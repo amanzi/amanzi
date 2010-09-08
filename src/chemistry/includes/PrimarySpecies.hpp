@@ -10,15 +10,15 @@
 
 class PrimarySpecies : public Species {
 
-  SecondarySpecies(const double s_charge, const double s_GMW, 
+  PrimarySpecies(const double s_charge, const double s_GMW, 
 		   const ActivityCoefficient* s_activityCoefficient, 
 		   Species::SpeciesName s_name);
 
-  ~SecondarySpecies();
+  ~PrimarySpecies();
 
 private:
-  std::vector<Species::SpeciesId> secondary_list_;
-  std::vector<double> secondary_coefficients_;
+  std::vector<Species::SpeciesId> primary_list_;
+  std::vector<double> primary_coefficients_;
 
 
 };
