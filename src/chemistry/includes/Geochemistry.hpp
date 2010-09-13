@@ -28,10 +28,10 @@ private:
   std::vector<ActivityCoefficient*> activityCoefficients_;
 
   Speciation speciation_;
-  std::vector<MineralReaction> mineralReactions_;
-  std::vector<GasExchange> gasReactions_;
-  std::vector<IonExchange> ionExchangeReactions_;
-  std::vector<SurfaceComplexation> surfaceComplexationReactions_;
+  std::vector<MineralReaction*> mineralReactions_;
+  std::vector<GasExchange*> gasReactions_;
+  std::vector<IonExchange*> ionExchangeReactions_;
+  std::vector<SurfaceComplexation*> surfaceComplexationReactions_;
 
 };
 
