@@ -1,4 +1,4 @@
-#ifndef __Reaction_Process_hpp__
+#ifndef __Speciation_Process_hpp__
 #define __Speciation_Process_hpp__
 
 #include "Teuchos_RCP.hpp"
@@ -16,6 +16,7 @@ public:
 
   void basisSwitch(void);
   void directSubstitution(void);
+  std::vector<SecondarySpecies> speciate(std::vector<PrimarySpecies>& primary);
 
 private:
 

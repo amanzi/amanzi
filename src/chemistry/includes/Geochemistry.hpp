@@ -1,11 +1,7 @@
 #ifndef __Geochemistry_hpp__
 #define __Geochemistry_hpp__
 
-#include "Teuchos_RCP.hpp"
-#include "Chemistry_PK.hpp"
-
 #include "Species.hpp"
-#include "PrimarySpecies.hpp"
 #include "SecondarySpecies.hpp"
 #include "Speciation.hpp"
 #include "MineralReaction.hpp"
@@ -14,21 +10,22 @@
 #include "SurfaceComplexation.hpp"
 
 
-// Chemistry Process Kernel Interface
+// Driver class for evalating geochemical related processes at a
+// single computational node
 
-class Geochemistry : public Chemistry_PK {
+class Geochemistry : {
 
 public:
-  Geochemistry(Teuchos::RCP<Chemistry_State> CS_);
+  Geochemistry();
   ~Geochemistry();
 
-
+  evaluateChemistry(std::vector<double> current_primary_species);
 
 private:
 
-  std::vector<PrimarySpecies> primarySpecies_;
-  std::vector<PrimarySpecies> secondarySpecies_;
-  std::vector<ActivityCoefficient> activityCoefficients_;
+  std::vector<double> primarySpecies_;
+  std::vector<SecondarySpecies> secondarySpecies_;
+  std::vector<ActivityCoefficient*> activityCoefficients_;
 
   Speciation speciation_;
   std::vector<MineralReaction> mineralReactions_;
