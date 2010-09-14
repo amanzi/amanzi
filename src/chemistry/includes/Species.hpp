@@ -72,3 +72,4 @@ inline double Species::gram_molecular_weight(void) const { return this->gram_mol
 inline Species::SpeciesName Species::name(void) const { return this->name_; }
 
 #endif
+
