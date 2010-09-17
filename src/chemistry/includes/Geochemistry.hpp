@@ -31,7 +31,7 @@ public:
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
   void calculateDTotal(Block *dtotal);
-  void scaleRHSAndJacobian(double *rhs, Block *J);
+  void scaleRHSAndJacobian(double *rhs, Block *JS);
 
   void set_ncomp(int i) { this->ncomp_ = i; }
   void addPrimarySpecies(Species s);
