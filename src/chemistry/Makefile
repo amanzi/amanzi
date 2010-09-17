@@ -44,7 +44,7 @@ clean : $(SUBDIRS)
 #
 # clobber - Really clean up the directory.
 #
-clobber : clean uninstall $(SUBDIRS)
+clobber : clean $(SUBDIRS)
 	rm -f .Makedepend *.o *.il
 
 #

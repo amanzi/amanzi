@@ -46,7 +46,7 @@ clean :
 # clobber - Really clean up the directory.
 #
 clobber : clean 
-	rm -f .Makedepend *.o *.il
+	rm -f .Makedepend *.o *.il $(LIBRARIES)
 
 #
 # FORCE - Null rule to force things to happen.
