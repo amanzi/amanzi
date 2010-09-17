@@ -10,6 +10,7 @@ obj = ${objdir}/Species.o \
 	${objdir}/LU.o \
 	${objdir}/Block.o \
 	${objdir}/Glenn.o \
+	${objdir}/SimpleMain.o \
 	${objdir}/FileIO.o
 
 ${objdir}/AqueousEquilibriumComplex.o : \
@@ -59,12 +60,12 @@ ${objdir}/Newton.o : ./solvers/Newton.cpp \
 	${CFLAGS}
 	mv Newton.o ${objdir}
 
-${objdir}/SimpleMain.o : ./base_chemistry/SimpleMain.cpp \
+${objdir}/SimpleMain.o : ./reactions/SimpleMain.cpp \
 	./reactions/Geochemistry.cpp \
 	./utility/Glenn.cpp 
-	${CXX} ${CPPFLAGS} -c ./base_chemistry/Geochemistry.cpp \
+	${CXX} ${CPPFLAGS} -c ./reactions/SimpleMain.cpp \
 	${CFLAGS}
-	mv Geochemistry.o ${objdir}
+	mv SimpleMain.o ${objdir}
 
 ${objdir}/Species.o : ./base_chemistry/Species.cpp
 	${CXX} ${CPPFLAGS} -c ./base_chemistry/Species.cpp \
