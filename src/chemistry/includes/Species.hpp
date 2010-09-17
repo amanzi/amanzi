@@ -4,7 +4,6 @@
 // Base class for species
 
 #include <string>
-#include <math.h>
 
 typedef std::string SpeciesName;
 typedef int SpeciesId;
@@ -58,7 +57,7 @@ public:
   void set_name(SpeciesName name) { this->name_ = name; }
 
 protected:
-//  Species(const double s_charge, const double s_GMW, const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);
+  //  Species(const double s_charge, const double s_GMW, const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);
 
   double molality_;
   double activity_;
@@ -67,7 +66,7 @@ protected:
   double ln_activity_;
   double ln_act_coef_;
   
-//  ActivityCoefficient* activityCoefficient;
+  //  ActivityCoefficient* activityCoefficient;
 
 
 private:

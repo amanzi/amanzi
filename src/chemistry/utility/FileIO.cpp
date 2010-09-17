@@ -1,6 +1,16 @@
+#include <cstdlib>
+#include <cstring>
+
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+using namespace std;
+
 #include "FileIO.hpp"
 
-FileIO::FileIO(string filename) {
+FileIO::FileIO(string filename) 
+{
 
   cout << filename << endl;
   file.open(filename.c_str(),fstream::in);
@@ -9,7 +19,8 @@ FileIO::FileIO(string filename) {
 
 }
 
-FileIO::FileIO(char *filename) {
+FileIO::FileIO(char *filename) 
+{
 
   cout << filename << endl;
   file.open(filename,fstream::in);
@@ -18,7 +29,8 @@ FileIO::FileIO(char *filename) {
 
 }
 
-int FileIO::getLine() {
+int FileIO::getLine() 
+{
 
   int ierr = 0;
   delete buffer;
@@ -36,13 +48,15 @@ int FileIO::getLine() {
 
 }
 
-int FileIO::getInputLine() {
+int FileIO::getInputLine() 
+{
 
   return getLine();
 
 }
 
-int FileIO::readDouble(double *d) {
+int FileIO::readDouble(double *d) 
+{
 
   *buffer >> *d;
 
@@ -50,7 +64,8 @@ int FileIO::readDouble(double *d) {
   
 }
 
-int FileIO::readInt(int *i) {
+int FileIO::readInt(int *i) 
+{
 
   *buffer >> *i;
 
@@ -58,7 +73,8 @@ int FileIO::readInt(int *i) {
   
 }
 
-int FileIO::readWord(char *word) {
+int FileIO::readWord(char *word) 
+{
 
 #if 0
   /* Remove any preceding spaces(32), tabs(9), or commas(44) etc */
@@ -87,7 +103,8 @@ int FileIO::readWord(char *word) {
 
 }
 
-int FileIO::readQuotedWords(char *words) {
+int FileIO::readQuotedWords(char *words) 
+{
 
   /* Remove any preceding spaces(32), tabs(9), or commas(44) etc */
   char c;
@@ -120,7 +137,8 @@ int FileIO::readQuotedWords(char *words) {
 
 }
 
-int FileIO::removeQuotes(char *str) {
+int FileIO::removeQuotes(char *str) 
+{
 
   /* Remove all quotes */
   string str2;
@@ -135,7 +153,8 @@ int FileIO::removeQuotes(char *str) {
 
 }
 
-int FileIO::findStringInFile(char *card) {
+int FileIO::findStringInFile(char *card) 
+{
 
   int ierr = 0;
 
@@ -153,23 +172,27 @@ int FileIO::findStringInFile(char *card) {
   return found==string::npos ? 0 : 1;
 }
 
-int FileIO::comparesTo(char *str) {
+int FileIO::comparesTo(char *str) 
+{
   string str2 = buffer->str();
   return str2.compare(str);
 }
 
-int FileIO::startsWith(char *str) {
+int FileIO::startsWith(char *str) 
+{
   return comparesTo(str);
 }
 
-void FileIO::checkDefaultMessage(char *word, int *ierr) {
+void FileIO::checkDefaultMessage(char *word, int *ierr) 
+{
 
   if (ierr) cout << "\"" << word << "\" set to default value" << endl;
   *ierr = 0;
 
 }
 
-void FileIO::checkErrorMessage(char *word1, char *word2, int ierr) {
+void FileIO::checkErrorMessage(char *word1, char *word2, int ierr) 
+{
 
   if (ierr) {
     cout << "Error reading \"" << word1 << "\" under keyword \"" << word2 << 
@@ -179,16 +202,18 @@ void FileIO::checkErrorMessage(char *word1, char *word2, int ierr) {
 
 }
 
-void FileIO::checkLineErrorMessage(char *word, int ierr) {
+void FileIO::checkLineErrorMessage(char *word, int ierr) 
+{
 
   if (ierr) {
     cout << "Error reading in string in \"" << word << "\"." << endl;
-    exit(1);
+    std::exit(1);
   }
 
 }
 
-void FileIO::toUpper(char *str) {
+void FileIO::toUpper(char *str) 
+{
 
   int len = (int)strlen(str);
   for (int i=0; i < len; i++) {
@@ -197,7 +222,8 @@ void FileIO::toUpper(char *str) {
 
 }
 
-void FileIO::toLower(char *str) {
+void FileIO::toLower(char *str) 
+{
 
   int len = (int)strlen(str);
   for (int i=0; i < len; i++) {
@@ -206,6 +232,7 @@ void FileIO::toLower(char *str) {
 
 }
 
-FileIO::~FileIO() {
+FileIO::~FileIO() 
+{
   file.close();
 }

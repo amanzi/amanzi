@@ -1,7 +1,7 @@
 // From numerical recipes in C
 // With modifications for memory by Glenn
 
-#include "LU.h"
+#include "LU.hpp"
 #define NRANSI
 #define TINY 1.0e-20
 

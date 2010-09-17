@@ -1,12 +1,6 @@
 #ifndef __FileIO_hpp__
 #define __FileIO_hpp__
 
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
-using namespace std;
-
 #define MAXCARDLENGTH 5 // add 1 to account of end of line \0
 #define MAXWORDLENGTH 33
 #define MAXSTRINGLENGTH 1025
