@@ -2,6 +2,7 @@
 #include "dbc.hh"
 
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -29,12 +30,14 @@ Mesh::Mesh (int space_dimension,
             const Epetra_MpiComm& comm,
             Entity_map* entity_map,
             stk::mesh::MetaData *meta_data,
-            stk::mesh::BulkData *bulk_data) :
+            stk::mesh::BulkData *bulk_data,
+            Vector_field_type &coordinate_field) :
     space_dimension_ (space_dimension),
     communicator_ (comm),
     entity_map_ (entity_map),
     meta_data_ (meta_data),
-    bulk_data_ (bulk_data)
+    bulk_data_ (bulk_data),
+    coordinate_field_ (coordinate_field)
 {
 
     ASSERT (dimension_ok_ ());
@@ -58,9 +61,9 @@ const stk::mesh::Selector& Mesh::selector_ (Element_Category category) const
     throw "Invalid element category in Mesh::selector_";
 }
 
-stk::mesh::Entity* Mesh::id_to_entity_ (stk::mesh::EntityRank rank, 
-                                        stk::mesh::EntityId id, 
-                                        Element_Category category) const
+stk::mesh::Entity* Mesh::id_to_entity (stk::mesh::EntityRank rank, 
+                                       stk::mesh::EntityId id, 
+                                       Element_Category category) const
 {
     ASSERT (valid_rank (rank));
     ASSERT (valid_category (category));
@@ -98,7 +101,7 @@ void Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
     // Look up element from global id.
     const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
     const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
-    stk::mesh::Entity *entity = id_to_entity_ (cell_rank, element, USED);
+    stk::mesh::Entity *entity = id_to_entity (cell_rank, element, USED);
     ASSERT (entity->identifier () == element);
 
     // Get relation connections
@@ -117,7 +120,7 @@ void Mesh::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 
     const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
     const int node_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
-    stk::mesh::Entity *entity = id_to_entity_ (cell_rank, element, USED);
+    stk::mesh::Entity *entity = id_to_entity (cell_rank, element, USED);
 
     stk::mesh::PairIterRelation faces = entity->relations (node_rank);
 
@@ -134,7 +137,7 @@ void Mesh::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
     const int from_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
     const int to_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
-    stk::mesh::Entity *entity = id_to_entity_ (from_rank, element, USED);
+    stk::mesh::Entity *entity = id_to_entity (from_rank, element, USED);
     
     stk::mesh::PairIterRelation nodes = entity->relations (to_rank);
     
@@ -149,16 +152,20 @@ void Mesh::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 
 double const * Mesh::coordinates (stk::mesh::Entity* node) const
 {
-
-
-
+    
+    // Get an array of entity data.
+    return field_data (coordinate_field_, *node);
 }
 
 
 double const * Mesh::coordinates (stk::mesh::EntityId node) const
 {
 
-    
+    ASSERT (node > 0);
+    ASSERT (node < count_entities (stk::mesh::Node, USED));
+
+    stk::mesh::Entity *entity = id_to_entity (stk::mesh::Node, node, USED);
+    return coordinates (entity);
 
 }
 

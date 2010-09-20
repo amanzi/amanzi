@@ -36,24 +36,20 @@ private:
     int space_dimension_;
     bool consistent_;
 
-
     std::auto_ptr<stk::mesh::MetaData> meta_data_;
     std::auto_ptr<stk::mesh::BulkData> bulk_data_;
-
 
     stk::mesh::Selector universal_selector_;
     stk::mesh::Selector owned_selector_;
     stk::mesh::Selector ghost_selector_;
     stk::mesh::Selector used_selector_;
 
+    Vector_field_type &coordinate_field_;
+
     const stk::mesh::Selector& selector_ (Element_Category category) const;
 
     void update_ ();
     void notify_views_ () {  }
-
-    stk::mesh::Entity* id_to_entity_ (stk::mesh::EntityRank rank, 
-                                      stk::mesh::EntityId id,
-                                      Element_Category category) const;
 
     // Internal Validators
     bool element_type_ok_ () const;
@@ -73,7 +69,8 @@ public:
           const Epetra_MpiComm& communicator, 
           Entity_map* entity_map, 
           stk::mesh::MetaData *meta_data, 
-          stk::mesh::BulkData *bulk_data);
+          stk::mesh::BulkData *bulk_data,
+          Vector_field_type& coordinate_field);
 
     virtual ~Mesh () { }
 
@@ -99,8 +96,13 @@ public:
     void element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const;
     void face_to_nodes    (stk::mesh::EntityId element, Entity_Ids& ids) const;
 
+
     double const * coordinates (stk::mesh::EntityId node) const;
     double const * coordinates (stk::mesh::Entity* node)  const;
+
+    stk::mesh::Entity* id_to_entity (stk::mesh::EntityRank rank, 
+                                     stk::mesh::EntityId id,
+                                     Element_Category category) const;
 
 
 

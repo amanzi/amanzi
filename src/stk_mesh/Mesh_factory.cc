@@ -62,7 +62,8 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     build_meta_data_ (data, fields);
     build_bulk_data_ (data, fields);
 
-    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, meta_data_, bulk_data_);
+    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, meta_data_, bulk_data_,
+                           *(meta_data_->get_field<Mesh::Vector_field_type> (std::string ("Coordinates"))));
 
     return mesh;
 }

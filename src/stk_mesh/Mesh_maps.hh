@@ -32,8 +32,7 @@ private:
     // Maps, Accessors and setters.
     // ----------------------------
     std::auto_ptr<Epetra_Map> maps_ [6];
-    //    std::auto_ptr<Epetra_Map>& map_       (Mesh_data::Entity_kind kind, bool include_ghost);
-    const Epetra_Map& map_ (Mesh_data::Entity_kind kind, bool include_ghost) const;
+    const Epetra_Map& map_  (Mesh_data::Entity_kind kind, bool include_ghost) const;
     unsigned int map_index_ (Mesh_data::Entity_kind kind, bool include_ghost) const;
     void assign_map_        (Mesh_data::Entity_kind kind, bool include_ghost, Epetra_Map *map);
     unsigned int kind_to_index_ (Mesh_data::Entity_kind type) const;
@@ -129,7 +128,18 @@ void Mesh_maps::face_to_nodes (unsigned int face, IT destination_begin, IT desti
 
 
 template <typename IT>
-void Mesh_maps::node_to_coordinates (unsigned int node, IT begin, IT end) const { }
+void Mesh_maps::node_to_coordinates (unsigned int local_node_id, IT begin, IT end) const 
+{ 
+
+    ASSERT ((unsigned int) (end-begin) == 3);
+
+    // Convert local node to global node Id.
+    stk::mesh::EntityId global_node_id = map_ (Mesh_data::NODE, true).GID (local_node_id);
+
+    const double * coordinates = mesh_->coordinates (global_node_id);
+    std::copy (coordinates, coordinates+3, begin);
+
+}
 
 
 template <typename F, typename D, typename M>

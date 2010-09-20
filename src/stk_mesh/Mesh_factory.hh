@@ -1,5 +1,5 @@
 #ifndef _MESH_FACTORY_HH_
-#define _MESH_FACTORYHH_
+#define _MESH_FACTORY_HH_
 
 #include "Data.hh"
 #include "Field_data.hh"
