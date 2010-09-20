@@ -1,0 +1,14 @@
+include_directories(${PROJECT_SOURCE_DIR}/utils)
+include_directories(${PROJECT_SOURCE_DIR}/dbc)
+include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
+include_directories(${Trilinos_INCLUDE_DIRS})
+
+add_library(stk_mesh Cell_topology.cc Element_category.cc Entity_map.cc Mesh_factory.cc Mesh.cc Mesh_maps.cc)
+target_link_libraries(stk_mesh dbc mesh_data ${Trilinos_LIBRARIES})
+link_directories(${Trilinos_LIBRARY_DIRS})
+
+if (BUILD_TESTS)
+  add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc)
+  target_link_libraries(test_stk_mesh stk_mesh unittest++)
+endif()
+
