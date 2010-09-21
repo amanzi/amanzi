@@ -49,6 +49,10 @@ SUITE (Mesh)
 
         }
 
+        // CHECK_EQUAL (mesh->count_global_entities (stk::mesh::Element), 4);
+        // CHECK_EQUAL (mesh->count_global_entities (stk::mesh::Face), 21);
+        // CHECK_EQUAL (mesh->count_global_entities (stk::mesh::Node), 20);
+
     }
 
     TEST_FIXTURE (Mesh_setup, Coordinates)

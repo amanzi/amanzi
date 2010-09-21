@@ -24,6 +24,7 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 
 namespace STK_mesh
 {
@@ -58,12 +59,13 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     Parts (0).swap     (side_sets_);
     Parts (0).swap     (node_sets_);
     Vector_entity_map ().swap (faces_map_);
+    coordinate_field_ = 0;
 
     build_meta_data_ (data, fields);
     build_bulk_data_ (data, fields);
 
     Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, meta_data_, bulk_data_,
-                           *(meta_data_->get_field<Mesh::Vector_field_type> (std::string ("Coordinates"))));
+                           *(meta_data_->get_field<Mesh::Vector_field_type> (std::string ("coordinates"))));
 
     return mesh;
 }
@@ -90,20 +92,20 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
 
 
     // Get the universal part. There's only one everything.
-    stk::mesh::Part &universal = meta_data_->universal_part ();
+    stk::mesh::Part &universal_part (meta_data_->universal_part ());
 
     // Add a faces part.
     faces_part_ = &meta_data_->declare_part ("Element sides", face_rank_);
+
+    put_coordinate_field_ (universal_part, space_dimension);
 
     // Declare and Put fields
     for (Mesh_data::Fields::const_iterator field = fields.begin ();
          field != fields.end (); 
          ++field)
     {
-        put_field_ (*field, universal, space_dimension);
+        put_field_ (*field, universal_part, space_dimension);
     }
-    Mesh_data::Field coordinates ("Coordinates", Mesh_data::VECTOR, Mesh_data::NODE);
-    put_field_ (coordinates, universal, space_dimension);
 
     meta_data_->commit ();
 
@@ -117,10 +119,10 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data, const Mesh_dat
 
     bulk_data_->modification_begin ();
 
+    // Explicitly assuming that all of the mesh data is on node 0:
     if (communicator_.MyPID () == 0)
     {
-        add_coordinates_ (data.coordinates ());
-        
+
         for (int block = 0; block < element_blocks_.size (); ++block)
             add_elements_to_part_ (data.element_block (block), *element_blocks_ [block]);
         
@@ -132,6 +134,12 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data, const Mesh_dat
     }
 
     bulk_data_->modification_end ();
+
+    add_coordinates_ (data.coordinates ());
+
+    // Loop over fields. Add them.
+        
+
 }
 
 
@@ -157,33 +165,36 @@ void Mesh_factory::put_field_ (const Mesh_data::Field& field_data,
 
 }
 
+void Mesh_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int space_dimension)
+{
+    coordinate_field_ = & meta_data_->declare_field<Mesh::Vector_field_type>("coordinates");
+    stk::mesh::put_field (*coordinate_field_, stk::mesh::Node, part, space_dimension);
+}
+
 
 void Mesh_factory::add_coordinates_ (const Mesh_data::Coordinates<double>& coordinate_data)
 {
 
     const int nodes = coordinate_data.nodes ();
 
-    Mesh::Vector_field_type* coordinates_field = 
-        meta_data_->get_field<Mesh::Vector_field_type> ("Coordinates");
+    // Select all of the nodes. 
+    stk::mesh::Selector universal_selector (meta_data_->universal_part ());
+    Entity_vector all_nodes;
+    stk::mesh::get_selected_entities (universal_selector, bulk_data_->buckets (stk::mesh::Node), all_nodes);
+    ASSERT (all_nodes.size () == nodes);
 
-    const Buckets node_buckets = bulk_data_->buckets (stk::mesh::Node);
-    for (Buckets::const_iterator bucket_it = node_buckets.begin ();
-         bucket_it != node_buckets.end ();
-         ++bucket_it)
+    // Loop over all nodes
+    int node_coordinate_index = 0;
+    for (Entity_vector::const_iterator node_it = all_nodes.begin ();
+         node_it != all_nodes.end ();
+         ++node_it)
     {
-        const stk::mesh::Bucket &bucket = **bucket_it;
+        double * coordinate_field_data = stk::mesh::field_data (*coordinate_field_, **node_it);
 
-        stk::mesh::BucketArray<Mesh::Vector_field_type> coordinates_array 
-            (*coordinates_field, bucket);
-
-        ASSERT (nodes == coordinates_array.dimension (1));
-
-        for (int node = 0; node < nodes; ++node)
-        {
-            const unsigned node_id = bucket [node].identifier ();
-            coordinate_data (node_id, &coordinates_array (0, node));
-        }
+        coordinate_data (node_coordinate_index, coordinate_field_data);
+        node_coordinate_index++;
     }
+
 }
 
 
@@ -224,6 +235,7 @@ void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block,
         stk::mesh::Entity &element = 
             stk::mesh::declare_element (*bulk_data_, part, (element_ind+1), &storage [0]);
 
+        // XXX We don't need this for general element blocks.
         declare_faces_ (element, part);
     }
 }
@@ -283,31 +295,5 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, stk:
 
 }
 
-
-// stk::mesh::EntityRank Mesh_factory::map_to_entity_type_ (Mesh_data::FIELD_LOCATION location)
-// {
-
-//     ASSERT (Mesh_data::ok_field_location (location));
-
-//     switch (location)
-//     {
-
-//     case Mesh_data::NODE:
-//         return stk::mesh::Node;
-
-//     case Mesh_data::EDGE:
-//         return stk::mesh::Edge;
-
-//     case Mesh_data::FACE:
-//         return face_rank_;
-
-//     case Mesh_data::ELEMENT:
-//         return element_rank_;
-
-//     default:
-//         return stk::mesh::EntityRankUndefined;
-//     }
-    
-// }
 
 }

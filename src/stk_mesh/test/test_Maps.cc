@@ -46,9 +46,7 @@ SUITE (MAPS)
             CHECK_ARRAY_EQUAL (coord_array, real_coordinates, 3);
 
             mesh_map.node_to_coordinates (19, coord_array, coord_array+3);
-            real_coordinates [0] = 4.0;
-            real_coordinates [1] = 1.0;
-            real_coordinates [2] = 1.0;
+            set_real_coordinates (4.0, 1.0, 1.0);
             CHECK_ARRAY_EQUAL (coord_array, real_coordinates, 3);
 
         }

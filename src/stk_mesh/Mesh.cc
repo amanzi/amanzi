@@ -162,7 +162,7 @@ double const * Mesh::coordinates (stk::mesh::EntityId node) const
 {
 
     ASSERT (node > 0);
-    ASSERT (node < count_entities (stk::mesh::Node, USED));
+    ASSERT (node <= count_entities (stk::mesh::Node, USED));
 
     stk::mesh::Entity *entity = id_to_entity (stk::mesh::Node, node, USED);
     return coordinates (entity);
