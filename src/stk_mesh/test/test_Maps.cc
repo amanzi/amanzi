@@ -41,11 +41,11 @@ SUITE (MAPS)
 
             double coord_array [3];
 
-            mesh_map.node_to_coordinates (1, coord_array, coord_array+3);
+            mesh_map.node_to_coordinates (0, coord_array, coord_array+3);
             set_real_coordinates (0.0, 0.0, 0.0);
             CHECK_ARRAY_EQUAL (coord_array, real_coordinates, 3);
 
-            mesh_map.node_to_coordinates (19, coord_array, coord_array+3);
+            mesh_map.node_to_coordinates (18, coord_array, coord_array+3);
             set_real_coordinates (4.0, 1.0, 1.0);
             CHECK_ARRAY_EQUAL (coord_array, real_coordinates, 3);
 

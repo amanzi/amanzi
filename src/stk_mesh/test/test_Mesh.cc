@@ -63,9 +63,22 @@ SUITE (Mesh)
         coordinates = mesh->coordinates (stk::mesh::EntityId (1));
         set_real_coordinates (0,0,0);
         CHECK_ARRAY_EQUAL (coordinates, real_coordinates, 3);
+
+        coordinates = mesh->coordinates (stk::mesh::EntityId (2));
+        set_real_coordinates (0, 1, 0);
+        CHECK_ARRAY_EQUAL (coordinates, real_coordinates, 3);
+
+        coordinates = mesh->coordinates (stk::mesh::EntityId (3));
+        set_real_coordinates (0, 1, 1);
+        CHECK_ARRAY_EQUAL (coordinates, real_coordinates, 3);
+
     
         coordinates = mesh->coordinates (stk::mesh::EntityId (19));
         set_real_coordinates (4.0, 1.0, 1.0);
+        CHECK_ARRAY_EQUAL (coordinates, real_coordinates, 3);
+
+        coordinates = mesh->coordinates (stk::mesh::EntityId (20));
+        set_real_coordinates (4.0, 0.0, 1.0);
         CHECK_ARRAY_EQUAL (coordinates, real_coordinates, 3);
 
     }
