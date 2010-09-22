@@ -26,6 +26,12 @@ INCLUDES = -I. \
 
 CXXFLAGS += $(INCLUDES)
 
+DIFF = diff
+DFLAGS = --brief
+
+TESTS = \
+	simpleCarbonate \
+	largeCarbonate
 
 #
 # Generic rules to generate executables.
@@ -47,10 +53,26 @@ all : $(EXECUTABLES)
 
 
 #
+# tests
+#
+
+test : $(TESTS)
+
+simpleCarbonate : 
+	./geochemistryTest -t 1 -v 1 > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+
+largeCarbonate : 
+	./geochemistryTest -t 2 -v 1 > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+
+
+#
 # clean - Clean up the directory.
 #
 clean : 
 	rm -f *~ *.CKP *.ln *.BAK *.bak .*.bak \
+		*.cout \
 		core errs \
 		,* .emacs_* \
 		tags TAGS \
