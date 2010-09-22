@@ -56,6 +56,8 @@ all : $(EXECUTABLES)
 # tests
 #
 
+tests : test
+
 test : $(TESTS)
 
 simpleCarbonate : 
