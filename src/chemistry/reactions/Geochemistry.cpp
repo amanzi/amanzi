@@ -1,28 +1,40 @@
 #include "Geochemistry.hpp"
 
-Geochemistry::Geochemistry() {
+Geochemistry::Geochemistry() 
+{
+  // end Geochemistry() constructor
 }
 
-void Geochemistry::setup(std::vector<double> *total) {
+Geochemistry::~Geochemistry() 
+{
+  // end Geochemistry destructor
+}
+
+void Geochemistry::setup(std::vector<double> *total) 
+{
   
   /* end setup() */
 }
 
-void Geochemistry::addPrimarySpecies(Species s) {
+void Geochemistry::addPrimarySpecies(Species s) 
+{
   primarySpecies_.push_back(s);
 }
 
-void Geochemistry::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) {
+void Geochemistry::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) 
+{
   aqComplexRxns_.push_back(c);
 }
 
-void Geochemistry::initializeMolalities(double initial_molality) {
+void Geochemistry::initializeMolalities(double initial_molality) 
+{
   for (std::vector<Species>::iterator i=primarySpecies_.begin();
        i!=primarySpecies_.end(); i++)
     i->set_molality(initial_molality);
 }
 
-void Geochemistry::updateChemistry(void) {
+void Geochemistry::updateChemistry(void)
+{
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++) {
     i->update();
@@ -33,8 +45,8 @@ void Geochemistry::updateChemistry(void) {
   }
 }
 
-void Geochemistry::calculateTotal(std::vector<double> &total) {
-
+void Geochemistry::calculateTotal(std::vector<double> &total) 
+{
   // add in primaries
   for (int i = 0; i < total.size(); i++)
     total[i] = primarySpecies_[i].get_molality();
@@ -47,7 +59,8 @@ void Geochemistry::calculateTotal(std::vector<double> &total) {
 
 }
 
-void Geochemistry::calculateDTotal(Block *dtotal) {
+void Geochemistry::calculateDTotal(Block *dtotal) 
+{
 
   dtotal->zero();
   // derivative with respect to free-ion is 1.
@@ -61,7 +74,8 @@ void Geochemistry::calculateDTotal(Block *dtotal) {
 
 }
 
-void Geochemistry::scaleRHSAndJacobian(double *rhs, Block *J) {
+void Geochemistry::scaleRHSAndJacobian(double *rhs, Block *J) 
+{
 
   for (int i=0; i<J->getSize(); i++) {
     double max = J->getRowAbsMax(i);
@@ -115,7 +129,7 @@ int Geochemistry::speciate(std::vector<double> target_totals)
     }
 
     if (verbose() == 3) {
-      cout << "before scale\n";
+      std::cout << "before scale\n";
       J->print();
     }
 
@@ -126,7 +140,7 @@ int Geochemistry::speciate(std::vector<double> target_totals)
     scaleRHSAndJacobian(rhs, J);
 
     if (verbose() == 3) {
-      cout << "after scale\n";
+      std::cout << "after scale\n";
       J->print();
     }
 
@@ -137,7 +151,7 @@ int Geochemistry::speciate(std::vector<double> target_totals)
     }
 
     if (verbose() == 3) {
-      cout << "before solve\n";
+      std::cout << "before solve\n";
       J->print();
     }
 
@@ -190,33 +204,50 @@ int Geochemistry::speciate(std::vector<double> target_totals)
   }
 
   if (verbose() > 1) {
-    cout << "Geochemistry::speciate num_iterations :" << num_iterations << endl;
+    std::cout << "Geochemistry::speciate num_iterations :" << num_iterations << std::endl;
   }
   return num_iterations;
   // end speciate
 }
 
-void Geochemistry::print_results(void)
+void Geochemistry::display(void) const
+{
+  std::cout << "----- Geochemistry description ------" << std::endl;
+  std::cout << "Primary Species:" << std::endl;
+  for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
+       primary != primarySpecies_.end(); primary++) {
+    primary->display();
+  }  
+  std::cout << std::endl;
+  std::cout << "Aqueous Equilibrium Complexes:" << std::endl;
+  for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
+       aec != aqComplexRxns_.end(); aec++) {
+    aec->display();
+  }  
+  std::cout << "-------------------------------------" << std::endl;
+  // end display()
+}
+
+void Geochemistry::print_results(void) const
 {
   // output for testing purposes
-  cout << endl;
-  cout << "Primary Species ---------------------\n";
+  std::cout << std::endl;
+  std::cout << "----- Solution ----------------------" << std::endl;
+  std::cout << "Primary Species ---------------------\n";
   for (int i = 0; i < ncomp(); i++) {
-    cout << "  " << primarySpecies_[i].get_name() << endl;
-    cout << "       Total: " << totals_[i] << endl;
-    cout << "    Free-Ion: " << primarySpecies_[i].get_molality() << endl;
+    std::cout << "  " << primarySpecies_[i].get_name() << std::endl;
+    std::cout << "       Total: " << totals_[i] << std::endl;
+    std::cout << "    Free-Ion: " << primarySpecies_[i].get_molality() << std::endl;
   }
-  cout << endl;
-  cout << "Secondary Species -------------------\n";
+  std::cout << std::endl;
+  std::cout << "Secondary Species -------------------\n";
   for (int i = 0; i < aqComplexRxns_.size(); i++) {
-    cout << "  " << aqComplexRxns_[i].get_name() << endl;
-    cout << "    Free-Ion: " << aqComplexRxns_[i].get_molality() << endl;
+    std::cout << "  " << aqComplexRxns_[i].get_name() << std::endl;
+    std::cout << "    Free-Ion: " << aqComplexRxns_[i].get_molality() << std::endl;
   }
-  cout << "-------------------------------------\n";
-  cout << endl;
+  std::cout << "-------------------------------------\n";
+  std::cout << std::endl;
 
   // end print_results
 }
 
-Geochemistry::~Geochemistry() {
-}

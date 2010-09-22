@@ -1,5 +1,6 @@
 SRCS_SPECIATE = \
 	./SimpleCarbonate.cpp \
+	./LargeCarbonate.cpp \
 	./geochemistry_test.cpp
 
 OBJS_SPECIATE = \
@@ -13,6 +14,12 @@ LIBS = \
 	-L../base_chemistry -lgeochembase \
 	-L../solvers -lgeochemsolvers \
 	-L../utility -lgeochemutil
+
+DEPEND_LIBS = \
+	../reactions/libgeochemrxns.a \
+	../base_chemistry/libgeochembase.a \
+	../solvers/libgeochemsolvers.a \
+	../utility/libgeochemutil.a
 
 INCLUDES = -I. \
 	-I../includes 
@@ -30,7 +37,7 @@ CXXFLAGS += $(INCLUDES)
 # generic build rule for all compilers
 #
 
-geochemistryTest : $(OBJS_SPECIATE)
+geochemistryTest : $(OBJS_SPECIATE) $(DEPEND_LIBS)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS_SPECIATE) $(LIBS) $(LDFLAGS)
 
 #

@@ -4,7 +4,7 @@
 
 
 #include "SimpleCarbonate.hpp"
-//#include "LargeCarbonate.hpp"
+#include "LargeCarbonate.hpp"
 #include "Geochemistry.hpp"
 
 int commandLineOptions(int argc, char **argv, int& verbose, int& test);
@@ -33,7 +33,7 @@ int main (int argc, char **argv) {
       if (verbose > 0) {
 	std::cout << "Running large carbonate speciation example." << std::endl;
       }
-      //    chem = new ComplexCarbonate();
+      chem = new LargeCarbonate();
       break;
     default:
       break;
@@ -44,9 +44,13 @@ int main (int argc, char **argv) {
     std::vector<double> total;
     chem->verbose(verbose);
     chem->setup(&total);
+    if (verbose > 1) {
+      chem->display();
+    }
+
     // solve for free-ion concentrations
     chem->speciate(total);
-    if (verbose > 1) {
+    if (verbose > 0) {
       chem->print_results();
     }
   }
