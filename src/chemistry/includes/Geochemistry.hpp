@@ -21,8 +21,11 @@ public:
   Geochemistry();
   ~Geochemistry();
 
+  // inheriting classes setup the species, etc
+  virtual void setup(std::vector<double> *total);
+
   // speciate for free-ion concentrations
-  int speciate(std::vector<double> totals_);
+  int speciate(std::vector<double> target_totals);
 
   void initializeMolalities(double initial_molality);
   // update activities, equilibrium complex concentrations, etc.
@@ -37,10 +40,17 @@ public:
   void addPrimarySpecies(Species s);
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
 
+  void print_results(void);
+  
+  int ncomp(void) const { return this->ncomp_; };
+
+  void verbose(const int s_verbose) { this->verbose_ = s_verbose; };
+  int verbose(void) const { return this->verbose_; };
 private:
-
+  int verbose_;
   int ncomp_;                // # basis species
-
+  std::vector<double> totals_;
+  
   std::vector<Species> primarySpecies_; // list of primary species
   Species water_;
 
