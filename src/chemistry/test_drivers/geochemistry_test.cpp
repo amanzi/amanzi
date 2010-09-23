@@ -7,30 +7,8 @@
 #include "LargeCarbonate.hpp"
 #include "Geochemistry.hpp"
 
-<<<<<<< local
-  std::string filename;
 
-  std::vector<double> total;
-=======
 int commandLineOptions(int argc, char **argv, int& verbose, int& test);
->>>>>>> other
-
-<<<<<<< local
-  // create geochemistry object
-  Geochemistry g;
-#if 0
-  // set up simple 2-species carbonate system (H,HCO3-)
-  createCarbonateSystem(&total,&g);
-#else
-  filename = "reaction.dat";
-  readChemistryFromFile(filename,&g);
-  filename = "target_total.dat";
-  readTargetTotalFromFile(filename,g.get_ncomp(),&total) ;
-#endif
-  // solve for free-ion concentrations
-  g.speciate(total);
-=======
->>>>>>> other
 
 int main (int argc, char **argv) {
 

@@ -51,12 +51,14 @@ public:
   void addPrimarySpecies(Species s);
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
 
-  void set_ncomp(int i) { this->ncomp_ = i; }
-
   void display(void) const;
   void print_results(void) const;
 
+  void set_ncomp(int i) { this->ncomp_ = i; }
   int get_ncomp(void) const { return this->ncomp_; }
+
+  void ncomp(int i) { this->ncomp_ = i; }
+  int ncomp(void) const { return this->ncomp_; }
 
   void verbose(const int s_verbose) { this->verbose_ = s_verbose; };
   int verbose(void) const { return this->verbose_; };
