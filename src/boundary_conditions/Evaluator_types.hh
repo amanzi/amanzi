@@ -7,6 +7,9 @@
    implementations.
 */
 
+namespace Boundary
+{
+
 struct BC_evaluator
 {
     virtual void operator () (Face f, Time t, Output c) = 0;
@@ -73,7 +76,7 @@ template <typename F>
 struct Time_evaluator : public BC_impl<F>
 {
 
-    Time_evaluator (Time_function &bc) : BC_impl<F> (bc) {  }
+    Time_evaluator (F &bc) : BC_impl<F> (bc) {  }
     void operator () (Face f, Time t, Output c) { BC_impl<F>::bc_ (t, c); }
 
 };
@@ -83,9 +86,17 @@ struct Time_evaluator : public BC_impl<F>
 
 
 template <typename F, typename E>
-BC_evaluator* build_space_time_ev(F &bc, E &ev) { return new Space_time_evaluator<F,E>(bc, ev); }
+BC_evaluator* build_space_time_BC(F &bc, E &ev) { return new Space_time_evaluator<F,E>(bc, ev); }
+
+template <typename F, typename E>
+BC_evaluator* build_space_BC (F &bc, E &ev) { return new Space_evaluator<F,E>(bc, ev); }
+
+template <typename F>
+BC_evaluator* build_time_BC (F &bc) { return new Time_evaluator<F>(bc); }
 
 
+
+}
 
 
 

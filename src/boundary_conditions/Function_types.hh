@@ -1,6 +1,10 @@
 #ifndef _FUNCTION_TYPES_H_
 #define _FUNCTION_TYPES_H_
 
+
+namespace Boundary
+{
+
 /* Define some parent types for boundary condition functions of
    various arguments. This will allow us to write boundary
    condition evaluators which specialize on the kinds of functions
@@ -22,7 +26,7 @@ struct Space_function      { virtual void operator () (Space x,         Output c
 struct Time_function       { virtual void operator () (         Time t, Output c) = 0; };
 struct Space_time_function { virtual void operator () (Space x, Time t, Output c) = 0; };
 
-
+}
 
 
 #endif /* _FUNCTION_TYPES_H_ */
