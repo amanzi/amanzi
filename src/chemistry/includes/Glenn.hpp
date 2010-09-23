@@ -3,6 +3,7 @@
 
 #include "Species.hpp"
 #include "AqueousEquilibriumComplex.hpp"
+#include "Beaker.hpp"
 #include "Geochemistry.hpp"
 #include "FileIO.hpp"
 
@@ -14,10 +15,10 @@ public:
 
 };
 
-static void createCarbonateSystem(std::vector<double> *total, Geochemistry *g) {
+static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
 
   // primary species
-  g->set_ncomp(2);
+  g->ncomp(2);
 
   total->push_back(1.e-6);
   total->push_back(1.e-3);
@@ -106,7 +107,7 @@ static void createCarbonateSystem(std::vector<double> *total, Geochemistry *g) {
 
 };
 
-static void readChemistryFromFile(string filename, Geochemistry *g) {
+static void readChemistryFromFile(string filename, Beaker *g) {
 
   char word[32];
   int ncomp, neqcplx;
@@ -117,7 +118,7 @@ static void readChemistryFromFile(string filename, Geochemistry *g) {
   // first line indicates number of primary and secondary components
   file->getLine();
   file->readInt(&ncomp);
-  g->set_ncomp(ncomp);
+  g->ncomp(ncomp);
   file->readInt(&neqcplx);
 
   int id;
