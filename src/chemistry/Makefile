@@ -5,7 +5,8 @@ SUBDIRS = \
 	utility \
 	solvers \
 	base_chemistry \
-	reactions
+	reactions \
+	test_drivers
 
 # MAKECMDGOALS is the make option: make 'clobber' or 'all'
 TARGET = $(MAKECMDGOALS)

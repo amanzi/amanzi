@@ -10,6 +10,8 @@ int main (int argc, char **args) {
 
   std::string filename;
 
+  int verbose = 1;
+
   std::vector<double> total;
 
   // create geochemistry object
@@ -24,7 +26,9 @@ int main (int argc, char **args) {
   readTargetTotalFromFile(filename,g.get_ncomp(),&total) ;
 #endif
   // solve for free-ion concentrations
+  g.verbose(verbose);
   g.speciate(total);
+  g.print_results();
 
   cout << "Done!\n";
 

@@ -1,45 +1,66 @@
 #include "Geochemistry.hpp"
 
-Geochemistry::Geochemistry() {
+Geochemistry::Geochemistry() 
+{
+  // end Geochemistry() constructor
 }
 
-void Geochemistry::addPrimarySpecies(Species s) {
+Geochemistry::~Geochemistry() 
+{
+  // end Geochemistry destructor
+}
+
+void Geochemistry::setup(std::vector<double> *total) 
+{
+  
+  /* end setup() */
+}
+
+void Geochemistry::addPrimarySpecies(Species s) 
+{
   primarySpecies_.push_back(s);
 }
 
-void Geochemistry::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) {
+void Geochemistry::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) 
+{
   aqComplexRxns_.push_back(c);
 }
 
-void Geochemistry::initializeMolalities(double initial_molality) {
+void Geochemistry::initializeMolalities(double initial_molality) 
+{
   for (std::vector<Species>::iterator i=primarySpecies_.begin();
        i!=primarySpecies_.end(); i++)
     i->set_molality(initial_molality);
 }
 
-void Geochemistry::updateChemistry(void) {
-  for (std::vector<Species>::iterator i=primarySpecies_.begin();
-       i!=primarySpecies_.end(); i++)
+void Geochemistry::updateChemistry(void)
+{
+  for (std::vector<Species>::iterator i = primarySpecies_.begin();
+       i != primarySpecies_.end(); i++) {
     i->update();
-  for (std::vector<AqueousEquilibriumComplex>::iterator i=aqComplexRxns_.begin();
-       i!=aqComplexRxns_.end(); i++)
+  }
+  for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
+       i != aqComplexRxns_.end(); i++) {
     i->update(primarySpecies_);
+  }
 }
 
-void Geochemistry::calculateTotal(std::vector<double> &total) {
-
+void Geochemistry::calculateTotal(std::vector<double> &total) 
+{
   // add in primaries
-  for (int i=0; i<(int)total.size(); i++)
+  for (int i = 0; i < (int)total.size(); i++)
     total[i] = primarySpecies_[i].get_molality();
 
   // add in aqueous complexes
-  for (std::vector<AqueousEquilibriumComplex>::iterator i=aqComplexRxns_.begin();
-       i!=aqComplexRxns_.end(); i++)
+  for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
+       i != aqComplexRxns_.end(); i++) {
     i->addContributionToTotal(total);
+  }
 
 }
 
-void Geochemistry::calculateDTotal(Block *dtotal) {
+void Geochemistry::calculateDTotal(Block *dtotal) 
+{
 
   dtotal->zero();
   // derivative with respect to free-ion is 1.
@@ -53,7 +74,8 @@ void Geochemistry::calculateDTotal(Block *dtotal) {
 
 }
 
-void Geochemistry::scaleRHSAndJacobian(double *rhs, Block *J) {
+void Geochemistry::scaleRHSAndJacobian(double *rhs, Block *J) 
+{
 
   for (int i=0; i<J->getSize(); i++) {
     double max = J->getRowAbsMax(i);
@@ -69,7 +91,8 @@ void Geochemistry::scaleRHSAndJacobian(double *rhs, Block *J) {
 void Geochemistry::calculateAccumulation(std::vector<double> total,
                                          double *residual,
                                          double volume, double porosity,
-                                         double saturation, double dt) {
+                                         double saturation, double dt)
+{
 
   // units = (mol solute/L water)*(m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = mol/sec
@@ -85,7 +108,8 @@ void Geochemistry::calculateAccumulationDerivative(Block *dtotal,
                                                    double volume, 
                                                    double porosity,
                                                    double saturation, 
-                                                   double dt) {
+                                                   double dt)
+{
 
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*(m^3 bulk)/(sec)
   //         *(kg water/L water)*(1000L water/m^3 water) = kg water/sec
@@ -98,21 +122,21 @@ void Geochemistry::calculateAccumulationDerivative(Block *dtotal,
 
 
 int Geochemistry::react(std::vector<double> total, double volume, 
-                        double porosity, double saturation, double dt) {
+                        double porosity, double saturation, double dt)
+{
 
-  int ncomp = ncomp_;
   double tolerance = 1.e-12;
 
-  Block *dtotal = new Block(ncomp);
-  double *fixed_residual = new double[ncomp];
-  double *residual = new double[ncomp];
-  double *rhs = new double[ncomp];
-  double *prev_molal = new double[ncomp];
-  double *update = new double[ncomp];
-  Block *J = new Block(ncomp);
+  Block *dtotal = new Block(get_ncomp());
+  double *fixed_residual = new double[get_ncomp()];
+  double *residual = new double[get_ncomp()];
+  double *rhs = new double[get_ncomp()];
+  double *prev_molal = new double[get_ncomp()];
+  double *update = new double[get_ncomp()];
+  Block *J = new Block(get_ncomp());
 
   // allocate pivoting array for LU
-  int *indices = new int[ncomp];
+  int *indices = new int[get_ncomp()];
 
   double max_rel_change;
   int num_iterations = 0;
@@ -134,7 +158,7 @@ int Geochemistry::react(std::vector<double> total, double volume,
     calculateAccumulationDerivative(dtotal,J,volume,porosity,saturation,dt);
   
     // subtract fixed porition
-    for (int i=0; i<ncomp; i++)
+    for (int i=0; i<get_ncomp(); i++)
       residual[i] -= fixed_residual[i];
 
     // add additional reactions here
@@ -149,7 +173,7 @@ int Geochemistry::react(std::vector<double> total, double volume,
     J->print();
 #endif
     // scale the Jacobian
-    for (int i=0; i<ncomp; i++)
+    for (int i=0; i<get_ncomp(); i++)
       rhs[i] = residual[i];
     scaleRHSAndJacobian(rhs,J);
 
@@ -159,7 +183,7 @@ int Geochemistry::react(std::vector<double> total, double volume,
 #endif
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
-    for (int i=0; i<ncomp; i++)
+    for (int i=0; i<get_ncomp(); i++)
       J->scaleColumn(i,primarySpecies_[i].get_molality());
 
 #ifdef DEBUG
@@ -168,14 +192,14 @@ int Geochemistry::react(std::vector<double> total, double volume,
 #endif
     // LU direct solve
     double D;
-    ludcmp(J->getValues(),ncomp,indices,&D);
-    lubksb(J->getValues(),ncomp,indices,rhs);
+    ludcmp(J->getValues(),get_ncomp(),indices,&D);
+    lubksb(J->getValues(),get_ncomp(),indices,rhs);
 
     // the following two sections still need to be encapsulated in
     // function calls.
 
     // calculate update truncating at a maximum of 5 in log space
-    for (int i=0; i<ncomp; i++) {
+    for (int i=0; i<get_ncomp(); i++) {
       update[i] = rhs[i] > 0. ? 
         (rhs[i] > 5. ? 5. : rhs[i]) : (rhs[i] < -5. ? -5. : rhs[i]);
       prev_molal[i] = primarySpecies_[i].get_molality();
@@ -184,13 +208,13 @@ int Geochemistry::react(std::vector<double> total, double volume,
 
     // calculate maximum relative change in concentration over all species
     max_rel_change = 0.;
-    for (int i=0; i<ncomp; i++) {
+    for (int i=0; i<get_ncomp(); i++) {
       double delta = fabs(primarySpecies_[i].get_molality()-prev_molal[i])/prev_molal[i];
       max_rel_change = delta > max_rel_change ? delta : max_rel_change;
     }
 
 #ifdef DEBUG
-    for (int i=0; i<ncomp; i++)
+    for (int i=0; i<get_ncomp(); i++)
       std::cout << primarySpecies_[i].get_name() << " " << primarySpecies_[i].get_molality() << " " << total[i] << "\n";
 #endif
 
@@ -203,9 +227,9 @@ int Geochemistry::react(std::vector<double> total, double volume,
 
 }
 
-int Geochemistry::speciate(std::vector<double> target_total) {
+int Geochemistry::speciate(std::vector<double> target_totals)
+{
 
-  int ncomp = ncomp_;
   double speciation_tolerance = 1.e-12;
 
   // initialize free-ion concentration s
@@ -213,25 +237,25 @@ int Geochemistry::speciate(std::vector<double> target_total) {
 
 
   // allocate arrays for Newton-Raphson
-  std::vector<double> total(ncomp);
-  Block *dtotal = new Block(ncomp);
-  double *residual = new double[ncomp];
-  double *rhs = new double[ncomp];
-  double *prev_molal = new double[ncomp];
-  double *update = new double[ncomp];
-  Block *J = new Block(ncomp);
+  std::vector<double> totals(get_ncomp(), 0.0);
+  Block *dtotal = new Block(get_ncomp());
+  double *residual = new double[get_ncomp()];
+  double *rhs = new double[get_ncomp()];
+  double *prev_molal = new double[get_ncomp()];
+  double *update = new double[get_ncomp()];
+  Block *J = new Block(get_ncomp());
 
   // allocate pivoting array for LU
-  int *indices = new int[ncomp];
+  int *indices = new int[get_ncomp()];
 
   double max_rel_change;
   int num_iterations = 0;
 
   do {
     
-//    calculateActivityCoefficients(-1);
+    //    calculateActivityCoefficients(-1);
     updateChemistry();
-    calculateTotal(total);
+    calculateTotal(totals);
     calculateDTotal(dtotal);
 
     // add derivatives of total with respect to free to Jacobian
@@ -239,41 +263,47 @@ int Geochemistry::speciate(std::vector<double> target_total) {
     J->addValues(0,0,dtotal);
 
     // calculate residual
-    for (int i=0; i<ncomp; i++)
-      residual[i] = total[i]-target_total[i];
+    for (int i = 0; i < get_ncomp(); i++) {
+      residual[i] = totals[i] - target_totals[i];
+    }
 
-#ifdef DEBUG
-    cout << "before scale\n";
-    J->print();
-#endif
+    if (verbose() == 3) {
+      std::cout << "before scale\n";
+      J->print();
+    }
+
     // scale the Jacobian
-    for (int i=0; i<ncomp; i++)
+    for (int i = 0; i < get_ncomp(); i++) {
       rhs[i] = residual[i];
-    scaleRHSAndJacobian(rhs,J);
+    }
+    scaleRHSAndJacobian(rhs, J);
 
-#ifdef DEBUG
-    cout << "after scale\n";
-    J->print();
-#endif
+    if (verbose() == 3) {
+      std::cout << "after scale\n";
+      J->print();
+    }
+
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
-    for (int i=0; i<ncomp; i++)
-      J->scaleColumn(i,primarySpecies_[i].get_molality());
+    for (int i = 0; i < get_ncomp(); i++) {
+      J->scaleColumn(i, primarySpecies_[i].get_molality());
+    }
 
-#ifdef DEBUG
-    cout << "before solve\n";
-    J->print();
-#endif
+    if (verbose() == 3) {
+      std::cout << "before solve\n";
+      J->print();
+    }
+
     // LU direct solve
     double D;
-    ludcmp(J->getValues(),ncomp,indices,&D);
-    lubksb(J->getValues(),ncomp,indices,rhs);
+    ludcmp(J->getValues(), get_ncomp(), indices, &D);
+    lubksb(J->getValues(), get_ncomp(), indices, rhs);
 
     // the following two sections still need to be encapsulated in
     // function calls.
 
     // calculate update truncating at a maximum of 5 in log space
-    for (int i=0; i<ncomp; i++) {
+    for (int i = 0; i < get_ncomp(); i++) {
       update[i] = rhs[i] > 0. ? 
         (rhs[i] > 5. ? 5. : rhs[i]) : (rhs[i] < -5. ? -5. : rhs[i]);
       prev_molal[i] = primarySpecies_[i].get_molality();
@@ -282,37 +312,22 @@ int Geochemistry::speciate(std::vector<double> target_total) {
 
     // calculate maximum relative change in concentration over all species
     max_rel_change = 0.;
-    for (int i=0; i<ncomp; i++) {
-      double delta = fabs(primarySpecies_[i].get_molality()-prev_molal[i])/prev_molal[i];
+    for (int i = 0; i < get_ncomp(); i++) {
+      double delta = fabs(primarySpecies_[i].get_molality() - prev_molal[i]) / prev_molal[i];
       max_rel_change = delta > max_rel_change ? delta : max_rel_change;
     }
 
-#ifdef DEBUG
-    for (int i=0; i<ncomp; i++)
-      std::cout << primarySpecies_[i].get_name() << " " << primarySpecies_[i].get_molality() << " " << total[i] << "\n";
-#endif
+    if (verbose() == 3) {
+      for (int i = 0; i < get_ncomp(); i++) {
+      	std::cout << primarySpecies_[i].get_name() << " " 
+		      << primarySpecies_[i].get_molality() << " " << totals[i] << "\n";
+      }
+    }
 
     num_iterations++;
 
     // exist if maximum relative change is below tolerance
   } while (max_rel_change > speciation_tolerance);
-
-  // output for testing purposes
-  cout << endl;
-  cout << "Primary Species ---------------------\n";
-  for (int i=0; i<ncomp; i++) {
-    cout << "  " << primarySpecies_[i].get_name() << endl;
-    cout << "       Total: " << total[i] << endl;
-    cout << "    Free-Ion: " << primarySpecies_[i].get_molality() << endl;
-  }
-  cout << endl;
-  cout << "Secondary Species -------------------\n";
-  for (int i=0; i<(int)aqComplexRxns_.size(); i++) {
-    cout << "  " << aqComplexRxns_[i].get_name() << endl;
-    cout << "    Free-Ion: " << aqComplexRxns_[i].get_molality() << endl;
-  }
-  cout << "-------------------------------------\n";
-  cout << endl;
 
   // free up memory
   delete J;
@@ -322,9 +337,56 @@ int Geochemistry::speciate(std::vector<double> target_total) {
   delete [] prev_molal;
   delete [] indices;
 
+  totals_.resize(get_ncomp());
+  for (int i = 0; i < get_ncomp(); i++) {
+    totals_[i] = totals[i];
+  }
+
+  if (verbose() > 1) {
+    std::cout << "Geochemistry::speciate num_iterations :" << num_iterations << std::endl;
+  }
   return num_iterations;
-
+  // end speciate
 }
 
-Geochemistry::~Geochemistry() {
+void Geochemistry::display(void) const
+{
+  std::cout << "----- Geochemistry description ------" << std::endl;
+  std::cout << "Primary Species:" << std::endl;
+  for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
+       primary != primarySpecies_.end(); primary++) {
+    primary->display();
+  }  
+  std::cout << std::endl;
+  std::cout << "Aqueous Equilibrium Complexes:" << std::endl;
+  for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
+       aec != aqComplexRxns_.end(); aec++) {
+    aec->display();
+  }  
+  std::cout << "-------------------------------------" << std::endl;
+  // end display()
 }
+
+void Geochemistry::print_results(void) const
+{
+  // output for testing purposes
+  std::cout << std::endl;
+  std::cout << "----- Solution ----------------------" << std::endl;
+  std::cout << "Primary Species ---------------------\n";
+  for (int i = 0; i < get_ncomp(); i++) {
+    std::cout << "  " << primarySpecies_[i].get_name() << std::endl;
+    std::cout << "       Total: " << totals_[i] << std::endl;
+    std::cout << "    Free-Ion: " << primarySpecies_[i].get_molality() << std::endl;
+  }
+  std::cout << std::endl;
+  std::cout << "Secondary Species -------------------\n";
+  for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
+    std::cout << "  " << aqComplexRxns_[i].get_name() << std::endl;
+    std::cout << "    Free-Ion: " << aqComplexRxns_[i].get_molality() << std::endl;
+  }
+  std::cout << "-------------------------------------\n";
+  std::cout << std::endl;
+
+  // end print_results
+}
+

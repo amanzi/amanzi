@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include "Species.hpp"
 
 Species::Species() 
@@ -62,3 +63,12 @@ void Species::update(void)
   // end update()
 }
 
+void Species::display(void) const
+{
+  std::cout << "    " << get_name();
+  std::cout << std::endl;
+  std::cout << "        charge = " << get_charge() << std::endl;
+  std::cout << "        mol wt = " << get_gram_molecular_weight() << std::endl;
+  
+  // end display()
+}

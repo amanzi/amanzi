@@ -31,6 +31,8 @@ public:
   void addContributionToDTotal(const std::vector<Species> primarySpecies,
                                Block *dtotal);
 
+  void display(void) const;
+
 protected:
 
 private:
@@ -43,6 +45,7 @@ private:
   double h2o_stoich_;
   double lnK_;
   double lnQK_;                        // store lnQK for derivatives later
+  double logK_;
   
   double log_to_ln(double d) { return d*2.30258509299; }
   double ln_to_log(double d) { return d*0.434294481904; }

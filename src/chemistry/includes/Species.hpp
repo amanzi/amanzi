@@ -56,6 +56,8 @@ public:
   void set_ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
   void set_name(SpeciesName name) { this->name_ = name; }
 
+  void display(void) const;
+
 protected:
   //  Species(const double s_charge, const double s_GMW, const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);
 
@@ -71,7 +73,7 @@ protected:
 
 private:
   SpeciesId identifier_;
-  double charge_;
+  double charge_; // why is this a double rather than int...?
   double gram_molecular_weight_;
   double ion_size_parameter_;
   SpeciesName name_;

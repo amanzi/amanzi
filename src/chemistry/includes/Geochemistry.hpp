@@ -21,8 +21,11 @@ public:
   Geochemistry();
   ~Geochemistry();
 
+  // inheriting classes setup the species, etc
+  virtual void setup(std::vector<double> *total);
+
   // speciate for free-ion concentrations
-  int speciate(std::vector<double> totals_);
+  int speciate(std::vector<double> target_totals);
 
   // solve a chemistry step
   int react(std::vector<double> total, double volume, double porosity, 
@@ -49,13 +52,20 @@ public:
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
 
   void set_ncomp(int i) { this->ncomp_ = i; }
-  
+
+  void display(void) const;
+  void print_results(void) const;
+
   int get_ncomp(void) const { return this->ncomp_; }
 
+  void verbose(const int s_verbose) { this->verbose_ = s_verbose; };
+  int verbose(void) const { return this->verbose_; };
+
 private:
-
+  int verbose_;
   int ncomp_;                // # basis species
-
+  std::vector<double> totals_;
+  
   std::vector<Species> primarySpecies_; // list of primary species
   Species water_;
 

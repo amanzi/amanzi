@@ -1,0 +1,35 @@
+
+
+Running large carbonate speciation example.
+
+----- Solution ----------------------
+Primary Species ---------------------
+  H+
+       Total: 0.001
+    Free-Ion: 2.11677e-05
+  HCO3-
+       Total: 0.001
+    Free-Ion: 2.09096e-05
+  Ca++
+       Total: 0.001
+    Free-Ion: 0.000999769
+  H2O
+       Total: 55.5084
+    Free-Ion: 55.5084
+
+Secondary Species -------------------
+  OH-
+    Free-Ion: 2.65207e-08
+  CO3--
+    Free-Ion: 4.63312e-11
+  H2CO3*
+    Free-Ion: 0.000978859
+  CaOH+
+    Free-Ion: 4.35096e-10
+  CaHCO3+
+    Free-Ion: 2.30806e-07
+  CaCO3(aq)
+    Free-Ion: 9.67771e-11
+-------------------------------------
+
+Done!
