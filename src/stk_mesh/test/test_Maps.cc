@@ -62,7 +62,9 @@ SUITE (MAPS)
         int nodes_cell_0 [] = {0, 4, 5, 1, 3, 7, 6, 2};
 
         int nodes_face_0 [] = {0, 4, 7, 3};
+        int nodes_face_1 [] = {4, 5, 6, 7};
         
+        int nodes_cell_3 [] = {12, 16, 17, 13, 15, 19, 18, 14};
 
         std::vector<unsigned int> faces (6);
         std::vector<unsigned int> nodes (8);
@@ -79,6 +81,12 @@ SUITE (MAPS)
 
             mesh_map.face_to_nodes (0, face_nodes.begin (), face_nodes.end ());
             CHECK_ARRAY_EQUAL (face_nodes.begin (), nodes_face_0, 4);
+
+            mesh_map.face_to_nodes (1, face_nodes.begin (), face_nodes.end ());
+            CHECK_ARRAY_EQUAL (face_nodes.begin (), nodes_face_1, 4);
+
+            mesh_map.cell_to_nodes (3, nodes.begin (), nodes.end ());
+            CHECK_ARRAY_EQUAL (nodes.begin (), nodes_cell_3, 8);
 
 
         }

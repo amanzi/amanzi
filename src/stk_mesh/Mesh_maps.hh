@@ -74,6 +74,12 @@ public:
     template <typename IT>
     void node_to_coordinates (unsigned int node, IT begin, IT end) const;
 
+    template <typename IT>
+    void face_to_coordinates (unsigned int face, IT begin, IT end) const;
+    
+    template <typename IT>
+    void cell_to_ccordinates (unsigned int call, IT begin, IT end) const;
+
     const Epetra_Map& cell_map (bool include_ghost) const 
     {
         return map_ (Mesh_data::CELL, include_ghost); 
