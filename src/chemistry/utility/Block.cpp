@@ -53,11 +53,38 @@ void Block::setValues(double **values) {
       A[i][j] = values[i][j];
 }
 
+void Block::setValues(Block *b) {
+  double **B = b->getValues();
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i][j] = B[i][j];
+}
+
 void Block::setValues(int ioffset, int joffset, Block *b) {
   double **A_ = b->getValues();
   for (int i=0; i<size; i++)
     for (int j=0; j<size; j++)
       A[i+ioffset][j+joffset] = A_[i][j];
+}
+
+void Block::setValues(Block *b, double scale) {
+  double **B = b->getValues();
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i][j] = scale*B[i][j];
+}
+
+void Block::setValues(double **values, double scale) {
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i][j] = scale*values[i][j];
+}
+
+void Block::setValues(int ioffset, int joffset, Block *b, double scale) {
+  double **B = b->getValues();
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i+ioffset][j+joffset] = scale*B[i][j];
 }
 
 void Block::addValue(int i, int j, double value) {
@@ -70,11 +97,38 @@ void Block::addValues(double **values) {
       A[i][j] += values[i][j];
 }
 
+void Block::addValues(Block *b) {
+  double **B = b->getValues();
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i][j] += B[i][j];
+}
+
 void Block::addValues(int ioffset, int joffset, Block *b) {
   double **A_ = b->getValues();
   for (int i=0; i<size; i++)
     for (int j=0; j<size; j++)
       A[i+ioffset][j+joffset] += A_[i][j];
+}
+
+void Block::addValues(double **values, double scale) {
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i][j] += scale*values[i][j];
+}
+
+void Block::addValues(Block *b, double scale) {
+  double **B = b->getValues();
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i][j] += scale*B[i][j];
+}
+
+void Block::addValues(int ioffset, int joffset, Block *b, double scale) {
+  double **B = b->getValues();
+  for (int i=0; i<size; i++)
+    for (int j=0; j<size; j++)
+      A[i+ioffset][j+joffset] += scale*B[i][j];
 }
 
 void Block::print() {

@@ -24,6 +24,10 @@ public:
   // speciate for free-ion concentrations
   int speciate(std::vector<double> totals_);
 
+  // solve a chemistry step
+  int react(std::vector<double> total, double volume, double porosity, 
+            double saturation, double dt);
+
   void initializeMolalities(double initial_molality);
   // update activities, equilibrium complex concentrations, etc.
   void updateChemistry(void);
@@ -31,6 +35,14 @@ public:
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
   void calculateDTotal(Block *dtotal);
+  // accumulation terms
+  void calculateAccumulation(std::vector<double> total, double *residual,
+                             double volume, double porosity,
+                             double saturation, double dt);
+  void calculateAccumulationDerivative(Block *dtotal,Block *J,
+                                       double volume, double porosity,
+                                       double saturation, double dt);
+
   void scaleRHSAndJacobian(double *rhs, Block *J);
 
   void addPrimarySpecies(Species s);
