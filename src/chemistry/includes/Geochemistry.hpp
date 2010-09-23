@@ -33,9 +33,12 @@ public:
   void calculateDTotal(Block *dtotal);
   void scaleRHSAndJacobian(double *rhs, Block *J);
 
-  void set_ncomp(int i) { this->ncomp_ = i; }
   void addPrimarySpecies(Species s);
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
+
+  void set_ncomp(int i) { this->ncomp_ = i; }
+  
+  int get_ncomp(void) const { return this->ncomp_; }
 
 private:
 

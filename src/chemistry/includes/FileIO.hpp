@@ -5,7 +5,17 @@
 #define MAXWORDLENGTH 33
 #define MAXSTRINGLENGTH 1025
 
+#include <cstdlib>
+#include <cstring>
+
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+using namespace std;
+
 class FileIO {
+
 public:
 
   FileIO(char *filename);

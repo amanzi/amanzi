@@ -1,12 +1,3 @@
-#include <cstdlib>
-#include <cstring>
-
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
-using namespace std;
-
 #include "FileIO.hpp"
 
 FileIO::FileIO(string filename) 
