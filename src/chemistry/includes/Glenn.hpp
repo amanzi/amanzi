@@ -11,14 +11,14 @@
 
 class Glenn {
 
-public:
+ public:
 
 };
 
 static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
 
   // primary species
-  g->ncomp(2);
+  g->resize(2);
 
   total->push_back(1.e-6);
   total->push_back(1.e-3);
@@ -83,7 +83,6 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
                                  h2o_stoich,
                                  charge,mol_wt,size,logK));
 
-
   species.clear();
   stoichiometries.clear();
   species_ids.clear();
@@ -104,10 +103,10 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
                                  h2o_stoich,
                                  charge,mol_wt,size,logK));
 
+}; // end createCarbonateSystem
 
-};
-
-static void readChemistryFromFile(string filename, Beaker *g) {
+static void readChemistryFromFile(string filename, Beaker *g) 
+{
 
   char word[32];
   int ncomp, neqcplx;
@@ -118,7 +117,7 @@ static void readChemistryFromFile(string filename, Beaker *g) {
   // first line indicates number of primary and secondary components
   file->getLine();
   file->readInt(&ncomp);
-  g->ncomp(ncomp);
+  g->resize(ncomp);
   file->readInt(&neqcplx);
 
   int id;
@@ -128,7 +127,7 @@ static void readChemistryFromFile(string filename, Beaker *g) {
   double size;
 
   // for ncomp primary speces, each line lists name, Z, a0
-  for (int i=0; i<ncomp; i++) {
+  for (int i = 0; i < ncomp; i++) {
     id = i;
     file->getLine();
     file->readWord(word);
@@ -152,7 +151,7 @@ static void readChemistryFromFile(string filename, Beaker *g) {
   double h2o_stoich;
   double logK;
   // for neqcplx secondary speces, each line lists name, Z, a0, etc.
-  for (int i=0; i<neqcplx; i++) {
+  for (int i = 0; i < neqcplx; i++) {
 
     species.clear();
     stoichiometries.clear();
@@ -170,7 +169,7 @@ static void readChemistryFromFile(string filename, Beaker *g) {
     file->getLine();
     int ncomp_in_rxn;
     file->readInt(&ncomp_in_rxn);
-    for (int j=0; j<ncomp_in_rxn; j++) {
+    for (int j = 0; j<ncomp_in_rxn; j++) {
       int tempi;
       file->readInt(&tempi);
       // decrement for zero-based indexing
@@ -178,7 +177,7 @@ static void readChemistryFromFile(string filename, Beaker *g) {
       species_ids.push_back(tempi);
     }
 #ifdef DEBUG
-    for (int j=0; j<(int)species_ids.size(); j++)
+    for (int j = 0; j < (int)species_ids.size(); j++)
       std::cout << species_ids[j] << " " ;
     std::cout << endl;
 #endif
@@ -187,12 +186,12 @@ static void readChemistryFromFile(string filename, Beaker *g) {
     file->getLine();
     // skip first value (PFLOTRAN eqcplxstroich mirrors eqcplxspecid)
     file->readDouble(&tempd);
-    for (int j=0; j<ncomp_in_rxn; j++) {
+    for (int j = 0; j<ncomp_in_rxn; j++) {
       file->readDouble(&tempd);
       stoichiometries.push_back(tempd);
     }
 #ifdef DEBUG
-    for (int j=0; j<ncomp_in_rxn; j++)
+    for (int j = 0; j < ncomp_in_rxn; j++)
       std::cout << stoichiometries[j] << " " ;
     std::cout << endl;
 #endif
@@ -216,19 +215,17 @@ static void readChemistryFromFile(string filename, Beaker *g) {
     std::cout << "-------------------------\n";
 #endif
     g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-                                    species,
-                                    stoichiometries,
-                                    species_ids,
-                                    h2o_stoich,
+                                    species,stoichiometries,
+                                    species_ids,h2o_stoich,
                                     charge,mol_wt,size,logK));
   }
   
   delete file;
-};
+}; // end readChemistryFromFile
 
 static void readTargetTotalFromFile(string filename, int ncomp, 
-                                    std::vector<double> *total) {
-
+                                    std::vector<double> *total) 
+{
   total->clear();
 
   // open file with FileIO buffer
@@ -236,7 +233,7 @@ static void readTargetTotalFromFile(string filename, int ncomp,
   // first line indicates number of primary and secondary components
   char word[32];
   double temp;
-  for (int i=0; i<ncomp; i++) {
+  for (int i = 0; i < ncomp; i++) {
     file->getLine();
     file->readWord(word);
     file->readDouble(&temp);
@@ -244,7 +241,6 @@ static void readTargetTotalFromFile(string filename, int ncomp,
     total->push_back(temp);
   }
   delete file;
+}; // end readTargetTotalFromFile
 
-};
-
-#endif
+#endif // __Glenn_hpp__

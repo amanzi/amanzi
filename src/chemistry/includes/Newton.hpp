@@ -13,16 +13,15 @@ public:
   virtual ~Newton();
 
   void solve();
-  void solve(double *r, Block *J, double *conc, double *update);
   
-private:
+ private:
 
   int n;
   double *x;
-  double *b;
+  double *r;
   Block *J;
   int *indices;
 
 };
 
-#endif
+#endif // __Newton_hpp__

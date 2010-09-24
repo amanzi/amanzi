@@ -10,7 +10,7 @@ using namespace std;
 
 class Block {
   
-public:
+ public:
   Block();
   Block(int);
   virtual ~Block();
@@ -46,12 +46,12 @@ public:
   void print(void);
 
   
-private:
+ private:
 
   int size;
   double **A;
 
 };
 
-#endif /*__Block_hpp__*/
+#endif // __Block_hpp__
 

@@ -16,7 +16,7 @@ using namespace std;
 
 class FileIO {
 
-public:
+ public:
 
   FileIO(char *filename);
   FileIO(string filename);
@@ -44,4 +44,4 @@ public:
 
 };
 
-#endif
+#endif // __FileIO_hpp__

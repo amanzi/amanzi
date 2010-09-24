@@ -1,8 +1,4 @@
-// From numerical recipes in C
-// With modifications for memory by Glenn
-
 #include "LU.hpp"
-#define NRANSI
 #define TINY 1.0e-20
 
 void ludcmp(double **a, int n, int *indx, double *d)
@@ -11,7 +7,6 @@ void ludcmp(double **a, int n, int *indx, double *d)
   double big,dum,sum,temp;
   double *vv;
 
-//  vv=vector(1,n);
   vv = new double[n];
 	*d=1.0;
 	for (i=0;i<n;i++) {
@@ -54,8 +49,7 @@ void ludcmp(double **a, int n, int *indx, double *d)
 		}
   }
   delete [] vv;
-//  free_vector(vv,1,n);
-}
+} // end ludcmp()
 
 
 #undef TINY
@@ -80,8 +74,7 @@ void lubksb(double **a, int n, int *indx, std::vector<double> &b)
 		for (j=i+1;j<n;j++) sum -= a[i][j]*b[j];
 		b[i]=sum/a[i][i];
 	}
-
-}
+} // end lubksb()
 
 void lubksb(double **a, int n, int *indx, double b[])
 {
@@ -103,5 +96,4 @@ void lubksb(double **a, int n, int *indx, double b[])
 		for (j=i+1;j<n;j++) sum -= a[i][j]*b[j];
 		b[i]=sum/a[i][i];
 	}
-
-}
+} // end lubksb()

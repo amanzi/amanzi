@@ -10,7 +10,7 @@ int main (int argc, char **args) {
 
   std::string filename;
 
-  int verbose = 3;
+  int verbose = 1;
 
   std::vector<double> total;
 

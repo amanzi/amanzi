@@ -12,7 +12,7 @@
 
 class AqueousEquilibriumComplex : public Species {
 
-public:
+ public:
   AqueousEquilibriumComplex();
   AqueousEquilibriumComplex(std::string s);
   AqueousEquilibriumComplex(SpeciesName name, 
@@ -33,9 +33,12 @@ public:
 
   void display(void) const;
 
-protected:
+ protected:
 
-private:
+ private:
+
+  double log_to_ln(double d) { return d*2.30258509299; }
+  double ln_to_log(double d) { return d*0.434294481904; }
 
   int ncomp_; // # components in reaction
   std::vector<SpeciesName> species_names_;
@@ -47,9 +50,6 @@ private:
   double lnQK_;                        // store lnQK for derivatives later
   double logK_;
   
-  double log_to_ln(double d) { return d*2.30258509299; }
-  double ln_to_log(double d) { return d*0.434294481904; }
-
 };
 
-#endif
+#endif // __AqueousEquilibriumComplex_hpp__

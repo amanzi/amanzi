@@ -8,7 +8,7 @@ FileIO::FileIO(string filename)
   if (!file.is_open()) cout << "ERROR opening file " << filename << ".\n";
   buffer = NULL;
 
-}
+} // end FileIO constructor
 
 FileIO::FileIO(char *filename) 
 {
@@ -18,7 +18,7 @@ FileIO::FileIO(char *filename)
   if (!file.is_open()) cout << "ERROR opening file " << filename << ".\n";
   buffer = NULL;
 
-}
+} // end FileIO constructor
 
 int FileIO::getLine() 
 {
@@ -37,14 +37,14 @@ int FileIO::getLine()
 
   return file.eof() ? 0 : 1;
 
-}
+} // end getLine()
 
 int FileIO::getInputLine() 
 {
 
   return getLine();
 
-}
+} // end getLine()
 
 int FileIO::readDouble(double *d) 
 {
@@ -53,7 +53,7 @@ int FileIO::readDouble(double *d)
 
   return buffer->fail() ? 0 : 1;
   
-}
+} // end readDouble()
 
 int FileIO::readInt(int *i) 
 {
@@ -62,7 +62,7 @@ int FileIO::readInt(int *i)
 
   return buffer->fail() ? 0 : 1;
   
-}
+} // end readInt()
 
 int FileIO::readWord(char *word) 
 {
@@ -92,7 +92,7 @@ int FileIO::readWord(char *word)
   if (strlen(word) == 0) return 1;
   else return 0;
 
-}
+} // end readWord()
 
 int FileIO::readQuotedWords(char *words) 
 {
@@ -126,7 +126,7 @@ int FileIO::readQuotedWords(char *words)
   if (strlen(words) == 0) return 1;
   else return 0;
 
-}
+} // end readQuotedWords()
 
 int FileIO::removeQuotes(char *str) 
 {
@@ -142,7 +142,7 @@ int FileIO::removeQuotes(char *str)
 
   return 0;
 
-}
+} // end removeQuotes()
 
 int FileIO::findStringInFile(char *card) 
 {
@@ -161,69 +161,61 @@ int FileIO::findStringInFile(char *card)
   }
   //return found ? 0 : 1;
   return found==string::npos ? 0 : 1;
-}
+} // end findStringInFile()
 
 int FileIO::comparesTo(char *str) 
 {
   string str2 = buffer->str();
   return str2.compare(str);
-}
+} // end comparesTo()
 
 int FileIO::startsWith(char *str) 
 {
   return comparesTo(str);
-}
+} // end startsWith()
 
 void FileIO::checkDefaultMessage(char *word, int *ierr) 
 {
-
   if (ierr) cout << "\"" << word << "\" set to default value" << endl;
   *ierr = 0;
-
-}
+} // end checkDefaultMessage()
 
 void FileIO::checkErrorMessage(char *word1, char *word2, int ierr) 
 {
-
   if (ierr) {
     cout << "Error reading \"" << word1 << "\" under keyword \"" << word2 << 
             "\"." << endl;
     exit(1);
   }
-
-}
+} // end checkErrorMessage()
 
 void FileIO::checkLineErrorMessage(char *word, int ierr) 
 {
-
   if (ierr) {
     cout << "Error reading in string in \"" << word << "\"." << endl;
     std::exit(1);
   }
-
-}
+} // end checkLineErrorMessage()
 
 void FileIO::toUpper(char *str) 
 {
-
   int len = (int)strlen(str);
-  for (int i=0; i < len; i++) {
+  for (int i = 0; i < len; i++) {
     str[i] = toupper(str[i]);
   }
-
-}
+} // end toUpper()
 
 void FileIO::toLower(char *str) 
 {
-
   int len = (int)strlen(str);
-  for (int i=0; i < len; i++) {
+  for (int i = 0; i < len; i++) {
     str[i] = tolower(str[i]);
   }
-
-}
+} // end toLower()
 
 FileIO::~FileIO() 
 {
   file.close();
-}
+  if (buffer) delete buffer;
+  buffer = NULL;
+} // end FileIO destructor

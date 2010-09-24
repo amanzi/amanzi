@@ -2,29 +2,50 @@
 
 Beaker::Beaker() 
 {
-  // end Beaker() constructor
-}
+  dtotal_ = NULL;
+  J = NULL;
+} // end Beaker() constructor
 
 Beaker::~Beaker() 
 {
-  // end Beaker destructor
-}
+  if (dtotal_) delete dtotal_;
+  dtotal_ = NULL;
+  if (J) delete J;
+  J = NULL;
+} // end Beaker destructor
 
-void Beaker::setup(std::vector<double> *total) 
+void Beaker::resize() {
+  if (dtotal_) delete dtotal_;
+  dtotal_ = new Block(ncomp());
+  fixed_residual.resize(ncomp());
+  residual.resize(ncomp());
+  prev_molal.resize(ncomp());
+  total_.resize(ncomp());
+
+  if (J) delete J;
+  J = new Block(ncomp());
+  rhs.resize(ncomp());
+  indices.resize(ncomp());
+} // end resize()
+
+void Beaker::resize(int n) {
+  ncomp(n);
+  resize();
+} // end resize()
+
+void Beaker::setup(std::vector<double> &total) 
 {
-  
-  /* end setup() */
-}
+} // end setup()
 
 void Beaker::addPrimarySpecies(Species s) 
 {
   primarySpecies_.push_back(s);
-}
+} // end addPrimarySpecies()
 
 void Beaker::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) 
 {
   aqComplexRxns_.push_back(c);
-}
+} // end addAqueousEquilibriumComplex()
 
 void Beaker::updateParameters(double por, double sat, double vol, double dtt)
 {
@@ -32,15 +53,15 @@ void Beaker::updateParameters(double por, double sat, double vol, double dtt)
   saturation(sat);
   volume(vol);
   dt(dtt);
-  psv1k_t(por,sat,vol,dtt);
-}
+  accumulation_coef(por,sat,vol,dtt);
+} // end updateParameters()
 
 void Beaker::initializeMolalities(double initial_molality) 
 {
   for (std::vector<Species>::iterator i=primarySpecies_.begin();
-       i!=primarySpecies_.end(); i++)
-    i->set_molality(initial_molality);
-}
+       i != primarySpecies_.end(); i++)
+    i->molality(initial_molality);
+} // end initializeMolalities
 
 void Beaker::initializeMolalities(std::vector<double> initial_molalities) 
 {
@@ -50,14 +71,12 @@ void Beaker::initializeMolalities(std::vector<double> initial_molalities)
     exit(EXIT_SUCCESS);
   }
 
-//  for (std::vector<Species>::iterator i=primarySpecies_.begin();
-//       i!=primarySpecies_.end(); i++)
-//    i->set_molality(initial_molalities[i]);
-  for (int i=0; i<(int)primarySpecies_.size(); i++)
-    primarySpecies_[i].set_molality(initial_molalities[i]);
-}
+  // iterator doesnt seem to work then passing a vector entry - geh
+  for (int i = 0; i < (int)primarySpecies_.size(); i++)
+    primarySpecies_[i].molality(initial_molalities[i]);
+} // end initializeMolalities()
 
-void Beaker::updateChemistry(void)
+void Beaker::updateEquilibriumChemistry(void)
 {
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++) {
@@ -67,21 +86,25 @@ void Beaker::updateChemistry(void)
        i != aqComplexRxns_.end(); i++) {
     i->update(primarySpecies_);
   }
-}
+} // end updateEquilibriumChemistry()
 
 void Beaker::calculateTotal(std::vector<double> &total) 
 {
   // add in primaries
   for (int i = 0; i < (int)total.size(); i++)
-    total[i] = primarySpecies_[i].get_molality();
+    total[i] = primarySpecies_[i].molality();
 
   // add in aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
        i != aqComplexRxns_.end(); i++) {
     i->addContributionToTotal(total);
   }
+} // end calculateTotal()
 
-}
+void Beaker::calculateTotal() 
+{
+  calculateTotal(total_);
+} // end calculateTotal()
 
 void Beaker::calculateDTotal(Block *dtotal) 
 {
@@ -91,17 +114,21 @@ void Beaker::calculateDTotal(Block *dtotal)
   dtotal->setDiagonal(1.);
 
   // add in derviative of complex contribution with respect to free-ion
-  for (std::vector<AqueousEquilibriumComplex>::iterator i=aqComplexRxns_.begin();
-       i!=aqComplexRxns_.end(); i++)
+  for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
+       i != aqComplexRxns_.end(); i++)
     i->addContributionToDTotal(primarySpecies_,dtotal);
 //dtotal->scale(den_kg_per_L); scale by density of water
+} // end calculateDTotal()
 
+void Beaker::calculateDTotal() 
+{
+  calculateDTotal(dtotal_);
 }
 
 void Beaker::scaleRHSAndJacobian(double *rhs, Block *J) 
 {
 
-  for (int i=0; i<J->getSize(); i++) {
+  for (int i = 0; i < J->getSize(); i++) {
     double max = J->getRowAbsMax(i);
     if (max > 1.) {
       double scale = 1./max;
@@ -109,13 +136,12 @@ void Beaker::scaleRHSAndJacobian(double *rhs, Block *J)
       J->scaleRow(i,scale);
     }
   }
-
-}
+} // end scaleRHSAndJacobian()
 
 void Beaker::scaleRHSAndJacobian(std::vector<double> &rhs, Block *J) 
 {
 
-  for (int i=0; i<J->getSize(); i++) {
+  for (int i = 0; i < J->getSize(); i++) {
     double max = J->getRowAbsMax(i);
     if (max > 1.) {
       double scale = 1./max;
@@ -123,7 +149,11 @@ void Beaker::scaleRHSAndJacobian(std::vector<double> &rhs, Block *J)
       J->scaleRow(i,scale);
     }
   }
+} // end scaleRHSAndJacobian()
 
+void Beaker::calculateAccumulation(std::vector<double> &residual)
+{
+  calculateAccumulation(total_,residual);
 }
 
 void Beaker::calculateAccumulation(std::vector<double> total,
@@ -134,9 +164,14 @@ void Beaker::calculateAccumulation(std::vector<double> total,
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = mol/sec
   // 1000.d0 converts vol from m^3 -> L
   // all residual entries should be in mol/sec
-  for (int i=0; i<(int)total.size(); i++)
-    residual[i] = psv1k_t()*total[i];
-}
+  for (int i = 0; i < (int)total.size(); i++)
+    residual[i] = accumulation_coef()*total[i];
+} // end calculateAccumulation()
+
+void Beaker::calculateAccumulationDerivative(Block *J)
+{
+  calculateAccumulationDerivative(dtotal_,J);
+} // end calculateAccumulationDerivative()
 
 void Beaker::calculateAccumulationDerivative(Block *dtotal,
                                              Block *J)
@@ -146,8 +181,8 @@ void Beaker::calculateAccumulationDerivative(Block *dtotal,
   //         *(kg water/L water)*(1000L water/m^3 water) = kg water/sec
   // all Jacobian entries should be in kg water/sec
   // note that setValues() overwrites all values...no need to zero
-  J->setValues(dtotal,psv1k_t());
-}
+  J->setValues(dtotal,accumulation_coef());
+} // end calculateAccumulationDerivative()
 
 
 void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update, 
@@ -155,22 +190,26 @@ void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update,
                                             double max_change) 
 {
   for (int i = 0; i < ncomp(); i++) {
-    if (update[i] > max_change) update[i] = max_change;
-    else if (update[i] < -max_change) update[i] = -max_change;
-    prev_solution[i] = primarySpecies_[i].get_molality();
-    primarySpecies_[i].set_molality(prev_solution[i]*exp(-update[i]));
+    if (update[i] > max_change) {
+      update[i] = max_change;
+    }
+    else if (update[i] < -max_change) {
+      update[i] = -max_change;
+    }
+    prev_solution[i] = primarySpecies_[i].molality();
+    primarySpecies_[i].molality(prev_solution[i]*exp(-update[i]));
   }
-}
+} // end updateMolalitiesWithTruncation()
 
 void Beaker::calculateMaxRelChangeInMolality(std::vector<double> prev_molal, 
                                              double &max_rel_change)
 {
   max_rel_change = 0.;
-  for (int i=0; i<ncomp(); i++) {
-    double delta = fabs(primarySpecies_[i].get_molality()-prev_molal[i])/prev_molal[i];
+  for (int i = 0; i < ncomp(); i++) {
+    double delta = fabs(primarySpecies_[i].molality()-prev_molal[i]) / prev_molal[i];
     max_rel_change = delta > max_rel_change ? delta : max_rel_change;
   }
-}
+} // end calculateMaxRelChangeInMolality()
 
 void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
       // LU direct solve
@@ -179,7 +218,7 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     int *indices = new int[ncomp()];
     ludcmp(A->getValues(),ncomp(),indices,&D);
     lubksb(A->getValues(),ncomp(),indices,b);
-}
+} // end solveLinearSystem
 
 int Beaker::react(std::vector<double> &total, double volume, 
                   double porosity, double saturation, double dt)
@@ -191,14 +230,6 @@ int Beaker::react(std::vector<double> &total, double volume,
 
   double tolerance = 1.e-12;
 
-  Block *dtotal = new Block(ncomp());
-  Block *J = new Block(ncomp());
-
-  std::vector<double> fixed_residual(ncomp());
-  std::vector<double> residual(ncomp());
-  std::vector<double> rhs(ncomp());
-  std::vector<double> prev_molal(ncomp());
-
   double max_rel_change;
   int num_iterations = 0;
 
@@ -208,18 +239,18 @@ int Beaker::react(std::vector<double> &total, double volume,
   do {
 
 //    calculateActivityCoefficients(-1);
-    updateChemistry();
-    calculateTotal(total);
-    calculateDTotal(dtotal);
+    updateEquilibriumChemistry();
+    calculateTotal();
+    calculateDTotal();
 
-    calculateAccumulation(total,residual);
+    calculateAccumulation(residual);
     // add derivatives of total with respect to free to Jacobian
     // calculateAccumulationDerivative() overwrites the entire Jacobian
     // i.e. no need to zero
-    calculateAccumulationDerivative(dtotal,J);
+    calculateAccumulationDerivative(J);
   
     // subtract fixed porition
-    for (int i=0; i<ncomp(); i++)
+    for (int i = 0; i < ncomp(); i++)
       residual[i] -= fixed_residual[i];
 
     // add additional reactions here
@@ -230,43 +261,31 @@ int Beaker::react(std::vector<double> &total, double volume,
     // calculateAccumulationDerivSorb()
 
     if (verbose() == 3) {
-      cout << "before scale\n";
-      for (int i=0; i<ncomp(); i++)
-          std::cout << "Res: " << primarySpecies_[i].get_name() << " " << 
-                    residual[i] << "\n";
-        J->print();
+      print_linear_system("before scale",J,rhs);
     }
+
     // scale the Jacobian
-    for (int i=0; i<ncomp(); i++)
+    for (int i = 0; i<ncomp(); i++)
       rhs[i] = residual[i];
     scaleRHSAndJacobian(rhs,J);
 
     if (verbose() == 3) {
-      cout << "after scale\n";
-      for (int i=0; i<ncomp(); i++)
-          std::cout << "RHS: " << primarySpecies_[i].get_name() << " " << 
-                    rhs[i] << "\n";
-      J->print();
+      print_linear_system("after scale",J,rhs);
     }
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
-    for (int i=0; i<ncomp(); i++)
-      J->scaleColumn(i,primarySpecies_[i].get_molality());
+    for (int i = 0; i<ncomp(); i++)
+      J->scaleColumn(i,primarySpecies_[i].molality());
 
     if (verbose() == 3) {
-      cout << "before solve\n";
-      for (int i=0; i<ncomp(); i++)
-        std::cout << "RHS: " << primarySpecies_[i].get_name() << " " << 
-                  rhs[i] << "\n";
-      J->print();
+      print_linear_system("before solve",J,rhs);
     }
 
     // call solver
     solveLinearSystem(J,rhs);
+
     if (verbose() >= 3) {
-      for (int i=0; i<ncomp(); i++)
-        std::cout << "Update: " << primarySpecies_[i].get_name() << " " << 
-                  rhs[i] << "\n";
+      print_linear_system("after solve",NULL,rhs);
     }
 
     // calculate update truncating at a maximum of 5 in log space
@@ -275,9 +294,9 @@ int Beaker::react(std::vector<double> &total, double volume,
     calculateMaxRelChangeInMolality(prev_molal,max_rel_change);
 
     if (verbose() >= 2) {
-      for (int i=0; i<ncomp(); i++)
-        std::cout << primarySpecies_[i].get_name() << " " << 
-                  primarySpecies_[i].get_molality() << " " << total[i] << "\n";
+      for (int i = 0; i < ncomp(); i++)
+        std::cout << primarySpecies_[i].name() << " " << 
+                  primarySpecies_[i].molality() << " " << total[i] << "\n";
     }
 
     num_iterations++;
@@ -285,20 +304,16 @@ int Beaker::react(std::vector<double> &total, double volume,
     // exit if maximum relative change is below tolerance
   } while (max_rel_change > tolerance);
 
-  totals_.resize(ncomp());
+  total_.resize(ncomp());
   for (int i = 0; i < ncomp(); i++) {
-    totals_[i] = total[i];
+    total_[i] = total[i];
   }
-
-  // free up memory
-  delete J;
-  delete dtotal;
 
   return num_iterations;
 
-}
+} // end react()
 
-int Beaker::speciate(std::vector<double> target_totals)
+int Beaker::speciate(std::vector<double> target_total)
 {
 
   double speciation_tolerance = 1.e-12;
@@ -306,92 +321,61 @@ int Beaker::speciate(std::vector<double> target_totals)
   // initialize free-ion concentration s
   initializeMolalities(1.e-9);
 
-
-  // allocate arrays for Newton-Raphson
-  std::vector<double> totals(ncomp(), 0.0);
-  Block *dtotal = new Block(ncomp());
-  Block *J = new Block(ncomp());
-  double *residual = new double[ncomp()];
-  double *rhs = new double[ncomp()];
-  double *prev_molal = new double[ncomp()];
-  double *update = new double[ncomp()];
-
-  // allocate pivoting array for LU
-  int *indices = new int[ncomp()];
-
   double max_rel_change;
   int num_iterations = 0;
 
   do {
     
     //    calculateActivityCoefficients(-1);
-    updateChemistry();
-    calculateTotal(totals);
-    calculateDTotal(dtotal);
+    updateEquilibriumChemistry();
+    calculateTotal();
+    calculateDTotal();
 
     // add derivatives of total with respect to free to Jacobian
     J->zero();
-    J->addValues(0,0,dtotal);
+    J->addValues(0,0,dtotal_);
 
     // calculate residual
-    for (int i = 0; i < ncomp(); i++) {
-      residual[i] = totals[i] - target_totals[i];
-    }
+    for (int i = 0; i < ncomp(); i++)
+      residual[i] = total_[i] - target_total[i];
 
     if (verbose() == 3) {
-      std::cout << "before scale\n";
-      J->print();
+      print_linear_system("before scale",J,rhs);
     }
 
     // scale the Jacobian
-    for (int i = 0; i < ncomp(); i++) {
+    for (int i = 0; i < ncomp(); i++)
       rhs[i] = residual[i];
-    }
-    scaleRHSAndJacobian(rhs, J);
+    scaleRHSAndJacobian(rhs,J);
 
     if (verbose() == 3) {
-      std::cout << "after scale\n";
-      J->print();
+      print_linear_system("after scale",J,rhs);
     }
-
     // for derivatives with respect to ln concentration, scale columns
     // by primary species concentrations
-    for (int i = 0; i < ncomp(); i++) {
-      J->scaleColumn(i, primarySpecies_[i].get_molality());
-    }
+    for (int i = 0; i<ncomp(); i++)
+      J->scaleColumn(i,primarySpecies_[i].molality());
 
     if (verbose() == 3) {
-      std::cout << "before solve\n";
-      J->print();
+      print_linear_system("before solve",J,rhs);
     }
 
-    // LU direct solve
-    double D;
-    ludcmp(J->getValues(), ncomp(), indices, &D);
-    lubksb(J->getValues(), ncomp(), indices, rhs);
+    // call solver
+    solveLinearSystem(J,rhs);
 
-    // the following two sections still need to be encapsulated in
-    // function calls.
+    if (verbose() >= 3) {
+      print_linear_system("after solve",NULL,rhs);
+    }
 
     // calculate update truncating at a maximum of 5 in log space
-    for (int i = 0; i < ncomp(); i++) {
-      update[i] = rhs[i] > 0. ? 
-        (rhs[i] > 5. ? 5. : rhs[i]) : (rhs[i] < -5. ? -5. : rhs[i]);
-      prev_molal[i] = primarySpecies_[i].get_molality();
-      primarySpecies_[i].set_molality(prev_molal[i]*exp(-update[i]));
-    }
-
+    updateMolalitiesWithTruncation(rhs,prev_molal,5.);
     // calculate maximum relative change in concentration over all species
-    max_rel_change = 0.;
-    for (int i = 0; i < ncomp(); i++) {
-      double delta = fabs(primarySpecies_[i].get_molality() - prev_molal[i]) / prev_molal[i];
-      max_rel_change = delta > max_rel_change ? delta : max_rel_change;
-    }
+    calculateMaxRelChangeInMolality(prev_molal,max_rel_change);
 
     if (verbose() == 3) {
       for (int i = 0; i < ncomp(); i++) {
-      	std::cout << primarySpecies_[i].get_name() << " " 
-		      << primarySpecies_[i].get_molality() << " " << totals[i] << "\n";
+      	std::cout << primarySpecies_[i].name() << " " 
+		      << primarySpecies_[i].molality() << " " << total_[i] << "\n";
       }
     }
 
@@ -400,26 +384,11 @@ int Beaker::speciate(std::vector<double> target_totals)
     // exist if maximum relative change is below tolerance
   } while (max_rel_change > speciation_tolerance);
 
-  // free up memory
-  delete J;
-  delete dtotal;
-  delete [] residual;
-  delete [] rhs;
-  delete [] update;
-  delete [] prev_molal;
-  delete [] indices;
-
-  totals_.resize(ncomp());
-  for (int i = 0; i < ncomp(); i++) {
-    totals_[i] = totals[i];
-  }
-
   if (verbose() > 1) {
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
   }
   return num_iterations;
-  // end speciate
-}
+}  // end speciate()
 
 void Beaker::display(void) const
 {
@@ -436,8 +405,7 @@ void Beaker::display(void) const
     aec->display();
   }  
   std::cout << "-------------------------------------" << std::endl;
-  // end display()
-}
+} // end display()
 
 void Beaker::print_results(void) const
 {
@@ -446,19 +414,27 @@ void Beaker::print_results(void) const
   std::cout << "----- Solution ----------------------" << std::endl;
   std::cout << "Primary Species ---------------------\n";
   for (int i = 0; i < ncomp(); i++) {
-    std::cout << "  " << primarySpecies_[i].get_name() << std::endl;
-    std::cout << "       Total: " << totals_[i] << std::endl;
-    std::cout << "    Free-Ion: " << primarySpecies_[i].get_molality() << std::endl;
+    std::cout << "  " << primarySpecies_[i].name() << std::endl;
+    std::cout << "       Total: " << total_[i] << std::endl;
+    std::cout << "    Free-Ion: " << primarySpecies_[i].molality() << std::endl;
   }
   std::cout << std::endl;
   std::cout << "Secondary Species -------------------\n";
   for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
-    std::cout << "  " << aqComplexRxns_[i].get_name() << std::endl;
-    std::cout << "    Free-Ion: " << aqComplexRxns_[i].get_molality() << std::endl;
+    std::cout << "  " << aqComplexRxns_[i].name() << std::endl;
+    std::cout << "    Free-Ion: " << aqComplexRxns_[i].molality() << std::endl;
   }
   std::cout << "-------------------------------------\n";
   std::cout << std::endl;
 
-  // end print_results
-}
+} // end print_results()
+
+void Beaker::print_linear_system(string s, Block *A, 
+                                 std::vector<double> vector) {
+  std::cout << s << endl;
+  for (int i = 0; i < (int)vector.size(); i++)
+    std::cout << primarySpecies_[i].name() << " " << vector[i] << std::endl;
+  if (A) A->print();
+} // end print_linear_system()
+
 

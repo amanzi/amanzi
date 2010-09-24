@@ -16,8 +16,7 @@ Species::Species()
     name_("")
 {
 //  ActivityCoefficient* activityCoefficient;
-  // end Species()
-}
+} // end Species constructor
 
 
 Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt, 
@@ -35,12 +34,11 @@ Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
     name_(name)
 {
   //  ActivityCoefficient* activityCoefficient;
-  // end Species()
-}
+} // end Species constructor
 
 Species::~Species() {
-  // end ~Species()
-}
+  
+} // end Species destructor
 
 void Species::update(const double molality) 
 {
@@ -50,8 +48,7 @@ void Species::update(const double molality)
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);
   ln_activity_ = ln_molality_ + ln_act_coef_;
-  // end update()
-}
+} // end update()
 
 void Species::update(void)
 {
@@ -60,15 +57,12 @@ void Species::update(void)
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);
   ln_activity_ = ln_molality_ + ln_act_coef_;
-  // end update()
-}
+} // end update()
 
 void Species::display(void) const
 {
-  std::cout << "    " << get_name();
+  std::cout << "    " << name();
   std::cout << std::endl;
-  std::cout << "        charge = " << get_charge() << std::endl;
-  std::cout << "        mol wt = " << get_gram_molecular_weight() << std::endl;
-  
-  // end display()
-}
+  std::cout << "        charge = " << charge() << std::endl;
+  std::cout << "        mol wt = " << gram_molecular_weight() << std::endl;
+} // end display()
