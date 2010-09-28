@@ -3,6 +3,7 @@ LIBRARIES = \
 
 SRCS = \
 	./AqueousEquilibriumComplex.cpp \
+	./GeneralRxn.cpp \
 	./Geochemistry.cpp
 
 OBJS = \

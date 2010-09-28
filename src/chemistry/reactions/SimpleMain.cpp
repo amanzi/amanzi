@@ -1,4 +1,5 @@
 #include "Geochemistry.hpp"
+#include "Beaker.hpp"
 #include "Glenn.hpp"
 
 #include <iostream>
