@@ -3,7 +3,7 @@
 #include "Species.hpp"
 
 Species::Species() 
-  : molality_(0.0), 
+  : molality_(1.e-9), 
     activity_(1.0),
     act_coef_(1.0),
     ln_molality_(0.0),
@@ -21,7 +21,7 @@ Species::Species()
 
 Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt, 
                  double size)
-  : molality_(0.0), 
+  : molality_(1.e-9), 
     activity_(1.0),
     act_coef_(1.0),
     ln_molality_(0.0),

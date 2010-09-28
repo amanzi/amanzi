@@ -4,12 +4,15 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex()
 {
   
   ncomp_ = 0; // # components in reaction
-//  species_names_;
-//  species_ids;
-//  stoichiometry;
-//  logK_array;
+  species_names_.clear();
+  species_ids_.clear();
+  stoichiometry_.clear();
+  logK_array_.clear();
+  h2o_stoich_ = 0.;
   lnK_ = 0.;
+  lnQK_ = 0.0;
   logK_ = 0.0;
+
 } // end AqueousEquilibriumComplex() constructor
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(std::string s) 
@@ -59,16 +62,16 @@ void AqueousEquilibriumComplex::update(const std::vector<Species> primarySpecies
 {
   double lnQK = -lnK_;
   for (int i = 0; i < ncomp_; i++) {
-    lnQK += stoichiometry_[i]*primarySpecies[species_ids_[i]].ln_activity();
+    lnQK += stoichiometry_[i] * primarySpecies[species_ids_[i]].ln_activity();
   }
   lnQK_ = lnQK;
-  molality_ = exp(lnQK)/act_coef_;
+  molality_ = exp(lnQK) / act_coef_;
 } // end update()
 
 void AqueousEquilibriumComplex::addContributionToTotal(std::vector<double> &total) 
 {
   for (int i = 0; i < ncomp_; i++) {
-    total[species_ids_[i]] += stoichiometry_[i]*molality_; 
+    total[species_ids_[i]] += stoichiometry_[i] * molality_; 
   }
 } // end addContributionToTotal()
 
@@ -84,7 +87,7 @@ void AqueousEquilibriumComplex::addContributionToDTotal(
   for (int j = 0; j < ncomp_; j++) {
     int jcomp = species_ids_[j];
     double tempd = stoichiometry_[j]*                              
-      exp(lnQK_-primarySpecies[jcomp].ln_molality()) / 
+      exp(lnQK_ - primarySpecies[jcomp].ln_molality()) / 
       act_coef_; // here act_coef is from complex
     // row loop
     for (int i = 0; i < ncomp_; i++)
