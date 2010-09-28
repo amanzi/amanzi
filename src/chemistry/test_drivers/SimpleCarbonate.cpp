@@ -1,8 +1,8 @@
 #include "SimpleCarbonate.hpp"
-#include "Geochemistry.hpp"
+#include "Beaker.hpp"
 
 SimpleCarbonate::SimpleCarbonate(void)
-  : Geochemistry()
+  : Beaker()
 {
   ncomp(2);
 }
@@ -12,11 +12,12 @@ SimpleCarbonate::~SimpleCarbonate(void)
 
 }
 
-void SimpleCarbonate::setup(std::vector<double> *total) {
+void SimpleCarbonate::setup(std::vector<double> &total) {
+  this->resize(ncomp());
 
   // primary species
-  total->push_back(1.e-6);
-  total->push_back(1.e-3);
+  total.push_back(1.e-6);
+  total.push_back(1.e-3);
 
   int id = 1;
   SpeciesName name = "H+";
