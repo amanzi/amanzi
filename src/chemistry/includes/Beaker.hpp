@@ -34,6 +34,7 @@ class Beaker {
   void addGeneralRxn(GeneralRxn r);
 
   // speciate for free-ion concentrations
+  int speciate(std::vector<double> target_total);
   int speciate(std::vector<double> target_total, double water_density);
 
   // solve a chemistry step

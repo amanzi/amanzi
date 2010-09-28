@@ -1,12 +1,12 @@
 #ifndef __SimpleCarbonate_hpp__
 #define __SimpleCarbonate_hpp__
 
-#include "Geochemistry.hpp"
+#include "Beaker.hpp"
 
 // Driver class for evalating geochemical related processes at a
 // single computational node
 
-class SimpleCarbonate : public Geochemistry {
+class SimpleCarbonate : public Beaker {
 
 public:
   SimpleCarbonate();

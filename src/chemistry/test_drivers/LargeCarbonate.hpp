@@ -1,12 +1,12 @@
 #ifndef __LargeCarbonate_hpp__
 #define __LargeCarbonate_hpp__
 
-#include "Geochemistry.hpp"
+#include "Beaker.hpp"
 
 // Driver class for evalating geochemical related processes at a
 // single computational node
 
-class LargeCarbonate : public Geochemistry {
+class LargeCarbonate : public Beaker {
 
 public:
   LargeCarbonate();

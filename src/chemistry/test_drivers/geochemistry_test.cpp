@@ -5,7 +5,7 @@
 
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
-#include "Geochemistry.hpp"
+#include "Beaker.hpp"
 
 
 int commandLineOptions(int argc, char **argv, int& verbose, int& test);
@@ -16,7 +16,7 @@ int main (int argc, char **argv) {
   int test = 0;
   int error = EXIT_SUCCESS;
 
-  Geochemistry *chem = NULL;
+  Beaker *chem = NULL;
   error = commandLineOptions(argc, argv, verbose, test);
 
   if (error == EXIT_SUCCESS) {
@@ -43,7 +43,7 @@ int main (int argc, char **argv) {
   if (chem != NULL) {
     std::vector<double> total;
     chem->verbose(verbose);
-    chem->setup(&total);
+    chem->setup(total);
     if (verbose > 1) {
       chem->display();
     }

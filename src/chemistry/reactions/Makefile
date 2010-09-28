@@ -3,6 +3,7 @@ LIBRARIES = \
 
 SRCS = \
 	./AqueousEquilibriumComplex.cpp \
+	./Beaker.cpp \
 	./GeneralRxn.cpp \
 	./Geochemistry.cpp
 

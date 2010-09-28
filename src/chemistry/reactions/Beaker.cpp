@@ -398,6 +398,12 @@ int Beaker::react(std::vector<double> &total, double porosity,
 
 } // end react()
 
+// if no water density provided, assume 1000 kg/m^3
+int Beaker::speciate(std::vector<double> target_total)
+{
+  speciate(target_total,1000.);
+}
+
 int Beaker::speciate(std::vector<double> target_total, double water_density)
 {
 

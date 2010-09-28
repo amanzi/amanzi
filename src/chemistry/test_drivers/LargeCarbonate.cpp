@@ -1,8 +1,8 @@
 #include "LargeCarbonate.hpp"
-#include "Geochemistry.hpp"
+#include "Beaker.hpp"
 
 LargeCarbonate::LargeCarbonate(void)
-  : Geochemistry()
+  : Beaker()
 {
   ncomp(4);
 }

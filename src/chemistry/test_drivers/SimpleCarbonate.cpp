@@ -1,8 +1,8 @@
 #include "SimpleCarbonate.hpp"
-#include "Geochemistry.hpp"
+#include "Beaker.hpp"
 
 SimpleCarbonate::SimpleCarbonate(void)
-  : Geochemistry()
+  : Beaker()
 {
   ncomp(2);
 }
