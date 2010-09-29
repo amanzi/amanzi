@@ -24,7 +24,7 @@ DEPEND_LIBS = \
 INCLUDES = -I. \
 	-I../includes 
 
-CXXFLAGS += $(INCLUDES)
+CXXFLAGS += -g -Wall -ansi -Wextra $(INCLUDES)
 
 DIFF = diff
 DFLAGS = --brief
