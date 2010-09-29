@@ -6,6 +6,7 @@ Beaker::Beaker()
   J = NULL;
   aqComplexRxns_.clear();
   generalKineticRxns_.clear();
+  activity_model_ = NULL;
 } // end Beaker() constructor
 
 Beaker::~Beaker() 
@@ -14,6 +15,8 @@ Beaker::~Beaker()
   dtotal_ = NULL;
   if (J) delete J;
   J = NULL;
+  if (activity_model_) delete activity_model_;
+  activity_model_ = NULL;
 } // end Beaker destructor
 
 void Beaker::resize() {
@@ -28,6 +31,9 @@ void Beaker::resize() {
   J = new Block(ncomp());
   rhs.resize(ncomp());
   indices.resize(ncomp());
+
+  if (activity_model_) delete activity_model_;
+  activity_model_ = new Activity();
 } // end resize()
 
 void Beaker::resize(int n) {
@@ -66,6 +72,19 @@ void Beaker::updateParameters(double por, double sat, double den, double vol,
   por_sat_den_vol(por,sat,den,vol); // units = kg water
 } // end updateParameters()
 
+void Beaker::updateActivityCoefficients() {
+
+  //return;
+  activity_model_->calculateIonicStrength(primarySpecies_,
+                                          aqComplexRxns_);
+  activity_model_->calculateActivityCoefficients(primarySpecies_,
+                                                 aqComplexRxns_);
+  for (std::vector<Species>::iterator i = primarySpecies_.begin();
+       i != primarySpecies_.end(); i++)
+    i->update();
+
+}
+
 void Beaker::initializeMolalities(double initial_molality) 
 {
   for (std::vector<Species>::iterator i=primarySpecies_.begin();
@@ -99,7 +118,7 @@ void Beaker::updateEquilibriumChemistry(void)
   // calculated seconday aqueous complex concentrations
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
        i != aqComplexRxns_.end(); i++) {
-    i->update(primarySpecies_);
+    i->update_kludge(primarySpecies_);
   }
   // calculate total component concentrations
   calculateTotal();
@@ -262,7 +281,6 @@ void Beaker::calculateJacobian(Block *J)
   // must calculate derivatives with 
   calculateDTotal();
 
-
   // zero Jacobian
   J->zero();
   // add in derivatives for equilibrium chemistry
@@ -312,7 +330,7 @@ void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update,
     // store the previous solution
     prev_solution[i] = primarySpecies_[i].molality();
     // update primary species molalities (log formulation)
-    primarySpecies_[i].molality(prev_solution[i] * exp(-update[i]));
+    primarySpecies_[i].molality(prev_solution[i] * std::exp(-update[i]));
   }
 } // end updateMolalitiesWithTruncation()
 
@@ -355,6 +373,9 @@ int Beaker::react(std::vector<double> &total, double porosity,
   double max_rel_change = 1.e20;
   // iteration counter
   int num_iterations = 0;
+
+  // lagging activity coefficients by a time step in this case
+  updateActivityCoefficients();
 
   // calculate portion of residual at time level t
   calculateFixedAccumulation(total,fixed_accumulation);
@@ -443,12 +464,19 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
   // initialize free-ion concentration s
   initializeMolalities(1.e-9);
 
+  // store current molalities
+  for (int i = 0; i < ncomp(); i++)
+    prev_molal[i] = primarySpecies_[i].molality();
+
   double max_rel_change;
   int num_iterations = 0;
+  bool calculate_activity_coefs = false;
 
   do {
     
+    updateActivityCoefficients();
     updateEquilibriumChemistry();
+    calculateDTotal();
 
     // calculate residual
     // units of residual: mol/sec
@@ -460,12 +488,12 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
     J->zero();
     J->addValues(0,0,dtotal_);
 
+    for (int i = 0; i < ncomp(); i++)
+      rhs[i] = residual[i];
+
     if (verbose() == 3) {
       print_linear_system("before scale",J,rhs);
     }
-
-    for (int i = 0; i < ncomp(); i++)
-      rhs[i] = residual[i];
 
     // scale the Jacobian
     scaleRHSAndJacobian(rhs,J);
@@ -503,8 +531,11 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
 
     num_iterations++;
 
+    // if max_rel_change small enough, turn on activity coefficients
+    if (max_rel_change < speciation_tolerance) calculate_activity_coefs = true;
+
     // exist if maximum relative change is below tolerance
-  } while (max_rel_change > speciation_tolerance);
+  } while (max_rel_change > speciation_tolerance && !calculate_activity_coefs);
 
   if (verbose() > 1) {
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
@@ -536,15 +567,19 @@ void Beaker::print_results(void) const
   std::cout << "----- Solution ----------------------" << std::endl;
   std::cout << "Primary Species ---------------------\n";
   for (int i = 0; i < ncomp(); i++) {
-    std::cout << "  " << primarySpecies_[i].name() << std::endl;
-    std::cout << "       Total: " << total_[i] << std::endl;
-    std::cout << "    Free-Ion: " << primarySpecies_[i].molality() << std::endl;
+    std::cout << "   " << primarySpecies_[i].name() << std::endl;
+    std::cout << "        Total: " << total_[i] << std::endl;
+    std::cout << "     Free-Ion: " << primarySpecies_[i].molality() << std::endl;
+    std::cout << "Activity Coef: " << primarySpecies_[i].act_coef() << std::endl;
+    std::cout << "     Activity: " << primarySpecies_[i].activity() << std::endl;
   }
   std::cout << std::endl;
   std::cout << "Secondary Species -------------------\n";
   for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
-    std::cout << "  " << aqComplexRxns_[i].name() << std::endl;
-    std::cout << "    Free-Ion: " << aqComplexRxns_[i].molality() << std::endl;
+    std::cout << "   " << aqComplexRxns_[i].name() << std::endl;
+    std::cout << "     Free-Ion: " << aqComplexRxns_[i].molality() << std::endl;
+    std::cout << "Activity Coef: " << aqComplexRxns_[i].act_coef() << std::endl;
+    std::cout << "     Activity: " << aqComplexRxns_[i].activity() << std::endl;
   }
   std::cout << "-------------------------------------\n";
   std::cout << std::endl;

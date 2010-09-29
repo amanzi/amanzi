@@ -1,15 +1,16 @@
 #ifndef __Beaker_hpp__
 #define __Beaker_hpp__
 
-#include "Species.hpp"
+#include "Activity.hpp"
 #include "AqueousEquilibriumComplex.hpp"
+#include "Block.hpp"
 #include "GeneralRxn.hpp"
+#include "LU.hpp"
 //#include "MineralReaction.hpp"
 //#include "GasExchange.hpp"
 //#include "IonExchange.hpp"
 //#include "SurfaceComplexation.hpp"
-#include "Block.hpp"
-#include "LU.hpp"
+#include "Species.hpp"
 
 #include <vector>
 
@@ -41,6 +42,7 @@ class Beaker {
   int react(std::vector<double> &total, double porosity, double saturation, 
             double density, double volume, double dt);
 
+  void updateActivityCoefficients();
   void initializeMolalities(double initial_molality);
   void initializeMolalities(std::vector<double> initial_molalities);
 
@@ -146,7 +148,7 @@ private:
   std::vector<Species> primarySpecies_; // list of primary species
   Species water_;
 
-//  std::vector<ActivityCoefficient*> activityCoefficients_;
+  Activity *activity_model_;
 
   std::vector<AqueousEquilibriumComplex> aqComplexRxns_; // list of aqueous equilibrium complexation reactions
   std::vector<GeneralRxn> generalKineticRxns_; //list of general kinetic reactions

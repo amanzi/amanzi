@@ -39,12 +39,12 @@ int main (int argc, char **args) {
   beaker.verbose(verbose);
 
   // to test react with unitary time step
-  beaker.react(total,porosity,saturation,water_density,volume,1.);
-  beaker.print_results();
+//  beaker.react(total,porosity,saturation,water_density,volume,1.);
+//  beaker.print_results();
 
   // to test speciation
-  beaker.speciate(total,water_density);
-  beaker.print_results();
+//  beaker.speciate(total,water_density);
+//  beaker.print_results();
 
   // to test a time stepping loop with kinetic reactions
   Glenn g(&beaker);
