@@ -157,12 +157,12 @@ private:
 
   // solver data structures
   std::vector<double> fixed_accumulation; // fixed (time t) portion of accumulation term
-  std::vector<double> residual;       // entire residual
+  std::vector<double> residual;       // entire residual [mol/sec]
   std::vector<double> prev_molal;     // previous molality of primary species
 
   std::vector<double> rhs;            // right-hand-side of system
   std::vector<int> indices;           // array for pivoting in LU
-  Block *J;                           // Jacobian
+  Block *J;                           // Jacobian [kg water/sec]
 
 };
 
