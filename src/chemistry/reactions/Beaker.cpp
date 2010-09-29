@@ -401,7 +401,7 @@ int Beaker::react(std::vector<double> &total, double porosity,
 // if no water density provided, assume 1000 kg/m^3
 int Beaker::speciate(std::vector<double> target_total)
 {
-  speciate(target_total,1000.);
+  return speciate(target_total,1000.);
 }
 
 int Beaker::speciate(std::vector<double> target_total, double water_density)
@@ -423,18 +423,19 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
 
     // add derivatives of total with respect to free to Jacobian
     J->zero();
+    calculateDTotal();
     J->addValues(0,0,dtotal_);
 
     // calculate residual
     for (int i = 0; i < ncomp(); i++)
       residual[i] = total_[i] - target_total[i];
 
+    for (int i = 0; i < ncomp(); i++)
+      rhs[i] = residual[i];
+
     if (verbose() == 3) {
       print_linear_system("before scale",J,rhs);
     }
-
-    for (int i = 0; i < ncomp(); i++)
-      rhs[i] = residual[i];
 
     // scale the Jacobian
     scaleRHSAndJacobian(rhs,J);
