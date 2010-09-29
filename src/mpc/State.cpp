@@ -5,10 +5,10 @@
 #include "MeshWrapper.hpp"
 
 State::State( Teuchos::RCP<DataLayout> data_layout_ , int number_of_components_,
-	      Teuchos::RCP<MeshWrapper> mesh_wrapper_):
+	      Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps_):
   data_layout(data_layout_),
   number_of_components(number_of_components_),
-  mesh_wrapper(mesh_wrapper_)
+  mesh_maps(mesh_maps_)
 {
   // create the Eptera_Vector objects
 

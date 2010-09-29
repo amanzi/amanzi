@@ -6,16 +6,17 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "DataLayout.hpp"
-#include "MeshWrapper.hpp"
+#include "Mesh_maps.hh"
 
 
 typedef enum { COMPLETE, UPDATING } status_type;
+
 
 class State {
 
 public:
 
-  State( Teuchos::RCP<DataLayout>, int, Teuchos::RCP<MeshWrapper> );
+  State( Teuchos::RCP<DataLayout>, int, Teuchos::RCP<STK_mesh::Mesh_maps> );
   ~State() {};
 
   // access methods
@@ -28,7 +29,7 @@ public:
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration () 
   { return total_component_concentration; };
   
-  Teuchos::RCP<const MeshWrapper> get_mesh_wrapper() const { return mesh_wrapper; };
+  Teuchos::RCP<const STK_mesh::Mesh_maps> get_mesh_maps() const { return mesh_maps; };
 
   const double get_time () const { return time; };
 
@@ -58,7 +59,7 @@ private:
   Teuchos::RCP<DataLayout> data_layout;
   
   // mesh
-  Teuchos::RCP<MeshWrapper> mesh_wrapper;
+  Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps;
 }; 
 
 
