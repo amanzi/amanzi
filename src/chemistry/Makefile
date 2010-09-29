@@ -2,6 +2,7 @@
 # Following subdirectories are built, in order.
 #
 SUBDIRS = \
+	includes \
 	utility \
 	solvers \
 	base_chemistry \
