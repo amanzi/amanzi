@@ -104,6 +104,8 @@ void Beaker::updateEquilibriumChemistry(void)
   // calculate total component concentrations
   calculateTotal();
 
+  // add equilibrium surface complexation here
+
 } // end updateEquilibriumChemistry()
 
 void Beaker::calculateTotal(std::vector<double> &total) 
@@ -155,6 +157,12 @@ void Beaker::updateKineticChemistry(void)
        i != generalKineticRxns_.end(); i++) {
     i->update_rates(primarySpecies_);
   }
+  
+  // add mineral saturation and rate calculations here
+
+  // add multirate kinetic surface complexation reaction quotient calculations 
+  // here
+
 } // end updateKineticChemistry()
 
 void Beaker::addKineticChemistryToResidual(std::vector<double> &residual) 
@@ -163,6 +171,11 @@ void Beaker::addKineticChemistryToResidual(std::vector<double> &residual)
   for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
        i != generalKineticRxns_.end(); i++)
          i->addContributionToResidual(residual, por_sat_den_vol());
+
+  // add mineral mineral contribution to residual here.  units = mol/sec.
+
+  // add multirate kinetic surface complexation contribution to residual here.
+
 } // end addKineticChemistryToResidual()
 
 void Beaker::addKineticChemistryToJacobian(Block *J) 
@@ -171,6 +184,11 @@ void Beaker::addKineticChemistryToJacobian(Block *J)
   for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
        i != generalKineticRxns_.end(); i++)
          i->addContributionToJacobian(J, primarySpecies_, por_sat_den_vol());
+
+  // add mineral mineral contribution to Jacobian here.  units = kg water/sec.
+
+  // add multirate kinetic surface complexation contribution to Jacobian here.
+
 } // end addKineticChemistryToJacobian()
 
 
@@ -190,6 +208,10 @@ void Beaker::addAccumulation(std::vector<double> total,
   // all residual entries should be in mol/sec
   for (int i = 0; i < (int)total.size(); i++)
     residual[i] += accumulation_coef()*total[i];
+
+  // add accumulation term for equilibrium sorption (e.g. Kd, surface 
+  // complexation) here
+
 } // end calculateAccumulation()
 
 void Beaker::addAccumulationDerivative(Block *J)
@@ -204,8 +226,11 @@ void Beaker::addAccumulationDerivative(Block *J,
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*(m^3 bulk)/(sec)
   //         *(kg water/L water)*(1000L water/m^3 water) = kg water/sec
   // all Jacobian entries should be in kg water/sec
-  // note that setValues() overwrites all values...no need to zero
   J->addValues(dtotal,accumulation_coef());
+
+  // add accumulation derivative term for equilibrium sorption 
+  // (e.g. Kd, surface complexation) here
+
 } // end calculateAccumulationDerivative()
 
 void Beaker::calculateFixedAccumulation(std::vector<double> total,
@@ -341,8 +366,11 @@ int Beaker::react(std::vector<double> &total, double porosity,
     updateEquilibriumChemistry();
     updateKineticChemistry();
 
+    // units of residual: mol/sec
     calculateResidual(residual,fixed_accumulation);
+    // units of Jacobian: kg water/sec
     calculateJacobian(J);
+    // therefore, units of solution: mol/kg water (change in molality)
 
     for (int i = 0; i<ncomp(); i++)
       rhs[i] = residual[i];
@@ -373,6 +401,7 @@ int Beaker::react(std::vector<double> &total, double porosity,
       print_linear_system("after solve",NULL,rhs);
     }
 
+    // units of solution: mol/kg water (change in molality)
     // calculate update truncating at a maximum of 5 in nat log space
     updateMolalitiesWithTruncation(rhs,prev_molal,5.);
     // calculate maximum relative change in concentration over all species
@@ -421,13 +450,15 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
     
     updateEquilibriumChemistry();
 
-    // add derivatives of total with respect to free to Jacobian
-    J->zero();
-    J->addValues(0,0,dtotal_);
-
     // calculate residual
+    // units of residual: mol/sec
     for (int i = 0; i < ncomp(); i++)
       residual[i] = total_[i] - target_total[i];
+
+    // add derivatives of total with respect to free to Jacobian
+    // units of Jacobian: kg water/sec
+    J->zero();
+    J->addValues(0,0,dtotal_);
 
     if (verbose() == 3) {
       print_linear_system("before scale",J,rhs);
