@@ -12,14 +12,15 @@ LargeCarbonate::~LargeCarbonate(void)
 
 }
 
-void LargeCarbonate::setup(std::vector<double> *total) {
+void LargeCarbonate::setup(std::vector<double> &total) {
+  this->resize(ncomp());
   //
   // initial total component values
   //
-  total->push_back(1.e-3);
-  total->push_back(1.e-3);
-  total->push_back(1.e-3);
-  total->push_back(55.5084);
+  total.push_back(1.e-3);
+  total.push_back(1.e-3);
+  total.push_back(1.e-3);
+  total.push_back(55.5084);
 
   //
   // primary species

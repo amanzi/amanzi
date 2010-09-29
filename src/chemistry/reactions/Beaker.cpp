@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "Beaker.hpp"
 
 Beaker::Beaker() 

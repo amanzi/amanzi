@@ -12,7 +12,7 @@ public:
   LargeCarbonate();
   ~LargeCarbonate();
 
-  void setup(std::vector<double> *total);
+  void setup(std::vector<double> &total);
 
 
 private:
