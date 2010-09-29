@@ -486,7 +486,12 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
     J->zero();
+    calculateDTotal();
     J->addValues(0,0,dtotal_);
+
+    // calculate residual
+    for (int i = 0; i < ncomp(); i++)
+      residual[i] = total_[i] - target_total[i];
 
     for (int i = 0; i < ncomp(); i++)
       rhs[i] = residual[i];
