@@ -120,11 +120,11 @@ class Beaker {
   double accumulation_coef(void) const { return this->accumulation_coef_; }
   double por_sat_den_vol(void) const { return this->por_sat_den_vol_; }
 
-  void verbose(const int s_verbose) { this->verbose_ = s_verbose; };
-  int verbose(void) const { return this->verbose_; };
+  void verbosity(const int s_verbosity) { this->verbosity_ = s_verbosity; };
+  int verbosity(void) const { return this->verbosity_; };
 
 private:
-  int verbose_;
+  int verbosity_;
   int ncomp_;                   // # basis species
   std::vector<double> total_;  // total component concentrations of basis species
   Block *dtotal_;      // matrix that holds derivative of total concentration w/respec to free-ion

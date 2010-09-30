@@ -1,8 +1,10 @@
 #include <cstdlib>
 
-#include "Beaker.hpp"
+#include "Beaker.hpp" 
+#include "Verbosity.hpp"
 
 Beaker::Beaker() 
+  : verbosity_(kSilent)
 {
   dtotal_ = NULL;
   J = NULL;
@@ -377,14 +379,14 @@ int Beaker::react(std::vector<double> &total, double porosity,
     for (int i = 0; i<ncomp(); i++)
       rhs[i] = residual[i];
 
-    if (verbose() == 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("before scale",J,rhs);
     }
 
     // scale the Jacobian
     scaleRHSAndJacobian(rhs,J);
 
-    if (verbose() == 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("after scale",J,rhs);
     }
     // for derivatives with respect to ln concentration, scale columns
@@ -392,14 +394,14 @@ int Beaker::react(std::vector<double> &total, double porosity,
     for (int i = 0; i<ncomp(); i++)
       J->scaleColumn(i,primarySpecies_[i].molality());
 
-    if (verbose() == 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("before solve",J,rhs);
     }
 
     // call solver
     solveLinearSystem(J,rhs);
 
-    if (verbose() >= 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("after solve",NULL,rhs);
     }
 
@@ -409,7 +411,7 @@ int Beaker::react(std::vector<double> &total, double porosity,
     // calculate maximum relative change in concentration over all species
     calculateMaxRelChangeInMolality(prev_molal,max_rel_change);
 
-    if (verbose() >= 2) {
+    if (verbosity() >= 2) {
       for (int i = 0; i < ncomp(); i++)
         std::cout << primarySpecies_[i].name() << " " << 
                   primarySpecies_[i].molality() << " " << total_[i] << "\n";
@@ -470,14 +472,14 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
     for (int i = 0; i < ncomp(); i++)
       rhs[i] = residual[i];
 
-    if (verbose() == 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("before scale",J,rhs);
     }
 
     // scale the Jacobian
     scaleRHSAndJacobian(rhs,J);
 
-    if (verbose() == 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("after scale",J,rhs);
     }
     // for derivatives with respect to ln concentration, scale columns
@@ -485,14 +487,14 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
     for (int i = 0; i<ncomp(); i++)
       J->scaleColumn(i,primarySpecies_[i].molality());
 
-    if (verbose() == 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("before solve",J,rhs);
     }
 
     // call solver
     solveLinearSystem(J,rhs);
 
-    if (verbose() >= 3) {
+    if (verbosity() == kDebugBeaker) {
       print_linear_system("after solve",NULL,rhs);
     }
 
@@ -501,7 +503,7 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
     // calculate maximum relative change in concentration over all species
     calculateMaxRelChangeInMolality(prev_molal,max_rel_change);
 
-    if (verbose() == 3) {
+    if (verbosity() == kDebugBeaker) {
       for (int i = 0; i < ncomp(); i++) {
       	std::cout << primarySpecies_[i].name() << " " 
 		      << primarySpecies_[i].molality() << " " << total_[i] << "\n";
@@ -513,7 +515,7 @@ int Beaker::speciate(std::vector<double> target_total, double water_density)
     // exist if maximum relative change is below tolerance
   } while (max_rel_change > speciation_tolerance);
 
-  if (verbose() > 1) {
+  if (verbosity() > 1) {
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
   }
   return num_iterations;

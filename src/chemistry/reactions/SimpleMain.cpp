@@ -36,7 +36,7 @@ int main (int argc, char **args) {
     total[i] *= water_density/1000.;
 #endif
   // solve for free-ion concentrations
-  beaker.verbose(verbose);
+  beaker.verbosity(verbose);
 
   // to test react with unitary time step
   beaker.react(total,porosity,saturation,water_density,volume,1.);

@@ -42,7 +42,7 @@ int main (int argc, char **argv) {
 
   if (chem != NULL) {
     std::vector<double> total;
-    chem->verbose(verbose);
+    chem->verbosity(verbose);
     chem->setup(total);
     if (verbose > 1) {
       chem->display();
