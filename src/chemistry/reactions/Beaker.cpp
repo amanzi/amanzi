@@ -1,6 +1,6 @@
 #include <cstdlib>
 
-#include "Beaker.hpp" 
+#include "Beaker.hpp"
 #include "Verbosity.hpp"
 
 Beaker::Beaker() 
@@ -411,7 +411,7 @@ int Beaker::react(std::vector<double> &total, double porosity,
     // calculate maximum relative change in concentration over all species
     calculateMaxRelChangeInMolality(prev_molal,max_rel_change);
 
-    if (verbosity() >= 2) {
+    if (verbosity() >= kVerbose) {
       for (int i = 0; i < ncomp(); i++)
         std::cout << primarySpecies_[i].name() << " " << 
                   primarySpecies_[i].molality() << " " << total_[i] << "\n";
