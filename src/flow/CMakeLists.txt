@@ -5,7 +5,7 @@ include_directories(${PROJECT_SOURCE_DIR}/stk_mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mpc)
 include_directories(${Trilinos_INCLUDE_DIRS})
 
-add_library(flow upper_packed_matrix.cpp mimetic_hex.cpp Flow_PK.cpp)
+add_library(flow upper_packed_matrix.cpp mimetic_hex.cpp Flow_PK.cpp Darcy_problem.cpp)
 target_link_libraries(flow stk_mesh ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 

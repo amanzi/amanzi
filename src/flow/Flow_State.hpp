@@ -5,6 +5,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Mesh_maps.hh"
+#include "State.hpp"
 
 class Flow_State {
 
@@ -27,6 +28,7 @@ public:
   Teuchos::RCP<const Epetra_Vector> get_water_saturation () const { return water_saturation; };
   Teuchos::RCP<const Epetra_Vector> get_water_density () const { return water_density; };
 
+  const Teuchos::RCP<const STK_mesh::Mesh_maps> get_mesh_maps() const { return mesh_maps;};
 
 private:
   // variables that are relevant to chemistry
@@ -35,7 +37,7 @@ private:
   Teuchos::RCP<const Epetra_Vector> water_saturation;
   Teuchos::RCP<const Epetra_Vector> water_density;
   
-  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh_maps;
+  const Teuchos::RCP<const STK_mesh::Mesh_maps> mesh_maps;
 };
 
 

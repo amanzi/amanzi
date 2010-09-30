@@ -5,6 +5,9 @@
 #include "State.hpp"
 #include "Flow_State.hpp"
 
+#include "NOX.H"
+#include "NOX_Epetra_Group.H"
+
 
 // Flow Process Kernel Interface
 
@@ -21,7 +24,9 @@ public:
 private:
 
   // auxilary state for process kernel
-  Teuchos::RCP<Flow_State> CS;
+  Teuchos::RCP<Flow_State> FS;
+
+  Teuchos::RCP<NOX::Solver::Generic> solver;
 
 };
 

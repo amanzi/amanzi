@@ -29,7 +29,7 @@ public:
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration () 
   { return total_component_concentration; };
   
-  Teuchos::RCP<const STK_mesh::Mesh_maps> get_mesh_maps() const { return mesh_maps; };
+  const Teuchos::RCP<const STK_mesh::Mesh_maps> get_mesh_maps() const { return mesh_maps; };
 
   const double get_time () const { return time; };
 
@@ -59,7 +59,7 @@ private:
   Teuchos::RCP<DataLayout> data_layout;
   
   // mesh
-  Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps;
+  const Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps;
 }; 
 
 
