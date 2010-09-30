@@ -4,7 +4,8 @@ LIBRARIES = \
 SRCS = \
 	./Block.cpp \
 	./FileIO.cpp \
-	./Glenn.cpp 
+	./Glenn.cpp \
+	./StringTokenizer.cpp
 
 OBJS = \
 	$(SRCS:%.cpp=%.o)

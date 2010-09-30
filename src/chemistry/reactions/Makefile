@@ -5,7 +5,8 @@ SRCS = \
 	./AqueousEquilibriumComplex.cpp \
 	./Beaker.cpp \
 	./GeneralRxn.cpp \
-	./Geochemistry.cpp
+	./Geochemistry.cpp \
+	./MineralKineticsCreator.cpp 
 
 OBJS = \
 	$(SRCS:%.cpp=%.o)

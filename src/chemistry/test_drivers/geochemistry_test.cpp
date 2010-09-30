@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google-c-style"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -6,7 +7,8 @@
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
-
+#include "MineralKineticsCreator.hpp"
+#include "Verbosity.hpp"
 
 int commandLineOptions(int argc, char **argv, int& verbose, int& test);
 
@@ -23,34 +25,47 @@ int main (int argc, char **argv) {
     switch (test){
     case 1:
       // set up simple 2-species carbonate system (H,HCO3-)
-      if (verbose > 0) {
+      if (verbose > kSilent) {
 	std::cout << "Running simple carbonate example." << std::endl;
       }
       chem = new SimpleCarbonate();
       break;
     case 2:
       // larger carbonate system, 3 components, 9 secondary
-      if (verbose > 0) {
+      if (verbose > kSilent) {
 	std::cout << "Running large carbonate speciation example." << std::endl;
       }
       chem = new LargeCarbonate();
       break;
+    case 3:
+      // calcite TST kinetics
+      if (verbose > kSilent) {
+        std::cout << "Running calcite kinetics tst problem." << std::endl;
+      }
+      //chem = new Something here....;
     default:
       break;
     }
   }
 
+
+  MineralKineticsCreator mkc;
+  std::string file_name("mineral.txt");
+  mkc.verbosity(verbose);
+  mkc.readFile(file_name);
+
+
   if (chem != NULL) {
     std::vector<double> total;
     chem->verbosity(verbose);
     chem->setup(total);
-    if (verbose > 1) {
+    if (verbose >= kVerbose ) {
       chem->display();
     }
 
     // solve for free-ion concentrations
     chem->speciate(total);
-    if (verbose > 0) {
+    if (verbose > kSilent) {
       chem->print_results();
     }
   }
@@ -107,7 +122,7 @@ int commandLineOptions(int argc, char **argv, int& verbose, int& test)
 	      <<  argv[0] << " -h \" for help." << std::endl;
   }
 
-  if (verbose > 1) {
+  if (verbose >= kVerbose) {
     std::cout << "Command Line Options: " << std::endl;
     std::cout << "\tTest number: " << test << std::endl;
     std::cout << "\tVerbosity: " << verbose << std::endl;
