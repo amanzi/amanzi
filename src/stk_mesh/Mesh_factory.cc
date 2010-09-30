@@ -65,7 +65,7 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     build_bulk_data_ (data, fields);
 
     Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, meta_data_, bulk_data_,
-                           *(meta_data_->get_field<Mesh::Vector_field_type> (std::string ("coordinates"))));
+                           *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
 
     return mesh;
 }
@@ -151,15 +151,15 @@ void Mesh_factory::put_field_ (const Mesh_data::Field& field_data,
 
     if (field_data.type () == Mesh_data::SCALAR)
     {
-        Mesh::Scalar_field_type& field (meta_data_->
-                                        declare_field<Mesh::Scalar_field_type>(field_data.name ()));
+        Scalar_field_type& field (meta_data_->
+                                  declare_field<Scalar_field_type>(field_data.name ()));
         stk::mesh::put_field (field, location, part);
     }
 
     if (field_data.type () == Mesh_data::VECTOR)
     {
-        Mesh::Vector_field_type& field (meta_data_->
-                                        declare_field<Mesh::Vector_field_type>(field_data.name ()));
+        Vector_field_type& field (meta_data_->
+                                  declare_field<Vector_field_type>(field_data.name ()));
         stk::mesh::put_field (field, location, part, space_dimension);
     }
 
@@ -167,7 +167,7 @@ void Mesh_factory::put_field_ (const Mesh_data::Field& field_data,
 
 void Mesh_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int space_dimension)
 {
-    coordinate_field_ = & meta_data_->declare_field<Mesh::Vector_field_type>("coordinates");
+    coordinate_field_ = & meta_data_->declare_field<Vector_field_type>("coordinates");
     stk::mesh::put_field (*coordinate_field_, stk::mesh::Node, part, space_dimension);
 }
 

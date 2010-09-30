@@ -28,7 +28,9 @@ struct simple_face_evaluator
 {
     template <typename F>
     void operator () (F& bc, Boundary::Face f, Boundary::Time t, Boundary::Output c) const 
-    {  double x = f+0.5; bc ( &x, t, c); } 
+    {  
+        double x = f+0.5; bc ( &x, t, c); 
+    } 
 };
 
 struct timeless_face_evaluator

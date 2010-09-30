@@ -5,6 +5,8 @@
 #include "Field_data.hh"
 #include "Mesh.hh"
 
+#include "Data_structures.hh"
+
 // Trilinos STK_mesh includes.
 #include <Shards_BasicTopologies.hpp>
 #include <stk_util/parallel/Parallel.hpp>
@@ -48,9 +50,7 @@ private:
     typedef std::vector<stk::mesh::Bucket*> Buckets;
     typedef std::vector<stk::mesh::Part*>   Parts;
 
-    typedef std::vector<stk::mesh::Entity*>                Entity_vector;
-    typedef std::vector<stk::mesh::EntityId>               Entity_id_vector;
-    typedef std::map<Entity_id_vector, stk::mesh::Entity*> Vector_entity_map;
+    typedef std::map<Entity_Ids, stk::mesh::Entity*> Vector_entity_map;
 
     void add_coordinates_ (const Mesh_data::Coordinates<double>& data);
     void build_meta_data_ (const Mesh_data::Data& data, const Mesh_data::Fields& fields);
@@ -93,7 +93,7 @@ private:
     Vector_entity_map faces_map_;
     stk::mesh::Part* faces_part_;
 
-    Mesh::Vector_field_type *coordinate_field_;
+    Vector_field_type *coordinate_field_;
 
     stk::mesh::Selector universal_selector_;
 
