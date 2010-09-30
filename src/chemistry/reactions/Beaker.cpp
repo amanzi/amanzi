@@ -452,15 +452,10 @@ int Beaker::react(std::vector<double> &total, double porosity,
 
 } // end react()
 
-// if no water density provided, assume 1000 kg/m^3
-int Beaker::speciate(std::vector<double> target_total)
-{
-  return speciate(target_total,1000.);
-}
 
-int Beaker::speciate(std::vector<double> target_total, double water_density)
+// if no water density provided, default is 1000.0 kg/m^3
+int Beaker::speciate(std::vector<double> target_total, const double water_density)
 {
-
   double speciation_tolerance = 1.e-12;
   // water_density is in kg/m^3
   this->water_density_kg_m3(water_density);
