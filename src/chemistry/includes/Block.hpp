@@ -1,7 +1,7 @@
 #ifndef __Block_hpp__
 #define __Block_hpp__
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <iomanip>
 using namespace std;

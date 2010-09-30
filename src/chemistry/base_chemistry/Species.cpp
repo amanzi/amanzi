@@ -43,7 +43,8 @@ Species::~Species() {
 void Species::update(const double molality) 
 {
   molality_ = molality;
-  act_coef_ = 1.; // to be replaced with call to activiti coef function
+  // note that activity coefficient not updated
+  // act_coef_ = 1.;
   activity_ = act_coef_ * molality_;
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);
@@ -52,7 +53,6 @@ void Species::update(const double molality)
 
 void Species::update(void)
 {
-  act_coef_ = 1.; // to be replaced with call to activiti coef function
   activity_ = act_coef_ * molality_;
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);

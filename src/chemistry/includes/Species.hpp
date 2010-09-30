@@ -14,7 +14,6 @@ class Species {
   Species();
   ~Species();
 
-
   Species(SpeciesId id, SpeciesName name, double charge, double mol_wt, 
           double size);
 

@@ -1,7 +1,7 @@
 #ifndef __LU_hpp__
 #define __LU_hpp__
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <vector>
 
