@@ -53,14 +53,14 @@ void Mesh_maps::build_maps_ ()
         stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
 
         // Get the collection of "owned" entities 
-        Mesh::Entity_vector entities;
+        Entity_vector entities;
         mesh_->get_entities (rank, OWNED, entities);
         const int num_local_entities = entities.size ();
         ASSERT (num_local_entities == mesh_->count_entities (rank, OWNED));
 
  
         // Get the collection of ghost entities.
-        Mesh::Entity_vector ghosts;
+        Entity_vector ghosts;
         mesh_->get_entities (entity_kind_index, GHOST, ghosts);
         const int num_ghost_entities = ghosts.size ();
         const int num_used_entities = num_local_entities + num_ghost_entities;
@@ -121,16 +121,16 @@ void Mesh_maps::build_tables_ ()
         // Get the global index of the cell from the map.
         const unsigned int global_index = the_cell_map.GID (local_cell);
 
-        Mesh::Entity_Ids faces;
+        Entity_Ids faces;
         mesh_->element_to_faces (global_index, faces);
         ASSERT (faces.size () == 6);
 
-        Mesh::Entity_Ids nodes;
+        Entity_Ids nodes;
         mesh_->element_to_nodes (global_index, nodes);
         ASSERT (nodes.size () == 8);
 
         // Loop over faces
-        for (Mesh::Entity_Ids::const_iterator face = faces.begin ();
+        for (Entity_Ids::const_iterator face = faces.begin ();
              face != faces.end (); ++face)
         {
             const unsigned int face_index = global_to_local_ [0] [*face];
@@ -138,7 +138,7 @@ void Mesh_maps::build_tables_ ()
         }
 
         // Loop over nodes
-        for (Mesh::Entity_Ids::const_iterator node = nodes.begin ();
+        for (Entity_Ids::const_iterator node = nodes.begin ();
              node != nodes.end (); ++node)
         {
             const unsigned int node_index = global_to_local_ [1] [*node];
@@ -157,12 +157,12 @@ void Mesh_maps::build_tables_ ()
     {
         const unsigned int global_index = the_face_map.GID (local_face);
         
-        Mesh::Entity_Ids nodes;
+        Entity_Ids nodes;
         mesh_->face_to_nodes (global_index, nodes);
         ASSERT (nodes.size () == 4);
         
         // Loop over nodes
-        for (Mesh::Entity_Ids::const_iterator node = nodes.begin ();
+        for (entity_Ids::const_iterator node = nodes.begin ();
              node != nodes.end (); ++node)
         {
             const unsigned int node_index = global_to_local_ [1] [*node];

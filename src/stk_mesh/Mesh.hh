@@ -3,6 +3,7 @@
 
 #include "Element_category.hh"
 #include "Entity_map.hh"
+#include "Data_structures.hh"
 
 #include <Teuchos_RCP.hpp>
 #include <Epetra_MpiComm.h>
@@ -20,13 +21,6 @@ struct Mesh_view;
 
 class Mesh
 {
-
-public:
-
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian> Vector_field_type;
-    typedef stk::mesh::Field<double>                       Scalar_field_type;
-    typedef std::vector<stk::mesh::Entity*>                Entity_vector;
-    typedef std::vector<stk::mesh::EntityId>               Entity_Ids;
 
 private:
 

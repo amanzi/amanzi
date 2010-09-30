@@ -3,35 +3,40 @@
 
 #include "../Coordinates.hh"
 
-void set (double v [], double a, double b, double c)
+template <typename F>
+void set (F v [], F a, F b, F c)
 {
     v [0] = a;
     v [1] = b;
     v [2] = c;
 }
 
-
-struct Fixture
+template <typename F>
+void set (std::vector<F> &v, F a, F b, F c)
 {
-    
-    typedef Mesh_data::Coordinates<int> C;
+    set (&v [0], a, b, c);
+}
 
-    C c;
 
-    Fixture () : c (10,3)  {  }
+template <typename F>
+struct Coords
+{
+    typedef Mesh_data::Coordinates<F> C;
+    C* c;
 
+    virtual ~Coords () { delete c; }
 };
 
-struct Data
+struct No_Data : public Coords<int>
 {
+    No_Data ()  { c = new Mesh_data::Coordinates<int>(10,3);  }
+};
 
-    typedef Mesh_data::Coordinates<double> C;
-
-    C* c;
+struct Data : public Coords<double>
+{
 
     Data ()
     {
-
         std::vector<std::vector<double> > coord_data (3, std::vector<double>(20));
         for (int node = 0; node < 20; ++node)
         {
@@ -44,9 +49,7 @@ struct Data
             coord_data [1] [node] = double (y_plane);
             coord_data [2] [node] = double (z_plane);
         }
-
         c = Mesh_data::Coordinates<double>::build_from (coord_data);
-
     }
 
 };
@@ -54,52 +57,6 @@ struct Data
 
 SUITE (Coordinates)
 {
-
-    TEST (Size)
-    {
-        
-        Mesh_data::Coordinates<double> d(10, 2);
-
-        CHECK_EQUAL (d.nodes (), 10);
-        CHECK_EQUAL (d.dimension (), 2);
-
-        Mesh_data::Coordinates<float> f(100,1);
-        
-        CHECK_EQUAL (f.nodes (), 100);
-        CHECK_EQUAL (f.dimension (), 1);
-
-        Mesh_data::Coordinates<int> i(1000, 3);
-        
-        CHECK_EQUAL (i.nodes (), 1000);
-        CHECK_EQUAL (i.dimension (), 3);
-
-    }
-
-    TEST_FIXTURE (Fixture, Storage)
-    {
-        c (2,0) = 10;
-        CHECK_EQUAL (c (2,0), 10);
-    }
-
-    TEST_FIXTURE (Fixture, Pointer_assignment)
-    {
-
-        C::pointer_type p = c.get_coordinate_pointer (0);
-
-        p [5] = 10;
-        CHECK_EQUAL (c (5,0), 10);
-        
-        p = c.get_coordinate_pointer (2);
-    }
-
-    TEST_FIXTURE (Fixture, Bounds_checking)
-    {
-
-        CHECK_THROW (c (10, 1), DBC_assertion);
-        CHECK_THROW (c (-1, 1), DBC_assertion);
-        CHECK_THROW (c (5,  3), DBC_assertion);
-        CHECK_THROW (c (5, -1), DBC_assertion);
-    }
 
     TEST (Construction)
     {
@@ -129,19 +86,65 @@ SUITE (Coordinates)
 
     }
 
-    TEST_FIXTURE (Fixture, Assignment)
+    TEST (Size)
     {
-
-        std::vector<std::vector<int> > d(3, std::vector<int>(10));
-
-        c.take_data_from (d);
         
+        Mesh_data::Coordinates<double> d(10, 2);
+
+        CHECK_EQUAL (d.nodes (), 10);
+        CHECK_EQUAL (d.dimension (), 2);
+
+        Mesh_data::Coordinates<float> f(100,1);
+        
+        CHECK_EQUAL (f.nodes (), 100);
+        CHECK_EQUAL (f.dimension (), 1);
+
+        Mesh_data::Coordinates<int> i(1000, 3);
+        
+        CHECK_EQUAL (i.nodes (), 1000);
+        CHECK_EQUAL (i.dimension (), 3);
 
     }
 
-    TEST_FIXTURE (Data, Retrevial)
+    TEST_FIXTURE (No_Data, Storage)
+    {
+        (*c) (2,0) = 10;
+        CHECK_EQUAL ((*c) (2,0), 10);
+    }
+
+    TEST_FIXTURE (No_Data, Pointer_assignment)
     {
 
+        C::pointer_type p = c->get_coordinate_pointer (0);
+
+        p [5] = 10;
+        CHECK_EQUAL ((*c) (5,0), 10);
+        
+        p = c->get_coordinate_pointer (2);
+    }
+
+    TEST_FIXTURE (No_Data, Bounds_checking)
+    {
+
+        CHECK_THROW ((*c) (10, 1), DBC_assertion);
+        CHECK_THROW ((*c) (-1, 1), DBC_assertion);
+        CHECK_THROW ((*c) (5,  3), DBC_assertion);
+        CHECK_THROW ((*c) (5, -1), DBC_assertion);
+    }
+
+
+    TEST_FIXTURE (No_Data, Assignment)
+    {
+        std::vector<std::vector<int> > d(3, std::vector<int>(10));
+        (*c).take_data_from (d);
+    }
+
+
+
+
+
+    TEST_FIXTURE (Data, Retrevial)
+    {
         double coords[3];
         double values[3];
 
@@ -152,7 +155,6 @@ SUITE (Coordinates)
         set (values, 4.0, 1.0, 1.0);
         (*c) (18, coords);
         CHECK_ARRAY_EQUAL (coords, values, 3);
-
     }
     
 

@@ -9,6 +9,7 @@ add_library(mesh_data
 target_link_libraries(mesh_data dbc)
 
 if (BUILD_TESTS)
-  add_executable(test_mesh_data test/Main.cc test/test_Coords.cc test/test_Data.cc test/test_Fields.cc)
+  add_executable(test_mesh_data test/Main.cc test/test_Coords.cc test/test_Data.cc test/test_Fields.cc 
+    test/test_Side_set.cc)
   target_link_libraries(test_mesh_data mesh_data unittest++)
 endif()
