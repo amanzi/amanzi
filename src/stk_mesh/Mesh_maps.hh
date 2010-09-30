@@ -21,7 +21,7 @@ class Mesh_maps
 {
 
 private:
-    
+
     Mesh_p mesh_;
     const Entity_map& entity_map_;
     Epetra_MpiComm communicator_;
@@ -43,7 +43,7 @@ private:
 
     bool valid_entity_kind_ (Mesh_data::Entity_kind kind) const;
 
-    // Local-id tables of entities 
+    // Local-id tables of entities
     std::vector<unsigned int> cell_to_face_;
     std::vector<unsigned int> cell_to_node_;
     std::vector<unsigned int> face_to_node_;
@@ -70,40 +70,55 @@ public:
 
     template <typename IT>
     void face_to_nodes (unsigned int face, IT begin, IT end) const;
-    
+
     template <typename IT>
     void node_to_coordinates (unsigned int node, IT begin, IT end) const;
 
     template <typename IT>
     void face_to_coordinates (unsigned int face, IT begin, IT end) const;
-    
+
     template <typename IT>
     void cell_to_ccordinates (unsigned int call, IT begin, IT end) const;
 
-    const Epetra_Map& cell_map (bool include_ghost) const 
-    {
-        return map_ (Mesh_data::CELL, include_ghost); 
-    }
+    const Epetra_Map& cell_map (bool include_ghost) const;
+    const Epetra_Map& face_map (bool include_ghost) const;
+    const Epetra_Map& node_map (bool include_ghost) const;
 
-    const Epetra_Map& face_map (bool include_ghost) const 
-    { 
-        return map_ (Mesh_data::FACE, include_ghost); 
-    }
 
-    const Epetra_Map& node_map (bool include_ghost) const 
-    { 
-        return map_ (Mesh_data::NODE, include_ghost); 
-    }
+    unsigned int num_sidesets () const;
+
+    template <typename IT>
+    void sideset_ids (IT begin, IT end) const;
+
+    template <typename IT>
+    void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Element_Categoty category,
+                  IT begin, IT end);
 
     unsigned int count_entities (Mesh_data::Entity_kind kind, Element_Category category) const;
 
 };
 
-// Template members
-// ----------------
+// Template & inline members
+// ------------------------
+
+const Epetra_Map& Mesh_maps::cell_map (bool include_ghost) const
+{
+    return map_ (Mesh_data::CELL, include_ghost);
+}
+
+const Epetra_Map& Mesh_maps::face_map (bool include_ghost) const
+{
+    return map_ (Mesh_data::FACE, include_ghost);
+}
+
+const Epetra_Map& Mesh_maps::node_map (bool include_ghost) const
+{
+    return map_ (Mesh_data::NODE, include_ghost);
+}
+
 
 template <typename IT>
-void Mesh_maps::cell_to_faces (unsigned int cell, IT destination_begin, IT destination_end) const 
+void Mesh_maps::cell_to_faces (unsigned int cell, IT destination_begin, IT destination_end) const
 {
     ASSERT ((unsigned int) (destination_end - destination_begin) == 6);
     const unsigned int index = 6*cell;
@@ -113,29 +128,29 @@ void Mesh_maps::cell_to_faces (unsigned int cell, IT destination_begin, IT desti
 }
 
 template <typename IT>
-void Mesh_maps::cell_to_nodes (unsigned int cell, IT destination_begin, IT destination_end) const 
+void Mesh_maps::cell_to_nodes (unsigned int cell, IT destination_begin, IT destination_end) const
 {
     ASSERT ((unsigned int) (destination_end - destination_begin) == 8);
     const unsigned int index = 8*cell;
     std::vector<unsigned int>::const_iterator begin = cell_to_node_.begin () + index;
     std::vector<unsigned int>::const_iterator end   = begin + 8;
     std::copy (begin, end, destination_begin);
- }
+}
 
 template <typename IT>
-void Mesh_maps::face_to_nodes (unsigned int face, IT destination_begin, IT destination_end) const 
+void Mesh_maps::face_to_nodes (unsigned int face, IT destination_begin, IT destination_end) const
 {
     ASSERT ((unsigned int) (destination_end - destination_begin) == 4);
     const unsigned int index = 4*face;
     std::vector<unsigned int>::const_iterator begin = face_to_node_.begin () + index;
     std::vector<unsigned int>::const_iterator end   = begin + 4;
     std::copy (begin, end, destination_begin);
- }
+}
 
 
 template <typename IT>
-void Mesh_maps::node_to_coordinates (unsigned int local_node_id, IT begin, IT end) const 
-{ 
+void Mesh_maps::node_to_coordinates (unsigned int local_node_id, IT begin, IT end) const
+{
 
     ASSERT ((unsigned int) (end-begin) == 3);
 

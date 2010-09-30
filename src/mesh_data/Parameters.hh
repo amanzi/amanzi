@@ -17,13 +17,13 @@ struct Parameters
                 const std::vector<int>& side_set_ids);
 
     std::string title_;
-    int dimensions_;
-    int num_nodes_;
-    int num_elements_;
+    unsigned int dimensions_;
+    unsigned int num_nodes_;
+    unsigned int num_elements_;
 
-    int num_element_blocks_;
-    int num_node_sets_;
-    int num_side_sets_;
+    unsigned int num_element_blocks_;
+    unsigned int num_node_sets_;
+    unsigned int num_side_sets_;
 
     std::vector<int> element_block_ids_;
     std::vector<int> node_set_ids_;
