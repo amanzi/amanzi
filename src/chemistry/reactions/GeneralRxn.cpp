@@ -24,7 +24,7 @@ GeneralRxn::GeneralRxn()
 
 GeneralRxn::GeneralRxn(std::string s) 
 {
-
+  static_cast<void>(s);
 } // end GeneralRxn() constructor
 
 GeneralRxn::GeneralRxn(SpeciesName name, 
@@ -37,7 +37,7 @@ GeneralRxn::GeneralRxn(SpeciesName name,
                             std::vector<int>backward_species_ids,
                             double kf, double kb) 
 {
-
+  static_cast<void>(name);
   ncomp_ = (int)species_ids.size();
   ncomp_forward_ = (int)forward_species_ids.size();
   ncomp_backward_ = (int)backward_species_ids.size();

@@ -19,6 +19,7 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex()
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(std::string s) 
                           : Species()
 {
+  static_cast<void>(s);
   // string = "name ncomp stoich1 comp1 stoich2 comp2 ... stoichN compN
   //           logK1 logK2 ... logKN a0 charge mol_wt"
 } // end AqueousEquilibriumComplex() constructor
