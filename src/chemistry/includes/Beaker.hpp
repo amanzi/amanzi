@@ -1,7 +1,7 @@
 #ifndef __Beaker_hpp__
 #define __Beaker_hpp__
 
-#include "Activity.hpp"
+#include "ActivityModel.hpp"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
 #include "GeneralRxn.hpp"
@@ -40,6 +40,7 @@ class Beaker {
 
   // inheriting classes setup the species, etc
   virtual void setup(std::vector<double> &total);
+  void SetupActivityModel(std::string model);
 
   void addPrimarySpecies(Species s);
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
@@ -168,7 +169,7 @@ private:
   std::vector<Species> primarySpecies_; // list of primary species
   Species water_;
 
-  Activity *activity_model_;
+  ActivityModel *activity_model_;
 
   std::vector<AqueousEquilibriumComplex> aqComplexRxns_; // list of aqueous equilibrium complexation reactions
   std::vector<GeneralRxn> generalKineticRxns_; //list of general kinetic reactions

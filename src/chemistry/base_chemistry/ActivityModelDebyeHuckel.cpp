@@ -34,5 +34,5 @@ double ActivityModelDebyeHuckel::evaluate(const Species& species)
 
 void ActivityModelDebyeHuckel::display(void) const
 {
-  std::cout << "Using Debye-Huckel activity model." << std::endl;
+  std::cout << "Activity model: Debye-Huckel" << std::endl;
 }  // end display()

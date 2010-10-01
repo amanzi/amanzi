@@ -1,6 +1,7 @@
 #include <cstdlib>
 
 #include "Beaker.hpp" 
+#include "ActivityModelFactory.hpp"
 #include "Verbosity.hpp"
 
 Beaker::Beaker() 
@@ -47,8 +48,6 @@ void Beaker::resize() {
   rhs.resize(ncomp());
   indices.resize(ncomp());
 
-  if (activity_model_) delete activity_model_;
-  activity_model_ = new Activity();
 } // end resize()
 
 void Beaker::resize(int n) {
@@ -60,6 +59,23 @@ void Beaker::setup(std::vector<double> &total)
 {
   static_cast<void>(total);
 } // end setup()
+
+void Beaker::SetupActivityModel(std::string model)
+{
+  if (model != ActivityModelFactory::unit &&
+      model != ActivityModelFactory::debye_huckel) {
+    model = ActivityModelFactory::unit;
+  }
+  if (activity_model_ != NULL) {
+    delete activity_model_;
+  }
+  ActivityModelFactory amf;
+  
+  activity_model_ = amf.create(model);
+  if (verbosity() >= kVerbose) {
+    activity_model_->display();
+  }
+}  // end SetupActivityModel() 
 
 void Beaker::addPrimarySpecies(Species s) 
 {
@@ -472,7 +488,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
     // calculate maximum relative change in concentration over all species
     max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 
-    if (verbosity() >= 2) {
+    if (verbosity() >= kDebugBeaker) {
       for (int i = 0; i < ncomp(); i++)
         std::cout << primarySpecies_[i].name() << " " << 
                   primarySpecies_[i].molality() << " " << total_[i] << "\n";

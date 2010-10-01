@@ -25,5 +25,5 @@ double ActivityModelUnit::evaluate(const Species& species)
 
 void ActivityModelUnit::display(void) const
 {
-  std::cout << "Using unit activity coefficients (gamma = 1.0)." << std::endl;
+  std::cout << "Activity Model: unit activity coefficients (gamma = 1.0)." << std::endl;
 }  // end display()

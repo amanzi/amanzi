@@ -1,9 +1,11 @@
+#include <iostream>
+#include <vector>
+
 #include "Geochemistry.hpp"
 #include "Beaker.hpp"
 #include "Glenn.hpp"
-
-#include <iostream>
-#include <vector>
+#include "ActivityModelFactory.hpp"
+#include "Verbosity.hpp"
 
 using namespace std;
 
@@ -13,17 +15,21 @@ int main (int argc, char **argv) {
 
   std::string filename;
 
-  int verbose = 1;
+  int verbose = kVerbose;
 
   std::vector<double> total;
 
   // create geochemistry object
   Beaker beaker;
+  beaker.verbosity(verbose);
+
   Beaker::BeakerParameters parameters = beaker.GetDefaultParameters();
   parameters.porosity = 0.25;
   parameters.saturation = 1.;
   parameters.water_density = 997.205133945901; // kg / m^3
   parameters.volume = 0.25; // m^3
+
+  beaker.SetupActivityModel(ActivityModelFactory::debye_huckel);
 
 #if 1
   // set up simple 2-species carbonate system (H,HCO3-)
@@ -38,7 +44,6 @@ int main (int argc, char **argv) {
     total[i] *= water_density/1000.;
 #endif
   // solve for free-ion concentrations
-  beaker.verbosity(verbose);
 
   // to test react with unitary time step
 //  beaker.ReactionStep(total, parameters, 1.0);
