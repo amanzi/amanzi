@@ -414,7 +414,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
   // iteration counter
-  int num_iterations = 0;
+  unsigned int num_iterations = 0;
 
   // lagging activity coefficients by a time step in this case
   updateActivityCoefficients();
@@ -479,7 +479,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
     num_iterations++;
 
     // exit if maximum relative change is below tolerance
-  } while (max_rel_change > tolerance());
+  } while (max_rel_change > tolerance() && num_iterations < max_iterations());
 
   // update total concentrations
   calculateTotal();
@@ -506,7 +506,7 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
     prev_molal[i] = primarySpecies_[i].molality();
 
   double max_rel_change;
-  int num_iterations = 0;
+  unsigned int num_iterations = 0;
   bool calculate_activity_coefs = false;
 
   do {
@@ -577,7 +577,9 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
     if (max_rel_change < speciation_tolerance) calculate_activity_coefs = true;
 
     // exist if maximum relative change is below tolerance
-  } while (max_rel_change > speciation_tolerance && !calculate_activity_coefs);
+  } while (max_rel_change > speciation_tolerance && 
+	   num_iterations < max_iterations() && 
+	   !calculate_activity_coefs);
 
   if (verbosity() > 1) {
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
