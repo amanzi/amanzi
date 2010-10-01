@@ -1,12 +1,12 @@
 #include <cstdlib>
+
 #include <iostream>
 #include <vector>
-
 
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
-
+#include "ActivityModelFactory.hpp"
 
 int commandLineOptions(int argc, char **argv, int& verbose, int& test);
 
@@ -17,25 +17,46 @@ int main (int argc, char **argv) {
   int error = EXIT_SUCCESS;
 
   Beaker *chem = NULL;
+  std::string activity_model_name;
+
   error = commandLineOptions(argc, argv, verbose, test);
 
   if (error == EXIT_SUCCESS) {
     switch (test){
     case 1:
-      // set up simple 2-species carbonate system (H,HCO3-)
+      // set up simple 2-species carbonate system (H,HCO3-) unit activity coefficients
       if (verbose > 0) {
-	std::cout << "Running simple carbonate example." << std::endl;
+	std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
       }
       chem = new SimpleCarbonate();
+      activity_model_name = ActivityModelFactory::unit;
       break;
     case 2:
-      // larger carbonate system, 3 components, 9 secondary
+      // set up simple 2-species carbonate system (H,HCO3-), debye-huckel activity coefficients
       if (verbose > 0) {
-	std::cout << "Running large carbonate speciation example." << std::endl;
+	std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
+      }
+      chem = new SimpleCarbonate();
+      activity_model_name = ActivityModelFactory::debye_huckel;
+      break;
+    case 3:
+      // larger carbonate system, 3 components, 9 secondary, unit activity coefficients
+      if (verbose > 0) {
+	std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
       }
       chem = new LargeCarbonate();
+      activity_model_name = ActivityModelFactory::unit;
+      break;
+    case 4:
+      // larger carbonate system, 3 components, 9 secondary, debye-huckel activity coefficients
+      if (verbose > 0) {
+	std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
+      }
+      chem = new LargeCarbonate();
+      activity_model_name = ActivityModelFactory::debye_huckel;
       break;
     default:
+      std::cout << "Invalid test number specified on command line. try using the \'-h\' option." << std::endl;
       break;
     }
   }
@@ -43,6 +64,7 @@ int main (int argc, char **argv) {
   if (chem != NULL) {
     std::vector<double> total;
     chem->verbosity(verbose);
+    chem->SetupActivityModel(activity_model_name);
     chem->setup(total);
     if (verbose > 1) {
       chem->display();
@@ -84,8 +106,10 @@ int commandLineOptions(int argc, char **argv, int& verbose, int& test)
       std::cout << argv[0] << " command line options:" << std::endl;
       std::cout << "    -t integer " << std::endl
 		<< "         run a test case. valid test numbers are: " << std::endl
-		<< "             1: simple carbonate speciation" << std::endl
-		<< "             2: larger carbonate speciation" << std::endl;
+		<< "             1: simple carbonate speciation, unit activity coeff" << std::endl
+		<< "             2: simple carbonate speciation, debye-huckel" << std::endl
+		<< "             3: larger carbonate speciation, unit activity coeff" << std::endl
+		<< "             4: larger carbonate speciation, debye-huckel" << std::endl;
       std::cout << std::endl;
       std::cout << std::endl;
       std::cout << "    -v integer" << std::endl;
@@ -94,6 +118,8 @@ int commandLineOptions(int argc, char **argv, int& verbose, int& test)
       std::cout << "             1: terse" << std::endl;
       std::cout << "             2: verbose" << std::endl;
       std::cout << "             3: debug" << std::endl;
+      std::cout << "             4: debug beaker" << std::endl;
+      std::cout << "             5: debug mineral kinetics" << std::endl;
       error = -1;
       break;
     default:
