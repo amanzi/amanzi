@@ -104,6 +104,9 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
   stoichiometries.push_back(1.);
   species_ids.push_back(1);
   h2o_stoich = -1.;
+  size = 3.;
+  charge = 0.;
+  mol_wt = 44.0098;
   logK = -6.3447;
   g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
                                  species,
