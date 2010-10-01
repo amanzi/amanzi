@@ -39,7 +39,7 @@ int main (int argc, char **args) {
   beaker.verbosity(verbose);
 
   // to test react with unitary time step
-//  beaker.react(total, parameters, 1.0);
+//  beaker.ReactionStep(total, parameters, 1.0);
 //  beaker.print_results();
 
   // to test speciation

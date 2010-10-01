@@ -23,7 +23,7 @@ void Glenn::solve(std::vector<double> &total, double final_time, double ts_size,
   // just converting seconds to years -- both obviously zero in this case
   b_->print_results(time / 365. / 24. / 3600.);
   do {
-    b_->react(total, parameters, ts_size);
+    b_->ReactionStep(total, parameters, ts_size);
     // increment time
     time += ts_size;
     b_->print_results(time / 365. / 24. / 3600.);

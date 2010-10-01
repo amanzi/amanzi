@@ -49,8 +49,8 @@ class Beaker {
   int speciate(std::vector<double> target_total, const double water_density = 1000.0);
 
   // solve a chemistry step
-  int react(std::vector<double> &total, const BeakerParameters& parameters, 
-	    double dt);
+  int ReactionStep(std::vector<double> &total, const BeakerParameters& parameters, 
+		   double dt);
 
   void updateActivityCoefficients();
   void initializeMolalities(double initial_molality);

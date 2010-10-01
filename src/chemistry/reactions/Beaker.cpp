@@ -397,9 +397,9 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     lubksb(A->getValues(),ncomp(),indices,b);
 } // end solveLinearSystem
 
-int Beaker::react(std::vector<double> &total, 
-		  const Beaker::BeakerParameters& parameters,
-		  double dt)
+int Beaker::ReactionStep(std::vector<double> &total, 
+			 const Beaker::BeakerParameters& parameters,
+			 double dt)
 {
 
   // update class paramters
@@ -488,7 +488,7 @@ int Beaker::react(std::vector<double> &total,
 
   return num_iterations;
 
-} // end react()
+} // end ReactionStep()
 
 
 // if no water density provided, default is 1000.0 kg/m^3
