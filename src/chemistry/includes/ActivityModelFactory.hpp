@@ -9,10 +9,10 @@
 class ActivityModelFactory 
 {
  public:
-  ActivityModelFactory();  
+  ActivityModelFactory();
   ~ActivityModelFactory();
 
-  ActivityModel* create(std::string model);
+  ActivityModel* Create(std::string model);
 
   static const string debye_huckel;
   static const string unit;
@@ -20,7 +20,6 @@ class ActivityModelFactory
  protected:
 
  private:
-
 };
 
 #endif  // __ACTIVITY_MODEL_FACTORY_HPP__

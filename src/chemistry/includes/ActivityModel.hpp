@@ -14,15 +14,15 @@ class ActivityModel {
   ActivityModel();
   virtual ~ActivityModel();
 
-  void calculateIonicStrength(std::vector<Species> primarySpecies,
+  void CalculateIonicStrength(std::vector<Species> primarySpecies,
                               std::vector<AqueousEquilibriumComplex> secondarySpecies);
-  void calculateActivityCoefficients(std::vector<Species> &primarySpecies,
+  void CalculateActivityCoefficients(std::vector<Species> &primarySpecies,
                                      std::vector<AqueousEquilibriumComplex> &secondarySpecies);
-  virtual double evaluate(const Species& species) = 0;
+  virtual double Evaluate(const Species& species) = 0;
 
   double ionic_strength(void) const { return this->I_; }
 
-  virtual void display(void) const = 0;
+  virtual void Display(void) const = 0;
 
  protected:
   double log_to_ln(double d) { return d*2.30258509299; }

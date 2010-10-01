@@ -71,9 +71,9 @@ void Beaker::SetupActivityModel(std::string model)
   }
   ActivityModelFactory amf;
   
-  activity_model_ = amf.create(model);
+  activity_model_ = amf.Create(model);
   if (verbosity() >= kVerbose) {
-    activity_model_->display();
+    activity_model_->Display();
   }
 }  // end SetupActivityModel() 
 
@@ -136,9 +136,9 @@ void Beaker::update_por_sat_den_vol(void)
 void Beaker::updateActivityCoefficients() {
 
   //return;
-  activity_model_->calculateIonicStrength(primarySpecies_,
+  activity_model_->CalculateIonicStrength(primarySpecies_,
                                           aqComplexRxns_);
-  activity_model_->calculateActivityCoefficients(primarySpecies_,
+  activity_model_->CalculateActivityCoefficients(primarySpecies_,
                                                  aqComplexRxns_);
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++)

@@ -11,9 +11,9 @@ class ActivityModelUnit : public ActivityModel {
   ActivityModelUnit();
   ~ActivityModelUnit();
 
-  double evaluate(const Species& species);
+  double Evaluate(const Species& species);
 
-  void display(void) const;
+  void Display(void) const;
 
  protected:
 

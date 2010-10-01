@@ -19,7 +19,7 @@ ActivityModelDebyeHuckel::~ActivityModelDebyeHuckel()
 {
 }  // end ActivityModelDebyeHuckel destructor
 
-double ActivityModelDebyeHuckel::evaluate(const Species& species)
+double ActivityModelDebyeHuckel::Evaluate(const Species& species)
 {
   // log(gamma_i) = - A * z_i^2 * sqrt(I) / (1 + a0 * B * sqrt(I)) + Bdot * I
 
@@ -30,9 +30,9 @@ double ActivityModelDebyeHuckel::evaluate(const Species& species)
       debyeBdot * I_;
 
   return std::exp(log_to_ln(log_gamma));
-}  // end calculateActivityCoefficient()
+}  // end Evaluate()
 
-void ActivityModelDebyeHuckel::display(void) const
+void ActivityModelDebyeHuckel::Display(void) const
 {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
-}  // end display()
+}  // end Display()

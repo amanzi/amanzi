@@ -15,7 +15,7 @@ ActivityModel::~ActivityModel()
 {
 }  // end ActivityModel destructor
 
-void ActivityModel::calculateIonicStrength(std::vector<Species> primarySpecies,
+void ActivityModel::CalculateIonicStrength(std::vector<Species> primarySpecies,
                                            std::vector<AqueousEquilibriumComplex> secondarySpecies)
 {
   // I = 0.5 * sum_i(m_i*z_i^2)
@@ -34,23 +34,23 @@ void ActivityModel::calculateIonicStrength(std::vector<Species> primarySpecies,
   }
 
   I_ *= 0.5;
-}  // end calculateIonicStrength()
+}  // end CalculateIonicStrength()
 
-void ActivityModel::calculateActivityCoefficients(std::vector<Species> &primarySpecies,
+void ActivityModel::CalculateActivityCoefficients(std::vector<Species> &primarySpecies,
                                                   std::vector<AqueousEquilibriumComplex> &secondarySpecies)
 {
   // primary species
   for (std::vector<Species>::iterator i = primarySpecies.begin();
        i != primarySpecies.end(); i++) {
-    double gamma = evaluate(*i);
+    double gamma = Evaluate(*i);
     i->act_coef(gamma);
   }
 
   // secondary aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::iterator i = secondarySpecies.begin();
        i != secondarySpecies.end(); i++) {
-    double gamma = evaluate(*i);
+    double gamma = Evaluate(*i);
     i->act_coef(gamma);
   }
-}  // end calculateActivityCoefficients()
+}  // end CalculateActivityCoefficients()
 
