@@ -86,8 +86,7 @@ class Beaker {
   void updateMolalitiesWithTruncation(std::vector<double> &update, 
                                       std::vector<double> &prev_solution,
                                       double max_change);
-  void calculateMaxRelChangeInMolality(std::vector<double> prev_molal, 
-                                       double &max_rel_change);
+  double calculateMaxRelChangeInMolality(std::vector<double> prev_molal);
   // solvers
   void scaleRHSAndJacobian(double *rhs, Block *J);
   void scaleRHSAndJacobian(std::vector<double> &rhs, Block *J);

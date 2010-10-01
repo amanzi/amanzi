@@ -58,6 +58,7 @@ void Beaker::resize(int n) {
 
 void Beaker::setup(std::vector<double> &total) 
 {
+  static_cast<void>(total);
 } // end setup()
 
 void Beaker::addPrimarySpecies(Species s) 
@@ -374,18 +375,19 @@ void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update,
     // store the previous solution
     prev_solution[i] = primarySpecies_[i].molality();
     // update primary species molalities (log formulation)
-    primarySpecies_[i].molality(prev_solution[i] * std::exp(-update[i]));
+    double molality = prev_solution[i] * std::exp(-update[i]);
+    primarySpecies_[i].molality(molality);
   }
 } // end updateMolalitiesWithTruncation()
 
-void Beaker::calculateMaxRelChangeInMolality(std::vector<double> prev_molal, 
-                                             double &max_rel_change)
+double Beaker::calculateMaxRelChangeInMolality(std::vector<double> prev_molal)
 {
-  max_rel_change = 0.;
+  double max_rel_change = 0.0;
   for (int i = 0; i < ncomp(); i++) {
     double delta = fabs(primarySpecies_[i].molality()-prev_molal[i]) / prev_molal[i];
     max_rel_change = delta > max_rel_change ? delta : max_rel_change;
   }
+  return max_rel_change;
 } // end calculateMaxRelChangeInMolality()
 
 void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
@@ -468,7 +470,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
     // calculate update truncating at a maximum of 5 in nat log space
     updateMolalitiesWithTruncation(rhs,prev_molal,5.);
     // calculate maximum relative change in concentration over all species
-    calculateMaxRelChangeInMolality(prev_molal,max_rel_change);
+    max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 
     if (verbosity() >= 2) {
       for (int i = 0; i < ncomp(); i++)
@@ -562,7 +564,7 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
     // calculate update truncating at a maximum of 5 in log space
     updateMolalitiesWithTruncation(rhs,prev_molal,5.);
     // calculate maximum relative change in concentration over all species
-    calculateMaxRelChangeInMolality(prev_molal,max_rel_change);
+    max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 
     if (verbosity() == kDebugBeaker) {
       for (int i = 0; i < ncomp(); i++) {
