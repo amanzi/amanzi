@@ -1,48 +1,32 @@
-#ifndef __Activity_hpp__
-#define __Activity_hpp__
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#ifndef __ACTIVITY_MODEL_DEBYE_HUCKEL_HPP__
+#define __ACTIVITY_MODEL_DEBYE_HUCKEL_HPP__
 
 // Base class for activity calculations
 
 #include <string>
 #include <vector>
 
-#include "Species.hpp"
-#include "AqueousEquilibriumComplex.hpp"
+#include "ActivityModel.hpp"
 
-class Activity {
+class Species;
 
+class ActivityModelDebyeHuckel : public ActivityModel {
  public:
-  Activity();
-  ~Activity();
+  ActivityModelDebyeHuckel();
+  ~ActivityModelDebyeHuckel();
 
-  void calculateIonicStrength(std::vector<Species> primarySpecies,
-                     std::vector<AqueousEquilibriumComplex> secondarySpecies);
-  void calculateActivityCoefficients(
-                     std::vector<Species> &primarySpecies,
-                     std::vector<AqueousEquilibriumComplex> &secondarySpecies);
-  double calculateActivityCoefficient(double charge, 
-                                      double ion_size_parameter);
-
-
-  double ionic_strength(void) const { return this->I_; }
-
-  void ionic_strength(double d) { this->I_ = d; }
+  double evaluate(const Species& species);
 
   void display(void) const;
 
  protected:
+
  private:
-
-  double log_to_ln(double d) { return d*2.30258509299; }
-  double ln_to_log(double d) { return d*0.434294481904; }
-
-  double I_; // ionic strength
-
-  const double debyeA;
-  const double debyeB;
-  const double debyeBdot;
-
+  static const double debyeA;
+  static const double debyeB;
+  static const double debyeBdot;
 };
 
-#endif // __Activity_hpp__
+#endif  // __ACTIVITY_MODEL_DEBYE_HUCKEL_HPP__
 
