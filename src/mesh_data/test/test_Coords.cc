@@ -17,7 +17,7 @@ void set (std::vector<F> &v, F a, F b, F c)
     set (&v [0], a, b, c);
 }
 
-
+// Fixture base to hold a Coordinate object.
 template <typename F>
 struct Coords
 {
@@ -27,11 +27,13 @@ struct Coords
     virtual ~Coords () { delete c; }
 };
 
+// Create an empty Coordinates<int> object.
 struct No_Data : public Coords<int>
 {
     No_Data ()  { c = new Mesh_data::Coordinates<int>(10,3);  }
 };
 
+// Create a coordinates object corresponding to the mesh in STK_mesh/test/Example_Mesh.hh
 struct Data : public Coords<double>
 {
 

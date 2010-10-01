@@ -3,6 +3,7 @@
 
 #include "Mesh.hh"
 #include "Entity_map.hh"
+#include "Data_structures.hh"
 
 #include "dbc.hh"
 
@@ -80,23 +81,21 @@ public:
     template <typename IT>
     void cell_to_ccordinates (unsigned int call, IT begin, IT end) const;
 
-    const Epetra_Map& cell_map (bool include_ghost) const;
-    const Epetra_Map& face_map (bool include_ghost) const;
-    const Epetra_Map& node_map (bool include_ghost) const;
+    inline const Epetra_Map& cell_map (bool include_ghost) const;
+    inline const Epetra_Map& face_map (bool include_ghost) const;
+    inline const Epetra_Map& node_map (bool include_ghost) const;
 
     unsigned int count_entities (Mesh_data::Entity_kind kind, Element_Category category) const;
 
     // Entity Sets (cell, side, node)
     // ------------------------------
-    unsigned int num_sets (Mesh_data::Entity_kind kind) const;
+    unsigned int num_sets     (Mesh_data::Entity_kind kind) const;
+    bool         valid_set_id (Mesh_data::Entity_kind kind, unsigned int id) const;
+    unsigned int set_size     (unsigned int set_id, Mesh_data::Entity_kind kind, 
+                               Element_Category category) const;
 
     template <typename IT>
     void set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const;
-
-    bool valid_set_id (Mesh_data::Entity_kind kind, unsigned int id) const;
-
-    unsigned int set_size (unsigned int set_id, Mesh_data::Entity_kind kind, 
-                           Element_Category category) const;
 
     template <typename IT>
     void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Element_Category category,

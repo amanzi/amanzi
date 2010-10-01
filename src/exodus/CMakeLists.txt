@@ -10,6 +10,7 @@ target_link_libraries(exodus dbc mesh_data ${EXODUS_LIBS_ALL})
 
 if (BUILD_TESTS)
   add_executable(test_exodus test/Main.cc test/test_Reader.cc)
+  add_test(test_exodus ${EXECUTABLE_OUTPUT_PATH}/test_exodus exodus)
   target_link_libraries(test_exodus exodus unittest++)
 endif()
 

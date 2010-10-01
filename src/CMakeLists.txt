@@ -2,6 +2,8 @@ SET(CMAKE_CXX_COMPILER mpicxx)
 SET(CMAKE_C_COMPILER mpicc)
 
 project (STK_Mesh)
+enable_testing()
+
 
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_BUILD_TYPE debug)

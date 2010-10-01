@@ -162,7 +162,7 @@ void Mesh_maps::build_tables_ ()
         ASSERT (nodes.size () == 4);
         
         // Loop over nodes
-        for (entity_Ids::const_iterator node = nodes.begin ();
+        for (Entity_Ids::const_iterator node = nodes.begin ();
              node != nodes.end (); ++node)
         {
             const unsigned int node_index = global_to_local_ [1] [*node];
