@@ -1,56 +1,58 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 
 #include <iostream>
 #include <vector>
+#include <string>
 
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
+#include "Verbosity.hpp"
 
-int commandLineOptions(int argc, char **argv, int& verbose, int& test);
+int CommandLineOptions(int argc, char **argv, VERBOSITY& verbosity, int& test);
 
-int main (int argc, char **argv) {
-
-  int verbose = 1;
+int main(int argc, char **argv) {
+  VERBOSITY verbosity = kTerse;
   int test = 0;
   int error = EXIT_SUCCESS;
 
   Beaker *chem = NULL;
   std::string activity_model_name;
 
-  error = commandLineOptions(argc, argv, verbose, test);
+  error = CommandLineOptions(argc, argv, verbosity, test);
 
   if (error == EXIT_SUCCESS) {
-    switch (test){
+    switch (test) {
     case 1:
       // set up simple 2-species carbonate system (H,HCO3-) unit activity coefficients
-      if (verbose > 0) {
-	std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
+      if (verbosity >= kTerse) {
+        std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
       }
       chem = new SimpleCarbonate();
       activity_model_name = ActivityModelFactory::unit;
       break;
     case 2:
       // set up simple 2-species carbonate system (H,HCO3-), debye-huckel activity coefficients
-      if (verbose > 0) {
-	std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
+      if (verbosity >= kTerse) {
+        std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
       }
       chem = new SimpleCarbonate();
       activity_model_name = ActivityModelFactory::debye_huckel;
       break;
     case 3:
       // larger carbonate system, 3 components, 9 secondary, unit activity coefficients
-      if (verbose > 0) {
-	std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
+      if (verbosity >= kTerse) {
+        std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
       }
       chem = new LargeCarbonate();
       activity_model_name = ActivityModelFactory::unit;
       break;
     case 4:
       // larger carbonate system, 3 components, 9 secondary, debye-huckel activity coefficients
-      if (verbose > 0) {
-	std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
+      if (verbosity >= kTerse) {
+        std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
       }
       chem = new LargeCarbonate();
       activity_model_name = ActivityModelFactory::debye_huckel;
@@ -63,16 +65,16 @@ int main (int argc, char **argv) {
 
   if (chem != NULL) {
     std::vector<double> total;
-    chem->verbosity(verbose);
+    chem->verbosity(verbosity);
     chem->SetupActivityModel(activity_model_name);
     chem->setup(total);
-    if (verbose > 1) {
+    if (verbosity > 1) {
       chem->display();
     }
 
     // solve for free-ion concentrations
     chem->speciate(total);
-    if (verbose > 0) {
+    if (verbosity >= kTerse) {
       chem->print_results();
     }
   }
@@ -81,11 +83,10 @@ int main (int argc, char **argv) {
     delete chem;
   }
   std::cout << "Done!\n";
+}  // end main()
 
-}
 
-
-int commandLineOptions(int argc, char **argv, int& verbose, int& test)
+int CommandLineOptions(int argc, char **argv, VERBOSITY& verbosity, int& test)
 {
   int error = -2;
   int option;
@@ -99,21 +100,21 @@ int commandLineOptions(int argc, char **argv, int& verbose, int& test)
       error = EXIT_SUCCESS;
       break;
     case 'v':
-      verbose = std::atoi(optarg);
+      verbosity = static_cast<VERBOSITY>(std::atoi(optarg));
       break;
     case '?': case 'h':  /* help mode */
       /* print some help stuff and exit without doing anything */
       std::cout << argv[0] << " command line options:" << std::endl;
       std::cout << "    -t integer " << std::endl
-		<< "         run a test case. valid test numbers are: " << std::endl
-		<< "             1: simple carbonate speciation, unit activity coeff" << std::endl
-		<< "             2: simple carbonate speciation, debye-huckel" << std::endl
-		<< "             3: larger carbonate speciation, unit activity coeff" << std::endl
-		<< "             4: larger carbonate speciation, debye-huckel" << std::endl;
+                << "         run a test case. valid test numbers are: " << std::endl
+                << "             1: simple carbonate speciation, unit activity coeff" << std::endl
+                << "             2: simple carbonate speciation, debye-huckel" << std::endl
+                << "             3: larger carbonate speciation, unit activity coeff" << std::endl
+                << "             4: larger carbonate speciation, debye-huckel" << std::endl;
       std::cout << std::endl;
       std::cout << std::endl;
       std::cout << "    -v integer" << std::endl;
-      std::cout << "         verbose output:" << std::endl;
+      std::cout << "         verbosity output:" << std::endl;
       std::cout << "             0: silent" << std::endl;
       std::cout << "             1: terse" << std::endl;
       std::cout << "             2: verbose" << std::endl;
@@ -129,17 +130,18 @@ int commandLineOptions(int argc, char **argv, int& verbose, int& test)
   }
 
   if (error != -1 && test == 0) {
-    std::cout << "No test number specified on command line. Try \"" 
-	      <<  argv[0] << " -h \" for help." << std::endl;
+    std::cout << "No test number specified on command line. Try \""
+              <<  argv[0] << " -h \" for help." << std::endl;
   }
 
-  if (verbose > 1) {
+  if (verbosity >= kVerbose) {
     std::cout << "Command Line Options: " << std::endl;
     std::cout << "\tTest number: " << test << std::endl;
-    std::cout << "\tVerbosity: " << verbose << std::endl;
+    std::cout << "\tVerbosity: " << verbosity << std::endl;
   }
   std::cout << std::endl << std::endl;
 
-  return error; /* end commandLineOptions() */
-}
+  return error;
+}  // end commandLineOptions()
+
 

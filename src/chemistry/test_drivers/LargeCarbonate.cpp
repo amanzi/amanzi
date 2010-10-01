@@ -1,16 +1,19 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include <vector>
+
+#include "AqueousEquilibriumComplex.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
 
 LargeCarbonate::LargeCarbonate(void)
-  : Beaker()
+    : Beaker()
 {
   ncomp(4);
-}
+}  // end LargeCarbonate constructor
 
 LargeCarbonate::~LargeCarbonate(void)
 {
-
-}
+}  // end LargeCarbonate constructor
 
 void LargeCarbonate::setup(std::vector<double> &total) {
   this->resize(ncomp());
@@ -44,14 +47,14 @@ void LargeCarbonate::setup(std::vector<double> &total) {
   charge = 2.0;
   mol_wt = 40.078;
   size = 0.0;
-  this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));  
+  this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   id++;
   name = "H2O";
   charge = 0.0;
   mol_wt = 18.0153;
   size = 0.0;
-  this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));  
+  this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   //
   // secondary species / aqueous complexes
@@ -76,12 +79,14 @@ void LargeCarbonate::setup(std::vector<double> &total) {
   charge = -1.;
   mol_wt = 17.0073;
   logK = 13.9951;
-  this->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-							       species,
-							       stoichiometries,
-							       species_ids,
-							       h2o_stoich,
-							       charge,mol_wt,size,logK));
+  AqueousEquilibriumComplex oh(name,
+                               species,
+                               stoichiometries,
+                               species_ids,
+                               h2o_stoich,
+                               charge, mol_wt, size, logK);
+  this->addAqueousEquilibriumComplex(oh);
+
 
   species.clear();
   stoichiometries.clear();
@@ -102,12 +107,13 @@ void LargeCarbonate::setup(std::vector<double> &total) {
   charge = -2.;
   mol_wt = 60.0092;
   logK = 10.3288;
-  this->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-							       species,
-							       stoichiometries,
-							       species_ids,
-							       h2o_stoich,
-							       charge,mol_wt,size,logK));
+  AqueousEquilibriumComplex co3(name,
+                                species,
+                                stoichiometries,
+                                species_ids,
+                                h2o_stoich,
+                                charge, mol_wt, size, logK);
+  this->addAqueousEquilibriumComplex(co3);
 
 
   species.clear();
@@ -129,12 +135,13 @@ void LargeCarbonate::setup(std::vector<double> &total) {
   charge = 0.0;
   mol_wt = 62.0251;
   logK = -6.3447;
-  this->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-							       species,
-							       stoichiometries,
-							       species_ids,
-							       h2o_stoich,
-							       charge,mol_wt,size,logK));
+  AqueousEquilibriumComplex h2co3(name,
+                                  species,
+                                  stoichiometries,
+                                  species_ids,
+                                  h2o_stoich,
+                                  charge, mol_wt, size, logK);
+  this->addAqueousEquilibriumComplex(h2co3);
 
 
   species.clear();
@@ -160,12 +167,13 @@ void LargeCarbonate::setup(std::vector<double> &total) {
   charge = 1.0;
   mol_wt = 57.0853;
   logK = 12.78;
-  this->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-							       species,
-							       stoichiometries,
-							       species_ids,
-							       h2o_stoich,
-							       charge,mol_wt,size,logK));
+  AqueousEquilibriumComplex caoh(name,
+                                 species,
+                                 stoichiometries,
+                                 species_ids,
+                                 h2o_stoich,
+                                 charge, mol_wt, size, logK);
+  this->addAqueousEquilibriumComplex(caoh);
 
 
   species.clear();
@@ -187,12 +195,13 @@ void LargeCarbonate::setup(std::vector<double> &total) {
   charge = 1.0;
   mol_wt = 101.095;
   logK = -1.043;
-  this->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-							       species,
-							       stoichiometries,
-							       species_ids,
-							       h2o_stoich,
-							       charge,mol_wt,size,logK));
+  AqueousEquilibriumComplex cahco3(name,
+                                   species,
+                                   stoichiometries,
+                                   species_ids,
+                                   h2o_stoich,
+                                   charge, mol_wt, size, logK);
+  this->addAqueousEquilibriumComplex(cahco3);
 
 
   species.clear();
@@ -218,12 +227,11 @@ void LargeCarbonate::setup(std::vector<double> &total) {
   charge = 0.0;
   mol_wt = 100.087;
   logK = 7.0088;
-  this->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-							       species,
-							       stoichiometries,
-							       species_ids,
-							       h2o_stoich,
-							       charge,mol_wt,size,logK));
-
-
-};
+  AqueousEquilibriumComplex caco3(name,
+                                  species,
+                                  stoichiometries,
+                                  species_ids,
+                                  h2o_stoich,
+                                  charge, mol_wt, size, logK);
+  this->addAqueousEquilibriumComplex(caco3);
+}  // end setup()

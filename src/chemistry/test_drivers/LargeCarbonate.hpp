@@ -1,5 +1,8 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef __LargeCarbonate_hpp__
 #define __LargeCarbonate_hpp__
+
+#include <vector>
 
 #include "Beaker.hpp"
 
@@ -7,16 +10,14 @@
 // single computational node
 
 class LargeCarbonate : public Beaker {
-
-public:
+ public:
   LargeCarbonate();
   ~LargeCarbonate();
 
   void setup(std::vector<double> &total);
 
 
-private:
-
+ private:
 };
 
-#endif
+#endif  // __LargeCarbonate_hpp__
