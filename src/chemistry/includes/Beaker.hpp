@@ -23,6 +23,17 @@ class Beaker {
   Beaker();
   ~Beaker();
 
+  struct BeakerParameters {
+    // solver parameters
+    double tolerance;
+    unsigned int max_iterations;
+    // physical parameters
+    double porosity; // [-]
+    double saturation; // [-]
+    double water_density; // [kg/m^3]
+    double volume; // [m^3]
+  };
+
   // resizes matrix and vectors for nonlinear system
   void resize();
   void resize(int ncomp);
@@ -38,8 +49,8 @@ class Beaker {
   int speciate(std::vector<double> target_total, const double water_density = 1000.0);
 
   // solve a chemistry step
-  int react(std::vector<double> &total, double porosity, double saturation, 
-            double density, double volume, double dt);
+  int react(std::vector<double> &total, const BeakerParameters& parameters, 
+	    double dt);
 
   void updateActivityCoefficients();
   void initializeMolalities(double initial_molality);
@@ -90,27 +101,8 @@ class Beaker {
   void ncomp(int i) { this->ncomp_ = i; }
   int ncomp(void) const { return this->ncomp_; }
 
-  // update discretization and flow parameters
-  // water_density [kg/m^3]
-  // volume [m^3]
-  void updateParameters(double por, double sat, double den, double vol, double dt);
- 
-  void porosity(double d) { this->porosity_ = d; }
-  void saturation(double d) { this->saturation_ = d; }
-  // updates both water density variables
-  void water_density_kg_m3(double d) { this->water_density_kg_m3_ = d; 
-                                       this->water_density_kg_L_ = d/1000.; }
-  void water_density_kg_L(double d) { this->water_density_kg_m3_ = d*1000.; 
-                                      this->water_density_kg_L_ = d; }
-  void volume(double d) { this->volume_ = d; }
-  void dt(double d) { this->dt_ = d; }
-  // calculates the coefficient in aqueous portion of accumulation term
-  void accumulation_coef(double por, double sat, double vol, double dtt) 
-                         { this->accumulation_coef_ = por*sat*vol*1000./dtt; }
-  // calculates product of porosity,saturation,water_density[kg/m^3],volume
-  void por_sat_den_vol(double por, double sat, double den, double vol) 
-                       { this->por_sat_den_vol_ = por*sat*den*vol; }
-
+  double tolerance(void) const { return this->tolerance_; }
+  unsigned int max_iterations(void) const { return this->max_iterations_; }
   double porosity(void) const { return this->porosity_; }
   double saturation(void) const { return this->saturation_; }
   double water_density_kg_m3(void) const { return this->water_density_kg_m3_; }
@@ -124,8 +116,38 @@ class Beaker {
   void verbosity(const int s_verbosity) { this->verbosity_ = s_verbosity; };
   int verbosity(void) const { return this->verbosity_; };
 
+  BeakerParameters GetDefaultParameters(void);
+
+protected:
+  // update discretization and flow parameters
+  // water_density [kg/m^3]
+  // volume [m^3]
+  void updateParameters(const BeakerParameters& parameters, double dt);
+ 
+  void tolerance(double value) { this->tolerance_ = value; }
+  void max_iterations(unsigned int value) { this->max_iterations_ = value; }
+  void porosity(double d) { this->porosity_ = d; }
+  void saturation(double d) { this->saturation_ = d; }
+  // updates both water density variables
+  void water_density_kg_m3(double d) { this->water_density_kg_m3_ = d; 
+                                       this->water_density_kg_L_ = d/1000.; }
+  void water_density_kg_L(double d) { this->water_density_kg_m3_ = d*1000.; 
+                                      this->water_density_kg_L_ = d; }
+  void volume(double d) { this->volume_ = d; }
+  void dt(double d) { this->dt_ = d; }
+  void accumulation_coef(double d) { this->accumulation_coef_ = d; }
+  void por_sat_den_vol(double d) { this->por_sat_den_vol_ = d; }
+  // calculates the coefficient in aqueous portion of accumulation term
+  void update_accumulation_coef(void); 
+  // calculates product of porosity,saturation,water_density[kg/m^3],volume
+  void update_por_sat_den_vol(void);
+
+
+
 private:
   int verbosity_;
+  double tolerance_;
+  unsigned int max_iterations_;
   int ncomp_;                   // # basis species
   std::vector<double> total_;  // total component concentrations of basis species
   Block *dtotal_;      // matrix that holds derivative of total concentration w/respec to free-ion

@@ -4,13 +4,24 @@
 #include "Verbosity.hpp"
 
 Beaker::Beaker() 
-  : verbosity_(kSilent)
+  : verbosity_(kSilent),
+    tolerance_(1.0e-12),
+    max_iterations_(250),
+    ncomp_(0),
+    dtotal_(NULL),
+    porosity_(1.0),
+    saturation_(1.0),
+    water_density_kg_m3_(1000.0),
+    water_density_kg_L_(1.0),
+    volume_(1.0),
+    dt_(0.0),
+    accumulation_coef_(0.0), 
+    por_sat_den_vol_(0.0),
+    activity_model_(NULL),
+    J(NULL)
 {
-  dtotal_ = NULL;
-  J = NULL;
   aqComplexRxns_.clear();
   generalKineticRxns_.clear();
-  activity_model_ = NULL;
 } // end Beaker() constructor
 
 Beaker::~Beaker() 
@@ -64,17 +75,46 @@ void Beaker::addGeneralRxn(GeneralRxn r)
   generalKineticRxns_.push_back(r);
 } // end addGeneralRxn()
 
-void Beaker::updateParameters(double por, double sat, double den, double vol, 
-                              double dtt)
+Beaker::BeakerParameters Beaker::GetDefaultParameters(void)
 {
-  porosity(por);
-  water_density_kg_m3(den); // den = [kg/m^3]
-  saturation(sat);
-  volume(vol); // vol = [m^3]
-  dt(dtt); // dtt = [sec]
-  accumulation_coef(por,sat,vol,dtt); // 
-  por_sat_den_vol(por,sat,den,vol); // units = kg water
+  Beaker::BeakerParameters parameters;
+
+  parameters.tolerance = tolerance();
+  parameters.max_iterations = max_iterations();
+ 
+  parameters.porosity = porosity();
+  parameters.saturation = saturation();
+  parameters.water_density = water_density_kg_m3(); // kg / m^3
+  parameters.volume = volume(); // m^3
+ 
+  return parameters;
+} // end GetDefaultParameters()
+    
+
+void Beaker::updateParameters(const Beaker::BeakerParameters& parameters, 
+                              double delta_t)
+{
+  tolerance(parameters.tolerance);
+  max_iterations(parameters.max_iterations);
+  porosity(parameters.porosity);
+  water_density_kg_m3(parameters.water_density); // den = [kg/m^3]
+  saturation(parameters.saturation);
+  volume(parameters.volume); // vol = [m^3]
+  dt(delta_t); // delta time = [sec]
+  update_accumulation_coef();
+  update_por_sat_den_vol();
 } // end updateParameters()
+
+void Beaker::update_accumulation_coef(void)
+{
+  accumulation_coef(porosity() * saturation() * volume() * 1000.0 / dt());
+} // end update_accumulation_coef
+
+void Beaker::update_por_sat_den_vol(void)
+{
+  por_sat_den_vol(porosity() * saturation() * water_density_kg_m3() * volume()); 
+} // end update_por_sat_den_vol()
+
 
 void Beaker::updateActivityCoefficients() {
 
@@ -357,17 +397,15 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     lubksb(A->getValues(),ncomp(),indices,b);
 } // end solveLinearSystem
 
-int Beaker::react(std::vector<double> &total, double porosity, 
-                  double saturation, double water_density, double volume, 
-                  double dt)
+int Beaker::react(std::vector<double> &total, 
+		  const Beaker::BeakerParameters& parameters,
+		  double dt)
 {
 
   // update class paramters
   // water_density [kg/m^3]
   // volume [m^3]
-  updateParameters(porosity,saturation,water_density,volume,dt);
-
-  double tolerance = 1.e-12;
+  updateParameters(parameters, dt);
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++)
@@ -441,7 +479,7 @@ int Beaker::react(std::vector<double> &total, double porosity,
     num_iterations++;
 
     // exit if maximum relative change is below tolerance
-  } while (max_rel_change > tolerance);
+  } while (max_rel_change > tolerance());
 
   // update total concentrations
   calculateTotal();
