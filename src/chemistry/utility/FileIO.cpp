@@ -23,7 +23,7 @@ FileIO::FileIO(char *filename)
 int FileIO::getLine() 
 {
 
-  int ierr = 0;
+  //int ierr = 0;
   delete buffer;
 
   while(1) {
@@ -150,7 +150,7 @@ int FileIO::findStringInFile(char *card)
   int ierr = 0;
 
   file.seekg(0,ios::beg);
-  size_t len = strlen(card);
+  //size_t len = strlen(card);
   size_t found = 0;
   while((ierr = getLine()) != 1) {
     string str = buffer->str();

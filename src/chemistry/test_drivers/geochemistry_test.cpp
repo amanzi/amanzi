@@ -1,58 +1,81 @@
-/* -*-  mode: c++; c-default-style: "google-c-style"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
+
 #include <iostream>
 #include <vector>
-
+#include <string>
 
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
+#include "ActivityModelFactory.hpp"
+#include "Verbosity.hpp"
 #include "KineticRate.hpp"
 #include "MineralKineticsFactory.hpp"
 #include "Verbosity.hpp"
 
-int commandLineOptions(int argc, char **argv, int& verbose, int& test);
+int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test);
 
-int main (int argc, char **argv) {
-
-  int verbose = 1;
+int main(int argc, char **argv) {
+  Verbosity verbosity = kTerse;
   int test = 0;
   int error = EXIT_SUCCESS;
 
   Beaker *chem = NULL;
-  error = commandLineOptions(argc, argv, verbose, test);
+  std::string activity_model_name;
+
+  error = CommandLineOptions(argc, argv, verbosity, test);
 
   if (error == EXIT_SUCCESS) {
-    switch (test){
-    case 1:
-      // set up simple 2-species carbonate system (H,HCO3-)
-      if (verbose > kSilent) {
-	std::cout << "Running simple carbonate example." << std::endl;
-      }
-      chem = new SimpleCarbonate();
-      break;
-    case 2:
-      // larger carbonate system, 3 components, 9 secondary
-      if (verbose > kSilent) {
-	std::cout << "Running large carbonate speciation example." << std::endl;
-      }
-      chem = new LargeCarbonate();
-      break;
-    case 3:
-      // calcite TST kinetics
-      if (verbose > kSilent) {
-        std::cout << "Running calcite kinetics tst problem." << std::endl;
-      }
-      //chem = new Something here....;
-    default:
-      break;
+    switch (test) {
+      case 1:
+        // set up simple 2-species carbonate system (H,HCO3-) unit activity coefficients
+        if (verbosity >= kTerse) {
+          std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
+        }
+        chem = new SimpleCarbonate();
+        activity_model_name = ActivityModelFactory::unit;
+        break;
+      case 2:
+        // set up simple 2-species carbonate system (H,HCO3-), debye-huckel activity coefficients
+        if (verbosity >= kTerse) {
+          std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
+        }
+        chem = new SimpleCarbonate();
+        activity_model_name = ActivityModelFactory::debye_huckel;
+        break;
+      case 3:
+        // larger carbonate system, 3 components, 9 secondary, unit activity coefficients
+        if (verbosity >= kTerse) {
+          std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
+        }
+        chem = new LargeCarbonate();
+        activity_model_name = ActivityModelFactory::unit;
+        break;
+      case 4:
+        // larger carbonate system, 3 components, 9 secondary, debye-huckel activity coefficients
+        if (verbosity >= kTerse) {
+          std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
+        }
+        chem = new LargeCarbonate();
+        activity_model_name = ActivityModelFactory::debye_huckel;
+        break;
+      case 5:
+        // calcite TST kinetics
+        if (verbosity >= kTerse) {
+          std::cout << "Running calcite kinetics tst problem." << std::endl;
+        }
+        //chem = new Something here....;
+      default:
+        std::cout << "Invalid test number specified on command line. try using the \'-h\' option." << std::endl;
+        break;
     }
   }
 
 
   MineralKineticsFactory mineral_kinetics_factory;
   std::string file_name("mineral.txt");
-  mineral_kinetics_factory.verbosity(verbose);
+  mineral_kinetics_factory.verbosity(verbosity);
   std::vector<KineticRate*> mineral_rates;
   mineral_rates = mineral_kinetics_factory.Create(file_name);
   for (std::vector<KineticRate*>::iterator rate = mineral_rates.begin();
@@ -63,15 +86,16 @@ int main (int argc, char **argv) {
 
   if (chem != NULL) {
     std::vector<double> total;
-    chem->verbosity(verbose);
+    chem->verbosity(verbosity);
+    chem->SetupActivityModel(activity_model_name);
     chem->setup(total);
-    if (verbose >= kVerbose ) {
+    if (verbosity >= kVerbose ) {
       chem->display();
     }
 
     // solve for free-ion concentrations
     chem->speciate(total);
-    if (verbose > kSilent) {
+    if (verbosity >= kTerse) {
       chem->print_results();
     }
   }
@@ -80,11 +104,10 @@ int main (int argc, char **argv) {
     delete chem;
   }
   std::cout << "Done!\n";
+}  // end main()
 
-}
 
-
-int commandLineOptions(int argc, char **argv, int& verbose, int& test)
+int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
 {
   int error = -2;
   int option;
@@ -92,49 +115,53 @@ int commandLineOptions(int argc, char **argv, int& verbose, int& test)
 
   while ((option = getopt(argc, argv, "ht:v:?")) != EOF) {
     switch (option) {
-    case 't':
-      /* specify the test that should be run */
-      test = std::atoi(optarg);
-      error = EXIT_SUCCESS;
-      break;
-    case 'v':
-      verbose = std::atoi(optarg);
-      break;
-    case '?': case 'h':  /* help mode */
-      /* print some help stuff and exit without doing anything */
-      std::cout << argv[0] << " command line options:" << std::endl;
-      std::cout << "    -t integer " << std::endl
-		<< "         run a test case. valid test numbers are: " << std::endl
-		<< "             1: simple carbonate speciation" << std::endl
-		<< "             2: larger carbonate speciation" << std::endl;
-      std::cout << std::endl;
-      std::cout << std::endl;
-      std::cout << "    -v integer" << std::endl;
-      std::cout << "         verbose output:" << std::endl;
-      std::cout << "             0: silent" << std::endl;
-      std::cout << "             1: terse" << std::endl;
-      std::cout << "             2: verbose" << std::endl;
-      std::cout << "             3: debug" << std::endl;
-      error = -1;
-      break;
-    default:
-      /* no options */
-      break;
+      case 't':
+        /* specify the test that should be run */
+        test = std::atoi(optarg);
+        error = EXIT_SUCCESS;
+        break;
+      case 'v':
+        verbosity = static_cast<Verbosity>(std::atoi(optarg));
+        break;
+      case '?': case 'h':  /* help mode */
+        /* print some help stuff and exit without doing anything */
+        std::cout << argv[0] << " command line options:" << std::endl;
+        std::cout << "    -t integer " << std::endl
+                  << "         run a test case. valid test numbers are: " << std::endl
+                  << "             1: simple carbonate speciation, unit activity coeff" << std::endl
+                  << "             2: simple carbonate speciation, debye-huckel" << std::endl
+                  << "             3: larger carbonate speciation, unit activity coeff" << std::endl
+                  << "             4: larger carbonate speciation, debye-huckel" << std::endl;
+        std::cout << std::endl;
+        std::cout << std::endl;
+        std::cout << "    -v integer" << std::endl;
+        std::cout << "         verbose output:" << std::endl;
+        std::cout << "             0: silent" << std::endl;
+        std::cout << "             1: terse" << std::endl;
+        std::cout << "             2: verbose" << std::endl;
+        std::cout << "             3: debug" << std::endl;
+        std::cout << "             4: debug beaker" << std::endl;
+        std::cout << "             5: debug mineral kinetics" << std::endl;
+        error = -1;
+        break;
+      default:
+        /* no options */
+        break;
     }
   }
 
   if (error != -1 && test == 0) {
-    std::cout << "No test number specified on command line. Try \"" 
-	      <<  argv[0] << " -h \" for help." << std::endl;
+    std::cout << "No test number specified on command line. Try \""
+              <<  argv[0] << " -h \" for help." << std::endl;
   }
 
-  if (verbose >= kVerbose) {
+  if (verbosity >= kVerbose) {
     std::cout << "Command Line Options: " << std::endl;
     std::cout << "\tTest number: " << test << std::endl;
-    std::cout << "\tVerbosity: " << verbose << std::endl;
+    std::cout << "\tVerbosity: " << verbosity << std::endl;
   }
   std::cout << std::endl << std::endl;
 
-  return error; /* end commandLineOptions() */
-}
+  return error;
+}  // end commandLineOptions()
 

@@ -2,6 +2,10 @@ LIBRARIES = \
 	libgeochembase.a
 
 SRCS = \
+	./ActivityModelFactory.cpp \
+	./ActivityModel.cpp \
+	./ActivityModelDebyeHuckel.cpp \
+	./ActivityModelUnit.cpp \
 	./Species.cpp 
 
 OBJS = \

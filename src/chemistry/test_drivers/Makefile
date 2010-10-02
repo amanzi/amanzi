@@ -30,8 +30,10 @@ DIFF = diff
 DFLAGS = --brief
 
 TESTS = \
-	simpleCarbonate \
-	largeCarbonate
+	simpleCarbonate_unit_activity_coeff \
+	largeCarbonate_unit_activity_coeff \
+	simpleCarbonate_debye_huckel \
+	largeCarbonate_debye_huckel
 
 #
 # Generic rules to generate executables.
@@ -60,12 +62,20 @@ tests : test
 
 test : $(TESTS)
 
-simpleCarbonate : 
+simpleCarbonate_unit_activity_coeff  : 
 	./geochemistryTest -t 1 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 
-largeCarbonate : 
+simpleCarbonate_debye_huckel  : 
 	./geochemistryTest -t 2 -v 1 > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+
+largeCarbonate_unit_activity_coeff : 
+	./geochemistryTest -t 3 -v 1 > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+
+largeCarbonate_debye_huckel : 
+	./geochemistryTest -t 4 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 
 

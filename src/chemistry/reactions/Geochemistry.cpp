@@ -10,6 +10,7 @@ Geochemistry::~Geochemistry()
 
 void Geochemistry::setup(std::vector<double> *total) 
 {
+  static_cast<void>(total);
 } // end setup()
 
 

@@ -24,7 +24,7 @@ GeneralRxn::GeneralRxn()
 
 GeneralRxn::GeneralRxn(std::string s) 
 {
-
+  static_cast<void>(s);
 } // end GeneralRxn() constructor
 
 GeneralRxn::GeneralRxn(SpeciesName name, 
@@ -37,7 +37,7 @@ GeneralRxn::GeneralRxn(SpeciesName name,
                             std::vector<int>backward_species_ids,
                             double kf, double kb) 
 {
-
+  static_cast<void>(name);
   ncomp_ = (int)species_ids.size();
   ncomp_forward_ = (int)forward_species_ids.size();
   ncomp_backward_ = (int)backward_species_ids.size();
@@ -81,7 +81,7 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies)
   // forward rate expression
   lnQkf_ = 0.;
   if (kf_ > 0.) {
-    lnQkf_ = log(kf_);
+    lnQkf_ = std::log(kf_);
     for (int i = 0; i < ncomp_forward_; i++) {
       lnQkf_ += forward_stoichiometry_[i] * 
                 primarySpecies[ forward_species_ids_[i] ].ln_activity();
@@ -91,7 +91,7 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies)
   // backward rate expression
   lnQkb_ = 0.;
   if (kb_ > 0.) {
-    lnQkb_ = log(kb_);
+    lnQkb_ = std::log(kb_);
     for (int i = 0; i < ncomp_backward_; i++) {
       lnQkb_ += backward_stoichiometry_[i] * 
                 primarySpecies[ backward_species_ids_[i] ].ln_activity();
@@ -105,8 +105,8 @@ void GeneralRxn::addContributionToResidual(std::vector<double> &residual,
 {
   // por_den_sat_vol = porosity*water_density*saturation*volume
   double effective_rate = 0.;
-  if (kf_ > 0.) effective_rate += exp(lnQkf_);
-  if (kb_ > 0.) effective_rate -= exp(lnQkb_);
+  if (kf_ > 0.) effective_rate += std::exp(lnQkf_);
+  if (kb_ > 0.) effective_rate -= std::exp(lnQkb_);
   effective_rate *= por_den_sat_vol;
 
   for (int i = 0; i < ncomp_; i++) {
@@ -133,7 +133,7 @@ void GeneralRxn::addContributionToJacobian(
     for (int j = 0; j < ncomp_forward_; j++) {
       int jcomp = forward_species_ids_[j];
       double tempd = -forward_stoichiometry_[j] *
-                     exp(lnQkf_ - primarySpecies[jcomp].ln_molality()) *
+                     std::exp(lnQkf_ - primarySpecies[jcomp].ln_molality()) *
                      por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++)
@@ -148,7 +148,7 @@ void GeneralRxn::addContributionToJacobian(
     for (int j = 0; j < ncomp_backward_; j++) {
       int jcomp = backward_species_ids_[j];
       double tempd = backward_stoichiometry_[j] *
-                     exp(lnQkb_ - primarySpecies[jcomp].ln_molality()) *
+                     std::exp(lnQkb_ - primarySpecies[jcomp].ln_molality()) *
                      por_den_sat_vol;
       // row loop
       for (int i = 0; i < ncomp_; i++)
@@ -168,6 +168,6 @@ void GeneralRxn::display(void) const
     }
   }
   std::cout << std::endl;
-  std::cout << "        forward_rate = " << exp(lnQkf_) << std::endl;
-  std::cout << "        backward_rate = " << exp(lnQkb_) << std::endl;
+  std::cout << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
+  std::cout << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
 } // end display()

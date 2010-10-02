@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <math.h>
+#include <cmath>
 
 #include "Species.hpp"
 #include "Block.hpp"
@@ -24,7 +24,7 @@ class AqueousEquilibriumComplex : public Species {
   ~AqueousEquilibriumComplex();
 
   // update molalities
-  void update(const std::vector<Species>primarySpecies);
+  void update_kludge(const std::vector<Species>primarySpecies);
   // add stoichiometric contribution of complex to total
   void addContributionToTotal(std::vector<double> &total);
   // add derivative of total with respect to free-ion to dtotal

@@ -1,4 +1,5 @@
 #include "Glenn.hpp"
+#include "Beaker.hpp"
 
 Glenn::Glenn(Beaker *b) 
 {
@@ -11,21 +12,24 @@ Glenn::~Glenn()
 } // end Glenn destructor
 
 void Glenn::solve(std::vector<double> &total, double final_time, double ts_size,
-                  double porosity, double saturation, double water_density, 
-                  double volume) 
+                  const Beaker::BeakerParameters& parameters)
 {
 
-  b_->initializeMolalities(1.e-9);
+  // speciate to get initial guess (and realistic activity coefficients)
+  b_->speciate(total, parameters.water_density);
+  b_->print_results();
 
   double time = 0.;
   // just converting seconds to years -- both obviously zero in this case
   b_->print_results(time / 365. / 24. / 3600.);
   do {
-    b_->react(total,porosity,saturation,water_density,volume,ts_size);
+    b_->ReactionStep(total, parameters, ts_size);
     // increment time
     time += ts_size;
     b_->print_results(time / 365. / 24. / 3600.);
   } while (time < final_time);
+
+  b_->print_results();
 
 } // end solve()
 

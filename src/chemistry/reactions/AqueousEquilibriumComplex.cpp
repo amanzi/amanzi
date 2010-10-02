@@ -1,6 +1,7 @@
 #include "AqueousEquilibriumComplex.hpp"
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex() 
+                          : Species()
 {
   
   ncomp_ = 0; // # components in reaction
@@ -16,7 +17,9 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex()
 } // end AqueousEquilibriumComplex() constructor
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(std::string s) 
+                          : Species()
 {
+  static_cast<void>(s);
   // string = "name ncomp stoich1 comp1 stoich2 comp2 ... stoichN compN
   //           logK1 logK2 ... logKN a0 charge mol_wt"
 } // end AqueousEquilibriumComplex() constructor
@@ -27,6 +30,7 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex(SpeciesName name,
                             std::vector<int>species_ids,
                             double h2o_stoich, double charge, double mol_wt,
                             double size, double logK) 
+                            : Species()
 {
 
   ncomp_ = (int)species.size();
@@ -58,20 +62,23 @@ AqueousEquilibriumComplex::~AqueousEquilibriumComplex()
 } // end AqueousEquilibriumComplex() destructor
 
 // temporary location for member functions
-void AqueousEquilibriumComplex::update(const std::vector<Species> primarySpecies) 
+// ask Ben!!!
+void AqueousEquilibriumComplex::update_kludge(const std::vector<Species> primarySpecies) 
 {
   double lnQK = -lnK_;
   for (int i = 0; i < ncomp_; i++) {
     lnQK += stoichiometry_[i] * primarySpecies[species_ids_[i]].ln_activity();
   }
   lnQK_ = lnQK;
-  molality_ = exp(lnQK) / act_coef_;
+//  molality_ = std::exp(lnQK) / act_coef_;
+  update(std::exp(lnQK) / act_coef_);
+  
 } // end update()
 
 void AqueousEquilibriumComplex::addContributionToTotal(std::vector<double> &total) 
 {
   for (int i = 0; i < ncomp_; i++) {
-    total[species_ids_[i]] += stoichiometry_[i] * molality_; 
+    total[species_ids_[i]] += stoichiometry_[i] * molality(); 
   }
 } // end addContributionToTotal()
 
@@ -87,7 +94,7 @@ void AqueousEquilibriumComplex::addContributionToDTotal(
   for (int j = 0; j < ncomp_; j++) {
     int jcomp = species_ids_[j];
     double tempd = stoichiometry_[j]*                              
-      exp(lnQK_ - primarySpecies[jcomp].ln_molality()) / 
+      std::exp(lnQK_ - primarySpecies[jcomp].ln_molality()) / 
       act_coef_; // here act_coef is from complex
     // row loop
     for (int i = 0; i < ncomp_; i++)
