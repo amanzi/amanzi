@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google-c-style"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef __MINERAL_KINETICS_FACTORY_HPP__
 
 #define __MINERAL_KINETICS_FACTORY_HPP__
@@ -16,30 +16,29 @@
 
 #include "StringTokenizer.hpp"
 
+class KineticRate;
+
 class MineralKineticsFactory
 {
-
-public:
-
+ public:
   MineralKineticsFactory(void);
   ~MineralKineticsFactory(void);
-
-  void readFile(const std::string file_name);
-
+  std::vector<KineticRate*> Create(std::string file_name);
+ 
   void verbosity(const int s_verbosity) { this->verbosity_ = s_verbosity; };
   int verbosity(void) const { return this->verbosity_; };
 
-protected:
+ protected:
 
-private:
+ private:
   int verbosity_;
+  static const std::string kTST;
 
-  void ParseReaction(const::std::string rxn_string);
-  void ParseRate(StringTokenizer rate);
-  void ParseTstParameters(StringTokenizer rate);
+  std::vector<KineticRate*> rates;
 
+  void ReadFile(const std::string file_name);
+  void ParseRate(StringTokenizer rate, KineticRate** kinetic_rate);
 };
-
 
 #endif     /* __MINERAL_KINETICS_FACTORY_HPP__ */
 

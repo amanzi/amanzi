@@ -6,6 +6,8 @@ SRCS = \
 	./Beaker.cpp \
 	./GeneralRxn.cpp \
 	./Geochemistry.cpp \
+	./KineticRate.cpp \
+	./KineticRateTST.cpp \
 	./MineralKineticsFactory.cpp 
 
 OBJS = \

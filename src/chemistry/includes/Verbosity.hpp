@@ -3,7 +3,7 @@
 
 #define __VERBOSITY_HPP__
 
-enum VERBOSITY {kSilent, kTerse, kVerbose, kDebug, kDebugBeaker, kDebugMineralKinetics};
+enum Verbosity {kSilent, kTerse, kVerbose, kDebug, kDebugBeaker, kDebugMineralKinetics};
 
 
 #endif     /* __VERBOSITY_HPP__ */

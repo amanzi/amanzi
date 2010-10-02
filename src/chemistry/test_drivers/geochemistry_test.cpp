@@ -7,6 +7,7 @@
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
+#include "KineticRate.hpp"
 #include "MineralKineticsFactory.hpp"
 #include "Verbosity.hpp"
 
@@ -52,7 +53,12 @@ int main (int argc, char **argv) {
   MineralKineticsFactory mineral_kinetics_factory;
   std::string file_name("mineral.txt");
   mineral_kinetics_factory.verbosity(verbose);
-  mineral_kinetics_factory.readFile(file_name);
+  std::vector<KineticRate*> mineral_rates;
+  mineral_rates = mineral_kinetics_factory.Create(file_name);
+  for (std::vector<KineticRate*>::iterator rate = mineral_rates.begin();
+       rate != mineral_rates.end(); rate++) {
+    (*rate)->Display();
+  }
 
 
   if (chem != NULL) {
