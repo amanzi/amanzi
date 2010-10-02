@@ -6,7 +6,7 @@ SRCS = \
 	./Beaker.cpp \
 	./GeneralRxn.cpp \
 	./Geochemistry.cpp \
-	./MineralKineticsCreator.cpp 
+	./MineralKineticsFactory.cpp 
 
 OBJS = \
 	$(SRCS:%.cpp=%.o)

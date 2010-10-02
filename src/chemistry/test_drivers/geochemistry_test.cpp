@@ -7,7 +7,7 @@
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
-#include "MineralKineticsCreator.hpp"
+#include "MineralKineticsFactory.hpp"
 #include "Verbosity.hpp"
 
 int commandLineOptions(int argc, char **argv, int& verbose, int& test);
@@ -49,10 +49,10 @@ int main (int argc, char **argv) {
   }
 
 
-  MineralKineticsCreator mkc;
+  MineralKineticsFactory mineral_kinetics_factory;
   std::string file_name("mineral.txt");
-  mkc.verbosity(verbose);
-  mkc.readFile(file_name);
+  mineral_kinetics_factory.verbosity(verbose);
+  mineral_kinetics_factory.readFile(file_name);
 
 
   if (chem != NULL) {

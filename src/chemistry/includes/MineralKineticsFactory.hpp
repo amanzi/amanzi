@@ -1,11 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google-c-style"; indent-tabs-mode: nil -*- */
-#ifndef __MINERAL_KINETICS_CREATOR_HPP__
+#ifndef __MINERAL_KINETICS_FACTORY_HPP__
 
-#define __MINERAL_KINETICS_CREATOR_HPP__
+#define __MINERAL_KINETICS_FACTORY_HPP__
 
 /*******************************************************************************
 **
-**  File Name: MineralKineticsCreator.h
+**  File Name: MineralKineticsFactory.h
 **
 **  Description: factory class for reading mineral rates from a file
 **  and creating a kinetic rate object.
@@ -16,13 +16,13 @@
 
 #include "StringTokenizer.hpp"
 
-class MineralKineticsCreator
+class MineralKineticsFactory
 {
 
 public:
 
-  MineralKineticsCreator(void);
-  ~MineralKineticsCreator(void);
+  MineralKineticsFactory(void);
+  ~MineralKineticsFactory(void);
 
   void readFile(const std::string file_name);
 
@@ -41,5 +41,5 @@ private:
 };
 
 
-#endif     /* __MINERAL_KINETICS_CREATOR_HPP__ */
+#endif     /* __MINERAL_KINETICS_FACTORY_HPP__ */
 

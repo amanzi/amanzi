@@ -4,24 +4,22 @@
 #include <fstream>
 #include <string>
 
-#include "MineralKineticsCreator.hpp"
+#include "MineralKineticsFactory.hpp"
 #include "Species.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
 
-MineralKineticsCreator::MineralKineticsCreator(void)
+MineralKineticsFactory::MineralKineticsFactory(void)
   : 
   verbosity_(kSilent)
 {
+}  // end MineralKineticsFactory constructor
 
-} // end MineralKineticsCreator constructor
-
-MineralKineticsCreator::~MineralKineticsCreator(void)
+MineralKineticsFactory::~MineralKineticsFactory(void)
 {
+}  // end MineralKineticsFactory destructor
 
-} // end MineralKineticsCreator destructor
-
-void MineralKineticsCreator::readFile(const std::string file_name)
+void MineralKineticsFactory::readFile(const std::string file_name)
 {
   if (verbosity() == kDebugMineralKinetics) {
     std::cout << "MineralKinetics::readFile()...." << std::endl;
@@ -52,7 +50,7 @@ void MineralKineticsCreator::readFile(const std::string file_name)
 
 } // end readFile()
 
-void MineralKineticsCreator::ParseReaction(const std::string rxn_string)
+void MineralKineticsFactory::ParseReaction(const std::string rxn_string)
 {
   if (verbosity() == kDebugMineralKinetics) {
     std::cout << "Reaction string: " << rxn_string << std::endl;
@@ -97,7 +95,7 @@ void MineralKineticsCreator::ParseReaction(const std::string rxn_string)
   
 } // end ParseReaction
 
-void MineralKineticsCreator::ParseRate(StringTokenizer rate)
+void MineralKineticsFactory::ParseRate(StringTokenizer rate)
 {
   std::string space(" ");
   StringTokenizer rate_name(rate.at(1), space); // strip out spaces
@@ -116,7 +114,7 @@ void MineralKineticsCreator::ParseRate(StringTokenizer rate)
 
 } // end ParseRate()
 
-void MineralKineticsCreator::ParseTstParameters(StringTokenizer rate)
+void MineralKineticsFactory::ParseTstParameters(StringTokenizer rate)
 {
   double area = 0.0;
   double pK = 0.0;
