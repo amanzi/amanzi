@@ -1,0 +1,33 @@
+
+
+Running simple carbonate example, unit activity coefficients.
+
+----- Solution ----------------------
+Primary Species ---------------------
+   H+
+        Total: 1e-06
+     Free-Ion: 5.32017e-09
+Activity Coef: 1
+     Activity: 5.32017e-09
+   HCO3-
+        Total: 0.001
+     Free-Ion: 0.000982579
+Activity Coef: 1
+     Activity: 0.000982579
+
+Secondary Species -------------------
+   OH-
+     Free-Ion: 1.90097e-06
+Activity Coef: 1
+     Activity: 1.90097e-06
+   CO3--
+     Free-Ion: 8.66248e-06
+Activity Coef: 1
+     Activity: 8.66248e-06
+   CO2(aq)
+     Free-Ion: 1.15609e-05
+Activity Coef: 1
+     Activity: 1.15609e-05
+-------------------------------------
+
+Done!

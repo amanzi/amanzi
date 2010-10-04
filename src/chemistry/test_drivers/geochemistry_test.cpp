@@ -78,7 +78,8 @@ int main(int argc, char **argv) {
     }
 
     // solve for free-ion concentrations
-    chem->speciate(total);
+    double water_density = 997.205133945901; // kg / m^3
+    chem->speciate(total, water_density);
     if (verbosity >= kTerse) {
       chem->print_results();
     }

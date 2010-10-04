@@ -1,0 +1,55 @@
+
+
+Running large carbonate speciation example, unit activity coefficients.
+
+----- Solution ----------------------
+Primary Species ---------------------
+   H+
+        Total: 0.001
+     Free-Ion: 2.1198e-05
+Activity Coef: 1
+     Activity: 2.1198e-05
+   HCO3-
+        Total: 0.001
+     Free-Ion: 2.09389e-05
+Activity Coef: 1
+     Activity: 2.09389e-05
+   Ca++
+        Total: 0.001
+     Free-Ion: 0.00100257
+Activity Coef: 1
+     Activity: 0.00100257
+   H2O
+        Total: 55.5084
+     Free-Ion: 55.664
+Activity Coef: 1
+     Activity: 55.664
+
+Secondary Species -------------------
+   OH-
+     Free-Ion: 2.6557e-08
+Activity Coef: 1
+     Activity: 2.6557e-08
+   CO3--
+     Free-Ion: 4.63297e-11
+Activity Coef: 1
+     Activity: 4.63297e-11
+   H2CO3*
+     Free-Ion: 0.000981632
+Activity Coef: 1
+     Activity: 0.000981632
+   CaOH+
+     Free-Ion: 4.36913e-10
+Activity Coef: 1
+     Activity: 4.36913e-10
+   CaHCO3+
+     Free-Ion: 2.31776e-07
+Activity Coef: 1
+     Activity: 2.31776e-07
+   CaCO3(aq)
+     Free-Ion: 9.70454e-11
+Activity Coef: 1
+     Activity: 9.70454e-11
+-------------------------------------
+
+Done!
