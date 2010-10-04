@@ -16,7 +16,7 @@ struct Big_File
     ExodusII::Exodus_file file;
     std::auto_ptr<Mesh_data::Parameters> params;
     
-    Big_File () : file ("htc_rad_test-random.exo"), params (read_parameters (file))
+    Big_File () : file ("exodus/test_files/htc_rad_test-random.exo"), params (read_parameters (file))
     { 
         
     }

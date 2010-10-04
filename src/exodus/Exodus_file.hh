@@ -19,6 +19,8 @@ struct Exodus_file
     Exodus_file (char const * filename);
 
     void to_stream (std::ostream& stream) const;
+
+    virtual ~Exodus_file ();
 };
 
 

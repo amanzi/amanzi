@@ -1,13 +1,17 @@
 #ifndef _EXODUS_ERROR_HH_
 #define _EXODUS_ERROR_HH_
 
+#include <sstream>
+
+
+
 namespace ExodusII
 {
 
 
 class ExodusError : public std::exception
 {
-    char const * what () const throw ()  { return "Unknown Exodus Error."; } 
+    inline char const * what () const throw ();
 
 public:
     
@@ -15,6 +19,13 @@ public:
     ExodusError (int retval) : retval_ (retval) { }
 };
 
+char const * ExodusError::what () const throw ()
+{
+    std::stringstream ss;
+    ss << "Unknown Exodus Error (";
+    ss << retval_ << ")" <<  std::endl;
+    return ss.str ().c_str ();
+}
 
 }
 

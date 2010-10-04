@@ -1,3 +1,7 @@
+#ifndef _EXAMPLE_MESH_H_
+#define _EXAMPLE_MESH_H_
+
+
 #include "Element_block.hh"
 #include "Coordinates.hh"
 #include "Element_types.hh"
@@ -32,7 +36,7 @@
 
 
 const int local_global_map [] = {1, 5, 6, 2, 4, 8, 7, 3};
-void make_node_ids (int element_number, int node_ids [])
+static void make_node_ids (int element_number, int node_ids [])
 {
     const int base = 4*element_number;
     for (int node = 0; node < 8; ++node)
@@ -115,3 +119,6 @@ struct Test_mesh
     }
 
 };
+
+#endif /* _EXAMPLE_MESH_H_ */
+

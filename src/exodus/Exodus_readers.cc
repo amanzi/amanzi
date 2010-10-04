@@ -65,8 +65,8 @@ Mesh_data::Parameters* read_parameters (Exodus_file file)
 
     
     Mesh_data::Parameters *params = new Mesh_data::Parameters (title, dimensionality, num_nodes, num_elements,
-                                                     num_element_blocks, num_node_sets, num_side_sets,
-                                                     element_block_ids, node_set_ids, side_set_ids);
+                                                               num_element_blocks, num_node_sets, num_side_sets,
+                                                               element_block_ids, node_set_ids, side_set_ids);
 
     return params;
 

@@ -36,10 +36,10 @@ CMAKE_COMMAND = /usr/bin/cmake
 RM = /usr/bin/cmake -E remove -f
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/berndt/ASCEM-Code/source
+CMAKE_SOURCE_DIR = /home/berndt/ASCEM-Code/amanzi/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/berndt/ASCEM-Code/source
+CMAKE_BINARY_DIR = /home/berndt/ASCEM-Code/amanzi/src
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -66,14 +66,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/berndt/ASCEM-Code/source && $(CMAKE_COMMAND) -E cmake_progress_start /home/berndt/ASCEM-Code/source/CMakeFiles /home/berndt/ASCEM-Code/source/mpc/CMakeFiles/progress.marks
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f CMakeFiles/Makefile2 mpc/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/berndt/ASCEM-Code/source/CMakeFiles 0
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(CMAKE_COMMAND) -E cmake_progress_start /home/berndt/ASCEM-Code/amanzi/src/CMakeFiles /home/berndt/ASCEM-Code/amanzi/src/mpc/CMakeFiles/progress.marks
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f CMakeFiles/Makefile2 mpc/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/berndt/ASCEM-Code/amanzi/src/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f CMakeFiles/Makefile2 mpc/clean
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f CMakeFiles/Makefile2 mpc/clean
 .PHONY : clean
 
 # The main clean target
@@ -82,22 +82,22 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f CMakeFiles/Makefile2 mpc/preinstall
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f CMakeFiles/Makefile2 mpc/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f CMakeFiles/Makefile2 mpc/preinstall
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f CMakeFiles/Makefile2 mpc/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/berndt/ASCEM-Code/source && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Convenience name for target.
 mpc/CMakeFiles/mpc.dir/rule:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f CMakeFiles/Makefile2 mpc/CMakeFiles/mpc.dir/rule
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f CMakeFiles/Makefile2 mpc/CMakeFiles/mpc.dir/rule
 .PHONY : mpc/CMakeFiles/mpc.dir/rule
 
 # Convenience name for target.
@@ -106,7 +106,7 @@ mpc: mpc/CMakeFiles/mpc.dir/rule
 
 # fast build rule for target.
 mpc/fast:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/build
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/build
 .PHONY : mpc/fast
 
 Chem_MPC.o: Chem_MPC.cpp.o
@@ -114,7 +114,7 @@ Chem_MPC.o: Chem_MPC.cpp.o
 
 # target to build an object file
 Chem_MPC.cpp.o:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chem_MPC.cpp.o
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chem_MPC.cpp.o
 .PHONY : Chem_MPC.cpp.o
 
 Chem_MPC.i: Chem_MPC.cpp.i
@@ -122,7 +122,7 @@ Chem_MPC.i: Chem_MPC.cpp.i
 
 # target to preprocess a source file
 Chem_MPC.cpp.i:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chem_MPC.cpp.i
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chem_MPC.cpp.i
 .PHONY : Chem_MPC.cpp.i
 
 Chem_MPC.s: Chem_MPC.cpp.s
@@ -130,7 +130,7 @@ Chem_MPC.s: Chem_MPC.cpp.s
 
 # target to generate assembly for a file
 Chem_MPC.cpp.s:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chem_MPC.cpp.s
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chem_MPC.cpp.s
 .PHONY : Chem_MPC.cpp.s
 
 Chemistry_PK.o: Chemistry_PK.cpp.o
@@ -138,7 +138,7 @@ Chemistry_PK.o: Chemistry_PK.cpp.o
 
 # target to build an object file
 Chemistry_PK.cpp.o:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chemistry_PK.cpp.o
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chemistry_PK.cpp.o
 .PHONY : Chemistry_PK.cpp.o
 
 Chemistry_PK.i: Chemistry_PK.cpp.i
@@ -146,7 +146,7 @@ Chemistry_PK.i: Chemistry_PK.cpp.i
 
 # target to preprocess a source file
 Chemistry_PK.cpp.i:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chemistry_PK.cpp.i
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chemistry_PK.cpp.i
 .PHONY : Chemistry_PK.cpp.i
 
 Chemistry_PK.s: Chemistry_PK.cpp.s
@@ -154,7 +154,7 @@ Chemistry_PK.s: Chemistry_PK.cpp.s
 
 # target to generate assembly for a file
 Chemistry_PK.cpp.s:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chemistry_PK.cpp.s
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/Chemistry_PK.cpp.s
 .PHONY : Chemistry_PK.cpp.s
 
 DataLayout.o: DataLayout.cpp.o
@@ -162,7 +162,7 @@ DataLayout.o: DataLayout.cpp.o
 
 # target to build an object file
 DataLayout.cpp.o:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/DataLayout.cpp.o
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/DataLayout.cpp.o
 .PHONY : DataLayout.cpp.o
 
 DataLayout.i: DataLayout.cpp.i
@@ -170,7 +170,7 @@ DataLayout.i: DataLayout.cpp.i
 
 # target to preprocess a source file
 DataLayout.cpp.i:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/DataLayout.cpp.i
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/DataLayout.cpp.i
 .PHONY : DataLayout.cpp.i
 
 DataLayout.s: DataLayout.cpp.s
@@ -178,7 +178,7 @@ DataLayout.s: DataLayout.cpp.s
 
 # target to generate assembly for a file
 DataLayout.cpp.s:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/DataLayout.cpp.s
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/DataLayout.cpp.s
 .PHONY : DataLayout.cpp.s
 
 State.o: State.cpp.o
@@ -186,7 +186,7 @@ State.o: State.cpp.o
 
 # target to build an object file
 State.cpp.o:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/State.cpp.o
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/State.cpp.o
 .PHONY : State.cpp.o
 
 State.i: State.cpp.i
@@ -194,7 +194,7 @@ State.i: State.cpp.i
 
 # target to preprocess a source file
 State.cpp.i:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/State.cpp.i
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/State.cpp.i
 .PHONY : State.cpp.i
 
 State.s: State.cpp.s
@@ -202,7 +202,7 @@ State.s: State.cpp.s
 
 # target to generate assembly for a file
 State.cpp.s:
-	cd /home/berndt/ASCEM-Code/source && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/State.cpp.s
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(MAKE) -f mpc/CMakeFiles/mpc.dir/build.make mpc/CMakeFiles/mpc.dir/State.cpp.s
 .PHONY : State.cpp.s
 
 # Help Target
@@ -237,6 +237,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/berndt/ASCEM-Code/source && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/berndt/ASCEM-Code/amanzi/src && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
