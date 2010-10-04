@@ -11,7 +11,7 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
   add_executable(test_flow test/Main.cc test/test_UPM.cpp test/test_mimetic.cpp)
-  add_test(test_flow ${EXECUTABLE_OUTPUT_PATH}/test_flow flow)
+  add_test(flow test_flow)
   target_link_libraries(test_flow flow unittest++)
 endif()
 

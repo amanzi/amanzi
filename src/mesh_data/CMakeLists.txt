@@ -12,6 +12,6 @@ if (BUILD_TESTS)
   add_executable(test_mesh_data 
     test/Main.cc test/test_Coords.cc test/test_Data.cc test/test_Fields.cc 
     test/test_Side_set.cc)
-  add_test(test_mesh_data ${EXECUTABLE_OUTPUT_PATH}/test_mesh_data mesh_data)
+  add_test(mesh_data test_mesh_data)
   target_link_libraries(test_mesh_data mesh_data unittest++)
 endif()

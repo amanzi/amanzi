@@ -21,4 +21,9 @@ void Exodus_file::to_stream (std::ostream& stream) const
     stream << "  Version: " << version << "\n\n";
 }
 
+Exodus_file::~Exodus_file ()
+{
+
+}
+
 }
