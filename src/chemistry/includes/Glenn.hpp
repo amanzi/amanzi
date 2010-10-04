@@ -16,8 +16,7 @@ class Glenn {
    ~Glenn();
 
    void solve(std::vector<double> &total, double final_time, double ts_size,
-              double porosity, double saturation, double water_density, 
-              double volume);
+              const Beaker::BeakerParameters& parameters);
 
  private:
    Beaker *b_;

@@ -1,27 +1,36 @@
-#include "Geochemistry.hpp"
-#include "Beaker.hpp"
-#include "Glenn.hpp"
-
 #include <iostream>
 #include <vector>
 
+#include "Geochemistry.hpp"
+#include "Beaker.hpp"
+#include "Glenn.hpp"
+#include "ActivityModelFactory.hpp"
+#include "Verbosity.hpp"
+
 using namespace std;
 
-int main (int argc, char **args) {
+int main (int argc, char **argv) {
+  static_cast<void>(argc);
+  static_cast<void>(argv);
 
   std::string filename;
 
-  int verbose = 1;
+  int verbose = kVerbose;
 
   std::vector<double> total;
 
   // create geochemistry object
   Beaker beaker;
+  beaker.verbosity(verbose);
 
-  double porosity = 0.25;
-  double saturation = 1.;
-  double water_density = 997.205133945901; // kg / m^3
-  double volume = 0.25; // m^3
+  Beaker::BeakerParameters parameters = beaker.GetDefaultParameters();
+  parameters.porosity = 0.25;
+  parameters.saturation = 1.;
+  parameters.water_density = 997.205133945901; // kg / m^3
+  parameters.volume = 0.25; // m^3
+
+  beaker.SetupActivityModel(ActivityModelFactory::debye_huckel);
+  //beaker.SetupActivityModel(ActivityModelFactory::unit);
 
 #if 1
   // set up simple 2-species carbonate system (H,HCO3-)
@@ -36,14 +45,13 @@ int main (int argc, char **args) {
     total[i] *= water_density/1000.;
 #endif
   // solve for free-ion concentrations
-  beaker.verbosity(verbose);
 
   // to test react with unitary time step
-//  beaker.react(total,porosity,saturation,water_density,volume,1.);
+//  beaker.ReactionStep(total, parameters, 1.0);
 //  beaker.print_results();
 
   // to test speciation
-//  beaker.speciate(total,water_density);
+//  beaker.speciate(total, parameters.water_density);
 //  beaker.print_results();
 
   // to test a time stepping loop with kinetic reactions
@@ -52,7 +60,7 @@ int main (int argc, char **args) {
   double final_time = 0.25 * 365. * 24. * 3600; // 1/4 year
   double time_step = final_time / 100;
 
-  g.solve(total,final_time,time_step,porosity,saturation,water_density,volume);
+  g.solve(total, final_time, time_step, parameters);
 
   cout << "Done!\n";
 
