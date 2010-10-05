@@ -162,7 +162,7 @@ void upper_packed_matrix::col_sum(double *csum) {
    
 }
 
-
+// matrix times matrix
 void upper_packed_matrix::sym_matmul(double *b, double *c) {
 
   int i, j, l;

@@ -1,0 +1,17 @@
+<ParameterList name="Flow BCs">
+  <Parameter name="number of BCs" type="int" value="3"/>
+  <ParameterList name="BC01">
+    <Parameter name="Type" type="string" value="Dirichlet"/>
+    <Parameter name="Dirichlet Const" type="double" value="2.0" />
+    <Parameter name="Side Set ID" type="int" value="1" />
+  </ParameterList>
+  <ParameterList name="BC02">
+    <Parameter name="Type" type="string" value="Neuman"/>
+    <Parameter name="Neuman Const"  type="double" value="1.0"/>
+  </ParameterList>  
+  <ParameterList name="BC03">
+    <Parameter name="Type" type="string" value="Robin"/>
+    <Parameter name="Robin Const" type="double" value="-1.0" />
+  </ParameterList>  
+</ParameterList>
+
