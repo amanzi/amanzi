@@ -20,8 +20,18 @@ TEST(Flow_BCs) {
 
 
 
-  Flow_BCs  fbcs ( flow_BCs_list);
+  Flow_BCs  fbcs ( flow_BCs_list );
 
   fbcs.read_Flow_BCs();
   
+  std::vector<flow_bc> bc = fbcs.get_BCs();
+
+  for (int i=0; i<bc.size(); i++) {
+    std::cout << "type...     " << bc[i].bc_type << std::endl;
+    std::cout << "value...    " << bc[i].value << std::endl;
+    std::cout << "side set... " << bc[i].side_set << std::endl;
+    std::cout << std::endl;
+  }  
 }
+
+

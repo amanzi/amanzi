@@ -29,7 +29,8 @@ public:
 
 
   void read_Flow_BCs();
-  int get_num_BCs() { return num_BCs; };
+  const int get_num_BCs() { return num_BCs; };
+  const std::vector<flow_bc> get_BCs() { return BCs; };
   
 private:
   Teuchos::ParameterList paramList; 
