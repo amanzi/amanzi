@@ -11,6 +11,15 @@
 // of flow BCs (really, this is the number of 
 // side sets
 
+
+struct flow_bc {
+  double value;
+  int side_set;
+  std::string bc_type;
+};
+
+
+
 class Flow_BCs {
 
 public:
@@ -18,12 +27,14 @@ public:
     paramList(parameterList) {};
   ~Flow_BCs() {};
 
+
   void read_Flow_BCs();
+  int get_num_BCs() { return num_BCs; };
   
 private:
   Teuchos::ParameterList paramList; 
-
-  
+  int num_BCs;
+  std::vector<flow_bc> BCs;
 };
 
 #endif
