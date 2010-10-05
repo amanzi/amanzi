@@ -15,6 +15,7 @@
 #include <string>
 
 #include "StringTokenizer.hpp"
+#include "Verbosity.hpp"
 
 class KineticRate;
 
@@ -25,13 +26,13 @@ class MineralKineticsFactory
   ~MineralKineticsFactory(void);
   std::vector<KineticRate*> Create(std::string file_name);
  
-  void verbosity(const int s_verbosity) { this->verbosity_ = s_verbosity; };
-  int verbosity(void) const { return this->verbosity_; };
+  void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
+  Verbosity verbosity(void) const { return this->verbosity_; };
 
  protected:
 
  private:
-  int verbosity_;
+  Verbosity verbosity_;
   static const std::string kTST;
 
   std::vector<KineticRate*> rates;

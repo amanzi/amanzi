@@ -58,7 +58,7 @@ void MineralKineticsFactory::ReadFile(const std::string file_name)
       KineticRate* kinetic_rate = NULL;
       ParseRate(st, &kinetic_rate);
 
-      kinetic_rate->verbosity(kDebugMineralKinetics);
+      kinetic_rate->verbosity(verbosity());
       kinetic_rate->ParseReaction(st.at(0));
       kinetic_rate->ParseParameters(st);
 
@@ -78,7 +78,7 @@ void MineralKineticsFactory::ParseRate(StringTokenizer rate, KineticRate** kinet
   //std::cout << "rate_name[0] = \'" << rate_name.at(0) << "\'" << std::endl;
 
   if (!(rate_name.at(0).compare(this->kTST))) {
-    if (verbosity() == kDebugMineralKinetics) {
+    if (0) {
       std::cout << "Rate type: \'" << rate_name.at(0) << "\' = " 
                 << "\'" << this->kTST << "\'" << std::endl;
     }

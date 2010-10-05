@@ -22,6 +22,10 @@ int main(int argc, char **argv) {
 
   Beaker *chem = NULL;
   std::string activity_model_name;
+  std::vector<KineticRate*> mineral_rates;
+  mineral_rates.clear();
+  std::string mineral_kinetics_file;
+  mineral_kinetics_file.clear();
 
   error = CommandLineOptions(argc, argv, verbosity, test);
 
@@ -68,7 +72,9 @@ int main(int argc, char **argv) {
         if (verbosity >= kTerse) {
           std::cout << "Running calcite kinetics tst problem." << std::endl;
         }
-        //chem = new Something here....;
+        chem = new LargeCarbonate();
+        activity_model_name = ActivityModelFactory::debye_huckel;
+        mineral_kinetics_file = "calcite-kinetics-tst.txt";
       }
       default: {
         std::cout << "Invalid test number specified on command line. try using the \'-h\' option." << std::endl;
@@ -76,18 +82,6 @@ int main(int argc, char **argv) {
       }
     }
   }
-
-
-  MineralKineticsFactory mineral_kinetics_factory;
-  std::string file_name("mineral.txt");
-  mineral_kinetics_factory.verbosity(verbosity);
-  std::vector<KineticRate*> mineral_rates;
-  mineral_rates = mineral_kinetics_factory.Create(file_name);
-  for (std::vector<KineticRate*>::iterator rate = mineral_rates.begin();
-       rate != mineral_rates.end(); rate++) {
-    (*rate)->Display();
-  }
-
 
   if (chem != NULL) {
     std::vector<double> total;
@@ -106,9 +100,31 @@ int main(int argc, char **argv) {
     }
   }
 
+
+  if (mineral_kinetics_file.size()) {
+    MineralKineticsFactory mineral_kinetics_factory;
+    mineral_kinetics_factory.verbosity(verbosity);
+    mineral_rates = mineral_kinetics_factory.Create(mineral_kinetics_file);
+    for (std::vector<KineticRate*>::iterator rate = mineral_rates.begin();
+         rate != mineral_rates.end(); rate++) {
+      (*rate)->Display();
+    }
+  }
+
+  // cleanup memory
   if (chem != NULL) {
     delete chem;
   }
+
+  if (mineral_rates.size() != 0) {
+    for (std::vector<KineticRate*>::iterator rate = mineral_rates.begin();
+         rate != mineral_rates.end(); rate++) {
+      if ((*rate) != NULL) {
+        delete (*rate);
+      }
+    }    
+  }
+
   std::cout << "Done!\n";
 }  // end main()
 
@@ -139,7 +155,8 @@ int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
                   << "             1: simple carbonate speciation, unit activity coeff" << std::endl
                   << "             2: simple carbonate speciation, debye-huckel" << std::endl
                   << "             3: larger carbonate speciation, unit activity coeff" << std::endl
-                  << "             4: larger carbonate speciation, debye-huckel" << std::endl;
+                  << "             4: larger carbonate speciation, debye-huckel" << std::endl
+                  << "             5: calcite kinetics, TST rate law" << std::endl;
         std::cout << std::endl;
         std::cout << std::endl;
         std::cout << "    -v integer" << std::endl;

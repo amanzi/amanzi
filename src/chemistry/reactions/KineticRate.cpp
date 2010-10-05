@@ -18,7 +18,7 @@ KineticRate::~KineticRate(void)
 
 void KineticRate::ParseReaction(const std::string rxn_string)
 {
-  if (verbosity() == kDebugMineralKinetics) {
+  if (0) {
     std::cout << "Reaction string: " << rxn_string << std::endl;
   }
   std::string rxn_delimiter("=");
@@ -26,36 +26,44 @@ void KineticRate::ParseReaction(const std::string rxn_string)
   StringTokenizer rxn(rxn_string, rxn_delimiter);
 
   StringTokenizer reactants(rxn.at(0), coeff_delimiter);
-  std::vector<SpeciesName> reactants_names;
-  std::vector<double> reactants_stoichiometery;
 
   for (std::vector<std::string>::iterator field = reactants.begin(); 
        field != reactants.end(); field++) {
-    reactants_stoichiometery.push_back(std::atof((*field).c_str()));
+    this->reactants_stoichiometery.push_back(std::atof((*field).c_str()));
     field++;
-    reactants_names.push_back(*field);
+    this->reactants_names.push_back(*field);
   }
 
   StringTokenizer products(rxn.at(1), coeff_delimiter);
-  std::vector<SpeciesName> products_names;
-  std::vector<double> products_stoichiometery;
 
   for (std::vector<std::string>::iterator field = products.begin(); 
        field != products.end(); field++) {
-    products_stoichiometery.push_back(std::atof((*field).c_str()));
+    this->products_stoichiometery.push_back(std::atof((*field).c_str()));
     field++;
-    products_names.push_back(*field);
+    this->products_names.push_back(*field);
   }
-
-  if (verbosity() == kDebugMineralKinetics) {
-    for (unsigned int species = 0; species < reactants_names.size(); species++) {
-      std::cout << reactants_stoichiometery.at(species) << " " 
-                << reactants_names.at(species) << " ";
-    }
-    std::cout << " = ";
-    for (unsigned int species = 0; species < products_names.size(); species++) {
-      std::cout << products_stoichiometery.at(species) << " " 
-                << products_names.at(species) << " ";
-    }
-  }  
 }  // end ParseReaction
+
+void KineticRate::DisplayReaction(void) const
+{
+  std::cout << "  Reaction: " << std::endl;
+  std::cout << "    ";
+  for (unsigned int species = 0; 
+       species < this->reactants_names.size(); species++) {
+    std::cout << this->reactants_stoichiometery.at(species) << " " 
+              << this->reactants_names.at(species);
+    if (species < this->reactants_names.size() - 1) {
+      std::cout << " + ";
+    }
+  }
+  std::cout << " = ";
+  for (unsigned int species = 0; 
+       species < this->products_names.size(); species++) {
+    std::cout << this->products_stoichiometery.at(species) << " " 
+              << this->products_names.at(species);
+    if (species < this->products_names.size() - 1) {
+      std::cout << " + ";
+    }
+  }
+  std::cout << std::endl;
+}  // end DisplayReaction
