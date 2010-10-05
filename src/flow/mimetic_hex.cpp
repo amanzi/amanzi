@@ -1,5 +1,6 @@
 #include <iostream>
 #include "mimetic_hex.hpp"
+#include "upper_packed_matrix.hpp"
 #include <math.h>
 
 mimetic_hex::mimetic_hex(double x_[8][3])
@@ -216,6 +217,25 @@ void mimetic_hex::mass_matrix(double* matrix)
   }
   
 }
+
+
+void mimetic_hex::diff_op(double coef,
+    const double &pcell, const double pface[], double &rcell, double rface[])
+{
+  double matrix[21], aux[6];
+  
+  mass_matrix(matrix, 1.0/coef);
+  upper_packed_matrix minv(matrix, 6);
+  minv.invert();
+  
+  for (int i = 0; i < 6; ++i) aux[i] = pface[i] - pcell;
+    
+  minv.sym_matmul(aux, rface);
+  
+  rcell = 0.0;
+  for (int i = 0; i < 6; ++i) rcell -= rface[i];
+}
+  
 
 void  transpose_3x3(double matout[][3], double matin[][3]) 
 {

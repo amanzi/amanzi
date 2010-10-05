@@ -23,7 +23,8 @@ public:
   void mass_matrix(double* matrix);
   void mass_matrix(double* matrix, double);
   void mass_matrix(double* matrix, double[][3]);
-
+  
+  void diff_op(double, const double&, const double[], double&, double[]);
 
 private:
 
