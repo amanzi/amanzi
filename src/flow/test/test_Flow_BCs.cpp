@@ -31,7 +31,9 @@ TEST(Flow_BCs) {
     std::cout << "value...    " << bc[i].value << std::endl;
     std::cout << "side set... " << bc[i].side_set << std::endl;
     std::cout << std::endl;
-  }  
+  }
+  
+  CHECK_EQUAL(bc.size(),fbcs.get_num_BCs());
 }
 
 

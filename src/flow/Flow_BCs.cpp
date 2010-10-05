@@ -7,7 +7,7 @@
 
 void Flow_BCs::read_Flow_BCs() {
   
-  int num_BCs = paramList.get<int>("number of BCs", 0);
+  num_BCs = paramList.get<int>("number of BCs", INT_MAX);
   // we cannot handle more than 100 BC paramerter lists
 
   if ( num_BCs > 100) throw std::exception(); 
