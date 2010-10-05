@@ -1,0 +1,33 @@
+
+
+Running simple carbonate example, debye-huckel.
+
+----- Solution ----------------------
+Primary Species ---------------------
+   H+
+        Total: 1e-06
+     Free-Ion: 5.71105e-09
+Activity Coef: 0.975432
+     Activity: 5.57074e-09
+   HCO3-
+        Total: 0.001
+     Free-Ion: 0.00098208
+Activity Coef: 0.974556
+     Activity: 0.000957092
+
+Secondary Species -------------------
+   OH-
+     Free-Ion: 1.86303e-06
+Activity Coef: 0.974465
+     Activity: 1.81546e-06
+   CO3--
+     Free-Ion: 8.93131e-06
+Activity Coef: 0.902247
+     Activity: 8.05825e-06
+   CO2(aq)
+     Free-Ion: 1.17914e-05
+Activity Coef: 1
+     Activity: 1.17914e-05
+-------------------------------------
+
+Done!

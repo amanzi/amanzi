@@ -9,7 +9,6 @@
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
-#include "Verbosity.hpp"
 #include "KineticRate.hpp"
 #include "MineralKineticsFactory.hpp"
 #include "Verbosity.hpp"
@@ -28,7 +27,7 @@ int main(int argc, char **argv) {
 
   if (error == EXIT_SUCCESS) {
     switch (test) {
-      case 1:
+      case 1: {
         // set up simple 2-species carbonate system (H,HCO3-) unit activity coefficients
         if (verbosity >= kTerse) {
           std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
@@ -36,7 +35,8 @@ int main(int argc, char **argv) {
         chem = new SimpleCarbonate();
         activity_model_name = ActivityModelFactory::unit;
         break;
-      case 2:
+      }
+      case 2: {
         // set up simple 2-species carbonate system (H,HCO3-), debye-huckel activity coefficients
         if (verbosity >= kTerse) {
           std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
@@ -44,7 +44,8 @@ int main(int argc, char **argv) {
         chem = new SimpleCarbonate();
         activity_model_name = ActivityModelFactory::debye_huckel;
         break;
-      case 3:
+      }
+      case 3: {
         // larger carbonate system, 3 components, 9 secondary, unit activity coefficients
         if (verbosity >= kTerse) {
           std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
@@ -52,7 +53,8 @@ int main(int argc, char **argv) {
         chem = new LargeCarbonate();
         activity_model_name = ActivityModelFactory::unit;
         break;
-      case 4:
+      }
+      case 4: {
         // larger carbonate system, 3 components, 9 secondary, debye-huckel activity coefficients
         if (verbosity >= kTerse) {
           std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
@@ -60,15 +62,18 @@ int main(int argc, char **argv) {
         chem = new LargeCarbonate();
         activity_model_name = ActivityModelFactory::debye_huckel;
         break;
-      case 5:
+      }
+      case 5: {
         // calcite TST kinetics
         if (verbosity >= kTerse) {
           std::cout << "Running calcite kinetics tst problem." << std::endl;
         }
         //chem = new Something here....;
-      default:
+      }
+      default: {
         std::cout << "Invalid test number specified on command line. try using the \'-h\' option." << std::endl;
         break;
+      }
     }
   }
 
@@ -89,12 +94,13 @@ int main(int argc, char **argv) {
     chem->verbosity(verbosity);
     chem->SetupActivityModel(activity_model_name);
     chem->setup(total);
-    if (verbosity >= kVerbose ) {
+    if (verbosity >= kVerbose) {
       chem->display();
     }
 
     // solve for free-ion concentrations
-    chem->speciate(total);
+    double water_density = 997.205133945901; // kg / m^3
+    chem->speciate(total, water_density);
     if (verbosity >= kTerse) {
       chem->print_results();
     }
@@ -115,15 +121,17 @@ int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
 
   while ((option = getopt(argc, argv, "ht:v:?")) != EOF) {
     switch (option) {
-      case 't':
+      case 't': {
         /* specify the test that should be run */
         test = std::atoi(optarg);
         error = EXIT_SUCCESS;
         break;
-      case 'v':
+      }
+      case 'v': {
         verbosity = static_cast<Verbosity>(std::atoi(optarg));
         break;
-      case '?': case 'h':  /* help mode */
+      }
+      case '?': case 'h': {  /* help mode */
         /* print some help stuff and exit without doing anything */
         std::cout << argv[0] << " command line options:" << std::endl;
         std::cout << "    -t integer " << std::endl
@@ -144,9 +152,11 @@ int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
         std::cout << "             5: debug mineral kinetics" << std::endl;
         error = -1;
         break;
-      default:
+      }
+      default: {
         /* no options */
         break;
+      }
     }
   }
 

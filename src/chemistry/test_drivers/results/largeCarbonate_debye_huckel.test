@@ -1,0 +1,55 @@
+
+
+Running large carbonate speciation example, debye-huckel activity coefficients.
+
+----- Solution ----------------------
+Primary Species ---------------------
+   H+
+        Total: 0.001
+     Free-Ion: 2.22124e-05
+Activity Coef: 0.954473
+     Activity: 2.12011e-05
+   HCO3-
+        Total: 0.001
+     Free-Ion: 2.19835e-05
+Activity Coef: 0.951358
+     Activity: 2.09142e-05
+   Ca++
+        Total: 0.001
+     Free-Ion: 0.0010026
+Activity Coef: 0.823172
+     Activity: 0.000825314
+   H2O
+        Total: 55.5084
+     Free-Ion: 55.664
+Activity Coef: 1
+     Activity: 55.664
+
+Secondary Species -------------------
+   OH-
+     Free-Ion: 2.79206e-08
+Activity Coef: 0.951022
+     Activity: 2.65531e-08
+   CO3--
+     Free-Ion: 5.64355e-11
+Activity Coef: 0.81984
+     Activity: 4.62681e-11
+   H2CO3*
+     Free-Ion: 0.000980619
+Activity Coef: 1
+     Activity: 0.000980619
+   CaOH+
+     Free-Ion: 3.77999e-10
+Activity Coef: 0.951358
+     Activity: 3.59612e-10
+   CaHCO3+
+     Free-Ion: 2.00316e-07
+Activity Coef: 0.951358
+     Activity: 1.90572e-07
+   CaCO3(aq)
+     Free-Ion: 7.97812e-11
+Activity Coef: 1
+     Activity: 7.97812e-11
+-------------------------------------
+
+Done!
