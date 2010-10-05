@@ -64,6 +64,16 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 .PHONY : rebuild_cache/fast
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+.PHONY : test/fast
+
 # The main all target
 all: cmake_check_build_system
 	cd /home/berndt/ASCEM-Code/amanzi/src && $(CMAKE_COMMAND) -E cmake_progress_start /home/berndt/ASCEM-Code/amanzi/src/CMakeFiles /home/berndt/ASCEM-Code/amanzi/src/mpc/CMakeFiles/progress.marks
@@ -214,6 +224,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... mpc"
 	@echo "... rebuild_cache"
+	@echo "... test"
 	@echo "... Chem_MPC.o"
 	@echo "... Chem_MPC.i"
 	@echo "... Chem_MPC.s"
