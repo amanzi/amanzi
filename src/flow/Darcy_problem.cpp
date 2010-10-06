@@ -1,6 +1,5 @@
 #include "Darcy_problem.hpp"
 
-
 void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 {
   Teuchos::RCP<const STK_mesh::Mesh_maps> mesh = FS->get_mesh_maps();
@@ -64,4 +63,58 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   
   delete [] p_face_use;
   delete [] f_face_use;
+}
+
+
+
+void Darcy_problem::initialize() 
+{
+
+  // here we intialize things such as the structure of the CRS matrix
+
+
+  // inititialize the CRS matrix...
+
+  const Epetra_Map face_map = FS->get_mesh_maps()->face_map(false);
+  const Epetra_Map face_map_ovl = FS->get_mesh_maps()->face_map(true);
+  const Epetra_Map cell_map = FS->get_mesh_maps()->cell_map(false);
+
+  // first we construct an Epetra_FECrsGraph
+  Epetra_FECrsGraph PrecFECrsGraph(View, face_map, 11);
+  
+  std::vector<unsigned int> local_faces (6);
+  for ( int icellLID = cell_map.MinLID(); icellLID < cell_map.MaxLID(); icellLID++)  
+    {
+      // get an array of local face indices for the current cell
+      FS->get_mesh_maps()->cell_to_faces(icellLID, local_faces.begin(), local_faces.end());
+      
+      // figure out the columns (ie. the global face indices) for all the 
+      // faces in the current cell
+      
+      int cols[6];
+      
+      for (int icol=0; icol<6; icol++) 
+	{ 
+	  cols[icol] = face_map_ovl.GID( local_faces[icol] );
+	}
+      
+      // each face in the cell must be connected to the other faces
+      // in the cell
+      for (int icol = 0; icol<6; icol++) 
+	{ 
+	  PrecFECrsGraph.InsertGlobalIndices(1, &cols[icol], 6, cols );
+	}
+    }
+	  
+	  
+  PrecMat = Teuchos::rcp(new Epetra_CrsMatrix(Copy, PrecFECrsGraph) );
+}
+
+
+Darcy_problem::Darcy_problem(Teuchos::RCP<Flow_State> FS_ ): 
+  FS(FS_)
+{
+
+  initialize();
+
 }

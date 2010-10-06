@@ -6,6 +6,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 #include "Flow_State.hpp"
+#include "Epetra_FECrsGraph.h"
+#include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_RowMatrix.h"
 #include "mimetic_hex.hpp"
@@ -14,8 +16,7 @@ class Darcy_problem {
 
 public:
 
-  Darcy_problem(Teuchos::RCP<Flow_State> FS_ ):
-    FS(FS_) {};
+  Darcy_problem(Teuchos::RCP<Flow_State> FS_ );
   ~Darcy_problem() {};
 
   void ComputeF(const Epetra_Vector & x, Epetra_Vector & f);
@@ -23,10 +24,12 @@ public:
   const Teuchos::RCP<Epetra_Map> get_NL_map () const { return NL_map; };
   const Teuchos::RCP<Epetra_CrsMatrix> get_PrecMat () const { return PrecMat; };
 
+  void initialize();
+
 private:
-  const Teuchos::RCP<Flow_State> FS;
-  const Teuchos::RCP<Epetra_Map> NL_map;
-  const Teuchos::RCP<Epetra_CrsMatrix> PrecMat;
+  Teuchos::RCP<Flow_State> FS;
+  Teuchos::RCP<Epetra_Map> NL_map;
+  Teuchos::RCP<Epetra_CrsMatrix> PrecMat;
   mimetic_hex MD[];
   double K[]; // array of (scalar) diffusion coefficients on cells
 
