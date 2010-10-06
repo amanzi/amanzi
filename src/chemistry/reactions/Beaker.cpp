@@ -4,17 +4,26 @@
 #include "ActivityModelFactory.hpp"
 #include "Verbosity.hpp"
 
+// solver defaults
+const double Beaker::tolerance_default = 1.0e-12;
+const unsigned int Beaker::max_iterations_default = 250;
+// default physical parameters
+const double Beaker::porosity_default = 1.0; // [-]
+const double Beaker::saturation_default = 1.0; // [-]
+const double Beaker::water_density_kg_m3_default = 1000.0; 
+const double Beaker::volume_default = 1.0; // [m^3]
+
 Beaker::Beaker() 
   : verbosity_(kSilent),
-    tolerance_(1.0e-12),
-    max_iterations_(250),
+    tolerance_(tolerance_default),
+    max_iterations_(max_iterations_default),
     ncomp_(0),
     dtotal_(NULL),
-    porosity_(1.0),
-    saturation_(1.0),
-    water_density_kg_m3_(1000.0),
+    porosity_(porosity_default),
+    saturation_(saturation_default),
+    water_density_kg_m3_(water_density_kg_m3_default),
     water_density_kg_L_(1.0),
-    volume_(1.0),
+    volume_(volume_default),
     dt_(0.0),
     accumulation_coef_(0.0), 
     por_sat_den_vol_(0.0),
@@ -96,6 +105,21 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void)
 {
   Beaker::BeakerParameters parameters;
 
+  parameters.tolerance = tolerance_default;
+  parameters.max_iterations = max_iterations_default;
+ 
+  parameters.porosity = porosity_default;
+  parameters.saturation = saturation_default;
+  parameters.water_density = water_density_kg_m3_default; // kg / m^3
+  parameters.volume = volume_default; // m^3
+ 
+  return parameters;
+} // end GetDefaultParameters()
+    
+Beaker::BeakerParameters Beaker::GetCurrentParameters(void)
+{
+  Beaker::BeakerParameters parameters;
+
   parameters.tolerance = tolerance();
   parameters.max_iterations = max_iterations();
  
@@ -105,7 +129,7 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void)
   parameters.volume = volume(); // m^3
  
   return parameters;
-} // end GetDefaultParameters()
+} // end GetCurrentParameters()
     
 
 void Beaker::updateParameters(const Beaker::BeakerParameters& parameters, 

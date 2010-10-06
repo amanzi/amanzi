@@ -118,6 +118,7 @@ class Beaker {
   Verbosity verbosity(void) const { return this->verbosity_; };
 
   BeakerParameters GetDefaultParameters(void);
+  BeakerParameters GetCurrentParameters(void);
 
 protected:
   // update discretization and flow parameters
@@ -187,6 +188,14 @@ private:
   std::vector<double> rhs;            // right-hand-side of system
   std::vector<int> indices;           // array for pivoting in LU
   Block *J;                           // Jacobian [kg water/sec]
+
+  
+  static const double tolerance_default;
+  static const unsigned int max_iterations_default;
+  static const double porosity_default;
+  static const double saturation_default;
+  static const double water_density_kg_m3_default;
+  static const double volume_default;
 
 };
 
