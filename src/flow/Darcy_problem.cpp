@@ -15,24 +15,26 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   // need to expand these to include the ghost values.
   
   // Cell segment of the output Epetra F vector.
-  double *f_cell_own; // = &f[0]; // address of initial ghost cell dof
+  double *f_cell_own;
+  f.ExtractView(&f_cell_own); // f_cell_own = &f[0]
   double *f_cell_use = f_cell_own; // assume no ghost cells
   
   // Face segment of the output Epetra F vector.
-  double *f_face_own; // = &f[ncell_own]; // address of initial ghost face dof
+  double *f_face_own = f_cell_own + ncell_own; // = &f[ncell_own]
   double *f_face_use = new double[nface_use];
   
   // Cell segment of the input Epetra X vector -- pressures.
-  double *p_cell_own; // = &x[0]; address of initial cell dof
+  double *p_cell_own;
+  x.ExtractView(&p_cell_own); // p_cell_own = &x[0]
   double *p_cell_use = p_cell_own;  // assume no ghost cells
   
   // Face segment of the input Epetra X vector -- pressures.
-  double *p_face_own; // = &x[ncell_own]; address of initial face dof
+  double *p_face_own = p_cell_own + ncell_own; // = &x[ncell_own]
   double *p_face_use = new double[nface_use];
   for (int j = 0; j < nface_own; ++j) p_face_use[j] = p_face_own[j];
   
   // Apply initial BC fixups to P_FACE_USE.
-  // CODE NEEDED HERE
+  FBC_initial(p_face_use);
   
   // Gather the ghost P_FACE_USE values.
   // CODE NEEDED HERE -- epetra import/export?
@@ -57,11 +59,24 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   // CODE NEEDED HERE -- epetra import/export?
   
   // Apply final BC fixups to F_FACE_USE.
-  // CODE NEEDED HERE
+  FBC_final(f_face_use);
   
   // Copy owned part of F_FACE_USE into face segment of F.
   for (int j = 0; j < nface_own; ++j) f_face_own[j] = f_face_use[j];
   
   delete [] p_face_use;
   delete [] f_face_use;
+}
+
+
+// BC fixups for F computation: initial pass.
+void FBC_initial(double p_face[])
+{
+  std::vector<flow_bc> bc = fbcs.get_BCs();
+}
+
+
+// BC fixups for F computation: final pass.
+void FBC_final(double f_face[])
+{
 }

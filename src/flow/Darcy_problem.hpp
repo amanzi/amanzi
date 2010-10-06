@@ -9,6 +9,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_RowMatrix.h"
 #include "mimetic_hex.hpp"
+#include "Flow_BCs.hpp"
 
 class Darcy_problem {
 
@@ -27,8 +28,11 @@ private:
   const Teuchos::RCP<Flow_State> FS;
   const Teuchos::RCP<Epetra_Map> NL_map;
   const Teuchos::RCP<Epetra_CrsMatrix> PrecMat;
-  mimetic_hex MD[];
-  double K[]; // array of (scalar) diffusion coefficients on cells
+  std::vector<mimetic_hex> MD;
+  std::vector<double> K; // (scalar) diffusion coefficients on cells
+  
+  void FBC_initial(double p_face[]);
+  void FBC_final(double f_face[]);
 
 };
 
