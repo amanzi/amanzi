@@ -15,6 +15,7 @@
 //#include "IonExchange.hpp"
 //#include "SurfaceComplexation.hpp"
 #include "Species.hpp"
+#include "Verbosity.hpp"
 
 #include <vector>
 
@@ -117,10 +118,11 @@ class Beaker {
   double accumulation_coef(void) const { return this->accumulation_coef_; }
   double por_sat_den_vol(void) const { return this->por_sat_den_vol_; }
 
-  void verbosity(const int s_verbosity) { this->verbosity_ = s_verbosity; };
-  int verbosity(void) const { return this->verbosity_; };
+  void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
+  Verbosity verbosity(void) const { return this->verbosity_; };
 
   BeakerParameters GetDefaultParameters(void);
+  BeakerParameters GetCurrentParameters(void);
 
 protected:
   // update discretization and flow parameters
@@ -151,7 +153,7 @@ protected:
 
 
 private:
-  int verbosity_;
+  Verbosity verbosity_;
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species
@@ -192,6 +194,14 @@ private:
   std::vector<double> rhs;            // right-hand-side of system
   std::vector<int> indices;           // array for pivoting in LU
   Block *J;                           // Jacobian [kg water/sec]
+
+  
+  static const double tolerance_default;
+  static const unsigned int max_iterations_default;
+  static const double porosity_default;
+  static const double saturation_default;
+  static const double water_density_kg_m3_default;
+  static const double volume_default;
 
 };
 

@@ -15,7 +15,7 @@ int main (int argc, char **argv) {
 
   std::string filename;
 
-  int verbose = kVerbose;
+  Verbosity verbose = kVerbose;
 
   std::vector<double> total;
 
