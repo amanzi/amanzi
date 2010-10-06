@@ -37,7 +37,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   FBC_initial(p_face_use);
   
   // Gather the ghost P_FACE_USE values.
-  // CODE NEEDED HERE -- epetra import/export?
+  // PARALLEL CODE NEEDED HERE -- epetra import/export?
   
   int face[6];
   double aux1[6], aux2[6];
@@ -56,7 +56,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   }
   
   // Parallel assembly: sum ghost F_FACE_USE values to the master value.
-  // CODE NEEDED HERE -- epetra import/export?
+  // PARALLEL CODE NEEDED HERE -- epetra import/export?
   
   // Apply final BC fixups to F_FACE_USE.
   FBC_final(f_face_use);
@@ -70,13 +70,20 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 
 
 // BC fixups for F computation: initial pass.
-void FBC_initial(double p_face[])
+void Darcy_problem::FBC_initial(double p_face[])
 {
-  //std::vector<flow_bc> bc = fbcs.get_BCs();
+  std::vector<flow_bc> bc = FBC->get_BCs();
+  
+  for (int i = 0; i < bc.size(); ++i) {
+  } 
 }
 
 
 // BC fixups for F computation: final pass.
-void FBC_final(double f_face[])
+void Darcy_problem::FBC_final(double f_face[])
 {
+  std::vector<flow_bc> bc = FBC->get_BCs();
+  
+  for (int i = 0; i < bc.size(); ++i) {
+  } 
 }

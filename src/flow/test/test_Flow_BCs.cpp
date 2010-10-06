@@ -18,9 +18,10 @@ TEST(Flow_BCs) {
   Teuchos::ParameterList flow_BCs_list;
   Teuchos::updateParametersFromXmlFile(xmlInFileName,&flow_BCs_list);
 
+  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh_maps;
+  // MESH_MAPS NEEDS TO BE DEFINED SOMEHOW
 
-
-  Flow_BCs  fbcs ( flow_BCs_list );
+  Flow_BCs  fbcs ( mesh_maps, flow_BCs_list );
 
   fbcs.read_Flow_BCs();
   

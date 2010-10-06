@@ -28,6 +28,7 @@ private:
   const Teuchos::RCP<Flow_State> FS;
   const Teuchos::RCP<Epetra_Map> NL_map;
   const Teuchos::RCP<Epetra_CrsMatrix> PrecMat;
+  const Teuchos::RCP<Flow_BCs> FBC;
   std::vector<mimetic_hex> MD;
   std::vector<double> K; // (scalar) diffusion coefficients on cells
   

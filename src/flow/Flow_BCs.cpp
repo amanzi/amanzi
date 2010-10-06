@@ -31,6 +31,11 @@ void Flow_BCs::read_Flow_BCs() {
     
     BCs[i].side_set = bc_list.get<int>("Side set ID", INT_MAX);
     if ( BCs[i].side_set == INT_MAX ) throw std::exception();
+    if (!mesh->valid_set_id(Mesh_data::FACE, BCs[i].side_set)) throw std::exception();
+    
+    BCs[i].num_faces = mesh->set_size(BCs[i].side_set, Mesh_data::FACE, STK_mesh::OWNED);
+    BCs[i].faces.resize(BCs[i].num_faces);
+    mesh->get_set(BCs[i].side_set, Mesh_data::FACE, STK_mesh::OWNED, BCs[i].faces.begin(), BCs[i].faces.end());
     
     BCs[i].value = bc_list.get<double>("BC value", DBL_MAX);
     if ( BCs[i].value == DBL_MAX ) throw std::exception();
