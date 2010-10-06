@@ -23,11 +23,11 @@ class KineticRate
 
   virtual void Setup(const std::string reaction, 
                      const StringTokenizer reaction_data,
-                     const std::vector<Species> primary_species) = 0;
-  virtual void Update(const std::vector<Species> primary_species) = 0;
+                     const SpeciesArray primary_species) = 0;
+  virtual void Update(const SpeciesArray primary_species) = 0;
   virtual void AddContributionToResidual(const double por_den_sat_vol,
                                          std::vector<double> *residual) = 0;
-  virtual void AddContributionToJacobian(const std::vector<Species> primary_species,
+  virtual void AddContributionToJacobian(const SpeciesArray primary_species,
                                          const double por_den_sat_vol,
                                          Block *J) = 0;
   virtual void Display(void) const = 0;
@@ -35,6 +35,7 @@ class KineticRate
   virtual void ParseParameters(const StringTokenizer rate) = 0;
 
   void ParseReaction(const std::string rxn_string);
+  void SetSpeciesIds(const SpeciesArray primary_species);
 
   void DisplayReaction(void) const;
 

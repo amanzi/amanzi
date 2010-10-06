@@ -34,12 +34,12 @@ class KineticRateTST : public KineticRate
   ~KineticRateTST(void);
 
   void Setup(std::string reaction, StringTokenizer reaction_data,
-             const std::vector<Species> primary_species);
-  void Update(const std::vector<Species> primary_species);
+             const SpeciesArray primary_species);
+  void Update(const SpeciesArray primary_species);
   void AddContributionToResidual(const double por_den_sat_vol, 
                                  std::vector<double> *residual);
                                  
-  void AddContributionToJacobian(const std::vector<Species> primary_species,
+  void AddContributionToJacobian(const SpeciesArray primary_species,
                                  const double por_den_sat_vol,
                                  Block *J);
   void Display(void) const;

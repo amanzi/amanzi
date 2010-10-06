@@ -84,6 +84,8 @@ int main(int argc, char **argv) {
   if (chem != NULL) {
     std::vector<double> total;
     chem->verbosity(verbosity);
+    Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
+    parameters.water_density = 997.205133945901; // kg / m^3
     chem->SetupActivityModel(activity_model_name);
     chem->setup(total, mineral_kinetics_file);
     if (verbosity >= kVerbose) {
@@ -91,10 +93,13 @@ int main(int argc, char **argv) {
     }
 
     // solve for free-ion concentrations
-    double water_density = 997.205133945901; // kg / m^3
-    chem->speciate(total, water_density);
+    chem->speciate(total, parameters.water_density);
     if (verbosity >= kTerse) {
       chem->print_results();
+    }
+    if (test == 5) {
+      std::cout << "----- Test Beaker Reaction Step -----" << std::endl;
+      chem->ReactionStep(total, parameters, 1.0);
     }
   }
 

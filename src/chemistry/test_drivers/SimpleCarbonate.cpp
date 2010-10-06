@@ -15,7 +15,8 @@ SimpleCarbonate::~SimpleCarbonate(void)
 {
 }  // end SimpleCarbonate destructor
 
-void SimpleCarbonate::setup(std::vector<double> &total) {
+void SimpleCarbonate::setup(std::vector<double> &total, 
+                            const std::string mineral_kinetics_file) {
   this->resize(ncomp());
 
   // primary species

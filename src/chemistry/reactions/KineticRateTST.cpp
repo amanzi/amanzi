@@ -32,7 +32,7 @@
 **    - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
 **
 *******************************************************************************/
-
+#include <cmath>
 #include <cstdlib>
 
 #include <iostream>
@@ -59,22 +59,28 @@ KineticRateTST::~KineticRateTST(void)
 }  // end KineticRateTST destructor
 
 
-void KineticRateTST::Setup(const Verbosity s_verbosity, std::string reaction, 
-                           StringTokenizer reaction_data)
+void KineticRateTST::Setup(const std::string reaction, 
+                           const StringTokenizer reaction_data,
+                           const SpeciesArray primary_species)
 {
-  verbosity(s_verbosity);
   ParseReaction(reaction);
+  SetSpeciesIds(primary_species);
   // first element in KineticRate.reactants is the mineral
-  SpeciesName mineral_name(reactants_names.at(0));
+  SpeciesName mineral_name(reactant_names.at(0));
   mineral_.name(mineral_name);
   ParseParameters(reaction_data);
   
 }  // end Setup()
 
 
-void KineticRateTST::Update(const std::vector<Species> primarySpecies)
+void KineticRateTST::Update(const SpeciesArray primary_species)
 {
-
+  double lnQ = 0.0;
+  for (unsigned int p = product_ids.size(); p < product_ids.size(); p++) {
+    lnQ += product_stoichiometery.at(p) * primary_species.at(p).ln_activity();
+  }
+  lnQ -= std::log(std::pow(10.0, -pK()));
+  std::cout << "lnQK = " << lnQ << std::endl;
 }  // end Update()
 
 void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol, 
@@ -89,7 +95,7 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
   
 }  // end AddContributionToResidual()
 
-void KineticRateTST::AddContributionToJacobian(const std::vector<Species> primarySpecies,
+void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_species,
                                                const double por_den_sat_vol,
                                                Block *J)
 {
@@ -106,19 +112,19 @@ void KineticRateTST::ParseParameters(StringTokenizer reaction_data)
   for (; field != reaction_data.end(); field++) {
     st.tokenize(*field, space);
 
-    if (!(st.at(0).compare("gmw"))) {
+    if (st.at(0) == "gmw") {
       mineral_.gram_molecular_weight(std::atof(st.at(1).c_str()));
     }
-    else if (!(st.at(0).compare("molar_density"))) {
+    else if (st.at(0) == "molar_density") {
       mineral_.molar_density(std::atof(st.at(1).c_str()));
     }
-    else if (!(st.at(0).compare("rate_constant"))) {
+    else if (st.at(0) == "rate_constant") {
       rate_constant(std::atof(st.at(1).c_str()));
     }
-    else if (!(st.at(0).compare("area"))) {
+    else if (st.at(0) == "area") {
       area(std::atof(st.at(1).c_str()));
     } 
-    else if (!(st.at(0).compare("pK"))) {
+    else if (st.at(0) == "pK") {
       pK(std::atof(st.at(1).c_str()));
     }
     else {

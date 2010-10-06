@@ -4,9 +4,14 @@
 // Base class for species
 
 #include <string>
+#include <vector>
 
 typedef std::string SpeciesName;
 typedef int SpeciesId;
+//typedef std::vector<Species> SpeciesArray;
+/*  SpeciesArray is actually defined at the end of the file because we
+**  can't use it in the typdef until it is declared.... Put all these
+**  in the class to get around this...?  */
 
 class Species {
 
@@ -81,6 +86,8 @@ class Species {
   SpeciesName name_;
 
 };
+
+typedef std::vector<Species> SpeciesArray;
 
 #endif // __Species_hpp__
 

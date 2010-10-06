@@ -19,9 +19,11 @@ KineticRate::KineticRate(void)
   product_ids.clear();
 }  // end KineticRate constructor
 
+
 KineticRate::~KineticRate(void)
 {
 }  // end KineticRate destructor
+
 
 void KineticRate::ParseReaction(const std::string rxn_string)
 {
@@ -49,7 +51,53 @@ void KineticRate::ParseReaction(const std::string rxn_string)
     field++;
     this->product_names.push_back(*field);
   }
-}  // end ParseReaction
+}  // end ParseReaction()
+
+
+void KineticRate::SetSpeciesIds(const SpeciesArray primary_species)
+{
+  
+  reactant_ids.resize(reactant_names.size());
+  for (unsigned int r = 0; r < reactant_names.size(); r++) {
+    bool reactant_found = false;
+    // check primary species
+    SpeciesArray::const_iterator primary;
+    for (primary = primary_species.begin(); primary != primary_species.end(); primary++) {
+      if (reactant_names.at(r) == (*primary).name()) {
+        reactant_found = true;
+        reactant_ids[r] = (*primary).identifier();
+        if (verbosity() == kDebugMineralKinetics) {
+          std::cout << "KineticRate::SetSpeciesIds: Found primary species " << (*primary).name() << std::endl;
+        }
+      }
+    }
+    // check secondary species...?
+    // check minerals...?
+    if (reactant_found == false) {
+      std::cout << "KineticRate::SetSpeciesIds: Did not find species \'" << reactant_names.at(r) << "\'! " << std::endl;
+    } 
+  }
+
+  product_ids.resize(product_names.size());
+  for (unsigned int r = 0; r < product_names.size(); r++) {
+    bool product_found = false;
+    SpeciesArray::const_iterator primary;
+    for (primary = primary_species.begin(); primary != primary_species.end(); primary++) {
+      if (product_names.at(r) == (*primary).name()) {
+        product_found = true;
+        product_ids[r] = (*primary).identifier();
+        if (verbosity() == kDebugMineralKinetics) {
+          std::cout << "KineticRate::SetSpeciesIds: Found primary species " << (*primary).name() << std::endl;
+        }
+      }
+    }
+    if (product_found == false) {
+      std::cout << "KineticRate::SetSpeciesIds: Did not find species \'" << product_names.at(r) << "\'! " << std::endl;
+    } 
+  }
+
+}  // end SetSpeciesIds()
+
 
 void KineticRate::DisplayReaction(void) const
 {

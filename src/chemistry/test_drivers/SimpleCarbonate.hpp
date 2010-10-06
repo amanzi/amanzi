@@ -14,7 +14,7 @@ class SimpleCarbonate : public Beaker {
   SimpleCarbonate();
   ~SimpleCarbonate();
 
-  void setup(std::vector<double> &total);
+  void setup(std::vector<double> &total, const std::string mineral_kinetics_file);
 
  private:
 };
