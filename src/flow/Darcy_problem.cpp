@@ -72,7 +72,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 // BC fixups for F computation: initial pass.
 void FBC_initial(double p_face[])
 {
-  std::vector<flow_bc> bc = fbcs.get_BCs();
+  //std::vector<flow_bc> bc = fbcs.get_BCs();
 }
 
 
