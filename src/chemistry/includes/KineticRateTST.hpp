@@ -7,7 +7,7 @@
 **
 **  Description: implementation of the TST rate law for mineral kinetics
 **
-**  R = k * A * Prod (a_i^m_i) * ( 1 - Q/Keq)^n
+**  R = k * A * Prod (a_i^m_i) * ( 1 - Q/Keq)
 **
 **  where:
 **    R : reaction rate, [moles/sec]
@@ -15,7 +15,6 @@
 **    Q : ion activity product, [-]
 **    k : reaction rate constant, [moles m^2 s^-1]
 **    A : reactive surface area, [m^2]
-**    n : saturation state exponent [-]
 **    a_i : activity of modifying species (primary or secondary)
 **    m_i : exponent of modifying species
 **
@@ -34,16 +33,27 @@ class KineticRateTST : public KineticRate
   KineticRateTST(void);
   ~KineticRateTST(void);
 
-  void Update(const std::vector<Species> primarySpecies);
+  void Setup(std::string reaction, StringTokenizer reaction_data,
+             const std::vector<Species> primary_species);
+  void Update(const std::vector<Species> primary_species);
   void AddContributionToResidual(const double por_den_sat_vol, 
                                  std::vector<double> *residual);
                                  
-  void AddContributionToJacobian(const std::vector<Species> primarySpecies,
+  void AddContributionToJacobian(const std::vector<Species> primary_species,
                                  const double por_den_sat_vol,
                                  Block *J);
   void Display(void) const;
 
   void ParseParameters(StringTokenizer rate);
+
+  /*
+  ** end of KineticRate inherited interface
+  */
+
+
+ protected:
+
+  Species mineral(void) const { return this->mineral_; };
 
   void area(double set_area) { this->area_ = set_area; };
   double area(void) const { return this->area_; };
@@ -54,13 +64,13 @@ class KineticRateTST : public KineticRate
   void sat_state_exponent(double set_sat_state_exponent) { this->sat_state_exponent_ = set_sat_state_exponent; };
   double sat_state_exponent(void) const { return this->sat_state_exponent_; };
 
- protected:
 
  private:
   double area_;  // surface area [m^2]
   double pK_;  // pK [-]
   double rate_constant_;  // k, rate constant, [moles/m^2/sec]
   double sat_state_exponent_;  // n, saturation state exponent, [-]
+  Species mineral_;
   std::vector<SpeciesName> modifying_species_names;
   std::vector<double> modifying_exponents;
   std::vector<int> modifying_species_ids;

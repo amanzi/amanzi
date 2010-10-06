@@ -11,9 +11,10 @@
 **  and creating a kinetic rate object.
 **
 *******************************************************************************/
-
+#include <vector>
 #include <string>
 
+#include "Species.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
 
@@ -24,7 +25,8 @@ class MineralKineticsFactory
  public:
   MineralKineticsFactory(void);
   ~MineralKineticsFactory(void);
-  std::vector<KineticRate*> Create(std::string file_name);
+  std::vector<KineticRate*> Create(const std::string file_name,
+                                   const std::vector<Species> primary_species);
  
   void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
   Verbosity verbosity(void) const { return this->verbosity_; };
@@ -37,8 +39,9 @@ class MineralKineticsFactory
 
   std::vector<KineticRate*> rates;
 
-  void ReadFile(const std::string file_name);
-  void ParseRate(StringTokenizer rate, KineticRate** kinetic_rate);
+  void ReadFile(const std::string file_name,
+                const std::vector<Species> primary_species);
+  KineticRate* CreateRate(std::string rate_type);
 };
 
 #endif     /* __MINERAL_KINETICS_FACTORY_HPP__ */

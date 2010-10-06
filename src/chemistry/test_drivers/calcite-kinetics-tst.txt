@@ -3,23 +3,24 @@
 #
 # comment lines begin with a # or a space character
 #
+# units are shown in the example, but not verified or converted by the code!
+#
 # each line is a semicolon delimited list for a single reaction rate expression:
 # field 1 : reaction : 'coeff mineral = coeff primary_species coeff primary_species' .... 
 # field 2 : rate type : string
 #
 # remaining fields depend on the rate type
 #
-# TST rate : Rate = k * area * Prod (a_i^m_i) * ( 1 - Q/Keq)^n
-#   field : 'pK double'
-#   field : 'k double' : rate constant [moles m^2 s^-1]
-#   field : 'area double' : [m^2]
-#   field : 'n double' : saturation state exponent [-]
-#   field : 'name double' : list of modifying species (primary or secondary) and exponent
+# TST rate : Rate = k * area * Prod (a_i^m_i) * ( 1 - Q/Keq)
+#   field : 'gmw double grams_per_mol' : gram molecular weight [grams mole^-1]
+#   field : 'molar_density double cm3_per_mol' : molar density [cm^3 mole^-1]
+#   field : 'rate_constant double moles_cm2_sec' : k, rate constant [moles cm^2 s^-1]
+#   field : 'area double cm2' : reactive surface area [cm^2]
+#   field : 'pK double unitless'
+#   field : 'name double' : list of modifying species primary and exponent
 #
-1.0 Calcite = 1.0 Ca++ 1.0 CO3-- ; TST ; pK 8.48 ; k 4.5e-3 ; area 0.005 ; n 0.25 ; H+ 0.5 HCO3- -0.25 H2O 1.0
 
+1.0 Calcite = 1.0 Ca++ 1.0 CO3-- ; TST ; gmw 100.0872 grams_per_mol ; molar_density 36.9340 cm3_per_mol ; area 1.0 cm2 ; rate_constant 1.0e-8 moles_cm2_sec ; pK 1.8487 unitless ; H+ 0.57 Ca++ -0.98
 
+#1 Calcite = -1 H+ 1 Ca++ 1 HCO3- ;  gmw 100.0872 grams_per_mol ; molar_density 36.9340 cm3_per_mol ; area 1.0 cm2 ; rate_constant 1.0e-8 moles_cm2_sec ; pK 1.8487 unitless ; H+ 0.57 Ca++ -0.98
 
-#1.0 Calcite = 1.0 Ca++ 1.0 CO3-- ; PWP ; pK 8.48 ; k 4.5e-3 ; area 0.005 ; H+ 0.5
-   foo bar baz
-#1.0 Pyrite = -1.0 H2O -3.5 O2(aq) 1.0 Fe+2 2.0 SO4-2 2.0 H+ ; TST ; pK 0.25 ; k 1.2e-5 ; area 5.0e-4 ; n 0.9 ; H+ -0.5 Fe+2 0.93

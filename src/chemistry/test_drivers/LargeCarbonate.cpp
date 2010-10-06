@@ -15,7 +15,8 @@ LargeCarbonate::~LargeCarbonate(void)
 {
 }  // end LargeCarbonate constructor
 
-void LargeCarbonate::setup(std::vector<double> &total) {
+void LargeCarbonate::setup(std::vector<double> &total, 
+                           const std::string mineral_kinetics_file) {
   this->resize(ncomp());
   //
   // initial total component values
@@ -234,4 +235,6 @@ void LargeCarbonate::setup(std::vector<double> &total) {
                                   h2o_stoich,
                                   charge, mol_wt, size, logK);
   this->addAqueousEquilibriumComplex(caco3);
+
+  this->SetupMineralKinetics(mineral_kinetics_file);
 }  // end setup()

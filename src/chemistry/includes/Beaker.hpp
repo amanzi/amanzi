@@ -1,6 +1,10 @@
 #ifndef __Beaker_hpp__
 #define __Beaker_hpp__
 
+// Driver class for evaluating geochemical related processes at a
+// single computational node
+
+
 #include "ActivityModel.hpp"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
@@ -14,8 +18,7 @@
 
 #include <vector>
 
-// Driver class for evaluating geochemical related processes at a
-// single computational node
+class KineticRate;
 
 class Beaker {
 
@@ -39,7 +42,8 @@ class Beaker {
   void resize(int ncomp);
 
   // inheriting classes setup the species, etc
-  virtual void setup(std::vector<double> &total);
+  virtual void setup(std::vector<double> &total, 
+                     const std::string mineral_kinetics_file);
   void SetupActivityModel(std::string model);
 
   void addPrimarySpecies(Species s);
@@ -123,6 +127,8 @@ protected:
   // water_density [kg/m^3]
   // volume [m^3]
   void updateParameters(const BeakerParameters& parameters, double dt);
+
+  void SetupMineralKinetics(const std::string mineral_kinetics_file);
  
   void tolerance(double value) { this->tolerance_ = value; }
   void max_iterations(unsigned int value) { this->max_iterations_ = value; }
@@ -173,7 +179,7 @@ private:
 
   std::vector<AqueousEquilibriumComplex> aqComplexRxns_; // list of aqueous equilibrium complexation reactions
   std::vector<GeneralRxn> generalKineticRxns_; //list of general kinetic reactions
-//  vector<MineralReaction*> mineralRxns_;
+  std::vector<KineticRate*> mineral_rates_;
 //  vector<GasExchange*> gasRxns_;
 //  vector<IonExchange*> ionExchangeRxns_;
 //  vector<SurfaceComplexation*> surfaceComplexationRxns_;

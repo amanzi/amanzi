@@ -2,6 +2,8 @@
 
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
+#include "KineticRate.hpp"
+#include "MineralKineticsFactory.hpp"
 #include "Verbosity.hpp"
 
 Beaker::Beaker() 
@@ -23,16 +25,32 @@ Beaker::Beaker()
 {
   aqComplexRxns_.clear();
   generalKineticRxns_.clear();
+  mineral_rates_.clear();
 } // end Beaker() constructor
 
 Beaker::~Beaker() 
 {
-  if (dtotal_) delete dtotal_;
-  dtotal_ = NULL;
-  if (J) delete J;
-  J = NULL;
-  if (activity_model_) delete activity_model_;
-  activity_model_ = NULL;
+  if (dtotal_ != NULL) {
+    delete dtotal_;
+  }
+
+  if (J != NULL) {
+    delete J;
+  }
+
+  if (activity_model_ != NULL) {
+    delete activity_model_;
+  }
+
+  if (mineral_rates_.size() != 0) {
+    for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
+         rate != mineral_rates_.end(); rate++) {
+      if ((*rate) != NULL) {
+        delete (*rate);
+      }
+    }    
+  }
+
 } // end Beaker destructor
 
 void Beaker::resize() {
@@ -55,9 +73,11 @@ void Beaker::resize(int n) {
   resize();
 } // end resize()
 
-void Beaker::setup(std::vector<double> &total) 
+void Beaker::setup(std::vector<double> &total, 
+                   const std::string mineral_kinetics_file)
 {
   static_cast<void>(total);
+  static_cast<void>(mineral_kinetics_file);
 } // end setup()
 
 void Beaker::SetupActivityModel(std::string model)
@@ -76,6 +96,24 @@ void Beaker::SetupActivityModel(std::string model)
     activity_model_->Display();
   }
 }  // end SetupActivityModel() 
+
+void Beaker::SetupMineralKinetics(const std::string mineral_kinetics_file)
+{
+  if (mineral_kinetics_file.size()) {
+    MineralKineticsFactory mineral_kinetics_factory;
+    mineral_kinetics_factory.verbosity(verbosity);
+    mineral_rates_ = mineral_kinetics_factory.Create(mineral_kinetics_file, 
+                                                     primarySpecies_);
+    
+    if (verbosity() >= kVerbose) {
+      for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
+           rate != mineral_rates_.end(); rate++) {
+        (*rate)->Display();
+      }
+    }
+  }
+
+}  // end SetupMineralKinetics()
 
 void Beaker::addPrimarySpecies(Species s) 
 {
@@ -239,7 +277,10 @@ void Beaker::updateKineticChemistry(void)
   }
   
   // add mineral saturation and rate calculations here
-
+  for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
+       rate != mineral_rates_.end(); rate++) {
+    (*rate)->Update(primarySpecies_);
+  }
   // add multirate kinetic surface complexation reaction quotient calculations 
   // here
 

@@ -9,8 +9,6 @@
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
-#include "KineticRate.hpp"
-#include "MineralKineticsFactory.hpp"
 #include "Verbosity.hpp"
 
 int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test);
@@ -87,7 +85,7 @@ int main(int argc, char **argv) {
     std::vector<double> total;
     chem->verbosity(verbosity);
     chem->SetupActivityModel(activity_model_name);
-    chem->setup(total);
+    chem->setup(total, mineral_kinetics_file);
     if (verbosity >= kVerbose) {
       chem->display();
     }
@@ -101,29 +99,12 @@ int main(int argc, char **argv) {
   }
 
 
-  if (mineral_kinetics_file.size()) {
-    MineralKineticsFactory mineral_kinetics_factory;
-    mineral_kinetics_factory.verbosity(verbosity);
-    mineral_rates = mineral_kinetics_factory.Create(mineral_kinetics_file);
-    for (std::vector<KineticRate*>::iterator rate = mineral_rates.begin();
-         rate != mineral_rates.end(); rate++) {
-      (*rate)->Display();
-    }
-  }
 
   // cleanup memory
   if (chem != NULL) {
     delete chem;
   }
 
-  if (mineral_rates.size() != 0) {
-    for (std::vector<KineticRate*>::iterator rate = mineral_rates.begin();
-         rate != mineral_rates.end(); rate++) {
-      if ((*rate) != NULL) {
-        delete (*rate);
-      }
-    }    
-  }
 
   std::cout << "Done!\n";
 }  // end main()
