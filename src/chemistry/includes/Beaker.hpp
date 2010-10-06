@@ -11,6 +11,7 @@
 //#include "IonExchange.hpp"
 //#include "SurfaceComplexation.hpp"
 #include "Species.hpp"
+#include "Verbosity.hpp"
 
 #include <vector>
 
@@ -113,8 +114,8 @@ class Beaker {
   double accumulation_coef(void) const { return this->accumulation_coef_; }
   double por_sat_den_vol(void) const { return this->por_sat_den_vol_; }
 
-  void verbosity(const int s_verbosity) { this->verbosity_ = s_verbosity; };
-  int verbosity(void) const { return this->verbosity_; };
+  void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
+  Verbosity verbosity(void) const { return this->verbosity_; };
 
   BeakerParameters GetDefaultParameters(void);
 
@@ -145,7 +146,7 @@ protected:
 
 
 private:
-  int verbosity_;
+  Verbosity verbosity_;
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species
