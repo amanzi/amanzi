@@ -11,11 +11,11 @@ KineticRate::KineticRate(void)
     : verbosity_(kSilent)
 {
   reactant_names.clear();
-  reactant_stoichiometery.clear();
+  reactant_stoichiometry.clear();
   reactant_ids.clear();
 
   product_names.clear();
-  product_stoichiometery.clear();
+  product_stoichiometry.clear();
   product_ids.clear();
 }  // end KineticRate constructor
 
@@ -38,7 +38,7 @@ void KineticRate::ParseReaction(const std::string rxn_string)
 
   for (std::vector<std::string>::iterator field = reactants.begin(); 
        field != reactants.end(); field++) {
-    this->reactant_stoichiometery.push_back(std::atof((*field).c_str()));
+    this->reactant_stoichiometry.push_back(std::atof((*field).c_str()));
     field++;
     this->reactant_names.push_back(*field);
   }
@@ -47,55 +47,46 @@ void KineticRate::ParseReaction(const std::string rxn_string)
 
   for (std::vector<std::string>::iterator field = products.begin(); 
        field != products.end(); field++) {
-    this->product_stoichiometery.push_back(std::atof((*field).c_str()));
+    this->product_stoichiometry.push_back(std::atof((*field).c_str()));
     field++;
     this->product_names.push_back(*field);
   }
 }  // end ParseReaction()
 
 
-void KineticRate::SetSpeciesIds(const SpeciesArray primary_species)
+void KineticRate::SetSpeciesIds(const SpeciesArray species, 
+                                const std::string species_type,
+                                const std::vector<SpeciesName> in_names,
+                                const std::vector<double> in_stoichiometry,
+                                std::vector<SpeciesId>* out_ids,
+                                std::vector<double>* out_stoichiometry)
 {
   
-  reactant_ids.resize(reactant_names.size());
-  for (unsigned int r = 0; r < reactant_names.size(); r++) {
-    bool reactant_found = false;
+  out_ids->clear();
+  if (out_stoichiometry != NULL) {
+    out_stoichiometry->clear();
+  }
+  for (unsigned int r = 0; r < in_names.size(); r++) {
+    bool species_found = false;
     // check primary species
-    SpeciesArray::const_iterator primary;
-    for (primary = primary_species.begin(); primary != primary_species.end(); primary++) {
-      if (reactant_names.at(r) == (*primary).name()) {
-        reactant_found = true;
-        reactant_ids[r] = (*primary).identifier();
+    SpeciesArray::const_iterator s;
+    for (s = species.begin(); s != species.end(); s++) {
+      if (in_names.at(r) == (*s).name()) {
+        species_found = true;
+        out_ids->push_back((*s).identifier());
+        if (out_stoichiometry != NULL) {
+          out_stoichiometry->push_back(in_stoichiometry.at(r));
+        }
         if (verbosity() == kDebugMineralKinetics) {
-          std::cout << "KineticRate::SetSpeciesIds: Found primary species " << (*primary).name() << std::endl;
+          std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type 
+                    << " species " << (*s).name() << std::endl;
         }
       }
     }
-    // check secondary species...?
-    // check minerals...?
-    if (reactant_found == false) {
-      std::cout << "KineticRate::SetSpeciesIds: Did not find species \'" << reactant_names.at(r) << "\'! " << std::endl;
+    if (species_found == false && verbosity() == kDebugMineralKinetics) {
+      std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'" << in_names.at(r) << "\' in " << species_type << " species list! " << std::endl;
     } 
   }
-
-  product_ids.resize(product_names.size());
-  for (unsigned int r = 0; r < product_names.size(); r++) {
-    bool product_found = false;
-    SpeciesArray::const_iterator primary;
-    for (primary = primary_species.begin(); primary != primary_species.end(); primary++) {
-      if (product_names.at(r) == (*primary).name()) {
-        product_found = true;
-        product_ids[r] = (*primary).identifier();
-        if (verbosity() == kDebugMineralKinetics) {
-          std::cout << "KineticRate::SetSpeciesIds: Found primary species " << (*primary).name() << std::endl;
-        }
-      }
-    }
-    if (product_found == false) {
-      std::cout << "KineticRate::SetSpeciesIds: Did not find species \'" << product_names.at(r) << "\'! " << std::endl;
-    } 
-  }
-
 }  // end SetSpeciesIds()
 
 
@@ -105,7 +96,7 @@ void KineticRate::DisplayReaction(void) const
   std::cout << "    ";
   for (unsigned int species = 0; 
        species < this->reactant_names.size(); species++) {
-    std::cout << this->reactant_stoichiometery.at(species) << " " 
+    std::cout << this->reactant_stoichiometry.at(species) << " " 
               << this->reactant_names.at(species);
     if (species < this->reactant_names.size() - 1) {
       std::cout << " + ";
@@ -114,7 +105,7 @@ void KineticRate::DisplayReaction(void) const
   std::cout << " = ";
   for (unsigned int species = 0; 
        species < this->product_names.size(); species++) {
-    std::cout << this->product_stoichiometery.at(species) << " " 
+    std::cout << this->product_stoichiometry.at(species) << " " 
               << this->product_names.at(species);
     if (species < this->product_names.size() - 1) {
       std::cout << " + ";

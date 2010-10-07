@@ -51,7 +51,10 @@ KineticRateTST::KineticRateTST(void)
 {
   this->modifying_species_names.clear();
   this->modifying_exponents.clear();
-  this->modifying_species_ids.clear();
+  this->modifying_primary_ids.clear();
+  this->modifying_primary_exponents.clear();
+  this->modifying_secondary_ids.clear();
+  this->modifying_secondary_exponents.clear();
 }  // end KineticRateTST constructor
 
 KineticRateTST::~KineticRateTST(void)
@@ -63,21 +66,64 @@ void KineticRateTST::Setup(const std::string reaction,
                            const StringTokenizer reaction_data,
                            const SpeciesArray primary_species)
 {
+  std::vector<double>* dummy_vector = NULL;
+  std::string species_type("primary");
+
+  // break the reaction string into reactants and products
   ParseReaction(reaction);
-  SetSpeciesIds(primary_species);
+
+  // determine the species ids for the reactants
+  if (verbosity() == kDebugMineralKinetics) {
+    std::cout << "  KineticRateTST::Setup(): Searching for reactant species ids..." 
+              << std::endl;
+  }
+  SetSpeciesIds(primary_species, species_type,
+                reactant_names, reactant_stoichiometry,
+                &reactant_ids, dummy_vector);
+
   // first element in KineticRate.reactants is the mineral
   SpeciesName mineral_name(reactant_names.at(0));
   mineral_.name(mineral_name);
+
+  // determine the species ids for the products
+  if (verbosity() == kDebugMineralKinetics) {
+    std::cout << "  KineticRateTST::Setup(): Searching for product species ids..." 
+              << std::endl;
+  }
+  SetSpeciesIds(primary_species, species_type,
+                product_names, product_stoichiometry,
+                &product_ids, dummy_vector);
+
+  // extract the rate parameters from the data string, including the
+  // modifying species data. adds data to the mineral species!
   ParseParameters(reaction_data);
+
+  // determine the species ids for the modifying species
+  if (verbosity() == kDebugMineralKinetics) {
+    std::cout << "  KineticRateTST::Setup(): Searching for modifying species ids..." 
+              << std::endl;
+  }
+  SetSpeciesIds(primary_species, species_type,
+                modifying_species_names, modifying_exponents,
+                &modifying_primary_ids, &modifying_primary_exponents);
   
+
+//   std::cout << std::endl;
+//   for (unsigned int i = 0; i < modifying_primary_ids.size(); i++) {
+//     std::cout << "  Modifier: " << std::endl;
+//     std::cout << "        id: " << modifying_primary_ids.at(i) << std::endl;
+//     std::cout << "      name: " << primary_species.at(modifying_primary_ids.at(i)).name() << std::endl;
+//     std::cout << "    coeff: " << modifying_primary_exponents.at(i) << std::endl;
+//   }  
 }  // end Setup()
+
 
 
 void KineticRateTST::Update(const SpeciesArray primary_species)
 {
   double lnQ = 0.0;
   for (unsigned int p = product_ids.size(); p < product_ids.size(); p++) {
-    lnQ += product_stoichiometery.at(p) * primary_species.at(p).ln_activity();
+    lnQ += product_stoichiometry.at(p) * primary_species.at(p).ln_activity();
   }
   lnQ -= std::log(std::pow(10.0, -pK()));
   std::cout << "lnQK = " << lnQ << std::endl;
@@ -86,7 +132,8 @@ void KineticRateTST::Update(const SpeciesArray primary_species)
 void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol, 
                                                std::vector<double> *residual)
 {
-
+  static_cast<void>(por_den_sat_vol);
+  static_cast<void>(residual);
   // Calculate K/Q 
 
   // Calculate modifying term based on primary species
@@ -99,6 +146,9 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
                                                const double por_den_sat_vol,
                                                Block *J)
 {
+  static_cast<void>(primary_species);
+  static_cast<void>(por_den_sat_vol);
+  static_cast<void>(J);
 
 }  // end AddContributionToJacobian()
 

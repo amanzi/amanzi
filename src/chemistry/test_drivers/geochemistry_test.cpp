@@ -73,6 +73,7 @@ int main(int argc, char **argv) {
         chem = new LargeCarbonate();
         activity_model_name = ActivityModelFactory::debye_huckel;
         mineral_kinetics_file = "calcite-kinetics-tst.txt";
+        break;
       }
       default: {
         std::cout << "Invalid test number specified on command line. try using the \'-h\' option." << std::endl;

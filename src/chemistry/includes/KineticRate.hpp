@@ -21,7 +21,7 @@ class KineticRate
  public:
   ~KineticRate(void);
 
-  virtual void Setup(const std::string reaction, 
+  virtual void Setup(const std::string reaction,
                      const StringTokenizer reaction_data,
                      const SpeciesArray primary_species) = 0;
   virtual void Update(const SpeciesArray primary_species) = 0;
@@ -35,7 +35,12 @@ class KineticRate
   virtual void ParseParameters(const StringTokenizer rate) = 0;
 
   void ParseReaction(const std::string rxn_string);
-  void SetSpeciesIds(const SpeciesArray primary_species);
+  void SetSpeciesIds(const SpeciesArray species,
+                     const std::string species_type,
+                     const std::vector<SpeciesName> in_names,
+                     const std::vector<double> in_stoichiometry,
+                     std::vector<SpeciesId>* out_ids,
+                     std::vector<double>* out_stoichiometry);
 
   void DisplayReaction(void) const;
 
@@ -46,10 +51,10 @@ class KineticRate
   KineticRate(void);
 
   std::vector<SpeciesName> reactant_names;
-  std::vector<double> reactant_stoichiometery;
+  std::vector<double> reactant_stoichiometry;
   std::vector<SpeciesId> reactant_ids;
   std::vector<SpeciesName> product_names;
-  std::vector<double> product_stoichiometery;
+  std::vector<double> product_stoichiometry;
   std::vector<SpeciesId> product_ids;
 
  private:

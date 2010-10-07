@@ -73,7 +73,10 @@ class KineticRateTST : public KineticRate
   Species mineral_;
   std::vector<SpeciesName> modifying_species_names;
   std::vector<double> modifying_exponents;
-  std::vector<int> modifying_species_ids;
+  std::vector<int> modifying_primary_ids;
+  std::vector<double> modifying_primary_exponents;
+  std::vector<int> modifying_secondary_ids;
+  std::vector<double> modifying_secondary_exponents;
 };
 
 #endif     /* __KINETIC_RATE_TST_HPP__ */
