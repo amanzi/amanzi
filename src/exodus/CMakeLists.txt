@@ -10,10 +10,16 @@ target_link_libraries(exodus dbc mesh_data ${EXODUS_LIBS_ALL})
 
 if (BUILD_TESTS)
   add_executable(test_exodus test/Main.cc test/test_Reader.cc)
+  add_executable(exec_reader test/exec_Reader.cc)
+  add_executable(exodus_read_test test/exodus_read_test.cc)
+
   add_test(exodus test_exodus)
   execute_process(COMMAND ${CMAKE_COMMAND} -E 
-    create_symlink ${CMAKE_SOURCE_DIR}/exodus/test/test_files ${CMAKE_BINARY_DIR}/exodus/test_files) 
+    copy_directory ${CMAKE_SOURCE_DIR}/exodus/test/test_files ${CMAKE_BINARY_DIR}/exodus/test_files) 
+
   target_link_libraries(test_exodus exodus unittest++)
+  target_link_libraries(exec_reader exodus)
+  target_link_libraries(exodus_read_test exodus)
 endif()
 
 

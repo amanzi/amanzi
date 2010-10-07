@@ -287,6 +287,41 @@ void Mesh_factory::declare_faces_ (stk::mesh::Entity& element, stk::mesh::Part &
 void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk::mesh::Part &part)
 {
 
+    // Side set consists of elements and a local face number. We need
+    // to convert these to the unique face indices.
+
+    const stk::mesh::EntityRank cell = entity_map_->kind_to_rank (Mesh_data::CELL);
+    const stk::mesh::EntityRank face = entity_map_->kind_to_rank (Mesh_data::FACE);
+
+    stk::mesh::PartVector parts_to_add;
+    parts_to_add.push_back (&part);
+
+    const int num_sides  = side_set.num_sides ();
+    const std::vector<int>& element_list = side_set.element_list ();
+    const std::vector<int>& side_list    = side_set.element_list ();
+    ASSERT (element_list.size () == num_sides);
+    ASSERT (side_list.size ()    == num_sides);
+
+    for (int index=0; index < num_sides; ++index)
+    {
+        const int element_number = element_list [index];
+        const int local_side = side_list [index];
+
+        // Look up the element from the Id.
+        stk::mesh::Entity *element = bulk_data_->get_entity (cell, element_number);
+
+        // Look up the face from the local face id.
+        stk::mesh::PairIterRelation faces = element->relations (face);
+        for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
+        {
+            if (it->identifier () == local_side)
+                bulk_data_->change_entity_parts(*(it->entity ()), parts_to_add);
+        }
+
+
+
+    }
+
 }
 
 
@@ -297,3 +332,5 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, stk:
 
 
 }
+
+

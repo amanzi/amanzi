@@ -3,16 +3,26 @@
 #include "../Exodus_readers.hh"
 #include "Data.hh"
 
+void read_file (const char* filename)
+{
+
+    Mesh_data::Data *mesh = ExodusII::read_exodus_file (filename);
+    std::cout << *mesh << std::endl << std::endl;
+
+    delete mesh;
+
+}
+
+
 int main (int argc, const char* argv [])
 {
     
-    Mesh_data::Data* mesh = ExodusII::read_exodus_file ("htc_rad_test-random.exo");
-    std::cout << *mesh << std::endl << std::endl;;
+    if (argc > 1)
+    {
+        
+        for (int i = 1; i < argc; ++i)
+            read_file (argv [i]);
 
-    mesh = ExodusII::read_exodus_file ("cubit.e");
-    std::cout << *mesh << std::endl << std::endl;;
-
-    mesh = ExodusII::read_exodus_file ("freefem.e");
-    std::cout << *mesh << std::endl;
+    }
 
 }

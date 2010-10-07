@@ -10,108 +10,145 @@
 #include "Parameters.hh"
 #include "Side_set.hh"
 
-struct Big_File
+struct Exodus_file_holder
 {
-    
     ExodusII::Exodus_file file;
-    std::auto_ptr<Mesh_data::Parameters> params;
-    
-    Big_File () : file ("exodus/test_files/htc_rad_test-random.exo"), params (read_parameters (file))
-    { 
-        
-    }
+    std::auto_ptr<Mesh_data::Data> data;
 
+    Exodus_file_holder (const char* filename) :
+        file (filename),
+        data (ExodusII::read_exodus_file (filename))
+    {  }
 };
 
-SUITE (Params)
+struct Big_File : Exodus_file_holder
+{
+    Big_File () : Exodus_file_holder ("exodus/test_files/htc_rad_test-random.exo") { }
+};
+
+struct quad_4x4 : Exodus_file_holder
+{
+    quad_4x4 () : Exodus_file_holder ("exodus/test_files/quad_4x4_ss.exo") { }
+};
+
+
+SUITE (Big_File)
 {
 
-    TEST_FIXTURE (Big_File, Sizes)
+    TEST_FIXTURE (Big_File, Parameters)
     {
-        CHECK_EQUAL (params->dimensions_, 3);
-        CHECK_EQUAL (params->num_nodes_, 6615);
-        CHECK_EQUAL (params->num_elements_, 5600);
-        CHECK_EQUAL (params->num_element_blocks_, 3);
-        CHECK_EQUAL (params->num_node_sets_, 0);
-        CHECK_EQUAL (params->num_side_sets_, 4);
+        const Mesh_data::Parameters &params (data->parameters ());
+
+        CHECK_EQUAL (params.element_block_ids_.size (), 3);
+        CHECK_EQUAL (params.node_set_ids_.size (), 0);
+        CHECK_EQUAL (params.side_set_ids_.size (), 4);
+
+        CHECK_EQUAL (params.dimensions_, 3);
+        CHECK_EQUAL (params.num_nodes_, 6615);
+        CHECK_EQUAL (params.num_elements_, 5600);
+        CHECK_EQUAL (params.num_element_blocks_, 3);
+        CHECK_EQUAL (params.num_node_sets_, 0);
+        CHECK_EQUAL (params.num_side_sets_, 4);
     };
 
-    TEST_FIXTURE (Big_File, Data)
+    TEST_FIXTURE (Big_File, Side_Sets)
     {
-        
-        CHECK_EQUAL (params->element_block_ids_.size (), 3);
-        CHECK_EQUAL (params->node_set_ids_.size (), 0);
-        CHECK_EQUAL (params->side_set_ids_.size (), 4);
+
+        {
+            const Mesh_data::Side_set &side (data->side_set (0));
+
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 400);
+            // CHECK_EQUAL (side.num_nodes (), 1600);
+        }
+
+        {
+            const Mesh_data::Side_set &side (data->side_set (1));
+
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 400);
+            // CHECK_EQUAL (side.num_nodes (), 1600);
+        }
+
+        {
+            const Mesh_data::Side_set &side (data->side_set (2));
+
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 1120);
+            // CHECK_EQUAL (side.num_nodes (), 4480);
+        }
+
+        {
+            const Mesh_data::Side_set &side (data->side_set (3));
+
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 800);
+            // CHECK_EQUAL (side.num_nodes (), 3200);
+        }
 
     }
 
 }
 
-
-
-SUITE (Side_set)
+SUITE (quad_4x4)
 {
 
-    TEST_FIXTURE (Big_File, Side_1)
+    TEST_FIXTURE (quad_4x4, Parameters)
     {
-        std::auto_ptr<Mesh_data::Side_set> side ( read_side_set (file, 1));
-        
-        CHECK       (side->has_node_factors ());
-        CHECK_EQUAL (side->num_sides (), 400);
-        CHECK_EQUAL (side->num_nodes (), 1600);
+        const Mesh_data::Parameters &params (data->parameters ());
 
-    }
+        CHECK_EQUAL (params.element_block_ids_.size (), 3);
+        CHECK_EQUAL (params.node_set_ids_.size (), 0);
+        CHECK_EQUAL (params.side_set_ids_.size (), 4);
 
-    TEST_FIXTURE (Big_File, Side_2)
+        CHECK_EQUAL (params.dimensions_, 3);
+        CHECK_EQUAL (params.num_nodes_, 6615);
+        CHECK_EQUAL (params.num_elements_, 5600);
+        CHECK_EQUAL (params.num_element_blocks_, 3);
+        CHECK_EQUAL (params.num_node_sets_, 0);
+        CHECK_EQUAL (params.num_side_sets_, 4);
+    };
+
+    TEST_FIXTURE (quad_4x4, Side_Sets)
     {
-        std::auto_ptr<Mesh_data::Side_set> side ( read_side_set (file, 2));
-        
-        CHECK       (side->has_node_factors ());
-        CHECK_EQUAL (side->num_sides (), 400);
-        CHECK_EQUAL (side->num_nodes (), 1600);
 
-    }
+        {
+            const Mesh_data::Side_set &side (data->side_set (0));
 
-    TEST_FIXTURE (Big_File, Side_3)
-    {
-        std::auto_ptr<Mesh_data::Side_set> side ( read_side_set (file, 3));
-        
-        CHECK       (side->has_node_factors ());
-        CHECK_EQUAL (side->num_sides (), 1120);
-        CHECK_EQUAL (side->num_nodes (), 4480);
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 400);
+            // CHECK_EQUAL (side.num_nodes (), 1600);
+        }
 
-    }
+        {
+            const Mesh_data::Side_set &side (data->side_set (1));
 
-    TEST_FIXTURE (Big_File, Side_4)
-    {
-        std::auto_ptr<Mesh_data::Side_set> side ( read_side_set (file, 4));
-        
-        CHECK       (side->has_node_factors ());
-        CHECK_EQUAL (side->num_sides (), 800);
-        CHECK_EQUAL (side->num_nodes (), 3200);
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 400);
+            // CHECK_EQUAL (side.num_nodes (), 1600);
+        }
 
-    }
+        {
+            const Mesh_data::Side_set &side (data->side_set (2));
 
-}
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 1120);
+            // CHECK_EQUAL (side.num_nodes (), 4480);
+        }
 
+        {
+            const Mesh_data::Side_set &side (data->side_set (3));
 
-
-SUITE (Element_block)
-{
-
-    
-}
-
-SUITE (Entire_mesh)
-{
-
-    TEST(Data)
-    {
-        
-        Mesh_data::Data* data = ExodusII::read_exodus_file ("htc_rad_test-random.exo");
+            // CHECK       (side.has_node_factors ());
+            CHECK_EQUAL (side.num_sides (), 800);
+            // CHECK_EQUAL (side.num_nodes (), 3200);
+        }
 
     }
 
 
 
 }
+
+
+

@@ -115,38 +115,44 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
 {
 
     int num_sides;
-    int num_nodes;
+    int num_dist_factors;
 
-    int ret_val = ex_get_side_set_param (file.id, set_id, &num_sides, &num_nodes);
+    int ret_val = ex_get_side_set_param (file.id, set_id, &num_sides, &num_dist_factors);
     if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
-
 
     std::vector<int> element_list(num_sides);
     std::vector<int> side_list(num_sides);
 
-    std::vector<int> node_list(num_nodes);
-    std::vector<int> node_count_list(num_sides);
-    std::vector<double> node_factors(num_nodes);
+    // std::vector<int> node_list(num_nodes);
+    // std::vector<int> node_count_list(num_sides);
+    // std::vector<double> node_factors(num_nodes);
         
     ret_val = ex_get_side_set (file.id, set_id, &element_list [0], &side_list [0]);
     if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
 
-    ret_val = ex_get_side_set_node_list (file.id, set_id, &node_count_list [0], &node_list [0]);
-    if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+    // int num_nodes;
+    // ret_val = ex_get_size_set_node_list (file.id, set_id, &num_nodes);
+    // if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
 
-    ret_val = ex_get_side_set_dist_fact (file.id, set_id, &node_factors [0]);
-    if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
-    if (ret_val > 0)
-    {
-        std::vector<double>().swap (node_factors);
-    }    
+
+
+    // ret_val = ex_get_side_set_node_list (file.id, set_id, &node_count_list [0], &node_list [0]);
+    // if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+
+    // ret_val = ex_get_side_set_dist_fact (file.id, set_id, &node_factors [0]);
+    // if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+    // if (ret_val > 0)
+    // {
+    //     std::vector<double>().swap (node_factors);
+    // }    
 
     return Mesh_data::Side_set::build_from (set_id, 
                                             element_list, 
-                                            side_list, 
-                                            node_list, 
-                                            node_count_list, 
-                                            node_factors);
+                                            side_list
+                                            // node_list, 
+                                            // node_count_list, 
+                                            // node_factors
+                                            );
     
 }
 
