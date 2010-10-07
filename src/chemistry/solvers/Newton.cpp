@@ -2,6 +2,7 @@
 #include "Newton.hpp"
 
 Newton::Newton(const int n) {
+  static_cast<void>(n);
 } // end Newton constructor
 
 void Newton::solve() {
