@@ -24,7 +24,7 @@ class Entity_map
 
     unsigned int dimension_;
 
-    stk::mesh::EntityRank ranks_ [3];
+    stk::mesh::EntityRank ranks_  [3];
     Mesh_data::Entity_kind kinds_ [3];
 
     std::map<stk::mesh::EntityRank, Mesh_data::Entity_kind> rank_to_kind_;

@@ -3,7 +3,4 @@
 SUITE (Side_set)
 {
 
-
-
-
 }
