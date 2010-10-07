@@ -6,7 +6,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 #include "Flow_State.hpp"
-#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_RowMatrix.h"
 #include "mimetic_hex.hpp"
 #include "Flow_BCs.hpp"
@@ -24,11 +24,13 @@ public:
   const Teuchos::RCP<Epetra_Map> get_NL_map () const { return NL_map; };
   const Teuchos::RCP<Epetra_CrsMatrix> get_PrecMat () const { return PrecMat; };
 
+  void initialize();
+
 private:
-  const Teuchos::RCP<Flow_State> FS;
-  const Teuchos::RCP<Epetra_Map> NL_map;
-  const Teuchos::RCP<Epetra_CrsMatrix> PrecMat;
-  const Teuchos::RCP<Flow_BCs> FBC;
+  Teuchos::RCP<Flow_State> FS;
+  Teuchos::RCP<Epetra_Map> NL_map;
+  Teuchos::RCP<Epetra_FECrsMatrix> PrecMat;
+  Teuchos::RCP<Flow_BCs> FBC;
   std::vector<mimetic_hex> MD;
   std::vector<double> K; // (scalar) diffusion coefficients on cells
   
