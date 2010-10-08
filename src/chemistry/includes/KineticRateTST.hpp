@@ -80,11 +80,18 @@ class KineticRateTST : public KineticRate
   double Q_over_Keq_;
   double modifying_term_;
 
+  // length is the number of modifying species (primary and secondary
+  // in the same list!)
   std::vector<SpeciesName> modifying_species_names;
   std::vector<double> modifying_exponents;
-  std::vector<int> modifying_primary_ids;
+  std::vector<int> modifying_primary_ids; // not needed?
+  std::vector<int> modifying_secondary_ids; // not needed?
+
+  // these vectors have length primary_species.size() so that dot
+  // products are easier. any unneeded values are set to zero.
+  std::vector<double> primary_stoichiometry;
   std::vector<double> modifying_primary_exponents;
-  std::vector<int> modifying_secondary_ids;
+  // length secondary_species.size()
   std::vector<double> modifying_secondary_exponents;
 };
 

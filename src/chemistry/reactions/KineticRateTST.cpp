@@ -4,16 +4,30 @@
 **
 **  Description: implementation of the TST rate law for mineral kinetics
 **
-**  R = k * A * Prod (a_i^m_i) * (1 - Q/Keq)
+**  R = k * A * Prod_m (a_m^{mu_m}) * (1 - Q/Keq)
+**
+**  Q = Prod_p (a_p^{nu_p})
 **
 **  where:
 **    R : reaction rate, [moles/sec]
 **    Keq : equilibrium constant, [-]
 **    Q : ion activity product, [-]
+**    a_p : activity of primary species
+**    nu_p : stoichiometric coefficient of primary species
 **    k : reaction rate constant, [moles m^2 s^-1]
 **    A : reactive surface area, [m^2]
-**    a_i : activity of modifying species
-**    m_i : exponent of modifying species
+**    a_m : activity of modifying species
+**    mu_m : exponent of modifying species
+**
+**  Residual:
+**
+**  Jacobian contributions:
+**
+**  dR/dC_j = k * A * (da_j/dC_j) * 
+**           ( (1-Q/Keq) * (mu_j * a_j^{mu_j - 1}) * Prod_{m!=j}(a_m^{mu_m}) - 
+**             Prod_{m}(a_m^{mu_m})/Keq * (nu_j * a_j^{nu_j - 1}) * Prod_{p!=j}(a_p^{nu_p}) )
+**
+**  J_ij = nu_i * dR/dCj
 **
 **
 **  Notes:
@@ -23,6 +37,9 @@
 **    one, so they are ignored in the ion activity product. The
 **    mineral is only accounted for in the accumulation / consumption
 **    of solid mass.
+**
+**    - assume that the stoichiometry, nu, and exponents, mu, are zero
+**    for any species that does not take part in the reaction!
 **
 **    - assume that the mineral reactions are always written so the
 **    products consist of only primary species.
@@ -55,8 +72,11 @@ KineticRateTST::KineticRateTST(void)
   this->modifying_species_names.clear();
   this->modifying_exponents.clear();
   this->modifying_primary_ids.clear();
-  this->modifying_primary_exponents.clear();
   this->modifying_secondary_ids.clear();
+
+  this->primary_stoichiometry.clear();
+  this->modifying_primary_exponents.clear();
+
   this->modifying_secondary_exponents.clear();
 }  // end KineticRateTST constructor
 
@@ -95,7 +115,7 @@ void KineticRateTST::Setup(const std::string reaction,
   }
   SetSpeciesIds(primary_species, species_type,
                 product_names, product_stoichiometry,
-                &product_ids, dummy_vector);
+                &product_ids, &primary_stoichiometry);
 
   // extract the rate parameters from the data string, including the
   // modifying species data. adds data to the mineral species!
@@ -127,24 +147,23 @@ void KineticRateTST::Update(const SpeciesArray primary_species)
   std::cout << std::endl;
   // calculate the Q/K term
   double lnQ = 0.0;
-  for (unsigned int p = 0; p < product_ids.size(); p++) {
-    unsigned int id = product_ids.at(p);
-    lnQ += product_stoichiometry.at(p) * primary_species.at(id).ln_activity();
-    std::cout << "  Update: p: " << p << "  id: " << id << "  coeff: " << product_stoichiometry.at(p)
-              << "  ln_a: " << primary_species.at(id).ln_activity() << std::endl;
+  for (unsigned int p = 0; p < primary_species.size(); p++) {
+    lnQ += primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
+    std::cout << "  Update: p: " << p << "  coeff: " << product_stoichiometry.at(p)
+              << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
   }
   double Q = std::exp(lnQ);
   double Keq = std::pow(10.0, -pK());
   Q_over_Keq(Q/Keq);
+
   std::cout << "  Update: lnQ = " << lnQ << "   Q = " << Q << "   Keq = " << Keq 
             << "  Q/K = " << Q_over_Keq() 
             << "  lnQK = " << std::log(Q_over_Keq()) << std::endl;
 
   // calculate the modifying primary species term:
   double ln_mod_term = 0.0;
-  for (unsigned int m = 0; m < modifying_primary_ids.size(); m++) {
-    unsigned int id = modifying_primary_ids.at(m);
-    ln_mod_term += modifying_primary_exponents.at(m) * primary_species.at(id).ln_activity();
+  for (unsigned int p = 0; p < primary_species.size(); p++) {
+    ln_mod_term += modifying_primary_exponents.at(p) * primary_species.at(p).ln_activity();
   }
   modifying_term(std::exp(ln_mod_term));
 
@@ -167,10 +186,9 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
   double rate = area() * rate_constant() * modifying_term() * sat_state;
 
   // add or subtract from the residual....
-  for (unsigned int p = 0; p < product_ids.size(); p++) {
-    unsigned int id = product_ids.at(p);
+  for (unsigned int p = 0; p < product_stoichiometry.size(); p++) {
     (*residual)[p] -= product_stoichiometry.at(p) * rate;
-    std::cout << "  Residual p: " << p << "  id: " << id 
+    std::cout << "  Residual p: " << p
               << "  coeff: " << product_stoichiometry.at(p)
               << "  rate: " << rate << "  redsidual: " << residual->at(p) << std::endl;
   }
@@ -184,26 +202,71 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
                                                Block *J)
 {
   /*
-  ** NOTE: jacobian has units of kg water/sec, adding dR/dC
+  ** Evaluate the dR/dC terms for this rate and add to the appropriate
+  ** location in the jacobian. See file description above for the jacobian.
+  **
+  ** NOTE: jacobian has units of kg_water/sec, dR/dC = (moles/s) / (moles/kg_water)
   */
   static_cast<void>(por_den_sat_vol);
 
+  // double dadC = 1.0;  // da_j/dC_j
   double Keq = std::pow(10.0, -pK());
-  double one_minus_QK = 1.0 - Q_over_Keq();
-  double area_rate_constant = area() * rate_constant();
+  double one_minus_QK = 1.0 - Q_over_Keq();  // (1-Q/Keq)
+  double area_rate_constant = area() * rate_constant();  // k*A
 
-  // every column of the dR/dci is the same, scaled by the stoichiometric coefficient. Calculate the 
-  double cols[J->getSize()];
+  // the contribution to every row of the jacobian has the same dR/dci
+  // term. Each colum scaled by the stoichiometric
+  // coefficient. 
+  std::vector<double> dRdC_row(primary_species.size());  // primary_species.size() == J.getSize()!
 
-  for (int j = 0; j < J->getSize(); j++) {
-    SpeciesId id = primary_species.at(j).identifier();
+  for (unsigned int p = 0; p < primary_species.size(); p++) {
+    // temp_modifying_term = Prod_{m!=j}(a_m^{mu_m})
     double temp_modifying_term = modifying_term();
+    double remove_modifying = modifying_primary_exponents.at(p) * 
+        primary_species.at(p).ln_activity();
+    remove_modifying = std::exp(remove_modifying);
+    temp_modifying_term /= remove_modifying;
+
+    // modifying_deriv = (mu_j * a_j^{mu_j - 1})
+    double modifying_deriv = (modifying_primary_exponents.at(p) - 1.0) * 
+        primary_species.at(p).ln_activity();
+    modifying_deriv = std::exp(modifying_deriv);
+
+    // temp_Q = Prod_{p!=j}(a_p^{nu_p}
+    double temp_Q = primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
+    temp_Q = std::exp(temp_Q);
+    temp_Q = Q_over_Keq() * Keq / temp_Q;
+
+    // primary_deriv = (nu_j * a_j^{nu_j - 1})
+    double primary_deriv = (primary_stoichiometry.at(p) - 1.0) * 
+        primary_species.at(p).ln_activity();
+    primary_deriv = std::exp(primary_deriv);
     
+    // modifying_term() / Keq = Prod_{m}(a_m^{mu_m})/Keq * 
+    
+    double dRdC = area_rate_constant * 
+        (one_minus_QK * modifying_deriv * temp_modifying_term - 
+         (modifying_term() / Keq) * primary_deriv * temp_Q);
+    dRdC_row[p] = dRdC;
+    if (verbosity() == 10000) {
+      std::cout << "J_row_contrib: p: " << p
+                << "\tA*k: " << area_rate_constant
+                << "\t1-Q/K: " << one_minus_QK
+                << "\tmod_deriv: " << modifying_deriv
+                << "\ttemp_mod_term: " << temp_modifying_term
+                << "\tmod_term/Keq: " << modifying_term() / Keq
+                << "\tprimary_deriv: " << primary_deriv
+                << "\ttemp_Q: " << temp_Q 
+                << "\trow: " << dRdC_row.at(p)
+                << std::endl;
+        
+    }
   }
 
+  // J_ij = nu_i * dR/dCj
   for (int i = 0; i < J->getSize(); i++) {
     for (int j = 0; j < J->getSize(); j++) {
-      J->addValue(i, j, cols[j]);
+      J->addValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
     }
   }
 
