@@ -8,7 +8,8 @@
 LargeCarbonate::LargeCarbonate(void)
     : Beaker()
 {
-  ncomp(4);
+  ncomp(3);
+  //ncomp(4);
 }  // end LargeCarbonate constructor
 
 LargeCarbonate::~LargeCarbonate(void)
@@ -24,7 +25,7 @@ void LargeCarbonate::setup(std::vector<double> &total,
   total.push_back(1.e-3);
   total.push_back(1.e-3);
   total.push_back(1.e-3);
-  total.push_back(55.5084);
+  //total.push_back(55.5084);
 
   //
   // primary species
@@ -50,12 +51,12 @@ void LargeCarbonate::setup(std::vector<double> &total,
   size = 6.0;
   this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
-  id++;
-  name = "H2O";
-  charge = 0.0;
-  mol_wt = 18.0153;
-  size = 3.0;
-  this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
+//   id++;
+//   name = "H2O";
+//   charge = 0.0;
+//   mol_wt = 18.0153;
+//   size = 3.0;
+//   this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   //
   // secondary species / aqueous complexes
@@ -71,9 +72,9 @@ void LargeCarbonate::setup(std::vector<double> &total,
   stoichiometries.push_back(-1.0);
   species_ids.push_back(0);
 
-  species.push_back("H2O");
-  stoichiometries.push_back(1.0);
-  species_ids.push_back(3);
+//   species.push_back("H2O");
+//   stoichiometries.push_back(1.0);
+//   species_ids.push_back(3);
 
   h2o_stoich = 1.0;
   size = 3.5;
@@ -121,7 +122,7 @@ void LargeCarbonate::setup(std::vector<double> &total,
   stoichiometries.clear();
   species_ids.clear();
 
-  name = "H2CO3*";
+  name = "CO2(aq)";
 
   species.push_back("H+");
   stoichiometries.push_back(1.0);
@@ -131,10 +132,10 @@ void LargeCarbonate::setup(std::vector<double> &total,
   stoichiometries.push_back(1.0);
   species_ids.push_back(1);
 
-  h2o_stoich = 0.0;
+  h2o_stoich = -1.0;
   size = 3.0;
   charge = 0.0;
-  mol_wt = 62.0251;
+  mol_wt = 44.0098;
   logK = -6.3447;
   AqueousEquilibriumComplex h2co3(name,
                                   species,
@@ -151,9 +152,9 @@ void LargeCarbonate::setup(std::vector<double> &total,
 
   name = "CaOH+";
 
-  species.push_back("H2O");
-  stoichiometries.push_back(1.0);
-  species_ids.push_back(3);
+//   species.push_back("H2O");
+//   stoichiometries.push_back(1.0);
+//   species_ids.push_back(3);
 
   species.push_back("H+");
   stoichiometries.push_back(-1.0);
@@ -163,7 +164,7 @@ void LargeCarbonate::setup(std::vector<double> &total,
   stoichiometries.push_back(1.0);
   species_ids.push_back(2);
 
-  h2o_stoich = -1.0;
+  h2o_stoich = 1.0;
   size = 4.0;
   charge = 1.0;
   mol_wt = 57.0853;

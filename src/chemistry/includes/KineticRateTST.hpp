@@ -64,13 +64,22 @@ class KineticRateTST : public KineticRate
   void sat_state_exponent(double set_sat_state_exponent) { this->sat_state_exponent_ = set_sat_state_exponent; };
   double sat_state_exponent(void) const { return this->sat_state_exponent_; };
 
-
+  void Q_over_Keq(const double QK) { this->Q_over_Keq_ = QK; };
+  double Q_over_Keq(void) const { return this->Q_over_Keq_; };
+  
+  void modifying_term(const double mod) { this->modifying_term_ = mod; };
+  double modifying_term(void) const { return this->modifying_term_; };
+  
  private:
   double area_;  // surface area [m^2]
   double pK_;  // pK [-]
   double rate_constant_;  // k, rate constant, [moles/m^2/sec]
   double sat_state_exponent_;  // n, saturation state exponent, [-]
   Species mineral_;
+
+  double Q_over_Keq_;
+  double modifying_term_;
+
   std::vector<SpeciesName> modifying_species_names;
   std::vector<double> modifying_exponents;
   std::vector<int> modifying_primary_ids;

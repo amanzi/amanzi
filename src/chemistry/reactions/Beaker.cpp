@@ -571,6 +571,14 @@ int Beaker::ReactionStep(std::vector<double> &total,
 
     // exit if maximum relative change is below tolerance
   } while (max_rel_change > tolerance() && num_iterations < max_iterations());
+  
+  if (num_iterations >= max_iterations()) {
+    std::cout << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
+    std::cout << "Warning: Results may not have the desired accuracy." << std::endl;
+    std::cout << "Warning: max relative change = " << max_rel_change << std::endl;
+    std::cout << "Warning: tolerance = " << tolerance() << std::endl;
+    std::cout << "Warning: max iterations = " << max_iterations() << std::endl;
+  }
 
   // update total concentrations
   calculateTotal();

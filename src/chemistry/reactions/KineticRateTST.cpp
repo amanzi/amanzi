@@ -38,6 +38,7 @@
 #include <iostream>
 
 #include "KineticRateTST.hpp"
+#include "Block.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
 
@@ -47,7 +48,9 @@ KineticRateTST::KineticRateTST(void)
       pK_(0.0),
       rate_constant_(0.0),
       sat_state_exponent_(0.0),
-      mineral_()
+      mineral_(),
+      Q_over_Keq_(1.0),
+      modifying_term_(1.0)
 {
   this->modifying_species_names.clear();
   this->modifying_exponents.clear();
@@ -121,34 +124,88 @@ void KineticRateTST::Setup(const std::string reaction,
 
 void KineticRateTST::Update(const SpeciesArray primary_species)
 {
+  std::cout << std::endl;
+  // calculate the Q/K term
   double lnQ = 0.0;
-  for (unsigned int p = product_ids.size(); p < product_ids.size(); p++) {
-    lnQ += product_stoichiometry.at(p) * primary_species.at(p).ln_activity();
+  for (unsigned int p = 0; p < product_ids.size(); p++) {
+    unsigned int id = product_ids.at(p);
+    lnQ += product_stoichiometry.at(p) * primary_species.at(id).ln_activity();
+    std::cout << "  Update: p: " << p << "  id: " << id << "  coeff: " << product_stoichiometry.at(p)
+              << "  ln_a: " << primary_species.at(id).ln_activity() << std::endl;
   }
-  lnQ -= std::log(std::pow(10.0, -pK()));
-  std::cout << "lnQK = " << lnQ << std::endl;
+  double Q = std::exp(lnQ);
+  double Keq = std::pow(10.0, -pK());
+  Q_over_Keq(Q/Keq);
+  std::cout << "  Update: lnQ = " << lnQ << "   Q = " << Q << "   Keq = " << Keq 
+            << "  Q/K = " << Q_over_Keq() 
+            << "  lnQK = " << std::log(Q_over_Keq()) << std::endl;
+
+  // calculate the modifying primary species term:
+  double ln_mod_term = 0.0;
+  for (unsigned int m = 0; m < modifying_primary_ids.size(); m++) {
+    unsigned int id = modifying_primary_ids.at(m);
+    ln_mod_term += modifying_primary_exponents.at(m) * primary_species.at(id).ln_activity();
+  }
+  modifying_term(std::exp(ln_mod_term));
+
+  // calculate the modifying secondary species term:
 }  // end Update()
 
 void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol, 
                                                std::vector<double> *residual)
 {
+  /*
+  ** NOTE: residual has units of moles/sec
+  */
   static_cast<void>(por_den_sat_vol);
   static_cast<void>(residual);
-  // Calculate K/Q 
 
-  // Calculate modifying term based on primary species
+  // Calculate saturation state term: 1-Q/K 
+  double sat_state = 1.0 - Q_over_Keq();
 
   // Calculate overall rate 
-  
+  double rate = area() * rate_constant() * modifying_term() * sat_state;
+
+  // add or subtract from the residual....
+  for (unsigned int p = 0; p < product_ids.size(); p++) {
+    unsigned int id = product_ids.at(p);
+    (*residual)[p] -= product_stoichiometry.at(p) * rate;
+    std::cout << "  Residual p: " << p << "  id: " << id 
+              << "  coeff: " << product_stoichiometry.at(p)
+              << "  rate: " << rate << "  redsidual: " << residual->at(p) << std::endl;
+  }
+
+  // TODO: updating the mineral mass.....
+
 }  // end AddContributionToResidual()
 
 void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_species,
                                                const double por_den_sat_vol,
                                                Block *J)
 {
-  static_cast<void>(primary_species);
+  /*
+  ** NOTE: jacobian has units of kg water/sec, adding dR/dC
+  */
   static_cast<void>(por_den_sat_vol);
-  static_cast<void>(J);
+
+  double Keq = std::pow(10.0, -pK());
+  double one_minus_QK = 1.0 - Q_over_Keq();
+  double area_rate_constant = area() * rate_constant();
+
+  // every column of the dR/dci is the same, scaled by the stoichiometric coefficient. Calculate the 
+  double cols[J->getSize()];
+
+  for (int j = 0; j < J->getSize(); j++) {
+    SpeciesId id = primary_species.at(j).identifier();
+    double temp_modifying_term = modifying_term();
+    
+  }
+
+  for (int i = 0; i < J->getSize(); i++) {
+    for (int j = 0; j < J->getSize(); j++) {
+      J->addValue(i, j, cols[j]);
+    }
+  }
 
 }  // end AddContributionToJacobian()
 

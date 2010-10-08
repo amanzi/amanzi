@@ -98,9 +98,9 @@ int main(int argc, char **argv) {
     if (verbosity >= kTerse) {
       chem->print_results();
     }
-    if (test == 5) {
+    if (mineral_kinetics_file.size() != 0) {
       std::cout << "----- Test Beaker Reaction Step -----" << std::endl;
-      chem->ReactionStep(total, parameters, 1.0);
+      chem->ReactionStep(total, parameters, 3600.0);
     }
   }
 

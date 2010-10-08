@@ -108,4 +108,6 @@ void SimpleCarbonate::setup(std::vector<double> &total,
                                   h2o_stoich,
                                   charge, mol_wt, size, logK);
   this->addAqueousEquilibriumComplex(co2aq);
+
+  this->SetupMineralKinetics(mineral_kinetics_file);
 }  // end setup()
