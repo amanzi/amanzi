@@ -25,16 +25,16 @@ void SimpleCarbonate::setup(std::vector<double> &total,
 
   int id = 1;
   SpeciesName name = "H+";
+  double size = 9.0;
   double charge = 1.0;
   double mol_wt = 1.0079;
-  double size = 9.0;
   this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   id = 2;
   name = "HCO3-";
+  size = 4.0;
   charge = -1.0;
   mol_wt = 61.0171;
-  size = 4.0;
   this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   // secondary aqueous complexes
@@ -48,11 +48,11 @@ void SimpleCarbonate::setup(std::vector<double> &total,
   species.push_back("H+");
   stoichiometries.push_back(-1.0);
   species_ids.push_back(0);
-  h2o_stoich = -1.0;
+  h2o_stoich = 1.0;
+  logK = 13.9951;
   size = 3.5;
   charge = -1.0;
   mol_wt = 17.0073;
-  logK = 13.9951;
   AqueousEquilibriumComplex oh(name,
                                species,
                                stoichiometries,
@@ -73,10 +73,10 @@ void SimpleCarbonate::setup(std::vector<double> &total,
   stoichiometries.push_back(1.0);
   species_ids.push_back(1);
   h2o_stoich = 0.0;
+  logK = 10.3288;
   size = 4.5;
   charge = -2.0;
   mol_wt = 60.0092;
-  logK = 10.3288;
   AqueousEquilibriumComplex co3(name,
                                 species,
                                 stoichiometries,
@@ -97,10 +97,10 @@ void SimpleCarbonate::setup(std::vector<double> &total,
   stoichiometries.push_back(1.0);
   species_ids.push_back(1);
   h2o_stoich = -1.0;
+  logK = -6.3447;
   size = 3.0;
   charge = 0.0;
   mol_wt = 44.0098;
-  logK = -6.3447;
   AqueousEquilibriumComplex co2aq(name,
                                   species,
                                   stoichiometries,

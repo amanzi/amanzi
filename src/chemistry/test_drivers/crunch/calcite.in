@@ -16,7 +16,7 @@ OUTPUT
 time_units               hours
 spatial_profile          1
 time_series              calcite-ts.out 1 1 1
-time_series_print        pH HCO3- Ca++ H+ 
+time_series_print        pH H+ HCO3- Ca++
 !!time_series_print        all
 time_series_interval     1  
 END

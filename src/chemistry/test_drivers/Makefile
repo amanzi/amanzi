@@ -62,21 +62,25 @@ tests : test
 
 test : $(TESTS)
 
-simpleCarbonate_unit_activity_coeff  : 
+simpleCarbonate_unit_activity_coeff  :
 	./geochemistryTest -t 1 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+	@echo 
 
 simpleCarbonate_debye_huckel  : 
 	./geochemistryTest -t 2 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+	@echo 
 
 largeCarbonate_unit_activity_coeff : 
 	./geochemistryTest -t 3 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+	@echo 
 
 largeCarbonate_debye_huckel : 
 	./geochemistryTest -t 4 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+	@echo 
 
 
 #
