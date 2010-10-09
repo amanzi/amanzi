@@ -1,5 +1,5 @@
 TITLE
-carbonate.in:  carbonate speciation problem for geochemistry code validation in ASCEM/Amanzi
+carbonate.in:  carbonate speciation with unit activity for geochemistry code validation in ASCEM/Amanzi
 END
 
 RUNTIME
@@ -8,6 +8,7 @@ database_sweep  false
 database        carbonate.dbs
 graphics        xmgr
 density_module  temperature
+debye-huckel    false
 END
 
 PRIMARY_SPECIES

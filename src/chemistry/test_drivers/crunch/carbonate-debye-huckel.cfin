@@ -1,0 +1,41 @@
+TITLE
+carbonate.in:  carbonate speciation with debye-huckel for geochemistry code validation in ASCEM/Amanzi
+END
+
+RUNTIME
+speciate_only   true
+database_sweep  false
+database        carbonate.dbs
+graphics        xmgr
+density_module  temperature
+debye-huckel    false
+END
+
+PRIMARY_SPECIES
+HCO3-
+H+
+END
+
+SECONDARY_SPECIES 
+OH-                                                                     
+CO3--
+CO2(aq)                                                                 
+END
+
+Condition        initial_condition   
+units            mol/kg
+temperature      25.0
+HCO3-            0.001
+H+               1.0e-6
+END
+
+DISCRETIZATION 
+xzones  1  1.0
+END
+ 
+INITIAL_CONDITIONS
+initial_condition   1-1
+END
+
+
+
