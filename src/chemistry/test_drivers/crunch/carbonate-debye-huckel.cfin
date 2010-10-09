@@ -8,7 +8,7 @@ database_sweep  false
 database        carbonate.dbs
 graphics        xmgr
 density_module  temperature
-debye-huckel    false
+debye-huckel    true
 END
 
 PRIMARY_SPECIES
