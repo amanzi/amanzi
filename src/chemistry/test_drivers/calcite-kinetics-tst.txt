@@ -20,7 +20,7 @@
 #   field : 'name double' : list of modifying species primary and exponent
 #
 
-1.0 Calcite = 1.0 Ca++ -1.0 H+ 1.0 HCO3- ; TST ; gmw 100.0872 grams_per_mol ; molar_density 36.9340 cm3_per_mol ; area 1.0 cm2 ; rate_constant 1.0e-8 moles_cm2_sec ; pK 1.8487 unitless ; H+ 1.0
+1.0 Calcite = 1.0 Ca++ -1.0 H+ 1.0 HCO3- ; TST ; gmw 100.0872 grams_per_mol ; molar_density 36.9340 cm3_per_mol ; area 1.0 cm2 ; rate_constant 1.0e-3 moles_cm2_sec ; pK -1.8487 unitless ; H+ 1.0
 
 #1 Calcite = -1 H+ 1 Ca++ 1 HCO3- ;  gmw 100.0872 grams_per_mol ; molar_density 36.9340 cm3_per_mol ; area 1.0 cm2 ; rate_constant 1.0e-8 moles_cm2_sec ; pK 1.8487 unitless ; H+ 0.57 Ca++ -0.98
 

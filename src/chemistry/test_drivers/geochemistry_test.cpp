@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <string>
 
@@ -12,6 +13,7 @@
 #include "Verbosity.hpp"
 
 int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test);
+void PrintDoubleVector(const std::vector<double> &total);
 
 int main(int argc, char **argv) {
   Verbosity verbosity = kTerse;
@@ -100,21 +102,32 @@ int main(int argc, char **argv) {
     }
     if (mineral_kinetics_file.size() != 0) {
       std::cout << "----- Test Beaker Reaction Step -----" << std::endl;
+      std::cout << "initial total: " << std::endl;
+      PrintDoubleVector(total);
       chem->ReactionStep(total, parameters, 3600.0);
+      std::cout << "final total: " << std::endl;
+      PrintDoubleVector(total);
     }
   }
-
-
 
   // cleanup memory
   if (chem != NULL) {
     delete chem;
   }
 
-
   std::cout << "Done!\n";
 }  // end main()
 
+
+void PrintDoubleVector(const std::vector<double> &total)
+{
+  std::cout << "[ ";
+  std::vector<double>::const_iterator i;
+  for (i = total.begin(); i != total.end(); i++) {
+    std::cout << std::scientific << std::setprecision(10) << *i << ", ";
+  }
+  std::cout << " ]" << std::endl;
+}  // end PrintDoubleVector()
 
 int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
 {

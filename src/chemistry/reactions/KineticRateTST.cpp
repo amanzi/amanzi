@@ -149,16 +149,20 @@ void KineticRateTST::Update(const SpeciesArray primary_species)
   double lnQ = 0.0;
   for (unsigned int p = 0; p < primary_species.size(); p++) {
     lnQ += primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
-    std::cout << "  Update: p: " << p << "  coeff: " << product_stoichiometry.at(p)
-              << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
+    if (verbosity() == kDebugMineralKinetics) {
+      std::cout << "  Update: p: " << p << "  coeff: " << product_stoichiometry.at(p)
+                << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
+    }
   }
   double Q = std::exp(lnQ);
   double Keq = std::pow(10.0, -pK());
   Q_over_Keq(Q/Keq);
 
-  std::cout << "  Update: lnQ = " << lnQ << "   Q = " << Q << "   Keq = " << Keq 
-            << "  Q/K = " << Q_over_Keq() 
-            << "  lnQK = " << std::log(Q_over_Keq()) << std::endl;
+  if (verbosity() == kDebugMineralKinetics) {
+    std::cout << "  Update: lnQ = " << lnQ << "   Q = " << Q << "   Keq = " << Keq 
+              << "  Q/K = " << Q_over_Keq() 
+              << "  lnQK = " << std::log(Q_over_Keq()) << std::endl;
+  }
 
   // calculate the modifying primary species term:
   double ln_mod_term = 0.0;
@@ -188,9 +192,11 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
   // add or subtract from the residual....
   for (unsigned int p = 0; p < product_stoichiometry.size(); p++) {
     (*residual)[p] -= product_stoichiometry.at(p) * rate;
-    std::cout << "  Residual p: " << p
-              << "  coeff: " << product_stoichiometry.at(p)
-              << "  rate: " << rate << "  redsidual: " << residual->at(p) << std::endl;
+    if (verbosity() == kDebugMineralKinetics) {
+      std::cout << "  Residual p: " << p
+                << "  coeff: " << product_stoichiometry.at(p)
+                << "  rate: " << rate << "  redsidual: " << residual->at(p) << std::endl;
+    }
   }
 
   // TODO: updating the mineral mass.....
