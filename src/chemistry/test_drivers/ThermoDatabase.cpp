@@ -16,8 +16,6 @@ ThermoDatabase::ThermoDatabase(void)
     : Beaker(),
       primary_id_(0)
 {
-  
-
 }  // end ThermoDatabase constructor
 
 ThermoDatabase::~ThermoDatabase(void)
@@ -30,12 +28,13 @@ void ThermoDatabase::setup(std::vector<double> &total,
   ReadFile(parameters.thermo_database_file);
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize(this->primary_species().size());
-  if (this->ncomp() != total.size()) {
+
+  if (static_cast<unsigned int>(this->ncomp()) != total.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
   }
-  this->SetupMineralKinetics(parameters.mineral_kinetics_file);
 
+  this->SetupMineralKinetics(parameters.mineral_kinetics_file);
 }  // end setup()
 
 /*******************************************************************************
@@ -73,8 +72,10 @@ void ThermoDatabase::ReadFile(const std::string file_name)
     // should be some type of helpful error message and graceful exit here....
   }
 
-  enum LineType { kCommentLine, kPrimarySpeciesLine, kAqueousEquilibriumComplexLine, kUnknownLine };
-  enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection, kUnknownSection };
+  enum LineType { kCommentLine, kPrimarySpeciesLine, 
+                  kAqueousEquilibriumComplexLine, kUnknownLine };
+  enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection, 
+                     kUnknownSection };
 
   std::string kSectionPrimary("<Primary Species");
   std::string kSectionAqueousEquilibriumComplex("<Aqueous Equilibrium Complexes");
@@ -87,6 +88,11 @@ void ThermoDatabase::ReadFile(const std::string file_name)
     count++;
     std::string line;
     getline(input, line);
+    if ((line.size() > 0) && (line[line.size() - 1] == '\r')) {
+      // getline only searches for \n line ends. windows files use \r\n
+      // check for a hanging \r and remove it if it is there
+      line.resize(line.size() - 1);
+    }
     char first = line[0];
     if (first == '#' || first == '\0' || first == ' ') {
       line_type = kCommentLine;
@@ -135,10 +141,6 @@ void ThermoDatabase::ReadFile(const std::string file_name)
  **  Primary Species Fields:
  **
  **  Name ; size parameter ; charge ; gram molecular weight
- **
- **  Secondary Species Fields:
- **
- **  Name ; reactants ; log Keq ; size parameter ; charge ; gram molecular weight
  **
  *******************************************************************************/
 void ThermoDatabase::ParsePrimarySpecies(const std::string data)
@@ -299,27 +301,15 @@ void ThermoDatabase::ParseReaction(const std::string reaction,
         species_ids->push_back(id);
       }
     }
-  }
-
-
-
+  }  // end for(s)
 }  // end ParseReaction()
 
-
-void ThermoDatabase::dummy(void)
-{
+/* old hard coded setup:
   int id = 1;
   SpeciesName name = "H+";
   double size = 9.0;
   double charge = 1.0;
   double mol_wt = 1.0079;
-  this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
-
-  id = 2;
-  name = "HCO3-";
-  size = 4.0;
-  charge = -1.0;
-  mol_wt = 61.0171;
   this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
 
   // secondary aqueous complexes
@@ -345,53 +335,4 @@ void ThermoDatabase::dummy(void)
                                h2o_stoich,
                                charge, mol_wt, size, logK);
   this->addAqueousEquilibriumComplex(oh);
-
-  species.clear();
-  stoichiometries.clear();
-  species_ids.clear();
-
-  name = "CO3--";
-  species.push_back("H+");
-  stoichiometries.push_back(-1.0);
-  species_ids.push_back(0);
-  species.push_back("HCO3-");
-  stoichiometries.push_back(1.0);
-  species_ids.push_back(1);
-  h2o_stoich = 0.0;
-  logK = 10.3288;
-  size = 4.5;
-  charge = -2.0;
-  mol_wt = 60.0092;
-  AqueousEquilibriumComplex co3(name,
-                                species,
-                                stoichiometries,
-                                species_ids,
-                                h2o_stoich,
-                                charge, mol_wt, size, logK);
-  this->addAqueousEquilibriumComplex(co3);
-
-  species.clear();
-  stoichiometries.clear();
-  species_ids.clear();
-
-  name = "CO2(aq)";
-  species.push_back("H+");
-  stoichiometries.push_back(1.0);
-  species_ids.push_back(0);
-  species.push_back("HCO3-");
-  stoichiometries.push_back(1.0);
-  species_ids.push_back(1);
-  h2o_stoich = -1.0;
-  logK = -6.3447;
-  size = 3.0;
-  charge = 0.0;
-  mol_wt = 44.0098;
-  AqueousEquilibriumComplex co2aq(name,
-                                  species,
-                                  stoichiometries,
-                                  species_ids,
-                                  h2o_stoich,
-                                  charge, mol_wt, size, logK);
-  this->addAqueousEquilibriumComplex(co2aq);
-
-}  // end setup()
+*/

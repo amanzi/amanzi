@@ -12,10 +12,7 @@ class ThermoDatabase : public Beaker {
   ThermoDatabase();
   virtual ~ThermoDatabase();
 
-  
-
   void setup(std::vector<double> &total, const Beaker::BeakerParameters parameters);
-
 
  protected:
   void ReadFile(const std::string thermo_filename);
@@ -27,8 +24,6 @@ class ThermoDatabase : public Beaker {
                      std::vector<double>* stoichiometries, 
                      std::vector<int>* species_ids, 
                      double* h2o_stoich);
-
-  void dummy(void);
 
  private:
   SpeciesId primary_id_;
