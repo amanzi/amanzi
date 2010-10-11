@@ -24,6 +24,9 @@ class ActivityModel {
 
   virtual void Display(void) const = 0;
 
+  void name(const std::string name) { this->name_ = name; };
+  std::string name(void) { return this->name_; };
+
  protected:
   double log_to_ln(double d) { return d*2.30258509299; }
   double ln_to_log(double d) { return d*0.434294481904; }
@@ -33,6 +36,7 @@ class ActivityModel {
   double I_;  // ionic strength
 
  private:
+  std::string name_;
 };
 
 #endif  // __ACTIVITY_MODEL_HPP__

@@ -83,10 +83,10 @@ void Beaker::resize(int n) {
 } // end resize()
 
 void Beaker::setup(std::vector<double> &total, 
-                   const std::string mineral_kinetics_file)
+                   const Beaker::BeakerParameters parameters)
 {
   static_cast<void>(total);
-  static_cast<void>(mineral_kinetics_file);
+  static_cast<void>(parameters);
 } // end setup()
 
 void Beaker::SetupActivityModel(std::string model)
@@ -143,9 +143,14 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void)
 {
   Beaker::BeakerParameters parameters;
 
+  parameters.thermo_database_file.clear();
+  parameters.mineral_kinetics_file.clear();
+
   parameters.tolerance = tolerance_default;
   parameters.max_iterations = max_iterations_default;
  
+  parameters.activity_model_name = ActivityModelFactory::unit;
+
   parameters.porosity = porosity_default;
   parameters.saturation = saturation_default;
   parameters.water_density = water_density_kg_m3_default; // kg / m^3
@@ -158,9 +163,17 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void)
 {
   Beaker::BeakerParameters parameters;
 
+  parameters.thermo_database_file.clear();
+  parameters.mineral_kinetics_file.clear();
+
   parameters.tolerance = tolerance();
   parameters.max_iterations = max_iterations();
  
+  parameters.activity_model_name.clear();    
+  if (activity_model_ != NULL) {
+    parameters.activity_model_name = activity_model_->name();
+  }
+
   parameters.porosity = porosity();
   parameters.saturation = saturation();
   parameters.water_density = water_density_kg_m3(); // kg / m^3

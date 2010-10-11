@@ -25,17 +25,16 @@ ThermoDatabase::~ThermoDatabase(void)
 }  // end ThermoDatabase destructor
 
 void ThermoDatabase::setup(std::vector<double> &total, 
-                           const std::string mineral_kinetics_file)
+                           const Beaker::BeakerParameters parameters)
 {
-  //const std::string thermo_file("input/carbonate.adb");
-  const std::string thermo_file("input/calcite.adb");
-  ReadFile(thermo_file);
+  ReadFile(parameters.thermo_database_file);
+  this->SetupActivityModel(parameters.activity_model_name);
   this->resize(this->primary_species().size());
-
-  this->SetupMineralKinetics(mineral_kinetics_file);
-
-  // total.push_back(1.e-6);
-  // total.push_back(1.e-3);
+  if (this->ncomp() != total.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+  }
+  this->SetupMineralKinetics(parameters.mineral_kinetics_file);
 
 }  // end setup()
 

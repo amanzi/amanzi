@@ -32,7 +32,9 @@ ActivityModel* ActivityModelFactory::Create(std::string model)
 
   if (activity_model == NULL) {
     // something went wrong, should throw an exception and exit gracefully....
+  } else {
+    // finish any additional setup
+    activity_model->name(model);
   }
-
   return activity_model;
 }  // end Create()

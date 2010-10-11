@@ -22,20 +22,14 @@ int main(int argc, char **argv) {
   int error = EXIT_SUCCESS;
 
   Beaker *chem = NULL;
-  std::string activity_model_name;
-  std::vector<KineticRate*> mineral_rates;
-  mineral_rates.clear();
-  std::string mineral_kinetics_file;
-  mineral_kinetics_file.clear();
+  std::vector<double> total;
+  total.clear();
 
+  std::string thermo_database_file("");
+  std::string mineral_kinetics_file("");
+  std::string activity_model_name("");
+  
   error = CommandLineOptions(argc, argv, verbosity, test);
-
-  std::vector<double> tot;
-  Beaker* database = new ThermoDatabase();
-  database->verbosity(kVerbose);
-  database->setup(tot, mineral_kinetics_file);
-  database->display();
-  return EXIT_FAILURE;
 
   if (error == EXIT_SUCCESS) {
     switch (test) {
@@ -44,8 +38,10 @@ int main(int argc, char **argv) {
         if (verbosity >= kTerse) {
           std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
         }
-        chem = new SimpleCarbonate();
+        thermo_database_file = "input/carbonate.adb";
         activity_model_name = ActivityModelFactory::unit;
+        total.push_back(1.0e-6);
+        total.push_back(1.0e-3);
         break;
       }
       case 2: {
@@ -53,8 +49,10 @@ int main(int argc, char **argv) {
         if (verbosity >= kTerse) {
           std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
         }
-        chem = new SimpleCarbonate();
+        thermo_database_file = "input/carbonate.adb";
         activity_model_name = ActivityModelFactory::debye_huckel;
+        total.push_back(1.0e-6);
+        total.push_back(1.0e-3);
         break;
       }
       case 3: {
@@ -62,8 +60,11 @@ int main(int argc, char **argv) {
         if (verbosity >= kTerse) {
           std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
         }
-        chem = new LargeCarbonate();
+        thermo_database_file = "input/calcite.adb";
         activity_model_name = ActivityModelFactory::unit;
+        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);
         break;
       }
       case 4: {
@@ -71,8 +72,11 @@ int main(int argc, char **argv) {
         if (verbosity >= kTerse) {
           std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
         }
-        chem = new LargeCarbonate();
+        thermo_database_file = "input/calcite.adb";
         activity_model_name = ActivityModelFactory::debye_huckel;
+        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);
         break;
       }
       case 5: {
@@ -80,9 +84,12 @@ int main(int argc, char **argv) {
         if (verbosity >= kTerse) {
           std::cout << "Running calcite kinetics tst problem." << std::endl;
         }
-        chem = new LargeCarbonate();
+        thermo_database_file = "input/calcite.adb";
         activity_model_name = ActivityModelFactory::debye_huckel;
         mineral_kinetics_file = "input/calcite-kinetics-tst.ain";
+        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);
         break;
       }
       default: {
@@ -92,13 +99,15 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (chem != NULL) {
-    std::vector<double> total;
+  if (thermo_database_file.size() != 0) {
+    chem = new ThermoDatabase();
     chem->verbosity(verbosity);
     Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
+    parameters.thermo_database_file = thermo_database_file;
+    parameters.mineral_kinetics_file = mineral_kinetics_file;
+    parameters.activity_model_name = activity_model_name;
     parameters.water_density = 997.205133945901; // kg / m^3
-    chem->SetupActivityModel(activity_model_name);
-    chem->setup(total, mineral_kinetics_file);
+    chem->setup(total, parameters);
     if (verbosity >= kVerbose) {
       chem->display();
     }
@@ -108,6 +117,7 @@ int main(int argc, char **argv) {
     if (verbosity >= kTerse) {
       chem->print_results();
     }
+  
     if (mineral_kinetics_file.size() != 0) {
       std::cout << "----- Test Beaker Reaction Step -----" << std::endl;
       std::cout << "initial total: " << std::endl;
@@ -117,7 +127,6 @@ int main(int argc, char **argv) {
       PrintDoubleVector(total);
     }
   }
-
   // cleanup memory
   if (chem != NULL) {
     delete chem;

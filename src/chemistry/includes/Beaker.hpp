@@ -4,6 +4,7 @@
 // Driver class for evaluating geochemical related processes at a
 // single computational node
 
+#include <string>
 
 #include "ActivityModel.hpp"
 #include "AqueousEquilibriumComplex.hpp"
@@ -28,9 +29,14 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerParameters {
+    // input files
+    std::string thermo_database_file;
+    std::string mineral_kinetics_file;
     // solver parameters
     double tolerance;
     unsigned int max_iterations;
+    // models
+    std::string activity_model_name;
     // physical parameters
     double porosity; // [-]
     double saturation; // [-]
@@ -44,7 +50,7 @@ class Beaker {
 
   // inheriting classes setup the species, etc
   virtual void setup(std::vector<double> &total, 
-                     const std::string mineral_kinetics_file);
+                     const Beaker::BeakerParameters parameters);
   void SetupActivityModel(std::string model);
 
   void addPrimarySpecies(Species s);

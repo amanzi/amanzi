@@ -14,7 +14,7 @@ class ThermoDatabase : public Beaker {
 
   
 
-  void setup(std::vector<double> &total, const std::string mineral_kinetics_file);
+  void setup(std::vector<double> &total, const Beaker::BeakerParameters parameters);
 
 
  protected:
