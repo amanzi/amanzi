@@ -7,8 +7,6 @@
 #include <string>
 
 #include "ThermoDatabase.hpp"
-#include "SimpleCarbonate.hpp"
-#include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
 #include "Verbosity.hpp"

@@ -1,6 +1,4 @@
 SRCS_SPECIATE = \
-	./SimpleCarbonate.cpp \
-	./LargeCarbonate.cpp \
 	./ThermoDatabase.cpp \
 	./geochemistry_test.cpp
 
@@ -31,10 +29,10 @@ DIFF = diff
 DFLAGS = --brief
 
 TESTS = \
-	simpleCarbonate_unit_activity_coeff \
-	largeCarbonate_unit_activity_coeff \
-	simpleCarbonate_debye_huckel \
-	largeCarbonate_debye_huckel
+	carbonate_unit_activity_coeff \
+	calcite_unit_activity_coeff \
+	carbonate_debye_huckel \
+	calcite_debye_huckel
 
 #
 # Generic rules to generate executables.
@@ -63,22 +61,22 @@ tests : test
 
 test : $(TESTS)
 
-simpleCarbonate_unit_activity_coeff  :
+carbonate_unit_activity_coeff  :
 	./geochemistryTest -t 1 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
-simpleCarbonate_debye_huckel  : 
+carbonate_debye_huckel  : 
 	./geochemistryTest -t 2 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
-largeCarbonate_unit_activity_coeff : 
+calcite_unit_activity_coeff : 
 	./geochemistryTest -t 3 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
-largeCarbonate_debye_huckel : 
+calcite_debye_huckel : 
 	./geochemistryTest -t 4 -v 1 > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
