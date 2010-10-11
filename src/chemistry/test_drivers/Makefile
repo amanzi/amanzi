@@ -1,6 +1,7 @@
 SRCS_SPECIATE = \
 	./SimpleCarbonate.cpp \
 	./LargeCarbonate.cpp \
+	./ThermoDatabase.cpp \
 	./geochemistry_test.cpp
 
 OBJS_SPECIATE = \

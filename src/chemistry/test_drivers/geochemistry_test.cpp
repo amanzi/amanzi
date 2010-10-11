@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+#include "ThermoDatabase.hpp"
 #include "SimpleCarbonate.hpp"
 #include "LargeCarbonate.hpp"
 #include "Beaker.hpp"
@@ -28,6 +29,13 @@ int main(int argc, char **argv) {
   mineral_kinetics_file.clear();
 
   error = CommandLineOptions(argc, argv, verbosity, test);
+
+  std::vector<double> tot;
+  Beaker* database = new ThermoDatabase();
+  database->verbosity(kVerbose);
+  database->setup(tot, mineral_kinetics_file);
+  database->display();
+  return EXIT_FAILURE;
 
   if (error == EXIT_SUCCESS) {
     switch (test) {
@@ -74,7 +82,7 @@ int main(int argc, char **argv) {
         }
         chem = new LargeCarbonate();
         activity_model_name = ActivityModelFactory::debye_huckel;
-        mineral_kinetics_file = "calcite-kinetics-tst.txt";
+        mineral_kinetics_file = "input/calcite-kinetics-tst.ain";
         break;
       }
       default: {

@@ -25,7 +25,7 @@ class Beaker {
 
  public:
   Beaker();
-  ~Beaker();
+  virtual ~Beaker();
 
   struct BeakerParameters {
     // solver parameters
@@ -98,7 +98,7 @@ class Beaker {
   void scaleRHSAndJacobian(std::vector<double> &rhs, Block *J);
   void solveLinearSystem(Block *A, std::vector<double> &b);
 
-  void display(void) const;
+  virtual void display(void) const;
   void print_results(void) const;
   void print_results(double time) const;
   void print_linear_system(string s, Block *A, std::vector<double> vector);
@@ -118,8 +118,8 @@ class Beaker {
   double accumulation_coef(void) const { return this->accumulation_coef_; }
   double por_sat_den_vol(void) const { return this->por_sat_den_vol_; }
 
-  void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
-  Verbosity verbosity(void) const { return this->verbosity_; };
+  virtual void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
+  virtual Verbosity verbosity(void) const { return this->verbosity_; };
 
   BeakerParameters GetDefaultParameters(void);
   BeakerParameters GetCurrentParameters(void);
@@ -150,7 +150,7 @@ protected:
   // calculates product of porosity,saturation,water_density[kg/m^3],volume
   void update_por_sat_den_vol(void);
 
-
+  std::vector<Species> primary_species(void) const { return this->primarySpecies_; };
 
 private:
   Verbosity verbosity_;
