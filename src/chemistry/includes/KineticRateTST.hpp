@@ -33,7 +33,8 @@ class KineticRateTST : public KineticRate
   KineticRateTST(void);
   ~KineticRateTST(void);
 
-  void Setup(std::string reaction, StringTokenizer reaction_data,
+  void Setup(const std::string reaction, 
+             const StringTokenizer reaction_data,
              const SpeciesArray primary_species);
   void Update(const SpeciesArray primary_species);
   void AddContributionToResidual(const double por_den_sat_vol, 
@@ -44,7 +45,7 @@ class KineticRateTST : public KineticRate
                                  Block *J);
   void Display(void) const;
 
-  void ParseParameters(StringTokenizer rate);
+  void ParseParameters(const StringTokenizer rate);
 
   /*
   ** end of KineticRate inherited interface

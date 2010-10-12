@@ -278,12 +278,12 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
 
 }  // end AddContributionToJacobian()
 
-void KineticRateTST::ParseParameters(StringTokenizer reaction_data)
+void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
 {
   std::string space(" ");
   StringTokenizer st;
 
-  std::vector<std::string>::iterator field = reaction_data.begin();
+  std::vector<std::string>::const_iterator field = reaction_data.begin();
 
   for (; field != reaction_data.end(); field++) {
     st.tokenize(*field, space);
