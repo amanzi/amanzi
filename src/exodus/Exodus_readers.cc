@@ -130,6 +130,11 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
     ret_val = ex_get_side_set (file.id, set_id, &element_list [0], &side_list [0]);
     if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
 
+    char name_data [MAX_STR_LENGTH];
+    ex_get_name (file.id, EX_SIDE_SET, set_id, name_data);
+
+    std::string name (name_data);
+
     // int num_nodes;
     // ret_val = ex_get_size_set_node_list (file.id, set_id, &num_nodes);
     // if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
@@ -148,7 +153,8 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
 
     return Mesh_data::Side_set::build_from (set_id, 
                                             element_list, 
-                                            side_list
+                                            side_list,
+                                            name
                                             // node_list, 
                                             // node_count_list, 
                                             // node_factors

@@ -82,7 +82,6 @@ public:
     unsigned int               rank_id      () const { return communicator_.MyPID (); }
     
     unsigned int count_entities (stk::mesh::EntityRank rank, Element_Category category) const;
-    //    unsigned int count_global_entities (stk::mesh::EntityRank rank) const;
     
     void get_entities (stk::mesh::EntityRank, Element_Category category, Entity_vector& entities) const;
     
@@ -97,9 +96,15 @@ public:
     stk::mesh::Entity* id_to_entity (stk::mesh::EntityRank rank, 
                                      stk::mesh::EntityId id,
                                      Element_Category category) const;
+
+    unsigned int num_sets (stk::mesh::EntityRank) const;
     
+    template <typename T>
+    void set_ids (stk::mesh::EntityRank rank, T storage);
 
-
+    template <typename T>
+    void set_element_ids (stk::mesh::EntityRank, unsigned int set_id, T storage);
+    
 
     // Manipulators
     // ------------

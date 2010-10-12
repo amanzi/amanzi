@@ -2,6 +2,7 @@
 #define _SIDE_SET_HH_
 
 #include <vector>
+#include <string>
 #include <iostream>
 
 namespace Mesh_data
@@ -14,6 +15,7 @@ class Side_set
     // int num_nodes_;
 
     int set_id_;
+    std::string name_;
 
     std::vector<int> element_list_;
     std::vector<int> side_list_;
@@ -44,7 +46,8 @@ public:
     void to_stream (std::ostream& stream, bool verbose = false) const;
 
     void take_data_from (std::vector<int>& element_list,
-                         std::vector<int>& side_list
+                         std::vector<int>& side_list,
+                         std::string& name
                          // std::vector<int>& node_list,
                          // std::vector<int>& node_count_list,
                          // std::vector<double>& node_factors
@@ -52,7 +55,8 @@ public:
 
     static Side_set* build_from (int id, 
                                  std::vector<int>& element_list,
-                                 std::vector<int>& side_list
+                                 std::vector<int>& side_list,
+                                 std::string name
                                  // std::vector<int>& node_list,
                                  // std::vector<int>& node_count_list,
                                  // std::vector<double>& node_factors
