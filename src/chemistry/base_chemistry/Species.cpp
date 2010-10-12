@@ -1,5 +1,8 @@
 #include <cmath>
+
 #include <iostream>
+#include <iomanip>
+
 #include "Species.hpp"
 
 Species::Species() 
@@ -67,3 +70,11 @@ void Species::display(void) const
   std::cout << "        charge = " << charge() << std::endl;
   std::cout << "        mol wt = " << gram_molecular_weight() << std::endl;
 } // end display()
+
+void Species::Display(void) const
+{
+  std::cout << std::setw(15) << name()
+            << std::setw(10) << charge()
+            << std::setw(10) << gram_molecular_weight() 
+            << std::endl;
+} // end Display()

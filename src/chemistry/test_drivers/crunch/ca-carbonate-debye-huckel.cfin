@@ -1,0 +1,60 @@
+TITLE
+calcite.in:  kinetic calcite dissolution problem for geochemistry code validation in ASCEM/Amanzi
+END
+
+RUNTIME
+speciate_only   false
+database_sweep  false
+database        calcite.dbs
+graphics        xmgr
+density_module  temperature
+time_units      hours
+timestep_max    1.0
+debye-huckel    true
+set_saturation  1.0
+END
+
+OUTPUT
+time_units               hours
+spatial_profile          1
+time_series              ca-carbonate-unit-ts.out 1 1 1
+time_series_print        pH H+ HCO3- Ca++
+!!time_series_print        all
+time_series_interval     1  
+END
+
+PRIMARY_SPECIES
+HCO3-
+Ca++
+H+
+END
+
+Condition        initial_condition   
+units            mol/kg
+temperature      25.0
+HCO3-            0.001
+Ca++             0.001
+H+               0.001
+END
+
+SECONDARY_SPECIES 
+OH-  
+CO2(aq)                                                                   
+CO3--                                                                 
+CaOH+                                                                   
+CaHCO3+                                                                 
+CaCO3(aq)                                                               
+END
+
+DISCRETIZATION 
+xzones  1  1.0
+END
+ 
+INITIAL_CONDITIONS
+initial_condition   1-1
+END
+
+POROSITY
+fix_porosity 0.5
+END
+

@@ -3,6 +3,8 @@ CRUNCHFLOW = ~/projects/crunchflow2007/bin/CrunchFlow2007
 TESTS = \
 	carbonate-unit \
 	carbonate-debye-huckel \
+	ca-carbonate-unit \
+	ca-carbonate-debye-huckel \
 	calcite
 
 #
@@ -21,6 +23,16 @@ carbonate-unit :
 	@echo 
 
 carbonate-debye-huckel :
+	echo $@.cfin > PestControl.ant
+	$(CRUNCHFLOW) > $@.cout
+	@echo 
+
+ca-carbonate-unit :
+	echo $@.cfin > PestControl.ant
+	$(CRUNCHFLOW) > $@.cout
+	@echo 
+
+ca-carbonate-debye-huckel :
 	echo $@.cfin > PestControl.ant
 	$(CRUNCHFLOW) > $@.cout
 	@echo 

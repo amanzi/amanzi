@@ -85,8 +85,12 @@ void Beaker::resize(int n) {
 void Beaker::setup(std::vector<double> &total, 
                    const Beaker::BeakerParameters parameters)
 {
-  static_cast<void>(total);
-  static_cast<void>(parameters);
+  SetParameters(parameters);
+
+  if (static_cast<unsigned int>(this->ncomp()) != total.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+  }
 } // end setup()
 
 void Beaker::SetupActivityModel(std::string model)
@@ -101,7 +105,7 @@ void Beaker::SetupActivityModel(std::string model)
   ActivityModelFactory amf;
   
   activity_model_ = amf.Create(model);
-  if (verbosity() >= kVerbose) {
+  if (verbosity() == kDebugBeaker) {
     activity_model_->Display();
   }
 }  // end SetupActivityModel() 
@@ -139,7 +143,7 @@ void Beaker::addGeneralRxn(GeneralRxn r)
   generalKineticRxns_.push_back(r);
 } // end addGeneralRxn()
 
-Beaker::BeakerParameters Beaker::GetDefaultParameters(void)
+Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const
 {
   Beaker::BeakerParameters parameters;
 
@@ -159,7 +163,7 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void)
   return parameters;
 } // end GetDefaultParameters()
     
-Beaker::BeakerParameters Beaker::GetCurrentParameters(void)
+Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const
 {
   Beaker::BeakerParameters parameters;
 
@@ -181,10 +185,8 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void)
  
   return parameters;
 } // end GetCurrentParameters()
-    
-
-void Beaker::updateParameters(const Beaker::BeakerParameters& parameters, 
-                              double delta_t)
+ 
+void Beaker::SetParameters(const Beaker::BeakerParameters& parameters)
 {
   tolerance(parameters.tolerance);
   max_iterations(parameters.max_iterations);
@@ -192,9 +194,16 @@ void Beaker::updateParameters(const Beaker::BeakerParameters& parameters,
   water_density_kg_m3(parameters.water_density); // den = [kg/m^3]
   saturation(parameters.saturation);
   volume(parameters.volume); // vol = [m^3]
-  dt(delta_t); // delta time = [sec]
   update_accumulation_coef();
   update_por_sat_den_vol();
+}  // end SetParameters()
+
+
+void Beaker::updateParameters(const Beaker::BeakerParameters& parameters, 
+                              double delta_t)
+{
+  dt(delta_t); // delta time = [sec]
+  SetParameters(parameters);
 } // end updateParameters()
 
 void Beaker::update_accumulation_coef(void)
@@ -699,6 +708,7 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
   return num_iterations;
 }  // end speciate()
 
+
 void Beaker::display(void) const
 {
   std::cout << "----- Beaker description ------" << std::endl;
@@ -715,6 +725,113 @@ void Beaker::display(void) const
   }  
   std::cout << "-------------------------------------" << std::endl;
 } // end display()
+
+void Beaker::Display(void) const
+{
+  std::cout << "-- Beaker description ------------------------------------------------"
+           << std::endl;
+  if (verbosity() >= kVerbose) {
+    DisplayParameters();
+  }
+
+  DisplayPrimary();
+  std::cout << std::endl;
+
+  DisplayAqueousEquilibriumComplexes();
+  std::cout << "----------------------------------------------------------------------" 
+            << std::endl;
+  
+}  // end Display()
+
+void Beaker::DisplayParameters(void) const
+{
+  // units....
+  std::cout << "---- Parameters ------------------------------------------------------"
+            << std::endl;
+  //std::cout << "    thermo_database_file: " << thermo_database_file << std::endl;
+  //std::cout << "    mineral_kinetics_file: " << mineral_kinetics_file << std::endl;
+  std::cout << "    tolerance: " << tolerance() << std::endl;
+  std::cout << "    max_iterations :" << max_iterations() << std::endl;
+
+  std::cout << "    activity model: " << activity_model_->name() << std::endl;
+
+  std::cout << "    porosity: " << porosity() << " [-]" << std::endl;
+  std::cout << "    water saturation: " << saturation() << " [-]" << std::endl;
+  std::cout << "    water density: " << water_density_kg_m3() << " [kg m^-3]"<< std::endl;
+  std::cout << "    volume: " << volume() << " [m^3]"<< std::endl;
+  std::cout << std::endl;
+
+}  // end DisplayParameters()
+
+void Beaker::DisplayPrimary(void) const
+{
+  std::cout << "---- Primary Species" << std::endl;
+  std::cout << std::setw(15) << "Species"
+            << std::setw(10) << "Charge"
+            << std::setw(10) << "GMW"
+            << std::endl;
+  for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
+       primary != primarySpecies_.end(); primary++) {
+    primary->Display();
+  }  
+}  // end DisplayPrimary()
+
+void Beaker::DisplayAqueousEquilibriumComplexes(void) const
+{
+  std::cout << "---- Aqueous Equilibrium Complexes" << std::endl;
+  std::cout << std::setw(12) << "Reaction"
+            << std::setw(38) << "log Keq"
+            << std::setw(10) << "Charge"
+            << std::setw(10) << "GMW"
+            << std::endl;
+  for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
+       aec != aqComplexRxns_.end(); aec++) {
+    aec->Display();
+  }  
+}  // end DisplayAqueousEquilibriumComplexes()
+
+void Beaker::DisplayResults(void) const
+{
+  std::cout << std::endl;
+  std::cout << "-- Solution ----------------------------------------------------------"
+            << std::endl;
+  std::cout << "---- Components " << std::endl;
+  std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "Molality" 
+            << std::endl;
+  for (int i = 0; i < ncomp(); i++) {
+    std::cout << std::setw(15) << primarySpecies_[i].name()
+              << std::scientific << std::setprecision(5)
+              << std::setw(15) << total_[i] << std::endl;
+
+  }
+
+  std::cout << "---- Species " << std::endl;
+  std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "Molarity" 
+            << std::setw(15) << "Activity Coeff" 
+            << std::setw(15) << "Activity" 
+            << std::endl;
+
+  for (int i = 0; i < ncomp(); i++) {
+    std::cout << std::setw(15) << primarySpecies_[i].name()
+              << std::scientific << std::setprecision(5)
+              << std::setw(15) << primarySpecies_[i].molality()
+              << std::setw(15) << primarySpecies_[i].act_coef()
+              << std::setw(15) << primarySpecies_[i].activity()
+              << std::endl;
+  }
+  for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
+    std::cout << std::setw(15) << aqComplexRxns_[i].name()
+              << std::scientific << std::setprecision(5)
+              << std::setw(15) << aqComplexRxns_[i].molality()
+              << std::setw(15) << aqComplexRxns_[i].act_coef()
+              << std::setw(15) << aqComplexRxns_[i].activity()
+              << std::endl;
+  }
+  std::cout << "----------------------------------------------------------------------"
+            << std::endl << std::endl;
+}  // end DisplayResults()
 
 void Beaker::print_results(void) const
 {

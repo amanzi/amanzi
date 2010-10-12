@@ -9,6 +9,7 @@ database        carbonate.dbs
 graphics        xmgr
 density_module  temperature
 debye-huckel    true
+set_saturation  1.0
 END
 
 PRIMARY_SPECIES
@@ -37,5 +38,7 @@ INITIAL_CONDITIONS
 initial_condition   1-1
 END
 
-
+POROSITY
+fix_porosity 0.5
+END
 

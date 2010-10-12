@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     switch (test) {
       case 1: {
         // set up simple 2-species carbonate system (H,HCO3-) unit activity coefficients
-        if (verbosity >= kTerse) {
+        if (verbosity == kTerse) {
           std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
         }
         thermo_database_file = "input/carbonate.adb";
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
       }
       case 2: {
         // set up simple 2-species carbonate system (H,HCO3-), debye-huckel activity coefficients
-        if (verbosity >= kTerse) {
+        if (verbosity == kTerse) {
           std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
         }
         thermo_database_file = "input/carbonate.adb";
@@ -55,10 +55,10 @@ int main(int argc, char **argv) {
       }
       case 3: {
         // larger carbonate system, 3 components, 9 secondary, unit activity coefficients
-        if (verbosity >= kTerse) {
+        if (verbosity == kTerse) {
           std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
         }
-        thermo_database_file = "input/calcite.adb";
+        thermo_database_file = "input/ca-carbonate.adb";
         activity_model_name = ActivityModelFactory::unit;
         total.push_back(1.0e-3);
         total.push_back(1.0e-3);
@@ -67,10 +67,10 @@ int main(int argc, char **argv) {
       }
       case 4: {
         // larger carbonate system, 3 components, 9 secondary, debye-huckel activity coefficients
-        if (verbosity >= kTerse) {
+        if (verbosity == kTerse) {
           std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
         }
-        thermo_database_file = "input/calcite.adb";
+        thermo_database_file = "input/ca-carbonate.adb";
         activity_model_name = ActivityModelFactory::debye_huckel;
         total.push_back(1.0e-3);
         total.push_back(1.0e-3);
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
       }
       case 5: {
         // calcite TST kinetics
-        if (verbosity >= kTerse) {
+        if (verbosity == kTerse) {
           std::cout << "Running calcite kinetics tst problem." << std::endl;
         }
         thermo_database_file = "input/calcite.adb";
@@ -104,16 +104,19 @@ int main(int argc, char **argv) {
     parameters.thermo_database_file = thermo_database_file;
     parameters.mineral_kinetics_file = mineral_kinetics_file;
     parameters.activity_model_name = activity_model_name;
-    parameters.water_density = 997.205133945901; // kg / m^3
+    parameters.porosity = 0.5;  // -
+    parameters.saturation = 1.0;  // - 
+    parameters.water_density = 1000.0; // 997.205133945901; // kg / m^3
+    parameters.volume = 1.0;  // m^3
     chem->setup(total, parameters);
     if (verbosity >= kVerbose) {
-      chem->display();
+      chem->Display();
     }
 
     // solve for free-ion concentrations
     chem->speciate(total, parameters.water_density);
     if (verbosity >= kTerse) {
-      chem->print_results();
+      chem->DisplayResults();
     }
   
     if (mineral_kinetics_file.size() != 0) {

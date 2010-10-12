@@ -32,6 +32,7 @@ class AqueousEquilibriumComplex : public Species {
                                Block *dtotal);
 
   void display(void) const;
+  void Display(void) const;
 
  protected:
 

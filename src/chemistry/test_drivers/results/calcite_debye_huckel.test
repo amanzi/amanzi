@@ -1,55 +1,58 @@
+Command Line Options: 
+	Test number: 4
+	Verbosity: 2
 
 
-Running large carbonate speciation example, debye-huckel activity coefficients.
+-- Beaker description ------------------------------------------------
+---- Parameters ------------------------------------------------------
+    tolerance: 1e-12
+    max_iterations :250
+    activity model: debye-huckel
+    porosity: 0.5 [-]
+    water saturation: 1 [-]
+    water density: 1000 [kg m^-3]
+    volume: 1 [m^3]
 
------ Solution ----------------------
-Primary Species ---------------------
-   H+
-        Total: 0.001
-     Free-Ion: 2.22124e-05
-Activity Coef: 0.954473
-     Activity: 2.12011e-05
-   HCO3-
-        Total: 0.001
-     Free-Ion: 2.19835e-05
-Activity Coef: 0.951358
-     Activity: 2.09142e-05
-   Ca++
-        Total: 0.001
-     Free-Ion: 0.0010026
-Activity Coef: 0.823172
-     Activity: 0.000825314
-   H2O
-        Total: 55.5084
-     Free-Ion: 55.664
-Activity Coef: 1
-     Activity: 55.664
+---- Primary Species
+        Species    Charge       GMW
+             H+         1    1.0079
+          HCO3-        -1   61.0171
+           Ca++         2    40.078
 
-Secondary Species -------------------
-   OH-
-     Free-Ion: 2.79206e-08
-Activity Coef: 0.951022
-     Activity: 2.65531e-08
-   CO3--
-     Free-Ion: 5.64355e-11
-Activity Coef: 0.81984
-     Activity: 4.62681e-11
-   H2CO3*
-     Free-Ion: 0.000980619
-Activity Coef: 1
-     Activity: 0.000980619
-   CaOH+
-     Free-Ion: 3.77999e-10
-Activity Coef: 0.951358
-     Activity: 3.59612e-10
-   CaHCO3+
-     Free-Ion: 2.00316e-07
-Activity Coef: 0.951358
-     Activity: 1.90572e-07
-   CaCO3(aq)
-     Free-Ion: 7.97812e-11
-Activity Coef: 1
-     Activity: 7.97812e-11
--------------------------------------
+---- Aqueous Equilibrium Complexes
+    Reaction                               log Keq    Charge       GMW
+    OH- = -1 H+
+                                           13.9951        -1   17.0073
+    CO3-- = -1 H+ + 1 HCO3-
+                                           10.3288        -2   60.0092
+    CO2(aq) = 1 H+ + 1 HCO3-
+                                           -6.3447         0   44.0098
+    CaOH+ = -1 H+ + 1 Ca++
+                                             12.85         1   57.0853
+    CaHCO3+ = 1 Ca++ + 1 HCO3-
+                                           -1.0467         1   101.095
+    CaCO3(aq) = -1 H+ + 1 Ca++ + 1 HCO3-
+                                            7.0017         0   100.087
+----------------------------------------------------------------------
+Beaker::speciate num_iterations :11
+
+-- Solution ----------------------------------------------------------
+---- Components 
+           Name       Molality
+             H+    1.00000e-03
+          HCO3-    1.00000e-03
+           Ca++    1.00000e-03
+---- Species 
+           Name       Molarity Activity Coeff       Activity
+             H+    2.21662e-05    9.54528e-01    2.11583e-05
+          HCO3-    2.19641e-05    9.51420e-01    2.08971e-05
+           Ca++    9.99799e-04    8.23377e-01    8.23211e-04
+            OH-    5.02574e-10    9.51086e-01    4.77991e-10
+          CO3--    5.64889e-11    8.20053e-01    4.63239e-11
+        CO2(aq)    9.77834e-04    1.00000e+00    9.77834e-04
+          CaOH+    5.77642e-12    9.51420e-01    5.49580e-12
+        CaHCO3+    2.01337e-07    9.51420e-01    1.91556e-07
+      CaCO3(aq)    8.09872e-11    1.00000e+00    8.09872e-11
+----------------------------------------------------------------------
 
 Done!

@@ -1,33 +1,46 @@
+Command Line Options: 
+	Test number: 2
+	Verbosity: 2
 
 
-Running simple carbonate example, debye-huckel.
+-- Beaker description ------------------------------------------------
+---- Parameters ------------------------------------------------------
+    tolerance: 1e-12
+    max_iterations :250
+    activity model: debye-huckel
+    porosity: 0.5 [-]
+    water saturation: 1 [-]
+    water density: 1000 [kg m^-3]
+    volume: 1 [m^3]
 
------ Solution ----------------------
-Primary Species ---------------------
-   H+
-        Total: 1e-06
-     Free-Ion: 5.71105e-09
-Activity Coef: 0.975432
-     Activity: 5.57074e-09
-   HCO3-
-        Total: 0.001
-     Free-Ion: 0.00098208
-Activity Coef: 0.974556
-     Activity: 0.000957092
+---- Primary Species
+        Species    Charge       GMW
+             H+         1    1.0079
+          HCO3-        -1   61.0171
 
-Secondary Species -------------------
-   OH-
-     Free-Ion: 1.86303e-06
-Activity Coef: 0.974465
-     Activity: 1.81546e-06
-   CO3--
-     Free-Ion: 8.93131e-06
-Activity Coef: 0.902247
-     Activity: 8.05825e-06
-   CO2(aq)
-     Free-Ion: 1.17914e-05
-Activity Coef: 1
-     Activity: 1.17914e-05
--------------------------------------
+---- Aqueous Equilibrium Complexes
+    Reaction                               log Keq    Charge       GMW
+    OH- = -1 H+
+                                           13.9951        -1   17.0073
+    CO3-- = -1 H+ + 1 HCO3-
+                                           10.3288        -2   60.0092
+    CO2(aq) = 1 H+ + 1 HCO3-
+                                           -6.3447         0   44.0098
+----------------------------------------------------------------------
+Beaker::speciate num_iterations :16
+
+-- Solution ----------------------------------------------------------
+---- Components 
+           Name       Molality
+             H+    1.00000e-06
+          HCO3-    1.00000e-03
+---- Species 
+           Name       Molarity Activity Coeff       Activity
+             H+    5.71183e-09    9.75464e-01    5.57168e-09
+          HCO3-    9.79335e-04    9.74590e-01    9.54450e-04
+            OH-    1.86266e-06    9.74499e-01    1.81516e-06
+          CO3--    8.90392e-06    9.02373e-01    8.03466e-06
+        CO2(aq)    1.17609e-05    1.00000e+00    1.17609e-05
+----------------------------------------------------------------------
 
 Done!

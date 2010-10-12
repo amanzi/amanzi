@@ -63,6 +63,7 @@ class Species {
   void name(SpeciesName name) { this->name_ = name; }
 
   void display(void) const;
+  void Display(void) const;
 
  protected:
   //  Species(const double s_charge, const double s_GMW, const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);

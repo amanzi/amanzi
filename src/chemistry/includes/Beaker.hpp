@@ -109,6 +109,13 @@ class Beaker {
   void print_results(double time) const;
   void print_linear_system(string s, Block *A, std::vector<double> vector);
 
+  void Display(void) const;
+  void DisplayParameters(void) const;
+  void DisplayPrimary(void) const;
+  void DisplayAqueousEquilibriumComplexes(void) const;
+
+  void DisplayResults(void) const;
+
   void ncomp(int i) { this->ncomp_ = i; }
   int ncomp(void) const { return this->ncomp_; }
 
@@ -127,8 +134,9 @@ class Beaker {
   virtual void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
   virtual Verbosity verbosity(void) const { return this->verbosity_; };
 
-  BeakerParameters GetDefaultParameters(void);
-  BeakerParameters GetCurrentParameters(void);
+  BeakerParameters GetDefaultParameters(void) const;
+  BeakerParameters GetCurrentParameters(void) const;
+  void SetParameters(const BeakerParameters& parameters);
 
 protected:
   // update discretization and flow parameters

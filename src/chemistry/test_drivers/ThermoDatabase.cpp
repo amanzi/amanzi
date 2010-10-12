@@ -25,6 +25,7 @@ ThermoDatabase::~ThermoDatabase(void)
 void ThermoDatabase::setup(std::vector<double> &total, 
                            const Beaker::BeakerParameters parameters)
 {
+  SetParameters(parameters);
   ReadFile(parameters.thermo_database_file);
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize(this->primary_species().size());

@@ -1,33 +1,46 @@
+Command Line Options: 
+	Test number: 1
+	Verbosity: 2
 
 
-Running simple carbonate example, unit activity coefficients.
+-- Beaker description ------------------------------------------------
+---- Parameters ------------------------------------------------------
+    tolerance: 1e-12
+    max_iterations :250
+    activity model: unit
+    porosity: 0.5 [-]
+    water saturation: 1 [-]
+    water density: 1000 [kg m^-3]
+    volume: 1 [m^3]
 
------ Solution ----------------------
-Primary Species ---------------------
-   H+
-        Total: 1e-06
-     Free-Ion: 5.32017e-09
-Activity Coef: 1
-     Activity: 5.32017e-09
-   HCO3-
-        Total: 0.001
-     Free-Ion: 0.000982579
-Activity Coef: 1
-     Activity: 0.000982579
+---- Primary Species
+        Species    Charge       GMW
+             H+         1    1.0079
+          HCO3-        -1   61.0171
 
-Secondary Species -------------------
-   OH-
-     Free-Ion: 1.90097e-06
-Activity Coef: 1
-     Activity: 1.90097e-06
-   CO3--
-     Free-Ion: 8.66248e-06
-Activity Coef: 1
-     Activity: 8.66248e-06
-   CO2(aq)
-     Free-Ion: 1.15609e-05
-Activity Coef: 1
-     Activity: 1.15609e-05
--------------------------------------
+---- Aqueous Equilibrium Complexes
+    Reaction                               log Keq    Charge       GMW
+    OH- = -1 H+
+                                           13.9951        -1   17.0073
+    CO3-- = -1 H+ + 1 HCO3-
+                                           10.3288        -2   60.0092
+    CO2(aq) = 1 H+ + 1 HCO3-
+                                           -6.3447         0   44.0098
+----------------------------------------------------------------------
+Beaker::speciate num_iterations :12
+
+-- Solution ----------------------------------------------------------
+---- Components 
+           Name       Molality
+             H+    1.00000e-06
+          HCO3-    1.00000e-03
+---- Species 
+           Name       Molarity Activity Coeff       Activity
+             H+    5.32144e-09    1.00000e+00    5.32144e-09
+          HCO3-    9.79832e-04    1.00000e+00    9.79832e-04
+            OH-    1.90051e-06    1.00000e+00    1.90051e-06
+          CO3--    8.63619e-06    1.00000e+00    8.63619e-06
+        CO2(aq)    1.15314e-05    1.00000e+00    1.15314e-05
+----------------------------------------------------------------------
 
 Done!

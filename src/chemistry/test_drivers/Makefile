@@ -34,6 +34,9 @@ TESTS = \
 	carbonate_debye_huckel \
 	calcite_debye_huckel
 
+GEOCHEM = ./geochemistryTest
+GEOVERB = -v 2
+
 #
 # Generic rules to generate executables.
 #
@@ -62,22 +65,22 @@ tests : test
 test : $(TESTS)
 
 carbonate_unit_activity_coeff  :
-	./geochemistryTest -t 1 -v 1 > $@.cout
+	$(GEOCHEM) -t 1 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
 carbonate_debye_huckel  : 
-	./geochemistryTest -t 2 -v 1 > $@.cout
+	$(GEOCHEM) -t 2 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
 calcite_unit_activity_coeff : 
-	./geochemistryTest -t 3 -v 1 > $@.cout
+	$(GEOCHEM) -t 3 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
 calcite_debye_huckel : 
-	./geochemistryTest -t 4 -v 1 > $@.cout
+	$(GEOCHEM) -t 4 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
