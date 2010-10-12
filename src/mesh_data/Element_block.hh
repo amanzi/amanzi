@@ -43,6 +43,7 @@ public:
     bool has_attributes () const        { return num_attributes_ > 0; }
     bool ok_element (int element) const { return (element >= 0) && (element < num_elements_); }
     const std::string& name () const    { return name_; }
+    unsigned int id () const            { return block_id_; }
 
     // Connectivity information
     // ------------------------

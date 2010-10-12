@@ -60,11 +60,18 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     Parts (0).swap (node_sets_);
     Vector_entity_map ().swap (faces_map_);
     coordinate_field_ = 0;
+    set_to_part_.clear ();
+    part_to_set_.clear ();
+
+
+    // Build the data for the mesh object.
 
     build_meta_data_ (data, fields);
     build_bulk_data_ (data, fields);
 
-    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, meta_data_, bulk_data_,
+    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, 
+                           meta_data_, bulk_data_,
+                           part_to_set_, set_to_part_,
                            *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
 
     return mesh;
@@ -202,6 +209,9 @@ stk::mesh::Part* Mesh_factory::add_element_block_ (const Mesh_data::Element_bloc
     stk::mesh::Part &new_part (meta_data_->declare_part (block.name (), element_rank_));
     stk::mesh::set_cell_topology 
         (new_part, get_topology_data (block.element_type ()).getTopology ());
+
+    add_id_pair_ (new_part, block.id ());
+
     return &new_part;
 }
 
@@ -209,8 +219,14 @@ stk::mesh::Part* Mesh_factory::add_element_block_ (const Mesh_data::Element_bloc
 stk::mesh::Part* Mesh_factory::add_side_set_ (const Mesh_data::Side_set& set)
 {
     std::ostringstream name;
-    name << set.id ();
+    if (set.name ().size () > 0)
+        name << set.name ();
+    else
+        name << set.id ();
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), face_rank_));
+
+    add_id_pair_ (new_part, set.id ());
+
     return &new_part;
 }
 
@@ -218,9 +234,24 @@ stk::mesh::Part* Mesh_factory::add_side_set_ (const Mesh_data::Side_set& set)
 stk::mesh::Part* Mesh_factory::add_node_set_ (const Mesh_data::Node_set& set)
 {
     std::ostringstream name;
-    name << set.id ();
+    if (set.name ().size () > 0)
+        name << set.name ();
+    else
+        name << set.id ();
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), stk::mesh::Node));
+
+    add_id_pair_ (new_part, set.id ());
+
+
     return &new_part;
+}
+
+void Mesh_factory::add_id_pair_ (stk::mesh::Part& part, unsigned int set_id)
+{
+    const unsigned int part_id = part.mesh_meta_data_ordinal ();
+
+    part_to_set_ [part_id] = set_id;
+    set_to_part_ [set_id]  = part_id;
 }
 
 

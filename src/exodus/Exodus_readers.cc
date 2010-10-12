@@ -106,7 +106,12 @@ Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id)
         if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
     }
 
-    return Mesh_data::Node_set::build_from (set_id, node_list, node_dist_factors);
+    char name_data [MAX_STR_LENGTH];
+    ex_get_name (file.id, EX_SIDE_SET, set_id, name_data);
+
+    std::string name (name_data);
+
+    return Mesh_data::Node_set::build_from (set_id, node_list, node_dist_factors, name);
 
 }
 

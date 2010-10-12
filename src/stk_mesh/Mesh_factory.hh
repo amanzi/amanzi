@@ -71,8 +71,7 @@ private:
     void put_field_ (const Mesh_data::Field& field, stk::mesh::Part&, unsigned int space_dimension);
     void put_coordinate_field_ (stk::mesh::Part& part, unsigned int space_dimension);
 
-    //! Convert mesh_data field descriptors to STK mesh descriptors.
-    stk::mesh::EntityRank map_to_entity_type_ (Mesh_data::Entity_kind location);
+    void add_id_pair_ (stk::mesh::Part& part, unsigned int set_id);
 
 
     // Temporary information for the mesh currently under construction.
@@ -96,6 +95,9 @@ private:
     Vector_field_type *coordinate_field_;
 
     stk::mesh::Selector universal_selector_;
+
+    Id_map part_to_set_;
+    Id_map set_to_part_;
 
 public:
 

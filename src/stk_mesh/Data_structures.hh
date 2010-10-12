@@ -13,6 +13,8 @@ typedef stk::mesh::Field<double>                       Scalar_field_type;
 typedef std::vector<stk::mesh::Entity*>                Entity_vector;
 typedef std::vector<stk::mesh::EntityId>               Entity_Ids;
 
+typedef std::map<unsigned int, unsigned int>           Id_map;
+
 }
 
 #endif /* _DATA_STRUCTURES_H_ */

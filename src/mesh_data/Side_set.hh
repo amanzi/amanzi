@@ -42,6 +42,7 @@ public:
     // const std::vector<double> node_factors () const { return node_factors_;    }
 
     int id () const { return set_id_; }
+    std::string name () const { return name_; }  
 
     void to_stream (std::ostream& stream, bool verbose = false) const;
 
@@ -56,7 +57,7 @@ public:
     static Side_set* build_from (int id, 
                                  std::vector<int>& element_list,
                                  std::vector<int>& side_list,
-                                 std::string name
+                                 std::string& name
                                  // std::vector<int>& node_list,
                                  // std::vector<int>& node_count_list,
                                  // std::vector<double>& node_factors

@@ -45,7 +45,7 @@ void Side_set::take_data_from (std::vector<int>& element_list,
 Side_set* Side_set::build_from (int id,
                                 std::vector<int>& element_list,
                                 std::vector<int>& side_list,
-                                std::string name
+                                std::string& name
                                 // std::vector<int>& node_list,
                                 // std::vector<int>& node_count_list,
                                 // std::vector<double>& node_factors
@@ -66,6 +66,7 @@ void Side_set::to_stream (std::ostream& stream, bool verbose) const
 {
 
     stream << "Side set: " << set_id_ << "\n";
+    stream << "  Name: "   << name_   << "\n";
     stream << "  Number of sides: " << num_sides_ << "\n";
     // stream << "  Number of nodes: " << num_nodes_ << "\n";
     if (verbose)

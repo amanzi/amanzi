@@ -31,12 +31,16 @@ Mesh::Mesh (int space_dimension,
             Entity_map* entity_map,
             stk::mesh::MetaData *meta_data,
             stk::mesh::BulkData *bulk_data,
+            const Id_map& part_to_set,
+            const Id_map& set_to_part,
             Vector_field_type &coordinate_field) :
     space_dimension_ (space_dimension),
     communicator_ (comm),
     entity_map_ (entity_map),
     meta_data_ (meta_data),
     bulk_data_ (bulk_data),
+    part_to_set_ (part_to_set),
+    set_to_part_ (set_to_part),
     coordinate_field_ (coordinate_field)
 {
 
