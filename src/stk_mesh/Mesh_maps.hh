@@ -90,17 +90,32 @@ public:
 
     // Entity Sets (cell, side, node)
     // ------------------------------
-    unsigned int num_sets     (Mesh_data::Entity_kind kind) const;
-    bool         valid_set_id (Mesh_data::Entity_kind kind, unsigned int id) const;
-    unsigned int set_size     (unsigned int set_id, 
-                               Mesh_data::Entity_kind kind, 
+
+    // Number and sizes
+    unsigned int num_sets () const;
+    unsigned int num_sets (Mesh_data::Entity_kind kind) const;
+
+    unsigned int get_set_size (unsigned int set_id,
+                               Mesh_data::Entity_kind kind,
                                Element_Category category) const;
 
+    unsigned int get_set_size (const char* name,
+                               Mesh_data::Entity_kind kind,
+                               Element_Category category) const;
+
+    // Id numbers
     template <typename IT>
-    void set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const;
+    void get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const;
+
+    bool valid_set_id (unsigned int id, Mesh_data::Entity_kind kind) const;
+
 
     template <typename IT>
     void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Element_Category category,
+                  IT begin, IT end) const;
+
+    template <typename IT>
+    void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
                   IT begin, IT end) const;
 
 

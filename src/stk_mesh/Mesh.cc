@@ -72,25 +72,19 @@ stk::mesh::Entity* Mesh::id_to_entity (stk::mesh::EntityRank rank,
     return *entity;
 }
 
-unsigned int Mesh::num_sets () const
-{
-    return set_to_part_.size ();
-}
-
 unsigned int Mesh::num_sets (stk::mesh::EntityRank rank) const 
 {
-    const stk::mesh::PartVector &parts ( meta_data_->get_parts ());
     int count = 0;
-    for (stk::mesh::PartVector::const_iterator it = parts.begin ();
-         it != parts.end ();
+
+    for (Id_map::const_iterator it = set_to_part_.begin ();
+         it != set_to_part_.end ();
          ++it)
     {
-        if ((*it)->primary_entity_rank () == rank) ++count;
+        if (it->second->primary_entity_rank () == rank) ++count;
     }
 
     return count;
 }
-
 
 unsigned int Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category category) const
 {
@@ -101,9 +95,26 @@ void Mesh::get_entities (stk::mesh::EntityRank rank, Element_Category category, 
 {
 
     ASSERT (entities.size () == 0);
-    stk::mesh::get_selected_entities (selector_ (category), bulk_data_->buckets (rank), entities);
+    get_entities_ (selector_ (category), rank, entities);
     ASSERT (entities.size () == count_entities (rank, category));
 
+}
+
+void Mesh::get_entities (const stk::mesh::Part& part, Element_Category category, Entity_vector& entities) const
+{
+    ASSERT (entities.size () == 0);
+
+    const stk::mesh::Selector part_selector = part | selector_ (category);
+    const stk::mesh::EntityRank rank  = part.primary_entity_rank ();
+
+    get_entities_ (part_selector, rank, entities);
+}
+
+
+void Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank,
+                          Entity_vector& entities) const
+{
+    stk::mesh::get_selected_entities (selector, bulk_data_->buckets (rank), entities);
 }
 
 
@@ -178,6 +189,26 @@ double const * Mesh::coordinates (stk::mesh::EntityId node) const
     stk::mesh::Entity *entity = id_to_entity (stk::mesh::Node, node, USED);
     return coordinates (entity);
 
+}
+
+stk::mesh::Part* Mesh::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
+{
+    
+    Id_map::const_iterator part_it = set_to_part_.find (std::make_pair (rank, set_id));
+    ASSERT (part_it != set_to_part_.end ());
+
+    return part_it->second;
+
+}
+
+stk::mesh::Part* Mesh::get_set (const char* name, stk::mesh::EntityRank rank)
+{
+
+    stk::mesh::Part *part = meta_data_->get_part (name);
+    ASSERT (part);
+    ASSERT (part->primary_entity_rank () == rank);
+
+    return part;
 }
 
 
