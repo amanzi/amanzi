@@ -46,7 +46,7 @@ Side_set* Side_set::build_from (int id,
                                 std::vector<int>& element_list,
                                 std::vector<int>& side_list,
                                 std::string& name
-                                // std::vector<int>& node_list,
+                                // , std::vector<int>& node_list,
                                 // std::vector<int>& node_count_list,
                                 // std::vector<double>& node_factors
                                 )
@@ -54,7 +54,8 @@ Side_set* Side_set::build_from (int id,
 
     Side_set* set = new Side_set (id);
 
-    set->take_data_from (element_list, side_list, name // , node_list, node_count_list, node_factors
+    set->take_data_from (element_list, side_list, name 
+                         // , node_list, node_count_list, node_factors
                          );
 
     return set;

@@ -71,7 +71,7 @@ private:
     void put_field_ (const Mesh_data::Field& field, stk::mesh::Part&, unsigned int space_dimension);
     void put_coordinate_field_ (stk::mesh::Part& part, unsigned int space_dimension);
 
-    void add_id_pair_ (stk::mesh::Part& part, unsigned int set_id);
+    void add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part);
 
 
     // Temporary information for the mesh currently under construction.
@@ -80,10 +80,12 @@ private:
     stk::mesh::MetaData *meta_data_;
     Entity_map          *entity_map_;
 
+
     stk::mesh::EntityRank face_rank_;
     stk::mesh::EntityRank element_rank_;
     
     int face_id_;
+    int element_id_;
 
     Parts element_blocks_;
     Parts side_sets_;
@@ -96,7 +98,6 @@ private:
 
     stk::mesh::Selector universal_selector_;
 
-    Id_map part_to_set_;
     Id_map set_to_part_;
 
 public:

@@ -31,7 +31,6 @@ Mesh::Mesh (int space_dimension,
             Entity_map* entity_map,
             stk::mesh::MetaData *meta_data,
             stk::mesh::BulkData *bulk_data,
-            const Id_map& part_to_set,
             const Id_map& set_to_part,
             Vector_field_type &coordinate_field) :
     space_dimension_ (space_dimension),
@@ -39,7 +38,6 @@ Mesh::Mesh (int space_dimension,
     entity_map_ (entity_map),
     meta_data_ (meta_data),
     bulk_data_ (bulk_data),
-    part_to_set_ (part_to_set),
     set_to_part_ (set_to_part),
     coordinate_field_ (coordinate_field)
 {
@@ -53,17 +51,6 @@ Mesh::Mesh (int space_dimension,
 
 // Information Getters
 // -------------------
-
-const stk::mesh::Selector& Mesh::selector_ (Element_Category category) const
-{
-    ASSERT (valid_category (category));
-
-    if (category == OWNED) return owned_selector_;
-    if (category == USED)  return used_selector_;
-    if (category == GHOST) return ghost_selector_;
-
-    throw "Invalid element category in Mesh::selector_";
-}
 
 stk::mesh::Entity* Mesh::id_to_entity (stk::mesh::EntityRank rank, 
                                        stk::mesh::EntityId id, 
@@ -84,6 +71,26 @@ stk::mesh::Entity* Mesh::id_to_entity (stk::mesh::EntityRank rank,
 
     return *entity;
 }
+
+unsigned int Mesh::num_sets () const
+{
+    return set_to_part_.size ();
+}
+
+unsigned int Mesh::num_sets (stk::mesh::EntityRank rank) const 
+{
+    const stk::mesh::PartVector &parts ( meta_data_->get_parts ());
+    int count = 0;
+    for (stk::mesh::PartVector::const_iterator it = parts.begin ();
+         it != parts.end ();
+         ++it)
+    {
+        if ((*it)->primary_entity_rank () == rank) ++count;
+    }
+
+    return count;
+}
+
 
 unsigned int Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category category) const
 {
@@ -176,6 +183,18 @@ double const * Mesh::coordinates (stk::mesh::EntityId node) const
 
 // Manipulators
 // ------------
+
+const stk::mesh::Selector& Mesh::selector_ (Element_Category category) const
+{
+    ASSERT (valid_category (category));
+
+    if (category == OWNED) return owned_selector_;
+    if (category == USED)  return used_selector_;
+    if (category == GHOST) return ghost_selector_;
+
+    throw "Invalid element category in Mesh::selector_";
+}
+
 
 void Mesh::update_ ()
 {

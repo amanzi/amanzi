@@ -13,7 +13,8 @@ typedef stk::mesh::Field<double>                       Scalar_field_type;
 typedef std::vector<stk::mesh::Entity*>                Entity_vector;
 typedef std::vector<stk::mesh::EntityId>               Entity_Ids;
 
-typedef std::map<unsigned int, unsigned int>           Id_map;
+typedef std::pair<stk::mesh::EntityRank, unsigned int> Rank_and_id;
+typedef std::map<Rank_and_id, stk::mesh::Part*> Id_map;
 
 }
 

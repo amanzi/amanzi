@@ -171,12 +171,12 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
 Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
 {
 
-    char element_name_data [MAX_STR_LENGTH];
 
     // Block size and type data
     int num_elements;
     int num_nodes_per_element;
     int num_attributes;
+    char element_name_data [MAX_STR_LENGTH];
     int ret_val = ex_get_elem_block (file.id, block_id, element_name_data,
                                      &num_elements, &num_nodes_per_element, &num_attributes);
     if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
@@ -198,8 +198,11 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
 
     Mesh_data::ELEMENT_TYPE element_type = read_element_type(element_name_data);
 
+    char element_block_name [MAX_STR_LENGTH];
+    ret_val = ex_get_name (file.id, EX_ELEM_BLOCK, block_id, element_block_name);
+
     return  Mesh_data::Element_block::build_from (block_id,
-                                                  std::string (element_name_data),
+                                                  std::string (element_block_name),
                                                   num_elements,
                                                   element_type, 
                                                   connectivity_map,
