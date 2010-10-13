@@ -6,11 +6,6 @@ void invert_sym_3x3 (double minv[][3], double mat[][3] );
 void transpose_3x3 (double matout[][3], double matin[][3] );
 void matmul (double matout[][3], double mat1[][3], double mat2[][3], int m );
 
-double dot_product(double a[], double b[]);
-void cross_product(double result[], double a[], double b[]);
-double triple_product(double a[], double b[], double c[]);
-double tet_volume(double x1[], double x2[], double x3[], double x4[]);
-
 
 
 

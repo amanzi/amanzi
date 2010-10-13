@@ -27,16 +27,38 @@ public:
   void initialize();
 
 private:
+
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<Epetra_Map> NL_map;
   Teuchos::RCP<Epetra_FECrsMatrix> PrecMat;
   Teuchos::RCP<Flow_BCs> FBC;
   std::vector<mimetic_hex> MD;
-  std::vector<double> K; // (scalar) diffusion coefficients on cells
   
-  void FBC_initial(double p_face[]);
-  void FBC_final(double f_face[]);
-
+  double rho_; // constant fluid density
+  std::vector<double> K_; // (scalar) diffusion coefficients on cells
+  std::vector<double> area_; // face areas
+  
+  // Private stuff related to boundary conditions.
+  
+  enum bc_types {
+    PRESSURE_CONSTANT = 1,
+    NO_FLOW,
+    DARCY_CONSTANT
+  };
+    
+  struct bc_spec {
+    bc_types type;
+    int num_faces;
+    std::vector<int> faces;
+    std::vector<double> aux;
+    double value;
+  };
+  std::vector<struct bc_spec> bc_;
+  
+  void BC_setup (std::vector<flow_bc> & bc);
+  void FBC_initial_pass(double p_face[]);
+  void FBC_final_pass(double f_face[]);
+  
 };
 
 #endif

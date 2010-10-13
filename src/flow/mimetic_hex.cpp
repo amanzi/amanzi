@@ -1,6 +1,7 @@
 #include <iostream>
 #include "mimetic_hex.hpp"
 #include "upper_packed_matrix.hpp"
+#include "cell_geometry.hpp"
 #include <math.h>
 
 mimetic_hex::mimetic_hex(double x_[8][3])
@@ -281,65 +282,23 @@ void invert_sym_3x3(double minv[][3], double mat[][3])
 }
 
 
-double dot_product(double a[], double b[])
-{
-  double dp = a[0]*b[0];
-  for (int i=1; i<3; i++)
-    dp += a[i]*b[i];
- 
-  return dp;
-}
-
-
-void cross_product(double result[], double a[], double b[])
-{
-  result[0] = a[1]*b[2] - a[2]*b[1];
-  result[1] = a[2]*b[0] - a[0]*b[2];
-  result[2] = a[0]*b[1] - a[1]*b[0];
-};
-
-
-
-double triple_product(double a[], double b[], double c[])
-{
-  return a[0]*(b[1]*c[2] - b[2]*c[1]) +
-    a[1]*(b[2]*c[0] - b[0]*c[2]) + 
-    a[2]*(b[0]*c[1] - b[1]*c[0]);
-};
-
-
-
-double tet_volume(double x1[], double x2[], double x3[], double x4[] )
-{
-  double v1[3], v2[3], v3[3];
-  
-  for (int i=0; i<3; i++) {
-    v1[i] = x2[i]-x1[i];
-    v2[i] = x3[i]-x1[i];
-    v3[i] = x4[i]-x1[i];
-  }
-
-  return triple_product(v1, v2, v3) / 6.0;
-
-};
-
 void mimetic_hex::compute_hex_volumes()
 {
 
-  cvol[0] = tet_volume(x[0], x[1], x[3], x[4]);
-  cvol[1] = tet_volume(x[1], x[2], x[0], x[5]); 
-  cvol[2] = tet_volume(x[2], x[3], x[1], x[6]); 
-  cvol[3] = tet_volume(x[3], x[0], x[2], x[7]); 
-  cvol[4] = tet_volume(x[4], x[7], x[5], x[0]); 
-  cvol[5] = tet_volume(x[5], x[4], x[6], x[1]);
-  cvol[6] = tet_volume(x[6], x[5], x[7], x[2]);
-  cvol[7] = tet_volume(x[7], x[6], x[4], x[3]); 
+  cvol[0] = cell_geometry::tet_volume(x[0], x[1], x[3], x[4]);
+  cvol[1] = cell_geometry::tet_volume(x[1], x[2], x[0], x[5]); 
+  cvol[2] = cell_geometry::tet_volume(x[2], x[3], x[1], x[6]); 
+  cvol[3] = cell_geometry::tet_volume(x[3], x[0], x[2], x[7]); 
+  cvol[4] = cell_geometry::tet_volume(x[4], x[7], x[5], x[0]); 
+  cvol[5] = cell_geometry::tet_volume(x[5], x[4], x[6], x[1]);
+  cvol[6] = cell_geometry::tet_volume(x[6], x[5], x[7], x[2]);
+  cvol[7] = cell_geometry::tet_volume(x[7], x[6], x[4], x[3]); 
 
   
   hvol = 0.0;
   for (int i=0; i<8; i++) hvol += cvol[i];
 
-  hvol += tet_volume(x[0],x[2],x[7],x[5]) + tet_volume(x[1],x[3],x[4],x[6]);
+  hvol += cell_geometry::tet_volume(x[0],x[2],x[7],x[5]) + cell_geometry::tet_volume(x[1],x[3],x[4],x[6]);
   
   hvol *= 0.5;
 }
@@ -353,37 +312,37 @@ void mimetic_hex::compute_hex_face_normals()
     v1[i] = x[7][i] - x[2][i];
     v2[i] = x[6][i] - x[3][i];
   }
-  cross_product(face_normal[0], v1, v2);
+  cell_geometry::cross_product(face_normal[0], v1, v2);
 
   for (int i=0; i<3; i++) {
     v1[i] = x[5][i] - x[0][i];
     v2[i] = x[4][i] - x[1][i];
   }
-  cross_product(face_normal[1], v1, v2);  
+  cell_geometry::cross_product(face_normal[1], v1, v2);  
 
   for (int i=0; i<3; i++) {
     v1[i] = x[4][i] - x[3][i];
     v2[i] = x[7][i] - x[0][i];
   }
-  cross_product(face_normal[2], v1, v2);  
+  cell_geometry::cross_product(face_normal[2], v1, v2);  
   
   for (int i=0; i<3; i++) {
     v1[i] = x[6][i] - x[1][i];
     v2[i] = x[5][i] - x[2][i];
   }
-  cross_product(face_normal[3], v1, v2);  
+  cell_geometry::cross_product(face_normal[3], v1, v2);  
 
   for (int i=0; i<3; i++) {
     v1[i] = x[2][i] - x[0][i];
     v2[i] = x[1][i] - x[3][i];
   }
-  cross_product(face_normal[4], v1, v2);  
+  cell_geometry::cross_product(face_normal[4], v1, v2);  
 
   for (int i=0; i<3; i++) {
     v1[i] = x[6][i] - x[4][i];
     v2[i] = x[7][i] - x[5][i];
   }
-  cross_product(face_normal[5], v1, v2);  
+  cell_geometry::cross_product(face_normal[5], v1, v2);  
   
   for (int j=0; j<6; j++)
     for (int i=0; i<3; i++)

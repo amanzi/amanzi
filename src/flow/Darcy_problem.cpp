@@ -1,5 +1,6 @@
 #include "Darcy_problem.hpp"
 #include "Epetra_FECrsGraph.h"
+#include "cell_geometry.hpp"
 
 void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 {
@@ -34,7 +35,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   for (int j = 0; j < nface_own; ++j) p_face_use[j] = p_face_own[j];
   
   // Apply initial BC fixups to P_FACE_USE.
-  FBC_initial(p_face_use);
+  FBC_initial_pass(p_face_use);
   
   // Gather the ghost P_FACE_USE values.
   // CODE NEEDED HERE -- epetra import/export?
@@ -50,7 +51,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
      // Gather the local face pressures.
      for (int i = 0; i < 6; ++i) aux1[i] = p_face_use[face[i]];
      // Compute the local value of the diffusion operator.
-     MD[j].diff_op(K[j], p_cell_use[j], aux1, f_cell_use[j], aux2);
+     MD[j].diff_op(K_[j], p_cell_use[j], aux1, f_cell_use[j], aux2);
      // Scatter local face result into F_FACE_USE.
      for (int i = 0; i < 6; ++i) f_face_use[face[i]] += aux2[i];
   }
@@ -59,7 +60,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   // CODE NEEDED HERE -- epetra import/export?
   
   // Apply final BC fixups to F_FACE_USE.
-  FBC_final(f_face_use);
+  FBC_final_pass(f_face_use);
   
   // Copy owned part of F_FACE_USE into face segment of F.
   for (int j = 0; j < nface_own; ++j) f_face_own[j] = f_face_use[j];
@@ -69,22 +70,94 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 }
 
 
-// BC fixups for F computation: initial pass.
-void FBC_initial(double p_face[])
+// Setup the private BC data structures
+void Darcy_problem::BC_setup (std::vector<flow_bc> & list)
 {
-  //std::vector<flow_bc> bc = fbcs.get_BCs();
+  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh = FS->get_mesh_maps();
+  //std::vector<flow_bc> list = bcs.get_BCs();
+  int num_bc = list.size();
+  bc_.resize(num_bc);
+  for (int i = 0; i < num_bc; ++i) {
+    if (!mesh->valid_set_id(Mesh_data::FACE, list[i].side_set)) throw std::exception();
+    bc_[i].num_faces = mesh->set_size(list[i].side_set, Mesh_data::FACE, STK_mesh::OWNED);
+    bc_[i].faces.resize(bc_[i].num_faces);
+    mesh->get_set(list[i].side_set, Mesh_data::FACE, STK_mesh::OWNED, bc_[i].faces.begin(), bc_[i].faces.end());
+    if (list[i].bc_type == "pressure Dirichlet constant") {
+      bc_[i].type = PRESSURE_CONSTANT;
+      bc_[i].value = list[i].value;
+      bc_[i].aux.resize(bc_[i].num_faces); // temp storage needed for Dirichlet-type conditions
+    }
+    else if (list[i].bc_type == "no flow")
+      bc_[i].type == NO_FLOW;
+    
+    else if (list[i].bc_type == "Darcy Dirichlet constant") {
+      bc_[i].type = DARCY_CONSTANT;
+      bc_[i].value = list[i].value;
+    }
+    else
+      throw std::exception();
+  }
+}
+
+
+// BC fixups for F computation: initial pass.
+void Darcy_problem::FBC_initial_pass(double p_face[])
+{
+  int n;
+  for (std::vector<bc_spec>::iterator bc = bc_.begin(); bc != bc_.end(); ++bc) {
+    switch (bc->type) {
+      case PRESSURE_CONSTANT:
+        for (int i = 0; i < bc->num_faces; ++i) {
+          n = bc->faces[i];
+          bc->aux[i] = p_face[n] - bc->value;
+          p_face[n] = bc->value;
+        }
+        break;
+    }
+  }
 }
 
 
 // BC fixups for F computation: final pass.
-void FBC_final(double f_face[])
+void Darcy_problem::FBC_final_pass(double f_face[])
 {
+  int n;
+  for (std::vector<bc_spec>::iterator bc = bc_.begin(); bc != bc_.end(); ++bc) {
+    switch (bc->type) {
+      case PRESSURE_CONSTANT:
+        for (int i = 0; i < bc->num_faces; ++i) {
+          n = bc->faces[i];
+          f_face[n] = bc->aux[i];
+        }
+        break;
+      case DARCY_CONSTANT:
+        for (int i = 0; i < bc->num_faces; ++i) {
+          n = bc->faces[i];
+          f_face[n] += rho_ * bc->value * area_[n];
+        }
+        break;
+      case NO_FLOW:
+        // The do-nothing boundary condition.
+        break;
+    }
+  }
 }
 
 
 
 void Darcy_problem::initialize()
 {
+  
+  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh = FS->get_mesh_maps();
+  
+  // Compute face areas.  Needed for BC and recovering Darcy velocities.
+  int nface_used = mesh->count_entities(Mesh_data::FACE, STK_mesh::USED);
+  area_.resize(nface_used);
+  double x[4][3];
+  for (int j = 0; j < nface_used; ++j) {
+    mesh->face_to_coordinates(j, x, x+12);
+    area_[j] = cell_geometry::quad_face_area(x[0], x[1], x[2], x[3]);
+  }
 
   // initialize the crs matrix
 

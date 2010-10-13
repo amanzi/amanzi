@@ -4,6 +4,7 @@
 #include "UnitTest++.h"
 #include "../upper_packed_matrix.hpp"
 #include "../mimetic_hex.hpp"
+#include "../cell_geometry.hpp"
 
 
 TEST(CROSS_PRODUCT) {
@@ -22,13 +23,13 @@ TEST(CROSS_PRODUCT) {
     double aux[3];
     double zero_array[3] = { 0.0, 0.0, 0.0 };
 
-    cross_product(aux, e[k], e[kp1]);
+    cell_geometry::cross_product(aux, e[k], e[kp1]);
     CHECK_ARRAY_EQUAL(aux, zero_array, 3);
 
-    cross_product(aux, e[kp1], e[k]);
+    cell_geometry::cross_product(aux, e[kp1], e[k]);
     CHECK_ARRAY_EQUAL(aux, zero_array, 3);
     
-    cross_product(aux, e[k], e[k]);
+    cell_geometry::cross_product(aux, e[k], e[k]);
     CHECK_ARRAY_EQUAL(aux, zero_array, 3);
   }
     
@@ -56,13 +57,13 @@ TEST(CROSS_PRODUCT) {
 
     for (int j = 0; j<3; j++) {
       for (int k = 0; k<3; k++) {
-	cross_product(aux, e[j], e[k]);
+	cell_geometry::cross_product(aux, e[j], e[k]);
 	for (int i=0; i<3; i++) 
 	  c[i] += a[j]*b[k]* aux[i];
       }
     }
     
-    cross_product(aux, a, b);
+    cell_geometry::cross_product(aux, a, b);
     
     CHECK_ARRAY_EQUAL(c, aux, 3);
   }
@@ -89,12 +90,12 @@ TEST(TRIPLE_PRODUCT) {
       c[i] = int(512*(b[i] - 0.5));     
     }
     
-    double tp = triple_product(a, b, c);
+    double tp = cell_geometry::triple_product(a, b, c);
 
     double aux[3];
-    cross_product(aux, b, c);
+    cell_geometry::cross_product(aux, b, c);
     
-    double dpcp = dot_product(a, aux);
+    double dpcp = cell_geometry::dot_product(a, aux, 3);
 
     CHECK_EQUAL(tp, dpcp);
 
@@ -111,7 +112,7 @@ TEST(TET_VOLUME) {
   // Reference tet; origin corner of 1x2x3 orthogonal, axis-aligned hex.
   double ref_tet[4][3] = { { 0,0,0 }, { 1,0,0 }, { 0,2,0 }, { 0,0,3 } };
 
-  CHECK_EQUAL(tet_volume(ref_tet[0], ref_tet[1], ref_tet[2], ref_tet[3]), 1.0);
+  CHECK_EQUAL(cell_geometry::tet_volume(ref_tet[0], ref_tet[1], ref_tet[2], ref_tet[3]), 1.0);
   
 
   double a[3];
@@ -128,12 +129,12 @@ TEST(TET_VOLUME) {
       shifted[j][i] = ref_tet[j][i] - a[i];
 
   // make sure that translation does not change the tet volume
-  CHECK_EQUAL(tet_volume(shifted[0], shifted[1], shifted[2], shifted[3]), 1.0);
+  CHECK_EQUAL(cell_geometry::tet_volume(shifted[0], shifted[1], shifted[2], shifted[3]), 1.0);
   
   double aux[4][3];
   matmul(aux, shifted, q, 4);
   
-  CHECK_EQUAL(tet_volume(aux[0], aux[1], aux[2], aux[3]), pow(125,3));
+  CHECK_EQUAL(cell_geometry::tet_volume(aux[0], aux[1], aux[2], aux[3]), pow(125,3));
 
   double s[3][3];
   for (int j=0; j<3; j++)
@@ -145,7 +146,7 @@ TEST(TET_VOLUME) {
 
   matmul(aux, shifted, s, 4);
   
-  CHECK_EQUAL(tet_volume(aux[0], aux[1], aux[2], aux[3]), 1.0);
+  CHECK_EQUAL(cell_geometry::tet_volume(aux[0], aux[1], aux[2], aux[3]), 1.0);
   
 }
 
