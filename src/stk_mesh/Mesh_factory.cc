@@ -55,16 +55,22 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
 
     // Reset all of the mesh-specific data.
     face_id_ = 0;
-    Parts (0).swap     (element_blocks_);
-    Parts (0).swap     (side_sets_);
-    Parts (0).swap     (node_sets_);
+    element_id_ = 0;
+    Parts (0).swap (element_blocks_);
+    Parts (0).swap (side_sets_);
+    Parts (0).swap (node_sets_);
     Vector_entity_map ().swap (faces_map_);
     coordinate_field_ = 0;
+    set_to_part_.clear ();
+    
+    // Build the data for the mesh object.
 
     build_meta_data_ (data, fields);
     build_bulk_data_ (data, fields);
 
-    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, meta_data_, bulk_data_,
+    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, 
+                           meta_data_, bulk_data_,
+                           set_to_part_,
                            *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
 
     return mesh;
@@ -89,7 +95,6 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
 
     for (int node_set = 0; node_set < num_node_sets; ++node_set)
         node_sets_.push_back (add_node_set_ (data.node_set (node_set)));
-
 
     // Get the universal part. There's only one everything.
     stk::mesh::Part &universal_part (meta_data_->universal_part ());
@@ -200,28 +205,65 @@ void Mesh_factory::add_coordinates_ (const Mesh_data::Coordinates<double>& coord
 
 stk::mesh::Part* Mesh_factory::add_element_block_ (const Mesh_data::Element_block& block)
 {
-    stk::mesh::Part &new_part (meta_data_->declare_part (block.name (), element_rank_));
+
+    std::ostringstream name;
+    if (block.name ().size () > 0)
+        name << block.name ();
+    else
+        name << "element block " << block.id ();
+
+    stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), element_rank_));
     stk::mesh::set_cell_topology 
         (new_part, get_topology_data (block.element_type ()).getTopology ());
+
+    add_set_part_relation_ (block.id (), new_part);
+
     return &new_part;
 }
 
 
 stk::mesh::Part* Mesh_factory::add_side_set_ (const Mesh_data::Side_set& set)
 {
-    std::ostringstream name ("Side set: ");
-    name << set.id ();
+    std::ostringstream name;
+    if (set.name ().size () > 0)
+        name << set.name ();
+    else
+        name << "side set " << set.id ();
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), face_rank_));
+
+    add_set_part_relation_ (set.id (), new_part);
+
     return &new_part;
 }
 
 
 stk::mesh::Part* Mesh_factory::add_node_set_ (const Mesh_data::Node_set& set)
 {
-    std::ostringstream name ("Node set: ");
-    name << set.id ();
+    std::ostringstream name;
+    if (set.name ().size () > 0)
+        name << set.name ();
+    else
+        name << "node set " << set.id ();
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), stk::mesh::Node));
+
+    add_set_part_relation_ (set.id (), new_part);
+
+
     return &new_part;
+}
+
+void Mesh_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part)
+{
+    const unsigned int part_id = part.mesh_meta_data_ordinal ();
+    const stk::mesh::EntityRank rank = part.primary_entity_rank ();
+    const Rank_and_id rank_set_id = std::make_pair (rank, set_id);
+
+    ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end ());
+
+    set_to_part_ [rank_set_id]  = &part;
+
+
+
 }
 
 
@@ -232,8 +274,9 @@ void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block,
     for (int element_ind = 0; element_ind < block.num_elements (); ++element_ind)
     {
         block.connectivity (element_ind, storage.begin ());
+        ++element_id_;
         stk::mesh::Entity &element = 
-            stk::mesh::declare_element (*bulk_data_, part, (element_ind+1), &storage [0]);
+            stk::mesh::declare_element (*bulk_data_, part, element_id_, &storage [0]);
 
         // XXX We don't need this for general element blocks.
         declare_faces_ (element, part);
@@ -290,9 +333,6 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk:
     // Side set consists of elements and a local face number. We need
     // to convert these to the unique face indices.
 
-    const stk::mesh::EntityRank cell = entity_map_->kind_to_rank (Mesh_data::CELL);
-    const stk::mesh::EntityRank face = entity_map_->kind_to_rank (Mesh_data::FACE);
-
     stk::mesh::PartVector parts_to_add;
     parts_to_add.push_back (&part);
 
@@ -308,10 +348,10 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk:
         const int local_side = side_list [index];
 
         // Look up the element from the Id.
-        stk::mesh::Entity *element = bulk_data_->get_entity (cell, element_number);
+        stk::mesh::Entity *element = bulk_data_->get_entity (element_rank_, element_number);
 
         // Look up the face from the local face id.
-        stk::mesh::PairIterRelation faces = element->relations (face);
+        stk::mesh::PairIterRelation faces = element->relations (face_rank_);
         for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
         {
             if (it->identifier () == local_side)
@@ -327,6 +367,22 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk:
 
 void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, stk::mesh::Part &part)
 {
+
+    stk::mesh::PartVector parts_to_add;
+    parts_to_add.push_back (&part);
+
+    const int num_nodes = node_set.num_nodes ();
+    const std::vector<int>& node_list = node_set.node_list ();
+    ASSERT (node_list.size () == num_nodes);
+
+    for (std::vector<int>::const_iterator it = node_list.begin ();
+         it != node_list.end ();
+         ++it)
+    {
+        stk::mesh::Entity *node = bulk_data_->get_entity (stk::mesh::Node, (*it));
+        bulk_data_->change_entity_parts (*node, parts_to_add);
+
+    }
 
 }
 

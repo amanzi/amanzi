@@ -37,8 +37,16 @@ void Mesh_maps::clear_internals_ ()
 
 void Mesh_maps::update_internals_()
 {
+    gather_sets_ ();
     build_maps_ ();
     build_tables_ ();
+}
+
+void Mesh_maps::gather_sets_ ()
+{
+
+    
+
 }
 
 

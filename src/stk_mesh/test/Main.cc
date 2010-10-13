@@ -15,4 +15,3 @@ int main(int argc, char *argv[])
     stk::parallel_machine_finalize ();
 
 }
-

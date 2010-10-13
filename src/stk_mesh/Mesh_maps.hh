@@ -39,6 +39,7 @@ private:
     unsigned int kind_to_index_ (Mesh_data::Entity_kind type) const;
     Mesh_data::Entity_kind index_to_kind_ (unsigned int index) const;
 
+    void gather_sets_ ();
     void build_maps_ ();
     void build_tables_ ();
 
@@ -91,7 +92,8 @@ public:
     // ------------------------------
     unsigned int num_sets     (Mesh_data::Entity_kind kind) const;
     bool         valid_set_id (Mesh_data::Entity_kind kind, unsigned int id) const;
-    unsigned int set_size     (unsigned int set_id, Mesh_data::Entity_kind kind, 
+    unsigned int set_size     (unsigned int set_id, 
+                               Mesh_data::Entity_kind kind, 
                                Element_Category category) const;
 
     template <typename IT>

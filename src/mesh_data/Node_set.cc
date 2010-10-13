@@ -5,7 +5,7 @@
 namespace Mesh_data
 {
 
-void Node_set::take_data_from (std::vector<int>& node_list, std::vector<double>& dist_factors)
+void Node_set::take_data_from (std::vector<int>& node_list, std::vector<double>& dist_factors, std::string& name)
 {
     num_nodes_ = node_list.size ();
     num_dist_factors_ = dist_factors.size ();
@@ -13,14 +13,17 @@ void Node_set::take_data_from (std::vector<int>& node_list, std::vector<double>&
     node_list_.swap (node_list);
     node_dist_factors_.swap (dist_factors);
 
+    name_.swap (name);
+
     ASSERT (valid ());
 }
 
 
-Node_set* Node_set::build_from (int set_id, std::vector<int>& node_list, std::vector<double>& dist_factors)
+Node_set* Node_set::build_from (int set_id, std::vector<int>& node_list, std::vector<double>& dist_factors,
+                                std::string& name)
 {
     Node_set *set = new Node_set (set_id);
-    set->take_data_from (node_list, dist_factors);
+    set->take_data_from (node_list, dist_factors, name);
     return set;
 }
 

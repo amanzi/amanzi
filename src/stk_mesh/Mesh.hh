@@ -41,9 +41,13 @@ private:
     Vector_field_type &coordinate_field_;
     
     const stk::mesh::Selector& selector_ (Element_Category category) const;
+
+    Id_map set_to_part_;
     
     void update_ ();
     void notify_views_ () {  }
+
+    const stk::mesh::Part& get_part_from_set_id_ (unsigned int set_id);
     
     // Internal Validators
     bool element_type_ok_ () const;
@@ -64,6 +68,7 @@ public:
           Entity_map* entity_map, 
           stk::mesh::MetaData *meta_data, 
           stk::mesh::BulkData *bulk_data,
+          const Id_map &set_to_part,
           Vector_field_type& coordinate_field);
     
     virtual ~Mesh () { }
@@ -82,7 +87,6 @@ public:
     unsigned int               rank_id      () const { return communicator_.MyPID (); }
     
     unsigned int count_entities (stk::mesh::EntityRank rank, Element_Category category) const;
-    //    unsigned int count_global_entities (stk::mesh::EntityRank rank) const;
     
     void get_entities (stk::mesh::EntityRank, Element_Category category, Entity_vector& entities) const;
     
@@ -90,17 +94,35 @@ public:
     void element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const;
     void face_to_nodes    (stk::mesh::EntityId element, Entity_Ids& ids) const;
     
-    
     double const * coordinates (stk::mesh::EntityId node) const;
     double const * coordinates (stk::mesh::Entity* node)  const;
     
     stk::mesh::Entity* id_to_entity (stk::mesh::EntityRank rank, 
                                      stk::mesh::EntityId id,
                                      Element_Category category) const;
+
+
+    // Sets
+    // ----
+
+    unsigned int num_sets () const;
+    unsigned int num_sets (stk::mesh::EntityRank rank) const;
+
+    Id_map::const_iterator sets_begin () const { return set_to_part_.begin (); }
+    Id_map::const_iterator sets_end () const { return set_to_part_.end (); }
     
+    template <typename T>
+    void get_set_ids (stk::mesh::EntityRank rank, T begin, T end) const;
 
+    bool valid_id (stk::mesh::EntityRank rank, unsigned int id) const;
 
+    template <typename T>
+    void get_set_element_ids (stk::mesh::EntityRank, unsigned int set_id, T begin, T end);
 
+    template <typename T>
+    void get_set_element_ids (stk::mesh::EntityRank, const char* name, T begin, T end);
+
+    
     // Manipulators
     // ------------
 
