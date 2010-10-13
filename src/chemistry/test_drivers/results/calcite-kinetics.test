@@ -1,0 +1,82 @@
+Command Line Options: 
+	Test number: 5
+	Verbosity: 2
+
+
+-- Beaker description ------------------------------------------------
+---- Parameters ------------------------------------------------------
+    tolerance: 1e-12
+    max_iterations :250
+    activity model: debye-huckel
+    porosity: 0.5 [-]
+    water saturation: 1 [-]
+    water density: 1000 [kg m^-3]
+    volume: 1 [m^3]
+
+---- Primary Species
+        Species    Charge       GMW
+             H+         1    1.0079
+          HCO3-        -1   61.0171
+           Ca++         2    40.078
+
+---- Aqueous Equilibrium Complexes
+    Reaction                               log Keq    Charge       GMW
+    OH- = -1 H+
+                                           13.9951        -1   17.0073
+    CO3-- = -1 H+ + 1 HCO3-
+                                           10.3288        -2   60.0092
+    CO2(aq) = 1 H+ + 1 HCO3-
+                                           -6.3447         0   44.0098
+    CaOH+ = -1 H+ + 1 Ca++
+                                             12.85         1   57.0853
+    CaHCO3+ = 1 Ca++ + 1 HCO3-
+                                           -1.0467         1   101.095
+    CaCO3(aq) = -1 H+ + 1 Ca++ + 1 HCO3-
+                                            7.0017         0   100.087
+
+---- Minerals
+    Reaction                               log_Keq  molar_density       GMW
+    Calcite = -1 H+ + 1 Ca++ + 1 HCO3-
+                                            1.8487         36.934   100.087
+
+---- Mineral Kinetics
+    Rate law: TST
+    Reaction: 
+      Calcite = -1 H+ + 1 Ca++ + 1 HCO3-
+    Parameters:
+      mineral = Calcite
+      mineral id = 0
+      rate constant = 1.8487 [moles/m^2/sec]
+      area = 1 [m^2]
+      log_Keq = 0 [-]
+      rate modifiers: 
+        { H+ }^1 
+
+
+----------------------------------------------------------------------
+Beaker::speciate num_iterations :11
+
+-- Solution ----------------------------------------------------------
+---- Components 
+           Name       Molality
+             H+    1.00000e-03
+          HCO3-    1.00000e-03
+           Ca++    1.00000e-03
+---- Species 
+           Name       Molarity Activity Coeff       Activity
+             H+    2.21662e-05    9.54528e-01    2.11583e-05
+          HCO3-    2.19641e-05    9.51420e-01    2.08971e-05
+           Ca++    9.99799e-04    8.23377e-01    8.23211e-04
+            OH-    5.02574e-10    9.51086e-01    4.77991e-10
+          CO3--    5.64889e-11    8.20053e-01    4.63239e-11
+        CO2(aq)    9.77834e-04    1.00000e+00    9.77834e-04
+          CaOH+    5.77642e-12    9.51420e-01    5.49580e-12
+        CaHCO3+    2.01337e-07    9.51420e-01    1.91556e-07
+      CaCO3(aq)    8.09872e-11    1.00000e+00    8.09872e-11
+----------------------------------------------------------------------
+
+-- Test Beaker Reaction Stepping -------------------------------------
+       Time (s)             H+          HCO3-           Ca++
+    0.00000e+00    1.00000e-03    1.00000e-03    1.00000e-03
+    3.60000e+03    9.26807e-04    1.07319e-03    1.07319e-03
+Done!

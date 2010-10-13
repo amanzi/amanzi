@@ -29,10 +29,11 @@ DIFF = diff
 DFLAGS = --brief
 
 TESTS = \
-	carbonate_unit_activity_coeff \
-	calcite_unit_activity_coeff \
-	carbonate_debye_huckel \
-	calcite_debye_huckel
+	carbonate-unit-activity-coeff \
+	carbonate-debye-huckel \
+	ca-carbonate-unit-activity-coeff \
+	ca-carbonate-debye-huckel \
+	calcite-kinetics
 
 GEOCHEM = ./geochemistryTest
 GEOVERB = -v 2
@@ -64,23 +65,28 @@ tests : test
 
 test : $(TESTS)
 
-carbonate_unit_activity_coeff  :
+carbonate-unit-activity-coeff  :
 	$(GEOCHEM) -t 1 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
-carbonate_debye_huckel  : 
+carbonate-debye-huckel  : 
 	$(GEOCHEM) -t 2 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
-calcite_unit_activity_coeff : 
+ca-carbonate-unit-activity-coeff : 
 	$(GEOCHEM) -t 3 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 
-calcite_debye_huckel : 
+ca-carbonate-debye-huckel : 
 	$(GEOCHEM) -t 4 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
+	@echo 
+
+calcite-kinetics : 
+	$(GEOCHEM) -t 5 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
 	@echo 
 

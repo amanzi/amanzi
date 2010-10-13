@@ -3,9 +3,9 @@ calcite.in:  kinetic calcite dissolution problem for geochemistry code validatio
 END
 
 RUNTIME
-speciate_only   false
+speciate_only   true
 database_sweep  false
-database        calcite.dbs
+database        ca-carbonate.dbs
 graphics        xmgr
 density_module  temperature
 time_units      hours

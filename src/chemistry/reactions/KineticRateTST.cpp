@@ -315,7 +315,7 @@ void KineticRateTST::Display(void) const
   std::cout << "      area = " << area() << " [m^2]" << std::endl;
   std::cout << "      log_Keq = " << log_Keq() << " [-]" << std::endl;
   std::cout << "      rate modifiers: " << std::endl;
-  std::cout << "      ";
+  std::cout << "        ";
   for (unsigned int mod = 0; mod < this->modifying_species_names.size(); mod++) {
     std::cout << "{ " << this->modifying_species_names.at(mod) << " }";
     std::cout << "^" << this->modifying_exponents.at(mod) << " " << std::endl;

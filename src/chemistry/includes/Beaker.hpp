@@ -116,7 +116,8 @@ class Beaker {
   void DisplayAqueousEquilibriumComplexes(void) const;
   void DisplayMinerals(void) const;
   void DisplayMineralKinetics(void) const;
-
+  void DisplayTotalColumnHeaders(void) const;
+  void DisplayTotalColumns(const double time, const std::vector<double>& total) const;
   void DisplayResults(void) const;
 
   void ncomp(int i) { this->ncomp_ = i; }

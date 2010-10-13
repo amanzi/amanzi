@@ -120,15 +120,15 @@ int main(int argc, char **argv) {
     }
   
     if (mineral_kinetics_file.size() != 0) {
-      std::cout << "----- Test Beaker Reaction Step -----" << std::endl;
-      std::cout << "initial total: " << std::endl;
-      PrintDoubleVector(total);
-      double delta_time = 60.0;
-      for (int time_step = 0; time_step < 60; time_step++) {
+      std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
+      chem->DisplayTotalColumnHeaders();
+      chem->DisplayTotalColumns(0.0, total);
+      double delta_time = 60.0;  // seconds
+      int num_time_steps = 60;
+      for (int time_step = 0; time_step <= num_time_steps; time_step++) {
         chem->ReactionStep(total, parameters, delta_time);        
       }
-      std::cout << "final total: " << std::endl;
-      PrintDoubleVector(total);
+      chem->DisplayTotalColumns(num_time_steps * delta_time, total);
     }
   }
   // cleanup memory

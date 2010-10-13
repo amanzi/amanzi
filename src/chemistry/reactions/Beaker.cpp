@@ -879,6 +879,26 @@ void Beaker::DisplayResults(void) const
             << std::endl << std::endl;
 }  // end DisplayResults()
 
+void Beaker::DisplayTotalColumnHeaders(void) const
+{
+  std::cout << std::setw(15) << "Time (s)";
+  for (int i = 0; i < ncomp(); i++) {
+    std::cout << std::setw(15) << primarySpecies_[i].name();
+  }
+  std::cout << std::endl;
+}  // end DisplayTotalColumnHeaders()
+
+void Beaker::DisplayTotalColumns(const double time, const std::vector<double>& total) const
+{
+  std::cout << std::setw(15) << time;
+  for (int i = 0; i < ncomp(); i++) {
+    std::cout << std::setw(15) << total.at(i);
+  }
+  std::cout << std::endl;
+
+}  // end DisplayTotalColumns()
+
+
 void Beaker::print_results(void) const
 {
   // output for testing purposes
