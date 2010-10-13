@@ -16,7 +16,6 @@ Species::Species()
     charge_(0),
     gram_molecular_weight_(0.0),
     ion_size_parameter_(0.0),
-    molar_density_(0.0),
     name_("")
 {
 //  ActivityCoefficient* activityCoefficient;

@@ -17,7 +17,7 @@ class Species {
 
  public:
   Species();
-  ~Species();
+  virtual ~Species();
 
   Species(SpeciesId id, SpeciesName name, double charge, double mol_wt, 
           double size);
@@ -44,7 +44,6 @@ class Species {
   double charge(void) const { return this->charge_; }
   double gram_molecular_weight(void) const { return this->gram_molecular_weight_; }
   double ion_size_parameter(void) const { return this->ion_size_parameter_; }
-  double molar_density(void) const { return this->molar_density_; }
   SpeciesName name(void) const { return this->name_; }
 
   void molality(double d) { this->molality_ = d; }
@@ -59,7 +58,6 @@ class Species {
   void charge(double d) { this->charge_ = d; }
   void gram_molecular_weight(double d) { this->gram_molecular_weight_ = d; }
   void ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
-  void molar_density(double d) { this->molar_density_ = d; }
   void name(SpeciesName name) { this->name_ = name; }
 
   void display(void) const;
@@ -83,7 +81,6 @@ class Species {
   double charge_; // why is this a double rather than int...?
   double gram_molecular_weight_;
   double ion_size_parameter_;
-  double molar_density_;
   SpeciesName name_;
 
 };

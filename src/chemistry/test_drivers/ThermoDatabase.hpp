@@ -18,6 +18,7 @@ class ThermoDatabase : public Beaker {
   void ReadFile(const std::string thermo_filename);
   void ParsePrimarySpecies(const std::string data);
   void ParseAqueousEquilibriumComplex(const std::string data);
+  void ParseMineral(const std::string data);
   void ParseReaction(const std::string reaction, 
                      std::string *name,
                      std::vector<SpeciesName>* species, 
@@ -27,6 +28,7 @@ class ThermoDatabase : public Beaker {
 
  private:
   SpeciesId primary_id_;
+  SpeciesId mineral_id_;
 };
 
 #endif  // __ThermoDatabase_hpp__

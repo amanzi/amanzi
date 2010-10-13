@@ -15,6 +15,7 @@
 #include <string>
 
 #include "Species.hpp"
+#include "Mineral.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
 
@@ -26,7 +27,8 @@ class MineralKineticsFactory
   MineralKineticsFactory(void);
   ~MineralKineticsFactory(void);
   std::vector<KineticRate*> Create(const std::string file_name,
-                                   const std::vector<Species> primary_species);
+                                   const std::vector<Species> primary_species,
+                                   const std::vector<Mineral> minerals);
  
   void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
   Verbosity verbosity(void) const { return this->verbosity_; };
@@ -40,8 +42,11 @@ class MineralKineticsFactory
   std::vector<KineticRate*> rates;
 
   void ReadFile(const std::string file_name,
-                const std::vector<Species> primary_species);
+                const std::vector<Species> primary_species,
+                const std::vector<Mineral> minerals);
   KineticRate* CreateRate(std::string rate_type);
+  SpeciesId VerifyMineralName(const std::string mineral_name,
+                              const std::vector<Mineral> minerals);
 };
 
 #endif     /* __MINERAL_KINETICS_FACTORY_HPP__ */

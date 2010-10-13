@@ -11,7 +11,7 @@
 #include "Block.hpp"
 #include "GeneralRxn.hpp"
 #include "LU.hpp"
-//#include "MineralReaction.hpp"
+#include "Mineral.hpp"
 //#include "GasExchange.hpp"
 //#include "IonExchange.hpp"
 //#include "SurfaceComplexation.hpp"
@@ -55,6 +55,7 @@ class Beaker {
 
   void addPrimarySpecies(Species s);
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
+  void addMineral(Mineral m);
   void addGeneralRxn(GeneralRxn r);
 
   // speciate for free-ion concentrations
@@ -113,6 +114,8 @@ class Beaker {
   void DisplayParameters(void) const;
   void DisplayPrimary(void) const;
   void DisplayAqueousEquilibriumComplexes(void) const;
+  void DisplayMinerals(void) const;
+  void DisplayMineralKinetics(void) const;
 
   void DisplayResults(void) const;
 
@@ -188,8 +191,9 @@ private:
   // por_sat_den_vol_ = porosity * saturation * water_density * volume [kg water]
   double por_sat_den_vol_; 
   
-  std::vector<Species> primarySpecies_; // list of primary species
   Species water_;
+  std::vector<Species> primarySpecies_; // list of primary species
+  std::vector<Mineral> minerals_; // list of mineral species
 
   ActivityModel *activity_model_;
 

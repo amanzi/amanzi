@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 
+#include "Mineral.hpp"
 #include "MineralKineticsFactory.hpp"
 #include "KineticRateTST.hpp"
 #include "KineticRate.hpp"
@@ -23,13 +24,14 @@ MineralKineticsFactory::~MineralKineticsFactory(void)
 }  // end MineralKineticsFactory destructor
 
 std::vector<KineticRate*> MineralKineticsFactory::Create(const std::string file_name,
-                                                         const std::vector<Species> primary_species)
+                                                         const std::vector<Species> primary_species,
+                                                         const std::vector<Mineral> minerals)
 {
   // the input file will generally contain multiple kinetic rates. so
   // this method should return an array of rate pointes....
   this->rates.clear();
 
-  ReadFile(file_name, primary_species);
+  ReadFile(file_name, primary_species, minerals);
 
   return this->rates;
 }  // end Create()
@@ -52,7 +54,8 @@ std::vector<KineticRate*> MineralKineticsFactory::Create(const std::string file_
 **
 *******************************************************************************/
 void MineralKineticsFactory::ReadFile(const std::string file_name,
-                                      const std::vector<Species> primary_species)
+                                      const std::vector<Species> primary_species,
+                                      const std::vector<Mineral> minerals)
 {
   if (verbosity() == kDebugMineralKinetics) {
     std::cout << "MineralKineticsFactory::ReadFile()...." << std::endl;
@@ -73,15 +76,16 @@ void MineralKineticsFactory::ReadFile(const std::string file_name,
     if (line[0] != '#' && line[0] != '\0' && line[0] != ' ') {
       // not a comment line or white space
       reaction_data.tokenize(line, delimiter);
-      std::string reaction = reaction_data.at(0);
+      std::string mineral_name = reaction_data.at(0);
+      SpeciesId mineral_id = VerifyMineralName(mineral_name, minerals);
       std::string rate_type = reaction_data.at(1);
-      reaction_data.erase(reaction_data.begin());  // erase reaction string
+      reaction_data.erase(reaction_data.begin());  // erase mineral name
       reaction_data.erase(reaction_data.begin());  // erase reaction type string
       KineticRate* kinetic_rate = NULL;
       kinetic_rate = CreateRate(rate_type);
       if (kinetic_rate != NULL) {
         kinetic_rate->verbosity(verbosity());
-        kinetic_rate->Setup(reaction, reaction_data, primary_species);
+        kinetic_rate->Setup(&(minerals.at(mineral_id)), reaction_data, primary_species);
         this->rates.push_back(kinetic_rate);
       }
     } else {
@@ -116,5 +120,29 @@ KineticRate* MineralKineticsFactory::CreateRate(std::string rate_type)
   }
   return kinetic_rate;
 }  // end CreateRate()
+
+
+SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_name,
+                                               const std::vector<Mineral> minerals)
+{
+  std::string space(" ");
+  StringTokenizer st(mineral_name, space);
+  std::string find_name = st.at(0);
+  bool mineral_found = false;
+  int mineral_id = -1;
+  for (std::vector<Mineral>::const_iterator m = minerals.begin();
+       m != minerals.end(); m++) {
+    if (find_name == m->name()) {
+      mineral_found = true;
+      mineral_id = m->identifier();
+    }
+  }
+  if (!mineral_found) {
+    // print helpful message and exit gracefully
+    std::cout << "MineralKineticsFactory::VerifyMineralName(): Did not find mineral \'"
+              << find_name << "\' in the mineral list." << std::endl;
+  }
+  return mineral_id;
+}  // end VerifyMineralName()
 
 

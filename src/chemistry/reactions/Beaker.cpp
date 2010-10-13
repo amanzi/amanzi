@@ -2,6 +2,7 @@
 
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
+#include "Mineral.hpp"
 #include "KineticRate.hpp"
 #include "MineralKineticsFactory.hpp"
 #include "Verbosity.hpp"
@@ -33,6 +34,7 @@ Beaker::Beaker()
     J(NULL)
 {
   aqComplexRxns_.clear();
+  minerals_.clear();
   generalKineticRxns_.clear();
   mineral_rates_.clear();
 } // end Beaker() constructor
@@ -116,9 +118,9 @@ void Beaker::SetupMineralKinetics(const std::string mineral_kinetics_file)
     MineralKineticsFactory mineral_kinetics_factory;
     mineral_kinetics_factory.verbosity(verbosity());
     mineral_rates_ = mineral_kinetics_factory.Create(mineral_kinetics_file, 
-                                                     primarySpecies_);
+                                                     primarySpecies_, minerals_);
     
-    if (verbosity() >= kVerbose) {
+    if (verbosity() >= kDebugMineralKinetics) {
       for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
            rate != mineral_rates_.end(); rate++) {
         (*rate)->Display();
@@ -137,6 +139,11 @@ void Beaker::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c)
 {
   aqComplexRxns_.push_back(c);
 } // end addAqueousEquilibriumComplex()
+
+void Beaker::addMineral(Mineral m) 
+{
+  minerals_.push_back(m);
+} // end addMineral()
 
 void Beaker::addGeneralRxn(GeneralRxn r) 
 {
@@ -708,7 +715,11 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
   return num_iterations;
 }  // end speciate()
 
-
+/********************************************************************************
+**
+**  Output related functions
+**
+********************************************************************************/
 void Beaker::display(void) const
 {
   std::cout << "----- Beaker description ------" << std::endl;
@@ -735,9 +746,13 @@ void Beaker::Display(void) const
   }
 
   DisplayPrimary();
-  std::cout << std::endl;
 
   DisplayAqueousEquilibriumComplexes();
+
+  DisplayMinerals();
+
+  DisplayMineralKinetics();
+
   std::cout << "----------------------------------------------------------------------" 
             << std::endl;
   
@@ -774,6 +789,7 @@ void Beaker::DisplayPrimary(void) const
        primary != primarySpecies_.end(); primary++) {
     primary->Display();
   }  
+  std::cout << std::endl;
 }  // end DisplayPrimary()
 
 void Beaker::DisplayAqueousEquilibriumComplexes(void) const
@@ -788,7 +804,37 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const
        aec != aqComplexRxns_.end(); aec++) {
     aec->Display();
   }  
+  std::cout << std::endl;
 }  // end DisplayAqueousEquilibriumComplexes()
+
+void Beaker::DisplayMinerals(void) const
+{
+  if (minerals_.size() > 0) {
+    std::cout << "---- Minerals" << std::endl;
+    std::cout << std::setw(12) << "Reaction"
+              << std::setw(38) << "log_Keq"
+              << std::setw(15) << "molar_density"
+              << std::setw(10) << "GMW"
+              << std::endl;
+    for (std::vector<Mineral>::const_iterator m = minerals_.begin();
+         m != minerals_.end(); m++) {
+      m->Display();
+    }  
+    std::cout << std::endl;
+  }
+}  // end DisplayMinerals()
+
+void Beaker::DisplayMineralKinetics(void) const
+{
+  if(mineral_rates_.size() > 0) {
+    std::cout << "---- Mineral Kinetics" << std::endl;
+    for (std::vector<KineticRate*>::const_iterator m = mineral_rates_.begin();
+         m != mineral_rates_.end(); m++) {
+      (*m)->Display();
+    }  
+    std::cout << std::endl;
+  }
+}  // end DisplayMineralKinetics()
 
 void Beaker::DisplayResults(void) const
 {

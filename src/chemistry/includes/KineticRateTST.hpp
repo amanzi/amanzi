@@ -23,6 +23,7 @@
 
 #include "KineticRate.hpp"
 #include "Species.hpp"
+#include "SecondarySpecies.hpp"
 #include "StringTokenizer.hpp"
 
 class Block; 
@@ -33,7 +34,7 @@ class KineticRateTST : public KineticRate
   KineticRateTST(void);
   ~KineticRateTST(void);
 
-  void Setup(const std::string reaction, 
+  void Setup(const SecondarySpecies* reaction,
              const StringTokenizer reaction_data,
              const SpeciesArray primary_species);
   void Update(const SpeciesArray primary_species);
@@ -54,12 +55,10 @@ class KineticRateTST : public KineticRate
 
  protected:
 
-  Species mineral(void) const { return this->mineral_; };
-
   void area(double set_area) { this->area_ = set_area; };
   double area(void) const { return this->area_; };
-  void pK(double set_pK) { this->pK_ = set_pK; };
-  double pK(void) const { return this->pK_; };
+  void log_Keq(double set_log_Keq) { this->log_Keq_ = set_log_Keq; };
+  double log_Keq(void) const { return this->log_Keq_; };
   void rate_constant(double set_rate_constant) { this->rate_constant_ = set_rate_constant; };
   double rate_constant(void) const { return this->rate_constant_; };
   void sat_state_exponent(double set_sat_state_exponent) { this->sat_state_exponent_ = set_sat_state_exponent; };
@@ -73,10 +72,9 @@ class KineticRateTST : public KineticRate
   
  private:
   double area_;  // surface area [m^2]
-  double pK_;  // pK [-]
+  double log_Keq_;  // log_Keq [-]
   double rate_constant_;  // k, rate constant, [moles/m^2/sec]
   double sat_state_exponent_;  // n, saturation state exponent, [-]
-  Species mineral_;
 
   double Q_over_Keq_;
   double modifying_term_;

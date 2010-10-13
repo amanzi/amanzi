@@ -8,7 +8,9 @@ SRCS = \
 	./Geochemistry.cpp \
 	./KineticRate.cpp \
 	./KineticRateTST.cpp \
-	./MineralKineticsFactory.cpp 
+	./Mineral.cpp \
+	./MineralKineticsFactory.cpp \
+	./SecondarySpecies.cpp	
 
 OBJS = \
 	$(SRCS:%.cpp=%.o)

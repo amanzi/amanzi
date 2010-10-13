@@ -7,6 +7,7 @@
 #include <string>
 
 #include "AqueousEquilibriumComplex.hpp"
+#include "Mineral.hpp"
 #include "ThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "Species.hpp"
@@ -14,7 +15,8 @@
 
 ThermoDatabase::ThermoDatabase(void)
     : Beaker(),
-      primary_id_(0)
+      primary_id_(0),
+      mineral_id_(0)
 {
 }  // end ThermoDatabase constructor
 
@@ -49,17 +51,13 @@ void ThermoDatabase::setup(std::vector<double> &total,
  **
  **  File sections are indicated by a < character.
  **
- **  Valid section names are: "Primary Species" "Aqueous Equilibrium Complexes"
+ **  Valid section names are: 
+ **
+ **    "Primary Species" "Aqueous Equilibrium Complexes" "Minerals" 
+ **
+ **    "Ion Exchange"
  **
  **  For example <Primary Species  <Aqueous Equilibrium Complexes
- **
- **  Primary Species Fields:
- **
- **  Name ; size parameter ; charge ; gram molecular weight
- **
- **  Secondary Species Fields:
- **
- **  Name ; reactants ; log Keq ; size parameter ; charge ; gram molecular weight
  **
  *******************************************************************************/
 void ThermoDatabase::ReadFile(const std::string file_name)
@@ -74,12 +72,14 @@ void ThermoDatabase::ReadFile(const std::string file_name)
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine, 
-                  kAqueousEquilibriumComplexLine, kUnknownLine };
+                  kAqueousEquilibriumComplexLine, kMineralLine,
+                  kUnknownLine };
   enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection, 
-                     kUnknownSection };
+                     kMineralSection, kUnknownSection };
 
   std::string kSectionPrimary("<Primary Species");
   std::string kSectionAqueousEquilibriumComplex("<Aqueous Equilibrium Complexes");
+  std::string kSectionMineral("<Minerals");
 
   LineType line_type;
   SectionType current_section;
@@ -104,6 +104,9 @@ void ThermoDatabase::ReadFile(const std::string file_name)
       } else if (line == kSectionAqueousEquilibriumComplex) {
         line_type = kAqueousEquilibriumComplexLine;
         current_section = kAqueousEquilibriumComplexSection;
+      } else if (line == kSectionMineral) {
+        line_type = kMineralLine;
+        current_section = kMineralSection;
       } else {
         std::cout << "ThermoDatabase::ReadFile(): unknown section string \'"
                   << line << "\'" << std::endl;
@@ -121,6 +124,17 @@ void ThermoDatabase::ReadFile(const std::string file_name)
           // print a helpful message and exit gracefully
           std::cout << "ERROR: ThermoDatabase::ReadFile() : "
                     << "Attempting to parse aqueous equilibrium complexes before "
+                    << "primary species have been specified. Please check for "
+                    << "additional error messages and verify database file is "
+                    << "correct." << std::endl;
+        }
+      } else if (current_section == kMineralSection) {
+        if (parsed_primaries) {
+          ParseMineral(line);
+        } else {
+          // print a helpful message and exit gracefully
+          std::cout << "ERROR: ThermoDatabase::ReadFile() : "
+                    << "Attempting to parse minerals before "
                     << "primary species have been specified. Please check for "
                     << "additional error messages and verify database file is "
                     << "correct." << std::endl;
@@ -242,11 +256,63 @@ void ThermoDatabase::ParseAqueousEquilibriumComplex(const std::string data)
  **
  **  Thermodynamic database file format
  **
+ **  <Mineral
+ **
+ **  Secondary Species Fields:
+ **
+ **  Name = coeff reactant ... ; log Keq ; gram molecular weight ; molar density
+ **
+ *******************************************************************************/
+void ThermoDatabase::ParseMineral(const std::string data)
+{
+  if (verbosity() > kDebugInputFile) {
+    std::cout << "ThermoDatabase::ParseMineral()...." << std::endl;
+  }
+  std::string semicolon(";");
+  std::string space(" ");
+  StringTokenizer no_spaces;
+
+  StringTokenizer aqueous_eq(data, semicolon);
+
+  std::string name;
+  std::vector<SpeciesName> species;
+  std::vector<double> stoichiometries;
+  std::vector<int> species_ids;
+  double h2o_stoich;
+  std::string reaction(aqueous_eq.at(0));
+  ParseReaction(reaction, &name, &species, &stoichiometries, &species_ids, &h2o_stoich);
+
+  no_spaces.tokenize(aqueous_eq.at(1), space);
+  double logKeq(std::atof(no_spaces.at(0).c_str()));
+
+  no_spaces.tokenize(aqueous_eq.at(2), space);
+  double gram_molecular_weight(std::atof(no_spaces.at(0).c_str()));
+
+  no_spaces.tokenize(aqueous_eq.at(3), space);
+  double molar_density(std::atof(no_spaces.at(0).c_str()));
+
+  Mineral mineral(name, mineral_id_++,
+                  species,
+                  stoichiometries,
+                  species_ids,
+                  h2o_stoich,
+                  gram_molecular_weight, logKeq, molar_density);
+  this->addMineral(mineral);
+  if (verbosity() > kDebugInputFile) {
+    mineral.display();
+  }
+         
+}  // end ParseMineral()
+
+/*******************************************************************************
+ **
+ **  Thermodynamic database file format
+ **
  **  reaction
  **
  **  Fields:
  **
- **  SecondarySpeciesName = coeff PrimaryName coeff PrimaryName ... 
+ **  SpeciesName = coeff PrimaryName coeff PrimaryName ... 
  **
  *******************************************************************************/
 void ThermoDatabase::ParseReaction(const std::string reaction, 
@@ -305,35 +371,3 @@ void ThermoDatabase::ParseReaction(const std::string reaction,
   }  // end for(s)
 }  // end ParseReaction()
 
-/* old hard coded setup:
-  int id = 1;
-  SpeciesName name = "H+";
-  double size = 9.0;
-  double charge = 1.0;
-  double mol_wt = 1.0079;
-  this->addPrimarySpecies(Species(id, name, charge, mol_wt, size));
-
-  // secondary aqueous complexes
-  std::vector<SpeciesName> species;
-  std::vector<double> stoichiometries;
-  std::vector<int> species_ids;
-  double h2o_stoich;
-  double logK;
-
-  name = "OH-";
-  species.push_back("H+");
-  stoichiometries.push_back(-1.0);
-  species_ids.push_back(0);
-  h2o_stoich = 1.0;
-  logK = 13.9951;
-  size = 3.5;
-  charge = -1.0;
-  mol_wt = 17.0073;
-  AqueousEquilibriumComplex oh(name,
-                               species,
-                               stoichiometries,
-                               species_ids,
-                               h2o_stoich,
-                               charge, mol_wt, size, logK);
-  this->addAqueousEquilibriumComplex(oh);
-*/

@@ -123,7 +123,10 @@ int main(int argc, char **argv) {
       std::cout << "----- Test Beaker Reaction Step -----" << std::endl;
       std::cout << "initial total: " << std::endl;
       PrintDoubleVector(total);
-      chem->ReactionStep(total, parameters, 3600.0);
+      double delta_time = 60.0;
+      for (int time_step = 0; time_step < 60; time_step++) {
+        chem->ReactionStep(total, parameters, delta_time);        
+      }
       std::cout << "final total: " << std::endl;
       PrintDoubleVector(total);
     }

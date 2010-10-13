@@ -54,6 +54,7 @@
 
 #include <iostream>
 
+#include "SecondarySpecies.hpp"
 #include "KineticRateTST.hpp"
 #include "Block.hpp"
 #include "StringTokenizer.hpp"
@@ -62,10 +63,9 @@
 KineticRateTST::KineticRateTST(void)
     : KineticRate(),
       area_(0.0),
-      pK_(0.0),
+      log_Keq_(0.0),
       rate_constant_(0.0),
       sat_state_exponent_(0.0),
-      mineral_(),
       Q_over_Keq_(1.0),
       modifying_term_(1.0)
 {
@@ -85,37 +85,27 @@ KineticRateTST::~KineticRateTST(void)
 }  // end KineticRateTST destructor
 
 
-void KineticRateTST::Setup(const std::string reaction, 
+void KineticRateTST::Setup(const SecondarySpecies* reaction,
                            const StringTokenizer reaction_data,
                            const SpeciesArray primary_species)
 {
-  std::vector<double>* dummy_vector = NULL;
-  std::string species_type("primary");
-
   // break the reaction string into reactants and products
-  ParseReaction(reaction);
+  name(reaction->name());
+  identifier(reaction->identifier());
 
-  // determine the species ids for the reactants
+  // copy the reactant species, ids and stoichiometry from the reaction species
   if (verbosity() == kDebugMineralKinetics) {
     std::cout << "  KineticRateTST::Setup(): Searching for reactant species ids..." 
               << std::endl;
   }
+  reactant_names = reaction->species_names();
+  reactant_stoichiometry = reaction->stoichiometry();
+  reactant_ids = reaction->species_ids();
+
+  std::string species_type("primary");
   SetSpeciesIds(primary_species, species_type,
                 reactant_names, reactant_stoichiometry,
-                &reactant_ids, dummy_vector);
-
-  // first element in KineticRate.reactants is the mineral
-  SpeciesName mineral_name(reactant_names.at(0));
-  mineral_.name(mineral_name);
-
-  // determine the species ids for the products
-  if (verbosity() == kDebugMineralKinetics) {
-    std::cout << "  KineticRateTST::Setup(): Searching for product species ids..." 
-              << std::endl;
-  }
-  SetSpeciesIds(primary_species, species_type,
-                product_names, product_stoichiometry,
-                &product_ids, &primary_stoichiometry);
+                &reactant_ids, &primary_stoichiometry);
 
   // extract the rate parameters from the data string, including the
   // modifying species data. adds data to the mineral species!
@@ -131,31 +121,31 @@ void KineticRateTST::Setup(const std::string reaction,
                 &modifying_primary_ids, &modifying_primary_exponents);
   
 
-//   std::cout << std::endl;
-//   for (unsigned int i = 0; i < modifying_primary_ids.size(); i++) {
-//     std::cout << "  Modifier: " << std::endl;
-//     std::cout << "        id: " << modifying_primary_ids.at(i) << std::endl;
-//     std::cout << "      name: " << primary_species.at(modifying_primary_ids.at(i)).name() << std::endl;
-//     std::cout << "    coeff: " << modifying_primary_exponents.at(i) << std::endl;
-//   }  
+  //   std::cout << std::endl;
+  //   for (unsigned int i = 0; i < modifying_primary_ids.size(); i++) {
+  //     std::cout << "  Modifier: " << std::endl;
+  //     std::cout << "        id: " << modifying_primary_ids.at(i) << std::endl;
+  //     std::cout << "      name: " << primary_species.at(modifying_primary_ids.at(i)).name() << std::endl;
+  //     std::cout << "    coeff: " << modifying_primary_exponents.at(i) << std::endl;
+  //   }  
 }  // end Setup()
 
 
 
 void KineticRateTST::Update(const SpeciesArray primary_species)
 {
-  std::cout << std::endl;
+  //  std::cout << std::endl;
   // calculate the Q/K term
   double lnQ = 0.0;
   for (unsigned int p = 0; p < primary_species.size(); p++) {
     lnQ += primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
     if (verbosity() == kDebugMineralKinetics) {
-      std::cout << "  Update: p: " << p << "  coeff: " << product_stoichiometry.at(p)
+      std::cout << "  Update: p: " << p << "  coeff: " << reactant_stoichiometry.at(p)
                 << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
     }
   }
   double Q = std::exp(lnQ);
-  double Keq = std::pow(10.0, -pK());
+  double Keq = std::pow(10.0, -log_Keq());
   Q_over_Keq(Q/Keq);
 
   if (verbosity() == kDebugMineralKinetics) {
@@ -190,11 +180,11 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
   double rate = area() * rate_constant() * modifying_term() * sat_state;
 
   // add or subtract from the residual....
-  for (unsigned int p = 0; p < product_stoichiometry.size(); p++) {
-    (*residual)[p] -= product_stoichiometry.at(p) * rate;
+  for (unsigned int p = 0; p < reactant_stoichiometry.size(); p++) {
+    (*residual)[p] -= reactant_stoichiometry.at(p) * rate;
     if (verbosity() == kDebugMineralKinetics) {
       std::cout << "  Residual p: " << p
-                << "  coeff: " << product_stoichiometry.at(p)
+                << "  coeff: " << reactant_stoichiometry.at(p)
                 << "  rate: " << rate << "  redsidual: " << residual->at(p) << std::endl;
     }
   }
@@ -216,7 +206,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
   static_cast<void>(por_den_sat_vol);
 
   // double dadC = 1.0;  // da_j/dC_j
-  double Keq = std::pow(10.0, -pK());
+  double Keq = std::pow(10.0, -log_Keq());
   double one_minus_QK = 1.0 - Q_over_Keq();  // (1-Q/Keq)
   double area_rate_constant = area() * rate_constant();  // k*A
 
@@ -288,11 +278,8 @@ void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
   for (; field != reaction_data.end(); field++) {
     st.tokenize(*field, space);
 
-    if (st.at(0) == "gmw") {
-      mineral_.gram_molecular_weight(std::atof(st.at(1).c_str()));
-    }
-    else if (st.at(0) == "molar_density") {
-      mineral_.molar_density(std::atof(st.at(1).c_str()));
+    if (st.at(0) == "log_Keq") {
+      rate_constant(std::atof(st.at(1).c_str()));
     }
     else if (st.at(0) == "rate_constant") {
       rate_constant(std::atof(st.at(1).c_str()));
@@ -300,9 +287,6 @@ void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
     else if (st.at(0) == "area") {
       area(std::atof(st.at(1).c_str()));
     } 
-    else if (st.at(0) == "pK") {
-      pK(std::atof(st.at(1).c_str()));
-    }
     else {
       // assume we are dealing with the list of rate modifying species
       for (unsigned int modifier = 0; modifier < st.size(); modifier++) {
@@ -321,23 +305,20 @@ void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
 
 void KineticRateTST::Display(void) const
 {
-  std::cout << "  Rate law: TST" << std::endl;
+  std::cout << "    Rate law: TST" << std::endl;
   this->DisplayReaction();
-  std::cout << "  Parameters:" << std::endl;
-  std::cout << "    mineral = " << mineral_.name() << std::endl;
-  std::cout << "    molar density = " << mineral_.molar_density() 
-            << " [cm^3/mole]" << std::endl;
-  std::cout << "    gram molecular weight = " 
-            << mineral_.gram_molecular_weight() << " [grams/mole]" 
-            << std::endl;
-  std::cout << "    rate constant = " << rate_constant() 
+  std::cout << "    Parameters:" << std::endl;
+  std::cout << "      mineral = " << name() << std::endl;
+  std::cout << "      mineral id = " << identifier() << std::endl;
+  std::cout << "      rate constant = " << rate_constant() 
             << " [moles/m^2/sec]" << std::endl;
-  std::cout << "    area = " << area() << " [m^2]" << std::endl;
-  std::cout << "    pK = " << pK() << " [-]" << std::endl;
-  std::cout << "    rate modifiers: " << std::endl;
+  std::cout << "      area = " << area() << " [m^2]" << std::endl;
+  std::cout << "      log_Keq = " << log_Keq() << " [-]" << std::endl;
+  std::cout << "      rate modifiers: " << std::endl;
+  std::cout << "      ";
   for (unsigned int mod = 0; mod < this->modifying_species_names.size(); mod++) {
-    std::cout << "      { " << this->modifying_species_names.at(mod) << " }";
-    std::cout << "^" << this->modifying_exponents.at(mod) << std::endl;
+    std::cout << "{ " << this->modifying_species_names.at(mod) << " }";
+    std::cout << "^" << this->modifying_exponents.at(mod) << " " << std::endl;
   }
   std::cout << std::endl;
 }  // end Display()

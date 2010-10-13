@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "Species.hpp"
+#include "SecondarySpecies.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
 
@@ -21,7 +22,7 @@ class KineticRate
  public:
   ~KineticRate(void);
 
-  virtual void Setup(const std::string reaction,
+  virtual void Setup(const SecondarySpecies* reaction,
                      const StringTokenizer reaction_data,
                      const SpeciesArray primary_species) = 0;
   virtual void Update(const SpeciesArray primary_species) = 0;
@@ -34,7 +35,6 @@ class KineticRate
 
   virtual void ParseParameters(const StringTokenizer rate) = 0;
 
-  void ParseReaction(const std::string rxn_string);
   void SetSpeciesIds(const SpeciesArray species,
                      const std::string species_type,
                      const std::vector<SpeciesName> in_names,
@@ -47,18 +47,23 @@ class KineticRate
   void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
   Verbosity verbosity(void) const { return this->verbosity_; };
 
+  void name(const std::string in_name) { this->name_ = in_name; };
+  std::string name(void) const { return this->name_; };
+
+  void identifier(const SpeciesId in_id) { this->identifier_ = in_id; };
+  SpeciesId identifier(void) const { return this->identifier_; };
+
  protected:
   KineticRate(void);
 
   std::vector<SpeciesName> reactant_names;
   std::vector<double> reactant_stoichiometry;
   std::vector<SpeciesId> reactant_ids;
-  std::vector<SpeciesName> product_names;
-  std::vector<double> product_stoichiometry;
-  std::vector<SpeciesId> product_ids;
 
  private:
   Verbosity verbosity_;
+  std::string name_;
+  SpeciesId identifier_;
 };
 
 #endif     /* __KINETIC_RATE_HPP__ */

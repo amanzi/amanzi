@@ -13,45 +13,12 @@ KineticRate::KineticRate(void)
   reactant_names.clear();
   reactant_stoichiometry.clear();
   reactant_ids.clear();
-
-  product_names.clear();
-  product_stoichiometry.clear();
-  product_ids.clear();
 }  // end KineticRate constructor
 
 
 KineticRate::~KineticRate(void)
 {
 }  // end KineticRate destructor
-
-
-void KineticRate::ParseReaction(const std::string rxn_string)
-{
-  if (0) {
-    std::cout << "Reaction string: " << rxn_string << std::endl;
-  }
-  std::string rxn_delimiter("=");
-  std::string coeff_delimiter(" ");
-  StringTokenizer rxn(rxn_string, rxn_delimiter);
-
-  StringTokenizer reactants(rxn.at(0), coeff_delimiter);
-
-  for (std::vector<std::string>::iterator field = reactants.begin(); 
-       field != reactants.end(); field++) {
-    this->reactant_stoichiometry.push_back(std::atof((*field).c_str()));
-    field++;
-    this->reactant_names.push_back(*field);
-  }
-
-  StringTokenizer products(rxn.at(1), coeff_delimiter);
-
-  for (std::vector<std::string>::iterator field = products.begin(); 
-       field != products.end(); field++) {
-    this->product_stoichiometry.push_back(std::atof((*field).c_str()));
-    field++;
-    this->product_names.push_back(*field);
-  }
-}  // end ParseReaction()
 
 
 void KineticRate::SetSpeciesIds(const SpeciesArray species, 
@@ -98,25 +65,18 @@ void KineticRate::SetSpeciesIds(const SpeciesArray species,
   }
 }  // end SetSpeciesIds()
 
-
 void KineticRate::DisplayReaction(void) const
 {
-  std::cout << "  Reaction: " << std::endl;
-  std::cout << "    ";
+  std::cout << "    Reaction: " << std::endl;
+  std::cout << "      ";
+  
+  std::cout << name();
+  std::cout << " = ";
   for (unsigned int species = 0; 
        species < this->reactant_names.size(); species++) {
     std::cout << this->reactant_stoichiometry.at(species) << " " 
               << this->reactant_names.at(species);
     if (species < this->reactant_names.size() - 1) {
-      std::cout << " + ";
-    }
-  }
-  std::cout << " = ";
-  for (unsigned int species = 0; 
-       species < this->product_names.size(); species++) {
-    std::cout << this->product_stoichiometry.at(species) << " " 
-              << this->product_names.at(species);
-    if (species < this->product_names.size() - 1) {
       std::cout << " + ";
     }
   }
