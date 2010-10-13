@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         if (verbosity == kTerse) {
           std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
         }
-        thermo_database_file = "input/carbonate.adb";
+        thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
         total.push_back(1.0e-6);
         total.push_back(1.0e-3);
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
         if (verbosity == kTerse) {
           std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
         }
-        thermo_database_file = "input/carbonate.adb";
+        thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
         total.push_back(1.0e-6);
         total.push_back(1.0e-3);
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
         if (verbosity == kTerse) {
           std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
         }
-        thermo_database_file = "input/ca-carbonate.adb";
+        thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
         total.push_back(1.0e-3);
         total.push_back(1.0e-3);
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
         if (verbosity == kTerse) {
           std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
         }
-        thermo_database_file = "input/ca-carbonate.adb";
+        thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
         total.push_back(1.0e-3);
         total.push_back(1.0e-3);
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
         if (verbosity == kTerse) {
           std::cout << "Running calcite kinetics tst problem." << std::endl;
         }
-        thermo_database_file = "input/calcite.adb";
+        thermo_database_file = "input/calcite.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
         mineral_kinetics_file = "input/calcite-kinetics-tst.ain";
         total.push_back(1.0e-3);
