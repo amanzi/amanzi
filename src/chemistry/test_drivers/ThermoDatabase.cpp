@@ -72,14 +72,15 @@ void ThermoDatabase::ReadFile(const std::string file_name)
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine, 
-                  kAqueousEquilibriumComplexLine, kMineralLine,
+                  kAqueousEquilibriumComplexLine, kMineralLine, kIonExchangeLine,
                   kUnknownLine };
   enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection, 
-                     kMineralSection, kUnknownSection };
+                     kMineralSection, kIonExchangeSection, kUnknownSection };
 
   std::string kSectionPrimary("<Primary Species");
   std::string kSectionAqueousEquilibriumComplex("<Aqueous Equilibrium Complexes");
   std::string kSectionMineral("<Minerals");
+  std::string kSectionIonExchange("<Ion Exchange");
 
   LineType line_type;
   SectionType current_section;
@@ -87,6 +88,8 @@ void ThermoDatabase::ReadFile(const std::string file_name)
   int count = 0;
   while (!input.eof() && count < 100) {
     count++;
+    bool data_order_error = false;
+    std::string error_section("");
     std::string line;
     getline(input, line);
     if ((line.size() > 0) && (line[line.size() - 1] == '\r')) {
@@ -107,6 +110,9 @@ void ThermoDatabase::ReadFile(const std::string file_name)
       } else if (line == kSectionMineral) {
         line_type = kMineralLine;
         current_section = kMineralSection;
+      } else if (line == kSectionIonExchange) {
+        line_type = kIonExchangeLine;
+        current_section = kIonExchangeSection;
       } else {
         std::cout << "ThermoDatabase::ReadFile(): unknown section string \'"
                   << line << "\'" << std::endl;
@@ -121,26 +127,33 @@ void ThermoDatabase::ReadFile(const std::string file_name)
         if (parsed_primaries) {
           ParseAqueousEquilibriumComplex(line);
         } else {
-          // print a helpful message and exit gracefully
-          std::cout << "ERROR: ThermoDatabase::ReadFile() : "
-                    << "Attempting to parse aqueous equilibrium complexes before "
-                    << "primary species have been specified. Please check for "
-                    << "additional error messages and verify database file is "
-                    << "correct." << std::endl;
+          data_order_error = true;
+          error_section = "aqueous equilibrium complexes";
         }
       } else if (current_section == kMineralSection) {
         if (parsed_primaries) {
           ParseMineral(line);
         } else {
-          // print a helpful message and exit gracefully
-          std::cout << "ERROR: ThermoDatabase::ReadFile() : "
-                    << "Attempting to parse minerals before "
-                    << "primary species have been specified. Please check for "
-                    << "additional error messages and verify database file is "
-                    << "correct." << std::endl;
+          data_order_error = true;
+          error_section = "minerals";
+        }
+      } else if (current_section == kIonExchangeSection) {
+        if (parsed_primaries) {
+          ParseIonExchange(line);
+        } else {
+          data_order_error = true;
+          error_section = "ion exchange";
         }
       } else {
         // should never be here....
+      }
+      if (data_order_error) {
+          // print a helpful message and exit gracefully
+          std::cout << "ERROR: ThermoDatabase::ReadFile() : "
+                    << "Attempting to parse " << error_section << " before "
+                    << "primary species have been specified. Please check for "
+                    << "additional error messages and verify database file is "
+                    << "correct." << std::endl;
       }
     }
 
@@ -272,23 +285,23 @@ void ThermoDatabase::ParseMineral(const std::string data)
   std::string space(" ");
   StringTokenizer no_spaces;
 
-  StringTokenizer aqueous_eq(data, semicolon);
+  StringTokenizer mineral_eq(data, semicolon);
 
   std::string name;
   std::vector<SpeciesName> species;
   std::vector<double> stoichiometries;
   std::vector<int> species_ids;
   double h2o_stoich;
-  std::string reaction(aqueous_eq.at(0));
+  std::string reaction(mineral_eq.at(0));
   ParseReaction(reaction, &name, &species, &stoichiometries, &species_ids, &h2o_stoich);
 
-  no_spaces.tokenize(aqueous_eq.at(1), space);
+  no_spaces.tokenize(mineral_eq.at(1), space);
   double logKeq(std::atof(no_spaces.at(0).c_str()));
 
-  no_spaces.tokenize(aqueous_eq.at(2), space);
+  no_spaces.tokenize(mineral_eq.at(2), space);
   double gram_molecular_weight(std::atof(no_spaces.at(0).c_str()));
 
-  no_spaces.tokenize(aqueous_eq.at(3), space);
+  no_spaces.tokenize(mineral_eq.at(3), space);
   double molar_density(std::atof(no_spaces.at(0).c_str()));
 
   Mineral mineral(name, mineral_id_++,
@@ -303,6 +316,30 @@ void ThermoDatabase::ParseMineral(const std::string data)
   }
          
 }  // end ParseMineral()
+
+/*******************************************************************************
+ **
+ **  Thermodynamic database file format
+ **
+ **  <Ion Exchange
+ **
+ **  Secondary Species Fields:
+ **
+ **  Name = coeff reactant ... ; ??? ; ???
+ **
+ *******************************************************************************/
+void ThermoDatabase::ParseIonExchange(const std::string data)
+{
+  if (verbosity() > kDebugInputFile) {
+    std::cout << "ThermoDatabase::ParseIonExchange()...." << std::endl;
+  }
+  std::string semicolon(";");
+  std::string space(" ");
+  StringTokenizer no_spaces;
+
+  std::cout << data << std::endl;
+         
+}  // end ParseIonExchange()
 
 /*******************************************************************************
  **

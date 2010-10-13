@@ -19,6 +19,7 @@ class ThermoDatabase : public Beaker {
   void ParsePrimarySpecies(const std::string data);
   void ParseAqueousEquilibriumComplex(const std::string data);
   void ParseMineral(const std::string data);
+  void ParseIonExchange(const std::string data);
   void ParseReaction(const std::string reaction, 
                      std::string *name,
                      std::vector<SpeciesName>* species, 

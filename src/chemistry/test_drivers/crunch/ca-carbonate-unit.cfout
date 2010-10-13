@@ -89,7 +89,7 @@
 
 
   Primary species    itype     guess      Total conc.  Constraint phase
-  HCO3-                1    1.0000E-06    1.0000E-03                       
+  HCO3-                1    1.0000E-06    3.0000E-03                       
   Ca++                 1    1.0000E-06    1.0000E-03                       
   H+                   1    1.0000E-05    1.0000E-03                       
 
@@ -109,15 +109,15 @@
   Liquid Density (kg/m^3) =   1000.000
   Solid Density (kg/m^3)  =      0.000
   Solid:Solution Ratio    =      0.000
-  Ionic Strength          =      0.002
-  Solution pH             =      4.673
-  Total Charge            =  2.000E-03
+  Ionic Strength          =      0.003
+  Solution pH             =      6.637
+  Total Charge            =  8.674E-19
 
  Total Aqueous Concentrations of Primary Species  
  --------------------------------------- 
 
   Species               Molality     Constraint    Constraint Phase 
- HCO3-                1.0000E-03     Total                           
+ HCO3-                3.0000E-03     Total                           
  Ca++                 1.0000E-03     Total                           
  H+                   1.0000E-03     Total                           
 
@@ -126,15 +126,15 @@
 
                            Log        Log                                 Activity
  Species              Molality   Activity      Molality      Activity   Coefficient    Type
-  HCO3-                 -4.678     -4.678     2.100E-05     2.100E-05     1.000E+00  Aqueous 
-  Ca++                  -3.000     -3.000     9.998E-04     9.998E-04     1.000E+00  Aqueous 
-  H+                    -4.673     -4.673     2.123E-05     2.123E-05     1.000E+00  Aqueous 
-  OH-                   -9.318     -9.318     4.807E-10     4.807E-10     1.000E+00  Aqueous 
-  CO2(aq)               -3.009     -3.009     9.788E-04     9.788E-04     1.000E+00  Aqueous 
-  CO3--                -10.330    -10.330     4.681E-11     4.681E-11     1.000E+00  Aqueous 
-  CaOH+                -11.177    -11.177     6.651E-12     6.651E-12     1.000E+00  Aqueous 
-  CaHCO3+               -6.635     -6.635     2.317E-07     2.317E-07     1.000E+00  Aqueous 
-  CaCO3(aq)            -10.014    -10.014     9.691E-11     9.691E-11     1.000E+00  Aqueous 
+  HCO3-                 -2.704     -2.704     1.976E-03     1.976E-03     1.000E+00  Aqueous 
+  Ca++                  -3.010     -3.010     9.778E-04     9.778E-04     1.000E+00  Aqueous 
+  H+                    -6.637     -6.637     2.308E-07     2.308E-07     1.000E+00  Aqueous 
+  OH-                   -7.354     -7.354     4.423E-08     4.423E-08     1.000E+00  Aqueous 
+  CO2(aq)               -3.000     -3.000     1.001E-03     1.001E-03     1.000E+00  Aqueous 
+  CO3--                 -6.392     -6.392     4.054E-07     4.054E-07     1.000E+00  Aqueous 
+  CaOH+                 -9.223     -9.223     5.986E-10     5.986E-10     1.000E+00  Aqueous 
+  CaHCO3+               -4.671     -4.671     2.133E-05     2.133E-05     1.000E+00  Aqueous 
+  CaCO3(aq)             -6.086     -6.086     8.208E-07     8.208E-07     1.000E+00  Aqueous 
 
   ****** Partial pressure of gases (bars) *****
 

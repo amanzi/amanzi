@@ -95,7 +95,7 @@
 
 
   Primary species    itype     guess      Total conc.  Constraint phase
-  HCO3-                1    1.0000E-06    1.0000E-03                       
+  HCO3-                1    1.0000E-06    3.0000E-03                       
   Ca++                 1    1.0000E-06    1.0000E-03                       
   H+                   1    1.0000E-05    1.0000E-03                       
 
@@ -115,15 +115,15 @@
   Liquid Density (kg/m^3) =   1000.000
   Solid Density (kg/m^3)  =   2709.893
   Solid:Solution Ratio    =    677.473
-  Ionic Strength          =      0.002
-  Solution pH             =      4.673
-  Total Charge            =  2.000E-03
+  Ionic Strength          =      0.003
+  Solution pH             =      6.612
+  Total Charge            =  8.674E-19
 
  Total Aqueous Concentrations of Primary Species  
  --------------------------------------- 
 
   Species               Molality     Constraint    Constraint Phase 
- HCO3-                1.0000E-03     Total                           
+ HCO3-                3.0000E-03     Total                           
  Ca++                 1.0000E-03     Total                           
  H+                   1.0000E-03     Total                           
 
@@ -132,22 +132,22 @@
 
                            Log        Log                                 Activity
  Species              Molality   Activity      Molality      Activity   Coefficient    Type
-  HCO3-                 -4.657     -4.678     2.205E-05     2.098E-05     9.515E-01  Aqueous 
-  Ca++                  -3.000     -3.084     9.998E-04     8.236E-04     8.238E-01  Aqueous 
-  H+                    -4.653     -4.673     2.225E-05     2.124E-05     9.546E-01  Aqueous 
-  OH-                   -9.297     -9.318     5.052E-10     4.805E-10     9.512E-01  Aqueous 
-  CO2(aq)               -3.010     -3.010     9.778E-04     9.782E-04     1.000E+00  Aqueous 
-  CO3--                -10.244    -10.330     5.698E-11     4.675E-11     8.204E-01  Aqueous 
-  CaOH+                -11.240    -11.261     5.756E-12     5.477E-12     9.515E-01  Aqueous 
-  CaHCO3+               -6.698     -6.720     2.004E-07     1.907E-07     9.515E-01  Aqueous 
-  CaCO3(aq)            -10.099    -10.098     7.969E-11     7.973E-11     1.000E+00  Aqueous 
+  HCO3-                 -2.703     -2.729     1.981E-03     1.867E-03     9.423E-01  Aqueous 
+  Ca++                  -3.008     -3.108     9.824E-04     7.799E-04     7.939E-01  Aqueous 
+  H+                    -6.588     -6.612     2.582E-07     2.444E-07     9.467E-01  Aqueous 
+  OH-                   -7.353     -7.379     4.434E-08     4.176E-08     9.419E-01  Aqueous 
+  CO2(aq)               -3.000     -2.999     1.001E-03     1.002E-03     1.001E+00  Aqueous 
+  CO3--                 -6.339     -6.442     4.579E-07     3.615E-07     7.894E-01  Aqueous 
+  CaOH+                 -9.320     -9.346     4.783E-10     4.508E-10     9.423E-01  Aqueous 
+  CaHCO3+               -4.768     -4.794     1.705E-05     1.607E-05     9.423E-01  Aqueous 
+  CaCO3(aq)             -6.234     -6.234     5.834E-07     5.838E-07     1.001E+00  Aqueous 
 
   ****** Partial pressure of gases (bars) *****
 
 
   ****** Saturation state of minerals (log[Q/K] *****
 
-  Calcite                  -4.9439
+  Calcite                  -1.0792
 
                 SPECIATION OF  
       INITIAL AND BOUNDARY CONDITIONS 

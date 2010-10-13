@@ -83,7 +83,7 @@
 
   Primary species    itype     guess      Total conc.  Constraint phase
   HCO3-                1    1.0000E-06    1.0000E-03                       
-  H+                   1    1.0000E-05    1.0000E-06                       
+  H+                   1    1.0000E-05    1.0000E-03                       
 
   Porosity for this chemical condition =   0.5000
 
@@ -101,27 +101,27 @@
   Liquid Density (kg/m^3) =   1000.000
   Solid Density (kg/m^3)  =      0.000
   Solid:Solution Ratio    =      0.000
-  Ionic Strength          =      0.001
-  Solution pH             =      8.250
-  Total Charge            = -9.990E-04
+  Ionic Strength          =      0.000
+  Solution pH             =      4.675
+  Total Charge            =  2.168E-19
 
  Total Aqueous Concentrations of Primary Species  
  --------------------------------------- 
 
   Species               Molality     Constraint    Constraint Phase 
  HCO3-                1.0000E-03     Total                           
- H+                   1.0000E-06     Total                           
+ H+                   1.0000E-03     Total                           
 
  Concentrations of Individual Species, Exchangers, and Surface Complexes 
  ----------------------------------------------------------------------- 
 
                            Log        Log                                 Activity
  Species              Molality   Activity      Molality      Activity   Coefficient    Type
-  HCO3-                 -3.009     -3.020     9.793E-04     9.545E-04     9.747E-01  Aqueous 
-  H+                    -8.240     -8.250     5.759E-09     5.618E-09     9.755E-01  Aqueous 
-  OH-                   -5.729     -5.741     1.864E-06     1.817E-06     9.746E-01  Aqueous 
-  CO3--                 -5.050     -5.095     8.910E-06     8.042E-06     9.026E-01  Aqueous 
-  CO2(aq)               -4.929     -4.929     1.177E-05     1.177E-05     1.000E+00  Aqueous 
+  HCO3-                 -4.673     -4.675     2.123E-05     2.112E-05     9.946E-01  Aqueous 
+  H+                    -4.673     -4.675     2.123E-05     2.112E-05     9.947E-01  Aqueous 
+  OH-                   -9.313     -9.316     4.860E-10     4.833E-10     9.946E-01  Aqueous 
+  CO3--                -10.316    -10.325     4.835E-11     4.733E-11     9.787E-01  Aqueous 
+  CO2(aq)               -3.009     -3.009     9.788E-04     9.788E-04     1.000E+00  Aqueous 
 
   ****** Partial pressure of gases (bars) *****
 

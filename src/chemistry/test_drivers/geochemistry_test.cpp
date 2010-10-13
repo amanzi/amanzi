@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
-        total.push_back(1.0e-6);
+        total.push_back(1.0e-3);
         total.push_back(1.0e-3);
         break;
       }
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        total.push_back(1.0e-6);
+        total.push_back(1.0e-3);
         total.push_back(1.0e-3);
         break;
       }
@@ -60,9 +60,9 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);  // H+
+        total.push_back(3.0e-3);  // HCO3-
+        total.push_back(1.0e-3);  // Ca++
         break;
       }
       case 4: {
@@ -72,9 +72,9 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);  // H+
+        total.push_back(3.0e-3);  // HCO3-
+        total.push_back(1.0e-3);  // Ca++
         break;
       }
       case 5: {
@@ -85,9 +85,23 @@ int main(int argc, char **argv) {
         thermo_database_file = "input/calcite.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
         mineral_kinetics_file = "input/calcite-kinetics-tst.ain";
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);  // H+
+        total.push_back(3.0e-3);  // HCO3-
+        total.push_back(1.0e-3);  // Ca++
+        break;
+      }
+      case 6: {
+        // Na+ Ca++ ion exchange
+        if (verbosity == kTerse) {
+          std::cout << "Running Na-Ca ion exchange problem." << std::endl;
+        }
+        thermo_database_file = "input/na-ca-ion-exchange.bgd";
+        activity_model_name = ActivityModelFactory::debye_huckel;
+        total.push_back(1.0e-3);  // H+
+        total.push_back(3.0e-3);  // HCO3-
+        total.push_back(1.0e-3);  // Ca++
+        total.push_back(1.0e-3);  // Na+
+        total.push_back(1.0e-3);  // Cl-
         break;
       }
       default: {
