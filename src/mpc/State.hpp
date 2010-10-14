@@ -1,5 +1,5 @@
-#ifndef __Status_hpp__
-#define __Status_hpp__
+#ifndef __State_hpp__
+#define __State_hpp__
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
@@ -42,6 +42,7 @@ public:
   void set_status ( status_type new_status ) { status = new_status; }
       
 private:
+  // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  
   Teuchos::RCP<Epetra_Vector> pressure;
   Teuchos::RCP<Epetra_Vector> darcy_flux;
