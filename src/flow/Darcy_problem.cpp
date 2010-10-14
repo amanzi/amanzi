@@ -202,4 +202,5 @@ void Darcy_problem::initialize()
   PrecMat_Graph.GlobalAssemble();
 
   PrecMat = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, PrecMat_Graph));
+  
 }
