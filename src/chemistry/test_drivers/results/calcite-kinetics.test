@@ -46,9 +46,9 @@ Command Line Options:
     Parameters:
       mineral = Calcite
       mineral id = 0
-      rate constant = 1.8487 [moles/m^2/sec]
+      rate constant = 0.001 [moles/m^2/sec]
       area = 1 [m^2]
-      log_Keq = 0 [-]
+      log_Keq = 1.8487 [-]
       rate modifiers: 
         { H+ }^1 
 
@@ -78,5 +78,5 @@ Beaker::speciate num_iterations :12
 -- Test Beaker Reaction Stepping -------------------------------------
        Time (s)             H+          HCO3-           Ca++
     0.00000e+00    1.00000e-03    3.00000e-03    1.00000e-03
-    3.60000e+03    1.01605e-03    2.98395e-03    9.83947e-04
+    3.60000e+03    9.99998e-04    3.00000e-03    1.00000e-03
 Done!
