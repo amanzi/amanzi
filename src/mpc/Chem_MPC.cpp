@@ -3,21 +3,19 @@
 #include "Chem_MPC.hpp"
 #include "State.hpp"
 #include "Chemistry_State.hpp"
-#include "Chemistry_PK.hpp"
+
 
 
 Chem_MPC::Chem_MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
-		   Teuchos::RCP<DataLayout> data_layout_1D_,
 		   Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps_):
   Parameters(Parameters_),
-  data_layout_1D(data_layout_1D_),
   mesh_maps(mesh_maps_)
   
  {
    int number_of_components = 10; // just a wild guess, should probably come in from input
    
    // create the state object
-   S = Teuchos::rcp( new State( data_layout_1D, number_of_components, mesh_maps) );
+   S = Teuchos::rcp( new State( number_of_components, mesh_maps) );
 
   // create auxilary state objects for the process models
   // chemistry...

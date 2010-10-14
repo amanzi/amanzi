@@ -5,7 +5,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
-#include "DataLayout.hpp"
 #include "Mesh_maps.hh"
 
 
@@ -16,7 +15,7 @@ class State {
 
 public:
 
-  State( Teuchos::RCP<DataLayout>, int, Teuchos::RCP<STK_mesh::Mesh_maps> );
+  State( int, Teuchos::RCP<STK_mesh::Mesh_maps> );
   ~State() {};
 
   // access methods
@@ -56,7 +55,7 @@ private:
   status_type status;
 
   // data layout
-  Teuchos::RCP<DataLayout> data_layout;
+  //Teuchos::RCP<DataLayout> data_layout;
   
   // mesh
   const Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps;

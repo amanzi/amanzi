@@ -2,23 +2,22 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
-#include "MeshWrapper.hpp"
+#include "Mesh_maps.hh"
 
-State::State( Teuchos::RCP<DataLayout> data_layout_ , int number_of_components_,
+State::State( int number_of_components_,
 	      Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps_):
-  data_layout(data_layout_),
   number_of_components(number_of_components_),
   mesh_maps(mesh_maps_)
 {
   // create the Eptera_Vector objects
 
-  water_density =    Teuchos::rcp( new Epetra_Vector( *data_layout->get_element_map() ) );
-  pressure =         Teuchos::rcp( new Epetra_Vector( *data_layout->get_element_map() ) );
-  darcy_flux =       Teuchos::rcp( new Epetra_Vector( *data_layout->get_element_map() ) );
-  porosity =         Teuchos::rcp( new Epetra_Vector( *data_layout->get_element_map()   ) );
-  water_saturation = Teuchos::rcp( new Epetra_Vector( *data_layout->get_element_map() ) ); 
+  water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
+  water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
   total_component_concentration 
-    = Teuchos::rcp( new Epetra_MultiVector( *data_layout->get_element_map(), number_of_components ) );  
+     = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );  
 
 };
 
