@@ -145,7 +145,7 @@ void KineticRateTST::Update(const SpeciesArray primary_species)
     }
   }
   double Q = std::exp(lnQ);
-  double Keq = std::pow(10.0, -log_Keq());
+  double Keq = std::pow(10.0, log_Keq());
   Q_over_Keq(Q/Keq);
 
   if (verbosity() == kDebugMineralKinetics) {
@@ -206,7 +206,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
   static_cast<void>(por_den_sat_vol);
 
   // double dadC = 1.0;  // da_j/dC_j
-  double Keq = std::pow(10.0, -log_Keq());
+  double Keq = std::pow(10.0, log_Keq());
   double one_minus_QK = 1.0 - Q_over_Keq();  // (1-Q/Keq)
   double area_rate_constant = area() * rate_constant();  // k*A
 
@@ -279,7 +279,7 @@ void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
     st.tokenize(*field, space);
 
     if (st.at(0) == "log_Keq") {
-      rate_constant(std::atof(st.at(1).c_str()));
+      log_Keq(std::atof(st.at(1).c_str()));
     }
     else if (st.at(0) == "rate_constant") {
       rate_constant(std::atof(st.at(1).c_str()));
