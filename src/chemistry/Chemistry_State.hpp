@@ -4,7 +4,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
-#include "MeshWrapper.hpp"
 
 class Chemistry_State {
 

@@ -4,7 +4,6 @@
 #include "State.hpp"
 #include "Chemistry_State.hpp"
 #include "Chemistry_PK.hpp"
-#include "MeshWrapper.hpp"
 
 
 Chem_MPC::Chem_MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
