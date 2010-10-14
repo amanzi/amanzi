@@ -99,7 +99,7 @@
   Ca++                 1    1.0000E-06    1.0000E-03                       
   H+                   1    1.0000E-05    1.0000E-03                       
 
-  Porosity for this chemical condition =   0.8000
+  Porosity for this chemical condition =   0.5000
 
 
 
@@ -110,11 +110,11 @@
   ---> GEOCHEMICAL CONDITION: initial_condition
 
   Temperature (C)         =     25.000
-  Porosity                =      0.800
+  Porosity                =      0.500
   Liquid Saturation       =      1.000
   Liquid Density (kg/m^3) =   1000.000
   Solid Density (kg/m^3)  =   2709.893
-  Solid:Solution Ratio    =    677.473
+  Solid:Solution Ratio    =   2709.893
   Ionic Strength          =      0.003
   Solution pH             =      6.612
   Total Charge            =  8.674E-19
@@ -168,8 +168,8 @@
   Maximum timestep (yrs) =    1.142E-04
   Maximum timestep (yrs) =    1.000E-10
 
- --> Porosity calculated from mineral volume fractions
- ----> Porosity is updated due to mineral dissolution and precipitation reactions
+ --> Porosity set by "fix_porosity" or "set_porosity" keywords
+ ----> No update of porosity
  --> Extended Debye-Huckel activity model used
  --> Activity coefficients only computed
      at beginning of time step 

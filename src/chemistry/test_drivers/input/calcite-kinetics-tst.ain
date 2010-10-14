@@ -20,7 +20,7 @@
 #   field : 'name double' : list of modifying species primary and exponent
 #
 
-Calcite ; TST ; area 1.0 cm2 ; rate_constant 1.0e-3 moles_cm2_sec ; log_Keq 1.8487 unitless ; H+ 1.0
+Calcite ; TST ; area 100.0 cm2 ; rate_constant 1.0e-3 moles_cm2_sec ; log_Keq 1.8487 unitless ; H+ 1.0
 
 #Calcite ; TST ; area 1.0 cm2 ; rate_constant 1.0e-8 moles_cm2_sec ; log_Keq 1.8487 unitless ; H+ 0.57 Ca++ -0.98
 

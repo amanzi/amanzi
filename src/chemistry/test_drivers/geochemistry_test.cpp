@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);  // H+
+        total.push_back(1.0e-3);  // HCO3-
         break;
       }
       case 2: {
@@ -49,8 +49,8 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        total.push_back(1.0e-3);
-        total.push_back(1.0e-3);
+        total.push_back(1.0e-3);  // H+
+        total.push_back(1.0e-3);  // HCO3-
         break;
       }
       case 3: {
@@ -185,13 +185,14 @@ int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
       case '?': case 'h': {  /* help mode */
         /* print some help stuff and exit without doing anything */
         std::cout << argv[0] << " command line options:" << std::endl;
-        std::cout << "    -t integer " << std::endl
-                  << "         run a test case. valid test numbers are: " << std::endl
-                  << "             1: simple carbonate speciation, unit activity coeff" << std::endl
-                  << "             2: simple carbonate speciation, debye-huckel" << std::endl
-                  << "             3: larger carbonate speciation, unit activity coeff" << std::endl
-                  << "             4: larger carbonate speciation, debye-huckel" << std::endl
-                  << "             5: calcite kinetics, TST rate law" << std::endl;
+        std::cout << "    -t integer " << std::endl;
+        std::cout << "         run a test case. valid test numbers are: " << std::endl;
+        std::cout << "             1: simple carbonate speciation, unit activity coeff" << std::endl;
+        std::cout << "             2: simple carbonate speciation, debye-huckel" << std::endl;
+        std::cout << "             3: larger carbonate speciation, unit activity coeff" << std::endl;
+        std::cout << "             4: larger carbonate speciation, debye-huckel" << std::endl;
+        std::cout << "             5: calcite kinetics, TST rate law" << std::endl;
+        std::cout << "             6: Na+ / Ca++ ion exchange" << std::endl;
         std::cout << std::endl;
         std::cout << std::endl;
         std::cout << "    -v integer" << std::endl;
@@ -201,7 +202,9 @@ int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
         std::cout << "             2: verbose" << std::endl;
         std::cout << "             3: debug" << std::endl;
         std::cout << "             4: debug beaker" << std::endl;
-        std::cout << "             5: debug mineral kinetics" << std::endl;
+        std::cout << "             5: debug input file" << std::endl;
+        std::cout << "             6: debug mineral kinetics" << std::endl;
+        std::cout << "             7: debug ion exchange" << std::endl;
         error = -1;
         break;
       }

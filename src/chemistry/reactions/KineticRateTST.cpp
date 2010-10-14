@@ -21,6 +21,8 @@
 **
 **  Residual:
 **
+**    r_i = nu_i R
+**
 **  Jacobian contributions:
 **
 **  dR/dC_j = k * A * (da_j/dC_j) * 
@@ -31,6 +33,9 @@
 **
 **
 **  Notes:
+**
+**    - R is the dissolution rate for the mineral, so positive when
+**    dissolution, negative when precipitation. dCalcite/dt = -R, dCa/dt = R
 **
 **    - assume that the "reactants" list as defined in KineticRate
 **    consists solely of the mineral and the coefficient is always
@@ -47,6 +52,15 @@
 **    - assume that the modifying species are only primary species
 **
 **    - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
+**
+**    - TODO: need to calculate the area rather than read from the file.
+**
+**    - TODO: need to obtain log_Keq from the mineral object rather than read from a file. 
+**
+**    - TODO: units of A and k are not consistent with the input
+**    file. need to pick a set!
+**
+**    - TODO: where should the mineral mass get updated at....?
 **
 *******************************************************************************/
 #include <cmath>
@@ -171,7 +185,6 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
   ** NOTE: residual has units of moles/sec
   */
   static_cast<void>(por_den_sat_vol);
-  static_cast<void>(residual);
 
   // Calculate saturation state term: 1-Q/K 
   double sat_state = 1.0 - Q_over_Keq();
@@ -205,7 +218,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
   */
   static_cast<void>(por_den_sat_vol);
 
-  // double dadC = 1.0;  // da_j/dC_j
+  // double dadC = 1.0;  // da_i/dC_j = nu_ij * m_i/m_j ; da_j/dC_j = m_j/m_j = 1
   double Keq = std::pow(10.0, log_Keq());
   double one_minus_QK = 1.0 - Q_over_Keq();  // (1-Q/Keq)
   double area_rate_constant = area() * rate_constant();  // k*A
@@ -279,12 +292,14 @@ void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
     st.tokenize(*field, space);
 
     if (st.at(0) == "log_Keq") {
+      // should really obtain this from the mineral object....
       log_Keq(std::atof(st.at(1).c_str()));
     }
     else if (st.at(0) == "rate_constant") {
       rate_constant(std::atof(st.at(1).c_str()));
     }
     else if (st.at(0) == "area") {
+      // needs to be calculated....
       area(std::atof(st.at(1).c_str()));
     } 
     else {
@@ -299,8 +314,6 @@ void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
       std::cout << "  Field: " << *field << std::endl;
     }
   }
-  // TODO: now need to identify the indicies in the primary species
-  // list....
 }  // end ParseParameters()
 
 void KineticRateTST::Display(void) const
