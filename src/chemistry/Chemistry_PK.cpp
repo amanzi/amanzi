@@ -19,8 +19,8 @@ void Chemistry_PK::advance( Teuchos::RCP<Epetra_MultiVector> tcc_star )
 {
   cout << "advancing the state of the chemistry process model here" << endl;
 
-  // this is how to get the element volumes...
-  // mesh_wrapper->get_element_volumes() 
+  // the MPC will call this function to advance the state 
+  // with this particular process kernel
 
   // this is how to get the total component concentration
   // CS->get_total_component_concentration()
@@ -39,8 +39,10 @@ void Chemistry_PK::commit_state( Teuchos::RCP<Chemistry_State> )
 {
   cout << "committing the internal state of the chemistry process model" << endl;
 
-  // use this function to commit the internal state
-  // of the chemistry process kernel
+  // the MPC will call this function to signal to the 
+  // process kernel that it has accepted the 
+  // state update, thus, the PK should update
+  // possible auxilary state variables here 
 
 };
 
