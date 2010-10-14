@@ -54,9 +54,6 @@ private:
   double time;
   status_type status;
 
-  // data layout
-  //Teuchos::RCP<DataLayout> data_layout;
-  
   // mesh
   const Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps;
 }; 
