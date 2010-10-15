@@ -1,4 +1,4 @@
-:Description: carbonate speciation problem for geochemistry code validation in ASCEM/Amanzi
+:Description: Batch carbonate equilibrium speciation reaction
 
 :=========================== chemistry ========================================
 CHEMISTRY
@@ -13,9 +13,9 @@ CO2(aq)
 /
 DATABASE ./carbonate.dat
 LOG_FORMULATION
-:ACTIVITY_COEFFICIENTS
-MOLAL
+:ACTIVITY_COEFFICIENTS TIMESTEP
 /
+
 :=========================== solver options ===================================
 TIMESTEPPER
 TS_ACCELERATION 8
@@ -53,6 +53,27 @@ BOUNDS
 /
 END
 
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+ID 1
+POROSITY 0.25d0
+TORTUOSITY 1.d0
+SATURATION_FUNCTION default
+PERMEABILITY
+PERM_X 1.d-12
+PERM_Y 1.d-12
+PERM_Z 1.d-12
+/
+/
+
+:=========================== saturation functions =============================
+SATURATION_FUNCTION default
+/
 
 :=========================== output options ===================================
 OUTPUT
@@ -67,12 +88,42 @@ INITIAL_TIMESTEP_SIZE 1.d-6 y
 MAXIMUM_TIMESTEP_SIZE 1.d-1 y
 /
 
+:=========================== regions ==========================================
+REGION all
+COORDINATES
+0.d0 0.d0 0.d0
+1.d0 1.d0 1.d0
+/
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+TYPE zero_gradient
+CONSTRAINT_LIST
+0.d0 initial
+/
+END
 
 
 :=========================== constraints ======================================
 CONSTRAINT initial
 CONCENTRATIONS
-H+     1.0e-6
-HCO3-  0.001
+H+     1.d-3      T
+HCO3-  1.d-3      T
 /
 /
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+TRANSPORT_CONDITION initial
+REGION all
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+REGION all
+MATERIAL soil1
+END
+
+
