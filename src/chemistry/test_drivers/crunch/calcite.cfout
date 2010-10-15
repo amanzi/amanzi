@@ -166,7 +166,7 @@
  Parameters for this run:
 
   Maximum timestep (yrs) =    1.142E-04
-  Maximum timestep (yrs) =    1.000E-10
+  Maximum timestep (yrs) =    1.142E-04
 
  --> Porosity set by "fix_porosity" or "set_porosity" keywords
  ----> No update of porosity
@@ -178,7 +178,7 @@
   Temperature gradient (C/m) =         0.00
 
  Graphics files printed at (yrs)
-   1.1416E-04
+   1.3699E-03
 
 
    Running in batch mode

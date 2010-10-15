@@ -66,29 +66,39 @@ tests : test
 test : $(TESTS)
 
 carbonate-unit-activity-coeff  :
+	@echo ----------------------------------------
 	$(GEOCHEM) -t 1 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo 
+	@echo ----------------------------------------
+	@echo
 
 carbonate-debye-huckel  : 
+	@echo ----------------------------------------
 	$(GEOCHEM) -t 2 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo 
+	@echo ----------------------------------------
+	@echo
 
 ca-carbonate-unit-activity-coeff : 
+	@echo ----------------------------------------
 	$(GEOCHEM) -t 3 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo 
+	@echo ----------------------------------------
+	@echo
 
 ca-carbonate-debye-huckel : 
+	@echo ----------------------------------------
 	$(GEOCHEM) -t 4 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo 
+	@echo ----------------------------------------
+	@echo
 
 calcite-kinetics : 
+	@echo ----- WARNING: These results have not been verified! -----
 	$(GEOCHEM) -t 5 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo 
+	@echo ----------------------------------------
+	@echo
 
 
 #

@@ -67,7 +67,7 @@
   Output block found
 
   Timestepping on--output files written
-   1.0000000000000000     
+   12.000000000000000     
 
 
  Parameters for this run:
@@ -129,140 +129,72 @@
 
   Initial mass in system =   1.98091188111625821E-003
  Time step #            1
-  Time (hrs) =  8.760E-07  Delt (hrs) = 8.760E-07
-  Number of Newton iterations =  1
-  Maximum change in master variable =   1.21E-10   at grid pts    1    1    1
+  Time (hrs) =  1.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.38E-04   at grid pts    1    1    1
 
  Time step #            2
-  Time (hrs) =  1.752E-06  Delt (hrs) = 8.760E-07
-  Number of Newton iterations =  1
-  Maximum change in master variable =   1.18E-10   at grid pts    1    1    1
+  Time (hrs) =  2.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #            3
-  Time (hrs) =  2.628E-06  Delt (hrs) = 8.760E-07
-  Number of Newton iterations =  1
-  Maximum change in master variable =   1.18E-10   at grid pts    1    1    1
+  Time (hrs) =  3.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #            4
-  Time (hrs) =  3.504E-06  Delt (hrs) = 8.760E-07
-  Number of Newton iterations =  1
-  Maximum change in master variable =   1.18E-10   at grid pts    1    1    1
+  Time (hrs) =  4.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #            5
-  Time (hrs) =  4.380E-06  Delt (hrs) = 8.760E-07
-  Number of Newton iterations =  1
-  Maximum change in master variable =   1.18E-10   at grid pts    1    1    1
+  Time (hrs) =  5.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #            6
-  Time (hrs) =  6.132E-06  Delt (hrs) = 1.752E-06
-  Number of Newton iterations =  1
-  Maximum change in master variable =   2.38E-10   at grid pts    1    1    1
+  Time (hrs) =  6.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #            7
-  Time (hrs) =  9.636E-06  Delt (hrs) = 3.504E-06
-  Number of Newton iterations =  1
-  Maximum change in master variable =   4.76E-10   at grid pts    1    1    1
+  Time (hrs) =  7.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #            8
-  Time (hrs) =  1.664E-05  Delt (hrs) = 7.008E-06
-  Number of Newton iterations =  1
-  Maximum change in master variable =   9.53E-10   at grid pts    1    1    1
+  Time (hrs) =  8.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #            9
-  Time (hrs) =  3.066E-05  Delt (hrs) = 1.402E-05
-  Number of Newton iterations =  1
-  Maximum change in master variable =   1.91E-09   at grid pts    1    1    1
+  Time (hrs) =  9.000E+00  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #           10
-  Time (hrs) =  5.869E-05  Delt (hrs) = 2.803E-05
-  Number of Newton iterations =  1
-  Maximum change in master variable =   3.81E-09   at grid pts    1    1    1
+  Time (hrs) =  1.000E+01  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #           11
-  Time (hrs) =  1.148E-04  Delt (hrs) = 5.606E-05
-  Number of Newton iterations =  1
-  Maximum change in master variable =   7.62E-09   at grid pts    1    1    1
+  Time (hrs) =  1.100E+01  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
  Time step #           12
-  Time (hrs) =  2.269E-04  Delt (hrs) = 1.121E-04
-  Number of Newton iterations =  1
-  Maximum change in master variable =   1.52E-08   at grid pts    1    1    1
-
- Time step #           13
-  Time (hrs) =  4.511E-04  Delt (hrs) = 2.243E-04
-  Number of Newton iterations =  2
-  Maximum change in master variable =   3.05E-08   at grid pts    1    1    1
-
- Time step #           14
-  Time (hrs) =  8.997E-04  Delt (hrs) = 4.485E-04
-  Number of Newton iterations =  2
-  Maximum change in master variable =   6.10E-08   at grid pts    1    1    1
-
- Time step #           15
-  Time (hrs) =  1.797E-03  Delt (hrs) = 8.970E-04
-  Number of Newton iterations =  2
-  Maximum change in master variable =   1.22E-07   at grid pts    1    1    1
-
- Time step #           16
-  Time (hrs) =  3.591E-03  Delt (hrs) = 1.794E-03
-  Number of Newton iterations =  2
-  Maximum change in master variable =   2.44E-07   at grid pts    1    1    1
-
- Time step #           17
-  Time (hrs) =  7.179E-03  Delt (hrs) = 3.588E-03
-  Number of Newton iterations =  2
-  Maximum change in master variable =   4.88E-07   at grid pts    1    1    1
-
- Time step #           18
-  Time (hrs) =  1.436E-02  Delt (hrs) = 7.176E-03
-  Number of Newton iterations =  2
-  Maximum change in master variable =   9.76E-07   at grid pts    1    1    1
-
- Time step #           19
-  Time (hrs) =  2.871E-02  Delt (hrs) = 1.435E-02
-  Number of Newton iterations =  2
-  Maximum change in master variable =   1.95E-06   at grid pts    1    1    1
-
- Time step #           20
-  Time (hrs) =  5.741E-02  Delt (hrs) = 2.870E-02
-  Number of Newton iterations =  2
-  Maximum change in master variable =   3.90E-06   at grid pts    1    1    1
-
- Time step #           21
-  Time (hrs) =  1.148E-01  Delt (hrs) = 5.741E-02
-  Number of Newton iterations =  2
-  Maximum change in master variable =   7.80E-06   at grid pts    1    1    1
-
- Time step #           22
-  Time (hrs) =  2.296E-01  Delt (hrs) = 1.148E-01
-  Number of Newton iterations =  2
-  Maximum change in master variable =   1.56E-05   at grid pts    1    1    1
-
- Time step #           23
-  Time (hrs) =  4.593E-01  Delt (hrs) = 2.296E-01
-  Number of Newton iterations =  2
-  Maximum change in master variable =   3.12E-05   at grid pts    1    1    1
-
- Time step #           24
-  Time (hrs) =  9.186E-01  Delt (hrs) = 4.593E-01
-  Number of Newton iterations =  2
-  Maximum change in master variable =   6.24E-05   at grid pts    1    1    1
-
-  Adjusting time step to match output file
-  ---> New time step = 8.1445E-02
-
- Time step #           25
-  Time (hrs) =  1.000E+00  Delt (hrs) = 8.144E-02
-  Number of Newton iterations =  2
-  Maximum change in master variable =   9.61E-06   at grid pts    1    1    1
+  Time (hrs) =  1.200E+01  Delt (hrs) = 1.000E+00
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.34E-04   at grid pts    1    1    1
 
 
    WRITING OUTPUT FILES
-  Time (hrs) =  1.000E+00
+  Time (hrs) =  1.200E+01
    File number  =            1
 
 
-  Total Newton iterations =           38
+  Total Newton iterations =           36
 
    *** RUN SUCCESSFULLY COMPLETED *** 
 
@@ -270,5 +202,5 @@
 
  ====== Running time on this computer ======
 
-     hr:   0    min:   0    sec:   0
+     hr:   0    min:   0    sec:   1
 

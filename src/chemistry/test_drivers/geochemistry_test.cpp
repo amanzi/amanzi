@@ -137,12 +137,12 @@ int main(int argc, char **argv) {
       std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
       chem->DisplayTotalColumnHeaders();
       chem->DisplayTotalColumns(0.0, total);
-      double delta_time = 60.0;  // seconds
-      int num_time_steps = 60;
+      double delta_time = 3660.0;  // seconds
+      int num_time_steps = 12;
       for (int time_step = 0; time_step <= num_time_steps; time_step++) {
         chem->ReactionStep(total, parameters, delta_time);        
+        chem->DisplayTotalColumns(time_step+1 * delta_time, total);
       }
-      chem->DisplayTotalColumns(num_time_steps * delta_time, total);
     }
   }
   // cleanup memory
