@@ -78,8 +78,8 @@ void Darcy_problem::BC_setup (std::vector<flow_bc> & list)
   int num_bc = list.size();
   bc_.resize(num_bc);
   for (int i = 0; i < num_bc; ++i) {
-    if (!mesh->valid_set_id(Mesh_data::FACE, list[i].side_set)) throw std::exception();
-    bc_[i].num_faces = mesh->set_size(list[i].side_set, Mesh_data::FACE, STK_mesh::OWNED);
+      if (!mesh->valid_set_id(list[i].side_set, Mesh_data::FACE)) throw std::exception();
+    bc_[i].num_faces = mesh->get_set_size(list[i].side_set, Mesh_data::FACE, STK_mesh::OWNED);
     bc_[i].faces.resize(bc_[i].num_faces);
     mesh->get_set(list[i].side_set, Mesh_data::FACE, STK_mesh::OWNED, bc_[i].faces.begin(), bc_[i].faces.end());
     if (list[i].bc_type == "pressure Dirichlet constant") {
@@ -155,7 +155,7 @@ void Darcy_problem::initialize()
   area_.resize(nface_used);
   double x[4][3];
   for (int j = 0; j < nface_used; ++j) {
-    mesh->face_to_coordinates(j, x, x+12);
+      mesh->face_to_coordinates(j, (double*) (x), (double*) (x)+12);
     area_[j] = cell_geometry::quad_face_area(x[0], x[1], x[2], x[3]);
   }
 
