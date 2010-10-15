@@ -9,11 +9,8 @@
 
 #include <Epetra_Map.h>
 #include <Epetra_MpiComm.h>
-#include <Teuchos_RCPDecl.hpp>
 
 #include <memory>
-
-typedef Teuchos::RCP<STK_mesh::Mesh> Mesh_p;
 
 namespace STK_mesh
 {
@@ -36,12 +33,13 @@ private:
     const Epetra_Map& map_  (Mesh_data::Entity_kind kind, bool include_ghost) const;
     unsigned int map_index_ (Mesh_data::Entity_kind kind, bool include_ghost) const;
     void assign_map_        (Mesh_data::Entity_kind kind, bool include_ghost, Epetra_Map *map);
-    unsigned int kind_to_index_ (Mesh_data::Entity_kind type) const;
-    Mesh_data::Entity_kind index_to_kind_ (unsigned int index) const;
 
-    void gather_sets_ ();
     void build_maps_ ();
     void build_tables_ ();
+
+    stk::mesh::EntityRank kind_to_rank_ (Mesh_data::Entity_kind kind) const {
+        return entity_map_.kind_to_rank (kind);
+    }
 
     bool valid_entity_kind_ (Mesh_data::Entity_kind kind) const;
 
@@ -50,8 +48,16 @@ private:
     std::vector<unsigned int> cell_to_node_;
     std::vector<unsigned int> face_to_node_;
 
-    std::map<unsigned int, unsigned int> global_to_local_ [3];
 
+    // Global to local index maps and associated bookkeeping.
+    Index_map global_to_local_maps_ [3];
+    unsigned int kind_to_index_ (Mesh_data::Entity_kind type) const;
+    const Index_map& kind_to_map_ (Mesh_data::Entity_kind kind) const;
+    Mesh_data::Entity_kind index_to_kind_ (unsigned int index) const;
+
+    unsigned int global_to_local_ (unsigned int global_id, Mesh_data::Entity_kind kind) const;
+
+    // Builds the global->local maps.
     template <typename F, typename D, typename M>
     void add_global_ids_ (F from, F to, D destination, M& inverse);
 
@@ -80,7 +86,7 @@ public:
     void face_to_coordinates (unsigned int face, IT begin, IT end) const;
 
     template <typename IT>
-    void cell_to_ccordinates (unsigned int call, IT begin, IT end) const;
+    void cell_to_coordinates (unsigned int cell, IT begin, IT end) const;
 
     inline const Epetra_Map& cell_map (bool include_ghost) const;
     inline const Epetra_Map& face_map (bool include_ghost) const;
@@ -121,8 +127,11 @@ public:
 
 };
 
+// -------------------------
 // Template & inline members
 // ------------------------
+
+// Inlined
 
 const Epetra_Map& Mesh_maps::cell_map (bool include_ghost) const
 {
@@ -138,6 +147,9 @@ const Epetra_Map& Mesh_maps::node_map (bool include_ghost) const
 {
     return map_ (Mesh_data::NODE, include_ghost);
 }
+
+// Connectivity accessors
+// ----------------------
 
 
 template <typename IT>
@@ -171,10 +183,12 @@ void Mesh_maps::face_to_nodes (unsigned int face, IT destination_begin, IT desti
 }
 
 
+// Cooordinate Getters
+// -------------------
+
 template <typename IT>
 void Mesh_maps::node_to_coordinates (unsigned int local_node_id, IT begin, IT end) const
 {
-
     ASSERT ((unsigned int) (end-begin) == 3);
 
     // Convert local node to global node Id.
@@ -182,8 +196,72 @@ void Mesh_maps::node_to_coordinates (unsigned int local_node_id, IT begin, IT en
 
     const double * coordinates = mesh_->coordinates (global_node_id);
     std::copy (coordinates, coordinates+3, begin);
+}
+
+template <typename IT>
+void Mesh_maps::face_to_coordinates (unsigned int local_face_id, IT begin, IT end) const
+{
+    ASSERT ((unsigned int) (end-begin) == 12);
+    throw "The function you seek\nhas no implementation.\nMike is too stressed.";
+}
+
+template <typename IT>
+void Mesh_maps::cell_to_coordinates (unsigned int local_cell_id, IT begin, IT end) const
+{
+    ASSERT ((unsigned int) (end-begin) == 24);
+    throw "The function you seek\nhas no implementation.\nMike is too stressed.";
+}
+
+// Set getters
+// -----------
+
+template <typename IT>
+void Mesh_maps::get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const
+{
+    std::vector<unsigned int> ids;
+    mesh_->get_set_ids (kind_to_rank_ (kind), ids);
+    ASSERT (ids.size () == num_sets (kind));
+
+    IT last = std::copy (ids.begin (), ids.end (), begin);
+
+    ASSERT (last == end);
 
 }
+
+template <typename IT>
+void Mesh_maps::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Element_Category category,
+                         IT begin, IT end) const
+{
+    Entity_vector entities;
+    stk::mesh::Part* set_part = mesh_->get_set (set_id, kind_to_rank_ (kind));
+    mesh_->get_entities (*set_part, category, entities);
+    
+
+    // Convert to local ids.
+    for (Entity_vector::const_iterator it = entities.begin ();
+         it != entities.end ();
+         ++it)
+    {
+        *begin = global_to_local_ ( (*it)->identifier (), kind);
+        begin++;
+    }
+
+    ASSERT (begin == end);
+
+
+}
+
+template <typename IT>
+void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
+              IT begin, IT end)
+{
+
+
+}
+
+
+// Internal template functions
+// ---------------------------
 
 
 template <typename F, typename D, typename M>
@@ -199,7 +277,6 @@ void Mesh_maps::add_global_ids_ (F from, F to, D destination, M& global_to_local
         destination++;
         local_id++;
     }
-
 }
 
 }

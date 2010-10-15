@@ -9,7 +9,7 @@ namespace STK_mesh
 {
 
 
-Mesh_maps::Mesh_maps (Mesh_p mesh) : mesh_ (mesh), 
+Mesh_maps::Mesh_maps (Mesh_p mesh) : mesh_ (mesh),
                                      entity_map_ (mesh->entity_map ()),
                                      communicator_ (mesh_->communicator ())
 {
@@ -30,23 +30,15 @@ void Mesh_maps::clear_internals_ ()
     face_to_node_.resize (0);
 
     for (int i=0; i<3; ++i)
-        global_to_local_ [i].erase (global_to_local_ [i].begin (), global_to_local_ [i].end ());
+        global_to_local_maps_ [i].erase (global_to_local_maps_ [i].begin (), global_to_local_maps_ [i].end ());
 
 }
 
 
 void Mesh_maps::update_internals_()
 {
-    gather_sets_ ();
     build_maps_ ();
     build_tables_ ();
-}
-
-void Mesh_maps::gather_sets_ ()
-{
-
-    
-
 }
 
 
@@ -56,17 +48,17 @@ void Mesh_maps::build_maps_ ()
     // For each of Elements, Faces, Nodes:
     for (int entity_kind_index = 0; entity_kind_index < 3; ++entity_kind_index)
     {
-        
+
         Mesh_data::Entity_kind kind = index_to_kind_ (entity_kind_index);
         stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
 
-        // Get the collection of "owned" entities 
+        // Get the collection of "owned" entities
         Entity_vector entities;
         mesh_->get_entities (rank, OWNED, entities);
         const int num_local_entities = entities.size ();
         ASSERT (num_local_entities == mesh_->count_entities (rank, OWNED));
 
- 
+
         // Get the collection of ghost entities.
         Entity_vector ghosts;
         mesh_->get_entities (entity_kind_index, GHOST, ghosts);
@@ -81,10 +73,10 @@ void Mesh_maps::build_maps_ ()
         // Create a vector of global ids and populate the inverse map.
         std::vector<int> my_entities_global_ids;
         add_global_ids_ (entities.begin (), entities.end (),
-                         std::back_inserter (my_entities_global_ids), 
-                         global_to_local_ [entity_kind_index]);
+                         std::back_inserter (my_entities_global_ids),
+                         global_to_local_maps_ [entity_kind_index]);
         ASSERT (my_entities_global_ids.size () == num_local_entities);
-        ASSERT (global_to_local_ [entity_kind_index].size () == num_local_entities);
+        ASSERT (global_to_local_maps_ [entity_kind_index].size () == num_local_entities);
 
 
 
@@ -93,7 +85,7 @@ void Mesh_maps::build_maps_ ()
         Epetra_Map *local_ghost_map (new Epetra_Map (-1,
                                                      num_used_entities,
                                                      &my_entities_global_ids [0],
-                                                     0, 
+                                                     0,
                                                      communicator_));
 
         assign_map_ (kind, true, local_ghost_map);
@@ -141,7 +133,7 @@ void Mesh_maps::build_tables_ ()
         for (Entity_Ids::const_iterator face = faces.begin ();
              face != faces.end (); ++face)
         {
-            const unsigned int face_index = global_to_local_ [0] [*face];
+            const unsigned int face_index = global_to_local_maps_ [0] [*face];
             cell_to_face_.push_back (face_index);
         }
 
@@ -149,7 +141,7 @@ void Mesh_maps::build_tables_ ()
         for (Entity_Ids::const_iterator node = nodes.begin ();
              node != nodes.end (); ++node)
         {
-            const unsigned int node_index = global_to_local_ [1] [*node];
+            const unsigned int node_index = global_to_local_maps_ [1] [*node];
             cell_to_node_.push_back (node_index);
         }
 
@@ -164,16 +156,16 @@ void Mesh_maps::build_tables_ ()
     for (int local_face = 0; local_face < num_local_faces; ++local_face)
     {
         const unsigned int global_index = the_face_map.GID (local_face);
-        
+
         Entity_Ids nodes;
         mesh_->face_to_nodes (global_index, nodes);
         ASSERT (nodes.size () == 4);
-        
+
         // Loop over nodes
         for (Entity_Ids::const_iterator node = nodes.begin ();
              node != nodes.end (); ++node)
         {
-            const unsigned int node_index = global_to_local_ [1] [*node];
+            const unsigned int node_index = global_to_local_maps_ [1] [*node];
             face_to_node_.push_back (node_index);
         }
     }
@@ -181,10 +173,8 @@ void Mesh_maps::build_tables_ ()
 
 }
 
-const Epetra_Map& Mesh_maps::map_ (Mesh_data::Entity_kind kind, bool include_ghost) const
-{
-    return *(maps_ [map_index_ (kind, include_ghost)].get ());
-}
+// Internal validators
+// -------------------
 
 /* This should accept the entity_kinds for which we have internal data
  */
@@ -192,6 +182,10 @@ bool Mesh_maps::valid_entity_kind_ (const Mesh_data::Entity_kind kind) const
 {
     return (kind == Mesh_data::NODE) || (kind == Mesh_data::FACE) || (kind == Mesh_data::CELL);
 }
+
+
+// Bookkeeping for the internal relationship maps
+// ----------------------------------------------
 
 
 unsigned int Mesh_maps::kind_to_index_ (const Mesh_data::Entity_kind kind) const
@@ -210,9 +204,32 @@ Mesh_data::Entity_kind Mesh_maps::index_to_kind_ (const unsigned int index) cons
     if (index == 0) return Mesh_data::NODE;
     if (index == 1) return Mesh_data::FACE;
     if (index == 2) return Mesh_data::CELL;
-
 }
 
+const Index_map& Mesh_maps::kind_to_map_ (Mesh_data::Entity_kind kind) const
+{
+    return global_to_local_maps_ [kind_to_index_ (kind)];
+}
+
+
+unsigned int Mesh_maps::global_to_local_ (unsigned int global_id, Mesh_data::Entity_kind kind) const
+{
+    const std::map<unsigned int, unsigned int>& global_local_map (kind_to_map_ (kind));
+    std::map<unsigned int, unsigned int>::const_iterator map_entry = global_local_map.find (global_id);
+    ASSERT (map_entry != global_local_map.end ());
+
+    return map_entry->second;
+}
+
+
+// Bookkeeping for the collection of Epetra_maps
+// ---------------------------------------------
+
+
+const Epetra_Map& Mesh_maps::map_ (Mesh_data::Entity_kind kind, bool include_ghost) const
+{
+    return *(maps_ [map_index_ (kind, include_ghost)].get ());
+}
 
 unsigned int Mesh_maps::map_index_ (Mesh_data::Entity_kind kind, bool include_ghost) const
 {
@@ -227,10 +244,43 @@ void Mesh_maps::assign_map_ (Mesh_data::Entity_kind kind, bool include_ghost, Ep
     maps_ [map_index] = std::auto_ptr<Epetra_Map>(map);
 }
 
+
+
+// Public Accesor Functions
+// ------------------------
+
+
 unsigned int Mesh_maps::count_entities (Mesh_data::Entity_kind kind, Element_Category category) const
 {
-    const int rank = entity_map_.kind_to_rank (kind);
-    return mesh_->count_entities (rank, category);
+    return mesh_->count_entities (kind_to_rank_ (kind), category);
 }
+
+bool Mesh_maps::valid_set_id (unsigned int set_id, Mesh_data::Entity_kind kind) const
+{
+    return mesh_->valid_id (set_id, kind_to_rank_ (kind));
+}
+
+unsigned int Mesh_maps::num_sets () const
+{
+    return mesh_->num_sets ();
+}
+
+unsigned int Mesh_maps::num_sets (Mesh_data::Entity_kind kind) const
+{
+    return mesh_->num_sets (kind_to_rank_ (kind));
+}
+
+unsigned int Mesh_maps::get_set_size (unsigned int set_id, 
+                                      Mesh_data::Entity_kind kind,
+                                      Element_Category category) const
+{
+    ASSERT (valid_set_id (set_id, kind));
+    stk::mesh::Part* part = mesh_->get_set (set_id, kind_to_rank_ (kind));
+
+    return mesh_->count_entities (*part, category);
+}
+
+
+
 
 }

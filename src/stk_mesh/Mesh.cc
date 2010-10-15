@@ -91,13 +91,19 @@ unsigned int Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category 
     return stk::mesh::count_selected_entities (selector_ (category), bulk_data_->buckets (rank));
 }
 
+unsigned int Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) const
+{
+    const stk::mesh::Selector part_selector = part | selector_ (category);
+    const stk::mesh::EntityRank rank        = part.primary_entity_rank ();
+
+    return stk::mesh::count_selected_entities (part_selector, bulk_data_->buckets (rank));
+}
+
 void Mesh::get_entities (stk::mesh::EntityRank rank, Element_Category category, Entity_vector& entities) const
 {
-
     ASSERT (entities.size () == 0);
     get_entities_ (selector_ (category), rank, entities);
     ASSERT (entities.size () == count_entities (rank, category));
-
 }
 
 void Mesh::get_entities (const stk::mesh::Part& part, Element_Category category, Entity_vector& entities) const
@@ -109,7 +115,6 @@ void Mesh::get_entities (const stk::mesh::Part& part, Element_Category category,
 
     get_entities_ (part_selector, rank, entities);
 }
-
 
 void Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank,
                           Entity_vector& entities) const
@@ -211,6 +216,35 @@ stk::mesh::Part* Mesh::get_set (const char* name, stk::mesh::EntityRank rank)
     return part;
 }
 
+void Mesh::get_sets (stk::mesh::EntityRank rank, stk::mesh::PartVector& sets) const
+{
+    
+    ASSERT (sets.size () == 0);
+
+    for (Id_map::const_iterator it = set_to_part_.begin ();
+         it != set_to_part_.end ();
+         ++it)
+    {
+        if (it->first.first == rank) sets.push_back (it->second);
+    }
+
+    ASSERT (sets.size () == num_sets (rank));
+
+}
+
+void Mesh::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int> &ids) const
+{
+    ASSERT (ids.size () == 0);
+    
+    for (Id_map::const_iterator it = set_to_part_.begin ();
+         it != set_to_part_.end ();
+         ++it)
+    {
+        if (it->first.first == rank) ids.push_back (it->first.second);
+    }
+
+}
+
 
 // Manipulators
 // ------------
@@ -273,6 +307,16 @@ void Mesh::update_ ()
 
 // }
 
+// Argument validators
+// -------------------
+
+bool Mesh::valid_id (unsigned int id, stk::mesh::EntityRank rank) const
+{
+    return (set_to_part_.find (std::make_pair (rank, id)) != set_to_part_.end ());
+}
+
+
+
 // Static Information & Validators
 // -------------------------------
 
@@ -309,6 +353,7 @@ bool Mesh::dimension_ok_ () const
 {
     return valid_dimension (space_dimension_);
 }
+
 
 }
 
