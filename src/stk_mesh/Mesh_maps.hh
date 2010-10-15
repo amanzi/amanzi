@@ -202,14 +202,31 @@ template <typename IT>
 void Mesh_maps::face_to_coordinates (unsigned int local_face_id, IT begin, IT end) const
 {
     ASSERT ((unsigned int) (end-begin) == 12);
-    throw "The function you seek\nhas no implementation.\nMike is too stressed.";
+
+    unsigned int node_indices [4];
+    face_to_nodes (local_face_id, node_indices, node_indices+4);
+    for (int i = 0; i < 4; ++i)
+    {
+        node_to_coordinates (node_indices [i], begin, begin+4);
+        begin+=4;
+    }
+
+
 }
 
 template <typename IT>
 void Mesh_maps::cell_to_coordinates (unsigned int local_cell_id, IT begin, IT end) const
 {
     ASSERT ((unsigned int) (end-begin) == 24);
-    throw "The function you seek\nhas no implementation.\nMike is too stressed.";
+
+    unsigned int node_indices [8];
+    cell_to_nodes (local_cell_id, node_indices, node_indices+8);
+    for (int i = 0; i < 8; ++i)
+    {
+        node_to_coordinates (node_indices [i], begin, begin+3);
+        begin+=3;
+    }
+
 }
 
 // Set getters
@@ -247,15 +264,28 @@ void Mesh_maps::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Eleme
     }
 
     ASSERT (begin == end);
-
-
 }
 
 template <typename IT>
-void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
-              IT begin, IT end)
+void Mesh_maps::get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
+                         IT begin, IT end) const
 {
 
+    Entity_vector entities;
+    stk::mesh::Part* set_part = mesh_->get_set (name, kind_to_rank_ (kind));
+    mesh_->get_entities (*set_part, category, entities);
+    
+    // Convert to local ids.
+    for (Entity_vector::const_iterator it = entities.begin ();
+         it != entities.end ();
+         ++it)
+    {
+        *begin = global_to_local_ ( (*it)->identifier (), kind);
+        begin++;
+    }
+
+    ASSERT (begin == end);
+    
 
 }
 
