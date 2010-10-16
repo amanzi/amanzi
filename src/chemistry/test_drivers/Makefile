@@ -28,15 +28,22 @@ CXXFLAGS += -g -Wall -ansi -Wextra $(INCLUDES)
 DIFF = diff
 DFLAGS = --brief
 
-TESTS = \
-	carbonate-unit-activity-coeff \
-	carbonate-debye-huckel \
-	ca-carbonate-unit-activity-coeff \
-	ca-carbonate-debye-huckel \
-	calcite-kinetics
-
 GEOCHEM = ./geochemistryTest
 GEOVERB = -v 2
+
+TESTS_CRUNCH = \
+	carbonate-unit-activity-coeff-crunch \
+	carbonate-debye-huckel-crunch \
+	ca-carbonate-unit-activity-coeff-crunch \
+	ca-carbonate-debye-huckel-crunch \
+	calcite-kinetics-crunch
+
+TESTS_PFLOTRAN = \
+	carbonate-unit-activity-coeff-pflotran \
+	carbonate-debye-huckel-pflotran \
+	ca-carbonate-unit-activity-coeff-pflotran \
+	ca-carbonate-debye-huckel-pflotran \
+	calcite-kinetics-pflotran
 
 #
 # Generic rules to generate executables.
@@ -63,42 +70,93 @@ all : $(EXECUTABLES)
 
 tests : test
 
-test : $(TESTS)
+test : $(TESTS_CRUNCH) $(TESTS_PFLOTRAN)
 
-carbonate-unit-activity-coeff  :
+test-crunch : $(TESTS_CRUNCH)
+
+test-pflotran : $(TESTS_PFLOTRAN)
+
+
+
+#
+# carbonate
+#
+carbonate-unit-activity-coeff-crunch  :
+	@echo
 	@echo ----------------------------------------
-	$(GEOCHEM) -t 1 $(GEOVERB) > $@.cout
-	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo ----------------------------------------
+	$(GEOCHEM) -m crunch -t 1 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
 	@echo
 
-carbonate-debye-huckel  : 
+carbonate-unit-activity-coeff-pflotran  :
+	@echo
 	@echo ----------------------------------------
-	$(GEOCHEM) -t 2 $(GEOVERB) > $@.cout
-	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo ----------------------------------------
+	$(GEOCHEM) -m pflotran -t 1 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/pflotran/$@.test
 	@echo
 
-ca-carbonate-unit-activity-coeff : 
+carbonate-debye-huckel-crunch  : 
+	@echo
 	@echo ----------------------------------------
-	$(GEOCHEM) -t 3 $(GEOVERB) > $@.cout
-	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo ----------------------------------------
+	$(GEOCHEM) -m crunch -t 2 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
 	@echo
 
-ca-carbonate-debye-huckel : 
+carbonate-debye-huckel-pflotran  : 
+	@echo
 	@echo ----------------------------------------
-	$(GEOCHEM) -t 4 $(GEOVERB) > $@.cout
-	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo ----------------------------------------
+	$(GEOCHEM) -m pflotran -t 2 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/pflotran/$@.test
 	@echo
 
-calcite-kinetics : 
+#
+# ca-carbonate
+#
+ca-carbonate-unit-activity-coeff-crunch : 
+	@echo
+	@echo ----------------------------------------
+	$(GEOCHEM) -m crunch -t 3 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+ca-carbonate-debye-huckel-crunch : 
+	@echo
+	@echo ----------------------------------------
+	$(GEOCHEM) -m crunch -t 4 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+ca-carbonate-unit-activity-coeff-pflotran : 
+	@echo
+	@echo ----------------------------------------
+	$(GEOCHEM) -m pflotran -t 3 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/pflotran/$@.test
+	@echo
+
+ca-carbonate-debye-huckel-pflotran : 
+	@echo
+	@echo ----------------------------------------
+	$(GEOCHEM) -m pflotran -t 4 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/pflotran/$@.test
+	@echo
+
+#
+# calcite kinetics
+#
+calcite-kinetics-crunch : 
+	@echo
 	@echo ----- WARNING: These results have not been verified! -----
-	$(GEOCHEM) -t 5 $(GEOVERB) > $@.cout
-	-$(DIFF) $(DFLAGS) $@.cout results/$@.test
-	@echo ----------------------------------------
+	$(GEOCHEM) -m crunch -t 5 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
 	@echo
+
+calcite-kinetics-pflotran : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m pflotran -t 5 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/pflotran/$@.test
+	@echo
+
 
 
 #

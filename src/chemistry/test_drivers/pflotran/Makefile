@@ -56,7 +56,7 @@ clean :
 		,* .emacs_* \
 		tags TAGS \
 		make.log MakeOut \
-		*.out *.cfout *.rst *.ant
+		*.out *.pfout *.rst *.ant *.tec
 
 #
 # clobber - Really clean up the directory.

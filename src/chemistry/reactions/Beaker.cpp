@@ -843,13 +843,15 @@ void Beaker::DisplayResults(void) const
             << std::endl;
   std::cout << "---- Components " << std::endl;
   std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "Molarity" 
             << std::setw(15) << "Molality" 
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
     std::cout << std::setw(15) << primarySpecies_[i].name()
               << std::scientific << std::setprecision(5)
-              << std::setw(15) << total_[i] << std::endl;
-
+              << std::setw(15) << total_[i] / water_density_kg_L()
+              << std::setw(15) << total_[i] 
+              << std::endl;
   }
 
   std::cout << "---- Species " << std::endl;
