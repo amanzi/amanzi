@@ -70,12 +70,12 @@
 
  Species         log K         Stoichiometric Coefficients
                             HCO3-  Ca++   H+     
- OH-           1.3991E+01   0.00   0.00  -1.00
- CO2(aq)      -6.3414E+00   1.00   0.00   1.00
- CO3--         1.0325E+01   1.00   0.00  -1.00
+ OH-           1.3995E+01   0.00   0.00  -1.00
+ CO2(aq)      -6.3447E+00   1.00   0.00   1.00
+ CO3--         1.0329E+01   1.00   0.00  -1.00
  CaOH+         1.2850E+01   0.00   1.00  -1.00
- CaHCO3+      -1.0429E+00   1.00   1.00   0.00
- CaCO3(aq)     7.0088E+00   1.00   1.00  -1.00
+ CaHCO3+      -1.0467E+00   1.00   1.00   0.00
+ CaCO3(aq)     7.0017E+00   1.00   1.00  -1.00
 
   ***KINETIC INPUTS***
 
@@ -110,7 +110,7 @@
   Solid Density (kg/m^3)  =      0.000
   Solid:Solution Ratio    =      0.000
   Ionic Strength          =      0.003
-  Solution pH             =      6.637
+  Solution pH             =      6.640
   Total Charge            =  8.674E-19
 
  Total Aqueous Concentrations of Primary Species  
@@ -127,14 +127,14 @@
                            Log        Log                                 Activity
  Species              Molality   Activity      Molality      Activity   Coefficient    Type
   HCO3-                 -2.704     -2.704     1.976E-03     1.976E-03     1.000E+00  Aqueous 
-  Ca++                  -3.010     -3.010     9.778E-04     9.778E-04     1.000E+00  Aqueous 
-  H+                    -6.637     -6.637     2.308E-07     2.308E-07     1.000E+00  Aqueous 
-  OH-                   -7.354     -7.354     4.423E-08     4.423E-08     1.000E+00  Aqueous 
+  Ca++                  -3.010     -3.010     9.776E-04     9.776E-04     1.000E+00  Aqueous 
+  H+                    -6.640     -6.640     2.291E-07     2.291E-07     1.000E+00  Aqueous 
+  OH-                   -7.355     -7.355     4.415E-08     4.415E-08     1.000E+00  Aqueous 
   CO2(aq)               -3.000     -3.000     1.001E-03     1.001E-03     1.000E+00  Aqueous 
-  CO3--                 -6.392     -6.392     4.054E-07     4.054E-07     1.000E+00  Aqueous 
-  CaOH+                 -9.223     -9.223     5.986E-10     5.986E-10     1.000E+00  Aqueous 
-  CaHCO3+               -4.671     -4.671     2.133E-05     2.133E-05     1.000E+00  Aqueous 
-  CaCO3(aq)             -6.086     -6.086     8.208E-07     8.208E-07     1.000E+00  Aqueous 
+  CO3--                 -6.393     -6.393     4.047E-07     4.047E-07     1.000E+00  Aqueous 
+  CaOH+                 -9.220     -9.220     6.029E-10     6.029E-10     1.000E+00  Aqueous 
+  CaHCO3+               -4.667     -4.667     2.151E-05     2.151E-05     1.000E+00  Aqueous 
+  CaCO3(aq)             -6.076     -6.076     8.402E-07     8.402E-07     1.000E+00  Aqueous 
 
   ****** Partial pressure of gases (bars) *****
 

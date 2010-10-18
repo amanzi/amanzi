@@ -1,5 +1,6 @@
 Command Line Options: 
-	Test number: 5
+	Model: pflotran
+	Test number: 4
 	Verbosity: 2
 
 
@@ -10,7 +11,7 @@ Command Line Options:
     activity model: debye-huckel
     porosity: 0.5 [-]
     water saturation: 1 [-]
-    water density: 1000 [kg m^-3]
+    water density: 997.16 [kg m^-3]
     volume: 1 [m^3]
 
 ---- Primary Species
@@ -34,49 +35,26 @@ Command Line Options:
     CaCO3(aq) = -1 H+ + 1 Ca++ + 1 HCO3-
                                             7.0017         0   100.087
 
----- Minerals
-    Reaction                               log_Keq  molar_density       GMW
-    Calcite = -1 H+ + 1 Ca++ + 1 HCO3-
-                                            1.8487         36.934   100.087
-
----- Mineral Kinetics
-    Rate law: TST
-    Reaction: 
-      Calcite = -1 H+ + 1 Ca++ + 1 HCO3-
-    Parameters:
-      mineral = Calcite
-      mineral id = 0
-      rate constant = 0.001 [moles/m^2/sec]
-      area = 100 [m^2]
-      log_Keq = 1.8487 [-]
-      rate modifiers: 
-        { H+ }^1 
-
-
 ----------------------------------------------------------------------
 Beaker::speciate num_iterations :12
 
 -- Solution ----------------------------------------------------------
 ---- Components 
-           Name       Molality
-             H+    1.00000e-03
-          HCO3-    3.00000e-03
-           Ca++    1.00000e-03
+           Name       Molarity       Molality
+             H+    1.00285e-03    1.00000e-03
+          HCO3-    3.00854e-03    3.00000e-03
+           Ca++    1.00285e-03    1.00000e-03
 ---- Species 
            Name       Molarity Activity Coeff       Activity
-             H+    2.56167e-07    9.46544e-01    2.42473e-07
-          HCO3-    1.98091e-03    9.42188e-01    1.86639e-03
-           Ca++    9.82210e-04    7.93500e-01    7.79384e-04
-            OH-    4.42912e-08    9.41714e-01    4.17096e-08
-          CO3--    4.57605e-07    7.88946e-01    3.61026e-07
-        CO2(aq)    1.00084e-03    1.00000e+00    1.00084e-03
-          CaOH+    4.81892e-10    9.42188e-01    4.54033e-10
-        CaHCO3+    1.71916e-05    9.42188e-01    1.61977e-05
-      CaCO3(aq)    5.97571e-07    1.00000e+00    5.97571e-07
+             H+    2.56210e-07    9.46482e-01    2.42498e-07
+          HCO3-    1.98650e-03    9.42115e-01    1.87152e-03
+           Ca++    9.84964e-04    7.93267e-01    7.81339e-04
+            OH-    4.42901e-08    9.41639e-01    4.17053e-08
+          CO3--    4.58957e-07    7.88703e-01    3.61980e-07
+        CO2(aq)    1.00370e-03    1.00000e+00    1.00370e-03
+          CaOH+    4.83089e-10    9.42115e-01    4.55125e-10
+        CaHCO3+    1.72834e-05    9.42115e-01    1.62829e-05
+      CaCO3(aq)    6.00654e-07    1.00000e+00    6.00654e-07
 ----------------------------------------------------------------------
 
--- Test Beaker Reaction Stepping -------------------------------------
-       Time (s)             H+          HCO3-           Ca++
-    0.00000e+00    1.00000e-03    3.00000e-03    1.00000e-03
-    3.60000e+03    9.99838e-04    3.00016e-03    1.00016e-03
 Done!

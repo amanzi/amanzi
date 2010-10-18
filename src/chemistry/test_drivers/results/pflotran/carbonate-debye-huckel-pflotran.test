@@ -1,4 +1,5 @@
 Command Line Options: 
+	Model: pflotran
 	Test number: 2
 	Verbosity: 2
 
@@ -10,7 +11,7 @@ Command Line Options:
     activity model: debye-huckel
     porosity: 0.5 [-]
     water saturation: 1 [-]
-    water density: 1000 [kg m^-3]
+    water density: 997.16 [kg m^-3]
     volume: 1 [m^3]
 
 ---- Primary Species
@@ -32,16 +33,16 @@ Beaker::speciate num_iterations :8
 
 -- Solution ----------------------------------------------------------
 ---- Components 
-           Name       Molality
-             H+    1.00000e-03
-          HCO3-    1.00000e-03
+           Name       Molarity       Molality
+             H+    1.00285e-03    1.00000e-03
+          HCO3-    1.00285e-03    1.00000e-03
 ---- Species 
            Name       Molarity Activity Coeff       Activity
-             H+    2.11515e-05    9.94673e-01    2.10389e-05
-          HCO3-    2.11510e-05    9.94633e-01    2.10375e-05
-            OH-    4.83299e-10    9.94629e-01    4.80704e-10
-          CO3--    4.79197e-11    9.78716e-01    4.68998e-11
-        CO2(aq)    9.78849e-04    1.00000e+00    9.78849e-04
+             H+    2.11820e-05    9.94670e-01    2.10691e-05
+          HCO3-    2.11815e-05    9.94630e-01    2.10677e-05
+            OH-    4.82607e-10    9.94626e-01    4.80013e-10
+          CO3--    4.79204e-11    9.78701e-01    4.68998e-11
+        CO2(aq)    9.81667e-04    1.00000e+00    9.81667e-04
 ----------------------------------------------------------------------
 
 Done!

@@ -66,9 +66,9 @@
 
  Species         log K         Stoichiometric Coefficients
                             HCO3-  H+     
- OH-           1.3991E+01   0.00  -1.00
- CO3--         1.0325E+01   1.00  -1.00
- CO2(aq)      -6.3414E+00   1.00   1.00
+ OH-           1.3995E+01   0.00  -1.00
+ CO3--         1.0329E+01   1.00  -1.00
+ CO2(aq)      -6.3447E+00   1.00   1.00
 
   ***KINETIC INPUTS***
 
@@ -102,8 +102,8 @@
   Solid Density (kg/m^3)  =      0.000
   Solid:Solution Ratio    =      0.000
   Ionic Strength          =      0.000
-  Solution pH             =      4.675
-  Total Charge            =  2.168E-19
+  Solution pH             =      4.677
+  Total Charge            = -2.168E-19
 
  Total Aqueous Concentrations of Primary Species  
  --------------------------------------- 
@@ -117,11 +117,11 @@
 
                            Log        Log                                 Activity
  Species              Molality   Activity      Molality      Activity   Coefficient    Type
-  HCO3-                 -4.673     -4.675     2.123E-05     2.112E-05     9.946E-01  Aqueous 
-  H+                    -4.673     -4.675     2.123E-05     2.112E-05     9.947E-01  Aqueous 
-  OH-                   -9.313     -9.316     4.860E-10     4.833E-10     9.946E-01  Aqueous 
-  CO3--                -10.316    -10.325     4.835E-11     4.733E-11     9.787E-01  Aqueous 
-  CO2(aq)               -3.009     -3.009     9.788E-04     9.788E-04     1.000E+00  Aqueous 
+  HCO3-                 -4.675     -4.677     2.115E-05     2.104E-05     9.946E-01  Aqueous 
+  H+                    -4.675     -4.677     2.115E-05     2.104E-05     9.947E-01  Aqueous 
+  OH-                   -9.316     -9.318     4.833E-10     4.807E-10     9.946E-01  Aqueous 
+  CO3--                -10.319    -10.329     4.792E-11     4.690E-11     9.787E-01  Aqueous 
+  CO2(aq)               -3.009     -3.009     9.788E-04     9.789E-04     1.000E+00  Aqueous 
 
   ****** Partial pressure of gases (bars) *****
 

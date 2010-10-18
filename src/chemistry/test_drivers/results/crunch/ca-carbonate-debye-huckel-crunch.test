@@ -1,4 +1,5 @@
 Command Line Options: 
+	Model: crunch
 	Test number: 4
 	Verbosity: 2
 
@@ -39,10 +40,10 @@ Beaker::speciate num_iterations :12
 
 -- Solution ----------------------------------------------------------
 ---- Components 
-           Name       Molality
-             H+    1.00000e-03
-          HCO3-    3.00000e-03
-           Ca++    1.00000e-03
+           Name       Molarity       Molality
+             H+    1.00000e-03    1.00000e-03
+          HCO3-    3.00000e-03    3.00000e-03
+           Ca++    1.00000e-03    1.00000e-03
 ---- Species 
            Name       Molarity Activity Coeff       Activity
              H+    2.56167e-07    9.46544e-01    2.42473e-07

@@ -11,12 +11,17 @@
 #include "ActivityModelFactory.hpp"
 #include "Verbosity.hpp"
 
-int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test);
+const std::string kCrunch("crunch");
+const std::string kPflotran("pflotran");
+
+int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test, std::string* model);
+void ModelSpecificParameters(const std::string model, Beaker::BeakerParameters* parameters);
 void PrintDoubleVector(const std::vector<double> &total);
 
 int main(int argc, char **argv) {
   Verbosity verbosity = kTerse;
   int test = 0;
+  std::string model("");
   int error = EXIT_SUCCESS;
 
   Beaker *chem = NULL;
@@ -27,7 +32,7 @@ int main(int argc, char **argv) {
   std::string mineral_kinetics_file("");
   std::string activity_model_name("");
   
-  error = CommandLineOptions(argc, argv, verbosity, test);
+  error = CommandLineOptions(argc, argv, &verbosity, &test, &model);
 
   if (error == EXIT_SUCCESS) {
     switch (test) {
@@ -120,8 +125,8 @@ int main(int argc, char **argv) {
     parameters.activity_model_name = activity_model_name;
     parameters.porosity = 0.5;  // -
     parameters.saturation = 1.0;  // - 
-    parameters.water_density = 1000.0; // 997.205133945901; // kg / m^3
     parameters.volume = 1.0;  // m^3
+    ModelSpecificParameters(model, &parameters);
     chem->setup(total, parameters);
     if (verbosity >= kVerbose) {
       chem->Display();
@@ -137,12 +142,12 @@ int main(int argc, char **argv) {
       std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
       chem->DisplayTotalColumnHeaders();
       chem->DisplayTotalColumns(0.0, total);
-      double delta_time = 60.0;  // seconds
-      int num_time_steps = 60;
+      double delta_time = 3660.0;  // seconds
+      int num_time_steps = 12;
       for (int time_step = 0; time_step <= num_time_steps; time_step++) {
         chem->ReactionStep(total, parameters, delta_time);        
+        chem->DisplayTotalColumns(time_step+1 * delta_time, total);
       }
-      chem->DisplayTotalColumns(num_time_steps * delta_time, total);
     }
   }
   // cleanup memory
@@ -154,6 +159,18 @@ int main(int argc, char **argv) {
 }  // end main()
 
 
+void ModelSpecificParameters(const std::string model, Beaker::BeakerParameters* parameters)
+{
+  if (model == kCrunch) {
+    parameters->water_density = 1000.0; // kg / m^3    
+  } else if (model == kPflotran) {
+    parameters->water_density = 997.16; // kg / m^3
+    // where did this number come from? parameters->water_density = 997.205133945901; // kg / m^3
+  } else {
+    // bad model name, how did we get here....
+  }
+}  // end ModelSpecificParameters()
+
 void PrintDoubleVector(const std::vector<double> &total)
 {
   std::cout << "[ ";
@@ -164,27 +181,38 @@ void PrintDoubleVector(const std::vector<double> &total)
   std::cout << " ]" << std::endl;
 }  // end PrintDoubleVector()
 
-int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
+int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test,
+                       std::string* model)
 {
   int error = -2;
   int option;
   extern char *optarg;
 
-  while ((option = getopt(argc, argv, "ht:v:?")) != EOF) {
+  while ((option = getopt(argc, argv, "m:ht:v:?")) != EOF) {
     switch (option) {
+      case 'm': {
+        model->assign(optarg);
+        error = EXIT_SUCCESS;
+        break;
+      }
       case 't': {
         /* specify the test that should be run */
-        test = std::atoi(optarg);
+        *test = std::atoi(optarg);
         error = EXIT_SUCCESS;
         break;
       }
       case 'v': {
-        verbosity = static_cast<Verbosity>(std::atoi(optarg));
+        *verbosity = static_cast<Verbosity>(std::atoi(optarg));
         break;
       }
       case '?': case 'h': {  /* help mode */
         /* print some help stuff and exit without doing anything */
         std::cout << argv[0] << " command line options:" << std::endl;
+        std::cout << "    -m string " << std::endl;
+        std::cout << "         adjusts parameters to match validation models. Options:" << std::endl;
+        std::cout << "             " << kCrunch << std::endl;
+        std::cout << "             " << kPflotran << std::endl;
+        std::cout << std::endl;
         std::cout << "    -t integer " << std::endl;
         std::cout << "         run a test case. valid test numbers are: " << std::endl;
         std::cout << "             1: simple carbonate speciation, unit activity coeff" << std::endl;
@@ -193,7 +221,6 @@ int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
         std::cout << "             4: larger carbonate speciation, debye-huckel" << std::endl;
         std::cout << "             5: calcite kinetics, TST rate law" << std::endl;
         std::cout << "             6: Na+ / Ca++ ion exchange" << std::endl;
-        std::cout << std::endl;
         std::cout << std::endl;
         std::cout << "    -v integer" << std::endl;
         std::cout << "         verbose output:" << std::endl;
@@ -215,15 +242,21 @@ int CommandLineOptions(int argc, char **argv, Verbosity& verbosity, int& test)
     }
   }
 
-  if (error != -1 && test == 0) {
+  if (error != -1 && *test == 0) {
     std::cout << "No test number specified on command line. Try \""
               <<  argv[0] << " -h \" for help." << std::endl;
   }
 
-  if (verbosity >= kVerbose) {
+  if (model->c_str() != kCrunch && model->c_str() != kPflotran) {
+    std::cout << "Invalid model name \'" << model << "\'." << std::endl;
+    std::cout << "Run \"" <<  argv[0] << " -h \" for help." << std::endl;
+  }
+
+  if (*verbosity >= kVerbose) {
     std::cout << "Command Line Options: " << std::endl;
-    std::cout << "\tTest number: " << test << std::endl;
-    std::cout << "\tVerbosity: " << verbosity << std::endl;
+    std::cout << "\tModel: " << *model << std::endl;
+    std::cout << "\tTest number: " << *test << std::endl;
+    std::cout << "\tVerbosity: " << *verbosity << std::endl;
   }
   std::cout << std::endl << std::endl;
 

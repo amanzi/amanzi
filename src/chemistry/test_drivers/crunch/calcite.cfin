@@ -10,11 +10,13 @@ graphics        xmgr
 density_module  temperature
 time_units      hours
 timestep_max    1.0
+timestep_init   1.0
+time_tolerance  10.0
 END
 
 OUTPUT
 time_units               hours
-spatial_profile          1
+spatial_profile          12
 time_series              calcite-ts.out 1 1 1
 time_series_print        pH H+ HCO3- Ca++
 !!time_series_print        all
