@@ -67,7 +67,7 @@ SecondarySpecies::~SecondarySpecies()
 **  these functions are only needed if SecondarySpecies equilibrium is added.
 **
 */
-void SecondarySpecies::Update_kludge(const std::vector<Species> primary_species) 
+void SecondarySpecies::Update(const std::vector<Species> primary_species) 
 {
   static_cast<void>(primary_species);
 } // end update()

@@ -42,9 +42,7 @@ AqueousEquilibriumComplex::~AqueousEquilibriumComplex()
 {
 } // end AqueousEquilibriumComplex() destructor
 
-// temporary location for member functions
-// ask Ben!!!
-void AqueousEquilibriumComplex::Update_kludge(const std::vector<Species> primarySpecies) 
+void AqueousEquilibriumComplex::Update(const std::vector<Species> primarySpecies) 
 {
   double lnQK = -lnK_;
   for (int i = 0; i < ncomp_; i++) {

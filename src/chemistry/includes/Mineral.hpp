@@ -27,7 +27,7 @@ class Mineral : public SecondarySpecies {
   ~Mineral();
 
   // update molalities
-  void Update_kludge(const std::vector<Species>primary_species);
+  void Update(const std::vector<Species>primary_species);
   // add stoichiometric contribution of complex to total
   void AddContributionToTotal(std::vector<double> &total);
   // add derivative of total with respect to free-ion to dtotal

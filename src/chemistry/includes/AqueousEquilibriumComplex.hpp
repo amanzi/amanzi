@@ -29,7 +29,7 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   ~AqueousEquilibriumComplex();
 
   // update molalities
-  void Update_kludge(const std::vector<Species>primarySpecies);
+  void Update(const std::vector<Species>primarySpecies);
   // add stoichiometric contribution of complex to total
   void AddContributionToTotal(std::vector<double> &total);
   // add derivative of total with respect to free-ion to dtotal

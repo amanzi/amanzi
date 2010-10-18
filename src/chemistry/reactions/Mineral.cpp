@@ -36,7 +36,7 @@ Mineral::~Mineral()
 **  these functions are only needed if mineral equilibrium is added.
 **
 */
-void Mineral::Update_kludge(const std::vector<Species> primary_species) 
+void Mineral::Update(const std::vector<Species> primary_species) 
 {
   static_cast<void>(primary_species);
 } // end update()

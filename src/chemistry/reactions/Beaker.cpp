@@ -270,7 +270,7 @@ void Beaker::updateEquilibriumChemistry(void)
   // calculated seconday aqueous complex concentrations
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
        i != aqComplexRxns_.end(); i++) {
-    i->Update_kludge(primarySpecies_);
+    i->Update(primarySpecies_);
   }
   // calculate total component concentrations
   calculateTotal();
