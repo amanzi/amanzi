@@ -577,7 +577,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
       print_linear_system("before solve",J,rhs);
     }
 
-    // call solver
+    // solve J dlnc = r
     solveLinearSystem(J,rhs);
 
     if (verbosity() == kDebugBeaker) {
@@ -586,6 +586,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
 
     // units of solution: mol/kg water (change in molality)
     // calculate update truncating at a maximum of 5 in nat log space
+    // update with exp(-dlnc)
     updateMolalitiesWithTruncation(rhs,prev_molal,5.);
     // calculate maximum relative change in concentration over all species
     max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
