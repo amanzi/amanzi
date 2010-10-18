@@ -21,7 +21,7 @@ Mineral::Mineral(const SpeciesName in_name,
                  const double in_molar_density)
     : SecondarySpecies(in_name, in_id, 
                        in_species, in_stoichiometries, in_species_ids,
-                       in_h2o_stoich, in_mol_wt, in_logK),
+                       in_h2o_stoich, 0., in_mol_wt, 0., in_logK),
       molar_density_(in_molar_density)
 {
 }  // end Mineral costructor

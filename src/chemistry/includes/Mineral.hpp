@@ -40,8 +40,6 @@ class Mineral : public SecondarySpecies {
   void molar_density(double d) { this->molar_density_ = d; }
 
  protected:
-  double log_to_ln(double d) { return d*2.30258509299; }
-  double ln_to_log(double d) { return d*0.434294481904; }
 
  private:
 

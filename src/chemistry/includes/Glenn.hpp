@@ -53,6 +53,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
   double logK;
 
   name = "OH-";
+  id = 0;
   species.push_back("H+");
   stoichiometries.push_back(-1.);
   species_ids.push_back(0);
@@ -62,6 +63,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
   mol_wt = 17.0073;
   logK = 13.9951;
   g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
+                                 id,
                                  species,
                                  stoichiometries,
                                  species_ids,
@@ -73,6 +75,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
   species_ids.clear();
 
   name = "CO3--";
+  id++;
   species.push_back("H+");
   stoichiometries.push_back(-1.);
   species_ids.push_back(0);
@@ -85,6 +88,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
   mol_wt = 60.0092;
   logK = 10.3288;
   g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
+                                 id,
                                  species,
                                  stoichiometries,
                                  species_ids,
@@ -96,6 +100,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
   species_ids.clear();
 
   name = "CO2(aq)";
+  id++;
   species.push_back("H+");
   stoichiometries.push_back(1.);
   species_ids.push_back(0);
@@ -108,6 +113,7 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker *g) {
   mol_wt = 44.0098;
   logK = -6.3447;
   g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
+                                 id,
                                  species,
                                  stoichiometries,
                                  species_ids,
@@ -227,6 +233,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
     std::cout << "-------------------------\n";
 #endif
     g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
+                                    i,
                                     species,stoichiometries,
                                     species_ids,h2o_stoich,
                                     charge,mol_wt,size,logK));

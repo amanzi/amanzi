@@ -253,6 +253,7 @@ void ThermoDatabase::ParseAqueousEquilibriumComplex(const std::string data)
   double gram_molecular_weight(std::atof(no_spaces.at(0).c_str()));
 
   AqueousEquilibriumComplex secondary(name,
+		                      0,
                                       species,
                                       stoichiometries,
                                       species_ids,

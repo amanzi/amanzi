@@ -270,7 +270,7 @@ void Beaker::updateEquilibriumChemistry(void)
   // calculated seconday aqueous complex concentrations
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
        i != aqComplexRxns_.end(); i++) {
-    i->update_kludge(primarySpecies_);
+    i->Update_kludge(primarySpecies_);
   }
   // calculate total component concentrations
   calculateTotal();
@@ -288,7 +288,7 @@ void Beaker::calculateTotal(std::vector<double> &total)
   // add in aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
        i != aqComplexRxns_.end(); i++) {
-    i->addContributionToTotal(total);
+    i->AddContributionToTotal(total);
   }
   
   // scale by water density to convert to molarity
@@ -310,7 +310,7 @@ void Beaker::calculateDTotal(Block *dtotal)
   // add in derviative of complex contribution with respect to free-ion
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
        i != aqComplexRxns_.end(); i++)
-    i->addContributionToDTotal(primarySpecies_,dtotal);
+    i->AddContributionToDTotal(primarySpecies_,dtotal);
   
   // scale by density of water
   dtotal->scale(water_density_kg_L()); 

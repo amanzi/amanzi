@@ -23,28 +23,37 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
                                    std::vector<double> in_stoichiometries,
                                    std::vector<SpeciesId> in_species_ids,
                                    const double in_h2o_stoich, 
+                                   const double in_charge,
                                    const double in_mol_wt, 
+                                   const double in_size,
                                    const double in_logK)
-    : Species(in_id, in_name, 0, in_mol_wt, 0),
+    : Species(in_id, in_name, in_charge, in_mol_wt, in_size),
       h2o_stoich_(in_h2o_stoich),
       lnK_(0.0),
       lnQK_(0.0),
       logK_(in_logK)
 {
+
   ncomp(static_cast<int>(in_species.size()));
 
+  // species names
   for (std::vector<SpeciesName>::const_iterator i = in_species.begin(); 
        i != in_species.end(); i++) {
     species_names_.push_back(*i);
   } 
+  // species stoichiometries
   for (std::vector<double>::const_iterator i = in_stoichiometries.begin();
        i != in_stoichiometries.end(); i++) {
     stoichiometry_.push_back(*i);
   }
+  // species ids
   for (std::vector<int>::const_iterator i = in_species_ids.begin();
        i != in_species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
+
+  logK_ = in_logK;
+  lnK_ = log_to_ln(in_logK);
 
 }  // end SecondarySpecies costructor
 
