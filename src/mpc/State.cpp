@@ -2,10 +2,10 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
-#include "Mesh_maps.hh"
+#include "Mesh_maps_stk.hh"
 
 State::State( int number_of_components_,
-	      Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps_):
+	      Teuchos::RCP<STK_mesh::Mesh_maps_stk> mesh_maps_):
   number_of_components(number_of_components_),
   mesh_maps(mesh_maps_)
 {

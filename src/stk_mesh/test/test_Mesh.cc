@@ -4,7 +4,7 @@
 
 #include "../Mesh.hh"
 #include "../Mesh_factory.hh"
-#include "../Mesh_maps.hh"
+#include "../Mesh_maps_stk.hh"
 #include "../Element_category.hh"
 
 #include "Element_block.hh"

@@ -7,7 +7,7 @@
 
 
 Chem_MPC::Chem_MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
-		   Teuchos::RCP<STK_mesh::Mesh_maps> mesh_maps_):
+		   Teuchos::RCP<STK_mesh::Mesh_maps_stk> mesh_maps_):
   Parameters(Parameters_),
   mesh_maps(mesh_maps_)
   

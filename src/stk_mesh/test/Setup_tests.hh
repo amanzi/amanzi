@@ -7,7 +7,7 @@
 
 #include "../Mesh.hh"
 #include "../Mesh_factory.hh"
-#include "../Mesh_maps.hh"
+#include "../Mesh_maps_stk.hh"
 #include "../Element_category.hh"
 
 #include "Element_block.hh"
@@ -65,7 +65,7 @@ struct Mesh_setup : public Test_mesh
 
 struct Map_setup : public Mesh_setup
 {
-    STK_mesh::Mesh_maps mesh_map;
+    STK_mesh::Mesh_maps_stk mesh_map;
 
     Map_setup () : mesh_map (mesh)
     {

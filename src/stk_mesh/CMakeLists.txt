@@ -4,7 +4,7 @@ include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 
 include_directories(${Trilinos_INCLUDE_DIRS})
 
-add_library(stk_mesh Cell_topology.cc Element_category.cc Entity_map.cc Mesh_factory.cc Mesh.cc Mesh_maps.cc)
+add_library(stk_mesh Cell_topology.cc Element_category.cc Entity_map.cc Mesh_factory.cc Mesh.cc Mesh_maps_stk.cc)
 target_link_libraries(stk_mesh dbc mesh_data ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
