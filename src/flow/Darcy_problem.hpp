@@ -2,7 +2,7 @@
 #define __Darcy_problem__
 
 #include "Epetra_Vector.h"
-#include "Mesh_maps.hh"
+#include "Mesh_maps_stk.hh"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 #include "Flow_State.hpp"

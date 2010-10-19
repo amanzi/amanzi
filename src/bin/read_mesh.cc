@@ -1,6 +1,6 @@
 #include "Mesh_factory.hh"
 #include "Mesh.hh"
-#include "Mesh_maps.hh"
+#include "Mesh_maps_stk.hh"
 #include "Exodus_readers.hh"
 #include "Data.hh"
 
@@ -54,7 +54,7 @@ void dump_mesh (const STK_mesh::Mesh& mesh)
 
 }
 
-void dump_maps (const STK_mesh::Mesh_maps& maps)
+void dump_maps (const STK_mesh::Mesh_maps_stk& maps)
 {
 
     std::cout << "Maps dump:" << std::endl;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     {
         Mesh_data::Data *data = read_file (argv [i]);
         STK_mesh::Mesh_p mesh = STK_mesh::Mesh_p (factory.build_mesh (*data, fields));
-        STK_mesh::Mesh_maps mesh_map (mesh);
+        STK_mesh::Mesh_maps_stk mesh_map (mesh);
 
         dump_mesh (*mesh);
         dump_maps (mesh_map);

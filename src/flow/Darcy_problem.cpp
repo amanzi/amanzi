@@ -4,7 +4,7 @@
 
 void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 {
-  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh = FS->get_mesh_maps();
   const int ncell_use = mesh->count_entities(Mesh_data::CELL, STK_mesh::USED);
   const int ncell_own = mesh->count_entities(Mesh_data::CELL, STK_mesh::OWNED);
   const int nface_use = mesh->count_entities(Mesh_data::FACE, STK_mesh::USED);
@@ -73,7 +73,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 // Setup the private BC data structures
 void Darcy_problem::BC_setup (std::vector<flow_bc> & list)
 {
-  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh = FS->get_mesh_maps();
   //std::vector<flow_bc> list = bcs.get_BCs();
   int num_bc = list.size();
   bc_.resize(num_bc);
@@ -148,7 +148,7 @@ void Darcy_problem::FBC_final_pass(double f_face[])
 void Darcy_problem::initialize()
 {
   
-  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh = FS->get_mesh_maps();
   
   // Compute face areas.  Needed for BC and recovering Darcy velocities.
   int nface_used = mesh->count_entities(Mesh_data::FACE, STK_mesh::USED);

@@ -34,7 +34,7 @@ private:
   Teuchos::RCP<const Epetra_Vector> darcy_flux;
   Teuchos::RCP<const Epetra_Vector> porosity;
 
-  Teuchos::RCP<const STK_mesh::Mesh_maps> mesh_maps;
+  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh_maps;
 };
 
 
