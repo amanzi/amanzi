@@ -4,7 +4,31 @@
 #include "UnitTest++.h"
 #include <vector>
 
-TEST(EXAMPLE1) {
+#include "Teuchos_RCP.hpp"
+
+#include "../stk_mesh/Mesh_maps_stk.hh"
+#include "../mpc/State.hpp"
+#include "../Transport_PK.hpp"
+
+
+
+TEST(TRANSPORT_GENERIC) {
+
+  using namespace std;
+  using namespace STK_mesh;
+
+  /* create a state with 1 component */
+  Teuchos::RCP<STK_mesh::Mesh_maps_stk>  mesh_amanzi;
+
+  int number_components = 1;
+  State global_state ( number_components, mesh_amanzi ) ;
+
+  std::cout << "Hello" << std::endl;
+}
+ 
+
+
+TEST(EXAMPLE2) {
 
   using namespace std;
 
@@ -28,7 +52,7 @@ TEST(EXAMPLE1) {
 
 
 
-TEST(EXAMPLE2) {
+TEST(EXAMPLE3) {
 
   using namespace std;
 
@@ -43,8 +67,11 @@ TEST(EXAMPLE2) {
   CHECK_CLOSE(x[1],y[1],0.0001);
 }
 
+
+
 // this test will obviously fail
-TEST(EXAMPLE3) {
+/*
+TEST(EXAMPLE4) {
 
   using namespace std;
 
@@ -57,3 +84,5 @@ TEST(EXAMPLE3) {
   CHECK_EQUAL(x[1],y[1]);
   CHECK_CLOSE(x[1],y[1],0.0001);
 }
+*/
+
