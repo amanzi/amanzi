@@ -15,7 +15,7 @@
 namespace STK_mesh
 {
 
-class Mesh_maps_stk
+  class Mesh_maps_stk
 {
 
 private:
