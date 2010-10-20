@@ -57,16 +57,18 @@ void State::write_gmv ( std::string filename )
   double xc[3];
   for (int i=0; i<num_nodes; i++) {
     mesh_maps->node_to_coordinates(i,xc,xc+3);
-    cout << xc[0] << " " << xc[1] << " " << xc[2] << endl;
 
     x[i] = xc[0];
     y[i] = xc[1];
     z[i] = xc[2];
   }
-
-  unsigned int num_cells = mesh_maps->count_entities(Mesh_data::CELL,OWNED);
-
   gmvwrite_node_data(&num_nodes, x, y, z);
+
+  delete x;
+  delete y;
+  delete z;
+  
+  unsigned int num_cells = mesh_maps->count_entities(Mesh_data::CELL,OWNED);
   
   gmvwrite_cell_header(&num_cells);
   
@@ -74,7 +76,7 @@ void State::write_gmv ( std::string filename )
   for (int i=0; i<num_cells; i++) {
     mesh_maps->cell_to_nodes(i,xh,xh+8);
     for (int j=0; j<8; j++) xh[j]++;
-    gmvwrite_cell_type("hex",8,xh);
+    gmvwrite_cell_type("phex8",8,xh);
   }
 
   gmvwrite_closefile();
