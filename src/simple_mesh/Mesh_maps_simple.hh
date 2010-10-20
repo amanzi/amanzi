@@ -5,8 +5,20 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
+#include "../mesh_data/Entity_kind.hh"
+
 #include <memory>
 #include <vector>
+
+
+enum Element_Category
+{
+    OWNED = 1,
+    GHOST = 2,
+    USED  = 3
+};
+
+
 
 class Mesh_maps_simple
 {
@@ -24,7 +36,7 @@ public:
   
   template <typename IT>
   void cell_to_faces (unsigned int cell, IT begin, IT end) const;
-  
+
   template <typename IT>
   void cell_to_nodes (unsigned int cell, IT begin, IT end) const;
   
@@ -44,25 +56,33 @@ public:
   inline const Epetra_Map& face_map (bool include_ghost) const;
   inline const Epetra_Map& node_map (bool include_ghost) const;
   
-  unsigned int count_nodes () const { return num_nodes_; };
-  unsigned int count_faces () const { return num_faces_; };
-  unsigned int count_cells () const { return num_cells_; };
+  unsigned int count_entities (Mesh_data::Entity_kind kind, Element_Category category) const;
 
-  unsigned int num_sets() const { return 6; };
-  unsigned int get_set_size (unsigned int set_id) const 
-  { return side_sets_[set_id].end() -side_sets_[set_id].begin(); }; 
+  unsigned int num_sets(Mesh_data::Entity_kind kind) const;
+  unsigned int get_set_size (unsigned int set_id, 
+			     Mesh_data::Entity_kind kind,
+			     Element_Category category) const;
+
+  unsigned int get_set_size (const char* name,
+			     Mesh_data::Entity_kind kind,
+			     Element_Category category) const;
+  
 
   // Id numbers
   template <typename IT>
-  void get_set_ids (IT begin, IT end) const;
+  void get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const;
  
-  bool valid_set_id (unsigned int id) const { return id<6; };
+  bool valid_set_id (unsigned int id, Mesh_data::Entity_kind kind) const;
 
   template <typename IT>
-  void get_set (unsigned int set_id, IT begin, IT end) const;
+  void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+		Element_Category category, IT begin, IT end) const;
   
 
-
+  template <typename IT>
+  void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
+		IT begin, IT end) const;
+  
 private:
   void update_internals_();
   void clear_internals_();
@@ -74,11 +94,11 @@ private:
   
   std::vector<double> coordinates_;
 
-  inline int node_index_(int i, int j, int k);
-  inline int xyface_index_(int i, int j, int k);
-  inline int yzface_index_(int i, int j, int k);
-  inline int xzface_index_(int i, int j, int k);
-  inline int cell_index_(int i, int j, int k);
+  inline unsigned int node_index_(int i, int j, int k);
+  inline unsigned int xyface_index_(int i, int j, int k);
+  inline unsigned int yzface_index_(int i, int j, int k);
+  inline unsigned int xzface_index_(int i, int j, int k);
+  inline unsigned int cell_index_(int i, int j, int k);
 
   int nx_, ny_, nz_;  // number of cells in the three coordinate directions
   double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
@@ -120,30 +140,32 @@ const Epetra_Map& Mesh_maps_simple::node_map (bool include_ghost) const
 }
 
 
-int Mesh_maps_simple::node_index_(int i, int j, int k)
+unsigned int Mesh_maps_simple::node_index_(int i, int j, int k)
 {
   return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
 }
 
-int Mesh_maps_simple::cell_index_(int i, int j, int k)
+unsigned int Mesh_maps_simple::cell_index_(int i, int j, int k)
 {
   return i + j*nx_ + k*nx_*ny_;
 }
 
-int Mesh_maps_simple::xyface_index_(int i, int j, int k)
+unsigned int Mesh_maps_simple::xyface_index_(int i, int j, int k)
 {
   return i + j*nx_ + k*nx_*ny_;
 }
 
-int Mesh_maps_simple::xzface_index_(int i, int j, int k)
+unsigned int Mesh_maps_simple::xzface_index_(int i, int j, int k)
 {
   return i + j*nx_ + k*nx_*(ny_+1) +  xyface_index_(0,0,nz_+1);
 }
 
-int Mesh_maps_simple::yzface_index_(int i, int j, int k)
+unsigned int Mesh_maps_simple::yzface_index_(int i, int j, int k)
 {
   return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0,0,nz_);
 }
+
+
 
 
 template <typename IT>
@@ -230,20 +252,39 @@ void Mesh_maps_simple::cell_to_coordinates (unsigned int local_cell_id, IT begin
 // -----------
 
 template <typename IT>
-void Mesh_maps_simple::get_set_ids (IT begin, IT end) const
+void Mesh_maps_simple::get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const
 {
-  std::vector<unsigned int> ids(6);
-  for (int i=0; i<6; i++) ids[i]=i;
-
-  std::copy (ids.begin (), ids.end (), begin);
+  switch (kind) {
+  case Mesh_data::FACE: 
+    std::vector<unsigned int> ids(6);
+    for (int i=0; i<6; i++) ids[i]=i;
+    
+    std::copy (ids.begin (), ids.end (), begin);
+    break;
+  default:
+    // we do not have anything for CELL and NODE, yet
+    throw std::exception();
+    break;
+  }
 }
-
 
 template <typename IT>
-void Mesh_maps_simple::get_set (unsigned int set_id, IT begin, IT end) const
+void Mesh_maps_simple::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+				Element_Category category, IT begin, IT end) const
 {
-  std::copy(side_sets_[set_id].begin(), side_sets_[set_id].end(), begin) ;
+  // we ignore category since this is a serial implementation
+  
+  switch (kind) {
+  case Mesh_data::FACE:
+    std::copy(side_sets_[set_id].begin(), side_sets_[set_id].end(), begin) ;
+    break;
+  default:
+    // we do not have anything for CELL and NODE, yet
+    throw std::exception();
+    break;
+  }
 }
+
 
 
 #endif /* _MESH_MAPS_H_ */

@@ -17,11 +17,13 @@ public:
 
   void advance();
   void commit_state ( Teuchos::RCP<Transport_State> );
+  double time_step_estimate();
 
 private:
 
   // auxilary state for process kernel
-  Teuchos::RCP<Transport_State> TS;
+  const Teuchos::RCP<Transport_State> TS_mirror;
+  Teuchos::RCP<Transport_State> TS_copy;
 
 };
 

@@ -26,6 +26,7 @@ public:
   Teuchos::RCP<const Epetra_Vector> get_water_saturation () const { return water_saturation; };
   Teuchos::RCP<const Epetra_Vector> get_darcy_flux () const { return darcy_flux; };
   
+  void copy (Teuchos::RCP<Transport_State> TS);
 
 private:
   // variables that are relevant to chemistry
@@ -34,7 +35,7 @@ private:
   Teuchos::RCP<const Epetra_Vector> darcy_flux;
   Teuchos::RCP<const Epetra_Vector> porosity;
 
-  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh_maps;
+  Teuchos::RCP<const Mesh_maps_simple> mesh_maps;
 };
 
 
