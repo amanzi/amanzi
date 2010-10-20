@@ -1,13 +1,15 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Chem_MPC.hpp"
+#include "MPC.hpp"
 #include "State.hpp"
-#include "Chemistry_State.hpp"
+#include "../chemistry/Chemistry_State.hpp"
+#include "../flow/Flow_State.hpp"
+#include "../transport/Transport_State.hpp"
 
 
 
-Chem_MPC::Chem_MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
-		   Teuchos::RCP<STK_mesh::Mesh_maps_stk> mesh_maps_):
+MPC::MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
+		   Teuchos::RCP<Mesh_maps_simple> mesh_maps_):
   Parameters(Parameters_),
   mesh_maps(mesh_maps_)
   
@@ -42,7 +44,7 @@ Chem_MPC::Chem_MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
 }
 
 
-void Chem_MPC::cycle_driver () {
+void MPC::cycle_driver () {
   
   cout << "this is the Chem_MPC::cycle_driver" << endl; 
 

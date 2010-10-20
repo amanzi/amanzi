@@ -5,6 +5,9 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
+#include "Mesh_maps_simple.hh"
+
+
 
 class Transport_State {
 
@@ -25,6 +28,7 @@ public:
   Teuchos::RCP<const Epetra_Vector>      get_water_saturation ()             const { return water_saturation; };
   Teuchos::RCP<const Epetra_Vector>      get_darcy_flux ()                   const { return darcy_flux; };
   
+  void copy (Teuchos::RCP<Transport_State> TS);
 
 private:
   /* state variables that are relevant to transport */
@@ -34,7 +38,7 @@ private:
   Teuchos::RCP<const Epetra_Vector>       porosity;
 
   /* mesh infranstructure */
-  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh_maps;
+  Teuchos::RCP<const Mesh_maps_simple> mesh_maps;
 };
 
 

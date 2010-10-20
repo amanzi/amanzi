@@ -1,7 +1,7 @@
 SET(CMAKE_CXX_COMPILER mpicxx)
 SET(CMAKE_C_COMPILER mpicc)
 
-project (AMANZI)
+project (Amanzi)
 enable_testing()
 
 
@@ -137,9 +137,11 @@ add_subdirectory(dbc)
 add_subdirectory(exodus)
 add_subdirectory(mesh_data)
 add_subdirectory(stk_mesh)
+add_subdirectory(simple_mesh)
 add_subdirectory(mpc)
 add_subdirectory(chemistry)
 add_subdirectory(transport)
 add_subdirectory(boundary_conditions)
 add_subdirectory(flow)
+add_subdirectory(gmv)
 add_subdirectory(bin)

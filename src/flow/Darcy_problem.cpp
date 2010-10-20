@@ -1,14 +1,15 @@
 #include "Darcy_problem.hpp"
 #include "Epetra_FECrsGraph.h"
 #include "cell_geometry.hpp"
+#include "Mesh_maps_simple.hh"
 
 void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 {
-  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh = FS->get_mesh_maps();
-  const int ncell_use = mesh->count_entities(Mesh_data::CELL, STK_mesh::USED);
-  const int ncell_own = mesh->count_entities(Mesh_data::CELL, STK_mesh::OWNED);
-  const int nface_use = mesh->count_entities(Mesh_data::FACE, STK_mesh::USED);
-  const int nface_own = mesh->count_entities(Mesh_data::FACE, STK_mesh::OWNED);
+  Teuchos::RCP<const Mesh_maps_simple> mesh = FS->get_mesh_maps();
+  const int ncell_use = mesh->count_entities(Mesh_data::CELL, USED);
+  const int ncell_own = mesh->count_entities(Mesh_data::CELL, OWNED);
+  const int nface_use = mesh->count_entities(Mesh_data::FACE, USED);
+  const int nface_own = mesh->count_entities(Mesh_data::FACE, OWNED);
   
   // The cell and face-based DoF are packed together into the X and F Epetra
   // vectors: cell-based DoF in the first part, followed by the face-based DoF.
@@ -73,15 +74,15 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 // Setup the private BC data structures
 void Darcy_problem::BC_setup (std::vector<flow_bc> & list)
 {
-  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<const Mesh_maps_simple> mesh = FS->get_mesh_maps();
   //std::vector<flow_bc> list = bcs.get_BCs();
   int num_bc = list.size();
   bc_.resize(num_bc);
   for (int i = 0; i < num_bc; ++i) {
       if (!mesh->valid_set_id(list[i].side_set, Mesh_data::FACE)) throw std::exception();
-    bc_[i].num_faces = mesh->get_set_size(list[i].side_set, Mesh_data::FACE, STK_mesh::OWNED);
+    bc_[i].num_faces = mesh->get_set_size(list[i].side_set, Mesh_data::FACE, OWNED);
     bc_[i].faces.resize(bc_[i].num_faces);
-    mesh->get_set(list[i].side_set, Mesh_data::FACE, STK_mesh::OWNED, bc_[i].faces.begin(), bc_[i].faces.end());
+    mesh->get_set(list[i].side_set, Mesh_data::FACE, OWNED, bc_[i].faces.begin(), bc_[i].faces.end());
     if (list[i].bc_type == "pressure Dirichlet constant") {
       bc_[i].type = PRESSURE_CONSTANT;
       bc_[i].value = list[i].value;
@@ -148,10 +149,10 @@ void Darcy_problem::FBC_final_pass(double f_face[])
 void Darcy_problem::initialize()
 {
   
-  Teuchos::RCP<const STK_mesh::Mesh_maps_stk> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<const Mesh_maps_simple> mesh = FS->get_mesh_maps();
   
   // Compute face areas.  Needed for BC and recovering Darcy velocities.
-  int nface_used = mesh->count_entities(Mesh_data::FACE, STK_mesh::USED);
+  int nface_used = mesh->count_entities(Mesh_data::FACE, USED);
   area_.resize(nface_used);
   double x[4][3];
   for (int j = 0; j < nface_used; ++j) {

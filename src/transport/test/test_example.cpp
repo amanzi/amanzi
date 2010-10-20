@@ -6,7 +6,7 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "../stk_mesh/Mesh_maps_stk.hh"
+#include "../simple_mesh/Mesh_maps_simple.hh"
 #include "../mpc/State.hpp"
 #include "../Transport_PK.hpp"
 
@@ -15,11 +15,9 @@
 TEST(TRANSPORT_GENERIC) {
 
   using namespace std;
-  using namespace STK_mesh;
 
   /* create a state with 1 component */
-  
-  Teuchos::RCP<STK_mesh::Mesh_maps_stk>  mesh_amanzi;
+  Teuchos::RCP<Mesh_maps_simple>  mesh_amanzi;
 
   int number_components = 1;
   State global_state ( number_components, mesh_amanzi ) ;
