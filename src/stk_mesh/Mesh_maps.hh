@@ -208,7 +208,7 @@ void Mesh_maps::face_to_coordinates (unsigned int local_face_id, IT begin, IT en
     for (int i = 0; i < 4; ++i)
     {
         node_to_coordinates (node_indices [i], begin, begin+4);
-        begin+=4;
+        begin+=3;
     }
 
 
