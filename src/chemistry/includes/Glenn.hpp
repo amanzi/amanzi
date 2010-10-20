@@ -15,8 +15,9 @@ class Glenn {
    Glenn(Beaker *b);
    ~Glenn();
 
-   void solve(std::vector<double> &total, double final_time, double ts_size,
-              const Beaker::BeakerParameters& parameters);
+  void solve(Beaker::BeakerComponents* components, 
+             double final_time, double ts_size,
+             const Beaker::BeakerParameters& parameters);
 
  private:
    Beaker *b_;

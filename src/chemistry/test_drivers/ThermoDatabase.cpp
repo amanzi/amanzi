@@ -29,21 +29,21 @@ ThermoDatabase::~ThermoDatabase(void)
 {
 }  // end ThermoDatabase destructor
 
-void ThermoDatabase::setup(std::vector<double> &total, 
-                           const Beaker::BeakerParameters parameters)
+void ThermoDatabase::Setup(const Beaker::BeakerComponents& components, 
+                           const Beaker::BeakerParameters& parameters)
 {
   SetParameters(parameters);
   ReadFile(parameters.thermo_database_file);
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize(this->primary_species().size());
 
-  if (static_cast<unsigned int>(this->ncomp()) != total.size()) {
+  if (static_cast<unsigned int>(this->ncomp()) != components.primaries.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
   }
 
   this->SetupMineralKinetics(parameters.mineral_kinetics_file);
-}  // end setup()
+}  // end Setup()
 
 /*******************************************************************************
  **

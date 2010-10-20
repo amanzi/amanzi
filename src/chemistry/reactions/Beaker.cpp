@@ -89,16 +89,19 @@ void Beaker::resize(int n) {
   resize();
 } // end resize()
 
-void Beaker::setup(std::vector<double> &total, 
-                   const Beaker::BeakerParameters parameters)
+void Beaker::Setup(const Beaker::BeakerComponents& components,
+                   const Beaker::BeakerParameters& parameters)
 {
   SetParameters(parameters);
 
-  if (static_cast<unsigned int>(this->ncomp()) != total.size()) {
+  this->SetupActivityModel(parameters.activity_model_name);
+  this->resize(this->primary_species().size());
+
+  if (static_cast<unsigned int>(this->ncomp()) != components.primaries.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
   }
-} // end setup()
+} // end Setup()
 
 void Beaker::SetupActivityModel(std::string model)
 {
@@ -532,7 +535,7 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     lubksb(A->getValues(),ncomp(),indices,b);
 } // end solveLinearSystem
 
-int Beaker::ReactionStep(std::vector<double> &total, 
+int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 			 const Beaker::BeakerParameters& parameters,
 			 double dt)
 {
@@ -555,7 +558,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
   updateActivityCoefficients();
 
   // calculate portion of residual at time level t
-  calculateFixedAccumulation(total,fixed_accumulation);
+  calculateFixedAccumulation(components->primaries, fixed_accumulation);
                         
   do {
 
@@ -628,7 +631,7 @@ int Beaker::ReactionStep(std::vector<double> &total,
   // update total concentrations
   calculateTotal();
   for (int i = 0; i < ncomp(); i++)
-    total[i] = total_[i];
+    components->primaries[i] = total_[i];
 
   return num_iterations;
 
@@ -636,11 +639,12 @@ int Beaker::ReactionStep(std::vector<double> &total,
 
 
 // if no water density provided, default is 1000.0 kg/m^3
-int Beaker::speciate(std::vector<double> target_total, const double water_density)
+int Beaker::Speciate(const Beaker::BeakerComponents& components, 
+                     const Beaker::BeakerParameters& parameters)
 {
   double speciation_tolerance = 1.e-12;
-  // water_density is in kg/m^3
-  this->water_density_kg_m3(water_density);
+
+  updateParameters(parameters, 0.0);
 
   // initialize free-ion concentration s
   initializeMolalities(1.e-9);
@@ -662,7 +666,7 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
     // calculate residual
     // units of residual: mol/sec
     for (int i = 0; i < ncomp(); i++)
-      residual[i] = total_[i] - target_total[i];
+      residual[i] = total_[i] - components.primaries[i];
 
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
@@ -672,7 +676,7 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
 
     // calculate residual
     for (int i = 0; i < ncomp(); i++)
-      residual[i] = total_[i] - target_total[i];
+      residual[i] = total_[i] - components.primaries[i];
 
     for (int i = 0; i < ncomp(); i++)
       rhs[i] = residual[i];
@@ -729,7 +733,7 @@ int Beaker::speciate(std::vector<double> target_total, const double water_densit
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
   }
   return num_iterations;
-}  // end speciate()
+}  // end Speciate()
 
 /********************************************************************************
 **

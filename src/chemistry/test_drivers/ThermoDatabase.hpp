@@ -12,8 +12,8 @@ class ThermoDatabase : public Beaker {
   ThermoDatabase();
   virtual ~ThermoDatabase();
 
-  void setup(std::vector<double> &total, 
-             const Beaker::BeakerParameters parameters);
+  void Setup(const Beaker::BeakerComponents& components,
+             const Beaker::BeakerParameters& parameters);
 
  protected:
   void ReadFile(const std::string thermo_filename);

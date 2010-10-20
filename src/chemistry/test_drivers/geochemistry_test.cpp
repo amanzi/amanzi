@@ -25,10 +25,10 @@ int main(int argc, char **argv) {
   int error = EXIT_SUCCESS;
 
   Beaker *chem = NULL;
-  std::vector<double> total;
-  total.clear();
-  std::vector<double> cec;  // cation exchange capacity
-  cec.clear();
+  Beaker::BeakerComponents components;
+  components.primaries.clear();
+  components.minerals.clear();
+  components.ion_exchange_sites.clear();
 
   std::string thermo_database_file("");
   std::string mineral_kinetics_file("");
@@ -45,8 +45,8 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
-        total.push_back(1.0e-3);  // H+
-        total.push_back(1.0e-3);  // HCO3-
+        components.primaries.push_back(1.0e-3);  // H+
+        components.primaries.push_back(1.0e-3);  // HCO3-
         break;
       }
       case 2: {
@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        total.push_back(1.0e-3);  // H+
-        total.push_back(1.0e-3);  // HCO3-
+        components.primaries.push_back(1.0e-3);  // H+
+        components.primaries.push_back(1.0e-3);  // HCO3-
         break;
       }
       case 3: {
@@ -67,9 +67,9 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
-        total.push_back(1.0e-3);  // H+
-        total.push_back(3.0e-3);  // HCO3-
-        total.push_back(1.0e-3);  // Ca++
+        components.primaries.push_back(1.0e-3);  // H+
+        components.primaries.push_back(3.0e-3);  // HCO3-
+        components.primaries.push_back(1.0e-3);  // Ca++
         break;
       }
       case 4: {
@@ -79,9 +79,9 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        total.push_back(1.0e-3);  // H+
-        total.push_back(3.0e-3);  // HCO3-
-        total.push_back(1.0e-3);  // Ca++
+        components.primaries.push_back(1.0e-3);  // H+
+        components.primaries.push_back(3.0e-3);  // HCO3-
+        components.primaries.push_back(1.0e-3);  // Ca++
         break;
       }
       case 5: {
@@ -92,9 +92,10 @@ int main(int argc, char **argv) {
         thermo_database_file = "input/calcite.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
         mineral_kinetics_file = "input/calcite-kinetics-tst.ain";
-        total.push_back(1.0e-3);  // H+
-        total.push_back(3.0e-3);  // HCO3-
-        total.push_back(1.0e-3);  // Ca++
+        components.primaries.push_back(1.0e-3);  // H+
+        components.primaries.push_back(3.0e-3);  // HCO3-
+        components.primaries.push_back(1.0e-3);  // Ca++
+        components.minerals.push_back(1.0);  // calcite 
         break;
       }
       case 6: {
@@ -104,12 +105,12 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/na-ca-ion-exchange.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        total.push_back(1.0e-3);  // H+
-        total.push_back(3.0e-3);  // HCO3-
-        total.push_back(1.0e-3);  // Ca++
-        total.push_back(1.0e-3);  // Na+
-        total.push_back(1.0e-3);  // Cl-
-        cec.push_back(100.0);  // X-, equivalents per 100 grams solid
+        components.primaries.push_back(1.0e-3);  // H+
+        components.primaries.push_back(3.0e-3);  // HCO3-
+        components.primaries.push_back(1.0e-3);  // Ca++
+        components.primaries.push_back(1.0e-3);  // Na+
+        components.primaries.push_back(1.0e-3);  // Cl-
+        components.ion_exchange_sites.push_back(100.0);  // X-, equivalents per 100 grams solid?
         break;
       }
       default: {
@@ -130,14 +131,13 @@ int main(int argc, char **argv) {
     parameters.saturation = 1.0;  // - 
     parameters.volume = 1.0;  // m^3
     ModelSpecificParameters(model, &parameters);
-    chem->setup(total, parameters);
+    chem->Setup(components, parameters);
     if (verbosity >= kVerbose) {
       chem->Display();
     }
 
     // solve for free-ion concentrations
-    // TODO: where/how does CEC get passed in....
-    chem->speciate(total, parameters.water_density);
+    chem->Speciate(components, parameters);
     if (verbosity >= kTerse) {
       chem->DisplayResults();
     }
@@ -145,12 +145,12 @@ int main(int argc, char **argv) {
     if (mineral_kinetics_file.size() != 0) {
       std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
       chem->DisplayTotalColumnHeaders();
-      chem->DisplayTotalColumns(0.0, total);
+      chem->DisplayTotalColumns(0.0, components.primaries);
       double delta_time = 3660.0;  // seconds
       int num_time_steps = 12;
       for (int time_step = 0; time_step <= num_time_steps; time_step++) {
-        chem->ReactionStep(total, parameters, delta_time);        
-        chem->DisplayTotalColumns(time_step+1 * delta_time, total);
+        chem->ReactionStep(&components, parameters, delta_time);        
+        chem->DisplayTotalColumns(time_step+1 * delta_time, components.primaries);
       }
     }
   }

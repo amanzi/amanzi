@@ -29,6 +29,12 @@ class Beaker {
   Beaker();
   virtual ~Beaker();
 
+  struct BeakerComponents {
+    std::vector<double> primaries;
+    std::vector<double> minerals;
+    std::vector<double> ion_exchange_sites;
+  };
+
   struct BeakerParameters {
     // input files
     std::string thermo_database_file;
@@ -50,8 +56,8 @@ class Beaker {
   void resize(int ncomp);
 
   // inheriting classes setup the species, etc
-  virtual void setup(std::vector<double> &total, 
-                     const Beaker::BeakerParameters parameters);
+  virtual void Setup(const Beaker::BeakerComponents& components,
+                     const Beaker::BeakerParameters& parameters);
   void SetupActivityModel(std::string model);
 
   void addPrimarySpecies(Species s);
@@ -62,10 +68,10 @@ class Beaker {
   void addGeneralRxn(GeneralRxn r);
 
   // speciate for free-ion concentrations
-  int speciate(std::vector<double> target_total, const double water_density = 1000.0);
+  int Speciate(const BeakerComponents& components, const BeakerParameters& parameters);
 
   // solve a chemistry step
-  int ReactionStep(std::vector<double> &total, const BeakerParameters& parameters, 
+  int ReactionStep(BeakerComponents* components, const BeakerParameters& parameters, 
 		   double dt);
 
   void updateActivityCoefficients();
