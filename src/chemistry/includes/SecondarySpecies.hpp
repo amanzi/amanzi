@@ -42,6 +42,9 @@ class SecondarySpecies : public Species {
   void ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
   int ncomp(void) const { return this->ncomp_; };
 
+  void set_logK(const double in_logK) { this->logK_ = in_logK; };
+  double logK(void) const { return this->logK_; };
+
   std::vector<SpeciesName> species_names(void) const { return this->species_names_; };
   std::vector<SpeciesId> species_ids(void) const { return this->species_ids_; };
   std::vector<double> stoichiometry(void) const { return this->stoichiometry_; };

@@ -27,6 +27,8 @@ int main(int argc, char **argv) {
   Beaker *chem = NULL;
   std::vector<double> total;
   total.clear();
+  std::vector<double> cec;  // cation exchange capacity
+  cec.clear();
 
   std::string thermo_database_file("");
   std::string mineral_kinetics_file("");
@@ -107,6 +109,7 @@ int main(int argc, char **argv) {
         total.push_back(1.0e-3);  // Ca++
         total.push_back(1.0e-3);  // Na+
         total.push_back(1.0e-3);  // Cl-
+        cec.push_back(100.0);  // X-, equivalents per 100 grams solid
         break;
       }
       default: {
@@ -133,6 +136,7 @@ int main(int argc, char **argv) {
     }
 
     // solve for free-ion concentrations
+    // TODO: where/how does CEC get passed in....
     chem->speciate(total, parameters.water_density);
     if (verbosity >= kTerse) {
       chem->DisplayResults();
@@ -248,7 +252,7 @@ int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test,
   }
 
   if (model->c_str() != kCrunch && model->c_str() != kPflotran) {
-    std::cout << "Invalid model name \'" << model << "\'." << std::endl;
+    std::cout << "Invalid model name \'" << *model << "\'." << std::endl;
     std::cout << "Run \"" <<  argv[0] << " -h \" for help." << std::endl;
   }
 

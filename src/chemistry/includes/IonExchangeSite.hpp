@@ -1,0 +1,43 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#ifndef __IonExchangeSite_hpp__
+#define __IonExchangeSite_hpp__
+
+/*
+**  Base class for ion exchange sites (e.g. X- in standard geochemistry notation)
+**
+**
+*/
+
+#include <string>
+#include <vector>
+#include <cmath>
+
+#include "Species.hpp"
+#include "Block.hpp"
+
+class IonExchangeSite : public Species {
+
+ public:
+  IonExchangeSite();
+  IonExchangeSite(const SpeciesName exchanger_name,
+                  const SpeciesId exchanger_id,
+                  const double exchanger_charge, 
+                  const double mol_wt,
+                  const double size);
+
+  virtual ~IonExchangeSite();
+
+  virtual void Update(void);
+  virtual void Display(void) const;
+
+  void set_cation_exchange_capacity(const int in_value) { this->cation_exchange_capacity_ = in_value; };
+  int cation_exchange_capacity(void) const { return this->cation_exchange_capacity_; };
+
+
+ protected:
+  double cation_exchange_capacity_;  // units...
+
+ private:
+};
+
+#endif  // __IonExchangeSite_hpp__

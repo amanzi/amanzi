@@ -6,6 +6,7 @@ SRCS = \
 	./ActivityModel.cpp \
 	./ActivityModelDebyeHuckel.cpp \
 	./ActivityModelUnit.cpp \
+	./IonExchangeSite.cpp \
 	./Species.cpp 
 
 OBJS = \

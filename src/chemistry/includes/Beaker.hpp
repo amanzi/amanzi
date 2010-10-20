@@ -13,7 +13,8 @@
 #include "LU.hpp"
 #include "Mineral.hpp"
 //#include "GasExchange.hpp"
-//#include "IonExchange.hpp"
+#include "IonExchangeSite.hpp"
+#include "IonExchangeComplex.hpp"
 //#include "SurfaceComplexation.hpp"
 #include "Species.hpp"
 #include "Verbosity.hpp"
@@ -54,6 +55,8 @@ class Beaker {
   void SetupActivityModel(std::string model);
 
   void addPrimarySpecies(Species s);
+  void AddIonExchangeSite(IonExchangeSite exchanger);
+  void AddIonExchangeComplex(IonExchangeComplex exchange_complex);
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
   void addMineral(Mineral m);
   void addGeneralRxn(GeneralRxn r);
@@ -116,6 +119,9 @@ class Beaker {
   void DisplayAqueousEquilibriumComplexes(void) const;
   void DisplayMinerals(void) const;
   void DisplayMineralKinetics(void) const;
+  void DisplayIonExchangeSites(void) const;
+  void DisplayIonExchangeComplexes(void) const;
+
   void DisplayTotalColumnHeaders(void) const;
   void DisplayTotalColumns(const double time, const std::vector<double>& total) const;
   void DisplayResults(void) const;
@@ -169,6 +175,7 @@ protected:
   void update_por_sat_den_vol(void);
 
   std::vector<Species> primary_species(void) const { return this->primarySpecies_; };
+  std::vector<IonExchangeSite> ion_exchange_sites(void) const { return this->ion_exchange_sites_; };
 
 private:
   Verbosity verbosity_;
@@ -195,6 +202,7 @@ private:
   Species water_;
   std::vector<Species> primarySpecies_; // list of primary species
   std::vector<Mineral> minerals_; // list of mineral species
+  std::vector<IonExchangeSite> ion_exchange_sites_;
 
   ActivityModel *activity_model_;
 
@@ -202,7 +210,7 @@ private:
   std::vector<GeneralRxn> generalKineticRxns_; //list of general kinetic reactions
   std::vector<KineticRate*> mineral_rates_;
 //  vector<GasExchange*> gasRxns_;
-//  vector<IonExchange*> ionExchangeRxns_;
+  std::vector<IonExchangeComplex> ion_exchange_rxns_;
 //  vector<SurfaceComplexation*> surfaceComplexationRxns_;
 
   // solver data structures

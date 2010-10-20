@@ -6,6 +6,7 @@ SRCS = \
 	./Beaker.cpp \
 	./GeneralRxn.cpp \
 	./Geochemistry.cpp \
+	./IonExchangeComplex.cpp \
 	./KineticRate.cpp \
 	./KineticRateTST.cpp \
 	./Mineral.cpp \

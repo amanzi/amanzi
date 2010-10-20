@@ -2,6 +2,9 @@
 
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
+#include "Species.hpp"
+#include "IonExchangeSite.hpp"
+#include "IonExchangeComplex.hpp"
 #include "Mineral.hpp"
 #include "KineticRate.hpp"
 #include "MineralKineticsFactory.hpp"
@@ -33,10 +36,13 @@ Beaker::Beaker()
     activity_model_(NULL),
     J(NULL)
 {
-  aqComplexRxns_.clear();
+  primarySpecies_.clear();
   minerals_.clear();
+  ion_exchange_sites_.clear();
+  aqComplexRxns_.clear();
   generalKineticRxns_.clear();
   mineral_rates_.clear();
+  ion_exchange_rxns_.clear();
 } // end Beaker() constructor
 
 Beaker::~Beaker() 
@@ -61,7 +67,6 @@ Beaker::~Beaker()
       }
     }    
   }
-
 } // end Beaker destructor
 
 void Beaker::resize() {
@@ -134,6 +139,16 @@ void Beaker::addPrimarySpecies(Species s)
 {
   primarySpecies_.push_back(s);
 } // end addPrimarySpecies()
+
+void Beaker::AddIonExchangeSite(IonExchangeSite exchanger) 
+{
+  ion_exchange_sites_.push_back(exchanger);
+} // end AddIonExchangeSites()
+
+void Beaker::AddIonExchangeComplex(IonExchangeComplex exchange_complex) 
+{
+  ion_exchange_rxns_.push_back(exchange_complex);
+} // end AddIonExchangeSites()
 
 void Beaker::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) 
 {
@@ -754,6 +769,10 @@ void Beaker::Display(void) const
 
   DisplayMineralKinetics();
 
+  DisplayIonExchangeSites();
+
+  DisplayIonExchangeComplexes();
+
   std::cout << "----------------------------------------------------------------------" 
             << std::endl;
   
@@ -762,6 +781,7 @@ void Beaker::Display(void) const
 void Beaker::DisplayParameters(void) const
 {
   // units....
+  // TODO: remove dashes after parameters and update test file results.
   std::cout << "---- Parameters ------------------------------------------------------"
             << std::endl;
   //std::cout << "    thermo_database_file: " << thermo_database_file << std::endl;
@@ -837,6 +857,39 @@ void Beaker::DisplayMineralKinetics(void) const
   }
 }  // end DisplayMineralKinetics()
 
+void Beaker::DisplayIonExchangeSites(void) const
+{
+  if (ion_exchange_sites_.size() > 0) {
+    std::cout << "---- Ion Exchange Sites" << std::endl;
+    std::cout << std::setw(15) << "Species"
+              << std::setw(10) << "Charge"
+              << std::setw(10) << "CEC"
+              << std::endl;
+    std::vector<IonExchangeSite>::const_iterator exchanger;
+    for (exchanger = ion_exchange_sites_.begin();
+         exchanger != ion_exchange_sites_.end(); exchanger++) {
+      exchanger->Display();
+    }  
+    std::cout << std::endl;
+  }
+}  // end DisplayIonExchangeSites()
+
+void Beaker::DisplayIonExchangeComplexes(void) const
+{
+  if (ion_exchange_rxns_.size() > 0) {
+    std::cout << "---- Ion Exchange Complexes" << std::endl;
+    std::cout << std::setw(12) << "Reaction"
+              << std::setw(38) << "log Keq"
+              << std::endl;
+    std::vector<IonExchangeComplex>::const_iterator iec;
+    for (iec = ion_exchange_rxns_.begin();
+         iec != ion_exchange_rxns_.end(); iec++) {
+      iec->Display();
+    }  
+    std::cout << std::endl;
+  }
+}  // end DisplayIonExchangeComplexes()
+
 void Beaker::DisplayResults(void) const
 {
   std::cout << std::endl;
@@ -877,6 +930,34 @@ void Beaker::DisplayResults(void) const
               << std::setw(15) << aqComplexRxns_[i].act_coef()
               << std::setw(15) << aqComplexRxns_[i].activity()
               << std::endl;
+  }
+  if (ion_exchange_sites_.size() > 0) {
+    std::cout << "---- Ion Exchange Sites " << std::endl;
+    std::cout << std::setw(15) << "Name" 
+              << std::setw(15) << "CEC"
+              << std::endl;
+
+    for (unsigned int i = 0; i < ion_exchange_sites_.size(); i++) {
+      std::cout << std::setw(15) << ion_exchange_sites_[i].name()
+                << std::scientific << std::setprecision(5)
+                << std::setw(15) << ion_exchange_sites_[i].cation_exchange_capacity()
+                << std::endl;
+    }
+  }
+
+  if (ion_exchange_rxns_.size() > 0) {
+    std::cout << "---- Ion Exchange Complexes " << std::endl;
+    std::cout << std::setw(15) << "Name" 
+              << std::setw(15) << "Molarity" 
+              << std::setw(15) << "Activity" 
+              << std::endl;
+    for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
+      std::cout << std::setw(15) << ion_exchange_rxns_[i].name()
+                << std::scientific << std::setprecision(5)
+                << std::setw(15) << ion_exchange_rxns_[i].molality()
+                << std::setw(15) << ion_exchange_rxns_[i].activity()
+                << std::endl;
+    }
   }
   std::cout << "----------------------------------------------------------------------"
             << std::endl << std::endl;
