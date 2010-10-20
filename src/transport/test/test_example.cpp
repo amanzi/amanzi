@@ -18,6 +18,7 @@ TEST(TRANSPORT_GENERIC) {
   using namespace STK_mesh;
 
   /* create a state with 1 component */
+  
   Teuchos::RCP<STK_mesh::Mesh_maps_stk>  mesh_amanzi;
 
   int number_components = 1;

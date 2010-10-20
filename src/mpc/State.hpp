@@ -56,7 +56,7 @@ private:
   status_type status;
 
   // mesh
-  const Teuchos::RCP<STK_mesh::Mesh_maps_stk> mesh_maps;
+  Teuchos::RCP<STK_mesh::Mesh_maps_stk> mesh_maps;
 }; 
 
 
