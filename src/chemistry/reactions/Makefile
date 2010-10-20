@@ -11,7 +11,8 @@ SRCS = \
 	./KineticRateTST.cpp \
 	./Mineral.cpp \
 	./MineralKineticsFactory.cpp \
-	./SecondarySpecies.cpp	
+	./Reaction.cpp \
+	./SecondarySpecies.cpp 
 
 OBJS = \
 	$(SRCS:%.cpp=%.o)
