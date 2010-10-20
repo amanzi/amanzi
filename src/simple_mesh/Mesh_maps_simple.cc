@@ -230,3 +230,50 @@ void Mesh_maps_simple::build_maps_ ()
 }
 
 
+unsigned int Mesh_maps_simple::count_entities (Mesh_data::Entity_kind kind, Element_Category category) const
+{
+  switch (kind) {
+  case Mesh_data::FACE: 
+    return num_faces_;
+    break;
+  case Mesh_data::NODE:
+    return num_nodes_;
+    break;
+  case Mesh_data::CELL:
+    return num_cells_;
+    break;
+  default:
+    throw std::exception();
+    break;
+  }
+}
+
+
+unsigned int Mesh_maps_simple::num_sets(Mesh_data::Entity_kind kind) const
+{
+  switch (kind) {
+  case Mesh_data::FACE:
+    return 6;
+    break;
+  default:
+    // nothing yet for NODE or CELL
+    throw std::exception();
+    break;
+  }
+}
+
+unsigned int Mesh_maps_simple::get_set_size (unsigned int set_id, 
+					     Mesh_data::Entity_kind kind,
+					     Element_Category category) const
+{
+  // we ignore category, since this is a serial implementation
+
+  switch (kind) {
+  case Mesh_data::FACE:
+    return side_sets_[set_id].size();
+    break;
+  default:
+    throw std::exception();
+    break;
+  }
+}

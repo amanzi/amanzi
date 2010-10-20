@@ -7,7 +7,6 @@
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
-
 TEST(MAPS) {
   
   using namespace std;
@@ -19,18 +18,18 @@ TEST(MAPS) {
 #endif
 
 
-  Mesh_maps_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm); 
+  Mesh_maps_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm); 
 
   
-  cout << "number of cells = " << Mm.count_cells() << endl;
-  cout << "number of faces = " << Mm.count_faces() << endl;
-  cout << "number of nodes = " << Mm.count_nodes() << endl;
+  cout << "number of cells = " << Mm.count_entities(Mesh_data::CELL,OWNED) << endl;
+  cout << "number of faces = " << Mm.count_entities(Mesh_data::FACE,OWNED) << endl;
+  cout << "number of nodes = " << Mm.count_entities(Mesh_data::NODE,OWNED) << endl;
 
   vector<double> x(24);
   vector<int> nodes(8);
   vector<int> faces(6);
   
-  for (int i=0; i<Mm.count_cells(); i++)
+  for (int i=0; i<Mm.count_entities(Mesh_data::CELL,OWNED); i++)
     {
       Mm.cell_to_nodes(i, nodes.begin(), nodes.end());
       
@@ -64,9 +63,9 @@ TEST(MAPS) {
   
   vector<int> ss;
   
-  for (int is=0; is<Mm.num_sets(); is++)  {
-    ss.resize(Mm.get_set_size(is));
-    Mm.get_set(is, ss.begin(), ss.end());
+  for (int is=0; is<Mm.num_sets(Mesh_data::FACE); is++)  {
+    ss.resize(Mm.get_set_size(is,Mesh_data::FACE,OWNED));
+    Mm.get_set(is, Mesh_data::FACE,OWNED,ss.begin(), ss.end());
 
     for (int k=0; k<ss.size(); k++) {
       cout << is << " : " << ss[k] << endl;

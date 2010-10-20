@@ -3,9 +3,14 @@
 
 
 Transport_PK::Transport_PK( Teuchos::RCP<Transport_State> TS_):
-  TS(TS_)
+  TS_mirror(TS_)
 { 
   // use the constructor to initialize the transport process kernel
+
+  // make a deep copy of the transport state object
+
+  TS_copy->copy(TS_mirror);
+
 
 };
 
@@ -13,6 +18,15 @@ Transport_PK::~Transport_PK()
 { 
 
 };
+
+
+double Transport_PK::time_step_estimate()
+{
+  // compute an estimate of the next time step here
+  
+  return 0.1;
+
+}
 
 
 void Transport_PK::advance( )

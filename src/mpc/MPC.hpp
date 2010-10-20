@@ -4,12 +4,12 @@
 #include "Chemistry_State.hpp"
 #include "Chemistry_PK.hpp"
 
-class Chem_MPC {
+class MPC {
 
 public:
-  Chem_MPC (Teuchos::RCP<Teuchos::ParameterList> Parameters_,
-	    Teuchos::RCP<STK_mesh::Mesh_maps_stk> mesh_maps_);
-  ~Chem_MPC () {};
+  MPC (Teuchos::RCP<Teuchos::ParameterList> Parameters_,
+	    Teuchos::RCP<Mesh_maps_simple> mesh_maps_);
+  ~MPC () {};
 
   void cycle_driver ();
   
@@ -22,7 +22,7 @@ private:
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> Parameters;
-  Teuchos::RCP<STK_mesh::Mesh_maps_stk> mesh_maps;
+  Teuchos::RCP<Mesh_maps_simple> mesh_maps;
 
   // storage for chemistry's return value
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
