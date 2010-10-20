@@ -40,6 +40,9 @@ public:
   
   const status_type get_status () const { return status; };
   void set_status ( status_type new_status ) { status = new_status; }
+
+
+  void write_gmv ( std::string filename );
       
 private:
   // state vectors
