@@ -15,14 +15,23 @@
 TEST(TRANSPORT_GENERIC) {
 
   using namespace std;
+  using namespace Teuchos;
+
+#ifdef HAVE_MPI
+  Epetra_MpiComm    *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
 
   /* create a state with 1 component */
-  Teuchos::RCP<Mesh_maps_simple>  mesh_amanzi;
+  RCP<Mesh_maps_simple>  mesh_amanzi = rcp(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm)); 
 
   int number_components = 1;
-  State global_state ( number_components, mesh_amanzi ) ;
+  State mpc_state ( number_components, mesh_amanzi ) ;
 
-  std::cout << "Hello" << std::endl;
+  RCP<Transport_State>  TS;
+
+  cout << "Hello" << endl;
 }
  
 

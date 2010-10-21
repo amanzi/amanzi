@@ -20,6 +20,7 @@
    the smart pointers to the original variables.
 */
 
+using namespace Teuchos;
 
 class Transport_PK {
 
@@ -33,8 +34,8 @@ public:
   void advance_transport_state ();
 
   /* access members */ 
-  Teuchos::RCP<Transport_State> get_transport_state ()      const { return TS; }
-  Teuchos::RCP<Transport_State> get_transport_state_next () const { return TS_next; }
+  RCP<Transport_State> get_transport_state ()      const { return TS; }
+  RCP<Transport_State> get_transport_state_next () const { return TS_next; }
 
   double get_transport_dT ()     { return dT; }
   int    get_transport_status () { return status; }
@@ -42,10 +43,10 @@ public:
 
 private:
   /* smart pointer to the transport state for process kernel */
-  Teuchos::RCP<Transport_State> TS;
+  RCP<Transport_State> TS;
 
   /* proposed new transport state */ 
-  Teuchos::RCP<Transport_State> TS_next;
+  RCP<Transport_State> TS_next;
 
   /* part of the future geometry package */
   Epetra_Vector face_area();
