@@ -67,7 +67,7 @@ public:
 
     void update ();
 
-    // Local id interfaces.
+    // Local id interfaces
     // --------------------
 
     template <typename IT>

@@ -1,5 +1,6 @@
 #include "Mesh_maps_stk.hh"
 #include "dbc.hh"
+#include "Utils.hh"
 
 #include <Teuchos_RCP.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
@@ -10,8 +11,8 @@ namespace STK_mesh
 
 
 Mesh_maps_stk::Mesh_maps_stk (Mesh_p mesh) : mesh_ (mesh),
-                                     entity_map_ (mesh->entity_map ()),
-                                     communicator_ (mesh_->communicator ())
+                                             entity_map_ (mesh->entity_map ()),
+                                             communicator_ (mesh_->communicator ())
 {
     update();
 }
@@ -49,6 +50,7 @@ void Mesh_maps_stk::build_maps_ ()
     for (int entity_kind_index = 0; entity_kind_index < 3; ++entity_kind_index)
     {
 
+
         Mesh_data::Entity_kind kind = index_to_kind_ (entity_kind_index);
         stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
 
@@ -69,7 +71,6 @@ void Mesh_maps_stk::build_maps_ ()
         std::copy (ghosts.begin (), ghosts.end (), std::back_inserter (entities));
         ASSERT (entities.size () == num_used_entities);
 
-
         // Create a vector of global ids and populate the inverse map.
         std::vector<int> my_entities_global_ids;
         add_global_ids_ (entities.begin (), entities.end (),
@@ -77,9 +78,6 @@ void Mesh_maps_stk::build_maps_ ()
                          global_to_local_maps_ [entity_kind_index]);
         ASSERT (my_entities_global_ids.size () == num_local_entities);
         ASSERT (global_to_local_maps_ [entity_kind_index].size () == num_local_entities);
-
-
-
 
         // Create the used = local+ghost map.
         Epetra_Map *local_ghost_map (new Epetra_Map (-1,
@@ -130,18 +128,24 @@ void Mesh_maps_stk::build_tables_ ()
         ASSERT (nodes.size () == 8);
 
         // Loop over faces
+        ASSERT ((unsigned int) (faces.end () - faces.begin ()) == 6);
         for (Entity_Ids::const_iterator face = faces.begin ();
              face != faces.end (); ++face)
         {
-            const unsigned int face_index = global_to_local_maps_ [0] [*face];
+            Index_map::const_iterator face_it = global_to_local_maps_ [1].find (*face);
+            ASSERT (face_it != global_to_local_maps_ [1].end ());
+            const unsigned int face_index = face_it->second;
             cell_to_face_.push_back (face_index);
         }
 
         // Loop over nodes
+        ASSERT ((unsigned int) (nodes.end () - nodes.begin ()) == 8);
         for (Entity_Ids::const_iterator node = nodes.begin ();
              node != nodes.end (); ++node)
         {
-            const unsigned int node_index = global_to_local_maps_ [1] [*node];
+            Index_map::const_iterator node_it = global_to_local_maps_ [0].find (*node);
+            ASSERT (node_it != global_to_local_maps_ [0].end ());
+            const unsigned int node_index = node_it->second;
             cell_to_node_.push_back (node_index);
         }
 
@@ -165,7 +169,9 @@ void Mesh_maps_stk::build_tables_ ()
         for (Entity_Ids::const_iterator node = nodes.begin ();
              node != nodes.end (); ++node)
         {
-            const unsigned int node_index = global_to_local_maps_ [1] [*node];
+            Index_map::const_iterator node_it = global_to_local_maps_ [0].find (*node);
+            ASSERT (node_it != global_to_local_maps_ [0].end ());
+            const unsigned int node_index = node_it->second;
             face_to_node_.push_back (node_index);
         }
     }
@@ -270,9 +276,9 @@ unsigned int Mesh_maps_stk::num_sets (Mesh_data::Entity_kind kind) const
     return mesh_->num_sets (kind_to_rank_ (kind));
 }
 
-unsigned int Mesh_maps_stk::get_set_size (unsigned int set_id, 
-                                      Mesh_data::Entity_kind kind,
-                                      Element_Category category) const
+unsigned int Mesh_maps_stk::get_set_size (unsigned int set_id,
+                                          Mesh_data::Entity_kind kind,
+                                          Element_Category category) const
 {
     ASSERT (valid_set_id (set_id, kind));
     stk::mesh::Part* part = mesh_->get_set (set_id, kind_to_rank_ (kind));
