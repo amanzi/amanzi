@@ -41,7 +41,7 @@ void gmvwrite_cells_fromfile(char *filename, long nclls);
 
 void gmvwrite_cell_header(void *ncells);
 
-void gmvwrite_cell_type(char cell_type[], int nverts, void *nodes);
+void gmvwrite_cell_type(const char cell_type[], int nverts, void *nodes);
 
 void gmvwrite_general_cell_type(char cell_type[], int nverts[], int nfaces,
 			        void *nodeids);
@@ -90,7 +90,7 @@ void gmvwrite_flag_header(void);
 
 void gmvwrite_flag_name(char flagname[], int numtypes, int data_type);
 
-void gmvwrite_flag_subname(char subname[]);
+void gmvwrite_flag_subname(const char subname[]);
 
 void gmvwrite_flag_data(int data_type, int flag_data[]);
 
@@ -140,9 +140,9 @@ void gmvwrite_surfvars_endsvar(void);
 
 void gmvwrite_surfflag_header(void);
 
-void gmvwrite_surfflag_name(char flagname[], int numtypes);
+void gmvwrite_surfflag_name(const char flagname[], int numtypes);
 
-void gmvwrite_surfflag_subname(char subname[]);
+void gmvwrite_surfflag_subname(const char subname[]);
 
 void gmvwrite_surfflag_data(int flag_data[]);
 

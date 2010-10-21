@@ -4,15 +4,30 @@
 #include "Transport_PK.hpp"
 
 
-/* constructor initializes the transport PK */
-Transport_PK::Transport_PK ( Teuchos::RCP<Transport_State> TS_MPC )
+using namespace Teuchos;
+
+
+/* 
+   Constructor for initializing the transport PK.
+   Its call is made usually at time T=0 by the MPC.
+ */
+Transport_PK::Transport_PK ( RCP<Transport_State> TS_MPC )
 { 
-  // use the constructor to initialize the transport process kernel
+  /* make a copy of the transport state object */
+  TS = TS_MPC;
 
-  // make a deep copy of the transport state object
+  /* copy pointers for state variables that will remain unchanged */
+  TS_next = rcp(new Transport_State());
+  TS_next->get_porosity () = TS->get_porosity (); 
+  TS_next->get_water_saturation () = TS->get_water_saturation (); 
+  TS_next->get_darcy_flux () = TS->get_darcy_flux (); 
 
-  TS->copy(TS_MPC);
+  /* allocate memory for state variables that will be changed */
+  RCP<Epetra_MultiVector>  tcc      = TS->get_total_component_concentration ();
+  RCP<Epetra_MultiVector>  tcc_next = TS_next->get_total_component_concentration ();
+  tcc_next = rcp( new Epetra_MultiVector( *tcc ) );
 
+  /* set null/zero values to all internal parameters */
   dT = 0.0;
   status = 0;
 };

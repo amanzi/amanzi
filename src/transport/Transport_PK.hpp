@@ -20,25 +20,32 @@
    the smart pointers to the original variables.
 */
 
+using namespace std;
 using namespace Teuchos;
 
 class Transport_PK {
 
 public:
-  Transport_PK ( Teuchos::RCP<Transport_State> TS_MPC );
+  /* three constructors */
+  Transport_PK ( RCP<Transport_State> TS_MPC );
+  Transport_PK ();
 
   ~Transport_PK ();
 
   /* primary members */
   void calculate_transport_dT ();
+  void request_transport_state ();
   void advance_transport_state ();
+
+  vector<double> calculate_accumulated_influx ();
+  vector<double> calculate_accumulated_outflux ();
 
   /* access members */ 
   RCP<Transport_State> get_transport_state ()      const { return TS; }
   RCP<Transport_State> get_transport_state_next () const { return TS_next; }
 
-  double get_transport_dT ()     { return dT; }
-  int    get_transport_status () { return status; }
+  double get_transport_dT ()      { return dT; }
+  int    get_transport_status ()  { return status; }
 
 
 private:
@@ -54,6 +61,10 @@ private:
   /* transport time step and status */
   double dT;
   int    status;
+
+  /* accumulated influx and outflux for each side */
+  vector<double>  influx;
+  vector<double> outflux;
 };
 
 #endif

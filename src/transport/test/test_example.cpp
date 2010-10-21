@@ -12,26 +12,38 @@
 
 
 
-TEST(TRANSPORT_GENERIC) {
+TEST(TRANSPORT_PK_INIT) {
 
   using namespace std;
   using namespace Teuchos;
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm    *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm    *comm = new Epetra_MpiComm( MPI_COMM_WORLD);
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  /* create a state with 1 component */
-  RCP<Mesh_maps_simple>  mesh_amanzi = rcp(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm)); 
+  /* create MPC state with 1 component */
+  RCP<Mesh_maps_simple>  mesh_amanzi = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
   int number_components = 1;
-  State mpc_state ( number_components, mesh_amanzi ) ;
+  State mpc_state( number_components, mesh_amanzi );
 
-  RCP<Transport_State>  TS;
+  /*create transport state from MPC state */
+  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
-  cout << "Hello" << endl;
+  /* initialize a transport process kernel from a transport state */
+  Transport_PK  TPK(TS);
+
+
+  /* the actual test is to print the Darcy velocity */
+  RCP<Transport_State>  TS_pointer;
+  RCP<Epetra_MultiVector>  darcy_flux_pointer;
+
+  TS_pointer = TPK.get_transport_state();
+  darcy_flux_pointer = TS_pointer->get_total_component_concentration();
+
+  cout << *(darcy_flux_pointer) << endl;
 }
  
 

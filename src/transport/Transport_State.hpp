@@ -20,23 +20,32 @@ public:
      water_saturation(S->get_water_saturation()),
      mesh_maps(S->get_mesh_maps()) {};
 
+  Transport_State (State S):
+     total_component_concentration(S.get_total_component_concentration()),
+     porosity(S.get_porosity()),
+     darcy_flux(S.get_darcy_flux()),
+     water_saturation(S.get_water_saturation()),
+     mesh_maps(S.get_mesh_maps()) {};
+
+  Transport_State () {};
+
   ~Transport_State () {};
 
   /* access methods for state variables */
-  RCP<const Epetra_MultiVector> get_total_component_concentration()       { return total_component_concentration; };
-  RCP<const Epetra_MultiVector> get_total_component_concentration() const { return total_component_concentration; };
-  RCP<const Epetra_Vector>      get_porosity ()                     const { return porosity; };
-  RCP<const Epetra_Vector>      get_water_saturation ()             const { return water_saturation; };
-  RCP<const Epetra_Vector>      get_darcy_flux ()                   const { return darcy_flux; };
+  RCP<Epetra_MultiVector> get_total_component_concentration()       { return total_component_concentration; };
+  RCP<Epetra_MultiVector> get_total_component_concentration() const { return total_component_concentration; };
+  RCP<const Epetra_Vector>      get_porosity ()               const { return porosity; };
+  RCP<const Epetra_Vector>      get_water_saturation ()       const { return water_saturation; };
+  RCP<const Epetra_Vector>      get_darcy_flux ()             const { return darcy_flux; };
   
   void copy (RCP<Transport_State> TS);
 
 private:
   /* state variables that are relevant to transport */
-  RCP<const Epetra_MultiVector>  total_component_concentration;
-  RCP<const Epetra_Vector>       water_saturation;
-  RCP<const Epetra_Vector>       darcy_flux;
-  RCP<const Epetra_Vector>       porosity;
+  RCP<Epetra_MultiVector>   total_component_concentration;
+  RCP<const Epetra_Vector>  water_saturation;
+  RCP<const Epetra_Vector>  darcy_flux;
+  RCP<const Epetra_Vector>  porosity;
 
   /* mesh infranstructure */
   RCP<const Mesh_maps_simple> mesh_maps;
