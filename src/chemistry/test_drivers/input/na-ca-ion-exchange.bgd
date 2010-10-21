@@ -45,7 +45,7 @@ NaCl(aq) = 1.0000 Cl- 1.0000 Na+ ; 0.7770 ; 3.0 ; 0.0 ; 58.4425
 #Calcite = 1.0 Ca++ 1.0 HCO3- -1.0 H+ ; 1.8487 ; 100.0872 ; 36.9340 
 
 <Ion Exchange Sites
-X- ; -1.0 
+X- ; -1.0 ; Kaolinite
 
 <Ion Exchange Complexes
 NaX = 1.0 Na+ 1.0 X- ; 0.00

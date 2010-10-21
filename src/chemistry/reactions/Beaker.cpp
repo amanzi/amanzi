@@ -291,17 +291,20 @@ void Beaker::updateEquilibriumChemistry(void)
     i->Update(primarySpecies_);
   }
 
+  // calculate total component concentrations
+  calculateTotal();
+
+  // calculate mineral saturation states
   for (std::vector<Mineral>::iterator m = minerals_.begin();
        m != minerals_.end(); m++) {
     m->Update(primarySpecies_);
   }
 
-  // calculate total component concentrations
-  calculateTotal();
-
   // add equilibrium surface complexation here
 
-} // end updateEquilibriumChemistry()
+  // add equilibrium ion exchange here
+
+}  // end updateEquilibriumChemistry()
 
 void Beaker::calculateTotal(std::vector<double> &total) 
 {
@@ -872,6 +875,7 @@ void Beaker::DisplayIonExchangeSites(void) const
   if (ion_exchange_sites_.size() > 0) {
     std::cout << "---- Ion Exchange Sites" << std::endl;
     std::cout << std::setw(15) << "Species"
+              << std::setw(15) << "Location"
               << std::setw(10) << "Charge"
               << std::setw(10) << "CEC"
               << std::endl;

@@ -22,6 +22,7 @@ class IonExchangeSite : public Species {
   IonExchangeSite(const SpeciesName exchanger_name,
                   const SpeciesId exchanger_id,
                   const double exchanger_charge, 
+                  const std::string exchanger_location,
                   const double mol_wt,
                   const double size);
 
@@ -35,9 +36,11 @@ class IonExchangeSite : public Species {
   void set_cation_exchange_capacity(const int in_value) { this->cation_exchange_capacity_ = in_value; };
   int cation_exchange_capacity(void) const { return this->cation_exchange_capacity_; };
 
+  std::string location(void) const { return this->location_; };
 
  protected:
   double cation_exchange_capacity_;  // units...
+  std::string location_;
 
  private:
 };

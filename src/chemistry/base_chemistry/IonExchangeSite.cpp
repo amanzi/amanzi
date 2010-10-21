@@ -13,12 +13,14 @@ IonExchangeSite::IonExchangeSite()
 } // end IonExchangeSite constructor
 
 
-IonExchangeSite::IonExchangeSite(SpeciesName exchanger_name, 
-                                 SpeciesId exchanger_id, 
-                                 double exchanger_charge, 
-                                 double mol_wt, double size)
+IonExchangeSite::IonExchangeSite(const SpeciesName exchanger_name, 
+                                 const SpeciesId exchanger_id, 
+                                 const double exchanger_charge, 
+                                 const std::string exchanger_location,
+                                 const double mol_wt, const double size)
     : Species(exchanger_id, exchanger_name, exchanger_charge, mol_wt, size),
-      cation_exchange_capacity_(0.0)
+      cation_exchange_capacity_(0.0),
+      location_(exchanger_location)
 {
 } // end IonExchangeSite constructor
 
@@ -35,6 +37,7 @@ void IonExchangeSite::Update(void)
 void IonExchangeSite::Display(void) const
 {
   std::cout << std::setw(15) << name()
+            << std::setw(15) << location()
             << std::setw(10) << charge()
             << std::setw(10) << cation_exchange_capacity() 
             << std::endl;

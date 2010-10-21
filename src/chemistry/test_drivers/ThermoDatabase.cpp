@@ -360,7 +360,13 @@ void ThermoDatabase::ParseMineral(const std::string data)
  **
  **  <Ion Exchange Site
  **
- **  Name ; change
+ **  Name ; change ; location
+ **
+ **  where location is the mineral where the exchanger is located, i.e. kaolinite
+ **
+ **  TODO: eventually something like "bulk" will be used as a dummy
+ **  mineral for bulk soil rather than a specific mineral. need to
+ **  coordinate this with surface complexation.
  **
  *******************************************************************************/
 void ThermoDatabase::ParseIonExchangeSite(const std::string data)
@@ -384,8 +390,11 @@ void ThermoDatabase::ParseIonExchangeSite(const std::string data)
   no_spaces.tokenize(exchanger_data.at(1), space);
   double exchanger_charge(std::atof(no_spaces.at(0).c_str()));
 
+  no_spaces.tokenize(exchanger_data.at(2), space);
+  std::string exchanger_location(no_spaces.at(0));
+
   IonExchangeSite exchanger(exchanger_name, ion_exchange_site_id_++, 
-                            exchanger_charge,
+                            exchanger_charge, exchanger_location,
                             mol_wt, size);
 
   this->AddIonExchangeSite(exchanger);
