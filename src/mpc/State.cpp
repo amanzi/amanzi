@@ -68,6 +68,8 @@ void State::write_gmv ( std::string filename )
   delete y;
   delete z;
   
+
+  // write the cell data
   unsigned int num_cells = mesh_maps->count_entities(Mesh_data::CELL,OWNED);
   
   gmvwrite_cell_header(&num_cells);
@@ -76,26 +78,35 @@ void State::write_gmv ( std::string filename )
   for (int i=0; i<num_cells; i++) {
     mesh_maps->cell_to_nodes(i,xh,xh+8);
     for (int j=0; j<8; j++) xh[j]++;
-    gmvwrite_cell_type("phex8",8,xh);
+
+    char cell_type [] = "phex8";
+    gmvwrite_cell_type(cell_type,8,xh);
   }
 
   
-  // write the side sets
+  // write the side sets, we only support 100 side sets
+  // with ids less than 100.
+
+  // how many side sets are there?
   unsigned int num_side_sets = mesh_maps->num_sets(Mesh_data::FACE);
   if (num_side_sets > 0) {
     vector<unsigned int> ssids(num_side_sets);
     mesh_maps->get_set_ids(Mesh_data::FACE, ssids.begin(), ssids.end());
     
-
     vector<unsigned int> side_set;
     int total_num_surfaces=0;
+
+    // figure out how many total faces are in side sets
     for (vector<unsigned int>::const_iterator it = ssids.begin(); it != ssids.end(); it++) {
       unsigned int set_size = mesh_maps->get_set_size(*it, Mesh_data::FACE, OWNED);
       total_num_surfaces += set_size;
     }
+
     if (total_num_surfaces > 0) {
+      // now start writing side set information
       gmvwrite_surface_header(&total_num_surfaces);
       
+      // loop over the side sets and write all faces belonging to side sets
       for (vector<unsigned int>::const_iterator it = ssids.begin(); it != ssids.end(); it++) {  
 	unsigned int set_size = mesh_maps->get_set_size(*it, Mesh_data::FACE, OWNED);
 	side_set.resize(set_size);
@@ -111,37 +122,118 @@ void State::write_gmv ( std::string filename )
       }
       
       
-      // for now this only works with Mesh_maps_simple which has 
-      // exactly six side sets
+      // now we generate an array of flags, one flag stands for one side set
       gmvwrite_surfflag_header();
-      gmvwrite_surfflag_name("SideSets",num_side_sets);
-      gmvwrite_surfflag_subname("00");
-      gmvwrite_surfflag_subname("01");
-      gmvwrite_surfflag_subname("02");
-      gmvwrite_surfflag_subname("03");
-      gmvwrite_surfflag_subname("04");
-      gmvwrite_surfflag_subname("05");
       
+      char ssname [] = "SideSets";
+      gmvwrite_surfflag_name(ssname,num_side_sets);
+      
+      char sssubname [] = "SideSet_000";
+
+      for (vector<unsigned int>::const_iterator it=ssids.begin(); 
+	   it!=ssids.end(); it++) {
+	sssubname[8] = '0' + (*it)/100;
+	sssubname[9] = '0' + ((*it)/10)%10;
+	sssubname[10] = '0' + (*it)%10;
+
+	gmvwrite_surfflag_subname(sssubname);
+      }
+      
+      
+      // this is the array of flags
       int *sflagdata = new int[total_num_surfaces];
       unsigned int is=0;
       unsigned int tag=1;
+      
+      // loop over the side sets
       for (vector<unsigned int>::const_iterator it = ssids.begin(); it != ssids.end(); it++) {  
 	unsigned int set_size = mesh_maps->get_set_size(*it, Mesh_data::FACE, OWNED);
 	side_set.resize(set_size);
 	
-	for (int i=0; i<set_size; i++) {
+	// loop over the faces in the current side set and
+	// store the flag for the current side set 
+ 	for (int i=0; i<set_size; i++) {
 	  sflagdata[is] = tag;
 	  is++;
 	}
 	tag++;
       }
+      // write the flag array
       gmvwrite_surfflag_data(sflagdata);
-
-      gmvwrite_surfflag_endflag();  
-
+      
+      delete sflagdata;
+      gmvwrite_surfflag_endflag();
     }
     
   }
   
+
+  // write element blocks
+
+  unsigned int num_element_blocks = mesh_maps->num_sets(Mesh_data::CELL);
+  if (num_element_blocks > 0) {
+    vector<unsigned int> ebids(num_element_blocks);
+    mesh_maps->get_set_ids(Mesh_data::CELL, ebids.begin(), ebids.end());
+    
+    vector<unsigned int> element_block;
+    int total_num_cells=0;
+
+    // figure out how many total cells are in element blocks
+    for (vector<unsigned int>::const_iterator it = ebids.begin(); it != ebids.end(); it++) {
+      unsigned int set_size = mesh_maps->get_set_size(*it, Mesh_data::CELL, OWNED);
+      total_num_cells += set_size;
+    }
+
+    if (total_num_cells > 0) {
+      // now start writing side set information
+      gmvwrite_flag_header();
+
+      char flagname [] = "ElementBlocks";
+      gmvwrite_flag_name(flagname,num_element_blocks,0);
+
+
+      // now we generate an array of flags, one flag stands for one side set
+      char ebsubname [] = "ElementBlock_000";
+
+      for (vector<unsigned int>::const_iterator it=ebids.begin(); 
+	   it!=ebids.end(); it++) {
+	ebsubname[13] = '0' + (*it)/100;
+	ebsubname[14] = '0' + ((*it)/10)%10;
+	ebsubname[15] = '0' + (*it)%10;
+
+	gmvwrite_flag_subname(ebsubname);
+      }
+      
+      // loop over the element blocks and write all cells belonging to element blocks
+
+      // this is the array of flags
+      int *ebflagdata = new int[total_num_cells];
+      unsigned int is=0;
+      unsigned int tag=1;
+      
+      // loop over the selement blocks sets
+      for (vector<unsigned int>::const_iterator it = ebids.begin(); it != ebids.end(); it++) {  
+	unsigned int set_size = mesh_maps->get_set_size(*it, Mesh_data::CELL, OWNED);
+	
+	// loop over the cells in the current element block set and
+	// store the flag for the current side set 
+ 	for (int i=0; i<set_size; i++) {
+	  ebflagdata[is] = tag;
+	  is++;
+	}
+	tag++;
+      }
+      // write the flag array
+      gmvwrite_flag_data(0,ebflagdata);
+
+      delete ebflagdata;
+
+      gmvwrite_flag_endflag();
+    }
+    
+  }  
+ 
+
+  // done
   gmvwrite_closefile();
 }

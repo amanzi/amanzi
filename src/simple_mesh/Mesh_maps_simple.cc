@@ -171,6 +171,8 @@ Mesh_maps_simple::Mesh_maps_simple (double x0, double y0, double z0,
        }
 
 
+   // we only have 6 side sets
+
    side_sets_.resize(6);
    
    side_sets_[0].resize( nx_ * nz_ );
@@ -207,6 +209,22 @@ Mesh_maps_simple::Mesh_maps_simple (double x0, double y0, double z0,
    	 count++;
        }
       
+
+   // we only have one element block
+
+   element_blocks_.resize(1);
+   element_blocks_[0].resize(nx_*ny_*nz_);
+   
+   count=0;
+   for (int iz=0; iz<nz_; iz++)
+     for (int iy=0; iy<ny_; iy++)
+       for (int ix=0; ix<nx_; ix++) 
+	 {
+	   element_blocks_[0][count] = cell_index_(ix,iy,iz);
+	   count++;
+	 }
+
+
    build_maps_ ();
 }
 
@@ -255,6 +273,9 @@ unsigned int Mesh_maps_simple::num_sets(Mesh_data::Entity_kind kind) const
   case Mesh_data::FACE:
     return 6;
     break;
+  case Mesh_data::CELL:
+    return 1;
+    break;
   default:
     // nothing yet for NODE or CELL
     throw std::exception();
@@ -271,6 +292,9 @@ unsigned int Mesh_maps_simple::get_set_size (unsigned int set_id,
   switch (kind) {
   case Mesh_data::FACE:
     return side_sets_[set_id].size();
+    break;
+  case Mesh_data::CELL:
+    return element_blocks_[set_id].size();
     break;
   default:
     throw std::exception();
