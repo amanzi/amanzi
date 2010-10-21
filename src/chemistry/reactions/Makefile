@@ -5,7 +5,6 @@ SRCS = \
 	./AqueousEquilibriumComplex.cpp \
 	./Beaker.cpp \
 	./GeneralRxn.cpp \
-	./Geochemistry.cpp \
 	./IonExchangeComplex.cpp \
 	./KineticRate.cpp \
 	./KineticRateTST.cpp \
