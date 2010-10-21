@@ -113,6 +113,7 @@ private:
   std::vector<unsigned int> face_to_node_;
   
   std::vector<std::vector<unsigned int> > side_sets_;
+  std::vector<std::vector<unsigned int> > element_blocks_;
   
   Epetra_Comm  *communicator_;
 
@@ -254,14 +255,26 @@ void Mesh_maps_simple::cell_to_coordinates (unsigned int local_cell_id, IT begin
 template <typename IT>
 void Mesh_maps_simple::get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const
 {
-  std::vector<unsigned int> ids(6);
   
+  std::vector<unsigned int> ids(0);
+
   switch (kind) {
   case Mesh_data::FACE: 
-    for (int i=0; i<6; i++) ids[i]=i;
-    
-    std::copy (ids.begin (), ids.end (), begin);
-    break;
+    {
+      ids.resize(6);
+      for (int i=0; i<6; i++) ids[i]=i;
+      
+      std::copy (ids.begin(), ids.end(), begin);
+      break;
+    }
+  case Mesh_data::CELL:
+    {
+      ids.resize(1);
+      ids[0] = 0;
+      
+      std::copy (ids.begin(), ids.end(), begin);
+      break;
+    }      
   default:
     // we do not have anything for CELL and NODE, yet
     throw std::exception();
@@ -278,6 +291,9 @@ void Mesh_maps_simple::get_set (unsigned int set_id, Mesh_data::Entity_kind kind
   case Mesh_data::FACE:
     std::copy(side_sets_[set_id].begin(), side_sets_[set_id].end(), begin) ;
     break;
+  case Mesh_data::CELL:
+    std::copy(element_blocks_[set_id].begin(), element_blocks_[set_id].end(), begin) ;
+    
   default:
     // we do not have anything for CELL and NODE, yet
     throw std::exception();
