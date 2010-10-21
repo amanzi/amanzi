@@ -59,6 +59,7 @@ class Beaker {
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
   void SetupActivityModel(std::string model);
+  void VerifyState(const Beaker::BeakerComponents& components);
 
   void addPrimarySpecies(Species s);
   void AddIonExchangeSite(IonExchangeSite exchanger);
@@ -181,6 +182,7 @@ protected:
   void update_por_sat_den_vol(void);
 
   std::vector<Species> primary_species(void) const { return this->primarySpecies_; };
+  std::vector<Mineral> minerals(void) const { return this->minerals_; };
   std::vector<IonExchangeSite> ion_exchange_sites(void) const { return this->ion_exchange_sites_; };
 
 private:

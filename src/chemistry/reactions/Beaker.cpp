@@ -96,12 +96,46 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
 
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize(this->primary_species().size());
+  this->VerifyState(components);
+} // end Setup()
 
+void Beaker::VerifyState(const Beaker::BeakerComponents& components)
+{
+  // some helpful error checking goes here...
+  std::string verify_sizes("ERROR: Beaker::VerifyState(): input data and initial conditions do not match:\n");
+  
   if (static_cast<unsigned int>(this->ncomp()) != components.primaries.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
+    std::cout << verify_sizes
+              << "ERROR: ncomp and components.primaries.size do not match."
+              << std::endl;
   }
-} // end Setup()
+
+  if (this->primary_species().size() != components.primaries.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+    std::cout << verify_sizes
+              << "ERROR: primary_species.size and components.primaries.size do not match."
+              << std::endl;
+  }
+
+  if (this->ion_exchange_sites().size() != components.ion_exchange_sites.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+    std::cout << verify_sizes
+              << "ERROR: ion_exchange_sites.size and components.ion_exchange_sites.size do not match."
+              << std::endl;
+  }
+
+  if (this->minerals().size() != components.minerals.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+    std::cout << verify_sizes
+              << "ERROR: minerals.size and components.minerals.size do not match."
+              << std::endl;
+  }
+}  // end VerifyState()
 
 void Beaker::SetupActivityModel(std::string model)
 {
