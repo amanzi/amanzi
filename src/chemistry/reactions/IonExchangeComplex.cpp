@@ -101,3 +101,20 @@ void IonExchangeComplex::DisplayReaction(void) const
   }
   std::cout << std::endl;
 } // end DisplayReaction()
+
+void IonExchangeComplex::DisplayResultsHeader(void) const
+{
+  std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "Molarity" 
+            << std::setw(15) << "Activity" 
+            << std::endl;
+} // end DisplayResultsHeader()
+
+void IonExchangeComplex::DisplayResults(void) const
+{
+      std::cout << std::setw(15) << name()
+                << std::scientific << std::setprecision(5)
+                << std::setw(15) << molality()
+                << std::setw(15) << activity()
+                << std::endl;
+} // end DisplayResults()

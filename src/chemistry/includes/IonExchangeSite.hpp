@@ -29,6 +29,8 @@ class IonExchangeSite : public Species {
 
   virtual void Update(void);
   virtual void Display(void) const;
+  void DisplayResultsHeader(void) const;
+  void DisplayResults(void) const;
 
   void set_cation_exchange_capacity(const int in_value) { this->cation_exchange_capacity_ = in_value; };
   int cation_exchange_capacity(void) const { return this->cation_exchange_capacity_; };

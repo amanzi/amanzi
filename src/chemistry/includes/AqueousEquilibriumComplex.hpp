@@ -38,6 +38,8 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
 
   void display(void) const;
   void Display(void) const;
+  void DisplayResultsHeader(void) const;
+  void DisplayResults(void) const;
 
  protected:
 

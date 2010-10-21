@@ -10,7 +10,12 @@
 #include "SecondarySpecies.hpp"
 #include "Block.hpp"
 
-// Class for aqueous equilibrium complexation reaction
+/* Class for mineral reaction, should be written with the mineral as
+** the reactant:
+**
+**  Calcite = 1.0 Ca++ + 1.0 HCO3- -1.0 H+
+**
+*/
 
 class Mineral : public SecondarySpecies {
 
@@ -35,6 +40,11 @@ class Mineral : public SecondarySpecies {
                                Block *dtotal);
 
   void Display(void) const;
+  void DisplayResultsHeader(void) const;
+  void DisplayResults(void) const;
+
+  double saturation_index(void) const { return std::log10(Q_over_K()); };  // SI = log10(Q/Keq)
+  double Q_over_K(void) const { return std::exp(this->lnQK_); };
 
   double molar_density(void) const { return this->molar_density_; }
   void molar_density(double d) { this->molar_density_ = d; }
@@ -42,7 +52,7 @@ class Mineral : public SecondarySpecies {
  protected:
 
  private:
-
+  double saturation_index_;  
   double molar_density_;
   
 };

@@ -62,6 +62,8 @@ class Species {
 
   void display(void) const;
   void Display(void) const;
+  void DisplayResultsHeader(void) const;
+  void DisplayResults(void) const;
 
  protected:
   //  Species(const double s_charge, const double s_GMW, const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);

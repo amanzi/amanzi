@@ -38,6 +38,11 @@ Mineral::~Mineral()
 */
 void Mineral::Update(const std::vector<Species> primary_species) 
 {
+  double lnQK = -lnK_;
+  for (int i = 0; i < ncomp_; i++) {
+    lnQK += stoichiometry_[i] * primary_species[species_ids_[i]].ln_activity();
+  }
+  lnQK_ = lnQK;
   static_cast<void>(primary_species);
 } // end update()
 
@@ -75,3 +80,21 @@ void Mineral::Display(void) const
             << std::setw(10) << gram_molecular_weight()
             << std::endl;
 } // end Display()
+
+void Mineral::DisplayResultsHeader(void) const
+{
+  std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "Q/K"
+            << std::setw(15) << "SI"
+            << std::endl;
+} // end DisplayResultsHeader()
+
+void Mineral::DisplayResults(void) const
+{
+  std::cout << std::setw(15) << name()
+            << std::scientific << std::setprecision(5)
+            << std::setw(15) << Q_over_K()
+            << std::fixed << std::setprecision(3)
+            << std::setw(15) << saturation_index()
+            << std::endl;
+} // end DisplayResults()

@@ -39,3 +39,18 @@ void IonExchangeSite::Display(void) const
             << std::setw(10) << cation_exchange_capacity() 
             << std::endl;
 } // end Display()
+
+void IonExchangeSite::DisplayResultsHeader(void) const
+{
+  std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "CEC"
+            << std::endl;
+} // end DisplayResultsHeader()
+
+void IonExchangeSite::DisplayResults(void) const
+{
+  std::cout << std::setw(15) << name()
+            << std::scientific << std::setprecision(5)
+            << std::setw(15) << cation_exchange_capacity()
+            << std::endl;
+} // end DisplayResults()

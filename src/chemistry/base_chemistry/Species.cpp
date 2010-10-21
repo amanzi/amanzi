@@ -77,3 +77,22 @@ void Species::Display(void) const
             << std::setw(10) << gram_molecular_weight() 
             << std::endl;
 } // end Display()
+
+void Species::DisplayResultsHeader(void) const
+{
+  std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "Molarity" 
+            << std::setw(15) << "Activity Coeff" 
+            << std::setw(15) << "Activity" 
+            << std::endl;
+} // end DisplayResultsHeader()
+
+void Species::DisplayResults(void) const
+{
+  std::cout << std::setw(15) << name()
+            << std::scientific << std::setprecision(5)
+            << std::setw(15) << molality()
+            << std::setw(15) << act_coef()
+            << std::setw(15) << activity()
+            << std::endl;
+} // end DisplayResults()

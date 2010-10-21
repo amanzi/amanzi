@@ -290,6 +290,12 @@ void Beaker::updateEquilibriumChemistry(void)
        i != aqComplexRxns_.end(); i++) {
     i->Update(primarySpecies_);
   }
+
+  for (std::vector<Mineral>::iterator m = minerals_.begin();
+       m != minerals_.end(); m++) {
+    m->Update(primarySpecies_);
+  }
+
   // calculate total component concentrations
   calculateTotal();
 
@@ -913,54 +919,38 @@ void Beaker::DisplayResults(void) const
   }
 
   std::cout << "---- Species " << std::endl;
-  std::cout << std::setw(15) << "Name" 
-            << std::setw(15) << "Molarity" 
-            << std::setw(15) << "Activity Coeff" 
-            << std::setw(15) << "Activity" 
-            << std::endl;
 
+  primarySpecies_[0].DisplayResultsHeader();
   for (int i = 0; i < ncomp(); i++) {
-    std::cout << std::setw(15) << primarySpecies_[i].name()
-              << std::scientific << std::setprecision(5)
-              << std::setw(15) << primarySpecies_[i].molality()
-              << std::setw(15) << primarySpecies_[i].act_coef()
-              << std::setw(15) << primarySpecies_[i].activity()
-              << std::endl;
+    primarySpecies_[i].DisplayResults();
   }
+
+  // same header info as primaries....
   for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
-    std::cout << std::setw(15) << aqComplexRxns_[i].name()
-              << std::scientific << std::setprecision(5)
-              << std::setw(15) << aqComplexRxns_[i].molality()
-              << std::setw(15) << aqComplexRxns_[i].act_coef()
-              << std::setw(15) << aqComplexRxns_[i].activity()
-              << std::endl;
+    aqComplexRxns_[i].DisplayResults();
   }
+
+  if (minerals_.size() > 0) {
+    std::cout << "---- Minerals " << std::endl;
+    minerals_[0].DisplayResultsHeader();
+    for (unsigned int i = 0; i < minerals_.size(); i++) {
+      minerals_[i].DisplayResults();
+    }
+  }
+
   if (ion_exchange_sites_.size() > 0) {
     std::cout << "---- Ion Exchange Sites " << std::endl;
-    std::cout << std::setw(15) << "Name" 
-              << std::setw(15) << "CEC"
-              << std::endl;
-
+    ion_exchange_sites_[0].DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_sites_.size(); i++) {
-      std::cout << std::setw(15) << ion_exchange_sites_[i].name()
-                << std::scientific << std::setprecision(5)
-                << std::setw(15) << ion_exchange_sites_[i].cation_exchange_capacity()
-                << std::endl;
+      ion_exchange_sites_[i].DisplayResults();
     }
   }
 
   if (ion_exchange_rxns_.size() > 0) {
     std::cout << "---- Ion Exchange Complexes " << std::endl;
-    std::cout << std::setw(15) << "Name" 
-              << std::setw(15) << "Molarity" 
-              << std::setw(15) << "Activity" 
-              << std::endl;
+    ion_exchange_rxns_[0].DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
-      std::cout << std::setw(15) << ion_exchange_rxns_[i].name()
-                << std::scientific << std::setprecision(5)
-                << std::setw(15) << ion_exchange_rxns_[i].molality()
-                << std::setw(15) << ion_exchange_rxns_[i].activity()
-                << std::endl;
+      ion_exchange_rxns_[i].DisplayResults();
     }
   }
   std::cout << "----------------------------------------------------------------------"
@@ -978,7 +968,8 @@ void Beaker::DisplayTotalColumnHeaders(void) const
 
 void Beaker::DisplayTotalColumns(const double time, const std::vector<double>& total) const
 {
-  std::cout << std::setw(15) << time;
+  std::cout << std::scientific << std::setprecision(5) << std::setw(15);
+  std::cout << time;
   for (int i = 0; i < ncomp(); i++) {
     std::cout << std::setw(15) << total.at(i);
   }

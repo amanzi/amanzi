@@ -47,6 +47,8 @@ class IonExchangeComplex : public SecondarySpecies {
   void display(void) const;
   void Display(void) const;
   void DisplayReaction(void) const;
+  void DisplayResultsHeader(void) const;
+  void DisplayResults(void) const;
 
  protected:
 

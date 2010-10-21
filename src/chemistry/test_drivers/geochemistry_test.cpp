@@ -152,6 +152,11 @@ int main(int argc, char **argv) {
         chem->ReactionStep(&components, parameters, delta_time);        
         chem->DisplayTotalColumns(time_step+1 * delta_time, components.primaries);
       }
+      std::cout << "---- Final Speciation" << std::endl;
+      chem->Speciate(components, parameters);
+      if (verbosity >= kTerse) {
+        chem->DisplayResults();
+      }
     }
   }
   // cleanup memory
