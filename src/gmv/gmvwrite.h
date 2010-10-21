@@ -146,6 +146,8 @@ void gmvwrite_surfflag_subname(char subname[]);
 
 void gmvwrite_surfflag_data(int flag_data[]);
 
+void gmvwrite_surfflag_endflag(void);
+
 void gmvwrite_units_fromfile(char *filename);
 
 void gmvwrite_units_header(void);

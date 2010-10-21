@@ -254,9 +254,10 @@ void Mesh_maps_simple::cell_to_coordinates (unsigned int local_cell_id, IT begin
 template <typename IT>
 void Mesh_maps_simple::get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const
 {
+  std::vector<unsigned int> ids(6);
+  
   switch (kind) {
   case Mesh_data::FACE: 
-    std::vector<unsigned int> ids(6);
     for (int i=0; i<6; i++) ids[i]=i;
     
     std::copy (ids.begin (), ids.end (), begin);
@@ -264,7 +265,6 @@ void Mesh_maps_simple::get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT en
   default:
     // we do not have anything for CELL and NODE, yet
     throw std::exception();
-    break;
   }
 }
 
@@ -281,7 +281,6 @@ void Mesh_maps_simple::get_set (unsigned int set_id, Mesh_data::Entity_kind kind
   default:
     // we do not have anything for CELL and NODE, yet
     throw std::exception();
-    break;
   }
 }
 

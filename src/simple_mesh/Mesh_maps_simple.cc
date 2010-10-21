@@ -185,7 +185,7 @@ Mesh_maps_simple::Mesh_maps_simple (double x0, double y0, double z0,
      for (int iz=0; iz<nz_; iz++) 
        {
    	 side_sets_[0][count] = xzface_index_(ix,0,iz);
-   	 side_sets_[2][count] = xzface_index_(ix,nx_,iz);
+   	 side_sets_[2][count] = xzface_index_(ix,ny_,iz);
    	 count ++;
        }
    
