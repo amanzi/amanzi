@@ -232,29 +232,29 @@ test/Main.cc.s:
 	cd /home/rao/develop/ASCEM/amanzi/src && $(MAKE) -f moab_mesh/CMakeFiles/test_moab_mesh.dir/build.make moab_mesh/CMakeFiles/test_moab_mesh.dir/test/Main.cc.s
 .PHONY : test/Main.cc.s
 
-test/test_hex1.o: test/test_hex1.cc.o
-.PHONY : test/test_hex1.o
+test/test_hex_2x2x2.o: test/test_hex_2x2x2.cc.o
+.PHONY : test/test_hex_2x2x2.o
 
 # target to build an object file
-test/test_hex1.cc.o:
-	cd /home/rao/develop/ASCEM/amanzi/src && $(MAKE) -f moab_mesh/CMakeFiles/test_moab_mesh.dir/build.make moab_mesh/CMakeFiles/test_moab_mesh.dir/test/test_hex1.cc.o
-.PHONY : test/test_hex1.cc.o
+test/test_hex_2x2x2.cc.o:
+	cd /home/rao/develop/ASCEM/amanzi/src && $(MAKE) -f moab_mesh/CMakeFiles/test_moab_mesh.dir/build.make moab_mesh/CMakeFiles/test_moab_mesh.dir/test/test_hex_2x2x2.cc.o
+.PHONY : test/test_hex_2x2x2.cc.o
 
-test/test_hex1.i: test/test_hex1.cc.i
-.PHONY : test/test_hex1.i
+test/test_hex_2x2x2.i: test/test_hex_2x2x2.cc.i
+.PHONY : test/test_hex_2x2x2.i
 
 # target to preprocess a source file
-test/test_hex1.cc.i:
-	cd /home/rao/develop/ASCEM/amanzi/src && $(MAKE) -f moab_mesh/CMakeFiles/test_moab_mesh.dir/build.make moab_mesh/CMakeFiles/test_moab_mesh.dir/test/test_hex1.cc.i
-.PHONY : test/test_hex1.cc.i
+test/test_hex_2x2x2.cc.i:
+	cd /home/rao/develop/ASCEM/amanzi/src && $(MAKE) -f moab_mesh/CMakeFiles/test_moab_mesh.dir/build.make moab_mesh/CMakeFiles/test_moab_mesh.dir/test/test_hex_2x2x2.cc.i
+.PHONY : test/test_hex_2x2x2.cc.i
 
-test/test_hex1.s: test/test_hex1.cc.s
-.PHONY : test/test_hex1.s
+test/test_hex_2x2x2.s: test/test_hex_2x2x2.cc.s
+.PHONY : test/test_hex_2x2x2.s
 
 # target to generate assembly for a file
-test/test_hex1.cc.s:
-	cd /home/rao/develop/ASCEM/amanzi/src && $(MAKE) -f moab_mesh/CMakeFiles/test_moab_mesh.dir/build.make moab_mesh/CMakeFiles/test_moab_mesh.dir/test/test_hex1.cc.s
-.PHONY : test/test_hex1.cc.s
+test/test_hex_2x2x2.cc.s:
+	cd /home/rao/develop/ASCEM/amanzi/src && $(MAKE) -f moab_mesh/CMakeFiles/test_moab_mesh.dir/build.make moab_mesh/CMakeFiles/test_moab_mesh.dir/test/test_hex_2x2x2.cc.s
+.PHONY : test/test_hex_2x2x2.cc.s
 
 # Help Target
 help:
@@ -279,9 +279,9 @@ help:
 	@echo "... test/Main.o"
 	@echo "... test/Main.i"
 	@echo "... test/Main.s"
-	@echo "... test/test_hex1.o"
-	@echo "... test/test_hex1.i"
-	@echo "... test/test_hex1.s"
+	@echo "... test/test_hex_2x2x2.o"
+	@echo "... test/test_hex_2x2x2.i"
+	@echo "... test/test_hex_2x2x2.s"
 .PHONY : help
 
 

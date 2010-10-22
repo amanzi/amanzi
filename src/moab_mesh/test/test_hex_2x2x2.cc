@@ -27,26 +27,26 @@ TEST(MOAB_HEX1)
   int NV = 8;
   int NF = 6;
   int NC = 1;
-  double xyz[12][3] = {{-0.5, -0.5,  0.5},
-		       {-0.5, -0.5, -0.5},
-		       {-0.5,  0.5, -0.5},
-		       {-0.5,  0.5,  0.5},
-		       { 0.5, -0.5,  0.5},
-		       { 0.5, -0.5, -0.5}, 
-		       { 0.5,  0.5, -0.5},
-		       { 0.5,  0.5,  0.5}};
-  int cellnodes[8] = {0,1,2,3,4,5,6,7};
+  double xyz[12][3] = {{0, 0, 0},
+		       {1, 0, 0},
+		       {0, 1, 0},
+		       {1, 1, 0},
+		       {0, 0, 1},
+		       {1, 0, 1}, 
+		       {0, 1, 1},
+		       {1, 1, 1}};
+  int cellnodes[8] = {0,1,3,2,4,5,7,6};
   int facenodes[6][4] = {{0,1,5,4},
-			 {1,2,6,5},
-			 {2,3,7,6},
-			 {3,0,4,7},
-			 {0,3,2,1},
-			 {4,5,6,7}};
+			 {1,3,7,5},
+			 {3,2,6,7},
+			 {2,0,4,6},
+			 {0,2,3,1},
+			 {4,5,7,6}};
 
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_maps mesh("hex1.exo",MPI_COMM_WORLD);
+  Mesh_maps mesh("hex_2x2x2_ss.exo",MPI_COMM_WORLD);
 
 
   nv = mesh.count_entities(Mesh_data::NODE,OWNED);
@@ -73,7 +73,7 @@ TEST(MOAB_HEX1)
       
     for (k = 0; k < 4; k++) {
       CHECK_EQUAL(facenodes[j][k],nodes[k]);
-      CHECK_ARRAY_EQUAL(&(fcoords[3*k]),xyz[facenodes[j][k]],3);
+      CHECK_ARRAY_EQUAL(xyz[facenodes[j][k]],&(fcoords[3*k]),3);
     }
   }
       
@@ -81,8 +81,8 @@ TEST(MOAB_HEX1)
   mesh.cell_to_coordinates(0,ccoords,ccoords+24);
     
   for (j = 0; j < 8; j++) {
-    CHECK_EQUAL(nodes[j],cellnodes[j]);
-    CHECK_ARRAY_EQUAL(xyz[j],&(ccoords[3*j]),3);
+    CHECK_EQUAL(cellnodes[j],nodes[j]);
+    CHECK_ARRAY_EQUAL(xyz[cellnodes[j]],&(ccoords[3*j]),3);
   }
 
 }
