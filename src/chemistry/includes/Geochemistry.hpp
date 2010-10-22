@@ -31,7 +31,7 @@ to see how it goes.
 
 */
 
-#include "Beaker"
+#include "Beaker.hpp"
 
 #include <vector>
 
@@ -48,10 +48,12 @@ class Geochemistry {
   virtual void CommitState() = 0;
 
   // having something like this is going to be annoying:
+  /*
   virtual void Advance(Petsc data);
   virtual void Advance(std::vector data);
   virtual void Advance(Teuchos::RPC<Epetra_MultiVector>);
   virtual void Advance(YourFavoriteFlavorVector data);
+  */
 
   virtual void set_verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
   virtual Verbosity verbosity(void) const { return this->verbosity_; };

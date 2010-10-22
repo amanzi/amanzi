@@ -3,7 +3,12 @@
 #include "AqueousEquilibriumComplex.hpp"
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex() 
-                          : SecondarySpecies()
+    : Species(),
+      ncomp_(0), // # components in reaction
+      h2o_stoich_(0.0),
+      lnK_(0.0),
+      lnQK_(0.0),
+      logK_(0.0)
 {
   species_names_.clear();
   species_ids_.clear();
@@ -13,7 +18,7 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex()
 } // end AqueousEquilibriumComplex() constructor
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(std::string s) 
-                          : SecondarySpecies()
+                          : Species()
 {
   static_cast<void>(s);
   // string = "name ncomp stoich1 comp1 stoich2 comp2 ... stoichN compN
@@ -30,12 +35,32 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex(const SpeciesName name,
                             const double mol_wt,
                             const double size, 
                             const double logK) 
-                            : SecondarySpecies(name, id, species, 
-                                               stoichiometries, species_ids,
-                                               h2o_stoich, charge, mol_wt, 
-                                               size, logK)
-{
+                            : Species(id, name, charge, mol_wt, size),
+                              h2o_stoich_(h2o_stoich),
+                              lnK_(log_to_ln(logK)),
+                              lnQK_(0.0),
+                              logK_(logK)
 
+{
+  set_ncomp(static_cast<int>(species.size()));
+
+  // species names
+  for (std::vector<SpeciesName>::const_iterator i = species.begin(); 
+       i != species.end(); i++) {
+    species_names_.push_back(*i);
+  } 
+  // species stoichiometries
+  for (std::vector<double>::const_iterator i = stoichiometries.begin();
+       i != stoichiometries.end(); i++) {
+    stoichiometry_.push_back(*i);
+  }
+  // species ids
+  for (std::vector<int>::const_iterator i = species_ids.begin();
+       i != species_ids.end(); i++) {
+    species_ids_.push_back(*i);
+  }
+
+  lnK_ = log_to_ln(logK);
 } // end AqueousEquilibriumComplex() constructor
 
 AqueousEquilibriumComplex::~AqueousEquilibriumComplex() 

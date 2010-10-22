@@ -49,12 +49,20 @@ class Mineral : public SecondarySpecies {
   double molar_density(void) const { return this->molar_density_; }
   void molar_density(double d) { this->molar_density_ = d; }
 
- protected:
+  double surface_area(void) const { return this->surface_area_; }
+  void set_surface_area(const double d) { this->surface_area_ = d; }
+  double volume_fraction(void) const { return this->volume_fraction_; }
+  void set_volume_fraction(const double d) { this->volume_fraction_ = d; }
+
+protected:
 
  private:
   double saturation_index_;  
-  double molar_density_;
-  
+  double molar_density_;     // [moles / m^3] 
+
+  double surface_area_;      // [m^2 mineral surface / m^3 mineral]
+  double volume_fraction_;   // [m^3 mineral / m^3 bulk]
+
 };
 
 #endif // __Mineral_hpp__

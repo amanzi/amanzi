@@ -6,12 +6,11 @@
 #include <cmath>
 
 #include "Species.hpp"
-#include "SecondarySpecies.hpp"
 #include "Block.hpp"
 
 // Class for aqueous equilibrium complexation reaction
 
-class AqueousEquilibriumComplex : public SecondarySpecies {
+class AqueousEquilibriumComplex : public Species {
 
  public:
   AqueousEquilibriumComplex();
@@ -29,12 +28,18 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   ~AqueousEquilibriumComplex();
 
   // update molalities
-  void Update(const std::vector<Species>primarySpecies);
+  void Update(const std::vector<Species> primary_species);
   // add stoichiometric contribution of complex to total
-  void AddContributionToTotal(std::vector<double> &total);
+  void AddContributionToTotal(std::vector<double>& total);
   // add derivative of total with respect to free-ion to dtotal
-  void AddContributionToDTotal(const std::vector<Species> primarySpecies,
-                               Block *dtotal);
+  void AddContributionToDTotal(const std::vector<Species> primary_species,
+                               Block* dtotal);
+  
+  void set_ncomp(const int ncomp) { this->ncomp_ = ncomp; };
+  int ncomp(void) const { return this->ncomp_; };
+
+  void set_logK(const double logK) { this->logK_ = logK; };
+  double logK(void) const { return this->logK_; };
 
   void display(void) const;
   void Display(void) const;
@@ -44,6 +49,19 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
  protected:
 
  private:
+
+  double log_to_ln(double d) { return d*2.30258509299; }
+  double ln_to_log(double d) { return d*0.434294481904; }
+
+  int ncomp_; // # components in reaction
+  std::vector<SpeciesName> species_names_;
+  std::vector<SpeciesId> species_ids_;       // ids of primary species in rxn
+  std::vector<double> stoichiometry_;  // stoich of primary species in rxn
+  std::vector<double> logK_array_;     // for temperature dep. logK
+  double h2o_stoich_;                  // stoichiometry of water in equation
+  double lnK_;                         // log value of equlibrium constant
+  double lnQK_;                        // store lnQK for derivatives later
+  double logK_;
 
 };
 
