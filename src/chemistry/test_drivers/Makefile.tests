@@ -1,7 +1,7 @@
 DIFF = diff
 DFLAGS = --brief
 
-GEOCHEM = ./geochemistryTest
+GEOCHEM = ../bin/geochemistryTest
 GEOVERB = -v 2
 
 TESTS_CRUNCH = \
@@ -22,6 +22,7 @@ TESTS_PFLOTRAN = \
 #
 # tests
 #
+all : test
 
 tests : test
 

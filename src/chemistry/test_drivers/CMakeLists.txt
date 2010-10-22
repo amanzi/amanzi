@@ -19,3 +19,5 @@ set(GEOCHEM_LIBS
 
 add_executable(${EXE_NAME} ${EXE_SRCS})
 target_link_libraries(${EXE_NAME} ${GEOCHEM_LIBS})
+
+INSTALL(TARGETS ${EXE_NAME} DESTINATION ${CMAKE_HOME_DIRECTORY}/bin)

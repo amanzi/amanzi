@@ -1,3 +1,5 @@
+project(ascem-geochemistry CXX)
+
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -ansi -Wextra")
 
