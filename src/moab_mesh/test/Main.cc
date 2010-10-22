@@ -1,10 +1,11 @@
 #include <UnitTest++.h>
 #include <TestReporterStdout.h>
-// #include "Teuchos_GlobalMPISession.hpp"
+#include <mpi.h>
 
 int main(int argc, char *argv[])
 {
-  //  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  MPI_Init(&argc, &argv);
   
   return UnitTest::RunAllTests ();
 }
