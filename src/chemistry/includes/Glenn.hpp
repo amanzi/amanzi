@@ -4,7 +4,6 @@
 #include "Species.hpp"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Beaker.hpp"
-#include "Geochemistry.hpp"
 #include "FileIO.hpp"
 
 #include <vector>
