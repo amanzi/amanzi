@@ -6,7 +6,7 @@ include_directories(${PROJECT_SOURCE_DIR}/mpc)
 include_directories(${Trilinos_INCLUDE_DIRS})
 
 add_library(transport Transport_PK.cpp Transport_State.cpp)
-target_link_libraries(transport simple_mesh mesh_data dbc mpc ${Trilinos_LIBRARIES})
+target_link_libraries(transport simple_mesh mesh_data dbc mpc flow ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)

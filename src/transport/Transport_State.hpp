@@ -5,40 +5,37 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh_maps_base.hh"
+#include "simple_mesh/Mesh_maps_simple.hh"
+
+
+/* 
+  The transport state is a sub-state of the global state.
+  At the moment they are equivalent. 
+*/
 
 
 using namespace Teuchos;
 
+
 class Transport_State {
 
 public:
-  Transport_State (RCP<State> S):
-     total_component_concentration(S->get_total_component_concentration()),
-     porosity(S->get_porosity()),
-     darcy_flux(S->get_darcy_flux()),
-     water_saturation(S->get_water_saturation()),
-     mesh_maps(S->get_mesh_maps()) {};
-
-  Transport_State (State S):
-     total_component_concentration(S.get_total_component_concentration()),
-     porosity(S.get_porosity()),
-     darcy_flux(S.get_darcy_flux()),
-     water_saturation(S.get_water_saturation()),
-     mesh_maps(S.get_mesh_maps()) {};
-
+  Transport_State (RCP<State> S);
+  Transport_State (State S);
+  /* a null constructor is useful for unit tests */
   Transport_State () {};
 
   ~Transport_State () {};
 
   /* access methods for state variables */
-  RCP<Epetra_MultiVector> get_total_component_concentration()       { return total_component_concentration; };
-  RCP<Epetra_MultiVector> get_total_component_concentration() const { return total_component_concentration; };
-  RCP<const Epetra_Vector>      get_porosity ()               const { return porosity; };
-  RCP<const Epetra_Vector>      get_water_saturation ()       const { return water_saturation; };
-  RCP<const Epetra_Vector>      get_darcy_flux ()             const { return darcy_flux; };
+  RCP<Epetra_MultiVector>   get_total_component_concentration()       { return total_component_concentration; }
+  RCP<Epetra_MultiVector>   get_total_component_concentration() const { return total_component_concentration; }
+  RCP<const Epetra_Vector>  get_porosity ()                     const { return porosity; }
+  RCP<const Epetra_Vector>  get_water_saturation ()             const { return water_saturation; }
+  RCP<const Epetra_Vector>  get_darcy_flux ()                   const { return darcy_flux; }
   
-  void copy (RCP<Transport_State> TS);
+  const RCP<const Mesh_maps_simple> get_mesh_maps()             const { return mesh_maps; }
+
 
 private:
   /* state variables that are relevant to transport */
@@ -48,7 +45,7 @@ private:
   RCP<const Epetra_Vector>  porosity;
 
   /* mesh infranstructure */
-  RCP<Mesh_maps_base> mesh_maps;
+  RCP<const Mesh_maps_simple> mesh_maps;
 };
 
 

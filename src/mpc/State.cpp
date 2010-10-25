@@ -2,14 +2,14 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
-#include "Mesh_maps_base.hh"
+#include "Mesh_maps_simple.hh"
 extern "C" {
 #include "gmvwrite.h"
 }
 
 
 State::State( int number_of_components_,
-	      Teuchos::RCP<Mesh_maps_base> mesh_maps_):
+	      Teuchos::RCP<Mesh_maps_simple> mesh_maps_):
   number_of_components(number_of_components_),
   mesh_maps(mesh_maps_)
 {

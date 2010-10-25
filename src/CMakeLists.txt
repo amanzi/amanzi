@@ -217,9 +217,9 @@ find_library(MOAB_LIBRARY MOAB
              /usr/local/lib
              ${MOAB_LIB_DIR})
 if(NOT MOAB_LIBRARY)
-  message(FATAL_ERROR "Error: could not find MOAB library\n"
-          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
-          "\nor defining MOAB_LIB_DIR")
+#  message(FATAL_ERROR "Error: could not find MOAB library\n"
+#          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
+#          "\nor defining MOAB_LIB_DIR")
 endif()
 
 set (MOAB_INCLUDE_DIR ${MOAB_DIR}/include)
@@ -228,9 +228,9 @@ find_path(MOAB_INCLUDES MBCore.hpp
           /usr/local/include
           ${MOAB_INCLUDE_DIR})
 if(NOT MOAB_INCLUDES)
-  message(FATAL_ERROR "Error: could not find MOAB includes\n"
-          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
-          "\nor defining MOAB_INCLUDE_DIR")
+#  message(FATAL_ERROR "Error: could not find MOAB includes\n"
+#          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
+#          "\nor defining MOAB_INCLUDE_DIR")
 endif()
 
 add_library(moab STATIC IMPORTED)
@@ -250,12 +250,12 @@ if (NOT DEFINED UnitTest_DIR)
   message(WARNING "No UnitTest++ directory defined. To compile the unit tests add:
  -D UnitTest_DIR::FILEPATH=<UnitTest++_install_prefix>")
 else()
-  find_library(UNITTEST_LIBRARY unittest++ "${UnitTest_DIR}")
+  find_library(UNITTEST_LIBRARY unittest++ "${UnitTest_DIR}/lib")
   if (NOT UNITTEST_LIBRARY)
     message(FATAL_ERROR "Error: could not find unittest++ library")
   endif()
   
-  find_path(UNITTEST_INCLUDES "UnitTest++.h" "${UnitTest_DIR}/src" "${UnitTest_DIR}/include/unittest++")
+  find_path(UNITTEST_INCLUDES "UnitTest++.h" "${UnitTest_DIR}/include")
   if (NOT UNITTEST_INCLUDES)
     message(FATAL_ERROR "Error: could not find UnitTest++ includes")
   else()
