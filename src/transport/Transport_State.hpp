@@ -34,7 +34,7 @@ public:
   RCP<const Epetra_Vector>  get_water_saturation ()             const { return water_saturation; }
   RCP<const Epetra_Vector>  get_darcy_flux ()                   const { return darcy_flux; }
   
-  const RCP<const Mesh_maps_simple> get_mesh_maps()             const { return mesh_maps; }
+  RCP<Mesh_maps_simple> get_mesh_maps()                   const { return mesh_maps; }
 
 
 private:
@@ -45,7 +45,7 @@ private:
   RCP<const Epetra_Vector>  porosity;
 
   /* mesh infranstructure */
-  RCP<const Mesh_maps_simple> mesh_maps;
+  RCP<Mesh_maps_simple> mesh_maps;
 };
 
 

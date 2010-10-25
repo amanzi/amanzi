@@ -53,7 +53,7 @@ Transport_PK::Transport_PK ( RCP<Transport_State> TS_MPC )
 /* this is part of the future geometry package */
 void Transport_PK::geometry_package()
 {
-  RCP<const Mesh_maps_simple> mesh = TS->get_mesh_maps();
+  RCP<Mesh_maps_simple> mesh = TS->get_mesh_maps();
 
 
   /* loop over faces and calculate areas */
@@ -62,7 +62,7 @@ void Transport_PK::geometry_package()
   Epetra_Map face_map = mesh->face_map(false);
 
   for ( f=face_map.MinLID(); f<face_map.MaxLID(); f++ ) {
-     //mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
+     mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
      (*face_area)[f] = quad_face_area(x[0], x[1], x[2], x[3]);
   }
@@ -80,7 +80,7 @@ void Transport_PK::geometry_package()
 
   /* populate upwind and downwind cells LID */
   for ( c=cell_map.MinLID(); c<cell_map.MaxLID(); c++) {
-     //mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
+     mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
 
      for ( i=0; i<6; i++ ) {
         f = face_map.LID(c2f[i]);
