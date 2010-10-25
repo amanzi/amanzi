@@ -48,8 +48,8 @@ private:
     
   struct bc_spec {
     bc_types type;
-    int num_faces;
-    std::vector<int> faces;
+    unsigned int num_faces;
+    std::vector<unsigned int> faces;
     std::vector<double> aux;
     double value;
   };

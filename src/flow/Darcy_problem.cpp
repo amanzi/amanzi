@@ -1,11 +1,11 @@
 #include "Darcy_problem.hpp"
 #include "Epetra_FECrsGraph.h"
 #include "cell_geometry.hpp"
-#include "Mesh_maps_simple.hh"
+#include "Mesh_maps_base.hh"
 
 void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 {
-  Teuchos::RCP<const Mesh_maps_simple> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<Mesh_maps_base> mesh = FS->get_mesh_maps();
   const int ncell_use = mesh->count_entities(Mesh_data::CELL, USED);
   const int ncell_own = mesh->count_entities(Mesh_data::CELL, OWNED);
   const int nface_use = mesh->count_entities(Mesh_data::FACE, USED);
@@ -41,20 +41,20 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   // Gather the ghost P_FACE_USE values.
   // CODE NEEDED HERE -- epetra import/export?
   
-  int face[6];
+  unsigned int face[6];
   double aux1[6], aux2[6];
   
   // Compute the diffusion operator contribution to F.
-  for (int j = 0; j < nface_use; ++j) f_face_use[j] = 0.0;
-  for (int j = 0; j < ncell_use; ++j) {
+  for (unsigned int j = 0; j < nface_use; ++j) f_face_use[j] = 0.0;
+  for (unsigned int j = 0; j < ncell_use; ++j) {
      // Get the list of process-local face indices for the cell.
      mesh->cell_to_faces(j, face, face+6);
      // Gather the local face pressures.
-     for (int i = 0; i < 6; ++i) aux1[i] = p_face_use[face[i]];
+     for (unsigned int i = 0; i < 6; ++i) aux1[i] = p_face_use[face[i]];
      // Compute the local value of the diffusion operator.
      MD[j].diff_op(K_[j], p_cell_use[j], aux1, f_cell_use[j], aux2);
      // Scatter local face result into F_FACE_USE.
-     for (int i = 0; i < 6; ++i) f_face_use[face[i]] += aux2[i];
+     for (unsigned int i = 0; i < 6; ++i) f_face_use[face[i]] += aux2[i];
   }
   
   // Parallel assembly: sum ghost F_FACE_USE values to the master value.
@@ -74,7 +74,7 @@ void Darcy_problem::ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
 // Setup the private BC data structures
 void Darcy_problem::BC_setup (std::vector<flow_bc> & list)
 {
-  Teuchos::RCP<const Mesh_maps_simple> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<Mesh_maps_base> mesh = FS->get_mesh_maps();
   //std::vector<flow_bc> list = bcs.get_BCs();
   int num_bc = list.size();
   bc_.resize(num_bc);
@@ -149,7 +149,7 @@ void Darcy_problem::FBC_final_pass(double f_face[])
 void Darcy_problem::initialize()
 {
   
-  Teuchos::RCP<const Mesh_maps_simple> mesh = FS->get_mesh_maps();
+  Teuchos::RCP<Mesh_maps_base> mesh = FS->get_mesh_maps();
   
   // Compute face areas.  Needed for BC and recovering Darcy velocities.
   int nface_used = mesh->count_entities(Mesh_data::FACE, USED);
@@ -174,13 +174,13 @@ void Darcy_problem::initialize()
 
   // loop over the cells in the mesh
 
-  std::vector<int> cface(6);
+  std::vector<unsigned int> cface(6);
 
-  for (int icell=cell_map.MinLID(); icell < cell_map.MaxLID(); icell++)
+  for (unsigned int icell=cell_map.MinLID(); icell < cell_map.MaxLID(); icell++)
     {
       // get the local face indices of faces connected to the 
       // current cell
-      FS->get_mesh_maps()->cell_to_faces(icell,cface.begin(),cface.end());
+      mesh->cell_to_faces(icell,cface.begin(),cface.end());
       
       // translate to global indices in a data structure that
       // Epetra_FECrsGraph.InsertGlobalIndices will understand

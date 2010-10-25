@@ -34,7 +34,7 @@ private:
   Teuchos::RCP<const Epetra_Vector> water_saturation;
   Teuchos::RCP<const Epetra_Vector> water_density;
   
-  Teuchos::RCP<const Mesh_maps_simple> mesh_maps;
+  Teuchos::RCP<Mesh_maps_base> mesh_maps;
 };
 
 

@@ -2,14 +2,14 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
-#include "Mesh_maps_simple.hh"
+#include "Mesh_maps_base.hh"
 extern "C" {
 #include "gmvwrite.h"
 }
 
 
 State::State( int number_of_components_,
-	      Teuchos::RCP<Mesh_maps_simple> mesh_maps_):
+	      Teuchos::RCP<Mesh_maps_base> mesh_maps_):
   number_of_components(number_of_components_),
   mesh_maps(mesh_maps_)
 {
@@ -49,14 +49,14 @@ void State::write_gmv ( std::string filename )
   
   // first write the node data
   unsigned int num_nodes = mesh_maps->count_entities(Mesh_data::NODE,OWNED);
-  
+
   double *x = new double [num_nodes];
   double *y = new double [num_nodes];
   double *z = new double [num_nodes];
 
-  double xc[3];
-  for (int i=0; i<num_nodes; i++) {
-    mesh_maps->node_to_coordinates(i,xc,xc+3);
+  std::vector<double> xc(3);
+  for (unsigned int i=0; i < num_nodes; i++) {
+    mesh_maps->node_to_coordinates(i,xc.begin(),xc.end());
 
     x[i] = xc[0];
     y[i] = xc[1];
@@ -74,14 +74,18 @@ void State::write_gmv ( std::string filename )
   
   gmvwrite_cell_header(&num_cells);
   
-  int *xh = new int[8]; 
+  std::vector<unsigned int> xh(8); 
+  unsigned int xh_[8];
   for (int i=0; i<num_cells; i++) {
-    mesh_maps->cell_to_nodes(i,xh,xh+8);
-    for (int j=0; j<8; j++) xh[j]++;
+    mesh_maps->cell_to_nodes(i,xh.begin(),xh.end());
+    for (int j=0; j<8; j++) xh_[j] = xh[j]+1;
 
     char cell_type [] = "phex8";
-    gmvwrite_cell_type(cell_type,8,xh);
+    
+    
+    gmvwrite_cell_type(cell_type,8,xh_);
   }
+  
 
   
   // write the side sets, we only support 100 side sets
@@ -113,11 +117,12 @@ void State::write_gmv ( std::string filename )
 	
 	mesh_maps->get_set(*it,Mesh_data::FACE,OWNED,side_set.begin(),side_set.end());
 	
-	unsigned int nodes[4];
+	std::vector<unsigned int> nodes(4);
+	unsigned int nodes_[4];
 	for (vector<unsigned int>::const_iterator sit = side_set.begin(); sit != side_set.end(); sit++) {
-	  mesh_maps->face_to_nodes(*sit,nodes,nodes+4);
-	  for (int j=0; j<4; j++) nodes[j]++;
-	  gmvwrite_surface_data(4,nodes);
+	  mesh_maps->face_to_nodes(*sit,nodes.begin(),nodes.end());
+	  for (int j=0; j<4; j++) nodes_[j] = nodes[j]+1;
+	  gmvwrite_surface_data(4,nodes_);
 	}
       }
       

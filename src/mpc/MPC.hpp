@@ -8,7 +8,7 @@ class MPC {
 
 public:
   MPC (Teuchos::RCP<Teuchos::ParameterList> Parameters_,
-	    Teuchos::RCP<Mesh_maps_simple> mesh_maps_);
+	    Teuchos::RCP<Mesh_maps_base> mesh_maps_);
   ~MPC () {};
 
   void cycle_driver ();
@@ -22,7 +22,7 @@ private:
 
   // misc setup information
   Teuchos::RCP<Teuchos::ParameterList> Parameters;
-  Teuchos::RCP<Mesh_maps_simple> mesh_maps;
+  Teuchos::RCP<Mesh_maps_base> mesh_maps;
 
   // storage for chemistry's return value
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
