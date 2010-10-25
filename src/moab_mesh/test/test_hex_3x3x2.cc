@@ -12,13 +12,10 @@
 
 #include "mpi.h"
 
+using namespace MOAB_mesh;
 
 TEST(MOAB_HEX_3x3x2)
 {
-
-  using namespace std;
-  using namespace MOAB_mesh;
-
 
   int i, j, k, err, nc, nf, nv;
   int faces[6], nodes[8], facedirs[6];
@@ -49,26 +46,26 @@ TEST(MOAB_HEX_3x3x2)
 			 {3,2,8,9,7,6,10,11},
 			 {4,5,6,7,12,13,14,15},
 			 {7,6,10,11,15,14,16,17}};
-  int facenodes[20][4] = {{0,1,5,4},
-			  {1,2,6,5},
-			  {2,3,7,6},
-			  {3,0,4,7},
-			  {0,3,2,1},
-			  {4,5,6,7},
-			  {2,8,10,6},
-			  {8,9,11,10},
+  int facenodes[20][4] = {{3,0,4,7},
 			  {9,3,7,11},
-			  {3,9,8,2},
-			  {7,6,10,11},
-			  {4,5,13,12},
-			  {5,6,14,13},
-			  {6,7,15,14},
 			  {7,4,12,15},
-			  {12,13,14,15},
-			  {6,10,16,14},
-			  {10,11,17,16},
 			  {11,7,15,17},
-			  {15,14,16,17}};
+			  {1,2,6,5},
+			  {2,8,10,6},
+			  {5,6,14,13},
+			  {6,10,16,14},
+			  {0,1,5,4},
+			  {4,5,13,12},
+			  {0,3,2,1},
+			  {3,9,8,2},
+			  {8,9,11,10},
+			  {10,11,17,16},
+			  {12,13,14,15},
+			  {15,14,16,17},
+			  {2,3,7,6},
+			  {4,5,6,7},
+			  {7,6,10,11},
+			  {6,7,15,14}};
 
 
   // Load a single hex from the hex1.exo file
@@ -116,6 +113,41 @@ TEST(MOAB_HEX_3x3x2)
       CHECK_ARRAY_EQUAL(xyz[cellnodes[i][j]],&(ccoords[3*j]),3);
     }
   }
+
+
+  // Verify the sidesets
+
+  int ns;
+  ns = mesh.num_sets(Mesh_data::FACE);
+  CHECK_EQUAL(7,ns);
+
+  int setids[7], expsetids[7]={1,101,102,103,104,105,106};
+  mesh.set_ids(Mesh_data::FACE,setids,setids+7);
+  
+  CHECK_ARRAY_EQUAL(expsetids,setids,7);
+
+  int setsize, expsetsizes[7] = {16,4,4,2,2,2,2};
+  int expsetfaces[7][16] = {{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
+			    {0,1,2,3,0,0,0,0,0,0,0,0,0,0,0,0},
+			    {4,5,6,7,0,0,0,0,0,0,0,0,0,0,0,0},
+			    {8,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+			    {10,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+			    {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+			    {14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+
+
+  for (i = 0; i < ns; i++) {
+    MBEntityHandle setfaces[16];
+
+    setsize = mesh.set_size(setids[i],Mesh_data::FACE,OWNED);
+    CHECK_EQUAL(expsetsizes[i],setsize);
+
+
+    mesh.get_set(setids[i],Mesh_data::FACE, OWNED, setfaces, setfaces+setsize);
+    
+    CHECK_ARRAY_EQUAL(expsetfaces[i],setfaces,setsize);
+  }
+
 
 }
 
