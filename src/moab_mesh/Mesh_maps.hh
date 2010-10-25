@@ -8,6 +8,7 @@
 #include "MBTypes.h"
 #include "MBCore.hpp"
 #include "MBRange.hpp"
+#include "MBTagConventions.hpp"
 #include "MBReadUtilIface.hpp"
 #include "MBParallelConventions.h"
 #include "MBParallelComm.hpp"
@@ -88,6 +89,9 @@ namespace MOAB_mesh
 
     MBTag lid_tag;        // Local ID
     MBTag gid_tag;        // Global ID
+    MBTag mattag;         // Material tag
+    MBTag sstag;          // Sideset tag
+    MBTag nstag;          // Nodeset tag
 
 
     // Local ID to MOAB handle map
@@ -152,16 +156,19 @@ namespace MOAB_mesh
 
     // Entity Sets (cell, side, node)
     // ------------------------------
-    unsigned int num_sets     (int kind) const;
-    bool         valid_set_id (int kind, unsigned int id) const;
-    unsigned int set_size     (unsigned int set_id, int kind, 
+    unsigned int num_sets     () const;
+    unsigned int num_sets     (Mesh_data::Entity_kind kind) const;
+    bool         valid_set_id (Mesh_data::Entity_kind kind, unsigned int id) const;
+    unsigned int set_size     (unsigned int set_id, 
+			       Mesh_data::Entity_kind kind, 
                                Element_Category category) const;
 
     template <typename IT>
-    void set_ids (int kind, IT begin, IT end) const;
+    void set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const;
 
     template <typename IT>
-    void get_set (unsigned int set_id, int kind, Element_Category category,
+    void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+		  Element_Category category,
                   IT begin, IT end) const;
 
   };
@@ -359,6 +366,198 @@ namespace MOAB_mesh
     delete [] coords;
   }
   
+
+
+  // Why does this have to be templated?
+
+  template <typename IT>
+  void Mesh_maps::set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const {
+    int *setids;
+    int i, nsets;
+
+    switch (kind) {
+    case Mesh_data::CELL: {
+      MBRange matsets;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,0,1,matsets);
+
+      nsets = matsets.size();
+      assert ((unsigned int) (end - begin) >= nsets);
+
+      setids = new int[nsets];
+      i = 0;
+      for (MBRange::iterator it = matsets.begin(); it != matsets.end(); ++it) { 
+	MBEntityHandle matset = *it;
+
+	mbcore->tag_get_data(mattag,&matset,1,&(setids[i++]));
+      }
+
+      std::copy (setids, setids + nsets, begin);
+      delete [] setids;
+
+      return;
+      break;
+    }
+
+    case Mesh_data::FACE: {
+      MBRange sidesets;
+      
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,0,1,sidesets);
+
+      nsets = sidesets.size();
+      assert ((unsigned int) (end - begin) >= nsets);
+
+      setids = new int[nsets];
+      i = 0;
+      for (MBRange::iterator it = sidesets.begin(); it != sidesets.end(); ++it) { 
+	MBEntityHandle sideset = *it;
+
+	mbcore->tag_get_data(sstag,&sideset,1,&(setids[i++]));
+      }
+
+      std::copy (setids, setids + nsets, begin);
+      delete [] setids;
+
+      return;
+      break;
+    }
+
+    case Mesh_data::NODE: {
+      MBRange nodesets;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,0,1,nodesets);
+
+      nsets = nodesets.size();
+      assert ((unsigned int) (end - begin) >= nsets);
+
+      setids = new int[nsets];
+      i = 0;
+      for (MBRange::iterator it = nodesets.begin(); it != nodesets.end(); ++it) { 
+	MBEntityHandle nodeset = *it;
+
+	mbcore->tag_get_data(nstag,&nodeset,1,&(setids[i++]));
+      }
+
+      std::copy (setids, setids + nsets, begin);
+      delete [] setids;
+
+      return;
+      break;
+    }
+
+    default:
+      return;
+    }
+    
+  }
+
+  
+  template <typename IT>
+  void Mesh_maps::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+		Element_Category category,
+		IT begin, IT end) const {
+
+    int i;
+    const void *valarr[1] = {&set_id};
+
+    switch (kind) {
+    case Mesh_data::CELL: {
+      MBRange matsets, cellrange;
+      int *cells;
+      int ncells;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,matsets);
+
+      assert(matsets.size() == 1);
+
+      MBEntityHandle matset = *(matsets.begin());
+
+      mbcore->get_entities_by_dimension(matset,celldim,cellrange);
+      ncells = cellrange.size();
+
+      assert ((unsigned int) (end - begin) >= ncells);
+
+      cells = new int[ncells];
+      i = 0;
+      for (MBRange::iterator jt = cellrange.begin(); jt != cellrange.end(); ++jt) {
+	MBEntityHandle ent = *jt;
+
+	mbcore->tag_get_data(lid_tag,&ent,1,&(cells[i++]));
+      }
+
+      std::copy(cells, cells + ncells, begin);
+
+      delete [] cells;
+
+      return;
+      break;
+    }
+    case Mesh_data::FACE: {
+      MBRange sidesets, facerange;
+      int *faces;
+      int nfaces;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,sidesets);
+
+      assert(sidesets.size() == 1);
+
+      MBEntityHandle sideset = *(sidesets.begin());
+
+      mbcore->get_entities_by_dimension(sideset,facedim,facerange);
+      nfaces = facerange.size();
+
+      assert ((unsigned int) (end - begin) >= nfaces);
+
+      faces = new int[nfaces];
+      i = 0;
+      for (MBRange::iterator jt = facerange.begin(); jt != facerange.end(); ++jt) {
+	MBEntityHandle ent = *jt;
+
+	mbcore->tag_get_data(lid_tag,&ent,1,&(faces[i++]));
+      }
+
+      std::copy(faces, faces + nfaces, begin);
+      
+      delete [] faces;
+
+      return;
+      break;
+    }
+    case Mesh_data::NODE: {
+      MBRange nodesets, noderange;
+      int *nodes;
+      int nnodes;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,nodesets);
+      assert(nodesets.size() == 1);
+
+      MBEntityHandle nodeset = *(nodesets.begin());
+
+      mbcore->get_entities_by_dimension(nodeset,0,noderange);
+      nnodes = noderange.size();
+
+      assert ((unsigned int) (end - begin) >= nnodes);
+
+      nodes = new int[nnodes];
+      i = 0;
+      for (MBRange::iterator jt = noderange.begin(); jt != noderange.end(); ++jt) {
+	MBEntityHandle ent = *jt;
+
+	mbcore->tag_get_data(lid_tag,&ent,1,&(nodes[i++]));
+      }
+
+      std::copy(nodes, nodes + nnodes, begin);
+      
+      delete [] nodes;
+
+      return;
+      break;
+    }
+    default:
+      return;
+    }
+    
+  }
 
 
 }
