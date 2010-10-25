@@ -1,4 +1,4 @@
-# Install script for directory: /home/rao/develop/ASCEM/amanzi/src/moab_mesh
+# Install script for directory: /home/berndt/ASCEM-Code/amanzi/src/moab_mesh
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)

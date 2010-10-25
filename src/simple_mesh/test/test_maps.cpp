@@ -26,10 +26,10 @@ TEST(MAPS) {
   cout << "number of nodes = " << Mm.count_entities(Mesh_data::NODE,OWNED) << endl;
 
   vector<double> x(24);
-  vector<int> nodes(8);
-  vector<int> faces(6);
+  vector<unsigned int> nodes(8);
+  vector<unsigned int> faces(6);
   
-  for (int i=0; i<Mm.count_entities(Mesh_data::CELL,OWNED); i++)
+  for (unsigned int i=0; i<Mm.count_entities(Mesh_data::CELL,OWNED); i++)
     {
       Mm.cell_to_nodes(i, nodes.begin(), nodes.end());
       
@@ -61,7 +61,7 @@ TEST(MAPS) {
 
     }
   
-  vector<int> ss;
+  vector<unsigned int> ss;
   
   for (int is=0; is<Mm.num_sets(Mesh_data::FACE); is++)  {
     ss.resize(Mm.get_set_size(is,Mesh_data::FACE,OWNED));

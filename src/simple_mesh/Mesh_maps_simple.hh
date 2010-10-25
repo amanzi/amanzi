@@ -10,17 +10,10 @@
 #include <memory>
 #include <vector>
 
-
-enum Element_Category
-{
-    OWNED = 1,
-    GHOST = 2,
-    USED  = 3
-};
+#include "Mesh_maps_base.hh"
 
 
-
-class Mesh_maps_simple
+class Mesh_maps_simple : public virtual Mesh_maps_base
 {
 
 public:
@@ -34,31 +27,59 @@ public:
   // Local id interfaces.
   // --------------------
   
-  template <typename IT>
-  void cell_to_faces (unsigned int cell, IT begin, IT end) const;
+  void cell_to_faces (unsigned int cell, 
+		      std::vector<unsigned int>::iterator begin, 
+		      std::vector<unsigned int>::iterator end);
+  void cell_to_faces (unsigned int cell, 
+		      unsigned int * begin, unsigned int * end);
 
-  template <typename IT>
-  void cell_to_nodes (unsigned int cell, IT begin, IT end) const;
+
+  void cell_to_nodes (unsigned int cell, 
+		      std::vector<unsigned int>::iterator begin, 
+		      std::vector<unsigned int>::iterator end);
+  void cell_to_nodes (unsigned int cell, 
+		      unsigned int * begin, unsigned int * end);
+
+
+  void face_to_nodes (unsigned int face,
+		      std::vector<unsigned int>::iterator begin, 
+		      std::vector<unsigned int>::iterator end);
+  void face_to_nodes (unsigned int face,
+		      unsigned int * begin, unsigned int * end);
   
-  template <typename IT>
-  void face_to_nodes (unsigned int face, IT begin, IT end) const;
+
+  void node_to_coordinates (unsigned int node, 
+			    std::vector<double>::iterator begin,
+			    std::vector<double>::iterator end);
+  void node_to_coordinates (unsigned int node, 
+			    double * begin,
+			    double * end);
   
-  template <typename IT>
-  void node_to_coordinates (unsigned int node, IT begin, IT end) const;
+  void face_to_coordinates (unsigned int face,
+			    std::vector<double>::iterator begin, 
+			    std::vector<double>::iterator end);
+  void face_to_coordinates (unsigned int face,
+			    double * begin, 
+			    double * end);
   
-  template <typename IT>
-  void face_to_coordinates (unsigned int face, IT begin, IT end) const;
-  
-  template <typename IT>
-  void cell_to_coordinates (unsigned int cell, IT begin, IT end) const;
+  void cell_to_coordinates (unsigned int cell, 
+			    std::vector<double>::iterator begin,
+			    std::vector<double>::iterator end);
+  void cell_to_coordinates (unsigned int cell, 
+			    double * begin,
+			    double * end);
   
   inline const Epetra_Map& cell_map (bool include_ghost) const;
+
   inline const Epetra_Map& face_map (bool include_ghost) const;
+
   inline const Epetra_Map& node_map (bool include_ghost) const;
   
-  unsigned int count_entities (Mesh_data::Entity_kind kind, Element_Category category) const;
+  unsigned int count_entities (Mesh_data::Entity_kind kind,
+			       Element_Category category) const;
 
   unsigned int num_sets(Mesh_data::Entity_kind kind) const;
+  
   unsigned int get_set_size (unsigned int set_id, 
 			     Mesh_data::Entity_kind kind,
 			     Element_Category category) const;
@@ -69,20 +90,25 @@ public:
   
 
   // Id numbers
-  template <typename IT>
-  void get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const;
+  void get_set_ids (Mesh_data::Entity_kind kind, 
+		    std::vector<unsigned int>::iterator begin, 
+		    std::vector<unsigned int>::iterator end) const;
+  void get_set_ids (Mesh_data::Entity_kind kind, 
+		    unsigned int * begin, 
+		    unsigned int * end) const;
  
   bool valid_set_id (unsigned int id, Mesh_data::Entity_kind kind) const;
 
-  template <typename IT>
   void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
-		Element_Category category, IT begin, IT end) const;
+		Element_Category category,
+		std::vector<unsigned int>::iterator begin,
+		std::vector<unsigned int>::iterator end) const;
+  void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+		Element_Category category,
+		unsigned int * begin,
+		unsigned int * end) const;
   
 
-  template <typename IT>
-  void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
-		IT begin, IT end) const;
-  
 private:
   void update_internals_();
   void clear_internals_();
@@ -167,138 +193,6 @@ unsigned int Mesh_maps_simple::yzface_index_(int i, int j, int k)
 }
 
 
-
-
-template <typename IT>
-void Mesh_maps_simple::cell_to_faces (unsigned int cell, IT destination_begin, IT destination_end) const
-{
-  // ASSERT ((unsigned int) (destination_end - destination_begin) == 6);
-    const unsigned int index = 6*cell;
-    std::vector<unsigned int>::const_iterator begin = cell_to_face_.begin () + index;
-    std::vector<unsigned int>::const_iterator end = begin + 6;
-    std::copy (begin, end, destination_begin);
-}
-
-
-template <typename IT>
-void Mesh_maps_simple::cell_to_nodes (unsigned int cell, IT destination_begin, IT destination_end) const
-{
-  // ASSERT ((unsigned int) (destination_end - destination_begin) == 8);
-    const unsigned int index = 8*cell;
-    std::vector<unsigned int>::const_iterator begin = cell_to_node_.begin () + index;
-    std::vector<unsigned int>::const_iterator end   = begin + 8;
-    std::copy (begin, end, destination_begin);
-}
-
-
-template <typename IT>
-void Mesh_maps_simple::face_to_nodes (unsigned int face, IT destination_begin, IT destination_end) const
-{
-  // ASSERT ((unsigned int) (destination_end - destination_begin) == 4);
-    const unsigned int index = 4*face;
-    std::vector<unsigned int>::const_iterator begin = face_to_node_.begin () + index;
-    std::vector<unsigned int>::const_iterator end   = begin + 4;
-    std::copy (begin, end, destination_begin);
-}
-
-
-// Cooordinate Getters
-// -------------------
-
-template <typename IT>
-void Mesh_maps_simple::node_to_coordinates (unsigned int local_node_id, IT destination_begin, IT destination_end) const
-{
-  //  ASSERT ((unsigned int) (end-begin) == 3);
-  const unsigned int index = 3*local_node_id;
-  std::vector<double>::const_iterator begin = coordinates_.begin() + index;
-  std::vector<double>::const_iterator end   = begin + 3;
-  std::copy (begin, end, destination_begin);
-}
-
-
-template <typename IT>
-void Mesh_maps_simple::face_to_coordinates (unsigned int local_face_id, IT begin, IT end) const
-{
-  // ASSERT ((unsigned int) (end-begin) == 12);
-
-    unsigned int node_indices [4];
-    face_to_nodes (local_face_id, node_indices, node_indices+4);
-    for (int i = 0; i < 4; ++i)
-    {
-        node_to_coordinates (node_indices [i], begin, begin+3);
-        begin+=3;
-    }
-
-
-}
-
-template <typename IT>
-void Mesh_maps_simple::cell_to_coordinates (unsigned int local_cell_id, IT begin, IT end) const
-{
-  // ASSERT ((unsigned int) (end-begin) == 24);
-
-    unsigned int node_indices [8];
-    cell_to_nodes (local_cell_id, node_indices, node_indices+8);
-    for (int i = 0; i < 8; ++i)
-    {
-        node_to_coordinates (node_indices [i], begin, begin+3);
-        begin+=3;
-    }
-
-}
-
-
-
-// Set getters
-// -----------
-
-template <typename IT>
-void Mesh_maps_simple::get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const
-{
-  
-  std::vector<unsigned int> ids(0);
-
-  switch (kind) {
-  case Mesh_data::FACE: 
-    {
-      ids.resize(6);
-      for (int i=0; i<6; i++) ids[i]=i;
-      
-      std::copy (ids.begin(), ids.end(), begin);
-      break;
-    }
-  case Mesh_data::CELL:
-    {
-      ids.resize(1);
-      ids[0] = 0;
-      
-      std::copy (ids.begin(), ids.end(), begin);
-      break;
-    }      
-  default:
-    // we do not have anything for CELL and NODE, yet
-    throw std::exception();
-  }
-}
-
-template <typename IT>
-void Mesh_maps_simple::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
-				Element_Category category, IT begin, IT end) const
-{
-  // we ignore category since this is a serial implementation
-  
-  switch (kind) {
-  case Mesh_data::FACE:
-    std::copy(side_sets_[set_id].begin(), side_sets_[set_id].end(), begin) ;
-    break;
-  case Mesh_data::CELL:
-    std::copy(element_blocks_[set_id].begin(), element_blocks_[set_id].end(), begin) ;
-    
-  default:
-    // we do not have anything for CELL and NODE, yet
-    throw std::exception();
-  }
-}
 
 
 

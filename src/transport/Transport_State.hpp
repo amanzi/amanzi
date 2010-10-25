@@ -5,7 +5,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_maps_base.hh"
 
 
 using namespace Teuchos;
@@ -48,7 +48,7 @@ private:
   RCP<const Epetra_Vector>  porosity;
 
   /* mesh infranstructure */
-  RCP<const Mesh_maps_simple> mesh_maps;
+  RCP<Mesh_maps_base> mesh_maps;
 };
 
 

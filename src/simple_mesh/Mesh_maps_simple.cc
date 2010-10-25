@@ -301,3 +301,301 @@ unsigned int Mesh_maps_simple::get_set_size (unsigned int set_id,
     break;
   }
 }
+
+
+void Mesh_maps_simple::cell_to_faces (unsigned int cell, 
+				      std::vector<unsigned int>::iterator destination_begin, 
+				      std::vector<unsigned int>::iterator destination_end)
+{
+  // ASSERT ((unsigned int) (destination_end - destination_begin) == 6);
+    const unsigned int index = 6*cell;
+    std::vector<unsigned int>::iterator begin = cell_to_face_.begin() + index;
+    std::vector<unsigned int>::iterator end = begin + 6;
+    std::copy (begin, end, destination_begin);
+}
+
+
+void Mesh_maps_simple::cell_to_faces (unsigned int cell, 
+				      unsigned int * destination_begin, 
+				      unsigned int * destination_end)
+{
+  // ASSERT ((unsigned int) (destination_end - destination_begin) == 6);
+    const unsigned int index = 6*cell;
+    std::vector<unsigned int>::iterator begin = cell_to_face_.begin() + index;
+    std::vector<unsigned int>::iterator end = begin + 6;
+    std::copy (begin, end, destination_begin);
+}
+
+
+void Mesh_maps_simple::cell_to_nodes (unsigned int cell, 
+				      std::vector<unsigned int>::iterator destination_begin, 
+				      std::vector<unsigned int>::iterator destination_end) 
+{
+  // ASSERT ((unsigned int) (destination_end - destination_begin) == 8);
+    const unsigned int index = 8*cell;
+    std::vector<unsigned int>::iterator begin = cell_to_node_.begin () + index;
+    std::vector<unsigned int>::iterator end   = begin + 8;
+    std::copy (begin, end, destination_begin);
+}
+
+void Mesh_maps_simple::cell_to_nodes (unsigned int cell, 
+				      unsigned int * destination_begin, 
+				      unsigned int * destination_end) 
+{
+  // ASSERT ((unsigned int) (destination_end - destination_begin) == 8);
+    const unsigned int index = 8*cell;
+    std::vector<unsigned int>::iterator begin = cell_to_node_.begin () + index;
+    std::vector<unsigned int>::iterator end   = begin + 8;
+    std::copy (begin, end, destination_begin);
+}
+
+
+void Mesh_maps_simple::face_to_nodes (unsigned int face, 
+				      std::vector<unsigned int>::iterator destination_begin,
+				      std::vector<unsigned int>::iterator destination_end) 
+{
+  // ASSERT ((unsigned int) (destination_end - destination_begin) == 4);
+    const unsigned int index = 4*face;
+    std::vector<unsigned int>::iterator begin = face_to_node_.begin () + index;
+    std::vector<unsigned int>::iterator end   = begin + 4;
+    
+    for (std::vector<unsigned int>::iterator it=begin; it !=end; it++) {
+      *destination_begin = *it;
+      destination_begin++;
+    }
+
+      //std::copy (begin, end, destination_begin);
+}
+
+void Mesh_maps_simple::face_to_nodes (unsigned int face, 
+				      unsigned int * destination_begin,
+				      unsigned int * destination_end) 
+{
+  // ASSERT ((unsigned int) (destination_end - destination_begin) == 4);
+    const unsigned int index = 4*face;
+    std::vector<unsigned int>::iterator begin = face_to_node_.begin () + index;
+    std::vector<unsigned int>::iterator end   = begin + 4;
+    
+    for (std::vector<unsigned int>::iterator it=begin; it !=end; it++) {
+      *destination_begin = *it;
+      destination_begin++;
+    }
+
+      //std::copy (begin, end, destination_begin);
+}
+
+
+// Cooordinate Getters
+// -------------------
+
+void Mesh_maps_simple::node_to_coordinates (unsigned int local_node_id, 
+					    std::vector<double>::iterator destination_begin, 
+					    std::vector<double>::iterator destination_end) 
+{
+  //  ASSERT ((unsigned int) (end-begin) == 3);
+  const unsigned int index = 3*local_node_id;
+  std::vector<double>::iterator begin = coordinates_.begin() + index;
+  std::vector<double>::iterator end   = begin + 3;
+  std::copy (begin, end, destination_begin);
+}
+void Mesh_maps_simple::node_to_coordinates (unsigned int local_node_id, 
+					    double * destination_begin, 
+					    double * destination_end) 
+{
+  //  ASSERT ((unsigned int) (end-begin) == 3);
+  const unsigned int index = 3*local_node_id;
+  std::vector<double>::iterator begin = coordinates_.begin() + index;
+  std::vector<double>::iterator end   = begin + 3;
+  std::copy (begin, end, destination_begin);
+}
+
+
+void Mesh_maps_simple::face_to_coordinates (unsigned int local_face_id, 
+					    std::vector<double>::iterator begin, 
+					    std::vector<double>::iterator end)
+{
+  // ASSERT ((unsigned int) (end-begin) == 12);
+
+  std::vector<unsigned int> node_indices(4);
+  face_to_nodes (local_face_id, node_indices.begin(), node_indices.end());
+  for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
+       it != node_indices.end(); ++it)
+    {
+      node_to_coordinates ( *it, begin, begin+3);
+      begin+=3;
+     }
+
+
+}
+void Mesh_maps_simple::face_to_coordinates (unsigned int local_face_id, 
+					    double * begin, 
+					    double * end)
+{
+  // ASSERT ((unsigned int) (end-begin) == 12);
+
+  std::vector<unsigned int> node_indices(4);
+  face_to_nodes (local_face_id, node_indices.begin(), node_indices.end());
+  for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
+       it != node_indices.end(); ++it)
+    {
+      node_to_coordinates ( *it, begin, begin+3);
+      begin+=3;
+     }
+
+
+}
+void Mesh_maps_simple::cell_to_coordinates (unsigned int local_cell_id, 
+					    std::vector<double>::iterator begin, 
+					    std::vector<double>::iterator end)
+{
+  // ASSERT ((unsigned int) (end-begin) == 24);
+  
+  std::vector<unsigned int> node_indices(8);
+  cell_to_nodes (local_cell_id, node_indices.begin(), node_indices.end());
+  for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
+       it != node_indices.end(); ++it)
+    {
+        node_to_coordinates ( *it, begin, begin+3);
+        begin+=3;
+    }
+
+}
+
+void Mesh_maps_simple::cell_to_coordinates (unsigned int local_cell_id, 
+					    double * begin, 
+					    double * end)
+{
+  // ASSERT ((unsigned int) (end-begin) == 24);
+  
+  std::vector<unsigned int> node_indices(8);
+  cell_to_nodes (local_cell_id, node_indices.begin(), node_indices.end());
+  for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
+       it != node_indices.end(); ++it)
+    {
+        node_to_coordinates ( *it, begin, begin+3);
+        begin+=3;
+    }
+
+}
+
+
+
+// Set getters
+// -----------
+
+void Mesh_maps_simple::get_set_ids (Mesh_data::Entity_kind kind, 
+				    std::vector<unsigned int>::iterator begin, 
+				    std::vector<unsigned int>::iterator end) const
+{
+  
+  std::vector<int> ids(0);
+
+  switch (kind) {
+  case Mesh_data::FACE: 
+    {
+      ids.resize(6);
+      for (int i=0; i<6; i++) ids[i]=i;
+      
+      std::copy (ids.begin(), ids.end(), begin);
+      break;
+    }
+  case Mesh_data::CELL:
+    {
+      ids.resize(1);
+      ids[0] = 0;
+      
+      std::copy (ids.begin(), ids.end(), begin);
+      break;
+    }      
+  default:
+    // we do not have anything for CELL and NODE, yet
+    throw std::exception();
+  }
+}
+
+void Mesh_maps_simple::get_set_ids (Mesh_data::Entity_kind kind, 
+				    unsigned int * begin, 
+				    unsigned int * end) const
+{
+  
+  std::vector<int> ids(0);
+
+  switch (kind) {
+  case Mesh_data::FACE: 
+    {
+      ids.resize(6);
+      for (int i=0; i<6; i++) ids[i]=i;
+      
+      std::copy (ids.begin(), ids.end(), begin);
+      break;
+    }
+  case Mesh_data::CELL:
+    {
+      ids.resize(1);
+      ids[0] = 0;
+      
+      std::copy (ids.begin(), ids.end(), begin);
+      break;
+    }      
+  default:
+    // we do not have anything for CELL and NODE, yet
+    throw std::exception();
+  }
+}
+
+void Mesh_maps_simple::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+				Element_Category category, 
+				std::vector<unsigned int>::iterator begin, 
+				std::vector<unsigned int>::iterator end) const
+{
+  // we ignore category since this is a serial implementation
+  
+  switch (kind) {
+  case Mesh_data::FACE:
+    std::copy(side_sets_[set_id].begin(), side_sets_[set_id].end(), begin) ;
+    break;
+  case Mesh_data::CELL:
+    std::copy(element_blocks_[set_id].begin(), element_blocks_[set_id].end(), begin) ;
+    break;
+  default:
+    // we do not have anything for CELL and NODE, yet
+    throw std::exception();
+  }
+}
+void Mesh_maps_simple::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+				Element_Category category, 
+				unsigned int * begin, 
+				unsigned int * end) const
+{
+  // we ignore category since this is a serial implementation
+  
+  switch (kind) {
+  case Mesh_data::FACE:
+    std::copy(side_sets_[set_id].begin(), side_sets_[set_id].end(), begin) ;
+    break;
+  case Mesh_data::CELL:
+    std::copy(element_blocks_[set_id].begin(), element_blocks_[set_id].end(), begin) ;
+    break;
+  default:
+    // we do not have anything for CELL and NODE, yet
+    throw std::exception();
+  }
+}
+
+
+bool Mesh_maps_simple::valid_set_id (unsigned int id, Mesh_data::Entity_kind kind) const 
+{
+  switch (kind) {
+  case Mesh_data::FACE:
+    return (id<6) ;
+    break;
+  case Mesh_data::CELL:
+    return (id == 0);
+    break;
+  default:
+    // we do not have anything for CELL and NODE, yet
+    throw std::exception();  
+  }
+    
+}
+
