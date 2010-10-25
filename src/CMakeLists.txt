@@ -211,7 +211,7 @@ set(EXODUS_LIBS_ALL exodusii netcdf curl)
 ##############################################################################
 
 #set (MOAB_DIR "${HOME}/packages/MOAB")
-#set (MOAB_LIB_DIR ${MOAB_DIR}/lib)
+set (MOAB_LIB_DIR ${MOAB_DIR}/lib)
 find_library(MOAB_LIBRARY MOAB
              /usr/lib
              /usr/local/lib
