@@ -277,7 +277,25 @@ namespace MOAB_mesh
     // Create maps from IDs to MOAB entity handles
 
     init_id_handle_maps();
-  
+
+
+    // Get material, sideset and nodeset tags
+
+    result = mbcore->tag_get_handle(MATERIAL_SET_TAG_NAME,mattag);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Could not get tag for material sets" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+    mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME,sstag);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Could not get tag for side sets" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+    mbcore->tag_get_handle(DIRICHLET_SET_TAG_NAME,nstag);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Could not get tag for node sets" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
 
   }
 
@@ -629,6 +647,117 @@ namespace MOAB_mesh
     return *map;
   }
 
+
+  unsigned int Mesh_maps::num_sets() const {
+    int ns,n;
+    
+    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&mattag,0,1,n);
+    ns = n;
+    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&sstag,0,1,n);
+    ns += n;
+    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&nstag,0,1,n);
+    ns += n;
+    
+    return ns;
+  }
+
+  unsigned int Mesh_maps::num_sets(Mesh_data::Entity_kind kind) const {
+    int n;
+    
+    switch (kind) {
+    case Mesh_data::CELL:
+      mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&mattag,0,1,n);
+      return n;
+    case Mesh_data::FACE:
+      mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&sstag,0,1,n);
+      return n;
+    case Mesh_data::NODE:
+      mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&nstag,0,1,n);
+      return n;
+    default:
+      return 0;
+    }
+  }
+
+  bool Mesh_maps::valid_set_id (Mesh_data::Entity_kind kind, unsigned int id) const {
+    int n;
+    const int lid = id;
+    const void* valarr[1] = {&lid};
+
+    valarr[0] = (void *) id;
+
+    switch (kind) {
+    case Mesh_data::CELL:
+      mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,n);
+      return (n > 0);
+    case Mesh_data::FACE:
+      mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,n);
+      return (n > 0);
+    case Mesh_data::NODE:
+      mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,n);
+      return (n > 0);
+    default:
+      return 0;
+    }    
+  }
+
+  unsigned int Mesh_maps::set_size(unsigned int set_id, 
+			Mesh_data::Entity_kind kind, 
+			Element_Category category) const {   
+
+    const int loc_setid = set_id;
+    const void* valarr[1];
+    valarr[0] =  &loc_setid;
+
+    switch (kind) {
+    case Mesh_data::CELL: {
+      MBRange matsets;
+      int ncells;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,matsets);
+
+      assert(matsets.size() == 1);
+
+      MBEntityHandle matset = *(matsets.begin());
+
+      mbcore->get_number_entities_by_dimension(matset,celldim,ncells);
+      return ncells;
+      break;
+    }
+
+    case Mesh_data::FACE: {
+      MBRange sidesets;
+      int nfaces;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,sidesets);
+      assert(sidesets.size() == 1);
+
+      MBEntityHandle sideset = *(sidesets.begin());
+
+      mbcore->get_number_entities_by_dimension(sideset,facedim,nfaces);
+      return nfaces;
+      break;
+    }
+
+    case Mesh_data::NODE: {
+      MBRange nodesets;
+      int nnodes;
+
+      mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,nodesets);
+      assert(nodesets.size() == 1);
+
+      MBEntityHandle nodeset = *(nodesets.begin());
+
+      mbcore->get_number_entities_by_dimension(nodeset,0,nnodes);
+      return nnodes;
+      break;
+    }
+
+    default:
+      return 0;
+    }
+    
+  }
   
 }
 
