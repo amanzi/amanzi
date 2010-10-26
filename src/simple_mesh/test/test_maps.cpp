@@ -28,6 +28,7 @@ TEST(MAPS) {
   vector<double> x(24);
   vector<unsigned int> nodes(8);
   vector<unsigned int> faces(6);
+  vector<int> face_dirs(6);
   
   for (unsigned int i=0; i<Mm.count_entities(Mesh_data::CELL,OWNED); i++)
     {
@@ -53,6 +54,14 @@ TEST(MAPS) {
 	
 	cout << endl;
       }
+
+      Mm.cell_to_face_dirs(i, face_dirs.begin(), face_dirs.end());
+      for (int j=0; j<6; j++) {
+
+	cout << face_dirs[j] << " ";
+      }
+      cout << endl << endl;
+
 
       Mm.cell_to_coordinates(i, x.begin(), x.begin()+24);
       for (int j=0; j<8; j++)

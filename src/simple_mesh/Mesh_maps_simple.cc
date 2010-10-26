@@ -89,6 +89,7 @@ Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
 	 }
 
    cell_to_face_.resize(6*num_cells_);
+   cell_to_face_dirs_.resize(6*num_cells_);
    cell_to_node_.resize(8*num_cells_);
    face_to_node_.resize(4*num_faces_);
 
@@ -123,6 +124,14 @@ Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
    	   cell_to_face_[istart+3]  = yzface_index_(ix,iy,iz);
    	   cell_to_face_[istart+4]  = xyface_index_(ix,iy,iz);
    	   cell_to_face_[istart+5]  = xyface_index_(ix,iy,iz+1);
+
+	   cell_to_face_dirs_[istart]   = -1;
+	   cell_to_face_dirs_[istart+1] = 1;
+	   cell_to_face_dirs_[istart+2] = 1;
+	   cell_to_face_dirs_[istart+3] = -1;
+	   cell_to_face_dirs_[istart+4] = -1;
+	   cell_to_face_dirs_[istart+5] = 1;
+	   
    	 }
 
 
@@ -164,38 +173,38 @@ Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
    	   face_to_node_[istart+3] = node_index_(ix,iy,iz+1);
    	 }
 
-   // now we need to fix the orientation of boundary xy faces for iz=0 
-   for (int iy=0; iy<ny_; iy++)
-     for (int ix=0; ix<nx_; ix++)
-       {
-   	 int istart = 4 * xyface_index_(ix,iy,0);
+   // // now we need to fix the orientation of boundary xy faces for iz=0 
+   // for (int iy=0; iy<ny_; iy++)
+   //   for (int ix=0; ix<nx_; ix++)
+   //     {
+   // 	 int istart = 4 * xyface_index_(ix,iy,0);
 
-   	 double dummy = face_to_node_[istart];
-   	 face_to_node_[istart] = face_to_node_[istart+2];
-   	 face_to_node_[istart+2] = dummy;
-       }
+   // 	 double dummy = face_to_node_[istart];
+   // 	 face_to_node_[istart] = face_to_node_[istart+2];
+   // 	 face_to_node_[istart+2] = dummy;
+   //     }
 
-   // now we need to fix the orientation of boundary xz faces for iy=0 
-   for (int iz=0; iz<nz_; iz++)
-     for (int ix=0; ix<nx_; ix++)
-       {
-   	 int istart = 4 * xzface_index_(ix,0,iz);
+   // // now we need to fix the orientation of boundary xz faces for iy=0 
+   // for (int iz=0; iz<nz_; iz++)
+   //   for (int ix=0; ix<nx_; ix++)
+   //     {
+   // 	 int istart = 4 * xzface_index_(ix,0,iz);
 
-   	 double dummy = face_to_node_[istart];
-   	 face_to_node_[istart] = face_to_node_[istart+2];
-   	 face_to_node_[istart+2] = dummy;
-       }
+   // 	 double dummy = face_to_node_[istart];
+   // 	 face_to_node_[istart] = face_to_node_[istart+2];
+   // 	 face_to_node_[istart+2] = dummy;
+   //     }
 
-   // now we need to fix the orientation of boundary yz faces for ix=0 
-   for (int iz=0; iz<nz_; iz++)
-     for (int iy=0; iy<ny_; iy++)
-       {
-   	 int istart = 4 * yzface_index_(0,iy,iz);
+   // // now we need to fix the orientation of boundary yz faces for ix=0 
+   // for (int iz=0; iz<nz_; iz++)
+   //   for (int iy=0; iy<ny_; iy++)
+   //     {
+   // 	 int istart = 4 * yzface_index_(0,iy,iz);
 
-   	 double dummy = face_to_node_[istart];
-   	 face_to_node_[istart] = face_to_node_[istart+2];
-   	 face_to_node_[istart+2] = dummy;
-       }
+   // 	 double dummy = face_to_node_[istart];
+   // 	 face_to_node_[istart] = face_to_node_[istart+2];
+   // 	 face_to_node_[istart+2] = dummy;
+   //     }
 
 
    // we only have 6 side sets
@@ -626,3 +635,22 @@ bool Mesh_maps_simple::valid_set_id (unsigned int id, Mesh_data::Entity_kind kin
     
 }
 
+void Mesh_maps_simple::cell_to_face_dirs (unsigned int cell, 
+					  std::vector<int>::iterator destination_begin, 
+					  std::vector<int>::iterator destination_end)
+{
+  const unsigned int index = 6*cell;
+  std::vector<int>::iterator begin = cell_to_face_dirs_.begin() + index;
+  std::vector<int>::iterator end = begin + 6;
+  std::copy (begin, end, destination_begin);  
+}
+
+
+void Mesh_maps_simple::cell_to_face_dirs (unsigned int cell, 
+					  int * destination_begin, int * destination_end)
+{
+  const unsigned int index = 6*cell;
+  std::vector<int>::iterator begin = cell_to_face_dirs_.begin() + index;
+  std::vector<int>::iterator end = begin + 6;
+  std::copy (begin, end, destination_begin);  
+}

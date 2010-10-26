@@ -36,7 +36,15 @@ public:
 		      unsigned int* begin, unsigned int *end) {};
 
 
-
+  virtual
+  void cell_to_face_dirs (unsigned int cell, 
+			  std::vector<int>::iterator begin, 
+			  std::vector<int>::iterator end) {};
+  virtual
+  void cell_to_face_dirs (unsigned int cell, 
+			  int * begin, int * end) {};
+  
+    
 
   virtual
   void cell_to_nodes (unsigned int cell, 

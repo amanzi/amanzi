@@ -38,6 +38,11 @@ public:
   void cell_to_faces (unsigned int cell, 
 		      unsigned int * begin, unsigned int * end);
 
+  void cell_to_face_dirs (unsigned int cell, 
+			  std::vector<int>::iterator begin, 
+			  std::vector<int>::iterator end);
+  void cell_to_face_dirs (unsigned int cell, 
+			  int * begin, int * end);
 
   void cell_to_nodes (unsigned int cell, 
 		      std::vector<unsigned int>::iterator begin, 
@@ -140,6 +145,7 @@ private:
 
   // Local-id tables of entities
   std::vector<unsigned int> cell_to_face_;
+  std::vector<int> cell_to_face_dirs_;
   std::vector<unsigned int> cell_to_node_;
   std::vector<unsigned int> face_to_node_;
   
