@@ -53,7 +53,7 @@ Transport_PK::Transport_PK ( RCP<Transport_State> TS_MPC )
 /* this is part of the future geometry package */
 void Transport_PK::geometry_package()
 {
-  RCP<Mesh_maps_simple> mesh = TS->get_mesh_maps();
+  RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
 
 
   /* loop over faces and calculate areas */

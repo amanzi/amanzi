@@ -255,7 +255,8 @@ else()
     message(FATAL_ERROR "Error: could not find unittest++ library")
   endif()
   
-  find_path(UNITTEST_INCLUDES "UnitTest++.h" "${UnitTest_DIR}/include")
+  find_path(UNITTEST_INCLUDES "UnitTest++.h" "${UnitTest_DIR}/include" 
+                                             "${UnitTest_DIR}/include/unittest++")
   if (NOT UNITTEST_INCLUDES)
     message(FATAL_ERROR "Error: could not find UnitTest++ includes")
   else()

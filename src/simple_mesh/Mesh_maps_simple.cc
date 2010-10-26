@@ -17,6 +17,33 @@ Mesh_maps_simple::Mesh_maps_simple (double x0, double y0, double z0,
   update();
 }
 
+Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
+				     Epetra_Comm *communicator ) :
+  communicator_(communicator)
+{
+
+  // read the parameters from the parameter list
+
+  nx_ = parameter_list.get<int>("Numer of Cells in X");
+  ny_ = parameter_list.get<int>("Numer of Cells in Y");
+  nz_ = parameter_list.get<int>("Numer of Cells in Z");
+  
+  x0_ = parameter_list.get<double>("X_Min");
+  x1_ = parameter_list.get<double>("X_Max");
+
+  y0_ = parameter_list.get<double>("Y_Min");
+  y1_ = parameter_list.get<double>("Y_Max");
+
+  z0_ = parameter_list.get<double>("Z_Min");
+  z1_ = parameter_list.get<double>("Z_Max");
+
+  update();
+}
+
+
+
+
+
 
  void Mesh_maps_simple::update ()
  {

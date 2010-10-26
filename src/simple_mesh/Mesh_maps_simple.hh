@@ -10,6 +10,7 @@
 #include <memory>
 #include <vector>
 
+#include "Teuchos_ParameterList.hpp"
 #include "Mesh_maps_base.hh"
 
 
@@ -22,6 +23,10 @@ public:
 		    double x1, double y1, double z1,
 		    int nx, int ny, int nz, Epetra_Comm *communicator);
   
+  Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
+		     Epetra_Comm *communicator );
+
+
   void update ();
   
   // Local id interfaces.

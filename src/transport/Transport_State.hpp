@@ -5,7 +5,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "simple_mesh/Mesh_maps_simple.hh"
+#include "simple_mesh/Mesh_maps_base.hh"
 
 
 /* 
@@ -34,7 +34,7 @@ public:
   RCP<const Epetra_Vector>  get_water_saturation ()             const { return water_saturation; }
   RCP<const Epetra_Vector>  get_darcy_flux ()                   const { return darcy_flux; }
   
-  RCP<Mesh_maps_simple> get_mesh_maps()                   const { return mesh_maps; }
+  RCP<Mesh_maps_base> get_mesh_maps()                   const { return mesh_maps; }
 
 
 private:
@@ -45,7 +45,7 @@ private:
   RCP<const Epetra_Vector>  porosity;
 
   /* mesh infranstructure */
-  RCP<Mesh_maps_simple> mesh_maps;
+  RCP<Mesh_maps_base> mesh_maps;
 };
 
 

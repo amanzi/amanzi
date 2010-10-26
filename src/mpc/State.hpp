@@ -2,10 +2,11 @@
 #define __State_hpp__
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
-#include "../simple_mesh/Mesh_maps_simple.hh"
+#include "../simple_mesh/Mesh_maps_base.hh"
 
 
 typedef enum { COMPLETE, UPDATING } status_type;
@@ -15,7 +16,11 @@ class State {
 
 public:
 
-  State( int, Teuchos::RCP<Mesh_maps_simple> );
+  State( int, Teuchos::RCP<Mesh_maps_base> );
+
+  State( Teuchos::ParameterList &parameter_list, 
+	 Teuchos::RCP<Mesh_maps_base> );
+
   ~State() {};
 
   // access methods
@@ -28,7 +33,7 @@ public:
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration () 
   { return total_component_concentration; };
   
-  const Teuchos::RCP<Mesh_maps_simple> get_mesh_maps() const { return mesh_maps; };
+  const Teuchos::RCP<Mesh_maps_base> get_mesh_maps() const { return mesh_maps; };
 
   const double get_time () const { return time; };
 
@@ -45,6 +50,9 @@ public:
   void write_gmv ( std::string filename );
       
 private:
+  void create_storage();
+  
+
   // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  
   Teuchos::RCP<Epetra_Vector> pressure;
@@ -59,7 +67,7 @@ private:
   status_type status;
 
   // mesh
-  const Teuchos::RCP<Mesh_maps_simple> mesh_maps;
+  const Teuchos::RCP<Mesh_maps_base> mesh_maps;
 }; 
 
 

@@ -9,7 +9,7 @@
 
 
 MPC::MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
-		   Teuchos::RCP<Mesh_maps_simple> mesh_maps_):
+		   Teuchos::RCP<Mesh_maps_base> mesh_maps_):
   Parameters(Parameters_),
   mesh_maps(mesh_maps_)
   
