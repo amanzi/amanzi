@@ -2,8 +2,10 @@
 #include "Epetra_MultiVector.h"
 
 
-Chemistry_PK::Chemistry_PK( Teuchos::RCP<Chemistry_State> CS_):
-  CS(CS_)
+Chemistry_PK::Chemistry_PK( Teuchos::ParameterList &parameter_list_,
+			    Teuchos::RCP<Chemistry_State> CS_):
+  CS(CS_), 
+  parameter_list(parameter_list_)
 { 
   // use the constructor to initialize the chemistry process kernel
 
@@ -15,7 +17,7 @@ Chemistry_PK::~Chemistry_PK()
 };
 
 
-void Chemistry_PK::advance( Teuchos::RCP<Epetra_MultiVector> tcc_star )
+void Chemistry_PK::advance( )
 {
   cout << "advancing the state of the chemistry process model here" << endl;
 

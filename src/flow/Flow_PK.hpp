@@ -14,17 +14,21 @@
 class Flow_PK {
 
 public:
-  Flow_PK (Teuchos::RCP<Flow_State> CS_);
+  Flow_PK ( Teuchos::ParameterList &parameter_list_,
+	    Teuchos::RCP<Flow_State> CS_);
 
   ~Flow_PK ();
 
-  void advance( Teuchos::RCP<Epetra_MultiVector> );
+  void advance( );
   void commit_state ( Teuchos::RCP<Flow_State> );
 
 private:
 
   // auxilary state for process kernel
   Teuchos::RCP<Flow_State> FS;
+
+  // parameter list
+  Teuchos::ParameterList parameter_list;
 
   Teuchos::RCP<NOX::Solver::Generic> solver;
 

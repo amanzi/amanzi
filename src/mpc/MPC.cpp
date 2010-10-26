@@ -3,38 +3,60 @@
 #include "MPC.hpp"
 #include "State.hpp"
 #include "../chemistry/Chemistry_State.hpp"
+#include "../chemistry/Chemistry_PK.hpp"
 #include "../flow/Flow_State.hpp"
+#include "../flow/Flow_PK.hpp"
 #include "../transport/Transport_State.hpp"
+#include "../transport/Transport_PK.hpp"
 
 
-
-MPC::MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
-		   Teuchos::RCP<Mesh_maps_base> mesh_maps_):
-  Parameters(Parameters_),
+MPC::MPC(Teuchos::ParameterList parameter_list_,
+	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
+  parameter_list(parameter_list_),
   mesh_maps(mesh_maps_)
   
  {
-   int number_of_components = 10; // just a wild guess, should probably come in from input
    
+   Teuchos::ParameterList state_parameter_list = 
+     parameter_list.sublist("State");
+
    // create the state object
-   S = Teuchos::rcp( new State( number_of_components, mesh_maps) );
+   S = Teuchos::rcp( new State( state_parameter_list, mesh_maps) );
+   
+   // create auxilary state objects for the process models
+   // chemistry...
+   
+   CS = Teuchos::rcp( new Chemistry_State( S ) );
+   
+   TS = Teuchos::rcp( new Transport_State( S ) );
 
-  // create auxilary state objects for the process models
-  // chemistry...
-  CS = Teuchos::rcp( new Chemistry_State( S ) );
-
-  // ... 
-  // done creating auxilary state objects for the process models
+   FS = Teuchos::rcp( new Flow_State( S ) ); 
+   // done creating auxilary state objects for the process models
 
   
-  // create the individual process models
-  // chemistry...
+   // create the individual process models
+   // chemistry...
+   Teuchos::ParameterList chemistry_parameter_list = 
+     parameter_list.sublist("Chemistry");
+   
+   CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+   
+   // transport...
+   Teuchos::ParameterList transport_parameter_list = 
+     parameter_list.sublist("Transport");
+   
+   TPK = Teuchos::rcp( new Transport_PK(transport_parameter_list, TS) );
+   
+   // flow...
+   Teuchos::ParameterList flow_parameter_list = 
+     parameter_list.sublist("Flow");
+   
+   FPK = Teuchos::rcp( new Flow_PK(flow_parameter_list, FS) );
+   // done creating the individual process models
 
-  CPK = Teuchos::rcp( new Chemistry_PK(CS) );
 
-  // ...
-  // done creating the individual process models
 
+   
   // chemistry computes new total_component_concentration, so
   // we create storage for that return multi vector
 
@@ -46,19 +68,25 @@ MPC::MPC(Teuchos::RCP<Teuchos::ParameterList> Parameters_,
 
 void MPC::cycle_driver () {
   
-  cout << "this is the Chem_MPC::cycle_driver" << endl; 
+  FPK->advance();
+  FPK->commit_state(FS);
 
-  CPK->advance( total_component_concentration_star );
+  TPK->advance();
+  TPK->commit_state(TS);
 
-  // let's ponder if we can accept the return value...
-  // ...
-  // o.k. 
-  
-  // accept total_component_concentration_star
-  Teuchos::RCP<Epetra_MultiVector> tcc = S->get_total_component_concentration();
-  *tcc = *total_component_concentration_star;
+  CPK->advance();
+  CPK->commit_state(CS);
 
-  // make the process model commit its state
-  CPK->commit_state( CS );
+}
+
+
+
+void MPC::write_mesh()
+{
+
+  Teuchos::ParameterList gmv_parameter_list = parameter_list.sublist("GMV");
+  std::string gmv_filename = gmv_parameter_list.get<string>("File Name");
+
+  S->write_gmv(gmv_filename);
 
 }

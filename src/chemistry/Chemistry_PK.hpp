@@ -11,17 +11,21 @@
 class Chemistry_PK {
 
 public:
-  Chemistry_PK (Teuchos::RCP<Chemistry_State> CS_);
+  Chemistry_PK (Teuchos::ParameterList &parameter_list_, 
+		Teuchos::RCP<Chemistry_State> CS_);
 
   ~Chemistry_PK ();
 
-  void advance( Teuchos::RCP<Epetra_MultiVector> );
+  void advance( );
   void commit_state ( Teuchos::RCP<Chemistry_State> );
 
 private:
 
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> CS;
+
+  // parameter list
+  Teuchos::ParameterList parameter_list;
 
 };
 

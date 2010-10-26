@@ -30,14 +30,16 @@ class Transport_PK {
 
 public:
   /* three constructors */
-  Transport_PK ( RCP<Transport_State> TS_MPC );
+  Transport_PK ( Teuchos::ParameterList &parameter_list_,
+		 RCP<Transport_State> TS_MPC );
   Transport_PK ();
 
   ~Transport_PK () {};
 
   /* primary members */
   void calculate_transport_dT ();
-  void advance_transport_state ();
+  void advance ();
+  void commit_state ( RCP<Transport_State> TS );
 
   vector<double> calculate_accumulated_influx ();
   vector<double> calculate_accumulated_outflux ();
@@ -63,6 +65,9 @@ private:
 
   /* proposed new transport state */ 
   RCP<Transport_State> TS_next;
+  
+  /* parameter list with Transport specific parameters */
+  Teuchos::ParameterList parameter_list;
 
   /* part of the future geometry package */
   Epetra_Vector    *face_area;
@@ -72,6 +77,9 @@ private:
   /* transport time step and status */
   double dT;
   int    status;
+ 
+  /* CFL */
+  double cfl;
 
   /* accumulated influx and outflux for each side */
   vector<double>  influx;
