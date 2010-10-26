@@ -14,7 +14,10 @@ using namespace cell_geometry;
    Constructor for initializing the transport PK.
    Its call is made usually at time T=0 by the MPC.
  */
-Transport_PK::Transport_PK ( RCP<Transport_State> TS_MPC )
+Transport_PK::Transport_PK ( Teuchos::ParameterList &parameter_list_,
+			     RCP<Transport_State> TS_MPC ) :
+  parameter_list(parameter_list_)
+
 { 
   /* make a copy of the transport state object */
   TS = TS_MPC;
@@ -46,6 +49,11 @@ Transport_PK::Transport_PK ( RCP<Transport_State> TS_MPC )
   face_to_cell_downwind = new Epetra_IntVector(face_map); 
 
   geometry_package();
+
+
+  /* read the CFL number from the parameter list with a default of 1.0 */
+  cfl = parameter_list.get<double>("CFL", 1.0);
+  
 };
 
 
@@ -92,8 +100,9 @@ void Transport_PK::geometry_package()
 
 /* MPC will call this function to advance the state  with this 
    particular process kernel */
-void Transport_PK::advance_transport_state ()
+void Transport_PK::advance ()
 {
+  cout << "advancing the state of the transport process model here" << endl;
   /* Step 1: Create reverse map: face -> cells  */
 
   /* Step 2: Loop over internal faces: update concentrations */
@@ -105,6 +114,15 @@ void Transport_PK::advance_transport_state ()
   /* Step 5: Loop over interface faces */
 };
 
+
+/* MPC will call this function to indicate to this particular 
+   process kernel that it can commit any auxilary state it 
+   has created, this call indicates that the MPC has accepted
+   the new state that this process kernel has computed */
+void Transport_PK::commit_state ( Teuchos::RCP<Transport_State> TS )
+{
+  cout << "committing the internal state of the chemistry process model" << endl;
+};
 
 
 /* 

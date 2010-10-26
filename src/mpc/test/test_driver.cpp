@@ -10,10 +10,13 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "../State.hpp"
+#include "State.hpp"
+#include "MPC.hpp"
 
 
 TEST(DRIVER) {
+
+  using namespace std;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -53,18 +56,15 @@ TEST(DRIVER) {
     }
 
 
-  // get the state parameter list
-  Teuchos::ParameterList state_parameter_list = driver_parameter_list.sublist("State");
+  // create the MPC
+  MPC mpc(driver_parameter_list, MMS);
   
-  State S(1,MMS);
+  mpc.write_mesh();
 
+  mpc.cycle_driver();
+  
   
 
-  // get the file name for the GMV dump
-  Teuchos::ParameterList gmv_parameter_list = driver_parameter_list.sublist("GMV");
-  std::string gmv_filename = gmv_parameter_list.get<string>("File Name");
-
-  S.write_gmv(gmv_filename);
       
 }
 

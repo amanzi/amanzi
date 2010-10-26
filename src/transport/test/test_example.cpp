@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "simple_mesh/Mesh_maps_simple.hh"
 #include "mpc/State.hpp"
@@ -32,8 +33,15 @@ TEST(TRANSPORT_PK_INIT) {
   /*create a transport state from the MPC state */
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
+  /* create a transport parameter list, this would ordinarily be read   */
+  /* from an input file, but here we can fake it by setting a parameter */
+  /* by hand  (see mpc/test_driver.cpp for an example of how parameter  */
+  /* lists are read                                                     */
+  ParameterList parameter_list; 
+  parameter_list.set("CFL",1.0);
+
   /* initialize a transport process kernel from a transport state */
-  Transport_PK  TPK(TS);
+  Transport_PK  TPK(parameter_list, TS);
 
 
   /* the actual test is to print the Darcy velocity */
@@ -68,8 +76,15 @@ TEST(TRANSPORT_PK_FACES) {
   /*create a transport state from the MPC state */
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
+  /* create a transport parameter list, this would ordinarily be read   */
+  /* from an input file, but here we can fake it by setting a parameter */
+  /* by hand  (see mpc/test_driver.cpp for an example of how parameter  */
+  /* lists are read                                                     */
+  ParameterList parameter_list;
+  parameter_list.set("CFL",1.0);
+
   /* initialize a transport process kernel from a transport state */
-  Transport_PK  TPK(TS);
+  Transport_PK  TPK(parameter_list, TS);
 
   /* printing face areas */
   int  f;

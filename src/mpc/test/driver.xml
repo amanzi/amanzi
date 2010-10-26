@@ -27,10 +27,15 @@
   <ParameterList name="State">
     <Parameter name="Number of component concentrations" type="int" value="10"/>
   </ParameterList>
-  
-  
+
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="0.5"/>   
+  </ParameterList>
+
+  <ParameterList name="Chemistry">
+  </ParameterList>
+
   <ParameterList name="Flow">
-    
     <ParameterList name="Flow BCs">
       <Parameter name="number of BCs" type="int" value="6"/>
       <ParameterList name="BC00">
@@ -64,7 +69,6 @@
 	<Parameter name="Side set ID" type="int" value="5" />
       </ParameterList>  
     </ParameterList>
-    
   </ParameterList>
   
 </ParameterList>
