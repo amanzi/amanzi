@@ -27,18 +27,18 @@ TEST(TRANSPORT_PK_INIT) {
   /* create a MPC state with one component */
   RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
-  int number_components = 1;
-  State mpc_state( number_components, mesh );
+  int num_components = 1;
+  State mpc_state( num_components, mesh );
 
   /*create a transport state from the MPC state */
-  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+  RCP<Transport_State>  TS = rcp( new Transport_State( mpc_state ) );
 
   /* create a transport parameter list, this would ordinarily be read   */
   /* from an input file, but here we can fake it by setting a parameter */
   /* by hand  (see mpc/test_driver.cpp for an example of how parameter  */
   /* lists are read                                                     */
   ParameterList parameter_list; 
-  parameter_list.set("CFL",1.0);
+  parameter_list.set( "CFL", 1.0 );
 
   /* initialize a transport process kernel from a transport state */
   Transport_PK  TPK(parameter_list, TS);
@@ -70,10 +70,10 @@ TEST(TRANSPORT_PK_FACES) {
   /* create a MPC state with one component */
   RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
-  int number_components = 1;
-  State mpc_state( number_components, mesh );
+  int num_components = 1;
+  State mpc_state( num_components, mesh );
 
-  /*create a transport state from the MPC state */
+  /* create a transport state from the MPC state */
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
   /* create a transport parameter list, this would ordinarily be read   */
@@ -81,7 +81,7 @@ TEST(TRANSPORT_PK_FACES) {
   /* by hand  (see mpc/test_driver.cpp for an example of how parameter  */
   /* lists are read                                                     */
   ParameterList parameter_list;
-  parameter_list.set("CFL",1.0);
+  parameter_list.set( "CFL", 1.0 );
 
   /* initialize a transport process kernel from a transport state */
   Transport_PK  TPK(parameter_list, TS);
@@ -96,6 +96,38 @@ TEST(TRANSPORT_PK_FACES) {
      cout << "face = " << f << "  area = " << area << endl;
      CHECK_CLOSE(area, 0.75, 0.25);
   }
+}
+ 
+
+
+TEST(TRANSPORT_PK_ADVANCE) {
+
+  using namespace std;
+  using namespace Teuchos;
+
+#ifdef HAVE_MPI
+  Epetra_MpiComm    *comm = new Epetra_MpiComm( MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+  /* create a MPC state with one component */
+  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
+
+  int num_components = 1;
+  State mpc_state( num_components, mesh );
+
+  /* create a transport state from the MPC state */
+  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+
+  /* initialize a transport process kernel from a transport state */
+  ParameterList parameter_list;
+  parameter_list.set( "CFL", 1.0 );
+
+  Transport_PK  TPK(parameter_list, TS);
+
+  /* advance the state */
+  TPK.advance();
 }
  
 

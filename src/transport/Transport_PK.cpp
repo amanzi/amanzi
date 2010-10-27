@@ -10,31 +10,21 @@ using namespace Teuchos;
 using namespace cell_geometry;
 
 
-/* 
-   Constructor for initializing the transport PK.
-   Its call is made usually at time T=0 by the MPC.
- */
-Transport_PK::Transport_PK ( Teuchos::ParameterList &parameter_list_,
-			     RCP<Transport_State> TS_MPC ) :
-  parameter_list(parameter_list_)
+/*  Constructor for initializing the transport PK.    */
+/*  Its call is made usually at time T=0 by the MPC.  */
+Transport_PK::Transport_PK ( ParameterList &parameter_list_MPC,
+			     RCP<Transport_State> TS_MPC )
 
 { 
+  parameter_list = parameter_list_MPC;
+
   /* make a copy of the transport state object */
-  TS = TS_MPC;
+  TS = rcp( new Transport_State() );
+  TS->copy_constant_state( *TS_MPC );
 
-  /* copy pointers for state variables that will remain unchanged */
+  /* allocate memory for internal (next) transport state */
   TS_next = rcp( new Transport_State () );
-
-  TS_next->get_porosity () = TS->get_porosity (); 
-  TS_next->get_water_saturation () = TS->get_water_saturation (); 
-  TS_next->get_darcy_flux () = TS->get_darcy_flux (); 
-
-  /* allocate memory for state variables that will be changed */
-  RCP<Epetra_MultiVector>  tcc      = TS->get_total_component_concentration ();
-  RCP<Epetra_MultiVector>  tcc_next = TS_next->get_total_component_concentration ();
-
-  tcc_next = rcp( new Epetra_MultiVector( *tcc ) );
-
+  TS_next->create_internal_state( *TS_MPC );
 
   /* set null/zero values to all internal parameters */
   dT = 0.0;
@@ -53,12 +43,22 @@ Transport_PK::Transport_PK ( Teuchos::ParameterList &parameter_list_,
 
   /* read the CFL number from the parameter list with a default of 1.0 */
   cfl = parameter_list.get<double>("CFL", 1.0);
-  
 };
 
 
 
-/* this is part of the future geometry package */
+/* destructor */
+Transport_PK::~Transport_PK()
+{
+  delete face_area;
+  delete face_to_cell_upwind;
+  delete face_to_cell_downwind;
+}
+
+
+
+
+/*  This is part of the future geometry package  */
 void Transport_PK::geometry_package()
 {
   RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
@@ -92,42 +92,99 @@ void Transport_PK::geometry_package()
 
      for ( i=0; i<6; i++ ) {
         f = face_map.LID(c2f[i]);
+        if ( (*face_to_cell_upwind)[f] == -1 ) { (*face_to_cell_upwind)[f] = c; }
+        else                                   { (*face_to_cell_downwind)[f] = c; }
+     }
+  }
+
+  /* select the upwinding cell */
+  int c1, c2;
+  double *darcy_flux;
+
+  TS->get_darcy_flux()->ExtractView( &darcy_flux );
+
+  for ( f=face_map.MinLID(); f<face_map.MaxLID(); f++ ) {
+     c1 = (*face_to_cell_upwind)[f]; 
+     c2 = (*face_to_cell_downwind)[f]; 
+
+     if ( darcy_flux[f] >= 0 ) {
+        (*face_to_cell_upwind)[f]   = max(c1, c2); 
+        (*face_to_cell_downwind)[f] = min(c1, c2); 
+     } else {
+        (*face_to_cell_upwind)[f]   = min(c1, c2); 
+        (*face_to_cell_downwind)[f] = max(c1, c2); 
      }
   }
 }
 
 
 
-/* MPC will call this function to advance the state  with this 
-   particular process kernel */
-void Transport_PK::advance ()
+/* MPC will call this function to advance the transport state  */
+void Transport_PK::advance()
 {
-  cout << "advancing the state of the transport process model here" << endl;
-  /* Step 1: Create reverse map: face -> cells  */
+  /* this should be moved to MPC */
+  //calculate_transport_dT();
 
-  /* Step 2: Loop over internal faces: update concentrations */
+  /* Step 1: Loop over internal faces: update concentrations */
+  int i, c1, c2;
+  unsigned int f;
+  double u, tcc_mass_flux;
 
-  /* Step 3: Create an interface map */  
+  /* access raw data */
+  double **tcc_data, **tcc_next_data;
 
-  /* Step 4: Parallel communication */
+  RCP<Epetra_MultiVector>  tcc      = TS->get_total_component_concentration ();
+  RCP<Epetra_MultiVector>  tcc_next = TS_next->get_total_component_concentration ();
 
-  /* Step 5: Loop over interface faces */
+  tcc->ExtractView( &tcc_data );
+  tcc_next->ExtractView( &tcc_next_data );
+
+  double *darcy_flux;
+  TS->get_darcy_flux()->ExtractView( &darcy_flux );
+
+  RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
+  Epetra_Map face_map = mesh->face_map(false);
+
+  /* advance each component */ 
+  int num_components = tcc->NumVectors();
+
+  for ( f=face_map.MinLID(); f<face_map.MaxLID(); f++ ) {
+     c1 = (*face_to_cell_upwind)[f]; 
+     c2 = (*face_to_cell_downwind)[f]; 
+
+     if ( c1 >=0 && c2 >= 0 ) {
+        u = darcy_flux[f];
+
+        for ( i=0; i<num_components; i++ ) {
+            tcc_mass_flux = cfl * dT * u * tcc_next_data[i][c1];
+
+            tcc_next_data[i][c1] = tcc_data[i][c1] + tcc_mass_flux;
+            tcc_next_data[i][c2] = tcc_data[i][c2] - tcc_mass_flux;
+        }
+     }
+  }
+
+
+  /* Step 2: Create an interface map */  
+
+  /* Step 3: Parallel communication */
+
+  /* Step 4: Loop over boundary faces */
 };
 
 
-/* MPC will call this function to indicate to this particular 
-   process kernel that it can commit any auxilary state it 
-   has created, this call indicates that the MPC has accepted
-   the new state that this process kernel has computed */
-void Transport_PK::commit_state ( Teuchos::RCP<Transport_State> TS )
+
+/*  MPC will call this function to indicate to the transport PK  */
+/*  that it can commit the advanced state it has created.        */
+/*  This  call indicates that the MPC has accepted the new state */
+void Transport_PK::commit_state ( RCP<Transport_State> TS )
 {
-  cout << "committing the internal state of the chemistry process model" << endl;
+  /* nothing is done her since a pointer to the state is kept */ 
 };
 
 
-/* 
-  DEBUGing routines
-*/
+
+/*  DEBUGing routines  */
 double Transport_PK::get_face_area( int f ) {
   double *internal_data;
 

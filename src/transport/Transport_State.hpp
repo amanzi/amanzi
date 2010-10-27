@@ -20,10 +20,13 @@ using namespace Teuchos;
 class Transport_State {
 
 public:
-  Transport_State (RCP<State> S);
-  Transport_State (State S);
+  Transport_State ( State S );
   /* a null constructor is useful for unit tests */
   Transport_State () {};
+
+  /* major member functions */
+  void copy_constant_state( Transport_State & TS );
+  void create_internal_state( Transport_State & TS );
 
   ~Transport_State () {};
 
@@ -34,7 +37,7 @@ public:
   RCP<const Epetra_Vector>  get_water_saturation ()             const { return water_saturation; }
   RCP<const Epetra_Vector>  get_darcy_flux ()                   const { return darcy_flux; }
   
-  RCP<Mesh_maps_base> get_mesh_maps()                   const { return mesh_maps; }
+  RCP<Mesh_maps_base> get_mesh_maps() const { return mesh_maps; }
 
 
 private:

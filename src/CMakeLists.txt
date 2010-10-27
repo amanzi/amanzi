@@ -210,16 +210,15 @@ set(EXODUS_LIBS_ALL exodusii netcdf curl)
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
 
-#set (MOAB_DIR "${HOME}/packages/MOAB")
 set (MOAB_LIB_DIR ${MOAB_DIR}/lib)
 find_library(MOAB_LIBRARY MOAB
              /usr/lib
              /usr/local/lib
              ${MOAB_LIB_DIR})
 if(NOT MOAB_LIBRARY)
-#  message(FATAL_ERROR "Error: could not find MOAB library\n"
-#          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
-#          "\nor defining MOAB_LIB_DIR")
+  message(FATAL_ERROR "Error: could not find MOAB library\n"
+          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
+          "\nor defining MOAB_LIB_DIR")
 endif()
 
 set (MOAB_INCLUDE_DIR ${MOAB_DIR}/include)
@@ -228,9 +227,9 @@ find_path(MOAB_INCLUDES MBCore.hpp
           /usr/local/include
           ${MOAB_INCLUDE_DIR})
 if(NOT MOAB_INCLUDES)
-#  message(FATAL_ERROR "Error: could not find MOAB includes\n"
-#          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
-#          "\nor defining MOAB_INCLUDE_DIR")
+  message(FATAL_ERROR "Error: could not find MOAB includes\n"
+          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
+          "\nor defining MOAB_INCLUDE_DIR")
 endif()
 
 add_library(moab STATIC IMPORTED)
@@ -295,7 +294,7 @@ add_subdirectory(exodus)
 add_subdirectory(mesh_data)
 add_subdirectory(stk_mesh)
 add_subdirectory(simple_mesh)
-#add_subdirectory(moab_mesh)
+add_subdirectory(moab_mesh)
 add_subdirectory(mpc)
 add_subdirectory(chemistry)
 add_subdirectory(transport)
