@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+
+# ############################################################################ #
+#
+#  Amanzi Trilinos Configuration File
+#
+# ############################################################################ #
+
+print_usage()
+{
+    echo ""
+    echo "Usage: $0 [options] -s|--source trilinos_path [ -- additional CMake args]"
+    echo ""
+    echo "OPTIONS:"
+    echo "-h|--help                           Print this message and exit"
+    echo "-s|--source trilinos_path           Define the directory the contains the Trilinos Source"
+    echo "-i|--install trilinos_install_path  Trilinos installation path"
+    echo "--disable-mpi                       Disable MPI"       
+    echo ""
+    echo ""
+    echo "EXAMPLE"
+    echo "Building with Boost libraries located in /usr/local"
+    echo "$0 -source /home/jcool/packages/trilinos/trilinos-10.6.0-Source --install /opt/packages/trilinos -- -D TPL_Boost_INCLUDE_DIRS:PATH=/usr/local/include -D Boost_LIBRARY_DIRS:PATH=/usr/local/lib"
+    echo "The '--' informs the parser what arguments should be passed to cmake"
+}
+
+# Need the new version of getopt to process the long style command options
+getopt_ok() {
+    getopts --test
+    stat=$?
+
+    if [ stat -eq 4 ]; then
+        return 1
+    else
+        echo "Your version of getopt failed the version test"
+        echo "long option names are disabled and will be ignored"
+        echo -n "getopt --test returned:"
+        echo stat
+        echo "Can not parse command line arguments"
+        return 0
+    fi    
+}
+
+# Parse command line opts
+INSTALL_PATH=`pwd`
+TRILINOS_PATH=
+ENABLE_MPI_FLAG=ON
+EXTRA_ARGS=
+
+short_opts='hs:i:'
+if [ getopt_ok ]; then
+    long_opts='help,source:,install:,disable-mpi'
+    args=`getopt -o ${short_opts} -l ${long_opts} -- $*`
+    stat=$?
+    if [ ${stat} -ne 0 ]; then
+        print_usage
+        exit 1
+    fi
+    set -- $args
+    for arg 
+    do
+        case "$arg" in
+            -h|--help) print_usage; exit 0;;
+            -i|--install) shift; INSTALL_PATH="$1"; shift;; 
+            -s|--source) shift; TRILINOS_PATH="$1"; shift;; 
+            --disable-mpi) ENABLE_MPI_FLAG=OFF; shift;; 
+            --) shift; EXTRA_ARGS=$@;break;;
+        esac
+    done
+else
+    echo "Need to put code here for the bultin getopts"
+    exit 1
+fi
+  
+# Check the Trilinos Path
+if [ -z ${TRILINOS_PATH} ]; then  
+    echo "Must specify a path to the Trilinos source"
+    print_usage
+    exit 0
+else
+    tmp=`echo ${TRILINOS_PATH//\'/}`
+    TRILINOS_PATH=${tmp}
+fi
+
+
+# Default Trilinos configuration
+#
+#  Build Configuration
+#  
+ENABLE_Fortran_FLAG=OFF
+ENABLE_STK_FLAG=ON
+ENABLE_VERBOSE_FLAG=OFF
+
+#
+# Build the CMake ARG list
+#
+#  Initially build as an array to control order of appearance on the
+#   command line. Will then be joined with white space to a scalar.
+declare -a DFLT_ARGS
+DFLT_ARGS[0]='-D CMAKE_BUILD_TYPE:STRING=DEBUG'
+DFLT_ARGS[1]="-D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PATH}"
+DFLT_ARGS[2]="-D Trilinos_ENABLE_Fortran:BOOL=${ENABLE_Fortran_FLAG}"
+DFLT_ARGS[3]="-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON"
+DFLT_ARGS[4]="-D Trilinos_ENABLE_STK:BOOL=${ENABLE_STK_FLAG}"
+DFLT_ARGS[5]="-D Trilinos_ENABLE_Fortran:BOOL=${ENABLE_Fortran_FLAG}"
+DFLT_ARGS[6]="-D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI_FLAG}"
+DFLT_ARGS[7]="-D CMAKE_VERBOSE_MAKEFILE:BOOL=${ENABLE_VERBOSE_FLAG}"
+DFLT_ARGS[8]="-D Trilinos_VERBOSE_CONFIGURE:BOOL=${ENABLE_VERBOSE_FLAG}"
+
+CMAKE_ARGS=${DFLT_ARGS[@]}
+
+echo ""
+echo "-----------------------------------------------------------------"
+echo " Trilinos Configuration"
+echo ""
+echo "Building Trilinos found in ${TRILINOS_PATH}"
+echo ""
+echo "Cmake Defines"
+for arg in ${DFLT_ARGS[@]}
+do
+    if [ ${arg} != '-D' ]; then
+        echo "${arg}"
+    fi    
+done    
+
+if [ -n "${EXTRA_ARGS}" ]; then
+    tmp=`echo ${EXTRA_ARGS//\'}`
+    EXTRA_ARGS=${tmp}
+    echo ""
+    echo "Addtional arguments passed in to cmake are:"
+    echo "${EXTRA_ARGS}"
+    echo ""
+fi
+echo ""
+echo "-----------------------------------------------------------------"
+# Always remove the cache file
+#  Future release may allow the build directory to be 
+#  some place other than the current directory
+cache_file=CMakeCache.txt
+if [ -e "${cache_file}" ]; then
+    echo "Removing old cache file"
+    rm ${cache_file}
+fi
+
+cmd="cmake ${CMAKE_ARGS} ${EXTRA_ARGS} ${TRILINOS_PATH}"
+echo $cmd
+
+$cmd
+
+exit $?
