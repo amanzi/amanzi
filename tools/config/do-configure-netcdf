@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+# ##############################################################################
+#
+# Amanzi netCDF Configuration 
+#
+# ##############################################################################
+print_usage()
+{
+    echo ""
+    echo "Usage: $0 [-h|--help]  -5|--hdf5-dir hdf5_path -z|--zlib-dir zlib_path -c|--curl-dir curl_path [ -- additional configure args]"
+    echo ""
+    echo "FLAGS:"
+    echo "-h|--help                           Print this message and exit"
+    echo "-5|--hdf5-dir hdf5_path             HDF5 installation directory (REQUIRED)"
+    echo "-z|--zlib-dir zlib_path             zlib (libz) installation directory (REQUIRED)"
+    echo "-c|--curl-dir curl_path             CURL (libcurl)  directory (REQUIRED)"
+    echo ""
+    echo ""
+    echo "Additional flags may be passed to configure"
+    echo "The '--' informs the parser that the remaining arguments are configure arguments" 
+}
+
+# Need the new version of getopt to process the long style command options
+getopt_ok() {
+    getopts --test
+    stat=$?
+
+    if [ stat -eq 4 ]; then
+        return 1
+    else
+        echo "Your version of getopt failed the version test"
+        echo "long option names are disabled and will be ignored"
+        echo -n "getopt --test returned:"
+        echo stat
+        echo "Can not parse command line arguments"
+        return 0
+    fi    
+}
+
+# Parse command line opts
+INSTALL_PATH=${HOME}/netcdf
+HDF5_PATH=
+ZLIB_PATH=
+CURL_PATH=
+EXTRA_ARGS=
+
+short_opts='hp:5:z:c:'
+if [ getopt_ok ]; then
+    long_opts='help,prefix:,hdf5-dir:,zlib-dir:,curl-dir:'
+    args=`getopt -o ${short_opts} -l ${long_opts} -u -- $*`
+    stat=$?
+    if [ ${stat} -ne 0 ]; then
+        print_usage
+        exit 1
+    fi
+    echo "Before set ${args}"
+    set -- $args
+    for arg 
+    do
+        case "$arg" in
+            -h|--help) print_usage; exit 0;;
+            -p|--prefix) shift; INSTALL_PATH="$1"; shift;; 
+            -5|--hdf5-dir) shift; HDF5_PATH="$1"; shift;; 
+            -z|--zlib-dir) shift; ZLIB_PATH="$1"; shift;; 
+            -c|--curl-dir) shift; CURL_PATH="$1"; shift;; 
+            --) shift; EXTRA_ARGS=$@;break;;
+        esac
+    done
+else
+    echo "Need to put code here for the bash bultin getopts"
+    exit 1
+fi
+
+# Check the arguments
+if [ -z "${HDF5_PATH}" ]; then
+    echo "Please define the HDF5 installation directory"
+    echo "HDF5 is required to build netCDF"
+    print_usage
+    exit 1
+fi
+
+if [ -z "${ZLIB_PATH}" ]; then
+    echo "Please define the ZLIB installation directory"
+    echo "ZLIB is required to build netCDF"
+    print_usage
+    exit 1
+fi
+
+if [ -z "${CURL_PATH}" ]; then
+    echo "Please define the CURL directory"
+    echo "CURL (libculr.a) is required to build netCDF"
+    print_usage
+    exit 1
+fi
+
+
+# Simple configure 
+#  Build without Fortran and with MPI compilers
+
+echo "-------------------------------------------------------------------"
+echo ""
+echo "Configuring netCDF"
+echo ""
+echo "PREFIX=${INSTALL_PATH}"
+echo "HDF5 Directory=${HDF5_PATH}"
+echo "ZLIB Directory=${ZLIB_PATH}"
+echo "CURL Directory=${CURL_PATH}"
+echo ""
+echo "-------------------------------------------------------------------"
+
+# Set CC and CXX
+export CC=mpicc
+export CXX=mpic++
+
+# Disable Fortran. In version 4.1.1 we had to set BOTH
+#  disable-fortran and disable-f90
+./configure --prefix=${INSTALL_PATH} \
+            --disable-fortran \
+            --disable-f90 \
+            --with-hdf5=${HDF5_PATH} \
+            --with-zlib=${ZLIB_PATH} \
+            --with-curl=${CURL_PATH}
