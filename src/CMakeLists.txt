@@ -212,7 +212,7 @@ set(EXODUS_LIBS_ALL exodusii netcdf curl)
 
 find_library(MOAB_LIBRARY MOAB
              HINTS ${MOAB_LIB_DIR}
-             HINTS ${MOAB_DIR}/lib
+                   ${MOAB_DIR}/lib
                    /usr/lib
                    /usr/local/lib
 		   )
