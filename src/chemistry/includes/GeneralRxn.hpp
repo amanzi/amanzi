@@ -28,7 +28,7 @@ class GeneralRxn {
 
   // update forward and reverse effective reaction rates
   void update_rates(const std::vector<Species> primarySpecies);
-  void addContributionToResidual(std::vector<double> &residual,
+  void addContributionToResidual(std::vector<double> *residual,
                                  double por_den_sat_vol);
   void addContributionToJacobian(Block *J, 
                                  const std::vector<Species> primarySpecies,

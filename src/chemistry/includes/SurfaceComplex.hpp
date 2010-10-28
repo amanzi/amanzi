@@ -30,7 +30,7 @@ class SurfaceComplex {
   void Update(const std::vector<Species>primarySpecies, 
               const SurfaceSite& surface_site);
   // add stoichiometric contribution of complex to total
-  void AddContributionToTotal(std::vector<double> &total);
+  void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
   void AddContributionToDTotal(const std::vector<Species> primarySpecies,
                                Block *dtotal);

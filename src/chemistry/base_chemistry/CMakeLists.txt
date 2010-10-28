@@ -7,6 +7,7 @@ set(SRCS
 	./ActivityModelUnit.cpp 
 	./IonExchangeSite.cpp 
 	./Species.cpp 
+	./SurfaceSite.cpp 
 )
 
 add_library(geochembase ${SRCS}) 

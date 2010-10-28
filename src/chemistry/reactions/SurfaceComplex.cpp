@@ -77,10 +77,10 @@ void SurfaceComplex::Update(const std::vector<Species> primarySpecies,
 
 } // end Update()
 
-void SurfaceComplex::AddContributionToTotal(std::vector<double> &total) 
+void SurfaceComplex::AddContributionToTotal(std::vector<double> *total) 
 {
   for (int i = 0; i < ncomp_; i++) {
-    total[species_ids_[i]] += stoichiometry_[i] * surface_concentration(); 
+    (*total)[species_ids_[i]] += stoichiometry_[i] * surface_concentration(); 
   }
 } // end AddContributionToTotal()
 

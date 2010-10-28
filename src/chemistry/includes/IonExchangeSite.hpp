@@ -34,7 +34,7 @@ class IonExchangeSite : public Species {
   void DisplayResults(void) const;
 
   void set_cation_exchange_capacity(const int in_value) { this->cation_exchange_capacity_ = in_value; };
-  int cation_exchange_capacity(void) const { return this->cation_exchange_capacity_; };
+  double cation_exchange_capacity(void) const { return this->cation_exchange_capacity_; };
 
   std::string location(void) const { return this->location_; };
 

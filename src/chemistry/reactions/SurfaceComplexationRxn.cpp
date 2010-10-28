@@ -13,10 +13,7 @@ SurfaceComplexationRxn::SurfaceComplexationRxn()
 
 SurfaceComplexationRxn::~SurfaceComplexationRxn() 
 {
-  if (surface_site_) {
-    delete surface_site_;
-  }
-  surface_site_ = NULL;
+  delete surface_site_;
 }
 
 void SurfaceComplexationRxn::SetNewtonSolveFlag(void) 
@@ -81,7 +78,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies)
   
 } // end Update()
 
-void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> &total) 
+void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) 
 {
   
   for (std::vector<SurfaceComplex>::iterator srfcplx = 

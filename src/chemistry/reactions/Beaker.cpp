@@ -1,14 +1,6 @@
 #include <cstdlib>
 
 #include "Beaker.hpp"
-#include "ActivityModelFactory.hpp"
-#include "Species.hpp"
-#include "IonExchangeSite.hpp"
-#include "IonExchangeComplex.hpp"
-#include "Mineral.hpp"
-#include "KineticRate.hpp"
-#include "MineralKineticsFactory.hpp"
-#include "Verbosity.hpp"
 
 // solver defaults
 const double Beaker::tolerance_default = 1.0e-12;
@@ -25,13 +17,15 @@ Beaker::Beaker()
     max_iterations_(max_iterations_default),
     ncomp_(0),
     dtotal_(NULL),
+    dtotal_sorbed_(NULL),
     porosity_(porosity_default),
     saturation_(saturation_default),
     water_density_kg_m3_(water_density_kg_m3_default),
     water_density_kg_L_(1.0),
     volume_(volume_default),
     dt_(0.0),
-    accumulation_coef_(0.0), 
+    aqueous_accumulation_coef_(0.0), 
+    sorbed_accumulation_coef_(0.0), 
     por_sat_den_vol_(0.0),
     activity_model_(NULL),
     J(NULL)
@@ -43,41 +37,45 @@ Beaker::Beaker()
   generalKineticRxns_.clear();
   mineral_rates_.clear();
   ion_exchange_rxns_.clear();
+
+  total_.clear();
+  total_sorbed_.clear();
 } // end Beaker() constructor
 
 Beaker::~Beaker() 
 {
-  if (dtotal_ != NULL) {
-    delete dtotal_;
-  }
-
-  if (J != NULL) {
-    delete J;
-  }
-
-  if (activity_model_ != NULL) {
-    delete activity_model_;
-  }
+  // According to C++ In A Nutshell (and other sources), no check
+  // on NULL is necessary for "delete".
+  delete dtotal_;
+  delete dtotal_sorbed_;
+  delete J;
+  delete activity_model_;
 
   if (mineral_rates_.size() != 0) {
     for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
          rate != mineral_rates_.end(); rate++) {
-      if ((*rate) != NULL) {
-        delete (*rate);
-      }
+      delete (*rate);
     }    
   }
 } // end Beaker destructor
 
 void Beaker::resize() {
-  if (dtotal_) delete dtotal_;
+  delete dtotal_;
   dtotal_ = new Block(ncomp());
+  // For now, assume that dtotal is always allocated
+  delete dtotal_sorbed_;
+  dtotal_sorbed_ = new Block(ncomp());
+  dtotal_sorbed_->zero();
+
   fixed_accumulation.resize(ncomp());
   residual.resize(ncomp());
   prev_molal.resize(ncomp());
   total_.resize(ncomp());
+  total_sorbed_.resize(ncomp());
+  for (unsigned int i = 0; i < total_sorbed_.size(); i++)
+    total_sorbed_[i] = 0.;
 
-  if (J) delete J;
+  delete J;
   J = new Block(ncomp());
   rhs.resize(ncomp());
   indices.resize(ncomp());
@@ -95,7 +93,7 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
   SetParameters(parameters);
 
   this->SetupActivityModel(parameters.activity_model_name);
-  this->resize(this->primary_species().size());
+  this->resize((int)this->primary_species().size());
   this->VerifyState(components);
 } // end Setup()
 
@@ -104,19 +102,19 @@ void Beaker::VerifyState(const Beaker::BeakerComponents& components)
   // some helpful error checking goes here...
   std::string verify_sizes("ERROR: Beaker::VerifyState(): input data and initial conditions do not match:\n");
   
-  if (static_cast<unsigned int>(this->ncomp()) != components.primaries.size()) {
+  if (static_cast<unsigned int>(this->ncomp()) != components.total.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
     std::cout << verify_sizes
-              << "ERROR: ncomp and components.primaries.size do not match."
+              << "ERROR: ncomp and components.free_ion.size do not match."
               << std::endl;
   }
 
-  if (this->primary_species().size() != components.primaries.size()) {
+  if (this->primary_species().size() != components.total.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
     std::cout << verify_sizes
-              << "ERROR: primary_species.size and components.primaries.size do not match."
+              << "ERROR: primary_species.size and components.free_ion.size do not match."
               << std::endl;
   }
 
@@ -135,6 +133,27 @@ void Beaker::VerifyState(const Beaker::BeakerComponents& components)
               << "ERROR: minerals.size and components.minerals.size do not match."
               << std::endl;
   }
+
+  if (this->total().size() != components.total.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+    std::cout << verify_sizes
+              << "ERROR: total.size and components.total.size do not match."
+              << std::endl;
+  }
+
+/* Ignore this check for now as I have hardwired total_sorbed to always be the
+   same size as total.  However, in components, the size of total_sorbed is 
+   currently 0.
+  if (this->total_sorbed().size() != components.total_sorbed.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+    std::cout << verify_sizes
+              << "ERROR: total_sorbed.size and components.total_sorbed.size do not match."
+              << std::endl;
+  }
+*/
+
 }  // end VerifyState()
 
 void Beaker::SetupActivityModel(std::string model)
@@ -253,7 +272,7 @@ void Beaker::SetParameters(const Beaker::BeakerParameters& parameters)
   water_density_kg_m3(parameters.water_density); // den = [kg/m^3]
   saturation(parameters.saturation);
   volume(parameters.volume); // vol = [m^3]
-  update_accumulation_coef();
+  update_accumulation_coefficients();
   update_por_sat_den_vol();
 }  // end SetParameters()
 
@@ -265,10 +284,11 @@ void Beaker::updateParameters(const Beaker::BeakerParameters& parameters,
   SetParameters(parameters);
 } // end updateParameters()
 
-void Beaker::update_accumulation_coef(void)
+void Beaker::update_accumulation_coefficients(void)
 {
-  accumulation_coef(porosity() * saturation() * volume() * 1000.0 / dt());
-} // end update_accumulation_coef
+  aqueous_accumulation_coef(porosity() * saturation() * volume() * 1000.0 / dt());
+  sorbed_accumulation_coef(volume() / dt());
+} // end update_accumulation_coefficients
 
 void Beaker::update_por_sat_den_vol(void)
 {
@@ -340,11 +360,12 @@ void Beaker::updateEquilibriumChemistry(void)
 
 }  // end updateEquilibriumChemistry()
 
-void Beaker::calculateTotal(std::vector<double> &total) 
+void Beaker::calculateTotal(std::vector<double> *total,
+                            std::vector<double> *total_sorbed) 
 {
   // add in primaries
-  for (int i = 0; i < (int)total.size(); i++)
-    total[i] = primarySpecies_[i].molality();
+  for (unsigned int i = 0; i < total->size(); i++)
+    (*total)[i] = primarySpecies_[i].molality();
 
   // add in aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
@@ -353,16 +374,24 @@ void Beaker::calculateTotal(std::vector<double> &total)
   }
   
   // scale by water density to convert to molarity
-  for (int i = 0; i < (int)total.size(); i++)
-    total[i] *= water_density_kg_L();
+  for (unsigned int i = 0; i < total->size(); i++)
+   (*total)[i] *= water_density_kg_L();
+
+  // calculate sorbed totals
+  for (std::vector<SurfaceComplexationRxn>::iterator i = 
+       surfaceComplexationRxns_.begin();
+       i != surfaceComplexationRxns_.end(); i++) {
+    i->AddContributionToTotal(total_sorbed);
+  }
+
 } // end calculateTotal()
 
 void Beaker::calculateTotal(void) 
 {
-  calculateTotal(total_);
+  calculateTotal(&total_, &total_sorbed_);
 } // end calculateTotal()
 
-void Beaker::calculateDTotal(Block *dtotal) 
+void Beaker::calculateDTotal(Block *dtotal, Block *dtotal_sorbed) 
 {
   dtotal->zero();
   // derivative with respect to free-ion is 1.
@@ -375,11 +404,19 @@ void Beaker::calculateDTotal(Block *dtotal)
   
   // scale by density of water
   dtotal->scale(water_density_kg_L()); 
+
+  // calculate sorbed derivatives
+  for (std::vector<SurfaceComplexationRxn>::iterator i = 
+       surfaceComplexationRxns_.begin();
+       i != surfaceComplexationRxns_.end(); i++) {
+    i->AddContributionToDTotal(primarySpecies_,dtotal_sorbed);
+  }
+
 } // end calculateDTotal()
 
 void Beaker::calculateDTotal(void) 
 {
-  calculateDTotal(dtotal_);
+  calculateDTotal(dtotal_, dtotal_sorbed_);
 }
 
 void Beaker::updateKineticChemistry(void)
@@ -400,7 +437,7 @@ void Beaker::updateKineticChemistry(void)
 
 } // end updateKineticChemistry()
 
-void Beaker::addKineticChemistryToResidual(std::vector<double> &residual) 
+void Beaker::addKineticChemistryToResidual(std::vector<double> *residual) 
 {
   // loop over general kinetic reactions and add rates
   for (std::vector<GeneralRxn>::iterator i = generalKineticRxns_.begin();
@@ -410,7 +447,7 @@ void Beaker::addKineticChemistryToResidual(std::vector<double> &residual)
   // add mineral mineral contribution to residual here.  units = mol/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToResidual(por_sat_den_vol(), &residual);
+    (*rate)->AddContributionToResidual(por_sat_den_vol(), residual);
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
@@ -436,60 +473,71 @@ void Beaker::addKineticChemistryToJacobian(Block *J)
 
 
 
-void Beaker::addAccumulation(std::vector<double> &residual)
+void Beaker::addAccumulation(std::vector<double> *residual)
 {
-  addAccumulation(total_,residual);
+  addAccumulation(total_, total_sorbed_, residual);
 }
 
 void Beaker::addAccumulation(std::vector<double> total,
-                             std::vector<double> &residual)
+                             std::vector<double> total_sorbed,
+                             std::vector<double> *residual)
 {
   // accumulation_coef = porosity*saturation*volume*1000./dt
   // units = (mol solute/L water)*(m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = mol/sec
   // 1000.d0 converts vol from m^3 -> L
   // all residual entries should be in mol/sec
-  for (int i = 0; i < (int)total.size(); i++)
-    residual[i] += accumulation_coef()*total[i];
+  for (unsigned int i = 0; i < total.size(); i++)
+    (*residual)[i] += aqueous_accumulation_coef() * total[i];
 
   // add accumulation term for equilibrium sorption (e.g. Kd, surface 
   // complexation) here
+  // accumulation_coef = porosity*saturation*volume*1000./dt
+  // units = (mol solute/L water)*(m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
+  //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = mol/sec
+  // 1000.d0 converts vol from m^3 -> L
+  // all residual entries should be in mol/sec
+  for (unsigned int i = 0; i < total_sorbed.size(); i++)
+    (*residual)[i] += sorbed_accumulation_coef() * total_sorbed[i];
 
 } // end calculateAccumulation()
 
 void Beaker::addAccumulationDerivative(Block *J)
 {
-  addAccumulationDerivative(J, dtotal_);
+  addAccumulationDerivative(J, dtotal_, dtotal_sorbed_);
 } // end calculateAccumulationDerivative()
 
 void Beaker::addAccumulationDerivative(Block *J,
-                                       Block *dtotal)
+                                       Block *dtotal,
+                                       Block *dtotal_sorbed)
 {
   // accumulation_coef = porosity*saturation*volume*1000./dt
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*(m^3 bulk)/(sec)
   //         *(kg water/L water)*(1000L water/m^3 water) = kg water/sec
   // all Jacobian entries should be in kg water/sec
-  J->addValues(dtotal,accumulation_coef());
+  J->addValues(dtotal, aqueous_accumulation_coef());
 
   // add accumulation derivative term for equilibrium sorption 
   // (e.g. Kd, surface complexation) here
+  J->addValues(dtotal_sorbed, sorbed_accumulation_coef());
 
 } // end calculateAccumulationDerivative()
 
 void Beaker::calculateFixedAccumulation(std::vector<double> total,
-                                        std::vector<double> &fixed_accumulation)
+                                        std::vector<double> total_sorbed,
+                                        std::vector<double> *fixed_accumulation)
 {
-  for (int i = 0; i < (int)total.size(); i++)
-    fixed_accumulation[i] = 0.;
-  addAccumulation(total,fixed_accumulation);
+  for (unsigned int i = 0; i < total.size(); i++)
+    (*fixed_accumulation)[i] = 0.;
+  addAccumulation(total, total_sorbed, fixed_accumulation);
 } // end calculateAccumulation()
 
-void Beaker::calculateResidual(std::vector<double> &residual, 
+void Beaker::calculateResidual(std::vector<double> *residual, 
                                std::vector<double> fixed_accumulation)
 {
   // subtract fixed porition
   for (int i = 0; i < ncomp(); i++)
-    residual[i] = -fixed_accumulation[i];
+    (*residual)[i] = -fixed_accumulation[i];
 
   // accumulation adds in equilibrium chemistry
   addAccumulation(residual);
@@ -601,7 +649,8 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   updateActivityCoefficients();
 
   // calculate portion of residual at time level t
-  calculateFixedAccumulation(components->primaries, fixed_accumulation);
+  calculateFixedAccumulation(components->total, components->total_sorbed,
+                             &fixed_accumulation);
                         
   do {
 
@@ -611,7 +660,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     updateKineticChemistry();
 
     // units of residual: mol/sec
-    calculateResidual(residual,fixed_accumulation);
+    calculateResidual(&residual,fixed_accumulation);
     // units of Jacobian: kg water/sec
     calculateJacobian(J);
     // therefore, units of solution: mol/kg water (change in molality)
@@ -674,7 +723,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // update total concentrations
   calculateTotal();
   for (int i = 0; i < ncomp(); i++)
-    components->primaries[i] = total_[i];
+    components->total[i] = total_[i];
 
   return num_iterations;
 
@@ -709,17 +758,13 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // calculate residual
     // units of residual: mol/sec
     for (int i = 0; i < ncomp(); i++)
-      residual[i] = total_[i] - components.primaries[i];
+      residual[i] = total_[i] - components.total[i];
 
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
     J->zero();
     calculateDTotal();
     J->addValues(0,0,dtotal_);
-
-    // calculate residual
-    for (int i = 0; i < ncomp(); i++)
-      residual[i] = total_[i] - components.primaries[i];
 
     for (int i = 0; i < ncomp(); i++)
       rhs[i] = residual[i];

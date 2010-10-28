@@ -79,10 +79,10 @@ void AqueousEquilibriumComplex::Update(const std::vector<Species> primarySpecies
   
 } // end update()
 
-void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> &total) 
+void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> *total) 
 {
   for (int i = 0; i < ncomp_; i++) {
-    total[species_ids_[i]] += stoichiometry_[i] * molality(); 
+    (*total)[species_ids_[i]] += stoichiometry_[i] * molality(); 
   }
 } // end addContributionToTotal()
 

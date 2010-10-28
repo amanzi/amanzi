@@ -100,7 +100,7 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies)
 
 } // end update_rates()
 
-void GeneralRxn::addContributionToResidual(std::vector<double> &residual,
+void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
                                            double por_den_sat_vol)
 {
   // por_den_sat_vol = porosity*water_density*saturation*volume
@@ -112,7 +112,7 @@ void GeneralRxn::addContributionToResidual(std::vector<double> &residual,
   for (int i = 0; i < ncomp_; i++) {
     int icomp = species_ids_[i];
     // this stoichiometry is for the overall reaction
-    residual[icomp] -= stoichiometry_[i]* effective_rate;
+    (*residual)[icomp] -= stoichiometry_[i]* effective_rate;
   }
 
 } // end addContributionToResidual()

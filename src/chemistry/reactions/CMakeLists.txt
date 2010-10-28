@@ -14,6 +14,8 @@ set(SRCS
 	./MineralKineticsFactory.cpp 
 	./Reaction.cpp 
 	./SecondarySpecies.cpp 
+	./SurfaceComplex.cpp 
+	./SurfaceComplexationRxn.cpp 
 )
 
 add_library(geochemrxns ${SRCS}) 

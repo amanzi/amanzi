@@ -21,9 +21,11 @@ int main (int argc, char **argv) {
   beaker.verbosity(verbose);
 
   Beaker::BeakerComponents components;
-  components.primaries.clear();
+  components.free_ion.clear();
   components.minerals.clear();
   components.ion_exchange_sites.clear();
+  components.total.clear();
+  components.total_sorbed.clear();
 
   Beaker::BeakerParameters parameters = beaker.GetDefaultParameters();
   parameters.porosity = 0.25;
@@ -36,15 +38,15 @@ int main (int argc, char **argv) {
 
 #if 1
   // set up simple 2-species carbonate system (H,HCO3-)
-  createCarbonateSystem(&(components.primaries), &beaker);
+  createCarbonateSystem(&(components.total), &beaker);
 #else
   filename = "reaction.dat";
   readChemistryFromFile(filename,&beaker);
   filename = "target_total.dat";
-  readTargetTotalFromFile(filename,beaker.ncomp(), &components) ;
+  readTargetTotalFromFile(filename,beaker.ncomp(), &components.total) ;
   // convert totals from molality [mol/kg water] -> molarity [mol/L water]
-  for (int i = 0; i < (int)total.size(); i++)
-    components.primaries[i] *= water_density/1000.;
+  for (unsigned int i = 0; i < components.total.size(); i++)
+    components.total[i] *= parameters.water_density/1000.;
 #endif
   // solve for free-ion concentrations
 

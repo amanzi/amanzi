@@ -26,9 +26,11 @@ int main(int argc, char **argv) {
 
   Beaker *chem = NULL;
   Beaker::BeakerComponents components;
-  components.primaries.clear();
+  components.free_ion.clear();
   components.minerals.clear();
   components.ion_exchange_sites.clear();
+  components.total.clear();
+  components.total_sorbed.clear();
 
   std::string thermo_database_file("");
   std::string mineral_kinetics_file("");
@@ -45,8 +47,8 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
-        components.primaries.push_back(1.0e-3);  // H+
-        components.primaries.push_back(1.0e-3);  // HCO3-
+        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(1.0e-3);  // HCO3-
         break;
       }
       case 2: {
@@ -56,8 +58,8 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        components.primaries.push_back(1.0e-3);  // H+
-        components.primaries.push_back(1.0e-3);  // HCO3-
+        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(1.0e-3);  // HCO3-
         break;
       }
       case 3: {
@@ -67,9 +69,9 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
-        components.primaries.push_back(1.0e-3);  // H+
-        components.primaries.push_back(3.0e-3);  // HCO3-
-        components.primaries.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(3.0e-3);  // HCO3-
+        components.total.push_back(1.0e-3);  // Ca++
         break;
       }
       case 4: {
@@ -79,9 +81,9 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        components.primaries.push_back(1.0e-3);  // H+
-        components.primaries.push_back(3.0e-3);  // HCO3-
-        components.primaries.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(3.0e-3);  // HCO3-
+        components.total.push_back(1.0e-3);  // Ca++
         break;
       }
       case 5: {
@@ -92,9 +94,9 @@ int main(int argc, char **argv) {
         thermo_database_file = "input/calcite.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
         mineral_kinetics_file = "input/calcite-kinetics-tst.ain";
-        components.primaries.push_back(1.0e-3);  // H+
-        components.primaries.push_back(3.0e-3);  // HCO3-
-        components.primaries.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(3.0e-3);  // HCO3-
+        components.total.push_back(1.0e-3);  // Ca++
         components.minerals.push_back(1.0);  // calcite 
         break;
       }
@@ -105,11 +107,11 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/na-ca-ion-exchange.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        components.primaries.push_back(1.0e-3);  // H+
-        components.primaries.push_back(3.0e-3);  // HCO3-
-        components.primaries.push_back(1.0e-3);  // Ca++
-        components.primaries.push_back(1.0e-3);  // Na+
-        components.primaries.push_back(1.0e-3);  // Cl-
+        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(3.0e-3);  // HCO3-
+        components.total.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // Na+
+        components.total.push_back(1.0e-3);  // Cl-
         components.ion_exchange_sites.push_back(100.0);  // X-, equivalents per 100 grams solid?
         break;
       }
@@ -145,12 +147,12 @@ int main(int argc, char **argv) {
     if (mineral_kinetics_file.size() != 0) {
       std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
       chem->DisplayTotalColumnHeaders();
-      chem->DisplayTotalColumns(0.0, components.primaries);
+      chem->DisplayTotalColumns(0.0, components.total);
       double delta_time = 3660.0;  // seconds
       int num_time_steps = 12;
       for (int time_step = 0; time_step <= num_time_steps; time_step++) {
         chem->ReactionStep(&components, parameters, delta_time);        
-        chem->DisplayTotalColumns(time_step+1 * delta_time, components.primaries);
+        chem->DisplayTotalColumns(time_step+1 * delta_time, components.total);
       }
       std::cout << "---- Final Speciation" << std::endl;
       chem->Speciate(components, parameters);

@@ -7,16 +7,18 @@
 #include <string>
 
 #include "ActivityModel.hpp"
+#include "ActivityModelFactory.hpp"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
 #include "GeneralRxn.hpp"
+#include "IonExchangeComplex.hpp"
+#include "IonExchangeSite.hpp"
+#include "KineticRate.hpp"
 #include "LU.hpp"
 #include "Mineral.hpp"
-//#include "GasExchange.hpp"
-#include "IonExchangeSite.hpp"
-#include "IonExchangeComplex.hpp"
-//#include "SurfaceComplexation.hpp"
+#include "MineralKineticsFactory.hpp"
 #include "Species.hpp"
+#include "SurfaceComplexationRxn.hpp"
 #include "Verbosity.hpp"
 
 #include <vector>
@@ -30,9 +32,11 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerComponents {
-    std::vector<double> primaries;
+    std::vector<double> free_ion;
     std::vector<double> minerals;
     std::vector<double> ion_exchange_sites;
+    std::vector<double> total;
+    std::vector<double> total_sorbed;
   };
 
   struct BeakerParameters {
@@ -83,25 +87,28 @@ class Beaker {
   // update activities, equilibrium complex concentrations, etc.
   void updateEquilibriumChemistry(void);
   void calculateTotal(void);
-  void calculateTotal(std::vector<double> &total);
+  void calculateTotal(std::vector<double> *total,
+                      std::vector<double> *total_sorbed);
   // calculate block of Jacobian corresponding to derivatives of total with
   // respect to free-ion
   void calculateDTotal(void);
-  void calculateDTotal(Block *dtotal);
+  void calculateDTotal(Block *dtotal, Block *dtotal_sorbed);
   // kinetic chemistry
   void updateKineticChemistry(void);
-  void addKineticChemistryToResidual(std::vector<double> &residual);
+  void addKineticChemistryToResidual(std::vector<double> *residual);
   void addKineticChemistryToJacobian(Block *J);
   // accumulation terms
-  void addAccumulation(std::vector<double> &residual);
+  void addAccumulation(std::vector<double> *residual);
   void addAccumulation(std::vector<double> total, 
-                       std::vector<double> &residual);
+                       std::vector<double> total_sorbed, 
+                       std::vector<double> *residual);
   void addAccumulationDerivative(Block *J);
-  void addAccumulationDerivative(Block *J, Block *dtotal);
+  void addAccumulationDerivative(Block *J, Block *dtotal, Block *dtotal_sorbed);
   void calculateFixedAccumulation(std::vector<double> total,
-                                  std::vector<double> &fixed_accumulation);
+                                  std::vector<double> total_sorbed,
+                                  std::vector<double> *fixed_accumulation);
   // residual and Jacobian
-  void calculateResidual(std::vector<double> &residual, 
+  void calculateResidual(std::vector<double> *residual, 
                          std::vector<double> fixed_residual);
   void calculateJacobian(Block *J);
 
@@ -145,7 +152,10 @@ class Beaker {
   double volume(void) const { return this->volume_; }
   double dt(void) const { return this->dt_; }
 
-  double accumulation_coef(void) const { return this->accumulation_coef_; }
+  double aqueous_accumulation_coef(void) const 
+    { return this->aqueous_accumulation_coef_; }
+  double sorbed_accumulation_coef(void) const 
+    { return this->sorbed_accumulation_coef_; }
   double por_sat_den_vol(void) const { return this->por_sat_den_vol_; }
 
   virtual void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
@@ -174,24 +184,40 @@ protected:
                                       this->water_density_kg_L_ = d; }
   void volume(double d) { this->volume_ = d; }
   void dt(double d) { this->dt_ = d; }
-  void accumulation_coef(double d) { this->accumulation_coef_ = d; }
+  void aqueous_accumulation_coef(double d) 
+    { this->aqueous_accumulation_coef_ = d; }
+  void sorbed_accumulation_coef(double d) 
+    { this->sorbed_accumulation_coef_ = d; }
   void por_sat_den_vol(double d) { this->por_sat_den_vol_ = d; }
   // calculates the coefficient in aqueous portion of accumulation term
-  void update_accumulation_coef(void); 
+  void update_accumulation_coefficients(void); 
   // calculates product of porosity,saturation,water_density[kg/m^3],volume
   void update_por_sat_den_vol(void);
+
 
   std::vector<Species> primary_species(void) const { return this->primarySpecies_; };
   std::vector<Mineral> minerals(void) const { return this->minerals_; };
   std::vector<IonExchangeSite> ion_exchange_sites(void) const { return this->ion_exchange_sites_; };
+  std::vector<double> total(void) const { return this->total_; };
+  std::vector<double> total_sorbed(void) const { return this->total_sorbed_; };
 
 private:
   Verbosity verbosity_;
   double tolerance_;
   unsigned int max_iterations_;
   int ncomp_;                   // # basis species
-  std::vector<double> total_;  // total component concentrations of basis species
-  Block *dtotal_;      // matrix that holds derivative of total concentration w/respec to free-ion
+
+  // Aqueous phase total component concentrations for basis species
+  std::vector<double> total_; // [mol/L]
+  // Matrix block containing derivative of total concentration w/respec to 
+  // free-ion
+  Block *dtotal_; // [kg water/sec]
+
+  // Sorbed phase total component concentrations for basis species
+  std::vector<double> total_sorbed_;  // [mol/m^3 bulk]
+  // Matrix block containing derivative of total sorbed concentration 
+  // w/respec to free-ion
+  Block *dtotal_sorbed_; // [kg water/sec]
 
   // common parameters among reactions
   double porosity_;            // [m^3 pore / m^3 bulk]
@@ -200,10 +226,12 @@ private:
   double water_density_kg_L_;  // [kg water / L water]
   double volume_;              // cell volume [m^3 bulk]
   double dt_;                  // time step size [seconds]
-  // accumulation_coef_ = porosity*saturation*volume*1000./dt [L water/sec]
+  // aqueous_accumulation_coef_ = porosity*saturation*volume*1000./dt [L water/sec]
   // units = (m^3 por/m^3 bulk)*(m^3 water/m^3 por)*
   //         (m^3 bulk)*(1000L water/m^3 water)/(sec) = (L water/sec)
-  double accumulation_coef_;  
+  double aqueous_accumulation_coef_;  
+  // sorbed_accumulation_coef_ = volume/dt [m^3 bulk/sec]
+  double sorbed_accumulation_coef_;  
   // por_sat_den_vol_ = porosity * saturation * water_density * volume [kg water]
   double por_sat_den_vol_; 
   
@@ -219,7 +247,7 @@ private:
   std::vector<KineticRate*> mineral_rates_;
 //  vector<GasExchange*> gasRxns_;
   std::vector<IonExchangeComplex> ion_exchange_rxns_;
-//  vector<SurfaceComplexation*> surfaceComplexationRxns_;
+  std::vector<SurfaceComplexationRxn> surfaceComplexationRxns_;
 
   // solver data structures
   std::vector<double> fixed_accumulation; // fixed (time t) portion of accumulation term
