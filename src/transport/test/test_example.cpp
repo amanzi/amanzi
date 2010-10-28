@@ -46,12 +46,12 @@ TEST(TRANSPORT_PK_INIT) {
 
   /* the actual test is to print the Darcy velocity */
   RCP<Transport_State>  TS_pointer;
-  RCP<const Epetra_MultiVector>  darcy_flux_pointer;
+  RCP<const Epetra_Vector>  darcy_flux;
 
   TS_pointer = TPK.get_transport_state();
-  darcy_flux_pointer = TS_pointer->get_darcy_flux();
+  darcy_flux = TS_pointer->get_darcy_flux();
 
-  cout << *(darcy_flux_pointer) << endl;
+  cout << *(darcy_flux) << endl;
 }
  
 
@@ -112,7 +112,7 @@ TEST(TRANSPORT_PK_ADVANCE) {
 #endif
 
   /* create a MPC state with one component */
-  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
+  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm) ); 
 
   int num_components = 1;
   State mpc_state( num_components, mesh );
@@ -126,8 +126,21 @@ TEST(TRANSPORT_PK_ADVANCE) {
 
   Transport_PK  TPK(parameter_list, TS);
 
+  /* create analytic Darcy flux */
+  TS->analytic_darcy_flux();
+  TS->analytic_total_component_concentration();
+
   /* advance the state */
   TPK.advance();
+
+  /* printing cell concentration */
+  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+
+  RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+
+  cout << *tcc << endl;
+  cout << *tcc_next << endl;
 }
  
 

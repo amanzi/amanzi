@@ -12,11 +12,14 @@ set(AMANZI_Mesh_VERSION_MAJOR 0)
 set(AMANZI_Mesh_VERSION_MINOR 1)
 
 
+set(HOME "/home/rao")
+
 
 ##############################################################################
 # Curl library - http://www.libcurl.org
 ##############################################################################
 
+set(Curl_DIR ${HOME}/packages/cmake-2.8.2/Utilities/cmcurl)
 find_library(CURL_LIBRARY curl 
              /usr/lib
              /usr/local/lib
@@ -55,8 +58,9 @@ set_property(TARGET curl PROPERTY IMPORTED_LOCATION ${CURL_LIBRARY})
 # MPICH - http://www.mcs.anl.gov/research/projects/mpich2/
 ##############################################################################
 
+set(MPI_DIR "/usr/lib64/openmpi")
 find_library(MPI_LIBRARY mpi
-             /usr/lib
+             /usr/lib64
              /usr/local/lib
              ${MPI_DIR}/lib
              ${MPI_LIB_DIR})
@@ -87,6 +91,7 @@ set(MPI_INCLUDE_DIR ${MPI_DIR}/include)
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
 ##############################################################################
 
+set (NetCDF_DIR /usr)
 find_library(NETCDF_LIBRARY netcdf
              ${NetCDF_DIR}/lib
 	     ${NetCDF_LIB_DIR}
@@ -174,6 +179,7 @@ set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIBRARY})
 # get it as part of Trilinos - http:://trilinos.sandia.gov
 ##############################################################################
 
+set(ExodusII_DIR "/home/lipnikov/SoftOther/ASCEM/exodusii-4.98")
 find_library(EXODUSII_LIBRARY exoIIv2c
              ${ExodusII_DIR}/cbind/src
 	     ${ExodusII_DIR}/lib
@@ -245,17 +251,17 @@ set(MOAB_LIBS_ALL MOAB netcdf netcdf_c++ hdf5)
 # UnitTest++ - http://unittest-cpp.sourceforge.net/
 ##############################################################################
 
+set(UnitTest_DIR "/home/lipnikov/SoftOther/ASCEM/UnitTest++")
 if (NOT DEFINED UnitTest_DIR)
   message(WARNING "No UnitTest++ directory defined. To compile the unit tests add:
  -D UnitTest_DIR::FILEPATH=<UnitTest++_install_prefix>")
 else()
-  find_library(UNITTEST_LIBRARY unittest++ "${UnitTest_DIR}/lib")
+  find_library(UNITTEST_LIBRARY UnitTest++ "${UnitTest_DIR}/lib")
   if (NOT UNITTEST_LIBRARY)
     message(FATAL_ERROR "Error: could not find unittest++ library")
   endif()
   
-  find_path(UNITTEST_INCLUDES "UnitTest++.h" "${UnitTest_DIR}/include" 
-                                             "${UnitTest_DIR}/include/unittest++")
+  find_path(UNITTEST_INCLUDES "UnitTest++.h" "${UnitTest_DIR}/src" "${UnitTest_DIR}/include/unittest++")
   if (NOT UNITTEST_INCLUDES)
     message(FATAL_ERROR "Error: could not find UnitTest++ includes")
   else()
@@ -272,6 +278,7 @@ endif()
 ##############################################################################
 #Trilinos
 ##############################################################################
+set (Trilinos_DIR "/home/lipnikov/SoftOther/ASCEM/trilinos-10.6.0-install")
 if(NOT DEFINED Trilinos_DIR)
 endif()
 
@@ -301,5 +308,4 @@ add_subdirectory(transport)
 add_subdirectory(boundary_conditions)
 add_subdirectory(flow)
 add_subdirectory(gmv)
-add_subdirectory(utils)
 add_subdirectory(bin)

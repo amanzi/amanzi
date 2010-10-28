@@ -27,7 +27,7 @@ Transport_PK::Transport_PK ( ParameterList &parameter_list_MPC,
   TS_next->create_internal_state( *TS_MPC );
 
   /* set null/zero values to all internal parameters */
-  dT = 0.0;
+  dT = 0.01;
   status = 0;
 
 
@@ -156,7 +156,7 @@ void Transport_PK::advance()
         u = darcy_flux[f];
 
         for ( i=0; i<num_components; i++ ) {
-            tcc_mass_flux = cfl * dT * u * tcc_next_data[i][c1];
+            tcc_mass_flux = cfl * dT * u * tcc_next_data[i][c2];
 
             tcc_next_data[i][c1] = tcc_data[i][c1] + tcc_mass_flux;
             tcc_next_data[i][c2] = tcc_data[i][c2] - tcc_mass_flux;
