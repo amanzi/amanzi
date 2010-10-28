@@ -8,10 +8,11 @@
 print_usage()
 {
     echo ""
-    echo "Usage: $0 [-h|--help]  -5|--hdf5-dir hdf5_path -z|--zlib-dir zlib_path -c|--curl-dir curl_path [ -- additional configure args]"
+    echo "Usage: $0 [-h|--help] [-p|--prefix path] -5|--hdf5-dir hdf5_path -z|--zlib-dir zlib_path -c|--curl-dir curl_path [ -- additional configure args]"
     echo ""
     echo "FLAGS:"
     echo "-h|--help                           Print this message and exit"
+    echo "-p|--prefix path                    Define the installation prefix path. Default ${HOME}/netcdf"
     echo "-5|--hdf5-dir hdf5_path             HDF5 installation directory (REQUIRED)"
     echo "-z|--zlib-dir zlib_path             zlib (libz) installation directory (REQUIRED)"
     echo "-c|--curl-dir curl_path             CURL (libcurl)  directory (REQUIRED)"
@@ -118,6 +119,7 @@ export CXX=mpic++
 ./configure --prefix=${INSTALL_PATH} \
             --disable-fortran \
             --disable-f90 \
+            --enable-netcdf4 \
             --with-hdf5=${HDF5_PATH} \
             --with-zlib=${ZLIB_PATH} \
             --with-curl=${CURL_PATH}

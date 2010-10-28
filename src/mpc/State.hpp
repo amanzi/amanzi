@@ -27,6 +27,7 @@ public:
 
   Teuchos::RCP<const Epetra_Vector> get_pressure () const { return pressure; }; 
   Teuchos::RCP<const Epetra_Vector> get_darcy_flux () const { return darcy_flux; };
+  Teuchos::RCP<Epetra_Vector> get_darcy_flux () { return darcy_flux; };
   Teuchos::RCP<const Epetra_Vector> get_porosity () const { return porosity; };
   Teuchos::RCP<const Epetra_Vector> get_water_saturation () const { return water_saturation; };
   Teuchos::RCP<const Epetra_Vector> get_water_density () const { return water_density; };

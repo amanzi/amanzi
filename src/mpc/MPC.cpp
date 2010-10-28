@@ -28,7 +28,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    
    CS = Teuchos::rcp( new Chemistry_State( S ) );
    
-   TS = Teuchos::rcp( new Transport_State( S ) );
+   TS = Teuchos::rcp( new Transport_State( *S ) );
 
    FS = Teuchos::rcp( new Flow_State( S ) ); 
    // done creating auxilary state objects for the process models
