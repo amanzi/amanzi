@@ -12,18 +12,15 @@ set(AMANZI_Mesh_VERSION_MAJOR 0)
 set(AMANZI_Mesh_VERSION_MINOR 1)
 
 
-#set(HOME "/home/rao")
-
-
 ##############################################################################
 # Curl library - http://www.libcurl.org
 ##############################################################################
 
 find_library(CURL_LIBRARY curl 
-             /usr/lib
-             /usr/local/lib
-             ${Curl_DIR}/lib 
-             ${Curl_LIB_DIR})
+             HINTS ${Curl_LIB_DIR}
+                   ${Curl_DIR}/lib 
+                   /usr/lib
+                   /usr/local/lib)
 if (NOT CURL_LIBRARY)
   message(FATAL_ERROR "Error: could not find Curl library"
           "Try defining Curl_DIR: (-D Curl_DIR:FILEPATH=-<Curl_install_prefix>"
@@ -33,11 +30,11 @@ endif()
 
 set(CURL_INCLUDE_DIR ${Curl_DIR}/curl)
 find_path(CURL_INCLUDES curl.h 
-          /usr/include/curl 
-          /usr/local/include/curl 
-          ${Curl_DIR}/include/curl 
-          ${Curl_DIR}/include 
-          ${CURL_INCLUDE_DIR})
+          HINTS ${CURL_INCLUDE_DIR}
+                ${Curl_DIR}/include 
+                ${Curl_DIR}/include/curl 
+                /usr/include/curl 
+                /usr/local/include/curl)
 if(NOT CURL_INCLUDES)
   message(FATAL_ERROR "Error: could not find Curl includes\n"
           "Try defining Curl_DIR: (-D Curl_DIR:FILEPATH=-<Curl_install_prefix>"
@@ -58,10 +55,10 @@ set_property(TARGET curl PROPERTY IMPORTED_LOCATION ${CURL_LIBRARY})
 ##############################################################################
 
 find_library(MPI_LIBRARY mpi
-             /usr/lib64
-             /usr/local/lib
-             ${MPI_DIR}/lib
-             ${MPI_LIB_DIR})
+             HINTS ${MPI_LIB_DIR}
+                   ${MPI_DIR}/lib
+                   /usr/lib64
+                   /usr/local/lib)
 if(NOT MPI_LIBRARY)
   message(FATAL_ERROR "Error: could not find MPI library\n"
           "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
@@ -69,10 +66,10 @@ if(NOT MPI_LIBRARY)
 endif()
 
 find_path(MPI_INCLUDES mpi.h 
-          /usr/include
-          /usr/local/include
-          ${MPI_DIR}/include
-          ${MPI_INCLUDE_DIR})
+          HINTS ${MPI_INCLUDE_DIR}
+                ${MPI_DIR}/include
+                /usr/include
+                /usr/local/include)
 if(NOT MPI_INCLUDES)
   message(FATAL_ERROR "Error: could not find MPI includes\n"
           "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
@@ -90,12 +87,11 @@ set(MPI_INCLUDE_DIR ${MPI_DIR}/include)
 ##############################################################################
 
 find_library(NETCDF_LIBRARY netcdf
-             ${NetCDF_DIR}/lib
-	     ${NetCDF_LIB_DIR}
-             /usr/lib
-	     /usr/local/lib
-	     NO_DEFAULT_PATH
-	     )
+	     HINTS ${NetCDF_LIB_DIR}
+                   ${NetCDF_DIR}/lib
+                   /usr/lib
+	           /usr/local/lib
+		   )
  if(NOT NETCDF_LIBRARY)
   message(FATAL_ERROR "Error: could not find netcdf library\n"
           "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
@@ -103,11 +99,11 @@ find_library(NETCDF_LIBRARY netcdf
 endif()
 
 find_library(NETCDF_C++_LIBRARY netcdf_c++
-             ${NetCDF_DIR}/lib
-	     ${NetCDF_LIB_DIR}
-             /usr/lib
-	     /usr/local/lib
-	     NO_DEFAULT_PATH)
+             HINTS ${NetCDF_LIB_DIR}
+                   ${NetCDF_DIR}/lib
+                   /usr/lib
+	           /usr/local/lib
+		   )
  if(NOT NETCDF_C++_LIBRARY)
   message(FATAL_ERROR "Error: could not find netcdf_c++ library\n"
           "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
@@ -115,11 +111,11 @@ find_library(NETCDF_C++_LIBRARY netcdf_c++
 endif()
 
 find_path(NETCDF_INCLUDES netcdf.h 
-          ${NetCDF_DIR}/include
-          ${NetCDF_INCLUDE_DIR}
-          /usr/include
-          /usr/local/include
-	  NO_DEFAULT_PATH)
+          HINTS ${NetCDF_INCLUDE_DIR}
+                ${NetCDF_DIR}/include
+                /usr/include
+                /usr/local/include
+		)
 if(NOT NETCDF_INCLUDES)
   message(FATAL_ERROR "Error: could not find NetCDF includes\n"
           "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
@@ -144,10 +140,11 @@ set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
 ##############################################################################
 
 find_library(HDF5_LIBRARY hdf5
-             /usr/lib
-             /usr/local/lib
-             ${HDF5_DIR}/lib
-             ${HDF5_LIB_DIR})
+             HINTS ${HDF5_LIB_DIR}
+                   ${HDF5_DIR}/lib
+                   /usr/lib
+                   /usr/local/lib
+		   )
 if(NOT HDF5_LIBRARY)
   message(FATAL_ERROR "Error: could not find HDF5 library\n"
           "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
@@ -155,10 +152,11 @@ if(NOT HDF5_LIBRARY)
 endif()
 
 find_path(HDF5_INCLUDES hdf5.h 
-          /usr/include
-          /usr/local/include
-          ${HDF5_DIR}/include
-          ${HDF5_INCLUDE_DIR})
+          HINTS ${HDF5_INCLUDE_DIR}
+                ${HDF5_DIR}/include
+                /usr/include
+                /usr/local/include
+		)
 if(NOT HDF5_INCLUDES)
   message(FATAL_ERROR "Error: could not find HDF5 includes\n"
           "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
@@ -177,9 +175,10 @@ set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIBRARY})
 ##############################################################################
 
 find_library(EXODUSII_LIBRARY exoIIv2c
-             ${ExodusII_DIR}/cbind/src
-	     ${ExodusII_DIR}/lib
-	     ${EXODUS_LIB_DIR})
+	     HINTS ${EXODUS_LIB_DIR}
+                   ${ExodusII_DIR}/cbind/src
+	           ${ExodusII_DIR}/lib
+		   )
 if(NOT EXODUSII_LIBRARY)
   message(FATAL_ERROR "Error: could not find ExodusII library\n"
           "Try defining ExodusII_DIR: (-D ExodusII_DIR:FILEPATH=<ExodusII_install_prefix>)\n"
@@ -187,9 +186,10 @@ if(NOT EXODUSII_LIBRARY)
 endif()
 
 find_path(EXODUSII_INCLUDES exodusII.h 
-          ${ExodusII_DIR}/cbind/include
-	  ${ExodusII_DIR}/include
-          ${ExodusII_INCLUDE_DIR})
+          HINTS ${ExodusII_INCLUDE_DIR}
+                ${ExodusII_DIR}/cbind/include
+	        ${ExodusII_DIR}/include
+		)
 if(NOT EXODUSII_INCLUDES)
   message(FATAL_ERROR "Error: could not find ExodusII includes\n"
           "Try defining ExodusII_DIR: (-D ExodusII_DIR:FILEPATH=<ExodusII_install_prefix>)\n"
@@ -212,23 +212,24 @@ set(EXODUS_LIBS_ALL exodusii netcdf curl)
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
 
-set (MOAB_DIR "${HOME}/packages/MOAB")
-set (MOAB_LIB_DIR ${MOAB_DIR}/lib)
 find_library(MOAB_LIBRARY MOAB
-             /usr/lib
-             /usr/local/lib
-             ${MOAB_LIB_DIR})
+             HINTS ${MOAB_LIB_DIR}
+             HINTS ${MOAB_DIR}/lib
+                   /usr/lib
+                   /usr/local/lib
+		   )
 if(NOT MOAB_LIBRARY)
   message(FATAL_ERROR "Error: could not find MOAB library\n"
           "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
           "\nor defining MOAB_LIB_DIR")
 endif()
 
-set (MOAB_INCLUDE_DIR ${MOAB_DIR}/include)
 find_path(MOAB_INCLUDES MBCore.hpp 
-          /usr/include
-          /usr/local/include
-          ${MOAB_INCLUDE_DIR})
+          HINTS ${MOAB_INCLUDE_DIR}
+                ${MOAB_DIR}/include
+                /usr/include
+                /usr/local/include
+		)
 if(NOT MOAB_INCLUDES)
   message(FATAL_ERROR "Error: could not find MOAB includes\n"
           "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
@@ -239,7 +240,7 @@ add_library(moab STATIC IMPORTED)
 set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
 
 # create a list of all the libraries required for MOAB to link.
-set(MOAB_LIBS_ALL MOAB netcdf netcdf_c++ hdf5)
+set(MOAB_LIBS_ALL moab netcdf netcdf_c++ hdf5)
 
 
 
@@ -252,12 +253,20 @@ if (NOT DEFINED UnitTest_DIR)
   message(WARNING "No UnitTest++ directory defined. To compile the unit tests add:
  -D UnitTest_DIR::FILEPATH=<UnitTest++_install_prefix>")
 else()
-  find_library(UNITTEST_LIBRARY UnitTest++ "${UnitTest_DIR}/lib")
+  find_library(UNITTEST_LIBRARY 
+               NAMES UnitTest++ unittest++
+               HINTS ${UnitTest_LIB_DIR}
+                     ${UnitTest_DIR}/lib
+		     )
   if (NOT UNITTEST_LIBRARY)
     message(FATAL_ERROR "Error: could not find unittest++ library")
   endif()
   
-  find_path(UNITTEST_INCLUDES "UnitTest++.h" "${UnitTest_DIR}/src" "${UnitTest_DIR}/include/unittest++")
+  find_path(UNITTEST_INCLUDES "UnitTest++.h" 
+            HINTS ${UnitTest_INCLUDE_DIR}
+                  ${UnitTest_DIR}/src 
+                  ${UnitTest_DIR}/include/unittest++
+		  )
   if (NOT UNITTEST_INCLUDES)
     message(FATAL_ERROR "Error: could not find UnitTest++ includes")
   else()
@@ -274,6 +283,7 @@ endif()
 ##############################################################################
 #Trilinos
 ##############################################################################
+
 if(NOT DEFINED Trilinos_DIR)
 endif()
 
@@ -296,7 +306,7 @@ add_subdirectory(exodus)
 add_subdirectory(mesh_data)
 add_subdirectory(stk_mesh)
 add_subdirectory(simple_mesh)
-add_subdirectory(moab_mesh_derived)
+add_subdirectory(moab_mesh)
 add_subdirectory(mpc)
 add_subdirectory(chemistry)
 add_subdirectory(transport)
