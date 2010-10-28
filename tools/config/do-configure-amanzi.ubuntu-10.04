@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# This is the script I use to configure amanzi on my
+# Ubuntu 10.04 machine. 
+#
+# I have the followig packages installed from the 
+# standard repositories (plus their dependencies):
+#
+# mpi-default-dev
+# mpi-default-bin
+# libcurl4-gnutls-dev
+# libhdf5-openmpi-dev
+# libnetcdf-dev
+# netcdf-bin
+# libunittest++-dev
+#
+# Then I installed ExodusII, MOAB, and Trilinos.
+#
+# Note that I have also recompiled the netcdf ubuntu 
+# packages according to the notes in the ExodusII 
+# readme. I will upload them to our WIKI, you can
+# download them and install them by hand with 
+# dpkg -i
+#
+# Markus Berndt (berndt@lanl.gov)
+
+rm -f CMakeCache.txt
+
+SOURCE=/home/berndt/ASCEM-Code/amanzi/src
+
+# modify the paths that point to the location of the
+# installation directories below
+
+/usr/bin/cmake \
+  -D MPI_INCLUDE_DIR:FILEPATH=/usr/lib64/openmpi/include \
+  -D Curl_DIR:FILEPATH=/usr/lib64 \
+  -D HDF5_DIR:FILEPATH=/usr/lib64 \
+  -D NetCDF_DIR:FILEPATH=/usr/lib64 \
+  -D ExodusII_DIR:FILEPATH=/home/berndt/Packages/Exodus/install/exodusii-4.98 \
+  -D MOAB_DIR:FILEPATH=/home/berndt/Packages/MOAB/install/MOAB-svn \
+  -D Trilinos_DIR:PATH=/home/berndt/Packages/Trilinos/install/trilinos-10.6.1 \
+  -D UnitTest_DIR:PATH=/usr \
+  ${SOURCE} 
+
