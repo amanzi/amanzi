@@ -216,6 +216,7 @@ set(EXODUS_LIBS_ALL exodusii netcdf curl)
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
 
+set (MOAB_DIR "${HOME}/packages/MOAB")
 set (MOAB_LIB_DIR ${MOAB_DIR}/lib)
 find_library(MOAB_LIBRARY MOAB
              /usr/lib
@@ -301,7 +302,7 @@ add_subdirectory(exodus)
 add_subdirectory(mesh_data)
 add_subdirectory(stk_mesh)
 add_subdirectory(simple_mesh)
-add_subdirectory(moab_mesh)
+add_subdirectory(moab_mesh_derived)
 add_subdirectory(mpc)
 add_subdirectory(chemistry)
 add_subdirectory(transport)
