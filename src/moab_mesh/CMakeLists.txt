@@ -8,7 +8,7 @@ link_directories(${MOAB_LIB_DIR} ${Trilinos_LIBRARY_DIRS})
 
 add_definitions("-DUSE_MPI")
 
-add_library(moab_mesh Cell_topology.cc Element_category.cc Mesh_maps.cc)
+add_library(moab_mesh Cell_topology.cc Element_category.cc Mesh_maps_moab.cc)
 target_link_libraries(moab_mesh dbc mesh_data ${MOAB_LIBS_ALL} ${Trilinos_LIBRARIES})
 
 if (BUILD_TESTS)
