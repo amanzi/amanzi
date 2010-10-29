@@ -3,7 +3,22 @@
 #include "SurfaceSite.hpp"
 
 SurfaceSite::SurfaceSite() 
+: name_(""),
+  identifier_(0),
+  charge_(0.)
 {
+  set_free_site_concentration(0.);
+  minerals_.clear();
+} 
+
+SurfaceSite::SurfaceSite(const SpeciesName name, 
+                         const SpeciesId id,
+                         const double free_site_concentration)
+                         : name_(name),
+                           identifier_(id),
+                           charge_(0.)
+{
+  set_free_site_concentration(free_site_concentration);
   minerals_.clear();
 } 
 

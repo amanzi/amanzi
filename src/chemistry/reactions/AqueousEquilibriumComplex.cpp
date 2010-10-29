@@ -5,7 +5,7 @@
 AqueousEquilibriumComplex::AqueousEquilibriumComplex() 
     : Species(),
       ncomp_(0), // # components in reaction
-      h2o_stoich_(0.0),
+      h2o_stoichiometry_(0.0),
       lnK_(0.0),
       lnQK_(0.0),
       logK_(0.0)
@@ -36,13 +36,13 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex(const SpeciesName name,
                             const double size, 
                             const double logK) 
                             : Species(id, name, charge, mol_wt, size),
-                              h2o_stoich_(h2o_stoich),
+                              h2o_stoichiometry_(h2o_stoich),
                               lnK_(log_to_ln(logK)),
                               lnQK_(0.0),
                               logK_(logK)
 
 {
-  set_ncomp(static_cast<int>(species.size()));
+  set_ncomp(static_cast<int>(stoichiometries.size()));
 
   // species names
   for (std::vector<SpeciesName>::const_iterator i = species.begin(); 
@@ -59,8 +59,6 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-
-  lnK_ = log_to_ln(logK);
 } // end AqueousEquilibriumComplex() constructor
 
 AqueousEquilibriumComplex::~AqueousEquilibriumComplex() 

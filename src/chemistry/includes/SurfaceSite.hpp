@@ -15,7 +15,8 @@ class SurfaceSite {
  public:
   SurfaceSite();
   SurfaceSite(const SpeciesName name, 
-              const SpeciesId id);
+              const SpeciesId id,
+              const double free_site_concentration);
   ~SurfaceSite();
 
   // adds a pointer to mineral list
@@ -24,6 +25,10 @@ class SurfaceSite {
 
   void display(void) const;
   void Display(void) const;
+
+  void set_name(SpeciesName name) { this->name_ = name; }
+  void set_identifier(SpeciesId i) { this->identifier_ = i; }
+  void set_charge(double d) { this->charge_ = d; }
 
   void set_free_site_concentration(const double d) 
     { this->free_site_concentration_ = d; 
@@ -34,6 +39,10 @@ class SurfaceSite {
   void set_molar_density(const double d) { this->molar_density_ = d; }
   void set_molar_surface_density(const double d) 
     { this->molar_surface_density_ = d; }
+
+  SpeciesName name(void) const { return this->name_; }
+  SpeciesId identifier(void) const { return this->identifier_; }
+  double charge(void) const { return this->charge_; }
 
   double free_site_concentration(void) const 
     { return this->free_site_concentration_; }
@@ -46,10 +55,17 @@ class SurfaceSite {
  protected:
 
  private:
+
+  SpeciesName name_;
+  SpeciesId identifier_;
+  double charge_;
+
   double molar_density_; // [moles sites / m^3 mineral]
   double molar_surface_density_; // [moles sites / m^2 mineral]
   double free_site_concentration_; // [moles sites / m^3 bulk]
   double ln_free_site_concentration_; // [-]
+
+  // for future use
   // a list of pointers to minerals assocaited with the site
   std::vector<Mineral*> minerals_;
 

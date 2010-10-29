@@ -11,28 +11,32 @@ SurfaceComplex::SurfaceComplex()
 
 } // end SurfaceComplex() constructor
 
-SurfaceComplex::SurfaceComplex(std::string s)
-{
-  static_cast<void>(s);
-  // string = "name ncomp stoich1 comp1 stoich2 comp2 ... stoichN compN
-  //           logK1 logK2 ... logKN a0 charge mol_wt"
-} // end SurfaceComplex() constructor
-
 SurfaceComplex::SurfaceComplex(const SpeciesName name, 
                             const SpeciesId id,
                             std::vector<SpeciesName>species,
                             std::vector<double>stoichiometries,
                             std::vector<int>species_ids,
                             const double h2o_stoich, 
+                            const double free_site_stoich,
                             const double charge, 
                             const double logK) 
-                            : surface_concentration_(0.),
-                              h2o_stoich_(h2o_stoich),
+                            : name_(name),
+                              identifier_(id),
+                              charge_(charge),
+                              surface_concentration_(0.),
+                              free_site_stoichiometry_(free_site_stoich),
+                              h2o_stoichiometry_(h2o_stoich),
                               lnK_(log_to_ln(logK)),
                               lnQK_(0.),
                               logK_(logK)
 {
-  set_ncomp(static_cast<int>(species.size()));
+
+  species_names_.clear();
+  species_ids_.clear();
+  stoichiometry_.clear();
+  logK_array_.clear();
+
+  set_ncomp(static_cast<int>(stoichiometries.size()));
 
   // species names
   for (std::vector<SpeciesName>::const_iterator i = species.begin(); 
@@ -49,9 +53,6 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-
-  logK_ = logK;
-  lnK_ = log_to_ln(logK);
 } // end SurfaceComplex() constructor
 
 SurfaceComplex::~SurfaceComplex() 

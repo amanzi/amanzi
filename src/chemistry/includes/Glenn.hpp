@@ -126,7 +126,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
 {
 
   char word[32];
-  int ncomp, neqcplx, ngeneral_rxn;
+  int ncomp, neqcplx, ngeneral_rxn, nsurfcplx_rxn;
 
   // open file with FileIO buffer
   FileIO *file = new FileIO(filename);
@@ -136,6 +136,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
   g->resize(ncomp);
   file->readInt(&neqcplx);
   file->readInt(&ngeneral_rxn);
+  file->readInt(&nsurfcplx_rxn);
 
   int id;
   SpeciesName name;
@@ -403,7 +404,124 @@ static void readChemistryFromFile(string filename, Beaker *g)
 //                                h2o_stoich,
                                 kf,kb));
   }
-  
+
+#ifdef DEBUG
+  std::cout << "--- Surface Complexation Reactions ---\n";
+#endif
+
+  // for neqcplx secondary speces, each line lists name, Z, a0, etc.
+  for (int i = 0; i < nsurfcplx_rxn; i++) {
+
+    // name currently not used
+    species.clear(); // currently not used
+    stoichiometries.clear();
+    species_ids.clear();
+
+    // surface complex name
+    file->getLine();
+    file->readWord(word);
+    name = word;
+    // surface site density
+    double site_density;
+    file->getLine();
+    file->readDouble(&site_density);
+
+    SurfaceSite *surface_site = new SurfaceSite(name,i,site_density);
+
+    int num_surface_complexes;
+    file->getLine();
+    file->readInt(&num_surface_complexes);
+
+    std::vector<SurfaceComplex> surface_complexes;
+    for (int icplx = 0; i < num_surface_complexes; i++) {
+     
+      // surface complex name
+      file->getLine();
+      file->readWord(word);
+      name = word;
+
+#ifdef DEBUG
+      std::cout << "Surface Complex: " << name << endl;
+#endif
+
+      // charge
+      file->readDouble(&charge);
+
+#ifdef DEBUG
+      std::cout << "Surface Complex Species IDs" << endl;
+#endif
+
+      // species ids
+      file->getLine();
+      int ncomp_in_rxn;
+      file->readInt(&ncomp_in_rxn);
+      for (int j = 0; j<ncomp_in_rxn; j++) {
+        int tempi;
+        file->readInt(&tempi);
+        // decrement for zero-based indexing
+        tempi--;
+        species_ids.push_back(tempi);
+      }
+#ifdef DEBUG
+      for (int j = 0; j < (int)species_ids.size(); j++)
+        std::cout << species_ids[j] << " " ;
+      std::cout << endl;
+#endif
+      // species stoichiometries
+      double tempd;
+      file->getLine();
+      for (int j = 0; j<ncomp_in_rxn; j++) {
+        file->readDouble(&tempd);
+        stoichiometries.push_back(tempd);
+      }
+#ifdef DEBUG
+      for (int j = 0; j < ncomp_in_rxn; j++)
+        std::cout << stoichiometries[j] << " " ;
+      std::cout << endl;
+#endif
+
+      // skip h2o id
+      file->getLine();
+
+      // h2o stoichiometry
+      file->getLine();
+      file->readDouble(&h2o_stoich);
+#ifdef DEBUG
+      std::cout << "H2O ID" << endl;
+      std::cout << h2o_stoich << endl;
+#endif
+      
+      // skip free site id
+      file->getLine();
+
+      // free site stoichiometry
+      double free_site_stoich;
+      file->getLine();
+      file->readDouble(&free_site_stoich);
+#ifdef DEBUG
+      std::cout << "Free Site Stoichiometry" << endl;
+      std::cout << free_site_stoich << endl;
+#endif
+
+      // logK
+      file->getLine();
+      file->readDouble(&logK);
+#ifdef DEBUG
+      std::cout << logK << endl;
+      std::cout << "-------------------------\n";
+#endif
+     
+      surface_complexes.push_back(
+         SurfaceComplex(name, icplx, species, stoichiometries, species_ids,
+                        h2o_stoich, free_site_stoich, charge, logK));
+
+    }
+    g->addSurfaceComplexationRxn(
+        SurfaceComplexationRxn(surface_site,
+                               surface_complexes));
+    surface_complexes.clear();
+  }
+
   delete file;
 }; // end readChemistryFromFile
 

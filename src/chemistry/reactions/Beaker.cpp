@@ -221,6 +221,11 @@ void Beaker::addGeneralRxn(GeneralRxn r)
   generalKineticRxns_.push_back(r);
 } // end addGeneralRxn()
 
+void Beaker::addSurfaceComplexationRxn(SurfaceComplexationRxn r) 
+{
+  surfaceComplexationRxns_.push_back(r);
+} // end addSurfaceComplexationRxn()
+
 Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const
 {
   Beaker::BeakerParameters parameters;

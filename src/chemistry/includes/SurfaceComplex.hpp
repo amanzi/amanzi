@@ -22,6 +22,7 @@ class SurfaceComplex {
                  std::vector<double> stoichiometries,
                  std::vector<int> species_ids,
                  const double h2o_stoich, 
+                 const double free_site_stoichiometry,
                  const double charge, 
                  const double logK);
   ~SurfaceComplex();
@@ -38,6 +39,10 @@ class SurfaceComplex {
   void display(void) const;
   void Display(void) const;
 
+  void set_name(SpeciesName name) { this->name_ = name; }
+  void set_identifier(SpeciesId i) { this->identifier_ = i; }
+  void set_charge(double d) { this->charge_ = d; }
+
   void set_free_site_stoichiometry(const double d) 
     { this->free_site_stoichiometry_ = d; }
   void set_lnQK(const double d) { this->lnQK_ = d; };
@@ -45,6 +50,10 @@ class SurfaceComplex {
   void set_ncomp(const int i) { this->ncomp_ = i; };
   void set_surface_concentration(const double d) 
     { this->surface_concentration_ = d; };
+
+  SpeciesName name(void) const { return this->name_; }
+  SpeciesId identifier(void) const { return this->identifier_; }
+  double charge(void) const { return this->charge_; }
 
   double free_site_stoichiometry(void) const 
     { return this->free_site_stoichiometry_; }
@@ -65,6 +74,11 @@ class SurfaceComplex {
   double log_to_ln(double d) { return d*2.30258509299; }
   double ln_to_log(double d) { return d*0.434294481904; }
 
+
+  SpeciesName name_;
+  SpeciesId identifier_;      
+  double charge_;
+
   double surface_concentration_;
 
   int ncomp_; // # components in reaction
@@ -73,7 +87,7 @@ class SurfaceComplex {
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
   double free_site_stoichiometry_;     // stoichiometry of free site in rxn
   std::vector<double> logK_array_;     // for temperature dep. logK
-  double h2o_stoich_;                  // stoichiometry of water in equation
+  double h2o_stoichiometry_;           // stoichiometry of water in equation
   double lnK_;                         // log value of equlibrium constant
   double lnQK_;                        // store lnQK for derivatives later
   double logK_;

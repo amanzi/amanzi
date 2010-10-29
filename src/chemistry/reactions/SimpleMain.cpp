@@ -36,7 +36,7 @@ int main (int argc, char **argv) {
   beaker.SetupActivityModel(ActivityModelFactory::debye_huckel);
   //beaker.SetupActivityModel(ActivityModelFactory::unit);
 
-#if 1
+#if 0
   // set up simple 2-species carbonate system (H,HCO3-)
   createCarbonateSystem(&(components.total), &beaker);
 #else

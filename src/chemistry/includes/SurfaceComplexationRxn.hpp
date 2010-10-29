@@ -16,14 +16,8 @@ class SurfaceComplexationRxn {
  public:
   SurfaceComplexationRxn();
   SurfaceComplexationRxn(std::string s);
-  SurfaceComplexationRxn(const SpeciesName name, 
-                 const SpeciesId id,
-                 std::vector<SpeciesName> species,
-                 std::vector<double> stoichiometries,
-                 std::vector<int> species_ids,
-                 const double h2o_stoich, 
-                 const double charge, 
-                 const double logK);
+  SurfaceComplexationRxn(SurfaceSite* surface_sites,
+                 std::vector<SurfaceComplex> surface_complexes);
   ~SurfaceComplexationRxn();
 
   // update sorbed concentrations

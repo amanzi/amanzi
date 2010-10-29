@@ -11,6 +11,20 @@ SurfaceComplexationRxn::SurfaceComplexationRxn()
   dSx_dmi_.clear();
 } 
 
+SurfaceComplexationRxn::SurfaceComplexationRxn(
+                            SurfaceSite *surface_sites,
+                            std::vector<SurfaceComplex> surface_complexes)
+{
+  // surface site
+  surface_site_ = surface_sites;
+
+  // surface complexes
+  for (std::vector<SurfaceComplex>::const_iterator i = surface_complexes.begin(); 
+       i != surface_complexes.end(); i++) {
+    surface_complexes_.push_back(*i);
+  } 
+}
+
 SurfaceComplexationRxn::~SurfaceComplexationRxn() 
 {
   delete surface_site_;
@@ -27,7 +41,7 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void)
       break;
     }
   }
-} 
+} // end SetNewtonSolveFlag
 
 void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies) 
 {
