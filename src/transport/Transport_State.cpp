@@ -15,6 +15,7 @@ Transport_State::Transport_State ( State S )
   porosity                      = S.get_porosity();
   darcy_flux                    = S.get_darcy_flux();
   water_saturation              = S.get_water_saturation();
+  water_density                 = S.get_water_density();
   mesh_maps                     = S.get_mesh_maps();
 }
 
@@ -27,6 +28,7 @@ void Transport_State::copy_constant_state ( Transport_State & S )
   porosity                      = S.get_porosity();
   darcy_flux                    = S.get_darcy_flux();
   water_saturation              = S.get_water_saturation();
+  water_density                 = S.get_water_density();
   mesh_maps                     = S.get_mesh_maps();
 }
 
@@ -36,8 +38,9 @@ void Transport_State::copy_constant_state ( Transport_State & S )
 void Transport_State::create_internal_state ( Transport_State & S )
 {
   porosity         = S.get_porosity(); 
-  water_saturation = S.get_water_saturation(); 
   darcy_flux       = S.get_darcy_flux(); 
+  water_saturation = S.get_water_saturation(); 
+  water_density    = S.get_water_density();
 
   RCP<Epetra_MultiVector> tcc = S.get_total_component_concentration();
   total_component_concentration = rcp( new Epetra_MultiVector( *tcc ) );
@@ -85,3 +88,41 @@ void Transport_State::analytic_total_component_concentration()
   }
 }
 
+
+
+/* DEBUG: create constant analytical porosity */
+void Transport_State::analytic_porosity( double phi )
+{
+  int  c;
+  Epetra_Map cell_map = mesh_maps->cell_map(false);
+
+  for( c=cell_map.MinLID(); c<cell_map.MaxLID(); c++ ) { 
+     (*porosity)[c] = phi;  /* default is 0.2 */
+  }
+}
+
+
+
+/* DEBUG: create constant analytical water saturation */
+void Transport_State::analytic_water_saturation( double ws )
+{
+  int  c;
+  Epetra_Map cell_map = mesh_maps->cell_map(false);
+
+  for( c=cell_map.MinLID(); c<cell_map.MaxLID(); c++ ) { 
+     (*water_saturation)[c] = ws;  /* default is 1.0 */
+  }
+}
+
+
+
+/* DEBUG: create constant analytical water density */
+void Transport_State::analytic_water_density( double wd )
+{
+  int  c;
+  Epetra_Map cell_map = mesh_maps->cell_map(false);
+
+  for( c=cell_map.MinLID(); c<cell_map.MaxLID(); c++ ) { 
+     (*water_density)[c] = wd;  /* default is 1000.0 */
+  }
+}

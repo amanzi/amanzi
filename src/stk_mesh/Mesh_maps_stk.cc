@@ -192,7 +192,7 @@ bool Mesh_maps_stk::valid_entity_kind_ (const Mesh_data::Entity_kind kind) const
     for (Mesh_data::Entity_kind* kind_it = kinds_; kind_it != kinds_+num_kinds_; ++kind_it)
         if (*kind_it == kind) return true;
 
-    return false
+    return false;
 }
 
 
