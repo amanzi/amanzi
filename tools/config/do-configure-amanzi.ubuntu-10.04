@@ -22,11 +22,28 @@
 # download them and install them by hand with 
 # dpkg -i
 #
+#
+#
+# If cmake is unable to find an include file because it is in an unusual
+# place and not PKGNAME_DIR/include, then you can add a line to this
+# script specifying PKGNAME_INCLUDE_DIR like so
+#
+#  -D Curl_INCLUDE_DIR:FILEPATH=/usr/local/lib/cmcurl/src/incs
+#
+# You can similarly force it to find a library in a particular location
+# by specifying PKGNAME_LIB_DIR
+#
+# Note that PKGNAME must be specified EXACTLY as it was specified for 
+# the PKGNAME_DIR variable, i.e, if the script uses Curl_DIR, then
+# the additional path has to be Curl_INCLUDE_DIR and not CURL_INCLUDE_DIR
+#
 # Markus Berndt (berndt@lanl.gov)
+# Rao Garimella (rao@lanl.gov)
+
 
 rm -f CMakeCache.txt
 
-SOURCE=/home/berndt/ASCEM-Code/amanzi/src
+SOURCE=$HOME/ASCEM-Code/amanzi/src
 
 # modify the paths that point to the location of the
 # installation directories below
@@ -36,9 +53,10 @@ SOURCE=/home/berndt/ASCEM-Code/amanzi/src
   -D Curl_DIR:FILEPATH=/usr/lib64 \
   -D HDF5_DIR:FILEPATH=/usr/lib64 \
   -D NetCDF_DIR:FILEPATH=/usr/lib64 \
-  -D ExodusII_DIR:FILEPATH=/home/berndt/Packages/Exodus/install/exodusii-4.98 \
-  -D MOAB_DIR:FILEPATH=/home/berndt/Packages/MOAB/install/MOAB-svn \
-  -D Trilinos_DIR:PATH=/home/berndt/Packages/Trilinos/install/trilinos-10.6.1 \
+  -D ExodusII_DIR:FILEPATH=$HOME/Packages/Exodus/install/exodusii-4.98 \
+  -D MOAB_DIR:FILEPATH=$HOME/Packages/MOAB/install/MOAB-svn \
+  -D Trilinos_DIR:PATH=$HOME/Packages/Trilinos/install/trilinos-10.6.1 \
   -D UnitTest_DIR:PATH=/usr \
   ${SOURCE} 
+
 

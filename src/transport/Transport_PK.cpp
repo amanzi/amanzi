@@ -119,25 +119,31 @@ void Transport_PK::geometry_package()
 
 
 
+double Transport_PK::calculate_transport_dT()
+{
+  dT = 0.01;
+}
+
+
+
 /* MPC will call this function to advance the transport state  */
 void Transport_PK::advance()
 {
   /* this should be moved to MPC */
-  //calculate_transport_dT();
+  calculate_transport_dT();
 
   /* Step 1: Loop over internal faces: update concentrations */
   int i, c1, c2;
   unsigned int f;
-  double u, tcc_mass_flux;
+  double u, density, phi_ws1, phi_ws2, tcc_mass_flux;
 
   /* access raw data */
-  double **tcc_data, **tcc_next_data;
+  RCP<Epetra_MultiVector>   tcc      = TS->get_total_component_concentration();
+  RCP<Epetra_MultiVector>   tcc_next = TS_next->get_total_component_concentration();
 
-  RCP<Epetra_MultiVector>  tcc      = TS->get_total_component_concentration ();
-  RCP<Epetra_MultiVector>  tcc_next = TS_next->get_total_component_concentration ();
-
-  tcc->ExtractView( &tcc_data );
-  tcc_next->ExtractView( &tcc_next_data );
+  RCP<const Epetra_Vector>  ws  = TS->get_water_saturation();
+  RCP<const Epetra_Vector>  phi = TS->get_porosity();
+  RCP<const Epetra_Vector>  rho = TS->get_water_density();
 
   double *darcy_flux;
   TS->get_darcy_flux()->ExtractView( &darcy_flux );
@@ -153,13 +159,17 @@ void Transport_PK::advance()
      c2 = (*face_to_cell_downwind)[f]; 
 
      if ( c1 >=0 && c2 >= 0 ) {
-        u = darcy_flux[f];
+        density = ((*rho)[c1] + (*rho)[c2]) / 2;
+        u = darcy_flux[f] / density;
+
+        phi_ws1 = (*phi)[c1] * (*ws)[c1]; 
+        phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
 
         for ( i=0; i<num_components; i++ ) {
-            tcc_mass_flux = cfl * dT * u * tcc_next_data[i][c2];
+            tcc_mass_flux = cfl * dT * u * (*tcc_next)[i][c2];
 
-            tcc_next_data[i][c1] = tcc_data[i][c1] + tcc_mass_flux;
-            tcc_next_data[i][c2] = tcc_data[i][c2] - tcc_mass_flux;
+            (*tcc_next)[i][c1] = (*tcc)[i][c1] + tcc_mass_flux / phi_ws1;
+            (*tcc_next)[i][c2] = (*tcc)[i][c2] - tcc_mass_flux / phi_ws2;
         }
      }
   }
@@ -177,7 +187,7 @@ void Transport_PK::advance()
 /*  MPC will call this function to indicate to the transport PK  */
 /*  that it can commit the advanced state it has created.        */
 /*  This  call indicates that the MPC has accepted the new state */
-void Transport_PK::commit_state ( RCP<Transport_State> TS )
+void Transport_PK::commit_state( RCP<Transport_State> TS )
 {
   /* nothing is done her since a pointer to the state is kept */ 
 };

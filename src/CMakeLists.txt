@@ -28,9 +28,8 @@ if (NOT CURL_LIBRARY)
          )
 endif()
 
-set(CURL_INCLUDE_DIR ${Curl_DIR}/curl)
 find_path(CURL_INCLUDES curl.h 
-          HINTS ${CURL_INCLUDE_DIR}
+          HINTS ${Curl_INCLUDE_DIR}
                 ${Curl_DIR}/include 
                 ${Curl_DIR}/include/curl 
                 /usr/include/curl 
@@ -78,7 +77,6 @@ endif()
 
 add_library(mpi STATIC IMPORTED)
 set_property(TARGET mpi PROPERTY IMPORTED_LOCATION ${MPI_LIBRARY})
-set(MPI_INCLUDE_DIR ${MPI_DIR}/include)
 
 
 
@@ -92,7 +90,7 @@ find_library(NETCDF_LIBRARY netcdf
                    /usr/lib
 	           /usr/local/lib
 		   )
- if(NOT NETCDF_LIBRARY)
+if(NOT NETCDF_LIBRARY)
   message(FATAL_ERROR "Error: could not find netcdf library\n"
           "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
           "\nor defining NetCDF_LIB_DIR")
@@ -214,7 +212,7 @@ set(EXODUS_LIBS_ALL exodusii netcdf curl)
 
 find_library(MOAB_LIBRARY MOAB
              HINTS ${MOAB_LIB_DIR}
-             HINTS ${MOAB_DIR}/lib
+                   ${MOAB_DIR}/lib
                    /usr/lib
                    /usr/local/lib
 		   )

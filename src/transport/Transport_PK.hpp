@@ -30,29 +30,29 @@ class Transport_PK {
 
 public:
   /* three constructors */
-  Transport_PK ( ParameterList &parameter_list_MPC,
+  Transport_PK( ParameterList &parameter_list_MPC,
 		 RCP<Transport_State> TS_MPC );
-  Transport_PK ();
+  Transport_PK();
 
-  ~Transport_PK ();
+  ~Transport_PK();
 
   /* primary members */
-  void calculate_transport_dT ();
-  void advance ();
-  void commit_state ( RCP<Transport_State> TS );
+  double calculate_transport_dT();
+  void advance();
+  void commit_state( RCP<Transport_State> TS );
 
-  vector<double> calculate_accumulated_influx ();
-  vector<double> calculate_accumulated_outflux ();
+  vector<double> calculate_accumulated_influx();
+  vector<double> calculate_accumulated_outflux();
 
   void geometry_package();
 
   /* access members */ 
-  RCP<Transport_State> get_transport_state ()      const { return TS; }
-  RCP<Transport_State> get_transport_state_next ()       { return TS_next; }
-  RCP<Transport_State> get_transport_state_next () const { return TS_next; }
+  RCP<Transport_State> get_transport_state()      const { return TS; }
+  RCP<Transport_State> get_transport_state_next()       { return TS_next; }
+  RCP<Transport_State> get_transport_state_next() const { return TS_next; }
 
-  double get_transport_dT ()      { return dT; }
-  int    get_transport_status ()  { return status; }
+  double get_transport_dT()      { return dT; }
+  int    get_transport_status()  { return status; }
  
 
 public:
