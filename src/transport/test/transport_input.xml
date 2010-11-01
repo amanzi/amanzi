@@ -1,0 +1,13 @@
+<ParameterList name="Transport">
+  <Parameter name="CFL" type="double" value="0.5"/>   
+
+  <ParameterList name="Transport BCs">
+    <Parameter name="number of BCs" type="int" value="1"/>
+    <ParameterList name="BC0">
+      <Parameter name="Type" type="string" value="Input flux"/>
+      <Parameter name="BC value" type="double" value="1.0" />
+      <Parameter name="Side set ID" type="int" value="3" />
+    </ParameterList>  
+  </ParameterList>
+</ParameterList>
+
