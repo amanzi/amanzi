@@ -1,0 +1,48 @@
+
+  Title of simulation: calcite.in:  kinetic calcite dissolution problem for geochemistry code v
+
+
+  --> Running in GIMRT mode (global implicit reaction and transport) 
+
+  Unit activity coefficients
+
+   ---> Using database: ca-carbonate.dbs                                                                                    
+  Temperature parameters not found
+  Using defaults
+
+  Number of components:                          3
+
+  Number of secondary species:                   6
+  No kinetic reactions involving minerals specified
+
+
+  Number of kinetic minerals:                    0
+
+  No surface complexation block found
+
+     --> Calling database subroutine
+
+
+  Number of reactions:                              6
+  Number of complexes:                              6
+  Number of minerals:                               0
+  Number of gases:                                  0
+
+     --> Finished reading database
+  No ion exchange block found
+  Fixing porosity at 0.5000
+  No update of porosity
+
+  Current density module: temperature
+
+
+  ---> READING GEOCHEMICAL CONDITIONS  
+
+
+  ---> STARTING SPECIATION OF GEOCHEMICAL CONDITIONS  
+
+
+                SPECIATION OF 
+      INITIAL AND BOUNDARY CONDITIONS 
+           SUCCESSFULLY COMPLETED
+

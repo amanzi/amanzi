@@ -1,0 +1,60 @@
+Command Line Options: 
+	Model: crunch
+	Test number: 4
+	Verbosity: 2
+
+
+-- Beaker description ------------------------------------------------
+---- Parameters ------------------------------------------------------
+    tolerance: 1e-12
+    max_iterations :250
+    activity model: debye-huckel
+    porosity: 0.5 [-]
+    water saturation: 1 [-]
+    water density: 1000 [kg m^-3]
+    volume: 1 [m^3]
+
+---- Primary Species
+        Species    Charge       GMW
+             H+         1    1.0079
+          HCO3-        -1   61.0171
+           Ca++         2    40.078
+
+---- Aqueous Equilibrium Complexes
+    Reaction                               log Keq    Charge       GMW
+    OH- = -1 H+
+                                           13.9951        -1   17.0073
+    CO3-- = -1 H+ + 1 HCO3-
+                                           10.3288        -2   60.0092
+    CO2(aq) = 1 H+ + 1 HCO3-
+                                           -6.3447         0   44.0098
+    CaOH+ = -1 H+ + 1 Ca++
+                                             12.85         1   57.0853
+    CaHCO3+ = 1 Ca++ + 1 HCO3-
+                                           -1.0467         1   101.095
+    CaCO3(aq) = -1 H+ + 1 Ca++ + 1 HCO3-
+                                            7.0017         0   100.087
+
+----------------------------------------------------------------------
+Beaker::speciate num_iterations :12
+
+-- Solution ----------------------------------------------------------
+---- Components 
+           Name       Molarity       Molality
+             H+    1.00000e-03    1.00000e-03
+          HCO3-    3.00000e-03    3.00000e-03
+           Ca++    1.00000e-03    1.00000e-03
+---- Species 
+           Name       Molarity Activity Coeff       Activity
+             H+    2.56167e-07    9.46544e-01    2.42473e-07
+          HCO3-    1.98091e-03    9.42188e-01    1.86639e-03
+           Ca++    9.82210e-04    7.93500e-01    7.79384e-04
+            OH-    4.42912e-08    9.41714e-01    4.17096e-08
+          CO3--    4.57605e-07    7.88946e-01    3.61026e-07
+        CO2(aq)    1.00084e-03    1.00000e+00    1.00084e-03
+          CaOH+    4.81892e-10    9.42188e-01    4.54033e-10
+        CaHCO3+    1.71916e-05    9.42188e-01    1.61977e-05
+      CaCO3(aq)    5.97571e-07    1.00000e+00    5.97571e-07
+----------------------------------------------------------------------
+
+Done!
