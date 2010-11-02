@@ -10,19 +10,12 @@ class CommandInterface:
     def __init__(self,command,args=None):
         
         self.command = command
-        if args != None:
-            if isinstance(args,list):
-                self.args=shlex.split(" ".join(args))
-            elif isinstance(args,str):
-                self.args=shlex.split(args)
-            else:
-                print 'Invalid argument type'
-                sys.exit(1)
-        else:
-            self.args=[]
-
+        self.args = []
         self.exit_code=0
         self.output=''
+
+        if args != None:
+            self._parse_arg_list(args)
 
         try:
             import subprocess
@@ -36,7 +29,38 @@ class CommandInterface:
         print 'exit_code=',self.exit_code
         print 'output=',self.output
 
-    def subprocess_run(self):
+    def _parse_arg_list(self,args):
+        list_args=[]
+        if isinstance(args,list):
+            list_args = shlex.split(" ".join(args))
+        elif isinstance(args,str):
+            list_args = shlex.split(args)
+        else:
+            print 'Unknown instance that is not a string or list'
+            sys.exit(1)
+
+        return list_args    
+       
+    def set_args(self,args):
+        self.args = self._parse_arg_list(args)
+        return self.args
+
+    def add_args(self,args):
+        new_args = self._parse_arg_list(args)
+        for item in new_args:
+            self.args.append(item)
+
+        return self.args
+
+    def run(self):
+        if self.use_ospipe == True:
+            self._ospipe_run()
+        else:
+            self._subprocess_run()
+
+        return self.exit_code    
+    
+    def _subprocess_run(self):
 
         try:
             import subprocess
@@ -48,37 +72,37 @@ class CommandInterface:
             output.close()
             self.exit_code = pipe.wait()
             print self.output
-            print 'RETURN CODE',pipe.returncode
         except:
              print 'Python module subprocess is not available'
              sys.exit(1)
 
         return self.exit_code
 
-    def ospipe_run(self):
+    def _ospipe_run(self):
         print 'Not support at this time'
         return self.exit_code
 
+################################################################################
+
 def Command(command,args=None):
     cmd = CommandInterface(command,args)
-    if cmd.use_ospipe != True:
-        cmd.subprocess_run()
-    else:
-        cmd.ospipe_run()
+    cmd.run()
+    
     return cmd
 
-
-
+################################################################################
 if __name__ == '__main__':
 
     command='ls'
-    args='-last'
-    ci=CommandInterface(command,args)
+    ci=CommandInterface(command)
+    ci.set_args('-lat')
     ci._dump_state()
 
     args=['-l', '-a']
     cmd = Command(command,args=args)
     cmd._dump_state()
+
+
 
     bad_cmd=Command('dummy_exe')
     bad_cmd._dump_state()
