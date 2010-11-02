@@ -29,7 +29,26 @@
   </ParameterList>
 
   <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="0.5"/>   
+   <Parameter name="CFL" type="double" value="0.5"/>   
+   <Parameter name="number of components" type="int" value="3"/>   
+
+   <ParameterList name="Transport BCs">
+    <Parameter name="number of BCs" type="int" value="2"/>
+    <ParameterList name="BC 0">
+      <Parameter name="Side set ID" type="int" value="3"/>
+      <Parameter name="Type" type="string" value="Discharge"/>
+      <Parameter name="number of components" type="int" value="2"/>
+      <Parameter name="Component 1" type="double" value="1.0"/>
+      <Parameter name="Component 2" type="double" value="1.0"/>
+    </ParameterList>  
+    <ParameterList name="BC 1">
+      <Parameter name="Side set ID" type="int" value="1"/>
+      <Parameter name="Type" type="string" value="Discharge"/>
+      <Parameter name="number of components" type="int" value="2"/>
+      <Parameter name="Component 3" type="double" value="1.0"/>
+      <Parameter name="Component 2" type="double" value="1.0"/>
+    </ParameterList>  
+   </ParameterList>
   </ParameterList>
 
   <ParameterList name="Chemistry">
