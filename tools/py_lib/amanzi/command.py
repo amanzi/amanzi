@@ -36,8 +36,7 @@ class CommandInterface:
         elif isinstance(args,str):
             list_args = shlex.split(args)
         else:
-            print 'Unknown instance that is not a string or list'
-            sys.exit(1)
+            raise TypeError, 'args must be of type list or str'
 
         return list_args
 
@@ -87,8 +86,7 @@ class CommandInterface:
             self.exit_code = pipe.wait()
             print self.output
         except:
-             print 'Python module subprocess is not available'
-             sys.exit(1)
+            raise ImportError, 'Python module subprocess is not available'
 
         return self.exit_code
 
