@@ -26,10 +26,17 @@ TEST(TRANSPORT_INPUT_XML) {
   updateParametersFromXmlFile(xmlInFileName, &TPK_list);
 
   /* read the CFL number from the parameter list with a default of 1.0 */
+  int number_components;
   double cfl;
 
-  cfl = TPK_list.get<double>("CFL", 1.0);
+  cfl = TPK_list.get<double>( "CFL", 1.0 );
   CHECK( 0 < cfl && cfl <= 1.0 );
+
+  number_components = TPK_list.get<int>( "number of components" );
+  CHECK( number_components > 0 );
+
+  cout << "CFL = " << cfl << endl;
+  cout << "Total number of components = " << number_components << endl;
 
   /* read number of boundary consitions */ 
   ParameterList TPK_BC_list;
@@ -42,26 +49,29 @@ TEST(TRANSPORT_INPUT_XML) {
   for( i=0; i<nBCs; i++ ) {
     char bc_char_name[10];
     
-    sprintf(bc_char_name, "BC%d", i);
+    sprintf(bc_char_name, "BC %d", i);
 
     string bc_name(bc_char_name);
     if ( ! TPK_BC_list.isSublist(bc_name) ) throw exception();
 
     ParameterList bc_list = TPK_BC_list.sublist(bc_name);
 
+    int     ssid, ntcc;
     string  type;
     double  value;
-    int     ssid;
 
-    type  = bc_list.get<string>("Type");
-    value = bc_list.get<double>("BC value");
     ssid  = bc_list.get<int>("Side set ID");
+    ntcc  = bc_list.get<int>("number of components");
+    type  = bc_list.get<string>("Type");
+    value = bc_list.get<double>("Component 2");
 
-    cout << "BC: " << bc_name << endl;
-    cout << "  type        = " << type << endl;
-    cout << "  value       = " << value << endl;
+    cout << "Boundary Condition: " << bc_name << endl;
     cout << "  side set id = " << ssid << endl;
+    cout << "  type        = " << type << endl;
+    cout << "  # componets = " << ntcc << endl;
+    cout << "  component 2 = " << value << endl;
   }
+  cout << "==================================================================" << endl << endl;
 }
 
 
@@ -80,18 +90,17 @@ TEST(TRANSPORT_PK_INIT) {
   /* create a MPC state with one component */
   RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
-  int num_components = 1;
-  State mpc_state( num_components, mesh );
+  int number_components = 3;
+  State mpc_state( number_components, mesh );
 
   /*create a transport state from the MPC state */
   RCP<Transport_State>  TS = rcp( new Transport_State( mpc_state ) );
 
-  /* create a transport parameter list, this would ordinarily be read   */
-  /* from an input file, but here we can fake it by setting a parameter */
-  /* by hand  (see mpc/test_driver.cpp for an example of how parameter  */
-  /* lists are read                                                     */
-  ParameterList parameter_list; 
-  parameter_list.set( "CFL", 1.0 );
+  /* read the trasport parameter list */
+  string xmlInFileName = "test/transport_input.xml";
+
+  ParameterList parameter_list;
+  updateParametersFromXmlFile(xmlInFileName, &parameter_list);
 
   /* initialize a transport process kernel from a transport state */
   Transport_PK  TPK(parameter_list, TS);
@@ -105,6 +114,7 @@ TEST(TRANSPORT_PK_INIT) {
   darcy_flux = TS_pointer->get_darcy_flux();
 
   cout << *(darcy_flux) << endl;
+  cout << "==================================================================" << endl << endl;
 }
  
 
@@ -123,18 +133,17 @@ TEST(TRANSPORT_PK_FACES) {
   /* create a MPC state with one component */
   RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
-  int num_components = 1;
+  int num_components = 3;
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state */
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
-  /* create a transport parameter list, this would ordinarily be read   */
-  /* from an input file, but here we can fake it by setting a parameter */
-  /* by hand  (see mpc/test_driver.cpp for an example of how parameter  */
-  /* lists are read                                                     */
+  /* read the trasport parameter list */
+  string xmlInFileName = "test/transport_input.xml";
+
   ParameterList parameter_list;
-  parameter_list.set( "CFL", 1.0 );
+  updateParametersFromXmlFile(xmlInFileName, &parameter_list);
 
   /* initialize a transport process kernel from a transport state */
   Transport_PK  TPK(parameter_list, TS);
@@ -149,6 +158,7 @@ TEST(TRANSPORT_PK_FACES) {
      cout << "face = " << f << "  area = " << area << endl;
      CHECK_CLOSE(area, 0.75, 0.25);
   }
+  cout << "==================================================================" << endl << endl;
 }
  
 
@@ -167,16 +177,19 @@ TEST(TRANSPORT_PK_ADVANCE) {
   /* create a MPC state with one component */
   RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm) ); 
 
-  int num_components = 1;
+  int num_components = 3;
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state */
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
-  /* initialize a transport process kernel from a transport state */
-  ParameterList parameter_list;
-  parameter_list.set( "CFL", 1.0 );
+  /* read the trasport parameter list */
+  string xmlInFileName = "test/transport_input.xml";
 
+  ParameterList parameter_list;
+  updateParametersFromXmlFile(xmlInFileName, &parameter_list);
+
+  /* initialize a transport process kernel from a transport state */
   Transport_PK  TPK(parameter_list, TS);
 
   /* create analytic Darcy flux */
@@ -197,65 +210,8 @@ TEST(TRANSPORT_PK_ADVANCE) {
 
   cout << *tcc << endl;
   cout << *tcc_next << endl;
+  cout << "==================================================================" << endl << endl;
 }
  
 
-
-TEST(EXAMPLE_A) {
-
-  using namespace std;
-
-  vector<int> x(10);
-  vector<int> y(10);
-
-  for (int it = 0; it < 10; it++)
-    {
-      x[it] = 0.0;
-    }
-
-  for (int it = 0; it < 10; it++)
-    {
-      x[it] = 0.0;
-    }
-  
-
-  CHECK_ARRAY_EQUAL(x,y,10);
-  CHECK_ARRAY_CLOSE(x,y,10,0.00001);
-}
-
-
-
-TEST(EXAMPLE_B) {
-
-  using namespace std;
-
-  vector<int> x(10);
-  vector<int> y(10);
-
-  x[1] = 1.0;
-  y[1] = 1.0;
-  y[2] = 2.0;
-
-  CHECK_EQUAL(x[1],y[1]);
-  CHECK_CLOSE(x[1],y[1],0.0001);
-}
-
-
-
-// this test will obviously fail
-/*
-TEST(EXAMPLE_C) {
-
-  using namespace std;
-
-  vector<int> x(10);
-  vector<int> y(10);
-
-  x[1] = 1.0;
-  y[1] = 2.0;
-
-  CHECK_EQUAL(x[1],y[1]);
-  CHECK_CLOSE(x[1],y[1],0.0001);
-}
-*/
 

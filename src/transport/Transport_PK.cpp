@@ -12,8 +12,8 @@ using namespace cell_geometry;
 
 /*  Constructor for initializing the transport PK.    */
 /*  Its call is made usually at time T=0 by the MPC.  */
-Transport_PK::Transport_PK ( ParameterList &parameter_list_MPC,
-			     RCP<Transport_State> TS_MPC )
+Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
+			    RCP<Transport_State> TS_MPC )
 
 { 
   parameter_list = parameter_list_MPC;
@@ -41,8 +41,8 @@ Transport_PK::Transport_PK ( ParameterList &parameter_list_MPC,
   geometry_package();
 
 
-  /* read the CFL number from the parameter list with a default of 1.0 */
-  cfl = parameter_list.get<double>("CFL", 1.0);
+  /* process parameter list */
+  process_parameter_list();
 };
 
 
@@ -119,6 +119,52 @@ void Transport_PK::geometry_package()
 
 
 
+/* process parameter list: needs to be called only once on each processor */
+void Transport_PK::process_parameter_list()
+{
+  cfl = parameter_list.get<double>( "CFL", 1.0 );
+  number_components = parameter_list.get<int>( "number of components" );
+
+  cout << "Transport PK: CFL = " << cfl << endl;
+  cout << "              Total number of components = " << number_components << endl;
+
+  /* read number of boundary consitions */ 
+  ParameterList BC_list;
+  int i, nBCs;
+
+  BC_list = parameter_list.get<ParameterList>("Transport BCs");
+  nBCs = BC_list.get<int>("number of BCs");
+
+  /* create list of boundary data */
+  bcs.resize( nBCs );
+  for( i=0; i<nBCs; i++ ) bcs[i] = Transport_BCs( 0, number_components );
+  
+  /*
+  for( i=0; i<nBCs; i++ ) {
+    char bc_char_name[10];
+    
+    sprintf(bc_char_name, "BC %d", i);
+
+    string bc_name(bc_char_name);
+    if ( ! TPK_BC_list.isSublist(bc_name) ) throw exception();
+
+    ParameterList bc_list = TPK_BC_list.sublist(bc_name);
+
+    int     ssid, ntcc;
+    string  type;
+    double  value;
+
+    ssid  = bc_list.get<int>("Side set ID");
+    ntcc  = bc_list.get<int>("number of components");
+    type  = bc_list.get<string>("Type");
+    value = bc_list.get<double>("Component 2");
+  }
+  */
+}
+
+
+
+/* estimation of the time step */
 double Transport_PK::calculate_transport_dT()
 {
   dT = 0.01;
