@@ -8,6 +8,7 @@
 #include "simple_mesh/Mesh_maps_simple.hh"
 #include "mpc/State.hpp"
 #include "transport/Transport_State.hpp"
+#include "transport/Transport_BCs.hpp"
 
 
 /* 
@@ -31,7 +32,7 @@ class Transport_PK {
 public:
   /* three constructors */
   Transport_PK( ParameterList &parameter_list_MPC,
-		 RCP<Transport_State> TS_MPC );
+		RCP<Transport_State> TS_MPC );
   Transport_PK();
 
   ~Transport_PK();
@@ -40,6 +41,8 @@ public:
   double calculate_transport_dT();
   void advance();
   void commit_state( RCP<Transport_State> TS );
+
+  void process_parameter_list();
 
   vector<double> calculate_accumulated_influx();
   vector<double> calculate_accumulated_outflux();
@@ -62,26 +65,31 @@ public:
 
 private:
   /* smart pointer to the transport state for process kernel */
-  RCP<Transport_State> TS;
+  RCP<Transport_State>  TS;
 
   /* proposed new transport state */ 
-  RCP<Transport_State> TS_next;
+  RCP<Transport_State>  TS_next;
   
   /* parameter list with Transport specific parameters */
-  ParameterList parameter_list;
+  ParameterList  parameter_list;
 
   /* part of the future geometry package */
-  Epetra_Vector    *face_area;
-  Epetra_IntVector *face_to_cell_upwind;
-  Epetra_IntVector *face_to_cell_downwind;
+  Epetra_Vector     *face_area;
+  Epetra_IntVector  *face_to_cell_upwind;
+  Epetra_IntVector  *face_to_cell_downwind;
 
   /* transport time step, CFL, and status */
-  double cfl, dT;
-  int    status;
- 
+  double  cfl, dT;
+  int     number_components;
+  int     status;
+
+  /* boundary conditions for each components and each side set */
+  /* it will be converted to a separate class                  */
+  vector<Transport_BCs>  bcs;
+
   /* accumulated influx and outflux for each side */
-  vector<double>  influx;
-  vector<double> outflux;
+  vector<double>   *influx;
+  vector<double>  *outflux;
 };
 
 #endif
