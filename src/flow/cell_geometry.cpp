@@ -106,5 +106,4 @@ namespace cell_geometry {
     }
     return triple_product(v1, v2, v3) / 6.0;
   }
-
 }

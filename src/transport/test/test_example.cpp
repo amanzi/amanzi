@@ -47,29 +47,29 @@ TEST(TRANSPORT_INPUT_XML) {
   CHECK( nBCs > 0 );
 
   for( i=0; i<nBCs; i++ ) {
-    char bc_char_name[10];
+     char bc_char_name[10];
     
-    sprintf(bc_char_name, "BC %d", i);
+     sprintf(bc_char_name, "BC %d", i);
 
-    string bc_name(bc_char_name);
-    if ( ! TPK_BC_list.isSublist(bc_name) ) throw exception();
+     string bc_name(bc_char_name);
+     if ( ! TPK_BC_list.isSublist(bc_name) ) throw exception();
 
-    ParameterList bc_list = TPK_BC_list.sublist(bc_name);
+     ParameterList bc_list = TPK_BC_list.sublist(bc_name);
 
-    int     ssid, ntcc;
-    string  type;
-    double  value;
+     int     ssid, ntcc;
+     string  type;
+     double  value;
 
-    ssid  = bc_list.get<int>("Side set ID");
-    ntcc  = bc_list.get<int>("number of components");
-    type  = bc_list.get<string>("Type");
-    value = bc_list.get<double>("Component 2");
+     ssid  = bc_list.get<int>("Side set ID");
+     ntcc  = bc_list.get<int>("number of components");
+     type  = bc_list.get<string>("Type");
+     value = bc_list.get<double>("Component 2");
 
-    cout << "Boundary Condition: " << bc_name << endl;
-    cout << "  side set id = " << ssid << endl;
-    cout << "  type        = " << type << endl;
-    cout << "  # componets = " << ntcc << endl;
-    cout << "  component 2 = " << value << endl;
+     cout << "Boundary Condition: " << bc_name << endl;
+     cout << "  side set id = " << ssid << endl;
+     cout << "  type        = " << type << endl;
+     cout << "  # componets = " << ntcc << endl;
+     cout << "  component 2 = " << value << endl;
   }
   cout << "==================================================================" << endl << endl;
 }
@@ -153,10 +153,21 @@ TEST(TRANSPORT_PK_FACES) {
   double area;
   Epetra_Map face_map = mesh->face_map(false);
 
-  for( f=face_map.MinLID(); f<face_map.MaxLID(); f++ ) { 
-     area = TPK.get_face_area(f);
-     cout << "face = " << f << "  area = " << area << endl;
+  for( f=face_map.MinLID(); f<=face_map.MaxLID(); f++ ) { 
+     area = TPK.get_face_area( f );
+     cout << "face id = " << f << "  area = " << area << endl;
      CHECK_CLOSE(area, 0.75, 0.25);
+  }
+
+  /* printing cell volumes */
+  int  c;
+  double volume;
+  Epetra_Map cell_map = mesh->cell_map(false);
+
+  for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
+     volume = TPK.get_cell_volume( c );
+     cout << "cell id = " << c << "  volume = " << volume << endl;
+     CHECK_EQUAL(area, 0.5);
   }
   cout << "==================================================================" << endl << endl;
 }
