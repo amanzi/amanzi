@@ -39,7 +39,21 @@ class CommandInterface:
             print 'Unknown instance that is not a string or list'
             sys.exit(1)
 
-        return list_args    
+        return list_args
+
+    def _build_run_command(self):
+        return self.command + ' ' + ' '.join(self.args)
+
+    def _parse_shell_exit(self,pattern):
+        m = pattern.findall(self.output)
+        if m != None:
+            idx = len(m) - 1
+            self.exit_code = m[idx]
+
+        return self.exit_code    
+
+    def _remove_shell_exit(self,pattern):
+        self.output = pattern.sub('',self.output)
        
     def set_args(self,args):
         self.args = self._parse_arg_list(args)
@@ -65,7 +79,7 @@ class CommandInterface:
         try:
             import subprocess
             from subprocess import Popen,PIPE,STDOUT
-            run_command=self.command + ' ' + ' '.join(self.args)
+            run_command=self._build_run_command()
             pipe = Popen(run_command,shell=True,stdout=PIPE,stderr=STDOUT)
             output = pipe.stdout
             self.output = output.read()
@@ -79,7 +93,25 @@ class CommandInterface:
         return self.exit_code
 
     def _ospipe_run(self):
-        print 'Not support at this time'
+        import os
+        import re
+        run_command = self._build_run_command()
+
+        # Need the '$' to delete the last print just
+        # in case the command output also has this 
+        # print out!
+        pattern = re.compile('SHELL_EXIT=(\d+)$')
+        
+        run_command = run_command + '; echo SHELL_EXIT=$?'
+        (child_stdin, child_outerr) =os.popen4(run_command)
+        child_stdin.close()
+        self.output = child_outerr.read()
+        self.exit_code = child_outerr.close()
+        if self.exit_code == None:
+            self._parse_shell_exit(pattern)
+        self._remove_shell_exit(pattern)    
+            
+
         return self.exit_code
 
 ################################################################################
@@ -106,3 +138,4 @@ if __name__ == '__main__':
 
     bad_cmd=Command('dummy_exe')
     bad_cmd._dump_state()
+
