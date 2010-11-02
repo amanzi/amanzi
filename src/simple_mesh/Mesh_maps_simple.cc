@@ -125,9 +125,9 @@ Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
    	   cell_to_face_[istart+4]  = xyface_index_(ix,iy,iz);
    	   cell_to_face_[istart+5]  = xyface_index_(ix,iy,iz+1);
 
-	   cell_to_face_dirs_[istart]   = -1;
+	   cell_to_face_dirs_[istart]   = 1;
 	   cell_to_face_dirs_[istart+1] = 1;
-	   cell_to_face_dirs_[istart+2] = 1;
+	   cell_to_face_dirs_[istart+2] = -1;
 	   cell_to_face_dirs_[istart+3] = -1;
 	   cell_to_face_dirs_[istart+4] = -1;
 	   cell_to_face_dirs_[istart+5] = 1;
