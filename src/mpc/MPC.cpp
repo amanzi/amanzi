@@ -80,6 +80,9 @@ void MPC::cycle_driver () {
   
   // so far we only have transport working
 
+
+  TS->set_analytic_darcy_flux();
+
   // start at time T=T0;
   S->set_time(T0);
 
