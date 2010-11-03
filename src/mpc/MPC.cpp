@@ -8,6 +8,7 @@
 #include "../flow/Flow_PK.hpp"
 #include "../transport/Transport_State.hpp"
 #include "../transport/Transport_PK.hpp"
+#include "../utils/gmv_mesh.hh"
 
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
@@ -82,13 +83,23 @@ void MPC::cycle_driver () {
   S->set_time(T0);
 
 
-  // dump the initial state to gmv
-  std::cout << "Time = " <<  S->get_time() << std::endl;
-  for( int k=0; k<20; k++ ) printf("%7.4f", (*TPK->get_transport_state_next()->get_total_component_concentration())[0][k]); cout << endl;
+  string gmv_meshfile = "test_gmv_mesh.gmv";
+  string gmv_datafile = "test_gmv_data.gmv.000";
 
+  GMV::create_mesh_file(*mesh_maps,gmv_meshfile);
+  int iter = 0;
 
+  GMV::open_data_file(gmv_meshfile, gmv_datafile, 
+		      mesh_maps->count_entities(Mesh_data::NODE, OWNED),
+		      mesh_maps->count_entities(Mesh_data::NODE, OWNED));
+  GMV::write_time(T0);
+  GMV::write_cycle(iter);
+  GMV::start_variables();
+  GMV::write_cell_data( *(*S->get_total_component_concentration())(0), "concentration0");
+  GMV::close_data_file();
 
   while (S->get_time() <= T1) {
+
     TPK->advance();
     double transport_dT = TPK->get_transport_dT();
 
@@ -113,10 +124,22 @@ void MPC::cycle_driver () {
     // update the state
     S->advance_time(transport_dT);
     
-    for( int k=0; k<20; k++ ) printf("%7.4f", (*TPK->get_transport_state_next()->get_total_component_concentration())[0][k]); cout << endl;
+    // advance the 
+    iter++;
+    
+    gmv_datafile[20] = '0' + iter%10;
+    gmv_datafile[19] = '0' + (iter/10)%10 ;
+    gmv_datafile[18] = '0' + (iter/100)%100;
    
-    std::cout << "Time = " <<  S->get_time() << std::endl;
-
+    
+    GMV::open_data_file(gmv_meshfile, gmv_datafile, 
+			mesh_maps->count_entities(Mesh_data::NODE, OWNED),
+			mesh_maps->count_entities(Mesh_data::NODE, OWNED));
+    GMV::write_time(S->get_time());
+    GMV::write_cycle(iter);
+    GMV::start_variables();
+    GMV::write_cell_data( *(*S->get_total_component_concentration())(0), "concentration0");
+    GMV::close_data_file();    
     
   }
 

@@ -25,7 +25,7 @@
   
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="200.0"/>
+    <Parameter name="End Time" type="double" value="2000.0"/>
   </ParameterList> 
 
   

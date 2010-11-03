@@ -25,11 +25,17 @@ namespace GMV {
   // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile".
   void open_data_file(Mesh_maps_base &mesh_maps, std::string filename);
 
+  void start_variables();
+
   // Writes node data to files which has previously been opened with open_data_file.
   void write_node_data(const Epetra_Vector &x, std::string varname);
 
   // Writes cell data to files which has previously been opened with open_data_file.
   void write_cell_data(const Epetra_Vector &x, std::string varname);
+
+  // Writes the cycle number and time
+  void write_cycle (const int cycle);
+  void write_time (const double time);
 
   // Finalizes a GMV file which has previously been opened with open_data_file.
   void close_data_file();

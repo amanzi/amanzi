@@ -40,7 +40,7 @@ namespace GMV {
     
   }
 
-  void create_mesh_file(::Mesh_maps_base &mesh_map, std::string filename)
+  void create_mesh_file(Mesh_maps_base &mesh_map, std::string filename)
   {
     write_mesh_to_file_(mesh_map, filename);
     gmvwrite_closefile();
@@ -51,18 +51,30 @@ namespace GMV {
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
     gmvwrite_nodes_fromfile((char*) meshfile.c_str(), num_nodes);
     gmvwrite_cells_fromfile((char*) meshfile.c_str(), num_cells);
-    gmvwrite_variable_header();
+    // gmvwrite_variable_header();
   }
 
-  void open_data_file(::Mesh_maps_base &mesh_map, std::string filename) {
+  void open_data_file(Mesh_maps_base &mesh_map, std::string filename) {
 
     unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
     unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
 
     write_mesh_to_file_(mesh_map, filename);
-    gmvwrite_variable_header();
+    // gmvwrite_variable_header();
   }
 
+  void write_time(const double time) {
+    gmvwrite_probtime(time);
+  }
+
+  void write_cycle(const int cycle) {
+    gmvwrite_cycleno(cycle);
+  }
+
+  void start_variables() {
+    gmvwrite_variable_header();
+  }
+    
   void write_node_data(const Epetra_Vector &x, std::string varname) {
     double *node_data;
     int err = x.ExtractView(&node_data);
@@ -74,6 +86,9 @@ namespace GMV {
     int err = x.ExtractView(&cell_data);
     gmvwrite_variable_name_data(CELL, (char *) varname.c_str(), cell_data);
   }
+
+
+
 
   void close_data_file() {
     gmvwrite_variable_endvars();
