@@ -191,6 +191,10 @@ double Transport_PK::calculate_transport_dT()
 
 
   /* parallel garther and scatter of dT */ 
+
+
+  /* incorporate CFL restriction */
+  dT *= cfl;
   //cout << "Transport time step dT = " << dT << endl;
 }
 
@@ -238,10 +242,19 @@ void Transport_PK::advance()
         phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
 
         for( i=0; i<num_components; i++ ) {
-           tcc_flux = cfl * dT * u * (*tcc)[i][c1];
+           tcc_flux = dT * u * (*tcc)[i][c1];
 
            (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
            (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
+        }
+     } 
+     else if ( c1 >=0 ) {
+        u = fabs(darcy_flux[f]);
+        phi_ws1 = (*phi)[c1] * (*ws)[c1]; 
+
+        for( i=0; i<num_components; i++ ) {
+           tcc_flux = dT * u * (*tcc)[i][c1];
+           (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
         }
      }
   }
@@ -255,27 +268,15 @@ void Transport_PK::advance()
   int  k, n;
   for( n=0; n<bcs.size(); n++ ) {
      for( k=0; k<bcs[n].faces.size(); k++ ) {
-        f = bcs[n].faces[k];
-
-        c1 = upwind_cell[f];
+        f  = bcs[n].faces[k];
         c2 = downwind_cell[f]; 
 
-        u = fabs(darcy_flux[f]);
-
-        if ( c1 >= 0 ) {
-           phi_ws1  = (*phi)[c1] * (*ws)[c1]; 
-
-           for( i=0; i<num_components; i++ ) {
-              tcc_flux = cfl * dT * u * (*tcc)[i][c1];
-              (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
-           }
-        }
-
         if ( c2 >= 0 ) {
+           u = fabs(darcy_flux[f]);
            phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
 
            for( i=0; i<num_components; i++ ) {
-              tcc_flux = cfl * dT * u * bcs[n].values[i];
+              tcc_flux = dT * u * bcs[n].values[i];
               (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
            }
         }

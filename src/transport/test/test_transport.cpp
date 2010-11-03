@@ -1,6 +1,6 @@
 #include <iostream>
-#include "stdlib.h"
-#include "math.h"
+#include <cstdlib>
+#include <cmath>
 #include "UnitTest++.h"
 #include <vector>
 
@@ -8,14 +8,13 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-
 #include "simple_mesh/Mesh_maps_simple.hh"
 #include "mpc/State.hpp"
 #include "transport/Transport_PK.hpp"
 
 
 
-TEST(TRANSPORT_INPUT_XML) {
+TEST(INPUT_XML) {
 
   using namespace std;
   using namespace Teuchos;
@@ -76,7 +75,7 @@ TEST(TRANSPORT_INPUT_XML) {
 
 
 
-TEST(TRANSPORT_PK_INIT) {
+TEST(INIT_PROCESS_KERNEL) {
 
   using namespace std;
   using namespace Teuchos;
@@ -120,7 +119,7 @@ TEST(TRANSPORT_PK_INIT) {
  
 
 
-TEST(TRANSPORT_PK_FACES) {
+TEST(FACES_VOLUMES) {
 
   using namespace std;
   using namespace Teuchos;
@@ -175,13 +174,13 @@ TEST(TRANSPORT_PK_FACES) {
  
 
 
-TEST(TRANSPORT_PK_ADVANCE) {
+TEST(ADVANCE_WITH_SIMPLE) {
 
   using namespace std;
   using namespace Teuchos;
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm    *comm = new Epetra_MpiComm( MPI_COMM_WORLD);
+  Epetra_MpiComm    *comm = new Epetra_MpiComm( MPI_COMM_WORLD );
 #else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
@@ -237,7 +236,7 @@ TEST(TRANSPORT_PK_ADVANCE) {
      cout << endl;
   }
  
-  cout << "Dynamics of component 0 (1-D transport)" << endl;
+  cout << "Dynamics of component 0 (3D simulaiton of 1D transport)" << endl;
   for( int i=0; i<20; i++ ) {
      *tcc = *tcc_next;
 
@@ -246,7 +245,7 @@ TEST(TRANSPORT_PK_ADVANCE) {
      dT = TPK.get_transport_dT();
      T += dT;
 
-     printf("T=%6.2f  C_0(x):", T);
+     printf("T=%6.1f  C_0(x):", T);
      for( int k=0; k<20; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
   }
   cout << "==================================================================" << endl << endl;
