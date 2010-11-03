@@ -63,7 +63,7 @@ TEST(TRANSPORT_INPUT_XML) {
      ssid  = bc_list.get<int>("Side set ID");
      ntcc  = bc_list.get<int>("number of components");
      type  = bc_list.get<string>("Type");
-     value = bc_list.get<double>("Component 2");
+     value = bc_list.get<double>("Component 1");
 
      cout << "Boundary Condition: " << bc_name << endl;
      cout << "  side set id = " << ssid << endl;
@@ -105,8 +105,9 @@ TEST(TRANSPORT_PK_INIT) {
   /* initialize a transport process kernel from a transport state */
   Transport_PK  TPK(parameter_list, TS);
 
-
   /* the actual test is to print the Darcy velocity */
+  TS->analytic_darcy_flux();
+
   RCP<Transport_State>  TS_pointer;
   RCP<const Epetra_Vector>  darcy_flux;
 

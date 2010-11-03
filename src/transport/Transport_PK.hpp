@@ -56,6 +56,7 @@ public:
   void commit_state( RCP<Transport_State> TS );
 
   void process_parameter_list();
+  void identify_upwind_cells();
   void extract_darcy_flux();
 
   vector<double> calculate_accumulated_influx();
@@ -93,8 +94,8 @@ private:
   vector<double>  face_area;
   vector<double>  cell_volume;
 
-  vector<double>  face2cell_upwind;
-  vector<double>  face2cell_downwind;
+  vector<double>  upwind_cell;
+  vector<double>  downwind_cell;
 
   /* transport time step, CFL, and status */
   double  cfl, dT;

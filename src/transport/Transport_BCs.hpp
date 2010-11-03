@@ -10,17 +10,14 @@ class Transport_BCs {
 public:
   Transport_BCs() {};
   Transport_BCs( int ssid, int ntcc ) { side_set_id = ssid; 
-                                        bc_values.resize( ntcc ); }
+                                        values.resize( ntcc ); }
   ~Transport_BCs() {};
 
-  inline
-  int get_side_set_id() { return side_set_id; }
-  
-  vector<int>& get_BCs() { return bc_values; }
 
-private:
+public:
   int  side_set_id;
-  vector<int>  bc_values;
+  vector<double>  values;
+  vector<unsigned int>  faces;
 };
 
 #endif

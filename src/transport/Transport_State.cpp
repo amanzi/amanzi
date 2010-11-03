@@ -8,8 +8,10 @@ using namespace Teuchos;
 using namespace cell_geometry;
 
 
-/* at the moment the transport state is a copy of the global state */  
-Transport_State::Transport_State ( State S )
+/* ************************************************************* */
+/* at the moment a transport state is a copy of the global state */  
+/* ************************************************************* */
+Transport_State::Transport_State( State S )
 {
   total_component_concentration = S.get_total_component_concentration();
   porosity                      = S.get_porosity();
@@ -21,8 +23,11 @@ Transport_State::Transport_State ( State S )
 
 
 
-/* trivial (at the moment) copy of a constant transport state */  
-void Transport_State::copy_constant_state ( Transport_State & S )
+
+/* ************************************************************* */
+/* trivial (at the moment) copy of a constant transport state    */  
+/* ************************************************************* */
+void Transport_State::copy_constant_state( Transport_State & S )
 {
   total_component_concentration = S.get_total_component_concentration();
   porosity                      = S.get_porosity();
@@ -34,8 +39,12 @@ void Transport_State::copy_constant_state ( Transport_State & S )
 
 
 
-/* internal transport state uses internal variable for the total component concentration */
-void Transport_State::create_internal_state ( Transport_State & S )
+
+/* ************************************************************* */
+/* internal transport state uses internal variable for the total */
+/* component concentration                                       */
+/* ************************************************************* */
+void Transport_State::create_internal_state( Transport_State & S )
 {
   porosity         = S.get_porosity(); 
   darcy_flux       = S.get_darcy_flux(); 
@@ -48,11 +57,15 @@ void Transport_State::create_internal_state ( Transport_State & S )
 
 
 
-/* DEBUG: create constant analytical velocity field */
+
+/* ************************************************************* */
+/* DEBUG: create constant analytical Darcy velocity field:       */
+/* u = (1,2,3)                                                   */
+/* ************************************************************* */
 void Transport_State::analytic_darcy_flux()
 {
   int  i, f;
-  double x[4][3], normal[3];
+  double x[4][3], normal[3], length;
 
   Epetra_Map face_map = mesh_maps->face_map(false);
 
@@ -60,14 +73,18 @@ void Transport_State::analytic_darcy_flux()
      mesh_maps->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
      quad_face_normal(normal, x[0], x[1], x[2], x[3]);
+     length = vector_length( normal, 3 );
 
-     (*darcy_flux)[f] = normal[0] + 2 * normal[1];
+     (*darcy_flux)[f] = (normal[0] + 2 * normal[1] + 3 * normal[2]) / length;
   }
 }
 
 
 
-/* DEBUG: create constant analytical concentration */
+
+/* ************************************************************* */
+/* DEBUG: create constant analytical concentration C_0 = x       */
+/* ************************************************************* */
 void Transport_State::analytic_total_component_concentration()
 {
   int  i, j, c;
@@ -84,13 +101,16 @@ void Transport_State::analytic_total_component_concentration()
         center[i] /= 8;
      }
 
-     (*total_component_concentration)[0][c] = (center[0] + center[1]) / 100;
+     (*total_component_concentration)[0][c] = center[0] / 100;
   }
 }
 
 
 
-/* DEBUG: create constant analytical porosity */
+
+/* ************************************************************* */
+/* DEBUG: create constant analytical porosity                    */
+/* ************************************************************* */
 void Transport_State::analytic_porosity( double phi )
 {
   int  c;
@@ -103,7 +123,10 @@ void Transport_State::analytic_porosity( double phi )
 
 
 
-/* DEBUG: create constant analytical water saturation */
+
+/* ************************************************************* */
+/* DEBUG: create constant analytical water saturation            */
+/* ************************************************************* */
 void Transport_State::analytic_water_saturation( double ws )
 {
   int  c;
@@ -116,7 +139,10 @@ void Transport_State::analytic_water_saturation( double ws )
 
 
 
-/* DEBUG: create constant analytical water density */
+
+/* ************************************************************* */
+/* DEBUG: create constant analytical water density               */
+/* ************************************************************* */
 void Transport_State::analytic_water_density( double wd )
 {
   int  c;
