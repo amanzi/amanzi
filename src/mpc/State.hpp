@@ -43,12 +43,12 @@ public:
   { return total_component_concentration; };
   
   const Teuchos::RCP<Mesh_maps_base> get_mesh_maps() const { return mesh_maps; };
-
   const double get_time () const { return time; };
 
   // modify methods
-
   void set_time ( double new_time );
+  void advance_time(double dT);
+  void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
 
   // status methods
   

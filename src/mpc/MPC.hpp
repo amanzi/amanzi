@@ -17,6 +17,7 @@ public:
 
   void cycle_driver ();
   void write_mesh();
+  void read_parameter_list();
 
 private:
   
@@ -38,6 +39,9 @@ private:
   Teuchos::RCP<Transport_PK> TPK;
   Teuchos::RCP<Flow_PK> FPK; 
 
+  Teuchos::ParameterList mpc_parameter_list;
+
+  double T0, T1;
 
 };
 

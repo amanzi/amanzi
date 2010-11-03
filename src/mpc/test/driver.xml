@@ -23,6 +23,11 @@
     <Parameter name="File Name" type="string" value="test.gmv"/>
   </ParameterList>
   
+  <ParameterList name="MPC">
+    <Parameter name="Start Time" type="double" value="0.0"/>
+    <Parameter name="End Time" type="double" value="10.0"/>
+  </ParameterList> 
+
   
   <ParameterList name="State">
     <Parameter name="Number of component concentrations" type="int" value="10"/>
@@ -30,7 +35,7 @@
 
   <ParameterList name="Transport">
    <Parameter name="CFL" type="double" value="0.5"/>   
-   <Parameter name="number of components" type="int" value="3"/>   
+   <Parameter name="number of components" type="int" value="3"/>
 
    <ParameterList name="Transport BCs">
     <Parameter name="number of BCs" type="int" value="2"/>

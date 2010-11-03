@@ -21,6 +21,8 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
 { 
   parameter_list = parameter_list_MPC;
 
+  number_components = TS_MPC->get_total_component_concentration()->NumVectors();
+
   /* make a copy of the transport state object */
   TS = rcp( new Transport_State() );
   TS->copy_constant_state( *TS_MPC );
@@ -76,7 +78,10 @@ void Transport_PK::process_parameter_list()
 
   /* global transport parameters */
   cfl = parameter_list.get<double>( "CFL", 1.0 );
-  number_components = parameter_list.get<int>( "number of components" );
+ 
+  // the number of components is given by the state and not read
+  // from the parameter list - M.B.
+  // number_components = parameter_list.get<int>( "number of components" );
 
   cout << "Transport PK: CFL = " << cfl << endl;
   cout << "              Total number of components = " << number_components << endl;

@@ -65,6 +65,17 @@ void State::set_time ( double new_time ) {
 
 }
 
+void State::update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector> new_tcc) 
+{
+  *total_component_concentration = *new_tcc;
+
+}
+
+void State::advance_time(double dT)
+{
+  time = time + dT;
+}
+
 
 void State::write_gmv ( std::string filename )
 {

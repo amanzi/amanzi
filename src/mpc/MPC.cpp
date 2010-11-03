@@ -17,6 +17,9 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
   
  {
    
+   mpc_parameter_list =  parameter_list.sublist("MPC");
+   read_parameter_list();
+
    Teuchos::ParameterList state_parameter_list = 
      parameter_list.sublist("State");
 
@@ -66,16 +69,51 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
 }
 
 
+void MPC::read_parameter_list()
+{
+  T0 = mpc_parameter_list.get<double>("Start Time");
+  T1 = mpc_parameter_list.get<double>("End Time");
+}
+
+
 void MPC::cycle_driver () {
   
-  FPK->advance();
-  FPK->commit_state(FS);
+  // so far we only have transport working
 
-  TPK->advance();
-  TPK->commit_state(TS);
+  // start at time T=T0;
+  S->set_time(T0);
 
-  CPK->advance();
-  CPK->commit_state(CS);
+
+  while (S->get_time() < T1) {
+    TPK->advance();
+    double transport_dT = TPK->get_transport_dT();
+
+    if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
+      {
+	// get the transport state and commit it to the state
+
+	RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+	
+	S->update_total_component_concentration(TS_next->get_total_component_concentration());
+
+	TPK->commit_state(TS);
+      }
+    else
+      {
+	// something went wrong
+	throw std::exception();
+      }
+
+    // update the state
+    S->advance_time(transport_dT);
+    
+
+
+  }
+
+
+  //CPK->advance();
+  //CPK->commit_state(CS);
 
 }
 
