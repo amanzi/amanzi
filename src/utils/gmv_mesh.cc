@@ -54,7 +54,7 @@ namespace GMV {
   }
 
 
-  void suffix_cycleno_(std::string &suffix, unsigned int cycleno) {
+  void suffix_no(std::string &suffix, unsigned int cycleno) {
     
     unsigned int digits = suffix.length() - 1;
 
@@ -78,7 +78,7 @@ namespace GMV {
     
     string suffixstr(digits+1,'.');
     
-    suffix_cycleno_(suffixstr, cycleno);
+    suffix_no(suffixstr, cycleno);
     filename.append(suffixstr);
     
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
@@ -101,7 +101,7 @@ namespace GMV {
 
     string suffixstr(digits+1,'.');
     
-    suffix_cycleno_(suffixstr, cycleno);
+    suffix_no(suffixstr, cycleno);
     filename.append(suffixstr); 
     
     write_mesh_to_file_(mesh_map, filename);

@@ -32,7 +32,7 @@
 
   
   <ParameterList name="State">
-    <Parameter name="Number of component concentrations" type="int" value="3"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
   </ParameterList>
 
   <ParameterList name="Transport">

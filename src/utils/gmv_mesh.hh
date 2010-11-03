@@ -49,6 +49,10 @@ namespace GMV {
 
   // Finalizes a GMV file which has previously been opened with open_data_file.
   void close_data_file();
+
+  // modify suffix string such that it is of form ".0203", where, in this example, cycleno=203 
+  void suffix_no(std::string &suffix, unsigned int cycleno);
+
 }
 
 #endif  /* _GMV_MESH_ */

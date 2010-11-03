@@ -72,7 +72,7 @@ void MPC::cycle_driver () {
   
   // so far we only have transport working
 
-
+  // use the analytic initialization functions in Transport_State
   TS->analytic_total_component_concentration();
   TS->analytic_porosity();
   TS->analytic_darcy_flux();
@@ -82,6 +82,7 @@ void MPC::cycle_driver () {
   // start at time T=T0;
   S->set_time(T0);
 
+
   // get the GMV data from the parameter list
   Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
   
@@ -90,17 +91,14 @@ void MPC::cycle_driver () {
   const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency");
   
   
-
+  // write the GMV mesh file
   GMV::create_mesh_file(*mesh_maps,gmv_meshfile);
+  
   int iter = 0;
 
-  GMV::open_data_file(*mesh_maps, gmv_datafile, iter, 6); 
-  GMV::write_time(T0);
-  GMV::write_cycle(iter);
-  GMV::start_data();
-  GMV::write_cell_data( *(*S->get_total_component_concentration())(0), "concentration0");
-  GMV::close_data_file();
-
+  // write the GMV data file
+  write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);
+  
   while (S->get_time() <= T1) {
 
     TPK->advance();
@@ -133,16 +131,9 @@ void MPC::cycle_driver () {
     iter++;
    
     if (  iter % gmv_cycle_freq   == 0 ) {
-      GMV::open_data_file(gmv_meshfile, gmv_datafile,
-			  mesh_maps->count_entities(Mesh_data::NODE, OWNED),
-			  mesh_maps->count_entities(Mesh_data::NODE, OWNED),
-			  iter, 6);
-      GMV::write_time(S->get_time());
-      GMV::write_cycle(iter);
-      GMV::start_data();
-      GMV::write_cell_data( *(*S->get_total_component_concentration())(0), "concentration0");
-      GMV::close_data_file();    
+      write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
     }
+    
   }
 
 
@@ -151,12 +142,28 @@ void MPC::cycle_driver () {
 
 
 
-void MPC::write_mesh()
+void MPC::write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile, 
+			  const int iter, const int digits)
 {
-
-  Teuchos::ParameterList gmv_parameter_list = parameter_list.sublist("GMV");
-  std::string gmv_filename = gmv_parameter_list.get<string>("File Name");
-
-  S->write_gmv(gmv_filename);
-
+  
+  GMV::open_data_file(gmv_meshfile, gmv_datafile,
+		      mesh_maps->count_entities(Mesh_data::NODE, OWNED),
+		      mesh_maps->count_entities(Mesh_data::CELL, OWNED),
+		      iter, digits);
+  GMV::write_time(S->get_time());
+  GMV::write_cycle(iter);
+  GMV::start_data();
+  
+  string basestring = "concentration";
+  string suffix = ".00";
+  
+  for (int nc=0; nc<S->get_number_of_components(); nc++) {
+    string concstring(basestring);
+    GMV::suffix_no(suffix,nc);
+    concstring.append(suffix);
+    
+    GMV::write_cell_data( *(*S->get_total_component_concentration())(nc), concstring);
+  }
+  GMV::close_data_file();     
+ 
 }
