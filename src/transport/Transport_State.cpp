@@ -75,7 +75,7 @@ void Transport_State::analytic_darcy_flux()
      quad_face_normal(normal, x[0], x[1], x[2], x[3]);
      length = vector_length( normal, 3 );
 
-     (*darcy_flux)[f] = (normal[0] + 2 * normal[1] + 3 * normal[2]) / length;
+     (*darcy_flux)[f] = (normal[0] + 0 * normal[1] + 0 * normal[2]) / length;
   }
 }
 
@@ -101,7 +101,7 @@ void Transport_State::analytic_total_component_concentration()
         center[i] /= 8;
      }
 
-     (*total_component_concentration)[0][c] = center[0] / 100;
+     (*total_component_concentration)[0][c] = (1 - center[0]) / 100;
   }
 }
 

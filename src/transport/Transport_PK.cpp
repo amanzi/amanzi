@@ -191,7 +191,7 @@ double Transport_PK::calculate_transport_dT()
 
 
   /* parallel garther and scatter of dT */ 
-  cout << "Transport time step dT = " << dT << endl;
+  //cout << "Transport time step dT = " << dT << endl;
 }
 
 
@@ -220,6 +220,9 @@ void Transport_PK::advance()
   RCP<const Epetra_Vector>  ws  = TS->get_water_saturation();
   RCP<const Epetra_Vector>  phi = TS->get_porosity();
 
+  /* copy previous state */
+  *tcc_next = *tcc; 
+
 
   /* advance each component */ 
   int num_components = tcc->NumVectors();
@@ -237,8 +240,8 @@ void Transport_PK::advance()
         for( i=0; i<num_components; i++ ) {
            tcc_flux = cfl * dT * u * (*tcc)[i][c1];
 
-           (*tcc_next)[i][c1] = (*tcc)[i][c1] - tcc_flux / phi_ws1;
-           (*tcc_next)[i][c2] = (*tcc)[i][c2] + tcc_flux / phi_ws2;
+           (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
+           (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
         }
      }
   }
@@ -264,7 +267,7 @@ void Transport_PK::advance()
 
            for( i=0; i<num_components; i++ ) {
               tcc_flux = cfl * dT * u * (*tcc)[i][c1];
-              (*tcc_next)[i][c1] = (*tcc)[i][c1] - tcc_flux / phi_ws1;
+              (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
            }
         }
 
@@ -273,7 +276,7 @@ void Transport_PK::advance()
 
            for( i=0; i<num_components; i++ ) {
               tcc_flux = cfl * dT * u * bcs[n].values[i];
-              (*tcc_next)[i][c2] = (*tcc)[i][c2] + tcc_flux / phi_ws2;
+              (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
            }
         }
      }

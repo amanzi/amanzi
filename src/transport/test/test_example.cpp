@@ -187,7 +187,7 @@ TEST(TRANSPORT_PK_ADVANCE) {
 #endif
 
   /* create a MPC state with one component */
-  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm) ); 
+  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 2, 2, comm) ); 
 
   int num_components = 3;
   State mpc_state( num_components, mesh );
@@ -215,13 +215,40 @@ TEST(TRANSPORT_PK_ADVANCE) {
   TPK.advance();
 
   /* printing cell concentration */
+  int  i, k;
+  double  dT, T;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
 
   RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
-  cout << *tcc << endl;
-  cout << *tcc_next << endl;
+  T = 0.0;
+  cout << "Original state: T=" << T << endl;
+  for( i=0; i<3; i++ ) {
+     for( int k=0; k<20; k++ ) printf("%7.4f", (*tcc)[i][k]); 
+     cout << endl;
+  }
+  dT = TPK.get_transport_dT();
+  T += dT;
+
+  cout << "New state: T=" << T << endl;
+  for( i=0; i<3; i++ ) {
+     for( int k=0; k<20; k++ ) printf("%7.4f", (*tcc_next)[i][k]); 
+     cout << endl;
+  }
+ 
+  cout << "Dynamics of component 0 (1-D transport)" << endl;
+  for( int i=0; i<20; i++ ) {
+     *tcc = *tcc_next;
+
+     TPK.advance();
+
+     dT = TPK.get_transport_dT();
+     T += dT;
+
+     printf("T=%6.2f  C_0(x):", T);
+     for( int k=0; k<20; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+  }
   cout << "==================================================================" << endl << endl;
 }
  
