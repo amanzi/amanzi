@@ -51,7 +51,6 @@ namespace GMV {
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
     gmvwrite_nodes_fromfile((char*) meshfile.c_str(), num_nodes);
     gmvwrite_cells_fromfile((char*) meshfile.c_str(), num_cells);
-    // gmvwrite_variable_header();
   }
 
   void open_data_file(Mesh_maps_base &mesh_map, std::string filename) {
@@ -60,7 +59,6 @@ namespace GMV {
     unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
 
     write_mesh_to_file_(mesh_map, filename);
-    // gmvwrite_variable_header();
   }
 
   void write_time(const double time) {
@@ -71,7 +69,7 @@ namespace GMV {
     gmvwrite_cycleno(cycle);
   }
 
-  void start_variables() {
+  void start_data() {
     gmvwrite_variable_header();
   }
     

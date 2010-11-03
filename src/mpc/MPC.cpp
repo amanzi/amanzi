@@ -94,7 +94,7 @@ void MPC::cycle_driver () {
 		      mesh_maps->count_entities(Mesh_data::NODE, OWNED));
   GMV::write_time(T0);
   GMV::write_cycle(iter);
-  GMV::start_variables();
+  GMV::start_data();
   GMV::write_cell_data( *(*S->get_total_component_concentration())(0), "concentration0");
   GMV::close_data_file();
 
@@ -137,7 +137,7 @@ void MPC::cycle_driver () {
 			mesh_maps->count_entities(Mesh_data::NODE, OWNED));
     GMV::write_time(S->get_time());
     GMV::write_cycle(iter);
-    GMV::start_variables();
+    GMV::start_data();
     GMV::write_cell_data( *(*S->get_total_component_concentration())(0), "concentration0");
     GMV::close_data_file();    
     

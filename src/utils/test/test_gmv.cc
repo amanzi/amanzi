@@ -46,6 +46,7 @@ TEST(GMV) {
 
   GMV::create_mesh_file(Mesh, gmv_meshfile);
   GMV::open_data_file(gmv_meshfile, gmv_datafile1, num_nodes, num_cells);
+  GMV::start_data();
   GMV::write_node_data(*node_quantity, "node_quantity");
   GMV::write_cell_data(*cell_quantity, "cell_quantity");
   GMV::write_cell_data(*fake_pressure, "pressure");
@@ -53,6 +54,7 @@ TEST(GMV) {
 
   // Write a file which contains both mesh and data.
   GMV::open_data_file(Mesh, gmv_fullfile);
+  GMV::start_data();
   GMV::write_node_data(*node_quantity, "node_quantity");
   GMV::write_cell_data(*cell_quantity, "cell_quantity");
   GMV::write_cell_data(*fake_pressure, "pressure");
