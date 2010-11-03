@@ -654,3 +654,15 @@ void Mesh_maps_simple::cell_to_face_dirs (unsigned int cell,
   std::vector<int>::iterator end = begin + 6;
   std::copy (begin, end, destination_begin);  
 }
+
+
+void Mesh_maps_simple::set_coordinate(unsigned int local_node_id, 
+				      double *source_begin, 
+				      double *source_end)
+{
+  unsigned int index = 3*local_node_id;
+  
+  std::vector<double>::iterator destination_begin = coordinates_.begin() + index;
+  std::copy(source_begin, source_end, destination_begin);
+
+}

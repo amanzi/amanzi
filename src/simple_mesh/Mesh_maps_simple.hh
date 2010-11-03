@@ -120,7 +120,13 @@ public:
   
   inline const Epetra_Comm * get_comm() { return communicator_; };
   
-
+  // this is not part of the Mesh_maps_base interface 
+  // and should be used with extreme caution:
+  // modify coordinates
+  
+  void set_coordinate(unsigned int local_node_id, 
+		       double* source_begin, double* source_end);
+  
 private:
   void update_internals_();
   void clear_internals_();
