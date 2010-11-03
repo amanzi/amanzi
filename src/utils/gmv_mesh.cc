@@ -1,15 +1,14 @@
 #include "gmv_mesh.hh"
-#include "Entity_kind.hh"
-#include "Element_category.hh"
+//#include "Entity_kind.hh"
 
 namespace GMV {
 
-  static inline void write_mesh_to_file_(STK_mesh::Mesh_maps_stk &mesh_map, std::string filename)
+  static inline void write_mesh_to_file_(Mesh_maps_base &mesh_map, std::string filename)
   {
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
     // Write node info
-    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, STK_mesh::OWNED);
+    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
     double *x = new double [num_nodes];
     double *y = new double [num_nodes];
     double *z = new double [num_nodes];
@@ -28,11 +27,11 @@ namespace GMV {
     delete z;
 
     // Write cell info
-    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, STK_mesh::OWNED);
+    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
 
     gmvwrite_cell_header(&num_cells);
 
-    int *xh = new int[8];
+    unsigned int *xh = new unsigned int[8];
     for (int i=0; i<num_cells; i++) {
       mesh_map.cell_to_nodes(i,xh,xh+8);
       for (int j=0; j<8; j++) xh[j]++;
@@ -41,7 +40,7 @@ namespace GMV {
     
   }
 
-  void create_mesh_file(STK_mesh::Mesh_maps_stk &mesh_map, std::string filename)
+  void create_mesh_file(::Mesh_maps_base &mesh_map, std::string filename)
   {
     write_mesh_to_file_(mesh_map, filename);
     gmvwrite_closefile();
@@ -55,10 +54,10 @@ namespace GMV {
     gmvwrite_variable_header();
   }
 
-  void open_data_file(STK_mesh::Mesh_maps_stk &mesh_map, std::string filename) {
+  void open_data_file(::Mesh_maps_base &mesh_map, std::string filename) {
 
-    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, STK_mesh::OWNED);
-    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, STK_mesh::OWNED);
+    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
+    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
 
     write_mesh_to_file_(mesh_map, filename);
     gmvwrite_variable_header();

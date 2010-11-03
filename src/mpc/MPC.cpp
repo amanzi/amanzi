@@ -57,15 +57,6 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    FPK = Teuchos::rcp( new Flow_PK(flow_parameter_list, FS) );
    // done creating the individual process models
 
-
-
-   
-  // chemistry computes new total_component_concentration, so
-  // we create storage for that return multi vector
-
-  total_component_concentration_star = Teuchos::rcp(new Epetra_MultiVector( *CS->get_total_component_concentration() ));
-
-
 }
 
 
@@ -81,15 +72,27 @@ void MPC::cycle_driver () {
   // so far we only have transport working
 
 
-  TS->set_analytic_darcy_flux();
+  TS->analytic_total_component_concentration();
+  TS->analytic_porosity();
+  TS->analytic_darcy_flux();
+  TS->analytic_water_saturation();
+  TS->analytic_water_density();
 
   // start at time T=T0;
   S->set_time(T0);
 
 
-  while (S->get_time() < T1) {
+  // dump the initial state to gmv
+  std::cout << "Time = " <<  S->get_time() << std::endl;
+  for( int k=0; k<20; k++ ) printf("%7.4f", (*TPK->get_transport_state_next()->get_total_component_concentration())[0][k]); cout << endl;
+
+
+
+  while (S->get_time() <= T1) {
     TPK->advance();
     double transport_dT = TPK->get_transport_dT();
+
+    std::cout << "Transport dT = " << transport_dT << std::endl;
 
     if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
       {
@@ -110,13 +113,14 @@ void MPC::cycle_driver () {
     // update the state
     S->advance_time(transport_dT);
     
+    for( int k=0; k<20; k++ ) printf("%7.4f", (*TPK->get_transport_state_next()->get_total_component_concentration())[0][k]); cout << endl;
+   
+    std::cout << "Time = " <<  S->get_time() << std::endl;
 
-
+    
   }
 
 
-  //CPK->advance();
-  //CPK->commit_state(CS);
 
 }
 
