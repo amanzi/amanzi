@@ -118,6 +118,8 @@ public:
 		unsigned int * begin,
 		unsigned int * end) const;
   
+  inline const Epetra_Comm * get_comm() { return communicator_; };
+  
 
 private:
   void update_internals_();

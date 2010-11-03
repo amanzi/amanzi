@@ -206,6 +206,8 @@ public:
 		Element_Category category,
 		unsigned int * begin,
 		unsigned int * end) const;
+
+  inline const Epetra_Comm * get_comm() { return epcomm; };
   
 };
 
