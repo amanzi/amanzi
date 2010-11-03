@@ -22,10 +22,16 @@ namespace GMV {
 
   // Opens and initializes a GMV file for writing which references a "fromfile" for mesh definition.
   void open_data_file(std::string mesh_fromfile, std::string filename, unsigned int num_nodes, unsigned int num_cells);
+
+  void open_data_file(std::string mesh_fromfile, std::string filename, unsigned int num_nodes, unsigned int num_cells, unsigned int cycleno, unsigned int digits);
+  
   // Opens and initializes a GMV file which contains mesh data, i.e. doesn't use a "fromfile".
   void open_data_file(Mesh_maps_base &mesh_maps, std::string filename);
-
-  void start_variables();
+ 
+  void open_data_file(Mesh_maps_base &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits);
+  
+  // start the variables section (call this after write_cycle or write_time)
+  void start_data();
 
   // Writes node data to files which has previously been opened with open_data_file.
   void write_node_data(const Epetra_Vector &x, std::string varname);

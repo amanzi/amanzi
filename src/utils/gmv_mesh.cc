@@ -53,6 +53,39 @@ namespace GMV {
     gmvwrite_cells_fromfile((char*) meshfile.c_str(), num_cells);
   }
 
+
+  void suffix_cycleno_(std::string &suffix, unsigned int cycleno) {
+    
+    unsigned int digits = suffix.length() - 1;
+
+    suffix[0] = '.';
+
+    if (cycleno >= pow(10,digits))  throw std::exception();
+
+    suffix[digits] = '0' + cycleno%10;
+    
+    int div = 10;
+    for (int i=1; i<digits; i++) {
+      suffix[digits-i] = '0' + (cycleno/div)%div;
+      div *=10;
+    }  
+
+  }
+  
+
+
+  void open_data_file(std::string meshfile, std::string filename, unsigned int num_nodes, unsigned int num_cells, unsigned int cycleno, unsigned int digits) {
+    
+    string suffixstr(digits+1,'.');
+    
+    suffix_cycleno_(suffixstr, cycleno);
+    filename.append(suffixstr);
+    
+    gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
+    gmvwrite_nodes_fromfile((char*) meshfile.c_str(), num_nodes);
+    gmvwrite_cells_fromfile((char*) meshfile.c_str(), num_cells);
+  }
+
   void open_data_file(Mesh_maps_base &mesh_map, std::string filename) {
 
     unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
@@ -60,6 +93,20 @@ namespace GMV {
 
     write_mesh_to_file_(mesh_map, filename);
   }
+
+  void open_data_file(Mesh_maps_base &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits) {
+
+    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
+    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
+
+    string suffixstr(digits+1,'.');
+    
+    suffix_cycleno_(suffixstr, cycleno);
+    filename.append(suffixstr); 
+    
+    write_mesh_to_file_(mesh_map, filename);
+  }
+  
 
   void write_time(const double time) {
     gmvwrite_probtime(time);

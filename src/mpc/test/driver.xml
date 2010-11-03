@@ -19,13 +19,15 @@
     </ParameterList>   
   </ParameterList>
   
-  <ParameterList name="GMV">
-    <Parameter name="File Name" type="string" value="test.gmv"/>
-  </ParameterList>
-  
+
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
     <Parameter name="End Time" type="double" value="2000.0"/>
+    <ParameterList name="GMV">
+      <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
+      <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
+      <Parameter name="Dump cycle frequency" type="int" value="10"/>
+    </ParameterList>    
   </ParameterList> 
 
   
