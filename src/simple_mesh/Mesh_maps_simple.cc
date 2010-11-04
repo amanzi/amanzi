@@ -41,7 +41,12 @@ Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
 }
 
 
-
+Mesh_maps_simple::~Mesh_maps_simple()
+{
+  delete cell_map_;
+  delete face_map_;
+  delete node_map_;
+}
 
 
 

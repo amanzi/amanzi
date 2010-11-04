@@ -26,6 +26,7 @@ public:
   Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
 		     Epetra_Comm *communicator );
 
+  ~Mesh_maps_simple (); 
 
   void update ();
   
