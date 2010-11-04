@@ -1116,10 +1116,7 @@ unsigned int Mesh_maps_moab::num_sets(Mesh_data::Entity_kind kind) const {
 
 bool Mesh_maps_moab::valid_set_id (unsigned int id, Mesh_data::Entity_kind kind) const {
   int n;
-  const int lid = id;
-  const void* valarr[1] = {&lid};
-
-  valarr[0] = (void *) id;
+  const void* valarr[1] = {&id};
 
   switch (kind) {
   case Mesh_data::CELL:
