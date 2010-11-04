@@ -125,9 +125,9 @@ Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
    	   cell_to_face_[istart+4]  = xyface_index_(ix,iy,iz);
    	   cell_to_face_[istart+5]  = xyface_index_(ix,iy,iz+1);
 
-	   cell_to_face_dirs_[istart]   = -1;
+	   cell_to_face_dirs_[istart]   = 1;
 	   cell_to_face_dirs_[istart+1] = 1;
-	   cell_to_face_dirs_[istart+2] = 1;
+	   cell_to_face_dirs_[istart+2] = -1;
 	   cell_to_face_dirs_[istart+3] = -1;
 	   cell_to_face_dirs_[istart+4] = -1;
 	   cell_to_face_dirs_[istart+5] = 1;
@@ -653,4 +653,16 @@ void Mesh_maps_simple::cell_to_face_dirs (unsigned int cell,
   std::vector<int>::iterator begin = cell_to_face_dirs_.begin() + index;
   std::vector<int>::iterator end = begin + 6;
   std::copy (begin, end, destination_begin);  
+}
+
+
+void Mesh_maps_simple::set_coordinate(unsigned int local_node_id, 
+				      double *source_begin, 
+				      double *source_end)
+{
+  unsigned int index = 3*local_node_id;
+  
+  std::vector<double>::iterator destination_begin = coordinates_.begin() + index;
+  std::copy(source_begin, source_end, destination_begin);
+
 }

@@ -1,7 +1,7 @@
 #ifndef _SETUP_EPETRA_EXAMPLE_H_
 #define _SETUP_EPETRA_EXAMPLE_H_
 
-#include "test/Setup_tests.hh"
+//#include "test/Setup_tests.hh"
 #include <Teuchos_RCP.hpp>
 #include "Epetra_Vector.h"
 

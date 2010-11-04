@@ -176,7 +176,7 @@ void Darcy_problem::initialize()
 
   std::vector<unsigned int> cface(6);
 
-  for (unsigned int icell=cell_map.MinLID(); icell < cell_map.MaxLID(); icell++)
+  for (unsigned int icell=cell_map.MinLID(); icell <= cell_map.MaxLID(); icell++)
     {
       // get the local face indices of faces connected to the 
       // current cell
