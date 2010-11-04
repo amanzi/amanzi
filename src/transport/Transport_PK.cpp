@@ -2,6 +2,7 @@
 #include "Epetra_MultiVector.h"
 
 #include "simple_mesh/Mesh_maps_base.hh"
+#include "simple_mesh/Mesh_maps_simple.hh"
 #include "Transport_PK.hpp"
 #include "flow/cell_geometry.hpp"
 
@@ -37,32 +38,32 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
 
 
   /* frequently used data */
-  Epetra_Map cell_map = TS->get_mesh_maps()->cell_map(false);
-  Epetra_Map face_map = TS->get_mesh_maps()->face_map(false);
+  const Epetra_Map & cell_map = TS->get_mesh_maps()->cell_map(false);
+  const Epetra_Map & face_map = TS->get_mesh_maps()->face_map(false);
 
   cmin = cell_map.MinLID();
   cmax = cell_map.MaxLID();
-  number_cells = cmax - cmin + 1;
+  number_cells = TS->get_mesh_maps()->count_entities( Mesh_data::CELL, OWNED );
 
   fmin = face_map.MinLID();
   fmax = face_map.MaxLID(); 
-  number_faces = fmax - fmin + 1;
+  number_faces = TS->get_mesh_maps()->count_entities( Mesh_data::FACE, OWNED );
 
 
   /* process parameter list */
   process_parameter_list();
 
   /* future geometry package */
-  cell_volume.resize( cmax + 1 );
-  face_area.resize( fmax + 1 );
+  cell_volume.resize( number_cells );
+  face_area.resize( number_faces );
 
-  upwind_cell.resize( fmax + 1 );
-  downwind_cell.resize( fmax + 1 );
+  upwind_cell.resize( number_faces );
+  downwind_cell.resize( number_faces );
 
   geometry_package();
 
   /* other preliminaries for Demo I */
-  darcy_flux.resize( fmax + 1 );
+  darcy_flux.resize( number_faces );
 };
 
 
@@ -79,10 +80,6 @@ void Transport_PK::process_parameter_list()
   /* global transport parameters */
   cfl = parameter_list.get<double>( "CFL", 1.0 );
  
-  // the number of components is given by the state and not read
-  // from the parameter list - M.B.
-  // number_components = parameter_list.get<int>( "number of components" );
-
   cout << "Transport PK: CFL = " << cfl << endl;
   cout << "              Total number of components = " << number_components << endl;
 
@@ -117,7 +114,8 @@ void Transport_PK::process_parameter_list()
      ntcc = bc_ss.get<int>("number of components");
      type = bc_ss.get<string>("Type");
 
-     /* check all existing components */
+     /* check all existing components: right now we check by id */
+     /* but it is possible to check by name in the future */
      for( k=0; k<number_components; k++ ) {
         char tcc_char_name[10];
 
@@ -160,12 +158,12 @@ double Transport_PK::calculate_transport_dT()
 
   RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
 
-  vector<double>  total_influx(number_cells, 0.0);
+  vector<double>  total_influx( number_cells, 0.0 );
 
   /* loop over faces and accumulate upwinding fluxes */
   int  i, f, c, c1;
   double  area, u;
-  Epetra_Map face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map(false);
 
   for( f=fmin; f<=fmax; f++ ) {
      c = downwind_cell[f];
@@ -341,7 +339,7 @@ void Transport_PK::extract_darcy_flux()
 /* ************************************************************* */
 void Transport_PK::identify_upwind_cells()
 {
-  RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
+  RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
 
   /* negative value is indicator of a boundary  */
   int  f;
@@ -356,7 +354,7 @@ void Transport_PK::identify_upwind_cells()
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  Epetra_Map  face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map(false);
 
   double *darcy_flux;
   TS->get_darcy_flux()->ExtractView( &darcy_flux );
@@ -366,7 +364,7 @@ void Transport_PK::identify_upwind_cells()
      mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
 
      for ( i=0; i<6; i++ ) {
-        f = face_map.LID(c2f[i]);
+        f = c2f[i];
         if ( darcy_flux[f] * dirs[i] >= 0 ) { upwind_cell[f] = c; }
         else                                { downwind_cell[f] = c; }
      }
@@ -401,7 +399,7 @@ void Transport_PK::geometry_package()
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  Epetra_Map  face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map(false);
 
   for( c=cmin; c<=cmax; c++ ) {
      TS->get_mesh_maps()->cell_to_coordinates( c, (double*) x, (double*) x+24 );
@@ -429,6 +427,20 @@ void Transport_PK::geometry_package()
      }
      cell_volume[c] = volume / 3;
   }
+
+
+  /* DEBUG: squash the mesh */
+  /*
+  int  p;
+  const Epetra_Map & node_map = TS->get_mesh_maps()->node_map(false);
+
+  for( p=node_map.MinLID(); p<=node_map.MaxLID(); p++ ) {
+     mesh->node_to_coordinates( p, (double*) x, (double*) x+3 ); 
+
+     x[0][3] /= x[0][0] + 1; 
+     mesh->set_coordinate( p, (double*) x, (double*) x+3 );
+  }
+  */
 }
 
 
