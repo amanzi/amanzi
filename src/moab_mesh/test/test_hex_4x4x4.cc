@@ -29,7 +29,6 @@ TEST(MOAB_HEX_4x4x4)
 
   Mesh_maps_moab mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD);
 
-
   nf = mesh.count_entities(Mesh_data::FACE,OWNED);
   CHECK_EQUAL(NF,nf);
   
@@ -37,6 +36,20 @@ TEST(MOAB_HEX_4x4x4)
   CHECK_EQUAL(NC,nc);
 
 
+  std::vector<unsigned int>  c2f(6);
+  Epetra_Map cell_map(mesh.cell_map(false));
+  Epetra_Map face_map(mesh.face_map(false));
+  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
+    {
+      mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
+      for (int j=0; j<6; j++)
+	{
+	  int f = face_map.LID(c2f[j]);
+	  CHECK( f == c2f[j] );
+	}
+
+    }
+  
   int ns;
 
   // Verify cell sets
@@ -115,8 +128,7 @@ TEST(MOAB_HEX_4x4x4)
   for (i = 0; i < ns-1; i++) {
     unsigned int setfaces[9];
 
-    // the following line causes this test to fail....  
-    cout << mesh.valid_set_id(fsetids[i+1],Mesh_data::FACE) << endl;
+    CHECK_EQUAL(true,mesh.valid_set_id(fsetids[i+1],Mesh_data::FACE));
    
     fsetsize = mesh.get_set_size(fsetids[i+1],Mesh_data::FACE,OWNED);
     CHECK_EQUAL(expfsetsizes[i],fsetsize);
