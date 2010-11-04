@@ -62,13 +62,19 @@ namespace GMV {
 
     if (cycleno >= pow(10,digits))  throw std::exception();
 
-    suffix[digits] = '0' + cycleno%10;
+    // suffix[digits] = '0' + cycleno%10;
     
-    int div = 10;
-    for (int i=1; i<digits; i++) {
-      suffix[digits-i] = '0' + (cycleno/div)%div;
-      div *=10;
-    }  
+    // int div = 10;
+    // for (int i=1; i<digits; i++) {
+    //   suffix[digits-i] = '0' + (cycleno/div)%div;
+    //   div *=10;
+    // }  
+
+    int div = 1;
+    for(int i = 0; i < digits; ++i) {
+      suffix[digits-i] = '0' + (cycleno/div)%10; 
+      div *= 10;
+    }
 
   }
   
