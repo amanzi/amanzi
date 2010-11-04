@@ -73,7 +73,7 @@ void MPC::cycle_driver () {
   // so far we only have transport working
 
   // use the analytic initialization functions in Transport_State
-  TS->analytic_total_component_concentration();
+  //TS->analytic_total_component_concentration();
   TS->analytic_porosity();
   TS->analytic_darcy_flux();
   TS->analytic_water_saturation();
