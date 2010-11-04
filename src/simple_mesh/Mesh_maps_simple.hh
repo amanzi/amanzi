@@ -118,7 +118,13 @@ public:
 		unsigned int * begin,
 		unsigned int * end) const;
   
-
+  inline const Epetra_Comm * get_comm() { return communicator_; };
+  
+  // this should be used with extreme caution:
+  // modify coordinates
+  void set_coordinate(unsigned int local_node_id, 
+		       double* source_begin, double* source_end);
+  
 private:
   void update_internals_();
   void clear_internals_();

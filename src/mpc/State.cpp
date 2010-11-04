@@ -53,16 +53,19 @@ void State::create_storage ()
 
 void State::set_time ( double new_time ) {
 
-  if ( status == UPDATING ) {
-    
-    time = new_time;
+  time = new_time;
 
-  } else {
-    
-    // throw an error
+}
 
-  }
+void State::update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector> new_tcc) 
+{
+  *total_component_concentration = *new_tcc;
 
+}
+
+void State::advance_time(double dT)
+{
+  time = time + dT;
 }
 
 

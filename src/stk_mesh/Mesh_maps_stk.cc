@@ -10,6 +10,12 @@ namespace STK_mesh
 {
 
 
+unsigned int Mesh_maps_stk::num_kinds_ = 3;
+Mesh_data::Entity_kind Mesh_maps_stk::kinds_ [3] = {Mesh_data::NODE, 
+                                                    Mesh_data::FACE, 
+                                                    Mesh_data::CELL};
+
+
 Mesh_maps_stk::Mesh_maps_stk (Mesh_p mesh) : mesh_ (mesh),
                                              entity_map_ (mesh->entity_map ()),
                                              communicator_ (mesh_->communicator ())
@@ -49,7 +55,6 @@ void Mesh_maps_stk::build_maps_ ()
     // For each of Elements, Faces, Nodes:
     for (int entity_kind_index = 0; entity_kind_index < 3; ++entity_kind_index)
     {
-
 
         Mesh_data::Entity_kind kind = index_to_kind_ (entity_kind_index);
         stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
@@ -182,11 +187,12 @@ void Mesh_maps_stk::build_tables_ ()
 // Internal validators
 // -------------------
 
-/* This should accept the entity_kinds for which we have internal data
- */
 bool Mesh_maps_stk::valid_entity_kind_ (const Mesh_data::Entity_kind kind) const
 {
-    return (kind == Mesh_data::NODE) || (kind == Mesh_data::FACE) || (kind == Mesh_data::CELL);
+    for (Mesh_data::Entity_kind* kind_it = kinds_; kind_it != kinds_+num_kinds_; ++kind_it)
+        if (*kind_it == kind) return true;
+
+    return false;
 }
 
 
@@ -205,11 +211,8 @@ unsigned int Mesh_maps_stk::kind_to_index_ (const Mesh_data::Entity_kind kind) c
 
 Mesh_data::Entity_kind Mesh_maps_stk::index_to_kind_ (const unsigned int index) const
 {
-    ASSERT (index >= 0 && index < 3);
-
-    if (index == 0) return Mesh_data::NODE;
-    if (index == 1) return Mesh_data::FACE;
-    if (index == 2) return Mesh_data::CELL;
+    ASSERT (index >= 0 && index < num_kinds_);
+    return kinds_ [index];
 }
 
 const Index_map& Mesh_maps_stk::kind_to_map_ (Mesh_data::Entity_kind kind) const

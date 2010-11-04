@@ -51,6 +51,8 @@ private:
 
     // Global to local index maps and associated bookkeeping.
     Index_map global_to_local_maps_ [3];
+    static unsigned int num_kinds_;
+    static Mesh_data::Entity_kind kinds_ [3];
     unsigned int kind_to_index_ (Mesh_data::Entity_kind type) const;
     const Index_map& kind_to_map_ (Mesh_data::Entity_kind kind) const;
     Mesh_data::Entity_kind index_to_kind_ (unsigned int index) const;

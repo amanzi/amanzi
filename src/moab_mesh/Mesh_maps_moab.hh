@@ -206,6 +206,14 @@ public:
 		Element_Category category,
 		unsigned int * begin,
 		unsigned int * end) const;
+
+  inline const Epetra_Comm * get_comm() { return epcomm; };
+
+  // this should be used with extreme caution:
+  // modify coordinates  
+  void set_coordinate(unsigned int local_node_id, 
+		      double* source_begin, double* source_end) 
+  { throw std::exception(); };
   
 };
 
