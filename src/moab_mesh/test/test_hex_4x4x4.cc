@@ -115,6 +115,9 @@ TEST(MOAB_HEX_4x4x4)
   for (i = 0; i < ns-1; i++) {
     unsigned int setfaces[9];
 
+    // the following line causes this test to fail....  
+    cout << mesh.valid_set_id(fsetids[i+1],Mesh_data::FACE) << endl;
+   
     fsetsize = mesh.get_set_size(fsetids[i+1],Mesh_data::FACE,OWNED);
     CHECK_EQUAL(expfsetsizes[i],fsetsize);
 
