@@ -23,8 +23,21 @@
 */
 
 
+namespace Amanzi_Transport{
+  const int TRANSPORT_NULL           = 0;
+  const int TRANSPORT_STATE_BEGIN    = 1;
+  const int TRANSPORT_STATE_COMPLETE = 2;
+
+  const double TRANSPORT_LARGE_TIME_STEP = 1e+99;
+  const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
+}
+
+
+
 using namespace std;
 using namespace Teuchos;
+using namespace Amanzi_Transport;
+
 
 
 class Transport_PK {
@@ -35,7 +48,7 @@ public:
 		RCP<Transport_State> TS_MPC );
   Transport_PK();
 
-  ~Transport_PK();
+  ~Transport_PK() {};
 
   /* primary members */
   double calculate_transport_dT();
@@ -43,6 +56,8 @@ public:
   void commit_state( RCP<Transport_State> TS );
 
   void process_parameter_list();
+  void identify_upwind_cells();
+  void extract_darcy_flux();
 
   vector<double> calculate_accumulated_influx();
   vector<double> calculate_accumulated_outflux();
@@ -60,23 +75,27 @@ public:
 
 public:
   /* member for debugging only */
-  double get_face_area( int f );
+  double get_face_area( int f )   { return face_area[f]; }
+  double get_cell_volume( int c ) { return cell_volume[c]; }
 
 
 private:
-  /* smart pointer to the transport state for process kernel */
+  /* original and proposed transport states */
   RCP<Transport_State>  TS;
-
-  /* proposed new transport state */ 
   RCP<Transport_State>  TS_next;
   
+  /* darcy_flux */
+  vector<double>  darcy_flux;
+
   /* parameter list with Transport specific parameters */
   ParameterList  parameter_list;
 
   /* part of the future geometry package */
-  Epetra_Vector     *face_area;
-  Epetra_IntVector  *face_to_cell_upwind;
-  Epetra_IntVector  *face_to_cell_downwind;
+  vector<double>  face_area;
+  vector<double>  cell_volume;
+
+  vector<double>  upwind_cell;
+  vector<double>  downwind_cell;
 
   /* transport time step, CFL, and status */
   double  cfl, dT;
@@ -88,8 +107,12 @@ private:
   vector<Transport_BCs>  bcs;
 
   /* accumulated influx and outflux for each side */
-  vector<double>   *influx;
-  vector<double>  *outflux;
+  vector<double>   influx;
+  vector<double>  outflux;
+
+  /* frequently used data */
+  int  cmin, cmax, number_cells;
+  int  fmin, fmax, number_faces;
 };
 
 #endif

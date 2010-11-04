@@ -46,9 +46,12 @@ public:
 
   const double get_time () const { return time; };
 
-  // modify methods
+  const int get_number_of_components() const { return number_of_components; };
 
+  // modify methods
   void set_time ( double new_time );
+  void advance_time(double dT);
+  void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
 
   // status methods
   

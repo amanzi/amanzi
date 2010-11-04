@@ -59,12 +59,10 @@ TEST(DRIVER) {
   // create the MPC
   MPC mpc(driver_parameter_list, MMS);
   
-  mpc.write_mesh();
-
   mpc.cycle_driver();
   
   
-
+  delete comm;
       
 }
 

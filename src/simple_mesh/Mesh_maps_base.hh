@@ -115,11 +115,6 @@ public:
 			     Mesh_data::Entity_kind kind,
 			     Element_Category category) const {};
 
-  // virtual
-  // unsigned int get_set_size (const char* name,
-  // 			     Mesh_data::Entity_kind kind,
-  // 			     Element_Category category) const {};
-  
   // Id numbers
   virtual
   void get_set_ids (Mesh_data::Entity_kind kind, 
@@ -144,12 +139,17 @@ public:
 		unsigned int * begin, 
 		unsigned int * end) const {};
   
-  // virtual
-  // void get_set (const char* name, Mesh_data::Entity_kind kind, 
-  // 		Element_Category category,
-  // 		std::vector<unsigned int>::iterator begin, 
-  // 		std::vector<unsigned int>::iterator end) const {};
-  
+
+  // communicator access
+  virtual
+  const Epetra_Comm* get_comm() {};
+
+  // this should be used with extreme caution:
+  // modify coordinates  
+  virtual void set_coordinate(unsigned int local_node_id, 
+			      double* source_begin, double* source_end) {};
+
+
 };
 
 #endif /* _MESH_MAPS_BASE_H_ */

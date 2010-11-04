@@ -8,6 +8,7 @@
 #include "../flow/Flow_PK.hpp"
 #include "../transport/Transport_State.hpp"
 #include "../transport/Transport_PK.hpp"
+#include "../utils/gmv_mesh.hh"
 
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
@@ -15,8 +16,11 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
   parameter_list(parameter_list_),
   mesh_maps(mesh_maps_)
   
- {
+{
    
+   mpc_parameter_list =  parameter_list.sublist("MPC");
+   read_parameter_list();
+
    Teuchos::ParameterList state_parameter_list = 
      parameter_list.sublist("State");
 
@@ -54,39 +58,112 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    FPK = Teuchos::rcp( new Flow_PK(flow_parameter_list, FS) );
    // done creating the individual process models
 
+}
 
 
-   
-  // chemistry computes new total_component_concentration, so
-  // we create storage for that return multi vector
-
-  total_component_concentration_star = Teuchos::rcp(new Epetra_MultiVector( *CS->get_total_component_concentration() ));
-
-
+void MPC::read_parameter_list()
+{
+  T0 = mpc_parameter_list.get<double>("Start Time");
+  T1 = mpc_parameter_list.get<double>("End Time");
 }
 
 
 void MPC::cycle_driver () {
   
-  FPK->advance();
-  FPK->commit_state(FS);
+  // so far we only have transport working
 
-  TPK->advance();
-  TPK->commit_state(TS);
+  // use the analytic initialization functions in Transport_State
+  //TS->analytic_total_component_concentration();
+  TS->analytic_porosity();
+  TS->analytic_darcy_flux();
+  TS->analytic_water_saturation();
+  TS->analytic_water_density();
 
-  CPK->advance();
-  CPK->commit_state(CS);
+  // start at time T=T0;
+  S->set_time(T0);
+
+
+  // get the GMV data from the parameter list
+  Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
+  
+  string gmv_meshfile = gmv_parameter_list.get<string>("Mesh file name");
+  string gmv_datafile = gmv_parameter_list.get<string>("Data file name");
+  const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency");
+  
+  
+  // write the GMV mesh file
+  GMV::create_mesh_file(*mesh_maps,gmv_meshfile);
+  
+  int iter = 0;
+
+  // write the GMV data file
+  write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);
+  
+  while (S->get_time() <= T1) {
+
+    TPK->advance();
+    double transport_dT = TPK->get_transport_dT();
+    
+    std::cout << "MPC: ";
+    std::cout << "Cycle = " << iter;
+    std::cout << ",  Transport dT = " << transport_dT << std::endl;
+
+    if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
+      {
+	// get the transport state and commit it to the state
+
+	RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+	
+	S->update_total_component_concentration(TS_next->get_total_component_concentration());
+
+	TPK->commit_state(TS);
+      }
+    else
+      {
+	// something went wrong
+	throw std::exception();
+      }
+
+    // update the state
+    S->advance_time(transport_dT);
+    
+    // advance the 
+    iter++;
+   
+    if (  iter % gmv_cycle_freq   == 0 ) {
+      write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
+    }
+    
+  }
+
+
 
 }
 
 
 
-void MPC::write_mesh()
+void MPC::write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile, 
+			  const int iter, const int digits)
 {
-
-  Teuchos::ParameterList gmv_parameter_list = parameter_list.sublist("GMV");
-  std::string gmv_filename = gmv_parameter_list.get<string>("File Name");
-
-  S->write_gmv(gmv_filename);
-
+  
+  GMV::open_data_file(gmv_meshfile, gmv_datafile,
+		      mesh_maps->count_entities(Mesh_data::NODE, OWNED),
+		      mesh_maps->count_entities(Mesh_data::CELL, OWNED),
+		      iter, digits);
+  GMV::write_time(S->get_time());
+  GMV::write_cycle(iter);
+  GMV::start_data();
+  
+  string basestring = "concentration";
+  string suffix = ".00";
+  
+  for (int nc=0; nc<S->get_number_of_components(); nc++) {
+    string concstring(basestring);
+    GMV::suffix_no(suffix,nc);
+    concstring.append(suffix);
+    
+    GMV::write_cell_data( *(*S->get_total_component_concentration())(nc), concstring);
+  }
+  GMV::close_data_file();     
+ 
 }

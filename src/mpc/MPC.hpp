@@ -16,7 +16,10 @@ public:
   ~MPC () {};
 
   void cycle_driver ();
-  void write_mesh();
+  //void write_mesh();
+  void write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile, 
+		       const int iter, const int digits);
+  void read_parameter_list();
 
 private:
   
@@ -38,6 +41,9 @@ private:
   Teuchos::RCP<Transport_PK> TPK;
   Teuchos::RCP<Flow_PK> FPK; 
 
+  Teuchos::ParameterList mpc_parameter_list;
+
+  double T0, T1;
 
 };
 
