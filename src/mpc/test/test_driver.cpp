@@ -62,7 +62,7 @@ TEST(DRIVER) {
   mpc.cycle_driver();
   
   
-
+  delete comm;
       
 }
 

@@ -1,5 +1,4 @@
 #include "gmv_mesh.hh"
-//#include "Entity_kind.hh"
 
 namespace GMV {
 
@@ -22,9 +21,9 @@ namespace GMV {
     }
     gmvwrite_node_data(&num_nodes, x, y, z);
   
-    delete x;
-    delete y;
-    delete z;
+    delete [] z;
+    delete [] y;
+    delete [] x;
 
     // Write cell info
     unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
@@ -37,6 +36,8 @@ namespace GMV {
       for (int j=0; j<8; j++) xh[j]++;
       gmvwrite_cell_type((char*) "phex8",8,xh);
     }
+
+    delete [] xh;
     
   }
 
