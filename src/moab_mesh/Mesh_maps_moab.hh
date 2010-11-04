@@ -97,8 +97,14 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
     std::vector<MBEntityHandle> face_id_to_handle;
     std::vector<MBEntityHandle> cell_id_to_handle;
 
+
+    // Maps
+
+    Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
+    Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
+
     
-    // Maps, Accessors and setters.
+    // Private methods
     // ----------------------------
 
     bool valid_entity_kind_ (int kind) const;
@@ -111,6 +117,10 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
     void init_pcell_sets();
 
     void init_id_handle_maps();
+
+    void init_cell_map();
+    void init_face_map();
+    void init_node_map();
 
 public:
   
@@ -210,160 +220,30 @@ public:
   { throw std::exception(); };
 
 
-  inline const Epetra_Map& cell_map (bool include_ghost) const;
+  inline const Epetra_Map& cell_map (bool include_ghost) const {
+    if (serial_run)
+      return *cell_map_wo_ghosts_;
+    else
+      return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
+  }
+	    
 
-  inline const Epetra_Map& face_map (bool include_ghost) const;
+  inline const Epetra_Map& face_map (bool include_ghost) const {
+    if (serial_run)
+      return *face_map_wo_ghosts_;
+    else
+      return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
+  }
 
-  inline const Epetra_Map& node_map (bool include_ghost) const;
+  inline const Epetra_Map& node_map (bool include_ghost) const {
+    if (serial_run)
+      return *node_map_wo_ghosts_;
+    else
+      return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
+  }
   
   
 };
-
-
-// Epetra map for nodes - basically a structure specifying the
-// global IDs of vertices owned or used by this processor
-
-inline const Epetra_Map& Mesh_maps_moab::cell_map (bool include_ghost) const
-{
-  int *cell_gids;
-  int ncell;
-
-  if (!serial_run) {
-    if (include_ghost) {
-
-      // Put in owned cells before the ghost cells
-
-      cell_gids = new int[OwnedCells.size()+GhostCells.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedCells,cell_gids);
-      ncell = OwnedCells.size();
-
-      mbcore->tag_get_data(gid_tag,GhostCells,&(cell_gids[ncell]));
-      ncell += GhostCells.size();
-
-    }
-    else {
-
-      cell_gids = new int[OwnedCells.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedCells,cell_gids);
-      ncell = OwnedCells.size();
-    }
-  }
-  else {
-    cell_gids = new int[AllCells.size()];
-
-    mbcore->tag_get_data(gid_tag,AllCells,cell_gids);
-    ncell = AllCells.size();
-  }
-
-  for (int i = 0; i < ncell; i++) cell_gids[i] -= 1;
-
-  Epetra_Map *map = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
-
-  delete [] cell_gids;
-
-  return *map;
-}
-
-
-
-
-// Epetra map for nodes - basically a structure specifying the
-// global IDs of vertices owned or used by this processor
-  
-inline const Epetra_Map& Mesh_maps_moab::face_map (bool include_ghost) const
-{
-  int *face_gids;
-  int nface;
-
-  if (!serial_run) {
-    if (include_ghost) {
-	
-      // Put in owned faces before not owned faces
-
-      face_gids = new int[OwnedFaces.size()+NotOwnedFaces.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
-      nface = OwnedFaces.size();
-
-      mbcore->tag_get_data(gid_tag,NotOwnedFaces,&(face_gids[nface]));
-      nface += NotOwnedFaces.size();
-    }
-    else {
-
-      face_gids = new int[OwnedFaces.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
-      nface = OwnedFaces.size();
-	
-    }
-  }
-  else {
-      
-    face_gids = new int[AllFaces.size()];
-
-    mbcore->tag_get_data(gid_tag,AllFaces,face_gids);
-    nface = AllFaces.size();
-  }
-
-
-  for (int i = 0; i < nface; i++) face_gids[i] -= 1;
-
-  Epetra_Map *map = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
-
-
-  delete [] face_gids;
-
-  return *map;
-}
-
-
-
-
-// Epetra map for nodes - basically a structure specifying the
-// global IDs of vertices owned or used by this processor
-
-inline const Epetra_Map& Mesh_maps_moab::node_map (bool include_ghost) const
-{
-  int *vert_gids;
-  int nvert;
-
-  if (!serial_run) {
-    if (include_ghost) {
-	
-      // Put in owned vertices before not owned vertices
-
-      vert_gids = new int[OwnedVerts.size()+NotOwnedVerts.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
-      nvert = OwnedVerts.size();
-
-      mbcore->tag_get_data(gid_tag,NotOwnedVerts,&(vert_gids[nvert]));
-      nvert += NotOwnedVerts.size();
-    }
-    else {
-      vert_gids = new int[OwnedVerts.size()];    
-
-      mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
-      nvert = OwnedVerts.size();
-    }
-  }
-  else {
-    vert_gids = new int[AllVerts.size()];
-
-    mbcore->tag_get_data(gid_tag,AllVerts,vert_gids);
-    nvert = AllVerts.size();
-  }
-
-  for (int i = 0; i < nvert; i++) vert_gids[i] -= 1;
-
-  Epetra_Map *map = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
-
-  delete [] vert_gids;
-
-  return *map;
-}
 
 
 #endif /* _MESH_MAPS_MOAB_H_ */

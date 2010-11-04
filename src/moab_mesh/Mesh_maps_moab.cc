@@ -272,6 +272,13 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
       
   }
 
+  
+  // Create Epetra_maps
+
+  init_cell_map();
+  init_face_map();
+  init_node_map();
+
 
   // Create maps from IDs to MOAB entity handles
 
@@ -1041,6 +1048,163 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
     return 0;
   }
     
+}
+
+
+// Epetra map for cells - basically a structure specifying the
+// global IDs of cells owned or used by this processor
+
+void Mesh_maps_moab::init_cell_map ()
+{
+  int *cell_gids;
+  int ncell;
+
+  if (!serial_run) {
+
+    // For parallel runs create map without and with ghost cells included
+    // Also, put in owned cells before the ghost cells
+
+    
+    cell_gids = new int[OwnedCells.size()+GhostCells.size()];
+    
+    mbcore->tag_get_data(gid_tag,OwnedCells,cell_gids);
+    ncell = OwnedCells.size();
+    
+    for (int i = 0; i < ncell; i++) cell_gids[i] -= 1;
+
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    
+
+
+
+    mbcore->tag_get_data(gid_tag,GhostCells,&(cell_gids[ncell]));
+    
+    for (int i = ncell; i < ncell+GhostCells.size(); i++) cell_gids[i] -= 1;
+
+    ncell += GhostCells.size();
+
+    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+
+  }
+  else {
+    cell_gids = new int[AllCells.size()];
+
+    mbcore->tag_get_data(gid_tag,AllCells,cell_gids);
+    ncell = AllCells.size();
+
+    for (int i = 0; i < ncell; i++) cell_gids[i] -= 1;
+
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+  }
+
+  delete [] cell_gids;
+
+}
+
+
+
+
+// Epetra map for faces - basically a structure specifying the
+// global IDs of cells owned or used by this processor
+
+void Mesh_maps_moab::init_face_map ()
+{
+  int *face_gids;
+  int nface;
+
+  if (!serial_run) {
+
+    // For parallel runs create map without and with ghost cells included
+    // Also, put in owned cells before the ghost cells
+
+    
+    face_gids = new int[OwnedFaces.size()+NotOwnedFaces.size()];
+    
+    mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
+    nface = OwnedFaces.size();
+    
+    for (int i = 0; i < nface; i++) face_gids[i] -= 1;
+
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    
+
+
+
+    mbcore->tag_get_data(gid_tag,NotOwnedFaces,&(face_gids[nface]));
+    
+    for (int i = nface; i < nface+NotOwnedFaces.size(); i++) face_gids[i] -= 1;
+
+    nface += NotOwnedFaces.size();
+
+    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+
+  }
+  else {
+    face_gids = new int[AllFaces.size()];
+
+    mbcore->tag_get_data(gid_tag,AllFaces,face_gids);
+    nface = AllFaces.size();
+
+    for (int i = 0; i < nface; i++) face_gids[i] -= 1;
+
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+  }
+
+  delete [] face_gids;
+
+}
+
+
+
+
+// Epetra map for nodes - basically a structure specifying the
+// global IDs of cells owned or used by this processor
+
+void Mesh_maps_moab::init_node_map ()
+{
+  int *vert_gids;
+  int nvert;
+
+  if (!serial_run) {
+
+    // For parallel runs create map without and with ghost verts included
+    // Also, put in owned cells before the ghost verts
+
+    
+    vert_gids = new int[OwnedVerts.size()+NotOwnedVerts.size()];
+    
+    mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
+    nvert = OwnedVerts.size();
+    
+    for (int i = 0; i < nvert; i++) vert_gids[i] -= 1;
+
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    
+
+
+
+    mbcore->tag_get_data(gid_tag,NotOwnedVerts,&(vert_gids[nvert]));
+    
+    for (int i = nvert; i < nvert+NotOwnedVerts.size(); i++) vert_gids[i] -= 1;
+
+    nvert += NotOwnedVerts.size();
+
+    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+
+  }
+  else {
+    vert_gids = new int[AllVerts.size()];
+
+    mbcore->tag_get_data(gid_tag,AllVerts,vert_gids);
+    nvert = AllVerts.size();
+
+    for (int i = 0; i < nvert; i++) vert_gids[i] -= 1;
+
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+  }
+
+  delete [] vert_gids;
+
 }
   
 
