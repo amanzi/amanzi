@@ -2,7 +2,6 @@
 #include "Epetra_MultiVector.h"
 
 #include "simple_mesh/Mesh_maps_base.hh"
-#include "simple_mesh/Mesh_maps_simple.hh"
 #include "Transport_PK.hpp"
 #include "flow/cell_geometry.hpp"
 
@@ -427,20 +426,6 @@ void Transport_PK::geometry_package()
      }
      cell_volume[c] = volume / 3;
   }
-
-
-  /* DEBUG: squash the mesh */
-  /*
-  int  p;
-  const Epetra_Map & node_map = TS->get_mesh_maps()->node_map(false);
-
-  for( p=node_map.MinLID(); p<=node_map.MaxLID(); p++ ) {
-     mesh->node_to_coordinates( p, (double*) x, (double*) x+3 ); 
-
-     x[0][3] /= x[0][0] + 1; 
-     mesh->set_coordinate( p, (double*) x, (double*) x+3 );
-  }
-  */
 }
 
 
