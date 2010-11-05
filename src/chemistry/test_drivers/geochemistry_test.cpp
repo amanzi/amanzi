@@ -199,7 +199,7 @@ int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test,
   int option;
   extern char *optarg;
 
-  while ((option = getopt(argc, argv, "m:ht:v:?")) != EOF) {
+  while ((option = getopt(argc, argv, "m:ht:v:?")) != -1) {
     switch (option) {
       case 'm': {
         model->assign(optarg);
