@@ -103,6 +103,15 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
     Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
     Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
 
+
+    // Sets (material sets, sidesets, nodesets)
+    // We store the number of sets in the whole problem regardless of whether
+    // they are represented on this processor or not
+    // We also store the IDs of the sets and the dimension of entities 
+    // in those sets
+  
+    int nsets;
+    int *setids, *setdims;
     
     // Private methods
     // ----------------------------
@@ -112,15 +121,17 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
 
     void clear_internals_();
 
-    void init_pvert_sets();
-    void init_pface_sets();
-    void init_pcell_sets();
+    void init_pvert_lists();
+    void init_pface_lists();
+    void init_pcell_lists();
 
     void init_id_handle_maps();
 
     void init_cell_map();
     void init_face_map();
     void init_node_map();
+
+    void init_set_info();
 
 public:
   
