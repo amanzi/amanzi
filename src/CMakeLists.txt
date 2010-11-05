@@ -1,7 +1,7 @@
 SET(CMAKE_CXX_COMPILER mpicxx)
 SET(CMAKE_C_COMPILER mpicc)
 
-project (AMANZI_Mesh)
+project (AMANZI)
 enable_testing()
 
 
