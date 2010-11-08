@@ -38,9 +38,10 @@ TEST(ADVANCE_WITH_MOAB) {
   Transport_PK  TPK(parameter_list, TS);
 
   /* create analytic Darcy flux */
-  TS->analytic_total_component_concentration();
+  double u[3] = {1, 0, 0};
+
   TS->analytic_porosity();
-  TS->analytic_darcy_flux();
+  TS->analytic_darcy_flux( u );
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 

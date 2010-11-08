@@ -50,7 +50,7 @@ public:
 
   /* debug routines */
   void analytic_total_component_concentration();
-  void analytic_darcy_flux();
+  void analytic_darcy_flux( double* u );
   void analytic_porosity( double phi = 0.2 );
   void analytic_water_saturation( double ws = 1.0 );
   void analytic_water_density( double wd = 1000.0 );

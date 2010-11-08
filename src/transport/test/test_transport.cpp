@@ -105,7 +105,8 @@ TEST(INIT_PROCESS_KERNEL) {
   Transport_PK  TPK(parameter_list, TS);
 
   /* the actual test is to print the Darcy velocity */
-  TS->analytic_darcy_flux();
+  double u[3] = {1, 2, 3};
+  TS->analytic_darcy_flux( u );
 
   RCP<Transport_State>  TS_pointer;
   RCP<const Epetra_Vector>  darcy_flux;
@@ -204,9 +205,11 @@ TEST(ADVANCE_WITH_SIMPLE) {
   Transport_PK  TPK(parameter_list, TS);
 
   /* create analytic Darcy flux */
+  double u[3] = {1, 0, 0};
+
   TS->analytic_total_component_concentration();
   TS->analytic_porosity();
-  TS->analytic_darcy_flux();
+  TS->analytic_darcy_flux( u );
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
