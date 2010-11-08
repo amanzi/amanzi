@@ -71,7 +71,7 @@ class Beaker {
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
   void addMineral(Mineral m);
   void addGeneralRxn(GeneralRxn r);
-  void addSurfaceComplexationRxn(SurfaceComplexationRxn r);
+  void addSurfaceComplexationRxn(SurfaceComplexationRxn *r);
 
   // speciate for free-ion concentrations
   int Speciate(const BeakerComponents& components, const BeakerParameters& parameters);

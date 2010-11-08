@@ -221,9 +221,9 @@ void Beaker::addGeneralRxn(GeneralRxn r)
   generalKineticRxns_.push_back(r);
 } // end addGeneralRxn()
 
-void Beaker::addSurfaceComplexationRxn(SurfaceComplexationRxn r) 
+void Beaker::addSurfaceComplexationRxn(SurfaceComplexationRxn *r) 
 {
-  surfaceComplexationRxns_.push_back(r);
+  surfaceComplexationRxns_.push_back(*r);
 } // end addSurfaceComplexationRxn()
 
 Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const
@@ -340,18 +340,16 @@ void Beaker::updateEquilibriumChemistry(void)
   //    calculateActivityCoefficients(-1);
 
   // update primary species activities
-  for (std::vector<Species>::iterator i = primarySpecies_.begin();
-       i != primarySpecies_.end(); i++) {
-    i->update();
+  for (std::vector<Species>::iterator primary = primarySpecies_.begin();
+       primary != primarySpecies_.end(); primary++) {
+    primary->update();
   }
   // calculated seconday aqueous complex concentrations
-  for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
-       i != aqComplexRxns_.end(); i++) {
-    i->Update(primarySpecies_);
+  for (std::vector<AqueousEquilibriumComplex>::iterator aqcplx = 
+       aqComplexRxns_.begin();
+       aqcplx != aqComplexRxns_.end(); aqcplx++) {
+    aqcplx->Update(primarySpecies_);
   }
-
-  // calculate total component concentrations
-  calculateTotal();
 
   // calculate mineral saturation states
   for (std::vector<Mineral>::iterator m = minerals_.begin();
@@ -360,8 +358,16 @@ void Beaker::updateEquilibriumChemistry(void)
   }
 
   // add equilibrium surface complexation here
+  for (std::vector<SurfaceComplexationRxn>::iterator srfcplx = 
+       surfaceComplexationRxns_.begin();
+       srfcplx != surfaceComplexationRxns_.end(); srfcplx++) {
+    srfcplx->Update(primarySpecies_);
+  }
 
   // add equilibrium ion exchange here
+
+  // calculate total component concentrations
+  calculateTotal();
 
 }  // end updateEquilibriumChemistry()
 

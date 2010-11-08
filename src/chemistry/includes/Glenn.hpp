@@ -516,7 +516,9 @@ static void readChemistryFromFile(string filename, Beaker *g)
                         h2o_stoich, free_site_stoich, charge, logK));
 
     }
-    g->addSurfaceComplexationRxn(
+    // have to pass in a new object here as the SurfaceSite destructor fails when
+    // deleting the vector storing mineral pointers
+    g->addSurfaceComplexationRxn(new
         SurfaceComplexationRxn(surface_site,
                                surface_complexes));
     surface_complexes.clear();
