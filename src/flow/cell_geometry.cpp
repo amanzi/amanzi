@@ -72,7 +72,7 @@ namespace cell_geometry {
            a[1]*(b[2]*c[0] - b[0]*c[2]) + 
            a[2]*(b[0]*c[1] - b[1]*c[0]);
   };
-
+  
 
   void quad_face_normal(double result[], double x1[], double x2[], double x3[], double x4[])
   {
@@ -85,6 +85,12 @@ namespace cell_geometry {
     for (int i = 0; i < 3; ++i)
       result[i] = 0.5 * result[i];
   }
+
+  void quad_face_normal(double result[], double x[][3])
+  { quad_face_normal(result, x[0], x[1], x[2], x[3]); }
+  
+  void quad_face_normal(double result[], Epetra_SerialDenseMatrix &x)
+  { quad_face_normal(result, x[0], x[1], x[2], x[3]); }
 
 
   double quad_face_area(double x1[], double x2[], double x3[], double x4[])
@@ -105,5 +111,45 @@ namespace cell_geometry {
       v3[i] = x4[i] - x1[i];
     }
     return triple_product(v1, v2, v3) / 6.0;
+  }
+  
+  
+  double hex_volume(Epetra_SerialDenseMatrix &x)
+  {
+    double hvol, cvol[8];
+    compute_hex_volumes(x, hvol, cvol);
+    return hvol;
+  }
+  
+  
+  void compute_hex_volumes (Epetra_SerialDenseMatrix &x, double &hvol, double cvol[])
+  {
+    cvol[0] = tet_volume(x[0], x[1], x[3], x[4]);
+    cvol[1] = tet_volume(x[1], x[2], x[0], x[5]); 
+    cvol[2] = tet_volume(x[2], x[3], x[1], x[6]); 
+    cvol[3] = tet_volume(x[3], x[0], x[2], x[7]); 
+    cvol[4] = tet_volume(x[4], x[7], x[5], x[0]); 
+    cvol[5] = tet_volume(x[5], x[4], x[6], x[1]);
+    cvol[6] = tet_volume(x[6], x[5], x[7], x[2]);
+    cvol[7] = tet_volume(x[7], x[6], x[4], x[3]); 
+
+    hvol = 0.0;
+    for (int i = 0; i < 8; ++i) hvol += cvol[i];
+
+    hvol += tet_volume(x[0],x[2],x[7],x[5]) + tet_volume(x[1],x[3],x[4],x[6]);
+    hvol *= 0.5;
+  }
+  
+  
+  void compute_hex_face_normals(Epetra_SerialDenseMatrix &x, Epetra_SerialDenseMatrix &a)
+  {
+    double v1[3], v2[3];
+
+    quad_face_normal(a[0], x[0], x[1], x[5], x[4]);
+    quad_face_normal(a[1], x[1], x[2], x[6], x[5]);
+    quad_face_normal(a[2], x[2], x[3], x[7], x[6]);
+    quad_face_normal(a[3], x[3], x[0], x[4], x[7]);
+    quad_face_normal(a[4], x[0], x[3], x[2], x[1]);
+    quad_face_normal(a[5], x[4], x[5], x[6], x[7]);
   }
 }
