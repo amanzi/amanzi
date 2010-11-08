@@ -12,8 +12,8 @@
 #include <ml_MultiLevelPreconditioner.h>
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
 
-#include "Darcy_problem.hpp"
-#include "Problem_interface.hpp"
+#include "DarcyProblem.hpp"
+//#include "Problem_interface.hpp"
 
 
 
@@ -164,5 +164,3 @@ void Flow_PK::commit_state( Teuchos::RCP<Flow_State> )
   
 
 };
-
-
