@@ -188,11 +188,17 @@ double Transport_PK::calculate_transport_dT()
 
 
   /* parallel garther and scatter of dT */ 
+#ifdef HAVE_MPI
+  double dT_global;
+  const  Epetra_Comm & comm = (*ws).Comm(); 
+ 
+  comm.MinAll( &dT, &dT_global, 1 );
+  dT = dT_global;
+#endif
 
 
   /* incorporate CFL restriction */
   dT *= cfl;
-  //cout << "Transport time step dT = " << dT << endl;
 }
 
 
