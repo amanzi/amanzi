@@ -225,9 +225,9 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     mbcomm->exchange_tags(gid_tag,AllFaces);
     mbcomm->exchange_tags(gid_tag,AllCells);
 
-    init_pvert_sets();
-    init_pface_sets();
-    init_pcell_sets();
+    init_pvert_lists();
+    init_pface_lists();
+    init_pcell_lists();
 
 
     for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
@@ -272,6 +272,13 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
       
   }
 
+  
+  // Create Epetra_maps
+
+  init_cell_map();
+  init_face_map();
+  init_node_map();
+
 
   // Create maps from IDs to MOAB entity handles
 
@@ -295,6 +302,9 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     std::cerr << "Could not get tag for node sets" << std::endl;
     assert(result == MB_SUCCESS);
   }
+
+
+  init_set_info();
 
 }
 
@@ -323,6 +333,13 @@ void Mesh_maps_moab::clear_internals_ ()
   spacedim = 3;
   celldim = -1;
   facedim = -1;
+
+  cell_map_w_ghosts_ = cell_map_wo_ghosts_ = NULL;
+  face_map_w_ghosts_ = face_map_wo_ghosts_ = NULL;
+  node_map_w_ghosts_ = node_map_wo_ghosts_ = NULL;
+
+  nsets = 0;
+  setids = setdims = NULL;
 }
 
 
@@ -367,7 +384,7 @@ void Mesh_maps_moab::init_id_handle_maps() {
 }
 
 
-void Mesh_maps_moab::init_pvert_sets() {
+void Mesh_maps_moab::init_pvert_lists() {
 
   // Get not owned vertices
 
@@ -392,7 +409,7 @@ void Mesh_maps_moab::init_pvert_sets() {
 }
 
 
-void Mesh_maps_moab::init_pface_sets() {
+void Mesh_maps_moab::init_pface_lists() {
 
   // Get not owned faces   
 
@@ -417,7 +434,7 @@ void Mesh_maps_moab::init_pface_sets() {
 }
 
 
-void Mesh_maps_moab::init_pcell_sets() {
+void Mesh_maps_moab::init_pcell_lists() {
   // Get not owned cells (which is the same as ghost cells)
 
   mbcomm->get_pstatus_entities(facedim,PSTATUS_GHOST,GhostCells);
@@ -427,6 +444,146 @@ void Mesh_maps_moab::init_pcell_sets() {
   OwnedCells = AllCells;  // I think we DO want a data copy here
   OwnedCells -= GhostCells;
 }
+
+
+
+void Mesh_maps_moab::init_set_info() {
+  int maxnsets;
+
+
+  std::vector<MBTag> tag_handles;
+  mbcore->tag_get_tags(tag_handles);
+
+
+
+  nsets = 0;
+  for (int i = 0; i < tag_handles.size(); i++) {
+    MBTag tag = tag_handles[i];
+    int n;
+    
+    if (tag != mattag && tag != sstag && tag != nstag) continue;
+    
+    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,n);
+    
+    nsets +=  n;
+  }
+    
+
+
+  if (serial_run) {
+    maxnsets = nsets;
+  }
+  else {
+    // Figure out the maximum number of sets on any processor,
+
+    MPI_Allreduce(&nsets,&maxnsets,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  }
+
+
+  setids = new int[5*maxnsets];
+  setdims = new int[5*maxnsets];
+
+  nsets = 0;
+  for (int i = 0; i < tag_handles.size(); i++) {
+    MBTag tag = tag_handles[i];
+    MBRange tagsets;
+    MBRange tagset;
+    int n;
+    
+    if (tag != mattag && tag != sstag && tag != nstag) continue;
+    
+    mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,tagsets);
+
+    for (MBRange::iterator it = tagsets.begin(); it != tagsets.end(); ++it) {
+      MBEntityHandle set = *it;
+      int val;
+      
+      mbcore->tag_get_data(tag,&set,1,&val);
+      setids[nsets] = val;
+
+      MBRange setents;
+      mbcore->get_entities_by_handle(set,setents,false);
+      int dim = mbcore->dimension_from_handle(*(setents.begin()));
+
+      setdims[nsets] = dim;
+
+      nsets++;
+    }
+
+  }
+
+  for (int i = nsets; i < maxnsets; i++) {
+    setids[i] = 0;
+    setdims[i] = -1;
+  }
+
+
+  if (serial_run) return;
+
+
+  // In a parallel run, we want the global number of sets and the
+  // global list of set ids 
+
+  int rank = mbcomm->rank();
+  int nprocs = mbcomm->size();
+
+
+  // Collate all the sets across processors
+  
+  int *allsetids = new int[nprocs*maxnsets];
+  int *allsetdims = new int[nprocs*maxnsets];
+  
+  
+  MPI_Allgather(setids,maxnsets,MPI_INT,allsetids,maxnsets,MPI_INT,
+		MPI_COMM_WORLD);
+  MPI_Allgather(setdims,maxnsets,MPI_INT,allsetdims,maxnsets,MPI_INT,
+		MPI_COMM_WORLD);
+  
+  
+  
+  // Make a list of all setids/entity dimensions across all processors
+  
+  if (rank == 0) {
+    nsets = 0;
+    for (int k = celldim; k >= 0; k--) {
+      for (int i = 0; i < nprocs*maxnsets; i++) {
+	if (allsetdims[i] != k) continue;
+	
+	int found = 0;
+	for (int j = 0; j < nsets; j++) {
+	  if (setids[j] == allsetids[i]) {
+	    found = 1;
+	    break;
+	  }
+	}
+	
+	if (!found) {
+	  setids[nsets] = allsetids[i];
+	  setdims[nsets] = allsetdims[i];
+	  nsets++;
+	}
+      }
+    }
+    
+  }
+  
+  
+  for (int i = 1; i < nprocs; i++) {
+    for (int j = 0; j < nsets; j++) {
+      allsetids[nsets*i+j] = allsetids[j];
+      allsetdims[nsets*i+j] = allsetdims[j];
+    }
+  }
+  
+  
+  MPI_Scatter(allsetids,nsets,MPI_INT,setids,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Scatter(allsetdims,nsets,MPI_INT,setdims,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  
+  delete [] allsetids;
+  delete [] allsetdims;
+  
+}
+
 
 
 
@@ -496,154 +653,6 @@ unsigned int Mesh_maps_moab::count_entities (Mesh_data::Entity_kind kind,
     std::cerr << "Count requested for unknown entity type" << std::endl;
   }
 }
-
-// Epetra map for nodes - basically a structure specifying the
-// global IDs of vertices owned or used by this processor
-
-const Epetra_Map& Mesh_maps_moab::cell_map (bool include_ghost) const
-{
-  int *cell_gids;
-  int ncell;
-
-  if (!serial_run) {
-    if (include_ghost) {
-
-      // Put in owned cells before the ghost cells
-
-      cell_gids = new int[OwnedCells.size()+GhostCells.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedCells,cell_gids);
-      ncell = OwnedCells.size();
-
-      mbcore->tag_get_data(gid_tag,GhostCells,&(cell_gids[ncell]));
-      ncell += GhostCells.size();
-
-    }
-    else {
-
-      cell_gids = new int[OwnedCells.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedCells,cell_gids);
-      ncell = OwnedCells.size();
-    }
-  }
-  else {
-    cell_gids = new int[AllCells.size()];
-
-    mbcore->tag_get_data(gid_tag,AllCells,cell_gids);
-    ncell = AllCells.size();
-  }
-
-  Epetra_Map *map = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
-
-  delete [] cell_gids;
-
-  return *map;
-}
-
-
-
-
-// Epetra map for nodes - basically a structure specifying the
-// global IDs of vertices owned or used by this processor
-  
-const Epetra_Map& Mesh_maps_moab::face_map (bool include_ghost) const
-{
-  int *face_gids;
-  int nface;
-
-  if (!serial_run) {
-    if (include_ghost) {
-	
-      // Put in owned faces before not owned faces
-
-      face_gids = new int[OwnedFaces.size()+NotOwnedFaces.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
-      nface = OwnedFaces.size();
-
-      mbcore->tag_get_data(gid_tag,NotOwnedFaces,&(face_gids[nface]));
-      nface += NotOwnedFaces.size();
-    }
-    else {
-
-      face_gids = new int[OwnedFaces.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
-      nface = OwnedFaces.size();
-	
-    }
-  }
-  else {
-      
-    face_gids = new int[AllFaces.size()];
-
-    mbcore->tag_get_data(gid_tag,AllFaces,face_gids);
-    nface = AllFaces.size();
-  }
-
-
-  cout << "Creating Epetra_map of size " << nface << " on processor " << epcomm->MyPID() << std::endl;
-
-  for (int i = 0; i < nface; i++)
-    cout << " " << face_gids[i] << " " << std::endl;
-
-  Epetra_Map *map = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
-
-  cout << "FINISHED creating Epetra_map of size " << nface << " on processor " << epcomm->MyPID() << std::endl;
-
-    
-
-  delete [] face_gids;
-
-  return *map;
-}
-
-
-
-
-// Epetra map for nodes - basically a structure specifying the
-// global IDs of vertices owned or used by this processor
-
-const Epetra_Map& Mesh_maps_moab::node_map (bool include_ghost) const
-{
-  int *vert_gids;
-  int nvert;
-
-  if (!serial_run) {
-    if (include_ghost) {
-	
-      // Put in owned vertices before not owned vertices
-
-      vert_gids = new int[OwnedVerts.size()+NotOwnedVerts.size()];
-
-      mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
-      nvert = OwnedVerts.size();
-
-      mbcore->tag_get_data(gid_tag,NotOwnedVerts,&(vert_gids[nvert]));
-      nvert += NotOwnedVerts.size();
-    }
-    else {
-      vert_gids = new int[OwnedVerts.size()];    
-
-      mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
-      nvert = OwnedVerts.size();
-    }
-  }
-  else {
-    vert_gids = new int[AllVerts.size()];
-
-    mbcore->tag_get_data(gid_tag,AllVerts,vert_gids);
-    nvert = AllVerts.size();
-  }
-
-  Epetra_Map *map = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
-
-  delete [] vert_gids;
-
-  return *map;
-}
-
 
 
 void Mesh_maps_moab::cell_to_faces (unsigned int cellid, 
@@ -899,74 +908,47 @@ void Mesh_maps_moab::get_set_ids (Mesh_data::Entity_kind kind,
 
 void Mesh_maps_moab::get_set_ids (Mesh_data::Entity_kind kind, 
 			      unsigned int *begin, unsigned int *end) const {
-  int *setids;
-  int i, nsets;
+  int sids[nsets];
+  int i, ns=0;
 
   switch (kind) {
   case Mesh_data::CELL: {
-    MBRange matsets;
 
-    mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,0,1,matsets);
+    for (i = 0; i < nsets; i++)
+      if (setdims[i] == celldim)
+	sids[ns++] = setids[i];
 
-    nsets = matsets.size();
-    assert ((unsigned int) (end - begin) >= nsets);
+    assert ((unsigned int) (end - begin) >= ns);
 
-    setids = new int[nsets];
-    i = 0;
-    for (MBRange::iterator it = matsets.begin(); it != matsets.end(); ++it) { 
-      MBEntityHandle matset = *it;
-
-      mbcore->tag_get_data(mattag,&matset,1,&(setids[i++]));
-    }
-
-    std::copy (setids, setids + nsets, begin);
-    delete [] setids;
+    std::copy (sids, sids + ns, begin);
 
     return;
     break;
   }
 
   case Mesh_data::FACE: {
-    MBRange sidesets;
-      
-    mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,0,1,sidesets);
 
-    nsets = sidesets.size();
-    assert ((unsigned int) (end - begin) >= nsets);
+    for (i = 0; i < nsets; i++)
+      if (setdims[i] == facedim)
+	sids[ns++] = setids[i];
 
-    setids = new int[nsets];
-    i = 0;
-    for (MBRange::iterator it = sidesets.begin(); it != sidesets.end(); ++it) { 
-      MBEntityHandle sideset = *it;
+    assert ((unsigned int) (end - begin) >= ns);
 
-      mbcore->tag_get_data(sstag,&sideset,1,&(setids[i++]));
-    }
-
-    std::copy (setids, setids + nsets, begin);
-    delete [] setids;
+    std::copy (sids, sids + ns, begin);
 
     return;
     break;
   }
 
   case Mesh_data::NODE: {
-    MBRange nodesets;
 
-    mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,0,1,nodesets);
+    for (i = 0; i < nsets; i++)
+      if (setdims[i] == 0)
+	sids[ns++] = setids[i];
 
-    nsets = nodesets.size();
-    assert ((unsigned int) (end - begin) >= nsets);
+    assert ((unsigned int) (end - begin) >= ns);
 
-    setids = new int[nsets];
-    i = 0;
-    for (MBRange::iterator it = nodesets.begin(); it != nodesets.end(); ++it) { 
-      MBEntityHandle nodeset = *it;
-
-      mbcore->tag_get_data(nstag,&nodeset,1,&(setids[i++]));
-    }
-
-    std::copy (setids, setids + nsets, begin);
-    delete [] setids;
+    std::copy (sids, sids + ns, begin);
 
     return;
     break;
@@ -1004,7 +986,7 @@ void Mesh_maps_moab::get_set (unsigned int set_id,
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,matsets);
 
-    assert(matsets.size() == 1);
+    if (matsets.size() == 0) return;
 
     MBEntityHandle matset = *(matsets.begin());
 
@@ -1035,7 +1017,7 @@ void Mesh_maps_moab::get_set (unsigned int set_id,
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,sidesets);
 
-    assert(sidesets.size() == 1);
+    if (sidesets.size() == 0) return;
 
     MBEntityHandle sideset = *(sidesets.begin());
 
@@ -1065,7 +1047,8 @@ void Mesh_maps_moab::get_set (unsigned int set_id,
     int nnodes;
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,nodesets);
-    assert(nodesets.size() == 1);
+
+    if (nodesets.size() == 0) return;
 
     MBEntityHandle nodeset = *(nodesets.begin());
 
@@ -1097,17 +1080,20 @@ void Mesh_maps_moab::get_set (unsigned int set_id,
 
 
 unsigned int Mesh_maps_moab::num_sets(Mesh_data::Entity_kind kind) const {
-  int n;
+  int n = 0;
     
   switch (kind) {
   case Mesh_data::CELL:
-    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&mattag,0,1,n);
+    for (int i = 0; i < nsets; i++)
+      if (setdims[i] == celldim) n++;
     return n;
   case Mesh_data::FACE:
-    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&sstag,0,1,n);
+    for (int i = 0; i < nsets; i++)
+      if (setdims[i] == facedim) n++;
     return n;
   case Mesh_data::NODE:
-    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&nstag,0,1,n);
+    for (int i = 0; i < nsets; i++)
+      if (setdims[i] == 0) n++;
     return n;
   default:
     return 0;
@@ -1115,25 +1101,26 @@ unsigned int Mesh_maps_moab::num_sets(Mesh_data::Entity_kind kind) const {
 }
 
 bool Mesh_maps_moab::valid_set_id (unsigned int id, Mesh_data::Entity_kind kind) const {
-  int n;
-  const int lid = id;
-  const void* valarr[1] = {&lid};
-
-  valarr[0] = (void *) id;
+  int n = 0;
 
   switch (kind) {
   case Mesh_data::CELL:
-    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,n);
-    return (n > 0);
+    for (int i = 0; i < nsets; i++)
+      if (setdims[i] == celldim && setids[i] == id) return true;
+    break;
   case Mesh_data::FACE:
-    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,n);
-    return (n > 0);
+    for (int i = 0; i < nsets; i++)
+      if (setdims[i] == facedim && setids[i] == id) return true;
+    break;
   case Mesh_data::NODE:
-    mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,n);
-    return (n > 0);
+    for (int i = 0; i < nsets; i++)
+      if (setdims[i] == 0 && setids[i] == id) return true;
+    break;
   default:
-    return 0;
+    return false;
   }    
+
+  return false;
 }
 
 unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id, 
@@ -1151,7 +1138,7 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,matsets);
 
-    assert(matsets.size() == 1);
+    if (matsets.size() == 0) return 0;
 
     MBEntityHandle matset = *(matsets.begin());
 
@@ -1165,7 +1152,7 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
     int nfaces;
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,sidesets);
-    assert(sidesets.size() == 1);
+    if (sidesets.size() == 0) return 0;
 
     MBEntityHandle sideset = *(sidesets.begin());
 
@@ -1179,7 +1166,7 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
     int nnodes;
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,nodesets);
-    assert(nodesets.size() == 1);
+    if (nodesets.size() == 0) return 0;
 
     MBEntityHandle nodeset = *(nodesets.begin());
 
@@ -1192,6 +1179,163 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
     return 0;
   }
     
+}
+
+
+// Epetra map for cells - basically a structure specifying the
+// global IDs of cells owned or used by this processor
+
+void Mesh_maps_moab::init_cell_map ()
+{
+  int *cell_gids;
+  int ncell;
+
+  if (!serial_run) {
+
+    // For parallel runs create map without and with ghost cells included
+    // Also, put in owned cells before the ghost cells
+
+    
+    cell_gids = new int[OwnedCells.size()+GhostCells.size()];
+    
+    mbcore->tag_get_data(gid_tag,OwnedCells,cell_gids);
+    ncell = OwnedCells.size();
+    
+    for (int i = 0; i < ncell; i++) cell_gids[i] -= 1;
+
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+    
+
+
+
+    mbcore->tag_get_data(gid_tag,GhostCells,&(cell_gids[ncell]));
+    
+    for (int i = ncell; i < ncell+GhostCells.size(); i++) cell_gids[i] -= 1;
+
+    ncell += GhostCells.size();
+
+    cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+
+  }
+  else {
+    cell_gids = new int[AllCells.size()];
+
+    mbcore->tag_get_data(gid_tag,AllCells,cell_gids);
+    ncell = AllCells.size();
+
+    for (int i = 0; i < ncell; i++) cell_gids[i] -= 1;
+
+    cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
+  }
+
+  delete [] cell_gids;
+
+}
+
+
+
+
+// Epetra map for faces - basically a structure specifying the
+// global IDs of cells owned or used by this processor
+
+void Mesh_maps_moab::init_face_map ()
+{
+  int *face_gids;
+  int nface;
+
+  if (!serial_run) {
+
+    // For parallel runs create map without and with ghost cells included
+    // Also, put in owned cells before the ghost cells
+
+    
+    face_gids = new int[OwnedFaces.size()+NotOwnedFaces.size()];
+    
+    mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
+    nface = OwnedFaces.size();
+    
+    for (int i = 0; i < nface; i++) face_gids[i] -= 1;
+
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+    
+
+
+
+    mbcore->tag_get_data(gid_tag,NotOwnedFaces,&(face_gids[nface]));
+    
+    for (int i = nface; i < nface+NotOwnedFaces.size(); i++) face_gids[i] -= 1;
+
+    nface += NotOwnedFaces.size();
+
+    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+
+  }
+  else {
+    face_gids = new int[AllFaces.size()];
+
+    mbcore->tag_get_data(gid_tag,AllFaces,face_gids);
+    nface = AllFaces.size();
+
+    for (int i = 0; i < nface; i++) face_gids[i] -= 1;
+
+    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
+  }
+
+  delete [] face_gids;
+
+}
+
+
+
+
+// Epetra map for nodes - basically a structure specifying the
+// global IDs of cells owned or used by this processor
+
+void Mesh_maps_moab::init_node_map ()
+{
+  int *vert_gids;
+  int nvert;
+
+  if (!serial_run) {
+
+    // For parallel runs create map without and with ghost verts included
+    // Also, put in owned cells before the ghost verts
+
+    
+    vert_gids = new int[OwnedVerts.size()+NotOwnedVerts.size()];
+    
+    mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
+    nvert = OwnedVerts.size();
+    
+    for (int i = 0; i < nvert; i++) vert_gids[i] -= 1;
+
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+    
+
+
+
+    mbcore->tag_get_data(gid_tag,NotOwnedVerts,&(vert_gids[nvert]));
+    
+    for (int i = nvert; i < nvert+NotOwnedVerts.size(); i++) vert_gids[i] -= 1;
+
+    nvert += NotOwnedVerts.size();
+
+    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+
+  }
+  else {
+    vert_gids = new int[AllVerts.size()];
+
+    mbcore->tag_get_data(gid_tag,AllVerts,vert_gids);
+    nvert = AllVerts.size();
+
+    for (int i = 0; i < nvert; i++) vert_gids[i] -= 1;
+
+    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
+  }
+
+  delete [] vert_gids;
+
 }
   
 

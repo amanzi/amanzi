@@ -1,0 +1,48 @@
+
+  Title of simulation: carbonate.in:  carbonate speciation with debye-huckel for geochemistry c
+
+
+  --> Running in GIMRT mode (global implicit reaction and transport) 
+
+  Extended Debye-Huckel activity model
+
+   ---> Using database: carbonate.dbs                                                                                       
+  Temperature parameters not found
+  Using defaults
+
+  Number of components:                          2
+
+  Number of secondary species:                   3
+  No kinetic reactions involving minerals specified
+
+
+  Number of kinetic minerals:                    0
+
+  No surface complexation block found
+
+     --> Calling database subroutine
+
+
+  Number of reactions:                              3
+  Number of complexes:                              3
+  Number of minerals:                               0
+  Number of gases:                                  0
+
+     --> Finished reading database
+  No ion exchange block found
+  Fixing porosity at 0.5000
+  No update of porosity
+
+  Current density module: temperature
+
+
+  ---> READING GEOCHEMICAL CONDITIONS  
+
+
+  ---> STARTING SPECIATION OF GEOCHEMICAL CONDITIONS  
+
+
+                SPECIATION OF 
+      INITIAL AND BOUNDARY CONDITIONS 
+           SUCCESSFULLY COMPLETED
+

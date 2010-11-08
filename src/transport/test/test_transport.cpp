@@ -248,6 +248,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
      printf("T=%6.1f  C_0(x):", T);
      for( int k=0; k<20; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
   }
+
   cout << "==================================================================" << endl << endl;
 }
  

@@ -97,8 +97,23 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
     std::vector<MBEntityHandle> face_id_to_handle;
     std::vector<MBEntityHandle> cell_id_to_handle;
 
+
+    // Maps
+
+    Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
+    Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
+
+
+    // Sets (material sets, sidesets, nodesets)
+    // We store the number of sets in the whole problem regardless of whether
+    // they are represented on this processor or not
+    // We also store the IDs of the sets and the dimension of entities 
+    // in those sets
+  
+    int nsets;
+    int *setids, *setdims;
     
-    // Maps, Accessors and setters.
+    // Private methods
     // ----------------------------
 
     bool valid_entity_kind_ (int kind) const;
@@ -106,11 +121,17 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
 
     void clear_internals_();
 
-    void init_pvert_sets();
-    void init_pface_sets();
-    void init_pcell_sets();
+    void init_pvert_lists();
+    void init_pface_lists();
+    void init_pcell_lists();
 
     void init_id_handle_maps();
+
+    void init_cell_map();
+    void init_face_map();
+    void init_node_map();
+
+    void init_set_info();
 
 public:
   
@@ -169,12 +190,6 @@ public:
 			    double * begin,
 			    double * end);
   
-  inline const Epetra_Map& cell_map (bool include_ghost) const;
-
-  inline const Epetra_Map& face_map (bool include_ghost) const;
-
-  inline const Epetra_Map& node_map (bool include_ghost) const;
-  
   unsigned int count_entities (Mesh_data::Entity_kind kind,
 			       Element_Category category) const;
 
@@ -214,6 +229,30 @@ public:
   void set_coordinate(unsigned int local_node_id, 
 		      double* source_begin, double* source_end) 
   { throw std::exception(); };
+
+
+  inline const Epetra_Map& cell_map (bool include_ghost) const {
+    if (serial_run)
+      return *cell_map_wo_ghosts_;
+    else
+      return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
+  }
+	    
+
+  inline const Epetra_Map& face_map (bool include_ghost) const {
+    if (serial_run)
+      return *face_map_wo_ghosts_;
+    else
+      return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
+  }
+
+  inline const Epetra_Map& node_map (bool include_ghost) const {
+    if (serial_run)
+      return *node_map_wo_ghosts_;
+    else
+      return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
+  }
+  
   
 };
 

@@ -15,6 +15,7 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
   add_executable(test_transport test/Main.cc test/test_transport.cpp test/test_moab.cpp)
+# test/test_moab.cpp)
   add_test(transport test_transport)
   target_link_libraries(test_transport transport simple_mesh unittest++ ${Trilinos_LIBRARIES})
 endif()
