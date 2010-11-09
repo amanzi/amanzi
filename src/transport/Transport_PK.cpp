@@ -186,11 +186,11 @@ double Transport_PK::calculate_transport_dT()
      influx = total_influx[c];
      if( influx ) dT_cell = cell_volume[c] * (*phi)[c] * (*ws)[c] / influx;
 
-     dT = min( dT, dT_cell);
+     dT = min( dT, dT_cell );
   }
 
 
-  /* parallel garther and scatter of dT */ 
+  /* parallel gather and scatter of dT */ 
 #ifdef HAVE_MPI
   double dT_global;
   const  Epetra_Comm & comm = (*ws).Comm(); 
@@ -218,59 +218,64 @@ void Transport_PK::advance()
   status = TRANSPORT_STATE_BEGIN;
 
 
-  /* Step 1: Loop over internal faces: update concentrations */
-  int i, c1, c2;
-  unsigned int f;
-  double u, phi_ws1, phi_ws2, tcc_flux;
+  int  i, c, c1, c2;
+  unsigned int  f;
+  double  u, area, vol_phi_ws, tcc_flux;
 
-  /* access raw data */
+  /* access data */
   RCP<Epetra_MultiVector>   tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector>   tcc_next = TS_next->get_total_component_concentration();
 
   RCP<const Epetra_Vector>  ws  = TS->get_water_saturation();
   RCP<const Epetra_Vector>  phi = TS->get_porosity();
 
-  /* copy previous state */
-  *tcc_next = *tcc; 
+
+  /* prepare conservative state */
+  int num_components = tcc->NumVectors();
+
+  for( c=cmin; c<=cmax; c++ ) {
+     vol_phi_ws = cell_volume[c] * (*phi)[c] * (*ws)[c]; 
+
+     for( i=0; i<num_components; i++ ) 
+        (*tcc_next)[i][c] = (*tcc)[i][c] * vol_phi_ws;
+  }
+
+
+  /* start non-blocking parallel communications */
 
 
   /* advance each component */ 
-  int num_components = tcc->NumVectors();
-
   for( f=fmin; f<=fmax; f++ ) {
      c1 = upwind_cell[f]; 
      c2 = downwind_cell[f]; 
 
      if ( c1 >=0 && c2 >= 0 ) {
         u = fabs(darcy_flux[f]);
-
-        phi_ws1 = (*phi)[c1] * (*ws)[c1]; 
-        phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
+        area = face_area[f];
 
         for( i=0; i<num_components; i++ ) {
-           tcc_flux = dT * u * (*tcc)[i][c1];
+           tcc_flux = dT * u * area * (*tcc)[i][c1];
 
-           (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
-           (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
+           (*tcc_next)[i][c1] -= tcc_flux;
+           (*tcc_next)[i][c2] += tcc_flux;
         }
      } 
      else if ( c1 >=0 ) {
         u = fabs(darcy_flux[f]);
-        phi_ws1 = (*phi)[c1] * (*ws)[c1]; 
+        area = face_area[f];
 
         for( i=0; i<num_components; i++ ) {
-           tcc_flux = dT * u * (*tcc)[i][c1];
-           (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
+           tcc_flux = dT * u * area * (*tcc)[i][c1];
+           (*tcc_next)[i][c1] -= tcc_flux;
         }
      }
   }
 
 
-  /* Step 2: Create an interface map */  
+  /* wait for communicationto be done */
 
-  /* Step 3: Parallel communication */
 
-  /* Step 4: Loop over boundary sets */
+  /* loop over exterior boundary sets */
   int  k, n;
   for( n=0; n<bcs.size(); n++ ) {
      for( k=0; k<bcs[n].faces.size(); k++ ) {
@@ -279,18 +284,24 @@ void Transport_PK::advance()
 
         if ( c2 >= 0 ) {
            u = fabs(darcy_flux[f]);
-           phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
+           area = face_area[f];
 
            for( i=0; i<num_components; i++ ) {
-              tcc_flux = dT * u * bcs[n].values[i];
-              (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
+              tcc_flux = dT * u * area * bcs[n].values[i];
+              (*tcc_next)[i][c2] += tcc_flux;
            }
         }
      }
   }
 
 
-  /* Step 5: Paralell communication */
+  /* recover concentration from new conservative state */
+  for( c=cmin; c<=cmax; c++ ) {
+     vol_phi_ws = cell_volume[c] * (*phi)[c] * (*ws)[c]; 
+
+     for( i=0; i<num_components; i++ ) 
+        (*tcc_next)[i][c] /= vol_phi_ws;
+  }
 
   status = TRANSPORT_STATE_COMPLETE;
 };
@@ -390,8 +401,8 @@ void Transport_PK::geometry_package()
   RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
 
   /* loop over faces and calculate areas */
-  unsigned int f;
-  double x[8][3], v1[3], v2[3];
+  unsigned int  f;
+  double  x[8][3], v1[3], v2[3];
 
   for( f=fmin; f<=fmax; f++ ) {
      mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
@@ -402,7 +413,8 @@ void Transport_PK::geometry_package()
 
   /* loop over cells, then faces, to calculate cell volume */
   int  i, j, c;
-  double  center[3], normal[3], volume;
+  double  normal[3], v3[3];
+  double  center, center1, center2, area1, area2, volume;
 
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
@@ -412,28 +424,36 @@ void Transport_PK::geometry_package()
   for( c=cmin; c<=cmax; c++ ) {
      TS->get_mesh_maps()->cell_to_coordinates( c, (double*) x, (double*) x+24 );
 
-     for( i=0; i<3; i++ ) { 
-        center[i] = 0;
-        for( j=0; j<8; j++ ) center[i] += x[j][i];
-        center[i] /= 8;
-     }
-
      mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
      mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
      
-     /* assume flat faces */
+     /* assume flat convex faces */
      volume = 0.0;
      for ( j=0; j<6; j++ ) {
         f = face_map.LID(c2f[j]);
         mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
+        for( i=0; i<3; i++ ) {
+           v1[i] = x[1][i] - x[0][i];
+           v2[i] = x[2][i] - x[0][i];
+           v3[i] = x[3][i] - x[0][i];
+        }
+
+        cross_product( normal, v1, v2 );
+        area1 = vector_length( normal, 3 );
+
+        cross_product( normal, v2, v3 );
+        area2 = vector_length( normal, 3 );
+
+        center1 = (x[0][0] + x[1][0] + x[2][0]) / 3;
+        center2 = (x[0][0] + x[2][0] + x[3][0]) / 3;
+        center = (center1 * area1 + center2 * area2) / (area1 + area2);
+
         quad_face_normal(normal, x[0], x[1], x[2], x[3]);
 
-        for( i=0; i<3; i++ ) v1[i] = x[0][i] - center[i];
-
-        volume += dirs[j] * dot_product(normal, v1, 3);
+        volume += dirs[j] * normal[0] * center;
      }
-     cell_volume[c] = volume / 3;
+     cell_volume[c] = volume;
   }
 }
 

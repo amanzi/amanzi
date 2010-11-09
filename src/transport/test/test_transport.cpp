@@ -19,7 +19,7 @@ TEST(INPUT_XML) {
   using namespace std;
   using namespace Teuchos;
 
-  string xmlInFileName = "test/transport_input.xml";
+  string xmlInFileName = "test/test_transport.xml";
 
   ParameterList TPK_list;
   updateParametersFromXmlFile(xmlInFileName, &TPK_list);
@@ -96,7 +96,7 @@ TEST(INIT_PROCESS_KERNEL) {
   RCP<Transport_State>  TS = rcp( new Transport_State( mpc_state ) );
 
   /* read the trasport parameter list */
-  string xmlInFileName = "test/transport_input.xml";
+  string xmlInFileName = "test/test_transport.xml";
 
   ParameterList parameter_list;
   updateParametersFromXmlFile(xmlInFileName, &parameter_list);
@@ -116,6 +116,8 @@ TEST(INIT_PROCESS_KERNEL) {
 
   cout << *(darcy_flux) << endl;
   cout << "==================================================================" << endl << endl;
+
+  delete comm;
 }
  
 
@@ -141,7 +143,7 @@ TEST(FACES_VOLUMES) {
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
   /* read the trasport parameter list */
-  string xmlInFileName = "test/transport_input.xml";
+  string xmlInFileName = "test/test_transport.xml";
 
   ParameterList parameter_list;
   updateParametersFromXmlFile(xmlInFileName, &parameter_list);
@@ -171,6 +173,8 @@ TEST(FACES_VOLUMES) {
      CHECK_EQUAL(area, 0.5);
   }
   cout << "==================================================================" << endl << endl;
+
+  delete comm;
 }
  
 
@@ -196,7 +200,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
   /* read the trasport parameter list */
-  string xmlInFileName = "test/transport_input.xml";
+  string xmlInFileName = "test/test_transport.xml";
 
   ParameterList parameter_list;
   updateParametersFromXmlFile(xmlInFileName, &parameter_list);
@@ -253,6 +257,8 @@ TEST(ADVANCE_WITH_SIMPLE) {
   }
 
   cout << "==================================================================" << endl << endl;
+
+  delete comm;
 }
  
 

@@ -29,7 +29,7 @@ TEST(ADVANCE_WITH_MOAB) {
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
 
   /* read the trasport parameter list */
-  string xmlInFileName = "test/transport_input_moab.xml";
+  string xmlInFileName = "test/test_moab.xml";
 
   ParameterList parameter_list;
   updateParametersFromXmlFile(xmlInFileName, &parameter_list);

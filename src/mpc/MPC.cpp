@@ -73,7 +73,7 @@ void MPC::cycle_driver () {
   // so far we only have transport working
 
   // use the analytic initialization functions in Transport_State
-  double u[3] = {1, 0, 0};
+  double u[3] = {-1, -0.5, -0.01};
  
   TS->analytic_porosity();
   TS->analytic_darcy_flux( u );
