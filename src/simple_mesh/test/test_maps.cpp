@@ -20,7 +20,9 @@ TEST(MAPS) {
 
   Mesh_maps_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
 
-  
+  double xc[] = { 2.0, 2.0, 2.0 };
+  Mm.set_coordinate(7,xc,xc+3);
+
   cout << "number of cells = " << Mm.count_entities(Mesh_data::CELL,OWNED) << endl;
   cout << "number of faces = " << Mm.count_entities(Mesh_data::FACE,OWNED) << endl;
   cout << "number of nodes = " << Mm.count_entities(Mesh_data::NODE,OWNED) << endl;

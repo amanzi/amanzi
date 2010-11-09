@@ -144,7 +144,12 @@ public:
   virtual
   const Epetra_Comm* get_comm() {};
 
-  
+  // this should be used with extreme caution:
+  // modify coordinates  
+  virtual void set_coordinate(unsigned int local_node_id, 
+			      double* source_begin, double* source_end) {};
+
+
 };
 
 #endif /* _MESH_MAPS_BASE_H_ */

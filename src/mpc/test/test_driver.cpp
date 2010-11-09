@@ -2,7 +2,11 @@
 #include "stdlib.h"
 #include "math.h"
 #include "UnitTest++.h"
+
+#include "Mesh_maps_moab.hh"
 #include "Mesh_maps_simple.hh"
+#include "Mesh_maps_base.hh"
+
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
@@ -20,7 +24,7 @@ TEST(DRIVER) {
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
+#else  
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
@@ -37,34 +41,48 @@ TEST(DRIVER) {
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 
-  Teuchos::RCP<Mesh_maps_simple> MMS;
+  Teuchos::RCP<Mesh_maps_base> mesh;
+  
+  cout << mesh_class << endl;
+
   if (mesh_class == "Simple") 
     {
       Teuchos::ParameterList simple_mesh_parameter_list = 
-	mesh_parameter_list.sublist("Simple Mesh Parameters");
+      	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      MMS = Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
+      Teuchos::RCP<Mesh_maps_simple> MMS = 
+      	Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
+      
+      mesh = MMS;
       
     } 
-  else 
+  else if (mesh_class == "MOAB")  
     {
-      // here's where we'll put the stuff for reading
-      // parameter lists for STK and MOAB
       
-      // for now just throw and exception
+      Teuchos::ParameterList moab_mesh_parameter_list = 
+      	mesh_parameter_list.sublist("MOAB Mesh Parameters");
+      
+      string filename = moab_mesh_parameter_list.get<string>("Exodus file name");
+
+      Teuchos::RCP<Mesh_maps_moab> MMM = 
+      	Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));      
+      
+      mesh = MMM;
+
+    }
+  else
+    {
       throw std::exception();
     }
 
 
   // create the MPC
-  MPC mpc(driver_parameter_list, MMS);
+  MPC mpc(driver_parameter_list, mesh);
   
-  mpc.write_mesh();
-
   mpc.cycle_driver();
   
   
-
+  delete comm;
       
 }
 

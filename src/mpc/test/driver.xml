@@ -14,46 +14,41 @@
       <Parameter name="Numer of Cells in Z" type="int" value="10"/> 
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
+      <Parameter name="Exodus file name" type="string" value="test/moab_mesh.exo"/>
     </ParameterList>   
     <ParameterList name="STK Mesh Parameters">
     </ParameterList>   
   </ParameterList>
   
-  <ParameterList name="GMV">
-    <Parameter name="File Name" type="string" value="test.gmv"/>
-  </ParameterList>
-  
+
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="10.0"/>
+    <Parameter name="End Time" type="double" value="1000.0"/>
+    <ParameterList name="GMV">
+      <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
+      <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
+      <Parameter name="Dump cycle frequency" type="int" value="20"/>
+    </ParameterList>    
   </ParameterList> 
 
   
   <ParameterList name="State">
-    <Parameter name="Number of component concentrations" type="int" value="10"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
   </ParameterList>
 
   <ParameterList name="Transport">
-   <Parameter name="CFL" type="double" value="0.5"/>   
-   <Parameter name="number of components" type="int" value="3"/>
-
-   <ParameterList name="Transport BCs">
-    <Parameter name="number of BCs" type="int" value="2"/>
-    <ParameterList name="BC 0">
-      <Parameter name="Side set ID" type="int" value="3"/>
-      <Parameter name="Type" type="string" value="Discharge"/>
-      <Parameter name="number of components" type="int" value="2"/>
-      <Parameter name="Component 1" type="double" value="1.0"/>
-      <Parameter name="Component 2" type="double" value="1.0"/>
-    </ParameterList>  
-    <ParameterList name="BC 1">
-      <Parameter name="Side set ID" type="int" value="1"/>
-      <Parameter name="Type" type="string" value="Discharge"/>
-      <Parameter name="number of components" type="int" value="2"/>
-      <Parameter name="Component 3" type="double" value="1.0"/>
-      <Parameter name="Component 2" type="double" value="1.0"/>
-    </ParameterList>  
-   </ParameterList>
+    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="number of components" type="int" value="1"/>   
+    
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      <ParameterList name="BC 0">
+	<Parameter name="Side set ID" type="int" value="3"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+	<Parameter name="number of components" type="int" value="1"/>
+	<Parameter name="Component 0" type="double" value="1.0"/>
+      </ParameterList>  
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="Chemistry">

@@ -59,10 +59,9 @@ void Transport_State::create_internal_state( Transport_State & S )
 
 
 /* ************************************************************* */
-/* DEBUG: create constant analytical Darcy velocity field:       */
-/* u = (1,2,3)                                                   */
+/* DEBUG: create constant analytical Darcy velocity fieldx u     */
 /* ************************************************************* */
-void Transport_State::analytic_darcy_flux()
+void Transport_State::analytic_darcy_flux( double* u )
 {
   int  i, f;
   double x[4][3], normal[3], length;
@@ -72,10 +71,10 @@ void Transport_State::analytic_darcy_flux()
   for( f=face_map.MinLID(); f<=face_map.MaxLID(); f++ ) { 
      mesh_maps->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
-     quad_face_normal(normal, x[0], x[1], x[2], x[3]);
+     quad_face_normal(x[0], x[1], x[2], x[3], normal);
      length = vector_length( normal, 3 );
 
-     (*darcy_flux)[f] = (normal[0] + 2 * normal[1] + 3 * normal[2]) / length;
+     (*darcy_flux)[f] = (u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2]) / length;
   }
 }
 
@@ -101,7 +100,7 @@ void Transport_State::analytic_total_component_concentration()
         center[i] /= 8;
      }
 
-     (*total_component_concentration)[0][c] = center[0] / 100;
+     (*total_component_concentration)[0][c] = pow(1 - center[0], 3) / 100;
   }
 }
 

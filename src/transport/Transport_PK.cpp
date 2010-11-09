@@ -37,32 +37,32 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
 
 
   /* frequently used data */
-  Epetra_Map cell_map = TS->get_mesh_maps()->cell_map(false);
-  Epetra_Map face_map = TS->get_mesh_maps()->face_map(false);
+  const Epetra_Map & cell_map = TS->get_mesh_maps()->cell_map(false);
+  const Epetra_Map & face_map = TS->get_mesh_maps()->face_map(false);
 
   cmin = cell_map.MinLID();
   cmax = cell_map.MaxLID();
-  number_cells = cmax - cmin + 1;
+  number_cells = TS->get_mesh_maps()->count_entities( Mesh_data::CELL, OWNED );
 
   fmin = face_map.MinLID();
   fmax = face_map.MaxLID(); 
-  number_faces = fmax - fmin + 1;
+  number_faces = TS->get_mesh_maps()->count_entities( Mesh_data::FACE, OWNED );
 
 
   /* process parameter list */
   process_parameter_list();
 
   /* future geometry package */
-  cell_volume.resize( cmax + 1 );
-  face_area.resize( fmax + 1 );
+  cell_volume.resize( number_cells );
+  face_area.resize( number_faces );
 
-  upwind_cell.resize( fmax + 1 );
-  downwind_cell.resize( fmax + 1 );
+  upwind_cell.resize( number_faces );
+  downwind_cell.resize( number_faces );
 
   geometry_package();
 
   /* other preliminaries for Demo I */
-  darcy_flux.resize( fmax + 1 );
+  darcy_flux.resize( number_faces );
 };
 
 
@@ -79,10 +79,6 @@ void Transport_PK::process_parameter_list()
   /* global transport parameters */
   cfl = parameter_list.get<double>( "CFL", 1.0 );
  
-  // the number of components is given by the state and not read
-  // from the parameter list - M.B.
-  // number_components = parameter_list.get<int>( "number of components" );
-
   cout << "Transport PK: CFL = " << cfl << endl;
   cout << "              Total number of components = " << number_components << endl;
 
@@ -117,7 +113,8 @@ void Transport_PK::process_parameter_list()
      ntcc = bc_ss.get<int>("number of components");
      type = bc_ss.get<string>("Type");
 
-     /* check all existing components */
+     /* check all existing components: right now we check by id */
+     /* but it is possible to check by name in the future */
      for( k=0; k<number_components; k++ ) {
         char tcc_char_name[10];
 
@@ -137,6 +134,9 @@ void Transport_PK::process_parameter_list()
      int  n;
 
      n = mesh->get_set_size( ssid, Mesh_data::FACE, OWNED );
+
+     cout << "side set faces = "<< n << endl;
+
      bcs[i].faces.resize( n );
 
      mesh->get_set( ssid, Mesh_data::FACE, OWNED, bcs[i].faces.begin(), bcs[i].faces.end() );
@@ -160,12 +160,12 @@ double Transport_PK::calculate_transport_dT()
 
   RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
 
-  vector<double>  total_influx(number_cells, 0.0);
+  vector<double>  total_influx( number_cells, 0.0 );
 
   /* loop over faces and accumulate upwinding fluxes */
   int  i, f, c, c1;
   double  area, u;
-  Epetra_Map face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map(false);
 
   for( f=fmin; f<=fmax; f++ ) {
      c = downwind_cell[f];
@@ -186,12 +186,22 @@ double Transport_PK::calculate_transport_dT()
      influx = total_influx[c];
      if( influx ) dT_cell = cell_volume[c] * (*phi)[c] * (*ws)[c] / influx;
 
-     dT = min( dT, dT_cell);
+     dT = min( dT, dT_cell );
   }
 
 
-  /* parallel garther and scatter of dT */ 
-  cout << "Transport time step dT = " << dT << endl;
+  /* parallel gather and scatter of dT */ 
+#ifdef HAVE_MPI
+  double dT_global;
+  const  Epetra_Comm & comm = (*ws).Comm(); 
+ 
+  comm.MinAll( &dT, &dT_global, 1 );
+  dT = dT_global;
+#endif
+
+
+  /* incorporate CFL restriction */
+  dT *= cfl;
 }
 
 
@@ -208,12 +218,11 @@ void Transport_PK::advance()
   status = TRANSPORT_STATE_BEGIN;
 
 
-  /* Step 1: Loop over internal faces: update concentrations */
-  int i, c1, c2;
-  unsigned int f;
-  double u, phi_ws1, phi_ws2, tcc_flux;
+  int  i, c, c1, c2;
+  unsigned int  f;
+  double  u, area, vol_phi_ws, tcc_flux;
 
-  /* access raw data */
+  /* access data */
   RCP<Epetra_MultiVector>   tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector>   tcc_next = TS_next->get_total_component_concentration();
 
@@ -221,66 +230,78 @@ void Transport_PK::advance()
   RCP<const Epetra_Vector>  phi = TS->get_porosity();
 
 
-  /* advance each component */ 
+  /* prepare conservative state */
   int num_components = tcc->NumVectors();
 
+  for( c=cmin; c<=cmax; c++ ) {
+     vol_phi_ws = cell_volume[c] * (*phi)[c] * (*ws)[c]; 
+
+     for( i=0; i<num_components; i++ ) 
+        (*tcc_next)[i][c] = (*tcc)[i][c] * vol_phi_ws;
+  }
+
+
+  /* start non-blocking parallel communications */
+
+
+  /* advance each component */ 
   for( f=fmin; f<=fmax; f++ ) {
      c1 = upwind_cell[f]; 
      c2 = downwind_cell[f]; 
 
      if ( c1 >=0 && c2 >= 0 ) {
         u = fabs(darcy_flux[f]);
-
-        phi_ws1 = (*phi)[c1] * (*ws)[c1]; 
-        phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
+        area = face_area[f];
 
         for( i=0; i<num_components; i++ ) {
-           tcc_flux = cfl * dT * u * (*tcc)[i][c1];
+           tcc_flux = dT * u * area * (*tcc)[i][c1];
 
-           (*tcc_next)[i][c1] = (*tcc)[i][c1] - tcc_flux / phi_ws1;
-           (*tcc_next)[i][c2] = (*tcc)[i][c2] + tcc_flux / phi_ws2;
+           (*tcc_next)[i][c1] -= tcc_flux;
+           (*tcc_next)[i][c2] += tcc_flux;
+        }
+     } 
+     else if ( c1 >=0 ) {
+        u = fabs(darcy_flux[f]);
+        area = face_area[f];
+
+        for( i=0; i<num_components; i++ ) {
+           tcc_flux = dT * u * area * (*tcc)[i][c1];
+           (*tcc_next)[i][c1] -= tcc_flux;
         }
      }
   }
 
 
-  /* Step 2: Create an interface map */  
+  /* wait for communicationto be done */
 
-  /* Step 3: Parallel communication */
 
-  /* Step 4: Loop over boundary sets */
+  /* loop over exterior boundary sets */
   int  k, n;
   for( n=0; n<bcs.size(); n++ ) {
      for( k=0; k<bcs[n].faces.size(); k++ ) {
-        f = bcs[n].faces[k];
-
-        c1 = upwind_cell[f];
+        f  = bcs[n].faces[k];
         c2 = downwind_cell[f]; 
 
-        u = fabs(darcy_flux[f]);
-
-        if ( c1 >= 0 ) {
-           phi_ws1  = (*phi)[c1] * (*ws)[c1]; 
-
-           for( i=0; i<num_components; i++ ) {
-              tcc_flux = cfl * dT * u * (*tcc)[i][c1];
-              (*tcc_next)[i][c1] = (*tcc)[i][c1] - tcc_flux / phi_ws1;
-           }
-        }
-
         if ( c2 >= 0 ) {
-           phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
+           u = fabs(darcy_flux[f]);
+           area = face_area[f];
 
            for( i=0; i<num_components; i++ ) {
-              tcc_flux = cfl * dT * u * bcs[n].values[i];
-              (*tcc_next)[i][c2] = (*tcc)[i][c2] + tcc_flux / phi_ws2;
+              tcc_flux = dT * u * area * bcs[n].values[i];
+              (*tcc_next)[i][c2] += tcc_flux;
            }
         }
      }
   }
 
 
-  /* Step 5: Paralell communication */
+  /* recover concentration from new conservative state */
+  for( c=cmin; c<=cmax; c++ ) {
+     vol_phi_ws = cell_volume[c] * (*phi)[c] * (*ws)[c]; 
+
+     for( i=0; i<num_components; i++ ) 
+        (*tcc_next)[i][c] /= vol_phi_ws;
+  }
 
   status = TRANSPORT_STATE_COMPLETE;
 };
@@ -337,7 +358,7 @@ void Transport_PK::extract_darcy_flux()
 /* ************************************************************* */
 void Transport_PK::identify_upwind_cells()
 {
-  RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
+  RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
 
   /* negative value is indicator of a boundary  */
   int  f;
@@ -352,7 +373,7 @@ void Transport_PK::identify_upwind_cells()
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  Epetra_Map  face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map(false);
 
   double *darcy_flux;
   TS->get_darcy_flux()->ExtractView( &darcy_flux );
@@ -362,7 +383,7 @@ void Transport_PK::identify_upwind_cells()
      mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
 
      for ( i=0; i<6; i++ ) {
-        f = face_map.LID(c2f[i]);
+        f = c2f[i];
         if ( darcy_flux[f] * dirs[i] >= 0 ) { upwind_cell[f] = c; }
         else                                { downwind_cell[f] = c; }
      }
@@ -380,8 +401,8 @@ void Transport_PK::geometry_package()
   RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
 
   /* loop over faces and calculate areas */
-  unsigned int f;
-  double x[8][3], v1[3], v2[3];
+  unsigned int  f;
+  double  x[8][3], v1[3], v2[3];
 
   for( f=fmin; f<=fmax; f++ ) {
      mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
@@ -392,38 +413,47 @@ void Transport_PK::geometry_package()
 
   /* loop over cells, then faces, to calculate cell volume */
   int  i, j, c;
-  double  center[3], normal[3], volume;
+  double  normal[3], v3[3];
+  double  center, center1, center2, area1, area2, volume;
 
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  Epetra_Map  face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map(false);
 
   for( c=cmin; c<=cmax; c++ ) {
      TS->get_mesh_maps()->cell_to_coordinates( c, (double*) x, (double*) x+24 );
 
-     for( i=0; i<3; i++ ) { 
-        center[i] = 0;
-        for( j=0; j<8; j++ ) center[i] += x[j][i];
-        center[i] /= 8;
-     }
-
      mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
      mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
      
-     /* assume flat faces */
+     /* assume flat convex faces */
      volume = 0.0;
      for ( j=0; j<6; j++ ) {
         f = face_map.LID(c2f[j]);
         mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
-        quad_face_normal(normal, x[0], x[1], x[2], x[3]);
+        for( i=0; i<3; i++ ) {
+           v1[i] = x[1][i] - x[0][i];
+           v2[i] = x[2][i] - x[0][i];
+           v3[i] = x[3][i] - x[0][i];
+        }
 
-        for( i=0; i<3; i++ ) v1[i] = x[0][i] - center[i];
+        cross_product( v1, v2, normal );
+        area1 = vector_length( normal, 3 );
 
-        volume += dirs[j] * dot_product(normal, v1, 3);
+        cross_product( v2, v3, normal );
+        area2 = vector_length( normal, 3 );
+
+        center1 = (x[0][0] + x[1][0] + x[2][0]) / 3;
+        center2 = (x[0][0] + x[2][0] + x[3][0]) / 3;
+        center = (center1 * area1 + center2 * area2) / (area1 + area2);
+
+        quad_face_normal(x[0], x[1], x[2], x[3], normal);
+
+        volume += dirs[j] * normal[0] * center;
      }
-     cell_volume[c] = volume / 3;
+     cell_volume[c] = volume;
   }
 }
 

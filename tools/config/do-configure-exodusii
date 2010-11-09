@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+
+# ##############################################################################
+#
+# Amanzi ExodusII Configuration 
+#
+# ##############################################################################
+print_usage()
+{
+    echo ""
+    echo "Usage: $0 [-h|--help] [-p|--prefix path]  -s|--source exodusii_path flags to define netCDF installation [ -- additional cmake args]"
+    echo ""
+    echo "FLAGS:"
+    echo "-h|--help                              Print this message and exit"
+    echo "-p|--prefix path                       Installation prefix (Default $HOME/exodusii)"
+    echo "-s|--source path                       Path that contains the ExodusII source"
+    echo "-n|--netcdf-dir netcdf_path            netCDF installation prefix"
+    echo "--netcdf-config netcdf_config_script   netCDF configure script (nc-config)"
+    echo ""
+    echo ""
+    echo "Additional flags may be passed to cmake"
+    echo "The '--' informs the parser that the remaining arguments are cmake arguments" 
+    echo ""
+    echo "ExodusII requires netCDF. This script attempts to find the nc-config script"
+    echo "to define the configuration of ExodusII. A user can explicitly define this script"
+    echo "or define the installation directory to define the script (<netcdf_path>/bin/nc-config)"
+    echo ""
+
+}
+
+# Need the new version of getopt to process the long style command options
+getopt_ok() {
+    getopts --test
+    stat=$?
+
+    if [ stat -eq 4 ]; then
+        return 1
+    else
+        echo "Your version of getopt failed the version test"
+        echo "long option names are disabled and will be ignored"
+        echo -n "getopt --test returned:"
+        echo stat
+        echo "Can not parse command line arguments"
+        return 0
+    fi    
+}
+
+# Parse command line opts
+INSTALL_PATH=${HOME}/exodusii
+EXODUSII_SRC_PATH=
+NETCDF_PATH=
+NETCDF_CONFIG=
+EXTRA_ARGS=
+
+short_opts='hs:p:n:'
+if [ getopt_ok ]; then
+    long_opts='help,source:,prefix:,netcdf-dir:,netcdf-config:'
+    args=`getopt -o ${short_opts} -l ${long_opts} -u -- $*`
+    stat=$?
+    if [ ${stat} -ne 0 ]; then
+        print_usage
+        exit 1
+    fi
+    set -- $args
+    for arg 
+    do
+        case "$arg" in
+            -h|--help) print_usage; exit 0;;
+            -p|--prefix) shift; INSTALL_PATH="$1"; shift;; 
+            -s|--source) shift; EXODUSII_SRC_PATH="$1"; shift;; 
+            -n|--netcdf-dir) shift; NETCDF_PATH="$1"; shift;; 
+            --netcdf-config) shift; NETCDF_CONFIG="$1"; shift;; 
+            --) shift; EXTRA_ARGS=$@;break;;
+        esac
+    done
+else
+    echo "Need to put code here for the bash bultin getopts"
+    exit 1
+fi
+
+# Check the arguments
+if [  -z "${NETCDF_PATH}" -a  -z "${NETCDF_CONFIG}" ]; then
+    echo "ExodusII requires netCDF"
+    echo "Define the installation path (-n|--netcdf-dir) or the configuration file (--netcdf-config"
+    echo ""
+    print_usage
+    exit 1
+fi
+
+if [ -z "${EXODUSII_SRC_PATH}" ]; then
+    echo "Must define the ExodusII source directory"
+    print_usage
+    echo ""
+    exit 1
+fi    
+
+# Define the netCDF configuration 
+if [ -z ${NETCDF_CONFIG} ]; then
+    NETCDF_CONFIG="${NETCDF_PATH}/bin/nc-config"
+fi
+
+if [ ! -e "${NETCDF_CONFIG}" -o ! -x "${NETCDF_CONFIG}" ]; then
+    echo "Can not find (or the user does not have permission to execute) ${NETCDF_CONFIG}"
+    echo ""
+    print_usage
+    exit 1
+fi
+
+
+# Define environment based on the netcdf build
+
+export CC=`${NETCDF_CONFIG} --cc`
+export CXX=`${NETCDF_CONFIG} --cxx`
+
+export NETCDF_DIR=`${NETCDF_CONFIG} --prefix`
+
+NETCDF_CFLAGS=`${NETCDF_CONFIG} --cflags`
+if [ -n "${CFLAGS}" ]; then
+    old_CFLAGS=${CFLAGS}
+    export CFLAGS="${NETCDF_CFLAGS} ${old_CFLAGS}"
+else
+    export CFLAGS="${NETCDF_CFLAGS}"
+fi
+
+NETCDF_LDFLAGS=`${NETCDF_CONFIG} --libs`
+if [ -n "${LDFLAGS}" ]; then
+    old_LDFLAGS=${LDFLAGS}
+    export LDFLAGS="${NETCDF_LDFLAGS} ${old_LDFLAGS}"
+else
+    export LDFLAGS="${NETCDF_LDFLAGS}"
+fi
+
+# Simple configure 
+#  Build without Fortran and with netCDF configuration defing the 
+#   compilers, flags and link order
+
+echo "-------------------------------------------------------------------"
+echo ""
+echo "Configuring Exodus"
+echo ""
+echo "INSTALL PREFIX=${INSTALL_PATH}"
+echo "Source Directory=${EXODUSII_SRC_PATH}"
+echo ""
+echo "With environment variables"
+echo "CC=${CC}"
+echo "CXX=${CXX}"
+echo "CFLAGS=${CFLAGS}"
+echo "LDFLAGS=${LDFLAGS}"
+echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+echo ""
+echo "-------------------------------------------------------------------"
+
+
+cache_file='CMakeCache.txt'
+if [ -e "${cache_file}" ]; then
+    rm "${cache_file}"
+fi
+
+export CMAKE_INCLUDE_PATH="/local/packages/hdf5-openmpi/include:/local/packages/netcdf/4.4.1/include"
+export CMAKE_LIBRARY_PATH="/local/packages/hdf5-openmpi/lib"
+cmake \
+          -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PATH} \
+          -D CMAKE_C_FLAGS:STRING=${CFLAGS} \
+          -D CMAKE_CXX_FLAGS:STRING=${CFLAGS} \
+          -D NETCDF_INCLUDE_DIR:STRING=${NETCDF_DIR}/include \
+          ${EXTRA_ARGS} \
+          ${EXODUSII_SRC_PATH}
+
+cmake_exit=$?
+
+echo ""
+echo "Cmake complete"
+echo ""
+
+echo "If the build fails in the cbind/test directory, comment out the section that adds the test"
+echo " directory in cbind/CMakeList.txt. Then re-run cmake"
+echo "Some users have reported problems building the ExodusII tests. Build system fails to link to"
+echo " the HDF libraries"
+
+
+exit ${cmake_exit}

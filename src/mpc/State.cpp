@@ -53,15 +53,7 @@ void State::create_storage ()
 
 void State::set_time ( double new_time ) {
 
-  if ( status == UPDATING ) {
-    
-    time = new_time;
-
-  } else {
-    
-    // throw an error
-
-  }
+  time = new_time;
 
 }
 

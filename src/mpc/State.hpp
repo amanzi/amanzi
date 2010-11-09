@@ -43,7 +43,10 @@ public:
   { return total_component_concentration; };
   
   const Teuchos::RCP<Mesh_maps_base> get_mesh_maps() const { return mesh_maps; };
+
   const double get_time () const { return time; };
+
+  const int get_number_of_components() const { return number_of_components; };
 
   // modify methods
   void set_time ( double new_time );

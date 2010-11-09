@@ -55,8 +55,8 @@ SOURCE=$HOME/ASCEM-Code/amanzi/src
   -D NetCDF_DIR:FILEPATH=/usr/lib64 \
   -D ExodusII_DIR:FILEPATH=$HOME/Packages/Exodus/install/exodusii-4.98 \
   -D MOAB_DIR:FILEPATH=$HOME/Packages/MOAB/install/MOAB-svn \
-  -D Trilinos_DIR:PATH=$HOME/Packages/Trilinos/install/trilinos-10.6.1 \
-  -D UnitTest_DIR:PATH=/usr \
+  -D Trilinos_DIR:FILEPATH=$HOME/Packages/Trilinos/install/trilinos-10.6.1 \
+  -D UnitTest_DIR:FILEPATH=/usr \
   ${SOURCE} 
 
 
