@@ -53,7 +53,8 @@ set_property(TARGET curl PROPERTY IMPORTED_LOCATION ${CURL_LIBRARY})
 # MPICH - http://www.mcs.anl.gov/research/projects/mpich2/
 ##############################################################################
 
-find_library(MPI_LIBRARY mpi
+find_library(MPI_LIBRARY
+             NAMES mpi mpich
              HINTS ${MPI_LIB_DIR}
                    ${MPI_DIR}/lib
                    /usr/lib64
