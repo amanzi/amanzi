@@ -60,6 +60,8 @@ public:
 
   DiffusionMatrix& Matrix() const { return *D_; }
 
+  void DeriveDarcyVelocity(Epetra_Vector &X, Epetra_Vector &Qx, Epetra_Vector &Qy, Epetra_Vector &Qz);
+
 private:
 
   Teuchos::RCP<Mesh_maps_base> mesh_;
@@ -89,6 +91,7 @@ private:  // Auxillary functions
   void init_mimetic_disc_(Mesh_maps_base&, std::vector<MimeticHexLocal>&) const;
   void apply_BC_initial_(Epetra_Vector&);
   void apply_BC_final_(Epetra_Vector&);
+  void face_centroid_(int, double[]);
 
 };
 

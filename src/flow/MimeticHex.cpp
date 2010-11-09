@@ -22,7 +22,7 @@ MimeticHex::MimeticHex(Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
     Epetra_SerialDenseMatrix xmatrix(View, xdata, 3, 3, 4);
     for (int j = 0; j < nface; ++j) {
       mesh->face_to_coordinates((unsigned int) j, xdata, xdata+12);
-      cell_geometry::quad_face_normal(face_normal_[j], xmatrix);
+      cell_geometry::quad_face_normal(xmatrix, face_normal_[j]);
     }
   }
   

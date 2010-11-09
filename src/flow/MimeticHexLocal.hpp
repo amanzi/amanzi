@@ -23,6 +23,9 @@ public:
   void diff_op(double, const double&, const Epetra_SerialDenseVector&, double&, Epetra_SerialDenseVector&);
   void diff_op(const Epetra_SerialSymDenseMatrix&, const double&, const Epetra_SerialDenseVector&, double&, Epetra_SerialDenseVector&);
 
+  void GravityFlux(const double g[], double gflux[]) const;
+  void CellFluxVector(double Fface[], double Fcell[]) const;
+      
 private:
 
   double hvol;

@@ -47,10 +47,13 @@ DiffusionMatrix* DarcyProblem::create_diff_matrix_(Teuchos::RCP<Mesh_maps_base> 
   std::vector<int> dir_faces;
   for (int j = 0; j < bc->NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc)[j];
-    if (BC.Type == FlowBC::PRESSURE_CONSTANT) {
-      dir_faces.reserve(dir_faces.size() + BC.Faces.size());
-      for (int i = 0; i < BC.Faces.size(); ++i)
-        dir_faces.push_back(BC.Faces[i]);
+    switch (BC.Type) {
+      case FlowBC::PRESSURE_CONSTANT:
+      case FlowBC::STATIC_HEAD:
+        dir_faces.reserve(dir_faces.size() + BC.Faces.size());
+        for (int i = 0; i < BC.Faces.size(); ++i)
+          dir_faces.push_back(BC.Faces[i]);
+        break;
     }
   }
   return new DiffusionMatrix(mesh, dir_faces);
@@ -150,7 +153,7 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   apply_BC_initial_(Pface); // modifies used values
 
   int cface[6];
-  double aux1[6], aux2[6];
+  double aux1[6], aux2[6], gflux[6];
 
   Fface.PutScalar(0.0);
   for (int j = 0; j < Pcell.MyLength(); ++j) {
@@ -159,7 +162,11 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    MD[j].diff_op((rho_ * k_[j] / mu_), Pcell[j], aux1, Fcell[j], aux2);
+    double K = (rho_ * k_[j] / mu_);
+    MD[j].diff_op(K, Pcell[j], aux1, Fcell[j], aux2);
+    // Gravity contribution
+    MD[j].GravityFlux(g_, gflux);
+    for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K * gflux[k];
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
   }
@@ -185,7 +192,38 @@ void DarcyProblem::apply_BC_initial_(Epetra_Vector &Pface)
           Pface[n] = BC.Value;
         }
         break;
+      // WARNING: THIS IS A ONE-OFF HACK.
+      // It is assumed that g is aligned with z.
+      // The BC value is used to set the height (for the entire
+      // set of BC faces) of zero pressure.
+      case FlowBC::STATIC_HEAD:
+        for (int i = 0; i < BC.Faces.size(); ++i) {
+          int n = BC.Faces[i];
+          double x[3];
+          face_centroid_(n, x);
+          double p = rho_ * g_[2] * (x[2] - BC.Value);
+          BC.Aux[i] = Pface[n] - p;
+          Pface[n] = p;
+        }
+        break;
     }
+  }
+}
+
+void DarcyProblem::face_centroid_(int face, double xc[])
+{
+   // Local storage for the 4 vertex coordinates of a face.
+  double x[4][3];
+  double *xBegin = &x[0][0];  // begin iterator
+  double *xEnd = xBegin+12;   // end iterator
+ 
+  mesh_->face_to_coordinates((unsigned int) face, xBegin, xEnd);
+  
+  for (int k = 0; k < 3; ++k) {
+    double s = 0.0;
+    for (int i = 0; i < 4; ++i)
+       s += x[i][k];
+    xc[k] = s / 4.0;
   }
 }
 
@@ -197,16 +235,16 @@ void DarcyProblem::apply_BC_final_(Epetra_Vector &Fface)
     FlowBC::bc_spec& BC = (*bc_)[j];
     switch (BC.Type) {
       case FlowBC::PRESSURE_CONSTANT:
+      case FlowBC::STATIC_HEAD:
         for (int i = 0; i < BC.Faces.size(); ++i) {
           int n = BC.Faces[i];
           Fface[n] = BC.Aux[i];
         }
         break;
-// NOT IMPLEMENTED YET -- MISSING DATA
       case FlowBC::DARCY_CONSTANT:
         for (int i = 0; i < BC.Faces.size(); ++i) {
           int n = BC.Faces[i];
-          Fface[n] += rho_ * BC.Value * md_->face_area_[n]; // NB: assumes face oriented out of domain
+          Fface[n] += rho_ * BC.Value * md_->face_area_[n];
         }
         break;
       case FlowBC::NO_FLOW:
@@ -250,4 +288,40 @@ Epetra_Vector* DarcyProblem::CreateFaceView(const Epetra_Vector &X)
   X.ExtractView(&data);
   int ncell = CellMap().NumMyElements();
   return new Epetra_Vector(View, FaceMap(), data+ncell);
+}
+
+
+void DarcyProblem::DeriveDarcyVelocity(Epetra_Vector &X,
+    Epetra_Vector &Qx, Epetra_Vector &Qy, Epetra_Vector &Qz)
+{
+  // should verify X.Map() is Map()
+  // should verify Qx.Map() is CellMap(false), and so for Qy, Qz
+  
+  // Create views into the cell and face segments of X and F
+  Epetra_Vector &Pcell = *CreateCellView(X);
+  Epetra_Vector &Pface_own = *CreateFaceView(X);
+
+  // Create face vectors that include ghosts.
+  Epetra_Vector Pface(FaceMap(true));
+
+  // Populate the face pressure vector from the input.
+  Pface.Import(Pface_own, *face_importer_, Insert);
+
+  int cface[6];
+  double aux1[6], aux2[6], aux3[3], gflux[6], dummy;
+
+  for (int j = 0; j < CellMap(false).NumMyElements(); ++j) {
+    
+  }
+  for (int j = 0; j < Pcell.MyLength(); ++j) {
+    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
+    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
+    MD[j].diff_op((k_[j]/mu_), Pcell[j], aux1, dummy, aux2);
+    MD[j].GravityFlux(g_, gflux);
+    for (int k = 0; k < 6; ++k) aux2[k] = (k_[j]/mu_) * gflux[k] - aux2[k];
+    MD[j].CellFluxVector(aux2, aux3);
+    Qx[j] = aux3[0];
+    Qy[j] = aux3[1];
+    Qz[j] = aux3[2];
+  }
 }

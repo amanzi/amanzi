@@ -13,7 +13,8 @@ public:
   enum bc_types {
     PRESSURE_CONSTANT = 1,
     NO_FLOW,
-    DARCY_CONSTANT
+    DARCY_CONSTANT,
+    STATIC_HEAD
   };
 
   struct bc_spec {

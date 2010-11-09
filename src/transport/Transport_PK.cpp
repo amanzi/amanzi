@@ -439,17 +439,17 @@ void Transport_PK::geometry_package()
            v3[i] = x[3][i] - x[0][i];
         }
 
-        cross_product( normal, v1, v2 );
+        cross_product( v1, v2, normal );
         area1 = vector_length( normal, 3 );
 
-        cross_product( normal, v2, v3 );
+        cross_product( v2, v3, normal );
         area2 = vector_length( normal, 3 );
 
         center1 = (x[0][0] + x[1][0] + x[2][0]) / 3;
         center2 = (x[0][0] + x[2][0] + x[3][0]) / 3;
         center = (center1 * area1 + center2 * area2) / (area1 + area2);
 
-        quad_face_normal(normal, x[0], x[1], x[2], x[3]);
+        quad_face_normal(x[0], x[1], x[2], x[3], normal);
 
         volume += dirs[j] * normal[0] * center;
      }
