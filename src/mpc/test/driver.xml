@@ -9,11 +9,12 @@
       <Parameter name="Y_Max" type="double" value="1.0"/>
       <Parameter name="Z_Min" type="double" value="0.0"/>
       <Parameter name="Z_Max" type="double" value="1.0"/>
-      <Parameter name="Numer of Cells in X" type="int" value="20"/> 
-      <Parameter name="Numer of Cells in Y" type="int" value="20"/> 
-      <Parameter name="Numer of Cells in Z" type="int" value="20"/> 
+      <Parameter name="Numer of Cells in X" type="int" value="10"/> 
+      <Parameter name="Numer of Cells in Y" type="int" value="10"/> 
+      <Parameter name="Numer of Cells in Z" type="int" value="10"/> 
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
+      <Parameter name="Exodus file name" type="string" value="test/moab_mesh.exo"/>
     </ParameterList>   
     <ParameterList name="STK Mesh Parameters">
     </ParameterList>   
@@ -22,7 +23,7 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="60.0"/>
+    <Parameter name="End Time" type="double" value="1000.0"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
@@ -37,23 +38,15 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
-    <Parameter name="number of components" type="int" value="3"/>   
+    <Parameter name="number of components" type="int" value="1"/>   
     
     <ParameterList name="Transport BCs">
-      <Parameter name="number of BCs" type="int" value="2"/>
+      <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC 0">
 	<Parameter name="Side set ID" type="int" value="3"/>
 	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="number of components" type="int" value="2"/>
+	<Parameter name="number of components" type="int" value="1"/>
 	<Parameter name="Component 0" type="double" value="1.0"/>
-	<Parameter name="Component 1" type="double" value="1.0"/>
-      </ParameterList>  
-      <ParameterList name="BC 1">
-	<Parameter name="Side set ID" type="int" value="1"/>
-	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="number of components" type="int" value="2"/>
-	<Parameter name="Component 2" type="double" value="1.0"/>
-	<Parameter name="Component 1" type="double" value="1.0"/>
       </ParameterList>  
     </ParameterList>
   </ParameterList>

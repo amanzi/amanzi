@@ -134,6 +134,9 @@ void Transport_PK::process_parameter_list()
      int  n;
 
      n = mesh->get_set_size( ssid, Mesh_data::FACE, OWNED );
+
+     cout << "side set faces = "<< n << endl;
+
      bcs[i].faces.resize( n );
 
      mesh->get_set( ssid, Mesh_data::FACE, OWNED, bcs[i].faces.begin(), bcs[i].faces.end() );
