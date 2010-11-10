@@ -13,7 +13,7 @@ class MimeticHex
 {
 public:
     
-  MimeticHex(Teuchos::RCP<Mesh_maps_base> &mesh);
+  MimeticHex(const Teuchos::RCP<Mesh_maps_base> &mesh);
   ~MimeticHex(){}
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }

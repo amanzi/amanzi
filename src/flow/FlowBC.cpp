@@ -2,7 +2,7 @@
 
 #include "float.h"
 
-FlowBC::FlowBC(Teuchos::ParameterList &list, Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
+FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
 {
   int nbc = list.get<int>("number of BCs", INT_MAX);
 

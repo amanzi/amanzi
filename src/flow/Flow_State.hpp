@@ -10,7 +10,14 @@ class Flow_State {
 
 public:
     
-  Flow_State(Teuchos::RCP<State> S);
+  Flow_State(Teuchos::RCP<State> S) :
+      mesh_maps_(S->get_mesh_maps()),
+      gravity_(S->get_gravity()),
+      fluid_density_(S->get_density()),
+      fluid_viscosity_(S->get_viscosity()),
+      permeability_(S->get_permeability()),
+      pressure_(S->get_pressure())
+    {}
 
   ~Flow_State () {};
 
@@ -23,7 +30,7 @@ public:
   
   const double* gravity() const { return *gravity_; }
   
-  const std::vector<double>& permeability() const { return *permeability_; }
+  const Epetra_Vector& permeability() const { return *permeability_; }
 
 private:
     
@@ -32,14 +39,10 @@ private:
   const Teuchos::RCP<double> fluid_density_;
   const Teuchos::RCP<double> fluid_viscosity_;
   const Teuchos::RCP<double*> gravity_;
-  const Teuchos::RCP<std::vector<double> > permeability_;
-  //const Teuchos::RCP<const std::vector<Epetra_SerialSymDenseMatrix>> permeability_;
+  const Teuchos::RCP<Epetra_Vector> permeability_;
   const Teuchos::RCP<Mesh_maps_base> mesh_maps_;
-  const Teuchos::RCP<Epetra_Vector> pressure_;
-  const Teuchos::RCP<Epetra_Vector> permeability_Epetra_;
-  
+  const Teuchos::RCP<Epetra_Vector> pressure_;  // current cell pressure solution
+
 };
-
-
 
 #endif

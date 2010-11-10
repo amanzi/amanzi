@@ -10,13 +10,13 @@ using namespace cell_topology;
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialSpdDenseSolver.h"
 
-MimeticHexLocal::MimeticHexLocal(double x[8][3])
+MimeticHexLocal::MimeticHexLocal(const double x[][3])
 {
   update(x);
 }
 
 
-void MimeticHexLocal::update(double x[8][3])
+void MimeticHexLocal::update(const double x[][3])
 {
   Epetra_SerialDenseMatrix X(View, (double*)x, 3, 3, 8);
   cell_geometry::compute_hex_volumes(X, hvol, cwgt);
@@ -30,7 +30,7 @@ void MimeticHexLocal::update(double x[8][3])
 }
 
 
-void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bool invert)
+void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bool invert) const
 {
   Epetra_SerialDenseMatrix Nc(3,3); // face normals at a corner
   Epetra_SerialDenseMatrix Mc(3,3); // corner mass matrix
@@ -83,7 +83,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
 }
 
 
-void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra_SerialSymDenseMatrix &K, bool invert)
+void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra_SerialSymDenseMatrix &K, bool invert) const
 {
   Epetra_SerialDenseMatrix Nc(3,3); // face normals at a corner
   Epetra_SerialDenseMatrix Mc(3,3); // corner mass matrix
@@ -140,7 +140,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
 
 void MimeticHexLocal::diff_op(double coef,
     const double &pcell, const double pface[],
-    double &rcell, double rface[])
+    double &rcell, double rface[]) const
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
@@ -163,7 +163,7 @@ void MimeticHexLocal::diff_op(double coef,
 
 void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
     const double &pcell, const double pface[],
-    double &rcell, double rface[])
+    double &rcell, double rface[]) const
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
@@ -186,7 +186,7 @@ void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
 
 void MimeticHexLocal::diff_op(double coef,
     const double &pcell, const Epetra_SerialDenseVector &pface,
-    double &rcell, Epetra_SerialDenseVector &rface)
+    double &rcell, Epetra_SerialDenseVector &rface) const
 {
   Epetra_SerialDenseVector aux(6);
   Epetra_SerialDenseMatrix Minv(6,6);
@@ -207,7 +207,7 @@ void MimeticHexLocal::diff_op(double coef,
 
 void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
     const double &pcell, const Epetra_SerialDenseVector &pface,
-    double &rcell, Epetra_SerialDenseVector &rface)
+    double &rcell, Epetra_SerialDenseVector &rface) const
 {
   Epetra_SerialDenseVector aux(6);
   Epetra_SerialDenseMatrix Minv(6,6);
@@ -224,6 +224,15 @@ void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
   for (int i = 0; i < 6; ++i)
     rcell -= rface(i);
 }
+
+//void MimeticHexLocal::Flux(double &coef, const double &pcell, const Epetra_SerialDenseVector &pface, Epetra_SerialDenseVector &fface) const
+//{
+//  mass_matrix(Minv, coef, true);
+//  for (int i = 0; i < 6; ++i) {
+//    aux[i] = pcell - pface[i];
+//    Minv.Multiply(false, aux, fface);
+//  }
+//}
 
 
 void MimeticHexLocal::GravityFlux(const double g[], double gflux[]) const

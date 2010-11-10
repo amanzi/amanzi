@@ -26,7 +26,7 @@ public:
   };
 
 public:
-  FlowBC(Teuchos::ParameterList &params, Teuchos::RCP<Mesh_maps_base> &mesh);
+  FlowBC(Teuchos::ParameterList &params, const Teuchos::RCP<Mesh_maps_base> &mesh);
   ~FlowBC() {}
 
   const int NumBC () const { return bc_.size(); }

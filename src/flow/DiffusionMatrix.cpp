@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-DiffusionMatrix::DiffusionMatrix(Teuchos::RCP<Mesh_maps_base> &mesh, std::vector<int> &dir_faces)
+DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh, const std::vector<int> &dir_faces)
 {
   mesh_ = mesh;
   dir_faces_ = dir_faces;

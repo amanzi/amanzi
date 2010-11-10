@@ -1,7 +1,7 @@
 #include "DarcyProblem.hpp"
 #include "DarcyMatvec.hpp"
 
-DarcyProblem::DarcyProblem(Teuchos::RCP<Mesh_maps_base> &mesh, Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
+DarcyProblem::DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
 {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
@@ -41,7 +41,7 @@ DarcyProblem::~DarcyProblem()
 }
 
 
-DiffusionMatrix* DarcyProblem::create_diff_matrix_(Teuchos::RCP<Mesh_maps_base> &mesh, Teuchos::RCP<FlowBC> &bc) const
+DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuchos::RCP<FlowBC> &bc) const
 {
   // Generate the list of all Dirichlet-type faces.
   std::vector<int> dir_faces;
@@ -108,7 +108,7 @@ void DarcyProblem::SetFluidViscosity(double mu)
 }
 
 
-void DarcyProblem::SetGravity(double g[3])
+void DarcyProblem::SetGravity(const double g[3])
 {
   for (int i = 0; i < 3; ++i) g_[i] = g[i];
 }
@@ -121,7 +121,7 @@ void DarcyProblem::SetPermeability(double k)
 }
 
 
-void DarcyProblem::SetPermeability(std::vector<double> &k)
+void DarcyProblem::SetPermeability(const Epetra_Vector &k)
 {
   /// should verify k has the expected size
   /// should verify k values are all > 0
@@ -272,7 +272,7 @@ Epetra_Map* DarcyProblem::create_dof_map_(const Epetra_Map &cell_map, const Epet
 }
 
 
-Epetra_Vector* DarcyProblem::CreateCellView(const Epetra_Vector &X)
+Epetra_Vector* DarcyProblem::CreateCellView(const Epetra_Vector &X) const
 {
   // should verify that X.Map() is the same as Map()
   double *data;
@@ -281,7 +281,7 @@ Epetra_Vector* DarcyProblem::CreateCellView(const Epetra_Vector &X)
 }
 
 
-Epetra_Vector* DarcyProblem::CreateFaceView(const Epetra_Vector &X)
+Epetra_Vector* DarcyProblem::CreateFaceView(const Epetra_Vector &X) const
 {
   // should verify that X.Map() is the same as Map()
   double *data;
@@ -291,8 +291,8 @@ Epetra_Vector* DarcyProblem::CreateFaceView(const Epetra_Vector &X)
 }
 
 
-void DarcyProblem::DeriveDarcyVelocity(Epetra_Vector &X,
-    Epetra_Vector &Qx, Epetra_Vector &Qy, Epetra_Vector &Qz)
+void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X,
+    Epetra_Vector &Qx, Epetra_Vector &Qy, Epetra_Vector &Qz) const
 {
   // should verify X.Map() is Map()
   // should verify Qx.Map() is CellMap(false), and so for Qy, Qz
@@ -324,4 +324,81 @@ void DarcyProblem::DeriveDarcyVelocity(Epetra_Vector &X,
     Qy[j] = aux3[1];
     Qz[j] = aux3[2];
   }
+}
+
+
+void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l1_error) const
+{
+  /// should verify P.Map() is Map()
+  /// should verify F.Map() is FaceMap()
+  
+  int cface[6], fdirs[6];
+  double aux1[6], aux2[6], gflux[6], dummy;
+  
+  // Create a view into the cell pressure segment of P.
+  Epetra_Vector &Pcell_own = *CreateCellView(P);
+  
+  // Create a copy of the face pressure segment of P that includes ghosts.
+  Epetra_Vector &Pface_own = *CreateFaceView(P);
+  Epetra_Vector Pface(FaceMap(true));
+  Pface.Import(Pface_own, *face_importer_, Insert);
+
+  // Create face flux and face count vectors that include ghosts.
+  Epetra_Vector Fface(FaceMap(true)); // fills with 0
+  Epetra_Vector count(FaceMap(true)); // fills with 0
+  Epetra_Vector error(FaceMap(true)); // fills with 0
+
+  // Process-local assembly of the face mass fluxes.
+  for (int j = 0; j < Pcell_own.MyLength(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
+    // Gather the local face pressures int AUX1.
+    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
+    // Compute the local value of the diffusion operator.
+    double K = (rho_ * k_[j] / mu_);
+    MD[j].diff_op(K, Pcell_own[j], aux1, dummy, aux2);
+    // Gravity contribution
+    MD[j].GravityFlux(g_, gflux);
+    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
+    mesh_->cell_to_face_dirs((unsigned int) j, fdirs, fdirs+6);
+    // Scatter the local face result into FFACE.
+    for (int k = 0; k < 6; ++k) {
+      Fface[cface[k]] += fdirs[k] * aux2[k];
+      count[cface[k]] += 1.0;
+      error[cface[k]] += aux2[k]; // sums to the flux discrepancy
+    }
+  }
+  
+  // Global assembly of face mass fluxes into the return vector.
+  F.Export(Fface, *face_importer_, Add);
+  
+  // Create an owned face count vector that overlays the count vector with ghosts.
+  double *count_data;
+  count.ExtractView(&count_data);
+  Epetra_Vector count_own(View, FaceMap(false), count_data);
+  
+  // Final global assembly of the face count vector.
+  count_own.Export(count, *face_importer_, Add);
+  
+  // Correct the double counting of fluxes on interior faces and convert
+  // mass flux to Darcy flux by dividing by the constant fluid density.
+  for (int j = 0; j < F.MyLength(); ++j)
+    F[j] = F[j] / (rho_ * count[j]);
+  
+  // Create an owned face error vector that overlays the error vector with ghosts.
+  double *error_data;
+  count.ExtractView(&error_data);
+  Epetra_Vector error_own(View, FaceMap(false), error_data);
+  
+  // Final global assembly of the face count vector.
+  error_own.Export(error, *face_importer_, Add);
+  
+  // Set the flux discrepancy error to 0 on boundary faces where there was only one flux computed
+  for (int j = 0; j < F.MyLength(); ++j)
+    if (count[j] == 1.0) error[j] = 0.0;
+
+  // Compute the norm of the flux discrepancy.
+  error.Norm1(&l1_error);
+    
+  delete &Pcell_own, &Pface_own;
 }
