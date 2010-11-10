@@ -3,12 +3,12 @@
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Mesh_maps_base.hh"
-//#include "cell_geometry.hpp"
+#include "cell_geometry.hpp"
 extern "C" {
 #include "gmvwrite.h"
 }
 
-//using namespace cell_geometry;
+using namespace cell_geometry;
 
 
 State::State( int number_of_components_,
