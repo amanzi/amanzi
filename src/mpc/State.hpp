@@ -20,23 +20,20 @@ public:
   State( Teuchos::ParameterList &parameter_list, 
 	 Teuchos::RCP<Mesh_maps_base> );
 
-  ~State() {};
+  ~State();
 
   // access methods
 
-  Teuchos::RCP<const Epetra_Vector> get_pressure () const { return pressure; }; 
-
-  Teuchos::RCP<const Epetra_Vector> get_darcy_flux () const { return darcy_flux; };
+  Teuchos::RCP<Epetra_Vector>       get_pressure ()         { return pressure; }; 
   Teuchos::RCP<Epetra_Vector>       get_darcy_flux ()       { return darcy_flux; };
-
-  Teuchos::RCP<const Epetra_Vector> get_porosity () const { return porosity; };
-  Teuchos::RCP<Epetra_Vector>       get_porosity ()       { return porosity; };
-
-  Teuchos::RCP<const Epetra_Vector> get_water_saturation () const { return water_saturation; };
-  Teuchos::RCP<Epetra_Vector>       get_water_saturation ()       { return water_saturation; };
-
-  Teuchos::RCP<const Epetra_Vector> get_water_density () const { return water_density; };
-  Teuchos::RCP<Epetra_Vector>       get_water_density ()       { return water_density; };
+  Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
+  Teuchos::RCP<Epetra_Vector>       get_water_saturation () { return water_saturation; };
+  Teuchos::RCP<Epetra_Vector>       get_water_density ()    { return water_density; };
+  Teuchos::RCP<Epetra_Vector>       get_permeability ()     { return permeability; };
+  
+  Teuchos::RCP<double>              get_density()      { return density; } 
+  Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
+  Teuchos::RCP<double*>             get_gravity()      { return gravity; }
 
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration () 
   { return total_component_concentration; };
@@ -82,8 +79,9 @@ private:
   Teuchos::RCP<Epetra_Vector> water_saturation;
   Teuchos::RCP<Epetra_Vector> permeability;
   
-  double gravity[3];
-  double density, viscosity;
+  Teuchos::RCP<double*> gravity;
+  Teuchos::RCP<double> density;
+  Teuchos::RCP<double> viscosity;
   
   int number_of_components;
 

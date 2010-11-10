@@ -10,10 +10,7 @@ class Flow_State {
 
 public:
     
-  Flow_State(Teuchos::RCP<State> S):
-    mesh_maps_(S->get_mesh_maps())
-    // INITIALIZE THE OTHER DATA COMPONENTS
-  { };
+  Flow_State(Teuchos::RCP<State> S);
 
   ~Flow_State () {};
 
@@ -32,12 +29,15 @@ private:
     
   // object doesn't own anything -- all smart pointers to the real thing.
     
-  const Teuchos::RCP<const double> fluid_density_;
-  const Teuchos::RCP<const double> fluid_viscosity_;
-  const Teuchos::RCP<const double[3]> gravity_;
-  const Teuchos::RCP<const std::vector<double> > permeability_;
+  const Teuchos::RCP<double> fluid_density_;
+  const Teuchos::RCP<double> fluid_viscosity_;
+  const Teuchos::RCP<double*> gravity_;
+  const Teuchos::RCP<std::vector<double> > permeability_;
   //const Teuchos::RCP<const std::vector<Epetra_SerialSymDenseMatrix>> permeability_;
   const Teuchos::RCP<Mesh_maps_base> mesh_maps_;
+  const Teuchos::RCP<Epetra_Vector> pressure_;
+  const Teuchos::RCP<Epetra_Vector> permeability_Epetra_;
+  
 };
 
 

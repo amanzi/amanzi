@@ -7,7 +7,7 @@ include_directories(${PROJECT_SOURCE_DIR}/flow)
 include_directories(${PROJECT_SOURCE_DIR}/gmv)
 include_directories(${Trilinos_INCLUDE_DIRS})
 
-add_library(flow Flow_PK.cpp cell_geometry.cpp MimeticHexLocal.cpp MimeticHex.cpp DiffusionMatrix.cpp DiffusionPrecon.cpp DarcyProblem.cpp DarcyMatvec.cpp FlowBC.cpp)
+add_library(flow Flow_PK.cpp cell_geometry.cpp MimeticHexLocal.cpp MimeticHex.cpp DiffusionMatrix.cpp DiffusionPrecon.cpp DarcyProblem.cpp DarcyMatvec.cpp FlowBC.cpp Flow_State.cpp)
 #add_library(flow upper_packed_matrix.cpp mimetic_hex.cpp Flow_PK.cpp Darcy_problem.cpp Flow_BCs.cpp cell_geometry.cpp DiffusionMatrix.cpp DiffusionPrecon.cpp DarcyProblem.cpp DarcyMatvec.cpp FlowBC.cpp)
 target_link_libraries(flow stk_mesh ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})

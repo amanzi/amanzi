@@ -3,12 +3,12 @@
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Mesh_maps_base.hh"
-#include "cell_geometry.hpp"
+//#include "cell_geometry.hpp"
 extern "C" {
 #include "gmvwrite.h"
 }
 
-using namespace cell_geometry;
+//using namespace cell_geometry;
 
 
 State::State( int number_of_components_,
@@ -40,18 +40,33 @@ State::State( Teuchos::ParameterList &parameter_list_,
   
 };
 
+
+State::~State()
+{
+  delete [] (*gravity);
+}
+
+
 void State::read_values()
 {
   // initialize the arrays with some constants from the input file
   set_porosity(parameter_list.get<double>("Constant porosity"));
   set_water_density(parameter_list.get<double>("Constant water density"));
   set_water_saturation(parameter_list.get<double>("Constant water saturation"));
+  set_permeability(parameter_list.get<double>("Constant permeability"));
   
   double u[3];
   u[0] = parameter_list.get<double>("Constant Darcy flux x");
   u[1] = parameter_list.get<double>("Constant Darcy flux y");
   u[2] = parameter_list.get<double>("Constant Darcy flux z");
   set_darcy_flux(u);
+  
+  u[0] = parameter_list.get<double>("Gravity x");		   
+  u[1] = parameter_list.get<double>("Gravity y");		   
+  u[2] = parameter_list.get<double>("Gravity z");		   
+  set_gravity(u);
+
+  set_viscosity(parameter_list.get<double>("Constant viscosity"));
 
   set_zero_total_component_concentration();
 }
@@ -66,9 +81,14 @@ void State::create_storage ()
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
+  permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
   total_component_concentration 
     = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );  
 
+  density =   Teuchos::rcp(new double);
+  viscosity = Teuchos::rcp(new double);
+  gravity =   Teuchos::rcp(new double*);
+  *gravity = new double[3];
 }
 
 
@@ -126,7 +146,7 @@ void State::set_water_density( double wd )
      (*water_density)[c] = wd;  /* default is 1000.0 */
   }
 
-  density = wd;
+  *density = wd;
 }
 
 
@@ -175,15 +195,15 @@ void State::set_permeability( double kappa )
 
 void State::set_viscosity(double mu)
 {
-  viscosity = mu;
+  *viscosity = mu;
 }
 
 
 void State::set_gravity(double *g)
 {
-  gravity[0] = g[0];
-  gravity[1] = g[1];
-  gravity[2] = g[2];
+  (*gravity)[0] = g[0];
+  (*gravity)[1] = g[1];
+  (*gravity)[2] = g[2];
 }
 
 
