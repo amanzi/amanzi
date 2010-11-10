@@ -72,14 +72,6 @@ void MPC::cycle_driver () {
   
   // so far we only have transport working
 
-  // use the analytic initialization functions in Transport_State
-  double u[3] = {-1, -0.5, -0.01};
- 
-  TS->analytic_porosity();
-  TS->analytic_darcy_flux( u );
-  TS->analytic_water_saturation();
-  TS->analytic_water_density();
-
   // start at time T=T0;
   S->set_time(T0);
 
@@ -106,7 +98,8 @@ void MPC::cycle_driver () {
     double transport_dT = TPK->get_transport_dT();
     
     std::cout << "MPC: ";
-    std::cout << "Cycle = " << iter;
+    std::cout << "Cycle = " << iter; 
+    std::cout << ",  Time = "<< S->get_time();
     std::cout << ",  Transport dT = " << transport_dT << std::endl;
 
     if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
@@ -132,6 +125,7 @@ void MPC::cycle_driver () {
     iter++;
    
     if (  iter % gmv_cycle_freq   == 0 ) {
+      cout << "Writing GMV file..." << endl;
       write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
     }
     
