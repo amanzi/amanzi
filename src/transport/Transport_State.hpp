@@ -5,7 +5,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "simple_mesh/Mesh_maps_base.hh"
+#include "Mesh_maps_base.hh"
 
 
 /* 

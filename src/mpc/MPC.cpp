@@ -2,13 +2,13 @@
 #include "Teuchos_ParameterList.hpp"
 #include "MPC.hpp"
 #include "State.hpp"
-#include "../chemistry/includes/Chemistry_State.hpp"
-#include "../chemistry/includes/Chemistry_PK.hpp"
-#include "../flow/Flow_State.hpp"
-#include "../flow/Flow_PK.hpp"
-#include "../transport/Transport_State.hpp"
-#include "../transport/Transport_PK.hpp"
-#include "../utils/gmv_mesh.hh"
+#include "Chemistry_State.hpp"
+#include "Chemistry_PK.hpp"
+#include "Flow_State.hpp"
+#include "Flow_PK.hpp"
+#include "Transport_State.hpp"
+#include "Transport_PK.hpp"
+#include "gmv_mesh.hh"
 
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,

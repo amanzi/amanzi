@@ -4,9 +4,9 @@
 #include "UnitTest++.h"
 #include <vector>
 
-#include "moab_mesh/Mesh_maps_moab.hh"
-#include "mpc/State.hpp"
-#include "transport/Transport_PK.hpp"
+#include "Mesh_maps_moab.hh"
+#include "State.hpp"
+#include "Transport_PK.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
