@@ -6,8 +6,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
-#include "../simple_mesh/Mesh_maps_base.hh"
-
+#include "Mesh_maps_base.hh"
 
 typedef enum { COMPLETE, UPDATING } status_type;
 
@@ -54,16 +53,24 @@ public:
   void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
 
   // status methods
-  
   const status_type get_status () const { return status; };
   void set_status ( status_type new_status ) { status = new_status; }
+
+
+  // debug helpers
+  void set_darcy_flux( double* u );
+  void set_water_saturation( double ws );
+  void set_water_density( double wd );
+  void set_zero_total_component_concentration();
+  void set_porosity( double phi );
+
 
 
   void write_gmv ( std::string filename );
       
 private:
   void create_storage();
-  
+  void read_values();
 
   // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  
@@ -80,6 +87,9 @@ private:
 
   // mesh
   const Teuchos::RCP<Mesh_maps_base> mesh_maps;
+
+  // parameter list
+  const Teuchos::ParameterList parameter_list;
 }; 
 
 

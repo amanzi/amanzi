@@ -13,6 +13,6 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 if (BUILD_TESTS)
   add_executable(test_simple_mesh test/Main.cc test/test_maps.cpp test/test_cell_numbering.cc)
   add_test(simple_mesh test_simple_mesh)
-  target_link_libraries(test_simple_mesh simple_mesh mpc unittest++)
+  target_link_libraries(test_simple_mesh simple_mesh mpc flow unittest++)
 endif()
 
