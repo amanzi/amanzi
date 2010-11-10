@@ -67,6 +67,7 @@ endif()
 find_path(MPI_INCLUDES mpi.h 
           HINTS ${MPI_INCLUDE_DIR}
                 ${MPI_DIR}/include
+                /usr/include/mpi
                 /usr/include
                 /usr/local/include)
 if(NOT MPI_INCLUDES)
