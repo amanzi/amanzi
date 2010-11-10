@@ -61,7 +61,7 @@ namespace GMV {
 
     suffix[0] = '.';
 
-    if (cycleno >= pow(10,digits))  throw std::exception();
+    if (cycleno >= pow(10.0, static_cast<double>(digits)))  throw std::exception();
 
     // suffix[digits] = '0' + cycleno%10;
     
