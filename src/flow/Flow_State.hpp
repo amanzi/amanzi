@@ -2,7 +2,6 @@
 #define __Flow_State_hpp__
 
 #include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Mesh_maps_base.hh"
 #include "State.hpp"
@@ -10,34 +9,35 @@
 class Flow_State {
 
 public:
-  Flow_State (Teuchos::RCP<State> S):
-    total_component_concentration(S->get_total_component_concentration()),
-    porosity(S->get_porosity()),
-    water_density(S->get_water_density()),
-    water_saturation(S->get_water_saturation()),
-    mesh_maps(S->get_mesh_maps())
+    
+  Flow_State(Teuchos::RCP<State> S):
+    mesh_maps_(S->get_mesh_maps())
+    // INITIALIZE THE OTHER DATA COMPONENTS
   { };
 
   ~Flow_State () {};
 
   // access methods
-  Teuchos::RCP<const Epetra_MultiVector> get_total_component_concentration() 
-  { return total_component_concentration; }; 
+  const Teuchos::RCP<Mesh_maps_base>& mesh() const { return mesh_maps_;};
   
-  Teuchos::RCP<const Epetra_Vector> get_porosity () const { return porosity; };
-  Teuchos::RCP<const Epetra_Vector> get_water_saturation () const { return water_saturation; };
-  Teuchos::RCP<const Epetra_Vector> get_water_density () const { return water_density; };
-
-  const Teuchos::RCP<Mesh_maps_base> get_mesh_maps() const { return mesh_maps;};
+  double fluid_density () const { return *fluid_density_; }
+  
+  double fluid_viscosity () const { return *fluid_viscosity_; }
+  
+  const double* gravity() const { return *gravity_; }
+  
+  const std::vector<double>& permeability() const { return *permeability_; }
 
 private:
-  // variables that are relevant to chemistry
-  Teuchos::RCP<const Epetra_MultiVector> total_component_concentration;
-  Teuchos::RCP<const Epetra_Vector> porosity;
-  Teuchos::RCP<const Epetra_Vector> water_saturation;
-  Teuchos::RCP<const Epetra_Vector> water_density;
-  
-  const Teuchos::RCP<Mesh_maps_base> mesh_maps;
+    
+  // object doesn't own anything -- all smart pointers to the real thing.
+    
+  const Teuchos::RCP<const double> fluid_density_;
+  const Teuchos::RCP<const double> fluid_viscosity_;
+  const Teuchos::RCP<const double[3]> gravity_;
+  const Teuchos::RCP<const std::vector<double> > permeability_;
+  //const Teuchos::RCP<const std::vector<Epetra_SerialSymDenseMatrix>> permeability_;
+  const Teuchos::RCP<Mesh_maps_base> mesh_maps_;
 };
 
 
