@@ -14,6 +14,7 @@ if (BUILD_TESTS)
   add_executable(exodus_read_test test/exodus_read_test.cc)
 
   add_test(exodus test_exodus)
+  set_tests_properties(exodus PROPERTIES WILL_FAIL true)
   execute_process(COMMAND ${CMAKE_COMMAND} -E 
     copy_directory ${CMAKE_SOURCE_DIR}/exodus/test/test_files ${CMAKE_BINARY_DIR}/exodus/test_files) 
 
