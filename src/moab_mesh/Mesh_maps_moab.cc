@@ -50,9 +50,12 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     // ghosts (0 for vertex connected ghost cells) and C indicates
     // the number of layers of ghost cells we want
 
+    // In the specification for the Ghosts we made the assumption 
+    // that we are dealing with 3D meshes only
+
     result = 
       mbcore->load_file(filename,NULL,
-			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION",
+			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1",
 			NULL,NULL,NULL);
       
     rank = mbcomm->rank();
@@ -229,13 +232,6 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     init_pface_lists();
     init_pcell_lists();
 
-
-    for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
-      MBEntityHandle face = *it;
-      int fgid;
-      mbcore->tag_get_data(gid_tag,&face,1,&fgid);
-    }
-      
   }
   else {
     // Serial case - we assign global IDs ourselves
@@ -303,6 +299,8 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     assert(result == MB_SUCCESS);
   }
 
+  // Initialize some info about the global number of sets, global set
+  // IDs and set types
 
   init_set_info();
 

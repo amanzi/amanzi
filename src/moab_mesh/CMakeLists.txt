@@ -18,6 +18,6 @@ if (BUILD_TESTS)
 	test/test_hex_3x3x2.cc
 	test/test_hex_4x4x4.cc)
   add_test(moab_mesh test_moab_mesh )
-  target_link_libraries(test_moab_mesh moab_mesh unittest++)
+  target_link_libraries(test_moab_mesh moab_mesh unittest++ hdf5 hdf5_hl z curl)
 endif()
 

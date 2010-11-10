@@ -6,6 +6,9 @@ include_directories(${PROJECT_SOURCE_DIR}/dbc)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
+include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
+include_directories(${PROJECT_SOURCE_DIR}/flow)
+include_directories(${PROJECT_SOURCE_DIR}/transport)
 include_directories(${PROJECT_SOURCE_DIR}/mpc)
 include_directories(${PROJECT_SOURCE_DIR}/transport)
 
@@ -23,7 +26,7 @@ if (BUILD_TESTS)
   add_executable(test_transport test/Main.cc test/test_transport.cpp test/test_moab.cpp)
   #add_executable(test_transport test/Main.cc test/test_driver.cpp)
   add_test(transport test_transport)
-  target_link_libraries(test_transport mpc flow transport simple_mesh unittest++ ${Trilinos_LIBRARIES})
+  target_link_libraries(test_transport mpc flow transport simple_mesh unittest++ ${Trilinos_LIBRARIES} hdf5 hdf5_hl z curl)
 endif()
 
 

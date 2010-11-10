@@ -8,9 +8,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "simple_mesh/Mesh_maps_simple.hh"
-#include "mpc/State.hpp"
-#include "transport/Transport_PK.hpp"
+#include "Mesh_maps_simple.hh"
+#include "State.hpp"
+#include "Transport_PK.hpp"
 
 
 

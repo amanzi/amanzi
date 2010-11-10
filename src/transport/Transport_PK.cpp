@@ -1,9 +1,9 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
 
-#include "simple_mesh/Mesh_maps_base.hh"
+#include "Mesh_maps_base.hh"
 #include "Transport_PK.hpp"
-#include "flow/cell_geometry.hpp"
+#include "cell_geometry.hpp"
 
 using namespace std;
 using namespace Teuchos;

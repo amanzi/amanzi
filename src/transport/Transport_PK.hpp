@@ -5,10 +5,10 @@
 #include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "simple_mesh/Mesh_maps_simple.hh"
-#include "mpc/State.hpp"
-#include "transport/Transport_State.hpp"
-#include "transport/Transport_BCs.hpp"
+#include "Mesh_maps_simple.hh"
+#include "State.hpp"
+#include "Transport_State.hpp"
+#include "Transport_BCs.hpp"
 
 
 /* 

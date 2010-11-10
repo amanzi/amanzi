@@ -10,8 +10,8 @@
       <Parameter name="Z_Min" type="double" value="0.0"/>
       <Parameter name="Z_Max" type="double" value="1.0"/>
       <Parameter name="Numer of Cells in X" type="int" value="10"/> 
-      <Parameter name="Numer of Cells in Y" type="int" value="10"/> 
-      <Parameter name="Numer of Cells in Z" type="int" value="10"/> 
+      <Parameter name="Numer of Cells in Y" type="int" value="1"/> 
+      <Parameter name="Numer of Cells in Z" type="int" value="1"/> 
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
       <Parameter name="Exodus file name" type="string" value="test/moab_mesh.exo"/>
@@ -23,19 +23,19 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="1000.0"/>
+    <Parameter name="End Time" type="double" value="100.0"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
-      <Parameter name="Dump cycle frequency" type="int" value="20"/>
-    </ParameterList>    
+      <Parameter name="Dump cycle frequency" type="int" value="1"/>
+    </ParameterList>
   </ParameterList> 
 
   
   <ParameterList name="State">
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Constant porosity" type="double" value="0.2"/>
-    <Parameter name="Constant Darcy flux x" type="double" value="1.0"/>
+    <Parameter name="Constant Darcy flux x" type="double" value="-1.0"/>
     <Parameter name="Constant Darcy flux y" type="double" value="0"/>
     <Parameter name="Constant Darcy flux z" type="double" value="0"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
@@ -49,7 +49,7 @@
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC 0">
-	<Parameter name="Side set ID" type="int" value="3"/>
+	<Parameter name="Side set ID" type="int" value="1"/>
 	<Parameter name="Type" type="string" value="Constant"/>
 	<Parameter name="number of components" type="int" value="1"/>
 	<Parameter name="Component 0" type="double" value="1.0"/>
