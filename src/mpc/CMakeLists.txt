@@ -22,6 +22,6 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 if (BUILD_TESTS)
   add_executable(test_mpc test/Main.cc test/test_driver.cpp)
   add_test(mpc test_mpc)
-  target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow utils unittest++)
+  target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow utils unittest++ hdf5 hdf5_hl z curl)
 endif()
 
