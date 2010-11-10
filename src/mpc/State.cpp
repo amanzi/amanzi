@@ -125,6 +125,8 @@ void State::set_water_density( double wd )
   for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
      (*water_density)[c] = wd;  /* default is 1000.0 */
   }
+
+  density = wd;
 }
 
 
@@ -165,7 +167,24 @@ void State::set_zero_total_component_concentration()
 
 
 
+void State::set_permeability( double kappa )
+{
+  permeability->PutScalar(kappa);
+}
 
+
+void State::set_viscosity(double mu)
+{
+  viscosity = mu;
+}
+
+
+void State::set_gravity(double *g)
+{
+  gravity[0] = g[0];
+  gravity[1] = g[1];
+  gravity[2] = g[2];
+}
 
 
 void State::write_gmv ( std::string filename )

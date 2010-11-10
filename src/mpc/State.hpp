@@ -63,8 +63,9 @@ public:
   void set_water_density( double wd );
   void set_zero_total_component_concentration();
   void set_porosity( double phi );
-
-
+  void set_permeability (double kappa);
+  void set_viscosity(double mu);
+  void set_gravity(double *g);
 
   void write_gmv ( std::string filename );
       
@@ -79,6 +80,10 @@ private:
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration; 
   Teuchos::RCP<Epetra_Vector> water_saturation;
+  Teuchos::RCP<Epetra_Vector> permeability;
+  
+  double gravity[3];
+  double density, viscosity;
   
   int number_of_components;
 
