@@ -238,7 +238,7 @@ add_library(moab STATIC IMPORTED)
 set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
 
 # create a list of all the libraries required for MOAB to link.
-set(MOAB_LIBS_ALL moab netcdf netcdf_c++ hdf5)
+set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5)
 
 
 
