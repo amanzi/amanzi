@@ -29,10 +29,11 @@ Flow_PK::Flow_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_Sta
 
 Flow_PK::~Flow_PK()
 { 
+  delete problem;
   delete solver;
   delete darcy_flux;
-  delete pressure;
-  delete problem;
+  //delete pressure; // do not delete this, it's just a view
+  delete solution; // delete this instead
 };
 
 
