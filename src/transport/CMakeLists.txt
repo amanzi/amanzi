@@ -23,10 +23,12 @@ target_link_libraries(transport simple_mesh moab_mesh mesh_data dbc mpc flow che
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
-  add_executable(test_transport test/Main.cc test/test_transport.cpp test/test_moab.cpp)
-  #add_executable(test_transport test/Main.cc test/test_driver.cpp)
-  add_test(transport test_transport)
-  target_link_libraries(test_transport mpc flow transport simple_mesh unittest++ ${Trilinos_LIBRARIES} hdf5 hdf5_hl z curl)
+  set(AMANZI_LIBRARIES  simple_mesh moab_mesh mpc flow transport)
+  add_executable(test_serial   test/Main.cc test/test_transport.cpp test/test_moab.cpp)
+  add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
+  add_test(transport test_serial test_parallel)
+  target_link_libraries(test_serial   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} hdf5 hdf5_hl z curl)
+  target_link_libraries(test_parallel ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} hdf5 hdf5_hl z curl)
 endif()
 
 

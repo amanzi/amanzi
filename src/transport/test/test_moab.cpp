@@ -26,16 +26,16 @@ TEST(ADVANCE_WITH_MOAB) {
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state */
-  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+  RCP<Transport_State>  TS = rcp( new Transport_State( mpc_state ) );
 
   /* read the trasport parameter list */
   string xmlInFileName = "test/test_moab.xml";
 
   ParameterList parameter_list;
-  updateParametersFromXmlFile(xmlInFileName, &parameter_list);
+  updateParametersFromXmlFile( xmlInFileName, &parameter_list );
 
   /* initialize a transport process kernel from a transport state */
-  Transport_PK  TPK(parameter_list, TS);
+  Transport_PK  TPK( parameter_list, TS );
 
   /* create analytic Darcy flux */
   double u[3] = {1, 0, 0};
@@ -46,15 +46,16 @@ TEST(ADVANCE_WITH_MOAB) {
   TS->analytic_water_density();
 
   /* advance the state */
-  TPK.advance();
+  double  dT = TPK.calculate_transport_dT();
+  TPK.advance( dT );
 
   /* printing cell concentration */
   int  i, k;
-  double  dT, T;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  double  T;
+  RCP<Transport_State>  TS_next = TPK.get_transport_state_next();
 
-  RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
-  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+  RCP<Epetra_MultiVector>  tcc      = TS->get_total_component_concentration();
+  RCP<Epetra_MultiVector>  tcc_next = TS_next->get_total_component_concentration();
 
   T = 0.0;
   cout << "Original state: T=" << T << endl;
@@ -75,9 +76,8 @@ TEST(ADVANCE_WITH_MOAB) {
   for( int i=0; i<20; i++ ) {
      *tcc = *tcc_next;
 
-     TPK.advance();
-
      dT = TPK.get_transport_dT();
+     TPK.advance( dT );
      T += dT;
 
      printf("T=%6.1f  C_0(x):", T);

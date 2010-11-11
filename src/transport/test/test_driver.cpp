@@ -41,28 +41,27 @@ TEST(DRIVER) {
 
   string  mesh_class = mesh_list.get<string>( "Mesh Class" );
 
+  RCP<Mesh_maps_base>  mesh;
+
   if ( mesh_class == "Simple" ) {
-cout << "Simple mesh" << endl;
-     RCP<Mesh_maps_simple>  MMS;
      ParameterList  simple_mesh_list = mesh_list.sublist( "Simple Mesh Parameters" );
 
-     MMS = rcp( new Mesh_maps_simple( simple_mesh_list, comm ) );
+     RCP<Mesh_maps_simple> MMS = rcp( new Mesh_maps_simple( simple_mesh_list, comm ) );
 
-     MPC  mpc( driver_list, MMS );
-     mpc.cycle_driver();
+     mesh = MMS;
   } 
   else if ( mesh_class == "MOAB" ) {
-cout << "MOAB mesh" << endl;
-     RCP<Mesh_maps_moab>  MMB;
      ParameterList  moab_mesh_list = mesh_list.sublist( "MOAB Mesh Parameters" );
 
      string  file_name = moab_mesh_list.get<string>( "Mesh file name" );
 
-     MMB = rcp( new Mesh_maps_moab( file_name.c_str(), MPI_COMM_WORLD ) );
+     RCP<Mesh_maps_moab>  MMM = rcp( new Mesh_maps_moab( file_name.c_str(), MPI_COMM_WORLD ) );
 
-     MPC  mpc( driver_list, MMB );
-     mpc.cycle_driver();
+     mesh = MMM;
   }
+
+  MPC  mpc( driver_list, mesh );
+  mpc.cycle_driver();
 
   delete comm;
 }

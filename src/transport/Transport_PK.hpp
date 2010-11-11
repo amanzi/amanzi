@@ -30,6 +30,8 @@ namespace Amanzi_Transport{
 
   const double TRANSPORT_LARGE_TIME_STEP = 1e+99;
   const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
+
+  const int TRANSPORT_INTERNAL_DEBUG = 1;
 }
 
 
@@ -52,7 +54,7 @@ public:
 
   /* primary members */
   double calculate_transport_dT();
-  void advance();
+  void advance( double dT );
   void commit_state( RCP<Transport_State> TS );
 
   void process_parameter_list();
@@ -84,7 +86,7 @@ private:
   RCP<Transport_State>  TS;
   RCP<Transport_State>  TS_next;
   
-  /* darcy_flux */
+  /* darcy_flux: it will disappear after merging with flow PK */
   vector<double>  darcy_flux;
 
   /* parameter list with Transport specific parameters */
@@ -94,6 +96,7 @@ private:
   vector<double>  face_area;
   vector<double>  cell_volume;
 
+  /* internal data */
   vector<double>  upwind_cell;
   vector<double>  downwind_cell;
 
@@ -111,8 +114,11 @@ private:
   vector<double>  outflux;
 
   /* frequently used data */
-  int  cmin, cmax, number_cells;
-  int  fmin, fmax, number_faces;
+  int  cmin, cmax_owned, cmax, number_owned_cells;
+  int  fmin, fmax_owned, fmax, number_owned_faces;
+
+  /* parallel information */
+  int MyPID;
 };
 
 #endif

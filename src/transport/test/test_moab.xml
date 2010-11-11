@@ -12,10 +12,10 @@
       <Parameter name="Component 1" type="double" value="1.0"/>
     </ParameterList>  
     <ParameterList name="BC 1">
-      <Parameter name="Side set ID" type="int" value="102"/>
+      <Parameter name="Side set ID" type="int" value="103"/>
       <Parameter name="Type" type="string" value="Constant"/>
       <Parameter name="number of components" type="int" value="2"/>
-      <Parameter name="Component 2" type="double" value="1.0"/>
+      <Parameter name="Component 0" type="double" value="1.0"/>
       <Parameter name="Component 1" type="double" value="1.0"/>
     </ParameterList>  
   </ParameterList>

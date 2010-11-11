@@ -57,7 +57,6 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    
    FPK = Teuchos::rcp( new Flow_PK(flow_parameter_list, FS) );
    // done creating the individual process models
-
 }
 
 
@@ -93,14 +92,18 @@ void MPC::cycle_driver () {
   write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);
   
   while (S->get_time() <= T1) {
+    double mpc_dT, chemistry_dT, transport_dT;
 
-    TPK->advance();
-    double transport_dT = TPK->get_transport_dT();
+    transport_dT = TPK->calculate_transport_dT();
+    chemistry_dT = 1e+99;
+    mpc_dT = min( transport_dT, chemistry_dT );
     
     std::cout << "MPC: ";
     std::cout << "Cycle = " << iter; 
     std::cout << ",  Time = "<< S->get_time();
     std::cout << ",  Transport dT = " << transport_dT << std::endl;
+
+    TPK->advance( mpc_dT );
 
     if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
       {
@@ -119,7 +122,7 @@ void MPC::cycle_driver () {
       }
 
     // update the state
-    S->advance_time(transport_dT);
+    S->advance_time(mpc_dT);
     
     // advance the 
     iter++;

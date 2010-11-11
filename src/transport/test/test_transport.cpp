@@ -203,10 +203,10 @@ TEST(ADVANCE_WITH_SIMPLE) {
   string xmlInFileName = "test/test_transport.xml";
 
   ParameterList parameter_list;
-  updateParametersFromXmlFile(xmlInFileName, &parameter_list);
+  updateParametersFromXmlFile( xmlInFileName, &parameter_list );
 
   /* initialize a transport process kernel from a transport state */
-  Transport_PK  TPK(parameter_list, TS);
+  Transport_PK  TPK( parameter_list, TS );
 
   /* create analytic Darcy flux */
   double u[3] = {1, 0, 0};
@@ -218,11 +218,12 @@ TEST(ADVANCE_WITH_SIMPLE) {
   TS->analytic_water_density();
 
   /* advance the state */
-  TPK.advance();
+  double  dT = TPK.calculate_transport_dT();
+  TPK.advance( dT );
 
   /* printing cell concentration */
   int  i, k;
-  double  dT, T;
+  double  T;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
 
   RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
@@ -243,13 +244,12 @@ TEST(ADVANCE_WITH_SIMPLE) {
      cout << endl;
   }
  
-  cout << "Dynamics of component 0 (3D simulaiton of 1D transport)" << endl;
+  cout << "Dynamics of component 0 (3D simulation of 1D transport)" << endl;
   for( int i=0; i<20; i++ ) {
      *tcc = *tcc_next;
 
-     TPK.advance();
-
      dT = TPK.get_transport_dT();
+     TPK.advance( dT );
      T += dT;
 
      printf("T=%6.1f  C_0(x):", T);
