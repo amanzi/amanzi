@@ -62,8 +62,8 @@ public:
   DiffusionMatrix& Matrix() const { return *D_; }
 
   void DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l1_error) const;
-  
-  void DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_Vector &Qx, Epetra_Vector &Qy, Epetra_Vector &Qz) const;
+
+  void DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const;
 
 private:
 

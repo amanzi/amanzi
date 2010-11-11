@@ -218,9 +218,9 @@ void DarcyProblem::face_centroid_(int face, double xc[])
   double x[4][3];
   double *xBegin = &x[0][0];  // begin iterator
   double *xEnd = xBegin+12;   // end iterator
- 
+
   mesh_->face_to_coordinates((unsigned int) face, xBegin, xEnd);
-  
+
   for (int k = 0; k < 3; ++k) {
     double s = 0.0;
     for (int i = 0; i < 4; ++i)
@@ -293,12 +293,12 @@ Epetra_Vector* DarcyProblem::CreateFaceView(const Epetra_Vector &X) const
 }
 
 
-void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X,
-    Epetra_Vector &Qx, Epetra_Vector &Qy, Epetra_Vector &Qz) const
+void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const
 {
   // should verify X.Map() is Map()
-  // should verify Qx.Map() is CellMap(false), and so for Qy, Qz
-  
+  // should verify Q.Map() is CellMap(false)
+  // should verify Q.NumVectors() is 3
+
   // Create views into the cell and face segments of X and F
   Epetra_Vector &Pcell = *CreateCellView(X);
   Epetra_Vector &Pface_own = *CreateFaceView(X);
@@ -313,7 +313,7 @@ void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X,
   double aux1[6], aux2[6], aux3[3], gflux[6], dummy;
 
   for (int j = 0; j < CellMap(false).NumMyElements(); ++j) {
-    
+
   }
   for (int j = 0; j < Pcell.MyLength(); ++j) {
     mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
@@ -322,9 +322,9 @@ void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X,
     MD[j].GravityFlux(g_, gflux);
     for (int k = 0; k < 6; ++k) aux2[k] = (k_[j]/mu_) * gflux[k] - aux2[k];
     MD[j].CellFluxVector(aux2, aux3);
-    Qx[j] = aux3[0];
-    Qy[j] = aux3[1];
-    Qz[j] = aux3[2];
+    Q[0][j] = aux3[0];
+    Q[1][j] = aux3[1];
+    Q[2][j] = aux3[2];
   }
 
   delete &Pcell, &Pface_own;
@@ -335,13 +335,13 @@ void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, dou
 {
   /// should verify P.Map() is Map()
   /// should verify F.Map() is FaceMap()
-  
+
   int cface[6], fdirs[6];
   double aux1[6], aux2[6], gflux[6], dummy;
-  
+
   // Create a view into the cell pressure segment of P.
   Epetra_Vector &Pcell_own = *CreateCellView(P);
-  
+
   // Create a copy of the face pressure segment of P that includes ghosts.
   Epetra_Vector &Pface_own = *CreateFaceView(P);
   Epetra_Vector Pface(FaceMap(true));
@@ -372,37 +372,37 @@ void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, dou
       error[cface[k]] += aux2[k]; // sums to the flux discrepancy
     }
   }
-  
+
   // Global assembly of face mass fluxes into the return vector.
   F.Export(Fface, *face_importer_, Add);
-  
+
   // Create an owned face count vector that overlays the count vector with ghosts.
   double *count_data;
   count.ExtractView(&count_data);
   Epetra_Vector count_own(View, FaceMap(false), count_data);
-  
+
   // Final global assembly of the face count vector.
   count_own.Export(count, *face_importer_, Add);
-  
+
   // Correct the double counting of fluxes on interior faces and convert
   // mass flux to Darcy flux by dividing by the constant fluid density.
   for (int j = 0; j < F.MyLength(); ++j)
     F[j] = F[j] / (rho_ * count[j]);
-  
+
   // Create an owned face error vector that overlays the error vector with ghosts.
   double *error_data;
-  count.ExtractView(&error_data);
+  error.ExtractView(&error_data);
   Epetra_Vector error_own(View, FaceMap(false), error_data);
-  
+
   // Final global assembly of the face count vector.
   error_own.Export(error, *face_importer_, Add);
-  
+
   // Set the flux discrepancy error to 0 on boundary faces where there was only one flux computed
   for (int j = 0; j < F.MyLength(); ++j)
     if (count[j] == 1.0) error[j] = 0.0;
 
   // Compute the norm of the flux discrepancy.
   error.Norm1(&l1_error);
-    
+
   delete &Pcell_own, &Pface_own;
 }

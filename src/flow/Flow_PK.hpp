@@ -19,18 +19,18 @@ public:
 
   int advance();
   void commit_state(Teuchos::RCP<Flow_State>) {}
-  
+
   // After a successful advance() the following routines may be called.
-  
+
   // Returns a reference to the cell pressure vector.
   const Epetra_Vector& Pressure() const { return *pressure; }
-  
+
   // Returns a reference to the Darcy face flux vector.
   const Epetra_Vector& DarcyFlux() const { return *darcy_flux; }
-  
-  // Computes the components of the Darcy velocity on cells in separate vectors.
-  void GetDarcyVelocity (Epetra_Vector &qx, Epetra_Vector &qy, Epetra_Vector &qz) const
-      { problem->DeriveDarcyVelocity(*solution, qx, qy, qz); }
+
+  // Computes the components of the Darcy velocity on cells.
+  void GetDarcyVelocity (Epetra_MultiVector &q) const
+      { problem->DeriveDarcyVelocity(*solution, q); }
 
 private:
 
@@ -39,7 +39,7 @@ private:
 
   DarcyProblem *problem;
   AztecOO *solver;
-  
+
   Epetra_Vector *solution;   // full cell/face solution
   Epetra_Vector *pressure;   // cell pressures
   Epetra_Vector *darcy_flux; // Darcy face fluxes

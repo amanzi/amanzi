@@ -62,8 +62,8 @@ FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh_maps_base> 
     else {
       throw std::exception();
     }
-    
-    // Temp storage needed for Dirichlet-type conditions    
+
+    // Temp storage needed for Dirichlet-type conditions.
     if (need_aux) bc_[i].Aux.resize(bc_[i].Faces.size());
 
     // Get the BC data value if required.

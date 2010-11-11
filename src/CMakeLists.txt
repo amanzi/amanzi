@@ -279,6 +279,7 @@ else()
   
   find_path(UNITTEST_INCLUDES "UnitTest++.h" 
             HINTS ${UnitTest_INCLUDE_DIR}
+                  ${UnitTest_DIR}/include
                   ${UnitTest_DIR}/src 
                   ${UnitTest_DIR}/include/unittest++
 		  )

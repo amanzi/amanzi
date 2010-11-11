@@ -23,7 +23,7 @@ void MimeticHexLocal::update(const double x[][3])
   double sum_cvol = 0.0;
   for (int i = 0; i < 8; ++i) sum_cvol += cwgt[i];
   for (int i = 0; i < 8; ++i) cwgt[i] = cwgt[i] / sum_cvol;
-  
+
   //compute_hex_face_normals();
   face_normal.Shape(3,6);
   cell_geometry::compute_hex_face_normals(X, face_normal);
@@ -35,7 +35,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
   Epetra_SerialDenseMatrix Nc(3,3); // face normals at a corner
   Epetra_SerialDenseMatrix Mc(3,3); // corner mass matrix
   Epetra_SerialSymDenseMatrix Mc_sym_view(View, Mc.A(), Mc.LDA(), Mc.M());  // symmetric view of Mc
-  
+
   // Set the mass matrix to zero.
   for (int j = 0; j < 6; j++)
     for (int i = 0; i < 6; ++i)
@@ -45,11 +45,11 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
   for (int c = 0; c < 8; ++c) {
 
     // Gather the three face normals adjacent to the corner.
-    for (int j = 0; j < 3; ++j) 
-      for (int k = 0; k < 3; ++k) 
+    for (int j = 0; j < 3; ++j)
+      for (int k = 0; k < 3; ++k)
 	//Nc(k,j) = face_normal[CellTopology::HexCornerFace[c][j]][k];
 	Nc(k,j) = face_normal[HexCornerFace[c][j]][k];
-    
+
     // Mc <-- Nc^T Nc
     Mc.Multiply('T', 'N', 1.0, Nc, Nc, 0.0);
 
@@ -57,7 +57,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
     Epetra_SerialSpdDenseSolver solver;
     solver.SetMatrix(Mc_sym_view);
     solver.Invert(); // gives full inverse in Mc, not just in triangle
-    
+
     // Scatter the corner mass matrix into the full cell mass matrix.
     double s = hvol * cwgt[c] / K;
     for (int j = 0; j < 3; ++j) {   // loop over corner face cols
@@ -70,7 +70,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
       }
     }
   }
-  
+
   if (invert) {
     // Create a "symmetric" view of the matrix (which is symmetric).
     Epetra_SerialSymDenseMatrix sym_view(View, matrix.A(), matrix.LDA(), matrix.M());
@@ -89,7 +89,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
   Epetra_SerialDenseMatrix Mc(3,3); // corner mass matrix
   Epetra_SerialDenseMatrix Tc(3,3); // temporary corner matrix
   Epetra_SerialSymDenseMatrix Mc_sym_view(View, Mc.A(), Mc.LDA(), Mc.M());  // symmetric view of Mc
-  
+
   // Set the mass matrix to zero.
   for (int j = 0; j < 6; j++)
     for (int i = 0; i < 6; ++i)
@@ -99,11 +99,11 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
   for (int c = 0; c < 8; ++c) {
 
     // Gather the three face normals adjacent to the corner.
-    for (int j = 0; j < 3; ++j) 
-      for (int k = 0; k < 3; ++k) 
+    for (int j = 0; j < 3; ++j)
+      for (int k = 0; k < 3; ++k)
 	//Nc(k,j) = face_normal[CellTopology::HexCornerFace[c][j]][k];
 	Nc(k,j) = face_normal[HexCornerFace[c][j]][k];
-    
+
     // Mc <-- Nc^T K Nc
     Tc.Multiply('L', 1.0, K, Nc, 0.0);
     Mc.Multiply('T', 'N', 1.0, Nc, Tc, 0.0);
@@ -112,7 +112,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
     Epetra_SerialSpdDenseSolver solver;
     solver.SetMatrix(Mc_sym_view);
     solver.Invert(); // gives full inverse in Mc, not just in triangle
-    
+
     // Scatter the corner mass matrix into the full cell mass matrix.
     double s = hvol * cwgt[c];
     for (int j = 0; j < 3; ++j) {   // loop over corner face cols
@@ -125,7 +125,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
       }
     }
   }
-  
+
   if (invert) {
     // Create a "symmetric" view of the matrix (which is symmetric).
     Epetra_SerialSymDenseMatrix sym_view(View, matrix.A(), matrix.LDA(), matrix.M());
@@ -144,22 +144,22 @@ void MimeticHexLocal::diff_op(double coef,
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
-  
+
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
-    
-  for (int i = 0; i < 6; ++i) 
+
+  for (int i = 0; i < 6; ++i)
     aux1(i) = pface[i] - pcell;
-  
+
   Epetra_SerialDenseVector aux2(View, rface, 6);
-    
+
   Minv.Multiply(false, aux1, aux2);
-  
+
   rcell = 0.0;
   for (int i = 0; i < 6; ++i)
     rcell -= rface[i];
 }
-  
+
 
 void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
     const double &pcell, const double pface[],
@@ -167,22 +167,22 @@ void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
 {
   Epetra_SerialDenseVector aux1(6);
   Epetra_SerialDenseMatrix Minv(6,6);
-  
+
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
-    
-  for (int i = 0; i < 6; ++i) 
+
+  for (int i = 0; i < 6; ++i)
     aux1(i) = pface[i] - pcell;
-  
+
   Epetra_SerialDenseVector aux2(View, rface, 6);
-    
+
   Minv.Multiply(false, aux1, aux2);
-  
+
   rcell = 0.0;
   for (int i = 0; i < 6; ++i)
     rcell -= rface[i];
 }
-  
+
 
 void MimeticHexLocal::diff_op(double coef,
     const double &pcell, const Epetra_SerialDenseVector &pface,
@@ -190,20 +190,20 @@ void MimeticHexLocal::diff_op(double coef,
 {
   Epetra_SerialDenseVector aux(6);
   Epetra_SerialDenseMatrix Minv(6,6);
-  
+
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
-  
-  for (int i = 0; i < 6; ++i) 
+
+  for (int i = 0; i < 6; ++i)
     aux(i) = pface[i] - pcell;
-    
+
   Minv.Multiply(false, aux, rface);
-  
+
   rcell = 0.0;
   for (int i = 0; i < 6; ++i)
     rcell -= rface(i);
 }
-  
+
 
 void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
     const double &pcell, const Epetra_SerialDenseVector &pface,
@@ -211,15 +211,15 @@ void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
 {
   Epetra_SerialDenseVector aux(6);
   Epetra_SerialDenseMatrix Minv(6,6);
-  
+
   // Inverse of the mass matrix.
   mass_matrix(Minv, coef, true);
-  
-  for (int i = 0; i < 6; ++i) 
+
+  for (int i = 0; i < 6; ++i)
     aux(i) = pface[i] - pcell;
-    
+
   Minv.Multiply(false, aux, rface);
-  
+
   rcell = 0.0;
   for (int i = 0; i < 6; ++i)
     rcell -= rface(i);
@@ -254,8 +254,8 @@ void MimeticHexLocal::CellFluxVector(double Fface[], double Fcell[]) const
   a.Shape(3);
   b.Size(3);
   for (int k = 0; k < 6; ++k) {
-    //double w = 1.0 / cell_geometry::vector_length(face_normal[k],3);
-    double w = 1.0;
+    double w = 1.0 / cell_geometry::vector_length(face_normal[k],3);
+    //double w = 1.0;
     for (int j = 0; j < 3; ++j) {
       for (int i = 0; i < 3; ++i)
         a(i,j) += w * face_normal(i,k) * face_normal(j,k);
