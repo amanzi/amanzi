@@ -20,7 +20,7 @@ if (BUILD_TESTS)
   add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp)
 #  add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test_mimetic.cpp)
   add_test(flow test_flow)
-  target_link_libraries(test_flow flow simple_mesh stk_mesh utils unittest++ ${Trilinos_LIBRARIES})
+  target_link_libraries(test_flow flow simple_mesh stk_mesh utils unittest++ ${Trilinos_LIBRARIES} ${MPI_LIBS_ALL})
 
 endif()
 

@@ -11,6 +11,6 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 if (BUILD_TESTS)
   add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc test/test_Maps.cc)
   add_test(stk_mesh test_stk_mesh)
-  target_link_libraries(test_stk_mesh stk_mesh unittest++)
+  target_link_libraries(test_stk_mesh stk_mesh unittest++ ${HDF5_LIBS_ALL})
 endif()
 

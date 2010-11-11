@@ -80,7 +80,7 @@ endif()
 add_library(mpi STATIC IMPORTED)
 set_property(TARGET mpi PROPERTY IMPORTED_LOCATION ${MPI_LIBRARY})
 
-
+set(MPI_LIBS_ALL mpi mpi_cxx)
 
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
@@ -132,8 +132,7 @@ add_library(netcdf_c++ SHARED IMPORTED)
 set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
 
 #target_link_libraries(netcdf curl)   # See note under ExodusII.
-
-
+set(NETCDF_LIBS_ALL netcdf curl hdf5 hdf5_hl z mpi mpi_cxx)
 
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
@@ -147,6 +146,18 @@ find_library(HDF5_LIBRARY hdf5
 		   )
 if(NOT HDF5_LIBRARY)
   message(FATAL_ERROR "Error: could not find HDF5 library\n"
+          "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
+          "\nor defining HDF5_LIB_DIR")
+endif()
+
+find_library(HDF5_HL_LIBRARY hdf5_hl
+             HINTS ${HDF5_LIB_DIR}
+                   ${HDF5_DIR}/lib
+                   /usr/lib
+                   /usr/local/lib
+		   )
+if(NOT HDF5_HL_LIBRARY)
+  message(FATAL_ERROR "Error: could not find HDF5_HL library\n"
           "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
           "\nor defining HDF5_LIB_DIR")
 endif()
@@ -166,6 +177,10 @@ endif()
 add_library(hdf5 STATIC IMPORTED)
 set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIBRARY})
 
+add_library(hdf5_hl STATIC IMPORTED)
+set_property(TARGET hdf5_hl PROPERTY IMPORTED_LOCATION ${HDF5_HL_LIBRARY})
+
+set(HDF5_LIBS_ALL hdf5 hdf5_hl z mpi mpi_cxx)
 
 
 
@@ -203,7 +218,7 @@ set_property(TARGET exodusii PROPERTY IMPORTED_LOCATION ${EXODUSII_LIBRARY})
 # target_link_libraries(exodusii netcdf)
 
 # Instead, we create a list of all the libraries required for ExodusII to link.
-set(EXODUS_LIBS_ALL exodusii netcdf curl)
+set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z curl mpi mpi_cxx) 
 
 
 
@@ -240,7 +255,7 @@ add_library(moab STATIC IMPORTED)
 set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
 
 # create a list of all the libraries required for MOAB to link.
-set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5)
+set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z mpi mpi_cxx curl)
 
 
 

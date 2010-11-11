@@ -18,9 +18,9 @@ if (BUILD_TESTS)
   execute_process(COMMAND ${CMAKE_COMMAND} -E 
     copy_directory ${CMAKE_SOURCE_DIR}/exodus/test/test_files ${CMAKE_BINARY_DIR}/exodus/test_files) 
 
-  target_link_libraries(test_exodus exodus unittest++ hdf5 hdf5_hl z)
-  target_link_libraries(exec_reader exodus hdf5 hdf5_hl z)
-  target_link_libraries(exodus_read_test exodus hdf5 hdf5_hl z)
+  target_link_libraries(test_exodus exodus unittest++ ${EXODUS_LIBS_ALL})
+  target_link_libraries(exec_reader exodus ${EXODUS_LIBS_ALL})
+  target_link_libraries(exodus_read_test exodus ${EXODUS_LIBS_ALL})
 endif()
 
 

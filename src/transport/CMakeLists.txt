@@ -27,8 +27,8 @@ if (BUILD_TESTS)
   add_executable(test_serial   test/Main.cc test/test_transport.cpp test/test_moab.cpp)
   add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
   add_test(transport test_serial test_parallel)
-  target_link_libraries(test_serial   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} hdf5 hdf5_hl z curl)
-  target_link_libraries(test_parallel ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} hdf5 hdf5_hl z curl)
+  target_link_libraries(test_serial   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
+  target_link_libraries(test_parallel ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
 endif()
 
 

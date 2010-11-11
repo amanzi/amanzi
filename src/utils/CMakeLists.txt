@@ -10,6 +10,6 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
   add_executable(test_gmv_writer test/Main.cc test/test_gmv.cc)
-  target_link_libraries(test_gmv_writer utils gmv unittest++)
+  target_link_libraries(test_gmv_writer utils gmv unittest++ ${MPI_LIBS_ALL})
 endif()
 
