@@ -6,12 +6,12 @@
 #include <cstring>
 #include <string>
 
-#include "moab_mesh/Mesh_maps_moab.hh"
-#include "simple_mesh/Mesh_maps_simple.hh"
-#include "mpc/State.hpp"
-#include "mpc/MPC.hpp"
-#include "transport/Transport_PK.hpp"
-#include "transport/Transport_State.hpp"
+#include "Mesh_maps_moab.hh"
+#include "Mesh_maps_simple.hh"
+#include "State.hpp"
+#include "MPC.hpp"
+#include "Transport_PK.hpp"
+#include "Transport_State.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
