@@ -39,6 +39,7 @@ DarcyProblem::~DarcyProblem()
   delete matvec_;
   delete precon_;
   delete face_importer_;
+  delete md_;
 }
 
 
