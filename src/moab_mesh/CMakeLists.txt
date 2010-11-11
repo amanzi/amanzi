@@ -18,6 +18,10 @@ if (BUILD_TESTS)
 	test/test_hex_3x3x2.cc
 	test/test_hex_4x4x4.cc)
   add_test(moab_mesh test_moab_mesh )
+  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy_directory ${CMAKE_SOURCE_DIR}/moab_mesh/test ${CMAKE_BINARY_DIR}/moab_mesh/test) 
+  endif()
   target_link_libraries(test_moab_mesh moab_mesh unittest++ ${MOAB_LIBS_ALL})
 endif()
 

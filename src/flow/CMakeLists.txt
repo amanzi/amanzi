@@ -20,6 +20,10 @@ if (BUILD_TESTS)
   add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp)
 #  add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test_mimetic.cpp)
   add_test(flow test_flow)
+  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy_directory ${CMAKE_SOURCE_DIR}/flow/test ${CMAKE_BINARY_DIR}/flow/test) 
+  endif()
   target_link_libraries(test_flow flow simple_mesh stk_mesh utils unittest++ ${Trilinos_LIBRARIES} ${MPI_LIBS_ALL})
 
 endif()

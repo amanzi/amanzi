@@ -22,6 +22,10 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 if (BUILD_TESTS)
   add_executable(test_mpc test/Main.cc test/test_driver.cpp)
   add_test(mpc test_mpc)
+  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy_directory ${CMAKE_SOURCE_DIR}/mpc/test ${CMAKE_BINARY_DIR}/mpc/test) 
+  endif()
   target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow utils unittest++ ${MOAB_ALL_LIBS})
 endif()
 
