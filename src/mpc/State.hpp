@@ -55,20 +55,25 @@ public:
 
 
   // debug helpers
-  void set_darcy_flux( double* u );
-  void set_water_saturation( double ws );
-  void set_water_density( double wd );
+  void set_darcy_flux( const double* u, const int mesh_block_id );
+  void set_water_saturation(const double ws );
+  void set_water_density(const double wd );
   void set_zero_total_component_concentration();
-  void set_porosity( double phi );
-  void set_permeability (double kappa);
-  void set_viscosity(double mu);
-  void set_gravity(double *g);
+  void set_porosity( const double phi );
+  void set_porosity( const double phi, const int mesh_block_id );
+  void set_permeability (const double kappa);
+  void set_permeability (const double kappa, const int mesh_block_id);
+  void set_viscosity(const double mu);
+  void set_gravity(const double *g);
 
   void write_gmv ( std::string filename );
       
 private:
   void create_storage();
-  void read_values();
+  void initialize_from_parameter_list();
+
+  void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
+				    int mesh_block_id);
 
   // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  

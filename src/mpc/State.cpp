@@ -36,7 +36,7 @@ State::State( Teuchos::ParameterList &parameter_list_,
 
   create_storage();
 
-  read_values();
+  initialize_from_parameter_list();
   
 };
 
@@ -47,28 +47,41 @@ State::~State()
 }
 
 
-void State::read_values()
+void State::initialize_from_parameter_list()
 {
-  // initialize the arrays with some constants from the input file
-  set_porosity(parameter_list.get<double>("Constant porosity"));
-  set_water_density(parameter_list.get<double>("Constant water density"));
-  set_water_saturation(parameter_list.get<double>("Constant water saturation"));
-  set_permeability(parameter_list.get<double>("Constant permeability"));
-  
+  int num_blocks = parameter_list.get<int>("Number of mesh blocks");
+
   double u[3];
-  u[0] = parameter_list.get<double>("Constant Darcy flux x");
-  u[1] = parameter_list.get<double>("Constant Darcy flux y");
-  u[2] = parameter_list.get<double>("Constant Darcy flux z");
-  set_darcy_flux(u);
-  
   u[0] = parameter_list.get<double>("Gravity x");		   
   u[1] = parameter_list.get<double>("Gravity y");		   
   u[2] = parameter_list.get<double>("Gravity z");		   
   set_gravity(u);
 
-  set_viscosity(parameter_list.get<double>("Constant viscosity"));
-
   set_zero_total_component_concentration();
+  set_water_density(parameter_list.get<double>("Constant water density"));
+  set_water_saturation(parameter_list.get<double>("Constant water saturation"));
+  set_viscosity(parameter_list.get<double>("Constant viscosity"));
+  
+  for (int nb=1; nb<=num_blocks; nb++) {
+    
+    std::stringstream pname;
+    pname << "Mesh block " << nb;
+    std::cout << pname.str() << std::endl; 
+    
+    Teuchos::ParameterList sublist = parameter_list.sublist(pname.str());
+
+    int mesh_block_ID = sublist.get<int>("Mesh block ID");
+
+    // initialize the arrays with some constants from the input file
+    set_porosity(sublist.get<double>("Constant porosity"),mesh_block_ID);
+    set_permeability(sublist.get<double>("Constant permeability"),mesh_block_ID);
+    
+    u[0] = sublist.get<double>("Constant Darcy flux x");
+    u[1] = sublist.get<double>("Constant Darcy flux y");
+    u[2] = sublist.get<double>("Constant Darcy flux z");
+    set_darcy_flux(u, mesh_block_ID);
+    
+  }
 }
 
 
@@ -111,95 +124,122 @@ void State::advance_time(double dT)
 }
 
 
+void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v, 
+				    int mesh_block_id)
+{
+  if (!mesh_maps->valid_set_id(mesh_block_id,Mesh_data::CELL)) {
+    throw std::exception();
+  }
+  
+  unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
+							 Mesh_data::CELL,
+							 OWNED);
 
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  
+  mesh_maps->get_set(mesh_block_id, Mesh_data::CELL,OWNED,
+		     cell_ids.begin(),cell_ids.end());
+  
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); 
+       c != cell_ids.end();  c++) {
+    v[*c] = value;  
+  } 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical Darcy velocity fieldx u     */
-/* ************************************************************* */
-void State::set_darcy_flux( double* u )
+}
+
+void State::set_darcy_flux( const double* u, const int mesh_block_id )
 {
   int  i, f;
   double x[4][3], normal[3], length;
 
-  Epetra_Map face_map = mesh_maps->face_map(false);
+  // Epetra_Map face_map = mesh_maps->face_map(false);
 
-  for( f=face_map.MinLID(); f<=face_map.MaxLID(); f++ ) { 
-     mesh_maps->face_to_coordinates( f, (double*) x, (double*) x+12 );
+  if (!mesh_maps->valid_set_id(mesh_block_id,Mesh_data::CELL)) {
+    throw std::exception();
+  }
+  
+  unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
+							 Mesh_data::CELL,
+							 OWNED);
+  
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  
 
-     quad_face_normal(x[0], x[1], x[2], x[3], normal);
-     length = vector_length( normal, 3 );
 
-     (*darcy_flux)[f] = (u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2]) / length;
+  mesh_maps->get_set(mesh_block_id, Mesh_data::CELL,OWNED,
+		     cell_ids.begin(),cell_ids.end());
+
+  
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); 
+       c != cell_ids.end();  c++) {
+    
+    std::vector<unsigned int> cface(6);
+    mesh_maps->cell_to_faces(*c, cface.begin(), cface.end());
+
+    for (std::vector<unsigned int>::iterator f = cface.begin();
+	 f != cface.end(); f++) {
+      
+      mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
+      
+      quad_face_normal(x[0], x[1], x[2], x[3], normal);
+      length = vector_length( normal, 3 );
+    
+      (*darcy_flux)[*f] = 
+	(u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2]) / length;
+    }
   }
 }
 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical water density               */
-/* ************************************************************* */
-void State::set_water_density( double wd )
+void State::set_water_density( const double wd )
 {
-  int  c;
-  Epetra_Map cell_map = mesh_maps->cell_map(false);
-
-  for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
-     (*water_density)[c] = wd;  /* default is 1000.0 */
-  }
-
+  water_density->PutScalar(wd);
   *density = wd;
 }
 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical water saturation            */
-/* ************************************************************* */
-void State::set_water_saturation( double ws )
+void State::set_water_saturation( const double ws )
 {
-  int  c;
-  Epetra_Map cell_map = mesh_maps->cell_map(false);
-
-  for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
-     (*water_saturation)[c] = ws;  /* default is 1.0 */
-  }
+  water_saturation->PutScalar(ws); 
 }
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical porosity                    */
-/* ************************************************************* */
-void State::set_porosity( double phi )
-{
-  int  c;
-  Epetra_Map cell_map = mesh_maps->cell_map(false);
 
-  for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
-     (*porosity)[c] = phi;  /* default is 0.2 */
-  }
+void State::set_porosity( const double phi )
+{
+  porosity->PutScalar(phi);  
 }
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical concentration C_0 = x       */
-/* ************************************************************* */
+void State::set_porosity( const double phi, const int mesh_block_id )
+{
+  set_cell_value_in_mesh_block(phi,*porosity,mesh_block_id);
+}
+
+
 void State::set_zero_total_component_concentration()
 {
   total_component_concentration->PutScalar(0.0);
-
 }
 
 
-
-void State::set_permeability( double kappa )
+void State::set_permeability( const double kappa )
 {
   permeability->PutScalar(kappa);
 }
 
 
-void State::set_viscosity(double mu)
+void State::set_permeability( const double kappa, const int mesh_block_id)
+{
+  set_cell_value_in_mesh_block(kappa,*permeability,mesh_block_id);
+}
+
+
+void State::set_viscosity(const double mu)
 {
   *viscosity = mu;
 }
 
 
-void State::set_gravity(double *g)
+void State::set_gravity(const double *g)
 {
   (*gravity)[0] = g[0];
   (*gravity)[1] = g[1];
