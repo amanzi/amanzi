@@ -66,36 +66,39 @@
   </ParameterList>
 
   <ParameterList name="Flow">
-    <ParameterList name="Flow BCs">
+
+    <Parameter name="Max Iterations" type="int" value="100"/>
+    <Parameter name="Error Tolerance" type="double" value="1.0e-8"/>
+    
+    <ParameterList name="Flow BC">
       <Parameter name="number of BCs" type="int" value="6"/>
       <ParameterList name="BC00">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
+	<Parameter name="Type" type="string" value="Pressure Constant"/>
 	<Parameter name="BC value" type="double" value="1.0" />
 	<Parameter name="Side set ID" type="int" value="0" />
       </ParameterList>  
       <ParameterList name="BC01">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
+	<Parameter name="Type" type="string" value="Pressure Constant"/>
 	<Parameter name="BC value" type="double" value="2.0" />
 	<Parameter name="Side set ID" type="int" value="1" />
       </ParameterList>
       <ParameterList name="BC02">
-	<Parameter name="Type" type="string" value="pressure Neuman constant"/>
+	<Parameter name="Type" type="string" value="Darcy Constant"/>
 	<Parameter name="BC value"  type="double" value="1.0"/>
 	<Parameter name="Side set ID" type="int" value="2" />
       </ParameterList>  
       <ParameterList name="BC03">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
+	<Parameter name="Type" type="string" value="Pressure Constant"/>
 	<Parameter name="BC value" type="double" value="-2.0" />
 	<Parameter name="Side set ID" type="int" value="3" />
       </ParameterList>  
       <ParameterList name="BC04">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
+	<Parameter name="Type" type="string" value="Static Head"/>
 	<Parameter name="BC value" type="double" value="2.0" />
 	<Parameter name="Side set ID" type="int" value="4" />
       </ParameterList>
       <ParameterList name="BC05">
-	<Parameter name="Type" type="string" value="pressure Neuman constant"/>
-	<Parameter name="BC value"  type="double" value="1.0"/>
+	<Parameter name="Type" type="string" value="No Flow"/>
 	<Parameter name="Side set ID" type="int" value="5" />
       </ParameterList>  
     </ParameterList>
