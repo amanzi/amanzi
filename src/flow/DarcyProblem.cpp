@@ -38,6 +38,7 @@ DarcyProblem::~DarcyProblem()
   delete rhs_;
   delete matvec_;
   delete precon_;
+  delete face_importer_;
 }
 
 
@@ -324,6 +325,8 @@ void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X,
     Qy[j] = aux3[1];
     Qz[j] = aux3[2];
   }
+
+  delete &Pcell, &Pface_own;
 }
 
 
