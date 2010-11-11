@@ -12,7 +12,7 @@ class DiffusionPrecon : public Epetra_Operator
 {
 public:
   DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, const Epetra_Map &map);
-  ~DiffusionPrecon() { };
+  ~DiffusionPrecon();
 
   void Compute();
 
