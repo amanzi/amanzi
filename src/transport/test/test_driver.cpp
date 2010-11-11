@@ -6,12 +6,12 @@
 #include <cstring>
 #include <string>
 
-#include "Mesh_maps_moab.hh"
-#include "Mesh_maps_simple.hh"
-#include "State.hpp"
-#include "MPC.hpp"
-#include "Transport_PK.hpp"
-#include "Transport_State.hpp"
+#include "moab_mesh/Mesh_maps_moab.hh"
+#include "simple_mesh/Mesh_maps_simple.hh"
+#include "mpc/State.hpp"
+#include "mpc/MPC.hpp"
+#include "transport/Transport_PK.hpp"
+#include "transport/Transport_State.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -24,17 +24,16 @@ TEST(DRIVER) {
   using namespace std;
 
 #ifdef HAVE_MPI
-  Epetra_MpiComm     *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm     *comm = new Epetra_MpiComm( MPI_COMM_WORLD );
 #else
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 #endif
   
-  string  xmlInFileName = "test/test_driver.xml";
-
-
   /* read the main parameter list */
   ParameterList  driver_list;
-  updateParametersFromXmlFile( xmlInFileName, &driver_list );
+  string  xmlFileName = "test/test_driver.xml";
+
+  updateParametersFromXmlFile( xmlFileName, &driver_list );
   
   /* get the Mesh sublist */
   ParameterList  mesh_list = driver_list.sublist( "Mesh" );
@@ -62,6 +61,18 @@ TEST(DRIVER) {
 
   MPC  mpc( driver_list, mesh );
   mpc.cycle_driver();
+
+ 
+  /* print influx data */
+  /*
+  int  i, n;
+  for( n=0; n<TPK.bcs.size(); n++ ) {
+     cout << "Side set " << n << " of type " << TPK.bcs[n].type << endl;
+     cout << "   influx: ";
+     for( i=0; i<number_components; i++ ) cout << TPK.bcs[n].influx[i] << " ";
+     cout << endl;
+  }
+  */
 
   delete comm;
 }

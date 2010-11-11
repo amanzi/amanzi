@@ -58,8 +58,8 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
 #ifdef HAVE_MPI
   const  Epetra_Comm & comm = cell_map.Comm(); 
   MyPID = comm.MyPID();
-cout << " MyPID=" << MyPID << " cells:" << cmin << " " << cmax_owned << " " << cmax << endl;
-cout << " MyPID=" << MyPID << " faces:" << fmin << " " << fmax_owned << " " << fmax << endl;
+//cout << " MyPID=" << MyPID << " cells:" << cmin << " " << cmax_owned << " " << cmax << endl;
+//cout << " MyPID=" << MyPID << " faces:" << fmin << " " << fmax_owned << " " << fmax << endl;
 #else
   MyPID = 0;
 #endif
@@ -147,17 +147,22 @@ void Transport_PK::process_parameter_list()
         bcs[i].values[k] = value;
      }
 
+     if ( type == "Constant" ) bcs[i].type = TRANSPORT_BC_CONSTANT_INFLUX;
+
      bcs[i].side_set_id = ssid;
      if ( !mesh->valid_set_id( ssid, Mesh_data::FACE ) ) throw exception();
 
      /* populate list of n boundary faces: it could be empty */
      int  n;
-
      n = mesh->get_set_size( ssid, Mesh_data::FACE, OWNED );
 
      bcs[i].faces.resize( n );
 
      mesh->get_set( ssid, Mesh_data::FACE, OWNED, bcs[i].faces.begin(), bcs[i].faces.end() );
+
+     /* allocate memory for influx and outflux vectors */
+     bcs[i].influx.resize(  number_components );
+     bcs[i].outflux.resize( number_components );
   }
 }
 
@@ -249,10 +254,10 @@ void Transport_PK::advance( double dT_MPC )
   RCP<const Epetra_Vector>  phi = TS->get_porosity();
 
 
-  /* prepare conservative state */
+  /* prepare conservative state in master and slave cells */
   int num_components = tcc->NumVectors();
 
-  for( c=cmin; c<=cmax_owned; c++ ) {
+  for( c=cmin; c<=cmax; c++ ) {
      vol_phi_ws = cell_volume[c] * (*phi)[c] * (*ws)[c]; 
 
      for( i=0; i<num_components; i++ ) 
@@ -260,7 +265,7 @@ void Transport_PK::advance( double dT_MPC )
   }
 
 
-  /* advance each component */ 
+  /* advance each component: loop over master and slave faces*/ 
   for( f=fmin; f<=fmax; f++ ) {
      c1 = upwind_cell[f]; 
      c2 = downwind_cell[f]; 
@@ -288,15 +293,6 @@ void Transport_PK::advance( double dT_MPC )
   }
 
 
-  /* blocking parallel communications */
-#ifdef HAVE_MPI
-  const Epetra_Map & cell_map = TS->get_mesh_maps()->cell_map( true );
-  Epetra_Export  Exporter( cell_map, cell_map );
-  
-  (*tcc_next).Export( *tcc_next, Exporter, Insert );
-#endif
-
-
   /* loop over exterior boundary sets */
   int  k, n;
   for( n=0; n<bcs.size(); n++ ) {
@@ -308,13 +304,25 @@ void Transport_PK::advance( double dT_MPC )
            u = fabs(darcy_flux[f]);
            area = face_area[f];
 
-           for( i=0; i<num_components; i++ ) {
-              tcc_flux = dT * u * area * bcs[n].values[i];
-              (*tcc_next)[i][c2] += tcc_flux;
-           }
+           if ( bcs[n].type == TRANSPORT_BC_CONSTANT_INFLUX ) {
+              for( i=0; i<num_components; i++ ) {
+                 tcc_flux = dT * u * area * bcs[n].values[i];
+                 (*tcc_next)[i][c2] += tcc_flux;
+                 bcs[n].influx[i] += tcc_flux;
+              }
+           } 
         }
      }
   }
+
+
+  /* blocking parallel communications: we override slave cells */
+#ifdef HAVE_MPI
+  const Epetra_Map & cell_map = TS->get_mesh_maps()->cell_map( true );
+  Epetra_Export  Exporter( cell_map, cell_map );
+  
+  (*tcc_next).Export( *tcc_next, Exporter, Insert );
+#endif
 
 
   /* recover concentration from new conservative state */

@@ -14,7 +14,7 @@
       <Parameter name="Numer of Cells in Z" type="int" value="3"/> 
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Mesh file name" type="string" value="test/fbasin_unstr_50_V01.exo"/>
+      <Parameter name="Mesh file name" type="string" value="test/fbasin_unstr_400_V01.exo"/>
     </ParameterList>   
     <ParameterList name="STK Mesh Parameters">
     </ParameterList>   
@@ -23,7 +23,7 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="1000000.0"/>
+    <Parameter name="End Time" type="double" value="2000000.0"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver.gmv"/>
@@ -36,16 +36,20 @@
     <Parameter name="Number of component concentrations" type="int" value="3"/>
     <Parameter name="Constant porosity" type="double" value="0.2"/>
     <Parameter name="Constant Darcy flux x" type="double" value="-1.0"/>
-    <Parameter name="Constant Darcy flux y" type="double" value="-1.0"/>
+    <Parameter name="Constant Darcy flux y" type="double" value="-0.6"/>
     <Parameter name="Constant Darcy flux z" type="double" value="-0.01"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
+    <Parameter name="Constant viscosity" type="double" value="1.0"/>
+    <Parameter name="Constant permeability" type="double" value="1.0"/>
+    <Parameter name="Gravity x" type="double" value="0.0"/>
+    <Parameter name="Gravity y" type="double" value="0.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.8"/>
   </ParameterList>
 
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
-    <Parameter name="number of components" type="int" value="3"/>   
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
@@ -63,37 +67,15 @@
   </ParameterList>
 
   <ParameterList name="Flow">
-    <ParameterList name="Flow BCs">
-      <Parameter name="number of BCs" type="int" value="6"/>
+    <Parameter name="Max Iterations" type="int" value="100"/>
+    <Parameter name="Error Tolerance" type="double" value="1.0e-8"/>
+
+    <ParameterList name="Flow BC">
+      <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC00">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
-	<Parameter name="BC value" type="double" value="1.0" />
-	<Parameter name="Side set ID" type="int" value="0" />
-      </ParameterList>  
-      <ParameterList name="BC01">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
-	<Parameter name="BC value" type="double" value="2.0" />
-	<Parameter name="Side set ID" type="int" value="1" />
-      </ParameterList>
-      <ParameterList name="BC02">
-	<Parameter name="Type" type="string" value="pressure Neuman constant"/>
-	<Parameter name="BC value"  type="double" value="1.0"/>
-	<Parameter name="Side set ID" type="int" value="2" />
-      </ParameterList>  
-      <ParameterList name="BC03">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
-	<Parameter name="BC value" type="double" value="-2.0" />
-	<Parameter name="Side set ID" type="int" value="3" />
-      </ParameterList>  
-      <ParameterList name="BC04">
-	<Parameter name="Type" type="string" value="pressure Dirichlet constant"/>
-	<Parameter name="BC value" type="double" value="2.0" />
-	<Parameter name="Side set ID" type="int" value="4" />
-      </ParameterList>
-      <ParameterList name="BC05">
-	<Parameter name="Type" type="string" value="pressure Neuman constant"/>
-	<Parameter name="BC value"  type="double" value="1.0"/>
-	<Parameter name="Side set ID" type="int" value="5" />
+        <Parameter name="Type" type="string" value="Static Head"/>
+        <Parameter name="BC value" type="double" value="2.0" />
+	<Parameter name="Side set ID" type="int" value="105" />
       </ParameterList>  
     </ParameterList>
   </ParameterList>

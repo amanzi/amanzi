@@ -16,8 +16,14 @@ public:
 
 public:
   int  side_set_id;
+  int  type;
   vector<double>  values;
   vector<unsigned int>  faces;
+
+  /* accumulated influx and outflux */
+  vector<double>   influx;
+  vector<double>  outflux;
+
 };
 
 #endif

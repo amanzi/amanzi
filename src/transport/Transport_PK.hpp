@@ -32,6 +32,9 @@ namespace Amanzi_Transport{
   const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
 
   const int TRANSPORT_INTERNAL_DEBUG = 1;
+
+  const int TRANSPORT_BC_CONSTANT_INFLUX = 1;
+  const int TRANSPORT_BC_NULL = 2;
 }
 
 
@@ -72,6 +75,7 @@ public:
   RCP<Transport_State> get_transport_state_next() const { return TS_next; }
 
   double get_transport_dT()      { return dT; }
+  double get_cfl()               { return cfl; }
   int    get_transport_status()  { return status; }
  
 
@@ -108,10 +112,6 @@ private:
   /* boundary conditions for each components and each side set */
   /* it will be converted to a separate class                  */
   vector<Transport_BCs>  bcs;
-
-  /* accumulated influx and outflux for each side */
-  vector<double>   influx;
-  vector<double>  outflux;
 
   /* frequently used data */
   int  cmin, cmax_owned, cmax, number_owned_cells;
