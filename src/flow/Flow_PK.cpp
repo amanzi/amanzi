@@ -32,8 +32,8 @@ Flow_PK::~Flow_PK()
   delete problem;
   delete solver;
   delete darcy_flux;
-  //delete pressure; // do not delete this, it's just a view
-  delete solution; // delete this instead
+  delete pressure; 
+  delete solution; 
 };
 
 
