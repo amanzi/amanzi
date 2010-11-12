@@ -194,24 +194,6 @@ void Beaker::SetupActivityModel(std::string model)
   }
 }  // end SetupActivityModel() 
 
-void Beaker::SetupMineralKinetics(const std::string mineral_kinetics_file)
-{
-  if (mineral_kinetics_file.size()) {
-    MineralKineticsFactory mineral_kinetics_factory;
-    mineral_kinetics_factory.verbosity(verbosity());
-    mineral_rates_ = mineral_kinetics_factory.Create(mineral_kinetics_file, 
-                                                     primarySpecies_, minerals_);
-    
-    if (verbosity() >= kDebugMineralKinetics) {
-      for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
-           rate != mineral_rates_.end(); rate++) {
-        (*rate)->Display();
-      }
-    }
-  }
-
-}  // end SetupMineralKinetics()
-
 void Beaker::addPrimarySpecies(Species s) 
 {
   primarySpecies_.push_back(s);
@@ -237,6 +219,22 @@ void Beaker::addMineral(Mineral m)
   minerals_.push_back(m);
 } // end addMineral()
 
+void Beaker::AddMineralKineticRate(KineticRate* rate) 
+{
+  mineral_rates_.push_back(rate);
+} // end AddMineralKineticRate()
+
+bool Beaker::HaveKinetics(void) const
+{
+  bool have_kinetics = false;
+  if (mineral_rates_.size()) {
+    have_kinetics = true;
+  }
+  // add other kinetic processes here....
+
+  return have_kinetics;
+}  // end HaveKinetics()
+
 void Beaker::addGeneralRxn(GeneralRxn r) 
 {
   generalKineticRxns_.push_back(r);
@@ -252,7 +250,6 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const
   Beaker::BeakerParameters parameters;
 
   parameters.thermo_database_file.clear();
-  parameters.mineral_kinetics_file.clear();
 
   parameters.tolerance = tolerance_default;
   parameters.max_iterations = max_iterations_default;
@@ -272,7 +269,6 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const
   Beaker::BeakerParameters parameters;
 
   parameters.thermo_database_file.clear();
-  parameters.mineral_kinetics_file.clear();
 
   parameters.tolerance = tolerance();
   parameters.max_iterations = max_iterations();
@@ -906,7 +902,6 @@ void Beaker::DisplayParameters(void) const
   std::cout << "---- Parameters ------------------------------------------------------"
             << std::endl;
   //std::cout << "    thermo_database_file: " << thermo_database_file << std::endl;
-  //std::cout << "    mineral_kinetics_file: " << mineral_kinetics_file << std::endl;
   std::cout << "    tolerance: " << tolerance() << std::endl;
   std::cout << "    max_iterations :" << max_iterations() << std::endl;
 

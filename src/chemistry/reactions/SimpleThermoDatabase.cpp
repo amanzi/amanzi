@@ -7,6 +7,7 @@
 #include <string>
 
 #include "AqueousEquilibriumComplex.hpp"
+#include "MineralKineticsFactory.hpp"
 #include "Mineral.hpp"
 #include "IonExchangeSite.hpp"
 #include "IonExchangeComplex.hpp"
@@ -36,7 +37,6 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
   ReadFile(parameters.thermo_database_file);
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize(this->primary_species().size());
-  this->SetupMineralKinetics(parameters.mineral_kinetics_file);
   this->VerifyComponentSizes(components);
   this->SetComponents(components);
 }  // end Setup()
@@ -73,22 +73,27 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine,
-                  kAqueousEquilibriumComplexLine, kMineralLine,
+                  kAqueousEquilibriumComplexLine, 
+                  kMineralLine, kMineralKineticsLine, kGeneralKineticsLine,
                   kIonExchangeSiteLine, kIonExchangeComplexLine,
                   kUnknownLine };
   enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection,
-                     kMineralSection, kIonExchangeSiteSection,
-                     kIonExchangeComplexSection, kUnknownSection };
+                     kMineralSection, kMineralKineticsSection, kGeneralKineticsSection,
+                     kIonExchangeSiteSection, kIonExchangeComplexSection, 
+                     kUnknownSection };
 
   std::string kSectionPrimary("<Primary Species");
   std::string kSectionAqueousEquilibriumComplex("<Aqueous Equilibrium Complexes");
   std::string kSectionMineral("<Minerals");
+  std::string kSectionMineralKinetics("<Mineral Kinetics");
+  std::string kSectionGeneralKinetics("<General Kinetics");
   std::string kSectionIonExchangeSites("<Ion Exchange Sites");
   std::string kSectionIonExchangeComplexes("<Ion Exchange Complexes");
 
   LineType line_type;
   SectionType current_section;
   bool parsed_primaries = false;
+  bool parsed_minerals = false;
   bool parsed_ion_exchange_sites = false;
   int count = 0;
   while (!input.eof() && count < 100) {
@@ -115,6 +120,12 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
       } else if (line == kSectionMineral) {
         line_type = kMineralLine;
         current_section = kMineralSection;
+      } else if (line == kSectionMineralKinetics) {
+        line_type = kMineralKineticsLine;
+        current_section = kMineralKineticsSection;
+      } else if (line == kSectionGeneralKinetics) {
+        line_type = kGeneralKineticsLine;
+        current_section = kGeneralKineticsSection;
       } else if (line == kSectionIonExchangeSites) {
         line_type = kIonExchangeSiteLine;
         current_section = kIonExchangeSiteSection;
@@ -138,12 +149,27 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
           data_order_error = 1;
           error_section = "aqueous equilibrium complexes";
         }
+      } else if (current_section == kGeneralKineticsSection) {
+        if (parsed_primaries) {
+          ParseGeneralKinetics(line);
+        } else {
+          data_order_error = 1;
+          error_section = "general kinetics";
+        }
       } else if (current_section == kMineralSection) {
         if (parsed_primaries) {
           ParseMineral(line);
+          parsed_minerals = true;
+        } else {
+          data_order_error = 1;
+          error_section = "minerals";
+        }
+      } else if (current_section == kMineralKineticsSection) {
+        if (parsed_primaries && parsed_minerals) {
+          ParseMineralKinetics(line);
         } else {
           data_order_error = 2;
-          error_section = "minerals";
+          error_section = "mineral kinetics";
         }
       } else if (current_section == kIonExchangeSiteSection) {
         ParseIonExchangeSite(line);
@@ -159,10 +185,10 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
             }
           } else if (parsed_ion_exchange_sites) {
             if (!parsed_primaries) {
-              data_order_error = 4;
+              data_order_error = 1;
             }
           } else {
-            data_order_error = 5;
+            data_order_error = 4;
           }
         }
       } else {
@@ -172,13 +198,13 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
         // print a helpful message and exit gracefully
         std::cout << "ERROR: SimpleThermoDatabase::ReadFile() : "
                   << "Attempting to parse " << error_section << " before ";
-        std::string temp;
+        std::string temp = "";
         if (data_order_error == 3) {
-          temp = "ion exchange sites ";
-        } else if (data_order_error == 4) {
-          temp = "primary species ";
-        } else if (data_order_error == 5) {
-          temp += "primary species and ion exchange sites ";
+          temp += "ion exchange sites ";
+        } else if (data_order_error == 2) {
+          temp += "minerals ";
+        } else if (data_order_error == 1) {
+          temp += "primary species ";
         }
         std::cout << temp << "have been specified. Please check for "
                   << "additional error messages and verify database file is "
@@ -301,6 +327,19 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string data
  **
  **  Thermodynamic database file format
  **
+ **  <General Kinetics
+ **
+ *******************************************************************************/
+void SimpleThermoDatabase::ParseGeneralKinetics(const std::string data)
+{
+  std::cout << "ERROR: SimpleThermoDatabase::ParseGeneralKinetics() : not implemented...."
+            << std::endl;
+}  // end ParseGeneralKinetics()
+
+/*******************************************************************************
+ **
+ **  Thermodynamic database file format
+ **
  **  <Mineral
  **
  **  Secondary Species Fields:
@@ -349,6 +388,52 @@ void SimpleThermoDatabase::ParseMineral(const std::string data)
   }
 
 }  // end ParseMineral()
+
+/*******************************************************************************
+ **
+ **  Thermodynamic database file format
+ **
+ **  <Mineral Kinetics
+ **
+ **  all rate information is contained on a single semicolon delimited line.
+ **
+ **  Field 0 : MineralName : assumed to have the same stoichiometry as the mineral definition
+ **
+ **  Field 1 : rate_name ("TST", ....)
+ **
+ **  remaining fields are processed by the rate class
+ **
+ *******************************************************************************/
+void SimpleThermoDatabase::ParseMineralKinetics(const std::string data)
+{
+  if (verbosity() == kDebugInputFile) {
+    std::cout << "SimpleThermoDatabase::ParseMineralKinetics()...." << std::endl;
+    std::cout << "  data: " << data << std::endl;
+  }
+  std::string semicolon(";");
+  std::string space(" ");
+  StringTokenizer no_spaces;
+
+  StringTokenizer rate_data(data, semicolon);
+  no_spaces.tokenize(rate_data.at(0), space);
+  std::string mineral_name = no_spaces.at(0);
+  std::string rate_type = rate_data.at(1);
+
+  rate_data.erase(rate_data.begin());  // erase mineral name
+  rate_data.erase(rate_data.begin());  // erase reaction type string
+
+  MineralKineticsFactory mkf;
+  SpeciesId mineral_id = mkf.VerifyMineralName(mineral_name, minerals());
+  Mineral mineral = minerals().at(mineral_id);
+  KineticRate* kinetic_rate = mkf.Create(rate_type, rate_data, mineral, primary_species());
+
+  this->AddMineralKineticRate(kinetic_rate);
+  if (verbosity() == kDebugInputFile || verbosity() == kDebugMineralKinetics) {
+    kinetic_rate->Display();
+  }
+
+}  // end ParseMineralKinetics()
+
 
 /*******************************************************************************
  **

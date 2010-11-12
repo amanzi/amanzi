@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
   components.total_sorbed.clear();
 
   std::string thermo_database_file("");
-  std::string mineral_kinetics_file("");
   std::string activity_model_name("");
   
   error = CommandLineOptions(argc, argv, &verbosity, &test, &model);
@@ -93,7 +92,6 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/calcite.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        mineral_kinetics_file = "input/calcite-kinetics-tst.ain";
         components.total.push_back(1.0e-3);  // H+
         components.total.push_back(3.0e-3);  // HCO3-
         components.total.push_back(1.0e-3);  // Ca++
@@ -127,7 +125,6 @@ int main(int argc, char **argv) {
     chem->verbosity(verbosity);
     Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
     parameters.thermo_database_file = thermo_database_file;
-    parameters.mineral_kinetics_file = mineral_kinetics_file;
     parameters.activity_model_name = activity_model_name;
     parameters.porosity = 0.5;  // -
     parameters.saturation = 1.0;  // - 
@@ -144,7 +141,7 @@ int main(int argc, char **argv) {
       chem->DisplayResults();
     }
   
-    if (mineral_kinetics_file.size() != 0) {
+    if (chem->HaveKinetics()) {
       std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
       chem->DisplayTotalColumnHeaders();
       chem->DisplayTotalColumns(0.0, components.total);

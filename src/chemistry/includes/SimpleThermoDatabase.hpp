@@ -19,7 +19,9 @@ class SimpleThermoDatabase : public Beaker {
   void ReadFile(const std::string thermo_filename);
   void ParsePrimarySpecies(const std::string data);
   void ParseAqueousEquilibriumComplex(const std::string data);
+  void ParseGeneralKinetics(const std::string data);
   void ParseMineral(const std::string data);
+  void ParseMineralKinetics(const std::string data);
   void ParseIonExchangeSite(const std::string data);
   void ParseIonExchangeComplex(const std::string data);
   void ParseReaction(const std::string reaction,

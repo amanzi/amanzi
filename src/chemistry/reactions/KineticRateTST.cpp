@@ -99,22 +99,22 @@ KineticRateTST::~KineticRateTST(void)
 }  // end KineticRateTST destructor
 
 
-void KineticRateTST::Setup(const SecondarySpecies* reaction,
+void KineticRateTST::Setup(const SecondarySpecies& reaction,
                            const StringTokenizer reaction_data,
                            const SpeciesArray primary_species)
 {
   // break the reaction string into reactants and products
-  name(reaction->name());
-  identifier(reaction->identifier());
+  name(reaction.name());
+  identifier(reaction.identifier());
 
   // copy the reactant species, ids and stoichiometry from the reaction species
   if (verbosity() == kDebugMineralKinetics) {
     std::cout << "  KineticRateTST::Setup(): Searching for reactant species ids..." 
               << std::endl;
   }
-  reactant_names = reaction->species_names();
-  reactant_stoichiometry = reaction->stoichiometry();
-  reactant_ids = reaction->species_ids();
+  reactant_names = reaction.species_names();
+  reactant_stoichiometry = reaction.stoichiometry();
+  reactant_ids = reaction.species_ids();
 
   std::string species_type("primary");
   SetSpeciesIds(primary_species, species_type,

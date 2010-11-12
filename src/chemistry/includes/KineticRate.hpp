@@ -22,7 +22,7 @@ class KineticRate
  public:
   ~KineticRate(void);
 
-  virtual void Setup(const SecondarySpecies* reaction,
+  virtual void Setup(const SecondarySpecies& reaction,
                      const StringTokenizer reaction_data,
                      const SpeciesArray primary_species) = 0;
   virtual void Update(const SpeciesArray primary_species) = 0;
