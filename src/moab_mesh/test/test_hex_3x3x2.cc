@@ -16,7 +16,7 @@ TEST(MOAB_HEX_3x3x2)
 {
 
   int i, j, k, err, nc, nf, nv;
-  unsigned int faces[6], nodes[8];
+  unsigned int faces[6], cnodes[8], fnodes[6];
   int facedirs[6];
   double ccoords[24], fcoords[12];
 
@@ -45,6 +45,14 @@ TEST(MOAB_HEX_3x3x2)
 				  {3,2,8,9,7,6,10,11},
 				  {4,5,6,7,12,13,14,15},
 				  {7,6,10,11,15,14,16,17}};
+  unsigned int cellfaces[4][6] = {{8,4,16,0,10,17},
+				  {16,5,12,1,11,18},
+				  {9,6,19,2,17,14},
+				  {19,7,13,3,18,15}};
+  int cellfacedirs[4][6] = {{1,1,1,1,1,1},
+			    {-1,1,1,1,1,1},
+			    {1,1,1,1,-1,1},
+			    {-1,1,1,1,-1,1}};
   unsigned int facenodes[20][4] = {{3,0,4,7},
 				   {9,3,7,11},
 				   {7,4,12,15},
@@ -65,6 +73,13 @@ TEST(MOAB_HEX_3x3x2)
 				   {4,5,6,7},
 				   {7,6,10,11},
 				   {6,7,15,14}};
+
+  unsigned int cfstd[6][4] = {{0,1,5,4},    // Expected cell-face-node pattern
+			      {1,2,6,5},
+			      {2,3,7,6},
+			      {3,0,4,7},
+			      {0,3,2,1},
+			      {4,5,6,7}};
 
 
   // Load a single hex from the hex1.exo file
@@ -90,25 +105,31 @@ TEST(MOAB_HEX_3x3x2)
   CHECK_EQUAL(NC,nc);
     
   for (i = 0; i < nc; i++) {
+    mesh.cell_to_nodes(i,cnodes,cnodes+8);
     mesh.cell_to_faces(i,faces,faces+6);
     mesh.cell_to_face_dirs(i,facedirs,facedirs+6);
 
+    CHECK_ARRAY_EQUAL(cellfaces[i],faces,6);
+    CHECK_ARRAY_EQUAL(cellfacedirs[i],facedirs,6);
+
+
     for (j = 0; j < 6; j++) {
-      mesh.face_to_nodes(faces[j],nodes,nodes+4);
+
+      mesh.face_to_nodes(faces[j],fnodes,fnodes+4);
       mesh.face_to_coordinates(faces[j],fcoords,fcoords+12);
       
       for (k = 0; k < 4; k++) {
-	CHECK_EQUAL(facenodes[faces[j]][k],nodes[k]);
+	CHECK_EQUAL(facenodes[faces[j]][k],fnodes[k]);
 	CHECK_ARRAY_EQUAL(xyz[facenodes[faces[j]][k]],&(fcoords[3*k]),3);
       }
+
     }
 
   
-    mesh.cell_to_nodes(i,nodes,nodes+8);
     mesh.cell_to_coordinates(i,ccoords,ccoords+24);
     
     for (j = 0; j < 8; j++) {
-      CHECK_EQUAL(cellnodes[i][j],nodes[j]);
+      CHECK_EQUAL(cellnodes[i][j],cnodes[j]);
       CHECK_ARRAY_EQUAL(xyz[cellnodes[i][j]],&(ccoords[3*j]),3);
     }
   }

@@ -665,20 +665,85 @@ void Mesh_maps_moab::cell_to_faces (unsigned int cellid,
 				    unsigned int *end)
 {
   MBEntityHandle cell;
-  MBRange cell_faces;    
+  MBRange cell_faces;
+  std::vector<MBEntityHandle> cell_nodes, face_nodes;
   int *cell_faceids;
   int nf;
+  int cfstd[6][4] = {{0,1,5,4},    // Expected cell-face-node pattern
+		     {1,2,6,5},
+		     {2,3,7,6},
+		     {0,4,7,3},
+		     {0,3,2,1},
+		     {4,5,6,7}};
+
 
   cell = cell_id_to_handle[cellid];
       
   mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
 			  MBInterface::INTERSECT);
-
   nf = cell_faces.size();
   assert ((unsigned int) (end - begin) >= nf);
-  cell_faceids = new int[nf];
 
-  mbcore->tag_get_data(lid_tag,cell_faces,cell_faceids);
+  cell_faceids = new int[nf];			
+
+
+  // Have to re-sort the faces according a specific template for hexes
+
+
+  if (nf == 6) { // Hex
+
+    MBEntityHandle *ordfaces, face;
+
+    ordfaces = new MBEntityHandle[6];
+
+    mbcore->get_connectivity(&cell, 1, cell_nodes);
+
+    for (int i = 0; i < nf; i++) {
+  
+      // Search for a face that has all the expected nodes
+
+      bool found = false;
+      int j;
+      for (j = 0; j < nf; j++) {
+
+	face = cell_faces[j];
+	mbcore->get_connectivity(&face, 1, face_nodes);
+
+	// Check if this face has all the expected nodes
+
+	bool all_present = true;
+
+	for (int k = 0; k < 4; k++) {
+	  unsigned int node = cell_nodes[cfstd[i][k]];
+
+	  if (face_nodes[0] != node && face_nodes[1] != node &&
+	      face_nodes[2] != node && face_nodes[3] != node) {
+	    all_present = false;
+	    break;
+	  }
+	}
+
+	if (all_present) {
+	  found = true;
+	  break;
+	}
+      }
+
+      assert(found);
+
+      if (found)
+	ordfaces[i] = face;
+    }
+
+
+    mbcore->tag_get_data(lid_tag,ordfaces,6,cell_faceids);
+
+    delete [] ordfaces;
+
+  }
+  else {
+    mbcore->tag_get_data(lid_tag,cell_faces,cell_faceids);
+  }
 
   std::copy (cell_faceids, cell_faceids+nf, begin);
 
@@ -699,26 +764,25 @@ void Mesh_maps_moab::cell_to_face_dirs (unsigned int cellid,
 				       int *end)
 {
   MBEntityHandle cell;
-  MBRange cell_faces;
+  unsigned int *cell_faces;
   int *cell_facedirs;
   int j,nf;
 
+  nf = 6; // HEX SPECIFIC - THIS NUMBER SHOULD COME FROM cell_to_faces
 
   cell = cell_id_to_handle[cellid];
 
-  mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
-			  MBInterface::INTERSECT);
+  cell_faces = new unsigned int[nf];
 
-  nf = cell_faces.size();
+  cell_to_faces(cellid,cell_faces,cell_faces+nf);
+
   assert ((unsigned int) (end - begin) >= nf);
   cell_facedirs = new int[nf];
 
-  j = 0;
-  for (MBRange::iterator i = cell_faces.begin(); i != cell_faces.end(); i++) {
-    MBEntityHandle face = *i;
+  for (int i = 0; i < nf; i++) {
+    MBEntityHandle face = face_id_to_handle[cell_faces[i]];
     int sidenum, offset;
-    mbcore->side_number(cell,face,sidenum,(cell_facedirs[j]),offset);
-    j++;
+    mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
   }
     
   std::copy (cell_facedirs, cell_facedirs+nf, begin);

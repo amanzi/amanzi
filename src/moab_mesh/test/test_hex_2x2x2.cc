@@ -32,12 +32,12 @@ TEST(MOAB_HEX1)
 		       {0, 1, 1},
 		       {1, 1, 1}};
   unsigned int cellnodes[8] = {0,1,3,2,4,5,7,6};
-  unsigned int facenodes[6][4] = {{0,2,3,1},
-				  {4,5,7,6},
-				  {0,1,5,4},
+  unsigned int facenodes[6][4] = {{0,1,5,4},
 				  {1,3,7,5},
 				  {3,2,6,7},
-				  {2,0,4,6}};
+				  {2,0,4,6},
+                                  {0,2,3,1},
+				  {4,5,7,6}};
 
 
   // Load a single hex from the hex1.exo file
@@ -70,7 +70,7 @@ TEST(MOAB_HEX1)
   for (j = 0; j < 6; j++) {
     mesh.face_to_nodes(faces[j],nodes,nodes+4);
     mesh.face_to_coordinates(faces[j],fcoords,fcoords+12);
-      
+
     for (k = 0; k < 4; k++) {
       CHECK_EQUAL(facenodes[j][k],nodes[k]);
       CHECK_ARRAY_EQUAL(xyz[facenodes[j][k]],&(fcoords[3*k]),3);
