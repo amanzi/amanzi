@@ -27,6 +27,6 @@ if (BUILD_TESTS)
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy_directory ${CMAKE_SOURCE_DIR}/chemistry/test ${CMAKE_BINARY_DIR}/chemistry/test) 
   endif()
-  target_link_libraries(test_chemistry mpc simple_mesh chemistry transport flow utils unittest++)
+  target_link_libraries(test_chemistry mpc simple_mesh chemistry transport flow utils unittest++ boost_filesystem)
 endif()
 

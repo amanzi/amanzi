@@ -10,6 +10,7 @@
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
 #include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
 	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
@@ -80,19 +81,29 @@ void MPC::cycle_driver () {
   
   string gmv_meshfile_ = gmv_parameter_list.get<string>("Mesh file name");
   string gmv_datafile_ = gmv_parameter_list.get<string>("Data file name");
-  string gmv_prefix = gmv_parameter_list.get<string>("GMV prefix",".");
+  string gmv_prefix = gmv_parameter_list.get<string>("GMV prefix","./");
   
-  if (gmv_prefix != ".") {
-    // create the GMV subdirectory
-    boost::filesystem::create_directory(gmv_prefix);
+  // create the GMV subdirectory
+  boost::filesystem::path prefix(gmv_prefix);
+  if (!boost::filesystem::is_directory(prefix.directory_string())) {
+    boost::filesystem::create_directory(prefix.directory_string());
   }
+  boost::filesystem::path fmesh(gmv_meshfile_);
+  boost::filesystem::path fdata(gmv_datafile_);
+  boost::filesystem::path slash("/");
 
   std::stringstream  mesh_filename;
-  mesh_filename << gmv_prefix << "/" << gmv_meshfile_;
+  mesh_filename << prefix.directory_string(); 
+  mesh_filename << slash.directory_string();
+  mesh_filename << fmesh.directory_string();
+
   string gmv_meshfile = mesh_filename.str();
 
   std::stringstream  data_filename;
-  data_filename << gmv_prefix << "/" << gmv_datafile_;
+  data_filename << prefix.directory_string(); 
+  data_filename << slash.directory_string();
+  data_filename << fdata.directory_string();
+
   string gmv_datafile = data_filename.str();
 
   const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency");

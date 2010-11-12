@@ -2,6 +2,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
+#include "Teuchos_MPISession.hpp"
 #include "Mesh_maps_base.hh"
 #include "cell_geometry.hpp"
 extern "C" {
@@ -66,11 +67,23 @@ void State::initialize_from_parameter_list()
     
     std::stringstream pname;
     pname << "Mesh block " << nb;
-    std::cout << pname.str() << std::endl; 
-    
+
     Teuchos::ParameterList sublist = parameter_list.sublist(pname.str());
 
     int mesh_block_ID = sublist.get<int>("Mesh block ID");
+
+    if (!mesh_maps->valid_set_id(mesh_block_ID,Mesh_data::CELL)) {
+      // there is an inconsistency in the xml input file, report and die
+      
+      int myrank = Teuchos::MPISession::getRank();
+
+      if (myrank == 0) {
+	std::cerr << "State::initialize_from_parameter_list... the mesh block with ID ";
+	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
+	throw std::exception();
+      }
+    }
+	
 
     // initialize the arrays with some constants from the input file
     set_porosity(sublist.get<double>("Constant porosity"),mesh_block_ID);
