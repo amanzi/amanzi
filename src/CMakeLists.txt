@@ -312,6 +312,13 @@ list(APPEND Trilinos_LIBRARIES m lapack blas)
 list(APPEND Trilinos_DIRS /usr/lib)
 list(APPEND Trilinos_INCLUDE_DIRS /usr/include)
 
+##############################################################################
+# Boost
+##############################################################################
+find_package( Boost COMPONENTS system filesystem REQUIRED)
+
+
+
 
 
 
