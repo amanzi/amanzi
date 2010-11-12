@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 
-#include "ThermoDatabase.hpp"
+#include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
 #include "Verbosity.hpp"
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
         components.total.push_back(1.0e-3);  // Ca++
         components.total.push_back(1.0e-3);  // Na+
         components.total.push_back(1.0e-3);  // Cl-
-        components.ion_exchange_sites.push_back(100.0);  // X-, equivalents per 100 grams solid?
+        components.ion_exchange_sites.push_back(15.0);  // X-, equivalents per 100 grams solid?
         break;
       }
       default: {
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   }
 
   if (thermo_database_file.size() != 0) {
-    chem = new ThermoDatabase();
+    chem = new SimpleThermoDatabase();
     chem->verbosity(verbosity);
     Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
     parameters.thermo_database_file = thermo_database_file;

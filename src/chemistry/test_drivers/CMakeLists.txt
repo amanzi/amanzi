@@ -5,7 +5,6 @@ include_directories(${PROJECT_SOURCE_DIR}/includes)
 set(EXE_NAME geochemistryTest)
 
 set(EXE_SRCS 
-	./ThermoDatabase.cpp 
 	./geochemistry_test.cpp 
 )
 

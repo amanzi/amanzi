@@ -1,16 +1,16 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ThermoDatabase_hpp__
-#define __ThermoDatabase_hpp__
+#ifndef __SimpleThermoDatabase_hpp__
+#define __SimpleThermoDatabase_hpp__
 
 #include <vector>
 
 #include "Species.hpp"
 #include "Beaker.hpp"
 
-class ThermoDatabase : public Beaker {
+class SimpleThermoDatabase : public Beaker {
  public:
-  ThermoDatabase();
-  virtual ~ThermoDatabase();
+  SimpleThermoDatabase();
+  virtual ~SimpleThermoDatabase();
 
   void Setup(const Beaker::BeakerComponents& components,
              const Beaker::BeakerParameters& parameters);
@@ -54,4 +54,4 @@ class ThermoDatabase : public Beaker {
   SpeciesId ion_exchange_complex_id_;
 };
 
-#endif  // __ThermoDatabase_hpp__
+#endif  // __SimpleThermoDatabase_hpp__

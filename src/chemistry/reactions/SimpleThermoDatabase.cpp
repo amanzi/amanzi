@@ -10,12 +10,12 @@
 #include "Mineral.hpp"
 #include "IonExchangeSite.hpp"
 #include "IonExchangeComplex.hpp"
-#include "ThermoDatabase.hpp"
+#include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "Species.hpp"
 #include "StringTokenizer.hpp"
 
-ThermoDatabase::ThermoDatabase(void)
+SimpleThermoDatabase::SimpleThermoDatabase(void)
     : Beaker(),
       primary_id_(0),
       aqueous_equilibrium_complex_id_(0),
@@ -23,14 +23,14 @@ ThermoDatabase::ThermoDatabase(void)
       ion_exchange_site_id_(0),
       ion_exchange_complex_id_(0)
 {
-}  // end ThermoDatabase constructor
+}  // end SimpleThermoDatabase constructor
 
-ThermoDatabase::~ThermoDatabase(void)
+SimpleThermoDatabase::~SimpleThermoDatabase(void)
 {
-}  // end ThermoDatabase destructor
+}  // end SimpleThermoDatabase destructor
 
-void ThermoDatabase::Setup(const Beaker::BeakerComponents& components,
-                           const Beaker::BeakerParameters& parameters)
+void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
+                                 const Beaker::BeakerParameters& parameters)
 {
   SetParameters(parameters);
   ReadFile(parameters.thermo_database_file);
@@ -61,10 +61,10 @@ void ThermoDatabase::Setup(const Beaker::BeakerComponents& components,
  **  For example <Primary Species  <Aqueous Equilibrium Complexes
  **
  *******************************************************************************/
-void ThermoDatabase::ReadFile(const std::string file_name)
+void SimpleThermoDatabase::ReadFile(const std::string file_name)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "ThermoDatabase::ReadFile()...." << std::endl;
+    std::cout << "SimpleThermoDatabase::ReadFile()...." << std::endl;
   }
 
   std::ifstream input(file_name.c_str());
@@ -122,7 +122,7 @@ void ThermoDatabase::ReadFile(const std::string file_name)
         line_type = kIonExchangeComplexLine;
         current_section = kIonExchangeComplexSection;
       } else {
-        std::cout << "ThermoDatabase::ReadFile(): unknown section string \'"
+        std::cout << "SimpleThermoDatabase::ReadFile(): unknown section string \'"
                   << line << "\'" << std::endl;
         current_section = kUnknownSection;
       }
@@ -170,7 +170,7 @@ void ThermoDatabase::ReadFile(const std::string file_name)
       }
       if (data_order_error) {
         // print a helpful message and exit gracefully
-        std::cout << "ERROR: ThermoDatabase::ReadFile() : "
+        std::cout << "ERROR: SimpleThermoDatabase::ReadFile() : "
                   << "Attempting to parse " << error_section << " before ";
         std::string temp;
         if (data_order_error == 3) {
@@ -200,10 +200,10 @@ void ThermoDatabase::ReadFile(const std::string file_name)
  **  Name ; size parameter ; charge ; gram molecular weight
  **
  *******************************************************************************/
-void ThermoDatabase::ParsePrimarySpecies(const std::string data)
+void SimpleThermoDatabase::ParsePrimarySpecies(const std::string data)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "ThermoDatabase::ParsePrimarySpecies()...." << std::endl;
+    std::cout << "SimpleThermoDatabase::ParsePrimarySpecies()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
   }
 
@@ -251,10 +251,10 @@ void ThermoDatabase::ParsePrimarySpecies(const std::string data)
  **  Name = coeff reactant ... ; log Keq ; size parameter ; charge ; gram molecular weight
  **
  *******************************************************************************/
-void ThermoDatabase::ParseAqueousEquilibriumComplex(const std::string data)
+void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string data)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "ThermoDatabase::ParseAqueousEquilibriumComplex()...." << std::endl;
+    std::cout << "SimpleThermoDatabase::ParseAqueousEquilibriumComplex()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
@@ -308,10 +308,10 @@ void ThermoDatabase::ParseAqueousEquilibriumComplex(const std::string data)
  **  Name = coeff reactant ... ; log Keq ; gram molecular weight ; molar density
  **
  *******************************************************************************/
-void ThermoDatabase::ParseMineral(const std::string data)
+void SimpleThermoDatabase::ParseMineral(const std::string data)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "ThermoDatabase::ParseMineral()...." << std::endl;
+    std::cout << "SimpleThermoDatabase::ParseMineral()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
@@ -365,10 +365,10 @@ void ThermoDatabase::ParseMineral(const std::string data)
  **  coordinate this with surface complexation.
  **
  *******************************************************************************/
-void ThermoDatabase::ParseIonExchangeSite(const std::string data)
+void SimpleThermoDatabase::ParseIonExchangeSite(const std::string data)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "ThermoDatabase::ParseIonExchangeSite()...." << std::endl;
+    std::cout << "SimpleThermoDatabase::ParseIonExchangeSite()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
   }
 
@@ -418,10 +418,10 @@ void ThermoDatabase::ParseIonExchangeSite(const std::string data)
  **    primary species and a single exchange site
  **
  *******************************************************************************/
-void ThermoDatabase::ParseIonExchangeComplex(const std::string data)
+void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string data)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "ThermoDatabase::ParseIonExchangeComplex()...." << std::endl;
+    std::cout << "SimpleThermoDatabase::ParseIonExchangeComplex()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
@@ -473,15 +473,15 @@ void ThermoDatabase::ParseIonExchangeComplex(const std::string data)
  **  SpeciesName = coeff PrimaryName coeff PrimaryName ...
  **
  *******************************************************************************/
-void ThermoDatabase::ParseReaction(const std::string reaction,
-                                   std::string* name,
-                                   std::vector<SpeciesName>* species,
-                                   std::vector<double>* stoichiometries,
-                                   std::vector<int>* species_ids,
-                                   double* h2o_stoich)
+void SimpleThermoDatabase::ParseReaction(const std::string reaction,
+                                         std::string* name,
+                                         std::vector<SpeciesName>* species,
+                                         std::vector<double>* stoichiometries,
+                                         std::vector<int>* species_ids,
+                                         double* h2o_stoich)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "    ThermoDatabase::ParseReaction()...." << std::endl;
+    std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
@@ -520,7 +520,7 @@ void ThermoDatabase::ParseReaction(const std::string reaction,
         }
       }
       if (id < 0) {
-        std::cout << "ThermoDatabase::ParseReaction(): reaction primary species \'"
+        std::cout << "SimpleThermoDatabase::ParseReaction(): reaction primary species \'"
                   << primary_name << "\' was not found in the primary species list...."
                   << std::endl;
       } else {
@@ -541,18 +541,18 @@ void ThermoDatabase::ParseReaction(const std::string reaction,
  **  SpeciesName = coeff PrimaryName coeff IonExchangeSite
  **
  *******************************************************************************/
-void ThermoDatabase::ParseReaction(const std::string reaction,
-                                   std::string* name,
-                                   SpeciesName* primary_name,
-                                   double* primary_stoichiometry,
-                                   SpeciesId* primary_id,
-                                   SpeciesName* exchanger_name,
-                                   double* exchanger_stoichiometry,
-                                   SpeciesId* exchanger_id,
-                                   double* h2o_stoich)
+void SimpleThermoDatabase::ParseReaction(const std::string reaction,
+                                         std::string* name,
+                                         SpeciesName* primary_name,
+                                         double* primary_stoichiometry,
+                                         SpeciesId* primary_id,
+                                         SpeciesName* exchanger_name,
+                                         double* exchanger_stoichiometry,
+                                         SpeciesId* exchanger_id,
+                                         double* h2o_stoich)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "    ThermoDatabase::ParseReaction()...." << std::endl;
+    std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
@@ -611,7 +611,7 @@ void ThermoDatabase::ParseReaction(const std::string reaction,
         }
       } else {
         // did not match an exchange site or primary species
-        std::cout << "ThermoDatabase::ParseReaction(): reaction species \'"
+        std::cout << "SimpleThermoDatabase::ParseReaction(): reaction species \'"
                   << search_name << "\' was not found in the primary species "
                   << "list or the ion exchange site list...."
                   << std::endl;
@@ -631,18 +631,18 @@ void ThermoDatabase::ParseReaction(const std::string reaction,
  **  SpeciesName = coeff PrimaryName coeff IonExchangeSite ...
  **
  *******************************************************************************/
-void ThermoDatabase::ParseReaction(const std::string reaction,
-                                   std::string* name,
-                                   std::vector<SpeciesName>* primaries,
-                                   std::vector<double>* primary_stoichiometries,
-                                   std::vector<SpeciesId>* primary_ids,
-                                   std::vector<SpeciesName>* exchange_sites,
-                                   std::vector<double>* exchanger_stoichiometries,
-                                   std::vector<SpeciesId>* exchanger_ids,
-                                   double* h2o_stoich)
+void SimpleThermoDatabase::ParseReaction(const std::string reaction,
+                                         std::string* name,
+                                         std::vector<SpeciesName>* primaries,
+                                         std::vector<double>* primary_stoichiometries,
+                                         std::vector<SpeciesId>* primary_ids,
+                                         std::vector<SpeciesName>* exchange_sites,
+                                         std::vector<double>* exchanger_stoichiometries,
+                                         std::vector<SpeciesId>* exchanger_ids,
+                                         double* h2o_stoich)
 {
   if (verbosity() == kDebugInputFile) {
-    std::cout << "    ThermoDatabase::ParseReaction()...." << std::endl;
+    std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
@@ -701,7 +701,7 @@ void ThermoDatabase::ParseReaction(const std::string reaction,
         }
       } else {
         // did not match an exchange site or primary species
-        std::cout << "ThermoDatabase::ParseReaction(): reaction species \'"
+        std::cout << "SimpleThermoDatabase::ParseReaction(): reaction species \'"
                   << search_name << "\' was not found in the primary species "
                   << "list or the ion exchange site list...."
                   << std::endl;
