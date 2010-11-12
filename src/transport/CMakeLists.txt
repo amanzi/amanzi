@@ -32,9 +32,9 @@ if (BUILD_TESTS)
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy_directory ${CMAKE_SOURCE_DIR}/transport/test ${CMAKE_BINARY_DIR}/transport/test) 
   endif()
-  target_link_libraries(test_serial   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS} boost_filesystem)
-  target_link_libraries(test_parallel ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS} boost_filesystem)
-  target_link_libraries(test_driver   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS} boost_filesystem)
+  target_link_libraries(test_serial   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
+  target_link_libraries(test_parallel ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
+  target_link_libraries(test_driver   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
 endif()
 
 

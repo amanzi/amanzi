@@ -27,6 +27,6 @@ if (BUILD_TESTS)
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy_directory ${CMAKE_SOURCE_DIR}/mpc/test ${CMAKE_BINARY_DIR}/mpc/test) 
   endif()
-  target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow utils unittest++ ${MOAB_ALL_LIBS} boost_filesystem)
+  target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow utils unittest++ ${MOAB_ALL_LIBS})
 endif()
 
