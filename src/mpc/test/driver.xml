@@ -69,6 +69,8 @@
   </ParameterList>
 
   <ParameterList name="Chemistry">
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
+    <Parameter name="Thermodynamic Database File" type="string" value="test/tracer.bgd" />
   </ParameterList>
 
   <ParameterList name="Flow">

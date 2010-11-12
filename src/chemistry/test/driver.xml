@@ -33,7 +33,7 @@
 
   <ParameterList name="State">
     <Parameter name="Number of mesh blocks" type="int" value="1"/>
-    <Parameter name="Number of component concentrations" type="int" value="1"/>
+    <Parameter name="Number of component concentrations" type="int" value="2"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
@@ -69,6 +69,11 @@
   </ParameterList>
 
   <ParameterList name="Chemistry">
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
+    <Parameter name="Thermodynamic Database File" type="string" value="test/carbonate.bgd" />
+    <Parameter name="Activity Model" type="string" value="unit" />
+    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
   </ParameterList>
 
   <ParameterList name="Flow">

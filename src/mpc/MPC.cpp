@@ -120,7 +120,12 @@ void MPC::cycle_driver () {
 	// something went wrong
 	throw std::exception();
       }
-
+    
+    chemistry_dT = transport_dT; // units?
+    CPK->advance(chemistry_dT);
+    Chemistry_PK::ChemistryStatus cpk_status = CPK->get_status();
+    CPK->commit_state(CS, chemistry_dT);
+    
     // update the state
     S->advance_time(mpc_dT);
     
