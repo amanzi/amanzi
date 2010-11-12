@@ -11,6 +11,7 @@
 
 #include "mpi.h"
 
+// Unless this example is enhanced, it does lesser testing than test_hex_3x3x2.cc
 
 TEST(MOAB_HEX_4x4x4)
 {
