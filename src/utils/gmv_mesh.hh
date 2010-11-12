@@ -43,6 +43,10 @@ namespace GMV {
   // Writes cell data to files which has previously been opened with open_data_file.
   void write_cell_data(const Epetra_Vector &x, std::string varname);
 
+  // Writes cell data to files which has previously been opened with open_data_file.
+  void write_face_data(const Epetra_Vector &x, std::string varname);
+
+
   // Writes the cycle number and time
   void write_cycle (const int cycle);
   void write_time (const double time);
