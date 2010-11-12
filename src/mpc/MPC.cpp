@@ -9,7 +9,7 @@
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
-
+#include "boost/filesystem/operations.hpp"
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
 	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
@@ -78,8 +78,23 @@ void MPC::cycle_driver () {
   // get the GMV data from the parameter list
   Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
   
-  string gmv_meshfile = gmv_parameter_list.get<string>("Mesh file name");
-  string gmv_datafile = gmv_parameter_list.get<string>("Data file name");
+  string gmv_meshfile_ = gmv_parameter_list.get<string>("Mesh file name");
+  string gmv_datafile_ = gmv_parameter_list.get<string>("Data file name");
+  string gmv_prefix = gmv_parameter_list.get<string>("GMV prefix",".");
+  
+  if (gmv_prefix != ".") {
+    // create the GMV subdirectory
+    boost::filesystem::create_directory(gmv_prefix);
+  }
+
+  std::stringstream  mesh_filename;
+  mesh_filename << gmv_prefix << "/" << gmv_meshfile_;
+  string gmv_meshfile = mesh_filename.str();
+
+  std::stringstream  data_filename;
+  data_filename << gmv_prefix << "/" << gmv_datafile_;
+  string gmv_datafile = data_filename.str();
+
   const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency");
   
   
