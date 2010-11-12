@@ -107,8 +107,7 @@ void MPC::cycle_driver () {
   string gmv_datafile = data_filename.str();
 
   const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency");
-  
-  
+    
   // write the GMV mesh file
   GMV::create_mesh_file(*mesh_maps,gmv_meshfile);
   
@@ -123,57 +122,77 @@ void MPC::cycle_driver () {
     S->update_darcy_flux(FPK->DarcyFlux());
     FPK->commit_state(FS);
   }
+  
 
-  // then iterate transport and chemistry
-  while (S->get_time() <= T1) {
-    double mpc_dT, chemistry_dT, transport_dT;
+  // let users selectively disable individual process kernels
+  // to allow for testing of the process kernels separately
 
-    transport_dT = TPK->calculate_transport_dT();
-    chemistry_dT = 1e+99;
-    mpc_dT = min( transport_dT, chemistry_dT );
+  bool transport_disabled = 
+    (parameter_list.get<string>("disable Transport_PK","no") == "yes");
+  bool chemistry_disabled =
+    (parameter_list.get<string>("disable Chemistry_PK","no") == "yes");
+  
+  cout << transport_disabled << " " << chemistry_disabled << endl;
+  
+  if (!chemistry_disabled || !transport_disabled) {
     
-    std::cout << "MPC: ";
-    std::cout << "Cycle = " << iter; 
-    std::cout << ",  Time = "<< S->get_time();
-    std::cout << ",  Transport dT = " << transport_dT << std::endl;
+    // then iterate transport and chemistry
+    while (S->get_time() <= T1) {
+      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99;
 
-    TPK->advance( mpc_dT );
+      if (!transport_disabled) transport_dT = TPK->calculate_transport_dT();
 
-    if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
-      {
-	// get the transport state and commit it to the state
+      mpc_dT = min( transport_dT, chemistry_dT );
+      
+      std::cout << "MPC: ";
+      std::cout << "Cycle = " << iter; 
+      std::cout << ",  Time = "<< S->get_time();
+      std::cout << ",  Transport dT = " << transport_dT << std::endl;
+      
+      if (!transport_disabled) {
+	// now advance transport
+	TPK->advance( mpc_dT );	
+	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
+	  {
+	    // get the transport state and commit it to the state
+	    RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+	    S->update_total_component_concentration(TS_next->get_total_component_concentration());
+	  }
+	else
+	  {
+	    // something went wrong
+	    throw std::exception();
+	  }
+      }
 
-	RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+      if (!chemistry_disabled) {
+	// now advance chemistry
+	chemistry_dT = transport_dT; // units?
+	CPK->advance(chemistry_dT);
+	Chemistry_PK::ChemistryStatus cpk_status = CPK->get_status();
+      }
+
+      // update the time in the state object
+      S->advance_time(mpc_dT);
+ 
+
+      // we're done with this time step, commit the state 
+      // in the process kernels
+      if (!transport_disabled) TPK->commit_state(TS);
+      if (!chemistry_disabled) CPK->commit_state(CS, chemistry_dT);
 	
-	S->update_total_component_concentration(TS_next->get_total_component_concentration());
-
-	TPK->commit_state(TS);
+     
+      // advance the iteration count
+      iter++;
+      
+      if (  iter % gmv_cycle_freq   == 0 ) {
+	cout << "Writing GMV file..." << endl;
+	write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
       }
-    else
-      {
-	// something went wrong
-	throw std::exception();
-      }
-    
-    chemistry_dT = transport_dT; // units?
-    CPK->advance(chemistry_dT);
-    Chemistry_PK::ChemistryStatus cpk_status = CPK->get_status();
-    CPK->commit_state(CS, chemistry_dT);
-    
-    // update the state
-    S->advance_time(mpc_dT);
-    
-    // advance the 
-    iter++;
-   
-    if (  iter % gmv_cycle_freq   == 0 ) {
-      cout << "Writing GMV file..." << endl;
-      write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
+      
     }
     
   }
-
-
 
 }
 
