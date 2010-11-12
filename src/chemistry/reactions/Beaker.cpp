@@ -94,10 +94,10 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
 
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize((int)this->primary_species().size());
-  this->VerifyState(components);
+  this->VerifyComponentSizes(components);
 } // end Setup()
 
-void Beaker::VerifyState(const Beaker::BeakerComponents& components)
+void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
 {
   // some helpful error checking goes here...
   std::string verify_sizes("ERROR: Beaker::VerifyState(): input data and initial conditions do not match:\n");
@@ -154,7 +154,28 @@ void Beaker::VerifyState(const Beaker::BeakerComponents& components)
   }
 */
 
-}  // end VerifyState()
+}  // end VerifyComponentSizes()
+
+void Beaker::SetComponents(const Beaker::BeakerComponents& components)
+{
+  unsigned int size = components.ion_exchange_sites.size();
+  if (ion_exchange_sites().size() == size) {
+    for (unsigned int ies = 0; ies < size; ies++) {
+      ion_exchange_sites_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
+    }
+  } else {
+    // error exit gracefully
+  }
+
+  size = components.minerals.size();
+  if (minerals().size() == size) {
+    for (unsigned int m = 0; m < size; m++) {
+      minerals_[m].set_volume_fraction(components.minerals.at(m));
+    }
+  } else {
+    // error exit gracefully
+  }
+}  // end SetComponents()
 
 void Beaker::SetupActivityModel(std::string model)
 {
@@ -361,7 +382,11 @@ void Beaker::updateEquilibriumChemistry(void)
 
   // add equilibrium surface complexation here
 
-  // add equilibrium ion exchange here
+  // add equilibrium ion exchange here?
+  for (std::vector<IonExchangeComplex>::iterator iec = ion_exchange_rxns_.begin();
+       iec != ion_exchange_rxns_.end(); iec++) {
+    iec->Update(primary_species(), ion_exchange_sites());
+  }
 
 }  // end updateEquilibriumChemistry()
 
@@ -735,7 +760,6 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 } // end ReactionStep()
 
 
-// if no water density provided, default is 1000.0 kg/m^3
 int Beaker::Speciate(const Beaker::BeakerComponents& components, 
                      const Beaker::BeakerParameters& parameters)
 {

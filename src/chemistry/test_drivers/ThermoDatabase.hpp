@@ -22,22 +22,30 @@ class ThermoDatabase : public Beaker {
   void ParseMineral(const std::string data);
   void ParseIonExchangeSite(const std::string data);
   void ParseIonExchangeComplex(const std::string data);
-  void ParseReaction(const std::string reaction, 
+  void ParseReaction(const std::string reaction,
                      std::string *name,
-                     std::vector<SpeciesName>* species, 
-                     std::vector<double>* stoichiometries, 
-                     std::vector<int>* species_ids, 
+                     std::vector<SpeciesName>* species,
+                     std::vector<double>* stoichiometries,
+                     std::vector<int>* species_ids,
                      double* h2o_stoich);
-  void ParseReaction(const std::string reaction, 
+  void ParseReaction(const std::string reaction,
                      std::string* name,
-                     std::vector<SpeciesName>* primaries, 
-                     std::vector<double>* primary_stoichiometries, 
-                     std::vector<SpeciesId>* primary_ids, 
-                     std::vector<SpeciesName>* exchange_sites, 
-                     std::vector<double>* exchanger_stoichiometries, 
-                     std::vector<SpeciesId>* exchanger_ids, 
+                     std::vector<SpeciesName>* primaries,
+                     std::vector<double>* primary_stoichiometries,
+                     std::vector<SpeciesId>* primary_ids,
+                     std::vector<SpeciesName>* exchange_sites,
+                     std::vector<double>* exchanger_stoichiometries,
+                     std::vector<SpeciesId>* exchanger_ids,
                      double* h2o_stoich);
-
+  void ParseReaction(const std::string reaction,
+                     std::string* name,
+                     SpeciesName* primary_name,
+                     double* primary_stoichiometry,
+                     SpeciesId* primary_id,
+                     SpeciesName* exchanger_name,
+                     double* exchanger_stoichiometry,
+                     SpeciesId* exchanger_id,
+                     double* h2o_stoich);
  private:
   SpeciesId primary_id_;
   SpeciesId aqueous_equilibrium_complex_id_;

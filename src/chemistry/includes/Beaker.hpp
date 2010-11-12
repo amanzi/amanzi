@@ -63,7 +63,8 @@ class Beaker {
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
   void SetupActivityModel(std::string model);
-  void VerifyState(const Beaker::BeakerComponents& components);
+  void VerifyComponentSizes(const Beaker::BeakerComponents& components);
+  void SetComponents(const Beaker::BeakerComponents& components);
 
   void addPrimarySpecies(Species s);
   void AddIonExchangeSite(IonExchangeSite exchanger);

@@ -29,8 +29,26 @@ IonExchangeSite::~IonExchangeSite()
 } // end IonExchangeSite destructor
 
 
-void IonExchangeSite::Update(void)
+void IonExchangeSite::update(void)
 {
+  // dummy update function, activity/conc/act coeff always equal to one?
+  molality_ = 1.0;
+  act_coef_ = 1.0;
+  activity_ = act_coef() * molality();
+  ln_molality_ = std::log(molality());
+  ln_act_coef_ = std::log(act_coef());
+  ln_activity_ = ln_molality() + ln_act_coef();
+} // end Update()
+
+void IonExchangeSite::update(const double in_molality)
+{
+  // dummy update function, activity/conc/act coeff always equal to one?
+  molality_ = 1.0;
+  act_coef_ = 1.0;
+  activity_ = act_coef() * molality();
+  ln_molality_ = std::log(molality());
+  ln_act_coef_ = std::log(act_coef());
+  ln_activity_ = ln_molality() + ln_act_coef();
 } // end Update()
 
 

@@ -28,7 +28,8 @@ class IonExchangeSite : public Species {
 
   virtual ~IonExchangeSite();
 
-  virtual void Update(void);
+  virtual void update(void);
+  virtual void update(const double in_molality);
   virtual void Display(void) const;
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
