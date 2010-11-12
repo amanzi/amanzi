@@ -26,6 +26,9 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
     // invalid database format, helpful error message and throw an error.
   }
 
+  Verbosity verbosity = static_cast<Verbosity>(parameter_list_.
+                                               get<int>("Verbosity", 0));
+
   // extract and set various parameters
   beaker_parameters_ = chem_->GetDefaultParameters();
 
@@ -72,14 +75,16 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
     beaker_components_.total.push_back( 0.1 );
   }
 
-  chem_->verbosity(kVerbose);
+  chem_->verbosity(verbosity);
   chem_->Setup(beaker_components_, beaker_parameters_);
-  chem_->Display();
-
+  if (verbosity) {
+    chem_->Display();
+  }
   // solve for free-ion concentrations
   chem_->Speciate(beaker_components_, beaker_parameters_);
-  chem_->DisplayResults();
-
+  if (verbosity) {
+    chem_->DisplayResults();
+  }
 }  // end Chemistry_PK()
 
 Chemistry_PK::~Chemistry_PK()
@@ -90,8 +95,9 @@ Chemistry_PK::~Chemistry_PK()
 
 void Chemistry_PK::advance(const double& delta_time)
 {
-  cout << "  Chemistry_PK::advance() : advancing the chemistry process model..." << endl;
-
+  if (chem_->verbosity()) {
+    cout << "  Chemistry_PK::advance() : advancing the chemistry process model..." << endl;
+  }
   // the MPC will call this function to advance the state
   // with this particular process kernel
 
@@ -107,15 +113,18 @@ void Chemistry_PK::advance(const double& delta_time)
 
   current_time_ = saved_time_ + delta_time;
 
-  chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);        
-  chem_->DisplayTotalColumns(current_time_, beaker_components_.total);
+  chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);
+  if (chem_->verbosity()) {
+    chem_->DisplayTotalColumns(current_time_, beaker_components_.total);
+  }
 }  // end advance()
 
 
 void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time)
 {
-  cout << "  Chemistry_PK::commit_state() : Committing internal state." << endl;
-
+  if (chem_->verbosity()) {
+    cout << "  Chemistry_PK::commit_state() : Committing internal state." << endl;
+  }
   // the MPC will call this function to signal to the
   // process kernel that it has accepted the
   // state update, thus, the PK should update
