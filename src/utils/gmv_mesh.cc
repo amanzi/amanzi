@@ -139,7 +139,12 @@ namespace GMV {
     gmvwrite_variable_name_data(CELL, (char *) varname.c_str(), cell_data);
   }
 
-
+  void write_face_data(const Epetra_Vector &x, std::string varname) {
+    double *face_data;
+    int err = x.ExtractView(&face_data);
+    gmvwrite_variable_name_data(FACE, (char *) varname.c_str(), face_data);
+  }
+    
 
 
   void close_data_file() {

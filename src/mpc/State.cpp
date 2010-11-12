@@ -76,9 +76,9 @@ void State::initialize_from_parameter_list()
     set_porosity(sublist.get<double>("Constant porosity"),mesh_block_ID);
     set_permeability(sublist.get<double>("Constant permeability"),mesh_block_ID);
     
-    u[0] = sublist.get<double>("Constant Darcy flux x");
-    u[1] = sublist.get<double>("Constant Darcy flux y");
-    u[2] = sublist.get<double>("Constant Darcy flux z");
+    u[0] = sublist.get<double>("Constant Darcy flux x",0.0);
+    u[1] = sublist.get<double>("Constant Darcy flux y",0.0);
+    u[2] = sublist.get<double>("Constant Darcy flux z",0.0);
     set_darcy_flux(u, mesh_block_ID);
     
   }
@@ -117,6 +117,12 @@ void State::update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector
   *total_component_concentration = *new_tcc;
 
 }
+
+void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
+{
+  *darcy_flux = new_darcy_flux;
+}
+
 
 void State::advance_time(double dT)
 {

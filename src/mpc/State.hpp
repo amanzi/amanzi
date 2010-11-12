@@ -48,7 +48,8 @@ public:
   void set_time ( double new_time );
   void advance_time(double dT);
   void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
-
+  void update_darcy_flux(const Epetra_Vector&);
+  
   // status methods
   const status_type get_status () const { return status; };
   void set_status ( status_type new_status ) { status = new_status; }

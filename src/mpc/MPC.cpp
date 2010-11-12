@@ -91,6 +91,14 @@ void MPC::cycle_driver () {
   // write the GMV data file
   write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);
   
+  // first solve the flow equation
+  if (parameter_list.get<string>("disable Flow_PK","no") == "no") {
+    FPK->advance();
+    S->update_darcy_flux(FPK->DarcyFlux());
+    FPK->commit_state(FS);
+  }
+
+  // then iterate transport and chemistry
   while (S->get_time() <= T1) {
     double mpc_dT, chemistry_dT, transport_dT;
 
@@ -167,6 +175,9 @@ void MPC::write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile,
     
     GMV::write_cell_data( *(*S->get_total_component_concentration())(nc), concstring);
   }
+  
+  // GMV::write_face_data( *(->get_darcy_flux()), "flux"); 
+  
   GMV::close_data_file();     
  
 }
