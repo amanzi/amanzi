@@ -56,14 +56,12 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
-    <Parameter name="number of components" type="int" value="1"/>   
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC 0">
 	<Parameter name="Side set ID" type="int" value="1"/>
 	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="number of components" type="int" value="1"/>
 	<Parameter name="Component 0" type="double" value="1.0"/>
       </ParameterList>  
     </ParameterList>

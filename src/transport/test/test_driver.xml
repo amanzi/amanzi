@@ -33,7 +33,7 @@
 
   
   <ParameterList name="State">
-    <Parameter name="Number of mesh blocks" type="int" value="1"/>
+    <Parameter name="Number of mesh blocks" type="int" value="4"/>
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
@@ -44,11 +44,38 @@
 
     <ParameterList name="Mesh block 1"> 
       <Parameter name="Mesh block ID" type="int" value="20000"/>
+      <Parameter name="Constant permeability" type="double" value="1.0"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant Darcy flux x" type="double" value="-1"/>
       <Parameter name="Constant Darcy flux y" type="double" value="-2"/>
       <Parameter name="Constant Darcy flux z" type="double" value="-0.01"/>
+    </ParameterList>
+
+    <ParameterList name="Mesh block 2"> 
+      <Parameter name="Mesh block ID" type="int" value="30000"/>
+      <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant permeability" type="double" value="1.0"/>
+      <Parameter name="Constant Darcy flux x" type="double" value="-1"/>
+      <Parameter name="Constant Darcy flux y" type="double" value="-2"/>
+      <Parameter name="Constant Darcy flux z" type="double" value="-0.01"/>
+    </ParameterList>
+
+    <ParameterList name="Mesh block 3"> 
+      <Parameter name="Mesh block ID" type="int" value="40000"/>
+      <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant permeability" type="double" value="1.0"/>
+      <Parameter name="Constant Darcy flux x" type="double" value="-1"/>
+      <Parameter name="Constant Darcy flux y" type="double" value="-2"/>
+      <Parameter name="Constant Darcy flux z" type="double" value="-0.01"/>
+    </ParameterList>
+
+    <ParameterList name="Mesh block 4"> 
+      <Parameter name="Mesh block ID" type="int" value="50000"/>
+      <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant permeability" type="double" value="1.0"/>
+      <Parameter name="Constant Darcy flux x" type="double" value="-1"/>
+      <Parameter name="Constant Darcy flux y" type="double" value="-2"/>
+      <Parameter name="Constant Darcy flux z" type="double" value="-0.01"/>
     </ParameterList>
   </ParameterList>
 
@@ -61,9 +88,8 @@
       <ParameterList name="BC 0">
 	<Parameter name="Side set ID" type="int" value="105"/>
 	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="number of components" type="int" value="2"/>
+	<Parameter name="number of components" type="int" value="1"/>
 	<Parameter name="Component 0" type="double" value="1.0"/>
-	<Parameter name="Component 1" type="double" value="1.0"/>
       </ParameterList>  
     </ParameterList>
   </ParameterList>
@@ -71,6 +97,7 @@
 
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
+    <Parameter name="Thermodynamic Database File" type="string" value="test/tracer.bgd" />
   </ParameterList>
 
 

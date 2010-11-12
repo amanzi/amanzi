@@ -125,12 +125,11 @@ void Transport_PK::process_parameter_list()
 
      ParameterList bc_ss = BC_list.sublist( bc_name );
 
-     unsigned int  ssid, ntcc;
+     unsigned int  ssid;
      string  type;
      double  value;
 
      ssid = bc_ss.get<int>("Side set ID");
-     ntcc = bc_ss.get<int>("number of components");
      type = bc_ss.get<string>("Type");
 
      /* check all existing components: right now we check by id */
