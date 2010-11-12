@@ -57,7 +57,6 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
-    <Parameter name="number of components" type="int" value="1"/>   
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>

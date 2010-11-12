@@ -33,18 +33,23 @@
 
   
   <ParameterList name="State">
-    <Parameter name="Number of component concentrations" type="int" value="3"/>
-    <Parameter name="Constant porosity" type="double" value="0.2"/>
-    <Parameter name="Constant Darcy flux x" type="double" value="-1.0"/>
-    <Parameter name="Constant Darcy flux y" type="double" value="-0.6"/>
-    <Parameter name="Constant Darcy flux z" type="double" value="-0.01"/>
+    <Parameter name="Number of mesh blocks" type="int" value="1"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
-    <Parameter name="Constant permeability" type="double" value="1.0"/>
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.8"/>
+
+    <ParameterList name="Mesh block 1"> 
+      <Parameter name="Mesh block ID" type="int" value="20000"/>
+      <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant Darcy flux x" type="double" value="-1"/>
+      <Parameter name="Constant Darcy flux y" type="double" value="-2"/>
+      <Parameter name="Constant Darcy flux z" type="double" value="-0.01"/>
+      <Parameter name="Constant permeability" type="double" value="1.0"/>
+    </ParameterList>
   </ParameterList>
 
 
@@ -63,8 +68,11 @@
     </ParameterList>
   </ParameterList>
 
+
   <ParameterList name="Chemistry">
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
   </ParameterList>
+
 
   <ParameterList name="Flow">
     <Parameter name="Max Iterations" type="int" value="100"/>
@@ -74,10 +82,12 @@
       <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC00">
         <Parameter name="Type" type="string" value="Static Head"/>
-        <Parameter name="BC value" type="double" value="2.0" />
+	<Parameter name="BC value" type="double" value="2.0" />
 	<Parameter name="Side set ID" type="int" value="105" />
       </ParameterList>  
     </ParameterList>
   </ParameterList>
   
+
+  <Parameter name="disable Flow_PK" type="string" value="yes"/>
 </ParameterList>
