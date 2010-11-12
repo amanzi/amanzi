@@ -28,7 +28,7 @@
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
-      <Parameter name="Dump cycle frequency" type="int" value="1"/>
+      <Parameter name="Dump cycle frequency" type="int" value="1000"/>
     </ParameterList>
   </ParameterList> 
 
