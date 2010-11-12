@@ -1,8 +1,7 @@
 #include <iostream>
 
-#include "cell_geometry.hpp"
-//#include "CellTopology.hpp"
-#include "cell_topology.hpp"
+#include "cell_geometry.hh"
+#include "cell_topology.hh"
 using namespace cell_topology;
 
 #include "MimeticHexLocal.hpp"

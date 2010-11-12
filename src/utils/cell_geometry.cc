@@ -1,4 +1,4 @@
-#include "cell_geometry.hpp"
+#include "cell_geometry.hh"
 #include <math.h>
 
 namespace cell_geometry {
@@ -139,8 +139,8 @@ namespace cell_geometry {
     hvol += tet_volume(x[0],x[2],x[7],x[5]) + tet_volume(x[1],x[3],x[4],x[6]);
     hvol *= 0.5;
   }
-  
-  
+
+
   void compute_hex_face_normals(const Epetra_SerialDenseMatrix &x, Epetra_SerialDenseMatrix &a)
   {
     double v1[3], v2[3];
