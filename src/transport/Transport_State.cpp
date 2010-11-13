@@ -123,11 +123,11 @@ void Transport_State::error_total_component_concentration( double t, vector<doub
         center[i] /= 8;
      }
 
-     if ( center[0] <= t ) {
-         d = (*total_component_concentration)[0][c] - 1;
-        *L1 += fabs( d ) * cell_volume[c];
-        *L2 += d * d * cell_volume[c];
-     }
+     if ( center[0] <= t ) { d = (*total_component_concentration)[0][c] - 1; }
+     else                  { d = (*total_component_concentration)[0][c]; }
+
+     *L1 += fabs( d ) * cell_volume[c];
+     *L2 += d * d * cell_volume[c];
   }
 
   *L2 = sqrt( *L2 );

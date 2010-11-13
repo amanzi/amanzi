@@ -56,8 +56,8 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   fmax_owned = fmin + number_owned_faces - 1;
 
   /* assume that enumartion starts with 0 */
-  number_wghost_cells = cmax;
-  number_wghost_faces = fmax;
+  number_wghost_cells = cmax + 1;
+  number_wghost_faces = fmax + 1;
 
 
   /* the rest of the code may not work without MPI information */
