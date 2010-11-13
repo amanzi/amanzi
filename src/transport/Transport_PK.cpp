@@ -397,7 +397,6 @@ void Transport_PK::check_divergence_free_condition()
      for ( i=0; i<6; i++ ) {
         f = c2f[i];
         u = (*darcy_flux)[f];
-if(MyPID==0) cout << "c=" << c << " i=" << i << " dirs[i]=" << dirs[i] << " f=" << f << " #owned=" << fmax_owned+1 << endl; 
         div += u * dirs[i];
         umax = max( umax, fabs( u ) / pow( face_area[f], 0.5 ) );
      }
@@ -412,7 +411,7 @@ if(MyPID==0) cout << "c=" << c << " i=" << i << " dirs[i]=" << dirs[i] << " f=" 
         cout << "    divergence = " << div << endl;
         cout << "    maximal velocity = " << umax << endl; 
         cout << "    admissible tolerance div/flux is 1e-6" << endl; 
-        //throw exception(); 
+        throw exception(); 
      }
   }
 
