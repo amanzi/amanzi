@@ -50,6 +50,9 @@ SOURCE=$HOME/ASCEM-Code/amanzi/src
 
 /usr/bin/cmake \
   -D MPI_INCLUDE_DIR:FILEPATH=/usr/lib64/openmpi/include \
+  -D MPI_EXEC:FILEPATH=mpirun \
+  -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \
+  -D MPI_EXEC_MAX_NUMPROCS:STRING=4 \
   -D Curl_DIR:FILEPATH=/usr/lib64 \
   -D HDF5_DIR:FILEPATH=/usr/lib64 \
   -D NetCDF_DIR:FILEPATH=/usr/lib64 \
