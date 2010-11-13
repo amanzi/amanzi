@@ -14,7 +14,7 @@
       <Parameter name="Numer of Cells in Z" type="int" value="3"/> 
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Mesh file name" type="string" value="test/fbasin_unstr_50_V01.exo"/> 
+      <Parameter name="Mesh file name" type="string" value="test/fbasin_unstr_400_V01.exo"/> 
     </ParameterList>   
     <ParameterList name="STK Mesh Parameters">
     </ParameterList>   
