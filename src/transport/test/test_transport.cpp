@@ -148,16 +148,11 @@ TEST(ADVANCE_WITH_SIMPLE) {
   double u[3] = {1, 0, 0};
 
   TS->analytic_darcy_flux( u );
-  TS->analytic_total_component_concentration();
   TS->analytic_porosity();
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
   /* advance the state */
-  double  dT = TPK.calculate_transport_dT();
-  TPK.advance( dT );
-
-  /* printing cell concentration */
   int  i, k;
   double  T = 0.0;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
@@ -166,7 +161,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
   for( i=0; i<100; i++ ) {
-     dT = TPK.calculate_transport_dT();
+     double dT = TPK.calculate_transport_dT();
      TPK.advance( dT );
      T += dT;
 
@@ -190,3 +185,62 @@ TEST(ADVANCE_WITH_SIMPLE) {
  
 
 
+
+/* convergence analisis */
+TEST(CONVERGENCE_ANALYSIS) {
+
+  using namespace std;
+  using namespace Teuchos;
+
+  cout << "================ TEST CONVERGENCE ANALISYS ===================" << endl;
+  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+
+  /* create a MPC state with three component */
+  int num_components = 1;
+  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 80, 2, 2, comm) ); 
+
+  State mpc_state( num_components, mesh );
+
+  /* create a transport state from the MPC state */
+  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+
+  /* initialize a transport process kernel from a transport state */
+  ParameterList parameter_list;
+  string xmlFileName = "test/test_transport.xml";
+
+  updateParametersFromXmlFile( xmlFileName, &parameter_list );
+  Transport_PK  TPK( parameter_list, TS );
+
+  /* create analytic Darcy flux */
+  double u[3] = {1, 0, 0};
+
+  TS->analytic_darcy_flux( u );
+  TS->analytic_total_component_concentration();
+  TS->analytic_porosity( 1.0 );
+  TS->analytic_water_saturation( 1.0 );
+  TS->analytic_water_density( 1.0 );
+
+  /* advance the state */
+  int  i, k, iter = 0;
+  double  T = 0.0, T1 = 0.5;
+  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+
+  RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
+  RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
+
+  while( T < T1 ) {
+     double dT = min( TPK.calculate_transport_dT(), T1 - T );
+     TPK.advance( dT );
+     T += dT;
+
+     *tcc = *tcc_next;
+     iter++;
+  }
+
+  /* calculate L1 error */
+  double  L1, L2;
+  TS->error_total_component_concentration( T, TPK.get_cell_volume(), &L1, &L2 );
+  cout << "L1 error = " << L1 << "  L2 error = " << L2 << "  dT = " << T1 / iter << endl;
+
+  delete comm;
+}

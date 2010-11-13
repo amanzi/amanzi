@@ -83,7 +83,7 @@ void Transport_State::analytic_darcy_flux( double* u )
 /* ************************************************************* */
 /* DEBUG: create constant analytical concentration C_0 = x       */
 /* ************************************************************* */
-void Transport_State::analytic_total_component_concentration()
+void Transport_State::analytic_total_component_concentration( double t )
 {
   int  i, j, c;
   double x[8][3], center[3];
@@ -99,8 +99,38 @@ void Transport_State::analytic_total_component_concentration()
         center[i] /= 8;
      }
 
-     (*total_component_concentration)[0][c] = pow(1 - center[0], 3) / 100;
+     if ( center[0] <= t ) (*total_component_concentration)[0][c] = 1;
   }
+}
+
+
+
+
+void Transport_State::error_total_component_concentration( double t, vector<double> & cell_volume, double* L1, double* L2 )
+{
+  int  i, j, c;
+  double  d, x[8][3], center[3];
+
+  Epetra_Map cell_map = mesh_maps->cell_map( false );
+
+  *L1 = *L2 = 0.0;
+  for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
+     mesh_maps->cell_to_coordinates( c, (double*) x, (double*) x+24);
+
+     for( i=0; i<3; i++ ) { 
+        center[i] = 0;
+        for( j=0; j<8; j++ ) center[i] += x[j][i];
+        center[i] /= 8;
+     }
+
+     if ( center[0] <= t ) {
+         d = (*total_component_concentration)[0][c] - 1;
+        *L1 += fabs( d ) * cell_volume[c];
+        *L2 += d * d * cell_volume[c];
+     }
+  }
+
+  *L2 = sqrt( *L2 );
 }
 
 
