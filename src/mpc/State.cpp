@@ -4,7 +4,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_MPISession.hpp"
 #include "Mesh_maps_base.hh"
-#include "cell_geometry.hpp"
+#include "cell_geometry.hh"
 extern "C" {
 #include "gmvwrite.h"
 }

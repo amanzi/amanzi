@@ -4,7 +4,7 @@ include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 include_directories(${Trilinos_INCLUDE_DIRS})
 
-add_library(utils gmv_mesh.cc)
+add_library(utils gmv_mesh.cc cell_geometry.cc)
 target_link_libraries(utils gmv simple_mesh dbc mesh_data ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 

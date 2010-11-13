@@ -1,5 +1,5 @@
 #include "MimeticHex.hpp"
-#include "cell_geometry.hpp"
+#include "cell_geometry.hh"
 
 MimeticHex::MimeticHex(const Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
 {

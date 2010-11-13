@@ -4,7 +4,7 @@
 
 #include "Mesh_maps_base.hh"
 #include "Transport_PK.hpp"
-#include "cell_geometry.hpp"
+#include "cell_geometry.hh"
 
 using namespace std;
 using namespace Teuchos;
