@@ -4,7 +4,7 @@
 #include "Epetra_MultiVector.h"
 #include "Teuchos_MPISession.hpp"
 #include "Mesh_maps_base.hh"
-#include "cell_geometry.hpp"
+#include "cell_geometry.hh"
 extern "C" {
 #include "gmvwrite.h"
 }
@@ -169,7 +169,7 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 void State::set_darcy_flux( const double* u, const int mesh_block_id )
 {
   int  i, f;
-  double x[4][3], normal[3], length;
+  double x[4][3], normal[3];
 
   // Epetra_Map face_map = mesh_maps->face_map(false);
 
@@ -201,10 +201,8 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
       mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
       
       quad_face_normal(x[0], x[1], x[2], x[3], normal);
-      length = vector_length( normal, 3 );
     
-      (*darcy_flux)[*f] = 
-	(u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2]) / length;
+      (*darcy_flux)[*f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
     }
   }
 }

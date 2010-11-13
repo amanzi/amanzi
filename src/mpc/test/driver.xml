@@ -23,11 +23,11 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="10.0"/>
+    <Parameter name="End Time" type="double" value="1e-4"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
-      <Parameter name="Dump cycle frequency" type="int" value="100"/>
+      <Parameter name="Dump cycle frequency" type="int" value="1000"/>
     </ParameterList>    
   </ParameterList> 
 
@@ -57,6 +57,8 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="verbosity level" type="int" value="10"/>  
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
@@ -76,7 +78,7 @@
   <ParameterList name="Flow">
 
     <Parameter name="Max Iterations" type="int" value="100"/>
-    <Parameter name="Error Tolerance" type="double" value="1.0e-8"/>
+    <Parameter name="Error Tolerance" type="double" value="1.0e-12"/>
     
     <ParameterList name="Flow BC">
       <Parameter name="number of BCs" type="int" value="6"/>

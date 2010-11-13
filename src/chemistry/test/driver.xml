@@ -23,12 +23,12 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="100.0"/>
+    <Parameter name="End Time" type="double" value="0.01"/>
     <Parameter name="disable Flow_PK" type="string" value="yes"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
-      <Parameter name="Dump cycle frequency" type="int" value="1"/>
+      <Parameter name="Dump cycle frequency" type="int" value="1000"/>
     </ParameterList>
   </ParameterList> 
 
@@ -56,6 +56,8 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="verbosity level" type="int" value="10"/>  
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
@@ -70,6 +72,7 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="test/carbonate.bgd" />
+    <Parameter name="Verbosity" type="int" value="2" />
     <Parameter name="Activity Model" type="string" value="unit" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>

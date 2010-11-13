@@ -24,6 +24,9 @@
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
     <Parameter name="End Time" type="double" value="10.0"/>
+    <Parameter name="disable Flow_PK" type="string" value="no"/>
+    <Parameter name="disable Transport_PK" type="string" value="no"/>
+    <Parameter name="disable Chemistry_PK" type="string" value="no"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
@@ -58,6 +61,8 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="verbosity level" type="int" value="10"/>  
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
