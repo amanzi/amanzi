@@ -197,7 +197,7 @@ TEST(CONVERGENCE_ANALYSIS) {
 
   /* create a MPC state with three component */
   int num_components = 1;
-  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 80, 2, 2, comm) ); 
+  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 40, 2, 2, comm) ); 
 
   State mpc_state( num_components, mesh );
 
