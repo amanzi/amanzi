@@ -31,10 +31,10 @@ namespace Amanzi_Transport{
   const double TRANSPORT_LARGE_TIME_STEP = 1e+99;
   const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
 
-  const int TRANSPORT_INTERNAL_DEBUG = 1;
-
   const int TRANSPORT_BC_CONSTANT_INFLUX = 1;
   const int TRANSPORT_BC_NULL = 2;
+
+  const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
 }
 
 
@@ -62,7 +62,7 @@ public:
 
   void process_parameter_list();
   void identify_upwind_cells();
-  void extract_darcy_flux();
+  void check_divergence_free_condition();
 
   vector<double> calculate_accumulated_influx();
   vector<double> calculate_accumulated_outflux();
@@ -90,9 +90,6 @@ private:
   RCP<Transport_State>  TS;
   RCP<Transport_State>  TS_next;
   
-  /* darcy_flux: it will disappear after merging with flow PK */
-  vector<double>  darcy_flux;
-
   /* parameter list with Transport specific parameters */
   ParameterList  parameter_list;
 
@@ -108,6 +105,7 @@ private:
   double  cfl, dT;
   int     number_components;
   int     status;
+  int     verbosity_level, internal_tests;
 
   /* boundary conditions for each components and each side set */
   /* it will be converted to a separate class                  */

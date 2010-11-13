@@ -32,9 +32,11 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   TS_next = rcp( new Transport_State () );
   TS_next->create_internal_state( *TS_MPC );
 
-  /* set null/zero values to all internal parameters */
+  /* set default values to all internal parameters */
   dT = 0.0;
   status = TRANSPORT_NULL;
+  verbosity_level = 0;
+  internal_tests = 0;
 
 
   /* frequently used data */
@@ -78,9 +80,8 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   upwind_cell.resize( number_owned_faces );
   downwind_cell.resize( number_owned_faces );
 
-
   /* other preliminaries for Demo I */
-  darcy_flux.resize( number_owned_faces );
+  /* darcy_flux.resize( number_owned_faces ); */
 };
 
 
@@ -96,12 +97,17 @@ void Transport_PK::process_parameter_list()
 
   /* global transport parameters */
   cfl = parameter_list.get<double>( "CFL", 1.0 );
+
+  verbosity_level = parameter_list.get<int>( "verbosity level", 0 );
+  internal_tests = parameter_list.get<string>( "enable internal tests", "no") == "yes";
  
   if ( !MyPID ) {
      cout << "Transport PK: CFL = " << cfl << endl;
      cout << "              Total number of components = " << number_components << endl;
+     cout << "              Verbosity level = " << verbosity_level << endl;
+     cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
-
+  
 
   /* read number of boundary consitions */ 
   ParameterList  BC_list;
@@ -176,24 +182,25 @@ void Transport_PK::process_parameter_list()
 double Transport_PK::calculate_transport_dT()
 {
   if ( status == TRANSPORT_NULL ) {
-     extract_darcy_flux();
+     /* extract_darcy_flux(); */
+     check_divergence_free_condition();
      identify_upwind_cells();
   }
 
-  RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
+  RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
+  RCP<Epetra_Vector>   darcy_flux = TS->get_darcy_flux();
 
   vector<double>  total_influx( number_owned_cells, 0.0 );
 
   /* loop over faces and accumulate upwinding fluxes */
   int  i, f, c, c1;
-  double  area, u;
+  double  u;
   const Epetra_Map & face_map = mesh->face_map(true);
 
   for( f=fmin; f<=fmax; f++ ) {
      c = downwind_cell[f];
 
-     area = face_area[f];
-     if( c >= 0 ) total_influx[c] += area * fabs( darcy_flux[f] ); 
+     if( c >= 0 ) total_influx[c] += fabs( (*darcy_flux)[f] ); 
   }
 
 
@@ -244,11 +251,12 @@ void Transport_PK::advance( double dT_MPC )
   /* access data */
   int  i, c, c1, c2;
   unsigned int  f;
-  double  u, area, vol_phi_ws, tcc_flux;
+  double  u, vol_phi_ws, tcc_flux;
 
   RCP<Epetra_MultiVector>   tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector>   tcc_next = TS_next->get_total_component_concentration();
 
+  RCP<const Epetra_Vector>  darcy_flux = TS->get_darcy_flux();
   RCP<const Epetra_Vector>  ws  = TS->get_water_saturation();
   RCP<const Epetra_Vector>  phi = TS->get_porosity();
 
@@ -270,22 +278,20 @@ void Transport_PK::advance( double dT_MPC )
      c2 = downwind_cell[f]; 
 
      if ( c1 >=0 && c2 >= 0 ) {
-        u = fabs(darcy_flux[f]);
-        area = face_area[f];
+        u = fabs( (*darcy_flux)[f] );
 
         for( i=0; i<num_components; i++ ) {
-           tcc_flux = dT * u * area * (*tcc)[i][c1];
+           tcc_flux = dT * u * (*tcc)[i][c1];
 
            (*tcc_next)[i][c1] -= tcc_flux;
            (*tcc_next)[i][c2] += tcc_flux;
         }
      } 
      else if ( c1 >=0 ) {
-        u = fabs(darcy_flux[f]);
-        area = face_area[f];
+        u = fabs( (*darcy_flux)[f]);
 
         for( i=0; i<num_components; i++ ) {
-           tcc_flux = dT * u * area * (*tcc)[i][c1];
+           tcc_flux = dT * u * (*tcc)[i][c1];
            (*tcc_next)[i][c1] -= tcc_flux;
         }
      }
@@ -300,12 +306,11 @@ void Transport_PK::advance( double dT_MPC )
         c2 = downwind_cell[f]; 
 
         if ( c2 >= 0 ) {
-           u = fabs(darcy_flux[f]);
-           area = face_area[f];
+           u = fabs( (*darcy_flux)[f] );
 
            if ( bcs[n].type == TRANSPORT_BC_CONSTANT_INFLUX ) {
               for( i=0; i<num_components; i++ ) {
-                 tcc_flux = dT * u * area * bcs[n].values[i];
+                 tcc_flux = dT * u * bcs[n].values[i];
                  (*tcc_next)[i][c2] += tcc_flux;
                  bcs[n].influx[i] += tcc_flux;
               }
@@ -334,7 +339,7 @@ void Transport_PK::advance( double dT_MPC )
 
 
   /* debug checks */
-  if ( TRANSPORT_INTERNAL_DEBUG ) {
+  if ( internal_tests ) {
      double tcc_min_values[num_components];
      double tcc_max_values[num_components];
 
@@ -343,7 +348,10 @@ void Transport_PK::advance( double dT_MPC )
 
      for( i=0; i<num_components; i++ ) {
         if ( tcc_min_values[i] < 0.0 || 
-             tcc_max_values[i] > 1.0 ) { throw exception(); }
+             tcc_max_values[i] > 1.0 + TRANSPORT_CONCENTRATION_OVERSHOOT ) { 
+           cout << "Transport failure: check div-free condition!" << endl; 
+           throw exception(); 
+        }
      }
   }
 
@@ -368,30 +376,47 @@ void Transport_PK::commit_state( RCP<Transport_State> TS )
 
 
 /* ************************************************************* */
-/* calculate Darcy velocity from mass flux:                      */
-/* serial implementaition                                        */
+/* verifies that the velocity field is divergence free           */
 /* ************************************************************* */
-void Transport_PK::extract_darcy_flux()
+void Transport_PK::check_divergence_free_condition()
 {
-  int  f, c1, c2;
-  double  density;
+  int  i, c, f;
+  double  div, u, umax, L8_error;
+  vector<unsigned int>  c2f(6);
+  vector<int>           dirs(6);
 
   RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
-  RCP<const Epetra_Vector>  rho = TS->get_water_density();
+  const Epetra_Map & face_map = mesh->face_map(true);
+  RCP<Epetra_Vector>   darcy_flux = TS->get_darcy_flux();
 
-  double *u;
-  TS->get_darcy_flux()->ExtractView( &u );
+  L8_error = 0;
 
-  for( f=fmin; f<=fmax; f++ ) {
-     c1 = upwind_cell[f]; 
-     c2 = downwind_cell[f]; 
+  for( c=cmin; c<=cmax_owned; c++ ) {
+     mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
+     mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
 
-     if ( c1 >= cmin && c2 >= cmin ) { density = ((*rho)[c1] + (*rho)[c2]) / 2; }
-     else if ( c1 >= cmin )          { density = (*rho)[c1]; }
-     else if ( c2 >= cmin )          { density = (*rho)[c2]; }
+     div = umax = 0;
+     for ( i=0; i<6; i++ ) {
+        f = c2f[i];
+        u = (*darcy_flux)[f];
+        div += u * dirs[i];
+        umax = max( umax, fabs( u ) * pow( face_area[f], 0.5 ) );
+     }
+     div /= cell_volume[c];
 
-     darcy_flux[f] = u[f] / density;
+     if( umax ) L8_error = max( L8_error, fabs( div ) / umax );
+
+     if ( fabs( div ) >= 1e-6 * umax ) { 
+        cout << "TRANSPORT: div-free condition is violated! "<< endl;
+        cout << "    cell = " << c << endl;
+        cout << "    divergence = " << div << endl;
+        cout << "    maximal velocity = " << umax << endl; 
+        cout << "    admissible tolerance div/flux is 1e-6" << endl; 
+        throw exception(); 
+     }
   }
+
+  cout << "Transport_PK: maximal (divergence / flux) = " << L8_error << endl;
 }
 
 
