@@ -6,6 +6,7 @@
 #include "State.hpp"
 #include "Chemistry_State.hpp"
 #include "Beaker.hpp"
+#include "Verbosity.hpp"
 
 // Chemistry Process Kernel Interface
 
@@ -21,14 +22,22 @@ class Chemistry_PK {
 
   ~Chemistry_PK ();
 
-  void advance(const double& delta_time);
+  void advance(const double& delta_time,
+               Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star);
   void commit_state ( Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
-  ChemistryStatus get_status(void) const { return this->status_; };
+  ChemistryStatus status(void) const { return this->status_; };
+
+  Verbosity verbosity(void) const { return this->verbosity_; };
+  void set_verbosity(const Verbosity verbosity) { this->verbosity_ = verbosity; };
+
+  unsigned int num_aqueous_components(void) const { return this->num_aqueous_components_; };
+  void num_aqueous_components(const unsigned int nac) { this->num_aqueous_components_ = nac; };
 
  protected:
   void set_status(const ChemistryStatus& status) { this->status_ = status; };
  private:
   ChemistryStatus status_;
+  Verbosity verbosity_;
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
 
@@ -49,6 +58,7 @@ class Chemistry_PK {
 
   double current_time_;
   double saved_time_;
+  unsigned int num_aqueous_components_;
 
 };
 

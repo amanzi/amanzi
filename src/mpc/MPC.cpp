@@ -168,8 +168,8 @@ void MPC::cycle_driver () {
       if (!chemistry_disabled) {
 	// now advance chemistry
 	chemistry_dT = transport_dT; // units?
-	CPK->advance(chemistry_dT);
-	Chemistry_PK::ChemistryStatus cpk_status = CPK->get_status();
+	CPK->advance(chemistry_dT, total_component_concentration_star);
+	Chemistry_PK::ChemistryStatus cpk_status = CPK->status();
       }
 
       // update the time in the state object

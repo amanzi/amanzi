@@ -224,6 +224,8 @@ public:
 
   inline const Epetra_Comm * get_comm() { return epcomm; };
 
+  unsigned int GID(unsigned int lid, Mesh_data::Entity_kind kind);
+
   // this should be used with extreme caution:
   // modify coordinates  
   void set_coordinate(unsigned int local_node_id, 

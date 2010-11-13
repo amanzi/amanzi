@@ -102,14 +102,14 @@ void State::create_storage ()
 {
   // create the Eptera_Vector objects
 
-  water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
-  porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
-  water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
-  permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
+  water_density =    Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(true) ) );
+  pressure =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(true) ) );
+  darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(true) ) );
+  porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(true) ) );
+  water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(true) ) ); 
+  permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(true) ) ); 
   total_component_concentration 
-    = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );  
+    = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(true), number_of_components ) );  
 
   density =   Teuchos::rcp(new double);
   viscosity = Teuchos::rcp(new double);
@@ -171,7 +171,7 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
   int  i, f;
   double x[4][3], normal[3];
 
-  // Epetra_Map face_map = mesh_maps->face_map(false);
+  // Epetra_Map face_map = mesh_maps->face_map(true);
 
   if (!mesh_maps->valid_set_id(mesh_block_id,Mesh_data::CELL)) {
     throw std::exception();

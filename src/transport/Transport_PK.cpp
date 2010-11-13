@@ -55,13 +55,15 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   number_owned_faces = TS->get_mesh_maps()->count_entities( Mesh_data::FACE, OWNED );
   fmax_owned = fmin + number_owned_faces - 1;
 
+  /* assume that enumartion starts with 0 */
+  number_wghost_cells = cmax + 1;
+  number_wghost_faces = fmax + 1;
+
 
   /* the rest of the code may not work without MPI information */
 #ifdef HAVE_MPI
   const  Epetra_Comm & comm = cell_map.Comm(); 
   MyPID = comm.MyPID();
-//cout << " MyPID=" << MyPID << " cells:" << cmin << " " << cmax_owned << " " << cmax << endl;
-//cout << " MyPID=" << MyPID << " faces:" << fmin << " " << fmax_owned << " " << fmax << endl;
 #else
   MyPID = 0;
 #endif
@@ -71,17 +73,14 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   process_parameter_list();
 
   /* future geometry package */
-  cell_volume.resize( number_owned_cells );
-  face_area.resize( number_owned_faces );
+  cell_volume.resize( number_wghost_cells );
+  face_area.resize( number_wghost_faces );
 
   geometry_package();
 
   /* future geometry package */
-  upwind_cell.resize( number_owned_faces );
-  downwind_cell.resize( number_owned_faces );
-
-  /* other preliminaries for Demo I */
-  /* darcy_flux.resize( number_owned_faces ); */
+  upwind_cell.resize( number_wghost_faces );
+  downwind_cell.resize( number_wghost_faces );
 };
 
 
@@ -182,7 +181,6 @@ void Transport_PK::process_parameter_list()
 double Transport_PK::calculate_transport_dT()
 {
   if ( status == TRANSPORT_NULL ) {
-     /* extract_darcy_flux(); */
      check_divergence_free_condition();
      identify_upwind_cells();
   }
@@ -190,7 +188,7 @@ double Transport_PK::calculate_transport_dT()
   RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
   RCP<Epetra_Vector>   darcy_flux = TS->get_darcy_flux();
 
-  vector<double>  total_influx( number_owned_cells, 0.0 );
+  vector<double>  total_influx( number_wghost_cells, 0.0 );
 
   /* loop over faces and accumulate upwinding fluxes */
   int  i, f, c, c1;
@@ -399,6 +397,7 @@ void Transport_PK::check_divergence_free_condition()
      for ( i=0; i<6; i++ ) {
         f = c2f[i];
         u = (*darcy_flux)[f];
+if(MyPID==0) cout << "c=" << c << " i=" << i << " dirs[i]=" << dirs[i] << " f=" << f << " #owned=" << fmax_owned+1 << endl; 
         div += u * dirs[i];
         umax = max( umax, fabs( u ) / pow( face_area[f], 0.5 ) );
      }
@@ -408,7 +407,8 @@ void Transport_PK::check_divergence_free_condition()
 
      if ( fabs( div ) >= 1e-6 * umax ) { 
         cout << "TRANSPORT: div-free condition is violated! "<< endl;
-        cout << "    cell = " << c << endl;
+        cout << "    MyPID = " << MyPID << endl;
+        cout << "    cell  = " << c << endl;
         cout << "    divergence = " << div << endl;
         cout << "    maximal velocity = " << umax << endl; 
         cout << "    admissible tolerance div/flux is 1e-6" << endl; 
@@ -489,7 +489,7 @@ void Transport_PK::geometry_package()
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  const Epetra_Map & face_map = mesh->face_map(true);
+  const Epetra_Map & face_map = mesh->face_map( true );
 
   for( c=cmin; c<=cmax_owned; c++ ) {
      mesh->cell_to_coordinates( c, (double*) x, (double*) x+24 );

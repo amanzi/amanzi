@@ -2,7 +2,6 @@
 #define __Transport_PK_hpp__
 
 #include "Epetra_Vector.h"
-#include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh_maps_simple.hh"
@@ -83,6 +82,7 @@ public:
   /* member for debugging only */
   double get_face_area( int f )   { return face_area[f]; }
   double get_cell_volume( int c ) { return cell_volume[c]; }
+  vector<double> & get_cell_volume() { return cell_volume; }
 
 
 private:
@@ -112,8 +112,8 @@ private:
   vector<Transport_BCs>  bcs;
 
   /* frequently used data */
-  int  cmin, cmax_owned, cmax, number_owned_cells;
-  int  fmin, fmax_owned, fmax, number_owned_faces;
+  int  cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
+  int  fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
 
   /* parallel information */
   int MyPID;

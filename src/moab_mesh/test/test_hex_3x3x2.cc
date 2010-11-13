@@ -169,5 +169,22 @@ TEST(MOAB_HEX_3x3x2)
   }
 
 
+
+  std::vector<unsigned int>  c2f(6);
+  Epetra_Map cell_map(mesh.cell_map(true));
+  Epetra_Map face_map(mesh.face_map(false));
+
+  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
+    {
+      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Mesh_data::CELL));
+      mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
+      for (int j=0; j<6; j++)
+	{
+	  int f = face_map.LID(mesh.GID(c2f[j],Mesh_data::FACE));
+	  CHECK( f == c2f[j] );
+	}
+
+    }
+
 }
 
