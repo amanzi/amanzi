@@ -159,47 +159,6 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
 
 
 
-  // Assign local IDs to entities
-
-
-  result = mbcore->tag_create("LOCAL_ID",sizeof(unsigned int),
-			      MB_TAG_DENSE,MB_TYPE_INTEGER,lid_tag,
-			      0,true);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Problem getting tag handle for LOCAL_ID" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-      
-  nent = AllVerts.size();
-  assert(nent > 0);
-  int *lids = new int[nent];
-  for (int i = 0; i < nent; i++) lids[i] = i;
-
-  result = mbcore->tag_set_data(lid_tag,AllVerts,lids);
-
-  delete [] lids;
-
-
-  nent = AllFaces.size();
-  assert(nent > 0);
-  lids = new int[nent];
-  for (int i = 0; i < nent; i++) lids[i] = i;
-
-  result = mbcore->tag_set_data(lid_tag,AllFaces,lids);
-
-  delete [] lids;
-
-
-  nent = AllCells.size();
-  assert(nent > 0);
-  lids = new int[nent];
-  for (int i = 0; i < nent; i++) lids[i] = i;
-
-  result = mbcore->tag_set_data(lid_tag,AllCells,lids);
-
-  delete [] lids;
-      
-
 
     
     
@@ -269,6 +228,11 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
   init_pcell_lists(); // cells MUST be initialized before faces
   init_pface_lists();
 
+  // Create maps from local IDs to MOAB entity handles (must be after
+  // the various init_p*_list calls)
+
+  init_id_handle_maps();
+
 
   
   // Create Epetra_maps
@@ -278,28 +242,6 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
   init_node_map();
 
 
-  // Create maps from IDs to MOAB entity handles
-
-  init_id_handle_maps();
-
-
-  // Get material, sideset and nodeset tags
-
-  result = mbcore->tag_get_handle(MATERIAL_SET_TAG_NAME,mattag);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get tag for material sets" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-  mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME,sstag);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get tag for side sets" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-  mbcore->tag_get_handle(DIRICHLET_SET_TAG_NAME,nstag);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get tag for node sets" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
 
   // Initialize some info about the global number of sets, global set
   // IDs and set types
@@ -345,6 +287,20 @@ void Mesh_maps_moab::clear_internals_ ()
 
 void Mesh_maps_moab::init_id_handle_maps() {
   int i, nv, nf, nc;
+  int result;
+
+  // Assign local IDs to entities
+
+
+  result = mbcore->tag_create("LOCAL_ID",sizeof(unsigned int),
+			      MB_TAG_DENSE,MB_TYPE_INTEGER,lid_tag,
+			      0,true);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Problem getting tag handle for LOCAL_ID" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+      
+
 
   nv = AllVerts.size();
 
@@ -353,10 +309,12 @@ void Mesh_maps_moab::init_id_handle_maps() {
   i = 0;
   for (MBRange::iterator it = OwnedVerts.begin(); it != OwnedVerts.end(); ++it) {
     MBEntityHandle vtx = *it;
+    mbcore->tag_set_data(lid_tag,&vtx,1,&i);
     vtx_id_to_handle[i++] = vtx;
   }    
   for (MBRange::iterator it = NotOwnedVerts.begin(); it != NotOwnedVerts.end(); ++it) {
     MBEntityHandle vtx = *it;
+    mbcore->tag_set_data(lid_tag,&vtx,1,&i);
     vtx_id_to_handle[i++] = vtx;
   }
     
@@ -369,10 +327,12 @@ void Mesh_maps_moab::init_id_handle_maps() {
   i = 0;
   for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
     MBEntityHandle face = *it;
+    mbcore->tag_set_data(lid_tag,&face,1,&i);
     face_id_to_handle[i++] = face;
   }
   for (MBRange::iterator it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); ++it) {
     MBEntityHandle face = *it;
+    mbcore->tag_set_data(lid_tag,&face,1,&i);
     face_id_to_handle[i++] = face;
   }
     
@@ -385,10 +345,12 @@ void Mesh_maps_moab::init_id_handle_maps() {
   i = 0;
   for (MBRange::iterator it = OwnedCells.begin(); it != OwnedCells.end(); ++it) {
     MBEntityHandle cell = *it;
+    mbcore->tag_set_data(lid_tag,&cell,1,&i);
     cell_id_to_handle[i++] = cell;
   }
   for (MBRange::iterator it = GhostCells.begin(); it != GhostCells.end(); ++it) {
     MBEntityHandle cell = *it;
+    mbcore->tag_set_data(lid_tag,&cell,1,&i);
     cell_id_to_handle[i++] = cell;
   }
     
@@ -493,7 +455,27 @@ void Mesh_maps_moab::init_pcell_lists() {
 
 
 void Mesh_maps_moab::init_set_info() {
-  int maxnsets;
+  int maxnsets, result;
+
+
+
+  // Get material, sideset and nodeset tags
+
+  result = mbcore->tag_get_handle(MATERIAL_SET_TAG_NAME,mattag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for material sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME,sstag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for side sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  mbcore->tag_get_handle(DIRICHLET_SET_TAG_NAME,nstag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for node sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
 
 
   std::vector<MBTag> tag_handles;
@@ -813,7 +795,8 @@ void Mesh_maps_moab::cell_to_face_dirs (unsigned int cellid,
   MBEntityHandle cell;
   unsigned int *cell_faces;
   int *cell_facedirs;
-  int j,nf;
+  int j,nf, result;
+  
 
   nf = 6; // HEX SPECIFIC - THIS NUMBER SHOULD COME FROM cell_to_faces
 
@@ -829,11 +812,18 @@ void Mesh_maps_moab::cell_to_face_dirs (unsigned int cellid,
   for (int i = 0; i < nf; i++) {
     MBEntityHandle face = face_id_to_handle[cell_faces[i]];
     int sidenum, offset;
-    mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
+
+    result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
+
+    if (result != MB_SUCCESS) {
+      cerr << "Could not find face dir in cell" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
   }
     
   std::copy (cell_facedirs, cell_facedirs+nf, begin);
 
+  delete [] cell_faces;
   delete [] cell_facedirs;
 }
 
