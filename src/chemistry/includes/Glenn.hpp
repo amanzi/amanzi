@@ -169,7 +169,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
   double h2o_stoich;
   double logK;
   // for neqcplx secondary speces, each line lists name, Z, a0, etc.
-  for (int i = 0; i < neqcplx; i++) {
+  for (int irxn = 0; irxn < neqcplx; irxn++) {
 
     species.clear();
     stoichiometries.clear();
@@ -234,7 +234,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
     std::cout << "-------------------------\n";
 #endif
     g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-                                    i,
+                                    irxn,
                                     species,stoichiometries,
                                     species_ids,h2o_stoich,
                                     charge,mol_wt,size,logK));
@@ -410,12 +410,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
 #endif
 
   // for neqcplx secondary speces, each line lists name, Z, a0, etc.
-  for (int i = 0; i < nsurfcplx_rxn; i++) {
-
-    // name currently not used
-    species.clear(); // currently not used
-    stoichiometries.clear();
-    species_ids.clear();
+  for (int irxn = 0; irxn < nsurfcplx_rxn; irxn++) {
 
     // surface complex name
     file->getLine();
@@ -426,15 +421,19 @@ static void readChemistryFromFile(string filename, Beaker *g)
     file->getLine();
     file->readDouble(&site_density);
 
-    SurfaceSite *surface_site = new SurfaceSite(name,i,site_density);
+    SurfaceSite *surface_site = new SurfaceSite(name,irxn,site_density);
 
     int num_surface_complexes;
     file->getLine();
     file->readInt(&num_surface_complexes);
 
     std::vector<SurfaceComplex> surface_complexes;
-    for (int icplx = 0; i < num_surface_complexes; i++) {
-     
+    for (int icplx = 0; icplx < num_surface_complexes; icplx++) {
+
+      species.clear(); // currently not used
+      stoichiometries.clear();
+      species_ids.clear();
+
       // surface complex name
       file->getLine();
       file->readWord(word);
@@ -518,9 +517,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
     }
     // have to pass in a new object here as the SurfaceSite destructor fails when
     // deleting the vector storing mineral pointers
-    g->addSurfaceComplexationRxn(new
-        SurfaceComplexationRxn(surface_site,
-                               surface_complexes));
+    g->addSurfaceComplexationRxn(SurfaceComplexationRxn(surface_site,surface_complexes));
     surface_complexes.clear();
   }
 
@@ -539,12 +536,31 @@ static void readTargetTotalFromFile(string filename, int ncomp,
   double temp;
   for (int i = 0; i < ncomp; i++) {
     file->getLine();
-    file->readWord(word);
-    file->readDouble(&temp);
-    file->readDouble(&temp);
+    file->readWord(word);    // name of species
+    file->readDouble(&temp); // free ion concentration [m]
+    file->readDouble(&temp); // total component concentration [m]
     total->push_back(temp);
   }
   delete file;
 }; // end readTargetTotalFromFile
+
+static void readTargetFreeIonFromFile(string filename, int ncomp, 
+                                      std::vector<double> *free_ion) 
+{
+  free_ion->clear();
+
+  // open file with FileIO buffer
+  FileIO *file = new FileIO(filename);
+  // first line indicates number of primary and secondary components
+  char word[32];
+  double temp;
+  for (int i = 0; i < ncomp; i++) {
+    file->getLine();
+    file->readWord(word);     // name of species
+    file->readDouble(&temp);  // free ion concentration [m]
+    free_ion->push_back(temp);
+  }
+  delete file;
+}; // end readTargetFreeIonFromFile
 
 #endif // __Glenn_hpp__

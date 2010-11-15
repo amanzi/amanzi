@@ -42,11 +42,15 @@ int main (int argc, char **argv) {
 #else
   filename = "reaction.dat";
   readChemistryFromFile(filename,&beaker);
+
   filename = "target_total.dat";
   readTargetTotalFromFile(filename,beaker.ncomp(), &components.total) ;
   // convert totals from molality [mol/kg water] -> molarity [mol/L water]
   for (unsigned int i = 0; i < components.total.size(); i++)
     components.total[i] *= parameters.water_density/1000.;
+
+  filename = "target_total.dat";
+  readTargetFreeIonFromFile(filename,beaker.ncomp(), &components.free_ion) ;
 #endif
   // solve for free-ion concentrations
 

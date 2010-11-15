@@ -16,8 +16,8 @@ class SurfaceComplexationRxn {
  public:
   SurfaceComplexationRxn();
   SurfaceComplexationRxn(std::string s);
-  SurfaceComplexationRxn(SurfaceSite* surface_sites,
-                 std::vector<SurfaceComplex> surface_complexes);
+  SurfaceComplexationRxn(SurfaceSite *surface_sites,
+                         std::vector<SurfaceComplex> surface_complexes);
   ~SurfaceComplexationRxn();
 
   // update sorbed concentrations
@@ -44,7 +44,7 @@ class SurfaceComplexationRxn {
 
  private:
    std::vector<SurfaceComplex> surface_complexes_;
-   SurfaceSite *surface_site_;
+   std::vector<SurfaceSite> surface_site_;
    bool use_newton_solve_;
 
    std::vector<double> dSx_dmi_; // temporary storage for derivative calculations

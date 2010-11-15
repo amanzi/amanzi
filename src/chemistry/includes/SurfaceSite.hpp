@@ -16,7 +16,7 @@ class SurfaceSite {
   SurfaceSite();
   SurfaceSite(const SpeciesName name, 
               const SpeciesId id,
-              const double free_site_concentration);
+              const double molar_density);
   ~SurfaceSite();
 
   // adds a pointer to mineral list
@@ -67,7 +67,7 @@ class SurfaceSite {
 
   // for future use
   // a list of pointers to minerals assocaited with the site
-  std::vector<Mineral*> minerals_;
+ // std::vector<Mineral*> minerals_;
 
 };
 

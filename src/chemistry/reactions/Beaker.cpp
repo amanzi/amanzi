@@ -114,6 +114,15 @@ void Beaker::VerifyState(const Beaker::BeakerComponents& components)
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
     std::cout << verify_sizes
+              << "ERROR: primary_species.size and components.total.size do not match."
+              << std::endl;
+  }
+
+  if (components.free_ion.size() > 0 &&
+      this->primary_species().size() != components.free_ion.size()) {
+    // initial conditions and database input don't match. Print a
+    // helpful message and exit gracefully.
+    std::cout << verify_sizes
               << "ERROR: primary_species.size and components.free_ion.size do not match."
               << std::endl;
   }
@@ -221,9 +230,9 @@ void Beaker::addGeneralRxn(GeneralRxn r)
   generalKineticRxns_.push_back(r);
 } // end addGeneralRxn()
 
-void Beaker::addSurfaceComplexationRxn(SurfaceComplexationRxn *r) 
+void Beaker::addSurfaceComplexationRxn(SurfaceComplexationRxn r) 
 {
-  surfaceComplexationRxns_.push_back(*r);
+  surfaceComplexationRxns_.push_back(r);
 } // end addSurfaceComplexationRxn()
 
 Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const
@@ -389,6 +398,10 @@ void Beaker::calculateTotal(std::vector<double> *total,
    (*total)[i] *= water_density_kg_L();
 
   // calculate sorbed totals
+  // initialize to zero
+  for (unsigned int i = 0; i < total_sorbed->size(); i++)
+    (*total_sorbed)[i] = 0.;
+  // add in contributions
   for (std::vector<SurfaceComplexationRxn>::iterator i = 
        surfaceComplexationRxns_.begin();
        i != surfaceComplexationRxns_.end(); i++) {
@@ -648,6 +661,12 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   updateParameters(parameters, dt);
 
   // store current molalities
+  // initialize free-ion concentrations
+  if (components->free_ion.size() > 0) {
+    initializeMolalities(components->free_ion);
+// testing only    initializeMolalities(1.e-9);
+  }
+
   for (int i = 0; i < ncomp(); i++)
     prev_molal[i] = primarySpecies_[i].molality();
 
@@ -732,9 +751,12 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   }
 
   // update total concentrations
-  calculateTotal();
-  for (int i = 0; i < ncomp(); i++)
+  updateEquilibriumChemistry();
+  for (int i = 0; i<ncomp(); i++) {
+    components->free_ion[i] = primarySpecies_[i].molality();
     components->total[i] = total_[i];
+    components->total_sorbed[i] = total_sorbed_[i];
+  }
 
   return num_iterations;
 
@@ -742,15 +764,20 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
 
 // if no water density provided, default is 1000.0 kg/m^3
-int Beaker::Speciate(const Beaker::BeakerComponents& components, 
+int Beaker::Speciate(Beaker::BeakerComponents* components, 
                      const Beaker::BeakerParameters& parameters)
 {
   double speciation_tolerance = 1.e-12;
 
   updateParameters(parameters, 0.0);
 
-  // initialize free-ion concentration s
-  initializeMolalities(1.e-9);
+  // initialize free-ion concentrations
+  if (components->free_ion.size() > 0) {
+    initializeMolalities(components->free_ion);
+  }
+  else {
+    initializeMolalities(1.e-9);
+  }
 
   // store current molalities
   for (int i = 0; i < ncomp(); i++)
@@ -769,7 +796,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     // calculate residual
     // units of residual: mol/sec
     for (int i = 0; i < ncomp(); i++)
-      residual[i] = total_[i] - components.total[i];
+      residual[i] = total_[i] - components->total[i];
 
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
@@ -827,6 +854,16 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   } while (max_rel_change > speciation_tolerance && 
 	   num_iterations < max_iterations() && 
 	   !calculate_activity_coefs);
+
+  // for now, initialize total sorbed concentrations based on the current free
+  // ion concentrations
+  updateEquilibriumChemistry();
+  components->total_sorbed.resize(total_sorbed_.size());
+  for (int i = 0; i<ncomp(); i++) {
+    components->free_ion[i] = primarySpecies_[i].molality();
+    components->total[i] = total_[i];
+    components->total_sorbed[i] = total_sorbed_[i];
+  }
 
   if (verbosity() > 1) {
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;

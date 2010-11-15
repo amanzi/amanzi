@@ -16,7 +16,7 @@ SurfaceComplexationRxn::SurfaceComplexationRxn(
                             std::vector<SurfaceComplex> surface_complexes)
 {
   // surface site
-  surface_site_ = surface_sites;
+  surface_site_.push_back(*surface_sites);
 
   // surface complexes
   for (std::vector<SurfaceComplex>::const_iterator i = surface_complexes.begin(); 
@@ -27,7 +27,6 @@ SurfaceComplexationRxn::SurfaceComplexationRxn(
 
 SurfaceComplexationRxn::~SurfaceComplexationRxn() 
 {
-  delete surface_site_;
 }
 
 void SurfaceComplexationRxn::SetNewtonSolveFlag(void) 
@@ -45,26 +44,26 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void)
 
 void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies) 
 {
-  const double site_density = surface_site_->SiteDensity();
-  double free_site_concentration = surface_site_->free_site_concentration();
+  const double site_density = (surface_site_[0]).SiteDensity();
 
   bool one_more = false;
   while(true) {
     // Initialize total to free site concentration
+    double free_site_concentration = (surface_site_[0]).free_site_concentration();
     double total = free_site_concentration;
     // Update surface complex concentrations; Add to total
 
     for (std::vector<SurfaceComplex>::iterator srfcplx = 
       surface_complexes_.begin(); 
       srfcplx != surface_complexes_.end(); srfcplx++) {
-      srfcplx->Update(primarySpecies,(*surface_site_));
+      srfcplx->Update(primarySpecies,(surface_site_[0]));
       total += srfcplx->free_site_stoichiometry() *
                srfcplx->surface_concentration();
     }
 
     if (one_more) break;
 
-    if (use_newton_solve()) {
+    if (/*use_newton_solve()*/true) {
       double residual = site_density - total;
       double dresidual_dfree_site_conc = 1.;
       std::vector<SurfaceComplex>::iterator srfcplx = 
@@ -75,7 +74,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies)
                                 free_site_concentration;
       }
       double dfree_site_conc = residual / dresidual_dfree_site_conc;
-      free_site_concentration -= dfree_site_conc;
+      free_site_concentration += dfree_site_conc;
       double tolerance = 1.e-12;
       if (fabs(dfree_site_conc / free_site_concentration) < tolerance) {
         one_more = true;
@@ -86,9 +85,12 @@ void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies)
       free_site_concentration = site_density / total;
       one_more = true;
     }
+
+    // update free site concentration
+    (surface_site_[0]).set_free_site_concentration(free_site_concentration);
+
   }
 
-  surface_site_->set_free_site_concentration(free_site_concentration);
   
 } // end Update()
 

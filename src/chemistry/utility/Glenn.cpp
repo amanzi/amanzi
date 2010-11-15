@@ -17,7 +17,7 @@ void Glenn::solve(Beaker::BeakerComponents* components,
 {
 
   // speciate to get initial guess (and realistic activity coefficients)
-  b_->Speciate(*components, parameters);
+  b_->Speciate(components, parameters);
   b_->print_results();
 
   double time = 0.;
