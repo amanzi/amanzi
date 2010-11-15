@@ -6,10 +6,10 @@ namespace Mesh_data
 {
 
 void Data::take_data_from (Parameters* params,
-                                Coordinates<double>* coords,
-                                std::vector<Element_block*> blocks,
-                                std::vector<Side_set*> side_sets,
-                                std::vector<Node_set*> node_sets)
+                           Coordinates<double>* coords,
+                           std::vector<Element_block*> blocks,
+                           std::vector<Side_set*> side_sets,
+                           std::vector<Node_set*> node_sets)
 {
 
     coords_ = std::auto_ptr<Coordinates<double> >(coords);
@@ -21,10 +21,10 @@ void Data::take_data_from (Parameters* params,
 }
 
 Data* Data::build_from (Parameters* params,
-                                  Coordinates<double>* coords,
-                                  std::vector<Element_block*> blocks,
-                                  std::vector<Side_set*> side_sets,
-                                  std::vector<Node_set*> node_sets)
+                        Coordinates<double>* coords,
+                        std::vector<Element_block*> blocks,
+                        std::vector<Side_set*> side_sets,
+                        std::vector<Node_set*> node_sets)
 {
 
     Data* mesh = new Data ();
@@ -56,7 +56,7 @@ void Data::to_stream (std::ostream& stream) const
 
     for (int set = 0; set < node_sets (); ++set)
         node_set (set).to_stream (stream);
-        
+
 }
 
 const Element_block& Data::element_block (int id) const
