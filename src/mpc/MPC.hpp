@@ -45,6 +45,9 @@ private:
 
   double T0, T1;
 
+  bool flow_enabled, transport_enabled, chemistry_enabled;
+
+
 };
 
 

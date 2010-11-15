@@ -136,6 +136,12 @@ void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
   *darcy_flux = new_darcy_flux;
 }
 
+void State::update_pressure(const Epetra_Vector &new_pressure)
+{
+  *pressure = new_pressure;
+}
+
+
 
 void State::advance_time(double dT)
 {

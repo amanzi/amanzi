@@ -25,10 +25,6 @@
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
-  
-  Teuchos::oblackholestream blackhole;
-  std::ostream &out = ( procRank == 0 ? std::cout : blackhole );
   
   Teuchos::CommandLineProcessor CLP;
   
@@ -70,8 +66,6 @@ int main(int argc, char *argv[])
 
   Teuchos::RCP<Mesh_maps_base> mesh;
   
-  cout << mesh_class << endl;
-
   if (mesh_class == "Simple") 
     {
       Teuchos::ParameterList simple_mesh_parameter_list = 

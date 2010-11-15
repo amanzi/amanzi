@@ -22,6 +22,29 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    mpc_parameter_list =  parameter_list.sublist("MPC");
    read_parameter_list();
 
+
+   // let users selectively disable individual process kernels
+   // to allow for testing of the process kernels separately
+   transport_enabled = 
+     (mpc_parameter_list.get<string>("disable Transport_PK","no") == "no");
+   chemistry_enabled =
+     (mpc_parameter_list.get<string>("disable Chemistry_PK","no") == "no");
+   flow_enabled =
+     (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
+   
+   cout << "MPC: The following process kernels are enabled: ";
+   if (flow_enabled) {
+     cout << "Flow ";
+   }
+   if (transport_enabled) {
+     cout << "Transport "; 
+   }
+   if (chemistry_enabled) {
+     cout << "Chemistry ";
+   }
+   cout << endl;
+
+
    Teuchos::ParameterList state_parameter_list = 
      parameter_list.sublist("State");
 
@@ -31,33 +54,34 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    // create auxilary state objects for the process models
    // chemistry...
    
-   CS = Teuchos::rcp( new Chemistry_State( S ) );
-   
-   TS = Teuchos::rcp( new Transport_State( *S ) );
+   if (chemistry_enabled) {
+     CS = Teuchos::rcp( new Chemistry_State( S ) );
 
-   FS = Teuchos::rcp( new Flow_State( S ) ); 
-   // done creating auxilary state objects for the process models
+     Teuchos::ParameterList chemistry_parameter_list = 
+       parameter_list.sublist("Chemistry");
+     
+     CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+   }
+   
+   if (transport_enabled) {
+     TS = Teuchos::rcp( new Transport_State( *S ) );
 
-  
-   // create the individual process models
-   // chemistry...
-   Teuchos::ParameterList chemistry_parameter_list = 
-     parameter_list.sublist("Chemistry");
-   
-   CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
-   
-   // transport...
-   Teuchos::ParameterList transport_parameter_list = 
-     parameter_list.sublist("Transport");
-   
-   TPK = Teuchos::rcp( new Transport_PK(transport_parameter_list, TS) );
-   
-   // flow...
-   Teuchos::ParameterList flow_parameter_list = 
-     parameter_list.sublist("Flow");
-   
-   FPK = Teuchos::rcp( new Flow_PK(flow_parameter_list, FS) );
-   // done creating the individual process models
+     Teuchos::ParameterList transport_parameter_list = 
+       parameter_list.sublist("Transport");
+     
+     TPK = Teuchos::rcp( new Transport_PK(transport_parameter_list, TS) );
+   }
+
+   if (flow_enabled) {
+     FS = Teuchos::rcp( new Flow_State( S ) );
+
+     Teuchos::ParameterList flow_parameter_list = 
+       parameter_list.sublist("Flow");
+     
+     FPK = Teuchos::rcp( new Flow_PK(flow_parameter_list, FS) );      
+   }
+   // done creating auxilary state objects and  process models
+
 }
 
 
@@ -106,41 +130,38 @@ void MPC::cycle_driver () {
 
   string gmv_datafile = data_filename.str();
 
-  const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency");
+  const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency",100000);
+  const double gmv_time_freq = gmv_parameter_list.get<double>("Dump time frequency",1.0e99);
     
   // write the GMV mesh file
   GMV::create_mesh_file(*mesh_maps,gmv_meshfile);
   
   int iter = 0;
-
-  // write the GMV data file
-  write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);
   
+  int gmv_freq_dump = 0;
+  double gmv_time_dump = 0.0;
+  int gmv_time_dump_int = 0;
+
   // first solve the flow equation
-  if (parameter_list.get<string>("disable Flow_PK","no") == "no") {
+  if (flow_enabled) {
     FPK->advance();
     S->update_darcy_flux(FPK->DarcyFlux());
+    S->update_pressure(FPK->Pressure());
     FPK->commit_state(FS);
   }
   
-
-  // let users selectively disable individual process kernels
-  // to allow for testing of the process kernels separately
-
-  bool transport_disabled = 
-    (parameter_list.get<string>("disable Transport_PK","no") == "yes");
-  bool chemistry_disabled =
-    (parameter_list.get<string>("disable Chemistry_PK","no") == "yes");
   
-  cout << transport_disabled << " " << chemistry_disabled << endl;
+  // write the GMV data file
+  write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);
+  gmv_time_dump_int++;
   
-  if (!chemistry_disabled || !transport_disabled) {
+  if (chemistry_enabled || transport_enabled) {
     
     // then iterate transport and chemistry
     while (S->get_time() <= T1) {
       double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99;
 
-      if (!transport_disabled) transport_dT = TPK->calculate_transport_dT();
+      if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
 
       mpc_dT = min( transport_dT, chemistry_dT );
       
@@ -149,7 +170,7 @@ void MPC::cycle_driver () {
       std::cout << ",  Time = "<< S->get_time();
       std::cout << ",  Transport dT = " << transport_dT << std::endl;
       
-      if (!transport_disabled) {
+      if (transport_enabled) {
 	// now advance transport
 	TPK->advance( mpc_dT );	
 	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
@@ -164,8 +185,8 @@ void MPC::cycle_driver () {
 	    throw std::exception();
 	  }
       }
-
-      if (!chemistry_disabled) {
+      
+      if (chemistry_enabled) {
 	// now advance chemistry
 	chemistry_dT = transport_dT; // units?
 	CPK->advance(chemistry_dT, total_component_concentration_star);
@@ -178,18 +199,30 @@ void MPC::cycle_driver () {
 
       // we're done with this time step, commit the state 
       // in the process kernels
-      if (!transport_disabled) TPK->commit_state(TS);
-      if (!chemistry_disabled) CPK->commit_state(CS, chemistry_dT);
+      if (transport_enabled) TPK->commit_state(TS);
+      if (chemistry_enabled) CPK->commit_state(CS, chemistry_dT);
 	
      
       // advance the iteration count
       iter++;
-      
-      if (  iter % gmv_cycle_freq   == 0 ) {
-	cout << "Writing GMV file..." << endl;
+
+      gmv_freq_dump = iter;
+      gmv_time_dump = S->get_time();
+     
+      if (  gmv_freq_dump % gmv_cycle_freq   ==  0 ) {
+
+	cout << "Writing GMV file at cycle " << gmv_freq_dump << endl;
 	write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
+
+      } else if ( (gmv_time_dump+ mpc_dT/1000.0) / gmv_time_freq  >= gmv_time_dump_int ) {
+
+	gmv_time_dump_int ++;
+	
+
+	cout << "Writing GMV file at time T=" << gmv_time_dump << endl;
+	write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
+	 
       }
-      
     }
     
   }
@@ -221,7 +254,7 @@ void MPC::write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile,
     GMV::write_cell_data( *(*S->get_total_component_concentration())(nc), concstring);
   }
   
-  // GMV::write_face_data( *(->get_darcy_flux()), "flux"); 
+  GMV::write_cell_data(*S->get_pressure(), "pressure"); 
   
   GMV::close_data_file();     
  
