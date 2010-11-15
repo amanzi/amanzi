@@ -145,7 +145,9 @@ private:
 
   int nx_, ny_, nz_;  // number of cells in the three coordinate directions
   double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
- 
+  int number_of_mesh_blocks;
+  double *mesh_block_z0, *mesh_block_z1;
+
   int num_cells_;
   int num_nodes_;
   int num_faces_;

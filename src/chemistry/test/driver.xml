@@ -38,6 +38,7 @@
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
+
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.8"/>
@@ -49,6 +50,8 @@
       <Parameter name="Constant Darcy flux y" type="double" value="0"/>
       <Parameter name="Constant Darcy flux z" type="double" value="0"/>
       <Parameter name="Constant permeability" type="double" value="1.0"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+      <Parameter name="Constant component concentration 1" type="double" value="0.0"/>
     </ParameterList>
 
   </ParameterList>

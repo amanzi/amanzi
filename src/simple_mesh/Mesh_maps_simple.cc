@@ -13,7 +13,7 @@ Mesh_maps_simple::Mesh_maps_simple (double x0, double y0, double z0,
   communicator_(communicator)
 
 {
- 
+  number_of_mesh_blocks=0;
   update();
 }
 
@@ -37,8 +37,32 @@ Mesh_maps_simple::Mesh_maps_simple ( Teuchos::ParameterList &parameter_list,
   z0_ = parameter_list.get<double>("Z_Min");
   z1_ = parameter_list.get<double>("Z_Max");
 
+
+  number_of_mesh_blocks = parameter_list.get<int>("Number of mesh blocks",0);
+  
+  
+  if (number_of_mesh_blocks > 0) {
+    mesh_block_z0 = new double [number_of_mesh_blocks];
+    mesh_block_z1 = new double [number_of_mesh_blocks];
+    
+    for (int nb=1; nb<=number_of_mesh_blocks; nb++) {
+      std::stringstream s; 
+      s << "Mesh block " << nb;
+
+      Teuchos::ParameterList sublist = parameter_list.sublist(s.str());
+      
+      mesh_block_z0[nb-1] = sublist.get<double>("Z0");
+      mesh_block_z1[nb-1] = sublist.get<double>("Z1");
+    }
+  }
+
   update();
 }
+
+
+
+
+
 
 
 Mesh_maps_simple::~Mesh_maps_simple()
@@ -46,6 +70,8 @@ Mesh_maps_simple::~Mesh_maps_simple()
   delete cell_map_;
   delete face_map_;
   delete node_map_;
+  if (!mesh_block_z0)  delete [] mesh_block_z0;
+  if (!mesh_block_z1)  delete [] mesh_block_z1;
 }
 
 
@@ -66,6 +92,7 @@ Mesh_maps_simple::~Mesh_maps_simple()
    face_to_node_.resize(0);
 
    side_sets_.resize(0);
+
  }
 
 
@@ -178,39 +205,6 @@ Mesh_maps_simple::~Mesh_maps_simple()
    	   face_to_node_[istart+3] = node_index_(ix,iy,iz+1);
    	 }
 
-   // // now we need to fix the orientation of boundary xy faces for iz=0 
-   // for (int iy=0; iy<ny_; iy++)
-   //   for (int ix=0; ix<nx_; ix++)
-   //     {
-   // 	 int istart = 4 * xyface_index_(ix,iy,0);
-
-   // 	 double dummy = face_to_node_[istart];
-   // 	 face_to_node_[istart] = face_to_node_[istart+2];
-   // 	 face_to_node_[istart+2] = dummy;
-   //     }
-
-   // // now we need to fix the orientation of boundary xz faces for iy=0 
-   // for (int iz=0; iz<nz_; iz++)
-   //   for (int ix=0; ix<nx_; ix++)
-   //     {
-   // 	 int istart = 4 * xzface_index_(ix,0,iz);
-
-   // 	 double dummy = face_to_node_[istart];
-   // 	 face_to_node_[istart] = face_to_node_[istart+2];
-   // 	 face_to_node_[istart+2] = dummy;
-   //     }
-
-   // // now we need to fix the orientation of boundary yz faces for ix=0 
-   // for (int iz=0; iz<nz_; iz++)
-   //   for (int iy=0; iy<ny_; iy++)
-   //     {
-   // 	 int istart = 4 * yzface_index_(0,iy,iz);
-
-   // 	 double dummy = face_to_node_[istart];
-   // 	 face_to_node_[istart] = face_to_node_[istart+2];
-   // 	 face_to_node_[istart+2] = dummy;
-   //     }
-
 
    // we only have 6 side sets
 
@@ -251,19 +245,108 @@ Mesh_maps_simple::~Mesh_maps_simple()
        }
       
 
-   // we only have one element block
 
-   element_blocks_.resize(1);
-   element_blocks_[0].resize(nx_*ny_*nz_);
+   // create element blocks
+
    
-   count=0;
-   for (int iz=0; iz<nz_; iz++)
-     for (int iy=0; iy<ny_; iy++)
-       for (int ix=0; ix<nx_; ix++) 
+   if (number_of_mesh_blocks == 0) 
+     {
+       // we only have one element block
+       
+       element_blocks_.resize(1);
+       element_blocks_[0].resize(nx_*ny_*nz_);
+       
+       count=0;
+       for (int iz=0; iz<nz_; iz++)
+	 for (int iy=0; iy<ny_; iy++)
+	   for (int ix=0; ix<nx_; ix++) 
+	     {
+	       element_blocks_[0][count] = cell_index_(ix,iy,iz);
+	       count++;
+	     }
+       
+       number_of_mesh_blocks = 1;
+
+     } 
+   else
+     {
+       element_blocks_.resize(number_of_mesh_blocks);
+
+       for (int nb=0; nb< number_of_mesh_blocks; nb++) 
 	 {
-	   element_blocks_[0][count] = cell_index_(ix,iy,iz);
-	   count++;
+	   
+	   // count the nunber of cells in mesh block nb
+	   count = 0;
+	   for (int ic=0; ic<num_cells_; ic++) 
+	     {
+	       std::vector<double> coords(24);
+	       cell_to_coordinates(ic,coords.begin(),coords.end());
+	       
+	       // first check if all z-coordinates are larger than
+	       // mesh_block_z0[nb]
+	       bool inside = true;
+	       for (int i=4; i<8; i++) 
+		 if ( coords[3*i+2] <= mesh_block_z0[nb] ) inside = false;
+	       for (int i=0; i<8; i++) 
+		 if ( coords[3*i+2] > mesh_block_z1[nb] ) inside = false;
+
+	       if (inside) count++;
+	       
+	     }
+	   element_blocks_[nb].resize(count);
+	   
+	   // add cells to mesh block nb
+	   count = 0;
+	   for (int ic=0; ic<num_cells_; ic++) 
+	     {
+	       std::vector<double> coords(24);
+	       cell_to_coordinates(ic,coords.begin(),coords.end());
+	       
+	       // first check if all z-coordinates are larger than
+	       // mesh_block_z0[nb]
+	       bool inside = true;
+	       for (int i=4; i<8; i++) 
+		 if ( coords[3*i+2] <= mesh_block_z0[nb] ) inside = false;
+	       for (int i=0; i<8; i++) 
+		 if ( coords[3*i+2] > mesh_block_z1[nb] ) inside = false;
+	       
+	       if (inside) {
+		 element_blocks_[nb][count] = ic;
+		 count++;
+	       }
+	       
+	     }	   
+
+	   
 	 }
+       
+       // check that all cells have been added to an element block
+       int ncb = 0;
+       for (int nb=0; nb< number_of_mesh_blocks; nb++) 
+	 {
+	   ncb += element_blocks_[nb].size();
+       
+	   std::cout << "Mesh_maps_simple: mesh block " << nb << " has " << element_blocks_[nb].size() << " cells" << std::endl;
+	 }
+
+
+       if (ncb < num_cells_) 
+	 {
+	   std::cout << "Mesh_maps_simple: WARNING... not all cells are in a mesh block\n";
+	   std::cout << "  number of cells in mesh blocks = " << ncb << std::endl;
+	   std::cout << "  number of cells in total       = " << num_cells_ << std::endl;
+	 }
+       if (ncb > num_cells_)
+	 std::cout << "Mesh_maps_simple: WARNING... overlapping mesh blocks" << std::endl;
+       
+       
+     }
+   
+   
+   
+
+
+
 
 
    build_maps_ ();
@@ -631,7 +714,7 @@ bool Mesh_maps_simple::valid_set_id (unsigned int id, Mesh_data::Entity_kind kin
     return (id<6) ;
     break;
   case Mesh_data::CELL:
-    return (id == 0);
+    return (id < number_of_mesh_blocks);
     break;
   default:
     // we do not have anything for CELL and NODE, yet

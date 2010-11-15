@@ -52,6 +52,8 @@ void State::initialize_from_parameter_list()
 {
   int num_blocks = parameter_list.get<int>("Number of mesh blocks");
 
+  cout << num_blocks << endl;
+
   double u[3];
   u[0] = parameter_list.get<double>("Gravity x");		   
   u[1] = parameter_list.get<double>("Gravity y");		   
@@ -94,6 +96,16 @@ void State::initialize_from_parameter_list()
     u[2] = sublist.get<double>("Constant Darcy flux z",0.0);
     set_darcy_flux(u, mesh_block_ID);
     
+    // read the component concentrations from the xml file
+    // and initialize them in mesh block mesh_block_ID
+    double tcc_const[number_of_components];
+    for (int nc=0; nc<number_of_components; nc++) {
+      std::stringstream s; 
+      s << "Constant component concentration " << nc;
+
+      tcc_const[nc] = sublist.get<double>(s.str());
+    }
+    set_total_component_concentration(tcc_const, mesh_block_ID);
   }
 }
 
@@ -241,6 +253,14 @@ void State::set_porosity( const double phi, const int mesh_block_id )
 void State::set_zero_total_component_concentration()
 {
   total_component_concentration->PutScalar(0.0);
+}
+
+
+void State::set_total_component_concentration( const double* conc, const int mesh_block_id )
+{
+  for (int nc=0; nc<number_of_components; nc++) {
+    set_cell_value_in_mesh_block(conc[nc], *(*total_component_concentration)(nc),mesh_block_id);
+  }
 }
 
 

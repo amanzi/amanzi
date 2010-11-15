@@ -254,7 +254,9 @@ void MPC::write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile,
     GMV::write_cell_data( *(*S->get_total_component_concentration())(nc), concstring);
   }
   
-  GMV::write_cell_data(*S->get_pressure(), "pressure"); 
+  GMV::write_cell_data(*S->get_pressure(), "pressure");
+  GMV::write_cell_data(*S->get_permeability(), "permeability");
+  GMV::write_cell_data(*S->get_porosity(),"porosity");
   
   GMV::close_data_file();     
  

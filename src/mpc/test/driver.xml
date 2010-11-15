@@ -45,12 +45,13 @@
     <ParameterList name="Mesh block 1"> 
       <Parameter name="Mesh block ID" type="int" value="0"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+      <Parameter name="Constant permeability" type="double" value="1.0"/>
 <!--  
       <Parameter name="Constant Darcy flux x" type="double" value="1.0"/>
       <Parameter name="Constant Darcy flux y" type="double" value="0"/>
       <Parameter name="Constant Darcy flux z" type="double" value="0"/>
 -->
-      <Parameter name="Constant permeability" type="double" value="1.0"/>
     </ParameterList>
 
   </ParameterList>

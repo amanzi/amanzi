@@ -61,6 +61,7 @@ public:
   void set_water_saturation(const double ws );
   void set_water_density(const double wd );
   void set_zero_total_component_concentration();
+  void set_total_component_concentration(const double* conc, const int mesh_block_id); 
   void set_porosity( const double phi );
   void set_porosity( const double phi, const int mesh_block_id );
   void set_permeability (const double kappa);
@@ -99,7 +100,7 @@ private:
   const Teuchos::RCP<Mesh_maps_base> mesh_maps;
 
   // parameter list
-  const Teuchos::ParameterList parameter_list;
+  Teuchos::ParameterList parameter_list;
 }; 
 
 

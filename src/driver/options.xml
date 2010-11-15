@@ -11,7 +11,16 @@
       <Parameter name="Z_Max" type="double" value="1.0"/>
       <Parameter name="Numer of Cells in X" type="int" value="10"/> 
       <Parameter name="Numer of Cells in Y" type="int" value="10"/> 
-      <Parameter name="Numer of Cells in Z" type="int" value="10"/> 
+      <Parameter name="Numer of Cells in Z" type="int" value="10"/>
+      <Parameter name="Number of mesh blocks" type="int" value="2"/>
+      <ParameterList name="Mesh block 1">
+	<Parameter name="Z0" type="double" value="-0.1"/>
+	<Parameter name="Z1" type="double" value="0.3"/>
+      </ParameterList>
+      <ParameterList name="Mesh block 2">
+	<Parameter name="Z0" type="double" value="0.3"/>
+	<Parameter name="Z1" type="double" value="1.1"/>	
+      </ParameterList>
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
       <Parameter name="Exodus file name" type="string" value="test/moab_mesh.exo"/>
@@ -38,8 +47,8 @@
 
   
   <ParameterList name="State">
-    <Parameter name="Number of mesh blocks" type="int" value="1"/>
-    <Parameter name="Number of component concentrations" type="int" value="1"/>
+    <Parameter name="Number of mesh blocks" type="int" value="2"/>
+    <Parameter name="Number of component concentrations" type="int" value="3"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
@@ -50,11 +59,26 @@
     <ParameterList name="Mesh block 1"> 
       <Parameter name="Mesh block ID" type="int" value="0"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant permeability" type="double" value="10.0"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+      <Parameter name="Constant component concentration 1" type="double" value="0.1"/>
+      <Parameter name="Constant component concentration 2" type="double" value="0.2"/>
       <Parameter name="Constant Darcy flux x" type="double" value="1.0"/>
       <Parameter name="Constant Darcy flux y" type="double" value="0"/>
-      <Parameter name="Constant Darcy flux z" type="double" value="0"/>
-      <Parameter name="Constant permeability" type="double" value="1.0"/>
+      <Parameter name="Constant Darcy flux z" type="double" value="0"/> -->
     </ParameterList>
+
+    <ParameterList name="Mesh block 2"> 
+      <Parameter name="Mesh block ID" type="int" value="1"/>
+      <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant permeability" type="double" value="1.0"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.1"/>
+      <Parameter name="Constant component concentration 1" type="double" value="0.3"/>
+      <Parameter name="Constant component concentration 2" type="double" value="0.5"/>
+      <Parameter name="Constant Darcy flux x" type="double" value="1.0"/>
+      <Parameter name="Constant Darcy flux y" type="double" value="0"/> 
+      <Parameter name="Constant Darcy flux z" type="double" value="0"/> 
+    </ParameterList>    
 
   </ParameterList>
 
@@ -69,6 +93,8 @@
 	<Parameter name="Side set ID" type="int" value="3"/>
 	<Parameter name="Type" type="string" value="Constant"/>
 	<Parameter name="Component 0" type="double" value="1.0"/>
+	<Parameter name="Component 1" type="double" value="0.6"/>
+	<Parameter name="Component 2" type="double" value="0.2"/>
       </ParameterList>  
     </ParameterList>
   </ParameterList>
@@ -81,7 +107,7 @@
   <ParameterList name="Flow">
 
     <Parameter name="Max Iterations" type="int" value="100"/>
-    <Parameter name="Error Tolerance" type="double" value="1.0e-8"/>
+    <Parameter name="Error Tolerance" type="double" value="1.0e-13"/>
     
     <ParameterList name="Flow BC">
       <Parameter name="number of BCs" type="int" value="2"/>
@@ -95,7 +121,7 @@
 	<Parameter name="BC value" type="double" value="0.0" />
 	<Parameter name="Side set ID" type="int" value="1" />
       </ParameterList>  
-    </ParameterList>
+     </ParameterList>
   </ParameterList>
   
 </ParameterList>
