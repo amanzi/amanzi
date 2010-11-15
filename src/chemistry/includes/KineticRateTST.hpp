@@ -34,7 +34,7 @@ class KineticRateTST : public KineticRate
   KineticRateTST(void);
   ~KineticRateTST(void);
 
-  void Setup(const SecondarySpecies* reaction,
+  void Setup(const SecondarySpecies& reaction,
              const StringTokenizer reaction_data,
              const SpeciesArray primary_species);
   void Update(const SpeciesArray primary_species);

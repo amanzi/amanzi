@@ -11,6 +11,7 @@
 
 #include "mpi.h"
 
+// Unless this example is enhanced, it does lesser testing than test_hex_3x3x2.cc
 
 TEST(MOAB_HEX_4x4x4)
 {
@@ -37,11 +38,13 @@ TEST(MOAB_HEX_4x4x4)
 
 
   std::vector<unsigned int>  c2f(6);
+  std::vector<int> c2fdirs(6);
   Epetra_Map cell_map(mesh.cell_map(false));
   Epetra_Map face_map(mesh.face_map(false));
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
+      mesh.cell_to_face_dirs(c, c2fdirs.begin(), c2fdirs.end() );
       for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(c2f[j]);

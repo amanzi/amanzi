@@ -128,7 +128,7 @@ TEST(1D_FLOW) {
             << "Norm of true residual = " << solver.TrueResidual() << std::endl;
   
   // Print the solution; contains both cell and face pressures.
-  // std::cout << X << std::endl;
+  //std::cout << X << std::endl;
   
   Epetra_Vector &Pcell = *(prob.CreateCellView(X));
   //std::cout << Pcell << std::endl;

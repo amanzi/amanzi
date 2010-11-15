@@ -1,11 +1,11 @@
 #include "MimeticHex.hpp"
-#include "cell_geometry.hpp"
+#include "cell_geometry.hh"
 
-MimeticHex::MimeticHex(Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
+MimeticHex::MimeticHex(const Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
 {
   int ncell = mesh->count_entities(Mesh_data::CELL, USED);
   int nface = mesh->count_entities(Mesh_data::FACE, USED);
-  
+
   { // Cell volumes
     volume_.Size(ncell);
     double xdata[24]; // 8 x 3
@@ -15,22 +15,21 @@ MimeticHex::MimeticHex(Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
       volume_[j] = cell_geometry::hex_volume(xmatrix);
     }
   }
-  
+
   { // Area-weighted face normals (oriented areas)
     face_normal_.Shape(3, nface);
     double xdata[12]; // 4 x 3
     Epetra_SerialDenseMatrix xmatrix(View, xdata, 3, 3, 4);
     for (int j = 0; j < nface; ++j) {
       mesh->face_to_coordinates((unsigned int) j, xdata, xdata+12);
-      cell_geometry::quad_face_normal(face_normal_[j], xmatrix);
+      cell_geometry::quad_face_normal(xmatrix, face_normal_[j]);
     }
   }
-  
+
   // Face areas
   face_area_.Size(nface);
   for (int j = 0; j < nface; ++j)
     face_area_[j] = cell_geometry::vector_length(face_normal_[j], 3);
-  
 }
 
 

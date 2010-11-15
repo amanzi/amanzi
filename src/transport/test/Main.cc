@@ -1,7 +1,7 @@
 #include <UnitTest++.h>
 #include <TestReporterStdout.h>
-#include "Teuchos_GlobalMPISession.hpp"
 
+#include "Teuchos_GlobalMPISession.hpp"
 
 
 int main( int argc, char *argv[] )

@@ -42,7 +42,6 @@ class Beaker {
   struct BeakerParameters {
     // input files
     std::string thermo_database_file;
-    std::string mineral_kinetics_file;
     // solver parameters
     double tolerance;
     unsigned int max_iterations;
@@ -63,18 +62,24 @@ class Beaker {
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
   void SetupActivityModel(std::string model);
-  void VerifyState(const Beaker::BeakerComponents& components);
+  void VerifyComponentSizes(const Beaker::BeakerComponents& components);
+  void SetComponents(const Beaker::BeakerComponents& components);
+  void UpdateComponents(Beaker::BeakerComponents* components);
 
   void addPrimarySpecies(Species s);
   void AddIonExchangeSite(IonExchangeSite exchanger);
   void AddIonExchangeComplex(IonExchangeComplex exchange_complex);
   void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
   void addMineral(Mineral m);
+  void AddMineralKineticRate(KineticRate* rate);
   void addGeneralRxn(GeneralRxn r);
   void addSurfaceComplexationRxn(SurfaceComplexationRxn r);
 
+  bool HaveKinetics(void) const;
+
   // speciate for free-ion concentrations
-  int Speciate(BeakerComponents* components, const BeakerParameters& parameters);
+  int Speciate(const BeakerComponents& components, 
+               const BeakerParameters& parameters);
 
   // solve a chemistry step
   int ReactionStep(BeakerComponents* components, const BeakerParameters& parameters, 
@@ -172,8 +177,6 @@ protected:
   // volume [m^3]
   void updateParameters(const BeakerParameters& parameters, double dt);
 
-  void SetupMineralKinetics(const std::string mineral_kinetics_file);
- 
   void tolerance(double value) { this->tolerance_ = value; }
   void max_iterations(unsigned int value) { this->max_iterations_ = value; }
   void porosity(double d) { this->porosity_ = d; }
@@ -196,11 +199,11 @@ protected:
   void update_por_sat_den_vol(void);
 
 
-  std::vector<Species> primary_species(void) const { return this->primarySpecies_; };
-  std::vector<Mineral> minerals(void) const { return this->minerals_; };
-  std::vector<IonExchangeSite> ion_exchange_sites(void) const { return this->ion_exchange_sites_; };
-  std::vector<double> total(void) const { return this->total_; };
-  std::vector<double> total_sorbed(void) const { return this->total_sorbed_; };
+  const std::vector<Species>& primary_species(void) const { return this->primarySpecies_; };
+  const std::vector<Mineral>& minerals(void) const { return this->minerals_; };
+  const std::vector<IonExchangeSite>& ion_exchange_sites(void) const { return this->ion_exchange_sites_; };
+  const std::vector<double>& total(void) const { return this->total_; };
+  const std::vector<double>& total_sorbed(void) const { return this->total_sorbed_; };
 
 private:
   Verbosity verbosity_;

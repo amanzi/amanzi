@@ -2,7 +2,7 @@
 
 #include "float.h"
 
-FlowBC::FlowBC(Teuchos::ParameterList &list, Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
+FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
 {
   int nbc = list.get<int>("number of BCs", INT_MAX);
 
@@ -38,23 +38,33 @@ FlowBC::FlowBC(Teuchos::ParameterList &list, Teuchos::RCP<Mesh_maps_base> &mesh)
     // Get the BC type and check it against the list of defined types.
     std::string type = bc_param.get<std::string>("Type", "NOT DEFINED");
     if (type == "NOT DEFINED") throw std::exception();
-    bool read_value;
+    bool read_value, need_aux;
     if (type == "Pressure Constant") {
       bc_[i].Type = PRESSURE_CONSTANT;
-      bc_[i].Aux.resize(bc_[i].Faces.size()); // temp storage needed for Dirichlet-type conditions
+      need_aux = true;
       read_value = true;
     }
     else if (type == "No Flow") {
       bc_[i].Type = NO_FLOW;
+      need_aux = false;
       read_value = false;
     }
     else if (type == "Darcy Constant") {
       bc_[i].Type = DARCY_CONSTANT;
+      need_aux = false;
+      read_value = true;
+    }
+    else if (type == "Static Head") {
+      bc_[i].Type = STATIC_HEAD;
+      need_aux = true;
       read_value = true;
     }
     else {
       throw std::exception();
     }
+
+    // Temp storage needed for Dirichlet-type conditions.
+    if (need_aux) bc_[i].Aux.resize(bc_[i].Faces.size());
 
     // Get the BC data value if required.
     if (read_value) {

@@ -2,9 +2,9 @@
 #include "stdlib.h"
 #include "math.h"
 #include "UnitTest++.h"
-#include "../upper_packed_matrix.hpp"
-#include "../mimetic_hex.hpp"
-#include "../cell_geometry.hpp"
+#include "upper_packed_matrix.hpp"
+#include "mimetic_hex.hpp"
+#include "cell_geometry.hh"
 
 
 TEST(CROSS_PRODUCT) {

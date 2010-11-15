@@ -9,6 +9,11 @@ DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, const Ep
   //MLprec->PrintList();
 }
 
+DiffusionPrecon::~DiffusionPrecon()
+{
+  delete MLprec;
+}
+
 void DiffusionPrecon::Compute()
 {
   MLprec->ComputePreconditioner();
@@ -42,7 +47,6 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
   for (int i = 0; i < X.NumVectors(); ++i) fvec_ptrs[i] = cvec_ptrs[i] + ncell;
   Epetra_MultiVector Yc(View, cell_map, cvec_ptrs, X.NumVectors());
   Epetra_MultiVector Yf(View, face_map, fvec_ptrs, X.NumVectors());
-  // delete [] fvec_ptrs; // is this the right time?
 
   // Temporary cell and face vectors.
   Epetra_MultiVector Tc(cell_map, X.NumVectors());
@@ -66,6 +70,8 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
   D->Dcf().Multiply(false, Tf, Tc);  // this should do the required parallel comm
   Tc.Update(1.0, Xc, -1.0);
   Yc.ReciprocalMultiply(1.0, D->Dcc(), Tc, 0.0);
+
+  delete [] fvec_ptrs;
 
   return 0;
 }

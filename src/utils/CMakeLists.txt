@@ -4,12 +4,12 @@ include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 include_directories(${Trilinos_INCLUDE_DIRS})
 
-add_library(utils gmv_mesh.cc)
+add_library(utils gmv_mesh.cc cell_geometry.cc MeshAudit.cc)
 target_link_libraries(utils gmv simple_mesh dbc mesh_data ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
   add_executable(test_gmv_writer test/Main.cc test/test_gmv.cc)
-  target_link_libraries(test_gmv_writer utils gmv unittest++)
+  target_link_libraries(test_gmv_writer utils gmv unittest++ ${MPI_LIBS_ALL})
 endif()
 

@@ -1,9 +1,10 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Export.h"
 
-#include "simple_mesh/Mesh_maps_base.hh"
+#include "Mesh_maps_base.hh"
 #include "Transport_PK.hpp"
-#include "flow/cell_geometry.hpp"
+#include "cell_geometry.hh"
 
 using namespace std;
 using namespace Teuchos;
@@ -31,38 +32,55 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   TS_next = rcp( new Transport_State () );
   TS_next->create_internal_state( *TS_MPC );
 
-  /* set null/zero values to all internal parameters */
+  /* set default values to all internal parameters */
   dT = 0.0;
   status = TRANSPORT_NULL;
+  verbosity_level = 0;
+  internal_tests = 0;
 
 
   /* frequently used data */
-  const Epetra_Map & cell_map = TS->get_mesh_maps()->cell_map(false);
-  const Epetra_Map & face_map = TS->get_mesh_maps()->face_map(false);
+  const Epetra_Map & cell_map = TS->get_mesh_maps()->cell_map(true);
+  const Epetra_Map & face_map = TS->get_mesh_maps()->face_map(true);
 
   cmin = cell_map.MinLID();
   cmax = cell_map.MaxLID();
-  number_cells = TS->get_mesh_maps()->count_entities( Mesh_data::CELL, OWNED );
+
+  number_owned_cells = TS->get_mesh_maps()->count_entities( Mesh_data::CELL, OWNED );
+  cmax_owned = cmin + number_owned_cells - 1;
 
   fmin = face_map.MinLID();
   fmax = face_map.MaxLID(); 
-  number_faces = TS->get_mesh_maps()->count_entities( Mesh_data::FACE, OWNED );
+
+  number_owned_faces = TS->get_mesh_maps()->count_entities( Mesh_data::FACE, OWNED );
+  fmax_owned = fmin + number_owned_faces - 1;
+
+  /* assume that enumartion starts with 0 */
+  number_wghost_cells = cmax + 1;
+  number_wghost_faces = fmax + 1;
+
+
+  /* the rest of the code may not work without MPI information */
+#ifdef HAVE_MPI
+  const  Epetra_Comm & comm = cell_map.Comm(); 
+  MyPID = comm.MyPID();
+#else
+  MyPID = 0;
+#endif
 
 
   /* process parameter list */
   process_parameter_list();
 
   /* future geometry package */
-  cell_volume.resize( number_cells );
-  face_area.resize( number_faces );
-
-  upwind_cell.resize( number_faces );
-  downwind_cell.resize( number_faces );
+  cell_volume.resize( number_wghost_cells );
+  face_area.resize( number_wghost_faces );
 
   geometry_package();
 
-  /* other preliminaries for Demo I */
-  darcy_flux.resize( number_faces );
+  /* future geometry package */
+  upwind_cell.resize( number_wghost_faces );
+  downwind_cell.resize( number_wghost_faces );
 };
 
 
@@ -78,10 +96,17 @@ void Transport_PK::process_parameter_list()
 
   /* global transport parameters */
   cfl = parameter_list.get<double>( "CFL", 1.0 );
- 
-  cout << "Transport PK: CFL = " << cfl << endl;
-  cout << "              Total number of components = " << number_components << endl;
 
+  verbosity_level = parameter_list.get<int>( "verbosity level", 0 );
+  internal_tests = parameter_list.get<string>( "enable internal tests", "no") == "yes";
+ 
+  if ( !MyPID ) {
+     cout << "Transport PK: CFL = " << cfl << endl;
+     cout << "              Total number of components = " << number_components << endl;
+     cout << "              Verbosity level = " << verbosity_level << endl;
+     cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+  }
+  
 
   /* read number of boundary consitions */ 
   ParameterList  BC_list;
@@ -105,12 +130,11 @@ void Transport_PK::process_parameter_list()
 
      ParameterList bc_ss = BC_list.sublist( bc_name );
 
-     unsigned int  ssid, ntcc;
+     unsigned int  ssid;
      string  type;
      double  value;
 
      ssid = bc_ss.get<int>("Side set ID");
-     ntcc = bc_ss.get<int>("number of components");
      type = bc_ss.get<string>("Type");
 
      /* check all existing components: right now we check by id */
@@ -127,16 +151,22 @@ void Transport_PK::process_parameter_list()
         bcs[i].values[k] = value;
      }
 
+     if ( type == "Constant" ) bcs[i].type = TRANSPORT_BC_CONSTANT_INFLUX;
+
      bcs[i].side_set_id = ssid;
      if ( !mesh->valid_set_id( ssid, Mesh_data::FACE ) ) throw exception();
 
      /* populate list of n boundary faces: it could be empty */
      int  n;
-
      n = mesh->get_set_size( ssid, Mesh_data::FACE, OWNED );
+
      bcs[i].faces.resize( n );
 
      mesh->get_set( ssid, Mesh_data::FACE, OWNED, bcs[i].faces.begin(), bcs[i].faces.end() );
+
+     /* allocate memory for influx and outflux vectors */
+     bcs[i].influx.resize(  number_components );
+     bcs[i].outflux.resize( number_components );
   }
 }
 
@@ -151,24 +181,24 @@ void Transport_PK::process_parameter_list()
 double Transport_PK::calculate_transport_dT()
 {
   if ( status == TRANSPORT_NULL ) {
-     extract_darcy_flux();
+     check_divergence_free_condition();
      identify_upwind_cells();
   }
 
-  RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
+  RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
+  RCP<Epetra_Vector>   darcy_flux = TS->get_darcy_flux();
 
-  vector<double>  total_influx( number_cells, 0.0 );
+  vector<double>  total_influx( number_wghost_cells, 0.0 );
 
   /* loop over faces and accumulate upwinding fluxes */
   int  i, f, c, c1;
-  double  area, u;
-  const Epetra_Map & face_map = mesh->face_map(false);
+  double  u;
+  const Epetra_Map & face_map = mesh->face_map(true);
 
   for( f=fmin; f<=fmax; f++ ) {
      c = downwind_cell[f];
 
-     area = face_area[f];
-     if( c >= 0 ) total_influx[c] += area * fabs( darcy_flux[f] ); 
+     if( c >= 0 ) total_influx[c] += fabs( (*darcy_flux)[f] ); 
   }
 
 
@@ -179,20 +209,27 @@ double Transport_PK::calculate_transport_dT()
   RCP<const Epetra_Vector>  phi = TS->get_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
-  for( c=cmin; c<=cmax; c++ ) {
+  for( c=cmin; c<=cmax_owned; c++ ) {
      influx = total_influx[c];
      if( influx ) dT_cell = cell_volume[c] * (*phi)[c] * (*ws)[c] / influx;
 
-     dT = min( dT, dT_cell);
+     dT = min( dT, dT_cell );
   }
 
 
-  /* parallel garther and scatter of dT */ 
+  /* parallel gather and scatter of dT */ 
+#ifdef HAVE_MPI
+  double dT_global;
+  const  Epetra_Comm & comm = (*ws).Comm(); 
+ 
+  comm.MinAll( &dT, &dT_global, 1 );
+  dT = dT_global;
+#endif
 
 
   /* incorporate CFL restriction */
   dT *= cfl;
-  //cout << "Transport time step dT = " << dT << endl;
+  return dT;
 }
 
 
@@ -201,67 +238,65 @@ double Transport_PK::calculate_transport_dT()
 /* ************************************************************* */
 /* MPC will call this function to advance the transport state    */
 /* ************************************************************* */
-void Transport_PK::advance()
+void Transport_PK::advance( double dT_MPC )
 {
-  /* this should be moved to MPC */
-  calculate_transport_dT();
-
   status = TRANSPORT_STATE_BEGIN;
 
+  /* overwrite the transport step */
+  dT = dT_MPC;
 
-  /* Step 1: Loop over internal faces: update concentrations */
-  int i, c1, c2;
-  unsigned int f;
-  double u, phi_ws1, phi_ws2, tcc_flux;
 
-  /* access raw data */
+  /* access data */
+  int  i, c, c1, c2;
+  unsigned int  f;
+  double  u, vol_phi_ws, tcc_flux;
+
   RCP<Epetra_MultiVector>   tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector>   tcc_next = TS_next->get_total_component_concentration();
 
+  RCP<const Epetra_Vector>  darcy_flux = TS->get_darcy_flux();
   RCP<const Epetra_Vector>  ws  = TS->get_water_saturation();
   RCP<const Epetra_Vector>  phi = TS->get_porosity();
 
-  /* copy previous state */
-  *tcc_next = *tcc; 
 
-
-  /* advance each component */ 
+  /* prepare conservative state in master and slave cells */
   int num_components = tcc->NumVectors();
 
+  for( c=cmin; c<=cmax; c++ ) {
+     vol_phi_ws = cell_volume[c] * (*phi)[c] * (*ws)[c]; 
+
+     for( i=0; i<num_components; i++ ) 
+        (*tcc_next)[i][c] = (*tcc)[i][c] * vol_phi_ws;
+  }
+
+
+  /* advance each component: loop over master and slave faces*/ 
   for( f=fmin; f<=fmax; f++ ) {
      c1 = upwind_cell[f]; 
      c2 = downwind_cell[f]; 
 
      if ( c1 >=0 && c2 >= 0 ) {
-        u = fabs(darcy_flux[f]);
-
-        phi_ws1 = (*phi)[c1] * (*ws)[c1]; 
-        phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
+        u = fabs( (*darcy_flux)[f] );
 
         for( i=0; i<num_components; i++ ) {
            tcc_flux = dT * u * (*tcc)[i][c1];
 
-           (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
-           (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
+           (*tcc_next)[i][c1] -= tcc_flux;
+           (*tcc_next)[i][c2] += tcc_flux;
         }
      } 
      else if ( c1 >=0 ) {
-        u = fabs(darcy_flux[f]);
-        phi_ws1 = (*phi)[c1] * (*ws)[c1]; 
+        u = fabs( (*darcy_flux)[f]);
 
         for( i=0; i<num_components; i++ ) {
            tcc_flux = dT * u * (*tcc)[i][c1];
-           (*tcc_next)[i][c1] -= tcc_flux / phi_ws1;
+           (*tcc_next)[i][c1] -= tcc_flux;
         }
      }
   }
 
 
-  /* Step 2: Create an interface map */  
-
-  /* Step 3: Parallel communication */
-
-  /* Step 4: Loop over boundary sets */
+  /* loop over exterior boundary sets */
   int  k, n;
   for( n=0; n<bcs.size(); n++ ) {
      for( k=0; k<bcs[n].faces.size(); k++ ) {
@@ -269,19 +304,55 @@ void Transport_PK::advance()
         c2 = downwind_cell[f]; 
 
         if ( c2 >= 0 ) {
-           u = fabs(darcy_flux[f]);
-           phi_ws2 = (*phi)[c2] * (*ws)[c2]; 
+           u = fabs( (*darcy_flux)[f] );
 
-           for( i=0; i<num_components; i++ ) {
-              tcc_flux = dT * u * bcs[n].values[i];
-              (*tcc_next)[i][c2] += tcc_flux / phi_ws2;
-           }
+           if ( bcs[n].type == TRANSPORT_BC_CONSTANT_INFLUX ) {
+              for( i=0; i<num_components; i++ ) {
+                 tcc_flux = dT * u * bcs[n].values[i];
+                 (*tcc_next)[i][c2] += tcc_flux;
+                 bcs[n].influx[i] += tcc_flux;
+              }
+           } 
         }
      }
   }
 
 
-  /* Step 5: Paralell communication */
+  /* blocking parallel communications: we override slave cells */
+#ifdef HAVE_MPI
+  const Epetra_Map & cell_map = TS->get_mesh_maps()->cell_map( true );
+  Epetra_Export  Exporter( cell_map, cell_map );
+  
+  (*tcc_next).Export( *tcc_next, Exporter, Insert );
+#endif
+
+
+  /* recover concentration from new conservative state */
+  for( c=cmin; c<=cmax_owned; c++ ) {
+     vol_phi_ws = cell_volume[c] * (*phi)[c] * (*ws)[c]; 
+
+     for( i=0; i<num_components; i++ ) 
+        (*tcc_next)[i][c] /= vol_phi_ws;
+  }
+
+
+  /* debug checks */
+  if ( internal_tests ) {
+     double tcc_min_values[num_components];
+     double tcc_max_values[num_components];
+
+     (*tcc_next).MinValue( tcc_min_values );
+     (*tcc_next).MaxValue( tcc_max_values );
+
+     for( i=0; i<num_components; i++ ) {
+        if ( tcc_min_values[i] < 0.0 || 
+             tcc_max_values[i] > 1.0 + TRANSPORT_CONCENTRATION_OVERSHOOT ) { 
+           cout << "Transport failure: check div-free condition!" << endl; 
+           throw exception(); 
+        }
+     }
+  }
+
 
   status = TRANSPORT_STATE_COMPLETE;
 };
@@ -303,30 +374,48 @@ void Transport_PK::commit_state( RCP<Transport_State> TS )
 
 
 /* ************************************************************* */
-/* calculate Darcy velocity from mass flux:                      */
-/* serial implementaition                                        */
+/* verifies that the velocity field is divergence free           */
 /* ************************************************************* */
-void Transport_PK::extract_darcy_flux()
+void Transport_PK::check_divergence_free_condition()
 {
-  int  f, c1, c2;
-  double  density;
+  int  i, c, f;
+  double  div, u, umax, L8_error;
+  vector<unsigned int>  c2f(6);
+  vector<int>           dirs(6);
 
   RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
-  RCP<const Epetra_Vector>  rho = TS->get_water_density();
+  const Epetra_Map & face_map = mesh->face_map(true);
+  RCP<Epetra_Vector>   darcy_flux = TS->get_darcy_flux();
 
-  double *u;
-  TS->get_darcy_flux()->ExtractView( &u );
+  L8_error = 0;
 
-  for( f=fmin; f<=fmax; f++ ) {
-     c1 = upwind_cell[f]; 
-     c2 = downwind_cell[f]; 
+  for( c=cmin; c<=cmax_owned; c++ ) {
+     mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
+     mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
 
-     if ( c1 >= cmin && c2 >= cmin ) { density = ((*rho)[c1] + (*rho)[c2]) / 2; }
-     else if ( c1 >= cmin )          { density = (*rho)[c1]; }
-     else if ( c2 >= cmin )          { density = (*rho)[c2]; }
+     div = umax = 0;
+     for ( i=0; i<6; i++ ) {
+        f = c2f[i];
+        u = (*darcy_flux)[f];
+        div += u * dirs[i];
+        umax = max( umax, fabs( u ) / pow( face_area[f], 0.5 ) );
+     }
+     div /= cell_volume[c];
 
-     darcy_flux[f] = u[f] / density;
+     if( umax ) L8_error = max( L8_error, fabs( div ) / umax );
+
+     if ( fabs( div ) >= 1e-6 * umax ) { 
+        cout << "TRANSPORT: div-free condition is violated! "<< endl;
+        cout << "    MyPID = " << MyPID << endl;
+        cout << "    cell  = " << c << endl;
+        cout << "    divergence = " << div << endl;
+        cout << "    maximal velocity = " << umax << endl; 
+        cout << "    admissible tolerance div/flux is 1e-6" << endl; 
+        throw exception(); 
+     }
   }
+
+  cout << "Transport_PK: maximal (divergence / flux) = " << L8_error << endl;
 }
 
 
@@ -353,12 +442,12 @@ void Transport_PK::identify_upwind_cells()
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  const Epetra_Map & face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map(true);
 
   double *darcy_flux;
   TS->get_darcy_flux()->ExtractView( &darcy_flux );
 
-  for( c=cmin; c<=cmax; c++) {
+  for( c=cmin; c<=cmax_owned; c++) {
      mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
      mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
 
@@ -381,8 +470,8 @@ void Transport_PK::geometry_package()
   RCP<Mesh_maps_base> mesh = TS->get_mesh_maps();
 
   /* loop over faces and calculate areas */
-  unsigned int f;
-  double x[8][3], v1[3], v2[3];
+  int  f;
+  double  x[8][3], v1[3], v2[3];
 
   for( f=fmin; f<=fmax; f++ ) {
      mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
@@ -393,38 +482,47 @@ void Transport_PK::geometry_package()
 
   /* loop over cells, then faces, to calculate cell volume */
   int  i, j, c;
-  double  center[3], normal[3], volume;
+  double  normal[3], v3[3];
+  double  center, center1, center2, area1, area2, volume;
 
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  const Epetra_Map & face_map = mesh->face_map(false);
+  const Epetra_Map & face_map = mesh->face_map( true );
 
-  for( c=cmin; c<=cmax; c++ ) {
-     TS->get_mesh_maps()->cell_to_coordinates( c, (double*) x, (double*) x+24 );
-
-     for( i=0; i<3; i++ ) { 
-        center[i] = 0;
-        for( j=0; j<8; j++ ) center[i] += x[j][i];
-        center[i] /= 8;
-     }
+  for( c=cmin; c<=cmax_owned; c++ ) {
+     mesh->cell_to_coordinates( c, (double*) x, (double*) x+24 );
 
      mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
      mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
      
-     /* assume flat faces */
+     /* assume flat convex faces */
      volume = 0.0;
      for ( j=0; j<6; j++ ) {
-        f = face_map.LID(c2f[j]);
+        f = c2f[j];
         mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
-        quad_face_normal(normal, x[0], x[1], x[2], x[3]);
+        for( i=0; i<3; i++ ) {
+           v1[i] = x[1][i] - x[0][i];
+           v2[i] = x[2][i] - x[0][i];
+           v3[i] = x[3][i] - x[0][i];
+        }
 
-        for( i=0; i<3; i++ ) v1[i] = x[0][i] - center[i];
+        cross_product( v1, v2, normal );
+        area1 = vector_length( normal, 3 );
 
-        volume += dirs[j] * dot_product(normal, v1, 3);
+        cross_product( v2, v3, normal );
+        area2 = vector_length( normal, 3 );
+
+        center1 = (x[0][0] + x[1][0] + x[2][0]) / 3;
+        center2 = (x[0][0] + x[2][0] + x[3][0]) / 3;
+        center = (center1 * area1 + center2 * area2) / (area1 + area2);
+
+        quad_face_normal(x[0], x[1], x[2], x[3], normal);
+
+        volume += dirs[j] * normal[0] * center;
      }
-     cell_volume[c] = volume / 3;
+     cell_volume[c] = volume;
   }
 }
 

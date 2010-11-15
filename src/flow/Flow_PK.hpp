@@ -2,36 +2,50 @@
 #define __Flow_PK_hpp__
 
 #include "Teuchos_RCP.hpp"
+
+#include "Epetra_Vector.h"
+#include "AztecOO.h"
+
 #include "State.hpp"
 #include "Flow_State.hpp"
-
-#include "NOX.H"
-#include "NOX_Epetra_Group.H"
-
-
-// Flow Process Kernel Interface
+#include "DarcyProblem.hpp"
 
 class Flow_PK {
 
 public:
-  Flow_PK ( Teuchos::ParameterList &parameter_list_,
-	    Teuchos::RCP<Flow_State> CS_);
+  Flow_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
 
   ~Flow_PK ();
 
-  void advance( );
-  void commit_state ( Teuchos::RCP<Flow_State> );
+  int advance();
+  void commit_state(Teuchos::RCP<Flow_State>) {}
+
+  // After a successful advance() the following routines may be called.
+
+  // Returns a reference to the cell pressure vector.
+  const Epetra_Vector& Pressure() const { return *pressure; }
+
+  // Returns a reference to the Darcy face flux vector.
+  const Epetra_Vector& DarcyFlux() const { return *darcy_flux; }
+
+  // Computes the components of the Darcy velocity on cells.
+  void GetDarcyVelocity (Epetra_MultiVector &q) const
+      { problem->DeriveDarcyVelocity(*solution, q); }
 
 private:
 
-  // auxilary state for process kernel
-  Teuchos::RCP<Flow_State> FS;
+  Teuchos::RCP<const Flow_State> FS;
+  Teuchos::RCP<FlowBC> bc;
 
-  // parameter list
-  Teuchos::ParameterList parameter_list;
+  DarcyProblem *problem;
+  AztecOO *solver;
 
-  Teuchos::RCP<NOX::Solver::Generic> solver;
+  Epetra_Vector *solution;   // full cell/face solution
+  Epetra_Vector *pressure;   // cell pressures
+  Epetra_Vector *darcy_flux; // Darcy face fluxes
 
+  int max_itr;      // max number of linear solver iterations
+  double err_tol;   // linear solver convergence error tolerance
 };
 
 #endif

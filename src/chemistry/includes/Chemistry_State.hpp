@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef __Chemistry_State_hpp__
 #define __Chemistry_State_hpp__
 
@@ -7,13 +8,13 @@
 
 class Chemistry_State {
 
-public:
+ public:
   Chemistry_State (Teuchos::RCP<State> S):
-    total_component_concentration(S->get_total_component_concentration()),
-    porosity(S->get_porosity()),
-    water_density(S->get_water_density()),
-    water_saturation(S->get_water_saturation()),
-    mesh_maps(S->get_mesh_maps())
+      total_component_concentration(S->get_total_component_concentration()),
+      porosity(S->get_porosity()),
+      water_density(S->get_water_density()),
+      water_saturation(S->get_water_saturation()),
+      mesh_maps(S->get_mesh_maps())
   { };
 
   ~Chemistry_State () {};
@@ -27,7 +28,7 @@ public:
   Teuchos::RCP<const Epetra_Vector> get_water_density () const { return water_density; };
   
 
-private:
+ private:
   // variables that are relevant to chemistry
   Teuchos::RCP<const Epetra_MultiVector> total_component_concentration;
   Teuchos::RCP<const Epetra_Vector> porosity;

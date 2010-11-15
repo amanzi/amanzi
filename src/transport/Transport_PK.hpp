@@ -2,13 +2,12 @@
 #define __Transport_PK_hpp__
 
 #include "Epetra_Vector.h"
-#include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 
-#include "simple_mesh/Mesh_maps_simple.hh"
-#include "mpc/State.hpp"
-#include "transport/Transport_State.hpp"
-#include "transport/Transport_BCs.hpp"
+#include "Mesh_maps_simple.hh"
+#include "State.hpp"
+#include "Transport_State.hpp"
+#include "Transport_BCs.hpp"
 
 
 /* 
@@ -30,6 +29,11 @@ namespace Amanzi_Transport{
 
   const double TRANSPORT_LARGE_TIME_STEP = 1e+99;
   const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
+
+  const int TRANSPORT_BC_CONSTANT_INFLUX = 1;
+  const int TRANSPORT_BC_NULL = 2;
+
+  const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
 }
 
 
@@ -52,12 +56,12 @@ public:
 
   /* primary members */
   double calculate_transport_dT();
-  void advance();
+  void advance( double dT );
   void commit_state( RCP<Transport_State> TS );
 
   void process_parameter_list();
   void identify_upwind_cells();
-  void extract_darcy_flux();
+  void check_divergence_free_condition();
 
   vector<double> calculate_accumulated_influx();
   vector<double> calculate_accumulated_outflux();
@@ -70,6 +74,7 @@ public:
   RCP<Transport_State> get_transport_state_next() const { return TS_next; }
 
   double get_transport_dT()      { return dT; }
+  double get_cfl()               { return cfl; }
   int    get_transport_status()  { return status; }
  
 
@@ -77,6 +82,7 @@ public:
   /* member for debugging only */
   double get_face_area( int f )   { return face_area[f]; }
   double get_cell_volume( int c ) { return cell_volume[c]; }
+  vector<double> & get_cell_volume() { return cell_volume; }
 
 
 private:
@@ -84,9 +90,6 @@ private:
   RCP<Transport_State>  TS;
   RCP<Transport_State>  TS_next;
   
-  /* darcy_flux */
-  vector<double>  darcy_flux;
-
   /* parameter list with Transport specific parameters */
   ParameterList  parameter_list;
 
@@ -94,6 +97,7 @@ private:
   vector<double>  face_area;
   vector<double>  cell_volume;
 
+  /* internal data */
   vector<double>  upwind_cell;
   vector<double>  downwind_cell;
 
@@ -101,18 +105,18 @@ private:
   double  cfl, dT;
   int     number_components;
   int     status;
+  int     verbosity_level, internal_tests;
 
   /* boundary conditions for each components and each side set */
   /* it will be converted to a separate class                  */
   vector<Transport_BCs>  bcs;
 
-  /* accumulated influx and outflux for each side */
-  vector<double>   influx;
-  vector<double>  outflux;
-
   /* frequently used data */
-  int  cmin, cmax, number_cells;
-  int  fmin, fmax, number_faces;
+  int  cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
+  int  fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
+
+  /* parallel information */
+  int MyPID;
 };
 
 #endif

@@ -1,6 +1,6 @@
 
-#include "mpc/State.hpp"
-#include "flow/cell_geometry.hpp"
+#include "State.hpp"
+#include "cell_geometry.hh"
 #include "Transport_State.hpp"
 
 
@@ -64,17 +64,16 @@ void Transport_State::create_internal_state( Transport_State & S )
 void Transport_State::analytic_darcy_flux( double* u )
 {
   int  i, f;
-  double x[4][3], normal[3], length;
+  double x[4][3], normal[3];
 
-  Epetra_Map face_map = mesh_maps->face_map(false);
+  const Epetra_Map & face_map = mesh_maps->face_map( true );
 
   for( f=face_map.MinLID(); f<=face_map.MaxLID(); f++ ) { 
      mesh_maps->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
-     quad_face_normal(normal, x[0], x[1], x[2], x[3]);
-     length = vector_length( normal, 3 );
+     quad_face_normal(x[0], x[1], x[2], x[3], normal);
 
-     (*darcy_flux)[f] = (u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2]) / length;
+     (*darcy_flux)[f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
   }
 }
 
@@ -84,12 +83,12 @@ void Transport_State::analytic_darcy_flux( double* u )
 /* ************************************************************* */
 /* DEBUG: create constant analytical concentration C_0 = x       */
 /* ************************************************************* */
-void Transport_State::analytic_total_component_concentration()
+void Transport_State::analytic_total_component_concentration( double t )
 {
   int  i, j, c;
   double x[8][3], center[3];
 
-  Epetra_Map cell_map = mesh_maps->cell_map(false);
+  const Epetra_Map & cell_map = mesh_maps->cell_map( true );
 
   for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
      mesh_maps->cell_to_coordinates( c, (double*) x, (double*) x+24);
@@ -100,8 +99,38 @@ void Transport_State::analytic_total_component_concentration()
         center[i] /= 8;
      }
 
-     (*total_component_concentration)[0][c] = pow(1 - center[0], 3) / 100;
+     if ( center[0] <= t ) (*total_component_concentration)[0][c] = 1;
   }
+}
+
+
+
+
+void Transport_State::error_total_component_concentration( double t, vector<double> & cell_volume, double* L1, double* L2 )
+{
+  int  i, j, c;
+  double  d, x[8][3], center[3];
+
+  const Epetra_Map & cell_map = mesh_maps->cell_map( true );
+
+  *L1 = *L2 = 0.0;
+  for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
+     mesh_maps->cell_to_coordinates( c, (double*) x, (double*) x+24);
+
+     for( i=0; i<3; i++ ) { 
+        center[i] = 0;
+        for( j=0; j<8; j++ ) center[i] += x[j][i];
+        center[i] /= 8;
+     }
+
+     if ( center[0] <= t ) { d = (*total_component_concentration)[0][c] - 1; }
+     else                  { d = (*total_component_concentration)[0][c]; }
+
+     *L1 += fabs( d ) * cell_volume[c];
+     *L2 += d * d * cell_volume[c];
+  }
+
+  *L2 = sqrt( *L2 );
 }
 
 
@@ -113,7 +142,7 @@ void Transport_State::analytic_total_component_concentration()
 void Transport_State::analytic_porosity( double phi )
 {
   int  c;
-  Epetra_Map cell_map = mesh_maps->cell_map(false);
+  const Epetra_Map & cell_map = mesh_maps->cell_map( true );
 
   for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
      (*porosity)[c] = phi;  /* default is 0.2 */
@@ -129,7 +158,7 @@ void Transport_State::analytic_porosity( double phi )
 void Transport_State::analytic_water_saturation( double ws )
 {
   int  c;
-  Epetra_Map cell_map = mesh_maps->cell_map(false);
+  const Epetra_Map & cell_map = mesh_maps->cell_map( true );
 
   for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
      (*water_saturation)[c] = ws;  /* default is 1.0 */
@@ -145,7 +174,7 @@ void Transport_State::analytic_water_saturation( double ws )
 void Transport_State::analytic_water_density( double wd )
 {
   int  c;
-  Epetra_Map cell_map = mesh_maps->cell_map(false);
+  const Epetra_Map & cell_map = mesh_maps->cell_map( true );
 
   for( c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++ ) { 
      (*water_density)[c] = wd;  /* default is 1000.0 */

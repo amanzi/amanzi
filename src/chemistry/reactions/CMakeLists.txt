@@ -14,6 +14,7 @@ set(SRCS
 	./MineralKineticsFactory.cpp 
 	./Reaction.cpp 
 	./SecondarySpecies.cpp 
+	./SimpleThermoDatabase.cpp
 	./SurfaceComplex.cpp 
 	./SurfaceComplexationRxn.cpp 
 )

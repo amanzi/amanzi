@@ -19,5 +19,16 @@ if (BUILD_TESTS)
 	test/test_hex_4x4x4.cc)
   add_test(moab_mesh test_moab_mesh )
   target_link_libraries(test_moab_mesh moab_mesh unittest++)
+
+  add_executable(test_parallel_moab_mesh
+        test/Main.cc
+        test/test_hex_4x4x4_4P.cc)
+  add_test(parallel_moab_mesh ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${MPI_EXEC_MAX_NUMPROCS} test_parallel_moab_mesh)
+  target_link_libraries(test_parallel_moab_mesh moab_mesh unittest++)
+
+  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      copy_directory ${CMAKE_SOURCE_DIR}/moab_mesh/test ${CMAKE_BINARY_DIR}/moab_mesh/test) 
+  endif()
 endif()
 

@@ -2,10 +2,14 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
+#include "Teuchos_MPISession.hpp"
 #include "Mesh_maps_base.hh"
+#include "cell_geometry.hh"
 extern "C" {
 #include "gmvwrite.h"
 }
+
+using namespace cell_geometry;
 
 
 State::State( int number_of_components_,
@@ -19,9 +23,10 @@ State::State( int number_of_components_,
 
 };
 
-State::State( Teuchos::ParameterList &parameter_list,
+State::State( Teuchos::ParameterList &parameter_list_,
 	      Teuchos::RCP<Mesh_maps_base> mesh_maps_):
-  mesh_maps(mesh_maps_)
+  mesh_maps(mesh_maps_),
+  parameter_list(parameter_list_)
 {
 
   // get the number of component concentrations from the 
@@ -32,7 +37,65 @@ State::State( Teuchos::ParameterList &parameter_list,
 
   create_storage();
 
+  initialize_from_parameter_list();
+  
 };
+
+
+State::~State()
+{
+  //delete [] (*gravity);
+}
+
+
+void State::initialize_from_parameter_list()
+{
+  int num_blocks = parameter_list.get<int>("Number of mesh blocks");
+
+  double u[3];
+  u[0] = parameter_list.get<double>("Gravity x");		   
+  u[1] = parameter_list.get<double>("Gravity y");		   
+  u[2] = parameter_list.get<double>("Gravity z");		   
+  set_gravity(u);
+
+  set_zero_total_component_concentration();
+  set_water_density(parameter_list.get<double>("Constant water density"));
+  set_water_saturation(parameter_list.get<double>("Constant water saturation"));
+  set_viscosity(parameter_list.get<double>("Constant viscosity"));
+  
+  for (int nb=1; nb<=num_blocks; nb++) {
+    
+    std::stringstream pname;
+    pname << "Mesh block " << nb;
+
+    Teuchos::ParameterList sublist = parameter_list.sublist(pname.str());
+
+    int mesh_block_ID = sublist.get<int>("Mesh block ID");
+
+    if (!mesh_maps->valid_set_id(mesh_block_ID,Mesh_data::CELL)) {
+      // there is an inconsistency in the xml input file, report and die
+      
+      int myrank = Teuchos::MPISession::getRank();
+
+      if (myrank == 0) {
+	std::cerr << "State::initialize_from_parameter_list... the mesh block with ID ";
+	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
+	throw std::exception();
+      }
+    }
+	
+
+    // initialize the arrays with some constants from the input file
+    set_porosity(sublist.get<double>("Constant porosity"),mesh_block_ID);
+    set_permeability(sublist.get<double>("Constant permeability"),mesh_block_ID);
+    
+    u[0] = sublist.get<double>("Constant Darcy flux x",0.0);
+    u[1] = sublist.get<double>("Constant Darcy flux y",0.0);
+    u[2] = sublist.get<double>("Constant Darcy flux z",0.0);
+    set_darcy_flux(u, mesh_block_ID);
+    
+  }
+}
 
 
 void State::create_storage ()
@@ -44,9 +107,14 @@ void State::create_storage ()
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
+  permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
   total_component_concentration 
     = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );  
 
+  density =   Teuchos::rcp(new double);
+  viscosity = Teuchos::rcp(new double);
+  gravity =   Teuchos::rcp(new double*);
+  *gravity = new double[3];
 }
 
 
@@ -63,9 +131,142 @@ void State::update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector
 
 }
 
+void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
+{
+  *darcy_flux = new_darcy_flux;
+}
+
+void State::update_pressure(const Epetra_Vector &new_pressure)
+{
+  *pressure = new_pressure;
+}
+
+
+
 void State::advance_time(double dT)
 {
   time = time + dT;
+}
+
+
+void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v, 
+				    int mesh_block_id)
+{
+  if (!mesh_maps->valid_set_id(mesh_block_id,Mesh_data::CELL)) {
+    throw std::exception();
+  }
+  
+  unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
+							 Mesh_data::CELL,
+							 OWNED);
+
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  
+  mesh_maps->get_set(mesh_block_id, Mesh_data::CELL,OWNED,
+		     cell_ids.begin(),cell_ids.end());
+  
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); 
+       c != cell_ids.end();  c++) {
+    v[*c] = value;  
+  } 
+
+}
+
+void State::set_darcy_flux( const double* u, const int mesh_block_id )
+{
+  int  i, f;
+  double x[4][3], normal[3];
+
+  // Epetra_Map face_map = mesh_maps->face_map(false);
+
+  if (!mesh_maps->valid_set_id(mesh_block_id,Mesh_data::CELL)) {
+    throw std::exception();
+  }
+  
+  unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
+							 Mesh_data::CELL,
+							 OWNED);
+  
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  
+
+
+  mesh_maps->get_set(mesh_block_id, Mesh_data::CELL,OWNED,
+		     cell_ids.begin(),cell_ids.end());
+
+  
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); 
+       c != cell_ids.end();  c++) {
+    
+    std::vector<unsigned int> cface(6);
+    mesh_maps->cell_to_faces(*c, cface.begin(), cface.end());
+
+    for (std::vector<unsigned int>::iterator f = cface.begin();
+	 f != cface.end(); f++) {
+      
+      mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
+      
+      quad_face_normal(x[0], x[1], x[2], x[3], normal);
+    
+      (*darcy_flux)[*f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
+    }
+  }
+}
+
+
+void State::set_water_density( const double wd )
+{
+  water_density->PutScalar(wd);
+  *density = wd;
+}
+
+
+void State::set_water_saturation( const double ws )
+{
+  water_saturation->PutScalar(ws); 
+}
+
+
+void State::set_porosity( const double phi )
+{
+  porosity->PutScalar(phi);  
+}
+
+void State::set_porosity( const double phi, const int mesh_block_id )
+{
+  set_cell_value_in_mesh_block(phi,*porosity,mesh_block_id);
+}
+
+
+void State::set_zero_total_component_concentration()
+{
+  total_component_concentration->PutScalar(0.0);
+}
+
+
+void State::set_permeability( const double kappa )
+{
+  permeability->PutScalar(kappa);
+}
+
+
+void State::set_permeability( const double kappa, const int mesh_block_id)
+{
+  set_cell_value_in_mesh_block(kappa,*permeability,mesh_block_id);
+}
+
+
+void State::set_viscosity(const double mu)
+{
+  *viscosity = mu;
+}
+
+
+void State::set_gravity(const double *g)
+{
+  (*gravity)[0] = g[0];
+  (*gravity)[1] = g[1];
+  (*gravity)[2] = g[2];
 }
 
 

@@ -48,6 +48,7 @@ int main (int argc, char **argv) {
   // convert totals from molality [mol/kg water] -> molarity [mol/L water]
   for (unsigned int i = 0; i < components.total.size(); i++)
     components.total[i] *= parameters.water_density/1000.;
+  components.total_sorbed.resize(beaker.ncomp());
 
   filename = "target_total.dat";
   readTargetFreeIonFromFile(filename,beaker.ncomp(), &components.free_ion) ;

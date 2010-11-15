@@ -50,9 +50,12 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     // ghosts (0 for vertex connected ghost cells) and C indicates
     // the number of layers of ghost cells we want
 
+    // In the specification for the Ghosts we made the assumption 
+    // that we are dealing with 3D meshes only
+
     result = 
       mbcore->load_file(filename,NULL,
-			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION",
+			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1",
 			NULL,NULL,NULL);
       
     rank = mbcomm->rank();
@@ -156,47 +159,6 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
 
 
 
-  // Assign local IDs to entities
-
-
-  result = mbcore->tag_create("LOCAL_ID",sizeof(unsigned int),
-			      MB_TAG_DENSE,MB_TYPE_INTEGER,lid_tag,
-			      0,true);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Problem getting tag handle for LOCAL_ID" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-      
-  nent = AllVerts.size();
-  assert(nent > 0);
-  int *lids = new int[nent];
-  for (int i = 0; i < nent; i++) lids[i] = i;
-
-  result = mbcore->tag_set_data(lid_tag,AllVerts,lids);
-
-  delete [] lids;
-
-
-  nent = AllFaces.size();
-  assert(nent > 0);
-  lids = new int[nent];
-  for (int i = 0; i < nent; i++) lids[i] = i;
-
-  result = mbcore->tag_set_data(lid_tag,AllFaces,lids);
-
-  delete [] lids;
-
-
-  nent = AllCells.size();
-  assert(nent > 0);
-  lids = new int[nent];
-  for (int i = 0; i < nent; i++) lids[i] = i;
-
-  result = mbcore->tag_set_data(lid_tag,AllCells,lids);
-
-  delete [] lids;
-      
-
 
     
     
@@ -225,17 +187,6 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     mbcomm->exchange_tags(gid_tag,AllFaces);
     mbcomm->exchange_tags(gid_tag,AllCells);
 
-    init_pvert_lists();
-    init_pface_lists();
-    init_pcell_lists();
-
-
-    for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
-      MBEntityHandle face = *it;
-      int fgid;
-      mbcore->tag_get_data(gid_tag,&face,1,&fgid);
-    }
-      
   }
   else {
     // Serial case - we assign global IDs ourselves
@@ -272,6 +223,17 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
       
   }
 
+
+  init_pvert_lists();
+  init_pcell_lists(); // cells MUST be initialized before faces
+  init_pface_lists();
+
+  // Create maps from local IDs to MOAB entity handles (must be after
+  // the various init_p*_list calls)
+
+  init_id_handle_maps();
+
+
   
   // Create Epetra_maps
 
@@ -280,29 +242,9 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
   init_node_map();
 
 
-  // Create maps from IDs to MOAB entity handles
 
-  init_id_handle_maps();
-
-
-  // Get material, sideset and nodeset tags
-
-  result = mbcore->tag_get_handle(MATERIAL_SET_TAG_NAME,mattag);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get tag for material sets" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-  mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME,sstag);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get tag for side sets" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-  mbcore->tag_get_handle(DIRICHLET_SET_TAG_NAME,nstag);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get tag for node sets" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-
+  // Initialize some info about the global number of sets, global set
+  // IDs and set types
 
   init_set_info();
 
@@ -345,14 +287,34 @@ void Mesh_maps_moab::clear_internals_ ()
 
 void Mesh_maps_moab::init_id_handle_maps() {
   int i, nv, nf, nc;
+  int result;
+
+  // Assign local IDs to entities
+
+
+  result = mbcore->tag_create("LOCAL_ID",sizeof(unsigned int),
+			      MB_TAG_DENSE,MB_TYPE_INTEGER,lid_tag,
+			      0,true);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Problem getting tag handle for LOCAL_ID" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+      
+
 
   nv = AllVerts.size();
 
   vtx_id_to_handle.reserve(nv);
 
   i = 0;
-  for (MBRange::iterator it = AllVerts.begin(); it != AllVerts.end(); ++it) {
+  for (MBRange::iterator it = OwnedVerts.begin(); it != OwnedVerts.end(); ++it) {
     MBEntityHandle vtx = *it;
+    mbcore->tag_set_data(lid_tag,&vtx,1,&i);
+    vtx_id_to_handle[i++] = vtx;
+  }    
+  for (MBRange::iterator it = NotOwnedVerts.begin(); it != NotOwnedVerts.end(); ++it) {
+    MBEntityHandle vtx = *it;
+    mbcore->tag_set_data(lid_tag,&vtx,1,&i);
     vtx_id_to_handle[i++] = vtx;
   }
     
@@ -363,8 +325,14 @@ void Mesh_maps_moab::init_id_handle_maps() {
   face_id_to_handle.reserve(nf);
 
   i = 0;
-  for (MBRange::iterator it = AllFaces.begin(); it != AllFaces.end(); ++it) {
+  for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
     MBEntityHandle face = *it;
+    mbcore->tag_set_data(lid_tag,&face,1,&i);
+    face_id_to_handle[i++] = face;
+  }
+  for (MBRange::iterator it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); ++it) {
+    MBEntityHandle face = *it;
+    mbcore->tag_set_data(lid_tag,&face,1,&i);
     face_id_to_handle[i++] = face;
   }
     
@@ -375,8 +343,14 @@ void Mesh_maps_moab::init_id_handle_maps() {
   cell_id_to_handle.reserve(nc);
 
   i = 0;
-  for (MBRange::iterator it = AllCells.begin(); it != AllCells.end(); ++it) {
+  for (MBRange::iterator it = OwnedCells.begin(); it != OwnedCells.end(); ++it) {
     MBEntityHandle cell = *it;
+    mbcore->tag_set_data(lid_tag,&cell,1,&i);
+    cell_id_to_handle[i++] = cell;
+  }
+  for (MBRange::iterator it = GhostCells.begin(); it != GhostCells.end(); ++it) {
+    MBEntityHandle cell = *it;
+    mbcore->tag_set_data(lid_tag,&cell,1,&i);
     cell_id_to_handle[i++] = cell;
   }
     
@@ -409,35 +383,68 @@ void Mesh_maps_moab::init_pvert_lists() {
 }
 
 
+// init_pface_lists is more complicated than init_pvert_lists and
+// init_pcell_lists because of the way MOAB is setting up shared
+// entities and ghost entities. When we ask MOAB to resolve shared
+// entities, then MOAB sets up faces on interprocessor boundaries and
+// assigns each of them to some processor. Therefore, the pstatus tags
+// on these faces are correctly set. On the other hand when we ask for
+// ghost cells, MOAB does not automatically create ghost faces. Also,
+// when we go through ghost cells and create their faces, MOAB does
+// not tag them as ghost faces, tagging them as owned faces
+// instead. So we have to process them specially.
+
+
 void Mesh_maps_moab::init_pface_lists() {
+  MBRange NotOwnedIntFaces;
 
-  // Get not owned faces   
+  // Get not owned faces on the inter-processor boundaries (the call
+  // here behaves this way because of the way the faces were created)
 
-  mbcomm->get_pstatus_entities(facedim,PSTATUS_NOT_OWNED,NotOwnedFaces);
-    
+  mbcomm->get_pstatus_entities(facedim,PSTATUS_NOT_OWNED,NotOwnedIntFaces);
+
+  NotOwnedFaces = NotOwnedIntFaces;
+
+  // Now go through all faces and add those that are connected to two 
+  // ghost cells or one ghost cell and nothing on the other side
+
+  for (MBRange::iterator it = AllFaces.begin(); it != AllFaces.end(); ++it) {
+    MBEntityHandle face = *it;
+    MBRange fcells;
+
+    mbcore->get_adjacencies(&face,1,3,false,fcells,MBCore::UNION);
+
+    if (fcells.size() == 0)
+      std::cerr << "Could not get cells connected to face" << std::endl;
+
+    if (fcells.size() == 1) {
+      if (GhostCells.index(fcells[0]) >= 0)
+	NotOwnedFaces.insert(face);
+    }
+    else if (fcells.size() == 2) {
+      if (GhostCells.index(fcells[0]) >= 0 &&
+	  GhostCells.index(fcells[1]) >= 0)
+	NotOwnedFaces.insert(face);
+    }
+  }
+
+
   // Subtract from all faces on processor to get owned faces only
     
   OwnedFaces = AllFaces;  // I think we DO want a data copy here
   OwnedFaces -= NotOwnedFaces;
     
-  // Get ghost faces (in MOAB, ghost faces are not owned
-  // by a processor and not connected to an element owned by
-  // the processor
     
-  MBRange GhostFaces;
-    
-  mbcomm->get_pstatus_entities(facedim,PSTATUS_GHOST,GhostFaces);
-    
-  UsedFaces = AllFaces; // I think we DO want a data copy here
-  UsedFaces -= GhostFaces;
-    
+  UsedFaces = OwnedFaces; // I think we DO want a data copy here
+  UsedFaces.merge(NotOwnedIntFaces);
+
 }
 
 
 void Mesh_maps_moab::init_pcell_lists() {
   // Get not owned cells (which is the same as ghost cells)
 
-  mbcomm->get_pstatus_entities(facedim,PSTATUS_GHOST,GhostCells);
+  mbcomm->get_pstatus_entities(celldim,PSTATUS_GHOST,GhostCells);
     
   // Subtract from all cells on processor to get owned cells only
     
@@ -448,7 +455,27 @@ void Mesh_maps_moab::init_pcell_lists() {
 
 
 void Mesh_maps_moab::init_set_info() {
-  int maxnsets;
+  int maxnsets, result;
+
+
+
+  // Get material, sideset and nodeset tags
+
+  result = mbcore->tag_get_handle(MATERIAL_SET_TAG_NAME,mattag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for material sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME,sstag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for side sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  mbcore->tag_get_handle(DIRICHLET_SET_TAG_NAME,nstag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for node sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
 
 
   std::vector<MBTag> tag_handles;
@@ -667,20 +694,85 @@ void Mesh_maps_moab::cell_to_faces (unsigned int cellid,
 				    unsigned int *end)
 {
   MBEntityHandle cell;
-  MBRange cell_faces;    
+  MBRange cell_faces;
+  std::vector<MBEntityHandle> cell_nodes, face_nodes;
   int *cell_faceids;
   int nf;
+  int cfstd[6][4] = {{0,1,5,4},    // Expected cell-face-node pattern
+		     {1,2,6,5},
+		     {2,3,7,6},
+		     {0,4,7,3},
+		     {0,3,2,1},
+		     {4,5,6,7}};
+
 
   cell = cell_id_to_handle[cellid];
       
   mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
 			  MBInterface::INTERSECT);
-
   nf = cell_faces.size();
   assert ((unsigned int) (end - begin) >= nf);
-  cell_faceids = new int[nf];
 
-  mbcore->tag_get_data(lid_tag,cell_faces,cell_faceids);
+  cell_faceids = new int[nf];			
+
+
+  // Have to re-sort the faces according a specific template for hexes
+
+
+  if (nf == 6) { // Hex
+
+    MBEntityHandle *ordfaces, face;
+
+    ordfaces = new MBEntityHandle[6];
+
+    mbcore->get_connectivity(&cell, 1, cell_nodes);
+
+    for (int i = 0; i < nf; i++) {
+  
+      // Search for a face that has all the expected nodes
+
+      bool found = false;
+      int j;
+      for (j = 0; j < nf; j++) {
+
+	face = cell_faces[j];
+	mbcore->get_connectivity(&face, 1, face_nodes);
+
+	// Check if this face has all the expected nodes
+
+	bool all_present = true;
+
+	for (int k = 0; k < 4; k++) {
+	  unsigned int node = cell_nodes[cfstd[i][k]];
+
+	  if (face_nodes[0] != node && face_nodes[1] != node &&
+	      face_nodes[2] != node && face_nodes[3] != node) {
+	    all_present = false;
+	    break;
+	  }
+	}
+
+	if (all_present) {
+	  found = true;
+	  break;
+	}
+      }
+
+      assert(found);
+
+      if (found)
+	ordfaces[i] = face;
+    }
+
+
+    mbcore->tag_get_data(lid_tag,ordfaces,6,cell_faceids);
+
+    delete [] ordfaces;
+
+  }
+  else {
+    mbcore->tag_get_data(lid_tag,cell_faces,cell_faceids);
+  }
 
   std::copy (cell_faceids, cell_faceids+nf, begin);
 
@@ -701,30 +793,37 @@ void Mesh_maps_moab::cell_to_face_dirs (unsigned int cellid,
 				       int *end)
 {
   MBEntityHandle cell;
-  MBRange cell_faces;
+  unsigned int *cell_faces;
   int *cell_facedirs;
-  int j,nf;
+  int j,nf, result;
+  
 
+  nf = 6; // HEX SPECIFIC - THIS NUMBER SHOULD COME FROM cell_to_faces
 
   cell = cell_id_to_handle[cellid];
 
-  mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
-			  MBInterface::INTERSECT);
+  cell_faces = new unsigned int[nf];
 
-  nf = cell_faces.size();
+  cell_to_faces(cellid,cell_faces,cell_faces+nf);
+
   assert ((unsigned int) (end - begin) >= nf);
   cell_facedirs = new int[nf];
 
-  j = 0;
-  for (MBRange::iterator i = cell_faces.begin(); i != cell_faces.end(); i++) {
-    MBEntityHandle face = *i;
+  for (int i = 0; i < nf; i++) {
+    MBEntityHandle face = face_id_to_handle[cell_faces[i]];
     int sidenum, offset;
-    mbcore->side_number(cell,face,sidenum,(cell_facedirs[j]),offset);
-    j++;
+
+    result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
+
+    if (result != MB_SUCCESS) {
+      cerr << "Could not find face dir in cell" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
   }
     
   std::copy (cell_facedirs, cell_facedirs+nf, begin);
 
+  delete [] cell_faces;
   delete [] cell_facedirs;
 }
 
@@ -1337,7 +1436,33 @@ void Mesh_maps_moab::init_node_map ()
   delete [] vert_gids;
 
 }
-  
+
+
+unsigned int Mesh_maps_moab::GID(unsigned int lid, Mesh_data::Entity_kind kind) {
+  MBEntityHandle ent;
+  unsigned int gid;
+
+  switch (kind) {
+  case Mesh_data::NODE:
+    ent = vtx_id_to_handle[lid];
+    break;
+
+  case Mesh_data::FACE:
+    ent = face_id_to_handle[lid];
+    break;
+
+  case Mesh_data::CELL:
+    ent = cell_id_to_handle[lid];
+    break;
+  default:
+    std::cerr << "Global ID requested for unknown entity type" << std::endl;
+  }
+
+  mbcore->tag_get_data(gid_tag,&ent,1,&gid);
+  gid -= 1;
+
+  return gid;
+}
 
 
 

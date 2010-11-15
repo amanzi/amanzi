@@ -11,7 +11,7 @@
 
 class DiffusionMatrix {
 public:
-  DiffusionMatrix(Teuchos::RCP<Mesh_maps_base> &mesh, std::vector<int> &dir_faces);
+  DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh, const std::vector<int> &dir_faces);
   ~DiffusionMatrix();
 
   void Compute(const std::vector<double> &K);

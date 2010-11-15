@@ -94,10 +94,10 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
 
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize((int)this->primary_species().size());
-  this->VerifyState(components);
+  this->VerifyComponentSizes(components);
 } // end Setup()
 
-void Beaker::VerifyState(const Beaker::BeakerComponents& components)
+void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
 {
   // some helpful error checking goes here...
   std::string verify_sizes("ERROR: Beaker::VerifyState(): input data and initial conditions do not match:\n");
@@ -151,9 +151,6 @@ void Beaker::VerifyState(const Beaker::BeakerComponents& components)
               << std::endl;
   }
 
-/* Ignore this check for now as I have hardwired total_sorbed to always be the
-   same size as total.  However, in components, the size of total_sorbed is 
-   currently 0.
   if (this->total_sorbed().size() != components.total_sorbed.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
@@ -161,9 +158,29 @@ void Beaker::VerifyState(const Beaker::BeakerComponents& components)
               << "ERROR: total_sorbed.size and components.total_sorbed.size do not match."
               << std::endl;
   }
-*/
 
-}  // end VerifyState()
+}  // end VerifyComponentSizes()
+
+void Beaker::SetComponents(const Beaker::BeakerComponents& components)
+{
+  unsigned int size = components.ion_exchange_sites.size();
+  if (ion_exchange_sites().size() == size) {
+    for (unsigned int ies = 0; ies < size; ies++) {
+      ion_exchange_sites_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
+    }
+  } else {
+    // error exit gracefully
+  }
+
+  size = components.minerals.size();
+  if (minerals().size() == size) {
+    for (unsigned int m = 0; m < size; m++) {
+      minerals_[m].set_volume_fraction(components.minerals.at(m));
+    }
+  } else {
+    // error exit gracefully
+  }
+}  // end SetComponents()
 
 void Beaker::SetupActivityModel(std::string model)
 {
@@ -181,24 +198,6 @@ void Beaker::SetupActivityModel(std::string model)
     activity_model_->Display();
   }
 }  // end SetupActivityModel() 
-
-void Beaker::SetupMineralKinetics(const std::string mineral_kinetics_file)
-{
-  if (mineral_kinetics_file.size()) {
-    MineralKineticsFactory mineral_kinetics_factory;
-    mineral_kinetics_factory.verbosity(verbosity());
-    mineral_rates_ = mineral_kinetics_factory.Create(mineral_kinetics_file, 
-                                                     primarySpecies_, minerals_);
-    
-    if (verbosity() >= kDebugMineralKinetics) {
-      for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
-           rate != mineral_rates_.end(); rate++) {
-        (*rate)->Display();
-      }
-    }
-  }
-
-}  // end SetupMineralKinetics()
 
 void Beaker::addPrimarySpecies(Species s) 
 {
@@ -225,6 +224,22 @@ void Beaker::addMineral(Mineral m)
   minerals_.push_back(m);
 } // end addMineral()
 
+void Beaker::AddMineralKineticRate(KineticRate* rate) 
+{
+  mineral_rates_.push_back(rate);
+} // end AddMineralKineticRate()
+
+bool Beaker::HaveKinetics(void) const
+{
+  bool have_kinetics = false;
+  if (mineral_rates_.size()) {
+    have_kinetics = true;
+  }
+  // add other kinetic processes here....
+
+  return have_kinetics;
+}  // end HaveKinetics()
+
 void Beaker::addGeneralRxn(GeneralRxn r) 
 {
   generalKineticRxns_.push_back(r);
@@ -240,7 +255,6 @@ Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const
   Beaker::BeakerParameters parameters;
 
   parameters.thermo_database_file.clear();
-  parameters.mineral_kinetics_file.clear();
 
   parameters.tolerance = tolerance_default;
   parameters.max_iterations = max_iterations_default;
@@ -260,7 +274,6 @@ Beaker::BeakerParameters Beaker::GetCurrentParameters(void) const
   Beaker::BeakerParameters parameters;
 
   parameters.thermo_database_file.clear();
-  parameters.mineral_kinetics_file.clear();
 
   parameters.tolerance = tolerance();
   parameters.max_iterations = max_iterations();
@@ -373,7 +386,11 @@ void Beaker::updateEquilibriumChemistry(void)
     srfcplx->Update(primarySpecies_);
   }
 
-  // add equilibrium ion exchange here
+  // add equilibrium ion exchange here?
+  for (std::vector<IonExchangeComplex>::iterator iec = ion_exchange_rxns_.begin();
+       iec != ion_exchange_rxns_.end(); iec++) {
+    iec->Update(primary_species(), ion_exchange_sites());
+  }
 
   // calculate total component concentrations
   calculateTotal();
@@ -731,7 +748,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // calculate maximum relative change in concentration over all species
     max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 
-    if (verbosity() >= kDebugBeaker) {
+    if (verbosity() == kDebugBeaker) {
       for (int i = 0; i < ncomp(); i++)
         std::cout << primarySpecies_[i].name() << " " << 
                   primarySpecies_[i].molality() << " " << total_[i] << "\n";
@@ -752,11 +769,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
   // update total concentrations
   updateEquilibriumChemistry();
-  for (int i = 0; i<ncomp(); i++) {
-    components->free_ion[i] = primarySpecies_[i].molality();
-    components->total[i] = total_[i];
-    components->total_sorbed[i] = total_sorbed_[i];
-  }
+  UpdateComponents(components);
 
   return num_iterations;
 
@@ -764,7 +777,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
 
 // if no water density provided, default is 1000.0 kg/m^3
-int Beaker::Speciate(Beaker::BeakerComponents* components, 
+int Beaker::Speciate(const Beaker::BeakerComponents& components, 
                      const Beaker::BeakerParameters& parameters)
 {
   double speciation_tolerance = 1.e-12;
@@ -772,8 +785,8 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
   updateParameters(parameters, 0.0);
 
   // initialize free-ion concentrations
-  if (components->free_ion.size() > 0) {
-    initializeMolalities(components->free_ion);
+  if (components.free_ion.size() > 0) {
+    initializeMolalities(components.free_ion);
   }
   else {
     initializeMolalities(1.e-9);
@@ -796,7 +809,7 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
     // calculate residual
     // units of residual: mol/sec
     for (int i = 0; i < ncomp(); i++)
-      residual[i] = total_[i] - components->total[i];
+      residual[i] = total_[i] - components.total[i];
 
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
@@ -858,18 +871,22 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
   updateEquilibriumChemistry();
-  components->total_sorbed.resize(total_sorbed_.size());
-  for (int i = 0; i<ncomp(); i++) {
-    components->free_ion[i] = primarySpecies_[i].molality();
-    components->total[i] = total_[i];
-    components->total_sorbed[i] = total_sorbed_[i];
-  }
 
   if (verbosity() > 1) {
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
   }
   return num_iterations;
 }  // end Speciate()
+
+// if no water density provided, default is 1000.0 kg/m^3
+void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
+{
+  for (int i = 0; i<ncomp(); i++) {
+    components->free_ion[i] = primarySpecies_[i].molality();
+    components->total[i] = total_[i];
+    components->total_sorbed[i] = total_sorbed_[i];
+  }
+} // end UpdateComponents()
 
 /********************************************************************************
 **
@@ -925,7 +942,6 @@ void Beaker::DisplayParameters(void) const
   std::cout << "---- Parameters ------------------------------------------------------"
             << std::endl;
   //std::cout << "    thermo_database_file: " << thermo_database_file << std::endl;
-  //std::cout << "    mineral_kinetics_file: " << mineral_kinetics_file << std::endl;
   std::cout << "    tolerance: " << tolerance() << std::endl;
   std::cout << "    max_iterations :" << max_iterations() << std::endl;
 

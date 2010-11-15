@@ -67,6 +67,12 @@ AqueousEquilibriumComplex::~AqueousEquilibriumComplex()
 
 void AqueousEquilibriumComplex::Update(const std::vector<Species> primarySpecies) 
 {
+  /* This is not the true Q/K for the reaction, but is instead
+  **   BC <==> cC + bB
+  **   K = a_C^c * a_B^b / a_BC^1
+  **   a_BC = a_C^c * a_B^b / K
+  **   a_BC = QK = a_C^c * a_B^b / K
+  */
   double lnQK = -lnK_;
   for (int i = 0; i < ncomp_; i++) {
     lnQK += stoichiometry_[i] * primarySpecies[species_ids_[i]].ln_activity();
