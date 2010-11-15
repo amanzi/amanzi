@@ -20,6 +20,7 @@ if (BUILD_TESTS)
   add_test(moab_mesh test_moab_mesh )
   target_link_libraries(test_moab_mesh moab_mesh unittest++)
 
+  set(MPI_EXEC_MAX_NUMPROCS 4)
   add_executable(test_parallel_moab_mesh
         test/Main.cc
         test/test_hex_4x4x4_4P.cc)
