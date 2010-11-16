@@ -2,6 +2,7 @@
 #define __DIFFUSIONPRECON_H__
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Operator.h"
 
 #include "DiffusionMatrix.hpp"
@@ -11,7 +12,8 @@
 class DiffusionPrecon : public Epetra_Operator
 {
 public:
-  DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, const Epetra_Map &map);
+  DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, 
+		  Teuchos::ParameterList &plist, const Epetra_Map &map);
   ~DiffusionPrecon();
 
   void Compute();

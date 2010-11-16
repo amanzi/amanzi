@@ -80,6 +80,16 @@ void State::initialize_from_parameter_list()
       if (myrank == 0) {
 	std::cerr << "State::initialize_from_parameter_list... the mesh block with ID ";
 	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
+
+	// get the mesh block IDs 
+	int num_blks = mesh_maps->num_sets(Mesh_data::CELL);
+	std::vector<unsigned int> setids(num_blks);
+	mesh_maps->get_set_ids(Mesh_data::CELL,setids.begin(),setids.end());
+	std::cerr << "valid mesh block IDs are: ";
+	for (int i=0; i<num_blks; i++) std::cerr << setids[i] << " ";
+	std::cerr << std::endl;
+
+
 	throw std::exception();
       }
     }

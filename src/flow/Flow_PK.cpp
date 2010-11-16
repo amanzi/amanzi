@@ -9,7 +9,8 @@ Flow_PK::Flow_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_Sta
   bc = Teuchos::rcp<FlowBC>(new FlowBC(bc_param_list, FS->mesh()));
 
   // Create the Darcy flow problem.
-  problem = new DarcyProblem(FS->mesh(), bc);
+  Teuchos::ParameterList darcy_plist = list.sublist("Darcy Problem");
+  problem = new DarcyProblem(FS->mesh(),darcy_plist, bc);
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());

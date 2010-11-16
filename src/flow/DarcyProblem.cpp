@@ -1,7 +1,9 @@
 #include "DarcyProblem.hpp"
 #include "DarcyMatvec.hpp"
 
-DarcyProblem::DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
+DarcyProblem::DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
+			   Teuchos::ParameterList &darcy_plist,
+			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
 {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
@@ -20,7 +22,8 @@ DarcyProblem::DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuch
   D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh, bc));
 
   // Create the preconditioner (structure only, no values)
-  precon_ = new DiffusionPrecon(D_, Map());
+  Teuchos::ParameterList diffprecon_plist = darcy_plist.sublist("Diffusion Preconditioner");
+  precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
 
   // Create the RHS vector.
   rhs_ = new Epetra_Vector(Map());
