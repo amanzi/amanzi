@@ -4,6 +4,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Mesh_maps_base.hh"
 
 #include "FlowBC.hpp"
@@ -19,7 +20,9 @@ class DarcyProblem
 {
 public:
 
-  DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuchos::RCP<FlowBC> &bc);
+  DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh, 
+	       Teuchos::ParameterList &darcy_plist,
+	       const Teuchos::RCP<FlowBC> &bc);
   ~DarcyProblem();
 
   // Set the constant value of fluid density.

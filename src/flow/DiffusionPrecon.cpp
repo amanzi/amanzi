@@ -1,12 +1,16 @@
 #include "DiffusionPrecon.hpp"
+#include "Teuchos_ParameterList.hpp"
 
-DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, const Epetra_Map &map)
+DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, 
+				 Teuchos::ParameterList &plist, const Epetra_Map &map)
     : D(matrix), map_(map)
 {
   label = strdup("DiffusionPrecon");
 
-  MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), false);
-  //MLprec->PrintList();
+  Teuchos::ParameterList ml_plist = plist.sublist("ML Parameters");
+
+  MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), ml_plist, false);
+  MLprec->PrintList();
 }
 
 DiffusionPrecon::~DiffusionPrecon()
