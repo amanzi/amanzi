@@ -52,8 +52,6 @@ void State::initialize_from_parameter_list()
 {
   int num_blocks = parameter_list.get<int>("Number of mesh blocks");
 
-  cout << num_blocks << endl;
-
   double u[3];
   u[0] = parameter_list.get<double>("Gravity x");		   
   u[1] = parameter_list.get<double>("Gravity y");		   

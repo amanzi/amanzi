@@ -67,6 +67,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
    }
    
+   // transport...
    if (transport_enabled) {
      TS = Teuchos::rcp( new Transport_State( *S ) );
 
@@ -76,6 +77,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      TPK = Teuchos::rcp( new Transport_PK(transport_parameter_list, TS) );
    }
 
+   // flow...
    if (flow_enabled) {
      FS = Teuchos::rcp( new Flow_State( S ) );
 
@@ -107,38 +109,45 @@ void MPC::cycle_driver () {
   // get the GMV data from the parameter list
   Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
   
-  string gmv_meshfile_ = gmv_parameter_list.get<string>("Mesh file name");
-  string gmv_datafile_ = gmv_parameter_list.get<string>("Data file name");
-  string gmv_prefix = gmv_parameter_list.get<string>("GMV prefix","./");
+  string gmv_meshfile_str = gmv_parameter_list.get<string>("Mesh file name");
+  string gmv_datafile_str = gmv_parameter_list.get<string>("Data file name");
+  string gmv_prefix_str = gmv_parameter_list.get<string>("GMV prefix","./");
   
-  // create the GMV subdirectory
-  boost::filesystem::path prefix(gmv_prefix);
-  if (!boost::filesystem::is_directory(prefix.directory_string())) {
-    boost::filesystem::create_directory(prefix.directory_string());
+  // create the GMV subdirectory if does not exist already
+  boost::filesystem::path gmv_prefix_path(gmv_prefix_str);
+  if (!boost::filesystem::is_directory(gmv_prefix_path.directory_string())) {
+    boost::filesystem::create_directory(gmv_prefix_path.directory_string());
   }
-  boost::filesystem::path fmesh(gmv_meshfile_);
-  boost::filesystem::path fdata(gmv_datafile_);
+
+  // convert strings to paths
+  boost::filesystem::path gmv_meshfile_path(gmv_meshfile_str);
+  boost::filesystem::path gmv_datafile_path(gmv_datafile_str);
   boost::filesystem::path slash("/");
 
-  std::stringstream  mesh_filename;
-  mesh_filename << prefix.directory_string(); 
-  mesh_filename << slash.directory_string();
-  mesh_filename << fmesh.directory_string();
+  // create a portable mesh file path string 
+  std::stringstream  gmv_mesh_filename_path_sstr;
+  gmv_mesh_filename_path_sstr << gmv_prefix_path.directory_string(); 
+  gmv_mesh_filename_path_sstr << slash.directory_string();
+  gmv_mesh_filename_path_sstr << gmv_meshfile_path.directory_string();
+  string gmv_mesh_filename_path_str = gmv_mesh_filename_path_sstr.str();
 
-  string gmv_meshfile = mesh_filename.str();
-
-  std::stringstream  data_filename;
-  data_filename << prefix.directory_string(); 
-  data_filename << slash.directory_string();
-  data_filename << fdata.directory_string();
-
-  string gmv_datafile = data_filename.str();
+  // create a portable data file path string
+  std::stringstream  gmv_data_filename_path_sstr;
+  gmv_data_filename_path_sstr << gmv_prefix_path.directory_string(); 
+  gmv_data_filename_path_sstr << slash.directory_string();
+  gmv_data_filename_path_sstr << gmv_datafile_path.directory_string();
+  string gmv_data_filename_path_str = gmv_data_filename_path_sstr.str();
+  
+  // create a portable mesh file string
+  std::stringstream  gmv_mesh_filename_sstr;
+  gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
+  string gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
 
   const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency",100000);
   const double gmv_time_freq = gmv_parameter_list.get<double>("Dump time frequency",1.0e99);
     
   // write the GMV mesh file
-  GMV::create_mesh_file(*mesh_maps,gmv_meshfile);
+  GMV::create_mesh_file(*mesh_maps, gmv_mesh_filename_path_str);
   
   int iter = 0;
   
@@ -156,7 +165,7 @@ void MPC::cycle_driver () {
   
   
   // write the GMV data file
-  write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);
+  write_mesh_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
   gmv_time_dump_int++;
   
   if (chemistry_enabled || transport_enabled) {
@@ -216,7 +225,8 @@ void MPC::cycle_driver () {
       if (  gmv_freq_dump % gmv_cycle_freq   ==  0 ) {
 
 	cout << "Writing GMV file at cycle " << gmv_freq_dump << endl;
-	write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
+	write_mesh_data(gmv_data_filename_path_str, 
+			gmv_mesh_filename_str, iter, 6);      
 
       } else if ( (gmv_time_dump+ mpc_dT/1000.0) / gmv_time_freq  >= gmv_time_dump_int ) {
 
@@ -224,7 +234,8 @@ void MPC::cycle_driver () {
 	
 
 	cout << "Writing GMV file at time T=" << gmv_time_dump << endl;
-	write_mesh_data(gmv_meshfile, gmv_datafile, iter, 6);      
+	write_mesh_data(gmv_data_filename_path_str, 
+			gmv_mesh_filename_str, iter, 6);   
 	 
       }
     }
@@ -235,11 +246,11 @@ void MPC::cycle_driver () {
 
 
 
-void MPC::write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile, 
-			  const int iter, const int digits)
+void MPC::write_mesh_data(std::string gmv_datafile_path,
+			  std::string gmv_meshfile, const int iter, const int digits)
 {
   
-  GMV::open_data_file(gmv_meshfile, gmv_datafile,
+  GMV::open_data_file(gmv_meshfile, gmv_datafile_path,
 		      mesh_maps->count_entities(Mesh_data::NODE, OWNED),
 		      mesh_maps->count_entities(Mesh_data::CELL, OWNED),
 		      iter, digits);

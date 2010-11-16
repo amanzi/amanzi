@@ -21,7 +21,7 @@ namespace GMV {
   void create_mesh_file(Mesh_maps_base &mesh_maps, std::string filename);
 
   // Opens and initializes a GMV file for writing which references a "fromfile" for mesh definition.
-  void open_data_file(std::string mesh_fromfile, std::string filename, unsigned int num_nodes, unsigned int num_cells);
+  void open_data_file(std::string mesh_fromfile, std::string filename_path, unsigned int num_nodes, unsigned int num_cells);
   
   // Opens and initializes a GMV file for writing which references a "fromfile" for mesh definition.
   // adds a suffix of the type .000302 with, in this case, cycleno=302 and digits= 6 
