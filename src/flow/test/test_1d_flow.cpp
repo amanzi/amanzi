@@ -72,6 +72,7 @@ TEST(1D_FLOW) {
   bc_top.set("Side set ID", 5);
   bc_top.set("Type", "No Flow");
   
+
   // Create the flow BCs from the parameter list.
   Teuchos::RCP<FlowBC> bc(new FlowBC(bc_list, mesh));
 
@@ -79,7 +80,12 @@ TEST(1D_FLOW) {
   //
   // CREATE THE DARCY FLOW PROBLEM
   
-  DarcyProblem prob(mesh, bc);
+  Teuchos::ParameterList darcy_plist;
+  Teuchos::ParameterList &diffprec_plist = darcy_plist.sublist("Diffusion Preconditioner");
+  Teuchos::ParameterList &ml_plist = diffprec_plist.sublist("ML Parameters");
+  ml_plist.set("default values", "SA");
+
+  DarcyProblem prob(mesh, darcy_plist, bc);
   
   prob.SetFluidDensity(1.0);
   prob.SetFluidViscosity(1.0);

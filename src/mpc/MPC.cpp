@@ -18,10 +18,8 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
   mesh_maps(mesh_maps_)
   
 {
-   
    mpc_parameter_list =  parameter_list.sublist("MPC");
    read_parameter_list();
-
 
    // let users selectively disable individual process kernels
    // to allow for testing of the process kernels separately
