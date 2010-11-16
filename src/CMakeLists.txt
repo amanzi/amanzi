@@ -1,6 +1,19 @@
-SET(CMAKE_CXX_COMPILER mpicxx)
-SET(CMAKE_C_COMPILER mpicc)
-
+# Note: This CMakeLists.txt file previously hard-wired the C and C++ compilers 
+# via the following commands:
+#
+#   SET(CMAKE_CXX_COMPILER mpicxx)
+#   SET(CMAKE_C_COMPILER mpicc)
+#
+# The values of these variables should not be set within this file; on some 
+# systems no "mpicxx" and "mpicc" wrappers are present.  Instead, cmake 
+# should be invoked with arguments such as
+#
+# cmake \
+#   -D CMAKE_CXX_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/CC" \
+#   -D CMAKE_C_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/cc" \
+#
+# --RTM
+    
 project (AMANZI)
 enable_testing()
 
