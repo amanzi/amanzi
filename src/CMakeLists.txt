@@ -6,7 +6,7 @@ enable_testing()
 
 
 cmake_minimum_required(VERSION 2.8)
-set(CMAKE_BUILD_TYPE debug)
+#set(CMAKE_BUILD_TYPE debug)
 
 set(AMANZI_Mesh_VERSION_MAJOR 0)
 set(AMANZI_Mesh_VERSION_MINOR 1)
