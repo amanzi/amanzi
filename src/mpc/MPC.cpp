@@ -93,6 +93,7 @@ void MPC::read_parameter_list()
 {
   T0 = mpc_parameter_list.get<double>("Start Time");
   T1 = mpc_parameter_list.get<double>("End Time");
+  end_cycle = mpc_parameter_list.get<int>("End Cycle",-1);
 }
 
 
@@ -169,11 +170,11 @@ void MPC::cycle_driver () {
   if (chemistry_enabled || transport_enabled) {
     
     // then iterate transport and chemistry
-    while (S->get_time() <= T1) {
+    while ( (S->get_time() <= T1)  &&  ((end_cycle == -1) || (iter <= end_cycle)) ) {
       double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99;
-
+      
       if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
-
+      
       mpc_dT = min( transport_dT, chemistry_dT );
       
       std::cout << "MPC: ";
@@ -203,44 +204,44 @@ void MPC::cycle_driver () {
 	CPK->advance(chemistry_dT, total_component_concentration_star);
 	Chemistry_PK::ChemistryStatus cpk_status = CPK->status();
       }
-
+      
       // update the time in the state object
       S->advance_time(mpc_dT);
- 
-
+      
+      
       // we're done with this time step, commit the state 
       // in the process kernels
       if (transport_enabled) TPK->commit_state(TS);
       if (chemistry_enabled) CPK->commit_state(CS, chemistry_dT);
-	
-     
+      
+      
       // advance the iteration count
       iter++;
-
+      
       gmv_freq_dump = iter;
       gmv_time_dump = S->get_time();
-     
+      
       if (  gmv_freq_dump % gmv_cycle_freq   ==  0 ) {
-
+	
 	cout << "Writing GMV file at cycle " << gmv_freq_dump << endl;
 	write_mesh_data(gmv_data_filename_path_str, 
 			gmv_mesh_filename_str, iter, 6);      
-
+	
       } else if ( (gmv_time_dump+ mpc_dT/1000.0) / gmv_time_freq  >= gmv_time_dump_int ) {
-
+	
 	gmv_time_dump_int ++;
 	
-
+	
 	cout << "Writing GMV file at time T=" << gmv_time_dump << endl;
 	write_mesh_data(gmv_data_filename_path_str, 
 			gmv_mesh_filename_str, iter, 6);   
-	 
+	
       }
     }
     
   }
-
 }
+
 
 
 
