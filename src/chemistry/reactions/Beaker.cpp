@@ -71,6 +71,7 @@ void Beaker::resize() {
   residual.resize(ncomp());
   prev_molal.resize(ncomp());
   total_.resize(ncomp());
+  // TODO: this should only be done if we are actually using sorption.
   total_sorbed_.resize(ncomp());
   for (unsigned int i = 0; i < total_sorbed_.size(); i++)
     total_sorbed_[i] = 0.;
@@ -106,7 +107,7 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
     std::cout << verify_sizes
-              << "ERROR: ncomp and components.free_ion.size do not match."
+              << "ERROR: ncomp and components.total.size do not match."
               << std::endl;
   }
 
@@ -118,12 +119,11 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
               << std::endl;
   }
 
-  if (components.free_ion.size() > 0 &&
-      this->primary_species().size() != components.free_ion.size()) {
+  if (components.free_ion.size() != components.total.size()) {
     // initial conditions and database input don't match. Print a
     // helpful message and exit gracefully.
     std::cout << verify_sizes
-              << "ERROR: primary_species.size and components.free_ion.size do not match."
+              << "ERROR: components.total.size and components.free_ion.size do not match."
               << std::endl;
   }
 
@@ -151,13 +151,15 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
               << std::endl;
   }
 
-  if (this->total_sorbed().size() != components.total_sorbed.size()) {
-    // initial conditions and database input don't match. Print a
-    // helpful message and exit gracefully.
-    std::cout << verify_sizes
-              << "ERROR: total_sorbed.size and components.total_sorbed.size do not match."
-              << std::endl;
-  }
+  // this check is breaking things because total_sorbed is always
+  // resized in resize(), even if there is no sorption!
+//   if (this->total_sorbed().size() != components.total_sorbed.size()) {
+//     // initial conditions and database input don't match. Print a
+//     // helpful message and exit gracefully.
+//     std::cout << verify_sizes
+//               << "ERROR: total_sorbed.size and components.total_sorbed.size do not match."
+//               << std::endl;
+//   }
 
 }  // end VerifyComponentSizes()
 
@@ -663,6 +665,10 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     double D;
     // allocate pivoting array for LU
     int *indices = new int[ncomp()];
+    /* TODO:this is a memory leak? we are new'ing a bunch of memory
+       but not freeing it.  need to change the object level indices
+       variable into an int*, then allocate correctly in resize() and
+       free in the destructor */
     ludcmp(A->getValues(),ncomp(),indices,&D);
     lubksb(A->getValues(),ncomp(),indices,b);
 } // end solveLinearSystem
@@ -882,9 +888,14 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
 {
   for (int i = 0; i<ncomp(); i++) {
-    components->free_ion[i] = primarySpecies_[i].molality();
     components->total[i] = total_[i];
-    components->total_sorbed[i] = total_sorbed_[i];
+    if (components->free_ion.size() > 0) {
+      components->free_ion[i] = primarySpecies_[i].molality();
+    }
+    if (components->total_sorbed.size() > 0 && 
+        total_sorbed_.size() > 0) {
+      components->total_sorbed[i] = total_sorbed_[i];
+    }
   }
 } // end UpdateComponents()
 

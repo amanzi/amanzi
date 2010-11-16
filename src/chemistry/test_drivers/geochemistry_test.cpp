@@ -130,6 +130,13 @@ int main(int argc, char **argv) {
     parameters.saturation = 1.0;  // - 
     parameters.volume = 1.0;  // m^3
     ModelSpecificParameters(model, &parameters);
+    if (components.free_ion.size() == 0) {
+      components.free_ion.resize(components.total.size(), 1.0e-9);
+      // WTF is this being used for? The entire thing is being coppied
+      // into the initial molalites. What if we don't actually want
+      // these values? What if we only want to specify a single
+      // value.....
+    }
     chem->Setup(components, parameters);
     if (verbosity >= kVerbose) {
       chem->Display();
