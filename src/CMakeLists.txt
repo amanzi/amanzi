@@ -318,8 +318,41 @@ list(APPEND Trilinos_INCLUDE_DIRS /usr/include)
 find_package( Boost COMPONENTS system filesystem REQUIRED)
 
 
+##############################################################################
+# CGNS - http://www.cgns.sourceforge.net/
+##############################################################################
+
+OPTION(ENABLE_CGNS "Build with cgnslib_2.5" OFF)
+
+if(ENABLE_CGNS)
+find_library(CGNS_LIBRARY cgns
+             HINTS ${CGNS_LIB_DIR}
+                   ${CGNS_DIR}/lib
+                   /usr/lib
+                   /usr/local/lib
+		   )
+if(NOT CGNS_LIBRARY)
+  message(FATAL_ERROR "Error: could not find CGNS library\n"
+          "Try defining CGNS_DIR: (-D CGNS_DIR:FILEPATH=<CGNS_install_prefix>)"
+          "\nor defining CGNS_LIB_DIR")
+endif()
 
 
+find_path(CGNS_INCLUDES cgnslib.h 
+          HINTS ${CGNS_INCLUDE_DIR}
+                ${CGNS_DIR}/include
+                /usr/include
+                /usr/local/include
+		)
+if(NOT CGNS_INCLUDES)
+  message(FATAL_ERROR "Error: could not find CGNS includes\n"
+          "Try defining CGNS_DIR: (-D CGNS_DIR:FILEPATH=<CGNS_install_prefix>)"
+          "\nor defining CGNS_INCLUDE_DIR")
+endif()
+
+add_library(cgns STATIC IMPORTED)
+set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
+endif()
 
 
 include_directories(${PROJECT_BINARY_DIR})
