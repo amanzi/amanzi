@@ -71,6 +71,7 @@ private:
   Teuchos::RCP<FlowBC> bc_;
   Epetra_Map *dof_map_;
   Epetra_Import *face_importer_;
+  Epetra_Import *cell_importer_;
 
   double rho_;  // constant fluid density
   double mu_;   // constant fluid viscosity

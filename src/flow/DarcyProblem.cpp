@@ -7,6 +7,7 @@ DarcyProblem::DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuch
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
 
   face_importer_ = new Epetra_Import(FaceMap(true),FaceMap(false));
+  cell_importer_ = new Epetra_Import(CellMap(true),CellMap(false));
 
   // Create the MimeticHexLocal objects.
   init_mimetic_disc_(*mesh, MD);
@@ -38,6 +39,7 @@ DarcyProblem::~DarcyProblem()
   delete rhs_;
   delete matvec_;
   delete precon_;
+  delete cell_importer_;
   delete face_importer_;
   delete md_;
 }
@@ -138,11 +140,17 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   // In addition, only the owned DoF belong to the vectors.
 
   // Create views into the cell and face segments of X and F
-  Epetra_Vector &Pcell = *CreateCellView(X);
+  Epetra_Vector &Pcell_own = *CreateCellView(X);
   Epetra_Vector &Pface_own = *CreateFaceView(X);
 
   Epetra_Vector &Fcell = *CreateCellView(F);
   Epetra_Vector &Fface_own = *CreateFaceView(F);
+  
+  // Create cell vectors that include ghosts.
+  Epetra_Vector Pcell(CellMap(true));
+  
+  // Populate the cell pressure vector from the input.
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
 
   // Create face vectors that include ghosts.
   Epetra_Vector Pface(FaceMap(true));
@@ -172,12 +180,15 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
   }
-  Fface_own.Export(Fface, *face_importer_, Add);
+  //Fface_own.Export(Fface, *face_importer_, Add);
 
   // Apply final BC fixups to FFACE.
-  apply_BC_final_(Fface_own); // only modifies owned values
+  apply_BC_final_(Fface); // modifies used values
+  
+  for (int j = 0; j < Fface_own.MyLength(); ++j)
+    Fface_own[j] = Fface[j];
 
-  delete &Pcell, &Pface_own, &Fcell, &Fface_own;
+  delete &Pcell_own, &Pface_own, &Fcell, &Fface_own;
 }
 
 
