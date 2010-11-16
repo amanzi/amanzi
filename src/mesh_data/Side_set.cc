@@ -7,7 +7,8 @@ namespace Mesh_data
 bool Side_set::valid () const
 {
 
-    bool result = (num_sides_ > 0);
+    bool result = true;         // a side set can be empty
+    // result = (num_sides_ > 0);
     // result &= (num_nodes_ > 0);
 
     result &= (element_list_.size ()    == num_sides_);

@@ -8,8 +8,10 @@ namespace Mesh_data
 
 bool Element_block::valid () const
 {
-    bool valid = ( num_elements_ > 0);
-    valid &= (num_nodes_per_element_ > 0);
+    bool valid(true);
+    if ( num_elements_ > 0) {
+      valid &= (num_nodes_per_element_ > 0);
+    }
     valid &= (num_attributes_ >= 0);
     valid &= (connectivity_map_.size () == num_elements_ * num_nodes_per_element_);
     valid &= (attribute_map_.size ()    == num_elements_ * num_attributes_);
@@ -36,11 +38,18 @@ void Element_block::take_data_from (int num_elements,
     name_ = name;
 
     num_elements_          = num_elements;
-    num_nodes_per_element_ = connectivity_map.size () / num_elements;
-    num_attributes_        = attribute_map.size ()    / num_elements;
+    if (num_elements > 0) {
+      num_nodes_per_element_ = connectivity_map.size () / num_elements;
+      num_attributes_        = attribute_map.size ()    / num_elements;
 
-    std::swap (connectivity_map_, connectivity_map);
-    std::swap (attribute_map_,    attribute_map);
+      std::swap (connectivity_map_, connectivity_map);
+      std::swap (attribute_map_,    attribute_map);
+    } else {
+      num_nodes_per_element_ = 0;
+      num_attributes_ = 0;
+      connectivity_map_.clear();
+      attribute_map.clear();
+    }
 
     ASSERT (valid ());
 }

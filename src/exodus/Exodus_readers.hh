@@ -24,6 +24,8 @@ Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id);
 
 Mesh_data::Data* read_exodus_file (const char *);
 
+Mesh_data::Data* read_exodus_file (const Exodus_file& file);
+
 Mesh_data::ELEMENT_TYPE read_element_type (const char *);
 
 }

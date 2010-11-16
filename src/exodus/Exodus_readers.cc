@@ -210,11 +210,9 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
 
 }
 
-Mesh_data::Data* read_exodus_file (const char * filename)
+Mesh_data::Data* read_exodus_file (const Exodus_file& file)
 {
     
-    Exodus_file file (filename);
-
     Mesh_data::Parameters* parameters = read_parameters (file);
 
     const int num_nodes = parameters->num_nodes_;
@@ -273,6 +271,12 @@ Mesh_data::ELEMENT_TYPE read_element_type (const char * name)
 
     return Mesh_data::UNKNOWN;
 
+}
+
+Mesh_data::Data* read_exodus_file (const char * filename)
+{
+  Exodus_file file (filename);
+  return read_exodus_file(file);
 }
 
 

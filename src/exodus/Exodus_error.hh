@@ -11,9 +11,8 @@ namespace ExodusII
 
 class ExodusError : public std::exception
 {
-    inline char const * what () const throw ();
-
 public:
+    inline char const * what () const throw ();
     
     int retval_;
     ExodusError (int retval) : retval_ (retval) { }
