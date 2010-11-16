@@ -60,6 +60,10 @@ class Chemistry_PK {
   double saved_time_;
   unsigned int num_aqueous_components_;
 
+  void XMLParameters(void);
+  void LocalPhysicalState(void);
+  void LocalInitialConditions(void);
+
 };
 
 #endif

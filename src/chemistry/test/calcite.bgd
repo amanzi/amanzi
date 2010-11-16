@@ -1,0 +1,51 @@
+# Calcite chemistry test problem for ascem geochemistry code validation
+<Primary Species
+#H2O ; 3.0 ; 0.0 ; 18.0153
+
+H+ ; 9.0 ; 1.0 ; 1.0079
+
+HCO3- ; 4.0 ; -1.0 ; 61.0171
+
+Ca++ ; 6.0 ; 2.0 ; 40.0780
+
+<Aqueous Equilibrium Complexes
+OH- = -1.0000 H+ 1.0000 H2O ; 13.9951 ; 3.5 ; -1.0 ; 17.0073
+
+CO3-- = -1.0000 H+ 1.0000 HCO3- ; 10.3288 ; 4.5 ; -2.0 ; 60.0092
+
+CO2(aq)  = -1.0000 H2O 1.0000 H+ 1.0000 HCO3- ; -6.3447 ; 3.0 ; 0.0 ; 44.0098
+
+CaOH+ = -1.0000 H+ 1.0000 Ca++ 1.0000 H2O ; 12.8500 ; 4.0 ; 1.0 ; 57.0853
+
+CaHCO3+ = 1.0000 Ca++ 1.0000 HCO3- ; -1.0467 ; 4.0 ; 1.0 ; 101.0951
+
+CaCO3(aq) = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 7.0017 ; 3.0 ; 0.0 ; 100.0872
+
+<Minerals
+Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340
+
+<Mineral Kinetics
+#
+# crude input file format for mineral kinetics
+#
+# units are shown in the example, but not verified or converted by the code!
+#
+# each line is a semicolon delimited list for a single reaction rate expression:
+# field 1 : mineral : name from the "<Minerals" section
+# field 2 : rate type : string
+#
+# remaining fields depend on the rate type
+#
+# TST rate : Rate = k * area * Prod (a_i^m_i) * ( 1 - Q/Keq)
+#   field : 'gmw double grams_per_mol' : gram molecular weight [grams mole^-1]
+#   field : 'molar_density double cm3_per_mol' : molar density [cm^3 mole^-1]
+#   field : 'rate_constant double moles_cm2_sec' : k, rate constant [moles cm^2 s^-1]
+#   field : 'area double cm2' : reactive surface area [cm^2]
+#   field : 'pK double unitless'
+#   field : 'name double' : list of modifying species primary and exponent
+#
+
+Calcite ; TST ; area 100.0 cm2 ; rate_constant 1.0e-3 moles_cm2_sec ; log_Keq 1.8487 unitless ; H+ 1.0
+
+#Calcite ; TST ; area 1.0 cm2 ; rate_constant 1.0e-8 moles_cm2_sec ; log_Keq 1.8487 unitless ; H+ 0.57 Ca++ -0.98
+

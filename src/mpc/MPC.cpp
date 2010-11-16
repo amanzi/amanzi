@@ -57,6 +57,10 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    if (chemistry_enabled) {
      CS = Teuchos::rcp( new Chemistry_State( S ) );
 
+     // TODO: Markus - is this the correct place to initialize this?
+     total_component_concentration_star = 
+         Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), S->get_number_of_components() ) );
+
      Teuchos::ParameterList chemistry_parameter_list = 
        parameter_list.sublist("Chemistry");
      

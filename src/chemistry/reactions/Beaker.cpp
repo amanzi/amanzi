@@ -677,6 +677,11 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 			 const Beaker::BeakerParameters& parameters,
 			 double dt)
 {
+  /*
+  ** Note: the parameter components is modified by this function.
+  ** initially it contains the initial component concentrations.
+  ** on return it contains the modified values of the components.
+  */
 
   // update class paramters
   // water_density [kg/m^3]

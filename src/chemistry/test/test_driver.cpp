@@ -26,10 +26,8 @@ TEST(DRIVER) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
   
-  std::string    xmlInFileName = "test/driver.xml";
+  std::string    xmlInFileName = "test/calcite.xml";
 
-
-  
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
   Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
@@ -41,28 +39,24 @@ TEST(DRIVER) {
 
   Teuchos::RCP<Mesh_maps_base> mesh;
   
-  if (mesh_class == "Simple") 
-    {
-      Teuchos::ParameterList simple_mesh_parameter_list = 
-      	mesh_parameter_list.sublist("Simple Mesh Parameters");
+  if (mesh_class == "Simple") {
+    Teuchos::ParameterList simple_mesh_parameter_list = 
+        mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      Teuchos::RCP<Mesh_maps_simple> MMS = 
-      	Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
+    Teuchos::RCP<Mesh_maps_simple> MMS = 
+        Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
       
-      mesh = MMS;
+    mesh = MMS;
       
-    } 
-  else 
-    {
-      throw std::exception();
-    }
+  } else {
+    throw std::exception();
+  }
 
 
   // create the MPC
   MPC mpc(driver_parameter_list, mesh);
   
   mpc.cycle_driver();
-  
   
   delete comm;
       
