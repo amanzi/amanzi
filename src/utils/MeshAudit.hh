@@ -9,10 +9,12 @@
 class MeshAudit {
 public:
 
-  MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_);
+  MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_, std::ostream& os=std::cout);
 
   // This is the main method.
   int Verify() const;
+  
+  void SetOutputFile(const std::string);
 
   // The individual tests are also available.  While the tests are all formally
   // independent, there is an implicit order dependence of the tests in that a
@@ -42,11 +44,12 @@ private:
   Teuchos::RCP<Mesh_maps_base> mesh;
 
   const Epetra_Comm *comm;
-
+  const int MyPID;
   const int nnode;
   const int nface;
   const int ncell;
 
+  std::ostream& os;
   unsigned int MAX_OUT;
 
   bool distinct_values(const std::vector<unsigned int> &list) const;

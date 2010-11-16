@@ -8,12 +8,16 @@
 #include "cell_geometry.hh"
 #include "cell_topology.hh"
 
+#include <iostream>
+#include <iomanip>
+
 using namespace std;
 
 // Need checks whether illegal usage of the interface causes exceptions
 
-MeshAudit:: MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_) :
-      mesh(mesh_), comm(mesh_->get_comm()),
+MeshAudit:: MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_, ostream& os_) :
+      mesh(mesh_), comm(mesh_->get_comm()), MyPID(mesh_->get_comm()->MyPID()),
+      os(os_),
       nnode(mesh_->node_map(true).NumMyElements()),
       nface(mesh_->face_map(true).NumMyElements()),
       ncell(mesh_->cell_map(true).NumMyElements()),
@@ -126,13 +130,13 @@ int MeshAudit::check_entity_counts() const
   int n, nref;
   int status=0;
 
-  cout << "Checking entity_counts ..." << endl;
+  os << "Checking entity_counts ..." << endl;
 
   // Check the number of owned nodes.
   n = mesh->count_entities(Mesh_data::NODE,OWNED);
   nref = mesh->node_map(false).NumMyElements();
   if (n != nref) {
-    cout << "ERROR: count_entities(NODE,OWNED)=" << n << "; should be " << nref << endl;
+    os << ": ERROR: count_entities(NODE,OWNED)=" << n << "; should be " << nref << endl;
     status = 1;
   }
 
@@ -140,7 +144,7 @@ int MeshAudit::check_entity_counts() const
   n = mesh->count_entities(Mesh_data::NODE,USED);
   nref = mesh->node_map(true).NumMyElements();
   if (n != nref) {
-    cout << "ERROR: count_entities(NODE,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(NODE,USED)=" << n << "; should be " << nref << endl;
     status = 1;
   }
 
@@ -148,7 +152,7 @@ int MeshAudit::check_entity_counts() const
   n = mesh->count_entities(Mesh_data::FACE,OWNED);
   nref = mesh->face_map(false).NumMyElements();
   if (n != nref) {
-    cout << "ERROR: count_entities(FACE,OWNED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(FACE,OWNED)=" << n << "; should be " << nref << endl;
     status = 1;
   }
 
@@ -156,7 +160,7 @@ int MeshAudit::check_entity_counts() const
   n = mesh->count_entities(Mesh_data::FACE,USED);
   nref = mesh->face_map(true).NumMyElements();
   if (n != nref) {
-    cout << "ERROR: count_entities(FACE,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(FACE,USED)=" << n << "; should be " << nref << endl;
     status = 1;
   }
 
@@ -164,7 +168,7 @@ int MeshAudit::check_entity_counts() const
   n = mesh->count_entities(Mesh_data::CELL,OWNED);
   nref = mesh->cell_map(false).NumMyElements();
   if (n != nref) {
-    cout << "ERROR: count_entities(CELL,OWNED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(CELL,OWNED)=" << n << "; should be " << nref << endl;
     status = 1;
   }
 
@@ -172,7 +176,7 @@ int MeshAudit::check_entity_counts() const
   n = mesh->count_entities(Mesh_data::CELL,USED);
   nref = mesh->cell_map(true).NumMyElements();
   if (n != nref) {
-    cout << "ERROR: count_entities(CELL,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: count_entities(CELL,USED)=" << n << "; should be " << nref << endl;
     status = 1;
   }
 
@@ -195,7 +199,7 @@ int MeshAudit::check_cell_to_nodes_refs() const
   vector<unsigned int> cnode(8);
   vector<unsigned int> refs(nnode, 0);
 
-  cout << "Checking cell_to_nodes references ..." << endl;
+  os << "Checking cell_to_nodes references ..." << endl;
 
   for (unsigned int j = 0; j < ncell; ++j) {
     cnode.assign(8, UINT_MAX);
@@ -228,19 +232,19 @@ int MeshAudit::check_cell_to_nodes_refs() const
   int status = 0;
 
   if (!bad_cells.empty()) {
-    cout << "ERROR: invalid nodes referenced by cells:";
+    os << "ERROR: invalid nodes referenced by cells:";
     write_list(bad_cells, MAX_OUT);
     status = -1;
   }
 
   if (!bad_cells1.empty()) {
-    cout << "ERROR: caught exception for cells:";
+    os << "ERROR: caught exception for cells:";
     write_list(bad_cells1, MAX_OUT);
     status = -1;
   }
 
   if (!free_nodes.empty()) {
-    cout << "WARNING: found unreferenced nodes:";
+    os << "WARNING: found unreferenced nodes:";
     write_list(free_nodes, MAX_OUT);
     if (status == 0) status = 1;
   }
@@ -265,7 +269,7 @@ int MeshAudit::check_cell_to_faces_refs() const
   vector<unsigned int> cface(6);
   vector<unsigned int> refs(nface, 0);
 
-  cout << "Checking cell_to_faces references ..." << endl;
+  os << "Checking cell_to_faces references ..." << endl;
 
   for (unsigned int j = 0; j < ncell; ++j) {
     cface.assign(6, UINT_MAX);
@@ -294,25 +298,25 @@ int MeshAudit::check_cell_to_faces_refs() const
   int status = 0;
 
   if (!bad_cells.empty()) {
-    cout << "ERROR: invalid faces referenced by cells:";
+    os << "ERROR: invalid faces referenced by cells:";
     write_list(bad_cells, MAX_OUT);
     status = -1;
   }
 
   if (!bad_cells1.empty()) {
-    cout << "ERROR: caught exception for cells:";
+    os << "ERROR: caught exception for cells:";
     write_list(bad_cells1, MAX_OUT);
     status = -1;
   }
 
   if (!free_faces.empty()) {
-    cout << "WARNING: found unreferenced faces:";
+    os << "WARNING: found unreferenced faces:";
     write_list(free_faces, MAX_OUT);
     if (status == 0) status = 1;
   }
 
   if (!bad_faces.empty()) {
-    cout << "WARNING: found faces shared by more than two cells:";
+    os << "WARNING: found faces shared by more than two cells:";
     write_list(bad_faces, MAX_OUT);
     if (status == 0) status = 1;
   }
@@ -336,7 +340,7 @@ int MeshAudit::check_face_to_nodes_refs() const
   vector<unsigned int> fnode(4);
   vector<unsigned int> refs(nnode, 0);
 
-  cout << "Checking face_to_nodes references ..." << endl;
+  os << "Checking face_to_nodes references ..." << endl;
 
   for (unsigned int j = 0; j < nface; ++j) {
     fnode.assign(4, UINT_MAX);
@@ -369,19 +373,19 @@ int MeshAudit::check_face_to_nodes_refs() const
   int status = 0;
 
   if (!bad_faces.empty()) {
-    cout << "ERROR: invalid nodes referenced by faces:";
+    os << "ERROR: invalid nodes referenced by faces:";
     write_list(bad_faces, MAX_OUT);
     status = -1;
   }
 
   if (!bad_faces1.empty()) {
-    cout << "ERROR: caught exception for faces:";
+    os << "ERROR: caught exception for faces:";
     write_list(bad_faces1, MAX_OUT);
     status = -1;
   }
 
   if (!free_nodes.empty()) {
-    cout << "WARNING: found unreferenced nodes:";
+    os << "WARNING: found unreferenced nodes:";
     write_list(free_nodes, MAX_OUT);
     if (status == 0) status = 1;
   }
@@ -399,7 +403,7 @@ int MeshAudit::check_face_to_nodes_refs() const
 
 int MeshAudit::check_cell_to_nodes_consistency() const
 {
-  cout << "Checking consistency of cell_to_nodes methods ..." << endl;
+  os << "Checking consistency of cell_to_nodes methods ..." << endl;
 
   vector<unsigned int> cnode(8);
   vector<unsigned int> bad_cells1, bad_cells1_exc;
@@ -421,13 +425,13 @@ int MeshAudit::check_cell_to_nodes_consistency() const
   int status = 0;
 
   if (!bad_cells1.empty()) {
-    cout << "ERROR: bad values from pointer-based accessor for cells:";
+    os << "ERROR: bad values from pointer-based accessor for cells:";
     write_list(bad_cells1, MAX_OUT);
     status = 1;
   }
 
   if (!bad_cells1_exc.empty()) {
-    cout << "ERROR: caught exception from pointer-based accessor for cells:";
+    os << "ERROR: caught exception from pointer-based accessor for cells:";
     write_list(bad_cells1_exc, MAX_OUT);
     status = 1;
   }
@@ -438,7 +442,7 @@ int MeshAudit::check_cell_to_nodes_consistency() const
 
 int MeshAudit::check_face_to_nodes_consistency() const
 {
-  cout << "Checking consistency of face_to_nodes methods ..." << endl;
+  os << "Checking consistency of face_to_nodes methods ..." << endl;
 
   vector<unsigned int> fnode(4);
   vector<unsigned int> bad_faces1, bad_faces1_exc;
@@ -460,13 +464,13 @@ int MeshAudit::check_face_to_nodes_consistency() const
   int status = 0;
 
   if (!bad_faces1.empty()) {
-    cout << "ERROR: bad values from pointer-based accessor for faces:";
+    os << "ERROR: bad values from pointer-based accessor for faces:";
     write_list(bad_faces1, MAX_OUT);
     status = 1;
   }
 
   if (!bad_faces1_exc.empty()) {
-    cout << "ERROR: caught exception from pointer-based accessor for faces:";
+    os << "ERROR: caught exception from pointer-based accessor for faces:";
     write_list(bad_faces1_exc, MAX_OUT);
     status = 1;
   }
@@ -477,7 +481,7 @@ int MeshAudit::check_face_to_nodes_consistency() const
 
 int MeshAudit::check_cell_to_faces_consistency() const
 {
-  cout << "Checking consistency of cell_to_faces methods ..." << endl;
+  os << "Checking consistency of cell_to_faces methods ..." << endl;
 
   vector<unsigned int> cface(6);
   vector<unsigned int> bad_cells1, bad_cells1_exc;
@@ -499,13 +503,13 @@ int MeshAudit::check_cell_to_faces_consistency() const
   int status = 0;
 
   if (!bad_cells1.empty()) {
-    cout << "ERROR: bad values from pointer-based accessor for cells:";
+    os << "ERROR: bad values from pointer-based accessor for cells:";
     write_list(bad_cells1, MAX_OUT);
     status = 1;
   }
 
   if (!bad_cells1_exc.empty()) {
-    cout << "ERROR: caught exception from pointer-based accessor for cells:";
+    os << "ERROR: caught exception from pointer-based accessor for cells:";
     write_list(bad_cells1_exc, MAX_OUT);
     status = 1;
   }
@@ -521,7 +525,7 @@ int MeshAudit::check_cell_to_faces_consistency() const
 
 int MeshAudit::check_cell_to_face_dirs_basic() const
 {
-  cout << "Checking cell_to_face_dirs (basic) ..." << endl;
+  os << "Checking cell_to_face_dirs (basic) ..." << endl;
 
   vector<int> fdirs0(6);
   vector<unsigned int> bad_cells0;
@@ -556,13 +560,13 @@ int MeshAudit::check_cell_to_face_dirs_basic() const
   int status = 0;
 
   if (!bad_cells0.empty()) {
-    cout << "ERROR: inadmissable or no data for cells:";
+    os << "ERROR: inadmissable or no data for cells:";
     write_list(bad_cells0, MAX_OUT);
     status = -1;
   }
 
   if (!bad_cells1.empty()) {
-    cout << "ERROR: pointer-based accessor returned inconsistent values for cells:";
+    os << "ERROR: pointer-based accessor returned inconsistent values for cells:";
     write_list(bad_cells1, MAX_OUT);
     if (status == 0) status = -1;
   }
@@ -576,7 +580,7 @@ int MeshAudit::check_cell_to_face_dirs_basic() const
 
 int MeshAudit::check_cell_degeneracy() const
 {
-  cout << "Checking cells for topological degeneracy ..." << endl;
+  os << "Checking cells for topological degeneracy ..." << endl;
 
   vector<unsigned int> cnode(8);
   vector<unsigned int> bad_cells;
@@ -587,7 +591,7 @@ int MeshAudit::check_cell_degeneracy() const
   }
 
   if (!bad_cells.empty()) {
-    cout << "ERROR: found topologically degenerate cells:";
+    os << "ERROR: found topologically degenerate cells:";
     write_list(bad_cells, MAX_OUT);
     return -1;
   } else {
@@ -605,7 +609,7 @@ int MeshAudit::check_cell_degeneracy() const
 
 int MeshAudit::check_cell_to_faces() const
 {
-  cout << "Checking correctness of cell_to_faces and cell_to_face_dirs ..." << endl;
+  os << "Checking correctness of cell_to_faces and cell_to_face_dirs ..." << endl;
 
   vector<unsigned int> cnode(8);
   vector<unsigned int> cface(6);
@@ -638,13 +642,13 @@ int MeshAudit::check_cell_to_faces() const
   int status = 0;
 
   if (!bad_cells0.empty()) {
-    cout << "ERROR: bad cell_to_faces values for cells:";
+    os << "ERROR: bad cell_to_faces values for cells:";
     write_list(bad_cells0, MAX_OUT);
     status = -1;
   }
 
   if (!bad_cells1.empty()) {
-    cout << "ERROR: bad cell_to_face_dirs values for cells:";
+    os << "ERROR: bad cell_to_face_dirs values for cells:";
     write_list(bad_cells1, MAX_OUT);
     status = -1;
   }
@@ -662,7 +666,7 @@ int MeshAudit::check_cell_to_faces() const
 
 int MeshAudit::check_node_to_coordinates() const
 {
-  cout << "Checking node_to_coordinates ..." << endl;
+  os << "Checking node_to_coordinates ..." << endl;
 
   vector<double> x1(3);
   vector<unsigned int> bad_nodes0;
@@ -698,13 +702,13 @@ int MeshAudit::check_node_to_coordinates() const
   int status = 0;
 
   if (!bad_nodes0.empty()) {
-    cout << "ERROR: no coordinate data for nodes:";
+    os << "ERROR: no coordinate data for nodes:";
     write_list(bad_nodes0, MAX_OUT);
     status = -1;
   }
 
   if (!bad_nodes1.empty()) {
-    cout << "ERROR: std::vector-based accessor returned inconsistent values for nodes:";
+    os << "ERROR: std::vector-based accessor returned inconsistent values for nodes:";
     write_list(bad_nodes1, MAX_OUT);
     if (status == 0) status = 1;
   }
@@ -725,7 +729,7 @@ int MeshAudit::check_node_to_coordinates() const
 
 int MeshAudit::check_cell_to_coordinates() const
 {
-  cout << "Checking cell_to_coordinates ..." << endl;
+  os << "Checking cell_to_coordinates ..." << endl;
 
   double xref[24]; // 3x8
   vector<double> x1(24);
@@ -769,13 +773,13 @@ int MeshAudit::check_cell_to_coordinates() const
   int status = 0;
 
   if (!bad_cells0.empty()) {
-    cout << "ERROR: bad cell_to_coordinates data for cells:";
+    os << "ERROR: bad cell_to_coordinates data for cells:";
     write_list(bad_cells0, MAX_OUT);
     status = -1;
   }
 
   if (!bad_cells1.empty()) {
-    cout << "ERROR: std::vector-based accessor returned inconsistent values for cells:";
+    os << "ERROR: std::vector-based accessor returned inconsistent values for cells:";
     write_list(bad_cells1, MAX_OUT);
     if (status == 0) status = 1;
   }
@@ -796,7 +800,7 @@ int MeshAudit::check_cell_to_coordinates() const
 
 int MeshAudit::check_face_to_coordinates() const
 {
-  cout << "Checking face_to_coordinates ..." << endl;
+  os << "Checking face_to_coordinates ..." << endl;
 
   double xref[12]; // 3x4
   vector<double> x1(12);
@@ -840,13 +844,13 @@ int MeshAudit::check_face_to_coordinates() const
   int status = 0;
 
   if (!bad_faces0.empty()) {
-    cout << "ERROR: bad face_to_coordinates data for faces:";
+    os << "ERROR: bad face_to_coordinates data for faces:";
     write_list(bad_faces0, MAX_OUT);
     status = -1;
   }
 
   if (!bad_faces1.empty()) {
-    cout << "ERROR: std::vector-based accessor returned inconsistent values for faces:";
+    os << "ERROR: std::vector-based accessor returned inconsistent values for faces:";
     write_list(bad_faces1, MAX_OUT);
     if (status == 0) status = 1;
   }
@@ -865,7 +869,7 @@ int MeshAudit::check_face_to_coordinates() const
 
 int MeshAudit::check_cell_topology() const
 {
-  cout << "Checking cell topology/geometry ..." << endl;
+  os << "Checking cell topology/geometry ..." << endl;
 
   double x[24], hvol, cvol[8];
   Epetra_SerialDenseMatrix xmat(View, x, 3, 3, 8);
@@ -881,9 +885,9 @@ int MeshAudit::check_cell_topology() const
   }
 
   if (!bad_cells.empty()) {
-    cout << "ERROR: found cells with non-positive volumes:";
+    os << "ERROR: found cells with non-positive volumes:";
     write_list(bad_cells, MAX_OUT);
-    cout << "       Cells either geometrically degenerate or have bad topology.";
+    os << "       Cells either geometrically degenerate or have bad topology.";
     return 1;
   } else {
     return 0;
@@ -904,19 +908,19 @@ int MeshAudit::check_cell_topology() const
 
 int MeshAudit::check_node_maps() const
 {
-  cout << "Checking owned and overlap node maps ..." << endl;
+  os << "Checking owned and overlap node maps ..." << endl;
   return check_maps(mesh->node_map(false), mesh->node_map(true));
 }
 
 int MeshAudit::check_face_maps() const
 {
-  cout << "Checking owned and overlap face maps ..." << endl;
+  os << "Checking owned and overlap face maps ..." << endl;
   return check_maps(mesh->face_map(false), mesh->face_map(true));
 }
 
 int MeshAudit::check_cell_maps() const
 {
-  cout << "Checking owned and overlap cell maps ..." << endl;
+  os << "Checking owned and overlap cell maps ..." << endl;
   return check_maps(mesh->cell_map(false), mesh->cell_map(true));
 }
 
@@ -926,17 +930,17 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
 
   // Local index should start at 0.
   if (map_own.IndexBase() != 0) {
-    cout << "ERROR: the owned map's index base is not 0." << endl;
+    os << "ERROR: the owned map's index base is not 0." << endl;
     status = -1;
   }
   if (map_use.IndexBase() != 0) {
-    cout << "ERROR: the overlap map's index base is not 0." << endl;
+    os << "ERROR: the overlap map's index base is not 0." << endl;
     status = -1;
   }
 
   // Check that the owned map is 1-1.
   if (!map_own.UniqueGIDs()) {
-    cout << "ERROR: owned map is not 1-to-1" << endl;
+    os << "ERROR: owned map is not 1-to-1" << endl;
     status = -1;
   }
 
@@ -948,7 +952,7 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
     // Serial or 1-process MPI
 
     if (!map_use.SameAs(map_own)) {
-      cout << "ERROR: the overlap map differs from the owned map (single process)." << endl;
+      os << "ERROR: the overlap map differs from the owned map (single process)." << endl;
       return -1;
     } else {
       return 0;
@@ -973,7 +977,7 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
         if (map_use.GID(j) != map_own.GID(j)) bad_map = true;
     }
     if (bad_map) {
-      cout << "ERROR: overlap map does not extend the owned map." << endl;
+      os << "ERROR: overlap map does not extend the owned map." << endl;
       status = -1;
     }
 
@@ -987,7 +991,7 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
     for (int j = 0; j < num_ovl; ++j)
       if (pids[j] < 0 || pids[j] == comm->MyPID()) bad_map = true;
     if (bad_map) {
-      cout << "ERROR: invalid ghosts in overlap map." << endl;
+      os << "ERROR: invalid ghosts in overlap map." << endl;
       status = -1;
     }
 
@@ -995,7 +999,7 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
     vector<int> ovl_gids(gids, gids+num_ovl);
     sort(ovl_gids.begin(), ovl_gids.end());
     if (adjacent_find(ovl_gids.begin(),ovl_gids.end()) != ovl_gids.end()) {
-      cout << "ERROR: duplicate ghosts in overlap map." << endl;
+      os << "ERROR: duplicate ghosts in overlap map." << endl;
       status = -1;
     }
 
@@ -1057,8 +1061,8 @@ int MeshAudit::same_face(const vector<unsigned int> fnode1, const vector<unsigne
 void MeshAudit::write_list(const vector<unsigned int> &list, unsigned int max_out) const
 {
   int num_out = min((unsigned int) list.size(), max_out);
-  for (int i = 0; i < num_out; ++i) cout << " " << list[i];
-  if (num_out < list.size()) cout << " [" << list.size()-num_out << " items omitted]";
-  cout << endl;
+  for (int i = 0; i < num_out; ++i) os << " " << list[i];
+  if (num_out < list.size()) os << " [" << list.size()-num_out << " items omitted]";
+  os << endl;
 }
 
