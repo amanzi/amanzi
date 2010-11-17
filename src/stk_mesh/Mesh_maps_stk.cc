@@ -291,5 +291,255 @@ unsigned int Mesh_maps_stk::get_set_size (unsigned int set_id,
 
 
 
+// -------------------------------------------------------------
+// Mesh_maps_stk::cell_to_faces
+// -------------------------------------------------------------
+template <typename IT>
+void Mesh_maps_stk::cell_to_faces (unsigned int cell, 
+                                   IT destination_begin, IT destination_end) const
+{
+    ASSERT ((unsigned int) (destination_end - destination_begin) == 6);
+    const unsigned int index = 6*cell;
+    std::vector<unsigned int>::const_iterator begin = cell_to_face_.begin () + index;
+    std::vector<unsigned int>::const_iterator end = begin + 6;
+    std::copy (begin, end, destination_begin);
+}
+
+void 
+Mesh_maps_stk::cell_to_faces (unsigned int cell, 
+                              std::vector<unsigned int>::iterator begin, 
+                              std::vector<unsigned int>::iterator end)
+{
+  cell_to_faces< std::vector<unsigned int>::iterator >(cell, begin, end);
+}
+
+void
+Mesh_maps_stk::cell_to_faces (unsigned int cell, 
+                              unsigned int* begin, unsigned int *end) 
+{
+  cell_to_faces< unsigned int * >(cell, begin, end);
+}
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::cell_to_face_dirs
+// -------------------------------------------------------------
+void
+Mesh_maps_stk::cell_to_face_dirs(unsigned int cell, 
+                                 std::vector<int>::iterator begin, 
+                                 std::vector<int>::iterator end)
+{
+  // FIXME: What do we do here?
+}
+                                   
+void
+Mesh_maps_stk::cell_to_face_dirs(unsigned int cell, 
+                                 int * begin, int * end)
+{
+  // FIXME: What do we do here?
+}  
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::cell_to_nodes
+// -------------------------------------------------------------
+template <typename IT>
+void 
+Mesh_maps_stk::cell_to_nodes (unsigned int cell, 
+                                 IT destination_begin, IT destination_end) const
+{
+    ASSERT ((unsigned int) (destination_end - destination_begin) == 8);
+    const unsigned int index = 8*cell;
+    std::vector<unsigned int>::const_iterator begin = cell_to_node_.begin () + index;
+    std::vector<unsigned int>::const_iterator end   = begin + 8;
+    std::copy (begin, end, destination_begin);
+}
+
+void 
+Mesh_maps_stk::cell_to_nodes (unsigned int cell, 
+                              std::vector<unsigned int>::iterator begin, 
+                              std::vector<unsigned int>::iterator end) 
+{
+  cell_to_nodes< std::vector<unsigned int>::iterator > (cell, begin, end);
+}
+
+void 
+Mesh_maps_stk::cell_to_nodes (unsigned int cell, 
+                              unsigned int * begin, unsigned int * end)
+{
+  cell_to_nodes< unsigned int * > (cell, begin, end);
+}
+
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::face_to_nodes
+// -------------------------------------------------------------
+template <typename IT>
+void 
+Mesh_maps_stk::face_to_nodes (unsigned int face, 
+                                 IT destination_begin, IT destination_end) const
+{
+    ASSERT ((unsigned int) (destination_end - destination_begin) == 4);
+    const unsigned int index = 4*face;
+    std::vector<unsigned int>::const_iterator begin = face_to_node_.begin () + index;
+    std::vector<unsigned int>::const_iterator end   = begin + 4;
+    std::copy (begin, end, destination_begin);
+}
+
+void 
+Mesh_maps_stk::face_to_nodes (unsigned int face, 
+                    std::vector<unsigned int>::iterator begin, 
+                    std::vector<unsigned int>::iterator end) 
+{
+  face_to_nodes< std::vector<unsigned int>::iterator >(face, begin, end);
+}
+
+void 
+Mesh_maps_stk::face_to_nodes (unsigned int face, 
+                              unsigned int * begin, unsigned int * end) 
+{
+  face_to_nodes< unsigned int * > (face, begin, end);
+}
+
+// Cooordinate Getters
+// -------------------
+
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::node_to_coordinates
+// -------------------------------------------------------------
+template <typename IT>
+void Mesh_maps_stk::node_to_coordinates (unsigned int local_node_id, IT begin, IT end) const
+{
+    ASSERT ((unsigned int) (end-begin) == 3);
+
+    // Convert local node to global node Id.
+    stk::mesh::EntityId global_node_id = map_ (Mesh_data::NODE, true).GID (local_node_id);
+
+    const double * coordinates = mesh_->coordinates (global_node_id);
+    std::copy (coordinates, coordinates+3, begin);
+}
+
+void 
+Mesh_maps_stk::node_to_coordinates (unsigned int node, 
+                          std::vector<double>::iterator begin, 
+                          std::vector<double>::iterator end) 
+{
+  node_to_coordinates< std::vector<double>::iterator >(node, begin, end);
+}
+
+void 
+Mesh_maps_stk::node_to_coordinates (unsigned int node, 
+                                    double * begin, 
+                                    double * end) 
+{
+  node_to_coordinates< double * >(node, begin, end);
+}
+
+
+// -------------------------------------------------------------
+// face_to_coordinates
+// -------------------------------------------------------------
+template <typename IT>
+void Mesh_maps_stk::face_to_coordinates (unsigned int local_face_id, IT begin, IT end) const
+{
+    ASSERT ((unsigned int) (end-begin) == 12);
+
+    unsigned int node_indices [4];
+    face_to_nodes (local_face_id, node_indices, node_indices+4);
+    for (int i = 0; i < 4; ++i)
+    {
+        node_to_coordinates (node_indices [i], begin, begin+4);
+        begin+=4;
+    }
+}
+
+void 
+Mesh_maps_stk::face_to_coordinates (unsigned int face, 
+                                    std::vector<double>::iterator begin, 
+                                    std::vector<double>::iterator end) 
+{
+  face_to_coordinates< std::vector<double>::iterator >(face, begin, end);
+}
+
+void 
+Mesh_maps_stk::face_to_coordinates (unsigned int face, 
+                                    double * begin, 
+                                    double * end) 
+{
+  face_to_coordinates< double * >(face, begin, end);
+}
+   
+
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::cell_to_coordinates
+// -------------------------------------------------------------
+template <typename IT>
+void Mesh_maps_stk::cell_to_coordinates (unsigned int local_cell_id, IT begin, IT end) const
+{
+    ASSERT ((unsigned int) (end-begin) == 24);
+
+    unsigned int node_indices [8];
+    cell_to_nodes (local_cell_id, node_indices, node_indices+8);
+    for (int i = 0; i < 8; ++i)
+    {
+        node_to_coordinates (node_indices [i], begin, begin+3);
+        begin+=3;
+    }
+
+}
+
+void 
+Mesh_maps_stk::cell_to_coordinates (unsigned int cell, 
+                                    std::vector<double>::iterator begin,
+                                    std::vector<double>::iterator end)
+{
+  cell_to_coordinates< std::vector<double>::iterator > (cell, begin, end);
+}
+
+void 
+Mesh_maps_stk::cell_to_coordinates (unsigned int cell, 
+                              double * begin,
+                              double * end) 
+{
+  cell_to_coordinates< double * > (cell, begin, end);
+}
+
+
+
+// Set getters
+// -----------
+
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::get_set_ids
+// -------------------------------------------------------------
+template <typename IT>
+void 
+Mesh_maps_stk::get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const
+{
+  std::vector<unsigned int> ids;
+  mesh_->get_set_ids (kind_to_rank_ (kind), ids);
+  ASSERT (ids.size () == num_sets (kind));
+  
+  IT last = std::copy (ids.begin (), ids.end (), begin);
+  
+  ASSERT (last == end);
+}
+
+void
+Mesh_maps_stk::get_set_ids(Mesh_data::Entity_kind kind, 
+                           std::vector<unsigned int>::iterator begin, 
+                           std::vector<unsigned int>::iterator end) const
+{
+  get_set_ids< std::vector<unsigned int>::iterator >(kind, begin, end);
+}
+
+void
+Mesh_maps_stk::get_set_ids (Mesh_data::Entity_kind kind, 
+                            unsigned int * begin, 
+                            unsigned int * end) const
+{
+  get_set_ids< unsigned int * >(kind, begin, end);
+}
 
 }
