@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+
+# ############################################################################ #
+#
+#  Amanzi CGNS 3.08 (BETA) Configuration File
+#
+# ############################################################################ #
+
+print_usage()
+{
+    echo ""
+    echo "Usage: $0 [options] -s|--source cgns_path [ -- additional CMake args]"
+    echo ""
+    echo "OPTIONS:"
+    echo "-h|--help                               Print this message and exit"
+    echo "-s|--source cgns_path                   Define the directory the contains the cgns Source"
+    echo "-i|--install cgns_install_path          cgns installation path"
+    echo "-5|--hdf5-path hdf5_install_path        HDF5 installation path"
+    echo "--hdf5-inc-path hdf5_include_path       HDF5 include path"
+    echo "--hdf5-lib-path hdf5_library_path       HDF5 library path"
+    echo "--disable-mpi                           Disable MPI [Default is TRUE, this option turns off MPI]"       
+    echo "-m|--mpi-path mpi_install_path          MPI installation path"
+    echo "--mpi-inc-path mpi_include_path         MPI include path"
+    echo "--mpi-lib-path mpi_library_path         MPI library path"
+    echo ""
+    echo ""
+    echo "The '--' informs the parser what arguments should be passed to cmake"
+    echo "You must enable MPI if HDF5 was built with MPI"
+    echo ""
+    echo "EXAMPLE"
+    echo "Building with ZLIB located in /usr/lib"
+    echo -n "$0 -source /home/jcool/packages/cgns/cgns-3.0.8-Source --install /opt/packages/cgns" 
+    echo -n "--hdf-path /opt/packages/hdf5-mpi/1.8.5 --mpi-path /usr/lib/openmpi/1.4-gcc --"
+    echo -n "-D HDF5_NEED_ZLIB:BOOL=TRUE -D ZLIB_LIBRARY_DIR:PATH=/usr/lib"
+    echo ""
+}
+
+# Need the new version of getopt to process the long style command options
+getopt_ok() {
+    getopts --test
+    stat=$?
+
+    if [ stat -eq 4 ]; then
+        return 1
+    else
+        echo "Your version of getopt failed the version test"
+        echo "long option names are disabled and will be ignored"
+        echo -n "getopt --test returned:"
+        echo stat
+        echo "Can not parse command line arguments"
+        return 0
+    fi    
+}
+
+# Parse command line opts
+INSTALL_PATH=`pwd`
+CGNS_PATH=
+HDF5_PATH=
+HDF5_INC_PATH=
+HDF5__LIB_PATH=
+ENABLE_MPI_FLAG=ON
+MPI_PATH=
+MPI_INC_PATH=
+MPI_LIB_PATH=
+EXTRA_ARGS=
+
+short_opts='hs:i:5:m:'
+if [ getopt_ok ]; then
+    long_opts='help,source:,install:,hdf5-path:,hdf5-inc-path:,hdf5-lib-path:,disable-mpi,mpi-path:,mpi-inc-path:,mpi-lib-path:'
+    args=`getopt -o ${short_opts} -l ${long_opts} --unquoted -- $*`
+    stat=$?
+    if [ ${stat} -ne 0 ]; then
+        print_usage
+        exit 1
+    fi
+    set -- $args
+    for arg 
+    do
+        case "$arg" in
+            -h|--help) print_usage; exit 0;;
+            -i|--install) shift; INSTALL_PATH="$1"; shift;; 
+            -s|--source) shift; CGNS_PATH="$1"; shift;; 
+            -5|--hdf5-path) shift; HDF5_PATH="$1"; shift;; 
+            --hdf5-inc-path) shift; HDF5_INC_PATH="$1"; shift;; 
+            --hdf5-lib-path) shift; HDF5_LIB_PATH="$1"; shift;; 
+            --disable-mpi) ENABLE_MPI_FLAG=OFF; shift;; 
+            -m|--mpi-path) shift; MPI_PATH="$1"; shift;; 
+            --mpi-inc-path) shift; MPI_INC_PATH="$1"; shift;; 
+            --mpi-lib-path) shift; MPI_LIB_PATH="$1"; shift;; 
+            --) shift; EXTRA_ARGS=$@;break;;
+        esac
+    done
+else
+    echo "Need to put code here for the bultin getopts"
+    exit 1
+fi
+  
+# Check the cgns Path
+if [ -z ${CGNS_PATH} ]; then  
+    echo "Must specify a path to the cgns source"
+    print_usage
+    exit 1
+fi
+
+if [ ! -z ${HDF5_PATH} ]; then
+    HDF5_INC_PATH=${HDF5_PATH}/include
+    HDF5_LIB_PATH=${HDF5_PATH}/lib
+fi
+
+
+if [ -z ${HDF5_INC_PATH} ]; then
+    echo "Must define the HDF5 include path"
+    print_usage
+    exit 1
+fi    
+
+if [ -z ${HDF5_LIB_PATH} ]; then
+    echo "Must define the HDF5 library path"
+    print_usage
+    exit 1
+fi
+
+if [ ${ENABLE_MPI_FLAG} = "ON" ]; then
+    if [ ! -z ${MPI_PATH} ]; then
+        MPI_INC_PATH=${MPI_PATH}/include
+        MPI_LIB_PATH=${MPI_PATH}/lib
+    fi
+fi
+
+if [ -z ${MPI_INC_PATH} ]; then
+    echo "Must define the MPI include path"
+    print_usage
+    exit 1
+fi    
+
+if [ -z ${MPI_LIB_PATH} ]; then
+    echo "Must define the MPI library path"
+    print_usage
+    exit 1
+fi
+
+# Default cgns configuration
+#
+#  Build Configuration
+#  
+ENABLE_FORTRAN=OFF
+
+#
+# Build the CMake ARG list
+#
+#  Initially build as an array to control order of appearance on the
+#   command line. Will then be joined with white space to a scalar.
+declare -a DFLT_ARGS
+DFLT_ARGS[0]="-D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PATH}"
+DFLT_ARGS[1]="-D ENABLE_FORTRAN:BOOL=${ENABLE_FORTRAN}"
+DFLT_ARGS[2]="-D HDF5_INCLUDE_DIR:PATH=${HDF5_INC_PATH}"
+DFLT_ARGS[3]="-D HDF5_LIBRARY_DIR:PATH=${HDF5_LIB_PATH}"
+DFLT_ARGS[4]="-D HDF5_NEED_MPI:BOOL=${ENABLE_MPI_FLAG}"
+if [ ${ENABLE_MPI_FLAG} = "ON" ]; then
+    DFLT_ARGS[5]="-D MPI_INCLUDE_DIR:PATH=${MPI_INC_PATH}"
+    DFLT_ARGS[6]="-D MPI_LIBRARY_DIR:PATH=${MPI_LIB_PATH}"
+fi    
+
+CMAKE_ARGS=${DFLT_ARGS[@]}
+
+echo ""
+echo "-----------------------------------------------------------------"
+echo " cgns Configuration"
+echo ""
+echo "Building cgns found in ${CGNS_PATH}"
+echo ""
+echo "Cmake Defines"
+for arg in ${DFLT_ARGS[@]}
+do
+    if [ ${arg} != '-D' ]; then
+        echo "${arg}"
+    fi    
+done    
+
+if [ -n "${EXTRA_ARGS}" ]; then
+    tmp=`echo ${EXTRA_ARGS//\'}`
+    EXTRA_ARGS=${tmp}
+    echo ""
+    echo "Addtional arguments passed in to cmake are:"
+    echo "${EXTRA_ARGS}"
+    echo ""
+fi
+echo ""
+echo "-----------------------------------------------------------------"
+# Always remove the cache file
+#  Future release may allow the build directory to be 
+#  some place other than the current directory
+cache_file=CMakeCache.txt
+if [ -e "${cache_file}" ]; then
+    echo "Removing old cache file"
+    rm ${cache_file}
+fi
+
+cmd="cmake ${CMAKE_ARGS} ${EXTRA_ARGS} ${CGNS_PATH}"
+echo $cmd
+
+$cmd
+
+exit $?

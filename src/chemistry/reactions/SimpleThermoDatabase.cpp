@@ -1,10 +1,18 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+/*
+**
+** TODO: need a lot more error checking and helpfull error messages from here.
+**
+*/
+
 #include <cstdlib>
 
 #include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
+#include <sstream>
 
 #include "AqueousEquilibriumComplex.hpp"
 #include "MineralKineticsFactory.hpp"
@@ -15,6 +23,7 @@
 #include "Beaker.hpp"
 #include "Species.hpp"
 #include "StringTokenizer.hpp"
+#include "ChemistryException.hpp"
 
 SimpleThermoDatabase::SimpleThermoDatabase(void)
     : Beaker(),
@@ -33,8 +42,8 @@ SimpleThermoDatabase::~SimpleThermoDatabase(void)
 void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
                                  const Beaker::BeakerParameters& parameters)
 {
-  SetParameters(parameters);
-  ReadFile(parameters.thermo_database_file);
+  this->SetParameters(parameters);
+  this->ReadFile(parameters.thermo_database_file);
   this->SetupActivityModel(parameters.activity_model_name);
   this->resize(this->primary_species().size());
   this->VerifyComponentSizes(components);
@@ -69,7 +78,11 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
 
   std::ifstream input(file_name.c_str());
   if (!input) {
-    // should be some type of helpful error message and graceful exit here....
+    std::ostringstream error_stream;
+    error_stream << "ERROR: SimpleThermoDatabase::ReadFile(): \n";
+    error_stream << "ERROR: file could not be opened.... " << file_name << "\n";
+    throw ChemistryException(error_stream.str(),
+                             ChemistryException::kUnrecoverableError);    
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine,
@@ -209,6 +222,12 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
         std::cout << temp << "have been specified. Please check for "
                   << "additional error messages and verify database file is "
                   << "correct." << std::endl;
+        std::ostringstream error_stream;
+        error_stream << "ERROR: SimpleThermoDatabase::ReadFile(): \n";
+        error_stream << "ERROR: a data order error has occured reading file " << file_name
+                     << "       please see output for details.\n";
+        throw ChemistryException(error_stream.str(),
+                                 ChemistryException::kUnrecoverableError);  
       }
     }
 

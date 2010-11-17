@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+# ##############################################################################
+#
+# Amanzi CGNS 2.5-4 (STANDARD RELEASE) Configuration 
+#
+# ##############################################################################
+
+print_usage()
+{
+    echo ""
+    echo "Usage: $0 [-h] [prefix_path]"
+    echo ""
+    echo "OPTIONS"
+    echo "-h        Print this message and exit"
+    echo ""
+    echo "If prefix path is not passed in, the default will be ${HOME}/cgns"
+    echo ""
+    echo ""
+}
+
+
+# Parse the command line
+help_flag=
+if [ $# -ne 0 ]; then
+    args=$@
+    help_flag=`expr match "${args}" '\(-h\)'`
+
+    if [ -n "${help_flag}" ]; then
+        print_usage
+        exit 0
+    fi
+fi
+
+prefix_path="${HOME}/cgns"
+if [ $# -ne 0 ]; then
+    prefix_path="$1"
+fi
+
+echo ""
+echo "PREFIX=${prefix_path}"
+
+# Simple configure 
+#  Build without Fortran, 64bit support and largefiles (>2Gb)
+
+# Set CC and CXX
+export CC=mpicc
+export CXX=mpic++
+
+./configure --prefix=${prefix_path} \
+            --enable-lfs \
+            --enable-64bit \
+            --with-fortran=no 

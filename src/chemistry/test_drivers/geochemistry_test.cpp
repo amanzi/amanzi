@@ -10,6 +10,7 @@
 #include "Beaker.hpp"
 #include "ActivityModelFactory.hpp"
 #include "Verbosity.hpp"
+#include "ChemistryException.hpp"
 
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
@@ -39,6 +40,21 @@ int main(int argc, char **argv) {
 
   if (error == EXIT_SUCCESS) {
     switch (test) {
+      case 0: {
+        // this is expected to fail with error checking 
+        if (verbosity == kTerse) {
+          std::cout << "Running component size sanity check." << std::endl;
+        }
+        thermo_database_file = "input/carbonate.bgd";
+        activity_model_name = ActivityModelFactory::unit;
+        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(1.0e-3);  // HCO3-
+        components.total.push_back(0.0);
+        components.free_ion.push_back(0.0);
+        components.minerals.push_back(0.0);
+        components.ion_exchange_sites.push_back(0.0);
+        break;
+      }
       case 1: {
         // set up simple 2-species carbonate system (H,HCO3-) unit activity coefficients
         if (verbosity == kTerse) {
@@ -119,58 +135,67 @@ int main(int argc, char **argv) {
       }
     }
   }
-
-  if (thermo_database_file.size() != 0) {
-    chem = new SimpleThermoDatabase();
-    chem->verbosity(verbosity);
-    Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
-    parameters.thermo_database_file = thermo_database_file;
-    parameters.activity_model_name = activity_model_name;
-    parameters.porosity = 0.5;  // -
-    parameters.saturation = 1.0;  // - 
-    parameters.volume = 1.0;  // m^3
-    ModelSpecificParameters(model, &parameters);
-    if (components.free_ion.size() == 0) {
-      components.free_ion.resize(components.total.size(), 1.0e-9);
-      // WTF is this being used for? The entire thing is being coppied
-      // into the initial molalites. What if we don't actually want
-      // these values? What if we only want to specify a single
-      // value.....
-    }
-    chem->Setup(components, parameters);
-    if (verbosity >= kVerbose) {
-      chem->Display();
-    }
-
-    // solve for free-ion concentrations
-    chem->Speciate(components, parameters);
-    if (verbosity >= kTerse) {
-      chem->DisplayResults();
-    }
-  
-    if (chem->HaveKinetics()) {
-      std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
-      chem->DisplayTotalColumnHeaders();
-      chem->DisplayTotalColumns(0.0, components.total);
-      double delta_time = 3660.0;  // seconds
-      int num_time_steps = 12;
-      for (int time_step = 0; time_step <= num_time_steps; time_step++) {
-        chem->ReactionStep(&components, parameters, delta_time);        
-        chem->DisplayTotalColumns(time_step+1 * delta_time, components.total);
+  try {
+    if (thermo_database_file.size() != 0) {
+      chem = new SimpleThermoDatabase();
+      chem->verbosity(verbosity);
+      Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
+      parameters.thermo_database_file = thermo_database_file;
+      parameters.activity_model_name = activity_model_name;
+      parameters.porosity = 0.5;  // -
+      parameters.saturation = 1.0;  // - 
+      parameters.volume = 1.0;  // m^3
+      ModelSpecificParameters(model, &parameters);
+      if (components.free_ion.size() == 0) {
+        components.free_ion.resize(components.total.size(), 1.0e-9);
       }
-      std::cout << "---- Final Speciation" << std::endl;
+      chem->Setup(components, parameters);
+      if (verbosity >= kVerbose) {
+        chem->Display();
+      }
+
+      // solve for free-ion concentrations
       chem->Speciate(components, parameters);
       if (verbosity >= kTerse) {
         chem->DisplayResults();
       }
+  
+      if (chem->HaveKinetics()) {
+        std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
+        chem->DisplayTotalColumnHeaders();
+        chem->DisplayTotalColumns(0.0, components.total);
+        double delta_time = 3660.0;  // seconds
+        int num_time_steps = 12;
+        for (int time_step = 0; time_step <= num_time_steps; time_step++) {
+          chem->ReactionStep(&components, parameters, delta_time);        
+          chem->DisplayTotalColumns(time_step+1 * delta_time, components.total);
+        }
+        std::cout << "---- Final Speciation" << std::endl;
+        chem->Speciate(components, parameters);
+        if (verbosity >= kTerse) {
+          chem->DisplayResults();
+        }
+      }
     }
+  } 
+  catch (const ChemistryException& geochem_error) {
+    std::cout << geochem_error.what() << std::endl;
+    error = EXIT_FAILURE;
   }
-  // cleanup memory
-  if (chem != NULL) {
-    delete chem;
+  catch (const std::runtime_error& rt_error) {
+    std::cout << rt_error.what() << std::endl;
+    error = EXIT_FAILURE;
+  }
+  catch (const std::logic_error& lg_error) {
+    std::cout << lg_error.what() << std::endl;
+    error = EXIT_FAILURE;  
   }
 
+  // cleanup memory
+  delete chem;
+
   std::cout << "Done!\n";
+  return error;
 }  // end main()
 
 
@@ -230,6 +255,7 @@ int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test,
         std::cout << std::endl;
         std::cout << "    -t integer " << std::endl;
         std::cout << "         run a test case. valid test numbers are: " << std::endl;
+        std::cout << "             0: error test" << std::endl;
         std::cout << "             1: simple carbonate speciation, unit activity coeff" << std::endl;
         std::cout << "             2: simple carbonate speciation, debye-huckel" << std::endl;
         std::cout << "             3: larger carbonate speciation, unit activity coeff" << std::endl;
