@@ -4,6 +4,7 @@ set(SRCS
 	 ./Block.cpp 
 	 ./FileIO.cpp 
 	 ./Glenn.cpp 
+	 ./ChemistryException.cpp
 	 ./StringTokenizer.cpp
 )
 

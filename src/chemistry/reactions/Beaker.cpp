@@ -1,5 +1,23 @@
 #include <cstdlib>
+#include <string>
+#include <vector>
+#include <sstream>
 
+#include "ActivityModel.hpp"
+#include "ActivityModelFactory.hpp"
+#include "AqueousEquilibriumComplex.hpp"
+#include "Block.hpp"
+#include "GeneralRxn.hpp"
+#include "ChemistryException.hpp"
+#include "IonExchangeComplex.hpp"
+#include "IonExchangeSite.hpp"
+#include "KineticRate.hpp"
+#include "LU.hpp"
+#include "Mineral.hpp"
+#include "MineralKineticsFactory.hpp"
+#include "Species.hpp"
+#include "SurfaceComplexationRxn.hpp"
+#include "Verbosity.hpp"
 #include "Beaker.hpp"
 
 // solver defaults
@@ -101,65 +119,67 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
 void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
 {
   // some helpful error checking goes here...
-  std::string verify_sizes("ERROR: Beaker::VerifyState(): input data and initial conditions do not match:\n");
+  bool error = false;
+  std::ostringstream error_stream;
+  error_stream << "ERROR: Beaker::VerifyComponentSizes(): database input and component initial conditions do not match:\n";
   
+  // if the size of the various initial conditions, components, and
+  // database input don't match. Print a helpful message and exit
+  // gracefully.
+
   if (static_cast<unsigned int>(this->ncomp()) != components.total.size()) {
-    // initial conditions and database input don't match. Print a
-    // helpful message and exit gracefully.
-    std::cout << verify_sizes
-              << "ERROR: ncomp and components.total.size do not match."
-              << std::endl;
+    error = true;
+    error_stream << "ERROR: ncomp(" << this->ncomp() 
+                 << ") and components.total.size(" << components.total.size()
+                 << ") do not match.\n";
   }
 
   if (this->primary_species().size() != components.total.size()) {
-    // initial conditions and database input don't match. Print a
-    // helpful message and exit gracefully.
-    std::cout << verify_sizes
-              << "ERROR: primary_species.size and components.total.size do not match."
-              << std::endl;
+    error = true;
+    error_stream << "ERROR: primary_species.size(" << this->primary_species().size()
+                 << ") and components.total.size(" << components.total.size()
+                 << ") do not match.\n";
   }
 
   if (components.free_ion.size() != components.total.size()) {
-    // initial conditions and database input don't match. Print a
-    // helpful message and exit gracefully.
-    std::cout << verify_sizes
-              << "ERROR: components.total.size and components.free_ion.size do not match."
-              << std::endl;
+    error = true;
+    error_stream << "ERROR: components.total.size(" << components.total.size()
+                 << ") and components.free_ion.size(" << components.free_ion.size()
+                 << ") do not match.\n";
   }
 
   if (this->ion_exchange_sites().size() != components.ion_exchange_sites.size()) {
-    // initial conditions and database input don't match. Print a
-    // helpful message and exit gracefully.
-    std::cout << verify_sizes
-              << "ERROR: ion_exchange_sites.size and components.ion_exchange_sites.size do not match."
-              << std::endl;
+    error = true;
+    error_stream<< "ERROR: ion_exchange_sites.size(" << this->ion_exchange_sites().size()
+                << ") and components.ion_exchange_sites.size(" << components.ion_exchange_sites.size()
+                << ") do not match.\n";
   }
 
   if (this->minerals().size() != components.minerals.size()) {
-    // initial conditions and database input don't match. Print a
-    // helpful message and exit gracefully.
-    std::cout << verify_sizes
-              << "ERROR: minerals.size and components.minerals.size do not match."
-              << std::endl;
+    error = true;
+    error_stream << "ERROR: minerals.size(" << this->minerals().size() 
+                 << ") and components.minerals.size(" << components.minerals.size()
+                 << ") do not match.\n";
   }
 
   if (this->total().size() != components.total.size()) {
-    // initial conditions and database input don't match. Print a
-    // helpful message and exit gracefully.
-    std::cout << verify_sizes
-              << "ERROR: total.size and components.total.size do not match."
-              << std::endl;
+    error = true;
+    error_stream << "ERROR: total.size(" << this->total().size()
+                 << ") and components.total.size(" << components.total.size()
+                 << ") do not match.\n";
   }
 
   // this check is breaking things because total_sorbed is always
   // resized in resize(), even if there is no sorption!
 //   if (this->total_sorbed().size() != components.total_sorbed.size()) {
-//     // initial conditions and database input don't match. Print a
-//     // helpful message and exit gracefully.
-//     std::cout << verify_sizes
-//               << "ERROR: total_sorbed.size and components.total_sorbed.size do not match."
-//               << std::endl;
+//     error = true;
+//     error_stream << "ERROR: total_sorbed.size and components.total_sorbed.size do not match.\n";
 //   }
+
+  if (error) {
+    throw ChemistryException(error_stream.str(), 
+                             ChemistryException::kUnrecoverableError);    
+  }
 
 }  // end VerifyComponentSizes()
 
@@ -171,7 +191,10 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
       ion_exchange_sites_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
     }
   } else {
-    // error exit gracefully
+    std::ostringstream error_stream;
+    error_stream << "ERROR: Beaker::SetComponents(): \n";
+    error_stream << "ERROR: ion_exchange_sites.size and components.ion_exchange_sites.size do not match.\n";
+    throw ChemistryException(error_stream.str());
   }
 
   size = components.minerals.size();
@@ -180,7 +203,10 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
       minerals_[m].set_volume_fraction(components.minerals.at(m));
     }
   } else {
-    // error exit gracefully
+    std::ostringstream error_stream;
+    error_stream << "ERROR: Beaker::SetComponents(): \n";
+    error_stream << "ERROR: minerals.size and components.minerals.size do not match.\n";
+    throw ChemistryException(error_stream.str());
   }
 }  // end SetComponents()
 
@@ -348,9 +374,12 @@ void Beaker::initializeMolalities(double initial_molality)
 void Beaker::initializeMolalities(std::vector<double> initial_molalities) 
 {
   if (initial_molalities.size() != primarySpecies_.size()) {
-    std::cout << "Mismatch in size of initial_molalities array "
-              << "and number of primarySpecies" << std::endl;
-    exit(EXIT_SUCCESS);
+    std::ostringstream error_stream;
+    error_stream << "ERROR: Beaker::initializeMolalities(): \n";
+    error_stream << "ERROR:   Mismatch in size of initial_molalities array "
+                 << "and number of primarySpecies" << std::endl;
+    throw ChemistryException(error_stream.str(), 
+                             ChemistryException::kUnrecoverableError);
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
@@ -771,6 +800,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   } while (max_rel_change > tolerance() && num_iterations < max_iterations());
   
   if (num_iterations >= max_iterations()) {
+    // TODO: should this be an error to the driver...?
     std::cout << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
     std::cout << "Warning: Results may not have the desired accuracy." << std::endl;
     std::cout << "Warning: max relative change = " << max_rel_change << std::endl;

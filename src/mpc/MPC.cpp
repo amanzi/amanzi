@@ -63,6 +63,10 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
        parameter_list.sublist("Chemistry");
      
      CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+
+     if (CPK->status() != ChemistryException::kOkay) {
+       // assume any error that occurs here is unrecoverable....?
+     }
    }
    
    // transport...
@@ -202,7 +206,16 @@ void MPC::cycle_driver () {
 	// now advance chemistry
 	chemistry_dT = transport_dT; // units?
 	CPK->advance(chemistry_dT, total_component_concentration_star);
-	Chemistry_PK::ChemistryStatus cpk_status = CPK->status();
+	ChemistryException::Status cpk_status = CPK->status();
+        if (cpk_status == ChemistryException::kOkay) {
+          // do something....
+        } else if (cpk_status == ChemistryException::kRecoverableError) {
+          // do yet another thing
+        } else if (cpk_status == ChemistryException::kUnrecoverableError) {
+          // do something else
+        } else {
+          // give up....
+        }
       }
       
       // update the time in the state object

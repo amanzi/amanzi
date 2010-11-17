@@ -1,5 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "Chemistry_PK.hpp"
+#include "ChemistryException.hpp"
 #include "Epetra_MultiVector.h"
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
@@ -34,12 +35,11 @@
  **    where foo refers to a vector of component concentrations for a
  **    single component. 
  **
- **
  *******************************************************************************/
 
 Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
-    : status_(kChemistryOK),
+    : status_(ChemistryException::kOkay),
       verbosity_(kSilent),
       chemistry_state_(chem_state),
       parameter_list_(param_list),
@@ -98,18 +98,23 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
   }
 
   // finish setting up the chemistry object 
-  chem_->verbosity(verbosity());
-  chem_->Setup(beaker_components_, beaker_parameters_);
-  if (verbosity() > kTerse) {
-    chem_->Display();
-  }
+  try {
+    chem_->verbosity(verbosity());
+    chem_->Setup(beaker_components_, beaker_parameters_);
+    if (verbosity() > kTerse) {
+      chem_->Display();
+    }
 
-  // solve for initial free-ion concentrations
-  chem_->Speciate(beaker_components_, beaker_parameters_);
-  if (verbosity() > kTerse) {
-    chem_->DisplayResults();
+    // solve for initial free-ion concentrations
+    chem_->Speciate(beaker_components_, beaker_parameters_);
+    if (verbosity() > kTerse) {
+      chem_->DisplayResults();
+    }
   }
-
+  catch (ChemistryException& geochem_error) {
+    std::cout << geochem_error.what() << std::endl;
+    set_status(geochem_error.error_status());
+  }
   // loop through every cell and verify that the initial conditions
   // produce a valid solution...? reaction step or speciate...?
 
@@ -148,7 +153,7 @@ void Chemistry_PK::XMLParameters(void)
   beaker_parameters_.tolerance = 
       parameter_list_.get<double>("Tolerance", 1.1e-12);
 
-  // TODO: WTF? using <unsigned int> in the parameter list doesn't work...?
+  // TODO: using <unsigned int> in the parameter list doesn't work...?
   beaker_parameters_.max_iterations = 
       static_cast<unsigned int>(parameter_list_.get<int>("Maximum Newton Iterations", 200));
 
@@ -182,6 +187,11 @@ void Chemistry_PK::LocalInitialConditions(void)
   // chem hasn't read the input file yet, so we don't know how many
   // mineral components there are yet... it needs to be in the xml
   // input data....
+
+  // TODO: we are assuming constant local initial conditions over the
+  // entire domain. Need to look at the MPC and apply initial
+  // conditions for each mesh block group
+
   if (verbosity() == kDebugChemistryProcessKernel) {
     std::cout << "    Looking for initial conditions xml data... ";
   }
@@ -205,6 +215,7 @@ void Chemistry_PK::LocalInitialConditions(void)
         std::stringstream mineral_ic_name;
         mineral_ic_name << "Mineral " << m;
         double mineral_ic = initial_conditions_minerals.get<double>(mineral_ic_name.str(), 0.0);
+        // TODO: this needs to be put into an array, size(num_cells)
         beaker_components_.minerals[m] = mineral_ic;
         if (verbosity() == kDebugChemistryProcessKernel) {
           std::cout << "        Added initial condition for: " << mineral_ic_name.str() 

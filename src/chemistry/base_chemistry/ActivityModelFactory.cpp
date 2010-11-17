@@ -1,11 +1,12 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
+#include <sstream>
 #include <string>
 
 #include "ActivityModel.hpp"
 #include "ActivityModelDebyeHuckel.hpp"
 #include "ActivityModelUnit.hpp"
 #include "ActivityModelFactory.hpp"
+#include "ChemistryException.hpp"
 
 const string ActivityModelFactory::debye_huckel = "debye-huckel";
 const string ActivityModelFactory::unit = "unit";
@@ -28,10 +29,22 @@ ActivityModel* ActivityModelFactory::Create(std::string model)
     activity_model = new ActivityModelUnit();
   } else {
     // default type, error...?
+    std::ostringstream error_stream;
+    error_stream << "ERROR: ActivityModelFactory::Create(): \n";
+    error_stream << "ERROR: Unknown activity model name: " << model << "\n"
+                 << "       valid names: " << unit << "\n"
+                 << "                    " << debye_huckel << "\n";
+    throw ChemistryException(error_stream.str(), 
+                             ChemistryException::kUnrecoverableError);    
   }
 
   if (activity_model == NULL) {
     // something went wrong, should throw an exception and exit gracefully....
+    std::ostringstream error_stream;
+    error_stream << "ERROR: ActivityModelFactory::Create(): \n";
+    error_stream << "ERROR: Activity model was not created for some reason....\n";
+    throw ChemistryException(error_stream.str(),
+                             ChemistryException::kUnrecoverableError);    
   } else {
     // finish any additional setup
     activity_model->name(model);

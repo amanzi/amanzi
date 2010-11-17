@@ -5,23 +5,19 @@
 // single computational node
 
 #include <string>
+#include <vector>
 
 #include "ActivityModel.hpp"
-#include "ActivityModelFactory.hpp"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
 #include "GeneralRxn.hpp"
 #include "IonExchangeComplex.hpp"
 #include "IonExchangeSite.hpp"
 #include "KineticRate.hpp"
-#include "LU.hpp"
 #include "Mineral.hpp"
-#include "MineralKineticsFactory.hpp"
 #include "Species.hpp"
 #include "SurfaceComplexationRxn.hpp"
 #include "Verbosity.hpp"
-
-#include <vector>
 
 class KineticRate;
 
