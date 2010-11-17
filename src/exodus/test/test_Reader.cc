@@ -10,6 +10,9 @@
 #include "Parameters.hh"
 #include "Side_set.hh"
 
+extern std::string test_file_path(const std::string& fname);
+extern std::string split_file_path(const std::string& fname);
+
 struct Exodus_file_holder
 {
     ExodusII::Exodus_file file;
@@ -23,45 +26,45 @@ struct Exodus_file_holder
 
 struct Big_File : Exodus_file_holder
 {
-    Big_File () : Exodus_file_holder ("test_files/htc_rad_test-random.exo") { }
+  Big_File () : Exodus_file_holder (test_file_path("htc_rad_test-random.exo").c_str()) { }
 };
 
 struct quad_4x4 : Exodus_file_holder
 {
-    quad_4x4 () : Exodus_file_holder ("test_files/quad_4x4_ss.exo") { }
+    quad_4x4 () : Exodus_file_holder (test_file_path("quad_4x4_ss.exo").c_str()) { }
 };
 
 struct hex_split_2_0 : Exodus_file_holder
 {
-     hex_split_2_0() : Exodus_file_holder ("test_files/split1/hex_4x4x4_ss.par.2.0") { }
+     hex_split_2_0() : Exodus_file_holder (split_file_path("hex_4x4x4_ss.par.2.0").c_str()) { }
 };
 
 struct hex_split_2_1 : Exodus_file_holder
 {
-     hex_split_2_1() : Exodus_file_holder ("test_files/split1/hex_4x4x4_ss.par.2.1") { }
+     hex_split_2_1() : Exodus_file_holder (split_file_path("hex_4x4x4_ss.par.2.1").c_str()) { }
 };
 
 
 struct hex11_split_2_0 : Exodus_file_holder
 {
-     hex11_split_2_0() : Exodus_file_holder ("test_files/split1/hex_11x11x11_ss.par.2.0") { }
+     hex11_split_2_0() : Exodus_file_holder (split_file_path("hex_11x11x11_ss.par.2.0").c_str()) { }
 };
 
 struct hex11_split_2_1 : Exodus_file_holder
 {
-     hex11_split_2_1() : Exodus_file_holder ("test_files/split1/hex_11x11x11_ss.par.2.1") { }
+     hex11_split_2_1() : Exodus_file_holder (split_file_path("hex_11x11x11_ss.par.2.1").c_str()) { }
 };
 
 
 struct twoblktet_2_0 : Exodus_file_holder
 {
-     twoblktet_2_0() : Exodus_file_holder ("test_files/split1/twoblktet_ss.par.2.0") { }
+     twoblktet_2_0() : Exodus_file_holder (split_file_path("twoblktet_ss.par.2.0").c_str()) { }
 };
 
 
 struct twoblktet_2_1 : Exodus_file_holder
 {
-     twoblktet_2_1() : Exodus_file_holder ("test_files/split1/twoblktet_ss.par.2.1") { }
+     twoblktet_2_1() : Exodus_file_holder (split_file_path("twoblktet_ss.par.2.1").c_str()) { }
 };
 
 
