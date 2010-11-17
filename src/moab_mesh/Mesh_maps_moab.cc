@@ -1,6 +1,4 @@
 #include "Mesh_maps_moab.hh"
-//#include "dbc.hh"
-
 //#include <Teuchos_RCP.hpp>
 
 using namespace std;
@@ -44,18 +42,20 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     // Load partitioned mesh - serial read of mesh with partition
     // info, deletion of non-local entities, resolution of
     // interprocessor connections. If we need ghosts we have to add
-    // the option "PARALLEL_GHOSTS=A.B.C" where A is usually the
+    // the option "PARALLEL_GHOSTS=A.B.C.D" where A is usually the
     // topological dimension of the mesh cells, B is the bridge
     // dimension or the dimension of entities across which we want
     // ghosts (0 for vertex connected ghost cells) and C indicates
-    // the number of layers of ghost cells we want
+    // the number of layers of ghost cells we want, D indicates if
+    // we want edges/faces bounding the ghost cells as well (1 for
+    // edges, 2 for faces, 3 for faces and edges)
 
     // In the specification for the Ghosts we made the assumption 
     // that we are dealing with 3D meshes only
 
     result = 
       mbcore->load_file(filename,NULL,
-			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1",
+			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1.2",
 			NULL,NULL,NULL);
       
     rank = mbcomm->rank();
@@ -107,66 +107,30 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
       
 
 
-    
 
-  // Get all vertices on this processor 
-    
-  result = mbcore->get_entities_by_dimension(0,0,AllVerts,false);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get vertices" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-    
+  { // Keep together and in this order 
 
+    init_pvert_lists();
+    init_pcell_lists(); // cells MUST be initialized before faces
+    init_pface_lists();
 
-  // Get all cells (faces in 2D, regions in 3D) on this processor
     
-  result = mbcore->get_entities_by_dimension(0,celldim,AllCells,false);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get cells" << std::endl;
-    assert(result == MB_SUCCESS);
+    // Create maps from local IDs to MOAB entity handles (must be after
+    // the various init_p*_list calls)
+    
+    init_id_handle_maps();
   }
     
     
 
 
 
-  // We have to make MOAB create the missing 'faces' (faces in 3D,
-  // edges in 2D). We do this by looping over the cells and asking
-  // for their faces with the create_if_missing=true option
-
-
-  for (MBRange::iterator it = AllCells.begin(); it != AllCells.end(); it++) {
-    MBEntityHandle cell = *it;
-    MBRange cfaces;
-      
-    mbcore->get_adjacencies(&cell,1,facedim,true,cfaces,MBCore::UNION);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Could not get faces of cell" << cell << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-  }
-    
-
-  // Get all "faces" (edges in 2D, faces in 3D) on this processor
-    
-  result = mbcore->get_entities_by_dimension(0,facedim,AllFaces,false);
-  if (result != MB_SUCCESS) {
-    std::cerr << "Could not get 'faces'" << std::endl;
-    assert(result == MB_SUCCESS);
-  }
-
-
-
-
-
-    
     
   if (!serial_run) {
     // Ask Parallel Communicator to assign global IDs to entities
 
     bool largest_dim_only=false;
-    int start_id=1;
+    int start_id=0;
     int largest_dim=celldim;
     result = mbcomm->assign_global_ids(0,largest_dim,start_id,largest_dim_only);
     if (result != MB_SUCCESS) {
@@ -197,7 +161,7 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
       
     nent = AllVerts.size();
     int *gids = new int[nent];
-    for (int i = 0; i < nent; i++) gids[i] = i+1;
+    for (int i = 0; i < nent; i++) gids[i] = i;
 
     result = mbcore->tag_set_data(gid_tag,AllVerts,gids);
 
@@ -206,7 +170,7 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
 
     nent = AllFaces.size();
     gids = new int[nent];
-    for (int i = 0; i < nent; i++) gids[i] = i+1;
+    for (int i = 0; i < nent; i++) gids[i] = i;
 
     result = mbcore->tag_set_data(gid_tag,AllFaces,gids);
 
@@ -215,7 +179,7 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
 
     nent = AllCells.size();
     gids = new int[nent];
-    for (int i = 0; i < nent; i++) gids[i] = i+1;
+    for (int i = 0; i < nent; i++) gids[i] = i;
 
     result = mbcore->tag_set_data(gid_tag,AllCells,gids);
 
@@ -224,23 +188,12 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
   }
 
 
-  init_pvert_lists();
-  init_pcell_lists(); // cells MUST be initialized before faces
-  init_pface_lists();
-
-  // Create maps from local IDs to MOAB entity handles (must be after
-  // the various init_p*_list calls)
-
-  init_id_handle_maps();
-
-
-  
   // Create Epetra_maps
-
+  
   init_cell_map();
   init_face_map();
   init_node_map();
-
+  
 
 
   // Initialize some info about the global number of sets, global set
@@ -261,11 +214,9 @@ void Mesh_maps_moab::clear_internals_ ()
   AllVerts.clear();
   OwnedVerts.clear();
   NotOwnedVerts.clear();
-  UsedVerts.clear();
   AllFaces.clear();
   OwnedFaces.clear();
   NotOwnedFaces.clear();
-  UsedFaces.clear();
   AllCells.clear();
   OwnedCells.clear();
   GhostCells.clear();
@@ -359,27 +310,30 @@ void Mesh_maps_moab::init_id_handle_maps() {
 
 
 void Mesh_maps_moab::init_pvert_lists() {
+  int result;
+
+  // Get all vertices on this processor 
+    
+  result = mbcore->get_entities_by_dimension(0,0,AllVerts,false);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get vertices" << std::endl;
+    assert(result == MB_SUCCESS);
+  }    
+
 
   // Get not owned vertices
 
-  mbcomm->get_pstatus_entities(0,PSTATUS_NOT_OWNED,NotOwnedVerts);
+  result = mbcomm->get_pstatus_entities(0,PSTATUS_NOT_OWNED,NotOwnedVerts);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get NotOwned vertices" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
 
   // Subtract from all vertices on processor to get owned vertices only
 
   OwnedVerts = AllVerts;  // I think we DO want a data copy here
   OwnedVerts -= NotOwnedVerts;
 
-  // Get ghost vertices (in MOAB, ghost vertices are not owned
-  // by a processor and not connected to an element owned by
-  // the processor
-
-  MBRange GhostVerts;
-    
-  mbcomm->get_pstatus_entities(0,PSTATUS_GHOST,GhostVerts);
-    
-  UsedVerts = AllVerts; // I think we DO want a data copy here
-  UsedVerts -= GhostVerts;
-    
 }
 
 
@@ -396,36 +350,40 @@ void Mesh_maps_moab::init_pvert_lists() {
 
 
 void Mesh_maps_moab::init_pface_lists() {
-  MBRange NotOwnedIntFaces;
+  int result;
 
-  // Get not owned faces on the inter-processor boundaries (the call
-  // here behaves this way because of the way the faces were created)
+  // We have to make MOAB create the missing 'faces' (faces in 3D,
+  // edges in 2D). We do this by looping over the cells and asking
+  // for their faces with the create_if_missing=true option
 
-  mbcomm->get_pstatus_entities(facedim,PSTATUS_NOT_OWNED,NotOwnedIntFaces);
 
-  NotOwnedFaces = NotOwnedIntFaces;
-
-  // Now go through all faces and add those that are connected to two 
-  // ghost cells or one ghost cell and nothing on the other side
-
-  for (MBRange::iterator it = AllFaces.begin(); it != AllFaces.end(); ++it) {
-    MBEntityHandle face = *it;
-    MBRange fcells;
-
-    mbcore->get_adjacencies(&face,1,3,false,fcells,MBCore::UNION);
-
-    if (fcells.size() == 0)
-      std::cerr << "Could not get cells connected to face" << std::endl;
-
-    if (fcells.size() == 1) {
-      if (GhostCells.index(fcells[0]) >= 0)
-	NotOwnedFaces.insert(face);
+  for (MBRange::iterator it = AllCells.begin(); it != AllCells.end(); it++) {
+    MBEntityHandle cell = *it;
+    MBRange cfaces;
+      
+    mbcore->get_adjacencies(&cell,1,facedim,true,cfaces,MBCore::UNION);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Could not get faces of cell" << cell << std::endl;
+      assert(result == MB_SUCCESS);
     }
-    else if (fcells.size() == 2) {
-      if (GhostCells.index(fcells[0]) >= 0 &&
-	  GhostCells.index(fcells[1]) >= 0)
-	NotOwnedFaces.insert(face);
-    }
+  }
+    
+
+  // Get all "faces" (edges in 2D, faces in 3D) on this processor
+    
+  result = mbcore->get_entities_by_dimension(0,facedim,AllFaces,false);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get 'faces'" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
+
+  // Get not owned faces 
+
+  result = mbcomm->get_pstatus_entities(facedim,PSTATUS_NOT_OWNED,NotOwnedFaces);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get NotOwned 'faces'" << std::endl;
+    assert(result == MB_SUCCESS);
   }
 
 
@@ -434,17 +392,28 @@ void Mesh_maps_moab::init_pface_lists() {
   OwnedFaces = AllFaces;  // I think we DO want a data copy here
   OwnedFaces -= NotOwnedFaces;
     
-    
-  UsedFaces = OwnedFaces; // I think we DO want a data copy here
-  UsedFaces.merge(NotOwnedIntFaces);
 
 }
 
 
 void Mesh_maps_moab::init_pcell_lists() {
+  int result;
+
+  // Get all cells (faces in 2D, regions in 3D) on this processor
+    
+  result = mbcore->get_entities_by_dimension(0,celldim,AllCells,false);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get cells" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+    
   // Get not owned cells (which is the same as ghost cells)
 
-  mbcomm->get_pstatus_entities(celldim,PSTATUS_GHOST,GhostCells);
+  result = mbcomm->get_pstatus_entities(celldim,PSTATUS_GHOST,GhostCells);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get ghost cells" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
     
   // Subtract from all cells on processor to get owned cells only
     
@@ -634,7 +603,7 @@ unsigned int Mesh_maps_moab::count_entities (Mesh_data::Entity_kind kind,
       return !serial_run ? NotOwnedVerts.size() : 0;
       break;
     case USED:
-      return !serial_run ? UsedVerts.size() : AllVerts.size();
+      return AllVerts.size();
       break;
     default:
       return 0;
@@ -651,7 +620,7 @@ unsigned int Mesh_maps_moab::count_entities (Mesh_data::Entity_kind kind,
       return !serial_run ? NotOwnedFaces.size() : 0;
       break;
     case USED:
-      return !serial_run ? UsedFaces.size() : AllFaces.size();
+      return AllFaces.size();
       break;
     default:
       return 0;
@@ -669,7 +638,7 @@ unsigned int Mesh_maps_moab::count_entities (Mesh_data::Entity_kind kind,
       return !serial_run ? GhostCells.size() : 0;
       break;
     case USED:
-      return !serial_run ? OwnedCells.size() : AllCells.size();
+      return AllCells.size();
       break;
     default:
       return 0;
@@ -1300,7 +1269,6 @@ void Mesh_maps_moab::init_cell_map ()
     mbcore->tag_get_data(gid_tag,OwnedCells,cell_gids);
     ncell = OwnedCells.size();
     
-    for (int i = 0; i < ncell; i++) cell_gids[i] -= 1;
 
     cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
     
@@ -1309,8 +1277,6 @@ void Mesh_maps_moab::init_cell_map ()
 
     mbcore->tag_get_data(gid_tag,GhostCells,&(cell_gids[ncell]));
     
-    for (int i = ncell; i < ncell+GhostCells.size(); i++) cell_gids[i] -= 1;
-
     ncell += GhostCells.size();
 
     cell_map_w_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
@@ -1321,8 +1287,6 @@ void Mesh_maps_moab::init_cell_map ()
 
     mbcore->tag_get_data(gid_tag,AllCells,cell_gids);
     ncell = AllCells.size();
-
-    for (int i = 0; i < ncell; i++) cell_gids[i] -= 1;
 
     cell_map_wo_ghosts_ = new Epetra_Map(-1,ncell,cell_gids,0,*epcomm);
   }
@@ -1353,17 +1317,11 @@ void Mesh_maps_moab::init_face_map ()
     mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
     nface = OwnedFaces.size();
     
-    for (int i = 0; i < nface; i++) face_gids[i] -= 1;
-
     face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
-    
-
 
 
     mbcore->tag_get_data(gid_tag,NotOwnedFaces,&(face_gids[nface]));
     
-    for (int i = nface; i < nface+NotOwnedFaces.size(); i++) face_gids[i] -= 1;
-
     nface += NotOwnedFaces.size();
 
     face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
@@ -1374,8 +1332,6 @@ void Mesh_maps_moab::init_face_map ()
 
     mbcore->tag_get_data(gid_tag,AllFaces,face_gids);
     nface = AllFaces.size();
-
-    for (int i = 0; i < nface; i++) face_gids[i] -= 1;
 
     face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm);
   }
@@ -1406,8 +1362,6 @@ void Mesh_maps_moab::init_node_map ()
     mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
     nvert = OwnedVerts.size();
     
-    for (int i = 0; i < nvert; i++) vert_gids[i] -= 1;
-
     node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
     
 
@@ -1415,8 +1369,6 @@ void Mesh_maps_moab::init_node_map ()
 
     mbcore->tag_get_data(gid_tag,NotOwnedVerts,&(vert_gids[nvert]));
     
-    for (int i = nvert; i < nvert+NotOwnedVerts.size(); i++) vert_gids[i] -= 1;
-
     nvert += NotOwnedVerts.size();
 
     node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
@@ -1427,8 +1379,6 @@ void Mesh_maps_moab::init_node_map ()
 
     mbcore->tag_get_data(gid_tag,AllVerts,vert_gids);
     nvert = AllVerts.size();
-
-    for (int i = 0; i < nvert; i++) vert_gids[i] -= 1;
 
     node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm);
   }
@@ -1459,7 +1409,6 @@ unsigned int Mesh_maps_moab::GID(unsigned int lid, Mesh_data::Entity_kind kind) 
   }
 
   mbcore->tag_get_data(gid_tag,&ent,1,&gid);
-  gid -= 1;
 
   return gid;
 }
