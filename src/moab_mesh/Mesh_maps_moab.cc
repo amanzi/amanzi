@@ -476,8 +476,8 @@ void Mesh_maps_moab::init_set_info() {
   }
 
 
-  setids = new int[5*maxnsets];
-  setdims = new int[5*maxnsets];
+  setids = new int[maxnsets];
+  setdims = new int[maxnsets];
 
   nsets = 0;
   for (int i = 0; i < tag_handles.size(); i++) {
@@ -528,6 +528,7 @@ void Mesh_maps_moab::init_set_info() {
   
   int *allsetids = new int[nprocs*maxnsets];
   int *allsetdims = new int[nprocs*maxnsets];
+  int *allnsets = new int[nprocs];
   
   
   MPI_Allgather(setids,maxnsets,MPI_INT,allsetids,maxnsets,MPI_INT,
@@ -560,19 +561,23 @@ void Mesh_maps_moab::init_set_info() {
 	}
       }
     }
-    
-  }
-  
-  
-  for (int i = 1; i < nprocs; i++) {
-    for (int j = 0; j < nsets; j++) {
-      allsetids[nsets*i+j] = allsetids[j];
-      allsetdims[nsets*i+j] = allsetdims[j];
+
+    for (int i = 1; i < nprocs; i++) {
+      for (int j = 0; j < nsets; j++) {
+	allsetids[nsets*i+j] = allsetids[j];
+	allsetdims[nsets*i+j] = allsetdims[j];
+      }
     }
+
+    for (int i = 0; i < nprocs; i++)
+      allnsets[i] = nsets;
+
   }
   
-  
+  MPI_Scatter(allnsets,1,MPI_INT,&nsets,1,MPI_INT,0,MPI_COMM_WORLD);
+
   MPI_Scatter(allsetids,nsets,MPI_INT,setids,nsets,MPI_INT,0,MPI_COMM_WORLD);
+
   MPI_Scatter(allsetdims,nsets,MPI_INT,setdims,nsets,MPI_INT,0,MPI_COMM_WORLD);
   
   delete [] allsetids;
