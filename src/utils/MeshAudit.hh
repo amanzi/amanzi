@@ -38,6 +38,9 @@ public:
   int check_node_maps() const;
   int check_face_maps() const;
   int check_cell_maps() const;
+  int check_ghost_nodes() const;
+  int check_ghost_faces() const;
+  int check_ghost_cells() const;
 
 private:
 

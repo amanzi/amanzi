@@ -4,6 +4,10 @@
 #include <cfloat>
 
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_Import.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_IntVector.h"
 
 #include "cell_geometry.hh"
 #include "cell_topology.hh"
@@ -30,87 +34,105 @@ int MeshAudit::Verify() const
   int ierr;
   bool fail = false;
   bool abort = false;
+  
+  // What I'd love to do here is to describe the dependencies between tests
+  // (i.e., what tests must pass before a given test can be run) and generate
+  // the dependency graph (tree) ala make, and then walk the tree running all
+  // the tests that can be run.  Instead I've got the horrible crufty hack
+  // you find below.
 
   ierr = check_entity_counts();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_cell_to_nodes_refs();
+  ierr = check_cell_to_nodes_refs();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_cell_to_nodes_consistency();
+  ierr = check_cell_to_nodes_consistency();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_cell_to_faces_refs();
+  ierr = check_cell_to_faces_refs();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_cell_to_faces_consistency();
+  ierr = check_cell_to_faces_consistency();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_face_to_nodes_refs();
+  ierr = check_face_to_nodes_refs();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_face_to_nodes_consistency();
+  ierr = check_face_to_nodes_consistency();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_cell_to_face_dirs_basic();
+  ierr = check_cell_to_face_dirs_basic();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_node_to_coordinates();
-  if (ierr < 0) abort = true;
-  if (ierr != 0) fail = true;
-
-  if (abort) return 1;
-
-  check_cell_degeneracy();
+  ierr = check_node_to_coordinates();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
   if (abort) return 1;
 
-  check_cell_to_faces();
+  ierr = check_cell_degeneracy();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
   if (abort) return 1;
 
-  check_cell_to_coordinates();
-  if (ierr < 0) abort = true;
-  if (ierr != 0) fail = true;
-
-  check_face_to_coordinates();
+  ierr = check_cell_to_faces();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
   if (abort) return 1;
 
-  check_cell_topology();
+  ierr = check_cell_to_coordinates();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_node_maps();
+  ierr = check_face_to_coordinates();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_face_maps();
+  if (abort) return 1;
+
+  ierr = check_cell_topology();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  check_cell_maps();
+  ierr = check_node_maps();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
+  ierr = check_face_maps();
+  if (ierr < 0) abort = true;
+  if (ierr != 0) fail = true;
+
+  ierr = check_cell_maps();
+  if (ierr < 0) abort = true;
+  if (ierr != 0) fail = true;
+  
+  if (abort) return 1;
 
   // Need to check all the "set" accessors
 
   // Need to check the consistency of overlap data.
+  ierr = check_ghost_nodes();
+  if (ierr < 0) abort = true;
+  if (ierr != 0) fail = true;
+  
+  ierr = check_ghost_faces();
+  if (ierr < 0) abort = true;
+  if (ierr != 0) fail = true;
+
+  ierr = check_ghost_cells();
+  if (ierr < 0) abort = true;
+  if (ierr != 0) fail = true;
 
   if (fail)
     return 0;
@@ -1011,15 +1033,248 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
   }
 }
 
+// Check that ghost nodes are exact copies of their master.
+// This simply means that they have the same coordinates.
+
+int MeshAudit::check_ghost_nodes() const
+{
+  os << "Checking ghost nodes ..." << endl;
+  
+  const Epetra_Map &node_map_own = mesh->node_map(false);
+  const Epetra_Map &node_map_use = mesh->node_map(true);
+  
+  int nnode_own = node_map_own.NumMyElements();
+  int nnode_use = node_map_use.NumMyElements();
+  
+  vector<double> coord(3);
+  vector<unsigned int> bad_nodes;
+  
+  Epetra_MultiVector coord_use(node_map_use,3);
+  double **data;
+  coord_use.ExtractView(&data);
+  Epetra_MultiVector coord_own(View, node_map_own, data, 3); 
+  
+  for (unsigned int j = 0; j < nnode_own; ++j) {
+    mesh->node_to_coordinates(j, coord.begin(), coord.end());
+    for (int k = 0; k < 3; ++k) coord_own[k][j] = coord[k];
+  }
+  
+  Epetra_Import importer(node_map_use, node_map_own);
+  coord_use.Import(coord_own, importer, Insert);
+  
+  for (unsigned int j = nnode_own; j < nnode_use; ++j) {
+    mesh->node_to_coordinates(j, coord.begin(), coord.end());
+    bool bad_data = false;
+    for (int k = 0; k < 3; ++k)
+      if (coord[k] != coord_use[k][j]) bad_data = true;
+    if (bad_data) bad_nodes.push_back(j);
+  }
+  
+  int status = 0;
+  
+  if (!bad_nodes.empty()) {
+    os << "ERROR: found ghost nodes with incorrect coordinates:";
+    write_list(bad_nodes, MAX_OUT);
+    status = 1;
+  }
+  
+  return status;
+}
+
+// Check that ghost faces are exact copies of their master.  This means
+// that the the GIDs of the nodes defining the face are the same, including
+// their order (face orientation).
+
+int MeshAudit::check_ghost_faces() const
+{
+  os << "Checking ghost faces ..." << endl;
+  
+  const Epetra_Map &node_map = mesh->node_map(true);
+  const Epetra_Map &face_map_own = mesh->face_map(false);
+  const Epetra_Map &face_map_use = mesh->face_map(true);
+  
+  int nface_own = face_map_own.NumMyElements();
+  int nface_use = face_map_use.NumMyElements();
+  
+  vector<unsigned int> fnode(4);
+  vector<unsigned int> bad_faces;
+  
+  // Create a matrix of the GIDs for all owned faces.
+  Epetra_IntSerialDenseMatrix gids(nface_use,4); // no Epetra_IntMultiVector :(
+  for (unsigned int j = 0; j < nface_own; ++j) {
+    mesh->face_to_nodes(j, fnode.begin(), fnode.end());
+    for (int k = 0; k < 4; ++k)
+      gids(j,k) = node_map.GID(fnode[k]);
+  }
+  
+  // Import these GIDs to all used faces; sets values on ghost faces.
+  Epetra_Import importer(face_map_use, face_map_own);
+  for (int k = 0; k < 4; ++k) {
+    Epetra_IntVector kgids_own(View, face_map_own, gids[k]);
+    Epetra_IntVector kgids_use(View, face_map_use, gids[k]);
+    kgids_use.Import(kgids_own, importer, Insert);
+  }
+  
+  // Compare the ghost face GIDs against the reference values just computed.
+  for (unsigned int j = nface_own; j < nface_use; ++j) {
+    mesh->face_to_nodes(j, fnode.begin(), fnode.end());
+    bool bad_data = false;
+    for (int k = 0; k < 4; ++k)
+      if (node_map.GID(fnode[k]) != gids(j,k)) bad_data = true;
+    if (bad_data) bad_faces.push_back(j);
+    // for bad faces we could do a further check to see how bad they are.
+    // For example, maybe the GIDs are in a different order but the face
+    // orientation is the same, etc.
+  }
+  
+  int status = 0;
+  
+  if (!bad_faces.empty()) {
+    os << "ERROR: found ghost faces that are not exact copies of their master:";
+    write_list(bad_faces, MAX_OUT);
+    status = 1;
+  }
+  
+  return status;
+}
+
+
+// Check that ghost cells are exact copies of their master.  This means
+// that the the GIDs of the nodes defining the cell are the same, including
+// their order (face orientation).
+
+int MeshAudit::check_ghost_cells() const
+{
+  os << "Checking ghost cells ..." << endl;
+  
+  const Epetra_Map &node_map = mesh->node_map(true);
+  const Epetra_Map &cell_map_own = mesh->cell_map(false);
+  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  
+  int ncell_own = cell_map_own.NumMyElements();
+  int ncell_use = cell_map_use.NumMyElements();
+  
+  vector<unsigned int> cnode(8);
+  vector<unsigned int> bad_cells;
+  
+  // Create a matrix of the GIDs for all owned cells.
+  Epetra_IntSerialDenseMatrix gids(ncell_use,8); // no Epetra_IntMultiVector :(
+  for (unsigned int j = 0; j < ncell_own; ++j) {
+    mesh->cell_to_nodes(j, cnode.begin(), cnode.end());
+    for (int k = 0; k < 8; ++k)
+      gids(j,k) = node_map.GID(cnode[k]);
+  }
+  
+  // Import these GIDs to all used cells; sets values on ghost cells.
+  Epetra_Import importer(cell_map_use, cell_map_own);
+  for (int k = 0; k < 8; ++k) {
+    Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
+    Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
+    kgids_use.Import(kgids_own, importer, Insert);
+  }
+  
+  // Compare the ghost cell GIDs against the reference values just computed.
+  for (unsigned int j = ncell_own; j < ncell_use; ++j) {
+    mesh->cell_to_nodes(j, cnode.begin(), cnode.end());
+    bool bad_data = false;
+    for (int k = 0; k < 8; ++k)
+      if (node_map.GID(cnode[k]) != gids(j,k)) bad_data = true;
+    if (bad_data) bad_cells.push_back(j);
+    // for bad cells we could do a further check to see how bad they are.
+    // For example, maybe the GIDs are in a different order but the cell
+    // orientation is the same, etc.
+  }
+  
+  int status = 0;
+  
+  if (!bad_cells.empty()) {
+    os << "ERROR: found ghost cells that are not exact copies of their master:";
+    write_list(bad_cells, MAX_OUT);
+    status = 1;
+  }
+  
+  return status;
+}
+
+// Check that num_sets successfully completes and that the returned value
+// is the same across all processors.  Independent checks for NODE, FACE
+// and CELL entities.
+
+// Check that get_set_ids successfully completes and that the returned data is
+// the same (including order) across all processors.  Check that the alternate
+// methods return identical data.  Independent checks for NODE, FACE and CELL
+// entities.
+
+// Check that valid_set_id returns true for all set IDs, and false for some
+// selection of invalid IDs.  Independent checks for NODE, FACE and CELL entities.
+
+// Check that get_set_size successfully completes and that the value for
+// for USED equals the sum of the values for OWNED and GHOST.  Check that
+// get_set successfully completes for OWNED, GHOST and USED.
+// Check that the lists (OWNED, GHOST, USED) have distinct values.
+// Check that the OWNED list LIDs are valid LIDs from the owned map.
+// Check that the USED list LIDs are valid LIDs from the used map.
+// Check that if the OWNED list were exported f
+// Check that the GHOST list LIDs are in fact ghost LIDs
+// Check that the USED list equals the concatenation of the OWNED and GHOST
+// lists.  (This is 
+
+//int MeshAudit::check_set(const Epetra_Map &map_own; const vector<unsigned int> &set_own,
+//                         const Epetra_Map &map_use; const vector<unsigned int> &set_use) const
+//{
+//  // Check that 
+//  if (!distinct_values(set_use)) {
+//  }
+//  
+//  bool bad_set = false;
+//  for (int j = 0; j < set_own.size(); ++j)
+//    if (!map_own.MyLID(set_own[j])) bad_set = true;
+//  if (bad_set){
+//  }
+//  
+//  // Tag all LIDs in the used map that should belong to the used set;
+//  // the owned set LIDs are taken as definitive.
+//  Epetra_IntVector tag_use(map_use); // fills with zero values
+//  int *tag_data;
+//  tag_use.ExtractView(&tag_data);
+//  Epetra_IntVector tag_own(View, map_own, tag_data);
+//  for (int j = 0; j < set_own.size(); ++j) tag_own[set_own[j]] = 1;
+//  Epetra_Import importer(map_use, map_own);
+//  tag_use.Import(tag_own, importer, Insert);
+//  for (int j = 0; j < set_use.size(); ++j) --tag_use[set_use[j]];
+//  
+//  // Check for negative tag values;
+//  // these indicate a ghost LID that shouldn't be in the set but is.
+//  bad_set = false;
+//  vector<unsigned int> bad_LIDs;
+//  for (int j = 0; j < set_own.size(); ++j)
+//    if (tag_use[j] < 0) bad_set.push_back(j);
+//  if (!bad_LIDs.empty()) {
+//    os << "ERROR: found LIDs that 
+//  }
+//  
+//  // Positive values indicate a ghost LID that should be in the set but isn't.
+//  
+//  
+//
+//}
+
 // Returns true if the values in the list are distinct -- no repeats.
 
-bool MeshAudit::distinct_values (const std::vector<unsigned int> &list) const
+bool MeshAudit::distinct_values(const vector<unsigned int> &list) const
 {
-  for (int i = 0; i < list.size(); ++i)
-    for (int j = i+1; j < list.size(); ++j)
-      if (list[i] == list[j]) return false;
-  return true;
+  vector<unsigned int> copy(list);
+  sort(copy.begin(), copy.end());
+  return (adjacent_find(copy.begin(),copy.end()) == copy.end());
 }
+
+//bool MeshAudit::distinct_values (const std::vector<unsigned int> &list) const
+//{
+//  for (int i = 0; i < list.size(); ++i)
+//    for (int j = i+1; j < list.size(); ++j)
+//      if (list[i] == list[j]) return false;
+//  return true;
+//}
 
 // Returns 1 if the face node lists fnode1 and fnode2 describe the same face
 // with the same orientation.  Returns -1 if the lists describe the same face
