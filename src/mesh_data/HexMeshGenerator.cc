@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Wed Nov 17 07:18:30 2010
+ * @date Thu Nov 18 10:05:06 2010
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -9,6 +9,9 @@
  */
 
 #include <algorithm>
+#include <boost/lambda/lambda.hpp>
+namespace bl = boost::lambda;
+
 #include "HexMeshGenerator.hh"
 
 namespace Mesh_data
@@ -450,15 +453,27 @@ HexMeshGenerator::generate(void)
 // -------------------------------------------------------------
 // HexMeshGenerator::cellmap
 // -------------------------------------------------------------
+/** 
+ * Creates a parallel map relating local cell index to global index.
+ * The map's global indexes are 0-based unless @c onebased is true.
+ * The created map should not overlap with other processors, so it
+ * does represent cell ownership.
+ * 
+ * @param onebased if true, generate a map with 1-based global indexes
+ * 
+ * @return map relating local to global cell indexes
+ */
 Epetra_Map*
-HexMeshGenerator::cellmap(void)
+HexMeshGenerator::cellmap(bool onebased)
 {
   std::vector<int> myidx(cell1_-cell0_ + 1);
   int cidx(cell0_);
-  for (std::vector<int>::iterator c = myidx.begin(); c != myidx.end(); c++, cidx++) 
-    *c = cidx;
+  if (onebased) cidx += 1;
 
-  Epetra_Map *result(new Epetra_Map(ncell_, myidx.size(), &myidx[0], 0, *comm_));
+  std::for_each(myidx.begin(), myidx.end(), bl::_1 = bl::var(cidx)++);
+
+  Epetra_Map *result(new Epetra_Map(ncell_, myidx.size(), &myidx[0], 
+                                    (onebased ? 1 : 0), *comm_));
 
   return result;
 }
@@ -466,13 +481,27 @@ HexMeshGenerator::cellmap(void)
 // -------------------------------------------------------------
 // HexMeshGenerator::vertexmap
 // -------------------------------------------------------------
+/** 
+ * Creates a parallel map relating local vertex index to global index.
+ * The map's global indexes are 0-based unless @c onebased is true.
+ * The created map will have to overlap with other processors, so it
+ * should not be used for vertex ownership.
+ * 
+ * @param onebased if true, generate an Epetra_Map with 1-based global indexes
+ * 
+ * @return map relating local to global vertex indexes
+ */
 Epetra_Map *
-HexMeshGenerator::vertexmap(void)
+HexMeshGenerator::vertexmap(bool onebased)
 {
   std::vector<int> myidx(vertex_gidx_.size());
   std::copy(vertex_gidx_.begin(), vertex_gidx_.end(), myidx.begin());
+
+  if (onebased)
+    std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
   
-  Epetra_Map *result(new Epetra_Map(-1, vertex_gidx_.size(), &myidx[0], 0, *comm_));
+  Epetra_Map *result(new Epetra_Map(-1, vertex_gidx_.size(), &myidx[0], 
+                                    (onebased ? 1 : 0), *comm_));
 
   return result;
 }
