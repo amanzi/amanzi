@@ -151,6 +151,12 @@ void State::update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector
 
 }
 
+void State::update_total_component_concentration(const Epetra_MultiVector& new_tcc) 
+{
+  *total_component_concentration = new_tcc;
+
+}
+
 void State::update_darcy_flux(const Epetra_Vector &new_darcy_flux)
 {
   *darcy_flux = new_darcy_flux;

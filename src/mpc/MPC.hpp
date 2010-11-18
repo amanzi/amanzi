@@ -33,7 +33,7 @@ private:
   Teuchos::ParameterList parameter_list;
   Teuchos::RCP<Mesh_maps_base> mesh_maps;
 
-  // storage for chemistry's return value
+  // storage for the component concentration intermediate values
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
 
   // process kernels
