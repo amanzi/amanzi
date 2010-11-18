@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.hh
  * @author William A. Perkins
- * @date Sun Nov 14 18:58:57 2010
+ * @date Thu Nov 18 09:50:57 2010
  * 
  * @brief  Declaration of the HexMeshGenerator class
  * 
@@ -30,6 +30,13 @@ namespace Mesh_data
  * This class is used to generate a hex mesh (in the form of a
  * Mesh_data::Data instance) in parallel.  The mesh is divided evenly,
  * by elements, amongst the involved processors.
+ *
+ * Some important conventions:
+ *
+ * - hexahedron topology matches that of shards::Hexahedron<8> (and
+ *   CGNS and others)
+ * - Internally, all indexes are 0-based
+ * - Epetra_Maps for global ID's can either be 0-based or 1-based
  * 
  */
 class HexMeshGenerator
@@ -124,10 +131,10 @@ public:
   Data *generate(void);
 
   /// (Collective) Generate a Epetra_Map for the cells
-  Epetra_Map *cellmap(void);
+  Epetra_Map *cellmap(bool onebased = false);
 
   /// (Collective) Generate a Epetra_Map for the vertexes
-  Epetra_Map *vertexmap(void);
+  Epetra_Map *vertexmap(bool onebased = false);
 
 }; // close class HexMeshGenerator
 
