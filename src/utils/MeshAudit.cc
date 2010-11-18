@@ -121,16 +121,19 @@ int MeshAudit::Verify() const
 
   // Need to check all the "set" accessors
 
-  // Need to check the consistency of overlap data.
-  ierr = check_ghost_nodes();
+  ierr = check_node_to_coordinates_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
   
-  ierr = check_ghost_faces();
+  ierr = check_face_to_nodes_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
-  ierr = check_ghost_cells();
+  ierr = check_cell_to_nodes_ghost_data();
+  if (ierr < 0) abort = true;
+  if (ierr != 0) fail = true;
+
+  ierr = check_cell_to_faces_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
 
@@ -1036,9 +1039,9 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
 // Check that ghost nodes are exact copies of their master.
 // This simply means that they have the same coordinates.
 
-int MeshAudit::check_ghost_nodes() const
+int MeshAudit::check_node_to_coordinates_ghost_data() const
 {
-  os << "Checking ghost nodes ..." << endl;
+  os << "Checking node_to_coordinates ghost data ..." << endl;
   
   const Epetra_Map &node_map_own = mesh->node_map(false);
   const Epetra_Map &node_map_use = mesh->node_map(true);
@@ -1085,9 +1088,9 @@ int MeshAudit::check_ghost_nodes() const
 // that the the GIDs of the nodes defining the face are the same, including
 // their order (face orientation).
 
-int MeshAudit::check_ghost_faces() const
+int MeshAudit::check_face_to_nodes_ghost_data() const
 {
-  os << "Checking ghost faces ..." << endl;
+  os << "Checking face_to_nodes ghost data ..." << endl;
   
   const Epetra_Map &node_map = mesh->node_map(true);
   const Epetra_Map &face_map_own = mesh->face_map(false);
@@ -1130,22 +1133,22 @@ int MeshAudit::check_ghost_faces() const
   int status = 0;
   
   if (!bad_faces.empty()) {
-    os << "ERROR: found ghost faces that are not exact copies of their master:";
+    os << "ERROR: found bad data for ghost faces:";
     write_list(bad_faces, MAX_OUT);
+    os << "       The ghost faces are not exact copies of their master." << endl;
     status = 1;
   }
   
   return status;
 }
 
-
 // Check that ghost cells are exact copies of their master.  This means
 // that the the GIDs of the nodes defining the cell are the same, including
 // their order (face orientation).
 
-int MeshAudit::check_ghost_cells() const
+int MeshAudit::check_cell_to_nodes_ghost_data() const
 {
-  os << "Checking ghost cells ..." << endl;
+  os << "Checking cell_to_nodes ghost data ..." << endl;
   
   const Epetra_Map &node_map = mesh->node_map(true);
   const Epetra_Map &cell_map_own = mesh->cell_map(false);
@@ -1188,8 +1191,67 @@ int MeshAudit::check_ghost_cells() const
   int status = 0;
   
   if (!bad_cells.empty()) {
-    os << "ERROR: found ghost cells that are not exact copies of their master:";
+    os << "ERROR: found bad data for ghost cells:";
     write_list(bad_cells, MAX_OUT);
+    os << "       The ghost cells are not exact copies of their master." << endl;
+    status = 1;
+  }
+  
+  return status;
+}
+
+// Check that ghost cells reference the same faces, and in the same order, as their
+// master.  This is part of a ghost being an exact copies the master.  Even if the
+// preceding ghost checks pass it is still possible for this one to fail.  In this
+// case the ghost would reference a different face (by GID) but that face would
+// reference the same nodes as the correct face.  So the two faces would be
+// geometrically identical, including orientation, but be distinct.
+
+int MeshAudit::check_cell_to_faces_ghost_data() const
+{
+  os << "Checking cell_to_face ghost data ..." << endl;
+  
+  const Epetra_Map &face_map = mesh->face_map(true);
+  const Epetra_Map &cell_map_own = mesh->cell_map(false);
+  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  
+  int ncell_own = cell_map_own.NumMyElements();
+  int ncell_use = cell_map_use.NumMyElements();
+  
+  vector<unsigned int> cface(6);
+  vector<unsigned int> bad_cells;
+  
+  // Create a matrix of the GIDs for all owned cells.
+  Epetra_IntSerialDenseMatrix gids(ncell_use,6); // no Epetra_IntMultiVector :(
+  for (unsigned int j = 0; j < ncell_own; ++j) {
+    mesh->cell_to_faces(j, cface.begin(), cface.end());
+    for (int k = 0; k < 6; ++k)
+      gids(j,k) = face_map.GID(cface[k]);
+  }
+  
+  // Import these GIDs to all used cells; sets values on ghost cells.
+  Epetra_Import importer(cell_map_use, cell_map_own);
+  for (int k = 0; k < 6; ++k) {
+    Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
+    Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
+    kgids_use.Import(kgids_own, importer, Insert);
+  }
+  
+  // Compare the ghost cell GIDs against the reference values just computed.
+  for (unsigned int j = ncell_own; j < ncell_use; ++j) {
+    mesh->cell_to_faces(j, cface.begin(), cface.end());
+    bool bad_data = false;
+    for (int k = 0; k < 6; ++k)
+      if (face_map.GID(cface[k]) != gids(j,k)) bad_data = true;
+    if (bad_data) bad_cells.push_back(j);
+  }
+  
+  int status = 0;
+  
+  if (!bad_cells.empty()) {
+    os << "ERROR: found bad data for ghost cells:";
+    write_list(bad_cells, MAX_OUT);
+    os << "       The ghost cells are not exact copies of their master." << endl;
     status = 1;
   }
   

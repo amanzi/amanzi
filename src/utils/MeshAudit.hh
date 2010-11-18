@@ -14,8 +14,6 @@ public:
   // This is the main method.
   int Verify() const;
   
-  void SetOutputFile(const std::string);
-
   // The individual tests are also available.  While the tests are all formally
   // independent, there is an implicit order dependence of the tests in that a
   // test may assume certain mesh data has been verified, and that verification
@@ -38,9 +36,10 @@ public:
   int check_node_maps() const;
   int check_face_maps() const;
   int check_cell_maps() const;
-  int check_ghost_nodes() const;
-  int check_ghost_faces() const;
-  int check_ghost_cells() const;
+  int check_node_to_coordinates_ghost_data() const;
+  int check_face_to_nodes_ghost_data() const;
+  int check_cell_to_nodes_ghost_data() const;
+  int check_cell_to_faces_ghost_data() const;
 
 private:
 
