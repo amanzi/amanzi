@@ -3,7 +3,11 @@
 
 #include "dbc.hh"
 
+#include <iostream>
+#include <algorithm>
 #include <sstream>
+#include <boost/lambda/lambda.hpp>
+namespace bl = boost::lambda;
 
 // Mesh_data
 #include "Data.hh"
@@ -35,8 +39,41 @@ Mesh_factory::Mesh_factory (const stk::ParallelMachine& comm, int bucket_size)
       communicator_ (comm)
 {  }
 
-
+/** 
+ * This should only be called for serial 
+ * 
+ * @param data the mesh
+ * @param fields data fields on the mesh
+ * 
+ * @return 
+ */
 Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data, 
+                                const Mesh_data::Fields& fields)
+{
+    ASSERT(communicator_.NumProc() == 1);
+
+    int ncell(data.parameters().num_elements_);
+    Epetra_Map cmap(ncell, 1, communicator_);
+
+    int nvert(data.parameters().num_nodes_);
+    Epetra_Map vmap(nvert, 1, communicator_);
+
+    return build_mesh(data, cmap, vmap, fields);
+}
+
+/** 
+ * Construct a Mesh instance, in parallel
+ * 
+ * @param data mesh description
+ * @param cellmap map of local to global cell indexes
+ * @param vertmap map of local to global vertex indexes
+ * @param fields any data fields to put on the mesh
+ * 
+ * @return Mesh instance
+ */
+Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data, 
+                                const Epetra_Map& cellmap,
+                                const Epetra_Map& vertmap,
                                 const Mesh_data::Fields& fields)
 {
 
@@ -55,7 +92,6 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
 
     // Reset all of the mesh-specific data.
     face_id_ = 0;
-    element_id_ = 0;
     Parts (0).swap (element_blocks_);
     Parts (0).swap (side_sets_);
     Parts (0).swap (node_sets_);
@@ -66,7 +102,7 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     // Build the data for the mesh object.
 
     build_meta_data_ (data, fields);
-    build_bulk_data_ (data, fields);
+    build_bulk_data_ (data, cellmap, vertmap, fields);
 
     Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, 
                            meta_data_, bulk_data_,
@@ -116,34 +152,36 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
 
 }
 
-void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data, const Mesh_data::Fields& fields)
+/** 
+ * add contents of the blocks and sets to their respctive parts
+ * 
+ * @param data 
+ * @param cellmap 
+ * @param vertmap 
+ * @param fields 
+ */
+void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data, 
+                                     const Epetra_Map& cellmap, 
+                                     const Epetra_Map& vertmap,
+                                     const Mesh_data::Fields& fields)
 {
-    // Now add contents of the blocks and sets to their respctive parts:
-
     const int space_dimension = data.parameters ().dimensions ();
 
     bulk_data_->modification_begin ();
 
-    // Explicitly assuming that all of the mesh data is on node 0:
-    if (communicator_.MyPID () == 0)
-    {
-
-        for (int block = 0; block < element_blocks_.size (); ++block)
-            add_elements_to_part_ (data.element_block (block), *element_blocks_ [block]);
+    for (int block = 0; block < element_blocks_.size (); ++block)
+        add_elements_to_part_ (data.element_block (block), *element_blocks_ [block], 
+                               cellmap, vertmap);
+    
+    for (int set = 0; set < side_sets_.size (); ++set)
+        add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
         
-        for (int set = 0; set < side_sets_.size (); ++set)
-            add_sides_to_part_ (data.side_set (set), *side_sets_ [set]);
-        
-        for (int set = 0; set < node_sets_.size (); ++set)
-            add_nodes_to_part_ (data.node_set (set), *node_sets_ [set]);
-    }
+    for (int set = 0; set < node_sets_.size (); ++set)
+        add_nodes_to_part_ (data.node_set (set), *node_sets_ [set], vertmap);
 
     bulk_data_->modification_end ();
 
-    add_coordinates_ (data.coordinates ());
-
-    // Loop over fields. Add them.
-        
+    add_coordinates_ (data.coordinates (), vertmap);
 
 }
 
@@ -176,30 +214,29 @@ void Mesh_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int sp
     stk::mesh::put_field (*coordinate_field_, stk::mesh::Node, part, space_dimension);
 }
 
-
-void Mesh_factory::add_coordinates_ (const Mesh_data::Coordinates<double>& coordinate_data)
+void Mesh_factory::add_coordinates_ (const Mesh_data::Coordinates<double>& coordinate_data,
+                                     const Epetra_Map& vertmap)
 {
 
-    const int nodes = coordinate_data.nodes ();
+    // Select the local nodes
+    stk::mesh::Selector owned(meta_data_->locally_owned_part());
+    Entity_vector local_nodes;
+    stk::mesh::get_selected_entities (owned,
+                                      bulk_data_->buckets (stk::mesh::Node), 
+                                      local_nodes);
 
-    // Select all of the nodes. 
-    stk::mesh::Selector universal_selector (meta_data_->universal_part ());
-    Entity_vector all_nodes;
-    stk::mesh::get_selected_entities (universal_selector, bulk_data_->buckets (stk::mesh::Node), all_nodes);
-    ASSERT (all_nodes.size () == nodes);
-
-    // Loop over all nodes
+    // Loop over the local nodes, if the node is owned by this
+    // process, set the coordinate
     int node_coordinate_index = 0;
-    for (Entity_vector::const_iterator node_it = all_nodes.begin ();
-         node_it != all_nodes.end ();
-         ++node_it)
+    for (Entity_vector::const_iterator node_it = local_nodes.begin ();
+         node_it != local_nodes.end (); ++node_it)
     {
+        int global_vidx((*node_it)->identifier());
+        ASSERT (vertmap.MyGID(global_vidx));
+        int local_vidx(vertmap.LID(global_vidx));
         double * coordinate_field_data = stk::mesh::field_data (*coordinate_field_, **node_it);
-
-        coordinate_data (node_coordinate_index, coordinate_field_data);
-        node_coordinate_index++;
+        coordinate_data (local_vidx, coordinate_field_data);
     }
-
 }
 
 
@@ -267,19 +304,39 @@ void Mesh_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part&
 }
 
 
-void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part &part)
+void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part &part,
+                                          const Epetra_Map& cmap, const Epetra_Map& vmap)
 {
     // Add connectivity information via stk::mesh::declare_element
     std::vector<int> storage (block.nodes_per_element ());
-    for (int element_ind = 0; element_ind < block.num_elements (); ++element_ind)
-    {
-        block.connectivity (element_ind, storage.begin ());
-        ++element_id_;
-        stk::mesh::Entity &element = 
-            stk::mesh::declare_element (*bulk_data_, part, element_id_, &storage [0]);
+    std::vector<int> global_vidx(block.nodes_per_element ());
 
-        // XXX We don't need this for general element blocks.
-        declare_faces_ (element, part);
+    for (int local_cidx = 0; local_cidx < block.num_elements (); ++local_cidx)
+    {
+        block.connectivity (local_cidx, storage.begin ());
+
+        for (unsigned int i = 0; i < block.nodes_per_element (); i++) {
+            global_vidx[i] = vmap.GID(storage[i]);
+        }
+
+        int global_cidx(cmap.GID(local_cidx));
+
+        try {
+            stk::mesh::Entity &element = 
+                stk::mesh::declare_element (*bulk_data_, part, global_cidx, &global_vidx[0]);
+            // XXX We don't need this for general element blocks.
+            declare_faces_ (element, part);
+        } catch (const std::runtime_error& e) {
+            std::stringstream msg;
+            msg << "cell error: local: " << local_cidx << ": ";
+            std::copy(storage.begin(), storage.end(), std::ostream_iterator<int>(msg, ", "));
+            msg << "global: " << global_cidx << ": ";
+            std::copy(global_vidx.begin(), global_vidx.end(), std::ostream_iterator<int>(msg, ", "));
+            std::cerr << msg.str() << std::endl;
+
+            throw e;
+        }
+
     }
 }
 
@@ -327,7 +384,9 @@ void Mesh_factory::declare_faces_ (stk::mesh::Entity& element, stk::mesh::Part &
 }
 
 
-void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk::mesh::Part &part)
+void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, 
+                                       stk::mesh::Part &part,
+                                       const Epetra_Map& cmap)
 {
 
     // Side set consists of elements and a local face number. We need
@@ -344,7 +403,7 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk:
 
     for (int index=0; index < num_sides; ++index)
     {
-        const int element_number = element_list [index];
+        const int element_number = cmap.GID(element_list [index]);
         const int local_side = side_list [index];
 
         // Look up the element from the Id.
@@ -365,7 +424,9 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk:
 }
 
 
-void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, stk::mesh::Part &part)
+void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, 
+                                       stk::mesh::Part &part,
+                                       const Epetra_Map& vmap)
 {
 
     stk::mesh::PartVector parts_to_add;
@@ -379,7 +440,8 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, stk:
          it != node_list.end ();
          ++it)
     {
-        stk::mesh::Entity *node = bulk_data_->get_entity (stk::mesh::Node, (*it));
+        int global_vidx(vmap.GID(*it));
+        stk::mesh::Entity *node = bulk_data_->get_entity (stk::mesh::Node, global_vidx);
         bulk_data_->change_entity_parts (*node, parts_to_add);
 
     }

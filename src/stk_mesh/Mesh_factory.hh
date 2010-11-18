@@ -52,9 +52,13 @@ private:
 
     typedef std::map<Entity_Ids, stk::mesh::Entity*> Vector_entity_map;
 
-    void add_coordinates_ (const Mesh_data::Coordinates<double>& data);
+    void add_coordinates_ (const Mesh_data::Coordinates<double>& data, 
+                           const Epetra_Map& vertmap);
     void build_meta_data_ (const Mesh_data::Data& data, const Mesh_data::Fields& fields);
-    void build_bulk_data_ (const Mesh_data::Data& data, const Mesh_data::Fields& fields);
+    void build_bulk_data_ (const Mesh_data::Data& data, 
+                           const Epetra_Map& cellmap, 
+                           const Epetra_Map& vertmap,
+                           const Mesh_data::Fields& fields);
     void receive_bulk_data_ ();
 
     // Add parts to the meta-data.
@@ -64,9 +68,12 @@ private:
     void declare_faces_                 (stk::mesh::Entity& element, stk::mesh::Part &part);
 
     // Populate parts with elements and fields via the bulk-data
-    void add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part& part);
-    void add_sides_to_part_    (const Mesh_data::Side_set& side_set,   stk::mesh::Part& part);
-    void add_nodes_to_part_    (const Mesh_data::Node_set& node_set,   stk::mesh::Part& part);
+    void add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part& part,
+                                const Epetra_Map& cellmap, const Epetra_Map& vertmap);
+    void add_sides_to_part_    (const Mesh_data::Side_set& side_set,   stk::mesh::Part& part,
+                                const Epetra_Map& cellmap);
+    void add_nodes_to_part_    (const Mesh_data::Node_set& node_set,   stk::mesh::Part& part,
+                                const Epetra_Map& vertmap);
 
     void put_field_ (const Mesh_data::Field& field, stk::mesh::Part&, unsigned int space_dimension);
     void put_coordinate_field_ (stk::mesh::Part& part, unsigned int space_dimension);
@@ -85,8 +92,6 @@ private:
     stk::mesh::EntityRank element_rank_;
     
     int face_id_;
-    int element_id_;
-
     Parts element_blocks_;
     Parts side_sets_;
     Parts node_sets_;
@@ -108,8 +113,12 @@ public:
     Mesh* build_mesh (const Mesh_data::Data& data, 
                       const Mesh_data::Fields& fields);
 
-    //! Build a mesh on all the other processors.
-    Mesh* build_mesh ();
+    //! Build a mesh from data with global indexes specified.
+    Mesh* build_mesh (const Mesh_data::Data& data, 
+                      const Epetra_Map& cellmap,
+                      const Epetra_Map& vertmap,
+                      const Mesh_data::Fields& fields);
+
 };
 
 }
