@@ -26,7 +26,7 @@ if (BUILD_TESTS)
   set(AMANZI_LIBRARIES  simple_mesh moab_mesh mpc flow transport)
   add_executable(test_serial   test/Main.cc test/test_transport.cpp test/test_moab.cpp)
   add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
-  add_executable(test_driver   test/Main.cc test/test_driver.cpp)
+  #add_executable(test_driver   test/Main.cc test/test_driver.cpp)
   add_test(transport test_serial test_parallel)
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
@@ -34,7 +34,7 @@ if (BUILD_TESTS)
   endif()
   target_link_libraries(test_serial   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
   target_link_libraries(test_parallel ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
-  target_link_libraries(test_driver   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
+  #target_link_libraries(test_driver   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
 endif()
 
 

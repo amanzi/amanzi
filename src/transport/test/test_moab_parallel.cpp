@@ -4,10 +4,6 @@
 #include "UnitTest++.h"
 #include <vector>
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-
 #include "Mesh_maps_moab.hh"
 #include "State.hpp"
 #include "Transport_PK.hpp"
@@ -17,6 +13,11 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 
+double f_step( double* x, double t ) { 
+  if ( x[0] <= t ) return 1;
+  return 0;
+}
+
 
 TEST(ADVANCE_WITH_MOAB_PARALLEL) {
 
@@ -25,13 +26,20 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
 
   cout << "================ TEST PARALLEL MOAB MESH ===================" << endl;
   /* create a MPC state with one component */
-  int num_components = 3;
-  RCP<Mesh_maps_moab> mesh = rcp( new Mesh_maps_moab( "test/hex_4x4x4_ss_4pe.h5m", MPI_COMM_WORLD ) );
+  int num_components = 2;
+  RCP<Mesh_maps_moab> mesh = rcp( new Mesh_maps_moab( "../moab_mesh/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
 
   State mpc_state( num_components, mesh );
 
-  /* create a transport state from the MPC state */
-  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+  /* create a transport state from the MPC state and populate it */
+  RCP<Transport_State>  TS = rcp( new Transport_State( mpc_state ) );
+  double u[3] = {1, 0, 0};
+
+  TS->analytic_total_component_concentration( f_step );
+  TS->analytic_porosity();
+  TS->analytic_darcy_flux( u );
+  TS->analytic_water_saturation();
+
 
   /* initialize a transport process kernel from a transport state */
   ParameterList parameter_list;
@@ -40,34 +48,28 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
   updateParametersFromXmlFile( xmlFileName, &parameter_list );
   Transport_PK  TPK( parameter_list, TS );
 
-  /* create analytic Darcy flux */
-  double u[3] = {1, 0, 0};
-
-  TS->analytic_porosity();
-  TS->analytic_darcy_flux( u );
-  TS->analytic_water_saturation();
-  TS->analytic_water_density();
-
   /* advance the state */
   double  dT = TPK.calculate_transport_dT();
   TPK.advance( dT );
 
   /* printing cell concentration */
-  int  i, k;
+  int  iter, k;
   double  T = 0.0;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
 
   RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
-  for( i=0; i<50; i++ ) {
+  iter = 0;
+  while( T < 1.0 ) {
      dT = TPK.calculate_transport_dT();
      TPK.advance( dT );
      T += dT;
+     iter++;
 
-     if ( i < 10 ) {
-        printf( "T=%6.1f  C_0(x):", T );
-        for( int k=0; k<4; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+     if ( iter < 10 && TPK.MyPID == 3 ) {
+        printf( "T=%7.2f  C_0(x):", T );
+        for( int k=0; k<10; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
      }
 
      *tcc = *tcc_next;

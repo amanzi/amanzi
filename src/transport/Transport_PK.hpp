@@ -2,6 +2,8 @@
 #define __Transport_PK_hpp__
 
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh_maps_simple.hh"
@@ -24,8 +26,9 @@
 
 namespace Amanzi_Transport{
   const int TRANSPORT_NULL           = 0;
-  const int TRANSPORT_STATE_BEGIN    = 1;
-  const int TRANSPORT_STATE_COMPLETE = 2;
+  const int TRANSPORT_FLOW_AVAILABLE = 1;
+  const int TRANSPORT_STATE_BEGIN    = 2;
+  const int TRANSPORT_STATE_COMPLETE = 3;
 
   const double TRANSPORT_LARGE_TIME_STEP = 1e+99;
   const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
@@ -62,23 +65,31 @@ public:
   void process_parameter_list();
   void identify_upwind_cells();
   void check_divergence_free_condition();
+  void print_statistics();
 
-  vector<double> calculate_accumulated_influx();
-  vector<double> calculate_accumulated_outflux();
+  vector<double>  calculate_accumulated_influx();
+  vector<double>  calculate_accumulated_outflux();
 
   void geometry_package();
 
   /* access members */ 
-  RCP<Transport_State> get_transport_state()      const { return TS; }
-  RCP<Transport_State> get_transport_state_next()       { return TS_next; }
-  RCP<Transport_State> get_transport_state_next() const { return TS_next; }
+  RCP<Transport_State>  get_transport_state()      const { return TS; }
+  RCP<Transport_State>  get_transport_state_next() const { return TS_nextMPC; }
 
   double get_transport_dT()      { return dT; }
   double get_cfl()               { return cfl; }
   int    get_transport_status()  { return status; }
  
+  Transport_State & ref_transport_state_next()  { return *TS_nextBIG; }
+
 
 public:
+  /* parallel information: will be moved to private */
+  int  MyPID;
+
+  /* output information */
+  int  verbosity_level, internal_tests;
+
   /* member for debugging only */
   double get_face_area( int f )   { return face_area[f]; }
   double get_cell_volume( int c ) { return cell_volume[c]; }
@@ -86,9 +97,10 @@ public:
 
 
 private:
-  /* original and proposed transport states */
+  /* original and proposed (MPC and BIG) transport states */
   RCP<Transport_State>  TS;
-  RCP<Transport_State>  TS_next;
+  RCP<Transport_State>  TS_nextMPC;   /* uses memory of BIG */
+  RCP<Transport_State>  TS_nextBIG; 
   
   /* parameter list with Transport specific parameters */
   ParameterList  parameter_list;
@@ -98,14 +110,17 @@ private:
   vector<double>  cell_volume;
 
   /* internal data */
-  vector<double>  upwind_cell;
-  vector<double>  downwind_cell;
+  RCP<Epetra_IntVector>  upwind_cell;
+  RCP<Epetra_IntVector>  downwind_cell;
+
+  /* communication patterns */
+  RCP<Epetra_Import>  cell_importer;
+  RCP<Epetra_Import>  face_importer;
 
   /* transport time step, CFL, and status */
   double  cfl, dT;
   int     number_components;
   int     status;
-  int     verbosity_level, internal_tests;
 
   /* boundary conditions for each components and each side set */
   /* it will be converted to a separate class                  */
@@ -114,9 +129,6 @@ private:
   /* frequently used data */
   int  cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int  fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
-
-  /* parallel information */
-  int MyPID;
 };
 
 #endif

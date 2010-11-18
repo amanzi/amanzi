@@ -14,7 +14,7 @@
       <Parameter name="Numer of Cells in Z" type="int" value="3"/> 
     </ParameterList>
     <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Mesh file name" type="string" value="test/fbasin_unstr_400_V01.exo"/> 
+      <Parameter name="Mesh file name" type="string" value="test/fbasin_unstr_50_V01.exo"/> 
     </ParameterList>   
     <ParameterList name="STK Mesh Parameters">
     </ParameterList>   
@@ -23,7 +23,7 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="20000.0"/>
+    <Parameter name="End Time" type="double" value="2.0"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver.gmv"/>
@@ -117,6 +117,6 @@
     </ParameterList>
   </ParameterList>
   
-<!--  <Parameter name="disable Flow_PK" type="string" value="yes"/> -->
+  <Parameter name="disable Flow_PK" type="string" value="yes"/> 
   <Parameter name="disable Chemistry_PK" type="string" value="yes"/> 
 </ParameterList>

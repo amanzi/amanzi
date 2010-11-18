@@ -14,6 +14,13 @@
 */
 
 
+enum Transport_CreateMode {
+     CopyPointers,   /* copy RCP pointers */
+     ViewMemory,     /* convert to overlap to non-overlap vectors  */
+     CopyMemory      /* copy non-overlap vector to overlap vectors */
+};
+
+
 using namespace std;
 using namespace Teuchos;
 
@@ -21,42 +28,41 @@ using namespace Teuchos;
 class Transport_State {
 
 public:
-  Transport_State ( State S );
-  /* a null constructor is useful for unit tests */
-  Transport_State () {};
+  Transport_State() {};
+  Transport_State( State & S );
+  Transport_State( Transport_State & S, Transport_CreateMode mode = CopyPointers );
 
-  /* major member functions */
-  void copy_constant_state( Transport_State & TS );
-  void create_internal_state( Transport_State & TS );
+  ~Transport_State() {};
 
-  ~Transport_State () {};
+  /* data management */
+  void copymemory_multivector( Epetra_MultiVector & source, Epetra_MultiVector & target );
+  void copymemory_vector( Epetra_Vector & source, Epetra_Vector & target );
 
   /* access methods for state variables */
-  RCP<Epetra_MultiVector>   get_total_component_concentration() const { return total_component_concentration; }
-  RCP<Epetra_MultiVector>   get_total_component_concentration()       { return total_component_concentration; }
+  RCP<Epetra_MultiVector>   get_total_component_concentration()  { return total_component_concentration; }
 
-  RCP<const Epetra_Vector>  get_porosity() const { return porosity; }
-  RCP<Epetra_Vector>        get_porosity()       { return porosity; }
+  RCP<Epetra_Vector>   get_porosity()         { return porosity; }
+  RCP<Epetra_Vector>   get_water_saturation() { return water_saturation; }
+  RCP<Epetra_Vector>   get_darcy_flux()       { return darcy_flux; }
+  RCP<Epetra_Vector>   get_water_density()    { return water_density; }
+  RCP<Mesh_maps_base>  get_mesh_maps()        { return mesh_maps; }
 
-  RCP<const Epetra_Vector>  get_water_saturation() const { return water_saturation; }
-  RCP<Epetra_Vector>        get_water_saturation()       { return water_saturation; }
+  Epetra_MultiVector &  ref_total_component_concentration()  { return *total_component_concentration; }
 
-  RCP<const Epetra_Vector>  get_darcy_flux() const { return darcy_flux; }
-  RCP<Epetra_Vector>        get_darcy_flux()       { return darcy_flux; }
+  Epetra_Vector &   ref_porosity()         { return *porosity; }
+  Epetra_Vector &   ref_water_saturation() { return *water_saturation; }
+  Epetra_Vector &   ref_darcy_flux()       { return *darcy_flux; }
+  Epetra_Vector &   ref_water_density()    { return *water_density; }
   
-  RCP<const Epetra_Vector>  get_water_density() const { return water_density; }
-  RCP<Epetra_Vector>        get_water_density()       { return water_density; }
-  
-  RCP<Mesh_maps_base> get_mesh_maps() const { return mesh_maps; }
 
   /* debug routines */
-  void analytic_total_component_concentration( double t = 0.0 );
+  void analytic_total_component_concentration( double f(double*, double), double t = 0.0 );
   void analytic_darcy_flux( double* u );
   void analytic_porosity( double phi = 0.2 );
   void analytic_water_saturation( double ws = 1.0 );
   void analytic_water_density( double wd = 1000.0 );
 
-  void error_total_component_concentration( double t, vector<double> & cell_volume, double* L1, double* L2 );
+  void error_total_component_concentration( double f(double*, double), double t, vector<double> & cell_volume, double* L1, double* L2 );
 
 private:
   /* state variables that are relevant to transport */
@@ -67,7 +73,7 @@ private:
   RCP<Epetra_Vector>        water_density;
 
   /* mesh infranstructure */
-  RCP<Mesh_maps_base> mesh_maps;
+  RCP<Mesh_maps_base>  mesh_maps;
 };
 
 
