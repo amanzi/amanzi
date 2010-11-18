@@ -329,6 +329,7 @@ Mesh_maps_stk::cell_to_face_dirs(unsigned int cell,
                                  std::vector<int>::iterator end)
 {
   // FIXME: What do we do here?
+  ASSERT(false);                // crash if this is called
 }
                                    
 void
@@ -336,6 +337,7 @@ Mesh_maps_stk::cell_to_face_dirs(unsigned int cell,
                                  int * begin, int * end)
 {
   // FIXME: What do we do here?
+  ASSERT(false);                // crash if this is called
 }  
 
 // -------------------------------------------------------------
@@ -542,4 +544,87 @@ Mesh_maps_stk::get_set_ids (Mesh_data::Entity_kind kind,
   get_set_ids< unsigned int * >(kind, begin, end);
 }
 
+
+// Connectivity accessors
+// ----------------------
+
+// -------------------------------------------------------------
+// Mesh_data::get_set
+// -------------------------------------------------------------
+template <typename IT>
+void Mesh_maps_stk::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+                             Element_Category category,
+                             IT begin, IT end) const
+{
+    Entity_vector entities;
+    stk::mesh::Part* set_part = mesh_->get_set (set_id, kind_to_rank_ (kind));
+    mesh_->get_entities (*set_part, category, entities);
+
+
+    // Convert to local ids.
+    for (Entity_vector::const_iterator it = entities.begin ();
+         it != entities.end ();
+         ++it)
+    {
+        *begin = global_to_local_ ( (*it)->identifier (), kind);
+        begin++;
+    }
+
+    ASSERT (begin == end);
 }
+
+void 
+Mesh_maps_stk::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+                        Element_Category category, 
+                        std::vector<unsigned int>::iterator begin, 
+                        std::vector<unsigned int>::iterator end) const
+{
+    get_set<std::vector<unsigned int>::iterator>(set_id, kind, category, begin, end);
+}
+
+void 
+Mesh_maps_stk::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
+                        Element_Category category, 
+                        unsigned int * begin, 
+                        unsigned int * end) const
+{
+    get_set<unsigned int *>(set_id, kind, category, begin, end);
+}
+
+
+template <typename IT>
+void Mesh_maps_stk::get_set (const char* name, 
+                             Mesh_data::Entity_kind kind, Element_Category category,
+                             IT begin, IT end) const
+{
+
+    Entity_vector entities;
+    stk::mesh::Part* set_part = mesh_->get_set (name, kind_to_rank_ (kind));
+    mesh_->get_entities (*set_part, category, entities);
+
+    // Convert to local ids.
+    for (Entity_vector::const_iterator it = entities.begin ();
+         it != entities.end ();
+         ++it)
+    {
+        *begin = global_to_local_ ( (*it)->identifier (), kind);
+        begin++;
+    }
+
+    ASSERT (begin == end);
+
+
+}
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::set_coordinate
+// -------------------------------------------------------------
+void
+Mesh_maps_stk::set_coordinate(unsigned int local_node_id, 
+                              double* source_begin, double* source_end)
+{
+    // FIXME: not implemented
+    ASSERT(false);
+}
+
+} // close namespace STK_mesh

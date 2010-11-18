@@ -49,7 +49,7 @@ void dump_mesh_topology (STK_mesh::Mesh_maps_stk &mesh)
               << ncell_own << "/" << ncell_use << std::endl;
 
     // Dump the connectivity between mesh features.
-    int cnode[8], cface[6], fnode[4];
+    unsigned int cnode[8], cface[6], fnode[4];
 
     for (int j = 0; j < ncell_use; ++j) 
     {

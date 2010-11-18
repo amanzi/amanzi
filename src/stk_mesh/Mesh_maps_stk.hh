@@ -89,6 +89,10 @@ namespace STK_mesh
     void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Element_Category category,
                   IT begin, IT end) const;
 
+    template <typename IT>
+    void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
+                  IT begin, IT end) const;
+
   public:
 
     explicit Mesh_maps_stk (Mesh_p mesh);
@@ -202,11 +206,13 @@ namespace STK_mesh
                   unsigned int * begin, 
                   unsigned int * end) const;
 
-    template <typename IT>
-    void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
-                  IT begin, IT end) const;
+    // communicator access
+    const Epetra_Comm* get_comm() { return &communicator_; };
 
-
+    // this should be used with extreme caution:
+    // modify coordinates  
+    void set_coordinate(unsigned int local_node_id, 
+                        double* source_begin, double* source_end);
   };
 
   // -------------------------
@@ -228,54 +234,6 @@ namespace STK_mesh
   const Epetra_Map& Mesh_maps_stk::node_map (bool include_ghost) const
   {
     return map_ (Mesh_data::NODE, include_ghost);
-  }
-
-  // Connectivity accessors
-  // ----------------------
-
-  template <typename IT>
-  void Mesh_maps_stk::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Element_Category category,
-                               IT begin, IT end) const
-  {
-    Entity_vector entities;
-    stk::mesh::Part* set_part = mesh_->get_set (set_id, kind_to_rank_ (kind));
-    mesh_->get_entities (*set_part, category, entities);
-    
-
-    // Convert to local ids.
-    for (Entity_vector::const_iterator it = entities.begin ();
-         it != entities.end ();
-         ++it)
-      {
-        *begin = global_to_local_ ( (*it)->identifier (), kind);
-        begin++;
-      }
-
-    ASSERT (begin == end);
-  }
-
-  template <typename IT>
-  void Mesh_maps_stk::get_set (const char* name, 
-                               Mesh_data::Entity_kind kind, Element_Category category,
-                               IT begin, IT end) const
-  {
-
-    Entity_vector entities;
-    stk::mesh::Part* set_part = mesh_->get_set (name, kind_to_rank_ (kind));
-    mesh_->get_entities (*set_part, category, entities);
-    
-    // Convert to local ids.
-    for (Entity_vector::const_iterator it = entities.begin ();
-         it != entities.end ();
-         ++it)
-      {
-        *begin = global_to_local_ ( (*it)->identifier (), kind);
-        begin++;
-      }
-
-    ASSERT (begin == end);
-    
-
   }
 
 
