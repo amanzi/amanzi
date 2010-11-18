@@ -48,6 +48,7 @@ public:
   void set_time ( double new_time );
   void advance_time(double dT);
   void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
+  void update_total_component_concentration(const Epetra_MultiVector&);
   void update_darcy_flux(const Epetra_Vector&);
   void update_pressure(const Epetra_Vector&);
 
