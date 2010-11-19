@@ -365,6 +365,7 @@ endif()
 
 add_library(cgns STATIC IMPORTED)
 set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
+set(CMAKE_CXX_FLAGS "-DENABLE_CGNS")
 endif()
 
 

@@ -19,6 +19,9 @@ public:
   //void write_mesh();
   void write_mesh_data(std::string gmv_meshfile, std::string gmv_datafile, 
 		       const int iter, const int digits);
+#ifdef ENABLE_CGNS
+  void write_cgns_data(std::string filename, int iter);
+#endif
   void read_parameter_list();
 
 private:
