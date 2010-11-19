@@ -102,8 +102,6 @@ void MPC::read_parameter_list()
 
 void MPC::cycle_driver () {
   
-  // so far we only have transport working
-
   // start at time T=T0;
   S->set_time(T0);
 
@@ -123,40 +121,8 @@ void MPC::cycle_driver () {
     // get the GMV data from the parameter list  
     Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
     
-    
-    string gmv_meshfile_str = gmv_parameter_list.get<string>("Mesh file name");
-    string gmv_datafile_str = gmv_parameter_list.get<string>("Data file name");
-    string gmv_prefix_str = gmv_parameter_list.get<string>("GMV prefix","./");
-    
-    // create the GMV subdirectory if does not exist already
-    boost::filesystem::path gmv_prefix_path(gmv_prefix_str);
-    if (!boost::filesystem::is_directory(gmv_prefix_path.directory_string())) {
-      boost::filesystem::create_directory(gmv_prefix_path.directory_string());
-    }
-    
-    // convert strings to paths
-    boost::filesystem::path gmv_meshfile_path(gmv_meshfile_str);
-    boost::filesystem::path gmv_datafile_path(gmv_datafile_str);
-    boost::filesystem::path slash("/");
-    
-    // create a portable mesh file path string 
-    std::stringstream  gmv_mesh_filename_path_sstr;
-    gmv_mesh_filename_path_sstr << gmv_prefix_path.directory_string(); 
-    gmv_mesh_filename_path_sstr << slash.directory_string();
-    gmv_mesh_filename_path_sstr << gmv_meshfile_path.directory_string();
-    gmv_mesh_filename_path_str = gmv_mesh_filename_path_sstr.str();
-    
-    // create a portable data file path string
-    std::stringstream  gmv_data_filename_path_sstr;
-    gmv_data_filename_path_sstr << gmv_prefix_path.directory_string(); 
-    gmv_data_filename_path_sstr << slash.directory_string();
-    gmv_data_filename_path_sstr << gmv_datafile_path.directory_string();
-    gmv_data_filename_path_str = gmv_data_filename_path_sstr.str();
-    
-    // create a portable mesh file string
-    std::stringstream  gmv_mesh_filename_sstr;
-    gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
-    gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
+    create_gmv_paths(gmv_mesh_filename_path_str, gmv_data_filename_path_str,
+		     gmv_mesh_filename_str, gmv_parameter_list);
     
     // write the GMV mesh file
     GMV::create_mesh_file(*mesh_maps, gmv_mesh_filename_path_str);
@@ -189,7 +155,7 @@ void MPC::cycle_driver () {
 
   if (gmv_output) {
     // write the GMV data file
-    write_mesh_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
+    write_gmv_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
   }
 #ifdef ENABLE_CGNS
   if (cgns_output) {
@@ -233,7 +199,12 @@ void MPC::cycle_driver () {
 	    // something went wrong
 	    throw std::exception();
 	  }
+      } else {
+	
+	*total_component_concentration_star = *S->get_total_component_concentration();
       }
+
+      
       
       if (chemistry_enabled) {
 	// now advance chemistry
@@ -246,7 +217,13 @@ void MPC::cycle_driver () {
           // give up....
           throw std::exception();
         }
+      } else {
+	// commit total_component_concentration_star to the state
+	
+	S->update_total_component_concentration(*total_component_concentration_star);
       }
+      
+
       
       // update the time in the state object
       S->advance_time(mpc_dT);
@@ -267,7 +244,7 @@ void MPC::cycle_driver () {
       if (  vizdump_cycle % vizdump_cycle_freq   ==  0 ) {
 	if (gmv_output) {
 	  cout << "Writing GMV file at cycle " << vizdump_cycle << endl;
-	  write_mesh_data(gmv_data_filename_path_str, 
+	  write_gmv_data(gmv_data_filename_path_str, 
 			  gmv_mesh_filename_str, iter, 6);
 	}
 #ifdef ENABLE_CGNS
@@ -282,7 +259,7 @@ void MPC::cycle_driver () {
 	
 	if (gmv_output) {
 	  cout << "Writing GMV file at time T=" << vizdump_time << endl;
-	  write_mesh_data(gmv_data_filename_path_str, 
+	  write_gmv_data(gmv_data_filename_path_str, 
 			  gmv_mesh_filename_str, iter, 6);
 	}
 #ifdef ENABLE_CGNS
@@ -300,8 +277,8 @@ void MPC::cycle_driver () {
 
 
 
-void MPC::write_mesh_data(std::string gmv_datafile_path,
-			  std::string gmv_meshfile, const int iter, const int digits)
+void MPC::write_gmv_data(std::string gmv_datafile_path,
+			 std::string gmv_meshfile, const int iter, const int digits)
 {
   
   GMV::open_data_file(gmv_meshfile, gmv_datafile_path,
@@ -353,3 +330,44 @@ void MPC::write_cgns_data(std::string filename, int iter)
   CGNS::close_data_file();     
 }
 #endif
+
+
+void MPC::create_gmv_paths(std::string  &gmv_mesh_filename_path_str,
+			   std::string  &gmv_data_filename_path_str,
+			   std::string  &gmv_mesh_filename_str,
+			   Teuchos::ParameterList &gmv_parameter_list)
+{
+  string gmv_meshfile_str = gmv_parameter_list.get<string>("Mesh file name");
+  string gmv_datafile_str = gmv_parameter_list.get<string>("Data file name");
+  string gmv_prefix_str = gmv_parameter_list.get<string>("GMV prefix","./");
+  
+  // create the GMV subdirectory if does not exist already
+  boost::filesystem::path gmv_prefix_path(gmv_prefix_str);
+  if (!boost::filesystem::is_directory(gmv_prefix_path.directory_string())) {
+    boost::filesystem::create_directory(gmv_prefix_path.directory_string());
+  }
+  
+  // convert strings to paths
+  boost::filesystem::path gmv_meshfile_path(gmv_meshfile_str);
+  boost::filesystem::path gmv_datafile_path(gmv_datafile_str);
+  boost::filesystem::path slash("/");
+  
+  // create a portable mesh file path string 
+  std::stringstream  gmv_mesh_filename_path_sstr;
+  gmv_mesh_filename_path_sstr << gmv_prefix_path.directory_string(); 
+  gmv_mesh_filename_path_sstr << slash.directory_string();
+  gmv_mesh_filename_path_sstr << gmv_meshfile_path.directory_string();
+  gmv_mesh_filename_path_str = gmv_mesh_filename_path_sstr.str();
+  
+  // create a portable data file path string
+  std::stringstream  gmv_data_filename_path_sstr;
+  gmv_data_filename_path_sstr << gmv_prefix_path.directory_string(); 
+  gmv_data_filename_path_sstr << slash.directory_string();
+  gmv_data_filename_path_sstr << gmv_datafile_path.directory_string();
+  gmv_data_filename_path_str = gmv_data_filename_path_sstr.str();
+  
+  // create a portable mesh file string
+  std::stringstream  gmv_mesh_filename_sstr;
+  gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
+  gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
+}
