@@ -104,11 +104,13 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     build_meta_data_ (data, fields);
     build_bulk_data_ (data, cellmap, vertmap, fields);
 
-    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, 
-                           meta_data_, bulk_data_,
-                           set_to_part_,
-                           *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
+    Mesh *mesh(NULL);
 
+    mesh = new Mesh (space_dimension, communicator_, entity_map_, 
+                     meta_data_, bulk_data_,
+                     set_to_part_,
+                     *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
+    
     return mesh;
 }
 
@@ -169,19 +171,19 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data,
 
     bulk_data_->modification_begin ();
 
+    for (int set = 0; set < node_sets_.size (); ++set)
+        add_nodes_to_part_ (data.node_set (set), *node_sets_ [set], vertmap);
+
     for (int block = 0; block < element_blocks_.size (); ++block)
         add_elements_to_part_ (data.element_block (block), *element_blocks_ [block], 
                                cellmap, vertmap);
     
-    for (int set = 0; set < side_sets_.size (); ++set)
-        add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
+    // for (int set = 0; set < side_sets_.size (); ++set)
+    //     add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
         
-    for (int set = 0; set < node_sets_.size (); ++set)
-        add_nodes_to_part_ (data.node_set (set), *node_sets_ [set], vertmap);
-
     bulk_data_->modification_end ();
 
-    add_coordinates_ (data.coordinates (), vertmap);
+    // add_coordinates_ (data.coordinates (), vertmap);
 
 }
 
@@ -304,6 +306,17 @@ void Mesh_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part&
 }
 
 
+/** 
+ * This routine adds elements to the specified part.  Each element is
+ * expected to have the same topology and this topology must match
+ * that assigned to the part.  In the process, nodes will be declared,
+ * but node ownership will not be assigned.
+ * 
+ * @param block 
+ * @param part 
+ * @param cmap 
+ * @param vmap 
+ */
 void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part &part,
                                           const Epetra_Map& cmap, const Epetra_Map& vmap)
 {
@@ -324,9 +337,7 @@ void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block,
         try {
             stk::mesh::Entity &element = 
                 stk::mesh::declare_element (*bulk_data_, part, global_cidx, &global_vidx[0]);
-            // XXX We don't need this for general element blocks.
-            declare_faces_ (element, part);
-        } catch (const std::runtime_error& e) {
+        } catch (const std::exception& e) {
             std::stringstream msg;
             msg << "cell error: local: " << local_cidx << ": ";
             std::copy(storage.begin(), storage.end(), std::ostream_iterator<int>(msg, ", "));
@@ -424,6 +435,16 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
 }
 
 
+/** 
+ * This routine declares the nodes in the node set and puts them in
+ * the specified part.  (NOTE: the nodes should just be declared,
+ * don't expect that they were declared elsewhere; entities can be
+ * declared many times)
+ * 
+ * @param node_set 
+ * @param part 
+ * @param vmap 
+ */
 void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, 
                                        stk::mesh::Part &part,
                                        const Epetra_Map& vmap)
@@ -441,9 +462,7 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set,
          ++it)
     {
         int global_vidx(vmap.GID(*it));
-        stk::mesh::Entity *node = bulk_data_->get_entity (stk::mesh::Node, global_vidx);
-        bulk_data_->change_entity_parts (*node, parts_to_add);
-
+        stk::mesh::Entity& node = bulk_data_->declare_entity (stk::mesh::Node, global_vidx, parts_to_add);
     }
 
 }

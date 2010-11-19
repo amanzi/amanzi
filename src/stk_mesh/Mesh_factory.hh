@@ -47,7 +47,6 @@ private:
     Epetra_MpiComm communicator_;
 
 
-    typedef std::vector<stk::mesh::Bucket*> Buckets;
     typedef std::vector<stk::mesh::Part*>   Parts;
 
     typedef std::map<Entity_Ids, stk::mesh::Entity*> Vector_entity_map;

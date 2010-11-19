@@ -15,5 +15,12 @@ if (BUILD_TESTS)
                  test/test_Maps.cc test/test_Hex.cc)
   add_test(stk_mesh test_stk_mesh)
   target_link_libraries(test_stk_mesh stk_mesh unittest++ ${HDF5_LIBS_ALL})
+
+  add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
+  target_link_libraries(test_stk_mesh_parallel stk_mesh unittest++ 
+                        ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+  add_test(stk_mesh_parallel
+           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_parallel)
+
 endif()
 
