@@ -801,20 +801,39 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   
   if (num_iterations >= max_iterations()) {
     // TODO: should this be an error to the driver...?
-    std::cout << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
-    std::cout << "Warning: Results may not have the desired accuracy." << std::endl;
-    std::cout << "Warning: max relative change = " << max_rel_change << std::endl;
-    std::cout << "Warning: tolerance = " << tolerance() << std::endl;
-    std::cout << "Warning: max iterations = " << max_iterations() << std::endl;
+    std::ostringstream error_stream;
+    error_stream << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
+    error_stream << "Warning: Results may not have the desired accuracy." << std::endl;
+    error_stream << "Warning: max relative change = " << max_rel_change << std::endl;
+    error_stream << "Warning: tolerance = " << tolerance() << std::endl;
+    error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
+    throw ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded);
   }
 
   // update total concentrations
   updateEquilibriumChemistry();
+  ValidateSolution();
   UpdateComponents(components);
 
   return num_iterations;
 
 } // end ReactionStep()
+
+void Beaker::ValidateSolution()
+{
+  for (unsigned int m = 0; m < minerals_.size(); m++) {
+    if (minerals_.at(m).volume_fraction() < 0) {
+      std::ostringstream error_stream;
+      error_stream << "ERROR: Beaker::ValidateSolution(): \n";
+      error_stream << "ERROR:   mineral " << minerals_.at(m).name()
+                   << " volume_fraction is negative." << std::endl;
+      throw ChemistryException(error_stream.str(), 
+                               ChemistryException::kInvalidSolution);
+
+    }
+  }
+
+} // end ValidoteSolution()
 
 
 // if no water density provided, default is 1000.0 kg/m^3
@@ -913,13 +932,13 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   // ion concentrations
   updateEquilibriumChemistry();
 
-  if (verbosity() > 1) {
+  if (verbosity() >= kDebugBeaker) {
     std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
   }
   return num_iterations;
 }  // end Speciate()
 
-// if no water density provided, default is 1000.0 kg/m^3
+
 void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
 {
   for (int i = 0; i<ncomp(); i++) {
@@ -932,7 +951,14 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
       components->total_sorbed[i] = total_sorbed_[i];
     }
   }
+  for (int m = 0; m < minerals_.size(); m++) {
+    components->minerals[m] = minerals_.at(m).volume_fraction();
+  }
+  for (int i = 0; i < ion_exchange_sites_.size(); i++) {
+    components->ion_exchange_sites[i] = ion_exchange_sites_.at(i).cation_exchange_capacity();
+  }
 } // end UpdateComponents()
+
 
 /********************************************************************************
 **

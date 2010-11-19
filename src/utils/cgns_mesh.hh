@@ -23,7 +23,7 @@ namespace CGNS {
   void open_data_file(std::string filename);
 
   // Create timestep node in CGNS structure of which has previously been opened with open_data_file.
-  void create_timestep(const double time, Mesh_data::Entity_kind kind);
+  void create_timestep(const double time, const int iter, Mesh_data::Entity_kind kind);
     
   // Writes data to files which has previously been opened with open_data_file.
   void write_field_data(const Epetra_Vector &x, std::string varname);

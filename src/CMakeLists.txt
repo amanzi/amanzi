@@ -19,7 +19,7 @@ enable_testing()
 
 
 cmake_minimum_required(VERSION 2.8)
-#set(CMAKE_BUILD_TYPE debug)
+set(CMAKE_BUILD_TYPE debug)
 
 set(AMANZI_Mesh_VERSION_MAJOR 0)
 set(AMANZI_Mesh_VERSION_MINOR 1)
@@ -365,6 +365,7 @@ endif()
 
 add_library(cgns STATIC IMPORTED)
 set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
+set(CMAKE_CXX_FLAGS "-DENABLE_CGNS")
 endif()
 
 

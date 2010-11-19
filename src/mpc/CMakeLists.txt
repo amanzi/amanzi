@@ -13,12 +13,15 @@ include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${MPI_INCLUDES})
 include_directories(${MOAB_INCLUDES})
 include_directories(${Boost_INCLUDES})
+IF(ENABLE_CGNS)
+include_directories(${CGNS_INCLUDES})
+ENDIF()
 
 add_definitions("-DUSE_MPI")
 
 
 add_library(mpc MPC.cpp  State.cpp)
-target_link_libraries(mpc simple_mesh gmv utils mesh_data ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(mpc simple_mesh gmv utils mesh_data utils ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)

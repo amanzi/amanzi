@@ -49,6 +49,8 @@ SOURCE=$HOME/ASCEM-Code/amanzi/src
 # installation directories below
 
 /usr/bin/cmake \
+  -D CMAKE_CXX_COMPILER:FILEPATH="mpiCC" \
+  -D CMAKE_C_COMPILER:FILEPATH="mpicc" \
   -D MPI_INCLUDE_DIR:FILEPATH=/usr/lib64/openmpi/include \
   -D MPI_EXEC:FILEPATH=mpirun \
   -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \

@@ -15,9 +15,8 @@ int soln_idx;    // solution node index
 int field_idx;    // solution node index
 int section_idx;  // cell connectivity
 int num_soln = 0;   // number of solution nodes
-char solutionList[256];
-std::string solutionNameList[10];
 std::vector<double> timeList;
+std::vector<string> nameList;
 
 namespace CGNS {
 
@@ -138,18 +137,31 @@ void open_data_file(const std::string soln_filename)
 	
     }
     
-void create_timestep(const double time, Mesh_data::Entity_kind kind)
+void create_timestep(const double time, const int iter, Mesh_data::Entity_kind kind)
     {
-	char solname[33];
 	int size[2];
+	std::stringstream solname;
+		
+	// make timestep name, add to list of names
+	solname << "Solution" << iter;
+	nameList.push_back(solname.str());
 	
-	// make timestep name
-	sprintf(solname,"Solution%d",num_soln);
-	solutionNameList[num_soln] = solname;
-	sprintf(solutionList,"%s%-32s",solutionList,solname);
-	num_soln++;
 	// add current time to timeList
 	timeList.push_back(time);
+	num_soln++;
+	
+	// reconstruct formatted string of names to pass to cgns
+	char solutionList[32*num_soln+1];
+	sprintf(solutionList,"%-32s",nameList[0].c_str());
+	for (int i=1; i<nameList.size(); i++) {
+	    sprintf(solutionList,"%s%-32s",solutionList,nameList[i].c_str());
+	}
+	
+	// EIB: CGNS does not take advantage of HDF5's ability to append datasets; 
+	//      therefore, we must track the time values and solution names, and overwrite
+	//      these tables every time we add a solution.
+	//      Also, CGNS is in C, so the list of solution names is taken as a 
+	//      C char of size [32*numNames]
 	
 	// rewrite base iteration
 	cg_biter_write(file_idx, base_idx,"TimeIterValues",num_soln);
@@ -165,9 +177,9 @@ void create_timestep(const double time, Mesh_data::Entity_kind kind)
 	
 	// create solution node under zone
 	if (kind == Mesh_data::CELL) {
-	    cg_sol_write(file_idx, base_idx,zone_idx, solname, CellCenter, &soln_idx);
+	    cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), CellCenter, &soln_idx);
 	} else if (kind == Mesh_data::NODE) {
-	    cg_sol_write(file_idx, base_idx,zone_idx, solname, Vertex, &soln_idx);
+	    cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), Vertex, &soln_idx);
 	} else {
 	    //throw an error
 	    printf("  E>> SHOULD BE THROWING ERROR HERE\n");

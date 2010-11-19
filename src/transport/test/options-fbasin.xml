@@ -3,7 +3,7 @@
   <ParameterList name="Mesh">
     <Parameter name="Mesh Class" type="string" value="MOAB"/>
     <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Exodus file name" type="string" value="meshes/fbasin_unstr_400_V02.exo"/>
+      <Parameter name="Exodus file name" type="string" value="meshes/fbasin_unstr_100_V02.exo"/>
     </ParameterList>   
   </ParameterList>
   

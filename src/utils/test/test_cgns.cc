@@ -27,13 +27,13 @@ TEST(CGNS) {
   Teuchos::RCP<Epetra_Vector> fake_pressure;
 
   // Setup node quantity
-  int node_index_list[] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+  int node_index_list[] = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
   double node_values[] = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120};
   node_quantity = Teuchos::rcp( new Epetra_Vector(Mesh.node_map(false)));
   node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
   
   // Setup cell quantity
-  int cell_index_list[] = {1, 2, 3, 4};
+  int cell_index_list[] = {0, 1, 2, 3};
   double cell_values[] = {10, 20, 30, 40};
   cell_quantity = Teuchos::rcp( new Epetra_Vector(Mesh.cell_map(false))); 
   cell_quantity->ReplaceGlobalValues(4, cell_values, cell_index_list);
@@ -46,16 +46,22 @@ TEST(CGNS) {
   // Write a file which contains both mesh and data.
   CGNS::create_mesh_file(Mesh, cgns_fullfile);
   CGNS::open_data_file(cgns_fullfile);
- 
-  // create first time step
-  CGNS::create_timestep(0.0, Mesh_data::CELL);
-  CGNS::write_field_data(*cell_quantity, "cell_quantity");
-  CGNS::write_field_data(*fake_pressure, "pressure");
-    
-  // create second time step
-  CGNS::create_timestep(1.0, Mesh_data::CELL);
-  CGNS::write_field_data(*cell_quantity, "cell_quantity");
-  CGNS::write_field_data(*fake_pressure, "pressure");
+     
+  double time = 0.0;
+  for (int i=0; i<15; i++) {
+      CGNS::create_timestep(time, i, Mesh_data::CELL);
+      CGNS::write_field_data(*cell_quantity, "cell_quantity");
+      CGNS::write_field_data(*fake_pressure, "pressure");
+      
+      // advance time and values
+      time += 1.0;
+      for (int j=0; j<4; j++) {
+	  cell_values[j] += 10.0;
+	  fake_values[j] += 1.0;
+      }
+      cell_quantity->ReplaceGlobalValues(4, cell_values, cell_index_list); 
+      fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list); 
+  }
     
   // close file
   CGNS::close_data_file();

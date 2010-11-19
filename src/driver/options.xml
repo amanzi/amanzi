@@ -32,17 +32,15 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="0.5"/>
+    <Parameter name="End Time" type="double" value="0.1"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="disable Transport_PK" type="string" value="no"/>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
-    <ParameterList name="GMV">
-      <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
-      <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
-      <Parameter name="GMV prefix" type="string" value="gmvfiles" />
-      <Parameter name="Dump cycle frequency" type="int" value="10000"/>
-      <Parameter name="Dump time frequency" type="double" value="0.05"/> 
-     </ParameterList>    
+    <Parameter name="Viz dump cycle frequency" type="int" value="10"/>
+    <Parameter name="Viz dump time frequency" type="double" value="0.05"/>
+    <ParameterList name="CGNS">
+      <Parameter name="File name" type="string" value="test1.cgns"/>
+    </ParameterList>
   </ParameterList> 
 
   

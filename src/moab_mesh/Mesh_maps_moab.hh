@@ -75,9 +75,9 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
     // ALL = OWNED + NOTOWNED or USED + GHOST
 
 
-    MBRange AllVerts, OwnedVerts, NotOwnedVerts, UsedVerts;
+    MBRange AllVerts, OwnedVerts, NotOwnedVerts;
 
-    MBRange AllFaces, OwnedFaces, NotOwnedFaces, UsedFaces;
+    MBRange AllFaces, OwnedFaces, NotOwnedFaces;
 
     MBRange AllCells, OwnedCells, GhostCells;
 

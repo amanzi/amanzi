@@ -22,12 +22,18 @@ TEST(ADVANCE_WITH_MOAB) {
   cout << "================ TEST ADVANCE WITH MOAB ===================" << endl;
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<Mesh_maps_moab>  mesh = rcp( new Mesh_maps_moab( "../moab_mesh/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD ) );
+  RCP<Mesh_maps_base>  mesh = rcp( new Mesh_maps_moab( "../moab_mesh/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD ) );
 
   State mpc_state( num_components, mesh );
 
-  /* create a transport state from the MPC state */
+  /* create a transport state from the MPC state and populate it */
   RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+  double u[3] = {1, 0, 0};
+
+  TS->analytic_darcy_flux( u );
+  TS->analytic_porosity();
+  TS->analytic_water_saturation();
+  TS->analytic_water_density();
 
   /* initialize a transport process kernel from a transport state */
   ParameterList parameter_list;
@@ -35,14 +41,6 @@ TEST(ADVANCE_WITH_MOAB) {
 
   updateParametersFromXmlFile( xmlFileName, &parameter_list );
   Transport_PK  TPK( parameter_list, TS );
-
-  /* create analytic Darcy flux */
-  double u[3] = {1, 0, 0};
-
-  TS->analytic_darcy_flux( u );
-  TS->analytic_porosity();
-  TS->analytic_water_saturation();
-  TS->analytic_water_density();
 
   /* advance the state */
   double  dT = TPK.calculate_transport_dT();

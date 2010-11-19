@@ -23,12 +23,12 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="0.1"/>
+    <Parameter name="End Time" type="double" value="0.5"/>
     <Parameter name="disable Flow_PK" type="string" value="yes"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
-      <Parameter name="Dump cycle frequency" type="int" value="10"/>
+      <Parameter name="Dump time frequency" type="double" value="0.05"/>
     </ParameterList>
   </ParameterList> 
 
@@ -59,7 +59,7 @@
 
 
   <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="CFL" type="double" value="0.25"/>   
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="verbosity level" type="int" value="10"/>  
     
@@ -68,7 +68,9 @@
       <ParameterList name="BC 0">
 	<Parameter name="Side set ID" type="int" value="1"/>
 	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="Component 0" type="double" value="1.0"/>
+	<Parameter name="Component 0" type="double" value="1.0e-2"/>
+	<Parameter name="Component 1" type="double" value="3.0e-2"/>
+	<Parameter name="Component 2" type="double" value="1.0e-2"/>
       </ParameterList>  
     </ParameterList>
   </ParameterList>
@@ -81,9 +83,15 @@
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
     <ParameterList name="Initial Conditions">
-      <ParameterList name="Minerals">
-        <Parameter name="Number of minerals" type="int" value="1"/>
-        <Parameter name="Mineral 1" type="double" value="0.25"/>
+      <Parameter name="Number of minerals" type="int" value="1"/>
+      <Parameter name="Number of ion exchange sites" type="int" value="0"/>
+      <Parameter name="Number of sorption sites" type="int" value="0"/>
+      <Parameter name="Number of mesh blocks" type="int" value="1"/>
+      <ParameterList name="Mesh block 1"> 
+        <Parameter name="Mesh block ID" type="int" value="0"/>
+        <ParameterList name="Minerals">
+          <Parameter name="Mineral 0" type="double" value="0.25"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
