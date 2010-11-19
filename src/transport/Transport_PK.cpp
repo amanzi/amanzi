@@ -309,24 +309,27 @@ void Transport_PK::advance( double dT_MPC )
      c1 = (*upwind_cell)[f]; 
      c2 = (*downwind_cell)[f]; 
 
-     if ( c1 >=0 && c2 >= 0 ) {
-        u = fabs( darcy_flux[f] );
+     u = fabs( darcy_flux[f] );
 
+     if ( c1 >=0 && c1 <= cmax_owned && c2 >= 0 && c2 <= cmax_owned ) {
         for( i=0; i<num_components; i++ ) {
            tcc_flux = dT * u * (*tcc)[i][c1];
-
            (*tcc_next)[i][c1] -= tcc_flux;
            (*tcc_next)[i][c2] += tcc_flux;
         }
      } 
-     else if ( c1 >=0 ) {
-        u = fabs( darcy_flux[f] );
-
+     else if ( c1 >=0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0) ) {
         for( i=0; i<num_components; i++ ) {
            tcc_flux = dT * u * (*tcc)[i][c1];
            (*tcc_next)[i][c1] -= tcc_flux;
         }
-     }
+     } 
+     else if ( c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned ) {
+        for( i=0; i<num_components; i++ ) {
+           tcc_flux = dT * u * (*tcc_next)[i][c1];
+           (*tcc_next)[i][c2] += tcc_flux;
+        }
+     } 
   }
 
 
@@ -367,13 +370,17 @@ void Transport_PK::advance( double dT_MPC )
      double tcc_min_values[num_components];
      double tcc_max_values[num_components];
 
-     (*tcc_next).MinValue( tcc_min_values );
-     (*tcc_next).MaxValue( tcc_max_values );
+     RCP<Epetra_MultiVector>   tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
+     (*tcc_nextMPC).MinValue( tcc_min_values );
+     (*tcc_nextMPC).MaxValue( tcc_max_values );
 
      for( i=0; i<num_components; i++ ) {
         if ( tcc_min_values[i] < 0.0 || 
              tcc_max_values[i] > 1.0 + TRANSPORT_CONCENTRATION_OVERSHOOT ) { 
-           cout << "Transport failure: check div-free condition!" << endl; 
+           cout << "Transport_PK: concentration is out of [0;1] interval" << endl; 
+           cout << "    MyPID = " << MyPID << endl;
+           cout << "    component = " << i << endl;
+           cout << "    min/max values = " << tcc_min_values[i] << " " << tcc_max_values[i] << endl;
            throw exception(); 
         }
      }
@@ -436,7 +443,7 @@ void Transport_PK::check_divergence_free_condition()
         cout << "    divergence = " << div << endl;
         cout << "    maximal velocity = " << umax << endl; 
         cout << "    admissible tolerance div/flux is 1e-6" << endl; 
-        //throw exception(); 
+        throw exception(); 
      }
   }
 
@@ -457,19 +464,11 @@ void Transport_PK::identify_upwind_cells()
   RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
   const Epetra_Map &   fmap = mesh->face_map( false );
 
-  int* data;
-
-  (*upwind_cell).ExtractView( &data );
-  Epetra_IntVector    upwind( View, fmap, data );
-
-  (*downwind_cell).ExtractView( &data );
-  Epetra_IntVector  downwind( View, fmap, data );
-
   /* negative value is indicator of a boundary  */
   int  f;
-  for( f=fmin; f<=fmax_owned; f++ ) {
-       upwind[f] = -1;
-     downwind[f] = -1;
+  for( f=fmin; f<=fmax; f++ ) {
+       (*upwind_cell)[f] = -1;
+     (*downwind_cell)[f] = -1;
   }
 
   /* populate upwind and downwind cells ids */
@@ -480,22 +479,16 @@ void Transport_PK::identify_upwind_cells()
 
   Epetra_Vector &  darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  for( c=cmin; c<=cmax_owned; c++) {
+  for( c=cmin; c<=cmax; c++) {
      mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
      mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
 
      for ( i=0; i<6; i++ ) {
         f = c2f[i];
-        if ( darcy_flux[f] * dirs[i] >= 0 ) {   upwind[f] = c; }
-        else                                { downwind[f] = c; }
+        if ( darcy_flux[f] * dirs[i] >= 0 ) {   (*upwind_cell)[f] = c; }
+        else                                { (*downwind_cell)[f] = c; }
      }
   }
-
-  /* import information to */
-#ifdef HAVE_MPI
-  (*upwind_cell).Import( upwind, *cell_importer, Insert );
-  (*downwind_cell).Import( downwind, *cell_importer, Insert );
-#endif
 }
 
 
@@ -558,6 +551,16 @@ void Transport_PK::geometry_package()
         center = (center1 * area1 + center2 * area2) / (area1 + area2);
 
         quad_face_normal(x[0], x[1], x[2], x[3], normal);
+/*
+if( (MyPID==2 && f==26) ||
+    (MyPID==0 && f==1 ) ) cout << MyPID 
+                     << " normal=" << normal[0] << " " << normal[1] << " " << normal[2] 
+                     << "  x[0]=" << x[0][0] << " " << x[0][1] << " " << x[0][2] << " " 
+                     << "  x[1]=" << x[1][0] << " " << x[1][1] << " " << x[1][2] << " " 
+                     << "  x[2]=" << x[2][0] << " " << x[2][1] << " " << x[2][2] << " " 
+                     << "  x[3]=" << x[3][0] << " " << x[3][1] << " " << x[3][2] << " " 
+                     << " f=" << f << " c=" << c << " dir=" << dirs[i] << endl;
+*/
 
         volume += dirs[j] * normal[0] * center;
      }

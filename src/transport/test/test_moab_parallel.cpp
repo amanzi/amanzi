@@ -12,6 +12,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "MeshAudit.hh"
+
 
 double f_step( double* x, double t ) { 
   if ( x[0] <= t ) return 1;
@@ -25,10 +27,14 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
   using namespace Teuchos;
 
   cout << "================ TEST PARALLEL MOAB MESH ===================" << endl;
-  /* create a MPC state with one component */
+  /* read and verify the mesh */
   int num_components = 2;
-  RCP<Mesh_maps_moab> mesh = rcp( new Mesh_maps_moab( "../moab_mesh/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
+  RCP<Mesh_maps_base> mesh = rcp( new Mesh_maps_moab( "../moab_mesh/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
 
+  MeshAudit audit( mesh );
+  audit.Verify();
+
+  /* create a MPC state with one component */
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state and populate it */
