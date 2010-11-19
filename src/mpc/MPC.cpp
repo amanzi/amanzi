@@ -9,6 +9,9 @@
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
+#ifdef ENABLE_CGNS
+#include "cgns_mesh.hh"
+#endif
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
@@ -108,55 +111,76 @@ void MPC::cycle_driver () {
   // start at time T=T0;
   S->set_time(T0);
 
+  bool gmv_output = mpc_parameter_list.isSublist("GMV");
+#ifdef ENABLE_CGNS
+  bool cgns_output = mpc_parameter_list.isSublist("CGNS");
+#endif
 
-  // get the GMV data from the parameter list
-  Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
-  
-  string gmv_meshfile_str = gmv_parameter_list.get<string>("Mesh file name");
-  string gmv_datafile_str = gmv_parameter_list.get<string>("Data file name");
-  string gmv_prefix_str = gmv_parameter_list.get<string>("GMV prefix","./");
-  
-  // create the GMV subdirectory if does not exist already
-  boost::filesystem::path gmv_prefix_path(gmv_prefix_str);
-  if (!boost::filesystem::is_directory(gmv_prefix_path.directory_string())) {
-    boost::filesystem::create_directory(gmv_prefix_path.directory_string());
-  }
+  const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",100000);
+  const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",1e+99);
 
-  // convert strings to paths
-  boost::filesystem::path gmv_meshfile_path(gmv_meshfile_str);
-  boost::filesystem::path gmv_datafile_path(gmv_datafile_str);
-  boost::filesystem::path slash("/");
+  string gmv_mesh_filename_str;
+  string gmv_data_filename_path_str;
+  string gmv_mesh_filename_path_str;  
 
-  // create a portable mesh file path string 
-  std::stringstream  gmv_mesh_filename_path_sstr;
-  gmv_mesh_filename_path_sstr << gmv_prefix_path.directory_string(); 
-  gmv_mesh_filename_path_sstr << slash.directory_string();
-  gmv_mesh_filename_path_sstr << gmv_meshfile_path.directory_string();
-  string gmv_mesh_filename_path_str = gmv_mesh_filename_path_sstr.str();
-
-  // create a portable data file path string
-  std::stringstream  gmv_data_filename_path_sstr;
-  gmv_data_filename_path_sstr << gmv_prefix_path.directory_string(); 
-  gmv_data_filename_path_sstr << slash.directory_string();
-  gmv_data_filename_path_sstr << gmv_datafile_path.directory_string();
-  string gmv_data_filename_path_str = gmv_data_filename_path_sstr.str();
-  
-  // create a portable mesh file string
-  std::stringstream  gmv_mesh_filename_sstr;
-  gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
-  string gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
-
-  const int gmv_cycle_freq = gmv_parameter_list.get<int>("Dump cycle frequency",100000);
-  const double gmv_time_freq = gmv_parameter_list.get<double>("Dump time frequency",1.0e99);
+  if (gmv_output) {
+    // get the GMV data from the parameter list  
+    Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
     
-  // write the GMV mesh file
-  GMV::create_mesh_file(*mesh_maps, gmv_mesh_filename_path_str);
+    
+    string gmv_meshfile_str = gmv_parameter_list.get<string>("Mesh file name");
+    string gmv_datafile_str = gmv_parameter_list.get<string>("Data file name");
+    string gmv_prefix_str = gmv_parameter_list.get<string>("GMV prefix","./");
+    
+    // create the GMV subdirectory if does not exist already
+    boost::filesystem::path gmv_prefix_path(gmv_prefix_str);
+    if (!boost::filesystem::is_directory(gmv_prefix_path.directory_string())) {
+      boost::filesystem::create_directory(gmv_prefix_path.directory_string());
+    }
+    
+    // convert strings to paths
+    boost::filesystem::path gmv_meshfile_path(gmv_meshfile_str);
+    boost::filesystem::path gmv_datafile_path(gmv_datafile_str);
+    boost::filesystem::path slash("/");
+    
+    // create a portable mesh file path string 
+    std::stringstream  gmv_mesh_filename_path_sstr;
+    gmv_mesh_filename_path_sstr << gmv_prefix_path.directory_string(); 
+    gmv_mesh_filename_path_sstr << slash.directory_string();
+    gmv_mesh_filename_path_sstr << gmv_meshfile_path.directory_string();
+    gmv_mesh_filename_path_str = gmv_mesh_filename_path_sstr.str();
+    
+    // create a portable data file path string
+    std::stringstream  gmv_data_filename_path_sstr;
+    gmv_data_filename_path_sstr << gmv_prefix_path.directory_string(); 
+    gmv_data_filename_path_sstr << slash.directory_string();
+    gmv_data_filename_path_sstr << gmv_datafile_path.directory_string();
+    gmv_data_filename_path_str = gmv_data_filename_path_sstr.str();
+    
+    // create a portable mesh file string
+    std::stringstream  gmv_mesh_filename_sstr;
+    gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
+    gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
+    
+    // write the GMV mesh file
+    GMV::create_mesh_file(*mesh_maps, gmv_mesh_filename_path_str);
+  }
   
+#ifdef ENABLE_CGNS
+  std::string cgns_filename;
+  if (cgns_output) {
+    Teuchos::ParameterList cgns_parameter_list =  mpc_parameter_list.sublist("CGNS");
+    
+    cgns_filename = cgns_parameter_list.get<string>("File name");
+    CGNS::create_mesh_file(*mesh_maps, cgns_filename);
+  }
+#endif  
+
   int iter = 0;
   
-  int gmv_freq_dump = 0;
-  double gmv_time_dump = 0.0;
-  int gmv_time_dump_int = 0;
+  int vizdump_cycle = 0;
+  double vizdump_time = 0.0;
+  int vizdump_time_count = 0;
 
   // first solve the flow equation
   if (flow_enabled) {
@@ -166,11 +190,17 @@ void MPC::cycle_driver () {
     FPK->commit_state(FS);
   }
   
-  
-  // write the GMV data file
-  write_mesh_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
-  gmv_time_dump_int++;
-  
+
+  if (gmv_output) {
+    // write the GMV data file
+    write_mesh_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
+  }
+#ifdef ENABLE_CGNS
+  if (cgns_output) {
+    write_cgns_data(cgns_filename, iter);
+  }
+#endif
+  vizdump_time_count ++;
   
   // we need to create an EpetraMulitVector that will store the 
   // intermediate value for the total component concentration
@@ -247,24 +277,36 @@ void MPC::cycle_driver () {
       // advance the iteration count
       iter++;
       
-      gmv_freq_dump = iter;
-      gmv_time_dump = S->get_time();
+      vizdump_cycle = iter;
+      vizdump_time = S->get_time();
       
-      if (  gmv_freq_dump % gmv_cycle_freq   ==  0 ) {
+      if (  vizdump_cycle % vizdump_cycle_freq   ==  0 ) {
+	if (gmv_output) {
+	  cout << "Writing GMV file at cycle " << vizdump_cycle << endl;
+	  write_mesh_data(gmv_data_filename_path_str, 
+			  gmv_mesh_filename_str, iter, 6);
+	}
+#ifdef ENABLE_CGNS
+	if (cgns_output) {
+	  cout << "Writing to CGNS file at cycle "<< vizdump_cycle << endl;
+	  write_cgns_data(cgns_filename, iter);
+	}
+#endif	
+      } else if ( (vizdump_time + mpc_dT/1000.0) / vizdump_time_freq  > vizdump_time_count ) {
 	
-	cout << "Writing GMV file at cycle " << gmv_freq_dump << endl;
-	write_mesh_data(gmv_data_filename_path_str, 
-			gmv_mesh_filename_str, iter, 6);      
+	vizdump_time_count ++;
 	
-      } else if ( (gmv_time_dump+ mpc_dT/1000.0) / gmv_time_freq  >= gmv_time_dump_int ) {
-	
-	gmv_time_dump_int ++;
-	
-	
-	cout << "Writing GMV file at time T=" << gmv_time_dump << endl;
-	write_mesh_data(gmv_data_filename_path_str, 
-			gmv_mesh_filename_str, iter, 6);   
-	
+	if (gmv_output) {
+	  cout << "Writing GMV file at time T=" << vizdump_time << endl;
+	  write_mesh_data(gmv_data_filename_path_str, 
+			  gmv_mesh_filename_str, iter, 6);
+	}
+#ifdef ENABLE_CGNS
+	if (cgns_output) {
+	  cout << "Writing to CGNS file at time T=" << vizdump_time << endl;
+	  write_cgns_data(cgns_filename, iter);
+	}
+#endif
       }
     }
     
@@ -304,3 +346,26 @@ void MPC::write_mesh_data(std::string gmv_datafile_path,
   GMV::close_data_file();     
  
 }
+
+#ifdef ENABLE_CGNS
+void MPC::write_cgns_data(std::string filename, int iter)
+{
+  CGNS::open_data_file(filename);
+  
+  CGNS::create_timestep(S->get_time(), iter, Mesh_data::CELL);
+
+  for (int nc=0; nc<S->get_number_of_components(); nc++) {
+    
+    std::stringstream cname;
+    cname << "concentration " << nc;
+    
+    CGNS::write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
+  }
+
+  CGNS::write_field_data(*S->get_pressure(), "pressure");
+  CGNS::write_field_data(*S->get_permeability(), "permeability");
+  CGNS::write_field_data(*S->get_porosity(),"porosity");
+  
+  CGNS::close_data_file();     
+}
+#endif
