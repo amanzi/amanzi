@@ -10,7 +10,7 @@ class ChemistryException : public std::runtime_error
 {
  public:
   enum Status {
-    kOkay, kUnrecoverableError, kRecoverableError
+    kOkay, kInvalidSolution, kMaxIterationsExceeded, kUnrecoverableError, kRecoverableError
   };
 
   ChemistryException();

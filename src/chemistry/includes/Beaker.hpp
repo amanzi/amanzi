@@ -201,6 +201,8 @@ protected:
   const std::vector<double>& total(void) const { return this->total_; };
   const std::vector<double>& total_sorbed(void) const { return this->total_sorbed_; };
 
+  void ValidateSolution(void);
+
 private:
   Verbosity verbosity_;
   double tolerance_;

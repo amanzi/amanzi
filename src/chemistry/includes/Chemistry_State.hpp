@@ -28,6 +28,8 @@ class Chemistry_State {
   Teuchos::RCP<const Epetra_Vector> get_water_density () const { return water_density; };
   
 
+  Teuchos::RCP<const Mesh_maps_base> get_mesh_maps() const { return mesh_maps; };
+
  private:
   // variables that are relevant to chemistry
   Teuchos::RCP<const Epetra_MultiVector> total_component_concentration;

@@ -55,17 +55,13 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    if (chemistry_enabled) {
      CS = Teuchos::rcp( new Chemistry_State( S ) );
 
-     // TODO: Markus - is this the correct place to initialize this?
-     total_component_concentration_star = 
-         Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), S->get_number_of_components() ) );
-
      Teuchos::ParameterList chemistry_parameter_list = 
        parameter_list.sublist("Chemistry");
      
      CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
 
      if (CPK->status() != ChemistryException::kOkay) {
-       // assume any error that occurs here is unrecoverable....?
+       throw std::exception();
      }
    }
    
@@ -175,7 +171,7 @@ void MPC::cycle_driver () {
   // we need to create an EpetraMulitVector that will store the 
   // intermediate value for the total component concentration
   total_component_concentration_star =
-    Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
+      Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
 
 
   if (chemistry_enabled || transport_enabled) {
@@ -200,10 +196,7 @@ void MPC::cycle_driver () {
 	  {
 	    // get the transport state and commit it to the state
 	    RCP<Transport_State> TS_next = TPK->get_transport_state_next();
-	    S->update_total_component_concentration(TS_next->get_total_component_concentration());
-	    // Ben: instead of the line above we'll store the result from the 
-	    // transport step in total_component_concentration_star, like this:
-	    // *total_component_concentration_star = *TS_next->get_total_component_concentration()
+            *total_component_concentration_star = *TS_next->get_total_component_concentration();
 	  }
 	else
 	  {
@@ -218,19 +211,10 @@ void MPC::cycle_driver () {
 	CPK->advance(chemistry_dT, total_component_concentration_star);
 	ChemistryException::Status cpk_status = CPK->status();
         if (cpk_status == ChemistryException::kOkay) {
-          // do something....
-	  // // Ben: here we'll get the new total component concentration from  
-	  // // and Chemistry_PK and copy it into the State object, like this
-	  // S->update_total_component_concentration(CPK->get_total_component_concentration())
-	  // // note that State.update_total_component_concentration( ... ) is
-	  // // overloaded so that Chemistry_PK.get_total_component_concentration() can
-	  // // either return &Epetra_MultiVector, or Teuchos::RCP<Epetra_MultiVector>.	  
-        } else if (cpk_status == ChemistryException::kRecoverableError) {
-          // do yet another thing
-        } else if (cpk_status == ChemistryException::kUnrecoverableError) {
-          // do something else
+	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
         } else {
           // give up....
+          throw std::exception();
         }
       }
       
