@@ -13,7 +13,9 @@ include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${MPI_INCLUDES})
 include_directories(${MOAB_INCLUDES})
 include_directories(${Boost_INCLUDES})
+IF(ENABLE_CGNS)
 include_directories(${CGNS_INCLUDES})
+ENDIF()
 
 add_definitions("-DUSE_MPI")
 
