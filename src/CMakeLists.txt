@@ -65,35 +65,35 @@ set_property(TARGET curl PROPERTY IMPORTED_LOCATION ${CURL_LIBRARY})
 # OpenMPI - http:://www.open-mpi.org
 # MPICH - http://www.mcs.anl.gov/research/projects/mpich2/
 ##############################################################################
-#
-#find_library(MPI_LIBRARY
-#             NAMES mpi mpich
-#             HINTS ${MPI_LIB_DIR}
-#                   ${MPI_DIR}/lib
-#                   /usr/lib64
-#                   /usr/local/lib)
-#if(NOT MPI_LIBRARY)
-#  message(FATAL_ERROR "Error: could not find MPI library\n"
-#          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
-#          "\nor defining MPI_LIB_DIR")
-#endif()
-#
-#find_path(MPI_INCLUDES mpi.h 
-#          HINTS ${MPI_INCLUDE_DIR}
-#                ${MPI_DIR}/include
-#                /usr/include/mpi
-#                /usr/include
-#                /usr/local/include)
-#if(NOT MPI_INCLUDES)
-#  message(FATAL_ERROR "Error: could not find MPI includes\n"
-#          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
-#          "\nor defining MPI_INCLUDE_DIR")
-#endif()
-#
-#add_library(mpi STATIC IMPORTED)
-#set_property(TARGET mpi PROPERTY IMPORTED_LOCATION ${MPI_LIBRARY})
-#
-#set(MPI_LIBS_ALL mpi mpi_cxx)
+
+find_library(MPI_LIBRARY
+             NAMES mpi mpich
+             HINTS ${MPI_LIB_DIR}
+                   ${MPI_DIR}/lib
+                   /usr/lib64
+                   /usr/local/lib)
+if(NOT MPI_LIBRARY)
+  message(FATAL_ERROR "Error: could not find MPI library\n"
+          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
+          "\nor defining MPI_LIB_DIR")
+endif()
+
+find_path(MPI_INCLUDES mpi.h 
+          HINTS ${MPI_INCLUDE_DIR}
+                ${MPI_DIR}/include
+                /usr/include/mpi
+                /usr/include
+                /usr/local/include)
+if(NOT MPI_INCLUDES)
+  message(FATAL_ERROR "Error: could not find MPI includes\n"
+          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
+          "\nor defining MPI_INCLUDE_DIR")
+endif()
+
+add_library(mpi STATIC IMPORTED)
+set_property(TARGET mpi PROPERTY IMPORTED_LOCATION ${MPI_LIBRARY})
+
+set(MPI_LIBS_ALL mpi mpi_cxx)
 
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
@@ -386,5 +386,3 @@ add_subdirectory(gmv)
 add_subdirectory(utils)
 add_subdirectory(bin)
 add_subdirectory(driver)
-
-#add_subdirectory(private)
