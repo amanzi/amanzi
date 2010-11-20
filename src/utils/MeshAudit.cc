@@ -20,7 +20,7 @@ using namespace std;
 // Need checks whether illegal usage of the interface causes exceptions
 
 MeshAudit:: MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_, ostream& os_) :
-      mesh(mesh_), comm(mesh_->get_comm()), MyPID(mesh_->get_comm()->MyPID()),
+      mesh(mesh_), comm(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
       os(os_),
       nnode(mesh_->node_map(true).NumMyElements()),
       nface(mesh_->face_map(true).NumMyElements()),
@@ -136,6 +136,15 @@ int MeshAudit::Verify() const
   ierr = check_cell_to_faces_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
+  
+  ierr = check_node_sets();
+  if (ierr) fail = true;
+
+  ierr = check_face_sets();
+  if (ierr) fail = true;
+
+  ierr = check_cell_sets();
+  if (ierr) fail = true;
 
   if (fail)
     return 0;
@@ -971,7 +980,7 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
 
   if (status != 0) return status;
 
-  if (comm->NumProc() == 1)
+  if (comm.NumProc() == 1)
   {
 
     // Serial or 1-process MPI
@@ -1014,7 +1023,7 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
     map_own.RemoteIDList(num_ovl, gids, pids, lids);
     bad_map = false;
     for (int j = 0; j < num_ovl; ++j)
-      if (pids[j] < 0 || pids[j] == comm->MyPID()) bad_map = true;
+      if (pids[j] < 0 || pids[j] == comm.MyPID()) bad_map = true;
     if (bad_map) {
       os << "ERROR: invalid ghosts in overlap map." << endl;
       status = -1;
@@ -1100,7 +1109,7 @@ int MeshAudit::check_face_to_nodes_ghost_data() const
   int nface_use = face_map_use.NumMyElements();
   
   vector<unsigned int> fnode(4);
-  vector<unsigned int> bad_faces;
+  vector<unsigned int> bad_faces, bad_faces1, bad_faces2;
   
   // Create a matrix of the GIDs for all owned faces.
   Epetra_IntSerialDenseMatrix gids(nface_use,4); // no Epetra_IntMultiVector :(
@@ -1124,10 +1133,26 @@ int MeshAudit::check_face_to_nodes_ghost_data() const
     bool bad_data = false;
     for (int k = 0; k < 4; ++k)
       if (node_map.GID(fnode[k]) != gids(j,k)) bad_data = true;
-    if (bad_data) bad_faces.push_back(j);
-    // for bad faces we could do a further check to see how bad they are.
-    // For example, maybe the GIDs are in a different order but the face
-    // orientation is the same, etc.
+    if (bad_data) {
+      // Determine just how bad the data is.
+      vector<unsigned int> fnode_ref(4);
+      for (int k = 0; k < 4; ++k) {
+        fnode[k] = node_map.GID(fnode[k]);
+        fnode_ref[k] = gids(j,k);
+      }
+      int n = same_face(fnode, fnode_ref);
+      switch (n) {
+      case 0: // completely bad -- different face
+        bad_faces.push_back(j);
+        break;
+      case -1: // very bad -- same face but wrong orientation
+        bad_faces1.push_back(j);
+        break;
+      case 1:  // not good -- same face and orientation, but not an exact copy
+        bad_faces2.push_back(j);
+        break;
+      }
+    }
   }
   
   int status = 0;
@@ -1135,8 +1160,19 @@ int MeshAudit::check_face_to_nodes_ghost_data() const
   if (!bad_faces.empty()) {
     os << "ERROR: found bad data for ghost faces:";
     write_list(bad_faces, MAX_OUT);
-    os << "       The ghost faces are not exact copies of their master." << endl;
     status = 1;
+  }
+  
+  if (!bad_faces1.empty()) {
+    os << "ERROR: found mis-oriented ghost faces:";
+    write_list(bad_faces, MAX_OUT);
+    status = 1;
+  }
+  
+  if (!bad_faces2.empty()) {
+    os << "WARNING: found ghost faces that are not exact copies of their master:";
+    write_list(bad_faces, MAX_OUT);
+    //status = 1; // don't flag this as an error for now
   }
   
   return status;
@@ -1258,68 +1294,393 @@ int MeshAudit::check_cell_to_faces_ghost_data() const
   return status;
 }
 
-// Check that num_sets successfully completes and that the returned value
-// is the same across all processors.  Independent checks for NODE, FACE
-// and CELL entities.
 
-// Check that get_set_ids successfully completes and that the returned data is
-// the same (including order) across all processors.  Check that the alternate
-// methods return identical data.  Independent checks for NODE, FACE and CELL
-// entities.
+int MeshAudit::check_node_sets() const
+{
+  os << "Checking node sets ..." << endl;
+  return check_sets(Mesh_data::NODE, mesh->node_map(false), mesh->node_map(true));
+}
 
-// Check that valid_set_id returns true for all set IDs, and false for some
-// selection of invalid IDs.  Independent checks for NODE, FACE and CELL entities.
+int MeshAudit::check_face_sets() const
+{
+  os << "Checking face sets ..." << endl;
+  return check_sets(Mesh_data::FACE, mesh->face_map(false), mesh->face_map(true));
+}
 
-// Check that get_set_size successfully completes and that the value for
-// for USED equals the sum of the values for OWNED and GHOST.  Check that
-// get_set successfully completes for OWNED, GHOST and USED.
-// Check that the lists (OWNED, GHOST, USED) have distinct values.
-// Check that the OWNED list LIDs are valid LIDs from the owned map.
-// Check that the USED list LIDs are valid LIDs from the used map.
-// Check that if the OWNED list were exported f
-// Check that the GHOST list LIDs are in fact ghost LIDs
-// Check that the USED list equals the concatenation of the OWNED and GHOST
-// lists.  (This is 
+int MeshAudit::check_cell_sets() const
+{
+  os << "Checking cell sets ..." << endl;
+  return check_sets(Mesh_data::CELL, mesh->cell_map(false), mesh->cell_map(true));
+}
 
-//int MeshAudit::check_set(const Epetra_Map &map_own; const vector<unsigned int> &set_own,
-//                         const Epetra_Map &map_use; const vector<unsigned int> &set_use) const
-//{
-//  // Check that 
-//  if (!distinct_values(set_use)) {
-//  }
-//  
-//  bool bad_set = false;
-//  for (int j = 0; j < set_own.size(); ++j)
-//    if (!map_own.MyLID(set_own[j])) bad_set = true;
-//  if (bad_set){
-//  }
-//  
-//  // Tag all LIDs in the used map that should belong to the used set;
-//  // the owned set LIDs are taken as definitive.
-//  Epetra_IntVector tag_use(map_use); // fills with zero values
-//  int *tag_data;
-//  tag_use.ExtractView(&tag_data);
-//  Epetra_IntVector tag_own(View, map_own, tag_data);
-//  for (int j = 0; j < set_own.size(); ++j) tag_own[set_own[j]] = 1;
-//  Epetra_Import importer(map_use, map_own);
-//  tag_use.Import(tag_own, importer, Insert);
-//  for (int j = 0; j < set_use.size(); ++j) --tag_use[set_use[j]];
-//  
-//  // Check for negative tag values;
-//  // these indicate a ghost LID that shouldn't be in the set but is.
-//  bad_set = false;
-//  vector<unsigned int> bad_LIDs;
-//  for (int j = 0; j < set_own.size(); ++j)
-//    if (tag_use[j] < 0) bad_set.push_back(j);
-//  if (!bad_LIDs.empty()) {
-//    os << "ERROR: found LIDs that 
-//  }
-//  
-//  // Positive values indicate a ghost LID that should be in the set but isn't.
-//  
-//  
-//
-//}
+int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
+                          const Epetra_Map &map_own, const Epetra_Map &map_use) const
+{
+  int ierr;
+  
+  // Basic sanity check on set IDs.
+  ierr = check_set_ids(kind);
+  if (comm.NumProc() > 1) comm.MaxAll(&ierr, &ierr, 1);
+  if (ierr) return 1;
+  
+  // Check set IDs are same across all processes.
+  ierr = check_set_ids_same(kind);
+  if (ierr) return 1;
+  
+  int status = 0; // overall status of the test
+  
+  // Additional tests; if these fail we can still continue.
+  ierr = check_set_ids_alt(kind);
+  if (ierr) status = 1;
+  ierr = check_valid_set_id(kind);
+  if (ierr) status = 1;
+  
+  // Now get the verified list of set IDs.
+  int nset = mesh->num_sets(kind);
+  vector<unsigned int> sids(nset);
+  mesh->get_set_ids(kind, sids.begin(), sids.end());
+  
+  for (int n = 0; n < sids.size(); ++n) {
+    os << "  Checking set ID=" << sids[n] << " ..." << endl;
+    
+    // Basic sanity checks of the owned and used sets.
+    int ierr1 = check_get_set(sids[n], kind, OWNED, map_own);
+    int ierr2 = check_get_set(sids[n], kind, USED,  map_use);
+    
+    // If the above tests passed, go ahead and check that the alternate
+    // get_set() method returns the same results.  If these fail testing
+    // can still continue.
+    if (!ierr1) {
+      ierr = check_get_set_alt(sids[n], kind, OWNED, map_own);
+      if (ierr) status = 1;
+    }
+    if (!ierr2) {
+      ierr = check_get_set_alt(sids[n], kind, USED,  map_use);
+      if (ierr) status = 1;
+    }
+    
+    // If anyone failed, everyone bails on further tests of this set.
+    if (ierr1 != 0 || ierr2 != 0) status = ierr = 1;
+    if (comm.NumProc() > 1) comm.MaxAll(&ierr, &ierr, 1);
+    if (ierr) continue;
+    
+    // Verify the used set relates correctly to the owned set.
+    ierr = check_used_set(sids[n], kind, map_own, map_use);
+    if (ierr) status = 1;
+    
+    // OUGHT TO DO TESTING OF THE GHOST SETS
+  }
+  
+  if (comm.NumProc() > 1) comm.MaxAll(&status, &status, 1);
+  return status;
+}
+  
+// Basic sanity check for set IDs: check that each process can successfully
+// get the vector of set IDs, and that the vector contains no duplicates.
+// This test runs independently on each process, and returns a per-process
+// pass/fail result.
+
+int MeshAudit::check_set_ids(Mesh_data::Entity_kind kind) const
+{
+  // Get the number of sets.
+  int nset;
+  try {
+    nset = mesh->num_sets(kind); // this may fail
+  } catch (...) {
+    os << "ERROR: caught exception from num_sets()" << endl;
+    return 1;
+  }
+  
+  // Get the vector of set IDs.
+  vector<unsigned int> sids(nset, UINT_MAX);
+  try {
+    mesh->get_set_ids(kind, sids.begin(), sids.end()); // this may fail
+  } catch (...) {
+    os << "ERROR: caught exception from get_set_ids()" << endl;
+    return 1;
+  }
+  
+  // Check to see that set ID values were actually assigned.  This assumes
+  // UINT_MAX is not a valid set ID.  This is a little iffy; perhaps 0 should
+  // be declared as an invalid set ID instead (the case for ExodusII), or
+  // perhaps we should just skip this check.
+  bool bad_data = false;
+  for (int j = 0; j < nset; ++j)
+    if (sids[j] == UINT_MAX) bad_data = true;
+  if (bad_data) {
+    os << "ERROR: get_set_ids() failed to set all values" << endl;
+    return 1;
+  }
+  
+  // Verify that the vector of set IDs contains no duplicates.  
+  if (!distinct_values(sids)) {
+    os << "ERROR: get_set_ids() returned duplicate IDs" << endl;
+    // it would be nice to output the duplicates
+    return 1;
+  }
+  
+  return 0;
+}
+
+// Check that each process gets the exact same vector of set IDs.
+// This is a collective test, returning a collective pass/fail result.
+
+int MeshAudit::check_set_ids_same(Mesh_data::Entity_kind kind) const
+{
+  if (comm.NumProc() > 1) {
+    
+    int status = 0;
+    
+    // Check the number of sets are the same,
+    // using the number on process 0 as the reference.
+    int nset = mesh->num_sets(kind);
+    comm.Broadcast(&nset, 1, 0);
+    if (nset != mesh->num_sets(kind)) {
+      os << "ERROR: inconsistent num_sets() value" << endl;
+      status = 1;
+    }
+    comm.MaxAll(&status, &status, 1);
+    if (status != 0) return 1;
+    
+    // Broadcast the set IDs on processor 0.
+    vector<unsigned int> sids(nset);
+    mesh->get_set_ids(kind, sids.begin(), sids.end());
+    int *sids0 = new int[nset];
+    for (int j = 0; j < nset; ++j) sids0[j] = sids[j];
+    comm.Broadcast(sids0, nset, 0);
+    
+    // Check the set IDs, using the vector on process 0 as the reference.
+    bool bad_data = false;
+    for (int j = 0; j < nset; ++j)
+      if (sids[j] != sids0[j]) bad_data = true;
+    if (bad_data) {
+      os << "ERROR: get_set_ids() returned inconsistent values" << endl;
+      status = 1;
+    }    
+    delete [] sids0;
+    comm.MaxAll(&status, &status, 1);
+    if (status != 0) return 1;
+  }
+  
+  return 0;
+}
+
+// Check that valid_set_id() returns correct results.  This test runs
+// independently on each process and returns a per-process pass/fail result.
+
+int MeshAudit::check_valid_set_id(Mesh_data::Entity_kind kind) const
+{
+  int status = 0;
+  int nset = mesh->num_sets(kind); // this should not fail
+  vector<unsigned int> sids(nset);
+  mesh->get_set_ids(kind, sids.begin(), sids.end()); // this should not fail
+  bool bad_data = false;
+  vector<unsigned int> bad_sids;
+  for (int j = 0; j < nset; ++j)
+    if (!mesh->valid_set_id(sids[j], kind)) bad_sids.push_back(sids[j]);
+  if (!bad_sids.empty()) {
+    os << "ERROR: valid_set_id() returned false for valid set IDs:";
+    write_list(bad_sids, MAX_OUT);
+    status = 1;
+  }
+  // WE REALLY SHOULD ALSO CHECK THE RESULT FOR A FEW INVALID SET IDS.
+  return status;
+}
+
+// Check that the alternate pointer-based get_set_ids accessor gives the same
+// result as the normative std::vector-based accessor.  This test runs
+// independently on each process and returns a per-process pass/fail result.
+
+int MeshAudit::check_set_ids_alt(Mesh_data::Entity_kind kind) const
+{
+  int nset = mesh->num_sets(kind); // this should not fail
+  vector<unsigned int> sids0(nset);
+  mesh->get_set_ids(kind, sids0.begin(), sids0.end()); // this should not fail
+  try {
+    unsigned int *sids1 = new unsigned int[nset];
+    for (int j = 0; j < nset; ++j) sids1[j] = UINT_MAX;
+    mesh->get_set_ids(kind, sids1, sids1+nset); // this may fail
+    bool bad_data = false;
+    for (int j = 0; j < nset; ++j)
+      if (sids1[j] != sids0[j]) bad_data = true;
+    if (bad_data) {
+      os << "ERROR: pointer-based get_set_ids() returned inconsistent values." << endl;
+      return 1;
+    }
+  } catch (...) {
+    os << "ERROR: caught exception from pointer-based get_set_ids()." << endl;
+    return 1;
+  }
+  return 0;
+}
+
+// Basic sanity check on set values: no duplicates, and all LID values belong
+// to the map.  This test runs independently on each process and returns a
+// per-process pass/fail result.
+
+int MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
+                             Element_Category category, const Epetra_Map &map) const
+{
+  // Get the size of the set.
+  int n;
+  try {
+    n = mesh->get_set_size(sid, kind, category); // this may fail
+  } catch (...) {
+    os << "  ERROR: caught exception from get_set_size()" << endl;
+    return 1;
+  }
+  
+  // Get the set.
+  vector<unsigned int> set(n, UINT_MAX);
+  try {
+    mesh->get_set(sid, kind, category, set.begin(), set.end());  // this may fail
+  } catch (...) {
+    os << "  ERROR: caught exception from get_set()" << endl;
+    return 1;
+  }
+  
+  // Check that all values were assigned.
+  bool bad_data = false;
+  for (int j = 0; j < set.size(); ++j)
+    if (set[j] == UINT_MAX) bad_data = true;
+  if (bad_data) {
+    os << "  ERROR: not all values assigned by get_set()" << endl;
+    return 1;
+  }
+    
+  // Check that the LIDs in the set belong to the map.
+  vector<unsigned int> bad_LIDs;
+  for (int j = 0; j < set.size(); ++j)
+    if (!map.MyLID(set[j])) bad_LIDs.push_back(set[j]);
+  if (!bad_LIDs.empty()) {
+    os << "  ERROR: set contains invalid LIDs:";
+    write_list(bad_LIDs, MAX_OUT);
+    return 1;
+  }
+  
+  // Check that there are no duplicates in the set.
+  if (!distinct_values(set)) {
+    os << "  ERROR: set contains duplicate LIDs." << endl;
+    // it would be nice to output the duplicates
+    return 1;
+  }
+  
+  return 0;
+}
+
+// Check that the alternate pointer-based get_set() returns the same result as
+// the normative std::vector-based method.  This test runs independently on each
+// process and returns a per-process pass/fail result.
+
+int MeshAudit::check_get_set_alt(unsigned int sid, Mesh_data::Entity_kind kind,
+                                 Element_Category category, const Epetra_Map &map) const
+{
+  int n = mesh->get_set_size(sid, kind, category);
+  vector<unsigned int> set0(n);
+  mesh->get_set(sid, kind, category, set0.begin(), set0.end());
+  unsigned int *set1 = new unsigned int[n];
+  try {
+    mesh->get_set(sid, kind, category, set1, set1+n);
+    bool bad_data = false;
+    for (int j = 0; j < n; ++j)
+      if (set1[j] != set0[j]) bad_data = true;
+    if (bad_data) {
+      os << "  ERROR: pointer-based get_set() returned inconsistent values." << endl;
+      return 1;
+    }
+  } catch (...) {
+    os << "  ERROR: caught exception from pointer-based get_set()" << endl;
+    return 1;
+  }
+  return 0;
+}
+
+// The correct used set is completely determined by the owned set.  This test
+// verifies that the used set is what it should be, considering the owned set
+// as definitive.  Note that we do not require the vector of used set LIDs to
+// extend the vector of owned set LIDs.  The values in each list can be
+// presented in any order.
+
+int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
+                              const Epetra_Map &map_own, const Epetra_Map &map_use) const
+{
+  if (comm.NumProc() == 1) {
+    
+    // In serial, the owned and used sets should be identical.
+    
+    int n = mesh->get_set_size(sid, kind, OWNED);
+    vector<unsigned int> set_own(n);
+    mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
+    
+    // Set sizes had better be the same.
+    if (mesh->get_set_size(sid, kind, USED) != set_own.size()) {
+      os << "  ERROR: owned and used set sizes differ" << endl;
+      return 1;
+    }
+    
+    // Verify that the two sets are identical.
+    vector<unsigned int> set_use(n);
+    mesh->get_set(sid, kind, USED, set_use.begin(), set_use.end());
+    bool bad_data = false;
+    for (int j = 0; j < n; ++j)
+      if (set_use[j] != set_own[j]) bad_data = true;
+    if (bad_data) {
+      os << "  ERROR: owned and used sets differ" << endl;
+      return 1;
+    }
+    
+    return 0;
+    
+  } else {
+    
+    int n = mesh->get_set_size(sid, kind, OWNED);
+    vector<unsigned int> set_own(n);
+    mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
+    vector<unsigned int> set_use(n);
+    mesh->get_set(sid, kind, USED,  set_use.begin(), set_use.end());
+    
+    // Tag all LIDs in the used map that should belong to the used set;
+    // the owned set LIDs are taken as definitive.
+    Epetra_IntVector tag_use(map_use); // fills with zero values
+    int *tag_data;
+    tag_use.ExtractView(&tag_data);
+    Epetra_IntVector tag_own(View, map_own, tag_data);
+    for (int j = 0; j < set_own.size(); ++j) tag_own[set_own[j]] = 1;
+    Epetra_Import importer(map_use, map_own);
+    tag_use.Import(tag_own, importer, Insert);
+
+    // Now untag all the LIDs that belong to the used set.  If things
+    // are correct, the tag vector will be filled with zeros afterwards.
+    for (int j = 0; j < set_use.size(); ++j) --tag_use[set_use[j]];
+
+    int status = 0;
+
+    // Check for negative tag values;
+    // these mark used LIDs that shouldn't be in the set but are.
+    vector<unsigned int> bad_LIDs;
+    for (int j = 0; j < set_use.size(); ++j)
+      if (tag_use[j] < 0) bad_LIDs.push_back(j);
+    if (!bad_LIDs.empty()) {
+      os << "  ERROR: found used LIDs that belong to the set but shouldn't:";
+      write_list(bad_LIDs, MAX_OUT);
+      status = 1;
+    }
+
+    // Check for positive tag values;
+    // these mark used LIDs that should be in the set but aren't.
+    bad_LIDs.resize(0);
+    for (int j = 0; j < set_own.size(); ++j)
+      if (tag_use[j] > 0) bad_LIDs.push_back(j);
+    if (!bad_LIDs.empty()) {
+      os << "  ERROR: found used LIDs that should belong to set but don't:";
+      write_list(bad_LIDs, MAX_OUT);
+      status = 1;
+    }
+
+    comm.MaxAll(&status, &status, 1);
+    return status;
+  }
+}
 
 // Returns true if the values in the list are distinct -- no repeats.
 
