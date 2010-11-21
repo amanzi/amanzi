@@ -4,31 +4,26 @@
     <Parameter name="Mesh Class" type="string" value="Simple"/>
     <ParameterList name="Simple Mesh Parameters">
       <Parameter name="X_Min" type="double" value="0.0"/>
-      <Parameter name="X_Max" type="double" value="1.0"/>
+      <Parameter name="X_Max" type="double" value="2.0"/>
       <Parameter name="Y_Min" type="double" value="0.0"/>
-      <Parameter name="Y_Max" type="double" value="1.0"/>
+      <Parameter name="Y_Max" type="double" value="0.10"/>
       <Parameter name="Z_Min" type="double" value="0.0"/>
-      <Parameter name="Z_Max" type="double" value="1.0"/>
-      <Parameter name="Numer of Cells in X" type="int" value="10"/> 
+      <Parameter name="Z_Max" type="double" value="0.10"/>
+      <Parameter name="Numer of Cells in X" type="int" value="50"/> 
       <Parameter name="Numer of Cells in Y" type="int" value="1"/> 
       <Parameter name="Numer of Cells in Z" type="int" value="1"/> 
     </ParameterList>
-    <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Exodus file name" type="string" value="test/moab_mesh.exo"/>
-    </ParameterList>   
-    <ParameterList name="STK Mesh Parameters">
-    </ParameterList>   
   </ParameterList>
   
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="0.5"/>
+    <Parameter name="End Time" type="double" value="1.0"/>
     <Parameter name="disable Flow_PK" type="string" value="yes"/>
-    <ParameterList name="GMV">
-      <Parameter name="Mesh file name" type="string" value="test_driver_mesh.gmv"/>
-      <Parameter name="Data file name" type="string" value="test_driver_data.gmv"/>
-      <Parameter name="Dump time frequency" type="double" value="0.05"/>
+    <Parameter name="disable Transport_PK" type="string" value="no"/>
+    <Parameter name="Viz dump time frequency" type="double" value="0.1"/>
+    <ParameterList name="CGNS">
+      <Parameter name="File name" type="string" value="calcite.cgns"/>
     </ParameterList>
   </ParameterList> 
 
@@ -36,7 +31,7 @@
     <Parameter name="Number of mesh blocks" type="int" value="1"/>
     <Parameter name="Number of component concentrations" type="int" value="3"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
-    <Parameter name="Constant water density" type="double" value="1000.0"/>
+    <Parameter name="Constant water density" type="double" value="997.16"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
 
     <Parameter name="Gravity x" type="double" value="0.0"/>
@@ -45,32 +40,32 @@
 
     <ParameterList name="Mesh block 1"> 
       <Parameter name="Mesh block ID" type="int" value="0"/>
-      <Parameter name="Constant porosity" type="double" value="0.2"/>
-      <Parameter name="Constant Darcy flux x" type="double" value="1.0"/>
+      <Parameter name="Constant porosity" type="double" value="0.25"/>
+      <Parameter name="Constant Darcy flux x" type="double" value="0.5"/>
       <Parameter name="Constant Darcy flux y" type="double" value="0"/>
       <Parameter name="Constant Darcy flux z" type="double" value="0"/>
       <Parameter name="Constant permeability" type="double" value="1.0"/>
       <Parameter name="Constant component concentration 0" type="double" value="1.0e-3"/>
-      <Parameter name="Constant component concentration 1" type="double" value="3.0e-3"/>
-      <Parameter name="Constant component concentration 2" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 1" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 2" type="double" value="0.0"/>
     </ParameterList>
 
   </ParameterList>
 
 
   <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="0.25"/>   
+    <Parameter name="CFL" type="double" value="0.5"/>   
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="verbosity level" type="int" value="10"/>  
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC 0">
-	<Parameter name="Side set ID" type="int" value="1"/>
+	<Parameter name="Side set ID" type="int" value="3"/>
 	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="Component 0" type="double" value="1.0e-2"/>
-	<Parameter name="Component 1" type="double" value="3.0e-2"/>
-	<Parameter name="Component 2" type="double" value="1.0e-2"/>
+	<Parameter name="Component 0" type="double" value="1.0e-3"/>
+	<Parameter name="Component 1" type="double" value="1.0e-3"/>
+	<Parameter name="Component 2" type="double" value="0.0"/>
       </ParameterList>  
     </ParameterList>
   </ParameterList>
@@ -78,14 +73,11 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="test/calcite.bgd" />
+    <Parameter name="Max Time Step (s)" type="double" value="0.5" />
     <Parameter name="Verbosity" type="int" value="2" />
     <Parameter name="Activity Model" type="string" value="unit" />
-    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
-    <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
     <ParameterList name="Initial Conditions">
       <Parameter name="Number of minerals" type="int" value="1"/>
-      <Parameter name="Number of ion exchange sites" type="int" value="0"/>
-      <Parameter name="Number of sorption sites" type="int" value="0"/>
       <Parameter name="Number of mesh blocks" type="int" value="1"/>
       <ParameterList name="Mesh block 1"> 
         <Parameter name="Mesh block ID" type="int" value="0"/>
@@ -96,43 +88,5 @@
     </ParameterList>
   </ParameterList>
 
-  <ParameterList name="Flow">
-
-    <Parameter name="Max Iterations" type="int" value="100"/>
-    <Parameter name="Error Tolerance" type="double" value="1.0e-8"/>
-    
-    <ParameterList name="Flow BC">
-      <Parameter name="number of BCs" type="int" value="6"/>
-      <ParameterList name="BC00">
-	<Parameter name="Type" type="string" value="Pressure Constant"/>
-	<Parameter name="BC value" type="double" value="1.0" />
-	<Parameter name="Side set ID" type="int" value="0" />
-      </ParameterList>  
-      <ParameterList name="BC01">
-	<Parameter name="Type" type="string" value="Pressure Constant"/>
-	<Parameter name="BC value" type="double" value="2.0" />
-	<Parameter name="Side set ID" type="int" value="1" />
-      </ParameterList>
-      <ParameterList name="BC02">
-	<Parameter name="Type" type="string" value="Darcy Constant"/>
-	<Parameter name="BC value"  type="double" value="1.0"/>
-	<Parameter name="Side set ID" type="int" value="2" />
-      </ParameterList>  
-      <ParameterList name="BC03">
-	<Parameter name="Type" type="string" value="Pressure Constant"/>
-	<Parameter name="BC value" type="double" value="-2.0" />
-	<Parameter name="Side set ID" type="int" value="3" />
-      </ParameterList>  
-      <ParameterList name="BC04">
-	<Parameter name="Type" type="string" value="Static Head"/>
-	<Parameter name="BC value" type="double" value="2.0" />
-	<Parameter name="Side set ID" type="int" value="4" />
-      </ParameterList>
-      <ParameterList name="BC05">
-	<Parameter name="Type" type="string" value="No Flow"/>
-	<Parameter name="Side set ID" type="int" value="5" />
-      </ParameterList>  
-    </ParameterList>
-  </ParameterList>
 
 </ParameterList>

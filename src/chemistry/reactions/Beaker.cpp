@@ -510,7 +510,7 @@ void Beaker::updateKineticChemistry(void)
   // add mineral saturation and rate calculations here
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->Update(primarySpecies_);
+    (*rate)->Update(primarySpecies_, minerals_);
   }
   // add multirate kinetic surface complexation reaction quotient calculations 
   // here
@@ -736,6 +736,11 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   for (int i = 0; i < ncomp(); i++)
     prev_molal[i] = primarySpecies_[i].molality();
 
+  for (unsigned int m = 0; m < minerals_.size(); m++) {
+    minerals_.at(m).set_volume_fraction(components->minerals.at(m));
+    minerals_.at(m).UpdateSurfaceAreaFromVolumeFraction(volume());
+  }
+
   // initialize to a large number (not necessary, but safe)
   double max_rel_change = 1.e20;
   // iteration counter
@@ -821,8 +826,8 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
   // update total concentrations
   updateEquilibriumChemistry();
-  ValidateSolution();
   UpdateComponents(components);
+  ValidateSolution();
 
   return num_iterations;
 
@@ -830,6 +835,12 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
 void Beaker::ValidateSolution()
 {
+  // TODO: what checks can we to to verify that the current solution is good?
+  // TODO: check for nan or inf's as a sign that the step was too big?
+
+  // TODO: negative total's (H+) are OK...
+
+  // negative mineral volume fractions are bad...
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     if (minerals_.at(m).volume_fraction() < 0) {
       std::ostringstream error_stream;
@@ -838,11 +849,10 @@ void Beaker::ValidateSolution()
                    << " volume_fraction is negative." << std::endl;
       throw ChemistryException(error_stream.str(), 
                                ChemistryException::kInvalidSolution);
-
     }
   }
 
-} // end ValidoteSolution()
+} // end ValidateSolution()
 
 
 // if no water density provided, default is 1000.0 kg/m^3
@@ -1069,8 +1079,9 @@ void Beaker::DisplayMinerals(void) const
     std::cout << "---- Minerals" << std::endl;
     std::cout << std::setw(12) << "Reaction"
               << std::setw(38) << "log_Keq"
-              << std::setw(15) << "molar_density"
+              << std::setw(15) << "molar volume"
               << std::setw(10) << "GMW"
+              << std::setw(10) << "SSA"
               << std::endl;
     for (std::vector<Mineral>::const_iterator m = minerals_.begin();
          m != minerals_.end(); m++) {

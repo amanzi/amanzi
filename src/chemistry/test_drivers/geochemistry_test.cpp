@@ -118,10 +118,10 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/calcite.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        components.total.push_back(1.0e-3);  // H+
+        components.total.push_back(3.0e-3);  // H+
         components.total.push_back(3.0e-3);  // HCO3-
-        components.total.push_back(1.0e-3);  // Ca++
-        components.minerals.push_back(1.0);  // calcite 
+        components.total.push_back(0.0);  // Ca++
+        components.minerals.push_back(0.2);  // calcite
         break;
       }
       case 6: {
@@ -136,30 +136,37 @@ int main(int argc, char **argv) {
         components.total.push_back(1.0e-3);  // Ca++
         components.total.push_back(1.0e-3);  // Na+
         components.total.push_back(1.0e-3);  // Cl-
-        components.ion_exchange_sites.push_back(15.0);  // X-, equivalents per 100 grams solid?
+        components.ion_exchange_sites.push_back(15.0);  // X-, units? equivalents per 100 grams solid?
         break;
       }
       default: {
-        std::cout << "Invalid test number specified on command line. try using the \'-h\' option." << std::endl;
+        std::cout << "Invalid test number specified on command line. "
+                  << "try using the \'-h\' option." << std::endl;
         break;
       }
     }
   }
+
   try {
     if (thermo_database_file.size() != 0) {
       chem = new SimpleThermoDatabase();
       chem->verbosity(verbosity);
+
       Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
       parameters.thermo_database_file = thermo_database_file;
       parameters.activity_model_name = activity_model_name;
       parameters.porosity = 0.5;  // -
-      parameters.saturation = 1.0;  // - 
+      parameters.saturation = 1.0;  // -
       parameters.volume = 1.0;  // m^3
+
       ModelSpecificParameters(model, &parameters);
+
       if (components.free_ion.size() == 0) {
         components.free_ion.resize(components.total.size(), 1.0e-9);
       }
+
       chem->Setup(components, parameters);
+
       if (verbosity >= kVerbose) {
         chem->Display();
       }
@@ -169,16 +176,19 @@ int main(int argc, char **argv) {
       if (verbosity >= kTerse) {
         chem->DisplayResults();
       }
-  
+
       if (chem->HaveKinetics()) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components.total);
-        double delta_time = 3660.0;  // seconds
-        int num_time_steps = 12;
-        for (int time_step = 0; time_step <= num_time_steps; time_step++) {
-          chem->ReactionStep(&components, parameters, delta_time);        
-          chem->DisplayTotalColumns(time_step+1 * delta_time, components.total);
+        double delta_time = 0.01;  // seconds
+        int num_time_steps = 750;
+        for (int time_step = 0; time_step < num_time_steps; time_step++) {
+          chem->ReactionStep(&components, parameters, delta_time);
+          if ((time_step+1) % 50 == 0) {
+            chem->DisplayTotalColumns((time_step+1) * delta_time, 
+                                      components.total);
+          }
         }
         std::cout << "---- Final Speciation" << std::endl;
         chem->Speciate(components, parameters);
@@ -187,7 +197,7 @@ int main(int argc, char **argv) {
         }
       }
     }
-  } 
+  }
   catch (const ChemistryException& geochem_error) {
     std::cout << geochem_error.what() << std::endl;
     error = EXIT_FAILURE;
@@ -198,7 +208,7 @@ int main(int argc, char **argv) {
   }
   catch (const std::logic_error& lg_error) {
     std::cout << lg_error.what() << std::endl;
-    error = EXIT_FAILURE;  
+    error = EXIT_FAILURE;
   }
 
   // cleanup memory
@@ -209,13 +219,15 @@ int main(int argc, char **argv) {
 }  // end main()
 
 
-void ModelSpecificParameters(const std::string model, Beaker::BeakerParameters* parameters)
+void ModelSpecificParameters(const std::string model, 
+                             Beaker::BeakerParameters* parameters)
 {
   if (model == kCrunch) {
-    parameters->water_density = 1000.0; // kg / m^3    
+    parameters->water_density = 1000.0; // kg / m^3
   } else if (model == kPflotran) {
     parameters->water_density = 997.16; // kg / m^3
-    // where did this number come from? parameters->water_density = 997.205133945901; // kg / m^3
+    // where did this number come from? 
+    // default parameters->water_density = 997.205133945901; // kg / m^3
   } else {
     // bad model name, how did we get here....
   }

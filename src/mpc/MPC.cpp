@@ -178,12 +178,16 @@ void MPC::cycle_driver () {
       
       if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
       
+      if (chemistry_enabled) {
+        chemistry_dT = CPK->max_time_step();
+      }
+      
       mpc_dT = min( transport_dT, chemistry_dT );
       
       std::cout << "MPC: ";
       std::cout << "Cycle = " << iter; 
       std::cout << ",  Time = "<< S->get_time();
-      std::cout << ",  Transport dT = " << transport_dT << std::endl;
+      std::cout << ",  dT = " << mpc_dT << std::endl;
       
       if (transport_enabled) {
 	// now advance transport
@@ -208,8 +212,7 @@ void MPC::cycle_driver () {
       
       if (chemistry_enabled) {
 	// now advance chemistry
-	chemistry_dT = transport_dT; // units?
-	CPK->advance(chemistry_dT, total_component_concentration_star);
+	CPK->advance(mpc_dT, total_component_concentration_star);
 	ChemistryException::Status cpk_status = CPK->status();
         if (cpk_status == ChemistryException::kOkay) {
 	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
@@ -232,7 +235,7 @@ void MPC::cycle_driver () {
       // we're done with this time step, commit the state 
       // in the process kernels
       if (transport_enabled) TPK->commit_state(TS);
-      if (chemistry_enabled) CPK->commit_state(CS, chemistry_dT);
+      if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       
       
       // advance the iteration count

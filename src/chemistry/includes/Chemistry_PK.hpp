@@ -31,6 +31,9 @@ class Chemistry_PK {
   Verbosity verbosity(void) const { return this->verbosity_; };
   void set_verbosity(const Verbosity verbosity) { this->verbosity_ = verbosity; };
 
+  void set_max_time_step(const double mts) { this->max_time_step_ = mts; };
+  double max_time_step(void) const { return this->max_time_step_; };
+
   int number_aqueous_components(void) const { return this->number_aqueous_components_; };
   void set_number_aqueous_components(const int nac) { this->number_aqueous_components_ = nac; };
 
@@ -48,6 +51,7 @@ class Chemistry_PK {
  private:
   ChemistryException::Status status_;
   Verbosity verbosity_;
+  double max_time_step_;
   // auxilary state for process kernel
   Teuchos::RCP<Chemistry_State> chemistry_state_;
 
@@ -68,6 +72,7 @@ class Chemistry_PK {
   Teuchos::RCP<const Epetra_Vector> current_porosity_;
   Teuchos::RCP<const Epetra_Vector> current_water_saturation_;
   Teuchos::RCP<const Epetra_Vector> current_water_density_;
+  Teuchos::RCP<const Epetra_SerialDenseVector> current_volume_;
 
   Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
   Teuchos::RCP<Epetra_MultiVector> minerals_;
@@ -99,6 +104,8 @@ class Chemistry_PK {
   void CopyCellToBeakerComponents(int cell_id,
                                   Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
   void CopyBeakerComponentsToCell(int cell_id);
+  void CopyStateToBeakerParameters(int cell_id);
+
 };
 
 #endif

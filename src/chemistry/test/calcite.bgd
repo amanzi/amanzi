@@ -21,10 +21,13 @@ CaHCO3+ = 1.0000 Ca++ 1.0000 HCO3- ; -1.0467 ; 4.0 ; 1.0 ; 101.0951
 
 CaCO3(aq) = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 7.0017 ; 3.0 ; 0.0 ; 100.0872
 
-<Minerals
-Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340
+#
+# mineral input:
+# Name = coeff Species .... ; log Keq ; GMW [g/mol] ; molar volume [cm^3/mol] ; SSA [m^2/g] 
 
-<Mineral Kinetics
+<Minerals
+Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340 ; 1.0
+
 #
 # crude input file format for mineral kinetics
 #
@@ -37,15 +40,16 @@ Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340
 # remaining fields depend on the rate type
 #
 # TST rate : Rate = k * area * Prod (a_i^m_i) * ( 1 - Q/Keq)
-#   field : 'gmw double grams_per_mol' : gram molecular weight [grams mole^-1]
-#   field : 'molar_density double cm3_per_mol' : molar density [cm^3 mole^-1]
-#   field : 'rate_constant double moles_cm2_sec' : k, rate constant [moles cm^2 s^-1]
-#   field : 'area double cm2' : reactive surface area [cm^2]
-#   field : 'pK double unitless'
+#   field : 'log10_rate_constant double moles_m2_sec' : k, rate constant [moles m^2 s^-1]
 #   field : 'name double' : list of modifying species primary and exponent
 #
 
-Calcite ; TST ; area 100.0 cm2 ; rate_constant 1.0e-3 moles_cm2_sec ; log_Keq 1.8487 unitless ; H+ 1.0
+<Mineral Kinetics
+Calcite ; TST ; log10_rate_constant -6.19 moles_m2_sec
 
-#Calcite ; TST ; area 1.0 cm2 ; rate_constant 1.0e-8 moles_cm2_sec ; log_Keq 1.8487 unitless ; H+ 0.57 Ca++ -0.98
+#Calcite ; TST ; log10_rate_constant -14.0 moles_m2_sec
+
+#Calcite ; TST ; log10_rate_constant -6.19 moles_m2_sec ; H+ 1.0
+
+#Calcite ; TST ; log10_rate_constant -8.0 moles_m2_sec ; H+ 0.57 Ca++ -0.98
 
