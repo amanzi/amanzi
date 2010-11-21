@@ -638,7 +638,7 @@ void Mesh_maps_moab::init_set_info() {
     int n;
     
     if (tag != mattag && tag != sstag && tag != nstag) continue;
-    
+
     mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,n);
     
     nsets +=  n;
@@ -656,6 +656,11 @@ void Mesh_maps_moab::init_set_info() {
   }
 
 
+  // We'll pad maxnsets so that we can try and avoid (but not
+  // guarantee) reallocation
+
+  maxnsets *= 2;
+
   setids = new int[maxnsets];
   setdims = new int[maxnsets];
 
@@ -667,7 +672,7 @@ void Mesh_maps_moab::init_set_info() {
     int n;
     
     if (tag != mattag && tag != sstag && tag != nstag) continue;
-    
+
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,tagsets);
 
     for (MBRange::iterator it = tagsets.begin(); it != tagsets.end(); ++it) {
@@ -705,6 +710,7 @@ void Mesh_maps_moab::init_set_info() {
 
 
   // Collate all the sets across processors
+
   
   int *allsetids = new int[nprocs*maxnsets];
   int *allsetdims = new int[nprocs*maxnsets];
@@ -719,46 +725,82 @@ void Mesh_maps_moab::init_set_info() {
   
   
   // Make a list of all setids/entity dimensions across all processors
-  
+
+  int nsetsall;
   if (rank == 0) {
-    nsets = 0;
+
+    // Just add to the list of setids on processor 0 Since we doubled
+    // the computed maxnsets and allocated allsetids to be of length
+    // nprocs*maxnsets, we are guaranteed that we will not overwrite
+    // processor 1 entries if we add unique entries from processor 1
+    // to the end of processor 0's list of sets and so on
+
+    nsetsall = nsets;
+
     for (int k = celldim; k >= 0; k--) {
-      for (int i = 0; i < nprocs*maxnsets; i++) {
-	if (allsetdims[i] != k) continue;
+      for (int ip = 1; ip < nprocs; ip++) {
+	for (int i = 0; i < maxnsets; i++) {
+	  if (allsetdims[ip*maxnsets+i] != k) continue;
 	
-	int found = 0;
-	for (int j = 0; j < nsets; j++) {
-	  if (setids[j] == allsetids[i]) {
-	    found = 1;
-	    break;
+	  int found = 0;
+	  for (int j = 0; j < nsetsall; j++) {
+	    if (allsetids[j] == allsetids[ip*maxnsets+i]) {
+	      found = 1;
+	      break;
+	    }
 	  }
-	}
-	
-	if (!found) {
-	  setids[nsets] = allsetids[i];
-	  setdims[nsets] = allsetdims[i];
-	  nsets++;
+	  
+	  if (!found) {
+	    allsetids[nsetsall] = allsetids[ip*maxnsets+i];
+	    allsetdims[nsetsall] = allsetdims[ip*maxnsets+i];
+	    nsetsall++;
+	  }
 	}
       }
     }
 
+    if (nsetsall > maxnsets) {
+      // We have to resize the allsetdims array
+
+      int *tmpsetids = new int[nsetsall];
+      int *tmpsetdims = new int[nsetsall];
+
+      // is it possible to use memcpy on arrays allocated by new
+
+      memcpy(tmpsetids, allsetids, nsetsall*sizeof(allsetids[0]));
+      memcpy(tmpsetdims, allsetdims, nsetsall*sizeof(allsetdims[0]));
+
+      delete [] allsetids;
+      delete [] allsetdims;
+
+      maxnsets = nsetsall;
+      allsetids = new int[maxnsets];
+      allsetdims = new int[maxnsets];
+
+      memcpy(allsetids, tmpsetids, nsetsall*sizeof(tmpsetids[0]));
+      memcpy(allsetdims, tmpsetdims, nsetsall*sizeof(tmpsetdims[0]));
+    }
+
+
+
     for (int i = 1; i < nprocs; i++) {
-      for (int j = 0; j < nsets; j++) {
-	allsetids[nsets*i+j] = allsetids[j];
-	allsetdims[nsets*i+j] = allsetdims[j];
-      }
+      memcpy(allsetids+maxnsets*i,allsetids,nsetsall*sizeof(allsetids[0]));
+      memcpy(allsetdims+maxnsets*i,allsetdims,nsetsall*sizeof(allsetdims[0]));
     }
 
     for (int i = 0; i < nprocs; i++)
-      allnsets[i] = nsets;
+      allnsets[i] = nsetsall;
 
-  }
+  } // if rank == 0;
+
+
+
   
   MPI_Scatter(allnsets,1,MPI_INT,&nsets,1,MPI_INT,0,MPI_COMM_WORLD);
 
-  MPI_Scatter(allsetids,nsets,MPI_INT,setids,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Scatter(allsetids,maxnsets,MPI_INT,setids,maxnsets,MPI_INT,0,MPI_COMM_WORLD);
 
-  MPI_Scatter(allsetdims,nsets,MPI_INT,setdims,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Scatter(allsetdims,maxnsets,MPI_INT,setdims,maxnsets,MPI_INT,0,MPI_COMM_WORLD);
   
   delete [] allsetids;
   delete [] allsetdims;
