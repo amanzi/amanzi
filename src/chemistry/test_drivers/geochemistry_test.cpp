@@ -15,8 +15,10 @@
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
 
-int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test, std::string* model);
-void ModelSpecificParameters(const std::string model, Beaker::BeakerParameters* parameters);
+int CommandLineOptions(int argc, char **argv,
+                       Verbosity* verbosity, int* test, std::string* model);
+void ModelSpecificParameters(const std::string model,
+                             Beaker::BeakerParameters* parameters);
 void PrintDoubleVector(const std::vector<double> &total);
 
 int main(int argc, char **argv) {
@@ -35,13 +37,13 @@ int main(int argc, char **argv) {
 
   std::string thermo_database_file("");
   std::string activity_model_name("");
-  
+
   error = CommandLineOptions(argc, argv, &verbosity, &test, &model);
 
   if (error == EXIT_SUCCESS) {
     switch (test) {
       case 0: {
-        // this is expected to fail with error checking 
+        // this is expected to fail with error checking
         if (verbosity == kTerse) {
           std::cout << "Running component size sanity check." << std::endl;
         }
@@ -56,9 +58,11 @@ int main(int argc, char **argv) {
         break;
       }
       case 1: {
-        // set up simple 2-species carbonate system (H,HCO3-) unit activity coefficients
+        // set up simple 2-species carbonate system (H,HCO3-),
+        // unit activity coefficients
         if (verbosity == kTerse) {
-          std::cout << "Running simple carbonate example, unit activity coefficients." << std::endl;
+          std::cout << "Running simple carbonate example, "
+                    << "unit activity coefficients." << std::endl;
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
@@ -67,9 +71,11 @@ int main(int argc, char **argv) {
         break;
       }
       case 2: {
-        // set up simple 2-species carbonate system (H,HCO3-), debye-huckel activity coefficients
+        // set up simple 2-species carbonate system (H,HCO3-),
+        // debye-huckel activity coefficients
         if (verbosity == kTerse) {
-          std::cout << "Running simple carbonate example, debye-huckel." << std::endl;
+          std::cout << "Running simple carbonate example, debye-huckel." 
+                    << std::endl;
         }
         thermo_database_file = "input/carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
@@ -78,9 +84,11 @@ int main(int argc, char **argv) {
         break;
       }
       case 3: {
-        // larger carbonate system, 3 components, 9 secondary, unit activity coefficients
+        // larger carbonate system, 3 components, 9 secondary, 
+        // unit activity coefficients
         if (verbosity == kTerse) {
-          std::cout << "Running large carbonate speciation example, unit activity coefficients." << std::endl;
+          std::cout << "Running large carbonate speciation example, "
+                    << "unit activity coefficients." << std::endl;
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::unit;
@@ -90,9 +98,11 @@ int main(int argc, char **argv) {
         break;
       }
       case 4: {
-        // larger carbonate system, 3 components, 9 secondary, debye-huckel activity coefficients
+        // larger carbonate system, 3 components, 9 secondary,
+        // debye-huckel activity coefficients
         if (verbosity == kTerse) {
-          std::cout << "Running large carbonate speciation example, debye-huckel activity coefficients." << std::endl;
+          std::cout << "Running large carbonate speciation example, "
+                    << "debye-huckel activity coefficients." << std::endl;
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
@@ -221,8 +231,8 @@ void PrintDoubleVector(const std::vector<double> &total)
   std::cout << " ]" << std::endl;
 }  // end PrintDoubleVector()
 
-int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test,
-                       std::string* model)
+int CommandLineOptions(int argc, char **argv, 
+                       Verbosity* verbosity, int* test, std::string* model)
 {
   int error = -2;
   int option;
@@ -254,7 +264,8 @@ int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test,
         std::cout << "             " << kPflotran << std::endl;
         std::cout << std::endl;
         std::cout << "    -t integer " << std::endl;
-        std::cout << "         run a test case. valid test numbers are: " << std::endl;
+        std::cout << "         run a test case. valid test numbers are: " 
+                  << std::endl;
         std::cout << "             0: error test" << std::endl;
         std::cout << "             1: simple carbonate speciation, unit activity coeff" << std::endl;
         std::cout << "             2: simple carbonate speciation, debye-huckel" << std::endl;
@@ -303,4 +314,3 @@ int CommandLineOptions(int argc, char **argv, Verbosity* verbosity, int* test,
 
   return error;
 }  // end commandLineOptions()
-

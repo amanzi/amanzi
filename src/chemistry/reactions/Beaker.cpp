@@ -1,3 +1,11 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+/*
+** TODO: update mineral volume fractions to components.minerals after kinetics....
+**
+** TODO: finish implementing ion exchange jacobian
+*/
+
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -700,6 +708,7 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
        free in the destructor */
     ludcmp(A->getValues(),ncomp(),indices,&D);
     lubksb(A->getValues(),ncomp(),indices,b);
+    delete[] indices;
 } // end solveLinearSystem
 
 int Beaker::ReactionStep(Beaker::BeakerComponents* components,
@@ -960,11 +969,11 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
 } // end UpdateComponents()
 
 
-/********************************************************************************
+/*******************************************************************************
 **
 **  Output related functions
 **
-********************************************************************************/
+*******************************************************************************/
 void Beaker::display(void) const
 {
   std::cout << "----- Beaker description ------" << std::endl;
@@ -1010,9 +1019,7 @@ void Beaker::Display(void) const
 void Beaker::DisplayParameters(void) const
 {
   // units....
-  // TODO: remove dashes after parameters and update test file results.
-  std::cout << "---- Parameters ------------------------------------------------------"
-            << std::endl;
+  std::cout << "---- Parameters" << std::endl;
   //std::cout << "    thermo_database_file: " << thermo_database_file << std::endl;
   std::cout << "    tolerance: " << tolerance() << std::endl;
   std::cout << "    max_iterations :" << max_iterations() << std::endl;
@@ -1130,23 +1137,34 @@ void Beaker::DisplayResults(void) const
             << std::setw(15) << "Molality" 
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
-    std::cout << std::setw(15) << primarySpecies_[i].name()
+    std::cout << std::setw(15) << primarySpecies_.at(i).name()
               << std::scientific << std::setprecision(5)
               << std::setw(15) << total_[i] / water_density_kg_L()
               << std::setw(15) << total_[i] 
               << std::endl;
   }
 
+  std::cout << "---- Change Balance " << std::endl;
+  double charge_balance_molal = 0.0;
+  for (int i = 0; i < ncomp(); i++) {
+    charge_balance_molal += primarySpecies_.at(i).charge() * total_[i];
+  }
+  std::cout << std::setw(15) << " "
+              << std::scientific << std::setprecision(5)
+              << std::setw(15) << " "
+              << std::setw(15) << charge_balance_molal
+              << std::endl;
+
   std::cout << "---- Species " << std::endl;
 
-  primarySpecies_[0].DisplayResultsHeader();
+  primarySpecies_.at(0).DisplayResultsHeader();
   for (int i = 0; i < ncomp(); i++) {
-    primarySpecies_[i].DisplayResults();
+    primarySpecies_.at(i).DisplayResults();
   }
 
   // same header info as primaries....
   for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
-    aqComplexRxns_[i].DisplayResults();
+    aqComplexRxns_.at(i).DisplayResults();
   }
 
   if (minerals_.size() > 0) {
@@ -1180,7 +1198,7 @@ void Beaker::DisplayTotalColumnHeaders(void) const
 {
   std::cout << std::setw(15) << "Time (s)";
   for (int i = 0; i < ncomp(); i++) {
-    std::cout << std::setw(15) << primarySpecies_[i].name();
+    std::cout << std::setw(15) << primarySpecies_.at(i).name();
   }
   std::cout << std::endl;
 }  // end DisplayTotalColumnHeaders()
@@ -1204,19 +1222,19 @@ void Beaker::print_results(void) const
   std::cout << "----- Solution ----------------------" << std::endl;
   std::cout << "Primary Species ---------------------\n";
   for (int i = 0; i < ncomp(); i++) {
-    std::cout << "   " << primarySpecies_[i].name() << std::endl;
+    std::cout << "   " << primarySpecies_.at(i).name() << std::endl;
     std::cout << "        Total: " << total_[i] << std::endl;
-    std::cout << "     Free-Ion: " << primarySpecies_[i].molality() << std::endl;
-    std::cout << "Activity Coef: " << primarySpecies_[i].act_coef() << std::endl;
-    std::cout << "     Activity: " << primarySpecies_[i].activity() << std::endl;
+    std::cout << "     Free-Ion: " << primarySpecies_.at(i).molality() << std::endl;
+    std::cout << "Activity Coef: " << primarySpecies_.at(i).act_coef() << std::endl;
+    std::cout << "     Activity: " << primarySpecies_.at(i).activity() << std::endl;
   }
   std::cout << std::endl;
   std::cout << "Secondary Species -------------------\n";
   for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
-    std::cout << "   " << aqComplexRxns_[i].name() << std::endl;
-    std::cout << "     Free-Ion: " << aqComplexRxns_[i].molality() << std::endl;
-    std::cout << "Activity Coef: " << aqComplexRxns_[i].act_coef() << std::endl;
-    std::cout << "     Activity: " << aqComplexRxns_[i].activity() << std::endl;
+    std::cout << "   " << aqComplexRxns_.at(i).name() << std::endl;
+    std::cout << "     Free-Ion: " << aqComplexRxns_.at(i).molality() << std::endl;
+    std::cout << "Activity Coef: " << aqComplexRxns_.at(i).act_coef() << std::endl;
+    std::cout << "     Activity: " << aqComplexRxns_.at(i).activity() << std::endl;
   }
   std::cout << "-------------------------------------\n";
   std::cout << std::endl;
@@ -1228,8 +1246,8 @@ void Beaker::print_results(double time) const
   if (time < 1.e-40) {
     std::cout << "Time\t";
     for (int i = 0; i < ncomp(); i++) {
-      std::cout << primarySpecies_[i].name() << " (total)\t";
-      std::cout << primarySpecies_[i].name() << " (free-ion)\t";
+      std::cout << primarySpecies_.at(i).name() << " (total)\t";
+      std::cout << primarySpecies_.at(i).name() << " (free-ion)\t";
     }
     std::cout << std::endl;
   }
@@ -1237,7 +1255,7 @@ void Beaker::print_results(double time) const
   std::cout << time << "\t";
   for (int i = 0; i < ncomp(); i++) {
     std::cout << total_[i] << "\t";
-    std::cout << primarySpecies_[i].molality() << "\t";
+    std::cout << primarySpecies_.at(i).molality() << "\t";
   }
   std::cout << std::endl;
 } // end print_results()
@@ -1246,7 +1264,7 @@ void Beaker::print_linear_system(string s, Block *A,
                                  std::vector<double> vector) {
   std::cout << s << endl;
   for (int i = 0; i < (int)vector.size(); i++)
-    std::cout << "RHS: " << primarySpecies_[i].name() << " " << vector[i] << std::endl;
+    std::cout << "RHS: " << primarySpecies_.at(i).name() << " " << vector[i] << std::endl;
   if (A) A->print();
 } // end print_linear_system()
 
