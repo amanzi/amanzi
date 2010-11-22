@@ -11,142 +11,585 @@
 #include "AztecOO.h"
 
 #include "Mesh_maps_simple.hh"
-#include "DiffusionMatrix.hpp"
-#include "DiffusionPrecon.hpp"
+//#include "DiffusionMatrix.hpp"
+//#include "DiffusionPrecon.hpp"
 #include "DarcyProblem.hpp"
-#include "DarcyMatvec.hpp"
+//#include "DarcyMatvec.hpp"
 
 #include "gmv_mesh.hh"
 
-//int main (int argc, char *argv[])
-//{
-//  MPI_Init(&argc, &argv);
+struct problem_setup
+{
+  Epetra_Comm *comm;
+  Teuchos::RCP<Mesh_maps_simple> mesh;
+  Teuchos::ParameterList bc_params;
+  DarcyProblem *problem;
+  AztecOO *solver;
+  Epetra_Vector *solution;
+  // parameters for analytic pressure function
+  double p0, pgrad[3];
   
-TEST(1D_FLOW) {
+  enum Side { LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP };
   
+  problem_setup()
+  {
 #ifdef HAVE_MPI
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
+    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm comm;
+    comm = new Epetra_SerialComm;
 #endif
+    
+    // Create the mesh.
+    mesh = Teuchos::rcp(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
+    
+    // Define the default BC parameter list: no flow on all sides.
+    // Can overwrite the BC on selected sides before creating the problem.
+    bc_params.set("number of BCs", 6);
+    set_bc(LEFT,   "No Flow");
+    set_bc(RIGHT,  "No Flow");
+    set_bc(FRONT,  "No Flow");
+    set_bc(BACK,   "No Flow");
+    set_bc(BOTTOM, "No Flow");
+    set_bc(TOP,    "No Flow");
+  }
   
+  ~problem_setup()
+  {
+    delete solution;
+    delete solver;
+    delete problem;
+  }  
   
-  //
-  // CREATE A SIMPLE BRICK MESH
+  void set_bc(Side side, std::string type, double value = 0.0) {
+    Teuchos::ParameterList *bc;
+    switch (side) {
+    case LEFT:
+      bc = &bc_params.sublist("BC00");
+      bc->set("Side set ID", 3);
+      break;
+    case RIGHT:
+      bc = &bc_params.sublist("BC01");
+      bc->set("Side set ID", 1);
+      break;
+    case FRONT:
+      bc = &bc_params.sublist("BC02");
+      bc->set("Side set ID", 0);
+      break;
+    case BACK:
+      bc = &bc_params.sublist("BC03");
+      bc->set("Side set ID", 2);
+      break;
+    case BOTTOM:
+      bc = &bc_params.sublist("BC04");
+      bc->set("Side set ID", 4);
+      break;
+    case TOP:
+      bc = &bc_params.sublist("BC05");
+      bc->set("Side set ID", 5);
+      break;
+    }
+    bc->set("Type", type);
+    bc->set("BC value", value);
+  }
   
-  //Teuchos::RCP<Mesh_maps_base> mesh(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5, &comm));
-  //Teuchos::RCP<Mesh_maps_base> mesh(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 100, 1, 1, &comm));
-  Teuchos::RCP<Mesh_maps_base> mesh(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 0.1, 0.1, 50, 1, 1, &comm));
-  
-  
-  //
-  // CREATE THE BOUNDARY CONDITIONS
-  
-  // Define the BC parameter list.
-  Teuchos::ParameterList bc_list;
-  bc_list.set("number of BCs", 6);
-  // Left side (ID 3)
-  Teuchos::ParameterList &bc_left = bc_list.sublist("BC00");
-  bc_left.set("Side set ID", 3);
-  bc_left.set("Type", "Pressure Constant");
-  bc_left.set("BC value", 0.0);
-  // Right side (ID 1)
-  Teuchos::ParameterList &bc_right = bc_list.sublist("BC01");
-  bc_right.set("Side set ID", 1);
-  bc_right.set("Type", "Pressure Constant");
-  bc_right.set("BC value", 1.0);
-  // Front side (ID 0)
-  Teuchos::ParameterList &bc_front = bc_list.sublist("BC02");
-  bc_front.set("Side set ID", 0);
-  bc_front.set("Type", "No Flow");
-  // Back side (ID 2)
-  Teuchos::ParameterList &bc_back = bc_list.sublist("BC03");
-  bc_back.set("Side set ID", 2);
-  bc_back.set("Type", "No Flow");
-  // Bottom side (ID 4)
-  Teuchos::ParameterList &bc_bottom = bc_list.sublist("BC04");
-  bc_bottom.set("Side set ID", 4);
-  bc_bottom.set("Type", "No Flow");
-  // Bottom side (ID 5)
-  Teuchos::ParameterList &bc_top = bc_list.sublist("BC05");
-  bc_top.set("Side set ID", 5);
-  bc_top.set("Type", "No Flow");
-  
+  void create_problem()
+  {
+    // Create the Darcy problem parameter list.
+    Teuchos::ParameterList pl;
+    //Teuchos::ParameterList &precon_pl = pl.sublist("Diffusion Preconditioner");
+    //Teuchos::ParameterList &ml_pl = precon_pl.sublist("ML Parameters");
+    //ml_pl.set("default values", "SA");
 
-  // Create the flow BCs from the parameter list.
-  Teuchos::RCP<FlowBC> bc(new FlowBC(bc_list, mesh));
+    // Create the flow BCs from the BC parameter list.
+    Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
+  
+    // Create the problem.
+    problem = new DarcyProblem(mesh, pl, bc);
+
+    // Set Darcy model defaults; these can be overwritten before solving the problem.
+    problem->SetFluidDensity(1.0);
+    problem->SetFluidViscosity(1.0);
+    problem->SetPermeability(1.0);
+    double g[3] = { 0.0 };
+    problem->SetGravity(g);
+  }
+  
+  void solve_problem()
+  {
+    problem->Assemble();
+
+    solver = new AztecOO;
+    solver->SetAztecOption(AZ_solver, AZ_cg);
+    solver->SetUserOperator(&(problem->Matvec()));
+    solver->SetPrecOperator(&(problem->Precon()));
+
+    // Define the RHS.
+    Epetra_Vector b(problem->RHS()); // make a copy, Aztec00 will muck with it
+    solver->SetRHS(&b);
+
+    // Register the initial solution guess; will be overwritten with the solution.
+    solution = new Epetra_Vector(problem->Map());
+    solver->SetLHS(solution);
+
+    solver->Iterate(50, 1.0e-10);
+    std::cout << "Solver performed " << solver->NumIters() << " iterations." << std::endl
+              << "Norm of true residual = " << solver->TrueResidual() << std::endl;
+  }
+  
+  void set_pressure_constants(double p0_, double pgrad_[])
+  {
+    p0 = p0_;
+    for (int i = 0; i < 3; ++i) pgrad[i] = pgrad_[i];
+  }
+  
+  double pressure(double *x)
+  {
+    return p0 + pgrad[0]*x[0] + pgrad[1]*x[1] + pgrad[2]*x[2];
+  }
+  
+  void cell_pressure_error(double &l2error)
+  {
+    Epetra_Vector &p_solve = *(problem->CreateCellView(*solution));
+    Epetra_Vector  p_error(problem->CellMap());
+        
+    double xdata[24];
+    Epetra_SerialDenseMatrix x(View, xdata, 3, 3, 8);
+    
+    for (int j = 0; j < p_error.MyLength(); ++j) {
+      mesh->cell_to_coordinates((unsigned int) j, xdata, xdata+24);
+      // Compute the cell centroid xc.
+      double xc[3];
+      for (int k = 0; k < 3; ++k) {
+        double s = 0.0;
+        for (int i = 0; i < 8; ++i) s += x(k,i);
+        xc[k] = s / 8.0;
+      }
+      // Evaluate the pressure error.
+      p_error[j] = pressure(xc) - p_solve[j];
+    }
+  p_error.Norm2(&l2error);
+  delete &p_solve;
+  }
+  
+  void face_pressure_error(double &l2error)
+  {
+    Epetra_Vector &p_solve = *(problem->CreateFaceView(*solution));
+    Epetra_Vector  p_error(problem->FaceMap());
+        
+    double xdata[12];
+    Epetra_SerialDenseMatrix x(View, xdata, 3, 3, 4);
+    
+    for (int j = 0; j < p_error.MyLength(); ++j) {
+      mesh->face_to_coordinates((unsigned int) j, xdata, xdata+12);
+      // Compute the face centroid xc.
+      double xc[3];
+      for (int k = 0; k < 3; ++k) {
+        double s = 0.0;
+        for (int i = 0; i < 4; ++i) s += x(k,i);
+        xc[k] = s / 4.0;
+      }
+      // Evaluate the pressure error.
+      p_error[j] = pressure(xc) - p_solve[j];
+    }
+  p_error.Norm2(&l2error);
+  delete &p_solve;
+  }
+  
+};
+
+SUITE(Simple_1D_Flow) {
+  
+  TEST_FIXTURE(problem_setup, x_p_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(LEFT,  "Pressure Constant", 1.0);
+    set_bc(RIGHT, "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 1.0;
+    double pgrad[3] = {-1.0, 0.0, 0.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
+
+  TEST_FIXTURE(problem_setup, xg_p_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(LEFT,  "Static Head", 1.0);
+    set_bc(RIGHT, "Static Head", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 1.0;
+    double pgrad[3] = {-1.0, 0.0, -1.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
+
+  TEST_FIXTURE(problem_setup, x_q_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(LEFT,  "Darcy Constant", -1.0);
+    set_bc(RIGHT, "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 1.0;
+    double pgrad[3] = {-1.0, 0.0, 0.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
+
+
+  TEST_FIXTURE(problem_setup, xg_q_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(LEFT,  "Darcy Constant", -1.0);
+    set_bc(RIGHT, "Static Head", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 1.0;
+    double pgrad[3] = {-1.0, 0.0, -1.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
 
   
-  //
-  // CREATE THE DARCY FLOW PROBLEM
-  
-  Teuchos::ParameterList darcy_plist;
-  Teuchos::ParameterList &diffprec_plist = darcy_plist.sublist("Diffusion Preconditioner");
-  Teuchos::ParameterList &ml_plist = diffprec_plist.sublist("ML Parameters");
-  ml_plist.set("default values", "SA");
+  TEST_FIXTURE(problem_setup, y_p_p)
+  {
 
-  DarcyProblem prob(mesh, darcy_plist, bc);
+    // Set non-default BC before create_problem().
+    set_bc(BACK,  "Pressure Constant", 1.0);
+    set_bc(FRONT, "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 0.0;
+    double pgrad[3] = {0.0, 1.0, 0.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    std::cout << error << std::endl;
+    CHECK(error < 1.0e-8);
+  }
+
+  TEST_FIXTURE(problem_setup, yg_p_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(BACK,  "Static Head", 1.0);
+    set_bc(FRONT, "Static Head", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 0.0;
+    double pgrad[3] = {0.0, 1.0, -1.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
+
+  TEST_FIXTURE(problem_setup, y_q_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(BACK,  "Darcy Constant", -1.0);
+    set_bc(FRONT, "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 0.0;
+    double pgrad[3] = {0.0, 1.0, 0.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
+
+
+  TEST_FIXTURE(problem_setup, yg_q_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(BACK,  "Darcy Constant", -1.0);
+    set_bc(FRONT, "Static Head", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 0.0;
+    double pgrad[3] = {0.0, 1.0, -1.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
   
-  prob.SetFluidDensity(1.0);
-  prob.SetFluidViscosity(1.0);
-  prob.SetPermeability(1.0);
-  double g[3] = { 0.0 };
-  prob.SetGravity(g);
   
-  prob.Assemble();
-  
-  // Acquire the matvec operator for the system.
-  Epetra_Operator &Ax = prob.Matvec();
-  
-  // Acquire the preconditioning operator for the system.
-  Epetra_Operator &precon = prob.Precon();
-  
-  
-  //
-  // CREATE THE AZTECOO SOLVER FOR THE LINEAR SYSTEM
-  
-  AztecOO solver; // an empty solver
-  
-  // Register the matvec operator (Epetra_Operator)
-  solver.SetUserOperator(&Ax);
-  
-  // Register the preconditioning operator (Epetra_Operator)
-  solver.SetPrecOperator(&precon);
-  
-  // Register the RHS.
-  Epetra_Vector B(prob.RHS()); // make a copy, Aztec00 wants to muck with it
-  solver.SetRHS(&B);
-  
-  // Register the initial solution guess; will be overwritten with the solution.
-  Epetra_Vector X(prob.Map()); // constructor sets values to zero
-  solver.SetLHS(&X);
-  
-  // Set the solver options.
-  solver.SetAztecOption(AZ_solver, AZ_cg); // use CG; the system is symmetric
-  //solver.SetAztecOption(AZ_precond, AZ_none);
+  TEST_FIXTURE(problem_setup, z_p_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(TOP,    "Pressure Constant", 0.0);
+    set_bc(BOTTOM, "Pressure Constant", 1.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 1.0;
+    double pgrad[3] = {0.0, 0.0, -1.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
   
   
-  //
-  // SOLVE THE SYSTEM
+  TEST_FIXTURE(problem_setup, zg_p_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(TOP,    "Pressure Constant", 0.0);
+    set_bc(BOTTOM, "Pressure Constant", 2.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 2.0;
+    double pgrad[3] = {0.0, 0.0, -2.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
   
-  solver.Iterate(100, 1.0e-8);
-  std::cout << "Solver performed " << solver.NumIters() << " iterations." << std::endl
-            << "Norm of true residual = " << solver.TrueResidual() << std::endl;
   
-  // Print the solution; contains both cell and face pressures.
-  //std::cout << X << std::endl;
+  TEST_FIXTURE(problem_setup, z_q_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(TOP,    "Darcy Constant", 1.0);
+    set_bc(BOTTOM, "Pressure Constant", 1.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 1.0;
+    double pgrad[3] = {0.0, 0.0, -1.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
   
-  Epetra_Vector &Pcell = *(prob.CreateCellView(X));
-  //std::cout << Pcell << std::endl;
   
-  // Write a GMV file with the cell pressures.
-  std::string gmv_file("flow.gmv");
-  GMV::open_data_file(*mesh, gmv_file);
-  GMV::start_data();
-  GMV::write_cell_data(Pcell, std::string("pressure"));
-  GMV::close_data_file();
-  delete &Pcell;
-  
-//  MPI_Finalize();
-//  return 0;
+  TEST_FIXTURE(problem_setup, zg_q_p)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(TOP,    "Darcy Constant", 1.0);
+    set_bc(BOTTOM, "Pressure Constant", 2.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Define the analytic pressure solution:
+    // p0 = pressure at (0,0,0).
+    // pgrad = constant pressure gradient.
+    // Domain is [0,1]^3.
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
+    //   q is the expected constant Darcy velocity
+    double p0 = 2.0;
+    double pgrad[3] = {0.0, 0.0, -2.0};
+    set_pressure_constants(p0, pgrad);
+
+    double error;
+    cell_pressure_error(error);
+    CHECK(error < 1.0e-8);
+    
+    face_pressure_error(error);
+    CHECK(error < 1.0e-8);
+  }
+
+
 }

@@ -67,6 +67,10 @@ public:
   void DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l1_error) const;
 
   void DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const;
+  
+  void GetFluidDensity(double &rho) const { rho = rho_; }
+  void GetFluidViscosity(double &mu) const { mu = mu_; }
+  void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = g_[i]; }
 
 private:
 
