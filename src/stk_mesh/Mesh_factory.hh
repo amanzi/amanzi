@@ -78,13 +78,23 @@ private:
     void add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part);
 
     const stk::mesh::Entity&
-    Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index, 
-                                stk::mesh::Entity *owner, const unsigned int& side_index,
-                                stk::mesh::Entity *nbr);
+    declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index, 
+                  stk::mesh::Entity *owner, const unsigned int& side_index,
+                  stk::mesh::Entity *nbr);
     
+    /// Generate the mesh faces local to this processor
     int generate_local_faces_(const int& fidx0, const bool& justcount = false);
 
-    int count_local_faces_() { return generate_local_faces_(0, true); }
+    /// Count the number of faces that need to be generated on this processor
+    int count_local_faces_(void) { return generate_local_faces_(0, true); }
+
+    /// Get the set of nodes defining the specified element side
+    Entity_vector
+    get_element_side_nodes_(const stk::mesh::Entity& element, const unsigned int& s);
+
+    /// Get the face declared for the specified cell side, if any
+    stk::mesh::Entity *
+    get_element_side_face_(const stk::mesh::Entity& element, const unsigned int& s);
     
     // Temporary information for the mesh currently under construction.
 

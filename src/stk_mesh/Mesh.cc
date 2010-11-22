@@ -93,7 +93,8 @@ unsigned int Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category 
 
 unsigned int Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) const
 {
-    const stk::mesh::Selector part_selector = part | selector_ (category);
+    stk::mesh::Selector part_selector(part);
+    part_selector &= selector_ (category);
     const stk::mesh::EntityRank rank        = part.primary_entity_rank ();
 
     return stk::mesh::count_selected_entities (part_selector, bulk_data_->buckets (rank));

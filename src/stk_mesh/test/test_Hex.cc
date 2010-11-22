@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Mon Nov 22 10:09:31 2010
+ * @date Mon Nov 22 12:34:04 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Mon Nov 22 10:09:31 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Nov 22 12:34:04 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <UnitTest++.h>
@@ -74,6 +74,21 @@ SUITE (HexMesh)
         lcount = mesh->count_entities(stk::mesh::Node, STK_mesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
+
+        stk::mesh::Part *side = mesh->get_set("North", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*ksize);
+
+        side = mesh->get_set("Bottom", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*jsize);
+
+        side = mesh->get_set("East", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, jsize*ksize);
 
         // STK_mesh::Mesh_maps_stk mesh_map(mesh);
 

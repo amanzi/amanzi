@@ -28,6 +28,7 @@ namespace bl = boost::lambda;
 // Trilinos
 #include <Shards_CellTopology.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -235,12 +236,13 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data,
     // bulk_data_->modification_end();
 
 
-    // FIXME: Put side set faces in the correct parts
+    // Put side set faces in the correct parts
 
-    // bulk_data_->modification_begin();
-    // for (int set = 0; set < side_sets_.size (); ++set)
-    //     add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
-    // bulk_data_->modification_end();
+    bulk_data_->modification_begin();
+    for (int set = 0; set < side_sets_.size (); ++set) {
+        add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
+    }
+    bulk_data_->modification_end();
 
 }
 
@@ -435,6 +437,59 @@ void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block,
     }
 }
 
+Entity_vector
+Mesh_factory::get_element_side_nodes_(const stk::mesh::Entity& element, 
+                                      const unsigned int& s)
+{
+    ASSERT(element.entity_rank() == element_rank_);
+
+    const CellTopologyData* topo = stk::mesh::get_cell_topology (element);
+    ASSERT(topo != NULL);
+
+    // get the cell nodes on this side
+
+    const CellTopologyData *side_topo = (topo->side[s].topology);
+    const unsigned * const side_node_map = topo->side[s].node;
+
+    stk::mesh::PairIterRelation rel = element.relations( node_rank_ );
+    Entity_vector snodes;
+    for ( unsigned i = 0 ; i < side_topo->node_count ; ++i ) {
+        snodes.push_back(rel[ side_node_map[i] ].entity());
+    }
+    return snodes;
+}
+
+
+
+/** 
+ * This routine finds (indirectly through related nodes) the face
+ * declared for the specified element side.  
+ * 
+ * @param element The element
+ * @param s The side index (0-based)
+ * 
+ * @return face entity, or NULL if non-existent
+ */
+stk::mesh::Entity *
+Mesh_factory::get_element_side_face_(const stk::mesh::Entity& element, const unsigned int& s)
+{
+    Entity_vector snodes(get_element_side_nodes_(element, s));
+
+    // get the face the nodes relate to, if any
+
+    std::vector< stk::mesh::Entity * > rfaces;
+    get_entities_through_relations(snodes, face_rank_, rfaces);
+  
+    ASSERT(rfaces.size() < 2);
+
+    stk::mesh::Entity *result = NULL;
+    if (!rfaces.empty()) result = rfaces.front();
+
+    return result;
+}
+    
+
+
 
 /** 
  * This routine takes care of everything necessary to declare a
@@ -543,36 +598,25 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
 
             int globalidx((*c)->identifier());
 
-            stk::mesh::PairIterRelation rel = 
-                (*c)->relations( stk::mesh::Node );
-
-
             for (unsigned int s = 0; s < topo->side_count; s++) {
                 const CellTopologyData *side_topo = (topo->side[s].topology);
                 const unsigned * const side_node_map = topo->side[s].node;
 
-                // get the cell nodes on this side
-
-                std::vector< stk::mesh::Entity * > snodes;
-                for ( unsigned i = 0 ; i < side_topo->node_count ; ++i ) {
-                    snodes.push_back(rel[ side_node_map[i] ].entity());
-                }
-
-
                 // see if the face already exists (on the local
                 // processor); if so, just go on to the next
 
-                std::vector< stk::mesh::Entity * > rfaces;
-                get_entities_through_relations(snodes, face_rank_, rfaces);
+                stk::mesh::Entity *rface(get_element_side_face_(**c, s));
+                if (rface != NULL) continue;
+                                         
+                // get the cell nodes on this side
 
-                if (rfaces.size() > 0) continue;
-                  
-                
+                Entity_vector snodes(get_element_side_nodes_(**c, s));
+
                 // get whatever cells the nodes on this side are
                 // related to (*c should be one of them, *and* there
                 // should be at most one other cell)
             
-                std::vector< stk::mesh::Entity * > rcells;
+                Entity_vector rcells;
                 get_entities_through_relations(snodes, 
                                                element_rank_, 
                                                rcells);
@@ -642,8 +686,8 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
                                        const Epetra_Map& cmap)
 {
 
-    // Side set consists of elements and a local face number. We need
-    // to convert these to the unique face indices.
+    // Side set consists of elements (local index) and a local face
+    // number. We need to convert these to the unique face indices.
 
     stk::mesh::PartVector parts_to_add;
     parts_to_add.push_back (&part);
@@ -656,22 +700,26 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
 
     for (int index=0; index < num_sides; ++index)
     {
-        const int element_number = cmap.GID(element_list [index]);
+        int local_idx(element_list [index]);
+        ASSERT(local_idx < cmap.NumMyElements());
+
         const int local_side = side_list [index];
+        int global_idx(cmap.GID(element_list [index]));
 
         // Look up the element from the Id.
-        stk::mesh::Entity *element = bulk_data_->get_entity (element_rank_, element_number);
+        stk::mesh::Entity *element = bulk_data_->get_entity (element_rank_, global_idx);
 
-        // Look up the face from the local face id.
-        stk::mesh::PairIterRelation faces = element->relations (face_rank_);
-        for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
-        {
-            if (it->identifier () == local_side)
-                bulk_data_->change_entity_parts(*(it->entity ()), parts_to_add);
+        stk::mesh::Entity *face = get_element_side_face_(*element, local_side);
+
+        if (face == NULL) {
+            std::string msg = 
+                boost::str(boost::format("side set %d: face not declared for side %d of cell %d (local = %d") %
+                           side_set.id() % local_side % global_idx % local_idx);
+            throw std::runtime_error(msg);
         }
 
+        bulk_data_->change_entity_parts(*face, parts_to_add);
     }
-
 }
 
 
