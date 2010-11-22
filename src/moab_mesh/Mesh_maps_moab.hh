@@ -112,6 +112,16 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
   
     int nsets;
     int *setids, *setdims;
+
+
+    // Minimum and maximum global IDs of faces
+
+    unsigned int minFGID, maxFGID;
+
+
+    // flag whether to flip a face dir or not when returning nodes of a face
+
+    bool *faceflip;
     
     // Private methods
     // ----------------------------
@@ -124,8 +134,10 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
     void init_pvert_lists();
     void init_pface_lists();
     void init_pcell_lists();
+    void init_pface_dirs();
 
     void init_id_handle_maps();
+    void init_global_ids();
 
     void init_cell_map();
     void init_face_map();

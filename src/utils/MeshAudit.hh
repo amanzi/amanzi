@@ -40,12 +40,16 @@ public:
   int check_face_to_nodes_ghost_data() const;
   int check_cell_to_nodes_ghost_data() const;
   int check_cell_to_faces_ghost_data() const;
+  
+  int check_node_sets() const;
+  int check_face_sets() const;
+  int check_cell_sets() const;
 
 private:
 
   Teuchos::RCP<Mesh_maps_base> mesh;
 
-  const Epetra_Comm *comm;
+  const Epetra_Comm &comm;
   const int MyPID;
   const int nnode;
   const int nface;
@@ -58,6 +62,14 @@ private:
   void write_list(const std::vector<unsigned int>&, unsigned int) const;
   int same_face(const std::vector<unsigned int>, const std::vector<unsigned int>) const;
   int check_maps(const Epetra_Map&, const Epetra_Map&) const;
+  int check_sets(Mesh_data::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  int check_set_ids(Mesh_data::Entity_kind) const;
+  int check_set_ids_same(Mesh_data::Entity_kind) const;
+  int check_valid_set_id(Mesh_data::Entity_kind) const;
+  int check_set_ids_alt(Mesh_data::Entity_kind) const;
+  int check_get_set(unsigned int, Mesh_data::Entity_kind, Element_Category, const Epetra_Map&) const;
+  int check_get_set_alt(unsigned int, Mesh_data::Entity_kind, Element_Category, const Epetra_Map&) const;
+  int check_used_set(unsigned int, Mesh_data::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
 };
 
 #endif
