@@ -48,6 +48,16 @@
       <Parameter name="Constant component concentration 0" type="double" value="1.0e-3"/>
       <Parameter name="Constant component concentration 1" type="double" value="1.0e-3"/>
       <Parameter name="Constant component concentration 2" type="double" value="0.0"/>
+<!-- saturated wrt calcite -->
+<!--
+       <Parameter name="Constant component concentration 0" type="double" value="7.69445e-4"/>
+-->
+<!--
+       <Parameter name="Constant component concentration 1" type="double" value="5.23056e-3"/>
+-->
+<!--
+       <Parameter name="Constant component concentration 2" type="double" value="2.23056e-3"/>
+-->
     </ParameterList>
 
   </ParameterList>

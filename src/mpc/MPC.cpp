@@ -241,6 +241,8 @@ void MPC::cycle_driver () {
       // advance the iteration count
       iter++;
       
+      // TODO: ask the CPK to dump its data someplace....
+
       vizdump_cycle = iter;
       vizdump_time = S->get_time();
       

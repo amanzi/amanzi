@@ -1,4 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include <algorithm>
+
 #include "Chemistry_PK.hpp"
 #include "ChemistryException.hpp"
 #include "Epetra_MultiVector.h"
@@ -34,6 +36,9 @@
  **
  **    where foo refers to a vector of component concentrations for a
  **    single component.
+ **
+ **  TODO: add method RevertToSavedState() which copies (not swaps)
+ **  the saved state back into the current state.
  **
  ******************************************************************************/
 
@@ -72,15 +77,8 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
 
   XMLParameters();
 
-  LocalPhysicalState();
-
-  // assume that the State object read in appropriate initial
-  // conditions for the total components, trac #216, comment 7
-  Teuchos::RCP<const Epetra_MultiVector> temp =
-      chemistry_state_->get_total_component_concentration();
-  aqueous_components_ = Teuchos::rcp(new Epetra_MultiVector(*temp));
-
-  set_number_aqueous_components(aqueous_components_->NumVectors());
+  InitializeInternalStorage(&current_state_);
+  InitializeInternalStorage(&saved_state_);
 
   // get initial conditions for minerals etc
   LocalInitialConditions();
@@ -91,7 +89,7 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
   // initialization purposes
   int cell=0;
   CopyStateToBeakerParameters(cell);
-  CopyCellToBeakerComponents(cell, aqueous_components_);
+  CopyCellToBeakerComponents(cell, current_state_.aqueous_components);
 
 
   // finish setting up the chemistry object
@@ -168,21 +166,62 @@ void Chemistry_PK::XMLParameters(void)
 
 }  // end XMLParameters()
 
-void Chemistry_PK::LocalPhysicalState(void)
+
+void Chemistry_PK::InitializeInternalStorage(InternalStorage* storage)
 {
   if (verbosity() == kDebugChemistryProcessKernel) {
-    std::cout << "  Chemistry_PK::LocalPhysicalState()" << std::endl;
+    std::cout << "  Chemistry_PK::InitializeInternalStorage()" << std::endl;
   }
-  // physical parameters
-  current_porosity_ = chemistry_state_->get_porosity();
+  // physical parameters we don't change, just point to state object
+  storage->porosity = chemistry_state_->get_porosity();
+  storage->water_saturation = chemistry_state_->get_water_saturation();
+  storage->water_density = chemistry_state_->get_water_density();
+  storage->volume = chemistry_state_->get_volume();
 
-  current_water_saturation_ = chemistry_state_->get_water_saturation();
+  // things we need a local copy of and know about because of the
+  // state vector
+  set_number_aqueous_components(
+      chemistry_state_->get_total_component_concentration()->NumVectors());
 
-  current_water_density_ = chemistry_state_->get_water_density();
+  storage->aqueous_components = Teuchos::rcp( new Epetra_MultiVector(
+      chemistry_state_->get_mesh_maps()->cell_map(false),
+      number_aqueous_components() ));
 
-  current_volume_ = chemistry_state_->get_volume();
+  // don't know yet if we have these... need to look in the xml
+  // file... the main state object really should be reading these
+  // in....
+  //storage->minerals = Teuchos::ENull;
+  //storage->ion_exchange_sites = Teuchos::ENull;
+  //storage->sorption_sites = Teuchos::ENull;
+}  // end InitializeInternalStorage()
 
-}  // end LocalPhysicalState()
+void Chemistry_PK::SwapCurrentAndSavedStorage(void)
+{
+  InternalStorage temp;
+
+  std::swap(current_state_.porosity, saved_state_.porosity);
+
+  std::swap(current_state_.water_saturation, 
+            saved_state_.water_saturation);
+
+  std::swap(current_state_.water_density, 
+            saved_state_.water_density);
+
+  std::swap(current_state_.volume, saved_state_.volume);
+
+  std::swap(current_state_.aqueous_components, 
+            saved_state_.aqueous_components);
+
+  std::swap(current_state_.minerals, saved_state_.minerals);
+
+  std::swap(current_state_.ion_exchange_sites, 
+            saved_state_.ion_exchange_sites);
+
+  std::swap(current_state_.sorption_sites, 
+            saved_state_.sorption_sites);
+
+  //  end SwapCurrentAndSavedStorage()
+}
 
 void Chemistry_PK::LocalInitialConditions(void)
 {
@@ -223,7 +262,11 @@ void Chemistry_PK::LocalInitialConditions(void)
     }
 
     if (number_minerals()) {
-      minerals_ =
+      current_state_.minerals =
+          Teuchos::rcp( new Epetra_MultiVector(
+              chemistry_state_->get_mesh_maps()->cell_map(false),
+              number_minerals() ));
+      saved_state_.minerals =
           Teuchos::rcp( new Epetra_MultiVector(
               chemistry_state_->get_mesh_maps()->cell_map(false),
               number_minerals() ));
@@ -241,7 +284,11 @@ void Chemistry_PK::LocalInitialConditions(void)
     }
 
     if (number_ion_exchange_sites()) {
-      ion_exchange_sites_ =
+      current_state_.ion_exchange_sites =
+          Teuchos::rcp( new Epetra_MultiVector(
+              chemistry_state_->get_mesh_maps()->cell_map(false),
+              number_ion_exchange_sites() ));
+      saved_state_.ion_exchange_sites =
           Teuchos::rcp( new Epetra_MultiVector(
               chemistry_state_->get_mesh_maps()->cell_map(false),
               number_ion_exchange_sites() ));
@@ -260,7 +307,11 @@ void Chemistry_PK::LocalInitialConditions(void)
     }
 
     if (number_sorption_sites()) {
-      sorption_sites_ =
+      current_state_.sorption_sites =
+          Teuchos::rcp( new Epetra_MultiVector(
+              chemistry_state_->get_mesh_maps()->cell_map(false),
+              number_sorption_sites() ));
+      saved_state_.sorption_sites =
           Teuchos::rcp( new Epetra_MultiVector(
               chemistry_state_->get_mesh_maps()->cell_map(false),
               number_sorption_sites() ));
@@ -299,7 +350,10 @@ void Chemistry_PK::LocalInitialConditions(void)
         int number_to_find = number_minerals();
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
-                                minerals_);
+                                current_state_.minerals);
+        ExtractInitialCondition(type, keyword, number_to_find, block,
+                                mesh_block_list, mesh_block_ID,
+                                saved_state_.minerals);
 
       }
 
@@ -312,7 +366,10 @@ void Chemistry_PK::LocalInitialConditions(void)
         int number_to_find = number_ion_exchange_sites();
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
-                                ion_exchange_sites_);
+                                current_state_.ion_exchange_sites);
+        ExtractInitialCondition(type, keyword, number_to_find, block,
+                                mesh_block_list, mesh_block_ID,
+                                saved_state_.ion_exchange_sites);
       }
 
       //
@@ -324,7 +381,10 @@ void Chemistry_PK::LocalInitialConditions(void)
         int number_to_find = number_sorption_sites();
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
-                                sorption_sites_);
+                                current_state_.sorption_sites);
+        ExtractInitialCondition(type, keyword, number_to_find, block,
+                                mesh_block_list, mesh_block_ID,
+                                saved_state_.sorption_sites);
       }
     }  // for (mesh blocks)
   }  // if(initial conditions)
@@ -429,7 +489,7 @@ void Chemistry_PK::SizeBeakerComponents(void)
 
 
 void Chemistry_PK::CopyCellToBeakerComponents(
-    int cell_id,
+    const int cell_id,
     Teuchos::RCP<const Epetra_MultiVector> aqueous_components)
 {
   // copy component data from the cell arrays into beaker component
@@ -442,57 +502,57 @@ void Chemistry_PK::CopyCellToBeakerComponents(
   }
 
   for (unsigned int m = 0; m < number_minerals(); m++) {
-    double* cell_minerals = (*minerals_)[m];
+    double* cell_minerals = (*current_state_.minerals)[m];
     beaker_components_.minerals[m] = cell_minerals[cell_id];
   }
 
   for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
-    double* cell_ion_exchange_sites = (*ion_exchange_sites_)[i];
+    double* cell_ion_exchange_sites = (*current_state_.ion_exchange_sites)[i];
     beaker_components_.ion_exchange_sites[i] = cell_ion_exchange_sites[cell_id];
   }
 
   for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-    double* cell_sorption_sites = (*sorption_sites_)[i];
+    double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
     beaker_components_.total_sorbed[i] = cell_sorption_sites[cell_id];
   }
 
 }  // end CopyCellToBeakerComponents()
 
 
-void Chemistry_PK::CopyBeakerComponentsToCell(int cell_id)
+void Chemistry_PK::CopyBeakerComponentsToCell(const int cell_id)
 {
   // copy data from the beaker back into the state arrays
 
   for (unsigned int c = 0; c < number_aqueous_components(); c++) {
-    double* cell_components = (*aqueous_components_)[c];
+    double* cell_components = (*current_state_.aqueous_components)[c];
     cell_components[cell_id] = beaker_components_.total[c];
   }
 
   for (unsigned int m = 0; m < number_minerals(); m++) {
-    double* cell_minerals = (*minerals_)[m];
+    double* cell_minerals = (*current_state_.minerals)[m];
     cell_minerals[cell_id] = beaker_components_.minerals[m];
   }
 
   for (unsigned int i = 0; i < number_ion_exchange_sites(); i++) {
-    double* cell_ion_exchange_sites = (*ion_exchange_sites_)[i];
+    double* cell_ion_exchange_sites = (*current_state_.ion_exchange_sites)[i];
     cell_ion_exchange_sites[cell_id] = beaker_components_.ion_exchange_sites[i];
   }
 
   for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-    double* cell_sorption_sites = (*sorption_sites_)[i];
+    double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
     cell_sorption_sites[cell_id] = beaker_components_.total_sorbed[i];
   }
 
 }  // end CopyBeakerComponentsToCell()
 
 
-void Chemistry_PK::CopyStateToBeakerParameters(int cell_id)
+void Chemistry_PK::CopyStateToBeakerParameters(const int cell_id)
 {
   // copy data from state arrays into the beaker parameters
-  beaker_parameters_.water_density = (*current_water_density_)[cell_id];
-  beaker_parameters_.porosity = (*current_porosity_)[cell_id];
-  beaker_parameters_.saturation = (*current_water_saturation_)[cell_id];
-  beaker_parameters_.volume = (*current_volume_)[cell_id];
+  beaker_parameters_.water_density = (*current_state_.water_density)[cell_id];
+  beaker_parameters_.porosity = (*current_state_.porosity)[cell_id];
+  beaker_parameters_.saturation = (*current_state_.water_saturation)[cell_id];
+  beaker_parameters_.volume = (*current_state_.volume)[cell_id];
 }  // end CopyStateToBeakerParameters()
 
 
@@ -504,7 +564,7 @@ void Chemistry_PK::CopyStateToBeakerParameters(int cell_id)
  ******************************************************************************/
 Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_total_component_concentration(void) const
 {
-  return aqueous_components_;
+  return current_state_.aqueous_components;
 }  // end get_total_component_concentration()
 
 
@@ -599,7 +659,7 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
 
   saved_time_ += delta_time;
 
-  // do something to save the state here....
+  SwapCurrentAndSavedStorage();
 
   if (verbosity() >= kTerse) {
     //chem_->Speciate(beaker_components_, beaker_parameters_);

@@ -69,19 +69,24 @@ class Chemistry_PK {
   int number_ion_exchange_sites_;
   int number_sorption_sites_;
 
-  Teuchos::RCP<const Epetra_Vector> current_porosity_;
-  Teuchos::RCP<const Epetra_Vector> current_water_saturation_;
-  Teuchos::RCP<const Epetra_Vector> current_water_density_;
-  Teuchos::RCP<const Epetra_SerialDenseVector> current_volume_;
+  struct InternalStorage {
+    // things we don't change, just point to State object
+    Teuchos::RCP<const Epetra_Vector> porosity;
+    Teuchos::RCP<const Epetra_Vector> water_saturation;
+    Teuchos::RCP<const Epetra_Vector> water_density;
+    Teuchos::RCP<const Epetra_SerialDenseVector> volume;
+    // things we need internal copies of
+    Teuchos::RCP<Epetra_MultiVector> aqueous_components;
+    Teuchos::RCP<Epetra_MultiVector> minerals;
+    Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites;
+    Teuchos::RCP<Epetra_MultiVector> sorption_sites;
+  };
 
-  Teuchos::RCP<Epetra_MultiVector> aqueous_components_;
-  Teuchos::RCP<Epetra_MultiVector> minerals_;
-  Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites_;
-  Teuchos::RCP<Epetra_MultiVector> sorption_sites_;
+  void InitializeInternalStorage(InternalStorage* storage);
+  void SwapCurrentAndSavedStorage(void);
 
-  Teuchos::RCP<Epetra_Vector> saved_porosity_;
-  Teuchos::RCP<Epetra_Vector> saved_water_saturation_;
-  Teuchos::RCP<Epetra_Vector> saved_water_density_;
+  InternalStorage current_state_;
+  InternalStorage saved_state_;
 
   void XMLParameters(void);
   void LocalPhysicalState(void);
@@ -101,10 +106,11 @@ class Chemistry_PK {
                                     Epetra_Vector& vec,
                                     const int mesh_block_id);
   void SizeBeakerComponents(void);
-  void CopyCellToBeakerComponents(int cell_id,
-                                  Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
-  void CopyBeakerComponentsToCell(int cell_id);
-  void CopyStateToBeakerParameters(int cell_id);
+  void CopyCellToBeakerComponents(
+      const int cell_id,
+      Teuchos::RCP<const Epetra_MultiVector> aqueous_components);
+  void CopyBeakerComponentsToCell(const int cell_id);
+  void CopyStateToBeakerParameters(const int cell_id);
 
 };
 
