@@ -158,7 +158,7 @@ void Chemistry_PK::XMLParameters(void)
 
   // solver parameters here....
   beaker_parameters_.tolerance =
-      parameter_list_.get<double>("Tolerance", 1.1e-12);
+      parameter_list_.get<double>("Tolerance", 1.0e-12);
 
   // TODO: using <unsigned int> in the parameter list doesn't work...?
   beaker_parameters_.max_iterations =
@@ -602,7 +602,7 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
   // do something to save the state here....
 
   if (verbosity() >= kTerse) {
-    chem_->Speciate(beaker_components_, beaker_parameters_);
+    //chem_->Speciate(beaker_components_, beaker_parameters_);
     //chem_->DisplayResults();
     //chem_->DisplayTotalColumnHeaders();
     //chem_->DisplayTotalColumns(saved_time_, beaker_components_.total);

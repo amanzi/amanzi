@@ -75,7 +75,7 @@
     <Parameter name="Thermodynamic Database File" type="string" value="test/calcite.bgd" />
     <Parameter name="Max Time Step (s)" type="double" value="0.5" />
     <Parameter name="Verbosity" type="int" value="2" />
-    <Parameter name="Activity Model" type="string" value="unit" />
+    <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <ParameterList name="Initial Conditions">
       <Parameter name="Number of minerals" type="int" value="1"/>
       <Parameter name="Number of mesh blocks" type="int" value="1"/>

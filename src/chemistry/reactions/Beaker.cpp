@@ -711,6 +711,19 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     delete[] indices;
 } // end solveLinearSystem
 
+void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals)
+{
+  double charge_balance = 0.0;
+  for (unsigned int i = 0; i < aqueous_totals.size(); i++) {
+    charge_balance += aqueous_totals.at(i) * primarySpecies_.at(i).charge(); 
+  }
+  if (charge_balance > tolerance()) {
+    std::cout << "WARNING: Beaker::CheckChargeBalance() :\n"
+              << "         charge balance = " << std::scientific
+              << charge_balance << std::fixed << std::endl;
+  }
+}  // end CheckChargeBalance()
+
 int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 			 const Beaker::BeakerParameters& parameters,
 			 double dt)
@@ -725,7 +738,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // water_density [kg/m^3]
   // volume [m^3]
   updateParameters(parameters, dt);
-
+  CheckChargeBalance(components->total);
   // store current molalities
   // initialize free-ion concentrations
   if (components->free_ion.size() > 0) {
@@ -815,6 +828,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   
   if (num_iterations >= max_iterations()) {
     // TODO: should this be an error to the driver...?
+    // code eventually produces nans when this isn't an error. 
     std::ostringstream error_stream;
     error_stream << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
     error_stream << "Warning: Results may not have the desired accuracy." << std::endl;
@@ -840,6 +854,9 @@ void Beaker::ValidateSolution()
 
   // TODO: negative total's (H+) are OK...
 
+  // charge balance is error or warning...?
+  CheckChargeBalance(total_);
+
   // negative mineral volume fractions are bad...
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     if (minerals_.at(m).volume_fraction() < 0) {
@@ -862,7 +879,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   double speciation_tolerance = 1.e-12;
 
   updateParameters(parameters, 0.0);
-
+  CheckChargeBalance(components.total);
   // initialize free-ion concentrations
   if (components.free_ion.size() > 0) {
     initializeMolalities(components.free_ion);
