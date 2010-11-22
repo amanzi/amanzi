@@ -31,8 +31,10 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
   int num_components = 2;
   RCP<Mesh_maps_base> mesh = rcp( new Mesh_maps_moab( "../moab_mesh/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
 
+  /*
   MeshAudit audit( mesh );
   audit.Verify();
+  */
 
   /* create a MPC state with one component */
   State mpc_state( num_components, mesh );
@@ -75,14 +77,14 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
 
      if ( iter < 10 && TPK.MyPID == 3 ) {
         printf( "T=%7.2f  C_0(x):", T );
-        for( int k=0; k<10; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+        for( int k=0; k<2; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
      }
 
      *tcc = *tcc_next;
   }
 
   /* check that the final state is constant */
-  for( int k=0; k<4; k++ ) 
+  for( int k=0; k<12; k++ ) 
      CHECK_CLOSE( (*tcc_next)[0][k], 1.0, 1e-6 );
 }
  

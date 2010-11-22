@@ -551,16 +551,6 @@ void Transport_PK::geometry_package()
         center = (center1 * area1 + center2 * area2) / (area1 + area2);
 
         quad_face_normal(x[0], x[1], x[2], x[3], normal);
-/*
-if( (MyPID==2 && f==26) ||
-    (MyPID==0 && f==1 ) ) cout << MyPID 
-                     << " normal=" << normal[0] << " " << normal[1] << " " << normal[2] 
-                     << "  x[0]=" << x[0][0] << " " << x[0][1] << " " << x[0][2] << " " 
-                     << "  x[1]=" << x[1][0] << " " << x[1][1] << " " << x[1][2] << " " 
-                     << "  x[2]=" << x[2][0] << " " << x[2][1] << " " << x[2][2] << " " 
-                     << "  x[3]=" << x[3][0] << " " << x[3][1] << " " << x[3][2] << " " 
-                     << " f=" << f << " c=" << c << " dir=" << dirs[i] << endl;
-*/
 
         volume += dirs[j] * normal[0] * center;
      }

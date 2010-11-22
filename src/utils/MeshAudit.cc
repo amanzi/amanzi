@@ -34,7 +34,7 @@ int MeshAudit::Verify() const
   int ierr;
   bool fail = false;
   bool abort = false;
-  
+
   // What I'd love to do here is to describe the dependencies between tests
   // (i.e., what tests must pass before a given test can be run) and generate
   // the dependency graph (tree) ala make, and then walk the tree running all
@@ -116,7 +116,7 @@ int MeshAudit::Verify() const
   ierr = check_cell_maps();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
-  
+
   if (abort) return 1;
 
   // Need to check all the "set" accessors
@@ -124,7 +124,7 @@ int MeshAudit::Verify() const
   ierr = check_node_to_coordinates_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
-  
+
   ierr = check_face_to_nodes_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
@@ -136,7 +136,7 @@ int MeshAudit::Verify() const
   ierr = check_cell_to_faces_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
-  
+
   ierr = check_node_sets();
   if (ierr) fail = true;
 
@@ -1051,29 +1051,29 @@ int MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) 
 int MeshAudit::check_node_to_coordinates_ghost_data() const
 {
   os << "Checking node_to_coordinates ghost data ..." << endl;
-  
+
   const Epetra_Map &node_map_own = mesh->node_map(false);
   const Epetra_Map &node_map_use = mesh->node_map(true);
-  
+
   int nnode_own = node_map_own.NumMyElements();
   int nnode_use = node_map_use.NumMyElements();
-  
+
   vector<double> coord(3);
   vector<unsigned int> bad_nodes;
-  
+
   Epetra_MultiVector coord_use(node_map_use,3);
   double **data;
   coord_use.ExtractView(&data);
-  Epetra_MultiVector coord_own(View, node_map_own, data, 3); 
-  
+  Epetra_MultiVector coord_own(View, node_map_own, data, 3);
+
   for (unsigned int j = 0; j < nnode_own; ++j) {
     mesh->node_to_coordinates(j, coord.begin(), coord.end());
     for (int k = 0; k < 3; ++k) coord_own[k][j] = coord[k];
   }
-  
+
   Epetra_Import importer(node_map_use, node_map_own);
   coord_use.Import(coord_own, importer, Insert);
-  
+
   for (unsigned int j = nnode_own; j < nnode_use; ++j) {
     mesh->node_to_coordinates(j, coord.begin(), coord.end());
     bool bad_data = false;
@@ -1081,15 +1081,15 @@ int MeshAudit::check_node_to_coordinates_ghost_data() const
       if (coord[k] != coord_use[k][j]) bad_data = true;
     if (bad_data) bad_nodes.push_back(j);
   }
-  
+
   int status = 0;
-  
+
   if (!bad_nodes.empty()) {
     os << "ERROR: found ghost nodes with incorrect coordinates:";
     write_list(bad_nodes, MAX_OUT);
     status = 1;
   }
-  
+
   return status;
 }
 
@@ -1100,17 +1100,17 @@ int MeshAudit::check_node_to_coordinates_ghost_data() const
 int MeshAudit::check_face_to_nodes_ghost_data() const
 {
   os << "Checking face_to_nodes ghost data ..." << endl;
-  
+
   const Epetra_Map &node_map = mesh->node_map(true);
   const Epetra_Map &face_map_own = mesh->face_map(false);
   const Epetra_Map &face_map_use = mesh->face_map(true);
-  
+
   int nface_own = face_map_own.NumMyElements();
   int nface_use = face_map_use.NumMyElements();
-  
+
   vector<unsigned int> fnode(4);
   vector<unsigned int> bad_faces, bad_faces1, bad_faces2;
-  
+
   // Create a matrix of the GIDs for all owned faces.
   Epetra_IntSerialDenseMatrix gids(nface_use,4); // no Epetra_IntMultiVector :(
   for (unsigned int j = 0; j < nface_own; ++j) {
@@ -1118,7 +1118,7 @@ int MeshAudit::check_face_to_nodes_ghost_data() const
     for (int k = 0; k < 4; ++k)
       gids(j,k) = node_map.GID(fnode[k]);
   }
-  
+
   // Import these GIDs to all used faces; sets values on ghost faces.
   Epetra_Import importer(face_map_use, face_map_own);
   for (int k = 0; k < 4; ++k) {
@@ -1126,7 +1126,7 @@ int MeshAudit::check_face_to_nodes_ghost_data() const
     Epetra_IntVector kgids_use(View, face_map_use, gids[k]);
     kgids_use.Import(kgids_own, importer, Insert);
   }
-  
+
   // Compare the ghost face GIDs against the reference values just computed.
   for (unsigned int j = nface_own; j < nface_use; ++j) {
     mesh->face_to_nodes(j, fnode.begin(), fnode.end());
@@ -1154,27 +1154,27 @@ int MeshAudit::check_face_to_nodes_ghost_data() const
       }
     }
   }
-  
+
   int status = 0;
-  
+
   if (!bad_faces.empty()) {
     os << "ERROR: found bad data for ghost faces:";
     write_list(bad_faces, MAX_OUT);
     status = 1;
   }
-  
+
   if (!bad_faces1.empty()) {
     os << "ERROR: found mis-oriented ghost faces:";
-    write_list(bad_faces, MAX_OUT);
+    write_list(bad_faces1, MAX_OUT);
     status = 1;
   }
-  
+
   if (!bad_faces2.empty()) {
     os << "WARNING: found ghost faces that are not exact copies of their master:";
-    write_list(bad_faces, MAX_OUT);
+    write_list(bad_faces2, MAX_OUT);
     //status = 1; // don't flag this as an error for now
   }
-  
+
   return status;
 }
 
@@ -1185,17 +1185,17 @@ int MeshAudit::check_face_to_nodes_ghost_data() const
 int MeshAudit::check_cell_to_nodes_ghost_data() const
 {
   os << "Checking cell_to_nodes ghost data ..." << endl;
-  
+
   const Epetra_Map &node_map = mesh->node_map(true);
   const Epetra_Map &cell_map_own = mesh->cell_map(false);
   const Epetra_Map &cell_map_use = mesh->cell_map(true);
-  
+
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
-  
+
   vector<unsigned int> cnode(8);
   vector<unsigned int> bad_cells;
-  
+
   // Create a matrix of the GIDs for all owned cells.
   Epetra_IntSerialDenseMatrix gids(ncell_use,8); // no Epetra_IntMultiVector :(
   for (unsigned int j = 0; j < ncell_own; ++j) {
@@ -1203,7 +1203,7 @@ int MeshAudit::check_cell_to_nodes_ghost_data() const
     for (int k = 0; k < 8; ++k)
       gids(j,k) = node_map.GID(cnode[k]);
   }
-  
+
   // Import these GIDs to all used cells; sets values on ghost cells.
   Epetra_Import importer(cell_map_use, cell_map_own);
   for (int k = 0; k < 8; ++k) {
@@ -1211,7 +1211,7 @@ int MeshAudit::check_cell_to_nodes_ghost_data() const
     Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
     kgids_use.Import(kgids_own, importer, Insert);
   }
-  
+
   // Compare the ghost cell GIDs against the reference values just computed.
   for (unsigned int j = ncell_own; j < ncell_use; ++j) {
     mesh->cell_to_nodes(j, cnode.begin(), cnode.end());
@@ -1223,16 +1223,16 @@ int MeshAudit::check_cell_to_nodes_ghost_data() const
     // For example, maybe the GIDs are in a different order but the cell
     // orientation is the same, etc.
   }
-  
+
   int status = 0;
-  
+
   if (!bad_cells.empty()) {
     os << "ERROR: found bad data for ghost cells:";
     write_list(bad_cells, MAX_OUT);
     os << "       The ghost cells are not exact copies of their master." << endl;
     status = 1;
   }
-  
+
   return status;
 }
 
@@ -1246,17 +1246,17 @@ int MeshAudit::check_cell_to_nodes_ghost_data() const
 int MeshAudit::check_cell_to_faces_ghost_data() const
 {
   os << "Checking cell_to_face ghost data ..." << endl;
-  
+
   const Epetra_Map &face_map = mesh->face_map(true);
   const Epetra_Map &cell_map_own = mesh->cell_map(false);
   const Epetra_Map &cell_map_use = mesh->cell_map(true);
-  
+
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
-  
+
   vector<unsigned int> cface(6);
   vector<unsigned int> bad_cells;
-  
+
   // Create a matrix of the GIDs for all owned cells.
   Epetra_IntSerialDenseMatrix gids(ncell_use,6); // no Epetra_IntMultiVector :(
   for (unsigned int j = 0; j < ncell_own; ++j) {
@@ -1264,7 +1264,7 @@ int MeshAudit::check_cell_to_faces_ghost_data() const
     for (int k = 0; k < 6; ++k)
       gids(j,k) = face_map.GID(cface[k]);
   }
-  
+
   // Import these GIDs to all used cells; sets values on ghost cells.
   Epetra_Import importer(cell_map_use, cell_map_own);
   for (int k = 0; k < 6; ++k) {
@@ -1272,7 +1272,7 @@ int MeshAudit::check_cell_to_faces_ghost_data() const
     Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
     kgids_use.Import(kgids_own, importer, Insert);
   }
-  
+
   // Compare the ghost cell GIDs against the reference values just computed.
   for (unsigned int j = ncell_own; j < ncell_use; ++j) {
     mesh->cell_to_faces(j, cface.begin(), cface.end());
@@ -1281,19 +1281,23 @@ int MeshAudit::check_cell_to_faces_ghost_data() const
       if (face_map.GID(cface[k]) != gids(j,k)) bad_data = true;
     if (bad_data) bad_cells.push_back(j);
   }
-  
+
   int status = 0;
-  
+
   if (!bad_cells.empty()) {
     os << "ERROR: found bad data for ghost cells:";
     write_list(bad_cells, MAX_OUT);
     os << "       The ghost cells are not exact copies of their master." << endl;
     status = 1;
   }
-  
+
   return status;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// TESTS OF SET DATA
+//
 
 int MeshAudit::check_node_sets() const
 {
@@ -1317,36 +1321,36 @@ int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
                           const Epetra_Map &map_own, const Epetra_Map &map_use) const
 {
   int ierr;
-  
+
   // Basic sanity check on set IDs.
   ierr = check_set_ids(kind);
   if (comm.NumProc() > 1) comm.MaxAll(&ierr, &ierr, 1);
   if (ierr) return 1;
-  
+
   // Check set IDs are same across all processes.
   ierr = check_set_ids_same(kind);
   if (ierr) return 1;
-  
+
   int status = 0; // overall status of the test
-  
+
   // Additional tests; if these fail we can still continue.
   ierr = check_set_ids_alt(kind);
   if (ierr) status = 1;
   ierr = check_valid_set_id(kind);
   if (ierr) status = 1;
-  
+
   // Now get the verified list of set IDs.
   int nset = mesh->num_sets(kind);
   vector<unsigned int> sids(nset);
   mesh->get_set_ids(kind, sids.begin(), sids.end());
-  
+
   for (int n = 0; n < sids.size(); ++n) {
     os << "  Checking set ID=" << sids[n] << " ..." << endl;
-    
+
     // Basic sanity checks of the owned and used sets.
     int ierr1 = check_get_set(sids[n], kind, OWNED, map_own);
     int ierr2 = check_get_set(sids[n], kind, USED,  map_use);
-    
+
     // If the above tests passed, go ahead and check that the alternate
     // get_set() method returns the same results.  If these fail testing
     // can still continue.
@@ -1358,23 +1362,23 @@ int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
       ierr = check_get_set_alt(sids[n], kind, USED,  map_use);
       if (ierr) status = 1;
     }
-    
+
     // If anyone failed, everyone bails on further tests of this set.
     if (ierr1 != 0 || ierr2 != 0) status = ierr = 1;
     if (comm.NumProc() > 1) comm.MaxAll(&ierr, &ierr, 1);
     if (ierr) continue;
-    
+
     // Verify the used set relates correctly to the owned set.
     ierr = check_used_set(sids[n], kind, map_own, map_use);
     if (ierr) status = 1;
-    
+
     // OUGHT TO DO TESTING OF THE GHOST SETS
   }
-  
+
   if (comm.NumProc() > 1) comm.MaxAll(&status, &status, 1);
   return status;
 }
-  
+
 // Basic sanity check for set IDs: check that each process can successfully
 // get the vector of set IDs, and that the vector contains no duplicates.
 // This test runs independently on each process, and returns a per-process
@@ -1390,7 +1394,7 @@ int MeshAudit::check_set_ids(Mesh_data::Entity_kind kind) const
     os << "ERROR: caught exception from num_sets()" << endl;
     return 1;
   }
-  
+
   // Get the vector of set IDs.
   vector<unsigned int> sids(nset, UINT_MAX);
   try {
@@ -1399,7 +1403,7 @@ int MeshAudit::check_set_ids(Mesh_data::Entity_kind kind) const
     os << "ERROR: caught exception from get_set_ids()" << endl;
     return 1;
   }
-  
+
   // Check to see that set ID values were actually assigned.  This assumes
   // UINT_MAX is not a valid set ID.  This is a little iffy; perhaps 0 should
   // be declared as an invalid set ID instead (the case for ExodusII), or
@@ -1411,14 +1415,14 @@ int MeshAudit::check_set_ids(Mesh_data::Entity_kind kind) const
     os << "ERROR: get_set_ids() failed to set all values" << endl;
     return 1;
   }
-  
-  // Verify that the vector of set IDs contains no duplicates.  
+
+  // Verify that the vector of set IDs contains no duplicates.
   if (!distinct_values(sids)) {
     os << "ERROR: get_set_ids() returned duplicate IDs" << endl;
     // it would be nice to output the duplicates
     return 1;
   }
-  
+
   return 0;
 }
 
@@ -1428,9 +1432,9 @@ int MeshAudit::check_set_ids(Mesh_data::Entity_kind kind) const
 int MeshAudit::check_set_ids_same(Mesh_data::Entity_kind kind) const
 {
   if (comm.NumProc() > 1) {
-    
+
     int status = 0;
-    
+
     // Check the number of sets are the same,
     // using the number on process 0 as the reference.
     int nset = mesh->num_sets(kind);
@@ -1441,14 +1445,14 @@ int MeshAudit::check_set_ids_same(Mesh_data::Entity_kind kind) const
     }
     comm.MaxAll(&status, &status, 1);
     if (status != 0) return 1;
-    
+
     // Broadcast the set IDs on processor 0.
     vector<unsigned int> sids(nset);
     mesh->get_set_ids(kind, sids.begin(), sids.end());
     int *sids0 = new int[nset];
     for (int j = 0; j < nset; ++j) sids0[j] = sids[j];
     comm.Broadcast(sids0, nset, 0);
-    
+
     // Check the set IDs, using the vector on process 0 as the reference.
     bool bad_data = false;
     for (int j = 0; j < nset; ++j)
@@ -1456,12 +1460,12 @@ int MeshAudit::check_set_ids_same(Mesh_data::Entity_kind kind) const
     if (bad_data) {
       os << "ERROR: get_set_ids() returned inconsistent values" << endl;
       status = 1;
-    }    
+    }
     delete [] sids0;
     comm.MaxAll(&status, &status, 1);
     if (status != 0) return 1;
   }
-  
+
   return 0;
 }
 
@@ -1529,7 +1533,7 @@ int MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
     os << "  ERROR: caught exception from get_set_size()" << endl;
     return 1;
   }
-  
+
   // Get the set.
   vector<unsigned int> set(n, UINT_MAX);
   try {
@@ -1538,7 +1542,7 @@ int MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
     os << "  ERROR: caught exception from get_set()" << endl;
     return 1;
   }
-  
+
   // Check that all values were assigned.
   bool bad_data = false;
   for (int j = 0; j < set.size(); ++j)
@@ -1547,7 +1551,7 @@ int MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
     os << "  ERROR: not all values assigned by get_set()" << endl;
     return 1;
   }
-    
+
   // Check that the LIDs in the set belong to the map.
   vector<unsigned int> bad_LIDs;
   for (int j = 0; j < set.size(); ++j)
@@ -1557,14 +1561,14 @@ int MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
     write_list(bad_LIDs, MAX_OUT);
     return 1;
   }
-  
+
   // Check that there are no duplicates in the set.
   if (!distinct_values(set)) {
     os << "  ERROR: set contains duplicate LIDs." << endl;
     // it would be nice to output the duplicates
     return 1;
   }
-  
+
   return 0;
 }
 
@@ -1605,19 +1609,19 @@ int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
                               const Epetra_Map &map_own, const Epetra_Map &map_use) const
 {
   if (comm.NumProc() == 1) {
-    
+
     // In serial, the owned and used sets should be identical.
-    
+
     int n = mesh->get_set_size(sid, kind, OWNED);
     vector<unsigned int> set_own(n);
     mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
-    
+
     // Set sizes had better be the same.
     if (mesh->get_set_size(sid, kind, USED) != set_own.size()) {
       os << "  ERROR: owned and used set sizes differ" << endl;
       return 1;
     }
-    
+
     // Verify that the two sets are identical.
     vector<unsigned int> set_use(n);
     mesh->get_set(sid, kind, USED, set_use.begin(), set_use.end());
@@ -1628,17 +1632,17 @@ int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
       os << "  ERROR: owned and used sets differ" << endl;
       return 1;
     }
-    
+
     return 0;
-    
+
   } else {
-    
+
     int n = mesh->get_set_size(sid, kind, OWNED);
     vector<unsigned int> set_own(n);
     mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
     vector<unsigned int> set_use(n);
     mesh->get_set(sid, kind, USED,  set_use.begin(), set_use.end());
-    
+
     // Tag all LIDs in the used map that should belong to the used set;
     // the owned set LIDs are taken as definitive.
     Epetra_IntVector tag_use(map_use); // fills with zero values

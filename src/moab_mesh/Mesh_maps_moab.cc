@@ -119,73 +119,15 @@ Mesh_maps_moab::Mesh_maps_moab (const char *filename, MPI_Comm comm)
     // the various init_p*_list calls)
     
     init_id_handle_maps();
+
+
   }
     
     
+  init_global_ids();
 
 
-
-    
-  if (!serial_run) {
-    // Ask Parallel Communicator to assign global IDs to entities
-
-    bool largest_dim_only=false;
-    int start_id=0;
-    int largest_dim=celldim;
-    result = mbcomm->assign_global_ids(0,largest_dim,start_id,largest_dim_only);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Problem assigning global IDS" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-    
-
-    // Exchange global IDs across all processors
-
-    result = mbcore->tag_get_handle("GLOBAL_ID",gid_tag);
-    if (result != MB_SUCCESS) {
-      std::cerr << "Could not get tag handle for GLOBAL_ID data" << std::endl;
-      assert(result == MB_SUCCESS);
-    }
-
-    mbcomm->exchange_tags(gid_tag,AllVerts);
-    mbcomm->exchange_tags(gid_tag,AllFaces);
-    mbcomm->exchange_tags(gid_tag,AllCells);
-
-  }
-  else {
-    // Serial case - we assign global IDs ourselves
-
-    result = mbcore->tag_create("GLOBAL_ID",sizeof(unsigned int),
-				MB_TAG_DENSE,MB_TYPE_INTEGER,gid_tag,
-				0,true);
-      
-    nent = AllVerts.size();
-    int *gids = new int[nent];
-    for (int i = 0; i < nent; i++) gids[i] = i;
-
-    result = mbcore->tag_set_data(gid_tag,AllVerts,gids);
-
-    delete [] gids;
-
-
-    nent = AllFaces.size();
-    gids = new int[nent];
-    for (int i = 0; i < nent; i++) gids[i] = i;
-
-    result = mbcore->tag_set_data(gid_tag,AllFaces,gids);
-
-    delete [] gids;
-
-
-    nent = AllCells.size();
-    gids = new int[nent];
-    for (int i = 0; i < nent; i++) gids[i] = i;
-
-    result = mbcore->tag_set_data(gid_tag,AllCells,gids);
-
-    delete [] gids;
-      
-  }
+  init_pface_dirs();
 
 
   // Create Epetra_maps
@@ -221,11 +163,17 @@ void Mesh_maps_moab::clear_internals_ ()
   OwnedCells.clear();
   GhostCells.clear();
     
+  lid_tag = 0;
   gid_tag = 0;
+  mattag = 0;
+  sstag = 0;
+  nstag = 0;
 
   spacedim = 3;
   celldim = -1;
   facedim = -1;
+
+  faceflip = NULL;
 
   cell_map_w_ghosts_ = cell_map_wo_ghosts_ = NULL;
   face_map_w_ghosts_ = face_map_wo_ghosts_ = NULL;
@@ -309,6 +257,75 @@ void Mesh_maps_moab::init_id_handle_maps() {
 }
 
 
+
+void Mesh_maps_moab::init_global_ids() {
+  int result;
+    
+  if (!serial_run) {
+    // Ask Parallel Communicator to assign global IDs to entities
+
+    bool largest_dim_only=false;
+    int start_id=0;
+    int largest_dim=celldim;
+    result = mbcomm->assign_global_ids(0,largest_dim,start_id,largest_dim_only);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Problem assigning global IDS" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+    
+
+    // Exchange global IDs across all processors
+
+    result = mbcore->tag_get_handle("GLOBAL_ID",gid_tag);
+    if (result != MB_SUCCESS) {
+      std::cerr << "Could not get tag handle for GLOBAL_ID data" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+
+    mbcomm->exchange_tags(gid_tag,AllVerts);
+    mbcomm->exchange_tags(gid_tag,AllFaces);
+    mbcomm->exchange_tags(gid_tag,AllCells);
+
+  }
+  else {
+    // Serial case - we assign global IDs ourselves
+
+    result = mbcore->tag_create("GLOBAL_ID",sizeof(unsigned int),
+				MB_TAG_DENSE,MB_TYPE_INTEGER,gid_tag,
+				0,true);
+      
+    int nent = AllVerts.size();
+    int *gids = new int[nent];
+    for (int i = 0; i < nent; i++) gids[i] = i;
+
+    result = mbcore->tag_set_data(gid_tag,AllVerts,gids);
+
+    delete [] gids;
+
+
+    nent = AllFaces.size();
+    gids = new int[nent];
+    for (int i = 0; i < nent; i++) gids[i] = i;
+
+    result = mbcore->tag_set_data(gid_tag,AllFaces,gids);
+
+    delete [] gids;
+
+
+    nent = AllCells.size();
+    gids = new int[nent];
+    for (int i = 0; i < nent; i++) gids[i] = i;
+
+    result = mbcore->tag_set_data(gid_tag,AllCells,gids);
+
+    delete [] gids;
+      
+  }
+
+
+}
+
+
 void Mesh_maps_moab::init_pvert_lists() {
   int result;
 
@@ -352,9 +369,10 @@ void Mesh_maps_moab::init_pvert_lists() {
 void Mesh_maps_moab::init_pface_lists() {
   int result;
 
-  // We have to make MOAB create the missing 'faces' (faces in 3D,
-  // edges in 2D). We do this by looping over the cells and asking
-  // for their faces with the create_if_missing=true option
+
+  // Make MOAB create the missing 'faces' (faces in 3D, edges in
+  // 2D). We do this by looping over the cells and asking for their
+  // faces with the create_if_missing=true option
 
 
   for (MBRange::iterator it = AllCells.begin(); it != AllCells.end(); it++) {
@@ -392,6 +410,168 @@ void Mesh_maps_moab::init_pface_lists() {
   OwnedFaces = AllFaces;  // I think we DO want a data copy here
   OwnedFaces -= NotOwnedFaces;
     
+
+}
+
+
+void Mesh_maps_moab::init_pface_dirs() {
+  int result, zero=0, minus1=-1;
+  int face_lid, face_gid, cell_gid;
+  int sidenum, offset, facedir;
+  MBEntityHandle cell, face;
+  int DebugWait=1;
+
+  // Do some additional processing to see if ghost faces and their masters
+  // are oriented the same way; if not, turn on flag to flip them
+
+
+  /* In this code, we increment local values of global IDs by 1 so
+     that we can distinguish between the lowest gid and no data */
+
+  //  result = mbcore->tag_create("TMP_FC_TAG",sizeof(MBEntityHandle),
+  //			      MB_TAG_DENSE, MB_TYPE_HANDLE, tmp_fc_tag,
+  //			      &zero,true);
+
+  MBTag tmp_fc0_tag, tmp_fc1_tag;
+  result = mbcore->tag_create("TMP_FC0_TAG",sizeof(int),
+			      MB_TAG_DENSE, MB_TYPE_INTEGER, tmp_fc0_tag,
+			      &zero,true);
+  result = mbcore->tag_create("TMP_FC1_TAG",sizeof(int),
+			      MB_TAG_DENSE, MB_TYPE_INTEGER, tmp_fc1_tag,
+			      &zero,true);
+
+  
+  for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); it++) {
+    MBRange fcells;
+    face = *it;
+
+    result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
+    if (result != MB_SUCCESS) {
+      cout << "Could not get cells of face" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+
+    mbcore->tag_set_data(tmp_fc0_tag,&face,1,&zero);
+    mbcore->tag_set_data(tmp_fc1_tag,&face,1,&zero);
+
+
+    for (MBRange::iterator jt = fcells.begin(); jt != fcells.end(); ++jt) {
+
+      cell = *jt;
+      result = mbcore->side_number(cell,face,sidenum,facedir,offset);
+      if (result != MB_SUCCESS) {
+	cout << "Could not get face dir w.r.t. cell" << std::endl;
+	assert(result == MB_SUCCESS);
+      }
+
+      result = mbcore->tag_get_data(gid_tag,&cell,1,&cell_gid);
+      cell_gid += 1; 
+
+      if (facedir == 1)
+	result = mbcore->tag_set_data(tmp_fc0_tag,&face,1,&cell_gid);
+      else
+	result = mbcore->tag_set_data(tmp_fc1_tag,&face,1,&cell_gid);
+      
+    }
+
+  }
+
+
+
+  mbcomm->exchange_tags(tmp_fc0_tag,AllFaces);
+  if (result != MB_SUCCESS) {
+    cout << "Could not get exchange tag data successfully" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
+  mbcomm->exchange_tags(tmp_fc1_tag,AllFaces);
+  if (result != MB_SUCCESS) {
+    cout << "Could not get exchange tag data successfully" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
+
+
+  faceflip = new bool[AllFaces.size()];
+  for (int i = 0; i < AllFaces.size(); i++) faceflip[i] = false;
+
+  for (MBRange::iterator it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); it++) {
+    MBRange fcells;
+    int ghost_cell0_gid = 0, ghost_cell1_gid = 0;
+    int master_cell0_gid = 0, master_cell1_gid = 0;
+
+    face = *it;
+
+
+    mbcore->tag_get_data(tmp_fc0_tag,&face,1,&master_cell0_gid);
+    if (result != MB_SUCCESS) {
+      cout << "Could not get face tag data" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+    mbcore->tag_get_data(tmp_fc1_tag,&face,1,&master_cell1_gid);
+    if (result != MB_SUCCESS) {
+      cout << "Could not get face tag data" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+
+
+    mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
+    if (result != MB_SUCCESS) {
+      cout << "Could not get cells of face" << std::endl;
+      assert(result == MB_SUCCESS);
+    }
+
+
+    for (MBRange::iterator jt = fcells.begin(); jt != fcells.end(); ++jt) {
+      cell = *jt;
+
+      result = mbcore->side_number(cell,face,sidenum,facedir,offset);
+      if (result != MB_SUCCESS) {
+	cout << "Could not get face dir w.r.t. cell" << std::endl;
+	assert(result == MB_SUCCESS);
+      }
+
+      if (facedir == 1) {
+	result = mbcore->tag_get_data(gid_tag,&cell,1,&ghost_cell0_gid);
+	ghost_cell0_gid += 1;
+      }
+      else {
+	result = mbcore->tag_get_data(gid_tag,&cell,1,&ghost_cell1_gid);
+	ghost_cell1_gid += 1;
+      }
+    }
+
+    if (ghost_cell0_gid == master_cell1_gid || 
+	ghost_cell1_gid == master_cell0_gid) {
+
+      // Both cells don't have to match because a ghost face may 
+      // not have the cell on the other side
+      
+      result = mbcore->tag_get_data(lid_tag,&face,1,&face_lid);
+      if (result != MB_SUCCESS) {
+	cout << "Could not get face tag data" << std::endl;
+	assert(result == MB_SUCCESS);
+      }
+      faceflip[face_lid] = true;
+
+    }
+    else { // Sanity check
+      if (ghost_cell0_gid != master_cell0_gid &&
+	  ghost_cell1_gid != master_cell1_gid) {
+
+	// Problem if there is no match at all
+
+	//
+	mbcore->tag_get_data(gid_tag,&face,1,&face_gid);
+	//
+
+	cout << "Face cells mismatch between master and ghost (processor " << mbcomm->rank() << ")" << std::endl;
+	cout << " Face " << face_gid << std::endl;
+	cout << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
+	cout << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
+      }
+    }
+  }
 
 }
 
@@ -458,7 +638,7 @@ void Mesh_maps_moab::init_set_info() {
     int n;
     
     if (tag != mattag && tag != sstag && tag != nstag) continue;
-    
+
     mbcore->get_number_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,n);
     
     nsets +=  n;
@@ -476,6 +656,11 @@ void Mesh_maps_moab::init_set_info() {
   }
 
 
+  // We'll pad maxnsets so that we can try and avoid (but not
+  // guarantee) reallocation
+
+  maxnsets *= 2;
+
   setids = new int[maxnsets];
   setdims = new int[maxnsets];
 
@@ -487,7 +672,7 @@ void Mesh_maps_moab::init_set_info() {
     int n;
     
     if (tag != mattag && tag != sstag && tag != nstag) continue;
-    
+
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&tag,0,1,tagsets);
 
     for (MBRange::iterator it = tagsets.begin(); it != tagsets.end(); ++it) {
@@ -525,6 +710,7 @@ void Mesh_maps_moab::init_set_info() {
 
 
   // Collate all the sets across processors
+
   
   int *allsetids = new int[nprocs*maxnsets];
   int *allsetdims = new int[nprocs*maxnsets];
@@ -539,46 +725,82 @@ void Mesh_maps_moab::init_set_info() {
   
   
   // Make a list of all setids/entity dimensions across all processors
-  
+
+  int nsetsall;
   if (rank == 0) {
-    nsets = 0;
+
+    // Just add to the list of setids on processor 0 Since we doubled
+    // the computed maxnsets and allocated allsetids to be of length
+    // nprocs*maxnsets, we are guaranteed that we will not overwrite
+    // processor 1 entries if we add unique entries from processor 1
+    // to the end of processor 0's list of sets and so on
+
+    nsetsall = nsets;
+
     for (int k = celldim; k >= 0; k--) {
-      for (int i = 0; i < nprocs*maxnsets; i++) {
-	if (allsetdims[i] != k) continue;
+      for (int ip = 1; ip < nprocs; ip++) {
+	for (int i = 0; i < maxnsets; i++) {
+	  if (allsetdims[ip*maxnsets+i] != k) continue;
 	
-	int found = 0;
-	for (int j = 0; j < nsets; j++) {
-	  if (setids[j] == allsetids[i]) {
-	    found = 1;
-	    break;
+	  int found = 0;
+	  for (int j = 0; j < nsetsall; j++) {
+	    if (allsetids[j] == allsetids[ip*maxnsets+i]) {
+	      found = 1;
+	      break;
+	    }
 	  }
-	}
-	
-	if (!found) {
-	  setids[nsets] = allsetids[i];
-	  setdims[nsets] = allsetdims[i];
-	  nsets++;
+	  
+	  if (!found) {
+	    allsetids[nsetsall] = allsetids[ip*maxnsets+i];
+	    allsetdims[nsetsall] = allsetdims[ip*maxnsets+i];
+	    nsetsall++;
+	  }
 	}
       }
     }
 
+    if (nsetsall > maxnsets) {
+      // We have to resize the allsetdims array
+
+      int *tmpsetids = new int[nsetsall];
+      int *tmpsetdims = new int[nsetsall];
+
+      // is it possible to use memcpy on arrays allocated by new
+
+      memcpy(tmpsetids, allsetids, nsetsall*sizeof(allsetids[0]));
+      memcpy(tmpsetdims, allsetdims, nsetsall*sizeof(allsetdims[0]));
+
+      delete [] allsetids;
+      delete [] allsetdims;
+
+      maxnsets = nsetsall;
+      allsetids = new int[maxnsets];
+      allsetdims = new int[maxnsets];
+
+      memcpy(allsetids, tmpsetids, nsetsall*sizeof(tmpsetids[0]));
+      memcpy(allsetdims, tmpsetdims, nsetsall*sizeof(tmpsetdims[0]));
+    }
+
+
+
     for (int i = 1; i < nprocs; i++) {
-      for (int j = 0; j < nsets; j++) {
-	allsetids[nsets*i+j] = allsetids[j];
-	allsetdims[nsets*i+j] = allsetdims[j];
-      }
+      memcpy(allsetids+maxnsets*i,allsetids,nsetsall*sizeof(allsetids[0]));
+      memcpy(allsetdims+maxnsets*i,allsetdims,nsetsall*sizeof(allsetdims[0]));
     }
 
     for (int i = 0; i < nprocs; i++)
-      allnsets[i] = nsets;
+      allnsets[i] = nsetsall;
 
-  }
+  } // if rank == 0;
+
+
+
   
   MPI_Scatter(allnsets,1,MPI_INT,&nsets,1,MPI_INT,0,MPI_COMM_WORLD);
 
-  MPI_Scatter(allsetids,nsets,MPI_INT,setids,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Scatter(allsetids,maxnsets,MPI_INT,setids,maxnsets,MPI_INT,0,MPI_COMM_WORLD);
 
-  MPI_Scatter(allsetdims,nsets,MPI_INT,setdims,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Scatter(allsetdims,maxnsets,MPI_INT,setdims,maxnsets,MPI_INT,0,MPI_COMM_WORLD);
   
   delete [] allsetids;
   delete [] allsetdims;
@@ -793,6 +1015,11 @@ void Mesh_maps_moab::cell_to_face_dirs (unsigned int cellid,
       cerr << "Could not find face dir in cell" << std::endl;
       assert(result == MB_SUCCESS);
     }
+    
+    // If this is a ghost face and the master has the opposite direction
+    // we are supposed to flip it
+
+    if (faceflip[cell_faces[i]]) cell_facedirs[i] *= -1;
   }
     
   std::copy (cell_facedirs, cell_facedirs+nf, begin);
@@ -863,8 +1090,14 @@ void Mesh_maps_moab::face_to_nodes (unsigned int faceid, unsigned int *begin,
   assert ((unsigned int) (end - begin) >= nn);
 
   face_nodeids = new int[nn];
-  for (int i = 0; i < nn; i++) 
-    mbcore->tag_get_data(lid_tag,&(face_nodes[i]),1,&(face_nodeids[i]));
+  if (faceflip[faceid]) {
+    for (int i = nn-1; i >= 0; i--) 
+      mbcore->tag_get_data(lid_tag,&(face_nodes[i]),1,&(face_nodeids[nn-i-1]));
+  }
+  else {
+    for (int i = 0; i < nn; i++) 
+      mbcore->tag_get_data(lid_tag,&(face_nodes[i]),1,&(face_nodeids[i]));
+  }
 
   std::copy (face_nodeids, face_nodeids+nn, begin);
 
@@ -962,8 +1195,14 @@ void Mesh_maps_moab::face_to_coordinates (unsigned int faceid,
 
     coords = new double[spacedim*nn];
     
-    for (int i = 0; i < nn; i++)
-      mbcore->get_coords(&(face_nodes[i]),1,coords+spacedim*i);
+    if (faceflip[faceid]) {
+      for (int i = nn-1; i >=0; i--)
+	mbcore->get_coords(&(face_nodes[i]),1,coords+spacedim*(nn-i-1));
+    }
+    else {
+      for (int i = 0; i < nn; i++)
+	mbcore->get_coords(&(face_nodes[i]),1,coords+spacedim*i);
+    }
 
     std::copy (coords, coords+spacedim*nn, begin);
 
