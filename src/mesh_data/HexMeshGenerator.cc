@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Thu Nov 18 10:05:06 2010
+ * @date Mon Nov 22 12:02:44 2010
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -257,14 +257,14 @@ HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
 // -------------------------------------------------------------
 
 /** 
- * Cell indexes are 0-based.  Side indexes are 1-based:
+ * Cell indexes are 0-based and local.  Side indexes are 0-based:
  * 
- *  - West = side 5 (i = 0)
- *  - East = side 3
- *  - South = side 2 (j = 0)
- *  - North = side 4
- *  - Bottom = side 1 (k = 0)
- *  - Top = side 6
+ *  - West = side 4 (i = 0)
+ *  - East = side 2
+ *  - South = side 1 (j = 0)
+ *  - North = side 3
+ *  - Bottom = side 0 (k = 0)
+ *  - Top = side 5
  * 
  * @return 
  */
@@ -274,7 +274,7 @@ HexMeshGenerator::generate_the_sidesets(void)
   std::vector<Side_set *> result;
 
   static const int SIX(6);
-  for (int side = 1; side <= SIX; side++) {
+  for (int side = 0; side < SIX; side++) {
     int imin(0), imax(ni_);
     int jmin(0), jmax(nj_);
     int kmin(0), kmax(nk_);
@@ -282,27 +282,27 @@ HexMeshGenerator::generate_the_sidesets(void)
     std::string ssname("Bogus");
 
     switch (side) {
-    case (1):
+    case (0):
       ssname = "Bottom";
       kmax = 1;
       break;
-    case (2):
+    case (1):
       ssname = "South";
       jmax = 1;
       break;
-    case (3):
+    case (2):
       ssname = "East";
       imin = imax - 1;
       break;
-    case (4):
+    case (3):
       ssname = "North";
       jmin = jmax - 1;
       break;
-    case (5):
+    case (4):
       ssname = "West";
       imax = 1;
       break;
-    case (6):
+    case (5):
       ssname = "Top";
       kmin = kmax - 1;
       break;
@@ -316,7 +316,7 @@ HexMeshGenerator::generate_the_sidesets(void)
         for (unsigned int k = kmin; k < kmax; k++) {
           unsigned cellidx(global_cell(i, j, k));
           if (cellidx >= cell0_ && cellidx <= cell1_) {
-            clist.push_back(cellidx);
+            clist.push_back(cellidx-cell0_);
             slist.push_back(side);
           }
         }
