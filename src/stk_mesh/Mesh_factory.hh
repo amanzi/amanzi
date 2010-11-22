@@ -58,13 +58,11 @@ private:
                            const Epetra_Map& cellmap, 
                            const Epetra_Map& vertmap,
                            const Mesh_data::Fields& fields);
-    void receive_bulk_data_ ();
 
     // Add parts to the meta-data.
     stk::mesh::Part* add_element_block_ (const Mesh_data::Element_block& block);
     stk::mesh::Part* add_side_set_      (const Mesh_data::Side_set& set);
     stk::mesh::Part* add_node_set_      (const Mesh_data::Node_set& set);
-    void declare_faces_                 (stk::mesh::Entity& element, stk::mesh::Part &part);
 
     // Populate parts with elements and fields via the bulk-data
     void add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part& part,
@@ -79,7 +77,15 @@ private:
 
     void add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part);
 
+    const stk::mesh::Entity&
+    Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index, 
+                                stk::mesh::Entity *owner, const unsigned int& side_index,
+                                stk::mesh::Entity *nbr);
+    
+    int generate_local_faces_(const int& fidx0, const bool& justcount = false);
 
+    int count_local_faces_() { return generate_local_faces_(0, true); }
+    
     // Temporary information for the mesh currently under construction.
 
     stk::mesh::BulkData *bulk_data_;
@@ -87,6 +93,7 @@ private:
     Entity_map          *entity_map_;
 
 
+    stk::mesh::EntityRank node_rank_;
     stk::mesh::EntityRank face_rank_;
     stk::mesh::EntityRank element_rank_;
     

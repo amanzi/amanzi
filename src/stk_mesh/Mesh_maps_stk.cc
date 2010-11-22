@@ -126,14 +126,14 @@ void Mesh_maps_stk::build_tables_ ()
 
         Entity_Ids faces;
         mesh_->element_to_faces (global_index, faces);
-        ASSERT (faces.size () == 6);
+        // ASSERT (faces.size () == 6);
 
         Entity_Ids nodes;
         mesh_->element_to_nodes (global_index, nodes);
         ASSERT (nodes.size () == 8);
 
         // Loop over faces
-        ASSERT ((unsigned int) (faces.end () - faces.begin ()) == 6);
+        // ASSERT ((unsigned int) (faces.end () - faces.begin ()) == 6);
         for (Entity_Ids::const_iterator face = faces.begin ();
              face != faces.end (); ++face)
         {
@@ -155,7 +155,7 @@ void Mesh_maps_stk::build_tables_ ()
         }
 
     }
-    ASSERT (cell_to_face_.size () == 6 * count_entities (Mesh_data::CELL, USED));
+    // ASSERT (cell_to_face_.size () == 6 * count_entities (Mesh_data::CELL, USED));
     ASSERT (cell_to_node_.size () == 8 * count_entities (Mesh_data::CELL, USED));
 
     // Faces to nodes

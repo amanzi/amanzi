@@ -139,7 +139,7 @@ void Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
         ids.push_back (it->entity ()->identifier ());
     }
 
-    ASSERT (ids.size () == 6);
+    // FIXME: ASSERT (ids.size () == 6);
 }
 
 void Mesh::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
