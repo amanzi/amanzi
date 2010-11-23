@@ -17,7 +17,9 @@
 #include "boost/filesystem/path.hpp"
 
 
+#ifdef ENABLE_CGNS
 using namespace CGNS_PAR;
+#endif
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
 	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
