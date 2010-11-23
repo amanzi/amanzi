@@ -16,7 +16,7 @@ public:
 
   void Compute(const std::vector<double> &K);
   void Compute(const std::vector<Epetra_SerialSymDenseMatrix> &K);
-  void Print();
+  void Print(ostream &os=std::cout);
 
   void ComputeFaceSchur();
 

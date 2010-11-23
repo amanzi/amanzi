@@ -1,3 +1,4 @@
+#include "Mesh_maps_moab.hh"
 //#include "mpi.h"
 #include "UnitTest++.h"
 
@@ -18,10 +19,13 @@
 
 #include "gmv_mesh.hh"
 
+#include <iostream>
+
 struct problem_setup
 {
   Epetra_Comm *comm;
-  Teuchos::RCP<Mesh_maps_simple> mesh;
+  //Teuchos::RCP<Mesh_maps_simple> mesh;
+  Teuchos::RCP<Mesh_maps_base> mesh;
   Teuchos::ParameterList bc_params;
   DarcyProblem *problem;
   AztecOO *solver;
@@ -40,7 +44,17 @@ struct problem_setup
 #endif
     
     // Create the mesh.
-    mesh = Teuchos::rcp(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
+    //mesh = Teuchos::rcp(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
+    
+    if (comm->NumProc() == 1)
+      mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab("test/4x4x4.g", MPI_COMM_WORLD));
+    else {
+      std::ostringstream file;
+      file << "test/4x4x4_" << comm->NumProc() << "P.h5m";
+std::cout << file.str() << std::endl;
+      mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab(file.str().c_str(), MPI_COMM_WORLD));
+std::cout << "FOOBAR" << std::endl;
+    }
     
     // Define the default BC parameter list: no flow on all sides.
     // Can overwrite the BC on selected sides before creating the problem.
@@ -51,6 +65,7 @@ struct problem_setup
     set_bc(BACK,   "No Flow");
     set_bc(BOTTOM, "No Flow");
     set_bc(TOP,    "No Flow");
+std::cout << "BARFOO" << std::endl;
   }
   
   ~problem_setup()
@@ -65,27 +80,27 @@ struct problem_setup
     switch (side) {
     case LEFT:
       bc = &bc_params.sublist("BC00");
-      bc->set("Side set ID", 3);
+      bc->set("Side set ID", 4);
       break;
     case RIGHT:
       bc = &bc_params.sublist("BC01");
-      bc->set("Side set ID", 1);
+      bc->set("Side set ID", 2);
       break;
     case FRONT:
       bc = &bc_params.sublist("BC02");
-      bc->set("Side set ID", 0);
+      bc->set("Side set ID", 1);
       break;
     case BACK:
       bc = &bc_params.sublist("BC03");
-      bc->set("Side set ID", 2);
+      bc->set("Side set ID", 3);
       break;
     case BOTTOM:
       bc = &bc_params.sublist("BC04");
-      bc->set("Side set ID", 4);
+      bc->set("Side set ID", 5);
       break;
     case TOP:
       bc = &bc_params.sublist("BC05");
-      bc->set("Side set ID", 5);
+      bc->set("Side set ID", 6);
       break;
     }
     bc->set("Type", type);
@@ -210,6 +225,7 @@ SUITE(Simple_1D_Flow) {
 
     // Set non-default model parameters before solve_problem().
 
+std::cout << "FUBAR" << std::endl;
     solve_problem();
 
     // Define the analytic pressure solution:
@@ -224,10 +240,12 @@ SUITE(Simple_1D_Flow) {
 
     double error;
     cell_pressure_error(error);
+    std::cout << error << " ";
     CHECK(error < 1.0e-8);
     
     face_pressure_error(error);
     CHECK(error < 1.0e-8);
+    std::cout << error << std::endl;
   }
 
   TEST_FIXTURE(problem_setup, xg_p_p)

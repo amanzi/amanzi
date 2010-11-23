@@ -59,7 +59,7 @@ DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_maps_
       case FlowBC::STATIC_HEAD:
         dir_faces.reserve(dir_faces.size() + BC.Faces.size());
         for (int i = 0; i < BC.Faces.size(); ++i)
-          dir_faces.push_back(BC.Faces[i]);
+          if (FaceMap().MyLID(BC.Faces[i])) dir_faces.push_back(BC.Faces[i]);
         break;
     }
   }

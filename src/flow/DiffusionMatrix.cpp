@@ -208,7 +208,7 @@ void DiffusionMatrix::ApplyDirichletProjection(Epetra_CrsMatrix &Mff)
     for (int i = 0; i < n; ++i) {
       values[i] = 0.0;
       int lcol = indices[i]; // local column index
-      if (Mff.RowMap().MyLID(lcol)) Mff.ReplaceMyValues(lcol, 1, &ZERO, &lrow);
+      if (Mff.RangeMap().MyLID(lcol)) Mff.ReplaceMyValues(lcol, 1, &ZERO, &lrow);
     }
     Mff.ReplaceMyValues(lrow, 1, &ONE, &lrow); // put a 1 on the diagonal
   }
@@ -223,11 +223,13 @@ void DiffusionMatrix::ApplyDirichletProjection(Epetra_MultiVector &xf)
 }
 
 
-void DiffusionMatrix::Print()
+void DiffusionMatrix::Print(std::ostream &os)
 {
-  std::cout << *Dcc_ << std::endl;
-  std::cout << *Dcf_ << std::endl;
-  std::cout << *Dff_ << std::endl;
-  if (Sff_) std::cout << *Sff_ << std::endl;
+  os << *Dcc_ << std::endl;
+  os << *Dcf_ << std::endl;
+  os << *Dff_ << std::endl;
+  if (Sff_) os << *Sff_ << std::endl;
+  for (int j = 0; j < dir_faces_.size(); ++j) os << dir_faces_[j] << " ";
+  if (dir_faces_.size() > 0) os << std::endl;
 }
 
