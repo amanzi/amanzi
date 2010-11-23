@@ -599,8 +599,6 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
             int globalidx((*c)->identifier());
 
             for (unsigned int s = 0; s < topo->side_count; s++) {
-                const CellTopologyData *side_topo = (topo->side[s].topology);
-                const unsigned * const side_node_map = topo->side[s].node;
 
                 // see if the face already exists (on the local
                 // processor); if so, just go on to the next
@@ -749,7 +747,8 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set,
          it != node_list.end ();
          ++it)
     {
-        int global_vidx(vmap.GID(*it));
+      int local_vidx(*it);
+        int global_vidx(vmap.GID(local_vidx));
         stk::mesh::Entity& node = bulk_data_->declare_entity (stk::mesh::Node, global_vidx, parts_to_add);
     }
 

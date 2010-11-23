@@ -73,8 +73,8 @@ SUITE (MAPS)
 
         if (my_pid == 0)
         {
-            // mesh_map.cell_to_faces (0, faces.begin (), faces.end ());
-            // CHECK_ARRAY_EQUAL (faces.begin (), faces_cell_0, 6);
+            mesh_map.cell_to_faces (0, faces.begin (), faces.end ());
+            CHECK_ARRAY_EQUAL (faces.begin (), faces_cell_0, 6);
 
             mesh_map.cell_to_nodes (0, nodes.begin (), nodes.end ());
             CHECK_ARRAY_EQUAL (nodes.begin (), nodes_cell_0, 8);

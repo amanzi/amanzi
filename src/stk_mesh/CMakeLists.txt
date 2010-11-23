@@ -1,6 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/utils)
 include_directories(${PROJECT_SOURCE_DIR}/dbc)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
+include_directories(${PROJECT_SOURCE_DIR}/exodus)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 
 include_directories(${Trilinos_INCLUDE_DIRS})
@@ -15,6 +16,10 @@ if (BUILD_TESTS)
                  test/test_Maps.cc test/test_Hex.cc)
   add_test(stk_mesh test_stk_mesh)
   target_link_libraries(test_stk_mesh stk_mesh unittest++ ${HDF5_LIBS_ALL})
+
+  # add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
+  # add_test(stk_mesh_read test_stk_mesh_read)
+  # target_link_libraries(test_stk_mesh_read exodus stk_mesh unittest++ ${HDF5_LIBS_ALL})
 
   add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
   target_link_libraries(test_stk_mesh_parallel stk_mesh unittest++ 
