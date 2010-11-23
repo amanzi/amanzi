@@ -57,9 +57,9 @@ endif()
 add_library(curl SHARED IMPORTED)
 set_property(TARGET curl PROPERTY IMPORTED_LOCATION ${CURL_LIBRARY})
 
-
-
-
+# Attempting to explicitly find the MPI implementation libraries has been 
+# deprecated in favor of using compiler wrappers such as 'mpicc'.  See Trac 
+# ticket #240.  --RTM
 ##############################################################################
 # MPI Message Passing Interface 
 # OpenMPI - http:://www.open-mpi.org
