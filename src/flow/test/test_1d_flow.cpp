@@ -51,9 +51,7 @@ struct problem_setup
     else {
       std::ostringstream file;
       file << "test/4x4x4_" << comm->NumProc() << "P.h5m";
-std::cout << file.str() << std::endl;
       mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab(file.str().c_str(), MPI_COMM_WORLD));
-std::cout << "FOOBAR" << std::endl;
     }
     
     // Define the default BC parameter list: no flow on all sides.
@@ -65,7 +63,6 @@ std::cout << "FOOBAR" << std::endl;
     set_bc(BACK,   "No Flow");
     set_bc(BOTTOM, "No Flow");
     set_bc(TOP,    "No Flow");
-std::cout << "BARFOO" << std::endl;
   }
   
   ~problem_setup()
@@ -225,7 +222,6 @@ SUITE(Simple_1D_Flow) {
 
     // Set non-default model parameters before solve_problem().
 
-std::cout << "FUBAR" << std::endl;
     solve_problem();
 
     // Define the analytic pressure solution:
@@ -240,12 +236,10 @@ std::cout << "FUBAR" << std::endl;
 
     double error;
     cell_pressure_error(error);
-    std::cout << error << " ";
     CHECK(error < 1.0e-8);
     
     face_pressure_error(error);
     CHECK(error < 1.0e-8);
-    std::cout << error << std::endl;
   }
 
   TEST_FIXTURE(problem_setup, xg_p_p)
@@ -375,7 +369,6 @@ std::cout << "FUBAR" << std::endl;
     CHECK(error < 1.0e-8);
     
     face_pressure_error(error);
-    std::cout << error << std::endl;
     CHECK(error < 1.0e-8);
   }
 
