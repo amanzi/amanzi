@@ -24,6 +24,7 @@
 #include "KineticRate.hpp"
 #include "Species.hpp"
 #include "SecondarySpecies.hpp"
+#include "Mineral.hpp"
 #include "StringTokenizer.hpp"
 
 class Block; 
@@ -37,7 +38,8 @@ class KineticRateTST : public KineticRate
   void Setup(const SecondarySpecies& reaction,
              const StringTokenizer reaction_data,
              const SpeciesArray primary_species);
-  void Update(const SpeciesArray primary_species);
+  void Update(const SpeciesArray primary_species,
+              const std::vector<Mineral>& minerals);
   void AddContributionToResidual(const double por_den_sat_vol, 
                                  std::vector<double> *residual);
                                  
@@ -59,8 +61,13 @@ class KineticRateTST : public KineticRate
   double area(void) const { return this->area_; };
   void log_Keq(double set_log_Keq) { this->log_Keq_ = set_log_Keq; };
   double log_Keq(void) const { return this->log_Keq_; };
-  void rate_constant(double set_rate_constant) { this->rate_constant_ = set_rate_constant; };
+
+  void rate_constant(double rate_constant) { this->rate_constant_ = rate_constant; };
   double rate_constant(void) const { return this->rate_constant_; };
+
+  void log10_rate_constant(double log10_k) { this->log10_rate_constant_ = log10_k; };
+  double log10_rate_constant(void) const { return this->log10_rate_constant_; };
+
   void sat_state_exponent(double set_sat_state_exponent) { this->sat_state_exponent_ = set_sat_state_exponent; };
   double sat_state_exponent(void) const { return this->sat_state_exponent_; };
 
@@ -74,6 +81,7 @@ class KineticRateTST : public KineticRate
   double area_;  // surface area [m^2]
   double log_Keq_;  // log_Keq [-]
   double rate_constant_;  // k, rate constant, [moles/m^2/sec]
+  double log10_rate_constant_;  // log10(k), 
   double sat_state_exponent_;  // n, saturation state exponent, [-]
 
   double Q_over_Keq_;

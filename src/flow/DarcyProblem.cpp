@@ -31,7 +31,7 @@ DarcyProblem::DarcyProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   // DEFINE DEFAULTS FOR PROBLEM PARAMETERS
   rho_ = 1.0;
   mu_  = 1.0;
-  k_.resize(CellMap().NumMyElements(), 1.0);
+  k_.resize(CellMap(true).NumMyElements(), 1.0);
   for (int i = 0; i < 3; ++i) g_[i] = 0.0; // no gravity
 }
 
@@ -59,7 +59,7 @@ DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_maps_
       case FlowBC::STATIC_HEAD:
         dir_faces.reserve(dir_faces.size() + BC.Faces.size());
         for (int i = 0; i < BC.Faces.size(); ++i)
-          dir_faces.push_back(BC.Faces[i]);
+          if (FaceMap().MyLID(BC.Faces[i])) dir_faces.push_back(BC.Faces[i]);
         break;
     }
   }
@@ -74,7 +74,7 @@ void DarcyProblem::init_mimetic_disc_(Mesh_maps_base &mesh, std::vector<MimeticH
   double *xBegin = &x[0][0];  // begin iterator
   double *xEnd = xBegin+24;   // end iterator
 
-  MD.resize(mesh.cell_map(false).NumMyElements());
+  MD.resize(mesh.cell_map(true).NumMyElements());
   for (int j = 0; j < MD.size(); ++j) {
     mesh.cell_to_coordinates((unsigned int) j, xBegin, xEnd);
     MD[j].update(x);
@@ -130,7 +130,7 @@ void DarcyProblem::SetPermeability(double k)
 
 void DarcyProblem::SetPermeability(const Epetra_Vector &k)
 {
-  /// should verify k has the expected size
+  /// should verify k.Map() is CellMap()
   /// should verify k values are all > 0
   for (int i = 0; i < k_.size(); ++i) k_[i] = k[i];
 }
@@ -146,24 +146,22 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   Epetra_Vector &Pcell_own = *CreateCellView(X);
   Epetra_Vector &Pface_own = *CreateFaceView(X);
 
-  Epetra_Vector &Fcell = *CreateCellView(F);
+  Epetra_Vector &Fcell_own = *CreateCellView(F);
   Epetra_Vector &Fface_own = *CreateFaceView(F);
   
-  // Create cell vectors that include ghosts.
+  // Create input cell and face pressure vectors that include ghosts.
   Epetra_Vector Pcell(CellMap(true));
-  
-  // Populate the cell pressure vector from the input.
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
-
-  // Create face vectors that include ghosts.
+  
   Epetra_Vector Pface(FaceMap(true));
-  Epetra_Vector Fface(FaceMap(true));
-
-  // Populate the face pressure vector from the input.
   Pface.Import(Pface_own, *face_importer_, Insert);
 
   // Apply initial BC fixups to PFACE.
   apply_BC_initial_(Pface); // modifies used values
+
+  // Create cell and face result vectors that include ghosts.
+  Epetra_Vector Fcell(CellMap(true));
+  Epetra_Vector Fface(FaceMap(true));
 
   int cface[6];
   double aux1[6], aux2[6], gflux[6];
@@ -183,15 +181,15 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
   }
-  //Fface_own.Export(Fface, *face_importer_, Add);
 
   // Apply final BC fixups to FFACE.
   apply_BC_final_(Fface); // modifies used values
   
-  for (int j = 0; j < Fface_own.MyLength(); ++j)
-    Fface_own[j] = Fface[j];
+  // Copy owned part of result into the output vectors.
+  for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
+  for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
 
-  delete &Pcell_own, &Pface_own, &Fcell, &Fface_own;
+  delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
 }
 
 

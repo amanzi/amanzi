@@ -79,6 +79,7 @@ KineticRateTST::KineticRateTST(void)
       area_(0.0),
       log_Keq_(0.0),
       rate_constant_(0.0),
+      log10_rate_constant_(0.0),
       sat_state_exponent_(0.0),
       Q_over_Keq_(1.0),
       modifying_term_(1.0)
@@ -146,9 +147,14 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
 
 
 
-void KineticRateTST::Update(const SpeciesArray primary_species)
+void KineticRateTST::Update(const SpeciesArray primary_species,
+                            const std::vector<Mineral>&  minerals)
 {
-  //  std::cout << std::endl;
+  // update surace area from the minerals
+  area(minerals.at(identifier()).surface_area());
+  log_Keq(minerals.at(identifier()).logK());
+//   std::cout << "area : " << area() << "  ";
+//   std::cout << std::endl;
   // calculate the Q/K term
   double lnQ = 0.0;
   for (unsigned int p = 0; p < primary_species.size(); p++) {
@@ -162,12 +168,6 @@ void KineticRateTST::Update(const SpeciesArray primary_species)
   double Keq = std::pow(10.0, log_Keq());
   Q_over_Keq(Q/Keq);
 
-  if (verbosity() == kDebugMineralKinetics) {
-    std::cout << "  Update: lnQ = " << lnQ << "   Q = " << Q << "   Keq = " << Keq 
-              << "  Q/K = " << Q_over_Keq() 
-              << "  lnQK = " << std::log(Q_over_Keq()) << std::endl;
-  }
-
   // calculate the modifying primary species term:
   double ln_mod_term = 0.0;
   for (unsigned int p = 0; p < primary_species.size(); p++) {
@@ -176,6 +176,20 @@ void KineticRateTST::Update(const SpeciesArray primary_species)
   modifying_term(std::exp(ln_mod_term));
 
   // calculate the modifying secondary species term:
+
+  if (verbosity() == kDebugMineralKinetics) {
+    std::cout << "Rate: " << name() << "\n"
+              << "  Update: lnQ = " << lnQ << "\n   Q = " << Q 
+              << "\n   Keq = " << Keq 
+              << "\n  Q/K = " << Q_over_Keq() 
+              << "\n  lnQK = " << std::log(Q_over_Keq()) << "\n"
+              << std::scientific
+              << "  area: " << area() << " [m^2]\n"
+              << "  rate_constant: " << rate_constant() << " [moles/m^2/s]\n"
+              << "  1-Q/K: " << 1.0-Q_over_Keq() << " [--]\n"
+              << std::fixed
+              << std::endl;
+  }
 }  // end Update()
 
 void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol, 
@@ -195,6 +209,7 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
   // add or subtract from the residual....
   for (unsigned int p = 0; p < reactant_stoichiometry.size(); p++) {
     (*residual)[p] -= reactant_stoichiometry.at(p) * rate;
+    //if (true) {
     if (verbosity() == kDebugMineralKinetics) {
       std::cout << "  Residual p: " << p
                 << "  coeff: " << reactant_stoichiometry.at(p)
@@ -219,6 +234,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
   static_cast<void>(por_den_sat_vol);
 
   // double dadC = 1.0;  // da_i/dC_j = nu_ij * m_i/m_j ; da_j/dC_j = m_j/m_j = 1
+
   double Keq = std::pow(10.0, log_Keq());
   double one_minus_QK = 1.0 - Q_over_Keq();  // (1-Q/Keq)
   double area_rate_constant = area() * rate_constant();  // k*A
@@ -291,17 +307,10 @@ void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
   for (; field != reaction_data.end(); field++) {
     st.tokenize(*field, space);
 
-    if (st.at(0) == "log_Keq") {
-      // should really obtain this from the mineral object....
-      log_Keq(std::atof(st.at(1).c_str()));
+    if (st.at(0) == "log10_rate_constant") {
+      log10_rate_constant(std::atof(st.at(1).c_str()));
+      rate_constant(std::pow(10.0, log10_rate_constant()));
     }
-    else if (st.at(0) == "rate_constant") {
-      rate_constant(std::atof(st.at(1).c_str()));
-    }
-    else if (st.at(0) == "area") {
-      // needs to be calculated....
-      area(std::atof(st.at(1).c_str()));
-    } 
     else {
       // assume we are dealing with the list of rate modifying species
       for (unsigned int modifier = 0; modifier < st.size(); modifier++) {
@@ -323,10 +332,8 @@ void KineticRateTST::Display(void) const
   std::cout << "    Parameters:" << std::endl;
   std::cout << "      mineral = " << name() << std::endl;
   std::cout << "      mineral id = " << identifier() << std::endl;
-  std::cout << "      rate constant = " << rate_constant() 
-            << " [moles/m^2/sec]" << std::endl;
-  std::cout << "      area = " << area() << " [m^2]" << std::endl;
-  std::cout << "      log_Keq = " << log_Keq() << " [-]" << std::endl;
+  std::cout << "      log10_rate constant = " << log10_rate_constant() << std::endl;
+  std::cout << "      rate constant = " << rate_constant() << std::endl;
   std::cout << "      rate modifiers: " << std::endl;
   std::cout << "        ";
   for (unsigned int mod = 0; mod < this->modifying_species_names.size(); mod++) {

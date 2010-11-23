@@ -229,12 +229,16 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
 
     for (std::vector<unsigned int>::iterator f = cface.begin();
 	 f != cface.end(); f++) {
+     
+      if (mesh_maps->face_map(false).MyLID(*f) ) {
+	
+	mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
+	
+	quad_face_normal(x[0], x[1], x[2], x[3], normal);
+	
+	(*darcy_flux)[*f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
+      }
       
-      mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
-      
-      quad_face_normal(x[0], x[1], x[2], x[3], normal);
-    
-      (*darcy_flux)[*f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
     }
   }
 }

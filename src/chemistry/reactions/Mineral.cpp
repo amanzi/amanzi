@@ -3,10 +3,15 @@
 
 #include "Mineral.hpp"
 #include "SecondarySpecies.hpp"
+#include "Verbosity.hpp"
 
 Mineral::Mineral() 
     : SecondarySpecies(),
-      molar_density_(0.0)
+      verbosity_(kSilent),
+      molar_volume_(0.0),
+      specific_surface_area_(0.0),
+      surface_area_(0.0),
+      volume_fraction_(0.0)
 {
 } // end Mineral() constructor
 
@@ -18,11 +23,16 @@ Mineral::Mineral(const SpeciesName in_name,
                  const double in_h2o_stoich, 
                  const double in_mol_wt, 
                  const double in_logK, 
-                 const double in_molar_density)
+                 const double molar_volume, 
+                 const double specific_surface_area)
     : SecondarySpecies(in_name, in_id, 
                        in_species, in_stoichiometries, in_species_ids,
                        in_h2o_stoich, 0., in_mol_wt, 0., in_logK),
-      molar_density_(in_molar_density)
+      verbosity_(kSilent),
+      molar_volume_(molar_volume),
+      specific_surface_area_(specific_surface_area),
+      surface_area_(0.0),
+      volume_fraction_(0.0)
 {
 }  // end Mineral costructor
 
@@ -36,6 +46,30 @@ Mineral::~Mineral()
 **  these functions are only needed if mineral equilibrium is added.
 **
 */
+
+void Mineral::UpdateSurfaceAreaFromVolumeFraction(const double total_volume)
+{
+  // area = SSA * GMW * V_fraction * V_total * unit_conversion / mole volume
+  // m^2 = (m^2/g * g/mol * -- * m^3 * cm^3/m^3) / (cm^3/mol)
+  //double cm3_in_m3 = 10.0;
+  double cm3_in_m3 = 1.0e6;
+  set_surface_area(specific_surface_area() * gram_molecular_weight() * 
+                   volume_fraction() * total_volume * cm3_in_m3 / molar_volume());
+  
+  if (verbosity() == kDebugMineralKinetics) {
+    std::cout << "Mineral: " << name() << "\n"
+              << "   SSA: " << specific_surface_area() << " [m^2/g]\n"
+              << "   GMW:" << gram_molecular_weight() << " [g/mole]\n"
+              << "   mole volume^-1: " << 1.0/molar_volume() << " [mole/cm^3]\n"
+              << "   volume fraction: " << volume_fraction() << " [-]\n"
+              << std::scientific << "   total volume: " << total_volume << " [m^3]\n"
+              << "   cm3 in m3=" << cm3_in_m3 << "\n"
+              << "   surface area=" << surface_area() << " [m^2]\n"
+              << std::fixed
+              << std::endl;
+  }
+}  // end UpdateSurfaceAreaFromVolumeFraction()
+
 void Mineral::Update(const std::vector<Species> primary_species) 
 {
   double lnQK = -lnK_;
@@ -76,8 +110,9 @@ void Mineral::Display(void) const
   std::cout << std::endl;
   std::cout << std::setw(40) << " " 
             << std::setw(10) << logK_
-            << std::setw(15) << molar_density()
+            << std::setw(15) << molar_volume()
             << std::setw(10) << gram_molecular_weight()
+            << std::setw(10) << specific_surface_area()
             << std::endl;
 } // end Display()
 

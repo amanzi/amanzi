@@ -12,6 +12,7 @@
 
 #include "Species.hpp"
 #include "SecondarySpecies.hpp"
+#include "Mineral.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
 
@@ -25,7 +26,8 @@ class KineticRate
   virtual void Setup(const SecondarySpecies& reaction,
                      const StringTokenizer reaction_data,
                      const SpeciesArray primary_species) = 0;
-  virtual void Update(const SpeciesArray primary_species) = 0;
+  virtual void Update(const SpeciesArray primary_species,
+                      const std::vector<Mineral>& minerals) = 0;
   virtual void AddContributionToResidual(const double por_den_sat_vol,
                                          std::vector<double> *residual) = 0;
   virtual void AddContributionToJacobian(const SpeciesArray primary_species,
@@ -44,7 +46,7 @@ class KineticRate
 
   void DisplayReaction(void) const;
 
-  void verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
+  void set_verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
   Verbosity verbosity(void) const { return this->verbosity_; };
 
   void name(const std::string in_name) { this->name_ = in_name; };

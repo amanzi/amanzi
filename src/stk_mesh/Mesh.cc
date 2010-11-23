@@ -2,6 +2,7 @@
 #include "dbc.hh"
 
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -93,7 +94,8 @@ unsigned int Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category 
 
 unsigned int Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) const
 {
-    const stk::mesh::Selector part_selector = part | selector_ (category);
+    stk::mesh::Selector part_selector(part);
+    part_selector &= selector_ (category);
     const stk::mesh::EntityRank rank        = part.primary_entity_rank ();
 
     return stk::mesh::count_selected_entities (part_selector, bulk_data_->buckets (rank));
@@ -126,20 +128,37 @@ void Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::Entity
 void Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
     // Look up element from global id.
+    const int node_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
     const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
     const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
     stk::mesh::Entity *entity = id_to_entity (cell_rank, element, USED);
     ASSERT (entity->identifier () == element);
 
-    // Get relation connections
-    stk::mesh::PairIterRelation faces = entity->relations (face_rank);
+    const CellTopologyData* topo = stk::mesh::get_cell_topology (*entity);
 
-    for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
-    {
-        ids.push_back (it->entity ()->identifier ());
+    ASSERT(topo != NULL);
+
+    stk::mesh::PairIterRelation rel = entity->relations( node_rank );
+    for (unsigned int s = 0; s < topo->side_count; s++) {
+        const CellTopologyData *side_topo = (topo->side[s].topology);
+        const unsigned * const side_node_map = topo->side[s].node;
+
+        Entity_vector snodes;
+
+        for ( unsigned i = 0 ; i < side_topo->node_count ; ++i ) {
+            snodes.push_back(rel[ side_node_map[i] ].entity());
+        }
+
+        std::vector< stk::mesh::Entity * > rfaces;
+        get_entities_through_relations(snodes, face_rank, rfaces);
+  
+        ASSERT(!rfaces.empty());
+
+        ids.push_back (rfaces.front()->identifier ());
+
     }
 
-    ASSERT (ids.size () == 6);
+    ASSERT (ids.size () == topo->side_count);
 }
 
 void Mesh::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const

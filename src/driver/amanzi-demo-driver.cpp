@@ -16,6 +16,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_DefaultMpiComm.hpp"
 
 
 #include "State.hpp"

@@ -8,15 +8,15 @@ database_sweep  false
 database        calcite.dbs
 graphics        xmgr
 density_module  temperature
-time_units      hours
-timestep_max    1.0
-timestep_init   1.0
+time_units      seconds
+timestep_max    0.5
+timestep_init   0.5
 time_tolerance  10.0
 END
 
 OUTPUT
-time_units               hours
-spatial_profile          12
+time_units               seconds
+spatial_profile          7.5
 time_series              calcite-ts.out 1 1 1
 time_series_print        pH H+ HCO3- Ca++
 !!time_series_print        all
@@ -32,10 +32,10 @@ END
 Condition        initial_condition   
 units            mol/kg
 temperature      25.0
+H+               0.003
 HCO3-            0.003
-Ca++             0.001
-H+               0.001
-Calcite          0.20   100.0
+Ca++             0.0
+Calcite          0.2 specific_surface_area 2.0
 END
 
 SECONDARY_SPECIES 
@@ -48,7 +48,7 @@ CaCO3(aq)
 END
 
 MINERALS
-Calcite     -label h+
+Calcite     -label default
 END
 
 DISCRETIZATION 

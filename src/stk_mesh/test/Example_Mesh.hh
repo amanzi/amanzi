@@ -40,7 +40,7 @@ static void make_node_ids (int element_number, int node_ids [])
 {
     const int base = 4*element_number;
     for (int node = 0; node < 8; ++node)
-        node_ids [node] = base+local_global_map [node];
+        node_ids [node] = base+local_global_map [node] - 1;
 }
 
 struct Test_mesh

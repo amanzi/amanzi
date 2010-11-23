@@ -11,9 +11,15 @@
 #include "gmv_mesh.hh"
 #ifdef ENABLE_CGNS
 #include "cgns_mesh.hh"
+#include "cgns_mesh_par.hh"
 #endif
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
+
+
+#ifdef ENABLE_CGNS
+using namespace CGNS_PAR;
+#endif
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
 	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
@@ -46,12 +52,14 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    cout << endl;
 
 
-   Teuchos::ParameterList state_parameter_list = 
-     parameter_list.sublist("State");
+   if (transport_enabled || flow_enabled || chemistry_enabled) {
+     Teuchos::ParameterList state_parameter_list = 
+       parameter_list.sublist("State");
+     
+     // create the state object
+     S = Teuchos::rcp( new State( state_parameter_list, mesh_maps) );
+   }
 
-   // create the state object
-   S = Teuchos::rcp( new State( state_parameter_list, mesh_maps) );
-   
    // create auxilary state objects for the process models
    // chemistry...
    
@@ -102,9 +110,11 @@ void MPC::read_parameter_list()
 
 void MPC::cycle_driver () {
   
-  // start at time T=T0;
-  S->set_time(T0);
-
+  if (transport_enabled || flow_enabled || chemistry_enabled) {
+    // start at time T=T0;
+    S->set_time(T0);
+  }
+  
   bool gmv_output = mpc_parameter_list.isSublist("GMV");
 #ifdef ENABLE_CGNS
   bool cgns_output = mpc_parameter_list.isSublist("CGNS");
@@ -134,7 +144,21 @@ void MPC::cycle_driver () {
     Teuchos::ParameterList cgns_parameter_list =  mpc_parameter_list.sublist("CGNS");
     
     cgns_filename = cgns_parameter_list.get<string>("File name");
-    CGNS::create_mesh_file(*mesh_maps, cgns_filename);
+    create_mesh_file(*mesh_maps, cgns_filename);
+
+
+    // print out the parallel distribution
+    int rank = mesh_maps->get_comm()->MyPID(); 
+    
+    Epetra_Vector RNK(mesh_maps->cell_map(false));
+    RNK.PutScalar((double)rank);
+
+    open_data_file(cgns_filename);
+    create_timestep(0.0, 0, Mesh_data::CELL);
+    write_field_data(RNK,"PE");
+
+    if (!flow_enabled && !transport_enabled && !chemistry_enabled) close_data_file();
+    
   }
 #endif  
 
@@ -152,25 +176,36 @@ void MPC::cycle_driver () {
     FPK->commit_state(FS);
   }
   
-
-  if (gmv_output) {
-    // write the GMV data file
-    write_gmv_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
-  }
+  if (flow_enabled || transport_enabled || chemistry_enabled) {
+    
+    if (gmv_output) {
+      // write the GMV data file
+      write_gmv_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
+    }
 #ifdef ENABLE_CGNS
-  if (cgns_output) {
-    write_cgns_data(cgns_filename, iter);
-  }
-#endif
-  vizdump_time_count ++;
-  
-  // we need to create an EpetraMulitVector that will store the 
-  // intermediate value for the total component concentration
-  total_component_concentration_star =
-      Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
+    if (cgns_output) {
+      // data file is already open, see above
 
+      write_field_data(*S->get_pressure(), "pressure");
+      write_field_data(*S->get_permeability(), "permeability");
+      write_field_data(*S->get_porosity(),"porosity");
+      for (int nc=0; nc<S->get_number_of_components(); nc++) {
+	std::stringstream cname;
+	cname << "concentration " << nc;
+	
+	write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
+      }      
+      close_data_file();
+    }
+#endif
+    vizdump_time_count ++;
+  }
 
   if (chemistry_enabled || transport_enabled) {
+    // we need to create an EpetraMulitVector that will store the 
+    // intermediate value for the total component concentration
+    total_component_concentration_star =
+      Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
     
     // then iterate transport and chemistry
     while ( (S->get_time() <= T1)  &&  ((end_cycle == -1) || (iter <= end_cycle)) ) {
@@ -178,12 +213,16 @@ void MPC::cycle_driver () {
       
       if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
       
+      if (chemistry_enabled) {
+        chemistry_dT = CPK->max_time_step();
+      }
+      
       mpc_dT = min( transport_dT, chemistry_dT );
       
       std::cout << "MPC: ";
       std::cout << "Cycle = " << iter; 
       std::cout << ",  Time = "<< S->get_time();
-      std::cout << ",  Transport dT = " << transport_dT << std::endl;
+      std::cout << ",  dT = " << mpc_dT << std::endl;
       
       if (transport_enabled) {
 	// now advance transport
@@ -208,8 +247,7 @@ void MPC::cycle_driver () {
       
       if (chemistry_enabled) {
 	// now advance chemistry
-	chemistry_dT = transport_dT; // units?
-	CPK->advance(chemistry_dT, total_component_concentration_star);
+	CPK->advance(mpc_dT, total_component_concentration_star);
 	ChemistryException::Status cpk_status = CPK->status();
         if (cpk_status == ChemistryException::kOkay) {
 	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
@@ -223,7 +261,7 @@ void MPC::cycle_driver () {
 	S->update_total_component_concentration(*total_component_concentration_star);
       }
       
-
+      
       
       // update the time in the state object
       S->advance_time(mpc_dT);
@@ -232,12 +270,14 @@ void MPC::cycle_driver () {
       // we're done with this time step, commit the state 
       // in the process kernels
       if (transport_enabled) TPK->commit_state(TS);
-      if (chemistry_enabled) CPK->commit_state(CS, chemistry_dT);
+      if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       
       
       // advance the iteration count
       iter++;
       
+      // TODO: ask the CPK to dump its data someplace....
+
       vizdump_cycle = iter;
       vizdump_time = S->get_time();
       
@@ -311,23 +351,21 @@ void MPC::write_gmv_data(std::string gmv_datafile_path,
 #ifdef ENABLE_CGNS
 void MPC::write_cgns_data(std::string filename, int iter)
 {
-  CGNS::open_data_file(filename);
+  open_data_file(filename);
   
-  CGNS::create_timestep(S->get_time(), iter, Mesh_data::CELL);
+  create_timestep(S->get_time(), iter, Mesh_data::CELL);
 
   for (int nc=0; nc<S->get_number_of_components(); nc++) {
     
     std::stringstream cname;
     cname << "concentration " << nc;
     
-    CGNS::write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
+    write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
   }
 
-  CGNS::write_field_data(*S->get_pressure(), "pressure");
-  CGNS::write_field_data(*S->get_permeability(), "permeability");
-  CGNS::write_field_data(*S->get_porosity(),"porosity");
+
   
-  CGNS::close_data_file();     
+  close_data_file();     
 }
 #endif
 
