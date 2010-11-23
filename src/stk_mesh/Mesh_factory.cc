@@ -3,7 +3,13 @@
 
 #include "dbc.hh"
 
+#include <iostream>
+#include <algorithm>
 #include <sstream>
+
+#include <boost/format.hpp>
+#include <boost/lambda/lambda.hpp>
+namespace bl = boost::lambda;
 
 // Mesh_data
 #include "Data.hh"
@@ -22,6 +28,7 @@
 // Trilinos
 #include <Shards_CellTopology.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
@@ -35,8 +42,41 @@ Mesh_factory::Mesh_factory (const stk::ParallelMachine& comm, int bucket_size)
       communicator_ (comm)
 {  }
 
-
+/** 
+ * This should only be called for serial 
+ * 
+ * @param data the mesh
+ * @param fields data fields on the mesh
+ * 
+ * @return 
+ */
 Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data, 
+                                const Mesh_data::Fields& fields)
+{
+    ASSERT(communicator_.NumProc() == 1);
+
+    int ncell(data.parameters().num_elements_);
+    Epetra_Map cmap(ncell, 1, communicator_);
+
+    int nvert(data.parameters().num_nodes_);
+    Epetra_Map vmap(nvert, 1, communicator_);
+
+    return build_mesh(data, cmap, vmap, fields);
+}
+
+/** 
+ * Construct a Mesh instance, in parallel
+ * 
+ * @param data mesh description
+ * @param cellmap map of local to global cell indexes
+ * @param vertmap map of local to global vertex indexes
+ * @param fields any data fields to put on the mesh
+ * 
+ * @return Mesh instance
+ */
+Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data, 
+                                const Epetra_Map& cellmap,
+                                const Epetra_Map& vertmap,
                                 const Mesh_data::Fields& fields)
 {
 
@@ -49,13 +89,13 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     meta_data_  = new stk::mesh::MetaData (stk::mesh::fem_entity_rank_names ());
     bulk_data_  = new stk::mesh::BulkData (*meta_data_, parallel_machine_, bucket_size_);
 
+    node_rank_    = entity_map_->kind_to_rank (Mesh_data::NODE);
     face_rank_    = entity_map_->kind_to_rank (Mesh_data::FACE);
     element_rank_ = entity_map_->kind_to_rank (Mesh_data::CELL);
 
 
     // Reset all of the mesh-specific data.
     face_id_ = 0;
-    element_id_ = 0;
     Parts (0).swap (element_blocks_);
     Parts (0).swap (side_sets_);
     Parts (0).swap (node_sets_);
@@ -66,13 +106,21 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     // Build the data for the mesh object.
 
     build_meta_data_ (data, fields);
-    build_bulk_data_ (data, fields);
+    build_bulk_data_ (data, cellmap, vertmap, fields);
 
-    Mesh *mesh = new Mesh (space_dimension, communicator_, entity_map_, 
-                           meta_data_, bulk_data_,
-                           set_to_part_,
-                           *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
+    Mesh *mesh(NULL);
 
+    // NOTE: Ownership of the pointers meta_data_ and bulk_data_ are
+    // transferred to the Mesh instance.  That's where the memory is
+    // deleted. IMHO, smart pointers should be used ANYTIME memory is
+    // allocated in one code block and deleted somewhere else. I
+    // wasted too much of my life looking for memory leaks. -WAP
+
+    mesh = new Mesh (space_dimension, communicator_, entity_map_, 
+                     meta_data_, bulk_data_,
+                     set_to_part_,
+                     *(meta_data_->get_field<Vector_field_type> (std::string ("coordinates"))));
+    
     return mesh;
 }
 
@@ -116,34 +164,85 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
 
 }
 
-void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data, const Mesh_data::Fields& fields)
+/** 
+ * add contents of the blocks and sets to their respctive parts
+ * 
+ * @param data 
+ * @param cellmap 
+ * @param vertmap 
+ * @param fields 
+ */
+void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data, 
+                                     const Epetra_Map& cellmap, 
+                                     const Epetra_Map& vertmap,
+                                     const Mesh_data::Fields& fields)
 {
-    // Now add contents of the blocks and sets to their respctive parts:
-
     const int space_dimension = data.parameters ().dimensions ();
 
-    bulk_data_->modification_begin ();
+    // declare nodes and elements first, nodes will overlap on processors
 
-    // Explicitly assuming that all of the mesh data is on node 0:
-    if (communicator_.MyPID () == 0)
-    {
+    bulk_data_->modification_begin();
 
-        for (int block = 0; block < element_blocks_.size (); ++block)
-            add_elements_to_part_ (data.element_block (block), *element_blocks_ [block]);
-        
-        for (int set = 0; set < side_sets_.size (); ++set)
-            add_sides_to_part_ (data.side_set (set), *side_sets_ [set]);
-        
-        for (int set = 0; set < node_sets_.size (); ++set)
-            add_nodes_to_part_ (data.node_set (set), *node_sets_ [set]);
+    for (int set = 0; set < node_sets_.size (); ++set)
+        add_nodes_to_part_ (data.node_set (set), *node_sets_ [set], vertmap);
+
+    for (int block = 0; block < element_blocks_.size (); ++block)
+        add_elements_to_part_ (data.element_block (block), *element_blocks_ [block], 
+                               cellmap, vertmap);
+    
+    bulk_data_->modification_end();
+
+    bulk_data_->modification_begin();
+    add_coordinates_ (data.coordinates (), vertmap);
+    bulk_data_->modification_end();
+
+    // Now, generate unique faces.  I have not found a way to renumber
+    // entities after they are declared.  So, we need to know the
+    // global face id in advance.  That means they need to be counted
+    // and starting global indexes distributed.
+    
+    int nface_local(count_local_faces_());
+    std::vector<int> nface(communicator_.NumProc(), 0);
+    communicator_.GatherAll(&nface_local, &nface[0], 1);
+
+    std::vector<int> global_fidx(nface.size() + 1);
+    int nface_global(0);
+    global_fidx[0] = 1;
+    for (unsigned int i = 1; i < global_fidx.size(); i++) {
+        global_fidx[i] = global_fidx[i-1] + nface[i-1];
+        nface_global += nface[i-1];
     }
 
-    bulk_data_->modification_end ();
+    std::cerr << "Process " << communicator_.MyPID() 
+              << " owns " << nface_local 
+              << " of " << nface_global 
+              << " faces, index " << global_fidx[communicator_.MyPID()]
+              << " to "  << global_fidx[communicator_.MyPID()+1] - 1
+              << std::endl;
+    ASSERT((global_fidx.back()-1) == nface_global);
 
-    add_coordinates_ (data.coordinates ());
+    bulk_data_->modification_begin();
+    generate_local_faces_(global_fidx[communicator_.MyPID()], false);
+    bulk_data_->modification_end();
 
-    // Loop over fields. Add them.
-        
+
+    // FIXME: Generate cell-to-face relations.  If cell-to-face
+    // relations are done here instead of in declare_face_() the same
+    // problems happen.  Declaring cell-to-face relations stomps on
+    // cell-to-node and/or face-to-node relations.
+
+    // bulk_data_->modification_begin();
+    // generate_face_relations_();
+    // bulk_data_->modification_end();
+
+
+    // Put side set faces in the correct parts
+
+    bulk_data_->modification_begin();
+    for (int set = 0; set < side_sets_.size (); ++set) {
+        add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
+    }
+    bulk_data_->modification_end();
 
 }
 
@@ -176,30 +275,56 @@ void Mesh_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int sp
     stk::mesh::put_field (*coordinate_field_, stk::mesh::Node, part, space_dimension);
 }
 
-
-void Mesh_factory::add_coordinates_ (const Mesh_data::Coordinates<double>& coordinate_data)
+/** 
+ * This routine puts the coordinate fields on @em local nodes.  
+ *
+ * It's written so that it may be called before or after
+ * BulkData::modification_end.
+ *
+ * The specified @c coordinate_data is for the nodes @em declared on
+ * the local processor. When the nodes were declared
+ * (::add_nodes_to_part_), shared nodes were declared on multiple
+ * processors.  When an entity is declared on multiple processors, the
+ * lowest rank processor in that set gets ownership. At least, we can
+ * expect that one of the processes in that set got ownership of each
+ * shared node.  We can also expect that the list of nodes owned by
+ * the local process got all mixed up.  We need to use the specified
+ * @c vertmap to identify the current local index given the global
+ * index.
+ * 
+ * @param coordinate_data coordinates of nodes originally declared on this processor
+ * @param vertmap local to global node index map for nodes originally declared on this processor
+ */
+void Mesh_factory::add_coordinates_ (const Mesh_data::Coordinates<double>& coordinate_data,
+                                     const Epetra_Map& vertmap)
 {
 
-    const int nodes = coordinate_data.nodes ();
+    // Select the local nodes
+    stk::mesh::Selector owned(meta_data_->locally_owned_part());
+    Entity_vector local_nodes;
+    stk::mesh::get_selected_entities (owned,
+                                      bulk_data_->buckets (stk::mesh::Node), 
+                                      local_nodes);
 
-    // Select all of the nodes. 
-    stk::mesh::Selector universal_selector (meta_data_->universal_part ());
-    Entity_vector all_nodes;
-    stk::mesh::get_selected_entities (universal_selector, bulk_data_->buckets (stk::mesh::Node), all_nodes);
-    ASSERT (all_nodes.size () == nodes);
-
-    // Loop over all nodes
+    // Loop over the local nodes, if the node is owned by this
+    // process, set the coordinate
     int node_coordinate_index = 0;
-    for (Entity_vector::const_iterator node_it = all_nodes.begin ();
-         node_it != all_nodes.end ();
-         ++node_it)
+    for (Entity_vector::const_iterator node_it = local_nodes.begin ();
+         node_it != local_nodes.end (); ++node_it)
     {
-        double * coordinate_field_data = stk::mesh::field_data (*coordinate_field_, **node_it);
-
-        coordinate_data (node_coordinate_index, coordinate_field_data);
-        node_coordinate_index++;
+        int global_vidx((*node_it)->identifier());
+        ASSERT (vertmap.MyGID(global_vidx));
+        int local_vidx(vertmap.LID(global_vidx));
+        double * coordinate_field_data = 
+            stk::mesh::field_data (*coordinate_field_, **node_it);
+        coordinate_data (local_vidx, coordinate_field_data);
+        // std::cerr << "add_coordinates: node " << global_vidx << " (" 
+        //           << local_vidx << " local): " 
+        //           << coordinate_field_data[0] << ", "
+        //           << coordinate_field_data[1] << ", "
+        //           << coordinate_field_data[2] << ", "
+        //           << std::endl;
     }
-
 }
 
 
@@ -267,71 +392,300 @@ void Mesh_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part&
 }
 
 
-void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part &part)
+/** 
+ * This routine adds elements to the specified part.  Each element is
+ * expected to have the same topology and this topology must match
+ * that assigned to the part.  In the process, nodes will be declared,
+ * but node ownership will not be assigned.
+ * 
+ * @param block 
+ * @param part 
+ * @param cmap 
+ * @param vmap 
+ */
+void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part &part,
+                                          const Epetra_Map& cmap, const Epetra_Map& vmap)
 {
     // Add connectivity information via stk::mesh::declare_element
     std::vector<int> storage (block.nodes_per_element ());
-    for (int element_ind = 0; element_ind < block.num_elements (); ++element_ind)
-    {
-        block.connectivity (element_ind, storage.begin ());
-        ++element_id_;
-        stk::mesh::Entity &element = 
-            stk::mesh::declare_element (*bulk_data_, part, element_id_, &storage [0]);
+    std::vector<int> global_vidx(block.nodes_per_element ());
 
-        // XXX We don't need this for general element blocks.
-        declare_faces_ (element, part);
+    for (int local_cidx = 0; local_cidx < block.num_elements (); ++local_cidx)
+    {
+        block.connectivity (local_cidx, storage.begin ());
+
+        for (unsigned int i = 0; i < block.nodes_per_element (); i++) {
+            global_vidx[i] = vmap.GID(storage[i]);
+        }
+
+        int global_cidx(cmap.GID(local_cidx));
+
+        try {
+            stk::mesh::Entity &element = 
+                stk::mesh::declare_element (*bulk_data_, part, global_cidx, &global_vidx[0]);
+        } catch (const std::exception& e) {
+            std::stringstream msg;
+            msg << "cell error: local: " << local_cidx << ": ";
+            std::copy(storage.begin(), storage.end(), std::ostream_iterator<int>(msg, ", "));
+            msg << "global: " << global_cidx << ": ";
+            std::copy(global_vidx.begin(), global_vidx.end(), std::ostream_iterator<int>(msg, ", "));
+            std::cerr << msg.str() << std::endl;
+
+            throw e;
+        }
+
     }
 }
 
-void Mesh_factory::declare_faces_ (stk::mesh::Entity& element, stk::mesh::Part &part)
+Entity_vector
+Mesh_factory::get_element_side_nodes_(const stk::mesh::Entity& element, 
+                                      const unsigned int& s)
 {
+    ASSERT(element.entity_rank() == element_rank_);
+
+    const CellTopologyData* topo = stk::mesh::get_cell_topology (element);
+    ASSERT(topo != NULL);
+
+    // get the cell nodes on this side
+
+    const CellTopologyData *side_topo = (topo->side[s].topology);
+    const unsigned * const side_node_map = topo->side[s].node;
+
+    stk::mesh::PairIterRelation rel = element.relations( node_rank_ );
+    Entity_vector snodes;
+    for ( unsigned i = 0 ; i < side_topo->node_count ; ++i ) {
+        snodes.push_back(rel[ side_node_map[i] ].entity());
+    }
+    return snodes;
+}
+
+
+
+/** 
+ * This routine finds (indirectly through related nodes) the face
+ * declared for the specified element side.  
+ * 
+ * @param element The element
+ * @param s The side index (0-based)
+ * 
+ * @return face entity, or NULL if non-existent
+ */
+stk::mesh::Entity *
+Mesh_factory::get_element_side_face_(const stk::mesh::Entity& element, const unsigned int& s)
+{
+    Entity_vector snodes(get_element_side_nodes_(element, s));
+
+    // get the face the nodes relate to, if any
+
+    std::vector< stk::mesh::Entity * > rfaces;
+    get_entities_through_relations(snodes, face_rank_, rfaces);
+  
+    ASSERT(rfaces.size() < 2);
+
+    stk::mesh::Entity *result = NULL;
+    if (!rfaces.empty()) result = rfaces.front();
+
+    return result;
+}
     
-    const CellTopologyData* element_topology = get_cell_topology (part);
-    const int num_faces = element_topology->side_count;
 
-    for (int local_face = 0; local_face < num_faces; ++local_face)
-    {
 
-        const CellTopologyData *face_topology     = element_topology->side [local_face].topology;
-        unsigned const * const  side_node_map     = element_topology->side [local_face].node;
-        const int               face_vertex_count = face_topology->vertex_count;
 
-        // Get the nodes belonging to the element
-        stk::mesh::PairIterRelation node_relations = element.relations (stk::mesh::Node);
+/** 
+ * This routine takes care of everything necessary to declare a
+ * (local) face, include declaring the entity and making necessary
+ * relations to related nodes and cells.  In order for this to work,
+ * the elements have to be declared @em and ghosted.  
+ * 
+ * @param nodes nodes involved in the face
+ * @param index global index to assign to the face
+ * @param owner the element that is the "owner" of the face
+ * @param nbr the neighboring element, if any
+ * 
+ * @return 
+ */
+const stk::mesh::Entity&
+Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index, 
+                            stk::mesh::Entity *owner, const unsigned int& side_index,
+                            stk::mesh::Entity *nbr)
+{
+    stk::mesh::PartVector p;
+    p.push_back(faces_part_);
 
-        // Pick out the nodes for this face.
-        std::vector<stk::mesh::EntityId> face_nodes (face_vertex_count);
-        for (int vertex = 0; vertex < face_vertex_count; ++vertex)
-        {
-            const unsigned int local_node = side_node_map [vertex];
-            face_nodes [vertex] = node_relations [local_node].entity ()->identifier ();
-        }
-        std::sort (face_nodes.begin (), face_nodes.end ());
-            
-        std::pair<Vector_entity_map::iterator, bool> result = 
-            faces_map_.insert (std::make_pair (face_nodes, (stk::mesh::Entity*) (NULL)));
-        if (result.second)
-        {
-            ++face_id_;
-            stk::mesh::Entity& face = 
-                declare_element_side (*bulk_data_, face_id_, element, local_face, faces_part_);
-            result.first->second = &face;
-        }
-        else 
-        {
-            stk::mesh::Entity* original_face = result.first->second;
-            bulk_data_->declare_relation (element, *original_face, local_face);
-            faces_map_.erase (result.first);
-        }
+    stk::mesh::Entity& face = 
+        bulk_data_->declare_entity(entity_map_->kind_to_rank(Mesh_data::FACE), index, p);
+
+    unsigned int r(0);
+    for (stk::mesh::EntityVector::iterator n = nodes.begin(); n != nodes.end(); n++) {
+        bulk_data_->declare_relation(face, **n, r++);
     }
+    
+    // FIXME: declaring cell to face relations here seems to mess up
+    // the cell to node relations, not sure why (varying the relation
+    // index doesn't seem to matter)
+
+    // bulk_data_->declare_relation(*owner, face, side_index);
+    // static const unsigned int ioffset(0);
+    
+    // bulk_data_->declare_relation(*owner, face, index+ioffset);
+    // if (nbr != NULL) {
+    //     bulk_data_->declare_relation(*nbr, face, index+ioffset);
+    // }
+
+    return face;
+}
+
+/** 
+ * This routine goes through the locally owned cells and generates
+ * cell faces.  The result are faces that are uniquely owned and
+ * uniquely defined.  For example, only one face relating two
+ * neighboring cells will be declared.
+ *
+ * Some conventions:
+ *
+ *  - A face can only be owned by a process that owns the related
+ *    cell(s).  
+ * 
+ *  - If the processes owning cells related to a given face
+ *    are different, the face is owned by the lower ranked process.
+ *
+ * - The order of face-to-cell relations is important.  All faces will
+ *    have one relation -- to it's "owner".  The second relation is
+ *    for the "neighbor" cell.  This may be used later to determine
+ *    face direction.
+ *
+ * caller is responsible for calling
+ * stk::mesh::BulkData::modification_begin() (when @c justcount is @c
+ * false ).
+ *
+ * This would be a lot easier if we could just declare the faces with
+ * some bogus global indexes and then renumber them, but I can't
+ * figure out how to do that.
+ * 
+ * @param justcount if true, do not declare any faces, just count how
+ * many there would be.
+ * 
+ * @return number of faces declared/counted
+ */
+int 
+Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
+{      
+    const unsigned int me = communicator_.MyPID();
+    int faceidx(faceidx0);
+    stk::mesh::Selector owned(meta_data_->locally_owned_part());
+
+    int nlocal = 
+        stk::mesh::count_selected_entities(owned, bulk_data_->buckets(entity_map_->kind_to_rank(Mesh_data::CELL)));
+
+    stk::mesh::PartVector parts(meta_data_->get_parts());
+    for (stk::mesh::PartVector::iterator p = parts.begin(); 
+           p != parts.end(); p++) {
+        const CellTopologyData* topo = stk::mesh::get_cell_topology (**p);
+        
+        if (topo == NULL) continue;
+
+        stk::mesh::Selector s(*(*p));
+        s &= owned;
+
+        std::vector< stk::mesh::Entity * > cells;
+        stk::mesh::get_selected_entities(s, 
+                                         bulk_data_->buckets(entity_map_->kind_to_rank(Mesh_data::CELL)), 
+                                         cells);
+        
+        int localidx(0);
+        for (std::vector< stk::mesh::Entity * >::iterator c = cells.begin();
+             c != cells.end(); c++, localidx++) {
+
+            int globalidx((*c)->identifier());
+
+            for (unsigned int s = 0; s < topo->side_count; s++) {
+
+                // see if the face already exists (on the local
+                // processor); if so, just go on to the next
+
+                stk::mesh::Entity *rface(get_element_side_face_(**c, s));
+                if (rface != NULL) continue;
+                                         
+                // get the cell nodes on this side
+
+                Entity_vector snodes(get_element_side_nodes_(**c, s));
+
+                // get whatever cells the nodes on this side are
+                // related to (*c should be one of them, *and* there
+                // should be at most one other cell)
+            
+                Entity_vector rcells;
+                get_entities_through_relations(snodes, 
+                                               element_rank_, 
+                                               rcells);
+
+                if (rcells.size() < 1) {
+                    
+                    std::string msg = 
+                        boost::str(boost::format("error: cell %d (owner = %d): face %d (%d nodes) doesn't even relate to cell") %
+                                   (*c)->identifier() % me % s % snodes.size());
+                    // std::cerr << msg << std::endl;
+                    throw std::runtime_error(msg);
+                } else if (rcells.size() > 2) {
+                    std::string msg = 
+                        boost::str(boost::format("error: cell %d (owner = %d): face %d relates to too many cells (%d)") %
+                                   (*c)->identifier() % me % s % rcells.size());
+                    throw std::runtime_error(msg);
+                }
+
+                stk::mesh::Entity *rcell(NULL);
+
+                for ( std::vector< stk::mesh::Entity * >::iterator r = rcells.begin();
+                      r != rcells.end(); r++) {
+                    if ((*r != *c)) {
+                        rcell = *r;
+                    }
+                }
+
+
+                // if there is no cell on the other side (rcell ==
+                // NULL) of the face, just declare/count the face
+
+                // if the related cell is owned by another
+                // process, only make the face if this processor's
+                // rank is less
+                
+                if (rcell != NULL && rcell->owner_rank() > me) {
+                    continue;
+                }
+
+
+                if (!justcount) {
+                    const stk::mesh::Entity& face = 
+                        declare_face_(snodes, faceidx, *c, s, rcell);
+                    // declare_element_side (*bulk_data_, 
+                    //                       static_cast<stk::mesh::EntityId>(faceidx),
+                    //                       **c, s, faces_part_);
+                }
+                faceidx++;
+                
+                std::cerr << "Cell " << globalidx 
+                          << ": side " << s 
+                          << ": face idx = " << faceidx
+                          << std::endl;
+
+            } // side loop
+
+        } // entity (element) loop
+ 
+    } // part loop
+    
+    return faceidx - faceidx0;
 }
 
 
-void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk::mesh::Part &part)
+void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, 
+                                       stk::mesh::Part &part,
+                                       const Epetra_Map& cmap)
 {
 
-    // Side set consists of elements and a local face number. We need
-    // to convert these to the unique face indices.
+    // Side set consists of elements (local index) and a local face
+    // number. We need to convert these to the unique face indices.
 
     stk::mesh::PartVector parts_to_add;
     parts_to_add.push_back (&part);
@@ -344,28 +698,42 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, stk:
 
     for (int index=0; index < num_sides; ++index)
     {
-        const int element_number = element_list [index];
+        int local_idx(element_list [index]);
+        ASSERT(local_idx < cmap.NumMyElements());
+
         const int local_side = side_list [index];
+        int global_idx(cmap.GID(element_list [index]));
 
         // Look up the element from the Id.
-        stk::mesh::Entity *element = bulk_data_->get_entity (element_rank_, element_number);
+        stk::mesh::Entity *element = bulk_data_->get_entity (element_rank_, global_idx);
 
-        // Look up the face from the local face id.
-        stk::mesh::PairIterRelation faces = element->relations (face_rank_);
-        for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
-        {
-            if (it->identifier () == local_side)
-                bulk_data_->change_entity_parts(*(it->entity ()), parts_to_add);
+        stk::mesh::Entity *face = get_element_side_face_(*element, local_side);
+
+        if (face == NULL) {
+            std::string msg = 
+                boost::str(boost::format("side set %d: face not declared for side %d of cell %d (local = %d") %
+                           side_set.id() % local_side % global_idx % local_idx);
+            throw std::runtime_error(msg);
         }
 
-
-
+        bulk_data_->change_entity_parts(*face, parts_to_add);
     }
-
 }
 
 
-void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, stk::mesh::Part &part)
+/** 
+ * This routine declares the nodes in the node set and puts them in
+ * the specified part.  (NOTE: the nodes should just be declared,
+ * don't expect that they were declared elsewhere; entities can be
+ * declared many times)
+ * 
+ * @param node_set 
+ * @param part 
+ * @param vmap 
+ */
+void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, 
+                                       stk::mesh::Part &part,
+                                       const Epetra_Map& vmap)
 {
 
     stk::mesh::PartVector parts_to_add;
@@ -379,9 +747,9 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set, stk:
          it != node_list.end ();
          ++it)
     {
-        stk::mesh::Entity *node = bulk_data_->get_entity (stk::mesh::Node, (*it));
-        bulk_data_->change_entity_parts (*node, parts_to_add);
-
+      int local_vidx(*it);
+        int global_vidx(vmap.GID(local_vidx));
+        stk::mesh::Entity& node = bulk_data_->declare_entity (stk::mesh::Node, global_vidx, parts_to_add);
     }
 
 }

@@ -10,8 +10,10 @@ int main(int argc, char *argv[])
 
     parallel_machine = stk::parallel_machine_init (&argc, &argv);
 
-    return UnitTest::RunAllTests ();
+    int status = UnitTest::RunAllTests ();
 
     stk::parallel_machine_finalize ();
+
+    return status;
 
 }
