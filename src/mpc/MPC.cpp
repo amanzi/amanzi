@@ -10,8 +10,8 @@
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
 #ifdef ENABLE_CGNS
-#include "cgns_mesh.hh"
 #include "cgns_mesh_par.hh"
+#include "cgns_mesh.hh"
 #endif
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"

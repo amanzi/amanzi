@@ -88,12 +88,9 @@ void DarcyProblem::Assemble()
   std::vector<double> K(k_);
   for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] / mu_;
   D_->Compute(K);
-  
-D_->Dcf().Print(std::cout);
 
   // Compute the face Schur complement of the diffusion matrix.
   D_->ComputeFaceSchur(); //D_->Print();
-D_->Dcf().Print(std::cout);
 
   // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
   precon_->Compute();
@@ -135,7 +132,12 @@ void DarcyProblem::SetPermeability(const Epetra_Vector &k)
 {
   /// should verify k.Map() is CellMap()
   /// should verify k values are all > 0
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k[i];
+  Epetra_Vector k_ovl(mesh_->cell_map(true));
+  Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
+
+  k_ovl.Import(k, importer, Insert);
+
+  for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
 }
 
 

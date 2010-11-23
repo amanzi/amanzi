@@ -27,7 +27,7 @@ DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh, const
     mesh->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6); // process-local face indices
     cf_graph.InsertMyIndices(j, 6, cface);
   }
-  cf_graph.FillComplete(face_map_ovl,cell_map);
+  cf_graph.FillComplete(face_map,cell_map);
   Dcf_ = new Epetra_CrsMatrix(Copy, cf_graph);
 
   //
