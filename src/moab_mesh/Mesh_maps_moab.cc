@@ -1303,6 +1303,13 @@ void Mesh_maps_moab::get_set (unsigned int set_id,
     MBEntityHandle matset = *(matsets.begin());
 
     mbcore->get_entities_by_dimension(matset,celldim,cellrange);
+    if (cellrange.size()) {
+      if (category == OWNED)
+	cellrange -= GhostCells;
+      else if (category == GHOST)
+	cellrange -= OwnedCells;
+    }
+
     ncells = cellrange.size();
 
     assert ((unsigned int) (end - begin) >= ncells);
@@ -1333,7 +1340,14 @@ void Mesh_maps_moab::get_set (unsigned int set_id,
 
     MBEntityHandle sideset = *(sidesets.begin());
 
-    mbcore->get_entities_by_dimension(sideset,facedim,facerange);
+    mbcore->get_entities_by_dimension(sideset,facedim,facerange); 
+    
+    if (facerange.size()) {
+      if (category == OWNED)
+	facerange -= NotOwnedFaces;
+      else if (category == GHOST)
+	facerange -= OwnedFaces;
+    }
     nfaces = facerange.size();
 
     assert ((unsigned int) (end - begin) >= nfaces);
@@ -1365,6 +1379,13 @@ void Mesh_maps_moab::get_set (unsigned int set_id,
     MBEntityHandle nodeset = *(nodesets.begin());
 
     mbcore->get_entities_by_dimension(nodeset,0,noderange);
+    if (noderange.size()) {
+      if (category == OWNED)
+	noderange -= NotOwnedVerts;
+      else if (category == GHOST)
+	noderange -= OwnedVerts;
+    }
+
     nnodes = noderange.size();
 
     assert ((unsigned int) (end - begin) >= nnodes);
@@ -1445,7 +1466,7 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
 
   switch (kind) {
   case Mesh_data::CELL: {
-    MBRange matsets;
+    MBRange matsets, cellrange;
     int ncells;
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,valarr,1,matsets);
@@ -1454,13 +1475,18 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
 
     MBEntityHandle matset = *(matsets.begin());
 
-    mbcore->get_number_entities_by_dimension(matset,celldim,ncells);
-    return ncells;
+    mbcore->get_entities_by_dimension(matset,celldim,cellrange);
+    if (category == OWNED)
+      cellrange -= GhostCells;
+    else if (category == GHOST)
+      cellrange -= OwnedCells;
+
+    return cellrange.size();
     break;
   }
 
   case Mesh_data::FACE: {
-    MBRange sidesets;
+    MBRange sidesets, facerange;
     int nfaces;
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,valarr,1,sidesets);
@@ -1468,13 +1494,18 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
 
     MBEntityHandle sideset = *(sidesets.begin());
 
-    mbcore->get_number_entities_by_dimension(sideset,facedim,nfaces);
-    return nfaces;
+    mbcore->get_entities_by_dimension(sideset,facedim,facerange);
+    if (category == OWNED)
+      facerange -= NotOwnedFaces;
+    else if (category == GHOST)
+      facerange -= OwnedFaces;
+
+    return facerange.size();
     break;
   }
 
   case Mesh_data::NODE: {
-    MBRange nodesets;
+    MBRange nodesets, noderange;
     int nnodes;
 
     mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,valarr,1,nodesets);
@@ -1482,8 +1513,13 @@ unsigned int Mesh_maps_moab::get_set_size(unsigned int set_id,
 
     MBEntityHandle nodeset = *(nodesets.begin());
 
-    mbcore->get_number_entities_by_dimension(nodeset,0,nnodes);
-    return nnodes;
+    mbcore->get_entities_by_dimension(nodeset,0,noderange);
+    if (category == OWNED)
+      noderange -= NotOwnedVerts;
+    else if (category == GHOST)
+      noderange -= OwnedVerts;
+
+    return noderange.size();
     break;
   }
 
