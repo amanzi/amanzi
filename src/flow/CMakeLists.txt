@@ -3,10 +3,13 @@ include_directories(${PROJECT_SOURCE_DIR}/utils)
 include_directories(${PROJECT_SOURCE_DIR}/error_handling)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
+include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mpc)
 include_directories(${PROJECT_SOURCE_DIR}/flow)
 include_directories(${PROJECT_SOURCE_DIR}/gmv)
 include_directories(${Trilinos_INCLUDE_DIRS})
+include_directories(${MOAB_INCLUDES})
+add_definitions("-DUSE_MPI")
 
 add_library(flow Flow_PK.cpp MimeticHexLocal.cpp MimeticHex.cpp
   DiffusionMatrix.cpp DiffusionPrecon.cpp DarcyProblem.cpp
