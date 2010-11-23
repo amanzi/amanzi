@@ -109,10 +109,10 @@ void Transport_State::copymemory_multivector( Epetra_MultiVector & source, Epetr
      for( i=0; i<number_vectors; i++ ) target[i][c] = source[i][c];
 
 #ifdef HAVE_MPI
-  if ( cmax_s < cmax_t ) {
-     Epetra_Import  importer( target_cmap, source_cmap );
-     target.Import( source, importer, Insert );
-  }
+  //if ( cmax_s < cmax_t ) {
+  Epetra_Import  importer( target_cmap, source_cmap );
+  target.Import( source, importer, Insert );
+  //}
 #endif
 }
 
@@ -137,10 +137,10 @@ void Transport_State::copymemory_vector( Epetra_Vector & source, Epetra_Vector &
   for( f=fmin; f<=fmax; f++ ) target[f] = source[f];
 
 #ifdef HAVE_MPI
-  if ( fmax_s < fmax_t ) {
-     Epetra_Import  Importer( target_fmap, source_fmap );
-     target.Import( source, Importer, Insert );
-  }
+  //  if ( fmax_s < fmax_t ) {
+  Epetra_Import  Importer( target_fmap, source_fmap );
+  target.Import( source, Importer, Insert );
+  // }
 #endif
 }
 
