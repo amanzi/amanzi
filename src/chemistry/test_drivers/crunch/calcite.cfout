@@ -96,8 +96,8 @@
 
   Primary species    itype     guess      Total conc.  Constraint phase
   HCO3-                1    1.0000E-06    3.0000E-03                       
-  Ca++                 1    1.0000E-06    1.0000E-03                       
-  H+                   1    1.0000E-05    1.0000E-03                       
+  Ca++                 1    1.0000E-06    1.0000E-30                       
+  H+                   1    1.0000E-05    3.0000E-03                       
 
   Porosity for this chemical condition =   0.5000
 
@@ -115,8 +115,8 @@
   Liquid Density (kg/m^3) =   1000.000
   Solid Density (kg/m^3)  =   2709.893
   Solid:Solution Ratio    =   2709.893
-  Ionic Strength          =      0.003
-  Solution pH             =      6.615
+  Ionic Strength          =      0.000
+  Solution pH             =      4.436
   Total Charge            =  4.337E-19
 
  Total Aqueous Concentrations of Primary Species  
@@ -124,30 +124,30 @@
 
   Species               Molality     Constraint    Constraint Phase 
  HCO3-                3.0000E-03     Total                           
- Ca++                 1.0000E-03     Total                           
- H+                   1.0000E-03     Total                           
+ Ca++                 1.0038E-30     Total                           
+ H+                   3.0000E-03     Total                           
 
  Concentrations of Individual Species, Exchangers, and Surface Complexes 
  ----------------------------------------------------------------------- 
 
                            Log        Log                                 Activity
  Species              Molality   Activity      Molality      Activity   Coefficient    Type
-  HCO3-                 -2.703     -2.729     1.981E-03     1.866E-03     9.422E-01  Aqueous 
-  Ca++                  -3.008     -3.108     9.822E-04     7.794E-04     7.935E-01  Aqueous 
-  H+                    -6.591     -6.615     2.563E-07     2.426E-07     9.465E-01  Aqueous 
-  OH-                   -7.354     -7.380     4.426E-08     4.168E-08     9.417E-01  Aqueous 
-  CO2(aq)               -3.000     -2.999     1.001E-03     1.002E-03     1.001E+00  Aqueous 
-  CO3--                 -6.340     -6.443     4.573E-07     3.608E-07     7.889E-01  Aqueous 
-  CaOH+                 -9.317     -9.343     4.816E-10     4.537E-10     9.422E-01  Aqueous 
-  CaHCO3+               -4.765     -4.791     1.719E-05     1.620E-05     9.422E-01  Aqueous 
-  CaCO3(aq)             -6.224     -6.224     5.968E-07     5.972E-07     1.001E+00  Aqueous 
+  HCO3-                 -4.433     -4.436     3.686E-05     3.660E-05     9.929E-01  Aqueous 
+  Ca++                 -29.999    -30.011     1.003E-30     9.754E-31     9.721E-01  Aqueous 
+  H+                    -4.433     -4.436     3.686E-05     3.661E-05     9.930E-01  Aqueous 
+  OH-                   -9.556     -9.559     2.783E-10     2.763E-10     9.929E-01  Aqueous 
+  CO2(aq)               -2.528     -2.528     2.963E-03     2.963E-03     1.000E+00  Aqueous 
+  CO3--                -10.317    -10.329     4.825E-11     4.690E-11     9.721E-01  Aqueous 
+  CaOH+                -38.421    -38.424     3.791E-39     3.764E-39     9.929E-01  Aqueous 
+  CaHCO3+              -33.398    -33.401     4.004E-34     3.976E-34     9.929E-01  Aqueous 
+  CaCO3(aq)            -37.013    -37.013     9.715E-38     9.715E-38     1.000E+00  Aqueous 
 
   ****** Partial pressure of gases (bars) *****
 
 
   ****** Saturation state of minerals (log[Q/K] *****
 
-  Calcite                  -1.0709
+  Calcite                 -31.8595
 
                 SPECIATION OF  
       INITIAL AND BOUNDARY CONDITIONS 
@@ -165,8 +165,8 @@
 
  Parameters for this run:
 
-  Maximum timestep (yrs) =    1.142E-04
-  Maximum timestep (yrs) =    1.142E-04
+  Maximum timestep (yrs) =    1.585E-08
+  Maximum timestep (yrs) =    1.585E-08
 
  --> Porosity set by "fix_porosity" or "set_porosity" keywords
  ----> No update of porosity
@@ -178,7 +178,7 @@
   Temperature gradient (C/m) =         0.00
 
  Graphics files printed at (yrs)
-   1.3699E-03
+   2.3782E-07
 
 
    Running in batch mode

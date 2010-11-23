@@ -22,6 +22,12 @@ double f_smooth( double* x, double t ) {
   return 0.5 - atan(50*(x[0]-5-t)) / M_PI;
 }
 
+double f_cubic( double* x, double t ) { 
+  if( x[0] < 1 + t ) return 1;
+  if( x[0] > 3 + t ) return 0;
+  return pow((3+t-x[0])/2, 2.0);
+}
+
 
 /* test constructor of transport PK */
 TEST(CONSTRUCTOR) {
@@ -224,7 +230,7 @@ TEST(CONVERGENCE_ANALYSIS) {
      double  u[3] = {1, 0, 0};
 
      TS->analytic_darcy_flux( u );
-     TS->analytic_total_component_concentration( f_smooth );
+     TS->analytic_total_component_concentration( f_cubic );
      TS->analytic_porosity( 1.0 );
      TS->analytic_water_saturation( 1.0 );
      TS->analytic_water_density( 1.0 );
@@ -242,7 +248,7 @@ TEST(CONVERGENCE_ANALYSIS) {
 
      /* advance the state */
      int  i, k, iter = 0;
-     double  T = 0.0, T1 = 0.5;
+     double  T = 0.0, T1 = 1.0;
 
      RCP<Transport_State>  TS_next = TPK.get_transport_state_next();
      RCP<Epetra_MultiVector>  tcc      = TS->get_total_component_concentration();
@@ -259,7 +265,7 @@ TEST(CONVERGENCE_ANALYSIS) {
 
      /* calculate L1 error */
      double  L1, L2;
-     TS->error_total_component_concentration( f_smooth, T, TPK.get_cell_volume(), &L1, &L2 );
+     TS->error_total_component_concentration( f_cubic, T, TPK.get_cell_volume(), &L1, &L2 );
      printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
   }
 

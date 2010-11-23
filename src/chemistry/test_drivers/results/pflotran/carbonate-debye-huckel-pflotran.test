@@ -5,7 +5,7 @@ Command Line Options:
 
 
 -- Beaker description ------------------------------------------------
----- Parameters ------------------------------------------------------
+---- Parameters
     tolerance: 1e-12
     max_iterations :250
     activity model: debye-huckel
@@ -29,13 +29,14 @@ Command Line Options:
                                            -6.3447         0   44.0098
 
 ----------------------------------------------------------------------
-Beaker::speciate num_iterations :8
 
 -- Solution ----------------------------------------------------------
 ---- Components 
            Name       Molarity       Molality
              H+    1.00285e-03    1.00000e-03
           HCO3-    1.00285e-03    1.00000e-03
+---- Change Balance 
+                                  2.16840e-19
 ---- Species 
            Name       Molarity Activity Coeff       Activity
              H+    2.11820e-05    9.94670e-01    2.10691e-05

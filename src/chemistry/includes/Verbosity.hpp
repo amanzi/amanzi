@@ -3,9 +3,16 @@
 
 #define __VERBOSITY_HPP__
 
-enum Verbosity { kSilent, kTerse, kVerbose, kDebug, kDebugBeaker, kDebugInputFile, 
-                 kDebugMineralKinetics, kDebugIonExchange,
-                 kDebugChemistryProcessKernel };
+enum Verbosity { kSilent, 
+                 kTerse, 
+                 kVerbose, 
+                 kDebug, 
+                 kDebugBeaker, 
+                 kDebugInputFile, 
+                 kDebugMineralKinetics, 
+                 kDebugIonExchange,
+                 kDebugChemistryProcessKernel
+};
 
 
 #endif     /* __VERBOSITY_HPP__ */

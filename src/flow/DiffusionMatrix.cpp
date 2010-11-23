@@ -11,23 +11,21 @@ DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh, const
   dir_faces_ = dir_faces;
   Sff_ = 0;
 
-  Epetra_Map cell_map = mesh->cell_map(false);
-  Epetra_Map face_map = mesh->face_map(false);
-  Epetra_Map face_map_ovl = mesh->face_map(true);
+  const Epetra_Map& cell_map = mesh->cell_map(false);
+  const Epetra_Map& face_map = mesh->face_map(false);
+  const Epetra_Map& face_map_ovl = mesh->face_map(true);
 
   Dcc_ = new Epetra_Vector(cell_map);
 
   //
   // CREATE THE CELL-FACE MATRIX
 
-  unsigned int cface[6];
-  int indices[6];
+  int cface[6];
 
   Epetra_CrsGraph cf_graph(Copy, cell_map, face_map_ovl, 6, true);
-  for (unsigned int j = cell_map.MinLID(); j <= cell_map.MaxLID(); ++j) {
-    mesh->cell_to_faces(j, cface, cface+6); // process-local face indices
-    for (int i = 0; i < 6; ++i) indices[i] = cface[i]; // just convert to signed int
-    cf_graph.InsertMyIndices(j, 6, indices);
+  for (int j = cell_map.MinLID(); j <= cell_map.MaxLID(); ++j) {
+    mesh->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6); // process-local face indices
+    cf_graph.InsertMyIndices(j, 6, cface);
   }
   cf_graph.FillComplete(face_map_ovl,cell_map);
   Dcf_ = new Epetra_CrsMatrix(Copy, cf_graph);
@@ -36,10 +34,10 @@ DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh, const
   // CREATE THE FACE-FACE MATRIX GRAPH
 
   Epetra_FECrsGraph graph(Copy, face_map, 11);
-  for (unsigned int j = cell_map.MinLID(); j <= cell_map.MaxLID(); ++j) {
-    mesh->cell_to_faces(j, cface, cface+6); // process-local face indices, possibly ghosts
-    for (int i = 0; i < 6; ++i) indices[i] = face_map_ovl.GID(cface[i]); // global face indices
-    graph.InsertGlobalIndices(6, indices, 6, indices);
+  for (int j = cell_map.MinLID(); j <= cell_map.MaxLID(); ++j) {
+    mesh->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6); // process-local face indices, possibly ghosts
+    for (int i = 0; i < 6; ++i) cface[i] = face_map_ovl.GID(cface[i]); // global face indices
+    graph.InsertGlobalIndices(6, cface, 6, cface);
   }
   graph.GlobalAssemble();
   Dff_ = new Epetra_FECrsMatrix(Copy, graph);
@@ -64,28 +62,23 @@ void DiffusionMatrix::Compute(const std::vector<double> &K)
   Epetra_SerialDenseMatrix minv(6,6);
   const bool invert = true;
 
-  unsigned int cface[6];
   int l_indices[6];
   Epetra_IntSerialDenseVector g_indices(6);
 
-  Epetra_Map cell_map = mesh_->cell_map(false);
-  Epetra_Map face_map = mesh_->face_map(true);
+  Epetra_Map cell_map = mesh_->cell_map(false); // owned cells
+  Epetra_Map face_map = mesh_->face_map(true);  // all faces
 
   (*Dff_).PutScalar(0.0);
-  for (int icell = 0; icell <= cell_map.MaxLID(); ++icell) {
+  for (int icell = 0; icell < cell_map.NumMyElements(); ++icell) {
 
     // Compute the inverse of the cell face mass matrix.
     mesh_->cell_to_coordinates((unsigned int) icell, xBegin, xEnd);
     MimeticHexLocal mhex(x);
     mhex.mass_matrix(minv, K[icell], invert);
-\
+
     // Get the cell face indices; we need both local and global indices.
-    // mesh_->cell_to_faces((unsigned int) icell, l_indices, l_indices+6);
-    mesh_->cell_to_faces((unsigned int) icell, cface, cface+6);
-    for (int k = 0; k < 6; ++k) {
-      l_indices[k] = (int) cface[k]; // need ints, not unsigned ints
-      g_indices[k] = face_map.GID(l_indices[k]);
-    }
+    mesh_->cell_to_faces((unsigned int) icell, (unsigned int*) l_indices, (unsigned int*) l_indices+6);
+    for (int k = 0; k < 6; ++k) g_indices[k] = face_map.GID(l_indices[k]);
 
     double w[6];
     double matsum = 0.0;
@@ -119,28 +112,23 @@ void DiffusionMatrix::Compute(const std::vector<Epetra_SerialSymDenseMatrix> &K)
   Epetra_SerialDenseMatrix minv(6,6);
   const bool invert = true;
 
-  unsigned int cface[6];
   int l_indices[6];
   Epetra_IntSerialDenseVector g_indices(6);
 
-  Epetra_Map cell_map = mesh_->cell_map(false);
-  Epetra_Map face_map = mesh_->face_map(true);
+  Epetra_Map cell_map = mesh_->cell_map(false); // owned cells
+  Epetra_Map face_map = mesh_->face_map(true);  // all faces
 
   (*Dff_).PutScalar(0.0);
-  for (int icell = 0; icell <= cell_map.MaxLID(); ++icell) {
+  for (int icell = 0; icell < cell_map.NumMyElements(); ++icell) {
 
     // Compute the inverse of the cell face mass matrix.
     mesh_->cell_to_coordinates((unsigned int) icell, xBegin, xEnd);
     MimeticHexLocal mhex(x);
     mhex.mass_matrix(minv, K[icell], invert);
-\
+
     // Get the cell face indices; we need both local and global indices.
-    // mesh_->cell_to_faces((unsigned int) icell, l_indices, l_indices+6);
-    mesh_->cell_to_faces((unsigned int) icell, cface, cface+6);
-    for (int k = 0; k < 6; ++k) {
-      l_indices[k] = (int) cface[k]; // need ints, not unsigned ints
-      g_indices[k] = face_map.GID(l_indices[k]);
-    }
+    mesh_->cell_to_faces((unsigned int) icell, (unsigned int*) l_indices, (unsigned int*) l_indices+6);
+    for (int k = 0; k < 6; ++k) g_indices[k] = face_map.GID(l_indices[k]);
 
     double w[6];
     double matsum = 0.0;
@@ -220,7 +208,7 @@ void DiffusionMatrix::ApplyDirichletProjection(Epetra_CrsMatrix &Mff)
     for (int i = 0; i < n; ++i) {
       values[i] = 0.0;
       int lcol = indices[i]; // local column index
-      if (Mff.RowMap().MyLID(lcol)) Mff.ReplaceMyValues(lcol, 1, &ZERO, &lrow);
+      if (Mff.RangeMap().MyLID(lcol)) Mff.ReplaceMyValues(lcol, 1, &ZERO, &lrow);
     }
     Mff.ReplaceMyValues(lrow, 1, &ONE, &lrow); // put a 1 on the diagonal
   }
@@ -235,11 +223,13 @@ void DiffusionMatrix::ApplyDirichletProjection(Epetra_MultiVector &xf)
 }
 
 
-void DiffusionMatrix::Print()
+void DiffusionMatrix::Print(std::ostream &os)
 {
-  std::cout << *Dcc_ << std::endl;
-  std::cout << *Dcf_ << std::endl;
-  std::cout << *Dff_ << std::endl;
-  if (Sff_) std::cout << *Sff_ << std::endl;
+  os << *Dcc_ << std::endl;
+  os << *Dcf_ << std::endl;
+  os << *Dff_ << std::endl;
+  if (Sff_) os << *Sff_ << std::endl;
+  for (int j = 0; j < dir_faces_.size(); ++j) os << dir_faces_[j] << " ";
+  if (dir_faces_.size() > 0) os << std::endl;
 }
 

@@ -59,6 +59,7 @@ class Beaker {
                      const Beaker::BeakerParameters& parameters);
   void SetupActivityModel(std::string model);
   void VerifyComponentSizes(const Beaker::BeakerComponents& components);
+  void CheckChargeBalance(const std::vector<double>& aqueous_totals);
   void SetComponents(const Beaker::BeakerComponents& components);
   void UpdateComponents(Beaker::BeakerComponents* components);
 

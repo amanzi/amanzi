@@ -44,7 +44,7 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
   }
 
   if (kinetic_rate != NULL) {
-    kinetic_rate->verbosity(verbosity());
+    kinetic_rate->set_verbosity(verbosity());
     kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral), rate_data, primary_species);
   } else {
     // failed to create a rate object, error message and graceful exit here....
