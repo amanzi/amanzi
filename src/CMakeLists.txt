@@ -372,4 +372,4 @@ add_subdirectory(utils)
 add_subdirectory(bin)
 add_subdirectory(driver)
 
-#add_subdirectory(private)
+add_subdirectory(private)

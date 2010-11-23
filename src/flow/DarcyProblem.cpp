@@ -88,9 +88,12 @@ void DarcyProblem::Assemble()
   std::vector<double> K(k_);
   for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] / mu_;
   D_->Compute(K);
+  
+D_->Dcf().Print(std::cout);
 
   // Compute the face Schur complement of the diffusion matrix.
   D_->ComputeFaceSchur(); //D_->Print();
+D_->Dcf().Print(std::cout);
 
   // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
   precon_->Compute();
