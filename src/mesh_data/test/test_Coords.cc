@@ -127,11 +127,10 @@ SUITE (Coordinates)
 
     TEST_FIXTURE (No_Data, Bounds_checking)
     {
-
-        CHECK_THROW ((*c) (10, 1), DBC_assertion);
-        CHECK_THROW ((*c) (-1, 1), DBC_assertion);
-        CHECK_THROW ((*c) (5,  3), DBC_assertion);
-        CHECK_THROW ((*c) (5, -1), DBC_assertion);
+        CHECK_THROW ((*c) (10, 1), DBC::Assertion);
+        CHECK_THROW ((*c) (-1, 1), DBC::Assertion);
+        CHECK_THROW ((*c) (5,  3), DBC::Assertion);
+        CHECK_THROW ((*c) (5, -1), DBC::Assertion);
     }
 
 
@@ -140,10 +139,6 @@ SUITE (Coordinates)
         std::vector<std::vector<int> > d(3, std::vector<int>(10));
         (*c).take_data_from (d);
     }
-
-
-
-
 
     TEST_FIXTURE (Data, Retrevial)
     {

@@ -1,4 +1,4 @@
-include_directories(${PROJECT_SOURCE_DIR}/dbc)
+include_directories(${PROJECT_SOURCE_DIR}/error_handling)
 
 if (BUILD_TESTS)
   add_executable(test_boundary_conditions test/Main.cc test/test_BC.cc)

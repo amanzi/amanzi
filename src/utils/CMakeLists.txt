@@ -1,5 +1,6 @@
+# -*- mode: cmake -*-
 include_directories(${PROJECT_SOURCE_DIR}/gmv)
-include_directories(${PROJECT_SOURCE_DIR}/dbc)
+include_directories(${PROJECT_SOURCE_DIR}/error_handling)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
@@ -10,10 +11,10 @@ add_definitions("-DUSE_MPI")
 
 if (NOT ENABLE_CGNS)
     add_library(utils gmv_mesh.cc cell_geometry.cc MeshAudit.cc )
-    target_link_libraries(utils gmv simple_mesh dbc mesh_data ${Trilinos_LIBRARIES})
+    target_link_libraries(utils gmv simple_mesh error_handling mesh_data ${Trilinos_LIBRARIES})
 else()
     add_library(utils gmv_mesh.cc cell_geometry.cc MeshAudit.cc cgns_mesh.cc)
-    target_link_libraries(utils gmv simple_mesh dbc mesh_data ${Trilinos_LIBRARIES} ${CGNS_LIBRARY})
+    target_link_libraries(utils gmv simple_mesh error_handling mesh_data ${Trilinos_LIBRARIES} ${CGNS_LIBRARY})
 endif()
 link_directories(${Trilinos_LIBRARY_DIRS})
 
