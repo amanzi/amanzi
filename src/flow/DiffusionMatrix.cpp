@@ -185,8 +185,8 @@ void DiffusionMatrix::ComputeFaceSchur()
         update(i,j) = -w[i]*(w[j]/(*Dcc_)[icell]);
       }
     }
-    for (int i = 0; i < n; ++i) indices[i] = (*Dcf_).ColMap().GID(indices[i]);
-    Epetra_IntSerialDenseVector g_indices(View, indices, n);
+    Epetra_IntSerialDenseVector g_indices(n);
+    for (int i = 0; i < n; ++i) g_indices[i] = (*Dcf_).ColMap().GID(indices[i]);
     (*Sff_).SumIntoGlobalValues(g_indices, update);
   }
   (*Sff_).GlobalAssemble();
@@ -208,7 +208,7 @@ void DiffusionMatrix::ApplyDirichletProjection(Epetra_CrsMatrix &Mff)
     for (int i = 0; i < n; ++i) {
       values[i] = 0.0;
       int lcol = indices[i]; // local column index
-      if (Mff.RangeMap().MyLID(lcol)) Mff.ReplaceMyValues(lcol, 1, &ZERO, &lrow);
+      if (Mff.RowMap().MyLID(lcol)) Mff.ReplaceMyValues(lcol, 1, &ZERO, &lrow);
     }
     Mff.ReplaceMyValues(lrow, 1, &ONE, &lrow); // put a 1 on the diagonal
   }
@@ -220,6 +220,10 @@ void DiffusionMatrix::ApplyDirichletProjection(Epetra_MultiVector &xf)
   for (int j = 0; j < dir_faces_.size(); ++j)
     for (int i = 0; i < xf.NumVectors(); ++i)
       xf[i][dir_faces_[j]] = 0.0;
+//  for (int j = 0; j < dir_faces_.size(); ++j) {
+//    if (xf.Map().MyLID(dir_faces_[j]))
+//      for (int i = 0; i < xf.NumVectors(); ++i) xf[i][dir_faces_[j]] = 0.0;
+//  }
 }
 
 
