@@ -1,5 +1,6 @@
+# -*- mode: cmake -*-
 include_directories("${PROJECT_SOURCE_DIR}/utils")
-include_directories("${PROJECT_SOURCE_DIR}/dbc")
+include_directories("${PROJECT_SOURCE_DIR}/error_handling")
 include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS})
@@ -9,7 +10,7 @@ add_library(mesh_data
   Element_types.cc Field_data.cc Node_set.cc
   Parameters.cc Side_set.cc HexMeshGenerator.cc)
 
-target_link_libraries(mesh_data dbc)
+target_link_libraries(mesh_data error_handling)
 
 if (BUILD_TESTS)
   add_executable(test_mesh_data 

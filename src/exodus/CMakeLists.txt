@@ -1,5 +1,5 @@
 include_directories("${PROJET_SOURCE_DIR}/utils")
-include_directories("${PROJECT_SOURCE_DIR}/dbc")
+include_directories("${PROJECT_SOURCE_DIR}/error_handling")
 include_directories("${PROJECT_SOURCE_DIR}/mesh_data")
 
 include_directories(${Trilinos_INCLUDE_DIRS})
@@ -10,7 +10,7 @@ include_directories("${NETCDF_INCLUDES}")
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 add_library(exodus Exodus_readers.cc Exodus_records.cc Exodus_file.cc Parallel_Exodus_file.cc)
-target_link_libraries(exodus dbc mesh_data ${EXODUS_LIBS_ALL})
+target_link_libraries(exodus error_handling mesh_data ${EXODUS_LIBS_ALL})
 
 if (BUILD_TESTS)
 

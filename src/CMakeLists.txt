@@ -1,3 +1,4 @@
+# -*- mode: cmake -*-
 # Note: This CMakeLists.txt file previously hard-wired the C and C++ compilers 
 # via the following commands:
 #
@@ -23,7 +24,6 @@ set(CMAKE_BUILD_TYPE debug)
 
 set(AMANZI_Mesh_VERSION_MAJOR 0)
 set(AMANZI_Mesh_VERSION_MINOR 1)
-
 
 ##############################################################################
 # Attempting to explicitly find the MPI implementation libraries has been 
@@ -307,43 +307,59 @@ find_package( Boost COMPONENTS system filesystem REQUIRED)
 OPTION(ENABLE_CGNS "Build with cgnslib_2.5" OFF)
 
 if(ENABLE_CGNS)
-find_library(CGNS_LIBRARY cgns
-             HINTS ${CGNS_LIB_DIR}
-                   ${CGNS_DIR}/lib
-                   /usr/lib
-                   /usr/local/lib
-		   )
-if(NOT CGNS_LIBRARY)
-  message(FATAL_ERROR "Error: could not find CGNS library\n"
-          "Try defining CGNS_DIR: (-D CGNS_DIR:FILEPATH=<CGNS_install_prefix>)"
-          "\nor defining CGNS_LIB_DIR")
-endif()
-
-
-find_path(CGNS_INCLUDES cgnslib.h 
-          HINTS ${CGNS_INCLUDE_DIR}
-                ${CGNS_DIR}/include
-                /usr/include
-                /usr/local/include
-		)
-if(NOT CGNS_INCLUDES)
-  message(FATAL_ERROR "Error: could not find CGNS includes\n"
-          "Try defining CGNS_DIR: (-D CGNS_DIR:FILEPATH=<CGNS_install_prefix>)"
-          "\nor defining CGNS_INCLUDE_DIR")
-endif()
-
-add_library(cgns STATIC IMPORTED)
-set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
-set(CMAKE_CXX_FLAGS "-DENABLE_CGNS")
+  find_library(CGNS_LIBRARY cgns
+    HINTS ${CGNS_LIB_DIR}
+    ${CGNS_DIR}/lib
+    /usr/lib
+    /usr/local/lib
+    )
+  if(NOT CGNS_LIBRARY)
+    message(FATAL_ERROR "Error: could not find CGNS library\n"
+      "Try defining CGNS_DIR: (-D CGNS_DIR:FILEPATH=<CGNS_install_prefix>)"
+      "\nor defining CGNS_LIB_DIR")
+  endif()
+  
+  
+  find_path(CGNS_INCLUDES cgnslib.h 
+    HINTS ${CGNS_INCLUDE_DIR}
+    ${CGNS_DIR}/include
+    /usr/include
+    /usr/local/include
+    )
+  if(NOT CGNS_INCLUDES)
+    message(FATAL_ERROR "Error: could not find CGNS includes\n"
+      "Try defining CGNS_DIR: (-D CGNS_DIR:FILEPATH=<CGNS_install_prefix>)"
+      "\nor defining CGNS_INCLUDE_DIR")
+  endif()
+  
+  add_library(cgns STATIC IMPORTED)
+  set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
+  set(CMAKE_CXX_FLAGS "-DENABLE_CGNS")
 endif()
 
 
 include_directories(${PROJECT_BINARY_DIR})
 
-add_subdirectory(dbc)
+OPTION(ENABLE_DBC "Enable DBC checking" OFF)
+if (ENABLE_DBC)
+  message("Enabling DBC checks")
+  add_definitions("-DENABLE_DBC")
+endif()
+  
+
+# Enable/Disable STK_mesh Amanzi package
+OPTION(ENABLE_STK_Mesh "Build Amanzi module STK_Mesh." OFF)
+if (NOT ENABLE_STK_Mesh)
+  message("STK_mesh compilation is disabled")
+  set(MESH_LIBRARY moab_mesh)
+else()
+  add_subdirectory(stk_mesh)
+  set(MESH_LIBRARY stk_mesh)
+endif()
+
+add_subdirectory(error_handling)
 add_subdirectory(exodus)
 add_subdirectory(mesh_data)
-add_subdirectory(stk_mesh)
 add_subdirectory(simple_mesh)
 add_subdirectory(moab_mesh)
 add_subdirectory(mpc)
