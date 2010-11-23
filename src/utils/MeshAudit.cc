@@ -1640,6 +1640,8 @@ int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
     int n = mesh->get_set_size(sid, kind, OWNED);
     vector<unsigned int> set_own(n);
     mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
+
+    n = mesh->get_set_size(sid, kind, USED);
     vector<unsigned int> set_use(n);
     mesh->get_set(sid, kind, USED,  set_use.begin(), set_use.end());
 
