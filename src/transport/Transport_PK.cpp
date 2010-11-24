@@ -35,7 +35,7 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   TS_nextMPC = rcp( new Transport_State ( *TS_nextBIG, ViewMemory ) );
 
   /* set default values to all internal parameters */
-  dT = 0.0;
+  dT = dT_debug = 0.0;
   status = TRANSPORT_NULL;
   verbosity_level = 0;
   internal_tests = 0;
@@ -115,6 +115,7 @@ void Transport_PK::process_parameter_list()
 
   verbosity_level = parameter_list.get<int>( "verbosity level", 0 );
   internal_tests = parameter_list.get<string>( "enable internal tests", "no") == "yes";
+  dT_debug = parameter_list.get<double>( "maximal time step", TRANSPORT_LARGE_TIME_STEP);
  
 
   /* read number of boundary consitions */ 
@@ -267,7 +268,9 @@ double Transport_PK::calculate_transport_dT()
 #endif
 
 
-  /* incorporate CFL restriction */
+  /* incorporate developers and CFL constraints */
+  dT = min( dT, dT_debug );
+
   dT *= cfl;
   return dT;
 }

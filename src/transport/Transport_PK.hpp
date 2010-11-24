@@ -118,7 +118,7 @@ private:
   RCP<Epetra_Import>  face_importer;
 
   /* transport time step, CFL, and status */
-  double  cfl, dT;
+  double  cfl, dT, dT_debug;
   int     number_components;
   int     status;
 

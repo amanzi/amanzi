@@ -14,7 +14,7 @@
 <!--    <Parameter name="End Cycle" type="int" value="1"/> -->
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="disable Transport_PK" type="string" value="no"/>
-    <Parameter name="disable Chemistry_PK" type="string" value="no"/>
+    <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="fbasin_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="fbasin_data.gmv"/>
@@ -28,7 +28,7 @@
     <Parameter name="Number of mesh blocks" type="int" value="5"/>
     <Parameter name="Number of component concentrations" type="int" value="3"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
-    <Parameter name="Constant water density" type="double" value="1000.0"/>
+    <Parameter name="Constant water density" type="double" value="997.16"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
@@ -38,26 +38,26 @@
       <Parameter name="Mesh block ID" type="int" value="20000"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant permeability" type="double" value="1.0e-9"/>
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant component concentration 1" type="double" value="0.2"/>
-      <Parameter name="Constant component concentration 2" type="double" value="0.4"/>
+      <Parameter name="Constant component concentration 0" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 1" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 2" type="double" value="0.0"/>
     </ParameterList>
 
     <ParameterList name="Mesh block 2"> 
       <Parameter name="Mesh block ID" type="int" value="30000"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant permeability" type="double" value="2.0e-8"/>
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant component concentration 1" type="double" value="0.2"/>
-      <Parameter name="Constant component concentration 2" type="double" value="0.4"/>
+      <Parameter name="Constant component concentration 0" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 1" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 2" type="double" value="0.0"/>
     </ParameterList>
 
     <ParameterList name="Mesh block 3"> 
       <Parameter name="Mesh block ID" type="int" value="40000"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant permeability" type="double" value="1.0e-10"/>
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant component concentration 1" type="double" value="0.0"/>
+      <Parameter name="Constant component concentration 0" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 1" type="double" value="1.0e-3"/>
       <Parameter name="Constant component concentration 2" type="double" value="0.0"/>
     </ParameterList>
 
@@ -65,8 +65,8 @@
       <Parameter name="Mesh block ID" type="int" value="50000"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant permeability" type="double" value="1.0e-8"/>
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant component concentration 1" type="double" value="0.8"/>
+      <Parameter name="Constant component concentration 0" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 1" type="double" value="1.0e-3"/>
       <Parameter name="Constant component concentration 2" type="double" value="0.0"/>
     </ParameterList>
 
@@ -74,8 +74,8 @@
       <Parameter name="Mesh block ID" type="int" value="70000"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Constant permeability" type="double" value="1.0e-8"/>
-      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant component concentration 1" type="double" value="0.8"/>
+      <Parameter name="Constant component concentration 0" type="double" value="1.0e-3"/>
+      <Parameter name="Constant component concentration 1" type="double" value="1.0e-3"/>
       <Parameter name="Constant component concentration 2" type="double" value="0.0"/>
     </ParameterList>
   </ParameterList>
@@ -83,8 +83,11 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
+    <!-- debug and developers options --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="verbosity level" type="int" value="10"/>  
+    <Parameter name="maximal time step" type="double" value="0.5"/>  
+    <!-- end of debug and developers options -->
     
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>
@@ -109,7 +112,7 @@
       <Parameter name="Number of minerals" type="int" value="1"/>
       <Parameter name="Number of mesh blocks" type="int" value="1"/>
       <ParameterList name="Mesh block 1"> 
-        <Parameter name="Mesh block ID" type="int" value="0"/>
+        <Parameter name="Mesh block ID" type="int" value="40000"/>
         <ParameterList name="Minerals">
           <Parameter name="Mineral 0" type="double" value="0.25"/>
         </ParameterList>
