@@ -118,8 +118,8 @@ int main(int argc, char **argv) {
         }
         thermo_database_file = "input/calcite.bgd";
         activity_model_name = ActivityModelFactory::debye_huckel;
-        components.total.push_back(3.0e-3);  // H+
-        components.total.push_back(3.0e-3);  // HCO3-
+        components.total.push_back(2.2124e-6);  // H+
+        components.total.push_back(2.2124e-6);  // HCO3-
         components.total.push_back(0.0);  // Ca++
         components.minerals.push_back(0.2);  // calcite
         break;
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components.total);
         double delta_time = 0.01;  // seconds
-        int num_time_steps = 750;
+        int num_time_steps = 500;
         for (int time_step = 0; time_step < num_time_steps; time_step++) {
           chem->ReactionStep(&components, parameters, delta_time);
           if ((time_step+1) % 50 == 0) {

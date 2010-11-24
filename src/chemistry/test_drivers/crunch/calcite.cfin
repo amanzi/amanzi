@@ -16,7 +16,7 @@ END
 
 OUTPUT
 time_units               seconds
-spatial_profile          7.5
+spatial_profile          5.0
 time_series              calcite-ts.out 1 1 1
 time_series_print        pH H+ HCO3- Ca++
 !!time_series_print        all
@@ -24,16 +24,16 @@ time_series_interval     1
 END
 
 PRIMARY_SPECIES
+H+
 HCO3-
 Ca++
-H+
 END
 
 Condition        initial_condition   
 units            mol/kg
 temperature      25.0
-H+               0.003
-HCO3-            0.003
+H+               2.2124e-6
+HCO3-            2.2124e-6
 Ca++             0.0
 Calcite          0.2 specific_surface_area 2.0
 END

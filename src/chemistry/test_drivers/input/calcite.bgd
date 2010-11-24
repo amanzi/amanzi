@@ -1,7 +1,5 @@
 # Calcite chemistry test problem for ascem geochemistry code validation
 <Primary Species
-#H2O ; 3.0 ; 0.0 ; 18.0153
-
 H+ ; 9.0 ; 1.0 ; 1.0079
 
 HCO3- ; 4.0 ; -1.0 ; 61.0171
@@ -47,9 +45,5 @@ Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340 ; 2.
 <Mineral Kinetics
 Calcite ; TST ; log10_rate_constant -6.19 moles_m2_sec
 
-#Calcite ; TST ; log10_rate_constant -14.0 moles_m2_sec
-
-#Calcite ; TST ; log10_rate_constant -6.19 moles_m2_sec ; H+ 1.0
-
-#Calcite ; TST ; log10_rate_constant -8.0 moles_m2_sec ; H+ 0.57 Ca++ -0.98
+#Calcite ; TST ; log10_rate_constant -10.0 moles_m2_sec
 
