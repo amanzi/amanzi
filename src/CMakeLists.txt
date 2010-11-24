@@ -340,7 +340,7 @@ endif()
 
 include_directories(${PROJECT_BINARY_DIR})
 
-OPTION(ENABLE_DBC "Enable DBC checking" OFF)
+OPTION(ENABLE_DBC "Enable DBC checking" ON)
 if (ENABLE_DBC)
   message("Enabling DBC checks")
   add_definitions("-DENABLE_DBC")
