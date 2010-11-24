@@ -4,8 +4,10 @@
 #include "Epetra_Import.h"
 
 #include "Mesh_maps_base.hh"
-#include "Transport_PK.hpp"
 #include "cell_geometry.hh"
+#include "dbc.hh"
+
+#include "Transport_PK.hpp"
 
 using namespace std;
 using namespace Teuchos;
@@ -133,7 +135,11 @@ void Transport_PK::process_parameter_list()
      sprintf(bc_char_name, "BC %d", i);
      string bc_name(bc_char_name);
 
-     if ( ! BC_list.isSublist( bc_name ) ) throw exception();
+     if ( ! BC_list.isSublist( bc_name ) ) {
+        cout << "MyPID = " << MyPID << endl;
+        cout << "Boundary condition with name " << bc_char_name << " does not exist" << endl;
+        ASSERT( 0 );
+     }
 
      ParameterList bc_ss = BC_list.sublist( bc_name );
 
@@ -161,7 +167,11 @@ void Transport_PK::process_parameter_list()
      if ( type == "Constant" ) bcs[i].type = TRANSPORT_BC_CONSTANT_INFLUX;
 
      bcs[i].side_set_id = ssid;
-     if ( !mesh->valid_set_id( ssid, Mesh_data::FACE ) ) throw exception();
+     if ( !mesh->valid_set_id( ssid, Mesh_data::FACE ) ) {
+        cout << "MyPID = " << MyPID << endl;
+        cout << "Invalid set of mesh faces with ID " << ssid << endl;
+        ASSERT( 0 );
+     }
 
      /* populate list of n boundary faces: it could be empty */
      int  n;
@@ -381,7 +391,7 @@ void Transport_PK::advance( double dT_MPC )
            cout << "    MyPID = " << MyPID << endl;
            cout << "    component = " << i << endl;
            cout << "    min/max values = " << tcc_min_values[i] << " " << tcc_max_values[i] << endl;
-           throw exception(); 
+           ASSERT( 0 ); 
         }
      }
   }
@@ -436,6 +446,7 @@ void Transport_PK::check_divergence_free_condition()
 
      if( umax ) L8_error = max( L8_error, fabs( div ) / umax );
 
+     /* hard-coded tolerance: no real guidance at the moment */
      if ( fabs( div ) >= 1e-6 * umax ) { 
         cout << "TRANSPORT: div-free condition is violated! "<< endl;
         cout << "    MyPID = " << MyPID << endl;
@@ -443,12 +454,19 @@ void Transport_PK::check_divergence_free_condition()
         cout << "    divergence = " << div << endl;
         cout << "    maximal velocity = " << umax << endl; 
         cout << "    admissible tolerance div/flux is 1e-6" << endl; 
-        throw exception(); 
+        ASSERT( 0 );
      }
   }
 
   if ( verbosity_level > 1 ) {
-     cout << "Transport_PK: maximal (divergence / flux) = " << L8_error << endl;
+#ifdef HAVE_MPI
+     double L8_global;
+     const  Epetra_Comm & comm = darcy_flux.Comm(); 
+ 
+     comm.MinAll( &L8_error, &L8_global, 1 );
+     L8_error = L8_global;
+#endif
+     if ( !MyPID ) cout << "Transport_PK: maximal (divergence / flux) = " << L8_error << endl;
   }
 }
 

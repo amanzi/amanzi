@@ -14,7 +14,7 @@
 <!--    <Parameter name="End Cycle" type="int" value="1"/> -->
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="disable Transport_PK" type="string" value="no"/>
-    <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
+    <Parameter name="disable Chemistry_PK" type="string" value="no"/>
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="fbasin_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="fbasin_data.gmv"/>
@@ -101,7 +101,20 @@
 
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="tracer.bgd" />
+    <Parameter name="Thermodynamic Database File" type="string" value="calcite.bgd" />
+    <Parameter name="Max Time Step (s)" type="double" value="0.5" />
+    <Parameter name="Verbosity" type="int" value="2" />
+    <Parameter name="Activity Model" type="string" value="debye-huckel" />
+    <ParameterList name="Initial Conditions">
+      <Parameter name="Number of minerals" type="int" value="1"/>
+      <Parameter name="Number of mesh blocks" type="int" value="1"/>
+      <ParameterList name="Mesh block 1"> 
+        <Parameter name="Mesh block ID" type="int" value="0"/>
+        <ParameterList name="Minerals">
+          <Parameter name="Mineral 0" type="double" value="0.25"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
 
