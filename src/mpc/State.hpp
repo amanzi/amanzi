@@ -35,7 +35,8 @@ public:
   Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
   Teuchos::RCP<double*>             get_gravity()      { return gravity; }
 
-  Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration () 
+  Teuchos::RCP<Epetra_MultiVector>  get_darcy_velocity () { return darcy_velocity; }
+  Teuchos::RCP<Epetra_MultiVector>  get_total_component_concentration () 
   { return total_component_concentration; };
   
   const Teuchos::RCP<Mesh_maps_base> get_mesh_maps() const { return mesh_maps; };
@@ -87,7 +88,8 @@ private:
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration; 
   Teuchos::RCP<Epetra_Vector> water_saturation;
   Teuchos::RCP<Epetra_Vector> permeability;
-  
+  Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
+
   Teuchos::RCP<double*> gravity;
   Teuchos::RCP<double> density;
   Teuchos::RCP<double> viscosity;

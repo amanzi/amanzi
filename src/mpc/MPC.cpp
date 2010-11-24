@@ -157,6 +157,8 @@ void MPC::cycle_driver () {
     create_timestep(0.0, 0, Mesh_data::CELL);
     write_field_data(RNK,"PE");
 
+
+    
     if (!flow_enabled && !transport_enabled && !chemistry_enabled) close_data_file();
     
   }
@@ -174,6 +176,10 @@ void MPC::cycle_driver () {
     S->update_darcy_flux(FPK->DarcyFlux());
     S->update_pressure(FPK->Pressure());
     FPK->commit_state(FS);
+    FPK->GetDarcyVelocity(*S->get_darcy_velocity());
+
+ 
+
   }
   
   if (flow_enabled || transport_enabled || chemistry_enabled) {
@@ -195,6 +201,13 @@ void MPC::cycle_driver () {
 	
 	write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
       }      
+
+      if (flow_enabled) {
+	write_field_data( *(*S->get_darcy_velocity())(0), "darcy velocity x");  
+	write_field_data( *(*S->get_darcy_velocity())(1), "darcy velocity y");  
+	write_field_data( *(*S->get_darcy_velocity())(2), "darcy velocity z");  
+      }    
+      
       close_data_file();
     }
 #endif
