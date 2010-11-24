@@ -50,7 +50,7 @@ Parameters::Parameters (std::string title,
 }
 
 
-void Parameters::to_stream (std::ostream& stream) const
+void Parameters::to_stream (std::ostream& stream, const bool& verbose) const
 {
     stream << "Mesh Parameters:\n";
     stream << "  Title: " << title_ << "\n";

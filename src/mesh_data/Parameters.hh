@@ -33,7 +33,7 @@ struct Parameters
     
     int dimensions () const { return dimensions_; }
 
-    void to_stream (std::ostream& stream) const;
+    void to_stream (std::ostream& stream, const bool& verbose = false) const;
 
     bool ok_node_id (int node)        const { return (node    >= 0) && (node    < num_nodes_);          }
     bool ok_element_id (int element)  const { return (element >= 0) && (element < num_elements_);       }

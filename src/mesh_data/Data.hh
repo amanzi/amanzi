@@ -51,7 +51,7 @@ public:
                             std::vector<Side_set*> side_sets,
                             std::vector<Node_set*> node_sets);
     
-    void to_stream (std::ostream& stream) const;
+    void to_stream (std::ostream& stream, const bool& verbose = false) const;
 
     virtual ~Data ();
 

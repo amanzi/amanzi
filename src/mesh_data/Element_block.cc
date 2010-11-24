@@ -1,3 +1,6 @@
+#include <iterator>
+#include <algorithm>
+
 #include "Element_block.hh"
 
 #include <string.h>
@@ -73,6 +76,14 @@ void Element_block::to_stream (std::ostream& stream, bool verbose) const
     stream << "Element block " << block_id_ << ":\n";
     stream << "  Element type: " << type_to_name (element_type_) << "\n";
     stream << "  Number of elements: " <<  num_elements_ << "\n";
+    if (verbose) {
+        std::vector<int>::const_iterator c(connectivity_map_.begin());
+        for (int i = 0; i < num_elements_; i++, c += num_nodes_per_element_) {
+            stream << "  Element " << i << ": ";
+            std::copy(c, c+(num_nodes_per_element_-1), std::ostream_iterator<int>(stream, ", "));
+            stream << std::endl;
+        }
+    }
 }
 
 
