@@ -17,6 +17,8 @@
 #include "DarcyProblem.hpp"
 //#include "DarcyMatvec.hpp"
 
+#include "cell_geometry.hh"
+
 #include "gmv_mesh.hh"
 
 #include <iostream>
@@ -144,8 +146,8 @@ struct problem_setup
     solver->SetLHS(solution);
 
     solver->Iterate(50, 1.0e-10);
-    std::cout << "Solver performed " << solver->NumIters() << " iterations." << std::endl
-              << "Norm of true residual = " << solver->TrueResidual() << std::endl;
+    //std::cout << "Solver performed " << solver->NumIters() << " iterations." << std::endl
+    //          << "Norm of true residual = " << solver->TrueResidual() << std::endl;
   }
   
   void set_pressure_constants(double p0_, double pgrad_[])
@@ -205,6 +207,21 @@ struct problem_setup
     }
   p_error.Norm2(&l2error);
   delete &p_solve;
+  }
+  
+  void darcy_flux_error(double q[3], double &error1, double &error2)
+  {
+    Epetra_Vector qflux(problem->FaceMap());
+    problem->DeriveDarcyFlux(*solution, qflux, error2);
+    
+    double a[3];
+    double x[12];
+    for (unsigned int j = 0; j < qflux.MyLength(); ++j) {
+      mesh->face_to_coordinates(j, x, x+12);
+      cell_geometry::quad_face_normal(x, a);
+      qflux[j] = qflux[j] - cell_geometry::dot_product(q, a, 3);
+    }
+    qflux.Norm2(&error1);
   }
   
 };
@@ -602,5 +619,74 @@ SUITE(Simple_1D_Flow) {
     CHECK(error < 1.0e-8);
   }
 
+}
+
+SUITE(Darcy_Flux) {
+  
+  TEST_FIXTURE(problem_setup, Darcy_Flux_X)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(LEFT,  "Pressure Constant", 1.0);
+    set_bc(RIGHT, "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+    
+    // Darcy velocity
+    double q[3] = { 1.0, 0.0, 0.0 };
+    double error1, error2;
+    darcy_flux_error(q, error1, error2);
+    CHECK(error1 < 1.0e-9); // flux error norm
+    CHECK(error2 < 1.0e-9); // flux discrepancy norm
+  }
+
+  
+  TEST_FIXTURE(problem_setup, Darcy_Flux_Y)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(FRONT, "Pressure Constant", 1.0);
+    set_bc(BACK,  "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+    
+    // Darcy velocity
+    double q[3] = { 0.0, 1.0, 0.0 };
+    double error1, error2;
+    darcy_flux_error(q, error1, error2);
+    CHECK(error1 < 1.0e-9); // flux error norm
+    CHECK(error2 < 1.0e-9); // flux discrepancy norm
+  }
+
+
+  TEST_FIXTURE(problem_setup, Darcy_Flux_Z)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(BOTTOM, "Pressure Constant", 1.0);
+    set_bc(TOP,    "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+
+    solve_problem();
+    
+    // Darcy velocity
+    double q[3] = { 0.0, 0.0, 1.0 };
+    double error1, error2;
+    darcy_flux_error(q, error1, error2);
+    CHECK(error1 < 1.0e-9); // flux error norm
+    CHECK(error2 < 1.0e-9); // flux discrepancy norm
+  }
 
 }
+
