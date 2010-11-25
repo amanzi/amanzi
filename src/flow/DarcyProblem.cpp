@@ -51,6 +51,7 @@ DarcyProblem::~DarcyProblem()
 DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuchos::RCP<FlowBC> &bc) const
 {
   // Generate the list of all Dirichlet-type faces.
+  // The provided lists should include all used BC faces.
   std::vector<int> dir_faces;
   for (int j = 0; j < bc->NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc)[j];
@@ -59,7 +60,7 @@ DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_maps_
       case FlowBC::STATIC_HEAD:
         dir_faces.reserve(dir_faces.size() + BC.Faces.size());
         for (int i = 0; i < BC.Faces.size(); ++i)
-          if (FaceMap().MyLID(BC.Faces[i])) dir_faces.push_back(BC.Faces[i]);
+          dir_faces.push_back(BC.Faces[i]);
         break;
     }
   }
