@@ -83,13 +83,12 @@
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
     <!-- debug and developers options --> 
-    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="enable internal tests" type="string" value="no"/>   
     <Parameter name="verbosity level" type="int" value="10"/>  
     <Parameter name="maximal time step" type="double" value="0.5"/>  
     <!-- end of debug and developers options -->
     
     <ParameterList name="Transport BCs">
-    <Parameter name="enable internal tests" type="string" value="yes"/>   
       <Parameter name="number of BCs" type="int" value="1"/>
       <ParameterList name="BC 0">
 	<Parameter name="Side set ID" type="int" value="3"/>

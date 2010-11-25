@@ -37,6 +37,8 @@ namespace Amanzi_Transport{
   const int TRANSPORT_BC_NULL = 2;
 
   const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
+
+  const int TRANSPORT_AMANZI_VERSION = 1;
 }
 
 
@@ -64,7 +66,9 @@ public:
 
   void process_parameter_list();
   void identify_upwind_cells();
-  void check_divergence_free_condition();
+
+  void check_divergence_property();
+  void check_GEDproperty( Epetra_MultiVector & tracer ); 
   void print_statistics();
 
   vector<double>  calculate_accumulated_influx();
@@ -89,6 +93,7 @@ public:
 
   /* output information */
   int  verbosity_level, internal_tests;
+  double  tests_tolerance;
 
   /* member for debugging only */
   double get_face_area( int f )   { return face_area[f]; }

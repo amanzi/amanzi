@@ -39,6 +39,7 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   status = TRANSPORT_NULL;
   verbosity_level = 0;
   internal_tests = 0;
+  tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
 
   /* frequently used data */
@@ -115,7 +116,8 @@ void Transport_PK::process_parameter_list()
 
   verbosity_level = parameter_list.get<int>( "verbosity level", 0 );
   internal_tests = parameter_list.get<string>( "enable internal tests", "no") == "yes";
-  dT_debug = parameter_list.get<double>( "maximal time step", TRANSPORT_LARGE_TIME_STEP);
+  tests_tolerance = parameter_list.get<double>( "internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT );
+  dT_debug = parameter_list.get<double>( "maximal time step", TRANSPORT_LARGE_TIME_STEP );
  
 
   /* read number of boundary consitions */ 
@@ -219,7 +221,7 @@ double Transport_PK::calculate_transport_dT()
      TS->copymemory_multivector( TS->ref_total_component_concentration(), TS_nextBIG->ref_total_component_concentration() );
      TS->copymemory_vector( TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux() );
 
-     check_divergence_free_condition();
+     check_divergence_property();
      identify_upwind_cells();
 
      status = TRANSPORT_FLOW_AVAILABLE;
@@ -378,25 +380,11 @@ void Transport_PK::advance( double dT_MPC )
   }
 
 
-  /* debug checks */
+  /* internal tests for tracers */
   if ( internal_tests ) {
-     double tcc_min_values[num_components];
-     double tcc_max_values[num_components];
-
      RCP<Epetra_MultiVector>   tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
-     (*tcc_nextMPC).MinValue( tcc_min_values );
-     (*tcc_nextMPC).MaxValue( tcc_max_values );
 
-     for( i=0; i<num_components; i++ ) {
-        if ( tcc_min_values[i] < 0.0 || 
-             tcc_max_values[i] > 1.0 + TRANSPORT_CONCENTRATION_OVERSHOOT ) { 
-           cout << "Transport_PK: concentration is out of [0;1] interval" << endl; 
-           cout << "    MyPID = " << MyPID << endl;
-           cout << "    component = " << i << endl;
-           cout << "    min/max values = " << tcc_min_values[i] << " " << tcc_max_values[i] << endl;
-           ASSERT( 0 ); 
-        }
-     }
+     check_GEDproperty( *tcc_nextMPC );
   }
 
 
@@ -415,63 +403,6 @@ void Transport_PK::commit_state( RCP<Transport_State> TS )
 {
   /* nothing is done her since a pointer to the state is kept */ 
 };
-
-
-
-
-/* ************************************************************* */
-/* verifies that the velocity field is divergence free           */
-/* ************************************************************* */
-void Transport_PK::check_divergence_free_condition()
-{
-  int  i, c, f;
-  double  div, u, umax, L8_error;
-  vector<unsigned int>  c2f(6);
-  vector<int>           dirs(6);
-
-  RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
-  Epetra_Vector &  darcy_flux = TS_nextBIG->ref_darcy_flux();
-
-  L8_error = 0;
-
-  for( c=cmin; c<=cmax_owned; c++ ) {
-     mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
-     mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
-
-     div = umax = 0;
-     for ( i=0; i<6; i++ ) {
-        f = c2f[i];
-        u = darcy_flux[f];
-        div += u * dirs[i];
-        umax = max( umax, fabs( u ) / pow( face_area[f], 0.5 ) );
-     }
-     div /= cell_volume[c];
-
-     if( umax ) L8_error = max( L8_error, fabs( div ) / umax );
-
-     /* hard-coded tolerance: no real guidance at the moment */
-     if ( fabs( div ) >= 1e-6 * umax ) { 
-        cout << "TRANSPORT: div-free condition is violated! "<< endl;
-        cout << "    MyPID = " << MyPID << endl;
-        cout << "    cell  = " << c << endl;
-        cout << "    divergence = " << div << endl;
-        cout << "    maximal velocity = " << umax << endl; 
-        cout << "    admissible tolerance div/flux is 1e-6" << endl; 
-        ASSERT( 0 );
-     }
-  }
-
-  if ( verbosity_level > 1 ) {
-#ifdef HAVE_MPI
-     double L8_global;
-     const  Epetra_Comm & comm = darcy_flux.Comm(); 
- 
-     comm.MinAll( &L8_error, &L8_global, 1 );
-     L8_error = L8_global;
-#endif
-     if ( !MyPID ) cout << "Transport_PK: maximal (divergence / flux) = " << L8_error << endl;
-  }
-}
 
 
 
@@ -508,6 +439,106 @@ void Transport_PK::identify_upwind_cells()
         f = c2f[i];
         if ( darcy_flux[f] * dirs[i] >= 0 ) {   (*upwind_cell)[f] = c; }
         else                                { (*downwind_cell)[f] = c; }
+     }
+  }
+}
+
+
+
+
+/* ************************************************************* */
+/* verifies that the velocity field is divergence free           */
+/* Demo I:  divergence must be zero or almost zero               */
+/* Demo II: divergence must be non-negative if dS/dP >= 0        */
+/* ************************************************************* */
+void Transport_PK::check_divergence_property()
+{
+  int  i, c, f;
+  double  div, u, umax, L8_error;
+  vector<unsigned int>  c2f(6);
+  vector<int>           dirs(6);
+
+  RCP<Mesh_maps_base>  mesh = TS->get_mesh_maps();
+  Epetra_Vector &  darcy_flux = TS_nextBIG->ref_darcy_flux();
+
+  L8_error = 0;
+
+  for( c=cmin; c<=cmax_owned; c++ ) {
+     mesh->cell_to_faces( c, c2f.begin(), c2f.end() );
+     mesh->cell_to_face_dirs( c, dirs.begin(), dirs.end() );
+
+     div = umax = 0;
+     for ( i=0; i<6; i++ ) {
+        f = c2f[i];
+        u = darcy_flux[f];
+        div += u * dirs[i];
+        umax = max( umax, fabs( u ) / pow( face_area[f], 0.5 ) );
+     }
+     div /= cell_volume[c];
+
+     if( umax ) L8_error = max( L8_error, fabs( div ) / umax );
+
+     /* verify that divergence complies with the flow model  */
+     int flag = 0;
+     if ( TRANSPORT_AMANZI_VERSION == 1 && fabs( div ) > tests_tolerance * umax ) {
+        cout << "TRANSPORT: The flow violates conservation property." << endl;
+        cout << "    Modify either flow convergence criteria or transport tolerance." << endl;
+        flag = 1;
+     }
+     if ( TRANSPORT_AMANZI_VERSION == 2 && div < -tests_tolerance * umax ) {
+        cout << "TRANSPORT: The flow has large artificial sinks."<< endl;
+        flag = 1;
+     }
+
+     if( flag && verbosity_level > 1 ) {
+        cout << "    MyPID = " << MyPID << endl;
+        cout << "    cell  = " << c << endl;
+        cout << "    divergence = " << div << endl;
+        cout << "    maximal velocity = " << umax << endl; 
+        ASSERT( 0 );
+     }
+  }
+
+  if ( verbosity_level > 3 ) {
+#ifdef HAVE_MPI
+     double L8_global;
+     const  Epetra_Comm & comm = darcy_flux.Comm(); 
+ 
+     comm.MinAll( &L8_error, &L8_global, 1 );
+     L8_error = L8_global;
+#endif
+     if ( !MyPID ) cout << "Transport_PK: maximal (divergence / flux) = " << L8_error << endl;
+  }
+}
+
+
+
+
+/* ************************************************************* */
+/* Check that global extrema diminished                          */
+/* ************************************************************* */
+void Transport_PK::check_GEDproperty( Epetra_MultiVector & tracer )
+{ 
+  int  i, num_components = tracer.NumVectors();
+  double  tol; 
+
+  double tr_min[num_components];
+  double tr_max[num_components];
+
+  tracer.MinValue( tr_min );
+  tracer.MaxValue( tr_max );
+
+  if ( TRANSPORT_AMANZI_VERSION == 1 ) {
+     for( i=0; i<num_components; i++ ) {
+        if ( tr_min[i] < 0 ) {
+           cout << "Transport_PK: concentration violated GED property" << endl; 
+           cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
+           cout << "    MyPID = " << MyPID << endl;
+           cout << "    component = " << i << endl;
+           cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << endl;
+
+           ASSERT( 0 ); 
+        }
      }
   }
 }
