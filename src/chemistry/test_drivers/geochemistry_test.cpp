@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
       parameters.porosity = 0.5;  // -
       parameters.saturation = 1.0;  // -
       parameters.volume = 1.0;  // m^3
-
+      parameters.max_iterations = 5;
       ModelSpecificParameters(model, &parameters);
 
       if (components.free_ion.size() == 0) {
@@ -181,11 +181,11 @@ int main(int argc, char **argv) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components.total);
-        double delta_time = 0.01;  // seconds
+        double delta_time = 0.5;  // seconds
         int num_time_steps = 500;
         for (int time_step = 0; time_step < num_time_steps; time_step++) {
           chem->ReactionStep(&components, parameters, delta_time);
-          if ((time_step+1) % 50 == 0) {
+          if ((time_step+1) % 2 == 0) {
             chem->DisplayTotalColumns((time_step+1) * delta_time, 
                                       components.total);
           }

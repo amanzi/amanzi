@@ -6,7 +6,7 @@ RUNTIME
 speciate_only   false
 database_sweep  false
 database        calcite.dbs
-graphics        xmgr
+graphics        kaleidagraph
 density_module  temperature
 time_units      seconds
 timestep_max    0.5
@@ -16,7 +16,7 @@ END
 
 OUTPUT
 time_units               seconds
-spatial_profile          5.0
+spatial_profile          250.0
 time_series              calcite-ts.out 1 1 1
 time_series_print        pH H+ HCO3- Ca++
 !!time_series_print        all
@@ -35,7 +35,7 @@ temperature      25.0
 H+               2.2124e-6
 HCO3-            2.2124e-6
 Ca++             0.0
-Calcite          0.2 specific_surface_area 2.0
+Calcite          0.2 specific_surface_area 1.0
 END
 
 SECONDARY_SPECIES 
@@ -48,7 +48,7 @@ CaCO3(aq)
 END
 
 MINERALS
-Calcite     -label default
+Calcite     -label default -rate -9.0
 END
 
 DISCRETIZATION 

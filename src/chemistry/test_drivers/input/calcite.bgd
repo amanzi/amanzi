@@ -24,7 +24,7 @@ CaCO3(aq) = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 7.0017 ; 3.0 ; 0.0 ; 100.0872
 # Name = coeff Species .... ; log Keq ; GMW [g/mol] ; molar volume [cm^3/mol] ; SSA [m^2/g] 
 
 <Minerals
-Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340 ; 2.0
+Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340 ; 1.0
 
 #
 # crude input file format for mineral kinetics
@@ -43,7 +43,7 @@ Calcite = -1.0000 H+ 1.0000 Ca++ 1.0000 HCO3- ; 1.8487 ; 100.0872 ; 36.9340 ; 2.
 #
 
 <Mineral Kinetics
-Calcite ; TST ; log10_rate_constant -6.19 moles_m2_sec
+#Calcite ; TST ; log10_rate_constant -6.19 moles_m2_sec
 
-#Calcite ; TST ; log10_rate_constant -10.0 moles_m2_sec
+Calcite ; TST ; log10_rate_constant -9.0 moles_m2_sec
 

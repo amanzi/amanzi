@@ -110,9 +110,11 @@ void Mineral::Display(void) const
   std::cout << std::endl;
   std::cout << std::setw(40) << " " 
             << std::setw(10) << logK_
-            << std::setw(15) << molar_volume()
-            << std::setw(10) << gram_molecular_weight()
-            << std::setw(10) << specific_surface_area()
+            << std::setw(13) << molar_volume()
+            << std::setw(13) << gram_molecular_weight()
+            << std::setw(13) << specific_surface_area()
+            << std::setw(13) << std::scientific << surface_area()
+            << std::setw(13) << std::fixed << volume_fraction()
             << std::endl;
 } // end Display()
 
