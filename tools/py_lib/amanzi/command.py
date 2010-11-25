@@ -65,6 +65,17 @@ class CommandInterface:
 
         return self.args
 
+    def search_args(self,target,index=None):
+        index = -1
+        if target in self.args:
+            index = self.args.index(target)
+
+        return index
+
+    def clear_args(self):
+        self.args = []
+        return 
+
     def run(self):
         if self.use_ospipe == True:
             self._ospipe_run()

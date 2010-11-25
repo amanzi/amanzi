@@ -130,6 +130,7 @@ void State::create_storage ()
   permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
   total_component_concentration 
     = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );  
+  darcy_velocity   = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
 
   density =   Teuchos::rcp(new double);
   viscosity = Teuchos::rcp(new double);
