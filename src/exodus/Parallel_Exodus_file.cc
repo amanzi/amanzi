@@ -2,7 +2,7 @@
 /**
  * @file   Parallel_Exodus_file.cc
  * @author William A. Perkins
- * @date Tue Nov 16 07:13:47 2010
+ * @date Mon Nov 29 07:21:11 2010
  * 
  * @brief  
  * 
@@ -12,9 +12,10 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Tue Nov 16 07:13:47 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Nov 29 07:21:11 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
+#include <algorithm>
 #include <exception>
 #include <boost/format.hpp>
 #include <exodusII.h>
@@ -87,6 +88,88 @@ Parallel_Exodus_file::read_mesh(void)
 {
 
   my_mesh.reset(ExodusII::read_exodus_file(*my_file));
+
+  // Even though element blocks are defined in all local files, if the
+  // local block is empty, it will not have a cell type specified, so
+  // we need get that from the other processes
+
+  my_comm->Barrier();
+  const int np(my_comm->NumProc());
+  const int me(my_comm->MyPID());
+
+  std::vector<int> byproc(np);
+  int nblk(my_mesh->element_blocks());
+
+  // check the number of blocks; should be the same on all processes
+
+  int ierr(0);
+  my_comm->GatherAll(&nblk, &byproc[0], 1);
+  for (int p = 1; p < np; p++) {
+    if (byproc[p] != byproc[p-1]) ierr++;
+  }
+  int aerr(0);
+  my_comm->SumAll(&ierr, &aerr, 1);
+
+  if (aerr) {
+    std::string msg(my_basename);
+    msg += ": mismatched numbers of element blocks";
+    throw std::runtime_error(msg);
+  }
+
+  for (int b = 0; b < nblk; b++) {
+    int mytype(my_mesh->element_block(b).element_type());
+    std::vector<int> alltype(np, Mesh_data::UNKNOWN);
+    my_comm->GatherAll(&mytype, &alltype[0], 1);
+
+    std::vector<int>::iterator junk;
+    junk = std::remove(alltype.begin(), alltype.end(),
+                       Mesh_data::UNKNOWN);
+    alltype.erase(junk, alltype.end());
+    junk = std::unique(alltype.begin(), alltype.end());
+    alltype.erase(junk, alltype.end());
+    
+    if (alltype.empty()) {
+
+      // this means that all processes reported the Mesh_data::UNKNOWN
+      // type for this element block; this is OK as long as it's empty
+      // on all processes.
+
+      if (my_mesh->element_block(b).num_elements() > 0) {
+        std::string msg = 
+          boost::str(boost::format("Process %d: %s: element block %d: block element type unknown") %
+                     me % my_basename %  my_mesh->element_block(b).id());
+        std::cerr << msg << std::endl;
+        ierr++;
+      }
+    } else if (alltype.size() > 1) {
+      
+      // this means that at least two processes reported different,
+      // not unknown, element types for this block; this is an error
+      // and needs to be reported.
+
+      std::string msg = 
+        boost::str(boost::format("Process %d: %s: element block %d: block element type mismatch") %
+                   me % my_basename %  my_mesh->element_block(b).id());
+      std::cerr << msg << std::endl;
+      ierr++;
+
+    } else {
+
+      Mesh_data::ELEMENT_TYPE 
+        thetype(static_cast<Mesh_data::ELEMENT_TYPE>(alltype.front()));
+
+      if (my_mesh->element_block(b).element_type() == Mesh_data::UNKNOWN) {
+        my_mesh->element_block(b).element_type(thetype);
+      }
+    }
+  }
+
+  my_comm->SumAll(&ierr, &aerr, 1);
+  if (aerr) {
+    std::string msg = 
+      boost::str(boost::format("%s: element block type errors") % my_basename);
+    throw std::runtime_error(msg);
+  }
 
   return my_mesh;
 }

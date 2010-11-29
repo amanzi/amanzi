@@ -24,6 +24,11 @@ struct Exodus_file_holder
     {  }
 };
 
+struct Tiny_File : Exodus_file_holder
+{
+  Tiny_File () : Exodus_file_holder (test_file_path("hex_2x2x2_ss.exo").c_str()) { }
+};
+
 struct Big_File : Exodus_file_holder
 {
   Big_File () : Exodus_file_holder (test_file_path("htc_rad_test-random.exo").c_str()) { }
@@ -71,6 +76,10 @@ struct twoblktet_2_1 : Exodus_file_holder
 
 SUITE (Big_File)
 {
+    TEST_FIXTURE (Tiny_File, Parameters)
+    {
+        data->to_stream(std::cerr, true);
+    }
 
     TEST_FIXTURE (Big_File, Parameters)
     {
@@ -204,6 +213,7 @@ SUITE (hex_split)
     CHECK_EQUAL (params.num_node_sets_, 21);
     CHECK_EQUAL (params.num_side_sets_, 21);
 
+    data->to_stream(std::cerr, true);
   }
   TEST_FIXTURE (hex_split_2_1, Parameters)
   {
@@ -220,6 +230,7 @@ SUITE (hex_split)
     CHECK_EQUAL (params.num_node_sets_, 21);
     CHECK_EQUAL (params.num_side_sets_, 21);
 
+    data->to_stream(std::cerr, true);
   }
 }
 

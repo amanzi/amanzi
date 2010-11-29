@@ -1,3 +1,8 @@
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
+#include <boost/lambda/lambda.hpp>
+namespace bl = boost::lambda;
+
 #include "Exodus_readers.hh"
 #include "Exodus_error.hh"
 
@@ -111,6 +116,9 @@ Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id)
 
     std::string name (name_data);
 
+    // make node indexes 0-based
+    std::for_each(node_list.begin(), node_list.end(), bl::_1 -= 1); 
+
     return Mesh_data::Node_set::build_from (set_id, node_list, node_dist_factors, name);
 
 }
@@ -155,6 +163,12 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
     // {
     //     std::vector<double>().swap (node_factors);
     // }    
+
+    // make element indexes 0-based
+    std::for_each(element_list.begin(), element_list.end(), bl::_1 -= 1); 
+
+    // make side indexes 0-based
+    std::for_each(side_list.begin(), side_list.end(), bl::_1 -= 1); 
 
     return Mesh_data::Side_set::build_from (set_id, 
                                             element_list, 
@@ -201,6 +215,9 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
     char element_block_name [MAX_STR_LENGTH];
     ret_val = ex_get_name (file.id, EX_ELEM_BLOCK, block_id, element_block_name);
 
+    // make node indexes 0-based
+    std::for_each(connectivity_map.begin(), connectivity_map.end(), bl::_1 -= 1); 
+    
     return  Mesh_data::Element_block::build_from (block_id,
                                                   std::string (element_block_name),
                                                   num_elements,
@@ -247,6 +264,7 @@ Mesh_data::ELEMENT_TYPE read_element_type (const char * name)
 {
 
     std::string id (name, name+3);
+    boost::to_upper(id);
 
     if (id == "CIR")
         return Mesh_data::CIRCLE;
