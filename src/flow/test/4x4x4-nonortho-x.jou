@@ -1,0 +1,29 @@
+## /opt/cubit/12.1-43317/bin/clarox
+## Cubit Version 12.1
+## Cubit Build 43317
+## Revised 2010-05-10 14:55:38 -0600 (Mon, 10 May 2010)
+## Running 11/26/2010 11:25:27 AM
+## Command Options:
+## -warning = On
+## -information = On
+brick x 1 y 1 z 1
+volume 1 move x 0.5 y 0.5 z 0.5
+webcut volume all with plane yplane offset 0.25 rotate 4 about 1 0 0 center 0.5 0.25 0.5 noimprint nomerge
+webcut volume all with plane yplane offset 0.5 rotate -4 about 1 0 0 center 0.5 0.5 0.5 noimprint nomerge
+webcut volume all with plane yplane offset 0.75 rotate 4 about 1 0 0 center 0.5 0.75 0.5 noimprint nomerge
+webcut volume all with plane zplane offset 0.25 rotate -4 about 1 0 0 center 0.5 0.5 0.25 noimprint nomerge
+webcut volume all with plane zplane offset 0.5 rotate 4 about 1 0 0 center 0.5 0.5 0.5 noimprint nomerge
+webcut volume all with plane zplane offset 0.75 rotate -4 about 1 0 0 center 0.5 0.5 0.75 noimprint nomerge
+imprint volume all
+merge volume all
+volume all size 0.25
+mesh volume all
+block 1 volume all
+sideset 1 surface 118 125 84 45
+sideset 2 surface 119 126 83 46 56 93 136 129 139 146 103 65 73 116 153 151
+sideset 3 surface 148 155 114 76
+sideset 4 surface 149 156 113 75 63 106 143 141 131 133 96 53 43 86 123 121
+sideset 5 surface 36 28 19 10
+sideset 6 surface 34 30 21 8
+set large exodus file off
+export genesis "4x4x4-nonortho-x.g" overwrite
