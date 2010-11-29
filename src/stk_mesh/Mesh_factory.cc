@@ -99,7 +99,6 @@ Mesh* Mesh_factory::build_mesh (const Mesh_data::Data& data,
     Parts (0).swap (element_blocks_);
     Parts (0).swap (side_sets_);
     Parts (0).swap (node_sets_);
-    Vector_entity_map ().swap (faces_map_);
     coordinate_field_ = 0;
     set_to_part_.clear ();
     
@@ -135,8 +134,15 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
 
     // Convert element blocks, node and side sets into Parts:
 
-    for (int block = 0; block < num_element_blocks; ++block)
+    for (int block = 0; block < num_element_blocks; ++block) {
         element_blocks_.push_back (add_element_block_ (data.element_block (block)));
+    }
+
+    // Something to put nodes in
+    nodes_part_ = &meta_data_->declare_part ("Nodes", node_rank_);
+
+    // Add a faces part.
+    faces_part_ = &meta_data_->declare_part ("Element sides", face_rank_);
 
     for (int side_set = 0; side_set < num_side_sets; ++side_set)
         side_sets_.push_back (add_side_set_ (data.side_set (side_set)));
@@ -146,9 +152,6 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
 
     // Get the universal part. There's only one everything.
     stk::mesh::Part &universal_part (meta_data_->universal_part ());
-
-    // Add a faces part.
-    faces_part_ = &meta_data_->declare_part ("Element sides", face_rank_);
 
     put_coordinate_field_ (universal_part, space_dimension);
 
@@ -179,21 +182,28 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data,
 {
     const int space_dimension = data.parameters ().dimensions ();
 
-    // declare nodes and elements first, nodes will overlap on processors
+    // elements first, nodes will be declared and will overlap on processors
+
+    bulk_data_->modification_begin();
+
+    unsigned int localcidx(0);
+    for (unsigned int block = 0; block < element_blocks_.size (); ++block) {
+        add_elements_to_part_ (data.element_block (block), *element_blocks_ [block], 
+                               cellmap, vertmap, localcidx);
+    }
+    
+    bulk_data_->modification_end();
+
+    // Now node ownership is established, so we can start doing things
+    // with nodes; bad things happen if you try to do these things
+    // before ownership is established
 
     bulk_data_->modification_begin();
 
     for (int set = 0; set < node_sets_.size (); ++set)
         add_nodes_to_part_ (data.node_set (set), *node_sets_ [set], vertmap);
-
-    for (int block = 0; block < element_blocks_.size (); ++block)
-        add_elements_to_part_ (data.element_block (block), *element_blocks_ [block], 
-                               cellmap, vertmap);
-    
-    bulk_data_->modification_end();
-
-    bulk_data_->modification_begin();
     add_coordinates_ (data.coordinates (), vertmap);
+
     bulk_data_->modification_end();
 
     // Now, generate unique faces.  I have not found a way to renumber
@@ -278,19 +288,21 @@ void Mesh_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int sp
 /** 
  * This routine puts the coordinate fields on @em local nodes.  
  *
- * It's written so that it may be called before or after
- * BulkData::modification_end.
+ * Caller is responsible for putting the ::bulk_data_ into
+ * modification state.
+ * 
  *
- * The specified @c coordinate_data is for the nodes @em declared on
- * the local processor. When the nodes were declared
- * (::add_nodes_to_part_), shared nodes were declared on multiple
- * processors.  When an entity is declared on multiple processors, the
- * lowest rank processor in that set gets ownership. At least, we can
- * expect that one of the processes in that set got ownership of each
- * shared node.  We can also expect that the list of nodes owned by
- * the local process got all mixed up.  We need to use the specified
- * @c vertmap to identify the current local index given the global
- * index.
+ * The specified @c coordinate_data is for the nodes @em used on the
+ * local processor.  The coordinates can be set only for the nodes
+ * that are owned by the local process (I think). When the nodes were
+ * declared in element connectivity, shared nodes were declared on
+ * multiple processors.  When an entity is declared on multiple
+ * processors, the lowest rank processor in that set gets
+ * ownership. At least, we can expect that one of the processes in
+ * that set got ownership of each shared node.  We can also expect
+ * that the list of nodes owned by the local process got all mixed up.
+ * We need to use the specified @c vertmap to identify the current
+ * local index given the global index.
  * 
  * @param coordinate_data coordinates of nodes originally declared on this processor
  * @param vertmap local to global node index map for nodes originally declared on this processor
@@ -338,8 +350,25 @@ stk::mesh::Part* Mesh_factory::add_element_block_ (const Mesh_data::Element_bloc
         name << "element block " << block.id ();
 
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), element_rank_));
-    stk::mesh::set_cell_topology 
-        (new_part, get_topology_data (block.element_type ()).getTopology ());
+
+    Mesh_data::ELEMENT_TYPE mdtype(block.element_type ());
+    switch (mdtype) {
+    case Mesh_data::HEX:
+      // this type is OK
+      break;
+    case Mesh_data::TETRA:
+    case Mesh_data::WEDGE:
+    default:
+      std::string msg = 
+        boost::str(boost::format("%s has unsupported cell type %s") %
+                   name.str() % type_to_name(block.element_type()));
+      throw std::runtime_error(msg);
+      break;
+    }
+
+    const shards::CellTopology topo(get_topology_data(mdtype));
+      
+    stk::mesh::set_cell_topology (new_part, topo.getTopology ());
 
     add_set_part_relation_ (block.id (), new_part);
 
@@ -355,6 +384,7 @@ stk::mesh::Part* Mesh_factory::add_side_set_ (const Mesh_data::Side_set& set)
     else
         name << "side set " << set.id ();
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), face_rank_));
+    meta_data_->declare_part_subset(*faces_part_, new_part);
 
     add_set_part_relation_ (set.id (), new_part);
 
@@ -370,6 +400,7 @@ stk::mesh::Part* Mesh_factory::add_node_set_ (const Mesh_data::Node_set& set)
     else
         name << "node set " << set.id ();
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), stk::mesh::Node));
+    meta_data_->declare_part_subset(*nodes_part_, new_part);
 
     add_set_part_relation_ (set.id (), new_part);
 
@@ -402,30 +433,32 @@ void Mesh_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part&
  * @param part 
  * @param cmap 
  * @param vmap 
+ * @param localidx0 current local element index (updated)
  */
 void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part &part,
-                                          const Epetra_Map& cmap, const Epetra_Map& vmap)
+                                          const Epetra_Map& cmap, const Epetra_Map& vmap, unsigned int& localidx0)
 {
     // Add connectivity information via stk::mesh::declare_element
     std::vector<int> storage (block.nodes_per_element ());
     std::vector<int> global_vidx(block.nodes_per_element ());
 
-    for (int local_cidx = 0; local_cidx < block.num_elements (); ++local_cidx)
+    for (int bidx = 0; bidx < block.num_elements (); ++bidx, ++localidx0)
     {
-        block.connectivity (local_cidx, storage.begin ());
+        block.connectivity (bidx, storage.begin ());
 
         for (unsigned int i = 0; i < block.nodes_per_element (); i++) {
             global_vidx[i] = vmap.GID(storage[i]);
         }
 
-        int global_cidx(cmap.GID(local_cidx));
+        int global_cidx(cmap.GID(localidx0));
 
         try {
             stk::mesh::Entity &element = 
                 stk::mesh::declare_element (*bulk_data_, part, global_cidx, &global_vidx[0]);
         } catch (const std::exception& e) {
             std::stringstream msg;
-            msg << "cell error: local: " << local_cidx << ": ";
+            std::cerr << e.what() << std::endl;
+            msg << "cell error: local: " << localidx0 << ": ";
             std::copy(storage.begin(), storage.end(), std::ostream_iterator<int>(msg, ", "));
             msg << "global: " << global_cidx << ": ";
             std::copy(global_vidx.begin(), global_vidx.end(), std::ostream_iterator<int>(msg, ", "));
@@ -664,10 +697,10 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
                 }
                 faceidx++;
                 
-                std::cerr << "Cell " << globalidx 
-                          << ": side " << s 
-                          << ": face idx = " << faceidx
-                          << std::endl;
+                // std::cerr << "Cell " << globalidx 
+                //           << ": side " << s 
+                //           << ": face idx = " << faceidx
+                //           << std::endl;
 
             } // side loop
 
@@ -683,6 +716,7 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
                                        stk::mesh::Part &part,
                                        const Epetra_Map& cmap)
 {
+    const unsigned int me(communicator_.MyPID());
 
     // Side set consists of elements (local index) and a local face
     // number. We need to convert these to the unique face indices.
@@ -692,7 +726,7 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
 
     const int num_sides  = side_set.num_sides ();
     const std::vector<int>& element_list = side_set.element_list ();
-    const std::vector<int>& side_list    = side_set.element_list ();
+    const std::vector<int>& side_list    = side_set.side_list ();
     ASSERT (element_list.size () == num_sides);
     ASSERT (side_list.size ()    == num_sides);
 
@@ -722,10 +756,11 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
 
 
 /** 
- * This routine declares the nodes in the node set and puts them in
- * the specified part.  (NOTE: the nodes should just be declared,
- * don't expect that they were declared elsewhere; entities can be
- * declared many times)
+ * This routine puts the nodes in the node set in the specified part.
+ * Ownership of nodes should be established before this is
+ * called. Only those nodes owned by this process are put in the part.
+ * See comments for ::add_coordinates_() for an explanation of
+ * indexing.
  * 
  * @param node_set 
  * @param part 
@@ -735,6 +770,7 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set,
                                        stk::mesh::Part &part,
                                        const Epetra_Map& vmap)
 {
+    const unsigned int me(communicator_.MyPID());
 
     stk::mesh::PartVector parts_to_add;
     parts_to_add.push_back (&part);
@@ -747,9 +783,12 @@ void Mesh_factory::add_nodes_to_part_ (const Mesh_data::Node_set& node_set,
          it != node_list.end ();
          ++it)
     {
-      int local_vidx(*it);
+        int local_vidx(*it);
         int global_vidx(vmap.GID(local_vidx));
-        stk::mesh::Entity& node = bulk_data_->declare_entity (stk::mesh::Node, global_vidx, parts_to_add);
+        stk::mesh::Entity *node = bulk_data_->get_entity (node_rank_, global_vidx);
+        if (node->owner_rank() == me) {
+          bulk_data_->change_entity_parts(*node, parts_to_add);
+        }
     }
 
 }

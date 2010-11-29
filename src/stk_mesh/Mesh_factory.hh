@@ -66,7 +66,7 @@ private:
 
     // Populate parts with elements and fields via the bulk-data
     void add_elements_to_part_ (const Mesh_data::Element_block& block, stk::mesh::Part& part,
-                                const Epetra_Map& cellmap, const Epetra_Map& vertmap);
+                                const Epetra_Map& cellmap, const Epetra_Map& vertmap, unsigned int& localidx0);
     void add_sides_to_part_    (const Mesh_data::Side_set& side_set,   stk::mesh::Part& part,
                                 const Epetra_Map& cellmap);
     void add_nodes_to_part_    (const Mesh_data::Node_set& node_set,   stk::mesh::Part& part,
@@ -112,7 +112,7 @@ private:
     Parts side_sets_;
     Parts node_sets_;
 
-    Vector_entity_map faces_map_;
+    stk::mesh::Part* nodes_part_;
     stk::mesh::Part* faces_part_;
 
     Vector_field_type *coordinate_field_;
