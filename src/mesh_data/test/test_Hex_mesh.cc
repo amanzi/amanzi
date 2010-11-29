@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex_mesh.cc
  * @author William A. Perkins
- * @date Sun Nov 14 18:38:32 2010
+ * @date Wed Nov 24 08:52:28 2010
  * 
  * @brief  A set of tests for the HexMeshGenerator class
  * 
@@ -17,7 +17,7 @@
 #include "Epetra_MpiComm.h"
 #include "../HexMeshGenerator.hh"
 
-const static unsigned int size(3);
+const static unsigned int size(2);
 
 SUITE (HexMeshGenerator)
 {
@@ -34,12 +34,12 @@ SUITE (HexMeshGenerator)
     Mesh_data::Data *mesh;
     mesh = gen.generate();
 
-    mesh->to_stream(std::cout);
+    mesh->to_stream(std::cout, true);
 
     // FIXME: do some checks on mesh
 
     try {
-      std::auto_ptr<Epetra_Map> cmap(gen.cellmap());
+      std::auto_ptr<Epetra_Map> cmap(gen.cellmap(true));
       CHECK_EQUAL(cmap->NumGlobalElements(), size*size*size);
       CHECK_EQUAL(cmap->NumGlobalElements(), gen.cells());
       CHECK_EQUAL(cmap->NumMyElements(), gen.mycells());
@@ -50,9 +50,9 @@ SUITE (HexMeshGenerator)
     }
 
     try {
-      std::auto_ptr<Epetra_Map> cmap(gen.vertexmap());
-      CHECK_EQUAL(cmap->MaxAllGID(), (size+1)*(size+1)*(size+1) - 1);
-      CHECK_EQUAL(cmap->MinAllGID(), 0);
+      std::auto_ptr<Epetra_Map> cmap(gen.vertexmap(true));
+      CHECK_EQUAL(cmap->MaxAllGID(), (size+1)*(size+1)*(size+1));
+      CHECK_EQUAL(cmap->MinAllGID(), 1);
       CHECK_EQUAL(cmap->NumMyElements(), gen.myvertexes());
       cmap->Print(std::cerr);   // ends up in the test log file
     } catch (int e) {

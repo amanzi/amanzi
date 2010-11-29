@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Mon Nov 22 12:02:44 2010
+ * @date Mon Nov 29 12:02:54 2010
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -281,26 +281,28 @@ HexMeshGenerator::generate_the_sidesets(void)
 
     std::string ssname("Bogus");
 
+    // these sides match the sides in shards::Hexahedron<8>:
+
     switch (side) {
     case (0):
-      ssname = "Bottom";
-      kmax = 1;
-      break;
-    case (1):
       ssname = "South";
       jmax = 1;
       break;
-    case (2):
-      ssname = "East";
-      imin = imax - 1;
+    case (1):
+      ssname = "West";
+      imax = 1;
       break;
-    case (3):
+    case (2):
       ssname = "North";
       jmin = jmax - 1;
       break;
+    case (3):
+      ssname = "East";
+      imin = imax - 1;
+      break;
     case (4):
-      ssname = "West";
-      imax = 1;
+      ssname = "Bottom";
+      kmax = 1;
       break;
     case (5):
       ssname = "Top";
@@ -326,6 +328,10 @@ HexMeshGenerator::generate_the_sidesets(void)
     Side_set* ss = Side_set::build_from(side, clist, slist, ssname);
     result.push_back(ss);
   }
+
+  // Note: result contains pointers to allocate memory that must be
+  // deleted elsewhere
+
   return result;
 }
 

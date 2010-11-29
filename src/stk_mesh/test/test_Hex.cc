@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Mon Nov 22 12:34:04 2010
+ * @date Mon Nov 29 12:16:14 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Mon Nov 22 12:34:04 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Nov 29 12:16:14 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <UnitTest++.h>
@@ -28,7 +28,7 @@ SUITE (HexMesh)
 {
     TEST (HexMesh)
     {
-        const unsigned int isize(1), jsize(1), ksize(4);
+        const unsigned int isize(3), jsize(3), ksize(3);
 
         Epetra_MpiComm comm(MPI_COMM_WORLD);
         const int nproc(comm.NumProc());
@@ -39,6 +39,17 @@ SUITE (HexMesh)
         Mesh_data::HexMeshGenerator g(&comm, isize, jsize, ksize);
 
         Teuchos::RCP<Mesh_data::Data> meshdata(g.generate());
+
+        for (int p = 0; p < nproc; p++) {
+          if (me == p) {
+            std::cerr << std::endl;
+            std::cerr << ">>>>>> Process " << p << " Begin <<<<<<" << std::endl;
+            meshdata->to_stream(std::cerr, true);
+            std::cerr << ">>>>>> Process " << p << " End <<<<<<" << std::endl;
+            std::cerr << std::endl;
+          }
+          comm.Barrier();
+        }
 
         // need to have 1-based global indexes for stk::mesh
         Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
@@ -75,7 +86,24 @@ SUITE (HexMesh)
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
 
-        stk::mesh::Part *side = mesh->get_set("North", stk::mesh::Face);
+        stk::mesh::Part *side;
+
+        side = mesh->get_set("West", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*jsize);
+
+        side = mesh->get_set("East", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*jsize);
+
+        side = mesh->get_set("South", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*ksize);
+
+        side = mesh->get_set("North", stk::mesh::Face);
         lcount = mesh->count_entities(*side, STK_mesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*ksize);
@@ -95,6 +123,13 @@ SUITE (HexMesh)
         // lcount = mesh_map.count_entities(Mesh_data::CELL, STK_mesh::OWNED);
         // comm.SumAll(&lcount, &gcount, 1);
         // CHECK_EQUAL (gcount, isize*jsize*ksize);
+
+        // lcount = mesh_map.count_entities(Mesh_data::FACE, STK_mesh::OWNED);
+        // comm.SumAll(&lcount, &gcount, 1);
+        // CHECK_EQUAL (gcount, 
+        //              (isize  )*(jsize  )*(ksize+1) + 
+        //              (isize  )*(jsize+1)*(ksize ) + 
+        //              (isize+1)*(jsize  )*(ksize ));
     }
 
 }

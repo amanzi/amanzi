@@ -44,22 +44,28 @@ Data::~Data ()
 
 }
 
-void Data::to_stream (std::ostream& stream) const
+void Data::to_stream (std::ostream& stream, const bool& verbose) const
 {
-    params_->to_stream (stream);
+    params_->to_stream (stream, verbose);
 
     for (int element = 0; element < element_blocks (); ++element)
-        element_block (element).to_stream (stream);
+        element_block (element).to_stream (stream, verbose);
 
     for (int set = 0; set < side_sets (); ++set)
-        side_set (set).to_stream (stream);
+        side_set (set).to_stream (stream, verbose);
 
     for (int set = 0; set < node_sets (); ++set)
-        node_set (set).to_stream (stream);
+        node_set (set).to_stream (stream, verbose);
 
 }
 
 const Element_block& Data::element_block (int id) const
+{
+    ASSERT (params_->ok_element_block (id));
+    return *element_blocks_ [id];
+}
+
+Element_block& Data::element_block (int id)
 {
     ASSERT (params_->ok_element_block (id));
     return *element_blocks_ [id];
