@@ -2,7 +2,7 @@
 /**
  * @file   test_Read.cc
  * @author William A. Perkins
- * @date Mon Nov 29 08:17:47 2010
+ * @date Mon Nov 29 11:22:34 2010
  * 
  * @brief Some unit tests for reading a (serial) Exodus file and
  * building a STK_mesh::Mesh_maps_stk instance.
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 22, 2010 by William A. Perkins
-// Last Change: Mon Nov 29 08:17:47 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Nov 29 11:22:34 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <UnitTest++.h>
@@ -173,7 +173,7 @@ SUITE (Exodus)
 
     TEST_FIXTURE (ParallelReadFixture, ParallelReader1)
     {
-        if (nproc > 1 && nproc < 4) {
+        if (nproc > 1 && nproc <= 4) {
             read("../exodus/test_files/split1/hex_11x11x11_ss.par");
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);

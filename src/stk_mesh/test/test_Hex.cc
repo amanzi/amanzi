@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Wed Nov 24 12:58:05 2010
+ * @date Mon Nov 29 12:16:14 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Wed Nov 24 12:58:05 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Nov 29 12:16:14 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <UnitTest++.h>
@@ -86,7 +86,24 @@ SUITE (HexMesh)
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
 
-        stk::mesh::Part *side = mesh->get_set("North", stk::mesh::Face);
+        stk::mesh::Part *side;
+
+        side = mesh->get_set("West", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*jsize);
+
+        side = mesh->get_set("East", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*jsize);
+
+        side = mesh->get_set("South", stk::mesh::Face);
+        lcount = mesh->count_entities(*side, STK_mesh::OWNED);
+        comm.SumAll(&lcount, &gcount, 1);
+        CHECK_EQUAL (gcount, isize*ksize);
+
+        side = mesh->get_set("North", stk::mesh::Face);
         lcount = mesh->count_entities(*side, STK_mesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*ksize);
@@ -106,6 +123,13 @@ SUITE (HexMesh)
         // lcount = mesh_map.count_entities(Mesh_data::CELL, STK_mesh::OWNED);
         // comm.SumAll(&lcount, &gcount, 1);
         // CHECK_EQUAL (gcount, isize*jsize*ksize);
+
+        // lcount = mesh_map.count_entities(Mesh_data::FACE, STK_mesh::OWNED);
+        // comm.SumAll(&lcount, &gcount, 1);
+        // CHECK_EQUAL (gcount, 
+        //              (isize  )*(jsize  )*(ksize+1) + 
+        //              (isize  )*(jsize+1)*(ksize ) + 
+        //              (isize+1)*(jsize  )*(ksize ));
     }
 
 }

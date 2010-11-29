@@ -88,6 +88,9 @@ private:
     /// Count the number of faces that need to be generated on this processor
     int count_local_faces_(void) { return generate_local_faces_(0, true); }
 
+    /// Check, and change if necessary, side set face ownership
+    void check_face_ownership_(void);
+
     /// Get the set of nodes defining the specified element side
     Entity_vector
     get_element_side_nodes_(const stk::mesh::Entity& element, const unsigned int& s);

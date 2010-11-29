@@ -247,7 +247,8 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data,
 
 
     // Put side set faces in the correct parts
-
+    
+    check_face_ownership_();
     bulk_data_->modification_begin();
     for (int set = 0; set < side_sets_.size (); ++set) {
         add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
@@ -576,16 +577,21 @@ Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& 
  *
  * Some conventions:
  *
- *  - A face can only be owned by a process that owns the related
- *    cell(s).  
+ *  - A face will be declared by the process that owns the related
+ *    cell(s).  N.B.: this can be changed by stk::mesh
  * 
- *  - If the processes owning cells related to a given face
- *    are different, the face is owned by the lower ranked process.
+ *  - If the processes owning cells related to a given face are
+ *    different, the face is declared by the lower ranked process.
  *
- * - The order of face-to-cell relations is important.  All faces will
- *    have one relation -- to it's "owner".  The second relation is
- *    for the "neighbor" cell.  This may be used later to determine
+ *  - The order of face-to-cell relations is important.  All faces
+ *    will have one relation -- to it's "owner".  The second relation
+ *    is for the "neighbor" cell.  This may be used later to determine
  *    face direction.
+ * 
+ * This routine just declares the needed faces.  It would be nice if
+ * stk::mesh would maintain ownership as the declaration, but, of
+ * course it doesn't.  In order to deal with side sets, ownership
+ * needs to be established/changed.
  *
  * caller is responsible for calling
  * stk::mesh::BulkData::modification_begin() (when @c justcount is @c
@@ -595,6 +601,8 @@ Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& 
  * some bogus global indexes and then renumber them, but I can't
  * figure out how to do that.
  * 
+ * @param faceidx0 starting global face index
+ *
  * @param justcount if true, do not declare any faces, just count how
  * many there would be.
  * 
@@ -711,6 +719,86 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
     return faceidx - faceidx0;
 }
 
+/** 
+ * Collective
+ *
+ * It appears that stk::mesh requires that the local process @em own
+ * an entity in order to call stk::mesh::change_entity_parts() for it.
+ * Sometimes, but not always, stk::mesh assigns ownership of faces
+ * different than they were declared.  This probably has something to
+ * do with the ownership of the nodes involved.  
+ *
+ * More testing/knowledge is needed to be certain.  
+ *
+ * In order to deal with side sets, as stored in Mesh_data::Side_set,
+ * the face must be owned by the same process as the cell in which it
+ * is involved.  This routine makes sure that's the case.
+ *
+ * The convention is for lowest owner rank amongst the connected cells
+ * owns the face.
+ * 
+ * @param cellmap 
+ */
+void
+Mesh_factory::check_face_ownership_(void)
+{
+    const unsigned int me(communicator_.MyPID());
+    
+    std::vector< stk::mesh::Entity * > faces;
+    stk::mesh::Selector owned(meta_data_->locally_owned_part());
+    get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Face), faces);
+
+    // std::cerr << boost::str(boost::format("Process %d owns %d faces in check_face_ownership_") %
+    //                                       me % faces.size())
+    //           << std::endl;
+    
+    std::vector<stk::mesh::EntityProc> eproc;
+
+    for (std::vector< stk::mesh::Entity * >::iterator f = faces.begin(); 
+         f != faces.end(); f++) {
+
+        std::vector< stk::mesh::Entity * > theface, nodes, cells;
+        theface.push_back(*f);
+        stk::mesh::get_entities_through_relations(theface, node_rank_, nodes);
+        stk::mesh::get_entities_through_relations(nodes, element_rank_, cells);
+
+        // there better be at least one cell related to this face
+
+        ASSERT(!cells.empty());
+
+        // There should be at most 2 cells related to this face
+
+        ASSERT(cells.size() <= 2);
+
+        unsigned int cowner = 
+            std::min<unsigned int>(cells.front()->owner_rank(), 
+                                   cells.back()->owner_rank());
+        
+
+        // the face should be owned by the same process as the cell,
+        // if not, change the owner; only the face owner can request
+        // this
+
+        if (cowner != me) {
+            eproc.push_back(stk::mesh::EntityProc(*f, cowner));
+            // std::string msg = 
+            //     boost::str(boost::format("%d: face %d: changing owner from %d to %d") %
+            //                me % (*f)->identifier() % 
+            //                (*f)->owner_rank() % cowner);
+            // std::cerr << msg << std::endl;
+        } else {
+            // std::string msg = 
+            //     boost::str(boost::format("%d: face %d, owner %d: cell %d, owner %d") %
+            //                me % (*f)->identifier() % (*f)->owner_rank() % 
+            //                cells.front()->identifier() % cells.front()->owner_rank());
+            // std::cerr << msg << std::endl;
+        }            
+    }
+    bulk_data_->modification_begin();
+    bulk_data_->change_entity_owner(eproc);
+    bulk_data_->modification_end();
+}
+
 
 void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, 
                                        stk::mesh::Part &part,
@@ -750,7 +838,14 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
             throw std::runtime_error(msg);
         }
 
-        bulk_data_->change_entity_parts(*face, parts_to_add);
+        if (face->owner_rank() != me) {
+            std::string msg = 
+                boost::str(boost::format("Process %d: side set %d: I own cell %d, but not its side face %d") %
+                                         me % side_set.id() % element->identifier() % face->identifier());
+            std::cerr << msg << std::endl;
+        } else {
+            bulk_data_->change_entity_parts(*face, parts_to_add);
+        }
     }
 }
 
