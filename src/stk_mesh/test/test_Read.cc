@@ -2,7 +2,7 @@
 /**
  * @file   test_Read.cc
  * @author William A. Perkins
- * @date Mon Nov 29 11:22:34 2010
+ * @date Mon Nov 29 14:12:37 2010
  * 
  * @brief Some unit tests for reading a (serial) Exodus file and
  * building a STK_mesh::Mesh_maps_stk instance.
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 22, 2010 by William A. Perkins
-// Last Change: Mon Nov 29 11:22:34 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Nov 29 14:12:37 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <UnitTest++.h>
@@ -155,6 +155,25 @@ SUITE (Exodus)
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 20);
+
+            stk::mesh::Part *p;
+            int count;
+
+            p = mesh->get_set(1, stk::mesh::Face);
+            CHECK(p != NULL);
+            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            CHECK_EQUAL(count, 600);
+            
+            p = mesh->get_set("element block 20000", stk::mesh::Element);
+            CHECK(p != NULL);
+            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            CHECK_EQUAL(count, 9);
+            
+            p = mesh->get_set("node set 103", stk::mesh::Node);
+            CHECK(p != NULL);
+            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            CHECK_EQUAL(count, 121);
+            
         }
     }
 
@@ -168,7 +187,26 @@ SUITE (Exodus)
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
-        }
+
+            stk::mesh::Part *p;
+            int count;
+
+            p = mesh->get_set("side set 1", stk::mesh::Face);
+            CHECK(p != NULL);
+            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            CHECK_EQUAL(count, 54);
+            
+            p = mesh->get_set("element block 20000", stk::mesh::Element);
+            CHECK(p != NULL);
+            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            CHECK_EQUAL(count, 9);
+            
+            p = mesh->get_set("node set 103", stk::mesh::Node);
+            CHECK(p != NULL);
+            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            CHECK_EQUAL(count, 16);
+            
+       }
     }
 
     TEST_FIXTURE (ParallelReadFixture, ParallelReader1)
@@ -188,6 +226,26 @@ SUITE (Exodus)
             local = mesh->count_entities(stk::mesh::Element, STK_mesh::OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 10*10*10);
+
+            stk::mesh::Part *p;
+
+            p = mesh->get_set("side set 1", stk::mesh::Face);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 600);
+            
+            p = mesh->get_set("element block 20000", stk::mesh::Element);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 9);
+
+            p = mesh->get_set("node set 103", stk::mesh::Node);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 121);
         }
     }            
 
@@ -208,6 +266,26 @@ SUITE (Exodus)
             local = mesh->count_entities(stk::mesh::Element, STK_mesh::OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 3*3*3);
+
+            stk::mesh::Part *p;
+
+            p = mesh->get_set(1, stk::mesh::Face);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 54);
+            
+            p = mesh->get_set(20000, stk::mesh::Element);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 9);
+
+            p = mesh->get_set(103, stk::mesh::Node);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 16);
         }
     }            
 
