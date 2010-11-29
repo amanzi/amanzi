@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Chemistry_State_hpp__
-#define __Chemistry_State_hpp__
+#ifndef __Geochemistry_Test_hpp__
+#define __Geochemistry_Test_hpp__
 
 #include <string>
 
