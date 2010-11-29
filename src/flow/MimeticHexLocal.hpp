@@ -8,10 +8,13 @@ class MimeticHexLocal {
 
 public:
   MimeticHexLocal() {}
-  MimeticHexLocal(const double x_[][3]);
+  MimeticHexLocal(double *x) { update(x); }
+  MimeticHexLocal(double x[][3]) { update(x); }
   ~MimeticHexLocal() {};
 
-  void update(const double x_[][3]);
+  void update(const Epetra_SerialDenseMatrix &x);
+  void update(double *x);
+  void update(double x[][3]);
 
   void mass_matrix(Epetra_SerialDenseMatrix &matrix, bool invert = false) const
       { mass_matrix(matrix, 1.0, invert); }

@@ -44,6 +44,9 @@ public:
   int check_node_sets() const;
   int check_face_sets() const;
   int check_cell_sets() const;
+  
+  int check_node_partition() const;
+  int check_face_partition() const;
 
 private:
 
