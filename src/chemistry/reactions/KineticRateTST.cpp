@@ -53,11 +53,11 @@
 **
 **    - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
 **
-**    - TODO: need to calculate the area rather than read from the file.
+**    - TODO: need to calculate the area (DONE) or read from the file.
 **
-**    - TODO: need to obtain log_Keq from the mineral object rather than read from a file. 
+**    - TODO: DONE: need to obtain log_Keq from the mineral object rather than read from a file. 
 **
-**    - TODO: units of A and k are not consistent with the input
+**    - TODO: DONE: units of A and k are not consistent with the input
 **    file. need to pick a set!
 **
 **    - TODO: where should the mineral mass get updated at....?
@@ -274,7 +274,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
         (one_minus_QK * modifying_deriv * temp_modifying_term - 
          (modifying_term() / Keq) * primary_deriv * temp_Q);
     dRdC_row[p] = dRdC;
-    if (verbosity() == 10000) {
+    if (verbosity() == kDebugMineralKinetics) {
       std::cout << "J_row_contrib: p: " << p
                 << "\tA*k: " << area_rate_constant
                 << "\t1-Q/K: " << one_minus_QK

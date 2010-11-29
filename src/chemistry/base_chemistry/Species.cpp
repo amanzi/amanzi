@@ -72,9 +72,10 @@ void Species::display(void) const
 
 void Species::Display(void) const
 {
-  std::cout << std::setw(15) << name()
-            << std::setw(10) << charge()
-            << std::setw(10) << gram_molecular_weight() 
+  std::cout << std::setw(15) << name() << std::fixed
+            << std::setprecision(2) << std::setw(10) << charge()
+            << std::setprecision(5) << std::setw(10) << gram_molecular_weight() 
+            << std::setprecision(2) << std::setw(10) << ion_size_parameter() 
             << std::endl;
 } // end Display()
 

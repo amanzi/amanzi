@@ -12,14 +12,11 @@
 #include "Verbosity.hpp"
 #include "ChemistryException.hpp"
 
+#include "geochemistry_test.hpp"
+
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
 
-int CommandLineOptions(int argc, char **argv,
-                       Verbosity* verbosity, int* test, std::string* model);
-void ModelSpecificParameters(const std::string model,
-                             Beaker::BeakerParameters* parameters);
-void PrintDoubleVector(const std::vector<double> &total);
 
 int main(int argc, char **argv) {
   Verbosity verbosity = kTerse;
@@ -37,6 +34,9 @@ int main(int argc, char **argv) {
 
   std::string thermo_database_file("");
   std::string activity_model_name("");
+  double delta_time = 0;  // seconds
+  int num_time_steps = 0;
+  int output_interval = 0;
 
   error = CommandLineOptions(argc, argv, &verbosity, &test, &model);
 
@@ -112,16 +112,13 @@ int main(int argc, char **argv) {
         break;
       }
       case 5: {
-        // calcite TST kinetics
-        if (verbosity == kTerse) {
-          std::cout << "Running calcite kinetics tst problem." << std::endl;
-        }
-        thermo_database_file = "input/calcite.bgd";
-        activity_model_name = ActivityModelFactory::debye_huckel;
-        components.total.push_back(2.2124e-6);  // H+
-        components.total.push_back(2.2124e-6);  // HCO3-
-        components.total.push_back(0.0);  // Ca++
-        components.minerals.push_back(0.2);  // calcite
+        calcite_kinetics(verbosity,
+                         &thermo_database_file,
+                         &activity_model_name,
+                         &components,
+                         &delta_time,
+                         &num_time_steps,
+                         &output_interval);
         break;
       }
       case 6: {
@@ -137,6 +134,34 @@ int main(int argc, char **argv) {
         components.total.push_back(1.0e-3);  // Na+
         components.total.push_back(1.0e-3);  // Cl-
         components.ion_exchange_sites.push_back(15.0);  // X-, units? equivalents per 100 grams solid?
+        break;
+      }
+      case 7: {
+        // fbasin, initial condition, no minerals
+        fbasin_initial_speciation(verbosity,
+                                  &thermo_database_file,
+                                  &activity_model_name,
+                                  &components);
+        break;
+      }
+      case 8: {
+        // fbasin, initial condition, mineral saturation state, no kinetics
+        fbasin_initial_speciation(verbosity,
+                                  &thermo_database_file,
+                                  &activity_model_name,
+                                  &components);
+        fbasin_minerals(verbosity,
+                        &thermo_database_file,
+                        &activity_model_name,
+                        &components);
+        break;
+      }
+      case 9: {
+        // fbasin, initial condition, mineral kinetics
+        fbasin_initial_all(verbosity,
+                           &thermo_database_file,
+                           &activity_model_name,
+                           &components);
         break;
       }
       default: {
@@ -158,7 +183,6 @@ int main(int argc, char **argv) {
       parameters.porosity = 0.5;  // -
       parameters.saturation = 1.0;  // -
       parameters.volume = 1.0;  // m^3
-      parameters.max_iterations = 5;
       ModelSpecificParameters(model, &parameters);
 
       if (components.free_ion.size() == 0) {
@@ -169,6 +193,7 @@ int main(int argc, char **argv) {
 
       if (verbosity >= kVerbose) {
         chem->Display();
+        chem->DisplayComponents(components);
       }
 
       // solve for free-ion concentrations
@@ -177,15 +202,14 @@ int main(int argc, char **argv) {
         chem->DisplayResults();
       }
 
-      if (chem->HaveKinetics()) {
+      if (num_time_steps != 0) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components.total);
-        double delta_time = 0.5;  // seconds
-        int num_time_steps = 500;
+        //parameters.max_iterations = 5;
         for (int time_step = 0; time_step < num_time_steps; time_step++) {
           chem->ReactionStep(&components, parameters, delta_time);
-          if ((time_step+1) % 2 == 0) {
+          if ((time_step+1) % output_interval == 0) {
             chem->DisplayTotalColumns((time_step+1) * delta_time, 
                                       components.total);
           }
@@ -285,6 +309,9 @@ int CommandLineOptions(int argc, char **argv,
         std::cout << "             4: larger carbonate speciation, debye-huckel" << std::endl;
         std::cout << "             5: calcite kinetics, TST rate law" << std::endl;
         std::cout << "             6: Na+ / Ca++ ion exchange" << std::endl;
+        std::cout << "             7: fbasin initial condition" << std::endl;
+        std::cout << "             8: fbasin initial condition with minerals" << std::endl;
+        std::cout << "             9: fbasin initial condition with mineral kinetics" << std::endl;
         std::cout << std::endl;
         std::cout << "    -v integer" << std::endl;
         std::cout << "         verbose output:" << std::endl;
@@ -326,3 +353,94 @@ int CommandLineOptions(int argc, char **argv,
 
   return error;
 }  // end commandLineOptions()
+
+
+void calcite_kinetics(const Verbosity& verbosity,
+                      std::string* thermo_database_file,
+                      std::string* activity_model_name,
+                      Beaker::BeakerComponents* components,
+                      double* delta_time,
+                      int* num_time_steps,
+                      int* output_interval)
+{
+        // calcite TST kinetics
+        if (verbosity == kTerse) {
+          std::cout << "Running calcite kinetics tst problem." << std::endl;
+        }
+        *thermo_database_file = "input/calcite.bgd";
+        *activity_model_name = ActivityModelFactory::debye_huckel;
+        components->total.push_back(-2.0e-5);  // H+
+        components->total.push_back(1.0e-3);  // HCO3-
+        components->total.push_back(1.0e-4);  // Ca++
+        components->minerals.push_back(0.2);  // calcite
+        *delta_time = 0.5;
+        *num_time_steps = 500;
+        *output_interval = 2;
+}  // end calcite_kinetics()
+
+
+void fbasin_initial_all(const Verbosity& verbosity,
+                        std::string* thermo_database_file,
+                        std::string* activity_model_name,
+                        Beaker::BeakerComponents* components)
+{
+  fbasin_initial_speciation(verbosity, thermo_database_file,
+                            activity_model_name, components);
+  fbasin_minerals(verbosity, thermo_database_file,
+                  activity_model_name, components);
+
+  *thermo_database_file = "input/fbasin-initial-mineral-kinetics.bgd";
+}  // end fbasin_initial_full
+
+void fbasin_initial_speciation(const Verbosity& verbosity,
+                               std::string* thermo_database_file,
+                               std::string* activity_model_name,
+                               Beaker::BeakerComponents* components)
+{
+        if (verbosity == kTerse) {
+          std::cout << "Running fbasin speciation problem, \'initial\' conditions." << std::endl;
+        }
+        *thermo_database_file = "input/fbasin-initial.bgd";
+        *activity_model_name = ActivityModelFactory::debye_huckel;
+        components->total.push_back(1.0000E-05);  // Na+
+        components->total.push_back(1.0000E-05);  // Ca++
+        components->total.push_back(8.4757E-08);  // Fe++
+        components->total.push_back(1.9211E-04);  // K+
+        components->total.push_back(6.6779E-09);  // Al+++
+        components->total.push_back(1.2683E-05);  // H+
+        components->total.push_back(1.0000E-05);  // N2(aq)
+        components->total.push_back(1.0000E-05);  // NO3-
+        components->total.push_back(2.0999E-04);  // HCO3-
+        components->total.push_back(1.0000E-05);  // Cl-
+        components->total.push_back(1.0000E-06);  // SO4--
+        components->total.push_back(1.0000E-06);  // HPO4--
+        components->total.push_back(1.0000E-06);  // F-
+        components->total.push_back(1.8703E-04);  // SiO2(aq)
+        components->total.push_back(1.0000E-15);  // UO2++
+        components->total.push_back(2.5279E-04);  // O2(aq)
+        components->total.push_back(1.0000E-15);  // Tracer
+
+}  // end fbasin_initial_speciation()
+
+void fbasin_minerals(const Verbosity& verbosity,
+                               std::string* thermo_database_file,
+                               std::string* activity_model_name,
+                               Beaker::BeakerComponents* components)
+{
+        if (verbosity == kTerse) {
+          std::cout << "Adding fbasin kinetic minerals." << std::endl;
+        }
+        *thermo_database_file = "input/fbasin-initial-minerals.bgd";
+        components->minerals.push_back(0.0);  // Gibbsite
+        components->minerals.push_back(0.21);  // Quartz
+        components->minerals.push_back(0.15);  // K-Feldspar
+        components->minerals.push_back(0.0);  // Jurbanite
+        components->minerals.push_back(0.1);  // Ferrihydrite
+        components->minerals.push_back(0.15);  // Kaolinite
+        components->minerals.push_back(0.0);  // Schoepite
+        components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
+        components->minerals.push_back(0.0);  // Soddyite
+        components->minerals.push_back(0.0);  // Calcite
+        components->minerals.push_back(0.0);  // Chalcedony
+
+}  // end fbasin_minerals()

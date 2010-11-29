@@ -138,7 +138,7 @@ class Beaker {
   void DisplayMineralKinetics(void) const;
   void DisplayIonExchangeSites(void) const;
   void DisplayIonExchangeComplexes(void) const;
-
+  void DisplayComponents(const BeakerComponents& components) const;
   void DisplayTotalColumnHeaders(void) const;
   void DisplayTotalColumns(const double time, const std::vector<double>& total) const;
   void DisplayResults(void) const;

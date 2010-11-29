@@ -1073,6 +1073,7 @@ void Beaker::DisplayPrimary(void) const
   std::cout << std::setw(15) << "Species"
             << std::setw(10) << "Charge"
             << std::setw(10) << "GMW"
+            << std::setw(10) << "D-H a0"
             << std::endl;
   for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
        primary != primarySpecies_.end(); primary++) {
@@ -1086,8 +1087,9 @@ void Beaker::DisplayAqueousEquilibriumComplexes(void) const
   std::cout << "---- Aqueous Equilibrium Complexes" << std::endl;
   std::cout << std::setw(12) << "Reaction"
             << std::setw(38) << "log Keq"
-            << std::setw(10) << "Charge"
+            << std::setw(8) << "Charge"
             << std::setw(10) << "GMW"
+            << std::setw(8) << "D-H a0"
             << std::endl;
   for (std::vector<AqueousEquilibriumComplex>::const_iterator aec = aqComplexRxns_.begin();
        aec != aqComplexRxns_.end(); aec++) {
@@ -1169,6 +1171,38 @@ void Beaker::DisplayIonExchangeComplexes(void) const
     std::cout << std::endl;
   }
 }  // end DisplayIonExchangeComplexes()
+
+void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
+{
+  std::cout << "--- Input Components -------------------------------------------------" 
+            << std::endl;
+  std::cout << "---- Aqueous Components" << std::endl;
+  std::cout << std::setw(15) << "Name" 
+            << std::setw(15) << "Molarity" 
+            << std::setw(15) << "Molality" 
+            << std::endl;
+  for (int i = 0; i < ncomp(); i++) {
+    std::cout << std::setw(15) << primarySpecies_.at(i).name()
+              << std::scientific << std::setprecision(5)
+              << std::setw(15) << components.total.at(i) / water_density_kg_L()
+              << std::setw(15) << components.total.at(i) 
+              << std::endl;
+  }
+
+  if (minerals_.size() > 0) {
+    std::cout << "---- Mineral Components" << std::endl;
+    std::cout << std::setw(15) << "Name"
+              << std::setw(15) << "Vol. frac" << std::endl;
+    for (unsigned int m = 0; m < minerals_.size(); m++) {
+      std::cout << std::setw(15) << minerals_.at(m).name()
+                << std::setw(15) << std::fixed << std::setprecision(5) 
+                << components.minerals.at(m) << std::endl;
+    }
+  }
+  std::cout << "----------------------------------------------------------------------" 
+            << std::endl;
+
+}  // end DisplayComponents
 
 void Beaker::DisplayResults(void) const
 {
