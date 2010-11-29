@@ -42,8 +42,8 @@ std::string type_to_name (Mesh_data::ELEMENT_TYPE type)
 bool ok_type (Mesh_data::ELEMENT_TYPE type)
 {
 
-    bool result = (type >= Mesh_data::CIRCLE);
-    result &= (type <= Mesh_data::UNKNOWN);
+    bool result = (type >= Mesh_data::UNKNOWN);
+    result &= (type <= Mesh_data::HEX);
 
     return result;
 }

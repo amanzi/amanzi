@@ -8,7 +8,8 @@ namespace Mesh_data
 
 enum ELEMENT_TYPE
 {
-    CIRCLE,
+    UNKNOWN = -1,
+    CIRCLE = 0,
     SPHERE,
     TRUSS,
     BEAM,
@@ -17,8 +18,7 @@ enum ELEMENT_TYPE
     SHELL,
     TETRA,
     WEDGE,
-    HEX,
-    UNKNOWN
+    HEX
 };
 
 std::string type_to_name (ELEMENT_TYPE type);

@@ -38,6 +38,7 @@ public:
     // -----------------
 
     ELEMENT_TYPE element_type () const  { return element_type_; }
+    void         element_type (ELEMENT_TYPE t)  { element_type_ = t; }
     int nodes_per_element () const      { return num_nodes_per_element_; }
     int num_elements () const           { return num_elements_; }
     bool has_attributes () const        { return num_attributes_ > 0; }

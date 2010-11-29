@@ -65,6 +65,12 @@ const Element_block& Data::element_block (int id) const
     return *element_blocks_ [id];
 }
 
+Element_block& Data::element_block (int id)
+{
+    ASSERT (params_->ok_element_block (id));
+    return *element_blocks_ [id];
+}
+
 const Side_set& Data::side_set (int id) const
 {
     ASSERT (params_->ok_side_set (id));
