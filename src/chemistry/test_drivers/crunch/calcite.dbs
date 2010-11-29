@@ -39,13 +39,5 @@ Calcite
   dependence :
   1.0 Calcite + 1.0 H+ =  1.0 Ca+2 + 1.0 HCO3-
 +---------------------------------------------------
-Calcite
-  label = h+
-  type  = tst
-  rate(25C) = -3.00
-  activation = 15.0  (kcal/mole)
-  dependence :     H+  1.0
-  1.0 Calcite + 1.0 H+ =  1.0 Ca+2 + 1.0 HCO3-
-+---------------------------------------------------
 End of mineral kinetics
  

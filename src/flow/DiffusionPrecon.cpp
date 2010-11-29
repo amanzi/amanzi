@@ -66,7 +66,6 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
 
   // "Solve" the Schur complement system for Yf with Tf as the rhs using ML
   MLprec->ApplyInverse(Tf, Yf);
-  //Yf = Tf;
 
   // BACKWARD SUBSTITUTION
   // Yc <- (Dcc)^(-1) * (Xc - Dcf * P * Yf)

@@ -208,7 +208,8 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
   size = components.minerals.size();
   if (minerals().size() == size) {
     for (unsigned int m = 0; m < size; m++) {
-      minerals_[m].set_volume_fraction(components.minerals.at(m));
+      minerals_.at(m).set_volume_fraction(components.minerals.at(m));
+      minerals_.at(m).UpdateSurfaceAreaFromVolumeFraction(volume());
     }
   } else {
     std::ostringstream error_stream;
@@ -888,6 +889,11 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     initializeMolalities(1.e-9);
   }
 
+  for (unsigned int m = 0; m < minerals_.size(); m++) {
+    minerals_.at(m).set_volume_fraction(components.minerals.at(m));
+    minerals_.at(m).UpdateSurfaceAreaFromVolumeFraction(volume());
+  }
+
   // store current molalities
   for (int i = 0; i < ncomp(); i++)
     prev_molal[i] = primarySpecies_[i].molality();
@@ -1096,9 +1102,19 @@ void Beaker::DisplayMinerals(void) const
     std::cout << "---- Minerals" << std::endl;
     std::cout << std::setw(12) << "Reaction"
               << std::setw(38) << "log_Keq"
-              << std::setw(15) << "molar volume"
-              << std::setw(10) << "GMW"
-              << std::setw(10) << "SSA"
+              << std::setw(13) << "molar volume"
+              << std::setw(13) << "GMW"
+              << std::setw(13) << "SSA"
+              << std::setw(13) << "Area"
+              << std::setw(13) << "Vfrac"
+              << std::endl;
+    std::cout << std::setw(12) << " "
+              << std::setw(38) << " "
+              << std::setw(13) << "[cm^3/mol]"
+              << std::setw(13) << "[g/mol]"
+              << std::setw(13) << "[m^2/g]"
+              << std::setw(13) << "[m^2]"
+              << std::setw(13) << "[-]"
               << std::endl;
     for (std::vector<Mineral>::const_iterator m = minerals_.begin();
          m != minerals_.end(); m++) {

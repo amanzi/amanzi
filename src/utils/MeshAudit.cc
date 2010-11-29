@@ -116,11 +116,7 @@ int MeshAudit::Verify() const
   ierr = check_cell_maps();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
-
-  if (abort) return 1;
-
-  // Need to check all the "set" accessors
-
+  
   ierr = check_node_to_coordinates_ghost_data();
   if (ierr < 0) abort = true;
   if (ierr != 0) fail = true;
@@ -135,6 +131,14 @@ int MeshAudit::Verify() const
 
   ierr = check_cell_to_faces_ghost_data();
   if (ierr < 0) abort = true;
+  if (ierr != 0) fail = true;
+
+  if (abort) return 1;
+
+  ierr = check_node_partition();
+  if (ierr != 0) fail = true;
+  
+  ierr = check_face_partition();
   if (ierr != 0) fail = true;
 
   ierr = check_node_sets();
@@ -1686,6 +1690,72 @@ int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
     comm.MaxAll(&status, &status, 1);
     return status;
   }
+}
+
+// SANE PARTITIONING CHECKS.  In parallel the cells, faces and nodes of the
+// mesh are each partitioned across the processes, and while in principle
+// these partitionings may be completely independent of each other, practical
+// considerations lead to certain conditions that reasonable partitions should
+// satisfy.  Taking the partitioning of the cells as given, one property that
+// should be satisfied by the face and node partitionings is that the process
+// that owns a particular face (node) must also own one of the cells containing
+// the face (node).
+
+int MeshAudit::check_face_partition() const
+{
+  os << "Checking face partition ..." << endl;
+  
+  // Mark all the faces contained by owned cells.
+  bool owned[nface];
+  for (int j = 0; j < nface; ++j) owned[j] = false;
+  unsigned int cface[6];
+  for (unsigned int j = 0; j < mesh->cell_map(false).NumMyElements(); ++j) {
+    mesh->cell_to_faces(j, cface, cface+6);
+    for (int k = 0; k < 6; ++k) owned[cface[k]] = true;
+  }
+  
+  // Verify that every owned face has been marked as belonging to an owned cell.
+  vector<unsigned int> bad_faces;
+  for (unsigned int j = 0; j < mesh->face_map(false).NumMyElements(); ++j)
+    if (!owned[j]) bad_faces.push_back(j);
+  
+  if (!bad_faces.empty()) {
+    os << "ERROR: found orphaned owned faces:";
+    write_list(bad_faces, MAX_OUT);
+    os << "       Process doesn't own either of the cells sharing the face." << endl;
+    return 1;
+  }
+  
+  return 0;
+}
+
+
+int MeshAudit::check_node_partition() const
+{
+  os << "Checking node partition ..." << endl;
+  
+  // Mark all the nodes contained by owned cells.
+  bool owned[nnode];
+  for (int j = 0; j < nnode; ++j) owned[j] = false;
+  unsigned int cnode[8];
+  for (unsigned int j = 0; j < mesh->cell_map(false).NumMyElements(); ++j) {
+    mesh->cell_to_nodes(j, cnode, cnode+8);
+    for (int k = 0; k < 8; ++k) owned[cnode[k]] = true;
+  }
+  
+  // Verify that every owned node has been marked as belonging to an owned cell.
+  vector<unsigned int> bad_nodes;
+  for (unsigned int j = 0; j < mesh->node_map(false).NumMyElements(); ++j)
+    if (!owned[j]) bad_nodes.push_back(j);
+  
+  if (!bad_nodes.empty()) {
+    os << "ERROR: found orphaned owned nodes:";
+    write_list(bad_nodes, MAX_OUT);
+    os << "       Process doesn't own any of the cells containing the node." << endl;
+    return 1;
+  }
+  
+  return 0;
 }
 
 // Returns true if the values in the list are distinct -- no repeats.

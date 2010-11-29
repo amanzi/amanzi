@@ -9,23 +9,30 @@ using namespace cell_topology;
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialSpdDenseSolver.h"
 
-MimeticHexLocal::MimeticHexLocal(const double x[][3])
+void MimeticHexLocal::update(const Epetra_SerialDenseMatrix &x)
 {
-  update(x);
-}
-
-
-void MimeticHexLocal::update(const double x[][3])
-{
-  Epetra_SerialDenseMatrix X(View, (double*)x, 3, 3, 8);
-  cell_geometry::compute_hex_volumes(X, hvol, cwgt);
+  cell_geometry::compute_hex_volumes(x, hvol, cwgt);
   double sum_cvol = 0.0;
   for (int i = 0; i < 8; ++i) sum_cvol += cwgt[i];
   for (int i = 0; i < 8; ++i) cwgt[i] = cwgt[i] / sum_cvol;
 
   //compute_hex_face_normals();
   face_normal.Shape(3,6);
-  cell_geometry::compute_hex_face_normals(X, face_normal);
+  cell_geometry::compute_hex_face_normals(x, face_normal);
+}
+
+
+void MimeticHexLocal::update(double x[][3])
+{
+  Epetra_SerialDenseMatrix X(View, (double*)x, 3, 3, 8);
+  update(X);
+}
+
+
+void MimeticHexLocal::update(double *x)
+{
+  Epetra_SerialDenseMatrix X(View, x, 3, 3, 8);
+  update(X);
 }
 
 

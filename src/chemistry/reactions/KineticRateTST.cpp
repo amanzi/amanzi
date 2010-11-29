@@ -178,8 +178,9 @@ void KineticRateTST::Update(const SpeciesArray primary_species,
   // calculate the modifying secondary species term:
 
   if (verbosity() == kDebugMineralKinetics) {
-    std::cout << "Rate: " << name() << "\n"
-              << "  Update: lnQ = " << lnQ << "\n   Q = " << Q 
+    std::cout << "  Update:\n"
+              << "  Rate: " << name()
+              << "\n  lnQ = " << lnQ << "\n   Q = " << Q 
               << "\n   Keq = " << Keq 
               << "\n  Q/K = " << Q_over_Keq() 
               << "\n  lnQK = " << std::log(Q_over_Keq()) << "\n"
@@ -211,7 +212,7 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
     (*residual)[p] -= reactant_stoichiometry.at(p) * rate;
     //if (true) {
     if (verbosity() == kDebugMineralKinetics) {
-      std::cout << "  Residual p: " << p
+      std::cout << "  AddToResidual p: " << p
                 << "  coeff: " << reactant_stoichiometry.at(p)
                 << "  rate: " << rate << "  redsidual: " << residual->at(p) << std::endl;
     }
@@ -333,7 +334,7 @@ void KineticRateTST::Display(void) const
   std::cout << "      mineral = " << name() << std::endl;
   std::cout << "      mineral id = " << identifier() << std::endl;
   std::cout << "      log10_rate constant = " << log10_rate_constant() << std::endl;
-  std::cout << "      rate constant = " << rate_constant() << std::endl;
+  std::cout << "      rate constant = " << std::scientific << rate_constant() << std::endl;
   std::cout << "      rate modifiers: " << std::endl;
   std::cout << "        ";
   for (unsigned int mod = 0; mod < this->modifying_species_names.size(); mod++) {
