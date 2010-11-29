@@ -164,6 +164,18 @@ int main(int argc, char **argv) {
                            &components);
         break;
       }
+      case 10: {
+        // calcite kinetics, long time steps
+        calcite_kinetics(verbosity,
+                         &thermo_database_file,
+                         &activity_model_name,
+                         &components,
+                         &delta_time,
+                         &num_time_steps,
+                         &output_interval);
+        delta_time = 90.0;
+        break;
+      }
       default: {
         std::cout << "Invalid test number specified on command line. "
                   << "try using the \'-h\' option." << std::endl;
@@ -375,7 +387,7 @@ void calcite_kinetics(const Verbosity& verbosity,
         components->minerals.push_back(0.2);  // calcite
         *delta_time = 0.5;
         *num_time_steps = 500;
-        *output_interval = 2;
+        *output_interval = 1;
 }  // end calcite_kinetics()
 
 

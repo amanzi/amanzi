@@ -102,14 +102,14 @@ void Mineral::Display(void) const
 {
   std::cout << "    " << name() << " = ";
   for (int i = 0; i < (int)species_names_.size(); i++) {
-    std::cout << stoichiometry_[i] << " " << species_names_[i];
+    std::cout << std::setprecision(2) << stoichiometry_[i] << " " << species_names_[i];
     if (i < (int)species_names_.size() - 1) {
       std::cout << " + ";
     }
   }
   std::cout << std::endl;
   std::cout << std::setw(40) << " " 
-            << std::setw(10) << logK_
+            << std::setw(10) << std::setprecision(5) << std::fixed << logK_
             << std::setw(13) << molar_volume()
             << std::setw(13) << gram_molecular_weight()
             << std::setw(13) << specific_surface_area()

@@ -32,9 +32,9 @@ END
 Condition        initial_condition   
 units            mol/kg
 temperature      25.0
-H+               2.2124e-6
-HCO3-            2.2124e-6
-Ca++             0.0
+H+               -2.0e-5
+HCO3-            1.0e-3
+Ca++             1.0e-4
 Calcite          0.2 specific_surface_area 1.0
 END
 

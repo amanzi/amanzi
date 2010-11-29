@@ -74,7 +74,7 @@ void KineticRate::DisplayReaction(void) const
   std::cout << " = ";
   for (unsigned int species = 0; 
        species < this->reactant_names.size(); species++) {
-    std::cout << this->reactant_stoichiometry.at(species) << " " 
+    std::cout << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " " 
               << this->reactant_names.at(species);
     if (species < this->reactant_names.size() - 1) {
       std::cout << " + ";
