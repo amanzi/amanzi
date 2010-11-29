@@ -109,7 +109,7 @@ void SimpleThermoDatabase::ReadFile(const std::string file_name)
   bool parsed_minerals = false;
   bool parsed_ion_exchange_sites = false;
   int count = 0;
-  while (!input.eof() && count < 100) {
+  while (!input.eof() && count < 5000) {
     count++;
     int data_order_error = 0;
     std::string error_section("");
