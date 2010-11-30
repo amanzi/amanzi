@@ -7,11 +7,15 @@ DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix,
 {
   label = strdup("DiffusionPrecon");
 
-  Teuchos::ParameterList ml_plist = plist.sublist("ML Parameters");
-
-  MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), ml_plist, false);
-  //MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), false);
-  //MLprec->PrintList();
+  if ( plist.isSublist("ML Parameters") ) 
+    {
+      Teuchos::ParameterList ml_plist = plist.sublist("ML Parameters");      
+      MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), ml_plist, false);
+    }
+  else
+    {
+      MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), false);
+    }
 }
 
 DiffusionPrecon::~DiffusionPrecon()
