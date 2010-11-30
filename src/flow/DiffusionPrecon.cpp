@@ -9,8 +9,8 @@ DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix,
 
   Teuchos::ParameterList ml_plist = plist.sublist("ML Parameters");
 
-  //MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), ml_plist, false);
-  MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), false);
+  MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), ml_plist, false);
+  //MLprec = new ML_Epetra::MultiLevelPreconditioner(D->Sff(), false);
   //MLprec->PrintList();
 }
 
