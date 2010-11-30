@@ -23,6 +23,7 @@ namespace CGNS_PAR {
   int num_soln = 0;   // number of solution nodes
   int rank;
   std::vector<double> timeList;
+  std::vector<int> cycleList;
   std::vector<string> nameList;
   Teuchos::RCP<Epetra_Map> all_to_one_node_map;
   Teuchos::RCP<Epetra_Map> all_to_one_cell_map;  
@@ -284,6 +285,10 @@ namespace CGNS_PAR {
 	// add current time to timeList
 	timeList.push_back(time);
 	num_soln++;
+
+	// add the current cycle to the list of cycles
+	cycleList.push_back(iter);
+		
 	
 	// reconstruct formatted string of names to pass to cgns
 	char solutionList[32*num_soln+1];
@@ -302,7 +307,8 @@ namespace CGNS_PAR {
 	cg_biter_write(file_idx, base_idx,"TimeIterValues",num_soln);
 	cg_goto(file_idx, base_idx,"BaseIterativeData_t",1,"end");
 	cg_array_write("TimeValues",RealDouble,1,&num_soln,&timeList[0]);
-	
+	cg_array_write("Cycles",Integer,1,&num_soln,&cycleList[0]);
+
 	// rewrite zone iteration
 	cg_ziter_write(file_idx, base_idx,zone_idx,"ZoneIterativeData");
 	cg_goto(file_idx, base_idx,"Zone_t",zone_idx,"ZoneIterativeData_t",1,"end");
