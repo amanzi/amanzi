@@ -338,9 +338,10 @@ void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVecto
   for (int j = 0; j < Pcell.MyLength(); ++j) {
     mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
+    double K = (k_[j] / mu_);
     MD[j].diff_op((k_[j]/mu_), Pcell[j], aux1, dummy, aux2);
     MD[j].GravityFlux(g_, gflux);
-    for (int k = 0; k < 6; ++k) aux2[k] = (k_[j]/mu_) * gflux[k] - aux2[k];
+    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
     MD[j].CellFluxVector(aux2, aux3);
     Q[0][j] = aux3[0];
     Q[1][j] = aux3[1];
