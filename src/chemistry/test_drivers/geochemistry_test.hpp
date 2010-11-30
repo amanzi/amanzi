@@ -21,6 +21,14 @@ void calcite_kinetics(const Verbosity& verbosity,
                       int* num_time_steps,
                       int* output_interval);
 
+void calcite_kinetics_large_time_steps(const Verbosity& verbosity,
+                                       std::string* thermo_database_file,
+                                       std::string* activity_model_name,
+                                       Beaker::BeakerComponents* components,
+                                       double* delta_time,
+                                       int* num_time_steps,
+                                       int* output_interval);
+
 void fbasin_initial_all(const Verbosity& verbosity,
                         std::string* thermo_database_file,
                         std::string* activity_model_name,

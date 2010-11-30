@@ -1,0 +1,206 @@
+
+  Title of simulation: calcite.in:  kinetic calcite dissolution problem for geochemistry code v
+
+
+  --> Running in GIMRT mode (global implicit reaction and transport) 
+
+  Extended Debye-Huckel activity model
+
+   ---> Using database: calcite.dbs                                                                                         
+  Temperature parameters not found
+  Using defaults
+
+  Number of components:                          3
+
+  Number of secondary species:                   6
+
+  Number of kinetic minerals:                    1
+
+  No surface complexation block found
+
+     --> Calling database subroutine
+
+
+  Number of reactions:                              7
+  Number of complexes:                              6
+  Number of minerals:                               1
+  Number of gases:                                  0
+
+     --> Finished reading database
+  No ion exchange block found
+  Fixing porosity at 0.5000
+  No update of porosity
+
+  Current density module: temperature
+
+
+  ---> READING GEOCHEMICAL CONDITIONS  
+
+
+  ---> STARTING SPECIATION OF GEOCHEMICAL CONDITIONS  
+
+
+                SPECIATION OF 
+      INITIAL AND BOUNDARY CONDITIONS 
+           SUCCESSFULLY COMPLETED
+
+  No aqueous kinetics block found
+  Retardation parameters not found
+  Assuming NO retardation (Kd = 0) 
+  No discretization in Z direction
+  Setting nz = 1
+
+
+   NZ =            1
+
+
+  Number of heterogeneities =            1
+
+
+  No boundary conditions found
+
+
+  Cannot interpret string in boundary read
+ initial_condition                                                                                                                   
+  Ignoring this line
+
+  Output block found
+
+  Timestepping on--output files written
+   360.00000000000000     
+
+
+ Parameters for this run:
+
+ --> Porosity set by "fix_porosity" or "set_porosity" keywords
+ ----> No update of porosity
+ --> Extended Debye-Huckel activity model used
+ --> Activity coefficients only computed
+     at beginning of time step 
+
+   Running in batch mode
+
+  Reading MODFLOW block
+  Reading flow block
+
+  No flow block found
+  Assuming Darcy fluxes = 0
+
+
+   Constant velocities have been specified
+
+   X Darcy velocity =    0.0000000000000000     
+   Y Darcy velocity =    0.0000000000000000     
+   Z Darcy velocity =    0.0000000000000000     
+
+
+   Constant gas velocities have been specified
+
+   X gas flux  =    0.0000000000000000     
+   Y gas flux  =    0.0000000000000000     
+   Z gas flux  =    0.0000000000000000     
+
+
+
+
+  No transport block found
+  Assuming dispersivity and diffusion = 0
+
+
+   Using constant diffusion coefficient
+  Diffusion coefficient (m**2/yr) =       0.0000E+00
+
+
+  Longitudinal dispersivity (m) =     0.0000E+00
+  Transverse dispersivity (m) =       0.0000E+00
+
+
+         INITIALIZATION COMPLETED 
+          STARTING TIMESTEPPING 
+
+
+  ---> RUNNING IN:  GLOBAL IMPLICIT REACTION AND TRANSPORT (GIMRT) MODE
+
+
+  Grid cells in X direction (NX):            1
+  Grid cells in Y direction (NY):            1
+  Grid cells in Z direction (NZ):            1
+
+
+  Initial mass in system =   2.11515913687310683E-005
+ Time step #            1
+  Time (days) =  3.000E+01  Delt (days) = 3.000E+01
+  Number of Newton iterations = 38
+  Maximum change in master variable =   2.97E+00   at grid pts    1    1    1
+
+ Time step #            2
+  Time (days) =  6.000E+01  Delt (days) = 3.000E+01
+  Number of Newton iterations =  5
+  Maximum change in master variable =   6.86E-02   at grid pts    1    1    1
+
+ Time step #            3
+  Time (days) =  9.000E+01  Delt (days) = 3.000E+01
+  Number of Newton iterations =  3
+  Maximum change in master variable =   9.03E-04   at grid pts    1    1    1
+
+ Time step #            4
+  Time (days) =  1.200E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  3
+  Maximum change in master variable =   1.08E-05   at grid pts    1    1    1
+
+ Time step #            5
+  Time (days) =  1.500E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  2
+  Maximum change in master variable =   1.28E-07   at grid pts    1    1    1
+
+ Time step #            6
+  Time (days) =  1.800E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  2
+  Maximum change in master variable =   1.52E-09   at grid pts    1    1    1
+
+ Time step #            7
+  Time (days) =  2.100E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  2
+  Maximum change in master variable =   1.81E-11   at grid pts    1    1    1
+
+ Time step #            8
+  Time (days) =  2.400E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  1
+  Maximum change in master variable =   2.16E-13   at grid pts    1    1    1
+
+ Time step #            9
+  Time (days) =  2.700E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  1
+  Maximum change in master variable =   3.55E-15   at grid pts    1    1    1
+
+ Time step #           10
+  Time (days) =  3.000E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  1
+  Maximum change in master variable =   0.00E+00   at grid pts    1    1    1
+
+ Time step #           11
+  Time (days) =  3.300E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  1
+  Maximum change in master variable =   0.00E+00   at grid pts    1    1    1
+
+ Time step #           12
+  Time (days) =  3.600E+02  Delt (days) = 3.000E+01
+  Number of Newton iterations =  1
+  Maximum change in master variable =   0.00E+00   at grid pts    1    1    1
+
+
+   WRITING OUTPUT FILES
+  Time (days) =  3.600E+02
+   File number  =            1
+
+
+  Total Newton iterations =           60
+
+   *** RUN SUCCESSFULLY COMPLETED *** 
+
+
+
+ ====== Running time on this computer ======
+
+     hr:   0    min:   0    sec:   1
+

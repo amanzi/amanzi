@@ -9,7 +9,8 @@ TESTS_CRUNCH = \
 	carbonate-debye-huckel-crunch \
 	ca-carbonate-unit-activity-coeff-crunch \
 	ca-carbonate-debye-huckel-crunch \
-	calcite-kinetics-crunch
+	calcite-kinetics-crunch \
+	calcite-kinetics-large-time-step-crunch
 
 TESTS_PFLOTRAN = \
 	carbonate-unit-activity-coeff-pflotran \
@@ -103,6 +104,13 @@ calcite-kinetics-crunch :
 	@echo
 	@echo ----- WARNING: These results have not been verified! -----
 	$(GEOCHEM) -m crunch -t 5 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+calcite-kinetics-large-time-step-crunch : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m crunch -t 10 $(GEOVERB) > $@.cout
 	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
 	@echo
 

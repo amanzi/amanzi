@@ -46,12 +46,8 @@ class Species {
   double ion_size_parameter(void) const { return this->ion_size_parameter_; }
   SpeciesName name(void) const { return this->name_; }
 
-  void molality(double d) { this->molality_ = d; }
-  void activity(double d) { this->activity_ = d; }
   void act_coef(double d) { this->act_coef_ = d; }
 
-  void ln_molality(double d) { this->ln_molality_ = d; }
-  void ln_activity(double d) { this->ln_activity_ = d; }
   void ln_act_coef(double d) { this->ln_act_coef_ = d; }
 
   void identifier(SpeciesId i) { this->identifier_ = i; }
@@ -67,6 +63,13 @@ class Species {
 
  protected:
   //  Species(const double s_charge, const double s_GMW, const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);
+
+  // these are dangerous, should only be used internally. Use the
+  // public update() to ensure that all related data gets updated!
+  void molality(double d) { this->molality_ = d; }
+  void activity(double d) { this->activity_ = d; }
+  void ln_molality(double d) { this->ln_molality_ = d; }
+  void ln_activity(double d) { this->ln_activity_ = d; }
 
   double molality_;
   double activity_;

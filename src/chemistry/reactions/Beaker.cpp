@@ -377,7 +377,7 @@ void Beaker::initializeMolalities(double initial_molality)
 {
   for (std::vector<Species>::iterator i=primarySpecies_.begin();
        i != primarySpecies_.end(); i++)
-    i->molality(initial_molality);
+    i->update(initial_molality);
 } // end initializeMolalities
 
 void Beaker::initializeMolalities(std::vector<double> initial_molalities) 
@@ -392,8 +392,9 @@ void Beaker::initializeMolalities(std::vector<double> initial_molalities)
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
-  for (int i = 0; i < (int)primarySpecies_.size(); i++)
-    primarySpecies_[i].molality(initial_molalities[i]);
+  for (int i = 0; i < (int)primarySpecies_.size(); i++) {
+    primarySpecies_[i].update(initial_molalities[i]);
+  }
 } // end initializeMolalities()
 
 void Beaker::updateEquilibriumChemistry(void)
@@ -441,8 +442,9 @@ void Beaker::calculateTotal(std::vector<double> *total,
                             std::vector<double> *total_sorbed) 
 {
   // add in primaries
-  for (unsigned int i = 0; i < total->size(); i++)
-    (*total)[i] = primarySpecies_[i].molality();
+  for (unsigned int i = 0; i < total->size(); i++) {
+    (*total)[i] = primarySpecies_.at(i).molality();
+  }
 
   // add in aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::iterator i = aqComplexRxns_.begin();
@@ -451,9 +453,9 @@ void Beaker::calculateTotal(std::vector<double> *total,
   }
   
   // scale by water density to convert to molarity
-  for (unsigned int i = 0; i < total->size(); i++)
-   (*total)[i] *= water_density_kg_L();
-
+  for (unsigned int i = 0; i < total->size(); i++) {
+    (*total)[i] *= water_density_kg_L();
+  }
   // calculate sorbed totals
   // initialize to zero
   for (unsigned int i = 0; i < total_sorbed->size(); i++)
@@ -684,7 +686,7 @@ void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update,
     prev_solution[i] = primarySpecies_[i].molality();
     // update primary species molalities (log formulation)
     double molality = prev_solution[i] * std::exp(-update[i]);
-    primarySpecies_[i].molality(molality);
+    primarySpecies_[i].update(molality);
   }
 } // end updateMolalitiesWithTruncation()
 
@@ -740,13 +742,16 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // volume [m^3]
   updateParameters(parameters, dt);
   CheckChargeBalance(components->total);
-  // store current molalities
-  // initialize free-ion concentrations
+
+  // initialize free-ion concentrations, these are actual
+  // concentrations, so the value must be positive or ln(free_ion)
+  // will return a nan!
   if (components->free_ion.size() > 0) {
     initializeMolalities(components->free_ion);
 // testing only    initializeMolalities(1.e-9);
   }
 
+  // store current molalities
   for (int i = 0; i < ncomp(); i++)
     prev_molal[i] = primarySpecies_[i].molality();
 
@@ -881,7 +886,9 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 
   updateParameters(parameters, 0.0);
   CheckChargeBalance(components.total);
-  // initialize free-ion concentrations
+  // initialize free-ion concentrations, these are actual
+  // concentrations, so the value must be positive or ln(free_ion)
+  // will return a nan!
   if (components.free_ion.size() > 0) {
     initializeMolalities(components.free_ion);
   }
@@ -910,9 +917,9 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 
     // calculate residual
     // units of residual: mol/sec
-    for (int i = 0; i < ncomp(); i++)
+    for (int i = 0; i < ncomp(); i++) {
       residual[i] = total_[i] - components.total[i];
-
+    }
     // add derivatives of total with respect to free to Jacobian
     // units of Jacobian: kg water/sec
     J->zero();
@@ -1180,12 +1187,14 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   std::cout << std::setw(15) << "Name" 
             << std::setw(15) << "Molarity" 
             << std::setw(15) << "Molality" 
+      //<< std::setw(15) << "Free Ion" // TODO: uncomment and update test results
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
     std::cout << std::setw(15) << primarySpecies_.at(i).name()
               << std::scientific << std::setprecision(5)
               << std::setw(15) << components.total.at(i) / water_density_kg_L()
               << std::setw(15) << components.total.at(i) 
+        //<< std::setw(15) << components.free_ion.at(i) // TODO: uncomment and update test results
               << std::endl;
   }
 

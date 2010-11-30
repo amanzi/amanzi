@@ -256,7 +256,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
     // modifying_deriv = (mu_j * a_j^{mu_j - 1})
     double modifying_deriv = (modifying_primary_exponents.at(p) - 1.0) * 
         primary_species.at(p).ln_activity();
-    modifying_deriv = std::exp(modifying_deriv);
+    modifying_deriv = std::exp(modifying_deriv) * modifying_primary_exponents.at(p);
 
     // temp_Q = Prod_{p!=j}(a_p^{nu_p}
     double temp_Q = primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
@@ -266,20 +266,22 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
     // primary_deriv = (nu_j * a_j^{nu_j - 1})
     double primary_deriv = (primary_stoichiometry.at(p) - 1.0) * 
         primary_species.at(p).ln_activity();
-    primary_deriv = std::exp(primary_deriv);
+    primary_deriv = std::exp(primary_deriv) * primary_stoichiometry.at(p);
     
     // modifying_term() / Keq = Prod_{m}(a_m^{mu_m})/Keq * 
     
     double dRdC = area_rate_constant * 
         (one_minus_QK * modifying_deriv * temp_modifying_term - 
          (modifying_term() / Keq) * primary_deriv * temp_Q);
-    dRdC_row[p] = dRdC;
+    dRdC_row[p] = -dRdC; // where does the neg sign come from...?
     if (verbosity() == kDebugMineralKinetics) {
       std::cout << "J_row_contrib: p: " << p
-                << "\tA*k: " << area_rate_constant
+                << std::scientific << "\tA*k: " << area_rate_constant
                 << "\t1-Q/K: " << one_minus_QK
                 << "\tmod_deriv: " << modifying_deriv
                 << "\ttemp_mod_term: " << temp_modifying_term
+                << "\tmod_term: " << modifying_term()
+                << "\tKeq: " << Keq
                 << "\tmod_term/Keq: " << modifying_term() / Keq
                 << "\tprimary_deriv: " << primary_deriv
                 << "\ttemp_Q: " << temp_Q 
@@ -293,7 +295,9 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
   for (int i = 0; i < J->getSize(); i++) {
     for (int j = 0; j < J->getSize(); j++) {
       J->addValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
+      //std::cout << dRdC_row.at(j) * primary_stoichiometry.at(i) << " ";
     }
+    //std::cout << std::endl;
   }
 
 }  // end AddContributionToJacobian()

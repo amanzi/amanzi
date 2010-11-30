@@ -17,6 +17,7 @@ class Block {
 
   int getSize(void) const { return this->size; };
   double **getValues(void) const { return this->A; };
+  double GetValue(const int& i, const int& j) const { return this->A[i][j]; };
 
   double getRowAbsMax(int);
 

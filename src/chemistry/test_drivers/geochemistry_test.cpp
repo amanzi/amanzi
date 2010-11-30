@@ -166,14 +166,13 @@ int main(int argc, char **argv) {
       }
       case 10: {
         // calcite kinetics, long time steps
-        calcite_kinetics(verbosity,
-                         &thermo_database_file,
-                         &activity_model_name,
-                         &components,
-                         &delta_time,
-                         &num_time_steps,
-                         &output_interval);
-        delta_time = 90.0;
+        calcite_kinetics_large_time_steps(verbosity,
+                                          &thermo_database_file,
+                                          &activity_model_name,
+                                          &components,
+                                          &delta_time,
+                                          &num_time_steps,
+                                          &output_interval);
         break;
       }
       default: {
@@ -198,6 +197,9 @@ int main(int argc, char **argv) {
       ModelSpecificParameters(model, &parameters);
 
       if (components.free_ion.size() == 0) {
+        // initialize free-ion concentrations, these are actual
+        // concentrations, so the value must be positive or ln(free_ion)
+        // will return a nan!
         components.free_ion.resize(components.total.size(), 1.0e-9);
       }
 
@@ -218,7 +220,7 @@ int main(int argc, char **argv) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components.total);
-        //parameters.max_iterations = 5;
+        //parameters.max_iterations = 2;
         for (int time_step = 0; time_step < num_time_steps; time_step++) {
           chem->ReactionStep(&components, parameters, delta_time);
           if ((time_step+1) % output_interval == 0) {
@@ -324,6 +326,7 @@ int CommandLineOptions(int argc, char **argv,
         std::cout << "             7: fbasin initial condition" << std::endl;
         std::cout << "             8: fbasin initial condition with minerals" << std::endl;
         std::cout << "             9: fbasin initial condition with mineral kinetics" << std::endl;
+        std::cout << "            10: calcite kinetics with large time steps" << std::endl;
         std::cout << std::endl;
         std::cout << "    -v integer" << std::endl;
         std::cout << "         verbose output:" << std::endl;
@@ -389,6 +392,30 @@ void calcite_kinetics(const Verbosity& verbosity,
         *num_time_steps = 500;
         *output_interval = 1;
 }  // end calcite_kinetics()
+
+
+void calcite_kinetics_large_time_steps(const Verbosity& verbosity,
+                                       std::string* thermo_database_file,
+                                       std::string* activity_model_name,
+                                       Beaker::BeakerComponents* components,
+                                       double* delta_time,
+                                       int* num_time_steps,
+                                       int* output_interval)
+{
+        // calcite TST kinetics
+        if (verbosity == kTerse) {
+          std::cout << "Running calcite kinetics tst problem." << std::endl;
+        }
+        *thermo_database_file = "input/calcite.bgd";
+        *activity_model_name = ActivityModelFactory::debye_huckel;
+        components->total.push_back(1.0e-3);  // H+
+        components->total.push_back(1.0e-3);  // HCO3-
+        components->total.push_back(0.0);  // Ca++
+        components->minerals.push_back(0.2);  // calcite
+        *delta_time = 30.0 * 24.0 * 3600.0;
+        *num_time_steps = 12;
+        *output_interval = 1;
+}  // end calcite_kinetics_large_time_steps()
 
 
 void fbasin_initial_all(const Verbosity& verbosity,
