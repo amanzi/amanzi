@@ -177,9 +177,6 @@ void MPC::cycle_driver () {
     S->update_pressure(FPK->Pressure());
     FPK->commit_state(FS);
     FPK->GetDarcyVelocity(*S->get_darcy_velocity());
-
- 
-
   }
   
   if (flow_enabled || transport_enabled || chemistry_enabled) {
@@ -203,9 +200,11 @@ void MPC::cycle_driver () {
       }      
 
       if (flow_enabled) {
-	write_field_data( *(*S->get_darcy_velocity())(0), "darcy velocity x");  
-	write_field_data( *(*S->get_darcy_velocity())(1), "darcy velocity y");  
-	write_field_data( *(*S->get_darcy_velocity())(2), "darcy velocity z");  
+	const Epetra_MultiVector &DV = *S->get_darcy_velocity();
+	
+	write_field_data( *DV(0), "darcy velocity x");
+	write_field_data( *DV(1), "darcy velocity y");
+	write_field_data( *DV(2), "darcy velocity z");
       }    
       
       close_data_file();
@@ -234,8 +233,8 @@ void MPC::cycle_driver () {
       
       std::cout << "MPC: ";
       std::cout << "Cycle = " << iter; 
-      std::cout << ",  Time = "<< S->get_time();
-      std::cout << ",  dT = " << mpc_dT << std::endl;
+      std::cout << ",  Time = "<< S->get_time() / (60*60*24);
+      std::cout << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
       
       if (transport_enabled) {
 	// now advance transport

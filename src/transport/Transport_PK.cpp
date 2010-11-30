@@ -494,7 +494,7 @@ void Transport_PK::check_divergence_property()
         cout << "    MyPID = " << MyPID << endl;
         cout << "    cell  = " << c << endl;
         cout << "    divergence = " << div << endl;
-        cout << "    maximal velocity = " << umax << endl; 
+        cout << "    maximal velocity = " << umax << endl;
         ASSERT( 0 );
      }
   }
