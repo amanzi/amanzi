@@ -22,11 +22,18 @@
 #include "State.hpp"
 #include "MPC.hpp"
 
-
 int main(int argc, char *argv[])
 {
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
+
+  // make sure only PE0 can write to std::cout
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
+  if (rank!=0) {
+    cout.rdbuf(0);
+  } 
+
   Teuchos::CommandLineProcessor CLP;
   
   CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"
@@ -60,6 +67,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList driver_parameter_list;
   Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
   
+  // print parameter list
+  std::cout << "======================> dumping parameter list <======================" << std::endl;
+  Teuchos::writeParameterListToXmlOStream(driver_parameter_list, std::cout);
+  std::cout << "======================> done dumping parameter list. <================"<<std::endl;
+
   // get the Mesh sublist
   Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("Mesh");
 

@@ -120,8 +120,8 @@ void MPC::cycle_driver () {
   bool cgns_output = mpc_parameter_list.isSublist("CGNS");
 #endif
 
-  const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",100000);
-  const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",1e+99);
+  const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",-1);
+  const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",-1);
 
   string gmv_mesh_filename_str;
   string gmv_data_filename_path_str;
@@ -294,7 +294,7 @@ void MPC::cycle_driver () {
       vizdump_cycle = iter;
       vizdump_time = S->get_time();
       
-      if (  vizdump_cycle % vizdump_cycle_freq   ==  0 ) {
+      if (  (vizdump_cycle_freq > 0) && (vizdump_cycle % vizdump_cycle_freq == 0) ) {
 	if (gmv_output) {
 	  cout << "Writing GMV file at cycle " << vizdump_cycle << endl;
 	  write_gmv_data(gmv_data_filename_path_str, 
@@ -306,7 +306,7 @@ void MPC::cycle_driver () {
 	  write_cgns_data(cgns_filename, iter);
 	}
 #endif	
-      } else if ( (vizdump_time + mpc_dT/1000.0) / vizdump_time_freq  > vizdump_time_count ) {
+      } else if ( (vizdump_time_freq > 0) && ((vizdump_time + mpc_dT/1000.0) / vizdump_time_freq  > vizdump_time_count) ) {
 	
 	vizdump_time_count ++;
 	
