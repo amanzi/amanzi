@@ -296,13 +296,13 @@ void MPC::cycle_driver () {
       
       if (  (vizdump_cycle_freq > 0) && (vizdump_cycle % vizdump_cycle_freq == 0) ) {
 	if (gmv_output) {
-	  cout << "Writing GMV file at cycle " << vizdump_cycle << endl;
+	  cout << "MPC: Writing GMV file at cycle " << vizdump_cycle << endl;
 	  write_gmv_data(gmv_data_filename_path_str, 
 			  gmv_mesh_filename_str, iter, 6);
 	}
 #ifdef ENABLE_CGNS
 	if (cgns_output) {
-	  cout << "Writing to CGNS file at cycle "<< vizdump_cycle << endl;
+	  cout << "MPC: Writing to CGNS file at cycle "<< vizdump_cycle << endl;
 	  write_cgns_data(cgns_filename, iter);
 	}
 #endif	
@@ -311,13 +311,13 @@ void MPC::cycle_driver () {
 	vizdump_time_count ++;
 	
 	if (gmv_output) {
-	  cout << "Writing GMV file at time T=" << vizdump_time << endl;
+	  cout << "MPC: Writing GMV file at time T=" << vizdump_time << endl;
 	  write_gmv_data(gmv_data_filename_path_str, 
 			  gmv_mesh_filename_str, iter, 6);
 	}
 #ifdef ENABLE_CGNS
 	if (cgns_output) {
-	  cout << "Writing to CGNS file at time T=" << vizdump_time << endl;
+	  cout << "MPC: Writing to CGNS file at time T=" << vizdump_time << endl;
 	  write_cgns_data(cgns_filename, iter);
 	}
 #endif

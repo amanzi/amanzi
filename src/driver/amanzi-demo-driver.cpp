@@ -98,9 +98,15 @@ int main(int argc, char *argv[])
       
       string filename = moab_mesh_parameter_list.get<string>("Exodus file name");
 
+      // shut up moab library..
+      std::streambuf *store_buf = std::cout.rdbuf();
+      std::cout.rdbuf(0);
+
       Teuchos::RCP<Mesh_maps_moab> MMM = 
       	Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));      
       
+      std::cout.rdbuf(store_buf);
+
       mesh = MMM;
 
     }
