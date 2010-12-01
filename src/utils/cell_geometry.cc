@@ -1,5 +1,8 @@
 #include "cell_geometry.hh"
+#include "cell_topology.hh"
 #include <math.h>
+
+using namespace cell_topology;
 
 namespace cell_geometry {
 
@@ -92,6 +95,12 @@ namespace cell_geometry {
   void quad_face_normal(const Epetra_SerialDenseMatrix &x, double result[])
   { quad_face_normal(x[0], x[1], x[2], x[3], result); }
 
+  void quad_face_normal(double *x, double result[])
+  {
+    Epetra_SerialDenseMatrix X(View, x, 3, 3, 4);
+    quad_face_normal(X, result);
+  }
+
 
   double quad_face_area(const double x1[], const double x2[], const double x3[], const double x4[])
   {
@@ -152,4 +161,57 @@ namespace cell_geometry {
     quad_face_normal(x[0], x[3], x[2], x[1], a[4]);
     quad_face_normal(x[4], x[5], x[6], x[7], a[5]);
   }
+  
+  
+  // Correct for hexes with planar faces (at least).
+  void hex_centroid (const Epetra_SerialDenseMatrix &x, double c[])
+  {
+    double hvol = 0.0;
+    for (int i = 0; i < 3; ++i) c[i] = 0.0;
+    
+    for (int j = 0; j < 10; ++j) {
+      int *tvert = HexTetVert[j];
+      double tvol = tet_volume(x[tvert[0]], x[tvert[1]], x[tvert[2]], x[tvert[3]]);
+      hvol += tvol;
+      for (int i = 0; i < 3; ++i) {
+        double s = 0.0;
+        for (int k = 0; k < 4; ++k) s += x[tvert[k]][i];
+        c[i] += tvol * s;
+      }
+    }
+    
+    hvol = 0.5 * hvol;
+    for (int i = 0; i < 3; ++i) c[i] = c[i] / (8 * hvol);
+  }
+  
+  // Correct only for planar faces.
+  void quad_face_centroid(const Epetra_SerialDenseMatrix &x, double c[])
+  {
+    double a0 = tri_face_area(x[0], x[1], x[3]);
+    double a2 = tri_face_area(x[2], x[3], x[1]);
+    
+    double c0[3], c2[3];
+    tri_face_centroid(x[0], x[1], x[3], c0);
+    tri_face_centroid(x[2], x[3], x[1], c2);
+    
+    for (int i = 0; i < 3; ++i) c[i] = (a0*c0[i] + a2*c2[i]) / (a0 + a2);
+  }
+  
+  double tri_face_area(const double x0[], const double x1[], const double x2[])
+  {
+    double v1[3], v2[3];
+    for (int i = 0; i < 3; ++i) {
+      v1[i] = x1[i] - x0[i];
+      v2[i] = x2[i] - x0[i];
+    }
+    double a[3];
+    cross_product(v1, v2, a);
+    return (0.5 * vector_length(a, 3));
+  }
+  
+  void tri_face_centroid(const double x0[], const double x1[], const double x2[], double c[])
+  {
+    for (int i = 0; i < 3; ++i) c[i] = (x0[i] + x1[i] + x2[i]) / 3.0;
+  }
+
 }
