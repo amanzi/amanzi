@@ -200,7 +200,7 @@ set_property(TARGET exodusii PROPERTY IMPORTED_LOCATION ${EXODUSII_LIBRARY})
 # target_link_libraries(exodusii netcdf)
 
 # Instead, we create a list of all the libraries required for ExodusII to link.
-set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z) 
+set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z curl) 
 
 
 
