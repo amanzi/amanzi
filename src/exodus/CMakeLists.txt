@@ -39,7 +39,7 @@ if (BUILD_TESTS)
                  test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
   target_link_libraries(test_pexodus_2 exodus unittest++ 
                         ${Trilinos_LIBRARIES} ${EXODUS_LIBS_ALL}
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
   add_test(exodus_parallel_2proc 
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 2 test_pexodus_2)
            
@@ -47,7 +47,7 @@ if (BUILD_TESTS)
                  test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
   target_link_libraries(test_pexodus_3 exodus unittest++ 
                         ${Trilinos_LIBRARIES} ${EXODUS_LIBS_ALL}
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
   add_test(exodus_parallel_3proc 
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 3 test_pexodus_3)
            
@@ -55,7 +55,7 @@ if (BUILD_TESTS)
                  test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
   target_link_libraries(test_pexodus_4 exodus unittest++ 
                         ${Trilinos_LIBRARIES} ${EXODUS_LIBS_ALL}
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
   add_test(exodus_parallel_4proc 
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 4 test_pexodus_4 )
            
