@@ -200,7 +200,7 @@ set_property(TARGET exodusii PROPERTY IMPORTED_LOCATION ${EXODUSII_LIBRARY})
 # target_link_libraries(exodusii netcdf)
 
 # Instead, we create a list of all the libraries required for ExodusII to link.
-set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z) 
+set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z curl) 
 
 
 
@@ -237,7 +237,7 @@ add_library(moab STATIC IMPORTED)
 set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
 
 # create a list of all the libraries required for MOAB to link.
-set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z)
+set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z curl)
 
 
 
@@ -290,7 +290,12 @@ if(NOT Trilinos_FOUND)
   message(FATAL_ERROR "Error: could not find Trilinos\n"
           "Try defining Trilinos_DIR: (-D Trilinos_DIR:FILEPATH=<Trilinos_install_prefix>)")
 endif()
-list(APPEND Trilinos_LIBRARIES m lapack blas)
+#list(APPEND Trilinos_LIBRARIES m lapack blas)
+#  I have commented out the above line because I believe this is the 
+#  incorrect way to do things.  Instead, targets that must link with 
+#  Trilinos should add ${Trilinos_TPL_LIBRARIES} when invoking  
+#  target_link_libraries().  This is the usage recommended by the 
+#  Trilinos team.  See http://trilinos.sandia.gov/Finding_Trilinos.txt  --RTM
 list(APPEND Trilinos_DIRS /usr/lib)
 list(APPEND Trilinos_INCLUDE_DIRS /usr/include)
 

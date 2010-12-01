@@ -20,10 +20,10 @@ link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
   add_executable(test_gmv_writer test/Main.cc test/test_gmv.cc)
-  target_link_libraries(test_gmv_writer utils gmv unittest++ ${MPI_LIBS_ALL})
+  target_link_libraries(test_gmv_writer utils gmv unittest++ ${Trilinos_TPL_LIBRARIES})
   if (ENABLE_CGNS)
       add_executable(test_cgns_writer test/Main.cc test/test_cgns.cc)
-      target_link_libraries(test_cgns_writer utils unittest++ ${MPI_LIBS_ALL} ${CGNS_LIBRARY} ${HDF5_LIBS_ALL})
+      target_link_libraries(test_cgns_writer utils unittest++ ${CGNS_LIBRARY} ${HDF5_LIBS_ALL} ${Trilinos_TPL_LIBRARIES})
   endif()
 endif()
 

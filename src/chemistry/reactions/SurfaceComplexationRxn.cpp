@@ -1,12 +1,14 @@
 #include <iomanip>
+#include <sstream>
 
+#include "ChemistryException.hpp"
 #include "SurfaceComplexationRxn.hpp"
 
 SurfaceComplexationRxn::SurfaceComplexationRxn()
-                         : surface_site_(NULL),
-                           use_newton_solve_(false)
+    : use_newton_solve_(false)
                   
 {
+  surface_site_.clear();
   surface_complexes_.clear();
   dSx_dmi_.clear();
 } 
@@ -25,8 +27,20 @@ SurfaceComplexationRxn::SurfaceComplexationRxn(
   } 
 }
 
+SurfaceComplexationRxn::SurfaceComplexationRxn(SurfaceSite surface_sites)
+{
+  // surface site
+  surface_site_.push_back(surface_sites);
+  surface_complexes_.clear();
+}
+
 SurfaceComplexationRxn::~SurfaceComplexationRxn() 
 {
+}
+
+void SurfaceComplexationRxn::AddSurfaceComplex(SurfaceComplex surface_complex)
+{
+  surface_complexes_.push_back(surface_complex);
 }
 
 void SurfaceComplexationRxn::SetNewtonSolveFlag(void) 
@@ -47,7 +61,10 @@ void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies)
   const double site_density = (surface_site_[0]).SiteDensity();
 
   bool one_more = false;
-  while(true) {
+  int max_iterations = 5000;
+  int iterations = 0;
+  while(iterations < max_iterations) {
+    iterations++;
     // Initialize total to free site concentration
     double free_site_concentration = (surface_site_[0]).free_site_concentration();
     double total = free_site_concentration;
@@ -90,7 +107,12 @@ void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies)
     (surface_site_[0]).set_free_site_concentration(free_site_concentration);
 
   }
-
+  if (iterations == max_iterations) {
+    std::ostringstream error_stream;
+    error_stream << "ERROR: SurfaceComplexationRxn::Update(): \n";
+    error_stream << "ERROR: loop reached max_iterations: " << iterations << std::endl;
+    throw ChemistryException(error_stream.str());   
+  }
   
 } // end Update()
 
@@ -156,6 +178,31 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
 
 } // end AddContributionToDTotal()
 
+void SurfaceComplexationRxn::DisplaySite(void) const
+{
+  std::vector<SurfaceSite>::const_iterator site;
+  for (site = surface_site_.begin(); site != surface_site_.end(); site++) {
+    site->Display();
+  }
+} // end DisplaySite()
+
+void SurfaceComplexationRxn::DisplayComplexes(void) const
+{
+  std::vector<SurfaceComplex>::const_iterator complex;
+  for (complex = surface_complexes_.begin(); 
+       complex != surface_complexes_.end(); complex++) {
+    complex->Display();
+  }
+} // end DisplayComplexes()
+
 void SurfaceComplexationRxn::Display(void) const
 {
+  DisplaySite();
+  DisplayComplexes();
 } // end Display()
+
+void SurfaceComplexationRxn::display(void) const
+{
+  DisplaySite();
+  DisplayComplexes();
+} // end display()
