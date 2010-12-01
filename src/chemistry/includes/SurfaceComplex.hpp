@@ -50,7 +50,7 @@ class SurfaceComplex {
   void display(void) const;
   void Display(void) const;
   void DisplayResultsHeader(void) const;
-  void SurfaceComplex::DisplayResults(void) const;
+  void DisplayResults(void) const;
 
   void set_name(SpeciesName name) { this->name_ = name; }
   void set_identifier(SpeciesId i) { this->identifier_ = i; }

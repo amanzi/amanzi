@@ -137,31 +137,36 @@ int main(int argc, char **argv) {
         break;
       }
       case 7: {
-        // fbasin, initial condition, no minerals
-        fbasin_initial_speciation(verbosity,
-                                  &thermo_database_file,
-                                  &activity_model_name,
-                                  &components);
+        // fbasin 'initial' condition
+        fbasin_initial(verbosity,
+                       &thermo_database_file,
+                       &activity_model_name,
+                       &components,
+                       &delta_time,
+                       &num_time_steps,
+                       &output_interval);
         break;
       }
       case 8: {
-        // fbasin, initial condition, mineral saturation state, no kinetics
-        fbasin_initial_speciation(verbosity,
-                                  &thermo_database_file,
-                                  &activity_model_name,
-                                  &components);
-        fbasin_minerals(verbosity,
-                        &thermo_database_file,
-                        &activity_model_name,
-                        &components);
+        // fbasin 'infiltration' condition
+        fbasin_infiltration(verbosity,
+                            &thermo_database_file,
+                            &activity_model_name,
+                            &components,
+                            &delta_time,
+                            &num_time_steps,
+                            &output_interval);
         break;
       }
       case 9: {
-        // fbasin, initial condition, mineral kinetics
-        fbasin_initial_all(verbosity,
-                           &thermo_database_file,
-                           &activity_model_name,
-                           &components);
+        // fbasin 'source' condition
+        fbasin_source(verbosity,
+                      &thermo_database_file,
+                      &activity_model_name,
+                      &components,
+                      &delta_time,
+                      &num_time_steps,
+                      &output_interval);
         break;
       }
       case 10: {
@@ -195,6 +200,39 @@ int main(int argc, char **argv) {
                              &delta_time,
                              &num_time_steps,
                              &output_interval);
+        break;
+      }
+      case 13: {
+        // uo2_5_component 'initial' condition
+        uo2_5_component_initial(verbosity,
+                                &thermo_database_file,
+                                &activity_model_name,
+                                &components,
+                                &delta_time,
+                                &num_time_steps,
+                                &output_interval);
+        break;
+      }
+      case 14: {
+        // uo2_5_component 'outlet' condition
+        uo2_5_component_outlet(verbosity,
+                               &thermo_database_file,
+                               &activity_model_name,
+                               &components,
+                               &delta_time,
+                               &num_time_steps,
+                               &output_interval);
+        break;
+      }
+      case 15: {
+        // uo2_5_component 'source' condition
+        uo2_5_component_source(verbosity,
+                               &thermo_database_file,
+                               &activity_model_name,
+                               &components,
+                               &delta_time,
+                               &num_time_steps,
+                               &output_interval);
         break;
       }
       default: {
@@ -346,11 +384,15 @@ int CommandLineOptions(int argc, char **argv,
         std::cout << "             4: larger carbonate speciation, debye-huckel" << std::endl;
         std::cout << "             5: calcite kinetics, TST rate law" << std::endl;
         std::cout << "             6: Na+ / Ca++ ion exchange" << std::endl;
-        std::cout << "             7: fbasin initial condition" << std::endl;
-        std::cout << "             8: fbasin initial condition with minerals" << std::endl;
-        std::cout << "             9: fbasin initial condition with mineral kinetics" << std::endl;
+        std::cout << "             7: fbasin 17 component initial condition" << std::endl;
+        std::cout << "             8: fbasin 17 component infiltration condition" << std::endl;
+        std::cout << "             9: fbasin 17 component source condition" << std::endl;
         std::cout << "            10: calcite kinetics with large time steps" << std::endl;
         std::cout << "            11: surface complexation" << std::endl;
+        std::cout << "            12: full surface complexation" << std::endl;
+        std::cout << "            13: UO2 5 component initial condition" << std::endl;
+        std::cout << "            14: UO2 5 component source condition" << std::endl;
+        std::cout << "            15: UO2 5 component outlet condition" << std::endl;
         std::cout << std::endl;
         std::cout << "    -v integer" << std::endl;
         std::cout << "         verbose output:" << std::endl;
@@ -467,6 +509,7 @@ void surface_complexation(const Verbosity& verbosity,
         *output_interval = 1;
 }  // end surface_complexation()
 
+// TODO: test 7 has been updated, this is now a duplicate 
 void surface_complexation_full(const Verbosity& verbosity,
                       std::string* thermo_database_file,
                       std::string* activity_model_name,
@@ -479,7 +522,7 @@ void surface_complexation_full(const Verbosity& verbosity,
         if (verbosity == kTerse) {
           std::cout << "Running surface complexation problem." << std::endl;
         }
-        *thermo_database_file = "input/fbasin-minerals-surface-complexation.bgd";
+        *thermo_database_file = "input/fbasin-17.bgd";
         *activity_model_name = ActivityModelFactory::debye_huckel;
         components->total.push_back(1.0000E-05);  // Na+
         components->total.push_back(1.0000E-05);  // Ca++
@@ -529,74 +572,317 @@ void surface_complexation_full(const Verbosity& verbosity,
         components->minerals.push_back(0.0);  // Calcite
         components->minerals.push_back(0.0);  // Chalcedony
         // sorbed components
-        components->total_sorbed.resize(components->total.size(),0.);
-        *delta_time = 30.*24.*3600.;
+        components->total_sorbed.resize(components->total.size(), 0.0);
+        *delta_time = 30.0 * 24.0 * 3600.0;
         *num_time_steps = 12;
         *output_interval = 1;
 }  // end surface_complexation_full()
 
-void fbasin_initial_all(const Verbosity& verbosity,
-                        std::string* thermo_database_file,
-                        std::string* activity_model_name,
-                        Beaker::BeakerComponents* components)
+/*******************************************************************************
+ **
+ ** fbasin UO2 17 component problem
+ **
+ ******************************************************************************/
+void fbasin_initial(const Verbosity& verbosity,
+                    std::string* thermo_database_file,
+                    std::string* activity_model_name,
+                    Beaker::BeakerComponents* components,
+                    double* delta_time,
+                    int* num_time_steps,
+                    int* output_interval)
 {
-  fbasin_initial_speciation(verbosity, thermo_database_file,
-                            activity_model_name, components);
-  fbasin_minerals(verbosity, thermo_database_file,
-                  activity_model_name, components);
+  if (verbosity == kTerse) {
+    std::cout << "Running fbasin problem, \'initial\' conditions." << std::endl;
+  }
+  *thermo_database_file = "input/fbasin-17.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *delta_time = 30.0 * 24.0 * 3600.0;
+  *num_time_steps = 12;
+  *output_interval = 1;
 
-  *thermo_database_file = "input/fbasin-initial-mineral-kinetics.bgd";
-}  // end fbasin_initial_full
+  fbasin_aqueous_initial(components);
+  fbasin_free_ions(components);
+  fbasin_minerals(components);
+  fbasin_sorbed(components);
+}  // end fbasin_initial
 
-void fbasin_initial_speciation(const Verbosity& verbosity,
-                               std::string* thermo_database_file,
-                               std::string* activity_model_name,
-                               Beaker::BeakerComponents* components)
+void fbasin_infiltration(const Verbosity& verbosity,
+                         std::string* thermo_database_file,
+                         std::string* activity_model_name,
+                         Beaker::BeakerComponents* components,
+                         double* delta_time,
+                         int* num_time_steps,
+                         int* output_interval)
 {
-        if (verbosity == kTerse) {
-          std::cout << "Running fbasin speciation problem, \'initial\' conditions." << std::endl;
-        }
-        *thermo_database_file = "input/fbasin-initial.bgd";
-        *activity_model_name = ActivityModelFactory::debye_huckel;
-        components->total.push_back(1.0000E-05);  // Na+
-        components->total.push_back(1.0000E-05);  // Ca++
-        components->total.push_back(8.4757E-08);  // Fe++
-        components->total.push_back(1.9211E-04);  // K+
-        components->total.push_back(6.6779E-09);  // Al+++
-        components->total.push_back(1.2683E-05);  // H+
-        components->total.push_back(1.0000E-05);  // N2(aq)
-        components->total.push_back(1.0000E-05);  // NO3-
-        components->total.push_back(2.0999E-04);  // HCO3-
-        components->total.push_back(1.0000E-05);  // Cl-
-        components->total.push_back(1.0000E-06);  // SO4--
-        components->total.push_back(1.0000E-06);  // HPO4--
-        components->total.push_back(1.0000E-06);  // F-
-        components->total.push_back(1.8703E-04);  // SiO2(aq)
-        components->total.push_back(1.0000E-15);  // UO2++
-        components->total.push_back(2.5279E-04);  // O2(aq)
-        components->total.push_back(1.0000E-15);  // Tracer
+  if (verbosity == kTerse) {
+    std::cout << "Running fbasin problem, \'infiltration\' conditions." << std::endl;
+  }
+  *thermo_database_file = "input/fbasin-17.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *delta_time = 30.0 * 24.0 * 3600.0;
+  *num_time_steps = 12;
+  *output_interval = 1;
 
-}  // end fbasin_initial_speciation()
+  fbasin_aqueous_infiltration(components);
+  fbasin_free_ions(components);
+  fbasin_minerals(components);
+  fbasin_sorbed(components);
+}  // end fbasin_infiltration
 
-void fbasin_minerals(const Verbosity& verbosity,
-                               std::string* thermo_database_file,
-                               std::string* activity_model_name,
-                               Beaker::BeakerComponents* components)
+void fbasin_source(const Verbosity& verbosity,
+                   std::string* thermo_database_file,
+                   std::string* activity_model_name,
+                   Beaker::BeakerComponents* components,
+                   double* delta_time,
+                   int* num_time_steps,
+                   int* output_interval)
 {
-        if (verbosity == kTerse) {
-          std::cout << "Adding fbasin kinetic minerals." << std::endl;
-        }
-        *thermo_database_file = "input/fbasin-initial-minerals.bgd";
-        components->minerals.push_back(0.0);  // Gibbsite
-        components->minerals.push_back(0.21);  // Quartz
-        components->minerals.push_back(0.15);  // K-Feldspar
-        components->minerals.push_back(0.0);  // Jurbanite
-        components->minerals.push_back(0.1);  // Ferrihydrite
-        components->minerals.push_back(0.15);  // Kaolinite
-        components->minerals.push_back(0.0);  // Schoepite
-        components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
-        components->minerals.push_back(0.0);  // Soddyite
-        components->minerals.push_back(0.0);  // Calcite
-        components->minerals.push_back(0.0);  // Chalcedony
+  if (verbosity == kTerse) {
+    std::cout << "Running fbasin problem, \'source\' conditions." << std::endl;
+  }
+  *thermo_database_file = "input/fbasin-17.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *delta_time = 30.0 * 24.0 * 3600.0;
+  *num_time_steps = 12;
+  *output_interval = 1;
+
+  fbasin_aqueous_source(components);
+  fbasin_free_ions(components);
+  fbasin_minerals(components);
+  fbasin_sorbed(components);
+}  // end fbasin_source
+
+void fbasin_aqueous_initial(Beaker::BeakerComponents* components)
+{
+  components->total.push_back(1.0000E-05);  // Na+
+  components->total.push_back(1.0000E-05);  // Ca++
+  components->total.push_back(8.4757E-08);  // Fe++
+  components->total.push_back(1.9211E-04);  // K+
+  components->total.push_back(6.6779E-09);  // Al+++
+  components->total.push_back(1.2683E-05);  // H+
+  components->total.push_back(1.0000E-05);  // N2(aq)
+  components->total.push_back(1.0000E-05);  // NO3-
+  components->total.push_back(2.0999E-04);  // HCO3-
+  components->total.push_back(1.0000E-05);  // Cl-
+  components->total.push_back(1.0000E-06);  // SO4--
+  components->total.push_back(1.0000E-06);  // HPO4--
+  components->total.push_back(1.0000E-06);  // F-
+  components->total.push_back(1.8703E-04);  // SiO2(aq)
+  components->total.push_back(1.0000E-15);  // UO2++
+  components->total.push_back(2.5279E-04);  // O2(aq)
+  components->total.push_back(1.0000E-15);  // Tracer
+}  // end fbasin_aqueous_initial
+
+void fbasin_aqueous_infiltration(Beaker::BeakerComponents* components)
+{
+  // constraint: infiltration
+  components->total.push_back(1.3132E-04);  // Na+
+  components->total.push_back(1.0000E-05);  // Ca++
+  components->total.push_back(1.0000E-12);  // Fe++
+  components->total.push_back(1.0000E-06);  // K+
+  components->total.push_back(1.0000E-12);  // Al+++
+  components->total.push_back(1.0716E-05);  // H+
+  components->total.push_back(1.0000E-05);  // N2(aq)
+  components->total.push_back(1.0000E-05);  // NO3-
+  components->total.push_back(6.0081E-05);  // HCO3-
+  components->total.push_back(1.0000E-05);  // Cl-
+  components->total.push_back(1.0000E-06);  // SO4--
+  components->total.push_back(1.0000E-06);  // HPO4--
+  components->total.push_back(7.8954E-05);  // F-
+  components->total.push_back(1.0000E-05);  // SiO2(aq)
+  components->total.push_back(1.0000E-15);  // UO2++
+  components->total.push_back(2.5277E-04);  // O2(aq)
+  components->total.push_back(1.0000E-15);  // Tracer
+}  // end fbasin_aqueous_infiltration
+
+void fbasin_aqueous_source(Beaker::BeakerComponents* components)
+{
+  // constraint: source
+  components->total.push_back(3.4363E-02);  // Na+
+  components->total.push_back(1.2475E-05);  // Ca++
+  components->total.push_back(3.0440E-05);  // Fe++
+  components->total.push_back(1.7136E-05);  // K+
+  components->total.push_back(2.8909E-05);  // Al+++
+  components->total.push_back(3.6351E-03);  // H+
+  components->total.push_back(1.3305E-03);  // N2(aq)
+  components->total.push_back(3.4572E-02);  // NO3-
+  components->total.push_back(2.1830E-03);  // HCO3-
+  components->total.push_back(3.3848E-05);  // Cl-
+  components->total.push_back(6.2463E-04);  // SO4--
+  components->total.push_back(7.1028E-05);  // HPO4--
+  components->total.push_back(7.8954E-05);  // F-
+  components->total.push_back(2.5280E-04);  // SiO2(aq)
+  components->total.push_back(3.5414E-05);  // UO2++
+  components->total.push_back(2.6038E-04);  // O2(aq)
+  components->total.push_back(3.5414E-05);  // Tracer
+}  // end fbasin_aqueous_source
+
+void fbasin_free_ions(Beaker::BeakerComponents* components)
+{
+  // free ion concentrations (better initial guess)
+  components->free_ion.push_back(9.9969E-06);  // Na+
+  components->free_ion.push_back(9.9746E-06);  // Ca++
+  components->free_ion.push_back(2.2405E-18);  // Fe++
+  components->free_ion.push_back(1.8874E-04);  // K+
+  components->free_ion.push_back(5.2970E-16);  // Al+++
+  components->free_ion.push_back(3.2759E-08);  // H+
+  components->free_ion.push_back(1.0000E-05);  // N2(aq)
+  components->free_ion.push_back(1.0000E-05);  // NO3-
+  components->free_ion.push_back(1.9282E-04);  // HCO3-
+  components->free_ion.push_back(9.9999E-06);  // Cl-
+  components->free_ion.push_back(9.9860E-07);  // SO4--
+  components->free_ion.push_back(9.9886E-07);  // HPO4--
+  components->free_ion.push_back(1.0000E-06);  // F-
+  components->free_ion.push_back(1.8703E-04);  // SiO2(aq)
+  components->free_ion.push_back(1.7609E-20);  // UO2++
+  components->free_ion.push_back(2.5277E-04);  // O2(aq)
+  components->free_ion.push_back(1.0000E-15);  // Tracer
+}  // end fbasin_free_ions()
+
+void fbasin_minerals(Beaker::BeakerComponents* components)
+{
+  components->minerals.push_back(0.0);  // Gibbsite
+  components->minerals.push_back(0.21);  // Quartz
+  components->minerals.push_back(0.15);  // K-Feldspar
+  components->minerals.push_back(0.0);  // Jurbanite
+  components->minerals.push_back(0.1);  // Ferrihydrite
+  components->minerals.push_back(0.15);  // Kaolinite
+  components->minerals.push_back(0.0);  // Schoepite
+  components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
+  components->minerals.push_back(0.0);  // Soddyite
+  components->minerals.push_back(0.0);  // Calcite
+  components->minerals.push_back(0.0);  // Chalcedony
 
 }  // end fbasin_minerals()
+
+void fbasin_sorbed(Beaker::BeakerComponents* components)
+{
+  components->total_sorbed.resize(components->total.size(), 0.0);
+}  // end fbasin_sorbed
+
+
+/*******************************************************************************
+ **
+ ** fbasin UO2 5 component problem
+ **
+ ******************************************************************************/
+void uo2_5_component_initial(const Verbosity& verbosity,
+                    std::string* thermo_database_file,
+                    std::string* activity_model_name,
+                    Beaker::BeakerComponents* components,
+                    double* delta_time,
+                    int* num_time_steps,
+                    int* output_interval)
+{
+  if (verbosity == kTerse) {
+    std::cout << "Running uo2_5_component problem, \'initial\' conditions." << std::endl;
+  }
+  *thermo_database_file = "input/uo2-5-component.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *delta_time = 30.0 * 24.0 * 3600.0;
+  *num_time_steps = 12;
+  *output_interval = 1;
+
+  uo2_5_component_aqueous_initial(components);
+  uo2_5_component_free_ions(components);
+  uo2_5_component_minerals(components);
+  uo2_5_component_sorbed(components);
+}  // end uo2_5_component_initial
+
+void uo2_5_component_outlet(const Verbosity& verbosity,
+                         std::string* thermo_database_file,
+                         std::string* activity_model_name,
+                         Beaker::BeakerComponents* components,
+                         double* delta_time,
+                         int* num_time_steps,
+                         int* output_interval)
+{
+  if (verbosity == kTerse) {
+    std::cout << "Running uo2_5_component problem, \'outlet\' conditions." << std::endl;
+  }
+  *thermo_database_file = "input/uo2-5-component.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *delta_time = 30.0 * 24.0 * 3600.0;
+  *num_time_steps = 12;
+  *output_interval = 1;
+
+  uo2_5_component_aqueous_outlet(components);
+  uo2_5_component_free_ions(components);
+  uo2_5_component_minerals(components);
+  uo2_5_component_sorbed(components);
+}  // end uo2_5_component_outlet
+
+void uo2_5_component_source(const Verbosity& verbosity,
+                   std::string* thermo_database_file,
+                   std::string* activity_model_name,
+                   Beaker::BeakerComponents* components,
+                   double* delta_time,
+                   int* num_time_steps,
+                   int* output_interval)
+{
+  if (verbosity == kTerse) {
+    std::cout << "Running uo2_5_component problem, \'source\' conditions." << std::endl;
+  }
+  *thermo_database_file = "input/uo2-5-component.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *delta_time = 30.0 * 24.0 * 3600.0;
+  *num_time_steps = 12;
+  *output_interval = 1;
+
+  uo2_5_component_aqueous_source(components);
+  uo2_5_component_free_ions(components);
+  uo2_5_component_minerals(components);
+  uo2_5_component_sorbed(components);
+}  // end uo2_5_component_source
+
+void uo2_5_component_aqueous_initial(Beaker::BeakerComponents* components)
+{
+  components->total.push_back(6.5874E-09);  // Al+++
+  components->total.push_back(-3.1408E-07);  // H+
+  components->total.push_back(1.0000E-06);  // HPO4--
+  components->total.push_back(1.8703E-04);  // SiO2(aq)
+  components->total.push_back(1.0000E-15);  // UO2++
+}  // end uo2_5_component_aqueous_initial
+
+void uo2_5_component_aqueous_outlet(Beaker::BeakerComponents* components)
+{
+  // constraint: outlet
+  components->total.push_back(1.0000E-12);  // Al+++
+  components->total.push_back(-1.1407E-09);  // H+
+  components->total.push_back(1.0000E-06);  // HPO4--
+  components->total.push_back(1.0000E-05);  // SiO2(aq)
+  components->total.push_back(1.0000E-15);  // UO2++
+}  // end uo2_5_component_aqueous_outlet
+
+void uo2_5_component_aqueous_source(Beaker::BeakerComponents* components)
+{
+  // constraint: source
+  components->total.push_back(2.8909E-05);  // Al+++
+  components->total.push_back(1.2786E-03);  // H+
+  components->total.push_back(7.1028E-05);  // HPO4--
+  components->total.push_back(2.5280E-04);  // SiO2(aq)
+  components->total.push_back(3.5414E-05);  // UO2++
+}  // end uo2_5_component_aqueous_source
+
+void uo2_5_component_free_ions(Beaker::BeakerComponents* components)
+{
+  // free ion concentrations (better initial guess)
+  components->free_ion.push_back(5.2970E-16);  // Al+++
+  components->free_ion.push_back(3.2759E-08);  // H+
+  components->free_ion.push_back(9.9886E-07);  // HPO4--
+  components->free_ion.push_back(1.8703E-04);  // SiO2(aq)
+  components->free_ion.push_back(1.7609E-20);  // UO2++
+}  // end uo2_5_component_free_ions()
+
+void uo2_5_component_minerals(Beaker::BeakerComponents* components)
+{
+  components->minerals.push_back(0.15);  // Kaolinite
+  components->minerals.push_back(0.21);  // Quartz
+  components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
+}  // end uo2_5_component_minerals()
+
+void uo2_5_component_sorbed(Beaker::BeakerComponents* components)
+{
+  components->total_sorbed.resize(components->total.size(), 0.0);
+}  // end uo2_5_component_sorbed
+
