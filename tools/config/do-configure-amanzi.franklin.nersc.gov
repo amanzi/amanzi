@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# This is the script I use to configure amanzi on my
+# Ubuntu 10.04 machine. 
+#
+# I have the followig packages installed from the 
+# standard repositories (plus their dependencies):
+#
+# mpi-default-dev
+# mpi-default-bin
+# libhdf5-openmpi-dev
+# libnetcdf-dev
+# netcdf-bin
+# libunittest++-dev
+#
+# Then I installed ExodusII, MOAB, and Trilinos.
+#
+# Note that I have also recompiled the netcdf ubuntu 
+# packages according to the notes in the ExodusII 
+# readme. I will upload them to our WIKI, you can
+# download them and install them by hand with 
+# dpkg -i
+#
+#
+#
+# If cmake is unable to find an include file because it is in an unusual
+# place and not PKGNAME_DIR/include, then you can add a line to this
+# script specifying PKGNAME_INCLUDE_DIR like so
+#
+#  -D Curl_INCLUDE_DIR:FILEPATH=/usr/local/lib/cmcurl/src/incs
+#
+# You can similarly force it to find a library in a particular location
+# by specifying PKGNAME_LIB_DIR
+#
+# Note that PKGNAME must be specified EXACTLY as it was specified for 
+# the PKGNAME_DIR variable, i.e, if the script uses Curl_DIR, then
+# the additional path has to be Curl_INCLUDE_DIR and not CURL_INCLUDE_DIR
+#
+# Markus Berndt (berndt@lanl.gov)
+# Rao Garimella (rao@lanl.gov)
+
+
+rm -f CMakeCache.txt
+
+SOURCE=$HOME/ASCEM-Code/amanzi/src
+
+# modify the paths that point to the location of the
+# installation directories below
+
+/usr/common/usg/cmake/2.8.2/bin/cmake \
+  -D CMAKE_CXX_COMPILER:FILEPATH="CC" \
+  -D CMAKE_C_COMPILER:FILEPATH="cc" \
+  -D PREFER_STATIC_LIBRARIES:BOOL=ON \
+  -D MPI_EXEC:FILEPATH=aprun \
+  -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \
+  -D MPI_EXEC_MAX_NUMPROCS:STRING=4 \
+  -D HDF5_DIR:FILEPATH=$CRAY_HDF5_DIR/hdf5-gnu \
+  -D NetCDF_DIR:FILEPATH=$NETCDF_DIR \
+  -D ExodusII_DIR:FILEPATH=$EXODUSII_DIR \
+  -D MOAB_DIR:FILEPATH=$MOAB_DIR \
+  -D Trilinos_DIR:FILEPATH=$TRILINOS_DIR \
+  -D UnitTest_DIR:FILEPATH=$UnitTestplusplus_DIR \
+  -D UnitTest_INCLUDE_DIR:FILEPATH=$UnitTestplusplus_INCLUDE_DIR \
+  ${SOURCE} 
+
+
