@@ -113,6 +113,10 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
 void AqueousEquilibriumComplex::display(void) const
 {
   std::cout << "    " << name() << " = ";
+  // TODO: uncomment and update test output
+//   if (h2o_stoichiometry_ > 0) {
+//     std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+//   }
   for (int i = 0; i < (int)species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
     if (i < (int)species_names_.size() - 1) {
@@ -129,6 +133,10 @@ void AqueousEquilibriumComplex::Display(void) const
 {
   std::cout << "    " << name() << " = " 
             << std::fixed << std::setprecision(3);
+  // TODO: uncomment and update test output
+//   if (h2o_stoichiometry_ > 0) {
+//     std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+//   }
   for (int i = 0; i < (int)species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
     if (i < (int)species_names_.size() - 1) {

@@ -11,15 +11,9 @@
 
 #include "AztecOO.h"
 
-#include "Mesh_maps_simple.hh"
-//#include "DiffusionMatrix.hpp"
-//#include "DiffusionPrecon.hpp"
 #include "DarcyProblem.hpp"
-//#include "DarcyMatvec.hpp"
-
 #include "cell_geometry.hh"
-
-#include "gmv_mesh.hh"
+//#include "Mesh_maps_simple.hh"
 
 #include <iostream>
 
@@ -165,19 +159,12 @@ struct problem_setup
     Epetra_Vector &p_solve = *(problem->CreateCellView(*solution));
     Epetra_Vector  p_error(problem->CellMap());
 
-    double xdata[24];
+    double xdata[24], xc[3];
     Epetra_SerialDenseMatrix x(View, xdata, 3, 3, 8);
 
     for (int j = 0; j < p_error.MyLength(); ++j) {
       mesh->cell_to_coordinates((unsigned int) j, xdata, xdata+24);
-      // Compute the cell centroid xc.
-      double xc[3];
-      for (int k = 0; k < 3; ++k) {
-        double s = 0.0;
-        for (int i = 0; i < 8; ++i) s += x(k,i);
-        xc[k] = s / 8.0;
-      }
-      // Evaluate the pressure error.
+      cell_geometry::hex_centroid(x, xc);
       p_error[j] = pressure(xc) - p_solve[j];
     }
   p_error.Norm2(&l2error);
@@ -189,19 +176,12 @@ struct problem_setup
     Epetra_Vector &p_solve = *(problem->CreateFaceView(*solution));
     Epetra_Vector  p_error(problem->FaceMap());
 
-    double xdata[12];
+    double xdata[12], xc[3];
     Epetra_SerialDenseMatrix x(View, xdata, 3, 3, 4);
 
     for (int j = 0; j < p_error.MyLength(); ++j) {
       mesh->face_to_coordinates((unsigned int) j, xdata, xdata+12);
-      // Compute the face centroid xc.
-      double xc[3];
-      for (int k = 0; k < 3; ++k) {
-        double s = 0.0;
-        for (int i = 0; i < 4; ++i) s += x(k,i);
-        xc[k] = s / 4.0;
-      }
-      // Evaluate the pressure error.
+      cell_geometry::quad_face_centroid(x, xc);
       p_error[j] = pressure(xc) - p_solve[j];
     }
   p_error.Norm2(&l2error);
@@ -263,11 +243,11 @@ SUITE(Simple_1D_Flow) {
     double error;
     cell_pressure_error(error);
     CHECK(error < 1.0e-8);
-    std::cout << "cell pressure error=" << error << std::endl;
+    //std::cout << "cell pressure error=" << error << std::endl;
 
     face_pressure_error(error);
     CHECK(error < 1.0e-8);
-    std::cout << "face pressure error=" << error << std::endl;
+    //std::cout << "face pressure error=" << error << std::endl;
   }
 
   TEST_FIXTURE(problem_setup, xg_p_p)
@@ -625,11 +605,11 @@ SUITE(Simple_1D_Flow) {
     double error;
     cell_pressure_error(error);
     CHECK(error < 1.0e-8);
-    std::cout << "cell pressure error=" << error << std::endl;
+    //std::cout << "cell pressure error=" << error << std::endl;
 
     face_pressure_error(error);
     CHECK(error < 1.0e-8);
-    std::cout << "face pressure error=" << error << std::endl;
+    //std::cout << "face pressure error=" << error << std::endl;
   }
 
 }
@@ -716,6 +696,8 @@ SUITE(Darcy_Velocity) {
     create_problem();
 
     // Set non-default model parameters before solve_problem().
+    problem->SetPermeability(2.0);
+    problem->SetFluidViscosity(2.0);
 
     solve_problem();
 
@@ -724,7 +706,7 @@ SUITE(Darcy_Velocity) {
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    std::cout << "error " << error << std::endl;
+    //std::cout << "error " << error << std::endl;
   }
 
 
@@ -736,6 +718,8 @@ SUITE(Darcy_Velocity) {
     set_bc(BACK,  "Pressure Constant", 0.0);
 
     create_problem();
+    problem->SetPermeability(2.0);
+    problem->SetFluidViscosity(2.0);
 
     // Set non-default model parameters before solve_problem().
 
@@ -746,7 +730,7 @@ SUITE(Darcy_Velocity) {
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    std::cout << "error " << error << std::endl;
+    //std::cout << "error " << error << std::endl;
   }
 
 
@@ -758,6 +742,8 @@ SUITE(Darcy_Velocity) {
     set_bc(TOP,    "Pressure Constant", 0.0);
 
     create_problem();
+    problem->SetPermeability(2.0);
+    problem->SetFluidViscosity(2.0);
 
     // Set non-default model parameters before solve_problem().
 
@@ -768,7 +754,88 @@ SUITE(Darcy_Velocity) {
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    std::cout << "error " << error << std::endl;
+    //std::cout << "error " << error << std::endl;
+  }
+
+
+  TEST_FIXTURE(problem_setup, Darcy_Velocity_X_Gravity)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(LEFT,  "Static Head", 1.0);
+    set_bc(RIGHT, "Static Head", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    problem->SetPermeability(2.0);
+    problem->SetFluidViscosity(2.0);
+    problem->SetFluidDensity(0.5);
+    double g[3] = {0.0, 0.0, -2.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Darcy velocity
+    double q[3] = { 1.0, 0.0, 0.0 };
+    double error;
+    darcy_velocity_error(q, error);
+    CHECK(error < 1.0e-8);
+    //std::cout << "error " << error << std::endl;
+  }
+
+
+  TEST_FIXTURE(problem_setup, Darcy_Velocity_Y_Gravity)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(FRONT, "Static Head", 1.0);
+    set_bc(BACK,  "Static Head", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    problem->SetPermeability(2.0);
+    problem->SetFluidViscosity(2.0);
+    problem->SetFluidDensity(0.5);
+    double g[3] = {0.0, 0.0, -2.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Darcy velocity
+    double q[3] = { 0.0, 1.0, 0.0 };
+    double error;
+    darcy_velocity_error(q, error);
+    CHECK(error < 1.0e-8);
+    //std::cout << "error " << error << std::endl;
+  }
+
+
+  TEST_FIXTURE(problem_setup, Darcy_Velocity_Z_Gravity)
+  {
+
+    // Set non-default BC before create_problem().
+    set_bc(BOTTOM, "Pressure Constant", 2.0);
+    set_bc(TOP,    "Pressure Constant", 0.0);
+
+    create_problem();
+
+    // Set non-default model parameters before solve_problem().
+    problem->SetPermeability(2.0);
+    problem->SetFluidViscosity(2.0);
+    problem->SetFluidDensity(0.5);
+    double g[3] = {0.0, 0.0, -2.0};
+    problem->SetGravity(g);
+
+    solve_problem();
+
+    // Darcy velocity
+    double q[3] = { 0.0, 0.0, 1.0 };
+    double error;
+    darcy_velocity_error(q, error);
+    CHECK(error < 1.0e-8);
+    //std::cout << "error " << error << std::endl;
   }
 
 }

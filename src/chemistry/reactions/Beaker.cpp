@@ -97,10 +97,12 @@ void Beaker::resize() {
   residual.resize(ncomp());
   prev_molal.resize(ncomp());
   total_.resize(ncomp());
-  // TODO: this should only be done if we are actually using sorption.
-  total_sorbed_.resize(ncomp());
-  for (unsigned int i = 0; i < total_sorbed_.size(); i++)
-    total_sorbed_[i] = 0.;
+  // TODO: FIXED? this should only be done if we are actually using sorption.
+  if (surfaceComplexationRxns_.size() > 0) {
+    total_sorbed_.resize(ncomp(), 0.0);
+    //for (unsigned int i = 0; i < total_sorbed_.size(); i++)
+    //  total_sorbed_[i] = 0.;
+  }
 
   delete J;
   J = new Block(ncomp());
@@ -177,12 +179,12 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
                  << ") do not match.\n";
   }
 
-  // this check is breaking things because total_sorbed is always
+  // FIXED? this check is breaking things because total_sorbed is always
   // resized in resize(), even if there is no sorption!
-//   if (this->total_sorbed().size() != components.total_sorbed.size()) {
-//     error = true;
-//     error_stream << "ERROR: total_sorbed.size and components.total_sorbed.size do not match.\n";
-//   }
+  if (this->total_sorbed().size() != components.total_sorbed.size()) {
+    error = true;
+    error_stream << "ERROR: total_sorbed.size and components.total_sorbed.size do not match.\n";
+  }
 
   if (error) {
     throw ChemistryException(error_stream.str(), 
@@ -1051,6 +1053,10 @@ void Beaker::Display(void) const
 
   DisplayIonExchangeComplexes();
 
+  DisplaySurfaceSites();
+
+  DisplaySurfaceComplexes();
+
   std::cout << "----------------------------------------------------------------------" 
             << std::endl;
   
@@ -1179,6 +1185,39 @@ void Beaker::DisplayIonExchangeComplexes(void) const
   }
 }  // end DisplayIonExchangeComplexes()
 
+void Beaker::DisplaySurfaceSites(void) const
+{
+  if (total_sorbed_.size() > 0) {
+    std::cout << "---- Surface Sites" << std::endl;
+    std::cout << std::setw(15) << "Species"
+              << std::setw(15) << "Site Density"
+              << std::endl;
+    std::vector<SurfaceComplexationRxn>::const_iterator s;
+    for (s = surfaceComplexationRxns_.begin();
+         s != surfaceComplexationRxns_.end(); s++) {
+      s->DisplaySite();
+    }  
+    std::cout << std::endl;
+  }
+}  // end DisplaySurfaceSites()
+
+void Beaker::DisplaySurfaceComplexes(void) const
+{
+  if (total_sorbed_.size() > 0) {
+    std::cout << "---- Surface Complexes" << std::endl;
+    std::cout << std::setw(12) << "Reaction"
+              << std::setw(38) << "log Keq"
+              << std::setw(10) << "charge"
+              << std::endl;
+    std::vector<SurfaceComplexationRxn>::const_iterator s;
+    for (s = surfaceComplexationRxns_.begin();
+         s != surfaceComplexationRxns_.end(); s++) {
+      s->DisplayComplexes();
+    }  
+    std::cout << std::endl;
+  }
+}  // end DisplaySurfaceComplexes()
+
 void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
 {
   std::cout << "--- Input Components -------------------------------------------------" 
@@ -1206,6 +1245,18 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
       std::cout << std::setw(15) << minerals_.at(m).name()
                 << std::setw(15) << std::fixed << std::setprecision(5) 
                 << components.minerals.at(m) << std::endl;
+    }
+  }
+
+  if (total_sorbed_.size() > 0) {
+    std::cout << "---- Surface Complex Sites" << std::endl;
+    std::cout << std::setw(15) << "Name" 
+              << std::setw(15) << "Molarity" << std::endl;
+    for (int i = 0; i < ncomp(); i++) {
+      std::cout << std::setw(15) << primarySpecies_.at(i).name()
+                << std::scientific << std::setprecision(5)
+                << std::setw(15) << components.total_sorbed.at(i) 
+                << std::endl;
     }
   }
   std::cout << "----------------------------------------------------------------------" 
