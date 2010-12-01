@@ -1,0 +1,36 @@
+<Primary Species
+# name               ; debye-huckel a0 ; charge ; GMW     
+
+H+                   ;   9.0 ;   1.0 ;   1.0079
+Cl-                  ;   3.0 ;  -1.0 ;  35.4527
+UO2++                ;   4.5 ;   2.0 ;  270.028
+
+<Aqueous Equilibrium Complexes
+# name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW      
+
+OH-                  =  1.0 H2O  -1.0 H+  ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
+HCl(aq)              =  1.0 H+  1.0 Cl-  ;      -0.67 ;   3.0 ;   0.0 ;  36.4606 
+
+UO2OH+               =  1.0 H2O  -1.0 H+  1.0 UO2++  ;     5.2073 ;   4.0 ;   1.0 ;  287.035 
+UO2(OH)2(aq)         =  2.0 H2O  -2.0 H+  1.0 UO2++  ;    10.3146 ;   3.0 ;   0.0 ;  304.042 
+UO2(OH)3-            =  3.0 H2O  -3.0 H+  1.0 UO2++  ;    19.2218 ;   4.0 ;  -1.0 ;   321.05 
+UO2(OH)4--           =  4.0 H2O  -4.0 H+  1.0 UO2++  ;    33.0291 ;   4.0 ;  -2.0 ;  338.057 
+(UO2)2OH+++          =  1.0 H2O  -1.0 H+  2.0 UO2++  ;     2.7072 ;   5.0 ;   3.0 ;  557.063 
+(UO2)2(OH)2++        =  2.0 H2O  -2.0 H+  2.0 UO2++  ;     5.6346 ;   4.5 ;   2.0 ;   574.07 
+(UO2)3(OH)4++        =  4.0 H2O  -4.0 H+  3.0 UO2++  ;     11.929 ;   4.5 ;   2.0 ;  878.112 
+(UO2)3(OH)5+         =  5.0 H2O  -5.0 H+  3.0 UO2++  ;    15.5862 ;   4.0 ;   1.0 ;   895.12 
+(UO2)3(OH)7-         =  7.0 H2O  -7.0 H+  3.0 UO2++  ;    31.0508 ;   4.0 ;  -1.0 ;  929.135 
+(UO2)4(OH)7+         =  7.0 H2O  -7.0 H+  4.0 UO2++  ;    21.9508 ;   4.0 ;   1.0 ;  1199.16 
+UO2Cl+               =  1.0 Cl-  1.0 UO2++  ;    -0.1572 ;   4.0 ;   1.0 ;   305.48 
+UO2Cl2(aq)           =  2.0 Cl-  1.0 UO2++  ;     1.1253 ;   3.0 ;   0.0 ;  340.933 
+
+<Surface Complex Sites
+# surface site ; site density
+>FeOH ; 1.0
+>AlOH ; 1.0
+
+<Surface Complexes
+# surface complex = coeff surface_site coeff primary.... ; log10 K ; charge ; ?
+>FeOHUO3 =  1.00  >FeOH  1.00  H2O  -2.00  H+  1.00  UO2++ ; 3.0500 ; 0.00
+>FeOHUO2++ =  1.00  >FeOH 1.00  UO2++ ;  -6.6300 ;  2.00
+>AlOUO2+ =  1.00  >AlOH -1.00  H+ 1.00  UO2++ ; -3.1300 ; 1.00

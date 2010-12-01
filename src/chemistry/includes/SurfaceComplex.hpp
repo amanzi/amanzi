@@ -25,6 +25,17 @@ class SurfaceComplex {
                  const double free_site_stoichiometry,
                  const double charge, 
                  const double logK);
+  SurfaceComplex(const SpeciesName name, 
+                 const SpeciesId id,
+                 std::vector<SpeciesName> species,
+                 std::vector<double> stoichiometries,
+                 std::vector<int> species_ids,
+                 const double h2o_stoich, 
+                 SpeciesName free_site_name,
+                 const double free_site_stoichiometry,
+                 SpeciesId free_site_id,
+                 const double charge, 
+                 const double logK);
   ~SurfaceComplex();
 
   // update molalities
@@ -85,7 +96,9 @@ class SurfaceComplex {
   std::vector<SpeciesName> species_names_;
   std::vector<SpeciesId> species_ids_;       // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
+  SpeciesName free_site_name_;
   double free_site_stoichiometry_;     // stoichiometry of free site in rxn
+  SpeciesId free_site_id_;
   std::vector<double> logK_array_;     // for temperature dep. logK
   double h2o_stoichiometry_;           // stoichiometry of water in equation
   double lnK_;                         // log value of equlibrium constant

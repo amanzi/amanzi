@@ -175,6 +175,17 @@ int main(int argc, char **argv) {
                                           &output_interval);
         break;
       }
+      case 11: {
+        // surface complexation
+        surface_complexation(verbosity,
+                             &thermo_database_file,
+                             &activity_model_name,
+                             &components,
+                             &delta_time,
+                             &num_time_steps,
+                             &output_interval);
+        break;
+      }
       default: {
         std::cout << "Invalid test number specified on command line. "
                   << "try using the \'-h\' option." << std::endl;
@@ -327,6 +338,7 @@ int CommandLineOptions(int argc, char **argv,
         std::cout << "             8: fbasin initial condition with minerals" << std::endl;
         std::cout << "             9: fbasin initial condition with mineral kinetics" << std::endl;
         std::cout << "            10: calcite kinetics with large time steps" << std::endl;
+        std::cout << "            11: surface complexation" << std::endl;
         std::cout << std::endl;
         std::cout << "    -v integer" << std::endl;
         std::cout << "         verbose output:" << std::endl;
@@ -417,6 +429,31 @@ void calcite_kinetics_large_time_steps(const Verbosity& verbosity,
         *output_interval = 1;
 }  // end calcite_kinetics_large_time_steps()
 
+
+void surface_complexation(const Verbosity& verbosity,
+                      std::string* thermo_database_file,
+                      std::string* activity_model_name,
+                      Beaker::BeakerComponents* components,
+                      double* delta_time,
+                      int* num_time_steps,
+                      int* output_interval)
+{
+        // calcite TST kinetics
+        if (verbosity == kTerse) {
+          std::cout << "Running surface complexation problem." << std::endl;
+        }
+        *thermo_database_file = "input/surface-complexation.bgd";
+        *activity_model_name = ActivityModelFactory::debye_huckel;
+        components->total.push_back(1.0e-3);  // H+
+        components->total.push_back(3.0e-3);  // Cl-
+        components->total.push_back(1.0e-3);  // UO2++
+        components->total_sorbed.push_back(1.0e-4);  // H+
+        components->total_sorbed.push_back(1.0e-4);  // Cl-
+        components->total_sorbed.push_back(1.0e-4);  // UO2++
+        *delta_time = 1.0;
+        *num_time_steps = 10;
+        *output_interval = 1;
+}  // end surface_complexation()
 
 void fbasin_initial_all(const Verbosity& verbosity,
                         std::string* thermo_database_file,

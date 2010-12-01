@@ -58,36 +58,14 @@ double SurfaceSite::SiteDensity(void) const
 
 void SurfaceSite::display(void) const
 {
-/*
-  std::cout << "    " << name() << " = ";
-  for (int i = 0; i < (int)species_names_.size(); i++) {
-    std::cout << stoichiometry_[i] << " " << species_names_[i];
-    if (i < (int)species_names_.size() - 1) {
-      std::cout << " + ";
-    }
-  }
-  std::cout << std::endl;
-  std::cout << "        logK = " << logK_ << std::endl;
-  std::cout << "        charge = " << charge() << std::endl;
-  std::cout << "        mol wt = " << gram_molecular_weight() << std::endl;
-*/
+
+  std::cout << "    " << name() << std::endl;
+  std::cout << "        site density = " << molar_density() << std::endl;
 } // end display()
 
 void SurfaceSite::Display(void) const
 {
-/*
-  std::cout << "    " << name() << " = ";
-  for (int i = 0; i < (int)species_names_.size(); i++) {
-    std::cout << stoichiometry_[i] << " " << species_names_[i];
-    if (i < (int)species_names_.size() - 1) {
-      std::cout << " + ";
-    }
-  }
-  std::cout << std::endl;
-  std::cout << std::setw(40) << " " 
-            << std::setw(10) << logK_
-            << std::setw(10) << charge()
-            << std::setw(10) << gram_molecular_weight()
+  std::cout << std::setw(15) << name()
+            << std::setw(15) << molar_density()
             << std::endl;
-*/
 } // end Display()

@@ -18,7 +18,11 @@ class SurfaceComplexationRxn {
   SurfaceComplexationRxn(std::string s);
   SurfaceComplexationRxn(SurfaceSite *surface_sites,
                          std::vector<SurfaceComplex> surface_complexes);
+  SurfaceComplexationRxn(SurfaceSite surface_sites);
   ~SurfaceComplexationRxn();
+
+  // add complexes to the reaction
+  void AddSurfaceComplex(SurfaceComplex surface_complex);
 
   // update sorbed concentrations
   void Update(const std::vector<Species>primarySpecies);
@@ -35,6 +39,8 @@ class SurfaceComplexationRxn {
 
   void display(void) const;
   void Display(void) const;
+  void DisplaySite(void) const;
+  void DisplayComplexes(void) const;
 
  protected:
 

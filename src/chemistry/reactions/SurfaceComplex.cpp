@@ -24,11 +24,61 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
                               identifier_(id),
                               charge_(charge),
                               surface_concentration_(0.),
+                              free_site_name_("Unknown"),
                               free_site_stoichiometry_(free_site_stoich),
+                              free_site_id_(-1),
                               h2o_stoichiometry_(h2o_stoich),
                               lnK_(log_to_ln(logK)),
                               lnQK_(0.),
                               logK_(logK)
+{
+
+  species_names_.clear();
+  species_ids_.clear();
+  stoichiometry_.clear();
+  logK_array_.clear();
+
+  set_ncomp(static_cast<int>(stoichiometries.size()));
+
+  // species names
+  for (std::vector<SpeciesName>::const_iterator i = species.begin(); 
+       i != species.end(); i++) {
+    species_names_.push_back(*i);
+  } 
+  // species stoichiometries
+  for (std::vector<double>::const_iterator i = stoichiometries.begin();
+       i != stoichiometries.end(); i++) {
+    stoichiometry_.push_back(*i);
+  }
+  // species ids
+  for (std::vector<int>::const_iterator i = species_ids.begin();
+       i != species_ids.end(); i++) {
+    species_ids_.push_back(*i);
+  }
+} // end SurfaceComplex() constructor
+
+SurfaceComplex::SurfaceComplex(const SpeciesName name, 
+                               const SpeciesId id,
+                               std::vector<SpeciesName>species,
+                               std::vector<double>stoichiometries,
+                               std::vector<int>species_ids,
+                               const double h2o_stoich, 
+                               const SpeciesName free_site_name,
+                               const double free_site_stoich,
+                               const SpeciesId free_site_id,
+                               const double charge, 
+                               const double logK) 
+    : name_(name),
+      identifier_(id),
+      charge_(charge),
+      surface_concentration_(0.),
+      free_site_name_(free_site_name),
+      free_site_stoichiometry_(free_site_stoich),
+      free_site_id_(free_site_id),
+      h2o_stoichiometry_(h2o_stoich),
+      lnK_(log_to_ln(logK)),
+      lnQK_(0.),
+      logK_(logK)
 {
 
   species_names_.clear();
@@ -93,8 +143,11 @@ void SurfaceComplex::AddContributionToDTotal(
 
 void SurfaceComplex::Display(void) const
 {
-/*
   std::cout << "    " << name() << " = ";
+  std::cout << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
+  if (h2o_stoichiometry_ > 0) {
+    std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+  }
   for (int i = 0; i < (int)species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
     if (i < (int)species_names_.size() - 1) {
@@ -105,7 +158,24 @@ void SurfaceComplex::Display(void) const
   std::cout << std::setw(40) << " " 
             << std::setw(10) << logK_
             << std::setw(10) << charge()
-            << std::setw(10) << gram_molecular_weight()
             << std::endl;
-*/
+} // end Display()
+
+void SurfaceComplex::display(void) const
+{
+  std::cout << "    " << name() << " = ";
+  std::cout << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
+  if (h2o_stoichiometry_ > 0) {
+    std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
+  }
+  for (int i = 0; i < (int)species_names_.size(); i++) {
+    std::cout << stoichiometry_[i] << " " << species_names_[i];
+    if (i < (int)species_names_.size() - 1) {
+      std::cout << " + ";
+    }
+  }
+  std::cout << std::endl;
+  std::cout << "     log K: " << logK_
+            << "\n     charge: " << charge() << std::endl;
+
 } // end Display()
