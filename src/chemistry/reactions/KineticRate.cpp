@@ -49,7 +49,8 @@ void KineticRate::SetSpeciesIds(const SpeciesArray species,
         species_found = true;
         out_ids->push_back((*s).identifier());
         if (out_stoichiometry != NULL) {
-          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
+//geh          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
+          (*out_stoichiometry)[(*s).identifier()] = in_stoichiometry.at(current);
         }
         if (verbosity() == kDebugMineralKinetics) {
           std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type 

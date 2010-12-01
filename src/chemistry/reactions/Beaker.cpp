@@ -532,7 +532,7 @@ void Beaker::addKineticChemistryToResidual(std::vector<double> *residual)
   // add mineral mineral contribution to residual here.  units = mol/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToResidual(por_sat_den_vol(), residual);
+    (*rate)->AddContributionToJacobian(primarySpecies_, minerals_, por_sat_den_vol(), J);
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
@@ -549,7 +549,7 @@ void Beaker::addKineticChemistryToJacobian(Block *J)
   // add mineral mineral contribution to Jacobian here.  units = kg water/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToJacobian(primarySpecies_, por_sat_den_vol(), J);
+    (*rate)->AddContributionToJacobian(primarySpecies_, minerals_, por_sat_den_vol(), J);
   }
 
   // add multirate kinetic surface complexation contribution to Jacobian here.
