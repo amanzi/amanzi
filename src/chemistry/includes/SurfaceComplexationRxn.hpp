@@ -41,6 +41,8 @@ class SurfaceComplexationRxn {
   void Display(void) const;
   void DisplaySite(void) const;
   void DisplayComplexes(void) const;
+  void DisplayResultsHeader(void) const;
+  void DisplayResults(void) const;
 
  protected:
 

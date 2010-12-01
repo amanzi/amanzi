@@ -186,6 +186,17 @@ int main(int argc, char **argv) {
                              &output_interval);
         break;
       }
+      case 12: {
+        // surface complexation with all fbasin species
+        surface_complexation_full(verbosity,
+                             &thermo_database_file,
+                             &activity_model_name,
+                             &components,
+                             &delta_time,
+                             &num_time_steps,
+                             &output_interval);
+        break;
+      }
       default: {
         std::cout << "Invalid test number specified on command line. "
                   << "try using the \'-h\' option." << std::endl;
@@ -223,6 +234,7 @@ int main(int argc, char **argv) {
 
       // solve for free-ion concentrations
       chem->Speciate(components, parameters);
+      chem->UpdateComponents(&components);
       if (verbosity >= kTerse) {
         chem->DisplayResults();
       }
@@ -454,6 +466,74 @@ void surface_complexation(const Verbosity& verbosity,
         *num_time_steps = 10;
         *output_interval = 1;
 }  // end surface_complexation()
+
+void surface_complexation_full(const Verbosity& verbosity,
+                      std::string* thermo_database_file,
+                      std::string* activity_model_name,
+                      Beaker::BeakerComponents* components,
+                      double* delta_time,
+                      int* num_time_steps,
+                      int* output_interval)
+{
+        // calcite TST kinetics
+        if (verbosity == kTerse) {
+          std::cout << "Running surface complexation problem." << std::endl;
+        }
+        *thermo_database_file = "input/fbasin-minerals-surface-complexation.bgd";
+        *activity_model_name = ActivityModelFactory::debye_huckel;
+        components->total.push_back(1.0000E-05);  // Na+
+        components->total.push_back(1.0000E-05);  // Ca++
+        components->total.push_back(8.4651E-08);  // Fe++
+        components->total.push_back(1.8874E-04);  // K+
+        components->total.push_back(6.5776E-09);  // Al+++
+        components->total.push_back(1.2716E-05);  // H+
+        components->total.push_back(1.0000E-05);  // N2(aq)
+        components->total.push_back(1.0000E-05);  // NO3-
+        components->total.push_back(2.0664E-04);  // HCO3-
+        components->total.push_back(1.0000E-05);  // Cl-
+        components->total.push_back(1.0000E-06);  // SO4--
+        components->total.push_back(1.0000E-06);  // HPO4--
+        components->total.push_back(1.0000E-06);  // F-
+        components->total.push_back(1.8703E-04);  // SiO2(aq)
+        components->total.push_back(1.0000E-15);  // UO2++
+        components->total.push_back(2.5279E-04);  // O2(aq)
+        components->total.push_back(1.0000E-15);  // Tracer
+        // free ion concentrations (better initial guess)
+        components->free_ion.push_back(9.9969E-06);  // Na+
+        components->free_ion.push_back(9.9746E-06);  // Ca++
+        components->free_ion.push_back(2.2405E-18);  // Fe++
+        components->free_ion.push_back(1.8874E-04);  // K+
+        components->free_ion.push_back(5.2970E-16);  // Al+++
+        components->free_ion.push_back(3.2759E-08);  // H+
+        components->free_ion.push_back(1.0000E-05);  // N2(aq)
+        components->free_ion.push_back(1.0000E-05);  // NO3-
+        components->free_ion.push_back(1.9282E-04);  // HCO3-
+        components->free_ion.push_back(9.9999E-06);  // Cl-
+        components->free_ion.push_back(9.9860E-07);  // SO4--
+        components->free_ion.push_back(9.9886E-07);  // HPO4--
+        components->free_ion.push_back(1.0000E-06);  // F-
+        components->free_ion.push_back(1.8703E-04);  // SiO2(aq)
+        components->free_ion.push_back(1.7609E-20);  // UO2++
+        components->free_ion.push_back(2.5277E-04);  // O2(aq)
+        components->free_ion.push_back(1.0000E-15);  // Tracer
+        // minerals
+        components->minerals.push_back(0.0);  // Gibbsite
+        components->minerals.push_back(0.21);  // Quartz
+        components->minerals.push_back(0.15);  // K-Feldspar
+        components->minerals.push_back(0.0);  // Jurbanite
+        components->minerals.push_back(0.1);  // Ferrihydrite
+        components->minerals.push_back(0.15);  // Kaolinite
+        components->minerals.push_back(0.0);  // Schoepite
+        components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
+        components->minerals.push_back(0.0);  // Soddyite
+        components->minerals.push_back(0.0);  // Calcite
+        components->minerals.push_back(0.0);  // Chalcedony
+        // sorbed components
+        components->total_sorbed.resize(components->total.size(),0.);
+        *delta_time = 30.*24.*3600.;
+        *num_time_steps = 12;
+        *output_interval = 1;
+}  // end surface_complexation_full()
 
 void fbasin_initial_all(const Verbosity& verbosity,
                         std::string* thermo_database_file,
