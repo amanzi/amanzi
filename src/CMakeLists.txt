@@ -25,6 +25,18 @@ set(CMAKE_BUILD_TYPE debug)
 set(AMANZI_Mesh_VERSION_MAJOR 0)
 set(AMANZI_Mesh_VERSION_MINOR 1)
 
+if(BUILD_STATIC_EXECUTABLES)
+    set(CMAKE_EXE_LINKER_FLAGS -static)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+    set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
+    set(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)
+    set(CMAKE_SHARED_LIBRARY_C_FLAGS)         # remove -fPIC
+    set(CMAKE_SHARED_LIBRARY_CXX_FLAGS)
+    set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS)    # remove -rdynamic
+    set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
+endif(BUILD_STATIC_EXECUTABLES)
+
+
 ##############################################################################
 # Attempting to explicitly find the MPI implementation libraries has been 
 # deprecated in favor of using compiler wrappers such as 'mpicc'.  See Trac 
