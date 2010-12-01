@@ -153,7 +153,7 @@ void Block::addValues(int ioffset, int joffset, Block *b, double scale) {
 void Block::print() {
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++)
-      cout << i << " " << j << " : " << A[j][i] << endl;
+      if (fabs(A[j][i]) > 0.) cout << i << " " << j << " : " << std::scientific << A[j][i] << endl;
   }
 }
 

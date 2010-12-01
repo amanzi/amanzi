@@ -5,6 +5,12 @@
 #include "AqueousEquilibriumComplex.hpp"
 #include "Beaker.hpp"
 #include "FileIO.hpp"
+#include "Mineral.hpp"
+#include "KineticRate.hpp"
+#include "KineticRateTST.hpp"
+#include "StringTokenizer.hpp"
+#include "MineralKineticsFactory.hpp"
+
 
 #include <vector>
 
@@ -126,7 +132,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
 {
 
   char word[32];
-  int ncomp, neqcplx, ngeneral_rxn, nsurfcplx_rxn;
+  int ncomp, neqcplx, ngeneral_rxn, nsurfcplx_rxn, nminerals;
 
   // open file with FileIO buffer
   FileIO *file = new FileIO(filename);
@@ -137,6 +143,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
   file->readInt(&neqcplx);
   file->readInt(&ngeneral_rxn);
   file->readInt(&nsurfcplx_rxn);
+  file->readInt(&nminerals);
 
   int id;
   SpeciesName name;
@@ -519,6 +526,137 @@ static void readChemistryFromFile(string filename, Beaker *g)
     // deleting the vector storing mineral pointers
     g->addSurfaceComplexationRxn(SurfaceComplexationRxn(surface_site,surface_complexes));
     surface_complexes.clear();
+  }
+
+#ifdef DEBUG
+  std::cout << "--- Kinetic Minerals ----\n";
+#endif
+  // secondary aqueous complexes
+  // for neqcplx secondary speces, each line lists name, Z, a0, etc.
+  for (int irxn = 0; irxn < nminerals; irxn++) {
+
+    species.clear();
+    stoichiometries.clear();
+    species_ids.clear();
+
+    file->getLine();
+    file->readWord(word);
+    name = word;
+#ifdef DEBUG
+    std::cout << name << endl;
+#endif
+    // species ids
+    file->getLine();
+    int ncomp_in_rxn;
+    file->readInt(&ncomp_in_rxn);
+    for (int j = 0; j<ncomp_in_rxn; j++) {
+      int tempi;
+      file->readInt(&tempi);
+      // decrement for zero-based indexing
+      tempi--;
+      species_ids.push_back(tempi);
+    }
+#ifdef DEBUG
+    for (int j = 0; j < (int)species_ids.size(); j++)
+      std::cout << species_ids[j] << " " ;
+    std::cout << endl;
+#endif
+    // species stoichiometries
+    double tempd;
+    file->getLine();
+    // skip first value (PFLOTRAN kinmnrlstroich mirrors kinmnrlspecid)
+    file->readDouble(&tempd);
+    for (int j = 0; j<ncomp_in_rxn; j++) {
+      file->readDouble(&tempd);
+      stoichiometries.push_back(tempd);
+    }
+#ifdef DEBUG
+    for (int j = 0; j < ncomp_in_rxn; j++)
+      std::cout << stoichiometries[j] << " " ;
+    std::cout << endl;
+#endif
+    // h2o id <- skip this
+    int tempi;
+    file->getLine();
+    file->readInt(&tempi);
+#ifdef DEBUG
+//    std::cout << kinmnrlh2oid[i] << endl;
+#endif
+    // h2o stoichiometry
+    file->getLine();
+    file->readDouble(&h2o_stoich);
+#ifdef DEBUG
+    std::cout << h2o_stoich << endl;
+#endif
+    // logK
+    file->getLine();
+    file->readDouble(&logK);
+#ifdef DEBUG
+    std::cout << logK << endl;
+#endif
+    // molar vol
+    double molar_vol;
+    file->getLine();
+    file->readDouble(&molar_vol);
+#ifdef DEBUG
+    std::cout << molar_vol << endl;
+#endif
+    // molar wt
+    double molar_wt;
+    file->getLine();
+    file->readDouble(&molar_wt);
+#ifdef DEBUG
+    std::cout << molar_wt << endl;
+#endif
+    // rate
+    double rate;
+    file->getLine();
+    file->readDouble(&rate);
+#ifdef DEBUG
+    std::cout << rate << endl;
+#endif
+    // specific surface area
+    double specific_surface_area;
+    file->getLine();
+    file->readDouble(&specific_surface_area);
+    // convert from cm^2/cm^3 to m^2/m^3
+    specific_surface_area *= 100.;
+#ifdef DEBUG
+    std::cout << specific_surface_area << endl;
+#endif
+
+
+#ifdef DEBUG
+    std::cout << "-------------------------\n";
+#endif
+
+    Mineral mineral(name, irxn,
+                    species,
+                    stoichiometries,
+                    species_ids,
+                    h2o_stoich,
+                    molar_wt, 
+                    logK, 
+                    molar_vol,
+                    specific_surface_area);
+    g->addMineral(mineral);
+
+
+    MineralKineticsFactory mkf;
+//    mkf.set_verbosity(verbosity());
+//    SpeciesId mineral_id = mkf.VerifyMineralName(name, minerals());
+//    Mineral mineral = minerals().at(mineral_id);
+    std::string rate_type = "TST";
+    std::string str1("log10_rate_constant ");
+    std::ostringstream oss;
+    oss << rate*10000.;
+    std::string str3(" moles_m2_sec");
+
+    std::string rate_string = str1 + oss.str() + str3;
+    StringTokenizer rate_data(rate_string, "");
+//    KineticRate* kinetic_rate = mkf.Create(rate_type, rate_data, mineral, g->primary_species());
+
+//    g->AddMineralKineticRate(kinetic_rate);
   }
 
   delete file;

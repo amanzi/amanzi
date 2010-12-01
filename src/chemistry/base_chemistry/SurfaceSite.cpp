@@ -69,3 +69,18 @@ void SurfaceSite::Display(void) const
             << std::setw(15) << molar_density()
             << std::endl;
 } // end Display()
+
+void SurfaceSite::DisplayResultsHeader(void) const
+{
+  std::cout << std::setw(15) << "Site Name"
+            << std::setw(15) << "Free Conc."
+            << std::endl;
+} // end DisplayResultsHeader()
+
+void SurfaceSite::DisplayResults(void) const
+{
+  std::cout << std::setw(15) << name()
+            << std::scientific << std::setprecision(5)
+            << std::setw(15) << free_site_concentration()
+            << std::endl;
+} // end DisplayResults()

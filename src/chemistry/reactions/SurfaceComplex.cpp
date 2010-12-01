@@ -179,3 +179,19 @@ void SurfaceComplex::display(void) const
             << "\n     charge: " << charge() << std::endl;
 
 } // end Display()
+
+void SurfaceComplex::DisplayResultsHeader(void) const
+{
+  std::cout << std::setw(15) << "Complex Name" 
+            << std::setw(15) << "Concentration" 
+            << std::endl;
+} // end DisplayResultsHeader()
+
+void SurfaceComplex::DisplayResults(void) const
+{
+  std::cout << std::setw(15) << name()
+            << std::scientific << std::setprecision(5)
+            << std::setw(15) << surface_concentration()
+            << std::endl;
+} // end DisplayResults()
+

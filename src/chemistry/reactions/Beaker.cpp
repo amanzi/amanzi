@@ -490,6 +490,7 @@ void Beaker::calculateDTotal(Block *dtotal, Block *dtotal_sorbed)
   // scale by density of water
   dtotal->scale(water_density_kg_L()); 
 
+  if (dtotal_sorbed) dtotal_sorbed->zero();
   // calculate sorbed derivatives
   for (std::vector<SurfaceComplexationRxn>::iterator i = 
        surfaceComplexationRxns_.begin();
@@ -532,7 +533,7 @@ void Beaker::addKineticChemistryToResidual(std::vector<double> *residual)
   // add mineral mineral contribution to residual here.  units = mol/sec.
   for (std::vector<KineticRate*>::iterator rate = mineral_rates_.begin();
        rate != mineral_rates_.end(); rate++) {
-    (*rate)->AddContributionToJacobian(primarySpecies_, minerals_, por_sat_den_vol(), J);
+    (*rate)->AddContributionToResidual(minerals_, por_sat_den_vol(), residual);
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
@@ -642,8 +643,10 @@ void Beaker::calculateJacobian(Block *J)
   J->zero();
   // add in derivatives for equilibrium chemistry
   addAccumulationDerivative(J);
+
   // add in derivatives for kinetic chemistry
   addKineticChemistryToJacobian(J);
+
 } // end calculateJacobian()
 
 void Beaker::scaleRHSAndJacobian(double *rhs, Block *J) 
@@ -1328,6 +1331,15 @@ void Beaker::DisplayResults(void) const
       ion_exchange_rxns_[i].DisplayResults();
     }
   }
+
+  if (surfaceComplexationRxns_.size() > 0) {
+    std::cout << "---- Surface Complexation Reactions " << std::endl;
+    for (unsigned int i = 0; i < surfaceComplexationRxns_.size(); i++) {
+      surfaceComplexationRxns_[i].DisplayResultsHeader();
+      surfaceComplexationRxns_[i].DisplayResults();
+    }
+  }
+
   std::cout << "----------------------------------------------------------------------"
             << std::endl << std::endl;
 }  // end DisplayResults()

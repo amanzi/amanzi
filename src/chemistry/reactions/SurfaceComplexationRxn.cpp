@@ -161,16 +161,16 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
        srfcplx != surface_complexes_.end(); srfcplx++) {
     double surface_concentration = srfcplx->surface_concentration();
     for (int icomp = 0; icomp < srfcplx->ncomp(); icomp++) {
-      int primary_species_id = srfcplx->species_id(icomp);
+      int primary_species_id_i = srfcplx->species_id(icomp);
       // 2.3-47c converted to non-log form
       double dSi_mi = surface_concentration /
-                      primarySpecies[primary_species_id].molality() *
+                      primarySpecies[primary_species_id_i].molality() *
                       (srfcplx->stoichiometry(icomp) -
                        (nu_li_nu_i_Si[icomp] / Sx_plus_sum_nu_i_sq_Si));
       for (int jcomp = 0; jcomp < srfcplx->ncomp(); jcomp++) {
         // 2.3-48a converted to non-log form
         double dPsij_dmi = dSi_mi * srfcplx->stoichiometry(jcomp);
-        dtotal->addValue(jcomp, icomp, dPsij_dmi);
+        dtotal->addValue(srfcplx->species_id(jcomp), primary_species_id_i, dPsij_dmi);
       }
     }
   }
@@ -206,3 +206,28 @@ void SurfaceComplexationRxn::display(void) const
   DisplaySite();
   DisplayComplexes();
 } // end display()
+
+void SurfaceComplexationRxn::DisplayResultsHeader(void) const
+{
+  std::cout << std::setw(15) << "---"
+            << std::endl;
+} // end DisplayResultsHeader()
+
+void SurfaceComplexationRxn::DisplayResults(void) const
+{
+
+  surface_site_[0].DisplayResultsHeader();
+  std::vector<SurfaceSite>::const_iterator site;
+  for (site = surface_site_.begin(); 
+       site != surface_site_.end(); site++) {
+    site->DisplayResults();
+  }
+
+  surface_complexes_[0].DisplayResultsHeader();
+  std::vector<SurfaceComplex>::const_iterator complex;
+  for (complex = surface_complexes_.begin(); 
+       complex != surface_complexes_.end(); complex++) {
+    complex->DisplayResults();
+  }
+
+} // end DisplayResults()
