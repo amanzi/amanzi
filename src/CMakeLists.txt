@@ -114,7 +114,7 @@ add_library(netcdf_c++ SHARED IMPORTED)
 set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
 
 #target_link_libraries(netcdf curl)   # See note under ExodusII.
-set(NETCDF_LIBS_ALL netcdf curl hdf5 hdf5_hl z mpi mpi_cxx)
+set(NETCDF_LIBS_ALL netcdf curl hdf5 hdf5_hl z)
 
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
@@ -162,7 +162,7 @@ set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIBRARY})
 add_library(hdf5_hl STATIC IMPORTED)
 set_property(TARGET hdf5_hl PROPERTY IMPORTED_LOCATION ${HDF5_HL_LIBRARY})
 
-set(HDF5_LIBS_ALL hdf5 hdf5_hl z mpi mpi_cxx)
+set(HDF5_LIBS_ALL hdf5 hdf5_hl z)
 
 
 
@@ -200,7 +200,7 @@ set_property(TARGET exodusii PROPERTY IMPORTED_LOCATION ${EXODUSII_LIBRARY})
 # target_link_libraries(exodusii netcdf)
 
 # Instead, we create a list of all the libraries required for ExodusII to link.
-set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z curl mpi mpi_cxx) 
+set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z) 
 
 
 
@@ -237,7 +237,7 @@ add_library(moab STATIC IMPORTED)
 set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
 
 # create a list of all the libraries required for MOAB to link.
-set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z mpi mpi_cxx curl)
+set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z)
 
 
 
