@@ -28,9 +28,11 @@ class KineticRate
                      const SpeciesArray primary_species) = 0;
   virtual void Update(const SpeciesArray primary_species,
                       const std::vector<Mineral>& minerals) = 0;
-  virtual void AddContributionToResidual(const double por_den_sat_vol,
+  virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
+                                         const double por_den_sat_vol,
                                          std::vector<double> *residual) = 0;
   virtual void AddContributionToJacobian(const SpeciesArray primary_species,
+                                         const std::vector<Mineral>& minerals,
                                          const double por_den_sat_vol,
                                          Block *J) = 0;
   virtual void Display(void) const = 0;

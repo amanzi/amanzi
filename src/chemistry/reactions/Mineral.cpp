@@ -55,6 +55,8 @@ void Mineral::UpdateSurfaceAreaFromVolumeFraction(const double total_volume)
   double cm3_in_m3 = 1.0e6;
   set_surface_area(specific_surface_area() * gram_molecular_weight() * 
                    volume_fraction() * total_volume * cm3_in_m3 / molar_volume());
+//geh
+//  set_surface_area(100.);
   
   if (verbosity() == kDebugMineralKinetics) {
     std::cout << "Mineral: " << name() << "\n"

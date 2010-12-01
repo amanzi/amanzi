@@ -160,7 +160,7 @@ void KineticRateTST::Update(const SpeciesArray primary_species,
   for (unsigned int p = 0; p < primary_species.size(); p++) {
     lnQ += primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
     if (verbosity() == kDebugMineralKinetics) {
-      std::cout << "  Update: p: " << p << "  coeff: " << reactant_stoichiometry.at(p)
+      std::cout << "  Update: p: " << p << "  coeff: " << primary_stoichiometry.at(p)
                 << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
     }
   }
@@ -193,7 +193,8 @@ void KineticRateTST::Update(const SpeciesArray primary_species,
   }
 }  // end Update()
 
-void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol, 
+void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  minerals,
+                                               const double por_den_sat_vol, 
                                                std::vector<double> *residual)
 {
   /*
@@ -207,14 +208,19 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
   // Calculate overall rate 
   double rate = area() * rate_constant() * modifying_term() * sat_state;
 
-  // add or subtract from the residual....
-  for (unsigned int p = 0; p < reactant_stoichiometry.size(); p++) {
-    (*residual)[p] -= reactant_stoichiometry.at(p) * rate;
-    //if (true) {
-    if (verbosity() == kDebugMineralKinetics) {
-      std::cout << "  AddToResidual p: " << p
+  // only add contribution if precipitating or mineral exists
+  if (minerals.at(identifier()).volume_fraction() > 0. || sat_state < 0.) {
+
+    // add or subtract from the residual....
+    for (unsigned int p = 0; p < reactant_stoichiometry.size(); p++) {
+      int reactant_id = reactant_ids.at(p);
+      (*residual)[reactant_id] -= reactant_stoichiometry.at(p) * rate;
+      //if (true) {
+      if (verbosity() == kDebugMineralKinetics) {
+        std::cout << "  AddToResidual p: " << p
                 << "  coeff: " << reactant_stoichiometry.at(p)
                 << "  rate: " << rate << "  redsidual: " << residual->at(p) << std::endl;
+      }
     }
   }
 
@@ -223,6 +229,7 @@ void KineticRateTST::AddContributionToResidual(const double por_den_sat_vol,
 }  // end AddContributionToResidual()
 
 void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_species,
+                                               const std::vector<Mineral>&  minerals,
                                                const double por_den_sat_vol,
                                                Block *J)
 {
@@ -240,64 +247,68 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
   double one_minus_QK = 1.0 - Q_over_Keq();  // (1-Q/Keq)
   double area_rate_constant = area() * rate_constant();  // k*A
 
-  // the contribution to every row of the jacobian has the same dR/dci
-  // term. Each colum scaled by the stoichiometric
-  // coefficient. 
-  std::vector<double> dRdC_row(primary_species.size());  // primary_species.size() == J.getSize()!
+  // only add contribution if precipitating or mineral exists
+  if (minerals.at(identifier()).volume_fraction() > 0. || one_minus_QK < 0.) {
 
-  for (unsigned int p = 0; p < primary_species.size(); p++) {
-    // temp_modifying_term = Prod_{m!=j}(a_m^{mu_m})
-    double temp_modifying_term = modifying_term();
-    double remove_modifying = modifying_primary_exponents.at(p) * 
-        primary_species.at(p).ln_activity();
-    remove_modifying = std::exp(remove_modifying);
-    temp_modifying_term /= remove_modifying;
+    // the contribution to every row of the jacobian has the same dR/dci
+    // term. Each colum scaled by the stoichiometric
+    // coefficient. 
+    std::vector<double> dRdC_row(primary_species.size());  // primary_species.size() == J.getSize()!
 
-    // modifying_deriv = (mu_j * a_j^{mu_j - 1})
-    double modifying_deriv = (modifying_primary_exponents.at(p) - 1.0) * 
-        primary_species.at(p).ln_activity();
-    modifying_deriv = std::exp(modifying_deriv) * modifying_primary_exponents.at(p);
+    for (unsigned int p = 0; p < primary_species.size(); p++) {
+      // temp_modifying_term = Prod_{m!=j}(a_m^{mu_m})
+      double temp_modifying_term = modifying_term();
+      double remove_modifying = modifying_primary_exponents.at(p) * 
+          primary_species.at(p).ln_activity();
+      remove_modifying = std::exp(remove_modifying);
+      temp_modifying_term /= remove_modifying;
+  
+      // modifying_deriv = (mu_j * a_j^{mu_j - 1})
+      double modifying_deriv = (modifying_primary_exponents.at(p) - 1.0) * 
+          primary_species.at(p).ln_activity();
+      modifying_deriv = std::exp(modifying_deriv) * modifying_primary_exponents.at(p);
 
-    // temp_Q = Prod_{p!=j}(a_p^{nu_p}
-    double temp_Q = primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
-    temp_Q = std::exp(temp_Q);
-    temp_Q = Q_over_Keq() * Keq / temp_Q;
-
-    // primary_deriv = (nu_j * a_j^{nu_j - 1})
-    double primary_deriv = (primary_stoichiometry.at(p) - 1.0) * 
-        primary_species.at(p).ln_activity();
-    primary_deriv = std::exp(primary_deriv) * primary_stoichiometry.at(p);
+      // temp_Q = Prod_{p!=j}(a_p^{nu_p}
+      double temp_Q = primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
+      temp_Q = std::exp(temp_Q);
+      temp_Q = Q_over_Keq() * Keq / temp_Q;
+  
+      // primary_deriv = (nu_j * a_j^{nu_j - 1})
+      double primary_deriv = (primary_stoichiometry.at(p) - 1.0) * 
+          primary_species.at(p).ln_activity();
+      primary_deriv = std::exp(primary_deriv) * primary_stoichiometry.at(p);
+      
+      // modifying_term() / Keq = Prod_{m}(a_m^{mu_m})/Keq * 
     
-    // modifying_term() / Keq = Prod_{m}(a_m^{mu_m})/Keq * 
-    
-    double dRdC = area_rate_constant * 
-        (one_minus_QK * modifying_deriv * temp_modifying_term - 
-         (modifying_term() / Keq) * primary_deriv * temp_Q);
-    dRdC_row[p] = -dRdC; // where does the neg sign come from...?
-    if (verbosity() == kDebugMineralKinetics) {
-      std::cout << "J_row_contrib: p: " << p
-                << std::scientific << "\tA*k: " << area_rate_constant
-                << "\t1-Q/K: " << one_minus_QK
-                << "\tmod_deriv: " << modifying_deriv
-                << "\ttemp_mod_term: " << temp_modifying_term
-                << "\tmod_term: " << modifying_term()
-                << "\tKeq: " << Keq
-                << "\tmod_term/Keq: " << modifying_term() / Keq
-                << "\tprimary_deriv: " << primary_deriv
-                << "\ttemp_Q: " << temp_Q 
-                << "\trow: " << dRdC_row.at(p)
-                << std::endl;
+      double dRdC = area_rate_constant * 
+          (one_minus_QK * modifying_deriv * temp_modifying_term - 
+           (modifying_term() / Keq) * primary_deriv * temp_Q);
+      dRdC_row[p] = -dRdC; // where does the neg sign come from...?
+      if (verbosity() == kDebugMineralKinetics) {
+        std::cout << "J_row_contrib: p: " << p
+                  << std::scientific << "\tA*k: " << area_rate_constant
+                  << "\t1-Q/K: " << one_minus_QK
+                  << "\tmod_deriv: " << modifying_deriv
+                  << "\ttemp_mod_term: " << temp_modifying_term
+                  << "\tmod_term: " << modifying_term()
+                  << "\tKeq: " << Keq
+                  << "\tmod_term/Keq: " << modifying_term() / Keq
+                  << "\tprimary_deriv: " << primary_deriv
+                  << "\ttemp_Q: " << temp_Q 
+                  << "\trow: " << dRdC_row.at(p)
+                  << std::endl;
         
+      }
     }
-  }
 
-  // J_ij = nu_i * dR/dCj
-  for (int i = 0; i < J->getSize(); i++) {
-    for (int j = 0; j < J->getSize(); j++) {
-      J->addValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
-      //std::cout << dRdC_row.at(j) * primary_stoichiometry.at(i) << " ";
+    // J_ij = nu_i * dR/dCj
+    for (int i = 0; i < J->getSize(); i++) {
+      for (int j = 0; j < J->getSize(); j++) {
+        J->addValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
+          //std::cout << dRdC_row.at(j) * primary_stoichiometry.at(i) << " ";
+      }
+      //std::cout << std::endl;
     }
-    //std::cout << std::endl;
   }
 
 }  // end AddContributionToJacobian()

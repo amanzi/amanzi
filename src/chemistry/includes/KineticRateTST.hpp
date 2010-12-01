@@ -40,10 +40,12 @@ class KineticRateTST : public KineticRate
              const SpeciesArray primary_species);
   void Update(const SpeciesArray primary_species,
               const std::vector<Mineral>& minerals);
-  void AddContributionToResidual(const double por_den_sat_vol, 
+  void AddContributionToResidual(const std::vector<Mineral>& minerals,
+                                 const double por_den_sat_vol, 
                                  std::vector<double> *residual);
                                  
   void AddContributionToJacobian(const SpeciesArray primary_species,
+                                 const std::vector<Mineral>& minerals,
                                  const double por_den_sat_vol,
                                  Block *J);
   void Display(void) const;
