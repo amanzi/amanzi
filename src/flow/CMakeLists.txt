@@ -12,7 +12,7 @@ include_directories(${MOAB_INCLUDES})
 add_definitions("-DUSE_MPI")
 
 add_library(flow Flow_PK.cpp MimeticHexLocal.cpp MimeticHex.cpp
-  DiffusionMap.cpp DiffusionMatrix.cpp DiffusionPrecon.cpp
+  DiffusionMatrix.cpp DiffusionPrecon.cpp
   DarcyProblem.cpp DarcyMatvec.cpp FlowBC.cpp)
 target_link_libraries(flow ${MESH_LIBRARY} ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
