@@ -1,3 +1,4 @@
+#include "errors.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "MPC.hpp"
@@ -72,6 +73,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
 
      if (CPK->status() != ChemistryException::kOkay) {
+       cout << "MPC: Chemistry_PK constructor returned an error status" << endl;
        throw std::exception();
      }
    }
@@ -115,10 +117,13 @@ void MPC::cycle_driver () {
     S->set_time(T0);
   }
 
+
+
   if (chemistry_enabled) {
     // total view needs this to be outside the constructor 
     CPK->InitializeChemistry();
     if (CPK->status() != ChemistryException::kOkay) {
+      cout << "MPC: Chemistry_PK.InitializeChemistry returned an error status" << endl;
       throw std::exception();
     }
   }
@@ -126,7 +131,18 @@ void MPC::cycle_driver () {
   bool gmv_output = mpc_parameter_list.isSublist("GMV");
 #ifdef ENABLE_CGNS
   bool cgns_output = mpc_parameter_list.isSublist("CGNS");
+
+
+
+  if (chemistry_enabled) {
+    if (cgns_output) {
+      CPK->set_chemistry_output_names(auxnames);
+      CPK->set_component_names(compnames);
+    }   
+  }
 #endif
+
+  
 
   const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",-1);
   const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",-1);
@@ -204,8 +220,12 @@ void MPC::cycle_driver () {
 	std::stringstream cname;
 	cname << "concentration " << nc;
 	
+	if (chemistry_enabled) {
+	  cname << " " << compnames[nc];
+	}
+
 	write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
-      }      
+      }
 
       if (flow_enabled) {
 	const Epetra_MultiVector &DV = *S->get_darcy_velocity();
@@ -214,6 +234,22 @@ void MPC::cycle_driver () {
 	write_field_data( *DV(1), "darcy velocity y");
 	write_field_data( *DV(2), "darcy velocity z");
       }    
+      
+      if (chemistry_enabled) {
+	// get the auxillary data
+	Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+
+	// how much of it is there?
+	int naux = aux->NumVectors();
+	for (int i=0; i<naux; i++) {
+	  std::stringstream name;
+	  name << auxnames[i];
+	  
+	  write_field_data( *(*aux)(i), name.str()); 
+
+	}
+
+      }
       
       close_data_file();
     }
@@ -250,13 +286,13 @@ void MPC::cycle_driver () {
 	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
 	  {
 	    // get the transport state and commit it to the state
-	    RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+	    Teuchos::RCP<Transport_State> TS_next = TPK->get_transport_state_next();
             *total_component_concentration_star = *TS_next->get_total_component_concentration();
 	  }
 	else
 	  {
-	    // something went wrong
-	    throw std::exception();
+	    Errors::Message message("MPC: error... Transport_PK.advance returned an error status"); 
+	    Exceptions::amanzi_throw(message);
 	  }
       } else {
 	
@@ -273,7 +309,8 @@ void MPC::cycle_driver () {
 	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
         } else {
           // give up....
-          throw std::exception();
+	    Errors::Message message("MPC: error... Chemistry_PK.advance returned an error status"); 
+	    Exceptions::amanzi_throw(message);
         }
       } else {
 	// commit total_component_concentration_star to the state
@@ -380,11 +417,28 @@ void MPC::write_cgns_data(std::string filename, int iter)
     std::stringstream cname;
     cname << "concentration " << nc;
     
+    if (chemistry_enabled) {
+      cname << " " << compnames[nc];
+    }
+
     write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
   }
-
-
   
+  if (chemistry_enabled) {
+    // get the auxillary data
+    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+    
+    // how much of it is there?
+    int naux = aux->NumVectors();
+    for (int i=0; i<naux; i++) {
+      std::stringstream name;
+      name << auxnames[i];
+      
+      write_field_data( *(*aux)(i), name.str()); 
+      
+    }
+    
+  }
   close_data_file();     
 }
 #endif

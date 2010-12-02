@@ -59,6 +59,15 @@ class Chemistry_PK {
 
   int using_sorption(void) const { return this->using_sorption_; };
   void set_using_sorption(const int us) { this->using_sorption_ = us; };
+  
+  // Ben: the following two routines provide the interface for
+  // output of auxillary cellwise data from chemistry
+  Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
+  void set_chemistry_output_names(std::vector<string> &names);
+
+  // Ben: this routine should set the strings that will be 
+  // appended to the component_x tag in the cgns output
+  void set_component_names(std::vector<string> &names);
 
  protected:
   void set_status(ChemistryException::Status status) { this->status_ = status; };
