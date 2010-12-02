@@ -148,6 +148,7 @@ class Mesh_maps_moab : public virtual Mesh_maps_base
 public:
   
   Mesh_maps_moab (const char *filename, MPI_Comm comm);
+  ~Mesh_maps_moab();
   
   void update ();
   
