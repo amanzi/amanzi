@@ -37,6 +37,15 @@ class Chemistry_PK {
   int number_aqueous_components(void) const { return this->number_aqueous_components_; };
   void set_number_aqueous_components(const int nac) { this->number_aqueous_components_ = nac; };
 
+  int have_free_ion_guess(void) const { return this->have_free_ion_guess_; };
+  void set_have_free_ion_guess(const int hfi) { this->have_free_ion_guess_ = hfi; };
+
+  int number_free_ion(void) const { return this->number_free_ion_; };
+  void set_number_free_ion(const int nfi) { this->number_free_ion_ = nfi; };
+
+  int number_total_sorbed(void) const { return this->number_total_sorbed_; };
+  void set_number_total_sorbed(const int nts) { this->number_total_sorbed_ = nts; };
+
   int number_minerals(void) const { return this->number_minerals_; };
   void set_number_minerals(const int nm) { this->number_minerals_ = nm; };
 
@@ -45,6 +54,9 @@ class Chemistry_PK {
 
   int number_sorption_sites(void) const { return this->number_sorption_sites_; };
   void set_number_sorption_sites(const int scs) { this->number_sorption_sites_ = scs; };
+
+  int using_sorption(void) const { return this->using_sorption_; };
+  void set_using_sorption(const int us) { this->using_sorption_ = us; };
 
  protected:
   void set_status(ChemistryException::Status status) { this->status_ = status; };
@@ -65,9 +77,13 @@ class Chemistry_PK {
   double current_time_;
   double saved_time_;
   int number_aqueous_components_;
+  int number_free_ion_;
+  int number_total_sorbed_;
   int number_minerals_;
   int number_ion_exchange_sites_;
   int number_sorption_sites_;
+  int using_sorption_;
+  int have_free_ion_guess_;
 
   struct InternalStorage {
     // things we don't change, just point to State object
@@ -77,6 +93,8 @@ class Chemistry_PK {
     Teuchos::RCP<const Epetra_SerialDenseVector> volume;
     // things we need internal copies of
     Teuchos::RCP<Epetra_MultiVector> aqueous_components;
+    Teuchos::RCP<Epetra_MultiVector> free_ion;
+    Teuchos::RCP<Epetra_MultiVector> total_sorbed;
     Teuchos::RCP<Epetra_MultiVector> minerals;
     Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites;
     Teuchos::RCP<Epetra_MultiVector> sorption_sites;

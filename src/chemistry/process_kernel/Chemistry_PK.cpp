@@ -53,9 +53,13 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
       current_time_(0.0),
       saved_time_(0.0),
       number_aqueous_components_(0),
+      number_free_ion_(0),
+      number_total_sorbed_(0),
       number_minerals_(0),
       number_ion_exchange_sites_(0),
-      number_sorption_sites_(0)
+      number_sorption_sites_(0),
+      using_sorption_(0),
+      have_free_ion_guess_(0)
 {
   // determine the format of the database file
   std::string database_format =
@@ -212,6 +216,12 @@ void Chemistry_PK::SwapCurrentAndSavedStorage(void)
   std::swap(current_state_.aqueous_components, 
             saved_state_.aqueous_components);
 
+  std::swap(current_state_.free_ion, 
+            saved_state_.free_ion);
+
+  std::swap(current_state_.total_sorbed, 
+            saved_state_.total_sorbed);
+
   std::swap(current_state_.minerals, saved_state_.minerals);
 
   std::swap(current_state_.ion_exchange_sites, 
@@ -242,6 +252,22 @@ void Chemistry_PK::LocalInitialConditions(void)
     std::cout << "    Looking for initial conditions xml data... ";
   }
 
+  //
+  // do we need have sorption?
+  //
+  set_using_sorption(parameter_list_.get<int>("Using sorption", 0));
+  if (using_sorption()) {
+    set_number_total_sorbed(number_aqueous_components());
+    current_state_.total_sorbed =
+        Teuchos::rcp( new Epetra_MultiVector(
+            chemistry_state_->get_mesh_maps()->cell_map(false),
+            number_total_sorbed() ));
+    saved_state_.total_sorbed =
+        Teuchos::rcp( new Epetra_MultiVector(
+            chemistry_state_->get_mesh_maps()->cell_map(false),
+            number_total_sorbed() ));
+  }
+
   if (parameter_list_.isSublist("Initial Conditions")) {
     if (verbosity() == kDebugChemistryProcessKernel) {
       std::cout << "found." << std::endl;
@@ -270,6 +296,24 @@ void Chemistry_PK::LocalInitialConditions(void)
           Teuchos::rcp( new Epetra_MultiVector(
               chemistry_state_->get_mesh_maps()->cell_map(false),
               number_minerals() ));
+    }
+
+    //
+    // do we have a guess for free ions?
+    //
+    set_have_free_ion_guess(
+        initial_conditions.get<int>("Have free ion guess", 0));
+    // must always set this, the flag only controls if we look in the xml file
+    set_number_free_ion(number_aqueous_components());
+    if (number_free_ion()) {
+      current_state_.free_ion =
+          Teuchos::rcp( new Epetra_MultiVector(
+              chemistry_state_->get_mesh_maps()->cell_map(false),
+              number_free_ion() ));
+      saved_state_.free_ion =
+          Teuchos::rcp( new Epetra_MultiVector(
+              chemistry_state_->get_mesh_maps()->cell_map(false),
+              number_free_ion() ));
     }
 
     //
@@ -341,6 +385,21 @@ void Chemistry_PK::LocalInitialConditions(void)
         throw std::exception();
       }
 
+      //
+      // look for free ions
+      //
+      if (have_free_ion_guess()) {
+        std::string type("Free ions");
+        std::string keyword("Component");
+        int number_to_find = number_free_ion();
+        ExtractInitialCondition(type, keyword, number_to_find, block,
+                                mesh_block_list, mesh_block_ID,
+                                current_state_.free_ion);
+        ExtractInitialCondition(type, keyword, number_to_find, block,
+                                mesh_block_list, mesh_block_ID,
+                                saved_state_.free_ion);
+
+      }
       //
       // look for minerals in this mesh block
       //
@@ -484,7 +543,7 @@ void Chemistry_PK::SizeBeakerComponents(void)
   beaker_components_.free_ion.resize(number_aqueous_components());
   beaker_components_.minerals.resize(number_minerals());
   beaker_components_.ion_exchange_sites.resize(number_ion_exchange_sites());
-  beaker_components_.total_sorbed.resize(number_sorption_sites());
+  beaker_components_.total_sorbed.resize(number_total_sorbed());
 }  // end SizeBeakerComponents()
 
 
@@ -498,7 +557,11 @@ void Chemistry_PK::CopyCellToBeakerComponents(
   for (unsigned int c = 0; c < number_aqueous_components(); c++) {
     double* cell_components = (*aqueous_components)[c];
     beaker_components_.total[c] = cell_components[cell_id];
-    beaker_components_.free_ion[c] = 1.0e-9;
+  }
+
+  for (unsigned int f = 0; f < number_free_ion(); f++) {
+    double* cell_free_ion = (*current_state_.free_ion)[f];
+    beaker_components_.free_ion[f] = cell_free_ion[cell_id];
   }
 
   for (unsigned int m = 0; m < number_minerals(); m++) {
@@ -511,10 +574,15 @@ void Chemistry_PK::CopyCellToBeakerComponents(
     beaker_components_.ion_exchange_sites[i] = cell_ion_exchange_sites[cell_id];
   }
 
-  for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-    double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
-    beaker_components_.total_sorbed[i] = cell_sorption_sites[cell_id];
+  for (unsigned int i = 0; i < number_total_sorbed(); i++) {
+    double* cell_total_sorbed = (*current_state_.total_sorbed)[i];
+    beaker_components_.total_sorbed[i] = cell_total_sorbed[cell_id];
   }
+
+//   for (unsigned int i = 0; i < number_sorption_sites(); i++) {
+//     double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
+//     beaker_components_.total_sorbed[i] = cell_sorption_sites[cell_id];
+//   }
 
 }  // end CopyCellToBeakerComponents()
 
