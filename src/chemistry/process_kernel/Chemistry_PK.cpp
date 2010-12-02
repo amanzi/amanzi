@@ -254,24 +254,6 @@ void Chemistry_PK::InitializeInternalStorage(InternalStorage* storage)
       chemistry_state_->get_mesh_maps()->cell_map(false),
       number_aqueous_components() ));
 
-  storage->free_ion_species = Teuchos::rcp( new Epetra_MultiVector(
-      chemistry_state_->get_mesh_maps()->cell_map(false),
-      number_aqueous_components() ));
-
-  storage->minerals = Teuchos::rcp( new Epetra_MultiVector(
-      chemistry_state_->get_mesh_maps()->cell_map(false),
-      number_minerals() ));
-
-  storage->sorption_sites = Teuchos::rcp( new Epetra_MultiVector(
-      chemistry_state_->get_mesh_maps()->cell_map(false),
-      number_sorption_sites() ));
-
-  if (number_sorption_sites() > 0) {
-    storage->total_sorbed = Teuchos::rcp( new Epetra_MultiVector(
-        chemistry_state_->get_mesh_maps()->cell_map(false),
-        number_aqueous_components() ));
-  }
- 
   // don't know yet if we have these... need to look in the xml
   // file... the main state object really should be reading these
   // in....
