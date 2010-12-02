@@ -1,3 +1,4 @@
+#include "errors.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "MPC.hpp"
@@ -285,14 +286,13 @@ void MPC::cycle_driver () {
 	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
 	  {
 	    // get the transport state and commit it to the state
-	    RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+	    Teuchos::RCP<Transport_State> TS_next = TPK->get_transport_state_next();
             *total_component_concentration_star = *TS_next->get_total_component_concentration();
 	  }
 	else
 	  {
-	    // something went wrong
-	    cout << "MPC: Transport_PK.advance returned an error status" << endl; 
-	    throw std::exception();
+	    Errors::Message message("MPC: error... Transport_PK.advance returned an error status"); 
+	    Exceptions::amanzi_throw(message);
 	  }
       } else {
 	
@@ -309,8 +309,8 @@ void MPC::cycle_driver () {
 	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
         } else {
           // give up....
-	  cout << "MPC: Chemistry_PK.advance returned an error status" << endl;
-          throw std::exception();
+	    Errors::Message message("MPC: error... Chemistry_PK.advance returned an error status"); 
+	    Exceptions::amanzi_throw(message);
         }
       } else {
 	// commit total_component_concentration_star to the state

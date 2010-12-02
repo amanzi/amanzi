@@ -15,14 +15,16 @@
 
 
 enum Transport_CreateMode {
-     CopyPointers,   /* copy RCP pointers */
+     CopyPointers,   /* copy Teuchos::RCP pointers */
      ViewMemory,     /* convert to overlap to non-overlap vectors  */
      CopyMemory      /* copy non-overlap vector to overlap vectors */
 };
 
 
 using namespace std;
-using namespace Teuchos;
+
+// don't use namespaces in header files - MB
+// using namespace Teuchos;
 
 
 class Transport_State {
@@ -39,13 +41,13 @@ public:
   void copymemory_vector( Epetra_Vector & source, Epetra_Vector & target );
 
   /* access methods for state variables */
-  RCP<Epetra_MultiVector>   get_total_component_concentration()  { return total_component_concentration; }
+  Teuchos::RCP<Epetra_MultiVector>   get_total_component_concentration()  { return total_component_concentration; }
 
-  RCP<Epetra_Vector>   get_porosity()         { return porosity; }
-  RCP<Epetra_Vector>   get_water_saturation() { return water_saturation; }
-  RCP<Epetra_Vector>   get_darcy_flux()       { return darcy_flux; }
-  RCP<Epetra_Vector>   get_water_density()    { return water_density; }
-  RCP<Mesh_maps_base>  get_mesh_maps()        { return mesh_maps; }
+  Teuchos::RCP<Epetra_Vector>   get_porosity()         { return porosity; }
+  Teuchos::RCP<Epetra_Vector>   get_water_saturation() { return water_saturation; }
+  Teuchos::RCP<Epetra_Vector>   get_darcy_flux()       { return darcy_flux; }
+  Teuchos::RCP<Epetra_Vector>   get_water_density()    { return water_density; }
+  Teuchos::RCP<Mesh_maps_base>  get_mesh_maps()        { return mesh_maps; }
 
   Epetra_MultiVector &  ref_total_component_concentration()  { return *total_component_concentration; }
 
@@ -66,14 +68,14 @@ public:
 
 private:
   /* state variables that are relevant to transport */
-  RCP<Epetra_MultiVector>   total_component_concentration;
-  RCP<Epetra_Vector>        water_saturation;
-  RCP<Epetra_Vector>        darcy_flux;
-  RCP<Epetra_Vector>        porosity;
-  RCP<Epetra_Vector>        water_density;
+  Teuchos::RCP<Epetra_MultiVector>   total_component_concentration;
+  Teuchos::RCP<Epetra_Vector>        water_saturation;
+  Teuchos::RCP<Epetra_Vector>        darcy_flux;
+  Teuchos::RCP<Epetra_Vector>        porosity;
+  Teuchos::RCP<Epetra_Vector>        water_density;
 
   /* mesh infranstructure */
-  RCP<Mesh_maps_base>  mesh_maps;
+  Teuchos::RCP<Mesh_maps_base>  mesh_maps;
 };
 
 

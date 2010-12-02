@@ -44,7 +44,7 @@ namespace Amanzi_Transport{
 
 
 using namespace std;
-using namespace Teuchos;
+//using namespace Teuchos;
 using namespace Amanzi_Transport;
 
 
@@ -53,8 +53,8 @@ class Transport_PK {
 
 public:
   /* three constructors */
-  Transport_PK( ParameterList &parameter_list_MPC,
-		RCP<Transport_State> TS_MPC );
+  Transport_PK( Teuchos::ParameterList &parameter_list_MPC,
+		Teuchos::RCP<Transport_State> TS_MPC );
   Transport_PK();
 
   ~Transport_PK() {};
@@ -62,7 +62,7 @@ public:
   /* primary members */
   double calculate_transport_dT();
   void advance( double dT );
-  void commit_state( RCP<Transport_State> TS );
+  void commit_state( Teuchos::RCP<Transport_State> TS );
 
   void process_parameter_list();
   void identify_upwind_cells();
@@ -77,8 +77,8 @@ public:
   void geometry_package();
 
   /* access members */ 
-  RCP<Transport_State>  get_transport_state()      const { return TS; }
-  RCP<Transport_State>  get_transport_state_next() const { return TS_nextMPC; }
+  Teuchos::RCP<Transport_State>  get_transport_state()      const { return TS; }
+  Teuchos::RCP<Transport_State>  get_transport_state_next() const { return TS_nextMPC; }
 
   double get_transport_dT()      { return dT; }
   double get_cfl()               { return cfl; }
@@ -103,24 +103,24 @@ public:
 
 private:
   /* original and proposed (MPC and BIG) transport states */
-  RCP<Transport_State>  TS;
-  RCP<Transport_State>  TS_nextMPC;   /* uses memory of BIG */
-  RCP<Transport_State>  TS_nextBIG; 
+  Teuchos::RCP<Transport_State>  TS;
+  Teuchos::RCP<Transport_State>  TS_nextMPC;   /* uses memory of BIG */
+  Teuchos::RCP<Transport_State>  TS_nextBIG; 
   
   /* parameter list with Transport specific parameters */
-  ParameterList  parameter_list;
+  Teuchos::ParameterList  parameter_list;
 
   /* part of the future geometry package */
   vector<double>  face_area;
   vector<double>  cell_volume;
 
   /* internal data */
-  RCP<Epetra_IntVector>  upwind_cell;
-  RCP<Epetra_IntVector>  downwind_cell;
+  Teuchos::RCP<Epetra_IntVector>  upwind_cell;
+  Teuchos::RCP<Epetra_IntVector>  downwind_cell;
 
   /* communication patterns */
-  RCP<Epetra_Import>  cell_importer;
-  RCP<Epetra_Import>  face_importer;
+  Teuchos::RCP<Epetra_Import>  cell_importer;
+  Teuchos::RCP<Epetra_Import>  face_importer;
 
   /* transport time step, CFL, and status */
   double  cfl, dT, dT_debug;
