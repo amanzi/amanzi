@@ -43,12 +43,6 @@ namespace Amanzi_Transport{
 
 
 
-using namespace std;
-//using namespace Teuchos;
-using namespace Amanzi_Transport;
-
-
-
 class Transport_PK {
 
 public:
@@ -71,8 +65,8 @@ public:
   void check_GEDproperty( Epetra_MultiVector & tracer ); 
   void print_statistics();
 
-  vector<double>  calculate_accumulated_influx();
-  vector<double>  calculate_accumulated_outflux();
+  std::vector<double>  calculate_accumulated_influx();
+  std::vector<double>  calculate_accumulated_outflux();
 
   void geometry_package();
 
@@ -98,7 +92,7 @@ public:
   /* member for debugging only */
   double get_face_area( int f )   { return face_area[f]; }
   double get_cell_volume( int c ) { return cell_volume[c]; }
-  vector<double> & get_cell_volume() { return cell_volume; }
+  std::vector<double> & get_cell_volume() { return cell_volume; }
 
 
 private:
@@ -111,8 +105,8 @@ private:
   Teuchos::ParameterList  parameter_list;
 
   /* part of the future geometry package */
-  vector<double>  face_area;
-  vector<double>  cell_volume;
+  std::vector<double>  face_area;
+  std::vector<double>  cell_volume;
 
   /* internal data */
   Teuchos::RCP<Epetra_IntVector>  upwind_cell;
@@ -129,7 +123,7 @@ private:
 
   /* boundary conditions for each components and each side set */
   /* it will be converted to a separate class                  */
-  vector<Transport_BCs>  bcs;
+  std::vector<Transport_BCs>  bcs;
 
   /* frequently used data */
   int  cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;

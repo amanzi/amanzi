@@ -2,8 +2,6 @@
 #define __TransportBCs_hpp__
 
 
-using namespace std;
-
 
 class Transport_BCs {
 
@@ -17,12 +15,12 @@ public:
 public:
   int  side_set_id;
   int  type;
-  vector<double>  values;
-  vector<unsigned int>  faces;
+  std::vector<double>  values;
+  std::vector<unsigned int>  faces;
 
   /* accumulated influx and outflux */
-  vector<double>   influx;
-  vector<double>  outflux;
+  std::vector<double>   influx;
+  std::vector<double>  outflux;
 
 };
 

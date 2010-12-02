@@ -3,7 +3,7 @@
   <ParameterList name="Mesh">
     <Parameter name="Mesh Class" type="string" value="MOAB"/>
     <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Exodus file name" type="string" value="meshes/fbasin_unstr_400_V02.exo"/>
+      <Parameter name="Exodus file name" type="string" value="meshes/fbasin_unstr_400_V02_4P.h5m"/>
     </ParameterList>   
   </ParameterList>
   
@@ -11,16 +11,22 @@
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
     <Parameter name="End Time" type="double" value="6.3e+7"/>
-<!--    <Parameter name="End Cycle" type="int" value="1"/> -->
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="disable Transport_PK" type="string" value="no"/>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
+    <Parameter name="Viz dump time frequency" type="double" value="5e+5"/> 
+
+<!--
     <ParameterList name="GMV">
       <Parameter name="Mesh file name" type="string" value="fbasin_mesh.gmv"/>
       <Parameter name="Data file name" type="string" value="fbasin_data.gmv"/>
       <Parameter name="GMV prefix" type="string" value="gmv" />
-      <Parameter name="Dump time frequency" type="double" value="5e+5"/> 
-     </ParameterList>    
+    </ParameterList>    
+-->
+
+    <ParameterList name="CGNS">
+      <Parameter name="File name" type="string" value="fbasin_data.cgns"/>
+    </ParameterList>
   </ParameterList> 
 
   
@@ -81,50 +87,9 @@
   </ParameterList>
 
 
-  <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="0.5"/>   
-    <!-- debug and developers options --> 
-    <Parameter name="enable internal tests" type="string" value="no"/>   
-    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
-    <Parameter name="verbosity level" type="int" value="10"/>  
-    <Parameter name="maximal time step" type="double" value="0.5"/>  
-    <!-- end of debug and developers options -->
-    
-    <ParameterList name="Transport BCs">
-      <Parameter name="number of BCs" type="int" value="1"/>
-      <ParameterList name="BC 0">
-	<Parameter name="Side set ID" type="int" value="50001"/>
-	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="Component 0" type="double" value="1.0"/>
-	<Parameter name="Component 1" type="double" value="1.0"/>
-	<Parameter name="Component 2" type="double" value="1.0"/>
-      </ParameterList>  
-    </ParameterList>
-  </ParameterList>
-
-
-  <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="calcite.bgd" />
-    <Parameter name="Max Time Step (s)" type="double" value="0.5" />
-    <Parameter name="Verbosity" type="int" value="2" />
-    <Parameter name="Activity Model" type="string" value="debye-huckel" />
-    <ParameterList name="Initial Conditions">
-      <Parameter name="Number of minerals" type="int" value="1"/>
-      <Parameter name="Number of mesh blocks" type="int" value="1"/>
-      <ParameterList name="Mesh block 1"> 
-        <Parameter name="Mesh block ID" type="int" value="40000"/>
-        <ParameterList name="Minerals">
-          <Parameter name="Mineral 0" type="double" value="0.25"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-
   <ParameterList name="Flow">
     <Parameter name="Max Iterations" type="int" value="500"/>
-    <Parameter name="Error Tolerance" type="double" value="1.0e-9"/>
+    <Parameter name="Error Tolerance" type="double" value="1.0e-8"/>
     
     <ParameterList name="Darcy Problem">
       <ParameterList name="Diffusion Preconditioner">
@@ -164,6 +129,46 @@
 	<Parameter name="Side set ID" type="int" value="50001" />
       </ParameterList>  
      </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="0.5"/>   
+    <!-- debug and developers options --> 
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+    <Parameter name="verbosity level" type="int" value="9"/>  
+    <!-- end of debug and developers options -->
+    
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      <ParameterList name="BC 0">
+	<Parameter name="Side set ID" type="int" value="50001"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+	<Parameter name="Component 0" type="double" value="1.0"/>
+	<Parameter name="Component 1" type="double" value="1.0"/>
+	<Parameter name="Component 2" type="double" value="1.0"/>
+      </ParameterList>  
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="Chemistry">
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
+    <Parameter name="Thermodynamic Database File" type="string" value="calcite.bgd" />
+    <Parameter name="Max Time Step (s)" type="double" value="0.5" />
+    <Parameter name="Verbosity" type="int" value="2" />
+    <Parameter name="Activity Model" type="string" value="debye-huckel" />
+    <ParameterList name="Initial Conditions">
+      <Parameter name="Number of minerals" type="int" value="1"/>
+      <Parameter name="Number of mesh blocks" type="int" value="1"/>
+      <ParameterList name="Mesh block 1"> 
+        <Parameter name="Mesh block ID" type="int" value="40000"/>
+        <ParameterList name="Minerals">
+          <Parameter name="Mineral 0" type="double" value="0.25"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
 </ParameterList>

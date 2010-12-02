@@ -21,11 +21,6 @@ enum Transport_CreateMode {
 };
 
 
-using namespace std;
-
-// don't use namespaces in header files - MB
-// using namespace Teuchos;
-
 
 class Transport_State {
 
@@ -64,7 +59,7 @@ public:
   void analytic_water_saturation( double ws = 1.0 );
   void analytic_water_density( double wd = 1000.0 );
 
-  void error_total_component_concentration( double f(double*, double), double t, vector<double> & cell_volume, double* L1, double* L2 );
+  void error_total_component_concentration( double f(double*, double), double t, std::vector<double> & cell_volume, double* L1, double* L2 );
 
 private:
   /* state variables that are relevant to transport */
