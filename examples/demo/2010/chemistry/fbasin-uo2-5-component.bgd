@@ -42,9 +42,9 @@ Quartz               =  1.00 SiO2(aq)  ;    -3.9993 ;  60.0843 ;   22.688 ;   1.
 <Mineral Kinetics
 # name               ; TST ; log10_rate_constant double     moles_m2_sec 
 
-Kaolinite            ; TST ; log10_rate_constant    -16.699 moles_m2_sec 
-Quartz               ; TST ; log10_rate_constant      -18.0 moles_m2_sec 
-(UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
+Kaolinite            ; TST ; log10_rate_constant    -12.699 moles_m2_sec 
+Quartz               ; TST ; log10_rate_constant      -14.0 moles_m2_sec 
+(UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -6.0 moles_m2_sec 
 
 <Surface Complex Sites
 # name               ; surface_density

@@ -37,14 +37,6 @@ void surface_complexation(const Verbosity& verbosity,
                           int* num_time_steps,
                           int* output_interval);
 
-void surface_complexation_full(const Verbosity& verbosity,
-                          std::string* thermo_database_file,
-                          std::string* activity_model_name,
-                          Beaker::BeakerComponents* components,
-                          double* delta_time,
-                          int* num_time_steps,
-                          int* output_interval);
-
 void fbasin_initial(const Verbosity& verbosity,
                     std::string* thermo_database_file,
                     std::string* activity_model_name,

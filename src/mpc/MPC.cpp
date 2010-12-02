@@ -114,6 +114,14 @@ void MPC::cycle_driver () {
     // start at time T=T0;
     S->set_time(T0);
   }
+
+  if (chemistry_enabled) {
+    // total view needs this to be outside the constructor 
+    CPK->InitializeChemistry();
+    if (CPK->status() != ChemistryException::kOkay) {
+      throw std::exception();
+    }
+  }
   
   bool gmv_output = mpc_parameter_list.isSublist("GMV");
 #ifdef ENABLE_CGNS
