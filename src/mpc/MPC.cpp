@@ -114,6 +114,10 @@ void MPC::cycle_driver () {
     // start at time T=T0;
     S->set_time(T0);
   }
+
+  if (transport_enabled && chemistry_enabled) {
+    CPK->InitializeChemistry(S->get_total_component_concentration());
+  }
   
   bool gmv_output = mpc_parameter_list.isSublist("GMV");
 #ifdef ENABLE_CGNS

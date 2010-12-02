@@ -21,6 +21,9 @@ class Chemistry_PK {
 
   ~Chemistry_PK ();
 
+  void InitializeChemistry(
+      Teuchos::RCP<const Epetra_MultiVector> total_component_concentration);
+
   void advance(const double& delta_time,
                Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
   void commit_state ( Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
@@ -77,9 +80,12 @@ class Chemistry_PK {
     Teuchos::RCP<const Epetra_SerialDenseVector> volume;
     // things we need internal copies of
     Teuchos::RCP<Epetra_MultiVector> aqueous_components;
+    Teuchos::RCP<Epetra_MultiVector> free_ion_species;
     Teuchos::RCP<Epetra_MultiVector> minerals;
     Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites;
     Teuchos::RCP<Epetra_MultiVector> sorption_sites;
+    Teuchos::RCP<Epetra_MultiVector> total_sorbed;
+//geh can do without for now.    Teuchos::RCP<Epetra_MultiVector> free_site_concentrations;
   };
 
   void InitializeInternalStorage(InternalStorage* storage);
