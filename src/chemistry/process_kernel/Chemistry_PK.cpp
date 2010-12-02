@@ -61,6 +61,9 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
       using_sorption_(false),
       have_free_ion_guess_(false)
 {
+  // TODO: is there any reason to keep any of this here, or should it
+  // all be moved down into InitializeChemistry()...?
+
   // determine the format of the database file
   std::string database_format =
       parameter_list_.get<std::string>("Thermodynamic Database Format",
@@ -402,6 +405,13 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                   mesh_block_list, mesh_block_ID,
                                   saved_state_.free_ion_species);
+      } else {
+        // need to manually add an initial condition
+        std::vector<double> values(number_free_ion(), 1.0e-9);
+        set_const_values_for_block(values, number_free_ion(),
+                                   current_state_.free_ion_species, mesh_block_ID); 
+        set_const_values_for_block(values, number_free_ion(),
+                                   saved_state_.free_ion_species, mesh_block_ID); 
       }
 
       //
