@@ -775,3 +775,63 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
     //chem_->DisplayTotalColumns(saved_time_, beaker_components_.total);
   }
 }  // end commit_state()
+
+
+
+Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
+{
+  // get the number of extra output variables, for now I'm using 1
+
+  int nvars = 1;
+ 
+  // create the Epetra_MultiVector that will hold the data
+
+  Teuchos::RCP<Epetra_MultiVector> aux_data = 
+    Teuchos::rcp(new Epetra_MultiVector(chemistry_state_->get_mesh_maps()->cell_map(false), nvars));
+
+  // populate aux_data, for now I am just initializing to 0, vector by vector
+  for (int i=0; i<nvars; i++) 
+    {
+      // the i-th Epetra_Vecotr in the aux_data Epetre_MultiVector
+      // is *(*aux_data)(i)
+
+      (*aux_data)(i)->PutScalar(0.0);
+    }
+
+  // return the multi vector
+  return aux_data;
+}
+
+
+void Chemistry_PK::set_chemistry_output_names(std::vector<string> &names)
+{
+  // get the number of auxillary variables, for now, just one
+
+  int nvars = 1;
+
+  // resize the name vector
+  names.resize(nvars);
+  
+  // populate the name vactor, for now there's only one
+  for (int i=0; i<nvars; i++)
+    {
+      names[i] = "auxillary variable";
+    }
+}
+
+
+void Chemistry_PK::set_component_names(std::vector<string> &names)
+{
+  // get the number of components
+  int ncomps = chemistry_state_->get_total_component_concentration()->NumVectors();
+
+  // resize the names vector 
+  names.resize(ncomps);
+
+  // populate the names vector, for testing I'm just adding "-test"
+
+  for (int i=0; i<ncomps; i++)
+    {
+      names[i] = "test";
+    }
+}

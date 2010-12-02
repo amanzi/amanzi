@@ -115,6 +115,8 @@ void MPC::cycle_driver () {
     S->set_time(T0);
   }
 
+
+
   if (chemistry_enabled) {
     // total view needs this to be outside the constructor 
     CPK->InitializeChemistry();
@@ -126,7 +128,18 @@ void MPC::cycle_driver () {
   bool gmv_output = mpc_parameter_list.isSublist("GMV");
 #ifdef ENABLE_CGNS
   bool cgns_output = mpc_parameter_list.isSublist("CGNS");
+
+
+
+  if (chemistry_enabled) {
+    if (cgns_output) {
+      CPK->set_chemistry_output_names(auxnames);
+      CPK->set_component_names(compnames);
+    }   
+  }
 #endif
+
+  
 
   const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",-1);
   const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",-1);
@@ -204,8 +217,12 @@ void MPC::cycle_driver () {
 	std::stringstream cname;
 	cname << "concentration " << nc;
 	
+	if (chemistry_enabled) {
+	  cname << " " << compnames[nc];
+	}
+
 	write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
-      }      
+      }
 
       if (flow_enabled) {
 	const Epetra_MultiVector &DV = *S->get_darcy_velocity();
@@ -214,6 +231,22 @@ void MPC::cycle_driver () {
 	write_field_data( *DV(1), "darcy velocity y");
 	write_field_data( *DV(2), "darcy velocity z");
       }    
+      
+      if (chemistry_enabled) {
+	// get the auxillary data
+	Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+
+	// how much of it is there?
+	int naux = aux->NumVectors();
+	for (int i=0; i<naux; i++) {
+	  std::stringstream name;
+	  name << auxnames[i];
+	  
+	  write_field_data( *(*aux)(i), name.str()); 
+
+	}
+
+      }
       
       close_data_file();
     }
@@ -380,11 +413,28 @@ void MPC::write_cgns_data(std::string filename, int iter)
     std::stringstream cname;
     cname << "concentration " << nc;
     
+    if (chemistry_enabled) {
+      cname << " " << compnames[nc];
+    }
+
     write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
   }
-
-
   
+  if (chemistry_enabled) {
+    // get the auxillary data
+    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+    
+    // how much of it is there?
+    int naux = aux->NumVectors();
+    for (int i=0; i<naux; i++) {
+      std::stringstream name;
+      name << auxnames[i];
+      
+      write_field_data( *(*aux)(i), name.str()); 
+      
+    }
+    
+  }
   close_data_file();     
 }
 #endif
