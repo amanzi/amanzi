@@ -1327,21 +1327,21 @@ int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
   int ierr;
 
   // Basic sanity check on set IDs.
-  ierr = check_set_ids(kind);
-  if (comm.NumProc() > 1) comm.MaxAll(&ierr, &ierr, 1);
+  int ierr_loc = check_set_ids(kind);
+  if (comm.NumProc() > 1) comm.MaxAll(&ierr_loc, &ierr, 1);
   if (ierr) return 1;
 
   // Check set IDs are same across all processes.
   ierr = check_set_ids_same(kind);
   if (ierr) return 1;
 
-  int status = 0; // overall status of the test
+  int status_loc = 0, status = 0; // overall status of the test
 
   // Additional tests; if these fail we can still continue.
   ierr = check_set_ids_alt(kind);
-  if (ierr) status = 1;
+  if (ierr) status_loc = 1;
   ierr = check_valid_set_id(kind);
-  if (ierr) status = 1;
+  if (ierr) status_loc = 1;
 
   // Now get the verified list of set IDs.
   int nset = mesh->num_sets(kind);
@@ -1360,26 +1360,26 @@ int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
     // can still continue.
     if (!ierr1) {
       ierr = check_get_set_alt(sids[n], kind, OWNED, map_own);
-      if (ierr) status = 1;
+      if (ierr) status_loc = 1;
     }
     if (!ierr2) {
       ierr = check_get_set_alt(sids[n], kind, USED,  map_use);
-      if (ierr) status = 1;
+      if (ierr) status_loc = 1;
     }
 
     // If anyone failed, everyone bails on further tests of this set.
-    if (ierr1 != 0 || ierr2 != 0) status = ierr = 1;
-    if (comm.NumProc() > 1) comm.MaxAll(&ierr, &ierr, 1);
+    if (ierr1 != 0 || ierr2 != 0) status_loc = ierr1 = 1;
+    if (comm.NumProc() > 1) comm.MaxAll(&ierr1, &ierr, 1);
     if (ierr) continue;
 
     // Verify the used set relates correctly to the owned set.
     ierr = check_used_set(sids[n], kind, map_own, map_use);
-    if (ierr) status = 1;
+    if (ierr) status_loc = 1;
 
     // OUGHT TO DO TESTING OF THE GHOST SETS
   }
 
-  if (comm.NumProc() > 1) comm.MaxAll(&status, &status, 1);
+  if (comm.NumProc() > 1) comm.MaxAll(&status_loc, &status, 1);
   return status;
 }
 
@@ -1437,7 +1437,7 @@ int MeshAudit::check_set_ids_same(Mesh_data::Entity_kind kind) const
 {
   if (comm.NumProc() > 1) {
 
-    int status = 0;
+    int status_loc = 0, status = 0;
 
     // Check the number of sets are the same,
     // using the number on process 0 as the reference.
@@ -1445,9 +1445,9 @@ int MeshAudit::check_set_ids_same(Mesh_data::Entity_kind kind) const
     comm.Broadcast(&nset, 1, 0);
     if (nset != mesh->num_sets(kind)) {
       os << "ERROR: inconsistent num_sets() value" << endl;
-      status = 1;
+      status_loc = 1;
     }
-    comm.MaxAll(&status, &status, 1);
+    comm.MaxAll(&status_loc, &status, 1);
     if (status != 0) return 1;
 
     // Broadcast the set IDs on processor 0.
@@ -1463,10 +1463,10 @@ int MeshAudit::check_set_ids_same(Mesh_data::Entity_kind kind) const
       if (sids[j] != sids0[j]) bad_data = true;
     if (bad_data) {
       os << "ERROR: get_set_ids() returned inconsistent values" << endl;
-      status = 1;
+      status_loc = 1;
     }
     delete [] sids0;
-    comm.MaxAll(&status, &status, 1);
+    comm.MaxAll(&status_loc, &status, 1);
     if (status != 0) return 1;
   }
 
@@ -1663,7 +1663,7 @@ int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
     // are correct, the tag vector will be filled with zeros afterwards.
     for (int j = 0; j < set_use.size(); ++j) --tag_use[set_use[j]];
 
-    int status = 0;
+    int status_loc = 0, status = 0;
 
     // Check for negative tag values;
     // these mark used LIDs that shouldn't be in the set but are.
@@ -1673,7 +1673,7 @@ int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
     if (!bad_LIDs.empty()) {
       os << "  ERROR: found used LIDs that belong to the set but shouldn't:";
       write_list(bad_LIDs, MAX_OUT);
-      status = 1;
+      status_loc = 1;
     }
 
     // Check for positive tag values;
@@ -1684,10 +1684,10 @@ int MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
     if (!bad_LIDs.empty()) {
       os << "  ERROR: found used LIDs that should belong to set but don't:";
       write_list(bad_LIDs, MAX_OUT);
-      status = 1;
+      status_loc = 1;
     }
 
-    comm.MaxAll(&status, &status, 1);
+    comm.MaxAll(&status_loc, &status, 1);
     return status;
   }
 }
