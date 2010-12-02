@@ -19,6 +19,13 @@ TESTS_PFLOTRAN = \
 	ca-carbonate-debye-huckel-pflotran \
 	calcite-kinetics-pflotran
 
+TESTS_FBASIN = \
+	fbasin-17-initial \
+	fbasin-17-infiltration \
+	fbasin-17-source \
+	fbasin-5-initial \
+	fbasin-5-outlet \
+	fbasin-5-source
 
 #
 # tests
@@ -27,7 +34,7 @@ all : test
 
 tests : test
 
-test : $(TESTS_CRUNCH) $(TESTS_PFLOTRAN)
+test : $(TESTS_CRUNCH) $(TESTS_PFLOTRAN) $(TESTS_FBASIN)
 
 test-crunch : $(TESTS_CRUNCH)
 
@@ -121,6 +128,50 @@ calcite-kinetics-pflotran :
 	-$(DIFF) $(DFLAGS) $@.cout results/pflotran/$@.test
 	@echo
 
+#
+# fbasin
+#
+fbasin-17-initial : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m crunch -t 7 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+fbasin-17-infiltration : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m crunch -t 8 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+fbasin-17-source : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m crunch -t 9 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+fbasin-5-initial : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m crunch -t 13 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+fbasin-5-outlet : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m crunch -t 14 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
+
+fbasin-5-source : 
+	@echo
+	@echo ----- WARNING: These results have not been verified! -----
+	$(GEOCHEM) -m crunch -t 15 $(GEOVERB) > $@.cout
+	-$(DIFF) $(DFLAGS) $@.cout results/crunch/$@.test
+	@echo
 
 
 #
