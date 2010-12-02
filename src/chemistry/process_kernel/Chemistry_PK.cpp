@@ -596,6 +596,11 @@ void Chemistry_PK::CopyBeakerComponentsToCell(const int cell_id)
     cell_components[cell_id] = beaker_components_.total[c];
   }
 
+  for (unsigned int c = 0; c < number_free_ion(); c++) {
+    double* cell_free_ion = (*current_state_.free_ion)[c];
+    cell_free_ion[cell_id] = beaker_components_.free_ion[c];
+  }
+
   for (unsigned int m = 0; m < number_minerals(); m++) {
     double* cell_minerals = (*current_state_.minerals)[m];
     cell_minerals[cell_id] = beaker_components_.minerals[m];
@@ -606,9 +611,9 @@ void Chemistry_PK::CopyBeakerComponentsToCell(const int cell_id)
     cell_ion_exchange_sites[cell_id] = beaker_components_.ion_exchange_sites[i];
   }
 
-  for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-    double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
-    cell_sorption_sites[cell_id] = beaker_components_.total_sorbed[i];
+  for (unsigned int i = 0; i < number_total_sorbed(); i++) {
+    double* cell_total_sorbed = (*current_state_.total_sorbed)[i];
+    cell_total_sorbed[cell_id] = beaker_components_.total_sorbed[i];
   }
 
 }  // end CopyBeakerComponentsToCell()
