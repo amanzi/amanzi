@@ -72,6 +72,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
 
      if (CPK->status() != ChemistryException::kOkay) {
+       cout << "MPC: Chemistry_PK constructor returned an error status" << endl;
        throw std::exception();
      }
    }
@@ -121,6 +122,7 @@ void MPC::cycle_driver () {
     // total view needs this to be outside the constructor 
     CPK->InitializeChemistry();
     if (CPK->status() != ChemistryException::kOkay) {
+      cout << "MPC: Chemistry_PK.InitializeChemistry returned an error status" << endl;
       throw std::exception();
     }
   }
@@ -289,6 +291,7 @@ void MPC::cycle_driver () {
 	else
 	  {
 	    // something went wrong
+	    cout << "MPC: Transport_PK.advance returned an error status" << endl; 
 	    throw std::exception();
 	  }
       } else {
@@ -306,6 +309,7 @@ void MPC::cycle_driver () {
 	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
         } else {
           // give up....
+	  cout << "MPC: Chemistry_PK.advance returned an error status" << endl;
           throw std::exception();
         }
       } else {
