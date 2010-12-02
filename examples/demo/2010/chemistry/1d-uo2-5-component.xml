@@ -96,12 +96,12 @@
       <Parameter name="Number of mesh blocks" type="int" value="1"/>
       <ParameterList name="Mesh block 1"> 
         <Parameter name="Mesh block ID" type="int" value="0"/>
-        <ParameterList name="Free Ions">
-	  <Parameter name="Component 0" type="double" value="5.2970E-16"/>  <!-- Al+++ -->
-	  <Parameter name="Component 1" type="double" value="3.2759E-08"/>  <!-- H+ -->
-	  <Parameter name="Component 2" type="double" value="9.9886E-07"/>  <!-- HPO4-2 -->
-	  <Parameter name="Component 3" type="double" value="1.8703E-04"/>  <!-- SiO2(aq) -->
-	  <Parameter name="Component 4" type="double" value="1.7609E-20"/>  <!-- UO2++ -->
+        <ParameterList name="Free Ion Species">
+	  <Parameter name="Free Ion Species 0" type="double" value="4.36476e-16"/>  <!-- Al+++ -->
+	  <Parameter name="Free Ion Species 1" type="double" value="3.16772e-08"/>  <!-- H+ -->
+	  <Parameter name="Free Ion Species 2" type="double" value="1.00000e-06"/>  <!-- HPO4-2 -->
+	  <Parameter name="Free Ion Species 3" type="double" value="1.87000e-04"/>  <!-- SiO2(aq) -->
+	  <Parameter name="Free Ion Species 4" type="double" value="1.84374e-20"/>  <!-- UO2++ -->
         </ParameterList>
         <ParameterList name="Minerals">
           <Parameter name="Mineral 0" type="double" value="0.15"/>  <!-- Kaolinite -->
