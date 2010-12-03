@@ -71,6 +71,7 @@ class Chemistry_PK {
 
  protected:
   void set_status(ChemistryException::Status status) { this->status_ = status; };
+
  private:
   ChemistryException::Status status_;
   Verbosity verbosity_;
@@ -95,6 +96,8 @@ class Chemistry_PK {
   int number_sorption_sites_;
   int using_sorption_;
   int have_free_ion_guess_;
+  std::vector<std::string> aux_names_;
+  std::vector<int> aux_index_;
 
   struct InternalStorage {
     // things we don't change, just point to State object
@@ -112,6 +115,8 @@ class Chemistry_PK {
 //geh can do without for now.    Teuchos::RCP<Epetra_MultiVector> free_site_concentrations;
   };
 
+  Teuchos::RCP<Epetra_MultiVector> aux_data_;
+
   void InitializeInternalStorage(InternalStorage* storage);
   void SwapCurrentAndSavedStorage(void);
 
@@ -121,6 +126,7 @@ class Chemistry_PK {
   void XMLParameters(void);
   void LocalPhysicalState(void);
   void LocalInitialConditions(void);
+  void SetupAuxiliaryOutput(void);
   void ExtractInitialCondition(const std::string& type,
                                const std::string& keyword,
                                const int number_to_find,

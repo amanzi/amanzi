@@ -12,6 +12,7 @@
 using namespace std;
 using namespace Teuchos;
 using namespace cell_geometry;
+using namespace Amanzi_Transport;
 
 
 

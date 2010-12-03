@@ -43,18 +43,12 @@ namespace Amanzi_Transport{
 
 
 
-using namespace std;
-using namespace Teuchos;
-using namespace Amanzi_Transport;
-
-
-
 class Transport_PK {
 
 public:
   /* three constructors */
-  Transport_PK( ParameterList &parameter_list_MPC,
-		RCP<Transport_State> TS_MPC );
+  Transport_PK( Teuchos::ParameterList &parameter_list_MPC,
+		Teuchos::RCP<Transport_State> TS_MPC );
   Transport_PK();
 
   ~Transport_PK() {};
@@ -62,7 +56,7 @@ public:
   /* primary members */
   double calculate_transport_dT();
   void advance( double dT );
-  void commit_state( RCP<Transport_State> TS );
+  void commit_state( Teuchos::RCP<Transport_State> TS );
 
   void process_parameter_list();
   void identify_upwind_cells();
@@ -71,14 +65,14 @@ public:
   void check_GEDproperty( Epetra_MultiVector & tracer ); 
   void print_statistics();
 
-  vector<double>  calculate_accumulated_influx();
-  vector<double>  calculate_accumulated_outflux();
+  std::vector<double>  calculate_accumulated_influx();
+  std::vector<double>  calculate_accumulated_outflux();
 
   void geometry_package();
 
   /* access members */ 
-  RCP<Transport_State>  get_transport_state()      const { return TS; }
-  RCP<Transport_State>  get_transport_state_next() const { return TS_nextMPC; }
+  Teuchos::RCP<Transport_State>  get_transport_state()      const { return TS; }
+  Teuchos::RCP<Transport_State>  get_transport_state_next() const { return TS_nextMPC; }
 
   double get_transport_dT()      { return dT; }
   double get_cfl()               { return cfl; }
@@ -98,29 +92,29 @@ public:
   /* member for debugging only */
   double get_face_area( int f )   { return face_area[f]; }
   double get_cell_volume( int c ) { return cell_volume[c]; }
-  vector<double> & get_cell_volume() { return cell_volume; }
+  std::vector<double> & get_cell_volume() { return cell_volume; }
 
 
 private:
   /* original and proposed (MPC and BIG) transport states */
-  RCP<Transport_State>  TS;
-  RCP<Transport_State>  TS_nextMPC;   /* uses memory of BIG */
-  RCP<Transport_State>  TS_nextBIG; 
+  Teuchos::RCP<Transport_State>  TS;
+  Teuchos::RCP<Transport_State>  TS_nextMPC;   /* uses memory of BIG */
+  Teuchos::RCP<Transport_State>  TS_nextBIG; 
   
   /* parameter list with Transport specific parameters */
-  ParameterList  parameter_list;
+  Teuchos::ParameterList  parameter_list;
 
   /* part of the future geometry package */
-  vector<double>  face_area;
-  vector<double>  cell_volume;
+  std::vector<double>  face_area;
+  std::vector<double>  cell_volume;
 
   /* internal data */
-  RCP<Epetra_IntVector>  upwind_cell;
-  RCP<Epetra_IntVector>  downwind_cell;
+  Teuchos::RCP<Epetra_IntVector>  upwind_cell;
+  Teuchos::RCP<Epetra_IntVector>  downwind_cell;
 
   /* communication patterns */
-  RCP<Epetra_Import>  cell_importer;
-  RCP<Epetra_Import>  face_importer;
+  Teuchos::RCP<Epetra_Import>  cell_importer;
+  Teuchos::RCP<Epetra_Import>  face_importer;
 
   /* transport time step, CFL, and status */
   double  cfl, dT, dT_debug;
@@ -129,7 +123,7 @@ private:
 
   /* boundary conditions for each components and each side set */
   /* it will be converted to a separate class                  */
-  vector<Transport_BCs>  bcs;
+  std::vector<Transport_BCs>  bcs;
 
   /* frequently used data */
   int  cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;

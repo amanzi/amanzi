@@ -105,6 +105,9 @@ Chemistry_PK::~Chemistry_PK()
 // object through chemistry_state_. We should just use that...?
 void Chemistry_PK::InitializeChemistry(void)
 {
+  if (verbosity() == kDebugChemistryProcessKernel) {
+    std::cout << "  Chemistry_PK::InitializeChemistry()" << std::endl;
+  }
   SizeBeakerComponents();
 
   // copy the first cell data into the beaker storage for
@@ -137,6 +140,8 @@ void Chemistry_PK::InitializeChemistry(void)
   }
 
   CopyBeakerComponentsToCell(cell);
+
+  SetupAuxiliaryOutput();
 
   // now take care of the remainder
   int num_cells = chemistry_state_->get_porosity()->MyLength();
@@ -212,6 +217,36 @@ void Chemistry_PK::XMLParameters(void)
 
 
 }  // end XMLParameters()
+
+void Chemistry_PK::SetupAuxiliaryOutput(void)
+{
+  // requires that Beaker::Setup() has already been called!
+  if (verbosity() == kDebugChemistryProcessKernel) {
+    std::cout << "  Chemistry_PK::SetupAuxiliaryOutput()" << std::endl;
+  }
+  // TODO: temporary hard coding of auxillary output names, needs to
+  // come from the input file eventually
+  aux_names_.clear();
+  aux_names_.push_back("pH");
+  
+  unsigned int nvars = aux_names_.size();
+  std::string name;
+  aux_index_.clear();
+  for (unsigned int i = 0; i < nvars; i++) {
+    if (aux_names_.at(i) == "pH") {
+      name = "H+";
+    } else {
+      name = aux_names_.at(i);
+    }
+    aux_index_.push_back(chem_->GetPrimaryIndex(name)); 
+    // check to make sure it is not -1, an invalid name/index
+  }
+
+  // create the Epetra_MultiVector that will hold the data
+  aux_data_ = 
+      Teuchos::rcp(new Epetra_MultiVector(chemistry_state_->get_mesh_maps()->cell_map(false), nvars));
+}  // end SetupAuxiliaryOutput()
+
 
 // Note: total aqueous components, free ions, total sorbed must all be
 // the same size. Each array has it's own number_XXX variable to keep
@@ -780,58 +815,43 @@ void Chemistry_PK::commit_state(Teuchos::RCP<Chemistry_State> chem_state,
 
 Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
 {
-  // get the number of extra output variables, for now I'm using 1
+  // NOTE: bja: can we assume that this will always be called after
+  // commit_state()?  not if we want to dump the data from a failed
+  // time step.  in that case commit_state will not have been called,
+  // so we would want to dump current_state, saved_state will have
+  // the old data...  after a commit_state saved will have the good
+  // data, current will have the old data because we are just swapping
+  // pointers..... For now, assume that commit_state will have been
+  // called, and dump the saved state info....
 
-  int nvars = 1;
- 
-  // create the Epetra_MultiVector that will hold the data
+  // TODO: need a better way to get the size of the mesh
+  int num_cells = chemistry_state_->get_porosity()->MyLength();
 
-  Teuchos::RCP<Epetra_MultiVector> aux_data = 
-    Teuchos::rcp(new Epetra_MultiVector(chemistry_state_->get_mesh_maps()->cell_map(false), nvars));
-
-  // populate aux_data, for now I am just initializing to 0, vector by vector
-  for (int i=0; i<nvars; i++) 
-    {
-      // the i-th Epetra_Vecotr in the aux_data Epetre_MultiVector
-      // is *(*aux_data)(i)
-
-      (*aux_data)(i)->PutScalar(0.0);
+  for (int cell = 0; cell < num_cells; cell++) {
+    // populate aux_data_ by copying from the appropriate internal storage
+    // for now, assume we are just looking at free ion conc of primaries
+    for (unsigned int i = 0; i < aux_names_.size(); i++) {
+      double* cell_aux_data = (*aux_data_)[i];
+      double* cell_free_ion = (*saved_state_.free_ion_species)[aux_index_.at(i)];
+      cell_aux_data[cell] = cell_free_ion[cell];
+      if (aux_names_.at(i) == "pH") {
+        cell_aux_data[cell] = -std::log10(cell_aux_data[cell]);
+      }
     }
+  }  // for(cells)
 
   // return the multi vector
-  return aux_data;
+  return aux_data_;
 }
 
 
 void Chemistry_PK::set_chemistry_output_names(std::vector<string> &names)
 {
-  // get the number of auxillary variables, for now, just one
-
-  int nvars = 1;
-
-  // resize the name vector
-  names.resize(nvars);
-  
-  // populate the name vactor, for now there's only one
-  for (int i=0; i<nvars; i++)
-    {
-      names[i] = "auxillary variable";
-    }
-}
+  names = aux_names_;
+}  // end set_chemistry_output_names() 
 
 
 void Chemistry_PK::set_component_names(std::vector<string> &names)
 {
-  // get the number of components
-  int ncomps = chemistry_state_->get_total_component_concentration()->NumVectors();
-
-  // resize the names vector 
-  names.resize(ncomps);
-
-  // populate the names vector, for testing I'm just adding "-test"
-
-  for (int i=0; i<ncomps; i++)
-    {
-      names[i] = "test";
-    }
-}
+  chem_->GetPrimaryNames(names);
+}  // end set_component_names()
