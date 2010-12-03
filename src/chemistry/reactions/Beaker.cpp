@@ -1021,6 +1021,27 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
 **  Output related functions
 **
 *******************************************************************************/
+void Beaker::GetPrimaryNames(std::vector<std::string>& names) const
+{
+  names.clear();
+  for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
+       primary != primarySpecies_.end(); primary++) {
+    names.push_back(primary->name());
+  }
+}  // end GetPrimaryNames()
+
+int Beaker::GetPrimaryIndex(std::string name) const
+{
+  int index = -1;
+  for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
+       primary != primarySpecies_.end(); primary++) {
+    if (primary->name() == name) {
+      index = primary->identifier();
+    }
+  }  
+  return index;
+}  // end GetPrimaryIndex()
+
 void Beaker::display(void) const
 {
   std::cout << "----- Beaker description ------" << std::endl;
