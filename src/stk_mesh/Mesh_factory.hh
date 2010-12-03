@@ -117,6 +117,7 @@ private:
 
     stk::mesh::Part* nodes_part_;
     stk::mesh::Part* faces_part_;
+    stk::mesh::Part* elements_part_;
 
     Vector_field_type *coordinate_field_;
 

@@ -132,6 +132,10 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
 
     const int space_dimension = data.parameters ().dimensions ();
 
+    // Something to put elements in
+
+    elements_part_ = &meta_data_->declare_part ("Elements", element_rank_);
+
     // Convert element blocks, node and side sets into Parts:
 
     for (int block = 0; block < num_element_blocks; ++block) {
@@ -351,6 +355,8 @@ stk::mesh::Part* Mesh_factory::add_element_block_ (const Mesh_data::Element_bloc
         name << "element block " << block.id ();
 
     stk::mesh::Part &new_part (meta_data_->declare_part (name.str (), element_rank_));
+
+    meta_data_->declare_part_subset(*elements_part_, new_part);
 
     Mesh_data::ELEMENT_TYPE mdtype(block.element_type ());
     switch (mdtype) {
