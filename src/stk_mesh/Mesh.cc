@@ -9,18 +9,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 
-// Helper functions and classes
-namespace {
-
-struct Element_has_id
-{
-    stk::mesh::EntityId id_;
-    Element_has_id (stk::mesh::EntityId id) : id_ (id) { }
-    bool operator () (stk::mesh::Entity *entity) { return (entity->identifier () == id_); }
-};
-
-}
-
 namespace STK_mesh
 {
 
@@ -46,32 +34,10 @@ Mesh::Mesh (int space_dimension,
     ASSERT (dimension_ok_ ());
     ASSERT (meta_data_.get ());
     ASSERT (bulk_data_.get ());
-
-    update_ ();
 }
 
 // Information Getters
 // -------------------
-
-stk::mesh::Entity* Mesh::id_to_entity (stk::mesh::EntityRank rank, 
-                                       stk::mesh::EntityId id, 
-                                       Element_Category category) const
-{
-    ASSERT (valid_rank (rank));
-    ASSERT (valid_category (category));
-
-    // Get the elements of correct rank
-    Entity_vector entities;
-    get_entities (rank, category, entities);
-
-    // Search for the given id.
-    Entity_vector::const_iterator entity = 
-        std::find_if (entities.begin (), entities.end (), Element_has_id (id));
-
-    if (entity == entities.end ()) throw "Unable to find specified entity in id_to_entity_";
-
-    return *entity;
-}
 
 unsigned int Mesh::num_sets (stk::mesh::EntityRank rank) const 
 {
@@ -87,90 +53,111 @@ unsigned int Mesh::num_sets (stk::mesh::EntityRank rank) const
     return count;
 }
 
-unsigned int Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category category) const
+/** 
+ * Ideally, we'd like to trust stk::mesh to understand @c category ,
+ * but it doesn't.  See get_entities() for how things really need to
+ * be done.
+ * 
+ * @param rank 
+ * @param category 
+ * 
+ * @return number of entities found
+ */
+unsigned int 
+Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category category) const
 {
-    return stk::mesh::count_selected_entities (selector_ (category), bulk_data_->buckets (rank));
+    Entity_vector e;
+    get_entities(rank, category, e);
+    return e.size();
 }
 
-unsigned int Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) const
-{
-    stk::mesh::Selector part_selector(part);
-    part_selector &= selector_ (category);
-    const stk::mesh::EntityRank rank        = part.primary_entity_rank ();
 
-    return stk::mesh::count_selected_entities (part_selector, bulk_data_->buckets (rank));
+unsigned int 
+Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) const
+{
+    Entity_vector e;
+    get_entities(part, category, e);
+    return e.size();
 }
 
-void Mesh::get_entities (stk::mesh::EntityRank rank, Element_Category category, Entity_vector& entities) const
+/** 
+ * Because cell-to-face relations are problematic, we can't really
+ * trust stk::mesh to get ghost cells and faces right.  
+ * 
+ * @param rank 
+ * @param category 
+ * @param entities 
+ */
+void 
+Mesh::get_entities (stk::mesh::EntityRank rank, Element_Category category, Entity_vector& entities) const
 {
-    ASSERT (entities.size () == 0);
     get_entities_ (selector_ (category), rank, entities);
-    ASSERT (entities.size () == count_entities (rank, category));
 }
 
-void Mesh::get_entities (const stk::mesh::Part& part, Element_Category category, Entity_vector& entities) const
+void 
+Mesh::get_entities (const stk::mesh::Part& part, Element_Category category, Entity_vector& entities) const
 {
-    ASSERT (entities.size () == 0);
-
-    const stk::mesh::Selector part_selector = part | selector_ (category);
+    const stk::mesh::Selector part_selector = part & selector_ (category);
     const stk::mesh::EntityRank rank  = part.primary_entity_rank ();
-
     get_entities_ (part_selector, rank, entities);
 }
 
-void Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank,
-                          Entity_vector& entities) const
+void 
+Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank,
+                     Entity_vector& entities) const
 {
     stk::mesh::get_selected_entities (selector, bulk_data_->buckets (rank), entities);
 }
 
 
-void Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
+/** 
+ * This may only be safe if @c element is locally owned or shared.
+ * 
+ * @param element @em global element identifier (in)
+ * @param ids @em global face identifiers (out)
+ */
+void 
+Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
     // Look up element from global id.
     const int node_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
     const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
     const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
-    stk::mesh::Entity *entity = id_to_entity (cell_rank, element, USED);
+
+    stk::mesh::Entity *entity = bulk_data_->get_entity(cell_rank, element);
     ASSERT (entity->identifier () == element);
 
     const CellTopologyData* topo = stk::mesh::get_cell_topology (*entity);
 
     ASSERT(topo != NULL);
 
-    stk::mesh::PairIterRelation rel = entity->relations( node_rank );
-    for (unsigned int s = 0; s < topo->side_count; s++) {
-        const CellTopologyData *side_topo = (topo->side[s].topology);
-        const unsigned * const side_node_map = topo->side[s].node;
-
-        Entity_vector snodes;
-
-        for ( unsigned i = 0 ; i < side_topo->node_count ; ++i ) {
-            snodes.push_back(rel[ side_node_map[i] ].entity());
-        }
-
-        std::vector< stk::mesh::Entity * > rfaces;
-        get_entities_through_relations(snodes, face_rank, rfaces);
-  
-        ASSERT(!rfaces.empty());
-
-        ids.push_back (rfaces.front()->identifier ());
-
+    stk::mesh::PairIterRelation faces = entity->relations( face_rank );
+    for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
+    {
+        ids.push_back (it->entity ()->identifier ());
     }
 
     ASSERT (ids.size () == topo->side_count);
 }
 
-void Mesh::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
+/** 
+ * This may only be safe if @c element is locally owned or shared.
+ * 
+ * @param element @em global element identifier (in)
+ * @param ids @em global node identifiers (out)
+ */
+void 
+Mesh::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
 
     const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
     const int node_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
-    stk::mesh::Entity *entity = id_to_entity (cell_rank, element, USED);
 
-    stk::mesh::PairIterRelation faces = entity->relations (node_rank);
+    stk::mesh::Entity *entity = bulk_data_->get_entity(cell_rank, element);
 
-    for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
+    stk::mesh::PairIterRelation nodes = entity->relations (node_rank);
+
+    for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); it != nodes.end (); ++it)
     {
         ids.push_back (it->entity ()->identifier ());
     }
@@ -183,7 +170,7 @@ void Mesh::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
     const int from_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
     const int to_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
-    stk::mesh::Entity *entity = id_to_entity (from_rank, element, USED);
+    stk::mesh::Entity *entity = bulk_data_->get_entity(from_rank, element);
     
     stk::mesh::PairIterRelation nodes = entity->relations (to_rank);
     
@@ -193,7 +180,6 @@ void Mesh::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
     }
 
     ASSERT (ids.size () == 4);
-    
 }
 
 double const * Mesh::coordinates (stk::mesh::Entity* node) const
@@ -203,19 +189,24 @@ double const * Mesh::coordinates (stk::mesh::Entity* node) const
     return field_data (coordinate_field_, *node);
 }
 
-
-double const * Mesh::coordinates (stk::mesh::EntityId node) const
+/** 
+ * 
+ * 
+ * @param node @em global node identifier
+ * 
+ * @return node coordinates
+ */
+double const * 
+Mesh::coordinates (stk::mesh::EntityId node) const
 {
 
-    ASSERT (node > 0);
-    ASSERT (node <= count_entities (stk::mesh::Node, USED));
-
-    stk::mesh::Entity *entity = id_to_entity (stk::mesh::Node, node, USED);
+    stk::mesh::Entity *entity = bulk_data_->get_entity(stk::mesh::Node, node);
     return coordinates (entity);
 
 }
 
-stk::mesh::Part* Mesh::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
+stk::mesh::Part* 
+Mesh::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
 {
     
     Id_map::const_iterator part_it = set_to_part_.find (std::make_pair (rank, set_id));
@@ -268,63 +259,27 @@ void Mesh::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int> &i
 // Manipulators
 // ------------
 
-const stk::mesh::Selector& Mesh::selector_ (Element_Category category) const
+stk::mesh::Selector Mesh::selector_ (Element_Category category) const
 {
     ASSERT (valid_category (category));
 
-    if (category == OWNED) return owned_selector_;
-    if (category == USED)  return used_selector_;
-    if (category == GHOST) return ghost_selector_;
-
-    throw "Invalid element category in Mesh::selector_";
+    stk::mesh::Selector s;
+    switch (category) {
+    case (OWNED):
+      s |= meta_data_->locally_owned_part();
+      break;
+    case (GHOST):
+      s |= meta_data_->globally_shared_part();
+      break;
+    case (USED):
+      s |= meta_data_->locally_owned_part();
+      s |= meta_data_->globally_shared_part();
+      break;
+    }
+    return s;
 }
 
 
-void Mesh::update_ ()
-{
-
-    // Make sure whatever mesh data I'm caching is brought up-to-date here.
-
-    // Update cached element selectors
-    universal_selector_ = stk::mesh::Selector (meta_data_->universal_part ());
-    owned_selector_     = stk::mesh::Selector (meta_data_->locally_owned_part ());
-    ghost_selector_     = stk::mesh::Selector (meta_data_->globally_shared_part ());
-    used_selector_      = owned_selector_ | ghost_selector_;
-    
-    notify_views_ ();
-
-}
-
-
-// void Mesh::rebalance_mesh (const Mesh::Entity_map& entity_map)
-// {
-
-//     // Loop over entities in entity_map
-//     for (Entity_map::const_iterator map_it;
-//          map_it != entity_map.end ();
-//          ++map_it)
-//     {
-
-//         // Look up the element from the global id in the map
-//         const stk::mesh::EntityId entity_global_id = map_it->first;
-//         const unsigned int destination = map_it->second;
-
-//         const stk::mesh::EntityId local_id = global_to_local (entity_global_id);
-//         if (local_id != 0)
-//         {
-//             // If the element was found, check it's destination. If not on
-//             // this rank, add it to the list of outgoing entities.
-//             if (destination != rank_id ())
-//             {
-
-//             }
-
-//         }        
-        
-
-//     }
-
-// }
 
 // Argument validators
 // -------------------

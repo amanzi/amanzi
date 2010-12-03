@@ -17,8 +17,6 @@
 namespace STK_mesh
 {
 
-struct Mesh_view;
-
 class Mesh
 {
 
@@ -33,20 +31,12 @@ private:
     std::auto_ptr<stk::mesh::MetaData> meta_data_;
     std::auto_ptr<stk::mesh::BulkData> bulk_data_;
     
-    stk::mesh::Selector universal_selector_;
-    stk::mesh::Selector owned_selector_;
-    stk::mesh::Selector ghost_selector_;
-    stk::mesh::Selector used_selector_;
-    
     Vector_field_type &coordinate_field_;
     
-    const stk::mesh::Selector& selector_ (Element_Category category) const;
+    stk::mesh::Selector selector_ (Element_Category category) const;
 
     Id_map set_to_part_;
     
-    void update_ ();
-    void notify_views_ () {  }
-
     const stk::mesh::Part& get_part_from_set_id_ (unsigned int set_id);
 
     void get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank, Entity_vector&) const;
@@ -125,16 +115,6 @@ public:
 
 
     
-    // Manipulators
-    // ------------
-
-    void modify_bulk_data () { bulk_data_->modification_begin ();              consistent_ = false; }
-    void freeze_bulk_data () { bulk_data_->modification_end ();   update_ ();  consistent_ = true;  }
-    void rebalance_mesh (const Entity_map& entity_map);
-
-    void add_view (Mesh_view* view) { }
-
-
     // Static information
     // ------------------
 

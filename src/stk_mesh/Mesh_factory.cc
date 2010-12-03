@@ -239,17 +239,6 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data,
     generate_local_faces_(global_fidx[communicator_.MyPID()], false);
     bulk_data_->modification_end();
 
-
-    // FIXME: Generate cell-to-face relations.  If cell-to-face
-    // relations are done here instead of in declare_face_() the same
-    // problems happen.  Declaring cell-to-face relations stomps on
-    // cell-to-node and/or face-to-node relations.
-
-    // bulk_data_->modification_begin();
-    // generate_face_relations_();
-    // bulk_data_->modification_end();
-
-
     // Put side set faces in the correct parts
     
     check_face_ownership_();
@@ -532,10 +521,9 @@ Mesh_factory::get_element_side_face_(const stk::mesh::Entity& element, const uns
 
 
 /** 
- * This routine takes care of everything necessary to declare a
- * (local) face, include declaring the entity and making necessary
- * relations to related nodes and cells.  In order for this to work,
- * the elements have to be declared @em and ghosted.  
+ * This routine takes care of declaring a (local) face, include
+ * declaring the entity and making necessary relations to related
+ * nodes and cells.
  * 
  * @param nodes nodes involved in the face
  * @param index global index to assign to the face
@@ -553,7 +541,7 @@ Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& 
     p.push_back(faces_part_);
 
     stk::mesh::Entity& face = 
-        bulk_data_->declare_entity(entity_map_->kind_to_rank(Mesh_data::FACE), index, p);
+        bulk_data_->declare_entity(face_rank_, index, p);
 
     unsigned int r(0);
     for (stk::mesh::EntityVector::iterator n = nodes.begin(); n != nodes.end(); n++) {
@@ -564,13 +552,7 @@ Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& 
     // the cell to node relations, not sure why (varying the relation
     // index doesn't seem to matter)
 
-    // bulk_data_->declare_relation(*owner, face, side_index);
-    // static const unsigned int ioffset(0);
-    
-    // bulk_data_->declare_relation(*owner, face, index+ioffset);
-    // if (nbr != NULL) {
-    //     bulk_data_->declare_relation(*nbr, face, index+ioffset);
-    // }
+    bulk_data_->declare_relation(*owner, face, side_index);
 
     return face;
 }
@@ -622,7 +604,7 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
     stk::mesh::Selector owned(meta_data_->locally_owned_part());
 
     int nlocal = 
-        stk::mesh::count_selected_entities(owned, bulk_data_->buckets(entity_map_->kind_to_rank(Mesh_data::CELL)));
+        stk::mesh::count_selected_entities(owned, bulk_data_->buckets(element_rank_));
 
     stk::mesh::PartVector parts(meta_data_->get_parts());
     for (stk::mesh::PartVector::iterator p = parts.begin(); 
@@ -636,7 +618,7 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
 
         std::vector< stk::mesh::Entity * > cells;
         stk::mesh::get_selected_entities(s, 
-                                         bulk_data_->buckets(entity_map_->kind_to_rank(Mesh_data::CELL)), 
+                                         bulk_data_->buckets(element_rank_), 
                                          cells);
         
         int localidx(0);
@@ -648,10 +630,20 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
             for (unsigned int s = 0; s < topo->side_count; s++) {
 
                 // see if the face already exists (on the local
-                // processor); if so, just go on to the next
+                // processor); if so, see if this cell is already
+                // related to it (it shouldn't be)
 
                 stk::mesh::Entity *rface(get_element_side_face_(**c, s));
-                if (rface != NULL) continue;
+
+                Entity_vector rcells;
+                if (rface != NULL) { 
+                  Entity_vector f;
+                  f.push_back(rface);
+                  get_entities_through_relations(f, element_rank_, rcells);
+                  ASSERT(rcells.size() == 1);
+                  bulk_data_->declare_relation(*(*c), *rface, s);
+                  continue;
+                }
                                          
                 // get the cell nodes on this side
 
@@ -661,7 +653,6 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
                 // related to (*c should be one of them, *and* there
                 // should be at most one other cell)
             
-                Entity_vector rcells;
                 get_entities_through_relations(snodes, 
                                                element_rank_, 
                                                rcells);

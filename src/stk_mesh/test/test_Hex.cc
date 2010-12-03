@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Mon Nov 29 12:16:14 2010
+ * @date Fri Dec  3 14:19:06 2010
  * 
  * @brief  
  * 
@@ -11,9 +11,11 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Mon Nov 29 12:16:14 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Fri Dec  3 14:19:06 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
+#include <iostream>
+#include <iomanip>
 #include <UnitTest++.h>
 #include <Epetra_MpiComm.h>
 
@@ -21,6 +23,7 @@
 #include "../Mesh_factory.hh"
 #include "../Data_structures.hh"
 #include "../Mesh_maps_stk.hh"
+#include "MeshAudit.hh"
 #include "HexMeshGenerator.hh"
 
 
@@ -118,19 +121,81 @@ SUITE (HexMesh)
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, jsize*ksize);
 
-        // STK_mesh::Mesh_maps_stk mesh_map(mesh);
+        
 
-        // lcount = mesh_map.count_entities(Mesh_data::CELL, STK_mesh::OWNED);
-        // comm.SumAll(&lcount, &gcount, 1);
-        // CHECK_EQUAL (gcount, isize*jsize*ksize);
+        // Teuchos::RCP<Mesh_maps_base> mesh_map(new STK_mesh::Mesh_maps_stk(mesh));
 
-        // lcount = mesh_map.count_entities(Mesh_data::FACE, STK_mesh::OWNED);
-        // comm.SumAll(&lcount, &gcount, 1);
-        // CHECK_EQUAL (gcount, 
-        //              (isize  )*(jsize  )*(ksize+1) + 
-        //              (isize  )*(jsize+1)*(ksize ) + 
-        //              (isize+1)*(jsize  )*(ksize ));
+        // mesh_map->cell_map(false).Print(std::cout);
+
+        // if (comm.NumProc() == 1) {
+        //   MeshAudit audit(mesh_map);
+        //   CHECK(audit.check_entity_counts());
+        // } else {
+        //   std::ostringstream ofile;
+        //   ofile << "stk_mesh_audit_" << std::setfill('0') << std::setw(4) << comm.MyPID() << ".txt";
+        //   std::ofstream ofs(ofile.str().c_str());
+        //   if (comm.MyPID() == 0)
+        //     std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
+        //   MeshAudit audit(mesh_map, ofs);
+        //   CHECK(audit.check_entity_counts());
+        // }
     }
 
+    TEST (HexGhosting)
+    {
+        const unsigned int isize(1), jsize(1), ksize(8);
+
+        Epetra_MpiComm comm(MPI_COMM_WORLD);
+        const int nproc(comm.NumProc());
+        const int me(comm.MyPID());
+
+        stk::ParallelMachine pm(comm.Comm());
+
+        Mesh_data::HexMeshGenerator g(&comm, isize, jsize, ksize);
+
+        Teuchos::RCP<Mesh_data::Data> meshdata(g.generate());
+        Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
+        Teuchos::RCP<Epetra_Map> vmap(g.vertexmap(true));
+
+        STK_mesh::Mesh_factory mf(pm, 1000);
+        Mesh_data::Fields nofields;
+        STK_mesh::Mesh_p mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
+
+        STK_mesh::Entity_vector e;
+
+
+        if (nproc > 1) {
+
+            // all processes should have at least 1 but at most 8 shared nodes
+
+            mesh->get_entities(stk::mesh::Node, STK_mesh::GHOST, e);
+            CHECK(!e.empty());
+            CHECK(e.size() <= 8);
+
+            // processes should have at least 1 but at most 2 shared faces
+
+            mesh->get_entities(stk::mesh::Face, STK_mesh::GHOST, e);
+            CHECK(!e.empty());
+            CHECK(e.size() <= 2);
+        
+            // processes should have at least 1 but at most 2 shared
+            // cells, but it doesn't
+            
+            // mesh->get_entities(stk::mesh::Element, STK_mesh::GHOST, e);
+            // CHECK(!e.empty());
+            // CHECK(e.size() <= 2);
+
+        } else {
+
+            mesh->get_entities(stk::mesh::Node, STK_mesh::GHOST, e);
+            CHECK(e.empty());
+
+            mesh->get_entities(stk::mesh::Face, STK_mesh::GHOST, e);
+            CHECK(e.empty());
+        
+            mesh->get_entities(stk::mesh::Element, STK_mesh::GHOST, e);
+            CHECK(e.empty());
+        }            
+    }        
 }
 
