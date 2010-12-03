@@ -309,17 +309,17 @@ void MPC::cycle_driver () {
 	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
         } else {
           // dump data and give up...
-	  S->update_total_component_concentration(CPK->get_total_component_concentration());
+// 	  S->update_total_component_concentration(CPK->get_total_component_concentration());
 	  
-	  S->advance_time(mpc_dT);
-	  iter++;
+// 	  S->advance_time(mpc_dT);
+// 	  iter++;
 	  
-#ifdef ENABLE_CGNS
-	  if (cgns_output) {
-	    cout << "MPC: Writing to CGNS file at cycle "<< vizdump_cycle << endl;
-	    write_cgns_data(cgns_filename, iter);
-	  }
-#endif	
+// #ifdef ENABLE_CGNS
+// 	  if (cgns_output) {
+// 	    cout << "MPC: Writing to CGNS file at cycle "<< vizdump_cycle << endl;
+// 	    write_cgns_data(cgns_filename, iter);
+// 	  }
+// #endif	
 	  
 	  Errors::Message message("MPC: error... Chemistry_PK.advance returned an error status"); 
 	  Exceptions::amanzi_throw(message);
