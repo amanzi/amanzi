@@ -836,6 +836,14 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
 
     num_iterations++;
 
+// geh
+//    if (num_iterations >= 100) {
+//      for (int i = 0; i < ncomp(); i++)
+//        std::cout << primarySpecies_[i].name() << " " << 
+//                  primarySpecies_[i].molality() << " " << total_[i] << "\n";
+//      std::cout << max_rel_change << " " << tolerance() << std::endl;
+//    }
+
     // exit if maximum relative change is below tolerance
   } while (max_rel_change > tolerance() && num_iterations < max_iterations());
   
@@ -848,6 +856,8 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: max relative change = " << max_rel_change << std::endl;
     error_stream << "Warning: tolerance = " << tolerance() << std::endl;
     error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
+    // update before leaving so that we can see the erroneous values!
+    UpdateComponents(components);
     throw ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded);
   }
 
@@ -1015,6 +1025,35 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
   }
 } // end UpdateComponents()
 
+void Beaker::CopyComponents(const Beaker::BeakerComponents from,
+                            Beaker::BeakerComponents *to)
+{
+  if (to->total.size() != from.total.size()) 
+    to->total.resize(from.total.size());
+  if (to->free_ion.size() != from.free_ion.size()) 
+    to->free_ion.resize(from.free_ion.size());
+  if (to->total_sorbed.size() != from.total_sorbed.size()) 
+    to->total_sorbed.resize(from.total_sorbed.size());
+  if (to->minerals.size() != from.minerals.size()) 
+    to->minerals.resize(from.minerals.size());
+  if (to->ion_exchange_sites.size() != from.ion_exchange_sites.size()) 
+    to->ion_exchange_sites.resize(from.ion_exchange_sites.size());
+  for (unsigned int i = 0; i < from.total.size(); i++) {
+    to->total[i] = from.total[i];
+  }
+  for (unsigned int i = 0; i < from.free_ion.size(); i++) {
+    to->free_ion[i] = from.free_ion[i];
+  }
+  for (unsigned int i = 0; i < from.total_sorbed.size(); i++) {
+    to->total_sorbed[i] = from.total_sorbed[i];
+  }
+  for (unsigned int i = 0; i < from.minerals.size(); i++) {
+    to->minerals[i] = from.minerals[i];
+  }
+  for (unsigned int i = 0; i < from.ion_exchange_sites.size(); i++) {
+    to->ion_exchange_sites[i] = from.ion_exchange_sites[i];
+  }
+} // end Beaker::CopyComponents()
 
 /*******************************************************************************
 **

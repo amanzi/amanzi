@@ -172,6 +172,8 @@ class Beaker {
   BeakerParameters GetDefaultParameters(void) const;
   BeakerParameters GetCurrentParameters(void) const;
   void SetParameters(const BeakerParameters& parameters);
+  void CopyComponents(const Beaker::BeakerComponents from,
+                            Beaker::BeakerComponents *to);
 
 protected:
   // update discretization and flow parameters
