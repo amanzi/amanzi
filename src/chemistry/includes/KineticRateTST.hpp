@@ -33,7 +33,7 @@ class KineticRateTST : public KineticRate
 {
  public:
   KineticRateTST(void);
-  ~KineticRateTST(void);
+  virtual ~KineticRateTST(void);
 
   void Setup(const SecondarySpecies& reaction,
              const StringTokenizer reaction_data,

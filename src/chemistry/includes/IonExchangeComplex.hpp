@@ -35,7 +35,8 @@ class IonExchangeComplex : Species {
   virtual ~IonExchangeComplex();
 
   // over ride Species.update()!
-  void update(void);
+  virtual void update(void);
+  virtual void update(const double molality);
 
   // update molalities
   virtual void Update(const std::vector<Species>primary_species, 

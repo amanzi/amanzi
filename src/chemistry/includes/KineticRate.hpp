@@ -21,7 +21,7 @@ class Block;
 class KineticRate
 {
  public:
-  ~KineticRate(void);
+  virtual ~KineticRate(void);
 
   virtual void Setup(const SecondarySpecies& reaction,
                      const StringTokenizer reaction_data,

@@ -19,7 +19,7 @@ class ChemistryException : public std::runtime_error
   virtual ~ChemistryException() throw();
 
   void PrintErrorMessage(void) const;
-  const Status error_status(void) const { return error_status_; };
+  Status error_status(void) const { return error_status_; };
 
  protected:
   Status error_status_;
