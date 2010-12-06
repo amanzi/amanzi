@@ -255,7 +255,7 @@ void MPC::cycle_driver () {
       close_data_file();
     }
 #endif
-    if (gnuplot_output) write_gnuplot_data(0);
+    if (gnuplot_output) write_gnuplot_data(0, 0.0);
 
 
     vizdump_time_count ++;
@@ -366,7 +366,7 @@ void MPC::cycle_driver () {
 	  write_cgns_data(cgns_filename, iter);
 	}
 #endif	
-	if (gnuplot_output) write_gnuplot_data(iter);
+	if (gnuplot_output) write_gnuplot_data(iter, vizdump_time + mpc_dT);
 
       } else if ( (vizdump_time_freq > 0) && ((vizdump_time + mpc_dT/1000.0) / vizdump_time_freq  > vizdump_time_count) ) {
 	
@@ -383,7 +383,7 @@ void MPC::cycle_driver () {
 	  write_cgns_data(cgns_filename, iter);
 	}
 #endif
-	if (gnuplot_output) write_gnuplot_data(iter);
+	if (gnuplot_output) write_gnuplot_data(iter, vizdump_time + mpc_dT);
 
       }
     }
@@ -464,7 +464,7 @@ void MPC::write_cgns_data(std::string filename, int iter)
 #endif
 
 
-void MPC::write_gnuplot_data(int iter)
+void MPC::write_gnuplot_data(int iter, double time)
 {
   // write each variable to a separate file
   // only works on one PE, not on a truly parallel run
@@ -480,12 +480,13 @@ void MPC::write_gnuplot_data(int iter)
       fname << "_" << compnames[nc];
     }    
     
-    fname << "_" << iter << ".dat";
+    fname << "_" << std::setfill('0') << std::setw(5) << iter << ".dat";
 
     filebuf fb;
     fb.open (fname.str().c_str(),ios::out);
     ostream os(&fb);
-    
+    os << "# time = " << time / (60.0 * 60.0 * 24.0 * 365.25) << " years" << std::endl;
+
     // now dump the Epetra Vector
     for (int i=0; i< (S->get_total_component_concentration())->MyLength(); i++) 
       os << (*(*S->get_total_component_concentration())(nc))[i] << endl;
@@ -503,11 +504,13 @@ void MPC::write_gnuplot_data(int iter)
       std::stringstream fname;
       fname << auxnames[n];
       
-      fname << "_" << iter << ".dat";
+      fname << "_" << std::setfill('0') << std::setw(5) << iter << ".dat";
       
       filebuf fb;
       fb.open (fname.str().c_str(),ios::out);
       ostream os(&fb);      
+      os << "# time = " << time / (60.0 * 60.0 * 24.0 * 365.25) << " years" << std::endl;
+
 
       // now dump the Epetra Vector
       for (int i=0; i< aux->MyLength(); i++) 

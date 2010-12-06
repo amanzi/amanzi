@@ -27,9 +27,10 @@
     <Parameter name="Viz dump cycle frequency" type="int" value="-1"/>
     <!-- dump every 0.05 days -->
     <Parameter name="Viz dump time frequency" type="double" value="1577846.3"/> 
-    <ParameterList name="CGNS">
+    <Parameter name="Gnuplot output" type="bool" value="true"/>
+    <!-- <ParameterList name="CGNS">
       <Parameter name="File name" type="string" value="1d-uo2-5-component.cgns"/>
-    </ParameterList>    
+    </ParameterList>    -->
   </ParameterList> 
 
 
@@ -83,7 +84,7 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="fbasin-uo2-5-component.bgd" />
-    <Parameter name="Verbosity" type="int" value="2" />
+    <Parameter name="Verbosity" type="int" value="1" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
