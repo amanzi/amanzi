@@ -135,14 +135,14 @@ void MPC::cycle_driver () {
 
 
   if (chemistry_enabled) {
-    if (cgns_output) {
-      CPK->set_chemistry_output_names(auxnames);
-      CPK->set_component_names(compnames);
-    }   
+    CPK->set_chemistry_output_names(auxnames);
+    CPK->set_component_names(compnames);
   }
 #endif
-
+  bool gnuplot_output = mpc_parameter_list.get<bool>("Gnuplot output",false);
+  if ( mesh_maps->get_comm()->NumProc() != 1 ) gnuplot_output = false;
   
+  cout << "MPC: will write gnuplot output" << endl;
 
   const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",-1);
   const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",-1);
@@ -187,6 +187,7 @@ void MPC::cycle_driver () {
     
   }
 #endif  
+
 
   int iter = 0;
   
@@ -254,6 +255,9 @@ void MPC::cycle_driver () {
       close_data_file();
     }
 #endif
+    if (gnuplot_output) write_gnuplot_data(0);
+
+
     vizdump_time_count ++;
   }
 
@@ -362,6 +366,8 @@ void MPC::cycle_driver () {
 	  write_cgns_data(cgns_filename, iter);
 	}
 #endif	
+	if (gnuplot_output) write_gnuplot_data(iter);
+
       } else if ( (vizdump_time_freq > 0) && ((vizdump_time + mpc_dT/1000.0) / vizdump_time_freq  > vizdump_time_count) ) {
 	
 	vizdump_time_count ++;
@@ -377,6 +383,8 @@ void MPC::cycle_driver () {
 	  write_cgns_data(cgns_filename, iter);
 	}
 #endif
+	if (gnuplot_output) write_gnuplot_data(iter);
+
       }
     }
     
@@ -454,6 +462,61 @@ void MPC::write_cgns_data(std::string filename, int iter)
   close_data_file();     
 }
 #endif
+
+
+void MPC::write_gnuplot_data(int iter)
+{
+  // write each variable to a separate file
+  // only works on one PE, not on a truly parallel run
+  
+  cout << " ...writing gnuplot output" << endl;
+  cout << " ...number of components : " << S->get_number_of_components() << endl;
+  
+  for (int nc=0; nc<S->get_number_of_components(); nc++) {
+    std::stringstream fname;
+    fname << "conc_" << nc;
+    
+    if (chemistry_enabled) {
+      fname << "_" << compnames[nc];
+    }    
+    
+    fname << "_" << iter << ".dat";
+
+    filebuf fb;
+    fb.open (fname.str().c_str(),ios::out);
+    ostream os(&fb);
+    
+    // now dump the Epetra Vector
+    for (int i=0; i< (S->get_total_component_concentration())->MyLength(); i++) 
+      os << (*(*S->get_total_component_concentration())(nc))[i] << endl;
+
+    fb.close();
+  }
+  
+  if (chemistry_enabled) {
+    // get the auxillary data
+    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+    
+    // how much of it is there?
+    int naux = aux->NumVectors();
+    for (int n=0; n<naux; n++) {
+      std::stringstream fname;
+      fname << auxnames[n];
+      
+      fname << "_" << iter << ".dat";
+      
+      filebuf fb;
+      fb.open (fname.str().c_str(),ios::out);
+      ostream os(&fb);      
+
+      // now dump the Epetra Vector
+      for (int i=0; i< aux->MyLength(); i++) 
+	os << (*(*aux)(n))[i] << endl;
+      fb.close();
+    }
+  }
+}
+
 
 
 void MPC::create_gmv_paths(std::string  &gmv_mesh_filename_path_str,

@@ -25,7 +25,7 @@ private:
 #ifdef ENABLE_CGNS
   void write_cgns_data(std::string filename, int iter);
 #endif
-
+  void write_gnuplot_data(int iter);
   
   // states
   Teuchos::RCP<State> S;
