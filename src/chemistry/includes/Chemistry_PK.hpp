@@ -85,6 +85,7 @@ class Chemistry_PK {
   Beaker* chem_;
   Beaker::BeakerParameters beaker_parameters_;
   Beaker::BeakerComponents beaker_components_;
+  Beaker::BeakerComponents beaker_components_copy_;
 
   double current_time_;
   double saved_time_;

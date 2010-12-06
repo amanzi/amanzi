@@ -126,6 +126,7 @@ void Chemistry_PK::InitializeChemistry(void)
 
     // solve for initial free-ion concentrations
     chem_->Speciate(beaker_components_, beaker_parameters_);
+    chem_->UpdateComponents(&beaker_components_);
     if (verbosity() > kTerse) {
       std::cout << "\nTest solution of initial conditions in cell 0:"
                 << std::endl;
@@ -163,6 +164,14 @@ void Chemistry_PK::InitializeChemistry(void)
     }
     // if successful copy back
     CopyBeakerComponentsToCell(icell);
+
+#ifdef GLENN_DEBUG
+    if (icell % (num_cells/10) == 0) {
+      std::cout << "  " << icell * 100 / num_cells
+              << "%" << std::endl;
+    }
+#endif
+
   }
 
 } // end InitializeChemistry()
@@ -751,6 +760,12 @@ void Chemistry_PK::advance(
   // now... should get data from the mesh...?
   int num_cells = chemistry_state_->get_porosity()->MyLength();
 
+  int max_iterations = 0;
+  int imax = -999;
+  int ave_iterations = 0;
+  int imin = -999;
+  int min_iterations = 10000000;
+
   for (int cell = 0; cell < num_cells; cell++) {
     // copy state data into the beaker data structures
     CopyCellToBeakerComponents(cell, tcc_star);
@@ -758,14 +773,39 @@ void Chemistry_PK::advance(
 
     try {
       // chemistry computations for this cell
-      chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);
+#ifdef GLENN_DEBUG
+      chem_->CopyComponents(beaker_components_,&beaker_components_copy_);
+#endif
+      int num_iterations = chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);
+      if (max_iterations < num_iterations) {
+        max_iterations = num_iterations;
+        imax = cell;
+      }
+      if (min_iterations > num_iterations) {
+        min_iterations = num_iterations;
+        imin = cell;
+      }
+      ave_iterations += num_iterations;
     }
     catch (ChemistryException& geochem_error) {
       std::cout << "ERROR: Chemistry_PR::advance() "
                 << "cell[" << cell << "]: " << std::endl;
       std::cout << geochem_error.what();
       chem_->DisplayTotalColumnHeaders();
+      std::cout << "\nFailed Solution" << std::endl;
+      std::cout << "  Total Component Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_.total);
+      std::cout << "  Free Ion Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_.free_ion);
+      std::cout << "  Total Sorbed Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_.total_sorbed);
+      std::cout << "\nPrevious Solution" << std::endl;
+      std::cout << "  Total Component Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total);
+      std::cout << "  Free Ion Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.free_ion);
+      std::cout << "  Total Sorbed Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total_sorbed);
       std::cout << std::endl;
       set_status(geochem_error.error_status());
     }
@@ -775,7 +815,25 @@ void Chemistry_PK::advance(
 
     // TODO: was porosity etc changed? copy someplace
 
+#ifdef GLENN_DEBUG
+    if (cell % (num_cells/10) == 0) {
+      std::cout << "  " << cell * 100 / num_cells
+              << "%" << std::endl;
+    }
+#endif
+
   }  // for(cells)
+
+#ifdef GLENN_DEBUG
+  if (chem_->verbosity() == kDebugChemistryProcessKernel) {
+    std::cout << "  Chemistry_PK::advance() : "
+              << "max iterations - " << max_iterations << " " << "  cell id: " << imax << std::endl;
+    std::cout << "  Chemistry_PK::advance() : "
+              << "min iterations - " << min_iterations << " " << "  cell id: " << imin << std::endl;
+    std::cout << "  Chemistry_PK::advance() : "
+              << "ave iterations - " << float(ave_iterations)/num_cells << std::endl;
+  }
+#endif
 
   if (chem_->verbosity() == kDebugChemistryProcessKernel) {
     // dumping the values of the final cell. not very helpful by itself,
