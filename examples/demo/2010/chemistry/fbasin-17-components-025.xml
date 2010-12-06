@@ -1,3 +1,14 @@
+<!--
+This is a resolution specific input file. It will only work with our
+current of (12/6/2010) 25 resolution fbasin meshes.  
+
+It is set up for the 17 component problem.
+
+Please adjust the viz dump output, frequency, mesh file location, 
+time limits, etc. 
+-->
+
+
 <ParameterList name="Main">
 
   <ParameterList name="Mesh">
