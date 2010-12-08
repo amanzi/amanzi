@@ -107,10 +107,10 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="fbasin-uo2-17-component.bgd" />
-    <Parameter name="Verbosity" type="int" value="2" />
+    <Parameter name="Verbosity" type="int" value="1" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.0e-12"/>
-    <Parameter name="Max Time Step (s)" type="double" value="3600.0"/>
+<!--    <Parameter name="Max Time Step (s)" type="double" value="3600.0"/> -->
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
     <Parameter name="Using sorption" type="string" value="yes"/>
     <Parameter name="Free ion concentrations provided" type="string" value="yes"/>
@@ -144,14 +144,14 @@
           <Parameter name="Mineral 0" type="double" value="0.0"/> <!-- Gibbsite -->
           <Parameter name="Mineral 1" type="double" value="0.21"/> <!-- Quartz -->
           <Parameter name="Mineral 2" type="double" value="0.15"/> <!-- K-Feldspar -->
-          <Parameter name="Mineral 3" type="double" value="0.0"/> <!-- Jurbanite -->
+          <Parameter name="Mineral 3" type="double" value="0.0001"/> <!-- Jurbanite -->
           <Parameter name="Mineral 4" type="double" value="0.1"/> <!-- Ferrihydrite -->
           <Parameter name="Mineral 5" type="double" value="0.15"/> <!-- Kaolinite -->
-          <Parameter name="Mineral 6" type="double" value="0.0"/> <!-- Schoepite -->
-          <Parameter name="Mineral 7" type="double" value="0.0"/> <!-- (UO2)3(PO4)2.4H2O -->
-          <Parameter name="Mineral 8" type="double" value="0.0"/> <!-- Soddyite -->
-          <Parameter name="Mineral 9" type="double" value="0.0"/> <!-- Calcite -->
-          <Parameter name="Mineral 10" type="double" value="0.0"/> <!-- Chalcedony -->
+          <Parameter name="Mineral 6" type="double" value="0.0001"/> <!-- Schoepite -->
+          <Parameter name="Mineral 7" type="double" value="0.0001"/> <!-- (UO2)3(PO4)2.4H2O -->
+          <Parameter name="Mineral 8" type="double" value="0.0001"/> <!-- Soddyite -->
+          <Parameter name="Mineral 9" type="double" value="0.0001"/> <!-- Calcite -->
+          <Parameter name="Mineral 10" type="double" value="0.0001"/> <!-- Chalcedony -->
         </ParameterList>
       </ParameterList>
     </ParameterList>

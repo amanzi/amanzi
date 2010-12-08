@@ -84,7 +84,7 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="fbasin-uo2-5-component.bgd" />
-    <Parameter name="Verbosity" type="int" value="2" />
+    <Parameter name="Verbosity" type="int" value="1" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
 <!--    <Parameter name="Max Time Step (s)" type="double" value="86400.0"/> -->
@@ -108,7 +108,7 @@
         <ParameterList name="Minerals">
           <Parameter name="Mineral 0" type="double" value="0.15"/>  <!-- Kaolinite -->
           <Parameter name="Mineral 1" type="double" value="0.21"/>  <!-- Quartz -->
-          <Parameter name="Mineral 2" type="double" value="0.0"/>   <!-- (UO2)3(PO4)2.4H2O -->
+          <Parameter name="Mineral 2" type="double" value="0.0001"/>   <!-- (UO2)3(PO4)2.4H2O -->
         </ParameterList>
       </ParameterList>
     </ParameterList>
