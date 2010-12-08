@@ -1,0 +1,175 @@
+TITLE
+Simplified Savannah F-Area test in 1D
+END
+ 
+DATABASE
+SavannahFArea.dbs
+END
+ 
+RUNTIME
+time_units       years
+timestep_max     0.1
+timestep_init    1.e-10
+time_tolerance   0.01
+hindmarsh        true
+correction_max   2.0
+debye-huckel     true
+database_sweep   false
+speciate_only    false
+gimrt            true
+graphics         kaleidagraph
+screen_output   100
+END
+ 
+OUTPUT
+time_units           years
+spatial_profile      0.1  0.25  0.5  1.0  1.5
+time_series          100 1  1
+time_series_print    pH UO2++
+time_series_interval 1
+END
+ 
+TEMPERATURE
+set_temperature  25.0
+END
+ 
+PRIMARY_SPECIES
+H+
+HPO4--
+Al+++
+SiO2(aq)
+UO2++
+Bogusite(aq)
+END
+ 
+SECONDARY_SPECIES
+(UO2)2(OH)2++                                                           
+(UO2)2OH+++                                                             
+(UO2)3(OH)4++                                                           
+(UO2)3(OH)5+                                                            
+(UO2)3(OH)7-                                                            
+(UO2)4(OH)7+                                                            
+
+Al(OH)2+                                                                
+AlHPO4+                                                                 
+AlO2-                                                                   
+AlOH++                                                                  
+
+H2PO4-                                                                  
+
+H3PO4(aq)                                                               
+
+HAlO2(aq)                                                               
+
+OH-                                                                     
+
+PO4---                                                                  
+UO2(H2PO4)(H3PO4)+                                                      
+UO2(H2PO4)2(aq)                                                         
+UO2(OH)2(aq)                                                            
+UO2(OH)3-                                                               
+UO2(OH)4--                                                              
+UO2H2PO4+                                                               
+UO2H3PO4++                                                              
+UO2HPO4(aq)                                                             
+UO2OH+                                                                  
+UO2PO4- 
+END
+
+GASES
+END
+
+MINERALS
+Quartz             -rate  -14.00
+Kaolinite          -rate  -12.699
+(UO2)3(PO4)2.4H2O  -rate  -6.00
+Bogusite           -rate  -35.00
+END
+
+SURFACE_COMPLEXATION
+>SiOH on Bogusite  -no_edl             
+>FeOH on Bogusite  -no_edl                 
+>AlOH on Bogusite  -no_edl   
+END
+
+DISCRETIZATION
+distance_units meters
+xzones 100 1.0
+END
+ 
+POROSITY
+fix_porosity     0.20
+porosity_update  false
+END
+
+Condition initial
+temperature      25.0
+set_porosity     0.20
+pH               7.5   
+HPO4--           1.0000E-06
+Al+++            6.5874E-09
+SiO2(aq)         1.8703E-04
+UO2++            1.0000E-15
+Bogusite(aq)     1.0E-02
+Bogusite         0.0000636  specific_surface_area  100.0       
+!Site name       <site density mol/m**2>   
+>FeOH            1.00E-06 
+>SiOH            1.00E-06  
+>AlOH            1.00E-06 
+
+!   Site_density: moles site/m^2 mineral
+!   Specific:     m^2/g mineral
+!   Wtmin:        g/mole mineral
+
+!!permole = 1.00E-06*1.0*1.0    !! Moles site/moles mineral
+!! Moles site/m^3 bulk:  = permole*volin/(volmol)  !! This is Lichtner's number
+!!MineralMolality = XX/(1.0*997.16*por*1.0)
+!!permole = site_density(ks,nchem)*specific(k,nchem)*wtmin(k)    !  Mole sites/Mole mineral
+!!MineralMolality = volin(k,nchem)/( volmol(k)*rocond(nchem)*porcond(nchem)*SaturationCond(nchem) )
+!!c_surf(ks,nchem) = permole*MineralMolality
+Kaolinite  0.15     100.0 
+Quartz     0.20     100.0 
+(UO2)3(PO4)2.4H2O   0.00    100.0
+END
+
+Condition boundary
+temperature      25.0
+set_porosity     0.20
+pH               2.93   
+HPO4--           7.1028E-05
+Al+++            2.8909E-05
+SiO2(aq)         2.5280E-04
+UO2++            3.5414E-05
+Bogusite(aq)     1.0E-02
+Bogusite         0.0000636  specific_surface_area  100.0       
+!Site name       <site density mol/m**2>   
+>FeOH            1.00E-06 
+>SiOH            1.00E-06  
+>AlOH            1.00E-06 
+Kaolinite  0.15     100.0 
+Quartz     0.20     100.0 
+(UO2)3(PO4)2.4H2O   0.00     100.0
+END
+
+BOUNDARY_CONDITIONS
+X_begin   boundary   flux
+X_end     boundary   flux
+END
+
+INITIAL_CONDITIONS
+initial   1-100
+boundary   1-1
+END
+
+TRANSPORT
+fix_diffusion  1.0E-36
+END
+
+FLOW
+time_units  years
+constant_flow  19.0
+END
+
+
+
+

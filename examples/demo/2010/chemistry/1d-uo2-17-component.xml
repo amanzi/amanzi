@@ -110,6 +110,7 @@
     <Parameter name="Verbosity" type="int" value="2" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.0e-12"/>
+    <Parameter name="Max Time Step (s)" type="double" value="3600.0"/>
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
     <Parameter name="Using sorption" type="string" value="yes"/>
     <Parameter name="Free ion concentrations provided" type="string" value="yes"/>

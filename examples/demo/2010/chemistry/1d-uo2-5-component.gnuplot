@@ -1,11 +1,11 @@
 reset
 set terminal pdf enhanced color lw 5 
-set output "1d-uo2-5-component.pdf"
+set output "Simplified-F-Area-1D-amanzi.pdf"
 
 system "date"
 set time
 
-set title "Amanzi 5 component UO2 1D problem"
+set title "Amanzi: 5 component UO2 1D problem"
 
 set xlabel "Distance [m]"
 set xrange [0:100]

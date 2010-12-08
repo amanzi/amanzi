@@ -52,7 +52,7 @@
       <Parameter name="Constant Darcy flux y" type="double" value="0"/>
       <Parameter name="Constant Darcy flux z" type="double" value="0"/>
       <Parameter name="Constant component concentration 0" type="double" value="6.5874E-09"/>  <!-- Al+++ -->
-      <Parameter name="Constant component concentration 1" type="double" value="-3.1408E-07"/>  <!-- H+ -->
+      <Parameter name="Constant component concentration 1" type="double" value="2.1593E-08"/>  <!-- H+ -->
       <Parameter name="Constant component concentration 2" type="double" value="1.0000E-06"/>  <!-- HPO4-2 -->
       <Parameter name="Constant component concentration 3" type="double" value="1.8703E-04"/>  <!-- SiO2(aq) -->
       <Parameter name="Constant component concentration 4" type="double" value="1.0000E-15"/>  <!-- UO2++ -->
@@ -72,7 +72,7 @@
 	<Parameter name="Side set ID" type="int" value="3"/>
 	<Parameter name="Type" type="string" value="Constant"/>
 	<Parameter name="Component 0" type="double" value="2.8909E-05"/>  <!-- Al+++ -->
-	<Parameter name="Component 1" type="double" value="1.2786E-03"/>  <!-- H+ -->
+	<Parameter name="Component 1" type="double" value="1.2807E-03"/>  <!-- H+ -->
 	<Parameter name="Component 2" type="double" value="7.1028E-05"/>  <!-- HPO4-2 -->
 	<Parameter name="Component 3" type="double" value="2.5280E-04"/>  <!-- SiO2(aq) -->
 	<Parameter name="Component 4" type="double" value="3.5414E-05"/>  <!-- UO2++ -->
@@ -84,9 +84,10 @@
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
     <Parameter name="Thermodynamic Database File" type="string" value="fbasin-uo2-5-component.bgd" />
-    <Parameter name="Verbosity" type="int" value="1" />
+    <Parameter name="Verbosity" type="int" value="2" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+<!--    <Parameter name="Max Time Step (s)" type="double" value="86400.0"/> -->
     <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
     <Parameter name="Using sorption" type="string" value="yes"/>
     <Parameter name="Free ion concentrations provided" type="string" value="yes"/>
