@@ -1,6 +1,7 @@
 #ifndef _MESH_HH_
 #define _MESH_HH_
 
+#include <iosfwd>
 #include "Element_category.hh"
 #include "Entity_map.hh"
 #include "Data_structures.hh"
@@ -40,6 +41,8 @@ private:
     const stk::mesh::Part& get_part_from_set_id_ (unsigned int set_id);
 
     void get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank, Entity_vector&) const;
+
+    void remove_bad_ghosts_(Entity_vector& entities) const;
 
     // Internal Validators
     bool element_type_ok_ () const;
@@ -115,6 +118,7 @@ public:
 
 
     
+    
     // Static information
     // ------------------
 
@@ -128,8 +132,10 @@ public:
     static bool valid_dimension (int space_dimension);
     static bool valid_rank (stk::mesh::EntityRank);
 
-};
+    void summary(std::ostream& os) const;
+    
+}; // close class Mesh
 
-}
+} // close namespace STK_mesh
 
 #endif

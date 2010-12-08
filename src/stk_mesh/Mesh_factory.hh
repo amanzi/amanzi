@@ -78,18 +78,22 @@ private:
     void add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part);
 
     const stk::mesh::Entity&
-    declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index, 
-                  stk::mesh::Entity *owner, const unsigned int& side_index,
-                  stk::mesh::Entity *nbr);
+    declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index);
     
     /// Generate the mesh faces local to this processor
     int generate_local_faces_(const int& fidx0, const bool& justcount = false);
+
+    /// Generate cell-to-face relations
+    void generate_cell_face_relations(void);
 
     /// Count the number of faces that need to be generated on this processor
     int count_local_faces_(void) { return generate_local_faces_(0, true); }
 
     /// Check, and change if necessary, side set face ownership
     void check_face_ownership_(void);
+
+    /// Create or change as necessary element ghosting
+    void create_cell_ghosting_(void);
 
     /// Get the set of nodes defining the specified element side
     Entity_vector

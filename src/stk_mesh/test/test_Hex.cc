@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Fri Dec  3 14:19:06 2010
+ * @date Wed Dec  8 08:01:10 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Fri Dec  3 14:19:06 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed Dec  8 08:01:10 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -121,7 +121,7 @@ SUITE (HexMesh)
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, jsize*ksize);
 
-        
+        mesh->summary(std::cerr);
 
         // Teuchos::RCP<Mesh_maps_base> mesh_map(new STK_mesh::Mesh_maps_stk(mesh));
 
@@ -163,25 +163,48 @@ SUITE (HexMesh)
 
         STK_mesh::Entity_vector e;
 
+        int ncell(mesh->count_entities(stk::mesh::Element, STK_mesh::OWNED));
 
         if (nproc > 1) {
+
+            mesh->summary(std::cerr);
 
             // all processes should have at least 1 but at most 8 shared nodes
 
             mesh->get_entities(stk::mesh::Node, STK_mesh::GHOST, e);
-            CHECK(!e.empty());
             CHECK(e.size() <= 8);
+            e.clear();
 
-            // processes should have at least 1 but at most 2 shared faces
+            // processes > 1 should have only 1 ghost face
 
             mesh->get_entities(stk::mesh::Face, STK_mesh::GHOST, e);
+
+            if (me == 0) {
+                CHECK(e.empty());
+            } else {
+                CHECK_EQUAL(e.size(), 1);
+            }
+            e.clear();
+
+            // the number of USED faces depends on the number of cells owned
+
+            mesh->get_entities(stk::mesh::Face, STK_mesh::USED, e);
+
+            int nface_expected(ncell*5+1);
+
             CHECK(!e.empty());
-            CHECK(e.size() <= 2);
+            CHECK_EQUAL(e.size(), nface_expected);
+            e.clear();
         
             // processes should have at least 1 but at most 2 shared
             // cells, but it doesn't
             
-            // mesh->get_entities(stk::mesh::Element, STK_mesh::GHOST, e);
+            mesh->get_entities(stk::mesh::Element, STK_mesh::GHOST, e);
+            e.clear();
+           
+            mesh->get_entities(stk::mesh::Element, STK_mesh::USED, e);
+            e.clear();
+
             // CHECK(!e.empty());
             // CHECK(e.size() <= 2);
 

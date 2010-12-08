@@ -1,3 +1,8 @@
+#include <iostream>
+#include <boost/format.hpp>
+#include <boost/lambda/lambda.hpp>
+namespace bl = boost::lambda;
+
 #include "Mesh.hh"
 #include "dbc.hh"
 
@@ -80,9 +85,74 @@ Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) co
     return e.size();
 }
 
+// -------------------------------------------------------------
+// Mesh::remove_bad_ghosts_
+// -------------------------------------------------------------
 /** 
- * Because cell-to-face relations are problematic, we can't really
- * trust stk::mesh to get ghost cells and faces right.  
+ * This routine takes a list of entities and removes those ghost
+ * entities that are not appropriate.  
+ *
+ * Nodes: stk::mesh ghosts all nodes in a ghosted cell, even if you
+ * tell it not to.  So, a node must be included in a cell owned by
+ * this process.  Others are removed.
+ *
+ * Faces: stk::mesh ghosts all faces in a ghosted cell, even if you
+ * tell it not to.  So each remotely owned face is checked to see if
+ * it's related to a locally-owned cell.  If not, it's removed from
+ * the list.
+ * 
+ * @param entities 
+ */
+void
+Mesh::remove_bad_ghosts_(Entity_vector& entities) const
+{
+    const int me(communicator_.MyPID());
+    Entity_vector tmp(entities);
+
+    for (Entity_vector::iterator i = tmp.begin(); i != tmp.end(); i++) {
+        bool bad(false);
+        if ((*i)->owner_rank() != me) {
+
+            if ((*i)->entity_rank() == stk::mesh::Node) {
+                stk::mesh::EntityVector thenode, cells;
+                thenode.push_back(*i);
+                stk::mesh::get_entities_through_relations(thenode, stk::mesh::Element, cells);
+                
+                for (stk::mesh::EntityVector:: iterator c = cells.begin(); c != cells.end(); c++) {
+                    if ((*c)->owner_rank() == me) {
+                        bad = false;
+                        break;
+                    } else {
+                        bad = true;
+                    }
+                }
+            }
+
+            if ((*i)->entity_rank() == stk::mesh::Face) { 
+                stk::mesh::EntityVector theface, cells;
+                theface.push_back(*i);
+                stk::mesh::get_entities_through_relations(theface, stk::mesh::Element, cells);
+                
+                
+                // ghost faces must relate to more than one cell
+                bad = bad || (cells.size() < 2);
+                
+                // ghost faces must relate to a cell owned by this process
+                bad = bad ||  (cells.front()->owner_rank() != me &&
+                               cells.back()->owner_rank() != me); 
+                
+                // std::cerr << "Process " << me << ": Face " << (*i)->identifier() 
+                //           << " connects cell " << cells.front()->identifier() 
+                //           << " to "  << cells.back()->identifier() << " " << bad << std::endl;
+                
+            }
+        }
+        if (bad) entities.erase(std::remove(entities.begin(), entities.end(), *i));
+    }
+}
+
+
+/** 
  * 
  * @param rank 
  * @param category 
@@ -107,6 +177,7 @@ Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank 
                      Entity_vector& entities) const
 {
     stk::mesh::get_selected_entities (selector, bulk_data_->buckets (rank), entities);
+    remove_bad_ghosts_(entities);
 }
 
 
@@ -263,17 +334,18 @@ stk::mesh::Selector Mesh::selector_ (Element_Category category) const
 {
     ASSERT (valid_category (category));
 
+    stk::mesh::Selector owned(meta_data_->locally_owned_part());
     stk::mesh::Selector s;
     switch (category) {
     case (OWNED):
-      s |= meta_data_->locally_owned_part();
+      s = owned;
       break;
     case (GHOST):
-      s |= meta_data_->globally_shared_part();
+      s = !owned;
+      // s &= meta_data_->globally_shared_part();
       break;
     case (USED):
-      s |= meta_data_->locally_owned_part();
-      s |= meta_data_->globally_shared_part();
+      s = meta_data_->universal_part();
       break;
     }
     return s;
@@ -329,5 +401,41 @@ bool Mesh::dimension_ok_ () const
 }
 
 
+// -------------------------------------------------------------
+// Mesh::summary
+// -------------------------------------------------------------
+void
+Mesh::summary(std::ostream& os) const
+{
+    const int nproc(communicator_.NumProc());
+    const int me(communicator_.MyPID());
+
+    for (int p = 0; p < nproc; p++) {
+        if (p == me) {
+            os << boost::str(boost::format("Process %d: Nodes: %5d owned, %5d ghost, %5d used") %
+                             me % 
+                             count_entities(stk::mesh::Node, OWNED) %
+                             count_entities(stk::mesh::Node, GHOST) %
+                             count_entities(stk::mesh::Node, USED))
+               << std::endl;
+
+            os << boost::str(boost::format("Process %d: Faces: %5d owned, %5d ghost, %5d used") %
+                             me % 
+                             count_entities(stk::mesh::Face, OWNED) %
+                             count_entities(stk::mesh::Face, GHOST) %
+                             count_entities(stk::mesh::Face, USED))
+               << std::endl;
+            os << boost::str(boost::format("Process %d: Cells: %5d owned, %5d ghost, %5d used") %
+                             me % 
+                             count_entities(stk::mesh::Element, OWNED) %
+                             count_entities(stk::mesh::Element, GHOST) %
+                             count_entities(stk::mesh::Element, USED))
+               << std::endl;
+        }
+        communicator_.Barrier();
+    }
+  
 }
+
+} // close namespace STK_mesh
 
