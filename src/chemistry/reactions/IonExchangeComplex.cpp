@@ -128,6 +128,12 @@ void IonExchangeComplex::update(void)
   ln_activity_ = std::log(activity());
 } // end Update()
 
+void IonExchangeComplex::update(const double molality)
+{
+  // dummy function
+  static_cast<void>(molality);
+} // end update()
+
 
 void IonExchangeComplex::Update(const std::vector<Species> primary_species,
                                 const std::vector<IonExchangeSite> exchange_sites)
