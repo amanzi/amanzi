@@ -151,9 +151,9 @@ int MeshAudit::Verify() const
   if (ierr) fail = true;
 
   if (fail)
-    return 0;
-  else
     return 1;
+  else
+    return 0;
 }
 
 // The count_entities method should return values that match the number of
@@ -1324,7 +1324,7 @@ int MeshAudit::check_cell_sets() const
 int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
                           const Epetra_Map &map_own, const Epetra_Map &map_use) const
 {
-  int ierr;
+  int ierr(0);
 
   // Basic sanity check on set IDs.
   int ierr_loc = check_set_ids(kind);
