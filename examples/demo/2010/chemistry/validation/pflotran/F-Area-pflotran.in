@@ -1,0 +1,743 @@
+:Description: 3D test problem for diffusion of tracer and reaction of calcite in a cubic domain
+ 
+MODE RICHARDS
+
+:DEBUG
+:PRINT_COUPLERS
+:/
+
+:============= runtime =================
+:CHECKPOINT 50
+:RESTART ./ss/restart.chk.ss 0.d0
+:RESTART ./pflotran.chk150
+:OVERWRITE_RESTART_TRANSPORT
+:WALLCLOCK_STOP 23.75
+
+:============== chemistry =================
+CHEMISTRY
+:OPERATOR_SPLITTING
+PRIMARY_SPECIES
+Na+
+Ca++
+Fe++
+K+
+Al+++
+H+
+N2(aq)
+NO3-
+HCO3-
+Cl-
+SO4--
+H2PO4-
+F-
+SiO2(aq)
+UO2++
+O2(aq)
+Tracer
+/
+SECONDARY_SPECIES
+OH-
+CO3--
+CO2(aq)
+CH4(aq)
+:
+NaHCO3(aq)
+NaCl(aq)
+NH4SO4-
+NaAlO2(aq)
+NaHP2O7--
+NaHPO4-
+NaHSiO3(aq)
+NaNO3(aq)
+NaOH(aq)
+NaSO4-
+NaF(aq)
+:
+CaCO3(aq)
+CaHCO3+
+CaPO4-
+CaHPO4(aq)
+CaF+
+:
+KCl(aq)
+KHPO4-
+KHSO4(aq)
+KOH(aq)
+KP2O7---
+KSO4-
+:
+:
+:iron
+Fe+++
+ Fe(SO4)2-
+ Fe2(OH)2++++
+ Fe3(OH)4(5+)
+ Fe(OH)2(aq)
+ Fe(OH)2+
+ Fe(OH)3(aq)
+ Fe(OH)3-
+ Fe(OH)4-
+ Fe(OH)4--
+ FeCO3(aq)
+ FeCO3+
+ FeCl+
+ FeCl++
+ FeCl2(aq)
+ FeCl2+
+ FeCl4-
+ FeCl4--
+ FeF+
+ FeF++
+ FeF2+
+ FeH2PO4+
+ FeH2PO4++
+ FeHCO3+
+ FeHPO4(aq)
+ FeHPO4+
+ FeNO3++
+ FeOH+
+ FeOH++
+ FePO4-
+ FeSO4(aq)
+ FeSO4+
+:
+AlOH++
+Al(OH)2+
+Al(OH)3(aq)
+Al(OH)4-
+AlH2PO4++
+AlHPO4+
+AlF++
+AlF2+
+AlF3(aq)
+AlF4-
+:
+H3PO4(aq)
+HPO4--
+PO4---
+H2PO3F(aq)
+HPO3F-
+PO3F--
+:
+H2F2(aq)
+HF(aq)
+HF2-
+:
+HSO4-
+H2SO4(aq)
+HCl(aq)
+HNO3(aq)
+HO2-
+:
+NH3(aq)
+NH4+
+N3-
+:
+HS-
+H2S(aq)
+:
+
+:uranium species
+U+++
+U++++
+UO2+
+:
+UO2OH+
+UO2(OH)2(aq)
+UO2(OH)3-
+UO2(OH)4--
+(UO2)2OH+++
+(UO2)2(OH)2++
+(UO2)3(OH)4++
+(UO2)3(OH)5+
+(UO2)3(OH)7-
+(UO2)4(OH)7+
+:
+UO2CO3(aq)
+UO2(CO3)2--
+UO2(CO3)3----
+(UO2)2CO3(OH)3-
+:
+Ca2UO2(CO3)3(aq)
+CaUO2(CO3)3--
+:
+UO2NO3+
+UO2Cl+
+UO2Cl2(aq)
+UO2SO4(aq)
+UO2(SO4)2--
+:
+UO2F+
+UO2F2(aq)
+UO2F3-
+UO2F4--
+:
+:25 C
+UO2(H2PO4)(H3PO4)+
+UO2(H2PO4)2(aq)
+UO2HPO4(aq)
+UO2H2PO4+
+UO2H3PO4++
+UO2PO4-
+/
+GAS_SPECIES
+CO2(g)
+O2(g)
+N2(g)
+H2(g)
+NH3(g)
+CO(g)
+/
+MINERALS
+Quartz
+Chalcedony
+SiO2(am)
+Calcite
+Gypsum
+Goethite
+Ferrihydrite
+Hematite
+Magnetite
+Pyrite
+Jarosite
+K-Feldspar
+Albite
+Kaolinite
+Anorthite
+Gibbsite
+Analcime
+Paragonite
+Rutherfordine
+Schoepite
+UO2(OH)2(beta)
+UO2CO3
+UO2(PO3)2
+(UO2)3(PO4)2
+(UO2)3(PO4)2.4H2O
+CaUO4
+ Boltwoodite
+ Boltwoodite-Na
+ Boltwoodite_PNNL
+ Boltwoodite-Na_PNNL
+ Soddyite
+ Soddyite_PNNL
+ Uraninite
+ Uranophane
+ Uranophane_PNNL
+ Weeksite
+ Weeksite_PNNL
+ Weeksite-Na_PNNL
+ UPO5
+ UO2SO4
+:UOF4
+ UO3.2H2O
+ UO3.0.9H2O(alpha)
+ UO3(gamma)
+ UO3(beta)
+ UO3(alpha)
+ Schwertmannite
+ Siderite
+ Jurbanite
+ Alum-K
+ Alunite
+/
+MINERAL_KINETICS
+Quartz
+RATE_CONSTANT 1.e-18 
+/
+Kaolinite
+RATE_CONSTANT 2.e-17 
+/
+K-Feldspar
+RATE_CONSTANT 2.e-17 
+/
+Ferrihydrite
+RATE_CONSTANT 1.e-14 
+/
+Jurbanite
+RATE_CONSTANT 1.e-14 
+/
+Gibbsite
+RATE_CONSTANT 1.e-14 
+/
+Calcite
+RATE_CONSTANT 1.e-10 
+/
+(UO2)3(PO4)2.4H2O
+RATE_CONSTANT 1.e-10 
+/
+Soddyite
+RATE_CONSTANT 1.e-10 
+/
+Schoepite
+RATE_CONSTANT 1.e-10 
+/
+Chalcedony
+RATE_CONSTANT 1.e-14 
+/
+/
+SORPTION
+SURFACE_COMPLEXATION_RXN
+EQUILIBRIUM
+SITE_FRACTION \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02 \
+0.02 0.02 0.02 0.02 0.02
+MINERAL Kaolinite
+SITE >SiOH 0.00636
+COMPLEXES
+>SiOUO3H3++
+>SiOUO3H2+
+>SiOUO3H
+>SiOUO3-
+>SiOUO2(OH)2-
+/
+/
+SURFACE_COMPLEXATION_RXN
+EQUILIBRIUM
+MINERAL Kaolinite
+SITE >FeOH 0.00636
+COMPLEXES
+>FeOHUO3
+>FeOHUO2++
+/
+/
+SURFACE_COMPLEXATION_RXN
+EQUILIBRIUM
+MINERAL Kaolinite
+SITE >AlOH 0.00636
+COMPLEXES
+>AlOUO2+
+/
+/
+/
+DATABASE ./savannah_river.dat
+LOG_FORMULATION
+ACTIVITY_COEFFICIENTS
+MOLAL
+OUTPUT
+All
+pH
+TOTAL_SORBED
+KD
+/
+/
+
+:============== flow solver options =============
+TIMESTEPPER FLOW
+TS_ACCELERATION 5
+MAX_STEPS 1000000
+/
+
+NEWTON_SOLVER FLOW
+:MATRIX_TYPE MFFD
+:PRECONDITIONER_MATRIX_TYPE AIJ
+RTOL 1.d-9
+ATOL 1.d-9
+STOL 1.d-60
+ITOL_UPDATE 1.d0
+NO_INFINITY_NORM
+:NO_PRINT_CONVERGENCE
+:PRINT_DETAILED_CONVERGENCE
+MAXIT 16
+/
+
+LINEAR_SOLVER FLOW
+:KSP_TYPE FGMRES
+:KSP_TYPE PREONLY
+:PC_TYPE LU
+/
+
+:============== transport solver options =============
+
+TIMESTEPPER TRANSPORT
+TS_ACCELERATION 4
+DT_FACTOR 2 2 2 2 1 1 1 1 1 0.8 0.8 0.8 0.5
+MAX_STEPS 1000000
+/
+
+NEWTON_SOLVER TRANSPORT
+RTOL 1.d-8
+ATOL 1.d-8
+STOL 1.e-60
+DTOL 1.e4
+:ITOL_UPDATE 1.d-4
+NO_INFINITY_NORM
+:NO_PRINT_CONVERGENCE
+:PRINT_DETAILED_CONVERGENCE
+MAXIT 16
+/
+
+LINEAR_SOLVER TRANSPORT
+:KSP_TYPE GMRES
+:PC_TYPE NONE
+:KSP_TYPE PREONLY
+:PC_TYPE LU
+:SOLVER GMRES
+/
+
+:================ discretization =================
+GRID
+TYPE structured
+ORIGIN 0.d0 0.d0 0.d0
+NXYZ 140 1 50
+BOUNDS
+0.d0 1400.d0
+0.d0 1.d0
+0.d0 50.d0
+/
+END
+
+:================= fluid properties ================
+FLUID_PROPERTY 
+DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:================ material properties =================
+MATERIAL_PROPERTY vadose_zone
+ID 1
+SATURATION_FUNCTION sf1
+POROSITY 0.39
+TORTUOSITY 0.5
+PERMEABILITY
+PERM_X 3.02388d-11
+PERM_Y 3.02388d-11
+PERM_Z 8.33857d-13
+:PERMEABILITY_POWER 1.d0
+/
+/
+
+MATERIAL_PROPERTY sat_zone
+ID 2
+SATURATION_FUNCTION sf1
+POROSITY 0.39
+TORTUOSITY 0.5
+PERMEABILITY
+PERM_X 3.02388d-11
+PERM_Y 3.02388d-11
+PERM_Z 8.33857d-13
+:PERMEABILITY_POWER 1.d0
+/
+/
+
+:============ saturation functions ==============
+
+SATURATION_FUNCTION sf0
+SATURATION_FUNCTION_TYPE VAN_GENUCHTEN
+RESIDUAL_SATURATION 0.409692
+LAMBDA 0.281552d0
+ALPHA 1.42745d-4
+MAX_CAPILLARY_PRESSURE 1.d8
+BETAC 0.d0
+POWER 1.d0
+/
+
+SATURATION_FUNCTION sf1
+SATURATION_FUNCTION_TYPE VAN_GENUCHTEN
+RESIDUAL_SATURATION 0.409692
+LAMBDA 0.5d0
+ALPHA 5.d-5
+MAX_CAPILLARY_PRESSURE 1.d8
+BETAC 0.d0
+POWER 1.d0
+/
+
+:============ output options ================
+OUTPUT
+:SCREEN PERIODIC 10
+PERIODIC TIME 0.5d0 y
+:PERIODIC_OBSERVATION TIMESTEP 1
+:times y 0.1 0.5 1. 2. 3. 4. 5. 10. 15. 20. \
+:       25. 30. 35. 40. 45. 50. 75. 100.
+:PERIODIC_OBSERVATION TIME 50 h
+FORMAT TECPLOT POINT
+FORMAT HDF5
+VELOCITIES
+MASS_BALANCE
+/
+
+:================= times ======================
+TIME
+FINAL_TIME 50.d0 y
+INITIAL_TIMESTEP_SIZE 1.d-9 y
+:MAXIMUM_TIMESTEP_SIZE 1.d-4 y !OS max
+MAXIMUM_TIMESTEP_SIZE 1.d-3 y
+MAXIMUM_TIMESTEP_SIZE 1.d-1 y at 1.d-1 y
+MAXIMUM_TIMESTEP_SIZE 2.5d-1 y at 5.d-0 y
+:MAXIMUM_TIMESTEP_SIZE 2.5d-3 y at 32.5d-0 y
+:MAXIMUM_TIMESTEP_SIZE 2.5d-1 y at 33.5d-0 y
+/
+
+:================ regions =====================
+REGION all
+COORDINATES
+0.d0    0.d0  0.d0
+1400.d0 1.d0 50.d0
+/
+END
+
+REGION vadose_zone
+COORDINATES
+-1.d20 -1.d20 25.d0
+1.d20 1.d20 50.d0
+/
+END
+
+REGION sat_zone
+COORDINATES
+-1.d20 -1.d20 0.d0
+1.d20 1.d20 25.d0
+/
+END
+
+REGION top
+FACE TOP
+COORDINATES
+0.d0 0.d0 50.d0
+1.d0 1.d0 50.d0
+/
+END
+
+REGION top_left
+FACE TOP
+COORDINATES
+0.d0 0.d0 50.d0
+550.d0 1.d0 50.d0
+/
+END
+
+REGION top_right
+FACE TOP
+COORDINATES
+650.d0 0.d0 50.d0
+1400.d0 1.d0 50.d0
+/
+END
+
+REGION bottom
+FACE BOTTOM
+COORDINATES
+0.d0 0.d0 0.d0
+1.d0 1.d0 0.d0
+/
+END
+
+REGION f-basin
+FACE TOP
+COORDINATES
+550.d0 0.d0 50.d0
+650.d0 1.d0 50.d0
+/
+END
+
+REGION left
+FACE WEST
+COORDINATES
+0.d0 0.d0 0.d0
+0.d0 1.d0 50.d0
+/
+END
+
+REGION right
+FACE EAST
+COORDINATES
+1400.d0 0.d0 0.d0
+1400.d0 1.d0 50.d0
+/
+END
+
+:============== flow conditions =============
+
+FLOW_CONDITION Initial
+TYPE
+PRESSURE hydrostatic
+/
+DATUM 0.d0 0.d0 25.d0
+PRESSURE 101325.d0
+/
+
+:basin
+FLOW_CONDITION F-basin
+TYPE
+FLUX neumann
+:FLUX dirichlet
+/
+FLUX 6.02486d-7 !kg/s (19 m/y)
+:INTERPOLATION linear
+:FLUX FILE f-basin.src !6.02486d-7 !m/s (19 m/y a la Flach: 1955-88)
+/
+
+:infiltration
+FLOW_CONDITION Infiltration
+TYPE
+FLUX neumann
+:FLUX dirichlet
+/
+FLUX 1.18398d-8 !kg/s (0.37338 m/y)
+/
+
+FLOW_CONDITION Upgradient
+TYPE
+:PRESSURE hydrostatic
+PRESSURE seepage
+/
+DATUM 0.d0 0.d0 33.d0 ! (68 m piezomentric head in field)
+PRESSURE 101325.d0
+/
+
+FLOW_CONDITION Downgradient
+TYPE
+:PRESSURE hydrostatic
+PRESSURE seepage
+/
+DATUM 0.d0 0.d0 21.d0 ! (56 m piezomentric head in field)
+PRESSURE 101325.d0
+/
+
+:UNIFORM_VELOCITY 3.84259d-6 0.d0 0.d0  ! 1.38333 cm/h
+
+:============ transport conditions ==============
+
+TRANSPORT_CONDITION Initial
+TYPE dirichlet
+CONSTRAINT_LIST
+0.d0 initial
+/
+END
+
+TRANSPORT_CONDITION Infiltration
+TYPE dirichlet
+CONSTRAINT_LIST
+0.d0 infiltration
+/
+END
+
+TRANSPORT_CONDITION F-basin
+TYPE dirichlet
+CONSTRAINT_LIST
+0.d0 source
+/
+/
+
+:=========== condition couplers ==============
+: initial condition
+INITIAL_CONDITION
+FLOW_CONDITION Initial
+TRANSPORT_CONDITION Initial
+REGION all
+END
+
+: source condition
+BOUNDARY_CONDITION
+FLOW_CONDITION F-basin
+TRANSPORT_CONDITION F-basin
+REGION f-basin
+END
+
+BOUNDARY_CONDITION Upgradient
+FLOW_CONDITION Upgradient
+TRANSPORT_CONDITION Initial
+REGION left
+END
+
+BOUNDARY_CONDITION Downgradient
+FLOW_CONDITION Downgradient
+TRANSPORT_CONDITION Initial
+REGION right
+END
+
+
+:========== stratigraphy couplers =============
+
+STRATA
+REGION all
+MATERIAL sat_zone
+END
+
+:=============== constraints ==================
+CONSTRAINT initial
+CONCENTRATIONS
+Na+      1.e-5      Z
+Ca++     1.e-5      T
+Fe++     1.e-12     M Ferrihydrite
+K+       1.e-6      M K-Feldspar
+Al+++    1.e-12     M Kaolinite
+H+       7.50      pH
+N2(aq)     1.e-5      T
+NO3-     1.e-5      T
+HCO3-    1.e-3      T
+Cl-      1.e-5      T
+SO4--    1.e-6      T
+H2PO4-   1.e-6 T
+F-       1.e-6      T
+SiO2(aq) 1.e-5      M Chalcedony
+UO2++    1.e-15     T
+O2(aq)   2.e-1      G O2(g)
+Tracer   1.d-15     T
+/
+MINERALS
+:mineral     vol. frac. area
+Quartz         0.21      1.
+Kaolinite      0.15      1.
+K-Feldspar     0.15      1.
+Ferrihydrite   0.1       1.
+Jurbanite      0.0       1.
+Gibbsite       0.0       1.
+Calcite        0.0       1.
+(UO2)3(PO4)2.4H2O 0.0    1.
+Soddyite       0.0       1.
+Schoepite      0.0       1.
+Chalcedony     0.0       1.
+/
+/
+
+CONSTRAINT infiltration
+CONCENTRATIONS
+Na+      1.e-5      Z
+Ca++     1.e-5      T
+Fe++     1.e-12     T
+K+       1.e-6      T
+Al+++    1.e-12     T
+H+       7.00      pH
+N2(aq)     1.e-5      T
+NO3-     1.e-5      T
+HCO3-   -3.5        G CO2(g)
+Cl-      1.e-5      T
+SO4--    1.e-6      T
+H2PO4-   1.e-6      T
+F-       1.e-6      T
+SiO2(aq) 1.e-5      T
+UO2++    1.e-15     T
+O2(aq)   2.e-1      G O2(g)
+Tracer   1.d-15     T
+/
+/
+
+CONSTRAINT source
+CONCENTRATIONS
+Na+      0.0343631  T
+Ca++     1.2475e-5  T
+Fe++     3.04403e-5 T
+K+       1.71363e-5 T
+Al+++    2.89087e-5 T
+H+       2.93      pH
+N2(aq)     0.0013305  T
+NO3-     0.0196759  Z
+HCO3-    0.002183   T CO2(g)
+Cl-      3.38476e-5 T
+SO4--    6.24625e-4 T
+H2PO4-   7.10279e-5 T
+F-       7.8954e-5  T
+SiO2(aq) 2.52799e-4 T
+UO2++    3.54135e-5 T
+O2(aq)   2.e-1      G O2(g)
+Tracer   3.54135e-5 T
+/
+/

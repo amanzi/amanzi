@@ -255,7 +255,7 @@
 
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="fbasin-minerals-surface-complexation_geh.bgd" />
+    <Parameter name="Thermodynamic Database File" type="string" value="fbasin-uo2-17-component.bgd" />
 <!--    <Parameter name="Verbosity" type="int" value="2" />-->
     <Parameter name="Verbosity" type="int" value="8" />
     <Parameter name="Activity Model" type="string" value="unit" />
