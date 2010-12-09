@@ -14,16 +14,19 @@ OH-
 
 AlOH++
 Al(OH)2+
-Al(OH)3(aq)
-Al(OH)4-
 AlH2PO4++
 AlHPO4+
+AlO2-
 
 H3PO4(aq)
 H2PO4-
+
+HAlO2(aq)
+
 PO4---
 
 UO2OH+
+UO2PO4-
 UO2(OH)2(aq)
 UO2(OH)3-
 UO2(OH)4--
@@ -36,10 +39,9 @@ UO2(OH)4--
 
 UO2(H2PO4)(H3PO4)+
 UO2(H2PO4)2(aq)
-UO2HPO4(aq)
 UO2H2PO4+
 UO2H3PO4++
-UO2PO4-
+UO2HPO4(aq)
 /
 
 GAS_SPECIES
