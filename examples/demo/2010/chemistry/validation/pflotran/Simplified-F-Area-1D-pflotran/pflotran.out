@@ -1,0 +1,2026 @@
+
+ ! ************************************************************************** !
+
+ Initial Basis
+
+ Primary Components:
+  Al+++
+    Charge:   3.00
+    Molar Weight:   26.9815
+    Debye-Huckel a0:    9.0000
+
+  H+
+    Charge:   1.00
+    Molar Weight:    1.0079
+    Debye-Huckel a0:    9.0000
+
+  HPO4--
+    Charge:  -2.00
+    Molar Weight:   95.9793
+    Debye-Huckel a0:    4.0000
+
+  SiO2(aq)
+    Charge:   0.00
+    Molar Weight:   60.0843
+    Debye-Huckel a0:    3.0000
+
+  UO2++
+    Charge:   2.00
+    Molar Weight:  270.0277
+    Debye-Huckel a0:    4.5000
+
+
+ Secondary Components:
+  OH-
+    Charge:  -1.00
+    Molar Weight:   17.0073
+    Debye-Huckel a0:    3.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  OH-                             
+       -1.00  H+                              
+        1.00  H2O                             
+      logK:    14.9398    13.9951    13.0272    12.2551    11.6308    11.2836    11.1675    11.3002
+
+  AlOH++
+    Charge:   2.00
+    Molar Weight:   43.9889
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  AlOH++                          
+       -1.00  H+                              
+        1.00  Al+++                           
+        1.00  H2O                             
+      logK:     5.7264     4.9571     4.0033     3.0626     2.0516     1.1673     0.3661    -0.3794
+
+  Al(OH)2+
+    Charge:   1.00
+    Molar Weight:   60.9962
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  Al(OH)2+                        
+       -2.00  H+                              
+        1.00  Al+++                           
+        2.00  H2O                             
+      logK:    12.1394    10.5945     8.7455     6.9818     5.1460     3.5858     2.2019     0.9295
+
+  Al(OH)3(aq)
+    Charge:   0.00
+    Molar Weight:   78.0034
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  Al(OH)3(aq)                     
+       -3.00  H+                              
+        1.00  Al+++                           
+        3.00  H2O                             
+      logK:    18.9826    16.1577    13.0193    10.2731     7.7112     5.8153     4.3824     3.2826
+
+  Al(OH)4-
+    Charge:  -1.00
+    Molar Weight:   95.0107
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  Al(OH)4-                        
+       -4.00  H+                              
+        1.00  Al+++                           
+        4.00  H2O                             
+      logK:    25.7948    22.8833    19.5707    16.5819    13.6762    11.4090     9.5977     8.1671
+
+  AlH2PO4++
+    Charge:   2.00
+    Molar Weight:  123.9688
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  AlH2PO4++                       
+        1.00  Al+++                           
+        1.00  H+                              
+        1.00  HPO4--                          
+      logK:   500.0000    -3.1000   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  AlHPO4+
+    Charge:   1.00
+    Molar Weight:  122.9608
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  AlHPO4+                         
+        1.00  Al+++                           
+        1.00  HPO4--                          
+      logK:   500.0000    -7.4000   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  H3PO4(aq)
+    Charge:   0.00
+    Molar Weight:   97.9952
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  H3PO4(aq)                       
+        1.00  HPO4--                          
+        2.00  H+                              
+      logK:    -9.3933    -9.3751    -9.5434    -9.8805   -10.4425   -11.1429   -12.0169   -13.1928
+
+  H2PO4-
+    Charge:  -1.00
+    Molar Weight:   96.9872
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  H2PO4-                          
+        1.00  H+                              
+        1.00  HPO4--                          
+      logK:    -7.3231    -7.2054    -7.1888    -7.2876    -7.5259    -7.8671    -8.3189    -8.9357
+
+  PO4---
+    Charge:  -3.00
+    Molar Weight:   94.9714
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  PO4---                          
+       -1.00  H+                              
+        1.00  HPO4--                          
+      logK:    12.6048    12.3218    12.1275    12.0760    12.1809    12.4313    12.8214    13.3896
+
+  UO2OH+
+    Charge:   1.00
+    Molar Weight:  287.0350
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2OH+                          
+       -1.00  H+                              
+        1.00  H2O                             
+        1.00  UO2++                           
+      logK:     5.9118     5.2073     4.4230     3.7193     3.0344     2.5003     2.0625     1.6927
+
+  UO2(OH)2(aq)
+    Charge:   0.00
+    Molar Weight:  304.0424
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(OH)2(aq)                    
+       -2.00  H+                              
+        1.00  UO2++                           
+        2.00  H2O                             
+      logK:   500.0000    10.3146   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)3-
+    Charge:  -1.00
+    Molar Weight:  321.0497
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(OH)3-                       
+       -3.00  H+                              
+        1.00  UO2++                           
+        3.00  H2O                             
+      logK:   500.0000    19.2218   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)4--
+    Charge:  -2.00
+    Molar Weight:  338.0571
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(OH)4--                      
+       -4.00  H+                              
+        1.00  UO2++                           
+        4.00  H2O                             
+      logK:   500.0000    33.0291   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)2OH+++
+    Charge:   3.00
+    Molar Weight:  557.0627
+    Debye-Huckel a0:    5.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)2OH+++                     
+       -1.00  H+                              
+        1.00  H2O                             
+        2.00  UO2++                           
+      logK:   500.0000     2.7072   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)2(OH)2++
+    Charge:   2.00
+    Molar Weight:  574.0701
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)2(OH)2++                   
+       -2.00  H+                              
+        2.00  H2O                             
+        2.00  UO2++                           
+      logK:     6.2772     5.6346     4.9999     4.5413     4.2278     4.1102     4.1173     4.2062
+
+  (UO2)3(OH)4++
+    Charge:   2.00
+    Molar Weight:  878.1125
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)3(OH)4++                   
+       -4.00  H+                              
+        3.00  UO2++                           
+        4.00  H2O                             
+      logK:   500.0000    11.9290   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3(OH)5+
+    Charge:   1.00
+    Molar Weight:  895.1198
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)3(OH)5+                    
+       -5.00  H+                              
+        3.00  UO2++                           
+        5.00  H2O                             
+      logK:    17.2322    15.5862    13.9178    12.6297    11.6179    11.0604    10.7863    10.6975
+
+  (UO2)3(OH)7-
+    Charge:  -1.00
+    Molar Weight:  929.1345
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)3(OH)7-                    
+       -7.00  H+                              
+        3.00  UO2++                           
+        7.00  H2O                             
+      logK:   500.0000    31.0508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)4(OH)7+
+    Charge:   1.00
+    Molar Weight: 1199.1622
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)4(OH)7+                    
+       -7.00  H+                              
+        4.00  UO2++                           
+        7.00  H2O                             
+      logK:   500.0000    21.9508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(H2PO4)(H3PO4)+
+    Charge:   1.00
+    Molar Weight:  465.0101
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(H2PO4)(H3PO4)+              
+        1.00  UO2++                           
+        2.00  HPO4--                          
+        3.00  H+                              
+      logK:   500.0000   -22.7537   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(H2PO4)2(aq)
+    Charge:   0.00
+    Molar Weight:  464.0022
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(H2PO4)2(aq)                 
+        1.00  UO2++                           
+        2.00  H+                              
+        2.00  HPO4--                          
+      logK:   500.0000   -21.7437   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2HPO4(aq)
+    Charge:   0.00
+    Molar Weight:  366.0070
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2HPO4(aq)                     
+        1.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000    -8.4398   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2H2PO4+
+    Charge:   1.00
+    Molar Weight:  367.0149
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2H2PO4+                       
+        1.00  H+                              
+        1.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000   -11.6719   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2H3PO4++
+    Charge:   2.00
+    Molar Weight:  368.0229
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2H3PO4++                      
+        1.00  HPO4--                          
+        1.00  UO2++                           
+        2.00  H+                              
+      logK:   500.0000   -11.3119   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2PO4-
+    Charge:  -1.00
+    Molar Weight:  364.9991
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2PO4-                         
+       -1.00  H+                              
+        1.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000    -2.0798   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Gas Components: None
+
+ Minerals:
+  Quartz
+    Molar Weight:   60.0843
+    Molar Volume:    0.0000
+    Mineral Reaction: 
+       -1.00  Quartz                          
+        1.00  SiO2(aq)                        
+      logK:    -4.6319    -3.9993    -3.4734    -3.0782    -2.7191    -2.4378    -2.2057    -2.0168
+
+  Chalcedony
+    Molar Weight:   60.0843
+    Molar Volume:    0.0000
+    Mineral Reaction: 
+       -1.00  Chalcedony                      
+        1.00  SiO2(aq)                        
+      logK:    -4.3359    -3.7281    -3.2307    -2.8615    -2.5280    -2.2669    -2.0512    -1.8760
+
+  SiO2(am)
+    Molar Weight:   60.0843
+    Molar Volume:    0.0000
+    Mineral Reaction: 
+       -1.00  SiO2(am)                        
+        1.00  SiO2(aq)                        
+      logK:    -3.1240    -2.7136    -2.4067    -2.1843    -1.9796    -1.8190    -1.6928    -1.6042
+
+  Kaolinite
+    Molar Weight:  258.1604
+    Molar Volume:    0.0001
+    Mineral Reaction: 
+       -1.00  Kaolinite                       
+       -6.00  H+                              
+        2.00  Al+++                           
+        2.00  SiO2(aq)                        
+        5.00  H2O                             
+      logK:     9.0182     6.8101     3.8468     0.9541    -2.0187    -4.5022    -6.7083    -8.8022
+
+  UO2(PO3)2
+    Molar Weight:  427.9716
+    Molar Volume:    0.0005
+    Mineral Reaction: 
+       -1.00  UO2(PO3)2                       
+       -2.00  H2O                             
+        1.00  UO2++                           
+        2.00  H+                              
+        2.00  HPO4--                          
+      logK:   -15.5219   -16.2805   -17.5908   -19.2474   -21.4473   -23.7724   -26.2942   -29.2401
+
+  (UO2)3(PO4)2
+    Molar Weight: 1000.0258
+    Molar Volume:    0.0005
+    Mineral Reaction: 
+       -1.00  (UO2)3(PO4)2                    
+       -2.00  H+                              
+        2.00  HPO4--                          
+        3.00  UO2++                           
+      logK:   -11.7922   -14.0241   -17.0120   -20.1991   -23.9257   -27.4614   -30.9788   -34.7687
+
+  (UO2)3(PO4)2.4H2O
+    Molar Weight: 1072.0869
+    Molar Volume:    0.0005
+    Mineral Reaction: 
+       -1.00  (UO2)3(PO4)2.4H2O               
+       -2.00  H+                              
+        2.00  HPO4--                          
+        3.00  UO2++                           
+        4.00  H2O                             
+      logK:   -26.3434   -27.0349   -27.9030   -28.7417   -29.6611   -30.5340   500.0000   500.0000
+
+
+ Surface Complexation Reactions:
+
+   Surface Complexes:
+  >SiOUO3H3++
+    Charge:   2.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3H3++                     
+        1.00  >SiOH                           
+        1.00  UO2++                           
+        1.00  H2O                             
+      logK:   500.0000     5.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO3H2+
+    Charge:   1.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3H2+                      
+        1.00  >SiOH                           
+        1.00  UO2++                           
+       -1.00  H+                              
+        1.00  H2O                             
+      logK:   500.0000     5.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO3H
+    Charge:   0.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3H                        
+        1.00  >SiOH                           
+        1.00  UO2++                           
+       -2.00  H+                              
+        1.00  H2O                             
+      logK:   500.0000     5.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO3-
+    Charge:  -1.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3-                        
+        1.00  >SiOH                           
+        1.00  UO2++                           
+       -3.00  H+                              
+        1.00  H2O                             
+      logK:   500.0000    12.3500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO2(OH)2-
+    Charge:  -1.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO2(OH)2-                   
+        1.00  >SiOH                           
+        1.00  UO2++                           
+       -3.00  H+                              
+        2.00  H2O                             
+      logK:   500.0000    12.3500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+   Surface Complexes:
+  >FeOHUO3
+    Charge:   0.00
+    Surface Complex Reaction: 
+       -1.00  >FeOHUO3                        
+        1.00  >FeOH                           
+       -2.00  H+                              
+        1.00  UO2++                           
+        1.00  H2O                             
+      logK:   500.0000     3.0500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeOHUO2++
+    Charge:   2.00
+    Surface Complex Reaction: 
+       -1.00  >FeOHUO2++                      
+        1.00  >FeOH                           
+        1.00  UO2++                           
+      logK:   500.0000    -6.6300   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+   Surface Complexes:
+  >AlOUO2+
+    Charge:   1.00
+    Surface Complex Reaction: 
+       -1.00  >AlOUO2+                        
+        1.00  >AlOH                           
+        1.00  UO2++                           
+       -1.00  H+                              
+      logK:   500.0000    -3.1300   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Ion Exchange Reactions: None
+
+ ! ************************************************************************** !
+
+
+ ! ************************************************************************** !
+
+ Final Basis
+
+ Primary Components:
+  Al+++
+    Charge:   3.00
+    Molar Weight:   26.9815
+    Debye-Huckel a0:    9.0000
+
+  H+
+    Charge:   1.00
+    Molar Weight:    1.0079
+    Debye-Huckel a0:    9.0000
+
+  HPO4--
+    Charge:  -2.00
+    Molar Weight:   95.9793
+    Debye-Huckel a0:    4.0000
+
+  SiO2(aq)
+    Charge:   0.00
+    Molar Weight:   60.0843
+    Debye-Huckel a0:    3.0000
+
+  UO2++
+    Charge:   2.00
+    Molar Weight:  270.0277
+    Debye-Huckel a0:    4.5000
+
+
+ Secondary Components:
+  OH-
+    Charge:  -1.00
+    Molar Weight:   17.0073
+    Debye-Huckel a0:    3.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  OH-                             
+        1.00  H2O                             
+       -1.00  H+                              
+      logK:    14.9398    13.9951    13.0272    12.2551    11.6308    11.2836    11.1675    11.3002
+
+  AlOH++
+    Charge:   2.00
+    Molar Weight:   43.9889
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  AlOH++                          
+        1.00  H2O                             
+        1.00  Al+++                           
+       -1.00  H+                              
+      logK:     5.7264     4.9571     4.0033     3.0626     2.0516     1.1673     0.3661    -0.3794
+
+  Al(OH)2+
+    Charge:   1.00
+    Molar Weight:   60.9962
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  Al(OH)2+                        
+        2.00  H2O                             
+        1.00  Al+++                           
+       -2.00  H+                              
+      logK:    12.1394    10.5945     8.7455     6.9818     5.1460     3.5858     2.2019     0.9295
+
+  Al(OH)3(aq)
+    Charge:   0.00
+    Molar Weight:   78.0034
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  Al(OH)3(aq)                     
+        3.00  H2O                             
+        1.00  Al+++                           
+       -3.00  H+                              
+      logK:    18.9826    16.1577    13.0193    10.2731     7.7112     5.8153     4.3824     3.2826
+
+  Al(OH)4-
+    Charge:  -1.00
+    Molar Weight:   95.0107
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  Al(OH)4-                        
+        4.00  H2O                             
+        1.00  Al+++                           
+       -4.00  H+                              
+      logK:    25.7948    22.8833    19.5707    16.5819    13.6762    11.4090     9.5977     8.1671
+
+  AlH2PO4++
+    Charge:   2.00
+    Molar Weight:  123.9688
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  AlH2PO4++                       
+        1.00  Al+++                           
+        1.00  H+                              
+        1.00  HPO4--                          
+      logK:   500.0000    -3.1000   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  AlHPO4+
+    Charge:   1.00
+    Molar Weight:  122.9608
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  AlHPO4+                         
+        1.00  Al+++                           
+        1.00  HPO4--                          
+      logK:   500.0000    -7.4000   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  H3PO4(aq)
+    Charge:   0.00
+    Molar Weight:   97.9952
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  H3PO4(aq)                       
+        2.00  H+                              
+        1.00  HPO4--                          
+      logK:    -9.3933    -9.3751    -9.5434    -9.8805   -10.4425   -11.1429   -12.0169   -13.1928
+
+  H2PO4-
+    Charge:  -1.00
+    Molar Weight:   96.9872
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  H2PO4-                          
+        1.00  H+                              
+        1.00  HPO4--                          
+      logK:    -7.3231    -7.2054    -7.1888    -7.2876    -7.5259    -7.8671    -8.3189    -8.9357
+
+  PO4---
+    Charge:  -3.00
+    Molar Weight:   94.9714
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  PO4---                          
+       -1.00  H+                              
+        1.00  HPO4--                          
+      logK:    12.6048    12.3218    12.1275    12.0760    12.1809    12.4313    12.8214    13.3896
+
+  UO2OH+
+    Charge:   1.00
+    Molar Weight:  287.0350
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2OH+                          
+        1.00  H2O                             
+       -1.00  H+                              
+        1.00  UO2++                           
+      logK:     5.9118     5.2073     4.4230     3.7193     3.0344     2.5003     2.0625     1.6927
+
+  UO2(OH)2(aq)
+    Charge:   0.00
+    Molar Weight:  304.0424
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(OH)2(aq)                    
+        2.00  H2O                             
+       -2.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000    10.3146   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)3-
+    Charge:  -1.00
+    Molar Weight:  321.0497
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(OH)3-                       
+        3.00  H2O                             
+       -3.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000    19.2218   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(OH)4--
+    Charge:  -2.00
+    Molar Weight:  338.0571
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(OH)4--                      
+        4.00  H2O                             
+       -4.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000    33.0291   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)2OH+++
+    Charge:   3.00
+    Molar Weight:  557.0627
+    Debye-Huckel a0:    5.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)2OH+++                     
+        1.00  H2O                             
+       -1.00  H+                              
+        2.00  UO2++                           
+      logK:   500.0000     2.7072   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)2(OH)2++
+    Charge:   2.00
+    Molar Weight:  574.0701
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)2(OH)2++                   
+        2.00  H2O                             
+       -2.00  H+                              
+        2.00  UO2++                           
+      logK:     6.2772     5.6346     4.9999     4.5413     4.2278     4.1102     4.1173     4.2062
+
+  (UO2)3(OH)4++
+    Charge:   2.00
+    Molar Weight:  878.1125
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)3(OH)4++                   
+        4.00  H2O                             
+       -4.00  H+                              
+        3.00  UO2++                           
+      logK:   500.0000    11.9290   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)3(OH)5+
+    Charge:   1.00
+    Molar Weight:  895.1198
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)3(OH)5+                    
+        5.00  H2O                             
+       -5.00  H+                              
+        3.00  UO2++                           
+      logK:    17.2322    15.5862    13.9178    12.6297    11.6179    11.0604    10.7863    10.6975
+
+  (UO2)3(OH)7-
+    Charge:  -1.00
+    Molar Weight:  929.1345
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)3(OH)7-                    
+        7.00  H2O                             
+       -7.00  H+                              
+        3.00  UO2++                           
+      logK:   500.0000    31.0508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  (UO2)4(OH)7+
+    Charge:   1.00
+    Molar Weight: 1199.1622
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  (UO2)4(OH)7+                    
+        7.00  H2O                             
+       -7.00  H+                              
+        4.00  UO2++                           
+      logK:   500.0000    21.9508   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(H2PO4)(H3PO4)+
+    Charge:   1.00
+    Molar Weight:  465.0101
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(H2PO4)(H3PO4)+              
+        3.00  H+                              
+        2.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000   -22.7537   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2(H2PO4)2(aq)
+    Charge:   0.00
+    Molar Weight:  464.0022
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2(H2PO4)2(aq)                 
+        2.00  H+                              
+        2.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000   -21.7437   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2HPO4(aq)
+    Charge:   0.00
+    Molar Weight:  366.0070
+    Debye-Huckel a0:    3.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2HPO4(aq)                     
+        1.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000    -8.4398   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2H2PO4+
+    Charge:   1.00
+    Molar Weight:  367.0149
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2H2PO4+                       
+        1.00  H+                              
+        1.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000   -11.6719   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2H3PO4++
+    Charge:   2.00
+    Molar Weight:  368.0229
+    Debye-Huckel a0:    4.5000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2H3PO4++                      
+        2.00  H+                              
+        1.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000   -11.3119   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  UO2PO4-
+    Charge:  -1.00
+    Molar Weight:  364.9991
+    Debye-Huckel a0:    4.0000
+    Equilibrium Aqueous Reaction: 
+       -1.00  UO2PO4-                         
+       -1.00  H+                              
+        1.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   500.0000    -2.0798   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Gas Components: None
+
+ Minerals:
+  Quartz
+    Molar Weight:   60.0843
+    Molar Volume:    0.0000
+    Mineral Reaction: 
+       -1.00  Quartz                          
+        1.00  SiO2(aq)                        
+      logK:    -4.6319    -3.9993    -3.4734    -3.0782    -2.7191    -2.4378    -2.2057    -2.0168
+
+  Chalcedony
+    Molar Weight:   60.0843
+    Molar Volume:    0.0000
+    Mineral Reaction: 
+       -1.00  Chalcedony                      
+        1.00  SiO2(aq)                        
+      logK:    -4.3359    -3.7281    -3.2307    -2.8615    -2.5280    -2.2669    -2.0512    -1.8760
+
+  SiO2(am)
+    Molar Weight:   60.0843
+    Molar Volume:    0.0000
+    Mineral Reaction: 
+       -1.00  SiO2(am)                        
+        1.00  SiO2(aq)                        
+      logK:    -3.1240    -2.7136    -2.4067    -2.1843    -1.9796    -1.8190    -1.6928    -1.6042
+
+  Kaolinite
+    Molar Weight:  258.1604
+    Molar Volume:    0.0001
+    Mineral Reaction: 
+       -1.00  Kaolinite                       
+        5.00  H2O                             
+        2.00  Al+++                           
+       -6.00  H+                              
+        2.00  SiO2(aq)                        
+      logK:     9.0182     6.8101     3.8468     0.9541    -2.0187    -4.5022    -6.7083    -8.8022
+
+  UO2(PO3)2
+    Molar Weight:  427.9716
+    Molar Volume:    0.0005
+    Mineral Reaction: 
+       -1.00  UO2(PO3)2                       
+       -2.00  H2O                             
+        2.00  H+                              
+        2.00  HPO4--                          
+        1.00  UO2++                           
+      logK:   -15.5219   -16.2805   -17.5908   -19.2474   -21.4473   -23.7724   -26.2942   -29.2401
+
+  (UO2)3(PO4)2
+    Molar Weight: 1000.0258
+    Molar Volume:    0.0005
+    Mineral Reaction: 
+       -1.00  (UO2)3(PO4)2                    
+       -2.00  H+                              
+        2.00  HPO4--                          
+        3.00  UO2++                           
+      logK:   -11.7922   -14.0241   -17.0120   -20.1991   -23.9257   -27.4614   -30.9788   -34.7687
+
+  (UO2)3(PO4)2.4H2O
+    Molar Weight: 1072.0869
+    Molar Volume:    0.0005
+    Mineral Reaction: 
+       -1.00  (UO2)3(PO4)2.4H2O               
+        4.00  H2O                             
+       -2.00  H+                              
+        2.00  HPO4--                          
+        3.00  UO2++                           
+      logK:   -26.3434   -27.0349   -27.9030   -28.7417   -29.6611   -30.5340   500.0000   500.0000
+
+
+ Surface Complexation Reactions:
+
+   Surface Complexes:
+  >SiOUO3H3++
+    Charge:   2.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3H3++                     
+        1.00  >SiOH                           
+        1.00  H2O                             
+        1.00  UO2++                           
+      logK:   500.0000     5.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO3H2+
+    Charge:   1.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3H2+                      
+        1.00  >SiOH                           
+        1.00  H2O                             
+       -1.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000     5.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO3H
+    Charge:   0.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3H                        
+        1.00  >SiOH                           
+        1.00  H2O                             
+       -2.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000     5.1800   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO3-
+    Charge:  -1.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO3-                        
+        1.00  >SiOH                           
+        1.00  H2O                             
+       -3.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000    12.3500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >SiOUO2(OH)2-
+    Charge:  -1.00
+    Surface Complex Reaction: 
+       -1.00  >SiOUO2(OH)2-                   
+        1.00  >SiOH                           
+        2.00  H2O                             
+       -3.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000    12.3500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+   Surface Complexes:
+  >FeOHUO3
+    Charge:   0.00
+    Surface Complex Reaction: 
+       -1.00  >FeOHUO3                        
+        1.00  >FeOH                           
+        1.00  H2O                             
+       -2.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000     3.0500   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+  >FeOHUO2++
+    Charge:   2.00
+    Surface Complex Reaction: 
+       -1.00  >FeOHUO2++                      
+        1.00  >FeOH                           
+        1.00  UO2++                           
+      logK:   500.0000    -6.6300   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+   Surface Complexes:
+  >AlOUO2+
+    Charge:   1.00
+    Surface Complex Reaction: 
+       -1.00  >AlOUO2+                        
+        1.00  >AlOH                           
+       -1.00  H+                              
+        1.00  UO2++                           
+      logK:   500.0000    -3.1300   500.0000   500.0000   500.0000   500.0000   500.0000   500.0000
+
+
+ Ion Exchange Reactions: None
+
+ ! ************************************************************************** !
+
+--------------------------------------------------------------------------------
+
+     5  Primary Species
+
+              Al+++                 H+                    HPO4--              
+              SiO2(aq)              UO2++               
+
+    26  Secondary Complex Species
+
+              OH-                   AlOH++                Al(OH)2+            
+              Al(OH)3(aq)           Al(OH)4-              AlH2PO4++           
+              AlHPO4+               H3PO4(aq)             H2PO4-              
+              PO4---                UO2OH+                UO2(OH)2(aq)        
+              UO2(OH)3-             UO2(OH)4--            (UO2)2OH+++         
+              (UO2)2(OH)2++         (UO2)3(OH)4++         (UO2)3(OH)5+        
+              (UO2)3(OH)7-          (UO2)4(OH)7+          UO2(H2PO4)(H3PO4)+  
+              UO2(H2PO4)2(aq)       UO2HPO4(aq)           UO2H2PO4+           
+              UO2H3PO4++            UO2PO4-             
+
+     0  Gas Species
+
+
+
+     7  Reference Minerals
+
+              Quartz                Chalcedony            SiO2(am)            
+              Kaolinite             UO2(PO3)2             (UO2)3(PO4)2        
+              (UO2)3(PO4)2.4H2O   
+
+     3  Kinetic Mineral Reactions
+
+              Quartz                Kaolinite             (UO2)3(PO4)2.4H2O   
+
+
+     3  Surface Complexation Reactions
+
+              >SiOH                 >FeOH                 >AlOH               
+
+
+     8  Surface Complexes
+
+              >SiOUO3H3++           >SiOUO3H2+            >SiOUO3H            
+              >SiOUO3-              >SiOUO2(OH)2-         >FeOHUO3            
+              >FeOHUO2++            >AlOUO2+            
+
+     0  Ion Exchange Reactions
+
+     0  Ion Exchange Cations
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Initial Condition
+
+--------------------------------------------------------------------------------
+     Transport Condition:   Initial
+                  Region:   all
+--------------------------------------------------------------------------------
+
+  Transport Condition: Initial
+
+  Constraint: initial
+  ----------------------------------------------------------------------------
+        iterations:    40
+                pH:     7.50
+    ionic strength:   1.6754E-06 [mol/L]
+    charge balance:  -1.9531E-06
+          pressure:   1.0133E+05 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   1.0000E+00    [---]
+ mass fraction H2O:   9.9999E-01    [---]
+  ----------------------------------------------------------------------------
+
+                        free        total
+  species               molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  Al+++                 4.3560E-16  6.5862E-09  9.8643E-01    Kaolinite
+  H+                    3.1671E-08  2.1593E-08  9.9848E-01    pH
+  HPO4--                6.6438E-07  1.0000E-06  9.9393E-01    total
+  SiO2(aq)              1.8703E-04  1.8703E-04  1.0000E+00    Chalcedony
+  UO2++                 1.8892E-20  1.0000E-15  9.9393E-01    total
+
+  complex               molality    act coef  logK
+  ----------------------------------------------------------------------------
+  H2PO4-                3.3561E-07  9.9848E-01   -7.2054E+00
+  OH-                   3.2030E-07  9.9848E-01    1.3995E+01
+  Al(OH)4-              5.6300E-09  9.9848E-01    2.2883E+01
+  Al(OH)3(aq)           9.4504E-10  1.0000E+00    1.6158E+01
+  Al(OH)2+              1.0947E-11  9.9848E-01    1.0595E+01
+  PO4---                1.0091E-11  9.8640E-01    1.2322E+01
+  H3PO4(aq)             1.5663E-12  1.0000E+00   -9.3751E+00
+  AlOH++                1.5090E-13  9.9393E-01    4.9571E+00
+  AlHPO4+               7.1381E-15  9.9848E-01   -7.4000E+00
+  UO2(OH)2(aq)          9.1000E-16  1.0000E+00    1.0315E+01
+  UO2PO4-               4.7193E-17  9.9848E-01   -2.0798E+00
+  UO2(OH)3-             3.5686E-17  9.9848E-01    1.9222E+01
+  UO2OH+                3.6898E-18  9.9848E-01    5.2073E+00
+  UO2HPO4(aq)           3.4136E-18  1.0000E+00   -8.4398E+00
+  UO2H2PO4+             1.8449E-22  9.9848E-01   -1.1672E+01
+  UO2(OH)4--            1.7668E-23  9.9393E-01    3.3029E+01
+  UO2(H2PO4)2(aq)       4.5382E-26  1.0000E+00   -2.1744E+01
+  AlH2PO4++             1.1365E-26  9.9393E-01   -3.1000E+00
+  UO2H3PO4++            2.5583E-30  9.9393E-01   -1.1312E+01
+  (UO2)2(OH)2++         8.2286E-31  9.9393E-01    5.6346E+00
+  UO2(H2PO4)(H3PO4)+    1.4708E-32  9.9848E-01   -2.2754E+01
+  (UO2)2OH+++           2.2183E-35  9.8640E-01    2.7072E+00
+  (UO2)3(OH)5+          5.4373E-38  9.9848E-01    1.5586E+01
+  (UO2)3(OH)7-          1.8654E-38  9.9848E-01    3.1051E+01
+  (UO2)3(OH)4++         7.8445E-42  9.9393E-01    1.1929E+01
+  (UO2)4(OH)7+          4.4098E-49  9.9848E-01    2.1951E+01
+
+
+  ----------------------------------------------------------------------------
+  primary species: Al+++                  total conc:   6.5675E-09
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  Al(OH)4-               85.48    5.6300E-09
+  Al(OH)3(aq)            14.35    9.4504E-10
+  Al(OH)2+                0.17    1.0947E-11
+  ----------------------------------------------------------------------------
+  primary species: H+                     total conc:   2.1531E-08
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  H2PO4-                 47.07    3.3561E-07
+  OH-                    44.92    3.2030E-07
+  H+                      4.44    3.1671E-08
+  Al(OH)4-                3.16    5.6300E-09
+  Al(OH)3(aq)             0.40    9.4504E-10
+  ----------------------------------------------------------------------------
+  primary species: HPO4--                 total conc:   9.9716E-07
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  HPO4--                 66.44    6.6438E-07
+  H2PO4-                 33.56    3.3561E-07
+  ----------------------------------------------------------------------------
+  primary species: SiO2(aq)               total conc:   1.8649E-04
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  SiO2(aq)              100.00    1.8703E-04
+  ----------------------------------------------------------------------------
+  primary species: UO2++                  total conc:   9.9716E-16
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  UO2(OH)2(aq)           91.00    9.1000E-16
+  UO2PO4-                 4.72    4.7193E-17
+  UO2(OH)3-               3.57    3.5686E-17
+  UO2OH+                  0.37    3.6898E-18
+  UO2HPO4(aq)             0.34    3.4136E-18
+
+  surf complex          mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >SiOH                 6.3600E-03  free site
+  >SiOUO3H3++           7.8904E-28  5.1800E+00
+  >SiOUO3H2+            2.4952E-20  5.1800E+00
+  >SiOUO3H              7.8904E-13  5.1800E+00
+  >SiOUO3-              1.6869E-12  1.2350E+01
+  >SiOUO2(OH)2-         1.6869E-12  1.2350E+01
+  >FeOH                 6.3600E-03  free site
+  >FeOHUO3              1.0644E-10  3.0500E+00
+  >FeOHUO2++            5.0945E-16 -6.6300E+00
+  >AlOH                 6.3600E-03  free site
+  >AlOUO2+              5.0945E-12 -3.1300E+00
+
+  primary species  retardation
+  ----------------------------------------------------------------------------
+  Al+++             1.0000E+00
+  H+                9.9995E-01
+  HPO4--            1.0000E+00
+  SiO2(aq)          1.0000E+00
+  UO2++             5.8113E+02
+
+  primary species     total(aq+sorbed)    total retardation
+                         [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  Al+++                 6.5675E-09          1.0000E+00
+  H+                    2.1530E-08          9.9995E-01
+  HPO4--                9.9716E-07          1.0000E+00
+  SiO2(aq)              1.8649E-04          1.0000E+00
+  UO2++                 5.7948E-13          5.8113E+02
+
+  mineral                             log SI    log K
+  ----------------------------------------------------------------------------
+  Quartz                              0.2712   -3.9993E+00
+  Chalcedony                          0.0000   -3.7281E+00
+  Kaolinite                          -0.0000    6.8101E+00
+  SiO2(am)                           -1.0145   -2.7136E+00
+  (UO2)3(PO4)2.4H2O                 -29.5046   -2.7035E+01
+  UO2(PO3)2                         -30.8063   -1.6280E+01
+  (UO2)3(PO4)2                      -42.5154   -1.4024E+01
+
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+     Transport Condition:   F-basin
+                  Region:   left
+--------------------------------------------------------------------------------
+
+  Transport Condition: F-basin
+
+  Constraint: source
+  ----------------------------------------------------------------------------
+        iterations:    23
+                pH:     2.93
+    ionic strength:   7.8548E-04 [mol/L]
+    charge balance:   1.2925E-03
+          pressure:   1.0133E+05 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   9.9997E-01    [---]
+ mass fraction H2O:   9.9997E-01    [---]
+  ----------------------------------------------------------------------------
+
+                        free        total
+  species               molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  Al+++                 2.7545E-05  2.8909E-05  7.6018E-01    total
+  H+                    1.2112E-03  1.2807E-03  9.7006E-01    pH
+  HPO4--                2.3852E-09  7.1028E-05  8.8052E-01    total
+  SiO2(aq)              2.5280E-04  2.5280E-04  1.0000E+00    total
+  UO2++                 1.3623E-05  3.5414E-05  8.8102E-01    total
+
+  complex               molality    act coef  logK
+  ----------------------------------------------------------------------------
+  H2PO4-                4.0875E-05  9.6874E-01   -7.2054E+00
+  UO2H2PO4+             1.4363E-05  9.6874E-01   -1.1672E+01
+  UO2HPO4(aq)           6.9397E-06  1.0000E+00   -8.4398E+00
+  H3PO4(aq)             6.8766E-06  1.0000E+00   -9.3751E+00
+  AlHPO4+               1.1403E-06  9.6874E-01   -7.4000E+00
+  UO2(H2PO4)2(aq)       4.0505E-07  1.0000E+00   -2.1744E+01
+  AlOH++                2.2329E-07  8.8102E-01    4.9571E+00
+  UO2OH+                6.5427E-08  9.6874E-01    5.2073E+00
+  UO2H3PO4++            8.0995E-09  8.8102E-01   -1.1312E+01
+  UO2(H2PO4)(H3PO4)+    5.0269E-09  9.6874E-01   -2.2754E+01
+  UO2PO4-               2.6615E-09  9.6874E-01   -2.0798E+00
+  UO2(OH)2(aq)          4.2138E-10  1.0000E+00    1.0315E+01
+  Al(OH)2+              3.9833E-10  9.6874E-01    1.0595E+01
+  (UO2)2OH+++           3.1961E-10  7.5287E-01    2.7072E+00
+  (UO2)2(OH)2++         2.7476E-10  8.8102E-01    5.6346E+00
+  OH-                   8.8869E-12  9.6861E-01    1.3995E+01
+  Al(OH)3(aq)           8.9796E-13  1.0000E+00    1.6158E+01
+  AlH2PO4++             7.3832E-14  8.8102E-01   -3.1000E+00
+  (UO2)3(OH)4++         1.2129E-15  8.8102E-01    1.1929E+01
+  UO2(OH)3-             4.5842E-16  9.6874E-01    1.9222E+01
+  (UO2)3(OH)5+          2.0673E-16  9.6874E-01    1.5586E+01
+  Al(OH)4-              1.4840E-16  9.6874E-01    2.2883E+01
+  PO4---                1.1346E-18  7.5097E-01    1.2322E+01
+  (UO2)4(OH)7+          7.7637E-22  9.6874E-01    2.1951E+01
+  (UO2)3(OH)7-          5.1380E-26  9.6874E-01    3.1051E+01
+  UO2(OH)4--            6.6900E-27  8.8052E-01    3.3029E+01
+
+
+  ----------------------------------------------------------------------------
+  primary species: Al+++                  total conc:   2.8827E-05
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  Al+++                  95.28    2.7545E-05
+  AlHPO4+                 3.94    1.1403E-06
+  AlOH++                  0.77    2.2329E-07
+  ----------------------------------------------------------------------------
+  primary species: H+                     total conc:   1.2771E-03
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  H+                     94.53    1.2112E-03
+  H2PO4-                  3.19    4.0875E-05
+  UO2H2PO4+               1.12    1.4363E-05
+  H3PO4(aq)               1.07    6.8766E-06
+  UO2(H2PO4)2(aq)         0.06    4.0505E-07
+  AlOH++                  0.02    2.2329E-07
+  ----------------------------------------------------------------------------
+  primary species: HPO4--                 total conc:   7.0826E-05
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  H2PO4-                 57.55    4.0875E-05
+  UO2H2PO4+              20.22    1.4363E-05
+  UO2HPO4(aq)             9.77    6.9397E-06
+  H3PO4(aq)               9.68    6.8766E-06
+  AlHPO4+                 1.61    1.1403E-06
+  UO2(H2PO4)2(aq)         1.14    4.0505E-07
+  UO2(H2PO4)(H3PO4)+      0.01    5.0269E-09
+  UO2H3PO4++              0.01    8.0995E-09
+  ----------------------------------------------------------------------------
+  primary species: SiO2(aq)               total conc:   2.5208E-04
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  SiO2(aq)              100.00    2.5280E-04
+  ----------------------------------------------------------------------------
+  primary species: UO2++                  total conc:   3.5313E-05
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  UO2H2PO4+              40.56    1.4363E-05
+  UO2++                  38.47    1.3623E-05
+  UO2HPO4(aq)            19.60    6.9397E-06
+  UO2(H2PO4)2(aq)         1.14    4.0505E-07
+  UO2OH+                  0.18    6.5427E-08
+  UO2H3PO4++              0.02    8.0995E-09
+  UO2(H2PO4)(H3PO4)+      0.01    5.0269E-09
+
+  surf complex          mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >SiOH                 6.3596E-03  free site
+  >SiOUO3H3++           5.0431E-13  5.1800E+00
+  >SiOUO3H2+            4.2924E-10  5.1800E+00
+  >SiOUO3H              3.6534E-07  5.1800E+00
+  >SiOUO3-              2.1023E-11  1.2350E+01
+  >SiOUO2(OH)2-         2.1023E-11  1.2350E+01
+  >FeOH                 1.2182E-04  free site
+  >FeOHUO3              9.4404E-07  3.0500E+00
+  >FeOHUO2++            6.2372E-03 -6.6300E+00
+  >AlOH                 4.3029E-04  free site
+  >AlOUO2+              5.9297E-03 -3.1300E+00
+
+  primary species  retardation
+  ----------------------------------------------------------------------------
+  Al+++             1.0000E+00
+  H+                9.7677E-01
+  HPO4--            1.0000E+00
+  SiO2(aq)          1.0000E+00
+  UO2++             2.7229E+00
+
+  primary species     total(aq+sorbed)    total retardation
+                         [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  Al+++                 2.8827E-05          1.0000E+00
+  H+                    1.2474E-03          9.7677E-01
+  HPO4--                7.0826E-05          1.0000E+00
+  SiO2(aq)              2.5208E-04          1.0000E+00
+  UO2++                 9.6154E-05          2.7229E+00
+
+  mineral                             log SI    log K
+  ----------------------------------------------------------------------------
+  (UO2)3(PO4)2.4H2O                   0.7773   -2.7035E+01
+  Quartz                              0.4021   -3.9993E+00
+  Chalcedony                          0.1309   -3.7281E+00
+  SiO2(am)                           -0.8836   -2.7136E+00
+  Kaolinite                          -5.7826    6.8101E+00
+  UO2(PO3)2                         -11.8557   -1.6280E+01
+  (UO2)3(PO4)2                      -12.2335   -1.4024E+01
+
+
+--------------------------------------------------------------------------------
+
+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+
+  Boundary Condition
+
+--------------------------------------------------------------------------------
+     Transport Condition:   outlet
+                  Region:   right
+--------------------------------------------------------------------------------
+
+  Transport Condition: outlet
+
+  Constraint: outlet
+  ----------------------------------------------------------------------------
+        iterations:    37
+                pH:     7.00
+    ionic strength:   1.1779E-06 [mol/L]
+    charge balance:  -1.3820E-06
+          pressure:   1.0133E+05 [Pa]
+       temperature:    25.00 [C]
+       density H2O:   997.16 [kg/m^3]
+ ln / activity H2O:   0.0000E+00  1.0000E+00    [---]
+ mole fraction H2O:   1.0000E+00    [---]
+ mass fraction H2O:   1.0000E+00    [---]
+  ----------------------------------------------------------------------------
+
+                        free        total
+  species               molal       molal       act coef     constraint
+  ----------------------------------------------------------------------------
+  Al+++                 4.9777E-18  1.0000E-12  9.8860E-01    total
+  H+                    1.0013E-07  6.1405E-07  9.9873E-01    pH
+  HPO4--                3.8482E-07  1.0000E-06  9.9491E-01    total
+  SiO2(aq)              1.0000E-05  1.0000E-05  1.0000E+00    total
+  UO2++                 1.8158E-19  1.0000E-15  9.9491E-01    total
+
+  complex               molality    act coef  logK
+  ----------------------------------------------------------------------------
+  H2PO4-                6.1517E-07  9.9872E-01   -7.2054E+00
+  OH-                   1.0126E-07  9.9872E-01    1.3995E+01
+  H3PO4(aq)             9.0811E-12  1.0000E+00   -9.3751E+00
+  PO4---                1.8460E-12  9.8858E-01    1.2322E+01
+  Al(OH)4-              6.4462E-13  9.9872E-01    2.2883E+01
+  Al(OH)3(aq)           3.4225E-13  1.0000E+00    1.6158E+01
+  Al(OH)2+              1.2534E-14  9.9872E-01    1.0595E+01
+  UO2(OH)2(aq)          8.7548E-16  1.0000E+00    1.0315E+01
+  AlOH++                5.4596E-16  9.9491E-01    4.9571E+00
+  UO2PO4-               8.3222E-17  9.9872E-01   -2.0798E+00
+  AlHPO4+               4.7385E-17  9.9872E-01   -7.4000E+00
+  UO2HPO4(aq)           1.9041E-17  1.0000E+00   -8.4398E+00
+  UO2OH+                1.1223E-17  9.9872E-01    5.2073E+00
+  UO2(OH)3-             1.0854E-17  9.9872E-01    1.9222E+01
+  UO2H2PO4+             3.2534E-21  9.9872E-01   -1.1672E+01
+  UO2(OH)4--            1.6981E-24  9.9491E-01    3.3029E+01
+  UO2(H2PO4)2(aq)       1.4677E-24  1.0000E+00   -2.1744E+01
+  AlH2PO4++             2.3840E-28  9.9491E-01   -3.1000E+00
+  UO2H3PO4++            1.4256E-28  9.9491E-01   -1.1312E+01
+  (UO2)2(OH)2++         7.6086E-30  9.9491E-01    5.6346E+00
+  UO2(H2PO4)(H3PO4)+    1.5038E-30  9.9872E-01   -2.2754E+01
+  (UO2)2OH+++           6.4785E-34  9.8858E-01    2.7072E+00
+  (UO2)3(OH)5+          1.5307E-37  9.9872E-01    1.5586E+01
+  (UO2)3(OH)7-          5.2515E-39  9.9872E-01    3.1051E+01
+  (UO2)3(OH)4++         6.9783E-41  9.9491E-01    1.1929E+01
+  (UO2)4(OH)7+          1.1943E-48  9.9872E-01    2.1951E+01
+
+
+  ----------------------------------------------------------------------------
+  primary species: Al+++                  total conc:   9.9716E-13
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  Al(OH)4-               64.46    6.4462E-13
+  Al(OH)3(aq)            34.23    3.4225E-13
+  Al(OH)2+                1.25    1.2534E-14
+  AlOH++                  0.05    5.4596E-16
+  ----------------------------------------------------------------------------
+  primary species: H+                     total conc:   6.1230E-07
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  H2PO4-                 75.33    6.1517E-07
+  OH-                    12.40    1.0126E-07
+  H+                     12.26    1.0013E-07
+  ----------------------------------------------------------------------------
+  primary species: HPO4--                 total conc:   9.9716E-07
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  H2PO4-                 61.52    6.1517E-07
+  HPO4--                 38.48    3.8482E-07
+  ----------------------------------------------------------------------------
+  primary species: SiO2(aq)               total conc:   9.9716E-06
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  SiO2(aq)              100.00    1.0000E-05
+  ----------------------------------------------------------------------------
+  primary species: UO2++                  total conc:   9.9716E-16
+  complex species       percent   molality
+  ----------------------------------------------------------------------------
+  UO2(OH)2(aq)           87.55    8.7548E-16
+  UO2PO4-                 8.32    8.3222E-17
+  UO2HPO4(aq)             1.90    1.9041E-17
+  UO2OH+                  1.12    1.1223E-17
+  UO2(OH)3-               1.09    1.0854E-17
+  UO2++                   0.02    1.8158E-19
+
+  surf complex          mol/m^3 blk logK
+  ----------------------------------------------------------------------------
+  >SiOH                 6.3600E-03  free site
+  >SiOUO3H3++           7.5910E-27  5.1800E+00
+  >SiOUO3H2+            7.5910E-20  5.1800E+00
+  >SiOUO3H              7.5910E-13  5.1800E+00
+  >SiOUO3-              5.1322E-13  1.2350E+01
+  >SiOUO2(OH)2-         5.1322E-13  1.2350E+01
+  >FeOH                 6.3600E-03  free site
+  >FeOHUO3              1.0240E-10  3.0500E+00
+  >FeOHUO2++            4.9012E-15 -6.6300E+00
+  >AlOH                 6.3600E-03  free site
+  >AlOUO2+              1.5499E-11 -3.1300E+00
+
+  primary species  retardation
+  ----------------------------------------------------------------------------
+  Al+++             1.0000E+00
+  H+                1.0000E+00
+  HPO4--            1.0000E+00
+  SiO2(aq)          1.0000E+00
+  UO2++             6.0115E+02
+
+  primary species     total(aq+sorbed)    total retardation
+                         [mol/L]               1+Kd
+  ----------------------------------------------------------------------------
+  Al+++                 9.9716E-13          1.0000E+00
+  H+                    6.1230E-07          1.0000E+00
+  HPO4--                9.9716E-07          1.0000E+00
+  SiO2(aq)              9.9716E-06          1.0000E+00
+  UO2++                 5.9945E-13          6.0115E+02
+
+  mineral                             log SI    log K
+  ----------------------------------------------------------------------------
+  Quartz                             -1.0007   -3.9993E+00
+  Chalcedony                         -1.2719   -3.7281E+00
+  SiO2(am)                           -2.2864   -2.7136E+00
+  Kaolinite                          -9.4260    6.8101E+00
+  (UO2)3(PO4)2.4H2O                 -28.0285   -2.7035E+01
+  UO2(PO3)2                         -29.2966   -1.6280E+01
+  (UO2)3(PO4)2                      -41.0393   -1.4024E+01
+
+
+--------------------------------------------------------------------------------
+
+Transport Stepper:
+max steps: 1000000
+max const cumulative_time_steps:   5
+max cuts:  16
+
+Transport Newton Solver:
+     atol:  1.0000E-08
+     rtol:  1.0000E-08
+     stol:  1.0000E-60
+     dtol:  1.0000E+04
+inftolres:  1.0000E-50
+inftolupd:  1.0000E-50
+    maxit:    16
+     maxf: 10000
+
+matrix type:baij                
+precond. matrix type:baij                
+inexact newton: off
+print convergence: on
+print detailed convergence: off
+check infinity norm: off
+force at least 1 iteration: on
+
+Transport Linear Solver
+ solver: bcgs
+precond: ilu
+   atol:  1.0000E-50
+   rtol:  1.0000E-05
+   dtol:  1.0000E+04
+  maxit:  10000
+ TRAN      1 Time=   1.0000E-06 Dt=   1.0000E-06 [y] snes_conv_reason:    2
+  newton =   4 [     4] linear =     4 [         4] cuts =  0 [   0]
+  --> max chng: dcmx=   1.1525E-15 dc/dt=   3.6546E-17 [mol/s]
+ TRAN      2 Time=   3.0000E-06 Dt=   2.0000E-06 [y] snes_conv_reason:    2
+  newton =   3 [     7] linear =     3 [         7] cuts =  0 [   0]
+  --> max chng: dcmx=   1.7579E-14 dc/dt=   2.7871E-16 [mol/s]
+ TRAN      3 Time=   7.0000E-06 Dt=   4.0000E-06 [y] snes_conv_reason:    2
+  newton =   3 [    10] linear =     3 [        10] cuts =  0 [   0]
+  --> max chng: dcmx=   1.8831E-12 dc/dt=   1.4928E-14 [mol/s]
+ TRAN      4 Time=   1.5000E-05 Dt=   8.0000E-06 [y] snes_conv_reason:    2
+  newton =  12 [    22] linear =    12 [        22] cuts =  0 [   0]
+  --> max chng: dcmx=   2.5231E-10 dc/dt=   1.0001E-12 [mol/s]
+ TRAN      5 Time=   2.1400E-05 Dt=   6.4000E-06 [y] snes_conv_reason:    2
+  newton =   3 [    25] linear =     3 [        25] cuts =  0 [   0]
+  --> max chng: dcmx=   9.7665E-10 dc/dt=   4.8390E-12 [mol/s]
+ TRAN      6 Time=   2.6750E-05 Dt=   5.3500E-06 [y] snes_conv_reason:    2
+  newton =   2 [    27] linear =     2 [        27] cuts =  0 [   0]
+  --> max chng: dcmx=   1.5920E-09 dc/dt=   9.4360E-12 [mol/s]
+ TRAN      7 Time=   3.3437E-05 Dt=   6.6875E-06 [y] snes_conv_reason:    2
+  newton =   2 [    29] linear =     2 [        29] cuts =  0 [   0]
+  --> max chng: dcmx=   3.0875E-09 dc/dt=   1.4640E-11 [mol/s]
+ TRAN      8 Time=   4.1797E-05 Dt=   8.3594E-06 [y] snes_conv_reason:    2
+  newton =   2 [    31] linear =     2 [        31] cuts =  0 [   0]
+  --> max chng: dcmx=   5.5774E-09 dc/dt=   2.1157E-11 [mol/s]
+ TRAN      9 Time=   5.2246E-05 Dt=   1.0449E-05 [y] snes_conv_reason:    2
+  newton =   2 [    33] linear =     2 [        33] cuts =  0 [   0]
+  --> max chng: dcmx=   9.4534E-09 dc/dt=   2.8688E-11 [mol/s]
+ TRAN     10 Time=   6.5308E-05 Dt=   1.3062E-05 [y] snes_conv_reason:    2
+  newton =   2 [    35] linear =     2 [        35] cuts =  0 [   0]
+  --> max chng: dcmx=   1.5128E-08 dc/dt=   3.6727E-11 [mol/s]
+ TRAN     11 Time=   8.1635E-05 Dt=   1.6327E-05 [y] snes_conv_reason:    2
+  newton =   2 [    37] linear =     2 [        37] cuts =  0 [   0]
+  --> max chng: dcmx=   2.3008E-08 dc/dt=   4.4687E-11 [mol/s]
+ TRAN     12 Time=   1.0204E-04 Dt=   2.0409E-05 [y] snes_conv_reason:    2
+  newton =   2 [    39] linear =     2 [        39] cuts =  0 [   0]
+  --> max chng: dcmx=   3.3493E-08 dc/dt=   5.2040E-11 [mol/s]
+ TRAN     13 Time=   1.2755E-04 Dt=   2.5511E-05 [y] snes_conv_reason:    2
+  newton =   2 [    41] linear =     2 [        41] cuts =  0 [   0]
+  --> max chng: dcmx=   4.7006E-08 dc/dt=   5.8428E-11 [mol/s]
+ TRAN     14 Time=   1.5944E-04 Dt=   3.1888E-05 [y] snes_conv_reason:    2
+  newton =   2 [    43] linear =     2 [        43] cuts =  0 [   0]
+  --> max chng: dcmx=   6.4035E-08 dc/dt=   6.3676E-11 [mol/s]
+ TRAN     15 Time=   1.9930E-04 Dt=   3.9861E-05 [y] snes_conv_reason:    2
+  newton =   2 [    45] linear =     2 [        45] cuts =  0 [   0]
+  --> max chng: dcmx=   8.5190E-08 dc/dt=   6.7770E-11 [mol/s]
+ TRAN     16 Time=   2.4913E-04 Dt=   4.9826E-05 [y] snes_conv_reason:    2
+  newton =   2 [    47] linear =     2 [        47] cuts =  0 [   0]
+  --> max chng: dcmx=   1.1124E-07 dc/dt=   7.0795E-11 [mol/s]
+ TRAN     17 Time=   3.1141E-04 Dt=   6.2282E-05 [y] snes_conv_reason:    2
+  newton =   2 [    49] linear =     2 [        49] cuts =  0 [   0]
+  --> max chng: dcmx=   1.4315E-07 dc/dt=   7.2884E-11 [mol/s]
+ TRAN     18 Time=   3.8926E-04 Dt=   7.7853E-05 [y] snes_conv_reason:    2
+  newton =   2 [    51] linear =     2 [        51] cuts =  0 [   0]
+  --> max chng: dcmx=   1.8213E-07 dc/dt=   7.4180E-11 [mol/s]
+ TRAN     19 Time=   4.8658E-04 Dt=   9.7316E-05 [y] snes_conv_reason:    2
+  newton =   2 [    53] linear =     2 [        53] cuts =  0 [   0]
+  --> max chng: dcmx=   2.2960E-07 dc/dt=   7.4815E-11 [mol/s]
+ TRAN     20 Time=   6.0822E-04 Dt=   1.2164E-04 [y] snes_conv_reason:    2
+  newton =   2 [    55] linear =     2 [        55] cuts =  0 [   0]
+  --> max chng: dcmx=   2.8730E-07 dc/dt=   7.4891E-11 [mol/s]
+ TRAN     21 Time=   7.6028E-04 Dt=   1.5206E-04 [y] snes_conv_reason:    2
+  newton =   2 [    57] linear =     2 [        57] cuts =  0 [   0]
+  --> max chng: dcmx=   3.5715E-07 dc/dt=   7.4479E-11 [mol/s]
+ TRAN     22 Time=   9.5035E-04 Dt=   1.9007E-04 [y] snes_conv_reason:    2
+  newton =   2 [    59] linear =     2 [        59] cuts =  0 [   0]
+  --> max chng: dcmx=   4.4129E-07 dc/dt=   7.3621E-11 [mol/s]
+ TRAN     23 Time=   1.1879E-03 Dt=   2.3759E-04 [y] snes_conv_reason:    2
+  newton =   2 [    61] linear =     2 [        61] cuts =  0 [   0]
+  --> max chng: dcmx=   5.4193E-07 dc/dt=   7.2330E-11 [mol/s]
+ TRAN     24 Time=   1.4849E-03 Dt=   2.9698E-04 [y] snes_conv_reason:    2
+  newton =   2 [    63] linear =     2 [        63] cuts =  0 [   0]
+  --> max chng: dcmx=   6.6115E-07 dc/dt=   7.0593E-11 [mol/s]
+ TRAN     25 Time=   1.8562E-03 Dt=   3.7123E-04 [y] snes_conv_reason:    2
+  newton =   2 [    65] linear =     2 [        65] cuts =  0 [   0]
+  --> max chng: dcmx=   8.0056E-07 dc/dt=   6.8383E-11 [mol/s]
+ TRAN     26 Time=   2.3202E-03 Dt=   4.6404E-04 [y] snes_conv_reason:    2
+  newton =   2 [    67] linear =     2 [        67] cuts =  0 [   0]
+  --> max chng: dcmx=   9.6081E-07 dc/dt=   6.5657E-11 [mol/s]
+ TRAN     27 Time=   2.9002E-03 Dt=   5.8005E-04 [y] snes_conv_reason:    2
+  newton =   2 [    69] linear =     2 [        69] cuts =  0 [   0]
+  --> max chng: dcmx=   1.1409E-06 dc/dt=   6.2369E-11 [mol/s]
+ TRAN     28 Time=   3.6253E-03 Dt=   7.2506E-04 [y] snes_conv_reason:    2
+  newton =   2 [    71] linear =     2 [        71] cuts =  0 [   0]
+  --> max chng: dcmx=   1.3372E-06 dc/dt=   5.8481E-11 [mol/s]
+ TRAN     29 Time=   4.5316E-03 Dt=   9.0633E-04 [y] snes_conv_reason:    2
+  newton =   7 [    78] linear =     7 [        78] cuts =  0 [   0]
+  --> max chng: dcmx=   1.5410E-06 dc/dt=   5.3915E-11 [mol/s]
+ TRAN     30 Time=   5.4380E-03 Dt=   9.0633E-04 [y] snes_conv_reason:    2
+  newton =   2 [    80] linear =     2 [        80] cuts =  0 [   0]
+  --> max chng: dcmx=   1.4245E-06 dc/dt=   4.9840E-11 [mol/s]
+ TRAN     31 Time=   6.4380E-03 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    82] linear =     2 [        82] cuts =  0 [   0]
+  --> max chng: dcmx=   1.4375E-06 dc/dt=   4.5584E-11 [mol/s]
+ TRAN     32 Time=   7.4380E-03 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    84] linear =     2 [        84] cuts =  0 [   0]
+  --> max chng: dcmx=   1.3162E-06 dc/dt=   4.1736E-11 [mol/s]
+ TRAN     33 Time=   8.4380E-03 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    86] linear =     2 [        86] cuts =  0 [   0]
+  --> max chng: dcmx=   1.2044E-06 dc/dt=   3.8191E-11 [mol/s]
+ TRAN     34 Time=   9.4380E-03 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    88] linear =     2 [        88] cuts =  0 [   0]
+  --> max chng: dcmx=   1.1021E-06 dc/dt=   3.4949E-11 [mol/s]
+ TRAN     35 Time=   1.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    90] linear =     2 [        90] cuts =  0 [   0]
+  --> max chng: dcmx=   1.0087E-06 dc/dt=   3.1986E-11 [mol/s]
+ TRAN     36 Time=   1.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    92] linear =     2 [        92] cuts =  0 [   0]
+  --> max chng: dcmx=   9.2341E-07 dc/dt=   2.9281E-11 [mol/s]
+ TRAN     37 Time=   1.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    94] linear =     2 [        94] cuts =  0 [   0]
+  --> max chng: dcmx=   9.1328E-07 dc/dt=   2.8960E-11 [mol/s]
+ TRAN     38 Time=   1.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    96] linear =     2 [        96] cuts =  0 [   0]
+  --> max chng: dcmx=   9.0099E-07 dc/dt=   2.8570E-11 [mol/s]
+ TRAN     39 Time=   1.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [    98] linear =     2 [        98] cuts =  0 [   0]
+  --> max chng: dcmx=   8.8405E-07 dc/dt=   2.8033E-11 [mol/s]
+ TRAN     40 Time=   1.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   100] linear =     2 [       100] cuts =  0 [   0]
+  --> max chng: dcmx=   8.6333E-07 dc/dt=   2.7376E-11 [mol/s]
+ TRAN     41 Time=   1.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   102] linear =     2 [       102] cuts =  0 [   0]
+  --> max chng: dcmx=   8.3960E-07 dc/dt=   2.6624E-11 [mol/s]
+ TRAN     42 Time=   1.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   104] linear =     2 [       104] cuts =  0 [   0]
+  --> max chng: dcmx=   8.1354E-07 dc/dt=   2.5797E-11 [mol/s]
+ TRAN     43 Time=   1.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   106] linear =     2 [       106] cuts =  0 [   0]
+  --> max chng: dcmx=   7.8572E-07 dc/dt=   2.4915E-11 [mol/s]
+ TRAN     44 Time=   1.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   108] linear =     2 [       108] cuts =  0 [   0]
+  --> max chng: dcmx=   7.5662E-07 dc/dt=   2.3992E-11 [mol/s]
+ TRAN     45 Time=   2.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   110] linear =     2 [       110] cuts =  0 [   0]
+  --> max chng: dcmx=   7.2669E-07 dc/dt=   2.3043E-11 [mol/s]
+ TRAN     46 Time=   2.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   112] linear =     2 [       112] cuts =  0 [   0]
+  --> max chng: dcmx=   6.9628E-07 dc/dt=   2.2079E-11 [mol/s]
+ TRAN     47 Time=   2.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   114] linear =     2 [       114] cuts =  0 [   0]
+  --> max chng: dcmx=   6.7654E-07 dc/dt=   2.1453E-11 [mol/s]
+ TRAN     48 Time=   2.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   116] linear =     2 [       116] cuts =  0 [   0]
+  --> max chng: dcmx=   6.7305E-07 dc/dt=   2.1342E-11 [mol/s]
+ TRAN     49 Time=   2.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   118] linear =     2 [       118] cuts =  0 [   0]
+  --> max chng: dcmx=   6.6724E-07 dc/dt=   2.1158E-11 [mol/s]
+ TRAN     50 Time=   2.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   120] linear =     2 [       120] cuts =  0 [   0]
+  --> max chng: dcmx=   6.5935E-07 dc/dt=   2.0908E-11 [mol/s]
+ TRAN     51 Time=   2.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   122] linear =     2 [       122] cuts =  0 [   0]
+  --> max chng: dcmx=   6.4962E-07 dc/dt=   2.0599E-11 [mol/s]
+ TRAN     52 Time=   2.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   124] linear =     2 [       124] cuts =  0 [   0]
+  --> max chng: dcmx=   6.3844E-07 dc/dt=   2.0245E-11 [mol/s]
+ TRAN     53 Time=   2.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   126] linear =     2 [       126] cuts =  0 [   0]
+  --> max chng: dcmx=   6.2598E-07 dc/dt=   1.9850E-11 [mol/s]
+ TRAN     54 Time=   2.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   128] linear =     2 [       128] cuts =  0 [   0]
+  --> max chng: dcmx=   6.1240E-07 dc/dt=   1.9419E-11 [mol/s]
+ TRAN     55 Time=   3.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   130] linear =     2 [       130] cuts =  0 [   0]
+  --> max chng: dcmx=   5.9785E-07 dc/dt=   1.8958E-11 [mol/s]
+ TRAN     56 Time=   3.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   132] linear =     2 [       132] cuts =  0 [   0]
+  --> max chng: dcmx=   5.8247E-07 dc/dt=   1.8470E-11 [mol/s]
+ TRAN     57 Time=   3.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   134] linear =     2 [       134] cuts =  0 [   0]
+  --> max chng: dcmx=   5.6642E-07 dc/dt=   1.7961E-11 [mol/s]
+ TRAN     58 Time=   3.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   136] linear =     2 [       136] cuts =  0 [   0]
+  --> max chng: dcmx=   5.6148E-07 dc/dt=   1.7805E-11 [mol/s]
+ TRAN     59 Time=   3.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   137] linear =     1 [       137] cuts =  0 [   0]
+  --> max chng: dcmx=   5.7419E-07 dc/dt=   1.8207E-11 [mol/s]
+ TRAN     60 Time=   3.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   138] linear =     1 [       138] cuts =  0 [   0]
+  --> max chng: dcmx=   5.6896E-07 dc/dt=   1.8042E-11 [mol/s]
+ TRAN     61 Time=   3.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   139] linear =     1 [       139] cuts =  0 [   0]
+  --> max chng: dcmx=   5.6251E-07 dc/dt=   1.7837E-11 [mol/s]
+ TRAN     62 Time=   3.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   140] linear =     1 [       140] cuts =  0 [   0]
+  --> max chng: dcmx=   5.5505E-07 dc/dt=   1.7601E-11 [mol/s]
+ TRAN     63 Time=   3.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   141] linear =     1 [       141] cuts =  0 [   0]
+  --> max chng: dcmx=   5.4666E-07 dc/dt=   1.7335E-11 [mol/s]
+ TRAN     64 Time=   3.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   142] linear =     1 [       142] cuts =  0 [   0]
+  --> max chng: dcmx=   5.3744E-07 dc/dt=   1.7042E-11 [mol/s]
+ TRAN     65 Time=   4.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   143] linear =     1 [       143] cuts =  0 [   0]
+  --> max chng: dcmx=   5.2748E-07 dc/dt=   1.6726E-11 [mol/s]
+ TRAN     66 Time=   4.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   144] linear =     1 [       144] cuts =  0 [   0]
+  --> max chng: dcmx=   5.1687E-07 dc/dt=   1.6390E-11 [mol/s]
+ TRAN     67 Time=   4.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   145] linear =     1 [       145] cuts =  0 [   0]
+  --> max chng: dcmx=   5.0569E-07 dc/dt=   1.6035E-11 [mol/s]
+ TRAN     68 Time=   4.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   146] linear =     1 [       146] cuts =  0 [   0]
+  --> max chng: dcmx=   5.0057E-07 dc/dt=   1.5873E-11 [mol/s]
+ TRAN     69 Time=   4.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   147] linear =     1 [       147] cuts =  0 [   0]
+  --> max chng: dcmx=   4.9843E-07 dc/dt=   1.5805E-11 [mol/s]
+ TRAN     70 Time=   4.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   148] linear =     1 [       148] cuts =  0 [   0]
+  --> max chng: dcmx=   4.9542E-07 dc/dt=   1.5710E-11 [mol/s]
+ TRAN     71 Time=   4.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   149] linear =     1 [       149] cuts =  0 [   0]
+  --> max chng: dcmx=   4.9158E-07 dc/dt=   1.5588E-11 [mol/s]
+ TRAN     72 Time=   4.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   150] linear =     1 [       150] cuts =  0 [   0]
+  --> max chng: dcmx=   4.8697E-07 dc/dt=   1.5442E-11 [mol/s]
+ TRAN     73 Time=   4.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   151] linear =     1 [       151] cuts =  0 [   0]
+  --> max chng: dcmx=   4.8165E-07 dc/dt=   1.5273E-11 [mol/s]
+ TRAN     74 Time=   4.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   152] linear =     1 [       152] cuts =  0 [   0]
+  --> max chng: dcmx=   4.7566E-07 dc/dt=   1.5083E-11 [mol/s]
+ TRAN     75 Time=   5.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   153] linear =     1 [       153] cuts =  0 [   0]
+  --> max chng: dcmx=   4.6906E-07 dc/dt=   1.4874E-11 [mol/s]
+ TRAN     76 Time=   5.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   154] linear =     1 [       154] cuts =  0 [   0]
+  --> max chng: dcmx=   4.6191E-07 dc/dt=   1.4647E-11 [mol/s]
+ TRAN     77 Time=   5.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   155] linear =     1 [       155] cuts =  0 [   0]
+  --> max chng: dcmx=   4.5425E-07 dc/dt=   1.4404E-11 [mol/s]
+ TRAN     78 Time=   5.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   156] linear =     1 [       156] cuts =  0 [   0]
+  --> max chng: dcmx=   4.4767E-07 dc/dt=   1.4195E-11 [mol/s]
+ TRAN     79 Time=   5.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   157] linear =     1 [       157] cuts =  0 [   0]
+  --> max chng: dcmx=   4.4645E-07 dc/dt=   1.4157E-11 [mol/s]
+ TRAN     80 Time=   5.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   158] linear =     1 [       158] cuts =  0 [   0]
+  --> max chng: dcmx=   4.4458E-07 dc/dt=   1.4097E-11 [mol/s]
+ TRAN     81 Time=   5.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   159] linear =     1 [       159] cuts =  0 [   0]
+  --> max chng: dcmx=   4.4208E-07 dc/dt=   1.4018E-11 [mol/s]
+ TRAN     82 Time=   5.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   160] linear =     1 [       160] cuts =  0 [   0]
+  --> max chng: dcmx=   4.3898E-07 dc/dt=   1.3920E-11 [mol/s]
+ TRAN     83 Time=   5.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   161] linear =     1 [       161] cuts =  0 [   0]
+  --> max chng: dcmx=   4.3533E-07 dc/dt=   1.3804E-11 [mol/s]
+ TRAN     84 Time=   5.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   162] linear =     1 [       162] cuts =  0 [   0]
+  --> max chng: dcmx=   4.3114E-07 dc/dt=   1.3671E-11 [mol/s]
+ TRAN     85 Time=   6.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   163] linear =     1 [       163] cuts =  0 [   0]
+  --> max chng: dcmx=   4.2646E-07 dc/dt=   1.3523E-11 [mol/s]
+ TRAN     86 Time=   6.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   164] linear =     1 [       164] cuts =  0 [   0]
+  --> max chng: dcmx=   4.2131E-07 dc/dt=   1.3360E-11 [mol/s]
+ TRAN     87 Time=   6.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   165] linear =     1 [       165] cuts =  0 [   0]
+  --> max chng: dcmx=   4.1573E-07 dc/dt=   1.3183E-11 [mol/s]
+ TRAN     88 Time=   6.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   166] linear =     1 [       166] cuts =  0 [   0]
+  --> max chng: dcmx=   4.0976E-07 dc/dt=   1.2993E-11 [mol/s]
+ TRAN     89 Time=   6.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   167] linear =     1 [       167] cuts =  0 [   0]
+  --> max chng: dcmx=   4.0798E-07 dc/dt=   1.2937E-11 [mol/s]
+ TRAN     90 Time=   6.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   168] linear =     1 [       168] cuts =  0 [   0]
+  --> max chng: dcmx=   4.0677E-07 dc/dt=   1.2898E-11 [mol/s]
+ TRAN     91 Time=   6.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   169] linear =     1 [       169] cuts =  0 [   0]
+  --> max chng: dcmx=   4.0506E-07 dc/dt=   1.2844E-11 [mol/s]
+ TRAN     92 Time=   6.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   170] linear =     1 [       170] cuts =  0 [   0]
+  --> max chng: dcmx=   4.0287E-07 dc/dt=   1.2775E-11 [mol/s]
+ TRAN     93 Time=   6.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   171] linear =     1 [       171] cuts =  0 [   0]
+  --> max chng: dcmx=   4.0023E-07 dc/dt=   1.2691E-11 [mol/s]
+ TRAN     94 Time=   6.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   172] linear =     1 [       172] cuts =  0 [   0]
+  --> max chng: dcmx=   3.9716E-07 dc/dt=   1.2594E-11 [mol/s]
+ TRAN     95 Time=   7.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   173] linear =     1 [       173] cuts =  0 [   0]
+  --> max chng: dcmx=   3.9368E-07 dc/dt=   1.2483E-11 [mol/s]
+ TRAN     96 Time=   7.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   174] linear =     1 [       174] cuts =  0 [   0]
+  --> max chng: dcmx=   3.8981E-07 dc/dt=   1.2361E-11 [mol/s]
+ TRAN     97 Time=   7.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   175] linear =     1 [       175] cuts =  0 [   0]
+  --> max chng: dcmx=   3.8558E-07 dc/dt=   1.2227E-11 [mol/s]
+ TRAN     98 Time=   7.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   176] linear =     1 [       176] cuts =  0 [   0]
+  --> max chng: dcmx=   3.8100E-07 dc/dt=   1.2081E-11 [mol/s]
+ TRAN     99 Time=   7.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   177] linear =     1 [       177] cuts =  0 [   0]
+  --> max chng: dcmx=   3.7803E-07 dc/dt=   1.1987E-11 [mol/s]
+ TRAN    100 Time=   7.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   178] linear =     1 [       178] cuts =  0 [   0]
+  --> max chng: dcmx=   3.7723E-07 dc/dt=   1.1962E-11 [mol/s]
+ TRAN    101 Time=   7.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   179] linear =     1 [       179] cuts =  0 [   0]
+  --> max chng: dcmx=   3.7603E-07 dc/dt=   1.1924E-11 [mol/s]
+ TRAN    102 Time=   7.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   180] linear =     1 [       180] cuts =  0 [   0]
+  --> max chng: dcmx=   3.7444E-07 dc/dt=   1.1873E-11 [mol/s]
+ TRAN    103 Time=   7.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   181] linear =     1 [       181] cuts =  0 [   0]
+  --> max chng: dcmx=   3.7247E-07 dc/dt=   1.1811E-11 [mol/s]
+ TRAN    104 Time=   7.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   182] linear =     1 [       182] cuts =  0 [   0]
+  --> max chng: dcmx=   3.7014E-07 dc/dt=   1.1737E-11 [mol/s]
+ TRAN    105 Time=   8.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   183] linear =     1 [       183] cuts =  0 [   0]
+  --> max chng: dcmx=   3.6747E-07 dc/dt=   1.1653E-11 [mol/s]
+ TRAN    106 Time=   8.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   184] linear =     1 [       184] cuts =  0 [   0]
+  --> max chng: dcmx=   3.6447E-07 dc/dt=   1.1557E-11 [mol/s]
+ TRAN    107 Time=   8.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   185] linear =     1 [       185] cuts =  0 [   0]
+  --> max chng: dcmx=   3.6116E-07 dc/dt=   1.1452E-11 [mol/s]
+ TRAN    108 Time=   8.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   186] linear =     1 [       186] cuts =  0 [   0]
+  --> max chng: dcmx=   3.5755E-07 dc/dt=   1.1338E-11 [mol/s]
+ TRAN    109 Time=   8.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   187] linear =     1 [       187] cuts =  0 [   0]
+  --> max chng: dcmx=   3.5388E-07 dc/dt=   1.1221E-11 [mol/s]
+ TRAN    110 Time=   8.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   188] linear =     1 [       188] cuts =  0 [   0]
+  --> max chng: dcmx=   3.5336E-07 dc/dt=   1.1205E-11 [mol/s]
+ TRAN    111 Time=   8.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   189] linear =     1 [       189] cuts =  0 [   0]
+  --> max chng: dcmx=   3.5250E-07 dc/dt=   1.1178E-11 [mol/s]
+ TRAN    112 Time=   8.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   190] linear =     1 [       190] cuts =  0 [   0]
+  --> max chng: dcmx=   3.5132E-07 dc/dt=   1.1140E-11 [mol/s]
+ TRAN    113 Time=   8.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   191] linear =     1 [       191] cuts =  0 [   0]
+  --> max chng: dcmx=   3.4982E-07 dc/dt=   1.1093E-11 [mol/s]
+ TRAN    114 Time=   8.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   192] linear =     1 [       192] cuts =  0 [   0]
+  --> max chng: dcmx=   3.4802E-07 dc/dt=   1.1036E-11 [mol/s]
+ TRAN    115 Time=   9.0438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   193] linear =     1 [       193] cuts =  0 [   0]
+  --> max chng: dcmx=   3.4592E-07 dc/dt=   1.0969E-11 [mol/s]
+ TRAN    116 Time=   9.1438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   194] linear =     1 [       194] cuts =  0 [   0]
+  --> max chng: dcmx=   3.4354E-07 dc/dt=   1.0894E-11 [mol/s]
+ TRAN    117 Time=   9.2438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   195] linear =     1 [       195] cuts =  0 [   0]
+  --> max chng: dcmx=   3.4089E-07 dc/dt=   1.0810E-11 [mol/s]
+ TRAN    118 Time=   9.3438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   196] linear =     1 [       196] cuts =  0 [   0]
+  --> max chng: dcmx=   3.3798E-07 dc/dt=   1.0717E-11 [mol/s]
+ TRAN    119 Time=   9.4438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   197] linear =     1 [       197] cuts =  0 [   0]
+  --> max chng: dcmx=   3.3483E-07 dc/dt=   1.0617E-11 [mol/s]
+ TRAN    120 Time=   9.5438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   198] linear =     1 [       198] cuts =  0 [   0]
+  --> max chng: dcmx=   3.3356E-07 dc/dt=   1.0577E-11 [mol/s]
+ TRAN    121 Time=   9.6438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   199] linear =     1 [       199] cuts =  0 [   0]
+  --> max chng: dcmx=   3.3294E-07 dc/dt=   1.0558E-11 [mol/s]
+ TRAN    122 Time=   9.7438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   200] linear =     1 [       200] cuts =  0 [   0]
+  --> max chng: dcmx=   3.3205E-07 dc/dt=   1.0529E-11 [mol/s]
+ TRAN    123 Time=   9.8438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   201] linear =     1 [       201] cuts =  0 [   0]
+  --> max chng: dcmx=   3.3089E-07 dc/dt=   1.0493E-11 [mol/s]
+ TRAN    124 Time=   9.9438E-02 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   202] linear =     1 [       202] cuts =  0 [   0]
+  --> max chng: dcmx=   3.2947E-07 dc/dt=   1.0448E-11 [mol/s]
+ TRAN    125 Time=   1.0000E-01 Dt=   5.6205E-04 [y] snes_conv_reason:    2
+  newton =   1 [   203] linear =     1 [       203] cuts =  0 [   0]
+  --> max chng: dcmx=   1.8444E-07 dc/dt=   1.0406E-11 [mol/s]
+ TRAN    126 Time=   1.0100E-01 Dt=   1.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   204] linear =     1 [       204] cuts =  0 [   0]
+  --> max chng: dcmx=   3.2602E-07 dc/dt=   1.0338E-11 [mol/s]
+ TRAN    127 Time=   1.0300E-01 Dt=   2.0000E-03 [y] snes_conv_reason:    2
+  newton =   1 [   205] linear =     1 [       205] cuts =  0 [   0]
+  --> max chng: dcmx=   6.5040E-07 dc/dt=   1.0312E-11 [mol/s]
+ TRAN    128 Time=   1.0700E-01 Dt=   4.0000E-03 [y] snes_conv_reason:    2
+  newton =   2 [   207] linear =     2 [       207] cuts =  0 [   0]
+  --> max chng: dcmx=   1.2387E-06 dc/dt=   9.8194E-12 [mol/s]
+ TRAN    129 Time=   1.1500E-01 Dt=   8.0000E-03 [y] snes_conv_reason:    2
+  newton =   3 [   210] linear =     3 [       210] cuts =  0 [   0]
+  --> max chng: dcmx=   2.3588E-06 dc/dt=   9.3496E-12 [mol/s]
+ TRAN    130 Time=   1.3100E-01 Dt=   1.6000E-02 [y] snes_conv_reason:    2
+  newton =   9 [   219] linear =     9 [       219] cuts =  0 [   0]
+  --> max chng: dcmx=   4.2342E-06 dc/dt=   8.3917E-12 [mol/s]
+ TRAN    131 Time=   1.4700E-01 Dt=   1.6000E-02 [y] snes_conv_reason:    2
+  newton =  10 [   229] linear =    10 [       229] cuts =  0 [   0]
+  --> max chng: dcmx=   3.8876E-06 dc/dt=   7.7046E-12 [mol/s]
+ TRAN    132 Time=   1.5980E-01 Dt=   1.2800E-02 [y] snes_conv_reason:    2
+  newton =   6 [   235] linear =     6 [       235] cuts =  0 [   0]
+  --> max chng: dcmx=   2.9336E-06 dc/dt=   7.2674E-12 [mol/s]
+ TRAN    133 Time=   1.7260E-01 Dt=   1.2800E-02 [y] snes_conv_reason:    2
+  newton =   6 [   241] linear =     6 [       241] cuts =  0 [   0]
+  --> max chng: dcmx=   2.7716E-06 dc/dt=   6.8662E-12 [mol/s]
+ TRAN    134 Time=   1.8540E-01 Dt=   1.2800E-02 [y] snes_conv_reason:    2
+  newton =   7 [   248] linear =     7 [       248] cuts =  0 [   0]
+  --> max chng: dcmx=   2.6399E-06 dc/dt=   6.5399E-12 [mol/s]
+ TRAN    135 Time=   1.9820E-01 Dt=   1.2800E-02 [y] snes_conv_reason:    2
+  newton =   8 [   256] linear =     8 [       256] cuts =  0 [   0]
+  --> max chng: dcmx=   2.5325E-06 dc/dt=   6.2738E-12 [mol/s]
+ TRAN    136 Time=   2.1100E-01 Dt=   1.2800E-02 [y] snes_conv_reason:    2
+  newton =   8 [   264] linear =     8 [       264] cuts =  0 [   0]
+  --> max chng: dcmx=   2.4344E-06 dc/dt=   6.0308E-12 [mol/s]
+ TRAN    137 Time=   2.2380E-01 Dt=   1.2800E-02 [y] snes_conv_reason:    2
+  newton =   8 [   272] linear =     8 [       272] cuts =  0 [   0]
+  --> max chng: dcmx=   2.3444E-06 dc/dt=   5.8079E-12 [mol/s]
+ TRAN    138 Time=   2.3660E-01 Dt=   1.2800E-02 [y] snes_conv_reason:    2
+  newton =   4 [   276] linear =     4 [       276] cuts =  0 [   0]
+  --> max chng: dcmx=   2.2615E-06 dc/dt=   5.6024E-12 [mol/s]
+ TRAN    139 Time=   2.5000E-01 Dt=   1.3400E-02 [y] snes_conv_reason:    2
+  newton =   6 [   282] linear =     6 [       282] cuts =  0 [   0]
+  --> max chng: dcmx=   2.2857E-06 dc/dt=   5.4088E-12 [mol/s]
+ TRAN    140 Time=   2.5000E-01 Dt=   2.9532E-17 [y] snes_conv_reason:    3
+  newton =   3 [   285] linear =     3 [       285] cuts =  0 [   0]
+  --> max chng: dcmx=   1.2540E-08 dc/dt=   1.3465E+01 [mol/s]
+ TRAN    141 Time=   2.7560E-01 Dt=   2.5600E-02 [y] snes_conv_reason:    2
+  newton =   4 [   289] linear =     4 [       289] cuts =  0 [   0]
+  --> max chng: dcmx=   4.0091E-06 dc/dt=   4.9659E-12 [mol/s]
+ TRAN    142 Time=   3.0120E-01 Dt=   2.5600E-02 [y] snes_conv_reason:    2
+  newton =  26 [   315] linear =    26 [       315] cuts =  1 [   1]
+  --> max chng: dcmx=   3.7682E-06 dc/dt=   4.6675E-12 [mol/s]
+ TRAN    143 Time=   3.2680E-01 Dt=   2.5600E-02 [y] snes_conv_reason:    2
+  newton =   6 [   321] linear =     6 [       321] cuts =  0 [   1]
+  --> max chng: dcmx=   3.4947E-06 dc/dt=   4.3287E-12 [mol/s]
+ TRAN    144 Time=   3.5240E-01 Dt=   2.5600E-02 [y] snes_conv_reason:    2
+  newton =   8 [   329] linear =     8 [       329] cuts =  0 [   1]
+  --> max chng: dcmx=   3.3429E-06 dc/dt=   4.1408E-12 [mol/s]
+ TRAN    145 Time=   3.7800E-01 Dt=   2.5600E-02 [y] snes_conv_reason:    2
+  newton =   8 [   337] linear =     8 [       337] cuts =  0 [   1]
+  --> max chng: dcmx=   3.1804E-06 dc/dt=   3.9395E-12 [mol/s]
+ TRAN    146 Time=   4.0360E-01 Dt=   2.5600E-02 [y] snes_conv_reason:    2
+  newton =  10 [   347] linear =    10 [       347] cuts =  0 [   1]
+  --> max chng: dcmx=   3.0422E-06 dc/dt=   3.7683E-12 [mol/s]
+ TRAN    147 Time=   4.2920E-01 Dt=   2.5600E-02 [y] snes_conv_reason:    2
+  newton =  10 [   357] linear =    10 [       357] cuts =  0 [   1]
+  --> max chng: dcmx=   2.9199E-06 dc/dt=   3.6167E-12 [mol/s]
+ TRAN    148 Time=   4.4968E-01 Dt=   2.0480E-02 [y] snes_conv_reason:    2
+  newton =   2 [   359] linear =     2 [       359] cuts =  0 [   1]
+  --> max chng: dcmx=   2.2774E-06 dc/dt=   3.5262E-12 [mol/s]
+ TRAN    149 Time=   4.9064E-01 Dt=   4.0960E-02 [y] snes_conv_reason:    2
+  newton =  10 [   369] linear =    10 [       369] cuts =  0 [   1]
+  --> max chng: dcmx=   4.2039E-06 dc/dt=   3.2545E-12 [mol/s]
+ TRAN    150 Time=   5.0000E-01 Dt=   9.3600E-03 [y] snes_conv_reason:    2
+  newton =   2 [   371] linear =     2 [       371] cuts =  0 [   1]
+  --> max chng: dcmx=   9.7720E-07 dc/dt=   3.3106E-12 [mol/s]
+ TRAN    151 Time=   5.3277E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   8 [   379] linear =     8 [       379] cuts =  0 [   1]
+  --> max chng: dcmx=   3.1925E-06 dc/dt=   3.0894E-12 [mol/s]
+ TRAN    152 Time=   5.6554E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   8 [   387] linear =     8 [       387] cuts =  0 [   1]
+  --> max chng: dcmx=   3.0787E-06 dc/dt=   2.9793E-12 [mol/s]
+ TRAN    153 Time=   5.9830E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   2 [   389] linear =     2 [       389] cuts =  0 [   1]
+  --> max chng: dcmx=   2.9704E-06 dc/dt=   2.8745E-12 [mol/s]
+ TRAN    154 Time=   6.1469E-01 Dt=   1.6384E-02 [y] snes_conv_reason:    2
+  newton =  36 [   425] linear =    36 [       425] cuts =  2 [   3]
+  --> max chng: dcmx=   1.4498E-06 dc/dt=   2.8059E-12 [mol/s]
+ TRAN    155 Time=   6.3107E-01 Dt=   1.6384E-02 [y] snes_conv_reason:    2
+  newton =   2 [   427] linear =     2 [       427] cuts =  0 [   3]
+  --> max chng: dcmx=   1.4369E-06 dc/dt=   2.7811E-12 [mol/s]
+ TRAN    156 Time=   6.4746E-01 Dt=   1.6384E-02 [y] snes_conv_reason:    2
+  newton =   2 [   429] linear =     2 [       429] cuts =  0 [   3]
+  --> max chng: dcmx=   1.4363E-06 dc/dt=   2.7799E-12 [mol/s]
+ TRAN    157 Time=   6.6384E-01 Dt=   1.6384E-02 [y] snes_conv_reason:    2
+  newton =   2 [   431] linear =     2 [       431] cuts =  0 [   3]
+  --> max chng: dcmx=   1.4211E-06 dc/dt=   2.7504E-12 [mol/s]
+ TRAN    158 Time=   6.8022E-01 Dt=   1.6384E-02 [y] snes_conv_reason:    2
+  newton =   2 [   433] linear =     2 [       433] cuts =  0 [   3]
+  --> max chng: dcmx=   1.4076E-06 dc/dt=   2.7243E-12 [mol/s]
+ TRAN    159 Time=   6.9661E-01 Dt=   1.6384E-02 [y] snes_conv_reason:    2
+  newton =   2 [   435] linear =     2 [       435] cuts =  0 [   3]
+  --> max chng: dcmx=   1.3936E-06 dc/dt=   2.6971E-12 [mol/s]
+ TRAN    160 Time=   7.2938E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   2 [   437] linear =     2 [       437] cuts =  0 [   3]
+  --> max chng: dcmx=   2.7006E-06 dc/dt=   2.6134E-12 [mol/s]
+ TRAN    161 Time=   7.6214E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    3
+  newton =  18 [   455] linear =    18 [       455] cuts =  1 [   4]
+  --> max chng: dcmx=   1.1513E-05 dc/dt=   1.1141E-11 [mol/s]
+ TRAN    162 Time=   7.9491E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   2 [   457] linear =     2 [       457] cuts =  0 [   4]
+  --> max chng: dcmx=   2.3775E-06 dc/dt=   2.3007E-12 [mol/s]
+ TRAN    163 Time=   8.2768E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   2 [   459] linear =     2 [       459] cuts =  0 [   4]
+  --> max chng: dcmx=   2.3426E-06 dc/dt=   2.2670E-12 [mol/s]
+ TRAN    164 Time=   8.6045E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   2 [   461] linear =     2 [       461] cuts =  0 [   4]
+  --> max chng: dcmx=   2.2931E-06 dc/dt=   2.2191E-12 [mol/s]
+ TRAN    165 Time=   8.9322E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   2 [   463] linear =     2 [       463] cuts =  0 [   4]
+  --> max chng: dcmx=   2.2468E-06 dc/dt=   2.1743E-12 [mol/s]
+ TRAN    166 Time=   9.2598E-01 Dt=   3.2768E-02 [y] snes_conv_reason:    2
+  newton =   2 [   465] linear =     2 [       465] cuts =  0 [   4]
+  --> max chng: dcmx=   2.2029E-06 dc/dt=   2.1318E-12 [mol/s]
+ TRAN    167 Time=   9.9152E-01 Dt=   6.5536E-02 [y] snes_conv_reason:    2
+  newton =  16 [   481] linear =    16 [       481] cuts =  0 [   4]
+  --> max chng: dcmx=   4.1254E-06 dc/dt=   1.9961E-12 [mol/s]
+ TRAN    168 Time=   1.0000E+00 Dt=   8.4800E-03 [y] snes_conv_reason:    2
+  newton =   2 [   483] linear =     2 [       483] cuts =  0 [   4]
+  --> max chng: dcmx=   5.5689E-07 dc/dt=   2.0824E-12 [mol/s]
+ TRAN    169 Time=   1.0250E+00 Dt=   2.5000E-02 [y] snes_conv_reason:    2
+  newton =  36 [   519] linear =    36 [       519] cuts =  2 [   6]
+  --> max chng: dcmx=   1.5384E-06 dc/dt=   1.9513E-12 [mol/s]
+ TRAN    170 Time=   1.0500E+00 Dt=   2.5000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   521] linear =     2 [       521] cuts =  0 [   6]
+  --> max chng: dcmx=   1.5204E-06 dc/dt=   1.9284E-12 [mol/s]
+ TRAN    171 Time=   1.0750E+00 Dt=   2.5000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   523] linear =     2 [       523] cuts =  0 [   6]
+  --> max chng: dcmx=   1.5155E-06 dc/dt=   1.9223E-12 [mol/s]
+ TRAN    172 Time=   1.1000E+00 Dt=   2.5000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   525] linear =     2 [       525] cuts =  0 [   6]
+  --> max chng: dcmx=   1.4765E-06 dc/dt=   1.8727E-12 [mol/s]
+ TRAN    173 Time=   1.1250E+00 Dt=   2.5000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   527] linear =     2 [       527] cuts =  0 [   6]
+  --> max chng: dcmx=   1.4157E-06 dc/dt=   1.7956E-12 [mol/s]
+ TRAN    174 Time=   1.1500E+00 Dt=   2.5000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   529] linear =     2 [       529] cuts =  0 [   6]
+  --> max chng: dcmx=   1.3370E-06 dc/dt=   1.6959E-12 [mol/s]
+ TRAN    175 Time=   1.2000E+00 Dt=   5.0000E-02 [y] snes_conv_reason:    2
+  newton =  10 [   539] linear =    10 [       539] cuts =  0 [   6]
+  --> max chng: dcmx=   2.2714E-06 dc/dt=   1.4405E-12 [mol/s]
+ TRAN    176 Time=   1.2400E+00 Dt=   4.0000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   541] linear =     2 [       541] cuts =  0 [   6]
+  --> max chng: dcmx=   1.5557E-06 dc/dt=   1.2333E-12 [mol/s]
+ TRAN    177 Time=   1.2800E+00 Dt=   4.0000E-02 [y] snes_conv_reason:    2
+  newton =  20 [   561] linear =    20 [       561] cuts =  1 [   7]
+  --> max chng: dcmx=   1.2886E-06 dc/dt=   1.0216E-12 [mol/s]
+ TRAN    178 Time=   1.3200E+00 Dt=   4.0000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   563] linear =     2 [       563] cuts =  0 [   7]
+  --> max chng: dcmx=   1.0220E-06 dc/dt=   8.1018E-13 [mol/s]
+ TRAN    179 Time=   1.3600E+00 Dt=   4.0000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   565] linear =     2 [       565] cuts =  0 [   7]
+  --> max chng: dcmx=   8.0997E-07 dc/dt=   6.4210E-13 [mol/s]
+ TRAN    180 Time=   1.4000E+00 Dt=   4.0000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   567] linear =     2 [       567] cuts =  0 [   7]
+  --> max chng: dcmx=   6.1832E-07 dc/dt=   4.9017E-13 [mol/s]
+ TRAN    181 Time=   1.4400E+00 Dt=   4.0000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   569] linear =     2 [       569] cuts =  0 [   7]
+  --> max chng: dcmx=   4.6050E-07 dc/dt=   3.6506E-13 [mol/s]
+ TRAN    182 Time=   1.4800E+00 Dt=   4.0000E-02 [y] snes_conv_reason:    2
+  newton =  14 [   583] linear =    14 [       583] cuts =  0 [   7]
+  --> max chng: dcmx=   3.3489E-07 dc/dt=   2.6549E-13 [mol/s]
+ TRAN    183 Time=   1.5000E+00 Dt=   2.0000E-02 [y] snes_conv_reason:    2
+  newton =   2 [   585] linear =     2 [       585] cuts =  0 [   7]
+  --> max chng: dcmx=   1.4077E-07 dc/dt=   2.2319E-13 [mol/s]
+
+ TRAN steps =    183 newton =      585 linear =        585 cuts =      7
+ TRAN SNES time = 1.8 seconds
+
+ CPU Time:  2.8300E-04 [sec]   4.7167E-06 [min]   7.8611E-08 [hr]
+
+ Wall Clock Time:  2.8853E+00 [sec]   4.8088E-02 [min]   8.0146E-04 [hr]

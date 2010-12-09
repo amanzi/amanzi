@@ -1,0 +1,431 @@
+
+  ************************** CRUNCH ******************************
+  ************************ VERSION 1.0 ***************************
+
+                      Author:  C.I. STEEFEL 
+  COPYRIGHT (c) 2000. The Regents of the University of California. 
+                       All Rights Reserved 
+
+  ****************************************************************
+  This work was produced at the University of California, Lawrence 
+  Livermore National Laboratory (UC LLNL) under contract no. W-7405-ENG-48 
+  (Contract 48) between the U.S. Department of Energy (DOE) and The Regents 
+  of the University of California (University) for the operation of UC LLNL. 
+  Copyright is reserved to the University for purposes of controlled dissem- 
+  ination, commercialization through formal licensing, or other disposition 
+  under terms of Contract 48; DOE policies, regulations and orders; and U.S. 
+  statutes. The rights of the Federal Government are reserved under Contract 
+  48 subject to the restrictions agreed upon by the DOE and University as 
+  allowed under DOE Acquisition Letter 97-1. 
+
+                                DISCLAIMER                            
+  This work was prepared as an account of work sponsored by an agency of the
+  United States Government. Neither the United States Government nor the 
+  University of California nor any of their employees, makes any warranty, 
+  express or implied, or assumes any liability or responsibility for the 
+  accuracy, completeness, or usefulness of any information, apparatus, product,
+  or process disclosed, or represents that its use would not infringe 
+  privately-owned rights.  Reference herein to any specific commercial products,
+  process, or service by trade name, trademark, manufacturer or otherwise does 
+  not necessarily constitute or imply its endorsement, recommendation, or 
+  favoring by the United States Government or the University of California. 
+  The views and opinions of authors expressed herein do not necessarily state 
+  or reflect those of the United States Government or the University of 
+  California, and shall not be used for advertising or product endorsement 
+  purposes. 
+  ****************************************************************
+
+
+  Simplified Savannah F-Area test in 1D                                   
+
+
+
+   ---> Using database: SavannahFArea.dbs                                                                                   
+
+
+ Number of components =                     6
+
+  1 H+                
+  2 HPO4--            
+  3 Al+++             
+  4 SiO2(aq)          
+  5 UO2++             
+  6 Bogusite(aq)      
+
+ Number of secondary species in input file =           25
+
+  1 (UO2)2(OH)2++     
+  2 (UO2)2OH+++       
+  3 (UO2)3(OH)4++     
+  4 (UO2)3(OH)5+      
+  5 (UO2)3(OH)7-      
+  6 (UO2)4(OH)7+      
+  7 Al(OH)2+          
+  8 AlHPO4+           
+  9 AlO2-             
+ 10 AlOH++            
+ 11 H2PO4-            
+ 12 H3PO4(aq)         
+ 13 HAlO2(aq)         
+ 14 OH-               
+ 15 PO4---            
+ 16 UO2(H2PO4)(H3PO4)+
+ 17 UO2(H2PO4)2(aq)   
+ 18 UO2(OH)2(aq)      
+ 19 UO2(OH)3-         
+ 20 UO2(OH)4--        
+ 21 UO2H2PO4+         
+ 22 UO2H3PO4++        
+ 23 UO2HPO4(aq)       
+ 24 UO2OH+            
+ 25 UO2PO4-           
+
+ Number of gases in input file =                0
+
+
+
+ Number of kinetic minerals =            4
+
+
+  Using database file: SavannahFArea.dbs
+
+  temperature interpolation coefficients
+                  ln(T+Tk)        1         T+Tk      (T+Tk)**-1   (t+tk)**-2
+
+    HOMOGENEOUS REACTIONS
+
+ Species         log K         Stoichiometric Coefficients
+                            H+     HPO4-- Al+++  SiO2(a UO2++  Bogusi 
+ (UO2)2(OH)2+  5.6349E+00  -2.00   0.00   0.00   0.00   2.00   0.00
+ (UO2)2OH+++   2.7072E+00  -1.00   0.00   0.00   0.00   2.00   0.00
+ (UO2)3(OH)4+  1.1929E+01  -4.00   0.00   0.00   0.00   3.00   0.00
+ (UO2)3(OH)5+  1.5589E+01  -5.00   0.00   0.00   0.00   3.00   0.00
+ (UO2)3(OH)7-  3.1051E+01  -7.00   0.00   0.00   0.00   3.00   0.00
+ (UO2)4(OH)7+  2.1951E+01  -7.00   0.00   0.00   0.00   4.00   0.00
+ Al(OH)2+      1.0594E+01  -2.00   0.00   1.00   0.00   0.00   0.00
+ AlHPO4+      -7.4000E+00   0.00   1.00   1.00   0.00   0.00   0.00
+ AlO2-         2.2879E+01  -4.00   0.00   1.00   0.00   0.00   0.00
+ AlOH++        4.9564E+00  -1.00   0.00   1.00   0.00   0.00   0.00
+ H2PO4-       -7.2013E+00   1.00   1.00   0.00   0.00   0.00   0.00
+ H3PO4(aq)    -9.3656E+00   2.00   1.00   0.00   0.00   0.00   0.00
+ HAlO2(aq)     1.6431E+01  -3.00   0.00   1.00   0.00   0.00   0.00
+ OH-           1.3991E+01  -1.00   0.00   0.00   0.00   0.00   0.00
+ PO4---        1.2318E+01  -1.00   1.00   0.00   0.00   0.00   0.00
+ UO2(H2PO4)(H -2.2754E+01   3.00   2.00   0.00   0.00   1.00   0.00
+ UO2(H2PO4)2( -2.1744E+01   2.00   2.00   0.00   0.00   1.00   0.00
+ UO2(OH)2(aq)  1.0315E+01  -2.00   0.00   0.00   0.00   1.00   0.00
+ UO2(OH)3-     1.9222E+01  -3.00   0.00   0.00   0.00   1.00   0.00
+ UO2(OH)4--    3.3029E+01  -4.00   0.00   0.00   0.00   1.00   0.00
+ UO2H2PO4+    -1.1672E+01   1.00   1.00   0.00   0.00   1.00   0.00
+ UO2H3PO4++   -1.1312E+01   2.00   1.00   0.00   0.00   1.00   0.00
+ UO2HPO4(aq)  -8.4398E+00   0.00   1.00   0.00   0.00   1.00   0.00
+ UO2OH+        5.2088E+00  -1.00   0.00   0.00   0.00   1.00   0.00
+ UO2PO4-      -2.0798E+00  -1.00   1.00   0.00   0.00   1.00   0.00
+
+      MINERAL REACTIONS
+
+ Mineral         log K         Stoichiometric Coefficients
+                            H+     HPO4-- Al+++  SiO2(a UO2++  Bogusi 
+ Quartz       -4.0056E+00   0.00   0.00   0.00   1.00   0.00   0.00
+ Kaolinite     6.7973E+00  -6.00   0.00   2.00   2.00   0.00   0.00
+ (UO2)3(PO4)2 -2.7036E+01  -2.00   2.00   0.00   0.00   3.00   0.00
+ Bogusite     -2.0000E+00   0.00   0.00   0.00   0.00   0.00   1.00
+
+     SURFACE COMPLEXATION REACTIONS
+
+ Surface complexes log K       Stoichiometric Coefficients
+                            H+     HPO4-- Al+++  SiO2(a UO2++  Bogusi >SiOH  >FeOH  >AlOH  
+ >SiOUO3H3++   5.1800E+00   0.00   0.00   0.00   0.00   1.00   0.00   1.00   0.00   0.00
+ >SiOUO3H2+    5.1800E+00  -1.00   0.00   0.00   0.00   1.00   0.00   1.00   0.00   0.00
+ >SiOUO3H      5.1800E+00  -2.00   0.00   0.00   0.00   1.00   0.00   1.00   0.00   0.00
+ >SiOUO3-      1.2350E+01  -3.00   0.00   0.00   0.00   1.00   0.00   1.00   0.00   0.00
+ >SiOUO2(OH)2  1.2350E+01  -3.00   0.00   0.00   0.00   1.00   0.00   1.00   0.00   0.00
+ >FeOHUO3      3.0500E+00  -2.00   0.00   0.00   0.00   1.00   0.00   0.00   1.00   0.00
+ >FeOHUO2++   -6.6300E+00   0.00   0.00   0.00   0.00   1.00   0.00   0.00   1.00   0.00
+ >AlOUO2+     -3.1300E+00  -1.00   0.00   0.00   0.00   1.00   0.00   0.00   0.00   1.00
+
+  ***KINETIC INPUTS***
+
+   MINERAL
+
+
+  ******  GEOCHEMICAL CONDITIONS INPUT  ******
+
+ Number of geochemical conditions specified =            2
+
+  Condition Label: initial
+
+
+  Primary species    itype     guess      Total conc.  Constraint phase
+  H+                   7    3.1623E-08   -2.0000E+00                       
+  HPO4--               1    1.0000E-06    1.0000E-06                       
+  Al+++                1    1.0000E-06    6.5874E-09                       
+  SiO2(aq)             1    1.0000E-06    1.8703E-04                       
+  UO2++                1    1.0000E-06    1.0000E-15                       
+  Bogusite(aq)         1    1.0000E-06    1.0000E-02                       
+
+  Porosity for this chemical condition =   0.2000
+
+
+
+  Condition Label: boundary
+
+
+  Primary species    itype     guess      Total conc.  Constraint phase
+  H+                   7    1.1749E-03    0.0000E+00                       
+  HPO4--               1    1.0000E-06    7.1028E-05                       
+  Al+++                1    1.0000E-06    2.8909E-05                       
+  SiO2(aq)             1    1.0000E-06    2.5280E-04                       
+  UO2++                1    1.0000E-06    3.5414E-05                       
+  Bogusite(aq)         1    1.0000E-06    1.0000E-02                       
+
+  Porosity for this chemical condition =   0.2000
+
+
+
+   ********  SPECIATION OF GEOCHEMICAL CONDITIONS  ********
+
+
+ *********************************************
+  ---> GEOCHEMICAL CONDITION: initial
+
+  Temperature (C)         =     25.000
+  Porosity                =      0.200
+  Liquid Saturation       =      1.000
+  Liquid Density (kg/m^3) =   1000.000
+  Solid Density (kg/m^3)  =   2624.749
+  Solid:Solution Ratio    =  10498.995
+  Ionic Strength          =      0.000
+  Solution pH             =      7.500
+  Total Charge            = -1.964E-06
+
+ Total Aqueous Concentrations of Primary Species  
+ --------------------------------------- 
+
+  Species               Molality     Constraint    Constraint Phase 
+ H+                   1.6094E-08     Activity                        
+ HPO4--               1.0000E-06     Total                           
+ Al+++                6.5874E-09     Total                           
+ SiO2(aq)             1.8703E-04     Total                           
+ UO2++                1.0000E-15     Total                           
+ Bogusite(aq)         1.0000E-02     Total                           
+
+  Surface complexes    Sites/kgw     Moles/g solid
+>SiOH          3.1800E-05       3.0289E-09
+>FeOH          3.1800E-05       3.0289E-09
+>AlOH          3.1800E-05       3.0289E-09
+
+ Total Concentrations on Surface Hydroxyl Sites 
+ ---------------------------------------------- 
+
+  Primary Species      Moles/kgw     Moles/g solid
+H+            -1.1482E-12      -1.0936E-16
+UO2++          5.7839E-13       5.5090E-17
+
+ Concentrations of Individual Species, Exchangers, and Surface Complexes 
+ ----------------------------------------------------------------------- 
+
+                           Log        Log                                 Activity
+ Species              Molality   Activity      Molality      Activity   Coefficient    Type
+  >SiOH                 -4.498     -4.498     3.180E-05     3.180E-05                Surface 
+  >FeOH                 -4.498     -4.498     3.180E-05     3.180E-05                Surface 
+  >AlOH                 -4.498     -4.498     3.180E-05     3.180E-05                Surface 
+  >SiOUO3H3++          -29.404    -29.404     3.945E-30     3.945E-30                Surface 
+  >SiOUO3H2+           -21.904    -21.904     1.247E-22     1.247E-22                Surface 
+  >SiOUO3H             -14.404    -14.404     3.945E-15     3.945E-15                Surface 
+  >SiOUO3-             -14.074    -14.074     8.433E-15     8.433E-15                Surface 
+  >SiOUO2(OH)2-        -14.074    -14.074     8.433E-15     8.433E-15                Surface 
+  >FeOHUO3             -12.274    -12.274     5.321E-13     5.321E-13                Surface 
+  >FeOHUO2++           -17.594    -17.594     2.547E-18     2.547E-18                Surface 
+  >AlOUO2+             -13.594    -13.594     2.547E-14     2.547E-14                Surface 
+  H+                    -7.499     -7.500     3.167E-08     3.162E-08     9.985E-01  Aqueous 
+  HPO4--                -6.176     -6.179     6.665E-07     6.625E-07     9.939E-01  Aqueous 
+  Al+++                -15.335    -15.341     4.624E-16     4.562E-16     9.864E-01  Aqueous 
+  SiO2(aq)              -3.728     -3.728     1.870E-04     1.870E-04     1.000E+00  Aqueous 
+  UO2++                -19.724    -19.726     1.889E-20     1.877E-20     9.939E-01  Aqueous 
+  Bogusite(aq)          -2.000     -2.000     1.000E-02     1.000E-02     1.000E+00  Aqueous 
+  (UO2)2(OH)2++        -30.085    -30.088     8.220E-31     8.170E-31     9.939E-01  Aqueous 
+  (UO2)2OH+++          -34.654    -34.660     2.218E-35     2.188E-35     9.864E-01  Aqueous 
+  (UO2)3(OH)4++        -41.106    -41.108     7.841E-42     7.793E-42     9.939E-01  Aqueous 
+  (UO2)3(OH)5+         -37.268    -37.268     5.401E-38     5.393E-38     9.985E-01  Aqueous 
+  (UO2)3(OH)7-         -37.729    -37.730     1.865E-38     1.862E-38     9.985E-01  Aqueous 
+  (UO2)4(OH)7+         -48.356    -48.356     4.407E-49     4.401E-49     9.985E-01  Aqueous 
+  Al(OH)2+             -10.934    -10.935     1.164E-11     1.162E-11     9.985E-01  Aqueous 
+  AlHPO4+              -14.119    -14.120     7.602E-15     7.591E-15     9.985E-01  Aqueous 
+  AlO2-                 -8.219     -8.220     6.041E-09     6.031E-09     9.985E-01  Aqueous 
+  AlOH++               -12.795    -12.797     1.605E-13     1.595E-13     9.939E-01  Aqueous 
+  H2PO4-                -6.477     -6.478     3.335E-07     3.330E-07     9.985E-01  Aqueous 
+  H3PO4(aq)            -11.813    -11.813     1.537E-12     1.537E-12     1.000E+00  Aqueous 
+  HAlO2(aq)             -9.272     -9.272     5.350E-10     5.350E-10     1.000E+00  Aqueous 
+  OH-                   -6.490     -6.491     3.233E-07     3.228E-07     9.985E-01  Aqueous 
+  PO4---               -10.991    -10.997     1.020E-11     1.006E-11     9.864E-01  Aqueous 
+  UO2(H2PO4)(H3PO4)+   -31.830    -31.830     1.480E-32     1.478E-32     9.985E-01  Aqueous 
+  UO2(H2PO4)2(aq)      -25.340    -25.340     4.567E-26     4.567E-26     1.000E+00  Aqueous 
+  UO2(OH)2(aq)         -15.041    -15.041     9.099E-16     9.099E-16     1.000E+00  Aqueous 
+  UO2(OH)3-            -16.448    -16.448     3.568E-17     3.563E-17     9.985E-01  Aqueous 
+  UO2(OH)4--           -22.753    -22.756     1.767E-23     1.756E-23     9.939E-01  Aqueous 
+  UO2H2PO4+            -21.733    -21.733     1.851E-22     1.848E-22     9.985E-01  Aqueous 
+  UO2H3PO4++           -29.591    -29.593     2.566E-30     2.551E-30     9.939E-01  Aqueous 
+  UO2HPO4(aq)          -17.465    -17.465     3.424E-18     3.424E-18     1.000E+00  Aqueous 
+  UO2OH+               -17.435    -17.435     3.676E-18     3.671E-18     9.985E-01  Aqueous 
+  UO2PO4-              -16.325    -16.325     4.734E-17     4.726E-17     9.985E-01  Aqueous 
+
+  ****** Partial pressure of gases (bars) *****
+
+
+  ****** Saturation state of minerals (log[Q/K] *****
+
+  Quartz                    0.2776
+  Kaolinite                 0.0648
+  (UO2)3(PO4)2.4H2O       -29.5009
+  Bogusite                  0.0000
+
+ *********************************************
+  ---> GEOCHEMICAL CONDITION: boundary
+
+  Temperature (C)         =     25.000
+  Porosity                =      0.200
+  Liquid Saturation       =      1.000
+  Liquid Density (kg/m^3) =   1000.000
+  Solid Density (kg/m^3)  =   2624.749
+  Solid:Solution Ratio    =  10498.995
+  Ionic Strength          =      0.001
+  Solution pH             =      2.930
+  Total Charge            =  1.296E-03
+
+ Total Aqueous Concentrations of Primary Species  
+ --------------------------------------- 
+
+  Species               Molality     Constraint    Constraint Phase 
+ H+                   1.2805E-03     Activity                        
+ HPO4--               7.1028E-05     Total                           
+ Al+++                2.8909E-05     Total                           
+ SiO2(aq)             2.5280E-04     Total                           
+ UO2++                3.5414E-05     Total                           
+ Bogusite(aq)         1.0000E-02     Total                           
+
+  Surface complexes    Sites/kgw     Moles/g solid
+>SiOH          3.1800E-05       3.0289E-09
+>FeOH          3.1800E-05       3.0289E-09
+>AlOH          3.1800E-05       3.0289E-09
+
+ Total Concentrations on Surface Hydroxyl Sites 
+ ---------------------------------------------- 
+
+  Primary Species      Moles/kgw     Moles/g solid
+H+            -2.9650E-05      -2.8241E-09
+UO2++          6.0827E-05       5.7936E-09
+
+ Concentrations of Individual Species, Exchangers, and Surface Complexes 
+ ----------------------------------------------------------------------- 
+
+                           Log        Log                                 Activity
+ Species              Molality   Activity      Molality      Activity   Coefficient    Type
+  >SiOH                 -4.498     -4.498     3.180E-05     3.180E-05                Surface 
+  >FeOH                 -6.213     -6.213     6.125E-07     6.125E-07                Surface 
+  >AlOH                 -5.665     -5.665     2.163E-06     2.163E-06                Surface 
+  >SiOUO3H3++          -14.601    -14.601     2.507E-15     2.507E-15                Surface 
+  >SiOUO3H2+           -11.671    -11.671     2.134E-12     2.134E-12                Surface 
+  >SiOUO3H              -8.741     -8.741     1.816E-09     1.816E-09                Surface 
+  >SiOUO3-             -12.981    -12.981     1.045E-13     1.045E-13                Surface 
+  >SiOUO2(OH)2-        -12.981    -12.981     1.045E-13     1.045E-13                Surface 
+  >FeOHUO3              -8.326     -8.326     4.720E-09     4.720E-09                Surface 
+  >FeOHUO2++            -4.506     -4.506     3.118E-05     3.118E-05                Surface 
+  >AlOUO2+              -4.528     -4.528     2.964E-05     2.964E-05                Surface 
+  H+                    -2.917     -2.930     1.211E-03     1.175E-03     9.701E-01  Aqueous 
+  HPO4--                -8.619     -8.674     2.407E-09     2.120E-09     8.808E-01  Aqueous 
+  Al+++                 -4.560     -4.679     2.753E-05     2.095E-05     7.607E-01  Aqueous 
+  SiO2(aq)              -3.597     -3.597     2.528E-04     2.528E-04     1.000E+00  Aqueous 
+  UO2++                 -4.868     -4.923     1.354E-05     1.193E-05     8.813E-01  Aqueous 
+  Bogusite(aq)          -2.000     -2.000     1.000E-02     1.000E-02     1.000E+00  Aqueous 
+  (UO2)2(OH)2++         -9.566     -9.621     2.714E-10     2.392E-10     8.813E-01  Aqueous 
+  (UO2)2OH+++           -9.501     -9.624     3.158E-10     2.379E-10     7.534E-01  Aqueous 
+  (UO2)3(OH)4++        -14.924    -14.979     1.192E-15     1.051E-15     8.813E-01  Aqueous 
+  (UO2)3(OH)5+         -15.695    -15.708     2.020E-16     1.957E-16     9.688E-01  Aqueous 
+  (UO2)3(OH)7-         -25.297    -25.310     5.051E-26     4.894E-26     9.688E-01  Aqueous 
+  (UO2)4(OH)7+         -21.120    -21.134     7.590E-22     7.353E-22     9.688E-01  Aqueous 
+  Al(OH)2+              -9.399     -9.413     3.989E-10     3.864E-10     9.688E-01  Aqueous 
+  AlHPO4+               -5.939     -5.953     1.151E-06     1.115E-06     9.688E-01  Aqueous 
+  AlO2-                -15.824    -15.838     1.500E-16     1.453E-16     9.688E-01  Aqueous 
+  AlOH++                -6.650     -6.705     2.236E-07     1.971E-07     8.813E-01  Aqueous 
+  H2PO4-                -4.389     -4.402     4.086E-05     3.959E-05     9.688E-01  Aqueous 
+  H3PO4(aq)             -5.168     -5.168     6.789E-06     6.790E-06     1.000E+00  Aqueous 
+  HAlO2(aq)            -12.320    -12.320     4.789E-13     4.790E-13     1.000E+00  Aqueous 
+  OH-                  -11.047    -11.061     8.968E-12     8.688E-12     9.687E-01  Aqueous 
+  PO4---               -17.938    -18.062     1.153E-18     8.666E-19     7.515E-01  Aqueous 
+  UO2(H2PO4)(H3PO4)+    -8.293     -8.307     5.093E-09     4.934E-09     9.688E-01  Aqueous 
+  UO2(H2PO4)2(aq)       -6.387     -6.387     4.103E-07     4.104E-07     1.000E+00  Aqueous 
+  UO2(OH)2(aq)          -9.378     -9.378     4.189E-10     4.190E-10     1.000E+00  Aqueous 
+  UO2(OH)3-            -15.341    -15.355     4.558E-16     4.416E-16     9.688E-01  Aqueous 
+  UO2(OH)4--           -26.177    -26.232     6.650E-27     5.858E-27     8.808E-01  Aqueous 
+  UO2H2PO4+             -4.841     -4.855     1.441E-05     1.397E-05     9.688E-01  Aqueous 
+  UO2H3PO4++            -8.090     -8.145     8.127E-09     7.162E-09     8.813E-01  Aqueous 
+  UO2HPO4(aq)           -5.157     -5.157     6.964E-06     6.966E-06     1.000E+00  Aqueous 
+  UO2OH+                -7.188     -7.202     6.483E-08     6.281E-08     9.688E-01  Aqueous 
+  UO2PO4-               -8.573     -8.587     2.671E-09     2.588E-09     9.688E-01  Aqueous 
+
+  ****** Partial pressure of gases (bars) *****
+
+
+  ****** Saturation state of minerals (log[Q/K] *****
+
+  Quartz                    0.4085
+  Kaolinite                -5.7695
+  (UO2)3(PO4)2.4H2O         0.7792
+  Bogusite                  0.0001
+
+                SPECIATION OF  
+      INITIAL AND BOUNDARY CONDITIONS 
+           SUCCESSFULLY COMPLETED
+
+
+   NZ =            1
+
+  Cell  Distance (m)
+   1    5.000E-01
+
+
+ Number of heterogeneities =            2
+
+
+ Parameters for this run:
+
+  Maximum timestep (yrs) =    1.000E-01
+  Maximum timestep (yrs) =    1.000E-10
+
+ --> Porosity set by "fix_porosity" or "set_porosity" keywords
+ ----> No update of porosity
+ --> Extended Debye-Huckel activity model used
+ --> Activity coefficients only computed
+     at beginning of time step 
+
+  Temperature (C) at J = 1            25.00
+  Temperature gradient (C/m) =         0.00
+
+ Graphics files printed at (yrs)
+   1.0000E-01
+   2.5000E-01
+   5.0000E-01
+   1.0000E+00
+   1.5000E+00
+
+
+  Constant velocities have been specified
+
+   X Darcy velocity =    19.000000000000000     
+   Y Darcy velocity =    0.0000000000000000     
+
+
+
+
+   Using constant diffusion coefficient
+  Diffusion coefficient (m**2/yr) =       1.0000E-36
+
+
+  Longitudinal dispersivity (m) =     0.0000E+00
+  Transverse dispersivity (m) =       0.0000E+00
+
+
+         INITIALIZATION COMPLETED 
+          STARTING TIMESTEPPING 
+
