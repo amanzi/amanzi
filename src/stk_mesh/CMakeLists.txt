@@ -8,7 +8,7 @@ include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIR})
 
-add_library(stk_mesh Cell_topology.cc Element_category.cc Entity_map.cc Mesh_factory.cc Mesh.cc Mesh_maps_stk.cc)
+add_library(stk_mesh Cell_topology.cc Entity_map.cc Mesh_factory.cc Mesh.cc Mesh_maps_stk.cc)
 target_link_libraries(stk_mesh error_handling mesh_data
                       ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})

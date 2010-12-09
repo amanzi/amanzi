@@ -1,3 +1,7 @@
+#include <algorithm>
+#include <boost/lambda/lambda.hpp>
+namespace bl = boost::lambda;
+
 #include "Mesh_maps_stk.hh"
 #include "dbc.hh"
 #include "Utils.hh"
@@ -5,6 +9,7 @@
 #include <Teuchos_RCP.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 
+static const int ZERO = 0;
 
 namespace STK_mesh
 {
@@ -20,36 +25,27 @@ Mesh_maps_stk::Mesh_maps_stk (Mesh_p mesh) : mesh_ (mesh),
                                              entity_map_ (mesh->entity_map ()),
                                              communicator_ (mesh_->communicator ())
 {
-    update();
+    build_maps_();
 }
 
-void Mesh_maps_stk::update ()
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::build_maps_
+// -------------------------------------------------------------
+static void
+extract_global_ids(const Entity_vector& entities,
+                   std::vector<int>& ids)
 {
-    clear_internals_ ();
-    update_internals_ ();
+    ids.clear();
+    ids.reserve(entities.size());
+    for (Entity_vector::const_iterator i = entities.begin(); i != entities.end(); i++) {
+        ids.push_back((*i)->identifier());
+    }
+    std::for_each(ids.begin(), ids.end(), bl::_1 -= 1);
 }
 
-void Mesh_maps_stk::clear_internals_ ()
-{
-
-    cell_to_face_.resize (0);
-    cell_to_node_.resize (0);
-    face_to_node_.resize (0);
-
-    for (int i=0; i<3; ++i)
-        global_to_local_maps_ [i].erase (global_to_local_maps_ [i].begin (), global_to_local_maps_ [i].end ());
-
-}
-
-
-void Mesh_maps_stk::update_internals_()
-{
-    build_maps_ ();
-    build_tables_ ();
-}
-
-
-void Mesh_maps_stk::build_maps_ ()
+void 
+Mesh_maps_stk::build_maps_ ()
 {
 
     // For each of Elements, Faces, Nodes:
@@ -59,130 +55,47 @@ void Mesh_maps_stk::build_maps_ ()
         Mesh_data::Entity_kind kind = index_to_kind_ (entity_kind_index);
         stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
 
-        // Get the collection of "owned" entities
         Entity_vector entities;
+        std::vector<int> entity_ids;
+        Teuchos::RCP<Epetra_Map> map;
+
+        // Get the collection of "owned" entities
         mesh_->get_entities (rank, OWNED, entities);
-        const int num_local_entities = entities.size ();
-        ASSERT (num_local_entities == mesh_->count_entities (rank, OWNED));
+        extract_global_ids(entities, entity_ids);
 
+        map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, communicator_));
+        map_owned_.insert(MapSet::value_type(kind, map));
 
-        // Get the collection of ghost entities.
-        Entity_vector ghosts;
-        mesh_->get_entities (entity_kind_index, GHOST, ghosts);
-        const int num_ghost_entities = ghosts.size ();
-        const int num_used_entities = num_local_entities + num_ghost_entities;
+        // Get the collection of "ghost" entities
+        Entity_vector ghost_entities;
+        mesh_->get_entities (rank, GHOST, ghost_entities);
+        std::vector<int> ghost_entity_ids;
+        extract_global_ids(ghost_entities, ghost_entity_ids);
+        std::copy(ghost_entity_ids.begin(), ghost_entity_ids.end(), 
+                  std::back_inserter(entity_ids));
 
-        // Put the collections together, ghosts at the back.
-        std::copy (ghosts.begin (), ghosts.end (), std::back_inserter (entities));
-        ASSERT (entities.size () == num_used_entities);
-
-        // Create a vector of global ids and populate the inverse map.
-        std::vector<int> my_entities_global_ids;
-        add_global_ids_ (entities.begin (), entities.end (),
-                         std::back_inserter (my_entities_global_ids),
-                         global_to_local_maps_ [entity_kind_index]);
-        ASSERT (my_entities_global_ids.size () == num_local_entities);
-        ASSERT (global_to_local_maps_ [entity_kind_index].size () == num_local_entities);
-
-        // Create the used = local+ghost map.
-        Epetra_Map *local_ghost_map (new Epetra_Map (-1,
-                                                     num_used_entities,
-                                                     &my_entities_global_ids [0],
-                                                     0,
-                                                     communicator_));
-
-        assign_map_ (kind, true, local_ghost_map);
-        ASSERT (map_ (kind, true).NumMyElements () == num_used_entities);
-
-        // Create the local map.
-        // Note that this is not sharing data with the local+ghost map.
-        Epetra_Map *local_map (new Epetra_Map (-1,
-                                               num_local_entities,
-                                               &my_entities_global_ids [0],
-                                               0,
-                                               communicator_));
-
-        assign_map_ (kind, false, local_map);
-        ASSERT (map_ (kind, false).NumMyElements () == num_local_entities);
-
+        map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, communicator_));
+        map_used_.insert(MapSet::value_type(kind, map));
     }
-
 }
 
-void Mesh_maps_stk::build_tables_ ()
+// -------------------------------------------------------------
+// Mesh_maps_stk::get_map_
+// -------------------------------------------------------------
+const Epetra_Map&
+Mesh_maps_stk::get_map_(const Mesh_data::Entity_kind& kind, const bool& include_ghost) const
 {
-
-    // Cell to faces and nodes.
-    ASSERT (cell_to_face_.size () == 0);
-    ASSERT (cell_to_node_.size () == 0);
-
-    // Loop over cells using local indices.
-    const Epetra_Map &the_cell_map (cell_map (true));
-    const unsigned int num_local_cells = count_entities (Mesh_data::CELL, USED);
-    for (int local_cell = 0; local_cell < num_local_cells; ++local_cell)
-    {
-        // Get the global index of the cell from the map.
-        const unsigned int global_index = the_cell_map.GID (local_cell);
-
-        Entity_Ids faces;
-        mesh_->element_to_faces (global_index, faces);
-        // ASSERT (faces.size () == 6);
-
-        Entity_Ids nodes;
-        mesh_->element_to_nodes (global_index, nodes);
-        ASSERT (nodes.size () == 8);
-
-        // Loop over faces
-        // ASSERT ((unsigned int) (faces.end () - faces.begin ()) == 6);
-        for (Entity_Ids::const_iterator face = faces.begin ();
-             face != faces.end (); ++face)
-        {
-            Index_map::const_iterator face_it = global_to_local_maps_ [1].find (*face);
-            ASSERT (face_it != global_to_local_maps_ [1].end ());
-            const unsigned int face_index = face_it->second;
-            cell_to_face_.push_back (face_index);
-        }
-
-        // Loop over nodes
-        ASSERT ((unsigned int) (nodes.end () - nodes.begin ()) == 8);
-        for (Entity_Ids::const_iterator node = nodes.begin ();
-             node != nodes.end (); ++node)
-        {
-            Index_map::const_iterator node_it = global_to_local_maps_ [0].find (*node);
-            ASSERT (node_it != global_to_local_maps_ [0].end ());
-            const unsigned int node_index = node_it->second;
-            cell_to_node_.push_back (node_index);
-        }
-
+    MapSet::const_iterator m;
+    if (include_ghost) {
+        m = map_used_.find(kind);
+        ASSERT(m != map_used_.end());
+    } else {
+        m = map_owned_.find(kind);
+        ASSERT(m != map_owned_.end());
     }
-    // ASSERT (cell_to_face_.size () == 6 * count_entities (Mesh_data::CELL, USED));
-    ASSERT (cell_to_node_.size () == 8 * count_entities (Mesh_data::CELL, USED));
-
-    // Faces to nodes
-    ASSERT (face_to_node_.size () == 0);
-    const Epetra_Map &the_face_map (face_map (true));
-    const unsigned int num_local_faces = count_entities (Mesh_data::FACE, USED);
-    for (int local_face = 0; local_face < num_local_faces; ++local_face)
-    {
-        const unsigned int global_index = the_face_map.GID (local_face);
-
-        Entity_Ids nodes;
-        mesh_->face_to_nodes (global_index, nodes);
-        ASSERT (nodes.size () == 4);
-
-        // Loop over nodes
-        for (Entity_Ids::const_iterator node = nodes.begin ();
-             node != nodes.end (); ++node)
-        {
-            Index_map::const_iterator node_it = global_to_local_maps_ [0].find (*node);
-            ASSERT (node_it != global_to_local_maps_ [0].end ());
-            const unsigned int node_index = node_it->second;
-            face_to_node_.push_back (node_index);
-        }
-    }
-    ASSERT (face_to_node_.size () == 4 * count_entities (Mesh_data::FACE, USED));
-
+    return *(m->second);
 }
+
 
 // Internal validators
 // -------------------
@@ -215,43 +128,9 @@ Mesh_data::Entity_kind Mesh_maps_stk::index_to_kind_ (const unsigned int index) 
     return kinds_ [index];
 }
 
-const Index_map& Mesh_maps_stk::kind_to_map_ (Mesh_data::Entity_kind kind) const
-{
-    return global_to_local_maps_ [kind_to_index_ (kind)];
-}
-
-
-unsigned int Mesh_maps_stk::global_to_local_ (unsigned int global_id, Mesh_data::Entity_kind kind) const
-{
-    const std::map<unsigned int, unsigned int>& global_local_map (kind_to_map_ (kind));
-    std::map<unsigned int, unsigned int>::const_iterator map_entry = global_local_map.find (global_id);
-    ASSERT (map_entry != global_local_map.end ());
-
-    return map_entry->second;
-}
-
-
 // Bookkeeping for the collection of Epetra_maps
 // ---------------------------------------------
 
-
-const Epetra_Map& Mesh_maps_stk::map_ (Mesh_data::Entity_kind kind, bool include_ghost) const
-{
-    return *(maps_ [map_index_ (kind, include_ghost)].get ());
-}
-
-unsigned int Mesh_maps_stk::map_index_ (Mesh_data::Entity_kind kind, bool include_ghost) const
-{
-    unsigned int index = kind_to_index_ (kind);
-    index = 2*index + (unsigned int) (include_ghost);
-    ASSERT (index < 6);
-}
-
-void Mesh_maps_stk::assign_map_ (Mesh_data::Entity_kind kind, bool include_ghost, Epetra_Map *map)
-{
-    const unsigned int map_index = map_index_ (kind, include_ghost);
-    maps_ [map_index] = std::auto_ptr<Epetra_Map>(map);
-}
 
 
 
@@ -285,7 +164,6 @@ unsigned int Mesh_maps_stk::get_set_size (unsigned int set_id,
 {
     ASSERT (valid_set_id (set_id, kind));
     stk::mesh::Part* part = mesh_->get_set (set_id, kind_to_rank_ (kind));
-
     return mesh_->count_entities (*part, category);
 }
 
@@ -298,11 +176,27 @@ template <typename IT>
 void Mesh_maps_stk::cell_to_faces (unsigned int cell, 
                                    IT destination_begin, IT destination_end) const
 {
-    ASSERT ((unsigned int) (destination_end - destination_begin) == 6);
-    const unsigned int index = 6*cell;
-    std::vector<unsigned int>::const_iterator begin = cell_to_face_.begin () + index;
-    std::vector<unsigned int>::const_iterator end = begin + 6;
-    std::copy (begin, end, destination_begin);
+    stk::mesh::EntityId global_cell_id = 
+        get_map_(Mesh_data::CELL, true).GID(cell);
+    global_cell_id += 1;        // need 1-based for stk::mesh
+
+    Entity_Ids face_ids;
+    mesh_->element_to_faces(global_cell_id, face_ids);
+    std::for_each(face_ids.begin(), face_ids.end(), bl::_1 -= 1);
+
+    IT i = destination_begin;
+    for (Entity_Ids::iterator f = face_ids.begin(); f != face_ids.end(); f++, i++) {
+        stk::mesh::EntityId global_face_id(*f);
+        if (!get_map_(Mesh_data::FACE, true).MyGID(global_face_id)) {
+            std::cerr << "Process " << communicator_.MyPID() << ": "
+                      << "cell " << cell << " (" << global_cell_id << ") has bogus face id "
+                      << global_face_id << std::endl;
+        }
+        ASSERT(get_map_(Mesh_data::FACE, true).MyGID(global_face_id));
+        stk::mesh::EntityId local_face_id = 
+            get_map_(Mesh_data::FACE, true).LID(global_face_id);
+        *i = local_face_id;
+    }
 }
 
 void 
@@ -323,21 +217,52 @@ Mesh_maps_stk::cell_to_faces (unsigned int cell,
 // -------------------------------------------------------------
 // Mesh_maps_stk::cell_to_face_dirs
 // -------------------------------------------------------------
+template <typename IT>
+void Mesh_maps_stk::cell_to_face_dirs (unsigned int cell, 
+                                   IT destination_begin, IT destination_end) const
+{
+    stk::mesh::EntityId global_cell_id = 
+        get_map_(Mesh_data::CELL, true).GID(cell);
+    global_cell_id += 1;        // need 1-based for stk::mesh
+
+    Entity_Ids face_ids;
+    mesh_->element_to_faces(global_cell_id, face_ids);
+
+    IT i = destination_begin;
+    for (Entity_Ids::iterator f = face_ids.begin(); f != face_ids.end(); f++, i++) {
+        stk::mesh::EntityId global_face_id(*f);
+        Entity_Ids cell_ids;
+        mesh_->face_to_elements(global_face_id, cell_ids);
+        
+        int dir(1);
+        if (cell_ids.size() > 1) {
+            if (cell_ids.front() == global_cell_id && 
+                cell_ids.front() > cell_ids.back()) {
+                dir = -1;
+            } else if (cell_ids.back() == global_cell_id && 
+                       cell_ids.back() > cell_ids.front()) {
+                dir = -1;
+            }
+        }
+        
+        *i = dir;
+    }
+}
+
+
 void
 Mesh_maps_stk::cell_to_face_dirs(unsigned int cell, 
                                  std::vector<int>::iterator begin, 
                                  std::vector<int>::iterator end)
 {
-  // FIXME: What do we do here?
-  ASSERT(false);                // crash if this is called
+    cell_to_face_dirs<std::vector<int>::iterator>(cell, begin, end);
 }
                                    
 void
 Mesh_maps_stk::cell_to_face_dirs(unsigned int cell, 
                                  int * begin, int * end)
 {
-  // FIXME: What do we do here?
-  ASSERT(false);                // crash if this is called
+    cell_to_face_dirs<int *>(cell, begin, end);
 }  
 
 // -------------------------------------------------------------
@@ -346,13 +271,29 @@ Mesh_maps_stk::cell_to_face_dirs(unsigned int cell,
 template <typename IT>
 void 
 Mesh_maps_stk::cell_to_nodes (unsigned int cell, 
-                                 IT destination_begin, IT destination_end) const
+                              IT destination_begin, IT destination_end) const
 {
-    ASSERT ((unsigned int) (destination_end - destination_begin) == 8);
-    const unsigned int index = 8*cell;
-    std::vector<unsigned int>::const_iterator begin = cell_to_node_.begin () + index;
-    std::vector<unsigned int>::const_iterator end   = begin + 8;
-    std::copy (begin, end, destination_begin);
+    stk::mesh::EntityId global_cell_id = 
+        get_map_(Mesh_data::CELL, true).GID(cell);
+    global_cell_id += 1;        // need 1-based for stk::mesh
+
+    Entity_Ids node_ids;
+    mesh_->element_to_nodes(global_cell_id, node_ids);
+    std::for_each(node_ids.begin(), node_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
+
+    IT i = destination_begin;
+    for (Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++, i++) {
+        stk::mesh::EntityId global_node_id(*n);
+        if (!get_map_(Mesh_data::NODE, true).MyGID(global_node_id)) {
+            std::cerr << "Process " << communicator_.MyPID() << ": "
+                      << "cell " << cell << " (" << global_cell_id << ") has bogus node id "
+                      << global_node_id << std::endl;
+        }
+        ASSERT(get_map_(Mesh_data::NODE, true).MyGID(global_node_id));
+        stk::mesh::EntityId local_node_id = 
+            get_map_(Mesh_data::NODE, true).LID(global_node_id);
+        *i = local_node_id;
+    }
 }
 
 void 
@@ -379,11 +320,27 @@ void
 Mesh_maps_stk::face_to_nodes (unsigned int face, 
                                  IT destination_begin, IT destination_end) const
 {
-    ASSERT ((unsigned int) (destination_end - destination_begin) == 4);
-    const unsigned int index = 4*face;
-    std::vector<unsigned int>::const_iterator begin = face_to_node_.begin () + index;
-    std::vector<unsigned int>::const_iterator end   = begin + 4;
-    std::copy (begin, end, destination_begin);
+    stk::mesh::EntityId global_face_id = 
+        get_map_(Mesh_data::FACE, true).GID(face);
+    global_face_id += 1;        // need 1-based for stk::mesh
+
+    Entity_Ids node_ids;
+    mesh_->face_to_nodes(global_face_id, node_ids);
+    std::for_each(node_ids.begin(), node_ids.end(), bl::_1 -= 1);
+
+    IT i = destination_begin;
+    for (Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++, i++) {
+        stk::mesh::EntityId global_node_id(*n);
+        // ASSERT(get_map_(Mesh_data::NODE, true).MyGID(global_node_id));
+        if (!get_map_(Mesh_data::NODE, true).MyGID(global_node_id)) {
+            std::cerr << "Process " << communicator_.MyPID() << ": "
+                      << "face " << face << " (" << global_face_id << ") has bogus node id "
+                      << global_node_id << std::endl;
+        }
+        stk::mesh::EntityId local_node_id = 
+            get_map_(Mesh_data::NODE, true).LID(global_node_id);
+        *i = local_node_id;
+    }
 }
 
 void 
@@ -411,10 +368,10 @@ Mesh_maps_stk::face_to_nodes (unsigned int face,
 template <typename IT>
 void Mesh_maps_stk::node_to_coordinates (unsigned int local_node_id, IT begin, IT end) const
 {
-    ASSERT ((unsigned int) (end-begin) == 3);
-
     // Convert local node to global node Id.
-    stk::mesh::EntityId global_node_id = map_ (Mesh_data::NODE, true).GID (local_node_id);
+    stk::mesh::EntityId global_node_id = 
+        get_map_(Mesh_data::NODE, true).GID(local_node_id);
+    global_node_id += 1;        // 1-based for stk::mesh
 
     const double * coordinates = mesh_->coordinates (global_node_id);
     std::copy (coordinates, coordinates+3, begin);
@@ -443,14 +400,19 @@ Mesh_maps_stk::node_to_coordinates (unsigned int node,
 template <typename IT>
 void Mesh_maps_stk::face_to_coordinates (unsigned int local_face_id, IT begin, IT end) const
 {
-    ASSERT ((unsigned int) (end-begin) == 12);
+    stk::mesh::EntityId global_face_id = 
+        get_map_(Mesh_data::FACE, true).GID(local_face_id);
+    global_face_id += 1;        // need 1-based for stk::mesh
 
-    unsigned int node_indices [4];
-    face_to_nodes (local_face_id, node_indices, node_indices+4);
-    for (int i = 0; i < 4; ++i)
-    {
-        node_to_coordinates (node_indices [i], begin, begin+4);
-        begin+=4;
+    Entity_Ids node_ids;
+    mesh_->face_to_nodes(global_face_id, node_ids);
+
+    IT i = begin;
+    const int ndim(mesh_->space_dimension());
+    for (Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
+        const double *coord = mesh_->coordinates(*n);
+        for (int d = 0; d < ndim; d++, i++) 
+            *i = coord[d];
     }
 }
 
@@ -548,29 +510,41 @@ Mesh_maps_stk::get_set_ids (Mesh_data::Entity_kind kind,
 // Connectivity accessors
 // ----------------------
 
+
+
 // -------------------------------------------------------------
 // Mesh_data::get_set
 // -------------------------------------------------------------
+template <typename IT>
+void Mesh_maps_stk::get_set (stk::mesh::Part& set_part, Mesh_data::Entity_kind kind, 
+                             Element_Category category,
+                             IT begin, IT end) const
+{
+    ASSERT(category != GHOST);
+    Entity_vector entities;
+    mesh_->get_entities (set_part, category, entities);
+    const Epetra_Map& themap(get_map_(kind, (category == USED)));
+
+    // Convert to local ids.
+    for (Entity_vector::const_iterator it = entities.begin (); 
+         it != entities.end (); ++it) {
+        unsigned int global_id((*it)->identifier());
+        global_id -= 1;         // 0-based for Epetra_Map
+        ASSERT(themap.MyGID(global_id));
+        unsigned int local_id(themap.LID(global_id));
+        *begin = local_id;
+        begin++;
+    }
+}
+
 template <typename IT>
 void Mesh_maps_stk::get_set (unsigned int set_id, Mesh_data::Entity_kind kind, 
                              Element_Category category,
                              IT begin, IT end) const
 {
-    Entity_vector entities;
-    stk::mesh::Part* set_part = mesh_->get_set (set_id, kind_to_rank_ (kind));
-    mesh_->get_entities (*set_part, category, entities);
-
-
-    // Convert to local ids.
-    for (Entity_vector::const_iterator it = entities.begin ();
-         it != entities.end ();
-         ++it)
-    {
-        *begin = global_to_local_ ( (*it)->identifier (), kind);
-        begin++;
-    }
-
-    ASSERT (begin == end);
+    stk::mesh::EntityRank rank(kind_to_rank_(kind));
+    stk::mesh::Part* set_part = mesh_->get_set (set_id, rank);
+    get_set(*set_part, kind, category, begin, end);
 }
 
 void 
@@ -597,23 +571,9 @@ void Mesh_maps_stk::get_set (const char* name,
                              Mesh_data::Entity_kind kind, Element_Category category,
                              IT begin, IT end) const
 {
-
-    Entity_vector entities;
     stk::mesh::Part* set_part = mesh_->get_set (name, kind_to_rank_ (kind));
-    mesh_->get_entities (*set_part, category, entities);
-
-    // Convert to local ids.
-    for (Entity_vector::const_iterator it = entities.begin ();
-         it != entities.end ();
-         ++it)
-    {
-        *begin = global_to_local_ ( (*it)->identifier (), kind);
-        begin++;
-    }
-
-    ASSERT (begin == end);
-
-
+    stk::mesh::EntityRank rank(kind_to_rank_(kind));
+    get_set(*set_part, kind, category, begin, end);
 }
 
 // -------------------------------------------------------------

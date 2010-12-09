@@ -34,12 +34,12 @@ Teuchos::RCP<STK_mesh::Mesh_maps_stk> import_exodus_mesh (const char *file)
 void dump_mesh_topology (STK_mesh::Mesh_maps_stk &mesh)
 {
     // Dump the numbers of the various mesh features.
-    int nnode_own = mesh.count_entities(Mesh_data::NODE, STK_mesh::OWNED);
-    int nnode_use = mesh.count_entities(Mesh_data::NODE, STK_mesh::USED);
-    int nface_own = mesh.count_entities(Mesh_data::FACE, STK_mesh::OWNED);
-    int nface_use = mesh.count_entities(Mesh_data::FACE, STK_mesh::USED);
-    int ncell_own = mesh.count_entities(Mesh_data::CELL, STK_mesh::OWNED);
-    int ncell_use = mesh.count_entities(Mesh_data::CELL, STK_mesh::USED);
+    int nnode_own = mesh.count_entities(Mesh_data::NODE, OWNED);
+    int nnode_use = mesh.count_entities(Mesh_data::NODE, USED);
+    int nface_own = mesh.count_entities(Mesh_data::FACE, OWNED);
+    int nface_use = mesh.count_entities(Mesh_data::FACE, USED);
+    int ncell_own = mesh.count_entities(Mesh_data::CELL, OWNED);
+    int ncell_use = mesh.count_entities(Mesh_data::CELL, USED);
 
     std::cout << "Number of nodes (owned/used) = "
               << nnode_own << "/" << nnode_use << std::endl;
@@ -75,7 +75,7 @@ void dump_mesh_topology (STK_mesh::Mesh_maps_stk &mesh)
 
 void dump_mesh_geometry (STK_mesh::Mesh_maps_stk &mesh)
 {
-    std::cout << "Node coordinates:" << std::endl;int nnode_use = mesh.count_entities(Mesh_data::NODE, STK_mesh::USED);
+    std::cout << "Node coordinates:" << std::endl;int nnode_use = mesh.count_entities(Mesh_data::NODE, USED);
     double x[3];
     for (int j = 0; j < nnode_use; ++j) 
     {

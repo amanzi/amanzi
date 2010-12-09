@@ -2,7 +2,7 @@
 /**
  * @file   test_Read.cc
  * @author William A. Perkins
- * @date Mon Nov 29 14:12:37 2010
+ * @date Thu Dec  9 08:26:06 2010
  * 
  * @brief Some unit tests for reading a (serial) Exodus file and
  * building a STK_mesh::Mesh_maps_stk instance.
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 22, 2010 by William A. Perkins
-// Last Change: Mon Nov 29 14:12:37 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Dec  9 08:26:06 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <UnitTest++.h>
@@ -21,8 +21,8 @@
 
 #include "Exodus_Readers.hh"
 #include "Parallel_Exodus_file.hh"
-#include "../Mesh_maps_stk.hh"
 #include "../Mesh_factory.hh"
+#include "Auditor.hh"
 
 // -------------------------------------------------------------
 // class ReadFixture
@@ -71,7 +71,7 @@ public:
   
 };
 
-const bool ReadFixture::verbose(true);
+const bool ReadFixture::verbose(false);
 
 
 // -------------------------------------------------------------
@@ -120,8 +120,10 @@ protected:
 
       Teuchos::RCP<Epetra_Map> cmap(thefile.cellmap());
       Teuchos::RCP<Epetra_Map> vmap(thefile.vertexmap());
-      cmap->Print(std::cerr);
-      vmap->Print(std::cerr);
+      if (verbose) {
+        cmap->Print(std::cerr);
+        vmap->Print(std::cerr);
+      }
       mesh.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
   }
 
@@ -149,9 +151,9 @@ SUITE (Exodus)
     {
         if (nproc == 1) {
             read("../exodus/test_files/hex_11x11x11_ss.exo");
-            CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, STK_mesh::OWNED), 11*11*11);
-            CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, STK_mesh::OWNED), 10*10*11*3);
-            CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, STK_mesh::OWNED), 10*10*10);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, OWNED), 11*11*11);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, OWNED), 10*10*11*3);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, OWNED), 10*10*10);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 20);
@@ -161,19 +163,21 @@ SUITE (Exodus)
 
             p = mesh->get_set(1, stk::mesh::Face);
             CHECK(p != NULL);
-            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            count = mesh->count_entities(*p, OWNED);
             CHECK_EQUAL(count, 600);
             
             p = mesh->get_set("element block 20000", stk::mesh::Element);
             CHECK(p != NULL);
-            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            count = mesh->count_entities(*p, OWNED);
             CHECK_EQUAL(count, 9);
             
             p = mesh->get_set("node set 103", stk::mesh::Node);
             CHECK(p != NULL);
-            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            count = mesh->count_entities(*p, OWNED);
             CHECK_EQUAL(count, 121);
             
+            Auditor audit("hex_11x11x11_ss_", mesh);
+            audit();
         }
     }
 
@@ -181,9 +185,9 @@ SUITE (Exodus)
     {
         if (nproc == 1) {
             read("../exodus/test_files/hex_4x4x4_ss.exo");
-            CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, STK_mesh::OWNED), 4*4*4);
-            CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, STK_mesh::OWNED), 3*3*4*3);
-            CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, STK_mesh::OWNED), 3*3*3);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, OWNED), 4*4*4);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, OWNED), 3*3*4*3);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, OWNED), 3*3*3);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
@@ -193,19 +197,21 @@ SUITE (Exodus)
 
             p = mesh->get_set("side set 1", stk::mesh::Face);
             CHECK(p != NULL);
-            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            count = mesh->count_entities(*p, OWNED);
             CHECK_EQUAL(count, 54);
             
             p = mesh->get_set("element block 20000", stk::mesh::Element);
             CHECK(p != NULL);
-            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            count = mesh->count_entities(*p, OWNED);
             CHECK_EQUAL(count, 9);
             
             p = mesh->get_set("node set 103", stk::mesh::Node);
             CHECK(p != NULL);
-            count = mesh->count_entities(*p, STK_mesh::OWNED);
+            count = mesh->count_entities(*p, OWNED);
             CHECK_EQUAL(count, 16);
             
+            Auditor audit("hex_4x4x4_ss_", mesh);
+            audit();
        }
     }
 
@@ -217,13 +223,13 @@ SUITE (Exodus)
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 20);
             int local, global;
-            local = mesh->count_entities(stk::mesh::Node, STK_mesh::OWNED);
+            local = mesh->count_entities(stk::mesh::Node, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 11*11*11);
-            local = mesh->count_entities(stk::mesh::Face, STK_mesh::OWNED);
+            local = mesh->count_entities(stk::mesh::Face, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 10*10*11*3);
-            local = mesh->count_entities(stk::mesh::Element, STK_mesh::OWNED);
+            local = mesh->count_entities(stk::mesh::Element, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 10*10*10);
 
@@ -231,21 +237,24 @@ SUITE (Exodus)
 
             p = mesh->get_set("side set 1", stk::mesh::Face);
             CHECK(p != NULL);
-            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            local = mesh->count_entities(*p, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 600);
             
             p = mesh->get_set("element block 20000", stk::mesh::Element);
             CHECK(p != NULL);
-            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            local = mesh->count_entities(*p, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 9);
 
             p = mesh->get_set("node set 103", stk::mesh::Node);
             CHECK(p != NULL);
-            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            local = mesh->count_entities(*p, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 121);
+
+            Auditor audit("hex_11x11x11_ss.par", mesh);
+            audit();
         }
     }            
 
@@ -257,13 +266,13 @@ SUITE (Exodus)
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
             CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
             int local, global;
-            local = mesh->count_entities(stk::mesh::Node, STK_mesh::OWNED);
+            local = mesh->count_entities(stk::mesh::Node, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 4*4*4);
-            local = mesh->count_entities(stk::mesh::Face, STK_mesh::OWNED);
+            local = mesh->count_entities(stk::mesh::Face, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 3*3*4*3);
-            local = mesh->count_entities(stk::mesh::Element, STK_mesh::OWNED);
+            local = mesh->count_entities(stk::mesh::Element, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 3*3*3);
 
@@ -271,21 +280,24 @@ SUITE (Exodus)
 
             p = mesh->get_set(1, stk::mesh::Face);
             CHECK(p != NULL);
-            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            local = mesh->count_entities(*p, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 54);
             
             p = mesh->get_set(20000, stk::mesh::Element);
             CHECK(p != NULL);
-            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            local = mesh->count_entities(*p, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 9);
 
             p = mesh->get_set(103, stk::mesh::Node);
             CHECK(p != NULL);
-            local = mesh->count_entities(*p, STK_mesh::OWNED);
+            local = mesh->count_entities(*p, OWNED);
             comm.SumAll(&local, &global, 1);
             CHECK_EQUAL(global, 16);
+
+            Auditor audit("hex_4x4x4_ss.par", mesh);
+            audit();
         }
     }            
 

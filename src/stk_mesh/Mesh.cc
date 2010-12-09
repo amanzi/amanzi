@@ -100,6 +100,9 @@ Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) co
  * tell it not to.  So each remotely owned face is checked to see if
  * it's related to a locally-owned cell.  If not, it's removed from
  * the list.
+ *
+ * FIXME: this appears to be unnecessary; it was based on my
+ * misconception of what needed to be ghosted.
  * 
  * @param entities 
  */
@@ -177,7 +180,7 @@ Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank 
                      Entity_vector& entities) const
 {
     stk::mesh::get_selected_entities (selector, bulk_data_->buckets (rank), entities);
-    remove_bad_ghosts_(entities);
+    // remove_bad_ghosts_(entities);
 }
 
 
@@ -191,7 +194,6 @@ void
 Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
     // Look up element from global id.
-    const int node_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
     const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
     const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
 
@@ -205,7 +207,8 @@ Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
     stk::mesh::PairIterRelation faces = entity->relations( face_rank );
     for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
     {
-        ids.push_back (it->entity ()->identifier ());
+        stk::mesh::EntityId gid(it->entity ()->identifier ());
+        ids.push_back (gid);
     }
 
     ASSERT (ids.size () == topo->side_count);
@@ -252,6 +255,33 @@ void Mesh::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 
     ASSERT (ids.size () == 4);
 }
+
+// -------------------------------------------------------------
+// Mesh::face_to_elements
+// -------------------------------------------------------------
+void
+Mesh::face_to_elements(stk::mesh::EntityId face, Entity_Ids& ids) const
+{
+    const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
+    const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
+
+    stk::mesh::Entity *entity = bulk_data_->get_entity(face_rank, face);
+    ASSERT (entity->identifier () == face);
+
+    stk::mesh::PairIterRelation cells = entity->relations( cell_rank );
+    ASSERT(!cells.empty());
+
+    for (stk::mesh::PairIterRelation::iterator it = cells.begin (); it != cells.end (); ++it)
+    {
+        stk::mesh::EntityId gid(it->entity ()->identifier ());
+        ids.push_back (gid);
+    }
+
+    ASSERT(ids.size() <= 2);
+}
+    
+
+
 
 double const * Mesh::coordinates (stk::mesh::Entity* node) const
 {
@@ -332,7 +362,7 @@ void Mesh::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int> &i
 
 stk::mesh::Selector Mesh::selector_ (Element_Category category) const
 {
-    ASSERT (valid_category (category));
+    ASSERT (category >= OWNED && category <= USED);
 
     stk::mesh::Selector owned(meta_data_->locally_owned_part());
     stk::mesh::Selector s;

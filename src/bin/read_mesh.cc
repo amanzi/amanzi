@@ -21,9 +21,9 @@ void dump_mesh (const STK_mesh::Mesh& mesh)
 
     std::cout << "Mesh dump:" << std::endl;
     std::cout << "----------" << std::endl;
-    std::cout << "Number of nodes:    " << mesh.count_entities (stk::mesh::Node,    STK_mesh::OWNED) << std::endl;
-    std::cout << "Number of faces:    " << mesh.count_entities (stk::mesh::Face,    STK_mesh::OWNED) << std::endl;
-    std::cout << "Number of elements: " << mesh.count_entities (stk::mesh::Element, STK_mesh::OWNED) << std::endl;
+    std::cout << "Number of nodes:    " << mesh.count_entities (stk::mesh::Node,    OWNED) << std::endl;
+    std::cout << "Number of faces:    " << mesh.count_entities (stk::mesh::Face,    OWNED) << std::endl;
+    std::cout << "Number of elements: " << mesh.count_entities (stk::mesh::Element, OWNED) << std::endl;
     std::cout << std::endl;
 
     std::cout << "Number of sets: " << std::endl;
@@ -44,7 +44,7 @@ void dump_mesh (const STK_mesh::Mesh& mesh)
         std::cout << "  Kind: "        << set_id.first
                   << "    Id: "        << set_id.second
                   << "    Part name: " << part->name ()
-                  << "    Size: "      << mesh.count_entities (*part, STK_mesh::OWNED)
+                  << "    Size: "      << mesh.count_entities (*part, OWNED)
                   << std::endl;
 
     }
@@ -60,9 +60,9 @@ void dump_maps (const STK_mesh::Mesh_maps_stk& maps)
     std::cout << "Maps dump:" << std::endl;
     std::cout << "----------" << std::endl;
 
-    std::cout << "Number of nodes: " << maps.count_entities (Mesh_data::NODE, STK_mesh::OWNED) << std::endl;
-    std::cout << "Number of faces: " << maps.count_entities (Mesh_data::FACE, STK_mesh::OWNED) << std::endl;
-    std::cout << "Number of cells: " << maps.count_entities (Mesh_data::CELL, STK_mesh::OWNED) << std::endl;
+    std::cout << "Number of nodes: " << maps.count_entities (Mesh_data::NODE, OWNED) << std::endl;
+    std::cout << "Number of faces: " << maps.count_entities (Mesh_data::FACE, OWNED) << std::endl;
+    std::cout << "Number of cells: " << maps.count_entities (Mesh_data::CELL, OWNED) << std::endl;
     std::cout << std::endl;
 
     std::cout << "Number of sets: " << std::endl;
@@ -84,9 +84,9 @@ void dump_maps (const STK_mesh::Mesh_maps_stk& maps)
          it != block_ids.end ();
          ++it)
     {
-        const unsigned int block_size = maps.get_set_size (*it, Mesh_data::CELL, STK_mesh::OWNED);
+        const unsigned int block_size = maps.get_set_size (*it, Mesh_data::CELL, OWNED);
         std::vector<unsigned int> local_cell_numbers (block_size);
-        maps.get_set (*it, Mesh_data::CELL, STK_mesh::OWNED, local_cell_numbers.begin (), local_cell_numbers.end ());
+        maps.get_set (*it, Mesh_data::CELL, OWNED, local_cell_numbers.begin (), local_cell_numbers.end ());
 
         std::ostringstream word_up;
         word_up << "Element block: " << (*it) << "\n"
@@ -110,9 +110,9 @@ void dump_maps (const STK_mesh::Mesh_maps_stk& maps)
          it != side_set_ids.end ();
          ++it)
     {
-        const unsigned int side_set_size = maps.get_set_size (*it, Mesh_data::FACE, STK_mesh::OWNED);
+        const unsigned int side_set_size = maps.get_set_size (*it, Mesh_data::FACE, OWNED);
         std::vector<unsigned int> local_face_numbers (side_set_size);
-        maps.get_set (*it, Mesh_data::FACE, STK_mesh::OWNED, local_face_numbers.begin (), local_face_numbers.end ());
+        maps.get_set (*it, Mesh_data::FACE, OWNED, local_face_numbers.begin (), local_face_numbers.end ());
 
         std::ostringstream word_up;
         word_up << "Side set: " << (*it) << "\n"

@@ -2,7 +2,7 @@
 #define _MESH_HH_
 
 #include <iosfwd>
-#include "Element_category.hh"
+#include "Mesh_maps_base.hh"
 #include "Entity_map.hh"
 #include "Data_structures.hh"
 
@@ -90,6 +90,7 @@ public:
     void element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const;
     void element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const;
     void face_to_nodes    (stk::mesh::EntityId element, Entity_Ids& ids) const;
+    void face_to_elements (stk::mesh::EntityId element, Entity_Ids& ids) const;
     
     double const * coordinates (stk::mesh::EntityId node) const;
     double const * coordinates (stk::mesh::Entity* node)  const;

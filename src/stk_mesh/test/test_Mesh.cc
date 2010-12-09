@@ -5,7 +5,6 @@
 #include "../Mesh.hh"
 #include "../Mesh_factory.hh"
 #include "../Mesh_maps_stk.hh"
-#include "../Element_category.hh"
 
 #include "Element_block.hh"
 #include "Coordinates.hh"
@@ -27,25 +26,25 @@ SUITE (Mesh)
         if (my_pid == 0)
         {
             CHECK_EQUAL (mesh->rank_id (), my_pid);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, STK_mesh::OWNED), 4);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    STK_mesh::OWNED), 21);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    STK_mesh::OWNED), 20);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, OWNED), 4);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    OWNED), 21);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    OWNED), 20);
 
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, STK_mesh::USED), 4);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    STK_mesh::USED), 21);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    STK_mesh::USED), 20);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, USED), 4);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    USED), 21);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    USED), 20);
 
         }
         else
         {
             CHECK_EQUAL (mesh->rank_id (), my_pid);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    STK_mesh::OWNED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    STK_mesh::OWNED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, STK_mesh::OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, OWNED), 0);
 
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    STK_mesh::USED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    STK_mesh::USED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, STK_mesh::USED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    USED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    USED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, USED), 0);
 
         }
 

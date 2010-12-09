@@ -1,6 +1,8 @@
 #ifndef _MESH_MAPS_STK_H_
 #define _MESH_MAPS_STK_H_
 
+#include <map>
+
 #include "Mesh_maps_base.hh"
 #include "Mesh.hh"
 #include "Entity_map.hh"
@@ -25,18 +27,17 @@ namespace STK_mesh
     const Entity_map& entity_map_;
     Epetra_MpiComm communicator_;
 
-    void update_internals_ ();
-    void clear_internals_ ();
-
     // Maps, Accessors and setters.
     // ----------------------------
-    std::auto_ptr<Epetra_Map> maps_ [6];
-    const Epetra_Map& map_  (Mesh_data::Entity_kind kind, bool include_ghost) const;
-    unsigned int map_index_ (Mesh_data::Entity_kind kind, bool include_ghost) const;
-    void assign_map_        (Mesh_data::Entity_kind kind, bool include_ghost, Epetra_Map *map);
 
+    /// A thing to relate Epetra_Maps to mesh entities
+    typedef std::map< Mesh_data::Entity_kind, Teuchos::RCP<Epetra_Map> > MapSet;
+
+    MapSet map_owned_;          /**< The Epetra_Map's for owned entities */
+    MapSet map_used_;           /**< The Epetra_Map's for used (owned + ghost) entities */
+    
+    /// Build and store the required Epetra_Map instances
     void build_maps_ ();
-    void build_tables_ ();
 
     stk::mesh::EntityRank kind_to_rank_ (Mesh_data::Entity_kind kind) const {
       return entity_map_.kind_to_rank (kind);
@@ -44,21 +45,11 @@ namespace STK_mesh
 
     bool valid_entity_kind_ (Mesh_data::Entity_kind kind) const;
 
-    // Local-id tables of entities
-    std::vector<unsigned int> cell_to_face_;
-    std::vector<unsigned int> cell_to_node_;
-    std::vector<unsigned int> face_to_node_;
-
-
     // Global to local index maps and associated bookkeeping.
-    Index_map global_to_local_maps_ [3];
     static unsigned int num_kinds_;
     static Mesh_data::Entity_kind kinds_ [3];
     unsigned int kind_to_index_ (Mesh_data::Entity_kind type) const;
-    const Index_map& kind_to_map_ (Mesh_data::Entity_kind kind) const;
     Mesh_data::Entity_kind index_to_kind_ (unsigned int index) const;
-
-    unsigned int global_to_local_ (unsigned int global_id, Mesh_data::Entity_kind kind) const;
 
     // Builds the global->local maps.
     template <typename F, typename D, typename M>
@@ -66,6 +57,9 @@ namespace STK_mesh
 
     template <typename IT>
     void cell_to_faces (unsigned int cell, IT begin, IT end) const;
+
+    template <typename IT>
+    void cell_to_face_dirs (unsigned int cell, IT begin, IT end) const;
 
     template <typename IT>
     void cell_to_nodes (unsigned int cell, IT begin, IT end) const;
@@ -86,12 +80,18 @@ namespace STK_mesh
     void get_set_ids (Mesh_data::Entity_kind kind, IT begin, IT end) const;
 
     template <typename IT>
+    void get_set (stk::mesh::Part& set_part, Mesh_data::Entity_kind kind, Element_Category category,
+                  IT begin, IT end) const;
+
+    template <typename IT>
     void get_set (unsigned int set_id, Mesh_data::Entity_kind kind, Element_Category category,
                   IT begin, IT end) const;
 
     template <typename IT>
     void get_set (const char* name, Mesh_data::Entity_kind kind, Element_Category category,
                   IT begin, IT end) const;
+
+    const Epetra_Map& get_map_(const Mesh_data::Entity_kind& kind, const bool& include_ghost) const;
 
   public:
 
@@ -223,17 +223,17 @@ namespace STK_mesh
 
   const Epetra_Map& Mesh_maps_stk::cell_map (bool include_ghost) const
   {
-    return map_ (Mesh_data::CELL, include_ghost);
+    return get_map_(Mesh_data::CELL, include_ghost);
   }
 
   const Epetra_Map& Mesh_maps_stk::face_map (bool include_ghost) const
   {
-    return map_ (Mesh_data::FACE, include_ghost);
+    return get_map_(Mesh_data::FACE, include_ghost);
   }
 
   const Epetra_Map& Mesh_maps_stk::node_map (bool include_ghost) const
   {
-    return map_ (Mesh_data::NODE, include_ghost);
+    return get_map_(Mesh_data::NODE, include_ghost);
   }
 
 

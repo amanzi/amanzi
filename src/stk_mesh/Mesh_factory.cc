@@ -22,7 +22,6 @@ namespace bl = boost::lambda;
 
 // STK_mesh
 #include "Element_field_types.hh"
-#include "Element_category.hh"
 #include "Cell_topology.hh"
 
 // Trilinos
@@ -949,9 +948,9 @@ Mesh_factory::create_cell_ghosting_(void)
     }
 
     send_list.clear();
-    // bulk_data_->modification_begin();
-    // bulk_data_->change_ghosting(cell_ghosting, send_list, faces_to_remove);
-    // bulk_data_->modification_end();
+    bulk_data_->modification_begin();
+    bulk_data_->change_ghosting(cell_ghosting, send_list, faces_to_remove);
+    bulk_data_->modification_end();
     
 
     
