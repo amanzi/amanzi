@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December  9, 2010 by William A. Perkins
-// Last Change: Thu Dec  9 08:26:53 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Dec  9 12:38:45 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -71,7 +71,9 @@ public:
         CHECK(audit->check_face_to_nodes_consistency() == 0);
         CHECK(audit->check_cell_to_face_dirs_basic() == 0);
         CHECK(audit->check_cell_degeneracy() == 0);
+        // This fails when parallel.  Run it anyway to get the log.
         // CHECK(audit->check_cell_to_faces() == 0);
+        audit->check_cell_to_faces();
         CHECK(audit->check_node_to_coordinates() == 0);
         CHECK(audit->check_cell_to_coordinates() == 0);
         CHECK(audit->check_face_to_coordinates() == 0);
