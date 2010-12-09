@@ -66,7 +66,7 @@
     <Parameter name="verbosity level" type="int" value="10"/>  
 
     <ParameterList name="Transport BCs">
-      <Parameter name="number of BCs" type="int" value="1"/>
+      <Parameter name="number of BCs" type="int" value="6"/>
       <!-- source -->
       <ParameterList name="BC 0">
 	<Parameter name="Side set ID" type="int" value="3"/>
@@ -76,6 +76,51 @@
 	<Parameter name="Component 2" type="double" value="7.1028E-05"/>  <!-- HPO4-2 -->
 	<Parameter name="Component 3" type="double" value="2.5280E-04"/>  <!-- SiO2(aq) -->
 	<Parameter name="Component 4" type="double" value="3.5414E-05"/>  <!-- UO2++ -->
+     </ParameterList>  
+      <ParameterList name="BC 1">
+	<Parameter name="Side set ID" type="int" value="0"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="6.5862E-09"/> <!-- Al+++ -->
+        <Parameter name="Component 1" type="double" value="2.1593E-08"/> <!-- H+ -->
+        <Parameter name="Component 2" type="double" value="1.0000E-06"/> <!-- HPO4-2 -->
+        <Parameter name="Component 3" type="double" value="1.8703E-04"/> <!-- SiO2(aq) -->
+        <Parameter name="Component 4" type="double" value="1.0000E-15"/> <!-- UO2++ -->
+     </ParameterList>  
+      <ParameterList name="BC 2">
+	<Parameter name="Side set ID" type="int" value="1"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="6.5862E-09"/> <!-- Al+++ -->
+        <Parameter name="Component 1" type="double" value="2.1593e-08"/> <!-- H+ -->
+        <Parameter name="Component 2" type="double" value="1.0000E-06"/> <!-- HPO4-2 -->
+        <Parameter name="Component 3" type="double" value="1.8703E-04"/> <!-- SiO2(aq) -->
+        <Parameter name="Component 4" type="double" value="1.0000E-15"/> <!-- UO2++ -->
+     </ParameterList>  
+      <ParameterList name="BC 3">
+	<Parameter name="Side set ID" type="int" value="2"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="6.5862E-09"/> <!-- Al+++ -->
+        <Parameter name="Component 1" type="double" value="2.1593E-08"/> <!-- H+ -->
+        <Parameter name="Component 2" type="double" value="1.0000E-06"/> <!-- HPO4-2 -->
+        <Parameter name="Component 3" type="double" value="1.8703E-04"/> <!-- SiO2(aq) -->
+        <Parameter name="Component 4" type="double" value="1.0000E-15"/> <!-- UO2++ -->
+     </ParameterList>  
+      <ParameterList name="BC 4">
+	<Parameter name="Side set ID" type="int" value="4"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="6.5862E-09"/> <!-- Al+++ -->
+        <Parameter name="Component 1" type="double" value="2.1593E-08"/> <!-- H+ -->
+        <Parameter name="Component 2" type="double" value="1.0000E-06"/> <!-- HPO4-2 -->
+        <Parameter name="Component 3" type="double" value="1.8703E-04"/> <!-- SiO2(aq) -->
+        <Parameter name="Component 4" type="double" value="1.0000E-15"/> <!-- UO2++ -->
+     </ParameterList>  
+      <ParameterList name="BC 5">
+	<Parameter name="Side set ID" type="int" value="5"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="6.5862E-09"/> <!-- Al+++ -->
+        <Parameter name="Component 1" type="double" value="2.1593E-08"/> <!-- H+ -->
+        <Parameter name="Component 2" type="double" value="1.0000E-06"/> <!-- HPO4-2 -->
+        <Parameter name="Component 3" type="double" value="1.8703E-04"/> <!-- SiO2(aq) -->
+        <Parameter name="Component 4" type="double" value="1.0000E-15"/> <!-- UO2++ -->
      </ParameterList>  
     </ParameterList>
   </ParameterList>
@@ -108,7 +153,7 @@
         <ParameterList name="Minerals">
           <Parameter name="Mineral 0" type="double" value="0.15"/>  <!-- Kaolinite -->
           <Parameter name="Mineral 1" type="double" value="0.21"/>  <!-- Quartz -->
-          <Parameter name="Mineral 2" type="double" value="0.0001"/>   <!-- (UO2)3(PO4)2.4H2O -->
+          <Parameter name="Mineral 2" type="double" value="0.0"/>   <!-- (UO2)3(PO4)2.4H2O -->
         </ParameterList>
       </ParameterList>
     </ParameterList>
