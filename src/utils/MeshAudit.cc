@@ -1328,7 +1328,7 @@ int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
 
   // Basic sanity check on set IDs.
   int ierr_loc = check_set_ids(kind);
-  if (comm.NumProc() > 1) comm.MaxAll(&ierr_loc, &ierr, 1);
+  comm.MaxAll(&ierr_loc, &ierr, 1);
   if (ierr) return 1;
 
   // Check set IDs are same across all processes.
@@ -1369,7 +1369,7 @@ int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
 
     // If anyone failed, everyone bails on further tests of this set.
     if (ierr1 != 0 || ierr2 != 0) status_loc = ierr1 = 1;
-    if (comm.NumProc() > 1) comm.MaxAll(&ierr1, &ierr, 1);
+    comm.MaxAll(&ierr1, &ierr, 1);
     if (ierr) continue;
 
     // Verify the used set relates correctly to the owned set.
@@ -1379,7 +1379,7 @@ int MeshAudit::check_sets(Mesh_data::Entity_kind kind,
     // OUGHT TO DO TESTING OF THE GHOST SETS
   }
 
-  if (comm.NumProc() > 1) comm.MaxAll(&status_loc, &status, 1);
+  comm.MaxAll(&status_loc, &status, 1);
   return status;
 }
 

@@ -85,7 +85,9 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
   XMLParameters();
 
   InitializeInternalStorage(&current_state_);
+/* geh comment: swapping current and saved state results in errors in geochemistry; skip for now.
   InitializeInternalStorage(&saved_state_);
+*/
 
   // get initial conditions for minerals etc
   LocalInitialConditions();
@@ -126,6 +128,7 @@ void Chemistry_PK::InitializeChemistry(void)
 
     // solve for initial free-ion concentrations
     chem_->Speciate(beaker_components_, beaker_parameters_);
+    chem_->UpdateComponents(&beaker_components_);
     if (verbosity() > kTerse) {
       std::cout << "\nTest solution of initial conditions in cell 0:"
                 << std::endl;
@@ -156,6 +159,7 @@ void Chemistry_PK::InitializeChemistry(void)
     try {
     // solve for initial free-ion concentrations
       chem_->Speciate(beaker_components_, beaker_parameters_);
+      chem_->UpdateComponents(&beaker_components_);
     }
     catch (ChemistryException& geochem_error) {
       std::cout << geochem_error.what() << std::endl;
@@ -163,6 +167,14 @@ void Chemistry_PK::InitializeChemistry(void)
     }
     // if successful copy back
     CopyBeakerComponentsToCell(icell);
+
+#ifdef GLENN_DEBUG
+    if (icell % (num_cells/10) == 0) {
+      std::cout << "  " << icell * 100 / num_cells
+              << "%" << std::endl;
+    }
+#endif
+
   }
 
 } // end InitializeChemistry()
@@ -332,6 +344,7 @@ void Chemistry_PK::SwapCurrentAndSavedStorage(void)
 {
   InternalStorage temp;
 
+/* geh comment: swapping current and saved state creates errors in geochemistry; skip for now
   std::swap(current_state_.porosity, saved_state_.porosity);
 
   std::swap(current_state_.water_saturation, 
@@ -358,7 +371,7 @@ void Chemistry_PK::SwapCurrentAndSavedStorage(void)
 
   std::swap(current_state_.total_sorbed, 
             saved_state_.total_sorbed);
-
+end geh comment */
   //  end SwapCurrentAndSavedStorage()
 }
 
@@ -437,16 +450,20 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.free_ion_species);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                   mesh_block_list, mesh_block_ID,
                                   saved_state_.free_ion_species);
+*/
       } else {
         // need to manually add an initial condition
         std::vector<double> values(number_free_ion(), 1.0e-9);
         set_const_values_for_block(values, number_free_ion(),
                                    current_state_.free_ion_species, mesh_block_ID); 
+/* geh comment
         set_const_values_for_block(values, number_free_ion(),
                                    saved_state_.free_ion_species, mesh_block_ID); 
+*/
       }
 
       //
@@ -459,9 +476,11 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.minerals);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 saved_state_.minerals);
+*/
 
       }
 
@@ -475,9 +494,11 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.ion_exchange_sites);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 saved_state_.ion_exchange_sites);
+*/
       }
 
       //
@@ -490,9 +511,11 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.sorption_sites);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 saved_state_.sorption_sites);
+*/
       }
     }  // for (mesh blocks)
   }  // if(initial conditions)
@@ -751,6 +774,12 @@ void Chemistry_PK::advance(
   // now... should get data from the mesh...?
   int num_cells = chemistry_state_->get_porosity()->MyLength();
 
+  int max_iterations = 0;
+  int imax = -999;
+  int ave_iterations = 0;
+  int imin = -999;
+  int min_iterations = 10000000;
+
   for (int cell = 0; cell < num_cells; cell++) {
     // copy state data into the beaker data structures
     CopyCellToBeakerComponents(cell, tcc_star);
@@ -758,14 +787,39 @@ void Chemistry_PK::advance(
 
     try {
       // chemistry computations for this cell
-      chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);
+#ifdef GLENN_DEBUG
+      chem_->CopyComponents(beaker_components_,&beaker_components_copy_);
+#endif
+      int num_iterations = chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);
+      if (max_iterations < num_iterations) {
+        max_iterations = num_iterations;
+        imax = cell;
+      }
+      if (min_iterations > num_iterations) {
+        min_iterations = num_iterations;
+        imin = cell;
+      }
+      ave_iterations += num_iterations;
     }
     catch (ChemistryException& geochem_error) {
       std::cout << "ERROR: Chemistry_PR::advance() "
                 << "cell[" << cell << "]: " << std::endl;
       std::cout << geochem_error.what();
       chem_->DisplayTotalColumnHeaders();
+      std::cout << "\nFailed Solution" << std::endl;
+      std::cout << "  Total Component Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_.total);
+      std::cout << "  Free Ion Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_.free_ion);
+      std::cout << "  Total Sorbed Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_.total_sorbed);
+      std::cout << "\nPrevious Solution" << std::endl;
+      std::cout << "  Total Component Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total);
+      std::cout << "  Free Ion Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.free_ion);
+      std::cout << "  Total Sorbed Concentrations" << std::endl;
+      chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total_sorbed);
       std::cout << std::endl;
       set_status(geochem_error.error_status());
     }
@@ -775,7 +829,25 @@ void Chemistry_PK::advance(
 
     // TODO: was porosity etc changed? copy someplace
 
+#ifdef GLENN_DEBUG
+    if (cell % (num_cells/10) == 0) {
+      std::cout << "  " << cell * 100 / num_cells
+              << "%" << std::endl;
+    }
+#endif
+
   }  // for(cells)
+
+#ifdef GLENN_DEBUG
+  if (chem_->verbosity() == kDebugChemistryProcessKernel) {
+    std::cout << "  Chemistry_PK::advance() : "
+              << "max iterations - " << max_iterations << " " << "  cell id: " << imax << std::endl;
+    std::cout << "  Chemistry_PK::advance() : "
+              << "min iterations - " << min_iterations << " " << "  cell id: " << imin << std::endl;
+    std::cout << "  Chemistry_PK::advance() : "
+              << "ave iterations - " << float(ave_iterations)/num_cells << std::endl;
+  }
+#endif
 
   if (chem_->verbosity() == kDebugChemistryProcessKernel) {
     // dumping the values of the final cell. not very helpful by itself,
@@ -832,7 +904,10 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
     // for now, assume we are just looking at free ion conc of primaries
     for (unsigned int i = 0; i < aux_names_.size(); i++) {
       double* cell_aux_data = (*aux_data_)[i];
+/* geh: swapping states results in errors; use current state for now
       double* cell_free_ion = (*saved_state_.free_ion_species)[aux_index_.at(i)];
+*/
+      double* cell_free_ion = (*current_state_.free_ion_species)[aux_index_.at(i)];
       cell_aux_data[cell] = cell_free_ion[cell];
       if (aux_names_.at(i) == "pH") {
         cell_aux_data[cell] = -std::log10(cell_aux_data[cell]);
