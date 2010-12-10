@@ -85,7 +85,9 @@ Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
   XMLParameters();
 
   InitializeInternalStorage(&current_state_);
+/* geh comment: swapping current and saved state results in errors in geochemistry; skip for now.
   InitializeInternalStorage(&saved_state_);
+*/
 
   // get initial conditions for minerals etc
   LocalInitialConditions();
@@ -157,6 +159,7 @@ void Chemistry_PK::InitializeChemistry(void)
     try {
     // solve for initial free-ion concentrations
       chem_->Speciate(beaker_components_, beaker_parameters_);
+      chem_->UpdateComponents(&beaker_components_);
     }
     catch (ChemistryException& geochem_error) {
       std::cout << geochem_error.what() << std::endl;
@@ -341,6 +344,7 @@ void Chemistry_PK::SwapCurrentAndSavedStorage(void)
 {
   InternalStorage temp;
 
+/* geh comment: swapping current and saved state creates errors in geochemistry; skip for now
   std::swap(current_state_.porosity, saved_state_.porosity);
 
   std::swap(current_state_.water_saturation, 
@@ -367,7 +371,7 @@ void Chemistry_PK::SwapCurrentAndSavedStorage(void)
 
   std::swap(current_state_.total_sorbed, 
             saved_state_.total_sorbed);
-
+end geh comment */
   //  end SwapCurrentAndSavedStorage()
 }
 
@@ -446,16 +450,20 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.free_ion_species);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                   mesh_block_list, mesh_block_ID,
                                   saved_state_.free_ion_species);
+*/
       } else {
         // need to manually add an initial condition
         std::vector<double> values(number_free_ion(), 1.0e-9);
         set_const_values_for_block(values, number_free_ion(),
                                    current_state_.free_ion_species, mesh_block_ID); 
+/* geh comment
         set_const_values_for_block(values, number_free_ion(),
                                    saved_state_.free_ion_species, mesh_block_ID); 
+*/
       }
 
       //
@@ -468,9 +476,11 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.minerals);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 saved_state_.minerals);
+*/
 
       }
 
@@ -484,9 +494,11 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.ion_exchange_sites);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 saved_state_.ion_exchange_sites);
+*/
       }
 
       //
@@ -499,9 +511,11 @@ void Chemistry_PK::LocalInitialConditions(void)
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.sorption_sites);
+/* geh comment
         ExtractInitialCondition(type, keyword, number_to_find, block,
                                 mesh_block_list, mesh_block_ID,
                                 saved_state_.sorption_sites);
+*/
       }
     }  // for (mesh blocks)
   }  // if(initial conditions)
@@ -890,7 +904,10 @@ Teuchos::RCP<Epetra_MultiVector> Chemistry_PK::get_extra_chemistry_output_data()
     // for now, assume we are just looking at free ion conc of primaries
     for (unsigned int i = 0; i < aux_names_.size(); i++) {
       double* cell_aux_data = (*aux_data_)[i];
+/* geh: swapping states results in errors; use current state for now
       double* cell_free_ion = (*saved_state_.free_ion_species)[aux_index_.at(i)];
+*/
+      double* cell_free_ion = (*current_state_.free_ion_species)[aux_index_.at(i)];
       cell_aux_data[cell] = cell_free_ion[cell];
       if (aux_names_.at(i) == "pH") {
         cell_aux_data[cell] = -std::log10(cell_aux_data[cell]);
