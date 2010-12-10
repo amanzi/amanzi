@@ -33,12 +33,14 @@ Mesh::Mesh (int space_dimension,
     meta_data_ (meta_data),
     bulk_data_ (bulk_data),
     set_to_part_ (set_to_part),
-    coordinate_field_ (coordinate_field)
+    coordinate_field_ (coordinate_field),
+    face_owner_(meta_data_->get_field<Id_field_type>("FaceOwner"))
 {
 
     ASSERT (dimension_ok_ ());
     ASSERT (meta_data_.get ());
     ASSERT (bulk_data_.get ());
+    ASSERT (face_owner_ != NULL);
 }
 
 // Information Getters
@@ -212,6 +214,31 @@ Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
     }
 
     ASSERT (ids.size () == topo->side_count);
+}
+
+void
+Mesh::element_to_face_dirs(stk::mesh::EntityId element, 
+                           std::vector<int>& dirs) const
+{
+    const int me = communicator_.MyPID();
+    const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
+    const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
+
+    stk::mesh::Entity *entity = bulk_data_->get_entity(cell_rank, element);
+
+    ASSERT (entity->identifier () == element);
+
+    stk::mesh::PairIterRelation faces = entity->relations( face_rank );
+    for (stk::mesh::PairIterRelation::iterator it = faces.begin (); it != faces.end (); ++it)
+    {
+        stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
+            stk::mesh::field_data<Id_field_type>(*face_owner_, *(it->entity()));
+        int dir(1);
+        if (*owner != element) {
+            dir = -1;
+        }
+        dirs.push_back (dir);
+    }
 }
 
 /** 

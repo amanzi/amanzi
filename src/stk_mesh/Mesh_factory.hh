@@ -78,7 +78,9 @@ private:
     void add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part);
 
     const stk::mesh::Entity&
-    declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index);
+    declare_face_(stk::mesh::EntityVector& nodes, 
+                  const unsigned int& index,
+                  const unsigned int& owner_index);
     
     /// Generate the mesh faces local to this processor
     int generate_local_faces_(const int& fidx0, const bool& justcount = false);
@@ -124,6 +126,7 @@ private:
     stk::mesh::Part* elements_part_;
 
     Vector_field_type *coordinate_field_;
+    Id_field_type *face_owner_;
 
     stk::mesh::Selector universal_selector_;
 

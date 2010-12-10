@@ -147,6 +147,11 @@ void Mesh_factory::build_meta_data_ (const Mesh_data::Data& data, const Mesh_dat
     // Add a faces part.
     faces_part_ = &meta_data_->declare_part ("Element sides", face_rank_);
 
+    // Add a field to faces that represents the face "owner"
+    
+    face_owner_ = &( meta_data_->declare_field< Id_field_type >("FaceOwner") );
+    stk::mesh::put_field(*face_owner_, face_rank_, *faces_part_);
+
     for (int side_set = 0; side_set < num_side_sets; ++side_set)
         side_sets_.push_back (add_side_set_ (data.side_set (side_set)));
 
@@ -286,18 +291,8 @@ void Mesh_factory::put_coordinate_field_ (stk::mesh::Part& part, unsigned int sp
  * Caller is responsible for putting the ::bulk_data_ into
  * modification state.
  * 
- *
- * The specified @c coordinate_data is for the nodes @em used on the
- * local processor.  The coordinates can be set only for the nodes
- * that are owned by the local process (I think). When the nodes were
- * declared in element connectivity, shared nodes were declared on
- * multiple processors.  When an entity is declared on multiple
- * processors, the lowest rank processor in that set gets
- * ownership. At least, we can expect that one of the processes in
- * that set got ownership of each shared node.  We can also expect
- * that the list of nodes owned by the local process got all mixed up.
- * We need to use the specified @c vertmap to identify the current
- * local index given the global index.
+ * The specified @c coordinate_data is for the nodes involved in cells
+ * owned by the local processor.  
  * 
  * @param coordinate_data coordinates of nodes originally declared on this processor
  * @param vertmap local to global node index map for nodes originally declared on this processor
@@ -306,31 +301,34 @@ void Mesh_factory::add_coordinates_ (const Mesh_data::Coordinates<double>& coord
                                      const Epetra_Map& vertmap)
 {
 
-    // Select the local nodes
-    stk::mesh::Selector owned(meta_data_->locally_owned_part());
+    // Select all the local nodes this process knows about
+    stk::mesh::Selector owned(meta_data_->universal_part ());
     Entity_vector local_nodes;
     stk::mesh::get_selected_entities (owned,
                                       bulk_data_->buckets (stk::mesh::Node), 
                                       local_nodes);
 
-    // Loop over the local nodes, if the node is owned by this
-    // process, set the coordinate
+    // Loop over the nodes, if the node is used by the cells owned by
+    // this process, set the coordinate
     int node_coordinate_index = 0;
     for (Entity_vector::const_iterator node_it = local_nodes.begin ();
          node_it != local_nodes.end (); ++node_it)
     {
         int global_vidx((*node_it)->identifier());
-        ASSERT (vertmap.MyGID(global_vidx));
-        int local_vidx(vertmap.LID(global_vidx));
-        double * coordinate_field_data = 
-            stk::mesh::field_data (*coordinate_field_, **node_it);
-        coordinate_data (local_vidx, coordinate_field_data);
-        // std::cerr << "add_coordinates: node " << global_vidx << " (" 
-        //           << local_vidx << " local): " 
-        //           << coordinate_field_data[0] << ", "
-        //           << coordinate_field_data[1] << ", "
-        //           << coordinate_field_data[2] << ", "
-        //           << std::endl;
+        if (vertmap.MyGID(global_vidx)) {
+            // only set the coordinates for the nodes this process
+            // knows about
+            int local_vidx(vertmap.LID(global_vidx));
+            double * coordinate_field_data = 
+                stk::mesh::field_data (*coordinate_field_, **node_it);
+            coordinate_data (local_vidx, coordinate_field_data);
+            // std::cerr << "add_coordinates: node " << global_vidx << " (" 
+            //           << local_vidx << " local): " 
+            //           << coordinate_field_data[0] << ", "
+            //           << coordinate_field_data[1] << ", "
+            //           << coordinate_field_data[2] << ", "
+            //           << std::endl;
+        }
     }
 }
 
@@ -533,7 +531,9 @@ Mesh_factory::get_element_side_face_(const stk::mesh::Entity& element, const uns
  * @return the declared face entity
  */
 const stk::mesh::Entity&
-Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& index)
+Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, 
+                            const unsigned int& index, 
+                            const unsigned int& owner_index)
 {
     stk::mesh::PartVector p;
     p.push_back(faces_part_);
@@ -541,11 +541,15 @@ Mesh_factory::declare_face_(stk::mesh::EntityVector& nodes, const unsigned int& 
     stk::mesh::Entity& face = 
         bulk_data_->declare_entity(face_rank_, index, p);
 
+    stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
+        stk::mesh::field_data(*face_owner_, face);
+    *owner = owner_index;
+
     unsigned int r(0);
     for (stk::mesh::EntityVector::iterator n = nodes.begin(); n != nodes.end(); n++) {
         bulk_data_->declare_relation(face, **n, r++);
     }
-    
+
     return face;
 }
 
@@ -677,14 +681,17 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
                 // process, only make the face if this processor's
                 // rank is less
                 
-                if (rcell != NULL && rcell->owner_rank() > me) {
-                    continue;
+                if (rcell != NULL) {
+                    if (rcell->owner_rank() != me) {
+                        if (rcell->identifier() < (*c)->identifier())
+                            continue;
+                    }
                 }
 
 
                 if (!justcount) {
                     const stk::mesh::Entity& face = 
-                        declare_face_(snodes, faceidx);
+                        declare_face_(snodes, faceidx, (*c)->identifier());
                 }
                 faceidx++;
                 

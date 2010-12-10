@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Thu Dec  9 06:53:43 2010
+ * @date Fri Dec 10 15:31:54 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Thu Dec  9 06:53:43 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Fri Dec 10 15:31:54 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -197,6 +197,23 @@ SUITE (HexMesh)
 
             // CHECK(!e.empty());
             // CHECK(e.size() <= 2);
+
+            // for (int p = 0; p < nproc; p++) {
+            //     if (me == p) {
+            //         STK_mesh::Entity_vector nodes;
+            //         mesh->get_entities(stk::mesh::Node, USED, nodes);
+            //         for (unsigned int i = 0; i < nodes.size(); i++) {
+            //             unsigned int gid(nodes[i]->identifier());
+            //             const double *coord = mesh->coordinates(gid);
+            //             std::cerr << "Node " << gid << ": "
+            //                       << coord[0] << ", "
+            //                       << coord[1] << ", "
+            //                       << coord[2] << std::endl;
+            //         }
+            //         std::cerr << ">>>>>> Process " << p << " End <<<<<< " << std::endl;
+            //     }
+            //     comm.Barrier();
+            // }
 
         } else {
 

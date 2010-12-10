@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December  9, 2010 by William A. Perkins
-// Last Change: Thu Dec  9 12:38:45 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Fri Dec 10 15:31:15 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -58,39 +58,37 @@ public:
     void 
     operator() (void) {
 
-        // mesh_map->node_map(true).Print(std::cerr);
-        // mesh_map->face_map(true).Print(std::cerr);
-        // mesh_map->cell_map(true).Print(std::cerr);
-        // CHECK(audit->Verify() == 0);
-        CHECK(audit->check_entity_counts() == 0);
-        CHECK(audit->check_cell_to_nodes_refs() == 0);
-        CHECK(audit->check_cell_to_faces_refs() == 0);
-        CHECK(audit->check_face_to_nodes_refs() == 0);
-        CHECK(audit->check_cell_to_nodes_consistency() == 0);
-        CHECK(audit->check_cell_to_faces_consistency() == 0);
-        CHECK(audit->check_face_to_nodes_consistency() == 0);
-        CHECK(audit->check_cell_to_face_dirs_basic() == 0);
-        CHECK(audit->check_cell_degeneracy() == 0);
-        // This fails when parallel.  Run it anyway to get the log.
+        mesh_map->node_map(true).Print(std::cerr);
+        mesh_map->face_map(true).Print(std::cerr);
+        mesh_map->cell_map(true).Print(std::cerr);
+        CHECK(audit->Verify() == 0);
+        // CHECK(audit->check_entity_counts() == 0);
+        // CHECK(audit->check_cell_to_nodes_refs() == 0);
+        // CHECK(audit->check_cell_to_faces_refs() == 0);
+        // CHECK(audit->check_face_to_nodes_refs() == 0);
+        // CHECK(audit->check_cell_to_nodes_consistency() == 0);
+        // CHECK(audit->check_cell_to_faces_consistency() == 0);
+        // CHECK(audit->check_face_to_nodes_consistency() == 0);
+        // CHECK(audit->check_cell_to_face_dirs_basic() == 0);
+        // CHECK(audit->check_node_to_coordinates() == 0);
+        // CHECK(audit->check_cell_degeneracy() == 0);
         // CHECK(audit->check_cell_to_faces() == 0);
-        audit->check_cell_to_faces();
-        CHECK(audit->check_node_to_coordinates() == 0);
-        CHECK(audit->check_cell_to_coordinates() == 0);
-        CHECK(audit->check_face_to_coordinates() == 0);
-        CHECK(audit->check_cell_topology() == 0);
-        CHECK(audit->check_node_maps() == 0);
-        CHECK(audit->check_face_maps() == 0);
-        CHECK(audit->check_cell_maps() == 0);
-        CHECK(audit->check_node_to_coordinates_ghost_data() == 0);
-        CHECK(audit->check_face_to_nodes_ghost_data() == 0);
-        CHECK(audit->check_cell_to_nodes_ghost_data() == 0);
-        CHECK(audit->check_cell_to_faces_ghost_data() == 0);
+        // CHECK(audit->check_cell_to_coordinates() == 0);
+        // CHECK(audit->check_face_to_coordinates() == 0);
+        // CHECK(audit->check_cell_topology() == 0);
+        // CHECK(audit->check_node_maps() == 0);
+        // CHECK(audit->check_face_maps() == 0);
+        // CHECK(audit->check_cell_maps() == 0);
+        // CHECK(audit->check_node_to_coordinates_ghost_data() == 0);
+        // CHECK(audit->check_face_to_nodes_ghost_data() == 0);
+        // CHECK(audit->check_cell_to_nodes_ghost_data() == 0);
+        // CHECK(audit->check_cell_to_faces_ghost_data() == 0);
         
-        CHECK(audit->check_node_partition() == 0);
-        CHECK(audit->check_face_partition() == 0);
-        CHECK(audit->check_node_sets() == 0);
-        CHECK(audit->check_face_sets() == 0);
-        CHECK(audit->check_cell_sets() == 0);
+        // CHECK(audit->check_node_partition() == 0);
+        // CHECK(audit->check_face_partition() == 0);
+        // CHECK(audit->check_node_sets() == 0);
+        // CHECK(audit->check_face_sets() == 0);
+        // CHECK(audit->check_cell_sets() == 0);
     }
 
 };

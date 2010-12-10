@@ -225,28 +225,10 @@ void Mesh_maps_stk::cell_to_face_dirs (unsigned int cell,
         get_map_(Mesh_data::CELL, true).GID(cell);
     global_cell_id += 1;        // need 1-based for stk::mesh
 
-    Entity_Ids face_ids;
-    mesh_->element_to_faces(global_cell_id, face_ids);
+    std::vector<int> dirs;
+    mesh_->element_to_face_dirs(global_cell_id, dirs);
 
-    IT i = destination_begin;
-    for (Entity_Ids::iterator f = face_ids.begin(); f != face_ids.end(); f++, i++) {
-        stk::mesh::EntityId global_face_id(*f);
-        Entity_Ids cell_ids;
-        mesh_->face_to_elements(global_face_id, cell_ids);
-        
-        int dir(1);
-        if (cell_ids.size() > 1) {
-            if (cell_ids.front() == global_cell_id && 
-                cell_ids.front() > cell_ids.back()) {
-                dir = -1;
-            } else if (cell_ids.back() == global_cell_id && 
-                       cell_ids.back() > cell_ids.front()) {
-                dir = -1;
-            }
-        }
-        
-        *i = dir;
-    }
+    std::copy(dirs.begin(), dirs.end(), destination_begin);
 }
 
 
@@ -440,16 +422,20 @@ Mesh_maps_stk::face_to_coordinates (unsigned int face,
 template <typename IT>
 void Mesh_maps_stk::cell_to_coordinates (unsigned int local_cell_id, IT begin, IT end) const
 {
-    ASSERT ((unsigned int) (end-begin) == 24);
+    stk::mesh::EntityId global_cell_id = 
+        get_map_(Mesh_data::CELL, true).GID(local_cell_id);
+    global_cell_id += 1;        // need 1-based for stk::mesh
 
-    unsigned int node_indices [8];
-    cell_to_nodes (local_cell_id, node_indices, node_indices+8);
-    for (int i = 0; i < 8; ++i)
-    {
-        node_to_coordinates (node_indices [i], begin, begin+3);
-        begin+=3;
+    Entity_Ids node_ids;
+    mesh_->element_to_nodes(global_cell_id, node_ids);
+
+    IT i = begin;
+    const int ndim(mesh_->space_dimension());
+    for (Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
+        const double *coord = mesh_->coordinates(*n);
+        for (int d = 0; d < ndim; d++, i++) 
+            *i = coord[d];
     }
-
 }
 
 void 

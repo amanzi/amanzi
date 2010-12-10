@@ -33,6 +33,7 @@ private:
     std::auto_ptr<stk::mesh::BulkData> bulk_data_;
     
     Vector_field_type &coordinate_field_;
+    Id_field_type *face_owner_;
     
     stk::mesh::Selector selector_ (Element_Category category) const;
 
@@ -88,6 +89,7 @@ public:
     void get_entities (const stk::mesh::Part& part, Element_Category category, Entity_vector& entities) const;
     
     void element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const;
+    void element_to_face_dirs (stk::mesh::EntityId element, std::vector<int>& ids) const;
     void element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const;
     void face_to_nodes    (stk::mesh::EntityId element, Entity_Ids& ids) const;
     void face_to_elements (stk::mesh::EntityId element, Entity_Ids& ids) const;
