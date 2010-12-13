@@ -2,6 +2,8 @@
 include_directories(${PROJECT_SOURCE_DIR}/gmv)
 include_directories(${PROJECT_SOURCE_DIR}/error_handling)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
+include_directories(${PROJECT_SOURCE_DIR}/stk_mesh)
+include_directories(${PROJECT_SOURCE_DIR}/exodus)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
 include_directories(${MOAB_INCLUDES})
@@ -29,3 +31,10 @@ endif()
 
 add_executable(verify_moab_mesh verify_moab_mesh.cc)
 target_link_libraries(verify_moab_mesh moab_mesh utils ${MOAB_ALL_LIBS})
+
+if (ENABLE_STK_Mesh) 
+   add_executable(verify_stk_mesh verify_stk_mesh.cc)
+   target_link_libraries(verify_stk_mesh exodus mesh_data stk_mesh utils ${EXODUS_LIBS_ALL} ${Trilinos_LIBRARIES})
+endif()
+
+
