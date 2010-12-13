@@ -231,12 +231,12 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data,
         nface_global += nface[i-1];
     }
 
-    // std::cerr << "Process " << communicator_.MyPID() 
-    //           << " owns " << nface_local 
-    //           << " of " << nface_global 
-    //           << " faces, index " << global_fidx[communicator_.MyPID()]
-    //           << " to "  << global_fidx[communicator_.MyPID()+1] - 1
-    //           << std::endl;
+    std::cerr << "Process " << communicator_.MyPID() 
+              << " owns " << nface_local 
+              << " of " << nface_global 
+              << " faces, index " << global_fidx[communicator_.MyPID()]
+              << " to "  << global_fidx[communicator_.MyPID()+1] - 1
+              << std::endl;
     ASSERT((global_fidx.back()-1) == nface_global);
 
     bulk_data_->modification_begin();
