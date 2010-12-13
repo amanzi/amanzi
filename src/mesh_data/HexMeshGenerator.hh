@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.hh
  * @author William A. Perkins
- * @date Thu Nov 18 09:50:57 2010
+ * @date Mon Dec 13 13:01:15 2010
  * 
  * @brief  Declaration of the HexMeshGenerator class
  * 
@@ -60,8 +60,11 @@ protected:
   const double dy_;              /**< The element size in the y-direction */
   const double dz_;              /**< The element size in the z-direction */
 
-  unsigned int cell0_;          /**< The (global, 0-based) index of first cell to generate */
-  unsigned int cell1_;          /**< The (global, 0-based) index of last cell to generate */
+  /// The global cell ids used in this instance
+  std::vector<unsigned int> cell_gidx_;
+
+  /// A thing to (quickly) identify cells owned by this process
+  std::map<unsigned int, unsigned int> cell_idxmap_;
 
   /// The global vertex ids used in this instance
   std::vector<unsigned int> vertex_gidx_;
@@ -119,7 +122,7 @@ public:
   unsigned int cells(void) const { return ncell_; }
 
   /// Get the number of local cells 
-  unsigned int mycells(void) const { return cell1_ - cell0_ + 1; }
+  unsigned int mycells(void) const { return cell_gidx_.size(); }
 
   /// Get the number of vertexes 
   unsigned int vertexes(void) const { return nvert_; }

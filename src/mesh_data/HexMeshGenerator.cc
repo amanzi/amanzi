@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Mon Nov 29 12:02:54 2010
+ * @date Mon Dec 13 13:05:45 2010
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -53,7 +53,7 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
     ncell_(ni_*nj_*nk_), nvert_((ni_+1)*(nj_+1)*(nk_+1)),
     xorig_(xorigin), yorig_(yorigin), zorig_(zorigin),
     dx_(xdelta), dy_(ydelta), dz_(zdelta),
-    cell0_(0), cell1_(0)
+    cell_gidx_(), cell_idxmap_(), vertex_gidx_(), vertex_idxmap_()
 {
   ASSERT(ni_ > 0);
   ASSERT(nj_ > 0);
@@ -62,12 +62,22 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
   ASSERT(ncell_ > p_size);      // require at least 1 cell per process
   const int p_rank(comm_->MyPID());
   unsigned int proccell(ncell_/p_size);
-  cell0_ = p_rank * proccell;
-  cell1_ = (p_rank + 1) * proccell - 1;
+  int cell0_ = p_rank * proccell;
+  int cell1_ = (p_rank + 1) * proccell - 1;
 
   // make sure all of the cells are owned by someone
   if ( (p_rank == p_size - 1)) {
     cell1_ = ncell_ - 1;
+  }
+
+  cell_gidx_.resize(cell1_ - cell0_ + 1);
+  std::for_each(cell_gidx_.begin(), cell_gidx_.end(), bl::_1 = bl::var(cell0_)++);
+  ASSERT(cell_gidx_.back() == cell1_);
+  
+  int lid(0);
+  for (std::vector<unsigned int>::iterator c = cell_gidx_.begin();
+       c != cell_gidx_.end(); c++, lid++) {
+    cell_idxmap_[*c] = lid;
   }
 
 }
@@ -195,7 +205,7 @@ void
 HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
 {
   static const unsigned int nvcell(8);
-  int num_elements(cell1_-cell0_+1);
+  int num_elements(cell_gidx_.size());
 
   ASSERT(num_elements > 0);
 
@@ -203,9 +213,10 @@ HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
   connectivity_map.resize(num_elements*nvcell);
 
   std::vector<int>::iterator c(connectivity_map.begin());
-  for (unsigned int g = cell0_; g <= cell1_; g++) {
+  for (std::vector<unsigned int>::iterator g = cell_gidx_.begin();
+       g != cell_gidx_.end(); g++) {
     unsigned int i, j, k;
-    global_rcell(g, i, j, k);   // g is 1-based; i, j, & k are 0-based
+    global_rcell(*g, i, j, k);   // g is 1-based; i, j, & k are 0-based
 
     *(c+0) = i + j*(ni_+1) + k*(ni_+1)*(nj_+1);
     *(c+1) = (i+1) + j*(ni_+1) + k*(ni_+1)*(nj_+1);
@@ -271,6 +282,7 @@ HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
 std::vector<Side_set *>
 HexMeshGenerator::generate_the_sidesets(void)
 {
+  std::map<unsigned int, bool> mine;
   std::vector<Side_set *> result;
 
   static const int SIX(6);
@@ -317,8 +329,8 @@ HexMeshGenerator::generate_the_sidesets(void)
       for (unsigned int j = jmin; j < jmax; j++) {
         for (unsigned int k = kmin; k < kmax; k++) {
           unsigned cellidx(global_cell(i, j, k));
-          if (cellidx >= cell0_ && cellidx <= cell1_) {
-            clist.push_back(cellidx-cell0_);
+          if (cell_idxmap_.find(cellidx) != cell_idxmap_.end()) {
+            clist.push_back(cell_idxmap_[cellidx]);
             slist.push_back(side);
           }
         }
@@ -387,7 +399,7 @@ HexMeshGenerator::generate(void)
 
 
     blk = Element_block::build_from(0, "Generated Elements", 
-                                    cell1_ - cell0_ + 1, HEX,
+                                    cell_gidx_.size(), HEX,
                                     connectivity,
                                     attribute);
     attribute.clear();
@@ -430,7 +442,7 @@ HexMeshGenerator::generate(void)
 
   Parameters* params(new Parameters("Generated", 3, 
                                     vertex_gidx_.size(), 
-                                    cell1_ - cell0_ + 1,
+                                    cell_gidx_.size(),
                                     1, 1, ssids.size(),
                                     one, one, ssids));
 
@@ -472,11 +484,10 @@ HexMeshGenerator::generate(void)
 Epetra_Map*
 HexMeshGenerator::cellmap(bool onebased)
 {
-  std::vector<int> myidx(cell1_-cell0_ + 1);
-  int cidx(cell0_);
-  if (onebased) cidx += 1;
-
-  std::for_each(myidx.begin(), myidx.end(), bl::_1 = bl::var(cidx)++);
+  std::vector<int> myidx(cell_gidx_.size());
+  std::copy(cell_gidx_.begin(), cell_gidx_.end(), myidx.begin());
+  if (onebased)
+    std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
 
   Epetra_Map *result(new Epetra_Map(ncell_, myidx.size(), &myidx[0], 
                                     (onebased ? 1 : 0), *comm_));
