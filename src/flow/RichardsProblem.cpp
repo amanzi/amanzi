@@ -2,6 +2,7 @@
 
 #include "RichardsProblem.hpp"
 //#include "DarcyMatvec.hpp"
+#include "RichardsNoxInterface.hpp"
 
 RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 			   Teuchos::ParameterList &list,
@@ -17,9 +18,6 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   init_mimetic_disc_(*mesh, MD);
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
 
-  // Create the matvec operator for the system
-  //matvec_ = new DarcyMatvec(this);
-
   // Create the diffusion matrix (structure only, no values)
   D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh, bc));
 
@@ -27,28 +25,37 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   Teuchos::ParameterList diffprecon_plist = list.sublist("Diffusion Preconditioner");
   precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
 
-  // Create the RHS vector.
-  rhs_ = new Epetra_Vector(Map());
+  // Create the NOX interface object for the system.
+  nox_interface_ = new RichardsNoxInterface(this);
 
   // DEFINE DEFAULTS FOR PROBLEM PARAMETERS
   rho_ = 1.0;
   mu_  = 1.0;
   k_.resize(CellMap(true).NumMyElements(), 1.0);
   for (int i = 0; i < 3; ++i) g_[i] = 0.0; // no gravity
-  
-  nox_interface_ = Teuchos::rcp<RichardsNoxInterface>(new RichardsNoxInterface(this));
 }
 
 
 RichardsProblem::~RichardsProblem()
 {
   delete dof_map_;
-  delete rhs_;
-  //delete matvec_;
-  delete precon_;
-  delete cell_importer_;
   delete face_importer_;
+  delete cell_importer_;
   delete md_;
+  delete precon_;
+  delete nox_interface_;
+}
+
+
+NOX::Epetra::Interface::Required& RichardsProblem::NoxReq() const
+{
+  return *nox_interface_;
+}
+
+  
+NOX::Epetra::Interface::Preconditioner& RichardsProblem::NoxPrecon() const
+{
+  return *nox_interface_;
 }
 
 
@@ -84,41 +91,6 @@ void RichardsProblem::init_mimetic_disc_(Mesh_maps_base &mesh, std::vector<Mimet
     mesh.cell_to_coordinates((unsigned int) j, xBegin, xEnd);
     MD[j].update(x);
   }
-}
-
-
-void RichardsProblem::Assemble()
-{
-  // Fill the diffusion matrix with values.
-  std::vector<double> K(k_);
-  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] / mu_;
-  D_->Compute(K);
-
-  // Compute the face Schur complement of the diffusion matrix.
-  D_->ComputeFaceSchur();
-
-  // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
-  precon_->Compute();
-
-  // Compute the RHS.
-  ComputeF(*rhs_, *rhs_); // bad form, I know -- input and output are aliased
-  (*rhs_).Scale(-1.0);
-}
-
-
-void RichardsProblem::ComputePreconditioner(const Epetra_Vector &X)
-{
-  // Fill the diffusion matrix with values.
-  // THIS IS WHERE WE USE THE CELL PRESSURE PART OF X TO EVALUATE THE RELATIVE PERMEABILITY
-  std::vector<double> K(k_);
-  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] / mu_;
-  D_->Compute(K);
-
-  // Compute the face Schur complement of the diffusion matrix.
-  D_->ComputeFaceSchur();
-
-  // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
-  precon_->Compute();
 }
 
 
@@ -159,6 +131,22 @@ void RichardsProblem::SetPermeability(const Epetra_Vector &k)
   k_ovl.Import(k, importer, Insert);
 
   for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
+}
+
+
+void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
+{
+  // Fill the diffusion matrix with values.
+  // THIS IS WHERE WE USE THE CELL PRESSURE PART OF X TO EVALUATE THE RELATIVE PERMEABILITY
+  std::vector<double> K(k_);
+  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] / mu_;
+  D_->Compute(K);
+
+  // Compute the face Schur complement of the diffusion matrix.
+  D_->ComputeFaceSchur();
+
+  // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
+  precon_->Compute();
 }
 
 

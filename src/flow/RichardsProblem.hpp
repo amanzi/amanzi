@@ -13,6 +13,10 @@
 #include "MimeticHexLocal.hpp"
 #include "MimeticHex.hpp"
 
+#include "NOX_Epetra_Interface_Required.H"
+//#include "NOX_Epetra_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
+
 // Forward declaration
 //class DarcyMatvec;
 class RichardsNoxInterface;
@@ -41,14 +45,11 @@ public:
   //void SetPermeability(const std::vector<double> &k);
   void SetPermeability(const Epetra_Vector &k);
 
-  // Assemble the problem
-  void Assemble();
+  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
 
-  void ComputePreconditioner(const Epetra_Vector &X);
+  void ComputePrecon(const Epetra_Vector &X);
   
-  void ComputeF (const Epetra_Vector &X, Epetra_Vector &F);
-
-  const Epetra_Vector& RHS() const { return *rhs_; }
+  Epetra_Operator& Precon() const { return *precon_; }
 
   const Epetra_Map& Map() const { return *dof_map_; }
 
@@ -60,12 +61,8 @@ public:
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
 
-  Epetra_Operator& Precon() const { return *precon_; }
-
-  Epetra_Operator& Matvec() const { return *matvec_; }
-  
-  Teuchos::RCP<NOX::Epetra::Interface::Required> NoxRequired() const { return nox_interface_; }
-  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> NoxPreconditioner() const { return nox_interface_; }
+  NOX::Epetra::Interface::Required& NoxReq() const; // { return *nox_interface_; }
+  NOX::Epetra::Interface::Preconditioner& NoxPrecon() const; // { return *nox_interface_; }
 
   DiffusionMatrix& Matrix() const { return *D_; }
 
@@ -91,16 +88,12 @@ private:
   std::vector<double> k_; // spatially variable permeability
 
   std::vector<MimeticHexLocal>  MD;
-  MimeticHex *md_; // evolving replacement for MD
-
-  Epetra_Vector *rhs_;
+  MimeticHex *md_;
 
   DiffusionPrecon *precon_;
-  Epetra_Operator *matvec_;
+  RichardsNoxInterface *nox_interface_;
 
   Teuchos::RCP<DiffusionMatrix> D_;
-  
-  Teuchos::RCP<RichardsNoxInterface> nox_interface;
 
 private:  // Auxillary functions
 

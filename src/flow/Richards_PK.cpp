@@ -1,16 +1,15 @@
-#include "Flow_PK.hpp"
+#include "Richards_PK.hpp"
 
 #include "RichardsProblem.hpp"
 
-Flow_PK::Flow_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
+Richards_PK::Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
 {
   // Create the flow boundary conditions object.
-  Teuchos::ParameterList bc_param_list = list.sublist("Flow BC");
-  bc = Teuchos::rcp<FlowBC>(new FlowBC(bc_param_list, FS->mesh()));
+  Teuchos::ParameterList bc_plist = plist.sublist("Flow BC");
+  bc = Teuchos::rcp<FlowBC>(new FlowBC(bc_plist, FS->mesh()));
 
   // Create the Richards flow problem.
-  Teuchos::ParameterList darcy_plist = list.sublist("Richards Problem");
-  problem = new RichardsProblem(FS->mesh(),darcy_plist, bc);
+  problem = new RichardsProblem(FS->mesh(), plist.sublist("Richards Problem"), bc);
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -19,17 +18,17 @@ Flow_PK::Flow_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_Sta
 
   // Create the linear solver and do the preliminary wiring.
   solver = new AztecOO;
-  solver->SetUserOperator(&(problem->Matvec()));
+  //solver->SetUserOperator(&(problem->Matvec()));
   solver->SetPrecOperator(&(problem->Precon()));
   solver->SetAztecOption(AZ_solver, AZ_cg);
 
   // Get some solver parameters from the flow parameter list.
-  max_itr = list.get<int>("Max Iterations");
-  err_tol = list.get<double>("Error Tolerance");
+  max_itr = plist.get<int>("Max Iterations");
+  err_tol = plist.get<double>("Error Tolerance");
 };
 
 
-Flow_PK::~Flow_PK()
+Richards_PK::~Richards_PK()
 {
   delete problem;
   delete solver;
@@ -39,7 +38,7 @@ Flow_PK::~Flow_PK()
 };
 
 
-int Flow_PK::advance()
+int Richards_PK::advance()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());
@@ -48,11 +47,11 @@ int Flow_PK::advance()
   problem->SetGravity(FS->gravity());
 
   // Perform the final "assembly" of the problem.
-  problem->Assemble();
+  //problem->Assemble();
 
   // Define the RHS for the system.
-  Epetra_Vector b(problem->RHS()); // make a copy, Aztec00 will muck with it
-  solver->SetRHS(&b);
+  //Epetra_Vector b(problem->RHS()); // make a copy, Aztec00 will muck with it
+  //solver->SetRHS(&b);
 
   // Define the initial solution guess; overwritten with solution.
   solver->SetLHS(solution);

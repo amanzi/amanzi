@@ -13,9 +13,9 @@
 class Richards_PK {
 
 public:
-  Flow_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
+  Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
 
-  ~Flow_PK ();
+  ~Richards_PK ();
 
   int advance();
   void commit_state(Teuchos::RCP<Flow_State>) {}
