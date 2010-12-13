@@ -23,7 +23,7 @@ Mesh_data::Entity_kind Mesh_maps_stk::kinds_ [3] = {Mesh_data::NODE,
 
 Mesh_maps_stk::Mesh_maps_stk (Mesh_p mesh) : mesh_ (mesh),
                                              entity_map_ (mesh->entity_map ()),
-                                             communicator_ (mesh_->communicator ())
+                                             communicator_ ((mesh_->communicator ()).Clone())
 {
     build_maps_();
 }
@@ -63,7 +63,7 @@ Mesh_maps_stk::build_maps_ ()
         mesh_->get_entities (rank, OWNED, entities);
         extract_global_ids(entities, entity_ids);
 
-        map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, communicator_));
+        map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *communicator_));
         map_owned_.insert(MapSet::value_type(kind, map));
 
         // Get the collection of "ghost" entities
@@ -74,7 +74,7 @@ Mesh_maps_stk::build_maps_ ()
         std::copy(ghost_entity_ids.begin(), ghost_entity_ids.end(), 
                   std::back_inserter(entity_ids));
 
-        map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, communicator_));
+        map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *communicator_));
         map_used_.insert(MapSet::value_type(kind, map));
     }
 }
@@ -188,7 +188,7 @@ void Mesh_maps_stk::cell_to_faces (unsigned int cell,
     for (Entity_Ids::iterator f = face_ids.begin(); f != face_ids.end(); f++, i++) {
         stk::mesh::EntityId global_face_id(*f);
         if (!get_map_(Mesh_data::FACE, true).MyGID(global_face_id)) {
-            std::cerr << "Process " << communicator_.MyPID() << ": "
+            std::cerr << "Process " << communicator_->MyPID() << ": "
                       << "cell " << cell << " (" << global_cell_id << ") has bogus face id "
                       << global_face_id << std::endl;
         }
@@ -267,7 +267,7 @@ Mesh_maps_stk::cell_to_nodes (unsigned int cell,
     for (Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++, i++) {
         stk::mesh::EntityId global_node_id(*n);
         if (!get_map_(Mesh_data::NODE, true).MyGID(global_node_id)) {
-            std::cerr << "Process " << communicator_.MyPID() << ": "
+            std::cerr << "Process " << communicator_->MyPID() << ": "
                       << "cell " << cell << " (" << global_cell_id << ") has bogus node id "
                       << global_node_id << std::endl;
         }
@@ -315,7 +315,7 @@ Mesh_maps_stk::face_to_nodes (unsigned int face,
         stk::mesh::EntityId global_node_id(*n);
         // ASSERT(get_map_(Mesh_data::NODE, true).MyGID(global_node_id));
         if (!get_map_(Mesh_data::NODE, true).MyGID(global_node_id)) {
-            std::cerr << "Process " << communicator_.MyPID() << ": "
+            std::cerr << "Process " << communicator_->MyPID() << ": "
                       << "face " << face << " (" << global_face_id << ") has bogus node id "
                       << global_node_id << std::endl;
         }

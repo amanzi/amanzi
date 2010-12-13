@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December  9, 2010 by William A. Perkins
-// Last Change: Fri Dec 10 15:31:15 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Dec 13 09:41:43 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -38,7 +38,7 @@ protected:
 public:
 
     /// Default constructor.
-    explicit Auditor(std::string oname, STK_mesh::Mesh_p mesh)
+    Auditor(std::string oname, STK_mesh::Mesh_p mesh)
         : mesh_map(new STK_mesh::Mesh_maps_stk(mesh)) {
         std::ostringstream ofile;
         ofile << oname
@@ -46,6 +46,18 @@ public:
               << mesh->communicator().MyPID() << ".tst";
         ofs.open(ofile.str().c_str());
         if (mesh->communicator().MyPID() == 0)
+            std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
+        audit.reset(new MeshAudit(mesh_map, ofs));
+    }
+
+    Auditor(std::string oname, Teuchos::RCP<Mesh_maps_base> mm)
+        : mesh_map(mm) {
+        std::ostringstream ofile;
+        ofile << oname
+              << std::setfill('0') << std::setw(4) 
+              << mesh_map->get_comm()->MyPID() << ".tst";
+        ofs.open(ofile.str().c_str());
+        if (mesh_map->get_comm()->MyPID() == 0)
             std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
         audit.reset(new MeshAudit(mesh_map, ofs));
     }

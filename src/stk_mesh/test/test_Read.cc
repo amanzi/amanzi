@@ -2,7 +2,7 @@
 /**
  * @file   test_Read.cc
  * @author William A. Perkins
- * @date Thu Dec  9 08:26:06 2010
+ * @date Mon Dec 13 10:30:27 2010
  * 
  * @brief Some unit tests for reading a (serial) Exodus file and
  * building a STK_mesh::Mesh_maps_stk instance.
@@ -13,9 +13,10 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 22, 2010 by William A. Perkins
-// Last Change: Thu Dec  9 08:26:06 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Dec 13 10:30:27 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
+#include <sstream>
 #include <UnitTest++.h>
 #include <Epetra_MpiComm.h>
 
@@ -301,5 +302,29 @@ SUITE (Exodus)
         }
     }            
 
+
+    TEST (DirectReader) 
+    {
+        Epetra_MpiComm comm(MPI_COMM_WORLD);
+
+        // FIXME: need to be able to assign path from configuration
+
+        std::string fpath("../exodus/test_files/");
+        std::string fname("hex_11x11x11_ss");
+        if (comm.NumProc() == 1) {
+            fname += ".exo";
+        } else {
+            fpath += "split1/";
+            fname += ".par";
+        }
+        fname = fpath + fname;
+
+        Teuchos::RCP<Mesh_maps_base> 
+            mesh_map(new STK_mesh::Mesh_maps_stk(comm, fname.c_str()));
+
+        Auditor audit("stk_mesh_read_", mesh_map);
+        audit();
+    }
+      
 } 
 

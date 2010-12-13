@@ -11,7 +11,7 @@
 #include "dbc.hh"
 
 #include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
+#include <Epetra_Comm.h>
 
 #include <memory>
 
@@ -24,8 +24,8 @@ namespace STK_mesh
   private:
 
     Mesh_p mesh_;
-    const Entity_map& entity_map_;
-    Epetra_MpiComm communicator_;
+    Entity_map entity_map_;
+    Epetra_Comm *communicator_;
 
     // Maps, Accessors and setters.
     // ----------------------------
@@ -97,7 +97,19 @@ namespace STK_mesh
 
     explicit Mesh_maps_stk (Mesh_p mesh);
 
-    void update ();
+    /// Construct hexahedral mesh of the given size and spacing
+    Mesh_maps_stk(const Epetra_MpiComm& comm, 
+                  const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
+                  const double& xorigin = 0.0, 
+                  const double& yorigin = 0.0, 
+                  const double& zorigin = 0.0, 
+                  const double& xdelta = 1.0, 
+                  const double& ydelta = 1.0, 
+                  const double& zdelta = 1.0);
+
+    /// Construct a mesh from a Exodus II file or file set
+    Mesh_maps_stk(const Epetra_MpiComm& comm, 
+                  const std::string& fname);
 
     // Local id interfaces
     // --------------------
@@ -207,7 +219,7 @@ namespace STK_mesh
                   unsigned int * end) const;
 
     // communicator access
-    const Epetra_Comm* get_comm() { return &communicator_; };
+    const Epetra_Comm* get_comm() { return communicator_; };
 
     // this should be used with extreme caution:
     // modify coordinates  

@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Fri Dec 10 15:31:54 2010
+ * @date Mon Dec 13 09:42:30 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Fri Dec 10 15:31:54 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Dec 13 09:42:30 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -229,6 +229,16 @@ SUITE (HexMesh)
 
         Auditor audit("stk_mesh_hextest2_", mesh);
         audit();
-    }        
+    } 
+
+    TEST (HexGenerator)
+    {
+        Epetra_MpiComm comm(MPI_COMM_WORLD);
+        Teuchos::RCP<Mesh_maps_base> 
+            mesh_map(new STK_mesh::Mesh_maps_stk(comm, 10, 10, 10));
+        
+        Auditor audit("stk_mesh_generated_", mesh_map);
+        audit();
+    }
 }
 

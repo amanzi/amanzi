@@ -2,7 +2,7 @@
 /**
  * @file   verify_stk_mesh.cc
  * @author William A. Perkins
- * @date Mon Dec 13 09:03:44 2010
+ * @date Mon Dec 13 10:35:09 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December 13, 2010 by William A. Perkins
-// Last Change: Mon Dec 13 09:03:44 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Dec 13 10:35:09 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -49,31 +49,15 @@ int main (int argc, char* argv[])
 
   std::string filename(argv[1]);
 
-  Teuchos::RCP<Mesh_data::Data> meshdata;
-  STK_mesh::Mesh_p mesh;
-  STK_mesh::Mesh_factory mf(comm.Comm(), 1000);
-  Mesh_data::Fields nofields;
-  Teuchos::RCP<Mesh_maps_base> maps;
+  Teuchos::RCP<Mesh_maps_base> 
+    maps(new STK_mesh::Mesh_maps_stk(comm, filename.c_str()));
+
   int lresult(0);
 
   if (nproc == 1) {
-    meshdata.reset(ExodusII::read_exodus_file(filename.c_str()));
-    mesh.reset(mf.build_mesh(*meshdata, nofields));
-    mesh->summary(std::cout);
-    maps.reset(new STK_mesh::Mesh_maps_stk(mesh));
-
     MeshAudit audit(maps);
     lresult = audit.Verify();
   } else {
-    ExodusII::Parallel_Exodus_file thefile(comm, filename.c_str());
-    meshdata = thefile.read_mesh();
-    Teuchos::RCP<Epetra_Map> cmap(thefile.cellmap());
-    Teuchos::RCP<Epetra_Map> vmap(thefile.vertexmap());
-
-    mesh.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
-    mesh->summary(std::cout);
-    maps.reset(new STK_mesh::Mesh_maps_stk(mesh));
-
     std::ostringstream ofile;
     ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << me << ".txt";
     std::ofstream ofs(ofile.str().c_str());
