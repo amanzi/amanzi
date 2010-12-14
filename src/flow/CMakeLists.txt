@@ -32,3 +32,7 @@ if (BUILD_TESTS)
   endif()
 endif()
 
+OPTION(ENABLE_FLOW_EXAMPLES "Build flow examples" OFF)
+if (ENABLE_FLOW_EXAMPLES)
+ add_subdirectory(examples)
+endif ()

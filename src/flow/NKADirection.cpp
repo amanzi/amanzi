@@ -6,14 +6,9 @@ NKADirection::NKADirection(const Teuchos::RCP<NOX::GlobalData>& gd,
 			   const NOX::Abstract::Vector& initvec)
 {
   // get the parameters the parameter list
-    
-  Teuchos::ParameterList& p = param.sublist("NKADirection");
   
-  int itmp = p.get("maxv", 10);
-  int mvec  = itmp;
-  
-  double dtmp =  p.get("vtol", 1e-4);
-  double vtol  = dtmp;
+  int mvec    = param.get<int>("maxv", 10);
+  double vtol = param.get<double>("vtol", 1e-4);
   
   state = new nka (mvec, vtol, initvec);
   
@@ -65,9 +60,9 @@ bool NKADirection::compute (NOX::Abstract::Vector &dir,
 
   status 
     = soln.applyRightPreconditioning(false,
-	   paramPtr->sublist("NKADirection").sublist("Linear Solver"), 
+				     paramPtr->sublist("Linear Solver"), 
 				     *fptr, *precond_fptr);
-
+  
   if (status != NOX::Abstract::Group::Ok) {
     throwError("compute", "Unable to apply preconditioner"); 
   } 
@@ -92,7 +87,7 @@ void NKADirection::throwError(const string& functionName,
 			      const string& errorMsg)
 {
   if (utils->isPrintType(NOX::Utils::Error))
-    utils->err() << "MyDirection::" << functionName 
+    utils->err() << "NKADirection::" << functionName 
 		 << " - " << errorMsg << endl;
   throw "NOX Error";
 }
