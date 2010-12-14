@@ -16,7 +16,7 @@ class RichardsNoxInterface : public NOX::Epetra::Interface::Required,
 
 public:
  
-  RichardsNoxInterface(RichardsProblem *problem) : problem_(problem) {}
+  RichardsNoxInterface(RichardsProblem *problem) : problem_(problem) { lag_prec = 1; lag_count=0; }
 
   ~RichardsNoxInterface() {}
 
@@ -29,9 +29,18 @@ public:
   // Compute the preconditioning operator.  Virtual function from "Preconditioner".
   bool computePreconditioner(const Epetra_Vector &x, Epetra_Operator &M, Teuchos::ParameterList *params);
 
+  
+  inline void setPrecLag(int lag_prec_) { lag_prec = lag_prec_;}
+  inline void resetPrecLagCounter () { lag_count = 0; }
+  inline int getPrecLag () { return lag_prec; }
+  inline int getPrecLagCounter () { return lag_count; }
+
 private:
   
   RichardsProblem *problem_;
+
+  int lag_prec;  // the preconditioner is lagged this many times before it is recomputed
+  int lag_count; // this counts how many times the preconditioner has been lagged
   
 };
 
