@@ -9,12 +9,6 @@
 
 #include "NOX.H"
 #include "NOX_Epetra.H"
-#include "NOX_GlobalData.H"
-#include "NOX_Direction_UserDefinedFactory.H"
-
-#include "NKA.H"
-#include "NKADirFactory.H"
-#include "NKADirection.H"
 
 #include "RichardsProblem.hpp"
 #include "gmv_mesh.hh"
@@ -68,44 +62,28 @@ int main(int argc, char *argv[])
   // Create the NOX parameter list.
   Teuchos::RCP<Teuchos::ParameterList> nox_param_p(new Teuchos::ParameterList);
   Teuchos::ParameterList &nox_param = *nox_param_p.get();
- 
-  // we need a GlobalData variable fo initialize the 
-  // NKA Direction factory later on
-  Teuchos::RCP<NOX::GlobalData> gd = Teuchos::rcp(new NOX::GlobalData(nox_param_p));
-
-
+  
   // Use a line search method...
   nox_param.set("Nonlinear Solver", "Line Search Based");
   
-  // with get the search direction...
+  // with Newton to get the search direction...
   Teuchos::ParameterList &direct_param = nox_param.sublist("Direction");
-  direct_param.set("Method", "User Defined");
+  direct_param.set("Method", "Newton");
   
-  // these are parameters that the NKA direction class
-  // will look at
-  Teuchos::ParameterList &mydirParams = nox_param.sublist("NKADirection");
-  mydirParams.set("maxv", 10);
-  mydirParams.set("vtol", 1e-8);
-  
-
-  // and taking the full step given by the nonlinear solver
+  // and taking the full step given by Newton.
   Teuchos::ParameterList &search_param = nox_param.sublist("Line Search");
   search_param.set("Method", "Full Step");
   
   Teuchos::ParameterList &newton_param = direct_param.sublist("Newton");
   newton_param.set("Forcing Term Method", "Constant");
   
-  // the linear solver is not going to be called
-  // but needs to be defined to allow the NKA solver
-  // to call the preconditioner
   Teuchos::ParameterList &linsol_param = newton_param.sublist("Linear Solver");
-  //linsol_param.set("Aztec Solver", "CG");
-  linsol_param.set("Aztec Solver", "GMRES");
+  linsol_param.set("Aztec Solver", "CG");
   linsol_param.set("Max Iterations", 100);
   //linsol_param.set("Compute Scaling Manually", false);
   linsol_param.set("Tolerance", 1.0e-6);
   linsol_param.set("Preconditioner", "User Defined");
-
+  
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList &print_param = nox_param.sublist("Printing");
   print_param.set("MyPID", comm.MyPID()); 
@@ -119,12 +97,12 @@ int main(int argc, char *argv[])
 			   NOX::Utils::Parameters + 
 			   NOX::Utils::Details + 
 			   NOX::Utils::Warning +
-			   NOX::Utils::Error +
-                           NOX::Utils::Debug);
-
+			   NOX::Utils::Error);
+                           //NOX::Utils::Debug +
+			   //NOX::Utils::TestDetails +
 
   Teuchos::RCP<NOX::Epetra::Interface::Required> Ireq = Teuchos::rcpFromRef(problem.NoxReq());                           
-  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> Iprec = Teuchos::rcpFromRef(problem.NoxPrecon());
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> Iprec = Teuchos::rcpFromRef(problem.NoxPrecon());                           
   Teuchos::RCP<Epetra_Operator> precon = Teuchos::rcpFromRef(problem.Precon());
   
   //Teuchos::RCP<Epetra_Vector> solution(new Epetra_Vector(problem.Map()));
@@ -138,12 +116,6 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO>
       nox_ls(new NOX::Epetra::LinearSystemAztecOO(print_param, linsol_param, Ireq, Iprec, precon, nox_solution));
 
-
-  // create our NKA direction factory
-  Teuchos::RCP<NOX::Direction::UserDefinedFactory> dir_factory 
-    = Teuchos::rcp(new NKADirFactory(gd, mydirParams, nox_solution));
-  direct_param.set("User Defined Direction Factory", dir_factory);
-
   // Create the NOX "group".
   Teuchos::RCP<NOX::Epetra::Group> group(new NOX::Epetra::Group(print_param, Ireq, nox_solution, nox_ls));
 
@@ -156,8 +128,6 @@ int main(int argc, char *argv[])
   
   // Finally we create the NOX solver for the problem
   Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(group, conv_test, nox_param_p);
-  
-  std::cout << "ABOUT TO CALL SOLVE ..." << std::endl;
   
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver->solve();
