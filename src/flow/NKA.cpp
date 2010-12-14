@@ -83,17 +83,11 @@ nka::nka (int mvec_, double vtol_, const NOX::Abstract::Vector &initvec)
 
 nka::~nka()
 {
-  //for (int i=0; i<mvec + 1; i++)
-  //{
-      //delete v[i];
-      //delete w[i];
-      //delete h[i];
-  //}
-  delete v;
-  delete w;
-  delete h;
-  delete next_v;
-  delete prev_v;
+  delete [] v;
+  delete [] w;
+  delete [] h;
+  delete [] next_v;
+  delete [] prev_v;
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -166,7 +160,7 @@ void nka::nka_correction (NOX::Abstract::Vector &dir,
       
       wp->update(-1.0, *ff.get(), 1.0);
       
-      s = wp->norm();
+      s = wp->innerProduct(*wp);
       s = sqrt(s);
       
       // If the function difference is 0, we can't update the subspace with
@@ -180,94 +174,96 @@ void nka::nka_correction (NOX::Abstract::Vector &dir,
 	  // nka_relax sets pending to NKAFALSE
 	  nka_relax();
 	}
-      else
-	{
-	  // Normalize w_1 and apply same factor to v_1. 
-	  vp = v[first_v];
-	  
-	  vp->scale(1.0/s);
-	  wp->scale(1.0/s);
-      
-      
-	  // Update H. 
-	  for (k = next_v[first_v]; k != NKAEOL; k = next_v[k])
-	    {
-	      h[first_v][k] = wp->innerProduct(*w[k]);
-	    }
-	  
-	  
-	  //  CHOLESKI FACTORIZATION OF H = W^t W
-	  //  original matrix kept in the upper triangle (implicit unit diagonal)
-	  //  lower triangle holds the factorization
-	  
-	  // Trivial initial factorization stage. 
-	  nvec = 1;
-	  h[first_v][first_v] = 1.0;
-	  
-	  for (k = next_v[first_v]; k != NKAEOL; k = next_v[k]) 
-	    {
-	      
-	      // Maintain at most MVEC vectors. 
-	      if (++nvec > mvec) 
-		{
-		  // Drop the last_v vector and update the free storage list. 
-		  assert(last_v == k);
-		  next_v[last_v] = free_v;
-		  free_v = k;
-		  last_v = prev_v[k];
-		  next_v[last_v] = NKAEOL;
-		  break;
-		}
-	      
-	      // Single stage of Choleski factorization. 
-	      hk = h[k];   // row k of H 
-	      hkk = 1.0;
-	      for (j = first_v; j != k; j = next_v[j]) 
-		{
-		  hj = h[j];   // row j of H 
-		  hkj = hj[k];
-		  for (i = first_v; i != j; i = next_v[i])
-		    {
-		      hkj -= hk[i] * hj[i];
-		    }
-		  hkj /= hj[j];
-		  hk[j] = hkj;
-		  hkk -= hkj*hkj;
-		}
-	      
-	      if (hkk > pow(vtol,2)) 
-		{
-		  hk[k] = sqrt(hkk);
-		} 
-	      else  
-		{
-		  // The current w nearly lies in the span of the previous vectors: 
-		  // Drop this vector, 
-		  assert(prev_v[k] != NKAEOL);
-		  next_v[prev_v[k]] = next_v[k];
-		  if (next_v[k] == NKAEOL)
-		    {
-		      last_v = prev_v[k];
-		    }
-		  else
-		    {
-		      prev_v[next_v[k]] = prev_v[k];
-		    }
-		  // update the free storage list, 
-		  next_v[k] = free_v;
-		  free_v = k;
-		  // back-up and move on to the next_v vector. 
-		  k = prev_v[k];
-		  nvec--;
-		}
-	    }
-	  
-	  assert(first_v != NKAEOL);
-	  subspace = NKATRUE; // the acceleration subspace isn't empty 
-	  
-	}
     }
   
+  if (pending)
+    {
+      // Normalize w_1 and apply same factor to v_1. 
+      vp = v[first_v];
+      
+      vp->scale(1.0/s);
+      wp->scale(1.0/s);
+      
+      
+      // Update H. 
+      for (k = next_v[first_v]; k != NKAEOL; k = next_v[k])
+	{
+	  h[first_v][k] = wp->innerProduct(*w[k]);
+	}
+      
+      
+      //  CHOLESKI FACTORIZATION OF H = W^t W
+      //  original matrix kept in the upper triangle (implicit unit diagonal)
+      //  lower triangle holds the factorization
+      
+      // Trivial initial factorization stage. 
+      nvec = 1;
+      h[first_v][first_v] = 1.0;
+      
+      for (k = next_v[first_v]; k != NKAEOL; k = next_v[k]) 
+	{
+	  
+	  // Maintain at most MVEC vectors. 
+	  if (++nvec > mvec) 
+	    {
+	      // Drop the last_v vector and update the free storage list. 
+	      assert(last_v == k);
+	      next_v[last_v] = free_v;
+	      free_v = k;
+	      last_v = prev_v[k];
+	      next_v[last_v] = NKAEOL;
+	      break;
+	    }
+	  
+	  // Single stage of Choleski factorization. 
+	  hk = h[k];   // row k of H 
+	  hkk = 1.0;
+	  for (j = first_v; j != k; j = next_v[j]) 
+	    {
+	      hj = h[j];   // row j of H 
+	      hkj = hj[k];
+	      for (i = first_v; i != j; i = next_v[i])
+		{
+		  hkj -= hk[i] * hj[i];
+		}
+	      hkj /= hj[j];
+	      hk[j] = hkj;
+	      hkk -= hkj*hkj;
+	    }
+	  
+	  if (hkk > pow(vtol,2)) 
+	    {
+	      hk[k] = sqrt(hkk);
+	    } 
+	  else  
+	    {
+	      // The current w nearly lies in the span of the previous vectors: 
+	      // Drop this vector, 
+	      assert(prev_v[k] != NKAEOL);
+	      next_v[prev_v[k]] = next_v[k];
+	      if (next_v[k] == NKAEOL)
+		{
+		  last_v = prev_v[k];
+		}
+	      else
+		{
+		  prev_v[next_v[k]] = prev_v[k];
+		}
+	      // update the free storage list, 
+	      next_v[k] = free_v;
+	      free_v = k;
+	      // back-up and move on to the next_v vector. 
+	      k = prev_v[k];
+	      nvec--;
+	    }
+	}
+      
+      assert(first_v != NKAEOL);
+      subspace = NKATRUE; // the acceleration subspace isn't empty 
+      
+    }
+  
+
   //  ACCELERATED CORRECTION
   
   // Locate storage for the new vectors. 

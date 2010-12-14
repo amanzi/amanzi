@@ -84,26 +84,15 @@ int main(int argc, char *argv[])
   // these are parameters that the NKA direction class
   // will look at
   Teuchos::ParameterList &mydirParams = nox_param.sublist("NKADirection");
-  mydirParams.set("maxv", 10);
-  mydirParams.set("vtol", 1e-8);
+  mydirParams.set("maxv", 4);
+  mydirParams.set("vtol", 5e-2);
   
 
   // and taking the full step given by the nonlinear solver
   Teuchos::ParameterList &search_param = nox_param.sublist("Line Search");
   search_param.set("Method", "Full Step");
   
-  Teuchos::ParameterList &newton_param = direct_param.sublist("Newton");
-  newton_param.set("Forcing Term Method", "Constant");
-  
-  // the linear solver is not going to be called
-  // but needs to be defined to allow the NKA solver
-  // to call the preconditioner
-  Teuchos::ParameterList &linsol_param = newton_param.sublist("Linear Solver");
-  //linsol_param.set("Aztec Solver", "CG");
-  linsol_param.set("Aztec Solver", "GMRES");
-  linsol_param.set("Max Iterations", 100);
-  //linsol_param.set("Compute Scaling Manually", false);
-  linsol_param.set("Tolerance", 1.0e-6);
+  Teuchos::ParameterList &linsol_param = direct_param.sublist("Linear Solver");
   linsol_param.set("Preconditioner", "User Defined");
 
   // Set the printing parameters in the "Printing" sublist

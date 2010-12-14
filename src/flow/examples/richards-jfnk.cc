@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   newton_param.set("Forcing Term Method", "Constant");
   
   Teuchos::ParameterList &linsol_param = newton_param.sublist("Linear Solver");
-  linsol_param.set("Aztec Solver", "CG");
+  linsol_param.set("Aztec Solver", "GMRES");
   linsol_param.set("Max Iterations", 100);
   //linsol_param.set("Compute Scaling Manually", false);
   linsol_param.set("Tolerance", 1.0e-6);

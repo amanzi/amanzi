@@ -19,8 +19,6 @@ NKADirection::NKADirection(const Teuchos::RCP<NOX::GlobalData>& gd,
 
 NKADirection::~NKADirection() 
 {
-  globalDataPtr = Teuchos::null;  
-
   delete state;
 };
 
@@ -28,7 +26,6 @@ NKADirection::~NKADirection()
 bool NKADirection::reset(const Teuchos::RCP<NOX::GlobalData> &gd, 
 			 Teuchos::ParameterList &param)
 {
-
   globalDataPtr = gd;
   utils = gd->getUtils();
   paramPtr = &param;
@@ -78,7 +75,6 @@ bool NKADirection::compute (NOX::Abstract::Vector  &dir,
 			    NOX::Abstract::Group  &soln, 
 			    const NOX::Solver::LineSearchBased  &solver)
 {
-  
   return NOX::Direction::Generic::compute( dir, soln, solver );
 };
 
