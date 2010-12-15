@@ -52,7 +52,13 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm,
 
   std::string s(my_basename);
 
-  s += boost::str(boost::format(".%d.%d") % np % me);
+  // create the format string that pads me with the correct number of zeros
+  int ndigits = (int)floor(log10(np)) + 1;
+  std::stringstream frmt;
+  frmt << ".%d.%0" << ndigits << "d";
+
+  s += boost::str(boost::format( frmt.str().c_str() ) % np % me);
+  //s += boost::str(boost::format(".%d.%d") % np % me);
 
   std::cerr << "Process " << me << " of " << np << ": trying file " << s << std::endl;
 
