@@ -357,7 +357,7 @@ if(ENABLE_CGNS)
   
   add_library(cgns STATIC IMPORTED)
   set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
-  set(CMAKE_CXX_FLAGS "-DENABLE_CGNS")
+  add_definitions("-DENABLE_CGNS")
 endif()
 
 
@@ -378,7 +378,7 @@ if (NOT ENABLE_STK_Mesh)
 else()
   add_subdirectory(stk_mesh)
   set(MESH_LIBRARY stk_mesh)
-  set(CMAKE_CXX_FLAGS "-DENABLE_STK")
+  add_definitions("-DENABLE_STK")
 endif()
 
 add_subdirectory(error_handling)
