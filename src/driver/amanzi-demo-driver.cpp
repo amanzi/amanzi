@@ -4,6 +4,10 @@
 
 #include "Mesh_maps_moab.hh"
 #include "Mesh_maps_simple.hh"
+#include "Exodus_readers.hh"
+#include "Parallel_Exodus_file.hh"
+#include "Mesh_factory.hh"
+#include "Mesh_maps_stk.hh"
 #include "Mesh_maps_base.hh"
 
 #include <Epetra_Comm.h>
@@ -110,6 +114,18 @@ int main(int argc, char *argv[])
       mesh = MMM;
 
     }
+#ifdef ENABLE_STK
+  else if (mesh_class == "STK")
+    {
+      string filename = mesh_parameter_list.get<string>("STK File name");
+      
+      Teuchos::RCP<STK_mesh::Mesh_maps_stk> STKMM = 
+      	Teuchos::rcp(new STK_mesh::Mesh_maps_stk(MPI_COMM_WORLD, filename.c_str()));            
+
+      mesh = STKMM;
+
+    }
+#endif
   else
     {
       throw std::exception();
