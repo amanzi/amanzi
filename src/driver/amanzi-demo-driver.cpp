@@ -88,11 +88,7 @@ int main(int argc, char *argv[])
       Teuchos::ParameterList simple_mesh_parameter_list = 
       	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      Teuchos::RCP<Mesh_maps_simple> MMS = 
-      	Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
-      
-      mesh = MMS;
-      
+      mesh = Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
     } 
   else if (mesh_class == "MOAB")  
     {
@@ -106,24 +102,15 @@ int main(int argc, char *argv[])
       std::streambuf *store_buf = std::cout.rdbuf();
       std::cout.rdbuf(0);
 
-      Teuchos::RCP<Mesh_maps_moab> MMM = 
-      	Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));      
-      
+      mesh = Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));            
       std::cout.rdbuf(store_buf);
-
-      mesh = MMM;
-
     }
 #ifdef ENABLE_STK
   else if (mesh_class == "STK")
     {
       string filename = mesh_parameter_list.get<string>("STK File name");
       
-      Teuchos::RCP<STK_mesh::Mesh_maps_stk> STKMM = 
-      	Teuchos::rcp(new STK_mesh::Mesh_maps_stk(MPI_COMM_WORLD, filename.c_str()));            
-
-      mesh = STKMM;
-
+      mesh = Teuchos::rcp(new STK_mesh::Mesh_maps_stk(MPI_COMM_WORLD, filename.c_str()));            
     }
 #endif
   else
