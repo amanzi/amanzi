@@ -19,7 +19,15 @@ bool RichardsNoxInterface::computePreconditioner(const Epetra_Vector &x, Epetra_
 {
   // We assume the input operator is the same one we handed to NOX.
   ASSERT(&M == &(problem_->Precon()));
-  (*problem_).ComputePrecon(x);
+
+  if (lag_count == 0) 
+    {
+      (*problem_).ComputePrecon(x);
+    }
+  lag_count++;
+  lag_count %= lag_prec;
+  
+
   return true;
 }
 

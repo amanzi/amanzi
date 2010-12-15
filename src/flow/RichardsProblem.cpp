@@ -27,6 +27,11 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 
   // Create the NOX interface object for the system.
   nox_interface_ = new RichardsNoxInterface(this);
+  
+  // set the lagging strategy (maybe set this from a paramter list entry)
+  nox_interface_->setPrecLag(5);
+  nox_interface_->resetPrecLagCounter(); 
+
 
   // DEFINE DEFAULTS FOR PROBLEM PARAMETERS
   rho_ = 1.0;

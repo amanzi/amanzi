@@ -20,7 +20,7 @@
 #include <UnitTest++.h>
 #include <Epetra_MpiComm.h>
 
-#include "Exodus_Readers.hh"
+#include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
 #include "../Mesh_factory.hh"
 #include "Auditor.hh"

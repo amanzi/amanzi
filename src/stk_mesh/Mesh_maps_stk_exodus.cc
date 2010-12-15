@@ -16,7 +16,7 @@
 
 #include "Mesh_maps_stk.hh"
 #include "Mesh_factory.hh"
-#include "Exodus_Readers.hh"
+#include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
 
 namespace STK_mesh {

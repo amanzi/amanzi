@@ -16,8 +16,8 @@ add_definitions("-DUSE_MPI")
 
 link_directories(${Trilinos_LIBRARY_DIRS})
 add_executable(richards-nka richards-nka.cc)
-target_link_libraries(richards-nka simple_mesh flow utils ${Trilinos_LIBRARIES})
+target_link_libraries(richards-nka moab_mesh simple_mesh flow utils ${Trilinos_LIBRARIES})
 
 add_executable(richards-jfnk richards-jfnk.cc)
-target_link_libraries(richards-jfnk simple_mesh flow utils ${Trilinos_LIBRARIES})
+target_link_libraries(richards-jfnk moab_mesh simple_mesh flow utils ${Trilinos_LIBRARIES})
 

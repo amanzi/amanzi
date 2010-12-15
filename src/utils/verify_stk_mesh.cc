@@ -22,7 +22,7 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 
-#include "Exodus_Readers.hh"
+#include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
 #include "Mesh_factory.hh"
 #include "Mesh_maps_stk.hh"
