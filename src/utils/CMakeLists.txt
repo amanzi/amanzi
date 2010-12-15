@@ -34,5 +34,5 @@ target_link_libraries(verify_moab_mesh moab_mesh utils ${MOAB_ALL_LIBS})
 
 if (ENABLE_STK_Mesh)
    add_executable(verify_stk_mesh verify_stk_mesh.cc)
-   target_link_libraries(verify_stk_mesh exodus mesh_data stk_mesh utils ${EXODUS_LIBS_ALL} ${Trilinos_LIBRARIES})
+   target_link_libraries(verify_stk_mesh mesh_data stk_mesh exodus utils ${EXODUS_LIBS_ALL} ${Trilinos_LIBRARIES})
 endif()
