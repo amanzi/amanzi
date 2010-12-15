@@ -11,13 +11,10 @@ include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${MOAB_INCLUDES})
 add_definitions("-DUSE_MPI")
 
-#add_library(flow Flow_PK.cpp MimeticHexLocal.cpp MimeticHex.cpp
-#  DiffusionMatrix.cpp DiffusionPrecon.cpp
-#  DarcyProblem.cpp DarcyMatvec.cpp FlowBC.cpp)
-add_library(flow Flow_PK.cpp MimeticHexLocal.cpp MimeticHex.cpp
-  DiffusionMatrix.cpp DiffusionPrecon.cpp
-  DarcyProblem.cpp DarcyMatvec.cpp FlowBC.cpp
-  Richards_PK RichardsProblem.cpp RichardsNoxInterface.cpp
+add_library(flow MimeticHexLocal.cpp MimeticHex.cpp
+  DiffusionMatrix.cpp DiffusionPrecon.cpp FlowBC.cpp
+  Darcy_PK.cpp DarcyProblem.cpp DarcyMatvec.cpp
+  Richards_PK.cpp RichardsProblem.cpp RichardsNoxInterface.cpp
   NKA.cpp NKADirFactory.cpp NKADirection.cpp)
 target_link_libraries(flow ${MESH_LIBRARY} ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})

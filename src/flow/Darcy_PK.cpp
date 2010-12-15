@@ -1,8 +1,8 @@
-#include "Flow_PK.hpp"
+#include "Darcy_PK.hpp"
 
 #include "DarcyProblem.hpp"
 
-Flow_PK::Flow_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
 {
   // Create the flow boundary conditions object.
   Teuchos::ParameterList bc_param_list = list.sublist("Flow BC");
@@ -29,7 +29,7 @@ Flow_PK::Flow_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_Sta
 };
 
 
-Flow_PK::~Flow_PK()
+Darcy_PK::~Darcy_PK()
 {
   delete problem;
   delete solver;
@@ -39,7 +39,7 @@ Flow_PK::~Flow_PK()
 };
 
 
-int Flow_PK::advance()
+int Darcy_PK::advance()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());

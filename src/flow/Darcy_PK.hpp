@@ -1,22 +1,22 @@
-#ifndef __Richards_PK_hpp__
-#define __Richards_PK_hpp__
+#ifndef __Darcy_PK_hpp__
+#define __Darcy_PK_hpp__
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_ParameterList.hpp"
 
 #include "Epetra_Vector.h"
+#include "AztecOO.h"
 
 #include "Flow_PK.hpp"
 #include "Flow_State.hpp"
-#include "RichardsProblem.hpp"
+#include "DarcyProblem.hpp"
 
-class Richards_PK : public Flow_PK
+class Darcy_PK : public Flow_PK
 {
 
 public:
-  Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
+  Darcy_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
 
-  ~Richards_PK ();
+  ~Darcy_PK ();
 
   int advance();
   void commit_state(Teuchos::RCP<Flow_State>) {}
@@ -30,21 +30,16 @@ public:
   const Epetra_Vector& DarcyFlux() const { return *darcy_flux; }
 
   // Computes the components of the Darcy velocity on cells.
-  void GetDarcyVelocity(Epetra_MultiVector &q) const
+  void GetDarcyVelocity (Epetra_MultiVector &q) const
       { problem->DeriveDarcyVelocity(*solution, q); }
-
-  // Computes the fluid saturation on cells.
-  void GetSaturation(Epetra_Vector &s) const;
 
 private:
 
   Teuchos::RCP<const Flow_State> FS;
   Teuchos::RCP<FlowBC> bc;
 
-  RichardsProblem *problem;
-
-  Teuchos::RCP<Teuchos::ParameterList> nox_param_p;
-  Teuchos::RCP<Teuchos::ParameterList> linsol_param_p;
+  DarcyProblem *problem;
+  AztecOO *solver;
 
   Epetra_Vector *solution;   // full cell/face solution
   Epetra_Vector *pressure;   // cell pressures
@@ -52,11 +47,6 @@ private:
 
   int max_itr;      // max number of linear solver iterations
   double err_tol;   // linear solver convergence error tolerance
-  int precon_freq;  // preconditioner update frequency
-
-  // Constructor helpers
-  void nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList>&, Teuchos::RCP<Teuchos::ParameterList>&) const;
-  void nox_nlk_setup(Teuchos::RCP<Teuchos::ParameterList>&, Teuchos::RCP<Teuchos::ParameterList>&) const;
 };
 
 #endif

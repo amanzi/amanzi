@@ -6,7 +6,8 @@
 #include "Chemistry_State.hpp"
 #include "Chemistry_PK.hpp"
 #include "Flow_State.hpp"
-#include "Flow_PK.hpp"
+#include "Darcy_PK.hpp"
+#include "Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
@@ -95,7 +96,15 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      Teuchos::ParameterList flow_parameter_list = 
        parameter_list.sublist("Flow");
      
-     FPK = Teuchos::rcp( new Flow_PK(flow_parameter_list, FS) );      
+     string flow_model = mpc_parameter_list.get<string>("Flow model","Darcy");
+     if (flow_model == "Darcy")
+       FPK = Teuchos::rcp( new Darcy_PK(flow_parameter_list, FS) );  
+     else if (flow_model == "Richards")
+       FPK = Teuchos::rcp( new Richards_PK(flow_parameter_list, FS) );
+     else {
+       cout << "MPC: unknown flow model: " << flow_model << endl;
+       throw std::exception();
+     } 
    }
    // done creating auxilary state objects and  process models
 
