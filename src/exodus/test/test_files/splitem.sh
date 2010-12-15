@@ -4,14 +4,30 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created November 15, 2010 by William A. Perkins
-# Last Change: Mon Nov 15 09:41:29 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# Last Change: Wed Dec 15 07:51:28 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 
-set -xue
+set -ue
+
+# This script requires the SEACAS utilities nem_slice and
+# nem_spread. SEACAS source can be obtained from
+# http://sourceforge.net/projects/seacas.  Set the enivronment
+# variable ACCESS to the path where SEACAS was installed.
 
 seacas=${ACCESS-/files0/ascem/src/seacas}
 nem_slice="$seacas/bin/nem_slice"
 nem_spread="$seacas/bin/nem_spread"
+
+if [ ! -x "$nem_slice" ]; then
+    echo "$0: error: Unable to find required utility $nem_slice" 1>&2 
+    echo "set $ACCESS environment variable to SEACAS installation location" 1>&2
+    exit 2
+fi
+if [ ! -x "$nem_spread" ]; then
+    echo "$0: error: Unable to find required utility $nem_spread" 1>&2 
+    echo "set $ACCESS environment variable to SEACAS installation location" 1>&2
+    exit 2
+fi
 
 # -------------------------------------------------------------
 # splitexo
