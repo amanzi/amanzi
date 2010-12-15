@@ -13,19 +13,11 @@
 #include "MimeticHexLocal.hpp"
 #include "MimeticHex.hpp"
 
-#include "NOX_Epetra_Interface_Required.H"
-//#include "NOX_Epetra_Interface_Jacobian.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
-
-// Forward declaration
-//class DarcyMatvec;
-class RichardsNoxInterface;
-
 class RichardsProblem
 {
 public:
 
-  RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh, 
+  RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 	       Teuchos::ParameterList&, const Teuchos::RCP<FlowBC> &bc);
   ~RichardsProblem();
 
@@ -48,7 +40,7 @@ public:
   void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
 
   void ComputePrecon(const Epetra_Vector &X);
-  
+
   Epetra_Operator& Precon() const { return *precon_; }
 
   const Epetra_Map& Map() const { return *dof_map_; }
@@ -61,15 +53,12 @@ public:
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
 
-  NOX::Epetra::Interface::Required& NoxReq() const; // { return *nox_interface_; }
-  NOX::Epetra::Interface::Preconditioner& NoxPrecon() const; // { return *nox_interface_; }
-
   DiffusionMatrix& Matrix() const { return *D_; }
 
   void DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l1_error) const;
 
   void DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const;
-  
+
   void GetFluidDensity(double &rho) const { rho = rho_; }
   void GetFluidViscosity(double &mu) const { mu = mu_; }
   void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = g_[i]; }
@@ -91,7 +80,6 @@ private:
   MimeticHex *md_;
 
   DiffusionPrecon *precon_;
-  RichardsNoxInterface *nox_interface_;
 
   Teuchos::RCP<DiffusionMatrix> D_;
 

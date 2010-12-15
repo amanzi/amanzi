@@ -17,18 +17,17 @@
 #include "NKADirection.H"
 
 #include "RichardsProblem.hpp"
+#include "RichardsNoxInterface.hpp"
 #include "gmv_mesh.hh"
-
-enum Side { LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP };
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  
+
   // MESH
   Teuchos::RCP<Mesh_maps_moab> mesh(new Mesh_maps_moab(argv[1], MPI_COMM_WORLD));
-  
+
   // BOUNDARY CONDITIONS
   Teuchos::ParameterList bc_params;
   bc_params.set("number of BCs", 6);
@@ -53,7 +52,7 @@ int main(int argc, char *argv[])
     bc_top.set("Side set ID", 6);
     bc_top.set("Type", "No Flow");
   Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
-  
+
   // PROBLEM
   Teuchos::ParameterList pl;
   RichardsProblem problem(mesh, pl, bc);
@@ -64,74 +63,65 @@ int main(int argc, char *argv[])
   problem.SetPermeability(1.0);
   double g[3] = { 0.0 };
   problem.SetGravity(g);
-  
+
+  // Initial solution vector and its NOX view.
+  Epetra_Vector solution(problem.Map());
+  NOX::Epetra::Vector nox_solution(Teuchos::rcpFromRef(solution), NOX::Epetra::Vector::CreateView);
+
   // Create the NOX parameter list.
   Teuchos::RCP<Teuchos::ParameterList> nox_param_p(new Teuchos::ParameterList);
   Teuchos::ParameterList &nox_param = *nox_param_p.get();
- 
-  // we need a GlobalData variable fo initialize the 
-  // NKA Direction factory later on
-  Teuchos::RCP<NOX::GlobalData> gd = Teuchos::rcp(new NOX::GlobalData(nox_param_p));
-
 
   // Use a line search method...
   nox_param.set("Nonlinear Solver", "Line Search Based");
-  
-  // with get the search direction...
+
+  // with our user-defined NKA search direction method...
   Teuchos::ParameterList &direct_param = nox_param.sublist("Direction");
   direct_param.set("Method", "User Defined");
-  
-  // these are parameters that the NKA direction class
-  // will look at
-  Teuchos::ParameterList &mydirParams = nox_param.sublist("NKADirection");
-  mydirParams.set("maxv", 4);
-  mydirParams.set("vtol", 5e-2);
-  
 
-  // and taking the full step given by the nonlinear solver
+  // and taking the full step given by NKA.
   Teuchos::ParameterList &search_param = nox_param.sublist("Line Search");
   search_param.set("Method", "Full Step");
-  
-  Teuchos::ParameterList &linsol_param = direct_param.sublist("Linear Solver");
+
+  // NKA Parameters.
+  Teuchos::ParameterList &nka_param = nox_param.sublist("NKADirection");
+  nka_param.set("maxv", 4);
+  nka_param.set("vtol", 5e-2);
+
+  // Wire-in the NKA direction factory.
+  Teuchos::RCP<NOX::GlobalData> gd(new NOX::GlobalData(nox_param_p));
+  Teuchos::RCP<NOX::Direction::UserDefinedFactory>
+      dir_factory(new NKADirFactory(gd, nka_param, nox_solution));
+  direct_param.set("User Defined Direction Factory", dir_factory);
+
+  // Set the linear solver parameters; all that matters is the preconditioner.
+  Teuchos::ParameterList &linsol_param = nka_param.sublist("Linear Solver");
   linsol_param.set("Preconditioner", "User Defined");
 
-  // Set the printing parameters in the "Printing" sublist
+  // Set the printing parameters in the "Printing" sublist.
   Teuchos::ParameterList &print_param = nox_param.sublist("Printing");
-  print_param.set("MyPID", comm.MyPID()); 
+  print_param.set("MyPID", comm.MyPID());
   print_param.set("Output Precision", 5);
   print_param.set("Output Processor", 0);
-  print_param.set("Output Information", 
-			   NOX::Utils::OuterIteration + 
-			   NOX::Utils::OuterIterationStatusTest + 
+  print_param.set("Output Information",
+			   NOX::Utils::OuterIteration +
+			   NOX::Utils::OuterIterationStatusTest +
 			   NOX::Utils::InnerIteration +
 			   NOX::Utils::LinearSolverDetails +
-			   NOX::Utils::Parameters + 
-			   NOX::Utils::Details + 
+			   NOX::Utils::Parameters +
+			   NOX::Utils::Details +
 			   NOX::Utils::Warning +
-			   NOX::Utils::Error +
-                           NOX::Utils::Debug);
+			   NOX::Utils::Error);
 
-
-  Teuchos::RCP<NOX::Epetra::Interface::Required> Ireq = Teuchos::rcpFromRef(problem.NoxReq());                           
-  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> Iprec = Teuchos::rcpFromRef(problem.NoxPrecon());
+  // Collect the bits needed to build the NOX linear system.
+  Teuchos::RCP<RichardsNoxInterface> nox_interface(new RichardsNoxInterface(&problem));
+  Teuchos::RCP<NOX::Epetra::Interface::Required> Ireq = nox_interface; // cast to base class
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> Iprec = nox_interface; // cast to base class
   Teuchos::RCP<Epetra_Operator> precon = Teuchos::rcpFromRef(problem.Precon());
-  
-  //Teuchos::RCP<Epetra_Vector> solution(new Epetra_Vector(problem.Map()));
-  Epetra_Vector solution(problem.Map());
-  NOX::Epetra::Vector nox_solution(Teuchos::rcpFromRef(solution), NOX::Epetra::Vector::CreateView);
-  
-  // I don't think this should be necessary; NOX should do this at the start of the iteration.
-  //problem.ComputePrecon(solution);
-  
+
   // Create the NOX "linear system".
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO>
       nox_ls(new NOX::Epetra::LinearSystemAztecOO(print_param, linsol_param, Ireq, Iprec, precon, nox_solution));
-
-
-  // create our NKA direction factory
-  Teuchos::RCP<NOX::Direction::UserDefinedFactory> dir_factory 
-    = Teuchos::rcp(new NKADirFactory(gd, mydirParams, nox_solution));
-  direct_param.set("User Defined Direction Factory", dir_factory);
 
   // Create the NOX "group".
   Teuchos::RCP<NOX::Epetra::Group> group(new NOX::Epetra::Group(print_param, Ireq, nox_solution, nox_ls));
@@ -142,19 +132,17 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::StatusTest::Combo> conv_test(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   conv_test->addStatusTest(abs_res);
   conv_test->addStatusTest(max_itr);
-  
-  // Finally we create the NOX solver for the problem
+
+  // Finally we create the NOX solver for the problem.
   Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(group, conv_test, nox_param_p);
-  
-  std::cout << "ABOUT TO CALL SOLVE ..." << std::endl;
-  
-  // Solve the nonlinear system
+
+  // Solve the nonlinear system.
   NOX::StatusTest::StatusType status = solver->solve();
-  
+
   // Extract the solution from the solver.
   const NOX::Epetra::Group& final_group = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& final_soln = (dynamic_cast<const NOX::Epetra::Vector&>(final_group.getX())).getEpetraVector();
-  
+
   // Write a GMV file with the cell pressures.
   std::string gmv_file("pressure.gmv");
   GMV::open_data_file(*mesh, gmv_file);
@@ -163,6 +151,6 @@ int main(int argc, char *argv[])
   GMV::write_cell_data(Pcell, std::string("pressure"));
   GMV::close_data_file();
   delete &Pcell;
-  
+
   return 0;
 }

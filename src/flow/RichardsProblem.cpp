@@ -1,8 +1,6 @@
 #include "Epetra_IntVector.h"
 
 #include "RichardsProblem.hpp"
-//#include "DarcyMatvec.hpp"
-#include "RichardsNoxInterface.hpp"
 
 RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 			   Teuchos::ParameterList &list,
@@ -25,14 +23,6 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   Teuchos::ParameterList diffprecon_plist = list.sublist("Diffusion Preconditioner");
   precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
 
-  // Create the NOX interface object for the system.
-  nox_interface_ = new RichardsNoxInterface(this);
-  
-  // set the lagging strategy (maybe set this from a paramter list entry)
-  nox_interface_->setPrecLag(5);
-  nox_interface_->resetPrecLagCounter(); 
-
-
   // DEFINE DEFAULTS FOR PROBLEM PARAMETERS
   rho_ = 1.0;
   mu_  = 1.0;
@@ -48,19 +38,6 @@ RichardsProblem::~RichardsProblem()
   delete cell_importer_;
   delete md_;
   delete precon_;
-  delete nox_interface_;
-}
-
-
-NOX::Epetra::Interface::Required& RichardsProblem::NoxReq() const
-{
-  return *nox_interface_;
-}
-
-  
-NOX::Epetra::Interface::Preconditioner& RichardsProblem::NoxPrecon() const
-{
-  return *nox_interface_;
 }
 
 
@@ -167,11 +144,11 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
 
   Epetra_Vector &Fcell_own = *CreateCellView(F);
   Epetra_Vector &Fface_own = *CreateFaceView(F);
-  
+
   // Create input cell and face pressure vectors that include ghosts.
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
-  
+
   Epetra_Vector Pface(FaceMap(true));
   Pface.Import(Pface_own, *face_importer_, Insert);
 
@@ -203,7 +180,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
 
   // Apply final BC fixups to FFACE.
   apply_BC_final_(Fface); // modifies used values
-  
+
   // Copy owned part of result into the output vectors.
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
   for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];

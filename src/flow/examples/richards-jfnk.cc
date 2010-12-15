@@ -11,18 +11,17 @@
 #include "NOX_Epetra.H"
 
 #include "RichardsProblem.hpp"
+#include "RichardsNoxInterface.hpp"
 #include "gmv_mesh.hh"
-
-enum Side { LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP };
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  
+
   // MESH
   Teuchos::RCP<Mesh_maps_moab> mesh(new Mesh_maps_moab(argv[1], MPI_COMM_WORLD));
-  
+
   // BOUNDARY CONDITIONS
   Teuchos::ParameterList bc_params;
   bc_params.set("number of BCs", 6);
@@ -47,7 +46,7 @@ int main(int argc, char *argv[])
     bc_top.set("Side set ID", 6);
     bc_top.set("Type", "No Flow");
   Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
-  
+
   // PROBLEM
   Teuchos::ParameterList pl;
   RichardsProblem problem(mesh, pl, bc);
@@ -58,66 +57,65 @@ int main(int argc, char *argv[])
   problem.SetPermeability(1.0);
   double g[3] = { 0.0 };
   problem.SetGravity(g);
-  
+
+  // Initial solution vector and its NOX view.
+  Epetra_Vector solution(problem.Map());
+  NOX::Epetra::Vector nox_solution(Teuchos::rcpFromRef(solution), NOX::Epetra::Vector::CreateView);
+
   // Create the NOX parameter list.
   Teuchos::RCP<Teuchos::ParameterList> nox_param_p(new Teuchos::ParameterList);
   Teuchos::ParameterList &nox_param = *nox_param_p.get();
-  
+
   // Use a line search method...
   nox_param.set("Nonlinear Solver", "Line Search Based");
-  
+
   // with Newton to get the search direction...
   Teuchos::ParameterList &direct_param = nox_param.sublist("Direction");
   direct_param.set("Method", "Newton");
-  
+
   // and taking the full step given by Newton.
   Teuchos::ParameterList &search_param = nox_param.sublist("Line Search");
   search_param.set("Method", "Full Step");
-  
+
+  // Set the Newton and linear solver parameters.
   Teuchos::ParameterList &newton_param = direct_param.sublist("Newton");
-  newton_param.set("Forcing Term Method", "Constant");
-  
   Teuchos::ParameterList &linsol_param = newton_param.sublist("Linear Solver");
   linsol_param.set("Aztec Solver", "GMRES");
   linsol_param.set("Max Iterations", 100);
-  //linsol_param.set("Compute Scaling Manually", false);
-  linsol_param.set("Tolerance", 1.0e-6);
   linsol_param.set("Preconditioner", "User Defined");
-  
-  // Set the printing parameters in the "Printing" sublist
+
+  // Set how accurately we solve the linear Newton update problem.
+  newton_param.set("Forcing Term Method", "Constant");
+  linsol_param.set("Tolerance", 1.0e-8);
+
+  // Set the printing parameters in the "Printing" sublist.
   Teuchos::ParameterList &print_param = nox_param.sublist("Printing");
-  print_param.set("MyPID", comm.MyPID()); 
+  print_param.set("MyPID", comm.MyPID());
   print_param.set("Output Precision", 5);
   print_param.set("Output Processor", 0);
-  print_param.set("Output Information", 
-			   NOX::Utils::OuterIteration + 
-			   NOX::Utils::OuterIterationStatusTest + 
+  print_param.set("Output Information",
+			   NOX::Utils::OuterIteration +
+			   NOX::Utils::OuterIterationStatusTest +
 			   NOX::Utils::InnerIteration +
 			   NOX::Utils::LinearSolverDetails +
-			   NOX::Utils::Parameters + 
-			   NOX::Utils::Details + 
+			   NOX::Utils::Parameters +
+			   NOX::Utils::Details +
 			   NOX::Utils::Warning +
 			   NOX::Utils::Error);
-                           //NOX::Utils::Debug +
-			   //NOX::Utils::TestDetails +
 
-  Teuchos::RCP<NOX::Epetra::Interface::Required> Ireq = Teuchos::rcpFromRef(problem.NoxReq());                           
-  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> Iprec = Teuchos::rcpFromRef(problem.NoxPrecon());                           
+  // Collect the bits needed to build the NOX linear system.
+  Teuchos::RCP<RichardsNoxInterface> nox_interface(new RichardsNoxInterface(&problem));
+  Teuchos::RCP<NOX::Epetra::Interface::Required> Ireq = nox_interface;
+  Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> Iprec = nox_interface;
   Teuchos::RCP<Epetra_Operator> precon = Teuchos::rcpFromRef(problem.Precon());
-  
-  //Teuchos::RCP<Epetra_Vector> solution(new Epetra_Vector(problem.Map()));
-  Epetra_Vector solution(problem.Map());
-  NOX::Epetra::Vector nox_solution(Teuchos::rcpFromRef(solution), NOX::Epetra::Vector::CreateView);
-  
-  // I don't think this should be necessary; NOX should do this at the start of the iteration.
-  //problem.ComputePrecon(solution);
-  
+
   // Create the NOX "linear system".
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO>
       nox_ls(new NOX::Epetra::LinearSystemAztecOO(print_param, linsol_param, Ireq, Iprec, precon, nox_solution));
 
   // Create the NOX "group".
-  Teuchos::RCP<NOX::Epetra::Group> group(new NOX::Epetra::Group(print_param, Ireq, nox_solution, nox_ls));
+  Teuchos::RCP<NOX::Epetra::Group>
+      group(new NOX::Epetra::Group(print_param, Ireq, nox_solution, nox_ls));
 
   // Create the NOX convergence criteron.
   Teuchos::RCP<NOX::StatusTest::NormF> abs_res(new NOX::StatusTest::NormF(1.0e-12));
@@ -125,17 +123,17 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::StatusTest::Combo> conv_test(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   conv_test->addStatusTest(abs_res);
   conv_test->addStatusTest(max_itr);
-  
-  // Finally we create the NOX solver for the problem
+
+  // Finally we create the NOX solver for the problem.
   Teuchos::RCP<NOX::Solver::Generic> solver = NOX::Solver::buildSolver(group, conv_test, nox_param_p);
-  
-  // Solve the nonlinear system
+
+  // Solve the nonlinear system.
   NOX::StatusTest::StatusType status = solver->solve();
-  
+
   // Extract the solution from the solver.
   const NOX::Epetra::Group& final_group = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
   const Epetra_Vector& final_soln = (dynamic_cast<const NOX::Epetra::Vector&>(final_group.getX())).getEpetraVector();
-  
+
   // Write a GMV file with the cell pressures.
   std::string gmv_file("pressure.gmv");
   GMV::open_data_file(*mesh, gmv_file);
@@ -144,6 +142,6 @@ int main(int argc, char *argv[])
   GMV::write_cell_data(Pcell, std::string("pressure"));
   GMV::close_data_file();
   delete &Pcell;
-  
+
   return 0;
 }
