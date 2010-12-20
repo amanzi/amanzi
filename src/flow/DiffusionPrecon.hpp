@@ -50,6 +50,8 @@ private:
   // ML preconditioner for the Schur complement system.
   ML_Epetra::MultiLevelPreconditioner *MLprec;
 
+  Teuchos::ParameterList ML_plist;
+
   char *label;
 };
 

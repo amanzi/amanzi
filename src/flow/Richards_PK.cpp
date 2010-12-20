@@ -60,12 +60,12 @@ void Richards_PK::nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList> &nox_param
   Teuchos::ParameterList &linsol_param = newton_param.sublist("Linear Solver");
   linsol_param_p = Teuchos::rcpFromRef(linsol_param); // we need this later
   linsol_param.set("Aztec Solver", "GMRES");
-  linsol_param.set("Max Iterations", 100);  // INPUT PARAMETER?
+  //linsol_param.set("Max Iterations", 100);  // INPUT PARAMETER?
   linsol_param.set("Preconditioner", "User Defined");
   linsol_param.set("Preconditioner Reuse Policy", "Recompute");  // INPUT PARAMETER?
 
   // Set how accurately we solve the linear Newton update problem.
-  newton_param.set("Forcing Term Method", "Constant");
+  newton_param.set("Forcing Term Method", "Type 2");
   linsol_param.set("Tolerance", 1.0e-8);  // INPUT PARAMETER?
 
   // Set the printing parameters in the "Printing" sublist
