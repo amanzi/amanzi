@@ -27,7 +27,13 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   rho_ = 1.0;
   mu_  = 1.0;
   k_.resize(CellMap(true).NumMyElements(), 1.0);
+  k_rl_.resize(CellMap(true).NumMyElements(), 1.0);
   for (int i = 0; i < 3; ++i) g_[i] = 0.0; // no gravity
+
+  // read values for the van Genuchten model
+  vG_m_      = list.get<double>("van Genuchten m");
+  vG_n_      = 1.0/(1.0-vG_m_); 
+  vG_alpha_  = list.get<double>("van Genuchten alpha");
 }
 
 
@@ -116,12 +122,56 @@ void RichardsProblem::SetPermeability(const Epetra_Vector &k)
 }
 
 
+void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P)
+{
+  for (int i=0; i<k_rl_.size(); i++)
+    {
+      if (P[i] < 0.0)
+	{
+	  double se = pow(1.0 + pow(-vG_alpha_*P[i],vG_n_),-vG_m_);
+
+	  k_rl_[i] = sqrt(se)*pow(1.0-pow(1.0-pow(se,1.0/vG_m_),vG_m_),2.0);
+	  
+	}
+      else
+	{
+	  k_rl_[i] = 1.0;
+	}
+
+    }
+}
+
+
+void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S)
+{
+  for (int i=0; i<P.MyLength(); i++)
+    {
+      if (P[i] < 0.0) 
+	{
+	  S[i] = pow(1.0 + pow(-vG_alpha_*P[i],vG_n_),-vG_m_);
+
+	}
+      else
+	{
+	  S[i] = 1.0;
+	}
+      
+    }
+}
+
 void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
 {
   // Fill the diffusion matrix with values.
   // THIS IS WHERE WE USE THE CELL PRESSURE PART OF X TO EVALUATE THE RELATIVE PERMEABILITY
   std::vector<double> K(k_);
-  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] / mu_;
+
+  Epetra_Vector &Pcell_own = *CreateCellView(X);
+  Epetra_Vector Pcell(CellMap(true));
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
+
+  UpdateVanGenuchtenRelativePermeability(Pcell);
+  
+  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
   D_->Compute(K);
 
   // Compute the face Schur complement of the diffusion matrix.
@@ -145,9 +195,12 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   Epetra_Vector &Fcell_own = *CreateCellView(F);
   Epetra_Vector &Fface_own = *CreateFaceView(F);
 
+
   // Create input cell and face pressure vectors that include ghosts.
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
+
+  UpdateVanGenuchtenRelativePermeability(Pcell);
 
   Epetra_Vector Pface(FaceMap(true));
   Pface.Import(Pface_own, *face_importer_, Insert);
@@ -169,7 +222,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] / mu_);
+    double K = (rho_ * k_[j] * k_rl_[j] / mu_);
     MD[j].diff_op(K, Pcell[j], aux1, Fcell[j], aux2);
     // Gravity contribution
     MD[j].GravityFlux(g_, gflux);
@@ -369,7 +422,7 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] / mu_);
+    double K = (rho_ * k_[j] *k_rl_[j] / mu_);
     MD[j].diff_op(K, Pcell_own[j], aux1, dummy, aux2);
     // Gravity contribution
     MD[j].GravityFlux(g_, gflux);

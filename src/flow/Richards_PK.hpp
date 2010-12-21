@@ -56,7 +56,7 @@ private:
 
   // Constructor helpers
   void nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList>&, Teuchos::RCP<Teuchos::ParameterList>&) const;
-  void nox_nlk_setup(Teuchos::RCP<Teuchos::ParameterList>&, Teuchos::RCP<Teuchos::ParameterList>&) const;
+  void nox_nlk_setup(Teuchos::ParameterList&, Teuchos::RCP<Teuchos::ParameterList>&, Teuchos::RCP<Teuchos::ParameterList>&) const;
 };
 
 #endif

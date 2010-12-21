@@ -37,6 +37,9 @@ public:
   //void SetPermeability(const std::vector<double> &k);
   void SetPermeability(const Epetra_Vector &k);
 
+  void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P);
+  void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
+
   void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
 
   void ComputePrecon(const Epetra_Vector &X);
@@ -75,6 +78,11 @@ private:
   double mu_;   // constant fluid viscosity
   double g_[3]; // gravitational acceleration
   std::vector<double> k_; // spatially variable permeability
+  std::vector<double> k_rl_;  // relative permeability
+
+  double vG_m_;     // van Genuchten m
+  double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
+  double vG_alpha_; // van Genuchten alpha
 
   std::vector<MimeticHexLocal>  MD;
   MimeticHex *md_;

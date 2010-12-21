@@ -36,7 +36,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const
   if (nl_solver == "JFNK")
     nox_jfnk_setup(nox_param_p, linsol_param_p);
   else if (nl_solver == "NLK")
-    nox_nlk_setup(nox_param_p, linsol_param_p);
+    nox_nlk_setup(plist, nox_param_p, linsol_param_p);
   else
     throw std::exception();
 };
@@ -84,7 +84,7 @@ void Richards_PK::nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList> &nox_param
 			   NOX::Utils::Error);
 }
 
-void Richards_PK::nox_nlk_setup(Teuchos::RCP<Teuchos::ParameterList> &nox_param_p, Teuchos::RCP<Teuchos::ParameterList> &linsol_param_p) const
+void Richards_PK::nox_nlk_setup(Teuchos::ParameterList &plist, Teuchos::RCP<Teuchos::ParameterList> &nox_param_p, Teuchos::RCP<Teuchos::ParameterList> &linsol_param_p) const
 {
   nox_param_p = Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList);
   Teuchos::ParameterList &nox_param = *nox_param_p.get();
@@ -99,9 +99,11 @@ void Richards_PK::nox_nlk_setup(Teuchos::RCP<Teuchos::ParameterList> &nox_param_
   search_param.set("Method", "Full Step");
 
   // NKA parameters.
+  Teuchos::ParameterList nka_sublist = plist.sublist("NKADirection");
+
   Teuchos::ParameterList &nka_param = direct_param.sublist("NKADirection");
-  nka_param.set("maxv", 5);
-  nka_param.set("vtol", 1.0e-3);
+  nka_param.set("maxv", nka_sublist.get<int>("maxv",5) );
+  nka_param.set("vtol", nka_sublist.get<double>("vtol",1.0e-3));
 
   // Wire-in the NKA direction factory.
   Teuchos::RCP<NOX::GlobalData> gd(new NOX::GlobalData(nox_param_p));
@@ -201,5 +203,8 @@ int Richards_PK::advance()
 
 void Richards_PK::GetSaturation(Epetra_Vector &s) const
 {
-  for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
+  //for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
+
+  problem->DeriveVanGenuchtenSaturation(*pressure, s);
+
 }
