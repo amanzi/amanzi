@@ -83,6 +83,7 @@ private:
   double vG_m_;     // van Genuchten m
   double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
   double vG_alpha_; // van Genuchten alpha
+  double vG_sr_;    // van Genuchten effective saturation
 
   std::vector<MimeticHexLocal>  MD;
   MimeticHex *md_;

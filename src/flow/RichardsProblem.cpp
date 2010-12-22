@@ -34,6 +34,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   vG_m_      = list.get<double>("van Genuchten m");
   vG_n_      = 1.0/(1.0-vG_m_); 
   vG_alpha_  = list.get<double>("van Genuchten alpha");
+  vG_sr_     = list.get<double>("van Genuchten residual saturation");
 }
 
 
@@ -126,15 +127,22 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
 {
   for (int i=0; i<k_rl_.size(); i++)
     {
-      if (P[i] < 0.0)
-	{
-	  double se = pow(1.0 + pow(-vG_alpha_*P[i],vG_n_),-vG_m_);
+      // first calculate the capillary pressure (reference pressure is one bar)
 
-	  k_rl_[i] = sqrt(se)*pow(1.0-pow(1.0-pow(se,1.0/vG_m_),vG_m_),2.0);
+      double pc = P[i] - 1.0e+5;
+
+      // if the capillary pressure is negative, we apply the van Genuchten model
+      if (pc < 0.0)
+	{
+	  // compute the effective saturation
+	  double se = pow(1.0 + pow(-vG_alpha_*P[i],vG_n_),-vG_m_);
 	  
+	  // from that we can compute the relative permeability 
+	  k_rl_[i] = sqrt(se)*pow(1.0-pow(1.0-pow(se,1.0/vG_m_),vG_m_),2.0);
 	}
       else
 	{
+	  // if the capillary pressure is positive, we're in the saturated 
 	  k_rl_[i] = 1.0;
 	}
 
@@ -146,13 +154,18 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
 {
   for (int i=0; i<P.MyLength(); i++)
     {
-      if (P[i] < 0.0) 
+      // compute the capillary pressure
+      double pc =  P[i] - 1.0e+5;
+      
+      if (pc < 0.0) 
 	{
-	  S[i] = pow(1.0 + pow(-vG_alpha_*P[i],vG_n_),-vG_m_);
+	  // compute the liquid saturation using the effective and residual saturation
+	  S[i] = pow(1.0 + pow(-vG_alpha_*pc,vG_n_),-vG_m_) * (1.0 - vG_sr_) + vG_sr_;
 
 	}
       else
 	{
+	  // where the capillary pressure is positive, saturation is one
 	  S[i] = 1.0;
 	}
       

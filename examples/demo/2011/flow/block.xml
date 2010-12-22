@@ -42,18 +42,20 @@
 
   <ParameterList name="Flow">
     <Parameter name="Max Iterations" type="int" value="500"/>
-    <Parameter name="Error Tolerance" type="double" value="1.0e-11"/>
+    <Parameter name="Error Tolerance" type="double" value="1.0e-13"/>
     <Parameter name="Nonlinear Solver" type="string" value="NLK"/>
-    <Parameter name="Preconditioner Update Frequency" type="int" value="2"/>
+    <Parameter name="Preconditioner Update Frequency" type="int" value="1"/>
     
     <ParameterList name="NKADirection">
-      <Parameter name="vtol" type="double" value="1e-3"/>
-      <Parameter name="maxv" type="int" value="15"/>      
+      <Parameter name="vtol" type="double" value="1e-1"/>
+      <Parameter name="maxv" type="int" value="5"/>      
     </ParameterList> 
 
     <ParameterList name="Richards Problem">
       <Parameter name="van Genuchten m" type="double" value="0.5"/>
       <Parameter name="van Genuchten alpha" type="double" value="0.00005"/>
+      <Parameter name="van Genuchten residual saturation" type="double" value="0.40969"/>
+
 
       <ParameterList name="Diffusion Preconditioner">
 	<ParameterList name="ML Parameters">
@@ -79,7 +81,7 @@
       <Parameter name="number of BCs" type="int" value="4"/>
       <ParameterList name="BC00">
 	<Parameter name="Type" type="string" value="Static Head"/>
-	<Parameter name="BC value" type="double" value="23.3333" />
+	<Parameter name="BC value" type="double" value="30.0" />
 	<Parameter name="Side set ID" type="int" value="1" />
       </ParameterList>
       <ParameterList name="BC01">
