@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Mon Dec 13 13:05:45 2010
+ * @date Wed Dec 29 09:45:16 2010
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -128,13 +128,16 @@ void
 HexMeshGenerator::global_rvertex(const unsigned int& index, 
                                  unsigned int& i, unsigned int& j, unsigned int& k) const
 {
-  ASSERT (index >= 0 && index <= nvert_ - 1); // index is 0-based
+  ASSERT (index >= 0 && index < nvert_); // index is 0-based
+  
   unsigned int tmp(index);
   k = tmp / ((ni_+1)*(nj_+1));
-  tmp -= k*(nj_+1)*(nj_+1);
+  tmp -= k*(ni_+1)*(nj_+1);
   j = tmp / (ni_+1);
   tmp -= j*(ni_+1);
   i = tmp;
+
+  // std::cerr << "vertex " << index << ": " << i << ", " << j << ", " << k << std::endl;
   return;
 }
 
@@ -163,6 +166,7 @@ HexMeshGenerator::global_cell(const unsigned int& i,
   return result;
 }
 
+
 // -------------------------------------------------------------
 // HexMeshGenerator::global_rcell
 // -------------------------------------------------------------
@@ -181,7 +185,7 @@ HexMeshGenerator::global_rcell(const unsigned int& index,
   ASSERT (index >= 0 && index < ncell_); // index is 1-based
   unsigned int tmp(index);
   k = tmp / ((ni_)*(nj_));
-  tmp -= k*(nj_)*(nj_);
+  tmp -= k*(ni_)*(nj_);
   j = tmp / (ni_);
   tmp -= j*(ni_);
   i = tmp;
@@ -196,8 +200,6 @@ HexMeshGenerator::global_rcell(const unsigned int& index,
 
  * 
  * @param connectivity_map cell connectivity to vertexes (local 0-based vertex indexes)
- * @param involved_global_vertexes an ordered list of the global indexes (0-based) of all the vertexes involved in @connectivity_map
- * @param vertex_idxmap a map for looking up local vertex indexes with global vertex indexes
  */
 
 
@@ -216,16 +218,19 @@ HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
   for (std::vector<unsigned int>::iterator g = cell_gidx_.begin();
        g != cell_gidx_.end(); g++) {
     unsigned int i, j, k;
-    global_rcell(*g, i, j, k);   // g is 1-based; i, j, & k are 0-based
+    unsigned int gidx(*g);
+    global_rcell(gidx, i, j, k);   // g is 1-based; i, j, & k are 0-based
 
-    *(c+0) = i + j*(ni_+1) + k*(ni_+1)*(nj_+1);
-    *(c+1) = (i+1) + j*(ni_+1) + k*(ni_+1)*(nj_+1);
-    *(c+2) = (i+1) + (j+1)*(ni_+1) + k*(ni_+1)*(nj_+1);
-    *(c+3) = i + (j+1)*(ni_+1) + k*(ni_+1)*(nj_+1);
-    *(c+4) = i + j*(ni_+1) + (k+1)*(ni_+1)*(nj_+1);
-    *(c+5) = (i+1) + j*(ni_+1) + (k+1)*(ni_+1)*(nj_+1);
-    *(c+6) = (i+1) + (j+1)*(ni_+1) + (k+1)*(ni_+1)*(nj_+1);
-    *(c+7) = i + (j+1)*(ni_+1) + (k+1)*(ni_+1)*(nj_+1);
+    // std::cerr << "cell " << gidx << ": " << i << ", " << j << ", " << k << std::endl;
+
+    *(c+0) = global_vertex(i  , j  , k  );
+    *(c+1) = global_vertex(i+1, j  , k  );
+    *(c+2) = global_vertex(i+1, j+1, k  );
+    *(c+3) = global_vertex(i  , j+1, k  );
+    *(c+4) = global_vertex(i  , j  , k+1);
+    *(c+5) = global_vertex(i+1, j  , k+1);
+    *(c+6) = global_vertex(i+1, j+1, k+1);
+    *(c+7) = global_vertex(i  , j+1, k+1);
     c += nvcell;
   }
 
