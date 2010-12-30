@@ -23,6 +23,7 @@ namespace bl = boost::lambda;
 // STK_mesh
 #include "Element_field_types.hh"
 #include "Cell_topology.hh"
+#include "Mesh_common.hh"
 
 // Trilinos
 #include <Shards_CellTopology.hpp>
@@ -252,8 +253,6 @@ void Mesh_factory::build_bulk_data_ (const Mesh_data::Data& data,
         add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
     }
     bulk_data_->modification_end();
-
-    // create_cell_ghosting_();
 }
 
 
@@ -786,199 +785,12 @@ Mesh_factory::generate_cell_face_relations(void)
 void
 Mesh_factory::check_face_ownership_(void)
 {
-    const unsigned int me(communicator_.MyPID());
-    
-    stk::mesh::EntityVector faces;
-    stk::mesh::Selector owned(meta_data_->locally_owned_part());
-    get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Face), faces);
-
-    // std::cerr << boost::str(boost::format("Process %d owns %d faces in check_face_ownership_") %
-    //                                       me % faces.size())
-    //           << std::endl;
-    
-    std::vector<stk::mesh::EntityProc> eproc;
-
-    for (stk::mesh::EntityVector::iterator f = faces.begin(); 
-         f != faces.end(); f++) {
-
-        stk::mesh::EntityVector theface, nodes, cells;
-        theface.push_back(*f);
-        stk::mesh::get_entities_through_relations(theface, node_rank_, nodes);
-        stk::mesh::get_entities_through_relations(nodes, element_rank_, cells);
-
-        // there better be at least one cell related to this face
-
-        ASSERT(!cells.empty());
-
-        // There should be at most 2 cells related to this face
-
-        ASSERT(cells.size() <= 2);
-
-        unsigned int cowner = 
-            std::min<unsigned int>(cells.front()->owner_rank(), 
-                                   cells.back()->owner_rank());
-        
-
-        // the face should be owned by the same process as the cell,
-        // if not, change the owner; only the face owner can request
-        // this
-
-        if (cowner != me) {
-            eproc.push_back(stk::mesh::EntityProc(*f, cowner));
-            // std::string msg = 
-            //     boost::str(boost::format("%d: face %d: changing owner from %d to %d") %
-            //                me % (*f)->identifier() % 
-            //                (*f)->owner_rank() % cowner);
-            // std::cerr << msg << std::endl;
-        } else {
-            // std::string msg = 
-            //     boost::str(boost::format("%d: face %d, owner %d: cell %d, owner %d") %
-            //                me % (*f)->identifier() % (*f)->owner_rank() % 
-            //                cells.front()->identifier() % cells.front()->owner_rank());
-            // std::cerr << msg << std::endl;
-        }            
-    }
-    bulk_data_->modification_begin();
-    bulk_data_->change_entity_owner(eproc);
-    bulk_data_->modification_end();
+  stk::mesh::check_face_ownership(*bulk_data_);
 }
 
 // -------------------------------------------------------------
 // Mesh_factory::create_cell_ghosting
 // -------------------------------------------------------------
-/** 
- * Collective
- *
- * This routine is used to explicitly define the ghosting of elements.
- * It goes through the locally owned and ghost faces and generates a
- * list of cells required on other processors.  This is used to create
- * a stk::mesh::Ghosting.
- *
- * It attempts to remove the faces and nodes that are automatically
- * added when the element is ghosted.
- *
- * This ghosting appears to be ineffective.  
- * 
- */
-void
-Mesh_factory::create_cell_ghosting_(void)
-{
-
-    const unsigned int me(communicator_.MyPID());
-
-    // The following builds a list of locally-owned cells that need to
-    // be ghosted elsewhere.  This is done by going through the list
-    // of faces owned or ghosted on this processor and checking which
-    // cells to which they are related.
-
-    // a place to put those local entities that need to be ghosted elsewhere
-    std::vector<stk::mesh::EntityProc> send_list;
-
-    stk::mesh::EntityVector faces;
-    stk::mesh::Selector used(meta_data_->locally_owned_part());
-    // used |= meta_data_->globally_shared_part();
-    get_selected_entities(used, bulk_data_->buckets(stk::mesh::Face), faces);
-
-    for (stk::mesh::EntityVector::iterator f = faces.begin(); 
-         f != faces.end(); f++) {
-
-        stk::mesh::EntityVector theface, cells;
-        theface.push_back(*f);
-        stk::mesh::get_entities_through_relations(theface, element_rank_, cells);
-        
-        ASSERT(!cells.empty());
-
-        ASSERT(cells.size() <= 2);
-
-        if (cells.size() < 2) continue;
-
-        // both cells owned by the same process
-        if (cells.front()->owner_rank() == 
-            cells.back()->owner_rank()) continue;
-
-        // neither cell locally-owned ?
-        if (cells.front()->owner_rank() != me &&
-            cells.back()->owner_rank() != me) {
-            std::string msg = 
-                boost::str(boost::format("%d: local face %d does not connect to any local cell") %
-                           me % (*f)->identifier());
-            std::cerr << msg << std::endl;
-            continue;
-        }
-
-        std::string msg = 
-            boost::str(boost::format("%d: face %d connects cell %d (%d) and %d (%d)") %
-                       me % (*f)->identifier() % 
-                       cells.front()->identifier() % cells.front()->owner_rank() % 
-                       cells.back()->identifier() % cells.back()->owner_rank());
-        std::cerr << msg << std::endl;
-
-        if (cells.front()->owner_rank() == me) {
-            // send this cell to the appropriate process
-            send_list.push_back(stk::mesh::EntityProc(cells.front(), 
-                                                      cells.back()->owner_rank()));
-        } else if (cells.back()->owner_rank() == me) {
-            // send this cell to the appropriate process
-            send_list.push_back(stk::mesh::EntityProc(cells.back(), 
-                                                      cells.front()->owner_rank()));
-        }
-
-   }    
-                                       
-
-    // make a Ghosting instance just for cells
-
-    bulk_data_->modification_begin();
-
-    stk::mesh::Ghosting& 
-        cell_ghosting(bulk_data_->create_ghosting("Element Ghosting"));
-    stk::mesh::EntityVector receive_list;
-
-    bulk_data_->change_ghosting(cell_ghosting, send_list, receive_list);
-    bulk_data_->modification_end();
-
-    // if possible, do not ghost unneeded faces from ghosted cells
-
-    cell_ghosting.receive_list(receive_list);
-    stk::mesh::EntityVector faces_to_remove;
-    for (stk::mesh::EntityVector::iterator i = receive_list.begin(); 
-         i != receive_list.end(); i++) {
-      if ((*i)->entity_rank() == face_rank_) {
-        stk::mesh::EntityVector theface, cells;
-        theface.push_back(*i);
-        stk::mesh::get_entities_through_relations(theface, element_rank_, cells);
-        if (cells.front()->owner_rank() != me &&
-            cells.back()->owner_rank() != me) {
-          faces_to_remove.push_back(*i);
-        }
-      }
-    }
-
-    send_list.clear();
-    bulk_data_->modification_begin();
-    bulk_data_->change_ghosting(cell_ghosting, send_list, faces_to_remove);
-    bulk_data_->modification_end();
-    
-
-    
-
-
-    // print out what is made compared to the shared aura
-
-    for (int p = 0; p < communicator_.NumProc(); p++) {
-        if (me == p) {
-            std::cerr << "Process " << me << ": " 
-                      << send_list.size() << " local cell(s) ghosted"
-                      << std::endl;
-            
-            std::cerr << bulk_data_->shared_aura() << std::endl;
-
-            std::cerr << cell_ghosting << std::endl;
-        }
-        communicator_.Barrier();
-    }
-
-}
 
 void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set, 
                                        stk::mesh::Part &part,

@@ -7,7 +7,10 @@ namespace bl = boost::lambda;
 #include "Utils.hh"
 
 #include <Teuchos_RCP.hpp>
+#include <Epetra_DataAccess.h>
+#include <Epetra_CrsMatrix.h>
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
 
 static const int ZERO = 0;
 
@@ -47,6 +50,8 @@ extract_global_ids(const Entity_vector& entities,
 void 
 Mesh_maps_stk::build_maps_ ()
 {
+    map_owned_.clear();
+    map_used_.clear();
 
     // For each of Elements, Faces, Nodes:
     for (int entity_kind_index = 0; entity_kind_index < 3; ++entity_kind_index)
@@ -572,5 +577,143 @@ Mesh_maps_stk::set_coordinate(unsigned int local_node_id,
     // FIXME: not implemented
     ASSERT(false);
 }
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::cellgraph
+// -------------------------------------------------------------
+/** 
+ * Make as cell-to-cell graph for the mesh.  Cell indexes are 0-based.
+ * 
+ * 
+ * @return smart pointer to a graph instance
+ */
+Teuchos::RCP<Epetra_CrsGraph> 
+Mesh_maps_stk::cellgraph() const
+{
+  const Epetra_Map& cmap(this->cell_map(false)); // 0-based
+  Teuchos::RCP<Epetra_CrsGraph> result;
+  result.reset(new Epetra_CrsGraph(Copy, cmap, 6));
+
+  for (int local_idx = 0; local_idx < cmap.NumMyElements(); local_idx++) {
+
+    const int global_idx(cmap.GID(local_idx));
+      
+    Entity_Ids faceids;         // 1-based
+      
+    mesh_->element_to_faces(global_idx + 1, faceids);
+
+    for (Entity_Ids::iterator f = faceids.begin(); f != faceids.end(); f++) {
+      Entity_Ids nbrids;        // 1-based
+      mesh_->face_to_elements(*f, nbrids);
+      
+      int junk;
+      junk = nbrids.front() - 1;
+      result->InsertGlobalIndices(global_idx, 1, &junk);
+      junk = nbrids.back() - 1;
+      result->InsertGlobalIndices(global_idx, 1, &junk);
+    }
+  }  
+  result->FillComplete();
+  return result;
+}
+
+// // -------------------------------------------------------------
+// // Mesh_maps_stk::cellgraph
+// // -------------------------------------------------------------
+// /** 
+//  * Make as cell-to-cell graph for the mesh.  Cell indexes in the graph
+//  * are 0-based.
+//  * 
+//  * 
+//  * @return smart pointer to a graph instance
+//  */
+// Teuchos::RCP<Epetra_CrsGraph> 
+// Mesh_maps_stk::cellgraph() const
+// {
+//   static const double ONE(1.0);
+//   const Epetra_Map& cmap(this->cell_map(false)); // 0-based
+//   Epetra_CrsMatrix cmat(Copy, cmap, 0, false);   // 0-based
+
+//   int junk;
+
+//   for (int local_idx = 0; local_idx < cmap.NumMyElements(); local_idx++) {
+
+//     std::set<int> nbrset;       // 0-based
+//     const int global_idx(cmap.GID(local_idx));
+//     junk = global_idx;
+//     cmat.InsertGlobalValues(global_idx, 1, &ONE, &junk);
+      
+//     Entity_Ids faceids;         // 1-based
+
+//     mesh_->element_to_faces(global_idx + 1, faceids);
+    
+//     for (Entity_Ids::iterator f = faceids.begin(); f != faceids.end(); f++) {
+//       Entity_Ids nbrids;        // 1-based
+//       mesh_->face_to_elements(*f, nbrids);
+//       if (nbrids.front() != global_idx) {
+//         junk = nbrids.front() - 1;
+//         cmat.InsertGlobalValues(global_idx, 1, &ONE, &junk);
+//       }
+//       if (nbrids.back() != global_idx) {
+//         junk = nbrids.back() - 1;
+//         cmat.InsertGlobalValues(global_idx, 1, &ONE, &junk);
+//       }
+//     }
+//   }
+//   cmat.FillComplete();
+
+//   Teuchos::RCP<Epetra_CrsGraph> result(new Epetra_CrsGraph(cmat.Graph()));
+
+//   return result;
+// }
+
+
+
+// -------------------------------------------------------------
+// Mesh_maps_stk::redistribute
+// -------------------------------------------------------------
+/** 
+ * This routine redistributes cells amongst the processors according
+ * to the specified @c cellmap0.  The indexes in @c cellmap0 are
+ * 0-based.
+ * 
+ * @param cellmap 0-based map of desired cell ownership
+ */
+void 
+Mesh_maps_stk::redistribute(const Epetra_Map& cellmap0)
+{
+  // change the 0-based map to a 1-based one
+
+  
+  std::vector<int> gids(cellmap0.NumMyElements());
+  std::copy(cellmap0.MyGlobalElements(), 
+            cellmap0.MyGlobalElements() + cellmap0.NumMyElements(), 
+            gids.begin());
+  std::for_each(gids.begin(), gids.end(), bl::_1 += 1);
+  Teuchos::RCP< Epetra_Map > cellmap1(new Epetra_Map(cellmap0.NumGlobalElements(), 
+                                                     gids.size(), &gids[0], 1, *communicator_));
+
+  mesh_->redistribute(*cellmap1);
+
+  this->build_maps_();
+}
+
+/** 
+ * This routine uses the Isorropia::Epetra::Partitioner, with the
+ * specified parameter list, to repartition and redistribute the mesh.
+ * 
+ * @param paramlist parameters for Isorropia::Epetra::Partitioner
+ */
+void 
+Mesh_maps_stk::redistribute(const Teuchos::ParameterList &paramlist)
+{
+  Teuchos::RCP<const Epetra_CrsGraph> cgraph(this->cellgraph());
+
+  Isorropia::Epetra::Partitioner partitioner(cgraph, paramlist, false);
+  partitioner.partition();
+  Teuchos::RCP< Epetra_Map > newcmap(partitioner.createNewMap()); // 0-based
+  this->redistribute(*newcmap);
+}
+
 
 } // close namespace STK_mesh
