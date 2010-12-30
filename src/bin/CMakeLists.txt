@@ -14,7 +14,8 @@ if (ENABLE_STK_Mesh)
 
    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
    target_link_libraries(stk_mesh_test_hex exodus mesh_data stk_mesh
-                         utils ${EXODUS_LIBS_ALL} ${Trilinos_LIBRARIES})
+                         utils ${EXODUS_LIBS_ALL}
+                         ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
 
 endif()
 

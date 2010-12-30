@@ -320,7 +320,7 @@ list(APPEND Trilinos_INCLUDE_DIRS /usr/include)
 ##############################################################################
 # Boost
 ##############################################################################
-find_package( Boost COMPONENTS system filesystem REQUIRED)
+find_package( Boost COMPONENTS system filesystem program_options REQUIRED)
 
 
 ##############################################################################
