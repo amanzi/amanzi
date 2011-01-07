@@ -15,7 +15,8 @@ add_library(flow MimeticHexLocal.cpp MimeticHex.cpp
   DiffusionMatrix.cpp DiffusionPrecon.cpp FlowBC.cpp
   Darcy_PK.cpp DarcyProblem.cpp DarcyMatvec.cpp
   Richards_PK.cpp RichardsProblem.cpp RichardsNoxInterface.cpp
-  NKA.cpp NKADirFactory.cpp NKADirection.cpp)
+  NKA.cpp NKADirFactory.cpp NKADirection.cpp
+  RichardsModelEvaluator.cpp)
 target_link_libraries(flow ${MESH_LIBRARY} ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 

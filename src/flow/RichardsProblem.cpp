@@ -173,6 +173,20 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
     }
 }
 
+
+// void RichardsProblem::DeriveVanGenuchtenPressure(const Epetra_Vector &S, Epetra_Vector &P)
+// {
+//   // derive from a one-off constant effective saturation
+//   double se = 0.9
+  
+//   for (int i=0; i<S.MyLength(); i++)
+//     {
+//       P[i] = 1/vG_alpha_ * pow( pow(se,-1/vG_m_) - 1.0, 1/vG_n_) ;
+//     }
+// }
+
+
+
 void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
 {
   // Fill the diffusion matrix with values.
@@ -201,6 +215,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   // The cell and face-based DoF are packed together into the X and F Epetra
   // vectors: cell-based DoF in the first part, followed by the face-based DoF.
   // In addition, only the owned DoF belong to the vectors.
+
 
   // Create views into the cell and face segments of X and F
   Epetra_Vector &Pcell_own = *CreateCellView(X);
