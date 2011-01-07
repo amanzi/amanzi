@@ -35,6 +35,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   vG_n_      = 1.0/(1.0-vG_m_); 
   vG_alpha_  = list.get<double>("van Genuchten alpha");
   vG_sr_     = list.get<double>("van Genuchten residual saturation");
+  p_atm_     = list.get<double>("atmospheric pressure");
 }
 
 
@@ -129,7 +130,7 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
     {
       // first calculate the capillary pressure (reference pressure is one bar)
 
-      double pc = P[i] - 1.0e+5;
+      double pc = P[i] - p_atm_;
 
       // if the capillary pressure is negative, we apply the van Genuchten model
       if (pc < 0.0)
@@ -155,7 +156,7 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
   for (int i=0; i<P.MyLength(); i++)
     {
       // compute the capillary pressure
-      double pc =  P[i] - 1.0e+5;
+      double pc =  P[i] - p_atm_;
       
       if (pc < 0.0) 
 	{
@@ -277,9 +278,9 @@ void RichardsProblem::apply_BC_initial_(Epetra_Vector &Pface)
           int n = BC.Faces[i];
           double x[3];
           face_centroid_(n, x);
-          double p = rho_ * g_[2] * (x[2] - BC.Value);
-          BC.Aux[i] = Pface[n] - p;
-          Pface[n] = p;
+          double p = rho_ * g_[2] * ( x[2]  - BC.Value);
+          BC.Aux[i] = Pface[n] - p - p_atm_;
+          Pface[n] = p + p_atm_;
         }
         break;
     }

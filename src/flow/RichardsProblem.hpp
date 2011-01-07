@@ -84,7 +84,8 @@ private:
   double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
   double vG_alpha_; // van Genuchten alpha
   double vG_sr_;    // van Genuchten effective saturation
-
+  double p_atm_;    // atmospheric pressure
+  
   std::vector<MimeticHexLocal>  MD;
   MimeticHex *md_;
 
