@@ -1,19 +1,4 @@
 # -*- mode: cmake -*-
-# Note: This CMakeLists.txt file previously hard-wired the C and C++ compilers 
-# via the following commands:
-#
-#   SET(CMAKE_CXX_COMPILER mpicxx)
-#   SET(CMAKE_C_COMPILER mpicc)
-#
-# The values of these variables should not be set within this file; on some 
-# systems no "mpicxx" and "mpicc" wrappers are present.  Instead, cmake 
-# should be invoked with arguments such as
-#
-# cmake \
-#   -D CMAKE_CXX_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/CC" \
-#   -D CMAKE_C_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/cc" \
-#
-# --RTM
     
 project (AMANZI)
 enable_testing()
@@ -43,44 +28,6 @@ if(BUILD_STATIC_EXECUTABLES)
 endif(BUILD_STATIC_EXECUTABLES)
 
 
-##############################################################################
-# Attempting to explicitly find the MPI implementation libraries has been 
-# deprecated in favor of using compiler wrappers such as 'mpicc'.  See Trac 
-# ticket #240.  --RTM
-##############################################################################
-# MPI Message Passing Interface 
-# OpenMPI - http:://www.open-mpi.org
-# MPICH - http://www.mcs.anl.gov/research/projects/mpich2/
-##############################################################################
-#
-#find_library(MPI_LIBRARY
-#             NAMES mpi mpich
-#             HINTS ${MPI_LIB_DIR}
-#                   ${MPI_DIR}/lib
-#                   /usr/lib64
-#                   /usr/local/lib)
-#if(NOT MPI_LIBRARY)
-#  message(FATAL_ERROR "Error: could not find MPI library\n"
-#          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
-#          "\nor defining MPI_LIB_DIR")
-#endif()
-#
-#find_path(MPI_INCLUDES mpi.h 
-#          HINTS ${MPI_INCLUDE_DIR}
-#                ${MPI_DIR}/include
-#                /usr/include/mpi
-#                /usr/include
-#                /usr/local/include)
-#if(NOT MPI_INCLUDES)
-#  message(FATAL_ERROR "Error: could not find MPI includes\n"
-#          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
-#          "\nor defining MPI_INCLUDE_DIR")
-#endif()
-#
-#add_library(mpi STATIC IMPORTED)
-#set_property(TARGET mpi PROPERTY IMPORTED_LOCATION ${MPI_LIBRARY})
-#
-#set(MPI_LIBS_ALL mpi mpi_cxx)
 
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
@@ -131,7 +78,7 @@ set_property(TARGET netcdf PROPERTY IMPORTED_LOCATION ${NETCDF_LIBRARY})
 add_library(netcdf_c++ SHARED IMPORTED)
 set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
 
-#target_link_libraries(netcdf )   # See note under ExodusII.
+#target_link_libraries(netcdf)   # See note under ExodusII.
 set(NETCDF_LIBS_ALL netcdf hdf5 hdf5_hl z)
 
 ##############################################################################
@@ -300,20 +247,11 @@ endif()
 #Trilinos
 ##############################################################################
 
-if(NOT DEFINED Trilinos_DIR)
-endif()
-
 find_package(Trilinos REQUIRED PATHS ${Trilinos_DIR}/include)
 if(NOT Trilinos_FOUND)
   message(FATAL_ERROR "Error: could not find Trilinos\n"
           "Try defining Trilinos_DIR: (-D Trilinos_DIR:FILEPATH=<Trilinos_install_prefix>)")
 endif()
-#list(APPEND Trilinos_LIBRARIES m lapack blas)
-#  I have commented out the above line because I believe this is the 
-#  incorrect way to do things.  Instead, targets that must link with 
-#  Trilinos should add ${Trilinos_TPL_LIBRARIES} when invoking  
-#  target_link_libraries().  This is the usage recommended by the 
-#  Trilinos team.  See http://trilinos.sandia.gov/Finding_Trilinos.txt  --RTM
 list(APPEND Trilinos_DIRS /usr/lib)
 list(APPEND Trilinos_INCLUDE_DIRS /usr/include)
 
@@ -358,6 +296,9 @@ if(ENABLE_CGNS)
   add_library(cgns STATIC IMPORTED)
   set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
   add_definitions("-DENABLE_CGNS")
+else()
+  message(WARNING "CGNS not enabled. Some modules and tests will not be compiled. Use option"
+    "-D ENABLE_CGNS::BOOL=True to enable.")
 endif()
 
 
@@ -369,8 +310,9 @@ if (ENABLE_DBC)
   add_definitions("-DENABLE_DBC")
 endif()
   
-
-# Enable/Disable STK_mesh Amanzi package
+##############################################################################
+# STK_mesh Amanzi package
+##############################################################################
 OPTION(ENABLE_STK_Mesh "Build Amanzi module STK_Mesh." OFF)
 if (NOT ENABLE_STK_Mesh)
   message("STK_mesh compilation is disabled")
