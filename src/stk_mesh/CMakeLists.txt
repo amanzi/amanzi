@@ -16,21 +16,31 @@ target_link_libraries(stk_mesh error_handling mesh_data
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
+
   add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
                  test/test_Maps.cc test/test_Hex.cc)
   add_test(stk_mesh test_stk_mesh)
   target_link_libraries(test_stk_mesh stk_mesh utils unittest++)
 
+  # parallel tests are limited to 4 processors because the read tests
+  # use files with a maximum of 4 partitions and the internally
+  # generated meshes are small (8 cells)
+
+  set(LOCAL_MPI_EXEC_MAX_NUMPROCS MPI_EXEC_MAX_NUMPROCS)
+  if (LOCAL_MPI_EXEC_MAX_NUMPROCS GREATER 4)
+    set(LOCAL_MPI_EXEC_MAX_NUMPROCS 4)
+  endif()
+
   add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
   target_link_libraries(test_stk_mesh_parallel stk_mesh utils unittest++)
   add_test(stk_mesh_parallel
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_parallel)
+           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${LOCAL_MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_parallel)
 
   add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
   target_link_libraries(test_stk_mesh_read exodus stk_mesh utils unittest++)
   add_test(stk_mesh_read test_stk_mesh_read)
   add_test(stk_mesh_read_parallel
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_read)
+           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${LOCAL_MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_read)
 
 endif()
 
