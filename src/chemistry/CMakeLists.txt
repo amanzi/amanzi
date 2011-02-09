@@ -29,6 +29,10 @@ if (BUILD_TESTS)
   add_test(chemistry test_chemistry)
   target_link_libraries(test_chemistry mpc simple_mesh chemistry transport flow utils unittest++)
 
+  add_executable(test_activity_coefficients test/Main.cc test/test_activity_coefficients.cpp)
+  add_test(chemistry_activity_coefficients test_activity_coefficients)
+  target_link_libraries(test_activity_coefficients chemistry unittest++)
+
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy_directory ${CMAKE_SOURCE_DIR}/chemistry/test ${CMAKE_BINARY_DIR}/chemistry/test) 
