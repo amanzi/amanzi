@@ -400,11 +400,11 @@ endif()
 
 if (ENABLE_MSTK_Mesh) 
   add_subdirectory(mstk_mesh)
-endif
+endif()
 
 if (ENABLE_MOAB_Mesh)
   add_subdirectory(moab_mesh)
-endif
+endif()
 
 add_subdirectory(error_handling)
 add_subdirectory(exodus)
