@@ -21,7 +21,7 @@ add_library(flow MimeticHexLocal.cpp MimeticHex.cpp
 target_link_libraries(flow ${MESH_LIBRARY} ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
-if (BUILD_TESTS)
+if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
   add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp)
   add_test(flow test_flow)
   target_link_libraries(test_flow flow moab_mesh simple_mesh ${MESH_LIBRARY} cell_geometry unittest++ ${Trilinos_LIBRARIES})

@@ -22,11 +22,13 @@ ENDIF()
 add_definitions("-DUSE_MPI")
 
 
+
+
 add_library(mpc MPC.cpp  State.cpp)
 target_link_libraries(mpc simple_mesh gmv_mesh gmv mesh_data cell_geometry ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
-if (BUILD_TESTS)
+if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
   add_executable(test_mpc test/Main.cc test/test_driver.cpp)
   add_test(mpc test_mpc)
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
