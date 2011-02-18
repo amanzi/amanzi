@@ -207,6 +207,77 @@ set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z )
 
 
 
+
+##############################################################################
+# MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
+##############################################################################
+
+find_library(MSTK_LIBRARY mstk
+             HINTS ${MSTK_LIB_DIR}
+                   ${MSTK_DIR}/lib
+                   /usr/lib
+                   /usr/local/lib
+		   )
+if(NOT MSTK_LIBRARY)
+  message(FATAL_ERROR "Error: could not find MSTK library\n"
+          "Try defining MSTK_DIR: (-D MSTK_DIR:FILEPATH=<MSTK_install_prefix>)"
+          "\nor defining MSTK_LIB_DIR")
+endif()
+
+find_path(MSTK_INCLUDES MSTK.h 
+          HINTS ${MSTK_INCLUDE_DIR}
+                ${MSTK_DIR}/include
+                /usr/include
+                /usr/local/include
+		)
+if(NOT MSTK_INCLUDES)
+  message(FATAL_ERROR "Error: could not find MSTK includes\n"
+          "Try defining MSTK_DIR: (-D MSTK_DIR:FILEPATH=<MSTK_install_prefix>)"
+          "\nor defining MSTK_INCLUDE_DIR")
+endif()
+
+add_library(mstk STATIC IMPORTED)
+set_property(TARGET mstk PROPERTY IMPORTED_LOCATION ${MSTK_LIBRARY})
+
+# create a list of all the libraries required for MSTK to link.
+set(MSTK_LIBS_ALL mstk exodusii netcdf metis)
+
+
+
+
+##############################################################################
+# METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
+##############################################################################
+
+find_library(METIS_LIBRARY metis
+	     HINTS ${METIS_LIB_DIR}
+                   ${METIS_DIR}
+	           ${METIS_DIR}/lib
+		   )
+if(NOT METIS_LIBRARY)
+  message(FATAL_ERROR "Error: could not find METIS library\n"
+          "Try defining METIS_DIR: (-D METIS_DIR:FILEPATH=<Metis_install_prefix>)\n"
+          "Or METIS_LIB_DIR")
+endif()
+
+find_path(METIS_INCLUDES metis.h 
+          HINTS ${METIS_INCLUDE_DIR}
+                ${METIS_DIR}
+	        ${METIS_DIR}/include
+		${METIS_DIR}/Lib
+		)
+if(NOT METIS_INCLUDES)
+  message(FATAL_ERROR "Error: could not find METIS includes\n"
+          "Try defining METIS_DIR: (-D METIS_DIR:FILEPATH=<METIS_install_prefix>)\n"
+          "Or METIS_INCLUDE_DIR")
+endif()
+
+add_library(metis STATIC IMPORTED)
+set_property(TARGET metis PROPERTY IMPORTED_LOCATION ${METIS_LIBRARY})
+
+
+
+
 ##############################################################################
 # UnitTest++ - http://unittest-cpp.sourceforge.net/
 ##############################################################################
@@ -328,6 +399,7 @@ add_subdirectory(exodus)
 add_subdirectory(mesh_data)
 add_subdirectory(simple_mesh)
 add_subdirectory(moab_mesh)
+add_subdirectory(mstk_mesh)
 add_subdirectory(mpc)
 add_subdirectory(chemistry)
 add_subdirectory(transport)
