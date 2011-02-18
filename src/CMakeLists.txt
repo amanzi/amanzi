@@ -3,6 +3,7 @@
 project (AMANZI)
 enable_testing()
 
+set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
 
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_BUILD_TYPE debug)
@@ -215,6 +216,7 @@ set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z )
 find_library(MSTK_LIBRARY mstk
              HINTS ${MSTK_LIB_DIR}
                    ${MSTK_DIR}/lib
+                   ${MSTK_DIR}/lib/${ARCHOS}
                    /usr/lib
                    /usr/local/lib
 		   )
