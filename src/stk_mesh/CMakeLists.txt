@@ -1,6 +1,7 @@
 # -*- mode: cmake -*-
 include_directories(${PROJECT_SOURCE_DIR}/utils)
 include_directories(${PROJECT_SOURCE_DIR}/error_handling)
+include_directories(${PROJECT_SOURCE_DIR}/mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/exodus)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
@@ -19,15 +20,15 @@ if (BUILD_TESTS)
   add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
                  test/test_Maps.cc test/test_Hex.cc)
   add_test(stk_mesh test_stk_mesh)
-  target_link_libraries(test_stk_mesh stk_mesh utils unittest++)
+  target_link_libraries(test_stk_mesh stk_mesh mesh_audit unittest++)
 
   add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
-  target_link_libraries(test_stk_mesh_parallel stk_mesh utils unittest++)
+  target_link_libraries(test_stk_mesh_parallel stk_mesh mesh_audit unittest++)
   add_test(stk_mesh_parallel
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_parallel)
 
   add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
-  target_link_libraries(test_stk_mesh_read exodus stk_mesh utils unittest++)
+  target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit unittest++)
   add_test(stk_mesh_read test_stk_mesh_read)
   add_test(stk_mesh_read_parallel
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_read)

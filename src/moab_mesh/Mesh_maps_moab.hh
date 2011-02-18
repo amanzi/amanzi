@@ -17,9 +17,9 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
-#include "../mesh_data/Entity_kind.hh"
+#include "Entity_kind.hh"
 
-#include "../simple_mesh/Mesh_maps_base.hh"
+#include "Mesh_maps_base.hh"
 
 #include <memory>
 #include <vector>

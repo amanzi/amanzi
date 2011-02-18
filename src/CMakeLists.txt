@@ -27,6 +27,56 @@ if(BUILD_STATIC_EXECUTABLES)
     set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS)
 endif(BUILD_STATIC_EXECUTABLES)
 
+##############################################################################
+# HDF5 - http://www.hdfgroup.org/HDF5/
+##############################################################################
+
+# find_library(HDF5_LIBRARY hdf5
+#              HINTS ${HDF5_LIB_DIR}
+#                    ${HDF5_DIR}/lib
+#                    /usr/lib
+#                    /usr/local/lib
+# 		   )
+# if(NOT HDF5_LIBRARY)
+#   message(FATAL_ERROR "Error: could not find HDF5 library\n"
+#           "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
+#           "\nor defining HDF5_LIB_DIR")
+# endif()
+
+# find_library(HDF5_HL_LIBRARY hdf5_hl
+#              HINTS ${HDF5_LIB_DIR}
+#                    ${HDF5_DIR}/lib
+#                    /usr/lib
+#                    /usr/local/lib
+# 		   )
+# if(NOT HDF5_HL_LIBRARY)
+#   message(FATAL_ERROR "Error: could not find HDF5_HL library\n"
+#           "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
+#           "\nor defining HDF5_LIB_DIR")
+# endif()
+
+# find_path(HDF5_INCLUDES hdf5.h 
+#           HINTS ${HDF5_INCLUDE_DIR}
+#                 ${HDF5_DIR}/include
+#                 /usr/include
+#                 /usr/local/include
+# 		)
+# if(NOT HDF5_INCLUDES)
+#   message(FATAL_ERROR "Error: could not find HDF5 includes\n"
+#           "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
+#           "\nor defining HDF5_INCLUDE_DIR")
+# endif()
+
+# add_library(hdf5 STATIC IMPORTED)
+# set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIBRARY})
+
+# add_library(hdf5_hl STATIC IMPORTED)
+# set_property(TARGET hdf5_hl PROPERTY IMPORTED_LOCATION ${HDF5_HL_LIBRARY})
+
+# set(HDF5_LIBS_ALL hdf5 hdf5_hl z)
+
+find_package(HDF5 "1.8.3" REQUIRED)
+include_directories(${HDF5_INCLUDE_DIRS})
 
 
 ##############################################################################
@@ -79,55 +129,7 @@ add_library(netcdf_c++ SHARED IMPORTED)
 set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
 
 #target_link_libraries(netcdf)   # See note under ExodusII.
-set(NETCDF_LIBS_ALL netcdf hdf5 hdf5_hl z)
-
-##############################################################################
-# HDF5 - http://www.hdfgroup.org/HDF5/
-##############################################################################
-
-find_library(HDF5_LIBRARY hdf5
-             HINTS ${HDF5_LIB_DIR}
-                   ${HDF5_DIR}/lib
-                   /usr/lib
-                   /usr/local/lib
-		   )
-if(NOT HDF5_LIBRARY)
-  message(FATAL_ERROR "Error: could not find HDF5 library\n"
-          "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
-          "\nor defining HDF5_LIB_DIR")
-endif()
-
-find_library(HDF5_HL_LIBRARY hdf5_hl
-             HINTS ${HDF5_LIB_DIR}
-                   ${HDF5_DIR}/lib
-                   /usr/lib
-                   /usr/local/lib
-		   )
-if(NOT HDF5_HL_LIBRARY)
-  message(FATAL_ERROR "Error: could not find HDF5_HL library\n"
-          "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
-          "\nor defining HDF5_LIB_DIR")
-endif()
-
-find_path(HDF5_INCLUDES hdf5.h 
-          HINTS ${HDF5_INCLUDE_DIR}
-                ${HDF5_DIR}/include
-                /usr/include
-                /usr/local/include
-		)
-if(NOT HDF5_INCLUDES)
-  message(FATAL_ERROR "Error: could not find HDF5 includes\n"
-          "Try defining HDF5_DIR: (-D HDF5_DIR:FILEPATH=<HDF5_install_prefix>)"
-          "\nor defining HDF5_INCLUDE_DIR")
-endif()
-
-add_library(hdf5 STATIC IMPORTED)
-set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIBRARY})
-
-add_library(hdf5_hl STATIC IMPORTED)
-set_property(TARGET hdf5_hl PROPERTY IMPORTED_LOCATION ${HDF5_HL_LIBRARY})
-
-set(HDF5_LIBS_ALL hdf5 hdf5_hl z)
+set(NETCDF_LIBS_ALL netcdf ${HDF5_LIBRARIES})
 
 
 
@@ -158,6 +160,7 @@ if(NOT EXODUSII_INCLUDES)
           "Or ExodusII_INCLUDE_DIR")
 endif()
 
+# These lines assign an imported library target to Exodus called exodusii and set it's location.
 add_library(exodusii STATIC IMPORTED)
 set_property(TARGET exodusii PROPERTY IMPORTED_LOCATION ${EXODUSII_LIBRARY})
 
@@ -165,7 +168,7 @@ set_property(TARGET exodusii PROPERTY IMPORTED_LOCATION ${EXODUSII_LIBRARY})
 # target_link_libraries(exodusii netcdf)
 
 # Instead, we create a list of all the libraries required for ExodusII to link.
-set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z ) 
+set(EXODUS_LIBS_ALL exodusii netcdf ${HDF5_LIBRARIES})
 
 
 
@@ -325,6 +328,7 @@ endif()
 
 add_subdirectory(error_handling)
 add_subdirectory(exodus)
+add_subdirectory(mesh)
 add_subdirectory(mesh_data)
 add_subdirectory(simple_mesh)
 add_subdirectory(moab_mesh)

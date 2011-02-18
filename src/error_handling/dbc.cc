@@ -28,7 +28,6 @@ const char* Assertion::what () const throw ()
 
 void amanzi_assert (const char* cond, const char* file, unsigned int line)
 {
-    //    throw Assertion (cond, file, line);
     Exceptions::amanzi_throw ( Assertion(cond, file, line) );
 }
 

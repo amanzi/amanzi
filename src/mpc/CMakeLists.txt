@@ -1,4 +1,5 @@
 include_directories(${PROJECT_SOURCE_DIR}/utils)
+include_directories(${PROJECT_SOURCE_DIR}/mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
@@ -22,7 +23,7 @@ add_definitions("-DUSE_MPI")
 
 
 add_library(mpc MPC.cpp  State.cpp)
-target_link_libraries(mpc simple_mesh gmv utils mesh_data utils ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(mpc simple_mesh gmv_mesh gmv mesh_data cell_geometry ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
@@ -32,6 +33,6 @@ if (BUILD_TESTS)
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
       copy_directory ${CMAKE_SOURCE_DIR}/mpc/test ${CMAKE_BINARY_DIR}/mpc/test) 
   endif()
-  target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow utils unittest++ ${MOAB_ALL_LIBS})
+  target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow unittest++ ${MOAB_ALL_LIBS})
 endif()
 

@@ -1,5 +1,6 @@
 # -*- mode: cmake -*-
 include_directories(${PROJECT_SOURCE_DIR}/utils)
+include_directories(${PROJECT_SOURCE_DIR}/mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/error_handling)
 include_directories(${Trilinos_INCLUDE_DIRS})

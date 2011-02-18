@@ -1,6 +1,7 @@
 include_directories(includes)
 include_directories(${PROJECT_SOURCE_DIR}/transport)
 include_directories(${PROJECT_SOURCE_DIR}/flow)
+include_directories(${PROJECT_SOURCE_DIR}/mesh)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mpc)
 
@@ -27,7 +28,7 @@ if (BUILD_TESTS)
 
   add_executable(test_chemistry test/Main.cc test/test_driver.cpp)
   add_test(chemistry test_chemistry)
-  target_link_libraries(test_chemistry mpc simple_mesh chemistry transport flow utils unittest++)
+  target_link_libraries(test_chemistry mpc simple_mesh chemistry transport flow unittest++)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
