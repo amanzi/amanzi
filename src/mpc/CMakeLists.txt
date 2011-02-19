@@ -25,7 +25,12 @@ add_definitions("-DUSE_MPI")
 
 
 add_library(mpc MPC.cpp  State.cpp)
-target_link_libraries(mpc simple_mesh gmv_mesh gmv mesh_data cell_geometry ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
+if (ENABLE_CGNS)
+    target_link_libraries(mpc simple_mesh gmv_mesh gmv cgns_writer mesh_data cell_geometry ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
+else(ENABLE_CGNS)
+    target_link_libraries(mpc simple_mesh gmv_mesh gmv mesh_data cell_geometry ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
+ endif()
+
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
