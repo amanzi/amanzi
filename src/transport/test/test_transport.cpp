@@ -14,7 +14,7 @@
 
 
 double f_step( double* x, double t ) { 
-  if ( x[0] <= t ) return 1;
+  if ( x[0] <= 1 + t ) return 1;
   return 0;
 }
 
@@ -25,7 +25,8 @@ double f_smooth( double* x, double t ) {
 double f_cubic( double* x, double t ) { 
   if( x[0] < 1 + t ) return 1;
   if( x[0] > 3 + t ) return 0;
-  return pow((3+t-x[0])/2, 2.0);
+  double z = (*x-1-t) / 2;
+  return 2*z*z*z - 3*z*z + 1;
 }
 
 
@@ -219,7 +220,7 @@ TEST(CONVERGENCE_ANALYSIS) {
 
   /* create a MPC state with one component */
   for( int nx=20; nx<641; nx*=2 ) {
-     RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 6.0, 1.0, 1.0, nx, 1, 1, comm) ); 
+     RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm) ); 
 
      /* create a MPC state with one component */
      int  num_components = 1;
