@@ -157,7 +157,7 @@ void Transport_PK::process_parameter_list()
      /* check all existing components: right now we check by id */
      /* but it is possible to check by name in the future */
      for( k=0; k<number_components; k++ ) {
-        char tcc_char_name[10];
+        char tcc_char_name[20];
 
         sprintf( tcc_char_name, "Component %d", k );
         string tcc_name( tcc_char_name );
