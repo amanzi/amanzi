@@ -10,7 +10,7 @@ include_directories("${NETCDF_INCLUDES}")
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 add_library(exodus Exodus_readers.cc Exodus_records.cc Exodus_file.cc Parallel_Exodus_file.cc)
-target_link_libraries(exodus error_handling mesh_data ${EXODUS_LIBS_ALL})
+target_link_libraries(exodus error_handling mesh_data ${EXODUS_LIBRARIES})
 
 if (BUILD_TESTS)
 
@@ -30,15 +30,15 @@ if (BUILD_TESTS)
     copy_directory ${CMAKE_SOURCE_DIR}/exodus/test/test_files ${EXODUS_FILE_DIR}) 
 
   target_link_libraries(test_exodus exodus unittest++
-                        ${EXODUS_LIBS_ALL}
+                        ${EXODUS_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-  target_link_libraries(exec_reader exodus ${EXODUS_LIBS_ALL})
-  target_link_libraries(exodus_read_test exodus ${EXODUS_LIBS_ALL})
+  target_link_libraries(exec_reader exodus ${EXODUS_LIBRARIES})
+  target_link_libraries(exodus_read_test exodus ${EXODUS_LIBRARIES})
 
   add_executable(test_pexodus_2 test/ParallelMain.cc 
                  test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
   target_link_libraries(test_pexodus_2 exodus unittest++ 
-                        ${Trilinos_LIBRARIES} ${EXODUS_LIBS_ALL}
+                        ${Trilinos_LIBRARIES} ${EXODUS_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
   add_test(exodus_parallel_2proc 
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 2 test_pexodus_2)
@@ -46,7 +46,7 @@ if (BUILD_TESTS)
   add_executable(test_pexodus_3 test/ParallelMain.cc 
                  test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
   target_link_libraries(test_pexodus_3 exodus unittest++ 
-                        ${Trilinos_LIBRARIES} ${EXODUS_LIBS_ALL}
+                        ${Trilinos_LIBRARIES} ${EXODUS_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
   add_test(exodus_parallel_3proc 
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 3 test_pexodus_3)
@@ -54,7 +54,7 @@ if (BUILD_TESTS)
   add_executable(test_pexodus_4 test/ParallelMain.cc 
                  test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
   target_link_libraries(test_pexodus_4 exodus unittest++ 
-                        ${Trilinos_LIBRARIES} ${EXODUS_LIBS_ALL}
+                        ${Trilinos_LIBRARIES} ${EXODUS_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
   add_test(exodus_parallel_4proc 
            ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 4 test_pexodus_4 )

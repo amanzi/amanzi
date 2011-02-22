@@ -20,5 +20,18 @@ add_definitions("-DUSE_MPI")
 
 link_directories(${Trilinos_LIBRARY_DIRS})
 add_executable(amanzi-demo-driver amanzi-demo-driver.cpp)
-target_link_libraries(amanzi-demo-driver mpc ${MESH_LIBRARY} simple_mesh error_handling exodus chemistry transport flow ${MOAB_ALL_LIBS} ${Trilinos_LIBRARIES})
+target_link_libraries(amanzi-demo-driver mpc simple_mesh error_handling 
+  exodus chemistry transport flow ${Trilinos_LIBRARIES})
+
+if (ENABLE_STK_Mesh)
+  target_link_libraries(amanzi-demo-driver stk_mesh)
+endif()
+
+if (ENABLE_MOAB_Mesh)
+  target_link_libraries(amanzi-demo-driver ${MOAB_LIBRARIES})
+endif()
+
+if (ENABLE_MSTK_Mesh)
+  target_link_libraries(amanzi-demo-driver ${MSTK_LIBRARIES})
+endif()
 

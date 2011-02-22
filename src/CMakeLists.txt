@@ -29,58 +29,16 @@ if(BUILD_STATIC_EXECUTABLES)
 endif(BUILD_STATIC_EXECUTABLES)
 
 
-
 ##############################################################################
-# NetCDF - http://www.unidata.ucar.edu/software/netcdf/
+# Process Options
 ##############################################################################
 
-find_library(NETCDF_LIBRARY netcdf
-	     HINTS ${NetCDF_LIB_DIR}
-                   ${NetCDF_DIR}/lib
-                   /usr/lib
-	           /usr/local/lib
-		   )
-if(NOT NETCDF_LIBRARY)
-  message(FATAL_ERROR "Error: could not find netcdf library\n"
-          "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
-          "\nor defining NetCDF_LIB_DIR")
+OPTION(ENABLE_DBC "Enable DBC checking" ON)
+if (ENABLE_DBC)
+  message("Enabling DBC checks")
+  add_definitions("-DENABLE_DBC")
 endif()
-
-find_library(NETCDF_C++_LIBRARY netcdf_c++
-             HINTS ${NetCDF_LIB_DIR}
-                   ${NetCDF_DIR}/lib
-                   /usr/lib
-	           /usr/local/lib
-		   )
- if(NOT NETCDF_C++_LIBRARY)
-  message(FATAL_ERROR "Error: could not find netcdf_c++ library\n"
-          "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
-          "\nor defining NetCDF_LIB_DIR")
-endif()
-
-find_path(NETCDF_INCLUDES netcdf.h 
-          HINTS ${NetCDF_INCLUDE_DIR}
-                ${NetCDF_DIR}/include
-                /usr/include
-                /usr/local/include
-		)
-if(NOT NETCDF_INCLUDES)
-  message(FATAL_ERROR "Error: could not find NetCDF includes\n"
-          "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
-          "\nor defining NetCDF_INCLUDE_DIR")
-endif()
-
-#
-# DID NOT SEEM TO NEED THIS - but left uncommented in checked in version
-#
-add_library(netcdf SHARED IMPORTED)
-set_property(TARGET netcdf PROPERTY IMPORTED_LOCATION ${NETCDF_LIBRARY})
-
-add_library(netcdf_c++ SHARED IMPORTED)
-set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
-
-#target_link_libraries(netcdf)   # See note under ExodusII.
-set(NETCDF_LIBS_ALL netcdf hdf5 hdf5_hl z)
+  
 
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
@@ -128,9 +86,61 @@ set_property(TARGET hdf5 PROPERTY IMPORTED_LOCATION ${HDF5_LIBRARY})
 add_library(hdf5_hl STATIC IMPORTED)
 set_property(TARGET hdf5_hl PROPERTY IMPORTED_LOCATION ${HDF5_HL_LIBRARY})
 
-set(HDF5_LIBS_ALL hdf5 hdf5_hl z)
+# Act like a find module:
+set(HDF5_FOUND)
+set(HDF5_LIBRARIES hdf5 hdf5_hl z)
 
 
+##############################################################################
+# NetCDF - http://www.unidata.ucar.edu/software/netcdf/
+##############################################################################
+
+find_library(NETCDF_LIBRARY netcdf
+	     HINTS ${NetCDF_LIB_DIR}
+                   ${NetCDF_DIR}/lib
+                   /usr/lib
+	           /usr/local/lib
+		   )
+if(NOT NETCDF_LIBRARY)
+  message(FATAL_ERROR "Error: could not find netcdf library\n"
+          "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
+          "\nor defining NetCDF_LIB_DIR")
+endif()
+
+find_library(NETCDF_C++_LIBRARY netcdf_c++
+             HINTS ${NetCDF_LIB_DIR}
+                   ${NetCDF_DIR}/lib
+                   /usr/lib
+	           /usr/local/lib
+		   )
+ if(NOT NETCDF_C++_LIBRARY)
+  message(FATAL_ERROR "Error: could not find netcdf_c++ library\n"
+          "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
+          "\nor defining NetCDF_LIB_DIR")
+endif()
+
+find_path(NETCDF_INCLUDES netcdf.h 
+          HINTS ${NetCDF_INCLUDE_DIR}
+                ${NetCDF_DIR}/include
+                /usr/include
+                /usr/local/include
+		)
+if(NOT NETCDF_INCLUDES)
+  message(FATAL_ERROR "Error: could not find NetCDF includes\n"
+          "Try defining NetCDF_DIR: (-D NetCDF_DIR:FILEPATH=<NetCDF_install_prefix>)"
+          "\nor defining NetCDF_INCLUDE_DIR")
+endif()
+
+add_library(netcdf SHARED IMPORTED)
+set_property(TARGET netcdf PROPERTY IMPORTED_LOCATION ${NETCDF_LIBRARY})
+set(NETCDF_FOUND)
+
+add_library(netcdf_c++ SHARED IMPORTED)
+set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
+set(NETCDF_C++_FOUND)
+
+set(NETCDF_LIBRARIES netcdf ${HDF5_LIBRARIES})
+set(NETCDF_C++_LIBRARIES netcdf)
 
 ##############################################################################
 # ExodusII - http://sourceforge.net/projects/exodusii/ or 
@@ -166,10 +176,7 @@ set_property(TARGET exodusii PROPERTY IMPORTED_LOCATION ${EXODUSII_LIBRARY})
 # target_link_libraries(exodusii netcdf)
 
 # Instead, we create a list of all the libraries required for ExodusII to link.
-set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z ) 
-
-
-
+set(EXODUS_LIBRARIES exodus exodusii ${NETCDF_LIBRARIES}) 
 
 ##############################################################################
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
@@ -204,10 +211,10 @@ if (ENABLE_MOAB_Mesh)
   add_library(moab STATIC IMPORTED)
   set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
 
-# create a list of all the libraries required for MOAB to link.
-  set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z )
+  # create a list of all the libraries required for MOAB to link.
+  set(MOAB_LIBRARIES moab exodus netcdf_c++)
 
-  endif(ENABLE_MOAB_Mesh)
+endif(ENABLE_MOAB_Mesh)
 
 
 
@@ -246,12 +253,12 @@ if (ENABLE_MSTK_Mesh)
   set_property(TARGET mstk PROPERTY IMPORTED_LOCATION ${MSTK_LIBRARY})
 
 # create a list of all the libraries required for MSTK to link.
-  set(MSTK_LIBS_ALL mstk exodusii netcdf metis)
+  set(MSTK_LIBS_ALL mstk exodusii netcdf_c++ metis)
 
 
-##############################################################################
-# METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
-##############################################################################
+  ##############################################################################
+  # METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
+  ##############################################################################
 
   find_library(METIS_LIBRARY metis
 	     HINTS ${METIS_LIB_DIR}
@@ -379,31 +386,23 @@ endif()
 
 include_directories(${PROJECT_BINARY_DIR})
 
-OPTION(ENABLE_DBC "Enable DBC checking" ON)
-if (ENABLE_DBC)
-  message("Enabling DBC checks")
-  add_definitions("-DENABLE_DBC")
-endif()
-  
 ##############################################################################
 # STK_mesh Amanzi package
 ##############################################################################
 OPTION(ENABLE_STK_Mesh "Build Amanzi module STK_Mesh." OFF)
-if (NOT ENABLE_STK_Mesh)
-  message("STK_mesh compilation is disabled")
-else()
+if (ENABLE_STK_Mesh)
   add_subdirectory(stk_mesh)
-  set(MESH_LIBRARY stk_mesh)
   add_definitions("-DENABLE_STK")
 endif()
 
 if (ENABLE_MSTK_Mesh) 
   add_subdirectory(mstk_mesh)
-  set(MESH_LIBRARY mstk_mesh)
+  add_definitions("-DENABLE_MSTK")
 endif()
 
 if (ENABLE_MOAB_Mesh)
   add_subdirectory(moab_mesh)
+  add_definitions("-DENABLE_MOAB")
 endif()
 
 add_subdirectory(error_handling)

@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
 
       mesh = Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
     } 
+#ifdef ENABLE_MOAB
   else if (mesh_class == "MOAB")  
     {
       
@@ -105,6 +106,7 @@ int main(int argc, char *argv[])
       mesh = Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));            
       std::cout.rdbuf(store_buf);
     }
+#endif
 #ifdef ENABLE_STK
   else if (mesh_class == "STK")
     {
