@@ -1,23 +1,9 @@
 # -*- mode: cmake -*-
-# Note: This CMakeLists.txt file previously hard-wired the C and C++ compilers 
-# via the following commands:
-#
-#   SET(CMAKE_CXX_COMPILER mpicxx)
-#   SET(CMAKE_C_COMPILER mpicc)
-#
-# The values of these variables should not be set within this file; on some 
-# systems no "mpicxx" and "mpicc" wrappers are present.  Instead, cmake 
-# should be invoked with arguments such as
-#
-# cmake \
-#   -D CMAKE_CXX_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/CC" \
-#   -D CMAKE_C_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/cc" \
-#
-# --RTM
     
 project (AMANZI)
 enable_testing()
 
+set(ARCHOS ${CMAKE_SYSTEM_PROCESSOR}_${CMAKE_SYSTEM_NAME})
 
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_BUILD_TYPE debug)
@@ -43,44 +29,6 @@ if(BUILD_STATIC_EXECUTABLES)
 endif(BUILD_STATIC_EXECUTABLES)
 
 
-##############################################################################
-# Attempting to explicitly find the MPI implementation libraries has been 
-# deprecated in favor of using compiler wrappers such as 'mpicc'.  See Trac 
-# ticket #240.  --RTM
-##############################################################################
-# MPI Message Passing Interface 
-# OpenMPI - http:://www.open-mpi.org
-# MPICH - http://www.mcs.anl.gov/research/projects/mpich2/
-##############################################################################
-#
-#find_library(MPI_LIBRARY
-#             NAMES mpi mpich
-#             HINTS ${MPI_LIB_DIR}
-#                   ${MPI_DIR}/lib
-#                   /usr/lib64
-#                   /usr/local/lib)
-#if(NOT MPI_LIBRARY)
-#  message(FATAL_ERROR "Error: could not find MPI library\n"
-#          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
-#          "\nor defining MPI_LIB_DIR")
-#endif()
-#
-#find_path(MPI_INCLUDES mpi.h 
-#          HINTS ${MPI_INCLUDE_DIR}
-#                ${MPI_DIR}/include
-#                /usr/include/mpi
-#                /usr/include
-#                /usr/local/include)
-#if(NOT MPI_INCLUDES)
-#  message(FATAL_ERROR "Error: could not find MPI includes\n"
-#          "Try defining MPI_DIR: (-D MPI_DIR:FILEPATH=<MPI_install_prefix>)"
-#          "\nor defining MPI_INCLUDE_DIR")
-#endif()
-#
-#add_library(mpi STATIC IMPORTED)
-#set_property(TARGET mpi PROPERTY IMPORTED_LOCATION ${MPI_LIBRARY})
-#
-#set(MPI_LIBS_ALL mpi mpi_cxx)
 
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
@@ -131,7 +79,7 @@ set_property(TARGET netcdf PROPERTY IMPORTED_LOCATION ${NETCDF_LIBRARY})
 add_library(netcdf_c++ SHARED IMPORTED)
 set_property(TARGET netcdf_c++ PROPERTY IMPORTED_LOCATION ${NETCDF_C++_LIBRARY})
 
-#target_link_libraries(netcdf )   # See note under ExodusII.
+#target_link_libraries(netcdf)   # See note under ExodusII.
 set(NETCDF_LIBS_ALL netcdf hdf5 hdf5_hl z)
 
 ##############################################################################
@@ -227,37 +175,111 @@ set(EXODUS_LIBS_ALL exodusii netcdf hdf5 hdf5_hl z )
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
 
-find_library(MOAB_LIBRARY MOAB
-             HINTS ${MOAB_LIB_DIR}
-                   ${MOAB_DIR}/lib
+OPTION(ENABLE_MOAB_Mesh "Build with MOAB" OFF)
+if (ENABLE_MOAB_Mesh)
+  find_library(MOAB_LIBRARY MOAB
+               HINTS ${MOAB_LIB_DIR}
+                     ${MOAB_DIR}/lib
+                     /usr/lib
+                     /usr/local/lib
+    		   )
+  if(NOT MOAB_LIBRARY)
+    message(FATAL_ERROR "Error: could not find MOAB library\n"
+            "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
+            "\nor defining MOAB_LIB_DIR")
+  endif()
+
+  find_path(MOAB_INCLUDES MBCore.hpp 
+            HINTS ${MOAB_INCLUDE_DIR}
+                  ${MOAB_DIR}/include
+                  /usr/include
+                  /usr/local/include
+		)
+  if(NOT MOAB_INCLUDES)
+    message(FATAL_ERROR "Error: could not find MOAB includes\n"
+            "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
+            "\nor defining MOAB_INCLUDE_DIR")
+  endif()
+
+  add_library(moab STATIC IMPORTED)
+  set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
+
+# create a list of all the libraries required for MOAB to link.
+  set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z )
+
+  endif(ENABLE_MOAB_Mesh)
+
+
+
+##############################################################################
+# MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
+##############################################################################
+
+OPTION(ENABLE_MSTK_Mesh "Build Amanzi module MSTK_Mesh." OFF)
+if (ENABLE_MSTK_Mesh)
+  find_library(MSTK_LIBRARY mstk
+             HINTS ${MSTK_LIB_DIR}
+                   ${MSTK_DIR}/lib
+                   ${MSTK_DIR}/lib/${ARCHOS}
                    /usr/lib
                    /usr/local/lib
 		   )
-if(NOT MOAB_LIBRARY)
-  message(FATAL_ERROR "Error: could not find MOAB library\n"
-          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
-          "\nor defining MOAB_LIB_DIR")
-endif()
+  if(NOT MSTK_LIBRARY)
+    message(FATAL_ERROR "Error: could not find MSTK library\n"
+          "Try defining MSTK_DIR: (-D MSTK_DIR:FILEPATH=<MSTK_install_prefix>)"
+          "\nor defining MSTK_LIB_DIR")
+  endif()
 
-find_path(MOAB_INCLUDES MBCore.hpp 
-          HINTS ${MOAB_INCLUDE_DIR}
-                ${MOAB_DIR}/include
+  find_path(MSTK_INCLUDES MSTK.h 
+          HINTS ${MSTK_INCLUDE_DIR}
+                ${MSTK_DIR}/include
                 /usr/include
                 /usr/local/include
 		)
-if(NOT MOAB_INCLUDES)
-  message(FATAL_ERROR "Error: could not find MOAB includes\n"
-          "Try defining MOAB_DIR: (-D MOAB_DIR:FILEPATH=<MOAB_install_prefix>)"
-          "\nor defining MOAB_INCLUDE_DIR")
-endif()
+  if(NOT MSTK_INCLUDES)
+    message(FATAL_ERROR "Error: could not find MSTK includes\n"
+          "Try defining MSTK_DIR: (-D MSTK_DIR:FILEPATH=<MSTK_install_prefix>)"
+          "\nor defining MSTK_INCLUDE_DIR")
+  endif()
 
-add_library(moab STATIC IMPORTED)
-set_property(TARGET moab PROPERTY IMPORTED_LOCATION ${MOAB_LIBRARY})
+  add_library(mstk STATIC IMPORTED)
+  set_property(TARGET mstk PROPERTY IMPORTED_LOCATION ${MSTK_LIBRARY})
 
-# create a list of all the libraries required for MOAB to link.
-set(MOAB_LIBS_ALL moab netcdf_c++ netcdf hdf5 hdf5_hl z )
+# create a list of all the libraries required for MSTK to link.
+  set(MSTK_LIBS_ALL mstk exodusii netcdf metis)
 
 
+##############################################################################
+# METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
+##############################################################################
+
+  find_library(METIS_LIBRARY metis
+	     HINTS ${METIS_LIB_DIR}
+                   ${METIS_DIR}
+	           ${METIS_DIR}/lib
+		   )
+  if(NOT METIS_LIBRARY)
+    message(FATAL_ERROR "Error: could not find METIS library\n"
+          "Try defining METIS_DIR: (-D METIS_DIR:FILEPATH=<Metis_install_prefix>)\n"
+          "Or METIS_LIB_DIR")
+  endif()
+
+  find_path(METIS_INCLUDES metis.h 
+          HINTS ${METIS_INCLUDE_DIR}
+                ${METIS_DIR}
+	        ${METIS_DIR}/include
+		${METIS_DIR}/Lib
+		)
+  if(NOT METIS_INCLUDES)
+    message(FATAL_ERROR "Error: could not find METIS includes\n"
+          "Try defining METIS_DIR: (-D METIS_DIR:FILEPATH=<METIS_install_prefix>)\n"
+          "Or METIS_INCLUDE_DIR")
+  endif()
+
+  add_library(metis STATIC IMPORTED)
+  set_property(TARGET metis PROPERTY IMPORTED_LOCATION ${METIS_LIBRARY})
+
+endif(ENABLE_MSTK_Mesh)
 
 
 ##############################################################################
@@ -300,27 +322,18 @@ endif()
 #Trilinos
 ##############################################################################
 
-if(NOT DEFINED Trilinos_DIR)
-endif()
-
 find_package(Trilinos REQUIRED PATHS ${Trilinos_DIR}/include)
 if(NOT Trilinos_FOUND)
   message(FATAL_ERROR "Error: could not find Trilinos\n"
           "Try defining Trilinos_DIR: (-D Trilinos_DIR:FILEPATH=<Trilinos_install_prefix>)")
 endif()
-#list(APPEND Trilinos_LIBRARIES m lapack blas)
-#  I have commented out the above line because I believe this is the 
-#  incorrect way to do things.  Instead, targets that must link with 
-#  Trilinos should add ${Trilinos_TPL_LIBRARIES} when invoking  
-#  target_link_libraries().  This is the usage recommended by the 
-#  Trilinos team.  See http://trilinos.sandia.gov/Finding_Trilinos.txt  --RTM
 list(APPEND Trilinos_DIRS /usr/lib)
 list(APPEND Trilinos_INCLUDE_DIRS /usr/include)
 
 ##############################################################################
 # Boost
 ##############################################################################
-find_package( Boost COMPONENTS system filesystem REQUIRED)
+find_package( Boost COMPONENTS system filesystem program_options REQUIRED)
 
 
 ##############################################################################
@@ -358,6 +371,9 @@ if(ENABLE_CGNS)
   add_library(cgns STATIC IMPORTED)
   set_property(TARGET cgns PROPERTY IMPORTED_LOCATION ${CGNS_LIBRARY})
   add_definitions("-DENABLE_CGNS")
+else()
+  message(WARNING "CGNS not enabled. Some modules and tests will not be compiled. Use option"
+    "-D ENABLE_CGNS::BOOL=True to enable.")
 endif()
 
 
@@ -369,23 +385,32 @@ if (ENABLE_DBC)
   add_definitions("-DENABLE_DBC")
 endif()
   
-
-# Enable/Disable STK_mesh Amanzi package
+##############################################################################
+# STK_mesh Amanzi package
+##############################################################################
 OPTION(ENABLE_STK_Mesh "Build Amanzi module STK_Mesh." OFF)
 if (NOT ENABLE_STK_Mesh)
   message("STK_mesh compilation is disabled")
-  set(MESH_LIBRARY moab_mesh)
 else()
   add_subdirectory(stk_mesh)
   set(MESH_LIBRARY stk_mesh)
   add_definitions("-DENABLE_STK")
 endif()
 
+if (ENABLE_MSTK_Mesh) 
+  add_subdirectory(mstk_mesh)
+  set(MESH_LIBRARY mstk_mesh)
+endif()
+
+if (ENABLE_MOAB_Mesh)
+  add_subdirectory(moab_mesh)
+endif()
+
 add_subdirectory(error_handling)
 add_subdirectory(exodus)
+add_subdirectory(mesh)
 add_subdirectory(mesh_data)
 add_subdirectory(simple_mesh)
-add_subdirectory(moab_mesh)
 add_subdirectory(mpc)
 add_subdirectory(chemistry)
 add_subdirectory(transport)
@@ -395,3 +420,31 @@ add_subdirectory(gmv)
 add_subdirectory(utils)
 add_subdirectory(bin)
 add_subdirectory(driver)
+
+
+message(STATUS "******************************************************************************")
+message(STATUS "")
+message(STATUS "${PROJECT_NAME} Configuration")
+message(STATUS "Version ${AMANZI_VERSION_MAJOR}.${AMANZI_VERSION_MINOR}")
+message(STATUS "")
+message(STATUS "System Information")
+message(STATUS "System ${CMAKE_SYSTEM}")
+message(STATUS "System Name ${CMAKE_SYSTEM_NAME}")
+message(STATUS "System Version ${CMAKE_SYSTEM_VERSION}")
+if ( APPLE )
+    message(STATUS "Mac OSX system")
+endif(APPLE)    
+if ( WIN32 )
+    message(STATUS "Windows system")
+endif(WIN32)    
+if ( UNIX )
+    message(STATUS "UNIX system")
+endif(UNIX)   
+message(STATUS "")
+message(STATUS "Build type ${CMAKE_BUILD_TYPE}")
+message(STATUS "")
+message(STATUS "Compilers")
+message(STATUS "C COMPILER ${CMAKE_C_COMPILER}")
+message(STATUS "CXX COMPILER ${CMAKE_CXX_COMPILER}")
+message(STATUS "")
+message(STATUS "******************************************************************************")

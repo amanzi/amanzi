@@ -135,6 +135,9 @@ public:
     static bool valid_dimension (int space_dimension);
     static bool valid_rank (stk::mesh::EntityRank);
 
+    /// redistribute cell ownership according to the specified map
+    void redistribute(const Epetra_Map& cellmap);
+
     void summary(std::ostream& os) const;
     
 }; // close class Mesh

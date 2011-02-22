@@ -2,13 +2,14 @@
 include_directories(${PROJECT_SOURCE_DIR}/utils)
 include_directories(${PROJECT_SOURCE_DIR}/error_handling)
 include_directories(${PROJECT_SOURCE_DIR}/mpc)
+include_directories(${PROJECT_SOURCE_DIR}/mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 
 include_directories(${Trilinos_INCLUDE_DIRS})
 
 add_library(simple_mesh Mesh_maps_simple.cc)
-target_link_libraries(simple_mesh ${Trilinos_LIBRARIES})
+target_link_libraries(simple_mesh ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)

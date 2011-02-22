@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Mon Dec 13 09:42:30 2010
+ * @date Wed Dec 29 10:20:46 2010
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Mon Dec 13 09:42:30 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed Dec 29 10:20:46 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -238,6 +238,22 @@ SUITE (HexMesh)
             mesh_map(new STK_mesh::Mesh_maps_stk(comm, 10, 10, 10));
         
         Auditor audit("stk_mesh_generated_", mesh_map);
+        audit();
+    }
+
+    TEST (HexPartition)
+    {
+        Epetra_MpiComm comm(MPI_COMM_WORLD);
+        STK_mesh::Mesh_maps_stk *mesh_stk = 
+          new STK_mesh::Mesh_maps_stk(comm, 4, 2, 2);
+        Teuchos::RCP<Mesh_maps_base> mesh_map(mesh_stk);
+
+        Teuchos::RCP<Epetra_CrsGraph> cgraph =
+          mesh_stk->cellgraph();
+        cgraph->Print(std::cerr);
+
+        mesh_stk->redistribute();
+        Auditor audit("stk_mesh_rpartitioned_", mesh_map);
         audit();
     }
 }

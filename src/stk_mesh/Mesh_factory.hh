@@ -94,9 +94,6 @@ private:
     /// Check, and change if necessary, side set face ownership
     void check_face_ownership_(void);
 
-    /// Create or change as necessary element ghosting
-    void create_cell_ghosting_(void);
-
     /// Get the set of nodes defining the specified element side
     Entity_vector
     get_element_side_nodes_(const stk::mesh::Entity& element, const unsigned int& s);
@@ -127,8 +124,6 @@ private:
 
     Vector_field_type *coordinate_field_;
     Id_field_type *face_owner_;
-
-    stk::mesh::Selector universal_selector_;
 
     Id_map set_to_part_;
 

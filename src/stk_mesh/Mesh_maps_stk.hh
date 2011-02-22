@@ -10,7 +10,9 @@
 
 #include "dbc.hh"
 
+#include <Teuchos_ParameterList.hpp>
 #include <Epetra_Map.h>
+#include <Epetra_CrsGraph.h>
 #include <Epetra_Comm.h>
 
 #include <memory>
@@ -225,6 +227,15 @@ namespace STK_mesh
     // modify coordinates  
     void set_coordinate(unsigned int local_node_id, 
                         double* source_begin, double* source_end);
+
+    /// Make a cell-to-cell graph from the mesh
+    Teuchos::RCP<Epetra_CrsGraph> cellgraph(void) const;
+
+    /// Redistribute the mesh according to the specified cell map
+    void redistribute(const Epetra_Map& cellmap);
+
+    /// Repartition and redistribute the mesh according to the specified parameters
+    void redistribute(const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"));
   };
 
   // -------------------------

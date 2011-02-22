@@ -1,154 +1,132 @@
-#ifndef _MESH_MAPS_MOAB_H_
-#define _MESH_MAPS_MOAB_H_
+#ifndef _MESH_MAPS_MSTK_H_
+#define _MESH_MAPS_MSTK_H_
 
-// MOAB include files - for some reason they have to be first -
-// if not the compiler cannot find MPI_COMM_WORLD
-
-#include "MBmpi.h"
-#include "MBTypes.h"
-#include "MBCore.hpp"
-#include "MBRange.hpp"
-#include "MBTagConventions.hpp"
-#include "MBReadUtilIface.hpp"
-#include "MBParallelConventions.h"
-#include "MBParallelComm.hpp"
 
 #include <Epetra_Map.h>
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
-#include "Entity_kind.hh"
+#include "../mesh_data/Entity_kind.hh"
 
-#include "Mesh_maps_base.hh"
+#include "../simple_mesh/Mesh_maps_base.hh"
 
 #include <memory>
 #include <vector>
+#include <sstream>
+
+#include "MSTK.h"
 
 
-class Mesh_maps_moab : public virtual Mesh_maps_base
+
+class Mesh_maps_mstk : public virtual Mesh_maps_base
 {
 
   private:
 
-    MBCore *mbcore;
-    MBParallelComm *mbcomm;
+  MPI_Comm comm;
+  int myprocid, numprocs;
 
-    int serial_run;
+  Mesh_ptr mesh;
+  //    MSTKComm *mstkcomm; Not defined - will define if we need it
 
-    int spacedim;
-    int celldim; // Topological dimension of highest level entities
-    int facedim; // Topological dimension of 2nd highest level entities
-
-    Epetra_MpiComm *epcomm;
-
-
-
-    // Local handles to entity lists (Vertices, "Faces", "Cells")
-
-    // For a surface mesh, "Faces" refers to mesh edges and "Cells"
-    // refers to mesh faces
-    //
-    // For a solid mesh, "Faces" refers to mesh faces and "Cells"
-    // refers to mesh regions
-    
-
-    // These are MOAB's definitions of types of parallel mesh entities
-    // These definitions are slightly different from what Amanzi has defined
-    //
-    // There are 2 types of cells - Owned and Ghost
-
-    // There are 4 types of lower dimensional entities 
-    //
-    // 1. OWNED - owned by this processor
-    //
-    // 2. NOTOWNED - not owned by this processor
-    //
-    // 3. USED - connected to at least one cell owned by this
-    // processor (may or may not be owned by this processor)
-    //
-    // 4. GHOST - neither the entity nor a cell connected to the
-    // entity is owned by the processor
-
-    // UNFORTUNATELY, THE TERMINOLOGY USED BY THE API USES GHOST TO
-    // MEAN NOTOWNED
-
-    // ALL = OWNED + NOTOWNED or USED + GHOST
-
-
-    MBRange AllVerts, OwnedVerts, NotOwnedVerts;
-
-    MBRange AllFaces, OwnedFaces, NotOwnedFaces;
-
-    MBRange AllCells, OwnedCells, GhostCells;
-
-
-    // tag handles
-
-    MBTag lid_tag;        // Local ID
-    MBTag gid_tag;        // Global ID
-    MBTag mattag;         // Material tag
-    MBTag sstag;          // Sideset tag
-    MBTag nstag;          // Nodeset tag
-
-
-    // Local ID to MOAB handle map
-
-    std::vector<MBEntityHandle> vtx_id_to_handle;
-    std::vector<MBEntityHandle> face_id_to_handle;
-    std::vector<MBEntityHandle> cell_id_to_handle;
-
-
-    // Maps
-
-    Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
-    Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
-
-
-    // Sets (material sets, sidesets, nodesets)
-    // We store the number of sets in the whole problem regardless of whether
-    // they are represented on this processor or not
-    // We also store the IDs of the sets and the dimension of entities 
-    // in those sets
+  int serial_run;
   
-    int nsets;
-    int *setids, *setdims;
+  int spacedim;
+  int celldim; // Topological dimension of highest level entities
+  int facedim; // Topological dimension of 2nd highest level entities
+  
+  Epetra_MpiComm *epcomm;
 
 
-    // Minimum and maximum global IDs of faces
 
-    unsigned int minFGID, maxFGID;
+  // Local handles to entity lists (Vertices, "Faces", "Cells")
+  
+  // For a surface mesh, "Faces" refers to mesh edges and "Cells"
+  // refers to mesh faces
+  //
+  // For a solid mesh, "Faces" refers to mesh faces and "Cells"
+  // refers to mesh regions
+  
+  
+  // These are MSTK's definitions of types of parallel mesh entities
+  // These definitions are slightly different from what Amanzi has defined
+  //
+  // There are 2 types of entities relevant to this code - Owned and Ghost
+  //
+  // 1. OWNED - owned by this processor
+  //
+  // 2. GHOST - not owned by this processor
+  
+  // ALL = OWNED + GHOST
+  
+
+  MSet_ptr AllVerts, OwnedVerts, NotOwnedVerts;
+  
+  MSet_ptr AllFaces, OwnedFaces, NotOwnedFaces;
+  
+  MSet_ptr AllCells, OwnedCells, GhostCells;
 
 
-    // flag whether to flip a face dir or not when returning nodes of a face
+  // Local ID to MSTK handle map
 
-    bool *faceflip;
-    
-    // Private methods
-    // ----------------------------
-
-    bool valid_entity_kind_ (int kind) const;
+  std::vector<MEntity_ptr> vtx_id_to_handle;
+  std::vector<MEntity_ptr> face_id_to_handle;
+  std::vector<MEntity_ptr> cell_id_to_handle;
 
 
-    void clear_internals_();
+  // Maps
+  
+  Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
+  Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
+  
+  
+  // Sets (material sets, sidesets, nodesets)
+  // We store the number of sets in the whole problem regardless of whether
+  // they are represented on this processor or not
+  // We also store the IDs of the sets and the dimension of entities 
+  // in those sets
+  
+  // We could also store a single array of setids and another array of setdims
+  // like we do for Mesh_Maps_Moab. Some code is easier this way and some code
+  // easier the other way
 
-    void init_pvert_lists();
-    void init_pface_lists();
-    void init_pcell_lists();
-    void init_pface_dirs();
+  // Cannot use std::vector<int> because we cannot pass it into MPI routines
 
-    void init_id_handle_maps();
-    void init_global_ids();
-
-    void init_cell_map();
-    void init_face_map();
-    void init_node_map();
-
-    void init_set_info();
+  int nmatsets, nsidesets, nnodesets;
+  int *matset_ids, *sideset_ids, *nodeset_ids; 
+                                              
+  
+  
+  // flag whether to flip a face dir or not when returning nodes of a face
+  
+  bool *faceflip;
+  
+  // Private methods
+  // ----------------------------
+  
+  bool valid_entity_kind_ (int kind) const;
+  
+  
+  void clear_internals_();
+  
+  void init_pvert_lists();
+  void init_pface_lists();
+  void init_pcell_lists();
+  void init_pface_dirs();
+  
+  void init_id_handle_maps();
+  void init_global_ids();
+  
+  void init_cell_map();
+  void init_face_map();
+  void init_node_map();
+  
+  void init_set_info();
 
 public:
   
-  Mesh_maps_moab (const char *filename, MPI_Comm comm);
-  ~Mesh_maps_moab();
+  Mesh_maps_mstk (const char *filename, MPI_Comm comm);
+  ~Mesh_maps_mstk();
   
   void update ();
   
@@ -272,4 +250,4 @@ public:
 };
 
 
-#endif /* _MESH_MAPS_MOAB_H_ */
+#endif /* _MESH_MAPS_MSTK_H_ */

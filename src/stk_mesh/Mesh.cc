@@ -5,6 +5,7 @@ namespace bl = boost::lambda;
 
 #include "Mesh.hh"
 #include "dbc.hh"
+#include "Mesh_common.hh"
 
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -13,6 +14,7 @@ namespace bl = boost::lambda;
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/SetOwners.hpp>
 
 namespace STK_mesh
 {
@@ -492,6 +494,59 @@ Mesh::summary(std::ostream& os) const
         communicator_.Barrier();
     }
   
+}
+
+// -------------------------------------------------------------
+// Mesh::redistribute
+// -------------------------------------------------------------
+/** 
+ * This redistributes ownership of cells in the mesh according to the
+ * specified @c cellmap.  
+ * 
+ * @param cellmap @em 1-based map of cell indexes
+ */
+void
+Mesh::redistribute(const Epetra_Map& cellmap)
+{
+    stk::mesh::Selector owned(meta_data_->locally_owned_part());
+    stk::mesh::EntityVector cells;
+    stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Element), cells);
+
+    std::vector<int> gid(cells.size());
+
+    int i(0);
+    stk::mesh::EntityVector::iterator c;
+    for (c = cells.begin(), i = 0; c != cells.end(); c++, i++) {
+        gid[i] = (*c)->identifier();
+    }
+
+    std::vector<int> pid(cells.size());
+    std::vector<int> lid(cells.size());
+
+    cellmap.RemoteIDList(cells.size(), &gid[0], &pid[0], &lid[0]);
+
+    std::vector<stk::mesh::EntityProc> eproc;
+
+    for (c = cells.begin(), i = 0; c != cells.end(); c++, i++) {
+        eproc.push_back(stk::mesh::EntityProc(*c, pid[i]));
+    }
+
+    // move the cells around
+
+    bulk_data_->modification_begin();
+    bulk_data_->change_entity_owner(eproc);
+    bulk_data_->modification_end();
+
+    // move the other stuff around
+    
+    bulk_data_->modification_begin();
+    stk::mesh::set_owners<stk::mesh::LowestRankSharingProcOwns>(*bulk_data_);
+    bulk_data_->modification_end();
+
+    stk::mesh::check_face_ownership(*bulk_data_);
+    stk::mesh::check_node_ownership(*bulk_data_);
+
+    
 }
 
 } // close namespace STK_mesh
