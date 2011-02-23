@@ -129,16 +129,6 @@ if ( search_path_found )
 
       endif()
 
-
-      # Now set the FOUND flag
-      if ( NetCDF_INCLUDE_DIRS AND NetCDF_LIBRARIES )
-          set(NetCDF_FOUND TRUE)
-      else()
-          set(NetCDF_FOUND FALSE)
-      endif()    
-
-else()
-      set(NetCDF_FOUND FALSE)
 endif()      
 
 find_package_handle_standard_args(NetCDF DEFAULT_MSG
