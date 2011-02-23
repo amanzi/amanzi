@@ -9,13 +9,6 @@ include(PrintVariable)
 # Required TPLs
 set(AMANZI_REQ_TPLS "NetCDF" "HDF5" CACHE INTERNAL "List of required TPLs to build Amanzi")
 
-# Enabled TPLs
-option(ENABLE_STK_Mesh  "Build Amanzi with the STK mesh framework" ON)
-option(ENABLE_MOAB_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
-option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
-
-option(ENABLE_CGNS      "Build Amanzi output library with CGNS" OFF)
-
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
@@ -35,5 +28,21 @@ find_package(NetCDF REQUIRED)
 # Exodus II -http://sourceforge.net/projects/exodusii
 ##############################################################################
 find_package(ExodusII REQUIRED)
+
+
+# Enabled TPLs
+option(ENABLE_STK_Mesh  "Build Amanzi with the STK mesh framework" ON)
+option(ENABLE_MOAB_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
+option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
+
+##############################################################################
+# CGNS - http://www.cgns.sourceforge.net/
+##############################################################################
+option(ENABLE_CGNS      "Build Amanzi output library with CGNS" OFF)
+if (ENABLE_CGNS)
+    find_package(CGNS REQUIRED)
+endif()    
+
+
 
 
