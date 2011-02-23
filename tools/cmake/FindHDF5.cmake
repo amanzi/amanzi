@@ -124,17 +124,17 @@
 # 
 # #############################################################################
 
-include(SelectLibraryConfigurations)
-include("${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake")
-
-# List of the valid HDF5 components
-set( HDF5_VALID_COMPONENTS 
-    C
-    CXX
-)
-
-### ORIGINAL SEARCH
-# try to find the HDF5 wrapper compilers
+#ORIGinclude(SelectLibraryConfigurations)
+#ORIGinclude("${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake")
+#ORIG
+#ORIG# List of the valid HDF5 components
+#ORIGset( HDF5_VALID_COMPONENTS 
+#ORIG    C
+#ORIG    CXX
+#ORIG)
+#ORIG
+#ORIG
+#ORIG# try to find the HDF5 wrapper compilers
 #ORIGfind_program( HDF5_C_COMPILER_EXECUTABLE
 #ORIG    NAMES h5cc h5pcc
 #ORIG    HINTS ENV HDF5_ROOT
@@ -149,13 +149,33 @@ set( HDF5_VALID_COMPONENTS
 #ORIG    DOC "HDF5 C++ Wrapper compiler.  Used only to detect HDF5 compile flags." )
 #ORIGmark_as_advanced( HDF5_CXX_COMPILER_EXECUTABLE )
 
-# Search preference is HDF5_DIR, HDF5_ROOT
-set(hdf5_search_hints ${HDF5_DIR} "$ENV{HDF5_ROOT}")
-message(STATUS "HDF5 search hints ${hdf5_search_hints}")
+#
+# Amanzi Modifications
+# In other packages, search_path is checked to see if the path
+# was found and the search for include files and libraries is not
+# preformed if this falg is FALSE. Since this package has it's own error
+# handling, we will not bypass it. An error message will be sent if the flag 
+# is false.
+include(SelectLibraryConfigurations)
+include(FindPackageHandleStandardArgs)
 
+# Amanzi Modules see <root>/tools/cmake
+include(SelectSearchPath)
+include(PrintVariable)
+
+# List of the valid HDF5 components
+set( HDF5_VALID_COMPONENTS 
+    C
+    CXX
+)
+
+# Define the search path 
+select_search_path(HDF5 hdf5_search_path search_path_found)
+
+# try to find the HDF5 wrapper compilers
 find_program( HDF5_C_COMPILER_EXECUTABLE
     NAMES h5cc h5pcc
-    HINTS ${hdf5_search_hints}
+    HINTS ${hdf5_search_path}
     PATH_SUFFIXES bin Bin
     DOC "HDF5 Wrapper compiler.  Used only to detect HDF5 compile flags."
     NO_DEFAULT_PATH )
@@ -163,7 +183,7 @@ mark_as_advanced( HDF5_C_COMPILER_EXECUTABLE )
 
 find_program( HDF5_CXX_COMPILER_EXECUTABLE
     NAMES h5c++ h5pc++
-    HINTS ${hdf5_search_hints}
+    HINTS ${hdf5_search_path}
     PATH_SUFFIXES bin Bin
     DOC "HDF5 C++ Wrapper compiler.  Used only to detect HDF5 compile flags."
     NO_DEFAULT_PATH )
@@ -171,13 +191,13 @@ mark_as_advanced( HDF5_CXX_COMPILER_EXECUTABLE )
 
 find_program( HDF5_DIFF_EXECUTABLE 
     NAMES h5diff
-    HINTS ${hdf5_search_hints}
+    HINTS ${hdf5_search_path}
     PATH_SUFFIXES bin Bin 
     DOC "HDF5 file differencing tool."
     NO_DEFAULT_PATH )
 mark_as_advanced( HDF5_DIFF_EXECUTABLE )
 
-# Standard FindHDF5.cmake 
+# Standard FindHDF5.cmake follows 
 
 # Invoke the HDF5 wrapper compiler.  The compiler return value is stored to the
 # return_value argument, the text output is stored to the output variable.
