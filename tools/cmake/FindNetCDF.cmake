@@ -23,10 +23,14 @@
 #    NetCDF_LARGE_DIMS       (BOOL)       Checks the header files for size of 
 #                                          NC_MAX_DIMS, NC_MAX_VARS and NC_MAX_VARS_DIMS
 #                                          Returns TRUE if
-#                                          NC_MAX_DIMS == 655363
-#                                          NC_MAX_VARS == 524288
-#                                          NC_MAX_VAR_DIMS == 8
-    
+#                                          NC_MAX_DIMS >= 655363
+#                                          NC_MAX_VARS >= 524288
+#                                          NC_MAX_VAR_DIMS >= 8
+#
+# #############################################################################
+
+# Standard CMake modules see CMAKE_ROOT/Modules
+include(FindPackageHandleStandardArgs)
 
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
@@ -134,15 +138,12 @@ if ( search_path_found )
       endif()    
 
 else()
-
-      message(SEND_ERROR "An explicit path to NetCDF must be defined\n"
-                         "Define this path either at the command line with\n"
-                         " -D NetCDF_DIR:FILEPATH=<install_prefix>\n"
-                         "    or through environment variable NetCDF_ROOT=<install_prefix>\n")
       set(NetCDF_FOUND FALSE)
-     
 endif()      
 
+find_package_handle_standard_args(NetCDF DEFAULT_MSG
+                                  NetCDF_LIBRARIES
+                                  NetCDF_INCLUDE_DIRS)
 mark_as_advanced(
   NetCDF_INCLUDE_DIR
   NetCDF_C_LIBRARY
