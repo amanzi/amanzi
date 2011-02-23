@@ -41,7 +41,16 @@ option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
 option(ENABLE_CGNS      "Build Amanzi output library with CGNS" OFF)
 if (ENABLE_CGNS)
     find_package(CGNS REQUIRED)
-endif()    
+endif() 
+
+##############################################################################
+# UnitTest++ - http://unittest-cpp.sourceforge.net/
+##############################################################################
+option(ENABLE_UnitTest "Build Amanzi unit tests. Requires UnitTest++" ON)
+
+
+
+
 
 
 
