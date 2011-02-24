@@ -417,8 +417,6 @@ add_subdirectory(chemistry)
 add_subdirectory(transport)
 add_subdirectory(boundary_conditions)
 add_subdirectory(flow)
-add_subdirectory(gmv)
-add_subdirectory(utils)
 add_subdirectory(bin)
 add_subdirectory(driver)
 

@@ -24,6 +24,7 @@ set(link_libs simple_mesh error_handling mesh_data)
 if (ENABLE_CGNS)
     list(APPEND ${CGNS_LIBRARY} ${HDF5_LIBS_ALL})
 endif()
+message("======> ${CGNS_LIBRARY}")
 target_link_libraries(output ${link_libs} ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
 
 
