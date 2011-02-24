@@ -49,7 +49,7 @@ set_package_info(NetCDF
 ##############################################################################
 # Exodus II -http://sourceforge.net/projects/exodusii
 ##############################################################################
-find_package(ExodusII REQUIRED)
+#find_package(ExodusII REQUIRED)
 set_package_info(ExodusII
                  "File format library. Originated from Sandia."
                  "http://sourceforge.net/projects/exodusii/"
@@ -63,7 +63,8 @@ set_package_info(ExodusII
 # Enable ALL possible mesh frameworks
 cmake_dependent_option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF
                        "ENABLE_STK_Mesh;ENABLE_MOAB_Mesh;ENABLE_MSTK" ON) 
-set_feature_info(ENABLE_ALL_Mesh
+add_feature_info(ALL_Mesh
+                 ENABLE_ALL_Mesh
                  "Build all available mesh frameworks"
                   )    
 
@@ -71,18 +72,18 @@ set_feature_info(ENABLE_ALL_Mesh
 # STK - Sierra Mesh Tool Kit part of Trilinos
 ##############################################################################
 option(ENABLE_STK_Mesh  "Build Amanzi with the STK mesh framework" ON)
-set_feature_info(ENABLE_STK_Mesh
+add_feature_info(STK_Mesh
+                 ENABLE_STK_Mesh
                  "Sierra Mesh Tool Kit (STK Mesh) a Trilinos package"
-                 "http://trilinos.sandia.gov/packages/stk"
                  )
 
 ##############################################################################
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
 option(ENABLE_MOAB_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
-set_package_info(ENABLE_MOAB_Mesh
+add_feature_info(MOAB_Mesh
+                 ENABLE_MOAB_Mesh
                  "A Mesh-Oriented datABase"
-                 "http://trac.mcs.anl.gov/projects/ITAPS/wiki/MOAB"
                  )
 
 ##############################################################################
@@ -90,20 +91,18 @@ set_package_info(ENABLE_MOAB_Mesh
 ##############################################################################
 cmake_dependent_option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF
                        "ENABLE_METIS" ON )
-set_feature_info(ENABLE_MSTK_Mesh
+add_feature_info(MSTK_Mesh
+                 ENABLE_MSTK_Mesh
                  "A mesh framework"
-                 "https://software.lanl.gov/MeshTools/trac/wiki"
-                 "When enabled will also enable METIS"
                  )
 
 ##############################################################################
 # METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
 ##############################################################################
 option(ENABLE_METIS "Mesh partitioning library" OFF)
-set_feature_info(ENABLE_METIS
+add_feature_info(METIS
+                 ENABLE_METIS
                  "Mesh partitioning library"
-                 "http://glaros.dtc.umn.edu/gkhome/metis/metis/overview"
-                 "Required by MSTK"
                  )
 
 
@@ -113,7 +112,8 @@ set_feature_info(ENABLE_METIS
 # CGNS - http://www.cgns.sourceforge.net/
 ##############################################################################
 option(ENABLE_CGNS  "Build Amanzi output library with CGNS" OFF)
-set_feature_info(ENABLE_CGNS
+add_feature_info(CGNS
+                  ENABLE_CGNS
                  "CFD General Notation System"
                  "http://cgns.sourceforge.net"
                  "Required to produce VisIt files"
@@ -126,10 +126,9 @@ set_feature_info(ENABLE_CGNS
 # UnitTest++ - http://unittest-cpp.sourceforge.net/
 ##############################################################################
 option(ENABLE_UnitTest "Build Amanzi unit tests. Requires UnitTest++" ON)
-set_feature_info(ENABLE_UnitTest
+set_feature_info(UnitTest
+                 ENABLE_UnitTest
                  "C++ unit test framework"
-                 "http://unittest-cpp.sourceforge.net"
-                 "Required to run test suite"
                  )
 
 
