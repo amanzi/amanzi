@@ -36,7 +36,7 @@ if ( search_path_found )
 
     # Search for include files
     find_path(UnitTest_INCLUDE_DIR
-                     NAMES 
+                     NAMES UnitTest++.h unittest++.h
                      HINTS ${search_path}
                      PATH_SUFFIXES include
                      DOC "Path to UnitTest include files"
@@ -44,7 +44,7 @@ if ( search_path_found )
 
     # Search for C library
     find_library( UnitTest_LIBRARY
-                  NAMES utest
+                  NAMES UnitTest++ unittest++
                   HINTS ${search_path}
                   PATH_SUFFIXES lib 
                   DOC "The UnitTest library"
@@ -61,7 +61,7 @@ find_package_handle_standard_args(UnitTest DEFAULT_MSG
                                   UnitTest_INCLUDE_DIR)
 mark_as_advanced(
   UnitTest_INCLUDE_DIR
-  UnitTest_C_LIBRARY
+  UnitTest_LIBRARY
   UnitTest_VERSION
 )
 
