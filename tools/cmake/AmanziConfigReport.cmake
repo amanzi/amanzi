@@ -5,6 +5,8 @@
 # Amanzi Configuration Report
 #
 # #############################################################################
+include(FeatureSummary)
+
 get_property(lang_enabled GLOBAL PROPERTY ENABLED_LANGUAGES)
 get_property(pack_found GLOBAL PROPERTY PACKAGES_FOUND)
 get_property(pack_not_found GLOBAL PROPERTY PACKAGES_NOT_FOUND)
@@ -60,3 +62,5 @@ foreach(pack ${pack_found})
 endforeach()    
 message(STATUS  "Did not find packages: ${pack_not_found}")
 message(STATUS "******************************************************************************")
+
+
