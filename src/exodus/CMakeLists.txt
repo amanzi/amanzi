@@ -1,11 +1,11 @@
-include_directories("${PROJET_SOURCE_DIR}/utils")
-include_directories("${PROJECT_SOURCE_DIR}/error_handling")
-include_directories("${PROJECT_SOURCE_DIR}/mesh_data")
+include_directories(${PROJET_SOURCE_DIR}/utils)
+include_directories(${PROJECT_SOURCE_DIR}/error_handling)
+include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 
 include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIR})
-include_directories("${EXODUSII_INCLUDES}")
-include_directories("${NETCDF_INCLUDES}")
+include_directories(${EXODUSII_INCLUDES})
+include_directories(${NETCDF_INCLUDES})
 
 link_directories(${Trilinos_LIBRARY_DIRS})
 

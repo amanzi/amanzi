@@ -21,12 +21,11 @@ include_directories(${PROJECT_SOURCE_DIR}/flow)
 add_definitions("-DUSE_MPI")
 
 add_library(transport Transport_PK.cpp Transport_State.cpp)
-target_link_libraries(transport simple_mesh moab_mesh mesh_data
-  error_handling mpc flow chemistry ${Trilinos_LIBRARIES})
+target_link_libraries(transport  mesh_data error_handling mpc flow chemistry ${Trilinos_LIBRARIES})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
-if (BUILD_TESTS)
-  set(AMANZI_LIBRARIES  simple_mesh moab_mesh mpc flow transport)
+if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
+  set(AMANZI_LIBRARIES simple_mesh moab_mesh mpc flow transport)
   add_executable(test_serial   test/Main.cc test/test_transport.cpp test/test_moab.cpp)
   add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
   add_test(transport test_serial test_parallel)
