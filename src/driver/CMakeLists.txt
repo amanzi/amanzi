@@ -28,10 +28,10 @@ if (ENABLE_STK_Mesh)
 endif()
 
 if (ENABLE_MOAB_Mesh)
-  target_link_libraries(amanzi-demo-driver ${MOAB_LIBRARIES})
+  target_link_libraries(amanzi-demo-driver moab_mesh)
 endif()
 
 if (ENABLE_MSTK_Mesh)
-  target_link_libraries(amanzi-demo-driver ${MSTK_LIBRARIES})
+  target_link_libraries(amanzi-demo-driver mstk_mesh)
 endif()
 

@@ -2,7 +2,10 @@
 #include "stdlib.h"
 #include "math.h"
 
+#if ENABLE_MOAB
 #include "Mesh_maps_moab.hh"
+#endif
+
 #include "Mesh_maps_simple.hh"
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
