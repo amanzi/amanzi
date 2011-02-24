@@ -407,6 +407,7 @@ if (ENABLE_MOAB_Mesh)
 endif()
 
 add_subdirectory(error_handling)
+add_subdirectory(output)
 add_subdirectory(exodus)
 add_subdirectory(mesh)
 add_subdirectory(mesh_data)
