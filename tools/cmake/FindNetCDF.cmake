@@ -130,6 +130,39 @@ if ( search_path_found )
 
       endif()
 
+      # Now we need to add extra libraries if NetCDF was built with HDF5
+      find_program(netcdf_config nc-config
+                   HINTS ${search_path}
+                   PATH_SUFFIXES bin Bin
+                   DOC "NetCDF configuration script"
+                   NO_DEFAULT_PATH)
+
+      if (netcdf_config)
+          message(STATUS "Found NetCDF configuration script: ${netcdf_config}")
+          execute_process(COMMAND "${netcdf_config}" "--has-hdf5"
+                          RESULT_VARIABLE _ret_code
+                          OUTPUT_VARIABLE _hdf5_flag
+                          ERROR_VARIABLE  _error_out
+                          )
+          if ( ${_hdf5_flag} ) 
+              message(STATUS "NetCDF has HDF5 symbols")
+              find_package(HDF5)
+              if ( HDF5_FOUND ) 
+                  list(APPEND NetCDF_LIBRARIES "${HDF5_LIBRARIES}")
+                  list(APPEND NetCDF_INCLUDE_DIRS "${HDF5_INCLUDE_DIRS}")
+              else()
+                  message(SEND_ERROR "NetCDF in ${NetCDF_DIR} has HDF5 but could not locate HDF5")
+              endif()
+
+          else()
+              message(STATUS "NetCDF in ${NetCDF_DIR} does not have HDF5 symbols")
+          endif()    
+      else()
+          message(WARNING "Could not loacte NetCDF configure script in ${NetCDF_DIR}")
+          message(WARNING "NetCDF_LIBRARIES may not contain all dependent libraries")
+      endif()    
+
+
 endif()      
 
 find_package_handle_standard_args(NetCDF DEFAULT_MSG
