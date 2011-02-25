@@ -42,6 +42,7 @@ if (CMAKE_FORTRAN_COMPILER_LOADED)
     message(STATUS "\tFortran Compiler ${CMAKE_FORTRAN_COMPILER}")
     message(STATUS "\tFortran Compiler ID ${CMAKE_FORTRAN_COMPILER_ID}")
 endif()    
+message(STATUS "")
 message(STATUS "Build type ${CMAKE_BUILD_TYPE}")
 message(STATUS "")
 message(STATUS "Compile Flags")
@@ -62,5 +63,8 @@ foreach(pack ${pack_found})
 endforeach()    
 message(STATUS  "Did not find packages: ${pack_not_found}")
 message(STATUS "******************************************************************************")
+
+print_enabled_features()
+print_disabled_features()
 
 
