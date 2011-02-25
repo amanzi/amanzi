@@ -38,11 +38,24 @@ set_feature_info(HDF5
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov
 ##############################################################################
-PRINT_VARIABLE(Trilinos_DIR)
+#PRINT_VARIABLE(Trilinos_DIR)
 find_package(Trilinos REQUIRED HINTS ${Trilinos_DIR} PATH_SUFFIXES include)
-PRINT_VARIABLE(Trilinos_DIR)
+
 if ( Trilinos_FOUND )
 
+    # Amanzi uses Epetra vectors throughout the code. 
+    # This find_package call defines Epetra_* variables.
+    # Amanzi developers should use these variables
+    # for libraries that ONLY use Epetra and avoid
+    # using the ALL POWERFUL(TM) Trilinos_LIBRARIES.
+    # When/If we create wrappers, using this variable
+    # will make that transition easier.
+    find_package(Epetra
+                 NO_MODULE
+                 HINTS ${Trilinos_DIR}
+                 PATH_SUFFIXES include
+                 )
+                
     # STK (Mesh framework) is not a default Trilinos package
     # Must explicity build this package. This is a check to see
     # if STK is in Trilinos. 
@@ -56,6 +69,16 @@ else()
                         " Please define the location of your Trilinos installation\n"
                         "using -D Trilinos_DIR:FILEPATH=<install path>\n")
 endif()    
+
+# Trilinos can contain 20 or more libraries (packages). The variable Trilino_LIBRARIES
+# does not have full path names only library names. I suspect if it did include
+# full path names the link command would exceed the command line character limit on
+# many platforms, thus we need to add Trilinos library path to the link to find these
+# libraries. Since Amanzi calls many Trilinos packages directly we'll add Trilinos
+# to all link commands here. Yes, this is overkill. We'll have wrappers someday.
+link_directories(${Trilinos_LIBRARY_DIRS})
+
+
 
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
