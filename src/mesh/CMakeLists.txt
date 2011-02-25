@@ -22,7 +22,7 @@ project(MESH)
 include_directories(${DBC_SOURCE_DIR})
 
 # External (TPL) directories
-include_directories(${Trilinos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
 
 
 #
@@ -34,4 +34,4 @@ add_library(cell_geometry cell_geometry.cc)
 # Library: mesh_audit
 #
 add_library(mesh_audit MeshAudit.cc)
-target_link_libraries(mesh_audit error_handling cell_geometry ${Epetra_LIBRARIES} ${Epetra_TPL_LIBRARIES})
+target_link_libraries(mesh_audit error_handling cell_geometry ${Epetra_LIBRARIES})

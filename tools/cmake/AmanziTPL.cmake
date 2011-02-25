@@ -43,14 +43,22 @@ find_package(Trilinos REQUIRED HINTS ${Trilinos_DIR} PATH_SUFFIXES include)
 
 if ( Trilinos_FOUND )
 
-    # Amanzi uses Epetra vectors throughout the code. 
+    message(STATUS "Found Trilinos: ${Trilinos_LIBRARY_DIR}")
+
+    # Amanzi uses Epetra and Teuchos utils throughout the code. 
     # This find_package call defines Epetra_* variables.
     # Amanzi developers should use these variables
-    # for libraries that ONLY use Epetra and avoid
+    # for libraries that ONLY use Epetra/Teuchos and avoid
     # using the ALL POWERFUL(TM) Trilinos_LIBRARIES.
     # When/If we create wrappers, using this variable
     # will make that transition easier.
     find_package(Epetra
+                 NO_MODULE
+                 HINTS ${Trilinos_DIR}
+                 PATH_SUFFIXES include
+                 )
+                
+    find_package(Teuchos
                  NO_MODULE
                  HINTS ${Trilinos_DIR}
                  PATH_SUFFIXES include
@@ -64,6 +72,19 @@ if ( Trilinos_FOUND )
                  HINTS ${Trilinos_DIR}
                  PATH_SUFFIXES include
                  )
+
+    # For some reason, Trilinos defines dependent TPLs in *_TPL_LIBRARIES not
+    # in *_LIBRARIES. We update the variables so the usage of these variables
+    # is consistent with other FindXXX modules.
+    list(APPEND Epetra_LIBRARIES "${Epetra_TPL_LIBRARIES}")
+    list(APPEND Epetra_INCLUDE_DIRS "${Epetra_TPL_INCLUDE_DIRS}")
+    list(APPEND Teuchos_LIBRARIES "${Teuchos_TPL_LIBRARIES}")
+    list(APPEND Teuchos_INCLUDE_DIRS "${Teuchos_TPL_INCLUDE_DIRS}")
+    list(APPEND STK_LIBRARIES "${STK_TPL_LIBRARIES}")
+    list(APPEND STK_INCLUDE_DIRS "${STK_TPL_INCLUDE_DIRS}")
+
+    list(APPEND Trilinos_LIBRARIES "${Trilinos_TPL_LIBRARIES}")
+    list(APPEND Trilinos_INCLUDE_DIRS "${Trilinos_TPL_INCLUDE_DIRS}")
 else()
     message(FATAL_ERROR "Can not locate Trilinos configuration file\n"
                         " Please define the location of your Trilinos installation\n"
