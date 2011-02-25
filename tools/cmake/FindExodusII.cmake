@@ -50,9 +50,33 @@ if ( search_path_found )
                   DOC "The ExodusII library"
                   NO_DEFAULT_PATH)
 
-     if ( NOT ExodusII_LIBRARY ) 
+     if ( ExodusII_LIBRARY ) 
+         get_filename_component(ExodusII_LIBRARY_DIR "${ExodusII_LIBRARY}" PATH)
+     else()    
          message(SEND_ERROR "Can not locate ExodusII library in ${ExodusII_DIR}")
      endif()
+
+     # ExodusII requires NetCDF. Add extra files and paths to ExodusII_INCLUDE_DIRS
+     # and ExodusII_LIBRARIES
+     set(ExodusII_INCLUDE_DIRS ${ExodusII_INCLUDE_DIR})
+     set(ExodusII_LIBRARIES ${ExodusII_LIBRARY})
+     if ( NetCDF_INCLUDE_DIRS AND NetCDF_LIBRARIES )
+        # Do nothing
+     else ()
+         find_package(NetCDF REQUIRED)
+     endif()
+     list(APPEND ExodusII_INCLUDE_DIRS "${NetCDF_INCLUDE_DIRS}")
+     list(APPEND ExodusII_LIBRARIES    "${NetCDF_LIBRARIES}")
+     #if ( ${NetCDF_FOUND} )
+     #    list(APPEND ExodusII_INCLUDE_DIRS "${NetCDF_INCLUDE_DIRS}")
+     #    list(APPEND ExodusII_LIBRARIES    "${NetCDF_LIBRARIES}")
+     #else()
+     #    message(STATUS "Can not locate NetCDF! This is a required package for ExodusII")
+     #endif()
+
+     # Remove duplicates
+     list(REMOVE_DUPLICATES ExodusII_INCLUDE_DIRS)
+     list(REMOVE_DUPLICATES ExodusII_LIBRARIES)
 
 endif()      
 
