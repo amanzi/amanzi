@@ -77,11 +77,11 @@ if ( search_path_found )
              ( netcdf_max_vars EQUAL "524288" OR netcdf_max_vars GREATER "524288") AND
              ( netcdf_max_var_dims EQUAL "8" OR netcdf_max_var_dims GREATER "8")
              )
-            set(NetCDF_MOAB_COMPATIBLE TRUE)
+            set(NetCDF_LARGE_DIMS TRUE)
         else()
             message(WARNING "The NetCDF found in ${NetCDF_DIR} does not have the correct NC_MAX_DIMS, NC_MAX_VARS and NC_MAX_VAR_DIMS\n"
                              "It may not be compatible with other TPL libraries such MOAB and ExodusII\n" )
-            set(NetCDF_MOAB_COMPATIBLE FALSE)
+            set(NetCDF_LARGE_DIMS FALSE)
         endif()
 
     endif()    
