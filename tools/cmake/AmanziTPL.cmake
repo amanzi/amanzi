@@ -38,7 +38,8 @@ set_feature_info(HDF5
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov
 ##############################################################################
-#PRINT_VARIABLE(Trilinos_DIR)
+# This command alters Trilinos_DIR. If it finds the configuration file
+# Trilinos_DIR is set to the path the configuration fiel was found.
 find_package(Trilinos REQUIRED HINTS ${Trilinos_DIR} PATH_SUFFIXES include)
 
 if ( Trilinos_FOUND )
