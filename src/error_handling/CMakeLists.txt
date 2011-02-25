@@ -38,7 +38,6 @@ if (BUILD_TESTS)
   endif()  
 
   # Add UnitTest include directory
-  PRINT_VARIABLE(UnitTest_INCLUDE_DIRS)
   include_directories(${UnitTest_INCLUDE_DIRS})
 
   # Define the test executable

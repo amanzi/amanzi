@@ -6,7 +6,7 @@ add_subdirectory(utils)
 
 # Mesh 
 add_subdirectory(mesh)
-#add_subdirectory(mesh_data)
+add_subdirectory(mesh_data)
 #add_subdirectory(simple_mesh)
 #add_subdirectory(exodus)
 
