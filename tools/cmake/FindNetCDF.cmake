@@ -47,18 +47,18 @@ if ( search_path_found )
     set(NetCDF_DIR "${search_path}" CACHE PATH "Path to search for NetCDF include and library files")
 
     # Search for include files
-    find_path(NetCDF_INCLUDE_DIRS
+    find_path(NetCDF_INCLUDE_DIR
                      NAMES netcdf.h
                      HINTS ${search_path}
                      PATH_SUFFIXES include
                      DOC "Path to NetCDF include files"
                      NO_DEFAULT_PATH)
-    set(NetCDF_INCLUDE_DIR "${NetCDF_INCLUDE_DIRS}")  # Consistent with other standard CMake Modules             
+    set(NetCDF_INCLUDE_DIRS "${NetCDF_INCLUDE_DIR}")             
 
-    # MOAB check here
-    if ( NetCDF_INCLUDE_DIRS ) 
+    # Large dimension check here
+    if ( NetCDF_INCLUDE_DIR ) 
        
-        set(netcdf_h "${NetCDF_INCLUDE_DIRS}/netcdf.h" )
+        set(netcdf_h "${NetCDF_INCLUDE_DIR}/netcdf.h" )
 
         file(STRINGS "${netcdf_h}" netcdf_max_dims_string REGEX "^#define NC_MAX_DIMS ")
         string(REGEX REPLACE "^#define NC_MAX_DIMS ([0-9]+).*$" "\\1" netcdf_max_dims "${netcdf_max_dims_string}")
@@ -122,6 +122,7 @@ if ( search_path_found )
                       PATH_SUFFIXES lib
                       DOC "The NetCDF C++ library"
                       NO_DEFAULT_PATH)
+         list(APPEND NetCDF_LIBRARIES ${NetCDF_FORTRAN_LIBRARY})
 
          if ( NOT NetCDF_FORTRAN_LIBRARY ) 
              message(SEND_ERROR "Can not locate NetCDF Fortran library in ${NetCDF_DIR}")
@@ -135,10 +136,12 @@ find_package_handle_standard_args(NetCDF DEFAULT_MSG
                                   NetCDF_LIBRARIES
                                   NetCDF_INCLUDE_DIRS)
 mark_as_advanced(
+  NetCDF_INCLUDE_DIRS
   NetCDF_INCLUDE_DIR
   NetCDF_C_LIBRARY
   NetCDF_CXX_LIBRARY
+  NetCDF_LIBRARIES
   NetCDF_FORTRAN_LIBRARY
-  NetCDF_MOAB_COMPATIBLE
+  NetCDF_LARGE_DIMS
 )
 
