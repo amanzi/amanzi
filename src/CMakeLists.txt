@@ -1,11 +1,17 @@
 # -*- mode: cmake -*-
-    
+
+# Standard utilities -- no dependence on mesh base
 add_subdirectory(error_handling)
-add_subdirectory(output)
-add_subdirectory(exodus)
-add_subdirectory(mesh)
-add_subdirectory(mesh_data)
-add_subdirectory(simple_mesh)
+
+# Mesh 
+#add_subdirectory(mesh)
+#add_subdirectory(mesh_data)
+#add_subdirectory(simple_mesh)
+#add_subdirectory(exodus)
+
+
+#add_subdirectory(output)
+
 #add_subdirectory(mpc)
 #add_subdirectory(chemistry)
 #add_subdirectory(transport)

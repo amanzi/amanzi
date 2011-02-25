@@ -11,9 +11,11 @@
 #
 #    Following variables are set:
 #    UnitTest_FOUND            (BOOL)       Flag indicating if UnitTest was found
-#    UnitTest_INCLUDE_DIR      (PATH)       Path to the utest include files
-#    UnitTest_LIBRARY_DIR      (PATH)       Path to the utest libraries
-#    UnitTest_LIBRARY          (FILE)       UnitTest libraries
+#    UnitTest_INCLUDE_DIR      (PATH)       Path to the UnitTest include file
+#    UnitTest_INCLUDE_DIRS     (LIST)       List of all required include files
+#    UnitTest_LIBRARY_DIR      (PATH)       Path to the UnitTest library
+#    UnitTest_LIBRARY          (FILE)       UnitTest library
+#    UnitTest_LIBRARIES        (LIST)       List of all required UnitTest libraries
 #
 # #############################################################################
 
@@ -42,6 +44,10 @@ if ( search_path_found )
                      DOC "Path to UnitTest include files"
                      NO_DEFAULT_PATH)
 
+    # UnitTest does not require additional libraries, but we define
+    # it anyway for consistency
+    set(UnitTest_INCLUDE_DIRS "${UnitTest_INCLUDE_DIR}")
+
     # Search for C library
     find_library( UnitTest_LIBRARY
                   NAMES UnitTest++ unittest++
@@ -50,7 +56,10 @@ if ( search_path_found )
                   DOC "The UnitTest library"
                   NO_DEFAULT_PATH)
 
-     if ( NOT UnitTest_LIBRARY ) 
+     if (UnitTest_LIBRARY ) 
+         get_filename_component(UnitTest_LIBRARY_DIR "${UnitTest_LIBRARY}" PATH)
+         set(UnitTest_LIBRARIES "${UnitTest_LIBRARY}")
+     else() 
          message(SEND_ERROR "Can not locate UnitTest library in ${UnitTest_DIR}")
      endif()
 
@@ -61,7 +70,9 @@ find_package_handle_standard_args(UnitTest DEFAULT_MSG
                                   UnitTest_INCLUDE_DIR)
 mark_as_advanced(
   UnitTest_INCLUDE_DIR
+  UnitTest_INCLUDE_DIRS
   UnitTest_LIBRARY
-  UnitTest_VERSION
+  UnitTest_LIBRARIES
+  UnitTest_LIBRARY_DIR
 )
 

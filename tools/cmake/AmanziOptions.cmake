@@ -52,7 +52,7 @@ set_feature_info(DBC
                  ENABLE_DBC
                  "Toggle design by contract (DBC) checking")
 if ( ENABLE_DBC )
-    add_definitions(ENABLE_DBC)
+    add_definitions("-D ENABLE_DBC")
 endif()    
 
 # Testing
