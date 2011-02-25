@@ -18,8 +18,11 @@ include(PrintVariable)
 # through these variables.
 project(MESH_DATA)
 
-include_directories("${PROJECT_SOURCE_DIR}/error_handling")
-include_directories(${Trilinos_INCLUDE_DIRS})
+# Amanzi include directories
+include_directories(${DBC_SOURCE_DIR})
+
+# External (TPL) include directories
+include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS})
 
