@@ -31,11 +31,11 @@ set(CMAKE_MODULE_PATH  ${AMANZI_MODULE_PATH})
 # Code version defined
 include(AmanziVersion)
 
-# Find required Amanzi TPL
-include(AmanziTPL)
-
 # Addtional build options
 include(AmanziOptions)
+
+# Find required Amanzi TPL
+include(AmanziTPL)
 
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
