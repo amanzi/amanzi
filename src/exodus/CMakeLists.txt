@@ -1,64 +1,105 @@
-include_directories(${PROJET_SOURCE_DIR}/utils)
-include_directories(${PROJECT_SOURCE_DIR}/error_handling)
-include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
+# -*- mode: cmake -*-
 
-include_directories(${Trilinos_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIR})
-include_directories(${EXODUSII_INCLUDES})
-include_directories(${NETCDF_INCLUDES})
+#
+#  Amanzi
+#    Mesh Base Class
+#
 
-link_directories(${Trilinos_LIBRARY_DIRS})
+# Amanzi module, include files found in AMANZI_MODULE_PATH
+include(PrintVariable)
 
-add_library(exodus Exodus_readers.cc Exodus_records.cc Exodus_file.cc Parallel_Exodus_file.cc)
-target_link_libraries(exodus error_handling mesh_data ${EXODUS_LIBRARIES})
+
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   EXO_SOURCE_DIR
+#   EXO_BASE_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(EXO)
+
+# Amanzi include directories
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+
+# External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${ExodusII_INCLUDE_DIRS})
+
+#
+# Library: exodus
+#
+file(GLOB exo_source_files "*.cc") 
+add_library(exodus ${exo_source_files})
+target_link_libraries(exodus 
+                      error_handling mesh_data
+                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
+
+#
+# Binary: exec_reader
+#
+add_executable(exec_reader test/exec_Reader.cc)
+target_link_libraries(exec_reader exodus)
+
+#
+# Binary: exodus_read_test
+#
+add_executable(exodus_read_test test/exodus_read_test.cc)
+target_link_libraries(exodus_read_test exodus)
+
 
 if (BUILD_TESTS)
 
-  set(EXODUS_FILE_DIR "${CMAKE_BINARY_DIR}/exodus/test_files")
+    # Add the UnitTest directory to the include paths
+    include_directories(${UnitTest_INCLUDE_DIRS})
 
-  set_source_files_properties(test/test_file_path.cc PROPERTIES 
-                              COMPILE_FLAGS
-                              "-DEXODUS_FILE_DIR=\"\\\"${EXODUS_FILE_DIR}\\\"\" ")
+    # Set up the test_files directory? --lpritch
+    set(EXODUS_FILE_DIR "${EXO_BINARY_DIR}/test_files")
+    set_source_files_properties(test/test_file_path.cc PROPERTIES 
+                                COMPILE_FLAGS
+                                "-DEXODUS_FILE_DIR=\"\\\"${EXODUS_FILE_DIR}\\\"\" ")
+                            
+    execute_process(COMMAND ${CMAKE_COMMAND} -E 
+    copy_directory ${AMANZI_SOURCE_SRC_DIR}/exodus/test/test_files ${EXODUS_FILE_DIR}) 
 
-  add_executable(test_exodus test/Main.cc test/test_Reader.cc test/test_file_path.cc)
-  add_executable(exec_reader test/exec_Reader.cc)
-  add_executable(exodus_read_test test/exodus_read_test.cc)
+    #  On Mac OSX, compiler complains about duplicates from Boost
+    #  These libraries are also listed in Epetra_LIBRARIES, Teuchos_LIBRARIES 
+    #  Warnings go away when Boost_*_LIBRARY is removed. Does not impact
+    #  test result may not have warnings on other systems. Error appears 
+    #  for each test below. See ticket #333
 
-  add_test(exodus test_exodus)
-  # set_tests_properties(exodus PROPERTIES WILL_FAIL true)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E 
-    copy_directory ${CMAKE_SOURCE_DIR}/exodus/test/test_files ${EXODUS_FILE_DIR}) 
+    # Test: exodus
+    add_executable(test_exodus test/Main.cc test/test_Reader.cc test/test_file_path.cc)
+    target_link_libraries(test_exodus exodus ${UnitTest_LIBRARIES}
+                          ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY}) 
+    add_test(exodus test_exodus)                  
+    # set_tests_properties(exodus PROPERTIES WILL_FAIL true) -- lpritch This was commented out in the original file
 
-  target_link_libraries(test_exodus exodus unittest++
-                        ${EXODUS_LIBRARIES}
+
+    # Test: test_pexodus_2
+    add_executable(test_pexodus_2 test/ParallelMain.cc 
+                   test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
+    target_link_libraries(test_pexodus_2 exodus ${UnitTest_LIBRARIES} 
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-  target_link_libraries(exec_reader exodus ${EXODUS_LIBRARIES})
-  target_link_libraries(exodus_read_test exodus ${EXODUS_LIBRARIES})
+    add_test(exodus_parallel_2proc 
+              ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 2 test_pexodus_2)
 
-  add_executable(test_pexodus_2 test/ParallelMain.cc 
-                 test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
-  target_link_libraries(test_pexodus_2 exodus unittest++ 
-                        ${Trilinos_LIBRARIES} ${EXODUS_LIBRARIES}
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
-  add_test(exodus_parallel_2proc 
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 2 test_pexodus_2)
+    # Test: test_pexodus_3
+    add_executable(test_pexodus_3 test/ParallelMain.cc 
+                   test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
+    target_link_libraries(test_pexodus_3 exodus ${UnitTest_LIBRARIES} 
+                          ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+    add_test(exodus_parallel_3proc 
+             ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 3 test_pexodus_3)
            
-  add_executable(test_pexodus_3 test/ParallelMain.cc 
-                 test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
-  target_link_libraries(test_pexodus_3 exodus unittest++ 
-                        ${Trilinos_LIBRARIES} ${EXODUS_LIBRARIES}
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
-  add_test(exodus_parallel_3proc 
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 3 test_pexodus_3)
-           
-  add_executable(test_pexodus_4 test/ParallelMain.cc 
-                 test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
-  target_link_libraries(test_pexodus_4 exodus unittest++ 
-                        ${Trilinos_LIBRARIES} ${EXODUS_LIBRARIES}
-                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Trilinos_TPL_LIBRARIES})
-  add_test(exodus_parallel_4proc 
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 4 test_pexodus_4 )
+    # Test: test_pexodus_4       
+    add_executable(test_pexodus_4 test/ParallelMain.cc 
+                   test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
+    target_link_libraries(test_pexodus_4 exodus  ${UnitTest_LIBRARIES}
+                        ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+    add_test(exodus_parallel_4proc 
+             ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 4 test_pexodus_4 )
            
 endif()
-
-
