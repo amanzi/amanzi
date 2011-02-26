@@ -39,9 +39,11 @@ set_feature_info(HDF5
 # Trilinos http://trilinos.sandia.gov
 ##############################################################################
 # This command alters Trilinos_DIR. If it finds the configuration file
-# Trilinos_DIR is set to the path the configuration fiel was found.
-find_package(Trilinos REQUIRED HINTS ${Trilinos_DIR} PATH_SUFFIXES include)
-
+# Trilinos_DIR is set to the path the configuration file was found.
+find_package(Trilinos 10.6 REQUIRED
+             HINTS ${Trilinos_DIR}
+             PATH_SUFFIXES include)
+            
 if ( Trilinos_FOUND )
 
     message(STATUS "Found Trilinos: ${Trilinos_LIBRARY_DIR}")
