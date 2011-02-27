@@ -17,6 +17,11 @@ if (ENABLE_STK_Mesh)
     add_subdirectory(stk_mesh)
 endif(ENABLE_STK_Mesh)    
 
+# MOAB (Trilinos Package)
+if (ENABLE_MOAB_Mesh)
+    add_subdirectory(moab_mesh)
+endif(ENABLE_MOAB_Mesh)    
+
 
 
 #add_subdirectory(output)
