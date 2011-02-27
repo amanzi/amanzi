@@ -10,6 +10,14 @@ add_subdirectory(mesh_data)
 add_subdirectory(simple_mesh)
 add_subdirectory(exodus)
 
+# Mesh Frameworks
+
+# STK (Trilinos Package)
+if (ENABLE_STK_Mesh)
+    add_subdirectory(stk_mesh)
+endif(ENABLE_STK_Mesh)    
+
+
 
 #add_subdirectory(output)
 
