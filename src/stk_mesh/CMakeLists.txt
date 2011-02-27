@@ -68,14 +68,12 @@ if (BUILD_TESTS)
                            ${UnitTest_LIBRARIES})
     add_parallel_test(stk_mesh_parallel 
                       test_stk_mesh_parallel NPROCS 4)                   
-#  add_test(stk_mesh_parallel
-#           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${LOCAL_MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_parallel)
-#
-#  add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
-#  target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit unittest++)
-#  add_test(stk_mesh_read test_stk_mesh_read)
-#  add_test(stk_mesh_read_parallel
-#           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${LOCAL_MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_read)
-#
+     
+    # Test: stk_mesh_read (serial and parallel)
+    add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
+    target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit ${UnitTest_LIBRARIES})
+    add_test(stk_mesh_read test_stk_mesh_read)
+    add_parallel_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4)
+
 endif()
 
