@@ -51,7 +51,6 @@ endif()
 
 add_library(output ${output_source_files})
 target_link_libraries(output error_handling simple_mesh mesh_data ${output_tpl_list} )
-PRINT_VARIABLE(output_tpl_list)
 
 
 if (BUILD_TESTS)
