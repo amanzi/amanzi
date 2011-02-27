@@ -12,8 +12,10 @@
 #    Following variables are set:
 #    CGNS_FOUND            (BOOL)       Flag indicating if CGNS was found
 #    CGNS_INCLUDE_DIR      (PATH)       Path to the cgns include files
+#    CGNS_INCLUDE_DIRS     (PATH)       Path to the cgns include files
 #    CGNS_LIBRARY_DIR      (PATH)       Path to the cgns libraries
 #    CGNS_LIBRARY          (FILE)       CGNS libraries
+#    CGNS_LIBRARIES        (FILE)       CGNS libraries
 #
 #    Additional variables:
 #    CGNS_VERSION          (STRING)     CGNS VERSION STRING
@@ -59,7 +61,7 @@ if ( search_path_found )
 
     endif()    
 
-    # Search for C library
+    # Search for library
     find_library( CGNS_LIBRARY
                   NAMES cgns
                   HINTS ${search_path}
@@ -67,7 +69,9 @@ if ( search_path_found )
                   DOC "The CGNS library"
                   NO_DEFAULT_PATH)
 
-     if ( NOT CGNS_LIBRARY ) 
+     if ( CGNS_LIBRARY ) 
+         get_filename_component(CGNS_LIBRARY_DIR "${CGNS_LIBRARY}" PATH)
+     else()    
          message(SEND_ERROR "Can not locate CGNS library in ${CGNS_DIR}")
      endif()
 
@@ -76,9 +80,17 @@ endif()
 find_package_handle_standard_args(CGNS DEFAULT_MSG
                                   CGNS_LIBRARY
                                   CGNS_INCLUDE_DIR)
+if (CGNS_FOUND )
+   set(CGNS_INCLUDE_DIRS ${CGNS_INCLUDE_DIR})
+   set(CGNS_LIBRARIES    ${CGNS_LIBRARY})
+endif()
+
 mark_as_advanced(
   CGNS_INCLUDE_DIR
-  CGNS_C_LIBRARY
+  CGNS_INCLUDE_DIRS
+  CGNS_LIBRARY
+  CGNS_LIBRARY_DIR
+  CGNS_LIBRARIES
   CGNS_VERSION
 )
 
