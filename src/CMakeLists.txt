@@ -29,9 +29,11 @@ endif(ENABLE_MOAB_Mesh)
 
 add_subdirectory(output)
 
+# Require mpc here to build State
 add_subdirectory(mpc)
+
 add_subdirectory(chemistry)
-#add_subdirectory(flow)
+add_subdirectory(flow)
 #add_subdirectory(transport)
 
 #add_subdirectory(boundary_conditions)

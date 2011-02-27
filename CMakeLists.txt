@@ -41,4 +41,4 @@ include(AmanziTPL)
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
-#include(AmanziConfigReport)
+include(AmanziConfigReport)

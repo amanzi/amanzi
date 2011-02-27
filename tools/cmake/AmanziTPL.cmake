@@ -76,6 +76,13 @@ if ( Trilinos_FOUND )
                  PATH_SUFFIXES include
                  )
 
+    # NOX non-linear solver used in flow
+    find_package(NOX
+                 NO_MODULE
+                 HINTS ${Trilinos_DIR}
+                 PATH_SUFFIXES include
+                 )
+                
     # For some reason, Trilinos defines dependent TPLs in *_TPL_LIBRARIES not
     # in *_LIBRARIES. We update the variables so the usage of these variables
     # is consistent with other FindXXX modules.
