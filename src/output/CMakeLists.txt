@@ -1,41 +1,74 @@
 # -*- mode: cmake -*-
-include_directories(${PROJECT_SOURCE_DIR}/error_handling)
-include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
-include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
-include_directories(${PROJECT_SOURCE_DIR}/mesh)
-include_directories(${Trilinos_INCLUDE_DIRS})
-if(ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDES})
-endif()    
-add_definitions("-DUSE_MPI")
-link_directories(${Trilinos_LIBRARY_DIRS})
 
-# Define the source for the output variable
-# GMV 
+#
+#  Amanzi
+#    MOAB Mesh frameworks
+#
+
+# Amanzi module, include files found in AMANZI_MODULE_PATH
+include(PrintVariable)
+include(AddParallelTest)
+
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   OUTPUT_SOURCE_DIR
+#   OUTPUT_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(OUTPUT)
+
+# Amanzi include directories
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+
+# External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
+if(ENABLE_CGNS)
+    include_directories(${CGNS_INCLUDE_DIRS})
+endif()    
+
+# Need to move this up to the root level -- lpritch
+add_definitions("-DUSE_MPI")
+
+#
+# Library: output
+#
+
+# GMV is always built, CGNS if enabled
 file(GLOB output_source_files "gmv*.c" "gmv*.cc")
+set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if(ENABLE_CGNS)
     file(GLOB cgns_source "cgns*.cc")
     list(APPEND output_source_files "${cgns_source}")
+    list(APPEND output_tpl_list ${CGNS_LIBRARIES})
 endif()
 
 add_library(output ${output_source_files})
-set(link_libs simple_mesh error_handling mesh_data)
-if (ENABLE_CGNS)
-    list(APPEND ${CGNS_LIBRARY} ${HDF5_LIBS_ALL})
-endif()
-message("======> ${CGNS_LIBRARY}")
-target_link_libraries(output ${link_libs} ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
+target_link_libraries(output error_handling simple_mesh mesh_data ${output_tpl_list} )
+PRINT_VARIABLE(output_tpl_list)
 
 
 if (BUILD_TESTS)
-  add_executable(test_gmv_output test/Main.cc test/test_gmv.cc)
-  target_link_libraries(test_gmv_output output unittest++ ${Trilinos_TPL_LIBRARIES})
-  add_test(gmv_output test_gmv_output)
-  if (ENABLE_CGNS)
-      add_executable(test_cgns_output test/Main.cc test/test_cgns.cc)
-      target_link_libraries(test_cgns_output output unittest++ ${CGNS_LIBRARY} ${HDF5_LIBS_ALL} 
-        ${Trilinos_TPL_LIBRARIES})
-      add_test(cgns_output test_cgns_output)
-  endif()
+
+    # Add UnitTest
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Test: gmv_output
+    add_executable(test_gmv_output test/Main.cc test/test_gmv.cc)
+    target_link_libraries(test_gmv_output output ${UnitTest_LIBRARIES})
+    add_test(gmv_output test_gmv_output)
+
+    # Test: cgns_output
+    if (ENABLE_CGNS)
+        add_executable(test_cgns_output test/Main.cc test/test_cgns.cc)
+        target_link_libraries(test_cgns_output output ${UnitTest_LIBRARIES})
+        add_test(cgns_output test_cgns_output)
+    endif()
+
 endif()
