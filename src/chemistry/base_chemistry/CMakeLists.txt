@@ -1,4 +1,10 @@
-include_directories(${PROJECT_SOURCE_DIR}/includes)
+# -*- mode: cmake -*-
+
+#
+#  Amanzi
+#    Chemistry Base
+#
+
 
 set(SRCS 
 	./ActivityModelFactory.cpp 

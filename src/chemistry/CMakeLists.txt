@@ -1,9 +1,42 @@
-include_directories(includes)
-include_directories(${PROJECT_SOURCE_DIR}/transport)
-include_directories(${PROJECT_SOURCE_DIR}/flow)
-include_directories(${PROJECT_SOURCE_DIR}/mesh)
-include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
-include_directories(${PROJECT_SOURCE_DIR}/mpc)
+# -*- mode: cmake -*-
+
+#
+#  Amanzi
+#    Chemistry
+#
+
+# Amanzi module, include files found in AMANZI_MODULE_PATH
+include(PrintVariable)
+include(AddParallelTest)
+
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   CHEM_SOURCE_DIR
+#   CHEM_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(CHEM)
+
+# Grab the state location property
+get_property(STATE_SOURCE_DIR GLOBAL PROPERTY STATE_SOURCE_DIR)
+
+# Amanzi include directories
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+
+# Chemistry includes directory
+# The set will define the variable in the chemistry scope
+# The global property will allow other directories (MPC) to
+# access this directory name through a variable.
+set(CHEM_INCLUDES_DIR "${CHEM_SOURCE_DIR}/includes")
+set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
+include_directories(${CHEM_INCLUDES_DIR})
+
+
 
 add_subdirectory(utility)
 add_subdirectory(solvers)
@@ -12,27 +45,30 @@ add_subdirectory(reactions)
 add_subdirectory(process_kernel)
 add_subdirectory(test_drivers)
 
-include_directories(${PROJECT_SOURCE_DIR}/mpc)
-include_directories(${PROJECT_SOURCE_DIR}/transport)
-include_directories(${PROJECT_SOURCE_DIR}/flow)
-include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
-include_directories(${PROJECT_SOURCE_DIR}/util)
-include_directories(${Trilinos_INCLUDE_DIRS})
-
-link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
-  add_executable(test_chemistry_unit test/Main.cc test/test_example.cpp)
-  add_test(chemistry test_chemistry)
-  target_link_libraries(test_chemistry_unit chemistry unittest++)
 
-  add_executable(test_chemistry test/Main.cc test/test_driver.cpp)
-  add_test(chemistry test_chemistry)
-  target_link_libraries(test_chemistry mpc simple_mesh chemistry transport flow unittest++)
+    # Add the UnitTest includes
+    include_directories(${UnitTest_INCLUDE_DIRS})
 
-  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-      copy_directory ${CMAKE_SOURCE_DIR}/chemistry/test ${CMAKE_BINARY_DIR}/chemistry/test) 
-  endif()
+    # External (TPL) includes
+    include_directories(${Teuchos_INCLUDE_DIRS})
+
+    # Test: chemistry_unit
+    add_executable(test_chemistry_unit test/Main.cc test/test_example.cpp)
+    target_link_libraries(test_chemistry_unit chemistry ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+    add_test(chemistry_unit test_chemistry_unit)
+
+    # Test: chemistry
+    #add_executable(test_chemistry test/Main.cc test/test_driver.cpp)
+    #add_test(chemistry test_chemistry)
+    #target_link_libraries(test_chemistry state simple_mesh mpc chemistry transport flow ${UnitTest_LIBRARIES})
+
+
+    if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+            copy_directory ${CHEM_SOURCE_DIR}/test ${CHEM_BINARY_DIR}/test) 
+    endif()
+
 endif()
 

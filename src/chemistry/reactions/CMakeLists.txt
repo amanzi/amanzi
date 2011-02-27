@@ -1,4 +1,13 @@
-include_directories(${PROJECT_SOURCE_DIR}/includes)
+# -*- mode: cmake -*-
+
+#
+#  Amanzi
+#    Chemistry Reactions
+#
+
+# Chemistry includes
+include_directories(${CHEM_INCLUDES_DIR})
+
 
 #
 # library

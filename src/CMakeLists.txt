@@ -30,10 +30,12 @@ endif(ENABLE_MOAB_Mesh)
 add_subdirectory(output)
 
 add_subdirectory(mpc)
-#add_subdirectory(chemistry)
-#add_subdirectory(transport)
-#add_subdirectory(boundary_conditions)
+add_subdirectory(chemistry)
 #add_subdirectory(flow)
+#add_subdirectory(transport)
+
+#add_subdirectory(boundary_conditions)
 #add_subdirectory(bin)
+
 #add_subdirectory(driver)
 
