@@ -92,6 +92,8 @@ if ( Trilinos_FOUND )
     list(APPEND Teuchos_INCLUDE_DIRS "${Teuchos_TPL_INCLUDE_DIRS}")
     list(APPEND STK_LIBRARIES "${STK_TPL_LIBRARIES}")
     list(APPEND STK_INCLUDE_DIRS "${STK_TPL_INCLUDE_DIRS}")
+    list(APPEND NOX_LIBRARIES "${NOX_TPL_LIBRARIES}")
+    list(APPEND NOX_INCLUDE_DIRS "${NOX_TPL_INCLUDE_DIRS}")
 
     list(APPEND Trilinos_LIBRARIES "${Trilinos_TPL_LIBRARIES}")
     list(APPEND Trilinos_INCLUDE_DIRS "${Trilinos_TPL_INCLUDE_DIRS}")
@@ -101,7 +103,7 @@ else()
                         "using -D Trilinos_DIR:FILEPATH=<install path>\n")
 endif()    
 
-# Trilinos can contain 20 or more libraries (packages). The variable Trilino_LIBRARIES
+# Trilinos can contain 20 or more libraries (packages). The variable Trilinos_LIBRARIES
 # does not have full path names only library names. I suspect if it did include
 # full path names the link command would exceed the command line character limit on
 # many platforms, thus we need to add Trilinos library path to the link to find these
