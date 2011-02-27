@@ -9,6 +9,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 # Enable testing, ctest needs this
+# all add_test commands are ignored unless this is called!
 enable_testing()
 
 # Define the project name
@@ -40,4 +41,4 @@ include(AmanziTPL)
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
-include(AmanziConfigReport)
+#include(AmanziConfigReport)

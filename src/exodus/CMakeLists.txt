@@ -2,18 +2,19 @@
 
 #
 #  Amanzi
-#    Mesh Base Class
+#    Exodus Readers
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
+include(AddParallelTest)
 
 
 #
 # Define a project name
 # After this command the following varaibles are defined
 #   EXO_SOURCE_DIR
-#   EXO_BASE_BINARY_DIR
+#   EXO_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
 project(EXO)
@@ -83,23 +84,20 @@ if (BUILD_TESTS)
                    test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_2 exodus ${UnitTest_LIBRARIES} 
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_test(exodus_parallel_2proc 
-              ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 2 test_pexodus_2)
+    add_parallel_test(pexodus_2proc test_pexodus_2 NPROCS 2)                
 
     # Test: test_pexodus_3
     add_executable(test_pexodus_3 test/ParallelMain.cc 
                    test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_3 exodus ${UnitTest_LIBRARIES} 
                           ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_test(exodus_parallel_3proc 
-             ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 3 test_pexodus_3)
+    add_parallel_test(pexodus_3proc test_pexodus_3 NPROCS 3)                
            
     # Test: test_pexodus_4       
     add_executable(test_pexodus_4 test/ParallelMain.cc 
                    test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_4 exodus  ${UnitTest_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_test(exodus_parallel_4proc 
-             ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} 4 test_pexodus_4 )
+    add_parallel_test(pexodus_4proc test_pexodus_4 NPROCS 4)                
            
 endif()

@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-
+include(AddParallelTest)
 
 #
 # Define a project name
@@ -48,10 +48,9 @@ if (BUILD_TESTS)
    target_link_libraries(test_mesh_data mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
    add_test(mesh_data test_mesh_data)
 
-   # Test: mesh_hex (PARALLEL)
+   # Test: mesh_hex 
    add_executable(test_hex_mesh test/Main.cc test/test_Hex_mesh.cc)
    target_link_libraries(test_hex_mesh mesh_data ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
-   add_test(mesh_data_parallel 
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${MPI_EXEC_MAX_NUMPROCS} test_hex_mesh)
+   add_parallel_test(mesh_data_parallel test_hex_mesh NPROCS 2)
 
 endif()
