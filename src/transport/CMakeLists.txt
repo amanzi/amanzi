@@ -1,40 +1,77 @@
 # -*- mode: cmake -*-
-include_directories(${MPI_INCLUDES})
-include_directories(${MOAB_INCLUDES})
-include_directories(${Trilinos_INCLUDE_DIRS})
-include_directories(${PROJECT_SOURCE_DIR}/utils)
-include_directories(${PROJECT_SOURCE_DIR}/error_handling)
-include_directories(${PROJECT_SOURCE_DIR}/mesh)
-include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
-include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
-include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
-include_directories(${PROJECT_SOURCE_DIR}/moab_mesh)
-include_directories(${PROJECT_SOURCE_DIR}/flow)
-include_directories(${PROJECT_SOURCE_DIR}/transport)
-include_directories(${PROJECT_SOURCE_DIR}/mpc)
-include_directories(${PROJECT_SOURCE_DIR}/transport)
 
-# to be elliminated
-include_directories(${PROJECT_SOURCE_DIR}/chemistry/includes)
-include_directories(${PROJECT_SOURCE_DIR}/flow)
+#
+#  Amanzi
+#   Transport process kernel
+#
 
+# Amanzi module, include files found in AMANZI_MODULE_PATH
+include(PrintVariable)
+include(AddParallelTest)
+
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   TRANSPORT_SOURCE_DIR
+#   TRANSPORT_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(TRANSPORT)
+
+# Grab state property
+get_property(STATE_SOURCE_DIR GLOBAL PROPERTY STATE_SOURCE_DIR)
+
+# Amanzi include directories
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+
+# External (TPL) include directories
+include_directories(${Epetra_INCLUDE_DIRS})
+
+# Need to move this to the root level -- lpritch
 add_definitions("-DUSE_MPI")
 
+#
+# Library: transport
+#
 add_library(transport Transport_PK.cpp Transport_State.cpp)
-target_link_libraries(transport  mesh_data error_handling mpc flow chemistry ${Trilinos_LIBRARIES})
-link_directories(${Trilinos_LIBRARY_DIRS})
+target_link_libraries(transport  mesh_data error_handling state flow chemistry ${Epetra_LIBRARIES})
 
-if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
-  set(AMANZI_LIBRARIES simple_mesh moab_mesh mpc flow transport)
-  add_executable(test_serial   test/Main.cc test/test_transport.cpp test/test_moab.cpp)
-  add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
-  add_test(transport test_serial test_parallel)
-  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-      copy_directory ${CMAKE_SOURCE_DIR}/transport/test ${CMAKE_BINARY_DIR}/transport/test) 
-  endif()
-  target_link_libraries(test_serial   ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
-  target_link_libraries(test_parallel ${AMANZI_LIBRARIES} unittest++ ${Trilinos_LIBRARIES} ${HDF_ALL_LIBS})
+if ( BUILD_TESTS )
+
+    # Add UnitTest includes
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    if (NOT (${TRANSPORT_SOURCE_DIR} EQUAL ${TRANSPORT_BINARY_DIR}) )
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${TRANSPORT_SOURCE_DIR}/test ${TRANSPORT_BINARY_DIR}/test) 
+    endif()
+
+    if ( ENABLE_MOAB_Mesh )
+
+        # Add MOAB include directory
+        include_directories(${MOAB_INCLUDE_DIRS})
+        include_directories(${MOAB_SOURCE_DIR})
+        include_directories(${TRANSPORT_SOURCE_DIR})
+
+        set(amanzi_libs simple_mesh moab_mesh state flow transport)
+
+        # Test: transport
+        add_executable(test_serial  test/Main.cc test/test_transport.cpp test/test_moab.cpp)
+        target_link_libraries(test_serial ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_test(transport test_serial)
+
+        # Test: transport (parallel)
+        add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
+        target_link_libraries(test_parallel ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_parallel_test(transport_parallel test_parallel NPROCS ${MPI_EXEC_MAX_NPROCS})
+
+    endif()    
+
 endif()
 
 

@@ -34,7 +34,7 @@ add_subdirectory(mpc)
 
 add_subdirectory(chemistry)
 add_subdirectory(flow)
-#add_subdirectory(transport)
+add_subdirectory(transport)
 
 #add_subdirectory(boundary_conditions)
 #add_subdirectory(bin)
