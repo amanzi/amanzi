@@ -2,7 +2,7 @@
 
 #
 #  Amanzi
-#    MOAB Mesh frameworks
+#    Mulitprocess Coordinator (MPC)
 #
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
@@ -25,59 +25,63 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+include_directories(${CHEM_SOURCE_DIR})
+include_directories(${TRANSPORT_SOURCE_DIR})
+include_directories(${FLOW_SOURCE_DIR})
+
+# Chemistry includes directory
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+PRINT_VARIABLE(CHEM_INCLUDES_DIR)
+include_directories(${CHEM_INCLUDES_DIR})
 
 # External (TPL) include directories
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-#if(ENABLE_CGNS)
-#    include_directories(${CGNS_INCLUDES})
-#endif()    
+if(ENABLE_CGNS)
+    include_directories(${CGNS_INCLUDES})
+endif()    
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
 
 
-# This state library will move to a new location 
-# once Markus has created the data manager.
-# I use global properties since all the PROJECT_NAME
-# variables in this directory are tied to the MPC.
-# These properties will be replaced with the appropriate
-# directory project name once it is moved.
 #
-# Library: state
+# Library: mpc
 #
-add_library(state State.cpp)
-set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-target_link_libraries(state output simple_mesh mesh_data cell_geometry ${state_tpl_libs})
-set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
-set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
+add_library(mpc MPC.cpp)
+set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+if (ENABLE_CGNS)
+    list(APPEND mpc_tpl_libs ${CGNS_LIBRARIES})
+endif()    
+list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
+target_link_libraries(mpc output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
+if (BUILD_TESTS)
+    
+    # Add UnitTest includes
+    include_directories(${UnitTest_INCLUDE_DIRS})
 
+    # Add MPC include directory. Need to remove this required path. -- lpritch
+    include_directories(${MPC_SOURCE_DIR})
 
-#add_library(mpc MPC.cpp  State.cpp)
-#if (ENABLE_CGNS)
-#   target_link_libraries(mpc output simple_mesh mesh_data cell_geometry ${CGNS_LIBRARY} ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
-#else(ENABLE_CGNS)
-#    target_link_libraries(mpc output simple_mesh mesh_data cell_geometry ${Trilinos_LIBRARIES} ${Boost_LIBRARIES})
-# endif()
+    # Copy test subdirectory for out of source builds
+    if (NOT (MPC_SOURCE_DIR STREQUAL MPC_BINARY_DIR))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
+    endif()
 
-#link_directories(${Trilinos_LIBRARY_DIRS})
+    
+    if ( ENABLE_MOAB_Mesh )
+        include_directories(${MOAB_SOURCE_DIR})
+        include_directories(${MOAB_INCLUDE_DIRS})
 
-#include_directories(${Boost_INCLUDE_DIR})
-#include_directories(${Trilinos_INCLUDE_DIRS})
-#include_directories(${MPI_INCLUDES})
-#include_directories(${MOAB_INCLUDES})
-#IF(ENABLE_CGNS)
-#include_directories(${CGNS_INCLUDES})
-#ENDIF()
-#if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
-#  add_executable(test_mpc test/Main.cc test/test_driver.cpp)
-#  add_test(mpc test_mpc)
-#  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-#    execute_process(COMMAND ${CMAKE_COMMAND} -E 
-#      copy_directory ${CMAKE_SOURCE_DIR}/mpc/test ${CMAKE_BINARY_DIR}/mpc/test) 
-#  endif()
-#  target_link_libraries(test_mpc mpc moab_mesh simple_mesh chemistry transport flow unittest++ ${MOAB_ALL_LIBS})
-#endif()
-#
+        # Test: mpc-moab
+        add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
+        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry transport flow ${UnitTest_LIBRARIES})
+        add_test(mpc-moab test_mpc_moab)
+    
+    endif()
+
+endif()

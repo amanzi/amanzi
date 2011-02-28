@@ -18,9 +18,6 @@ include(AddParallelTest)
 # through these variables.
 project(CHEM)
 
-# Grab the state location property
-get_property(STATE_SOURCE_DIR GLOBAL PROPERTY STATE_SOURCE_DIR)
-
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
