@@ -39,11 +39,5 @@ add_subdirectory(transport)
 # Multiprocess coordinator
 add_subdirectory(mpc)
 
-#add_subdirectory(boundary_conditions)
-
 # Amanzi binaries
 add_subdirectory(executables)
-
-# Additional executables
-#add_subdirectory(bin)
-
