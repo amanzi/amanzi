@@ -41,4 +41,7 @@ include(AmanziTPL)
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
-include(AmanziConfigReport)
+option(ENABLE_Config_Report "Print out detailed information at the end of a configuration" ON)
+if (ENABLE_Config_Report)
+    include(AmanziConfigReport)
+endif()    
