@@ -4,7 +4,6 @@ include_directories(${PROJECT_SOURCE_DIR}/error_handling)
 include_directories(${PROJECT_SOURCE_DIR}/mesh)
 include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
 include_directories(${PROJECT_SOURCE_DIR}/exodus)
-include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
 
 include_directories(${Trilinos_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIR})
