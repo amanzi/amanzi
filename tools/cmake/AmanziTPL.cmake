@@ -25,9 +25,12 @@ set_feature_info(Boost
 ##############################################################################
 find_package(HDF5 REQUIRED)
 if ( NOT HDF5_IS_PARALLEL ) 
-    message(FATAL_ERROR "The HDF5 installation found in ${HDF5_DIR} is not\n"
-                        "a parallel build. Please re-run cmake and define\n"
-                        "a HDF5 installation that is parallel.\n")
+    message(WARNING     "The HDF5 installation found in ${HDF5_DIR} is not "
+                        "a parallel build. At this time, this installation "
+                        "is compatible with other TPLs. Soon Amanzi will "
+                        "require a parallel enabled HDF5. Please update your "
+                        "HDF5 installation to include MPI I/O symbols"
+            )            
 endif(NOT HDF5_IS_PARALLEL)
 set_feature_info(HDF5
                 "I/O library that creates HDF5 formatted files"
