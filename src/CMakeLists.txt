@@ -40,8 +40,10 @@ add_subdirectory(transport)
 add_subdirectory(mpc)
 
 #add_subdirectory(boundary_conditions)
+
+# Amanzi binaries
+add_subdirectory(executables)
+
+# Additional executables
 #add_subdirectory(bin)
-
-
-#add_subdirectory(driver)
 
