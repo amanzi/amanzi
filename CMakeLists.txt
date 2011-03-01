@@ -6,7 +6,7 @@
 #
 
 # Require cmake 2.8 or higher
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.2)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
