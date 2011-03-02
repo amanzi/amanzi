@@ -254,8 +254,10 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
     endif()
 
     # Remove duplicates
-    list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
-    list(REMOVE_DUPLICATES NetCDF_LIBRARIES)
+    # This breaks the configure if HDF5 returns debug and 
+    # optimized libraries
+    #list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
+    #list(REMOVE_DUPLICATES NetCDF_LIBRARIES)
 
 
    
