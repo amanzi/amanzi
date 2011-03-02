@@ -36,7 +36,6 @@ include_directories(${MPC_SOURCE_DIR})
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
-PRINT_VARIABLE(CHEM_INCLUDES_DIR)
 include_directories(${CHEM_INCLUDES_DIR})
 
 # The mesh frameworks
@@ -61,7 +60,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDES})
+    include_directories(${CGNS_INCLUDE_DIRS})
 endif()    
 
 # Need to move this up to the root -- lpritch

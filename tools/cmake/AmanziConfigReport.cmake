@@ -64,7 +64,7 @@ endforeach()
 message(STATUS  "Did not find packages: ${pack_not_found}")
 message(STATUS "******************************************************************************")
 
-print_enabled_features()
-print_disabled_features()
+#print_enabled_features()
+#print_disabled_features()
 
 

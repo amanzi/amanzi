@@ -38,6 +38,18 @@ include(AmanziOptions)
 # Find required Amanzi TPL
 include(AmanziTPL)
 
+# Check the mesh framework choice
+if ( (NOT ENABLE_STK_Mesh)  AND 
+     (NOT ENABLE_MOAB_Mesh) AND
+     (NOT ENABLE_MSTK_Mesh)
+   )
+    message(FATAL_ERROR "Missing a mesh framework\n"
+                        "Please enable at least one of the following mesh frameworks\n"
+                        "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
+                        "-D ENABLE_STK_Mesh:BOOL=ON\n"
+                        "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
+endif()    
+
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
