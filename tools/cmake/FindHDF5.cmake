@@ -151,16 +151,17 @@
 
 #
 # Amanzi Modifications
-# In other packages, search_path is checked to see if the path
-# was found and the search for include files and libraries is not
-# preformed if this falg is FALSE. Since this package has it's own error
-# handling, we will not bypass it. An error message will be sent if the flag 
-# is false.
+# The standard FindHDF.cmake module uses an environment variable HDF5_ROOT
+# and standard CMake paths to search for compiler wrappers and the HDF5 diff
+# utility. The compilers are used to define the HDF5_INCLUDE_DIRS and 
+# HDF5_LIBRARIES. We do not want the search to include default paths. The
+# default paths have caused issues with systems that have more than one
+# HDF5 installation. Since this module has error handling, we will not
+# bypass it. If the search fails the module will handle the error.
 include(SelectLibraryConfigurations)
 include(FindPackageHandleStandardArgs)
 
 # Amanzi Modules see <root>/tools/cmake
-include(SelectSearchPath)
 include(PrintVariable)
 
 # List of the valid HDF5 components
@@ -170,7 +171,18 @@ set( HDF5_VALID_COMPONENTS
 )
 
 # Define the search path 
-select_search_path(HDF5 hdf5_search_path search_path_found)
+# Either HDF5_BIN_DIR or HDF5_DIR
+set(hdf5_search_path ${HDF5_BIN_DIR} ${HDF5_DIR})
+
+if(hdf5_search_path)
+    message(STATUS "Searching for HDF5 binaries in ${hdf5_search_path}")
+    # Do nothing
+else()
+    message(FATAL_ERROR "Must define a path to a HDF5 installation\n"
+                        " -D HDF5_DIR:FILEPATH=<hdf5 install prefix>\n"
+                        "or a directory that contain HDF5 binaries (h5diff, h5pcc,...)\n"
+                        " -D HDF5_BIN_DIR:FILEPATH=<hdf5 binary directory>\n")
+endif()                    
 
 # try to find the HDF5 wrapper compilers
 find_program( HDF5_C_COMPILER_EXECUTABLE
