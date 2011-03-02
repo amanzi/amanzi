@@ -6,11 +6,14 @@
 #include "Mesh_maps_moab.hh"
 #endif
 
+#if ENABLE_STK
+#include "Mesh_factory.hh"
+#include "Mesh_maps_stk.hh"
+#endif
+
 #include "Mesh_maps_simple.hh"
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
-#include "Mesh_factory.hh"
-#include "Mesh_maps_stk.hh"
 #include "Mesh_maps_base.hh"
 
 #include <Epetra_Comm.h>
