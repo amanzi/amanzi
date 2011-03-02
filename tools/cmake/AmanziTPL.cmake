@@ -150,7 +150,7 @@ set_feature_info(ALL_Mesh
 ##############################################################################
 # STK - Sierra Mesh Tool Kit part of Trilinos
 ##############################################################################
-option(ENABLE_STK_Mesh  "Build Amanzi with the STK mesh framework" ON)
+option(ENABLE_STK_Mesh  "Build Amanzi with the STK mesh framework" OFF)
 set_feature_info(STK_Mesh
                  ENABLE_STK_Mesh
                  "Sierra Mesh Tool Kit (STK Mesh) a Trilinos package"
@@ -165,6 +165,8 @@ set_feature_info(MOAB_Mesh
                  "A Mesh-Oriented datABase"
                  )
 if (ENABLE_MOAB_Mesh)
+    set(MOAB_NEEDS_NetCDF True)
+    set(MOAB_NEEDS_HDF5   True)
     find_package(MOAB REQUIRED)
 endif()
 
