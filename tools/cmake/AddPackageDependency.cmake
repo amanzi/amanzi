@@ -42,6 +42,8 @@ function(ADD_PACKAGE_DEPENDENCY)
     endif()    
 
     # Find required package
+    message(STATUS "${target_package} depends on ${req_package}")
+    message(STATUS "Updatig ${target_package}_LIBRARIES and ${target_package}_INCLUDE_DIRS")
     find_package(${req_package} REQUIRED)
     if( ${req_package}_LIBRARIES AND ${req_package}_INCLUDE_DIRS )
         set(_save_lib_list ${${target_package}_LIBRARIES})
