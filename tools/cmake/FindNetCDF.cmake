@@ -253,14 +253,6 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
         add_package_dependency(NetCDF DEPENDS_ON HDF5)
     endif()
 
-    # Remove duplicates
-    # This breaks the configure if HDF5 returns debug and 
-    # optimized libraries
-    #list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
-    #list(REMOVE_DUPLICATES NetCDF_LIBRARIES)
-
-
-   
 endif(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS )    
 
 # Send useful message if everything is found

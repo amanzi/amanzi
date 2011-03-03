@@ -178,7 +178,7 @@ if(hdf5_search_path)
     message(STATUS "Searching for HDF5 binaries in ${hdf5_search_path}")
     # Do nothing
 else()
-    message(FATAL_ERROR "Must define a path to a HDF5 installation\n"
+    message(WARNING    "Must define a path to a HDF5 installation\n"
                         " -D HDF5_DIR:FILEPATH=<hdf5 install prefix>\n"
                         "or a directory that contain HDF5 binaries (h5diff, h5pcc,...)\n"
                         " -D HDF5_BIN_DIR:FILEPATH=<hdf5 binary directory>\n")

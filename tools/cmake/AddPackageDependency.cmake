@@ -10,6 +10,7 @@ include(CMakeParseArguments)
 
 # Amanzi modules
 include(PrintVariable)
+include(ParseLibraryList)
 
 function(ADD_PACKAGE_DEPENDENCY)
 
@@ -46,12 +47,93 @@ function(ADD_PACKAGE_DEPENDENCY)
     message(STATUS "Updatig ${target_package}_LIBRARIES and ${target_package}_INCLUDE_DIRS")
     find_package(${req_package} REQUIRED)
     if( ${req_package}_LIBRARIES AND ${req_package}_INCLUDE_DIRS )
-        set(_save_lib_list ${${target_package}_LIBRARIES})
-        list(APPEND _save_lib_list ${${req_package}_LIBRARIES})
-        set(${target_package}_LIBRARIES ${_save_lib_list} PARENT_SCOPE)
+
+        # Add the include paths 
         set(_save_inc_list ${${target_package}_INCLUDE_DIRS})
-        list(APPEND _save_inc_list ${${req_package}_INCLUDE_DIRS})
+        list(APPEND _save_lib_list ${${req_package}_INCLUDE_DIRS})
         set(${target_package}_INCLUDE_DIRS ${_save_inc_list} PARENT_SCOPE)
+        list(REMOVE_DUPLICATES ${target_package}_INCLUDE_DIRS)
+
+        # Add the libraries....this can be tricky because some packages
+        # *cough* HDF5 *cough* return a list with keywords debug, optimized
+        # general in the list. These keywords are flags that are used when
+        # CMAKE_BUILD_TYPE is set. Need to construct the LIBRARIES carefully
+        # if these are present.
+        parse_library_list(${${target_package}_LIBRARIES}
+                           FOUND     target_libs_split
+                           DEBUG     target_debug_libs
+                           OPT       target_opt_libs
+                           GENERAL   target_gen_libs)
+
+        parse_library_list(${${req_package}_LIBRARIES}
+                           FOUND     req_libs_split
+                           DEBUG     req_debug_libs
+                           OPT       req_opt_libs
+                           GENERAL   req_gen_libs)
+        
+        # _save_lib_list tmp storage
+        set(_save_lib_list "")
+        if ( ${target_libs_split} OR ${req_libs_split} )
+
+            # Define the parsed lists if the orginal list did not contain keywords
+            if ( NOT ${target_libs_split} )
+                set(target_debug_libs ${${target_package}_LIBRARIES})
+                set(target_opt_libs ${${target_package}_LIBRARIES})
+                set(target_general_libs ${${target_package}_LIBRARIES})
+            endif()    
+
+            if ( NOT ${req_libs_split} )
+                set(req_debug_libs ${${req_package}_LIBRARIES})
+                set(req_opt_libs ${${req_package}_LIBRARIES})
+                set(req_general_libs ${${req_package}_LIBRARIES})
+            endif()    
+
+            # Define each type and store in tmp lists removing duplicates
+            set(_save_debug_list "")
+            set(_save_opt_list "")
+            set(_save_gen_list "")
+            if ( target_debug_libs OR req_debug_libs )
+                set(_save_debug_list "${target_debug_libs}" "${req_debug_libs}")
+                list(REMOVE_DUPLICATES _save_debug_list)
+                print_variable(_save_debug_list)
+            endif()    
+            if ( target_opt_libs OR req_opt_libs )
+                set(_save_opt_list "${target_opt_libs}" "${req_opt_libs}")
+                list(REMOVE_DUPLICATES _save_opt_list)
+                print_variable(_save_opt_list)
+            endif()    
+            if ( target_gen_libs OR req_gen_libs )
+                set(_save_gen_list "${target_gen_libs}" "${req_gen_libs}")
+                list(REMOVE_DUPLICATES _save_gen_list)
+                print_variable(_save_gen_list)
+            endif()    
+
+            # Now build the _save_lib_list with the keywords
+            if(_save_debug_list)
+                list(APPEND _save_lib_list "debug")
+                list(APPEND _save_lib_list "${_save_debug_list}")
+            endif()    
+            
+            if(_save_opt_list)
+                list(APPEND _save_lib_list "optimized")
+                list(APPEND _save_lib_list "${_save_opt_list}")
+            endif()    
+
+            if(_save_gen_list)
+                list(APPEND _save_lib_list "general")
+                list(APPEND _save_lib_list "${_save_gen_list}")
+            endif()    
+
+        else()
+
+            #  Neither list has keywords
+            set(_save_lib_list "${${target_package}_LIBRARIES}" "${${req_package}_LIBRARIES}")
+
+        endif()    
+
+       
+        set(${target_package}_LIBRARIES ${_save_lib_list} PARENT_SCOPE)
+
     endif()    
 
 endfunction(ADD_PACKAGE_DEPENDENCY)

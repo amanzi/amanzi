@@ -160,12 +160,12 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
     # Define prerequisite packages
     set(MOAB_INCLUDE_DIRS ${MOAB_INCLUDE_DIR})
     set(MOAB_LIBRARIES    ${MOAB_LIBRARY})
-    if(MOAB_NEEDS_HDF5)
-        add_package_dependency(MOAB DEPENDS_ON HDF5)
-    endif()    
     if (MOAB_NEEDS_NetCDF)
         add_package_dependency(MOAB DEPENDS_ON NetCDF)
     endif()
+    if(MOAB_NEEDS_HDF5)
+        add_package_dependency(MOAB DEPENDS_ON HDF5)
+    endif()    
 
 
    
