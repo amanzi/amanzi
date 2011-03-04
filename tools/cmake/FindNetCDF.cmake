@@ -238,11 +238,16 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
             message(STATUS "Found NetCDF configuration script: ${netcdf_config}")
             execute_process(COMMAND "${netcdf_config}" "--has-hdf5"
                             RESULT_VARIABLE _ret_code
-                            OUTPUT_VARIABLE _hdf5_flag
-                            ERROR_VARIABLE  _error_out
+                            OUTPUT_VARIABLE _stdout
+                            ERROR_VARIABLE  _stderr
                            )
-            if ( ${_hdf5_flag} ) 
+            string(REGEX REPLACE "[\n\r ]" "" _hdf5_answer ${_stdout})
+            message(STATUS "${netcdf_config} --has-hdf5 returned '${_hdf5_answer}'")
+            string(COMPARE EQUAL "${_hdf5_answer}" "yes" _has_hdf5)
+            if (${_has_hdf5} ) 
                 set(NetCDF_NEEDS_HDF5 True)
+            else()
+                message(STATUS "NetCDF does not require HDF5")
             endif()    
 
         endif()
