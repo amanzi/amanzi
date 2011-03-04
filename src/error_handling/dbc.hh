@@ -32,11 +32,15 @@ void amanzi_assert (const char * cond, const char * file,  unsigned int line);
 // Macros for DBC checks in the code
 // ---------------------------------
 
-#ifdef ENABLE_DBC
-#define ASSERT(bool_expression) if (!(bool_expression)) DBC::amanzi_assert( #bool_expression, __FILE__, __LINE__ )
-#else
-#define ASSERT(a)
+// The do wrapper prevents the if statement from grabbing subsequent
+// else statements away from enclosing ifs.  The version when DBC is
+// not enabled compiles away to nothing, but surpresses warning about
+// unused variables in the expression a.
 
+#ifdef ENABLE_DBC
+#define ASSERT(bool_expression) do { if (!(bool_expression)) DBC::amanzi_assert( #bool_expression, __FILE__, __LINE__ ); } while (0)
+#else
+#define ASSERT(a) do { (void)sizeof(a); } while (0);
 #endif /* ENABLE_DBC */
 
 
