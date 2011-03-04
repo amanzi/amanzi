@@ -50,7 +50,7 @@ function(ADD_PACKAGE_DEPENDENCY)
 
         # Add the include paths 
         set(_save_inc_list ${${target_package}_INCLUDE_DIRS})
-        list(APPEND _save_lib_list ${${req_package}_INCLUDE_DIRS})
+        list(APPEND _save_inc_list ${${req_package}_INCLUDE_DIRS})
         set(${target_package}_INCLUDE_DIRS ${_save_inc_list} PARENT_SCOPE)
         list(REMOVE_DUPLICATES ${target_package}_INCLUDE_DIRS)
 
