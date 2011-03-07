@@ -27,6 +27,7 @@ include(FindPackageHandleStandardArgs)
 
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
+include(AddPackageDependency)
 
 if ( ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS )
 

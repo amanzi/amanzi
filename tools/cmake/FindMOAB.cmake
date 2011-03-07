@@ -24,6 +24,7 @@ include(FindPackageHandleStandardArgs)
 
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
+include(AddPackageDependency)
 
 if ( MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )
 
@@ -173,8 +174,8 @@ endif(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )
 
 # Send useful message if everything is found
 find_package_handle_standard_args(MOAB DEFAULT_MSG
-                                           MOAB_LIBRARIES
-                                           MOAB_INCLUDE_DIRS)
+  MOAB_LIBRARIES
+  MOAB_INCLUDE_DIRS)
 
 # find_package)handle)standard_args should set MOAB_FOUND but it does not!
 if ( MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)

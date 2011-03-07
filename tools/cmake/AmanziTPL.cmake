@@ -10,6 +10,13 @@ include(FeatureSummary)
 # Amanzi CMake modules see <root source>/tools/cmake
 include(PrintVariable)
 
+
+##############################################################################
+# ------------------------ Required Libraries -------------------------------#
+##############################################################################
+
+
+
 ##############################################################################
 # Boost
 ##############################################################################
@@ -73,11 +80,13 @@ if ( Trilinos_FOUND )
     # STK (Mesh framework) is not a default Trilinos package
     # Must explicity build this package. This is a check to see
     # if STK is in Trilinos. 
-    find_package(STK 
-                 NO_MODULE
-                 HINTS ${Trilinos_DIR}
-                 PATH_SUFFIXES include
-                 )
+    if (ENABLE_STK_Mesh)
+      find_package(STK 
+        NO_MODULE
+        HINTS ${Trilinos_DIR}
+        PATH_SUFFIXES include
+        )
+    endif()
 
     # NOX non-linear solver used in flow
     find_package(NOX
@@ -114,8 +123,6 @@ endif()
 # to all link commands here. Yes, this is overkill. We'll have wrappers someday.
 link_directories(${Trilinos_LIBRARY_DIRS})
 
-
-
 ##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
 ##############################################################################
@@ -124,6 +131,7 @@ set_feature_info(NetCDF
                  "Network Common Data Format (NetCDF)"
                  "http://www.unidata.ucar.edu/software/netcdf/"
                  "Required by ExodusII library")
+
 
 ##############################################################################
 # Exodus II -http://sourceforge.net/projects/exodusii
@@ -135,9 +143,20 @@ set_feature_info(ExodusII
                  "Required by all the mesh frameworks to read mesh files")
 
 
-# Enabled TPLs
 
-# Mesh TPLs
+##############################################################################
+############################ Option Processing ###############################
+##############################################################################
+
+
+
+
+
+
+
+##############################################################################
+#---------------------------- Mesh Frameworks -------------------------------#
+##############################################################################
 
 # Enable ALL possible mesh frameworks
 cmake_dependent_option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF
@@ -155,6 +174,7 @@ set_feature_info(STK_Mesh
                  ENABLE_STK_Mesh
                  "Sierra Mesh Tool Kit (STK Mesh) a Trilinos package"
                  )
+
 
 ##############################################################################
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
@@ -185,17 +205,13 @@ endif()
 #    find_package(MSTK REQUIRED)
 #endif() 
 
+
+
+
+
 ##############################################################################
-# METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
+#-------------------------- Optional Libraries ------------------------------#
 ##############################################################################
-option(ENABLE_METIS "Mesh partitioning library" OFF)
-set_feature_info(METIS
-                 ENABLE_METIS
-                 "Mesh partitioning library"
-                 )
-if (ENABLE_METIS)
-    find_package(METIS REQUIRED)
-endif() 
 
 ##############################################################################
 # CGNS - http://www.cgns.sourceforge.net/
@@ -224,6 +240,17 @@ if (ENABLE_UnitTest)
 endif()    
 
 
+##############################################################################
+# METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
+##############################################################################
+option(ENABLE_METIS "Mesh partitioning library" OFF)
+set_feature_info(METIS
+                 ENABLE_METIS
+                 "Mesh partitioning library"
+                 )
+if (ENABLE_METIS)
+    find_package(METIS REQUIRED)
+endif() 
 
 
 

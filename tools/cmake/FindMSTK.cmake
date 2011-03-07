@@ -24,6 +24,7 @@ include(FindPackageHandleStandardArgs)
 
 # Amanzi CMake functions see <root>/tools/cmake for source
 include(PrintVariable)
+include(AddPackageDependency)
 
 if ( MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS )
 
