@@ -119,18 +119,19 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
        
         set(netcdf_h "${NetCDF_INCLUDE_DIR}/netcdf.h" )
 
-        file(STRINGS "${netcdf_h}" netcdf_max_dims_string REGEX "^#define NC_MAX_DIMS ")
-        string(REGEX REPLACE "^#define NC_MAX_DIMS ([0-9]+).*$" "\\1" netcdf_max_dims "${netcdf_max_dims_string}")
+        file(STRINGS "${netcdf_h}" netcdf_max_dims_string REGEX "^#define NC_MAX_DIMS")
+        string(REGEX REPLACE "[^0-9]" "" netcdf_max_dims "${netcdf_max_dims_string}")
 
-        file(STRINGS "${netcdf_h}" netcdf_max_vars_string REGEX "^#define NC_MAX_VARS ")
-        string(REGEX REPLACE "^#define NC_MAX_VARS ([0-9]+).*$" "\\1" netcdf_max_vars "${netcdf_max_vars_string}")
+        file(STRINGS "${netcdf_h}" netcdf_max_vars_string REGEX "^#define NC_MAX_VARS")
+        string(REGEX REPLACE "[^0-9]" "" netcdf_max_vars "${netcdf_max_vars_string}")
 
-        file(STRINGS "${netcdf_h}" netcdf_max_var_dims_string REGEX "^#define NC_MAX_VAR_DIMS ")
-        string(REGEX REPLACE "^#define NC_MAX_VAR_DIMS ([0-9]+).*$" "\\1" netcdf_max_var_dims "${netcdf_max_var_dims_string}")
+        file(STRINGS "${netcdf_h}" netcdf_max_var_dims_string REGEX "^#define NC_MAX_VAR_DIMS")
+        string(REGEX REPLACE "[^0-9]" "" netcdf_max_var_dims "${netcdf_max_var_dims_string}")
 
-        #PRINT_VARIABLE(netcdf_max_dims)
-        #PRINT_VARIABLE(netcdf_max_vars)
-        #PRINT_VARIABLE(netcdf_max_var_dims)
+        PRINT_VARIABLE(netcdf_max_dims_string)
+        PRINT_VARIABLE(netcdf_max_dims)
+        PRINT_VARIABLE(netcdf_max_vars)
+        PRINT_VARIABLE(netcdf_max_var_dims)
 
         if ( 
              ( (netcdf_max_dims EQUAL 65536)  OR (netcdf_max_dims GREATER 65536) ) AND
