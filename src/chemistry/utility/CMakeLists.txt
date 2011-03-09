@@ -1,4 +1,12 @@
-include_directories(${PROJECT_SOURCE_DIR}/includes)
+# -*- mode: cmake -*-
+
+#
+#  Amanzi
+#    Chemistry Utilities
+#
+
+# Chemistry includes
+include_directories(${CHEM_INCLUDES_DIR})
 
 set(SRCS 
 	 ./Block.cpp 

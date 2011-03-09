@@ -1,47 +1,79 @@
 # -*- mode: cmake -*-
-include_directories(${PROJECT_SOURCE_DIR}/utils)
-include_directories(${PROJECT_SOURCE_DIR}/error_handling)
-include_directories(${PROJECT_SOURCE_DIR}/mesh)
-include_directories(${PROJECT_SOURCE_DIR}/mesh_data)
-include_directories(${PROJECT_SOURCE_DIR}/exodus)
-include_directories(${PROJECT_SOURCE_DIR}/simple_mesh)
+#
+#  Amanzi
+#    STK Mesh framework (Trilinos package)
+#
 
-include_directories(${Trilinos_INCLUDE_DIRS})
-include_directories(${Boost_INCLUDE_DIR})
+# Amanzi module, include files found in AMANZI_MODULE_PATH
+include(AddParallelTest)
+include(PrintVariable)
 
-add_library(stk_mesh Cell_topology.cc Entity_map.cc Mesh_factory.cc
-            Mesh.cc Mesh_maps_stk.cc Mesh_maps_stk_hex.cc
-            Mesh_maps_stk_exodus.cc Mesh_common.cc)
-target_link_libraries(stk_mesh error_handling mesh_data
-                      ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
-link_directories(${Trilinos_LIBRARY_DIRS})
+
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   STK_SOURCE_DIR
+#   STK_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(STK)
+
+# Amanzi include directories
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${EXO_SOURCE_DIR})
+
+
+# External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${STK_INCLUDE_DIRS})
+include_directories(${ExodusII_INCLUDE_DIRS})
+
+#
+# Library: stk_mesh
+#
+file(GLOB stk_mesh_files "*.cc") 
+add_library(stk_mesh ${stk_mesh_files})
+target_link_libraries(stk_mesh error_handling mesh_data 
+                      ${Trilinos_LIBRARIES} ${ExodusII_LIBRARIES})
 
 if (BUILD_TESTS)
 
-  add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
-                 test/test_Maps.cc test/test_Hex.cc)
-  add_test(stk_mesh test_stk_mesh)
-  target_link_libraries(test_stk_mesh stk_mesh mesh_audit unittest++)
+    # Add UnitTest includes
+    include_directories(${UnitTest_INCLUDE_DIRS})
 
-  # parallel tests are limited to 4 processors because the read tests
-  # use files with a maximum of 4 partitions and the internally
-  # generated meshes are small (8 cells)
+    # Test: stk_mesh
+    add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
+                     test/test_Maps.cc test/test_Hex.cc)
+    target_link_libraries(test_stk_mesh stk_mesh mesh_audit         
+                          ${UnitTest_LIBRARIES} )
+    add_test(stk_mesh test_stk_mesh)
 
-  set(LOCAL_MPI_EXEC_MAX_NUMPROCS MPI_EXEC_MAX_NUMPROCS)
-  if (LOCAL_MPI_EXEC_MAX_NUMPROCS GREATER 4)
-    set(LOCAL_MPI_EXEC_MAX_NUMPROCS 4)
-  endif()
+#  # parallel tests are limited to 4 processors because the read tests
+#  # use files with a maximum of 4 partitions and the internally
+#  # generated meshes are small (8 cells)
+#
+#  set(LOCAL_MPI_EXEC_MAX_NUMPROCS MPI_EXEC_MAX_NUMPROCS)
+#  if (LOCAL_MPI_EXEC_MAX_NUMPROCS GREATER 4)
+#    set(LOCAL_MPI_EXEC_MAX_NUMPROCS 4)
+#  endif()
 
-  add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
-  target_link_libraries(test_stk_mesh_parallel stk_mesh mesh_audit unittest++)
-  add_test(stk_mesh_parallel
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${LOCAL_MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_parallel)
-
-  add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
-  target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit unittest++)
-  add_test(stk_mesh_read test_stk_mesh_read)
-  add_test(stk_mesh_read_parallel
-           ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${LOCAL_MPI_EXEC_MAX_NUMPROCS} test_stk_mesh_read)
+    # Test: stk_mesh_parallel
+    add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
+    target_link_libraries(test_stk_mesh_parallel stk_mesh mesh_audit
+                           ${UnitTest_LIBRARIES})
+    add_parallel_test(stk_mesh_parallel 
+                      test_stk_mesh_parallel NPROCS 4)                   
+     
+    # Test: stk_mesh_read (serial and parallel)
+    add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
+    target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit ${UnitTest_LIBRARIES})
+    add_test(stk_mesh_read test_stk_mesh_read)
+    add_parallel_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4)
 
 endif()
 

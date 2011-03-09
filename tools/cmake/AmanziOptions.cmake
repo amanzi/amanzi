@@ -16,7 +16,7 @@ include(FeatureSummary)
 
 # Set the build type for now we only build
 # a debug version
-if ( NOT ( ${CMAKE_BUILD_TYPE} MATCHES "Debug" ) )
+if ( (DEFINED ${CMAKE_BUILD_TYPE}) AND ( NOT ( ${CMAKE_BUILD_TYPE} MATCHES "Debug" ) ) )
     message(WARNING "At this time only Debug builds are allowed")
 endif()
 set(CMAKE_BUILD_TYPE debug)
@@ -48,11 +48,11 @@ endif(BUILD_STATIC_EXECUTABLES)
 
 # DBC - Design by contract
 option(ENABLE_DBC "Enable Design By Contract (DBC) checking" ON)
-add_feature_info(DBC
+set_feature_info(DBC
                  ENABLE_DBC
                  "Toggle design by contract (DBC) checking")
 if ( ENABLE_DBC )
-    add_definitions(ENABLE_DBC)
+    add_definitions("-D ENABLE_DBC")
 endif()    
 
 # Testing
@@ -60,7 +60,7 @@ endif()
 # should have a single switch for this. -- lpritch
 cmake_dependent_option(ENABLE_TESTS "Enable unit testing" ON
                        "ENABLE_UnitTest" ON)
-add_feature_info(TESTS
+set_feature_info(TESTS
                  ENABLE_TESTS
                  "Toggle for unit tests")
 if (ENABLE_TESTS)

@@ -1,4 +1,13 @@
-include_directories(${PROJECT_SOURCE_DIR}/includes)
+# -*- mode: cmake -*-
+
+#
+#  Amanzi
+#    Chemistry Test Drivers
+#
+
+# Chemistry includes
+include_directories(${CHEM_INCLUDES_DIR})
+
 #
 # ben's test program
 #
@@ -19,10 +28,10 @@ set(GEOCHEM_LIBS
 add_executable(${EXE_NAME} ${EXE_SRCS})
 target_link_libraries(${EXE_NAME} ${GEOCHEM_LIBS})
 
-if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
   execute_process(COMMAND ${CMAKE_COMMAND} -E 
-                  copy_directory ${CMAKE_SOURCE_DIR}/chemistry/test_drivers/input 
-                  ${CMAKE_BINARY_DIR}/chemistry/test_drivers/input) 
+                  copy_directory ${CHEM_SOURCE_DIR}/test_drivers/input 
+                  ${CHEM_BINARY_DIR}/test_drivers/input) 
 endif()
 
 
