@@ -22,17 +22,13 @@ include_directories(${Trilinos_INCLUDE_DIRS})
 link_directories(${Trilinos_LIBRARY_DIRS})
 
 if (BUILD_TESTS)
-  add_executable(test_chemistry_unit test/Main.cc test/test_example.cpp)
-  add_test(chemistry test_chemistry)
-  target_link_libraries(test_chemistry_unit chemistry unittest++)
-
-  add_executable(test_chemistry test/Main.cc test/test_driver.cpp)
-  add_test(chemistry test_chemistry)
-  target_link_libraries(test_chemistry mpc simple_mesh chemistry transport flow unittest++)
-
   add_executable(test_activity_coefficients test/Main.cc test/test_activity_coefficients.cpp)
   add_test(chemistry_activity_coefficients test_activity_coefficients)
   target_link_libraries(test_activity_coefficients chemistry unittest++)
+
+  add_executable(test_beaker test/Main.cc test/test_beaker.cpp)
+  add_test(chemistry_beaker test_beaker)
+  target_link_libraries(test_beaker chemistry unittest++)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
