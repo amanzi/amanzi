@@ -58,6 +58,8 @@ private:
   std::vector<string> auxnames;
   std::vector<string> compnames; 
 
+  std::string flow_model;
+
 };
 
 

@@ -96,7 +96,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      Teuchos::ParameterList flow_parameter_list = 
        parameter_list.sublist("Flow");
      
-     string flow_model = mpc_parameter_list.get<string>("Flow model","Darcy");
+     flow_model = mpc_parameter_list.get<string>("Flow model","Darcy");
      if (flow_model == "Darcy")
        FPK = Teuchos::rcp( new Darcy_PK(flow_parameter_list, FS) );  
      else if (flow_model == "Richards")
@@ -212,9 +212,12 @@ void MPC::cycle_driver () {
     FPK->commit_state(FS);
     FPK->GetDarcyVelocity(*S->get_darcy_velocity());
     
-    Richards_PK *RPK = dynamic_cast<Richards_PK*> (&*FPK); 
-  
-    RPK->GetSaturation(*S->get_water_saturation()); 
+    if ( flow_model == "Richards") 
+      {
+	Richards_PK *RPK = dynamic_cast<Richards_PK*> (&*FPK); 
+	
+	RPK->GetSaturation(*S->get_water_saturation()); 
+      }
   }
   
   if (flow_enabled || transport_enabled || chemistry_enabled) {
@@ -230,8 +233,11 @@ void MPC::cycle_driver () {
       write_field_data(*S->get_pressure(), "pressure");
       write_field_data(*S->get_permeability(), "permeability");
       write_field_data(*S->get_porosity(),"porosity");
-      
-      write_field_data(*S->get_water_saturation(),"water saturation");
+   
+      if (flow_mode == "Richards")
+	{
+	  write_field_data(*S->get_water_saturation(),"water saturation");
+	}
 
       for (int nc=0; nc<S->get_number_of_components(); nc++) {
 	std::stringstream cname;
