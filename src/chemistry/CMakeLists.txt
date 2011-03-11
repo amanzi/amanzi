@@ -52,11 +52,11 @@ if (BUILD_TESTS)
 
   add_executable(test_activity_coefficients test/Main.cc test/test_activity_coefficients.cpp)
   add_test(chemistry_activity_coefficients test_activity_coefficients)
-  target_link_libraries(test_activity_coefficients chemistry unittest++)
+  target_link_libraries(test_activity_coefficients chemistry ${UnitTest_LIBRARIES})
 
   add_executable(test_beaker test/Main.cc test/test_beaker.cpp)
   add_test(chemistry_beaker test_beaker)
-  target_link_libraries(test_beaker chemistry unittest++)
+  target_link_libraries(test_beaker chemistry ${UnitTest_LIBRARIES})
 
 
     # Test: chemistry_unit
