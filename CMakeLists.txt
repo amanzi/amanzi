@@ -8,6 +8,14 @@
 # Require cmake 2.8 or higher
 cmake_minimum_required(VERSION 2.8.2)
 
+if ("${CMAKE_PATCH_VERSION}" GREATER 2)
+  set(ADJUST_POLICY "True")
+endif()
+
+if (${ADJUST_POLICY})
+  cmake_policy(SET CMP0017 NEW)
+endif()
+
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
 enable_testing()
