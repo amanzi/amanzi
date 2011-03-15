@@ -30,6 +30,13 @@ set_feature_info(Boost
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
+
+# We need to use the project-local HDF5 finder. Temporarily Change
+# policy CMP0017 if were using cmake 2.8.3 or later
+if (${ADJUST_POLICY})
+  cmake_policy(SET CMP0017 OLD)
+endif()
+
 find_package(HDF5 REQUIRED)
 if ( NOT HDF5_IS_PARALLEL ) 
     message(WARNING     "The HDF5 installation found in ${HDF5_DIR} is not "
@@ -44,6 +51,11 @@ set_feature_info(HDF5
                 "http://www.hdfgroup.org/HDF5"
                 "Required library for several components in Amanzi"
                 )
+
+# Restore policy of preferring offical CMake modules over local ones.
+if (${ADJUST_POLICY})
+  cmake_policy(SET CMP0017 NEW)
+endif()
 
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov

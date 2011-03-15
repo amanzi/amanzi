@@ -44,28 +44,23 @@ add_subdirectory(test_drivers)
 
 
 if (BUILD_TESTS)
+  # Add the UnitTest includes
+  include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Add the UnitTest includes
-    include_directories(${UnitTest_INCLUDE_DIRS})
+  # External (TPL) includes
+  include_directories(${Teuchos_INCLUDE_DIRS})
 
-    # External (TPL) includes
-    include_directories(${Teuchos_INCLUDE_DIRS})
+  add_executable(chemistry_tests
+		 test/Main.cc
+		 test/test_activity_coefficients.cpp
+		 test/test_beaker.cpp)
+  target_link_libraries(chemistry_tests chemistry ${UnitTest_LIBRARIES})
+  add_test(chemistry chemistry_tests)
 
-    # Test: chemistry_unit
-    add_executable(test_chemistry_unit test/Main.cc test/test_example.cpp)
-    target_link_libraries(test_chemistry_unit chemistry ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
-    add_test(chemistry_unit test_chemistry_unit)
-
-    # Test: chemistry
-    #add_executable(test_chemistry test/Main.cc test/test_driver.cpp)
-    #add_test(chemistry test_chemistry)
-    #target_link_libraries(test_chemistry state simple_mesh mpc chemistry transport flow ${UnitTest_LIBRARIES})
-
-
-    if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-            copy_directory ${CHEM_SOURCE_DIR}/test ${CHEM_BINARY_DIR}/test) 
-    endif()
+  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+      copy_directory ${CHEM_SOURCE_DIR}/test ${CHEM_BINARY_DIR}/test)
+  endif()
 
 endif()
 
