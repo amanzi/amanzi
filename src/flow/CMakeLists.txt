@@ -47,7 +47,6 @@ file(GLOB flow_source_files "*.cpp")
 add_library(flow ${flow_source_files})
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES flow_tpl_libs)
-PRINT_VARIABLE(flow_tpl_libs)
 target_link_libraries(flow ${flow_tpl_libs})
 
 if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
