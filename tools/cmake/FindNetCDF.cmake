@@ -67,14 +67,14 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
         if (EXISTS "${NetCDF_INCLUDE_DIR}")
 
-            find_path(test_include_path
+            find_path(cdf_include_path
                       NAMES ${netcdf_inc_names}
                       HINTS ${NetCDF_INCLUDE_DIR}
                       NO_DEFAULT_PATH)
-            if(NOT test_include_path)
+            if(NOT cdf_include_path)
                 message(SEND_ERROR "Can not locate ${netcdf_inc_names} in ${NetCDF_INCLUDE_DIR}")
             endif()
-            set(NetCDF_INCLUDE_DIR "${test_include_path}")
+            set(NetCDF_INCLUDE_DIR "${cdf_include_path}")
 
         else()
             message(SEND_ERROR "NetCDF_INCLUDE_DIR=${NetCDF_INCLUDE_DIR} does not exist")
@@ -110,6 +110,7 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
     endif()
 
+
     if ( NOT NetCDF_INCLUDE_DIR )
         message(SEND_ERROR "Can not locate NetCDF include directory")
     endif()
@@ -118,6 +119,7 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
     if ( NetCDF_INCLUDE_DIR ) 
        
         set(netcdf_h "${NetCDF_INCLUDE_DIR}/netcdf.h" )
+        message(WARNING ${netcdf_h})
 
         file(STRINGS "${netcdf_h}" netcdf_max_dims_string REGEX "^#define NC_MAX_DIMS")
         string(REGEX REPLACE "[^0-9]" "" netcdf_max_dims "${netcdf_max_dims_string}")
