@@ -35,7 +35,7 @@ if (BUILD_TESTS)
     # this directory is NOT included in the compile line *shrug*.
     # I don't have to do this in other directories.
     # Created a ticket #328 to track this.
-    include_directories(${MESH_BASE_SOURCE_DIR})
+#    include_directories(${MESH_BASE_SOURCE_DIR})
 
     # Add UnitTest include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
