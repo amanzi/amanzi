@@ -31,12 +31,6 @@ target_link_libraries(simple_mesh ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
 
-    # I do not know why, but when compiling test_simple_mesh
-    # this directory is NOT included in the compile line *shrug*.
-    # I don't have to do this in other directories.
-    # Created a ticket #328 to track this.
-#    include_directories(${MESH_BASE_SOURCE_DIR})
-
     # Add UnitTest include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
 
