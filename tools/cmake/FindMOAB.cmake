@@ -57,14 +57,14 @@ else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
 
         if (EXISTS "${MOAB_INCLUDE_DIR}")
 
-            find_path(test_include_path
+            find_path(moab_include_path
                       NAMES ${moab_inc_names}
                       HINTS ${MOAB_INCLUDE_DIR}
                       NO_DEFAULT_PATH)
-            if(NOT test_include_path)
+            if(NOT moab_include_path)
                 message(SEND_ERROR "Can not locate ${moab_inc_names} in ${MOAB_INCLUDE_DIR}")
             endif()
-            set(MOAB_INCLUDE_DIR "${test_include_path}")
+            set(MOAB_INCLUDE_DIR "${moab_include_path}")
 
         else()
             message(SEND_ERROR "MOAB_INCLUDE_DIR=${MOAB_INCLUDE_DIR} does not exist")

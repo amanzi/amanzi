@@ -60,14 +60,14 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
 
         if (EXISTS "${ExodusII_INCLUDE_DIR}")
 
-            find_path(test_include_path
+            find_path(exodusII_include_path
                       NAMES ${exodus_inc_names}
                       HINTS ${ExodusII_INCLUDE_DIR}
                       NO_DEFAULT_PATH)
-            if(NOT test_include_path)
+            if(NOT exodusII_include_path)
                 message(SEND_ERROR "Can not locate ${exodus_inc_names} in ${ExodusII_INCLUDE_DIR}")
             endif()
-            set(ExodusII_INCLUDE_DIR "${test_include_path}")
+            set(ExodusII_INCLUDE_DIR "${exodusII_include_path}")
 
         else()
             message(SEND_ERROR "ExodusII_INCLUDE_DIR=${ExodusII_INCLUDE_DIR} does not exist")
