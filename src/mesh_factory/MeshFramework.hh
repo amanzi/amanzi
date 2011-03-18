@@ -3,7 +3,7 @@
 /**
  * @file   MeshFramework.hh
  * @author William A. Perkins
- * @date Mon Mar 14 09:32:02 2011
+ * @date Mon Mar 14 12:20:41 2011
  * 
  * @brief  some typedefs to identify mesh frameworks
  * 
@@ -16,7 +16,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 11, 2011 by William A. Perkins
-// Last Change: Mon Mar 14 09:32:02 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Mar 14 12:20:41 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -29,22 +29,25 @@
 
 namespace Mesh {
 
-/// A type to identify available mesh frameworks
-enum Framework {
-  Simple = 1,
-  MOAB,
-  STK,
-  MSTK
-};
+  /// A type to identify available mesh frameworks
+  enum Framework {
+    Simple = 1,
+    MOAB,
+    STK,
+    MSTK
+  };
 
-/// A type with which an ordered preference list of Framework 
-typedef std::vector<Framework> FrameworkPreference;
+  /// A type with which an ordered preference list of Framework 
+  typedef std::vector<Framework> FrameworkPreference;
 
-/// Get a name for a given framework
-extern std::string framework_name(const Framework& fw);
+  /// Get a name for a given framework
+  extern std::string framework_name(const Framework& fw);
 
-/// Generate the default framework preferences
-extern FrameworkPreference default_preference(void);
+  /// Generate the default framework preferences
+  extern FrameworkPreference default_preference(void);
+
+  /// Modify framework preferences to get those available
+  extern FrameworkPreference available_preference(const FrameworkPreference& p);
 
 }
 
