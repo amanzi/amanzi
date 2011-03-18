@@ -2,7 +2,7 @@
 /**
  * @file   FrameworkTraits.cc
  * @author William A. Perkins
- * @date Fri Mar 18 12:41:32 2011
+ * @date Fri Mar 18 15:22:43 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Fri Mar 18 12:41:32 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Fri Mar 18 15:22:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <boost/format.hpp>
@@ -149,15 +149,15 @@ namespace Mesh {
   
     // this defines a type, there constructor of which is used to
     // instantiate a mesh when it's generated
-    // typedef typename mpl::eval_if<
-    //     mpl::bool_<M == Simple>
-    //     , mpl::identity<Mesh_maps_simple>
-    //     , mpl::eval_if<
-    //         mpl::bool_<M == STK>
-    //         , mpl::identity<Mesh_maps_stk>
-    //         , mpl::identity<bogus_maps>
-    //         >
-    //     > generate_maps;
+    typedef mpl::eval_if<
+      mpl::bool_<M == Simple>
+      , mpl::identity<Mesh_maps_simple>
+      , mpl::eval_if<
+          mpl::bool_<M == STK>
+          , mpl::identity<Mesh_maps_stk>
+          , mpl::identity<bogus_maps>
+          >
+      > generate_maps;
     
     // // this defines a type, there constructor of which is used to
     // // instantiate a mesh when it's read from a file or file set
@@ -176,6 +176,10 @@ namespace Mesh {
     //   > read_maps;
     
     
+    // -------------------------------------------------------------
+    // FrameworkTraits<M>::canread
+    // -------------------------------------------------------------
+    /// A type to indicate whether this framework can mesh of a specific format
     template < int FMT = 0 > 
     struct canread {
 
@@ -209,8 +213,8 @@ namespace Mesh {
             >
         >::type {};
     };
-        
-    
+
+
 
     /// Construct a mesh from a Exodus II file or file set
     static Teuchos::RCP<Mesh_maps_base>
@@ -220,6 +224,7 @@ namespace Mesh {
       return result;
     }
 
+    /// A type to indicate whether this framework can generate meshes
     struct cangenerate {
       struct parallel : 
         mpl::bool_< M == STK >::type
@@ -234,9 +239,10 @@ namespace Mesh {
     generate(const double& x0, const double& y0, const double& z0,
          const double& x1, const double& y1, const double& z1,
          const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
-         const Epetra_MpiComm& comm)
+         Epetra_MpiComm& comm)
     {
-      Teuchos::RCP<Mesh_maps_base> result;
+      Teuchos::RCP<Mesh_maps_base> 
+        result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm));
       return result;
     }
 
@@ -287,35 +293,6 @@ namespace Mesh {
     }
     return result;
   }
-
-  // -------------------------------------------------------------
-  // framework_switch_test
-  // -------------------------------------------------------------
-  // template < typename thetest >
-  // static bool 
-  // framework_switch_test(const Framework& f, const bool& parallel)
-  // {
-  //   bool result(false);
-  //   switch (f) {
-  //   case Simple:
-  //     result = parallel_test<FrameworkTraits<Simple>::thetest>(parallel);
-  //     break;
-  //   case STK:
-  //     break;
-  //   case MOAB:
-  //     break;
-  //   case MSTK:
-  //     break;
-  //   default:
-  //     {
-  //       std::string msg = 
-  //         boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
-  //       amanzi_throw(Message(msg.c_str()));
-  //     }
-  //   }
-  //   return result;
-  // }
-
 
   // -------------------------------------------------------------
   // framework_reads
@@ -374,7 +351,7 @@ namespace Mesh {
   // framework_read
   // -------------------------------------------------------------
   Teuchos::RCP<Mesh_maps_base> 
-  framework_read(const Epetra_MpiComm& comm, const Framework& f, const std::string& fname)
+  framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fname)
   {
     Teuchos::RCP<Mesh_maps_base> result;
     switch (f) {
@@ -419,6 +396,39 @@ namespace Mesh {
       break;
     case MSTK:
       result = parallel_test< FrameworkTraits<MSTK>::cangenerate >(parallel);
+      break;
+    default:
+      {
+        std::string msg = 
+          boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+        amanzi_throw(Message(msg.c_str()));
+      }
+    }
+    return result;
+  }
+
+  // -------------------------------------------------------------
+  // framework_generates
+  // -------------------------------------------------------------
+  Teuchos::RCP<Mesh_maps_base> 
+  framework_generate(Epetra_MpiComm& comm, const Framework& f, 
+                     const double& x0, const double& y0, const double& z0,
+                     const double& x1, const double& y1, const double& z1,
+                     const unsigned int& nx, const unsigned int& ny, const unsigned int& nz)
+  {
+    Teuchos::RCP<Mesh_maps_base> result;
+    switch (f) {
+    case Simple:
+      result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+      break;
+    case STK:
+      result = FrameworkTraits<STK>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+      break;
+    case MOAB:
+      result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+      break;
+    case MSTK:
+      result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
       break;
     default:
       {

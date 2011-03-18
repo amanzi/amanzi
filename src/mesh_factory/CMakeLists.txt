@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created March 11, 2011 by William A. Perkins
-# Last Change: Tue Mar 15 12:10:06 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# Last Change: Fri Mar 18 15:00:34 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(AddParallelTest)
@@ -77,7 +77,11 @@ if (BUILD_TESTS)
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Test: test_mesh_factory
-   add_executable(test_mesh_factory test/Main.cc test/test_mesh_file.cc test/test_mesh_framework.cc)
+   add_executable(test_mesh_factory 
+     test/Main.cc
+     test/test_mesh_file.cc 
+     test/test_mesh_framework.cc
+     test/test_mesh_factory.cc)
    target_link_libraries(test_mesh_factory mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES})
    add_test(mesh_factory test_mesh_factory)
    add_parallel_test(mesh_factory_parallel test_mesh_factory)

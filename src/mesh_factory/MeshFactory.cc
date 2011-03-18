@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 10, 2011 by William A. Perkins
-// Last Change: Wed Mar 16 08:12:27 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Fri Mar 18 15:06:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -26,7 +26,7 @@ namespace Mesh {
   // -------------------------------------------------------------
   // MeshFactory:: constructors / destructor
   // -------------------------------------------------------------
-  MeshFactory::MeshFactory(Epetra_Comm *communicator)
+  MeshFactory::MeshFactory(const Epetra_MpiComm &communicator)
     : my_comm(communicator), my_preference(default_preference())
   {
   
@@ -61,12 +61,12 @@ namespace Mesh {
   Teuchos::RCP<Mesh_maps_base> 
   MeshFactory::create(const std::string& filename)
   {
-    Format fmt = file_format(*my_comm, filename);
+    Format fmt = file_format(my_comm, filename);
     Teuchos::RCP<Mesh_maps_base> result;
     for (FrameworkPreference::const_iterator i = my_preference.begin(); 
          i != my_preference.end(); i++) {
-      if (framework_reads(*i, fmt, my_comm->NumProc() > 1)) {
-        result = framework_read(*my_comm, *i, filename);
+      if (framework_reads(*i, fmt, my_comm.NumProc() > 1)) {
+        result = framework_read(my_comm, *i, filename);
         return result;
       }
     }
@@ -81,8 +81,8 @@ namespace Mesh {
     Teuchos::RCP<Mesh_maps_base> result;
     for (FrameworkPreference::const_iterator i = my_preference.begin(); 
          i != my_preference.end(); i++) {
-      if (framework_generates(*i, my_comm->NumProc() > 1)) {
-        result = framework_generate(*my_comm, *i, 
+      if (framework_generates(*i, my_comm.NumProc() > 1)) {
+        result = framework_generate(my_comm, *i, 
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz);
         return result;

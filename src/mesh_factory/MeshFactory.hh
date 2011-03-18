@@ -3,7 +3,7 @@
 /**
  * @file   MeshFactory.hh
  * @author William A. Perkins
- * @date Fri Mar 18 07:21:43 2011
+ * @date Fri Mar 18 15:06:30 2011
  * 
  * @brief  declaration of the MeshFactory class
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 10, 2011 by William A. Perkins
-// Last Change: Fri Mar 18 07:21:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Fri Mar 18 15:06:30 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #ifndef _MeshFactory_hh_
@@ -37,7 +37,7 @@ namespace Mesh {
   protected:
 
     /// The parallel environment
-    Epetra_Comm *my_comm;
+    Epetra_MpiComm my_comm;
 
     /// A list of preferred mesh frameworks to consider
     FrameworkPreference my_preference;
@@ -50,7 +50,7 @@ namespace Mesh {
   public:
 
     /// Default constructor.
-    explicit MeshFactory(Epetra_Comm *communicator);
+    explicit MeshFactory(const Epetra_MpiComm& communicator);
 
     /// Destructor
     ~MeshFactory(void);
