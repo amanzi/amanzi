@@ -67,14 +67,14 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
 
         if (EXISTS "${NetCDF_INCLUDE_DIR}")
 
-            find_path(cdf_include_path
+            find_path(cdf_test_include_path
                       NAMES ${netcdf_inc_names}
                       HINTS ${NetCDF_INCLUDE_DIR}
                       NO_DEFAULT_PATH)
-            if(NOT cdf_include_path)
+            if(NOT cdf_test_include_path)
                 message(SEND_ERROR "Can not locate ${netcdf_inc_names} in ${NetCDF_INCLUDE_DIR}")
             endif()
-            set(NetCDF_INCLUDE_DIR "${cdf_include_path}")
+            set(NetCDF_INCLUDE_DIR "${cdf_test_include_path}")
 
         else()
             message(SEND_ERROR "NetCDF_INCLUDE_DIR=${NetCDF_INCLUDE_DIR} does not exist")
