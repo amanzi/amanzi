@@ -95,6 +95,17 @@ namespace STK_mesh
 
     const Epetra_Map& get_map_(const Mesh_data::Entity_kind& kind, const bool& include_ghost) const;
 
+    void read_exodus_(const Epetra_MpiComm& comm, const std::string& fname);
+
+    void generate_(const Epetra_MpiComm& comm, 
+                   const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
+                   const double& xorigin, 
+                   const double& yorigin, 
+                   const double& zorigin, 
+                   const double& xdelta, 
+                   const double& ydelta, 
+                   const double& zdelta);
+
   public:
 
     explicit Mesh_maps_stk (Mesh_p mesh);
@@ -109,9 +120,21 @@ namespace STK_mesh
                   const double& ydelta = 1.0, 
                   const double& zdelta = 1.0);
 
+    /// Construct hexahedral mesh (Mesh_maps_simple alternative)
+    Mesh_maps_stk(double x0, double y0, double z0,
+                  double x1, double y1, double z1,
+                  int nx, int ny, int nz, 
+                  Epetra_MpiComm *communicator);
+
     /// Construct a mesh from a Exodus II file or file set
     Mesh_maps_stk(const Epetra_MpiComm& comm, 
                   const std::string& fname);
+
+    /// Construct a mesh from a Exodus II file or file set
+    Mesh_maps_stk(const char *filename, MPI_Comm comm);
+
+    /// The destructor
+    ~Mesh_maps_stk(void);
 
     // Local id interfaces
     // --------------------
