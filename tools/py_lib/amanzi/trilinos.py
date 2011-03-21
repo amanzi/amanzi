@@ -123,23 +123,31 @@ class _ParameterInterface(_ElementInterface):
             raise ValueError, 'Parameter constructor requires a value'
 
         _ElementInterface.__init__(self,_ParameterTag,{})
-        str_type = get_str_type(value)
-        str_value = str(value)
-        self.set('name',name)
-        self.set('type',str_type)
-        self.set('value', str_value)
+        self.set_name(name)
+        self.set_value(value)
 
     def get_name(self):
         return self.get('name',default=None)
 
+    def set_name(self,name):
+        return self.set('name',name)
+
     def get_type(self):
         str_type = self.get('type',default=None)
         return get_py_type(str_type)
-
+    
     def get_value(self):
         value = self.get('value',default=None)
         str_type = self.get('type',default=None)
         return convert_str_to_type(value,str_type)
+
+    def set_value(self,value):
+        str_value = str(value)
+        str_type = get_str_type(value)
+        self.set('type', str_type)
+        self.set('value', str_value)
+        return str_value
+
 
 
 ################################################################################
@@ -179,6 +187,10 @@ class ParameterList(ElementTree):
             ElementTree.__init__(self,element=root,file=None)
         else:
             ElementTree.__init__(self,element=None,file=file)
+
+    def name(self):
+        root = self.getroot()
+        return root.get('name')
 
     def attach(self,object):
         root = self.getroot()
@@ -233,6 +245,39 @@ class ParameterList(ElementTree):
             sublist._setroot(result)
          
         return sublist
+
+    def find_parameter(self,target=None,quiet=False):
+        result = None
+
+        if target == None:
+            raise ValueError, ' requires a parameter name'
+
+        search_list = []    
+        try:
+            serach_list = self.iterfind(_ParameterTag)
+        except AttributeError:
+            search_list = self.getiterator(_ParameterTag)
+
+        for node in search_list:
+            node_name = node.get_name()
+            if node_name == target:
+                result =  node
+                break
+
+        #if result == None and quiet != False:
+        #    print 'Could not find parameter ' + target
+
+        return result    
+
+    def set_parameter(self,name,value):
+        node = self.find_parameter(name,quiet=True)
+        if node != None:
+            node.set_value(value)
+        else:
+            node = Parameter(name,value)
+            self.attach(node)
+
+        return node
 
     def dumpXML(self,file=sys.stdout,encoding='utf-8',xml_translate=None,*args):
 
@@ -382,13 +427,16 @@ if __name__ == '__main__':
    input.add_sublist(mesh)
    input.add_sublist(mpc)
 
-   #input.dumpXML()
+   input.dumpXML()
+
+   mpc.set_parameter('End Cycle', 100)
+   mpc.dumpXML()
+
 
 
    # Read Fbasin input file
-   fbasin = InputList(file='fbasin-5-components-025.xml')
-
-   flow = fbasin.find_sublist('Flow')
+   #fbasin = InputList(file='fbasin-5-components-025.xml')
+   #flow = fbasin.find_sublist('Flow')
 
    print
 
