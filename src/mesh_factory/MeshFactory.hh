@@ -3,7 +3,7 @@
 /**
  * @file   MeshFactory.hh
  * @author William A. Perkins
- * @date Fri Mar 18 15:06:30 2011
+ * @date Tue Mar 22 08:26:54 2011
  * 
  * @brief  declaration of the MeshFactory class
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 10, 2011 by William A. Perkins
-// Last Change: Fri Mar 18 15:06:30 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Mar 22 08:26:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #ifndef _MeshFactory_hh_
@@ -70,6 +70,9 @@ namespace Mesh {
     Teuchos::RCP<Mesh_maps_base> create(double x0, double y0, double z0,
                                         double x1, double y1, double z1,
                                         int nx, int ny, int nz);
+    
+    /// Create a hexahedral mesh using the specified parameter list
+    Teuchos::RCP<Mesh_maps_base> create(Teuchos::ParameterList &parameter_list);
 
     /// Create a mesh by reading the specified file (or set of files) -- operator
     Teuchos::RCP<Mesh_maps_base> operator() (const std::string& filename)

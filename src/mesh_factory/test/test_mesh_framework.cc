@@ -2,7 +2,7 @@
 /**
  * @file   test_mesh_framework.cc
  * @author William A. Perkins
- * @date Fri Mar 18 10:06:22 2011
+ * @date Tue Mar 22 11:56:46 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Fri Mar 18 10:06:22 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Mar 22 11:56:46 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -31,7 +31,7 @@ SUITE (Framework)
 
     CHECK(std::find(pref.begin(), pref.end(), Mesh::Simple) != pref.end());
     
-#ifdef HAVE_MOAB_MESH_NOT
+#ifdef HAVE_MOAB_MESH
     CHECK(std::find(pref.begin(), pref.end(), Mesh::MOAB) != pref.end());
 #else
     CHECK(std::find(pref.begin(), pref.end(), Mesh::MOAB) == pref.end());
@@ -58,7 +58,7 @@ SUITE (Framework)
     pref.clear();
     pref.push_back(Mesh::MOAB);
     pref = Mesh::available_preference(pref);
-#ifdef HAVE_MOAB_MESH_NOT
+#ifdef HAVE_MOAB_MESH
     CHECK(!pref.empty());
 #else
     CHECK(pref.empty());
@@ -93,7 +93,7 @@ SUITE (Framework)
     CHECK(!Mesh::framework_reads(Mesh::Simple, Mesh::Nemesis, parallel));
     CHECK(!Mesh::framework_reads(Mesh::Simple, Mesh::MOABHDF5, parallel));
 
-    CHECK(Mesh::framework_reads(Mesh::MOAB, Mesh::ExodusII, parallel));
+    CHECK(!Mesh::framework_reads(Mesh::MOAB, Mesh::ExodusII, parallel));
     CHECK(!Mesh::framework_reads(Mesh::MOAB, Mesh::Nemesis, parallel));
     CHECK(Mesh::framework_reads(Mesh::MOAB, Mesh::MOABHDF5, parallel));
 

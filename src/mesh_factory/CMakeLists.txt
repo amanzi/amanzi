@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created March 11, 2011 by William A. Perkins
-# Last Change: Fri Mar 18 15:00:34 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# Last Change: Tue Mar 22 10:55:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(AddParallelTest)
@@ -45,7 +45,7 @@ target_link_libraries(mesh_factory error_handling mesh_data simple_mesh)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_SOURCE_DIR})
-    target_link_libraries(mesh_factory stk_mesh)
+    target_link_libraries(mesh_factory stk_mesh exodus mesh_data)
     add_definitions("-DHAVE_STK_MESH")
 endif()
 
@@ -71,6 +71,9 @@ if (BUILD_TESTS)
     set(test_file_flags "${test_file_flags} -DBOGUS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/bogus.exo\\\"\" ")
         
     set_source_files_properties(test/test_mesh_file.cc PROPERTIES 
+                                COMPILE_FLAGS ${test_file_flags})
+
+    set_source_files_properties(test/test_mesh_factory.cc PROPERTIES 
                                 COMPILE_FLAGS ${test_file_flags})
    
    # Add UnitTest include directories

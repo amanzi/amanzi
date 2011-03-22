@@ -7,11 +7,13 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 10, 2011 by William A. Perkins
-// Last Change: Fri Mar 18 15:06:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Mar 22 09:21:50 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
+
+#include <boost/format.hpp>
 
 #include "MeshFactory.hh"
 #include "MeshFileType.hh"
@@ -39,6 +41,14 @@ namespace Mesh {
   // -------------------------------------------------------------
   // MeshFactory::preference
   // -------------------------------------------------------------
+  /** 
+   * This routine populates the framework preference list, but only
+   * with available frameworks.  If none of the preferred frameworks
+   * are available, the preference list is left empty and an exception
+   * is thrown.
+   * 
+   * @param pref list of mesh framework preferences
+   */
   void
   MeshFactory::preference(const FrameworkPreference& pref)
   {
@@ -58,6 +68,13 @@ namespace Mesh {
   // -------------------------------------------------------------
   // MeshFactory::create
   // -------------------------------------------------------------
+  /** 
+   * This creates a mesh by reading the specified file (or file set).  
+   * 
+   * @param filename mesh file to read
+   * 
+   * @return mesh instance
+   */
   Teuchos::RCP<Mesh_maps_base> 
   MeshFactory::create(const std::string& filename)
   {
@@ -70,15 +87,45 @@ namespace Mesh {
         return result;
       }
     }
-    return result;
+    amanzi_throw(Mesh::Message(boost::str(boost::format("%s: unable to read mesh file") %
+                                          filename).c_str()));
   }
 
+  /** 
+   * This creates a mesh by generating a block of hexahedral cells.
+   * 
+   * @param x0 origin x-coordinate
+   * @param y0 origin y-coordinate
+   * @param z0 origin z-coordinate
+   * @param x1 maximum x-coordinate
+   * @param y1 maximum y-coordinate
+   * @param z1 maximum z-coordinate
+   * @param nx number of cells in the x-direction
+   * @param ny number of cells in the y-direction
+   * @param nz number of cells in the z-direction
+   * 
+   * @return mesh instance
+   */
   Teuchos::RCP<Mesh_maps_base> 
   MeshFactory::create(double x0, double y0, double z0,
                       double x1, double y1, double z1,
                       int nx, int ny, int nz)
   {
     Teuchos::RCP<Mesh_maps_base> result;
+    if (nx <= 0 || ny <= 0 || nz <= 0) {
+      Mesh::Message 
+        e(boost::str(boost::format("invalid mesh cells requested: %d x %d x %d") %
+                     nx % ny % nz).c_str());
+        amanzi_throw(e);
+    }
+
+    if (x1 - x0 <= 0.0 || y1 - y0 <= 0.0 || z1 - z0 <= 0.0) {
+      Mesh::Message 
+        e(boost::str(boost::format("invalid mesh dimensions requested: %.6g x %.6g x %.6g") %
+                     (x1 - x0) % (y1 - y0) % (z1 - z0)).c_str());
+        amanzi_throw(e);
+    }
+      
     for (FrameworkPreference::const_iterator i = my_preference.begin(); 
          i != my_preference.end(); i++) {
       if (framework_generates(*i, my_comm.NumProc() > 1)) {
@@ -88,7 +135,43 @@ namespace Mesh {
         return result;
       }
     }
-    return result;
+    amanzi_throw(Mesh::Message("unable to generate mesh"));
+  }
+
+  /** 
+   * This creates a mesh by generating a block of hexahedral cells,
+   * but using a parameter list with the limits and cell counts.
+   * 
+   * @param parameter_list 
+   * 
+   * @return 
+   */
+  Teuchos::RCP<Mesh_maps_base> 
+  MeshFactory::create(Teuchos::ParameterList &parameter_list)
+  {
+    double x0, y0, z0, x1, y1, z1;
+    int nx, ny, nz, nblock;
+
+    // read the parameters from the parameter list
+    
+    nx = parameter_list.get<int>("Numer of Cells in X");
+    ny = parameter_list.get<int>("Numer of Cells in Y");
+    nz = parameter_list.get<int>("Numer of Cells in Z");
+    
+    x0 = parameter_list.get<double>("X_Min");
+    x1 = parameter_list.get<double>("X_Max");
+    
+    y0 = parameter_list.get<double>("Y_Min");
+    y1 = parameter_list.get<double>("Y_Max");
+    
+    z0 = parameter_list.get<double>("Z_Min");
+    z1 = parameter_list.get<double>("Z_Max");
+    
+    // Note that this is ignored.  It doesn't seem to be used by
+    // Mesh_maps_simple anyway.
+    nblock = parameter_list.get<int>("Number of mesh blocks", 0);
+      
+    return create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
   }
 
 } // namespace Mesh

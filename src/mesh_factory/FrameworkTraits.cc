@@ -2,7 +2,7 @@
 /**
  * @file   FrameworkTraits.cc
  * @author William A. Perkins
- * @date Fri Mar 18 15:22:43 2011
+ * @date Tue Mar 22 11:55:18 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Fri Mar 18 15:22:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Mar 22 11:55:18 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <boost/format.hpp>
@@ -26,7 +26,19 @@ namespace mpl = boost::mpl;
 
 #include <Teuchos_RCP.hpp>
 
+// How stupid is this? MOAB mesh stuff evidently cannot be included
+// before Epetra_MpiComm.h
+
+#ifdef HAVE_MOAB_MESH
+#define MOAB_FLAG true
+#define USE_MPI 
+#include "Mesh_maps_moab.hh"
+#undef USE_MPI
+#endif
+
 #include "FrameworkTraits.hh"
+
+
 #include "MeshFramework.hh"
 #include "MeshFileType.hh"
 #include "MeshException.hh"
@@ -65,9 +77,11 @@ public:
 // Here, and in the Mesh::Framework unit test are hopefully the only
 // places where there has to be ifdef's for mesh frameworks.
 
-#ifdef HAVE_MOAB_MESH_NOT
+#ifdef HAVE_MOAB_MESH
 #define MOAB_FLAG true
+#define USE_MPI
 #include "Mesh_maps_moab.hh"
+#undef USE_MPI
 #else
 #define MOAB_FLAG false
 typedef bogus_maps Mesh_maps_moab;
@@ -89,6 +103,7 @@ typedef bogus_maps Mesh_maps_stk;
 #define MSTK_FLAG false
 typedef bogus_maps Mesh_maps_mstk;
 #endif
+
 
 #include "Mesh_maps_simple.hh"
 
@@ -159,34 +174,35 @@ namespace Mesh {
           >
       > generate_maps;
     
-    // // this defines a type, there constructor of which is used to
-    // // instantiate a mesh when it's read from a file or file set
-    // typedef mpl::eval_if<
-    //   mpl::bool_<M == MOAB>
-    //   , mpl::identity<Mesh_maps_moab>
-    //   , mpl::if_<
-    //       mpl::bool_<M == STK>
-    //       , mpl::identity<Mesh_maps_stk>
-    //       , mpl::if_<
-    //           mpl::bool_<M == MSTK>
-    //           , mpl::identity<Mesh_maps_mstk>
-    //           , mpl::identity<bogus_maps>
-    //           >
-    //       >
-    //   > read_maps;
+    // this defines a type, there constructor of which is used to
+    // instantiate a mesh when it's read from a file or file set
+    typedef mpl::eval_if<
+      mpl::bool_<M == MOAB>
+      , mpl::identity<Mesh_maps_moab>
+      , mpl::eval_if<
+          mpl::bool_<M == STK>
+          , mpl::identity<Mesh_maps_stk>
+          , mpl::eval_if<
+              mpl::bool_<M == MSTK>
+              , mpl::identity<Mesh_maps_mstk>
+              , mpl::identity<bogus_maps>
+              >
+          >
+      > read_maps;
     
     
     // -------------------------------------------------------------
     // FrameworkTraits<M>::canread
     // -------------------------------------------------------------
     /// A type to indicate whether this framework can mesh of a specific format
+    // FIXME: Doesn't MOAB read exodus files
     template < int FMT = 0 > 
     struct canread {
 
       struct parallel :
         mpl::eval_if<
         mpl::bool_< M == MOAB >
-        , mpl::bool_< FMT == ExodusII || FMT == MOABHDF5 >
+        , mpl::bool_< FMT == MOABHDF5 >
         , mpl::eval_if<
             mpl::bool_< M == STK >
             , mpl::bool_< FMT == Nemesis >
@@ -201,7 +217,7 @@ namespace Mesh {
       struct serial :
         mpl::eval_if<
         mpl::bool_< M == MOAB >
-        , mpl::bool_< FMT == ExodusII || FMT == MOABHDF5 >
+        , mpl::bool_< FMT == MOABHDF5 >
         , mpl::eval_if<
             mpl::bool_< M == STK >
             , mpl::bool_< FMT == ExodusII >
@@ -218,9 +234,10 @@ namespace Mesh {
 
     /// Construct a mesh from a Exodus II file or file set
     static Teuchos::RCP<Mesh_maps_base>
-    read(const Epetra_MpiComm& comm, const std::string& fname)
+    read(Epetra_MpiComm& comm, const std::string& fname)
     {
-      Teuchos::RCP<Mesh_maps_base> result;
+      Teuchos::RCP<Mesh_maps_base> 
+        result(new typename read_maps::type(fname.c_str(), comm.Comm()));
       return result;
     }
 

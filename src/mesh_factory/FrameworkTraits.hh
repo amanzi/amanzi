@@ -3,7 +3,7 @@
 /**
  * @file   FrameworkTraits.hh
  * @author William A. Perkins
- * @date Fri Mar 18 15:18:51 2011
+ * @date Mon Mar 21 11:24:23 2011
  * 
  * @brief  
  * 
@@ -12,12 +12,12 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 10, 2011 by William A. Perkins
-// Last Change: Fri Mar 18 15:18:51 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Mar 21 11:24:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 #ifndef _FrameworkTraits_hh_
 #define _FrameworkTraits_hh_
 
-#include <Epetra_Comm.h>
+#include <Epetra_MpiComm.h>
 #include <Teuchos_RCP.hpp>
 
 #include "MeshFramework.hh"
