@@ -57,16 +57,16 @@ else(UnitTest_LIBRARIES AND UnitTest_INCLUDE_DIRS)
 
         if (EXISTS "${UnitTest_INCLUDE_DIR}")
 
-            find_path(test_include_path
+            find_path(UnitTest_test_include_path
                       NAMES ${unittest_inc_names}
                       HINTS ${UnitTest_INCLUDE_DIR}
                       PATH_SUFFIXES ${unittest_inc_suffixes}
                       NO_DEFAULT_PATH)
-            if(NOT test_include_path)
+            if(NOT UnitTest_test_include_path)
                 message(SEND_ERROR "Can not locate ${unittest_inc_names} in ${UnitTest_INCLUDE_DIR} "
                                    "with suffixes ${unittest_inc_suffixes}")
             endif()
-            set(UnitTest_INCLUDE_DIR "${test_include_path}")
+             set(UnitTest_INCLUDE_DIR "${UnitTest_test_include_path}")
 
         else()
             message(SEND_ERROR "UnitTest_INCLUDE_DIR=${UnitTest_INCLUDE_DIR} does not exist")

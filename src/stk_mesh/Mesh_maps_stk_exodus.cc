@@ -2,7 +2,7 @@
 /**
  * @file   Mesh_maps_stk_exodus.cc
  * @author William A. Perkins
- * @date Mon Dec 13 10:26:29 2010
+ * @date Mon Mar 14 15:14:00 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December 13, 2010 by William A. Perkins
-// Last Change: Mon Dec 13 10:26:29 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Mar 14 15:14:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_maps_stk.hh"
@@ -22,13 +22,11 @@
 namespace STK_mesh {
 
   // -------------------------------------------------------------
-  // Mesh_maps_stk::Mesh_maps_stk
+  // Mesh_maps_stk::read_exodus_
   // -------------------------------------------------------------
-  Mesh_maps_stk::Mesh_maps_stk(const Epetra_MpiComm& comm, 
-                               const std::string& fname)
-    : mesh_(), 
-      entity_map_ (3),          // FIXME: needs to come from the file
-      communicator_(comm.Clone())
+  void
+  Mesh_maps_stk::read_exodus_(const Epetra_MpiComm& comm, 
+                              const std::string& fname)
   {
     const int nproc(communicator_->NumProc());
     const int me(communicator_->MyPID());
@@ -59,6 +57,27 @@ namespace STK_mesh {
     if (aerr != 0) 
       throw std::runtime_error("Exodus file read error");
     build_maps_();
+  }
+
+
+  // -------------------------------------------------------------
+  // Mesh_maps_stk::Mesh_maps_stk
+  // -------------------------------------------------------------
+  Mesh_maps_stk::Mesh_maps_stk(const Epetra_MpiComm& comm, 
+                               const std::string& fname)
+    : mesh_(), 
+      entity_map_ (3),          // FIXME: needs to come from the file
+      communicator_(comm.Clone())
+  {
+    read_exodus_(comm, fname);
+  }
+
+  Mesh_maps_stk::Mesh_maps_stk(const char *fname, MPI_Comm comm)
+    : mesh_(), 
+      entity_map_ (3),          // FIXME: needs to come from the file
+      communicator_(new Epetra_MpiComm(comm))
+  {
+    read_exodus_(comm, fname);
   }
 
   

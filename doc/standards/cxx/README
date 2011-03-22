@@ -1,0 +1,47 @@
+Notes:
+
+Google Style Guide :
+ - License:
+     source: Artistic License/GPL
+     document: Creative Commons 3.0 BY 
+
+ - source :
+     svn checkout http://google-styleguide.googlecode.com/svn/trunk/ google-styleguide-read-only
+
+ - files obtained from r66:
+     cppguide.xml
+     styleguide.xsl
+     styleguide.css
+     google-c-style.el
+     cpplint/README
+     cpplint/cpplint.py
+     cpplint/cpplint_unittest.py
+
+
+  - Displaying the local copy of the cppguide.xml
+
+     - Modern browsers (at least Firefox, and Chrome) don't allow
+       processing local (file:/// urls) xml files with xsl because of
+       security concerns.
+
+     - Install the xsltproc tool if it isn't already installed on your
+       system. (macports: libxslt, ubuntu: xsltproc, manually:
+       http://xmlsoft.org/XSLT/)
+
+     - Run:
+       xsltproc cppguide.xml > cppguide.html
+
+     - Open cppguide.html in your browser 
+
+
+google.vim :
+ - License: MIT
+
+ - source :
+     http://www.vim.org/scripts/script.php?script_id=2636
+
+ - script version 1.1.0, 2011-01-17
+
+ - install details
+   Move google.vim to ~/.vim/indent as cpp.vim 
+

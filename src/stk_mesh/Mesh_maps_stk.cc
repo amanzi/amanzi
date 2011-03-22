@@ -31,6 +31,15 @@ Mesh_maps_stk::Mesh_maps_stk (Mesh_p mesh) : mesh_ (mesh),
     build_maps_();
 }
 
+Mesh_maps_stk::~Mesh_maps_stk(void)
+{
+  try {
+    delete communicator_;
+  } catch (...) {
+    // just eat it
+  }
+}
+
 
 // -------------------------------------------------------------
 // Mesh_maps_stk::build_maps_

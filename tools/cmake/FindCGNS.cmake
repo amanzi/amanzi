@@ -59,14 +59,14 @@ else(CGNS_LIBRARIES AND CGNS_INCLUDE_DIRS)
 
         if (EXISTS "${CGNS_INCLUDE_DIR}")
 
-            find_path(test_include_path
+            find_path(cgns_test_include_path
                       NAMES ${cgns_inc_names}
                       HINTS ${CGNS_INCLUDE_DIR}
                       NO_DEFAULT_PATH)
-            if(NOT test_include_path)
+            if(NOT cgns_test_include_path)
                 message(SEND_ERROR "Can not locate ${cgns_inc_names} in ${CGNS_INCLUDE_DIR}")
             endif()
-            set(CGNS_INCLUDE_DIR "${test_include_path}")
+            set(CGNS_INCLUDE_DIR "${cgns_test_include_path}")
 
         else()
             message(SEND_ERROR "CGNS_INCLUDE_DIR=${CGNS_INCLUDE_DIR} does not exist")
