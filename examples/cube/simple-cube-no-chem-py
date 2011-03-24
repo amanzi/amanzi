@@ -1,0 +1,332 @@
+#!/usr/bin/env python
+
+# ############################################################################ #
+#                                                                              #
+# Sample Amanzi Input File                                                     #
+#                                                                              #
+# This is use a case example of a simple discretized unit cube. The intent is  #
+# to create an example with enough interesting features that designing the     #
+# input file points to deficiencies in the toolset classes.                    #
+#                                                                              #
+# ############################################################################ #
+
+# ############################################################################ #
+# Import Python Modules                                                        #
+# ############################################################################ #
+import sys, os, string
+
+# ############################################################################ #
+# Import Amanzi Python Modules                                                 #
+# ############################################################################ #
+from amanzi import boolean, vector
+from amanzi import mesh, flow, transport, chemistry
+from amanzi import mpc
+
+
+# ############################################################################ #
+# Mesh Definition                                                              #
+#                                                                              #
+# Assumptions:                                                                 #
+#   + Coordinate system is right-handed                                        # 
+#   + node = coordinate 3-tuple, cell = fundamental mesh unit                  # 
+#   + Side sets = cell face collection                                         #
+#   + Block = cell collection                                                  #
+#   + Each side set or block is referenced through a string OR int identifier  #
+#                                                                              #
+# ############################################################################ #
+
+#
+# 'mesh' is an instance of Exodus class. Note the file name  
+# in the declaration. We could put checks in the Python side that would
+# verify that this file exists and is in an Exodus format.
+mesh = ExodusMesh('mock-basin.exo')
+mesh.framework = 'MOAB'
+mesh.num_dim = 3
+mesh.num_sideset_ids = 15
+mesh.num_blocks   = 3
+
+# Define the mesh blocks
+# Usage: mesh.add_block(Python_String_Attribute, Mesh_file_id)
+# This call will define the attribute mesh.block.str_attr = id 
+# Example: mesh.block.layer_1 = 100
+mesh.add_block('layer_0', 100)
+mesh.add_block('layer_1', 101)
+mesh.add_block('layer_2', 102)
+
+# Define the side sets
+# Usage: mesh.add_sideset(str_attr,list of mesh_file_ids)
+# This call will define the attribute mesh.sideset.str_attr
+# mesh.sideset.north = 20001
+# I'm standing at the origin looking along the y-axis 
+# x right(+)/left(-), y front(-)/back(+), z top(+)/bottom(-)
+
+# Assign a label for each face of the box
+mesh.add_sideset('right',[1007, 1008, 1009])
+mesh.add_sideset('left',[1001, 1002, 1003])
+mesh.add_sideset('front',[1004, 1005, 1006])
+mesh.add_sideset('back',[1010, 1011, 1012])
+mesh.add_sideset('bottom',[1000])
+mesh.add_sideset('top',[1013, 1014])
+
+# Top has two sidesets
+mesh.add_sideset('basin', [1014])
+mesh.add_sideset('not_basin',[1013])
+
+# Perform a mesh audit
+# We launch our mesh auditor and throw an error if the
+# audit fails. This would not be required but highly recommended!
+# Audit would valid the mesh (NNC audit) and also check for sideset
+# ids.
+mesh.audit()
+
+# ############################################################################ #
+# Primary Species Definition                                                   #
+#                                                                              #
+#                                                                              #
+# Assumptions:                                                                 #
+#     + Secondary species defined in the database file (Should we check this?) #
+#                                                                              # 
+# ############################################################################ #
+species = SpeciesClass()
+species.num = 5
+
+# Like the mesh class, the add_species allows the user to reference these
+# quantities by a string
+# species.H = 'H+'
+species.add_species('H', 'H+')
+species.add_species('A', 'Species A')
+species.add_species('B', 'Species B')
+
+# We could also have canned species list
+# i.e. species = FBasin5Component() that has all the species defined. No need to
+# species.add_species(...) in that case.
+
+# ############################################################################ #
+# Initial State Definition                                                     #
+#                                                                              #
+# ############################################################################ #
+
+# We haven't talked about restart and what State means in that mode. I assume
+# state in that context means the state at the start time. We may want two 
+# classes: InitialState(), State(), where the latter is defined from a restart. 
+# Also need to communicate what the defined primary species are. For now 
+# Require a species instance for the __init__ call here.
+state = State(species)
+
+# General parameters for state
+# Vectors related to spatial quanities
+# need to be checked against the mesh dimension
+state.gravity = [0,0,-9.8]
+
+# Properties of water ?
+# Will we need this for every problem? 
+state.H2O_saturation  = 1.0
+state.H2O_density     = 1000.0
+state.H2O_viscosity   = 0.001308
+
+# Define the initial species concentrations
+# Should this be tied to a layer?
+state.species.H           = -3.1408E-07
+state.species.A           = 6.5874E-09
+state.species.B         = 1.0000E-06
+
+# Define the layers
+# I don't think layer is the right term here, but we need to differentiate from
+# mesh blocks. Mesh block can be used in many different settings not just 
+# defining the permeability and porosity
+state.num_layers = 3
+
+# Usage: state.add_layer('str_attr', Mesh block instance)
+
+# Need reasonable values here, borrowed from fbasin input
+# Layer 0
+state.add_layer('layer_0',mesh.block.layer_0)
+state.layer_0.porosity     = ??
+state.layer_0.permeability = ??
+
+# Layer 1
+state.add_layer('layer_1',mesh.block.layer_1)
+state.layer_1.porosity     = ??
+state.layer_1.permeability = ??
+
+# Layer 2
+state.add_layer('layer_2',mesh.block.layer_2)
+state.layer_2.porosity     = ??
+state.layer_2.permeability = ??
+
+
+# ############################################################################ #
+# Flow Process Kernel Definition                                               #
+#                                                                              #
+# ############################################################################ #
+
+# Define a Solver Class
+# These would be the default values 
+# Typical usage would be
+#   ML = MLSolver()
+#   flow = DarcyFlow(solver=ML)
+ML = MLSolver()
+ML.max_iter  = 500
+ML.error_tol = 1.0E-14
+ML.max_levels =  40
+ML.prec_type = 'MGV'
+ML.type = 'increasing' # Not clear what decreasing or increasing from FBasin input
+ML.aggregation.type = 'Uncoupled-MIS'
+ML.aggregation.damping = 1.333
+ML.aggregation.threshold = 0.03
+ML.eigen_analysis.type = 'cg'
+ML.eigen_analysis.iter = 20
+ML.smoother.sweeps = 5
+ML.smoother.damping = 1.0
+ML.smoother.when = 'both'
+ML.smoother.type = 'symetric Gauss-Seidel'
+ML.coarse.type = 'Amesos-KLU'
+ML.coarse.max_size = 128
+
+# Create a flow class
+# Should we require a solver class when creating flow? 
+# What else should be included for Richard's
+# 
+flow = DarcyFlow(solver=ML)
+
+# ############################################################################ #
+# Transport Process Kernel Definition                                          #
+#                                                                              #
+# ############################################################################ #
+
+# Create the transport class need the species list
+transport = Transport(species)
+
+# Standard parameters
+# What about higher order discretizations?
+transport.CFL = 1.0
+transport.enable_checks(False)
+transport.verbosity = 10
+transport.interal_tol = 1.0E-01
+
+# ############################################################################ #
+# Boundary Condition Definitions                                               #
+#                                                                              # 
+# Assumptions:                                                                 #
+#             + Chemistry will never have BCs                                  #
+#             + In the XML file, BC will be separate from the                  #
+#               Flow and Transport list 
+#               Example:                                
+#                <ParameterList name="Boundary Conditions">
+#                  <Parameter name="num of boundary conditions", type="int", 
+#                  <ParameterList name="left">
+#                      <Parameter name="Type" type="string" value="Out Flow">          
+#                      <Parameter name="sideset" type="string" value="left">
+#                      <Parameter name="sideset_ids", type="int", length="3", value="{1001,1002,1003}">
+#                      <Paramater name="BC Value" type="double" value="-1.0">
+#                      <ParameterList name="Species List">
+#                         <Parameter name="Concentration 0" type="double" value=1.0>
+#                         <Parameter name="Concentration 1" type="double" value=0.1>
+#                         <Parameter name="Concentration 2" type="double" value=0.4>
+#
+#                  :
+#                  :
+#                  <ParameterList name="bottom">
+#                     <Paramter name="Type" type="string" value="No Flow">
+#                     <Parameter name="sideset" type="string" value="bottom">
+#                     <Parameter name="sideset_ids" type="int" length="1" value="{1000}">
+#
+# ############################################################################ #
+
+# Pass in the list of sidesets that will be used to define boundary conditions
+list_of_bc_sidesets = [mesh.sideset.left, 
+                       mesh.sideset.right,
+                       mesh.bottom,
+                       mesh.sideset.basin,
+                       mesh.sideset.not_basin]
+
+# Pass in the flow, transport and sidesets
+# Use the last attribute as the BC attribute labels
+BC = BoundaryConditions(flow=flow,transport=transport,sidesets=list_of_sidesets)
+
+# Now define each BC
+
+# Left: Inflow
+# Need the rate and the species list
+# Grab a copy of the species list
+left_species = species.copy()
+left_species.H           = ??
+left_species.A           = ??
+left_species.B           = ??
+BC.left = Inflow(rate=-1.0,species=left_species)
+
+# Right: Outflow
+# No species list needed
+BC.right = Outflow(rate=-1.0)
+
+# Bottom: NoFlow
+BC.bottom = NoFlow()
+
+# Basin: InFlow
+# Need basin species concentrations
+basin_species = species.copy()
+basin_species.H           = ??
+basin_species.A           = ??
+basin_species.B           = ??
+BC.basin = Inflow(rate=-1.0E-07,species=basin_species)
+
+# Not_Basin: Inflow (rain fall?)
+# Background species from rainfall
+background_species = species.copy()
+background_species.H      = ??
+background_species.A      = ??
+background_species.B      = ??
+BC.background = Inflow(rate=-1.0E-08,species=background_species)
+
+
+
+
+# ############################################################################ #
+# Chemistry Process Kernel Definition                                          #
+#                                                                              #
+# ############################################################################ #
+
+# No Chemistry in this example
+
+# ############################################################################ #
+# Multi-Process Coordinator (MPC) Definition                                   #
+#                                                                              #
+# ############################################################################ #
+
+# Decoupled....how would a coupled mpc be defined
+mpc = MPC(flow_PK=flow,transport_PK=transport)
+
+
+# Time control .... I think dt control should go here
+mpc.time_crtl.t_start = 0.0
+mpc.time_crtl.t_end   = 315360000.0
+#mpc.time_ctrl.dt = ???? Do we want to allow user to set dt max, dt by output here?
+
+# Restart is under output in source but will be it's own class here
+mpc.restart.dt = 86400.0   # Control restart delta t and delta cycles
+mpc.restart.dcyc = 1000
+
+# Create output 
+mpc.add_output('CGNS')
+mpc.output.CGNS.dt = 86400.0
+mpc.output.CGNS.file = 'simple-cube.cgns'
+
+
+# ############################################################################ #
+#  Create an input file                                                        #
+#                                                                              #
+# ############################################################################ #
+
+input = InputTree(mesh,state,mpc)
+input.write('simple-cube-no-chem.xml')
+
+
+
+
+
+
+
+
+
+
+
