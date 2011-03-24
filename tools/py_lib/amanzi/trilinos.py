@@ -112,6 +112,10 @@ def convert_str_to_type(str,str_type):
     return result
 
 ################################################################################
+class TrilinosParser(XMLParser):
+
+    def __init__(self) 
+################################################################################
 class _ParameterInterface(_ElementInterface):
 
     def __init__(self, name=None, value=None):
@@ -232,6 +236,7 @@ class ParameterList(ElementTree):
             search_list = self.getiterator(tag=_ParameterListTag)
 
         for node in search_list:
+            print node
             node_name = node.get_name()
             if node_name == target:
                 result = node
@@ -427,16 +432,18 @@ if __name__ == '__main__':
    input.add_sublist(mesh)
    input.add_sublist(mpc)
 
-   input.dumpXML()
+   #input.dumpXML()
 
    mpc.set_parameter('End Cycle', 100)
-   mpc.dumpXML()
+   #mpc.dumpXML()
 
 
 
    # Read Fbasin input file
-   #fbasin = InputList(file='fbasin-5-components-025.xml')
-   #flow = fbasin.find_sublist('Flow')
+   fbasin = InputList(file='fbasin-5-components-025.xml')
+   print type(fbasin).__name__
+   print fbasin
+   flow = fbasin.find_sublist('Flow')
 
    print
 
