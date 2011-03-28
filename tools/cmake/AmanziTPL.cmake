@@ -4,7 +4,6 @@
 #
 
 # Standard CMake modules see CMAKE_ROOT/Modules
-include(CMakeDependentOption)
 include(FeatureSummary)
 
 # Amanzi CMake modules see <root source>/tools/cmake
@@ -171,12 +170,16 @@ set_feature_info(ExodusII
 ##############################################################################
 
 # Enable ALL possible mesh frameworks
-cmake_dependent_option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF
-                       "ENABLE_STK_Mesh;ENABLE_MOAB_Mesh;ENABLE_MSTK" ON) 
-set_feature_info(ALL_Mesh
-                 ENABLE_ALL_Mesh
-                 "Build all available mesh frameworks"
-                  )    
+#option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF)
+#if(ENABLE_ALL_Mesh)
+#    set(ENABLE_STK_Mesh ON)
+#    set(ENABLE_MOAB_Mesh ON)
+#    set(ENABLE_MSTK_Mesh ON)
+#endif()    
+#set_feature_info(ALL_Mesh
+#                 ENABLE_ALL_Mesh
+#                 "Build all available mesh frameworks"
+#                  )    
 
 ##############################################################################
 # STK - Sierra Mesh Tool Kit part of Trilinos
@@ -205,8 +208,7 @@ endif()
 ##############################################################################
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
-cmake_dependent_option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF
-                       "ENABLE_METIS" ON )
+option(ENABLE_MSTK_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
 set_feature_info(MSTK_Mesh
                  ENABLE_MSTK_Mesh
                  "A mesh framework"
