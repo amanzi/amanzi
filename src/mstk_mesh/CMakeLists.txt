@@ -39,11 +39,11 @@ add_definitions("-DUSE_MPI -DMSTK_HAVE_MPI")
 #
 set(mstk_mesh_files Cell_topology.cc Element_category.cc Mesh_maps_mstk.cc) 
 add_library(mstk_mesh ${mstk_mesh_files})
-target_link_libraries(mstk_mesh mesh_data error_handling ${MSTK_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+target_link_libraries(mstk_mesh mesh_data error_handling ${MSTK_LIBRARIES} ${ExodusII_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
     
-    # Add UnitTest include
+    # Add UnitTest ExodusII include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 

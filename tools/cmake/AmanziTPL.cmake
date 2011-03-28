@@ -205,17 +205,15 @@ endif()
 ##############################################################################
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
-#PRINT_VARIABLE(ENABLE_MSTK_Mesh)             
-#cmake_dependent_option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF
-#                       "ENABLE_METIS" ON )
-#set_feature_info(MSTK_Mesh
-#                 ENABLE_MSTK_Mesh
-#                 "A mesh framework"
-#                 )
-#PRINT_VARIABLE(ENABLE_MSTK_Mesh)             
-#if (ENABLE_MSTK_Mesh)
-#    find_package(MSTK REQUIRED)
-#endif() 
+cmake_dependent_option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF
+                       "ENABLE_METIS" ON )
+set_feature_info(MSTK_Mesh
+                 ENABLE_MSTK_Mesh
+                 "A mesh framework"
+                 )
+if (ENABLE_MSTK_Mesh)
+    find_package(MSTK REQUIRED)
+endif() 
 
 
 
