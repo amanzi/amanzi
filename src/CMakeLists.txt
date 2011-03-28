@@ -23,9 +23,9 @@ if (ENABLE_MOAB_Mesh)
 endif(ENABLE_MOAB_Mesh)    
 
 # MSTK Mesh framework
-#if (ENABLE_MSTK_Mesh)
-#    add_subdirectory(mstk_mesh)
-#endif(ENABLE_MSTK_Mesh)    
+if (ENABLE_MSTK_Mesh)
+    add_subdirectory(mstk_mesh)
+endif(ENABLE_MSTK_Mesh)    
 
 add_subdirectory(output)
 

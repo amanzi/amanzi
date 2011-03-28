@@ -52,6 +52,7 @@ if(ENABLE_MOAB_Mesh)
 endif()    
 if(ENABLE_MSTK_Mesh)
     include_directories(${MSTK_INCLUDE_DIRS})
+    include_directories(${MSTK_SOURCE_DIR})
     list(APPEND amanzi_mesh_libs mstk_mesh)
 endif()    
 

@@ -57,14 +57,14 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
         if (EXISTS "${MSTK_INCLUDE_DIR}")
 
-            find_path(test_include_path
+            find_path(test_mstk_include_path
                       NAMES ${mstk_inc_names}
                       HINTS ${MSTK_INCLUDE_DIR}
                       NO_DEFAULT_PATH)
-            if(NOT test_include_path)
+            if(NOT test_mstk_include_path)
                 message(SEND_ERROR "Can not locate ${mstk_inc_names} in ${MSTK_INCLUDE_DIR}")
             endif()
-            set(MSTK_INCLUDE_DIR "${test_include_path}")
+            set(MSTK_INCLUDE_DIR "${test_mstk_include_path}")
 
         else()
             message(SEND_ERROR "MSTK_INCLUDE_DIR=${MSTK_INCLUDE_DIR} does not exist")
