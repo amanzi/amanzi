@@ -128,6 +128,7 @@ function(ADD_PACKAGE_DEPENDENCY)
 
             #  Neither list has keywords
             set(_save_lib_list "${${target_package}_LIBRARIES}" "${${req_package}_LIBRARIES}")
+            list(REMOVE_DUPLICATES _save_lib_list)
 
         endif()    
 
