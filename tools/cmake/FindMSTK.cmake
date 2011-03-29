@@ -161,15 +161,15 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
     # Define prerequisite packages
     set(MSTK_INCLUDE_DIRS ${MSTK_INCLUDE_DIR})
     set(MSTK_LIBRARIES    ${MSTK_LIBRARY})
+
+    # MSTK requires METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
     add_package_dependency(MSTK DEPENDS_ON METIS)
-    if(MSTK_NEEDS_HDF5)
-        add_package_dependency(MSTK DEPENDS_ON HDF5)
-    endif()    
-    if (MSTK_NEEDS_NetCDF)
-        add_package_dependency(MSTK DEPENDS_ON NetCDF)
-    endif()
 
+    # MSTK depends on ExodusII
+    add_package_dependency(MSTK DEPENDS_ON ExodusII)
 
+    # MSTK depends on NetCDF
+    add_package_dependency(MSTK DEPENDS_ON NetCDF)
    
 endif(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS )    
 

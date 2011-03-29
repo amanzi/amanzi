@@ -250,22 +250,3 @@ set_feature_info(UnitTest
 if (ENABLE_UnitTest)
     find_package(UnitTest)
 endif()    
-
-
-##############################################################################
-# METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
-##############################################################################
-option(ENABLE_METIS "Mesh partitioning library" OFF)
-set_feature_info(METIS
-                 ENABLE_METIS
-                 "Mesh partitioning library"
-                 )
-if (ENABLE_METIS)
-    find_package(METIS REQUIRED)
-endif() 
-
-
-
-
-
-
