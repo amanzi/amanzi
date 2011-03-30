@@ -228,7 +228,7 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
    
     # Define the LIBRARIES and INCLUDE_DORS
     set(NetCDF_INCLUDE_DIRS ${NetCDF_INCLUDE_DIR})
-    set(NetCDF_LIBRARIES    ${NetCDF_C_LIBRARY} ${NetCDF_CXX_LIBRARY})
+    set(NetCDF_LIBRARIES    ${NetCDF_CXX_LIBRARY} ${NetCDF_C_LIBRARY})
 
     # Need to find the NetCDF config script to check for HDF5
     if ( NetCDF_DIR OR NetCDF_BIN_DIR )
