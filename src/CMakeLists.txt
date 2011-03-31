@@ -40,5 +40,8 @@ add_subdirectory(transport)
 # Multiprocess coordinator
 add_subdirectory(mpc)
 
+# Time integration
+add_subdirectory(time_integration)
+
 # Amanzi binaries
 add_subdirectory(executables)
