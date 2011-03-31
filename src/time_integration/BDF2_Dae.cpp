@@ -388,7 +388,81 @@ namespace BDF2 {
   }
 
 
+  void Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc)
+  {
+    
+    // call fpa_restart (this%fpa) ! <<----- NEED TO CONVERT THIS
 
+    int itr = 0;
+    
+    Epetra_Vector du(u0);
+    Epetra_Vector u_tmp(u0);
+    
+    do
+      {
+	
+	// Check for too many nonlinear iterations.
+	if (itr >= state.mitr) 
+	  {
+	    if (state.verbose) 
+	      {
+		//write(this%unit,fmt=1) itr, error
+	      }
+	    errc = 1;
+	    return;
+	  }
+	
+	itr++;
+
+	// Evaluate the preconditioned nonlinear function.
+	state.pcfun_calls++;
+	
+	// compute u_tmp = (u-u0)/h
+	u_tmp = u;
+	u_tmp.Update(-1.0/h,u0,1.0/h);
+	
+	// call pcfun (t, u, (u-u0)/h, du)  ! <<------- NEEDS TO BE CONVERTED
+	
+	// Accelerated correction.
+	// call fpa_correction (this%fpa, du, dp=pardp)  ! <<------- NEEDS TO BE CONVERTED 
+  
+	// Next solution iterate and error estimate.
+	// FORTRAN:  u  = u - du
+	u.Update(-1.0,du,1.0);
+	
+	double error;
+	//   error = enorm(u, du)   ! <<------- NEEDS TO BE CONVERTED
+	if (state.verbose) 
+	  {
+	    //write(this%unit,fmt=3) itr, error
+	  }
+
+	// Check for convergence.
+	if (((error < state.ntol) && (itr > 1)) || (error < 0.01 * state.ntol))
+	  {
+	    if (state.verbose) 
+	      {
+		//write(this%unit,fmt=2) itr, error
+	      }
+	    errc = 0;
+	    return;
+	  }
+      }
+    while (true);
+
+    // 1 format(2x,'AIN BCE solve FAILED: ',i3,' iterations (max), error=',es12.5)
+    // 2 format(2x,'AIN BCE solve succeeded: ',i3,' iterations, error=',es12.5)
+    // 3 format(2x,i3,': error=',es12.5)
+    
+
+  }
+
+
+
+  void Dae::update_precon()
+  {
+    // here we need to update the preconditioner
+  }
 
 
 }

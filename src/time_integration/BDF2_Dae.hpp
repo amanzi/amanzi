@@ -27,6 +27,9 @@ namespace BDF2 {
 
     void bdf2_step(double& h, double hmin, int mtries, Epetra_Vector& u, double& hnext); 
 
+    void update_precon();
+    void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc);
+
 
   private:
 
@@ -40,15 +43,6 @@ namespace BDF2 {
     const static double RMIN = 0.25;
     const static double RMAX = 4.0;
     const static double MARGIN = 3.0;
-
-    // successful STATUS return codes
-    const static int SOLVED_TO_TOUT = 1;
-    const static int SOLVED_TO_NSTEP = 2;
-    
-    // unsuccessful STATUS return codes
-    const static int BAD_INPUT = -1;
-    const static int STEP_FAILED = -2;
-    const static int STEP_SIZE_TOO_SMALL = -3;
 
   };
 
