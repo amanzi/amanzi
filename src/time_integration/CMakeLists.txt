@@ -21,6 +21,7 @@ project(TIME_INTEGRATION)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${FLOW_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -37,7 +38,7 @@ file(GLOB time_integration_source_files "*.cpp")
 add_library(time_integration ${time_integration_source_files})
 set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES time_integration_tpl_libs)
-target_link_libraries(time_integration error_handling ${time_integration_tpl_libs})
+target_link_libraries(time_integration error_handling flow ${time_integration_tpl_libs})
 
 if (BUILD_TESTS)
 

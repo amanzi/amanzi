@@ -1,14 +1,19 @@
 
+#include "NOX_Epetra_Vector.H"
+
 #include "BDF2_Dae.hpp"
 #include "BDF2_SolutionHistory.hpp"
+#include "BDF2_fnBase.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
+
 namespace BDF2 {
 
-  Dae::Dae(Epetra_BlockMap& map, int mitr, double ntol, int mvec, double vtol) 
+  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map, int mitr, double ntol, int mvec, double vtol) :
+    fn(fn_)
   {
     
     int maxv;
@@ -24,13 +29,19 @@ namespace BDF2 {
     ASSERT(mvec>0);
     maxv = std::min<int>(maxv,mvec);
     
-    SolutionHistory *sh = new SolutionHistory(3, map);
+    // Initialize the FPA structure.
+    // first create a NOX::Epetra::Vector to initialize nka with
+    NOX::Epetra::Vector init_vector( Epetra_Vector(map), NOX::ShapeCopy );
+
+    fpa = new nka(maxv, vtol, init_vector); 
     
+    SolutionHistory *sh = new SolutionHistory(3, map);
     state.init_solution_history(sh);
   }
 
   
-  Dae::Dae(Epetra_BlockMap& map)
+  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map) :
+    fn(fn_)
   {
     SolutionHistory *sh = new SolutionHistory(3, map);
     
@@ -183,7 +194,7 @@ namespace BDF2 {
 
     // Update the preconditioner.
     state.updpc_calls++;
-    //call updpc (t, u, etah, errc) ! <<------- NEEDS TO BE CONVERTED, will return an error code
+    fn.update_precon (t, u, etah, errc); 
     if (errc != 0)
       {
 	state.updpc_failed++;
@@ -204,7 +215,7 @@ namespace BDF2 {
     state.usable_pc = true;
 
     // Solve the nonlinear BCE system.
-    //call solve_bce_ain (this, t, etah, u0, u, errc, pcfun, enorm)  ! <<------ NEEDS TO BE CONVERTED
+    solve_bce ( t, etah, u0, u, errc);
     if (errc != 0) 
       {
 	state.failed_bce++;
@@ -294,7 +305,7 @@ namespace BDF2 {
 	
 	//  Solve the nonlinear BCE system.
 	u = up; // Initial solution guess is the predictor.
-	// call solve_bce_ain (this, t, etah, u0, u, errc, pcfun, enorm) ! <<------- NEEDS TO BE CONVERTED 
+	solve_bce ( t, etah, u0, u, errc );
 	if (errc == 0) break;  // leave the do-while loop, the BCE step was successful.
 
 	if (fresh_pc) // preconditioner was fresh; cut h and return error condition.
@@ -327,8 +338,7 @@ namespace BDF2 {
 	u0.Update(-1.0, up, 1.0);
 	
 	
-	double perr;
-	//perr = enorm(u, u0) ! <<------- NEED TO CONVERT THIS
+	double perr = fn.enorm(u, u0);
 	if (perr < 4.0) // accept the step.
 	  { 
 	    if (state.verbose)
@@ -391,13 +401,16 @@ namespace BDF2 {
   void Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc)
   {
     
-    // call fpa_restart (this%fpa) ! <<----- NEED TO CONVERT THIS
+    fpa->nka_restart();
 
     int itr = 0;
     
     Epetra_Vector du(u0);
     Epetra_Vector u_tmp(u0);
     
+    Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
+      Teuchos::rcp(new NOX::Epetra::Vector(u0, NOX::ShapeCopy));
+
     do
       {
 	
@@ -422,16 +435,23 @@ namespace BDF2 {
 	u_tmp.Update(-1.0/h,u0,1.0/h);
 	
 	// call pcfun (t, u, (u-u0)/h, du)  ! <<------- NEEDS TO BE CONVERTED
-	
+	fn.fun(t, u, u_tmp, du);
+	fn.precon(du, u_tmp);
+
 	// Accelerated correction.
-	// call fpa_correction (this%fpa, du, dp=pardp)  ! <<------- NEEDS TO BE CONVERTED 
-  
+	*preconditioned_f  = u_tmp;        // copy preconditioned functional into appropriate data type
+	NOX::Epetra::Vector nev_du(du, NOX::ShapeCopy);  // create a vector for the solution
+	
+	fpa->nka_correction(nev_du, preconditioned_f);
+	
+	du = nev_du.getEpetraVector();  // copy result into an Epetra_Vector.
+
+
 	// Next solution iterate and error estimate.
 	// FORTRAN:  u  = u - du
 	u.Update(-1.0,du,1.0);
 	
-	double error;
-	//   error = enorm(u, du)   ! <<------- NEEDS TO BE CONVERTED
+	double  error = fn.enorm(u, du); 
 	if (state.verbose) 
 	  {
 	    //write(this%unit,fmt=3) itr, error
@@ -459,10 +479,4 @@ namespace BDF2 {
 
 
 
-  void Dae::update_precon()
-  {
-    // here we need to update the preconditioner
-  }
-
-
-}
+ }

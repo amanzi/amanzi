@@ -4,7 +4,10 @@
 #include "Epetra_Vector.h"
 #include "Epetra_BlockMap.h"
 
+#include "NKA.H"
+
 #include "BDF2_State.hpp"
+#include "BDF2_fnBase.hpp"
 
 
 namespace BDF2 {
@@ -13,8 +16,8 @@ namespace BDF2 {
 
   public:
 
-    Dae(Epetra_BlockMap& map, int mitr, double ntol, int mvec, double vtol); 
-    Dae(Epetra_BlockMap& map);
+    Dae(fnBase& fn_, Epetra_BlockMap& map, int mitr, double ntol, int mvec, double vtol); 
+    Dae(fnBase& fn_, Epetra_BlockMap& map);
 
     void set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
 
@@ -27,7 +30,6 @@ namespace BDF2 {
 
     void bdf2_step(double& h, double hmin, int mtries, Epetra_Vector& u, double& hnext); 
 
-    void update_precon();
     void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc);
 
 
@@ -38,6 +40,9 @@ namespace BDF2 {
     double margin;
 
     State state;
+    nka* fpa;
+    fnBase& fn;
+
 
     // constants
     const static double RMIN = 0.25;
