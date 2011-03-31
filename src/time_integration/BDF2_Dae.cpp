@@ -356,7 +356,7 @@ namespace BDF2 {
 	// FORTRAN:  dt(2:) = h + time_deltas(this%uhist)
 
 	std::vector<double> dt(3);
-	std::vector<double> dt0(2);
+	std::vector<double> dt0(2); // to store the time deltas from the solution history
 	state.uhist->time_deltas(dt0);	
 	
 	dt[0] = h;
