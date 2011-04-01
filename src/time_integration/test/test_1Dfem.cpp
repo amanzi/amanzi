@@ -311,7 +311,7 @@ TEST(Nodal_1D_FEM) {
 
   TS.set_initial_state(t, u, udot);
 
-  TS.bdf2_step(h,0.0000001,10,u,hnext);
+  //TS.bdf2_step(h,0.0000001,10,u,hnext);
   
 	       
 
