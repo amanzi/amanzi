@@ -94,7 +94,7 @@ namespace BDF2 {
 
   void Dae::set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot)
   {
-    ASSERT(x.Map().SameAs( xdot.Map() ) );
+    // ASSERT(x.Map().PointSameAs( xdot.Map() ) );
 
     state.uhist->flush_history(t, x, xdot);
     state.seq = -1;  

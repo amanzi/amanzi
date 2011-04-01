@@ -54,8 +54,8 @@ if (BUILD_TESTS)
     # Add the time_integration directory to the include paths
     include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 
-    add_executable(test_solhist test/Main.cc test/test_solhist.cpp) 
-    target_link_libraries(test_solhist time_integration error_handling ${UnitTest_LIBRARIES})
-    add_test(time_integration test_solhist)
+    add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp) 
+    target_link_libraries(test_time_integration time_integration error_handling ${UnitTest_LIBRARIES})
+    add_test(time_integration test_time_integration)
 
 endif()

@@ -23,7 +23,7 @@ namespace BDF2 {
   SolutionHistory::SolutionHistory(int mvec, double t, const Epetra_Vector& x, const Epetra_Vector& xdot)
   {
     ASSERT(mvec>0);                     
-    ASSERT(x.Map().SameAs(xdot.Map()));  // x and xdot have the same structure
+    // ASSERT(x.Map().SameAs(xdot.Map()));  // x and xdot have the same structure
 
     initialize(mvec, x.Map() );
     record_solution(t,x,xdot);
@@ -62,7 +62,7 @@ namespace BDF2 {
 
   void SolutionHistory::record_solution(double t, const Epetra_Vector& x)
   {
-    ASSERT(x.Map().SameAs( (*d[0]).Map() ));
+    // ASSERT(x.Map().SameAs( (*d[0]).Map() ));
 
     // update the number of vectors
     nvec++;
@@ -93,9 +93,9 @@ namespace BDF2 {
 
   void SolutionHistory::record_solution(double t, const Epetra_Vector& x, const Epetra_Vector& xdot)
   {
-    ASSERT(x.Map().SameAs( xdot.Map() ) );
-    ASSERT(x.Map().SameAs( (*d[0]).Map() ) );
-    ASSERT(xdot.Map().SameAs( (*d[0]).Map() ) );
+    //ASSERT(x.Map().SameAs( xdot.Map() ) );
+    //ASSERT(x.Map().SameAs( (*d[0]).Map() ) );
+    //ASSERT(xdot.Map().SameAs( (*d[0]).Map() ) );
     
     record_solution(t,x);
 
@@ -128,7 +128,7 @@ namespace BDF2 {
 
   void SolutionHistory::interpolate_solution(double t, Epetra_Vector& x)
   {  
-    ASSERT(x.Map().SameAs( (*d[0]).Map() ) );    
+    //ASSERT(x.Map().SameAs( (*d[0]).Map() ) );    
 
     int order = nvec-1;
     
@@ -138,7 +138,7 @@ namespace BDF2 {
 
   void SolutionHistory::interpolate_solution(double t, Epetra_Vector& x, int order)
   {
-    ASSERT(x.Map().SameAs( (*d[0]).Map() ) );    
+    //ASSERT(x.Map().SameAs( (*d[0]).Map() ) );    
     ASSERT(order<nvec);
     ASSERT(order>0);
     
@@ -152,7 +152,7 @@ namespace BDF2 {
 
   void SolutionHistory::most_recent_solution(Epetra_Vector& x)
   {
-    ASSERT(x.Map().SameAs( (*d[0]).Map() ) );
+    //ASSERT(x.Map().SameAs( (*d[0]).Map() ) );
 
     x = *d[0];
   }
