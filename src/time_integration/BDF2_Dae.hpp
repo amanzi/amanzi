@@ -16,8 +16,8 @@ namespace BDF2 {
 
   public:
 
-    Dae(fnBase& fn_, Epetra_BlockMap& map, int mitr, double ntol, int mvec, double vtol); 
-    Dae(fnBase& fn_, Epetra_BlockMap& map);
+    Dae(fnBase& fn_, Epetra_BlockMap& map_, int mitr, double ntol, int mvec, double vtol); 
+    Dae(fnBase& fn_, Epetra_BlockMap& map_);
 
     void set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
 
@@ -43,6 +43,7 @@ namespace BDF2 {
     nka* fpa;
     fnBase& fn;
 
+    Epetra_BlockMap& map;
 
     // constants
     const static double RMIN = 0.25;

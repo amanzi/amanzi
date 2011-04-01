@@ -1,4 +1,5 @@
 
+#include "Teuchos_RCP.hpp"
 #include "NOX_Epetra_Vector.H"
 
 #include "BDF2_Dae.hpp"
@@ -12,8 +13,8 @@
 
 namespace BDF2 {
 
-  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map, int mitr, double ntol, int mvec, double vtol) :
-    fn(fn_)
+  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_, int mitr, double ntol, int mvec, double vtol) :
+    fn(fn_), map(map_)
   {
     
     int maxv;
@@ -40,8 +41,8 @@ namespace BDF2 {
   }
 
   
-  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map) :
-    fn(fn_)
+  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_) :
+    fn(fn_), map(map_)
   {
     SolutionHistory *sh = new SolutionHistory(3, map);
     
@@ -97,7 +98,7 @@ namespace BDF2 {
     // ASSERT(x.Map().PointSameAs( xdot.Map() ) );
 
     state.uhist->flush_history(t, x, xdot);
-    state.seq = -1;  
+    state.seq = 0;  
   }
 
   
@@ -187,7 +188,7 @@ namespace BDF2 {
 
 
     // Predicted solution and base point for the BCE step.
-    Epetra_Vector u0(u);
+    Epetra_Vector u0(map);
 
     state.uhist->interpolate_solution (t,  u, 1);
     state.uhist->interpolate_solution (t0, u0, 1);
@@ -268,8 +269,8 @@ namespace BDF2 {
       }
 
     // Predicted solution and base point for BCE step.
-    Epetra_Vector up(u);
-    Epetra_Vector u0(u);
+    Epetra_Vector up(map);
+    Epetra_Vector u0(map);
     
     state.uhist->interpolate_solution(t,  up, 2);
     state.uhist->interpolate_solution(t0, u0, 1);
@@ -405,11 +406,12 @@ namespace BDF2 {
 
     int itr = 0;
     
-    Epetra_Vector du(u0);
-    Epetra_Vector u_tmp(u0);
+    Epetra_Vector du(map);
+    Epetra_Vector u_tmp(map);
     
+
     Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
-      Teuchos::rcp(new NOX::Epetra::Vector(u0, NOX::ShapeCopy));
+      Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
 
     do
       {
@@ -434,8 +436,10 @@ namespace BDF2 {
 	u_tmp = u;
 	u_tmp.Update(-1.0/h,u0,1.0/h);
 	
-	// call pcfun (t, u, (u-u0)/h, du)  ! <<------- NEEDS TO BE CONVERTED
+	u_tmp.Print(std::cout);
+	
 	fn.fun(t, u, u_tmp, du);
+	
 	fn.precon(du, u_tmp);
 
 	// Accelerated correction.

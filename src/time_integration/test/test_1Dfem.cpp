@@ -110,8 +110,57 @@ public:
 
   void update_precon(double t, Epetra_Vector& up, double h, int& errc) 
   {
+    
+    // Jacobian of the linear term in udot.
+    eval_mass_matrix (*dx, *jac);
+
+    
+    jac->Scale(1.0 / h);
+
+    // Jacobian of the linear diffusion term in u.
+    Epetra_Vector a(*cell_map);
+    eval_diff_coef (up, a);
+    
+    double tmp;
+    
+    for (int j = 0; j<=n-2; j++)
+      { 
+	tmp = a[j]/(*dx)[j];
+	(*jac)[IND(1,j)] = (*jac)[IND(1,j)] + tmp;
+	(*jac)[IND(2,j)] = (*jac)[IND(2,j)] - tmp;
+	(*jac)[IND(0,j+1)] = (*jac)[IND(0,j+1)] - tmp;
+	(*jac)[IND(1,j+1)] = (*jac)[IND(1,j+1)] + tmp;
+      }
+
+    // Dirichlet BC at the left-most node.
+    (*jac)[IND(1,0)] = 1.0;
+    (*jac)[IND(2,0)] = 0.0;
+    (*jac)[IND(0,1)] = 0.0;
+
+    // Dirichlet BC at the right-most node.
+    (*jac)[IND(1,n-1)] = 1.0;
+    (*jac)[IND(0,n-1)] = 0.0;
+    (*jac)[IND(2,n-2)] = 0.0;
+
+    double **jacv;
+    jac->ExtractView(jacv);
+    
+    tdfactor (jacv[0], n);
+
+    errc = 0;
+    
 
   }
+
+
+
+
+
+
+
+
+
+
 
 
   //private:
@@ -243,7 +292,7 @@ public:
 
 TEST(Nodal_1D_FEM) {
 
-  nodal1Dfem NF (201, 0.0, 1.0, 10.0, 5.0, 2, 1.0, 0.0, 1.0e-5);
+  nodal1Dfem NF (11, 0.0, 1.0, 10.0, 5.0, 2, 1.0, 0.0, 1.0e-5);
   
   Epetra_Vector u(*NF.nodal_map);
   
@@ -257,9 +306,13 @@ TEST(Nodal_1D_FEM) {
   Epetra_Vector udot(*NF.nodal_map);
   NF.compute_udot(t, u, udot);
 
+  double h = 1.0e-5;
+  double hnext;
+
   TS.set_initial_state(t, u, udot);
 
+  TS.bdf2_step(h,0.0000001,10,u,hnext);
   
+	       
 
-  
 }
