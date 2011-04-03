@@ -38,6 +38,8 @@ namespace BDF2 {
     
     SolutionHistory *sh = new SolutionHistory(3, map);
     state.init_solution_history(sh);
+    
+    state.verbose = true;
   }
 
   
@@ -131,20 +133,18 @@ namespace BDF2 {
 	  }	    
 
 	// Attempt a BDF2 step.
-	int errc;
+	int errc = 0;
 	bdf2_step_simple (h, u, hnext, errc, true);
 	if (errc == 0) return;
 
 	// Step failed; try again with the suggested step size.
 	if (state.verbose)
 	  {
-	    //write(this%unit,fmt=1) hnext/h
+	    std::cout << "Changing H by a factor of " << hnext/h << std::endl;
 	  }
 	h = hnext;
       }
     while (true);
-
-    // 1 format(2x,'Changing H by a factor of ',f6.3)
 
   }
 
@@ -166,7 +166,7 @@ namespace BDF2 {
 	bdf2_step_gen(h, u, hnext, errc, false);
 	break;
 	
-      case 3:
+      default:
 	bdf2_step_gen(h, u, hnext, errc, ectrl);
 	break;
       }
@@ -183,7 +183,7 @@ namespace BDF2 {
 
     if (state.verbose) 
       {
-	//write(this%unit,fmt=1) this%seq+1, tlast, h, etah
+	std::cout << "Trap step " << state.seq+1 << " tlast = " << tlast << " h = " << h << " etah = " << etah << std::endl;
       }
 
 
@@ -201,7 +201,7 @@ namespace BDF2 {
 	state.updpc_failed++;
 	if (state.verbose) 
 	  {
-	    // write(this%unit,fmt=2) t, etah
+	    std::cout << "Preconditioner update failed at T = " << t << "  ETAH = " << etah << std::endl;
 	  }
 	hnext = 0.1 * h; // want to quickly find an acceptably small step size.
 	errc = -1;
@@ -210,7 +210,7 @@ namespace BDF2 {
 
     if (state.verbose)
       {
-	// write(this%unit,fmt=3) t, etah
+	std::cout << "Preconditioner updated at T = " << t << " etah = " << etah << std::endl;
       }
     state.hpc = etah;
     state.usable_pc = true;
@@ -228,18 +228,12 @@ namespace BDF2 {
 
     if (state.verbose) 
       {
-	//write(this%unit,fmt=4)
+	std::cout << "Step accepted: no local error control" << std::endl;
       }
     state.freeze_count = 2;
     hnext = h;
     errc = 0;
    
-    // 1 format(/,'TRAP step ',i6,': T=',es12.5,', H=',es12.5,', ETAH=',es12.5)
-    // 2 format(2x,'Preconditioner update FAILED at T=',es12.5,', ETAH=',es12.5)
-    // 3 format(2x,'Preconditioner updated at T=',es12.5,', ETAH=',es12.5)
-    // 4 format(2x,'Step accepted: no local error control')
-
-
   }
 
 
@@ -254,9 +248,12 @@ namespace BDF2 {
     double etah = eta * h;
     double t0 = tlast + (1.0 - eta)*h;
 
+
+    std::cout << "Dae::bdf2_step_gen\n";
+
     if (state.verbose)
       {
-	// write(this%unit,fmt=1) this%seq+1, tlast, h, etah
+	std::cout << "BDF2 step " << state.seq+1 << " T = "<< tlast << " H = " << h << " ETAH = " << etah << std::endl;
       }
     bool fresh_pc = false;
 
@@ -282,13 +279,13 @@ namespace BDF2 {
 	if (! state.usable_pc) 
 	  {
 	    state.updpc_calls++;
-	    // call updpc (t, up, etah, errc)  ! <<---------- NEEDS TO BE CONVERTED
+	    fn.update_precon (t, up, etah, errc); 
 	    if (errc != 0)  // update failed; cut h and return error condition.
 	      { 
 		state.updpc_failed++;
 		if (state.verbose)
 		  {
-		    //write(this%unit,fmt=2) t, etah
+		    std::cout << "Preconditioner update failed, T = "<< t << " etah = " << etah << std::endl;
 		  }
 		hnext = 0.5 * h;
 		errc = -1;
@@ -297,7 +294,7 @@ namespace BDF2 {
 	      }
 	    if (state.verbose)
 	      {
-		//write(this%unit,fmt=3) t, etah
+		std::cout << "Preconditioner updated at T = "<< t << " etah = " << etah <<std::endl;
 	      }
 	    state.hpc = etah;
 	    state.usable_pc = true;
@@ -327,7 +324,7 @@ namespace BDF2 {
     while (true);
 	     
 
-    // predictor_error = true;
+    //bool predictor_error = true;
     bool predictor_error = ectrl;
 
     if (predictor_error) 
@@ -344,7 +341,8 @@ namespace BDF2 {
 	  { 
 	    if (state.verbose)
 	      {
-		//write(this%unit,fmt=4) perr
+
+		std::cout << "Step accepted, perr = " << perr <<std::endl;
 	      }
 	    errc = 0;
 	  }
@@ -353,7 +351,7 @@ namespace BDF2 {
 	    state.rejected_steps++;
 	    if (state.verbose) 
 	      {
-		//write(this%unit,fmt=5) perr
+		std::cout << "Step REJECTED, perr = " << perr << std::endl;
 	      }
 	    hnext = 0.5 * h;
 	    state.freeze_count = 1;
@@ -375,27 +373,20 @@ namespace BDF2 {
 	dt[2] = h + dt0[1];
 
 	select_step_size (dt, perr, hnext);
+	
 	hnext = std::max<double>(RMIN*h, std::min<double>(RMAX*h, hnext));
 	if (state.freeze_count != 0) hnext = std::min<double>(h, hnext);
-
       }
     else
       {
 	if (state.verbose) 
 	  {
-	    //write(this%unit,fmt=6)
+	    std::cout << "Step accepted: no local error control" << std::endl;
 	  }
 	hnext = h;
 	errc = 0;
 
       }
-
-    // 1 format(/,'BDF2 step ',i6,': T=',es12.5,', H=',es12.5,', ETAH=',es12.5)
-    // 2 format(2x,'Preconditioner update FAILED at T=',es12.5,', ETAH=',es12.5)
-    // 3 format(2x,'Preconditioner updated at T=',es12.5,', ETAH=',es12.5)
-    // 4 format(2x,'Step accepted: perr=',es12.5)
-    // 5 format(2x,'Step REJECTED: perr=',es12.5)
-    // 6 format(2x,'Step accepted: no local error control')
   }
 
 
@@ -415,13 +406,14 @@ namespace BDF2 {
 
     do
       {
-	
+	double error;
+
 	// Check for too many nonlinear iterations.
 	if (itr >= state.mitr) 
 	  {
 	    if (state.verbose) 
 	      {
-		//write(this%unit,fmt=1) itr, error
+		std::cout << "AIN BCE solve failed " << itr << " iterations (max), error = " << error << std::endl;
 	      }
 	    errc = 1;
 	    return;
@@ -436,10 +428,8 @@ namespace BDF2 {
 	u_tmp = u;
 	u_tmp.Update(-1.0/h,u0,1.0/h);
 	
-	u_tmp.Print(std::cout);
-	
 	fn.fun(t, u, u_tmp, du);
-	
+       
 	fn.precon(du, u_tmp);
 
 	// Accelerated correction.
@@ -450,15 +440,14 @@ namespace BDF2 {
 	
 	du = nev_du.getEpetraVector();  // copy result into an Epetra_Vector.
 
-
 	// Next solution iterate and error estimate.
 	// FORTRAN:  u  = u - du
 	u.Update(-1.0,du,1.0);
 	
-	double  error = fn.enorm(u, du); 
+	error = fn.enorm(u, du); 
 	if (state.verbose) 
 	  {
-	    //write(this%unit,fmt=3) itr, error
+	    std::cout << itr << ": error = " << error << std::endl;
 	  }
 
 	// Check for convergence.
@@ -466,7 +455,7 @@ namespace BDF2 {
 	  {
 	    if (state.verbose) 
 	      {
-		//write(this%unit,fmt=2) itr, error
+		std::cout << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
 	      }
 	    errc = 0;
 	    return;

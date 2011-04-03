@@ -32,6 +32,10 @@ namespace BDF2 {
 
     void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc);
 
+    double most_recent_time() 
+    {
+      return state.uhist->most_recent_time();
+    }
 
   private:
 

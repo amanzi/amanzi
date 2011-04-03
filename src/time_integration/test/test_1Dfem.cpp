@@ -31,6 +31,7 @@ public:
     nodal_map = new Epetra_BlockMap(nnode, 1, 1,*comm);
     cell_map = new Epetra_BlockMap(nnode-1, 1, 1, *comm);
     cell_map_3 = new Epetra_BlockMap(nnode-1, 3, 1, *comm); // 3 elements per entry
+    nodal_map_3 = new Epetra_BlockMap(nnode, 3, 1, *comm);
 
     // create equi-spaced mesh
     mesh = new Epetra_Vector(*nodal_map);
@@ -48,13 +49,16 @@ public:
       }
     (*mesh)[n-1] = x1;
 
-    jac = new Epetra_Vector(*cell_map_3,n-1);
-    m = new Epetra_Vector(*cell_map_3,n-1);
+    jac = new Epetra_Vector(*nodal_map_3);
 
   }
 
   void fun(double t, Epetra_Vector& u, Epetra_Vector& udot, Epetra_Vector& f) 
   {
+    ASSERT(udot.MyLength() == n);
+    ASSERT(u.MyLength() == n);
+    ASSERT(f.MyLength() == n);
+
     Epetra_Vector a(*cell_map);
 
     
@@ -68,7 +72,7 @@ public:
       }
     f[n-2] = f[n-2] + ((*dx)[n-2]/3.0)*udot[n-2] - (a[n-2]/(*dx)[n-2])*(u_right - u[n-2]);
     
-    f[1] = u[1] - u_left;
+    f[0] = u[0] - u_left;
     f[n-1] = u[n-1] - u_right;
     
   }
@@ -76,16 +80,11 @@ public:
   
   void precon(Epetra_Vector& u, Epetra_Vector& Pu) 
   {
-    // Precondition the function.
-    double **jacv;
-    jac->ExtractView(jacv);
+    ASSERT(u.MyLength() == Pu.MyLength());
 
-    double **uv;
-    u.ExtractView(uv);
-
-    tdsolve (jacv[0], uv[0], n);
+    tdsolve (*jac, u, 0);
+    
     Pu = u;
-      
   }
   
   double enorm(Epetra_Vector& u, Epetra_Vector& du) 
@@ -142,10 +141,8 @@ public:
     (*jac)[IND(0,n-1)] = 0.0;
     (*jac)[IND(2,n-2)] = 0.0;
 
-    double **jacv;
-    jac->ExtractView(jacv);
     
-    tdfactor (jacv[0], n);
+    tdfactor (*jac, 0);
 
     errc = 0;
     
@@ -167,6 +164,8 @@ public:
   
   void eval_diff_coef (Epetra_Vector& u, Epetra_Vector& a)
   {
+    ASSERT(a.MyLength() == n-1);
+    
     switch (prob)
       {
       case 1: 
@@ -175,10 +174,8 @@ public:
       case 2:
 	for (int j=0; j<n-1; j++)
 	  {
-	    a[j] = d + std::max<double>(0.0, 0.5*(u[j]+u[j+1]));
-	  }
+	    a[j] = d + std::max<double>(0.0, 0.5*(u[j]+u[j+1]));	  }
 	break;
-	
       }	
     
   }
@@ -187,9 +184,10 @@ public:
   void eval_mass_matrix(Epetra_Vector& dx, Epetra_Vector& m)
   {
     ASSERT(dx.MyLength() == n-1);
+    ASSERT(3*(dx.MyLength()+1) == m.MyLength());
     
     m[IND(1,0)] = 0.0;
-    for (int j=0; j<n-1; j++)
+    for (int j=0; j<dx.MyLength(); j++)
       {
 	m[IND(1,j)] = m[IND(1,j)] + dx[j]/3.0;
 	m[IND(2,j)] = dx[j]/6.0;
@@ -199,10 +197,10 @@ public:
   }
 
 
-  void tdfactor(double* a, int len)
+  void tdfactor(Epetra_Vector& a, int is)
   {
 
-    for (int j=1; j < len; j++)
+    for (int j=1+is; j < n-is; j++)
       {
 	a[IND(2,j-1)] = a[IND(2,j-1)]/a[IND(1,j-1)];
 	a[IND(1,j)]   = a[IND(1,j)] - a[IND(0,j)]*a[IND(2,j-1)];
@@ -211,28 +209,32 @@ public:
   }
 
   
-  void tdsolve(double* a, double* x, int len)
+  void tdsolve(Epetra_Vector& a, Epetra_Vector& x, int is)
   {
-    
+    ASSERT(a.MyLength() == 3*(x.MyLength()));
+
     // Forward substitution.
-    x[0] = x[0]/a[IND(1,0)];
-    for (int j = 1; j<=len-1; j++)
+    x[is] = x[is]/a[IND(1,is)];
+    for (int j = 1+is; j<=n-1-is; j++)
       {
 	x[j] = (x[j] - a[IND(0,j)]*x[j-1])/a[IND(1,j)];
       }
-    
+
     // Backward substitution.
-    for (int j = len-2; j>=0; j--)
+    for (int j = n-2-is; j>=is; j--)
       {
 	x[j] = x[j] - a[IND(2,j)]*x[j+1];
       }
-
   }
 
   
   void compute_udot(double t, Epetra_Vector& u, Epetra_Vector& udot)
   {
     Epetra_Vector a(*cell_map);
+    Epetra_Vector m(*nodal_map_3);
+
+    ASSERT(u.MyLength() == n);
+    ASSERT(udot.MyLength() == n);
     
     eval_diff_coef(u, a);
     udot[1] = - (a[0]/(*dx)[0])*(u[1] - u_left);
@@ -244,22 +246,20 @@ public:
     udot[n-2] = udot[n-2] + (a[n-2]/(*dx)[n-2])*(u_right - u[n-2]);
 
     // Evaluate the mass matrix.
-    eval_mass_matrix(*dx, *m);
+    eval_mass_matrix(*dx, m);
+
+
 
     // Solve for UDOT on the interior nodes only.
-    double **mv;
-    m->ExtractView(mv);
 
-    double **udotv;
-    udot.ExtractView(udotv);
-    
-    tdfactor (mv[0]+1, n-1);
-    tdsolve (mv[0]+1, udotv[0]+1, n-1);
+    tdfactor (m, 1);
+
+    tdsolve (m, udot, 1);
 
       // Time independent Dirichlet BV.
     udot[0] = 0.0;
-    udot[n-1] = 0.0;
-   
+    udot[n-1] = 0.0;   
+
   } 
 
 
@@ -270,10 +270,11 @@ public:
   
   Epetra_BlockMap* nodal_map;
   Epetra_BlockMap* cell_map;
+  Epetra_BlockMap* nodal_map_3;
   Epetra_BlockMap* cell_map_3;
 
+
   Epetra_Vector* mesh;
-  Epetra_Vector* m;
   Epetra_Vector* dx;
   
   double u_left, u_right;
@@ -292,7 +293,7 @@ public:
 
 TEST(Nodal_1D_FEM) {
 
-  nodal1Dfem NF (11, 0.0, 1.0, 10.0, 5.0, 2, 1.0, 0.0, 1.0e-5);
+  nodal1Dfem NF (201, 0.0, 1.0, 0.0, 0.0, 2, 0.0002, 0.0, 1.0e-5);
   
   Epetra_Vector u(*NF.nodal_map);
   
@@ -300,18 +301,32 @@ TEST(Nodal_1D_FEM) {
     u[j] = sin(4.0*atan(1.0)* (*NF.mesh)[j]);
 
   double t=0.0;
+  double tout = 0.2;
   
-  BDF2::Dae TS( NF, *NF.nodal_map, 10, 0.01, 2, 0.01);
+  BDF2::Dae TS( NF, *NF.nodal_map, 5, 0.01, 2, 0.05);
   
-  Epetra_Vector udot(*NF.nodal_map);
-  NF.compute_udot(t, u, udot);
+  Epetra_Vector *udot  = new Epetra_Vector(*NF.nodal_map);
+
+  NF.compute_udot(t, u, *udot);
 
   double h = 1.0e-5;
   double hnext;
 
-  TS.set_initial_state(t, u, udot);
+  TS.set_initial_state(t, u, *udot);
 
-  //TS.bdf2_step(h,0.0000001,10,u,hnext);
+  int i=0;
+  double tlast;
+  do {
+    
+    TS.bdf2_step(h,0.0,20,u,hnext);
+
+    TS.commit_solution(h,u);
+    
+    h = hnext;
+    i++;
+
+    tlast=TS.most_recent_time();
+  } while (tout >= tlast);
   
 	       
 
