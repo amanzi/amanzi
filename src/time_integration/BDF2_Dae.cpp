@@ -42,6 +42,9 @@ namespace BDF2 {
     state.init_solution_history(sh);
     
     state.verbose = plist.get<bool>("Verbose",false);
+
+    this->setLinePrefix("BDF2: ");
+
   }
 
   
@@ -103,7 +106,10 @@ namespace BDF2 {
     ASSERT(hmin<=h);
     ASSERT(mtries>=1);
 
-    
+    using Teuchos::OSTab;
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab    
 
     int tries = 0;
     do
@@ -130,9 +136,9 @@ namespace BDF2 {
 	if (errc == 0) return;
 
 	// Step failed; try again with the suggested step size.
-	if (state.verbose)
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
 	  {
-	    std::cout << "Changing H by a factor of " << hnext/h << std::endl;
+	    *out << "Changing H by a factor of " << hnext/h << std::endl;
 	  }
 	h = hnext;
       }
@@ -173,12 +179,17 @@ namespace BDF2 {
     double etah = 0.5 * h;
     double t0 = tlast + etah;
 
-    if (state.verbose) 
+    using Teuchos::OSTab;
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+    
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
       {
-	std::cout << "Trap step " << state.seq+1 << " tlast = " << tlast << " h = " << h << " etah = " << etah << std::endl;
+	*out << "Trap step " << state.seq+1 << " tlast = " << tlast << " h = " << h << " etah = " << etah << std::endl;
       }
-
-
+    
+    
     // Predicted solution and base point for the BCE step.
     Epetra_Vector u0(map);
 
@@ -191,18 +202,18 @@ namespace BDF2 {
     if (errc != 0)
       {
 	state.updpc_failed++;
-	if (state.verbose) 
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
 	  {
-	    std::cout << "Preconditioner update failed at T = " << t << "  ETAH = " << etah << std::endl;
+	    *out << "Preconditioner update failed at T = " << t << "  ETAH = " << etah << std::endl;
 	  }
 	hnext = 0.1 * h; // want to quickly find an acceptably small step size.
 	errc = -1;
 	return;
       }
-
-    if (state.verbose)
+    
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
       {
-	std::cout << "Preconditioner updated at T = " << t << " etah = " << etah << std::endl;
+	*out << "Preconditioner updated at T = " << t << " etah = " << etah << std::endl;
       }
     state.hpc = etah;
     state.usable_pc = true;
@@ -218,9 +229,9 @@ namespace BDF2 {
 	return;
       }
 
-    if (state.verbose) 
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
       {
-	std::cout << "Step accepted: no local error control" << std::endl;
+	*out << "Step accepted: no local error control" << std::endl;
       }
     state.freeze_count = 2;
     hnext = h;
@@ -240,9 +251,14 @@ namespace BDF2 {
     double etah = eta * h;
     double t0 = tlast + (1.0 - eta)*h;
 
-    if (state.verbose)
+    using Teuchos::OSTab;
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    OSTab tab = this->getOSTab(1,"TEST "); // This sets the line prefix and adds one tab
+
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
       {
-	std::cout << "BDF2 step " << state.seq+1 << " T = "<< tlast << " H = " << h << " ETAH = " << etah << std::endl;
+	*out << "BDF2 step " << state.seq+1 << " T = "<< tlast << " H = " << h << " ETAH = " << etah << std::endl;
       }
     bool fresh_pc = false;
 
@@ -272,18 +288,18 @@ namespace BDF2 {
 	    if (errc != 0)  // update failed; cut h and return error condition.
 	      { 
 		state.updpc_failed++;
-		if (state.verbose)
+		if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 		  {
-		    std::cout << "Preconditioner update failed, T = "<< t << " etah = " << etah << std::endl;
+		    *out << "Preconditioner update failed, T = "<< t << " etah = " << etah << std::endl;
 		  }
 		hnext = 0.5 * h;
 		errc = -1;
 		return;
 
 	      }
-	    if (state.verbose)
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {
-		std::cout << "Preconditioner updated at T = "<< t << " etah = " << etah <<std::endl;
+		*out << "Preconditioner updated at T = "<< t << " etah = " << etah <<std::endl;
 	      }
 	    state.hpc = etah;
 	    state.usable_pc = true;
@@ -328,19 +344,19 @@ namespace BDF2 {
 	double perr = fn.enorm(u, u0);
 	if (perr < 4.0) // accept the step.
 	  { 
-	    if (state.verbose)
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {
 
-		std::cout << "Step accepted, perr = " << perr <<std::endl;
+		*out << "Step accepted, perr = " << perr <<std::endl;
 	      }
 	    errc = 0;
 	  }
 	else  // reject the step; cut h and return error condition.
 	  {
 	    state.rejected_steps++;
-	    if (state.verbose) 
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {
-		std::cout << "Step REJECTED, perr = " << perr << std::endl;
+		*out << "Step REJECTED, perr = " << perr << std::endl;
 	      }
 	    hnext = 0.5 * h;
 	    state.freeze_count = 1;
@@ -368,9 +384,9 @@ namespace BDF2 {
       }
     else
       {
-	if (state.verbose) 
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	  {
-	    std::cout << "Step accepted: no local error control" << std::endl;
+	    *out << "Step accepted: no local error control" << std::endl;
 	  }
 	hnext = h;
 	errc = 0;
@@ -382,6 +398,11 @@ namespace BDF2 {
   void Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc)
   {
     
+    using Teuchos::OSTab;
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+
     fpa->nka_restart();
 
     int itr = 0;
@@ -400,9 +421,9 @@ namespace BDF2 {
 	// Check for too many nonlinear iterations.
 	if (itr >= state.mitr) 
 	  {
-	    if (state.verbose) 
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {
-		std::cout << "AIN BCE solve failed " << itr << " iterations (max), error = " << error << std::endl;
+		*out << "AIN BCE solve failed " << itr << " iterations (max), error = " << error << std::endl;
 	      }
 	    errc = 1;
 	    return;
@@ -434,17 +455,17 @@ namespace BDF2 {
 	u.Update(-1.0,du,1.0);
 	
 	error = fn.enorm(u, du); 
-	if (state.verbose) 
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	  {
-	    std::cout << itr << ": error = " << error << std::endl;
+	    *out << itr << ": error = " << error << std::endl;
 	  }
 
 	// Check for convergence.
 	if (((error < state.ntol) && (itr > 1)) || (error < 0.01 * state.ntol))
 	  {
-	    if (state.verbose) 
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {
-		std::cout << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
+		*out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
 	      }
 	    errc = 0;
 	    return;
@@ -483,8 +504,10 @@ namespace BDF2 {
 
 
 
-  void Dae::write_bdf2_stepping_statistics(std::ostringstream& oss)
+  void Dae::write_bdf2_stepping_statistics()
   {
+    std::ostringstream oss;
+    
     oss.flush();
     oss.setf(ios::scientific, ios::floatfield);
 
@@ -524,6 +547,17 @@ namespace BDF2 {
     oss.fill('0');
     oss.width(2);
     oss << right << state.rejected_steps; 
+
+
+    using Teuchos::OSTab;
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    OSTab tab = this->getOSTab(1,"TEST "); // This sets the line prefix and adds one tab
+    
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	
+      {
+	*out << oss.str() << std::endl;
+      }
   }
 
 }
