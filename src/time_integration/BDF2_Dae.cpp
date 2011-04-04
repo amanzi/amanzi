@@ -1,5 +1,6 @@
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Epetra_Vector.H"
 
 #include "BDF2_Dae.hpp"
@@ -13,45 +14,36 @@
 
 namespace BDF2 {
 
-  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_, int mitr, double ntol, int mvec, double vtol) :
-    fn(fn_), map(map_)
-  {
-    
-    int maxv;
-    
-    ASSERT(mitr>1);
-    state.mitr = mitr;
 
-    ASSERT(ntol>0.0);
-    ASSERT(ntol<1.0);
-    state.ntol = ntol;
+  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_, Teuchos::ParameterList& plist_) :
+    fn(fn_), map(map_), plist(plist_)
+  {
+    // make sure the parameter list is not empty
+    state.mitr = plist.get<int>("Nonlinear solver max iterations");
+    ASSERT(state.mitr>1);
+
+    state.ntol = plist.get<double>("Nonlinear solver tolerance");
+    ASSERT(state.ntol>0.0);
+    ASSERT(state.ntol<1.0);
     
-    maxv = state.mitr-1;
+    int maxv = state.mitr-1;
+    int mvec = plist.get<int>("NKA max vectors");
     ASSERT(mvec>0);
     maxv = std::min<int>(maxv,mvec);
     
     // Initialize the FPA structure.
     // first create a NOX::Epetra::Vector to initialize nka with
     NOX::Epetra::Vector init_vector( Epetra_Vector(map), NOX::ShapeCopy );
-
+    double vtol = plist.get<double>("NKA drop tolerance");
     fpa = new nka(maxv, vtol, init_vector); 
     
+    // create the solution history object
     SolutionHistory *sh = new SolutionHistory(3, map);
     state.init_solution_history(sh);
     
-    state.verbose = true;
+    state.verbose = plist.get<bool>("Verbose",false);
   }
 
-  
-  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_) :
-    fn(fn_), map(map_)
-  {
-    SolutionHistory *sh = new SolutionHistory(3, map);
-    
-    state.init_solution_history(sh);    
-  }
-
-  
   
   void Dae::commit_solution(const double h, const Epetra_Vector& u)
   {
@@ -247,9 +239,6 @@ namespace BDF2 {
     double eta = (state.hlast + h) / (state.hlast + 2.0 * h);
     double etah = eta * h;
     double t0 = tlast + (1.0 - eta)*h;
-
-
-    std::cout << "Dae::bdf2_step_gen\n";
 
     if (state.verbose)
       {

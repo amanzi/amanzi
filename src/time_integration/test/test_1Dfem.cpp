@@ -16,7 +16,7 @@
 #include "BDF2_fnBase.hpp"
 #include "BDF2_Dae.hpp"
 
-
+// 2D array index algebra for 3*n arrays
 #define IND(i,j) ((i)+3*(j))    
 
 class nodal1Dfem : public BDF2::fnBase 
@@ -293,27 +293,58 @@ public:
 
 TEST(Nodal_1D_FEM) {
 
-  nodal1Dfem NF (201, 0.0, 1.0, 0.0, 0.0, 2, 0.0002, 0.0, 1.0e-5);
+  // create the parameter list for BDF2
+  Teuchos::ParameterList plist;
+  plist.set<int>("Nonlinear solver max iterations", 10);
+  plist.set<double>("Nonlinear solver tolerance", 0.01);
+  plist.set<int>("NKA max vectors",5);
+  plist.set<double>("NKA drop tolerance",0.05);
+  plist.set<bool>("Verbose",false);
+
+
+  // set the parameters for this problem
+  int nnodes = 201;
+  double x0  = 0.0;
+  double x1  = 1.0;
+  double u0  = 0.0;
+  double u1  = 0.0;
+  int problem_number = 2;
+  double diff_coef = 0.0002;
+
+  // set parameters for the error function
+  double atol = 0.0;
+  double rtol = 1.0e-5;
   
+
+  // create the PDE problem
+  nodal1Dfem NF (nnodes, x0, x1, u0, u1, problem_number, diff_coef, atol, rtol);
+  
+  // create the time stepper
+  BDF2::Dae TS( NF, *NF.nodal_map, plist);
+  
+  // create the initial condition
   Epetra_Vector u(*NF.nodal_map);
-  
   for (int j=0; j< u.MyLength(); j++)
     u[j] = sin(4.0*atan(1.0)* (*NF.mesh)[j]);
 
+  // initial time
   double t=0.0;
-  double tout = 0.2;
-  
-  BDF2::Dae TS( NF, *NF.nodal_map, 5, 0.01, 2, 0.05);
-  
-  Epetra_Vector *udot  = new Epetra_Vector(*NF.nodal_map);
 
+  // final time
+  double tout = 0.2;
+
+  // create udot and compute its initial value
+  Epetra_Vector *udot  = new Epetra_Vector(*NF.nodal_map);
   NF.compute_udot(t, u, *udot);
 
+  // initial time step
   double h = 1.0e-5;
   double hnext;
 
+  // initialize the state of the time stepper
   TS.set_initial_state(t, u, *udot);
 
+  // iterate until the final time
   int i=0;
   double tlast;
   do {
@@ -327,6 +358,8 @@ TEST(Nodal_1D_FEM) {
 
     tlast=TS.most_recent_time();
   } while (tout >= tlast);
+
+  std::cout << "Final time = " << tlast << std::endl;
   
 	       
 

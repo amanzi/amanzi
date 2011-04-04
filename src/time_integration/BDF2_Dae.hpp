@@ -1,6 +1,8 @@
 #ifndef _BDF2_DAE_HPP_
 #define _BDF2_DAE_HPP_
 
+#include "Teuchos_ParameterList.hpp"
+
 #include "Epetra_Vector.h"
 #include "Epetra_BlockMap.h"
 
@@ -15,9 +17,8 @@ namespace BDF2 {
   class Dae {
 
   public:
-
-    Dae(fnBase& fn_, Epetra_BlockMap& map_, int mitr, double ntol, int mvec, double vtol); 
-    Dae(fnBase& fn_, Epetra_BlockMap& map_);
+    
+    Dae(fnBase& fn_, Epetra_BlockMap& map_, Teuchos::ParameterList& plist);
 
     void set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
 
@@ -32,7 +33,7 @@ namespace BDF2 {
 
     void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc);
 
-    double most_recent_time() 
+    const double most_recent_time() 
     {
       return state.uhist->most_recent_time();
     }
@@ -48,6 +49,8 @@ namespace BDF2 {
     fnBase& fn;
 
     Epetra_BlockMap& map;
+
+    Teuchos::ParameterList plist;
 
     // constants
     const static double RMIN = 0.25;
