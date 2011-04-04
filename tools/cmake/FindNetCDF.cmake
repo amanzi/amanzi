@@ -119,7 +119,7 @@ else(NetCDF_LIBRARIES AND NetCDF_INCLUDE_DIRS)
     if ( NetCDF_INCLUDE_DIR ) 
        
         set(netcdf_h "${NetCDF_INCLUDE_DIR}/netcdf.h" )
-        message(WARNING ${netcdf_h})
+        message(STATUS "NetCDF include file ${netcdf_h} will be searched for define values")
 
         file(STRINGS "${netcdf_h}" netcdf_max_dims_string REGEX "^#define NC_MAX_DIMS")
         string(REGEX REPLACE "[^0-9]" "" netcdf_max_dims "${netcdf_max_dims_string}")

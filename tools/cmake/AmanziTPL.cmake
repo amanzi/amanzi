@@ -4,7 +4,6 @@
 #
 
 # Standard CMake modules see CMAKE_ROOT/Modules
-include(CMakeDependentOption)
 include(FeatureSummary)
 
 # Amanzi CMake modules see <root source>/tools/cmake
@@ -171,12 +170,16 @@ set_feature_info(ExodusII
 ##############################################################################
 
 # Enable ALL possible mesh frameworks
-cmake_dependent_option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF
-                       "ENABLE_STK_Mesh;ENABLE_MOAB_Mesh;ENABLE_MSTK" ON) 
-set_feature_info(ALL_Mesh
-                 ENABLE_ALL_Mesh
-                 "Build all available mesh frameworks"
-                  )    
+#option(ENABLE_ALL_Mesh "Build all Amanzi mesh frameworks" OFF)
+#if(ENABLE_ALL_Mesh)
+#    set(ENABLE_STK_Mesh ON)
+#    set(ENABLE_MOAB_Mesh ON)
+#    set(ENABLE_MSTK_Mesh ON)
+#endif()    
+#set_feature_info(ALL_Mesh
+#                 ENABLE_ALL_Mesh
+#                 "Build all available mesh frameworks"
+#                  )    
 
 ##############################################################################
 # STK - Sierra Mesh Tool Kit part of Trilinos
@@ -205,17 +208,14 @@ endif()
 ##############################################################################
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
-#PRINT_VARIABLE(ENABLE_MSTK_Mesh)             
-#cmake_dependent_option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF
-#                       "ENABLE_METIS" ON )
-#set_feature_info(MSTK_Mesh
-#                 ENABLE_MSTK_Mesh
-#                 "A mesh framework"
-#                 )
-#PRINT_VARIABLE(ENABLE_MSTK_Mesh)             
-#if (ENABLE_MSTK_Mesh)
-#    find_package(MSTK REQUIRED)
-#endif() 
+option(ENABLE_MSTK_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
+set_feature_info(MSTK_Mesh
+                 ENABLE_MSTK_Mesh
+                 "A mesh framework"
+                 )
+if (ENABLE_MSTK_Mesh)
+    find_package(MSTK REQUIRED)
+endif() 
 
 
 
@@ -250,22 +250,3 @@ set_feature_info(UnitTest
 if (ENABLE_UnitTest)
     find_package(UnitTest)
 endif()    
-
-
-##############################################################################
-# METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
-##############################################################################
-option(ENABLE_METIS "Mesh partitioning library" OFF)
-set_feature_info(METIS
-                 ENABLE_METIS
-                 "Mesh partitioning library"
-                 )
-if (ENABLE_METIS)
-    find_package(METIS REQUIRED)
-endif() 
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 #ifndef _ELEMENT_CATEGORY_H_
 #define _ELEMENT_CATEGORY_H_
 
-namespace MOAB_mesh
+namespace MSTK_mesh
 {
 
 enum Element_Category

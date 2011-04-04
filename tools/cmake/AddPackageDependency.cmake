@@ -44,7 +44,7 @@ function(ADD_PACKAGE_DEPENDENCY)
 
     # Find required package
     message(STATUS "${target_package} depends on ${req_package}")
-    message(STATUS "Updatig ${target_package}_LIBRARIES and ${target_package}_INCLUDE_DIRS")
+    message(STATUS "Updating ${target_package}_LIBRARIES and ${target_package}_INCLUDE_DIRS")
     find_package(${req_package} REQUIRED)
     if( ${req_package}_LIBRARIES AND ${req_package}_INCLUDE_DIRS )
 
@@ -128,6 +128,7 @@ function(ADD_PACKAGE_DEPENDENCY)
 
             #  Neither list has keywords
             set(_save_lib_list "${${target_package}_LIBRARIES}" "${${req_package}_LIBRARIES}")
+            list(REMOVE_DUPLICATES _save_lib_list)
 
         endif()    
 
