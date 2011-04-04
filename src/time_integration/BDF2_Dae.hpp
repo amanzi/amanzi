@@ -5,6 +5,7 @@
 // that is part of LANL's Truchas code. 
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #include "Epetra_Vector.h"
 #include "Epetra_BlockMap.h"
@@ -18,8 +19,9 @@
 
 namespace BDF2 {
 
-  class Dae {
-
+  class Dae : public Teuchos::VerboseObject<Dae>
+  {
+    
   public:
     
     // Create the BDF2 Dae solver object, the nonlinear problem must
@@ -64,7 +66,7 @@ namespace BDF2 {
     }
 
     // write statistics about the time step
-    void write_bdf2_stepping_statistics(std::ostringstream& oss);
+    void write_bdf2_stepping_statistics();
 
   private:
 

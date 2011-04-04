@@ -5,6 +5,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
@@ -306,6 +307,7 @@ TEST(Nodal_1D_FEM) {
   
   // create the time stepper
   BDF2::Dae TS( NF, *NF.nodal_map, plist);
+  TS.setVerbLevel(Teuchos::VERB_NONE);
   
   // create the initial condition
   Epetra_Vector u(*NF.nodal_map);
@@ -338,9 +340,7 @@ TEST(Nodal_1D_FEM) {
 
     TS.commit_solution(h,u);
     
-    std::ostringstream oss;
-    TS.write_bdf2_stepping_statistics(oss);
-    std::cout << oss.str() << std::endl;
+    TS.write_bdf2_stepping_statistics();
 
     h = hnext;
     i++;
