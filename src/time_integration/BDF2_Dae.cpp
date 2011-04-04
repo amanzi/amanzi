@@ -1,10 +1,14 @@
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+
 #include "NOX_Epetra_Vector.H"
 
 #include "BDF2_Dae.hpp"
 #include "BDF2_SolutionHistory.hpp"
 #include "BDF2_fnBase.hpp"
+#include "BDF2_PListValidator.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -13,45 +17,33 @@
 
 namespace BDF2 {
 
-  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_, int mitr, double ntol, int mvec, double vtol) :
-    fn(fn_), map(map_)
+  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_, Teuchos::ParameterList& plist_) :
+    fn(fn_), map(map_), plist(plist_)
   {
-    
-    int maxv;
-    
-    ASSERT(mitr>1);
-    state.mitr = mitr;
+    // validate the paramter list...
+    validate_parameter_list();
 
-    ASSERT(ntol>0.0);
-    ASSERT(ntol<1.0);
-    state.ntol = ntol;
+    // read the parameter list
+    state.mitr = plist.get<int>("Nonlinear solver max iterations");
+    state.ntol = plist.get<double>("Nonlinear solver tolerance");
     
-    maxv = state.mitr-1;
-    ASSERT(mvec>0);
-    maxv = std::min<int>(maxv,mvec);
+    int maxv = state.mitr-1;
+    int mvec = plist.get<int>("NKA max vectors");
+     maxv = std::min<int>(maxv,mvec);
     
     // Initialize the FPA structure.
     // first create a NOX::Epetra::Vector to initialize nka with
     NOX::Epetra::Vector init_vector( Epetra_Vector(map), NOX::ShapeCopy );
-
+    double vtol = plist.get<double>("NKA drop tolerance");
     fpa = new nka(maxv, vtol, init_vector); 
     
+    // create the solution history object
     SolutionHistory *sh = new SolutionHistory(3, map);
     state.init_solution_history(sh);
     
-    state.verbose = true;
+    state.verbose = plist.get<bool>("Verbose",false);
   }
 
-  
-  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_) :
-    fn(fn_), map(map_)
-  {
-    SolutionHistory *sh = new SolutionHistory(3, map);
-    
-    state.init_solution_history(sh);    
-  }
-
-  
   
   void Dae::commit_solution(const double h, const Epetra_Vector& u)
   {
@@ -247,9 +239,6 @@ namespace BDF2 {
     double eta = (state.hlast + h) / (state.hlast + 2.0 * h);
     double etah = eta * h;
     double t0 = tlast + (1.0 - eta)*h;
-
-
-    std::cout << "Dae::bdf2_step_gen\n";
 
     if (state.verbose)
       {
@@ -471,5 +460,70 @@ namespace BDF2 {
   }
 
 
+  void Dae::validate_parameter_list()
+  {
+    // create the parameter list validator
+    Teuchos::RCP<const BDF2::PListValidator> plist_validator
+      = Teuchos::rcp(new BDF2::PListValidator());
+    
+    // get the array of valid parameter names
+    Teuchos::RCP<const Teuchos::Array<std::string> > valid_pnames 
+      = plist_validator->validStringValues();
+    
+    // loop over valid parameter names, and validate the paramter list entries
+    // here we assume that all parameters must exist in the paramter list
+    for (Teuchos::Array<std::string>::const_iterator pname = valid_pnames->begin();
+	 pname != valid_pnames->end(); 
+	 pname++)
+       {
+	 Teuchos::ParameterEntry entry = plist.getEntry(*pname);
+	 plist_validator->validate(entry,*pname,plist.name()); 	
+       }
+  }
 
- }
+
+
+  void Dae::write_bdf2_stepping_statistics(std::ostringstream& oss)
+  {
+    oss.flush();
+    oss.setf(ios::scientific, ios::floatfield);
+
+    oss << "STEP=";
+    oss.fill('0');
+    oss.width(5);
+    oss << right << state.seq;
+    oss << " T=";
+    oss.precision(5);
+    oss.width(11);
+    oss << left << state.uhist->most_recent_time();
+    oss << " H=";
+    oss.precision(5);
+    oss.width(11);
+    oss << left << state.hlast;
+    oss << " NFUN:NPC=";
+    oss.fill('0');
+    oss.width(4);
+    oss << right << state.pcfun_calls;
+    oss << ":";
+    oss.fill('0');
+    oss.width(4);
+    oss << right << state.updpc_calls;
+    oss << " NPCF:NNR:NNF:NSR=";
+    oss.fill('0');
+    oss.width(4);
+    oss << right << state.pcfun_calls;
+    oss << ":";
+    oss.fill('0');
+    oss.width(2);
+    oss << state.retried_bce;
+    oss << ":";
+    oss.fill('0');
+    oss.width(2);
+    oss << right << state.failed_bce;
+    oss << ":";
+    oss.fill('0');
+    oss.width(2);
+    oss << right << state.rejected_steps; 
+  }
+
+}
