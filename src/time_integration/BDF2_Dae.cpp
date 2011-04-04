@@ -1,11 +1,14 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+
 #include "NOX_Epetra_Vector.H"
 
 #include "BDF2_Dae.hpp"
 #include "BDF2_SolutionHistory.hpp"
 #include "BDF2_fnBase.hpp"
+#include "BDF2_PListValidator.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -14,22 +17,19 @@
 
 namespace BDF2 {
 
-
   Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_, Teuchos::ParameterList& plist_) :
     fn(fn_), map(map_), plist(plist_)
   {
-    // make sure the parameter list is not empty
-    state.mitr = plist.get<int>("Nonlinear solver max iterations");
-    ASSERT(state.mitr>1);
+    // validate the paramter list...
+    validate_parameter_list();
 
+    // read the parameter list
+    state.mitr = plist.get<int>("Nonlinear solver max iterations");
     state.ntol = plist.get<double>("Nonlinear solver tolerance");
-    ASSERT(state.ntol>0.0);
-    ASSERT(state.ntol<1.0);
     
     int maxv = state.mitr-1;
     int mvec = plist.get<int>("NKA max vectors");
-    ASSERT(mvec>0);
-    maxv = std::min<int>(maxv,mvec);
+     maxv = std::min<int>(maxv,mvec);
     
     // Initialize the FPA structure.
     // first create a NOX::Epetra::Vector to initialize nka with
@@ -460,5 +460,27 @@ namespace BDF2 {
   }
 
 
+  void Dae::validate_parameter_list()
+  {
+    // create the parameter list validator
+    Teuchos::RCP<const BDF2::PListValidator> plist_validator
+      = Teuchos::rcp(new BDF2::PListValidator());
+    
+    // get the array of valid parameter names
+    Teuchos::RCP<const Teuchos::Array<std::string> > valid_pnames 
+      = plist_validator->validStringValues();
+    
+    // loop over valid parameter names, and validate the paramter list entries
+    // here we assume that all parameters must exist in the paramter list
+    for (Teuchos::Array<std::string>::const_iterator pname = valid_pnames->begin();
+	 pname != valid_pnames->end(); 
+	 pname++)
+       {
+	 Teuchos::ParameterEntry entry = plist.getEntry(*pname);
+	 plist_validator->validate(entry,*pname,plist.name()); 	
+       }
+  }
 
- }
+
+
+}

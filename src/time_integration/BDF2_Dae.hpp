@@ -10,6 +10,7 @@
 
 #include "BDF2_State.hpp"
 #include "BDF2_fnBase.hpp"
+#include "BDF2_PListValidator.hpp"
 
 
 namespace BDF2 {
@@ -39,6 +40,8 @@ namespace BDF2 {
     }
 
   private:
+
+    void validate_parameter_list();
 
     double rmin; 
     double rmax; 

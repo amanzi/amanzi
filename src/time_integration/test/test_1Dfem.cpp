@@ -15,6 +15,7 @@
 
 #include "BDF2_fnBase.hpp"
 #include "BDF2_Dae.hpp"
+#include "BDF2_PListValidator.hpp"
 
 // 2D array index algebra for 3*n arrays
 #define IND(i,j) ((i)+3*(j))    
@@ -28,10 +29,10 @@ public:
   {
     // create the Epetra map for the nodal values
     Epetra_Comm* comm = new Epetra_SerialComm();
-    nodal_map = new Epetra_BlockMap(nnode, 1, 1,*comm);
-    cell_map = new Epetra_BlockMap(nnode-1, 1, 1, *comm);
-    cell_map_3 = new Epetra_BlockMap(nnode-1, 3, 1, *comm); // 3 elements per entry
-    nodal_map_3 = new Epetra_BlockMap(nnode, 3, 1, *comm);
+    nodal_map = new Epetra_BlockMap(nnode, 1, 0,*comm);
+    cell_map = new Epetra_BlockMap(nnode-1, 1, 0, *comm);
+    cell_map_3 = new Epetra_BlockMap(nnode-1, 3, 0, *comm); // 3 elements per entry
+    nodal_map_3 = new Epetra_BlockMap(nnode, 3, 0, *comm);
 
     // create equi-spaced mesh
     mesh = new Epetra_Vector(*nodal_map);
@@ -295,11 +296,14 @@ TEST(Nodal_1D_FEM) {
 
   // create the parameter list for BDF2
   Teuchos::ParameterList plist;
-  plist.set<int>("Nonlinear solver max iterations", 10);
-  plist.set<double>("Nonlinear solver tolerance", 0.01);
-  plist.set<int>("NKA max vectors",5);
-  plist.set<double>("NKA drop tolerance",0.05);
-  plist.set<bool>("Verbose",false);
+  //Teuchos::RCP<const BDF2::PListValidator> pval = 
+  //  Teuchos::rcp(new BDF2::PListValidator());
+  //std::string docstring;
+  plist.set("Nonlinear solver max iterations", 10);
+  plist.set("Nonlinear solver tolerance", 0.01);
+  plist.set("NKA max vectors",5);
+  plist.set("NKA drop tolerance",0.05);
+  plist.set("Verbose",false);
 
 
   // set the parameters for this problem
@@ -359,8 +363,10 @@ TEST(Nodal_1D_FEM) {
     tlast=TS.most_recent_time();
   } while (tout >= tlast);
 
-  std::cout << "Final time = " << tlast << std::endl;
   
-	       
+  CHECK_EQUAL(i,276);
+  CHECK_CLOSE(tlast,0.20376307741675311,1.0e-15);
+
+
 
 }
