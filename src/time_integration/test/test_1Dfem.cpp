@@ -150,19 +150,6 @@ public:
 
   }
 
-
-
-
-
-
-
-
-
-
-
-
-  //private:
-  
   void eval_diff_coef (Epetra_Vector& u, Epetra_Vector& a)
   {
     ASSERT(a.MyLength() == n-1);
@@ -263,12 +250,6 @@ public:
 
   } 
 
-
-
-
-
-
-  
   Epetra_BlockMap* nodal_map;
   Epetra_BlockMap* cell_map;
   Epetra_BlockMap* nodal_map_3;
@@ -357,6 +338,10 @@ TEST(Nodal_1D_FEM) {
 
     TS.commit_solution(h,u);
     
+    std::ostringstream oss;
+    TS.write_bdf2_stepping_statistics(oss);
+    std::cout << oss.str() << std::endl;
+
     h = hnext;
     i++;
 

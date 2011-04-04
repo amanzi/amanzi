@@ -483,4 +483,47 @@ namespace BDF2 {
 
 
 
+  void Dae::write_bdf2_stepping_statistics(std::ostringstream& oss)
+  {
+    oss.flush();
+    oss.setf(ios::scientific, ios::floatfield);
+
+    oss << "STEP=";
+    oss.fill('0');
+    oss.width(5);
+    oss << right << state.seq;
+    oss << " T=";
+    oss.precision(5);
+    oss.width(11);
+    oss << left << state.uhist->most_recent_time();
+    oss << " H=";
+    oss.precision(5);
+    oss.width(11);
+    oss << left << state.hlast;
+    oss << " NFUN:NPC=";
+    oss.fill('0');
+    oss.width(4);
+    oss << right << state.pcfun_calls;
+    oss << ":";
+    oss.fill('0');
+    oss.width(4);
+    oss << right << state.updpc_calls;
+    oss << " NPCF:NNR:NNF:NSR=";
+    oss.fill('0');
+    oss.width(4);
+    oss << right << state.pcfun_calls;
+    oss << ":";
+    oss.fill('0');
+    oss.width(2);
+    oss << state.retried_bce;
+    oss << ":";
+    oss.fill('0');
+    oss.width(2);
+    oss << right << state.failed_bce;
+    oss << ":";
+    oss.fill('0');
+    oss.width(2);
+    oss << right << state.rejected_steps; 
+  }
+
 }

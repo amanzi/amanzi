@@ -41,8 +41,8 @@ namespace BDF2 {
       ASSERT(sh);
       uhist = sh;
     }
-      
-     
+
+    
     int       seq;          // number of steps taken
     double    hlast;        // last step size
     double    hpc;          // step size built into the current preconditioner

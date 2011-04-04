@@ -39,6 +39,8 @@ namespace BDF2 {
       return state.uhist->most_recent_time();
     }
 
+    void write_bdf2_stepping_statistics(std::ostringstream& oss);
+
   private:
 
     void validate_parameter_list();
