@@ -1,12 +1,19 @@
 #ifndef _BDF2_SOLUTION_HISTORY_H_
 #define _BDF2_SOLUTION_HISTORY_H_
 
+// This class is based on Neil Carlson's SOLUTION_HISTORY
+// module that is part of LANL's Truchas code.
+
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
 
 namespace BDF2 {
+
+  // The BDF2::SolutionHistory class stores the solution history 
+  // of the time stepper and provides interpolation methods
+  // that are used in the BDF2::Dae object.
 
   class SolutionHistory {
 
@@ -91,7 +98,7 @@ namespace BDF2 {
 
     int nvec;
     std::vector<double> times;                   // times
-    std::vector<Teuchos::RCP<Epetra_Vector> > d; // divided differences
+    std::vector<Teuchos::RCP<Epetra_Vector> > d; // divided(?) differences
 
   };
 }

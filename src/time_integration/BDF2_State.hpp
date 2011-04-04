@@ -1,6 +1,9 @@
 #ifndef _BDF2_STATE_HPP_
 #define _BDF2_STATE_HPP_
 
+// This class is based on Neil Carlson's BDF2_DAE module 
+// that is part of LANL's Truchas code. 
+
 #include "dbc.hh"
 #include "BDF2_SolutionHistory.hpp"
 #include <limits>
