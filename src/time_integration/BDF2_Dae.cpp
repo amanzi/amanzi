@@ -2,13 +2,14 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #include "NOX_Epetra_Vector.H"
 
 #include "BDF2_Dae.hpp"
 #include "BDF2_SolutionHistory.hpp"
 #include "BDF2_fnBase.hpp"
-#include "BDF2_PListValidator.hpp"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -17,32 +18,9 @@
 
 namespace BDF2 {
 
-  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_, Teuchos::ParameterList& plist_) :
-    fn(fn_), map(map_), plist(plist_)
+  Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_) :
+    fn(fn_), map(map_)
   {
-    // validate the paramter list...
-    validate_parameter_list();
-
-    // read the parameter list
-    state.mitr = plist.get<int>("Nonlinear solver max iterations");
-    state.ntol = plist.get<double>("Nonlinear solver tolerance");
-    
-    int maxv = state.mitr-1;
-    int mvec = plist.get<int>("NKA max vectors");
-     maxv = std::min<int>(maxv,mvec);
-    
-    // Initialize the FPA structure.
-    // first create a NOX::Epetra::Vector to initialize nka with
-    NOX::Epetra::Vector init_vector( Epetra_Vector(map), NOX::ShapeCopy );
-    double vtol = plist.get<double>("NKA drop tolerance");
-    fpa = new nka(maxv, vtol, init_vector); 
-    
-    // create the solution history object
-    SolutionHistory *sh = new SolutionHistory(3, map);
-    state.init_solution_history(sh);
-    
-    state.verbose = plist.get<bool>("Verbose",false);
-
     // set the line prefix for output
     this->setLinePrefix("BDF2::Dae");
     
@@ -50,6 +28,98 @@ namespace BDF2 {
     this->getOStream()->setShowLinePrefix(true);
 
   }
+
+
+  void Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
+  {
+    TEST_FOR_EXCEPT(is_null(paramList));
+
+    // Validate and set the parameter defaults.  Here, the parameters are
+    // validated and the state of *this is not changed unless the parameter
+    // validation succeeds.  Also, any validators that are defined for various
+    // parameters are passed along so that they can be used in extracting
+    // values!
+
+    paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
+    paramList_ = paramList;
+
+    // make sure that the parameter list is actually valid (this is probably redundant)
+    paramList_->validateParameters(*this->getValidParameters());
+
+    // read the parameter list and initialize the class
+    state.mitr = paramList_->get<int>("Nonlinear solver max iterations");
+    state.ntol = paramList_->get<double>("Nonlinear solver tolerance");
+    
+    int maxv = state.mitr-1;
+    int mvec = paramList_->get<int>("NKA max vectors");
+    maxv = std::min<int>(maxv,mvec);
+    
+    // Initialize the FPA structure.
+    // first create a NOX::Epetra::Vector to initialize nka with
+    NOX::Epetra::Vector init_vector( Epetra_Vector(map), NOX::ShapeCopy );
+    double vtol = paramList_->get<double>("NKA drop tolerance");
+    fpa = new nka(maxv, vtol, init_vector); 
+    
+    // create the solution history object
+    SolutionHistory *sh = new SolutionHistory(3, map);
+    state.init_solution_history(sh);    
+
+    // Read the sublist for verbosity settings.
+    Teuchos::readVerboseObjectSublist(&*paramList_,this);
+
+  }
+
+  Teuchos::RCP<Teuchos::ParameterList> Dae::getNonconstParameterList()
+  {
+    return paramList_;
+  }
+  
+  
+  Teuchos::RCP<Teuchos::ParameterList> Dae::unsetParameterList()
+  {
+    Teuchos::RCP<Teuchos::ParameterList> paramList = paramList_;
+    paramList_ = Teuchos::null;
+    return paramList;
+  }
+  
+  
+  Teuchos::RCP<const Teuchos::ParameterList> Dae::getParameterList() const
+  {
+    return paramList_;
+  }
+
+  Teuchos::RCP<const Teuchos::ParameterList> Dae::getValidParameters() const
+  {
+    using Teuchos::RCP; 
+    using Teuchos::ParameterList;
+    using Teuchos::setStringToIntegralParameter;
+    using Teuchos::tuple;
+    static RCP<const ParameterList> validParams;
+    if (is_null(validParams)) {
+      RCP<ParameterList> 
+	pl = Teuchos::rcp(new ParameterList("Time Stepping"));
+      Teuchos::setIntParameter("Nonlinear solver max iterations", 
+			       10,
+			       "The maximum number of nonlinear iterations per invocation of the nonlinear solver.",
+			       &*pl);
+      Teuchos::setIntParameter("NKA max vectors",
+			       5,
+			       "The size of the vectorspace for the nonlinear Krylov accelerator.",
+			       &*pl);
+      Teuchos::setDoubleParameter("Nonlinear solver tolerance",
+				  0.001,
+				  "The tolerance for the nonlinear solver.",
+				  &*pl);
+      Teuchos::setDoubleParameter("NKA drop tolerance",
+				  0.05,
+				  "Drop tolerance for the nonlinear Krylov accelerator.",
+				  &*pl);
+      Teuchos::setupVerboseObjectSublist(&*pl);
+      validParams = pl;
+    }
+    return validParams;
+  }
+  
 
   
   void Dae::commit_solution(const double h, const Epetra_Vector& u)
@@ -517,29 +587,6 @@ namespace BDF2 {
     while (true);
 
   }
-
-
-  void Dae::validate_parameter_list()
-  {
-    // create the parameter list validator
-    Teuchos::RCP<const BDF2::PListValidator> plist_validator
-      = Teuchos::rcp(new BDF2::PListValidator());
-    
-    // get the array of valid parameter names
-    Teuchos::RCP<const Teuchos::Array<std::string> > valid_pnames 
-      = plist_validator->validStringValues();
-    
-    // loop over valid parameter names, and validate the paramter list entries
-    // here we assume that all parameters must exist in the paramter list
-    for (Teuchos::Array<std::string>::const_iterator pname = valid_pnames->begin();
-	 pname != valid_pnames->end(); 
-	 pname++)
-       {
-	 Teuchos::ParameterEntry entry = plist.getEntry(*pname);
-	 plist_validator->validate(entry,*pname,plist.name()); 	
-       }
-  }
-
 
 
   void Dae::write_bdf2_stepping_statistics()

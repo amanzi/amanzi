@@ -6,6 +6,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
 
 #include "Epetra_Vector.h"
 #include "Epetra_BlockMap.h"
@@ -14,12 +15,12 @@
 
 #include "BDF2_State.hpp"
 #include "BDF2_fnBase.hpp"
-#include "BDF2_PListValidator.hpp"
 
 
 namespace BDF2 {
 
-  class Dae : public Teuchos::VerboseObject<Dae>
+  class Dae : public Teuchos::VerboseObject<Dae>,
+	      public Teuchos::ParameterListAcceptor
   {
     
   public:
@@ -30,7 +31,7 @@ namespace BDF2 {
     // The map is passed in, so that the BDF2 Dae stepper knows what
     // kind of Epetra_Vector is needs to work with.
     // The parameter list plist is checked for validity in the constructor.
-    Dae(fnBase& fn_, Epetra_BlockMap& map_, Teuchos::ParameterList& plist);
+    Dae(fnBase& fn_, Epetra_BlockMap& map_);
 
     // initializes the state of the BDF2 stepper
     void set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
@@ -68,9 +69,15 @@ namespace BDF2 {
     // write statistics about the time step
     void write_bdf2_stepping_statistics();
 
-  private:
+    // Overridden from ParameterListAccpetor
+    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const&) ;
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() ;
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-    void validate_parameter_list();
+
+  private:
 
     double rmin; 
     double rmax; 
@@ -82,7 +89,7 @@ namespace BDF2 {
 
     Epetra_BlockMap& map;
 
-    Teuchos::ParameterList plist;
+    Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
     // constants
     const static double RMIN = 0.25;

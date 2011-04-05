@@ -16,7 +16,7 @@
 
 #include "BDF2_fnBase.hpp"
 #include "BDF2_Dae.hpp"
-#include "BDF2_PListValidator.hpp"
+
 
 // 2D array index algebra for 3*n arrays
 #define IND(i,j) ((i)+3*(j))    
@@ -280,16 +280,14 @@ public:
 TEST(Nodal_1D_FEM) {
 
   // create the parameter list for BDF2
-  Teuchos::ParameterList plist;
-  //Teuchos::RCP<const BDF2::PListValidator> pval = 
-  //  Teuchos::rcp(new BDF2::PListValidator());
-  //std::string docstring;
-  plist.set("Nonlinear solver max iterations", 10);
-  plist.set("Nonlinear solver tolerance", 0.01);
-  plist.set("NKA max vectors",5);
-  plist.set("NKA drop tolerance",0.05);
-  plist.set("Verbose",false);
-
+  Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(new Teuchos::ParameterList());
+  plist->set("Nonlinear solver max iterations", 10);
+  plist->set("Nonlinear solver tolerance", 0.01);
+  plist->set("NKA max vectors",5);
+  plist->set("NKA drop tolerance",0.05);
+  Teuchos::ParameterList& verblist = plist->sublist("VerboseObject");
+  
+  verblist.set("Verbosity Level","none");
 
   // set the parameters for this problem
   int nnodes = 201;
@@ -309,8 +307,8 @@ TEST(Nodal_1D_FEM) {
   nodal1Dfem NF (nnodes, x0, x1, u0, u1, problem_number, diff_coef, atol, rtol);
   
   // create the time stepper
-  BDF2::Dae TS( NF, *NF.nodal_map, plist);
-  TS.setVerbLevel(Teuchos::VERB_HIGH);
+  BDF2::Dae TS( NF, *NF.nodal_map);
+  TS.setParameterList(plist);
   
   // create the initial condition
   Epetra_Vector u(*NF.nodal_map);
