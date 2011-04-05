@@ -24,6 +24,10 @@ namespace BDF2 {
     // updates the preconditioner
     virtual void update_precon(double t, Epetra_Vector& up, double h, int& errc) = 0;
    
+    // check the admissibility of a solution
+    // override with the actual admissibility check
+    bool check_admissibility(double t, Epetra_Vector& up) { return true; }
+
   };
 
 }
