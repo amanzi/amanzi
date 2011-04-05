@@ -26,7 +26,7 @@ namespace BDF2 {
    
     // check the admissibility of a solution
     // override with the actual admissibility check
-    bool is_admissible(Epetra_Vector& up) { return true; }
+    virtual bool is_admissible(Epetra_Vector& up) { return true; }
 
   };
 

@@ -109,6 +109,7 @@ public:
     
   }
 
+
   void update_precon(double t, Epetra_Vector& up, double h, int& errc) 
   {
     
@@ -150,6 +151,13 @@ public:
     
 
   }
+
+  bool is_admissible(Epetra_Vector& u)
+  {
+      return true;
+  }
+
+
 
   void eval_diff_coef (Epetra_Vector& u, Epetra_Vector& a)
   {
