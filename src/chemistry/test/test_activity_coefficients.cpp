@@ -124,7 +124,7 @@ SUITE(GeochemistryTestsActivityModels)
     set_activity_model_name(ActivityModelFactory::unit);
     double gamma;
     RunTest("H+", &gamma);
-    std::cout << "ionic strength: " << ionic_strength() << std::endl;
+    //std::cout << "ionic strength: " << ionic_strength() << std::endl;
     CHECK_CLOSE(0.025, ionic_strength(), tolerance());
   }  // end TEST_FIXTURE()
 
