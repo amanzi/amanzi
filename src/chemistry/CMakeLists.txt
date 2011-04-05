@@ -52,6 +52,7 @@ if (BUILD_TESTS)
 
   add_executable(chemistry_tests
 		 test/Main.cc
+		 test/test_string_tokenizer.cpp
 		 test/test_chemistry_exceptions.cpp
 		 test/test_species.cpp
 		 test/test_ion_exchange_site.cpp
