@@ -91,11 +91,6 @@ public:
   
   double enorm(Epetra_Vector& u, Epetra_Vector& du) 
   {
-    Epetra_Vector tmp1(u);
-    Epetra_Vector tmp2(u);
-    Epetra_Vector tmp3(u);
-
-
 
     double en = 0.0;
     for (int j=0; j<u.MyLength(); j++)
@@ -315,7 +310,7 @@ TEST(Nodal_1D_FEM) {
   
   // create the time stepper
   BDF2::Dae TS( NF, *NF.nodal_map, plist);
-  TS.setVerbLevel(Teuchos::VERB_LOW);
+  TS.setVerbLevel(Teuchos::VERB_HIGH);
   
   // create the initial condition
   Epetra_Vector u(*NF.nodal_map);

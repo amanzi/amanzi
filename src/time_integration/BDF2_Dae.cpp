@@ -572,11 +572,11 @@ namespace BDF2 {
     oss << " NPCF:NNR:NNF:NSR=";
     oss.fill('0');
     oss.width(4);
-    oss << right << state.pcfun_calls;
+    oss << right << state.updpc_failed;
     oss << ":";
     oss.fill('0');
     oss.width(2);
-    oss << state.retried_bce;
+    oss << right << state.retried_bce;
     oss << ":";
     oss.fill('0');
     oss.width(2);
