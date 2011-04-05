@@ -307,7 +307,7 @@ TEST(Nodal_1D_FEM) {
   
   // create the time stepper
   BDF2::Dae TS( NF, *NF.nodal_map, plist);
-  TS.setVerbLevel(Teuchos::VERB_NONE);
+  TS.setVerbLevel(Teuchos::VERB_LOW);
   
   // create the initial condition
   Epetra_Vector u(*NF.nodal_map);

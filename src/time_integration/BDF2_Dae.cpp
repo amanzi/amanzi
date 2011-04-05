@@ -43,7 +43,11 @@ namespace BDF2 {
     
     state.verbose = plist.get<bool>("Verbose",false);
 
-    this->setLinePrefix("BDF2: ");
+    // set the line prefix for output
+    this->setLinePrefix("BDF2::Dae");
+    
+    // make sure that the line prefix is printed
+    this->getOStream()->setShowLinePrefix(true);
 
   }
 
@@ -254,7 +258,7 @@ namespace BDF2 {
     using Teuchos::OSTab;
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    OSTab tab = this->getOSTab(1,"TEST "); // This sets the line prefix and adds one tab
+    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
       {
@@ -276,6 +280,34 @@ namespace BDF2 {
     
     state.uhist->interpolate_solution(t,  up, 2);
     state.uhist->interpolate_solution(t0, u0, 1);
+
+    // check the predicted solution for admissibility 
+    // and update preconditioner/halve time step if not
+    if ( ! fn.is_admissible(up) )
+      { 
+	state.updpc_calls++;
+	fn.update_precon(t, up, etah, errc);
+	if ( errc != 0) // update failed
+	  {
+	    state.updpc_failed++;
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
+	      {
+		*out << "Preconditioner update FAILED at T=" << t << ", ETAH=" << etah << std::endl;
+	      }
+	    hnext = 0.5 * h;
+	    
+	    errc = -1;
+	    return;
+	  }
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
+	  {
+	    *out << "Preconditioner updated at T=" << t << ", ETAH=" << etah << std::endl;
+	  }
+	
+        state.hpc = etah;
+        state.usable_pc = true;
+	fresh_pc = true;
+      }
 
     // BCE loop:
     do
@@ -453,6 +485,17 @@ namespace BDF2 {
 	// Next solution iterate and error estimate.
 	// FORTRAN:  u  = u - du
 	u.Update(-1.0,du,1.0);
+
+	// Check the solution iterate for admissibility.
+	if ( ! fn.is_admissible(u) ) // iterate is bad; bail.
+	  {
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
+	      {
+		*out << "AIN BCE solve FAILED: inadmissible solution iterate: itr=" << itr << std::endl;
+		errc = 2;
+		return;
+	      }
+	  }
 	
 	error = fn.enorm(u, du); 
 	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
@@ -547,7 +590,7 @@ namespace BDF2 {
     using Teuchos::OSTab;
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    OSTab tab = this->getOSTab(1,"TEST "); // This sets the line prefix and adds one tab
+    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	
       {
