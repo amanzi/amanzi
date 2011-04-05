@@ -123,8 +123,8 @@ public:
     for (int j = 0; j<=n-2; j++)
       { 
 	tmp = a[j]/(*dx)[j];
-	(*jac)[IND(1,j)] = (*jac)[IND(1,j)] + tmp;
-	(*jac)[IND(2,j)] = (*jac)[IND(2,j)] - tmp;
+	(*jac)[IND(1,j)]   = (*jac)[IND(1,j)] + tmp;
+	(*jac)[IND(2,j)]   = (*jac)[IND(2,j)] - tmp;
 	(*jac)[IND(0,j+1)] = (*jac)[IND(0,j+1)] - tmp;
 	(*jac)[IND(1,j+1)] = (*jac)[IND(1,j+1)] + tmp;
       }
@@ -149,7 +149,7 @@ public:
 
   bool is_admissible(Epetra_Vector& u)
   {
-      return true;
+    return true;
   }
 
 
@@ -301,8 +301,8 @@ TEST(Nodal_1D_FEM) {
   double diff_coef = 0.0002;
 
   // set parameters for the error function
-  double atol = 0.0;
-  double rtol = 1.0e-5;
+  double atol = 1.0e-5;
+  double rtol = 0.0;
   
 
   // create the PDE problem
@@ -316,6 +316,7 @@ TEST(Nodal_1D_FEM) {
   Epetra_Vector u(*NF.nodal_map);
   for (int j=0; j< u.MyLength(); j++)
     u[j] = sin(4.0*atan(1.0)* (*NF.mesh)[j]);
+
 
   // initial time
   double t=0.0;
@@ -352,9 +353,6 @@ TEST(Nodal_1D_FEM) {
   } while (tout >= tlast);
 
   
-  CHECK_EQUAL(i,276);
-  CHECK_CLOSE(tlast,0.20376307741675311,1.0e-15);
-
-
-
+  CHECK_EQUAL(i,147);
+  CHECK_CLOSE(tlast,0.2044366451977221 ,1.0e-15);
 }
