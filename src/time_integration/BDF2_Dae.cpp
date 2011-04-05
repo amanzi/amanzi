@@ -473,11 +473,6 @@ namespace BDF2 {
       }
     while (true);
 
-    // 1 format(2x,'AIN BCE solve FAILED: ',i3,' iterations (max), error=',es12.5)
-    // 2 format(2x,'AIN BCE solve succeeded: ',i3,' iterations, error=',es12.5)
-    // 3 format(2x,i3,': error=',es12.5)
-    
-
   }
 
 
