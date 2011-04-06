@@ -19,7 +19,7 @@ include(PrintVariable)
 ##############################################################################
 # Boost
 ##############################################################################
-find_package( Boost COMPONENTS system filesystem program_options REQUIRED)
+find_package( Boost COMPONENTS system filesystem program_options regex REQUIRED)
 set_feature_info(Boost
                  "C++ Extension library"
                  "http://www.boost.org"

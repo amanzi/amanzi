@@ -27,6 +27,7 @@ if (ENABLE_MSTK_Mesh)
     add_subdirectory(mstk_mesh)
 endif(ENABLE_MSTK_Mesh)    
 
+add_subdirectory(mesh_factory)
 add_subdirectory(output)
 
 # Build State

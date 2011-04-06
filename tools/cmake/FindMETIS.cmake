@@ -56,14 +56,14 @@ else(METIS_LIBRARIES AND METIS_INCLUDE_DIRS)
 
         if (EXISTS "${METIS_INCLUDE_DIR}")
 
-            find_path(test_include_path
+            find_path(metis_test_include_path
                       NAMES ${metis_inc_names}
                       HINTS ${METIS_INCLUDE_DIR}
                       NO_DEFAULT_PATH)
-            if(NOT test_include_path)
+            if(NOT metis_test_include_path)
                 message(SEND_ERROR "Can not locate ${metis_inc_names} in ${METIS_INCLUDE_DIR}")
             endif()
-            set(METIS_INCLUDE_DIR "${test_include_path}")
+            set(METIS_INCLUDE_DIR "${metis_test_include_path}")
 
         else()
             message(SEND_ERROR "METIS_INCLUDE_DIR=${METIS_INCLUDE_DIR} does not exist")
