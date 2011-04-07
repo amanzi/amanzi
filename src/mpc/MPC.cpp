@@ -15,6 +15,8 @@
 #include "cgns_mesh_par.hh"
 #include "cgns_mesh.hh"
 #endif
+// TODO: We are using depreciated parts of boost::filesystem
+#define BOOST_FILESYSTEM_VERSION 2
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
