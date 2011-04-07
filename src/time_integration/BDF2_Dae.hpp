@@ -92,9 +92,9 @@ namespace BDF2 {
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
     // constants
-    const static double RMIN = 0.25;
-    const static double RMAX = 4.0;
-    const static double MARGIN = 3.0;
+    const static double RMIN;
+    const static double RMAX;
+    const static double MARGIN;
 
   };
 
