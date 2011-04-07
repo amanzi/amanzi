@@ -1,6 +1,7 @@
 #include "Exodus_records.hh"
 
 #include <string.h>
+#include <boost/format.hpp>
 
 #include "Exodus_error.hh"
 #include "exodusII.h"
@@ -35,7 +36,11 @@ void Info_records::read_record_count_ (int id)
     char c_dummy;
 
     int ret_val = ex_inquire (id, EX_INQ_INFO, &num_records, &f_dummy, &c_dummy);
-    if (ret_val < 0) throw ExodusError (ret_val);
+    if (ret_val < 0) {
+      std::string msg = 
+        boost::str(boost::format("file %d: error: ex_inquire failed (%d)") % ret_val);
+      throw ExodusII::ExodusError (msg.c_str());
+    }
 }
 
 

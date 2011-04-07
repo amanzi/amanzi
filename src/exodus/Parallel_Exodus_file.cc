@@ -2,7 +2,7 @@
 /**
  * @file   Parallel_Exodus_file.cc
  * @author William A. Perkins
- * @date Mon Nov 29 07:21:11 2010
+ * @date Thu Apr  7 08:29:45 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Mon Nov 29 07:21:11 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Apr  7 08:29:45 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <algorithm>
@@ -197,7 +197,12 @@ Parallel_Exodus_file::cellmap(void)
 
   int ret_val = 
     ex_get_elem_num_map(my_file->id, &gids[0]);
-  if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+  if (ret_val < 0) {
+    std::string msg = 
+      boost::str(boost::format("%s: error: cannot read element number map (%d)") %
+                 my_file->filename % ret_val);
+    throw ExodusII::ExodusError (msg.c_str());
+  }
 
   my_comm->Barrier();
 
@@ -223,7 +228,12 @@ Parallel_Exodus_file::vertexmap(void)
 
   int ret_val = 
     ex_get_node_num_map(my_file->id, &gids[0]);
-  if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+  if (ret_val < 0) {
+    std::string msg = 
+      boost::str(boost::format("%s: error: cannot read vertex number map (%d)") %
+                 my_file->filename % ret_val);
+    throw ExodusII::ExodusError (msg.c_str());
+  }
 
   my_comm->Barrier();
 

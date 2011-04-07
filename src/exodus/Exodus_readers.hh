@@ -31,23 +31,5 @@ Mesh_data::ELEMENT_TYPE read_element_type (const char *);
 }
 
 
-namespace 
-{
-
-template <typename S>
-Mesh_data::Coordinates<double>* read_coordinates_impl_ (ExodusII::Exodus_file file, int num_nodes, int dimensions)
-{
-
-    std::vector<std::vector<S> > data (dimensions, std::vector<S>(num_nodes));
-
-    int ret_val = ex_get_coord (file.id, &data [0] [0], &data [1] [0], &data [2] [0]);
-    if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
-
-    return Mesh_data::Coordinates<double>::build_from (data);
-
-}
-
-}
-
 
 #endif
