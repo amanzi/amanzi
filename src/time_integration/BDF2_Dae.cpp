@@ -18,9 +18,9 @@
 
 namespace BDF2 {
 
-  const static double Dae::RMIN = 0.25;
-  const static double Dae::RMAX = 4.0;
-  const static double Dae::MARGIN = 3.0;
+  const double Dae::RMIN = 0.25;
+  const double Dae::RMAX = 4.0;
+  const double Dae::MARGIN = 3.0;
 
   Dae::Dae(fnBase& fn_, Epetra_BlockMap& map_) :
     fn(fn_), map(map_)
