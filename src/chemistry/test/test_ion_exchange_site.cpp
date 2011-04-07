@@ -44,7 +44,7 @@ SUITE(GeochemistryTestsIonExchangeSite)
       exchanger_charge_(-2),
       exchanger_location_("Fe(OH)2"),
       molecular_weight_(45.6789),
-      size_(-9.8),
+      size_(9.8),
       exchanger_name_("X--"),
       ies_(exchanger_name_, exchanger_id_, exchanger_charge_, exchanger_location_, molecular_weight_, size_)
   {

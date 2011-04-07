@@ -7,6 +7,7 @@
 #include <UnitTest++.h>
 
 #include "Species.hpp"
+#include "ChemistryException.hpp"
 
 SUITE(GeochemistryTestsSpecies)
 {
@@ -38,17 +39,12 @@ SUITE(GeochemistryTestsSpecies)
   }; // end class SpeciesTest
 
   SpeciesTest::SpeciesTest()
-      : id_(),
-      charge_(),
-      gram_molecular_weight_(),
-      ion_size_parameter_(),
-      name_()
+      : id_(3),
+      charge_(2.0),
+      gram_molecular_weight_(40.0780),
+      ion_size_parameter_(6.0),
+      name_("Ca++")
       {
-        id_ = 3;
-        charge_ = 2.0;
-        gram_molecular_weight_ = 40.0780;
-        ion_size_parameter_ = 6.0;
-        name_ = "Ca++";
       }
 
   SpeciesTest::~SpeciesTest()
@@ -96,6 +92,27 @@ SUITE(GeochemistryTestsSpecies)
   {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(name_, species.name());
+  }
+
+  //
+  // check that exceptions are thrown for invalid data
+  //
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_id)
+  {
+    CHECK_THROW(Species species(-1, name_, charge_, gram_molecular_weight_, ion_size_parameter_),
+                ChemistryException);
+  }
+
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_molecular_weight)
+  {
+    CHECK_THROW(Species species(id_, name_, charge_, -45.678, ion_size_parameter_),
+                ChemistryException);
+  }
+
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_ion_size)
+  {
+    CHECK_THROW(Species species(id_, name_, charge_, gram_molecular_weight_, -9.0),
+                ChemistryException);
   }
 
   //

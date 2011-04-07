@@ -1,9 +1,11 @@
 #include <cmath>
 
+#include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "Species.hpp"
+#include "ChemistryException.hpp"
 
 Species::Species() 
   : molality_(1.e-9), 
@@ -37,6 +39,26 @@ Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
     name_(name)
 {
   //  ActivityCoefficient* activityCoefficient;
+  if (identifier() < 0) {
+    std::ostringstream error_stream;
+    error_stream << "CHEMISTRY_ERROR: Species::Species(): \n";
+    error_stream << "CHEMISTRY_ERROR: invalid identifier (id < 0), id = " << identifier() << std::endl;
+    throw ChemistryException(error_stream.str());
+  }
+  if (gram_molecular_weight() < 0.0) {
+    std::ostringstream error_stream;
+    error_stream << "CHEMISTRY_ERROR: Species::Species(): \n";
+    error_stream << "CHEMISTRY_ERROR: invalid gram molecular weight "
+                 << "(gmw < 0.0), gmw = " << gram_molecular_weight() << std::endl;
+    throw ChemistryException(error_stream.str());
+  }
+  if (ion_size_parameter() < 0.0) {
+    std::ostringstream error_stream;
+    error_stream << "CHEMISTRY_ERROR: Species::Species(): \n";
+    error_stream << "CHEMISTRY_ERROR: invalid ion size parameter "
+                 << "(size < 0.0), size = " << ion_size_parameter() << std::endl;
+    throw ChemistryException(error_stream.str());
+  }
 } // end Species constructor
 
 Species::~Species() {
