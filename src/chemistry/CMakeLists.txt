@@ -58,6 +58,7 @@ if (BUILD_TESTS)
 		 test/test_ion_exchange_site.cpp
 		 test/test_surface_site.cpp
 		 test/test_activity_coefficients.cpp
+		 test/test_secondary_species.cpp
 		 test/test_beaker.cpp)
   target_link_libraries(chemistry_tests chemistry ${UnitTest_LIBRARIES})
   add_test(chemistry chemistry_tests)
