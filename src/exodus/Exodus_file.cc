@@ -16,7 +16,7 @@ Exodus_file::Exodus_file (char const * filename_in) : system_word_size (sizeof (
       std::string msg =
         boost::str(boost::format("%s: error: cannot open (%d)") %
                    filename_in % id);
-      throw ExodusError (msg.c_str());
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
 }
 
