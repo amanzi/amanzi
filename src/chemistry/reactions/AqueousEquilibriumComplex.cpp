@@ -1,6 +1,10 @@
+#include <cmath>
+
+#include <iostream>
 #include <iomanip>
 
 #include "AqueousEquilibriumComplex.hpp"
+#include "Block.hpp"
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex() 
     : Species(),
@@ -17,13 +21,6 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex()
 
 } // end AqueousEquilibriumComplex() constructor
 
-AqueousEquilibriumComplex::AqueousEquilibriumComplex(std::string s) 
-                          : Species()
-{
-  static_cast<void>(s);
-  // string = "name ncomp stoich1 comp1 stoich2 comp2 ... stoichN compN
-  //           logK1 logK2 ... logKN a0 charge mol_wt"
-} // end AqueousEquilibriumComplex() constructor
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(const SpeciesName name, 
                             const SpeciesId id,

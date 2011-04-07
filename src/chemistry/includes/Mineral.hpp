@@ -2,21 +2,23 @@
 #ifndef __Mineral_hpp__
 #define __Mineral_hpp__
 
-#include <string>
-#include <vector>
-#include <cmath>
-
-#include "Species.hpp"
-#include "SecondarySpecies.hpp"
-#include "Block.hpp"
-#include "Verbosity.hpp"
-
 /* Class for mineral reaction, should be written with the mineral as
 ** the reactant:
 **
 **  Calcite = 1.0 Ca++ + 1.0 HCO3- -1.0 H+
 **
 */
+
+#include <cmath>
+
+#include <vector>
+
+#include "Species.hpp"
+#include "SecondarySpecies.hpp"
+#include "Verbosity.hpp"
+
+// forward declarations
+class Block;
 
 class Mineral : public SecondarySpecies {
 

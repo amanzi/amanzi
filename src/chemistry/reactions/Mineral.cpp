@@ -1,4 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include <iostream>
 #include <iomanip>
 
 #include "Mineral.hpp"

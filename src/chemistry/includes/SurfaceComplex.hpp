@@ -1,21 +1,20 @@
 #ifndef __SurfaceComplex_hpp__
 #define __SurfaceComplex_hpp__
 
-#include <string>
+// Class for aqueous equilibrium complexation reaction
+
 #include <vector>
-#include <cmath>
 
 #include "Species.hpp"
 #include "SurfaceSite.hpp"
-#include "Block.hpp"
 
-// Class for aqueous equilibrium complexation reaction
+// forward declarations
+class Block;
 
 class SurfaceComplex {
 
  public:
   SurfaceComplex();
-  SurfaceComplex(std::string s);
   SurfaceComplex(const SpeciesName name, 
                  const SpeciesId id,
                  std::vector<SpeciesName> species,

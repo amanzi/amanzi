@@ -1,20 +1,18 @@
 #ifndef __AqueousEquilibriumComplex_hpp__
 #define __AqueousEquilibriumComplex_hpp__
 
-#include <string>
+// Class for aqueous equilibrium complexation reaction
+
 #include <vector>
-#include <cmath>
 
 #include "Species.hpp"
-#include "Block.hpp"
 
-// Class for aqueous equilibrium complexation reaction
+class Block;
 
 class AqueousEquilibriumComplex : public Species {
 
  public:
   AqueousEquilibriumComplex();
-  AqueousEquilibriumComplex(std::string s);
   AqueousEquilibriumComplex(const SpeciesName name, 
                             const SpeciesId id,
                             std::vector<SpeciesName> species,

@@ -2,6 +2,7 @@
 #include <cstdlib>
 
 #include <iostream>
+#include <iomanip>
 
 #include "KineticRate.hpp"
 #include "StringTokenizer.hpp"

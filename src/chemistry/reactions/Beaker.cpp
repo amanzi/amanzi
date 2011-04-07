@@ -7,7 +7,10 @@
 */
 
 #include <cstdlib>
+
 #include <string>
+#include <iostream>
+#include <iomanip>
 #include <vector>
 #include <sstream>
 
@@ -1472,9 +1475,9 @@ void Beaker::print_results(double time) const
   std::cout << std::endl;
 } // end print_results()
 
-void Beaker::print_linear_system(string s, Block *A, 
+void Beaker::print_linear_system(std::string s, Block *A, 
                                  std::vector<double> vector) {
-  std::cout << s << endl;
+  std::cout << s << std::endl;
   for (int i = 0; i < (int)vector.size(); i++)
     std::cout << "RHS: " << primarySpecies_.at(i).name() << " " << vector[i] << std::endl;
   if (A) A->print();

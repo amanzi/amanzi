@@ -1,6 +1,8 @@
+#include <iostream>
 #include <iomanip>
 
 #include "SurfaceSite.hpp"
+#include "Block.hpp"
 
 SurfaceSite::SurfaceSite() 
 : name_(""),
