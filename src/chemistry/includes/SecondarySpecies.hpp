@@ -19,7 +19,7 @@ class SecondarySpecies : public Species {
                    const SpeciesId secondary_id,
                    const std::vector<SpeciesName> species,
                    const std::vector<double> stoichiometries,
-                   const std::vector<int> species_ids,
+                   const std::vector<SpeciesId> species_ids,
                    const double h2o_stoich, 
                    const double charge, 
                    const double mol_wt,
@@ -29,9 +29,9 @@ class SecondarySpecies : public Species {
   virtual ~SecondarySpecies();
 
   // update molalities
-  virtual void Update(const std::vector<Species>primary_species);
+  virtual void Update(const std::vector<Species>& primary_species);
   // add stoichiometric contribution of complex to total
-  virtual void AddContributionToTotal(std::vector<double> &total) = 0;
+  virtual void AddContributionToTotal(std::vector<double> *total) = 0;
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species> primary_species,
                                        Block *dtotal) = 0;
@@ -41,6 +41,7 @@ class SecondarySpecies : public Species {
   void set_logK(const double in_logK) { this->logK_ = in_logK; };
   double logK(void) const { return this->logK_; };
   double lnK(void) const { return this->lnK_; };
+  double lnQK(void) const { return this->lnQK_; };
 
   std::vector<SpeciesName> species_names(void) const { return this->species_names_; };
   std::vector<SpeciesId> species_ids(void) const { return this->species_ids_; };

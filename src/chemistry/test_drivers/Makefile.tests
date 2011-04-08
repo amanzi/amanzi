@@ -1,7 +1,7 @@
 DIFF = diff
 DFLAGS = --brief
 
-GEOCHEM = ../bin/geochemistryTest
+GEOCHEM = ../../../build/src/chemistry/test_drivers/geochemistryTest
 GEOVERB = -v 2
 
 TESTS_CRUNCH = \
