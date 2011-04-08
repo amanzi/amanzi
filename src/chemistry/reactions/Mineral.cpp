@@ -73,17 +73,16 @@ void Mineral::UpdateSurfaceAreaFromVolumeFraction(const double total_volume)
   }
 }  // end UpdateSurfaceAreaFromVolumeFraction()
 
-void Mineral::Update(const std::vector<Species> primary_species) 
+void Mineral::Update(const std::vector<Species>& primary_species) 
 {
   double lnQK = -lnK_;
-  for (int i = 0; i < ncomp_; i++) {
-    lnQK += stoichiometry_[i] * primary_species[species_ids_[i]].ln_activity();
+  for (int i = 0; i < ncomp(); i++) {
+    lnQK += stoichiometry_.at(i) * primary_species.at(species_ids_.at(i)).ln_activity();
   }
   lnQK_ = lnQK;
-  static_cast<void>(primary_species);
 } // end update()
 
-void Mineral::AddContributionToTotal(std::vector<double> &total) 
+void Mineral::AddContributionToTotal(std::vector<double> *total) 
 {
   static_cast<void>(total);
 } // end addContributionToTotal()

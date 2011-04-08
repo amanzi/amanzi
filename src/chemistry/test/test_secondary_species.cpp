@@ -87,7 +87,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
                          const double logK)
         : SecondarySpecies(name, id, species_names, stoichiometry, species_ids,
                            h2o_stoich, charge, mol_wt, size, logK) {};
-    void AddContributionToTotal(std::vector<double> &total)
+    void AddContributionToTotal(std::vector<double> *total)
     {
       static_cast<void>(total);
     } // end addContributionToTotal()
