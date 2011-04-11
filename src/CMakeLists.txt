@@ -3,6 +3,7 @@
 # Standard utilities -- no dependence on mesh base
 add_subdirectory(error_handling)
 add_subdirectory(utils)
+add_subdirectory(input)
 
 # Mesh 
 add_subdirectory(mesh)
