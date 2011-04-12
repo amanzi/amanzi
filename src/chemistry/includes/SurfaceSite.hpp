@@ -28,10 +28,15 @@ class SurfaceSite {
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
 
+  // TODO: should all these really be public? should not be changing the
+  // name, id, etc after creation!
   void set_name(SpeciesName name) { this->name_ = name; }
   void set_identifier(SpeciesId i) { this->identifier_ = i; }
   void set_charge(double d) { this->charge_ = d; }
 
+  // TODO: I'd like to keep set_xyz just as a mutator for a single
+  // variable. Since these are changing two variables, can we call
+  // them update_free_site_concentration, update_ln_free_site....?
   void set_free_site_concentration(const double d) 
     { this->free_site_concentration_ = d; 
       this->ln_free_site_concentration_ = std::log(d); }

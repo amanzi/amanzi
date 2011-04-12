@@ -25,6 +25,11 @@
 **      std::cerr << geochem_error.what() << std::endl;
 **    }
 **
+**   TODO: get rid of the error_status_ member and subclass for
+**   different types of errors. 
+**
+**   TODO: default error string should be "CHEMISTRY_ERROR"
+**
 *******************************************************************************/
 #include <string>
 #include <iostream>

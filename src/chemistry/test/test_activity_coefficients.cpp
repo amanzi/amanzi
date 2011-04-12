@@ -3,14 +3,90 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <typeinfo>
 
 #include <UnitTest++.h>
 
 #include "Species.hpp"
 #include "ActivityModelFactory.hpp"
+#include "ActivityModelUnit.hpp"
+#include "ActivityModelDebyeHuckel.hpp"
+#include "ActivityModel.hpp"
+#include "ChemistryException.hpp"
 
 SUITE(GeochemistryTestsActivityModels)
 {
+  /*****************************************************************************
+   **
+   **  Test for ActivityModelFactory.cpp
+   **
+   *****************************************************************************/
+  
+  /*
+    if you pass the factory a valid name, it should return the correct
+    activity model class. If you pass it an invalid name, it should
+    throw an error.
+   */
+
+  class ActivityModelFactoryTest
+  {
+   public:
+
+   protected:
+    ActivityModelFactoryTest();
+    ~ActivityModelFactoryTest();
+
+    void RunTest(const std::string name);
+
+    ActivityModelFactory amf_;
+    ActivityModel* activity_model_;
+    
+   private:
+
+  };
+
+  ActivityModelFactoryTest::ActivityModelFactoryTest()
+      : amf_(),
+      activity_model_(NULL)
+  {
+  }
+
+  ActivityModelFactoryTest::~ActivityModelFactoryTest()
+  {
+    delete activity_model_;
+  }
+
+  void ActivityModelFactoryTest::RunTest(const std::string name)
+  {
+    activity_model_ = amf_.Create(name);
+  }
+
+  // use C++ RTTI to determine if the correct type of object was
+  // returned from the factory, e.g. see "typeid" at
+  // http://en.wikibooks.org/wiki/C++_Programming/RTTI
+
+  TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_unit)
+  {
+    std::string name("unit");
+    RunTest(name);
+    CHECK_EQUAL(typeid(ActivityModelUnit).name(), typeid(*activity_model_).name());
+  } // end TEST_FIXTURE()
+
+  TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_debyehuckel)
+  {
+    std::string name("debye-huckel");
+    RunTest(name);
+    CHECK_EQUAL(typeid(ActivityModelDebyeHuckel).name(), typeid(*activity_model_).name());
+  } // end TEST_FIXTURE()
+
+  TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_invalid)
+  {
+    std::string name("invalid-name");
+    CHECK_THROW(RunTest(name), ChemistryException);
+    CHECK( !activity_model_);
+  } // end TEST_FIXTURE()
+
+
   /*
     Test ionic strength and activity coefficient calculations for
     different activity models. Arbitrary choice of 6 ions with charge
@@ -124,7 +200,7 @@ SUITE(GeochemistryTestsActivityModels)
     set_activity_model_name(ActivityModelFactory::unit);
     double gamma;
     RunTest("H+", &gamma);
-    std::cout << "ionic strength: " << ionic_strength() << std::endl;
+    //std::cout << "ionic strength: " << ionic_strength() << std::endl;
     CHECK_CLOSE(0.025, ionic_strength(), tolerance());
   }  // end TEST_FIXTURE()
 

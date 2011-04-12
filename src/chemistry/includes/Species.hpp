@@ -16,11 +16,10 @@ typedef int SpeciesId;
 class Species {
 
  public:
-  Species();
-  virtual ~Species();
-
+  Species(); // this is only present for stl containers, don't use it
   Species(SpeciesId id, SpeciesName name, double charge, double mol_wt, 
           double size);
+  virtual ~Species();
 
   // update(): calculate the new activity coefficient, set the molarity,
   // activity and associated log values. Need to look at different
@@ -30,7 +29,7 @@ class Species {
   virtual void update(void);
   virtual void update(const double molality);
 
-  // accessor methods
+  // accessor methods for calculated values
   double molality(void) const { return this->molality_; }
   double activity(void) const { return this->activity_; }
   double act_coef(void) const { return this->act_coef_; }
@@ -40,21 +39,16 @@ class Species {
   double ln_activity(void) const { return this->ln_activity_; }
   double ln_act_coef(void) const { return this->ln_act_coef_; }
 
+  // access invariant data
   SpeciesId identifier(void) const { return this->identifier_; }
   double charge(void) const { return this->charge_; }
   double gram_molecular_weight(void) const { return this->gram_molecular_weight_; }
   double ion_size_parameter(void) const { return this->ion_size_parameter_; }
   SpeciesName name(void) const { return this->name_; }
 
+  // these should only be used by the activity coefficient model
   void act_coef(double d) { this->act_coef_ = d; }
-
   void ln_act_coef(double d) { this->ln_act_coef_ = d; }
-
-  void identifier(SpeciesId i) { this->identifier_ = i; }
-  void charge(double d) { this->charge_ = d; }
-  void gram_molecular_weight(double d) { this->gram_molecular_weight_ = d; }
-  void ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
-  void name(SpeciesName name) { this->name_ = name; }
 
   void display(void) const;
   void Display(void) const;
@@ -87,6 +81,16 @@ class Species {
   double gram_molecular_weight_;
   double ion_size_parameter_;
   SpeciesName name_;
+
+  // these are data and should not be changed during a
+  // simulation. Remove this interface and require correct data be
+  // provided during initialization! Probably means we need to ditch
+  // the empty constructor as well.
+  void identifier(SpeciesId i) { this->identifier_ = i; }
+  void charge(double d) { this->charge_ = d; }
+  void gram_molecular_weight(double d) { this->gram_molecular_weight_ = d; }
+  void ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
+  void name(SpeciesName name) { this->name_ = name; }
 
 };
 

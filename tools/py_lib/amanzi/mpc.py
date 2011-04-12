@@ -9,37 +9,32 @@ from trilinos import Parameter, ParameterList
 
 class VizBase(ParameterList):
 
-    def __init__(self):
+    def __init__(self,label=None):
 
         ParameterList.__init__(self,'Viz Parameters')
+        self.label = label
         self.dt = -1.0
         self.dnc = -1
         self.file = ''
+        self.add_parameter('Output Type',self.label)
         self.add_parameter('Dump time frequency', self.dt)
         self.add_parameter('Dump cycle frequecy', self.dnc)
         self.add_parameter('File name', self.file)
 
     def set_dt(self,value):
         self.dt = value
-        node = self.find_parameter('Dump time frequency')
-        if node != None:
-            node.set('value', value)
-
+        node = self.set_parameter('Dump time frequency',value)
         return node
 
     def set_dnc(self,value):
         self.dnc = value
-        node = self.find_parameter('Dump cycle frequency')
-        if node != None:
-            node.set('value', value)
+        node = self.set_parameter('Dump cycle frequency',value)
 
         return node
 
     def set_file(self,value):
         self.file = value
-        node = self.find_parameter('Dump cycle frequency')
-        if node != None:
-            node.set('value', value)
+        node = self.set_parameter('File name',value)
 
         return node
 
@@ -48,7 +43,7 @@ class CGNS(VizBase):
 
     def __init__(self,file=None):
 
-        VizBase.__init__(self)
+        VizBase.__init__(self,'CGNS')
         if file != None:
             self.set_file(file)
 
@@ -68,10 +63,9 @@ class MPC(ParameterList):
         self.enable_chemistry = bool(True)
         self.set_parameter('enable Chemistry', bool(True))
 
-        viz = self.add_sublist('Viz Parameters')
-        viz.add_sublist(CGNS('dummy.cgns'))
-
-        self.viz = viz
+        self.viz = CGNS('dummy.cgns')
+        viz_root = self.viz.getroot()
+        self.attach(viz_root)
 
     def set_start_time(self,value):
         self.start_time = value
@@ -89,6 +83,7 @@ if __name__ == '__main__':
 
     mpc = MPC()
     mpc.viz.set_file('fbasin.cgns')
+    mpc.viz.set_dt(0.5)
     mpc.set_end_time(3600000.0)
 
     mpc.dumpXML()

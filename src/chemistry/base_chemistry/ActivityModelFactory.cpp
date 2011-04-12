@@ -47,6 +47,7 @@ ActivityModel* ActivityModelFactory::Create(std::string model)
                              ChemistryException::kUnrecoverableError);    
   } else {
     // finish any additional setup
+    // TODO: set the name in the object constructor so we can verify that the correct object was created.
     activity_model->name(model);
   }
   return activity_model;
