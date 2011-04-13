@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(AddParallelTest)
+include(TestManager)
 
 
 #
@@ -84,7 +85,8 @@ if (BUILD_TESTS)
                    test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_2 exodus ${UnitTest_LIBRARIES} 
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_parallel_test(pexodus_2proc test_pexodus_2 NPROCS 2)
+#    add_parallel_test(pexodus_2proc test_pexodus_2 NPROCS 2)
+     add_unit_test(pexodus_2proc test_pexodus_2 NPROCS 2)
 
     # Test: test_pexodus_3
     add_executable(test_pexodus_3 test/ParallelMain.cc 
