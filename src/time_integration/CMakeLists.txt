@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -56,6 +56,6 @@ if (BUILD_TESTS)
 
     add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp) 
     target_link_libraries(test_time_integration time_integration error_handling ${UnitTest_LIBRARIES})
-    add_test(time_integration test_time_integration)
+    add_unit_test(time_integration test_time_integration)
 
 endif()

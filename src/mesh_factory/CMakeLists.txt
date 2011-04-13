@@ -9,7 +9,7 @@
 # Last Change: Tue Mar 22 10:55:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 # Amanzi module, include files found in AMANZI_MODULE_PATH
-include(AddParallelTest)
+include(TestManager)
 include(PrintVariable)
 
 
@@ -86,8 +86,8 @@ if (BUILD_TESTS)
      test/test_mesh_framework.cc
      test/test_mesh_factory.cc)
    target_link_libraries(test_mesh_factory mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES})
-   add_test(mesh_factory test_mesh_factory)
-   add_parallel_test(mesh_factory_parallel test_mesh_factory)
+   add_unit_test(mesh_factory test_mesh_factory)
+   add_unit_test(mesh_factory_parallel test_mesh_factory)
 
 endif()
    

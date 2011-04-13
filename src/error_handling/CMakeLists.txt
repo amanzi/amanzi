@@ -51,7 +51,7 @@ if (BUILD_TESTS)
   # Add the executable to the 'make test' target
   # this command does nothing if enable_testing() is not 
   # called in a parent CMakeLists.txt file 
-  add_test(error test_error_handling)
+  add_unit_test(error test_error_handling)
 
 endif()
 

@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -60,7 +60,7 @@ if (BUILD_TESTS)
 		 test/test_activity_coefficients.cpp
 		 test/test_beaker.cpp)
   target_link_libraries(chemistry_tests chemistry ${UnitTest_LIBRARIES})
-  add_test(chemistry chemistry_tests)
+  add_unit_test(chemistry chemistry_tests)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E

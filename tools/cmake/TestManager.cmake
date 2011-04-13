@@ -4,6 +4,7 @@
 # Functions for managing tests.
 #
 
+include(AddParallelTest)
 include(CMakeParseArguments)
 include(PrintVariable)
 
@@ -55,5 +56,3 @@ endforeach()
 
 endfunction(ADD_UNIT_TEST)
 
-
-function(ADD_INTEGRATION_TEST, test_name, 
