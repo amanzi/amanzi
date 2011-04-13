@@ -19,11 +19,11 @@
 # CMake Modules 
 include(CMakeParseArguments)
 
-macro(ADD_PARALLEL_TEST)
+macro(ADD_PARALLEL_TEST test_name test_exec)
     set(_options  "")
     set(_oneValue "NPROCS")
     set(_multiValue "MPI_EXEC_ARGS")
-    cmake_parse_arguments(ADD_PARALLEL_TEST "${_options}" "${_oneValue}" "${_multiValue}" ${ARGN}) 
+    cmake_parse_arguments(ADD_PARALLEL_TEST "${_options}" "${_oneValue}" "${_multiValue}" ${ARGN})
 
     # Default number of procs is 1
     set(_local_nprocs  1)
@@ -40,23 +40,7 @@ macro(ADD_PARALLEL_TEST)
        endif()     
     endif()        
 
-    # Unparsed args are the test_name,test_exec,test_exec_args
-    set(_left_over ${ADD_PARALLEL_TEST_UNPARSED_ARGUMENTS})
-    list(LENGTH _left_over _left_over_num)
-    if ( ${_left_over_num} LESS 2 ) 
-        message(FATAL_ERROR "Invalid use of ADD_PARALLEL_TEST")
-    endif()    
-    list(GET _left_over 0 test_name)
-    list(GET _left_over 1 test_exec)
-    set(test_exec_args "")
-    if ( ${_left_over_num} GREATER 2 )
-        math(EXPR _last_idx "${_left_over_num} - 1 ")
-        foreach( _idx RANGE 2 ${_last_idx} 1 )
-            list(GET _left_over ${_idx} _item)
-            list(APPEND test_exec_args ${_item})
-        endforeach()
-    endif()    
-
+    LIST(APPEND test_exec_args ${ADD_PARALLELL_TEST_UNPARSED_ARGUMENTS})
 
     # Build MPI_EXEC cpmmand
     # This will have to change if POE is used as MPI_EXEC!
