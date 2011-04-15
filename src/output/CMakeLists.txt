@@ -67,7 +67,7 @@ if (BUILD_TESTS)
     if (ENABLE_CGNS)
         add_executable(test_cgns_output test/Main.cc test/test_cgns.cc)
         target_link_libraries(test_cgns_output output ${UnitTest_LIBRARIES})
-        add_unit_test(cgns_output test_cgns_output)
+        add_integration_test(cgns_output test_cgns_output)
     endif()
 
 endif()

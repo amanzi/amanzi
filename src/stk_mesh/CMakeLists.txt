@@ -72,8 +72,8 @@ if (BUILD_TESTS)
     # Test: stk_mesh_read (serial and parallel)
     add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
     target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit ${UnitTest_LIBRARIES})
-    add_unit_test(stk_mesh_read test_stk_mesh_read)
-    add_unit_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4)
+    add_integration_test(stk_mesh_read test_stk_mesh_read)
+    add_integration_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4)
 
 endif()
 

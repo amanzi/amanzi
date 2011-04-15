@@ -86,8 +86,8 @@ if (BUILD_TESTS)
      test/test_mesh_framework.cc
      test/test_mesh_factory.cc)
    target_link_libraries(test_mesh_factory mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES})
-   add_unit_test(mesh_factory test_mesh_factory)
-   add_unit_test(mesh_factory_parallel test_mesh_factory)
+   add_integration_test(mesh_factory test_mesh_factory)
+   add_integration_test(mesh_factory_parallel test_mesh_factory)
 
 endif()
    

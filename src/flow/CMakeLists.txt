@@ -71,7 +71,7 @@ if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
         
         add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp)
         target_link_libraries(test_flow flow moab_mesh simple_mesh cell_geometry ${UnitTest_LIBRARIES})
-        add_unit_test(flow test_flow)
+        add_integration_test(flow test_flow)
       
     endif()    
 

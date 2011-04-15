@@ -68,7 +68,7 @@ if (BUILD_TESTS)
         test/Main.cc
         test/test_hex_4x4x4_4P.cc)
     target_link_libraries(test_parallel_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-    add_unit_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4)
+    add_integration_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4)
 
 endif()
 

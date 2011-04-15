@@ -58,9 +58,9 @@ if ( BUILD_TESTS )
         set(amanzi_libs simple_mesh moab_mesh state flow transport)
 
         # Test: transport
-        add_executable(test_serial  test/Main.cc test/test_transport.cpp test/test_moab.cpp)
+        add_executable(test_serial test/Main.cc test/test_transport.cpp test/test_moab.cpp)
         target_link_libraries(test_serial ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_unit_test(transport test_serial)
+        add_integration_test(transport test_serial)
 
         # Test: transport (parallel)
         add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)

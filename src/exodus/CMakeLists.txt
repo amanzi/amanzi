@@ -86,20 +86,20 @@ if (BUILD_TESTS)
     target_link_libraries(test_pexodus_2 exodus ${UnitTest_LIBRARIES} 
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 #    add_parallel_test(pexodus_2proc test_pexodus_2 NPROCS 2)
-     add_unit_test(pexodus_2proc test_pexodus_2 NPROCS 2)
+     add_integration_test(pexodus_2proc test_pexodus_2 NPROCS 2)
 
     # Test: test_pexodus_3
     add_executable(test_pexodus_3 test/ParallelMain.cc 
                    test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_3 exodus ${UnitTest_LIBRARIES} 
                           ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_unit_test(pexodus_3proc test_pexodus_3 NPROCS 3)                
+    add_integration_test(pexodus_3proc test_pexodus_3 NPROCS 3)                
 
     # Test: test_pexodus_4       
     add_executable(test_pexodus_4 test/ParallelMain.cc 
                    test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_4 exodus  ${UnitTest_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_unit_test(pexodus_4proc test_pexodus_4 NPROCS 4)                
+    add_integration_test(pexodus_4proc test_pexodus_4 NPROCS 4)                
      
 endif()
