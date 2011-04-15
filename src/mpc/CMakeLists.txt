@@ -50,12 +50,12 @@ add_definitions("-DUSE_MPI")
 # Library: mpc
 #
 add_library(mpc MPC.cpp)
-set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
 if (ENABLE_CGNS)
     list(APPEND mpc_tpl_libs ${CGNS_LIBRARIES})
 endif()    
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
-target_link_libraries(mpc output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
+target_link_libraries(mpc solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
     

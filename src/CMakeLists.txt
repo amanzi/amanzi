@@ -31,6 +31,12 @@ endif(ENABLE_MSTK_Mesh)
 add_subdirectory(mesh_factory)
 add_subdirectory(output)
 
+# Solvers
+add_subdirectory(solvers)
+
+# Time integration
+add_subdirectory(time_integration)
+
 # Build State
 add_subdirectory(state)
 
@@ -40,9 +46,6 @@ add_subdirectory(transport)
 
 # Multiprocess coordinator
 add_subdirectory(mpc)
-
-# Time integration
-add_subdirectory(time_integration)
 
 # Amanzi binaries
 add_subdirectory(executables)

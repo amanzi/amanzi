@@ -25,6 +25,7 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -63,6 +64,7 @@ if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
 
     # Add the flow directory to the include paths
     include_directories(${FLOW_SOURCE_DIR})
+    include_directories(${SOLVERS_SOURCE_DIR})
 
     # Test: flow
     # Test depends on MOAB mesh framework
