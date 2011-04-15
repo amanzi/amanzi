@@ -39,10 +39,12 @@ public:
 
   void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P);
   void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
-
+  void dSofP(const Epetra_Vector &P, Epetra_Vector &dS);
+  
   void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
 
   void ComputePrecon(const Epetra_Vector &X);
+  void ComputePrecon(const Epetra_Vector &X, const double h);
 
   Epetra_Operator& Precon() const { return *precon_; }
 

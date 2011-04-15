@@ -151,6 +151,32 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
 }
 
 
+void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
+{
+  for (int i=0; i<P.MyLength(); i++)
+    {
+      // compute the capillary pressure
+      double pc =  P[i] - p_atm_;
+      
+      if (pc < 0.0) 
+	{
+	  // compute the derivative of liquid saturation using the effective and residual saturation
+	  dS[i] = -vG_m_ * pow(1.0 + pow(-vG_alpha_*pc,vG_n_),-vG_m_-1.0) 
+	    * vG_n_ * pow(-vG_alpha_*pc,vG_n_ - 1.0) * (-vG_alpha_) * (1.0 - vG_sr_);
+	}
+      else
+	{
+	  // where the capillary pressure is positive, saturation is one and the
+	  // derivative of saturation is zero 
+	  dS[i] = 0.0;
+	}      
+
+
+
+
+    }
+}
+
 void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S)
 {
   for (int i=0; i<P.MyLength(); i++)
@@ -208,6 +234,38 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
   // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
   precon_->Compute();
 }
+
+
+
+void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
+{
+  // Fill the diffusion matrix with values.
+  // THIS IS WHERE WE USE THE CELL PRESSURE PART OF X TO EVALUATE THE RELATIVE PERMEABILITY
+  std::vector<double> K(k_);
+
+  Epetra_Vector &Pcell_own = *CreateCellView(X);
+  Epetra_Vector Pcell(CellMap(true));
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
+
+  UpdateVanGenuchtenRelativePermeability(Pcell);
+  
+  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
+  D_->Compute(K);
+
+  // add the time derivative to the diagonal
+  Epetra_Vector celldiag(CellMap(false));
+  dSofP(Pcell_own, celldiag);
+  celldiag.Scale(1.0/h);
+  
+  D_->add_to_celldiag(celldiag);
+
+  // Compute the face Schur complement of the diffusion matrix.
+  D_->ComputeFaceSchur();
+
+  // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
+  precon_->Compute();
+}
+
 
 
 void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)

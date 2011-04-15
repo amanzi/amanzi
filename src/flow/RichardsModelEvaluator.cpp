@@ -5,150 +5,124 @@
 #else
 #  include "Epetra_SerialComm.h"
 #endif // HAVE_MPI
-#include "Epetra_CrsMatrix.h"
 
-#ifdef EXAMPLEAPPLICATION_DEBUG
-#include <iostream>
-#endif
+#include "Epetra_Vector.h"
 
-#include "Teuchos_dyn_cast.hpp"
 
-RichardsModelEvaluator::RichardsModelEvaluator(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
+
+RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem, 
+					       Teuchos::RCP<DiffusionMatrix> &matrix,
+					       Teuchos::ParameterList &plist, 
+					       const Epetra_Map &map) 
+  : problem_(problem),  D(matrix), map_(map)
 {
-  //  initialize(epetra_comm_ptr, params);
+  
+  
+  
 }
 
 void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
 {
-//   epetra_comm_ptr_ = epetra_comm_ptr;
-//   numElements_ = params.get<int>( "NumElements" );
   
-//   // This object is derived from NOX::Epetra::Interface
-//   problemInterfacePtr_ = Teuchos::rcp(new TransientInterface(numElements_, *epetra_comm_ptr_, -20.0, 20.0));
+}
 
-//   // Set the PDE nonlinear coefficient for this problem
-//   problemInterfacePtr_->setPDEfactor(1.0);
+// Overridden from BDF2::fnBase
 
-//   // This is needed to extract the Epetra_Map for the solution
-//   epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( problemInterfacePtr_->getMap() ) );
-// //  Epetra_Vector& soln = problemInterfacePtr_->getSolution();
-// //  const Epetra_BlockMap& solnBlockMap = soln.Map();
-// //  std::cout << "typeName(solnBlockMap).name() = " << typeid(solnBlockMap) << std::endl;
-// //  const Epetra_Map& solnMap = Teuchos::dyn_cast<const Epetra_Map>(solnBlockMap);
-// //  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( solnMap ) );
+void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u, 
+				 const Epetra_Vector& udot, Epetra_Vector& f) 
+{
+  // compute F(u)
+  problem_->ComputeF(u, f);
+ 
 
-//   // This is needed to extract the Epetra_CrsGraph for the Jacobian
-// //  Epetra_CrsMatrix &jacobian = problemInterfacePtr_->getJacobian();
-// //  W_graph_ = Teuchos::rcp(new Epetra_CrsGraph( jacobian.Graph() ) );
-//   W_graph_ = Teuchos::rcp(new Epetra_CrsGraph( problemInterfacePtr_->getGraph() ) );
+  Epetra_Vector *uc     = problem_->CreateCellView(u);  
+  Epetra_Vector *udotc  = problem_->CreateCellView(udot);
+  Epetra_Vector *fc     = problem_->CreateCellView(f);
+  
+  // compute S'(p)
+  Epetra_Vector dS (problem_->CellMap());
+  problem_->dSofP(*uc, dS);
+  
+  // on the cell unknowns compute f=f+dS*udotc
+  fc->Multiply(1.0,dS,*udotc,1.0);
+}
+
+void RichardsModelEvaluator::precon(const Epetra_Vector& X, Epetra_Vector& Y)
+{
+
+  const int ncell = D->Mesh().count_entities(Mesh_data::CELL, OWNED);
+
+  const Epetra_Map &cell_map = D->Mesh().cell_map(false);
+  const Epetra_Map &face_map = D->Mesh().face_map(false);
+
+  // The cell and face-based DoF are packed together into the X and Y Epetra
+  // vectors: cell-based DoF in the first part, followed by the face-based DoF.
+  // In addition, only the owned DoF belong to the vectors.
+
+  // Create views Xc and Xf into the cell and face segments of X.
+  double **cvec_ptrs = X.Pointers();
+  double **fvec_ptrs = new double*[X.NumVectors()];
+  for (int i = 0; i < X.NumVectors(); ++i) fvec_ptrs[i] = cvec_ptrs[i] + ncell;
+  Epetra_MultiVector Xc(View, cell_map, cvec_ptrs, X.NumVectors());
+  Epetra_MultiVector Xf(View, face_map, fvec_ptrs, X.NumVectors());
+
+  // Create views Yc and Yf into the cell and face segments of Y.
+  cvec_ptrs = Y.Pointers();
+  for (int i = 0; i < X.NumVectors(); ++i) fvec_ptrs[i] = cvec_ptrs[i] + ncell;
+  Epetra_MultiVector Yc(View, cell_map, cvec_ptrs, X.NumVectors());
+  Epetra_MultiVector Yf(View, face_map, fvec_ptrs, X.NumVectors());
+
+  // Temporary cell and face vectors.
+  Epetra_MultiVector Tc(cell_map, X.NumVectors());
+  Epetra_MultiVector Tf(face_map, X.NumVectors());
+
+  // FORWARD ELIMINATION
+  // Tf <- Xf - P (Dcf)^T (Dcc)^(-1) Xc
+  Tc.ReciprocalMultiply(1.0, D->Dcc(), Xc, 0.0);
+  D->Dcf().Multiply(true, Tc, Tf);  // this should do the required parallel comm
+  D->ApplyDirichletProjection(Tf);
+  Tf.Update(1.0, Xf, -1.0);
+
+  // "Solve" the Schur complement system for Yf with Tf as the rhs using ML
+  MLprec->ApplyInverse(Tf, Yf);
+
+  // BACKWARD SUBSTITUTION
+  // Yc <- (Dcc)^(-1) * (Xc - Dcf * P * Yf)
+  Tf = Yf;
+  D->ApplyDirichletProjection(Tf);
+  D->Dcf().Multiply(false, Tf, Tc);  // this should do the required parallel comm
+  Tc.Update(1.0, Xc, -1.0);
+  Yc.ReciprocalMultiply(1.0, D->Dcc(), Tc, 0.0);
+
+  delete [] fvec_ptrs;
 
 }
 
-// Overridden from EpetraExt::ModelEvaluator
-
-Teuchos::RCP<const Epetra_Map>
-RichardsModelEvaluator::get_x_map() const
+void RichardsModelEvaluator::update_precon(const double t, const Epetra_Vector& up, const double h, int& errc)
 {
-  //  return epetra_map_ptr_;
+  problem_->ComputePrecon(up,h);
+
+  errc = 0;
 }
 
-Teuchos::RCP<const Epetra_Map>
-RichardsModelEvaluator::get_f_map() const
+
+
+double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 {
-  //  return epetra_map_ptr_;
+  // simply use 2-norm of the difference for now
+  
+  Epetra_Vector udiff(u);
+  
+  udiff.Update(-1.0,du,1.0);
+
+  double error;
+  udiff.Norm2(&error);
+
+  return error;
 }
 
-Teuchos::RCP<const Epetra_Vector>
-RichardsModelEvaluator::get_x_init() const
-{
-  // Epetra_Vector& soln = problemInterfacePtr_->getSolution();
-  // Teuchos::RCP<Epetra_Vector> x_init = Teuchos::rcp(new Epetra_Vector(soln));
-  // return x_init;
-}
 
-Teuchos::RCP<const Epetra_Vector>
-RichardsModelEvaluator::get_x_dot_init() const
+bool RichardsModelEvaluator::is_admissible(const Epetra_Vector& up)
 {
-  // Epetra_Vector& soln = problemInterfacePtr_->getSolution();
-  // Teuchos::RCP<Epetra_Vector> x_dot_init = Teuchos::rcp(new Epetra_Vector(soln));
-  // x_dot_init->PutScalar(0.0);
-  // return x_dot_init;
-}
-
-Teuchos::RCP<Epetra_Operator>
-RichardsModelEvaluator::create_W() const
-{
-  // Teuchos::RCP<Epetra_Operator> W = Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
-  // return W;
-}
-
-EpetraExt::ModelEvaluator::InArgs
-RichardsModelEvaluator::createInArgs() const
-{
- //  InArgsSetup inArgs;
- //  inArgs.setSupports(IN_ARG_x,true);
- //  inArgs.setSupports(IN_ARG_x_dot,true);
- //  inArgs.setSupports(IN_ARG_alpha,true);
- //  inArgs.setSupports(IN_ARG_beta,true);
- //  inArgs.setSupports(IN_ARG_t,true);
- // // 2007/06/08: rabartl: We have to accept t even if we don't use it!  We have
- // // to require that all transient problems define t even if the model does not
- // // use it since this is the only way to completely pass an initial condition.
- //  return inArgs;
-}
-
-EpetraExt::ModelEvaluator::OutArgs
-RichardsModelEvaluator::createOutArgs() const
-{
-  // OutArgsSetup outArgs;
-  // outArgs.setSupports(OUT_ARG_f,true);
-  // outArgs.setSupports(OUT_ARG_W,true);
-  // return outArgs;
-}
-
-void RichardsModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
-{
-//   Teuchos::RCP<const Epetra_Vector> x = inArgs.get_x();
-//   Teuchos::RCP<const Epetra_Vector> xdot = inArgs.get_x_dot();
-// #ifdef EXAMPLEAPPLICATION_DEBUG
-//   std::cout << "RichardsModelEvaluator::evalModel ---------------------------{" << std::endl;
-//   std::cout << "x = " << std::endl;
-//   x->Print(std::cout);
-//   std::cout << "xdot = " << std::endl;
-//   xdot->Print(std::cout);
-// #endif // EXAMPLEAPPLICATION_DEBUG
-//   Teuchos::RCP<Epetra_Vector> f;
-//   if( (f = outArgs.get_f()).get() ) 
-//   {
-//     NOX::Epetra::Interface::Required::FillType flag = NOX::Epetra::Interface::Required::Residual;
-//     problemInterfacePtr_->evaluate(flag,&*x,&*xdot,0.0,0.0,&*f,NULL);
-// #ifdef EXAMPLEAPPLICATION_DEBUG
-//     std::cout << "f = " << std::endl;
-//     f->Print(std::cout);
-// #endif // EXAMPLEAPPLICATION_DEBUG
-//   }
-//   Teuchos::RCP<Epetra_Operator> W;
-//   if( (W = outArgs.get_W()).get() ) 
-//   {
-//     const double alpha = inArgs.get_alpha();
-//     const double beta = inArgs.get_beta();
-//     NOX::Epetra::Interface::Required::FillType flag = NOX::Epetra::Interface::Required::Jac;
-// //    Epetra_CrsMatrix& jacobian = problemInterfacePtr_->getJacobian();
-//     Epetra_CrsMatrix& jac = Teuchos::dyn_cast<Epetra_CrsMatrix>(*W);
-//     problemInterfacePtr_->evaluate(flag,&*x,&*xdot,alpha,beta,NULL,&jac);
-// #ifdef EXAMPLEAPPLICATION_DEBUG
-//     std::cout << "jac = " << std::endl;
-//     jac.Print(std::cout);
-// #endif // EXAMPLEAPPLICATION_DEBUG
-//   }
-// #ifdef EXAMPLEAPPLICATION_DEBUG
-//   std::cout << "RichardsModelEvaluator::evalModel ---------------------------}" << std::endl;
-// #endif // EXAMPLEAPPLICATION_DEBUG
-}
-
-Teuchos::RCP<Epetra_Vector> RichardsModelEvaluator::get_exact_solution( double t ) const
-{
-  // Epetra_Vector& x_exact = problemInterfacePtr_->getExactSoln(t);
-  // Teuchos::RCP<Epetra_Vector> x_exact_ptr = Teuchos::rcp(&x_exact,false);
-  // return(x_exact_ptr);
+  return true;
 }
