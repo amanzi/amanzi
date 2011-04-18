@@ -1,14 +1,15 @@
 #ifndef __GeneralRxn_hpp__
 #define __GeneralRxn_hpp__
 
+// Class for general forward/reverse reaction
+
 #include <string>
 #include <vector>
-#include <cmath>
 
 #include "Species.hpp"
-#include "Block.hpp"
 
-// Class for general forward/reverse reaction
+// forward declarations
+class Block;
 
 class GeneralRxn {
 

@@ -7,7 +7,7 @@
 #include <vector>
 
 typedef std::string SpeciesName;
-typedef int SpeciesId;
+typedef int SpeciesId; // unsigned int?
 //typedef std::vector<Species> SpeciesArray;
 /*  SpeciesArray is actually defined at the end of the file because we
 **  can't use it in the typdef until it is declared.... Put all these
@@ -79,18 +79,18 @@ class Species {
   SpeciesId identifier_;
   double charge_; // why is this a double rather than int...?
   double gram_molecular_weight_;
-  double ion_size_parameter_;
+  double ion_size_parameter_; // angstroms
   SpeciesName name_;
 
   // these are data and should not be changed during a
   // simulation. Remove this interface and require correct data be
   // provided during initialization! Probably means we need to ditch
   // the empty constructor as well.
-  void identifier(SpeciesId i) { this->identifier_ = i; }
-  void charge(double d) { this->charge_ = d; }
-  void gram_molecular_weight(double d) { this->gram_molecular_weight_ = d; }
-  void ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
-  void name(SpeciesName name) { this->name_ = name; }
+  //void identifier(SpeciesId i) { this->identifier_ = i; }
+  //void charge(double d) { this->charge_ = d; }
+  //void gram_molecular_weight(double d) { this->gram_molecular_weight_ = d; }
+  //void ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
+  //void name(SpeciesName name) { this->name_ = name; }
 
 };
 

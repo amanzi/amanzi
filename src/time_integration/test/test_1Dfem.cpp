@@ -55,7 +55,7 @@ public:
 
   }
 
-  void fun(double t, Epetra_Vector& u, Epetra_Vector& udot, Epetra_Vector& f) 
+  void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f) 
   {
     ASSERT(udot.MyLength() == n);
     ASSERT(u.MyLength() == n);
@@ -80,16 +80,17 @@ public:
   }
     
   
-  void precon(Epetra_Vector& u, Epetra_Vector& Pu) 
+  void precon(const Epetra_Vector& u, Epetra_Vector& Pu) 
   {
     ASSERT(u.MyLength() == Pu.MyLength());
-
-    tdsolve (*jac, u, 0);
     
     Pu = u;
+
+    tdsolve (*jac, Pu, 0);
+    
   }
   
-  double enorm(Epetra_Vector& u, Epetra_Vector& du) 
+  double enorm(const Epetra_Vector& u, const Epetra_Vector& du) 
   {
 
     double en = 0.0;
@@ -105,7 +106,7 @@ public:
   }
 
 
-  void update_precon(double t, Epetra_Vector& up, double h, int& errc) 
+  void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc) 
   {
     
     // Jacobian of the linear term in udot.
@@ -147,14 +148,14 @@ public:
 
   }
 
-  bool is_admissible(Epetra_Vector& u)
+  bool is_admissible(const Epetra_Vector& u)
   {
     return true;
   }
 
 
 
-  void eval_diff_coef (Epetra_Vector& u, Epetra_Vector& a)
+  void eval_diff_coef (const Epetra_Vector& u, Epetra_Vector& a)
   {
     ASSERT(a.MyLength() == n-1);
     

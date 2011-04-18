@@ -8,8 +8,8 @@
 #include "ActivityModelFactory.hpp"
 #include "ChemistryException.hpp"
 
-const string ActivityModelFactory::debye_huckel = "debye-huckel";
-const string ActivityModelFactory::unit = "unit";
+const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
+const std::string ActivityModelFactory::unit = "unit";
 
 ActivityModelFactory::ActivityModelFactory()
 {
@@ -19,7 +19,7 @@ ActivityModelFactory::~ActivityModelFactory()
 {
 }  // end ActivityModelFactory destructor
 
-ActivityModel* ActivityModelFactory::Create(std::string model)
+ActivityModel* ActivityModelFactory::Create(const std::string& model)
 {
   ActivityModel* activity_model = NULL;
 

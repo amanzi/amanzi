@@ -1,11 +1,6 @@
 #ifndef __Block_hpp__
 #define __Block_hpp__
 
-#include <cmath>
-#include <iostream>
-#include <iomanip>
-using namespace std;
-
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
 class Block {

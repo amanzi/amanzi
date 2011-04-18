@@ -128,7 +128,7 @@ class Beaker {
   virtual void display(void) const;
   void print_results(void) const;
   void print_results(double time) const;
-  void print_linear_system(string s, Block *A, std::vector<double> vector);
+  void print_linear_system(std::string s, Block *A, std::vector<double> vector);
 
   void GetPrimaryNames(std::vector<std::string>& names) const;
   int GetPrimaryIndex(std::string name) const;

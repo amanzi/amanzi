@@ -2,7 +2,7 @@
 /**
  * @file   Parallel_Exodus_file.cc
  * @author William A. Perkins
- * @date Mon Nov 29 07:21:11 2010
+ * @date Thu Apr  7 08:55:01 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Mon Nov 29 07:21:11 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Apr  7 08:55:01 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <algorithm>
@@ -63,6 +63,8 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm,
   std::cerr << "Process " << me << " of " << np << ": trying file " << s << std::endl;
 
   int ierr(0);
+  ExodusError ex_all;
+
   try {
     my_file.reset(new Exodus_file(s.c_str()));
   } catch (const ExodusError& e) {
@@ -71,13 +73,14 @@ Parallel_Exodus_file::Parallel_Exodus_file(const Epetra_Comm& comm,
                      me % s % e.what());
     std::cerr << msg << std::endl;
     ierr += 1;
+    ex_all.add_data(msg.c_str());
   }
 
   int gerr(0);
   my_comm->SumAll(&ierr, &gerr, 1);
 
   if (gerr > 0) {
-    throw std::runtime_error("Parallel_Exodus_file construction error");
+    Exceptions::amanzi_throw( ex_all );
   }
 }
 
@@ -119,7 +122,7 @@ Parallel_Exodus_file::read_mesh(void)
   if (aerr) {
     std::string msg(my_basename);
     msg += ": mismatched numbers of element blocks";
-    throw std::runtime_error(msg);
+    Exceptions::amanzi_throw( ExodusError(msg.c_str()) );
   }
 
   for (int b = 0; b < nblk; b++) {
@@ -174,7 +177,7 @@ Parallel_Exodus_file::read_mesh(void)
   if (aerr) {
     std::string msg = 
       boost::str(boost::format("%s: element block type errors") % my_basename);
-    throw std::runtime_error(msg);
+    Exceptions::amanzi_throw( ExodusError(msg.c_str()) );
   }
 
   return my_mesh;
@@ -197,7 +200,12 @@ Parallel_Exodus_file::cellmap(void)
 
   int ret_val = 
     ex_get_elem_num_map(my_file->id, &gids[0]);
-  if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+  if (ret_val < 0) {
+    std::string msg = 
+      boost::str(boost::format("%s: error: cannot read element number map (%d)") %
+                 my_file->filename % ret_val);
+    Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+  }
 
   my_comm->Barrier();
 
@@ -223,7 +231,12 @@ Parallel_Exodus_file::vertexmap(void)
 
   int ret_val = 
     ex_get_node_num_map(my_file->id, &gids[0]);
-  if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+  if (ret_val < 0) {
+    std::string msg = 
+      boost::str(boost::format("%s: error: cannot read vertex number map (%d)") %
+                 my_file->filename % ret_val);
+    Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+  }
 
   my_comm->Barrier();
 

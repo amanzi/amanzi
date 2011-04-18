@@ -166,7 +166,7 @@ SUITE(GeochemistryTestsActivityModels)
     species_.push_back(SO4_mm);
     species_.push_back(Al_ppp);
     species_.push_back(PO4_mmm);
-    // should add some aqueous complexes to test ionic strength....
+    // TODO: should add some aqueous complexes to test ionic strength....
     aqueous_complexes_.clear();
   }
 

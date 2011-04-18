@@ -72,15 +72,26 @@ struct twoblktet_2_1 : Exodus_file_holder
      twoblktet_2_1() : Exodus_file_holder (split_file_path("twoblktet_ss.par.2.1").c_str()) { }
 };
 
+SUITE (Error)
+{
+  TEST (Nonexistant)
+  {
+    Mesh_data::Data *data = NULL;
+    CHECK_THROW((data = ExodusII::read_exodus_file ("A.bogus.exo")), ExodusII::ExodusError);
+    if (data != NULL) delete data;
+  }
+}
 
-
-SUITE (Big_File)
+SUITE (Tiny_File)
 {
     TEST_FIXTURE (Tiny_File, Parameters)
     {
         data->to_stream(std::cerr, true);
     }
+}
 
+SUITE (Big_File)
+{
     TEST_FIXTURE (Big_File, Parameters)
     {
         const Mesh_data::Parameters &params (data->parameters ());

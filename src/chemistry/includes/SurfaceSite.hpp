@@ -1,14 +1,14 @@
 #ifndef __SurfaceSite_hpp__
 #define __SurfaceSite_hpp__
 
-#include <string>
-#include <vector>
-#include <cmath>
+// Class for storing surface site data for surface complexation
 
-#include "Block.hpp"
+#include <vector>
+
 #include "Mineral.hpp"
 
-// Class for storing surface site data for surface complexation
+// forward declarations
+class Block;
 
 class SurfaceSite {
 

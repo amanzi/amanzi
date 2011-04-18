@@ -41,6 +41,7 @@ public:
 
   const Epetra_Map& OperatorRangeMap() const { return map_; }
 
+
 private:
   // The diffusion matrix
   Teuchos::RCP<DiffusionMatrix> D;

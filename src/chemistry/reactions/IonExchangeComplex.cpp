@@ -66,10 +66,12 @@
 **
 */
 
-
+#include <iostream>
 #include <iomanip>
 
 #include "IonExchangeComplex.hpp"
+#include "Block.hpp"
+
 
 IonExchangeComplex::IonExchangeComplex()
     : Species()

@@ -1,17 +1,15 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef __Secondary_Species_hpp__
 #define __Secondary_Species_hpp__
-
-
-#include <string>
-#include <vector>
-#include <cmath>
-
-#include "Species.hpp"
-#include "Block.hpp"
-
 // Base class for secondary species (aqueous equilibrium complexes,
 // minerals)
+
+#include <vector>
+
+#include "Species.hpp"
+
+// forward declarations
+class Block;
 
 class SecondarySpecies : public Species {
 
@@ -21,7 +19,7 @@ class SecondarySpecies : public Species {
                    const SpeciesId secondary_id,
                    const std::vector<SpeciesName> species,
                    const std::vector<double> stoichiometries,
-                   const std::vector<int> species_ids,
+                   const std::vector<SpeciesId> species_ids,
                    const double h2o_stoich, 
                    const double charge, 
                    const double mol_wt,
@@ -31,19 +29,19 @@ class SecondarySpecies : public Species {
   virtual ~SecondarySpecies();
 
   // update molalities
-  virtual void Update(const std::vector<Species>primary_species);
+  virtual void Update(const std::vector<Species>& primary_species);
   // add stoichiometric contribution of complex to total
-  virtual void AddContributionToTotal(std::vector<double> &total) = 0;
+  virtual void AddContributionToTotal(std::vector<double> *total) = 0;
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species> primary_species,
                                        Block *dtotal) = 0;
 
-  void set_ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
-  void ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
   int ncomp(void) const { return this->ncomp_; };
 
   void set_logK(const double in_logK) { this->logK_ = in_logK; };
   double logK(void) const { return this->logK_; };
+  double lnK(void) const { return this->lnK_; };
+  double lnQK(void) const { return this->lnQK_; };
 
   std::vector<SpeciesName> species_names(void) const { return this->species_names_; };
   std::vector<SpeciesId> species_ids(void) const { return this->species_ids_; };
@@ -67,6 +65,9 @@ class SecondarySpecies : public Species {
   double logK_;
 
  private:
+  // should not be able to change ncomp after it is set in the constructor...?
+  //void set_ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
+  void ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
 };
 
 #endif

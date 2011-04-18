@@ -1,21 +1,20 @@
 #ifndef __SurfaceComplexationRxn_hpp__
 #define __SurfaceComplexationRxn_hpp__
 
-#include <string>
-#include <vector>
-#include <cmath>
+// Class for aqueous equilibrium complexation reaction
 
-#include "Block.hpp"
+#include <vector>
+
 #include "SurfaceComplex.hpp"
 #include "SurfaceSite.hpp"
 
-// Class for aqueous equilibrium complexation reaction
+// forward declarations
+class Block;
 
 class SurfaceComplexationRxn {
 
  public:
   SurfaceComplexationRxn();
-  SurfaceComplexationRxn(std::string s);
   SurfaceComplexationRxn(SurfaceSite *surface_sites,
                          std::vector<SurfaceComplex> surface_complexes);
   SurfaceComplexationRxn(SurfaceSite surface_sites);

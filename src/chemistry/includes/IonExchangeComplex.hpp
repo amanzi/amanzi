@@ -10,13 +10,13 @@
 */
 
 
-#include <string>
 #include <vector>
-#include <cmath>
 
 #include "Species.hpp"
 #include "IonExchangeSite.hpp"
-#include "Block.hpp"
+
+// forward declarations
+class Block;
 
 class IonExchangeComplex : Species {
 

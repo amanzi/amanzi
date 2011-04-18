@@ -1,6 +1,8 @@
+#include <iostream>
 #include <iomanip>
 
 #include "SurfaceComplex.hpp"
+#include "Block.hpp"
 
 SurfaceComplex::SurfaceComplex()
 {

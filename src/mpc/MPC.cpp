@@ -15,6 +15,8 @@
 #include "cgns_mesh_par.hh"
 #include "cgns_mesh.hh"
 #endif
+// TODO: We are using depreciated parts of boost::filesystem
+#define BOOST_FILESYSTEM_VERSION 2
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 
@@ -299,7 +301,7 @@ void MPC::cycle_driver () {
         chemistry_dT = CPK->max_time_step();
       }
       
-      mpc_dT = min( transport_dT, chemistry_dT );
+      mpc_dT = std::min( transport_dT, chemistry_dT );
       
       std::cout << "MPC: ";
       std::cout << "Cycle = " << iter; 
@@ -504,8 +506,8 @@ void MPC::write_gnuplot_data(int iter, double time)
     
     fname << "_" << std::setfill('0') << std::setw(5) << iter << ".dat";
 
-    filebuf fb;
-    fb.open (fname.str().c_str(),ios::out);
+    std::filebuf fb;
+    fb.open (fname.str().c_str(), std::ios::out);
     ostream os(&fb);
     os << "# time = " << time / (60.0 * 60.0 * 24.0 * 365.25) << " years" << std::endl;
 
@@ -528,8 +530,8 @@ void MPC::write_gnuplot_data(int iter, double time)
       
       fname << "_" << std::setfill('0') << std::setw(5) << iter << ".dat";
       
-      filebuf fb;
-      fb.open (fname.str().c_str(),ios::out);
+      std::filebuf fb;
+      fb.open (fname.str().c_str(), std::ios::out);
       ostream os(&fb);      
       os << "# time = " << time / (60.0 * 60.0 * 24.0 * 365.25) << " years" << std::endl;
 

@@ -12,17 +12,17 @@ include(TestManager)
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
-
+include_directories(${SOLVERS_SOURCE_DIR})
 
 if ( ENABLE_MOAB_Mesh )
 
     # Binary: richards-nlk
     add_executable(richards-nlk richards-nlk.cc)
-    target_link_libraries(richards-nlk moab_mesh flow cell_geometry output)
+    target_link_libraries(richards-nlk solvers moab_mesh flow cell_geometry output)
 
     # Binary: richards-jfnk
     add_executable(richards-jfnk richards-jfnk.cc)
-    target_link_libraries(richards-jfnk moab_mesh flow cell_geometry output)
+    target_link_libraries(richards-jfnk solvers moab_mesh flow cell_geometry output)
 
 else()    
 

@@ -1,8 +1,12 @@
+#include <cmath>
+
+#include <iostream>
 #include <iomanip>
 #include <sstream>
 
 #include "ChemistryException.hpp"
 #include "SurfaceComplexationRxn.hpp"
+#include "Block.hpp"
 
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false)

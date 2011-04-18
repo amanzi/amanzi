@@ -12,10 +12,10 @@ class ActivityModelFactory
   ActivityModelFactory();
   ~ActivityModelFactory();
 
-  ActivityModel* Create(std::string model);
+  ActivityModel* Create(const std::string& model);
 
-  static const string debye_huckel;
-  static const string unit;
+  static const std::string debye_huckel;
+  static const std::string unit;
 
  protected:
 

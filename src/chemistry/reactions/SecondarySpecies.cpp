@@ -1,7 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include <iostream>
 #include <iomanip>
+#include <sstream>
 
 #include "SecondarySpecies.hpp"
+#include "ChemistryException.hpp"
 
 SecondarySpecies::SecondarySpecies() 
     : Species(),
@@ -52,8 +55,35 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
     species_ids_.push_back(*i);
   }
 
-  logK_ = in_logK;
-  lnK_ = log_to_ln(in_logK);
+  lnK_ = log_to_ln(logK());
+
+  //
+  // verify the setup
+  //
+
+  // must have ncomp > 0, or ncomp > 1?
+  if (ncomp() < 1) {
+    std::ostringstream error_stream;
+    error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
+    error_stream << "CHEMISTRY_ERROR: invalid number of components "
+                 << "(ncomp < 1), ncomp = " << ncomp() << std::endl;
+    throw ChemistryException(error_stream.str());
+  }
+  // size of species names, stoichiometries and id arrays must be the same
+  if (species_names_.size() != stoichiometry_.size()) {
+    std::ostringstream error_stream;
+    error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
+    error_stream << "CHEMISTRY_ERROR: invalid input data: \n";
+    error_stream << "CHEMISTRY_ERROR: species_names.size() != stoichiometries.size()" << std::endl;
+    throw ChemistryException(error_stream.str());
+  }
+  if (species_names_.size() != species_ids_.size()) {
+    std::ostringstream error_stream;
+    error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
+    error_stream << "CHEMISTRY_ERROR: invalid input data: \n";
+    error_stream << "CHEMISTRY_ERROR: species_names.size() != species_ids.size()" << std::endl;
+    throw ChemistryException(error_stream.str());
+  }
 
 }  // end SecondarySpecies costructor
 
@@ -67,12 +97,12 @@ SecondarySpecies::~SecondarySpecies()
 **  these functions are only needed if SecondarySpecies equilibrium is added.
 **
 */
-void SecondarySpecies::Update(const std::vector<Species> primary_species) 
+void SecondarySpecies::Update(const std::vector<Species>& primary_species) 
 {
   static_cast<void>(primary_species);
 } // end update()
 
-void SecondarySpecies::AddContributionToTotal(std::vector<double> &total) 
+void SecondarySpecies::AddContributionToTotal(std::vector<double> *total) 
 {
   static_cast<void>(total);
 } // end addContributionToTotal()

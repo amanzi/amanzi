@@ -1,3 +1,8 @@
+#include <cmath>
+
+#include <iostream>
+#include <iomanip>
+
 #include "Block.hpp"
 
 Block::Block() {
@@ -27,7 +32,7 @@ void Block::setDiagonal(double d) {
 double Block::getRowAbsMax(int irow) {
   double max = 0.;
   for (int i = 0; i < size; i++) {
-    double value = fabs(A[irow][i]);
+    double value = std::fabs(A[irow][i]);
     if (value > max) max = value;
   }
   return max;
@@ -152,8 +157,12 @@ void Block::addValues(int ioffset, int joffset, Block *b, double scale) {
 
 void Block::print() {
   for (int i = 0; i < size; i++) {
-    for (int j = 0; j < size; j++)
-      if (fabs(A[j][i]) > 0.) cout << i << " " << j << " : " << std::scientific << A[j][i] << endl;
+    for (int j = 0; j < size; j++) {
+      if (std::fabs(A[j][i]) > 0.) {
+        std::cout << i << " " << j << " : "
+                  << std::scientific << A[j][i] << std::endl;
+      }
+    }
   }
 }
 

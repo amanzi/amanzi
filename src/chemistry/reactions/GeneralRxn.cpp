@@ -1,4 +1,9 @@
+#include <cmath>
+
+#include <iostream>
+
 #include "GeneralRxn.hpp"
+#include "Block.hpp"
 
 GeneralRxn::GeneralRxn() 
 {

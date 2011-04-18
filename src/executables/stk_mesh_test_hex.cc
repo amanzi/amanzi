@@ -24,6 +24,8 @@ static const char* SCCS_ID = "$Id$ Battelle PNL";
 #include <Isorropia_EpetraPartitioner.hpp>
 
 #include <boost/format.hpp>
+// TODO: We are using depreciated parts of boost::filesystem
+#define BOOST_FILESYSTEM_VERSION 2
 #include <boost/filesystem/path.hpp>
 namespace bf = boost::filesystem;
 #include <boost/program_options.hpp>
