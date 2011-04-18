@@ -65,7 +65,7 @@ if ( BUILD_TESTS )
         # Test: transport (parallel)
         add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
         target_link_libraries(test_parallel ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_unit_test(transport_parallel test_parallel NPROCS ${MPI_EXEC_MAX_NPROCS})
+        add_integration_test(transport_parallel test_parallel NPROCS ${MPI_EXEC_MAX_NUMPROCS})
 
     endif()    
 

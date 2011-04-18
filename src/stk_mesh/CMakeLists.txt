@@ -66,8 +66,7 @@ if (BUILD_TESTS)
     add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
     target_link_libraries(test_stk_mesh_parallel stk_mesh mesh_audit
                            ${UnitTest_LIBRARIES})
-    add_unit_test(stk_mesh_parallel 
-                      test_stk_mesh_parallel NPROCS 4)                   
+    add_unit_test(stk_mesh_parallel test_stk_mesh_parallel NPROCS 4)                   
      
     # Test: stk_mesh_read (serial and parallel)
     add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)

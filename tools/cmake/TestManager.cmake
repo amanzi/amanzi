@@ -23,10 +23,18 @@ function(_ADD_TEST_LABELS test_name)
 
 endfunction(_ADD_TEST_LABELS)
 
-function (_REGISTER_TEST test_name test_exec nprocs labels mpi_args)
+
+
+
+
+function (_REGISTER_TEST test_name test_exec nprocs is_parallel mpi_args)
+
+  if ("${nprocs}" STREQUAL "")
+    set(nprocs 1)
+  endif()
 
   foreach(nproc ${nprocs})
-    if (${nproc} GREATER 1)
+    if ((${nproc} GREATER 1) OR "${is_parallel}")
       ADD_PARALLEL_TEST(${test_name} ${test_exec} NPROCS ${nproc} MPI_EXEC_ARGS ${mpi_args})
       _add_test_labels(${test_name} "Parallel")
     else()
@@ -39,8 +47,6 @@ endfunction(_REGISTER_TEST)
 
 
 
-
-function(ADD_UNIT_TEST test_name test_exec)
 
 #
 # Usage:
@@ -60,21 +66,19 @@ function(ADD_UNIT_TEST test_name test_exec)
 # mpi. It is ignored for serial tests.
 #
 
+function(ADD_UNIT_TEST test_name test_exec)
+
   set(options "PARALLEL")
   set(oneValueArgs "")
   set(multiValueArgs NPROCS)
 
   cmake_parse_arguments(ADD_UNIT_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  set(nprocs "${ADD_UNIT_TEST_NPROCS}" )
-  if ("${nprocs}" STREQUAL "")
-    set(nprocs 1)
-  endif()
+  set(is_parallel "${ADD_UNIT_TEST_PARALLEL}")
+  set(mpi_args    "${ADD_UNIT_TEST_MPI_EXEC_ARGS}")
+  set(nprocs      "${ADD_UNIT_TEST_NPROCS}")
 
-  set(labels ${ADD_UNIT_TEST_LABELS})
-  set(mpi_args ${ADD_UNIT_TEST_MPI_EXEC_ARGS})
-
-  _register_test("${test_name}" "${test_exec}" "${nprocs}" "${labels}" "${mpiargs}")
+  _register_test("${test_name}" "${test_exec}" "${nprocs}" "${is_parallel}" "${mpiargs}")
   _add_test_labels("${test_name}" "Unit")
 
 endfunction(ADD_UNIT_TEST)
@@ -90,15 +94,11 @@ function(ADD_INTEGRATION_TEST test_name test_exec)
 
   cmake_parse_arguments(ADD_INTEGRATION_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  set(nprocs "${ADD_INTEGRATION_TEST_NPROCS}" )
-  if ("${nprocs}" STREQUAL "")
-    set(nprocs 1)
-  endif()
+  set(is_parallel "${ADD_INTEGRATION_TEST_PARALLEL}")
+  set(mpi_args    "${ADD_INTEGRATION_TEST_MPI_EXEC_ARGS}")
+  set(nprocs      "${ADD_INTEGRATION_TEST_NPROCS}")
 
-  set(labels ${ADD_UNIT_TEST_LABELS})
-  set(mpi_args ${ADD_UNIT_TEST_MPI_EXEC_ARGS})
-
-  _register_test("${test_name}" "${test_exec}" "${nprocs}" "${labels}" "${mpiargs}")
+  _register_test("${test_name}" "${test_exec}" "${nprocs}" "${is_parallel}" "${mpiargs}")
   _add_test_labels(${test_name} "Integration")
 
   # TODO: Add dependencies on files

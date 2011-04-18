@@ -40,7 +40,6 @@ macro(ADD_PARALLEL_TEST test_name test_exec)
     endif()
   endif()
 
-  print_variable(MPI_EXEC_ARGS_FLAG)
   LIST(APPEND test_exec_args "${MPI_EXEC_ARGS_FLAG}" "${MPI_EXEC_ARGS}" "${ADD_PARALLELL_TEST_UNPARSED_ARGUMENTS}")
 
   # Build MPI_EXEC cpmmand
@@ -48,7 +47,6 @@ macro(ADD_PARALLEL_TEST test_name test_exec)
   set(_mpi_cmd ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} ${_local_nprocs})
   list(APPEND _mpi_cmd ${ADD_PARALLEL_TEST_MPI_EXEC_ARGS})
   list(APPEND _mpi_cmd ${test_exec} ${test_exec_args})
-  message("_mpi_cmd=${_mpi_cmd}")
 
   # Finally add the test
   add_test(${test_name} ${_mpi_cmd})
