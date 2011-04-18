@@ -12,11 +12,11 @@ include(PrintVariable)
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   MESH_BASE_SOURCE_DIR
-#   MESH_BASE_BINARY_DIR
+#   SIMPLE_MESH_SOURCE_DIR
+#   SIMPLE_MESH_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(MESH_BASE)
+project(SIMPLE_MESH)
 
 # Amanzi include directories
 include_directories(${MESH_SOURCE_DIR})

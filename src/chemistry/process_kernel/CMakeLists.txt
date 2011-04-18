@@ -10,7 +10,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${SIMPLE_MESH_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 
 # External (TPL) include directories

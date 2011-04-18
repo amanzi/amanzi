@@ -31,7 +31,7 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${SIMPLE_MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 
 
