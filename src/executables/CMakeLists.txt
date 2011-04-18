@@ -94,4 +94,20 @@ if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
     target_link_libraries(stk_mesh_test_hex 
                          exodus mesh_data stk_mesh output mesh_audit
                          ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
-endif()    
+endif()
+
+#
+# Binary: verify_moab_mesh
+#
+if ( ENABLE_STK_Mesh )
+    add_executable(verify_stk_mesh verify_stk_mesh.cc)
+    target_link_libraries(verify_stk_mesh stk_mesh mesh_audit exodus)
+endif()
+
+#
+# Binary: verify_moab_mesh
+#
+if ( ENABLE_MOAB_Mesh )
+    add_executable(verify_moab_mesh verify_moab_mesh.cc)
+    target_link_libraries(verify_moab_mesh moab_mesh mesh_audit)
+endif()

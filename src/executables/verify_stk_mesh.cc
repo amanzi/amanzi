@@ -52,11 +52,11 @@ int main (int argc, char* argv[])
   Teuchos::RCP<Mesh_maps_base> 
     maps(new STK_mesh::Mesh_maps_stk(comm, filename.c_str()));
 
-  int lresult(0);
+  int status;
 
   if (nproc == 1) {
     MeshAudit audit(maps);
-    lresult = audit.Verify();
+    status = audit.Verify();
   } else {
     std::ostringstream ofile;
     ofile << "mesh_audit_" << std::setfill('0') << std::setw(4) << me << ".txt";
@@ -64,16 +64,12 @@ int main (int argc, char* argv[])
     if (me == 0)
       std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
     MeshAudit audit(maps, ofs);
-    lresult = audit.Verify();
+    status = audit.Verify();
   }
-
-  int gresult;
-
-  comm.MaxAll(&lresult, &gresult, 1);
 
   if (me == 0) {
-    std::cout << filename << ": " << (gresult ? "has errors" : "OK") << std::endl;
+    std::cout << filename << ": " << (status ? "has errors" : "OK") << std::endl;
   }
 
-  return gresult;
+  return status;
 }
