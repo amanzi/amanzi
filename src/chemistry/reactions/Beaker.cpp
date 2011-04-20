@@ -241,27 +241,27 @@ void Beaker::SetupActivityModel(std::string model)
   }
 }  // end SetupActivityModel() 
 
-void Beaker::addPrimarySpecies(Species s) 
+void Beaker::addPrimarySpecies(const Species& s) 
 {
   primarySpecies_.push_back(s);
 } // end addPrimarySpecies()
 
-void Beaker::AddIonExchangeSite(IonExchangeSite exchanger) 
+void Beaker::AddIonExchangeSite(IonExchangeSite& exchanger) 
 {
   ion_exchange_sites_.push_back(exchanger);
 } // end AddIonExchangeSites()
 
-void Beaker::AddIonExchangeComplex(IonExchangeComplex exchange_complex) 
+void Beaker::AddIonExchangeComplex(IonExchangeComplex& exchange_complex) 
 {
   ion_exchange_rxns_.push_back(exchange_complex);
 } // end AddIonExchangeSites()
 
-void Beaker::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) 
+void Beaker::addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c) 
 {
   aqComplexRxns_.push_back(c);
 } // end addAqueousEquilibriumComplex()
 
-void Beaker::addMineral(Mineral m) 
+void Beaker::addMineral(Mineral& m) 
 {
   minerals_.push_back(m);
 } // end addMineral()
@@ -282,12 +282,12 @@ bool Beaker::HaveKinetics(void) const
   return have_kinetics;
 }  // end HaveKinetics()
 
-void Beaker::addGeneralRxn(GeneralRxn r) 
+void Beaker::addGeneralRxn(const GeneralRxn& r) 
 {
   generalKineticRxns_.push_back(r);
 } // end addGeneralRxn()
 
-void Beaker::addSurfaceComplexationRxn(SurfaceComplexationRxn r) 
+void Beaker::addSurfaceComplexationRxn(const SurfaceComplexationRxn& r) 
 {
   surfaceComplexationRxns_.push_back(r);
 } // end addSurfaceComplexationRxn()
@@ -385,7 +385,7 @@ void Beaker::initializeMolalities(double initial_molality)
     i->update(initial_molality);
 } // end initializeMolalities
 
-void Beaker::initializeMolalities(std::vector<double> initial_molalities) 
+void Beaker::initializeMolalities(const std::vector<double>& initial_molalities) 
 {
   if (initial_molalities.size() != primarySpecies_.size()) {
     std::ostringstream error_stream;
@@ -567,8 +567,8 @@ void Beaker::addAccumulation(std::vector<double> *residual)
   addAccumulation(total_, total_sorbed_, residual);
 }
 
-void Beaker::addAccumulation(std::vector<double> total,
-                             std::vector<double> total_sorbed,
+void Beaker::addAccumulation(const std::vector<double>& total,
+                             const std::vector<double>& total_sorbed,
                              std::vector<double> *residual)
 {
   // accumulation_coef = porosity*saturation*volume*1000./dt
@@ -612,8 +612,8 @@ void Beaker::addAccumulationDerivative(Block *J,
 
 } // end calculateAccumulationDerivative()
 
-void Beaker::calculateFixedAccumulation(std::vector<double> total,
-                                        std::vector<double> total_sorbed,
+void Beaker::calculateFixedAccumulation(const std::vector<double>& total,
+                                        const std::vector<double>& total_sorbed,
                                         std::vector<double> *fixed_accumulation)
 {
   for (unsigned int i = 0; i < total.size(); i++)
@@ -622,7 +622,7 @@ void Beaker::calculateFixedAccumulation(std::vector<double> total,
 } // end calculateAccumulation()
 
 void Beaker::calculateResidual(std::vector<double> *residual, 
-                               std::vector<double> fixed_accumulation)
+                               const std::vector<double>& fixed_accumulation)
 {
   // subtract fixed porition
   for (int i = 0; i < ncomp(); i++)
@@ -698,7 +698,7 @@ void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update,
   }
 } // end updateMolalitiesWithTruncation()
 
-double Beaker::calculateMaxRelChangeInMolality(std::vector<double> prev_molal)
+double Beaker::calculateMaxRelChangeInMolality(const std::vector<double>& prev_molal)
 {
   double max_rel_change = 0.0;
   for (int i = 0; i < ncomp(); i++) {
@@ -1028,7 +1028,7 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
   }
 } // end UpdateComponents()
 
-void Beaker::CopyComponents(const Beaker::BeakerComponents from,
+void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents *to)
 {
   if (to->total.size() != from.total.size()) 

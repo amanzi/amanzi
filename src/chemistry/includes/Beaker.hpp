@@ -63,14 +63,14 @@ class Beaker {
   void SetComponents(const Beaker::BeakerComponents& components);
   void UpdateComponents(Beaker::BeakerComponents* components);
 
-  void addPrimarySpecies(Species s);
-  void AddIonExchangeSite(IonExchangeSite exchanger);
-  void AddIonExchangeComplex(IonExchangeComplex exchange_complex);
-  void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
-  void addMineral(Mineral m);
+  void addPrimarySpecies(const Species& s);
+  void AddIonExchangeSite(IonExchangeSite& exchanger);
+  void AddIonExchangeComplex(IonExchangeComplex& exchange_complex);
+  void addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
+  void addMineral(Mineral& m);
   void AddMineralKineticRate(KineticRate* rate);
-  void addGeneralRxn(GeneralRxn r);
-  void addSurfaceComplexationRxn(SurfaceComplexationRxn r);
+  void addGeneralRxn(const GeneralRxn& r);
+  void addSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
 
   bool HaveKinetics(void) const;
 
@@ -84,7 +84,7 @@ class Beaker {
 
   void updateActivityCoefficients();
   void initializeMolalities(double initial_molality);
-  void initializeMolalities(std::vector<double> initial_molalities);
+  void initializeMolalities(const std::vector<double>& initial_molalities);
 
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
@@ -102,24 +102,24 @@ class Beaker {
   void addKineticChemistryToJacobian(Block *J);
   // accumulation terms
   void addAccumulation(std::vector<double> *residual);
-  void addAccumulation(std::vector<double> total, 
-                       std::vector<double> total_sorbed, 
+  void addAccumulation(const std::vector<double>& total, 
+                       const std::vector<double>& total_sorbed, 
                        std::vector<double> *residual);
   void addAccumulationDerivative(Block *J);
   void addAccumulationDerivative(Block *J, Block *dtotal, Block *dtotal_sorbed);
-  void calculateFixedAccumulation(std::vector<double> total,
-                                  std::vector<double> total_sorbed,
+  void calculateFixedAccumulation(const std::vector<double>& total,
+                                  const std::vector<double>& total_sorbed,
                                   std::vector<double> *fixed_accumulation);
   // residual and Jacobian
   void calculateResidual(std::vector<double> *residual, 
-                         std::vector<double> fixed_residual);
+                         const std::vector<double>& fixed_residual);
   void calculateJacobian(Block *J);
 
   // utilities for updating solution, convergence checks
   void updateMolalitiesWithTruncation(std::vector<double> &update, 
                                       std::vector<double> &prev_solution,
                                       double max_change);
-  double calculateMaxRelChangeInMolality(std::vector<double> prev_molal);
+  double calculateMaxRelChangeInMolality(const std::vector<double>& prev_molal);
   // solvers
   void scaleRHSAndJacobian(double *rhs, Block *J);
   void scaleRHSAndJacobian(std::vector<double> &rhs, Block *J);
@@ -172,7 +172,7 @@ class Beaker {
   BeakerParameters GetDefaultParameters(void) const;
   BeakerParameters GetCurrentParameters(void) const;
   void SetParameters(const BeakerParameters& parameters);
-  void CopyComponents(const Beaker::BeakerComponents from,
+  void CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents *to);
 
 protected:
