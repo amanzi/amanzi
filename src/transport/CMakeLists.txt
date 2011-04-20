@@ -54,6 +54,7 @@ if ( BUILD_TESTS )
         include_directories(${MOAB_INCLUDE_DIRS})
         include_directories(${MOAB_SOURCE_DIR})
         include_directories(${TRANSPORT_SOURCE_DIR})
+        include_directories(${Boost_INCLUDE_DIRS})
 
         set(amanzi_libs simple_mesh moab_mesh state flow transport)
 
