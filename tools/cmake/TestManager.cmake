@@ -35,7 +35,7 @@ function (_REGISTER_TEST test_name test_exec nprocs is_parallel mpi_args)
 
   foreach(nproc ${nprocs})
     if ((${nproc} GREATER 1) OR "${is_parallel}")
-      ADD_PARALLEL_TEST(${test_name} ${test_exec} NPROCS ${nproc} MPI_EXEC_ARGS ${mpi_args})
+      ADD_PARALLEL_TEST(${test_name} ${test_exec} "${mpi_args}" NPROCS ${nproc} )
       _add_test_labels(${test_name} "Parallel")
     else()
       add_test(${test_name} ${test_exec})
