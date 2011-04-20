@@ -4,7 +4,6 @@
 # Functions for managing tests.
 #
 
-include(AddParallelTest)
 include(CMakeParseArguments)
 include(PrintVariable)
 
@@ -77,7 +76,6 @@ endfunction(_ADD_TEST_LABELS)
 
 
 
-#
 # Usage:
 #
 # ADD_UNIT_TEST(<test_name> <test_executable>
@@ -135,6 +133,9 @@ function(ADD_INTEGRATION_TEST test_name test_exec)
   set(is_parallel  "${ADD_INTEGRATION_TEST_PARALLEL}")
   set(mpi_args     "${ADD_INTEGRATION_TEST_MPI_EXEC_ARGS}")
   set(nprocs       "${ADD_INTEGRATION_TEST_NPROCS}")
+
+  separate_arguments(global_mpi_args UNIX_COMMAND "${MPI_EXEC_ARGS}")
+  list(APPEND mpi_args ${global_mpi_args})
 
   _register_test("${test_name}" "${test_exec}" "${test_args}" "${nprocs}" "${is_parallel}" "${mpi_args}")
   _add_test_labels(${test_name} "Integration")
