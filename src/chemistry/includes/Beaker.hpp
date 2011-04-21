@@ -50,6 +50,13 @@ class Beaker {
     double volume; // [m^3]
   };
 
+  struct SolverStatus {
+    unsigned int num_rhs_evaluations;
+    unsigned int num_jacobian_evaluations;
+    unsigned int num_newton_iterations;
+    bool converged;
+  };
+
   // resizes matrix and vectors for nonlinear system
   void resize();
   void resize(int ncomp);
@@ -174,6 +181,7 @@ class Beaker {
   void SetParameters(const BeakerParameters& parameters);
   void CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents *to);
+  SolverStatus status(void) const { return this->status_; };
 
 protected:
   // update discretization and flow parameters
@@ -268,7 +276,8 @@ private:
   std::vector<int> indices;           // array for pivoting in LU
   Block *J;                           // Jacobian [kg water/sec]
 
-  
+  SolverStatus status_;
+  void ResetStatus(void);
   static const double tolerance_default;
   static const unsigned int max_iterations_default;
   static const double porosity_default;

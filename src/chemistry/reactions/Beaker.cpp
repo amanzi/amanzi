@@ -353,6 +353,14 @@ void Beaker::updateParameters(const Beaker::BeakerParameters& parameters,
   SetParameters(parameters);
 } // end updateParameters()
 
+void Beaker::ResetStatus(void)
+{
+  status_.num_rhs_evaluations = 0;
+  status_.num_jacobian_evaluations = 0;
+  status_.num_newton_iterations = 0;
+  status_.converged = false;
+}
+
 void Beaker::update_accumulation_coefficients(void)
 {
   aqueous_accumulation_coef(porosity() * saturation() * volume() * 1000.0 / dt());
@@ -624,6 +632,7 @@ void Beaker::calculateFixedAccumulation(const std::vector<double>& total,
 void Beaker::calculateResidual(std::vector<double> *residual, 
                                const std::vector<double>& fixed_accumulation)
 {
+  status_.num_rhs_evaluations++;
   // subtract fixed porition
   for (int i = 0; i < ncomp(); i++)
     (*residual)[i] = -fixed_accumulation[i];
@@ -639,6 +648,7 @@ void Beaker::calculateResidual(std::vector<double> *residual,
 
 void Beaker::calculateJacobian(Block *J)
 {
+  status_.num_jacobian_evaluations++;
   // must calculate derivatives with 
   calculateDTotal();
 
@@ -750,6 +760,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // update class paramters
   // water_density [kg/m^3]
   // volume [m^3]
+  ResetStatus();
   updateParameters(parameters, dt);
   CheckChargeBalance(components->total);
 
@@ -864,6 +875,11 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     throw ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded);
   }
 
+  status_.num_newton_iterations = num_iterations;
+  if (max_rel_change < tolerance()) {
+    status_.converged = true;
+  }
+
   // update total concentrations
   updateEquilibriumChemistry();
   UpdateComponents(components);
@@ -903,7 +919,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters)
 {
   double speciation_tolerance = 1.e-12;
-
+  ResetStatus();
   updateParameters(parameters, 0.0);
   CheckChargeBalance(components.total);
   // initialize free-ion concentrations, these are actual
@@ -1000,9 +1016,16 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
   updateEquilibriumChemistry();
+  status_.num_newton_iterations = num_iterations;
+  if (max_rel_change < tolerance()) {
+    status_.converged = true;
+  }
 
   if (verbosity() >= kDebugBeaker) {
-    std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
+    std::cout << "Beaker::speciate: status.num_rhs_evaluations: " << status_.num_rhs_evaluations << std::endl;
+    std::cout << "Beaker::speciate: status.num_jacobian_evaluations: " << status_.num_jacobian_evaluations << std::endl;
+    std::cout << "Beaker::speciate: status.num_newton_iterations: " << status_.num_newton_iterations << std::endl;
+    std::cout << "Beaker::speciate: status.converged: " << status_.converged << std::endl;
   }
   return num_iterations;
 }  // end Speciate()
