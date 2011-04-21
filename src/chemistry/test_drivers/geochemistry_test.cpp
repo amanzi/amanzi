@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"

@@ -7,6 +7,7 @@
 #include "ActivityModelUnit.hpp"
 #include "ActivityModelFactory.hpp"
 #include "ChemistryException.hpp"
+#include "exceptions.hh"
 
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
 const std::string ActivityModelFactory::unit = "unit";
@@ -34,8 +35,8 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model)
     error_stream << "ERROR: Unknown activity model name: " << model << "\n"
                  << "       valid names: " << unit << "\n"
                  << "                    " << debye_huckel << "\n";
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);    
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+                                                ChemistryException::kUnrecoverableError));
   }
 
   if (activity_model == NULL) {
@@ -43,8 +44,8 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model)
     std::ostringstream error_stream;
     error_stream << "ERROR: ActivityModelFactory::Create(): \n";
     error_stream << "ERROR: Activity model was not created for some reason....\n";
-    throw ChemistryException(error_stream.str(),
-                             ChemistryException::kUnrecoverableError);    
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
+                                                ChemistryException::kUnrecoverableError));
   } else {
     // finish any additional setup
     // TODO: set the name in the object constructor so we can verify that the correct object was created.

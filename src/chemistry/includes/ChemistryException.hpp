@@ -3,10 +3,11 @@
 
 #define __CHEMISTRY_EXCEPTION__
 
-#include <stdexcept>
 #include <string>
 
-class ChemistryException : public std::runtime_error
+#include "errors.hh"
+
+class ChemistryException : public Errors::Message
 {
  public:
   enum Status {

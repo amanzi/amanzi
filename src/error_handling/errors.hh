@@ -17,6 +17,7 @@ public:
 
     explicit Message () : message_ () {  }
     explicit Message (const char* message) : message_ (message) { }
+    explicit Message (const std::string& message) : message_ (message) { }
     ~Message () throw ();
 
     const char* what () const throw () { return message_.c_str (); }

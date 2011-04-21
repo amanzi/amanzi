@@ -8,13 +8,15 @@
 
 #include "ChemistryException.hpp"
 
+#include "exceptions.hh"
+
 SUITE(GeochemistryTests_ChemistryException)
 {
   TEST(TestChemistryException_default_message)
   {
     try {
       ChemistryException ce;
-      throw ce;
+      Exceptions::amanzi_throw(ce);
     }
     catch (ChemistryException& e) {
       CHECK_EQUAL("ERROR", e.what());
@@ -25,7 +27,7 @@ SUITE(GeochemistryTests_ChemistryException)
   {
     try {
       ChemistryException ce("Foo bar baz.");
-      throw ce;
+      Exceptions::amanzi_throw(ce);
     }
     catch (ChemistryException& e) {
       CHECK_EQUAL("Foo bar baz.", e.what());
@@ -36,7 +38,7 @@ SUITE(GeochemistryTests_ChemistryException)
   {
     try {
       ChemistryException ce("Foo bar baz.", ChemistryException::kUnrecoverableError);
-      throw ce;
+      Exceptions::amanzi_throw(ce);
     }
     catch (ChemistryException& e) {
       CHECK_EQUAL(ChemistryException::kUnrecoverableError, e.error_status());

@@ -8,6 +8,8 @@
 #include "SurfaceComplexationRxn.hpp"
 #include "Block.hpp"
 
+#include "exceptions.hh"
+
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false)
                   
@@ -115,7 +117,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies)
     std::ostringstream error_stream;
     error_stream << "ERROR: SurfaceComplexationRxn::Update(): \n";
     error_stream << "ERROR: loop reached max_iterations: " << iterations << std::endl;
-    throw ChemistryException(error_stream.str());   
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
   
 } // end Update()

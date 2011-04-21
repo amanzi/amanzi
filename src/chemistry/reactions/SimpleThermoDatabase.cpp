@@ -27,6 +27,8 @@
 #include "StringTokenizer.hpp"
 #include "ChemistryException.hpp"
 
+#include "exceptions.hh"
+
 SimpleThermoDatabase::SimpleThermoDatabase(void)
     : Beaker(),
       primary_id_(0),
@@ -88,8 +90,8 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
     std::ostringstream error_stream;
     error_stream << "ERROR: SimpleThermoDatabase::ReadFile(): \n";
     error_stream << "ERROR: file could not be opened.... " << file_name << "\n";
-    throw ChemistryException(error_stream.str(),
-                             ChemistryException::kUnrecoverableError);    
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
+                                                ChemistryException::kUnrecoverableError));
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine,
@@ -268,8 +270,8 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
         error_stream << "ERROR: SimpleThermoDatabase::ReadFile(): \n";
         error_stream << "ERROR: a data order error has occured reading file " << file_name
                      << "       please see output for details.\n";
-        throw ChemistryException(error_stream.str(),
-                                 ChemistryException::kUnrecoverableError);  
+        Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
+                                                    ChemistryException::kUnrecoverableError));
       }
     }
 

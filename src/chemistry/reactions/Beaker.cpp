@@ -31,6 +31,8 @@
 #include "Verbosity.hpp"
 #include "Beaker.hpp"
 
+#include "exceptions.hh"
+
 // solver defaults
 const double Beaker::tolerance_default = 1.0e-12;
 const unsigned int Beaker::max_iterations_default = 250;
@@ -190,8 +192,8 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
   }
 
   if (error) {
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);    
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+                                                ChemistryException::kUnrecoverableError));
   }
 
 }  // end VerifyComponentSizes()
@@ -207,7 +209,7 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
     std::ostringstream error_stream;
     error_stream << "ERROR: Beaker::SetComponents(): \n";
     error_stream << "ERROR: ion_exchange_sites.size and components.ion_exchange_sites.size do not match.\n";
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
 
   size = components.minerals.size();
@@ -220,7 +222,7 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
     std::ostringstream error_stream;
     error_stream << "ERROR: Beaker::SetComponents(): \n";
     error_stream << "ERROR: minerals.size and components.minerals.size do not match.\n";
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
 }  // end SetComponents()
 
@@ -400,8 +402,8 @@ void Beaker::initializeMolalities(const std::vector<double>& initial_molalities)
     error_stream << "ERROR: Beaker::initializeMolalities(): \n";
     error_stream << "ERROR:   Mismatch in size of initial_molalities array "
                  << "and number of primarySpecies" << std::endl;
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+                                                ChemistryException::kUnrecoverableError));
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
@@ -872,7 +874,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
     // update before leaving so that we can see the erroneous values!
     UpdateComponents(components);
-    throw ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded);
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded));
   }
 
   status_.num_newton_iterations = num_iterations;
@@ -906,8 +908,8 @@ void Beaker::ValidateSolution()
       error_stream << "ERROR: Beaker::ValidateSolution(): \n";
       error_stream << "ERROR:   mineral " << minerals_.at(m).name()
                    << " volume_fraction is negative." << std::endl;
-      throw ChemistryException(error_stream.str(), 
-                               ChemistryException::kInvalidSolution);
+      Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+                                                  ChemistryException::kInvalidSolution));
     }
   }
 

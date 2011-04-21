@@ -6,6 +6,8 @@
 #include "SecondarySpecies.hpp"
 #include "ChemistryException.hpp"
 
+#include "exceptions.hh"
+
 SecondarySpecies::SecondarySpecies() 
     : Species(),
       ncomp_(0), // # components in reaction
@@ -67,7 +69,7 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
     error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
     error_stream << "CHEMISTRY_ERROR: invalid number of components "
                  << "(ncomp < 1), ncomp = " << ncomp() << std::endl;
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
   // size of species names, stoichiometries and id arrays must be the same
   if (species_names_.size() != stoichiometry_.size()) {
@@ -75,14 +77,14 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
     error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
     error_stream << "CHEMISTRY_ERROR: invalid input data: \n";
     error_stream << "CHEMISTRY_ERROR: species_names.size() != stoichiometries.size()" << std::endl;
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
   if (species_names_.size() != species_ids_.size()) {
     std::ostringstream error_stream;
     error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
     error_stream << "CHEMISTRY_ERROR: invalid input data: \n";
     error_stream << "CHEMISTRY_ERROR: species_names.size() != species_ids.size()" << std::endl;
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
 
 }  // end SecondarySpecies costructor

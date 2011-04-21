@@ -62,7 +62,7 @@ if (BUILD_TESTS)
 		 test/test_aqueous_equilibrium_complex.cpp
 		 test/test_mineral.cpp
 		 test/test_beaker.cpp)
-  target_link_libraries(chemistry_tests chemistry ${UnitTest_LIBRARIES})
+  target_link_libraries(chemistry_tests chemistry error_handling ${UnitTest_LIBRARIES})
   add_test(chemistry chemistry_tests)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
