@@ -8,22 +8,35 @@
 
 #include "Epetra_Vector.h"
 
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 
 RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem, 
-					       Teuchos::RCP<DiffusionMatrix> &matrix,
 					       Teuchos::ParameterList &plist, 
 					       const Epetra_Map &map) 
-  : problem_(problem),  D(matrix), map_(map)
+  : problem_(problem), D(problem->Matrix()),  map_(map), plist_(plist)
 {
-  
-  
+  this->setLinePrefix("RichardsModelEvaluator");
+  this->getOStream()->setShowLinePrefix(true);
+
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&plist_,this);
   
 }
 
 void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
   
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+    {
+      *out << "initialize o.k." << std::endl;
+    }
+  
+
 }
 
 // Overridden from BDF2::fnBase
@@ -31,6 +44,12 @@ void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_p
 void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u, 
 				 const Epetra_Vector& udot, Epetra_Vector& f) 
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+  
+ 
   // compute F(u)
   problem_->ComputeF(u, f);
  
@@ -45,80 +64,84 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   
   // on the cell unknowns compute f=f+dS*udotc
   fc->Multiply(1.0,dS,*udotc,1.0);
+  
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+    {
+      *out << "fun o.k." << std::endl;
+    }
+
 }
 
 void RichardsModelEvaluator::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-  const int ncell = D->Mesh().count_entities(Mesh_data::CELL, OWNED);
 
-  const Epetra_Map &cell_map = D->Mesh().cell_map(false);
-  const Epetra_Map &face_map = D->Mesh().face_map(false);
+  (problem_->Precon()).ApplyInverse(X, Y);
 
-  // The cell and face-based DoF are packed together into the X and Y Epetra
-  // vectors: cell-based DoF in the first part, followed by the face-based DoF.
-  // In addition, only the owned DoF belong to the vectors.
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+    {
+      *out << "precon o.k." << std::endl;
+    }
 
-  // Create views Xc and Xf into the cell and face segments of X.
-  double **cvec_ptrs = X.Pointers();
-  double **fvec_ptrs = new double*[X.NumVectors()];
-  for (int i = 0; i < X.NumVectors(); ++i) fvec_ptrs[i] = cvec_ptrs[i] + ncell;
-  Epetra_MultiVector Xc(View, cell_map, cvec_ptrs, X.NumVectors());
-  Epetra_MultiVector Xf(View, face_map, fvec_ptrs, X.NumVectors());
-
-  // Create views Yc and Yf into the cell and face segments of Y.
-  cvec_ptrs = Y.Pointers();
-  for (int i = 0; i < X.NumVectors(); ++i) fvec_ptrs[i] = cvec_ptrs[i] + ncell;
-  Epetra_MultiVector Yc(View, cell_map, cvec_ptrs, X.NumVectors());
-  Epetra_MultiVector Yf(View, face_map, fvec_ptrs, X.NumVectors());
-
-  // Temporary cell and face vectors.
-  Epetra_MultiVector Tc(cell_map, X.NumVectors());
-  Epetra_MultiVector Tf(face_map, X.NumVectors());
-
-  // FORWARD ELIMINATION
-  // Tf <- Xf - P (Dcf)^T (Dcc)^(-1) Xc
-  Tc.ReciprocalMultiply(1.0, D->Dcc(), Xc, 0.0);
-  D->Dcf().Multiply(true, Tc, Tf);  // this should do the required parallel comm
-  D->ApplyDirichletProjection(Tf);
-  Tf.Update(1.0, Xf, -1.0);
-
-  // "Solve" the Schur complement system for Yf with Tf as the rhs using ML
-  MLprec->ApplyInverse(Tf, Yf);
-
-  // BACKWARD SUBSTITUTION
-  // Yc <- (Dcc)^(-1) * (Xc - Dcf * P * Yf)
-  Tf = Yf;
-  D->ApplyDirichletProjection(Tf);
-  D->Dcf().Multiply(false, Tf, Tc);  // this should do the required parallel comm
-  Tc.Update(1.0, Xc, -1.0);
-  Yc.ReciprocalMultiply(1.0, D->Dcc(), Tc, 0.0);
-
-  delete [] fvec_ptrs;
 
 }
 
 void RichardsModelEvaluator::update_precon(const double t, const Epetra_Vector& up, const double h, int& errc)
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
+
   problem_->ComputePrecon(up,h);
 
   errc = 0;
+
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+    {
+      *out << "update_precon done" << std::endl;
+    }
+
+
 }
 
 
 
 double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
+
   // simply use 2-norm of the difference for now
   
-  Epetra_Vector udiff(u);
+  Epetra_Vector *u_cell  = problem_->CreateCellView(u);
+  Epetra_Vector *du_cell = problem_->CreateCellView(du);
   
-  udiff.Update(-1.0,du,1.0);
+  double atol = 0.00001;
+  double rtol = 0.0;
 
-  double error;
-  udiff.Norm2(&error);
+  double en = 0.0;
+  for (int j=0; j<u_cell->MyLength(); j++)
+    {
+      double tmp = abs(du[j])/(atol+rtol*abs(u[j]));
+      en = std::max<double>(en, tmp);
+    }
+  
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+    {
+      *out << "enorm done" << std::endl;
+    }
 
-  return error;
+  return  en;
+
 }
 
 

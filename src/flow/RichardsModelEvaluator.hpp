@@ -2,6 +2,7 @@
 #define RICHARDS_MODEL_EVALUATOR_HPP
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
@@ -10,12 +11,13 @@
 #include "BDF2_fnBase.hpp"
 #include "RichardsProblem.hpp"
 
-class RichardsModelEvaluator : public BDF2::fnBase {
+class RichardsModelEvaluator : public BDF2::fnBase,
+			       public Teuchos::VerboseObject<RichardsModelEvaluator>
+{
 public:
 
   // Constructor
   RichardsModelEvaluator(RichardsProblem *problem, 
-			 Teuchos::RCP<DiffusionMatrix> &matrix,
 			 Teuchos::ParameterList &plist, 
 			 const Epetra_Map &map); 
 
@@ -35,14 +37,16 @@ private:
   RichardsProblem* problem_;
 
   // The diffusion matrix
-  Teuchos::RCP<DiffusionMatrix> D;
+  DiffusionMatrix& D;
 
   Epetra_Map map_;
 
   // ML preconditioner for the Schur complement system.
   ML_Epetra::MultiLevelPreconditioner *MLprec;
 
-  Teuchos::ParameterList ML_plist;
+  //Teuchos::ParameterList ML_plist;
+
+  Teuchos::ParameterList& plist_;
 
 };
 
