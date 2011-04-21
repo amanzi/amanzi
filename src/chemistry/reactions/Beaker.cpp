@@ -246,12 +246,12 @@ void Beaker::addPrimarySpecies(const Species& s)
   primarySpecies_.push_back(s);
 } // end addPrimarySpecies()
 
-void Beaker::AddIonExchangeSite(IonExchangeSite& exchanger) 
+void Beaker::AddIonExchangeSite(const IonExchangeSite& exchanger) 
 {
   ion_exchange_sites_.push_back(exchanger);
 } // end AddIonExchangeSites()
 
-void Beaker::AddIonExchangeComplex(IonExchangeComplex& exchange_complex) 
+void Beaker::AddIonExchangeComplex(const IonExchangeComplex& exchange_complex) 
 {
   ion_exchange_rxns_.push_back(exchange_complex);
 } // end AddIonExchangeSites()
@@ -261,7 +261,7 @@ void Beaker::addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c)
   aqComplexRxns_.push_back(c);
 } // end addAqueousEquilibriumComplex()
 
-void Beaker::addMineral(Mineral& m) 
+void Beaker::addMineral(const Mineral& m) 
 {
   minerals_.push_back(m);
 } // end addMineral()
@@ -1063,16 +1063,16 @@ void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
 **  Output related functions
 **
 *******************************************************************************/
-void Beaker::GetPrimaryNames(std::vector<std::string>& names) const
+void Beaker::GetPrimaryNames(std::vector<std::string>* names) const
 {
-  names.clear();
+  names->clear();
   for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
        primary != primarySpecies_.end(); primary++) {
-    names.push_back(primary->name());
+    names->push_back(primary->name());
   }
 }  // end GetPrimaryNames()
 
-int Beaker::GetPrimaryIndex(std::string name) const
+int Beaker::GetPrimaryIndex(const std::string& name) const
 {
   int index = -1;
   for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
@@ -1475,7 +1475,7 @@ void Beaker::print_results(double time) const
   std::cout << std::endl;
 } // end print_results()
 
-void Beaker::print_linear_system(std::string s, Block *A, 
+void Beaker::print_linear_system(const std::string& s, Block *A, 
                                  std::vector<double> vector) {
   std::cout << s << std::endl;
   for (int i = 0; i < (int)vector.size(); i++)

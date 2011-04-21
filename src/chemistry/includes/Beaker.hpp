@@ -64,10 +64,10 @@ class Beaker {
   void UpdateComponents(Beaker::BeakerComponents* components);
 
   void addPrimarySpecies(const Species& s);
-  void AddIonExchangeSite(IonExchangeSite& exchanger);
-  void AddIonExchangeComplex(IonExchangeComplex& exchange_complex);
+  void AddIonExchangeSite(const IonExchangeSite& exchanger);
+  void AddIonExchangeComplex(const IonExchangeComplex& exchange_complex);
   void addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
-  void addMineral(Mineral& m);
+  void addMineral(const Mineral& m);
   void AddMineralKineticRate(KineticRate* rate);
   void addGeneralRxn(const GeneralRxn& r);
   void addSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
@@ -128,10 +128,10 @@ class Beaker {
   virtual void display(void) const;
   void print_results(void) const;
   void print_results(double time) const;
-  void print_linear_system(std::string s, Block *A, std::vector<double> vector);
+  void print_linear_system(const std::string& s, Block *A, std::vector<double> vector);
 
-  void GetPrimaryNames(std::vector<std::string>& names) const;
-  int GetPrimaryIndex(std::string name) const;
+  void GetPrimaryNames(std::vector<std::string>* names) const;
+  int GetPrimaryIndex(const std::string& name) const;
 
   void Display(void) const;
   void DisplayParameters(void) const;
