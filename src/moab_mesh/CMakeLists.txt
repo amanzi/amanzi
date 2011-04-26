@@ -61,14 +61,14 @@ if (BUILD_TESTS)
                    test/test_hex_3x3x2.cc
                    test/test_hex_4x4x4.cc)
     target_link_libraries(test_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-    add_unit_test(moab_mesh test_moab_mesh )
+    add_amanzi_test(moab_mesh test_moab_mesh KIND unit)
 
     # Test: moab_mesh_parallel
     add_executable(test_parallel_moab_mesh
         test/Main.cc
         test/test_hex_4x4x4_4P.cc)
     target_link_libraries(test_parallel_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-    add_integration_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4)
+    add_amanzi_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4 KIND int)
 
 endif()
 

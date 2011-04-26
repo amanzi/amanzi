@@ -76,7 +76,7 @@ if (BUILD_TESTS)
     add_executable(test_exodus test/Main.cc test/test_Reader.cc test/test_file_path.cc)
     target_link_libraries(test_exodus exodus ${UnitTest_LIBRARIES}
                           ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY}) 
-    add_unit_test(exodus test_exodus)                  
+    add_amanzi_test(exodus test_exodus KIND unit)                  
     # set_tests_properties(exodus PROPERTIES WILL_FAIL true) -- lpritch This was commented out in the original file
 
 
@@ -86,20 +86,20 @@ if (BUILD_TESTS)
     target_link_libraries(test_pexodus_2 exodus ${UnitTest_LIBRARIES} 
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 #    add_parallel_test(pexodus_2proc test_pexodus_2 NPROCS 2)
-     add_integration_test(pexodus_2proc test_pexodus_2 NPROCS 2)
+     add_amanzi_test(pexodus_2proc test_pexodus_2 NPROCS 2 KIND int)
 
     # Test: test_pexodus_3
     add_executable(test_pexodus_3 test/ParallelMain.cc 
                    test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_3 exodus ${UnitTest_LIBRARIES} 
                           ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_integration_test(pexodus_3proc test_pexodus_3 NPROCS 3)                
+    add_amanzi_test(pexodus_3proc test_pexodus_3 NPROCS 3 KIND int)                
 
     # Test: test_pexodus_4       
     add_executable(test_pexodus_4 test/ParallelMain.cc 
                    test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
     target_link_libraries(test_pexodus_4 exodus  ${UnitTest_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
-    add_integration_test(pexodus_4proc test_pexodus_4 NPROCS 4)                
+    add_amanzi_test(pexodus_4proc test_pexodus_4 NPROCS 4 KIND int)                
      
 endif()

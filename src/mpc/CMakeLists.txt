@@ -79,7 +79,7 @@ if (BUILD_TESTS)
         # Test: mpc-moab
         add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
         target_link_libraries(test_mpc_moab mpc moab_mesh chemistry transport flow ${UnitTest_LIBRARIES})
-        add_integration_test(mpc-moab test_mpc_moab)
+        add_amanzi_test(mpc-moab test_mpc_moab KIND int)
     
     endif()
 

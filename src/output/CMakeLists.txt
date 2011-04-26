@@ -61,13 +61,13 @@ if (BUILD_TESTS)
     # Test: gmv_output
     add_executable(test_gmv_output test/Main.cc test/test_gmv.cc)
     target_link_libraries(test_gmv_output output ${UnitTest_LIBRARIES})
-    add_unit_test(gmv_output test_gmv_output)
+    add_amanzi_test(gmv_output test_gmv_output KIND unit)
 
     # Test: cgns_output
     if (ENABLE_CGNS)
         add_executable(test_cgns_output test/Main.cc test/test_cgns.cc)
         target_link_libraries(test_cgns_output output ${UnitTest_LIBRARIES})
-        add_integration_test(cgns_output test_cgns_output)
+        add_amanzi_test(cgns_output test_cgns_output KIND int)
     endif()
 
 endif()

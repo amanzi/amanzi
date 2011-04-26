@@ -17,11 +17,11 @@ function (_REGISTER_TEST test_name test_exec test_args nprocs is_parallel mpi_ar
   foreach(nproc ${nprocs})
     if ((${nproc} GREATER 1) OR "${is_parallel}")
       _add_parallel_test(${test_name} ${test_exec} "${test_args}" ${nproc} "${mpi_args}")
-      _add_test_labels(${test_name} "Parallel")
+      _add_test_labels(${test_name} "PARALLEL")
     else()
       add_test(${test_name} ${test_exec} ${test_args})
-      _add_test_labels(${test_name} "Serial")
-    endif()
+      _add_test_labels(${test_name} "SERIAL")
+    ENDIF()
   endforeach()
 
 endfunction(_REGISTER_TEST)
@@ -55,7 +55,6 @@ endfunction(_ADD_PARALLEL_TEST)
 
 
 
-
 function(_ADD_TEST_LABELS test_name)
 
   get_test_property(${test_name} LABELS labels)
@@ -70,25 +69,46 @@ function(_ADD_TEST_LABELS test_name)
 endfunction(_ADD_TEST_LABELS)
 
 
+function(_ADD_TEST_KIND_LABEL test_name kind_in)
 
+  set(kind_prefixes UNIT INT REG)
 
+  string(TOUPPER "${kind_in}" kind)
+
+  foreach(kind_prefix ${kind_prefixes})
+    string(REGEX MATCH "${kind_prefix}" match ${kind})
+    if(match)
+      break()
+    endif()
+  endforeach()
+
+ if (match)
+    _add_test_labels("${test_name}" "${match}")
+  else()
+    message(FATAL_ERROR, "No, or invalid test kind specified.")
+  endif()
+
+endfunction()
 
 
 
 
 # Usage:
 #
-# ADD_UNIT_TEST(<test_name> <test_executable>
-#                [arg1 ...]
-#                PARALLEL
-#                [NPROCS procs1 ... ]
-#                [MPI_EXEC_ARGS arg1 ... ]
+# ADD_AMANZI_TEST(<test_name> <test_executable>
+#                  [arg1 ...]
+#                  KIND [unit | int | reg]
+#                  PARALLEL
+#                  [NPROCS procs1 ... ]
+#                  [MPI_EXEC_ARGS arg1 ... ]
 #
 # Arguments:
 #  test_name: the name given to the resulting test in test reports
 #  test_executable: The test executable which performs the test
 #  arg1 ...: Additional arguments for the test executable
 #
+# Keyword KIND is required and should be one of unit, int or reg. 
+
 # Option PARALLEL signifies that this is a parallel job. This is also
 # implied by an NPROCS value > 1
 #
@@ -97,51 +117,31 @@ endfunction(_ADD_TEST_LABELS)
 #
 # Optional MPI_EXEC_ARGS keyword denotes extra arguments to give to
 # mpi. It is ignored for serial tests.
-#
 
-function(ADD_UNIT_TEST test_name test_exec)
+
+function(ADD_AMANZI_TEST test_name test_exec)
 
   set(options "PARALLEL")
-  set(oneValueArgs "")
-  set(multiValueArgs NPROCS)
+  set(oneValueArgs "KIND")
+  set(multiValueArgs "NPROCS" "FILES")
 
-  cmake_parse_arguments(ADD_UNIT_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(AMANZI_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  set(test_args    "${ADD_UNIT_TEST_UNPARSED_ARGUMENTS}")
-  set(is_parallel  "${ADD_UNIT_TEST_PARALLEL}")
-  set(mpi_args     "${ADD_UNIT_TEST_MPI_EXEC_ARGS}")
-  set(nprocs       "${ADD_UNIT_TEST_NPROCS}")
-
+  set(test_args    "${AMANZI_TEST_UNPARSED_ARGUMENTS}")
+  set(is_parallel  "${AMANZI_TEST_PARALLEL}")
+  set(kind_in      "${AMANZI_TEST_KIND}")
+  set(mpi_args     "${AMANZI_TEST_MPI_EXEC_ARGS}")
+  set(nprocs       "${AMANZI_TEST_NPROCS}")
+  
   separate_arguments(global_mpi_args UNIX_COMMAND "${MPI_EXEC_ARGS}")
   list(APPEND mpi_args ${global_mpi_args})
 
   _register_test("${test_name}" "${test_exec}" "${test_args}" "${nprocs}" "${is_parallel}" "${mpi_args}")
-  _add_test_labels("${test_name}" "Unit")
 
-endfunction(ADD_UNIT_TEST)
+  _add_test_kind_label("${test_name} ${kind_in}")
+
+endfunction(ADD_AMANZI_TEST)
 
 
-function(ADD_INTEGRATION_TEST test_name test_exec)
-
-  set(options "PARALLEL")
-  set(oneValueArgs "")
-  set(multiValueArgs NPROCS FILES)
-
-  cmake_parse_arguments(ADD_INTEGRATION_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-  set(test_args    "${ADD_INTEGRATION_TEST_UNPARSED_ARGUMENTS}")
-  set(is_parallel  "${ADD_INTEGRATION_TEST_PARALLEL}")
-  set(mpi_args     "${ADD_INTEGRATION_TEST_MPI_EXEC_ARGS}")
-  set(nprocs       "${ADD_INTEGRATION_TEST_NPROCS}")
-
-  separate_arguments(global_mpi_args UNIX_COMMAND "${MPI_EXEC_ARGS}")
-  list(APPEND mpi_args ${global_mpi_args})
-
-  _register_test("${test_name}" "${test_exec}" "${test_args}" "${nprocs}" "${is_parallel}" "${mpi_args}")
-  _add_test_labels(${test_name} "Integration")
-
-  # TODO: Add dependencies on files
-
-endfunction(ADD_INTEGRATION_TEST)
 
 

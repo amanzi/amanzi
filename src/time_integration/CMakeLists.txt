@@ -56,6 +56,6 @@ if (BUILD_TESTS)
 
     add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp) 
     target_link_libraries(test_time_integration time_integration solvers error_handling ${UnitTest_LIBRARIES})
-    add_unit_test(time_integration test_time_integration)
+    add_amanzi_test(time_integration test_time_integration KIND unit)
 
 endif()

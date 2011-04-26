@@ -51,7 +51,7 @@ if (BUILD_TESTS)
                      test/test_Maps.cc test/test_Hex.cc)
     target_link_libraries(test_stk_mesh stk_mesh mesh_audit         
                           ${UnitTest_LIBRARIES} )
-    add_unit_test(stk_mesh test_stk_mesh)
+    add_amanzi_test(stk_mesh test_stk_mesh KIND unit)
 
 #  # parallel tests are limited to 4 processors because the read tests
 #  # use files with a maximum of 4 partitions and the internally
@@ -66,13 +66,14 @@ if (BUILD_TESTS)
     add_executable(test_stk_mesh_parallel test/Main.cc test/test_Hex.cc)
     target_link_libraries(test_stk_mesh_parallel stk_mesh mesh_audit
                            ${UnitTest_LIBRARIES})
-    add_unit_test(stk_mesh_parallel test_stk_mesh_parallel NPROCS 4)                   
+    add_amanzi_test(stk_mesh_parallel test_stk_mesh_parallel NPROCS 4 KIND unit)                   
      
     # Test: stk_mesh_read (serial and parallel)
     add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
     target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit ${UnitTest_LIBRARIES})
-    add_integration_test(stk_mesh_read test_stk_mesh_read)
-    add_integration_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4)
+
+    add_amanzi_test(stk_mesh_read test_stk_mesh_read KIND int)
+    add_amanzi_test(stk_mesh_read_parallel test_stk_mesh_read KIND int NPROCS 4)
 
 endif()
 
