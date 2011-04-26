@@ -2,7 +2,7 @@
 /**
  * @file   test_pread_2.cc
  * @author William A. Perkins
- * @date Wed Nov 17 09:06:36 2010
+ * @date Thu Apr 21 12:37:23 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Wed Nov 17 09:06:36 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Apr 21 12:37:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -63,4 +63,42 @@ SUITE (Exodus_4_Proc)
     checkit(thefile);
   }
 
+  TEST (prism)
+  {
+    std::string bname(split_file_path("prism.par").c_str());
+    
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+
+    CHECK_EQUAL(comm.NumProc(), 4);
+    
+    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    checkit(thefile);
+      
+  }
+
+  TEST (mixed_coarse)
+  {
+    std::string bname(split_file_path("mixed-coarse.par").c_str());
+    
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+
+    CHECK_EQUAL(comm.NumProc(), 4);
+    
+    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    checkit(thefile);
+      
+  }
+
+  TEST (mixed)
+  {
+    std::string bname(split_file_path("mixed.par").c_str());
+    
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+
+    CHECK_EQUAL(comm.NumProc(), 4);
+    
+    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    checkit(thefile);
+      
+  }
 }

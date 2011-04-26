@@ -30,6 +30,8 @@ std::string type_to_name (Mesh_data::ELEMENT_TYPE type)
         return "shell";
     case Mesh_data::TETRA:
         return "tetrahedron";
+    case Mesh_data::PYRAMID:
+        return "pyramid";
     case Mesh_data::WEDGE:
         return "wedge";
     case Mesh_data::HEX:

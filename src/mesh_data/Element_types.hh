@@ -17,6 +17,7 @@ enum ELEMENT_TYPE
     QUAD,
     SHELL,
     TETRA,
+    PYRAMID,
     WEDGE,
     HEX
 };

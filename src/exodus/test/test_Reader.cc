@@ -39,6 +39,21 @@ struct quad_4x4 : Exodus_file_holder
     quad_4x4 () : Exodus_file_holder (test_file_path("quad_4x4_ss.exo").c_str()) { }
 };
 
+struct prism : Exodus_file_holder
+{
+     prism() : Exodus_file_holder (test_file_path("prism.exo").c_str()) { }
+};
+
+struct mixed_coarse : Exodus_file_holder
+{
+     mixed_coarse() : Exodus_file_holder (test_file_path("mixed-coarse.exo").c_str()) { }
+};
+
+struct mixed : Exodus_file_holder
+{
+     mixed() : Exodus_file_holder (test_file_path("mixed.exo").c_str()) { }
+};
+
 struct hex_split_2_0 : Exodus_file_holder
 {
      hex_split_2_0() : Exodus_file_holder (split_file_path("hex_4x4x4_ss.par.2.0").c_str()) { }
@@ -71,6 +86,7 @@ struct twoblktet_2_1 : Exodus_file_holder
 {
      twoblktet_2_1() : Exodus_file_holder (split_file_path("twoblktet_ss.par.2.1").c_str()) { }
 };
+
 
 SUITE (Error)
 {
@@ -202,9 +218,57 @@ SUITE (quad_4x4)
         }
 
     }
+}
 
+SUITE (prism)
+{
+    TEST_FIXTURE(prism, Parameters)
+    {
+        const Mesh_data::Parameters &params (data->parameters ());
 
+        CHECK_EQUAL (params.dimensions_, 3);
+        CHECK_EQUAL (params.num_nodes_, 1920);
+        CHECK_EQUAL (params.num_elements_, 2634);
+        CHECK_EQUAL (params.num_element_blocks_, 1);
 
+        // FIXME: eventually, this file needs to have side sets
+        CHECK_EQUAL (params.num_side_sets_, 0);
+
+    }
+}
+
+SUITE (mixed_coarse)
+{
+    TEST_FIXTURE(mixed_coarse, Parameters)
+    {
+        const Mesh_data::Parameters &params (data->parameters ());
+
+        CHECK_EQUAL (params.dimensions_, 3);
+        CHECK_EQUAL (params.num_nodes_, 361);
+        CHECK_EQUAL (params.num_elements_, 592);
+        CHECK_EQUAL (params.num_element_blocks_, 5);
+
+        // FIXME: eventually, this file needs to have side sets
+        CHECK_EQUAL (params.num_side_sets_, 0);
+
+    }
+}
+
+SUITE (mixed)
+{
+    TEST_FIXTURE(mixed, Parameters)
+    {
+        const Mesh_data::Parameters &params (data->parameters ());
+
+        CHECK_EQUAL (params.dimensions_, 3);
+        CHECK_EQUAL (params.num_nodes_, 6495);
+        CHECK_EQUAL (params.num_elements_, 23186);
+        CHECK_EQUAL (params.num_element_blocks_, 6);
+
+        // FIXME: eventually, this file needs to have side sets
+        CHECK_EQUAL (params.num_side_sets_, 0);
+
+    }
 }
 
 SUITE (hex_split)

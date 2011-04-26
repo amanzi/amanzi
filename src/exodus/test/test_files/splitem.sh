@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created November 15, 2010 by William A. Perkins
-# Last Change: Wed Dec 15 07:51:28 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# Last Change: Thu Apr 21 12:01:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 
 set -ue
@@ -97,6 +97,11 @@ files=" \
     htc_rad_test-random.exo 4 \
     htc_rad_test-random.exo 3 \
     htc_rad_test-random.exo 2 \
+    prism.exo               2 \
+    prism.exo               4 \
+    mixed-coarse.exo        2 \
+    mixed-coarse.exo        4 \
+    mixed.exo               4 \
 "
 
 set $files

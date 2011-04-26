@@ -2,7 +2,7 @@
 /**
  * @file   test_pread_2.cc
  * @author William A. Perkins
- * @date Thu Apr  7 09:37:16 2011
+ * @date Thu Apr 21 11:22:16 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Thu Apr  7 09:37:16 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Apr 21 11:22:16 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -67,6 +67,32 @@ SUITE (Exodus_2_Proc)
   TEST (hex_11x11x11_ss)
   {
     std::string bname(split_file_path("hex_11x11x11_ss.par").c_str());
+    
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+
+    CHECK_EQUAL(comm.NumProc(), 2);
+    
+    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    checkit(thefile);
+      
+  }
+
+  TEST (prism)
+  {
+    std::string bname(split_file_path("prism.par").c_str());
+    
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+
+    CHECK_EQUAL(comm.NumProc(), 2);
+    
+    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    checkit(thefile);
+      
+  }
+
+  TEST (mixed_coarse)
+  {
+    std::string bname(split_file_path("mixed-coarse.par").c_str());
     
     Epetra_MpiComm comm(MPI_COMM_WORLD);
 

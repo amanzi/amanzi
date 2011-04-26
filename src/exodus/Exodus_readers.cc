@@ -366,6 +366,8 @@ Mesh_data::ELEMENT_TYPE read_element_type (const char * name)
         return Mesh_data::SHELL;
     if (id == "TET")
         return Mesh_data::TETRA;
+    if (id == "PYR")
+        return Mesh_data::PYRAMID;
     if (id == "WED")
         return Mesh_data::WEDGE;
     if (id == "HEX")
