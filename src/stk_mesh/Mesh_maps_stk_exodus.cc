@@ -2,7 +2,7 @@
 /**
  * @file   Mesh_maps_stk_exodus.cc
  * @author William A. Perkins
- * @date Mon Mar 14 15:14:00 2011
+ * @date Thu Apr 21 12:58:49 2011
  * 
  * @brief  
  * 
@@ -11,13 +11,14 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December 13, 2010 by William A. Perkins
-// Last Change: Mon Mar 14 15:14:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Apr 21 12:58:49 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_maps_stk.hh"
 #include "Mesh_factory.hh"
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
+#include "stk_mesh_error.hh"
 
 namespace STK_mesh {
 
@@ -55,7 +56,7 @@ namespace STK_mesh {
     int aerr(0);
     comm.SumAll(&ierr, &aerr, 1);
     if (aerr != 0) 
-      throw std::runtime_error("Exodus file read error");
+      Exceptions::amanzi_throw( STKMeshError ("Exodus file read error") );
     build_maps_();
   }
 

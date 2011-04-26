@@ -24,6 +24,7 @@ namespace bl = boost::lambda;
 #include "Element_field_types.hh"
 #include "Cell_topology.hh"
 #include "Mesh_common.hh"
+#include "stk_mesh_error.hh"
 
 // Trilinos
 #include <Shards_CellTopology.hpp>
@@ -357,7 +358,7 @@ stk::mesh::Part* Mesh_factory::add_element_block_ (const Mesh_data::Element_bloc
       std::string msg = 
         boost::str(boost::format("%s has unsupported cell type %s") %
                    name.str() % type_to_name(block.element_type()));
-      throw std::runtime_error(msg);
+      Exceptions::amanzi_throw( STKMeshError (msg.c_str()) );
       break;
     }
 
@@ -459,7 +460,7 @@ void Mesh_factory::add_elements_to_part_ (const Mesh_data::Element_block& block,
             std::copy(global_vidx.begin(), global_vidx.end(), std::ostream_iterator<int>(msg, ", "));
             std::cerr << msg.str() << std::endl;
 
-            throw e;
+            Exceptions::amanzi_throw( STKMeshError (msg.str().c_str()) );
         }
 
     }
@@ -656,12 +657,12 @@ Mesh_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
                         boost::str(boost::format("error: cell %d (owner = %d): face %d (%d nodes) doesn't even relate to cell") %
                                    (*c)->identifier() % me % s % snodes.size());
                     // std::cerr << msg << std::endl;
-                    throw std::runtime_error(msg);
+                    Exceptions::amanzi_throw( STKMeshError (msg.c_str()) );
                 } else if (rcells.size() > 2) {
                     std::string msg = 
                         boost::str(boost::format("error: cell %d (owner = %d): face %d relates to too many cells (%d)") %
                                    (*c)->identifier() % me % s % rcells.size());
-                    throw std::runtime_error(msg);
+                    Exceptions::amanzi_throw( STKMeshError (msg.c_str()) );
                 }
 
                 stk::mesh::Entity *rcell(NULL);
@@ -828,7 +829,7 @@ void Mesh_factory::add_sides_to_part_ (const Mesh_data::Side_set& side_set,
             std::string msg = 
                 boost::str(boost::format("side set %d: face not declared for side %d of cell %d (local = %d") %
                            side_set.id() % local_side % global_idx % local_idx);
-            throw std::runtime_error(msg);
+            Exceptions::amanzi_throw( STKMeshError (msg.c_str()) );
         }
 
         if (face->owner_rank() != me) {

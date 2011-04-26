@@ -7,6 +7,8 @@
 
 #include "dbc.hh"
 
+#include "stk_mesh_error.hh"
+
 namespace STK_mesh
 {
 
@@ -31,8 +33,9 @@ const shards::CellTopology get_topology_data (const Mesh_data::ELEMENT_TYPE& typ
         // fall through
         break;
     }
-    throw "Element not supported yet";
-        
+
+    Exceptions::amanzi_throw( STKMeshError ("Element not supported yet") );
+
 }
 
 

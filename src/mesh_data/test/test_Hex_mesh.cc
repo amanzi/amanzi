@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex_mesh.cc
  * @author William A. Perkins
- * @date Wed Dec 29 09:22:24 2010
+ * @date Thu Apr 21 13:27:01 2011
  * 
  * @brief  A set of tests for the HexMeshGenerator class
  * 
@@ -14,8 +14,10 @@
 #include <UnitTest++.h>
 #include <iostream>
 #include <stdexcept>
+#include <boost/format.hpp>
 #include "Epetra_MpiComm.h"
 #include "../HexMeshGenerator.hh"
+#include "errors.hh"
 
 const static unsigned int size(4);
 
@@ -23,11 +25,8 @@ SUITE (HexMeshGenerator)
 {
   TEST (Generation)
   {
-#ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-#else
-    Epetra_SerialComm comm;
-#endif
+
     int me(comm.MyPID());
 
     Mesh_data::HexMeshGenerator gen(&comm, size*size, size, size);
@@ -45,8 +44,13 @@ SUITE (HexMeshGenerator)
       CHECK_EQUAL(cmap->NumMyElements(), gen.mycells());
       cmap->Print(std::cerr);   // ends up in the test log file
     } catch (int e) {
-      std::cerr << "Cell Epetra_Map error: " << e << std::endl;
-      throw e;
+      
+      // it appears that Epetra_Map's throw an int when in trouble,
+      // let's make into an Amanzi exception
+
+      std::string msg = 
+        boost::str(boost::format("Cell Epetra_Map error: %d") % e);
+      Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
 
     try {
@@ -56,8 +60,9 @@ SUITE (HexMeshGenerator)
       CHECK_EQUAL(cmap->NumMyElements(), gen.myvertexes());
       cmap->Print(std::cerr);   // ends up in the test log file
     } catch (int e) {
-      std::cerr << "Vertex Epetra_Map error: " << e << std::endl;
-      throw e;
+      std::string msg = 
+        boost::str(boost::format("Vertex Epetra_Map error: %d") % e);
+      Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
     }
 
     comm.Barrier();             // probably not necessary
