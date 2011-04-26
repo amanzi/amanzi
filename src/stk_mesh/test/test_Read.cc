@@ -2,7 +2,7 @@
 /**
  * @file   test_Read.cc
  * @author William A. Perkins
- * @date Mon Dec 13 10:30:27 2010
+ * @date Thu Apr 21 15:04:30 2011
  * 
  * @brief Some unit tests for reading a (serial) Exodus file and
  * building a STK_mesh::Mesh_maps_stk instance.
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 22, 2010 by William A. Perkins
-// Last Change: Mon Dec 13 10:30:27 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Apr 21 15:04:30 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <sstream>
@@ -182,6 +182,48 @@ SUITE (Exodus)
         }
     }
 
+    TEST_FIXTURE (SerialReadFixture, PrismReader)
+    {
+        if (nproc == 1) {
+            read("../exodus/test_files/prism.exo");
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, OWNED), 1920);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, OWNED), 2634);
+            CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 1);
+
+            // FIXME: Audit the mesh here
+        }
+
+    }
+        
+    TEST_FIXTURE (SerialReadFixture, MixedCoarseReader)
+    {
+        if (nproc == 1) {
+            read("../exodus/test_files/mixed-coarse.exo");
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, OWNED), 361);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, OWNED), 592);
+            CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 5);
+
+            // FIXME: Audit the mesh here
+        }
+
+    }
+
+
+    TEST_FIXTURE (SerialReadFixture, MixedReader)
+    {
+        if (nproc == 1) {
+            read("../exodus/test_files/mixed.exo");
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, OWNED), 6495);
+            CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, OWNED), 23186);
+            CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 6);
+
+            // FIXME: Audit the mesh here
+        }
+
+    }
+
+
+
     TEST_FIXTURE (SerialReadFixture, SerialReader2)
     {
         if (nproc == 1) {
@@ -302,6 +344,68 @@ SUITE (Exodus)
         }
     }            
 
+
+    TEST_FIXTURE (ParallelReadFixture, PrismParallelReader)
+    {
+        if (nproc == 2 || nproc == 4) {
+            read("../exodus/test_files/split1/prism.par");
+            CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 1);
+            int local, global;
+            local = mesh->count_entities(stk::mesh::Node, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 1920);
+            local = mesh->count_entities(stk::mesh::Element, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 2634);
+
+            stk::mesh::Part *p;
+
+            p = mesh->get_set(1, stk::mesh::Element);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 2634);
+
+            // FIXME: audit mesh here
+        }
+    }            
+
+    TEST_FIXTURE (ParallelReadFixture, MixedCoarseParallelReader)
+    {
+        if (nproc == 2 || nproc == 4) {
+            read("../exodus/test_files/split1/mixed-coarse.par");
+            CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 5);
+            int local, global;
+            local = mesh->count_entities(stk::mesh::Node, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 361);
+            local = mesh->count_entities(stk::mesh::Element, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 592);
+
+            stk::mesh::Part *p;
+
+            p = mesh->get_set(1, stk::mesh::Element);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 120);
+
+            p = mesh->get_set(2, stk::mesh::Element);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 48);
+
+            p = mesh->get_set(3, stk::mesh::Element);
+            CHECK(p != NULL);
+            local = mesh->count_entities(*p, OWNED);
+            comm.SumAll(&local, &global, 1);
+            CHECK_EQUAL(global, 48);
+
+            // FIXME: audit mesh here
+        }
+    }            
 
     TEST (DirectReader) 
     {

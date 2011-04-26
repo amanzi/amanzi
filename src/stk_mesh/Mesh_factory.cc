@@ -348,10 +348,11 @@ stk::mesh::Part* Mesh_factory::add_element_block_ (const Mesh_data::Element_bloc
     Mesh_data::ELEMENT_TYPE mdtype(block.element_type ());
     switch (mdtype) {
     case Mesh_data::HEX:
+    case Mesh_data::TETRA:
+    case Mesh_data::PYRAMID:
+    case Mesh_data::WEDGE:
       // this type is OK
       break;
-    case Mesh_data::TETRA:
-    case Mesh_data::WEDGE:
     default:
       std::string msg = 
         boost::str(boost::format("%s has unsupported cell type %s") %

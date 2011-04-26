@@ -15,22 +15,24 @@ const shards::CellTopology get_topology_data (const Mesh_data::ELEMENT_TYPE& typ
 {
     ASSERT (Mesh_data::ok_type (type));
 
-
-    if (Mesh_data::TRIANGLE == type)
-    {
-        return shards::getCellTopologyData<shards::Triangle<3> >();
+    switch (type) {
+    case (Mesh_data::HEX):
+        return shards::getCellTopologyData< shards::Hexahedron<8> >();
+        break;
+    case (Mesh_data::TETRA):
+        return shards::getCellTopologyData< shards::Tetrahedron<4> >();
+        break;
+    case (Mesh_data::PYRAMID):
+        return shards::getCellTopologyData< shards::Pyramid<5> >();
+        break;
+    case (Mesh_data::WEDGE):
+        return shards::getCellTopologyData< shards::Wedge<6> >();
+    default:
+        // fall through
+        break;
     }
-    else if (Mesh_data::HEX == type)
-    {
-        return shards::getCellTopologyData<shards::Hexahedron<8> >();
-    }
-    else if (Mesh_data::TETRA == type)
-    {
-        return shards::getCellTopologyData<shards::Tetrahedron<4> >();
-    }
-
     throw "Element not supported yet";
-
+        
 }
 
 
