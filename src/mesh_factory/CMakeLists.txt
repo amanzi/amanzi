@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created March 11, 2011 by William A. Perkins
-# Last Change: Tue Mar 22 10:55:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# Last Change: Fri Apr 22 09:49:51 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(AddParallelTest)
@@ -64,11 +64,23 @@ endif()
 if (BUILD_TESTS)
 
     # some test file locations defined as macros
+
+    # files in the exodus test directory always seem to be available
+
     set(EXODUS_FILE_DIR "${EXO_BINARY_DIR}/test_files")
     set(test_file_flags "-DEXODUS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/hex_4x4x4_ss.exo\\\"\" ")
     set(test_file_flags "${test_file_flags} -DNEMESIS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/split1/hex_11x11x11_ss.par\\\"\" ")
-    set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${MOAB_SOURCE_DIR}/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
     set(test_file_flags "${test_file_flags} -DBOGUS_TEST_FILE=\"\\\"${EXODUS_FILE_DIR}/bogus.exo\\\"\" ")
+
+    # If the MOAB framework is not available, MOAB_SOURCE_DIR is not
+    # defined.  We still need a MOAB file to check, though.  Wouldn't
+    # it be better to have a single place where we put all
+    # example/test meshes?
+    if(ENABLE_MOAB_Mesh)
+        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${MOAB_SOURCE_DIR}/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
+    else()
+        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${AMANZI_SOURCE_DIR}/src/moab_mesh/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
+    endif()
         
     set_source_files_properties(test/test_mesh_file.cc PROPERTIES 
                                 COMPILE_FLAGS ${test_file_flags})
