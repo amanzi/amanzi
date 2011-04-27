@@ -38,7 +38,7 @@ endif()
 #
 # openmp example
 #
-add_executable(beaker-threads beaker-threads.cc)
-target_link_libraries(beaker-threads ${GEOCHEM_LIBS} error_handling gomp)
-set_target_properties(beaker-threads PROPERTIES COMPILE_FLAGS "-fopenmp")
-#INSTALL(TARGETS ${EXE_NAME} DESTINATION ${CMAKE_HOME_DIRECTORY}/bin)
+#add_executable(beaker-threads beaker-threads.cc)
+#target_link_libraries(beaker-threads ${GEOCHEM_LIBS} error_handling gomp)
+#set_target_properties(beaker-threads PROPERTIES COMPILE_FLAGS "-fopenmp")
+
