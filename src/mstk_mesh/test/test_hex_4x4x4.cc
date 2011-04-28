@@ -2,14 +2,17 @@
 
 #include <iostream>
 
-#include "../Mesh_maps_mstk.hh"
-#include "../../mesh_data/Entity_kind.hh"
+#include "../Mesh_MSTK.hh"
 
 
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 
 #include "mpi.h"
+
+using namespace Amanzi;
+using namespace AmanziMesh;
+using namespace AmanziGeometry;
 
 // Unless this example is enhanced, it does lesser testing than test_hex_3x3x2.cc
 
@@ -19,7 +22,6 @@ TEST(MSTK_HEX_4x4x4)
   int i, j, k, err, nc, nf, nv;
   unsigned int faces[6], nodes[8];
   int facedirs[6];
-  double ccoords[24], fcoords[12];
 
   int NV = 64;
   int NF = 108;
@@ -28,23 +30,24 @@ TEST(MSTK_HEX_4x4x4)
 
   // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
-  Mesh_maps_mstk mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD);
+  Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,3);
 
-  nf = mesh.count_entities(Mesh_data::FACE,OWNED);
+  nf = mesh.num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
   
-  nc = mesh.count_entities(Mesh_data::CELL,OWNED);
+  nc = mesh.num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
   std::vector<unsigned int>  c2f(6);
   std::vector<int> c2fdirs(6);
-  Epetra_Map cell_map(mesh.cell_map(false));
-  Epetra_Map face_map(mesh.face_map(false));
+  Epetra_Map cell_map(mesh.cell_epetra_map(false));
+  Epetra_Map face_map(mesh.face_epetra_map(false));
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
-      mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
-      mesh.cell_to_face_dirs(c, c2fdirs.begin(), c2fdirs.end() );
+      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,AmanziMesh::CELL));
+      mesh.cell_get_faces(c, &c2f);
+      mesh.cell_get_face_dirs(c, &c2fdirs);
       for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(c2f[j]);
@@ -57,12 +60,13 @@ TEST(MSTK_HEX_4x4x4)
 
   // Verify cell sets
 
-  ns = mesh.num_sets(Mesh_data::CELL);
+  ns = mesh.num_sets(AmanziMesh::CELL);
   CHECK_EQUAL(3,ns);
 
-  unsigned int csetids[3], expcsetids[3] = {10000,20000,30000};
+  unsigned int expcsetids[3] = {10000,20000,30000};
+  std::vector<Set_ID> csetids(3);
 
-  mesh.get_set_ids(Mesh_data::CELL,csetids,csetids+3);
+  mesh.get_set_ids(AmanziMesh::CELL,&csetids);
 
   CHECK_ARRAY_EQUAL(expcsetids,csetids,3);
 
@@ -74,13 +78,13 @@ TEST(MSTK_HEX_4x4x4)
 				     {18,19,20,21,22,23,24,25,26}};
 
   for (i = 0; i < ns; i++) {
-    unsigned int setcells[9];
+    std::vector<Entity_ID> setcells(9);
 
-    csetsize = mesh.get_set_size(csetids[i],Mesh_data::CELL,OWNED);
+    csetsize = mesh.get_set_size(csetids[i],AmanziMesh::CELL,AmanziMesh::OWNED);
     CHECK_EQUAL(expcsetsizes[i],csetsize);
 
 
-    mesh.get_set(csetids[i],Mesh_data::CELL, OWNED, setcells, setcells+csetsize);
+    mesh.get_set_entities(csetids[i],AmanziMesh::CELL, AmanziMesh::OWNED, &setcells);
     
     CHECK_ARRAY_EQUAL(expcsetcells[i],setcells,csetsize);
   }
@@ -88,14 +92,16 @@ TEST(MSTK_HEX_4x4x4)
 
   // Verify the sidesets
 
-  ns = mesh.num_sets(Mesh_data::FACE);
+  ns = mesh.num_sets(AmanziMesh::FACE);
   CHECK_EQUAL(21,ns);
   
-  unsigned int fsetids[21], expfsetids[21]={1,101,102,103,104,105,106,
-					    10001,10002,20001,30001,10003,
-					    20002,30002,10004,20003,30003,
-					    10005,20004,30004,30005};
-  mesh.get_set_ids(Mesh_data::FACE,fsetids,fsetids+21);
+  unsigned int expfsetids[21]={1,101,102,103,104,105,106,
+                               10001,10002,20001,30001,10003,
+			       20002,30002,10004,20003,30003,
+			       10005,20004,30004,30005};
+  std::vector<Set_ID> fsetids(21);
+
+  mesh.get_set_ids(AmanziMesh::FACE,&fsetids);
   
   CHECK_ARRAY_EQUAL(expfsetids,fsetids,21);
 
@@ -129,15 +135,15 @@ TEST(MSTK_HEX_4x4x4)
 
 
   for (i = 0; i < ns-1; i++) {
-    unsigned int setfaces[9];
+    std::vector<Entity_ID> setfaces(9);
 
-    CHECK_EQUAL(true,mesh.valid_set_id(fsetids[i+1],Mesh_data::FACE));
+    CHECK_EQUAL(true,mesh.valid_set_id(fsetids[i+1],AmanziMesh::FACE));
    
-    fsetsize = mesh.get_set_size(fsetids[i+1],Mesh_data::FACE,OWNED);
+    fsetsize = mesh.get_set_size(fsetids[i+1],AmanziMesh::FACE,AmanziMesh::OWNED);
     CHECK_EQUAL(expfsetsizes[i],fsetsize);
 
 
-    mesh.get_set(fsetids[i+1],Mesh_data::FACE, OWNED, setfaces, setfaces+fsetsize);
+    mesh.get_set_entities(fsetids[i+1],AmanziMesh::FACE, AmanziMesh::OWNED, &setfaces);
     
     CHECK_ARRAY_EQUAL(expfsetfaces[i],setfaces,fsetsize);
   }

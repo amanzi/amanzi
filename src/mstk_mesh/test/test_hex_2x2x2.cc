@@ -3,22 +3,25 @@
 #include <iostream>
 
 
-#include "../Mesh_maps_mstk.hh"
-#include "../../mesh_data/Entity_kind.hh"
+#include "../Mesh_MSTK.hh"
 
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 
 #include "mpi.h"
 
+using namespace Amanzi;
+using namespace AmanziMesh;
+using namespace AmanziGeometry;
+
 
 TEST(MSTK_HEX1)
 {
 
   int i, j, k, err, nc, nv;
-  unsigned int faces[6], facenodes[4], cellnodes[8], expfacenodes[4];
-  int facedirs[6];
-  double ccoords[24], fcoords[12];
+  std::vector<Entity_ID> faces(6), facenodes(4), cellnodes(8), expfacenodes(4);
+  std::vector<int> facedirs(6);
+  std::vector<Point> ccoords(8), fcoords(4);
 
   int NV = 8;
   int NF = 6;
@@ -42,45 +45,47 @@ TEST(MSTK_HEX1)
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_maps_mstk mesh("test/hex_2x2x2_ss.exo",MPI_COMM_WORLD);
+  Mesh_MSTK mesh("test/hex_2x2x2_ss.exo",MPI_COMM_WORLD,3);
 
 
   // Check number of nodes and their coordinates
 
-  nv = mesh.count_entities(Mesh_data::NODE, OWNED);
+  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
-    double coords[3];
-    
-    mesh.node_to_coordinates(i,coords,coords+6);
+    Point coords;
+
+    coords.init(mesh.space_dimension());
+
+    mesh.node_get_coordinates(i,&coords);
     CHECK_ARRAY_EQUAL(xyz[i],coords,3);
   }
 
 
   // Check number of cells and their face nodes and their face coordinates
   
-  nc = mesh.count_entities(Mesh_data::CELL,OWNED);
+  nc = mesh.num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
   // Check cell coordinates directly
 
-  mesh.cell_to_nodes(0,cellnodes, cellnodes+8);
-  mesh.cell_to_coordinates(0,ccoords,ccoords+24);
+  mesh.cell_get_nodes(0,&cellnodes);
+  mesh.cell_get_coordinates(0,&ccoords);
     
   for (j = 0; j < 8; j++) {
-    CHECK_ARRAY_EQUAL(xyz[cellnodes[j]],&(ccoords[3*j]),3);
+    CHECK_ARRAY_EQUAL(xyz[cellnodes[j]],ccoords[j],3);
   }
 
 
     
-  mesh.cell_to_faces(0,faces,faces+6);
-  mesh.cell_to_face_dirs(0,facedirs,facedirs+6);
+  mesh.cell_get_faces(0,&faces);
+  mesh.cell_get_face_dirs(0,&facedirs);
 
   for (j = 0; j < 6; j++) {
-    mesh.face_to_nodes(faces[j],facenodes,facenodes+4);
-    mesh.face_to_coordinates(faces[j],fcoords,fcoords+12);
+    mesh.face_get_nodes(faces[j],&facenodes);
+    mesh.face_get_coordinates(faces[j],&fcoords);
 
 
     for (k = 0; k < 4; k++)
@@ -104,13 +109,13 @@ TEST(MSTK_HEX1)
     if (facedirs[j] == 1) {
       for (k = 0; k < 4; k++) {
 	CHECK_EQUAL(expfacenodes[(k0+k)%4],facenodes[k]);
-	CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+k)%4]],&(fcoords[3*k]),3);
+	CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+k)%4]],fcoords[k],3);
       }
     }
     else {
       for (k = 0; k < 4; k++) {
 	CHECK_EQUAL(expfacenodes[(k0+4-k)%4],facenodes[k]);
-	CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+4-k)%4]],&(fcoords[3*k]),3);
+	CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+4-k)%4]],fcoords[k],3);
       }
     }
 
@@ -120,11 +125,12 @@ TEST(MSTK_HEX1)
   // Verify the sidesets
 
   int ns;
-  ns = mesh.num_sets(Mesh_data::FACE);
+  ns = mesh.num_sets(AmanziMesh::FACE);
   CHECK_EQUAL(7,ns);
 
-  unsigned int setids[7], expsetids[7]={1,101,102,103,104,105,106};
-  mesh.get_set_ids(Mesh_data::FACE,setids,setids+7);
+  unsigned int expsetids[7]={1,101,102,103,104,105,106};
+  std::vector<Set_ID> setids(7);
+  mesh.get_set_ids(AmanziMesh::FACE,&setids);
   
   CHECK_ARRAY_EQUAL(expsetids,setids,7);
 
@@ -139,13 +145,13 @@ TEST(MSTK_HEX1)
 
 
   for (i = 0; i < ns; i++) {
-    unsigned int setfaces[6];
+    std::vector<Entity_ID> setfaces(6);
 
-    setsize = mesh.get_set_size(setids[i],Mesh_data::FACE,OWNED);
+    setsize = mesh.get_set_size(setids[i],AmanziMesh::FACE,AmanziMesh::OWNED);
     CHECK_EQUAL(expsetsizes[i],setsize);
 
 
-    mesh.get_set(setids[i],Mesh_data::FACE, OWNED, setfaces, setfaces+setsize);
+    mesh.get_set_entities(setids[i],AmanziMesh::FACE, AmanziMesh::OWNED, &setfaces);
     
     int allfound = 1;
     for (j = 0; j < setsize; j++) {
