@@ -5,6 +5,8 @@
 ** test program for openmp threading of multiple beaker objects
 **
 */
+#include <unistd.h>
+
 #include <cstdlib>
 
 #include <iostream>
