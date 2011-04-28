@@ -20,10 +20,11 @@ project(MESH)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) directories
 include_directories(${Epetra_INCLUDE_DIRS})
-
+include_directories(${Boost_INCLUDE_DIRS})
 
 #
 # Library: cell_geometry
@@ -35,3 +36,10 @@ add_library(cell_geometry cell_geometry.cc)
 #
 add_library(mesh_audit MeshAudit.cc)
 target_link_libraries(mesh_audit error_handling cell_geometry ${Epetra_LIBRARIES})
+
+#
+# Library: mesh
+#
+add_library(mesh Mesh.cc)
+target_link_libraries(mesh geometry)
+
