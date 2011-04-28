@@ -24,6 +24,8 @@ include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -37,9 +39,9 @@ add_definitions("-DUSE_MPI -DMSTK_HAVE_MPI")
 #
 # Library: mstk_mesh
 #
-set(mstk_mesh_files Cell_topology.cc Element_category.cc Mesh_maps_mstk.cc) 
+set(mstk_mesh_files Mesh_MSTK.cc) 
 add_library(mstk_mesh ${mstk_mesh_files})
-target_link_libraries(mstk_mesh mesh_data error_handling ${MSTK_LIBRARIES} ${ExodusII_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+target_link_libraries(mstk_mesh error_handling ${MSTK_LIBRARIES} ${ExodusII_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
     
