@@ -24,9 +24,9 @@ SecondarySpecies::SecondarySpecies()
 
 SecondarySpecies::SecondarySpecies(const SpeciesName in_name, 
                                    const SpeciesId in_id,
-                                   std::vector<SpeciesName> in_species,
-                                   std::vector<double> in_stoichiometries,
-                                   std::vector<SpeciesId> in_species_ids,
+                                   const std::vector<SpeciesName>& in_species,
+                                   const std::vector<double>& in_stoichiometries,
+                                   const std::vector<SpeciesId>& in_species_ids,
                                    const double in_h2o_stoich, 
                                    const double in_charge,
                                    const double in_mol_wt, 
@@ -109,7 +109,7 @@ void SecondarySpecies::AddContributionToTotal(std::vector<double> *total)
   static_cast<void>(total);
 } // end addContributionToTotal()
 
-void SecondarySpecies::AddContributionToDTotal(const std::vector<Species> primary_species,
+void SecondarySpecies::AddContributionToDTotal(const std::vector<Species>& primary_species,
                                                Block *dtotal) 
 {
   static_cast<void>(primary_species);

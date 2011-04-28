@@ -26,9 +26,9 @@ class Mineral : public SecondarySpecies {
   Mineral();
   Mineral(const SpeciesName name,
           SpeciesId mineral_id,
-          std::vector<SpeciesName> species,
-          std::vector<double> stoichiometries,
-          std::vector<SpeciesId> species_ids,
+          const std::vector<SpeciesName>& species,
+          const std::vector<double>& stoichiometries,
+          const std::vector<SpeciesId>& species_ids,
           const double h2o_stoich, const double mol_wt,
           const double logK, const double molar_volume,
           const double specific_surface_area);
@@ -39,7 +39,7 @@ class Mineral : public SecondarySpecies {
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
-  virtual void AddContributionToDTotal(const std::vector<Species> primary_species,
+  virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        Block *dtotal);
 
   void Display(void) const;
