@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/env python
 #
 # Copyright (c) 2009 Google Inc. All rights reserved.
 #
@@ -3015,9 +3015,9 @@ def ProcessFile(filename, vlevel):
 
   # When reading from stdin, the extension is unknown, so no cpplint tests
   # should rely on the extension.
-  if (filename != '-' and file_extension != 'cc' and file_extension != 'h'
+  if (filename != '-' and file_extension != 'cc' and file_extension != 'hh'
       and file_extension != 'cpp'):
-    sys.stderr.write('Ignoring %s; not a .cc or .h file\n' % filename)
+    sys.stderr.write('Ignoring %s; not a .cc or .hh file\n' % filename)
   else:
     ProcessFileData(filename, file_extension, lines, Error)
     if carriage_return_found and os.linesep != '\r\n':
