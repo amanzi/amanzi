@@ -14,8 +14,8 @@ class ActivityModel {
   ActivityModel();
   virtual ~ActivityModel();
 
-  void CalculateIonicStrength(std::vector<Species> primarySpecies,
-                              std::vector<AqueousEquilibriumComplex> secondarySpecies);
+  void CalculateIonicStrength(const std::vector<Species>& primarySpecies,
+                              const std::vector<AqueousEquilibriumComplex>& secondarySpecies);
   void CalculateActivityCoefficients(std::vector<Species> &primarySpecies,
                                      std::vector<AqueousEquilibriumComplex> &secondarySpecies);
   virtual double Evaluate(const Species& species) = 0;
