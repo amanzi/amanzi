@@ -5,6 +5,9 @@ add_subdirectory(error_handling)
 add_subdirectory(utils)
 add_subdirectory(input)
 
+# Geometry
+add_subdirectory(geometry)
+
 # Mesh 
 add_subdirectory(mesh)
 add_subdirectory(mesh_data)
