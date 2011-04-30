@@ -1,21 +1,6 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="styleguide.xsl"?>
-<GUIDE title="Google C++ Style Guide">
-
-<p align="right">
-
-Revision 3.188
-</p>
-
-
-
-<address>
-Benjy Weinberger<br/>
-Craig Silverstein<br/>
-Gregory Eitzmann<br/>
-Mark Mentovai<br/>
-Tashana Landray
-</address>
+<GUIDE title="Amanzi C++ Style Guide">
 
 <OVERVIEW>
 <CATEGORY title="Important Note">
@@ -38,9 +23,7 @@ Tashana Landray
 <CATEGORY title="Background">
   <p>
     C++ is the main development language
-    
-    used by many of Google's open-source
-    projects.
+    for Amanzi.
     As every C++ programmer knows, the language has many powerful features,
     but this power brings with it complexity, which in turn can make code
     more bug-prone and harder to read and maintain.
@@ -87,7 +70,7 @@ Tashana Landray
   </p>
   <p>
     
-    Open-source projects developed by Google
+    New code developed for Amanzi should
     conform to the requirements in this guide.
   </p>
   
@@ -103,7 +86,7 @@ Tashana Landray
 <CATEGORY title="Header Files">
   <p>
     In general, every <code>.cc</code> file should have an associated
-    <code>.h</code> file. There are some common exceptions, such as
+    <code>.hh</code> file. There are some common exceptions, such as
     
     unittests
     and small <code>.cc</code> files containing just a <code>main()</code>
@@ -120,6 +103,7 @@ Tashana Landray
 
   <STYLEPOINT title="The #define Guard">
     <SUMMARY>
+      <!-- TODO(bandre): prefer to just use project_file or project_subproject_file? -->
       All header files should have <code>#define</code> guards to
       prevent multiple inclusion.  The format of the symbol name
       should be
@@ -130,7 +114,7 @@ Tashana Landray
       <p>
         To guarantee uniqueness, they should be based on the full path
         in a project's source tree.  For example, the file
-        <code>foo/src/bar/baz.h</code> in project <code>foo</code> should
+        <code>foo/src/bar/baz.hh</code> in project <code>foo</code> should
         have the following guard:
       </p>
       <CODE_SNIPPET>
@@ -167,7 +151,7 @@ Tashana Landray
         <code>File</code> class in ways that do not require access to
         the declaration of the <code>File</code> class, your header
         file can just forward declare <code>class File;</code> instead
-        of having to <code>#include "file/base/file.h"</code>.
+        of having to <code>#include "file/base/file.hh"</code>.
       </p>
       <p>
         How can we use a class <code>Foo</code> in a header file
@@ -217,7 +201,7 @@ Tashana Landray
         depend on the symbol being brought in transitively via headers
         not directly included.  One exception is if <code>Foo</code>
         is used in <code>myfile.cc</code>, it's ok to #include (or
-        forward-declare) <code>Foo</code> in <code>myfile.h</code>,
+        forward-declare) <code>Foo</code> in <code>myfile.hh</code>,
         instead of <code>myfile.cc</code>.
       </SUBSECTION>
     </BODY>
@@ -275,9 +259,9 @@ Tashana Landray
     </BODY>
   </STYLEPOINT>
 
-  <STYLEPOINT title="The -inl.h Files">
+  <STYLEPOINT title="The -inl.hh Files">
     <SUMMARY>
-      You may use file names with a <code>-inl.h</code> suffix to define
+      You may use file names with a <code>-inl.hh</code> suffix to define
       complex inline functions when needed.
     </SUMMARY>
     <BODY>
@@ -286,29 +270,29 @@ Tashana Landray
         file, so that the compiler has the definition available for
         inlining at the call sites.  However, implementation code
         properly belongs in <code>.cc</code> files, and we do not like
-        to have much actual code in <code>.h</code> files unless there
+        to have much actual code in <code>.hh</code> files unless there
         is a readability or performance advantage.
       </p>
       <p>
         If an inline function definition is short, with very little,
         if any, logic in it, you should put the code in your
-        <code>.h</code> file.  For example, accessors and mutators
+        <code>.hh</code> file.  For example, accessors and mutators
         should certainly be inside a class definition.  More complex
-        inline functions may also be put in a <code>.h</code> file for
+        inline functions may also be put in a <code>.hh</code> file for
         the convenience of the implementer and callers, though if this
-        makes the <code>.h</code> file too unwieldy you can instead
-        put that code in a separate <code>-inl.h</code> file.
+        makes the <code>.hh</code> file too unwieldy you can instead
+        put that code in a separate <code>-inl.hh</code> file.
         This separates the implementation from the class definition,
         while still allowing the implementation to be included where
         necessary.
       </p>
       <p>
-        Another use of <code>-inl.h</code> files is for definitions of
+        Another use of <code>-inl.hh</code> files is for definitions of
         function templates.  This can be used to keep your template
         definitions easy to read.
       </p>
       <p>
-        Do not forget that a <code>-inl.h</code> file requires a
+        Do not forget that a <code>-inl.hh</code> file requires a
         <a href="#The__define_Guard"><code>#define</code> guard</a> just
         like any other header file.
       </p>
@@ -349,51 +333,52 @@ Tashana Landray
       
       other libraries' <code>.h</code>, your
       project's
-      <code>.h</code>.
+      <code>.hh</code>.
     </SUMMARY>
     <BODY>
       <p>
-        
+        <!-- TODO(bandre): better to use the build system and compiler include path to handle this? -->
+	<!-- TODO(bandre): c standard library headers should be included with <cX> rather than <X.h>, Stroustrup 1997, pg 202 -->
         All of a project's header files should be
         listed as descendants of the project's source directory
         without use of UNIX directory shortcuts <code>.</code> (the current
         directory) or <code>..</code> (the parent directory).  For
         example,
         
-        <code>google-awesome-project/src/base/logging.h</code>
+        <code>amanzi/src/base/logging.hh</code>
         should be included as
       </p>
       <CODE_SNIPPET>
-        #include "base/logging.h"
+        #include "base/logging.hh"
       </CODE_SNIPPET>
       <p>
         In <code><var>dir/foo</var>.cc</code> or <code><var>dir/foo_test</var>.cc</code>,
 	whose main purpose is to implement or test the stuff in
-        <code><var>dir2/foo2</var>.h</code>, order your includes as
+        <code><var>dir2/foo2</var>.hh</code>, order your includes as
         follows:
       </p>
       <ol>
-        <li> <code><var>dir2/foo2</var>.h</code> (preferred location
+        <li> <code><var>dir2/foo2</var>.hh</code> (preferred location
           &#8212; see details below).</li>
         <li> C system files.</li>
         <li> C++ system files.</li>
         <li> Other libraries' <code>.h</code> files.</li>
         <li> 
              Your project's
-             <code>.h</code> files.</li>
+             <code>.hh</code> files.</li>
       </ol>
       <p>
         The preferred ordering reduces hidden dependencies.  We want
         every header file to be compilable on its own.  The easiest
         way to achieve this is to make sure that every one of them is
-        the first <code>.h</code> file <code>#include</code>d in some
+        the first <code>.hh</code> file <code>#include</code>d in some
         <code>.cc</code>.  
       </p>
       <p>
         <code><var>dir/foo</var>.cc</code> and
-        <code><var>dir2/foo2</var>.h</code> are often in the same
+        <code><var>dir2/foo2</var>.hh</code> are often in the same
         directory (e.g. <code>base/basictypes_test.cc</code> and
-        <code>base/basictypes.h</code>), but can be in different
+        <code>base/basictypes.hh</code>), but can be in different
         directories too.
       </p>
       
@@ -404,21 +389,22 @@ Tashana Landray
       <p>
         For example, the includes in
         
-        <code>google-awesome-project/src/foo/internal/fooserver.cc</code>
+        <code>amanzi/src/foo/internal/fooserver.cc</code>
         might look like this:
       </p>
       <CODE_SNIPPET>
-        #include "foo/public/fooserver.h"  // Preferred location.
+        #include "foo/public/fooserver.hh"  // Preferred location.
 
         #include &lt;sys/types.h&gt;
         #include &lt;unistd.h&gt;
+        #include &lt;cmath&gt;
 
         #include &lt;hash_map&gt;
         #include &lt;vector&gt;
 
-        #include "base/basictypes.h"
-        #include "base/commandlineflags.h"
-        #include "foo/public/bar.h"
+        #include "base/basictypes.hh"
+        #include "base/commandlineflags.hh"
+        #include "foo/public/bar.hh"
       </CODE_SNIPPET>
     </BODY>
   </STYLEPOINT>
@@ -495,7 +481,7 @@ Tashana Landray
                    namespace</code>.
                  </p>
                  </li>
-            <li> Do not use unnamed namespaces in <code>.h</code>
+            <li> Do not use unnamed namespaces in <code>.hh</code>
                  files.
                  </li>
           </ul>
@@ -512,7 +498,7 @@ Tashana Landray
                  definitions/declarations, and forward declarations of classes
                  from other namespaces:
                  <CODE_SNIPPET>
-                   // In the .h file
+                   // In the .hh file
                    namespace mynamespace {
 
                    // All declarations are within the namespace scope.
@@ -542,7 +528,7 @@ Tashana Landray
                    in other namespaces.
                  </p>
                  <CODE_SNIPPET>
-                   #include "a.h"
+                   #include "a.hh"
 
                    DEFINE_bool(someflag, false, "dummy flag");
 
@@ -578,23 +564,23 @@ Tashana Landray
 
             <li> You may use a <SYNTAX>using-declaration</SYNTAX>
                  anywhere in a <code>.cc</code> file, and in functions,
-                 methods or classes in <code>.h</code> files.
+                 methods or classes in <code>.hh</code> files.
                  <CODE_SNIPPET>
                    // OK in .cc files.
-                   // Must be in a function, method or class in .h files.
+                   // Must be in a function, method or class in .hh files.
                    using ::foo::bar;
                  </CODE_SNIPPET>
                  </li>
 
             <li> Namespace aliases are allowed anywhere in a
                  <code>.cc</code> file, anywhere inside the named
-                 namespace that wraps an entire <code>.h</code> file,
+                 namespace that wraps an entire <code>.hh</code> file,
                  and in functions and methods.
                  <CODE_SNIPPET>
                    // Shorten access to some commonly used names in .cc files.
                    namespace fbz = ::foo::bar::baz;
 
-                   // Shorten access to some commonly used names (in a .h file).
+                   // Shorten access to some commonly used names (in a .hh file).
                    namespace librarian {
                    // The following alias is available to all files including
                    // this header (in namespace librarian):
@@ -610,7 +596,7 @@ Tashana Landray
                    }  // namespace librarian
                  </CODE_SNIPPET>
                  <p>
-                 Note that an alias in a .h file is visible to everyone
+                 Note that an alias in a .hh file is visible to everyone
                  #including that file, so public headers (those available
                  outside a project) and headers transitively #included by them,
                  should avoid defining aliases, as part of the general
@@ -841,6 +827,7 @@ Tashana Landray
 
   <STYLEPOINT title="Doing Work in Constructors">
     <SUMMARY>
+      <!-- TODO(bandre): I don't think this is the current convention in amanzi.... -->
       In general, constructors should merely set member variables to their
       initial values.  Any complex initialization should go in an explicit
       <code>Init()</code> method.
@@ -1449,91 +1436,6 @@ Tashana Landray
   </STYLEPOINT>
 </CATEGORY>
 
-<CATEGORY title="Google-Specific Magic">
-  
-  <p>
-    There are various tricks and utilities that we use to make C++
-    code more robust, and various ways we use C++ that may differ from
-    what you see elsewhere.
-  </p>
-
-  
-
-  <STYLEPOINT title="Smart Pointers">
-    
-    <SUMMARY>
-      If you actually need pointer semantics, <code>scoped_ptr</code>
-      is great.  You should only use <code>std::tr1::shared_ptr</code>
-      with a non-const referent when it is truly necessary to share ownership
-      of an object (e.g. inside an STL container). You should never use
-      <code>auto_ptr</code>.
-    </SUMMARY>
-    <BODY>
-      <DEFINITION>
-        "Smart" pointers are objects that act like pointers, but automate
-        management of the underlying memory. 
-      </DEFINITION>
-      <PROS>
-        Smart pointers are extremely useful for preventing memory leaks, and
-        are essential for writing exception-safe code. They also formalize
-        and document the ownership of dynamically allocated memory.
-      </PROS>
-      <CONS>
-        We prefer designs in which objects have single, fixed owners. Smart
-        pointers which enable sharing or transfer of ownership can act as a
-        tempting alternative to a careful design of ownership semantics,
-        leading to confusing code and even bugs in which memory is never
-        deleted. The semantics of smart pointers (especially
-        <code>auto_ptr</code>) can be nonobvious and confusing. The
-        exception-safety benefits of smart pointers are not decisive, since
-        we do not allow exceptions.
-      </CONS>
-      <DECISION>
-        <dl>
-          <dt><code>scoped_ptr</code></dt>
-          <dd>Straightforward and risk-free. Use wherever appropriate.</dd>
-          <dt><code>auto_ptr</code></dt>
-          <dd>Confusing and bug-prone ownership-transfer semantics. Do not use.
-            </dd>
-          <dt><code>shared_ptr</code></dt>
-          <dd>
-          Safe with const referents (i.e. <code>shared_ptr&lt;const
-          T&gt;</code>). Reference-counted pointers with non-const referents
-          can occasionally be the best design, but try to rewrite with single
-          owners where possible. 
-          </dd>
-        </dl>
-      </DECISION>
-    </BODY>
-  </STYLEPOINT>
-
-  <STYLEPOINT title="cpplint">
-    <SUMMARY>
-      Use
-      <code>cpplint.py</code>
-      to detect style errors.
-    </SUMMARY>
-    <BODY>
-      <p>
-        <code>cpplint.py</code>
-        is a tool that reads a source file and
-        identifies many style errors.  It is not perfect, and has both false
-        positives and false negatives, but it is still a valuable tool.  False
-        positives can be ignored by putting <code>// NOLINT</code> at
-        the end of the line.
-      </p>
-      
-      <p>
-        Some projects have instructions on how to run <code>cpplint.py</code>
-        from their project tools. If the project you are contributing to does
-        not, you can download <A HREF="http://google-styleguide.googlecode.com/svn/trunk/cpplint/cpplint.py"><code>cpplint.py</code></A> separately.
-      </p>
-    </BODY>
-  </STYLEPOINT>
-
-  
-</CATEGORY>
-
 <CATEGORY title="Other C++ Features">
   <STYLEPOINT title="Reference Arguments">
     <SUMMARY>
@@ -1567,7 +1469,7 @@ Tashana Landray
           void Foo(const string &amp;in, string *out);
         </CODE_SNIPPET>
         <p>
-          In fact it is a very strong convention in Google code that input
+          In fact it is a very strong convention in Amanzi code that input
           arguments are values or <code>const</code> references while
           output arguments are pointers.  Input parameters may be
           <code>const</code> pointers, but we never allow
@@ -1726,119 +1628,6 @@ Tashana Landray
     </BODY>
   </STYLEPOINT>
 
-  <STYLEPOINT title="Exceptions">
-    <SUMMARY>
-      We do not use C++ exceptions.
-    </SUMMARY>
-    <BODY>
-      <PROS>
-        <ul>
-          <li>Exceptions allow higher levels of an application to
-          decide how to handle "can't happen" failures in deeply
-          nested functions, without the obscuring and error-prone
-          bookkeeping of error codes.</li>
-
-          
-
-          <li>Exceptions are used by most other modern
-          languages.  Using them in C++ would make it more consistent with
-          Python, Java, and the C++ that others are familiar with.</li>
-
-          <li>Some third-party C++ libraries use exceptions, and turning
-          them off internally makes it harder to integrate with those
-          libraries.</li>
-
-          <li>Exceptions are the only way for a constructor to fail.
-          We can simulate this with a factory function or an
-          <code>Init()</code> method, but these require heap
-          allocation or a new "invalid" state, respectively.</li>
-
-          <li>Exceptions are really handy in testing frameworks.</li>
-        </ul>
-      </PROS>
-      <CONS>
-        <ul>
-          <li>When you add a <code>throw</code> statement to an existing
-          function, you must examine all of its transitive callers. Either
-          they must make at least the basic exception safety guarantee, or
-          they must never catch the exception and be happy with the
-          program terminating as a result. For instance, if
-          <code>f()</code> calls <code>g()</code> calls
-          <code>h()</code>, and <code>h</code> throws an exception
-          that <code>f</code> catches, <code>g</code> has to be
-          careful or it may not clean up properly.</li>
-
-          <li>More generally, exceptions make the control flow of
-          programs difficult to evaluate by looking at code: functions
-          may return in places you don't expect. This causes
-          maintainability and debugging difficulties. You can minimize
-          this cost via some rules on how and where exceptions can be
-          used, but at the cost of more that a developer needs to know
-          and understand.</li>
-
-          <li>Exception safety requires both RAII and different coding
-          practices. Lots of supporting machinery is needed to make
-          writing correct exception-safe code easy. Further, to avoid
-          requiring readers to understand the entire call graph,
-          exception-safe code must isolate logic that writes to
-          persistent state into a "commit" phase. This will have both
-          benefits and costs (perhaps where you're forced to obfuscate
-          code to isolate the commit). Allowing exceptions would force
-          us to always pay those costs even when they're not worth
-          it.</li>
-
-          <li>Turning on exceptions adds data to each binary produced,
-          increasing compile time (probably slightly) and possibly
-          increasing address space pressure.
-          </li>
-
-          <li>The availability of exceptions may encourage developers
-          to throw them when they are not appropriate or recover from
-          them when it's not safe to do so. For example, invalid user
-          input should not cause exceptions to be thrown. We would
-          need to make the style guide even longer to document these
-          restrictions!</li>
-        </ul>
-      </CONS>
-      <DECISION>
-        <p>
-          On their face, the benefits of using exceptions outweigh the
-          costs, especially in new projects.  However, for existing code,
-          the introduction of exceptions has implications on all dependent
-          code.  If exceptions can be propagated beyond a new project, it
-          also becomes problematic to integrate the new project into
-          existing exception-free code.  Because most existing C++ code at
-          Google is not prepared to deal with exceptions, it is
-          comparatively difficult to adopt new code that generates
-          exceptions.
-        </p>
-        <p>
-          Given that Google's existing code is not exception-tolerant, the
-          costs of using exceptions are somewhat greater than the costs in
-          a new project.  The conversion process would be slow and
-          error-prone.  We don't believe that the available alternatives to
-          exceptions, such as error codes and assertions, introduce a
-          significant burden.
-          
-        </p>
-        <p>
-          Our advice against using exceptions is not predicated on
-          philosophical or moral grounds, but practical ones.
-          
-          Because we'd like to use our open-source
-          projects at Google and it's difficult to do so if those projects
-          use exceptions, we need to advise against exceptions in Google
-          open-source projects as well.
-          Things would probably be different if we had to do it all over
-          again from scratch.
-        </p>
-        <p>
-          There is an <a HREF="#Windows_Code">exception</a> to this
-          rule (no pun intended) for Windows code.
-        </p>
-      </DECISION>
-    </BODY>
-  </STYLEPOINT>
 
   <STYLEPOINT title="Run-Time Type Information (RTTI)">
     <SUMMARY>
@@ -1953,110 +1742,6 @@ Tashana Landray
     </BODY>
   </STYLEPOINT>
 
-  <STYLEPOINT title="Streams">
-    <SUMMARY>
-      Use streams only for logging.
-    </SUMMARY>
-    <BODY>
-      <DEFINITION>
-        Streams are a replacement for <code>printf()</code> and
-        <code>scanf()</code>.
-      </DEFINITION>
-      <PROS>
-        With streams, you do not need to know the type of the object
-        you are printing.  You do not have problems with format
-        strings not matching the argument list.  (Though with gcc, you
-        do not have that problem with <code>printf</code> either.)  Streams
-        have automatic constructors and destructors that open and close the
-        relevant files.
-      </PROS>
-      <CONS>
-        Streams make it difficult to do functionality like
-        <code>pread()</code>.  Some formatting (particularly the common
-        format string idiom <code>%.*s</code>) is difficult if not
-        impossible to do efficiently using streams without using
-        <code>printf</code>-like hacks.  Streams do not support operator
-        reordering (the <code>%1s</code> directive), which is helpful for
-        internationalization.
-      </CONS>
-      <DECISION>
-        
-        <p>
-          Do not use streams, except where required by a logging interface.
-          Use <code>printf</code>-like routines instead.
-        </p>
-        <p>
-          There are various pros and cons to using streams, but in
-          this case, as in many other cases, consistency trumps the
-          debate.  Do not use streams in your code.
-        </p>
-
-        <SUBSECTION title="Extended Discussion">
-          <p>
-            There has been debate on this issue, so this explains the
-            reasoning in greater depth.  Recall the Only One Way
-            guiding principle: we want to make sure that whenever we
-            do a certain type of I/O, the code looks the same in all
-            those places.  Because of this, we do not want to allow
-            users to decide between using streams or using
-            <code>printf</code> plus Read/Write/etc.  Instead, we should
-            settle on one or the other.  We made an exception for logging
-            because it is a pretty specialized application, and for
-            historical reasons.
-          </p>
-          <p>
-            Proponents of streams have argued that streams are the obvious
-            choice of the two, but the issue is not actually so clear.  For
-            every advantage of streams they point out, there is an
-            equivalent disadvantage.  The biggest advantage is that
-            you do not need to know the type of the object to be
-            printing.  This is a fair point.  But, there is a
-            downside: you can easily use the wrong type, and the
-            compiler will not warn you.  It is easy to make this
-            kind of mistake without knowing when using streams.
-          </p>
-          <CODE_SNIPPET>
-            cout &lt;&lt; this;  // Prints the address
-            cout &lt;&lt; *this;  // Prints the contents
-          </CODE_SNIPPET>
-          <p>
-            The compiler does not generate an error because
-            <code>&lt;&lt;</code> has been overloaded.  We discourage
-            overloading for just this reason.
-          </p>
-          <p>
-            Some say <code>printf</code> formatting is ugly and hard to
-            read, but streams are often no better.  Consider the following
-            two fragments, both with the same typo.  Which is easier to
-            discover?
-          </p>
-          <CODE_SNIPPET>
-             cerr &lt;&lt; "Error connecting to '" &lt;&lt; foo-&gt;bar()-&gt;hostname.first
-                  &lt;&lt; ":" &lt;&lt; foo-&gt;bar()-&gt;hostname.second &lt;&lt; ": " &lt;&lt; strerror(errno);
-
-             fprintf(stderr, "Error connecting to '%s:%u: %s",
-                     foo-&gt;bar()-&gt;hostname.first, foo-&gt;bar()-&gt;hostname.second,
-                     strerror(errno));
-          </CODE_SNIPPET>
-          <p>
-            And so on and so forth for any issue you might bring up.
-            (You could argue, "Things would be better with the right
-            wrappers," but if it is true for one scheme, is it not
-            also true for the other?  Also, remember the goal is to
-            make the language smaller, not add yet more machinery that
-            someone has to learn.)
-          </p>
-          <p>
-            Either path would yield different advantages and
-            disadvantages, and there is not a clearly superior
-            solution.  The simplicity doctrine mandates we settle on
-            one of them though, and the majority decision was on
-            <code>printf</code> + <code>read</code>/<code>write</code>.
-          </p>
-        </SUBSECTION>
-      </DECISION>
-    </BODY>
-  </STYLEPOINT>
 
   <STYLEPOINT title="Preincrement and Predecrement">
     <SUMMARY>
@@ -2466,7 +2151,7 @@ Tashana Landray
         macros; if you use macros, follow it whenever possible:
       </p>
       <ul>
-        <li> Don't define macros in a <code>.h</code> file.
+        <li> Don't define macros in a <code>.hh</code> file.
              </li>
         <li> <code>#define</code> macros right before you use them,
              and <code>#undef</code> them right after.
@@ -2538,7 +2223,7 @@ Tashana Landray
 
   <STYLEPOINT title="Boost">
   <SUMMARY>
-    Use only approved libraries from the Boost library collection.
+    Use of libraries from the Boost library collection is allowed, provided you document any new dependencies in the third party library documentation.
   </SUMMARY>
   <BODY>
     <DEFINITION>
@@ -2767,7 +2452,7 @@ Tashana Landray
       </p>
       <p>
         C++ files should end in <code>.cc</code> and header files
-        should end in <code>.h</code>.
+        should end in <code>.hh</code>.
       </p>
       <p>
         Do not use filenames that already exist
@@ -2775,27 +2460,27 @@ Tashana Landray
       </p>
       <p>
         In general, make your filenames very specific.  For example,
-        use <code>http_server_logs.h</code> rather
-        than <code>logs.h</code>.  A very common case is to have a
-        pair of files called, e.g., <code>foo_bar.h</code>
+        use <code>http_server_logs.hh</code> rather
+        than <code>logs.hh</code>.  A very common case is to have a
+        pair of files called, e.g., <code>foo_bar.hh</code>
         and <code>foo_bar.cc</code>, defining a class
         called <code>FooBar</code>.
       </p>
       <p>
-        Inline functions must be in a <code>.h</code> file. If your
+        Inline functions must be in a <code>.hh</code> file. If your
         inline functions are very short, they should go directly into your
-        <code>.h</code> file. However, if your inline functions
+        <code>.hh</code> file. However, if your inline functions
         include a lot of code, they may go into a third file that
-        ends in <code>-inl.h</code>.  In a class with a lot of inline
+        ends in <code>-inl.hh</code>.  In a class with a lot of inline
         code, your class could have three files:
       </p>
       <CODE_SNIPPET>
-        url_table.h      // The class declaration.
+        url_table.hh      // The class declaration.
         url_table.cc     // The class definition.
-        url_table-inl.h  // Inline functions that include lots of code.
+        url_table-inl.hh  // Inline functions that include lots of code.
       </CODE_SNIPPET>
       <p>
-        See also the section <a href="#The_-inl.h_Files">-inl.h Files</a>
+        See also the section <a href="#The_-inl.hh_Files">-inl.hh Files</a>
       </p>
     </BODY>
   </STYLEPOINT>
@@ -2969,7 +2654,7 @@ Tashana Landray
     <SUMMARY>
       Namespace names are all lower-case, and based on project names and
       possibly their directory structure:
-      <code>google_awesome_project</code>.
+      <code>amanzi_sub_project</code>.
     </SUMMARY>
     <BODY>
       <p>
@@ -3008,10 +2693,7 @@ Tashana Landray
         };
       </CODE_SNIPPET>
       <p>
-        Until January 2009, the style was to name enum values like
-        <A HREF="#Macro_Names">macros</A>.  This caused problems with
-        name collisions between enum values and macros.  Hence, the
-        change to prefer constant-style naming was put in place.  New
+        New
         code should prefer constant-style naming if possible.
         However, there is no reason to change old code to use
         constant-style names, unless the old names are actually
@@ -3113,7 +2795,7 @@ Tashana Landray
           Every file should contain the following items, in order:
           <ul>
             <li>a copyright statement (for example,
-                <code>Copyright 2008 Google Inc.</code>)</li>
+                <code>Copyright 2008 Amanzi Inc.</code>)</li>
             <li>a license boilerplate.  Choose the appropriate boilerplate
                 for the license used by the project (for example,
                 Apache 2.0, BSD, LGPL, GPL)</li>
@@ -3138,19 +2820,19 @@ Tashana Landray
           notice and author line, that describes the contents of the file.
         </p>
         <p>
-          Generally a <code>.h</code> file will describe the classes
+          Generally a <code>.hh</code> file will describe the classes
           that are declared in the file with an overview of what they
           are for and how they are used. A <code>.cc</code> file
           should contain more information about implementation details
           or discussions of tricky algorithms. If you feel the
           implementation details or a discussion of the algorithms
-          would be useful for someone reading the <code>.h</code>,
+          would be useful for someone reading the <code>.hh</code>,
           feel free to put it there instead, but mention in the
           <code>.cc</code> that the documentation is in the
-          <code>.h</code> file.
+          <code>.hh</code> file.
         </p>
         <p>
-          Do not duplicate comments in both the <code>.h</code> and
+          Do not duplicate comments in both the <code>.hh</code> and
           the <code>.cc</code>. Duplicated comments diverge.
         </p>
       </SUBSECTION>
@@ -3285,7 +2967,7 @@ Tashana Landray
         </p>
         <p>
           Note you should <em>not</em> just repeat the comments given
-          with the function declaration, in the <code>.h</code> file or
+          with the function declaration, in the <code>.hh</code> file or
           wherever.  It's okay to recapitulate briefly what the function
           does, but the focus of the comments should be on how it does it.
         </p>
@@ -4067,7 +3749,7 @@ Tashana Landray
       <p>
         Note that when the code wraps in this example, both of
         the <code>&amp;&amp;</code> logical AND operators are at the
-        end of the line.  This is more common in Google code, though
+        end of the line.  This is more common in Amanzi code, though
         wrapping all operators at the beginning of the line is also
         allowed.  Feel free to insert extra parentheses judiciously,
         because they can be very helpful in increasing readability
@@ -4405,6 +4087,262 @@ Tashana Landray
   </STYLEPOINT>
 </CATEGORY>
 
+<CATEGORY title="Amanzi-Specific Magic">
+
+  <p>
+    There are various tricks and utilities that we use to make C++
+    code more robust, and various ways we use C++ that may differ from
+    what you see elsewhere.
+  </p>
+
+  <STYLEPOINT title="Error Handling (Exceptions)">
+    <!-- TODO(mbuksas): need discussion of amanzi error handling infrastructure here. -->
+    <SUMMARY>
+      Error handling in Amanzi is done using the error handling library....
+    </SUMMARY>
+    <BODY>
+      <PROS>
+        <ul>
+          <li>P-A</li>
+
+          <li>P-B</li>
+
+          <li>P-C</li>
+
+          <li>P-D</li>
+
+          <li>P-E</li>
+        </ul>
+      </PROS>
+      <CONS>
+        <ul>
+          <li>C-A</li>
+
+          <li>C-B</li>
+
+          <li>C-C</li>
+
+          <li>C-D
+          </li>
+
+          <li>C-E</li>
+        </ul>
+      </CONS>
+      <DECISION>
+        <p>
+          Foo
+        </p>
+        <p>
+          Bar
+        </p>
+        <p>
+          Baz
+        </p>
+      </DECISION>
+    </BODY>
+  </STYLEPOINT>
+
+  <STYLEPOINT title="IO Library and Streams">
+    <!-- TODO(?): need a discussion of Amanzi I/O library, controling verbosity of code output -->
+    <SUMMARY>
+      Amanzi's use on HPC platforms requires special I/O handling....
+    </SUMMARY>
+    <BODY>
+      <DEFINITION>
+        Streams are a replacement for <code>printf()</code> and
+        <code>scanf()</code>.
+      </DEFINITION>
+      <PROS>
+        With streams, you do not need to know the type of the object
+        you are printing.  You do not have problems with format
+        strings not matching the argument list.  (Though with gcc, you
+        do not have that problem with <code>printf</code> either.)  Streams
+        have automatic constructors and destructors that open and close the
+        relevant files.
+      </PROS>
+      <CONS>
+        Streams make it difficult to do functionality like
+        <code>pread()</code>.  Some formatting (particularly the common
+        format string idiom <code>%.*s</code>) is difficult if not
+        impossible to do efficiently using streams without using
+        <code>printf</code>-like hacks.  Streams do not support operator
+        reordering (the <code>%1s</code> directive), which is helpful for
+        internationalization.
+      </CONS>
+      <DECISION>
+
+        <p>
+          Do not use streams, except where required by a logging interface.
+          Use <code>printf</code>-like routines instead.
+        </p>
+        <p>
+          There are various pros and cons to using streams, but in
+          this case, as in many other cases, consistency trumps the
+          debate.  Do not use streams in your code.
+        </p>
+
+        <SUBSECTION title="Extended Discussion">
+          <p>
+            There has been debate on this issue, so this explains the
+            reasoning in greater depth.  Recall the Only One Way
+            guiding principle: we want to make sure that whenever we
+            do a certain type of I/O, the code looks the same in all
+            those places.  Because of this, we do not want to allow
+            users to decide between using streams or using
+            <code>printf</code> plus Read/Write/etc.  Instead, we should
+            settle on one or the other.  We made an exception for logging
+            because it is a pretty specialized application, and for
+            historical reasons.
+          </p>
+          <p>
+            Proponents of streams have argued that streams are the obvious
+            choice of the two, but the issue is not actually so clear.  For
+            every advantage of streams they point out, there is an
+            equivalent disadvantage.  The biggest advantage is that
+            you do not need to know the type of the object to be
+            printing.  This is a fair point.  But, there is a
+            downside: you can easily use the wrong type, and the
+            compiler will not warn you.  It is easy to make this
+            kind of mistake without knowing when using streams.
+          </p>
+          <CODE_SNIPPET>
+            cout &lt;&lt; this;  // Prints the address
+            cout &lt;&lt; *this;  // Prints the contents
+          </CODE_SNIPPET>
+          <p>
+            The compiler does not generate an error because
+            <code>&lt;&lt;</code> has been overloaded.  We discourage
+            overloading for just this reason.
+          </p>
+          <p>
+            Some say <code>printf</code> formatting is ugly and hard to
+            read, but streams are often no better.  Consider the following
+            two fragments, both with the same typo.  Which is easier to
+            discover?
+          </p>
+          <CODE_SNIPPET>
+             cerr &lt;&lt; "Error connecting to '" &lt;&lt; foo-&gt;bar()-&gt;hostname.first
+                  &lt;&lt; ":" &lt;&lt; foo-&gt;bar()-&gt;hostname.second &lt;&lt; ": " &lt;&lt; strerror(errno);
+
+             fprintf(stderr, "Error connecting to '%s:%u: %s",
+                     foo-&gt;bar()-&gt;hostname.first, foo-&gt;bar()-&gt;hostname.second,
+                     strerror(errno));
+          </CODE_SNIPPET>
+          <p>
+            And so on and so forth for any issue you might bring up.
+            (You could argue, "Things would be better with the right
+            wrappers," but if it is true for one scheme, is it not
+            also true for the other?  Also, remember the goal is to
+            make the language smaller, not add yet more machinery that
+            someone has to learn.)
+          </p>
+          <p>
+            Either path would yield different advantages and
+            disadvantages, and there is not a clearly superior
+            solution.  The simplicity doctrine mandates we settle on
+            one of them though, and the majority decision was on
+            <code>printf</code> + <code>read</code>/<code>write</code>.
+          </p>
+        </SUBSECTION>
+      </DECISION>
+    </BODY>
+  </STYLEPOINT>
+
+  <STYLEPOINT title="Smart Pointers">
+    <!-- TODO(bandre): update to use trilinos rpc instead. chemistry only uses trilinos in the process kernel, the rest of the code does not use it to maintain compatibility with the structured mesh code. Which smart pointers should we use...? -->
+    <SUMMARY>
+      Amanzi uses <code>Teuchos::RCP</code> for smart pointers....<br/>
+      If you actually need pointer semantics, <code>scoped_ptr</code>
+      is great.  You should only use <code>std::tr1::shared_ptr</code>
+      with a non-const referent when it is truly necessary to share ownership
+      of an object (e.g. inside an STL container). You should never use
+      <code>auto_ptr</code>.
+    </SUMMARY>
+    <BODY>
+      <DEFINITION>
+        "Smart" pointers are objects that act like pointers, but automate
+        management of the underlying memory.
+      </DEFINITION>
+      <PROS>
+        Smart pointers are extremely useful for preventing memory leaks, and
+        are essential for writing exception-safe code. They also formalize
+        and document the ownership of dynamically allocated memory.
+      </PROS>
+      <CONS>
+        We prefer designs in which objects have single, fixed owners. Smart
+        pointers which enable sharing or transfer of ownership can act as a
+        tempting alternative to a careful design of ownership semantics,
+        leading to confusing code and even bugs in which memory is never
+        deleted. The semantics of smart pointers (especially
+        <code>auto_ptr</code>) can be nonobvious and confusing. The
+        exception-safety benefits of smart pointers are not decisive, since
+        we do not allow exceptions.
+      </CONS>
+      <DECISION>
+        <dl>
+          <dt><code>scoped_ptr</code></dt>
+          <dd>Straightforward and risk-free. Use wherever appropriate.</dd>
+          <dt><code>auto_ptr</code></dt>
+          <dd>Confusing and bug-prone ownership-transfer semantics. Do not use.
+            </dd>
+          <dt><code>shared_ptr</code></dt>
+          <dd>
+          Safe with const referents (i.e. <code>shared_ptr&lt;const
+          T&gt;</code>). Reference-counted pointers with non-const referents
+          can occasionally be the best design, but try to rewrite with single
+          owners where possible.
+          </dd>
+        </dl>
+      </DECISION>
+    </BODY>
+  </STYLEPOINT>
+
+  <STYLEPOINT title="cpplint">
+    <SUMMARY>
+      Use
+      <code>cpplint.py</code>
+      to detect style errors.
+    </SUMMARY>
+    <BODY>
+      <p>
+        <code>cpplint.py</code>
+        is a tool that reads a source file and
+        identifies many style errors.  It is not perfect, and has both false
+        positives and false negatives, but it is still a valuable tool.  False
+        positives can be ignored by putting <code>// NOLINT</code> at
+        the end of the line.
+      </p>
+
+      <p>
+        The Google version of <code>cpplint.py</code> has been modified for
+        Amanzi specific rules. To use the Amanzi version, use the build system command XXXX <!-- TODO(mbuksas): describe --> or manually run <code>amanzi/tools/XXXX</code> <!-- TODO(mbuksas): where is this going to live? -->
+      </p>
+    </BODY>
+  </STYLEPOINT>
+
+   <STYLEPOINT title="Compiler Warnings">
+    <SUMMARY>
+      It is good practice to use the compilers highest level of
+      warnings and treat all warnings as errors.
+    </SUMMARY>
+    <BODY>
+      <p>
+        Another form of static analysis, similar to lint.
+      </p>
+      <p>
+	More detailed discussion.... Sutter and Alexandrescu (2005) Rule 1, JSF Rule 218
+      </p>
+
+      <p>
+        This will eventually be enforced by the build system.
+      </p>
+    </BODY>
+  </STYLEPOINT>
+
+
+</CATEGORY>
+
+
 <CATEGORY title="Exceptions to the Rules">
   <p>
     The coding conventions described above are mandatory.  However,
@@ -4450,7 +4388,7 @@ Tashana Landray
       </p>
       <ul>
         <li> Do not use Hungarian notation (for example, naming an
-             integer <code>iNum</code>). Use the Google naming conventions,
+             integer <code>iNum</code>). Use the Amanzi naming conventions,
              including the <code>.cc</code> extension for source files.
              </li>
         <li> Windows defines many of its own synonyms for primitive
@@ -4465,7 +4403,7 @@ Tashana Landray
              warnings as errors.
              </li>
         <li> Do not use <code>#pragma once</code>; instead use the
-             standard Google include guards.  The path in the include
+             standard Amanzi include guards.  The path in the include
              guards should be relative to the top of your project
              tree.
              </li>
@@ -4549,11 +4487,21 @@ Tashana Landray
 
 <HR/>
 
+
+
 <p align="right">
-Revision 3.188
+Amanzi Revision 1.0
 </p>
 
+<address>
+Mike Buksas <br/>
+Ben Andre <br/>
+</address>
 
+<p align="right">
+Based on <a href="http://code.google.com/p/google-styleguide/">Google C++ Style Guide</a>, Revision 3.188<br/>
+Google style guides are licensed under the <a href="http://creativecommons.org/licenses/by/3.0/">Creative Commons 3.0 BY</a> License
+</p>
 
 <address>
 Benjy Weinberger<br/>
