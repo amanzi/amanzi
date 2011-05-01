@@ -949,12 +949,12 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D ExodusII_DIR:FILEPATH=${PREFIX} \\
         -D ENABLE_MOAB_Mesh:BOOL=ON \\
         -D MOAB_DIR:FILEPATH=${PREFIX} \\
-        -D ENABLE_MSTK_Mesh:BOOL=ON \\
+        -D ENABLE_MSTK_Mesh:BOOL=${USE_MSTK} \\
         -D MSTK_DIR:FILEPATH=${MSTK_PREFIX} \\
         -D METIS_DIR:FILEPATH=${METIS_PREFIX} \\
         -D ENABLE_CGNS:BOOL=ON \\
         -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
-        -D ENABLE_STK_Mesh:BOOL=${USE_MSTK} \\
+        -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
         -D ENABLE_OpenMP:BOOL=ON \\
         ..
