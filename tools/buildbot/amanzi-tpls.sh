@@ -877,7 +877,25 @@ PLATFORM=${PLATFORM}
 
 # ugly centos buildbot hack
 CMAKE=`which cmake`
+if [ -z \${CMAKE} ]; then
+    if [ -n ${CMAKE_EXE} ]; then
+        CMAKE=${CMAKE_EXE}
+        echo "Using \${CMAKE}"
+    else
+        echo "Could not find cmake in path, set CMAKE_EXE in the config file."
+        exit
+    fi
+fi
 CTEST=`which ctest`
+if [ -z \${CTEST} ]; then
+    if [ -n ${CTEST_EXE} ]; then
+        CTEST=${CTEST_EXE}
+        echo "Using \${CTEST}"
+    else
+        echo "Could not find ctest in path, set CTEST_EXE in the config file."
+        exit
+    fi
+fi
 
 function determine_amanzi_dir() {
     AMANZI_DIR=

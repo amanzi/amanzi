@@ -7,6 +7,9 @@
 # PATH=$PATH:${HOME}/local/bin
 # export PATH
 
+CMAKE_EXE=${HOME}/local/bin/cmake
+CTEST_EXE=${HOME}/local/bin/ctest
+
 PREFIX=${HOME}/slaves/amanzi/amanzi-libs
 SOURCE=${HOME}/slaves/amanzi/amanzi-tpl-source
 WORK_DIR=${HOME}/slaves/amanzi
