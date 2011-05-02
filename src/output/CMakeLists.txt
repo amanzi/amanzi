@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(TestManager)
+include(AddParallelTest)
 
 #
 # Define a project name
@@ -22,7 +22,7 @@ project(OUTPUT)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${SIMPLE_MESH_SOURCE_DIR})
+include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -61,13 +61,13 @@ if (BUILD_TESTS)
     # Test: gmv_output
     add_executable(test_gmv_output test/Main.cc test/test_gmv.cc)
     target_link_libraries(test_gmv_output output ${UnitTest_LIBRARIES})
-    add_amanzi_test(gmv_output test_gmv_output KIND unit)
+    add_test(gmv_output test_gmv_output)
 
     # Test: cgns_output
     if (ENABLE_CGNS)
         add_executable(test_cgns_output test/Main.cc test/test_cgns.cc)
         target_link_libraries(test_cgns_output output ${UnitTest_LIBRARIES})
-        add_amanzi_test(cgns_output test_cgns_output KIND int)
+        add_test(cgns_output test_cgns_output)
     endif()
 
 endif()
