@@ -138,7 +138,7 @@ function(ADD_AMANZI_TEST test_name test_exec)
 
   _register_test("${test_name}" "${test_exec}" "${test_args}" "${nprocs}" "${is_parallel}" "${mpi_args}")
 
-  _add_test_kind_label("${test_name} ${kind_in}")
+  _add_test_kind_label("${test_name}" "${kind_in}")
 
 endfunction(ADD_AMANZI_TEST)
 
