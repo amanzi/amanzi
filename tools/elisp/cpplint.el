@@ -52,7 +52,7 @@
          (local-file (file-relative-name
                       temp-file
                       (file-name-directory buffer-file-name))))
-    (list "cpplint.py" (list local-file))))
+    (list "cpplint.py" (list "--filter=-whitespace,-legal/copyright" local-file))))
 
 ;; From http://www.emacswiki.org/emacs/FlyMake
 
