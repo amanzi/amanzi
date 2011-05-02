@@ -1,25 +1,27 @@
 ;;
-;; cpplint.el
+;; coding_standards.el
 ;;
-;; Support for the Google code checking tool cpplint
+;; Support for the Google code checking tool cpplint and code style
 ;;
 ;; To load:
 ;;
 ;; Load this file into emacs. For example, add the following to your .emacs or .emacs.d/init.el:
 ;;
-;;   (load-file "path/to/this/file/cpplint.el")
+;;   (load-file "path/to/this/file/coding_standards.el")
 ;;
-;; You will need cpplint.py somewhere in your path.
+;; You will need our modified version of cpplint.py somewhere in your
+;; path. It can be found in the repository at
+;; tools/py_lib/cpplint/cpplint.py
 ;;
 ;; To activate in a particular buffer:
 ;;
-;;   M-x activate-cpplint
+;;   M-x amanzi-standards-activate
 ;;
 ;; To deactivate in a particular buffer:
 ;;
-;;  M-x deactivate-cpplint
+;;  M-x amanzi-standards-deactivate
 ;;
-;; To use:
+;; To use style checking:
 ;;
 ;;   Warnings returned by cpplint will be highlighted. Use M-p, M-n to
 ;;   move between warnings and see the text of the warning in the
@@ -52,7 +54,7 @@
          (local-file (file-relative-name
                       temp-file
                       (file-name-directory buffer-file-name))))
-    (list "cpplint.py" (list "--filter=-whitespace,-legal/copyright" local-file))))
+    (list "cpplint.py" (list "--filter=-whitespace,+whitespace/end_of_line,+whitespace/tab,-legal/copyright" local-file))))
 
 ;; From http://www.emacswiki.org/emacs/FlyMake
 
@@ -91,13 +93,15 @@ Key bindings:
   :keymap my-flymake-minor-mode-map)
 
 
-(defun activate-cpplint () "Activate cpplint on the current buffer" (interactive)
-  (progn (flymake-mode t)
-         (my-flymake-minor-mode t)))
+(defun amanzi-standards-activate () "Activate Amanzi standards checking on this buffer" (interactive)
+  (progn (google-set-c-style) 
+         (flymake-mode t)
+         (my-flymake-minor-mode t)
+         ()))
 
-(defun deactivate-cpplint () "Deactivate cppline on the current buffer" (interactive)
+(defun amanzi-standards-deactivate () "Deactivate Amanzi standards checking on this buffer" (interactive)
   (progn (flymake-mode nil)
          (my-flymake-minor-mode nil)))
 
 
-(provide 'cpplint)
+(provide 'coding_standards)
