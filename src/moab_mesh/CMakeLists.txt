@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -22,7 +22,7 @@ project(MOAB)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${SIMPLE_MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -61,14 +61,14 @@ if (BUILD_TESTS)
                    test/test_hex_3x3x2.cc
                    test/test_hex_4x4x4.cc)
     target_link_libraries(test_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-    add_test(moab_mesh test_moab_mesh )
+    add_amanzi_test(moab_mesh test_moab_mesh KIND unit)
 
     # Test: moab_mesh_parallel
     add_executable(test_parallel_moab_mesh
         test/Main.cc
         test/test_hex_4x4x4_4P.cc)
     target_link_libraries(test_parallel_moab_mesh moab_mesh ${UnitTest_LIBRARIES})
-    add_parallel_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4)
+    add_amanzi_test(moab_mesh_parallel test_parallel_moab_mesh NPROCS 4 KIND int)
 
 endif()
 

@@ -164,7 +164,7 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
     # MSTK requires METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
     add_package_dependency(MSTK DEPENDS_ON METIS)
-    
+
     # MSTK depends on ExodusII
     add_package_dependency(MSTK DEPENDS_ON ExodusII)
 

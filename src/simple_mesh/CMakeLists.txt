@@ -12,11 +12,11 @@ include(PrintVariable)
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   MESH_BASE_SOURCE_DIR
-#   MESH_BASE_BINARY_DIR
+#   SIMPLE_MESH_SOURCE_DIR
+#   SIMPLE_MESH_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(MESH_BASE)
+project(SIMPLE_MESH)
 
 # Amanzi include directories
 include_directories(${MESH_SOURCE_DIR})
@@ -44,7 +44,7 @@ if (BUILD_TESTS)
     # to remind me to change this when the mpc is back in the build system
     #add_executable(test_simple_mesh test/Main.cc test/test_maps.cpp test/test_cell_numbering.cc)
     #target_link_libraries(test_simple_mesh simple_mesh ${UnitTest_LIBRARIES} ${Epetra_LIBRARIES})
-    #add_test(simple_mesh test_simple_mesh)
+    #add_amanzi_test(simple_mesh test_simple_mesh)
 
 endif()
 

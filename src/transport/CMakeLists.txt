@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -22,7 +22,7 @@ project(TRANSPORT)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${SIMPLE_MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 
@@ -59,14 +59,14 @@ if ( BUILD_TESTS )
         set(amanzi_libs simple_mesh moab_mesh state flow transport)
 
         # Test: transport
-        add_executable(test_serial  test/Main.cc test/test_transport.cpp test/test_moab.cpp)
+        add_executable(test_serial test/Main.cc test/test_transport.cpp test/test_moab.cpp)
         target_link_libraries(test_serial ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_test(transport test_serial)
+        add_amanzi_test(transport test_serial KIND unit)
 
         # Test: transport (parallel)
         add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
         target_link_libraries(test_parallel ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_parallel_test(transport_parallel test_parallel NPROCS ${MPI_EXEC_MAX_NPROCS})
+        add_amanzi_test(transport_parallel test_parallel NPROCS ${MPI_EXEC_MAX_NUMPROCS} KIND int)
 
     endif()    
 

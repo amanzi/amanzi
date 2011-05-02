@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -22,7 +22,7 @@ project(CHEM)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${SIMPLE_MESH_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 
 # Chemistry includes directory
@@ -62,8 +62,8 @@ if (BUILD_TESTS)
 		 test/test_aqueous_equilibrium_complex.cpp
 		 test/test_mineral.cpp
 		 test/test_beaker.cpp)
-  target_link_libraries(chemistry_tests chemistry error_handling ${UnitTest_LIBRARIES})
-  add_test(chemistry chemistry_tests)
+  target_link_libraries(chemistry_tests chemistry ${UnitTest_LIBRARIES})
+  add_amanzi_test(chemistry chemistry_tests KIND unit)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E

@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -22,7 +22,7 @@ project(FLOW)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${SIMPLE_MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
@@ -74,7 +74,7 @@ if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
         
         add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp)
         target_link_libraries(test_flow flow moab_mesh simple_mesh cell_geometry ${UnitTest_LIBRARIES})
-        add_test(flow test_flow)
+        add_amanzi_test(flow test_flow KIND int)
       
     endif()    
 
