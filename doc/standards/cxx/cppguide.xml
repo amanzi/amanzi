@@ -107,7 +107,7 @@
       All header files should have <code>#define</code> guards to
       prevent multiple inclusion.  The format of the symbol name
       should be
-      <code><i>&lt;PROJECT&gt;</i>_<i>&lt;PATH&gt;</i>_<i>&lt;FILE&gt;</i>_H_</code>.
+      <code><i>&lt;PROJECT&gt;</i>_<i>&lt;PATH&gt;</i>_<i>&lt;FILE&gt;</i>_HH_</code>.
     </SUMMARY>
     <BODY>
       
@@ -118,12 +118,12 @@
         have the following guard:
       </p>
       <CODE_SNIPPET>
-         #ifndef FOO_BAR_BAZ_H_
-         #define FOO_BAR_BAZ_H_
+         #ifndef FOO_BAR_BAZ_HH_
+         #define FOO_BAR_BAZ_HH_
 
          ...
 
-         #endif  // FOO_BAR_BAZ_H_
+         #endif  // FOO_BAR_BAZ_HH_
       </CODE_SNIPPET>
       
     </BODY>
