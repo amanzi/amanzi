@@ -9,6 +9,8 @@
 ;;
 ;;   (load-file "path/to/this/file/cpplint.el")
 ;;
+;; You will need cpplint.py somewhere in your path.
+;;
 ;; To activate in a particular buffer:
 ;;
 ;;   M-x activate-cpplint
@@ -28,6 +30,8 @@
 ;;
 ;; Please report errors to mwbuksas@lanl.gov
 ;;
+
+(require 'google-c-style)
 
 (eval-after-load "flymake"
   '(progn (add-to-list 'flymake-allowed-file-name-masks
@@ -97,15 +101,3 @@ Key bindings:
 
 
 (provide 'cpplint)
-
-
-
-
-
-
-
-
-
-
-
-
