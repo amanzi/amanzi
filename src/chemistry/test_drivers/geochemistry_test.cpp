@@ -1,4 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include <unistd.h>
+
 #include <cstdlib>
 
 #include <iostream>

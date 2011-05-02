@@ -16,7 +16,7 @@ class SurfaceComplexationRxn {
  public:
   SurfaceComplexationRxn();
   SurfaceComplexationRxn(SurfaceSite *surface_sites,
-                         std::vector<SurfaceComplex> surface_complexes);
+                         const std::vector<SurfaceComplex>& surface_complexes);
   SurfaceComplexationRxn(SurfaceSite surface_sites);
   ~SurfaceComplexationRxn();
 
@@ -24,11 +24,11 @@ class SurfaceComplexationRxn {
   void AddSurfaceComplex(SurfaceComplex surface_complex);
 
   // update sorbed concentrations
-  void Update(const std::vector<Species>primarySpecies);
+  void Update(const std::vector<Species>& primarySpecies);
   // add stoichiometric contribution of complex to sorbed total
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to sorbed dtotal
-  void AddContributionToDTotal(const std::vector<Species> primarySpecies,
+  void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
                                Block *dtotal);
   // If the free site stoichiometry in any of the surface complexes
   // is not equal to 1., we must use Newton's method to solve for

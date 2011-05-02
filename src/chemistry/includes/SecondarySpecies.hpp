@@ -17,9 +17,9 @@ class SecondarySpecies : public Species {
   SecondarySpecies();
   SecondarySpecies(const SpeciesName name,
                    const SpeciesId secondary_id,
-                   const std::vector<SpeciesName> species,
-                   const std::vector<double> stoichiometries,
-                   const std::vector<SpeciesId> species_ids,
+                   const std::vector<SpeciesName>& species,
+                   const std::vector<double>& stoichiometries,
+                   const std::vector<SpeciesId>& species_ids,
                    const double h2o_stoich, 
                    const double charge, 
                    const double mol_wt,
@@ -33,7 +33,7 @@ class SecondarySpecies : public Species {
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double> *total) = 0;
   // add derivative of total with respect to free-ion to dtotal
-  virtual void AddContributionToDTotal(const std::vector<Species> primary_species,
+  virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        Block *dtotal) = 0;
 
   int ncomp(void) const { return this->ncomp_; };
