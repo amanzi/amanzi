@@ -92,21 +92,50 @@ class ConfigurationManager(object):
     return
 
   def getArch(self, framework, opts):
+    import os
     arch = ''
     if hasattr(framework, 'arch'): return framework.arch
-    # Check PROJECT_ARCH
+    # Check PROJECT_ARCH.
+    # We check to see if it is set on the command line, then we check the environment variables, and, finally, we use the 
+    # filename of the configure script if it is not 'configure.py'.
     found = 0
     for name in opts:
       if name.find(self.PROJECT+'_ARCH=') >= 0:
         arch  = name.split('=')[1]
         found = 1
         break
-    # Use the filename of script
+    if not found:
+      arch = os.environ.get(self.PROJECT+'_ARCH')
+      if arch != None:
+        found = 1
+      else:
+        arch = ''
+    # Use the filename of script, if we have been unable to determine this from PROJECT_ARCH.
     if not found:
       filename = os.path.basename(sys.argv[0])
       if not filename.startswith('configure') and not filename.startswith('reconfigure'):
         arch = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         opts.append(self.PROJECT+'_ARCH='+arch)
+      else:
+        # Unable to determine any suitable value for 'arch' attribute.
+        msg ='*******************************************************************************\n'\
+            +'UNABLE to DETERMINE AMANZI_ARCH.  Please set AMANZI_ARCH and re-run configure.\n' \
+            +'*******************************************************************************\n'
+        print msg
+        if not framework is None:
+          framework.logClear()
+          import traceback
+          if hasattr(framework, 'log'):
+            try:
+              framework.log.write(msg)
+              traceback.print_tb(sys.exc_info()[2], file = framework.log)
+              framework.log.close()
+              self.cleanupLog(framework)
+            except:
+              pass
+          else:
+            traceback.print_tb(sys.exc_info()[2])
+        sys.exit(1)
     return arch
 
   def cleanupLog(self, framework):
@@ -147,6 +176,7 @@ class ConfigurationManager(object):
     self.bsDir     = os.path.join(self.configDir, 'BuildSystem')
     if not os.path.isdir(self.configDir):
       raise RuntimeError('Run configure from $'+self.PROJECT+'_DIR, not '+os.path.abspath('.'))
+    # TODO: This should eventually try to clone BuildSystem via Mercurial; failing that, we then download the tarball.
     if not os.path.isdir(self.bsDir):
       print '==============================================================================='
       print '''++ Could not locate BuildSystem in %s.''' % self.configDir
@@ -242,8 +272,11 @@ class ConfigurationManager(object):
     import cPickle
 
     framework = None
+    arch = self.getArch(framework, sys.argv)
+
     try:
       framework = config.framework.Framework(['--configModules='+self.Project+'.Configure','--optionsModule='+self.Project+'.compilerOptions']+sys.argv[1:], loadArgDB = 0)
+      framework.arch = arch
       framework.setup()
       framework.logPrint('\n'.join(logMessages))
       framework.configure(out = sys.stdout)

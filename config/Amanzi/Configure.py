@@ -7,10 +7,56 @@ class AmanziDir(object):
   dir = os.getcwd()
 
 class AmanziArch(object):
-  arch = 'Simple'
+  arch = ''
+  def __init__(self, framework=None, opts=None):
+    import os
+    import sys
+    # Check AMANZI_ARCH.
+    # We check to see if it is set on the command line, then we check the environment variables, and, finally, we use the 
+    # filename of the configure script if it is not 'configure.py'.
+    found = 0
+    for name in opts:
+      if name.find('AMANZI_ARCH=') >= 0:
+        arch  = name.split('=')[1]
+        found = 1
+        break
+    if not found:
+      arch = os.environ.get('AMANZI_ARCH')
+      if arch != None:
+        found = 1
+      else:
+        arch = ''
+    # Use the filename of script, if we have been unable to determine this from PROJECT_ARCH.
+    if not found:
+      filename = os.path.basename(sys.argv[0])
+      if not filename.startswith('configure') and not filename.startswith('reconfigure'):
+        arch = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        opts.append('AMANZI_ARCH='+arch)
+      else:
+        # Unable to determine any suitable value for 'arch' attribute.
+        msg ='*******************************************************************************\n'\
+            +'UNABLE to DETERMINE AMANZI_ARCH.  Please set AMANZI_ARCH and re-run configure.\n' \
+            +'*******************************************************************************\n'
+        print msg
+        if not framework is None:
+          framework.logClear()
+          import traceback
+          if hasattr(framework, 'log'):
+            try:
+              framework.log.write(msg)
+              traceback.print_tb(sys.exc_info()[2], file = framework.log)
+              framework.log.close()
+              self.cleanupLog(framework)
+            except:
+              pass
+          else:
+            traceback.print_tb(sys.exc_info()[2])
+        sys.exit(1)
+    self.arch = arch
 
 class Configure(config.base.Configure):
   def __init__(self, framework):
+    import sys
     config.base.Configure.__init__(self, framework)
     self.Project      = 'Amanzi'
     self.project      = self.Project.lower()
@@ -18,11 +64,9 @@ class Configure(config.base.Configure):
     self.headerPrefix = self.PROJECT
     self.substPrefix  = self.PROJECT
     self.defineAutoconfMacros()
-    self.usingBLAS = 0
-    self.usingMPI  = 0
+    self.arch = AmanziArch(framework, sys.argv)
     # Fix these later
     self.dir  = AmanziDir()
-    self.arch = AmanziArch()
     self.PACKAGES_INCLUDES = ''
     self.PACKAGES_LIBS     = ''
     return
@@ -55,28 +99,35 @@ class Configure(config.base.Configure):
     # Note that we do this for all packages upon which Amanzi may depend, regardless of whether they are optional.  For optional 
     # packages, we determine if they actually need to be configured in the 'configure' method for that package.
     self.blaslapack    = framework.require('config.packages.BlasLapack', self)
-    self.boost         = framework.require('config.packages.boost',      self)
     self.mpi           = framework.require('config.packages.MPI',        self)
+    self.boost         = framework.require('config.packages.boost',      self)
     self.netcdf        = framework.require('config.packages.NetCDF',     self)
-    self.hdf5          = framework.require('config.hdf5',                self)
-    self.exodusii      = framework.require('config.ExodusII',            self)
-    self.moab          = framework.require('config.MOAB',                self)
+    self.hdf5          = framework.require('config.packages.hdf5',       self)
+    self.exodusii      = framework.require('config.packages.ExodusII',   self)
+    self.moab          = framework.require('config.packages.MOAB',       self)
 
     # Set some additional options for some of the packages:
 
+    # Set the .archProvider for all packages.
+    # There should probably be a more automatic way of doing this, at some point.
+
+    self.blaslapack.archProvider = self.arch
+    self.mpi.archProvider        = self.arch
+    self.boost.archProvider      = self.arch
+    self.netcdf.archProvider     = self.arch
+    self.hdf5.archProvider       = self.arch
+    self.exodusii.archProvider   = self.arch
+    self.moab.archProvider       = self.arch
+
     # For BLAS/LAPACK:
     #force blaslapack to depend on scalarType so precision is set before BlasLapack is built
-    self.blaslapack = framework.require('config.packages.BlasLapack', self)
     #framework.require('PETSc.utilities.scalarTypes', self.blaslapack)
-    self.blaslapack.archProvider       = self.arch
     #self.blaslapack.precisionProvider = self.scalartypes
     self.blaslapack.installDirProvider = self.dir
     self.blaslapack.headerPrefix       = self.headerPrefix
 
     # For MPI:
-    self.mpi = framework.require('config.packages.MPI', self)
-    self.mpi.archProvider       = self.arch
-    self.mpi.languageProvider   = self.languages
+    #self.mpi.languageProvider   = self.languages  #RTM: Do we need to set this?  Appears to depend on PETSc.utilities.languages
     self.mpi.installDirProvider = self.dir
     self.mpi.headerPrefix       = self.headerPrefix
 
