@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(TestManager)
+include(AddParallelTest)
 
 #
 # Define a project name
@@ -22,7 +22,7 @@ project(MPC)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${SIMPLE_MESH_SOURCE_DIR})
+include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
@@ -79,7 +79,7 @@ if (BUILD_TESTS)
         # Test: mpc-moab
         add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
         target_link_libraries(test_mpc_moab mpc moab_mesh chemistry transport flow ${UnitTest_LIBRARIES})
-        add_amanzi_test(mpc-moab test_mpc_moab KIND int)
+        add_test(mpc-moab test_mpc_moab)
     
     endif()
 
