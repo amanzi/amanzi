@@ -68,6 +68,8 @@ public:
   void GetFluidViscosity(double &mu) const { mu = mu_; }
   void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = g_[i]; }
 
+  void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
+
 private:
 
   Teuchos::RCP<Mesh_maps_base> mesh_;

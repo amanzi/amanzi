@@ -1,10 +1,13 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include <unistd.h>
+
 #include <cstdlib>
 
 #include <iostream>
 #include <iomanip>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
@@ -281,6 +284,14 @@ int main(int argc, char **argv) {
             chem->DisplayTotalColumns((time_step+1) * delta_time, 
                                       components.total);
           }
+          if (verbosity >= kDebugNewtonSolver) {
+            Beaker::SolverStatus status = chem->status();
+            std::cout << "Timestep: " << time_step << std::endl;
+            std::cout << "    number of rhs evaluations: " << status.num_rhs_evaluations << std::endl;
+            std::cout << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
+            std::cout << "    number of newton iterations: " << status.num_newton_iterations << std::endl;
+            std::cout << "    solution converged: " << status.converged << std::endl;
+          }
         }
         std::cout << "---- Final Speciation" << std::endl;
         chem->Speciate(components, parameters);
@@ -397,6 +408,7 @@ int CommandLineOptions(int argc, char **argv,
         std::cout << "             5: debug input file" << std::endl;
         std::cout << "             6: debug mineral kinetics" << std::endl;
         std::cout << "             7: debug ion exchange" << std::endl;
+        std::cout << "             8: debug newton solver" << std::endl;
         error = -1;
         break;
       }

@@ -556,3 +556,15 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
 
   delete &Pcell_own, &Pface_own;
 }
+
+
+void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot)
+{
+  ComputeF(u,udot);
+
+  // zero out the face part
+  Epetra_Vector *udot_face = CreateFaceView(udot);
+  udot_face->PutScalar(0.0);
+
+  udot.Print(cout);
+}

@@ -8,6 +8,8 @@
 #include "SurfaceComplexationRxn.hpp"
 #include "Block.hpp"
 
+#include "exceptions.hh"
+
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false)
                   
@@ -19,7 +21,7 @@ SurfaceComplexationRxn::SurfaceComplexationRxn()
 
 SurfaceComplexationRxn::SurfaceComplexationRxn(
                             SurfaceSite *surface_sites,
-                            std::vector<SurfaceComplex> surface_complexes)
+                            const std::vector<SurfaceComplex>& surface_complexes)
 {
   // surface site
   surface_site_.push_back(*surface_sites);
@@ -60,7 +62,7 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void)
   }
 } // end SetNewtonSolveFlag
 
-void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies) 
+void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
 {
   const double site_density = (surface_site_[0]).SiteDensity();
 
@@ -115,7 +117,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species> primarySpecies)
     std::ostringstream error_stream;
     error_stream << "ERROR: SurfaceComplexationRxn::Update(): \n";
     error_stream << "ERROR: loop reached max_iterations: " << iterations << std::endl;
-    throw ChemistryException(error_stream.str());   
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
   
 } // end Update()
@@ -131,7 +133,7 @@ void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total)
 } // end AddContributionToTotal()
 
 void SurfaceComplexationRxn::AddContributionToDTotal(
-                                   const std::vector<Species> primarySpecies,
+                                   const std::vector<Species>& primarySpecies,
                                    Block *dtotal) 
 {
   // All referenced equations #s are from the pflotran chemistry implementation

@@ -15,9 +15,9 @@ SurfaceComplex::SurfaceComplex()
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name, 
                             const SpeciesId id,
-                            std::vector<SpeciesName>species,
-                            std::vector<double>stoichiometries,
-                            std::vector<int>species_ids,
+                            const std::vector<SpeciesName>& species,
+                            const std::vector<double>& stoichiometries,
+                            const std::vector<int>& species_ids,
                             const double h2o_stoich, 
                             const double free_site_stoich,
                             const double charge, 
@@ -61,9 +61,9 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name, 
                                const SpeciesId id,
-                               std::vector<SpeciesName>species,
-                               std::vector<double>stoichiometries,
-                               std::vector<int>species_ids,
+                               const std::vector<SpeciesName>& species,
+                               const std::vector<double>& stoichiometries,
+                               const std::vector<int>& species_ids,
                                const double h2o_stoich, 
                                const SpeciesName free_site_name,
                                const double free_site_stoich,
@@ -111,7 +111,7 @@ SurfaceComplex::~SurfaceComplex()
 {
 } // end SurfaceComplex() destructor
 
-void SurfaceComplex::Update(const std::vector<Species> primarySpecies,
+void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
                             const SurfaceSite& surface_site) 
 {
 
@@ -138,7 +138,7 @@ void SurfaceComplex::AddContributionToTotal(std::vector<double> *total)
 } // end AddContributionToTotal()
 
 void SurfaceComplex::AddContributionToDTotal(
-                                   const std::vector<Species> primarySpecies,
+                                   const std::vector<Species>& primarySpecies,
                                    Block *dtotal) 
 {
 } // end AddContributionToDTotal()

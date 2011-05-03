@@ -16,24 +16,24 @@ class SimpleThermoDatabase : public Beaker {
              const Beaker::BeakerParameters& parameters);
 
  protected:
-  void ReadFile(const std::string thermo_filename);
-  void ParsePrimarySpecies(const std::string data);
-  void ParseAqueousEquilibriumComplex(const std::string data);
-  void ParseGeneralKinetics(const std::string data);
-  void ParseMineral(const std::string data);
-  void ParseMineralKinetics(const std::string data);
-  void ParseIonExchangeSite(const std::string data);
-  void ParseIonExchangeComplex(const std::string data);
-  void ParseSurfaceComplexSite(const std::string data);
-  void ParseSurfaceComplex(const std::string data);
+  void ReadFile(const std::string& thermo_filename);
+  void ParsePrimarySpecies(const std::string& data);
+  void ParseAqueousEquilibriumComplex(const std::string& data);
+  void ParseGeneralKinetics(const std::string& data);
+  void ParseMineral(const std::string& data);
+  void ParseMineralKinetics(const std::string& data);
+  void ParseIonExchangeSite(const std::string& data);
+  void ParseIonExchangeComplex(const std::string& data);
+  void ParseSurfaceComplexSite(const std::string& data);
+  void ParseSurfaceComplex(const std::string& data);
   void FinishSurfaceComplexation(void);
-  void ParseReaction(const std::string reaction,
+  void ParseReaction(const std::string& reaction,
                      std::string *name,
                      std::vector<SpeciesName>* species,
                      std::vector<double>* stoichiometries,
                      std::vector<int>* species_ids,
                      double* h2o_stoich);
-  void ParseIonExchangeReaction(const std::string reaction,
+  void ParseIonExchangeReaction(const std::string& reaction,
                                 std::string* name,
                                 std::vector<SpeciesName>* primaries,
                                 std::vector<double>* primary_stoichiometries,
@@ -42,7 +42,7 @@ class SimpleThermoDatabase : public Beaker {
                                 std::vector<double>* exchanger_stoichiometries,
                                 std::vector<SpeciesId>* exchanger_ids,
                                 double* h2o_stoich);
-  void ParseIonExchangeReaction(const std::string reaction,
+  void ParseIonExchangeReaction(const std::string& reaction,
                                 std::string* name,
                                 SpeciesName* primary_name,
                                 double* primary_stoichiometry,
@@ -52,7 +52,7 @@ class SimpleThermoDatabase : public Beaker {
                                 SpeciesId* exchanger_id,
                                 double* h2o_stoich);
 
-  void ParseSurfaceComplexReaction(const std::string reaction,
+  void ParseSurfaceComplexReaction(const std::string& reaction,
                                    std::string* name,
                                    std::vector<SpeciesName>* primary_name,
                                    std::vector<double>* primary_stoichiometry,

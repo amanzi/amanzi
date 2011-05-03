@@ -8,6 +8,8 @@
 #include "Beaker.hpp"
 #include "Verbosity.hpp"
 
+#include "errors.hh"
+#include "exceptions.hh"
 
 /*******************************************************************************
  **
@@ -436,7 +438,7 @@ void Chemistry_PK::LocalInitialConditions(void)
       if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_ID,
                                                            Mesh_data::CELL)) {
         // there is an inconsistency in the xml input file...
-        throw std::exception();
+        Exceptions::amanzi_throw(Errors::Message("Chemistry_PK::inconsistent xml input"));
       }
 
       //
@@ -583,7 +585,8 @@ void Chemistry_PK::set_cell_value_in_mesh_block(const double value,
 {
   if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_id,
                                                        Mesh_data::CELL)) {
-    throw std::exception();
+    Exceptions::amanzi_throw(Errors::Message(
+        "Chemistry_PK::set_cell_value_in_mesh_block(): invalid mesh set id"));
   }
 
   unsigned int mesh_block_size =
@@ -928,5 +931,5 @@ void Chemistry_PK::set_chemistry_output_names(std::vector<string> &names)
 
 void Chemistry_PK::set_component_names(std::vector<string> &names)
 {
-  chem_->GetPrimaryNames(names);
+  chem_->GetPrimaryNames(&names);
 }  // end set_component_names()

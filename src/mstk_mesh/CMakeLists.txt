@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(TestManager)
+include(AddParallelTest)
 
 #
 # Define a project name
@@ -22,7 +22,7 @@ project(MSTK)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${SIMPLE_MESH_SOURCE_DIR})
+include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -60,14 +60,14 @@ if (BUILD_TESTS)
                    test/test_hex_3x3x2.cc
                    test/test_hex_4x4x4.cc)
     target_link_libraries(test_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(mstk_mesh test_mstk_mesh KIND unit )
+    add_test(mstk_mesh test_mstk_mesh )
 
     # Test: mstk_mesh_parallel
     add_executable(test_parallel_mstk_mesh
         test/Main.cc
         test/test_hex_4x4x4_4P.cc)
     target_link_libraries(test_parallel_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh NPROCS 4 KIND int)
+    add_parallel_test(mstk_mesh_parallel test_parallel_mstk_mesh NPROCS 4)
 
 endif()
 

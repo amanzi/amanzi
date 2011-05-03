@@ -11,6 +11,7 @@ enum Verbosity { kSilent,
                  kDebugInputFile, 
                  kDebugMineralKinetics, 
                  kDebugIonExchange,
+                 kDebugNewtonSolver,
                  kDebugChemistryProcessKernel
 };
 

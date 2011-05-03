@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(TestManager)
+include(AddParallelTest)
 
 #
 # Define a project name
