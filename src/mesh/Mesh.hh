@@ -2,15 +2,11 @@
 #define _AMANZI_MESH_H_
 
 #include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
-#include <Epetra_SerialComm.h>
 
 #include <memory>
-#include <vector>
 
+#include "MeshDefs.hh"
 #include "Point.hh"
-
-
 
 namespace Amanzi
 {
@@ -18,63 +14,16 @@ namespace Amanzi
   namespace AmanziMesh
   {
 
-
-   // Necessary typedefs and enumerations
-      
-   typedef unsigned int Entity_ID;
-   typedef unsigned int Set_ID;
-
-    // Cells (aka zones/elements) are the highest dimension entities in a mesh 
-    // Nodes (aka vertices) are lowest dimension entities in a mesh 
-    // Faces in a 3D mesh are 2D entities, in a 2D mesh are 1D entities
-    
-    enum Entity_kind 
-      {
-	NODE = 0,
-	EDGE,
-	FACE,
-	CELL
-      };
-
-
-    // Parallel status of entity 
-    
-    enum Parallel_type 
-      {
-	OWNED = 1,         // Owned by this processor
-	GHOST = 2,         // Owned by another processor
-	USED  = 3          // OWNED + GHOST
-      };
-    
-    // Standard element types and catchall (POLYGON/POLYHED)
-
-    enum Cell_type 
-      {
-	TRI = 1,
-	QUAD,
-	POLYGON,
-	TET,
-	PRISM,
-	PYRAMID,
-	HEX,
-	POLYHED                // Polyhedron 
-      };
-    
-
-
     class Mesh
     {
     
     public:
       
-      
-      
       // constructor 
 
-      Mesh() {
-	spacedim = 3;
-	celldim = 3;
-	geometry_precomputed = false;
+      Mesh()
+        : spacedim(3), celldim(3), geometry_precomputed(false)
+      {
       }
 
       // destructor
@@ -105,23 +54,6 @@ namespace Amanzi
 
 
 
-      // Check if Entity_kind is valid
-
-      inline 
-      bool entity_valid_kind (const Entity_kind kind) const {
-	return (kind >= NODE && kind <= CELL);
-      }
-    
-
-
-
-      // Check if Parallel_type is valid
-
-      inline 
-      bool entity_valid_ptype (const Parallel_type ptype) const {
-	return (ptype >= OWNED && ptype <= USED);
-      }
-
       // Get parallel type of eneity
     
       virtual
@@ -131,13 +63,6 @@ namespace Amanzi
 
 
 
-      // Check if Cell_type is valid
-    
-      inline 
-      bool cell_valid_type (const Cell_type type) const {
-	return (type >= TRI && type <= POLYHED); 
-      }
-    
       // Get cell type
     
       virtual
@@ -182,7 +107,7 @@ namespace Amanzi
     
       virtual
       void cell_get_faces (const Entity_ID cellid, 
-			   std::vector<Entity_ID> *faceids) = 0;
+			   Entity_ID_List *faceids) = 0;
     
     
       // Get directions in which a cell uses face
@@ -209,7 +134,7 @@ namespace Amanzi
     
       virtual
       void cell_get_nodes (const Entity_ID cellid, 
-			   std::vector<Entity_ID> *nodeids) = 0;
+			   Entity_ID_List *nodeids) = 0;
     
     
       // Get nodes of face 
@@ -221,7 +146,7 @@ namespace Amanzi
     
       virtual
       void face_get_nodes (const Entity_ID faceid, 
-			   std::vector<Entity_ID> *nodeids) = 0;
+			   Entity_ID_List *nodeids) = 0;
     
 
 
@@ -233,14 +158,14 @@ namespace Amanzi
       virtual 
       void node_get_cells (const Entity_ID nodeid, 
 			   const Parallel_type ptype,
-			   std::vector<Entity_ID> *cellids) = 0;
+			   Entity_ID_List *cellids) = 0;
     
       // Faces of type 'ptype' connected to a node
     
       virtual
       void node_get_faces (const Entity_ID nodeid, 
 			   const Parallel_type ptype,
-			   std::vector<Entity_ID> *faceids) = 0;
+			   Entity_ID_List *faceids) = 0;
     
       // Get faces of ptype of a particular cell that are connected to the
       // given node
@@ -249,14 +174,14 @@ namespace Amanzi
       void node_get_cell_faces (const Entity_ID nodeid, 
 				const Entity_ID cellid,
 				const Parallel_type ptype,
-				std::vector<Entity_ID> *faceids) = 0;    
+				Entity_ID_List *faceids) = 0;    
     
       // Cells connected to a face
     
       virtual 
       void face_get_cells (const Entity_ID faceid, 
 			   const Parallel_type ptype,
-			   std::vector<Entity_ID> *cellids) = 0;
+			   Entity_ID_List *cellids) = 0;
     
 
 
@@ -274,7 +199,7 @@ namespace Amanzi
       virtual
       void cell_get_face_adj_cells(const Entity_ID cellid,
 				   const Parallel_type ptype,
-				   std::vector<Entity_ID> *fadj_cellids) = 0;
+				   Entity_ID_List *fadj_cellids) = 0;
 
       // Node connected neighboring cells of given cell
       // (a hex in a structured mesh has 26 node connected neighbors)
@@ -283,7 +208,7 @@ namespace Amanzi
       virtual
       void cell_get_node_adj_cells(const Entity_ID cellid,
 				   const Parallel_type ptype,
-				   std::vector<Entity_ID> *nadj_cellids) = 0;
+				   Entity_ID_List *nadj_cellids) = 0;
 
 
     
@@ -307,7 +232,7 @@ namespace Amanzi
     
       virtual
       void cell_get_nodes_4viz (const Entity_ID cellid, 
-				std::vector<Entity_ID> *nodeids) = 0;
+				Entity_ID_List *nodeids) = 0;
     
     
     
@@ -393,7 +318,7 @@ namespace Amanzi
 
       virtual
       void get_set_ids (const Entity_kind kind, 
-			std::vector<Set_ID> *setids) = 0;
+			Set_ID_List *setids) = 0;
 
 
       // Is this is a valid ID of a set containing entities of 'kind'
@@ -417,7 +342,7 @@ namespace Amanzi
       void get_set_entities (const Set_ID setid, 
 			     const Entity_kind kind, 
 			     const Parallel_type ptype, 
-			     std::vector<Entity_ID> *entids) = 0; 
+			     Entity_ID_List *entids) = 0; 
 
 
 
