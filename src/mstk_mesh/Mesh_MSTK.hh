@@ -1,7 +1,6 @@
 #ifndef _AMANZI_MESH_MSTK_H_
 #define _AMANZI_MESH_MSTK_H_
 
-
 #include <Mesh.hh>
 #include <Point.hh>
 
@@ -9,6 +8,7 @@ using namespace std;
 #include <memory>
 #include <vector>
 #include <sstream>
+#include <Epetra_MpiComm.h>
 
 #include <MSTK.h>
 
