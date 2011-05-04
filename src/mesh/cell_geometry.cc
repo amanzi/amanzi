@@ -1,8 +1,9 @@
 #include "cell_geometry.hh"
-#include "cell_topology.hh"
+#include "Cell_topology.hh"
 #include <math.h>
 
-using namespace cell_topology;
+using namespace Amanzi;
+using namespace AmanziMesh;
 
 namespace cell_geometry {
 
