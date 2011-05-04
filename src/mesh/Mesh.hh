@@ -2,10 +2,12 @@
 #define _AMANZI_MESH_H_
 
 #include <Epetra_Map.h>
+#include <Epetra_MpiComm.h>
 
 #include <memory>
 
 #include "MeshDefs.hh"
+#include "Cell_topology.hh"
 #include "Point.hh"
 
 namespace Amanzi
@@ -22,7 +24,7 @@ namespace Amanzi
       // constructor 
 
       Mesh()
-        : spacedim(3), celldim(3), geometry_precomputed(false)
+        : spacedim(3), celldim(3), geometry_precomputed(false), comm(NULL)
       {
       }
 
@@ -350,17 +352,18 @@ namespace Amanzi
 
 
       // communicator access
-      // It has been suggested that Epetra_MPIComm can be used directly
-      // instead of putting this in here
+      // temporary until we set up an amanzi communicator
 
-      //  virtual
-      // const Epetra_Comm* get_comm() {};
+      inline
+      const Epetra_Comm* get_comm() { return comm;};
+
+      inline
+      void set_comm(MPI_Comm incomm) {comm = new Epetra_MpiComm(incomm);};
 
       // this should be used with extreme caution: WHO USES THIS????
       // IF IT IS ONLY SIMPLE MESH, THEN SIMPLE MESH SHOULD IMPLEMENT IT
       // modify coordinates  
       // virtual void set_coordinate(Entity_ID local_node_id, double *coords) {};
-
 
     private:
 
@@ -369,6 +372,8 @@ namespace Amanzi
       int precompute_geometric_quantities();
       std::vector<double> cell_volumes, face_areas;
       std::vector<AmanziGeometry::Point> cell_centroids, face_normals;
+
+      Epetra_Comm *comm; // temporary until we get an amanzi communicator
 
     }; // End class Mesh
 
