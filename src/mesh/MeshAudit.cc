@@ -1542,9 +1542,6 @@ bool MeshAudit::distinct_values(const Entity_ID_List &list) const
 }
 
 
-// CHECK THIS 
-
-
 // Returns 1 if the face node lists fnode1 and fnode2 describe the same face
 // with the same orientation.  Returns -1 if the lists describe the same face
 // but with opposite orientations.  Returns 0 if the lists describe different
@@ -1553,34 +1550,29 @@ bool MeshAudit::distinct_values(const Entity_ID_List &list) const
 
 int MeshAudit::same_face(const Entity_ID_List fnode1, const Entity_ID_List fnode2) const
 {
-  if (fnode1.size() != fnode2.size()) return 0;
+  int nn = fnode1.size();
+
+  if (nn != fnode2.size()) return 0;
 
   // Locate position in fnode1 of fnode2[0].
-  int n;
-  for (n = 0; n < fnode1.size(); ++n)
-    if (fnode1[n] == fnode2[0]) break;
-  if (n == fnode1.size()) return 0; // did not find it -- different faces
+  int i, n;
+  for (i = 0, n = -1; i < nn; ++i)
+    if (fnode1[i] == fnode2[0]) {
+      n = i;
+      break;
+    }
+  if (n == -1) return 0; // did not find it -- different faces
 
 
-  // Cyclic permutation p such that p[0] = n.
-  int p[fnode1.size()];
-  for (int i = 0; i < fnode1.size(); ++i) p[i] = (n + i) % 4;
-
-  // Check if fnode1[p] equals fnode2.
-  for (n = 1; n < fnode1.size(); ++n)
-    if (fnode1[p[n]] != fnode2[n]) break;
-  if (n == fnode1.size()) return 1;  // they match
+  for (i = 1; i < nn; ++i)
+    if (fnode1[(n+i)%nn] != fnode2[i]) break;
+  if (i == nn) return 1;  // they match
 
   // Modify the permutation to reverse the orientation of fnode1.
-  // REWORK
-  int s = p[1];
-  p[1] = p[3];
-  p[3] = s;
 
-  // Check if fnode1[p] equals fnode2.
-  for (n = 1; n < fnode1.size(); ++n)
-    if (fnode1[p[n]] != fnode2[n]) break;
-  if (n == 4) return -1;
+  for (i = 1; i < nn; ++i)
+    if (fnode1[(n-i+nn)%nn] != fnode2[i]) break;
+  if (i == nn) return -1;   // matched nodes but orientation is reversed
 
   return 0; // different faces
 }
