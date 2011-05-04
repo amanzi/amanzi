@@ -1,7 +1,6 @@
 #ifndef _AMANZI_MESH_MSTK_H_
 #define _AMANZI_MESH_MSTK_H_
 
-#include <Epetra_MpiComm.h>
 #include <Mesh.hh>
 #include <Point.hh>
 
