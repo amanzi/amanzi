@@ -4,12 +4,12 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Comm.h"
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 class MeshAudit {
 public:
 
-  MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_, std::ostream& os=std::cout);
+  MeshAudit(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
 
   // This is the main method.
   int Verify() const;
@@ -32,7 +32,7 @@ public:
   int check_node_to_coordinates() const;
   int check_cell_to_coordinates() const;
   int check_face_to_coordinates() const;
-  int check_cell_topology() const;
+  int check_cell_geometry() const;
   int check_node_maps() const;
   int check_face_maps() const;
   int check_cell_maps() const;
@@ -50,7 +50,7 @@ public:
 
 private:
 
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   const Epetra_Comm &comm;
   const int MyPID;
@@ -61,18 +61,16 @@ private:
   std::ostream& os;
   unsigned int MAX_OUT;
 
-  bool distinct_values(const std::vector<unsigned int> &list) const;
+  bool distinct_values(const Amanzi::AmanziMesh::Entity_ID_List& list) const;
   void write_list(const std::vector<unsigned int>&, unsigned int) const;
-  int same_face(const std::vector<unsigned int>, const std::vector<unsigned int>) const;
+  int same_face(const Amanzi::AmanziMesh::Entity_ID_List, const Amanzi::AmanziMesh::Entity_ID_List) const;
   int check_maps(const Epetra_Map&, const Epetra_Map&) const;
-  int check_sets(Mesh_data::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  int check_set_ids(Mesh_data::Entity_kind) const;
-  int check_set_ids_same(Mesh_data::Entity_kind) const;
-  int check_valid_set_id(Mesh_data::Entity_kind) const;
-  int check_set_ids_alt(Mesh_data::Entity_kind) const;
-  int check_get_set(unsigned int, Mesh_data::Entity_kind, Element_Category, const Epetra_Map&) const;
-  int check_get_set_alt(unsigned int, Mesh_data::Entity_kind, Element_Category, const Epetra_Map&) const;
-  int check_used_set(unsigned int, Mesh_data::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  int check_sets(Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  int check_set_ids(Amanzi::AmanziMesh::Entity_kind) const;
+  int check_set_ids_same(Amanzi::AmanziMesh::Entity_kind) const;
+  int check_valid_set_id(Amanzi::AmanziMesh::Entity_kind) const;
+  int check_get_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, Amanzi::AmanziMesh::Parallel_type, const Epetra_Map&) const;
+  int check_used_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
 };
 
 #endif
