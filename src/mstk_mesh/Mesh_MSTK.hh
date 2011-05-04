@@ -1,6 +1,7 @@
 #ifndef _AMANZI_MESH_MSTK_H_
 #define _AMANZI_MESH_MSTK_H_
 
+#include <Epetra_MpiComm.h>
 
 #include <Mesh.hh>
 #include <Point.hh>
@@ -21,7 +22,7 @@ namespace Amanzi {
       
     private:
 
-      MPI_Comm comm;
+      MPI_Comm mpicomm;
       int myprocid, numprocs;
 
       Mesh_ptr mesh;
@@ -58,7 +59,10 @@ namespace Amanzi {
       MSet_ptr AllCells, OwnedCells, GhostCells;
 
 
-      std::vector<Cell_type> cell_type;
+      // Attribute handle to store cell_type and original cell_type
+
+      MAttrib_ptr celltype_att, orig_celltype_att, orig_celltopo_att;
+      
 
       // Local ID to MSTK handle map
 
@@ -69,7 +73,6 @@ namespace Amanzi {
 
       // Maps
 
-      Epetra_MpiComm *epcomm;  // epetra wants its own special communicator
       Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
       Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
   
@@ -99,7 +102,10 @@ namespace Amanzi {
       // ----------------------------
   
       void clear_internals_();
-  
+
+      void collapse_degen_edges();
+      void label_celltype();
+
       void init_pvert_lists();
       void init_pface_lists();
       void init_pcell_lists();
@@ -417,10 +423,6 @@ namespace Amanzi {
 	return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
     }
     
-    inline Cell_type Mesh_MSTK::cell_get_type(const Entity_ID cellid) const {
-      return cell_type[cellid];
-    }
-    
     inline Parallel_type Mesh_MSTK::entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const {
       MEntity_ptr ment;
       
@@ -441,7 +443,6 @@ namespace Amanzi {
       else
 	return OWNED;
     }
-
 
   } // End namespace AmanziMesh
 
