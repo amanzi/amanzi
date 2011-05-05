@@ -147,6 +147,9 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
 	  k_rl_[i] = 1.0;
 	}
 
+      
+      k_rl_[i]  = 1.0;
+
     }
 }
 
@@ -196,6 +199,8 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
 	  S[i] = 1.0;
 	}
       
+      S[i] = 1.0;
+
     }
 }
 
@@ -255,8 +260,12 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
   // add the time derivative to the diagonal
   Epetra_Vector celldiag(CellMap(false));
   dSofP(Pcell_own, celldiag);
-  celldiag.Scale(1.0/h);
+  celldiag.PutScalar(1.0/h);
   
+  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++)
+    {
+      celldiag[n] *= md_->Volume(n);
+    }
   D_->add_to_celldiag(celldiag);
 
   // Compute the face Schur complement of the diffusion matrix.
@@ -566,5 +575,4 @@ void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetr
   Epetra_Vector *udot_face = CreateFaceView(udot);
   udot_face->PutScalar(0.0);
 
-  udot.Print(cout);
 }

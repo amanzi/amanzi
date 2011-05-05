@@ -15,6 +15,7 @@
 #include "RichardsModelEvaluator.hpp"
 #include "BDF2_Dae.hpp"
 #include "gmv_mesh.hh"
+#include "State.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +30,7 @@ int main(int argc, char *argv[])
   if (framework_available(Mesh::Simple)) {
     pref.clear(); pref.push_back(Mesh::Simple);
     mesh_factory.preference(pref);
-    mesh = mesh_factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
+    mesh = mesh_factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
   }
 
   // BOUNDARY CONDITIONS
@@ -56,6 +57,32 @@ int main(int argc, char *argv[])
   bc_top.set("Side set ID", 5);
   bc_top.set("Type", "No Flow");
   Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
+
+
+  // create the state
+  Teuchos::ParameterList state_plist;
+  state_plist.set<int>("Number of mesh blocks",1);
+  state_plist.set<int>("Number of component concentrations",1);
+  state_plist.set<double>("Constant water density",1000.0);
+  state_plist.set<double>("Constant water saturation",1.0);
+  state_plist.set<double>("Constant viscosity",1.0);
+  state_plist.set<double>("Gravity x",0.0);
+  state_plist.set<double>("Gravity y",0.0);
+  state_plist.set<double>("Gravity z",0.0);
+  
+  Teuchos::ParameterList& mb1_plist = state_plist.sublist("Mesh block 1");
+  mb1_plist.set<int>("Mesh block ID",0);
+  mb1_plist.set<double>("Constant porosity",0.2);
+  mb1_plist.set<double>("Constant permeability",10.0);
+  mb1_plist.set<double>("Constant component concentration 0",0.0);
+  mb1_plist.set<double>("Constant Darcy flux x",0.0);
+  mb1_plist.set<double>("Constant Darcy flux y",0.0);
+  mb1_plist.set<double>("Constant Darcy flux z",0.0);
+
+
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_plist, mesh));
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+
   
   // PROBLEM
   Teuchos::ParameterList pl;
@@ -66,31 +93,32 @@ int main(int argc, char *argv[])
   RichardsProblem problem(mesh, pl, bc);
 
   // MODEL PARAMETERS
-  problem.SetFluidDensity(1.0);
-  problem.SetFluidViscosity(1.0);
+  problem.SetFluidDensity(FS->fluid_density());
+  problem.SetFluidViscosity(FS->fluid_viscosity());
   problem.SetPermeability(1.0);
-  double g[3] = { 0.0 };
-  g[2] = -9.8;
-  problem.SetGravity(g);
+  problem.SetGravity(FS->gravity());
 
   // Create the BDF2 parameter list.
   Teuchos::RCP<Teuchos::ParameterList> bdf2_param_p(new Teuchos::ParameterList);
   Teuchos::ParameterList &bdf2_param = *bdf2_param_p.get();
 
   // BDF2 Paramters
-  bdf2_param.set("Nonlinear solver max iterations",10);
+  bdf2_param.set("Nonlinear solver max iterations",20);
   bdf2_param.set("Nonlinear solver tolerance",0.01);
-  bdf2_param.set("NKA max vectors", 4);
+  bdf2_param.set("NKA max vectors", 10);
   bdf2_param.set("NKA drop tolerance", 5e-2);
 
   // set the BDF2 verbosity level
   bdf2_param.sublist("VerboseObject").set("Verbosity Level","high");
 
+
+
   // create the Richards Model Evaluator
   Teuchos::ParameterList plist;
   plist.sublist("VerboseObject").set("Verbosity Level","none");
   
-  RichardsModelEvaluator RME(&problem, plist, problem.Map());
+  
+  RichardsModelEvaluator RME(&problem, plist, problem.Map(), FS);
 
   // create the time stepping object
   BDF2::Dae TS( RME, problem.Map() );
@@ -133,7 +161,6 @@ int main(int argc, char *argv[])
     i++;
 
     tlast=TS.most_recent_time();
-  } while (t1 >= tlast);
  
   
   
@@ -147,6 +174,7 @@ int main(int argc, char *argv[])
   GMV::write_cell_data(Pcell, std::string("pressure"));
   GMV::close_data_file();
   delete &Pcell;
+  } while (t1 >= tlast);
 
   return 0;
 }
