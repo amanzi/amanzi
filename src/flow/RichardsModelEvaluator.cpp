@@ -75,8 +75,6 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
 
   dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
 
-  dS.Print(std::cout);
-
   // on the cell unknowns compute f=f+dS*udotc*rho*phi
   fc->Multiply(1.0,dS,*udotc,1.0);
   
