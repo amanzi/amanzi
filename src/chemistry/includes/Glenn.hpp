@@ -166,6 +166,9 @@ static void readChemistryFromFile(string filename, Beaker *g)
     g->addPrimarySpecies(Species(id,name,charge,mol_wt,size));
   }
 
+  std::vector<std::string> primary_names;
+  g->GetPrimaryNames(&primary_names);
+
 #ifdef DEBUG
   std::cout << "--- Aqueous Complexes----\n";
 #endif
@@ -199,6 +202,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
       file->readInt(&tempi);
       // decrement for zero-based indexing
       tempi--;
+      species.push_back(primary_names[tempi]);
       species_ids.push_back(tempi);
     }
 #ifdef DEBUG

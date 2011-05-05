@@ -53,6 +53,7 @@ int main (int argc, char **argv) {
   filename = "target_total.dat";
   readTargetFreeIonFromFile(filename,beaker.ncomp(), &components.free_ion) ;
 #endif
+  beaker.resize();
   // solve for free-ion concentrations
 
   // to test react with unitary time step
