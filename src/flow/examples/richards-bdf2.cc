@@ -15,6 +15,12 @@
 #include "RichardsModelEvaluator.hpp"
 #include "BDF2_Dae.hpp"
 #include "gmv_mesh.hh"
+#include "State.hpp"
+
+#include "cgns_mesh_par.hh"
+#include "cgns_mesh.hh"
+
+
 
 int main(int argc, char *argv[])
 {
@@ -29,7 +35,7 @@ int main(int argc, char *argv[])
   if (framework_available(Mesh::Simple)) {
     pref.clear(); pref.push_back(Mesh::Simple);
     mesh_factory.preference(pref);
-    mesh = mesh_factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3);
+    mesh = mesh_factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 11, 1, 1);
   }
 
   // BOUNDARY CONDITIONS
@@ -38,7 +44,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList &bc_left = bc_params.sublist("BC00");
   bc_left.set("Side set ID", 1);
   bc_left.set("Type", "Pressure Constant");
-  bc_left.set("BC value", 1.0);
+  bc_left.set("BC value", 0.0);
   Teuchos::ParameterList &bc_right = bc_params.sublist("BC01");
   bc_right.set("Side set ID", 3);
   bc_right.set("Type", "Pressure Constant");
@@ -56,6 +62,32 @@ int main(int argc, char *argv[])
   bc_top.set("Side set ID", 5);
   bc_top.set("Type", "No Flow");
   Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
+
+
+  // create the state
+  Teuchos::ParameterList state_plist;
+  state_plist.set<int>("Number of mesh blocks",1);
+  state_plist.set<int>("Number of component concentrations",1);
+  state_plist.set<double>("Constant water density",1.0);
+  state_plist.set<double>("Constant water saturation",1.0);
+  state_plist.set<double>("Constant viscosity",1.0);
+  state_plist.set<double>("Gravity x",0.0);
+  state_plist.set<double>("Gravity y",0.0);
+  state_plist.set<double>("Gravity z",0.0);
+  
+  Teuchos::ParameterList& mb1_plist = state_plist.sublist("Mesh block 1");
+  mb1_plist.set<int>("Mesh block ID",0);
+  mb1_plist.set<double>("Constant porosity",0.2);
+  mb1_plist.set<double>("Constant permeability",10.0);
+  mb1_plist.set<double>("Constant component concentration 0",0.0);
+  mb1_plist.set<double>("Constant Darcy flux x",0.0);
+  mb1_plist.set<double>("Constant Darcy flux y",0.0);
+  mb1_plist.set<double>("Constant Darcy flux z",0.0);
+
+
+  Teuchos::RCP<State> S = Teuchos::rcp(new State(state_plist, mesh));
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+
   
   // PROBLEM
   Teuchos::ParameterList pl;
@@ -66,31 +98,32 @@ int main(int argc, char *argv[])
   RichardsProblem problem(mesh, pl, bc);
 
   // MODEL PARAMETERS
-  problem.SetFluidDensity(1.0);
-  problem.SetFluidViscosity(1.0);
+  problem.SetFluidDensity(FS->fluid_density());
+  problem.SetFluidViscosity(FS->fluid_viscosity());
   problem.SetPermeability(1.0);
-  double g[3] = { 0.0 };
-  g[2] = -9.8;
-  problem.SetGravity(g);
+  problem.SetGravity(FS->gravity());
 
   // Create the BDF2 parameter list.
   Teuchos::RCP<Teuchos::ParameterList> bdf2_param_p(new Teuchos::ParameterList);
   Teuchos::ParameterList &bdf2_param = *bdf2_param_p.get();
 
   // BDF2 Paramters
-  bdf2_param.set("Nonlinear solver max iterations",10);
+  bdf2_param.set("Nonlinear solver max iterations",25);
   bdf2_param.set("Nonlinear solver tolerance",0.01);
-  bdf2_param.set("NKA max vectors", 4);
+  bdf2_param.set("NKA max vectors", 5);
   bdf2_param.set("NKA drop tolerance", 5e-2);
 
   // set the BDF2 verbosity level
   bdf2_param.sublist("VerboseObject").set("Verbosity Level","high");
 
+
+
   // create the Richards Model Evaluator
   Teuchos::ParameterList plist;
   plist.sublist("VerboseObject").set("Verbosity Level","none");
   
-  RichardsModelEvaluator RME(&problem, plist, problem.Map());
+  
+  RichardsModelEvaluator RME(&problem, plist, problem.Map(), FS);
 
   // create the time stepping object
   BDF2::Dae TS( RME, problem.Map() );
@@ -98,18 +131,55 @@ int main(int argc, char *argv[])
 
   // create the initial condition
   Epetra_Vector u(problem.Map());
-  u.PutScalar(0.0);
+
+  // first for the cells
+  Epetra_Vector * ucells =  problem.CreateCellView(u);
+  for (int j=0; j<ucells->MyLength(); j++)
+    {
+      std::vector<double> coords;
+      coords.resize(24);
+      mesh->cell_to_coordinates(j, coords.begin(), coords.end());
+
+      // average the x coordinates
+      double xavg = 0.0;
+      for (int k=0; k<24; k+=3)
+	xavg += coords[k];
+      xavg /= 8.0;
+
+      (*ucells)[j] = sin(M_PI*xavg);
+    }
+
+  // then for faces
+  Epetra_Vector * ufaces =  problem.CreateFaceView(u);
+  for (int j=0; j<ufaces->MyLength(); j++)
+    {
+      std::vector<double> coords;
+      coords.resize(12);
+      mesh->face_to_coordinates(j, coords.begin(), coords.end());
+
+      // average the x coordinates
+      double xavg = 0.0;
+      for (int k=0; k<12; k+=3)
+	xavg += coords[k];
+      xavg /= 4.0;
+
+      (*ufaces)[j] = sin(M_PI*xavg);
+    }
+  
+  // initialize the state
+  S->update_pressure( * problem.CreateCellView(u) );
+  S->set_time(0.0);
 
   // set intial and final time
   double t0 = 0.0;
-  double t1 = 1.0;
+  double t1 = 100.0;
 
   // compute the initial udot
   Epetra_Vector udot(problem.Map());
   problem.Compute_udot(t0,u,udot);
   
   // initial time step
-  double h = 1.0e-5;
+  double h = 1.0e-3;
   double hnext;
 
   // intialize the state of the time stepper
@@ -117,6 +187,20 @@ int main(int argc, char *argv[])
  
   int errc;
   RME.update_precon(t0, u, h, errc);
+
+
+  // set up output
+  std::string cgns_filename = "out.cgns";
+
+  CGNS::create_mesh_file(*mesh, cgns_filename);
+
+  CGNS::open_data_file(cgns_filename);
+  CGNS::create_timestep(0.0, 0, Mesh_data::CELL);
+
+  CGNS::write_field_data(*(S->get_pressure()), "pressure");
+  
+
+
 
   // iterate
   int i = 0;
@@ -126,27 +210,37 @@ int main(int argc, char *argv[])
     TS.bdf2_step(h,0.0,20,u,hnext);
     
     TS.commit_solution(h,u);
-    
+
+    S->advance_time(h);
+
+    // update the state, but only the cell values of pressure
+    S->update_pressure( * problem.CreateCellView(u) );
+
     TS.write_bdf2_stepping_statistics();
 
     h = hnext;
     i++;
 
     tlast=TS.most_recent_time();
-  } while (t1 >= tlast);
- 
-  
-  
+    
+
+    if ( i%10 == 1 ) 
+      { 
+	CGNS::open_data_file(cgns_filename);
+	CGNS::create_timestep(S->get_time(), i, Mesh_data::CELL);
+
+	CGNS::write_field_data(*(S->get_pressure()), "pressure");
+
+      }
 
   
-  // Write a GMV file with the cell pressures.
-  std::string gmv_file("pressure.gmv");
-  GMV::open_data_file(*mesh, gmv_file);
-  GMV::start_data();
-  Epetra_Vector &Pcell = *(problem.CreateCellView(u));
-  GMV::write_cell_data(Pcell, std::string("pressure"));
-  GMV::close_data_file();
-  delete &Pcell;
+  } while (t1 >= tlast);
+
+  CGNS::open_data_file(cgns_filename);
+  CGNS::create_timestep(S->get_time(), i, Mesh_data::CELL);
+  
+  CGNS::write_field_data(*(S->get_pressure()), "pressure");
+
 
   return 0;
 }
