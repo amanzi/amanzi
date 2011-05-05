@@ -73,6 +73,10 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   
   dS.PutScalar(1.0);
 
+  dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
+
+  dS.Print(std::cout);
+
   // on the cell unknowns compute f=f+dS*udotc*rho*phi
   fc->Multiply(1.0,dS,*udotc,1.0);
   
@@ -140,7 +144,7 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   double rtol = 0.0;
 
   double en = 0.0;
-  for (int j=0; j<u_cell->MyLength(); j++)
+  for (int j=0; j<u.MyLength(); j++)
     {
       double tmp = abs(du[j])/(atol+rtol*abs(u[j]));
       en = std::max<double>(en, tmp);

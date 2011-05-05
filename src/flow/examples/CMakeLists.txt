@@ -16,6 +16,9 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${TIME_STEPPING_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${CGNS_INCLUDE_DIRS})
+
 
 if ( ENABLE_MOAB_Mesh )
 
