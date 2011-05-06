@@ -7,7 +7,6 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
 
 
 set(input_example_src input_example.cpp)
