@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -61,12 +61,12 @@ if ( BUILD_TESTS )
         # Test: transport
         add_executable(test_serial  test/Main.cc test/test_transport.cpp test/test_moab.cpp)
         target_link_libraries(test_serial ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_test(transport test_serial)
+        add_amanzi_test(transport test_serial KIND unit)
 
         # Test: transport (parallel)
         add_executable(test_parallel test/Main.cc test/test_moab_parallel.cpp)
         target_link_libraries(test_parallel ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_parallel_test(transport_parallel test_parallel NPROCS ${MPI_EXEC_MAX_NPROCS})
+        add_amanzi_test(transport_parallel test_parallel NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
 
     endif()    
 

@@ -36,6 +36,14 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   vG_alpha_  = list.get<double>("van Genuchten alpha");
   vG_sr_     = list.get<double>("van Genuchten residual saturation");
   p_atm_     = list.get<double>("atmospheric pressure");
+
+
+  // store the cell volumes in a convenient way
+  cell_volumes = new Epetra_Vector(mesh->cell_map(false)); 
+  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++)
+    {
+      (*cell_volumes)[n] = md_->Volume(n);
+    }  
 }
 
 
@@ -46,6 +54,8 @@ RichardsProblem::~RichardsProblem()
   delete cell_importer_;
   delete md_;
   delete precon_;
+
+  delete cell_volumes;
 }
 
 
@@ -147,6 +157,9 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
 	  k_rl_[i] = 1.0;
 	}
 
+      
+      k_rl_[i]  = 1.0;
+
     }
 }
 
@@ -196,6 +209,8 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
 	  S[i] = 1.0;
 	}
       
+      S[i] = 1.0;
+
     }
 }
 
@@ -226,6 +241,8 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
   UpdateVanGenuchtenRelativePermeability(Pcell);
   
   for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
+
+
   D_->Compute(K);
 
   // Compute the face Schur complement of the diffusion matrix.
@@ -255,8 +272,15 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
   // add the time derivative to the diagonal
   Epetra_Vector celldiag(CellMap(false));
   dSofP(Pcell_own, celldiag);
-  celldiag.Scale(1.0/h);
+  celldiag.PutScalar(1.0/h);
   
+  //for (int n=0; n<(md_->CellMap()).NumMyElements(); n++)
+  //  {
+  //    celldiag[n] *= md_->Volume(n);
+  //  }
+  celldiag.Multiply(1.0,celldiag,*cell_volumes,0.0);
+
+
   D_->add_to_celldiag(celldiag);
 
   // Compute the face Schur complement of the diffusion matrix.
@@ -566,5 +590,4 @@ void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetr
   Epetra_Vector *udot_face = CreateFaceView(udot);
   udot_face->PutScalar(0.0);
 
-  udot.Print(cout);
 }

@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -60,14 +60,14 @@ if (BUILD_TESTS)
                    test/test_hex_3x3x2.cc
                    test/test_hex_4x4x4.cc)
     target_link_libraries(test_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
-    add_test(mstk_mesh test_mstk_mesh )
+    add_amanzi_test(mstk_mesh test_mstk_mesh KIND unit)
 
     # Test: mstk_mesh_parallel
     add_executable(test_parallel_mstk_mesh
         test/Main.cc
         test/test_hex_4x4x4_4P.cc)
     target_link_libraries(test_parallel_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
-    add_parallel_test(mstk_mesh_parallel test_parallel_mstk_mesh NPROCS 4)
+    add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh NPROCS 4 KIND int)
 
 endif()
 
