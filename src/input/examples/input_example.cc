@@ -1,135 +1,50 @@
+#include <iostream>
 
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_getConst.hpp"
-#include "Teuchos_Version.hpp"
-#include "Teuchos_StandardCatchMacros.hpp"
-#include "Teuchos_FancyOStream.hpp"
-#include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_Tuple.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_ParameterListAcceptorHelpers.hpp"
 
-#ifdef HAVE_TEUCHOS_EXTENDED
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#endif
+#include "simple_mesh_input.hh"
 
-#ifdef USE_MPI
-#include "mpi.h"
-#endif
+typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
 
-using Teuchos::CommandLineProcessor;
-using Teuchos::ParameterList;
-using Teuchos::getParameter;
-typedef ParameterList::PrintOptions PLPrintOptions;
-using Teuchos::ParameterEntry;
-using Teuchos::OSTab;
-using Teuchos::rcp;
-
-void print_break() { std::cout << "---------------------------------------------------" << std::endl; }
-double Plus ( double a, double b ) { return a+b; }
-
+void print_line() { std::cout << "----------------------------------------" << std::endl; }
 
 int main(int argc, char *argv[])
 {
 
   using std::cout;
   using std::endl;
-
-  bool verbose = true;
-  bool result;
-
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
-
-  bool success = true;
-
-  //-----------------------------------------------------------
-  // Create Main Parameter List / Sublist Structure
-  //-----------------------------------------------------------
-
-  /* This creates the general structure of the input list */
-  ParameterList MainPList("Main");
-  ParameterList& MPCPList = MainPList.sublist("MPC");
-  ParameterList& MeshPList = MainPList.sublist("Mesh");
-  ParameterList& StatePList = MainPList.sublist("State");
-  ParameterList& ChemPList = MainPList.sublist("Chemistry");
-  ParameterList& FlowPList = MainPList.sublist("Flow");
-  ParameterList& TransportPList = MainPList.sublist("Transport");
+  using std::string;
 
 
-  /* Mesh */
+  /* Create a input object to print out the defaults */
+  SimpleMeshInput simple_mesh_info;
+  print_line();
+  cout << "Valid Parameters for Simple Mesh" << endl;
+  Teuchos::printValidParameters(simple_mesh_info,cout,true);
+  print_line();
 
-  /* Each Mesh list MUST define a mesh class */
-  MeshPList.get("Mesh Class", "MOAB");
- Teuchos::setStringToIntegralParameter<int>(
-    "Mesh Class", "MOAB",
-    "Defines the underlying mesh framework for the mesh class",
-    Teuchos::tuple<std::string>("Simple","MOAB", "STK"),
-    &MeshPList
-    );
+  Teuchos::RCP<const Teuchos::ParameterList> info_list =
+     simple_mesh_info.getParameterList(); 
 
- 
-  ParameterList& MOABPList = MeshPList.sublist("MOAB Mesh Parameters");
-  MOABPList.set("Exodus file name", "fbasin_unstr_025_V02_128P.h5m");
+  print_line();
+  cout << "Sample simple mesh input setup" << endl;
+  print_line();
+  SimpleMeshInput simple_mesh(0.0,0.0,0.0,1.0,1.0,1.0,30,30,30);
+  simple_mesh.add_block(0.0,0.1);
+  simple_mesh.add_block(0.1,0.5);
+  simple_mesh.add_block(0.5,1.0);
 
-  /* Create a validator that accepts double or std::string input */
-  typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
-  Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
-    DoubleStringValidator = rcp(
-      new Teuchos::AnyNumberParameterEntryValidator(
-        Teuchos::AnyNumberParameterEntryValidator::PREFER_DOUBLE,
-        AcceptedTypes(false).allowDouble(true).allowString(true)
-        )
-      );
+  Teuchos::RCP<const Teuchos::ParameterList> simple_list =
+      simple_mesh.getParameterList();
 
-  /* Create a validator that accepts int or std::string input */
-  typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
-  Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
-    IntStringValidator = rcp(
-      new Teuchos::AnyNumberParameterEntryValidator(
-        Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,
-        AcceptedTypes(false).allowInt(true).allowString(true)
-        )
-      );
+  simple_list->print(std::cout,PLPrintOptions().showTypes(true).showDoc(true));
+  print_line();
 
-
-  /* MPC */
-  MPCPList.set("Start Time", 0.0, "Initial simulation time", DoubleStringValidator);
-  MPCPList.set("End Time", 0.1, "Final simulation time", DoubleStringValidator);
-  MPCPList.set("End Cycle", 1000, "Final cycle count", IntStringValidator);
-  ParameterList& PKList = MPCPList.sublist("Enabled PK");
-  PKList.get("Flow",true);
-  PKList.get("Transport",true);
-  PKList.get("Chemistry",false);
-
-  MPCPList.get("Flow Model","Darcy");
-  Teuchos::setStringToIntegralParameter<int>(
-    "Flow Model", "Darcy",
-    "Define the flow model",
-    Teuchos::tuple<std::string>("Darcy","Richards"),
-    &MPCPList
-    );
-
-  ParameterList& VizPList = MPCPList.sublist("Viz");
-  ParameterList& CGNSPList = VizPList.sublist("CGNS");
-  CGNSPList.set("Viz dump cycle frequency", 10);
-  CGNSPList.set("Viz dump time frequency", 0.05);
-  CGNSPList.set("File name", "test1.cgns");
-
-  /* State */
-  const Teuchos::Array<double> 
-    gravity = Teuchos::tuple<double>(0.0,0.0,0.0);
-  StatePList.set("Gravity",gravity);
-
-  ParameterList& H2OPList = StatePList.sublist("Water");
-  H2OPList.set("saturation",1.0);
-  H2OPList.set("density",1000.0);
-  H2OPList.set("viscosity",0.001308);
-
-
-  /* Dump List to the screen */
-  MainPList.print(cout,PLPrintOptions().showTypes(true).showDoc(true));
-
+  
   return 0;
 }    

@@ -8,6 +8,8 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 
+# Add the input project directory to the include list
+include_directories(${INPUT_SOURCE_DIR})
 
 set(input_example_src input_example.cc)
 add_executable(input_example.exe ${input_example_src})
