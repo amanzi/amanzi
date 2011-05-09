@@ -108,27 +108,32 @@ class Configure(config.base.Configure):
 
     # Set some additional options for some of the packages:
 
-    # Set the .archProvider for all packages.
+    # Set the archProvider and installDirProvider for all packages.
     # There should probably be a more automatic way of doing this, at some point.
 
-    self.blaslapack.archProvider = self.arch
-    self.mpi.archProvider        = self.arch
-    self.boost.archProvider      = self.arch
-    self.netcdf.archProvider     = self.arch
-    self.hdf5.archProvider       = self.arch
-    self.exodusii.archProvider   = self.arch
-    self.moab.archProvider       = self.arch
+    self.blaslapack.archProvider        = self.arch
+    self.blaslapack.installDirProvider  = self.dir
+    self.mpi.archProvider               = self.arch
+    self.mpi.installDirProvider         = self.dir
+    self.boost.archProvider             = self.arch
+    self.boost.installDirProvider       = self.dir
+    self.netcdf.archProvider            = self.arch
+    self.netcdf.installDirProvider      = self.dir
+    self.hdf5.archProvider              = self.arch
+    self.hdf5.installDirProvider        = self.dir
+    self.exodusii.archProvider          = self.arch
+    self.exodusii.installDirProvider    = self.dir
+    self.moab.archProvider              = self.arch
+    self.moab.installDirProvider        = self.dir
 
     # For BLAS/LAPACK:
     #force blaslapack to depend on scalarType so precision is set before BlasLapack is built
     #framework.require('PETSc.utilities.scalarTypes', self.blaslapack)
     #self.blaslapack.precisionProvider = self.scalartypes
-    self.blaslapack.installDirProvider = self.dir
     self.blaslapack.headerPrefix       = self.headerPrefix
 
     # For MPI:
     #self.mpi.languageProvider   = self.languages  #RTM: Do we need to set this?  Appears to depend on PETSc.utilities.languages
-    self.mpi.installDirProvider = self.dir
     self.mpi.headerPrefix       = self.headerPrefix
 
     self.compilers.headerPrefix = self.headerPrefix
