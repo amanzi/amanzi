@@ -12,15 +12,21 @@ public:
   Newton(int);
   virtual ~Newton();
 
+  void size(int i) { this->size_ = i; }
+  void size(void) const { return this->size_; }
+
   void solve();
   
  private:
 
-  int n;
-  double *x;
-  double *r;
-  Block *J;
-  int *indices;
+  int size_;
+  std::vector<double> x_;
+  std::vector<double> r_;
+  Block *J_;
+
+  double d_;
+  std::vector<int> indices_;
+  std::vector<double> vv_;
 
 };
 

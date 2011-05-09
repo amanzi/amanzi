@@ -19,6 +19,11 @@
 #include "SurfaceComplexationRxn.hpp"
 #include "Verbosity.hpp"
 
+#ifdef GLENN
+#include "chemistry/includes/direct_solver.hh"
+#include "chemistry/includes/matrix_block.hh"
+#endif
+
 class KineticRate;
 
 class Beaker {
@@ -284,6 +289,10 @@ private:
   static const double saturation_default;
   static const double water_density_kg_m3_default;
   static const double volume_default;
+
+#ifdef GLENN
+  DirectSolver *solver;
+#endif
 
 };
 

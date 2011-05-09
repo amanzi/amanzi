@@ -60,6 +60,9 @@ Beaker::Beaker()
     por_sat_den_vol_(0.0),
     activity_model_(NULL),
     J(NULL)
+#ifdef GLENN
+    , solver(NULL)
+#endif
 {
   primarySpecies_.clear();
   minerals_.clear();
@@ -88,6 +91,9 @@ Beaker::~Beaker()
       delete (*rate);
     }    
   }
+#ifdef GLENN
+  delete solver;
+#endif
 } // end Beaker destructor
 
 void Beaker::resize() {
@@ -114,6 +120,10 @@ void Beaker::resize() {
   rhs.resize(ncomp());
   indices.resize(ncomp());
 
+#ifdef GLENN
+  solver = new DirectSolver();
+  solver->Initialize(ncomp());
+#endif
 } // end resize()
 
 void Beaker::resize(int n) {
@@ -722,6 +732,7 @@ double Beaker::calculateMaxRelChangeInMolality(const std::vector<double>& prev_m
 
 void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
       // LU direct solve
+#ifndef GLENN
     double D;
     // allocate pivoting array for LU
     int *indices = new int[ncomp()];
@@ -732,6 +743,9 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     ludcmp(A->getValues(),ncomp(),indices,&D);
     lubksb(A->getValues(),ncomp(),indices,b);
     delete[] indices;
+#else
+    solver->Solve(A,b);
+#endif
 } // end solveLinearSystem
 
 void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals)
