@@ -61,6 +61,7 @@ if (BUILD_TESTS)
 		 test/test_secondary_species.cpp
 		 test/test_aqueous_equilibrium_complex.cpp
 		 test/test_mineral.cpp
+		 test/test_mineral_kinetics_factory.cpp
 		 test/test_beaker.cpp)
   target_link_libraries(chemistry_tests chemistry error_handling ${UnitTest_LIBRARIES})
   add_amanzi_test(chemistry chemistry_tests KIND unit)
