@@ -3,7 +3,7 @@
 
 #include "Beaker.hpp"
 #include "Glenn.hpp"
-#include "ActivityModelFactory.hpp"
+#include "activity-model-factory.hh"
 #include "Verbosity.hpp"
 
 using namespace std;

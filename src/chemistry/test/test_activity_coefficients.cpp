@@ -8,10 +8,10 @@
 #include <UnitTest++.h>
 
 #include "Species.hpp"
-#include "ActivityModelFactory.hpp"
-#include "ActivityModelUnit.hpp"
-#include "ActivityModelDebyeHuckel.hpp"
-#include "ActivityModel.hpp"
+#include "activity-model-factory.hh"
+#include "activity-model-unit.hh"
+#include "activity-model-debye-huckel.hh"
+#include "activity-model.hh"
 #include "ChemistryException.hpp"
 
 SUITE(GeochemistryTestsActivityModels)
