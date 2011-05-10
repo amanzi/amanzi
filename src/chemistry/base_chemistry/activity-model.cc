@@ -4,7 +4,7 @@
 #include <vector>
 #include <iostream>
 
-#include "ActivityModel.hpp"
+#include "activity-model.hh"
 
 ActivityModel::ActivityModel()
     : I_(0.0) {

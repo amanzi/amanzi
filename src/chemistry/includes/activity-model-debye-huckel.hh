@@ -1,13 +1,13 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_DEBYE_HUCKEL_HPP__
-#define __ACTIVITY_MODEL_DEBYE_HUCKEL_HPP__
+#ifndef __ACTIVITY_MODEL_DEBYE_HUCKEL_HH__
+#define __ACTIVITY_MODEL_DEBYE_HUCKEL_HH__
 
 // Base class for activity calculations
 
 #include <string>
 #include <vector>
 
-#include "ActivityModel.hpp"
+#include "activity-model.hh"
 
 class Species;
 

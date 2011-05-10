@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_HPP__
-#define __ACTIVITY_MODEL_HPP__
+#ifndef __ACTIVITY_MODEL_HH__
+#define __ACTIVITY_MODEL_HH__
 
 // Base class for activity calculations
 

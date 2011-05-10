@@ -14,8 +14,8 @@
 #include <vector>
 #include <sstream>
 
-#include "ActivityModel.hpp"
-#include "ActivityModelFactory.hpp"
+#include "activity-model.hh"
+#include "activity-model-factory.hh"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
 #include "GeneralRxn.hpp"

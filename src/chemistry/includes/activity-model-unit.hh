@@ -1,8 +1,8 @@
-/* -*-  mode: c++; c-default-style: "google-c-style"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_UNIT_HPP__
-#define __ACTIVITY_MODEL_UNIT_HPP__
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#ifndef __ACTIVITY_MODEL_UNIT_HH__
+#define __ACTIVITY_MODEL_UNIT_HH__
 
-#include "ActivityModel.hpp"
+#include "activity-model.hh"
 
 class Species;
 

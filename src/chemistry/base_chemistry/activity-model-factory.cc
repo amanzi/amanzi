@@ -2,10 +2,10 @@
 #include <sstream>
 #include <string>
 
-#include "ActivityModel.hpp"
-#include "ActivityModelDebyeHuckel.hpp"
-#include "ActivityModelUnit.hpp"
-#include "ActivityModelFactory.hpp"
+#include "activity-model.hh"
+#include "activity-model-debye-huckel.hh"
+#include "activity-model-unit.hh"
+#include "activity-model-factory.hh"
 #include "ChemistryException.hpp"
 #include "exceptions.hh"
 

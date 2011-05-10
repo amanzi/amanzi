@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "ActivityModel.hpp"
+#include "activity-model.hh"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
 #include "GeneralRxn.hpp"
