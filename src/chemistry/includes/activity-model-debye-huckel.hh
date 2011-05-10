@@ -4,9 +4,6 @@
 
 // Base class for activity calculations
 
-#include <string>
-#include <vector>
-
 #include "activity-model.hh"
 
 class Species;

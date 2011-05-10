@@ -6,8 +6,7 @@
 
 #include "activity-model.hh"
 
-class ActivityModelFactory 
-{
+class ActivityModelFactory {
  public:
   ActivityModelFactory();
   ~ActivityModelFactory();
