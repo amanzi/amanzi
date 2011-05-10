@@ -380,8 +380,8 @@ void Beaker::updateActivityCoefficients() {
   //return;
   activity_model_->CalculateIonicStrength(primarySpecies_,
                                           aqComplexRxns_);
-  activity_model_->CalculateActivityCoefficients(primarySpecies_,
-                                                 aqComplexRxns_);
+  activity_model_->CalculateActivityCoefficients(&primarySpecies_,
+                                                 &aqComplexRxns_);
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++)
     i->update();

@@ -38,15 +38,15 @@ void ActivityModel::CalculateActivityCoefficients(
     std::vector<Species>* primarySpecies,
     std::vector<AqueousEquilibriumComplex>* secondarySpecies) {
   // primary species
-  for (std::vector<Species>::iterator i = primarySpecies.begin();
-       i != primarySpecies.end(); i++) {
+  for (std::vector<Species>::iterator i = primarySpecies->begin();
+       i != primarySpecies->end(); i++) {
     double gamma = Evaluate(*i);
     i->act_coef(gamma);
   }
 
   // secondary aqueous complexes
-  for (std::vector<AqueousEquilibriumComplex>::iterator i = secondarySpecies.begin();
-       i != secondarySpecies.end(); i++) {
+  for (std::vector<AqueousEquilibriumComplex>::iterator i = secondarySpecies->begin();
+       i != secondarySpecies->end(); i++) {
     double gamma = Evaluate(*i);
     i->act_coef(gamma);
   }
