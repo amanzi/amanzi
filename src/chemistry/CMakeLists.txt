@@ -57,7 +57,7 @@ if (BUILD_TESTS)
 		 test/test_species.cpp
 		 test/test_ion_exchange_site.cpp
 		 test/test_surface_site.cpp
-		 test/test_activity_coefficients.cpp
+		 test/test_activity_coefficients.cc
 		 test/test_secondary_species.cpp
 		 test/test_aqueous_equilibrium_complex.cpp
 		 test/test_mineral.cpp

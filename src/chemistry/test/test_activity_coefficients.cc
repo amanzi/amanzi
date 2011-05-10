@@ -21,7 +21,7 @@ SUITE(GeochemistryTestsActivityModels)
    **  Test for ActivityModelFactory.cpp
    **
    *****************************************************************************/
-  
+
   /*
     if you pass the factory a valid name, it should return the correct
     activity model class. If you pass it an invalid name, it should
@@ -40,7 +40,7 @@ SUITE(GeochemistryTestsActivityModels)
 
     ActivityModelFactory amf_;
     ActivityModel* activity_model_;
-    
+
    private:
 
   };
