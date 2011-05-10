@@ -7,17 +7,15 @@
 #include "ActivityModel.hpp"
 
 ActivityModel::ActivityModel()
-    : I_(0.0)
-{
+    : I_(0.0) {
 }  // end ActivityModel constructor
 
-ActivityModel::~ActivityModel()
-{
+ActivityModel::~ActivityModel() {
 }  // end ActivityModel destructor
 
-void ActivityModel::CalculateIonicStrength(const std::vector<Species>& primarySpecies,
-                                           const std::vector<AqueousEquilibriumComplex>& secondarySpecies)
-{
+void ActivityModel::CalculateIonicStrength(
+    const std::vector<Species>& primarySpecies,
+    const std::vector<AqueousEquilibriumComplex>& secondarySpecies) {
   // I = 0.5 * sum_i(m_i*z_i^2)
   I_ = 0.;
 
@@ -36,9 +34,9 @@ void ActivityModel::CalculateIonicStrength(const std::vector<Species>& primarySp
   I_ *= 0.5;
 }  // end CalculateIonicStrength()
 
-void ActivityModel::CalculateActivityCoefficients(std::vector<Species> &primarySpecies,
-                                                  std::vector<AqueousEquilibriumComplex> &secondarySpecies)
-{
+void ActivityModel::CalculateActivityCoefficients(
+    std::vector<Species>* primarySpecies,
+    std::vector<AqueousEquilibriumComplex>* secondarySpecies) {
   // primary species
   for (std::vector<Species>::iterator i = primarySpecies.begin();
        i != primarySpecies.end(); i++) {
