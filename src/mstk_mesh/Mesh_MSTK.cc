@@ -1038,6 +1038,7 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Point>
   MEntity_ptr cell;
   double coords[3];
   int nn, result;
+  int spdim = space_dimension(), celldim = cell_dimension();
 
   assert(ccoords != NULL);
 
@@ -1045,7 +1046,7 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Point>
 
   cell = cell_id_to_handle[cellid];
       
-  if (cell_dimension() == 3) {
+  if (celldim == 3) {
     List_ptr rverts = MR_Vertices(cell);
     
     nn = List_Num_Entries(rverts);
@@ -1053,21 +1054,29 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Point>
     for (int i = 0; i < nn; i++) {
       MV_Coords(List_Entry(rverts,i),coords);
 
-      ((*ccoords)[i]).init(3);
-      ((*ccoords)[i]).set(coords[0],coords[1],coords[2]);
+      Point xyz(spdim);
+      xyz.set(coords[0],coords[1],coords[2]);
+
+      ccoords->push_back(xyz);
     }    
 
     List_Delete(rverts);
   }
-  else {
+  else if (celldim == 2) {
+
     List_ptr fverts = MF_Vertices(cell,1,0);
     nn = List_Num_Entries(fverts);
 
     for (int i = 0; i < nn; i++) {
       MV_Coords(List_Entry(fverts,i),coords);
 
-      ((*ccoords)[i]).init(2);
-      ((*ccoords)[i]).set(coords[0],coords[1],coords[2]);
+      Point xyz(spdim);
+      if (spdim == 2)
+	xyz.set(coords[0],coords[1]);
+      else
+	xyz.set(coords[0],coords[1],coords[2]);
+
+      ccoords->push_back(xyz);
     }
   }
 
@@ -1098,15 +1107,21 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
       if (faceflip[faceid]) {
 	for (int i = nn-1; i >=0; i--) {
 	  MV_Coords(List_Entry(fverts,i),coords);
-	  ((*fcoords)[nn-i-1]).init(3);
-	  ((*fcoords)[nn-i-i]).set(coords[0],coords[1],coords[2]);
+
+	  Point xyz(3);
+	  xyz.set(coords[0],coords[1],coords[2]);
+
+	  fcoords->push_back(xyz);
 	}
       }
       else {
 	for (int i = 0; i < nn; i++) {
 	  MV_Coords(List_Entry(fverts,i),coords);
-	  ((*fcoords)[i]).init(3);
-	  ((*fcoords)[i]).set(coords[0],coords[1],coords[2]);
+
+	  Point xyz(3);
+	  xyz.set(coords[0],coords[1],coords[2]);
+
+	  fcoords->push_back(xyz);
 	}	  
       }
     }
@@ -1122,13 +1137,15 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
 	ev[0] = ME_Vertex(edge,1);
       }
 
+      Point xyz(3);
+
       MV_Coords(ev[0],coords);
-      ((*fcoords)[0]).init(3);
-      ((*fcoords)[0]).set(coords[0],coords[1],coords[2]);
+      xyz.set(coords[0],coords[1],coords[2]);
+      fcoords->push_back(xyz);
 	
       MV_Coords(ev[1],coords);
-      ((*fcoords)[1]).init(3);
-      ((*fcoords)[1]).set(coords[0],coords[1],coords[2]);
+      xyz.set(coords[0],coords[1],coords[2]);
+      fcoords->push_back(xyz);
     }
   }
   else {  // 2D Mesh
@@ -1144,14 +1161,16 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
       ev[1] = ME_Vertex(edge,0);
       ev[0] = ME_Vertex(edge,1);
     }
+
+    Point xyz(2);
       
     MV_Coords(ev[0],coords);
-    ((*fcoords)[0]).init(2);
-    ((*fcoords)[0]).set(coords[0],coords[1]);
+    xyz.set(coords[0],coords[1]);
+    fcoords->push_back(xyz);
       
     MV_Coords(ev[1],coords);
-    ((*fcoords)[1]).init(2);
-    ((*fcoords)[1]).set(coords[0],coords[1]);
+    xyz.set(coords[0],coords[1]);
+    fcoords->push_back(xyz);
   }	  
 } // Mesh_MSTK::face_get_coordinates
   
@@ -2527,46 +2546,53 @@ void Mesh_MSTK::label_celltype() {
 
       nrf = MR_Num_Faces(region);
 
-      switch (nrv) {
+      switch (nrf) {
       case 4:
-
 	ctype = TET;
 	break;
-
       case 5:
-
-	switch (nrf) {
-	case 5:
 
 	  nquads = 0;
 	  rfaces = MR_Faces(region);	  
 	  idx2 = 0;
-	  while ((face = List_Next_Entry(rfaces,&idx))) {
+	  while ((face = List_Next_Entry(rfaces,&idx2)))
 	    if (MF_Num_Vertices(face) == 4)
 	      nquads++;
-	  }
+	  List_Delete(rfaces);
 
 	  switch (nquads) {
 	  case 1:
-	    ctype = PYRAMID; /* 5 faces (1 quad), 5 vertices */
+	    ctype = PYRAMID;
 	    break;
 	  case 3:
-	    ctype = PRISM;   /* 5 faces (3 quads), 5 vertices */
+	    ctype = PRISM;
 	    break;
 	  default:
-	    ctype = POLYHED; /* 5 faces, but unclassifiable */
+	    ctype = POLYHED;
 	  }
-	  
-	  break;
-	default:
 
-	  ctype = POLYHED;
+	break;
 
-	} /* switch (nrf) */
+      case 6:
 
-      } /* switch (nrv) */
+	  nquads = 0;
+	  rfaces = MR_Faces(region);	  
+	  idx2 = 0;
+	  while ((face = List_Next_Entry(rfaces,&idx2)))
+	    if (MF_Num_Vertices(face) == 4)
+	      nquads++;
+	  List_Delete(rfaces);
 
-      MEnt_Set_AttVal(face,celltype_att,ctype,0.0,NULL);
+	  ctype = (nquads == 6) ? HEX : POLYHED;
+
+	break;
+      default:
+
+	ctype = POLYHED;
+
+      }
+
+      MEnt_Set_AttVal(region,celltype_att,ctype,0.0,NULL);
 
     }
 
