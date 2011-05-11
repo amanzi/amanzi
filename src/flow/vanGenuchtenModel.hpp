@@ -6,7 +6,7 @@
 class vanGenuchtenModel : public WaterRetentionBaseModel {
   
 public:
-  vanGenuchtenModel(double m_, double alpha_, 
+  vanGenuchtenModel(int meshblock_, double m_, double alpha_, 
 		    double sr_, double p_atm_);
 
   

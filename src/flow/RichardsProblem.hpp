@@ -12,6 +12,7 @@
 #include "DiffusionPrecon.hpp"
 #include "MimeticHexLocal.hpp"
 #include "MimeticHex.hpp"
+#include "WaterRetentionBaseModel.hpp"
 
 class RichardsProblem
 {
@@ -100,6 +101,8 @@ private:
   Teuchos::RCP<DiffusionMatrix> D_;
 
   Epetra_Vector* cell_volumes;
+  
+  std::vector<Teuchos::RCP<WaterRetentionBaseModel> > WRM;
   
 private:  // Auxillary functions
 
