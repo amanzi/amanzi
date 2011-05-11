@@ -197,6 +197,216 @@ namespace Amanzi
 
       return face_normals[faceid];
     }
+
+
+
+    // Temporary routines for backward compatibility
+    //
+    // ----- ATTENTION - ATTENTION - ATTENTION -----
+    // NEW CODE SHOULD NOT USE THESE FUNCTIONS SINCE THEY WILL GO AWAY
+    //
+    
+
+
+    void Mesh::cell_to_faces (unsigned int cell, 
+			      std::vector<unsigned int>::iterator begin, 
+			      std::vector<unsigned int>::iterator end) 
+    {
+      cell_to_faces (cell, &(*begin), &(*end));
+    };
+    
+    void Mesh::cell_to_faces (unsigned int cell, 
+			      unsigned int* begin, unsigned int *end) 
+    {
+      Entity_ID_List cfaces;
+      
+      cell_get_faces ((Entity_ID)cell, &cfaces);
+
+      assert (cfaces.size() <= (unsigned int) (end-begin));
+      std::copy (cfaces.begin(), cfaces.end(), begin);
+    };
+
+
+    void Mesh::cell_to_face_dirs (unsigned int cell, 
+				  std::vector<int>::iterator begin, 
+			    std::vector<int>::iterator end) 
+    {
+      cell_to_face_dirs (cell, &(*begin), &(*end));
+    };
+    void Mesh::cell_to_face_dirs (unsigned int cell, 
+				  int * begin, int * end) 
+    {
+      vector<int> cfdirs;
+
+      cell_get_face_dirs ((Entity_ID)cell, &cfdirs);
+
+      assert (cfdirs.size() <= (unsigned int) (end-begin));
+      std::copy (cfdirs.begin(), cfdirs.end(), begin);
+    };
+  
+    
+
+    void Mesh::cell_to_nodes (unsigned int cell, 
+			      std::vector<unsigned int>::iterator begin, 
+			      std::vector<unsigned int>::iterator end) 
+    {
+      cell_to_nodes (cell, &(*begin), &(*end));
+    };
+    void Mesh::cell_to_nodes (unsigned int cell, 
+			      unsigned int * begin, unsigned int * end) 
+    {
+      Entity_ID_List cnodes;
+
+      cell_get_nodes ((Entity_ID)cell, &cnodes);
+
+      assert (cnodes.size() <= (unsigned int) (end-begin));
+      std::copy (cnodes.begin(), cnodes.end(), begin);
+    };
+      
+
+
+
+    void Mesh::face_to_nodes (unsigned int face, 
+			      std::vector<unsigned int>::iterator begin, 
+			      std::vector<unsigned int>::iterator end) 
+    {
+      face_to_nodes(face, &(*begin), &(*end));
+    };
+    void Mesh::face_to_nodes (unsigned int face, 
+			      unsigned int * begin, unsigned int * end) 
+    {
+      Entity_ID_List fnodes;
+
+      face_get_nodes ((Entity_ID)face, &fnodes);
+
+      assert (fnodes.size() <= (unsigned int) (end-begin));
+      std::copy (fnodes.begin(), fnodes.end(), begin);
+    };
+
+
+
+    void Mesh::node_to_coordinates (unsigned int node, 
+				    std::vector<double>::iterator begin, 
+				    std::vector<double>::iterator end) 
+    {
+      node_to_coordinates (node, &(*begin), &(*end));
+    };
+    void Mesh::node_to_coordinates (unsigned int node, 
+				    double * begin, 
+				    double * end) 
+    {
+      Point xyz;
+      
+      node_get_coordinates ((Entity_ID)node, &xyz);
+      
+      assert (xyz.dim() == (end-begin));
+      for (int i = 0; i < xyz.dim(); i++) begin[i] = xyz[i];
+    };
+
+    void Mesh::face_to_coordinates (unsigned int face, 
+				    std::vector<double>::iterator begin, 
+				    std::vector<double>::iterator end)
+    {
+      face_to_coordinates (face, &(*begin), &(*end));
+    };
+    void Mesh::face_to_coordinates (unsigned int face, 
+				    double * begin, 
+				    double * end)
+    {
+      vector<Point> fxyz;
+
+      face_get_coordinates ((Entity_ID)face, &fxyz);
+      
+      int dim = fxyz[0].dim();
+      int nfn = fxyz.size();
+      assert ((nfn*dim) <= (end-begin));
+    
+      for (int i = 0; i < nfn; i++)
+	for (int j = 0; j < dim; j++)
+	  begin[i*dim+j] = fxyz[i][j];
+    };
+    
+    void Mesh::cell_to_coordinates (unsigned int cell, 
+				    std::vector<double>::iterator begin,
+				    std::vector<double>::iterator end) 
+    {
+      cell_to_coordinates (cell, &(*begin), &(*end));
+    };
+    void Mesh::cell_to_coordinates (unsigned int cell, 
+				    double * begin,
+				    double * end) 
+    {
+      vector<Point> cxyz;
+      
+      cell_get_coordinates ((Entity_ID)cell, &cxyz);
+      
+      int dim = cxyz[0].dim();
+      int ncn = cxyz.size();
+      assert ((ncn*dim) <= (end-begin));
+    
+      for (int i = 0; i < ncn; i++)
+	for (int j = 0; j < dim; j++)
+	  begin[i*dim+j] = cxyz[i][j];
+    };
+    
+    
+    unsigned int Mesh::count_entities (Entity_kind kind,
+				 Parallel_type ptype) const 
+    {
+      return num_entities(kind, ptype);
+    };
+
+
+    // Unchanged in new interface
+    // unsigned int num_sets(Entity_kind kind) const {};
+      
+    // Unchanged in new interface
+    // unsigned int get_set_size (unsigned int set_id, 
+    //			       Entity_kind kind,
+    //			       Parallel_type ptype) const {};
+
+    // Id numbers
+    void Mesh::get_set_ids (Entity_kind kind, 
+			    std::vector<unsigned int>::iterator begin, 
+			    std::vector<unsigned int>::iterator end)
+    {
+      get_set_ids (kind, &(*begin), &(*end));
+    };
+    void Mesh::get_set_ids (Entity_kind kind, 
+			    unsigned int * begin, 
+			    unsigned int * end)
+    {
+      Set_ID_List setids;
+
+      get_set_ids (kind, &setids);
+
+      assert (setids.size() <= (end-begin));
+      std::copy (setids.begin(), setids.end(), begin);
+    };
+
+    // Unchanged in new interface
+    // bool valid_set_id (unsigned int id, Entity_kind kind) const {};
+      
+
+    void Mesh::get_set (unsigned int set_id, Entity_kind kind, 
+			Parallel_type ptype, 
+			std::vector<unsigned int>::iterator begin, 
+			std::vector<unsigned int>::iterator end)
+    {
+      get_set (set_id, kind, ptype, &(*begin), &(*end));
+    };
+    void Mesh::get_set (unsigned int set_id, Entity_kind kind, 
+			Parallel_type ptype, 
+			unsigned int * begin, 
+			unsigned int * end)
+    {
+      Entity_ID_List setents;
+
+      get_set_entities ((Set_ID)set_id, kind, ptype, &setents);
+
+      assert (setents.size() <= (end-begin));
+      std::copy (setents.begin(), setents.end(), begin);
+    };
     
   } // end namespace AmanziMesh
 

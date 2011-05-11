@@ -365,6 +365,112 @@ namespace Amanzi
       // modify coordinates  
       // virtual void set_coordinate(Entity_ID local_node_id, double *coords) {};
 
+
+
+
+      // Temporary routines for backward compatibility
+
+
+      void cell_to_faces (unsigned int cell, 
+			  std::vector<unsigned int>::iterator begin, 
+			  std::vector<unsigned int>::iterator end);
+
+      void cell_to_faces (unsigned int cell, 
+			  unsigned int* begin, unsigned int *end);
+
+
+      void cell_to_face_dirs (unsigned int cell, 
+			      std::vector<int>::iterator begin, 
+			      std::vector<int>::iterator end);
+      void cell_to_face_dirs (unsigned int cell, 
+			      int * begin, int * end);
+  
+    
+
+      void cell_to_nodes (unsigned int cell, 
+			  std::vector<unsigned int>::iterator begin, 
+			  std::vector<unsigned int>::iterator end);
+      void cell_to_nodes (unsigned int cell, 
+			  unsigned int * begin, unsigned int * end);
+      
+
+
+
+      void face_to_nodes (unsigned int face, 
+			  std::vector<unsigned int>::iterator begin, 
+			  std::vector<unsigned int>::iterator end);
+      void face_to_nodes (unsigned int face, 
+			  unsigned int * begin, unsigned int * end);
+
+
+
+      void node_to_coordinates (unsigned int node, 
+				std::vector<double>::iterator begin, 
+				std::vector<double>::iterator end);
+      void node_to_coordinates (unsigned int node, 
+				double * begin, 
+				double * end);
+
+      void face_to_coordinates (unsigned int face, 
+				std::vector<double>::iterator begin, 
+				std::vector<double>::iterator end);
+      void face_to_coordinates (unsigned int face, 
+				double * begin, 
+				double * end);
+      
+      void cell_to_coordinates (unsigned int cell, 
+				std::vector<double>::iterator begin,
+				std::vector<double>::iterator end);
+      void cell_to_coordinates (unsigned int cell, 
+				double * begin,
+				double * end);
+      
+      inline const Epetra_Map& cell_map (bool include_ghost) const 
+      {
+	return cell_epetra_map (include_ghost);
+      };
+      
+      inline const Epetra_Map& face_map (bool include_ghost) const 
+      {
+	return face_epetra_map (include_ghost);
+      }; 
+      
+      inline const Epetra_Map& node_map (bool include_ghost) const 
+      {
+	return node_epetra_map (include_ghost);
+      };
+  
+      unsigned int count_entities (Entity_kind kind,
+				   Parallel_type ptype) const;
+
+      // Unchanged in new interface
+      // unsigned int num_sets(Entity_kind kind) const {};
+      
+      // Unchanged in new interface
+      // unsigned int get_set_size (unsigned int set_id, 
+      //			 Entity_kind kind,
+      //			 Parallel_type ptype) const {};
+
+      // Id numbers
+      void get_set_ids (Entity_kind kind, 
+			std::vector<unsigned int>::iterator begin, 
+			std::vector<unsigned int>::iterator end);
+      void get_set_ids (Entity_kind kind, 
+			unsigned int * begin, 
+			unsigned int * end);
+
+      // Unchanged in new interface
+      // bool valid_set_id (unsigned int id, Entity_kind kind) const {};
+      
+      void get_set (unsigned int set_id, Entity_kind kind, 
+		    Parallel_type ptype, 
+		    std::vector<unsigned int>::iterator begin, 
+		    std::vector<unsigned int>::iterator end);
+      void get_set (unsigned int set_id, Entity_kind kind, 
+		    Parallel_type ptype, 
+		    unsigned int * begin, 
+		    unsigned int * end);
+
     private:
 
       unsigned int celldim, spacedim;
@@ -381,5 +487,8 @@ namespace Amanzi
   } // end namespace AmanziMesh
 
 } // end namespace Amanzi
+
+
+ 
 
 #endif /* _AMANZI_MESH_H_ */
