@@ -20,7 +20,7 @@ namespace Amanzi
       ncells = num_entities(CELL,USED);
     
       if (celldim == 3) {
-	Point centroid(3), normal(3);
+	Point centroid(spacedim), normal(spacedim);
 	std::vector<Point> ccoords;
 
 	for (int i = 0; i < ncells; i++) {
@@ -51,7 +51,7 @@ namespace Amanzi
 	    for (int j = 0; j < nf; j++) {
 
 	      face_get_coordinates(faces[j],&fcoords);
-	      nfnodes[j] = fcoords.size();
+	      nfnodes.push_back(fcoords.size());
 
 	      if (fdirs[j] == 1) {
 		for (int k = 0; k < nfnodes[j]; k++)
