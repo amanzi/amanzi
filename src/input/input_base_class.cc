@@ -40,6 +40,31 @@ std::string InputBaseClass::getXmlString() const
   return ostream.str();
 } 
 
+void InputBaseClass::setValidIntParameter(std::string const &keyword,
+                                          int value,
+                                          std::string const &doc_string)
+{
+   Teuchos::RCP<Teuchos::ParameterList> plist = getMyNonconstParamList();
+
+   Teuchos::setIntParameter(keyword,
+                            value,
+                            doc_string,
+                            &*plist);
+}
+
+void InputBaseClass::setValidDoubleParameter(std::string const &keyword,
+                                             double value,
+                                             std::string const &doc_string)
+{
+   Teuchos::RCP<Teuchos::ParameterList> plist = getMyNonconstParamList();
+
+   Teuchos::setDoubleParameter(keyword,
+                               value,
+                               doc_string,
+                               &*plist);
+}
+   
+
 
 
 

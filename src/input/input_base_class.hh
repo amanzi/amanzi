@@ -33,6 +33,21 @@ class InputBaseClass : public Teuchos::ParameterListAcceptorDefaultBase
 
     /* Return input information as an XML string */
     std::string getXmlString() const;
+
+  protected:
+    /*
+    *  Methods to set parameters with validators
+    *  Made these methods protected because they alter the
+    *  private Parameter List
+    */
+    void setValidIntParameter(std::string const & keyword, 
+                              int value,
+                              std::string const & doc_string);
+
+    void setValidDoubleParameter(std::string const & keyword, 
+                                 double value,
+                                 std::string const & doc_string);
+
      
 
   
