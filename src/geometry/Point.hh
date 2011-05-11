@@ -20,6 +20,7 @@ namespace Amanzi
 
     public:
       Point()                                                    { d = 0; xyz = NULL; }
+      Point(const Point& p)                                      { init(p.d); for( int i=0; i<d; i++) xyz[i] = p.xyz[i]; }
       Point( const int N )                                       { init(N); }
       Point( const double& x, const double& y )                  { init(2); xyz[0] = x; xyz[1] = y;  }
       Point( const double& x, const double& y, const double& z ) { init(3); xyz[0] = x; xyz[1] = y; xyz[2] = z; }
@@ -27,7 +28,17 @@ namespace Amanzi
       ~Point() { if ( xyz != NULL ) delete [] xyz; }
 
       /* initialization */
-      void init( const int N ) { d = N;  xyz = new double[d]; for( int i=0; i<d; i++) xyz[i] = 0.0; }
+      void init( const int N ) {
+	if (!xyz) 
+	  xyz = new double[N]; 
+	else if (d < N) { // If it was reinitialized to be a higher dim point
+	  delete [] xyz;
+	  xyz = new double[N];
+	}
+	d = N;
+	for( int i=0; i<d; i++) xyz[i] = 0.0;
+      }
+
 
       void set( const double& val ) { for( int i=0; i<d; i++ ) xyz[i] = val;  }
       void set( const Point& p )    { for( int i=0; i<d; i++ ) xyz[i] = p[i]; }
@@ -52,8 +63,8 @@ namespace Amanzi
 
       Point& operator+=( const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] += p[i]; return *this; }
       Point& operator-=( const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] -= p[i]; return *this; }
-      Point& operator*=( const double& d ) { for( int i=0; i<d; i++ ) xyz[i] *= d;    return *this; }
-      Point& operator/=( const double& d ) { for( int i=0; i<d; i++ ) xyz[i] /= d;    return *this; }
+      Point& operator*=( const double& c ) { for( int i=0; i<d; i++ ) xyz[i] *= c;    return *this; }
+      Point& operator/=( const double& c ) { for( int i=0; i<d; i++ ) xyz[i] /= c;    return *this; }
 
       friend Point  operator*( const double& r, const Point& p )  { return (p.d==2) ? Point( r*p[0], r*p[1] ) : Point( r*p[0], r*p[1], r*p[2] ); }
       friend Point  operator*( const Point& p,  const double& r ) { return r*p; }
