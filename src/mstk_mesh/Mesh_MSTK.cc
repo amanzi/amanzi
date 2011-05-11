@@ -1019,10 +1019,14 @@ void Mesh_MSTK::node_get_coordinates (const Entity_ID nodeid, Point *ncoords)
 
   MV_Coords(vtx,coords);
 
-  if (space_dimension() == 3) 
+  if (space_dimension() == 3) {
+    ncoords->init(3);
     ncoords->set(coords[0],coords[1],coords[2]);
-  else if (space_dimension() == 2)
+  }
+  else if (space_dimension() == 2) {
+    ncoords->init(2);
     ncoords->set(coords[0],coords[1]);
+  }
 
 } // Mesh_MSTK::node_get_coordinates
 
@@ -1039,6 +1043,7 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Point>
   double coords[3];
   int nn, result;
   int spdim = space_dimension(), celldim = cell_dimension();
+  Point xyz(spdim);
 
   assert(ccoords != NULL);
 
@@ -1054,23 +1059,19 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Point>
     for (int i = 0; i < nn; i++) {
       MV_Coords(List_Entry(rverts,i),coords);
 
-      Point xyz(spdim);
       xyz.set(coords[0],coords[1],coords[2]);
-
       ccoords->push_back(xyz);
     }    
 
     List_Delete(rverts);
   }
   else if (celldim == 2) {
-
     List_ptr fverts = MF_Vertices(cell,1,0);
     nn = List_Num_Entries(fverts);
 
     for (int i = 0; i < nn; i++) {
       MV_Coords(List_Entry(fverts,i),coords);
 
-      Point xyz(spdim);
       if (spdim == 2)
 	xyz.set(coords[0],coords[1]);
       else
@@ -1092,13 +1093,15 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
 {
   double coords[3];
   int nn;
+  int spdim = space_dimension(), celldim = cell_dimension();
 
   assert(fcoords != NULL);
 
   fcoords->clear();
 
-  if (space_dimension() == 3) {
-    if (cell_dimension() == 3) {
+  if (spdim == 3) {
+    Point xyz(3);
+    if (celldim == 3) {
       MFace_ptr face = face_id_to_handle[faceid];
       List_ptr fverts = MF_Vertices(face,1,0);
 
@@ -1108,9 +1111,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
 	for (int i = nn-1; i >=0; i--) {
 	  MV_Coords(List_Entry(fverts,i),coords);
 
-	  Point xyz(3);
 	  xyz.set(coords[0],coords[1],coords[2]);
-
 	  fcoords->push_back(xyz);
 	}
       }
@@ -1118,9 +1119,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
 	for (int i = 0; i < nn; i++) {
 	  MV_Coords(List_Entry(fverts,i),coords);
 
-	  Point xyz(3);
 	  xyz.set(coords[0],coords[1],coords[2]);
-
 	  fcoords->push_back(xyz);
 	}	  
       }
@@ -1137,8 +1136,6 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
 	ev[0] = ME_Vertex(edge,1);
       }
 
-      Point xyz(3);
-
       MV_Coords(ev[0],coords);
       xyz.set(coords[0],coords[1],coords[2]);
       fcoords->push_back(xyz);
@@ -1149,6 +1146,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
     }
   }
   else {  // 2D Mesh
+    Point xyz(2);
     MEdge_ptr edge;
     MVertex_ptr ev[2];
 
@@ -1162,8 +1160,6 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
       ev[0] = ME_Vertex(edge,1);
     }
 
-    Point xyz(2);
-      
     MV_Coords(ev[0],coords);
     xyz.set(coords[0],coords[1]);
     fcoords->push_back(xyz);
