@@ -538,9 +538,10 @@ int MeshAudit::check_cell_to_faces() const
 	  break;
 	}
 
+	fnode_ref.clear();
 	for (int i = 0; i < nfn; ++i) {
 	  int nodenum = fnodes_std[ctype][k][i];
-	  fnode_ref[i] = cnode[nodenum];
+	  fnode_ref.push_back(cnode[nodenum]);
 	}
 
 	int dir = same_face(fnode, fnode_ref); // should be the same face
@@ -725,7 +726,7 @@ int MeshAudit::check_cell_geometry() const
   double hvol;
   Entity_ID_List bad_cells;
 
-  for (unsigned int j = 0; j < ncell; ++j) {
+  for (Entity_ID j = 0; j < ncell; ++j) {
     hvol = mesh->cell_volume(j);
       
     if (hvol <= 0.0) bad_cells.push_back(j);
