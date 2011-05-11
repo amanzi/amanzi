@@ -20,8 +20,8 @@ static const char* SCCS_ID = "$Id$ Battelle PNL";
 #include "MeshException.hh"
 #include "FrameworkTraits.hh"
 
-
-namespace Mesh {
+namespace Amanzi {
+namespace AmanziMesh {
   // -------------------------------------------------------------
   // framework_name
   // -------------------------------------------------------------
@@ -93,4 +93,5 @@ namespace Mesh {
   }
       
 
-} // namespace Mesh
+} // namespace AmanziMesh
+} // namespace Amanzi

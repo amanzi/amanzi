@@ -26,9 +26,10 @@
 
 #include "MeshException.hh"
 #include "MeshFramework.hh"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
-namespace Mesh {
+namespace Amanzi {
+namespace AmanziMesh {
 
   // -------------------------------------------------------------
   //  class MeshFactory
@@ -63,25 +64,25 @@ namespace Mesh {
     void preference(const FrameworkPreference& pref);
 
     /// Create a mesh by reading the specified file (or set of files)
-    Teuchos::RCP<Mesh_maps_base> create(const std::string& filename);
+    Teuchos::RCP<Mesh> create(const std::string& filename);
 
 
     /// Create a hexahedral mesh of the specified dimensions
-    Teuchos::RCP<Mesh_maps_base> create(double x0, double y0, double z0,
+    Teuchos::RCP<Mesh> create(double x0, double y0, double z0,
                                         double x1, double y1, double z1,
                                         int nx, int ny, int nz);
     
     /// Create a hexahedral mesh using the specified parameter list
-    Teuchos::RCP<Mesh_maps_base> create(Teuchos::ParameterList &parameter_list);
+    Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list);
 
     /// Create a mesh by reading the specified file (or set of files) -- operator
-    Teuchos::RCP<Mesh_maps_base> operator() (const std::string& filename)
+    Teuchos::RCP<Mesh> operator() (const std::string& filename)
     {
       return create(filename);
     }
   
     /// Create a hexahedral mesh of the specified dimensions -- operator
-    Teuchos::RCP<Mesh_maps_base> operator() (double x0, double y0, double z0,
+    Teuchos::RCP<Mesh> operator() (double x0, double y0, double z0,
                                              double x1, double y1, double z1,
                                              int nx, int ny, int nz)
     { 
@@ -90,6 +91,7 @@ namespace Mesh {
 
   };
 
-} // namespace Mesh
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif

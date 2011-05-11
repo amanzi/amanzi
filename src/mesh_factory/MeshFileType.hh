@@ -18,7 +18,8 @@
 
 #include <Epetra_Comm.h>
 
-namespace Mesh {
+namespace Amanzi {
+namespace AmanziMesh {
 
   /// Identifers for those file formats understood
   enum Format { 
@@ -40,7 +41,7 @@ namespace Mesh {
     return file_format(comm, name.c_str());
   }
 
-} // namespace Mesh
-
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif

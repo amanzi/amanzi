@@ -26,7 +26,8 @@ namespace bfs = boost::filesystem;
 #include "MeshFileType.hh"
 #include "MeshException.hh"
 
-namespace Mesh {
+namespace Amanzi {
+namespace AmanziMesh {
 
   static const std::string HDF5magic = "\211HDF\r\n\032\n";
   static const std::string NetCDFmagic = "CDF\002";
@@ -160,4 +161,5 @@ namespace Mesh {
     return result;
   }
 
-} // namespace Mesh
+} // close namespace AmanziMesh
+} // close namespace Amanzi

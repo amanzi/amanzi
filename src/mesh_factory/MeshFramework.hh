@@ -27,7 +27,8 @@
 #include <string>
 #include <vector>
 
-namespace Mesh {
+namespace Amanzi {
+namespace AmanziMesh {
 
   /// A type to identify available mesh frameworks
   enum Framework {
@@ -49,6 +50,7 @@ namespace Mesh {
   /// Modify framework preferences to get those available
   extern FrameworkPreference available_preference(const FrameworkPreference& p);
 
-}
+} // close namespace AmanziMesh
+} // close namespace Amanzi
 
 #endif

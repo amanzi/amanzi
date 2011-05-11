@@ -24,7 +24,8 @@
 #include "errors.hh"
 #include "MeshFramework.hh"
 
-namespace Mesh {
+namespace Amanzi {
+namespace AmanziMesh {
 
   /// A special exception type for MeshFactory errors
   class Message : public Errors::Message {
@@ -72,6 +73,7 @@ namespace Mesh {
     ~FileMessage(void) throw() {};
   };    
     
-} // namespace Mesh
+} // namespace AmanziMesh
+} // namespace Amanzi
 
 #endif

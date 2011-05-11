@@ -42,7 +42,7 @@ namespace mpl = boost::mpl;
 #include "MeshFramework.hh"
 #include "MeshFileType.hh"
 #include "MeshException.hh"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 // -------------------------------------------------------------
 //  class bogus_maps
@@ -53,23 +53,26 @@ namespace mpl = boost::mpl;
  * 
  */
 
-class bogus_maps : public Mesh_maps_base {
+using namespace Amanzi;
+using namespace AmanziMesh;
+
+class bogus_maps : public Mesh {
 public:
 
   /// Default constructor.
   bogus_maps(const char *filename, MPI_Comm comm) 
-    : Mesh_maps_base() 
+    : Mesh() 
   {
-    amanzi_throw(Mesh::Message("reading not supported"));
+    amanzi_throw(Message("reading not supported"));
   }
 
   bogus_maps(double x0, double y0, double z0,
              double x1, double y1, double z1,
              int nx, int ny, int nz, 
              Epetra_MpiComm *communicator)
-    : Mesh_maps_base() 
+    : Amanzi::AmanziMesh::Mesh() 
   {
-    amanzi_throw(Mesh::Message("generation not supported"));
+    amanzi_throw(Message("generation not supported"));
   }
 
 };
@@ -98,18 +101,18 @@ typedef bogus_maps Mesh_maps_stk;
 
 #ifdef HAVE_MSTK_MESH
 #define MSTK_FLAG true
-#include "Mesh_maps_mstk.hh"
+#include "Mesh_MSTK.hh"
 #else
 #define MSTK_FLAG false
-typedef bogus_maps Mesh_maps_mstk;
+typedef bogus_maps Mesh_MSTK;
 #endif
 
 
 #include "Mesh_maps_simple.hh"
 
-namespace Mesh {
 
-
+namespace Amanzi {
+  namespace AmanziMesh {
 
 // template <int N>
 // struct foo
@@ -184,7 +187,7 @@ namespace Mesh {
           , mpl::identity<Mesh_maps_stk>
           , mpl::eval_if<
               mpl::bool_<M == MSTK>
-              , mpl::identity<Mesh_maps_mstk>
+              , mpl::identity<Mesh_MSTK>
               , mpl::identity<bogus_maps>
               >
           >
@@ -233,10 +236,10 @@ namespace Mesh {
 
 
     /// Construct a mesh from a Exodus II file or file set
-    static Teuchos::RCP<Mesh_maps_base>
+    static Teuchos::RCP<Mesh>
     read(Epetra_MpiComm& comm, const std::string& fname)
     {
-      Teuchos::RCP<Mesh_maps_base> 
+      Teuchos::RCP<Mesh> 
         result(new typename read_maps::type(fname.c_str(), comm.Comm()));
       return result;
     }
@@ -252,13 +255,13 @@ namespace Mesh {
     };
 
     /// Generate a hex mesh 
-    static Teuchos::RCP<Mesh_maps_base>
+    static Teuchos::RCP<Mesh>
     generate(const double& x0, const double& y0, const double& z0,
          const double& x1, const double& y1, const double& z1,
          const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
          Epetra_MpiComm& comm)
     {
-      Teuchos::RCP<Mesh_maps_base> 
+      Teuchos::RCP<Mesh> 
         result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm));
       return result;
     }
@@ -367,10 +370,10 @@ namespace Mesh {
   // -------------------------------------------------------------
   // framework_read
   // -------------------------------------------------------------
-  Teuchos::RCP<Mesh_maps_base> 
+  Teuchos::RCP<Mesh> 
   framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fname)
   {
-    Teuchos::RCP<Mesh_maps_base> result;
+    Teuchos::RCP<Mesh> result;
     switch (f) {
     case Simple:
       result = FrameworkTraits<Simple>::read(comm, fname);
@@ -427,13 +430,13 @@ namespace Mesh {
   // -------------------------------------------------------------
   // framework_generates
   // -------------------------------------------------------------
-  Teuchos::RCP<Mesh_maps_base> 
+  Teuchos::RCP<Mesh> 
   framework_generate(Epetra_MpiComm& comm, const Framework& f, 
                      const double& x0, const double& y0, const double& z0,
                      const double& x1, const double& y1, const double& z1,
                      const unsigned int& nx, const unsigned int& ny, const unsigned int& nz)
   {
-    Teuchos::RCP<Mesh_maps_base> result;
+    Teuchos::RCP<Mesh> result;
     switch (f) {
     case Simple:
       result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
@@ -458,5 +461,5 @@ namespace Mesh {
   }
 
 
-} // namespace Mesh
-
+} // namespace AmanziMesh
+} // namespace Amanzi

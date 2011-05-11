@@ -18,7 +18,9 @@ static const char* SCCS_ID = "$Id$ Battelle PNL";
 #include "MeshFactory.hh"
 #include "MeshFileType.hh"
 #include "FrameworkTraits.hh"
-namespace Mesh {
+
+namespace Amanzi{
+namespace AmanziMesh {
   
 
   // -------------------------------------------------------------
@@ -57,7 +59,7 @@ namespace Mesh {
     my_preference.clear();
     my_preference = available_preference(pref);
     if (my_preference.empty()) {
-      Mesh::Message e("specified framework(s) not available: ");
+      Message e("specified framework(s) not available: ");
       for (FrameworkPreference::const_iterator i = pref.begin(); 
            i != pref.end(); i++) {
         e.add_data(framework_name(*i).c_str());
@@ -79,31 +81,31 @@ namespace Mesh {
    * 
    * @return mesh instance
    */
-  Teuchos::RCP<Mesh_maps_base> 
+  Teuchos::RCP<Mesh> 
   MeshFactory::create(const std::string& filename)
   {
     // check the file format
     Format fmt = file_format(my_comm, filename);
 
     if (fmt == UnknownFormat) {
-      Mesh::FileMessage 
+      FileMessage 
         e(boost::str(boost::format("%s: unknown file format") %
                      filename).c_str());
       amanzi_throw(e);
     }
       
-    Mesh::Message e("MeshFactory::create: error: ");
+    Message e("MeshFactory::create: error: ");
     int ierr[1];
     ierr[0] = 0;
 
-    Teuchos::RCP<Mesh_maps_base> result;
+    Teuchos::RCP<Mesh> result;
     for (FrameworkPreference::const_iterator i = my_preference.begin(); 
          i != my_preference.end(); i++) {
       if (framework_reads(*i, fmt, my_comm.NumProc() > 1)) {
         try {
           result = framework_read(my_comm, *i, filename);
           return result;
-        } catch (const Mesh::Message& msg) {
+        } catch (const Message& msg) {
           ierr[0] += 1;
           e.add_data(msg.what());
         } catch (const std::exception& stde) {
@@ -140,13 +142,13 @@ namespace Mesh {
    * 
    * @return mesh instance
    */
-  Teuchos::RCP<Mesh_maps_base> 
+  Teuchos::RCP<Mesh> 
   MeshFactory::create(double x0, double y0, double z0,
                       double x1, double y1, double z1,
                       int nx, int ny, int nz)
   {
-    Teuchos::RCP<Mesh_maps_base> result;
-    Mesh::Message e("MeshFactory::create: error: ");
+    Teuchos::RCP<Mesh> result;
+    Message e("MeshFactory::create: error: ");
     int ierr[1];
     ierr[0] = 0;
     if (nx <= 0 || ny <= 0 || nz <= 0) {
@@ -173,7 +175,7 @@ namespace Mesh {
                                       x0, y0, z0, x1, y1, z1, 
                                       nx, ny, nz);
           return result;
-        } catch (const Mesh::Message& msg) {
+        } catch (const Message& msg) {
           ierr[0] += 1;
           e.add_data(msg.what());
         } catch (const std::exception& stde) {
@@ -197,7 +199,7 @@ namespace Mesh {
    * 
    * @return 
    */
-  Teuchos::RCP<Mesh_maps_base> 
+  Teuchos::RCP<Mesh> 
   MeshFactory::create(Teuchos::ParameterList &parameter_list)
   {
     double x0, y0, z0, x1, y1, z1;
@@ -225,4 +227,5 @@ namespace Mesh {
     return create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
   }
 
-} // namespace Mesh
+} // namespace AmanziMesh
+} // namespace Amanzi
