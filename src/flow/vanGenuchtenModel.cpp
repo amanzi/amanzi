@@ -1,11 +1,13 @@
 #include "vanGenuchtenModel.hpp"
 #include "math.h"
 
-vanGenuchtenModel::vanGenuchtenModel(double m_, double alpha_, 
+vanGenuchtenModel::vanGenuchtenModel(int meshblock_, double m_, double alpha_, 
 				     double sr_, double p_atm_) :
   m(m_), alpha(alpha_), sr(sr_), p_atm(p_atm_)
 {
   n = 1.0/(1.0-m);
+
+  set_mesh_block(meshblock_);
 }
 
  

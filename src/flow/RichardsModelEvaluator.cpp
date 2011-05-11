@@ -71,7 +71,7 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   
   dS.Multiply(0.0,dS,phi,rho);
   
-  dS.PutScalar(1.0);
+  // dS.PutScalar(1.0);
 
   dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
 

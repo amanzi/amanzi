@@ -68,12 +68,12 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList state_plist;
   state_plist.set<int>("Number of mesh blocks",1);
   state_plist.set<int>("Number of component concentrations",1);
-  state_plist.set<double>("Constant water density",1.0);
+  state_plist.set<double>("Constant water density",1000.0);
   state_plist.set<double>("Constant water saturation",1.0);
   state_plist.set<double>("Constant viscosity",1.0);
   state_plist.set<double>("Gravity x",0.0);
   state_plist.set<double>("Gravity y",0.0);
-  state_plist.set<double>("Gravity z",0.0);
+  state_plist.set<double>("Gravity z",-9.8);
   
   Teuchos::ParameterList& mb1_plist = state_plist.sublist("Mesh block 1");
   mb1_plist.set<int>("Mesh block ID",0);
@@ -89,13 +89,18 @@ int main(int argc, char *argv[])
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
 
   
-  // PROBLEM
-  Teuchos::ParameterList pl;
-  pl.set("van Genuchten m",0.5);
-  pl.set("van Genuchten alpha",0.00005);
-  pl.set("van Genuchten residual saturation",0.40969);
-  pl.set("atmospheric pressure", 0.0);
-  RichardsProblem problem(mesh, pl, bc);
+  // Water Retention Model (here we use van Genuchten)
+  Teuchos::ParameterList vGl;
+  vGl.set<int>("Number of mesh blocks", 1);
+  Teuchos::ParameterList& mb1_vGl = vGl.sublist("WRM 0");
+  mb1_vGl.set<string>("Water Retention Model","van Genuchten");
+  mb1_vGl.set<int>("Mesh Block ID", 0);
+  mb1_vGl.set<double>("van Genuchten m",0.5);
+  mb1_vGl.set<double>("van Genuchten alpha",0.00005);
+  mb1_vGl.set<double>("van Genuchten residual saturation",0.40969);
+  mb1_vGl.set<double>("atmospheric pressure", 0.0);
+
+  RichardsProblem problem(mesh, vGl, bc);
 
   // MODEL PARAMETERS
   problem.SetFluidDensity(FS->fluid_density());
