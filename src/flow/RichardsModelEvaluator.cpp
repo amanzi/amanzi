@@ -13,8 +13,10 @@
 
 RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem, 
 					       Teuchos::ParameterList &plist, 
-					       const Epetra_Map &map) 
-  : problem_(problem), D(problem->Matrix()),  map_(map), plist_(plist)
+					       const Epetra_Map &map,
+					       Teuchos::RCP<const Flow_State> FS) 
+  : problem_(problem), D(problem->Matrix()),  map_(map), plist_(plist),
+    FS_(FS)
 {
   this->setLinePrefix("RichardsModelEvaluator");
   this->getOStream()->setShowLinePrefix(true);
@@ -61,8 +63,19 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   // compute S'(p)
   Epetra_Vector dS (problem_->CellMap());
   problem_->dSofP(*uc, dS);
+  const Epetra_Vector& phi = FS_->porosity();
+  double rho;
+  problem_->GetFluidDensity(rho);
+
+  // assume that porosity is piecewise constant
   
-  // on the cell unknowns compute f=f+dS*udotc
+  dS.Multiply(0.0,dS,phi,rho);
+  
+  // dS.PutScalar(1.0);
+
+  dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
+
+  // on the cell unknowns compute f=f+dS*udotc*rho*phi
   fc->Multiply(1.0,dS,*udotc,1.0);
   
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
@@ -129,7 +142,7 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   double rtol = 0.0;
 
   double en = 0.0;
-  for (int j=0; j<u_cell->MyLength(); j++)
+  for (int j=0; j<u.MyLength(); j++)
     {
       double tmp = abs(du[j])/(atol+rtol*abs(u[j]));
       en = std::max<double>(en, tmp);
