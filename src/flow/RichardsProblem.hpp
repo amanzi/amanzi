@@ -5,7 +5,7 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 #include "FlowBC.hpp"
 #include "DiffusionMatrix.hpp"
@@ -17,7 +17,7 @@ class RichardsProblem
 {
 public:
 
-  RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
+  RichardsProblem(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh,
 	       Teuchos::ParameterList&, const Teuchos::RCP<FlowBC> &bc);
   ~RichardsProblem();
 
@@ -68,7 +68,7 @@ public:
 
 private:
 
-  Teuchos::RCP<Mesh_maps_base> mesh_;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<FlowBC> bc_;
   Epetra_Map *dof_map_;
   Epetra_Import *face_importer_;
@@ -96,8 +96,8 @@ private:
 private:  // Auxillary functions
 
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
-  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<Mesh_maps_base>&, const Teuchos::RCP<FlowBC>&) const;
-  void init_mimetic_disc_(Mesh_maps_base&, std::vector<MimeticHexLocal>&) const;
+  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>&, const Teuchos::RCP<FlowBC>&) const;
+  void init_mimetic_disc_(Amanzi::AmanziMesh::Mesh&, std::vector<MimeticHexLocal>&) const;
   void apply_BC_initial_(Epetra_Vector&);
   void apply_BC_final_(Epetra_Vector&);
   void face_centroid_(int, double[]);

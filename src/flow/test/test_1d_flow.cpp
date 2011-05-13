@@ -13,7 +13,7 @@
 
 #include "DarcyProblem.hpp"
 #include "cell_geometry.hh"
-//#include "Mesh_maps_simple.hh"
+//#include "Mesh_simple.hh"
 
 
 #include <iostream>
@@ -21,8 +21,8 @@
 struct problem_setup
 {
   Epetra_Comm *comm;
-  //Teuchos::RCP<Mesh_maps_simple> mesh;
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  //Teuchos::RCP<Mesh_simple> mesh;
+  Teuchos::RCP<Mesh> mesh;
   Teuchos::ParameterList bc_params;
   DarcyProblem *problem;
   AztecOO *solver;
@@ -41,7 +41,7 @@ struct problem_setup
 #endif
 
     // Create the mesh.
-    //mesh = Teuchos::rcp(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
+    //mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
     if (comm->NumProc() == 1)
       mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab("test/4x4x4.g", MPI_COMM_WORLD));
     else {

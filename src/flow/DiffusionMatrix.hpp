@@ -7,12 +7,12 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 class DiffusionMatrix {
 public:
 
-  DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh, const std::vector<int> &dir_faces);
+  DiffusionMatrix(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh, const std::vector<int> &dir_faces);
 
   ~DiffusionMatrix();
 
@@ -30,7 +30,7 @@ public:
 
   // Accessors
 
-  const Mesh_maps_base& Mesh() const { return *mesh_; }
+  const Amanzi::AmanziMesh::Mesh& Mesh() const { return *mesh_; }
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
 
@@ -52,7 +52,7 @@ public:
 
 private:
 
-  Teuchos::RCP<Mesh_maps_base> mesh_;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
   Epetra_Vector *Dcc_;
   Epetra_CrsMatrix *Dcf_;
   Epetra_FECrsMatrix *Dff_;

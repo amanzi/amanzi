@@ -1,10 +1,13 @@
 #include "MimeticHex.hpp"
 #include "cell_geometry.hh"
 
-MimeticHex::MimeticHex(const Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
+using namespace Amanzi;
+using namespace AmanziMesh;
+
+MimeticHex::MimeticHex(const Teuchos::RCP<Mesh> &mesh) : mesh_(mesh)
 {
-  int ncell = mesh->count_entities(Mesh_data::CELL, USED);
-  int nface = mesh->count_entities(Mesh_data::FACE, USED);
+  int ncell = mesh->count_entities(CELL, USED);
+  int nface = mesh->count_entities(FACE, USED);
 
   { // Cell volumes
     volume_.Size(ncell);

@@ -3,7 +3,7 @@
 
 #include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 #include "State.hpp"
 
 class Flow_State {
@@ -22,7 +22,7 @@ public:
   ~Flow_State () {};
 
   // access methods
-  const Teuchos::RCP<Mesh_maps_base>& mesh() const { return mesh_maps_;};
+  const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh() const { return mesh_maps_;};
 
   double fluid_density () const { return *fluid_density_; }
 
@@ -40,7 +40,7 @@ private:
   const Teuchos::RCP<double> fluid_viscosity_;
   const Teuchos::RCP<double*> gravity_;
   const Teuchos::RCP<Epetra_Vector> permeability_;
-  const Teuchos::RCP<Mesh_maps_base> mesh_maps_;
+  const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_;
   const Teuchos::RCP<Epetra_Vector> pressure_;  // current cell pressure solution
 
 };

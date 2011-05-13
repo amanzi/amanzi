@@ -4,7 +4,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 class FlowBC {
 
@@ -26,7 +26,7 @@ public:
   };
 
 public:
-  FlowBC(Teuchos::ParameterList &params, const Teuchos::RCP<Mesh_maps_base> &mesh);
+  FlowBC(Teuchos::ParameterList &params, const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh);
   ~FlowBC() {}
 
   const int NumBC () const { return bc_.size(); }
@@ -37,7 +37,7 @@ public:
 
 private:
 
-  Teuchos::RCP<Mesh_maps_base> mesh_;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
 
   std::vector<bc_spec> bc_;
 

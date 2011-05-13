@@ -1,6 +1,9 @@
 #include "DiffusionPrecon.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+using namespace Amanzi;
+using namespace AmanziMesh;
+
 DiffusionPrecon::DiffusionPrecon(Teuchos::RCP<DiffusionMatrix> &matrix, 
 				 Teuchos::ParameterList &plist, const Epetra_Map &map)
     : D(matrix), map_(map)
@@ -35,7 +38,7 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
   // possibly the same object or different views of the same underlying data.
   // To cope with this possibility we do not assign to Y until the end.
 
-  const int ncell = D->Mesh().count_entities(Mesh_data::CELL, OWNED);
+  const int ncell = D->Mesh().count_entities(CELL, OWNED);
 
   const Epetra_Map &cell_map = D->Mesh().cell_map(false);
   const Epetra_Map &face_map = D->Mesh().face_map(false);

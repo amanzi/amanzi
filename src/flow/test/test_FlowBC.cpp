@@ -8,7 +8,7 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 #include "FlowBC.hpp"
 
 TEST(FlowBC) {
@@ -20,7 +20,7 @@ TEST(FlowBC) {
 #endif
 
   // Create a simple 2x2x2 brick mesh
-  Teuchos::RCP<Mesh_maps_base> mesh(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm));
+  Teuchos::RCP<Mesh> mesh(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm));
 
   // Read the flow BC parameters from an XML file.
   Teuchos::ParameterList flow_BCs_list;

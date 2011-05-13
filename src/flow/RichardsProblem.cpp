@@ -2,7 +2,10 @@
 
 #include "RichardsProblem.hpp"
 
-RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
+using namespace Amanzi;
+using namespace AmanziMesh;
+
+RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh> &mesh,
 			   Teuchos::ParameterList &list,
 			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
 {
@@ -49,7 +52,7 @@ RichardsProblem::~RichardsProblem()
 }
 
 
-DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuchos::RCP<FlowBC> &bc) const
+DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
 {
   // Generate the list of all Dirichlet-type faces.
   // The provided lists should include all used BC faces.
@@ -69,7 +72,7 @@ DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_ma
 }
 
 
-void RichardsProblem::init_mimetic_disc_(Mesh_maps_base &mesh, std::vector<MimeticHexLocal> &MD) const
+void RichardsProblem::init_mimetic_disc_(Mesh &mesh, std::vector<MimeticHexLocal> &MD) const
 {
   // Local storage for the 8 vertex coordinates of a hexahedral cell.
   double x[8][3];

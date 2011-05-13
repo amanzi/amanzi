@@ -2,7 +2,10 @@
 
 #include "float.h"
 
-FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh_maps_base> &mesh) : mesh_(mesh)
+using namespace Amanzi;
+using namespace AmanziMesh;
+
+FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh> &mesh) : mesh_(mesh)
 {
   int nbc = list.get<int>("number of BCs", INT_MAX);
 
@@ -29,11 +32,11 @@ FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh_maps_base> 
     // Get the Set ID and verify that it is valid.
     bc_[i].SetID = bc_param.get<int>("Side set ID", INT_MAX);
     if (bc_[i].SetID == INT_MAX) throw std::exception();
-    if (!mesh->valid_set_id(bc_[i].SetID, Mesh_data::FACE)) throw std::exception();
+    if (!mesh->valid_set_id(bc_[i].SetID, FACE)) throw std::exception();
 
     // Get the corresponding list of (local) face IDs.
-    bc_[i].Faces.resize(mesh->get_set_size(bc_[i].SetID, Mesh_data::FACE, USED));
-    mesh->get_set(bc_[i].SetID, Mesh_data::FACE, USED, bc_[i].Faces.begin(), bc_[i].Faces.end());
+    bc_[i].Faces.resize(mesh->get_set_size(bc_[i].SetID, FACE, USED));
+    mesh->get_set(bc_[i].SetID, FACE, USED, bc_[i].Faces.begin(), bc_[i].Faces.end());
 
     // Get the BC type and check it against the list of defined types.
     std::string type = bc_param.get<std::string>("Type", "NOT DEFINED");

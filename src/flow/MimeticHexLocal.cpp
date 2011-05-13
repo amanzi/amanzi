@@ -1,13 +1,15 @@
 #include <iostream>
 
 #include "cell_geometry.hh"
-#include "cell_topology.hh"
-using namespace cell_topology;
+#include "Cell_topology.hh"
 
 #include "MimeticHexLocal.hpp"
 
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialSpdDenseSolver.h"
+
+using namespace Amanzi;
+using namespace AmanziMesh;
 
 void MimeticHexLocal::update(const Epetra_SerialDenseMatrix &x)
 {

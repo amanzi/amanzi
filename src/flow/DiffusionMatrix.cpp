@@ -5,7 +5,10 @@
 
 #include <iostream>
 
-DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh,
+using namespace Amanzi;
+using namespace AmanziMesh;
+
+DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh,
                                  const std::vector<int> &dir_faces) : mesh_(mesh), dir_faces_(dir_faces)
 {
   const Epetra_Map& cell_map = CellMap(false); // owned cells
