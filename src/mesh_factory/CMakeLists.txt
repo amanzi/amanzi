@@ -32,8 +32,7 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-
+include_directories(${GEOMETRY_SOURCE_DIR})
 
 #
 # Library: mesh_factory
@@ -41,7 +40,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 
 set(mesh_factory_files MeshFileType.cc MeshFramework.cc MeshFactory.cc FrameworkTraits.cc) 
 add_library(mesh_factory ${mesh_factory_files})
-target_link_libraries(mesh_factory error_handling mesh_data simple_mesh)
+target_link_libraries(mesh_factory error_handling simple_mesh)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
@@ -58,7 +57,7 @@ endif()
 if (ENABLE_MSTK_Mesh)
     include_directories(${MSTK_INCLUDE_DIR} ${MSTK_SOURCE_DIR})
     target_link_libraries(mesh_factory mstk_mesh)
-    add_definitions("-DHAVE_MSTK_MESH")
+    add_definitions("-DHAVE_MSTK_MESH -DMSTK_HAVE_MPI")
 endif()
 
 if (BUILD_TESTS)
