@@ -57,8 +57,10 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension
       ok = 1;
     }
 
+    if (myprocid == 0) {
     int DebugWait=0;
     while (DebugWait);
+    }
     
     ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
@@ -2595,3 +2597,36 @@ void Mesh_MSTK::label_celltype() {
   }
 
 } /* Mesh_MSTK::label_celltypes */
+
+
+//
+// Epetra maps
+//------------
+    
+    
+inline 
+const Epetra_Map& Mesh_MSTK::cell_epetra_map (const bool include_ghost) const
+{
+  if (serial_run)
+    return *cell_map_wo_ghosts_;
+  else
+    return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
+}
+    
+inline 
+const Epetra_Map& Mesh_MSTK::face_epetra_map (const bool include_ghost) const
+{
+  if (serial_run)
+    return *face_map_wo_ghosts_;
+  else
+    return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
+}
+    
+inline 
+const Epetra_Map& Mesh_MSTK::node_epetra_map (const bool include_ghost) const
+{
+  if (serial_run)
+    return *node_map_wo_ghosts_;
+  else
+    return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
+}
