@@ -12,7 +12,7 @@ class MPC {
 
 public:
   MPC (Teuchos::ParameterList parameter_list_,
-       Teuchos::RCP<Mesh_maps_base> mesh_maps_);
+       Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_);
   ~MPC () {};
 
   void cycle_driver ();
@@ -35,7 +35,7 @@ private:
 
   // misc setup information
   Teuchos::ParameterList parameter_list;
-  Teuchos::RCP<Mesh_maps_base> mesh_maps;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps;
 
   // storage for the component concentration intermediate values
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;

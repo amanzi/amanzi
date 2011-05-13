@@ -4,8 +4,8 @@
 #include "UnitTest++.h"
 
 #include "Mesh_maps_moab.hh"
-#include "Mesh_maps_simple.hh"
-#include "Mesh_maps_base.hh"
+#include "Mesh_simple.hh"
+#include "Mesh.hh"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
@@ -20,7 +20,11 @@
 
 TEST(DRIVER) {
 
+
   using namespace std;
+
+  using namespace Amanzi;
+  using namespace AmanziMesh;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -41,7 +45,7 @@ TEST(DRIVER) {
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  Teuchos::RCP<Mesh> mesh;
   
   cout << mesh_class << endl;
 
@@ -50,8 +54,8 @@ TEST(DRIVER) {
       Teuchos::ParameterList simple_mesh_parameter_list = 
       	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      Teuchos::RCP<Mesh_maps_simple> MMS = 
-      	Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
+      Teuchos::RCP<Mesh_simple> MMS = 
+      	Teuchos::rcp(new Mesh_simple(simple_mesh_parameter_list, comm));
       
       mesh = MMS;
       

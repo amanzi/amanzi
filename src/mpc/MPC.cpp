@@ -25,8 +25,11 @@
 using namespace CGNS_PAR;
 #endif
 
+using namespace Amanzi;
+using namespace AmanziMesh;
+
 MPC::MPC(Teuchos::ParameterList parameter_list_,
-	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
+	 Teuchos::RCP<Mesh> mesh_maps_):
   parameter_list(parameter_list_),
   mesh_maps(mesh_maps_)
   
@@ -189,7 +192,7 @@ void MPC::cycle_driver () {
     RNK.PutScalar((double)rank);
 
     open_data_file(cgns_filename);
-    create_timestep(0.0, 0, Mesh_data::CELL);
+    create_timestep(0.0, 0, CELL);
     write_field_data(RNK,"PE");
 
 
@@ -423,8 +426,8 @@ void MPC::write_gmv_data(std::string gmv_datafile_path,
 {
   
   GMV::open_data_file(gmv_meshfile, gmv_datafile_path,
-		      mesh_maps->count_entities(Mesh_data::NODE, OWNED),
-		      mesh_maps->count_entities(Mesh_data::CELL, OWNED),
+		      mesh_maps->count_entities(NODE, OWNED),
+		      mesh_maps->count_entities(CELL, OWNED),
 		      iter, digits);
   GMV::write_time(S->get_time());
   GMV::write_cycle(iter);
@@ -454,7 +457,7 @@ void MPC::write_cgns_data(std::string filename, int iter)
 {
   open_data_file(filename);
   
-  create_timestep(S->get_time(), iter, Mesh_data::CELL);
+  create_timestep(S->get_time(), iter, CELL);
 
   for (int nc=0; nc<S->get_number_of_components(); nc++) {
     
