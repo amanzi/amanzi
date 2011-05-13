@@ -2,7 +2,7 @@
 #include "stdlib.h"
 #include "math.h"
 #include "UnitTest++.h"
-#include "../Mesh_maps_simple.hh"
+#include "../Mesh_simple.hh"
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
@@ -18,7 +18,7 @@ TEST(MAPS) {
 #endif
 
 
-  Mesh_maps_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
+  Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
 
   double xc[] = { 2.0, 2.0, 2.0 };
   Mm.set_coordinate(7,xc,xc+3);
