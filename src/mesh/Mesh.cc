@@ -407,7 +407,8 @@ namespace Amanzi
       assert (setents.size() <= (end-begin));
       std::copy (setents.begin(), setents.end(), begin);
     };
-    
+
+
   } // end namespace AmanziMesh
 
 }  // end namespace Amanzi  

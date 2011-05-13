@@ -294,13 +294,13 @@ namespace Amanzi
     
     
       virtual
-      inline const Epetra_Map& cell_epetra_map (const bool include_ghost) const = 0;
+      const Epetra_Map& cell_epetra_map (const bool include_ghost) const = 0;
     
       virtual
-      inline const Epetra_Map& face_epetra_map (const bool include_ghost) const = 0; 
+      const Epetra_Map& face_epetra_map (const bool include_ghost) const = 0; 
     
       virtual
-      inline const Epetra_Map& node_epetra_map (const bool include_ghost) const = 0;
+      const Epetra_Map& node_epetra_map (const bool include_ghost) const = 0;
     
     
     
@@ -360,16 +360,9 @@ namespace Amanzi
       inline
       void set_comm(MPI_Comm incomm) {comm = new Epetra_MpiComm(incomm);};
 
-      // this should be used with extreme caution: WHO USES THIS????
-      // IF IT IS ONLY SIMPLE MESH, THEN SIMPLE MESH SHOULD IMPLEMENT IT
-      // modify coordinates  
-      // virtual void set_coordinate(Entity_ID local_node_id, double *coords) {};
-
-
 
 
       // Temporary routines for backward compatibility
-
 
       void cell_to_faces (unsigned int cell, 
 			  std::vector<unsigned int>::iterator begin, 
@@ -425,20 +418,22 @@ namespace Amanzi
 				double * begin,
 				double * end);
       
-      inline const Epetra_Map& cell_map (bool include_ghost) const 
+
+      const Epetra_Map& cell_map (bool include_ghost) const 
       {
 	return cell_epetra_map (include_ghost);
       };
       
-      inline const Epetra_Map& face_map (bool include_ghost) const 
+      const Epetra_Map& face_map (bool include_ghost) const 
       {
 	return face_epetra_map (include_ghost);
       }; 
       
-      inline const Epetra_Map& node_map (bool include_ghost) const 
+      const Epetra_Map& node_map (bool include_ghost) const 
       {
 	return node_epetra_map (include_ghost);
       };
+
   
       unsigned int count_entities (Entity_kind kind,
 				   Parallel_type ptype) const;
