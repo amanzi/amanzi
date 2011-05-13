@@ -22,7 +22,7 @@ class Chemistry_State {
   Teuchos::RCP<const Epetra_Vector> get_water_saturation() const { return water_saturation_; };
   Teuchos::RCP<const Epetra_Vector> get_water_density() const { return water_density_; };
 
-  Teuchos::RCP<const Mesh_maps_base> get_mesh_maps() const { return mesh_maps_; };
+  Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps_; };
 
   Teuchos::RCP<const Epetra_SerialDenseVector> get_volume() const { return volume_; };
 
@@ -33,7 +33,7 @@ class Chemistry_State {
   Teuchos::RCP<const Epetra_Vector> water_saturation_;
   Teuchos::RCP<const Epetra_Vector> water_density_;
 
-  Teuchos::RCP<Mesh_maps_base> mesh_maps_;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_;
 
   // local variable
   Teuchos::RCP<Epetra_SerialDenseVector> volume_;
