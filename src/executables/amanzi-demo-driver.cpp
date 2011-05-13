@@ -11,10 +11,10 @@
 #include "Mesh_maps_stk.hh"
 #endif
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
@@ -31,6 +31,10 @@
 
 #include "State.hpp"
 #include "MPC.hpp"
+
+using namespace Amanzi;
+using namespace AmanziMesh;
+
 
 int main(int argc, char *argv[])
 {
@@ -87,14 +91,14 @@ int main(int argc, char *argv[])
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  Teuchos::RCP<Mesh> mesh;
   
   if (mesh_class == "Simple") 
     {
       Teuchos::ParameterList simple_mesh_parameter_list = 
       	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      mesh = Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
+      mesh = Teuchos::rcp(new Mesh_simple(simple_mesh_parameter_list, comm));
     } 
 #ifdef ENABLE_MOAB
   else if (mesh_class == "MOAB")  
