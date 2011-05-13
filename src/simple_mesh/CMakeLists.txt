@@ -12,14 +12,15 @@ include(PrintVariable)
 #
 # Define a project name
 # After this command the following varaibles are defined
-#   MESH_BASE_SOURCE_DIR
-#   MESH_BASE_BINARY_DIR
+#   MESH_SIMPLE_SOURCE_DIR
+#   MESH_SIMPLE_BINARY_DIR
 # Other projects (subdirectories) can reference this directory
 # through these variables.
-project(MESH_BASE)
+project(MESH_SIMPLE)
 
 # Amanzi include directories
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
