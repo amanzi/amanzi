@@ -34,7 +34,7 @@ add_library(cell_geometry cell_geometry.cc)
 #
 # Library: mesh_audit
 #
-add_library(mesh_audit MeshAudit.cc)
+add_library(mesh_audit MeshAudit.cc MeshAuditOld.cc)
 target_link_libraries(mesh_audit error_handling cell_geometry ${Epetra_LIBRARIES})
 
 #
