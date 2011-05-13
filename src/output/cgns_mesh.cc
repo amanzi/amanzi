@@ -1,6 +1,4 @@
 #include "cgns_mesh.hh"
-//#include "Entity_kind.hh"
-//#include "Element_category.hh"
 //#include <vector>
 
 
@@ -18,10 +16,14 @@ int num_soln = 0;   // number of solution nodes
 std::vector<double> timeList;
 std::vector<string> nameList;
 
+using namespace Amanzi;
+using namespace AmanziMesh;
+using namespace AmanziGeometry;
+
 namespace CGNS {
 
     
-void create_mesh_file(Mesh_maps_base &mesh_maps, std::string filename)
+void create_mesh_file(Mesh &mesh_maps, std::string filename)
     {
 	int isize[3][1];
 	int nelem_start, nelem_end, nbdyelem;
@@ -37,8 +39,8 @@ void create_mesh_file(Mesh_maps_base &mesh_maps, std::string filename)
 	cg_base_write(file_idx, "Base", icelldim, iphysdim, &base_idx);
 			
 	// get num_nodes, num_cells
-	unsigned int num_nodes = mesh_maps.count_entities(Mesh_data::NODE,OWNED);
-	unsigned int num_cells = mesh_maps.count_entities(Mesh_data::CELL,OWNED);
+	unsigned int num_nodes = mesh_maps.num_entities(NODE,OWNED);
+	unsigned int num_cells = mesh_maps.num_entities(CELL,OWNED);
 	
 	// create zone
 	isize[0][0] = num_nodes;
@@ -52,9 +54,9 @@ void create_mesh_file(Mesh_maps_base &mesh_maps, std::string filename)
 	double *y = new double [num_nodes];
 	double *z = new double [num_nodes];
 	
-	std::vector<double> xc(3);
 	for (int i=0; i<num_nodes; i++) {
-	    mesh_maps.node_to_coordinates(i,xc.begin(),xc.end());
+            Point xc(3);
+	    mesh_maps.node_to_coordinates(i,&xc);
 	    x[i] = xc[0];
 	    y[i] = xc[1];
 	    z[i] = xc[2];
@@ -67,13 +69,13 @@ void create_mesh_file(Mesh_maps_base &mesh_maps, std::string filename)
 	
 	// get connectivity
 	int *ielem = new int [num_cells*8];
-	std::vector<unsigned int> xh(8);
+	Entity_ID_List xh(8);
 	
 	nelem_start = 1; // first cell ID
 	nelem_end = 0;
 	for (int i=0; i<num_cells; i++) {
-	    mesh_maps.cell_to_nodes(i,xh.begin(),xh.end());
-	    for (int j=0; j<8; j++) {
+	    mesh_maps.cell_to_nodes(i,&xh);
+	    for (int j=0; j<xh.size(); j++) {
 		ielem[i*8+j] = xh[j]+1;
 	    }
 	    nelem_end++;
@@ -137,7 +139,7 @@ void open_data_file(const std::string soln_filename)
 	
     }
     
-void create_timestep(const double time, const int iter, Mesh_data::Entity_kind kind)
+void create_timestep(const double time, const int iter, Entity_kind kind)
     {
 	int size[2];
 	std::stringstream solname;
@@ -176,9 +178,9 @@ void create_timestep(const double time, const int iter, Mesh_data::Entity_kind k
 	cg_array_write("SolutionPointers",Character,2,size,solutionList);
 	
 	// create solution node under zone
-	if (kind == Mesh_data::CELL) {
+	if (kind == CELL) {
 	    cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), CellCenter, &soln_idx);
-	} else if (kind == Mesh_data::NODE) {
+	} else if (kind == NODE) {
 	    cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), Vertex, &soln_idx);
 	} else {
 	    //throw an error

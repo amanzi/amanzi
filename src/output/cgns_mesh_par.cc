@@ -7,7 +7,9 @@
 //#include "Element_category.hh"
 //#include <vector>
 
-
+using namespace Amanzi;
+using namespace AmanziMesh;
+using namespace AmanziGeometry;
 
 namespace CGNS_PAR {
 
@@ -33,7 +35,7 @@ namespace CGNS_PAR {
 
   
   
-  void create_mesh_file(Mesh_maps_base &mesh_maps, std::string filename)
+  void create_mesh_file(Mesh &mesh_maps, std::string filename)
   {
     using namespace CGNS_PAR;
     
@@ -54,8 +56,8 @@ namespace CGNS_PAR {
     
     // get num_nodes, num_cells
     // - gather sum to PE0 - MB
-    unsigned int num_nodes = mesh_maps.count_entities(Mesh_data::NODE,OWNED);
-    unsigned int num_cells = mesh_maps.count_entities(Mesh_data::CELL,OWNED);
+    unsigned int num_nodes = mesh_maps.num_entities(NODE,OWNED);
+    unsigned int num_cells = mesh_maps.num_entities(CELL,OWNED);
     
     int nums[2];
     int dummy[2];
@@ -81,17 +83,17 @@ namespace CGNS_PAR {
     double *y = new double [num_nodes];
     double *z = new double [num_nodes];
     
-    std::vector<double> xc(3);
+    Point xc(3);
     for (int i=0; i<num_nodes; i++) {
-      mesh_maps.node_to_coordinates(i,xc.begin(),xc.end());
+      mesh_maps.node_get_coordinates(i,&xc);
       x[i] = xc[0];
       y[i] = xc[1];
       z[i] = xc[2];
     }
     // make Epetra versions of the coordinate vectors
-    Epetra_Vector ep_x(View, mesh_maps.node_map(false), x);
-    Epetra_Vector ep_y(View, mesh_maps.node_map(false), y);
-    Epetra_Vector ep_z(View, mesh_maps.node_map(false), z);
+    Epetra_Vector ep_x(View, mesh_maps.node_epetra_map(false), x);
+    Epetra_Vector ep_y(View, mesh_maps.node_epetra_map(false), y);
+    Epetra_Vector ep_z(View, mesh_maps.node_epetra_map(false), z);
     
     // make the all to one map
     if (rank == 0) {
@@ -146,13 +148,13 @@ namespace CGNS_PAR {
     
     // get connectivity
     int *ielem = new int [num_cells*8];
-    std::vector<unsigned int> xh(8);
+    Entity_ID_List xh(8);
     
     nelem_start = 1; // first cell ID
     nelem_end = 0;
     for (int i=0; i<num_cells; i++) {
-      mesh_maps.cell_to_nodes(i,xh.begin(),xh.end());
-      for (int j=0; j<8; j++) {
+      mesh_maps.cell_to_nodes(i,&xh);
+      for (int j=0; j<xh.size(); j++) {
 	ielem[i*8+j] = mesh_maps.node_map(true).GID(xh[j]) +1;
       }
       nelem_end++;
@@ -160,9 +162,9 @@ namespace CGNS_PAR {
     nbdyelem    = 0;		// unsorted boundary elements
     
     int *gids = new int [num_cells*8];
-    int LIDStart = mesh_maps.cell_map(false).MinLID();
+    int LIDStart = mesh_maps.cell_epetra_map(false).MinLID();
     for (int i=0; i<num_cells; i++) {
-      int start =  8*mesh_maps.cell_map(false).GID(LIDStart+i);
+      int start =  8*mesh_maps.cell_epetra_map(false).GID(LIDStart+i);
       for (int j=0; j<8; j++) gids[8*i+j] = start + j;
     }
     
@@ -269,7 +271,7 @@ namespace CGNS_PAR {
     }
   }
     
-  void create_timestep(const double time, const int iter, Mesh_data::Entity_kind kind)
+  void create_timestep(const double time, const int iter, Entity_kind kind)
     {
       using namespace CGNS_PAR;
 
@@ -319,9 +321,9 @@ namespace CGNS_PAR {
 	
 	
 	// create solution node under zone
-	if (kind == Mesh_data::CELL) {
+	if (kind == CELL) {
 	  cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), CellCenter, &soln_idx);
-	} else if (kind == Mesh_data::NODE) {
+	} else if (kind == NODE) {
 	  cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), Vertex, &soln_idx);
 	} else {
 	  //throw an error

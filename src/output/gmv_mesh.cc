@@ -1,20 +1,24 @@
 #include "gmv_mesh.hh"
 
+using namespace Amanzi;
+using namespace AmanziMesh;
+using namespace AmanziGeometry;
+
 namespace GMV {
 
-  static inline void write_mesh_to_file_(Mesh_maps_base &mesh_map, std::string filename)
+  static inline void write_mesh_to_file_(Mesh &mesh_map, std::string filename)
   {
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
     // Write node info
-    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
+    unsigned int num_nodes = mesh_map.num_entities(NODE, OWNED);
     double *x = new double [num_nodes];
     double *y = new double [num_nodes];
     double *z = new double [num_nodes];
-    double xc[3];
 
     for (int i=0; i<num_nodes; i++) {
-      mesh_map.node_to_coordinates(i,xc,xc+3);
+      Point xc;
+      mesh_map.node_get_coordinates(i,&xc);
       x[i] = xc[0];
       y[i] = xc[1];
       z[i] = xc[2];
@@ -26,14 +30,16 @@ namespace GMV {
     delete [] x;
 
     // Write cell info
-    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
+    unsigned int num_cells = mesh_map.num_entities(CELL, OWNED);
 
     gmvwrite_cell_header(&num_cells);
 
     unsigned int *xh = new unsigned int[8];
     for (int i=0; i<num_cells; i++) {
-      mesh_map.cell_to_nodes(i,xh,xh+8);
-      for (int j=0; j<8; j++) xh[j]++;
+      Entity_ID_List cnodes;
+      mesh_map.cell_get_nodes(i,&cnodes);
+      for (int j=0; j<cnodes.size(); j++) 
+	xh[j] = cnodes[j]+1;
       gmvwrite_cell_type((char*) "phex8",8,xh);
     }
 
@@ -41,7 +47,7 @@ namespace GMV {
     
   }
 
-  void create_mesh_file(Mesh_maps_base &mesh_map, std::string filename)
+  void create_mesh_file(Mesh &mesh_map, std::string filename)
   {
     write_mesh_to_file_(mesh_map, filename);
     gmvwrite_closefile();
@@ -93,18 +99,18 @@ namespace GMV {
     gmvwrite_cells_fromfile((char*) meshfile.c_str(), num_cells);
   }
 
-  void open_data_file(Mesh_maps_base &mesh_map, std::string filename) {
+  void open_data_file(Mesh &mesh_map, std::string filename) {
 
-    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
-    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
+    unsigned int num_nodes = mesh_map.num_entities(NODE, OWNED);
+    unsigned int num_cells = mesh_map.num_entities(CELL, OWNED);
 
     write_mesh_to_file_(mesh_map, filename);
   }
 
-  void open_data_file(Mesh_maps_base &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits) {
+  void open_data_file(Mesh &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits) {
 
-    unsigned int num_nodes = mesh_map.count_entities(Mesh_data::NODE, OWNED);
-    unsigned int num_cells = mesh_map.count_entities(Mesh_data::CELL, OWNED);
+    unsigned int num_nodes = mesh_map.num_entities(NODE, OWNED);
+    unsigned int num_cells = mesh_map.num_entities(CELL, OWNED);
 
     string suffixstr(digits+1,'.');
     

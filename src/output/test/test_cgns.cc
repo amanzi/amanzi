@@ -1,11 +1,13 @@
 #include "UnitTest++.h"
 #include "../cgns_mesh.hh"
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 
 
 TEST(CGNS) {
 
   using namespace std;
+  using namespace Amanzi;
+  using namespace AmanziMesh;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -17,7 +19,7 @@ TEST(CGNS) {
   string cgns_datafile1 = "test_data.cgns";
   string cgns_fullfile = "test_cgns_full.cgns";
 
-  Mesh_maps_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
+  Mesh_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
     
   unsigned int num_nodes = Mesh.count_entities(Mesh_data::NODE, OWNED);
   unsigned int num_cells = Mesh.count_entities(Mesh_data::CELL, OWNED);

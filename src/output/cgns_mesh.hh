@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 #include "Epetra_Vector.h"
 
 extern "C" {
@@ -14,7 +14,7 @@ extern "C" {
 namespace CGNS {
     
   // Write a CGNS file containing only mesh data to be used as a "fromfile".
-  void create_mesh_file(Mesh_maps_base &mesh_maps, std::string filename);
+  void create_mesh_file(Amanzi::AmanziMesh::Mesh &mesh_maps, std::string filename);
 
   // Opens and initializes a CGNS file for writing which references a "fromfile" for mesh definition.
   void open_data_file(std::string mesh_fromfile, std::string filename,  
@@ -23,7 +23,7 @@ namespace CGNS {
   void open_data_file(std::string filename);
 
   // Create timestep node in CGNS structure of which has previously been opened with open_data_file.
-  void create_timestep(const double time, const int iter, Mesh_data::Entity_kind kind);
+  void create_timestep(const double time, const int iter, Entity_kind kind);
     
   // Writes data to files which has previously been opened with open_data_file.
   void write_field_data(const Epetra_Vector &x, std::string varname);
