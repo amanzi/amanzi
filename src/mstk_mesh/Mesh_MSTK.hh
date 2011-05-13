@@ -169,7 +169,7 @@ namespace Amanzi {
       // order according to Exodus II convention.
     
       void cell_get_faces (const Entity_ID cellid, 
-			   std::vector<Entity_ID> *faceids);
+			   Entity_ID_List *faceids);
     
     
       // Get directions in which a cell uses face
@@ -194,7 +194,7 @@ namespace Amanzi {
       // consistent with the face normal
     
       void cell_get_nodes (const Entity_ID cellid, 
-			   std::vector<Entity_ID> *nodeids);
+			   Entity_ID_List *nodeids);
     
     
       // Get nodes of face 
@@ -205,7 +205,7 @@ namespace Amanzi {
       // In 2D, nfnodes is 2
     
       void face_get_nodes (const Entity_ID faceid, 
-			   std::vector<Entity_ID> *nodeids);
+			   Entity_ID_List *nodeids);
     
 
 
@@ -216,13 +216,13 @@ namespace Amanzi {
     
       void node_get_cells (const Entity_ID nodeid, 
 			   const Parallel_type ptype,
-			   std::vector<Entity_ID> *cellids);
+			   Entity_ID_List *cellids);
     
       // Faces of type 'ptype' connected to a node
     
       void node_get_faces (const Entity_ID nodeid, 
 			   const Parallel_type ptype,
-			   std::vector<Entity_ID> *faceids);
+			   Entity_ID_List *faceids);
     
       // Get faces of ptype of a particular cell that are connected to the
       // given node
@@ -230,13 +230,13 @@ namespace Amanzi {
       void node_get_cell_faces (const Entity_ID nodeid, 
 				const Entity_ID cellid,
 				const Parallel_type ptype,
-				std::vector<Entity_ID> *faceids);    
+				Entity_ID_List *faceids);    
     
       // Cells connected to a face
     
       void face_get_cells (const Entity_ID faceid, 
 			   const Parallel_type ptype,
-			   std::vector<Entity_ID> *cellids);
+			   Entity_ID_List *cellids);
     
 
 
@@ -253,7 +253,7 @@ namespace Amanzi {
 
       void cell_get_face_adj_cells(const Entity_ID cellid,
 				   const Parallel_type ptype,
-				   std::vector<Entity_ID> *fadj_cellids);
+				   Entity_ID_List *fadj_cellids);
 
       // Node connected neighboring cells of given cell
       // (a hex in a structured mesh has 26 node connected neighbors)
@@ -261,7 +261,7 @@ namespace Amanzi {
 
       void cell_get_node_adj_cells(const Entity_ID cellid,
 				   const Parallel_type ptype,
-				   std::vector<Entity_ID> *nadj_cellids);
+				   Entity_ID_List *nadj_cellids);
 
 
     
@@ -283,7 +283,7 @@ namespace Amanzi {
       // See cell_get_nodes for details on node ordering
     
       void cell_get_nodes_4viz (const Entity_ID cellid, 
-				std::vector<Entity_ID> *nodeids);
+				Entity_ID_List *nodeids);
     
     
     
@@ -339,13 +339,10 @@ namespace Amanzi {
       //------------
     
     
-      inline 
       const Epetra_Map& cell_epetra_map (bool include_ghost) const;
     
-      inline 
       const Epetra_Map& face_epetra_map (bool include_ghost) const; 
 
-      inline 
       const Epetra_Map& node_epetra_map (bool include_ghost) const;
     
     
@@ -383,44 +380,12 @@ namespace Amanzi {
       void get_set_entities (const Set_ID setid, 
 			     const Entity_kind kind, 
 			     const Parallel_type ptype, 
-			     std::vector<Entity_ID> *entids); 
+			     Entity_ID_List *entids); 
 
     };
 
 
 
-
-    //
-    // Epetra maps
-    //------------
-    
-    
-    inline 
-    const Epetra_Map& Mesh_MSTK::cell_epetra_map (const bool include_ghost) const
-    {
-      if (serial_run)
-	return *cell_map_wo_ghosts_;
-      else
-	return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
-    }
-    
-    inline 
-    const Epetra_Map& Mesh_MSTK::face_epetra_map (const bool include_ghost) const
-    {
-      if (serial_run)
-	return *face_map_wo_ghosts_;
-      else
-	return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
-    }
-    
-    inline 
-    const Epetra_Map& Mesh_MSTK::node_epetra_map (const bool include_ghost) const
-    {
-      if (serial_run)
-	return *node_map_wo_ghosts_;
-      else
-	return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
-    }
     
     inline Parallel_type Mesh_MSTK::entity_get_ptype(const Entity_kind kind, const Entity_ID entid) const {
       MEntity_ptr ment;
