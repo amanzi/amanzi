@@ -8,6 +8,8 @@
 #include "Beaker.hpp"
 #include "Verbosity.hpp"
 
+using namespace Amanzi;
+using namespace AmanziMesh;
 
 /*******************************************************************************
  **
@@ -434,7 +436,7 @@ void Chemistry_PK::LocalInitialConditions(void)
 
       int mesh_block_ID = mesh_block_list.get<int>("Mesh block ID");
       if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_ID,
-                                                           Mesh_data::CELL)) {
+                                                           CELL)) {
         // there is an inconsistency in the xml input file...
         throw std::exception();
       }
@@ -582,19 +584,19 @@ void Chemistry_PK::set_cell_value_in_mesh_block(const double value,
                                                 const int mesh_block_id)
 {
   if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_id,
-                                                       Mesh_data::CELL)) {
+                                                       CELL)) {
     throw std::exception();
   }
 
   unsigned int mesh_block_size =
       chemistry_state_->get_mesh_maps()->get_set_size(mesh_block_id,
-                                                      Mesh_data::CELL,
+                                                      CELL,
                                                       OWNED);
 
   std::vector<unsigned int> cell_ids(mesh_block_size);
 
   chemistry_state_->get_mesh_maps()->get_set(mesh_block_id,
-                                             Mesh_data::CELL, OWNED,
+                                             CELL, OWNED,
                                              cell_ids.begin(), cell_ids.end());
 
   for( std::vector<unsigned int>::iterator c = cell_ids.begin();
