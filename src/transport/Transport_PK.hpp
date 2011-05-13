@@ -6,7 +6,6 @@
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
-#include "Mesh_maps_simple.hh"
 #include "State.hpp"
 #include "Transport_State.hpp"
 #include "Transport_BCs.hpp"

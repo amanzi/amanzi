@@ -8,7 +8,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 #include "State.hpp"
 #include "Transport_PK.hpp"
 
@@ -35,6 +35,8 @@ TEST(CONSTRUCTOR) {
 
   using namespace std;
   using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace AmanziMesh;
 
   cout << "================ TEST XML FILE ===================" << endl;
 #ifdef HAVE_MPI
@@ -45,7 +47,7 @@ TEST(CONSTRUCTOR) {
 
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
+  RCP<Mesh_simple>  mesh = rcp( new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
   State mpc_state( num_components, mesh );
 
@@ -77,6 +79,8 @@ TEST(FACES_VOLUMES) {
 
   using namespace std;
   using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace AmanziMesh;
 
   cout << "================ TEST FACES AND VOLUMES ===================" << endl;
 #ifdef HAVE_MPI
@@ -87,7 +91,7 @@ TEST(FACES_VOLUMES) {
 
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
+  RCP<Mesh_simple>  mesh = rcp( new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
   State mpc_state( num_components, mesh );
 
@@ -140,6 +144,8 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   using namespace std;
   using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace AmanziMesh;
 
   cout << "================ TEST ADVANCE ===================" << endl;
 #ifdef HAVE_MPI
@@ -150,7 +156,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 2, 2, comm) ); 
+  RCP<Mesh_simple>  mesh = rcp( new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 2, 2, comm) ); 
 
   State mpc_state( num_components, mesh );
 
@@ -214,13 +220,15 @@ TEST(CONVERGENCE_ANALYSIS) {
 
   using namespace std;
   using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace AmanziMesh;
 
   cout << "================ TEST CONVERGENCE ANALISYS ===================" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
   /* create a MPC state with one component */
   for( int nx=20; nx<641; nx*=2 ) {
-     RCP<Mesh_maps_simple>  mesh = rcp( new Mesh_maps_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm) ); 
+     RCP<Mesh_simple>  mesh = rcp( new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm) ); 
 
      /* create a MPC state with one component */
      int  num_components = 1;
