@@ -44,8 +44,6 @@ namespace Amanzi
 	
       // Compute the geometric center of all face nodes
 
-      Point center(3);
-
       int np = ccoords.size();
       if (np < 4) {
 	cout << "Not a polyhedron" << std::endl;
@@ -58,7 +56,8 @@ namespace Amanzi
 
       }
       else { // if (np > 4), polyhedron with possibly curved faces
-	
+
+	Point center(0.0,0.0,0.0);
 	for (int i = 0; i < np; i++)
 	  center += ccoords[i];
 	center /= np;
@@ -68,7 +67,7 @@ namespace Amanzi
 
 	  // geometric center of all face nodes
 	  
-	  Point fcenter(3);
+	  Point fcenter(0.0,0.0,0.0);
 	  for (int j = 0; j < nfnodes[i]; j++)
 	    fcenter += fcoords[offset+j];
 	  fcenter /= nfnodes[i];
@@ -86,8 +85,8 @@ namespace Amanzi
 	    kp1 = offset+(j+1)%nfnodes[i];
 	    
 	    tcentroid = (center+fcenter+fcoords[k]+fcoords[kp1])/4.0;
-	    v1 = fcoords[kp1]-center;
-	    v2 = fcoords[k]-center;
+	    v1 = fcoords[k]-center;
+	    v2 = fcoords[kp1]-center;
 	    v3 = fcenter-center;
 	    tvolume = (v1^v2)*v3;
 	    
@@ -253,7 +252,6 @@ namespace Amanzi
 
     Point polygon_get_normal(const std::vector<Point> coords)
     {
-      Point normal;
 
       if (coords.size() < 3) {
 	cout << "Degenerate polygon - Cannot compute normal" << std::endl;	
@@ -263,6 +261,8 @@ namespace Amanzi
 
       int dim = coords[0].dim();
 
+      Point normal(dim);
+
       switch (dim) {
       case 2: {
 	// sufficient to evaluate normal at one corner
@@ -270,12 +270,14 @@ namespace Amanzi
 	Point v1 = coords[2]-coords[1];
 	Point v2 = coords[0]-coords[1];
 
+	normal.set(0.0,0.0);
 	normal = v1^v2;
 	break;
       }
       case 3: {
 	// evaluate normal at all corners and average
 
+	normal.set(0.0,0.0,0.0);
 	unsigned int np = coords.size();
 	for (int i = 0; i < np; i++) {
 	  Point v1 = coords[(i+1)%np]-coords[i];
