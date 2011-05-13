@@ -6,6 +6,9 @@
 #include "Epetra_MultiVector.h"
 #include "cell_geometry.hh"
 
+#include "errors.hh"
+#include "exceptions.hh"
+
 using namespace Amanzi;
 using namespace AmanziMesh;
 
@@ -42,10 +45,8 @@ void Chemistry_State::ExtractVolumeFromMesh(void)
   int ncell = mesh->count_entities(CELL, OWNED);
 
   if (ncell != volume_->Length()) {
-    // error.....
-    std::cout << "Chemistry_State::ExtractVolumeFromMesh() size error." 
-              << std::endl;
-    throw std::exception();
+    Exceptions::amanzi_throw(
+        Errors::Message("Chemistry_State::ExtractVolumeFromMesh() size error."));
   }
 
   double xdata[24]; // 8 x 3

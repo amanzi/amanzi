@@ -50,6 +50,13 @@ class Beaker {
     double volume; // [m^3]
   };
 
+  struct SolverStatus {
+    unsigned int num_rhs_evaluations;
+    unsigned int num_jacobian_evaluations;
+    unsigned int num_newton_iterations;
+    bool converged;
+  };
+
   // resizes matrix and vectors for nonlinear system
   void resize();
   void resize(int ncomp);
@@ -63,14 +70,14 @@ class Beaker {
   void SetComponents(const Beaker::BeakerComponents& components);
   void UpdateComponents(Beaker::BeakerComponents* components);
 
-  void addPrimarySpecies(Species s);
-  void AddIonExchangeSite(IonExchangeSite exchanger);
-  void AddIonExchangeComplex(IonExchangeComplex exchange_complex);
-  void addAqueousEquilibriumComplex(AqueousEquilibriumComplex c);
-  void addMineral(Mineral m);
+  void addPrimarySpecies(const Species& s);
+  void AddIonExchangeSite(const IonExchangeSite& exchanger);
+  void AddIonExchangeComplex(const IonExchangeComplex& exchange_complex);
+  void addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
+  void addMineral(const Mineral& m);
   void AddMineralKineticRate(KineticRate* rate);
-  void addGeneralRxn(GeneralRxn r);
-  void addSurfaceComplexationRxn(SurfaceComplexationRxn r);
+  void addGeneralRxn(const GeneralRxn& r);
+  void addSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
 
   bool HaveKinetics(void) const;
 
@@ -84,7 +91,7 @@ class Beaker {
 
   void updateActivityCoefficients();
   void initializeMolalities(double initial_molality);
-  void initializeMolalities(std::vector<double> initial_molalities);
+  void initializeMolalities(const std::vector<double>& initial_molalities);
 
   // equilibrium chemistry
   // update activities, equilibrium complex concentrations, etc.
@@ -102,24 +109,24 @@ class Beaker {
   void addKineticChemistryToJacobian(Block *J);
   // accumulation terms
   void addAccumulation(std::vector<double> *residual);
-  void addAccumulation(std::vector<double> total, 
-                       std::vector<double> total_sorbed, 
+  void addAccumulation(const std::vector<double>& total, 
+                       const std::vector<double>& total_sorbed, 
                        std::vector<double> *residual);
   void addAccumulationDerivative(Block *J);
   void addAccumulationDerivative(Block *J, Block *dtotal, Block *dtotal_sorbed);
-  void calculateFixedAccumulation(std::vector<double> total,
-                                  std::vector<double> total_sorbed,
+  void calculateFixedAccumulation(const std::vector<double>& total,
+                                  const std::vector<double>& total_sorbed,
                                   std::vector<double> *fixed_accumulation);
   // residual and Jacobian
   void calculateResidual(std::vector<double> *residual, 
-                         std::vector<double> fixed_residual);
+                         const std::vector<double>& fixed_residual);
   void calculateJacobian(Block *J);
 
   // utilities for updating solution, convergence checks
   void updateMolalitiesWithTruncation(std::vector<double> &update, 
                                       std::vector<double> &prev_solution,
                                       double max_change);
-  double calculateMaxRelChangeInMolality(std::vector<double> prev_molal);
+  double calculateMaxRelChangeInMolality(const std::vector<double>& prev_molal);
   // solvers
   void scaleRHSAndJacobian(double *rhs, Block *J);
   void scaleRHSAndJacobian(std::vector<double> &rhs, Block *J);
@@ -128,10 +135,10 @@ class Beaker {
   virtual void display(void) const;
   void print_results(void) const;
   void print_results(double time) const;
-  void print_linear_system(std::string s, Block *A, std::vector<double> vector);
+  void print_linear_system(const std::string& s, Block *A, std::vector<double> vector);
 
-  void GetPrimaryNames(std::vector<std::string>& names) const;
-  int GetPrimaryIndex(std::string name) const;
+  void GetPrimaryNames(std::vector<std::string>* names) const;
+  int GetPrimaryIndex(const std::string& name) const;
 
   void Display(void) const;
   void DisplayParameters(void) const;
@@ -172,8 +179,9 @@ class Beaker {
   BeakerParameters GetDefaultParameters(void) const;
   BeakerParameters GetCurrentParameters(void) const;
   void SetParameters(const BeakerParameters& parameters);
-  void CopyComponents(const Beaker::BeakerComponents from,
+  void CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents *to);
+  SolverStatus status(void) const { return this->status_; };
 
 protected:
   // update discretization and flow parameters
@@ -268,7 +276,8 @@ private:
   std::vector<int> indices;           // array for pivoting in LU
   Block *J;                           // Jacobian [kg water/sec]
 
-  
+  SolverStatus status_;
+  void ResetStatus(void);
   static const double tolerance_default;
   static const unsigned int max_iterations_default;
   static const double porosity_default;

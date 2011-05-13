@@ -1,56 +1,56 @@
 #ifndef RICHARDS_MODEL_EVALUATOR_HPP
 #define RICHARDS_MODEL_EVALUATOR_HPP
 
-#include "EpetraExt_ModelEvaluator.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Rythmos_ConfigDefs.h"
+#include "Teuchos_VerboseObject.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
 
+#include "BDF2_fnBase.hpp"
+#include "RichardsProblem.hpp"
+#include "Flow_State.hpp"
 
-class RichardsModelEvaluator : public EpetraExt::ModelEvaluator {
+class RichardsModelEvaluator : public BDF2::fnBase,
+			       public Teuchos::VerboseObject<RichardsModelEvaluator>
+{
 public:
 
   // Constructor
-  RichardsModelEvaluator(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
+  RichardsModelEvaluator(RichardsProblem *problem, 
+			 Teuchos::ParameterList &plist, 
+			 const Epetra_Map &map,
+			 Teuchos::RCP<const Flow_State> FS); 
 
   // Initialization
   void initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
 
-  Teuchos::RCP<const Epetra_Map> get_x_map() const;
 
-  Teuchos::RCP<const Epetra_Map> get_f_map() const;
+  void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f);
+  void precon(const Epetra_Vector& u, Epetra_Vector& Pu);
+  double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
+  void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc);
 
-  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
-
-  Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
-
-  Teuchos::RCP<Epetra_Operator> create_W() const;
-
-  InArgs createInArgs() const;
-
-  OutArgs createOutArgs() const;
-
-  void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
-
-  Teuchos::RCP<Epetra_Vector> get_exact_solution( double t ) const;
+  bool is_admissible(const Epetra_Vector& up);
 
 private:
+  
+  RichardsProblem* problem_;
 
-    // Epetra Comm:
-    Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_;
-    // Epetra Map:
-    Teuchos::RCP<const Epetra_Map> epetra_map_ptr_;
-    
-    // Global number of unknowns:
-    int numElements_;
+  // The diffusion matrix
+  DiffusionMatrix& D;
 
-    Teuchos::RCP<Epetra_CrsGraph> W_graph_;
+  Epetra_Map map_;
 
-    // // This ModelEvaluator object will own a TransientInterface object
-    // Teuchos::RCP<TransientInterface> problemInterfacePtr_;
+  // ML preconditioner for the Schur complement system.
+  ML_Epetra::MultiLevelPreconditioner *MLprec;
+
+  //Teuchos::ParameterList ML_plist;
+
+  Teuchos::ParameterList& plist_;
+  Teuchos::RCP<const Flow_State> FS_;
+
 };
 
 #endif // RICHARDS_MODEL_EVALUATOR_HPP 

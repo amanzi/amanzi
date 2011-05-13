@@ -9,7 +9,7 @@
 # Last Change: Fri Apr 22 09:49:51 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 # Amanzi module, include files found in AMANZI_MODULE_PATH
-include(AddParallelTest)
+include(TestManager)
 include(PrintVariable)
 
 
@@ -31,7 +31,7 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 
 #
@@ -97,8 +97,8 @@ if (BUILD_TESTS)
      test/test_mesh_framework.cc
      test/test_mesh_factory.cc)
    target_link_libraries(test_mesh_factory mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES})
-   add_test(mesh_factory test_mesh_factory)
-   add_parallel_test(mesh_factory_parallel test_mesh_factory)
+   add_amanzi_test(mesh_factory test_mesh_factory KIND int)
+   add_amanzi_test(mesh_factory_parallel test_mesh_factory KIND int)
 
 endif()
    

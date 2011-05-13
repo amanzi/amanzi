@@ -6,6 +6,10 @@
 
 #include "Mesh.hh"
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/visitors.hpp>
+#include <boost/graph/breadth_first_search.hpp>
+
 class MeshAudit {
 public:
 
@@ -19,34 +23,46 @@ public:
   // test may assume certain mesh data has been verified, and that verification
   // is done by other tests.
 
-  int check_entity_counts() const;
-  int check_cell_to_nodes_refs() const;
-  int check_cell_to_faces_refs() const;
-  int check_face_to_nodes_refs() const;
-  int check_cell_to_nodes_consistency() const;
-  int check_cell_to_faces_consistency() const;
-  int check_face_to_nodes_consistency() const;
-  int check_cell_to_face_dirs_basic() const;
-  int check_cell_degeneracy() const;
-  int check_cell_to_faces() const;
-  int check_node_to_coordinates() const;
-  int check_cell_to_coordinates() const;
-  int check_face_to_coordinates() const;
-  int check_cell_geometry() const;
-  int check_node_maps() const;
-  int check_face_maps() const;
-  int check_cell_maps() const;
-  int check_node_to_coordinates_ghost_data() const;
-  int check_face_to_nodes_ghost_data() const;
-  int check_cell_to_nodes_ghost_data() const;
-  int check_cell_to_faces_ghost_data() const;
+  bool check_entity_counts() const;
+  bool check_cell_to_nodes() const;
+  bool check_cell_to_faces() const;
+  bool check_face_to_nodes() const;
+  bool check_cell_to_face_dirs() const;
+  bool check_cell_to_nodes_consistency() const;
+  bool check_cell_to_faces_consistency() const;
+  bool check_face_to_nodes_consistency() const;
+  bool check_cell_to_face_dirs_consistency() const;
+  bool check_node_refs_by_cells() const;
+  bool check_face_refs_by_cells() const;
+  bool check_node_refs_by_faces() const;
+  bool check_cell_degeneracy() const;
+  bool check_cell_geometry() const;
+  bool check_cell_to_faces_to_nodes() const;
+  bool check_node_to_coordinates() const;
+  bool check_cell_to_coordinates() const;
+  bool check_face_to_coordinates() const;
+  bool check_node_maps() const;
+  bool check_face_maps() const;
+  bool check_cell_maps() const;
+  bool check_node_to_coordinates_ghost_data() const;
+  bool check_face_to_nodes_ghost_data() const;
+  bool check_cell_to_nodes_ghost_data() const;
+  bool check_cell_to_faces_ghost_data() const;
   
-  int check_node_sets() const;
-  int check_face_sets() const;
-  int check_cell_sets() const;
+  bool check_node_set_ids() const;
+  bool check_face_set_ids() const;
+  bool check_cell_set_ids() const;
   
-  int check_node_partition() const;
-  int check_face_partition() const;
+  bool check_valid_node_set_id() const;
+  bool check_valid_face_set_id() const;
+  bool check_valid_cell_set_id() const;
+  
+  bool check_node_sets() const;
+  bool check_face_sets() const;
+  bool check_cell_sets() const;
+  
+  bool check_node_partition() const;
+  bool check_face_partition() const;
 
 private:
 
@@ -63,14 +79,36 @@ private:
 
   bool distinct_values(const Amanzi::AmanziMesh::Entity_ID_List& list) const;
   void write_list(const std::vector<unsigned int>&, unsigned int) const;
-  int same_face(const Amanzi::AmanziMesh::Entity_ID_List, const Amanzi::AmanziMesh::Entity_ID_List) const;
-  int check_maps(const Epetra_Map&, const Epetra_Map&) const;
-  int check_sets(Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  int check_set_ids(Amanzi::AmanziMesh::Entity_kind) const;
-  int check_set_ids_same(Amanzi::AmanziMesh::Entity_kind) const;
-  int check_valid_set_id(Amanzi::AmanziMesh::Entity_kind) const;
-  int check_get_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, Amanzi::AmanziMesh::Parallel_type, const Epetra_Map&) const;
-  int check_used_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  bool global_any(bool) const;
+  int same_face(const std::vector<unsigned int>, const std::vector<unsigned int>) const;
+  
+  bool check_maps(const Epetra_Map&, const Epetra_Map&) const;
+  bool check_get_set_ids(Amanzi::AmanziMesh::Entity_kind) const;
+  bool check_valid_set_id(Amanzi::AmanziMesh::Entity_kind) const;
+  bool check_sets(Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  bool check_get_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, Amanzi::AmanziMesh::Parallel_type, const Epetra_Map&) const;
+  bool check_used_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  
+  // This is the vertex type for the test dependency graph.
+  typedef bool (MeshAudit::* Test)() const;
+  struct Vertex
+  {
+    Vertex() : run(true) {}
+    std::string name;
+    mutable bool run;
+    Test test;
+  };
+
+  typedef boost::adjacency_list<boost::listS, boost::vecS, boost::directedS, Vertex> Graph;
+  Graph g;
+  
+  struct mark_do_not_run : public boost::bfs_visitor<>
+  {
+    template <class Vertex, class Graph>
+    void discover_vertex(Vertex v, Graph &g) { g[v].run = false; }
+  };
+  
+  void create_test_dependencies();
 };
 
 #endif

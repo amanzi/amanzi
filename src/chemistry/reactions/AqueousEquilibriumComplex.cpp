@@ -14,9 +14,9 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex()
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(const SpeciesName name,
                             const SpeciesId id,
-                            std::vector<SpeciesName> species,
-                            std::vector<double> stoichiometry,
-                            std::vector<SpeciesId> species_ids,
+                            const std::vector<SpeciesName>& species,
+                            const std::vector<double>& stoichiometry,
+                            const std::vector<SpeciesId>& species_ids,
                             const double h2o_stoich,
                             const double charge,
                             const double mol_wt,
@@ -56,7 +56,7 @@ void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> *tota
 } // end addContributionToTotal()
 
 void AqueousEquilibriumComplex::AddContributionToDTotal(
-    const std::vector<Species> primarySpecies,
+    const std::vector<Species>& primarySpecies,
     Block *dtotal)
 {
 

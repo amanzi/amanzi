@@ -1,6 +1,8 @@
 #include "Epetra_IntVector.h"
 
 #include "RichardsProblem.hpp"
+#include "vanGenuchtenModel.hpp"
+#include "Mesh.hh"
 
 using namespace Amanzi;
 using namespace AmanziMesh;
@@ -25,20 +27,44 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh> &mesh,
   // Create the preconditioner (structure only, no values)
   Teuchos::ParameterList diffprecon_plist = list.sublist("Diffusion Preconditioner");
   precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
+  
+  // resize the vectors for permeability
+  k_.resize(CellMap(true).NumMyElements()); 
+  k_rl_.resize(CellMap(true).NumMyElements());
 
-  // DEFINE DEFAULTS FOR PROBLEM PARAMETERS
-  rho_ = 1.0;
-  mu_  = 1.0;
-  k_.resize(CellMap(true).NumMyElements(), 1.0);
-  k_rl_.resize(CellMap(true).NumMyElements(), 1.0);
-  for (int i = 0; i < 3; ++i) g_[i] = 0.0; // no gravity
+  // read the water retention model sublist and create the WRM array
+  int nblocks = list.get<int>("Number of mesh blocks");
+  WRM.resize(nblocks);
+  
+  for (int nb = 0; nb < nblocks; nb++)
+    {
+      std::stringstream ss;
+      ss << "WRM " << nb;
+      Teuchos::ParameterList &wrmlist = list.sublist(ss.str());
 
-  // read values for the van Genuchten model
-  vG_m_      = list.get<double>("van Genuchten m");
-  vG_n_      = 1.0/(1.0-vG_m_); 
-  vG_alpha_  = list.get<double>("van Genuchten alpha");
-  vG_sr_     = list.get<double>("van Genuchten residual saturation");
-  p_atm_     = list.get<double>("atmospheric pressure");
+      // which water retention model are we using?
+      if (wrmlist.get<string>("Water Retention Model") == "van Genuchten") 
+	{
+	  // read the mesh block number that this model applies to
+	  int meshblock = wrmlist.get<int>("Mesh Block ID");
+
+	  // read values for the van Genuchten model
+	  double vG_m_      = wrmlist.get<double>("van Genuchten m");
+	  double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
+	  double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
+	  double p_atm_     = wrmlist.get<double>("atmospheric pressure");
+
+	  WRM[nb] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
+						       vG_sr_,p_atm_));
+	}
+    }
+
+  // store the cell volumes in a convenient way
+  cell_volumes = new Epetra_Vector(mesh->cell_map(false)); 
+  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++)
+    {
+      (*cell_volumes)[n] = md_->Volume(n);
+    }  
 }
 
 
@@ -49,6 +75,8 @@ RichardsProblem::~RichardsProblem()
   delete cell_importer_;
   delete md_;
   delete precon_;
+
+  delete cell_volumes;
 }
 
 
@@ -129,25 +157,36 @@ void RichardsProblem::SetPermeability(const Epetra_Vector &k)
 
 void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P)
 {
-  for (int i=0; i<k_rl_.size(); i++)
+  for (int mb=0; mb<WRM.size(); mb++) 
     {
-      // first calculate the capillary pressure (reference pressure is one bar)
+      // get mesh block cells
+      unsigned int ncells = mesh_->get_set_size(mb,CELL,OWNED);
+      std::vector<unsigned int> block(ncells);
 
-      double pc = P[i] - p_atm_;
-
-      // if the capillary pressure is negative, we apply the van Genuchten model
-      if (pc < 0.0)
+      mesh_->get_set(mb,CELL,OWNED,block.begin(),block.end());
+      
+      std::vector<unsigned int>::iterator j;
+      for (j = block.begin(); j!=block.end(); j++)
 	{
-	  // compute the effective saturation
-	  double se = pow(1.0 + pow(-vG_alpha_*P[i],vG_n_),-vG_m_);
-	  
-	  // from that we can compute the relative permeability 
-	  k_rl_[i] = sqrt(se)*pow(1.0-pow(1.0-pow(se,1.0/vG_m_),vG_m_),2.0);
+	  k_rl_[*j] = WRM[mb]->k_relative(P[*j]);
 	}
-      else
+    }
+}
+
+void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
+{
+  for (int mb=0; mb<WRM.size(); mb++) 
+    {
+      // get mesh block cells
+      unsigned int ncells = mesh_->get_set_size(mb,CELL,OWNED);
+      std::vector<unsigned int> block(ncells);
+
+      mesh_->get_set(mb,CELL,OWNED,block.begin(),block.end());
+      
+      std::vector<unsigned int>::iterator j;
+      for (j = block.begin(); j!=block.end(); j++)
 	{
-	  // if the capillary pressure is positive, we're in the saturated 
-	  k_rl_[i] = 1.0;
+	  dS[*j] = WRM[mb]->d_saturation(P[*j]);
 	}
 
     }
@@ -156,38 +195,22 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
 
 void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S)
 {
-  for (int i=0; i<P.MyLength(); i++)
+  for (int mb=0; mb<WRM.size(); mb++) 
     {
-      // compute the capillary pressure
-      double pc =  P[i] - p_atm_;
-      
-      if (pc < 0.0) 
-	{
-	  // compute the liquid saturation using the effective and residual saturation
-	  S[i] = pow(1.0 + pow(-vG_alpha_*pc,vG_n_),-vG_m_) * (1.0 - vG_sr_) + vG_sr_;
+      // get mesh block cells
+      unsigned int ncells = mesh_->get_set_size(mb,CELL,OWNED);
+      std::vector<unsigned int> block(ncells);
 
-	}
-      else
-	{
-	  // where the capillary pressure is positive, saturation is one
-	  S[i] = 1.0;
-	}
+      mesh_->get_set(mb,CELL,OWNED,block.begin(),block.end());
       
+      std::vector<unsigned int>::iterator j;
+      for (j = block.begin(); j!=block.end(); j++)
+	{
+	  S[*j] = WRM[mb]->saturation(P[*j]);
+	}
+
     }
 }
-
-
-// void RichardsProblem::DeriveVanGenuchtenPressure(const Epetra_Vector &S, Epetra_Vector &P)
-// {
-//   // derive from a one-off constant effective saturation
-//   double se = 0.9
-  
-//   for (int i=0; i<S.MyLength(); i++)
-//     {
-//       P[i] = 1/vG_alpha_ * pow( pow(se,-1/vG_m_) - 1.0, 1/vG_n_) ;
-//     }
-// }
-
 
 
 void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
@@ -203,6 +226,8 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
   UpdateVanGenuchtenRelativePermeability(Pcell);
   
   for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
+
+
   D_->Compute(K);
 
   // Compute the face Schur complement of the diffusion matrix.
@@ -211,6 +236,45 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
   // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
   precon_->Compute();
 }
+
+
+
+void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
+{
+  // Fill the diffusion matrix with values.
+  // THIS IS WHERE WE USE THE CELL PRESSURE PART OF X TO EVALUATE THE RELATIVE PERMEABILITY
+  std::vector<double> K(k_);
+
+  Epetra_Vector &Pcell_own = *CreateCellView(X);
+  Epetra_Vector Pcell(CellMap(true));
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
+
+  UpdateVanGenuchtenRelativePermeability(Pcell);
+  
+  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
+  D_->Compute(K);
+
+  // add the time derivative to the diagonal
+  Epetra_Vector celldiag(CellMap(false));
+  dSofP(Pcell_own, celldiag);
+  celldiag.PutScalar(1.0/h);
+  
+  //for (int n=0; n<(md_->CellMap()).NumMyElements(); n++)
+  //  {
+  //    celldiag[n] *= md_->Volume(n);
+  //  }
+  celldiag.Multiply(1.0,celldiag,*cell_volumes,0.0);
+
+
+  D_->add_to_celldiag(celldiag);
+
+  // Compute the face Schur complement of the diffusion matrix.
+  D_->ComputeFaceSchur();
+
+  // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
+  precon_->Compute();
+}
+
 
 
 void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
@@ -500,4 +564,15 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
   error_own.Norm2(&l2_error);
 
   delete &Pcell_own, &Pface_own;
+}
+
+
+void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot)
+{
+  ComputeF(u,udot);
+
+  // zero out the face part
+  Epetra_Vector *udot_face = CreateFaceView(udot);
+  udot_face->PutScalar(0.0);
+
 }

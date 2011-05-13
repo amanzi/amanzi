@@ -53,29 +53,27 @@ namespace mpl = boost::mpl;
  * 
  */
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-
-class bogus_maps : public Mesh {
+class bogus_maps : public Amanzi::AmanziMesh::Mesh {
 public:
-
+  
   /// Default constructor.
   bogus_maps(const char *filename, MPI_Comm comm) 
     : Mesh() 
   {
-    amanzi_throw(Message("reading not supported"));
+    Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
-
+  
   bogus_maps(double x0, double y0, double z0,
-             double x1, double y1, double z1,
-             int nx, int ny, int nz, 
-             Epetra_MpiComm *communicator)
+	     double x1, double y1, double z1,
+	     int nx, int ny, int nz, 
+	     Epetra_MpiComm *communicator)
     : Amanzi::AmanziMesh::Mesh() 
   {
-    amanzi_throw(Message("generation not supported"));
+    Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
-
+  
 };
+
 
 // Here, and in the Mesh::Framework unit test are hopefully the only
 // places where there has to be ifdef's for mesh frameworks.
@@ -108,7 +106,7 @@ typedef bogus_maps Mesh_MSTK;
 #endif
 
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 
 
 namespace Amanzi {
@@ -169,7 +167,7 @@ namespace Amanzi {
     // instantiate a mesh when it's generated
     typedef mpl::eval_if<
       mpl::bool_<M == Simple>
-      , mpl::identity<Mesh_maps_simple>
+      , mpl::identity<Mesh_simple>
       , mpl::eval_if<
           mpl::bool_<M == STK>
           , mpl::identity<Mesh_maps_stk>
@@ -292,7 +290,7 @@ namespace Amanzi {
       {
         std::string msg = 
           boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
-        amanzi_throw(Message(msg.c_str()));
+        Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
     }
     return result;
@@ -361,7 +359,7 @@ namespace Amanzi {
       {
         std::string msg = 
           boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
-        amanzi_throw(Message(msg.c_str()));
+        Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
     }
     return result;
@@ -391,7 +389,7 @@ namespace Amanzi {
       {
         std::string msg = 
           boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
-        amanzi_throw(Message(msg.c_str()));
+        Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
     }
     return result;
@@ -421,7 +419,7 @@ namespace Amanzi {
       {
         std::string msg = 
           boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
-        amanzi_throw(Message(msg.c_str()));
+        Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
     }
     return result;
@@ -454,7 +452,7 @@ namespace Amanzi {
       {
         std::string msg = 
           boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
-        amanzi_throw(Message(msg.c_str()));
+        Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
     }
     return result;

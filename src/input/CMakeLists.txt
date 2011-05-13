@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -26,6 +26,16 @@ project(INPUT)
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+
+
+#
+# Library: input
+#
+set(input_src_files input_base_class.cc simple_mesh_input.cc
+                    transport_input.cc)
+add_library(input ${input_src_files})
+target_link_libraries(input ${Teuchos_LIBRARIES})
+
 
 
 

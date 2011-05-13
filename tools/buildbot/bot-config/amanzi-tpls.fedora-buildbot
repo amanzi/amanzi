@@ -1,0 +1,23 @@
+# use your package manager to install available packages, for example:
+#
+# sudo yum install boost-devel
+
+PREFIX=${HOME}/slaves/amanzi/amanzi-libs
+SOURCE=${HOME}/slaves/amanzi/amanzi-tpl-source
+WORK_DIR=${HOME}/slaves/amanzi
+
+MPI_PREFIX=${PREFIX}
+BOOST_PREFIX=/usr
+HDF5_PREFIX=${PREFIX}
+NETCDF_PREFIX=${PREFIX}
+CGNS_PREFIX=${PREFIX}
+UNITTEST_PREFIX=${PREFIX}
+ZLIB_PREFIX=${PREFIX}
+CURL_PREFIX=${PREFIX}
+METIS_PREFIX=${PREFIX}
+MSTK_PREFIX=${PREFIX}
+
+PARALLEL_NP=2
+MPIEXEC_ARGS='-mca mpi_yield_when_idle 1'
+
+USE_MSTK=ON

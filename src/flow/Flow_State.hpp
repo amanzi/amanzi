@@ -16,7 +16,8 @@ public:
       fluid_density_(S->get_density()),
       fluid_viscosity_(S->get_viscosity()),
       permeability_(S->get_permeability()),
-      pressure_(S->get_pressure())
+      pressure_(S->get_pressure()),
+      porosity_(S->get_porosity())
     {}
 
   ~Flow_State () {};
@@ -32,6 +33,8 @@ public:
 
   const Epetra_Vector& permeability() const { return *permeability_; }
 
+  const Epetra_Vector& porosity() const { return *porosity_; }
+
 private:
 
   // object doesn't own anything -- all smart pointers to the real thing.
@@ -42,7 +45,7 @@ private:
   const Teuchos::RCP<Epetra_Vector> permeability_;
   const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_;
   const Teuchos::RCP<Epetra_Vector> pressure_;  // current cell pressure solution
-
+  const Teuchos::RCP<Epetra_Vector> porosity_;
 };
 
 #endif

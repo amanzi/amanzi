@@ -24,6 +24,9 @@
 #include "MeshFileType.hh"
 #include "Mesh.hh"
 
+#include "errors.hh"
+#include "exceptions.hh"
+
 namespace Amanzi {
 namespace AmanziMesh {
 

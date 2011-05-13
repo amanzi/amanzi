@@ -1,0 +1,23 @@
+# use your package manager to install available packages, for example:
+#
+# sudo port install cmake boost unittest-cpp cgnslib
+
+PREFIX=${HOME}/projects/amanzi/amanzi-libs
+SOURCE=${HOME}/projects/amanzi/amanzi-tpl-source
+WORK_DIR=${HOME}/projects/amanzi
+
+MPI_PREFIX=/usr
+BOOST_PREFIX=/opt/local
+HDF5_PREFIX=${PREFIX}
+NETCDF_PREFIX=${PREFIX}
+CGNS_PREFIX=/opt/local
+UNITTEST_PREFIX=/opt/local
+ZLIB_PREFIX=${PREFIX}
+CURL_PREFIX=/opt/local
+METIS_PREFIX=${PREFIX}
+MSTK_PREFIX=${PREFIX}
+
+PARALLEL_NP=2
+MPIEXEC_ARGS='-mca mpi_yield_when_idle 1'
+
+USE_MSTK=ON

@@ -6,6 +6,8 @@
 #include "SecondarySpecies.hpp"
 #include "ChemistryException.hpp"
 
+#include "exceptions.hh"
+
 SecondarySpecies::SecondarySpecies() 
     : Species(),
       ncomp_(0), // # components in reaction
@@ -22,9 +24,9 @@ SecondarySpecies::SecondarySpecies()
 
 SecondarySpecies::SecondarySpecies(const SpeciesName in_name, 
                                    const SpeciesId in_id,
-                                   std::vector<SpeciesName> in_species,
-                                   std::vector<double> in_stoichiometries,
-                                   std::vector<SpeciesId> in_species_ids,
+                                   const std::vector<SpeciesName>& in_species,
+                                   const std::vector<double>& in_stoichiometries,
+                                   const std::vector<SpeciesId>& in_species_ids,
                                    const double in_h2o_stoich, 
                                    const double in_charge,
                                    const double in_mol_wt, 
@@ -67,7 +69,7 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
     error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
     error_stream << "CHEMISTRY_ERROR: invalid number of components "
                  << "(ncomp < 1), ncomp = " << ncomp() << std::endl;
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
   // size of species names, stoichiometries and id arrays must be the same
   if (species_names_.size() != stoichiometry_.size()) {
@@ -75,14 +77,14 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
     error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
     error_stream << "CHEMISTRY_ERROR: invalid input data: \n";
     error_stream << "CHEMISTRY_ERROR: species_names.size() != stoichiometries.size()" << std::endl;
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
   if (species_names_.size() != species_ids_.size()) {
     std::ostringstream error_stream;
     error_stream << "CHEMISTRY_ERROR: SecondarySpecies::SecondarySpecies(): \n";
     error_stream << "CHEMISTRY_ERROR: invalid input data: \n";
     error_stream << "CHEMISTRY_ERROR: species_names.size() != species_ids.size()" << std::endl;
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
 
 }  // end SecondarySpecies costructor
@@ -107,7 +109,7 @@ void SecondarySpecies::AddContributionToTotal(std::vector<double> *total)
   static_cast<void>(total);
 } // end addContributionToTotal()
 
-void SecondarySpecies::AddContributionToDTotal(const std::vector<Species> primary_species,
+void SecondarySpecies::AddContributionToDTotal(const std::vector<Species>& primary_species,
                                                Block *dtotal) 
 {
   static_cast<void>(primary_species);

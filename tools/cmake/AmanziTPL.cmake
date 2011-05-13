@@ -250,3 +250,18 @@ set_feature_info(UnitTest
 if (ENABLE_UnitTest)
     find_package(UnitTest)
 endif()    
+
+##############################################################################
+# OpenMP - http://openmp.org/
+#
+# comment out set_feature_info per
+# https://software.lanl.gov/ascem/trac/ticket/413#comment:1
+##############################################################################
+option(ENABLE_OpenMP "Build Amanzi executables with OpenMP" OFF)
+#set_feature_info(OpenMP
+#                 ENABLE_OpenMP
+#                 "OpenMP, multi-platform shared-memory parallel programming"
+#                 )
+if (ENABLE_OpenMP)
+    find_package(OpenMP)
+endif()

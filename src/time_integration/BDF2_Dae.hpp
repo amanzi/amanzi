@@ -31,7 +31,7 @@ namespace BDF2 {
     // The map is passed in, so that the BDF2 Dae stepper knows what
     // kind of Epetra_Vector is needs to work with.
     // The parameter list plist is checked for validity in the constructor.
-    Dae(fnBase& fn_, Epetra_BlockMap& map_);
+    Dae(fnBase& fn_, const Epetra_BlockMap& map_);
 
     // initializes the state of the BDF2 stepper
     void set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
@@ -87,7 +87,7 @@ namespace BDF2 {
     nka* fpa;
     fnBase& fn;
 
-    Epetra_BlockMap& map;
+    const Epetra_BlockMap& map;
 
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
 

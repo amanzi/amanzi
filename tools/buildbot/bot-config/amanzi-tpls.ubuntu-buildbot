@@ -1,0 +1,23 @@
+# use your package manager to install available packages, for example:
+#
+# sudo apt-get install install g++ mpi-default-dev mpi-default-bin libcurl4-gnutls-dev libhdf5-openmpi-dev libnetcdf-dev netcdf-bin libunittest++-dev libboost-dev cmake liblapack-dev libcgns-dev libboost-program-options-1.42-dev libboost-filesystem-1.42-dev libboost-system-1.42-dev libboost-regex-1.42-dev 
+
+PREFIX=${HOME}/slaves/amanzi/amanzi-libs
+SOURCE=${HOME}/slaves/amanzi/amanzi-tpl-source
+WORK_DIR=${HOME}/slaves/amanzi
+
+MPI_PREFIX=/usr
+BOOST_PREFIX=/usr
+HDF5_PREFIX=/usr
+NETCDF_PREFIX=${PREFIX}
+CGNS_PREFIX=/usr
+UNITTEST_PREFIX=/usr
+ZLIB_PREFIX=/usr
+CURL_PREFIX=/usr
+METIS_PREFIX=${PREFIX}
+MSTK_PREFIX=${PREFIX}
+
+PARALLEL_NP=2
+MPIEXEC_ARGS='-mca mpi_yield_when_idle 1'
+
+USE_MSTK=ON

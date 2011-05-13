@@ -101,8 +101,8 @@ KineticRateTST::~KineticRateTST(void)
 
 
 void KineticRateTST::Setup(const SecondarySpecies& reaction,
-                           const StringTokenizer reaction_data,
-                           const SpeciesArray primary_species)
+                           const StringTokenizer& reaction_data,
+                           const SpeciesArray& primary_species)
 {
   // break the reaction string into reactants and products
   name(reaction.name());
@@ -147,7 +147,7 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
 
 
 
-void KineticRateTST::Update(const SpeciesArray primary_species,
+void KineticRateTST::Update(const SpeciesArray& primary_species,
                             const std::vector<Mineral>&  minerals)
 {
   // update surace area from the minerals
@@ -228,7 +228,7 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
 
 }  // end AddContributionToResidual()
 
-void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_species,
+void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_species,
                                                const std::vector<Mineral>&  minerals,
                                                const double por_den_sat_vol,
                                                Block *J)
@@ -313,7 +313,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray primary_specie
 
 }  // end AddContributionToJacobian()
 
-void KineticRateTST::ParseParameters(const StringTokenizer reaction_data)
+void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data)
 {
   std::string space(" ");
   StringTokenizer st;

@@ -17,18 +17,18 @@ class SurfaceComplex {
   SurfaceComplex();
   SurfaceComplex(const SpeciesName name, 
                  const SpeciesId id,
-                 std::vector<SpeciesName> species,
-                 std::vector<double> stoichiometries,
-                 std::vector<int> species_ids,
+                 const std::vector<SpeciesName>& species,
+                 const std::vector<double>& stoichiometries,
+                 const std::vector<int>& species_ids,
                  const double h2o_stoich, 
                  const double free_site_stoichiometry,
                  const double charge, 
                  const double logK);
   SurfaceComplex(const SpeciesName name, 
                  const SpeciesId id,
-                 std::vector<SpeciesName> species,
-                 std::vector<double> stoichiometries,
-                 std::vector<int> species_ids,
+                 const std::vector<SpeciesName>& species,
+                 const std::vector<double>& stoichiometries,
+                 const std::vector<int>& species_ids,
                  const double h2o_stoich, 
                  SpeciesName free_site_name,
                  const double free_site_stoichiometry,
@@ -38,12 +38,12 @@ class SurfaceComplex {
   ~SurfaceComplex();
 
   // update molalities
-  void Update(const std::vector<Species>primarySpecies, 
+  void Update(const std::vector<Species>& primarySpecies, 
               const SurfaceSite& surface_site);
   // add stoichiometric contribution of complex to total
   void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
-  void AddContributionToDTotal(const std::vector<Species> primarySpecies,
+  void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
                                Block *dtotal);
 
   void display(void) const;

@@ -31,6 +31,8 @@
 #include "Verbosity.hpp"
 #include "Beaker.hpp"
 
+#include "exceptions.hh"
+
 // solver defaults
 const double Beaker::tolerance_default = 1.0e-12;
 const unsigned int Beaker::max_iterations_default = 250;
@@ -190,8 +192,8 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
   }
 
   if (error) {
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);    
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+                                                ChemistryException::kUnrecoverableError));
   }
 
 }  // end VerifyComponentSizes()
@@ -207,7 +209,7 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
     std::ostringstream error_stream;
     error_stream << "ERROR: Beaker::SetComponents(): \n";
     error_stream << "ERROR: ion_exchange_sites.size and components.ion_exchange_sites.size do not match.\n";
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
 
   size = components.minerals.size();
@@ -220,7 +222,7 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
     std::ostringstream error_stream;
     error_stream << "ERROR: Beaker::SetComponents(): \n";
     error_stream << "ERROR: minerals.size and components.minerals.size do not match.\n";
-    throw ChemistryException(error_stream.str());
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   }
 }  // end SetComponents()
 
@@ -241,27 +243,27 @@ void Beaker::SetupActivityModel(std::string model)
   }
 }  // end SetupActivityModel() 
 
-void Beaker::addPrimarySpecies(Species s) 
+void Beaker::addPrimarySpecies(const Species& s) 
 {
   primarySpecies_.push_back(s);
 } // end addPrimarySpecies()
 
-void Beaker::AddIonExchangeSite(IonExchangeSite exchanger) 
+void Beaker::AddIonExchangeSite(const IonExchangeSite& exchanger) 
 {
   ion_exchange_sites_.push_back(exchanger);
 } // end AddIonExchangeSites()
 
-void Beaker::AddIonExchangeComplex(IonExchangeComplex exchange_complex) 
+void Beaker::AddIonExchangeComplex(const IonExchangeComplex& exchange_complex) 
 {
   ion_exchange_rxns_.push_back(exchange_complex);
 } // end AddIonExchangeSites()
 
-void Beaker::addAqueousEquilibriumComplex(AqueousEquilibriumComplex c) 
+void Beaker::addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c) 
 {
   aqComplexRxns_.push_back(c);
 } // end addAqueousEquilibriumComplex()
 
-void Beaker::addMineral(Mineral m) 
+void Beaker::addMineral(const Mineral& m) 
 {
   minerals_.push_back(m);
 } // end addMineral()
@@ -282,12 +284,12 @@ bool Beaker::HaveKinetics(void) const
   return have_kinetics;
 }  // end HaveKinetics()
 
-void Beaker::addGeneralRxn(GeneralRxn r) 
+void Beaker::addGeneralRxn(const GeneralRxn& r) 
 {
   generalKineticRxns_.push_back(r);
 } // end addGeneralRxn()
 
-void Beaker::addSurfaceComplexationRxn(SurfaceComplexationRxn r) 
+void Beaker::addSurfaceComplexationRxn(const SurfaceComplexationRxn& r) 
 {
   surfaceComplexationRxns_.push_back(r);
 } // end addSurfaceComplexationRxn()
@@ -353,6 +355,14 @@ void Beaker::updateParameters(const Beaker::BeakerParameters& parameters,
   SetParameters(parameters);
 } // end updateParameters()
 
+void Beaker::ResetStatus(void)
+{
+  status_.num_rhs_evaluations = 0;
+  status_.num_jacobian_evaluations = 0;
+  status_.num_newton_iterations = 0;
+  status_.converged = false;
+}
+
 void Beaker::update_accumulation_coefficients(void)
 {
   aqueous_accumulation_coef(porosity() * saturation() * volume() * 1000.0 / dt());
@@ -385,15 +395,15 @@ void Beaker::initializeMolalities(double initial_molality)
     i->update(initial_molality);
 } // end initializeMolalities
 
-void Beaker::initializeMolalities(std::vector<double> initial_molalities) 
+void Beaker::initializeMolalities(const std::vector<double>& initial_molalities) 
 {
   if (initial_molalities.size() != primarySpecies_.size()) {
     std::ostringstream error_stream;
     error_stream << "ERROR: Beaker::initializeMolalities(): \n";
     error_stream << "ERROR:   Mismatch in size of initial_molalities array "
                  << "and number of primarySpecies" << std::endl;
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+                                                ChemistryException::kUnrecoverableError));
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
@@ -567,8 +577,8 @@ void Beaker::addAccumulation(std::vector<double> *residual)
   addAccumulation(total_, total_sorbed_, residual);
 }
 
-void Beaker::addAccumulation(std::vector<double> total,
-                             std::vector<double> total_sorbed,
+void Beaker::addAccumulation(const std::vector<double>& total,
+                             const std::vector<double>& total_sorbed,
                              std::vector<double> *residual)
 {
   // accumulation_coef = porosity*saturation*volume*1000./dt
@@ -612,8 +622,8 @@ void Beaker::addAccumulationDerivative(Block *J,
 
 } // end calculateAccumulationDerivative()
 
-void Beaker::calculateFixedAccumulation(std::vector<double> total,
-                                        std::vector<double> total_sorbed,
+void Beaker::calculateFixedAccumulation(const std::vector<double>& total,
+                                        const std::vector<double>& total_sorbed,
                                         std::vector<double> *fixed_accumulation)
 {
   for (unsigned int i = 0; i < total.size(); i++)
@@ -622,8 +632,9 @@ void Beaker::calculateFixedAccumulation(std::vector<double> total,
 } // end calculateAccumulation()
 
 void Beaker::calculateResidual(std::vector<double> *residual, 
-                               std::vector<double> fixed_accumulation)
+                               const std::vector<double>& fixed_accumulation)
 {
+  status_.num_rhs_evaluations++;
   // subtract fixed porition
   for (int i = 0; i < ncomp(); i++)
     (*residual)[i] = -fixed_accumulation[i];
@@ -639,6 +650,7 @@ void Beaker::calculateResidual(std::vector<double> *residual,
 
 void Beaker::calculateJacobian(Block *J)
 {
+  status_.num_jacobian_evaluations++;
   // must calculate derivatives with 
   calculateDTotal();
 
@@ -698,7 +710,7 @@ void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update,
   }
 } // end updateMolalitiesWithTruncation()
 
-double Beaker::calculateMaxRelChangeInMolality(std::vector<double> prev_molal)
+double Beaker::calculateMaxRelChangeInMolality(const std::vector<double>& prev_molal)
 {
   double max_rel_change = 0.0;
   for (int i = 0; i < ncomp(); i++) {
@@ -750,6 +762,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   // update class paramters
   // water_density [kg/m^3]
   // volume [m^3]
+  ResetStatus();
   updateParameters(parameters, dt);
   CheckChargeBalance(components->total);
 
@@ -861,7 +874,12 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
     // update before leaving so that we can see the erroneous values!
     UpdateComponents(components);
-    throw ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded);
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded));
+  }
+
+  status_.num_newton_iterations = num_iterations;
+  if (max_rel_change < tolerance()) {
+    status_.converged = true;
   }
 
   // update total concentrations
@@ -890,8 +908,8 @@ void Beaker::ValidateSolution()
       error_stream << "ERROR: Beaker::ValidateSolution(): \n";
       error_stream << "ERROR:   mineral " << minerals_.at(m).name()
                    << " volume_fraction is negative." << std::endl;
-      throw ChemistryException(error_stream.str(), 
-                               ChemistryException::kInvalidSolution);
+      Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+                                                  ChemistryException::kInvalidSolution));
     }
   }
 
@@ -903,7 +921,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters)
 {
   double speciation_tolerance = 1.e-12;
-
+  ResetStatus();
   updateParameters(parameters, 0.0);
   CheckChargeBalance(components.total);
   // initialize free-ion concentrations, these are actual
@@ -1000,9 +1018,16 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   // for now, initialize total sorbed concentrations based on the current free
   // ion concentrations
   updateEquilibriumChemistry();
+  status_.num_newton_iterations = num_iterations;
+  if (max_rel_change < tolerance()) {
+    status_.converged = true;
+  }
 
   if (verbosity() >= kDebugBeaker) {
-    std::cout << "Beaker::speciate num_iterations :" << num_iterations << std::endl;
+    std::cout << "Beaker::speciate: status.num_rhs_evaluations: " << status_.num_rhs_evaluations << std::endl;
+    std::cout << "Beaker::speciate: status.num_jacobian_evaluations: " << status_.num_jacobian_evaluations << std::endl;
+    std::cout << "Beaker::speciate: status.num_newton_iterations: " << status_.num_newton_iterations << std::endl;
+    std::cout << "Beaker::speciate: status.converged: " << status_.converged << std::endl;
   }
   return num_iterations;
 }  // end Speciate()
@@ -1028,7 +1053,7 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components)
   }
 } // end UpdateComponents()
 
-void Beaker::CopyComponents(const Beaker::BeakerComponents from,
+void Beaker::CopyComponents(const Beaker::BeakerComponents& from,
                             Beaker::BeakerComponents *to)
 {
   if (to->total.size() != from.total.size()) 
@@ -1063,16 +1088,16 @@ void Beaker::CopyComponents(const Beaker::BeakerComponents from,
 **  Output related functions
 **
 *******************************************************************************/
-void Beaker::GetPrimaryNames(std::vector<std::string>& names) const
+void Beaker::GetPrimaryNames(std::vector<std::string>* names) const
 {
-  names.clear();
+  names->clear();
   for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
        primary != primarySpecies_.end(); primary++) {
-    names.push_back(primary->name());
+    names->push_back(primary->name());
   }
 }  // end GetPrimaryNames()
 
-int Beaker::GetPrimaryIndex(std::string name) const
+int Beaker::GetPrimaryIndex(const std::string& name) const
 {
   int index = -1;
   for (std::vector<Species>::const_iterator primary = primarySpecies_.begin();
@@ -1475,7 +1500,7 @@ void Beaker::print_results(double time) const
   std::cout << std::endl;
 } // end print_results()
 
-void Beaker::print_linear_system(std::string s, Block *A, 
+void Beaker::print_linear_system(const std::string& s, Block *A, 
                                  std::vector<double> vector) {
   std::cout << s << std::endl;
   for (int i = 0; i < (int)vector.size(); i++)

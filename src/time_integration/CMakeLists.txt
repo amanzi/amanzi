@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -21,7 +21,7 @@ project(TIME_INTEGRATION)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
-include_directories(${FLOW_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -53,9 +53,10 @@ if (BUILD_TESTS)
 
     # Add the time_integration directory to the include paths
     include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+    include_directories(${SOLVERS_SOURCE_DIR})
 
     add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp) 
-    target_link_libraries(test_time_integration time_integration error_handling ${UnitTest_LIBRARIES})
-    add_test(time_integration test_time_integration)
+    target_link_libraries(test_time_integration time_integration solvers error_handling ${UnitTest_LIBRARIES})
+    add_amanzi_test(time_integration test_time_integration KIND unit)
 
 endif()

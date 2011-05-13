@@ -77,9 +77,9 @@ SUITE(GeochemistryTestsSecondarySpecies)
    public:
     MockSecondarySpecies() : SecondarySpecies() {};
     MockSecondarySpecies(const SpeciesName name, const SpeciesId id,
-                         std::vector<SpeciesName> species_names,
-                         std::vector<double> stoichiometry,
-                         std::vector<SpeciesId> species_ids,
+                         const std::vector<SpeciesName>& species_names,
+                         const std::vector<double>& stoichiometry,
+                         const std::vector<SpeciesId>& species_ids,
                          const double h2o_stoich,
                          const double charge,
                          const double mol_wt,
@@ -92,7 +92,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
       static_cast<void>(total);
     } // end addContributionToTotal()
 
-    void AddContributionToDTotal(const std::vector<Species> primary_species,
+    void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                  Block *dtotal)
     {
       static_cast<void>(primary_species);

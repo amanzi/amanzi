@@ -12,6 +12,7 @@
 #include "DiffusionPrecon.hpp"
 #include "MimeticHexLocal.hpp"
 #include "MimeticHex.hpp"
+#include "WaterRetentionBaseModel.hpp"
 
 class RichardsProblem
 {
@@ -39,10 +40,12 @@ public:
 
   void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P);
   void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
-
+  void dSofP(const Epetra_Vector &P, Epetra_Vector &dS);
+  
   void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
 
   void ComputePrecon(const Epetra_Vector &X);
+  void ComputePrecon(const Epetra_Vector &X, const double h);
 
   Epetra_Operator& Precon() const { return *precon_; }
 
@@ -66,6 +69,10 @@ public:
   void GetFluidViscosity(double &mu) const { mu = mu_; }
   void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = g_[i]; }
 
+  void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
+  
+  const Epetra_Vector* cell_vols() { return cell_volumes; }
+  
 private:
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
@@ -93,6 +100,10 @@ private:
 
   Teuchos::RCP<DiffusionMatrix> D_;
 
+  Epetra_Vector* cell_volumes;
+  
+  std::vector<Teuchos::RCP<WaterRetentionBaseModel> > WRM;
+  
 private:  // Auxillary functions
 
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
@@ -101,6 +112,7 @@ private:  // Auxillary functions
   void apply_BC_initial_(Epetra_Vector&);
   void apply_BC_final_(Epetra_Vector&);
   void face_centroid_(int, double[]);
+
 
 };
 

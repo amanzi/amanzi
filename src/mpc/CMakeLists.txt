@@ -7,7 +7,7 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
-include(AddParallelTest)
+include(TestManager)
 
 #
 # Define a project name
@@ -50,12 +50,12 @@ add_definitions("-DUSE_MPI")
 # Library: mpc
 #
 add_library(mpc MPC.cpp)
-set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
 if (ENABLE_CGNS)
     list(APPEND mpc_tpl_libs ${CGNS_LIBRARIES})
 endif()    
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
-target_link_libraries(mpc output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
+target_link_libraries(mpc solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
     
@@ -79,7 +79,7 @@ if (BUILD_TESTS)
         # Test: mpc-moab
         add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
         target_link_libraries(test_mpc_moab mpc moab_mesh chemistry transport flow ${UnitTest_LIBRARIES})
-        add_test(mpc-moab test_mpc_moab)
+        add_amanzi_test(mpc-moab test_mpc_moab KIND int)
     
     endif()
 

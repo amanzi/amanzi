@@ -37,21 +37,21 @@
 #include "ChemistryException.hpp" 
 
 ChemistryException::ChemistryException() 
-    : runtime_error("ERROR"),
+    : Message("ERROR"),
       error_status_(ChemistryException::kOkay)
 {
     /* end ChemistryException() */
 }
 
 ChemistryException::ChemistryException(std::string error_message) 
-    : runtime_error(error_message),
+    : Message(error_message),
       error_status_(ChemistryException::kOkay)
 {
     /* end ChemistryException(std::string) */
 }
 
 ChemistryException::ChemistryException(std::string error_message, Status error_status) 
-    : runtime_error(error_message),
+    : Message(error_message),
       error_status_(error_status)
 {
     /* end ChemistryException(std::string) */

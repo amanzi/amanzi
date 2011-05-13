@@ -50,6 +50,12 @@ DiffusionMatrix::~DiffusionMatrix()
   delete Dff_, Dcf_, Dcc_;
 }
 
+void DiffusionMatrix::add_to_celldiag(const Epetra_Vector &celldiag)
+{
+  Dcc_->Update(1.0,celldiag,1.0);
+}
+
+
 
 const Epetra_FECrsMatrix& DiffusionMatrix::Sff()
 {

@@ -26,7 +26,7 @@ set(GEOCHEM_LIBS
 
 
 add_executable(${EXE_NAME} ${EXE_SRCS})
-target_link_libraries(${EXE_NAME} ${GEOCHEM_LIBS})
+target_link_libraries(${EXE_NAME} ${GEOCHEM_LIBS} error_handling)
 
 if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
   execute_process(COMMAND ${CMAKE_COMMAND} -E 
@@ -35,4 +35,12 @@ if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
 endif()
 
 
-#INSTALL(TARGETS ${EXE_NAME} DESTINATION ${CMAKE_HOME_DIRECTORY}/bin)
+#
+# OpenMP test program
+#
+if (${OPENMP_FOUND})
+  add_executable(beaker-threads beaker-threads.cc)
+  target_link_libraries(beaker-threads ${GEOCHEM_LIBS} error_handling ${OpenMP_CXX_FLAGS})
+  set_target_properties(beaker-threads PROPERTIES COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
+endif()
+

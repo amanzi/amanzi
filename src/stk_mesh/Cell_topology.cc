@@ -1,3 +1,5 @@
+/* Copyright 2011 LANS */
+
 #include "Cell_topology.hh"
 
 #include "Element_types.hh"
@@ -7,36 +9,20 @@
 
 #include "dbc.hh"
 
-#include "stk_mesh_error.hh"
-
-namespace STK_mesh
-{
+namespace STK_mesh {
 
 
-const shards::CellTopology get_topology_data (const Mesh_data::ELEMENT_TYPE& type)
-{
-    ASSERT (Mesh_data::ok_type (type));
+const shards::CellTopology
+get_topology_data(const Mesh_data::ELEMENT_TYPE& type) {
+    ASSERT(Mesh_data::ok_type(type));
 
-    switch (type) {
-    case (Mesh_data::HEX):
+    if (Mesh_data::TRIANGLE == type) {
+    } else if (Mesh_data::HEX == type) {
         return shards::getCellTopologyData< shards::Hexahedron<8> >();
-        break;
-    case (Mesh_data::TETRA):
-        return shards::getCellTopologyData< shards::Tetrahedron<4> >();
-        break;
-    case (Mesh_data::PYRAMID):
-        return shards::getCellTopologyData< shards::Pyramid<5> >();
-        break;
-    case (Mesh_data::WEDGE):
-        return shards::getCellTopologyData< shards::Wedge<6> >();
-    default:
-        // fall through
-        break;
+    } else if (Mesh_data::TETRA == type) {
+        return shards::getCellTopologyData<shards::Tetrahedron<4> >();
     }
 
     Exceptions::amanzi_throw( STKMeshError ("Element not supported yet") );
-
 }
-
-
 }

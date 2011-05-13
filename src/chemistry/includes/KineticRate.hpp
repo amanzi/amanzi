@@ -24,25 +24,25 @@ class KineticRate
   virtual ~KineticRate(void);
 
   virtual void Setup(const SecondarySpecies& reaction,
-                     const StringTokenizer reaction_data,
-                     const SpeciesArray primary_species) = 0;
-  virtual void Update(const SpeciesArray primary_species,
+                     const StringTokenizer& reaction_data,
+                     const SpeciesArray& primary_species) = 0;
+  virtual void Update(const SpeciesArray& primary_species,
                       const std::vector<Mineral>& minerals) = 0;
   virtual void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                          const double por_den_sat_vol,
                                          std::vector<double> *residual) = 0;
-  virtual void AddContributionToJacobian(const SpeciesArray primary_species,
+  virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
                                          const double por_den_sat_vol,
                                          Block *J) = 0;
   virtual void Display(void) const = 0;
 
-  virtual void ParseParameters(const StringTokenizer rate) = 0;
+  virtual void ParseParameters(const StringTokenizer& rate) = 0;
 
-  void SetSpeciesIds(const SpeciesArray species,
-                     const std::string species_type,
-                     const std::vector<SpeciesName> in_names,
-                     const std::vector<double> in_stoichiometry,
+  void SetSpeciesIds(const SpeciesArray& species,
+                     const std::string& species_type,
+                     const std::vector<SpeciesName>& in_names,
+                     const std::vector<double>& in_stoichiometry,
                      std::vector<SpeciesId>* out_ids,
                      std::vector<double>* out_stoichiometry);
 

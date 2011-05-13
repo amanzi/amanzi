@@ -1,0 +1,23 @@
+# install everything locally. use your package manager to install cmake
+#
+# sudo port install cmake
+
+PREFIX=${HOME}/slaves/amanzi/amanzi-libs
+SOURCE=${HOME}/slaves/amanzi/tpl-source
+WORK_DIR=${HOME}/slaves/amanzi
+
+MPI_PREFIX=/usr
+BOOST_PREFIX=/opt/local
+HDF5_PREFIX=${PREFIX}
+NETCDF_PREFIX=${PREFIX}
+CGNS_PREFIX=${PREFIX}
+UNITTEST_PREFIX=${PREFIX}
+ZLIB_PREFIX=${PREFIX}
+CURL_PREFIX=${PREFIX}
+METIS_PREFIX=${PREFIX}
+MSTK_PREFIX=${PREFIX}
+
+PARALLEL_NP=2
+MPIEXEC_ARGS='-mca mpi_yield_when_idle 1'
+
+USE_MSTK=OFF

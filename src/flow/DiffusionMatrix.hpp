@@ -28,6 +28,9 @@ public:
 
   void Print(ostream &os=std::cout) const;
 
+  void add_to_celldiag(const Epetra_Vector &celldiag);
+
+
   // Accessors
 
   const Amanzi::AmanziMesh::Mesh& Mesh() const { return *mesh_; }
