@@ -1,13 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "State.hpp"
 #include "Chemistry_State.hpp"
+
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_MultiVector.h"
-#include "cell_geometry.hh"
+#include "Teuchos_RCPDecl.hpp"
 
+#include "cell_geometry.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
+#include "State.hpp"
+
 
 Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
   : total_component_concentration_(S->get_total_component_concentration()),
