@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "Chemistry_State.hpp"
+#include "Chemistry_State.hh"
 
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_MultiVector.h"

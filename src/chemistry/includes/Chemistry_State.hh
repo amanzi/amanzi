@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Chemistry_State_hpp__
-#define __Chemistry_State_hpp__
+#ifndef __CHEMISTRY_STATE_HH__
+#define __CHEMISTRY_STATE_HH__
 
 #include "Teuchos_RCP.hpp"
 
@@ -49,4 +49,4 @@ class Chemistry_State {
 
 
 
-#endif
+#endif  // __CHEMISTRY_STATE_HH__

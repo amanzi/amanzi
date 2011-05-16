@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "Chemistry_PK.hpp"
+#include "Chemistry_PK.hh"
 
 #include <string>
 #include <algorithm>
@@ -15,7 +15,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
-#include "Chemistry_State.hpp"
+#include "Chemistry_State.hh"
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "Verbosity.hpp"

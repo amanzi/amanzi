@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Chemistry_PK_hpp__
-#define __Chemistry_PK_hpp__
+#ifndef __CHEMISTRY_PK_HH__
+#define __CHEMISTRY_PK_HH__
 
 #include <string>
 
@@ -159,4 +159,4 @@ class Chemistry_PK {
 
 };
 
-#endif
+#endif  // __CHEMISTRY_PK_HH__
