@@ -360,7 +360,7 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
   }
   else {  // cell_dimension() = 2; surface or 2D mesh
 
-    List_ptr fedges = MF_Edges((MFace_ptr)cellid,1,0);
+    List_ptr fedges = MF_Edges((MFace_ptr)cell,1,0);
     MEdge_ptr edge;
     int idx = 0;
     while ((edge = List_Next_Entry(fedges,&idx))) {
