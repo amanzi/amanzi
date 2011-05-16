@@ -28,6 +28,16 @@ project(INPUT)
 include_directories(${Teuchos_INCLUDE_DIRS})
 
 
+#
+# Library: input
+#
+set(input_src_files input_base_class.cc simple_mesh_input.cc
+                    transport_input.cc)
+add_library(input ${input_src_files})
+target_link_libraries(input ${Teuchos_LIBRARIES})
+
+
+
 
 # Add examples
 option(ENABLE_INPUT_EXAMPLES "Build input examples" OFF)

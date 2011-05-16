@@ -12,6 +12,8 @@
 #include "DiffusionPrecon.hpp"
 #include "MimeticHexLocal.hpp"
 #include "MimeticHex.hpp"
+#include "WaterRetentionBaseModel.hpp"
+#include "Flow_State.hpp"
 
 class RichardsProblem
 {
@@ -36,6 +38,8 @@ public:
   // Sets a spatially variable (scalar) permeability, one value per cell.
   //void SetPermeability(const std::vector<double> &k);
   void SetPermeability(const Epetra_Vector &k);
+
+  void SetFlowState( Teuchos::RCP<const Flow_State> FS_ );
 
   void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P);
   void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
@@ -69,7 +73,9 @@ public:
   void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = g_[i]; }
 
   void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
-
+  
+  const Epetra_Vector* cell_vols() { return cell_volumes; }
+  
 private:
 
   Teuchos::RCP<Mesh_maps_base> mesh_;
@@ -83,7 +89,6 @@ private:
   double g_[3]; // gravitational acceleration
   std::vector<double> k_; // spatially variable permeability
   std::vector<double> k_rl_;  // relative permeability
-
   double vG_m_;     // van Genuchten m
   double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
   double vG_alpha_; // van Genuchten alpha
@@ -97,6 +102,12 @@ private:
 
   Teuchos::RCP<DiffusionMatrix> D_;
 
+  Epetra_Vector* cell_volumes;
+  
+  std::vector<Teuchos::RCP<WaterRetentionBaseModel> > WRM;
+
+  Teuchos::RCP<const Flow_State> FS;  
+
 private:  // Auxillary functions
 
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
@@ -105,6 +116,7 @@ private:  // Auxillary functions
   void apply_BC_initial_(Epetra_Vector&);
   void apply_BC_final_(Epetra_Vector&);
   void face_centroid_(int, double[]);
+
 
 };
 

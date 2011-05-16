@@ -13,8 +13,10 @@
 
 RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem, 
 					       Teuchos::ParameterList &plist, 
-					       const Epetra_Map &map) 
-  : problem_(problem), D(problem->Matrix()),  map_(map), plist_(plist)
+					       const Epetra_Map &map,
+					       Teuchos::RCP<const Flow_State> FS) 
+  : problem_(problem), D(problem->Matrix()),  map_(map), plist_(plist),
+    FS_(FS)
 {
   this->setLinePrefix("RichardsModelEvaluator");
   this->getOStream()->setShowLinePrefix(true);
@@ -61,9 +63,20 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   // compute S'(p)
   Epetra_Vector dS (problem_->CellMap());
   problem_->dSofP(*uc, dS);
+  const Epetra_Vector& phi = FS_->porosity();
+  double rho;
+  problem_->GetFluidDensity(rho);
+
+  // assume that porosity is piecewise constant
+  dS.Multiply(rho,dS,phi,0.0);
+
+  // scale by the cell volumes
+  dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
+
+  // on the cell unknowns compute f=f+dS*udotc*rho*phi
+  fc->Multiply(1.0,dS,*udotc,1.0); 
   
-  // on the cell unknowns compute f=f+dS*udotc
-  fc->Multiply(1.0,dS,*udotc,1.0);
+  //fc->Print(std::cout);
   
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
     {
@@ -79,8 +92,9 @@ void RichardsModelEvaluator::precon(const Epetra_Vector& X, Epetra_Vector& Y)
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-
   (problem_->Precon()).ApplyInverse(X, Y);
+
+  //Y.Print(std::cout);
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
     {
@@ -106,8 +120,6 @@ void RichardsModelEvaluator::update_precon(const double t, const Epetra_Vector& 
     {
       *out << "update_precon done" << std::endl;
     }
-
-
 }
 
 
@@ -120,21 +132,21 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
 
-  // simply use 2-norm of the difference for now
-  
-  Epetra_Vector *u_cell  = problem_->CreateCellView(u);
-  Epetra_Vector *du_cell = problem_->CreateCellView(du);
-  
   double atol = 0.00001;
   double rtol = 0.0;
 
   double en = 0.0;
-  for (int j=0; j<u_cell->MyLength(); j++)
+  for (int j=0; j<u.MyLength(); j++)
     {
       double tmp = abs(du[j])/(atol+rtol*abs(u[j]));
       en = std::max<double>(en, tmp);
     }
   
+  // find the global maximum
+#ifdef HAVE_MPI
+  MPI_Allreduce ( &en, &en, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+#endif
+
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
     {
       *out << "enorm done" << std::endl;
