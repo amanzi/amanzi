@@ -105,8 +105,8 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
                            const SpeciesArray& primary_species)
 {
   // break the reaction string into reactants and products
-  name(reaction.name());
-  identifier(reaction.identifier());
+  set_name(reaction.name());
+  set_identifier(reaction.identifier());
 
   // copy the reactant species, ids and stoichiometry from the reaction species
   if (verbosity() == kDebugMineralKinetics) {

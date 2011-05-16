@@ -1,26 +1,23 @@
-/* -*-  mode: c++; c-default-style: "google-c-style"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cmath>
 
 #include <iostream>
 
-#include "ActivityModelDebyeHuckel.hpp"
+#include "activity-model-debye-huckel.hh"
 
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
-const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C  
+const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C
 const double ActivityModelDebyeHuckel::debyeBdot = 0.0410;  // 25C
 
 ActivityModelDebyeHuckel::ActivityModelDebyeHuckel()
-    : ActivityModel()
-{
+    : ActivityModel() {
 }  // end ActivityModelDebyeHuckel constructor
 
 
-ActivityModelDebyeHuckel::~ActivityModelDebyeHuckel()
-{
+ActivityModelDebyeHuckel::~ActivityModelDebyeHuckel() {
 }  // end ActivityModelDebyeHuckel destructor
 
-double ActivityModelDebyeHuckel::Evaluate(const Species& species)
-{
+double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
   // log(gamma_i) = - A * z_i^2 * sqrt(I) / (1 + a0 * B * sqrt(I)) + Bdot * I
   double gamma(0.0);
   if (fabs(species.charge()) < 1.e-10) {
@@ -33,12 +30,12 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species)
         (1.0 + species.ion_size_parameter() * debyeB * sqrt_I) +
         debyeBdot * I_;
 
-    gamma = std::exp(log_to_ln(log_gamma));  // why not just std::pow(10.0, log_gamma)? 
+    // bja: why not just std::pow(10.0, log_gamma)?
+    gamma = std::exp(log_to_ln(log_gamma));
   }
   return gamma;
 }  // end Evaluate()
 
-void ActivityModelDebyeHuckel::Display(void) const
-{
+void ActivityModelDebyeHuckel::Display(void) const {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
 }  // end Display()

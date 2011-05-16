@@ -14,8 +14,8 @@
 #include <vector>
 #include <sstream>
 
-#include "ActivityModel.hpp"
-#include "ActivityModelFactory.hpp"
+#include "activity-model.hh"
+#include "activity-model-factory.hh"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
 #include "GeneralRxn.hpp"
@@ -380,8 +380,8 @@ void Beaker::updateActivityCoefficients() {
   //return;
   activity_model_->CalculateIonicStrength(primarySpecies_,
                                           aqComplexRxns_);
-  activity_model_->CalculateActivityCoefficients(primarySpecies_,
-                                                 aqComplexRxns_);
+  activity_model_->CalculateActivityCoefficients(&primarySpecies_,
+                                                 &aqComplexRxns_);
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++)
     i->update();

@@ -37,7 +37,7 @@ class KineticRate
                                          Block *J) = 0;
   virtual void Display(void) const = 0;
 
-  virtual void ParseParameters(const StringTokenizer& rate) = 0;
+  virtual void ParseParameters(const StringTokenizer& rate_parameters) = 0;
 
   void SetSpeciesIds(const SpeciesArray& species,
                      const std::string& species_type,
@@ -50,15 +50,14 @@ class KineticRate
 
   void set_verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
   Verbosity verbosity(void) const { return this->verbosity_; };
-
-  void name(const std::string in_name) { this->name_ = in_name; };
   std::string name(void) const { return this->name_; };
-
-  void identifier(const SpeciesId in_id) { this->identifier_ = in_id; };
   SpeciesId identifier(void) const { return this->identifier_; };
 
  protected:
   KineticRate(void);
+
+  void set_name(const std::string in_name) { this->name_ = in_name; };
+  void set_identifier(const SpeciesId in_id) { this->identifier_ = in_id; };
 
   std::vector<SpeciesName> reactant_names;
   std::vector<double> reactant_stoichiometry;

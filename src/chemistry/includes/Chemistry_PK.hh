@@ -1,14 +1,22 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Chemistry_PK_hpp__
-#define __Chemistry_PK_hpp__
+#ifndef __CHEMISTRY_PK_HH__
+#define __CHEMISTRY_PK_HH__
+
+#include <string>
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MultiVector.h"
-#include "State.hpp"
-#include "Chemistry_State.hpp"
+#include "Teuchos_ParameterList.hpp"
+
 #include "Beaker.hpp"
 #include "ChemistryException.hpp"
 #include "Verbosity.hpp"
+
+// forward declarations
+class Epetra_MultiVector;
+class Epetra_Vector;
+class Epetra_SerialDenseVector;
+
+class Chemistry_State;
 
 // Chemistry Process Kernel Interface
 
@@ -63,11 +71,11 @@ class Chemistry_PK {
   // Ben: the following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
-  void set_chemistry_output_names(std::vector<string> &names);
+  void set_chemistry_output_names(std::vector<std::string> &names);
 
   // Ben: this routine should set the strings that will be 
   // appended to the component_x tag in the cgns output
-  void set_component_names(std::vector<string> &names);
+  void set_component_names(std::vector<std::string> &names);
 
  protected:
   void set_status(ChemistryException::Status status) { this->status_ = status; };
@@ -151,4 +159,4 @@ class Chemistry_PK {
 
 };
 
-#endif
+#endif  // __CHEMISTRY_PK_HH__

@@ -2,26 +2,23 @@
 #include <sstream>
 #include <string>
 
-#include "ActivityModel.hpp"
-#include "ActivityModelDebyeHuckel.hpp"
-#include "ActivityModelUnit.hpp"
-#include "ActivityModelFactory.hpp"
+#include "activity-model.hh"
+#include "activity-model-debye-huckel.hh"
+#include "activity-model-unit.hh"
+#include "activity-model-factory.hh"
 #include "ChemistryException.hpp"
 #include "exceptions.hh"
 
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
 const std::string ActivityModelFactory::unit = "unit";
 
-ActivityModelFactory::ActivityModelFactory()
-{
+ActivityModelFactory::ActivityModelFactory() {
 }  // end ActivityModelFactory constructor
 
-ActivityModelFactory::~ActivityModelFactory()
-{
+ActivityModelFactory::~ActivityModelFactory() {
 }  // end ActivityModelFactory destructor
 
-ActivityModel* ActivityModelFactory::Create(const std::string& model)
-{
+ActivityModel* ActivityModelFactory::Create(const std::string& model) {
   ActivityModel* activity_model = NULL;
 
   if (model == debye_huckel) {
@@ -35,7 +32,7 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model)
     error_stream << "ERROR: Unknown activity model name: " << model << "\n"
                  << "       valid names: " << unit << "\n"
                  << "                    " << debye_huckel << "\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
                                                 ChemistryException::kUnrecoverableError));
   }
 
@@ -48,7 +45,9 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model)
                                                 ChemistryException::kUnrecoverableError));
   } else {
     // finish any additional setup
-    // TODO: set the name in the object constructor so we can verify that the correct object was created.
+
+    // TODO(bandre): set the name in the object constructor so we can
+    // verify that the correct object was created.
     activity_model->name(model);
   }
   return activity_model;

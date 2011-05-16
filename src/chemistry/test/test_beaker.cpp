@@ -7,7 +7,7 @@
 
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
-#include "ActivityModelFactory.hpp"
+#include "activity-model-factory.hh"
 #include "Verbosity.hpp"
 #include "ChemistryException.hpp"
 

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 
 #include "Mineral.hpp"
 #include "MineralKineticsFactory.hpp"
@@ -11,6 +12,7 @@
 #include "Species.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
+#include "ChemistryException.hpp"
 
 const std::string MineralKineticsFactory::kTST = "TST";
 
@@ -39,17 +41,27 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
   if (!(rate_name.at(0).compare(this->kTST))) {
     kinetic_rate = new KineticRateTST();
   } else {
-    std::cout << "Unknown Rate type: \'" << rate_name.at(0) << "\'" << std::endl;
-    // some sort of gracefull exit here....
+    std::ostringstream error_stream;
+    error_stream << "ERROR: MineralKineticsFactory::Create(): \n";
+    error_stream << "ERROR: Unknown kinetic rate name: " << rate_name.at(0) 
+                 << "\n       valid names: " << kTST << "\n";
+    throw ChemistryException(error_stream.str(), 
+                             ChemistryException::kUnrecoverableError);
   }
 
   if (kinetic_rate != NULL) {
     kinetic_rate->set_verbosity(verbosity());
-    kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral), rate_data, primary_species);
+    kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral), 
+                        rate_data, primary_species);
   } else {
-    // failed to create a rate object, error message and graceful exit here....
-    std::cout << "MineralKineticsFactory::ParseRate() : could not create rate type: "
-              << rate_name[0] << std::endl;
+    // new failed to create a rate object, for some reason.... Do we
+    // really need this check?
+    std::ostringstream error_stream;
+    error_stream << "ERROR: MineralKineticsFactory::Create(): \n";
+    error_stream << "ERROR: could not create rate type: " << rate_name.at(0) 
+                 << "\n       new failed...?" << std::endl;
+    throw ChemistryException(error_stream.str(), 
+                             ChemistryException::kUnrecoverableError);
   }
 
   return kinetic_rate;
@@ -70,8 +82,12 @@ SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_na
   }
   if (!mineral_found) {
     // print helpful message and exit gracefully
-    std::cout << "MineralKineticsFactory::VerifyMineralName(): Did not find mineral \'"
-              << mineral_name << "\' in the mineral list." << std::endl;
+    std::ostringstream error_stream;
+    error_stream << "ERROR: MineralKineticsFactory::VerifyMineralName(): \n";
+    error_stream << "ERROR: Did not find mineral: \'" << mineral_name << "\'\n"
+                 << "       in the mineral list. " << std::endl;
+    throw ChemistryException(error_stream.str(), 
+                             ChemistryException::kUnrecoverableError);
   }
   return mineral_id;
 }  // end VerifyMineralName()
