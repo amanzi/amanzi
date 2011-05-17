@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Tue May  3 11:00:08 2011
+ * @date Tue May 17 10:20:40 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Tue May  3 11:00:08 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 10:20:40 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -23,6 +23,7 @@
 #include "../Mesh_STK_factory.hh"
 #include "../Data_structures.hh"
 #include "HexMeshGenerator.hh"
+#include "Auditor.hh"
 
 
 SUITE (HexMesh)
@@ -122,8 +123,8 @@ SUITE (HexMesh)
 
         mesh->summary(std::cerr);
 
-        // Auditor audit("stk_mesh_hextest1_", mesh);
-        // audit();
+        Auditor audit("stk_mesh_hextest1_", mesh);
+        audit();
 
     }
 
@@ -224,34 +225,34 @@ SUITE (HexMesh)
             CHECK(e.empty());
         }            
 
-        // Auditor audit("stk_mesh_hextest2_", mesh);
-        // audit();
+        Auditor audit("stk_mesh_hextest2_", mesh);
+        audit();
     } 
 
-    // TEST (HexGenerator)
-    // {
-    //     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    //     Teuchos::RCP<Mesh_maps_base> 
-    //         mesh_map(new Amanzi::AmanziMesh::STK::Mesh_maps_stk(comm, 10, 10, 10));
-        
-    //     // Auditor audit("stk_mesh_generated_", mesh_map);
-    //     // audit();
-    // }
+    TEST (HexGenerator)
+    {
+        Epetra_MpiComm comm(MPI_COMM_WORLD);
+        Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+            mesh_map(new Amanzi::AmanziMesh::STK::Mesh_STK(comm, 10, 10, 10));
+     
+        Auditor audit("stk_mesh_generated_", mesh_map);
+        audit();
+    }
 
-    // TEST (HexPartition)
-    // {
-    //     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    //     Amanzi::AmanziMesh::STK::Mesh_maps_stk *mesh_stk = 
-    //       new Amanzi::AmanziMesh::STK::Mesh_maps_stk(comm, 4, 2, 2);
-    //     Teuchos::RCP<Mesh_maps_base> mesh_map(mesh_stk);
+    TEST (HexPartition)
+    {
+        Epetra_MpiComm comm(MPI_COMM_WORLD);
+        Amanzi::AmanziMesh::STK::Mesh_STK
+          *mesh_stk = new Amanzi::AmanziMesh::STK::Mesh_STK(comm, 4, 2, 2);
 
-    //     Teuchos::RCP<Epetra_CrsGraph> cgraph =
-    //       mesh_stk->cellgraph();
-    //     cgraph->Print(std::cerr);
+        Teuchos::RCP<Epetra_CrsGraph> cgraph = mesh_stk->cellgraph();
+        cgraph->Print(std::cerr);
 
-    //     mesh_stk->redistribute();
-    //     // Auditor audit("stk_mesh_rpartitioned_", mesh_map);
-    //     // audit();
-    // }
+        mesh_stk->redistribute();
+
+        Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(mesh_stk);
+        Auditor audit("stk_mesh_rpartitioned_", mesh);
+        audit();
+    }
 }
 

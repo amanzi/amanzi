@@ -39,7 +39,7 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 #
 file(GLOB stk_mesh_files "*.cc") 
 add_library(stk_mesh ${stk_mesh_files})
-target_link_libraries(stk_mesh error_handling mesh_data 
+target_link_libraries(stk_mesh error_handling mesh_data mesh 
                       ${Trilinos_LIBRARIES} ${ExodusII_LIBRARIES})
 
 if (BUILD_TESTS)
@@ -50,7 +50,7 @@ if (BUILD_TESTS)
     # Test: stk_mesh
     add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
                      test/test_Maps.cc test/test_Hex.cc)
-    target_link_libraries(test_stk_mesh stk_mesh 
+    target_link_libraries(test_stk_mesh stk_mesh mesh_audit
                           ${UnitTest_LIBRARIES} )
     add_amanzi_test(stk_mesh test_stk_mesh KIND unit)
 

@@ -53,22 +53,24 @@ class Mesh_STK_Impl {
   unsigned int count_entities (stk::mesh::EntityRank rank,  Parallel_type category) const;
   unsigned int count_entities (const stk::mesh::Part& part, Parallel_type category) const;
     
-  void get_entities (stk::mesh::EntityRank rank,  Parallel_type category, Entity_vector& entities) const;
-  void get_entities (const stk::mesh::Part& part, Parallel_type category, Entity_vector& entities) const;
-    
+  void get_entities (stk::mesh::EntityRank rank,  Parallel_type category, 
+                     Entity_vector& entities) const;
+  void get_entities (const stk::mesh::Part& part, Parallel_type category, 
+                     Entity_vector& entities) const;
+
   void element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const;
   void element_to_face_dirs (stk::mesh::EntityId element, std::vector<int>& ids) const;
   void element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const;
   void face_to_nodes    (stk::mesh::EntityId element, Entity_Ids& ids) const;
   void face_to_elements (stk::mesh::EntityId element, Entity_Ids& ids) const;
+  void node_to_faces    (stk::mesh::EntityId element, Entity_Ids& ids) const;
+  void node_to_elements (stk::mesh::EntityId element, Entity_Ids& ids) const;
     
   double const * coordinates (stk::mesh::EntityId node) const;
   double const * coordinates (stk::mesh::Entity* node)  const;
     
   stk::mesh::Entity* id_to_entity (stk::mesh::EntityRank rank, 
-                                   stk::mesh::EntityId id,
-                                   Parallel_type category) const;
-
+                                   stk::mesh::EntityId id) const;
 
   // Sets
   // ----
