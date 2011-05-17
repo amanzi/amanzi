@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December  9, 2010 by William A. Perkins
-// Last Change: Tue May 10 11:21:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:46:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -39,7 +39,7 @@ class Auditor {
 
   /// Default constructor.
   Auditor(std::string oname, Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p mesh)
-      : mesh_map(new Amanzi::AmanziMesh::STK::Mesh_STK(mesh)) {
+      : mesh_map(new Amanzi::AmanziMesh::Mesh_STK(mesh)) {
     std::ostringstream ofile;
     ofile << oname
           << std::setfill('0') << std::setw(4) 

@@ -3,7 +3,7 @@
 /**
  * @file   MeshFramework.hh
  * @author William A. Perkins
- * @date Mon Mar 14 12:20:41 2011
+ * @date Tue May 17 11:37:06 2011
  * 
  * @brief  some typedefs to identify mesh frameworks
  * 
@@ -16,7 +16,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 11, 2011 by William A. Perkins
-// Last Change: Mon Mar 14 12:20:41 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:37:06 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -34,7 +34,7 @@ namespace AmanziMesh {
   enum Framework {
     Simple = 1,
     MOAB,
-    STK,
+    STKMESH,
     MSTK
   };
 

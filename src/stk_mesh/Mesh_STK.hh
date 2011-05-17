@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.hh
  * @author William A. Perkins
- * @date Tue May 17 10:15:23 2011
+ * @date Tue May 17 11:42:40 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Tue May 17 10:15:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:42:40 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -33,7 +33,6 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
-namespace STK {
 
 // -------------------------------------------------------------
 //  class Mesh_STK
@@ -42,7 +41,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
  public:
 
   /// Construct a mesh from a
-  explicit Mesh_STK(Mesh_STK_Impl_p mesh);
+  explicit Mesh_STK(STK::Mesh_STK_Impl_p mesh);
 
   /// Construct hexahedral mesh of the given size and spacing
   Mesh_STK(const Epetra_MpiComm& comm, 
@@ -284,10 +283,10 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   std::auto_ptr<Epetra_MpiComm> communicator_;
 
   /// The mesh implementation
-  Mesh_STK_Impl_p mesh_;
+  STK::Mesh_STK_Impl_p mesh_;
 
   /// A thing to relate stk::mesh ranks to Entity_kind
-  Entity_map entity_map_;
+  STK::Entity_map entity_map_;
 
   // Maps, Accessors and setters.
   // ----------------------------
@@ -319,7 +318,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
 };
 
-} // namespace STK
 } // namespace AmanziMesh
 } // namespace Amanzi
 

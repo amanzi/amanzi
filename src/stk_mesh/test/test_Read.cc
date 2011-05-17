@@ -2,7 +2,7 @@
 /**
  * @file   test_Read.cc
  * @author William A. Perkins
- * @date Tue May 17 10:54:43 2011
+ * @date Tue May 17 11:47:52 2011
  * 
  * @brief Some unit tests for reading a (serial) Exodus file and
  * building a STK_mesh::Mesh_maps_stk instance.
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 22, 2010 by William A. Perkins
-// Last Change: Tue May 17 10:54:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:47:52 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <sstream>
@@ -434,7 +434,7 @@ SUITE (Exodus)
     fname = fpath + fname;
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-        mesh(new Amanzi::AmanziMesh::STK::Mesh_STK(comm, fname.c_str()));
+        mesh(new Amanzi::AmanziMesh::Mesh_STK(comm, fname.c_str()));
 
     Auditor audit("stk_mesh_read_", mesh);
     audit();

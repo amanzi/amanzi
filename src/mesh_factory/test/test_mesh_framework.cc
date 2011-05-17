@@ -2,7 +2,7 @@
 /**
  * @file   test_mesh_framework.cc
  * @author William A. Perkins
- * @date Mon May 16 14:03:55 2011
+ * @date Tue May 17 11:51:39 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Mon May 16 14:03:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:51:39 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -38,9 +38,9 @@ SUITE (Framework)
 #endif
 
 #ifdef HAVE_STK_MESH
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STK) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STKMESH) != pref.end());
 #else
-    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STK) == pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STKMESH) == pref.end());
 #endif
 
 #ifdef HAVE_MSTK_MESH
@@ -65,7 +65,7 @@ SUITE (Framework)
 #endif
     
     pref.clear();
-    pref.push_back(Amanzi::AmanziMesh::STK);
+    pref.push_back(Amanzi::AmanziMesh::STKMESH);
     pref = Amanzi::AmanziMesh::available_preference(pref);
 #ifdef HAVE_STK_MESH
     CHECK(!pref.empty());
@@ -98,13 +98,13 @@ SUITE (Framework)
     CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
     if (parallel) {
-      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::ExodusII, parallel));
-      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::Nemesis, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::Nemesis, parallel));
     } else {
-      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::ExodusII, parallel));
-      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::Nemesis, parallel));
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::Nemesis, parallel));
     }
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::MOABHDF5, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STKMESH, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
   }
 
@@ -115,7 +115,7 @@ SUITE (Framework)
     
     CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel));
     CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel));
-    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STK, parallel));
+    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STKMESH, parallel));
     if (parallel) {
       CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel));
     } 

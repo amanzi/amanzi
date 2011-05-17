@@ -2,7 +2,7 @@
 /**
  * @file   MeshFramework.cc
  * @author William A. Perkins
- * @date Mon Mar 14 16:40:01 2011
+ * @date Tue May 17 11:49:33 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 11, 2011 by William A. Perkins
-// Last Change: Mon Mar 14 16:40:01 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:49:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
@@ -33,7 +33,7 @@ namespace AmanziMesh {
     case (Simple):
       result = "Simple";
       break;
-    case (STK):
+    case (STKMESH):
       result = "stk::mesh";
       break;
     case (MOAB):
@@ -57,7 +57,7 @@ namespace AmanziMesh {
     // order is important here, it is the order in which the framework
     // is chosen, if there is a choice
 
-    if (framework_available(STK)) result.push_back(STK);
+    if (framework_available(STKMESH)) result.push_back(STKMESH);
     if (framework_available(Simple)) result.push_back(Simple);
     if (framework_available(MOAB)) result.push_back(MOAB);
     if (framework_available(MSTK)) result.push_back(MSTK);

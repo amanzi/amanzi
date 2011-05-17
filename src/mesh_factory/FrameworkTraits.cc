@@ -2,7 +2,7 @@
 /**
  * @file   FrameworkTraits.cc
  * @author William A. Perkins
- * @date Mon May 16 14:46:38 2011
+ * @date Tue May 17 11:39:46 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Mon May 16 14:46:38 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:39:46 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <boost/format.hpp>
@@ -224,11 +224,10 @@ typedef bogus_maps Mesh_maps_moab;
 
 #ifdef HAVE_STK_MESH
 #define STK_FLAG true
-#include "Mesh_maps_stk.hh"
-typedef STK_mesh::Mesh_maps_stk Mesh_maps_stk;
+#include "Mesh_STK.hh"
 #else
 #define STK_FLAG false
-typedef bogus_maps Mesh_maps_stk;
+typedef bogus_maps Mesh_STK;
 #endif
 
 #ifdef HAVE_MSTK_MESH
@@ -280,7 +279,7 @@ struct FrameworkTraits {
   typedef mpl::bool_<
     M == Simple  || 
     ( M == MOAB && MOAB_FLAG ) ||
-    ( M == STK && STK_FLAG ) ||
+    ( M == STKMESH && STK_FLAG ) ||
     ( M == MSTK && MSTK_FLAG ) 
     > available;
   
@@ -290,8 +289,8 @@ typedef mpl::eval_if<
   mpl::bool_<M == Simple>
   , mpl::identity<Mesh_simple>
   , mpl::eval_if<
-      mpl::bool_<M == STK>
-      , mpl::identity<Mesh_maps_stk>
+      mpl::bool_<M == STKMESH>
+      , mpl::identity<Mesh_STK>
       , mpl::identity<bogus_maps>
       >
   > generate_maps;
@@ -302,8 +301,8 @@ typedef mpl::eval_if<
   mpl::bool_<M == MOAB>
   , mpl::identity<Mesh_maps_moab>
   , mpl::eval_if<
-      mpl::bool_<M == STK>
-      , mpl::identity<Mesh_maps_stk>
+      mpl::bool_<M == STKMESH>
+      , mpl::identity<Mesh_STK>
       , mpl::eval_if<
           mpl::bool_<M == MSTK>
           , mpl::identity<Mesh_MSTK>
@@ -326,7 +325,7 @@ struct canread {
     mpl::bool_< M == MOAB >
     , mpl::bool_< FMT == MOABHDF5 >
     , mpl::eval_if<
-        mpl::bool_< M == STK >
+        mpl::bool_< M == STKMESH >
         , mpl::bool_< FMT == Nemesis >
         , mpl::eval_if<
             mpl::bool_< M == MSTK >
@@ -341,7 +340,7 @@ struct canread {
     mpl::bool_< M == MOAB >
     , mpl::bool_< FMT == MOABHDF5 >
     , mpl::eval_if<
-        mpl::bool_< M == STK >
+        mpl::bool_< M == STKMESH >
         , mpl::bool_< FMT == ExodusII >
         , mpl::eval_if<
             mpl::bool_< M == MSTK >
@@ -364,10 +363,10 @@ read(Epetra_MpiComm& comm, const std::string& fname)
 /// A type to indicate whether this framework can generate meshes
 struct cangenerate {
   struct parallel : 
-      mpl::bool_< M == STK >::type
+      mpl::bool_< M == STKMESH >::type
   {};
   struct serial :
-      mpl::bool_<M == Simple || M == STK >::type
+      mpl::bool_<M == Simple || M == STKMESH >::type
   {};
 };
 
@@ -396,8 +395,8 @@ framework_available(const Framework& f)
     case Simple:
       result = FrameworkTraits<Simple>::available::value;
       break;
-    case STK:
-      result = FrameworkTraits<STK>::available::value;
+    case STKMESH:
+      result = FrameworkTraits<STKMESH>::available::value;
       break;
     case MOAB:
       result = FrameworkTraits<MOAB>::available::value;
@@ -465,8 +464,8 @@ framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
     case Simple:
       result = framework_reads<Simple>(fmt, parallel);
       break;
-    case STK:
-      result = framework_reads<STK>(fmt, parallel);
+    case STKMESH:
+      result = framework_reads<STKMESH>(fmt, parallel);
       break;
     case MOAB:
       result = framework_reads<MOAB>(fmt, parallel);
@@ -495,8 +494,8 @@ framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fnam
     case Simple:
       result = FrameworkTraits<Simple>::read(comm, fname);
       break;
-    case STK:
-      result = FrameworkTraits<STK>::read(comm, fname);
+    case STKMESH:
+      result = FrameworkTraits<STKMESH>::read(comm, fname);
       break;
     case MOAB:
       result = FrameworkTraits<MOAB>::read(comm, fname);
@@ -525,8 +524,8 @@ framework_generates(const Framework& f, const bool& parallel)
     case Simple:
       result = parallel_test< FrameworkTraits<Simple>::cangenerate >(parallel);
       break;
-    case STK:
-      result = parallel_test< FrameworkTraits<STK>::cangenerate >(parallel);
+    case STKMESH:
+      result = parallel_test< FrameworkTraits<STKMESH>::cangenerate >(parallel);
       break;
     case MOAB:
       result = parallel_test< FrameworkTraits<MOAB>::cangenerate >(parallel);
@@ -558,8 +557,8 @@ framework_generate(Epetra_MpiComm& comm, const Framework& f,
     case Simple:
       result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
       break;
-    case STK:
-      result = FrameworkTraits<STK>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+    case STKMESH:
+      result = FrameworkTraits<STKMESH>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
       break;
     case MOAB:
       result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);

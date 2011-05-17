@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Tue May 17 10:20:40 2011
+ * @date Tue May 17 11:46:28 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Tue May 17 10:20:40 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:46:28 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -233,7 +233,7 @@ SUITE (HexMesh)
     {
         Epetra_MpiComm comm(MPI_COMM_WORLD);
         Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-            mesh_map(new Amanzi::AmanziMesh::STK::Mesh_STK(comm, 10, 10, 10));
+            mesh_map(new Amanzi::AmanziMesh::Mesh_STK(comm, 10, 10, 10));
      
         Auditor audit("stk_mesh_generated_", mesh_map);
         audit();
@@ -242,8 +242,8 @@ SUITE (HexMesh)
     TEST (HexPartition)
     {
         Epetra_MpiComm comm(MPI_COMM_WORLD);
-        Amanzi::AmanziMesh::STK::Mesh_STK
-          *mesh_stk = new Amanzi::AmanziMesh::STK::Mesh_STK(comm, 4, 2, 2);
+        Amanzi::AmanziMesh::Mesh_STK
+          *mesh_stk = new Amanzi::AmanziMesh::Mesh_STK(comm, 4, 2, 2);
 
         Teuchos::RCP<Epetra_CrsGraph> cgraph = mesh_stk->cellgraph();
         cgraph->Print(std::cerr);

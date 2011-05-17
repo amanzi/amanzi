@@ -4,7 +4,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Mon May  9 12:05:39 2011
+ * @date Tue May 17 11:45:25 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Mon May  9 12:05:39 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:45:25 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_STK.hh"
@@ -48,7 +48,7 @@ Mesh_STK::generate_(const unsigned int& ni, const unsigned int& nj, const unsign
   Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
   Teuchos::RCP<Epetra_Map> vmap(g.vertexmap(true));
   stk::ParallelMachine pm(communicator_->GetMpiComm());
-  Mesh_STK_factory mf(pm, 1000);
+  STK::Mesh_STK_factory mf(pm, 1000);
   Data::Fields nofields;
   mesh_.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
   build_maps_();

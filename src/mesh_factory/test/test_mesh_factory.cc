@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 18, 2011 by William A. Perkins
-// Last Change: Mon May 16 14:53:51 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:51:31 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -76,7 +76,7 @@ SUITE (MeshFramework)
     // The Simple framework should always be there
     check_preference(mesh_factory, Amanzi::AmanziMesh::Simple);
     check_preference(mesh_factory, Amanzi::AmanziMesh::MOAB);
-    check_preference(mesh_factory, Amanzi::AmanziMesh::STK);
+    check_preference(mesh_factory, Amanzi::AmanziMesh::STKMESH);
     check_preference(mesh_factory, Amanzi::AmanziMesh::MSTK);
   }
     
@@ -115,8 +115,8 @@ SUITE (MeshFramework)
 
     // The STK, if available, framework will always generate
 
-    if (framework_available(Amanzi::AmanziMesh::STK)) {
-      pref.clear(); pref.push_back(Amanzi::AmanziMesh::STK);
+    if (framework_available(Amanzi::AmanziMesh::STKMESH)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::STKMESH);
       mesh_factory.preference(pref);
       mesh = mesh_factory(x0, y0, z0,
                           x1, y1, z1,
@@ -189,9 +189,9 @@ SUITE (MeshFramework)
 
     // Try it with another framework just for grins
 
-    if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STK)) {
+    if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH)) {
       Amanzi::AmanziMesh::FrameworkPreference pref;
-      pref.push_back(Amanzi::AmanziMesh::STK);
+      pref.push_back(Amanzi::AmanziMesh::STKMESH);
       mesh_factory.preference(pref);
       CHECK_THROW(mesh = mesh_factory(MOAB_TEST_FILE),
                   Amanzi::AmanziMesh::Message);
@@ -207,7 +207,7 @@ SUITE (MeshFramework)
     Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
 
     bool available =
-        (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STK) && !parallel) ||
+        (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) && !parallel) ||
         Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::MSTK);
 
     if (available) {
@@ -225,7 +225,7 @@ SUITE (MeshFramework)
     
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
     Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
-    if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STK) && parallel) {
+    if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) && parallel) {
       mesh = mesh_factory(NEMESIS_TEST_FILE);
       CHECK(!mesh.is_null());
     } else {

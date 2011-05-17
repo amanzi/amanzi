@@ -4,7 +4,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Tue May 17 10:17:02 2011
+ * @date Tue May 17 11:45:28 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Tue May 17 10:17:02 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:45:28 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <algorithm>
@@ -32,7 +32,6 @@ static const int ZERO = 0;
 
 namespace Amanzi {
 namespace AmanziMesh {
-namespace STK {
 
 // -------------------------------------------------------------
 //  class Mesh_STK
@@ -50,7 +49,7 @@ const unsigned int Mesh_STK::num_kinds_ =
 // -------------------------------------------------------------
 // Mesh_STK:: constructors / destructor
 // -------------------------------------------------------------
-Mesh_STK::Mesh_STK(Mesh_STK_Impl_p mesh)
+Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
     : communicator_(new Epetra_MpiComm(mesh->communicator())),
       mesh_(mesh), 
       entity_map_(3),                   // FIXME: can be 2; take from mesh
@@ -97,7 +96,7 @@ Mesh_STK::entity_get_ptype(const Entity_kind kind,
       used = this->node_epetra_map(true).MyLID(entid);
       break;
     default:
-       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
+      Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
   }
   if (owned) {
     return OWNED;
@@ -184,7 +183,7 @@ Mesh_STK::GID(const Entity_ID lid, const Entity_kind kind) const
       result = this->node_epetra_map(true).GID(lid);
       break;
     default:
-       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
+      Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
   }
   
   return result;
@@ -213,7 +212,7 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
       result = this->node_epetra_map(true).LID(gid);
       break;
     default:
-       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
+      Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
   }
   return result;
 }
@@ -228,13 +227,14 @@ Mesh_STK::cell_get_faces (const Entity_ID cellid,
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;                  // need 1-based for stk::mesh
 
-  Entity_Ids stk_face_ids;
+  STK::Entity_Ids stk_face_ids;
   mesh_->element_to_faces(global_cell_id, stk_face_ids);
-                                        // 0-based for Epetra_Map
+  // 0-based for Epetra_Map
   std::for_each(stk_face_ids.begin(), stk_face_ids.end(), bl::_1 -= 1);
 
   outfaceids->clear();
-  for (Entity_Ids::iterator f = stk_face_ids.begin(); f != stk_face_ids.end(); f++) {
+  for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
+       f != stk_face_ids.end(); f++) {
     stk::mesh::EntityId global_face_id(*f);
     ASSERT(this->face_epetra_map(true).MyGID(global_face_id));
     stk::mesh::EntityId local_face_id = 
@@ -268,12 +268,12 @@ Mesh_STK::cell_get_nodes (const Entity_ID cellid,
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;        // need 1-based for stk::mesh
 
-  Entity_Ids node_ids;
+  STK::Entity_Ids node_ids;
   mesh_->element_to_nodes(global_cell_id, node_ids);
   std::for_each(node_ids.begin(), node_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
 
   outnodeids->clear();
-  for (Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
+  for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
     ASSERT(this->node_epetra_map(true).MyGID(global_node_id));
     stk::mesh::EntityId local_node_id = 
@@ -292,12 +292,12 @@ Mesh_STK::face_get_nodes (const Entity_ID faceid,
   stk::mesh::EntityId global_face_id = this->GID(faceid, FACE);
   global_face_id += 1;        // need 1-based for stk::mesh
 
-  Entity_Ids node_ids;
+  STK::Entity_Ids node_ids;
   mesh_->face_to_nodes(global_face_id, node_ids);
   std::for_each(node_ids.begin(), node_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
 
   outnodeids->clear();
-  for (Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
+  for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
     ASSERT(this->node_epetra_map(true).MyGID(global_node_id));
     stk::mesh::EntityId local_node_id = 
@@ -317,12 +317,12 @@ Mesh_STK::node_get_cells(const Entity_ID nodeid,
 {
   stk::mesh::EntityId global_node_id = this->GID(nodeid, NODE);
   global_node_id += 1;        // need 1-based for stk::mesh
-  Entity_Ids cell_ids;
+  STK::Entity_Ids cell_ids;
   mesh_->node_to_elements(global_node_id, cell_ids);
   std::for_each(cell_ids.begin(), cell_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
 
   outcellids->clear();
-  for (Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
+  for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_epetra_map(true).LID(*i));
     Parallel_type theptype(this->entity_get_ptype(CELL, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
@@ -343,11 +343,11 @@ Mesh_STK::node_get_faces(const Entity_ID nodeid,
 {
   stk::mesh::EntityId global_node_id = this->GID(nodeid, NODE);
   global_node_id += 1;        // need 1-based for stk::mesh
-  Entity_Ids face_ids;
+  STK::Entity_Ids face_ids;
   mesh_->node_to_faces(global_node_id, face_ids);
   std::for_each(face_ids.begin(), face_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
   outfaceids->clear();
-  for (Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
+  for (STK::Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
     Entity_ID local_face_id(this->cell_epetra_map(true).LID(*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_face_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
@@ -395,10 +395,10 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
   stk::mesh::EntityId global_face_id = 
       this->face_epetra_map(true).GID(faceid);
   
-  Entity_Ids cell_ids;
+  STK::Entity_Ids cell_ids;
   mesh_->face_to_elements(global_face_id, cell_ids);
   std::for_each(cell_ids.begin(), cell_ids.end(), bl::_1 -= 1); // 0-based for Epetra_Map
-  for (Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
+  for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_epetra_map(true).LID(*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));
     if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
@@ -488,10 +488,10 @@ Mesh_STK::face_get_coordinates (const Entity_ID faceid,
   stk::mesh::EntityId gid(this->GID(faceid, FACE));
   gid++;                                // need 1-based for stk::mesh
   
-  Entity_Ids nodes;
+  STK::Entity_Ids nodes;
   mesh_->face_to_nodes(gid, nodes);
   fcoords->clear();
-  for (Entity_Ids::iterator n = nodes.begin(); n != nodes.end(); n++) {
+  for (STK::Entity_Ids::iterator n = nodes.begin(); n != nodes.end(); n++) {
     const double *c(mesh_->coordinates(*n));
     AmanziGeometry::Point p;
     switch (space_dimension()) {
@@ -520,10 +520,10 @@ Mesh_STK::cell_get_coordinates (const Entity_ID cellid,
   stk::mesh::EntityId gid(this->GID(cellid, CELL));
   gid++;                                // need 1-based for stk::mesh
   
-  Entity_Ids nodes;
+  STK::Entity_Ids nodes;
   mesh_->element_to_nodes(gid, nodes);
   ccoords->clear();
-  for (Entity_Ids::iterator n = nodes.begin(); n != nodes.end(); n++) {
+  for (STK::Entity_Ids::iterator n = nodes.begin(); n != nodes.end(); n++) {
     const double *c(mesh_->coordinates(*n));
     AmanziGeometry::Point p;
     switch (space_dimension()) {
@@ -549,9 +549,9 @@ Mesh_STK::cell_get_coordinates (const Entity_ID cellid,
 // -------------------------------------------------------------
 const Epetra_Map& 
 Mesh_STK::cell_epetra_map(bool include_ghost) const
-  {
-    return get_map_(CELL, include_ghost);
-  }
+{
+  return get_map_(CELL, include_ghost);
+}
 
 // -------------------------------------------------------------
 // Mesh_STK::cell_epetra_map
@@ -640,11 +640,11 @@ Mesh_STK::get_set_entities (const Set_ID setid,
   stk::mesh::Part *p(mesh_->get_set(setid, rank));
   ASSERT(p != NULL);
 
-  Entity_vector entities;
+  STK::Entity_vector entities;
   mesh_->get_entities(*p, ptype, entities);
 
   entids->clear();
-  for (Entity_vector::iterator e = entities.begin(); 
+  for (STK::Entity_vector::iterator e = entities.begin(); 
        e != entities.end(); e++) {
     Entity_ID gid((*e)->identifier());
     gid--;                              // 0-based for Epetra_Map
@@ -661,15 +661,15 @@ Mesh_STK::get_set_entities (const Set_ID setid,
 // Mesh_STK::build_maps_
 // -------------------------------------------------------------
 static void
-extract_global_ids(const Entity_vector& entities,
+extract_global_ids(const STK::Entity_vector& entities,
                    std::vector<int>& ids)
 {
-    ids.clear();
-    ids.reserve(entities.size());
-    for (Entity_vector::const_iterator i = entities.begin(); i != entities.end(); i++) {
-        ids.push_back((*i)->identifier());
-    }
-    std::for_each(ids.begin(), ids.end(), bl::_1 -= 1);
+  ids.clear();
+  ids.reserve(entities.size());
+  for (STK::Entity_vector::const_iterator i = entities.begin(); i != entities.end(); i++) {
+    ids.push_back((*i)->identifier());
+  }
+  std::for_each(ids.begin(), ids.end(), bl::_1 -= 1);
 }
 
 void 
@@ -684,7 +684,7 @@ Mesh_STK::build_maps_ ()
     Entity_kind kind(kinds_[i]);
     stk::mesh::EntityRank rank = entity_map_.kind_to_rank (kind);
 
-    Entity_vector entities;
+    STK::Entity_vector entities;
     std::vector<int> entity_ids;
     Teuchos::RCP<Epetra_Map> map;
 
@@ -696,7 +696,7 @@ Mesh_STK::build_maps_ ()
     map_owned_.insert(MapSet::value_type(kind, map));
 
     // Get the collection of "ghost" entities
-    Entity_vector ghost_entities;
+    STK::Entity_vector ghost_entities;
     mesh_->get_entities (rank, GHOST, ghost_entities);
     std::vector<int> ghost_entity_ids;
     extract_global_ids(ghost_entities, ghost_entity_ids);
@@ -745,12 +745,12 @@ Mesh_STK::cellgraph() const
 
     const int global_idx(cmap.GID(local_idx));
       
-    Entity_Ids faceids;         // 1-based
+    STK::Entity_Ids faceids;         // 1-based
       
     mesh_->element_to_faces(global_idx + 1, faceids);
 
-    for (Entity_Ids::iterator f = faceids.begin(); f != faceids.end(); f++) {
-      Entity_Ids nbrids;        // 1-based
+    for (STK::Entity_Ids::iterator f = faceids.begin(); f != faceids.end(); f++) {
+      STK::Entity_Ids nbrids;        // 1-based
       mesh_->face_to_elements(*f, nbrids);
       
       int junk;
@@ -811,6 +811,5 @@ Mesh_STK::redistribute(const Teuchos::ParameterList &paramlist)
 }
 
 
-} // namespace STK
 } // namespace AmanziMesh
 } // namespace Amanzi

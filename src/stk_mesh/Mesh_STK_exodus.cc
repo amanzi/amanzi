@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created May  9, 2011 by William A. Perkins
-// Last Change: Mon May  9 11:17:42 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May 17 11:45:27 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -37,7 +37,7 @@ Mesh_STK::read_exodus_(const std::string& fname)
   const int me(communicator_->MyPID());
   int ierr(0);
     
-  Mesh_STK_factory mf(communicator_->GetMpiComm(), 1000);
+  STK::Mesh_STK_factory mf(communicator_->GetMpiComm(), 1000);
   Data::Fields nofields;
   Teuchos::RCP<Data::Data> meshdata;
     
