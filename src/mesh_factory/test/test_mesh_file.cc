@@ -2,7 +2,7 @@
 /**
  * @file   test_mesh_file.cc
  * @author William A. Perkins
- * @date Mon Mar 14 10:24:48 2011
+ * @date Mon May 16 14:03:23 2011
  * 
  * @brief  
  * 
@@ -15,7 +15,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Mon Mar 14 10:24:48 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May 16 14:03:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -39,14 +39,14 @@ SUITE (MeshFileType)
     // EXODUS_TEST_FILE is macro defined by cmake
     std::string fname(EXODUS_TEST_FILE); 
 
-    Mesh::Format f;
+    Amanzi::AmanziMesh::Format f;
     try {
-      f = Mesh::file_format(comm, fname);
-    } catch (const Mesh::Message& e) {
+      f = Amanzi::AmanziMesh::file_format(comm, fname);
+    } catch (const Amanzi::AmanziMesh::Message& e) {
       throw e;
     }
 
-    CHECK(f == Mesh::ExodusII);
+    CHECK(f == Amanzi::AmanziMesh::ExodusII);
   }
 
   TEST (Nemesis) 
@@ -56,19 +56,20 @@ SUITE (MeshFileType)
     // NEMESIS_TEST_FILE is macro defined by cmake
     std::string fname(NEMESIS_TEST_FILE); 
     
-    Mesh::Format f;
+    Amanzi::AmanziMesh::Format f;
     if (comm.NumProc() > 1 && comm.NumProc() <= 4) {
       int ierr[1];
       ierr[0] = 0;
       try {
-        f = Mesh::file_format(comm, fname);
-      } catch (const Mesh::Message& e) {
+        f = Amanzi::AmanziMesh::file_format(comm, fname);
+      } catch (const Amanzi::AmanziMesh::Message& e) {
         throw e;
       }
 
-      CHECK(f == Mesh::Nemesis);
+      CHECK(f == Amanzi::AmanziMesh::Nemesis);
     } else {
-      CHECK_THROW(f = Mesh::file_format(comm, fname), Mesh::FileMessage);
+      CHECK_THROW(f = Amanzi::AmanziMesh::file_format(comm, fname), 
+                  Amanzi::AmanziMesh::FileMessage);
     }  
   }
    
@@ -79,14 +80,14 @@ SUITE (MeshFileType)
     // MOAB_TEST_FILE is macro defined by cmake
     std::string fname(MOAB_TEST_FILE); 
 
-    Mesh::Format f;
+    Amanzi::AmanziMesh::Format f;
     try {
-      f = Mesh::file_format(comm, fname);
-    } catch (const Mesh::Message& e) {
+      f = Amanzi::AmanziMesh::file_format(comm, fname);
+    } catch (const Amanzi::AmanziMesh::Message& e) {
       throw e;
     }
 
-    CHECK(f == Mesh::MOABHDF5);
+    CHECK(f == Amanzi::AmanziMesh::MOABHDF5);
   }
 
   TEST (PathFailure) 
@@ -95,9 +96,10 @@ SUITE (MeshFileType)
 
     std::string fname("/some/bogus/path.exo"); 
 
-    Mesh::Format f;
+    Amanzi::AmanziMesh::Format f;
 
-    CHECK_THROW(Mesh::file_format(comm, fname), Mesh::FileMessage);
+    CHECK_THROW(Amanzi::AmanziMesh::file_format(comm, fname), 
+                Amanzi::AmanziMesh::FileMessage);
   }    
 
   TEST (MagicNumberFailure)
@@ -106,9 +108,10 @@ SUITE (MeshFileType)
 
     std::string fname(BOGUS_TEST_FILE); 
 
-    Mesh::Format f;
+    Amanzi::AmanziMesh::Format f;
 
-    CHECK_THROW(Mesh::file_format(comm, fname), Mesh::FileMessage);
+    CHECK_THROW(Amanzi::AmanziMesh::file_format(comm, fname), 
+                Amanzi::AmanziMesh::FileMessage);
   }
     
 }

@@ -121,7 +121,7 @@ namespace Amanzi {
 
     public:
 
-      Mesh_MSTK (const char *filename, MPI_Comm comm, int space_dimension);
+      Mesh_MSTK (const char *filename, MPI_Comm comm, int space_dimension = 3);
       ~Mesh_MSTK ();
 
 

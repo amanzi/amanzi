@@ -2,7 +2,7 @@
 /**
  * @file   FrameworkTraits.cc
  * @author William A. Perkins
- * @date Tue Mar 22 11:55:18 2011
+ * @date Mon May 16 14:46:38 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Tue Mar 22 11:55:18 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May 16 14:46:38 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <boost/format.hpp>
@@ -54,11 +54,17 @@ namespace mpl = boost::mpl;
  */
 
 class bogus_maps : public Amanzi::AmanziMesh::Mesh {
-public:
+ public:
   
   /// Default constructor.
-  bogus_maps(const char *filename, MPI_Comm comm) 
-    : Mesh() 
+  bogus_maps(const char *filename, MPI_Comm c) 
+      : Mesh(), bogus_map_(NULL) 
+  {
+    Exceptions::amanzi_throw(Errors::Message("reading not supported"));
+  }
+  
+  bogus_maps(const char *filename, MPI_Comm c, int dim) 
+      : Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
@@ -67,11 +73,139 @@ public:
 	     double x1, double y1, double z1,
 	     int nx, int ny, int nz, 
 	     Epetra_MpiComm *communicator)
-    : Amanzi::AmanziMesh::Mesh() 
+      : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
+
+  // all of these virtual methods need to be implemented, even though
+  // they'll never be used (because instantiating this class will
+  // throw an exception)
+
+  Amanzi::AmanziMesh::Parallel_type 
+  entity_get_ptype(const Amanzi::AmanziMesh::Entity_kind kind, 
+                   const Amanzi::AmanziMesh::Entity_ID entid) const
+  { return Amanzi::AmanziMesh::OWNED; }
+
+  Amanzi::AmanziMesh::Cell_type 
+  cell_get_type(const Amanzi::AmanziMesh::Entity_ID cellid) const
+  { return Amanzi::AmanziMesh::UNKNOWN; }
+
+  unsigned int 
+  num_entities (const Amanzi::AmanziMesh::Entity_kind kind,
+                const Amanzi::AmanziMesh::Parallel_type ptype) const
+  { return 0; }
+
+  unsigned int 
+  GID(const Amanzi::AmanziMesh::Entity_ID lid, 
+      const Amanzi::AmanziMesh::Entity_kind kind) const
+  { return 0; }
+
+  void 
+  cell_get_faces (const Amanzi::AmanziMesh::Entity_ID cellid, 
+                  Amanzi::AmanziMesh::Entity_ID_List *faceids) 
+  {} 
+
+  void cell_get_face_dirs (const Amanzi::AmanziMesh::Entity_ID cellid, 
+                           std::vector<int> *face_dirs) 
+  {}
   
+  void cell_get_nodes (const Amanzi::AmanziMesh::Entity_ID cellid, 
+                       Amanzi::AmanziMesh::Entity_ID_List *nodeids)
+  {}
+
+  void face_get_nodes (const Amanzi::AmanziMesh::Entity_ID faceid, 
+                       Amanzi::AmanziMesh::Entity_ID_List *nodeids)
+  {}
+
+  void node_get_cells (const Amanzi::AmanziMesh::Entity_ID nodeid, 
+                       const Amanzi::AmanziMesh::Parallel_type ptype,
+                       Amanzi::AmanziMesh::Entity_ID_List *cellids)
+  {}
+
+  void node_get_faces (const Amanzi::AmanziMesh::Entity_ID nodeid, 
+                       const Amanzi::AmanziMesh::Parallel_type ptype,
+                       Amanzi::AmanziMesh::Entity_ID_List *faceids)
+  {}
+    
+  void node_get_cell_faces (const Amanzi::AmanziMesh::Entity_ID nodeid, 
+                            const Amanzi::AmanziMesh::Entity_ID cellid,
+                            const Amanzi::AmanziMesh::Parallel_type ptype,
+                            Amanzi::AmanziMesh::Entity_ID_List *faceids)
+  {}
+    
+  void face_get_cells (const Amanzi::AmanziMesh::Entity_ID faceid, 
+                       const Amanzi::AmanziMesh::Parallel_type ptype,
+                       Amanzi::AmanziMesh::Entity_ID_List *cellids)
+  {}
+
+  void cell_get_face_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
+                               const Amanzi::AmanziMesh::Parallel_type ptype,
+                               Amanzi::AmanziMesh::Entity_ID_List *fadj_cellids)
+  {}
+
+  void cell_get_node_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
+                               const Amanzi::AmanziMesh::Parallel_type ptype,
+                               Amanzi::AmanziMesh::Entity_ID_List *nadj_cellids)
+  {}
+
+  Amanzi::AmanziMesh::Cell_type 
+  cell_get_type_4viz(const Amanzi::AmanziMesh::Entity_ID cellid) const
+  { return Amanzi::AmanziMesh::UNKNOWN; }
+    
+  void 
+  cell_get_nodes_4viz (const Amanzi::AmanziMesh::Entity_ID cellid, 
+                       Amanzi::AmanziMesh::Entity_ID_List *nodeids)
+  {}
+
+  void 
+  node_get_coordinates (const Amanzi::AmanziMesh::Entity_ID nodeid, 
+                        Amanzi::AmanziGeometry::Point *ncoord)
+  {}
+
+  void face_get_coordinates (const Amanzi::AmanziMesh::Entity_ID faceid, 
+			     std::vector<Amanzi::AmanziGeometry::Point> *fcoords)
+  {}
+
+  void cell_get_coordinates (const Amanzi::AmanziMesh::Entity_ID cellid, 
+			     std::vector<Amanzi::AmanziGeometry::Point> *ccoords)
+  {}
+
+  const Epetra_Map& cell_epetra_map (const bool include_ghost) const
+  { return *bogus_map_; }
+    
+  const Epetra_Map& face_epetra_map (const bool include_ghost) const
+  { return *bogus_map_; }
+    
+  const Epetra_Map& node_epetra_map (const bool include_ghost) const
+  { return *bogus_map_; }
+
+  unsigned int num_sets(const Amanzi::AmanziMesh::Entity_kind kind) const
+  { return 0; }
+
+  void get_set_ids (const Amanzi::AmanziMesh::Entity_kind kind, 
+                    Amanzi::AmanziMesh::Set_ID_List *setids)
+  {}
+
+  bool valid_set_id (const Amanzi::AmanziMesh::Set_ID setid, 
+                     const Amanzi::AmanziMesh::Entity_kind kind) const
+  { return false; }
+
+  unsigned int get_set_size (const Amanzi::AmanziMesh::Set_ID setid, 
+                             const Amanzi::AmanziMesh::Entity_kind kind,
+                             const Amanzi::AmanziMesh::Parallel_type ptype)
+  { return 0; }
+
+  void get_set_entities (const Amanzi::AmanziMesh::Set_ID setid, 
+                         const Amanzi::AmanziMesh::Entity_kind kind, 
+                         const Amanzi::AmanziMesh::Parallel_type ptype, 
+                         Amanzi::AmanziMesh::Entity_ID_List *entids)
+  {}
+
+ private:
+
+  Epetra_Map *bogus_map_;
+
 };
 
 
@@ -110,170 +244,155 @@ typedef bogus_maps Mesh_MSTK;
 
 
 namespace Amanzi {
-  namespace AmanziMesh {
+namespace AmanziMesh {
 
-// template <int N>
-// struct foo
-// {
-//   foo() { std::cout << "foo<" << N << ">" << std::endl; }
-// };
-
-// template <int Index>
-// struct type_at
-// {
-//   // this is the type container..
-//   typedef typename mpl::vector<foo<0>, foo<1>, foo<2>, foo<3> > seq;
-//   // this allows us to get the type at the given index
-//   typedef typename mpl::at<seq, mpl::int_<Index> >::type type;
-// };
-  
-
-  // -------------------------------------------------------------
-  // Mesh::FrameworkTraits
-  // 
-  // The idea here is to make as many decisions as possible at compile
-  // time.  This hopefully will reduce the code necessary to make
-  // appropriate framework choices at runtime.
-  //
-  // This is a pretty straightforward use of the boost::mpl library.
-  // Refer to Abrahams and Gurtovoy (2005). C++ Template
-  // Metaprogramming, Addison-Wesley.
-  //
-  // There are several things that need to be figured out.  
-  // 
-  //   1. is the framework available (compiled into the code) 
-  // 
-  //   2. can the framework read a file of a certain format,
-  //   considering whether the environment is parallel or not
-  //   
-  //   3. can the framework generate a mesh, in parallel or not
-  //
-  //   4. determine the appropriate Mesh_maps_* constructor to use to
-  //   make an instance
-  //   -------------------------------------------------------------
-  template < int M = 0 > 
-  struct FrameworkTraits {
+// -------------------------------------------------------------
+// Mesh::FrameworkTraits
+// 
+// The idea here is to make as many decisions as possible at compile
+// time.  This hopefully will reduce the code necessary to make
+// appropriate framework choices at runtime.
+//
+// This is a pretty straightforward use of the boost::mpl library.
+// Refer to Abrahams and Gurtovoy (2005). C++ Template
+// Metaprogramming, Addison-Wesley.
+//
+// There are several things that need to be figured out.  
+// 
+//   1. is the framework available (compiled into the code) 
+// 
+//   2. can the framework read a file of a certain format,
+//   considering whether the environment is parallel or not
+//   
+//   3. can the framework generate a mesh, in parallel or not
+//
+//   4. determine the appropriate Mesh_maps_* constructor to use to
+//   make an instance
+//
+// The template argument M is expected to be one of the enum
+// Amanzi::AmanziMesh::Framework.
+// -------------------------------------------------------------
+template < int M = 0 > 
+struct FrameworkTraits {
     
-    // a type that's used to see if a the specified mesh framework (M)
-    // is available
-    typedef mpl::bool_<
-      M == Simple  || 
-      ( M == MOAB && MOAB_FLAG ) ||
-      ( M == STK && STK_FLAG ) ||
-      ( M == MSTK && MSTK_FLAG ) 
-      > available;
+  // a type that's used to see if a the specified mesh framework (M)
+  // is available
+  typedef mpl::bool_<
+    M == Simple  || 
+    ( M == MOAB && MOAB_FLAG ) ||
+    ( M == STK && STK_FLAG ) ||
+    ( M == MSTK && MSTK_FLAG ) 
+    > available;
   
-    // this defines a type, there constructor of which is used to
-    // instantiate a mesh when it's generated
-    typedef mpl::eval_if<
-      mpl::bool_<M == Simple>
-      , mpl::identity<Mesh_simple>
+// this defines a type, there constructor of which is used to
+// instantiate a mesh when it's generated
+typedef mpl::eval_if<
+  mpl::bool_<M == Simple>
+  , mpl::identity<Mesh_simple>
+  , mpl::eval_if<
+      mpl::bool_<M == STK>
+      , mpl::identity<Mesh_maps_stk>
+      , mpl::identity<bogus_maps>
+      >
+  > generate_maps;
+    
+// this defines a type, there constructor of which is used to
+// instantiate a mesh when it's read from a file or file set
+typedef mpl::eval_if<
+  mpl::bool_<M == MOAB>
+  , mpl::identity<Mesh_maps_moab>
+  , mpl::eval_if<
+      mpl::bool_<M == STK>
+      , mpl::identity<Mesh_maps_stk>
       , mpl::eval_if<
-          mpl::bool_<M == STK>
-          , mpl::identity<Mesh_maps_stk>
+          mpl::bool_<M == MSTK>
+          , mpl::identity<Mesh_MSTK>
           , mpl::identity<bogus_maps>
           >
-      > generate_maps;
-    
-    // this defines a type, there constructor of which is used to
-    // instantiate a mesh when it's read from a file or file set
-    typedef mpl::eval_if<
-      mpl::bool_<M == MOAB>
-      , mpl::identity<Mesh_maps_moab>
-      , mpl::eval_if<
-          mpl::bool_<M == STK>
-          , mpl::identity<Mesh_maps_stk>
-          , mpl::eval_if<
-              mpl::bool_<M == MSTK>
-              , mpl::identity<Mesh_MSTK>
-              , mpl::identity<bogus_maps>
-              >
-          >
-      > read_maps;
+      >
+  > read_maps;
     
     
-    // -------------------------------------------------------------
-    // FrameworkTraits<M>::canread
-    // -------------------------------------------------------------
-    /// A type to indicate whether this framework can mesh of a specific format
-    // FIXME: Doesn't MOAB read exodus files
-    template < int FMT = 0 > 
-    struct canread {
+// -------------------------------------------------------------
+// FrameworkTraits<M>::canread
+// -------------------------------------------------------------
+/// A type to indicate whether this framework can mesh of a specific format
+// FIXME: Doesn't MOAB read exodus files
+template < int FMT = 0 > 
+struct canread {
 
-      struct parallel :
-        mpl::eval_if<
-        mpl::bool_< M == MOAB >
-        , mpl::bool_< FMT == MOABHDF5 >
+  struct parallel :
+      mpl::eval_if<
+    mpl::bool_< M == MOAB >
+    , mpl::bool_< FMT == MOABHDF5 >
+    , mpl::eval_if<
+        mpl::bool_< M == STK >
+        , mpl::bool_< FMT == Nemesis >
         , mpl::eval_if<
-            mpl::bool_< M == STK >
-            , mpl::bool_< FMT == Nemesis >
-            , mpl::eval_if<
-                mpl::bool_< M == MSTK >
-                , mpl::bool_< FMT == ExodusII >
-                , mpl::false_
-                >
-            >
-        >::type {};
-
-      struct serial :
-        mpl::eval_if<
-        mpl::bool_< M == MOAB >
-        , mpl::bool_< FMT == MOABHDF5 >
-        , mpl::eval_if<
-            mpl::bool_< M == STK >
+            mpl::bool_< M == MSTK >
             , mpl::bool_< FMT == ExodusII >
-            , mpl::eval_if<
-                mpl::bool_< M == MSTK >
-                , mpl::bool_< FMT == ExodusII >
-                , mpl::false_
-                >
+            , mpl::false_
             >
-        >::type {};
-    };
+        >
+    >::type {};
 
+  struct serial :
+      mpl::eval_if<
+    mpl::bool_< M == MOAB >
+    , mpl::bool_< FMT == MOABHDF5 >
+    , mpl::eval_if<
+        mpl::bool_< M == STK >
+        , mpl::bool_< FMT == ExodusII >
+        , mpl::eval_if<
+            mpl::bool_< M == MSTK >
+            , mpl::bool_< FMT == ExodusII >
+            , mpl::false_
+            >
+        >
+    >::type {};
+};
 
+/// Construct a mesh from a Exodus II file or file set
+static Teuchos::RCP<Mesh>
+read(Epetra_MpiComm& comm, const std::string& fname)
+{
+  Teuchos::RCP<Mesh> 
+      result(new typename read_maps::type(fname.c_str(), comm.Comm()));
+  return result;
+}
 
-    /// Construct a mesh from a Exodus II file or file set
-    static Teuchos::RCP<Mesh>
-    read(Epetra_MpiComm& comm, const std::string& fname)
-    {
-      Teuchos::RCP<Mesh> 
-        result(new typename read_maps::type(fname.c_str(), comm.Comm()));
-      return result;
-    }
+/// A type to indicate whether this framework can generate meshes
+struct cangenerate {
+  struct parallel : 
+      mpl::bool_< M == STK >::type
+  {};
+  struct serial :
+      mpl::bool_<M == Simple || M == STK >::type
+  {};
+};
 
-    /// A type to indicate whether this framework can generate meshes
-    struct cangenerate {
-      struct parallel : 
-        mpl::bool_< M == STK >::type
-      {};
-      struct serial :
-        mpl::bool_<M == Simple || M == STK >::type
-      {};
-    };
-
-    /// Generate a hex mesh 
-    static Teuchos::RCP<Mesh>
-    generate(const double& x0, const double& y0, const double& z0,
+/// Generate a hex mesh 
+static Teuchos::RCP<Mesh>
+generate(const double& x0, const double& y0, const double& z0,
          const double& x1, const double& y1, const double& z1,
          const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
          Epetra_MpiComm& comm)
-    {
-      Teuchos::RCP<Mesh> 
-        result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm));
-      return result;
-    }
+{
+  Teuchos::RCP<Mesh> 
+      result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm));
+  return result;
+}
 
-  };
+};
 
-  // -------------------------------------------------------------
-  // framework_available
-  // -------------------------------------------------------------
-  bool
-  framework_available(const Framework& f)
-  {
-    bool result;
-    switch (f) {
+// -------------------------------------------------------------
+// framework_available
+// -------------------------------------------------------------
+bool
+framework_available(const Framework& f)
+{
+  bool result;
+  switch (f) {
     case Simple:
       result = FrameworkTraits<Simple>::available::value;
       break;
@@ -289,40 +408,40 @@ namespace Amanzi {
     default:
       {
         std::string msg = 
-          boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
         Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
-    }
-    return result;
   }
+  return result;
+}
 
-  // -------------------------------------------------------------
-  // parallel_test
-  // -------------------------------------------------------------
-  template < class thetest >
-  static bool 
-  parallel_test(const bool& isp)
-  {
-    bool result;
-    if (isp) {
-      result = thetest::parallel::value;
-    } else {
-      result = thetest::serial::value;
-    }
-    return result;
+// -------------------------------------------------------------
+// parallel_test
+// -------------------------------------------------------------
+template < class thetest >
+static bool 
+parallel_test(const bool& isp)
+{
+  bool result;
+  if (isp) {
+    result = thetest::parallel::value;
+  } else {
+    result = thetest::serial::value;
   }
+  return result;
+}
 
-  // -------------------------------------------------------------
-  // framework_reads
-  // -------------------------------------------------------------
+// -------------------------------------------------------------
+// framework_reads
+// -------------------------------------------------------------
 
-  template < int F >
-  static bool 
-  framework_reads(const Format& fmt, const bool& parallel)
-  {
-    typedef FrameworkTraits<F> traits;
-    bool result = false;
-    switch (fmt) {
+template < int F >
+static bool 
+framework_reads(const Format& fmt, const bool& parallel)
+{
+  typedef FrameworkTraits<F> traits;
+  bool result = false;
+  switch (fmt) {
     case ExodusII:
       result = parallel_test< typename traits::template canread<ExodusII> >(parallel);
       break;
@@ -334,15 +453,15 @@ namespace Amanzi {
       break;
     default:
       result = false;
-    }
-    return result;
   }
+  return result;
+}
 
-  bool
-  framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
-  {
-    bool result;
-    switch (f) {
+bool
+framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
+{
+  bool result;
+  switch (f) {
     case Simple:
       result = framework_reads<Simple>(fmt, parallel);
       break;
@@ -358,21 +477,21 @@ namespace Amanzi {
     default:
       {
         std::string msg = 
-          boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
         Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
-    }
-    return result;
   }
+  return result;
+}
 
-  // -------------------------------------------------------------
-  // framework_read
-  // -------------------------------------------------------------
-  Teuchos::RCP<Mesh> 
-  framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fname)
-  {
-    Teuchos::RCP<Mesh> result;
-    switch (f) {
+// -------------------------------------------------------------
+// framework_read
+// -------------------------------------------------------------
+Teuchos::RCP<Mesh> 
+framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fname)
+{
+  Teuchos::RCP<Mesh> result;
+  switch (f) {
     case Simple:
       result = FrameworkTraits<Simple>::read(comm, fname);
       break;
@@ -388,21 +507,21 @@ namespace Amanzi {
     default:
       {
         std::string msg = 
-          boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
         Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
-    }
-    return result;
   }
+  return result;
+}
 
-  // -------------------------------------------------------------
-  // framework_generates
-  // -------------------------------------------------------------
-  bool
-  framework_generates(const Framework& f, const bool& parallel)
-  {
-    bool result;
-    switch (f) {
+// -------------------------------------------------------------
+// framework_generates
+// -------------------------------------------------------------
+bool
+framework_generates(const Framework& f, const bool& parallel)
+{
+  bool result;
+  switch (f) {
     case Simple:
       result = parallel_test< FrameworkTraits<Simple>::cangenerate >(parallel);
       break;
@@ -418,24 +537,24 @@ namespace Amanzi {
     default:
       {
         std::string msg = 
-          boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
         Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
-    }
-    return result;
   }
+  return result;
+}
 
-  // -------------------------------------------------------------
-  // framework_generates
-  // -------------------------------------------------------------
-  Teuchos::RCP<Mesh> 
-  framework_generate(Epetra_MpiComm& comm, const Framework& f, 
-                     const double& x0, const double& y0, const double& z0,
-                     const double& x1, const double& y1, const double& z1,
-                     const unsigned int& nx, const unsigned int& ny, const unsigned int& nz)
-  {
-    Teuchos::RCP<Mesh> result;
-    switch (f) {
+// -------------------------------------------------------------
+// framework_generates
+// -------------------------------------------------------------
+Teuchos::RCP<Mesh> 
+framework_generate(Epetra_MpiComm& comm, const Framework& f, 
+                   const double& x0, const double& y0, const double& z0,
+                   const double& x1, const double& y1, const double& z1,
+                   const unsigned int& nx, const unsigned int& ny, const unsigned int& nz)
+{
+  Teuchos::RCP<Mesh> result;
+  switch (f) {
     case Simple:
       result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
       break;
@@ -451,12 +570,12 @@ namespace Amanzi {
     default:
       {
         std::string msg = 
-          boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
         Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
       }
-    }
-    return result;
   }
+  return result;
+}
 
 
 } // namespace AmanziMesh

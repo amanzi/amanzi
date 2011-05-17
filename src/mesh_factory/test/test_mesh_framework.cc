@@ -2,7 +2,7 @@
 /**
  * @file   test_mesh_framework.cc
  * @author William A. Perkins
- * @date Tue Mar 22 11:56:46 2011
+ * @date Mon May 16 14:03:55 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Tue Mar 22 11:56:46 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May 16 14:03:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -27,37 +27,37 @@ SUITE (Framework)
 {
   TEST (DefaultPreference) {
     
-    Mesh::FrameworkPreference pref(Mesh::default_preference());
+    Amanzi::AmanziMesh::FrameworkPreference pref(Amanzi::AmanziMesh::default_preference());
 
-    CHECK(std::find(pref.begin(), pref.end(), Mesh::Simple) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::Simple) != pref.end());
     
 #ifdef HAVE_MOAB_MESH
-    CHECK(std::find(pref.begin(), pref.end(), Mesh::MOAB) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MOAB) != pref.end());
 #else
-    CHECK(std::find(pref.begin(), pref.end(), Mesh::MOAB) == pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MOAB) == pref.end());
 #endif
 
 #ifdef HAVE_STK_MESH
-    CHECK(std::find(pref.begin(), pref.end(), Mesh::STK) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STK) != pref.end());
 #else
-    CHECK(std::find(pref.begin(), pref.end(), Mesh::STK) == pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::STK) == pref.end());
 #endif
 
 #ifdef HAVE_MSTK_MESH
-    CHECK(std::find(pref.begin(), pref.end(), Mesh::MSTK) != pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MSTK) != pref.end());
 #else
-    CHECK(std::find(pref.begin(), pref.end(), Mesh::MSTK) == pref.end());
+    CHECK(std::find(pref.begin(), pref.end(), Amanzi::AmanziMesh::MSTK) == pref.end());
 #endif
 
   }
 
   TEST (AvailablePreference) 
   {
-    Mesh::FrameworkPreference pref;
+    Amanzi::AmanziMesh::FrameworkPreference pref;
     
     pref.clear();
-    pref.push_back(Mesh::MOAB);
-    pref = Mesh::available_preference(pref);
+    pref.push_back(Amanzi::AmanziMesh::MOAB);
+    pref = Amanzi::AmanziMesh::available_preference(pref);
 #ifdef HAVE_MOAB_MESH
     CHECK(!pref.empty());
 #else
@@ -65,8 +65,8 @@ SUITE (Framework)
 #endif
     
     pref.clear();
-    pref.push_back(Mesh::STK);
-    pref = Mesh::available_preference(pref);
+    pref.push_back(Amanzi::AmanziMesh::STK);
+    pref = Amanzi::AmanziMesh::available_preference(pref);
 #ifdef HAVE_STK_MESH
     CHECK(!pref.empty());
 #else
@@ -74,8 +74,8 @@ SUITE (Framework)
 #endif
     
     pref.clear();
-    pref.push_back(Mesh::MSTK);
-    pref = Mesh::available_preference(pref);
+    pref.push_back(Amanzi::AmanziMesh::MSTK);
+    pref = Amanzi::AmanziMesh::available_preference(pref);
 #ifdef HAVE_MSTK_MESH
     CHECK(!pref.empty());
 #else
@@ -89,22 +89,22 @@ SUITE (Framework)
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     bool parallel(comm.NumProc() > 1);
     
-    CHECK(!Mesh::framework_reads(Mesh::Simple, Mesh::ExodusII, parallel));
-    CHECK(!Mesh::framework_reads(Mesh::Simple, Mesh::Nemesis, parallel));
-    CHECK(!Mesh::framework_reads(Mesh::Simple, Mesh::MOABHDF5, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::ExodusII, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::Nemesis, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
-    CHECK(!Mesh::framework_reads(Mesh::MOAB, Mesh::ExodusII, parallel));
-    CHECK(!Mesh::framework_reads(Mesh::MOAB, Mesh::Nemesis, parallel));
-    CHECK(Mesh::framework_reads(Mesh::MOAB, Mesh::MOABHDF5, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::ExodusII, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::Nemesis, parallel));
+    CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
     if (parallel) {
-      CHECK(!Mesh::framework_reads(Mesh::STK, Mesh::ExodusII, parallel));
-      CHECK(Mesh::framework_reads(Mesh::STK, Mesh::Nemesis, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::Nemesis, parallel));
     } else {
-      CHECK(Mesh::framework_reads(Mesh::STK, Mesh::ExodusII, parallel));
-      CHECK(!Mesh::framework_reads(Mesh::STK, Mesh::Nemesis, parallel));
+      CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::ExodusII, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::Nemesis, parallel));
     }
-    CHECK(!Mesh::framework_reads(Mesh::STK, Mesh::MOABHDF5, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::STK, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
   }
 
@@ -113,11 +113,11 @@ SUITE (Framework)
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     bool parallel(comm.NumProc() > 1);
     
-    CHECK(!Mesh::framework_generates(Mesh::MOAB, parallel));
-    CHECK(!Mesh::framework_generates(Mesh::MSTK, parallel));
-    CHECK(Mesh::framework_generates(Mesh::STK, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel));
+    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel));
+    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STK, parallel));
     if (parallel) {
-      CHECK(!Mesh::framework_generates(Mesh::Simple, parallel));
+      CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel));
     } 
   }
 

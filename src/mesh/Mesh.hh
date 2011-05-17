@@ -30,7 +30,7 @@ namespace Amanzi
 
       // destructor
 
-      ~Mesh() {};
+      virtual ~Mesh() {};
 
       inline
       void set_space_dimension(const unsigned int dim) {

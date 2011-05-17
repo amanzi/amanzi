@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 11, 2011 by William A. Perkins
-// Last Change: Mon Mar 14 10:05:46 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May 16 14:17:44 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -101,7 +101,7 @@ namespace AmanziMesh {
     } else if (boost::regex_match(fname, NemesisExt)) {
       result = Nemesis;
       fname = boost::str(boost::format("%s.%d.%d") % 
-                         fname % comm.NumProc() % comm.MyPID());
+                         name % comm.NumProc() % comm.MyPID());
     } else {
       result = UnknownFormat;
     }
