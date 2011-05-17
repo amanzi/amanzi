@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Wed Dec 29 10:20:46 2010
+ * @date Tue May  3 11:00:08 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Wed Dec 29 10:20:46 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue May  3 11:00:08 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -19,15 +19,10 @@
 #include <UnitTest++.h>
 #include <Epetra_MpiComm.h>
 
-#include "../Mesh.hh"
-#include "../Mesh_factory.hh"
+#include "../Mesh_STK_Impl.hh"
+#include "../Mesh_STK_factory.hh"
 #include "../Data_structures.hh"
 #include "HexMeshGenerator.hh"
-#include "Auditor.hh"
-
-
-
-
 
 
 SUITE (HexMesh)
@@ -42,9 +37,9 @@ SUITE (HexMesh)
 
         stk::ParallelMachine pm(comm.Comm());
 
-        Mesh_data::HexMeshGenerator g(&comm, isize, jsize, ksize);
+        Amanzi::AmanziMesh::Data::HexMeshGenerator g(&comm, isize, jsize, ksize);
 
-        Teuchos::RCP<Mesh_data::Data> meshdata(g.generate());
+        Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> meshdata(g.generate());
 
         for (int p = 0; p < nproc; p++) {
           if (me == p) {
@@ -70,64 +65,65 @@ SUITE (HexMesh)
         CHECK_EQUAL(vmap->MaxAllGID(), (isize+1)*(jsize+1)*(ksize+1));
 
 
-        STK_mesh::Mesh_factory mf(pm, 1000);
-        Mesh_data::Fields nofields;
-        STK_mesh::Mesh_p mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
+        Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(pm, 1000);
+        Amanzi::AmanziMesh::Data::Fields nofields;
+        Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
+          mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
 
         CHECK_EQUAL (mesh->rank_id (), me);
         
         int lcount, gcount;
-        lcount = mesh->count_entities(stk::mesh::Element,OWNED);
+        lcount = mesh->count_entities(stk::mesh::Element,Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*jsize*ksize);
 
-        lcount = mesh->count_entities(stk::mesh::Face, OWNED);
+        lcount = mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, 
                      (isize  )*(jsize  )*(ksize+1) + 
                      (isize  )*(jsize+1)*(ksize ) + 
                      (isize+1)*(jsize  )*(ksize ));
 
-        lcount = mesh->count_entities(stk::mesh::Node, OWNED);
+        lcount = mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
 
         stk::mesh::Part *side;
 
         side = mesh->get_set("West", stk::mesh::Face);
-        lcount = mesh->count_entities(*side, OWNED);
+        lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*jsize);
 
         side = mesh->get_set("East", stk::mesh::Face);
-        lcount = mesh->count_entities(*side, OWNED);
+        lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*jsize);
 
         side = mesh->get_set("South", stk::mesh::Face);
-        lcount = mesh->count_entities(*side, OWNED);
+        lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*ksize);
 
         side = mesh->get_set("North", stk::mesh::Face);
-        lcount = mesh->count_entities(*side, OWNED);
+        lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*ksize);
 
         side = mesh->get_set("Bottom", stk::mesh::Face);
-        lcount = mesh->count_entities(*side, OWNED);
+        lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, isize*jsize);
 
         side = mesh->get_set("East", stk::mesh::Face);
-        lcount = mesh->count_entities(*side, OWNED);
+        lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
         comm.SumAll(&lcount, &gcount, 1);
         CHECK_EQUAL (gcount, jsize*ksize);
 
         mesh->summary(std::cerr);
 
-        Auditor audit("stk_mesh_hextest1_", mesh);
-        audit();
+        // Auditor audit("stk_mesh_hextest1_", mesh);
+        // audit();
 
     }
 
@@ -141,19 +137,20 @@ SUITE (HexMesh)
 
         stk::ParallelMachine pm(comm.Comm());
 
-        Mesh_data::HexMeshGenerator g(&comm, isize, jsize, ksize);
+        Amanzi::AmanziMesh::Data::HexMeshGenerator g(&comm, isize, jsize, ksize);
 
-        Teuchos::RCP<Mesh_data::Data> meshdata(g.generate());
+        Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> meshdata(g.generate());
         Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
         Teuchos::RCP<Epetra_Map> vmap(g.vertexmap(true));
 
-        STK_mesh::Mesh_factory mf(pm, 1000);
-        Mesh_data::Fields nofields;
-        STK_mesh::Mesh_p mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
+        Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(pm, 1000);
+        Amanzi::AmanziMesh::Data::Fields nofields;
+        Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
+          mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
 
-        STK_mesh::Entity_vector e;
+        Amanzi::AmanziMesh::STK::Entity_vector e;
 
-        int ncell(mesh->count_entities(stk::mesh::Element, OWNED));
+        int ncell(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED));
 
         if (nproc > 1) {
 
@@ -161,13 +158,13 @@ SUITE (HexMesh)
 
             // all processes should have at least 1 but at most 8 shared nodes
 
-            mesh->get_entities(stk::mesh::Node, GHOST, e);
+            mesh->get_entities(stk::mesh::Node, Amanzi::AmanziMesh::GHOST, e);
             // CHECK(e.size() <= 8);
             e.clear();
 
             // processes > 1 should have only 1 ghost face
 
-            mesh->get_entities(stk::mesh::Face, GHOST, e);
+            mesh->get_entities(stk::mesh::Face, Amanzi::AmanziMesh::GHOST, e);
 
             if (me == 0) {
                 // CHECK(e.empty());
@@ -178,7 +175,7 @@ SUITE (HexMesh)
 
             // the number of USED faces depends on the number of cells owned
 
-            // mesh->get_entities(stk::mesh::Face, USED, e);
+            // mesh->get_entities(stk::mesh::Face, Amanzi::AmanziMesh::USED, e);
 
             int nface_expected(ncell*5+1);
 
@@ -189,10 +186,10 @@ SUITE (HexMesh)
             // processes should have at least 1 but at most 2 shared
             // cells, but it doesn't
             
-            mesh->get_entities(stk::mesh::Element, GHOST, e);
+            mesh->get_entities(stk::mesh::Element, Amanzi::AmanziMesh::GHOST, e);
             e.clear();
            
-            mesh->get_entities(stk::mesh::Element, USED, e);
+            mesh->get_entities(stk::mesh::Element, Amanzi::AmanziMesh::USED, e);
             e.clear();
 
             // CHECK(!e.empty());
@@ -200,7 +197,7 @@ SUITE (HexMesh)
 
             // for (int p = 0; p < nproc; p++) {
             //     if (me == p) {
-            //         STK_mesh::Entity_vector nodes;
+            //         Amanzi::AmanziMesh::STK::Entity_vector nodes;
             //         mesh->get_entities(stk::mesh::Node, USED, nodes);
             //         for (unsigned int i = 0; i < nodes.size(); i++) {
             //             unsigned int gid(nodes[i]->identifier());
@@ -217,44 +214,44 @@ SUITE (HexMesh)
 
         } else {
 
-            mesh->get_entities(stk::mesh::Node, GHOST, e);
+            mesh->get_entities(stk::mesh::Node, Amanzi::AmanziMesh::GHOST, e);
             CHECK(e.empty());
 
-            mesh->get_entities(stk::mesh::Face, GHOST, e);
+            mesh->get_entities(stk::mesh::Face, Amanzi::AmanziMesh::GHOST, e);
             CHECK(e.empty());
         
-            mesh->get_entities(stk::mesh::Element, GHOST, e);
+            mesh->get_entities(stk::mesh::Element, Amanzi::AmanziMesh::GHOST, e);
             CHECK(e.empty());
         }            
 
-        Auditor audit("stk_mesh_hextest2_", mesh);
-        audit();
+        // Auditor audit("stk_mesh_hextest2_", mesh);
+        // audit();
     } 
 
-    TEST (HexGenerator)
-    {
-        Epetra_MpiComm comm(MPI_COMM_WORLD);
-        Teuchos::RCP<Mesh_maps_base> 
-            mesh_map(new STK_mesh::Mesh_maps_stk(comm, 10, 10, 10));
+    // TEST (HexGenerator)
+    // {
+    //     Epetra_MpiComm comm(MPI_COMM_WORLD);
+    //     Teuchos::RCP<Mesh_maps_base> 
+    //         mesh_map(new Amanzi::AmanziMesh::STK::Mesh_maps_stk(comm, 10, 10, 10));
         
-        Auditor audit("stk_mesh_generated_", mesh_map);
-        audit();
-    }
+    //     // Auditor audit("stk_mesh_generated_", mesh_map);
+    //     // audit();
+    // }
 
-    TEST (HexPartition)
-    {
-        Epetra_MpiComm comm(MPI_COMM_WORLD);
-        STK_mesh::Mesh_maps_stk *mesh_stk = 
-          new STK_mesh::Mesh_maps_stk(comm, 4, 2, 2);
-        Teuchos::RCP<Mesh_maps_base> mesh_map(mesh_stk);
+    // TEST (HexPartition)
+    // {
+    //     Epetra_MpiComm comm(MPI_COMM_WORLD);
+    //     Amanzi::AmanziMesh::STK::Mesh_maps_stk *mesh_stk = 
+    //       new Amanzi::AmanziMesh::STK::Mesh_maps_stk(comm, 4, 2, 2);
+    //     Teuchos::RCP<Mesh_maps_base> mesh_map(mesh_stk);
 
-        Teuchos::RCP<Epetra_CrsGraph> cgraph =
-          mesh_stk->cellgraph();
-        cgraph->Print(std::cerr);
+    //     Teuchos::RCP<Epetra_CrsGraph> cgraph =
+    //       mesh_stk->cellgraph();
+    //     cgraph->Print(std::cerr);
 
-        mesh_stk->redistribute();
-        Auditor audit("stk_mesh_rpartitioned_", mesh_map);
-        audit();
-    }
+    //     mesh_stk->redistribute();
+    //     // Auditor audit("stk_mesh_rpartitioned_", mesh_map);
+    //     // audit();
+    // }
 }
 

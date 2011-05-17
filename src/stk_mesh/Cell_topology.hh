@@ -2,15 +2,21 @@
 #define _CELL_TOPOLOGY_HH_
 
 
-#include "Element_types.hh"
+#include "MeshDefs.hh"
 #include "Element_field_types.hh"
 
-namespace shards { struct CellTopology; }
-
-namespace STK_mesh
-{
-
-const shards::CellTopology get_topology_data (const Mesh_data::ELEMENT_TYPE&);
-
+namespace shards { 
+struct CellTopology; 
 }
+
+namespace Amanzi {
+namespace AmanziMesh {
+namespace STK {
+
+const shards::CellTopology get_topology_data (const Cell_type& t);
+
+} // close namespace STK 
+} // close namespace Mesh 
+} // close namespace Amanzi 
+
 #endif

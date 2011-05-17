@@ -5,7 +5,7 @@
 /**
  * @file   stk_mesh_error.hh
  * @author William A. Perkins
- * @date Thu Apr 21 12:56:54 2011
+ * @date Mon May  2 14:29:37 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created April 21, 2011 by William A. Perkins
-// Last Change: Thu Apr 21 12:56:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May  2 14:29:37 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #ifndef _stk_mesh_error_hh_
@@ -21,14 +21,19 @@
 
 #include "errors.hh"
 
-namespace STK_mesh
+namespace Amanzi {
+namespace AmanziMesh {
+namespace STK {
+
+class Error : public Errors::Message 
 {
-    class STKMeshError : public Errors::Message 
-    {
-    public:
-        explicit STKMeshError(void) : Errors::Message() {};
-        explicit STKMeshError(const char* message) : Errors::Message(message) {};
-        ~STKMeshError(void) throw() {};
-    };
-} // namespace STK_mesh
+ public:
+  explicit Error(void) : Errors::Message() {};
+  explicit Error(const char* message) : Errors::Message(message) {};
+  ~Error(void) throw() {};
+};
+
+} // close namespace STK 
+} // close namespace Mesh 
+} // close namespace Amanzi 
 #endif

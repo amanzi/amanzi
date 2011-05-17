@@ -46,7 +46,7 @@ static void make_node_ids (int element_number, int node_ids [])
 struct Test_mesh
 {
 
-    Mesh_data::Data *data;
+  Amanzi::AmanziMesh::Data::Data *data;
 
 
     Test_mesh ()
@@ -61,8 +61,8 @@ struct Test_mesh
         const int num_node_sets = 0;
 
         // Parameters
-        Mesh_data::Parameters *parameters = 
-            new Mesh_data::Parameters("Test mesh", 
+        Amanzi::AmanziMesh::Data::Parameters *parameters = 
+            new Amanzi::AmanziMesh::Data::Parameters("Test mesh", 
                                       dimensions, 
                                       num_nodes, 
                                       num_elements, 
@@ -80,14 +80,14 @@ struct Test_mesh
         }
         std::vector<double> attributes(0);
         std::string name ("A");
-        Mesh_data::Element_block* block = 
-            Mesh_data::Element_block::build_from(element_block_id, 
+        Amanzi::AmanziMesh::Data::Element_block* block = 
+            Amanzi::AmanziMesh::Data::Element_block::build_from(element_block_id, 
                                                  name,
                                                  num_elements, 
-                                                 Mesh_data::HEX, 
+                                                 Amanzi::AmanziMesh::HEX, 
                                                  connectivity, attributes);
 
-        std::vector<Mesh_data::Element_block*> element_blocks(1, block);
+        std::vector<Amanzi::AmanziMesh::Data::Element_block*> element_blocks(1, block);
 
 
 
@@ -105,16 +105,16 @@ struct Test_mesh
             coord_data [2] [node] = double (z_plane);
         }
 
-        Mesh_data::Coordinates<double>* coordinates = Mesh_data::Coordinates<double>::build_from (coord_data);
+        Amanzi::AmanziMesh::Data::Coordinates<double>* coordinates = Amanzi::AmanziMesh::Data::Coordinates<double>::build_from (coord_data);
 
         // Side sets
-        std::vector<Mesh_data::Side_set*> side_sets(0);
+        std::vector<Amanzi::AmanziMesh::Data::Side_set*> side_sets(0);
 
         // Node sets
-        std::vector<Mesh_data::Node_set*> node_sets(0);
+        std::vector<Amanzi::AmanziMesh::Data::Node_set*> node_sets(0);
 
         // Data container
-        data = Mesh_data::Data::build_from(parameters, coordinates, element_blocks, side_sets, node_sets);
+        data = Amanzi::AmanziMesh::Data::Data::build_from(parameters, coordinates, element_blocks, side_sets, node_sets);
 
     }
 

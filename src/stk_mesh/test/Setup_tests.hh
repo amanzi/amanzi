@@ -5,9 +5,8 @@
 #include <Epetra_MpiComm.h>
 #include <Teuchos_RCP.hpp>
 
-#include "../Mesh.hh"
-#include "../Mesh_factory.hh"
-#include "../Mesh_maps_stk.hh"
+#include "../Mesh_STK_Impl.hh"
+#include "../Mesh_STK_factory.hh"
 
 #include "Element_block.hh"
 #include "Coordinates.hh"
@@ -18,8 +17,8 @@
 
 extern stk::ParallelMachine parallel_machine;
 
-typedef Teuchos::RCP<STK_mesh::Mesh> Mesh_p;
-typedef Teuchos::RCP<STK_mesh::Mesh_factory> Factory_p;
+typedef Teuchos::RCP<Amanzi::AmanziMesh::STK::Mesh_STK_Impl> Mesh_p;
+typedef Teuchos::RCP<Amanzi::AmanziMesh::STK::Mesh_STK_factory> Factory_p;
 typedef Teuchos::RCP<Epetra_MpiComm> Comm_p;
 
 
@@ -43,14 +42,14 @@ struct Mesh_setup : public Test_mesh
 
     Mesh_setup ()
     {
-        Mesh_data::Fields fields;
+        Amanzi::AmanziMesh::Data::Fields fields;
 
         communicator = Comm_p (new Epetra_MpiComm(parallel_machine));
         my_pid = communicator->MyPID ();
 
         const int bucket_size = 20;
         
-        factory = Factory_p(new STK_mesh::Mesh_factory (parallel_machine, bucket_size));
+        factory = Factory_p(new Amanzi::AmanziMesh::STK::Mesh_STK_factory(parallel_machine, bucket_size));
         mesh    = Mesh_p (factory->build_mesh (*data, fields));
 
     }
@@ -58,16 +57,6 @@ struct Mesh_setup : public Test_mesh
     ~Mesh_setup ()
     {
         communicator->Barrier ();
-    }
-
-};
-
-struct Map_setup : public Mesh_setup
-{
-    STK_mesh::Mesh_maps_stk mesh_map;
-
-    Map_setup () : mesh_map (mesh)
-    {
     }
 
 };

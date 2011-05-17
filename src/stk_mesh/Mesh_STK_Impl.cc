@@ -3,7 +3,7 @@
 #include <boost/lambda/lambda.hpp>
 namespace bl = boost::lambda;
 
-#include "Mesh.hh"
+#include "Mesh_STK_Impl.hh"
 #include "dbc.hh"
 #include "Mesh_common.hh"
 
@@ -16,20 +16,21 @@ namespace bl = boost::lambda;
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/SetOwners.hpp>
 
-namespace STK_mesh
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace STK {
 
 // Constructors
 // ------------
 
-Mesh::Mesh (int space_dimension, 
-            const Epetra_MpiComm& comm,
-            Entity_map* entity_map,
-            stk::mesh::MetaData *meta_data,
-            stk::mesh::BulkData *bulk_data,
-            const Id_map& set_to_part,
-            Vector_field_type &coordinate_field) :
-    space_dimension_ (space_dimension),
+Mesh_STK_Impl::Mesh_STK_Impl (int space_dimension, 
+                              const Epetra_MpiComm& comm,
+                              Entity_map* entity_map,
+                              stk::mesh::MetaData *meta_data,
+                              stk::mesh::BulkData *bulk_data,
+                              const Id_map& set_to_part,
+                              Vector_field_type &coordinate_field) :
+  space_dimension_ (space_dimension),
     communicator_ (comm),
     entity_map_ (entity_map),
     meta_data_ (meta_data),
@@ -48,7 +49,7 @@ Mesh::Mesh (int space_dimension,
 // Information Getters
 // -------------------
 
-unsigned int Mesh::num_sets (stk::mesh::EntityRank rank) const 
+unsigned int Mesh_STK_Impl::num_sets (stk::mesh::EntityRank rank) const 
 {
     int count = 0;
 
@@ -73,7 +74,7 @@ unsigned int Mesh::num_sets (stk::mesh::EntityRank rank) const
  * @return number of entities found
  */
 unsigned int 
-Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category category) const
+Mesh_STK_Impl::count_entities (stk::mesh::EntityRank rank, Parallel_type category) const
 {
     Entity_vector e;
     get_entities(rank, category, e);
@@ -82,82 +83,12 @@ Mesh::count_entities (stk::mesh::EntityRank rank, Element_Category category) con
 
 
 unsigned int 
-Mesh::count_entities (const stk::mesh::Part& part, Element_Category category) const
+Mesh_STK_Impl::count_entities (const stk::mesh::Part& part, Parallel_type category) const
 {
     Entity_vector e;
     get_entities(part, category, e);
     return e.size();
 }
-
-// -------------------------------------------------------------
-// Mesh::remove_bad_ghosts_
-// -------------------------------------------------------------
-/** 
- * This routine takes a list of entities and removes those ghost
- * entities that are not appropriate.  
- *
- * Nodes: stk::mesh ghosts all nodes in a ghosted cell, even if you
- * tell it not to.  So, a node must be included in a cell owned by
- * this process.  Others are removed.
- *
- * Faces: stk::mesh ghosts all faces in a ghosted cell, even if you
- * tell it not to.  So each remotely owned face is checked to see if
- * it's related to a locally-owned cell.  If not, it's removed from
- * the list.
- *
- * FIXME: this appears to be unnecessary; it was based on my
- * misconception of what needed to be ghosted.
- * 
- * @param entities 
- */
-void
-Mesh::remove_bad_ghosts_(Entity_vector& entities) const
-{
-    const int me(communicator_.MyPID());
-    Entity_vector tmp(entities);
-
-    for (Entity_vector::iterator i = tmp.begin(); i != tmp.end(); i++) {
-        bool bad(false);
-        if ((*i)->owner_rank() != me) {
-
-            if ((*i)->entity_rank() == stk::mesh::Node) {
-                stk::mesh::EntityVector thenode, cells;
-                thenode.push_back(*i);
-                stk::mesh::get_entities_through_relations(thenode, stk::mesh::Element, cells);
-                
-                for (stk::mesh::EntityVector:: iterator c = cells.begin(); c != cells.end(); c++) {
-                    if ((*c)->owner_rank() == me) {
-                        bad = false;
-                        break;
-                    } else {
-                        bad = true;
-                    }
-                }
-            }
-
-            if ((*i)->entity_rank() == stk::mesh::Face) { 
-                stk::mesh::EntityVector theface, cells;
-                theface.push_back(*i);
-                stk::mesh::get_entities_through_relations(theface, stk::mesh::Element, cells);
-                
-                
-                // ghost faces must relate to more than one cell
-                bad = bad || (cells.size() < 2);
-                
-                // ghost faces must relate to a cell owned by this process
-                bad = bad ||  (cells.front()->owner_rank() != me &&
-                               cells.back()->owner_rank() != me); 
-                
-                // std::cerr << "Process " << me << ": Face " << (*i)->identifier() 
-                //           << " connects cell " << cells.front()->identifier() 
-                //           << " to "  << cells.back()->identifier() << " " << bad << std::endl;
-                
-            }
-        }
-        if (bad) entities.erase(std::remove(entities.begin(), entities.end(), *i));
-    }
-}
-
 
 /** 
  * 
@@ -166,13 +97,13 @@ Mesh::remove_bad_ghosts_(Entity_vector& entities) const
  * @param entities 
  */
 void 
-Mesh::get_entities (stk::mesh::EntityRank rank, Element_Category category, Entity_vector& entities) const
+Mesh_STK_Impl::get_entities (stk::mesh::EntityRank rank, Parallel_type category, Entity_vector& entities) const
 {
     get_entities_ (selector_ (category), rank, entities);
 }
 
 void 
-Mesh::get_entities (const stk::mesh::Part& part, Element_Category category, Entity_vector& entities) const
+Mesh_STK_Impl::get_entities (const stk::mesh::Part& part, Parallel_type category, Entity_vector& entities) const
 {
     const stk::mesh::Selector part_selector = part & selector_ (category);
     const stk::mesh::EntityRank rank  = part.primary_entity_rank ();
@@ -180,11 +111,10 @@ Mesh::get_entities (const stk::mesh::Part& part, Element_Category category, Enti
 }
 
 void 
-Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank,
+Mesh_STK_Impl::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank rank,
                      Entity_vector& entities) const
 {
     stk::mesh::get_selected_entities (selector, bulk_data_->buckets (rank), entities);
-    // remove_bad_ghosts_(entities);
 }
 
 
@@ -195,11 +125,11 @@ Mesh::get_entities_ (const stk::mesh::Selector& selector, stk::mesh::EntityRank 
  * @param ids @em global face identifiers (out)
  */
 void 
-Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
+Mesh_STK_Impl::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
     // Look up element from global id.
-    const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
-    const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
+    const int cell_rank = entity_map_->kind_to_rank (CELL);
+    const int face_rank = entity_map_->kind_to_rank (FACE);
 
     stk::mesh::Entity *entity = bulk_data_->get_entity(cell_rank, element);
     ASSERT (entity->identifier () == element);
@@ -219,12 +149,12 @@ Mesh::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const
 }
 
 void
-Mesh::element_to_face_dirs(stk::mesh::EntityId element, 
+Mesh_STK_Impl::element_to_face_dirs(stk::mesh::EntityId element, 
                            std::vector<int>& dirs) const
 {
     const int me = communicator_.MyPID();
-    const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
-    const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
+    const int cell_rank = entity_map_->kind_to_rank (CELL);
+    const int face_rank = entity_map_->kind_to_rank (FACE);
 
     stk::mesh::Entity *entity = bulk_data_->get_entity(cell_rank, element);
 
@@ -250,11 +180,11 @@ Mesh::element_to_face_dirs(stk::mesh::EntityId element,
  * @param ids @em global node identifiers (out)
  */
 void 
-Mesh::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
+Mesh_STK_Impl::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
 
-    const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
-    const int node_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
+    const int cell_rank = entity_map_->kind_to_rank (CELL);
+    const int node_rank = entity_map_->kind_to_rank (NODE);
 
     stk::mesh::Entity *entity = bulk_data_->get_entity(cell_rank, element);
 
@@ -269,10 +199,10 @@ Mesh::element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 
 }
 
-void Mesh::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
+void Mesh_STK_Impl::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 {
-    const int from_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
-    const int to_rank = entity_map_->kind_to_rank (Mesh_data::NODE);
+    const int from_rank = entity_map_->kind_to_rank (FACE);
+    const int to_rank = entity_map_->kind_to_rank (NODE);
     stk::mesh::Entity *entity = bulk_data_->get_entity(from_rank, element);
     
     stk::mesh::PairIterRelation nodes = entity->relations (to_rank);
@@ -286,13 +216,13 @@ void Mesh::face_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const
 }
 
 // -------------------------------------------------------------
-// Mesh::face_to_elements
+// Mesh_STK_Impl::face_to_elements
 // -------------------------------------------------------------
 void
-Mesh::face_to_elements(stk::mesh::EntityId face, Entity_Ids& ids) const
+Mesh_STK_Impl::face_to_elements(stk::mesh::EntityId face, Entity_Ids& ids) const
 {
-    const int cell_rank = entity_map_->kind_to_rank (Mesh_data::CELL);
-    const int face_rank = entity_map_->kind_to_rank (Mesh_data::FACE);
+    const int cell_rank = entity_map_->kind_to_rank (CELL);
+    const int face_rank = entity_map_->kind_to_rank (FACE);
 
     stk::mesh::Entity *entity = bulk_data_->get_entity(face_rank, face);
     ASSERT (entity->identifier () == face);
@@ -312,7 +242,7 @@ Mesh::face_to_elements(stk::mesh::EntityId face, Entity_Ids& ids) const
 
 
 
-double const * Mesh::coordinates (stk::mesh::Entity* node) const
+double const * Mesh_STK_Impl::coordinates (stk::mesh::Entity* node) const
 {
     
     // Get an array of entity data.
@@ -327,7 +257,7 @@ double const * Mesh::coordinates (stk::mesh::Entity* node) const
  * @return node coordinates
  */
 double const * 
-Mesh::coordinates (stk::mesh::EntityId node) const
+Mesh_STK_Impl::coordinates (stk::mesh::EntityId node) const
 {
 
     stk::mesh::Entity *entity = bulk_data_->get_entity(stk::mesh::Node, node);
@@ -336,7 +266,7 @@ Mesh::coordinates (stk::mesh::EntityId node) const
 }
 
 stk::mesh::Part* 
-Mesh::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
+Mesh_STK_Impl::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
 {
     
     Id_map::const_iterator part_it = set_to_part_.find (std::make_pair (rank, set_id));
@@ -346,7 +276,7 @@ Mesh::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
 
 }
 
-stk::mesh::Part* Mesh::get_set (const char* name, stk::mesh::EntityRank rank)
+stk::mesh::Part* Mesh_STK_Impl::get_set (const char* name, stk::mesh::EntityRank rank)
 {
 
     stk::mesh::Part *part = meta_data_->get_part (name);
@@ -356,7 +286,7 @@ stk::mesh::Part* Mesh::get_set (const char* name, stk::mesh::EntityRank rank)
     return part;
 }
 
-void Mesh::get_sets (stk::mesh::EntityRank rank, stk::mesh::PartVector& sets) const
+void Mesh_STK_Impl::get_sets (stk::mesh::EntityRank rank, stk::mesh::PartVector& sets) const
 {
     
     ASSERT (sets.size () == 0);
@@ -372,7 +302,7 @@ void Mesh::get_sets (stk::mesh::EntityRank rank, stk::mesh::PartVector& sets) co
 
 }
 
-void Mesh::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int> &ids) const
+void Mesh_STK_Impl::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int> &ids) const
 {
     ASSERT (ids.size () == 0);
     
@@ -389,7 +319,7 @@ void Mesh::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int> &i
 // Manipulators
 // ------------
 
-stk::mesh::Selector Mesh::selector_ (Element_Category category) const
+stk::mesh::Selector Mesh_STK_Impl::selector_ (Parallel_type category) const
 {
     ASSERT (category >= OWNED && category <= USED);
 
@@ -415,7 +345,7 @@ stk::mesh::Selector Mesh::selector_ (Element_Category category) const
 // Argument validators
 // -------------------
 
-bool Mesh::valid_id (unsigned int id, stk::mesh::EntityRank rank) const
+bool Mesh_STK_Impl::valid_id (unsigned int id, stk::mesh::EntityRank rank) const
 {
     return (set_to_part_.find (std::make_pair (rank, id)) != set_to_part_.end ());
 }
@@ -425,24 +355,24 @@ bool Mesh::valid_id (unsigned int id, stk::mesh::EntityRank rank) const
 // Static Information & Validators
 // -------------------------------
 
-stk::mesh::EntityRank Mesh::get_element_type (int space_dimension)
+stk::mesh::EntityRank Mesh_STK_Impl::get_element_type (int space_dimension)
 {
     ASSERT (valid_dimension (space_dimension));
     return (space_dimension == 3) ? stk::mesh::Element : stk::mesh::Face;
 }
 
-stk::mesh::EntityRank Mesh::get_face_type (int space_dimension)
+stk::mesh::EntityRank Mesh_STK_Impl::get_face_type (int space_dimension)
 {
     ASSERT (valid_dimension (space_dimension));
     return (space_dimension == 3) ? stk::mesh::Face : stk::mesh::Edge;
 }
 
-bool Mesh::valid_dimension (int space_dimension)
+bool Mesh_STK_Impl::valid_dimension (int space_dimension)
 {
     return (space_dimension >= 2) && (space_dimension <= 3);
 }
 
-bool Mesh::valid_rank (stk::mesh::EntityRank rank)
+bool Mesh_STK_Impl::valid_rank (stk::mesh::EntityRank rank)
 {
     return (rank == stk::mesh::Node || rank == stk::mesh::Edge ||
             rank == stk::mesh::Face || rank == stk::mesh::Element);
@@ -454,17 +384,17 @@ bool Mesh::valid_rank (stk::mesh::EntityRank rank)
 // -----------------
 
 
-bool Mesh::dimension_ok_ () const
+bool Mesh_STK_Impl::dimension_ok_ () const
 {
     return valid_dimension (space_dimension_);
 }
 
 
 // -------------------------------------------------------------
-// Mesh::summary
+// Mesh_STK_Impl::summary
 // -------------------------------------------------------------
 void
-Mesh::summary(std::ostream& os) const
+Mesh_STK_Impl::summary(std::ostream& os) const
 {
     const int nproc(communicator_.NumProc());
     const int me(communicator_.MyPID());
@@ -497,7 +427,7 @@ Mesh::summary(std::ostream& os) const
 }
 
 // -------------------------------------------------------------
-// Mesh::redistribute
+// Mesh_STK_Impl::redistribute
 // -------------------------------------------------------------
 /** 
  * This redistributes ownership of cells in the mesh according to the
@@ -506,7 +436,7 @@ Mesh::summary(std::ostream& os) const
  * @param cellmap @em 1-based map of cell indexes
  */
 void
-Mesh::redistribute(const Epetra_Map& cellmap)
+Mesh_STK_Impl::redistribute(const Epetra_Map& cellmap)
 {
     stk::mesh::Selector owned(meta_data_->locally_owned_part());
     stk::mesh::EntityVector cells;
@@ -549,5 +479,7 @@ Mesh::redistribute(const Epetra_Map& cellmap)
     
 }
 
-} // close namespace STK_mesh
+} // close namespace STK 
+} // close namespace Mesh 
+} // close namespace Amanzi 
 

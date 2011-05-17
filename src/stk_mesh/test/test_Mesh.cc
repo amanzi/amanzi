@@ -2,10 +2,6 @@
 
 #include "Setup_tests.hh"
 
-#include "../Mesh.hh"
-#include "../Mesh_factory.hh"
-#include "../Mesh_maps_stk.hh"
-
 #include "Element_block.hh"
 #include "Coordinates.hh"
 #include "Element_types.hh"
@@ -26,25 +22,25 @@ SUITE (Mesh)
         if (my_pid == 0)
         {
             CHECK_EQUAL (mesh->rank_id (), my_pid);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, OWNED), 4);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    OWNED), 21);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    OWNED), 20);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 4);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    Amanzi::AmanziMesh::OWNED), 21);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    Amanzi::AmanziMesh::OWNED), 20);
 
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, USED), 4);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    USED), 21);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    USED), 20);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, Amanzi::AmanziMesh::USED), 4);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    Amanzi::AmanziMesh::USED), 21);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    Amanzi::AmanziMesh::USED), 20);
 
         }
         else
         {
             CHECK_EQUAL (mesh->rank_id (), my_pid);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    OWNED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    OWNED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    Amanzi::AmanziMesh::OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    Amanzi::AmanziMesh::OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 0);
 
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    USED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    USED), 0);
-            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, USED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Node,    Amanzi::AmanziMesh::USED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Face,    Amanzi::AmanziMesh::USED), 0);
+            CHECK_EQUAL (mesh->count_entities (stk::mesh::Element, Amanzi::AmanziMesh::USED), 0);
 
         }
 

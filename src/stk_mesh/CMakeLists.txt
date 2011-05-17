@@ -21,6 +21,7 @@ project(STK)
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
@@ -49,7 +50,7 @@ if (BUILD_TESTS)
     # Test: stk_mesh
     add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
                      test/test_Maps.cc test/test_Hex.cc)
-    target_link_libraries(test_stk_mesh stk_mesh mesh_audit         
+    target_link_libraries(test_stk_mesh stk_mesh 
                           ${UnitTest_LIBRARIES} )
     add_amanzi_test(stk_mesh test_stk_mesh KIND unit)
 
