@@ -5,8 +5,9 @@
 #include "Utils.hh"
 #include "dbc.hh"
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 bool Parameters::valid () const
 {
@@ -85,6 +86,6 @@ void Parameters::to_stream (std::ostream& stream, const bool& verbose) const
 }
 
 
-
-
-} // namespace
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi

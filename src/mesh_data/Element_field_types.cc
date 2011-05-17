@@ -2,8 +2,9 @@
 
 #include "dbc.hh"
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 // bool ok_field_location (Entity_types type)
 // {
@@ -47,6 +48,6 @@ std::string type_to_name (FIELD_TYPE type)
     }
 }
 
-
-
-}
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi

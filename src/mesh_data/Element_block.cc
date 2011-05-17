@@ -2,12 +2,14 @@
 #include <algorithm>
 
 #include "Element_block.hh"
+#include "Element_types.hh"
 
 #include <string.h>
 #include "dbc.hh"
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 bool Element_block::valid () const
 {
@@ -33,7 +35,7 @@ std::vector<int> Element_block::connectivity (int element) const
 
 void Element_block::take_data_from (int num_elements, 
                                     std::string name,
-                                    ELEMENT_TYPE element_type,
+                                    Cell_type element_type,
                                     std::vector<int>& connectivity_map,
                                     std::vector<double>& attribute_map)
 {
@@ -61,7 +63,7 @@ void Element_block::take_data_from (int num_elements,
 Element_block* Element_block::build_from (int id,
                                           std::string name,
                                           int num_elements,
-                                          ELEMENT_TYPE element_type,
+                                          Cell_type element_type,
                                           std::vector<int>& connectivity_map,
                                           std::vector<double>& attribute_map)
 {
@@ -89,4 +91,6 @@ void Element_block::to_stream (std::ostream& stream, bool verbose) const
 
 
 
-}
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi

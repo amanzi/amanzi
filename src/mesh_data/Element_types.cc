@@ -4,50 +4,38 @@
 
 #include "dbc.hh"
 
-namespace Mesh_data
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
+
+std::string type_to_name (Cell_type type)
 {
 
-std::string type_to_name (Mesh_data::ELEMENT_TYPE type)
-{
+  ASSERT (cell_valid_type(type));
 
-    ASSERT (ok_type (type));
-
-    switch (type)
-    {
-    case Mesh_data::CIRCLE:
-        return "circle";
-    case Mesh_data::SPHERE:
-        return "sphere";
-    case Mesh_data::TRUSS:
-        return "truss";
-    case Mesh_data::BEAM:
-        return "beam";
-    case Mesh_data::TRIANGLE:
-        return "triangle";
-    case Mesh_data::QUAD:
-        return "quad";
-    case Mesh_data::SHELL:
-        return "shell";
-    case Mesh_data::TETRA:
-        return "tetrahedron";
-    case Mesh_data::PYRAMID:
-        return "pyramid";
-    case Mesh_data::WEDGE:
-        return "wedge";
-    case Mesh_data::HEX:
-        return "hexahedron";
+  switch (type)
+  {
+    case TRI:
+      return "triangle";
+    case QUAD:
+      return "quad";
+    case POLYGON:
+      return "polygon";
+    case TET:
+      return "tetrahedron";
+    case PYRAMID:
+      return "pyramid";
+    case PRISM:
+      return "prism";
+    case HEX:
+      return "hexahedron";
+    case POLYHED:
+      return "polyhedron";
     default:
-        return "unknown";
-    }
+      return "unknown";
+  }
 }
 
-bool ok_type (Mesh_data::ELEMENT_TYPE type)
-{
-
-    bool result = (type >= Mesh_data::UNKNOWN);
-    result &= (type <= Mesh_data::HEX);
-
-    return result;
-}
-
-}
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi

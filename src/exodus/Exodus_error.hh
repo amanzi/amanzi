@@ -5,17 +5,17 @@
 #include <sstream>
 
 
+namespace Amanzi {
+namespace Exodus {
 
-namespace ExodusII
-{
-  class ExodusError : public Errors::Message
-  {
-  public:
-    explicit ExodusError(void) : Errors::Message() {};
-    explicit ExodusError(const char* message) : Errors::Message(message) {};
-    ~ExodusError(void) throw() {};
-  };
+class ExodusError : public Errors::Message {
+ public:
+  explicit ExodusError(void) : Errors::Message() {};
+  explicit ExodusError(const char* message) : Errors::Message(message) {};
+  ~ExodusError(void) throw() {};
+};
   
+} // close namespace Exodus
 }
 
 #endif

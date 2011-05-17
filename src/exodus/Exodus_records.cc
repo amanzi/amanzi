@@ -6,9 +6,8 @@
 #include "Exodus_error.hh"
 #include "exodusII.h"
 
-namespace ExodusII
-{
-
+namespace Amanzi {
+namespace Exodus {
 
 Info_records::Info_records (Exodus_file file)
 {
@@ -39,7 +38,7 @@ void Info_records::read_record_count_ (int id)
     if (ret_val < 0) {
       std::string msg = 
         boost::str(boost::format("file %d: error: ex_inquire failed (%d)") % ret_val);
-      throw ExodusII::ExodusError (msg.c_str());
+      throw ExodusError (msg.c_str());
     }
 }
 
@@ -59,4 +58,5 @@ void Info_records::to_stream (std::ostream& stream) const
     }
 }
 
-}
+} // namespace Exodus
+} // namespace Amanzi

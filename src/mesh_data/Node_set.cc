@@ -2,8 +2,9 @@
 
 #include "dbc.hh"
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 void Node_set::take_data_from (std::vector<int>& node_list, std::vector<double>& dist_factors, std::string& name)
 {
@@ -39,4 +40,6 @@ void Node_set::to_stream (std::ostream& stream, bool verbose) const
     stream << "  Distribution factors: " << num_dist_factors_ << std::endl;
 }
 
-}
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi

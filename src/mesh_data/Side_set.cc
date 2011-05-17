@@ -1,8 +1,9 @@
 #include "Side_set.hh"
 #include "dbc.hh"
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 bool Side_set::valid () const
 {
@@ -84,5 +85,6 @@ void Side_set::to_stream (std::ostream& stream, bool verbose) const
 
 }
 
-
-}
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi

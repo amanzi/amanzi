@@ -9,27 +9,27 @@
 #include "Side_set.hh"
 #include "Node_set.hh"
 
-namespace ExodusII
-{
+namespace Amanzi {
+namespace Exodus {
 
-Mesh_data::Parameters* read_parameters (Exodus_file file);
+AmanziMesh::Data::Parameters* read_parameters (Exodus_file file);
 
-Mesh_data::Coordinates<double>* read_coordinates (Exodus_file file, int num_nodes, int dimensions);
+AmanziMesh::Data::Coordinates<double>* read_coordinates (Exodus_file file, int num_nodes, int dimensions);
 
-Mesh_data::Element_block* read_element_block (Exodus_file file, int block_id);
+AmanziMesh::Data::Element_block* read_element_block (Exodus_file file, int block_id);
 
-Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id);
+AmanziMesh::Data::Side_set* read_side_set (Exodus_file file, int set_id);
 
-Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id);
+AmanziMesh::Data::Node_set* read_node_set (Exodus_file file, int set_id);
 
-Mesh_data::Data* read_exodus_file (const char *);
+AmanziMesh::Data::Data* read_exodus_file (const char *);
 
-Mesh_data::Data* read_exodus_file (const Exodus_file& file);
+AmanziMesh::Data::Data* read_exodus_file (const Exodus_file& file);
 
-Mesh_data::ELEMENT_TYPE read_element_type (const char *);
+AmanziMesh::Cell_type read_element_type (const char *);
 
-}
-
+} // namespace Exodus
+} // namespace Amanzi
 
 
 #endif

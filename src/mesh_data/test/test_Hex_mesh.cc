@@ -2,7 +2,7 @@
 /**
  * @file   test_Hex_mesh.cc
  * @author William A. Perkins
- * @date Thu Apr 21 13:27:01 2011
+ * @date Mon May  2 12:49:51 2011
  * 
  * @brief  A set of tests for the HexMeshGenerator class
  * 
@@ -29,8 +29,8 @@ SUITE (HexMeshGenerator)
 
     int me(comm.MyPID());
 
-    Mesh_data::HexMeshGenerator gen(&comm, size*size, size, size);
-    Mesh_data::Data *mesh;
+    Amanzi::AmanziMesh::Data::HexMeshGenerator gen(&comm, size*size, size, size);
+    Amanzi::AmanziMesh::Data::Data *mesh;
     mesh = gen.generate();
 
     mesh->to_stream(std::cout, true);

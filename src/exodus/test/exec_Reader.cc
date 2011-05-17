@@ -6,10 +6,10 @@
 void read_file (const char* filename)
 {
 
-    Mesh_data::Data *mesh = ExodusII::read_exodus_file (filename);
-    std::cout << *mesh << std::endl << std::endl;
+  Amanzi::AmanziMesh::Data::Data *mesh = Amanzi::Exodus::read_exodus_file (filename);
+  std::cout << *mesh << std::endl << std::endl;
 
-    delete mesh;
+  delete mesh;
 
 }
 
@@ -17,12 +17,12 @@ void read_file (const char* filename)
 int main (int argc, const char* argv [])
 {
     
-    if (argc > 1)
-    {
+  if (argc > 1)
+  {
         
-        for (int i = 1; i < argc; ++i)
-            read_file (argv [i]);
+    for (int i = 1; i < argc; ++i)
+      read_file (argv [i]);
 
-    }
+  }
 
 }

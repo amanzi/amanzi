@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.hh
  * @author William A. Perkins
- * @date Mon Dec 13 13:01:15 2010
+ * @date Mon May  2 12:45:20 2011
  * 
  * @brief  Declaration of the HexMeshGenerator class
  * 
@@ -19,8 +19,9 @@
 #include "Data.hh"
 
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 // -------------------------------------------------------------
 //  class HexMeshGenerator
 // -------------------------------------------------------------
@@ -141,6 +142,8 @@ public:
 
 }; // close class HexMeshGenerator
 
-} // close namespace Mesh_data
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi
 
 #endif

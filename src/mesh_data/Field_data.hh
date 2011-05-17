@@ -4,11 +4,12 @@
 #include <list>
 #include <string>
 
-#include "Entity_kind.hh"
+#include "MeshDefs.hh"
 #include "Element_field_types.hh"
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 class Field
 {
@@ -49,6 +50,8 @@ public:
 
 };
 
-}
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi
 
 #endif

@@ -4,29 +4,25 @@
 #include <iostream>
 
 
-namespace ExodusII
-{
+namespace Amanzi {
+namespace Exodus {
 
-struct Exodus_file
-{
-    int id;
-    char const * filename;
-    int exodus_word_size;
-    int system_word_size;
+struct Exodus_file {
+  int id;
+  char const * filename;
+  int exodus_word_size;
+  int system_word_size;
 
-    float version;
+  float version;
     
-    Exodus_file (char const * filename);
+  Exodus_file (char const * filename);
 
-    void to_stream (std::ostream& stream) const;
+  void to_stream (std::ostream& stream) const;
 
-    virtual ~Exodus_file ();
+  virtual ~Exodus_file ();
 };
 
-
-
-
-
-} // namespace ExodusII
+} // namespace Exodus
+} // namespace Amanzi
 
 #endif

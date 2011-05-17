@@ -6,27 +6,25 @@
 
 #include "Exodus_file.hh"
 
-namespace ExodusII
-{
+namespace Amanzi {
+namespace Exodus {
 
 struct Info_records
 {
+  Info_records (Exodus_file file);
 
-    Info_records (Exodus_file file);
+  int num_records;
+  std::vector<std::string> records;
 
-    int num_records;
-    std::vector<std::string> records;
+  void to_stream (std::ostream& stream) const;
 
-    void to_stream (std::ostream& stream) const;
+ private:
 
-private:
-
-    void read_record_count_ (int id);
+  void read_record_count_ (int id);
 
 };
 
-
-
-}
+} // namespace Exodus
+} // namespace Amanzi
 
 #endif
