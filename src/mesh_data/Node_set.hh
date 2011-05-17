@@ -5,8 +5,9 @@
 #include <string>
 #include <iostream>
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 class Node_set
 {
@@ -47,7 +48,8 @@ public:
 };
 
 
-}
-
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi
 
 #endif

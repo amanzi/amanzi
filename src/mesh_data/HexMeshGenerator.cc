@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Wed Dec 29 09:45:16 2010
+ * @date Mon May  2 12:45:31 2011
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -14,8 +14,9 @@ namespace bl = boost::lambda;
 
 #include "HexMeshGenerator.hh"
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 // -------------------------------------------------------------
 //  class HexMeshGenerator
@@ -528,7 +529,9 @@ HexMeshGenerator::vertexmap(bool onebased)
   return result;
 }
 
-} // close namespace Mesh_data
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi
 
 
 

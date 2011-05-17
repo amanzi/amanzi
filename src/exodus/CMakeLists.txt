@@ -22,6 +22,7 @@ project(EXO)
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 
 # External (TPL) include directories

@@ -21,7 +21,7 @@ void set (std::vector<F> &v, F a, F b, F c)
 template <typename F>
 struct Coords
 {
-    typedef Mesh_data::Coordinates<F> C;
+    typedef Amanzi::AmanziMesh::Data::Coordinates<F> C;
     C* c;
 
     virtual ~Coords () { delete c; }
@@ -30,7 +30,7 @@ struct Coords
 // Create an empty Coordinates<int> object.
 struct No_Data : public Coords<int>
 {
-    No_Data ()  { c = new Mesh_data::Coordinates<int>(10,3);  }
+    No_Data ()  { c = new Amanzi::AmanziMesh::Data::Coordinates<int>(10,3);  }
 };
 
 // Create a coordinates object corresponding to the mesh in STK_mesh/test/Example_Mesh.hh
@@ -51,7 +51,7 @@ struct Data : public Coords<double>
             coord_data [1] [node] = double (y_plane);
             coord_data [2] [node] = double (z_plane);
         }
-        c = Mesh_data::Coordinates<double>::build_from (coord_data);
+        c = Amanzi::AmanziMesh::Data::Coordinates<double>::build_from (coord_data);
     }
 
 };
@@ -68,18 +68,18 @@ SUITE (Coordinates)
         for (int i=0; i<d.size (); ++i)
             d [i] = i;
 
-        Mesh_data::Coordinates<int> c1 (num_nodes, &d [0]);
+        Amanzi::AmanziMesh::Data::Coordinates<int> c1 (num_nodes, &d [0]);
         CHECK_EQUAL (c1.dimension (), 1);
         CHECK_EQUAL (c1.nodes (), num_nodes);
         CHECK_ARRAY_EQUAL (c1.get_coordinate_pointer (0), &d[0], 10);
 
-        Mesh_data::Coordinates<int> c2 (num_nodes, &d [0], &d [10]);
+        Amanzi::AmanziMesh::Data::Coordinates<int> c2 (num_nodes, &d [0], &d [10]);
         CHECK_EQUAL (c2.dimension (), 2);
         CHECK_EQUAL (c1.nodes (), num_nodes);
         CHECK_ARRAY_EQUAL (c2.get_coordinate_pointer (0), &d [0 ], 10);
         CHECK_ARRAY_EQUAL (c2.get_coordinate_pointer (1), &d [10], 10);
 
-        Mesh_data::Coordinates<int> c3 (num_nodes, &d [0], &d [10], &d [20]);
+        Amanzi::AmanziMesh::Data::Coordinates<int> c3 (num_nodes, &d [0], &d [10], &d [20]);
         CHECK_EQUAL (c3.dimension (), 3);
         CHECK_EQUAL (c1.nodes (), num_nodes);
         CHECK_ARRAY_EQUAL (c3.get_coordinate_pointer (0), &d [0 ], 10);
@@ -91,17 +91,17 @@ SUITE (Coordinates)
     TEST (Size)
     {
         
-        Mesh_data::Coordinates<double> d(10, 2);
+        Amanzi::AmanziMesh::Data::Coordinates<double> d(10, 2);
 
         CHECK_EQUAL (d.nodes (), 10);
         CHECK_EQUAL (d.dimension (), 2);
 
-        Mesh_data::Coordinates<float> f(100,1);
+        Amanzi::AmanziMesh::Data::Coordinates<float> f(100,1);
         
         CHECK_EQUAL (f.nodes (), 100);
         CHECK_EQUAL (f.dimension (), 1);
 
-        Mesh_data::Coordinates<int> i(1000, 3);
+        Amanzi::AmanziMesh::Data::Coordinates<int> i(1000, 3);
         
         CHECK_EQUAL (i.nodes (), 1000);
         CHECK_EQUAL (i.dimension (), 3);

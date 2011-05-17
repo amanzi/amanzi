@@ -1,7 +1,6 @@
 #include <UnitTest++.h>
 
 #include "../Field_data.hh"
-#include "../Entity_kind.hh"
 
 #include <string>
 
@@ -12,10 +11,10 @@ SUITE (Field_data)
     {
 
         std::string name = "Rumplestiltskin";
-        Mesh_data::Entity_kind location = Mesh_data::CELL;
-        Mesh_data::FIELD_TYPE type = Mesh_data::SCALAR;
+        Amanzi::AmanziMesh::Entity_kind location = Amanzi::AmanziMesh::CELL;
+        Amanzi::AmanziMesh::Data::FIELD_TYPE type = Amanzi::AmanziMesh::Data::SCALAR;
 
-        Mesh_data::Field f (name, type, location);
+        Amanzi::AmanziMesh::Data::Field f (name, type, location);
 
         CHECK_EQUAL (f.name (), name);
         CHECK_EQUAL (f.type (), type);
@@ -26,11 +25,11 @@ SUITE (Field_data)
     TEST (Default)
     {
         std::string name = "Bob's crab shack";
-        Mesh_data::Field f (name);
+        Amanzi::AmanziMesh::Data::Field f (name);
 
         CHECK_EQUAL (f.name (), name);
-        CHECK_EQUAL (f.location (), Mesh_data::CELL);
-        CHECK_EQUAL (f.type (), Mesh_data::SCALAR);
+        CHECK_EQUAL (f.location (), Amanzi::AmanziMesh::CELL);
+        CHECK_EQUAL (f.type (), Amanzi::AmanziMesh::Data::SCALAR);
     }
 
 }
@@ -40,26 +39,29 @@ SUITE (Fields)
 
     TEST (Empty)
     {
-        Mesh_data::Fields fields;
+        Amanzi::AmanziMesh::Data::Fields fields;
         CHECK (fields.empty ());
     }
 
     TEST (Add)
     {
-        Mesh_data::Fields fields;
+        Amanzi::AmanziMesh::Data::Fields fields;
 
-        Mesh_data::Field f ("Smith", Mesh_data::SCALAR, Mesh_data::NODE);
+        Amanzi::AmanziMesh::Data::Field f ("Smith", Amanzi::AmanziMesh::Data::SCALAR, 
+                                     Amanzi::AmanziMesh::NODE);
         fields.add_field (f);
 
-        Mesh_data::Field g ("Jones", Mesh_data::VECTOR, Mesh_data::EDGE);
+        Amanzi::AmanziMesh::Data::Field g ("Jones", Amanzi::AmanziMesh::Data::VECTOR, 
+                                     Amanzi::AmanziMesh::EDGE);
         fields.add_field (g);
 
-        Mesh_data::Field h ("Brown", Mesh_data::SCALAR, Mesh_data::FACE);
+        Amanzi::AmanziMesh::Data::Field h ("Brown", Amanzi::AmanziMesh::Data::SCALAR, 
+                                     Amanzi::AmanziMesh::FACE);
         fields.add_field (h);
 
         CHECK (!fields.empty ());
         int count = 0;
-        for (Mesh_data::Fields::const_iterator it = fields.begin ();
+        for (Amanzi::AmanziMesh::Data::Fields::const_iterator it = fields.begin ();
              it != fields.end ();
              ++it)
         {

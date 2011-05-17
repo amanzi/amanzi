@@ -15,7 +15,9 @@ namespace
 {
 
 template <typename S>
-Mesh_data::Coordinates<double>* read_coordinates_impl_ (ExodusII::Exodus_file file, int num_nodes, int dimensions)
+Amanzi::AmanziMesh::Data::Coordinates<double>* 
+read_coordinates_impl_ (Amanzi::Exodus::Exodus_file file, 
+                        int num_nodes, int dimensions)
 {
 
     std::vector<std::vector<S> > data (dimensions, std::vector<S>(num_nodes));
@@ -25,19 +27,19 @@ Mesh_data::Coordinates<double>* read_coordinates_impl_ (ExodusII::Exodus_file fi
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read coordinates (%d)") %
                    file.filename % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( Amanzi::Exodus::ExodusError (msg.c_str()) );
     }
 
-    return Mesh_data::Coordinates<double>::build_from (data);
+    return Amanzi::AmanziMesh::Data::Coordinates<double>::build_from (data);
 
 }
 }
 
 
-namespace ExodusII
-{
+namespace Amanzi {
+namespace Exodus {
 
-Mesh_data::Parameters* read_parameters (Exodus_file file)
+AmanziMesh::Data::Parameters* read_parameters (Exodus_file file)
 {
 
     char title_data [MAX_LINE_LENGTH];
@@ -58,7 +60,7 @@ Mesh_data::Parameters* read_parameters (Exodus_file file)
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read global parameters (%d)") %
                    file.filename % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
     std::string title(title_data);
 
@@ -76,7 +78,7 @@ Mesh_data::Parameters* read_parameters (Exodus_file file)
           std::string msg = 
             boost::str(boost::format("%s: error: cannot read element block ids (%d)") %
                        file.filename % ret_val);
-          Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+          Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
         }
     }
 
@@ -91,7 +93,7 @@ Mesh_data::Parameters* read_parameters (Exodus_file file)
           std::string msg = 
             boost::str(boost::format("%s: error: cannot read node block ids (%d)") %
                        file.filename % ret_val);
-          Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+          Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
         }
     }
 
@@ -106,14 +108,14 @@ Mesh_data::Parameters* read_parameters (Exodus_file file)
           std::string msg = 
             boost::str(boost::format("%s: error: cannot read side block ids (%d)") %
                        file.filename % ret_val);
-          Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+          Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
         }
     }
 
 
 
     
-    Mesh_data::Parameters *params = new Mesh_data::Parameters (title, dimensionality, num_nodes, num_elements,
+    AmanziMesh::Data::Parameters *params = new AmanziMesh::Data::Parameters (title, dimensionality, num_nodes, num_elements,
                                                                num_element_blocks, num_node_sets, num_side_sets,
                                                                element_block_ids, node_set_ids, side_set_ids);
 
@@ -122,7 +124,7 @@ Mesh_data::Parameters* read_parameters (Exodus_file file)
 }
 
 
-Mesh_data::Coordinates<double>* read_coordinates (Exodus_file file, int num_nodes, int dimensions)
+AmanziMesh::Data::Coordinates<double>* read_coordinates (Exodus_file file, int num_nodes, int dimensions)
 {
 
     if (file.exodus_word_size == sizeof (float))
@@ -135,7 +137,7 @@ Mesh_data::Coordinates<double>* read_coordinates (Exodus_file file, int num_node
 }
 
 
-Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id)
+AmanziMesh::Data::Node_set* read_node_set (Exodus_file file, int set_id)
 {
 
     int num_nodes;
@@ -145,7 +147,7 @@ Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id)
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read node set %d parameters (%d)") %
                    file.filename % set_id % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
 
     std::vector<int> node_list(num_nodes);
@@ -156,7 +158,7 @@ Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id)
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read node set %d (%d)") %
                    file.filename % set_id % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
 
     if (num_dist_factors > 0)
@@ -166,7 +168,7 @@ Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id)
           std::string msg = 
             boost::str(boost::format("%s: error: cannot read node set distribution factors %d (%d)") %
                        file.filename % set_id % ret_val);
-          Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+          Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
         }
     }
 
@@ -178,12 +180,12 @@ Mesh_data::Node_set* read_node_set (Exodus_file file, int set_id)
     // make node indexes 0-based
     std::for_each(node_list.begin(), node_list.end(), bl::_1 -= 1); 
 
-    return Mesh_data::Node_set::build_from (set_id, node_list, node_dist_factors, name);
+    return AmanziMesh::Data::Node_set::build_from (set_id, node_list, node_dist_factors, name);
 
 }
 
 
-Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
+AmanziMesh::Data::Side_set* read_side_set (Exodus_file file, int set_id)
 {
 
     int num_sides;
@@ -194,7 +196,7 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read side set %d parameters (%d)") %
                    file.filename % set_id % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
 
     std::vector<int> element_list(num_sides);
@@ -209,7 +211,7 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read side set %d (%d)") %
                    file.filename % set_id % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
 
     char name_data [MAX_STR_LENGTH];
@@ -219,15 +221,15 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
 
     // int num_nodes;
     // ret_val = ex_get_size_set_node_list (file.id, set_id, &num_nodes);
-    // if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+    // if (ret_val < 0) throw ExodusError (ret_val);
 
 
 
     // ret_val = ex_get_side_set_node_list (file.id, set_id, &node_count_list [0], &node_list [0]);
-    // if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+    // if (ret_val < 0) throw ExodusError (ret_val);
 
     // ret_val = ex_get_side_set_dist_fact (file.id, set_id, &node_factors [0]);
-    // if (ret_val < 0) throw ExodusII::ExodusError (ret_val);
+    // if (ret_val < 0) throw ExodusError (ret_val);
     // if (ret_val > 0)
     // {
     //     std::vector<double>().swap (node_factors);
@@ -239,7 +241,7 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
     // make side indexes 0-based
     std::for_each(side_list.begin(), side_list.end(), bl::_1 -= 1); 
 
-    return Mesh_data::Side_set::build_from (set_id, 
+    return AmanziMesh::Data::Side_set::build_from (set_id, 
                                             element_list, 
                                             side_list,
                                             name
@@ -251,7 +253,7 @@ Mesh_data::Side_set* read_side_set (Exodus_file file, int set_id)
 }
 
 
-Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
+AmanziMesh::Data::Element_block* read_element_block(Exodus_file file, int block_id)
 {
 
 
@@ -266,7 +268,7 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read element block %d parameters (%d)") %
                    file.filename % block_id % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
 
 
@@ -277,7 +279,7 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
       std::string msg = 
         boost::str(boost::format("%s: error: cannot read element block %d connectivity (%d)") %
                    file.filename % block_id % ret_val);
-      Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+      Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
     }
 
     // Attribute Map
@@ -290,11 +292,11 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
           std::string msg = 
             boost::str(boost::format("%s: error: cannot read element block %d attributes (%d)") %
                        file.filename % block_id % ret_val);
-          Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+          Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
         }
     }
 
-    Mesh_data::ELEMENT_TYPE element_type = read_element_type(element_name_data);
+    AmanziMesh::Cell_type element_type = read_element_type(element_name_data);
 
     char element_block_name [MAX_STR_LENGTH];
     ret_val = ex_get_name (file.id, EX_ELEM_BLOCK, block_id, element_block_name);
@@ -302,7 +304,7 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
     // make node indexes 0-based
     std::for_each(connectivity_map.begin(), connectivity_map.end(), bl::_1 -= 1); 
     
-    return  Mesh_data::Element_block::build_from (block_id,
+    return  AmanziMesh::Data::Element_block::build_from (block_id,
                                                   std::string (element_block_name),
                                                   num_elements,
                                                   element_type, 
@@ -311,77 +313,68 @@ Mesh_data::Element_block* read_element_block(Exodus_file file, int block_id)
 
 }
 
-Mesh_data::Data* read_exodus_file (const Exodus_file& file)
+AmanziMesh::Data::Data* read_exodus_file (const Exodus_file& file)
 {
     
-    Mesh_data::Parameters* parameters = read_parameters (file);
+    AmanziMesh::Data::Parameters* parameters = read_parameters (file);
 
     const int num_nodes = parameters->num_nodes_;
     const int dimensions = parameters->dimensions_;
 
-    Mesh_data::Coordinates<double>* coords = read_coordinates (file, num_nodes, dimensions);
+    AmanziMesh::Data::Coordinates<double>* coords = read_coordinates (file, num_nodes, dimensions);
 
     // Element blocks:
-    std::vector<Mesh_data::Element_block*> element_blocks (parameters->num_element_blocks_);
+    std::vector<AmanziMesh::Data::Element_block*> element_blocks (parameters->num_element_blocks_);
     for (int i = 0; i < parameters->num_element_blocks_; ++i)
         element_blocks [i] = read_element_block (file, parameters->element_block_ids_ [i]);
 
     // Side sets:
-    std::vector<Mesh_data::Side_set*> side_sets (parameters->num_side_sets_);
+    std::vector<AmanziMesh::Data::Side_set*> side_sets (parameters->num_side_sets_);
     for (int i = 0; i < parameters->num_side_sets_; ++i)
         side_sets [i] = read_side_set (file, parameters->side_set_ids_ [i]);
 
     // Node sets:
-    std::vector<Mesh_data::Node_set*> node_sets (parameters->num_node_sets_);
+    std::vector<AmanziMesh::Data::Node_set*> node_sets (parameters->num_node_sets_);
     for (int i = 0; i < parameters->num_node_sets_; ++i)
         node_sets [i] = read_node_set (file, parameters->node_set_ids_ [i]);
 
     
-    Mesh_data::Data* mesh = Mesh_data::Data::build_from (parameters, coords, element_blocks, side_sets, node_sets);
+    AmanziMesh::Data::Data* mesh = AmanziMesh::Data::Data::build_from (parameters, coords, element_blocks, side_sets, node_sets);
 
     return mesh;
         
 
 }
 
-Mesh_data::ELEMENT_TYPE read_element_type (const char * name)
+AmanziMesh::Cell_type read_element_type (const char * name)
 {
 
     std::string id (name, name+3);
     boost::to_upper(id);
 
-    if (id == "CIR")
-        return Mesh_data::CIRCLE;
-    if (id == "SPH")
-        return Mesh_data::SPHERE;
-    if (id == "TRU")
-        return Mesh_data::TRUSS;
-    if (id == "BEA")
-        return Mesh_data::BEAM;
     if (id == "TRI")
-        return Mesh_data::TRIANGLE;
+        return AmanziMesh::TRI;
     if (id == "QUA")
-        return Mesh_data::QUAD;
-    if (id == "SHE")
-        return Mesh_data::SHELL;
+        return AmanziMesh::QUAD;
     if (id == "TET")
-        return Mesh_data::TETRA;
+        return AmanziMesh::TET;
     if (id == "PYR")
-        return Mesh_data::PYRAMID;
+        return AmanziMesh::PYRAMID;
     if (id == "WED")
-        return Mesh_data::WEDGE;
+        return AmanziMesh::PRISM;
     if (id == "HEX")
-        return Mesh_data::HEX;
+        return AmanziMesh::HEX;
 
-    return Mesh_data::UNKNOWN;
+    return AmanziMesh::UNKNOWN;
 
 }
 
-Mesh_data::Data* read_exodus_file (const char * filename)
+AmanziMesh::Data::Data* read_exodus_file (const char * filename)
 {
   Exodus_file file (filename);
   return read_exodus_file(file);
 }
 
+} // namespace Exodus
+} // namespace Amanzi
 
-}

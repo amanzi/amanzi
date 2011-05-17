@@ -2,7 +2,7 @@
 /**
  * @file   test_pread_2.cc
  * @author William A. Perkins
- * @date Thu Apr 21 12:37:23 2011
+ * @date Mon May  2 10:18:48 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Thu Apr 21 12:37:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May  2 10:18:48 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -23,7 +23,7 @@
 #include "../Parallel_Exodus_file.hh"
 
 extern std::string split_file_path(const std::string& fname);
-extern void checkit(ExodusII::Parallel_Exodus_file & thefile);
+extern void checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile);
 
 SUITE (Exodus_4_Proc)
 {
@@ -35,7 +35,7 @@ SUITE (Exodus_4_Proc)
 
     CHECK_EQUAL(comm.NumProc(), 4);
     
-    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
     checkit(thefile);
   }
 
@@ -47,7 +47,7 @@ SUITE (Exodus_4_Proc)
 
     CHECK_EQUAL(comm.NumProc(), 4);
     
-    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
     checkit(thefile);
   }
 
@@ -59,7 +59,7 @@ SUITE (Exodus_4_Proc)
 
     CHECK_EQUAL(comm.NumProc(), 4);
     
-    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
     checkit(thefile);
   }
 
@@ -71,7 +71,7 @@ SUITE (Exodus_4_Proc)
 
     CHECK_EQUAL(comm.NumProc(), 4);
     
-    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
     checkit(thefile);
       
   }
@@ -84,7 +84,7 @@ SUITE (Exodus_4_Proc)
 
     CHECK_EQUAL(comm.NumProc(), 4);
     
-    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
     checkit(thefile);
       
   }
@@ -97,7 +97,7 @@ SUITE (Exodus_4_Proc)
 
     CHECK_EQUAL(comm.NumProc(), 4);
     
-    ExodusII::Parallel_Exodus_file thefile(comm, bname);
+    Amanzi::Exodus::Parallel_Exodus_file thefile(comm, bname);
     checkit(thefile);
       
   }

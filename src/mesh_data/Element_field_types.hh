@@ -3,8 +3,9 @@
 
 #include <string>
 
-namespace Mesh_data
-{
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
 // enum FIELD_LOCATION
 // {
@@ -28,5 +29,7 @@ bool ok_field_type (FIELD_TYPE type);
 std::string type_to_name (FIELD_TYPE type);
 
 
-}
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi
 #endif

@@ -2,7 +2,7 @@
 /**
  * @file   test_pread_checkit.cc
  * @author William A. Perkins
- * @date Tue Nov 16 10:42:06 2010
+ * @date Mon May  2 13:06:27 2011
  * 
  * @brief Routines to check ExodusII::Parallel_Exodus_file instances
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 16, 2010 by William A. Perkins
-// Last Change: Tue Nov 16 10:42:06 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May  2 13:06:27 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -26,9 +26,9 @@
 // checkit
 // -------------------------------------------------------------
 void 
-checkit(ExodusII::Parallel_Exodus_file & thefile)
+checkit(Amanzi::Exodus::Parallel_Exodus_file & thefile)
 {
-  Teuchos::RCP<Mesh_data::Data> themesh(thefile.read_mesh());
+  Teuchos::RCP<Amanzi::AmanziMesh::Data::Data> themesh(thefile.read_mesh());
   
   int lcell(themesh->parameters().num_elements_), gcell;
   thefile.comm().SumAll(&lcell, &gcell, 1);

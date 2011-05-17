@@ -3,7 +3,7 @@
 /**
  * @file   Parallel_Exodus_file.hh
  * @author William A. Perkins
- * @date Tue Nov 16 10:09:55 2010
+ * @date Mon May  2 12:58:29 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Tue Nov 16 10:09:55 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May  2 12:58:29 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -28,8 +28,8 @@
 #include "Exodus_file.hh"
 
 
-namespace ExodusII
-{
+namespace Amanzi {
+namespace Exodus {
 
 // -------------------------------------------------------------
 //  class Parallel_Exodus_file
@@ -45,7 +45,7 @@ namespace ExodusII
  * 
  */
 class Parallel_Exodus_file {
-protected:
+ protected:
 
   
   Teuchos::RCP<Epetra_Comm> my_comm; /**< The parallel environment */
@@ -53,12 +53,12 @@ protected:
 
   Teuchos::RCP<Exodus_file> my_file; /**< The local Exodus file description */
 
-  Teuchos::RCP<Mesh_data::Data> my_mesh; /**< The local mesh */
+  Teuchos::RCP<AmanziMesh::Data::Data> my_mesh; /**< The local mesh */
 
   /// Protected, unimplemented, copy constructor to avoid unwanted copies.
   Parallel_Exodus_file(const Parallel_Exodus_file& old);
 
-public:
+ public:
 
   /// Default constructor.
   Parallel_Exodus_file(const Epetra_Comm& comm, const std::string& basename);
@@ -70,7 +70,7 @@ public:
   const Epetra_Comm& comm() { return *my_comm; }
 
   /// Read the (local) mesh from the file
-  Teuchos::RCP<Mesh_data::Data> read_mesh(void);
+  Teuchos::RCP<AmanziMesh::Data::Data> read_mesh(void);
 
   /// Construct a cell map for the file set (collective)
   Teuchos::RCP<Epetra_Map> cellmap(void);
@@ -80,6 +80,7 @@ public:
 };
 
 
-} // close namespace ExodusII
+} // namespace Exodus
+} // namespace Amanzi
 
 #endif

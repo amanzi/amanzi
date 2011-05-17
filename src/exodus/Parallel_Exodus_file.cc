@@ -2,7 +2,7 @@
 /**
  * @file   Parallel_Exodus_file.cc
  * @author William A. Perkins
- * @date Thu Apr  7 08:55:01 2011
+ * @date Mon May  2 13:05:09 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 15, 2010 by William A. Perkins
-// Last Change: Thu Apr  7 08:55:01 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon May  2 13:05:09 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <algorithm>
@@ -24,8 +24,8 @@
 #include "Exodus_readers.hh"
 
 
-namespace ExodusII
-{
+namespace Amanzi {
+namespace Exodus {
 
 // -------------------------------------------------------------
 //  class Parallel_Exodus_file
@@ -92,11 +92,11 @@ Parallel_Exodus_file::~Parallel_Exodus_file(void)
 // -------------------------------------------------------------
 // Parallel_Exodus_file::read_mesh
 // -------------------------------------------------------------
-Teuchos::RCP<Mesh_data::Data> 
+Teuchos::RCP<AmanziMesh::Data::Data> 
 Parallel_Exodus_file::read_mesh(void)
 {
 
-  my_mesh.reset(ExodusII::read_exodus_file(*my_file));
+  my_mesh.reset(read_exodus_file(*my_file));
 
   // Even though element blocks are defined in all local files, if the
   // local block is empty, it will not have a cell type specified, so
@@ -127,19 +127,19 @@ Parallel_Exodus_file::read_mesh(void)
 
   for (int b = 0; b < nblk; b++) {
     int mytype(my_mesh->element_block(b).element_type());
-    std::vector<int> alltype(np, Mesh_data::UNKNOWN);
+    std::vector<int> alltype(np, AmanziMesh::UNKNOWN);
     my_comm->GatherAll(&mytype, &alltype[0], 1);
 
     std::vector<int>::iterator junk;
     junk = std::remove(alltype.begin(), alltype.end(),
-                       Mesh_data::UNKNOWN);
+                       AmanziMesh::UNKNOWN);
     alltype.erase(junk, alltype.end());
     junk = std::unique(alltype.begin(), alltype.end());
     alltype.erase(junk, alltype.end());
     
     if (alltype.empty()) {
 
-      // this means that all processes reported the Mesh_data::UNKNOWN
+      // this means that all processes reported the AmanziMesh::Data::UNKNOWN
       // type for this element block; this is OK as long as it's empty
       // on all processes.
 
@@ -164,10 +164,10 @@ Parallel_Exodus_file::read_mesh(void)
 
     } else {
 
-      Mesh_data::ELEMENT_TYPE 
-        thetype(static_cast<Mesh_data::ELEMENT_TYPE>(alltype.front()));
+      AmanziMesh::Cell_type
+        thetype(static_cast<AmanziMesh::Cell_type>(alltype.front()));
 
-      if (my_mesh->element_block(b).element_type() == Mesh_data::UNKNOWN) {
+      if (my_mesh->element_block(b).element_type() == AmanziMesh::UNKNOWN) {
         my_mesh->element_block(b).element_type(thetype);
       }
     }
@@ -204,7 +204,7 @@ Parallel_Exodus_file::cellmap(void)
     std::string msg = 
       boost::str(boost::format("%s: error: cannot read element number map (%d)") %
                  my_file->filename % ret_val);
-    Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+    Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
   my_comm->Barrier();
@@ -235,7 +235,7 @@ Parallel_Exodus_file::vertexmap(void)
     std::string msg = 
       boost::str(boost::format("%s: error: cannot read vertex number map (%d)") %
                  my_file->filename % ret_val);
-    Exceptions::amanzi_throw( ExodusII::ExodusError (msg.c_str()) );
+    Exceptions::amanzi_throw( ExodusError (msg.c_str()) );
   }
 
   my_comm->Barrier();
@@ -245,6 +245,7 @@ Parallel_Exodus_file::vertexmap(void)
   return vmap;
 }
 
-} // close namespace ExodusII
+} // namespace Exodus
+} // namespace Amanzi
 
 

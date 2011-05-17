@@ -4,8 +4,8 @@
 #include "Exodus_file.hh"
 #include "Exodus_error.hh"
 
-namespace ExodusII
-{
+namespace Amanzi {
+namespace Exodus {
 
 Exodus_file::Exodus_file (char const * filename_in) : system_word_size (sizeof (double)),
                                                       filename (filename_in), 
@@ -33,4 +33,6 @@ Exodus_file::~Exodus_file ()
 
 }
 
-}
+} // namespace Exodus
+} // namespace Amanzi
+

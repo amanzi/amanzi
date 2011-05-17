@@ -3,29 +3,17 @@
 
 #include <string>
 
-namespace Mesh_data
-{
+#include "MeshDefs.hh"
 
-enum ELEMENT_TYPE
-{
-    UNKNOWN = -1,
-    CIRCLE = 0,
-    SPHERE,
-    TRUSS,
-    BEAM,
-    TRIANGLE,
-    QUAD,
-    SHELL,
-    TETRA,
-    PYRAMID,
-    WEDGE,
-    HEX
-};
+namespace Amanzi {
+namespace AmanziMesh {
+namespace Data {
 
-std::string type_to_name (ELEMENT_TYPE type);
+std::string type_to_name (AmanziMesh::Cell_type type);
 
-bool ok_type (ELEMENT_TYPE);
+} // namespace Data
+} // namespace Mesh
+} // namespace Amanzi
 
-}
 
 #endif
