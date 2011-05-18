@@ -13,9 +13,6 @@
 #include "State.hpp"
 
 
-namespace Amanzi
-{
-
 Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
   : total_component_concentration_(S->get_total_component_concentration()),
     porosity_(S->get_porosity()),
@@ -25,7 +22,7 @@ Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
 {
   // TODO: can we make this the same type as the other state vectors
   volume_ = Teuchos::rcp( new Epetra_SerialDenseVector(
-            get_mesh_maps()->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED)));
+                                                       get_mesh_maps()->count_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED)));
 
   ExtractVolumeFromMesh();
 }  // end Chemistry_State
@@ -38,14 +35,14 @@ Chemistry_State::~Chemistry_State()
 
 void Chemistry_State::ExtractVolumeFromMesh(void)
 {
-  Teuchos::RCP<const AmanziMesh::Mesh> const_mesh = get_mesh_maps();
+  Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> const_mesh = get_mesh_maps();
 
   // one of the mesh calls below requires removing the const from the
   // mesh pointer....
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = 
-    Teuchos::rcp_const_cast<AmanziMesh::Mesh>(const_mesh);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = 
+    Teuchos::rcp_const_cast<Amanzi::AmanziMesh::Mesh>(const_mesh);
 
-  int ncell = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncell = mesh->count_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
 
   if (ncell != volume_->Length()) {
     Exceptions::amanzi_throw(
@@ -61,5 +58,3 @@ void Chemistry_State::ExtractVolumeFromMesh(void)
  
   
 }  // end ExtractVolumeFromMesh()
-
-} // close namespace Amanzi

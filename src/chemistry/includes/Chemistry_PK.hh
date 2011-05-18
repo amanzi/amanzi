@@ -11,8 +11,6 @@
 #include "ChemistryException.hpp"
 #include "Verbosity.hpp"
 
-namespace Amanzi
-{
 
 // forward declarations
 class Epetra_MultiVector;
@@ -162,6 +160,5 @@ class Chemistry_PK {
 
 };
 
-} // close namespace Amanzi
 
 #endif  // __CHEMISTRY_PK_HH__
