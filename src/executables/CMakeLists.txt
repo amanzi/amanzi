@@ -24,8 +24,10 @@ project(EXEC)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${EXO_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
@@ -33,6 +35,7 @@ include_directories(${CHEM_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
+
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
