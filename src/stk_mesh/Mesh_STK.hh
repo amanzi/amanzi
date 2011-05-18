@@ -33,6 +33,7 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
+  namespace STK {
 
 // -------------------------------------------------------------
 //  class Mesh_STK
@@ -318,6 +319,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 
 };
 
+} // namespace STK
 } // namespace AmanziMesh
 } // namespace Amanzi
 
