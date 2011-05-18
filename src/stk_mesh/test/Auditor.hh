@@ -29,7 +29,7 @@ class Auditor {
  protected:
 
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_map;
-  Teuchos::RCP<MeshAudit> audit;
+  Teuchos::RCP<Amanzi::MeshAudit> audit;
   std::ofstream ofs;
 
   /// Protected copy constructor to avoid unwanted copies.
@@ -39,7 +39,7 @@ class Auditor {
 
   /// Default constructor.
   Auditor(std::string oname, Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p mesh)
-      : mesh_map(new Amanzi::AmanziMesh::Mesh_STK(mesh)) {
+    : mesh_map(new Amanzi::AmanziMesh::STK::Mesh_STK(mesh)) {
     std::ostringstream ofile;
     ofile << oname
           << std::setfill('0') << std::setw(4) 
@@ -47,7 +47,7 @@ class Auditor {
     ofs.open(ofile.str().c_str());
     if (mesh->communicator().MyPID() == 0)
       std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
-    audit.reset(new MeshAudit(mesh_map, ofs));
+    audit.reset(new Amanzi::MeshAudit(mesh_map, ofs));
   }
 
   Auditor(std::string oname, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mm)
@@ -59,7 +59,7 @@ class Auditor {
     ofs.open(ofile.str().c_str());
     if (mesh_map->get_comm()->MyPID() == 0)
       std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
-    audit.reset(new MeshAudit(mesh_map, ofs));
+    audit.reset(new Amanzi::MeshAudit(mesh_map, ofs));
   }
 
   /// Destructor

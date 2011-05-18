@@ -233,7 +233,7 @@ SUITE (HexMesh)
     {
         Epetra_MpiComm comm(MPI_COMM_WORLD);
         Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-            mesh_map(new Amanzi::AmanziMesh::Mesh_STK(comm, 10, 10, 10));
+	  mesh_map(new Amanzi::AmanziMesh::STK::Mesh_STK(comm, 10, 10, 10));
      
         Auditor audit("stk_mesh_generated_", mesh_map);
         audit();
@@ -242,8 +242,8 @@ SUITE (HexMesh)
     TEST (HexPartition)
     {
         Epetra_MpiComm comm(MPI_COMM_WORLD);
-        Amanzi::AmanziMesh::Mesh_STK
-          *mesh_stk = new Amanzi::AmanziMesh::Mesh_STK(comm, 4, 2, 2);
+        Amanzi::AmanziMesh::STK::Mesh_STK
+          *mesh_stk = new Amanzi::AmanziMesh::STK::Mesh_STK(comm, 4, 2, 2);
 
         Teuchos::RCP<Epetra_CrsGraph> cgraph = mesh_stk->cellgraph();
         cgraph->Print(std::cerr);
