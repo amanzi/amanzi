@@ -3,7 +3,7 @@
 #include "math.h"
 #include "UnitTest++.h"
 
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 #include "Mesh_simple.hh"
 #include "Mesh.hh"
 
@@ -65,8 +65,8 @@ TEST(DRIVER) {
       
       string filename = moab_mesh_parameter_list.get<string>("Exodus file name");
 
-      Teuchos::RCP<Mesh_maps_moab> MMM = 
-      	Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));      
+      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MOAB> MMM = 
+      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), MPI_COMM_WORLD));      
       
       mesh = MMM;
 
