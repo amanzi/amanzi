@@ -462,6 +462,8 @@ void Mesh_simple::cell_get_faces (Entity_ID cell, Entity_ID_List *faceids)
 {
   unsigned int index = 6*cell;
 
+  faceids->clear();
+
   for (int i = 0; i < 6; i++) {
     faceids->push_back(*(cell_to_face_.begin()+index));
     index++;
@@ -474,6 +476,8 @@ void Mesh_simple::cell_get_nodes (Entity_ID cell, Entity_ID_List *nodeids)
 {
   unsigned int index = 8*cell;
 
+  nodeids->clear();
+
   for (int i = 0; i < 8; i++) {
     nodeids->push_back(*(cell_to_node_.begin()+index));
     index++;
@@ -484,6 +488,8 @@ void Mesh_simple::cell_get_nodes (Entity_ID cell, Entity_ID_List *nodeids)
 void Mesh_simple::face_get_nodes (Entity_ID face, Entity_ID_List *nodeids)
 {
   unsigned int index = 4*face;
+
+  nodeids->clear();
 
   for (int i = 0; i < 4; i++) {
     nodeids->push_back(*(face_to_node_.begin()+index));
@@ -512,6 +518,8 @@ void Mesh_simple::face_get_coordinates (Entity_ID local_face_id, std::vector<Poi
 
   face_get_nodes (local_face_id, &node_indices);
 
+  fcoords->clear();
+
   Point xyz(3);
   for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
        it != node_indices.end(); ++it)
@@ -525,7 +533,10 @@ void Mesh_simple::face_get_coordinates (Entity_ID local_face_id, std::vector<Poi
 void Mesh_simple::cell_get_coordinates (Entity_ID local_cell_id, std::vector<Point> *ccoords)
 {  
   std::vector<unsigned int> node_indices(8);
+
   cell_get_nodes (local_cell_id, &node_indices);
+
+  ccoords->clear();
 
   Point xyz(3);
   for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
