@@ -3,7 +3,7 @@
 #include "math.h"
 
 #if ENABLE_MOAB
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 #endif
 
 #if ENABLE_STK
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
       std::streambuf *store_buf = std::cout.rdbuf();
       std::cout.rdbuf(0);
 
-      mesh = Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));            
+      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), MPI_COMM_WORLD));            
       std::cout.rdbuf(store_buf);
     }
 #endif
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     {
       string filename = mesh_parameter_list.get<string>("STK File name");
       
-      mesh = Teuchos::rcp(new STK_mesh::Mesh_maps_stk(MPI_COMM_WORLD, filename.c_str()));            
+      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::STK::Mesh_STK(MPI_COMM_WORLD, filename.c_str()));            
     }
 #endif
   else

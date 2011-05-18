@@ -1,4 +1,4 @@
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 
 #include <mpi.h>
 #include <iostream>
@@ -26,12 +26,12 @@ int main (int argc, char* argv[])
   
   string filename(argv[1]);
 
-  Teuchos::RCP<Mesh_maps_base> mesh(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), MPI_COMM_WORLD));
   
   int status;
 
   if (comm.NumProc() == 1) {
-    MeshAudit audit(mesh);
+    Amanzi::MeshAudit audit(mesh);
     status = audit.Verify();
   } else {
     ostringstream ofile;
@@ -39,7 +39,7 @@ int main (int argc, char* argv[])
     ofstream ofs(ofile.str().c_str());
     if (comm.MyPID() == 0)
       cout << "Writing results to " << ofile.str() << ", etc." << endl;
-    MeshAudit audit(mesh, ofs);
+    Amanzi::MeshAudit audit(mesh, ofs);
     status = audit.Verify();
   }
   
