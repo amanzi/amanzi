@@ -15,324 +15,304 @@ namespace Amanzi {
 
 namespace AmanziMesh {
 
-  class Mesh_simple : public virtual Mesh
-  {
+class Mesh_simple : public virtual Mesh
+{
       
-  public:
+public:
       
-    Mesh_simple (double x0, double y0, double z0,
-		 double x1, double y1, double z1,
-		 int nx, int ny, int nz, Epetra_Comm *communicator);
-      
-    Mesh_simple ( Teuchos::ParameterList &parameter_list,
-		  Epetra_Comm *communicator );
-      
-    virtual ~Mesh_simple ();
-      
-    void update ();
+  Mesh_simple (double x0, double y0, double z0,
+	       double x1, double y1, double z1,
+	       int nx, int ny, int nz, Epetra_Comm *communicator);
+  
+  Mesh_simple ( Teuchos::ParameterList &parameter_list,
+		Epetra_Comm *communicator );
+  
+  virtual ~Mesh_simple ();
+  
+  void update ();
 
 
-    // Get parallel type of eneity
+  // Get parallel type of entity
     
-    Parallel_type entity_get_ptype(const Entity_kind kind, 
-				   const Entity_ID entid) const;
+  Parallel_type entity_get_ptype(const Entity_kind kind, 
+				 const Entity_ID entid) const;
 
 
-    // Get cell type
+  // Get cell type
     
-    Cell_type cell_get_type(const Entity_ID cellid) const;
+  Cell_type cell_get_type(const Entity_ID cellid) const;
         
    
-    //
-    // General mesh information
-    // -------------------------
-    //
+  //
+  // General mesh information
+  // -------------------------
+  //
     
-    // Number of entities of any kind (cell, face, node) and in a
-    // particular category (OWNED, GHOST, USED)
+  // Number of entities of any kind (cell, face, node) and in a
+  // particular category (OWNED, GHOST, USED)
     
-    unsigned int num_entities (const Entity_kind kind,
-			       const Parallel_type ptype) const;
-    
-    
-    // Global ID of any entity
-    
-    unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+  unsigned int num_entities (const Entity_kind kind,
+			     const Parallel_type ptype) const;
     
     
+  // Global ID of any entity
     
-    //
-    // Mesh Entity Adjacencies 
-    //-------------------------
+  unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
+    
+    
+    
+  //
+  // Mesh Entity Adjacencies 
+  //-------------------------
 
 
-    // Downward Adjacencies
-    //---------------------
+  // Downward Adjacencies
+  //---------------------
     
-    // Get faces of a cell.
+  // Get faces of a cell.
 
-    // On a distributed mesh, this will return all the faces of the
-    // cell, OWNED or GHOST. The faces will be returned in a standard
-    // order according to Exodus II convention.
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. The faces will be returned in a standard
+  // order according to Exodus II convention.
     
-    void cell_get_faces (const Entity_ID cellid, 
-			 std::vector<Entity_ID> *faceids) const;
-    
-    
-    // Get directions in which a cell uses face
-    // In 3D, direction is 1 if face normal points out of cell
-    // and -1 if face normal points into cell
-    // In 2D, direction is 1 if face/edge is defined in the same
-    // direction as the cell polygon, and -1 otherwise
-    
-    void cell_get_face_dirs (const Entity_ID cellid, 
-			     std::vector<int> *face_dirs) const;
+  void cell_get_faces (const Entity_ID cellid, 
+		       std::vector<Entity_ID> *faceids) const;
     
     
+  // Get directions in which a cell uses face
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
     
-    // Get nodes of cell 
-    // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
-    // are returned
-    // Nodes are returned in a standard order (Exodus II convention)
-    // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES in 3D
-    // For a general polyhedron this will return the nodes in
-    // arbitrary order
-    // In 2D, the nodes of the polygon will be returned in ccw order 
-    // consistent with the face normal
-    
-    void cell_get_nodes (const Entity_ID cellid, 
-			 std::vector<Entity_ID> *nodeids) const;
+  void cell_get_face_dirs (const Entity_ID cellid, 
+			   std::vector<int> *face_dirs) const;
     
     
-    // Get nodes of face 
-    // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
-    // are returned
-    // In 3D, the nodes of the face are returned in ccw order consistent
-    // with the face normal
-    // In 2D, nfnodes is 2
     
-    void face_get_nodes (const Entity_ID faceid, 
-			 std::vector<Entity_ID> *nodeids) const;
+  // Get nodes of cell 
+  // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
+  // are returned
+  // Nodes are returned in a standard order (Exodus II convention)
+  // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES in 3D
+  // For a general polyhedron this will return the nodes in
+  // arbitrary order
+  // In 2D, the nodes of the polygon will be returned in ccw order 
+  // consistent with the face normal
     
-
-
-    // Upward adjacencies
-    //-------------------
+  void cell_get_nodes (const Entity_ID cellid, 
+		       std::vector<Entity_ID> *nodeids) const;
     
-    // Cells of type 'ptype' connected to a node
     
-    void node_get_cells (const Entity_ID nodeid, 
-			 const Parallel_type ptype,
-			 std::vector<Entity_ID> *cellids) const;
+  // Get nodes of face 
+  // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
+  // are returned
+  // In 3D, the nodes of the face are returned in ccw order consistent
+  // with the face normal
+  // In 2D, nfnodes is 2
     
-    // Faces of type 'ptype' connected to a node
-    
-    void node_get_faces (const Entity_ID nodeid, 
-			 const Parallel_type ptype,
-			 std::vector<Entity_ID> *faceids) const;
-    
-    // Get faces of ptype of a particular cell that are connected to the
-    // given node
-    
-    void node_get_cell_faces (const Entity_ID nodeid, 
-			      const Entity_ID cellid,
-			      const Parallel_type ptype,
-			      std::vector<Entity_ID> *faceids) const;    
-    
-    // Cells connected to a face
-    
-    void face_get_cells (const Entity_ID faceid, 
-			 const Parallel_type ptype,
-			 std::vector<Entity_ID> *cellids) const;
+  void face_get_nodes (const Entity_ID faceid, 
+		       std::vector<Entity_ID> *nodeids) const;
     
 
 
-    // Same level adjacencies
-    //-----------------------
-
-    // Face connected neighboring cells of given cell of a particular ptype
-    // (e.g. a hex has 6 face neighbors)
-
-    // The order in which the cellids are returned cannot be
-    // guaranteed in general except when ptype = USED, in which case
-    // the cellids will correcpond to cells across the respective
-    // faces given by cell_get_faces
-
-    void cell_get_face_adj_cells(const Entity_ID cellid,
-				 const Parallel_type ptype,
-				 std::vector<Entity_ID> *fadj_cellids) const;
-
-    // Node connected neighboring cells of given cell
-    // (a hex in a structured mesh has 26 node connected neighbors)
-    // The cells are returned in no particular order
-
-    void cell_get_node_adj_cells(const Entity_ID cellid,
-				 const Parallel_type ptype,
-				 std::vector<Entity_ID> *nadj_cellids) const;
-
-
+  // Upward adjacencies
+  //-------------------
     
-    //
-    // Mesh Topology for viz  
-    //----------------------
-    //
-    // We need a special function because certain types of degenerate
-    // hexes will not be recognized as any standard element type (hex,
-    // pyramid, prism or tet). The original topology of this element 
-    // without any collapsed nodes will be returned by this call.
+  // Cells of type 'ptype' connected to a node
     
+  void node_get_cells (const Entity_ID nodeid, 
+		       const Parallel_type ptype,
+		       std::vector<Entity_ID> *cellids) const;
     
-    // Original cell type 
+  // Faces of type 'ptype' connected to a node
     
-    Cell_type cell_get_type_4viz(const Entity_ID cellid) const;
+  void node_get_faces (const Entity_ID nodeid, 
+		       const Parallel_type ptype,
+		       std::vector<Entity_ID> *faceids) const;
     
+  // Get faces of ptype of a particular cell that are connected to the
+  // given node
     
-    // See cell_get_nodes for details on node ordering
+  void node_get_cell_faces (const Entity_ID nodeid, 
+			    const Entity_ID cellid,
+			    const Parallel_type ptype,
+			    std::vector<Entity_ID> *faceids) const;    
     
-    void cell_get_nodes_4viz (const Entity_ID cellid, 
-			      std::vector<Entity_ID> *nodeids) const;
+  // Cells connected to a face
     
+  void face_get_cells (const Entity_ID faceid, 
+		       const Parallel_type ptype,
+		       std::vector<Entity_ID> *cellids) const;
     
-    
-    //
-    // Mesh entity geometry
-    //--------------
-    //
-    
-    // Node coordinates - 3 in 3D and 2 in 2D
-    
-    void node_get_coordinates (const Entity_ID nodeid, 
-			       AmanziGeometry::Point *ncoord) const;
-    
-    
-    // Face coordinates - conventions same as face_to_nodes call 
-    // Number of nodes is the vector size divided by number of spatial dimensions
-    
-    void face_get_coordinates (const Entity_ID faceid, 
-			       std::vector<AmanziGeometry::Point> *fcoords) const; 
-    
-    // Coordinates of cells in standard order (Exodus II convention)
-    // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
-    // For a general polyhedron this will return the node coordinates in
-    // arbitrary order
-    // Number of nodes is vector size divided by number of spatial dimensions
-    
-    void cell_get_coordinates (const Entity_ID cellid, 
-			       std::vector<AmanziGeometry::Point> *ccoords) const;
-    
-    
-    // Volume/Area of cell
-    inline
-    double cell_volume (const Entity_ID cellid) const;
-    
-    // Area/length of face
-    inline
-    double face_area(const Entity_ID faceid) const;
-    
-    // Centroid of cell
-    inline
-    AmanziGeometry::Point cell_centroid (const Entity_ID cell) const;
-    
-    // Normal to face
-    // The vector is not normalized or in other words, this is an area
-    // weighted normal
-    inline 
-    AmanziGeometry::Point face_normal (const Entity_ID face) const;
-    
-    
-    
-    //
-    // Epetra maps
-    //------------
-    
-    
-    const Epetra_Map& cell_epetra_map (bool include_ghost) const;
-    
-    const Epetra_Map& face_epetra_map (bool include_ghost) const; 
-
-    const Epetra_Map& node_epetra_map (bool include_ghost) const;
-    
-    
-    
-    
-    //
-    // Boundary Conditions or Sets
-    //----------------------------
-    //
-    
-    // Number of sets containing entities of type 'kind' in mesh
-    
-    unsigned int num_sets(const Entity_kind kind) const;
-    
-    
-    // Ids of sets containing entities of 'kind'
-
-    void get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const;
 
 
-    // Is this is a valid ID of a set containing entities of 'kind'
+  // Same level adjacencies
+  //-----------------------
 
-    bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
+  // Face connected neighboring cells of given cell of a particular ptype
+  // (e.g. a hex has 6 face neighbors)
 
+  // The order in which the cellids are returned cannot be
+  // guaranteed in general except when ptype = USED, in which case
+  // the cellids will correcpond to cells across the respective
+  // faces given by cell_get_faces
 
-    // Get number of entities of type 'category' in set
+  void cell_get_face_adj_cells(const Entity_ID cellid,
+			       const Parallel_type ptype,
+			       std::vector<Entity_ID> *fadj_cellids) const;
 
-    unsigned int get_set_size (const Set_ID setid, 
-			       const Entity_kind kind,
-			       const Parallel_type ptype) const;
+  // Node connected neighboring cells of given cell
+  // (a hex in a structured mesh has 26 node connected neighbors)
+  // The cells are returned in no particular order
 
-
-    // Get list of entities of type 'category' in set
-
-    void get_set_entities (const Set_ID setid, 
-			   const Entity_kind kind, 
-			   const Parallel_type ptype, 
-			   std::vector<Entity_ID> *entids) const; 
-
-
-    // this should be used with extreme caution:
-    // modify coordinates
-    void set_coordinate(unsigned int local_node_id,
-			double* source_begin, double* source_end);
-
-  private:
-    void update_internals_();
-    void clear_internals_();
-    void build_maps_();
+  void cell_get_node_adj_cells(const Entity_ID cellid,
+			       const Parallel_type ptype,
+			       std::vector<Entity_ID> *nadj_cellids) const;
 
 
-    Epetra_Map *cell_map_, *face_map_, *node_map_;
+    
+  //
+  // Mesh Topology for viz  
+  //----------------------
+  //
+  // We need a special function because certain types of degenerate
+  // hexes will not be recognized as any standard element type (hex,
+  // pyramid, prism or tet). The original topology of this element 
+  // without any collapsed nodes will be returned by this call.
+    
+    
+  // Original cell type 
+    
+  Cell_type cell_get_type_4viz(const Entity_ID cellid) const;
+    
+    
+  // See cell_get_nodes for details on node ordering
+    
+  void cell_get_nodes_4viz (const Entity_ID cellid, 
+			    std::vector<Entity_ID> *nodeids) const;
+    
+    
+    
+  //
+  // Mesh entity geometry
+  //--------------
+  //
+    
+  // Node coordinates - 3 in 3D and 2 in 2D
+    
+  void node_get_coordinates (const Entity_ID nodeid, 
+			     AmanziGeometry::Point *ncoord) const;
+    
+    
+  // Face coordinates - conventions same as face_to_nodes call 
+  // Number of nodes is the vector size divided by number of spatial dimensions
+    
+  void face_get_coordinates (const Entity_ID faceid, 
+			     std::vector<AmanziGeometry::Point> *fcoords) const; 
+    
+  // Coordinates of cells in standard order (Exodus II convention)
+  // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
+  // For a general polyhedron this will return the node coordinates in
+  // arbitrary order
+  // Number of nodes is vector size divided by number of spatial dimensions
+    
+  void cell_get_coordinates (const Entity_ID cellid, 
+			     std::vector<AmanziGeometry::Point> *ccoords) const;
+    
+    
+  //
+  // Epetra maps
+  //------------
+    
+    
+  const Epetra_Map& cell_epetra_map (bool include_ghost) const;
+    
+  const Epetra_Map& face_epetra_map (bool include_ghost) const; 
+
+  const Epetra_Map& node_epetra_map (bool include_ghost) const;
+    
+    
+    
+    
+  //
+  // Boundary Conditions or Sets
+  //----------------------------
+  //
+    
+  // Number of sets containing entities of type 'kind' in mesh
+    
+  unsigned int num_sets(const Entity_kind kind) const;
+    
+    
+  // Ids of sets containing entities of 'kind'
+
+  void get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const;
 
 
-    std::vector<double> coordinates_;
+  // Is this is a valid ID of a set containing entities of 'kind'
 
-    inline unsigned int node_index_(int i, int j, int k);
-    inline unsigned int xyface_index_(int i, int j, int k);
-    inline unsigned int yzface_index_(int i, int j, int k);
-    inline unsigned int xzface_index_(int i, int j, int k);
-    inline unsigned int cell_index_(int i, int j, int k);
+  bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
 
-    int nx_, ny_, nz_;  // number of cells in the three coordinate directions
-    double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
-    int number_of_mesh_blocks;
-    double *mesh_block_z0, *mesh_block_z1;
 
-    int num_cells_;
-    int num_nodes_;
-    int num_faces_;
+  // Get number of entities of type 'category' in set
 
-    // Local-id tables of entities
-    std::vector<unsigned int> cell_to_face_;
-    std::vector<int> cell_to_face_dirs_;
-    std::vector<unsigned int> cell_to_node_;
-    std::vector<unsigned int> face_to_node_;
+  unsigned int get_set_size (const Set_ID setid, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
 
-    std::vector<std::vector<unsigned int> > side_sets_;
-    std::vector<std::vector<unsigned int> > element_blocks_;
 
-    Epetra_Comm  *communicator_;
+  // Get list of entities of type 'category' in set
 
-  };
+  void get_set_entities (const Set_ID setid, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
+
+  // this should be used with extreme caution:
+  // modify coordinates
+  void set_coordinate(unsigned int local_node_id,
+		      double* source_begin, double* source_end);
+
+private:
+  void update_internals_();
+  void clear_internals_();
+  void build_maps_();
+
+
+  Epetra_Map *cell_map_, *face_map_, *node_map_;
+
+
+  std::vector<double> coordinates_;
+
+  inline unsigned int node_index_(int i, int j, int k);
+  inline unsigned int xyface_index_(int i, int j, int k);
+  inline unsigned int yzface_index_(int i, int j, int k);
+  inline unsigned int xzface_index_(int i, int j, int k);
+  inline unsigned int cell_index_(int i, int j, int k);
+
+  int nx_, ny_, nz_;  // number of cells in the three coordinate directions
+  double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
+  int number_of_mesh_blocks;
+  double *mesh_block_z0, *mesh_block_z1;
+
+  int num_cells_;
+  int num_nodes_;
+  int num_faces_;
+
+  // Local-id tables of entities
+  std::vector<unsigned int> cell_to_face_;
+  std::vector<int> cell_to_face_dirs_;
+  std::vector<unsigned int> cell_to_node_;
+  std::vector<unsigned int> face_to_node_;
+
+  std::vector<std::vector<unsigned int> > side_sets_;
+  std::vector<std::vector<unsigned int> > element_blocks_;
+
+  Epetra_Comm  *communicator_;
+
+};
 
   // -------------------------
   // Template & inline members
