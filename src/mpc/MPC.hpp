@@ -8,11 +8,14 @@
 #include "Flow_State.hpp"
 #include "Flow_PK.hpp"
 
+namespace Amanzi
+{
+
 class MPC {
 
 public:
   MPC (Teuchos::ParameterList parameter_list_,
-       Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_);
+       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_);
   ~MPC () {};
 
   void cycle_driver ();
@@ -35,7 +38,7 @@ private:
 
   // misc setup information
   Teuchos::ParameterList parameter_list;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_maps;
 
   // storage for the component concentration intermediate values
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
@@ -63,3 +66,4 @@ private:
 };
 
 
+} // close namespace Amanzi

@@ -25,6 +25,8 @@
 using namespace CGNS_PAR;
 #endif
 
+namespace Amanzi
+{
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
 	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
@@ -586,3 +588,5 @@ void MPC::create_gmv_paths(std::string  &gmv_mesh_filename_path_str,
   gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
   gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
 }
+
+} // close namespace Amanzi
