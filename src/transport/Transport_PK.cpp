@@ -11,6 +11,10 @@
 
 using namespace std;
 using namespace Teuchos;
+
+namespace Amanzi
+{
+
 using namespace Amanzi_Transport;
 
 
@@ -51,13 +55,13 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
   cmin = cmap.MinLID();
   cmax = cmap.MaxLID();
 
-  number_owned_cells = mesh->count_entities( CELL, OWNED );
+  number_owned_cells = mesh->count_entities( AmanziMesh::CELL, AmanziMesh::OWNED );
   cmax_owned = cmin + number_owned_cells - 1;
 
   fmin = fmap.MinLID();
   fmax = fmap.MaxLID(); 
 
-  number_owned_faces = mesh->count_entities( FACE, OWNED );
+  number_owned_faces = mesh->count_entities( AmanziMesh::FACE, AmanziMesh::OWNED );
   fmax_owned = fmin + number_owned_faces - 1;
 
   /* assume that enumartion starts with 0 */
@@ -560,7 +564,7 @@ void Transport_PK::geometry_package()
   for( f=fmin; f<=fmax; f++ ) {
      mesh->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
-     face_area[f] = quad_face_area(x[0], x[1], x[2], x[3]);
+     face_area[f] = cell_geometry::quad_face_area(x[0], x[1], x[2], x[3]);
   }
 
 
@@ -592,17 +596,17 @@ void Transport_PK::geometry_package()
            v3[i] = x[3][i] - x[0][i];
         }
 
-        cross_product( v1, v2, normal );
-        area1 = vector_length( normal, 3 );
+	cell_geometry::cross_product( v1, v2, normal );
+        area1 = cell_geometry::vector_length( normal, 3 );
 
-        cross_product( v2, v3, normal );
-        area2 = vector_length( normal, 3 );
+	cell_geometry::cross_product( v2, v3, normal );
+        area2 = cell_geometry::vector_length( normal, 3 );
 
         center1 = (x[0][0] + x[1][0] + x[2][0]) / 3;
         center2 = (x[0][0] + x[2][0] + x[3][0]) / 3;
         center = (center1 * area1 + center2 * area2) / (area1 + area2);
 
-        quad_face_normal(x[0], x[1], x[2], x[3], normal);
+	cell_geometry::quad_face_normal(x[0], x[1], x[2], x[3], normal);
 
         volume += dirs[j] * normal[0] * center;
      }
@@ -611,3 +615,4 @@ void Transport_PK::geometry_package()
 }
 
 
+} // close namespace Amanzi

@@ -22,6 +22,8 @@
    the smart pointers to the original variables.
 */
 
+namespace Amanzi
+{
 
 namespace Amanzi_Transport{
   const int TRANSPORT_NULL           = 0;
@@ -128,5 +130,7 @@ private:
   int  cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int  fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
 };
+
+} // close namespace Amanzi
 
 #endif

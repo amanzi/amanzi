@@ -10,6 +10,8 @@
 using namespace std;
 using namespace Teuchos;
 
+namespace Amanzi
+{
 
 /* ************************************************************* */
 /* at the moment a transport state is a copy of the global state */  
@@ -160,7 +162,7 @@ void Transport_State::analytic_darcy_flux( double* u )
   for( f=fmap.MinLID(); f<=fmap.MaxLID(); f++ ) { 
      mesh_maps->face_to_coordinates( f, (double*) x, (double*) x+12 );
 
-     quad_face_normal(x[0], x[1], x[2], x[3], normal);
+     cell_geometry::quad_face_normal(x[0], x[1], x[2], x[3], normal);
 
      (*darcy_flux)[f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
   }
@@ -268,3 +270,5 @@ void Transport_State::analytic_water_density( double wd )
      (*water_density)[c] = wd;  /* default is 1000.0 */
   }
 }
+
+} // close namespace Amanzi
