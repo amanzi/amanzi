@@ -24,8 +24,8 @@
 
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
-#include "Mesh_factory.hh"
-#include "Mesh_maps_stk.hh"
+#include "MeshFactory.hh"
+#include "Mesh_STK.hh"
 
 #include "MeshAudit.hh"
 
@@ -49,13 +49,13 @@ int main (int argc, char* argv[])
 
   std::string filename(argv[1]);
 
-  Teuchos::RCP<Mesh_maps_base> 
-    maps(new STK_mesh::Mesh_maps_stk(comm, filename.c_str()));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+    maps(new Amanzi::AmanziMesh::STK::Mesh_STK(comm, filename.c_str()));
 
   int status;
 
   if (nproc == 1) {
-    MeshAudit audit(maps);
+    Amanzi::MeshAudit audit(maps);
     status = audit.Verify();
   } else {
     std::ostringstream ofile;
@@ -63,7 +63,7 @@ int main (int argc, char* argv[])
     std::ofstream ofs(ofile.str().c_str());
     if (me == 0)
       std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
-    MeshAudit audit(maps, ofs);
+    Amanzi::MeshAudit audit(maps, ofs);
     status = audit.Verify();
   }
 
