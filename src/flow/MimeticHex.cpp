@@ -1,13 +1,13 @@
 #include "MimeticHex.hpp"
 #include "cell_geometry.hh"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-
-MimeticHex::MimeticHex(const Teuchos::RCP<Mesh> &mesh) : mesh_(mesh)
+namespace Amanzi
 {
-  int ncell = mesh->count_entities(CELL, USED);
-  int nface = mesh->count_entities(FACE, USED);
+
+MimeticHex::MimeticHex(const Teuchos::RCP<AmanziMesh::Mesh> &mesh) : mesh_(mesh)
+{
+  int ncell = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int nface = mesh->count_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   { // Cell volumes
     volume_.Size(ncell);
@@ -55,3 +55,5 @@ void MimeticHex::DeriveFluxes(const Epetra_Vector &X, Epetra_Vector &F) const
 //
 //  }
 }
+
+} // close namespace Amanzi

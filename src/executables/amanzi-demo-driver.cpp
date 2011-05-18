@@ -32,9 +32,6 @@
 #include "State.hpp"
 #include "MPC.hpp"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-
 
 int main(int argc, char *argv[])
 {
@@ -91,14 +88,14 @@ int main(int argc, char *argv[])
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 
-  Teuchos::RCP<Mesh> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   if (mesh_class == "Simple") 
     {
       Teuchos::ParameterList simple_mesh_parameter_list = 
       	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      mesh = Teuchos::rcp(new Mesh_simple(simple_mesh_parameter_list, comm));
+      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(simple_mesh_parameter_list, comm));
     } 
 #ifdef ENABLE_MOAB
   else if (mesh_class == "MOAB")  
@@ -132,7 +129,7 @@ int main(int argc, char *argv[])
 
 
   // create the MPC
-  MPC mpc(driver_parameter_list, mesh);
+  Amanzi::AmanziMesh::MPC mpc(driver_parameter_list, mesh);
   
   mpc.cycle_driver();
   

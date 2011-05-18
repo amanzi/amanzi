@@ -5,6 +5,9 @@
 #include "Epetra_Vector.h"
 #include "Flow_State.hpp"
 
+namespace Amanzi
+{
+
 // Pure virtual base class that the Darcy and Richards flow
 // process kernels should derive from.
 
@@ -26,5 +29,7 @@ public:
   virtual void GetDarcyVelocity(Epetra_MultiVector &q) const = 0;
   
 };
+
+}
 
 #endif

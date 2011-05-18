@@ -6,8 +6,6 @@
 TEST(CGNS) {
 
   using namespace std;
-  using namespace Amanzi;
-  using namespace AmanziMesh;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -21,8 +19,8 @@ TEST(CGNS) {
 
   Mesh_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
     
-  unsigned int num_nodes = Mesh.count_entities(Mesh_data::NODE, OWNED);
-  unsigned int num_cells = Mesh.count_entities(Mesh_data::CELL, OWNED);
+  unsigned int num_nodes = Mesh.count_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int num_cells = Mesh.count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;
@@ -51,7 +49,7 @@ TEST(CGNS) {
      
   double time = 0.0;
   for (int i=0; i<15; i++) {
-      CGNS::create_timestep(time, i, Mesh_data::CELL);
+      CGNS::create_timestep(time, i, AmanziMesh::CELL);
       CGNS::write_field_data(*cell_quantity, "cell_quantity");
       CGNS::write_field_data(*fake_pressure, "pressure");
       

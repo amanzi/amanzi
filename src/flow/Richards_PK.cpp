@@ -12,6 +12,9 @@
 #include "NKADirFactory.H"
 #include "NKADirection.H"
 
+namespace Amanzi
+{
+
 Richards_PK::Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
 {
   // Create the flow boundary conditions object.
@@ -208,3 +211,5 @@ void Richards_PK::GetSaturation(Epetra_Vector &s) const
   problem->DeriveVanGenuchtenSaturation(*pressure, s);
 
 }
+
+} // close namespace Amanzi

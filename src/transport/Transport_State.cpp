@@ -9,9 +9,6 @@
 
 using namespace std;
 using namespace Teuchos;
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace cell_geometry;
 
 
 /* ************************************************************* */

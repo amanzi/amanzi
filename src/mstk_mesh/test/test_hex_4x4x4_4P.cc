@@ -10,17 +10,13 @@
 #include "mpi.h"
 
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace AmanziGeometry;
-
 TEST(MSTK_HEX_4x4x4_4P)
 {
 
   int i, j, k, err, nc, nf, nv;
-  std::vector<Entity_ID> faces(6), nodes(8);
+  std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), nodes(8);
   std::vector<int> facedirs(6);
-  std::vector<Point> ccoords(8), fcoords(4);
+  std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NVowned[4] = {24,20,16,4}; // updated
   int NFowned[4] = {29,31,29,19}; // updated
@@ -49,63 +45,63 @@ TEST(MSTK_HEX_4x4x4_4P)
   }
 
   //  if (rank == 0) {
-    int DebugWait = 0;
-    while (DebugWait);
-    //  }
+  int DebugWait = 0;
+  while (DebugWait);
+  //  }
 
   // Load a single hex from the hex1.exo file
 
-    Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,3);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,3);
 
 
-  nv = mesh.num_entities(AmanziMesh::NODE,AmanziMesh::OWNED);  
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);  
   CHECK_EQUAL(NVowned[rank],nv);
   
-  nf = mesh.num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);  
+  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);  
   CHECK_EQUAL(NFowned[rank],nf);
   
-  nc = mesh.num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NCowned[rank],nc);
 
-  nv = mesh.num_entities(AmanziMesh::NODE,AmanziMesh::USED);  
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);  
   CHECK_EQUAL(NVused[rank],nv);
   
-  nf = mesh.num_entities(AmanziMesh::FACE,AmanziMesh::USED);  
+  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);  
   CHECK_EQUAL(NFused[rank],nf);
   
-  nc = mesh.num_entities(AmanziMesh::CELL,AmanziMesh::USED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
   CHECK_EQUAL(NCused[rank],nc);
 
-  nv = mesh.num_entities(AmanziMesh::NODE,AmanziMesh::GHOST);  
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::GHOST);  
   CHECK_EQUAL(NVghost[rank],nv);
   
-  nf = mesh.num_entities(AmanziMesh::FACE,AmanziMesh::GHOST);  
+  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::GHOST);  
   CHECK_EQUAL(NFghost[rank],nf);
   
-  nc = mesh.num_entities(AmanziMesh::CELL,AmanziMesh::GHOST);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::GHOST);
   CHECK_EQUAL(NCghost[rank],nc);
 
 
-  std::vector<Entity_ID>  c2f(6);
+  std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
   std::vector<int> c2fdirs(6);
   Epetra_Map cell_map(mesh.cell_epetra_map(false));
   Epetra_Map face_map(mesh.face_epetra_map(true));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
-      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,AmanziMesh::CELL));
+      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
       mesh.cell_get_faces(c, &c2f);
       mesh.cell_get_face_dirs(c, &c2fdirs);
 
       for (int j=0; j<6; j++)
 	{
-	  int f = face_map.LID(mesh.GID(c2f[j],AmanziMesh::FACE));
+	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
 	  CHECK_EQUAL( f,c2f[j] );
 	  if (f != c2f[j]) {
 	    cout << std::endl;
 	    cout << "Processor ID " << rank << std::endl;
 	    cout << "Cell ID " << cell_map.GID(c) << std::endl;
-	    cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh.GID(c2f[j],AmanziMesh::FACE) << " f = " << f << std::endl;
+	    cout << "Problem face c2f[j] = " << c2f[j] << " GID = " << mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE) << " f = " << f << std::endl;
 	    cout << std::endl;
 	  }
 	}
@@ -116,13 +112,13 @@ TEST(MSTK_HEX_4x4x4_4P)
   // Verify cell sets
 
   int ns;
-  ns = mesh.num_sets(AmanziMesh::CELL);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::CELL);
   CHECK_EQUAL(3,ns);
 
   std::vector<unsigned int> csetids(3);
   unsigned int expcsetids[3] = {10000,20000,30000};
 
-  mesh.get_set_ids(AmanziMesh::CELL,&csetids);
+  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,&csetids);
 
   for (int i = 0; i < 3; i++)
     CHECK_EQUAL(expcsetids[i],csetids[i]);

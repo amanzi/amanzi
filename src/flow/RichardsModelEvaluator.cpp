@@ -11,6 +11,9 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 
+namespace Amanzi
+{
+
 RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem, 
 					       Teuchos::ParameterList &plist, 
 					       const Epetra_Map &map,
@@ -162,3 +165,5 @@ bool RichardsModelEvaluator::is_admissible(const Epetra_Vector& up)
 {
   return true;
 }
+
+} // close namespace Amanzi

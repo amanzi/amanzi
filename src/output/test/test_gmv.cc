@@ -6,8 +6,6 @@
 TEST(GMV) {
 
   using namespace std;
-  using namespace Amanzi;
-  using namespace AmanziMesh;
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -19,10 +17,10 @@ TEST(GMV) {
   string gmv_datafile1 = "test_gmv1.gmv";
   string gmv_fullfile = "test_gmv_full.gmv";
 
-  Mesh_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
+  AmanziMesh::Mesh_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
 
-  unsigned int num_nodes = Mesh.num_entities(NODE, OWNED);
-  unsigned int num_cells = Mesh.num_entities(CELL, OWNED);
+  unsigned int num_nodes = Mesh.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int num_cells = Mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;

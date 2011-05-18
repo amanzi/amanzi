@@ -7,6 +7,9 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Teuchos_RCP.hpp"
 
+namespace Amanzi
+{
+
 class Chemistry_State {
 
  public:
@@ -42,6 +45,6 @@ class Chemistry_State {
 
 };
 
-
+} // close namespace Amanzi
 
 #endif

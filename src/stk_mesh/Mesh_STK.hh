@@ -104,7 +104,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // cell, OWNED or GHOST. The faces will be returned in a standard
   // order according to Exodus II convention.
   void cell_get_faces (const Entity_ID cellid, 
-                       Entity_ID_List *faceids);
+                       Entity_ID_List *faceids) const;
     
     
   // Get directions in which a cell uses face
@@ -113,7 +113,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // In 2D, direction is 1 if face/edge is defined in the same
   // direction as the cell polygon, and -1 otherwise
   void cell_get_face_dirs (const Entity_ID cellid, 
-                           std::vector<int> *face_dirs);
+                           std::vector<int> *face_dirs) const;
 
   // Get nodes of cell 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
@@ -125,7 +125,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // In 2D, the nodes of the polygon will be returned in ccw order 
   // consistent with the face normal
   void cell_get_nodes (const Entity_ID cellid, 
-                       Entity_ID_List *nodeids);
+                       Entity_ID_List *nodeids) const;
 
   // Get nodes of face 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
@@ -134,7 +134,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // with the face normal
   // In 2D, nfnodes is 2
   void face_get_nodes (const Entity_ID faceid, 
-                       Entity_ID_List *nodeids);
+                       Entity_ID_List *nodeids) const;
 
   // Upward adjacencies
   //-------------------
@@ -142,24 +142,24 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // Cells of type 'ptype' connected to a node
   void node_get_cells (const Entity_ID nodeid, 
                        const Parallel_type ptype,
-                       Entity_ID_List *cellids);
+                       Entity_ID_List *cellids) const;
     
   // Faces of type 'ptype' connected to a node
   void node_get_faces (const Entity_ID nodeid, 
                        const Parallel_type ptype,
-                       Entity_ID_List *faceids);
+                       Entity_ID_List *faceids) const;
     
   // Get faces of ptype of a particular cell that are connected to the
   // given node
   void node_get_cell_faces (const Entity_ID nodeid, 
                             const Entity_ID cellid,
                             const Parallel_type ptype,
-                            Entity_ID_List *faceids);    
+                            Entity_ID_List *faceids) const;    
     
   // Cells connected to a face
   void face_get_cells (const Entity_ID faceid, 
                        const Parallel_type ptype,
-                       Entity_ID_List *cellids);
+                       Entity_ID_List *cellids) const;
     
 
 
@@ -175,14 +175,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // faces given by cell_get_faces
   void cell_get_face_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
-                               Entity_ID_List *fadj_cellids);
+                               Entity_ID_List *fadj_cellids) const;
 
   // Node connected neighboring cells of given cell
   // (a hex in a structured mesh has 26 node connected neighbors)
   // The cells are returned in no particular order
   void cell_get_node_adj_cells(const Entity_ID cellid,
                                const Parallel_type ptype,
-                               Entity_ID_List *nadj_cellids);
+                               Entity_ID_List *nadj_cellids) const;
 
   //
   // Mesh Topology for viz  
@@ -199,7 +199,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
     
   // See cell_get_nodes for details on node ordering
   void cell_get_nodes_4viz (const Entity_ID cellid, 
-                            Entity_ID_List *nodeids);
+                            Entity_ID_List *nodeids) const;
     
     
   //
@@ -209,13 +209,13 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
     
   // Node coordinates - 3 in 3D and 2 in 2D
   void node_get_coordinates (const Entity_ID nodeid, 
-			     AmanziGeometry::Point *ncoord);
+			     AmanziGeometry::Point *ncoord) const;
     
     
   // Face coordinates - conventions same as face_to_nodes call 
   // Number of nodes is the vector size divided by number of spatial dimensions
   void face_get_coordinates (const Entity_ID faceid, 
-			     std::vector<AmanziGeometry::Point> *fcoords); 
+			     std::vector<AmanziGeometry::Point> *fcoords) const; 
     
   // Coordinates of cells in standard order (Exodus II convention)
   // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
@@ -223,7 +223,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // arbitrary order
   // Number of nodes is vector size divided by number of spatial dimensions
   void cell_get_coordinates (const Entity_ID cellid, 
-			     std::vector<AmanziGeometry::Point> *ccoords);
+			     std::vector<AmanziGeometry::Point> *ccoords) const;
 
 
   //
@@ -244,7 +244,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
     
   // Ids of sets containing entities of 'kind'
   void get_set_ids (const Entity_kind kind, 
-                    Set_ID_List *setids);
+                    Set_ID_List *setids) const;
 
 
   // Is this is a valid ID of a set containing entities of 'kind'
@@ -255,14 +255,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   // Get number of entities of type 'category' in set
   unsigned int get_set_size (const Set_ID setid, 
                              const Entity_kind kind,
-                             const Parallel_type ptype);
+                             const Parallel_type ptype) const;
 
 
   // Get list of entities of type 'category' in set
   void get_set_entities (const Set_ID setid, 
                          const Entity_kind kind, 
                          const Parallel_type ptype, 
-                         Entity_ID_List *entids); 
+                         Entity_ID_List *entids) const; 
 
   /// Make a cell-to-cell graph from the mesh
   Teuchos::RCP<Epetra_CrsGraph> cellgraph(void) const;

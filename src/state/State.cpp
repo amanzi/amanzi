@@ -9,12 +9,9 @@ extern "C" {
 #include "gmvwrite.h"
 }
 
-using namespace cell_geometry;
-using namespace Amanzi;
-using namespace AmanziMesh;
 
 State::State( int number_of_components_,
-	      Teuchos::RCP<Mesh> mesh_maps_):
+	      Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_):
   number_of_components(number_of_components_),
   mesh_maps(mesh_maps_)
 {
@@ -25,7 +22,7 @@ State::State( int number_of_components_,
 };
 
 State::State( Teuchos::ParameterList &parameter_list_,
-	      Teuchos::RCP<Mesh> mesh_maps_):
+	      Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_):
   mesh_maps(mesh_maps_),
   parameter_list(parameter_list_)
 {
@@ -73,7 +70,7 @@ void State::initialize_from_parameter_list()
 
     int mesh_block_ID = sublist.get<int>("Mesh block ID");
 
-    if (!mesh_maps->valid_set_id(mesh_block_ID,CELL)) {
+    if (!mesh_maps->valid_set_id(mesh_block_ID,AmanziMesh::CELL)) {
       // there is an inconsistency in the xml input file, report and die
       
       int myrank = Teuchos::MPISession::getRank();
@@ -83,7 +80,7 @@ void State::initialize_from_parameter_list()
 	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
 
 	// get the mesh block IDs 
-	int num_blks = mesh_maps->num_sets(CELL);
+	int num_blks = mesh_maps->num_sets(AmanziMesh::CELL);
 	std::vector<unsigned int> setids(num_blks);
 	mesh_maps->get_set_ids(CELL,setids.begin(),setids.end());
 	std::cerr << "valid mesh block IDs are: ";
@@ -180,17 +177,17 @@ void State::advance_time(double dT)
 void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v, 
 				    int mesh_block_id)
 {
-  if (!mesh_maps->valid_set_id(mesh_block_id,CELL)) {
+  if (!mesh_maps->valid_set_id(mesh_block_id,AmanziMesh::CELL)) {
     throw std::exception();
   }
   
   unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
-							 CELL,
-							 OWNED);
+							 AmanziMesh::CELL,
+							 AmanziMesh::OWNED);
 
   std::vector<unsigned int> cell_ids(mesh_block_size);
   
-  mesh_maps->get_set(mesh_block_id, CELL,OWNED,
+  mesh_maps->get_set(mesh_block_id, AmanziMesh::CELL, AmanziMesh::OWNED,
 		     cell_ids.begin(),cell_ids.end());
   
   for( std::vector<unsigned int>::iterator c = cell_ids.begin(); 
@@ -207,19 +204,19 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
 
   // Epetra_Map face_map = mesh_maps->face_map(false);
 
-  if (!mesh_maps->valid_set_id(mesh_block_id,CELL)) {
+  if (!mesh_maps->valid_set_id(mesh_block_id,AmanziMesh::CELL)) {
     throw std::exception();
   }
   
   unsigned int mesh_block_size = mesh_maps->get_set_size(mesh_block_id,
-							 CELL,
-							 OWNED);
+							 AmanziMesh::CELL,
+							 AmanziMesh::OWNED);
   
   std::vector<unsigned int> cell_ids(mesh_block_size);
   
 
 
-  mesh_maps->get_set(mesh_block_id, CELL,OWNED,
+  mesh_maps->get_set(mesh_block_id, AmanziMesh::CELL, AmanziMesh::OWNED,
 		     cell_ids.begin(),cell_ids.end());
 
   
@@ -317,7 +314,7 @@ void State::write_gmv ( std::string filename )
   gmvwrite_openfile_ir_ascii( (char*) filename.c_str(), 4, 8 );
   
   // first write the node data
-  unsigned int num_nodes = mesh_maps->count_entities(NODE,OWNED);
+  unsigned int num_nodes = mesh_maps->count_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
 
   double *x = new double [num_nodes];
   double *y = new double [num_nodes];
@@ -339,7 +336,7 @@ void State::write_gmv ( std::string filename )
   
 
   // write the cell data
-  unsigned int num_cells = mesh_maps->count_entities(CELL,OWNED);
+  unsigned int num_cells = mesh_maps->count_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
   
   gmvwrite_cell_header(&num_cells);
   
@@ -361,17 +358,17 @@ void State::write_gmv ( std::string filename )
   // with ids less than 100.
 
   // how many side sets are there?
-  unsigned int num_side_sets = mesh_maps->num_sets(FACE);
+  unsigned int num_side_sets = mesh_maps->num_sets(AmanziMesh::FACE);
   if (num_side_sets > 0) {
     vector<unsigned int> ssids(num_side_sets);
-    mesh_maps->get_set_ids(FACE, ssids.begin(), ssids.end());
+    mesh_maps->get_set_ids(AmanziMesh::FACE, ssids.begin(), ssids.end());
     
     vector<unsigned int> side_set;
     int total_num_surfaces=0;
 
     // figure out how many total faces are in side sets
     for (vector<unsigned int>::const_iterator it = ssids.begin(); it != ssids.end(); it++) {
-      unsigned int set_size = mesh_maps->get_set_size(*it, FACE, OWNED);
+      unsigned int set_size = mesh_maps->get_set_size(*it, AmanziMesh::FACE, AmanziMesh::OWNED);
       total_num_surfaces += set_size;
     }
 
@@ -381,10 +378,10 @@ void State::write_gmv ( std::string filename )
       
       // loop over the side sets and write all faces belonging to side sets
       for (vector<unsigned int>::const_iterator it = ssids.begin(); it != ssids.end(); it++) {  
-	unsigned int set_size = mesh_maps->get_set_size(*it, FACE, OWNED);
+	unsigned int set_size = mesh_maps->get_set_size(*it, AmanziMesh::FACE, AmanziMesh::OWNED);
 	side_set.resize(set_size);
 	
-	mesh_maps->get_set(*it,FACE,OWNED,side_set.begin(),side_set.end());
+	mesh_maps->get_set(*it,AmanziMesh::FACE,AmanziMesh::OWNED,side_set.begin(),side_set.end());
 	
 	std::vector<unsigned int> nodes(4);
 	unsigned int nodes_[4];
@@ -421,7 +418,7 @@ void State::write_gmv ( std::string filename )
       
       // loop over the side sets
       for (vector<unsigned int>::const_iterator it = ssids.begin(); it != ssids.end(); it++) {  
-	unsigned int set_size = mesh_maps->get_set_size(*it, FACE, OWNED);
+	unsigned int set_size = mesh_maps->get_set_size(*it, AmanziMesh::FACE, AmanziMesh::OWNED);
 	side_set.resize(set_size);
 	
 	// loop over the faces in the current side set and
@@ -444,7 +441,7 @@ void State::write_gmv ( std::string filename )
 
   // write element blocks
 
-  unsigned int num_element_blocks = mesh_maps->num_sets(CELL);
+  unsigned int num_element_blocks = mesh_maps->num_sets(AmanziMesh::CELL);
   if (num_element_blocks > 0) {
     vector<unsigned int> ebids(num_element_blocks);
     mesh_maps->get_set_ids(CELL, ebids.begin(), ebids.end());
@@ -454,7 +451,7 @@ void State::write_gmv ( std::string filename )
 
     // figure out how many total cells are in element blocks
     for (vector<unsigned int>::const_iterator it = ebids.begin(); it != ebids.end(); it++) {
-      unsigned int set_size = mesh_maps->get_set_size(*it, CELL, OWNED);
+      unsigned int set_size = mesh_maps->get_set_size(*it, AmanziMesh::CELL, AmanziMesh::OWNED);
       total_num_cells += set_size;
     }
 
@@ -487,7 +484,7 @@ void State::write_gmv ( std::string filename )
       
       // loop over the selement blocks sets
       for (vector<unsigned int>::const_iterator it = ebids.begin(); it != ebids.end(); it++) {  
-	unsigned int set_size = mesh_maps->get_set_size(*it, CELL, OWNED);
+	unsigned int set_size = mesh_maps->get_set_size(*it, AmanziMesh::CELL, AmanziMesh::OWNED);
 	
 	// loop over the cells in the current element block set and
 	// store the flag for the current side set 

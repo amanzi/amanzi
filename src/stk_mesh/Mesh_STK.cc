@@ -222,7 +222,7 @@ Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
 // -------------------------------------------------------------
 void 
 Mesh_STK::cell_get_faces (const Entity_ID cellid, 
-                          std::vector<Entity_ID> *outfaceids)
+                          std::vector<Entity_ID> *outfaceids) const
 {
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;                  // need 1-based for stk::mesh
@@ -248,7 +248,7 @@ Mesh_STK::cell_get_faces (const Entity_ID cellid,
 // -------------------------------------------------------------
 void 
 Mesh_STK::cell_get_face_dirs (const Entity_ID cellid, 
-                              std::vector<int> *face_dirs)
+                              std::vector<int> *face_dirs) const
 {
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;        // need 1-based for stk::mesh
@@ -263,7 +263,7 @@ Mesh_STK::cell_get_face_dirs (const Entity_ID cellid,
 // -------------------------------------------------------------
 void 
 Mesh_STK::cell_get_nodes (const Entity_ID cellid, 
-                          Entity_ID_List *outnodeids)
+                          Entity_ID_List *outnodeids) const
 {
   stk::mesh::EntityId global_cell_id = this->GID(cellid, CELL);
   global_cell_id += 1;        // need 1-based for stk::mesh
@@ -287,7 +287,7 @@ Mesh_STK::cell_get_nodes (const Entity_ID cellid,
 // -------------------------------------------------------------
 void 
 Mesh_STK::face_get_nodes (const Entity_ID faceid, 
-                          Entity_ID_List *outnodeids)
+                          Entity_ID_List *outnodeids) const
 {
   stk::mesh::EntityId global_face_id = this->GID(faceid, FACE);
   global_face_id += 1;        // need 1-based for stk::mesh
@@ -313,7 +313,7 @@ Mesh_STK::face_get_nodes (const Entity_ID faceid,
 void 
 Mesh_STK::node_get_cells(const Entity_ID nodeid, 
                          const Parallel_type ptype,
-                         Entity_ID_List *outcellids)
+                         Entity_ID_List *outcellids) const
 {
   stk::mesh::EntityId global_node_id = this->GID(nodeid, NODE);
   global_node_id += 1;        // need 1-based for stk::mesh
@@ -339,7 +339,7 @@ Mesh_STK::node_get_cells(const Entity_ID nodeid,
 void 
 Mesh_STK::node_get_faces(const Entity_ID nodeid, 
                          const Parallel_type ptype,
-                         Entity_ID_List *outfaceids)
+                         Entity_ID_List *outfaceids) const
 {
   stk::mesh::EntityId global_node_id = this->GID(nodeid, NODE);
   global_node_id += 1;        // need 1-based for stk::mesh
@@ -366,7 +366,7 @@ void
 Mesh_STK::node_get_cell_faces(const Entity_ID nodeid, 
                               const Entity_ID cellid,
                               const Parallel_type ptype,
-                              Entity_ID_List *outfaceids)
+                              Entity_ID_List *outfaceids) const
 {
   Entity_ID_List node_faces;
   Entity_ID_List cell_faces;
@@ -390,7 +390,7 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
 void
 Mesh_STK::face_get_cells(const Entity_ID faceid, 
                          const Parallel_type ptype,
-                         Entity_ID_List *outcellids)
+                         Entity_ID_List *outcellids) const
 {
   stk::mesh::EntityId global_face_id = 
       this->face_epetra_map(true).GID(faceid);
@@ -415,7 +415,7 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
 void 
 Mesh_STK::cell_get_face_adj_cells(const Entity_ID cellid,
                                   const Parallel_type ptype,
-                                  Entity_ID_List *fadj_cellids)
+                                  Entity_ID_List *fadj_cellids) const
 {
   // FIXME
 }
@@ -447,7 +447,7 @@ Mesh_STK::cell_get_type_4viz(const Entity_ID cellid) const
 // -------------------------------------------------------------
 void 
 Mesh_STK::cell_get_nodes_4viz (const Entity_ID cellid, 
-                               Entity_ID_List *nodeids)
+                               Entity_ID_List *nodeids) const
 {
   // FIXME: degenerate cells
   cell_get_nodes(cellid, nodeids);
@@ -459,7 +459,7 @@ Mesh_STK::cell_get_nodes_4viz (const Entity_ID cellid,
 // -------------------------------------------------------------
 void 
 Mesh_STK::node_get_coordinates (const Entity_ID nodeid, 
-                                AmanziGeometry::Point *x)
+                                AmanziGeometry::Point *x) const
 {
   stk::mesh::EntityId gid(this->GID(nodeid, NODE));
   gid++;                                // need 1-based for stk::mesh
@@ -483,7 +483,7 @@ Mesh_STK::node_get_coordinates (const Entity_ID nodeid,
 // -------------------------------------------------------------
 void 
 Mesh_STK::face_get_coordinates (const Entity_ID faceid, 
-                                std::vector<AmanziGeometry::Point> *fcoords)
+                                std::vector<AmanziGeometry::Point> *fcoords) const
 {
   stk::mesh::EntityId gid(this->GID(faceid, FACE));
   gid++;                                // need 1-based for stk::mesh
@@ -515,7 +515,7 @@ Mesh_STK::face_get_coordinates (const Entity_ID faceid,
 // -------------------------------------------------------------
 void 
 Mesh_STK::cell_get_coordinates (const Entity_ID cellid, 
-                                std::vector<AmanziGeometry::Point> *ccoords)
+                                std::vector<AmanziGeometry::Point> *ccoords) const
 {
   stk::mesh::EntityId gid(this->GID(cellid, CELL));
   gid++;                                // need 1-based for stk::mesh
@@ -585,7 +585,7 @@ Mesh_STK::num_sets (Entity_kind kind) const
 // -------------------------------------------------------------
 // Mesh_STK::get_set_ids
 // -------------------------------------------------------------
-void Mesh_STK::get_set_ids (const Entity_kind kind, Set_ID_List *setids)
+void Mesh_STK::get_set_ids (const Entity_kind kind, Set_ID_List *setids) const
 {
   ASSERT (entity_valid_kind(kind));
   stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
@@ -614,7 +614,7 @@ Mesh_STK::valid_set_id (const Set_ID setid, const Entity_kind kind) const
 // -------------------------------------------------------------
 unsigned int 
 Mesh_STK::get_set_size (const Set_ID setid, const Entity_kind kind, 
-                        const Parallel_type ptype)
+                        const Parallel_type ptype) const
 {
   ASSERT (entity_valid_ptype(ptype));
   ASSERT (this->valid_set_id(setid, kind));
@@ -631,7 +631,7 @@ void
 Mesh_STK::get_set_entities (const Set_ID setid, 
                             const Entity_kind kind, 
                             const Parallel_type ptype, 
-                            Entity_ID_List *entids)
+                            Entity_ID_List *entids) const
 {
   ASSERT (entity_valid_ptype(ptype));
   ASSERT (this->valid_set_id(setid, kind));

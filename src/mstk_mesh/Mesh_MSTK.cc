@@ -3,9 +3,12 @@
 
 using namespace std;
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace AmanziGeometry;
+
+namespace Amanzi
+{
+
+namespace AmanziMesh
+{
 
 // Constructor - load up mesh from file
 
@@ -274,7 +277,7 @@ Cell_type Mesh_MSTK::cell_get_type(const Entity_ID cellid) const {
     
 
 void Mesh_MSTK::cell_get_faces (const Entity_ID cellid, 
-				std::vector<Entity_ID> *faceids)
+				std::vector<Entity_ID> *faceids) const
 {
   MEntity_ptr cell;
 
@@ -381,7 +384,7 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 // direction as the cell polygon, and -1 otherwise
     
 void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid, 
-				    std::vector<int> *face_dirs) 
+				    std::vector<int> *face_dirs) const 
 {
   MEntity_ptr cell;
   std::vector<Entity_ID> faceids;
@@ -446,7 +449,7 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
 // consistent with the face normal
 
 void Mesh_MSTK::cell_get_nodes (const Entity_ID cellid, 
-				std::vector<Entity_ID> *nodeids)
+				std::vector<Entity_ID> *nodeids) const
 {
   MEntity_ptr cell;
   int nn, lid;
@@ -496,7 +499,7 @@ void Mesh_MSTK::cell_get_nodes (const Entity_ID cellid,
 // In 2D, nfnodes is 2
 
 void Mesh_MSTK::face_get_nodes (const Entity_ID faceid, 
-				std::vector<Entity_ID> *nodeids)
+				std::vector<Entity_ID> *nodeids) const
 {
   MEntity_ptr genface;
   int nn, lid;
@@ -551,7 +554,7 @@ void Mesh_MSTK::face_get_nodes (const Entity_ID faceid,
     
 void Mesh_MSTK::node_get_cells (const Entity_ID nodeid, 
 				const Parallel_type ptype,
-				std::vector<Entity_ID> *cellids)
+				std::vector<Entity_ID> *cellids) const
 {
   int idx, lid;
   List_ptr cell_list;
@@ -595,7 +598,7 @@ void Mesh_MSTK::node_get_cells (const Entity_ID nodeid,
     
 void Mesh_MSTK::node_get_faces (const Entity_ID nodeid, 
 				const Parallel_type ptype,
-				std::vector<Entity_ID> *faceids)
+				std::vector<Entity_ID> *faceids) const
 {
   int idx, lid;
   List_ptr face_list;
@@ -641,7 +644,7 @@ void Mesh_MSTK::node_get_faces (const Entity_ID nodeid,
 void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid, 
 				     const Entity_ID cellid,
 				     const Parallel_type ptype,
-				     std::vector<Entity_ID> *faceids)
+				     std::vector<Entity_ID> *faceids) const
 {
   int idx, lid;
   List_ptr cell_list;
@@ -709,7 +712,7 @@ void Mesh_MSTK::node_get_cell_faces (const Entity_ID nodeid,
     
 void Mesh_MSTK::face_get_cells (const Entity_ID faceid, 
 				const Parallel_type ptype,
-				std::vector<Entity_ID> *cellids)
+				std::vector<Entity_ID> *cellids) const
 {
   int lid;
 
@@ -775,7 +778,7 @@ void Mesh_MSTK::face_get_cells (const Entity_ID faceid,
 
 void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
 					const Parallel_type ptype,
-					std::vector<Entity_ID> *fadj_cellids)
+					std::vector<Entity_ID> *fadj_cellids) const
 {
   int lid;
 
@@ -859,7 +862,7 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
 
 void Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
 					const Parallel_type ptype,
-					std::vector<Entity_ID> *nadj_cellids)
+					std::vector<Entity_ID> *nadj_cellids) const
 {
   int lid, mkid;
   List_ptr cell_list;
@@ -982,7 +985,7 @@ Cell_type Mesh_MSTK::cell_get_type_4viz(const Entity_ID cellid) const {
 
 
 void Mesh_MSTK::cell_get_nodes_4viz (const Entity_ID cellid, 
-				     std::vector<Entity_ID> *nodeids)
+				     std::vector<Entity_ID> *nodeids) const
 {
   MEntity_ptr cell;
   std::vector<Entity_ID> *orig_vids;
@@ -1010,7 +1013,7 @@ void Mesh_MSTK::cell_get_nodes_4viz (const Entity_ID cellid,
 
 // Node coordinates - 3 in 3D and 2 in 2D
     
-void Mesh_MSTK::node_get_coordinates (const Entity_ID nodeid, Point *ncoords)
+void Mesh_MSTK::node_get_coordinates (const Entity_ID nodeid, AmanziGeometry::Point *ncoords) const
 {    
   MEntity_ptr vtx;
   double coords[3];
@@ -1039,13 +1042,13 @@ void Mesh_MSTK::node_get_coordinates (const Entity_ID nodeid, Point *ncoords)
 // arbitrary order
 // Number of nodes is vector size divided by number of spatial dimensions
 
-void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Point> *ccoords)
+void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<AmanziGeometry::Point> *ccoords) const
 {    
   MEntity_ptr cell;
   double coords[3];
   int nn, result;
   int spdim = space_dimension(), celldim = cell_dimension();
-  Point xyz(spdim);
+  AmanziGeometry::Point xyz(spdim);
 
   assert(ccoords != NULL);
 
@@ -1091,7 +1094,7 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Point>
 // Face coordinates - conventions same as face_to_nodes call 
 // Number of nodes is the vector size divided by number of spatial dimensions
     
-void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point> *fcoords)
+void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<AmanziGeometry::Point> *fcoords) const
 {
   double coords[3];
   int nn;
@@ -1102,7 +1105,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
   fcoords->clear();
 
   if (spdim == 3) {
-    Point xyz(3);
+    AmanziGeometry::Point xyz(3);
     if (celldim == 3) {
       MFace_ptr face = face_id_to_handle[faceid];
       List_ptr fverts = MF_Vertices(face,1,0);
@@ -1148,7 +1151,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
     }
   }
   else {  // 2D Mesh
-    Point xyz(2);
+    AmanziGeometry::Point xyz(2);
     MEdge_ptr edge;
     MVertex_ptr ev[2];
 
@@ -1176,7 +1179,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Point>
 
   // Ids of sets containing entities of 'kind'
 
-void Mesh_MSTK::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) 
+void Mesh_MSTK::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const 
 {
   int i, ns=0;
 
@@ -1228,7 +1231,7 @@ void Mesh_MSTK::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids
 void Mesh_MSTK::get_set_entities (const Set_ID setid, 
 				  const Entity_kind kind, 
 				  const Parallel_type ptype, 
-				  std::vector<Entity_ID> *setents) 
+				  std::vector<Entity_ID> *setents) const 
 {
   int idx, i, lid;
   MSet_ptr mset, mset1;
@@ -1392,7 +1395,7 @@ bool Mesh_MSTK::valid_set_id (const Set_ID setid, const Entity_kind kind) const
 
 unsigned int Mesh_MSTK::get_set_size (const Set_ID setid, 
 				      const Entity_kind kind,
-				      const Parallel_type ptype)
+				      const Parallel_type ptype) const
 {
   stringstream setname;
   MSet_ptr mset1, mset;
@@ -2630,3 +2633,7 @@ const Epetra_Map& Mesh_MSTK::node_epetra_map (const bool include_ghost) const
   else
     return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
 }
+
+
+} // close namespace AmanziMesh
+} // close namespace Amanzi

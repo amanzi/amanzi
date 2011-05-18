@@ -10,6 +10,7 @@ extern "C" {
 #include "cgnslib.h"
 }
 
+namespace Amanzi {
 
 namespace CGNS {
     
@@ -34,5 +35,7 @@ namespace CGNS {
   // Finalizes a CGNS file which has previously been opened with open_data_file.
   void close_data_file();
 }
+
+} // close namespace Amanzi
 
 #endif  /* _CGNS_MESH_ */

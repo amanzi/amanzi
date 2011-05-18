@@ -10,6 +10,9 @@
 #include "Flow_State.hpp"
 #include "DarcyProblem.hpp"
 
+namespace Amanzi
+{
+
 class Darcy_PK : public Flow_PK
 {
 
@@ -48,5 +51,7 @@ private:
   int max_itr;      // max number of linear solver iterations
   double err_tol;   // linear solver convergence error tolerance
 };
+
+}
 
 #endif

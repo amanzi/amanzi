@@ -8,6 +8,9 @@
 #include "Mesh.hh"
 
 
+namespace Amanzi
+{
+
 /* 
   The transport state is a sub-state of the global state.
   At the moment they are equivalent. 
@@ -42,7 +45,7 @@ public:
   Teuchos::RCP<Epetra_Vector>   get_water_saturation() { return water_saturation; }
   Teuchos::RCP<Epetra_Vector>   get_darcy_flux()       { return darcy_flux; }
   Teuchos::RCP<Epetra_Vector>   get_water_density()    { return water_density; }
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>  get_mesh_maps()        { return mesh_maps; }
+  Teuchos::RCP<AmanziMesh::Mesh>  get_mesh_maps()        { return mesh_maps; }
 
   Epetra_MultiVector &  ref_total_component_concentration()  { return *total_component_concentration; }
 
@@ -70,9 +73,10 @@ private:
   Teuchos::RCP<Epetra_Vector>        water_density;
 
   /* mesh infranstructure */
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh>  mesh_maps;
+  Teuchos::RCP<AmanziMesh::Mesh>  mesh_maps;
 };
 
+} // close namespace Amanzi
 
 #endif
 

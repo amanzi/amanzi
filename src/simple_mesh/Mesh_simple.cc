@@ -2,10 +2,6 @@
 #include <Teuchos_RCP.hpp>
 
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace AmanziGeometry;
-
 Mesh_simple::Mesh_simple (double x0, double y0, double z0,
 				    double x1, double y1, double z1,
 				    int nx, int ny, int nz,
@@ -390,29 +386,31 @@ Parallel_type Mesh_simple::entity_get_ptype(const Entity_kind kind,
 
 // Get cell type
     
-Cell_type Mesh_simple::cell_get_type(const Entity_ID cellid) const 
+Amanzi::AmanziMesh::Cell_type Mesh_simple::cell_get_type(const Amanzi::AmanziMesh::Entity_ID cellid) const 
 {
   return HEX;
 }
         
     
-unsigned int Mesh_simple::GID(const Entity_ID lid, const Entity_kind kind) const
+unsigned int Mesh_simple::GID(const Amanzi::AmanziMesh::Entity_ID lid, 
+			      const Amanzi::AmanziMesh::Entity_kind kind) const
 {
   return lid;  // Its a serial code
 }
 
 
 
-unsigned int Mesh_simple::num_entities (Entity_kind kind, Parallel_type ptype) const
+unsigned int Mesh_simple::num_entities (Amanzi::AmanziMesh::Entity_kind kind, 
+					Amanzi::AmanziMesh::Parallel_type ptype) const
 {
   switch (kind) {
-  case FACE: 
+  case Amanzi::AmanziMesh::FACE: 
     return num_faces_;
     break;
-  case NODE:
+  case Amanzi::AmanziMesh::NODE:
     return num_nodes_;
     break;
-  case CELL:
+  case Amanzi::AmanziMesh::CELL:
     return num_cells_;
     break;
   default:
@@ -422,13 +420,13 @@ unsigned int Mesh_simple::num_entities (Entity_kind kind, Parallel_type ptype) c
 }
 
 
-unsigned int Mesh_simple::num_sets(Entity_kind kind) const
+unsigned int Mesh_simple::num_sets(Amanzi::AmanziMesh::Entity_kind kind) const
 {
   switch (kind) {
-  case FACE:
+  case Amanzi::AmanziMesh::FACE:
     return 6;
     break;
-  case CELL:
+  case Amanzi::AmanziMesh::CELL:
     return 1;
     break;
   default:
@@ -438,17 +436,17 @@ unsigned int Mesh_simple::num_sets(Entity_kind kind) const
   }
 }
 
-unsigned int Mesh_simple::get_set_size (Set_ID set_id, 
-					     Entity_kind kind,
-					     Parallel_type ptype)
+unsigned int Mesh_simple::get_set_size (Amanzi::AmanziMesh::Set_ID set_id, 
+					Amanzi::AmanziMesh::Entity_kind kind,
+					Amanzi::AmanziMesh::Parallel_type ptype) const
 {
   // we ignore ptype, since this is a serial implementation
 
   switch (kind) {
-  case FACE:
+  case Amanzi::AmanziMesh::FACE:
     return side_sets_[set_id].size();
     break;
-  case CELL:
+  case Amanzi::AmanziMesh::CELL:
     return element_blocks_[set_id].size();
     break;
   default:
@@ -458,7 +456,8 @@ unsigned int Mesh_simple::get_set_size (Set_ID set_id,
 }
 
 
-void Mesh_simple::cell_get_faces (Entity_ID cell, Entity_ID_List *faceids)  
+void Mesh_simple::cell_get_faces (Amanzi::AmanziMesh::Entity_ID cell, 
+				  Amanzi::AmanziMesh::Entity_ID_List *faceids)  const 
 {
   unsigned int index = 6*cell;
 
@@ -470,7 +469,8 @@ void Mesh_simple::cell_get_faces (Entity_ID cell, Entity_ID_List *faceids)
 
 
 
-void Mesh_simple::cell_get_nodes (Entity_ID cell, Entity_ID_List *nodeids)
+void Mesh_simple::cell_get_nodes (Amanzi::AmanziMesh::Entity_ID cell, 
+				  Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
 {
   unsigned int index = 8*cell;
 
@@ -481,7 +481,8 @@ void Mesh_simple::cell_get_nodes (Entity_ID cell, Entity_ID_List *nodeids)
 }
 
 
-void Mesh_simple::face_get_nodes (Entity_ID face, Entity_ID_List *nodeids)
+void Mesh_simple::face_get_nodes (Amanzi::AmanziMesh::Entity_ID face, 
+				  Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
 {
   unsigned int index = 4*face;
 
@@ -495,7 +496,8 @@ void Mesh_simple::face_get_nodes (Entity_ID face, Entity_ID_List *nodeids)
 // Cooordinate Getters
 // -------------------
 
-void Mesh_simple::node_get_coordinates (Entity_ID local_node_id, Point *ncoords)
+void Mesh_simple::node_get_coordinates (Amanzi::AmanziMesh::Entity_ID local_node_id, 
+					Amanzi::AmanziGeometry::Point *ncoords) const
 {
   unsigned int index = 3*local_node_id;
   std::vector<double>::iterator begin = coordinates_.begin() + index;
@@ -506,7 +508,8 @@ void Mesh_simple::node_get_coordinates (Entity_ID local_node_id, Point *ncoords)
 }
 
 
-void Mesh_simple::face_get_coordinates (Entity_ID local_face_id, std::vector<Point> *fcoords)
+void Mesh_simple::face_get_coordinates (Amanzi::AmanziMesh::Entity_ID local_face_id, 
+					std::vector<Amanzi::AmanziGeometry::Point> *fcoords) const
 {
   Entity_ID_List node_indices(4);
 
@@ -522,7 +525,8 @@ void Mesh_simple::face_get_coordinates (Entity_ID local_face_id, std::vector<Poi
 
 }
 
-void Mesh_simple::cell_get_coordinates (Entity_ID local_cell_id, std::vector<Point> *ccoords)
+void Mesh_simple::cell_get_coordinates (Amanzi::AmanziMesh::Entity_ID local_cell_id, 
+					std::vector<Amanzi::AmanziGeometry::Point> *ccoords) const
 {  
   std::vector<unsigned int> node_indices(8);
   cell_get_nodes (local_cell_id, &node_indices);
@@ -541,19 +545,20 @@ void Mesh_simple::cell_get_coordinates (Entity_ID local_cell_id, std::vector<Poi
 // Set getters
 // -----------
 
-void Mesh_simple::get_set_ids (Entity_kind kind, Set_ID_List *setids)
+void Mesh_simple::get_set_ids (Amanzi::AmanziMesh::Entity_kind kind, 
+			       Amanzi::AmanziMesh::Set_ID_List *setids) const
 {
   
   std::vector<int> ids(0);
 
   switch (kind) {
-  case FACE: 
+  case Amanzi::AmanziMesh::FACE: 
     {
       for (int i=0; i<6; i++)
 	setids->push_back(i);	
       break;
     }
-  case CELL:
+  case Amanzi::AmanziMesh::CELL:
     {
       setids->push_back(0);
       break;
@@ -565,17 +570,18 @@ void Mesh_simple::get_set_ids (Entity_kind kind, Set_ID_List *setids)
 }
 
 
-void Mesh_simple::get_set_entities (Set_ID set_id, Entity_kind kind, 
-				    Parallel_type ptype, 
-				    Set_ID_List *setents)
+void Mesh_simple::get_set_entities (Amanzi::AmanziMesh::Set_ID set_id, 
+				    Amanzi::AmanziMesh::Entity_kind kind, 
+				    Amanzi::AmanziMesh::Parallel_type ptype, 
+				    Amanzi::AmanziMesh::Set_ID_List *setents) const
 {
   // we ignore ptype since this is a serial implementation
   
   switch (kind) {
-  case FACE:
+  case Amanzi::AmanziMesh::FACE:
     *setents = side_sets_[set_id];
     break;
-  case CELL:
+  case Amanzi::AmanziMesh::CELL:
     *setents = element_blocks_[set_id];
     break;
   default:
@@ -585,13 +591,14 @@ void Mesh_simple::get_set_entities (Set_ID set_id, Entity_kind kind,
 }
 
 
-bool Mesh_simple::valid_set_id (Entity_ID id, Entity_kind kind) const 
+bool Mesh_simple::valid_set_id (Amanzi::AmanziMesh::Entity_ID id, 
+				Amanzi::AmanziMesh::Entity_kind kind) const 
 {
   switch (kind) {
-  case FACE:
+  case Amanzi::AmanziMesh::FACE:
     return (id<6) ;
     break;
-  case CELL:
+  case Amanzi::AmanziMesh::CELL:
     return (id < number_of_mesh_blocks);
     break;
   default:
@@ -601,7 +608,8 @@ bool Mesh_simple::valid_set_id (Entity_ID id, Entity_kind kind) const
     
 }
 
-void Mesh_simple::cell_get_face_dirs (Entity_ID cell, std::vector<int> *cfacedirs)
+void Mesh_simple::cell_get_face_dirs (Amanzi::AmanziMesh::Entity_ID cell, 
+				      std::vector<int> *cfacedirs) const
 {
   unsigned int index = 6*cell;
   for (int i = 0; i < 6; i++) {
@@ -611,9 +619,9 @@ void Mesh_simple::cell_get_face_dirs (Entity_ID cell, std::vector<int> *cfacedir
 }
 
 
-void Mesh_simple::set_coordinate(Entity_ID local_node_id, 
-				      double *source_begin, 
-				      double *source_end)
+void Mesh_simple::set_coordinate(Amanzi::AmanziMesh::Entity_ID local_node_id, 
+				 double *source_begin, 
+				 double *source_end) const
 {
   unsigned int index = 3*local_node_id;
   
@@ -624,18 +632,18 @@ void Mesh_simple::set_coordinate(Entity_ID local_node_id,
 
 
 
-void Mesh_simple::node_get_cells (const Entity_ID nodeid, 
-			   const Parallel_type ptype,
-			   Entity_ID_List *cellids) 
+void Mesh_simple::node_get_cells (const Amanzi::AmanziMesh::Entity_ID nodeid, 
+			   const Amanzi::AmanziMesh::Parallel_type ptype,
+			   Amanzi::AmanziMesh::Entity_ID_List *cellids) const 
 {
   throw std::exception();
 }
     
 // Faces of type 'ptype' connected to a node
     
-void Mesh_simple::node_get_faces (const Entity_ID nodeid, 
-		     const Parallel_type ptype,
-		     Entity_ID_List *faceids)
+void Mesh_simple::node_get_faces (const Amanzi::AmanziMesh::Entity_ID nodeid, 
+		     const Amanzi::AmanziMesh::Parallel_type ptype,
+		     Amanzi::AmanziMesh::Entity_ID_List *faceids) const
 {
   throw std::exception();
 }   
@@ -643,19 +651,19 @@ void Mesh_simple::node_get_faces (const Entity_ID nodeid,
 // Get faces of ptype of a particular cell that are connected to the
 // given node
 
-void Mesh_simple::node_get_cell_faces (const Entity_ID nodeid, 
-			  const Entity_ID cellid,
-			  const Parallel_type ptype,
-			  Entity_ID_List *faceids)
+void Mesh_simple::node_get_cell_faces (const Amanzi::AmanziMesh::Entity_ID nodeid, 
+			  const Amanzi::AmanziMesh::Entity_ID cellid,
+			  const Amanzi::AmanziMesh::Parallel_type ptype,
+			  Amanzi::AmanziMesh::Entity_ID_List *faceids) const
 {
   throw std::exception();
 }
     
 // Cells connected to a face
     
-void Mesh_simple::face_get_cells (const Entity_ID faceid, 
-		     const Parallel_type ptype,
-		     Entity_ID_List *cellids)
+void Mesh_simple::face_get_cells (const Amanzi::AmanziMesh::Entity_ID faceid, 
+		     const Amanzi::AmanziMesh::Parallel_type ptype,
+		     Amanzi::AmanziMesh::Entity_ID_List *cellids) const
 {
   throw std::exception();
 }
@@ -673,9 +681,9 @@ void Mesh_simple::face_get_cells (const Entity_ID faceid,
 // the cellids will correcpond to cells across the respective
 // faces given by cell_get_faces
 
-void Mesh_simple::cell_get_face_adj_cells(const Entity_ID cellid,
-			     const Parallel_type ptype,
-			     Entity_ID_List *fadj_cellids)
+void Mesh_simple::cell_get_face_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
+			     const Amanzi::AmanziMesh::Parallel_type ptype,
+			     Amanzi::AmanziMesh::Entity_ID_List *fadj_cellids) const
 {
   throw std::exception();
 }
@@ -684,9 +692,9 @@ void Mesh_simple::cell_get_face_adj_cells(const Entity_ID cellid,
 // (a hex in a structured mesh has 26 node connected neighbors)
 // The cells are returned in no particular order
 
-void Mesh_simple::cell_get_node_adj_cells(const Entity_ID cellid,
-			     const Parallel_type ptype,
-			     Entity_ID_List *nadj_cellids)
+void Mesh_simple::cell_get_node_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
+			     const Amanzi::AmanziMesh::Parallel_type ptype,
+			     Amanzi::AmanziMesh::Entity_ID_List *nadj_cellids) const
 {
   throw std::exception();
 }
@@ -705,16 +713,16 @@ void Mesh_simple::cell_get_node_adj_cells(const Entity_ID cellid,
 
 // Original cell type 
 
-Cell_type Mesh_simple::cell_get_type_4viz(const Entity_ID cellid) const 
+Amanzi::AmanziMesh::Cell_type Mesh_simple::cell_get_type_4viz(const Amanzi::AmanziMesh::Entity_ID cellid) const 
 {
-  return HEX;
+  return Amanzi::AmanziMesh::HEX;
 }
     
     
 // See cell_get_nodes for details on node ordering
     
-void Mesh_simple::cell_get_nodes_4viz (const Entity_ID cellid, 
-				Entity_ID_List *nodeids) 
+void Mesh_simple::cell_get_nodes_4viz (const Amanzi::AmanziMesh::Entity_ID cellid, 
+				Amanzi::AmanziMesh::Entity_ID_List *nodeids) const 
 {
   cell_get_nodes(cellid, nodeids);
 }

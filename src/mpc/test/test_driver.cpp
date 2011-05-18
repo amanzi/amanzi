@@ -23,9 +23,6 @@ TEST(DRIVER) {
 
   using namespace std;
 
-  using namespace Amanzi;
-  using namespace AmanziMesh;
-
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else  
@@ -45,7 +42,7 @@ TEST(DRIVER) {
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 
-  Teuchos::RCP<Mesh> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   cout << mesh_class << endl;
 
@@ -54,8 +51,8 @@ TEST(DRIVER) {
       Teuchos::ParameterList simple_mesh_parameter_list = 
       	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      Teuchos::RCP<Mesh_simple> MMS = 
-      	Teuchos::rcp(new Mesh_simple(simple_mesh_parameter_list, comm));
+      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_simple> MMS = 
+      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(simple_mesh_parameter_list, comm));
       
       mesh = MMS;
       

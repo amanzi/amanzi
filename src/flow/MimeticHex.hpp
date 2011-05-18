@@ -9,6 +9,8 @@
 
 #include "Mesh.hh"
 
+namespace Amanzi {
+
 class MimeticHex
 {
 public:
@@ -39,5 +41,7 @@ private:
   Epetra_SerialDenseMatrix face_normal_;
 
 };
+
+} // close namespace Amanzi
 
 #endif

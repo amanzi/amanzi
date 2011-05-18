@@ -8,8 +8,8 @@
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialSpdDenseSolver.h"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
+namespace Amanzi
+{
 
 void MimeticHexLocal::update(const Epetra_SerialDenseMatrix &x)
 {
@@ -56,7 +56,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
     for (int j = 0; j < 3; ++j)
       for (int k = 0; k < 3; ++k)
 	//Nc(k,j) = face_normal[CellTopology::HexCornerFace[c][j]][k];
-	Nc(k,j) = face_normal[HexCornerFace[c][j]][k];
+	Nc(k,j) = face_normal[AmanziMesh::HexCornerFace[c][j]][k];
 
     // Mc <-- Nc^T Nc
     Mc.Multiply('T', 'N', 1.0, Nc, Nc, 0.0);
@@ -70,10 +70,10 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, double K, bo
     double s = hvol * cwgt[c] / K;
     for (int j = 0; j < 3; ++j) {   // loop over corner face cols
       //int jj = CellTopology::HexCornerFace[c][j]; // the corresponding cell face index
-      int jj = HexCornerFace[c][j]; // the corresponding cell face index
+      int jj = AmanziMesh::HexCornerFace[c][j]; // the corresponding cell face index
       for (int i = 0; i <3 ; ++i) {   // loop over corner face rows
 	//int ii = CellTopology::HexCornerFace[c][i]; // the corresponding cell face index
-	int ii = HexCornerFace[c][i]; // the corresponding cell face index
+	int ii = AmanziMesh::HexCornerFace[c][i]; // the corresponding cell face index
         matrix(ii,jj) += s * Mc(i,j);
       }
     }
@@ -110,7 +110,7 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
     for (int j = 0; j < 3; ++j)
       for (int k = 0; k < 3; ++k)
 	//Nc(k,j) = face_normal[CellTopology::HexCornerFace[c][j]][k];
-	Nc(k,j) = face_normal[HexCornerFace[c][j]][k];
+	Nc(k,j) = face_normal[AmanziMesh::HexCornerFace[c][j]][k];
 
     // Mc <-- Nc^T K Nc
     Tc.Multiply('L', 1.0, K, Nc, 0.0);
@@ -125,10 +125,10 @@ void MimeticHexLocal::mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra
     double s = hvol * cwgt[c];
     for (int j = 0; j < 3; ++j) {   // loop over corner face cols
       //int jj = CellTopology::HexCornerFace[c][j]; // the corresponding cell face index
-      int jj = HexCornerFace[c][j]; // the corresponding cell face index
+      int jj = AmanziMesh::HexCornerFace[c][j]; // the corresponding cell face index
       for (int i = 0; i <3 ; ++i) {   // loop over corner face rows
 	//int ii = CellTopology::HexCornerFace[c][i]; // the corresponding cell face index
-	int ii = HexCornerFace[c][i]; // the corresponding cell face index
+	int ii = AmanziMesh::HexCornerFace[c][i]; // the corresponding cell face index
         matrix(ii,jj) += s * Mc(i,j);
       }
     }
@@ -280,3 +280,4 @@ void MimeticHexLocal::CellFluxVector(double Fface[], double Fcell[]) const
   for (int k = 0; k < 3; ++k) Fcell[k] = x[k];
 }
 
+} // close namespace Amanzi

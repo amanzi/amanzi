@@ -10,10 +10,12 @@
 #include <boost/graph/visitors.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
+namespace Amanzi {
+
 class MeshAuditOld {
 public:
 
-  MeshAuditOld(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
+  MeshAuditOld(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
 
   // This is the main method.
   int Verify() const;
@@ -73,7 +75,7 @@ public:
 
 private:
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
   const Epetra_Comm &comm;
   const int MyPID;
@@ -90,13 +92,13 @@ private:
   int same_face(const std::vector<unsigned int>, const std::vector<unsigned int>) const;
   
   bool check_maps(const Epetra_Map&, const Epetra_Map&) const;
-  bool check_get_set_ids(Amanzi::AmanziMesh::Entity_kind) const;
-  bool check_valid_set_id(Amanzi::AmanziMesh::Entity_kind) const;
-  bool check_sets(Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  bool check_get_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, Amanzi::AmanziMesh::Parallel_type, const Epetra_Map&) const;
-  bool check_used_set(unsigned int, Amanzi::AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  bool check_sets_alt(Amanzi::AmanziMesh::Entity_kind) const;
-  bool check_get_set_alt(unsigned int, Amanzi::AmanziMesh::Entity_kind, Amanzi::AmanziMesh::Parallel_type) const;
+  bool check_get_set_ids(AmanziMesh::Entity_kind) const;
+  bool check_valid_set_id(AmanziMesh::Entity_kind) const;
+  bool check_sets(AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  bool check_get_set(unsigned int, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Epetra_Map&) const;
+  bool check_used_set(unsigned int, AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  bool check_sets_alt(AmanziMesh::Entity_kind) const;
+  bool check_get_set_alt(unsigned int, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type) const;
   
   // This is the vertex type for the test dependency graph.
   typedef bool (MeshAuditOld::* Test)() const;
@@ -119,5 +121,7 @@ private:
   
   void create_test_dependencies();
 };
+
+} // close namespace Amanzi
 
 #endif

@@ -1,5 +1,8 @@
 #include "DarcyMatvec.hpp"
 
+namespace Amanzi
+{
+
 DarcyMatvec::DarcyMatvec(DarcyProblem *problem) : problem_(problem)
 {
   label_ = strdup("DarcyMatvec");
@@ -18,3 +21,5 @@ int DarcyMatvec::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
   yy->Update(1.0, problem_->RHS(), 1.0);
   return 0;
 }
+
+} // close namespace Amanzi

@@ -10,6 +10,9 @@
 #include "ChemistryException.hpp"
 #include "Verbosity.hpp"
 
+namespace Amanzi
+{
+
 // Chemistry Process Kernel Interface
 
 class Chemistry_PK {
@@ -150,5 +153,7 @@ class Chemistry_PK {
   void CopyStateToBeakerParameters(const int cell_id);
 
 };
+
+} // close namespace Amanzi
 
 #endif

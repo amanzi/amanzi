@@ -4,10 +4,10 @@
 #include "vanGenuchtenModel.hpp"
 #include "Mesh.hh"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
+namespace Amanzi
+{
 
-RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh> &mesh,
+RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 			   Teuchos::ParameterList &list,
 			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
 {
@@ -80,7 +80,7 @@ RichardsProblem::~RichardsProblem()
 }
 
 
-DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
+DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
 {
   // Generate the list of all Dirichlet-type faces.
   // The provided lists should include all used BC faces.
@@ -100,7 +100,7 @@ DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh> &
 }
 
 
-void RichardsProblem::init_mimetic_disc_(Mesh &mesh, std::vector<MimeticHexLocal> &MD) const
+void RichardsProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<MimeticHexLocal> &MD) const
 {
   // Local storage for the 8 vertex coordinates of a hexahedral cell.
   double x[8][3];
@@ -160,10 +160,10 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -178,10 +178,10 @@ void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -198,10 +198,10 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -576,3 +576,5 @@ void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetr
   udot_face->PutScalar(0.0);
 
 }
+
+} // close namespace RichardsProblem

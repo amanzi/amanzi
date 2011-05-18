@@ -4,6 +4,9 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 
+namespace Amanzi
+{
+
 class MimeticHexLocal {
 
 public:
@@ -36,5 +39,7 @@ private:
   Epetra_SerialDenseMatrix face_normal;
 
 };
+
+} // close namespace Amanzi
 
 #endif

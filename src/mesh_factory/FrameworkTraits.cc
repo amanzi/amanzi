@@ -577,5 +577,5 @@ framework_generate(Epetra_MpiComm& comm, const Framework& f,
 }
 
 
-} // namespace AmanziMesh
-} // namespace Amanzi
+} // close namespace AmanziMesh
+} // close namespace Amanzi

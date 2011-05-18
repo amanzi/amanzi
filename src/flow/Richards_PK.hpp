@@ -10,6 +10,9 @@
 #include "Flow_State.hpp"
 #include "RichardsProblem.hpp"
 
+namespace Amanzi
+{
+
 class Richards_PK : public Flow_PK
 {
 
@@ -58,5 +61,7 @@ private:
   void nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList>&, Teuchos::RCP<Teuchos::ParameterList>&) const;
   void nox_nlk_setup(Teuchos::ParameterList&, Teuchos::RCP<Teuchos::ParameterList>&, Teuchos::RCP<Teuchos::ParameterList>&) const;
 };
+
+} // close namespace Amanzi
 
 #endif

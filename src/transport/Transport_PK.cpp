@@ -11,9 +11,6 @@
 
 using namespace std;
 using namespace Teuchos;
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace cell_geometry;
 using namespace Amanzi_Transport;
 
 
@@ -46,7 +43,7 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
 
 
   /* frequently used data */
-  RCP<Mesh>  mesh = TS->get_mesh_maps();
+  RCP<AmanziMesh::Mesh>  mesh = TS->get_mesh_maps();
 
   const Epetra_Map &  cmap = mesh->cell_map( true );
   const Epetra_Map &  fmap = mesh->face_map( true );
@@ -112,7 +109,7 @@ Transport_PK::Transport_PK( ParameterList &parameter_list_MPC,
 /* ************************************************************* */
 void Transport_PK::process_parameter_list()
 {
-  RCP<Mesh> mesh = TS->get_mesh_maps();
+  RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
   /* global transport parameters */
   cfl = parameter_list.get<double>( "CFL", 1.0 );
@@ -173,7 +170,7 @@ void Transport_PK::process_parameter_list()
      if ( type == "Constant" ) bcs[i].type = TRANSPORT_BC_CONSTANT_INFLUX;
 
      bcs[i].side_set_id = ssid;
-     if ( !mesh->valid_set_id( ssid, FACE ) ) {
+     if ( !mesh->valid_set_id( ssid, AmanziMesh::FACE ) ) {
         cout << "MyPID = " << MyPID << endl;
         cout << "Invalid set of mesh faces with ID " << ssid << endl;
         ASSERT( 0 );
@@ -181,11 +178,11 @@ void Transport_PK::process_parameter_list()
 
      /* populate list of n boundary faces: it could be empty */
      int  n;
-     n = mesh->get_set_size( ssid, FACE, OWNED );
+     n = mesh->get_set_size( ssid, AmanziMesh::FACE, AmanziMesh::OWNED );
 
      bcs[i].faces.resize( n );
 
-     mesh->get_set( ssid, FACE, OWNED, bcs[i].faces.begin(), bcs[i].faces.end() );
+     mesh->get_set( ssid, AmanziMesh::FACE, AmanziMesh::OWNED, bcs[i].faces.begin(), bcs[i].faces.end() );
 
      /* allocate memory for influx and outflux vectors */
      bcs[i].influx.resize(  number_components );
@@ -235,7 +232,7 @@ double Transport_PK::calculate_transport_dT()
   int  i, f, c, c1;
   double  u;
 
-  RCP<Mesh>  mesh = TS->get_mesh_maps();
+  RCP<AmanziMesh::Mesh>  mesh = TS->get_mesh_maps();
   const Epetra_Map &  fmap = mesh->face_map( true );
   const Epetra_Vector &  darcy_flux = TS_nextBIG->ref_darcy_flux();
 
@@ -416,7 +413,7 @@ void Transport_PK::commit_state( RCP<Transport_State> TS )
 /* ************************************************************* */
 void Transport_PK::identify_upwind_cells()
 {
-  RCP<Mesh>  mesh = TS->get_mesh_maps();
+  RCP<AmanziMesh::Mesh>  mesh = TS->get_mesh_maps();
   const Epetra_Map &   fmap = mesh->face_map( false );
 
   /* negative value is indicator of a boundary  */
@@ -461,7 +458,7 @@ void Transport_PK::check_divergence_property()
   vector<unsigned int>  c2f(6);
   vector<int>           dirs(6);
 
-  RCP<Mesh>  mesh = TS->get_mesh_maps();
+  RCP<AmanziMesh::Mesh>  mesh = TS->get_mesh_maps();
   Epetra_Vector &  darcy_flux = TS_nextBIG->ref_darcy_flux();
 
   L8_error = 0;
@@ -554,7 +551,7 @@ void Transport_PK::check_GEDproperty( Epetra_MultiVector & tracer )
 /* ************************************************************* */
 void Transport_PK::geometry_package()
 {
-  RCP<Mesh> mesh = TS->get_mesh_maps();
+  RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
   /* loop over faces and calculate areas */
   int  f;

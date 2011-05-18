@@ -14,11 +14,13 @@
 #include "MimeticHex.hpp"
 #include "WaterRetentionBaseModel.hpp"
 
+namespace Amanzi {
+
 class RichardsProblem
 {
 public:
 
-  RichardsProblem(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh,
+  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 	       Teuchos::ParameterList&, const Teuchos::RCP<FlowBC> &bc);
   ~RichardsProblem();
 
@@ -75,7 +77,7 @@ public:
   
 private:
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<FlowBC> bc_;
   Epetra_Map *dof_map_;
   Epetra_Import *face_importer_;
@@ -107,13 +109,15 @@ private:
 private:  // Auxillary functions
 
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
-  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>&, const Teuchos::RCP<FlowBC>&) const;
-  void init_mimetic_disc_(Amanzi::AmanziMesh::Mesh&, std::vector<MimeticHexLocal>&) const;
+  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&, const Teuchos::RCP<FlowBC>&) const;
+  void init_mimetic_disc_(AmanziMesh::Mesh&, std::vector<MimeticHexLocal>&) const;
   void apply_BC_initial_(Epetra_Vector&);
   void apply_BC_final_(Epetra_Vector&);
   void face_centroid_(int, double[]);
 
 
 };
+
+} // close namespace Amanzi
 
 #endif

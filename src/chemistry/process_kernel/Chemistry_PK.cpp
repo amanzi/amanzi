@@ -11,9 +11,6 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-
 /*******************************************************************************
  **
  **  Purpose: Trilinos based process kernel for chemistry
@@ -46,6 +43,9 @@ using namespace AmanziMesh;
  **  the saved state back into the current state.
  **
  ******************************************************************************/
+
+namespace Amanzi
+{
 
 Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
@@ -439,7 +439,7 @@ void Chemistry_PK::LocalInitialConditions(void)
 
       int mesh_block_ID = mesh_block_list.get<int>("Mesh block ID");
       if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_ID,
-                                                           CELL)) {
+                                                           AmanziMesh::CELL)) {
         // there is an inconsistency in the xml input file...
         Exceptions::amanzi_throw(Errors::Message("Chemistry_PK::inconsistent xml input"));
       }
@@ -587,20 +587,21 @@ void Chemistry_PK::set_cell_value_in_mesh_block(const double value,
                                                 const int mesh_block_id)
 {
   if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_id,
-                                                       CELL)) {
+                                                       AmanziMesh::CELL)) {
     Exceptions::amanzi_throw(Errors::Message(
         "Chemistry_PK::set_cell_value_in_mesh_block(): invalid mesh set id"));
   }
 
   unsigned int mesh_block_size =
       chemistry_state_->get_mesh_maps()->get_set_size(mesh_block_id,
-                                                      CELL,
-                                                      OWNED);
+                                                      AmanziMesh::CELL,
+                                                      AmanziMesh::OWNED);
 
   std::vector<unsigned int> cell_ids(mesh_block_size);
 
   chemistry_state_->get_mesh_maps()->get_set(mesh_block_id,
-                                             CELL, OWNED,
+                                             AmanziMesh::CELL, 
+                                             AmanziMesh::OWNED,
                                              cell_ids.begin(), cell_ids.end());
 
   for( std::vector<unsigned int>::iterator c = cell_ids.begin();
@@ -936,3 +937,5 @@ void Chemistry_PK::set_component_names(std::vector<string> &names)
 {
   chem_->GetPrimaryNames(&names);
 }  // end set_component_names()
+
+} // close namespace Amanzi

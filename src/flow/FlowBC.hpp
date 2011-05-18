@@ -6,6 +6,8 @@
 
 #include "Mesh.hh"
 
+namespace Amanzi {
+
 class FlowBC {
 
 public:
@@ -26,7 +28,7 @@ public:
   };
 
 public:
-  FlowBC(Teuchos::ParameterList &params, const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh);
+  FlowBC(Teuchos::ParameterList &params, const Teuchos::RCP<AmanziMesh::Mesh> &mesh);
   ~FlowBC() {}
 
   const int NumBC () const { return bc_.size(); }
@@ -37,10 +39,12 @@ public:
 
 private:
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 
   std::vector<bc_spec> bc_;
 
 };
+
+} // close namespace Amanzi
 
 #endif

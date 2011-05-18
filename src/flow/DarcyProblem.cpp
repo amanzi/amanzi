@@ -3,10 +3,10 @@
 #include "DarcyProblem.hpp"
 #include "DarcyMatvec.hpp"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
+namespace Amanzi
+{
 
-DarcyProblem::DarcyProblem(const Teuchos::RCP<Mesh> &mesh,
+DarcyProblem::DarcyProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 			   Teuchos::ParameterList &darcy_plist,
 			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
 {
@@ -53,7 +53,7 @@ DarcyProblem::~DarcyProblem()
 }
 
 
-DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
+DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
 {
   // Generate the list of all Dirichlet-type faces.
   // The provided lists should include all used BC faces.
@@ -73,7 +73,7 @@ DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<Amanzi::Am
 }
 
 
-void DarcyProblem::init_mimetic_disc_(Amanzi::AmanziMesh::Mesh &mesh, std::vector<MimeticHexLocal> &MD) const
+void DarcyProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<MimeticHexLocal> &MD) const
 {
   // Local storage for the 8 vertex coordinates of a hexahedral cell.
   double x[8][3];
@@ -431,3 +431,5 @@ void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, dou
 
   delete &Pcell_own, &Pface_own;
 }
+
+} // close namespace Amanzi

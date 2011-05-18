@@ -3,13 +3,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
 #include "Epetra_IntVector.h"
-//#include "Entity_kind.hh"
-//#include "Element_category.hh"
-//#include <vector>
-
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace AmanziGeometry;
 
 namespace CGNS_PAR {
 
@@ -35,7 +28,7 @@ namespace CGNS_PAR {
 
   
   
-  void create_mesh_file(Mesh &mesh_maps, std::string filename)
+  void create_mesh_file(AmanziMesh::Mesh &mesh_maps, std::string filename)
   {
     using namespace CGNS_PAR;
     
@@ -56,8 +49,8 @@ namespace CGNS_PAR {
     
     // get num_nodes, num_cells
     // - gather sum to PE0 - MB
-    unsigned int num_nodes = mesh_maps.num_entities(NODE,OWNED);
-    unsigned int num_cells = mesh_maps.num_entities(CELL,OWNED);
+    unsigned int num_nodes = mesh_maps.num_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
+    unsigned int num_cells = mesh_maps.num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
     
     int nums[2];
     int dummy[2];
@@ -321,9 +314,9 @@ namespace CGNS_PAR {
 	
 	
 	// create solution node under zone
-	if (kind == CELL) {
+	if (kind == AmanziMesh::CELL) {
 	  cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), CellCenter, &soln_idx);
-	} else if (kind == NODE) {
+	} else if (kind == AmanziMesh::NODE) {
 	  cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), Vertex, &soln_idx);
 	} else {
 	  //throw an error

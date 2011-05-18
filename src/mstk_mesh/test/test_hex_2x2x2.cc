@@ -10,18 +10,14 @@
 
 #include "mpi.h"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace AmanziGeometry;
-
 
 TEST(MSTK_HEX1)
 {
 
   int i, j, k, err, nc, nv;
-  std::vector<Entity_ID> faces(6), facenodes(4), cellnodes(8), expfacenodes(4);
+  std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), facenodes(4), cellnodes(8), expfacenodes(4);
   std::vector<int> facedirs(6);
-  std::vector<Point> ccoords(8), fcoords(4);
+  std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 8;
   int NF = 6;
@@ -45,16 +41,16 @@ TEST(MSTK_HEX1)
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_MSTK mesh("test/hex_2x2x2_ss.exo",MPI_COMM_WORLD,3);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_2x2x2_ss.exo",MPI_COMM_WORLD,3);
 
 
   // Check number of nodes and their coordinates
 
-  nv = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
-    Point coords;
+    Amanzi::AmanziGeometry::Point coords;
 
     coords.init(mesh.space_dimension());
 
@@ -65,7 +61,7 @@ TEST(MSTK_HEX1)
 
   // Check number of cells and their face nodes and their face coordinates
   
-  nc = mesh.num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
@@ -125,12 +121,12 @@ TEST(MSTK_HEX1)
   // Verify the sidesets
 
   int ns;
-  ns = mesh.num_sets(AmanziMesh::FACE);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
   CHECK_EQUAL(7,ns);
 
   unsigned int expsetids[7]={1,101,102,103,104,105,106};
-  std::vector<Set_ID> setids(7);
-  mesh.get_set_ids(AmanziMesh::FACE,&setids);
+  std::vector<Amanzi::AmanziMesh::Set_ID> setids(7);
+  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,&setids);
   
   CHECK_ARRAY_EQUAL(expsetids,setids,7);
 
@@ -145,13 +141,13 @@ TEST(MSTK_HEX1)
 
 
   for (i = 0; i < ns; i++) {
-    std::vector<Entity_ID> setfaces(6);
+    std::vector<Amanzi::AmanziMesh::Entity_ID> setfaces(6);
 
-    setsize = mesh.get_set_size(setids[i],AmanziMesh::FACE,AmanziMesh::OWNED);
+    setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
     CHECK_EQUAL(expsetsizes[i],setsize);
 
 
-    mesh.get_set_entities(setids[i],AmanziMesh::FACE, AmanziMesh::OWNED, &setfaces);
+    mesh.get_set_entities(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, &setfaces);
     
     int allfound = 1;
     for (j = 0; j < setsize; j++) {

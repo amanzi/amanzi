@@ -20,10 +20,11 @@
 
 using namespace std;
 using namespace boost;
-using namespace Amanzi;
-using namespace AmanziMesh;
 
-MeshAuditOld:: MeshAuditOld(Teuchos::RCP<Mesh> &mesh_, ostream& os_) :
+namespace Amanzi
+{
+
+MeshAuditOld:: MeshAuditOld(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, ostream& os_) :
       mesh(mesh_), comm(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
       os(os_),
       nnode(mesh_->node_map(true).NumMyElements()),
@@ -339,7 +340,7 @@ bool MeshAuditOld::check_entity_counts() const
   bool error = false;
 
   // Check the number of owned nodes.
-  n = mesh->count_entities(NODE,OWNED);
+  n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
   nref = mesh->node_map(false).NumMyElements();
   if (n != nref) {
     os << ": ERROR: count_entities(NODE,OWNED)=" << n << "; should be " << nref << endl;
@@ -347,7 +348,7 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of used nodes.
-  n = mesh->count_entities(NODE,USED);
+  n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::USED);
   nref = mesh->node_map(true).NumMyElements();
   if (n != nref) {
     os << "ERROR: count_entities(NODE,USED)=" << n << "; should be " << nref << endl;
@@ -355,7 +356,7 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of owned faces.
-  n = mesh->count_entities(FACE,OWNED);
+  n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
   nref = mesh->face_map(false).NumMyElements();
   if (n != nref) {
     os << "ERROR: count_entities(FACE,OWNED)=" << n << "; should be " << nref << endl;
@@ -363,7 +364,7 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of used faces.
-  n = mesh->count_entities(FACE,USED);
+  n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::USED);
   nref = mesh->face_map(true).NumMyElements();
   if (n != nref) {
     os << "ERROR: count_entities(FACE,USED)=" << n << "; should be " << nref << endl;
@@ -371,7 +372,7 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of owned cells.
-  n = mesh->count_entities(CELL,OWNED);
+  n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
   nref = mesh->cell_map(false).NumMyElements();
   if (n != nref) {
     os << "ERROR: count_entities(CELL,OWNED)=" << n << "; should be " << nref << endl;
@@ -379,7 +380,7 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of used cells.
-  n = mesh->count_entities(CELL,USED);
+  n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::USED);
   nref = mesh->cell_map(true).NumMyElements();
   if (n != nref) {
     os << "ERROR: count_entities(CELL,USED)=" << n << "; should be " << nref << endl;
@@ -863,7 +864,7 @@ bool MeshAuditOld::check_cell_to_faces_to_nodes() const
     bool bad_dir  = false;
     for (int k = 0; k < cface.size(); ++k) {
       for (int i = 0; i < fnode_ref.size(); ++i)
-        fnode_ref[i] = cnode[Amanzi::AmanziMesh::HexFaceVert[k][i]];
+        fnode_ref[i] = cnode[AmanziMesh::HexFaceVert[k][i]];
       mesh->face_to_nodes(cface[k], fnode.begin(), fnode.end()); // this should not fail
       int dir = same_face(fnode, fnode_ref); // should be the same face
       if (dir == 0) // wrong face
@@ -1559,20 +1560,20 @@ bool MeshAuditOld::check_cell_to_faces_ghost_data() const
 
 bool MeshAuditOld::check_node_set_ids() const
 {
-  return check_get_set_ids(NODE);
+  return check_get_set_ids(AmanziMesh::NODE);
 }
 
 bool MeshAuditOld::check_face_set_ids() const
 {
-  return check_get_set_ids(FACE);
+  return check_get_set_ids(AmanziMesh::FACE);
 }
 
 bool MeshAuditOld::check_cell_set_ids() const
 {
-  return check_get_set_ids(CELL);
+  return check_get_set_ids(AmanziMesh::CELL);
 }
 
-bool MeshAuditOld::check_get_set_ids(Entity_kind kind) const
+bool MeshAuditOld::check_get_set_ids(AmanziMesh::Entity_kind kind) const
 {
   bool error = false;
 
@@ -1659,20 +1660,20 @@ bool MeshAuditOld::check_get_set_ids(Entity_kind kind) const
 
 bool MeshAuditOld::check_valid_node_set_id() const
 {
-  return check_valid_set_id(NODE);
+  return check_valid_set_id(AmanziMesh::NODE);
 }
 
 bool MeshAuditOld::check_valid_face_set_id() const
 {
-  return check_valid_set_id(FACE);
+  return check_valid_set_id(AmanziMesh::FACE);
 }
 
 bool MeshAuditOld::check_valid_cell_set_id() const
 {
-  return check_valid_set_id(CELL);
+  return check_valid_set_id(AmanziMesh::CELL);
 }
 
-bool MeshAuditOld::check_valid_set_id(Entity_kind kind) const
+bool MeshAuditOld::check_valid_set_id(AmanziMesh::Entity_kind kind) const
 {
   // Get the list of set IDs.
   int nset = mesh->num_sets(kind); // this should not fail
@@ -1716,20 +1717,20 @@ bool MeshAuditOld::check_valid_set_id(Entity_kind kind) const
 
 bool MeshAuditOld::check_node_sets() const
 {
-  return check_sets(NODE, mesh->node_map(false), mesh->node_map(true));
+  return check_sets(AmanziMesh::NODE, mesh->node_map(false), mesh->node_map(true));
 }
 
 bool MeshAuditOld::check_face_sets() const
 {
-  return check_sets(FACE, mesh->face_map(false), mesh->face_map(true));
+  return check_sets(AmanziMesh::FACE, mesh->face_map(false), mesh->face_map(true));
 }
 
 bool MeshAuditOld::check_cell_sets() const
 {
-  return check_sets(CELL, mesh->cell_map(false), mesh->cell_map(true));
+  return check_sets(AmanziMesh::CELL, mesh->cell_map(false), mesh->cell_map(true));
 }
 
-bool MeshAuditOld::check_sets(Entity_kind kind,
+bool MeshAuditOld::check_sets(AmanziMesh::Entity_kind kind,
                           const Epetra_Map &map_own, const Epetra_Map &map_use) const
 {
   bool error = false;
@@ -1743,8 +1744,10 @@ bool MeshAuditOld::check_sets(Entity_kind kind,
     os << "  Checking set ID=" << sids[n] << " ..." << endl;
 
     // Basic sanity checks of the owned and used sets.
-    bool bad_set = check_get_set(sids[n], kind, OWNED, map_own) ||
-                   check_get_set(sids[n], kind, USED,  map_use);
+    bool bad_set = check_get_set(sids[n], kind, AmanziMesh::OWNED, 
+				 map_own) ||
+                   check_get_set(sids[n], kind, AmanziMesh::USED,  
+				 map_use);
     bad_set = global_any(bad_set);
 
     // Verify the used set relates correctly to the owned set.
@@ -1762,8 +1765,10 @@ bool MeshAuditOld::check_sets(Entity_kind kind,
 // to the map.  This test runs independently on each process and returns a
 // per-process pass/fail result.
 
-bool MeshAuditOld::check_get_set(unsigned int sid, Entity_kind kind,
-                             Parallel_type ptype, const Epetra_Map &map) const
+bool MeshAuditOld::check_get_set(unsigned int sid, 
+				 AmanziMesh::Entity_kind kind,
+				 AmanziMesh::Parallel_type ptype, 
+				 const Epetra_Map &map) const
 {
   // Get the size of the set.
   int n;
@@ -1819,26 +1824,31 @@ bool MeshAuditOld::check_get_set(unsigned int sid, Entity_kind kind,
 // presented in any order.  This is a collective test, returning a collective
 // pass/fail result.
 
-bool MeshAuditOld::check_used_set(unsigned int sid, Entity_kind kind,
-                               const Epetra_Map &map_own, const Epetra_Map &map_use) const
+bool MeshAuditOld::check_used_set(unsigned int sid, 
+				  AmanziMesh::Entity_kind kind,
+				  const Epetra_Map &map_own, 
+				  const Epetra_Map &map_use) const
 {
   if (comm.NumProc() == 1) {
 
     // In serial, the owned and used sets should be identical.
 
-    int n = mesh->get_set_size(sid, kind, OWNED);
+    int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
     vector<unsigned int> set_own(n);
-    mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
+    mesh->get_set(sid, kind, AmanziMesh::OWNED, set_own.begin(), 
+		  set_own.end());
 
     // Set sizes had better be the same.
-    if (mesh->get_set_size(sid, kind, USED) != set_own.size()) {
+    if (mesh->get_set_size(sid, kind, AmanziMesh::USED) != 
+	set_own.size()) {
       os << "  ERROR: owned and used set sizes differ" << endl;
       return true;
     }
 
     // Verify that the two sets are identical.
     vector<unsigned int> set_use(n);
-    mesh->get_set(sid, kind, USED, set_use.begin(), set_use.end());
+    mesh->get_set(sid, kind, AmanziMesh::USED, set_use.begin(), 
+		  set_use.end());
     bool bad_data = false;
     for (int j = 0; j < n; ++j)
       if (set_use[j] != set_own[j]) bad_data = true;
@@ -1851,13 +1861,14 @@ bool MeshAuditOld::check_used_set(unsigned int sid, Entity_kind kind,
 
   } else {
 
-    int n = mesh->get_set_size(sid, kind, OWNED);
+    int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
     vector<unsigned int> set_own(n);
-    mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
+    mesh->get_set(sid, kind, AmanziMesh::OWNED, set_own.begin(), 
+		  set_own.end());
 
-    n = mesh->get_set_size(sid, kind, USED);
+    n = mesh->get_set_size(sid, kind, AmanziMesh::USED);
     vector<unsigned int> set_use(n);
-    mesh->get_set(sid, kind, USED,  set_use.begin(), set_use.end());
+    mesh->get_set(sid, kind, AmanziMesh::USED,  set_use.begin(), set_use.end());
 
     // Tag all LIDs in the used map that should belong to the used set;
     // the owned set LIDs are taken as definitive.
@@ -1907,20 +1918,20 @@ bool MeshAuditOld::check_used_set(unsigned int sid, Entity_kind kind,
 
 bool MeshAuditOld::check_node_sets_alt() const
 {
-  return check_sets_alt(NODE);
+  return check_sets_alt(AmanziMesh::NODE);
 }
 
 bool MeshAuditOld::check_face_sets_alt() const
 {
-  return check_sets_alt(FACE);
+  return check_sets_alt(AmanziMesh::FACE);
 }
 
 bool MeshAuditOld::check_cell_sets_alt() const
 {
-  return check_sets_alt(CELL);
+  return check_sets_alt(AmanziMesh::CELL);
 }
 
-bool MeshAuditOld::check_sets_alt(Entity_kind kind) const
+bool MeshAuditOld::check_sets_alt(AmanziMesh::Entity_kind kind) const
 {
   bool error = false;
 
@@ -1948,8 +1959,9 @@ bool MeshAuditOld::check_sets_alt(Entity_kind kind) const
   for (int n = 0; n < sids.size(); ++n) {
     os << "  Checking set ID=" << sids[n] << " ..." << endl;
 
-    bool bad_set = check_get_set_alt(sids[n], kind, OWNED) ||
-                   check_get_set_alt(sids[n], kind, USED);
+    bool bad_set = check_get_set_alt(sids[n], kind, 
+				     AmanziMesh::OWNED) ||
+                   check_get_set_alt(sids[n], kind, AmanziMesh::USED);
 
     // OUGHT TO DO TESTING OF THE GHOST SETS
 
@@ -1964,8 +1976,9 @@ bool MeshAuditOld::check_sets_alt(Entity_kind kind) const
 // the normative std::vector-based method.  This test runs independently on each
 // process and returns a per-process pass/fail result.
 
-bool MeshAuditOld::check_get_set_alt(unsigned int sid, Entity_kind kind,
-                                  Parallel_type ptype) const
+bool MeshAuditOld::check_get_set_alt(unsigned int sid, 
+				     AmanziMesh::Entity_kind kind,
+				     AmanziMesh::Parallel_type ptype) const
 {
   int n = mesh->get_set_size(sid, kind, ptype);
   vector<unsigned int> set0(n);
@@ -2117,3 +2130,5 @@ bool MeshAuditOld::global_any(bool value) const
   comm.MaxAll(&lval, &gval, 1);
   return gval;
 }
+
+} // close namespace Amanzi

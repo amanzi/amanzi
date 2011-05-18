@@ -10,18 +10,14 @@
 
 #include "mpi.h"
 
-using namespace Amanzi;
-using namespace AmanziMesh;
-using namespace AmanziGeometry;
-
 
 TEST(MSTK_HEX_3x3x2)
 {
 
   int i, j, k, err, nc, nf, nv;
-  std::vector<Entity_ID> faces(6), cnodes(8), fnodes(6), expfacenodes(4);
+  std::vector<Amanzi::AmanziMesh::Entity_ID> faces(6), cnodes(8), fnodes(6), expfacenodes(4);
   std::vector<int> facedirs(6);
-  std::vector<Point> ccoords(8), fcoords(4);
+  std::vector<Amanzi::AmanziGeometry::Point> ccoords(8), fcoords(4);
 
   int NV = 18;
   int NF = 20;
@@ -56,14 +52,14 @@ TEST(MSTK_HEX_3x3x2)
 
   // Load a simple 2 element hex mesh 
 
-  Mesh_MSTK mesh("test/hex_3x3x2_ss.exo",MPI_COMM_WORLD,3);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_3x3x2_ss.exo",MPI_COMM_WORLD,3);
 
 
-  nv = mesh.num_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
-    Point coords;
+    Amanzi::AmanziGeometry::Point coords;
 
     coords.init(mesh.space_dimension()); 
 
@@ -74,10 +70,10 @@ TEST(MSTK_HEX_3x3x2)
   }
 
 
-  nf = mesh.num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
   
-  nc = mesh.num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
     
   for (i = 0; i < nc; i++) {
@@ -135,12 +131,12 @@ TEST(MSTK_HEX_3x3x2)
   // Verify the sidesets
 
   int ns;
-  ns = mesh.num_sets(AmanziMesh::FACE);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
   CHECK_EQUAL(7,ns);
 
   unsigned int expsetids[7]={1,101,102,103,104,105,106};
-  std::vector<Set_ID> setids(7);
-  mesh.get_set_ids(AmanziMesh::FACE,&setids);
+  std::vector<Amanzi::AmanziMesh::Set_ID> setids(7);
+  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,&setids);
   
   CHECK_ARRAY_EQUAL(expsetids,setids,7);
 
@@ -155,13 +151,13 @@ TEST(MSTK_HEX_3x3x2)
 
 
   for (i = 0; i < ns; i++) {
-    std::vector<Entity_ID> setfaces(16);
+    std::vector<Amanzi::AmanziMesh::Entity_ID> setfaces(16);
 
-    setsize = mesh.get_set_size(setids[i],AmanziMesh::FACE,AmanziMesh::OWNED);
+    setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
     CHECK_EQUAL(expsetsizes[i],setsize);
 
 
-    mesh.get_set_entities(setids[i],AmanziMesh::FACE, AmanziMesh::OWNED, &setfaces);
+    mesh.get_set_entities(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, &setfaces);
     
     int allfound = 1;
     for (j = 0; j < setsize; j++) {
@@ -184,17 +180,17 @@ TEST(MSTK_HEX_3x3x2)
 
 
 
-  std::vector<Entity_ID>  c2f(6);
+  std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
   Epetra_Map cell_map(mesh.cell_epetra_map(true));
   Epetra_Map face_map(mesh.face_epetra_map(false));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
-      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,AmanziMesh::CELL));
+      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
       mesh.cell_get_faces(c, &c2f);
       for (int j=0; j<6; j++)
   	{
-  	  int f = face_map.LID(mesh.GID(c2f[j],AmanziMesh::FACE));
+  	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
   	  CHECK( f == c2f[j] );
   	}
 
