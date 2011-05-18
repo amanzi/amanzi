@@ -1,8 +1,9 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
- * @file   verify_stk_mesh.cc
+ * @file   verify_mesh.cc
  * @author William A. Perkins
- * @date Mon Dec 13 10:35:09 2010
+ * @date Wed May 18 12:33:22 2011
  * 
  * @brief  
  * 
@@ -11,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December 13, 2010 by William A. Perkins
-// Last Change: Mon Dec 13 10:35:09 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed May 18 12:33:22 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -22,12 +23,9 @@
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 
-#include "Exodus_readers.hh"
-#include "Parallel_Exodus_file.hh"
-#include "Mesh_factory.hh"
-#include "Mesh_maps_stk.hh"
-
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
+#include "MeshException.hh"
 
 int main (int argc, char* argv[])
 {
@@ -42,20 +40,28 @@ int main (int argc, char* argv[])
     return 3;
   }
 
-  // the first, and only, command line argument is a file name; when
-  // run in parallel this is a base name to which the number of
-  // processes and process id is added, e.g., basename.N.P; if run
-  // serially the file name is the complete name of the file
+  // the first, and only, command line argument is a file name. Three
+  // types are supported depending on which frameworks are compiled in
 
   std::string filename(argv[1]);
 
-  Teuchos::RCP<Mesh_maps_base> 
-    maps(new STK_mesh::Mesh_maps_stk(comm, filename.c_str()));
+  Amanzi::AmanziMesh::MeshFactory factory(comm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+
+  try {
+    mesh = factory(filename);
+  } catch (const Amanzi::AmanziMesh::Message& e) {
+    std::cerr << argv[0] << ": mesh error: " << e.what() << std::endl;
+    exit(3);
+  } catch (const std::exception& e) {
+    std::cerr << argv[0] << ": error: " << e.what() << std::endl;
+    exit(3);
+  }
 
   int status;
 
   if (nproc == 1) {
-    MeshAudit audit(maps);
+    MeshAudit audit(mesh);
     status = audit.Verify();
   } else {
     std::ostringstream ofile;
@@ -63,7 +69,7 @@ int main (int argc, char* argv[])
     std::ofstream ofs(ofile.str().c_str());
     if (me == 0)
       std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
-    MeshAudit audit(maps, ofs);
+    MeshAudit audit(mesh, ofs);
     status = audit.Verify();
   }
 
