@@ -24,9 +24,8 @@ project(EXEC)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${EXO_SOURCE_DIR})
+include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
@@ -40,21 +39,6 @@ include_directories(${CHEM_INCLUDES_DIR})
 
 # The mesh frameworks
 set(amanzi_mesh_libs "")
-if ( ENABLE_STK_Mesh )
-    include_directories(${STK_INCLUDE_DIRS})
-    include_directories(${STK_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs stk_mesh)
-endif()
-if(ENABLE_MOAB_Mesh)
-    include_directories(${MOAB_INCLUDE_DIRS})
-    include_directories(${MOAB_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs moab_mesh)
-endif()    
-if(ENABLE_MSTK_Mesh)
-    include_directories(${MSTK_INCLUDE_DIRS})
-    include_directories(${MSTK_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs mstk_mesh)
-endif()    
 
 # External (TPL) include directories
 include_directories(${Boost_INCLUDE_DIRS})
@@ -87,27 +71,7 @@ target_link_libraries(amanzi-demo-driver
                       ${Boost_LIBRARIES})
 
 #
-# Binary: stk_mesh_test_hex
+# Binary: verify_mesh
 #
-if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
-    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
-    target_link_libraries(stk_mesh_test_hex 
-                         exodus mesh_data stk_mesh output mesh_audit
-                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
-endif()
-
-#
-# Binary: verify_moab_mesh
-#
-if ( ENABLE_STK_Mesh )
-    add_executable(verify_stk_mesh verify_stk_mesh.cc)
-    target_link_libraries(verify_stk_mesh stk_mesh mesh_audit exodus)
-endif()
-
-#
-# Binary: verify_moab_mesh
-#
-if ( ENABLE_MOAB_Mesh )
-    add_executable(verify_moab_mesh verify_moab_mesh.cc)
-    target_link_libraries(verify_moab_mesh moab_mesh mesh_audit)
-endif()
+add_executable(verify_mesh verify_mesh.cc)
+target_link_libraries(verify_mesh mesh_factory mesh_audit)
