@@ -32,7 +32,7 @@ namespace mpl = boost::mpl;
 #ifdef HAVE_MOAB_MESH
 #define MOAB_FLAG true
 #define USE_MPI 
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 #undef USE_MPI
 #endif
 
@@ -215,11 +215,11 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
 #ifdef HAVE_MOAB_MESH
 #define MOAB_FLAG true
 #define USE_MPI
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 #undef USE_MPI
 #else
 #define MOAB_FLAG false
-typedef bogus_maps Mesh_maps_moab;
+typedef bogus_maps Mesh_MOAB;
 #endif
 
 #ifdef HAVE_STK_MESH
@@ -299,7 +299,7 @@ typedef mpl::eval_if<
 // instantiate a mesh when it's read from a file or file set
 typedef mpl::eval_if<
   mpl::bool_<M == MOAB>
-  , mpl::identity<Mesh_maps_moab>
+  , mpl::identity<Mesh_MOAB>
   , mpl::eval_if<
       mpl::bool_<M == STKMESH>
       , mpl::identity<Mesh_STK>
