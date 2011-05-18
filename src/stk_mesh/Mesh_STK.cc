@@ -426,7 +426,7 @@ Mesh_STK::cell_get_face_adj_cells(const Entity_ID cellid,
 // -------------------------------------------------------------
 void Mesh_STK::cell_get_node_adj_cells(const Entity_ID cellid,
                                        const Parallel_type ptype,
-                                       Entity_ID_List *nadj_cellids)
+                                       Entity_ID_List *nadj_cellids) const
 {
   // FIXME
 }
