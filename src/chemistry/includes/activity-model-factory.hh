@@ -1,13 +1,12 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_FACTORY_HPP__
-#define __ACTIVITY_MODEL_FACTORY_HPP__
+#ifndef __ACTIVITY_MODEL_FACTORY_HH__
+#define __ACTIVITY_MODEL_FACTORY_HH__
 
 #include <string>
 
-#include "ActivityModel.hpp"
+#include "activity-model.hh"
 
-class ActivityModelFactory 
-{
+class ActivityModelFactory {
  public:
   ActivityModelFactory();
   ~ActivityModelFactory();

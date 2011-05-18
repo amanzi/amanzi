@@ -1,14 +1,19 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Chemistry_State_hpp__
-#define __Chemistry_State_hpp__
+#ifndef __CHEMISTRY_STATE_HH__
+#define __CHEMISTRY_STATE_HH__
 
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Teuchos_RCP.hpp"
 
 namespace Amanzi
 {
+
+// forward declarations
+class Epetra_Vector;
+class Epetra_MultiVector;
+class Epetra_SerialDenseVector;
+
+class State;
+class Mesh_maps_base;
 
 class Chemistry_State {
 
@@ -47,4 +52,4 @@ class Chemistry_State {
 
 } // close namespace Amanzi
 
-#endif
+#endif  // __CHEMISTRY_STATE_HH__

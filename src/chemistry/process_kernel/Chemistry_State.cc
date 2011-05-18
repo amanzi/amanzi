@@ -1,13 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "State.hpp"
-#include "Chemistry_State.hpp"
+#include "Chemistry_State.hh"
+
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_MultiVector.h"
-#include "cell_geometry.hh"
+#include "Teuchos_RCPDecl.hpp"
 
+#include "cell_geometry.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
+#include "State.hpp"
+
 
 namespace Amanzi
 {

@@ -9,7 +9,9 @@
 #include "Verbosity.hpp"
 
 KineticRate::KineticRate(void)
-    : verbosity_(kSilent)
+    : verbosity_(kSilent),
+      name_("KineticRate"),
+      identifier_(0)
 {
   reactant_names.clear();
   reactant_stoichiometry.clear();
@@ -60,6 +62,7 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
       }
     }
     if (species_found == false && verbosity() == kDebugMineralKinetics) {
+      // TODO(bandre): is this actually a runtime error?
       std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'" 
                 << in_names.at(current) << "\' in " << species_type 
                 << " species list! " << std::endl;

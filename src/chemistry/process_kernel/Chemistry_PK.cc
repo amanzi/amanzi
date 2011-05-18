@@ -1,15 +1,26 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+#include "Chemistry_PK.hh"
+
+#include <string>
 #include <algorithm>
 
-#include "Chemistry_PK.hpp"
-#include "ChemistryException.hpp"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "Mesh_maps_base.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+
+#include "Chemistry_State.hh"
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "Verbosity.hpp"
+#include "ChemistryException.hpp"
 
-#include "errors.hh"
-#include "exceptions.hh"
 
 /*******************************************************************************
  **
