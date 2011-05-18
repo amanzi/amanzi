@@ -74,4 +74,5 @@ target_link_libraries(amanzi-demo-driver
 # Binary: verify_mesh
 #
 add_executable(verify_mesh verify_mesh.cc)
-target_link_libraries(verify_mesh mesh_factory mesh_audit)
+target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
+                      ${Boost_LIBRARIES})
