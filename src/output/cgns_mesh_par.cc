@@ -4,6 +4,8 @@
 #include "Epetra_Export.h"
 #include "Epetra_IntVector.h"
 
+namespace Amanzi {
+
 namespace CGNS_PAR {
 
   // Handles to carry around: - keep here or in cgnswrite??
@@ -357,4 +359,6 @@ namespace CGNS_PAR {
     if (rank == 0) cg_close(file_idx);
   }
   
-}
+} // namespace CGNS_PAR
+
+} // namespace CGNS

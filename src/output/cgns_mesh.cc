@@ -16,6 +16,9 @@ int num_soln = 0;   // number of solution nodes
 std::vector<double> timeList;
 std::vector<string> nameList;
 
+namespace Amanzi
+{
+
 namespace CGNS {
 
     
@@ -35,8 +38,8 @@ void create_mesh_file(Mesh &mesh_maps, std::string filename)
 	cg_base_write(file_idx, "Base", icelldim, iphysdim, &base_idx);
 			
 	// get num_nodes, num_cells
-	unsigned int num_nodes = mesh_maps.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
-	unsigned int num_cells = mesh_maps.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+	unsigned int num_nodes = mesh_maps.num_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
+	unsigned int num_cells = mesh_maps.num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
 	
 	// create zone
 	isize[0][0] = num_nodes;
@@ -135,7 +138,7 @@ void open_data_file(const std::string soln_filename)
 	
     }
     
-  void create_timestep(const double time, const int iter, Amanzi::AmanziMesh::Entity_kind kind)
+  void create_timestep(const double time, const int iter, AmanziMesh::Entity_kind kind)
     {
 	int size[2];
 	std::stringstream solname;
@@ -174,9 +177,9 @@ void open_data_file(const std::string soln_filename)
 	cg_array_write("SolutionPointers",Character,2,size,solutionList);
 	
 	// create solution node under zone
-	if (kind == Amanzi::AmanziMesh::CELL) {
+	if (kind == AmanziMesh::CELL) {
 	    cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), CellCenter, &soln_idx);
-	} else if (kind == Amanzi::AmanziMesh::NODE) {
+	} else if (kind == AmanziMesh::NODE) {
 	    cg_sol_write(file_idx, base_idx,zone_idx, nameList.back().c_str(), Vertex, &soln_idx);
 	} else {
 	    //throw an error
@@ -207,4 +210,6 @@ void close_data_file()
 	cg_close(file_idx);
     }
     
-}
+} // close namespace CGNS
+
+} // close namespace Amanzi

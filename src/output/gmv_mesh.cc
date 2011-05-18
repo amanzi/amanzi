@@ -1,5 +1,8 @@
 #include "gmv_mesh.hh"
 
+namespace Amanzi 
+{
+
 namespace GMV {
 
   static inline void write_mesh_to_file_(AmanziMesh::Mesh &mesh_map, std::string filename)
@@ -7,13 +10,13 @@ namespace GMV {
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
     // Write node info
-    unsigned int num_nodes = mesh_map.num_entities(NODE, OWNED);
+    unsigned int num_nodes = mesh_map.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
     double *x = new double [num_nodes];
     double *y = new double [num_nodes];
     double *z = new double [num_nodes];
 
     for (int i=0; i<num_nodes; i++) {
-      Point xc;
+      AmanziGeometry::Point xc;
       mesh_map.node_get_coordinates(i,&xc);
       x[i] = xc[0];
       y[i] = xc[1];
@@ -103,7 +106,7 @@ namespace GMV {
     write_mesh_to_file_(mesh_map, filename);
   }
 
-  void open_data_file(Mesh &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits) {
+  void open_data_file(AmanziMesh::Mesh &mesh_map, std::string filename, unsigned int cycleno, unsigned int digits) {
 
     unsigned int num_nodes = mesh_map.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
     unsigned int num_cells = mesh_map.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -153,4 +156,7 @@ namespace GMV {
     gmvwrite_variable_endvars();
     gmvwrite_closefile();
   }
-}
+
+} // namespace GMV
+
+} // namespace Amanzi
