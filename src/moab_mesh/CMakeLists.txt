@@ -22,8 +22,7 @@ project(MOAB)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -40,7 +39,7 @@ add_definitions("-DUSE_MPI")
 # libraries listed. Ticket #335
 file(GLOB moab_mesh_files "*.cc") 
 add_library(moab_mesh ${moab_mesh_files})
-target_link_libraries(moab_mesh mesh_data error_handling ${MOAB_LIBRARIES} ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES})
+target_link_libraries(moab_mesh mesh error_handling geometry ${MOAB_LIBRARIES} ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
     

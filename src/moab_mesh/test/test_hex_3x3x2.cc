@@ -2,8 +2,7 @@
 
 #include <iostream>
 
-#include "../Mesh_maps_moab.hh"
-#include "../../mesh_data/Entity_kind.hh"
+#include "../Mesh_MOAB.hh"
 
 
 #include "Epetra_Map.h"
@@ -84,10 +83,10 @@ TEST(MOAB_HEX_3x3x2)
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_maps_moab mesh("test/hex_3x3x2_ss.exo",MPI_COMM_WORLD);
+  Amanazi::AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x2_ss.exo",MPI_COMM_WORLD);
 
 
-  nv = mesh.count_entities(Mesh_data::NODE,OWNED);
+  nv = mesh.count_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
@@ -98,10 +97,10 @@ TEST(MOAB_HEX_3x3x2)
   }
 
 
-  nf = mesh.count_entities(Mesh_data::FACE,OWNED);
+  nf = mesh.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
   
-  nc = mesh.count_entities(Mesh_data::CELL,OWNED);
+  nc = mesh.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
     
   for (i = 0; i < nc; i++) {
@@ -138,11 +137,11 @@ TEST(MOAB_HEX_3x3x2)
   // Verify the sidesets
 
   int ns;
-  ns = mesh.num_sets(Mesh_data::FACE);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
   CHECK_EQUAL(7,ns);
 
   unsigned int setids[7], expsetids[7]={1,101,102,103,104,105,106};
-  mesh.get_set_ids(Mesh_data::FACE,setids,setids+7);
+  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,setids,setids+7);
   
   CHECK_ARRAY_EQUAL(expsetids,setids,7);
 
@@ -159,11 +158,11 @@ TEST(MOAB_HEX_3x3x2)
   for (i = 0; i < ns; i++) {
     unsigned int setfaces[16];
 
-    setsize = mesh.get_set_size(setids[i],Mesh_data::FACE,OWNED);
+    setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
     CHECK_EQUAL(expsetsizes[i],setsize);
 
 
-    mesh.get_set(setids[i],Mesh_data::FACE, OWNED, setfaces, setfaces+setsize);
+    mesh.get_set(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, setfaces, setfaces+setsize);
     
     CHECK_ARRAY_EQUAL(expsetfaces[i],setfaces,setsize);
   }
@@ -176,11 +175,11 @@ TEST(MOAB_HEX_3x3x2)
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
-      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Mesh_data::CELL));
+      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
       mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
       for (int j=0; j<6; j++)
 	{
-	  int f = face_map.LID(mesh.GID(c2f[j],Mesh_data::FACE));
+	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
 	  CHECK( f == c2f[j] );
 	}
 

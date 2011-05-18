@@ -2,8 +2,7 @@
 
 #include <iostream>
 
-#include "../Mesh_maps_moab.hh"
-#include "../../mesh_data/Entity_kind.hh"
+#include "../Mesh_MOAB.hh"
 
 
 #include "Epetra_Map.h"
@@ -28,12 +27,12 @@ TEST(MOAB_HEX_4x4x4)
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_maps_moab mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD);
 
-  nf = mesh.count_entities(Mesh_data::FACE,OWNED);
+  nf = mesh.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
   
-  nc = mesh.count_entities(Mesh_data::CELL,OWNED);
+  nc = mesh.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
@@ -57,12 +56,12 @@ TEST(MOAB_HEX_4x4x4)
 
   // Verify cell sets
 
-  ns = mesh.num_sets(Mesh_data::CELL);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::CELL);
   CHECK_EQUAL(3,ns);
 
   unsigned int csetids[3], expcsetids[3] = {10000,20000,30000};
 
-  mesh.get_set_ids(Mesh_data::CELL,csetids,csetids+3);
+  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,csetids,csetids+3);
 
   CHECK_ARRAY_EQUAL(expcsetids,csetids,3);
 
@@ -76,11 +75,11 @@ TEST(MOAB_HEX_4x4x4)
   for (i = 0; i < ns; i++) {
     unsigned int setcells[9];
 
-    csetsize = mesh.get_set_size(csetids[i],Mesh_data::CELL,OWNED);
+    csetsize = mesh.get_set_size(csetids[i],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
     CHECK_EQUAL(expcsetsizes[i],csetsize);
 
 
-    mesh.get_set(csetids[i],Mesh_data::CELL, OWNED, setcells, setcells+csetsize);
+    mesh.get_set(csetids[i],Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, setcells, setcells+csetsize);
     
     CHECK_ARRAY_EQUAL(expcsetcells[i],setcells,csetsize);
   }
@@ -88,14 +87,14 @@ TEST(MOAB_HEX_4x4x4)
 
   // Verify the sidesets
 
-  ns = mesh.num_sets(Mesh_data::FACE);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
   CHECK_EQUAL(21,ns);
   
   unsigned int fsetids[21], expfsetids[21]={1,101,102,103,104,105,106,
 					    10001,10002,20001,30001,10003,
 					    20002,30002,10004,20003,30003,
 					    10005,20004,30004,30005};
-  mesh.get_set_ids(Mesh_data::FACE,fsetids,fsetids+21);
+  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,fsetids,fsetids+21);
   
   CHECK_ARRAY_EQUAL(expfsetids,fsetids,21);
 
@@ -131,13 +130,13 @@ TEST(MOAB_HEX_4x4x4)
   for (i = 0; i < ns-1; i++) {
     unsigned int setfaces[9];
 
-    CHECK_EQUAL(true,mesh.valid_set_id(fsetids[i+1],Mesh_data::FACE));
+    CHECK_EQUAL(true,mesh.valid_set_id(fsetids[i+1],Amanzi::AmanziMesh::FACE));
    
-    fsetsize = mesh.get_set_size(fsetids[i+1],Mesh_data::FACE,OWNED);
+    fsetsize = mesh.get_set_size(fsetids[i+1],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
     CHECK_EQUAL(expfsetsizes[i],fsetsize);
 
 
-    mesh.get_set(fsetids[i+1],Mesh_data::FACE, OWNED, setfaces, setfaces+fsetsize);
+    mesh.get_set(fsetids[i+1],Amanzi::AmanziMesh::FACE, OWNED, setfaces, setfaces+fsetsize);
     
     CHECK_ARRAY_EQUAL(expfsetfaces[i],setfaces,fsetsize);
   }

@@ -2,8 +2,7 @@
 
 #include <iostream>
 
-#include "../Mesh_maps_moab.hh"
-#include "../../mesh_data/Entity_kind.hh"
+#include "../Mesh_MOAB.hh"
 
 
 #include "Epetra_Map.h"
@@ -48,34 +47,34 @@ TEST(MOAB_HEX_4x4x4_4P)
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_maps_moab mesh("test/hex_4x4x4_ss_4P.h5m",MPI_COMM_WORLD);
+  Mesh_MOAB mesh("test/hex_4x4x4_ss_4P.h5m",MPI_COMM_WORLD);
 
 
-  nv = mesh.count_entities(Mesh_data::NODE,OWNED);  
+  nv = mesh.count_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);  
   CHECK_EQUAL(NVowned[rank],nv);
   
-  nf = mesh.count_entities(Mesh_data::FACE,OWNED);  
+  nf = mesh.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);  
   CHECK_EQUAL(NFowned[rank],nf);
   
-  nc = mesh.count_entities(Mesh_data::CELL,OWNED);
+  nc = mesh.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NCowned[rank],nc);
 
-  nv = mesh.count_entities(Mesh_data::NODE,USED);  
+  nv = mesh.count_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);  
   CHECK_EQUAL(NVused[rank],nv);
   
-  nf = mesh.count_entities(Mesh_data::FACE,USED);  
+  nf = mesh.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);  
   CHECK_EQUAL(NFused[rank],nf);
   
-  nc = mesh.count_entities(Mesh_data::CELL,USED);
+  nc = mesh.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
   CHECK_EQUAL(NCused[rank],nc);
 
-  nv = mesh.count_entities(Mesh_data::NODE,GHOST);  
+  nv = mesh.count_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::GHOST);  
   CHECK_EQUAL(NVghost[rank],nv);
   
-  nf = mesh.count_entities(Mesh_data::FACE,GHOST);  
+  nf = mesh.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::GHOST);  
   CHECK_EQUAL(NFghost[rank],nf);
   
-  nc = mesh.count_entities(Mesh_data::CELL,GHOST);
+  nc = mesh.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::GHOST);
   CHECK_EQUAL(NCghost[rank],nc);
 
 
@@ -86,13 +85,13 @@ TEST(MOAB_HEX_4x4x4_4P)
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
-      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Mesh_data::CELL));
+      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
       mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
       mesh.cell_to_face_dirs(c, c2fdirs.begin(), c2fdirs.end());
 
       for (int j=0; j<6; j++)
 	{
-	  int f = face_map.LID(mesh.GID(c2f[j],Mesh_data::FACE));
+	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
 	  CHECK_EQUAL( f,c2f[j] );
 	  CHECK_EQUAL(1,abs(c2fdirs[j]));
 	}
@@ -103,12 +102,12 @@ TEST(MOAB_HEX_4x4x4_4P)
   // Verify cell sets
 
   int ns;
-  ns = mesh.num_sets(Mesh_data::CELL);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::CELL);
   CHECK_EQUAL(3,ns);
 
   unsigned int csetids[3], expcsetids[3] = {10000,20000,30000};
 
-  mesh.get_set_ids(Mesh_data::CELL,csetids,csetids+3);
+  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,csetids,csetids+3);
 
   CHECK_ARRAY_EQUAL(expcsetids,csetids,3);
 

@@ -3,8 +3,7 @@
 #include <iostream>
 
 
-#include "../Mesh_maps_moab.hh"
-#include "../../mesh_data/Entity_kind.hh"
+#include "../Mesh_MOAB.hh"
 
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
@@ -42,12 +41,12 @@ TEST(MOAB_HEX1)
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_maps_moab mesh("test/hex_2x2x2_ss.exo",MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x2_ss.exo",MPI_COMM_WORLD);
 
 
   // Check number of nodes and their coordinates
 
-  nv = mesh.count_entities(Mesh_data::NODE, OWNED);
+  nv = mesh.count_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
@@ -60,7 +59,7 @@ TEST(MOAB_HEX1)
 
   // Check number of cells and their face nodes and their face coordinates
   
-  nc = mesh.count_entities(Mesh_data::CELL,OWNED);
+  nc = mesh.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
 
     
@@ -91,11 +90,11 @@ TEST(MOAB_HEX1)
   // Verify the sidesets
 
   int ns;
-  ns = mesh.num_sets(Mesh_data::FACE);
+  ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
   CHECK_EQUAL(7,ns);
 
   unsigned int setids[7], expsetids[7]={1,101,102,103,104,105,106};
-  mesh.get_set_ids(Mesh_data::FACE,setids,setids+7);
+  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,setids,setids+7);
   
   CHECK_ARRAY_EQUAL(expsetids,setids,7);
 
@@ -112,11 +111,11 @@ TEST(MOAB_HEX1)
   for (i = 0; i < ns; i++) {
     unsigned int setfaces[6];
 
-    setsize = mesh.get_set_size(setids[i],Mesh_data::FACE,OWNED);
+    setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
     CHECK_EQUAL(expsetsizes[i],setsize);
 
 
-    mesh.get_set(setids[i],Mesh_data::FACE, OWNED, setfaces, setfaces+setsize);
+    mesh.get_set(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, setfaces, setfaces+setsize);
     
     CHECK_ARRAY_EQUAL(expsetfaces[i],setfaces,setsize);
   }
