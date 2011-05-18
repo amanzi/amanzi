@@ -32,6 +32,7 @@ static const int ZERO = 0;
 
 namespace Amanzi {
 namespace AmanziMesh {
+  namespace STK {
 
 // -------------------------------------------------------------
 //  class Mesh_STK
@@ -810,6 +811,6 @@ Mesh_STK::redistribute(const Teuchos::ParameterList &paramlist)
   this->redistribute(*newcmap);
 }
 
-
+} // namespace STK
 } // namespace AmanziMesh
 } // namespace Amanzi
