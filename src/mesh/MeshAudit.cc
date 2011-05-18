@@ -463,6 +463,7 @@ bool MeshAudit::check_face_refs_by_cells() const
 
   for (unsigned int j = 0; j < ncell; ++j) {
     mesh->cell_get_faces(j, &cface);
+    mesh->cell_get_faces(j, &cface);
     for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
   }
 
@@ -577,6 +578,7 @@ bool MeshAudit::check_cell_to_face_dirs() const
     fdirs.assign(6, INT_MAX);
     try {
       mesh->cell_get_face_dirs(j, &fdirs);  // this may fail
+      mesh->cell_get_face_dirs(j, &fdirs);
       bool bad_data = false;
       for (int k = 0; k < fdirs.size(); ++k)
         if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
@@ -1112,8 +1114,13 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
   for (unsigned int j = nface_own; j < nface_use; ++j) {
     mesh->face_get_nodes(j, &fnode);
     bool bad_data = false;
-    for (int k = 0; k < maxnodes; ++k)
-      if (node_map.GID(fnode[k]) != gids(j,k)) bad_data = true;
+    for (int k = 0; k < fnode.size(); ++k)
+      if (node_map.GID(fnode[k]) != gids(j,k)) { 
+        bad_data = true;
+        std::cerr << comm.MyPID() << ": used face " << j << ", node " << k << ": " 
+                  << node_map.GID(fnode[k]) << " != " << gids(j,k)
+                  << std::endl;
+      }
     if (bad_data) {
       // Determine just how bad the data is.
       AmanziMesh::Entity_ID_List fnode_ref(maxnodes);

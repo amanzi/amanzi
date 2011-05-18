@@ -467,6 +467,7 @@ void Mesh_simple::cell_get_faces (AmanziMesh::Entity_ID cell,
   unsigned int index = 6*cell;
 
   faceids->clear();
+
   for (int i = 0; i < 6; i++) {
     faceids->push_back(*(cell_to_face_.begin()+index));
     index++;
@@ -481,6 +482,7 @@ void Mesh_simple::cell_get_nodes (AmanziMesh::Entity_ID cell,
   unsigned int index = 8*cell;
 
   nodeids->clear();
+
   for (int i = 0; i < 8; i++) {
     nodeids->push_back(*(cell_to_node_.begin()+index));
     index++;
@@ -494,6 +496,7 @@ void Mesh_simple::face_get_nodes (AmanziMesh::Entity_ID face,
   unsigned int index = 4*face;
 
   nodeids->clear();
+
   for (int i = 0; i < 4; i++) {
     nodeids->push_back(*(face_to_node_.begin()+index));
     index++;
@@ -539,7 +542,10 @@ void Mesh_simple::cell_get_coordinates (AmanziMesh::Entity_ID local_cell_id,
 					std::vector<AmanziGeometry::Point> *ccoords) const
 {  
   std::vector<unsigned int> node_indices(8);
+
   cell_get_nodes (local_cell_id, &node_indices);
+
+  ccoords->clear();
 
   ccoords->clear();
 

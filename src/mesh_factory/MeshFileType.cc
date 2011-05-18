@@ -1,15 +1,20 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 // file: MeshFileType.cc
 // -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
+/**
+ * @file   MeshFileType.cc
+ * @author William A. Perkins
+ * @date Wed May 18 12:46:37 2011
+ * 
+ * @brief  
+ * 
+ * 
+ */
 // -------------------------------------------------------------
 // Created March 11, 2011 by William A. Perkins
-// Last Change: Mon May 16 14:17:44 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed May 18 12:46:37 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
-
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
@@ -30,7 +35,8 @@ namespace Amanzi {
 namespace AmanziMesh {
 
   static const std::string HDF5magic = "\211HDF\r\n\032\n";
-  static const std::string NetCDFmagic = "CDF\002";
+  static const std::string NetCDFmagic1 = "CDF\001";
+  static const std::string NetCDFmagic2 = "CDF\002";
   static const int magiclen = 16;
 
   static const boost::regex ExodusExt(".*\\.exo$", boost::regex::basic);
@@ -132,10 +138,15 @@ namespace AmanziMesh {
     switch (result) {
     case (ExodusII):
     case (Nemesis):
-      fmagic.assign(buffer, NetCDFmagic.size());
-      if (fmagic == NetCDFmagic) {
+      fmagic.assign(buffer, NetCDFmagic1.size());
+      if (fmagic == NetCDFmagic1) { 
         ok = true;
-      } else {
+      } 
+      fmagic.assign(buffer, NetCDFmagic2.size());
+      if (fmagic == NetCDFmagic2) { 
+        ok = true;
+      } 
+      if (!ok) {
         e.add_data(": bad magic number, expected NetCDF");
         fmagic.assign(buffer, HDF5magic.size());
         if (fmagic == HDF5magic) {
