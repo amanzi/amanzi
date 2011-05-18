@@ -2,7 +2,7 @@
 /**
  * @file   test_Read.cc
  * @author William A. Perkins
- * @date Tue May 17 11:47:52 2011
+ * @date Wed May 18 14:15:54 2011
  * 
  * @brief Some unit tests for reading a (serial) Exodus file and
  * building a STK_mesh::Mesh_maps_stk instance.
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 22, 2010 by William A. Perkins
-// Last Change: Tue May 17 11:47:52 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed May 18 14:15:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <sstream>
@@ -190,9 +190,8 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 2634);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 1);
 
-      // FIXME: Audit the mesh here
-      // Auditor audit("prism_", mesh);
-      // audit();
+      Auditor audit("prism_", mesh);
+      audit();
     }
 
   }
@@ -205,9 +204,8 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 592);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 5);
 
-      // FIXME: Audit the mesh here
-      // Auditor audit("mixed-coarse_", mesh);
-      // audit();
+      Auditor audit("mixed-coarse_", mesh);
+      audit();
     }
 
   }
@@ -221,9 +219,8 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 23186);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 6);
 
-      // FIXME: Audit the mesh here
-      // Auditor audit("mixed_", mesh);
-      // audit();
+      Auditor audit("mixed_", mesh);
+      audit();
     }
 
   }
@@ -372,9 +369,8 @@ SUITE (Exodus)
       comm.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 2634);
 
-      // FIXME: audit mesh here
-      // Auditor audit("prism.par.", mesh);
-      // audit();
+      Auditor audit("prism.par.", mesh);
+      audit();
     }
   }            
 
@@ -411,9 +407,8 @@ SUITE (Exodus)
       comm.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 48);
 
-      // FIXME: audit mesh here
-      // Auditor audit("mixed-coarse.par.", mesh);
-      // audit();
+      Auditor audit("mixed-coarse.par.", mesh);
+      audit();
     }
   }            
 
