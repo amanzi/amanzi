@@ -8,19 +8,16 @@
 #include "Epetra_Map.h"
 #include "Mesh.hh"
 
-namespace Amanzi
-{
-
 typedef enum { COMPLETE, UPDATING } status_type;
 
 class State {
 
 public:
 
-  State( int, Teuchos::RCP<AmanziMesh::Mesh> );
+  State( int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
 
   State( Teuchos::ParameterList &parameter_list, 
-	 Teuchos::RCP<AmanziMesh::Mesh> );
+	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
 
   ~State();
 
@@ -41,7 +38,7 @@ public:
   Teuchos::RCP<Epetra_MultiVector>  get_total_component_concentration () 
   { return total_component_concentration; };
   
-  const Teuchos::RCP<AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
+  const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
   const double get_time () const { return time; };
 
@@ -102,12 +99,10 @@ private:
   status_type status;
 
   // mesh
-  const Teuchos::RCP<AmanziMesh::Mesh> mesh_maps;
+  const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps;
 
   // parameter list
   Teuchos::ParameterList parameter_list;
 }; 
-
-} // close namespace Amanzi
 
 #endif
