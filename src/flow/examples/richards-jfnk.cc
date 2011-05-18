@@ -1,4 +1,4 @@
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 
   // MESH
-  Teuchos::RCP<Mesh_maps_moab> mesh(new Mesh_maps_moab(argv[1], MPI_COMM_WORLD));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MOAB> mesh(new Amanzi::AmanziMesh::Mesh_MOAB(argv[1], MPI_COMM_WORLD));
 
   // BOUNDARY CONDITIONS
   Teuchos::ParameterList bc_params;

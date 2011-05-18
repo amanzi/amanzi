@@ -1,4 +1,4 @@
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 //#include "mpi.h"
 #include "UnitTest++.h"
 
@@ -43,11 +43,11 @@ struct problem_setup
     // Create the mesh.
     //mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
     if (comm->NumProc() == 1)
-      mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab("test/4x4x4.g", MPI_COMM_WORLD));
+      mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh_MOAB>(new Amanzi::AmanziMesh::Mesh_MOAB("test/4x4x4.g", MPI_COMM_WORLD));
     else {
       std::ostringstream file;
       file << "test/4x4x4-" << comm->NumProc() << "P.h5m";
-      mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab(file.str().c_str(), MPI_COMM_WORLD));
+      mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh_MOAB>(new Amanzi::AmanziMesh::Mesh_MOAB(file.str().c_str(), MPI_COMM_WORLD));
     }
 
     // Define the default BC parameter list: no flow on all sides.

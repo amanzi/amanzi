@@ -1,4 +1,4 @@
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
   CGNS::create_mesh_file(*mesh, cgns_filename);
 
   CGNS::open_data_file(cgns_filename);
-  CGNS::create_timestep(0.0, 0, Mesh_data::CELL);
+  CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
 
   CGNS::write_field_data(*(S->get_pressure()), "pressure");
   CGNS::write_field_data(*(S->get_permeability()), "permeability");
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
     if ( i%5 == 1 ) 
       { 
 	CGNS::open_data_file(cgns_filename);
-	CGNS::create_timestep(S->get_time(), i, Mesh_data::CELL);
+	CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
 
 	CGNS::write_field_data(*(S->get_pressure()), "pressure");
 	CGNS::write_field_data(*(S->get_permeability()), "permeability");
@@ -356,7 +356,7 @@ int main(int argc, char *argv[])
   } while (t1 >= tlast);
 
   CGNS::open_data_file(cgns_filename);
-  CGNS::create_timestep(S->get_time(), i, Mesh_data::CELL);
+  CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
   
   CGNS::write_field_data(*(S->get_pressure()), "pressure");
   CGNS::write_field_data(*(S->get_permeability()), "permeability");
