@@ -585,7 +585,7 @@ void Mesh_simple::get_set_ids (AmanziMesh::Entity_kind kind,
     }      
   default:
     // we do not have anything for NODE, yet
-    throw std::exception();
+    return;
   }
 }
 
@@ -625,7 +625,7 @@ bool Mesh_simple::valid_set_id (AmanziMesh::Entity_ID id,
     break;
   default:
     // we do not have anything for NODE, yet
-    throw std::exception();  
+    return false;
   }
     
 }
