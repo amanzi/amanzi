@@ -35,6 +35,7 @@ Mesh_MOAB::Mesh_MOAB (const char *filename, MPI_Comm comm)
   }
 
   epcomm = new Epetra_MpiComm(comm);
+  Mesh::set_comm(epcomm);
 
 
   if (!mbcomm || mbcomm->size() == 1) 
