@@ -33,6 +33,9 @@ include_directories(${CHEM_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${EXO_SOURCE_DIR})
 
 
 # Chemistry includes directory
