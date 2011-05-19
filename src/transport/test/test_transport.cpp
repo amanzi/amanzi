@@ -45,19 +45,19 @@ TEST(CONSTRUCTOR) {
 
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<AmanziMesh::Mesh_simple>  mesh = rcp( new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
+  RCP<Amanzi::AmanziMesh::Mesh_simple>  mesh = rcp( new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state */
-  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+  RCP<Amanzi::Transport_State>  TS = rcp( new Amanzi::Transport_State(mpc_state) );
 
   /* initialize a transport process kernel from a transport state */
   ParameterList TPK_list;
   string xmlFileName = "test/test_transport.xml";
 
   updateParametersFromXmlFile( xmlFileName, &TPK_list );
-  Transport_PK  TPK( TPK_list, TS );
+  Amanzi::Transport_PK  TPK( TPK_list, TS );
 
   TPK.print_statistics();
 
@@ -87,19 +87,19 @@ TEST(FACES_VOLUMES) {
 
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<AmanziMesh::Mesh_simple>  mesh = rcp( new AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
+  RCP<Amanzi::AmanziMesh::Mesh_simple>  mesh = rcp( new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm) ); 
 
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state */
-  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+  RCP<Amanzi::Transport_State>  TS = rcp( new Amanzi::Transport_State(mpc_state) );
 
   /* initialize a transport process kernel from a transport state */
   ParameterList  parameter_list;
   string xmlFileName = "test/test_transport.xml";
 
   updateParametersFromXmlFile( xmlFileName, &parameter_list );
-  Transport_PK  TPK( parameter_list, TS );
+  Amanzi::Transport_PK  TPK( parameter_list, TS );
 
   TPK.print_statistics();
 
@@ -150,12 +150,12 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<AmanziMesh::Mesh_simple>  mesh = rcp( new AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 2, 2, comm) ); 
+  RCP<Amanzi::AmanziMesh::Mesh_simple>  mesh = rcp( new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 2, 2, comm) ); 
 
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state and populate it */
-  RCP<Transport_State>  TS = rcp( new Transport_State(mpc_state) );
+  RCP<Amanzi::Transport_State>  TS = rcp( new Amanzi::Transport_State(mpc_state) );
   double u[3] = {1, 0, 0};
 
   TS->analytic_darcy_flux( u );
@@ -169,14 +169,14 @@ TEST(ADVANCE_WITH_SIMPLE) {
   string xmlFileName = "test/test_transport.xml";
 
   updateParametersFromXmlFile( xmlFileName, &parameter_list );
-  Transport_PK  TPK( parameter_list, TS );
+  Amanzi::Transport_PK  TPK( parameter_list, TS );
 
   TPK.print_statistics();
 
   /* advance the state */
   int  iter, k;
   double  T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Amanzi::Transport_State> TS_next = TPK.get_transport_state_next();
 
   RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
@@ -220,14 +220,14 @@ TEST(CONVERGENCE_ANALYSIS) {
 
   /* create a MPC state with one component */
   for( int nx=20; nx<641; nx*=2 ) {
-    RCP<AmanziMesh::Mesh_simple>  mesh = rcp( new AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm) ); 
+    RCP<Amanzi::AmanziMesh::Mesh_simple>  mesh = rcp( new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm) ); 
 
      /* create a MPC state with one component */
      int  num_components = 1;
      State  mpc_state( num_components, mesh );
 
      /* create a transport state from the MPC state and populate it */
-     RCP<Transport_State>  TS = rcp( new Transport_State( mpc_state ) );
+     RCP<Amanzi::Transport_State>  TS = rcp( new Amanzi::Transport_State( mpc_state ) );
      double  u[3] = {1, 0, 0};
 
      TS->analytic_darcy_flux( u );
@@ -241,7 +241,7 @@ TEST(CONVERGENCE_ANALYSIS) {
      string xmlFileName = "test/test_transport.xml";
 
      updateParametersFromXmlFile( xmlFileName, &parameter_list );
-     Transport_PK  TPK( parameter_list, TS );
+     Amanzi::Transport_PK  TPK( parameter_list, TS );
 
      if( nx == 20 ) TPK.print_statistics();
 
@@ -251,7 +251,7 @@ TEST(CONVERGENCE_ANALYSIS) {
      int  i, k, iter = 0;
      double  T = 0.0, T1 = 1.0;
 
-     RCP<Transport_State>  TS_next = TPK.get_transport_state_next();
+     RCP<Amanzi::Transport_State>  TS_next = TPK.get_transport_state_next();
      RCP<Epetra_MultiVector>  tcc      = TS->get_total_component_concentration();
      RCP<Epetra_MultiVector>  tcc_next = TS_next->get_total_component_concentration();
 

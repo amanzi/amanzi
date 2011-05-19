@@ -78,7 +78,7 @@ TEST(DRIVER) {
 
 
   // create the MPC
-  MPC mpc(driver_parameter_list, mesh);
+  Amanzi::MPC mpc(driver_parameter_list, mesh);
   
   mpc.cycle_driver();
   

@@ -39,9 +39,10 @@ public:
     for( int i=0; i<d; i++) xyz[i] = 0.0;
   }
   
-  
+
   void set( const double& val ) { for( int i=0; i<d; i++ ) xyz[i] = val;  }
   void set( const Point& p )    { for( int i=0; i<d; i++ ) xyz[i] = p[i]; }
+  void set( const double *val ) { if (!val) throw std::exception(); for( int i=0; i<d; i++ ) xyz[i] = val[i]; }
   void set( const double& x, const double& y ) { xyz[0] = x; xyz[1] = y; }
   void set( const double& x, const double& y, const double& z ) { xyz[0] = x; xyz[1] = y; xyz[2] = z; }
   

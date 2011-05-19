@@ -47,7 +47,7 @@ TEST(MOAB_HEX_4x4x4_4P)
 
   // Load a single hex from the hex1.exo file
 
-  Mesh_MOAB mesh("test/hex_4x4x4_ss_4P.h5m",MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_4x4x4_ss_4P.h5m",MPI_COMM_WORLD);
 
 
   nv = mesh.count_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);  
@@ -80,8 +80,8 @@ TEST(MOAB_HEX_4x4x4_4P)
 
   std::vector<unsigned int>  c2f(6);
   std::vector<int> c2fdirs(6);
-  Epetra_Map cell_map(mesh.cell_map(false));
-  Epetra_Map face_map(mesh.face_map(true));
+  Epetra_Map cell_map(mesh.cell_epetra_map(false));
+  Epetra_Map face_map(mesh.face_epetra_map(true));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
@@ -105,9 +105,10 @@ TEST(MOAB_HEX_4x4x4_4P)
   ns = mesh.num_sets(Amanzi::AmanziMesh::CELL);
   CHECK_EQUAL(3,ns);
 
-  unsigned int csetids[3], expcsetids[3] = {10000,20000,30000};
+  std::vector<unsigned int> csetids(3);
+  unsigned int expcsetids[3] = {10000,20000,30000};
 
-  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,csetids,csetids+3);
+  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,&csetids);
 
   CHECK_ARRAY_EQUAL(expcsetids,csetids,3);
 

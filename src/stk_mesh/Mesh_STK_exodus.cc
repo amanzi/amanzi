@@ -21,7 +21,6 @@ static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 namespace Amanzi {
 namespace AmanziMesh {
-namespace STK {
 
 // -------------------------------------------------------------
 //  class Mesh_STK
@@ -92,6 +91,5 @@ Mesh_STK::Mesh_STK(const char *fname, MPI_Comm comm)
   read_exodus_(fname);
 }
 
-} // namespace STK
 } // namespace AmanziMesh
 } // namespace Amanzi

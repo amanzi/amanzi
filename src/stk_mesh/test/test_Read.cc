@@ -429,7 +429,7 @@ SUITE (Exodus)
     fname = fpath + fname;
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::STK::Mesh_STK(comm, fname.c_str()));
+      mesh(new Amanzi::AmanziMesh::Mesh_STK(comm, fname.c_str()));
 
     Auditor audit("stk_mesh_read_", mesh);
     audit();

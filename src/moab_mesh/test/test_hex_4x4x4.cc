@@ -38,8 +38,8 @@ TEST(MOAB_HEX_4x4x4)
 
   std::vector<unsigned int>  c2f(6);
   std::vector<int> c2fdirs(6);
-  Epetra_Map cell_map(mesh.cell_map(false));
-  Epetra_Map face_map(mesh.face_map(false));
+  Epetra_Map cell_map(mesh.cell_epetra_map(false));
+  Epetra_Map face_map(mesh.face_epetra_map(false));
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
@@ -59,9 +59,10 @@ TEST(MOAB_HEX_4x4x4)
   ns = mesh.num_sets(Amanzi::AmanziMesh::CELL);
   CHECK_EQUAL(3,ns);
 
-  unsigned int csetids[3], expcsetids[3] = {10000,20000,30000};
+  std::vector<unsigned int> csetids(3);
+  unsigned int expcsetids[3] = {10000,20000,30000};
 
-  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,csetids,csetids+3);
+  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,&csetids);
 
   CHECK_ARRAY_EQUAL(expcsetids,csetids,3);
 
@@ -90,11 +91,12 @@ TEST(MOAB_HEX_4x4x4)
   ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
   CHECK_EQUAL(21,ns);
   
-  unsigned int fsetids[21], expfsetids[21]={1,101,102,103,104,105,106,
-					    10001,10002,20001,30001,10003,
-					    20002,30002,10004,20003,30003,
-					    10005,20004,30004,30005};
-  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,fsetids,fsetids+21);
+  std::vector<unsigned int> fsetids(21);
+  unsigned int  expfsetids[21]={1,101,102,103,104,105,106,
+				10001,10002,20001,30001,10003,
+				20002,30002,10004,20003,30003,
+				10005,20004,30004,30005};
+  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,&fsetids);
   
   CHECK_ARRAY_EQUAL(expfsetids,fsetids,21);
 
@@ -136,7 +138,7 @@ TEST(MOAB_HEX_4x4x4)
     CHECK_EQUAL(expfsetsizes[i],fsetsize);
 
 
-    mesh.get_set(fsetids[i+1],Amanzi::AmanziMesh::FACE, OWNED, setfaces, setfaces+fsetsize);
+    mesh.get_set(fsetids[i+1],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, setfaces, setfaces+fsetsize);
     
     CHECK_ARRAY_EQUAL(expfsetfaces[i],setfaces,fsetsize);
   }

@@ -166,8 +166,8 @@ Mesh_MOAB::~Mesh_MOAB() {
   delete face_map_w_ghosts_;
   delete node_map_wo_ghosts_;
   delete node_map_w_ghosts_;
-  delete [] setids;
-  delete [] setdims;
+  delete [] setids_;
+  delete [] setdims_;
   delete [] faceflip;
   delete epcomm;
   delete mbcore;
@@ -208,7 +208,7 @@ void Mesh_MOAB::clear_internals_ ()
   node_map_w_ghosts_ = node_map_wo_ghosts_ = NULL;
 
   nsets = 0;
-  setids = setdims = NULL;
+  setids_ = setdims_ = NULL;
 }
 
 
@@ -777,8 +777,8 @@ void Mesh_MOAB::init_set_info() {
 
   maxnsets *= 2;
 
-  setids = new int[maxnsets];
-  setdims = new int[maxnsets];
+  setids_ = new int[maxnsets];
+  setdims_ = new int[maxnsets];
 
   nsets = 0;
   for (int i = 0; i < tag_handles.size(); i++) {
@@ -800,7 +800,7 @@ void Mesh_MOAB::init_set_info() {
       int val;
       
       result = mbcore->tag_get_data(tag,&set,1,&val);
-      setids[nsets] = val;
+      setids_[nsets] = val;
 
       MBRange setents;
       result = mbcore->get_entities_by_handle(set,setents,false);
@@ -810,7 +810,7 @@ void Mesh_MOAB::init_set_info() {
       }
       int dim = mbcore->dimension_from_handle(*(setents.begin()));
 
-      setdims[nsets] = dim;
+      setdims_[nsets] = dim;
 
       nsets++;
     }
@@ -818,8 +818,8 @@ void Mesh_MOAB::init_set_info() {
   }
 
   for (int i = nsets; i < maxnsets; i++) {
-    setids[i] = 0;
-    setdims[i] = -1;
+    setids_[i] = 0;
+    setdims_[i] = -1;
   }
 
 
@@ -841,9 +841,9 @@ void Mesh_MOAB::init_set_info() {
   int *allnsets = new int[nprocs];
   
   
-  MPI_Allgather(setids,maxnsets,MPI_INT,allsetids,maxnsets,MPI_INT,
+  MPI_Allgather(setids_,maxnsets,MPI_INT,allsetids,maxnsets,MPI_INT,
 		MPI_COMM_WORLD);
-  MPI_Allgather(setdims,maxnsets,MPI_INT,allsetdims,maxnsets,MPI_INT,
+  MPI_Allgather(setdims_,maxnsets,MPI_INT,allsetdims,maxnsets,MPI_INT,
 		MPI_COMM_WORLD);
   
   
@@ -883,16 +883,16 @@ void Mesh_MOAB::init_set_info() {
     if (nsets > maxnsets) {
       // We have to resize the setids and setdims array
 
-      delete [] setids;
-      delete [] setdims;
+      delete [] setids_;
+      delete [] setdims_;
 
       maxnsets = nsets;
-      setids = new int[maxnsets];
-      setdims = new int[maxnsets];
+      setids_ = new int[maxnsets];
+      setdims_ = new int[maxnsets];
     }
     
-    memcpy(setids, allsetids, nsets*sizeof(allsetids[0]));
-    memcpy(setdims, allsetdims, nsets*sizeof(allsetdims[0]));
+    memcpy(setids_, allsetids, nsets*sizeof(allsetids[0]));
+    memcpy(setdims_, allsetdims, nsets*sizeof(allsetdims[0]));
 
   } // if rank == 0
 
@@ -907,20 +907,20 @@ void Mesh_MOAB::init_set_info() {
 
   if (rank != 0) {					       
     if (nsets > maxnsets) { 
-      delete [] setids;
-      delete [] setdims;
+      delete [] setids_;
+      delete [] setdims_;
 
       maxnsets = nsets;
-      setids = new int[maxnsets];
-      setdims = new int[maxnsets];
+      setids_ = new int[maxnsets];
+      setdims_ = new int[maxnsets];
     }    
   }
 
 
   // Tell all the other processors about the complete list of sets
   
-  MPI_Bcast(setids,nsets,MPI_INT,0,MPI_COMM_WORLD);
-  MPI_Bcast(setdims,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(setids_,nsets,MPI_INT,0,MPI_COMM_WORLD);
+  MPI_Bcast(setdims_,nsets,MPI_INT,0,MPI_COMM_WORLD);
   
 
   delete [] allnsets;
@@ -1114,7 +1114,7 @@ void Mesh_MOAB::cell_get_faces (Entity_ID cellid, Entity_ID_List *faceids) const
 
 
 
-void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, unsigned int *facedirs) const
+void Mesh_MOAB::cell_get_face_dirs (Entity_ID cellid, std::vector<int> *facedirs) const
 {
   MBEntityHandle cell;
   unsigned int *cell_faces;
@@ -1244,7 +1244,7 @@ void Mesh_MOAB::face_get_nodes (Entity_ID faceid, Entity_ID_List *fnodes) const
   
 
 
-void Mesh_MOAB::node_get_coordinates (Entity_ID node_id, AmanziGeometry::Point ncoord) const 
+void Mesh_MOAB::node_get_coordinates (Entity_ID node_id, AmanziGeometry::Point *ncoord) const 
 {
   MBEntityHandle node;
   double coords[3];
@@ -1264,7 +1264,7 @@ void Mesh_MOAB::node_get_coordinates (Entity_ID node_id, AmanziGeometry::Point n
 
 
 
-void Mesh_MOAB::cell_get_coordinates (Entity_ID cellid, std::vector<AmanziGeometry::Point> ccoords) const
+void Mesh_MOAB::cell_get_coordinates (Entity_ID cellid, std::vector<AmanziGeometry::Point> *ccoords) const
 {
   MBEntityHandle cell;
   std::vector<MBEntityHandle> cell_nodes;
@@ -1294,7 +1294,7 @@ void Mesh_MOAB::cell_get_coordinates (Entity_ID cellid, std::vector<AmanziGeomet
     }
 
     AmanziGeometry::Point xyz(spacedim);
-    xyz->set(coords);
+    xyz.set(coords);
     ccoords->push_back(xyz);
   }
 
@@ -1304,7 +1304,7 @@ void Mesh_MOAB::cell_get_coordinates (Entity_ID cellid, std::vector<AmanziGeomet
 
 
 
-void Mesh_MOAB::face_to_coordinates (Entity_ID faceid, std::vector<AmanziGeometry::Point> fcoords) const
+void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeometry::Point> *fcoords) const
 {
     MBEntityHandle face;
     std::vector<MBEntityHandle> face_nodes;
@@ -1313,7 +1313,7 @@ void Mesh_MOAB::face_to_coordinates (Entity_ID faceid, std::vector<AmanziGeometr
 
     face = face_id_to_handle[faceid];
 
-    fcoords->clear()
+    fcoords->clear();
 
     result = mbcore->get_connectivity(&face, 1, face_nodes, true);
     if (result != MB_SUCCESS) {
@@ -1334,7 +1334,7 @@ void Mesh_MOAB::face_to_coordinates (Entity_ID faceid, std::vector<AmanziGeometr
 	}
 
 	AmanziGeometry::Point xyz(spacedim);
-	xyz->set(coords);
+	xyz.set(coords);
 	fcoords->push_back(xyz);
       }
     }
@@ -1347,7 +1347,7 @@ void Mesh_MOAB::face_to_coordinates (Entity_ID faceid, std::vector<AmanziGeometr
 	}
 
 	AmanziGeometry::Point xyz(spacedim);
-	xyz->set(coords);
+	xyz.set(coords);
 	fcoords->push_back(xyz);
       }
     }
@@ -1367,8 +1367,8 @@ void Mesh_MOAB::get_set_ids (Entity_kind kind, Set_ID_List *setids) const
   case CELL: {
 
     for (i = 0; i < nsets; i++)
-      if (setdims[i] == celldim)
-	setids->push_back(setids[i]);
+      if (setdims_[i] == celldim)
+	setids->push_back(setids_[i]);
 
     return;
     break;
@@ -1377,8 +1377,8 @@ void Mesh_MOAB::get_set_ids (Entity_kind kind, Set_ID_List *setids) const
   case FACE: {
 
     for (i = 0; i < nsets; i++)
-      if (setdims[i] == facedim)
-	setids->push_back(setids[i]);
+      if (setdims_[i] == facedim)
+	setids->push_back(setids_[i]);
 
     return;
     break;
@@ -1387,8 +1387,8 @@ void Mesh_MOAB::get_set_ids (Entity_kind kind, Set_ID_List *setids) const
   case NODE: {
 
     for (i = 0; i < nsets; i++)
-      if (setdims[i] == 0)
-	setids->push_back(setids[i]);
+      if (setdims_[i] == 0)
+	setids->push_back(setids_[i]);
 
     return;
     break;
@@ -1439,8 +1439,6 @@ void Mesh_MOAB::get_set_entities (Set_ID set_id,
       else if (ptype == GHOST)
 	cellrange -= OwnedCells;
     }
-
-    ncells = cellrange.size();
 
 
     for (MBRange::iterator jt = cellrange.begin(); jt != cellrange.end(); ++jt) {
@@ -1556,15 +1554,15 @@ unsigned int Mesh_MOAB::num_sets(Entity_kind kind) const {
   switch (kind) {
   case CELL:
     for (int i = 0; i < nsets; i++)
-      if (setdims[i] == celldim) n++;
+      if (setdims_[i] == celldim) n++;
     return n;
   case FACE:
     for (int i = 0; i < nsets; i++)
-      if (setdims[i] == facedim) n++;
+      if (setdims_[i] == facedim) n++;
     return n;
   case NODE:
     for (int i = 0; i < nsets; i++)
-      if (setdims[i] == 0) n++;
+      if (setdims_[i] == 0) n++;
     return n;
   default:
     return 0;
@@ -1577,15 +1575,15 @@ bool Mesh_MOAB::valid_set_id (Set_ID id, Entity_kind kind) const {
   switch (kind) {
   case CELL:
     for (int i = 0; i < nsets; i++)
-      if (setdims[i] == celldim && setids[i] == id) return true;
+      if (setdims_[i] == celldim && setids_[i] == id) return true;
     break;
   case FACE:
     for (int i = 0; i < nsets; i++)
-      if (setdims[i] == facedim && setids[i] == id) return true;
+      if (setdims_[i] == facedim && setids_[i] == id) return true;
     break;
   case NODE:
     for (int i = 0; i < nsets; i++)
-      if (setdims[i] == 0 && setids[i] == id) return true;
+      if (setdims_[i] == 0 && setids_[i] == id) return true;
     break;
   default:
     return false;
@@ -2012,27 +2010,49 @@ unsigned int Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const {
 
 
 
-  inline const Epetra_Map& cell_epetra_map (bool include_ghost) const {
-    if (serial_run)
-      return *cell_map_wo_ghosts_;
-    else
-      return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
-  }
-	    
+inline const Epetra_Map& Mesh_MOAB::cell_epetra_map (bool include_ghost) const {
+  if (serial_run)
+    return *cell_map_wo_ghosts_;
+  else
+    return (include_ghost ? *cell_map_w_ghosts_ : *cell_map_wo_ghosts_);
+}
 
-  inline const Epetra_Map& face_epetra_map (bool include_ghost) const {
-    if (serial_run)
-      return *face_map_wo_ghosts_;
-    else
-      return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
-  }
 
-  inline const Epetra_Map& node_epetra_map (bool include_ghost) const {
-    if (serial_run)
-      return *node_map_wo_ghosts_;
-    else
-      return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
+inline const Epetra_Map& Mesh_MOAB::face_epetra_map (bool include_ghost) const {
+  if (serial_run)
+    return *face_map_wo_ghosts_;
+  else
+    return (include_ghost ? *face_map_w_ghosts_ : *face_map_wo_ghosts_);
+}
+
+inline const Epetra_Map& Mesh_MOAB::node_epetra_map (bool include_ghost) const {
+  if (serial_run)
+    return *node_map_wo_ghosts_;
+  else
+    return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
+}
+
+
+  // Get parallel type of eneity
+  
+Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind, 
+				 const Entity_ID entid) const
+  {
+    throw std::exception(); // Not implemented
   }
+  
+  
+  
+  
+  // Get cell type
+  
+Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
+  {
+    return HEX;
+  }
+    
+        
+    
   
 
 } // close namespace AmanziMesh

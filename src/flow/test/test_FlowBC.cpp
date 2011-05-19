@@ -20,7 +20,7 @@ TEST(FlowBC) {
 #endif
 
   // Create a simple 2x2x2 brick mesh
-  Teuchos::RCP<Mesh> mesh(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2, comm));
 
   // Read the flow BC parameters from an XML file.
   Teuchos::ParameterList flow_BCs_list;
@@ -28,7 +28,7 @@ TEST(FlowBC) {
   Teuchos::updateParametersFromXmlFile(xmlInFileName, &flow_BCs_list);
 
   // Create the flow BC object using the read parameters.
-  FlowBC bc(flow_BCs_list, mesh);
+  Amanzi::FlowBC bc(flow_BCs_list, mesh);
 
   // Write out what we've got.
   for (int i = 0; i < bc.NumBC(); ++i) {
@@ -37,7 +37,7 @@ TEST(FlowBC) {
     std::cout << "Faces...    ";
     for (int j = 0; j < bc[i].Faces.size(); ++j) std::cout << " " << bc[i].Faces[j];
     std::cout << std::endl;
-    if (bc[i].Type == FlowBC::PRESSURE_CONSTANT)
+    if (bc[i].Type == Amanzi::FlowBC::PRESSURE_CONSTANT)
       std::cout << "Value...    " << bc[i].Value << std::endl;
     std::cout << std::endl;
   }

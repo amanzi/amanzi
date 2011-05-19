@@ -16,7 +16,7 @@ namespace Amanzi {
 
 namespace AmanziMesh {
 
-  class Mesh_MSTK : public virtual Mesh
+  class Mesh_MSTK : public Mesh
   {
       
   private:

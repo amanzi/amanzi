@@ -22,9 +22,9 @@ struct problem_setup
 {
   Epetra_Comm *comm;
   //Teuchos::RCP<Mesh_simple> mesh;
-  Teuchos::RCP<Mesh> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   Teuchos::ParameterList bc_params;
-  DarcyProblem *problem;
+  Amanzi::DarcyProblem *problem;
   AztecOO *solver;
   Epetra_Vector *solution;
   // parameters for analytic pressure function
@@ -109,10 +109,10 @@ struct problem_setup
     //ml_pl.set("default values", "SA");
 
     // Create the flow BCs from the BC parameter list.
-    Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
+    Teuchos::RCP<Amanzi::FlowBC> bc(new Amanzi::FlowBC(bc_params, mesh));
 
     // Create the problem.
-    problem = new DarcyProblem(mesh, pl, bc);
+    problem = new Amanzi::DarcyProblem(mesh, pl, bc);
 
     // Set Darcy model defaults; these can be overwritten before solving the problem.
     problem->SetFluidDensity(1.0);

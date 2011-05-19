@@ -93,8 +93,9 @@ TEST(MOAB_HEX1)
   ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
   CHECK_EQUAL(7,ns);
 
-  unsigned int setids[7], expsetids[7]={1,101,102,103,104,105,106};
-  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,setids,setids+7);
+  std::vector<unsigned int> setids(7);
+  unsigned int expsetids[7]={1,101,102,103,104,105,106};
+  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,&setids);
   
   CHECK_ARRAY_EQUAL(expsetids,setids,7);
 

@@ -23,7 +23,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-#include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
@@ -58,6 +57,9 @@ list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lp
 target_link_libraries(mpc solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
+
+  include_directories(${MESH_SIMPLE_SOURCE_DIR})
+
     
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})

@@ -30,7 +30,7 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
 
   /* read and verify the mesh */
   int num_components = 2;
-  RCP<Mesh> mesh = rcp( new Amanzi::AmanziMesh::Mesh_MOAB( "../moab_mesh/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
+  RCP<Amanzi::AmanziMesh::Mesh> mesh = rcp( new Amanzi::AmanziMesh::Mesh_MOAB( "../moab_mesh/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
 
   /*
   MeshAudit audit( mesh );
@@ -41,7 +41,7 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
   State mpc_state( num_components, mesh );
 
   /* create a transport state from the MPC state and populate it */
-  RCP<Transport_State>  TS = rcp( new Transport_State( mpc_state ) );
+  RCP<Amanzi::Transport_State>  TS = rcp( new Amanzi::Transport_State( mpc_state ) );
   double u[3] = {1, 0, 0};
 
   TS->analytic_total_component_concentration( f_step );
@@ -55,7 +55,7 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
   string xmlFileName = "test/test_moab_parallel.xml";
 
   updateParametersFromXmlFile( xmlFileName, &parameter_list );
-  Transport_PK  TPK( parameter_list, TS );
+  Amanzi::Transport_PK  TPK( parameter_list, TS );
 
   /* advance the state */
   double  dT = TPK.calculate_transport_dT();
@@ -64,7 +64,7 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
   /* printing cell concentration */
   int  iter, k;
   double  T = 0.0;
-  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Amanzi::Transport_State> TS_next = TPK.get_transport_state_next();
 
   RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();

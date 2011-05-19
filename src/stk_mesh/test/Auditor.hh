@@ -39,7 +39,7 @@ class Auditor {
 
   /// Default constructor.
   Auditor(std::string oname, Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p mesh)
-    : mesh_map(new Amanzi::AmanziMesh::STK::Mesh_STK(mesh)) {
+    : mesh_map(new Amanzi::AmanziMesh::Mesh_STK(mesh)) {
     std::ostringstream ofile;
     ofile << oname
           << std::setfill('0') << std::setw(4) 

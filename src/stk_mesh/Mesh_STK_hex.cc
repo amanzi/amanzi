@@ -22,7 +22,6 @@
 
 namespace Amanzi {
 namespace AmanziMesh {
-namespace STK {
 
 // -------------------------------------------------------------
 //  class Mesh_STK
@@ -95,6 +94,5 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
             x0, y0, z0, xdelta, ydelta, zdelta);
 }
 
-} // namespace STK
 } // namespace AmanziMesh
 } // namespace Amanzi

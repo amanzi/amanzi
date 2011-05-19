@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
 
   // create the MPC
-  Amanzi::AmanziMesh::MPC mpc(driver_parameter_list, mesh);
+  Amanzi::MPC mpc(driver_parameter_list, mesh);
   
   mpc.cycle_driver();
   

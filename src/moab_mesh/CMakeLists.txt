@@ -26,6 +26,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${MOAB_INCLUDE_DIRS})
 
 # Need this define. Errors from MOAB include files 
@@ -39,7 +40,7 @@ add_definitions("-DUSE_MPI")
 # libraries listed. Ticket #335
 file(GLOB moab_mesh_files "*.cc") 
 add_library(moab_mesh ${moab_mesh_files})
-target_link_libraries(moab_mesh mesh error_handling geometry ${MOAB_LIBRARIES} ${HDF5_LIBRARIES} ${Teuchos_LIBRARIES})
+target_link_libraries(moab_mesh mesh error_handling geometry ${MOAB_LIBRARIES} ${HDF5_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
     

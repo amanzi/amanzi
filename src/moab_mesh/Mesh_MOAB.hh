@@ -27,7 +27,7 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
-class Mesh_MOAB : public virtual Mesh
+class Mesh_MOAB : public Mesh
 {
 
   private:
@@ -113,7 +113,7 @@ class Mesh_MOAB : public virtual Mesh
     // in those sets
   
     int nsets;
-    int *setids, *setdims;
+    int *setids_, *setdims_;
 
 
     // Minimum and maximum global IDs of faces
@@ -154,26 +154,17 @@ public:
   
   void update ();
   
-  // Local id interfaces.
-  // --------------------
- 
-    // Get parallel type of eneity
+    // Get parallel type of entity
     
-    virtual
     Parallel_type entity_get_ptype(const Entity_kind kind, 
-				   const Entity_ID entid) const = 0;
-
-
+				   const Entity_ID entid) const;
 
 
     // Get cell type
     
-    virtual
-    Cell_type cell_get_type(const Entity_ID cellid) const = 0;
+    Cell_type cell_get_type(const Entity_ID cellid) const;
         
-    
-
-
+   
     //
     // General mesh information
     // -------------------------
@@ -182,15 +173,13 @@ public:
     // Number of entities of any kind (cell, face, node) and in a
     // particular category (OWNED, GHOST, USED)
     
-    virtual
     unsigned int num_entities (const Entity_kind kind,
-			       const Parallel_type ptype) const = 0;
+			       const Parallel_type ptype) const;
     
     
     // Global ID of any entity
     
-    virtual
-    unsigned int GID(const Entity_ID lid, const Entity_kind kind) const = 0;
+    unsigned int GID(const Entity_ID lid, const Entity_kind kind) const;
     
     
     
@@ -208,9 +197,8 @@ public:
     // cell, OWNED or GHOST. The faces will be returned in a standard
     // order according to Exodus II convention.
     
-    virtual
     void cell_get_faces (const Entity_ID cellid, 
-			 Entity_ID_List *faceids) const = 0;
+			 Entity_ID_List *faceids) const;
     
     
     // Get directions in which a cell uses face
@@ -219,9 +207,8 @@ public:
     // In 2D, direction is 1 if face/edge is defined in the same
     // direction as the cell polygon, and -1 otherwise
     
-    virtual
     void cell_get_face_dirs (const Entity_ID cellid, 
-			     std::vector<int> *face_dirs) const = 0;
+			     std::vector<int> *face_dirs) const;
     
     
     
@@ -235,9 +222,8 @@ public:
     // In 2D, the nodes of the polygon will be returned in ccw order 
     // consistent with the face normal
     
-    virtual
     void cell_get_nodes (const Entity_ID cellid, 
-			 Entity_ID_List *nodeids) const = 0;
+			 Entity_ID_List *nodeids) const;
     
     
     // Get nodes of face 
@@ -247,9 +233,8 @@ public:
     // with the face normal
     // In 2D, nfnodes is 2
     
-    virtual
     void face_get_nodes (const Entity_ID faceid, 
-			 Entity_ID_List *nodeids) const = 0;
+			 Entity_ID_List *nodeids) const;
     
 
 
@@ -258,33 +243,29 @@ public:
     
     // Cells of type 'ptype' connected to a node
     
-    virtual 
     void node_get_cells (const Entity_ID nodeid, 
 			 const Parallel_type ptype,
-			 Entity_ID_List *cellids) const = 0;
+			 Entity_ID_List *cellids) const;
     
     // Faces of type 'ptype' connected to a node
     
-    virtual
     void node_get_faces (const Entity_ID nodeid, 
 			 const Parallel_type ptype,
-			 Entity_ID_List *faceids) const = 0;
+			 Entity_ID_List *faceids) const;
     
     // Get faces of ptype of a particular cell that are connected to the
     // given node
     
-    virtual
     void node_get_cell_faces (const Entity_ID nodeid, 
 			      const Entity_ID cellid,
 			      const Parallel_type ptype,
-			      Entity_ID_List *faceids) const = 0;    
+			      Entity_ID_List *faceids) const;    
     
     // Cells connected to a face
     
-    virtual 
     void face_get_cells (const Entity_ID faceid, 
 			 const Parallel_type ptype,
-			 Entity_ID_List *cellids) const = 0;
+			 Entity_ID_List *cellids) const;
     
 
 
@@ -299,19 +280,17 @@ public:
     // the cellids will correcpond to cells across the respective
     // faces given by cell_get_faces
 
-    virtual
     void cell_get_face_adj_cells(const Entity_ID cellid,
 				 const Parallel_type ptype,
-				 Entity_ID_List *fadj_cellids) const = 0;
+				 Entity_ID_List *fadj_cellids) const;
 
     // Node connected neighboring cells of given cell
     // (a hex in a structured mesh has 26 node connected neighbors)
     // The cells are returned in no particular order
 
-    virtual
     void cell_get_node_adj_cells(const Entity_ID cellid,
 				 const Parallel_type ptype,
-				 Entity_ID_List *nadj_cellids) const = 0;
+				 Entity_ID_List *nadj_cellids) const;
 
 
     
@@ -327,15 +306,13 @@ public:
     
     // Original cell type 
     
-    virtual
-    Cell_type cell_get_type_4viz(const Entity_ID cellid) const = 0;
+    Cell_type cell_get_type_4viz(const Entity_ID cellid) const;
     
     
     // See cell_get_nodes for details on node ordering
     
-    virtual
     void cell_get_nodes_4viz (const Entity_ID cellid, 
-			      Entity_ID_List *nodeids) const = 0;
+			      Entity_ID_List *nodeids) const;
     
     
     
@@ -346,17 +323,15 @@ public:
     
     // Node coordinates - 3 in 3D and 2 in 2D
     
-    virtual
     void node_get_coordinates (const Entity_ID nodeid, 
-			       AmanziGeometry::Point *ncoord) const = 0;
+			       AmanziGeometry::Point *ncoord) const;
     
     
     // Face coordinates - conventions same as face_to_nodes call 
     // Number of nodes is the vector size divided by number of spatial dimensions
     
-    virtual
     void face_get_coordinates (const Entity_ID faceid, 
-			       std::vector<AmanziGeometry::Point> *fcoords) const = 0; 
+			       std::vector<AmanziGeometry::Point> *fcoords) const; 
     
     // Coordinates of cells in standard order (Exodus II convention)
     // STANDARD CONVENTION WORKS ONLY FOR STANDARD CELL TYPES IN 3D
@@ -364,61 +339,20 @@ public:
     // arbitrary order
     // Number of nodes is vector size divided by number of spatial dimensions
     
-    virtual 
     void cell_get_coordinates (const Entity_ID cellid, 
-			       std::vector<AmanziGeometry::Point> *ccoords) const = 0;
+			       std::vector<AmanziGeometry::Point> *ccoords) const;
     
     
-
-    // Mesh entity geometry
-    //--------------
-    //
-    
-    
-    // Volume/Area of cell
-    
-    inline
-    double cell_volume (const Entity_ID cellid) const {
-      return cell_volumes[cellid];
-    }
-    
-    // Area/length of face
-
-    inline
-    double face_area(const Entity_ID faceid) const {
-      return face_areas[faceid];
-    }
-    
-    
-    // Centroid of cell
-
-    inline
-    AmanziGeometry::Point cell_centroid (const Entity_ID cellid) const {
-      return cell_centroids[cellid];
-    }
-    
-    // Normal to face
-    // The vector is normalized and then weighted by the area of the face
-    
-    inline
-    AmanziGeometry::Point face_normal (const Entity_ID faceid) const {
-      return face_normals[faceid];
-    }
-
-
     //
     // Epetra maps
     //------------
     
     
-    virtual
-    const Epetra_Map& cell_epetra_map (const bool include_ghost) const = 0;
+    const Epetra_Map& cell_epetra_map (bool include_ghost) const;
     
-    virtual
-    const Epetra_Map& face_epetra_map (const bool include_ghost) const = 0; 
-    
-    virtual
-    const Epetra_Map& node_epetra_map (const bool include_ghost) const = 0;
+    const Epetra_Map& face_epetra_map (bool include_ghost) const; 
+
+    const Epetra_Map& node_epetra_map (bool include_ghost) const;
     
     
     
@@ -430,40 +364,32 @@ public:
     
     // Number of sets containing entities of type 'kind' in mesh
     
-    virtual
-    unsigned int num_sets(const Entity_kind kind) const = 0;
+    unsigned int num_sets(const Entity_kind kind) const;
     
     
     // Ids of sets containing entities of 'kind'
 
-    virtual
-    void get_set_ids (const Entity_kind kind, 
-		      Set_ID_List *setids) const = 0;
+    void get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const;
 
 
     // Is this is a valid ID of a set containing entities of 'kind'
 
-    virtual
-    bool valid_set_id (const Set_ID setid, 
-		       const Entity_kind kind) const = 0;
+    bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
 
 
     // Get number of entities of type 'category' in set
 
-    virtual
     unsigned int get_set_size (const Set_ID setid, 
 			       const Entity_kind kind,
-			       const Parallel_type ptype) const = 0;
+			       const Parallel_type ptype) const;
 
 
     // Get list of entities of type 'category' in set
 
-    virtual
     void get_set_entities (const Set_ID setid, 
 			   const Entity_kind kind, 
 			   const Parallel_type ptype, 
-			   Entity_ID_List *entids) const = 0; 
-  
+			   Entity_ID_List *entids) const;   
 };
 
 } // close namespace AmanziMesh
