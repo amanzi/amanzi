@@ -439,8 +439,7 @@ unsigned int Mesh_simple::num_sets(AmanziMesh::Entity_kind kind) const
     return 1;
     break;
   default:
-    // nothing yet for NODE or CELL
-    throw std::exception();
+    return 0;
     break;
   }
 }
