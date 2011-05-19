@@ -515,7 +515,7 @@ void Mesh_simple::node_get_coordinates (const AmanziMesh::Entity_ID local_node_i
 
   ncoords->init(3);
   
-  ncoords->set( coordinates_[index] );
+  ncoords->set( &(coordinates_[index]) );
 }
 
 
