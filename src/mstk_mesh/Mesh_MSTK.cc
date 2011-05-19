@@ -30,7 +30,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension
 
   serial_run =  (!mpicomm || numprocs == 1) ? true : false;
 
-  set_comm(mpicomm);
+  Mesh::set_comm(mpicomm);
 
   if (serial_run) {
 
