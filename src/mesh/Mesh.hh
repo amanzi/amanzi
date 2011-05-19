@@ -36,8 +36,6 @@ namespace AmanziMesh
     Mesh()
       : spacedim(3), celldim(3), geometry_precomputed(false), comm(NULL)
     {
-      precompute_geometric_quantities();
-      geometry_precomputed = true;
     }
 
     // destructor
@@ -290,6 +288,7 @@ namespace AmanziMesh
     
     inline
     double cell_volume (const Entity_ID cellid) const {
+      assert (geometry_precomputed == true);
       return cell_volumes[cellid];
     }
     
@@ -297,6 +296,7 @@ namespace AmanziMesh
 
     inline
     double face_area(const Entity_ID faceid) const {
+      assert (geometry_precomputed == true);
       return face_areas[faceid];
     }
     
@@ -305,6 +305,7 @@ namespace AmanziMesh
 
     inline
     AmanziGeometry::Point cell_centroid (const Entity_ID cellid) const {
+      assert (geometry_precomputed == true);
       return cell_centroids[cellid];
     }
     
@@ -313,6 +314,7 @@ namespace AmanziMesh
     
     inline
     AmanziGeometry::Point face_normal (const Entity_ID faceid) const {
+      assert (geometry_precomputed == true);
       return face_normals[faceid];
     }
 
