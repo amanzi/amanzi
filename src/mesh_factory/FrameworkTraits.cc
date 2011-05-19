@@ -2,7 +2,7 @@
 /**
  * @file   FrameworkTraits.cc
  * @author William A. Perkins
- * @date Tue May 17 11:39:46 2011
+ * @date Thu May 19 07:16:00 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:39:46 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu May 19 07:16:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <boost/format.hpp>
@@ -103,50 +103,50 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
 
   void 
   cell_get_faces (const Amanzi::AmanziMesh::Entity_ID cellid, 
-                  Amanzi::AmanziMesh::Entity_ID_List *faceids) 
+                  Amanzi::AmanziMesh::Entity_ID_List *faceids) const
   {} 
 
   void cell_get_face_dirs (const Amanzi::AmanziMesh::Entity_ID cellid, 
-                           std::vector<int> *face_dirs) 
+                           std::vector<int> *face_dirs) const
   {}
   
   void cell_get_nodes (const Amanzi::AmanziMesh::Entity_ID cellid, 
-                       Amanzi::AmanziMesh::Entity_ID_List *nodeids)
+                       Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
   {}
 
   void face_get_nodes (const Amanzi::AmanziMesh::Entity_ID faceid, 
-                       Amanzi::AmanziMesh::Entity_ID_List *nodeids)
+                       Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
   {}
 
   void node_get_cells (const Amanzi::AmanziMesh::Entity_ID nodeid, 
                        const Amanzi::AmanziMesh::Parallel_type ptype,
-                       Amanzi::AmanziMesh::Entity_ID_List *cellids)
+                       Amanzi::AmanziMesh::Entity_ID_List *cellids) const
   {}
 
   void node_get_faces (const Amanzi::AmanziMesh::Entity_ID nodeid, 
                        const Amanzi::AmanziMesh::Parallel_type ptype,
-                       Amanzi::AmanziMesh::Entity_ID_List *faceids)
+                       Amanzi::AmanziMesh::Entity_ID_List *faceids) const
   {}
     
   void node_get_cell_faces (const Amanzi::AmanziMesh::Entity_ID nodeid, 
                             const Amanzi::AmanziMesh::Entity_ID cellid,
                             const Amanzi::AmanziMesh::Parallel_type ptype,
-                            Amanzi::AmanziMesh::Entity_ID_List *faceids)
+                            Amanzi::AmanziMesh::Entity_ID_List *faceids) const
   {}
     
   void face_get_cells (const Amanzi::AmanziMesh::Entity_ID faceid, 
                        const Amanzi::AmanziMesh::Parallel_type ptype,
-                       Amanzi::AmanziMesh::Entity_ID_List *cellids)
+                       Amanzi::AmanziMesh::Entity_ID_List *cellids) const
   {}
 
   void cell_get_face_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
                                const Amanzi::AmanziMesh::Parallel_type ptype,
-                               Amanzi::AmanziMesh::Entity_ID_List *fadj_cellids)
+                               Amanzi::AmanziMesh::Entity_ID_List *fadj_cellids) const
   {}
 
   void cell_get_node_adj_cells(const Amanzi::AmanziMesh::Entity_ID cellid,
                                const Amanzi::AmanziMesh::Parallel_type ptype,
-                               Amanzi::AmanziMesh::Entity_ID_List *nadj_cellids)
+                               Amanzi::AmanziMesh::Entity_ID_List *nadj_cellids) const
   {}
 
   Amanzi::AmanziMesh::Cell_type 
@@ -155,20 +155,20 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
     
   void 
   cell_get_nodes_4viz (const Amanzi::AmanziMesh::Entity_ID cellid, 
-                       Amanzi::AmanziMesh::Entity_ID_List *nodeids)
+                       Amanzi::AmanziMesh::Entity_ID_List *nodeids) const
   {}
 
   void 
   node_get_coordinates (const Amanzi::AmanziMesh::Entity_ID nodeid, 
-                        Amanzi::AmanziGeometry::Point *ncoord)
+                        Amanzi::AmanziGeometry::Point *ncoord) const
   {}
 
   void face_get_coordinates (const Amanzi::AmanziMesh::Entity_ID faceid, 
-			     std::vector<Amanzi::AmanziGeometry::Point> *fcoords)
+			     std::vector<Amanzi::AmanziGeometry::Point> *fcoords) const
   {}
 
   void cell_get_coordinates (const Amanzi::AmanziMesh::Entity_ID cellid, 
-			     std::vector<Amanzi::AmanziGeometry::Point> *ccoords)
+			     std::vector<Amanzi::AmanziGeometry::Point> *ccoords) const
   {}
 
   const Epetra_Map& cell_epetra_map (const bool include_ghost) const
@@ -184,7 +184,7 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
   { return 0; }
 
   void get_set_ids (const Amanzi::AmanziMesh::Entity_kind kind, 
-                    Amanzi::AmanziMesh::Set_ID_List *setids)
+                    Amanzi::AmanziMesh::Set_ID_List *setids) const
   {}
 
   bool valid_set_id (const Amanzi::AmanziMesh::Set_ID setid, 
@@ -193,13 +193,13 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
 
   unsigned int get_set_size (const Amanzi::AmanziMesh::Set_ID setid, 
                              const Amanzi::AmanziMesh::Entity_kind kind,
-                             const Amanzi::AmanziMesh::Parallel_type ptype)
+                             const Amanzi::AmanziMesh::Parallel_type ptype) const
   { return 0; }
 
   void get_set_entities (const Amanzi::AmanziMesh::Set_ID setid, 
                          const Amanzi::AmanziMesh::Entity_kind kind, 
                          const Amanzi::AmanziMesh::Parallel_type ptype, 
-                         Amanzi::AmanziMesh::Entity_ID_List *entids)
+                         Amanzi::AmanziMesh::Entity_ID_List *entids) const
   {}
 
  private:
