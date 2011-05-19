@@ -102,6 +102,9 @@ namespace Amanzi
 
 	(*centroid) /= (*volume);  // centroid = 1st moment / 0th moment
       } // end if (np > 4)
+
+      (*volume) /= 6; // Account for multiplier here rather than in
+                      // computation of each tet
  
     } // polyhed_get_vol_centroid
 
