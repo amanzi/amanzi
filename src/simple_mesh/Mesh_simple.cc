@@ -510,12 +510,11 @@ void Mesh_simple::face_get_nodes (AmanziMesh::Entity_ID face,
 void Mesh_simple::node_get_coordinates (const AmanziMesh::Entity_ID local_node_id, 
 					AmanziGeometry::Point *ncoords) const
 {
-//  unsigned int index = 3*local_node_id;
-//  std::vector<double>::iterator begin = coordinates_.begin() + index;
+  unsigned int index = 3*local_node_id;
 
-//  ncoords->init(3);
+  ncoords->init(3);
   
-//  ncoords->set( *(begin), *(begin+1), *(begin+2));
+  ncoords->set( coordinates_[index] );
 }
 
 
