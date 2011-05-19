@@ -61,7 +61,7 @@ int main (int argc, char* argv[])
   int status;
 
   if (nproc == 1) {
-    MeshAudit audit(mesh);
+    Amanzi::MeshAudit audit(mesh);
     status = audit.Verify();
   } else {
     std::ostringstream ofile;
@@ -69,7 +69,7 @@ int main (int argc, char* argv[])
     std::ofstream ofs(ofile.str().c_str());
     if (me == 0)
       std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
-    MeshAudit audit(mesh, ofs);
+    Amanzi::MeshAudit audit(mesh, ofs);
     status = audit.Verify();
   }
 

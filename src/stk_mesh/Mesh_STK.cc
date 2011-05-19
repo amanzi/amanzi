@@ -57,12 +57,6 @@ Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
 {
   Mesh::set_comm(communicator_->GetMpiComm());
   build_maps_();
-
-
-  // Calculate geometric quantities 
-
-  Mesh::precompute_geometric_quantities();
-  Mesh::geometry_precomputed = true;
 }
 
 Mesh_STK::~Mesh_STK(void)

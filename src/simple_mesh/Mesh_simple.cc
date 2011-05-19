@@ -20,12 +20,6 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
 {
   number_of_mesh_blocks=0;
   update();
-
-
-  // Calculate geometric quantities 
-
-  Mesh::precompute_geometric_quantities();
-  Mesh::geometry_precomputed = true;
 }
 
 Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
@@ -69,11 +63,6 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 
   update();
 
-
-  // Calculate geometric quantities 
-
-  Mesh::precompute_geometric_quantities();
-  Mesh::geometry_precomputed = true;
 }
 
 

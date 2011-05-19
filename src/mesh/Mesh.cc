@@ -9,7 +9,7 @@ namespace Amanzi
 namespace AmanziMesh
 {
 
-  int Mesh::precompute_geometric_quantities() {
+  int Mesh::precompute_geometric_quantities() const {
     int ncells;
     double volume, area, len;
   
@@ -135,6 +135,8 @@ namespace AmanziMesh
       }
 
     }
+
+    geometry_precomputed = true;
 
   } // Mesh::precompute_geometric_quantities
 

@@ -125,13 +125,6 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension
 
   init_set_info();
 
-
-
-  // Calculate geometric quantities 
-
-  Mesh::precompute_geometric_quantities();
-  Mesh::geometry_precomputed = true;
-
 }
 
 

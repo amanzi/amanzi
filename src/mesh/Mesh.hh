@@ -22,10 +22,10 @@ namespace AmanziMesh
   private:
 
     unsigned int celldim, spacedim;
-    bool geometry_precomputed;
-    int precompute_geometric_quantities();
-    std::vector<double> cell_volumes, face_areas;
-    std::vector<AmanziGeometry::Point> cell_centroids, face_normals;
+    mutable bool geometry_precomputed;
+    int precompute_geometric_quantities() const;
+    mutable std::vector<double> cell_volumes, face_areas;
+    mutable std::vector<AmanziGeometry::Point> cell_centroids, face_normals;
 
     Epetra_Comm *comm; // temporary until we get an amanzi communicator
     
@@ -288,7 +288,7 @@ namespace AmanziMesh
     
     inline
     double cell_volume (const Entity_ID cellid) const {
-      assert (geometry_precomputed == true);
+      if (!geometry_precomputed) precompute_geometric_quantities();
       return cell_volumes[cellid];
     }
     
@@ -296,7 +296,7 @@ namespace AmanziMesh
 
     inline
     double face_area(const Entity_ID faceid) const {
-      assert (geometry_precomputed == true);
+      if (!geometry_precomputed) precompute_geometric_quantities();
       return face_areas[faceid];
     }
     
@@ -305,7 +305,7 @@ namespace AmanziMesh
 
     inline
     AmanziGeometry::Point cell_centroid (const Entity_ID cellid) const {
-      assert (geometry_precomputed == true);
+      if (!geometry_precomputed) precompute_geometric_quantities();
       return cell_centroids[cellid];
     }
     
@@ -314,7 +314,7 @@ namespace AmanziMesh
     
     inline
     AmanziGeometry::Point face_normal (const Entity_ID faceid) const {
-      assert (geometry_precomputed == true);
+      if (!geometry_precomputed) precompute_geometric_quantities();
       return face_normals[faceid];
     }
 
