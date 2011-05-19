@@ -391,6 +391,8 @@ namespace AmanziMesh
     inline
     void set_comm(MPI_Comm incomm) {comm = new Epetra_MpiComm(incomm);};
 
+    inline
+    void set_comm(Epetra_Comm *incomm) { comm = incomm; };
 
 
     // Temporary routines for backward compatibility

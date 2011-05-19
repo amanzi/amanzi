@@ -20,6 +20,8 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
 {
   number_of_mesh_blocks=0;
   update();
+
+  Mesh::set_comm(communicator);
 }
 
 Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
@@ -63,6 +65,7 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 
   update();
 
+  Mesh::set_comm(communicator);
 }
 
 
