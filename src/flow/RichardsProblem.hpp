@@ -15,13 +15,14 @@
 #include "WaterRetentionBaseModel.hpp"
 #include "Flow_State.hpp"
 
-class RichardsProblem
+class RichardsProblem 
 {
 public:
 
   RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 	       Teuchos::ParameterList&, const Teuchos::RCP<FlowBC> &bc);
   ~RichardsProblem();
+
 
   // Set the constant value of fluid density.
   void SetFluidDensity(double rho);

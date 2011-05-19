@@ -33,6 +33,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   int nblocks = list.get<int>("Number of mesh blocks");
   WRM.resize(nblocks);
   
+  p_atm_ = list.get<double>("Atmospheric pressure");
   for (int nb = 0; nb < nblocks; nb++)
     {
       std::stringstream ss;
@@ -49,7 +50,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 	  double vG_m_      = wrmlist.get<double>("van Genuchten m");
 	  double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
 	  double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
-	  double p_atm_     = wrmlist.get<double>("atmospheric pressure");
+	  // double p_atm_     = wrmlist.get<double>("atmospheric pressure");
 
 	  WRM[nb] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
 						       vG_sr_,p_atm_));
