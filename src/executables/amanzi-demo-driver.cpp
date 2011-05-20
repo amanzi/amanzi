@@ -2,11 +2,11 @@
 #include "stdlib.h"
 #include "math.h"
 
-#if ENABLE_MOAB
+#if HAVE_MOAB_MESH
 #include "Mesh_maps_moab.hh"
 #endif
 
-#if ENABLE_STK
+#if HAVE_STK_MESH
 #include "Mesh_factory.hh"
 #include "Mesh_maps_stk.hh"
 #endif
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
       mesh = Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
     } 
-#ifdef ENABLE_MOAB
+#ifdef HAVE_MOAB_MESH
   else if (mesh_class == "MOAB")  
     {
       
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
       std::cout.rdbuf(store_buf);
     }
 #endif
-#ifdef ENABLE_STK
+#ifdef HAVE_STK_MESH
   else if (mesh_class == "STK")
     {
       string filename = mesh_parameter_list.get<string>("STK File name");

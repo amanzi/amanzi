@@ -135,6 +135,8 @@ void MPC::cycle_driver () {
     try {
       // total view needs this to be outside the constructor 
       CPK->InitializeChemistry();
+      CPK->set_chemistry_output_names(auxnames);
+      CPK->set_component_names(compnames);
     } catch (ChemistryException& chem_error) {
       std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
                 << std::endl << chem_error.what() << std::endl;
