@@ -8,7 +8,7 @@
 #include <UnitTest++.h>
 
 #include "KineticRate.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 SUITE(GeochemistryTestsKineticRate)
 {

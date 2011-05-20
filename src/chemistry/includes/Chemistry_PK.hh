@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __CHEMISTRY_PK_HH__
-#define __CHEMISTRY_PK_HH__
+#ifndef AMANZI_CHEMISTRY_PK_HH_
+#define AMANZI_CHEMISTRY_PK_HH_
 
 #include <string>
 
@@ -8,7 +8,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Beaker.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 #include "Verbosity.hpp"
 
 // forward declarations
@@ -34,7 +34,6 @@ class Chemistry_PK {
   void advance(const double& delta_time,
                Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
   void commit_state ( Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
-  ChemistryException::Status status(void) const { return this->status_; };
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
 
@@ -78,10 +77,8 @@ class Chemistry_PK {
   void set_component_names(std::vector<std::string> &names);
 
  protected:
-  void set_status(ChemistryException::Status status) { this->status_ = status; };
 
  private:
-  ChemistryException::Status status_;
   Verbosity verbosity_;
   double max_time_step_;
   // auxilary state for process kernel
@@ -159,4 +156,4 @@ class Chemistry_PK {
 
 };
 
-#endif  // __CHEMISTRY_PK_HH__
+#endif  // AMANZI_CHEMISTRY_PK_HH_

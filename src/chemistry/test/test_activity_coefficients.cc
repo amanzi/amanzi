@@ -12,7 +12,7 @@
 #include "activity-model-unit.hh"
 #include "activity-model-debye-huckel.hh"
 #include "activity-model.hh"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 SUITE(GeochemistryTestsActivityModels)
 {

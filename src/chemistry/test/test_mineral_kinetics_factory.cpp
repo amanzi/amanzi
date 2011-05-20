@@ -11,7 +11,7 @@
 #include "MineralKineticsFactory.hpp"
 #include "KineticRate.hpp"
 #include "KineticRateTST.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 SUITE(GeochemistryTestsMineralKineticsFactory)
 {

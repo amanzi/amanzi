@@ -1,4 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "MineralKineticsFactory.hpp"
+
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -6,13 +8,13 @@
 #include <sstream>
 
 #include "Mineral.hpp"
-#include "MineralKineticsFactory.hpp"
 #include "KineticRateTST.hpp"
 #include "KineticRate.hpp"
 #include "Species.hpp"
 #include "StringTokenizer.hpp"
 #include "Verbosity.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
+#include "exceptions.hh"
 
 const std::string MineralKineticsFactory::kTST = "TST";
 
@@ -26,7 +28,7 @@ MineralKineticsFactory::~MineralKineticsFactory(void)
 }  // end MineralKineticsFactory destructor
 
 
-KineticRate* MineralKineticsFactory::Create(const std::string& rate_type, 
+KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
                                             const StringTokenizer& rate_data,
                                             const Mineral& mineral,
                                             const SpeciesArray& primary_species)
@@ -42,26 +44,24 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
     kinetic_rate = new KineticRateTST();
   } else {
     std::ostringstream error_stream;
-    error_stream << "ERROR: MineralKineticsFactory::Create(): \n";
-    error_stream << "ERROR: Unknown kinetic rate name: " << rate_name.at(0) 
+    error_stream << "MineralKineticsFactory::Create(): \n";
+    error_stream << "Unknown kinetic rate name: " << rate_name.at(0)
                  << "\n       valid names: " << kTST << "\n";
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 
   if (kinetic_rate != NULL) {
     kinetic_rate->set_verbosity(verbosity());
-    kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral), 
+    kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral),
                         rate_data, primary_species);
   } else {
     // new failed to create a rate object, for some reason.... Do we
     // really need this check?
     std::ostringstream error_stream;
-    error_stream << "ERROR: MineralKineticsFactory::Create(): \n";
-    error_stream << "ERROR: could not create rate type: " << rate_name.at(0) 
+    error_stream << "MineralKineticsFactory::Create(): \n";
+    error_stream << "could not create rate type: " << rate_name.at(0)
                  << "\n       new failed...?" << std::endl;
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);
+    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
   return kinetic_rate;
@@ -83,11 +83,10 @@ SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_na
   if (!mineral_found) {
     // print helpful message and exit gracefully
     std::ostringstream error_stream;
-    error_stream << "ERROR: MineralKineticsFactory::VerifyMineralName(): \n";
-    error_stream << "ERROR: Did not find mineral: \'" << mineral_name << "\'\n"
+    error_stream << "MineralKineticsFactory::VerifyMineralName(): \n";
+    error_stream << "Did not find mineral: \'" << mineral_name << "\'\n"
                  << "       in the mineral list. " << std::endl;
-    throw ChemistryException(error_stream.str(), 
-                             ChemistryException::kUnrecoverableError);
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
   return mineral_id;
 }  // end VerifyMineralName()
