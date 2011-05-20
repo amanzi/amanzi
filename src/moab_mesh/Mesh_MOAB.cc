@@ -1328,7 +1328,7 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
     
     if (faceflip[faceid]) {
       for (int i = nn-1; i >=0; i--) {
-	result = mbcore->get_coords(&(face_nodes[i]),1,coords+spacedim*(nn-i-1));
+	result = mbcore->get_coords(&(face_nodes[i]),1,coords);
 	if (result != MB_SUCCESS) {
 	  std::cerr << "Problem getting coordinates of node" << std::endl;
 	  assert(result == MB_SUCCESS);
@@ -1341,7 +1341,7 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
     }
     else {
       for (int i = 0; i < nn; i++) {
-	result = mbcore->get_coords(&(face_nodes[i]),1,coords+spacedim*i);
+	result = mbcore->get_coords(&(face_nodes[i]),1,coords);
 	if (result != MB_SUCCESS) {
 	  std::cerr << "Problem getting tag data" << std::endl;
 	  assert(result == MB_SUCCESS);
