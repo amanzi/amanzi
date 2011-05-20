@@ -11,7 +11,7 @@ TEST(vanGenuchten) {
   double sr = 0.4;
   double p_atm = 1.0e+5;
 
-  vanGenuchtenModel vG(m, alpha, sr, p_atm);
+  vanGenuchtenModel vG(1, m, alpha, sr, p_atm);
   
   // check k_relative for p = 2*p_atm
   CHECK_EQUAL(vG.k_relative(2.0*p_atm),1.0);

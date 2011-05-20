@@ -6,8 +6,11 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ParameterListAcceptorHelpers.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
 
 #include "simple_mesh_input.hh"
+#include "transport_input.hh"
 
 typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
 
@@ -25,12 +28,11 @@ int main(int argc, char *argv[])
   SimpleMeshInput simple_mesh_info;
   print_line();
   cout << "Valid Parameters for Simple Mesh" << endl;
+  print_line();
   Teuchos::printValidParameters(simple_mesh_info,cout,true);
   print_line();
 
-  Teuchos::RCP<const Teuchos::ParameterList> info_list =
-     simple_mesh_info.getParameterList(); 
-
+  /* Example of creating Simple input object */
   print_line();
   cout << "Sample simple mesh input setup" << endl;
   print_line();
@@ -44,7 +46,29 @@ int main(int argc, char *argv[])
 
   simple_list->print(std::cout,PLPrintOptions().showTypes(true).showDoc(true));
   print_line();
+  cout << "Dump information to XML format" << endl;
+  Teuchos::writeParameterListToXmlOStream(*simple_list,std::cout); 
+  print_line();
 
-  
+  /* Transport example */
+  TransportInput transport;
+
+  print_line();
+  cout << "Transport Default Parameters (XML)" << endl;
+  print_line();
+  string transport_xml = transport.getXmlString(); 
+  cout << transport_xml << endl;
+  print_line();
+
+  print_line();
+  cout << "Change transport parameters CFL and max dT" << endl;
+  print_line();
+  transport.set_cfl(0.5);
+  transport.set_max_dt(1.0e-03);
+  transport.set_verbosity(1);
+  transport.getParameterList()->print(cout,PLPrintOptions().showTypes(true).showDoc(true));
+  print_line();
+
+
   return 0;
 }    
