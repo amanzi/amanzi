@@ -52,7 +52,7 @@ TEST(MOAB_HEX1)
   for (i = 0; i < nv; i++) {
     double coords[3];
     
-    mesh.node_to_coordinates(i,coords,coords+6);
+    mesh.node_to_coordinates(i,coords,coords+3);
     CHECK_ARRAY_EQUAL(xyz[i],coords,3);
   }
 
