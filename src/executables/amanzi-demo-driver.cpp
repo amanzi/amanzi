@@ -1,6 +1,6 @@
 #include <iostream>
-#include "stdlib.h"
-#include "math.h"
+#include <cstdlib>
+#include <cmath>
 
 #if HAVE_MOAB_MESH
 #include "Mesh_maps_moab.hh"
@@ -31,6 +31,9 @@
 
 #include "State.hpp"
 #include "MPC.hpp"
+
+#include "errors.hh"
+#include "exceptions.hh"
 
 int main(int argc, char *argv[])
 {
@@ -123,7 +126,11 @@ int main(int argc, char *argv[])
 #endif
   else
     {
-      throw std::exception();
+      ostringstream error_message;
+      error_message << "AMANZI_DEMO_DRIVER: main(): "
+                    << "could not find mesh class \'" << mesh_class
+                    << "\' is not enabled." << std::endl;
+      Exceptions::amanzi_throw(Errors::Message(error_message.str()));
     }
 
 
