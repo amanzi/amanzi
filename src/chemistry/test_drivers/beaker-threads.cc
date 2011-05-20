@@ -20,7 +20,7 @@
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "Verbosity.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 #include "beaker-threads.hh"
 

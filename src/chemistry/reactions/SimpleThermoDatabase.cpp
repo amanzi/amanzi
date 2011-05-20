@@ -6,6 +6,8 @@
 **
 */
 
+#include "SimpleThermoDatabase.hpp"
+
 #include <cstdlib>
 
 #include <fstream>
@@ -21,11 +23,10 @@
 #include "SurfaceComplex.hpp"
 #include "IonExchangeSite.hpp"
 #include "IonExchangeComplex.hpp"
-#include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "Species.hpp"
 #include "StringTokenizer.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 #include "exceptions.hh"
 
@@ -88,10 +89,9 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
   std::ifstream input(file_name.c_str());
   if (!input) {
     std::ostringstream error_stream;
-    error_stream << "ERROR: SimpleThermoDatabase::ReadFile(): \n";
-    error_stream << "ERROR: file could not be opened.... " << file_name << "\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
-                                                ChemistryException::kUnrecoverableError));
+    error_stream << "SimpleThermoDatabase::ReadFile(): \n";
+    error_stream << "file could not be opened.... " << file_name << "\n";
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine,
@@ -251,8 +251,9 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
       }
       if (data_order_error) {
         // print a helpful message and exit gracefully
-        std::cout << "ERROR: SimpleThermoDatabase::ReadFile() : "
-                  << "Attempting to parse " << error_section << " before ";
+        std::ostringstream error_stream;
+        error_stream << "SimpleThermoDatabase::ReadFile() : "
+                     << "Attempting to parse " << error_section << " before ";
         std::string temp = "";
         if (data_order_error == 5) {
           temp += "surface complex sites ";
@@ -263,15 +264,13 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
         } else if (data_order_error == 1) {
           temp += "primary species ";
         }
-        std::cout << temp << "have been specified. Please check for "
+        error_stream << temp << "have been specified. Please check for "
                   << "additional error messages and verify database file is "
                   << "correct." << std::endl;
-        std::ostringstream error_stream;
-        error_stream << "ERROR: SimpleThermoDatabase::ReadFile(): \n";
-        error_stream << "ERROR: a data order error has occured reading file " << file_name
+        error_stream << "SimpleThermoDatabase::ReadFile(): \n";
+        error_stream << "a data order error has occured reading file " << file_name
                      << "       please see output for details.\n";
-        Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
-                                                    ChemistryException::kUnrecoverableError));
+        Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
       }
     }
 
@@ -397,8 +396,11 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
  *******************************************************************************/
 void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data)
 {
-  std::cout << "ERROR: SimpleThermoDatabase::ParseGeneralKinetics() : not implemented...."
-            << std::endl;
+  std::ostringstream error_stream;
+  error_stream << "SimpleThermoDatabase::ParseGeneralKinetics() : not implemented."
+               << std::endl;
+  Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+
 }  // end ParseGeneralKinetics()
 
 /*******************************************************************************

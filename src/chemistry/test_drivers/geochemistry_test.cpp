@@ -13,7 +13,7 @@
 #include "Beaker.hpp"
 #include "activity-model-factory.hh"
 #include "Verbosity.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 #include "geochemistry_test.hpp"
 

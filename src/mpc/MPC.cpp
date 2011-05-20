@@ -68,16 +68,17 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    // chemistry...
    
    if (chemistry_enabled) {
-     CS = Teuchos::rcp( new Chemistry_State( S ) );
+     try {
+       CS = Teuchos::rcp( new Chemistry_State( S ) );
 
-     Teuchos::ParameterList chemistry_parameter_list = 
-       parameter_list.sublist("Chemistry");
+       Teuchos::ParameterList chemistry_parameter_list = 
+           parameter_list.sublist("Chemistry");
      
-     CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
-
-     if (CPK->status() != ChemistryException::kOkay) {
-       cout << "MPC: Chemistry_PK constructor returned an error status" << endl;
-       throw std::exception();
+       CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+     } catch (ChemistryException& chem_error) {
+       std::cout << "MPC: Chemistry_PK constructor returned an error: " 
+                 << std::endl << chem_error.what() << std::endl;
+       amanzi_throw(chem_error);
      }
    }
    
@@ -131,11 +132,13 @@ void MPC::cycle_driver () {
 
 
   if (chemistry_enabled) {
-    // total view needs this to be outside the constructor 
-    CPK->InitializeChemistry();
-    if (CPK->status() != ChemistryException::kOkay) {
-      cout << "MPC: Chemistry_PK.InitializeChemistry returned an error status" << endl;
-      throw std::exception();
+    try {
+      // total view needs this to be outside the constructor 
+      CPK->InitializeChemistry();
+    } catch (ChemistryException& chem_error) {
+      std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
+                << std::endl << chem_error.what() << std::endl;
+      Exceptions::amanzi_throw(chem_error);
     }
   }
   
@@ -146,8 +149,13 @@ void MPC::cycle_driver () {
 
 
   if (chemistry_enabled) {
-    CPK->set_chemistry_output_names(auxnames);
-    CPK->set_component_names(compnames);
+    try {
+      CPK->set_chemistry_output_names(auxnames);
+      CPK->set_component_names(compnames);
+    } catch (ChemistryException& chem_error) {
+      std::cout << chem_error.what() << std::endl;
+      Exceptions::amanzi_throw(chem_error);
+    }
   }
 #endif
   bool gnuplot_output = mpc_parameter_list.get<bool>("Gnuplot output",false);
@@ -261,8 +269,13 @@ void MPC::cycle_driver () {
       }    
       
       if (chemistry_enabled) {
-	// get the auxillary data
-	Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+        try {
+          // get the auxillary data
+          Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+        } catch (ChemistryException& chem_error) {
+          std::cout << chem_error.what() << std::endl;
+          amanzi_throw(chem_error);
+        }
 
 	// how much of it is there?
 	int naux = aux->NumVectors();
@@ -330,12 +343,16 @@ void MPC::cycle_driver () {
       
       
       if (chemistry_enabled) {
-	// now advance chemistry
-	CPK->advance(mpc_dT, total_component_concentration_star);
-	ChemistryException::Status cpk_status = CPK->status();
-        if (cpk_status == ChemistryException::kOkay) {
-	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
-        } else {
+        try {
+          // now advance chemistry
+          CPK->advance(mpc_dT, total_component_concentration_star);
+	  S->update_total_component_concentration(CPK->get_total_component_concentration());
+        } catch (ChemistryException& chem_error) {
+          std::ostringstream error_message;
+          error_message << "MPC: error... Chemistry_PK.advance returned an error status";
+          error_message << chem_error.what();
+          Errors::Message message(error_message.str());
+	  Exceptions::amanzi_throw(message);
           // dump data and give up...
 // 	  S->update_total_component_concentration(CPK->get_total_component_concentration());
 	  
@@ -349,8 +366,6 @@ void MPC::cycle_driver () {
 // 	  }
 // #endif	
 	  
-	  Errors::Message message("MPC: error... Chemistry_PK.advance returned an error status"); 
-	  Exceptions::amanzi_throw(message);
         }
       } else {
 	// commit total_component_concentration_star to the state

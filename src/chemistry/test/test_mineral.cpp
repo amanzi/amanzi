@@ -8,7 +8,7 @@
 #include <UnitTest++.h>
 
 #include "Mineral.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 #include "Block.hpp"
 #include "Verbosity.hpp"
 
