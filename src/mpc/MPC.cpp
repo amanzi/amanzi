@@ -147,23 +147,28 @@ void MPC::cycle_driver () {
   bool gmv_output = mpc_parameter_list.isSublist("GMV");
 #ifdef ENABLE_CGNS
   bool cgns_output = mpc_parameter_list.isSublist("CGNS");
-
-
-
-  if (chemistry_enabled) {
-    try {
-      CPK->set_chemistry_output_names(auxnames);
-      CPK->set_component_names(compnames);
-    } catch (ChemistryException& chem_error) {
-      std::cout << chem_error.what() << std::endl;
-      Exceptions::amanzi_throw(chem_error);
-    }
+  if (cgns_output) {
+    cout << "MPC: will write cgns output" << endl;
   }
+
+  // bandre: moved up to the previous chemistry try block
+  // if (chemistry_enabled) {
+  //   try {
+  //     CPK->set_chemistry_output_names(auxnames);
+  //     CPK->set_component_names(compnames);
+  //   } catch (ChemistryException& chem_error) {
+  //     std::cout << chem_error.what() << std::endl;
+  //     Exceptions::amanzi_throw(chem_error);
+  //   }
+  // }
 #endif
   bool gnuplot_output = mpc_parameter_list.get<bool>("Gnuplot output",false);
-  if ( mesh_maps->get_comm()->NumProc() != 1 ) gnuplot_output = false;
-  
-  cout << "MPC: will write gnuplot output" << endl;
+  if ( mesh_maps->get_comm()->NumProc() != 1 ) {
+    gnuplot_output = false;
+  }
+  if (gnuplot_output) {
+    cout << "MPC: will write gnuplot output" << endl;
+  }
 
   const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",-1);
   const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",-1);
@@ -246,7 +251,7 @@ void MPC::cycle_driver () {
       write_field_data(*S->get_permeability(), "permeability");
       write_field_data(*S->get_porosity(),"porosity");
    
-      if (flow_mode == "Richards")
+      if (flow_model == "Richards")
 	{
 	  write_field_data(*S->get_water_saturation(),"water saturation");
 	}
@@ -274,19 +279,18 @@ void MPC::cycle_driver () {
         try {
           // get the auxillary data
           Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+
+          // how much of it is there?
+          int naux = aux->NumVectors();
+          for (int i=0; i<naux; i++) {
+            std::stringstream name;
+            name << auxnames[i];
+
+            write_field_data( *(*aux)(i), name.str());
+          }
         } catch (ChemistryException& chem_error) {
           std::cout << chem_error.what() << std::endl;
           amanzi_throw(chem_error);
-        }
-
-	// how much of it is there?
-	int naux = aux->NumVectors();
-	for (int i=0; i<naux; i++) {
-	  std::stringstream name;
-	  name << auxnames[i];
-	  
-	  write_field_data( *(*aux)(i), name.str()); 
-
 	}
 
       }
