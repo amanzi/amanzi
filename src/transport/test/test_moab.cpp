@@ -22,7 +22,7 @@ TEST(ADVANCE_WITH_MOAB) {
   cout << "================ TEST ADVANCE WITH MOAB ===================" << endl;
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<Amanzi::AmanziMesh::Mesh>  mesh = rcp( new Amanzi::AmanziMesh::Mesh_MOAB( "../moab_mesh/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD ) );
+  RCP<Amanzi::AmanziMesh::Mesh>  mesh = rcp( new Amanzi::AmanziMesh::Mesh_MOAB( "../mesh/mesh_moab/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD ) );
 
   State mpc_state( num_components, mesh );
 
