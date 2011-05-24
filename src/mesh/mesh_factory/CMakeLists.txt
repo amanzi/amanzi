@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created March 11, 2011 by William A. Perkins
-# Last Change: Fri Apr 22 09:49:51 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# Last Change: Tue May 24 12:56:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(TestManager)
@@ -78,7 +78,7 @@ if (BUILD_TESTS)
     if(ENABLE_MOAB_Mesh)
         set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${MOAB_SOURCE_DIR}/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
     else()
-        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${AMANZI_SOURCE_DIR}/src/moab_mesh/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
+        set(test_file_flags "${test_file_flags} -DMOAB_TEST_FILE=\"\\\"${AMANZI_SOURCE_DIR}/src/mesh/mesh_moab/test/hex_4x4x4_ss_4P.h5m\\\"\" ")
     endif()
         
     set_source_files_properties(test/test_mesh_file.cc PROPERTIES 

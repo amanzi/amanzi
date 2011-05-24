@@ -64,7 +64,7 @@ if (BUILD_TESTS)
                                 "-DEXODUS_FILE_DIR=\"\\\"${EXODUS_FILE_DIR}\\\"\" ")
                             
     execute_process(COMMAND ${CMAKE_COMMAND} -E 
-    copy_directory ${AMANZI_SOURCE_SRC_DIR}/exodus/test/test_files ${EXODUS_FILE_DIR}) 
+    copy_directory ${EXO_SOURCE_DIR}/test/test_files ${EXODUS_FILE_DIR}) 
 
     #  On Mac OSX, compiler complains about duplicates from Boost
     #  These libraries are also listed in Epetra_LIBRARIES, Teuchos_LIBRARIES 
