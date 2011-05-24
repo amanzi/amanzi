@@ -47,6 +47,7 @@ set(amanzi_mesh_libs "")
 list(APPEND amanzi_mesh_libs stk_mesh exodus)
 add_definitions("-DHAVE_STK_MESH")
 add_definitions("-DHAVE_MOAB_MESH")
+add_definitions("-DHAVE_MSTK_MESH")
 
 # External (TPL) include directories
 include_directories(${Boost_INCLUDE_DIRS})
