@@ -102,16 +102,8 @@ void HDF5::createDataFile(std::string mesh_filename, std::string soln_filename) 
     Exceptions::amanzi_throw(message);
   }
 
-  // create default group structure
-  // TODO(barker): add error handling: can't create
-  hid_t group = H5Gcreate2(file, "/Arrays",
-                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  group = H5Gcreate2(file, "/Probes", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  group = H5Gcreate2(file, "/Fields", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
   // close file
-  herr_t status = H5Gclose(group);
-  status = H5Fclose(file);
+  herr_t status = H5Fclose(file);
 
   // Store filenames
   setH5DataFilename(h5filename);
@@ -409,13 +401,14 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
   double *data;
   int err = x.ExtractView(&data);
   int length = x.GlobalLength();
+  hid_t file, group, dataspace, dataset;
 
   // TODO(barker): how to build path name?? probably still need iteration number
   std::stringstream h5path;
-  h5path << "/Fields/" << varname;
+  h5path << "/" << varname;
 
   // TODO(barker): add error handling: can't write/create
-  hid_t file = H5Fopen(H5DataFilename().c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+  file = H5Fopen(H5DataFilename().c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
   if (file < 0) {
     Errors::Message message(
           "HDF5::writeFieldData_ error opening data file to write field data");
@@ -423,9 +416,7 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
   }
 
   // Check if varname group exists; if not, create it
-  hid_t group = H5Gopen(file, "/Fields", H5P_DEFAULT);
-  htri_t exists = H5Lexists(group, varname.c_str(), H5P_DEFAULT);
-  H5Gclose(group);
+  htri_t exists = H5Lexists(file, h5path.str().c_str(), H5P_DEFAULT);
   if (exists) {
     group = H5Gopen(file, h5path.str().c_str(), H5P_DEFAULT);
   } else {
@@ -435,8 +426,8 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
   h5path << "/" << Iteration();
 
   hsize_t hs = static_cast<hsize_t> (length);
-  hid_t dataspace = H5Screate_simple(1, &hs, NULL);
-  hid_t dataset = H5Dcreate(file, h5path.str().c_str(),
+  dataspace = H5Screate_simple(1, &hs, NULL);
+  dataset = H5Dcreate(file, h5path.str().c_str(),
                             H5T_NATIVE_DOUBLE, dataspace,
                             H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   herr_t status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
