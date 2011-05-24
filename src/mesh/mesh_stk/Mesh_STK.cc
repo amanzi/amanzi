@@ -4,7 +4,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Tue May 17 11:45:28 2011
+ * @date Thu May 19 12:15:07 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:45:28 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu May 19 12:15:07 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <algorithm>
@@ -67,6 +67,7 @@ Mesh_STK::~Mesh_STK(void)
 // -------------------------------------------------------------
 // Mesh_STK::entity_get_ptype
 // -------------------------------------------------------------
+// FIXME: can be implemented in Mesh
 /** 
  * 
  * 
@@ -411,23 +412,54 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
 
 // -------------------------------------------------------------
 // Mesh_STK::cell_get_face_adj_cells
+// FIXME: not Mesh_STK specific
 // -------------------------------------------------------------
 void 
 Mesh_STK::cell_get_face_adj_cells(const Entity_ID cellid,
                                   const Parallel_type ptype,
                                   Entity_ID_List *fadj_cellids) const
 {
-  // FIXME
+  Entity_ID_List faces;
+  cell_get_faces(cellid, &faces);
+
+  fadj_cellids->clear();
+  for (Entity_ID_List::iterator f = faces.begin(); 
+       f != faces.end(); f++) {
+    Entity_ID_List fcells;
+    face_get_cells(*f, ptype, &fcells);
+    if (!fcells.empty()) {
+      if (fcells.front() != cellid) {
+        fadj_cellids->push_back(fcells.front());
+      } else if (fcells.back() != cellid) {
+        fadj_cellids->push_back(fcells.back());
+      }
+    }
+  }
 }
 
 // -------------------------------------------------------------
 // Mesh_STK::cell_get_node_adj_cells
+// FIXME: can be implemented in Mesh
 // -------------------------------------------------------------
 void Mesh_STK::cell_get_node_adj_cells(const Entity_ID cellid,
                                        const Parallel_type ptype,
                                        Entity_ID_List *nadj_cellids) const
 {
-  // FIXME
+  Entity_ID_List nodes;
+  cell_get_nodes(cellid, &nodes);
+
+  nadj_cellids->clear();
+  for (Entity_ID_List::iterator n = nodes.begin(); 
+       n != nodes.end(); n++) {
+    Entity_ID_List ncells;
+    node_get_cells(*n, ptype, &ncells);
+    for (Entity_ID_List::iterator c = ncells.begin(); 
+         c != ncells.end(); c++) {
+      if (*c != cellid) {
+        nadj_cellids->push_back(*c);
+      }
+    }
+  }
 }
 
 
