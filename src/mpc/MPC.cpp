@@ -21,12 +21,12 @@
 #include "boost/filesystem/path.hpp"
 
 
+namespace Amanzi
+{
+
 #ifdef ENABLE_CGNS
 using namespace CGNS_PAR;
 #endif
-
-namespace Amanzi
-{
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
 	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
