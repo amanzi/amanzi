@@ -17,13 +17,14 @@
 
 namespace Amanzi {
 
-class RichardsProblem
+class RichardsProblem 
 {
 public:
 
   RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 	       Teuchos::ParameterList&, const Teuchos::RCP<FlowBC> &bc);
   ~RichardsProblem();
+
 
   // Set the constant value of fluid density.
   void SetFluidDensity(double rho);

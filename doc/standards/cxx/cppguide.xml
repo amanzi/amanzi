@@ -2171,6 +2171,7 @@
   </STYLEPOINT>
 
   <STYLEPOINT title="0 and NULL">
+    <!-->TODO(bandre): for invalid values, assign NAN for doubles<-->
   <SUMMARY>
     Use <code>0</code> for integers, <code>0.0</code> for reals,
     <code>NULL</code> for pointers, and <code>'\0'</code> for chars.
