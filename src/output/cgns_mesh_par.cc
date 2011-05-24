@@ -78,7 +78,7 @@ namespace CGNS_PAR {
     double *y = new double [num_nodes];
     double *z = new double [num_nodes];
     
-    Point xc(3);
+    AmanziGeometry::Point xc(3);
     for (int i=0; i<num_nodes; i++) {
       mesh_maps.node_get_coordinates(i,&xc);
       x[i] = xc[0];
@@ -143,12 +143,12 @@ namespace CGNS_PAR {
     
     // get connectivity
     int *ielem = new int [num_cells*8];
-    Entity_ID_List xh(8);
+    AmanziMesh::Entity_ID_List xh(8);
     
     nelem_start = 1; // first cell ID
     nelem_end = 0;
     for (int i=0; i<num_cells; i++) {
-      mesh_maps.cell_to_nodes(i,&xh);
+      mesh_maps.cell_get_nodes(i,&xh);
       for (int j=0; j<xh.size(); j++) {
 	ielem[i*8+j] = mesh_maps.node_map(true).GID(xh[j]) +1;
       }
@@ -266,7 +266,7 @@ namespace CGNS_PAR {
     }
   }
     
-  void create_timestep(const double time, const int iter, Entity_kind kind)
+  void create_timestep(const double time, const int iter, AmanziMesh::Entity_kind kind)
     {
       using namespace CGNS_PAR;
 
