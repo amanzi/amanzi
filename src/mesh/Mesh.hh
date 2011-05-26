@@ -25,7 +25,8 @@ namespace AmanziMesh
     mutable bool geometry_precomputed;
     int precompute_geometric_quantities() const;
     mutable std::vector<double> cell_volumes, face_areas;
-    mutable std::vector<AmanziGeometry::Point> cell_centroids, face_normals;
+    mutable std::vector<AmanziGeometry::Point> cell_centroids, 
+      face_centroids, face_normals;
 
     Epetra_Comm *comm; // temporary until we get an amanzi communicator
     
@@ -307,6 +308,14 @@ namespace AmanziMesh
     AmanziGeometry::Point cell_centroid (const Entity_ID cellid) const {
       if (!geometry_precomputed) precompute_geometric_quantities();
       return cell_centroids[cellid];
+    }
+    
+    // Centroid of face
+
+    inline
+    AmanziGeometry::Point face_centroid (const Entity_ID faceid) const {
+      if (!geometry_precomputed) precompute_geometric_quantities();
+      return face_centroids[faceid];
     }
     
     // Normal to face

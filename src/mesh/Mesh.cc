@@ -78,6 +78,7 @@ namespace AmanziMesh
 
 	AmanziGeometry::polygon_get_area_centroid(fcoords,&area,&centroid);
 	face_areas.push_back(area);
+	face_centroids.push_back(centroid);
 
 	normal = AmanziGeometry::polygon_get_normal(fcoords);
 	normal *= area;
@@ -109,6 +110,9 @@ namespace AmanziMesh
 	  evec = fcoords[1]-fcoords[0];
 	  area = sqrt(evec*evec);
 	  face_areas.push_back(area);
+
+	  centroid = 0.5*(fcoords[0]+fcoords[1]);
+	  face_centroids.push_back(centroid);
 	    
 	  normal = AmanziGeometry::Point(evec[1],-evec[0]);
 	  face_normals.push_back(normal);
@@ -131,6 +135,22 @@ namespace AmanziMesh
 
 	// edge normals are ambiguous for surface mesh
 	// So we won't compute them
+
+	int nfaces = num_entities(FACE,USED);
+	std::vector<AmanziGeometry::Point> fcoords;
+	AmanziGeometry::Point evec(3), normal(3);
+
+	for (int i = 0; i < nfaces; i++) {
+	  face_get_coordinates(i,&fcoords);
+
+	  evec = fcoords[1]-fcoords[0];
+	  area = sqrt(evec*evec);
+	  face_areas.push_back(area);
+
+	  centroid = 0.5*(fcoords[0]+fcoords[1]);
+	  face_centroids.push_back(centroid);
+	    
+	}
 
       }
 
