@@ -22,71 +22,69 @@ double f_step( double* x, double t ) {
 
 
 TEST(ADVANCE_WITH_MOAB_PARALLEL) {
-
   using namespace std;
   using namespace Teuchos;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziTransport;
 
   cout << "================ TEST PARALLEL MOAB MESH ===================" << endl;
 
   /* read and verify the mesh */
   int num_components = 2;
-  RCP<Amanzi::AmanziMesh::Mesh> mesh = rcp( new Amanzi::AmanziMesh::Mesh_MOAB( "../mesh/mesh_moab/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
+  RCP<Mesh> mesh = rcp(new Mesh_MOAB( "../mesh/mesh_moab/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD));
 
   /*
-  MeshAudit audit( mesh );
+  MeshAudit audit(mesh);
   audit.Verify();
   */
 
-  /* create a MPC state with one component */
-  State mpc_state( num_components, mesh );
+  // create a MPC state with one component 
+  State mpc_state(num_components, mesh);
 
   /* create a transport state from the MPC state and populate it */
-  RCP<Amanzi::Transport_State>  TS = rcp( new Amanzi::Transport_State( mpc_state ) );
+  RCP<Transport_State>  TS = rcp(new Transport_State(mpc_state));
   double u[3] = {1, 0, 0};
 
-  TS->analytic_total_component_concentration( f_step );
+  TS->analytic_total_component_concentration(f_step);
   TS->analytic_porosity();
-  TS->analytic_darcy_flux( u );
+  TS->analytic_darcy_flux(u);
   TS->analytic_water_saturation();
 
-
-  /* initialize a transport process kernel from a transport state */
+  // initialize a transport process kernel from a transport state
   ParameterList parameter_list;
   string xmlFileName = "test/test_moab_parallel.xml";
 
   updateParametersFromXmlFile( xmlFileName, &parameter_list );
-  Amanzi::Transport_PK  TPK( parameter_list, TS );
+  Transport_PK  TPK( parameter_list, TS );
 
-  /* advance the state */
-  double  dT = TPK.calculate_transport_dT();
+  double  dT = TPK.calculate_transport_dT();  
   TPK.advance( dT );
 
-  /* printing cell concentration */
+  // printing cell concentration
   int  iter, k;
   double  T = 0.0;
-  RCP<Amanzi::Transport_State> TS_next = TPK.get_transport_state_next();
+  RCP<Transport_State> TS_next = TPK.get_transport_state_next();
 
   RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
   iter = 0;
-  while( T < 1.0 ) {
+  while(T < 1.0) {
      dT = TPK.calculate_transport_dT();
-     TPK.advance( dT );
+     TPK.advance(dT);
      T += dT;
      iter++;
 
-     if ( iter < 10 && TPK.MyPID == 3 ) {
-        printf( "T=%7.2f  C_0(x):", T );
-        for( int k=0; k<2; k++ ) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+     if (iter < 10 && TPK.MyPID == 3) {
+        printf("T=%7.2f  C_0(x):", T);
+        for (int k=0; k<2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
      }
 
      *tcc = *tcc_next;
   }
 
-  /* check that the final state is constant */
-  for( int k=0; k<12; k++ ) 
-     CHECK_CLOSE( (*tcc_next)[0][k], 1.0, 1e-6 );
+  for (int k=0; k<12; k++) 
+     CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
 }
  
  

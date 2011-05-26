@@ -5,33 +5,28 @@
 #include  <math.h>
 
 
-namespace Amanzi
-{
+namespace Amanzi {
 
-namespace AmanziGeometry
-{
+namespace AmanziGeometry {
 
-
-class Point 
-{
-private:
+class Point {
+ private:
   int    d;
   double *xyz;
+
+ public:
+  Point()                                                  { d = 0; xyz = NULL; }
+  Point(const Point& p)                                    { d = 0; xyz = NULL; init(p.d); for( int i=0; i<d; i++) xyz[i] = p.xyz[i]; }
+  Point(const int N)                                       { d = 0; xyz = NULL; init(N); }
+  Point(const double& x, const double& y)                  { d = 0; xyz = NULL; init(2); xyz[0] = x; xyz[1] = y;  }
+  Point(const double& x, const double& y, const double& z) { d = 0; xyz = NULL; init(3); xyz[0] = x; xyz[1] = y; xyz[2] = z; }
+  ~Point() { if (xyz != NULL) delete [] xyz; }
   
-public:
-  Point()                                                    { d = 0; xyz = NULL; }
-  Point(const Point& p)                                      { d = 0; xyz = NULL; init(p.d); for( int i=0; i<d; i++) xyz[i] = p.xyz[i]; }
-  Point( const int N )                                       { d = 0; xyz = NULL; init(N); }
-  Point( const double& x, const double& y )                  { d = 0; xyz = NULL; init(2); xyz[0] = x; xyz[1] = y;  }
-  Point( const double& x, const double& y, const double& z ) { d = 0; xyz = NULL; init(3); xyz[0] = x; xyz[1] = y; xyz[2] = z; }
-  
-  ~Point() { if ( xyz != NULL ) delete [] xyz; }
-  
-  /* initialization */
-  void init( const int N ) {
-    if (!xyz) 
+  void init(const int N) {
+    if (!xyz) {
       xyz = new double[N]; 
-    else if (d < N) { // If it was reinitialized to be a higher dim point
+    }
+    else if (d < N) {  // If it was reinitialized to be a higher dim point
       delete [] xyz;
       xyz = new double[N];
     }
@@ -39,7 +34,6 @@ public:
     for( int i=0; i<d; i++) xyz[i] = 0.0;
   }
   
-
   void set( const double& val ) { for( int i=0; i<d; i++ ) xyz[i] = val;  }
   void set( const Point& p )    { for( int i=0; i<d; i++ ) xyz[i] = p[i]; }
   void set( const double *val ) { if (!val) throw std::exception(); for( int i=0; i<d; i++ ) xyz[i] = val[i]; }
