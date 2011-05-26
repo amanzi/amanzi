@@ -30,7 +30,7 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
 
   /* read and verify the mesh */
   int num_components = 2;
-  RCP<Amanzi::AmanziMesh::Mesh> mesh = rcp( new Amanzi::AmanziMesh::Mesh_MOAB( "../moab_mesh/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
+  RCP<Amanzi::AmanziMesh::Mesh> mesh = rcp( new Amanzi::AmanziMesh::Mesh_MOAB( "../mesh/mesh_moab/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD ) );
 
   /*
   MeshAudit audit( mesh );

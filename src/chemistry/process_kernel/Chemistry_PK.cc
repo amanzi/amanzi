@@ -19,7 +19,7 @@
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "Verbosity.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 
 /*******************************************************************************
@@ -57,8 +57,7 @@
 
 Chemistry_PK::Chemistry_PK(Teuchos::ParameterList &param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
-    : status_(ChemistryException::kOkay),
-      verbosity_(kSilent),
+    : verbosity_(kSilent),
       max_time_step_(9.9e9),
       chemistry_state_(chem_state),
       parameter_list_(param_list),
@@ -149,10 +148,10 @@ void Chemistry_PK::InitializeChemistry(void)
     }
   }
   catch (ChemistryException& geochem_error) {
-    // TODO: any errer in the constructor is probably fatal. should be
-    // rethrown rather than set_status()?
+    // TODO: any errer in the constructor is probably fatal. 
+    // TODO(bandre): write to cout/cerr here or let the catcher handle it?
     std::cout << geochem_error.what() << std::endl;
-    set_status(geochem_error.error_status());
+    Exceptions::amanzi_throw(geochem_error);
   }
 
   CopyBeakerComponentsToCell(cell);
@@ -176,7 +175,7 @@ void Chemistry_PK::InitializeChemistry(void)
     }
     catch (ChemistryException& geochem_error) {
       std::cout << geochem_error.what() << std::endl;
-      set_status(geochem_error.error_status());
+      Exceptions::amanzi_throw(geochem_error);
     }
     // if successful copy back
     CopyBeakerComponentsToCell(icell);
@@ -449,7 +448,8 @@ void Chemistry_PK::LocalInitialConditions(void)
       if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_ID,
                                                            Amanzi::AmanziMesh::CELL)) {
         // there is an inconsistency in the xml input file...
-        Exceptions::amanzi_throw(Errors::Message("Chemistry_PK::inconsistent xml input"));
+        std::string message = "Chemistry_PK::LocalInitialConditions(): inconsistent xml input";
+        Exceptions::amanzi_throw(ChemistryInvalidInput(message));
       }
 
       //
@@ -596,7 +596,7 @@ void Chemistry_PK::set_cell_value_in_mesh_block(const double value,
 {
   if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_id,
                                                        Amanzi::AmanziMesh::CELL)) {
-    Exceptions::amanzi_throw(Errors::Message(
+    Exceptions::amanzi_throw(ChemistryInvalidInput(
         "Chemistry_PK::set_cell_value_in_mesh_block(): invalid mesh set id"));
   }
 
@@ -802,9 +802,10 @@ void Chemistry_PK::advance(
 
     try {
       // chemistry computations for this cell
-#ifdef GLENN_DEBUG
+//#ifdef GLENN_DEBUG
+      // TODO(bandre): need a better way to deal with debugging stuff we want to keep
       chem_->CopyComponents(beaker_components_,&beaker_components_copy_);
-#endif
+//#endif
       int num_iterations = chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
@@ -828,6 +829,8 @@ void Chemistry_PK::advance(
       chem_->DisplayTotalColumns(current_time_, beaker_components_.free_ion);
       std::cout << "  Total Sorbed Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_.total_sorbed);
+//#ifdef GLENN_DEBUG
+      // TODO(bandre): these cause an exception if called when the above copy is missing
       std::cout << "\nPrevious Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total);
@@ -835,8 +838,9 @@ void Chemistry_PK::advance(
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.free_ion);
       std::cout << "  Total Sorbed Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total_sorbed);
+//#endif
       std::cout << std::endl;
-      set_status(geochem_error.error_status());
+      Exceptions::amanzi_throw(geochem_error);
     }
 
     // update this cell's data in the arrays

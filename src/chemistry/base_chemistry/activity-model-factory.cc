@@ -1,12 +1,13 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "activity-model-factory.hh"
+
 #include <sstream>
 #include <string>
 
 #include "activity-model.hh"
 #include "activity-model-debye-huckel.hh"
 #include "activity-model-unit.hh"
-#include "activity-model-factory.hh"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 #include "exceptions.hh"
 
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
@@ -28,21 +29,19 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model) {
   } else {
     // default type, error...?
     std::ostringstream error_stream;
-    error_stream << "ERROR: ActivityModelFactory::Create(): \n";
-    error_stream << "ERROR: Unknown activity model name: " << model << "\n"
+    error_stream << "ActivityModelFactory::Create(): \n"
+                 << "Unknown activity model name: " << model << "\n"
                  << "       valid names: " << unit << "\n"
                  << "                    " << debye_huckel << "\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
-                                                ChemistryException::kUnrecoverableError));
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 
   if (activity_model == NULL) {
     // something went wrong, should throw an exception and exit gracefully....
     std::ostringstream error_stream;
-    error_stream << "ERROR: ActivityModelFactory::Create(): \n";
-    error_stream << "ERROR: Activity model was not created for some reason....\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str(),
-                                                ChemistryException::kUnrecoverableError));
+    error_stream << "ActivityModelFactory::Create(): \n"
+                 << "Activity model was not created for some reason....\n";
+    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
   } else {
     // finish any additional setup
 

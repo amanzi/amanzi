@@ -165,6 +165,7 @@ int main(int argc, char *argv[])
   // Water Retention Model (here we use van Genuchten)
   Teuchos::ParameterList vGl;
   vGl.set<int>("Number of mesh blocks", 5);
+  vGl.set<double>("Atmospheric pressure", 101325.0);
 
   {
     Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 0");
@@ -173,7 +174,6 @@ int main(int argc, char *argv[])
     mb_vGl.set<double>("van Genuchten m",0.392);
     mb_vGl.set<double>("van Genuchten alpha",6.33e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.0609);
-    mb_vGl.set<double>("atmospheric pressure", 101325);
   }
   {
     Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 1");
@@ -182,7 +182,6 @@ int main(int argc, char *argv[])
     mb_vGl.set<double>("van Genuchten m",0.386);
     mb_vGl.set<double>("van Genuchten alpha",2.961e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.213);
-    mb_vGl.set<double>("atmospheric pressure", 101325);
   }    
   {
     Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 2");
@@ -191,7 +190,6 @@ int main(int argc, char *argv[])
     mb_vGl.set<double>("van Genuchten m",0.456);
     mb_vGl.set<double>("van Genuchten alpha",6.84e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.2595);
-    mb_vGl.set<double>("atmospheric pressure", 101325);
   }
   {
     Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 3");
@@ -200,7 +198,6 @@ int main(int argc, char *argv[])
     mb_vGl.set<double>("van Genuchten m",0.469);
     mb_vGl.set<double>("van Genuchten alpha",9.39e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.0837);
-    mb_vGl.set<double>("atmospheric pressure", 101325);
   }    
   {
     Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 4");
@@ -209,7 +206,6 @@ int main(int argc, char *argv[])
     mb_vGl.set<double>("van Genuchten m",0.658);
     mb_vGl.set<double>("van Genuchten alpha",1.008e-3);
     mb_vGl.set<double>("van Genuchten residual saturation",0.0774);
-    mb_vGl.set<double>("atmospheric pressure", 101325);
   }    
 
   RichardsProblem problem(mesh, vGl, bc);
