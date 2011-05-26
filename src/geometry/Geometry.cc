@@ -231,8 +231,9 @@ namespace Amanzi
 	    
 	    Point v3 = v1^v2;
 	    
-	    (*area) += 0.5*sqrt(v3*v3);
-	    (*centroid) += (coords[i]+coords[(i+1)%np]+center)/3.0;
+            double area_temp = norm(v3)/2;
+	    (*area) += area_temp;
+	    (*centroid) += (coords[i]+coords[(i+1)%np]+center) * (area_temp/3.0);
 	  }
 
 	  (*centroid) /= (*area);
