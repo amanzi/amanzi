@@ -39,8 +39,8 @@ TEST(ADVANCE_WITH_MSTK) {
   ParameterList parameter_list;
   string xmlFileName = "test/test_mstk.xml";
 
-  updateParametersFromXmlFile( xmlFileName, &parameter_list );
-  Transport_PK TPK( parameter_list, TS );
+  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  Transport_PK TPK(parameter_list, TS);
 
   // advance the state
   double  dT = TPK.calculate_transport_dT();

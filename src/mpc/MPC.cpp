@@ -87,12 +87,12 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    
    // transport...
    if (transport_enabled) {
-     TS = Teuchos::rcp( new Transport_State( *S ) );
+     TS = Teuchos::rcp( new AmanziTransport::Transport_State( *S ) );
 
      Teuchos::ParameterList transport_parameter_list = 
        parameter_list.sublist("Transport");
      
-     TPK = Teuchos::rcp( new Transport_PK(transport_parameter_list, TS) );
+     TPK = Teuchos::rcp( new AmanziTransport::Transport_PK(transport_parameter_list, TS) );
    }
 
    // flow...
@@ -333,10 +333,10 @@ void MPC::cycle_driver () {
       if (transport_enabled) {
 	// now advance transport
 	TPK->advance( mpc_dT );	
-	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
+	if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) 
 	  {
 	    // get the transport state and commit it to the state
-	    Teuchos::RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+	    Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
             *total_component_concentration_star = *TS_next->get_total_component_concentration();
 	  }
 	else
