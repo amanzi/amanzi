@@ -17,7 +17,7 @@ class Point {
  public:
   Point()                                                  { d = 0; xyz = NULL; }
   Point(const Point& p)                                    { d = 0; xyz = NULL; init(p.d); for( int i=0; i<d; i++) xyz[i] = p.xyz[i]; }
-  explicit Point(const int N)                              { d = 0; xyz = NULL; init(N); }
+  Point(const int N)                                       { d = 0; xyz = NULL; init(N); }
   Point(const double& x, const double& y)                  { d = 0; xyz = NULL; init(2); xyz[0] = x; xyz[1] = y;  }
   Point(const double& x, const double& y, const double& z) { d = 0; xyz = NULL; init(3); xyz[0] = x; xyz[1] = y; xyz[2] = z; }
   ~Point() { if (xyz != NULL) delete [] xyz; }

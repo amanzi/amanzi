@@ -88,7 +88,9 @@ int Transport_PK::Init()
 
   upwind_cell_ = rcp(new Epetra_IntVector(fmap));  // The maps include both owned and ghosts
   downwind_cell_ = rcp(new Epetra_IntVector(fmap));
+
   component_ = rcp(new Epetra_Vector(cmap));
+  limiter_ = rcp(new Epetra_Vector(cmap));
 
   return 0;
 }
@@ -302,10 +304,10 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
   int num_components = tcc->NumVectors();
  
   Reconstruction lifting(mesh, component_);
+  lifting.Init();
 
   for (i=0; i<num_components; i++) {
-    // calculate conservative quantatity
-    for (c=cmin; c<=cmax_owned; c++) {
+    for (c=cmin; c<=cmax_owned; c++) {  // calculate conservative quantatity 
       vol_phi_ws = mesh->cell_volume(c) * phi[c] * ws[c]; 
       (*tcc_next)[i][c] = (*component_)[c] = (*tcc)[i][c] * vol_phi_ws;
     }
@@ -313,13 +315,20 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     lifting.reset_field(mesh, component_);
     lifting.calculateCellGradient();
 
+    std::vector<AmanziGeometry::Point>& gradient = lifting.get_gradient();
+    calculateLimiterBarthJespersen(component_, gradient, limiter_);
+    lifting.applyLimiter(limiter_); 
+  
     for (f=fmin; f<=fmax; f++) {  // loop over master and slave faces
       c1 = (*upwind_cell_)[f]; 
       c2 = (*downwind_cell_)[f]; 
 
       u = fabs(darcy_flux[f]);
+      //const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      AmanziGeometry::Point xf(3);
 
       if (c1 >=0 && c1 <= cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+        double upwind_value = lifting.getValue(c1, xf);
         tcc_flux = dT * u * (*tcc)[i][c1];
         (*component_)[c1] -= tcc_flux;
         (*component_)[c2] += tcc_flux;
@@ -466,18 +475,40 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
 }
 
 
-
-/* ************************************************************* */
-/*  MPC will call this function to indicate to the transport PK  */
-/*  that it can commit the advanced state it has created.        */
-/*  This  call indicates that the MPC has accepted the new state */
-/* ************************************************************* */
-void Transport_PK::commit_state( RCP<Transport_State> TS )
+/* *******************************************************************
+ * Identify flux direction based on direction of the face normal 
+ ****************************************************************** */
+void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& scalar_field, 
+                                                  std::vector<AmanziGeometry::Point>& gradient, 
+                                                  Teuchos::RCP<Epetra_Vector>& limiter)
 {
-  /* nothing is done her since a pointer to the state is kept */ 
-};
+  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1; 
 
+  RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
+  for (int f=fmin; f<=fmax_owned; f++) {
+    int c1, c2;
+    c1 = (*upwind_cell_)[f];
+    c2 = (*downwind_cell_)[f];
+    if (c1<0 || c2<0) continue;  // exclude boundary faces
+
+    const AmanziGeometry::Point& xc1 = mesh->cell_centroid(c1);
+    const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
+    //const AmanziGeometry::Point& xcf = mesh->face_centroid(f);
+    AmanziGeometry::Point xcf(3);
+
+    double u1, u2, u1f, u2f;  // cell and inteface values
+    u1 = (*scalar_field)[c1];
+    u1f = u1 + (gradient[c1] * (xcf - xc1));
+
+    u2 = (*scalar_field)[c2];
+    u2f = u2 + (gradient[c2] * (xcf - xc2));
+
+    double umin = std::min(u1, u2);
+    double umax = std::max(u1, u2);
+    if (u2f > umax || u2f < umin) (*limiter)[c2] = std::max(0.0, (u1 - u2) / (u2f - u2)); 
+  } 
+}
 
 
 /* ************************************************************* */

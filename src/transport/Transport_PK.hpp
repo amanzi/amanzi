@@ -64,7 +64,7 @@ class Transport_PK {
   // primary members
   double calculate_transport_dT();
   void advance(double dT);
-  void commit_state(Teuchos::RCP<Transport_State> TS);
+  void commit_state(Teuchos::RCP<Transport_State> TS) {};  // pointer to state is known
 
   void check_divergence_property();
   void check_GEDproperty(Epetra_MultiVector& tracer) const; 
@@ -84,6 +84,10 @@ class Transport_PK {
   void advance_donor_upwind(double dT);
   void advance_second_order_upwind(double dT);
   void advance_arbitrary_order_upwind(double dT);
+
+  void calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& scalar_field, 
+                                      std::vector<AmanziGeometry::Point>& gradient, 
+                                      Teuchos::RCP<Epetra_Vector>& limiter);
 
   void process_parameter_list();
   void identify_upwind_cells();
@@ -111,7 +115,9 @@ class Transport_PK {
 
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
+
   Teuchos::RCP<Epetra_Vector> component_;
+  Teuchos::RCP<Epetra_Vector> limiter_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
