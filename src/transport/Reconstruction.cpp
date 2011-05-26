@@ -68,6 +68,8 @@ void Reconstruction::calculateCellGradient()
     matrix.shape(dim, dim);  // Teuchos will initilize this matrix by zeros
     for (int i=0; i<dim; i++) rhs[i] = 0.0;
 
+    bool local_min = true;
+    bool local_max = true;
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells); 
@@ -75,16 +77,27 @@ void Reconstruction::calculateCellGradient()
     for (int i=0; i<cells.size(); i++) {
       xc2  = mesh_->cell_centroid(cells[i]);
       xc2 -= xc;
+
       double value = u[cells[i]] - u[c];
+      if (value > 0) {  
+        local_min = false; 
+      } 
+      else if (value < 0) {
+        local_max = false;
+      } 
       populateLeastSquareSystem(xc2, value, matrix, rhs);
     }
     //printLeastSquareSystem(matrix, rhs);
 
-    int info;
-    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs, dim, &info); 
-    if (info) ASSERT(0);
+    if (local_min || local_max) {
+       rhs[0] = rhs[1] = rhs[2] = 0.0;
+    } else {
+      int info;
+      lapack.POSV('U', dim, 1, matrix.values(), dim, rhs, dim, &info); 
+      if (info) ASSERT(0);
+    }
 
-    rhs[0] = rhs[1] = rhs[2] = 0.0;  // TESTING COMPATABILITY 
+    //rhs[0] = rhs[1] = rhs[2] = 0.0;  // TESTING COMPATABILITY 
     gradient_[c].set(rhs[0], rhs[1], rhs[2]);
   }
 
@@ -95,18 +108,16 @@ void Reconstruction::calculateCellGradient()
 /* ******************************************************************
  * The limiter must be between 0 and 1
 ****************************************************************** */
-void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector> limiter)
+void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 {
-  for (int c=cmin; c<cmax_owned; c++) {
-    gradient_[c] *= (*limiter)[c];
-  }
+  for (int c=cmin; c<cmax_owned; c++) gradient_[c] *= (*limiter)[c];
 }
 
 
 /* ******************************************************************
  * calculates a value at point p using gradinet and centroid
 ****************************************************************** */
-double Reconstruction::getValue(const int cell, Amanzi::AmanziGeometry::Point& p)
+double Reconstruction::getValue(const int cell, const Amanzi::AmanziGeometry::Point& p)
 {
   AmanziGeometry::Point xc(dim);
   xc = mesh_->cell_centroid(cell); 

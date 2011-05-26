@@ -81,9 +81,9 @@ Transport_State::Transport_State(Transport_State& S, Transport_CreateMode mode)
 }
 
 
-/* ************************************************************* */
-/* import concentrations to internal Transport state             */
-/* ************************************************************* */
+/* *******************************************************************
+ * import concentrations to internal Transport state             
+ ****************************************************************** */
 void Transport_State::copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target)
 {
   int i, c, cmin, cmax, cmax_s, cmax_t, number_vectors;
@@ -97,8 +97,9 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source, Epetra_
   cmax   = std::min(cmax_s, cmax_t);
 
   number_vectors = source.NumVectors();
-  for (c=cmin; c<=cmax; c++) 
+  for (c=cmin; c<=cmax; c++) {
      for(i=0; i<number_vectors; i++) target[i][c] = source[i][c];
+  }
 
 #ifdef HAVE_MPI
   if (cmax_s > cmax_t) throw std::exception();  // must be replaced by amanziException
@@ -109,9 +110,9 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source, Epetra_
 }
 
 
-/* ************************************************************* */
-/* import darcy flux to internal Transport state                 */
-/* ************************************************************* */
+/* *******************************************************************
+ * Routine imports Darcy flux to internal Transport state                 
+ ****************************************************************** */
 void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& target)
 {
   int f, fmin, fmax, fmax_s, fmax_t;
@@ -135,51 +136,39 @@ void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& ta
 }
 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical Darcy velocity fieldx u     */
-/* ************************************************************* */
+/* *******************************************************************
+ * DEBUG: create constant analytical Darcy velocity fieldx u     
+ ****************************************************************** */
 void Transport_State::analytic_darcy_flux( double* u )
 {
-  int  i, f;
-  double x[4][3], normal[3];
+  const Epetra_BlockMap& fmap = (*darcy_flux).Map();
 
-  const Epetra_BlockMap &  fmap = (*darcy_flux).Map();
+  for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) { 
+    const AmanziGeometry::Point& normal = mesh_maps->face_normal(f);    
 
-  for( f=fmap.MinLID(); f<=fmap.MaxLID(); f++ ) { 
-     mesh_maps->face_to_coordinates( f, (double*) x, (double*) x+12 );
-
-     cell_geometry::quad_face_normal(x[0], x[1], x[2], x[3], normal);
-
-     (*darcy_flux)[f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
+    (*darcy_flux)[f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
   }
 }
 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical concentration C_0 = x       */
-/* ************************************************************* */
-void Transport_State::analytic_total_component_concentration( double f(double*, double), double t )
+/* *******************************************************************
+ * DEBUG: create constant analytical concentration C_0 = x       
+ ****************************************************************** */
+void Transport_State::analytic_total_component_concentration(double f(double*, double), double t)
 {
-  int  i, j, c;
-  double x[8][3], center[3];
+  double center[3];
+  const Epetra_BlockMap& cmap = (*total_component_concentration).Map();
 
-  const Epetra_BlockMap &  cmap = (*total_component_concentration).Map();
+  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
+    const AmanziGeometry::Point& xc = mesh_maps->cell_centroid(c);    
 
-  for( c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
-     mesh_maps->cell_to_coordinates( c, (double*) x, (double*) x+24);
-
-     for( i=0; i<3; i++ ) { 
-        center[i] = 0;
-        for( j=0; j<8; j++ ) center[i] += x[j][i];
-        center[i] /= 8;
-     }
-
-     (*total_component_concentration)[0][c] = f( center, t );
+    for (int i=0; i<xc.dim(); i++) center[i] = xc[i];
+    (*total_component_concentration)[0][c] = f(center, t);
   }
 }
 
 
-/* ************************************************************* */
+/* **************************************************************** */
 void Transport_State::error_total_component_concentration(
     double f(double*, double), 
     double t, 
@@ -192,7 +181,7 @@ void Transport_State::error_total_component_concentration(
 
   *L1 = *L2 = 0.0;
   for (c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
-    AmanziGeometry::Point xc = mesh_maps->cell_centroid(c);
+    const AmanziGeometry::Point xc = mesh_maps->cell_centroid(c);
 
     center[0] = xc.x();  // should re-write local functions
     center[1] = xc.y();
@@ -209,44 +198,41 @@ void Transport_State::error_total_component_concentration(
 }
 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical porosity                    */
-/* ************************************************************* */
-void Transport_State::analytic_porosity( double phi )
+/* *******************************************************************
+ * DEBUG: create constant analytical porosity                    
+ ****************************************************************** */
+void Transport_State::analytic_porosity(double phi)
 {
-  int  c;
-  const Epetra_BlockMap &  cmap = (*porosity).Map();
+  const Epetra_BlockMap& cmap = (*porosity).Map();
 
-  for( c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
-     (*porosity)[c] = phi;  /* default is 0.2 */
+  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
+    (*porosity)[c] = phi;  // default is 0.2
   }
 }
 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical water saturation            */
-/* ************************************************************* */
-void Transport_State::analytic_water_saturation( double ws )
+/* ******************************************************************
+ * DEBUG: create constant analytical water saturation            
+ ***************************************************************** */
+void Transport_State::analytic_water_saturation(double ws)
 {
-  int  c;
   const Epetra_BlockMap &  cmap = (*water_saturation).Map();
 
-  for( c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
-     (*water_saturation)[c] = ws;  /* default is 1.0 */
+  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
+    (*water_saturation)[c] = ws;  // default is 1.0 
   }
 }
 
 
-/* ************************************************************* */
-/* DEBUG: create constant analytical water density               */
-/* ************************************************************* */
-void Transport_State::analytic_water_density( double wd )
+/* *****************************************************************
+ * DEBUG: create constant analytical water density               
+ **************************************************************** */
+void Transport_State::analytic_water_density(double wd)
 {
-  int  c;
   const Epetra_BlockMap &  cmap = (*water_density).Map();
 
-  for( c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
-     (*water_density)[c] = wd;  /* default is 1000.0 */
+  for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
+    (*water_density)[c] = wd;  // default is 1000.0
   }
 }
 

@@ -85,10 +85,10 @@ class Point {
   }
   
   /* miscaleneous */
-  friend double L22(  const Point& p ) { return p*p; }
-  friend double norm( const Point& p ) { return sqrt( p*p ); }
+  friend double L22( const Point& p) { return p*p; }
+  friend double norm(const Point& p) { return sqrt(p*p); }
   
-  friend ostream& operator<<( ostream& os, Point& p) {
+  friend ostream& operator<<( ostream& os, const Point& p) {
     os << p.x() << " " << p.y();
     if( p.d == 3 ) os << " " << p.z();
     return os;

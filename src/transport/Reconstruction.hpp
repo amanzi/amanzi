@@ -46,10 +46,10 @@ class Reconstruction {
   }
 
   void calculateCellGradient();
-  void applyLimiter(Teuchos::RCP<Epetra_Vector> limiter);
+  void applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter);
  
   // access
-  double getValue(const int cell, AmanziGeometry::Point& p);
+  double getValue(const int cell, const AmanziGeometry::Point& p);
   std::vector<AmanziGeometry::Point>& get_gradient() { return gradient_; }
 
  private:
