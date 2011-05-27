@@ -24,7 +24,7 @@ TEST(ADVANCE_WITH_MSTK) {
 
   std::cout << "================ TEST ADVANCE WITH MSTK ===================" << endl;
   int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mstk_mesh/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD));
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD));
 
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
@@ -59,8 +59,8 @@ TEST(ADVANCE_WITH_MSTK) {
     T += dT;
 
     if (i < 10) {
-      printf( "T=%6.1f  C_0(x):", T );
-      for( int k=0; k<4; k++ ) printf("%7.4f", (*tcc_next)[0][k]); std::cout << endl;
+      printf( "T=%6.2f  C_0(x):", T );
+      for( int k=0; k<3; k++ ) printf("%7.4f", (*tcc_next)[0][k]); std::cout << endl;
     }
     *tcc = *tcc_next;
   }

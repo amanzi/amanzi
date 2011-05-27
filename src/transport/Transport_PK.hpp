@@ -108,8 +108,8 @@ class Transport_PK {
   int Init();  // move here all code from constructor 
 
   Teuchos::RCP<Transport_State> TS;
+  Teuchos::RCP<Transport_State> TS_nextBIG;  // involves both owned and ghost values
   Teuchos::RCP<Transport_State> TS_nextMPC;  // uses physical memory of TS_nextBIG
-  Teuchos::RCP<Transport_State> TS_nextBIG; 
   
   Teuchos::ParameterList parameter_list;
 
