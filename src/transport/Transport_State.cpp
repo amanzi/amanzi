@@ -30,7 +30,7 @@ Transport_State::Transport_State(State& S)
  * mode = CopyMemory   creates internal transport state based on 
  *                     ovelapped mesh maps                       
 /* **************************************************************** */
-Transport_State::Transport_State(Transport_State& S, Transport_CreateMode mode)
+Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 {
   if (mode == CopyPointers) {
     total_component_concentration = S.get_total_component_concentration();
