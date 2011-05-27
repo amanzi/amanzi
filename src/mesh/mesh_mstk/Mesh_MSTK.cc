@@ -2476,8 +2476,10 @@ void Mesh_MSTK::collapse_degen_edges() {
           // Will this work? Don't we have to use push_back?
 
 	  for (int i = 0; i < orig_vids->size(); i++) 
-	    if ((*orig_vids)[i] == MV_ID(vdel))
+	    if ((*orig_vids)[i] == MV_ID(vdel)) {
+	        throw std::exception();
 	      (*orig_vids)[i] = (Entity_ID) MV_ID(vkeep);
+            }
 	}
 
 	List_Delete(vregs);
@@ -2492,9 +2494,12 @@ void Mesh_MSTK::collapse_degen_edges() {
 	    MEnt_Get_AttVal(region,orig_celltopo_att,NULL,NULL,&pval);
 	    orig_vids = (std::vector<Entity_ID> *)pval;
 
+            // will this work? Don't we have to use push_back
 	    for (int i = 0; i < orig_vids->size(); i++)
-	      if ((*orig_vids)[i] = MV_ID(vdel))
-		(*orig_vids)[i] = (Entity_ID) vkeep;
+	      if ((*orig_vids)[i] = MV_ID(vdel)) {
+	        throw std::exception();
+		(*orig_vids)[i] = (Entity_ID) MV_ID(vkeep);
+              }
 	  }
 	}
       }
