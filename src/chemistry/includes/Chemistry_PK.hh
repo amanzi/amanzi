@@ -1,14 +1,22 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Chemistry_PK_hpp__
-#define __Chemistry_PK_hpp__
+#ifndef AMANZI_CHEMISTRY_PK_HH_
+#define AMANZI_CHEMISTRY_PK_HH_
+
+#include <string>
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MultiVector.h"
-#include "State.hpp"
-#include "Chemistry_State.hpp"
+#include "Teuchos_ParameterList.hpp"
+
 #include "Beaker.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 #include "Verbosity.hpp"
+
+// forward declarations
+class Epetra_MultiVector;
+class Epetra_Vector;
+class Epetra_SerialDenseVector;
+
+class Chemistry_State;
 
 // Chemistry Process Kernel Interface
 
@@ -26,7 +34,6 @@ class Chemistry_PK {
   void advance(const double& delta_time,
                Teuchos::RCP<const Epetra_MultiVector> total_component_concentration_star);
   void commit_state ( Teuchos::RCP<Chemistry_State> chem_state, const double& delta_time);
-  ChemistryException::Status status(void) const { return this->status_; };
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
 
@@ -63,17 +70,15 @@ class Chemistry_PK {
   // Ben: the following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> get_extra_chemistry_output_data();
-  void set_chemistry_output_names(std::vector<string> &names);
+  void set_chemistry_output_names(std::vector<std::string> &names);
 
   // Ben: this routine should set the strings that will be 
   // appended to the component_x tag in the cgns output
-  void set_component_names(std::vector<string> &names);
+  void set_component_names(std::vector<std::string> &names);
 
  protected:
-  void set_status(ChemistryException::Status status) { this->status_ = status; };
 
  private:
-  ChemistryException::Status status_;
   Verbosity verbosity_;
   double max_time_step_;
   // auxilary state for process kernel
@@ -151,4 +156,4 @@ class Chemistry_PK {
 
 };
 
-#endif
+#endif  // AMANZI_CHEMISTRY_PK_HH_

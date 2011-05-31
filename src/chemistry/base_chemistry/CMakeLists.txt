@@ -7,11 +7,11 @@
 
 
 set(SRCS 
-	./ActivityModelFactory.cpp 
-	./ActivityModel.cpp 
-	./ActivityModelDebyeHuckel.cpp 
-	./ActivityModelUnit.cpp 
-	./IonExchangeSite.cpp 
+	./activity-model-factory.cc
+	./activity-model.cc
+	./activity-model-debye-huckel.cc
+	./activity-model-unit.cc
+	./IonExchangeSite.cpp
 	./Species.cpp 
 	./SurfaceSite.cpp 
 )

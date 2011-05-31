@@ -16,6 +16,7 @@ public:
   double d_saturation(double p);  
 
   void update_p_atm(double new_p_atm);
+  const double get_p_atm() { return p_atm; };
 
 private:
   const double m;     // van Genuchten m

@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 #include "SurfaceComplexationRxn.hpp"
 #include "Block.hpp"
 
@@ -115,9 +115,9 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies)
   }
   if (iterations == max_iterations) {
     std::ostringstream error_stream;
-    error_stream << "ERROR: SurfaceComplexationRxn::Update(): \n";
-    error_stream << "ERROR: loop reached max_iterations: " << iterations << std::endl;
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
+    error_stream << "SurfaceComplexationRxn::Update(): \n"
+                 << "loop reached max_iterations: " << iterations << std::endl;
+    Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
   }
   
 } // end Update()

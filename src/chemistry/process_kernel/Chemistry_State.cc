@@ -1,13 +1,19 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "State.hpp"
-#include "Chemistry_State.hpp"
+#include "Chemistry_State.hh"
+
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_MultiVector.h"
+#include "Teuchos_RCPDecl.hpp"
+
+#include "State.hpp"
+
 #include "cell_geometry.hh"
 
+#include "chemistry-exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
 
 Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
   : total_component_concentration_(S->get_total_component_concentration()),
@@ -43,7 +49,7 @@ void Chemistry_State::ExtractVolumeFromMesh(void)
 
   if (ncell != volume_->Length()) {
     Exceptions::amanzi_throw(
-        Errors::Message("Chemistry_State::ExtractVolumeFromMesh() size error."));
+        ChemistryException("Chemistry_State::ExtractVolumeFromMesh() size error."));
   }
 
   double xdata[24]; // 8 x 3

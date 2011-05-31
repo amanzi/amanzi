@@ -14,12 +14,12 @@
 #include <vector>
 #include <sstream>
 
-#include "ActivityModel.hpp"
-#include "ActivityModelFactory.hpp"
+#include "activity-model.hh"
+#include "activity-model-factory.hh"
 #include "AqueousEquilibriumComplex.hpp"
 #include "Block.hpp"
 #include "GeneralRxn.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 #include "IonExchangeComplex.hpp"
 #include "IonExchangeSite.hpp"
 #include "KineticRate.hpp"
@@ -146,7 +146,7 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
   // some helpful error checking goes here...
   bool error = false;
   std::ostringstream error_stream;
-  error_stream << "ERROR: Beaker::VerifyComponentSizes(): database input and component initial conditions do not match:\n";
+  error_stream << "Beaker::VerifyComponentSizes(): database input and component initial conditions do not match:\n";
   
   // if the size of the various initial conditions, components, and
   // database input don't match. Print a helpful message and exit
@@ -154,42 +154,42 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
 
   if (static_cast<unsigned int>(this->ncomp()) != components.total.size()) {
     error = true;
-    error_stream << "ERROR: ncomp(" << this->ncomp() 
+    error_stream << "ncomp(" << this->ncomp() 
                  << ") and components.total.size(" << components.total.size()
                  << ") do not match.\n";
   }
 
   if (this->primary_species().size() != components.total.size()) {
     error = true;
-    error_stream << "ERROR: primary_species.size(" << this->primary_species().size()
+    error_stream << "primary_species.size(" << this->primary_species().size()
                  << ") and components.total.size(" << components.total.size()
                  << ") do not match.\n";
   }
 
   if (components.free_ion.size() != components.total.size()) {
     error = true;
-    error_stream << "ERROR: components.total.size(" << components.total.size()
+    error_stream << "components.total.size(" << components.total.size()
                  << ") and components.free_ion.size(" << components.free_ion.size()
                  << ") do not match.\n";
   }
 
   if (this->ion_exchange_sites().size() != components.ion_exchange_sites.size()) {
     error = true;
-    error_stream<< "ERROR: ion_exchange_sites.size(" << this->ion_exchange_sites().size()
-                << ") and components.ion_exchange_sites.size(" << components.ion_exchange_sites.size()
-                << ") do not match.\n";
+    error_stream << "ion_exchange_sites.size(" << this->ion_exchange_sites().size()
+                 << ") and components.ion_exchange_sites.size(" << components.ion_exchange_sites.size()
+                 << ") do not match.\n";
   }
 
   if (this->minerals().size() != components.minerals.size()) {
     error = true;
-    error_stream << "ERROR: minerals.size(" << this->minerals().size() 
+    error_stream << "minerals.size(" << this->minerals().size() 
                  << ") and components.minerals.size(" << components.minerals.size()
                  << ") do not match.\n";
   }
 
   if (this->total().size() != components.total.size()) {
     error = true;
-    error_stream << "ERROR: total.size(" << this->total().size()
+    error_stream << "total.size(" << this->total().size()
                  << ") and components.total.size(" << components.total.size()
                  << ") do not match.\n";
   }
@@ -198,12 +198,11 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components)
   // resized in resize(), even if there is no sorption!
   if (this->total_sorbed().size() != components.total_sorbed.size()) {
     error = true;
-    error_stream << "ERROR: total_sorbed.size and components.total_sorbed.size do not match.\n";
+    error_stream << "total_sorbed.size and components.total_sorbed.size do not match.\n";
   }
 
   if (error) {
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
-                                                ChemistryException::kUnrecoverableError));
+    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
 }  // end VerifyComponentSizes()
@@ -217,9 +216,9 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
     }
   } else {
     std::ostringstream error_stream;
-    error_stream << "ERROR: Beaker::SetComponents(): \n";
-    error_stream << "ERROR: ion_exchange_sites.size and components.ion_exchange_sites.size do not match.\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
+    error_stream << "Beaker::SetComponents(): \n";
+    error_stream << "ion_exchange_sites.size and components.ion_exchange_sites.size do not match.\n";
+    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
   size = components.minerals.size();
@@ -230,9 +229,9 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components)
     }
   } else {
     std::ostringstream error_stream;
-    error_stream << "ERROR: Beaker::SetComponents(): \n";
-    error_stream << "ERROR: minerals.size and components.minerals.size do not match.\n";
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
+    error_stream << "Beaker::SetComponents(): \n";
+    error_stream << "minerals.size and components.minerals.size do not match.\n";
+    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 }  // end SetComponents()
 
@@ -390,8 +389,8 @@ void Beaker::updateActivityCoefficients() {
   //return;
   activity_model_->CalculateIonicStrength(primarySpecies_,
                                           aqComplexRxns_);
-  activity_model_->CalculateActivityCoefficients(primarySpecies_,
-                                                 aqComplexRxns_);
+  activity_model_->CalculateActivityCoefficients(&primarySpecies_,
+                                                 &aqComplexRxns_);
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++)
     i->update();
@@ -409,11 +408,10 @@ void Beaker::initializeMolalities(const std::vector<double>& initial_molalities)
 {
   if (initial_molalities.size() != primarySpecies_.size()) {
     std::ostringstream error_stream;
-    error_stream << "ERROR: Beaker::initializeMolalities(): \n";
-    error_stream << "ERROR:   Mismatch in size of initial_molalities array "
+    error_stream << "Beaker::initializeMolalities(): \n";
+    error_stream << "   Mismatch in size of initial_molalities array "
                  << "and number of primarySpecies" << std::endl;
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
-                                                ChemistryException::kUnrecoverableError));
+    Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
@@ -878,7 +876,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   } while (max_rel_change > tolerance() && num_iterations < max_iterations());
   
   if (num_iterations >= max_iterations()) {
-    // TODO: should this be an error to the driver...?
+    // TODO(bandre): should this be an error to the driver...?
     // code eventually produces nans when this isn't an error. 
     std::ostringstream error_stream;
     error_stream << "Warning: The maximum number Netwon iterations reached in Beaker::ReactionStep()." << std::endl;
@@ -888,7 +886,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     error_stream << "Warning: max iterations = " << max_iterations() << std::endl;
     // update before leaving so that we can see the erroneous values!
     UpdateComponents(components);
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str(), ChemistryException::kMaxIterationsExceeded));
+    Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
   }
 
   status_.num_newton_iterations = num_iterations;
@@ -919,11 +917,10 @@ void Beaker::ValidateSolution()
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     if (minerals_.at(m).volume_fraction() < 0) {
       std::ostringstream error_stream;
-      error_stream << "ERROR: Beaker::ValidateSolution(): \n";
-      error_stream << "ERROR:   mineral " << minerals_.at(m).name()
+      error_stream << "Beaker::ValidateSolution(): \n";
+      error_stream << "   mineral " << minerals_.at(m).name()
                    << " volume_fraction is negative." << std::endl;
-      Exceptions::amanzi_throw(ChemistryException(error_stream.str(), 
-                                                  ChemistryException::kInvalidSolution));
+      Exceptions::amanzi_throw(ChemistryInvalidSolution(error_stream.str()));
     }
   }
 

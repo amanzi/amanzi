@@ -12,7 +12,7 @@ set(SRCS
 	 ./Block.cpp 
 	 ./FileIO.cpp 
 	 ./Glenn.cpp 
-	 ./ChemistryException.cpp
+	 ./chemistry-exception.cc
 	 ./StringTokenizer.cpp
 )
 

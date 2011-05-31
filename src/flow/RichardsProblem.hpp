@@ -13,14 +13,16 @@
 #include "MimeticHexLocal.hpp"
 #include "MimeticHex.hpp"
 #include "WaterRetentionBaseModel.hpp"
+#include "Flow_State.hpp"
 
-class RichardsProblem
+class RichardsProblem 
 {
 public:
 
   RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 	       Teuchos::ParameterList&, const Teuchos::RCP<FlowBC> &bc);
   ~RichardsProblem();
+
 
   // Set the constant value of fluid density.
   void SetFluidDensity(double rho);
@@ -37,6 +39,8 @@ public:
   // Sets a spatially variable (scalar) permeability, one value per cell.
   //void SetPermeability(const std::vector<double> &k);
   void SetPermeability(const Epetra_Vector &k);
+
+  void SetFlowState( Teuchos::RCP<const Flow_State> FS_ );
 
   void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P);
   void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
@@ -86,7 +90,6 @@ private:
   double g_[3]; // gravitational acceleration
   std::vector<double> k_; // spatially variable permeability
   std::vector<double> k_rl_;  // relative permeability
-
   double vG_m_;     // van Genuchten m
   double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
   double vG_alpha_; // van Genuchten alpha
@@ -103,7 +106,9 @@ private:
   Epetra_Vector* cell_volumes;
   
   std::vector<Teuchos::RCP<WaterRetentionBaseModel> > WRM;
-  
+
+  Teuchos::RCP<const Flow_State> FS;  
+
 private:  // Auxillary functions
 
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;

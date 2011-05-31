@@ -33,6 +33,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   int nblocks = list.get<int>("Number of mesh blocks");
   WRM.resize(nblocks);
   
+  p_atm_ = list.get<double>("Atmospheric pressure");
   for (int nb = 0; nb < nblocks; nb++)
     {
       std::stringstream ss;
@@ -49,7 +50,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 	  double vG_m_      = wrmlist.get<double>("van Genuchten m");
 	  double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
 	  double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
-	  double p_atm_     = wrmlist.get<double>("atmospheric pressure");
+	  // double p_atm_     = wrmlist.get<double>("atmospheric pressure");
 
 	  WRM[nb] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
 						       vG_sr_,p_atm_));
@@ -151,6 +152,12 @@ void RichardsProblem::SetPermeability(const Epetra_Vector &k)
   for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
 }
 
+void RichardsProblem::SetFlowState( Teuchos::RCP<const Flow_State> FS_ )
+{
+  FS = FS_;
+}
+
+
 
 void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P)
 {
@@ -224,7 +231,6 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
   
   for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
 
-
   D_->Compute(K);
 
   // Compute the face Schur complement of the diffusion matrix.
@@ -249,18 +255,19 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
   UpdateVanGenuchtenRelativePermeability(Pcell);
   
   for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
+
   D_->Compute(K);
 
   // add the time derivative to the diagonal
   Epetra_Vector celldiag(CellMap(false));
   dSofP(Pcell_own, celldiag);
-  celldiag.PutScalar(1.0/h);
-  
-  //for (int n=0; n<(md_->CellMap()).NumMyElements(); n++)
-  //  {
-  //    celldiag[n] *= md_->Volume(n);
-  //  }
-  celldiag.Multiply(1.0,celldiag,*cell_volumes,0.0);
+
+  // get the porosity
+  const Epetra_Vector& phi = FS->porosity();
+
+  celldiag.Multiply(rho_,celldiag,phi,0.0);
+
+  celldiag.Multiply(1.0/h,celldiag,*cell_volumes,0.0);
 
 
   D_->add_to_celldiag(celldiag);
@@ -326,6 +333,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
 
   // Apply final BC fixups to FFACE.
   apply_BC_final_(Fface); // modifies used values
+
 
   // Copy owned part of result into the output vectors.
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];

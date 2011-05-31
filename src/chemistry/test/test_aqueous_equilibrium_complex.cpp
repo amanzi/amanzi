@@ -8,7 +8,7 @@
 #include <UnitTest++.h>
 
 #include "AqueousEquilibriumComplex.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 #include "Block.hpp"
 
 SUITE(GeochemistryTestsAqueousEquilibriumComplex)

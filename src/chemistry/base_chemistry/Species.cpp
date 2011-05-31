@@ -5,7 +5,7 @@
 #include <iomanip>
 
 #include "Species.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 #include "exceptions.hh"
 
@@ -43,23 +43,23 @@ Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
   //  ActivityCoefficient* activityCoefficient;
   if (identifier() < 0) {
     std::ostringstream error_stream;
-    error_stream << "CHEMISTRY_ERROR: Species::Species(): \n";
-    error_stream << "CHEMISTRY_ERROR: invalid identifier (id < 0), id = " << identifier() << std::endl;
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
+    error_stream << "Species::Species(): \n"
+                 << "invalid identifier (id < 0), id = " << identifier() << std::endl;
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
   if (gram_molecular_weight() < 0.0) {
     std::ostringstream error_stream;
-    error_stream << "CHEMISTRY_ERROR: Species::Species(): \n";
-    error_stream << "CHEMISTRY_ERROR: invalid gram molecular weight "
+    error_stream << "Species::Species(): \n"
+                 << "invalid gram molecular weight "
                  << "(gmw < 0.0), gmw = " << gram_molecular_weight() << std::endl;
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
   if (ion_size_parameter() < 0.0) {
     std::ostringstream error_stream;
-    error_stream << "CHEMISTRY_ERROR: Species::Species(): \n";
-    error_stream << "CHEMISTRY_ERROR: invalid ion size parameter "
+    error_stream << "Species::Species(): \n"
+                 << "invalid ion size parameter "
                  << "(size < 0.0), size = " << ion_size_parameter() << std::endl;
-    Exceptions::amanzi_throw(ChemistryException(error_stream.str()));
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 } // end Species constructor
 

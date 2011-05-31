@@ -8,7 +8,7 @@
 #include <UnitTest++.h>
 
 #include "SecondarySpecies.hpp"
-#include "ChemistryException.hpp"
+#include "chemistry-exception.hh"
 
 SUITE(GeochemistryTestsSecondarySpecies)
 {

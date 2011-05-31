@@ -8,11 +8,11 @@
 #include <UnitTest++.h>
 
 #include "Species.hpp"
-#include "ActivityModelFactory.hpp"
-#include "ActivityModelUnit.hpp"
-#include "ActivityModelDebyeHuckel.hpp"
-#include "ActivityModel.hpp"
-#include "ChemistryException.hpp"
+#include "activity-model-factory.hh"
+#include "activity-model-unit.hh"
+#include "activity-model-debye-huckel.hh"
+#include "activity-model.hh"
+#include "chemistry-exception.hh"
 
 SUITE(GeochemistryTestsActivityModels)
 {
@@ -21,7 +21,7 @@ SUITE(GeochemistryTestsActivityModels)
    **  Test for ActivityModelFactory.cpp
    **
    *****************************************************************************/
-  
+
   /*
     if you pass the factory a valid name, it should return the correct
     activity model class. If you pass it an invalid name, it should
@@ -40,7 +40,7 @@ SUITE(GeochemistryTestsActivityModels)
 
     ActivityModelFactory amf_;
     ActivityModel* activity_model_;
-    
+
    private:
 
   };
