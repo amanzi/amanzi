@@ -7,7 +7,7 @@
 #include "Chemistry_PK.hh"
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
-#include "Richards_PK.hpp"
+#include "SteadyState_Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
@@ -103,7 +103,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      if (flow_model == "Darcy")
        FPK = Teuchos::rcp( new Darcy_PK(flow_parameter_list, FS) );  
      else if (flow_model == "Richards")
-       FPK = Teuchos::rcp( new Richards_PK(flow_parameter_list, FS) );
+       FPK = Teuchos::rcp( new SteadyState_Richards_PK(flow_parameter_list, FS) );
      else {
        cout << "MPC: unknown flow model: " << flow_model << endl;
        throw std::exception();
@@ -231,7 +231,7 @@ void MPC::cycle_driver () {
     
     if ( flow_model == "Richards") 
       {
-	Richards_PK *RPK = dynamic_cast<Richards_PK*> (&*FPK); 
+	SteadyState_Richards_PK *RPK = dynamic_cast<SteadyState_Richards_PK*> (&*FPK); 
 	
 	RPK->GetSaturation(*S->get_water_saturation()); 
       }
