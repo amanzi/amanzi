@@ -39,8 +39,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDES})
-endif()    
+    include_directories(${CGNS_INCLUDE_DIRS})
+endif()  
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
