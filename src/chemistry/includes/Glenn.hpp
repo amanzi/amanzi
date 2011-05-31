@@ -302,6 +302,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
       file->readInt(&tempi);
       // decrement for zero-based indexing
       tempi--;
+      species.push_back(primary_names[tempi]);
       species_ids.push_back(tempi);
     }
 #ifdef DEBUG
@@ -470,6 +471,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
         file->readInt(&tempi);
         // decrement for zero-based indexing
         tempi--;
+        species.push_back(primary_names[tempi]);
         species_ids.push_back(tempi);
       }
 #ifdef DEBUG
@@ -558,6 +560,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
       file->readInt(&tempi);
       // decrement for zero-based indexing
       tempi--;
+      species.push_back(primary_names[tempi]);
       species_ids.push_back(tempi);
     }
 #ifdef DEBUG
@@ -569,7 +572,7 @@ static void readChemistryFromFile(string filename, Beaker *g)
     double tempd;
     file->getLine();
     // skip first value (PFLOTRAN kinmnrlstroich mirrors kinmnrlspecid)
-    file->readDouble(&tempd);
+// not longer the case - geh    file->readDouble(&tempd);
     for (int j = 0; j<ncomp_in_rxn; j++) {
       file->readDouble(&tempd);
       stoichiometries.push_back(tempd);
@@ -673,7 +676,6 @@ static void readTargetTotalFromFile(string filename, int ncomp,
 
   // open file with FileIO buffer
   FileIO *file = new FileIO(filename);
-  // first line indicates number of primary and secondary components
   char word[32];
   double temp;
   for (int i = 0; i < ncomp; i++) {
@@ -693,7 +695,6 @@ static void readTargetFreeIonFromFile(string filename, int ncomp,
 
   // open file with FileIO buffer
   FileIO *file = new FileIO(filename);
-  // first line indicates number of primary and secondary components
   char word[32];
   double temp;
   for (int i = 0; i < ncomp; i++) {
@@ -704,5 +705,34 @@ static void readTargetFreeIonFromFile(string filename, int ncomp,
   }
   delete file;
 }; // end readTargetFreeIonFromFile
+
+static void readMineralVolFracFromFile(string filename, 
+                                        const std::vector<Mineral>& minerals,
+                                        std::vector<double> *mineral_vol_frac) 
+{
+  int nmnrl = minerals.size();
+  mineral_vol_frac->clear();
+  mineral_vol_frac->resize(nmnrl);
+  for (int imnrl = 0; imnrl < nmnrl; imnrl++)
+    (*mineral_vol_frac)[imnrl] = 0.;
+
+  // open file with FileIO buffer
+  FileIO *file = new FileIO(filename);
+  char word[32];
+  double temp;
+  while (file->getLine() != 0) {
+    file->readWord(word);     // name of mineral
+    int imnrl = -1;
+    for (int i = 0; i < nmnrl; i++) {
+      if (minerals[i].name().compare(word) == 0) imnrl = i;
+    }
+    if (imnrl > -1) {
+      file->readDouble(&temp);  // volume fraction [-]
+      (*mineral_vol_frac)[imnrl] = temp;
+      file->readDouble(&temp);  // surface area [m^2/m^3]
+    }
+  }
+  delete file;
+}; // end readMineralsVolFracFromFile
 
 #endif // __Glenn_hpp__

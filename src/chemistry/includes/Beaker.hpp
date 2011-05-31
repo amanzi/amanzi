@@ -188,6 +188,8 @@ class Beaker {
                             Beaker::BeakerComponents *to);
   SolverStatus status(void) const { return this->status_; };
 
+  const std::vector<Mineral>& minerals(void) const { return this->minerals_; };
+
 protected:
   // update discretization and flow parameters
   // water_density [kg/m^3]
@@ -217,7 +219,6 @@ protected:
 
 
   const std::vector<Species>& primary_species(void) const { return this->primarySpecies_; };
-  const std::vector<Mineral>& minerals(void) const { return this->minerals_; };
   const std::vector<IonExchangeSite>& ion_exchange_sites(void) const { return this->ion_exchange_sites_; };
   const std::vector<double>& total(void) const { return this->total_; };
   const std::vector<double>& total_sorbed(void) const { return this->total_sorbed_; };

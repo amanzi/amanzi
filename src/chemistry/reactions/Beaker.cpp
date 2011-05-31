@@ -935,6 +935,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters)
 {
   double speciation_tolerance = 1.e-12;
+  double residual_tolerance = 1.e-12;
   ResetStatus();
   updateParameters(parameters, 0.0);
   CheckChargeBalance(components.total);
@@ -958,6 +959,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     prev_molal[i] = primarySpecies_[i].molality();
 
   double max_rel_change;
+  double max_residual;
   unsigned int num_iterations = 0;
   bool calculate_activity_coefs = false;
 
@@ -980,6 +982,9 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 
     for (int i = 0; i < ncomp(); i++)
       rhs[i] = residual[i];
+
+    //geh
+    DisplayResults();
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("before scale",J,rhs);
@@ -1021,11 +1026,17 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 
     num_iterations++;
 
+    max_residual = 0.;
+    for (int i = 0; i < ncomp(); i++)
+      if (fabs(residual[i]) > max_residual) max_residual = fabs(residual[i]);
+
     // if max_rel_change small enough, turn on activity coefficients
-    if (max_rel_change < speciation_tolerance) calculate_activity_coefs = true;
+    if (max_rel_change < speciation_tolerance || 
+        max_residual < residual_tolerance) calculate_activity_coefs = true;
 
     // exist if maximum relative change is below tolerance
-  } while (max_rel_change > speciation_tolerance && 
+  } while (max_rel_change > speciation_tolerance &&
+     max_residual > residual_tolerance && 
 	   num_iterations < max_iterations() && 
 	   !calculate_activity_coefs);
 
