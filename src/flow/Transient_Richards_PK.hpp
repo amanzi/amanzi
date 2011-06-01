@@ -9,6 +9,9 @@
 #include "Flow_PK.hpp"
 #include "Flow_State.hpp"
 #include "RichardsProblem.hpp"
+#include "RichardsModelEvaluator.hpp"
+#include "BDF2_Dae.hpp"
+
 
 class Transient_Richards_PK : public Flow_PK
 {
@@ -18,7 +21,7 @@ public:
 
   ~Transient_Richards_PK ();
 
-  int advance();
+  int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State>) {}
 
   // After a successful advance() the following routines may be called.
@@ -42,9 +45,9 @@ private:
   Teuchos::RCP<FlowBC> bc;
 
   RichardsProblem *problem;
-
-  Teuchos::RCP<Teuchos::ParameterList> nox_param_p;
-  Teuchos::RCP<Teuchos::ParameterList> linsol_param_p;
+  RichardsModelEvaluator *RME;
+  
+  BDF2::Dae *time_stepper;
 
   Epetra_Vector *solution;   // full cell/face solution
   Epetra_Vector *pressure;   // cell pressures
