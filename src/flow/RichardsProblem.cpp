@@ -4,6 +4,10 @@
 #include "vanGenuchtenModel.hpp"
 #include "Mesh_maps_base.hh"
 
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+
 RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 			   Teuchos::ParameterList &list,
 			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
@@ -29,31 +33,57 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
 
+
+  p_atm_ = list.get<double>("Atmospheric pressure");
+  
+  Teuchos::ParameterList &vGsl = list.sublist("Water retention models");
+
   // read the water retention model sublist and create the WRM array
-  int nblocks = list.get<int>("Number of mesh blocks");
+
+  // first figure out how many entries there are
+  int nblocks = 0;
+  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++)
+    {
+      // only count sublists
+      if (vGsl.isSublist(vGsl.name(i))) 
+	{
+	  nblocks++;
+	}
+      else
+	{
+	  // currently we only support van Genuchten, if a user
+	  // specifies something else, throw a meaningful error...
+	  Errors::Message m("RichardsProblem: the Water retention models sublist contains an entry that is not a sublist!");
+	  Exceptions::amanzi_throw(m);
+	}
+    }
+
   WRM.resize(nblocks);
   
-  p_atm_ = list.get<double>("Atmospheric pressure");
-  for (int nb = 0; nb < nblocks; nb++)
+  int iblock = 0;
+  
+  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++)
     {
-      std::stringstream ss;
-      ss << "WRM " << nb;
-      Teuchos::ParameterList &wrmlist = list.sublist(ss.str());
-
-      // which water retention model are we using?
-      if (wrmlist.get<string>("Water Retention Model") == "van Genuchten") 
-	{
-	  // read the mesh block number that this model applies to
-	  int meshblock = wrmlist.get<int>("Mesh Block ID");
-
-	  // read values for the van Genuchten model
-	  double vG_m_      = wrmlist.get<double>("van Genuchten m");
-	  double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
-	  double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
-	  // double p_atm_     = wrmlist.get<double>("atmospheric pressure");
-
-	  WRM[nb] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
-						       vG_sr_,p_atm_));
+      if (vGsl.isSublist(vGsl.name(i)))
+	{      
+	  Teuchos::ParameterList &wrmlist = vGsl.sublist( vGsl.name(i) );
+	  
+	  // which water retention model are we using? currently we only have van Genuchten
+	  if ( wrmlist.get<string>("Water retention model") == "van Genuchten") 
+	    {
+	      // read the mesh block number that this model applies to
+	      int meshblock = wrmlist.get<int>("Region ID");
+	      
+	      // read values for the van Genuchten model
+	      double vG_m_      = wrmlist.get<double>("van Genuchten m");
+	      double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
+	      double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
+	      
+	      WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
+							       vG_sr_,p_atm_));
+	    }
+	  
+	  iblock++;
 	}
     }
 
