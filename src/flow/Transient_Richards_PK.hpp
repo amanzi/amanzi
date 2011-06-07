@@ -21,7 +21,7 @@ public:
 
   ~Transient_Richards_PK ();
 
-  int advance_to_steady_state();
+  int advance();
   void commit_state(Teuchos::RCP<Flow_State>) {}
 
   // After a successful advance() the following routines may be called.
@@ -30,10 +30,10 @@ public:
   const Epetra_Vector& Pressure() const { return *pressure; }
 
   // Returns a reference to the Richards face flux vector.
-  const Epetra_Vector& RichardsFlux() const { return *richards_flux; }
+  const Epetra_Vector& Flux() const { return *richards_flux; }
 
   // Computes the components of the Richards velocity on cells.
-  void GetRichardsVelocity(Epetra_MultiVector &q) const
+  void GetVelocity(Epetra_MultiVector &q) const
       { problem->DeriveDarcyVelocity(*solution, q); }
 
   // Computes the fluid saturation on cells.

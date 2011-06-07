@@ -39,7 +39,7 @@ Transient_Richards_PK::~Transient_Richards_PK()
 };
 
 
-int Transient_Richards_PK::advance_to_steady_state()
+int Transient_Richards_PK::advance()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());
