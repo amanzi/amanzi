@@ -1,5 +1,5 @@
-#ifndef __Richards_PK_hpp__
-#define __Richards_PK_hpp__
+#ifndef __SteadyState_Richards_PK_hpp__
+#define __SteadyState_Richards_PK_hpp__
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -10,13 +10,13 @@
 #include "Flow_State.hpp"
 #include "RichardsProblem.hpp"
 
-class Richards_PK : public Flow_PK
+class SteadyState_Richards_PK : public Flow_PK
 {
 
 public:
-  Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
+  SteadyState_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
 
-  ~Richards_PK ();
+  ~SteadyState_Richards_PK ();
 
   int advance();
   void commit_state(Teuchos::RCP<Flow_State>) {}

@@ -1,4 +1,4 @@
-#include "Richards_PK.hpp"
+#include "SteadyState_Richards_PK.hpp"
 
 #include "RichardsProblem.hpp"
 #include "RichardsNoxInterface.hpp"
@@ -12,7 +12,7 @@
 #include "NKADirFactory.H"
 #include "NKADirection.H"
 
-Richards_PK::Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
+SteadyState_Richards_PK::SteadyState_Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
 {
   // Create the flow boundary conditions object.
   Teuchos::ParameterList bc_plist = plist.sublist("Flow BC");
@@ -41,7 +41,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const
     throw std::exception();
 };
 
-void Richards_PK::nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList> &nox_param_p, Teuchos::RCP<Teuchos::ParameterList> &linsol_param_p) const
+void SteadyState_Richards_PK::nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList> &nox_param_p, Teuchos::RCP<Teuchos::ParameterList> &linsol_param_p) const
 {
   nox_param_p = Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList);
   Teuchos::ParameterList &nox_param = *nox_param_p.get();
@@ -84,7 +84,7 @@ void Richards_PK::nox_jfnk_setup(Teuchos::RCP<Teuchos::ParameterList> &nox_param
 			   NOX::Utils::Error);
 }
 
-void Richards_PK::nox_nlk_setup(Teuchos::ParameterList &plist, Teuchos::RCP<Teuchos::ParameterList> &nox_param_p, Teuchos::RCP<Teuchos::ParameterList> &linsol_param_p) const
+void SteadyState_Richards_PK::nox_nlk_setup(Teuchos::ParameterList &plist, Teuchos::RCP<Teuchos::ParameterList> &nox_param_p, Teuchos::RCP<Teuchos::ParameterList> &linsol_param_p) const
 {
   nox_param_p = Teuchos::rcp<Teuchos::ParameterList>(new Teuchos::ParameterList);
   Teuchos::ParameterList &nox_param = *nox_param_p.get();
@@ -134,7 +134,7 @@ void Richards_PK::nox_nlk_setup(Teuchos::ParameterList &plist, Teuchos::RCP<Teuc
 }
 
 
-Richards_PK::~Richards_PK()
+SteadyState_Richards_PK::~SteadyState_Richards_PK()
 {
   delete darcy_flux;
   delete pressure;
@@ -143,7 +143,7 @@ Richards_PK::~Richards_PK()
 };
 
 
-int Richards_PK::advance()
+int SteadyState_Richards_PK::advance()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());
@@ -201,7 +201,7 @@ int Richards_PK::advance()
     return 1;
 }
 
-void Richards_PK::GetSaturation(Epetra_Vector &s) const
+void SteadyState_Richards_PK::GetSaturation(Epetra_Vector &s) const
 {
   //for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
 
