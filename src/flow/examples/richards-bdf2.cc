@@ -164,45 +164,46 @@ int main(int argc, char *argv[])
   
   // Water Retention Model (here we use van Genuchten)
   Teuchos::ParameterList vGl;
-  vGl.set<int>("Number of mesh blocks", 5);
   vGl.set<double>("Atmospheric pressure", 101325.0);
 
+  Teuchos::ParameterList& vGsl = vGl.sublist("Water retention models");
+
   {
-    Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 0");
-    mb_vGl.set<string>("Water Retention Model","van Genuchten");
-    mb_vGl.set<int>("Mesh Block ID", 0);
+    Teuchos::ParameterList& mb_vGl = vGsl.sublist("WRM 0");
+    mb_vGl.set<string>("Water retention model","van Genuchten");
+    mb_vGl.set<int>("Region ID", 0);
     mb_vGl.set<double>("van Genuchten m",0.392);
     mb_vGl.set<double>("van Genuchten alpha",6.33e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.0609);
   }
   {
-    Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 1");
-    mb_vGl.set<string>("Water Retention Model","van Genuchten");
-    mb_vGl.set<int>("Mesh Block ID", 1);
+    Teuchos::ParameterList& mb_vGl = vGsl.sublist("WRM 1");
+    mb_vGl.set<string>("Water retention model","van Genuchten");
+    mb_vGl.set<int>("Region ID", 1);
     mb_vGl.set<double>("van Genuchten m",0.386);
     mb_vGl.set<double>("van Genuchten alpha",2.961e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.213);
   }    
   {
-    Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 2");
-    mb_vGl.set<string>("Water Retention Model","van Genuchten");
-    mb_vGl.set<int>("Mesh Block ID", 2);
+    Teuchos::ParameterList& mb_vGl = vGsl.sublist("WRM 2");
+    mb_vGl.set<string>("Water retention model","van Genuchten");
+    mb_vGl.set<int>("Region ID", 2);
     mb_vGl.set<double>("van Genuchten m",0.456);
     mb_vGl.set<double>("van Genuchten alpha",6.84e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.2595);
   }
   {
-    Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 3");
-    mb_vGl.set<string>("Water Retention Model","van Genuchten");
-    mb_vGl.set<int>("Mesh Block ID", 3);
+    Teuchos::ParameterList& mb_vGl = vGsl.sublist("WRM 3");
+    mb_vGl.set<string>("Water retention model","van Genuchten");
+    mb_vGl.set<int>("Region ID", 3);
     mb_vGl.set<double>("van Genuchten m",0.469);
     mb_vGl.set<double>("van Genuchten alpha",9.39e-5);
     mb_vGl.set<double>("van Genuchten residual saturation",0.0837);
   }    
   {
-    Teuchos::ParameterList& mb_vGl = vGl.sublist("WRM 4");
-    mb_vGl.set<string>("Water Retention Model","van Genuchten");
-    mb_vGl.set<int>("Mesh Block ID", 4);
+    Teuchos::ParameterList& mb_vGl = vGsl.sublist("WRM 4");
+    mb_vGl.set<string>("Water retention model","van Genuchten");
+    mb_vGl.set<int>("Region ID", 4);
     mb_vGl.set<double>("van Genuchten m",0.658);
     mb_vGl.set<double>("van Genuchten alpha",1.008e-3);
     mb_vGl.set<double>("van Genuchten residual saturation",0.0774);

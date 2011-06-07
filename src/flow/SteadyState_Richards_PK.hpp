@@ -1,5 +1,5 @@
-#ifndef __Richards_PK_hpp__
-#define __Richards_PK_hpp__
+#ifndef __SteadyState_Richards_PK_hpp__
+#define __SteadyState_Richards_PK_hpp__
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -10,13 +10,13 @@
 #include "Flow_State.hpp"
 #include "RichardsProblem.hpp"
 
-class Richards_PK : public Flow_PK
+class SteadyState_Richards_PK : public Flow_PK
 {
 
 public:
-  Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
+  SteadyState_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
 
-  ~Richards_PK ();
+  ~SteadyState_Richards_PK ();
 
   int advance();
   void commit_state(Teuchos::RCP<Flow_State>) {}
@@ -27,10 +27,10 @@ public:
   const Epetra_Vector& Pressure() const { return *pressure; }
 
   // Returns a reference to the Darcy face flux vector.
-  const Epetra_Vector& DarcyFlux() const { return *darcy_flux; }
+  const Epetra_Vector& Flux() const { return *darcy_flux; }
 
   // Computes the components of the Darcy velocity on cells.
-  void GetDarcyVelocity(Epetra_MultiVector &q) const
+  void GetVelocity(Epetra_MultiVector &q) const
       { problem->DeriveDarcyVelocity(*solution, q); }
 
   // Computes the fluid saturation on cells.

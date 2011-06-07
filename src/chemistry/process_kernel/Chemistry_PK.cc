@@ -801,9 +801,10 @@ void Chemistry_PK::advance(
 
     try {
       // chemistry computations for this cell
-#ifdef GLENN_DEBUG
+//#ifdef GLENN_DEBUG
+      // TODO(bandre): need a better way to deal with debugging stuff we want to keep
       chem_->CopyComponents(beaker_components_,&beaker_components_copy_);
-#endif
+//#endif
       int num_iterations = chem_->ReactionStep(&beaker_components_, beaker_parameters_, delta_time);
       if (max_iterations < num_iterations) {
         max_iterations = num_iterations;
@@ -827,6 +828,8 @@ void Chemistry_PK::advance(
       chem_->DisplayTotalColumns(current_time_, beaker_components_.free_ion);
       std::cout << "  Total Sorbed Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_.total_sorbed);
+//#ifdef GLENN_DEBUG
+      // TODO(bandre): these cause an exception if called when the above copy is missing
       std::cout << "\nPrevious Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total);
@@ -834,6 +837,7 @@ void Chemistry_PK::advance(
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.free_ion);
       std::cout << "  Total Sorbed Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total_sorbed);
+//#endif
       std::cout << std::endl;
       Exceptions::amanzi_throw(geochem_error);
     }

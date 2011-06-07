@@ -1,12 +1,12 @@
 #include <iostream>
-#include "stdlib.h"
-#include "math.h"
+#include <cstdlib>
+#include <cmath>
 
-#if ENABLE_MOAB
+#if HAVE_MOAB_MESH
 #include "Mesh_maps_moab.hh"
 #endif
 
-#if ENABLE_STK
+#if HAVE_STK_MESH
 #include "Mesh_factory.hh"
 #include "Mesh_maps_stk.hh"
 #endif
@@ -31,6 +31,9 @@
 
 #include "State.hpp"
 #include "MPC.hpp"
+
+#include "errors.hh"
+#include "exceptions.hh"
 
 int main(int argc, char *argv[])
 {
@@ -96,7 +99,7 @@ int main(int argc, char *argv[])
 
       mesh = Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
     } 
-#ifdef ENABLE_MOAB
+#ifdef HAVE_MOAB_MESH
   else if (mesh_class == "MOAB")  
     {
       
@@ -113,7 +116,7 @@ int main(int argc, char *argv[])
       std::cout.rdbuf(store_buf);
     }
 #endif
-#ifdef ENABLE_STK
+#ifdef HAVE_STK_MESH
   else if (mesh_class == "STK")
     {
       string filename = mesh_parameter_list.get<string>("STK File name");
@@ -123,7 +126,11 @@ int main(int argc, char *argv[])
 #endif
   else
     {
-      throw std::exception();
+      ostringstream error_message;
+      error_message << "AMANZI_DEMO_DRIVER: main(): "
+                    << "could not find mesh class \'" << mesh_class
+                    << "\' is not enabled." << std::endl;
+      Exceptions::amanzi_throw(Errors::Message(error_message.str()));
     }
 
 

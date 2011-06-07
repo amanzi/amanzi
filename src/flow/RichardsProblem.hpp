@@ -76,7 +76,10 @@ public:
   void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
   
   const Epetra_Vector* cell_vols() { return cell_volumes; }
-  
+
+  void SetInitialPressureProfileCells(double height, Epetra_Vector *pressure);
+  void SetInitialPressureProfileFaces(double height, Epetra_Vector *pressure);
+
 private:
 
   Teuchos::RCP<Mesh_maps_base> mesh_;
@@ -90,10 +93,10 @@ private:
   double g_[3]; // gravitational acceleration
   std::vector<double> k_; // spatially variable permeability
   std::vector<double> k_rl_;  // relative permeability
-  double vG_m_;     // van Genuchten m
-  double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
-  double vG_alpha_; // van Genuchten alpha
-  double vG_sr_;    // van Genuchten effective saturation
+  //double vG_m_;     // van Genuchten m
+  //double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
+  //double vG_alpha_; // van Genuchten alpha
+  //double vG_sr_;    // van Genuchten effective saturation
   double p_atm_;    // atmospheric pressure
   
   std::vector<MimeticHexLocal>  MD;

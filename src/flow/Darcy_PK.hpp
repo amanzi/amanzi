@@ -27,10 +27,10 @@ public:
   const Epetra_Vector& Pressure() const { return *pressure; }
 
   // Returns a reference to the Darcy face flux vector.
-  const Epetra_Vector& DarcyFlux() const { return *darcy_flux; }
+  const Epetra_Vector& Flux() const { return *darcy_flux; }
 
   // Computes the components of the Darcy velocity on cells.
-  void GetDarcyVelocity (Epetra_MultiVector &q) const
+  void GetVelocity (Epetra_MultiVector &q) const
       { problem->DeriveDarcyVelocity(*solution, q); }
 
 private:
