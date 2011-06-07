@@ -30,11 +30,12 @@ The libraries and tools listed in this section are assumed to be part of the tar
 a user would not build these libraries from source.  The Amanzi team recommends that users use
 pre-built binaries or tools such as MacPorts, yum, rpm to install these libraries.  
 
-At a minimum the build environment must have,
+At a minimum the build environment must have the following system software libraries and tools present.
 \begin{itemize}
 \item A UNIX-like OS. Amanzi has been built on several flavors of Linux (Red Hat/CentOS, Ubuntu, Fedora) and 
 Mac OS 10.5 and 10.6. Native Windows builds are not supported at this time.
 \item C and C++ compiler.
+\item Python 2.6 version or higher.
 \item MPI. Amanzi has been built against OpenMPI and MPICH. Amanzi does not support non-MPI builds at this time.
 \item BLAS/LAPACK built and tuned to the target architecture.
 \end{itemize}
@@ -61,21 +62,21 @@ site at https://software.lanl.gov/ascem/trac/buildbot.
 \hline
 Name & Version & Description & Dependencies & Source Location \\
 \hline
-CMake &&&& \\
+CMake & 2.8 & Cross platform build system & Python 2.6 & http://www.cmake.org/cmake/resources/software.html \\
 \hline
-Boost &&&& \\
+Boost & 1.44.0 & Supplemental C++ Library & C++ &  http://www.boost.org/users/download/\\
 \hline
-zlib &&&& \\
+zlib & 1.2.5 &Compression library (required by HDF5) & C, MPI \& zlib &  http://zlib.net/ \\
 \hline
-cURL &&&& \\
+cURL & 7.21.2 & Download wizard library (required netCDF) & C & http://curl.haxx.se/download.html \\
 \hline
-HDF5 &&&& \\
+HDF5 &1.8.7 & File format library & C. MPI \& zlib & http://www.hdfgroup.org/HDF5/release/obtain5.html \\
 \hline
-netCDF &&&& \\
+netCDF & 4.1.1 & File format library & C, MPI, cURL \& HDF5 & http://www.unidata.ucar.edu/software/netcdf/ \\
 \hline
-ExodusII &&&& \\
+ExodusII & 4.98 & Mesh database library & C, MPI \& netCDF & http://sourceforge.net/projects/exodusii/\\
 \hline
-Trilnos &&&& \\
+Trilnos & 10.6 & C++ numerical software library & C++, MPI, Exodus (if STKMesh is enabled) \& CMake & http://trilinos.sandia.gov/download/trilinos-10.6.html \\
 \hline
 \hline
 \end{tabular}
@@ -90,6 +91,9 @@ library configuration for each of these is also listed in the Amanzi TPL build s
 these TPLs in the build will likely require a change to the TPL build order. Please refer to the Amanzi TPL build script for
 more information.
 
+Although all the supported mesh framework libraries are supported in this section, users are required to build
+Amanzi with at least one of the frameworks. 
+
 \begin{table}[htdp]
 \begin{center}
 \begin{tabular}{|c|c|p{3cm}|p{3cm}|p{3cm}|}
@@ -97,6 +101,22 @@ more information.
 \hline
 Name & Version & Description & Dependencies & Source Location \\
 \hline
+UnitTest++ &&&& \\
+\hline
+MOAB &&&& \\
+\hline
+MSTK &&&& \\
+\hline
+STKMesh &&&& \\
+\hline
+XDMF &&&& \\
+\hline
+VisIt &&&& \\
+\hline
+ASCEM-IO &&&& \\
+\hline
+DOxygen &&&& \\
+
 &&&& \\
 \hline
 
