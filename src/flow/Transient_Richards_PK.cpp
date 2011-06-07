@@ -60,8 +60,6 @@ int Transient_Richards_PK::advance()
   double h =  ss_h0;
   double hnext;
 
-  pressure->PutScalar(160125.0);
-
   // create udot
   Epetra_Vector udot(problem->Map());
   problem->Compute_udot(t0,  *solution, udot);
