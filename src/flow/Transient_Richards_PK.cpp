@@ -20,7 +20,8 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, cons
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
-  pressure = problem->CreateCellView(*solution);
+  pressure_cells = problem->CreateCellView(*solution);
+  pressure_faces = problem->CreateFaceView(*solution);
   richards_flux = new Epetra_Vector(problem->FaceMap());
 
   // create the time stepper...
@@ -40,7 +41,8 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, cons
 Transient_Richards_PK::~Transient_Richards_PK()
 {
   delete richards_flux;
-  delete pressure;
+  delete pressure_cells;
+  delete pressure_faces;
   delete solution;
   delete problem;
 };
@@ -61,6 +63,9 @@ int Transient_Richards_PK::advance()
   double hnext;
 
   // create udot
+  problem->SetInitialPressureProfileCells(0.0,pressure_cells);
+  problem->SetInitialPressureProfileFaces(0.0,pressure_faces);
+
   Epetra_Vector udot(problem->Map());
   problem->Compute_udot(t0,  *solution, udot);
 
@@ -79,8 +84,6 @@ int Transient_Richards_PK::advance()
     time_stepper->bdf2_step(h,0.0,20,*solution,hnext);
     
     time_stepper->commit_solution(h,*solution);
-
-    // time_stepper->advance_time(h);
 
     // update the state, but only the cell values of pressure
     // FS->update_pressure( * problem->CreateCellView(*solution) );
@@ -108,6 +111,8 @@ void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
 {
   //for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
 
-  problem->DeriveVanGenuchtenSaturation(*pressure, s);
+  problem->DeriveVanGenuchtenSaturation(*pressure_cells, s);
 
 }
+
+

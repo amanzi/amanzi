@@ -88,20 +88,6 @@ target_link_libraries(amanzi-demo-driver
                       ${Trilinos_LIBRARIES}
                       ${Boost_LIBRARIES})
 
-
-#
-# Binary: amanzi-driver
-#
-add_executable(amanzi-driver amanzi-driver.cpp)
-set(driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-set(driver_amanzi_libs time_integration mpc state simple_mesh error_handling exodus ${amanzi_mesh_libs})
-set(driver_pk_libs chemistry transport flow)
-target_link_libraries(amanzi-driver 
-                      ${driver_amanzi_libs}
-                      ${driver_pk_libs}
-                      ${Trilinos_LIBRARIES}
-                      ${Boost_LIBRARIES})
-
 #
 # Binary: stk_mesh_test_hex
 #

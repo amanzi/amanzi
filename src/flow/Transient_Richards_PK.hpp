@@ -27,7 +27,7 @@ public:
   // After a successful advance() the following routines may be called.
 
   // Returns a reference to the cell pressure vector.
-  const Epetra_Vector& Pressure() const { return *pressure; }
+  const Epetra_Vector& Pressure() const { return *pressure_cells; }
 
   // Returns a reference to the Richards face flux vector.
   const Epetra_Vector& Flux() const { return *richards_flux; }
@@ -38,6 +38,7 @@ public:
 
   // Computes the fluid saturation on cells.
   void GetSaturation(Epetra_Vector &s) const;
+  
 
 private:
 
@@ -51,7 +52,8 @@ private:
   BDF2::Dae *time_stepper;
 
   Epetra_Vector *solution;   // full cell/face solution
-  Epetra_Vector *pressure;   // cell pressures
+  Epetra_Vector *pressure_cells;   // cell pressures
+  Epetra_Vector *pressure_faces;
   Epetra_Vector *richards_flux; // Darcy face fluxes
 
   int max_itr;      // max number of linear solver iterations

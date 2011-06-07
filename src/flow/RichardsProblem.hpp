@@ -76,7 +76,10 @@ public:
   void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
   
   const Epetra_Vector* cell_vols() { return cell_volumes; }
-  
+
+  void SetInitialPressureProfileCells(double height, Epetra_Vector *pressure);
+  void SetInitialPressureProfileFaces(double height, Epetra_Vector *pressure);
+
 private:
 
   Teuchos::RCP<Mesh_maps_base> mesh_;

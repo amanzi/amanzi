@@ -102,7 +102,7 @@
     <ParameterList name="Richards Problem">
 
       <Parameter name="Steady state calculation initial time" type="double" value="0.0"/>
-      <Parameter name="Steady state calculation final time" type="double" value="1.0e8"/>
+      <Parameter name="Steady state calculation final time" type="double" value="1.0e7"/>
       <Parameter name="Steady state calculation initial time step" type="double" value="1e-5"/>
       
       <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>
@@ -116,7 +116,7 @@
       <ParameterList name="Time integrator">
         <Parameter name="Nonlinear solver max iterations" type="int" value="15"/>
 	<Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
-        <Parameter name="NKA max vectors" type="int" value="5"/>
+        <Parameter name="NKA max vectors" type="int" value="10"/>
 	<Parameter name="NKA drop tolerance" type="double" value="5.0e-2"/>
         <ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="high"/>

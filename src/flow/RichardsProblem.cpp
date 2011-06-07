@@ -617,3 +617,42 @@ void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetr
   udot_face->PutScalar(0.0);
 
 }
+
+
+
+void RichardsProblem::SetInitialPressureProfileCells(double height, Epetra_Vector *pressure)
+{
+  for (int j=0; j<pressure->MyLength(); j++)
+    {
+      std::vector<double> coords;
+      coords.resize(24);
+      FS->mesh()->cell_to_coordinates(j, coords.begin(), coords.end());
+      
+      // average the x coordinates
+      double zavg = 0.0;
+      for (int k=2; k<24; k+=3)
+	zavg += coords[k];
+      zavg /= 8.0;
+
+      (*pressure)[j] = p_atm_ - 9800 * zavg;
+    }
+}
+
+
+void RichardsProblem::SetInitialPressureProfileFaces(double height, Epetra_Vector *pressure)
+{
+  for (int j=0; j<pressure->MyLength(); j++)
+    {
+      std::vector<double> coords;
+      coords.resize(12);
+      FS->mesh()->face_to_coordinates(j, coords.begin(), coords.end());
+
+      // average the x coordinates
+      double zavg = 0.0;
+      for (int k=2; k<12; k+=3)
+	zavg += coords[k];
+      zavg /= 4.0;
+
+      (*pressure)[j] = 101325.0 - 9800.0 * zavg;
+    }
+}
