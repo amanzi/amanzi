@@ -61,10 +61,23 @@ site at https://software.lanl.gov/ascem/trac/buildbot.
 \hline
 Name & Version & Description & Dependencies & Source Location \\
 \hline
-&&&& \\
+CMake &&&& \\
 \hline
-
-
+Boost &&&& \\
+\hline
+zlib &&&& \\
+\hline
+cURL &&&& \\
+\hline
+HDF5 &&&& \\
+\hline
+netCDF &&&& \\
+\hline
+ExodusII &&&& \\
+\hline
+Trilnos &&&& \\
+\hline
+\hline
 \end{tabular}
 \end{center}
 \label{default}
@@ -73,7 +86,9 @@ Name & Version & Description & Dependencies & Source Location \\
 
 \section*{Supported External Software}
 The TPLs listed in this section are not required to build Amanzi, but are required to support some Amanzi features. The 
-library configuration for each of these is also listed in the Amanzi TPL build script. 
+library configuration for each of these is also listed in the Amanzi TPL build script. Please note the dependencies. Enabling
+these TPLs in the build will likely require a change to the TPL build order. Please refer to the Amanzi TPL build script for
+more information.
 
 \begin{table}[htdp]
 \begin{center}
