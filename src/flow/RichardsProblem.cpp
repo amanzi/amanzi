@@ -194,10 +194,12 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,Mesh_data::CELL,OWNED);
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -212,10 +214,12 @@ void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,Mesh_data::CELL,OWNED);
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -232,10 +236,12 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,Mesh_data::CELL,OWNED);
+      unsigned int mb_id = WRM[mb]->mesh_block();
+      
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)

@@ -2,14 +2,21 @@
 
 #include "RichardsProblem.hpp"
 
-Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
+Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), richards_plist(plist)
 {
   // Create the flow boundary conditions object.
-  Teuchos::ParameterList bc_plist = plist.sublist("Flow BC");
+  Teuchos::ParameterList bc_plist = richards_plist.sublist("Flow BC");
   bc = Teuchos::rcp<FlowBC>(new FlowBC(bc_plist, FS->mesh()));
 
   // Create the Richards flow problem.
-  problem = new RichardsProblem(FS->mesh(), plist.sublist("Richards Problem"), bc);
+  Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
+
+  problem = new RichardsProblem(FS->mesh(), rlist, bc);
+
+  ss_t0 = rlist.get<double>("Steady state calculation initial time");
+  ss_t1 = rlist.get<double>("Steady state calculation final time");
+  ss_h0 = rlist.get<double>("Steady state calculation initial time step");
+
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -19,11 +26,11 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, cons
   // create the time stepper...
 
   // first the Richards model evaluator
-  Teuchos::ParameterList &rme_list = plist.sublist("Richards model evaluator");
+  Teuchos::ParameterList &rme_list = rlist.sublist("Richards model evaluator");
   RME = new RichardsModelEvaluator(problem, rme_list, problem->Map(), FS);  
 
   // then the BDF2 solver
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(plist.sublist("Time integrator")));
+  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(rlist.sublist("Time integrator")));
 
   time_stepper = new BDF2::Dae(*RME, problem->Map());
   time_stepper->setParameterList(bdf2_list_p);
@@ -48,11 +55,12 @@ int Transient_Richards_PK::advance()
   problem->SetGravity(FS->gravity());
   problem->SetFlowState(FS);
 
-  double t0 = 0.0;
-  double t1 = 100.0;
-  double h = 1e-5;
+  double t0 = ss_t0;
+  double t1 = ss_t1;
+  double h =  ss_h0;
   double hnext;
 
+  pressure->PutScalar(160125.0);
 
   // create udot
   Epetra_Vector udot(problem->Map());

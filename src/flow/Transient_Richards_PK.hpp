@@ -43,7 +43,8 @@ private:
 
   Teuchos::RCP<const Flow_State> FS;
   Teuchos::RCP<FlowBC> bc;
-
+  Teuchos::ParameterList &richards_plist;
+  
   RichardsProblem *problem;
   RichardsModelEvaluator *RME;
   
@@ -57,6 +58,7 @@ private:
   double err_tol;   // linear solver convergence error tolerance
   int precon_freq;  // preconditioner update frequency
 
+  double ss_t0, ss_t1, ss_h0;
 
 };
 
