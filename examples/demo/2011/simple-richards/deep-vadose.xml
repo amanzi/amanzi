@@ -10,9 +10,9 @@
       <Parameter name="Y_Max" type="double" value="1.0"/>
       <Parameter name="Z_Min" type="double" value="0.0"/>
       <Parameter name="Z_Max" type="double" value="100.0"/>
-      <Parameter name="Numer of Cells in X" type="int" value="50"/> 
+      <Parameter name="Numer of Cells in X" type="int" value="100"/> 
       <Parameter name="Numer of Cells in Y" type="int" value="1"/> 
-      <Parameter name="Numer of Cells in Z" type="int" value="200"/>
+      <Parameter name="Numer of Cells in Z" type="int" value="100"/>
       <Parameter name="Number of mesh blocks" type="int" value="1"/>
       <ParameterList name="Mesh block 1">
 	<Parameter name="Z0" type="double" value="-0.1"/>
