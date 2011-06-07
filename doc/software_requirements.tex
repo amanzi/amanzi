@@ -1,0 +1,50 @@
+\documentclass[12pt]{article}
+\usepackage{color}
+\usepackage{multirow}
+
+
+% begin preamble
+\setlength{\baselineskip}{16.0pt}    % 16 pt usual spacing between lines
+
+\setlength{\parskip}{3pt plus 2pt}
+\setlength{\parindent}{20pt}
+\setlength{\oddsidemargin}{0.5cm}
+\setlength{\evensidemargin}{0.5cm}
+\setlength{\marginparsep}{0.75cm}
+\setlength{\marginparwidth}{2.5cm}
+\setlength{\marginparpush}{1.0cm}
+\setlength{\textwidth}{150mm}
+
+\pagestyle{empty} % use if page numbers not wanted
+
+% end preamble
+
+\begin{document}
+\title{Amanzi Extern Software Requirements}
+
+\maketitle
+
+
+\section*{System Software Environment}
+The libraries and tools listed in this section are assumed to be part of the target platform. Typically, 
+a user would not build these libraries from source.  The Amanzi team recommends that users use
+pre-built binaries or tools such as MacPorts, yum, rpm to install these libraries.  
+
+At a minimum the build environment must have,
+\begin{itemize}
+\item A UNIX-like OS. Amanzi has been built on several flavors of Linux (Red Hat/CentOS, Ubuntu, Fedora) and 
+Mac OS 10.5 and 10.6. Native Windows builds are not supported at this time.
+\item C and C++ compiler.
+\item MPI. Amanzi has been built against OpenMPI and MPICH. Amanzi does not support non-MPI builds at this time.
+\item BLAS/LAPACK built and tuned to the target architecture.
+\end{itemize}
+
+If these libraries are installed in non-standard locations, user's will need to know the location 
+of the header and library files to build most of the other third party libraries (TPLs).
+
+\section*{Required External Software}
+Amanzi leverages existing software libraries and  
+
+\section*{Supported External Software}
+\end{document}
+
