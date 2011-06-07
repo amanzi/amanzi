@@ -1,6 +1,6 @@
 \documentclass[12pt]{article}
 \usepackage{color}
-\usepackage{multirow}
+
 
 
 % begin preamble
@@ -101,13 +101,15 @@ Amanzi with at least one of the frameworks.
 \hline
 Name & Version & Description & Dependencies & Source Location \\
 \hline
-UnitTest++ &&&& \\
+UnitTest++ & 1.4 & C++ unit test framework & C++ & http://sourceforge.net/projects/unittest-cpp/ \\
 \hline
-MOAB &&&& \\
+MOAB & rev 4225 (SVN) & Mesh framework & C/C++, MPI, Exodus & Tarfile located on Trac site https://software.lanl.gov/ascem/trac/wiki/Amanzi/Building/TPL/MOAB  \\
 \hline
-MSTK &&&& \\
+MSTK & 1.80 & Mesh framework & C, MPI, Exodus & https://software.lanl.gov/MeshTools/trac\\
 \hline
-STKMesh &&&& \\
+STKMesh & & Mesh framework available in Trilinos & Exodus, Trilinos & Build with Trilinos with '-D ENABLE\_STKMesh:bool=true'  \\
+\hline
+SWIG &&&& \\
 \hline
 XDMF &&&& \\
 \hline
