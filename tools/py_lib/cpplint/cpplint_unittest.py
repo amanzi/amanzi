@@ -1308,6 +1308,10 @@ class CpplintTest(CpplintTestBase):
                   '  [whitespace/parens] [5]')
     self.TestLint('for (foo; ba; bar ) {', 'Mismatching spaces inside () in for'
                   '  [whitespace/parens] [5]')
+    self.TestLint('catch (foo ) {', 'Mismatching spaces inside () in catch'
+                  '  [whitespace/parens] [5]')
+    self.TestLint('catch ( foo) {', 'Mismatching spaces inside () in catch'
+                  '  [whitespace/parens] [5]')
     self.TestLint('for (; foo; bar) {', '')
     self.TestLint('for ( ; foo; bar) {', '')
     self.TestLint('for ( ; foo; bar ) {', '')
@@ -1315,11 +1319,24 @@ class CpplintTest(CpplintTestBase):
     self.TestLint('while (  foo  ) {', 'Should have zero or one spaces inside'
                   ' ( and ) in while  [whitespace/parens] [5]')
 
+  def testSpacingAfterControlKeywords(self):
+    self.TestLint('  if(foo) {', 'Missing space before ( in if('
+                  '  [whitespace/parens] [5]')
+    self.TestLint('  for(foo) {', 'Missing space before ( in for('
+                  '  [whitespace/parens] [5]')
+    self.TestLint('  while(foo) {', 'Missing space before ( in while('
+                  '  [whitespace/parens] [5]')
+    self.TestLint('  switch(foo) {', 'Missing space before ( in switch('
+                  '  [whitespace/parens] [5]')
+    self.TestLint('  catch(foo) {', 'Missing space before ( in catch('
+                  '  [whitespace/parens] [5]')
+
   def testSpacingForFncall(self):
     self.TestLint('if (foo) {', '')
     self.TestLint('for (foo;bar;baz) {', '')
     self.TestLint('while (foo) {', '')
     self.TestLint('switch (foo) {', '')
+    self.TestLint('catch (foo) {', '')
     self.TestLint('foo( bar)', 'Extra space after ( in function call'
                   '  [whitespace/parens] [4]')
     self.TestLint('foobar( \\', '')
