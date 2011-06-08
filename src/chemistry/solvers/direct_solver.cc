@@ -46,48 +46,48 @@ void DirectSolver::LUDecomposition(void) {
   double temp, dum;
 
   double **a = A_->GetValues();
-	row_interchange_ = 1.0;
-	for (int i = 0; i < system_size(); i++) {
-		double big = 0.0;
-		for (int j = 0; j < system_size(); j++)
-			if ((temp = fabs(a[i][j])) > big) big = temp;
+  row_interchange_ = 1.0;
+  for (int i = 0; i < system_size(); i++) {
+    double big = 0.0;
+    for (int j = 0; j < system_size(); j++)
+      if ((temp = fabs(a[i][j])) > big) big = temp;
     if (big == 0.0) std::cout << "Singular matrix in routine ludcmp";
-		row_scaling_[i] = 1.0 / big;
-	}
-	for (int j = 0; j < system_size(); j++) {
-		for (int i = 0; i < j; i++) {
-			double sum = a[i][j];
-			for (int k = 0; k < i; k++) 
+    row_scaling_[i] = 1.0 / big;
+  }
+  for (int j = 0; j < system_size(); j++) {
+    for (int i = 0; i < j; i++) {
+      double sum = a[i][j];
+      for (int k = 0; k < i; k++) 
         sum -= a[i][k] * a[k][j];
-			a[i][j] = sum;
-		}
-		double big = 0.0;
-		for (int i = j; i < system_size(); i++) {
-			double sum =  a[i][j];
-			for (int k = 0; k < j; k++) 
+      a[i][j] = sum;
+    }
+    double big = 0.0;
+    for (int i = j; i < system_size(); i++) {
+      double sum =  a[i][j];
+      for (int k = 0; k < j; k++) 
         sum -= a[i][k] * a[k][j];
-			a[i][j] = sum;
-			if ((dum = row_scaling_[i] * fabs(sum)) >= big) {
-				big = dum;
-				imax = i;
-			}
-		}
-		if (j != imax) {
-			for (int k = 0; k < system_size(); k++) {
-				dum = a[imax][k];
-				a[imax][k] = a[j][k];
-				a[j][k] = dum;
-			}
-			row_interchange_ = -row_interchange_;
-			row_scaling_[imax] = row_scaling_[j];
-		}
-		pivoting_indices_[j] = imax;
-		if (a[j][j] == 0.0) a[j][j] = small_number;
-		if (j != system_size() - 1) {
-			dum = 1.0 / (a[j][j]);
-			for (int i = j + 1; i < system_size(); i++) 
+      a[i][j] = sum;
+      if ((dum = row_scaling_[i] * fabs(sum)) >= big) {
+        big = dum;
+        imax = i;
+      }
+    }
+    if (j != imax) {
+      for (int k = 0; k < system_size(); k++) {
+        dum = a[imax][k];
+        a[imax][k] = a[j][k];
+        a[j][k] = dum;
+      }
+      row_interchange_ = -row_interchange_;
+      row_scaling_[imax] = row_scaling_[j];
+    }
+    pivoting_indices_[j] = imax;
+    if (a[j][j] == 0.0) a[j][j] = small_number;
+    if (j != system_size() - 1) {
+      dum = 1.0 / (a[j][j]);
+      for (int i = j + 1; i < system_size(); i++) 
         a[i][j] *= dum;
-		}
+    }
   }
 
   a = NULL;
@@ -107,25 +107,25 @@ void DirectSolver::LUBackSolve(void) {
 void DirectSolver::LUBackSolve(std::vector<double> &b) {
   double **a = A_->GetValues();
   int ii = 0;
-	for (int i = 0; i < system_size(); i++) {
-		int ip=pivoting_indices_[i];
-		double sum = b[ip];
-		b[ip] = b[i];
-		if (ii != 0) {
-			for (int j = ii - 1; j < i; j++) 
+  for (int i = 0; i < system_size(); i++) {
+    int ip=pivoting_indices_[i];
+    double sum = b[ip];
+    b[ip] = b[i];
+    if (ii != 0) {
+      for (int j = ii - 1; j < i; j++) 
         sum -= a[i][j] * b[j];
     }
-		else if (sum != 0.0) {
-			ii = i+1;
+    else if (sum != 0.0) {
+      ii = i+1;
     }
-		b[i] = sum;
-	}
-	for (int i = system_size() - 1; i >= 0; i--) {
-		double sum = b[i];
-		for (int j = i+1; j < system_size(); j++) 
+    b[i] = sum;
+  }
+  for (int i = system_size() - 1; i >= 0; i--) {
+    double sum = b[i];
+    for (int j = i+1; j < system_size(); j++) 
       sum -= a[i][j] * b[j];
-		b[i] = sum / a[i][i];
-	}
+    b[i] = sum / a[i][i];
+  }
   a = NULL;
 } // end LUBackSolve()
 

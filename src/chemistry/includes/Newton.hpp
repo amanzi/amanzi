@@ -4,7 +4,8 @@
 #include "Block.hpp"
 
 #include <iostream>
-using namespace std;
+#include <vector>
+#include <cmath>
 
 class Newton {
   
@@ -12,8 +13,11 @@ public:
   Newton(int);
   virtual ~Newton();
 
+  void LUDecomposition(double **a, int n, int *indx);
+  void LUBackSolve(double **a, int n, int *indx, std::vector<double> &b);
+
   void size(int i) { this->size_ = i; }
-  void size(void) const { return this->size_; }
+  int size(void) const { return this->size_; }
 
   void solve();
   
