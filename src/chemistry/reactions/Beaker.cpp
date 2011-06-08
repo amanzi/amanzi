@@ -60,6 +60,9 @@ Beaker::Beaker()
     por_sat_den_vol_(0.0),
     activity_model_(NULL),
     J(NULL)
+#ifdef GLENN
+    , solver(NULL)
+#endif
 {
   primarySpecies_.clear();
   minerals_.clear();
@@ -88,6 +91,9 @@ Beaker::~Beaker()
       delete (*rate);
     }    
   }
+#ifdef GLENN
+  delete solver;
+#endif
 } // end Beaker destructor
 
 void Beaker::resize() {
@@ -114,6 +120,10 @@ void Beaker::resize() {
   rhs.resize(ncomp());
   indices.resize(ncomp());
 
+#ifdef GLENN
+  solver = new DirectSolver();
+  solver->Initialize(ncomp());
+#endif
 } // end resize()
 
 void Beaker::resize(int n) {
@@ -720,6 +730,7 @@ double Beaker::calculateMaxRelChangeInMolality(const std::vector<double>& prev_m
 
 void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
       // LU direct solve
+#ifndef GLENN
     double D;
     // allocate pivoting array for LU
     int *indices = new int[ncomp()];
@@ -730,6 +741,9 @@ void Beaker::solveLinearSystem(Block *A, std::vector<double> &b) {
     ludcmp(A->getValues(),ncomp(),indices,&D);
     lubksb(A->getValues(),ncomp(),indices,b);
     delete[] indices;
+#else
+    solver->Solve(A,b);
+#endif
 } // end solveLinearSystem
 
 void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals)
@@ -918,6 +932,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters)
 {
   double speciation_tolerance = 1.e-12;
+  double residual_tolerance = 1.e-12;
   ResetStatus();
   updateParameters(parameters, 0.0);
   CheckChargeBalance(components.total);
@@ -941,6 +956,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     prev_molal[i] = primarySpecies_[i].molality();
 
   double max_rel_change;
+  double max_residual;
   unsigned int num_iterations = 0;
   bool calculate_activity_coefs = false;
 
@@ -963,6 +979,9 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 
     for (int i = 0; i < ncomp(); i++)
       rhs[i] = residual[i];
+
+    //geh
+    DisplayResults();
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("before scale",J,rhs);
@@ -1004,11 +1023,17 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
 
     num_iterations++;
 
+    max_residual = 0.;
+    for (int i = 0; i < ncomp(); i++)
+      if (fabs(residual[i]) > max_residual) max_residual = fabs(residual[i]);
+
     // if max_rel_change small enough, turn on activity coefficients
-    if (max_rel_change < speciation_tolerance) calculate_activity_coefs = true;
+    if (max_rel_change < speciation_tolerance || 
+        max_residual < residual_tolerance) calculate_activity_coefs = true;
 
     // exist if maximum relative change is below tolerance
-  } while (max_rel_change > speciation_tolerance && 
+  } while (max_rel_change > speciation_tolerance &&
+     max_residual > residual_tolerance && 
 	   num_iterations < max_iterations() && 
 	   !calculate_activity_coefs);
 

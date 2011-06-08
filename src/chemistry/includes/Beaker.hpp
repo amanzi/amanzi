@@ -19,6 +19,11 @@
 #include "SurfaceComplexationRxn.hpp"
 #include "verbosity.hh"
 
+#ifdef GLENN
+#include "chemistry/includes/direct_solver.hh"
+#include "chemistry/includes/matrix_block.hh"
+#endif
+
 class KineticRate;
 
 class Beaker {
@@ -183,6 +188,8 @@ class Beaker {
                             Beaker::BeakerComponents *to);
   SolverStatus status(void) const { return this->status_; };
 
+  const std::vector<Mineral>& minerals(void) const { return this->minerals_; };
+
 protected:
   // update discretization and flow parameters
   // water_density [kg/m^3]
@@ -212,7 +219,6 @@ protected:
 
 
   const std::vector<Species>& primary_species(void) const { return this->primarySpecies_; };
-  const std::vector<Mineral>& minerals(void) const { return this->minerals_; };
   const std::vector<IonExchangeSite>& ion_exchange_sites(void) const { return this->ion_exchange_sites_; };
   const std::vector<double>& total(void) const { return this->total_; };
   const std::vector<double>& total_sorbed(void) const { return this->total_sorbed_; };
@@ -284,6 +290,10 @@ private:
   static const double saturation_default;
   static const double water_density_kg_m3_default;
   static const double volume_default;
+
+#ifdef GLENN
+  DirectSolver *solver;
+#endif
 
 };
 
