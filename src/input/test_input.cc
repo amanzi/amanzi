@@ -10,8 +10,11 @@
 typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
 
 
-const std::string TestInput::num_sublist_keyword_  = "Number of sublists";
-const std::string TestInput::sublist_root_name_    = "Sublist"; 
+const std::string TestInput::num_sublist_keyword_      = "Number of sublists";
+const std::string TestInput::int_parameter_keyword_    = "Integer Parameter";
+const std::string TestInput::double_parameter_keyword_ = "Double Parameter";
+const std::string TestInput::bool_parameter_keyword_   = "Boolean Parameter";
+const std::string TestInput::sublist_root_name_        = "Sublists"; 
 
 /* Default constructor */
 TestInput::TestInput()
@@ -51,12 +54,11 @@ TestInput::TestInput(int x0, double x1, bool x2)
 
 }
 
-#if 0
 /* Override setParameterList from ParameterListAcceptor */
 void TestInput::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const
                                     &plist)
 {
-  //TEST_FOR_EXPECT(is_null(plist));
+  TEST_FOR_EXCEPT(is_null(plist));
 
   /* Validate the incoming list */
   Teuchos::RCP<const Teuchos::ParameterList> plist_valid = getValidParameters();
@@ -66,18 +68,11 @@ void TestInput::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const
   setMyParamList(plist);
 
   /* Set private variables */
-  nx_ = plist->get<int>("Number of cells in X");
-  ny_ = plist->get<int>("Number of cells in Y");
-  nz_ = plist->get<int>("Number of cells in Z");
+  Int_  = plist->get<int>(int_parameter_keyword_);
+  Dbl_  = plist->get<double>(double_parameter_keyword_);
+  Bool_ = plist->get<bool>(bool_parameter_keyword_);
 
-  x0_ = plist->get<double>("X_Min");
-  x1_ = plist->get<double>("X_Max");
-  y0_ = plist->get<double>("Y_Min");
-  y1_ = plist->get<double>("Y_Max");
-  z0_ = plist->get<double>("Z_Min");
-  z1_ = plist->get<double>("Z_Max");
-
-  num_blocks_ = plist->get<int>(num_blocks_keyword_);
+  num_sublist_ = plist->get<int>(num_sublist_keyword_);
 
 
 }
@@ -96,40 +91,34 @@ TestInput::getValidParameters() const
   return validParams;
 }
 
-std::string TestInput::generate_mesh_block_name(int label) const
+std::string TestInput::generate_sublist_name(int label) const
 {
   std::stringstream ss;
-  ss << "Mesh block " << label;
+  ss << "Sublist " << label;
   return ss.str();
 }
 
-void TestInput::add_block(double z0, double z1)
+void TestInput::add_sublist(int x0, double x1, bool x2)
 {
-  /* Will use Validators that compare zmin and zmax when available */
-  Teuchos::ParameterEntry z0_entry;
-  z0_entry.setValue<double>(z0,false,"",this->DoubleOnlyValidator_);
-
-  Teuchos::ParameterEntry z1_entry;
-  z1_entry.setValue<double>(z1,false,"",this->DoubleOnlyValidator_);
-
-
-  /* Update the number of blocks */
+  /* Grab the internal plist ... will change */
   Teuchos::RCP<Teuchos::ParameterList> plist = getNonconstParameterList();
-  int num_blocks = plist->get<int>(num_blocks_keyword_); 
-  num_blocks++;
-  plist->set<int>(num_blocks_keyword_,num_blocks);
 
-  /* Now add the new block sublist */
-  std::string block_name = generate_mesh_block_name(num_blocks);
-  Teuchos::ParameterList& new_block =
-      plist->sublist(blocks_sublist_name_,true).sublist(block_name);
-  new_block.setEntry("Z0",z0_entry);
-  new_block.setEntry("Z1",z1_entry);
+  /* Update the number of sublists */
+  std::string  new_sublist_name = generate_sublist_name(num_sublist_);
+  num_sublist_++;
+  plist->set<int>(num_sublist_keyword_,num_sublist_);
+
+  /* Now add the new sublist */
+  Teuchos::ParameterList& new_list =
+      plist->sublist(sublist_root_name_,true).sublist(new_sublist_name);
+
+  new_list.set<int>(int_parameter_keyword_,x0);
+  new_list.set<double>(double_parameter_keyword_,x1);
+  new_list.set<bool>(bool_parameter_keyword_,x2);
 
   setParameterList(plist);
 
 }
-#endif
 
 /* Private */
 
@@ -145,20 +134,16 @@ TestInput::defineValidTestParameterList() const
                  true,
                  "",
                  this->IntOnlyValidator_);
-  plist->setEntry("Integer Parameter",entry);
+  plist->setEntry(int_parameter_keyword_,entry);
 
   entry.setValue(Dbl_,
                  true,
                  "",
                  this->DoubleOnlyValidator_);
-  plist->setEntry("Double",entry);
+  plist->setEntry(double_parameter_keyword_,entry);
 
   /* bool Parameter */
-  entry.setValue(Bool_,
-                 true,
-                 "",
-                 Teuchos::null);
-  plist->setEntry("Boolean Parameter",entry);
+  plist->set<bool>(bool_parameter_keyword_,Bool_);
 
   /* Number of sublists */
   entry.setValue(num_sublist_,
@@ -166,7 +151,7 @@ TestInput::defineValidTestParameterList() const
                  "Number of sublists",
                  this->IntOnlyValidator_);
   plist->setEntry(num_sublist_keyword_,entry);
-  plist->sublist("Sublists");
+  plist->sublist(sublist_root_name_);
 
 
   return plist;
