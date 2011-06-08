@@ -47,9 +47,6 @@ if (BUILD_TESTS)
   # Add the UnitTest includes
   include_directories(${UnitTest_INCLUDE_DIRS})
 
-  # External (TPL) includes
-  include_directories(${Teuchos_INCLUDE_DIRS})
-
   add_executable(chemistry_tests
 		 test/Main.cc
 		 test/test_string_tokenizer.cpp
@@ -66,6 +63,17 @@ if (BUILD_TESTS)
 		 test/test_beaker.cpp)
   target_link_libraries(chemistry_tests chemistry error_handling ${UnitTest_LIBRARIES})
   add_amanzi_test(chemistry chemistry_tests KIND unit)
+
+
+  # Trilinos related (TPL) includes
+  include_directories(${Teuchos_INCLUDE_DIRS})
+  include_directories(${Epetra_INCLUDE_DIRS})
+
+  add_executable(chemistry_pk_tests
+		 test/Main.cc
+		 test/test_chemistry_pk.cc)
+  target_link_libraries(chemistry_pk_tests chemistry state simple_mesh error_handling exodus ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+  add_amanzi_test(chemistry_pk chemistry_pk_tests KIND unit)
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
     execute_process(COMMAND ${CMAKE_COMMAND} -E
