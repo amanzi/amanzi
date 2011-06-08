@@ -20,10 +20,10 @@ public:
   virtual const Epetra_Vector& Pressure() const = 0;
 
   // Returns a reference to the Darcy face flux vector.
-  virtual const Epetra_Vector& DarcyFlux() const = 0;
+  virtual const Epetra_Vector& Flux() const = 0;
 
   // Computes the components of the Darcy velocity on cells.
-  virtual void GetDarcyVelocity(Epetra_MultiVector &q) const = 0;
+  virtual void GetVelocity(Epetra_MultiVector &q) const = 0;
   
 };
 

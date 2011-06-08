@@ -1,0 +1,202 @@
+<ParameterList name="Main">
+
+  <ParameterList name="Mesh">
+    <Parameter name="Mesh Class" type="string" value="Simple"/>
+    
+    <ParameterList name="Simple Mesh Parameters">
+      <Parameter name="X_Min" type="double" value="0.0"/>
+      <Parameter name="X_Max" type="double" value="1.0"/>
+      <Parameter name="Y_Min" type="double" value="0.0"/>
+      <Parameter name="Y_Max" type="double" value="1.0"/>
+      <Parameter name="Z_Min" type="double" value="0.0"/>
+      <Parameter name="Z_Max" type="double" value="68.0"/>
+      <Parameter name="Numer of Cells in X" type="int" value="1"/> 
+      <Parameter name="Numer of Cells in Y" type="int" value="1"/> 
+      <Parameter name="Numer of Cells in Z" type="int" value="136"/>
+      <Parameter name="Number of mesh blocks" type="int" value="5"/>
+      <ParameterList name="Mesh block 1">
+	<Parameter name="Z0" type="double" value="-0.1"/>
+	<Parameter name="Z1" type="double" value="20.0"/>
+      </ParameterList>
+      <ParameterList name="Mesh block 2">
+	<Parameter name="Z0" type="double" value="20.0"/>
+	<Parameter name="Z1" type="double" value="23.0"/>
+      </ParameterList>      
+      <ParameterList name="Mesh block 3">
+	<Parameter name="Z0" type="double" value="23.0"/>
+	<Parameter name="Z1" type="double" value="29.0"/>
+      </ParameterList>      
+      <ParameterList name="Mesh block 4">
+	<Parameter name="Z0" type="double" value="29.0"/>
+	<Parameter name="Z1" type="double" value="52.0"/>
+      </ParameterList>      
+      <ParameterList name="Mesh block 5">
+	<Parameter name="Z0" type="double" value="52.0"/>
+	<Parameter name="Z1" type="double" value="68.1"/>
+      </ParameterList>      
+    </ParameterList>    
+  </ParameterList>    
+
+  
+
+  <ParameterList name="MPC">
+    <Parameter name="Start Time" type="double" value="0.0"/>
+    <Parameter name="End Time" type="double" value="1e200"/>
+    <Parameter name="End Cycle" type="int" value="1000"/>
+    <Parameter name="disable Flow_PK" type="string" value="no"/>
+    <Parameter name="Flow model" type="string" value="Richards"/>
+    <Parameter name="disable Transport_PK" type="string" value="yes"/>
+    <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
+    <Parameter name="Viz dump cycle frequency" type="int" value="10"/>
+    <ParameterList name="CGNS">
+      <Parameter name="File name" type="string" value="block.cgns"/>
+    </ParameterList>    
+  </ParameterList> 
+
+  
+  <ParameterList name="State">
+    <Parameter name="Number of mesh blocks" type="int" value="5"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
+    <Parameter name="Constant water saturation" type="double" value="1.0"/>
+    <Parameter name="Constant water density" type="double" value="1000.0"/>
+    <Parameter name="Constant viscosity" type="double" value="1.0"/>
+    <Parameter name="Gravity x" type="double" value="0.0"/>
+    <Parameter name="Gravity y" type="double" value="0.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.8"/>
+
+    <ParameterList name="Mesh block 1"> 
+      <Parameter name="Mesh block ID" type="int" value="0"/>
+      <Parameter name="Constant porosity" type="double" value="0.1643"/>
+      <Parameter name="Constant permeability" type="double" value="7.33e-14"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.01"/>
+    </ParameterList>
+    <ParameterList name="Mesh block 2"> 
+      <Parameter name="Mesh block ID" type="int" value="1"/>
+      <Parameter name="Constant porosity" type="double" value="0.2625"/>
+      <Parameter name="Constant permeability" type="double" value="5.27e-14"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.01"/>
+    </ParameterList>
+    <ParameterList name="Mesh block 3"> 
+      <Parameter name="Mesh block ID" type="int" value="2"/>
+      <Parameter name="Constant porosity" type="double" value="0.4223"/>
+      <Parameter name="Constant permeability" type="double" value="1.37e-14"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.01"/>
+    </ParameterList>
+    <ParameterList name="Mesh block 4"> 
+      <Parameter name="Mesh block ID" type="int" value="3"/>
+      <Parameter name="Constant porosity" type="double" value="0.3586"/>
+      <Parameter name="Constant permeability" type="double" value="1.23e-13"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.01"/>
+    </ParameterList>
+    <ParameterList name="Mesh block 5"> 
+      <Parameter name="Mesh block ID" type="int" value="4"/>
+      <Parameter name="Constant porosity" type="double" value="0.2585"/>
+      <Parameter name="Constant permeability" type="double" value="1.24e-12"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.01"/>
+    </ParameterList>
+  </ParameterList>  
+
+
+  <ParameterList name="Flow">
+
+    <ParameterList name="Richards Problem">
+
+      <Parameter name="Steady state calculation initial time" type="double" value="0.0"/>
+      <Parameter name="Steady state calculation final time" type="double" value="1.0e7"/>
+      <Parameter name="Steady state calculation initial time step" type="double" value="1e-5"/>
+      
+      <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>
+
+      <ParameterList name="Richards model evaluator">
+         <ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="none"/>
+	</ParameterList>       
+      </ParameterList>
+
+      <ParameterList name="Time integrator">
+        <Parameter name="Nonlinear solver max iterations" type="int" value="15"/>
+	<Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
+        <Parameter name="NKA max vectors" type="int" value="10"/>
+	<Parameter name="NKA drop tolerance" type="double" value="5.0e-2"/>
+        <ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="high"/>
+	</ParameterList>
+      </ParameterList>	
+
+      <ParameterList name="Water retention models">
+        <ParameterList name="Water retention model 0">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="0"/>
+          <Parameter name="van Genuchten m" type="double" value="0.392"/>
+          <Parameter name="van Genuchten alpha" type="double" value="6.33e-5"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0609"/>	   
+        </ParameterList>
+        <ParameterList name="Water retention model 1">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="1"/>
+          <Parameter name="van Genuchten m" type="double" value="0.386"/>
+          <Parameter name="van Genuchten alpha" type="double" value="2.961e-5"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.213"/>	   
+        </ParameterList>
+        <ParameterList name="Water retention model 2">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="2"/>
+          <Parameter name="van Genuchten m" type="double" value="0.456"/>
+          <Parameter name="van Genuchten alpha" type="double" value="6.84e-5"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.2595"/>	   
+        </ParameterList>
+        <ParameterList name="Water retention model 4">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="3"/>
+          <Parameter name="van Genuchten m" type="double" value="0.469"/>
+          <Parameter name="van Genuchten alpha" type="double" value="9.39e-5"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0837"/>	   
+        </ParameterList>
+        <ParameterList name="Water retention model 5">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="4"/>
+          <Parameter name="van Genuchten m" type="double" value="0.658"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1.008e-3"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0774"/>	   
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="Diffusion Preconditioner">
+	<ParameterList name="ML Parameters">
+	  <Parameter name="ML output" type="int" value="0"/>
+  	  <Parameter name="max levels" type="int" value="40"/>
+	  <Parameter name="prec type" type="string" value="MGV"/>
+	  <Parameter name="increasing or decreasing" type="string" value="increasing"/>
+	  <Parameter name="aggregation: type" type="string" value="Uncoupled-MIS"/>
+	  <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
+	  <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+	  <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+	  <Parameter name="eigen-analysis: iterations" type="int" value="20"/>
+	  <Parameter name="smoother: sweeps" type="int" value="5"/>
+	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+	  <Parameter name="smoother: pre or post" type="string" value="both"/>
+	  <Parameter name="smoother: type" type="string" value="symmetric Gauss-Seidel"/>
+	  <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+	  <Parameter name="coarse: max size" type="int" value="128"/>	   
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Flow BC">
+      <Parameter name="number of BCs" type="int" value="2"/>
+      <ParameterList name="BC00">
+	<Parameter name="Type" type="string" value="Pressure Constant"/>
+	<Parameter name="BC value" type="double" value="160125.0" />
+	<Parameter name="Side set ID" type="int" value="4" />
+      </ParameterList>
+      <ParameterList name="BC01">
+	<Parameter name="Type" type="string" value="Pressure Constant"/>
+	<Parameter name="BC value" type="double" value="-506275.0" />
+	<Parameter name="Side set ID" type="int" value="5" />
+      </ParameterList>      
+     </ParameterList>
+
+
+  </ParameterList>
+
+</ParameterList>

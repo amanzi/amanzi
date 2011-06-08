@@ -29,6 +29,8 @@ include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
@@ -56,7 +58,7 @@ if (ENABLE_CGNS)
     add_definitions("-DENABLE_CGNS")
 endif()    
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
-target_link_libraries(mpc solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
+target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
     

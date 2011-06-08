@@ -21,42 +21,46 @@ public:
 
   ~Transient_Richards_PK ();
 
-  int advance_to_steady_state();
+  int advance();
   void commit_state(Teuchos::RCP<Flow_State>) {}
 
   // After a successful advance() the following routines may be called.
 
   // Returns a reference to the cell pressure vector.
-  const Epetra_Vector& Pressure() const { return *pressure; }
+  const Epetra_Vector& Pressure() const { return *pressure_cells; }
 
   // Returns a reference to the Richards face flux vector.
-  const Epetra_Vector& RichardsFlux() const { return *richards_flux; }
+  const Epetra_Vector& Flux() const { return *richards_flux; }
 
   // Computes the components of the Richards velocity on cells.
-  void GetRichardsVelocity(Epetra_MultiVector &q) const
+  void GetVelocity(Epetra_MultiVector &q) const
       { problem->DeriveDarcyVelocity(*solution, q); }
 
   // Computes the fluid saturation on cells.
   void GetSaturation(Epetra_Vector &s) const;
+  
 
 private:
 
   Teuchos::RCP<const Flow_State> FS;
   Teuchos::RCP<FlowBC> bc;
-
+  Teuchos::ParameterList &richards_plist;
+  
   RichardsProblem *problem;
   RichardsModelEvaluator *RME;
   
   BDF2::Dae *time_stepper;
 
   Epetra_Vector *solution;   // full cell/face solution
-  Epetra_Vector *pressure;   // cell pressures
+  Epetra_Vector *pressure_cells;   // cell pressures
+  Epetra_Vector *pressure_faces;
   Epetra_Vector *richards_flux; // Darcy face fluxes
 
   int max_itr;      // max number of linear solver iterations
   double err_tol;   // linear solver convergence error tolerance
   int precon_freq;  // preconditioner update frequency
 
+  double ss_t0, ss_t1, ss_h0;
 
 };
 

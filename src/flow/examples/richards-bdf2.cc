@@ -168,7 +168,6 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList& vGsl = vGl.sublist("Water retention models");
 
-  vGsl.set<int>("Test",1);
   {
     Teuchos::ParameterList& mb_vGl = vGsl.sublist("WRM 0");
     mb_vGl.set<string>("Water retention model","van Genuchten");
