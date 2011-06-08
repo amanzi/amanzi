@@ -28,7 +28,7 @@
 #include "MineralKineticsFactory.hpp"
 #include "Species.hpp"
 #include "SurfaceComplexationRxn.hpp"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 #include "Beaker.hpp"
 
 #include "exceptions.hh"

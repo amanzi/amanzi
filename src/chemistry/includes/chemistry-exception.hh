@@ -6,11 +6,10 @@
 
 #include "errors.hh"
 
-class ChemistryException : public Errors::Message
-{
+class ChemistryException : public Errors::Message {
  public:
   ChemistryException();
-  ChemistryException(std::string error_message);
+  explicit ChemistryException(std::string error_message);
   virtual ~ChemistryException() throw();
 
   static const std::string kChemistryError;
@@ -21,10 +20,9 @@ class ChemistryException : public Errors::Message
 };
 
 
-class ChemistryInvalidInput : public ChemistryException
-{
+class ChemistryInvalidInput : public ChemistryException {
  public:
-  ChemistryInvalidInput(std::string error_message);
+  explicit ChemistryInvalidInput(std::string error_message);
   virtual ~ChemistryInvalidInput() throw();
 
  protected:
@@ -34,10 +32,9 @@ class ChemistryInvalidInput : public ChemistryException
 };
 
 
-class ChemistryUnrecoverableError : public ChemistryException
-{
+class ChemistryUnrecoverableError : public ChemistryException {
  public:
-  ChemistryUnrecoverableError(std::string error_message);
+  explicit ChemistryUnrecoverableError(std::string error_message);
   virtual ~ChemistryUnrecoverableError() throw();
 
  protected:
@@ -47,10 +44,9 @@ class ChemistryUnrecoverableError : public ChemistryException
 };
 
 
-class ChemistryMaxIterationsReached : public ChemistryException
-{
+class ChemistryMaxIterationsReached : public ChemistryException {
  public:
-  ChemistryMaxIterationsReached(std::string error_message);
+  explicit ChemistryMaxIterationsReached(std::string error_message);
   virtual ~ChemistryMaxIterationsReached() throw();
 
  protected:
@@ -60,10 +56,9 @@ class ChemistryMaxIterationsReached : public ChemistryException
 };
 
 
-class ChemistryInvalidSolution : public ChemistryException
-{
+class ChemistryInvalidSolution : public ChemistryException {
  public:
-  ChemistryInvalidSolution(std::string error_message);
+  explicit ChemistryInvalidSolution(std::string error_message);
   virtual ~ChemistryInvalidSolution() throw();
 
  protected:

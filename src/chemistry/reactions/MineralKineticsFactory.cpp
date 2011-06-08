@@ -11,8 +11,8 @@
 #include "KineticRateTST.hpp"
 #include "KineticRate.hpp"
 #include "Species.hpp"
-#include "StringTokenizer.hpp"
-#include "Verbosity.hpp"
+#include "string-tokenizer.hh"
+#include "verbosity.hh"
 #include "chemistry-exception.hh"
 #include "exceptions.hh"
 

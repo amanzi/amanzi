@@ -7,7 +7,7 @@
 
 #include "UnitTest++.h"
 
-#include "StringTokenizer.hpp"
+#include "string-tokenizer.hh"
 
 SUITE(GeochemistryTests_StringTokenizer)
 {

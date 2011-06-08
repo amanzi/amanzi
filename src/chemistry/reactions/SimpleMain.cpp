@@ -4,7 +4,7 @@
 #include "Beaker.hpp"
 #include "Glenn.hpp"
 #include "activity-model-factory.hh"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 
 using namespace std;
 

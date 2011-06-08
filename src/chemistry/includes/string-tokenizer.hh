@@ -1,7 +1,7 @@
-/* -*-  mode: c++; c-default-style: "google-c-style"; indent-tabs-mode: nil -*- */
-#ifndef __STRING_TOKENIZER_HPP__
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#ifndef STRING_TOKENIZER_HH_
 
-#define __STRING_TOKENIZER_HPP__
+#define STRING_TOKENIZER_HH_
 
 /*******************************************************************************
 **
@@ -22,28 +22,19 @@
 **
 *******************************************************************************/
 
-
-/*
-** Include Files:
-*/
-
 #include <string>
 #include <vector>
 
 
-class StringTokenizer : public std::vector<std::string>
-{
+class StringTokenizer : public std::vector<std::string> {
+ public:
 
-public:
-
-    StringTokenizer(void);
-    StringTokenizer(const std::string &source,
-                    const std::string &delimiters = " \t\n");
-    void tokenize(const std::string &source,
+  StringTokenizer(void);
+  StringTokenizer(const std::string &source,
                   const std::string &delimiters = " \t\n");
-
+  void tokenize(const std::string &source,
+                const std::string &delimiters = " \t\n");
 };
 
-
-#endif     /* __STRING_TOKENIZER_HPP__ */
+#endif     /* STRING_TOKENIZER_HH_ */
 

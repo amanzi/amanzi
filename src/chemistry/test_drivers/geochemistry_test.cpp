@@ -12,7 +12,7 @@
 #include "SimpleThermoDatabase.hpp"
 #include "Beaker.hpp"
 #include "activity-model-factory.hh"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 #include "chemistry-exception.hh"
 
 #include "geochemistry_test.hpp"

@@ -15,8 +15,8 @@
 
 #include "Species.hpp"
 #include "Mineral.hpp"
-#include "Verbosity.hpp"
-#include "StringTokenizer.hpp"
+#include "verbosity.hh"
+#include "string-tokenizer.hh"
 
 class KineticRate;
 

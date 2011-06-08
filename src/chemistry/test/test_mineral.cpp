@@ -10,7 +10,7 @@
 #include "Mineral.hpp"
 #include "chemistry-exception.hh"
 #include "Block.hpp"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 
 SUITE(GeochemistryTestsMineral)
 {

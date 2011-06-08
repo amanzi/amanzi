@@ -4,7 +4,7 @@
 
 #include "Mineral.hpp"
 #include "SecondarySpecies.hpp"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 
 Mineral::Mineral() 
     : SecondarySpecies(),

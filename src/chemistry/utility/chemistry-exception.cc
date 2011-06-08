@@ -41,21 +41,18 @@ const std::string ChemistryException::kChemistryError = "CHEMISTRY_ERROR: ";
 const std::string ChemistryException::kDefaultMessage = "An unknown error has occured.";
 
 ChemistryException::ChemistryException()
-  : Message(ChemistryException::kChemistryError)
-{
+  : Message(ChemistryException::kChemistryError) {
   this->add_data(kDefaultMessage.c_str());
   /* end ChemistryException() */
 }
 
 ChemistryException::ChemistryException(std::string error_message)
-  : Message(ChemistryException::kChemistryError)
-{
+  : Message(ChemistryException::kChemistryError) {
   this->add_data(error_message.c_str());
   /* end ChemistryException(std::string) */
 }
 
-ChemistryException::~ChemistryException() throw ()
-{
+ChemistryException::~ChemistryException() throw() {
   /* end ~ChemistryException() */
 }
 
@@ -66,19 +63,16 @@ ChemistryException::~ChemistryException() throw ()
 *******************************************************************************/
 
 ChemistryInvalidInput::ChemistryInvalidInput()
-  : ChemistryException()
-{
+  : ChemistryException() {
   /* end ChemistryInvalidInput() */
 }
 
 ChemistryInvalidInput::ChemistryInvalidInput(std::string error_message)
-  : ChemistryException(error_message)
-{
+  : ChemistryException(error_message) {
   /* end ChemistryInvalidInput(std::string) */
 }
 
-ChemistryInvalidInput::~ChemistryInvalidInput() throw ()
-{
+ChemistryInvalidInput::~ChemistryInvalidInput() throw() {
   /* end ~ChemistryInvalidInput() */
 }
 
@@ -89,19 +83,16 @@ ChemistryInvalidInput::~ChemistryInvalidInput() throw ()
 *******************************************************************************/
 
 ChemistryUnrecoverableError::ChemistryUnrecoverableError()
-  : ChemistryException()
-{
+  : ChemistryException() {
   /* end ChemistryUnrecoverableError() */
 }
 
 ChemistryUnrecoverableError::ChemistryUnrecoverableError(std::string error_message)
-  : ChemistryException(error_message)
-{
+  : ChemistryException(error_message) {
   /* end ChemistryUnrecoverableError(std::string) */
 }
 
-ChemistryUnrecoverableError::~ChemistryUnrecoverableError() throw ()
-{
+ChemistryUnrecoverableError::~ChemistryUnrecoverableError() throw() {
   /* end ~ChemistryUnrecoverableError() */
 }
 
@@ -112,19 +103,16 @@ ChemistryUnrecoverableError::~ChemistryUnrecoverableError() throw ()
 *******************************************************************************/
 
 ChemistryMaxIterationsReached::ChemistryMaxIterationsReached()
-  : ChemistryException()
-{
+  : ChemistryException() {
   /* end ChemistryMaxIterationsReached() */
 }
 
 ChemistryMaxIterationsReached::ChemistryMaxIterationsReached(std::string error_message)
-  : ChemistryException(error_message)
-{
+  : ChemistryException(error_message) {
   /* end ChemistryMaxIterationsReached(std::string) */
 }
 
-ChemistryMaxIterationsReached::~ChemistryMaxIterationsReached() throw ()
-{
+ChemistryMaxIterationsReached::~ChemistryMaxIterationsReached() throw() {
   /* end ~ChemistryMaxIterationsReached() */
 }
 
@@ -135,18 +123,15 @@ ChemistryMaxIterationsReached::~ChemistryMaxIterationsReached() throw ()
 *******************************************************************************/
 
 ChemistryInvalidSolution::ChemistryInvalidSolution()
-  : ChemistryException()
-{
+  : ChemistryException() {
   /* end ChemistryInvalidSolution() */
 }
 
 ChemistryInvalidSolution::ChemistryInvalidSolution(std::string error_message)
-  : ChemistryException(error_message)
-{
+  : ChemistryException(error_message) {
   /* end ChemistryInvalidSolution(std::string) */
 }
 
-ChemistryInvalidSolution::~ChemistryInvalidSolution() throw ()
-{
+ChemistryInvalidSolution::~ChemistryInvalidSolution() throw() {
   /* end ~ChemistryInvalidSolution() */
 }

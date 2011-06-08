@@ -71,8 +71,8 @@
 #include "SecondarySpecies.hpp"
 #include "KineticRateTST.hpp"
 #include "Block.hpp"
-#include "StringTokenizer.hpp"
-#include "Verbosity.hpp"
+#include "string-tokenizer.hh"
+#include "verbosity.hh"
 
 KineticRateTST::KineticRateTST(void)
     : KineticRate(),

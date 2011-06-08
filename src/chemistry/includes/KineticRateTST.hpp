@@ -25,7 +25,7 @@
 #include "Species.hpp"
 #include "SecondarySpecies.hpp"
 #include "Mineral.hpp"
-#include "StringTokenizer.hpp"
+#include "string-tokenizer.hh"
 
 class Block; 
 

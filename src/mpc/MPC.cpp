@@ -3,8 +3,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "MPC.hpp"
 #include "State.hpp"
-#include "Chemistry_State.hh"
-#include "Chemistry_PK.hh"
+#include "chemistry-state.hh"
+#include "chemistry-pK.hh"
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
 //#include "SteadyState_Richards_PK.hpp"
@@ -136,8 +136,8 @@ void MPC::cycle_driver () {
     try {
       // total view needs this to be outside the constructor 
       CPK->InitializeChemistry();
-      CPK->set_chemistry_output_names(auxnames);
-      CPK->set_component_names(compnames);
+      CPK->set_chemistry_output_names(&auxnames);
+      CPK->set_component_names(&compnames);
     } catch (ChemistryException& chem_error) {
       std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
                 << std::endl << chem_error.what() << std::endl;
@@ -155,7 +155,7 @@ void MPC::cycle_driver () {
   // bandre: moved up to the previous chemistry try block
   // if (chemistry_enabled) {
   //   try {
-  //     CPK->set_chemistry_output_names(auxnames);
+  //     CPK->set_chemistry_output_names(&auxnames);
   //     CPK->set_component_names(compnames);
   //   } catch (ChemistryException& chem_error) {
   //     std::cout << chem_error.what() << std::endl;

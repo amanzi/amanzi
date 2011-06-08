@@ -8,7 +8,7 @@
 #include "Mineral.hpp"
 #include "KineticRate.hpp"
 #include "KineticRateTST.hpp"
-#include "StringTokenizer.hpp"
+#include "string-tokenizer.hh"
 #include "MineralKineticsFactory.hpp"
 
 

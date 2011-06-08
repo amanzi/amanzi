@@ -15,7 +15,7 @@
 
 #include "Species.hpp"
 #include "SecondarySpecies.hpp"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 
 // forward declarations
 class Block;

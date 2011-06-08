@@ -13,7 +13,7 @@ set(SRCS
 	 ./FileIO.cpp 
 	 ./Glenn.cpp 
 	 ./chemistry-exception.cc
-	 ./StringTokenizer.cpp
+	 ./string-tokenizer.cc
 )
 
 add_library(geochemutil ${SRCS}) 

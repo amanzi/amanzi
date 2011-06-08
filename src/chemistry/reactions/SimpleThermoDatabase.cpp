@@ -25,7 +25,7 @@
 #include "IonExchangeComplex.hpp"
 #include "Beaker.hpp"
 #include "Species.hpp"
-#include "StringTokenizer.hpp"
+#include "string-tokenizer.hh"
 #include "chemistry-exception.hh"
 
 #include "exceptions.hh"

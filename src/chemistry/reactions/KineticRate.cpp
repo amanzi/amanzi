@@ -5,8 +5,8 @@
 #include <iomanip>
 
 #include "KineticRate.hpp"
-#include "StringTokenizer.hpp"
-#include "Verbosity.hpp"
+#include "string-tokenizer.hh"
+#include "verbosity.hh"
 
 KineticRate::KineticRate(void)
     : verbosity_(kSilent),

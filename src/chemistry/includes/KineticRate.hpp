@@ -13,8 +13,8 @@
 #include "Species.hpp"
 #include "SecondarySpecies.hpp"
 #include "Mineral.hpp"
-#include "StringTokenizer.hpp"
-#include "Verbosity.hpp"
+#include "string-tokenizer.hh"
+#include "verbosity.hh"
 
 class Block; 
 

@@ -5,7 +5,7 @@
 #include <string>
 
 #include "Beaker.hpp"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 
 int CommandLineOptions(int argc, char **argv,
                        Verbosity* verbosity);

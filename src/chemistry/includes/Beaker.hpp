@@ -17,7 +17,7 @@
 #include "Mineral.hpp"
 #include "Species.hpp"
 #include "SurfaceComplexationRxn.hpp"
-#include "Verbosity.hpp"
+#include "verbosity.hh"
 
 class KineticRate;
 
