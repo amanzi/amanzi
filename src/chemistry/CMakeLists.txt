@@ -48,19 +48,19 @@ if (BUILD_TESTS)
   include_directories(${UnitTest_INCLUDE_DIRS})
 
   add_executable(chemistry_tests
-		 test/Main.cc
-		 test/test_string_tokenizer.cpp
+		 test/main.cc
+		 test/test_string_tokenizer.cc
 		 test/test_chemistry_exceptions.cc
-		 test/test_species.cpp
-		 test/test_ion_exchange_site.cpp
-		 test/test_surface_site.cpp
+		 test/test_species.cc
+		 test/test_ion_exchange_site.cc
+		 test/test_surface_site.cc
 		 test/test_activity_coefficients.cc
-		 test/test_secondary_species.cpp
-		 test/test_aqueous_equilibrium_complex.cpp
-		 test/test_mineral.cpp
-		 test/test_mineral_kinetics_factory.cpp
-		 test/test_kinetic_rate.cpp
-		 test/test_beaker.cpp)
+		 test/test_secondary_species.cc
+		 test/test_aqueous_equilibrium_complex.cc
+		 test/test_mineral.cc
+		 test/test_mineral_kinetics_factory.cc
+		 test/test_kinetic_rate.cc
+		 test/test_beaker.cc)
   target_link_libraries(chemistry_tests chemistry error_handling ${UnitTest_LIBRARIES})
   add_amanzi_test(chemistry chemistry_tests KIND unit)
 
@@ -70,7 +70,7 @@ if (BUILD_TESTS)
   include_directories(${Epetra_INCLUDE_DIRS})
 
   add_executable(chemistry_pk_tests
-		 test/Main.cc
+		 test/main.cc
 		 test/test_chemistry_pk.cc)
   target_link_libraries(chemistry_pk_tests chemistry state simple_mesh error_handling exodus ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
   add_amanzi_test(chemistry_pk chemistry_pk_tests KIND unit)

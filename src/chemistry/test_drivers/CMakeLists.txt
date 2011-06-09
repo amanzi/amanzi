@@ -14,7 +14,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 set(EXE_NAME geochemistryTest)
 
 set(EXE_SRCS 
-	./geochemistry_test.cpp 
+	./geochemistry_test.cc
 )
 
 set(GEOCHEM_LIBS
