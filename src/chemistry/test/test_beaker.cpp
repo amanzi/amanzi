@@ -1,15 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include <cstdlib>
+#include <cmath>
+
 #include <iostream>
-#include "stdlib.h"
-#include "math.h"
-#include "UnitTest++.h"
 #include <vector>
 
-#include "SimpleThermoDatabase.hpp"
-#include "Beaker.hpp"
-#include "activity-model-factory.hh"
+#include "UnitTest++.h"
+
+#include "simple_thermo_database.hh"
+#include "beaker.hh"
+#include "activity_model_factory.hh"
 #include "verbosity.hh"
-#include "chemistry-exception.hh"
+#include "chemistry_exception.hh"
 
 SUITE(BeakerTests)
 {

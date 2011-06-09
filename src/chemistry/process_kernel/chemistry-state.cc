@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "chemistry-state.hh"
+#include "chemistry_state.hh"
 
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_MultiVector.h"
@@ -10,7 +10,7 @@
 
 #include "cell_geometry.hh"
 
-#include "chemistry-exception.hh"
+#include "chemistry_exception.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 

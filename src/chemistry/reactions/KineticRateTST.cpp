@@ -68,10 +68,10 @@
 
 #include <iostream>
 
-#include "SecondarySpecies.hpp"
-#include "KineticRateTST.hpp"
-#include "Block.hpp"
-#include "string-tokenizer.hh"
+#include "secondary_species.hh"
+#include "kinetic_rate_tst.hh"
+#include "block.hh"
+#include "string_tokenizer.hh"
 #include "verbosity.hh"
 
 KineticRateTST::KineticRateTST(void)

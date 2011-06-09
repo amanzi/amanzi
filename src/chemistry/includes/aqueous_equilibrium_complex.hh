@@ -1,11 +1,11 @@
-#ifndef __AqueousEquilibriumComplex_hpp__
-#define __AqueousEquilibriumComplex_hpp__
+#ifndef AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_
+#define AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_
 
 // Class for aqueous equilibrium complexation reaction
 
 #include <vector>
 
-#include "SecondarySpecies.hpp"
+#include "secondary_species.hh"
 
 class Block;
 
@@ -45,4 +45,4 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
 
 };
 
-#endif // __AqueousEquilibriumComplex_hpp__
+#endif // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_

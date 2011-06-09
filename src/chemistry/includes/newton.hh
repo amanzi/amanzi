@@ -1,7 +1,7 @@
-#ifndef __Newton_hpp__
-#define __Newton_hpp__
+#ifndef AMANZI_CHEMISTRY_NEWTON_HH_
+#define AMANZI_CHEMISTRY_NEWTON_HH_
 
-#include "Block.hpp"
+#include "block.hh"
 
 #include <iostream>
 #include <vector>
@@ -34,4 +34,4 @@ public:
 
 };
 
-#endif // __Newton_hpp__
+#endif // AMANZI_CHEMISTRY_NEWTON_HH_

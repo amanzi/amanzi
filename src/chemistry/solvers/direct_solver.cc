@@ -1,5 +1,5 @@
 #include "chemistry/includes/direct_solver.hh"
-#include "chemistry/includes/Block.hpp"
+#include "chemistry/includes/block.hh"
 
 DirectSolver::DirectSolver(void)
     : Solver(),

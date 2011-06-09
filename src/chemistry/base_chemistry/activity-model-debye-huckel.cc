@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "activity-model-debye-huckel.hh"
+#include "activity_model_debye_huckel.hh"
 
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
 const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C

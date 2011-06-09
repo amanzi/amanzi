@@ -1,15 +1,15 @@
-#ifndef __Glenn_hpp__
-#define __Glenn_hpp__
+#ifndef AMANZI_CHEMISTRY_GLENN_HH_
+#define AMANZI_CHEMISTRY_GLENN_HH_
 
-#include "Species.hpp"
-#include "AqueousEquilibriumComplex.hpp"
-#include "Beaker.hpp"
-#include "FileIO.hpp"
-#include "Mineral.hpp"
-#include "KineticRate.hpp"
-#include "KineticRateTST.hpp"
-#include "string-tokenizer.hh"
-#include "MineralKineticsFactory.hpp"
+#include "species.hh"
+#include "aqueous_equilibrium_complex.hh"
+#include "beaker.hh"
+#include "file_io.hh"
+#include "mineral.hh"
+#include "kinetic_rate.hh"
+#include "kinetic_rate_tst.hh"
+#include "string_tokenizer.hh"
+#include "mineral_kinetics_factory.hh"
 
 
 #include <vector>
@@ -735,4 +735,4 @@ static void readMineralVolFracFromFile(string filename,
   delete file;
 }; // end readMineralsVolFracFromFile
 
-#endif // __Glenn_hpp__
+#endif // AMANZI_CHEMISTRY_GLENN_HH_

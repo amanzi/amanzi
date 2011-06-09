@@ -1,10 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_DEBYE_HUCKEL_HH__
-#define __ACTIVITY_MODEL_DEBYE_HUCKEL_HH__
+#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_
+#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_
 
 // Base class for activity calculations
 
-#include "activity-model.hh"
+#include "activity_model.hh"
 
 class Species;
 
@@ -25,5 +25,5 @@ class ActivityModelDebyeHuckel : public ActivityModel {
   static const double debyeBdot;
 };
 
-#endif  // __ACTIVITY_MODEL_DEBYE_HUCKEL_HPP__
+#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_
 

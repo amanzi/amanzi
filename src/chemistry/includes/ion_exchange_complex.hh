@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __IonExchangeComplex_hpp__
-#define __IonExchangeComplex_hpp__
+#ifndef AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
+#define AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
 
 /*
 **  Class for ion exchange complexation reaction
@@ -12,8 +12,8 @@
 
 #include <vector>
 
-#include "Species.hpp"
-#include "IonExchangeSite.hpp"
+#include "species.hh"
+#include "ion_exchange_site.hh"
 
 // forward declarations
 class Block;
@@ -85,4 +85,4 @@ class IonExchangeComplex : Species {
 
 };
 
-#endif // __IonExchangeComplex_hpp__
+#endif // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_

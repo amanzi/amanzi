@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "MineralKineticsFactory.hpp"
+#include "mineral_kinetics_factory.hh"
 
 #include <cstdlib>
 #include <iostream>
@@ -7,13 +7,13 @@
 #include <string>
 #include <sstream>
 
-#include "Mineral.hpp"
-#include "KineticRateTST.hpp"
-#include "KineticRate.hpp"
-#include "Species.hpp"
-#include "string-tokenizer.hh"
+#include "mineral.hh"
+#include "kinetic_rate_tst.hh"
+#include "kinetic_rate.hh"
+#include "species.hh"
+#include "string_tokenizer.hh"
 #include "verbosity.hh"
-#include "chemistry-exception.hh"
+#include "chemistry_exception.hh"
 #include "exceptions.hh"
 
 const std::string MineralKineticsFactory::kTST = "TST";

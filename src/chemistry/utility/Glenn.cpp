@@ -1,5 +1,5 @@
-#include "Glenn.hpp"
-#include "Beaker.hpp"
+#include "glenn.hh"
+#include "beaker.hh"
 
 Glenn::Glenn(Beaker *b) 
 {

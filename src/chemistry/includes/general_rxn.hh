@@ -1,12 +1,12 @@
-#ifndef __GeneralRxn_hpp__
-#define __GeneralRxn_hpp__
+#ifndef AMANZI_CHEMISTRY_GENERAL_RXN_HH_
+#define AMANZI_CHEMISTRY_GENERAL_RXN_HH_
 
 // Class for general forward/reverse reaction
 
 #include <string>
 #include <vector>
 
-#include "Species.hpp"
+#include "species.hh"
 
 // forward declarations
 class Block;
@@ -58,4 +58,4 @@ class GeneralRxn {
   
 };
 
-#endif // __GeneralRxn_hpp__
+#endif // AMANZI_CHEMISTRY_GENERAL_RXN_HH_

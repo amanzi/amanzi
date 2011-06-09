@@ -1,8 +1,8 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_UNIT_HH__
-#define __ACTIVITY_MODEL_UNIT_HH__
+#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
+#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
 
-#include "activity-model.hh"
+#include "activity_model.hh"
 
 class Species;
 
@@ -20,5 +20,5 @@ class ActivityModelUnit : public ActivityModel {
  private:
 };
 
-#endif  // __ACTIVITY_MODEL_UNIT_HPP__
+#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
 

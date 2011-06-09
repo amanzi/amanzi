@@ -1,7 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef STRING_TOKENIZER_HH_
-
-#define STRING_TOKENIZER_HH_
+#ifndef AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_
+#define AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_
 
 /*******************************************************************************
 **
@@ -36,5 +35,5 @@ class StringTokenizer : public std::vector<std::string> {
                 const std::string &delimiters = " \t\n");
 };
 
-#endif     /* STRING_TOKENIZER_HH_ */
+#endif     /* AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_ */
 

@@ -1,5 +1,5 @@
-#ifndef __LU_hpp__
-#define __LU_hpp__
+#ifndef AMANZI_CHEMISTRY_LU_HH_
+#define AMANZI_CHEMISTRY_LU_HH_
 
 #include <cmath>
 #include <iostream>
@@ -10,4 +10,4 @@ void ludcmp(double **a, int n, int *indx, double *d);
 void lubksb(double **a, int n, int *indx, std::vector<double> &b);
 void lubksb(double **a, int n, int *indx, double b[]);
 
-#endif // __LU_hpp__
+#endif // AMANZI_CHEMISTRY_LU_HH_

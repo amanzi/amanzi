@@ -1,4 +1,4 @@
-#include "Newton.hpp"
+#include "newton.hh"
 
 Newton::Newton(const int n) {
   

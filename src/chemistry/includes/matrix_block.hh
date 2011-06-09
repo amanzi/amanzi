@@ -1,7 +1,7 @@
-#ifndef __AMANZI_CHEMISTRY_MATRIXBLOCK_HH__
-#define __AMANZI_CHEMISTRY_MATRIXBLOCK_HH__
+#ifndef AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
+#define AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
 
-#include "chemistry/includes/Block.hpp"
+#include "chemistry/includes/block.hh"
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
@@ -55,5 +55,5 @@ class MatrixBlock {
 
 };
 
-#endif // __AMANZI_CHEMISTRY_MATRIXBLOCK_HH__
+#endif // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
 

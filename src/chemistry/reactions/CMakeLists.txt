@@ -21,7 +21,6 @@ set(SRCS
 	./KineticRateTST.cpp 
 	./Mineral.cpp 
 	./MineralKineticsFactory.cpp 
-	./Reaction.cpp 
 	./SecondarySpecies.cpp 
 	./SimpleThermoDatabase.cpp
 	./SurfaceComplex.cpp 

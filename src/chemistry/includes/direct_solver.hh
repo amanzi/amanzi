@@ -1,12 +1,12 @@
-#ifndef __AMANZI_CHEMISTRY_DIRECTSOLVER_HH__
-#define __AMANZI_CHEMISTRY_DIRECTSOLVER_HH__
+#ifndef AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_DIRECTSOLVER_HH_
+#define AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_DIRECTSOLVER_HH_
 
 #include <iostream>
 #include <vector>
 using namespace std;
 
 #include "chemistry/includes/solver.hh"
-#include "chemistry/includes/Block.hpp"
+#include "chemistry/includes/block.hh"
 
 class DirectSolver : public Solver {
   
@@ -32,4 +32,4 @@ public:
 
 };
 
-#endif // __AMANZI_CHEMISTRY_DIRECTSOLVER_HH__
+#endif // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_DIRECTSOLVER_HH_

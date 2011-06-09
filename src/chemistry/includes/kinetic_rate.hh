@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __KINETIC_RATE_HPP__
+#ifndef AMANZI_CHEMISTRY_KINETIC_RATE_HH_
 
-#define __KINETIC_RATE_HPP__
+#define AMANZI_CHEMISTRY_KINETIC_RATE_HH_
 
 /*******************************************************************************
 **
@@ -10,10 +10,10 @@
 *******************************************************************************/
 #include <vector>
 
-#include "Species.hpp"
-#include "SecondarySpecies.hpp"
-#include "Mineral.hpp"
-#include "string-tokenizer.hh"
+#include "species.hh"
+#include "secondary_species.hh"
+#include "mineral.hh"
+#include "string_tokenizer.hh"
 #include "verbosity.hh"
 
 class Block; 
@@ -69,5 +69,5 @@ class KineticRate
   SpeciesId identifier_;
 };
 
-#endif     /* __KINETIC_RATE_HPP__ */
+#endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_HH_ */
 

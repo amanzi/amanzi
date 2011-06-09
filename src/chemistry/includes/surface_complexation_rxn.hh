@@ -1,12 +1,12 @@
-#ifndef __SurfaceComplexationRxn_hpp__
-#define __SurfaceComplexationRxn_hpp__
+#ifndef AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
+#define AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
 
 // Class for aqueous equilibrium complexation reaction
 
 #include <vector>
 
-#include "SurfaceComplex.hpp"
-#include "SurfaceSite.hpp"
+#include "surface_complex.hh"
+#include "surface_site.hh"
 
 // forward declarations
 class Block;
@@ -58,4 +58,4 @@ class SurfaceComplexationRxn {
 
 };
 
-#endif // __SurfaceComplexationRxn_hpp__
+#endif // AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_

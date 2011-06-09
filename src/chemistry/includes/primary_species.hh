@@ -1,5 +1,5 @@
-#ifndef __Primary_Species_hpp__
-#define __Primary_Species_hpp__
+#ifndef AMANZI_CHEMISTRY_PRIMARY_SPECIES_HH_
+#define AMANZI_CHEMISTRY_PRIMARY_SPECIES_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "State.hpp"

@@ -1,7 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef VERBOSITY_HH_
-
-#define VERBOSITY_HH_
+#ifndef AMANZI_CHEMISTRY_VERBOSITY_HH_
+#define AMANZI_CHEMISTRY_VERBOSITY_HH_
 
 enum Verbosity { kSilent,
                  kTerse,
@@ -17,5 +16,5 @@ enum Verbosity { kSilent,
 };
 
 
-#endif     /* VERBOSITY_HH_ */
+#endif     /* AMANZI_CHEMISTRY_VERBOSITY_HH_ */
 

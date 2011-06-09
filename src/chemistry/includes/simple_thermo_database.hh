@@ -1,11 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __SimpleThermoDatabase_hpp__
-#define __SimpleThermoDatabase_hpp__
+#ifndef AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
+#define AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
 
 #include <vector>
 
-#include "Species.hpp"
-#include "Beaker.hpp"
+#include "species.hh"
+#include "beaker.hh"
 
 class SimpleThermoDatabase : public Beaker {
  public:
@@ -76,4 +76,4 @@ private:
 
 };
 
-#endif  // __SimpleThermoDatabase_hpp__
+#endif  // AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_

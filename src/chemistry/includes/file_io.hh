@@ -1,5 +1,5 @@
-#ifndef __FileIO_hpp__
-#define __FileIO_hpp__
+#ifndef AMANZI_CHEMISTRY_FILEIO_HH_
+#define AMANZI_CHEMISTRY_FILEIO_HH_
 
 #define MAXCARDLENGTH 5 // add 1 to account of end of line \0
 #define MAXWORDLENGTH 33
@@ -44,4 +44,4 @@ class FileIO {
 
 };
 
-#endif // __FileIO_hpp__
+#endif // AMANZI_CHEMISTRY_FILEIO_HH_

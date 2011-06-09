@@ -7,12 +7,12 @@
 
 #include <UnitTest++.h>
 
-#include "Species.hpp"
-#include "activity-model-factory.hh"
-#include "activity-model-unit.hh"
-#include "activity-model-debye-huckel.hh"
-#include "activity-model.hh"
-#include "chemistry-exception.hh"
+#include "species.hh"
+#include "activity_model_factory.hh"
+#include "activity_model_unit.hh"
+#include "activity_model_debye_huckel.hh"
+#include "activity_model.hh"
+#include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsActivityModels)
 {

@@ -1,5 +1,5 @@
-#ifndef __AMANZI_CHEMISTRY_SOLVER_HH__
-#define __AMANZI_CHEMISTRY_SOLVER_HH__
+#ifndef AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_
+#define AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_
 
 #include "chemistry/includes/matrix_block.hh"
 
@@ -28,4 +28,4 @@ public:
 
 };
 
-#endif // __AMANZI_CHEMISTRY_SOLVER_HH__
+#endif // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_

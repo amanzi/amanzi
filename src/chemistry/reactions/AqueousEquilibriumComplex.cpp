@@ -1,10 +1,11 @@
+#include "aqueous_equilibrium_complex.hh"
+
 #include <cmath>
 
 #include <iostream>
 #include <iomanip>
 
-#include "AqueousEquilibriumComplex.hpp"
-#include "Block.hpp"
+#include "block.hh"
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex() 
     : SecondarySpecies()

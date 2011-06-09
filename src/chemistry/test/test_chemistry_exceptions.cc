@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "chemistry-exception.hh"
+#include "chemistry_exception.hh"
 
 #include <cstdlib>
 #include <cmath>

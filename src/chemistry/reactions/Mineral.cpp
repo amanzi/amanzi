@@ -2,8 +2,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Mineral.hpp"
-#include "SecondarySpecies.hpp"
+#include "mineral.hh"
+#include "secondary_species.hh"
 #include "verbosity.hh"
 
 Mineral::Mineral() 

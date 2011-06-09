@@ -8,8 +8,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Beaker.hpp"
-#include "chemistry-exception.hh"
+#include "beaker.hh"
+#include "chemistry_exception.hh"
 #include "verbosity.hh"
 
 // forward declarations

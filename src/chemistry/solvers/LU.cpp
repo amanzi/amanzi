@@ -1,4 +1,4 @@
-#include "LU.hpp"
+#include "lu.hh"
 #define TINY 1.0e-20
 
 void ludcmp(double **a, int n, int *indx, double *d)

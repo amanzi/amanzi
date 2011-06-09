@@ -1,5 +1,5 @@
-#ifndef __Species_hpp__
-#define __Species_hpp__
+#ifndef AMANZI_CHEMISTRY_SPECIES_HH_
+#define AMANZI_CHEMISTRY_SPECIES_HH_
 
 // Base class for species
 
@@ -96,5 +96,5 @@ class Species {
 
 typedef std::vector<Species> SpeciesArray;
 
-#endif // __Species_hpp__
+#endif // AMANZI_CHEMISTRY_SPECIES_HH_
 

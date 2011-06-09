@@ -1,12 +1,12 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Secondary_Species_hpp__
-#define __Secondary_Species_hpp__
+#ifndef AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_
+#define AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_
 // Base class for secondary species (aqueous equilibrium complexes,
 // minerals)
 
 #include <vector>
 
-#include "Species.hpp"
+#include "species.hh"
 
 // forward declarations
 class Block;

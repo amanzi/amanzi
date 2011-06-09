@@ -1,14 +1,14 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_HH__
-#define __ACTIVITY_MODEL_HH__
+#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
+#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
 
 // Base class for activity calculations
 
 #include <vector>
 #include <string>
 
-#include "Species.hpp"
-#include "AqueousEquilibriumComplex.hpp"
+#include "species.hh"
+#include "aqueous_equilibrium_complex.hh"
 
 class ActivityModel {
  public:
@@ -42,5 +42,5 @@ class ActivityModel {
   std::string name_;
 };
 
-#endif  // __ACTIVITY_MODEL_HPP__
+#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
 

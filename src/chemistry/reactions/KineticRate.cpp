@@ -4,8 +4,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include "KineticRate.hpp"
-#include "string-tokenizer.hh"
+#include "kinetic_rate.hh"
+#include "string_tokenizer.hh"
 #include "verbosity.hh"
 
 KineticRate::KineticRate(void)

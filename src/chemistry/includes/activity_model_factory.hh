@@ -1,10 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __ACTIVITY_MODEL_FACTORY_HH__
-#define __ACTIVITY_MODEL_FACTORY_HH__
+#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
+#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
 
 #include <string>
 
-#include "activity-model.hh"
+#include "activity_model.hh"
 
 class ActivityModelFactory {
  public:
@@ -21,5 +21,5 @@ class ActivityModelFactory {
  private:
 };
 
-#endif  // __ACTIVITY_MODEL_FACTORY_HPP__
+#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
 

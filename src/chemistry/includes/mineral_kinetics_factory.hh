@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __MINERAL_KINETICS_FACTORY_HPP__
+#ifndef AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_
 
-#define __MINERAL_KINETICS_FACTORY_HPP__
+#define AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_
 
 /*******************************************************************************
 **
@@ -13,10 +13,10 @@
 #include <vector>
 #include <string>
 
-#include "Species.hpp"
-#include "Mineral.hpp"
+#include "species.hh"
+#include "mineral.hh"
 #include "verbosity.hh"
-#include "string-tokenizer.hh"
+#include "string_tokenizer.hh"
 
 class KineticRate;
 
@@ -46,5 +46,5 @@ class MineralKineticsFactory
 
 };
 
-#endif     /* __MINERAL_KINETICS_FACTORY_HPP__ */
+#endif     /* AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_ */
 

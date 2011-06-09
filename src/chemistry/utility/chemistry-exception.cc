@@ -26,7 +26,7 @@
 **    }
 **
 *******************************************************************************/
-#include "chemistry-exception.hh"
+#include "chemistry_exception.hh"
 
 #include <string>
 #include <iostream>

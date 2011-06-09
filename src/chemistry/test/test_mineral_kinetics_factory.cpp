@@ -7,11 +7,11 @@
 
 #include <UnitTest++.h>
 
-#include "Species.hpp"
-#include "MineralKineticsFactory.hpp"
-#include "KineticRate.hpp"
-#include "KineticRateTST.hpp"
-#include "chemistry-exception.hh"
+#include "species.hh"
+#include "mineral_kinetics_factory.hh"
+#include "kinetic_rate.hh"
+#include "kinetic_rate_tst.hh"
+#include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsMineralKineticsFactory)
 {

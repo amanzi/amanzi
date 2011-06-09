@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Mineral_hpp__
-#define __Mineral_hpp__
+#ifndef AMANZI_CHEMISTRY_MINERAL_HH_
+#define AMANZI_CHEMISTRY_MINERAL_HH_
 
 /* Class for mineral reaction, should be written with the mineral as
 ** the reactant:
@@ -13,8 +13,8 @@
 
 #include <vector>
 
-#include "Species.hpp"
-#include "SecondarySpecies.hpp"
+#include "species.hh"
+#include "secondary_species.hh"
 #include "verbosity.hh"
 
 // forward declarations
@@ -74,4 +74,4 @@ class Mineral : public SecondarySpecies {
   //void set_specific_surface_area(const double d) { this->specific_surface_area_ = d; }
 };
 
-#endif // __Mineral_hpp__
+#endif // AMANZI_CHEMISTRY_MINERAL_HH_

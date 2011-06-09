@@ -15,10 +15,10 @@
 #include "Mesh_maps_simple.hh"
 #include "State.hpp"
 
-#include "chemistry-pk.hh"
-#include "chemistry-state.hh"
-#include "Species.hpp"
-#include "chemistry-exception.hh"
+#include "chemistry_pk.hh"
+#include "chemistry_state.hh"
+#include "species.hh"
+#include "chemistry_exception.hh"
 
 
 /*****************************************************************************

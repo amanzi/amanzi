@@ -7,9 +7,9 @@
 
 #include <UnitTest++.h>
 
-#include "Mineral.hpp"
-#include "chemistry-exception.hh"
-#include "Block.hpp"
+#include "mineral.hh"
+#include "chemistry_exception.hh"
+#include "block.hh"
 #include "verbosity.hh"
 
 SUITE(GeochemistryTestsMineral)

@@ -1,13 +1,13 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "activity-model-factory.hh"
+#include "activity_model_factory.hh"
 
 #include <sstream>
 #include <string>
 
-#include "activity-model.hh"
-#include "activity-model-debye-huckel.hh"
-#include "activity-model-unit.hh"
-#include "chemistry-exception.hh"
+#include "activity_model.hh"
+#include "activity_model_debye_huckel.hh"
+#include "activity_model_unit.hh"
+#include "chemistry_exception.hh"
 #include "exceptions.hh"
 
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";

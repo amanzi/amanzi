@@ -1,10 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __Geochemistry_Test_hpp__
-#define __Geochemistry_Test_hpp__
+#ifndef AMANZI_CHEMISTRY_GEOCHEMISTRY_TEST_HH_
+#define AMANZI_CHEMISTRY_GEOCHEMISTRY_TEST_HH_
 
 #include <string>
 
-#include "Beaker.hpp"
+#include "beaker.hh"
 #include "verbosity.hh"
 
 int CommandLineOptions(int argc, char **argv,
@@ -94,4 +94,4 @@ void uo2_5_component_minerals(Beaker::BeakerComponents* components);
 void uo2_5_component_sorbed(Beaker::BeakerComponents* components);
 
 
-#endif 
+#endif  /* AMANZI_CHEMISTRY_GEOCHEMISTRY_TEST_HH_ */

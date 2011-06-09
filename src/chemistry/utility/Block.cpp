@@ -3,7 +3,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Block.hpp"
+#include "block.hh"
 
 Block::Block() {
   size = 0;

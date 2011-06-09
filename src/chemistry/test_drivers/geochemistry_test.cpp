@@ -1,4 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "geochemistry_test.hh"
+
 #include <unistd.h>
 
 #include <cstdlib>
@@ -9,13 +11,11 @@
 #include <string>
 #include <stdexcept>
 
-#include "SimpleThermoDatabase.hpp"
-#include "Beaker.hpp"
-#include "activity-model-factory.hh"
+#include "simple_thermo_database.hh"
+#include "beaker.hh"
+#include "activity_model_factory.hh"
 #include "verbosity.hh"
-#include "chemistry-exception.hh"
-
-#include "geochemistry_test.hpp"
+#include "chemistry_exception.hh"
 
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");

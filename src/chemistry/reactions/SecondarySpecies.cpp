@@ -3,8 +3,8 @@
 #include <iomanip>
 #include <sstream>
 
-#include "SecondarySpecies.hpp"
-#include "chemistry-exception.hh"
+#include "secondary_species.hh"
+#include "chemistry_exception.hh"
 
 #include "exceptions.hh"
 

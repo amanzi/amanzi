@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#include "GeneralRxn.hpp"
-#include "Block.hpp"
+#include "general_rxn.hh"
+#include "block.hh"
 
 GeneralRxn::GeneralRxn() 
 {

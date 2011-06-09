@@ -6,6 +6,8 @@
 ** TODO: finish implementing ion exchange jacobian
 */
 
+#include "beaker.hh"
+
 #include <cstdlib>
 
 #include <string>
@@ -14,22 +16,21 @@
 #include <vector>
 #include <sstream>
 
-#include "activity-model.hh"
-#include "activity-model-factory.hh"
-#include "AqueousEquilibriumComplex.hpp"
-#include "Block.hpp"
-#include "GeneralRxn.hpp"
-#include "chemistry-exception.hh"
-#include "IonExchangeComplex.hpp"
-#include "IonExchangeSite.hpp"
-#include "KineticRate.hpp"
-#include "LU.hpp"
-#include "Mineral.hpp"
-#include "MineralKineticsFactory.hpp"
-#include "Species.hpp"
-#include "SurfaceComplexationRxn.hpp"
+#include "activity_model.hh"
+#include "activity_model_factory.hh"
+#include "aqueous_equilibrium_complex.hh"
+#include "block.hh"
+#include "general_rxn.hh"
+#include "chemistry_exception.hh"
+#include "ion_exchange_complex.hh"
+#include "ion_exchange_site.hh"
+#include "kinetic_rate.hh"
+#include "lu.hh"
+#include "mineral.hh"
+#include "mineral_kinetics_factory.hh"
+#include "species.hh"
+#include "surface_complexation_rxn.hh"
 #include "verbosity.hh"
-#include "Beaker.hpp"
 
 #include "exceptions.hh"
 

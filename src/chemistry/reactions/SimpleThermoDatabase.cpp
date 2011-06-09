@@ -6,7 +6,7 @@
 **
 */
 
-#include "SimpleThermoDatabase.hpp"
+#include "simple_thermo_database.hh"
 
 #include <cstdlib>
 
@@ -16,17 +16,17 @@
 #include <string>
 #include <sstream>
 
-#include "AqueousEquilibriumComplex.hpp"
-#include "MineralKineticsFactory.hpp"
-#include "Mineral.hpp"
-#include "SurfaceSite.hpp"
-#include "SurfaceComplex.hpp"
-#include "IonExchangeSite.hpp"
-#include "IonExchangeComplex.hpp"
-#include "Beaker.hpp"
-#include "Species.hpp"
-#include "string-tokenizer.hh"
-#include "chemistry-exception.hh"
+#include "aqueous_equilibrium_complex.hh"
+#include "mineral_kinetics_factory.hh"
+#include "mineral.hh"
+#include "surface_site.hh"
+#include "surface_complex.hh"
+#include "ion_exchange_site.hh"
+#include "ion_exchange_complex.hh"
+#include "beaker.hh"
+#include "species.hh"
+#include "string_tokenizer.hh"
+#include "chemistry_exception.hh"
 
 #include "exceptions.hh"
 

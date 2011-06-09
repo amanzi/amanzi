@@ -5,7 +5,10 @@
 ** test program for openmp threading of multiple beaker objects
 **
 */
+#include "beaker-threads.hh"
+
 #include <unistd.h>
+#include <omp.h>
 
 #include <cstdlib>
 
@@ -15,14 +18,10 @@
 #include <string>
 #include <stdexcept>
 
-#include <omp.h>
-
-#include "SimpleThermoDatabase.hpp"
-#include "Beaker.hpp"
+#include "simple_thermo_database.hh"
+#include "beaker.hh"
 #include "verbosity.hh"
-#include "chemistry-exception.hh"
-
-#include "beaker-threads.hh"
+#include "chemistry_exception.hh"
 
 int main(int argc, char **argv) {
   Verbosity verbosity = kTerse;
@@ -36,14 +35,14 @@ int main(int argc, char **argv) {
   // hard code some basic info we need for chemistry
   Beaker::BeakerParameters parameters;
   parameters.thermo_database_file = "input/fbasin-17.bgd";
-  parameters.activity_model_name = "debye-huckel"; 
+  parameters.activity_model_name = "debye-huckel";
   parameters.porosity = 0.5;  // -
   parameters.saturation = 1.0;  // -
   parameters.volume = 1.0;  // m^3
   parameters.water_density = 997.16;
   parameters.tolerance = 1.0e-12;
   parameters.max_iterations= 250;
-  
+
   // setup and initialize a beaker object for each thread
   int num_threads = omp_get_max_threads();
   std::cout << "  number of threads: " << num_threads << std::endl;

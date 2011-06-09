@@ -6,8 +6,8 @@
 
 #include <UnitTest++.h>
 
-#include "Species.hpp"
-#include "chemistry-exception.hh"
+#include "species.hh"
+#include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsSpecies)
 {

@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef __IonExchangeSite_hpp__
-#define __IonExchangeSite_hpp__
+#ifndef AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
+#define AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
 
 /*
 **  Base class for ion exchange sites (e.g. X- in standard geochemistry notation)
@@ -12,8 +12,8 @@
 #include <vector>
 #include <cmath>
 
-#include "Species.hpp"
-#include "Block.hpp"
+#include "species.hh"
+#include "block.hh"
 
 class IonExchangeSite : public Species {
 
@@ -46,4 +46,4 @@ class IonExchangeSite : public Species {
  private:
 };
 
-#endif  // __IonExchangeSite_hpp__
+#endif  // AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_

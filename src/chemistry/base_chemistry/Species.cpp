@@ -4,8 +4,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Species.hpp"
-#include "chemistry-exception.hh"
+#include "species.hh"
+#include "chemistry_exception.hh"
 
 #include "exceptions.hh"
 

@@ -4,9 +4,9 @@
 #include <iomanip>
 #include <sstream>
 
-#include "chemistry-exception.hh"
-#include "SurfaceComplexationRxn.hpp"
-#include "Block.hpp"
+#include "chemistry_exception.hh"
+#include "surface_complexation_rxn.hh"
+#include "block.hh"
 
 #include "exceptions.hh"
 

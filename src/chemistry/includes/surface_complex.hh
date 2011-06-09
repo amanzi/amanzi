@@ -1,12 +1,12 @@
-#ifndef __SurfaceComplex_hpp__
-#define __SurfaceComplex_hpp__
+#ifndef AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_
+#define AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_
 
 // Class for aqueous equilibrium complexation reaction
 
 #include <vector>
 
-#include "Species.hpp"
-#include "SurfaceSite.hpp"
+#include "species.hh"
+#include "surface_site.hh"
 
 // forward declarations
 class Block;
@@ -107,4 +107,4 @@ class SurfaceComplex {
   double logK_;
 };
 
-#endif // __SurfaceComplex_hpp__
+#endif // AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_

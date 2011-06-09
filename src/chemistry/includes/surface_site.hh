@@ -1,11 +1,11 @@
-#ifndef __SurfaceSite_hpp__
-#define __SurfaceSite_hpp__
+#ifndef AMANZI_CHEMISTRY_SURFACESITE_HH_
+#define AMANZI_CHEMISTRY_SURFACESITE_HH_
 
 // Class for storing surface site data for surface complexation
 
 #include <vector>
 
-#include "Mineral.hpp"
+#include "mineral.hh"
 
 // forward declarations
 class Block;
@@ -78,4 +78,4 @@ class SurfaceSite {
 
 };
 
-#endif // __SurfaceSite_hpp__
+#endif // AMANZI_CHEMISTRY_SURFACESITE_HH_

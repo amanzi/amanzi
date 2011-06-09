@@ -1,5 +1,5 @@
-#ifndef __Beaker_hpp__
-#define __Beaker_hpp__
+#ifndef AMANZI_CHEMISTRY_BEAKER_HH_
+#define AMANZI_CHEMISTRY_BEAKER_HH_
 
 // Driver class for evaluating geochemical related processes at a
 // single computational node
@@ -7,16 +7,16 @@
 #include <string>
 #include <vector>
 
-#include "activity-model.hh"
-#include "AqueousEquilibriumComplex.hpp"
-#include "Block.hpp"
-#include "GeneralRxn.hpp"
-#include "IonExchangeComplex.hpp"
-#include "IonExchangeSite.hpp"
-#include "KineticRate.hpp"
-#include "Mineral.hpp"
-#include "Species.hpp"
-#include "SurfaceComplexationRxn.hpp"
+#include "activity_model.hh"
+#include "aqueous_equilibrium_complex.hh"
+#include "block.hh"
+#include "general_rxn.hh"
+#include "ion_exchange_complex.hh"
+#include "ion_exchange_site.hh"
+#include "kinetic_rate.hh"
+#include "mineral.hh"
+#include "species.hh"
+#include "surface_complexation_rxn.hh"
 #include "verbosity.hh"
 
 #ifdef GLENN
@@ -297,4 +297,4 @@ private:
 
 };
 
-#endif // __Beaker_hpp__
+#endif // AMANZI_CHEMISTRY_BEAKER_HH_

@@ -1,9 +1,9 @@
 #include <iostream>
 #include <vector>
 
-#include "Beaker.hpp"
-#include "Glenn.hpp"
-#include "activity-model-factory.hh"
+#include "beaker.hh"
+#include "glenn.hh"
+#include "activity_model_factory.hh"
 #include "verbosity.hh"
 
 using namespace std;

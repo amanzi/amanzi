@@ -69,8 +69,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include "IonExchangeComplex.hpp"
-#include "Block.hpp"
+#include "ion_exchange_complex.hh"
+#include "block.hh"
 
 
 IonExchangeComplex::IonExchangeComplex()

@@ -6,8 +6,8 @@
 
 #include <UnitTest++.h>
 
-#include "SurfaceSite.hpp"
-#include "Species.hpp"
+#include "surface_site.hh"
+#include "species.hh"
 
 SUITE(GeochemistryTestsSurfaceSite)
 {

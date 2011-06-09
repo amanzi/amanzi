@@ -1,5 +1,5 @@
-#ifndef __Block_hpp__
-#define __Block_hpp__
+#ifndef AMANZI_CHEMISTRY_BLOCK_HH_
+#define AMANZI_CHEMISTRY_BLOCK_HH_
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
@@ -49,5 +49,5 @@ class Block {
 
 };
 
-#endif // __Block_hpp__
+#endif // AMANZI_CHEMISTRY_BLOCK_HH_
 

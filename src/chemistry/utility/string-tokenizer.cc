@@ -15,7 +15,7 @@
 **      http://web.archive.org/web/20030810163805/http://www.thecodezone.com/diary/archives/000057.html
 **
 *******************************************************************************/
-#include "string-tokenizer.hh"
+#include "string_tokenizer.hh"
 
 #include <string>
 

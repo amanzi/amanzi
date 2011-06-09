@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "activity-model-unit.hh"
+#include "activity_model_unit.hh"
 
 ActivityModelUnit::ActivityModelUnit()
   : ActivityModel() {

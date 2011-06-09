@@ -6,7 +6,7 @@
 
 #include <UnitTest++.h>
 
-#include "IonExchangeSite.hpp"
+#include "ion_exchange_site.hh"
 
 SUITE(GeochemistryTestsIonExchangeSite)
 {
