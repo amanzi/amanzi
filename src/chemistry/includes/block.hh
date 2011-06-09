@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef AMANZI_CHEMISTRY_BLOCK_HH_
 #define AMANZI_CHEMISTRY_BLOCK_HH_
 

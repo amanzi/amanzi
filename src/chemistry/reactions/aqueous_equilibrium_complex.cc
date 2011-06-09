@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "aqueous_equilibrium_complex.hh"
 
 #include <cmath>

@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "glenn.hh"
 #include "beaker.hh"
 

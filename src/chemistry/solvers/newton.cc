@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "newton.hh"
 
 Newton::Newton(const int n) {

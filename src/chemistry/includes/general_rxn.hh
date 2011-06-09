@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef AMANZI_CHEMISTRY_GENERAL_RXN_HH_
 #define AMANZI_CHEMISTRY_GENERAL_RXN_HH_
 
