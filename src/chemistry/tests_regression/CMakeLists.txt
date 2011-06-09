@@ -30,8 +30,8 @@ target_link_libraries(${EXE_NAME} ${GEOCHEM_LIBS} error_handling)
 
 if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
   execute_process(COMMAND ${CMAKE_COMMAND} -E 
-                  copy_directory ${CHEM_SOURCE_DIR}/test_drivers/input 
-                  ${CHEM_BINARY_DIR}/test_drivers/input) 
+                  copy_directory ${CHEM_SOURCE_DIR}/tests_regression/input 
+                  ${CHEM_BINARY_DIR}/tests_regression/input) 
 endif()
 
 

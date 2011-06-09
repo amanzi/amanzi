@@ -40,7 +40,7 @@
 
   <ParameterList name="Chemistry">
     <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="test/test_chemistry_pk.bgd" />
+    <Parameter name="Thermodynamic Database File" type="string" value="test_chemistry_pk.bgd" />
     <Parameter name="Verbosity" type="int" value="1" />
     <Parameter name="Activity Model" type="string" value="debye-huckel" />
     <Parameter name="Tolerance" type="double" value="1.5e-12"/>

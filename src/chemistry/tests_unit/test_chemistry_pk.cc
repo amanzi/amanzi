@@ -56,7 +56,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     // mesh/state related code....
 
     // get the parameter list from the input file
-    std::string xml_input_filename("test/test_chemistry_pk.xml");
+    std::string xml_input_filename("test_chemistry_pk.xml");
     Teuchos::ParameterList parameter_list;
     Teuchos::updateParametersFromXmlFile(xml_input_filename, &parameter_list);
 
