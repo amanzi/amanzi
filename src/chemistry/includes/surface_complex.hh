@@ -13,7 +13,6 @@
 class Block;
 
 class SurfaceComplex {
-
  public:
   SurfaceComplex();
   SurfaceComplex(const SpeciesName name,

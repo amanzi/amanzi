@@ -15,7 +15,6 @@ typedef int SpeciesId;  // unsigned int?
 **  in the class to get around this...?  */
 
 class Species {
-
  public:
   Species();  // this is only present for stl containers, don't use it
   Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
@@ -83,7 +82,8 @@ class Species {
   void DisplayResults(void) const;
 
  protected:
-  //  Species(const double s_charge, const double s_GMW, const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);
+  // Species(const double s_charge, const double s_GMW,
+  //         const ActivityCoefficient* s_activityCoefficient, SpeciesName s_name);
 
   // these are dangerous, should only be used internally. Use the
   // public update() to ensure that all related data gets updated!
@@ -126,7 +126,6 @@ class Species {
   // void gram_molecular_weight(double d) { this->gram_molecular_weight_ = d; }
   // void ion_size_parameter(double d) { this->ion_size_parameter_ = d; }
   // void name(SpeciesName name) { this->name_ = name; }
-
 };
 
 typedef std::vector<Species> SpeciesArray;

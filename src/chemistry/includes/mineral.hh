@@ -21,7 +21,6 @@
 class Block;
 
 class Mineral : public SecondarySpecies {
-
  public:
   Mineral();
   Mineral(const SpeciesName name,

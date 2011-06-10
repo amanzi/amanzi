@@ -40,7 +40,6 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     SpeciesArray primarySpecies_;
 
    private:
-
   };  // end class AqueousEquilibriumComplexTest
 
   AqueousEquilibriumComplexTest::AqueousEquilibriumComplexTest()
@@ -150,8 +149,4 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     CHECK_ARRAY_CLOSE(dt[0], e[0], aec.ncomp(), 1.0e-15);
     CHECK_ARRAY_CLOSE(dt[1], e[1], aec.ncomp(), 1.0e-15);
   }
-
-
-
-
 }  // end SUITE(GeochemistryTestAqueousEquilibriumComplex)

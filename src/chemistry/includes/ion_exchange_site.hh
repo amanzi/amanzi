@@ -7,16 +7,15 @@
 **
 **
 */
+#include <cmath>
 
 #include <string>
 #include <vector>
-#include <cmath>
 
 #include "species.hh"
 #include "block.hh"
 
 class IonExchangeSite : public Species {
-
  public:
   IonExchangeSite();
   IonExchangeSite(const SpeciesName exchanger_name,

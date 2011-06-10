@@ -5,10 +5,9 @@
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
 class Block {
-
  public:
   Block();
-  Block(int);
+  explicit Block(int n);
   virtual ~Block();
 
   int getSize(void) const {
@@ -21,27 +20,27 @@ class Block {
     return this->A[i][j];
   };
 
-  double getRowAbsMax(int);
+  double getRowAbsMax(int imax);
 
-  void setValue(int, int, double);
-  void setValues(double**);
-  void setValues(Block*);
-  void setValues(int, int, Block*);
-  void setValues(double**, double scale);
-  void setValues(Block*, double scale);
-  void setValues(int, int, Block*, double scale);
+  void setValue(int i, int j, double value);
+  void setValues(double** values);
+  void setValues(Block* b);
+  void setValues(int ioffset, int joffset, Block* b);
+  void setValues(double** values, double scale);
+  void setValues(Block* b, double scale);
+  void setValues(int ioffset, int joffset, Block* b, double scale);
 
-  void addValue(int, int, double);
-  void addValues(double**);
-  void addValues(Block*);
-  void addValues(int, int, Block*);
-  void addValues(double**, double scale);
-  void addValues(Block*, double scale);
-  void addValues(int, int, Block*, double scale);
+  void addValue(int i, int j, double value);
+  void addValues(double** values);
+  void addValues(Block* b);
+  void addValues(int ioffset, int joffset, Block* b);
+  void addValues(double** values, double scale);
+  void addValues(Block* b, double scale);
+  void addValues(int ioffset, int joffset, Block* b, double scale);
 
-  void scaleRow(int, double);
-  void scaleColumn(int, double);
-  void scale(double);
+  void scaleRow(int irow, double scale);
+  void scaleColumn(int icol, double scale);
+  void scale(double scale);
 
   void zero(void);
   void setDiagonal(double d);
@@ -53,7 +52,6 @@ class Block {
 
   int size;
   double** A;
-
 };
 
 #endif  // AMANZI_CHEMISTRY_BLOCK_HH_

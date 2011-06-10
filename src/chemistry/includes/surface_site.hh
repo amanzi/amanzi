@@ -12,7 +12,6 @@
 class Block;
 
 class SurfaceSite {
-
  public:
   SurfaceSite();
   SurfaceSite(const SpeciesName name,
@@ -29,7 +28,7 @@ class SurfaceSite {
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
 
-  // TODO: should all these really be public? should not be changing the
+  // TODO(bandre): should all these really be public? should not be changing the
   // name, id, etc after creation!
   void set_name(SpeciesName name) {
     this->name_ = name;
@@ -41,7 +40,7 @@ class SurfaceSite {
     this->charge_ = d;
   }
 
-  // TODO: I'd like to keep set_xyz just as a mutator for a single
+  // TODO(bandre): I'd like to keep set_xyz just as a mutator for a single
   // variable. Since these are changing two variables, can we call
   // them update_free_site_concentration, update_ln_free_site....?
   void set_free_site_concentration(const double d) {
@@ -98,7 +97,6 @@ class SurfaceSite {
   // for future use
   // a list of pointers to minerals assocaited with the site
   // std::vector<Mineral*> minerals_;
-
 };
 
 #endif  // AMANZI_CHEMISTRY_SURFACESITE_HH_

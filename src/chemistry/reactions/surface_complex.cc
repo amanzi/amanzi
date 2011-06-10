@@ -1,8 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "surface_complex.hh"
+
 #include <iostream>
 #include <iomanip>
 
-#include "surface_complex.hh"
 #include "block.hh"
 
 SurfaceComplex::SurfaceComplex() {
@@ -10,7 +11,6 @@ SurfaceComplex::SurfaceComplex() {
   species_ids_.clear();
   stoichiometry_.clear();
   logK_array_.clear();
-
 }  // end SurfaceComplex() constructor
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name,
@@ -110,7 +110,6 @@ SurfaceComplex::~SurfaceComplex() {
 
 void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
                             const SurfaceSite& surface_site) {
-
   double lnQK_temp = -lnK_;
 
   // Need to consider activity of water
@@ -123,7 +122,6 @@ void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
       surface_site.ln_free_site_concentration();
   set_lnQK(lnQK_temp);
   set_surface_concentration(std::exp(lnQK()));
-
 }  // end Update()
 
 void SurfaceComplex::AddContributionToTotal(std::vector<double> *total) {
@@ -143,9 +141,9 @@ void SurfaceComplex::Display(void) const {
   if (h2o_stoichiometry_ > 0) {
     std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
   }
-  for (int i = 0; i < (int)species_names_.size(); i++) {
+  for (unsigned int i = 0; i < species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
-    if (i < (int)species_names_.size() - 1) {
+    if (i < species_names_.size() - 1) {
       std::cout << " + ";
     }
   }
@@ -162,16 +160,15 @@ void SurfaceComplex::display(void) const {
   if (h2o_stoichiometry_ > 0) {
     std::cout << h2o_stoichiometry_ << " " << "H2O" << " + ";
   }
-  for (int i = 0; i < (int)species_names_.size(); i++) {
+  for (unsigned int i = 0; i < species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
-    if (i < (int)species_names_.size() - 1) {
+    if (i < species_names_.size() - 1) {
       std::cout << " + ";
     }
   }
   std::cout << std::endl;
   std::cout << "     log K: " << logK_
             << "\n     charge: " << charge() << std::endl;
-
 }  // end Display()
 
 void SurfaceComplex::DisplayResultsHeader(void) const {

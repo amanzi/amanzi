@@ -7,7 +7,7 @@
 #include "activity_model_factory.hh"
 #include "verbosity.hh"
 
-using namespace std;
+using std::cout;
 
 int main(int argc, char** argv) {
   static_cast<void>(argc);
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
   readChemistryFromFile(filename, &beaker);
 
   filename = "target_total.dat";
-  readTargetTotalFromFile(filename, beaker.ncomp(), &components.total) ;
+  readTargetTotalFromFile(filename, beaker.ncomp(), &components.total);
   // convert totals from molality [mol/kg water] -> molarity [mol/L water]
   for (unsigned int i = 0; i < components.total.size(); i++) {
     components.total[i] *= parameters.water_density / 1000.;
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
   readChemistryFromFile(filename, &beaker);
 
   filename = "target_total.dat";
-  readTargetTotalFromFile(filename, beaker.ncomp(), &components.total) ;
+  readTargetTotalFromFile(filename, beaker.ncomp(), &components.total);
   // convert totals from molality [mol/kg water] -> molarity [mol/L water]
   for (unsigned int i = 0; i < components.total.size(); i++) {
     components.total[i] *= parameters.water_density / 1000.;
@@ -94,5 +94,4 @@ int main(int argc, char** argv) {
   g.solve(&components, final_time, time_step, parameters);
 
   cout << "Done!\n";
-
 }

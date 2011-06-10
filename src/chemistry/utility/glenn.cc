@@ -15,7 +15,6 @@ Glenn::~Glenn() {
 void Glenn::solve(Beaker::BeakerComponents* components,
                   double final_time, double ts_size,
                   const Beaker::BeakerParameters& parameters) {
-
   // speciate to get initial guess (and realistic activity coefficients)
   b_->Speciate(*components, parameters);
   b_->UpdateComponents(components);
@@ -34,7 +33,6 @@ void Glenn::solve(Beaker::BeakerComponents* components,
   // just converting seconds to years -- both obviously zero in this case
   b_->print_results(time / 365. / 24. / 3600.);
   do {
-
     b_->ReactionStep(components, parameters, ts_size);
     // increment time
     time += ts_size;
@@ -43,7 +41,6 @@ void Glenn::solve(Beaker::BeakerComponents* components,
     times.push_back(time / 24. / 3600.);
     A.push_back(components->total[0]);
     B.push_back(components->total[1]);
-
   } while (time < final_time);
 
 
@@ -52,5 +49,4 @@ void Glenn::solve(Beaker::BeakerComponents* components,
   for (unsigned int i = 0; i < times.size(); i++) {
     std::cout << times[i] << ' ' << A[i] << ' ' << B[i] << std::endl;
   }
-
 }  // end solve()

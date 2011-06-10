@@ -12,7 +12,6 @@
 class Block;
 
 class SecondarySpecies : public Species {
-
  public:
   SecondarySpecies();
   SecondarySpecies(const SpeciesName name,

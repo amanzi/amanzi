@@ -19,7 +19,6 @@
 class Block;
 
 class IonExchangeComplex : Species {
-
  public:
   IonExchangeComplex();
   IonExchangeComplex(const SpeciesName name,
@@ -42,9 +41,9 @@ class IonExchangeComplex : Species {
   virtual void Update(const std::vector<Species>primary_species,
                       const std::vector<IonExchangeSite>exchange_sites);
   // add stoichiometric contribution of complex to total
-  virtual void AddContributionToTotal(std::vector<double> &total);
+  virtual void AddContributionToTotal(std::vector<double>* total);
   // add derivative of total with respect to free-ion to dtotal
-  virtual void AddContributionToDTotal(const std::vector<Species> primary_species,
+  virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        Block* dtotal);
 
   void display(void) const;
@@ -98,11 +97,10 @@ class IonExchangeComplex : Species {
   double exchange_site_stoichiometry_;
   SpeciesId exchange_site_id_;
 
-  double h2o_stoich_;                  // stoichiometry of water in equation
-  double log_Keq_;                     // log10 value of equlibrium constant
-  double ln_Keq_;                      // natural log value of equlibrium constant
-  double ln_QKeq_;                     // store lnQK for derivatives later
-
+  double h2o_stoich_;               // stoichiometry of water in equation
+  double log_Keq_;                  // log10 value of equlibrium constant
+  double ln_Keq_;                   // natural log value of equlibrium constant
+  double ln_QKeq_;                  // store lnQK for derivatives later
 };
 
 #endif  // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_

@@ -48,7 +48,6 @@ SUITE(GeochemistryTestsChemistryPK) {
    private:
     Teuchos::RCP<Mesh_maps_base> mesh_;
     Teuchos::RCP<State> state_;
-
   };  // end class SpeciationTest
 
   ChemistryPKTest::ChemistryPKTest() {
@@ -82,7 +81,6 @@ SUITE(GeochemistryTestsChemistryPK) {
   }
 
   void ChemistryPKTest::RunTest(const std::string name, double * gamma) {
-
   }  // end ChemistryPKTest::RunTest()
 
   /*****************************************************************************
@@ -138,5 +136,4 @@ SUITE(GeochemistryTestsChemistryPK) {
     CHECK_EQUAL(names.at(3), "SiO2(aq)");
     CHECK_EQUAL(names.at(4), "UO2++");
   }  // end TEST_FIXTURE()
-
 }  // end SUITE(GeochemistryTestChemistryPK)

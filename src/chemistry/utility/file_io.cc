@@ -1,30 +1,38 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "file_io.hh"
 
-FileIO::FileIO(string filename) {
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
 
+using std::string;
+using std::fstream;
+using std::stringstream;
+using std::cout;
+using std::endl;
+using std::ios;
+using std::noskipws;
+
+FileIO::FileIO(string filename) {
   cout << filename << endl;
   file.open(filename.c_str(), fstream::in);
   if (!file.is_open()) {
     cout << "ERROR opening file " << filename << ".\n";
   }
   buffer = NULL;
-
 }  // end FileIO constructor
 
 FileIO::FileIO(char* filename) {
-
   cout << filename << endl;
   file.open(filename, fstream::in);
   if (!file.is_open()) {
     cout << "ERROR opening file " << filename << ".\n";
   }
   buffer = NULL;
-
 }  // end FileIO constructor
 
 int FileIO::getLine() {
-
   // int ierr = 0;
   delete buffer;
 
@@ -38,33 +46,25 @@ int FileIO::getLine() {
   }
 
   return file.eof() ? 0 : 1;
-
 }  // end getLine()
 
 int FileIO::getInputLine() {
-
   return getLine();
-
 }  // end getLine()
 
 int FileIO::readDouble(double* d) {
-
   *buffer >> *d;
 
   return buffer->fail() ? 0 : 1;
-
 }  // end readDouble()
 
 int FileIO::readInt(int* i) {
-
   *buffer >> *i;
 
   return buffer->fail() ? 0 : 1;
-
 }  // end readInt()
 
 int FileIO::readWord(char* word) {
-
 #if 0
   /* Remove any preceding spaces(32), tabs(9), or commas(44) etc */
   char c;
@@ -94,11 +94,9 @@ int FileIO::readWord(char* word) {
   } else {
     return 0;
   }
-
 }  // end readWord()
 
 int FileIO::readQuotedWords(char* words) {
-
   /* Remove any preceding spaces(32), tabs(9), or commas(44) etc */
   char c;
   *buffer >> noskipws >> c;
@@ -107,7 +105,7 @@ int FileIO::readQuotedWords(char* words) {
   }
 
   string str;
-  if (c == 34) { // quote found
+  if (c == 34) {  // quote found
     while (c != 34) {
       str.append(1, c);
       *buffer >> noskipws >> c;
@@ -131,11 +129,9 @@ int FileIO::readQuotedWords(char* words) {
   } else {
     return 0;
   }
-
 }  // end readQuotedWords()
 
 int FileIO::removeQuotes(char* str) {
-
   /* Remove all quotes */
   string str2;
   while (1) {
@@ -149,11 +145,9 @@ int FileIO::removeQuotes(char* str) {
   strcpy(str, str2.c_str());
 
   return 0;
-
 }  // end removeQuotes()
 
 int FileIO::findStringInFile(char* card) {
-
   int ierr = 0;
 
   file.seekg(0, ios::beg);
@@ -202,14 +196,14 @@ void FileIO::checkLineErrorMessage(char* word, int ierr) {
 }  // end checkLineErrorMessage()
 
 void FileIO::toUpper(char* str) {
-  int len = (int)strlen(str);
+  int len = static_cast<int>(strlen(str));
   for (int i = 0; i < len; i++) {
     str[i] = toupper(str[i]);
   }
 }  // end toUpper()
 
 void FileIO::toLower(char* str) {
-  int len = (int)strlen(str);
+  int len = static_cast<int>(strlen(str));
   for (int i = 0; i < len; i++) {
     str[i] = tolower(str[i]);
   }

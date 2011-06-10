@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-#include "UnitTest++.h"
+#include <UnitTest++.h>
 
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
@@ -14,7 +14,6 @@
 #include "chemistry_exception.hh"
 
 SUITE(BeakerTests) {
-
   TEST(CheckBadComponentSizes) {
     SimpleThermoDatabase chem;
 
@@ -78,8 +77,6 @@ SUITE(BeakerTests) {
       have_exception = true;
     }
     CHECK_EQUAL(true, have_exception);
-
-
   }  // end TEST(CheckBadDatabaseFile)
 
   TEST(CheckBadActivityModel) {
@@ -109,9 +106,5 @@ SUITE(BeakerTests) {
       have_exception = true;
     }
     CHECK_EQUAL(true, have_exception);
-
-
   }  // end TEST(CheckBadActivityModel)
-
-
 }  // end SUITE(BeakerTests)

@@ -6,7 +6,7 @@
 #include <vector>
 #include <iostream>
 
-#include "UnitTest++.h"
+#include <UnitTest++.h>
 
 #include "exceptions.hh"
 
@@ -68,6 +68,4 @@ SUITE(GeochemistryTests_ChemistryException) {
       CHECK_EQUAL("CHEMISTRY_ERROR: Foo bar baz.", e.what());
     }
   }  // end TEST()
-
-
 }  // end SUITE()

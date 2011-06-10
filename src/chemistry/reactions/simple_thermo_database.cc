@@ -2,7 +2,7 @@
 
 /*
 **
-** TODO: need a lot more error checking and helpfull error messages from here.
+** TODO(bandre): need a lot more error checking and helpfull error messages from here.
 **
 */
 
@@ -271,7 +271,6 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
         Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
       }
     }
-
   }  // end while
 
   FinishSurfaceComplexation();
@@ -324,7 +323,6 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     primary.display();
   }
-
 }  // end ParsePrimarySpecies()
 
 /*******************************************************************************
@@ -380,7 +378,6 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
   if (verbosity() == kDebugInputFile) {
     secondary.display();
   }
-
 }  // end ParseAqueousEquilibriumComplex()
 
 /*******************************************************************************
@@ -395,7 +392,6 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
   error_stream << "SimpleThermoDatabase::ParseGeneralKinetics() : not implemented."
                << std::endl;
   Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-
 }  // end ParseGeneralKinetics()
 
 /*******************************************************************************
@@ -454,7 +450,6 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     mineral.display();
   }
-
 }  // end ParseMineral()
 
 /*******************************************************************************
@@ -499,7 +494,6 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
   if (verbosity() == kDebugInputFile || verbosity() == kDebugMineralKinetics) {
     kinetic_rate->Display();
   }
-
 }  // end ParseMineralKinetics()
 
 
@@ -513,7 +507,7 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
  **
  **  where location is the mineral where the exchanger is located, i.e. kaolinite
  **
- **  TODO: eventually something like "bulk" will be used as a dummy
+ **  TODO(bandre): eventually something like "bulk" will be used as a dummy
  **  mineral for bulk soil rather than a specific mineral. need to
  **  coordinate this with surface complexation.
  **
@@ -549,7 +543,6 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     exchanger.display();
   }
-
 }  // end ParseIonExchangeSite()
 
 /*******************************************************************************
@@ -625,7 +618,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
  **
  **  where location is the mineral where the exchanger is located, i.e. kaolinite
  **
- **  TODO: eventually something like "bulk" will be used as a dummy
+ **  TODO(bandre): eventually something like "bulk" will be used as a dummy
  **  mineral for bulk soil rather than a specific mineral. need to
  **  coordinate this with surface complexation.
  **
@@ -663,7 +656,6 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
     site.display();
     // rxn.Display();
   }
-
 }  // end ParseSurfaceComplexSite()
 
 /*******************************************************************************

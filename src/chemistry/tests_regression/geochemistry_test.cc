@@ -672,7 +672,6 @@ void fbasin_minerals(Beaker::BeakerComponents* components) {
   components->minerals.push_back(0.0);  // Soddyite
   components->minerals.push_back(0.0);  // Calcite
   components->minerals.push_back(0.0);  // Chalcedony
-
 }  // end fbasin_minerals()
 
 void fbasin_sorbed(Beaker::BeakerComponents* components) {

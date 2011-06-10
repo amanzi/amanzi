@@ -13,12 +13,11 @@
 class Block;
 
 class SurfaceComplexationRxn {
-
  public:
   SurfaceComplexationRxn();
   SurfaceComplexationRxn(SurfaceSite* surface_sites,
                          const std::vector<SurfaceComplex>& surface_complexes);
-  SurfaceComplexationRxn(SurfaceSite surface_sites);
+  explicit SurfaceComplexationRxn(SurfaceSite surface_sites);
   ~SurfaceComplexationRxn();
 
   // add complexes to the reaction
@@ -60,7 +59,6 @@ class SurfaceComplexationRxn {
   bool use_newton_solve_;
 
   std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
-
 };
 
 #endif  // AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_

@@ -56,7 +56,6 @@ double SurfaceSite::SiteDensity(void) const {
 }  // end SiteDensity()
 
 void SurfaceSite::display(void) const {
-
   std::cout << "    " << name() << std::endl;
   std::cout << "        site density = " << molar_density() << std::endl;
 }  // end display()

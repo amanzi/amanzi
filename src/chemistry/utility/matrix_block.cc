@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include <cmath>
-
 #include "chemistry/includes/matrix_block.hh"
+
+#include <cmath>
 
 #include <iostream>
 #include <iomanip>

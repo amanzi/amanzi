@@ -3,6 +3,7 @@
 #define AMANZI_CHEMISTRY_GEOCHEMISTRY_TEST_HH_
 
 #include <string>
+#include <vector>
 
 #include "beaker.hh"
 #include "verbosity.hh"

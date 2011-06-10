@@ -26,7 +26,6 @@ SUITE(GeochemistryTestsKineticRate) {
 
     SpeciesArray species_;
    private:
-
   };  // end class KineticRateTest
 
   KineticRateTest::KineticRateTest() {
@@ -50,7 +49,6 @@ SUITE(GeochemistryTestsKineticRate) {
     species_.push_back(CO3_mm);
     species_.push_back(Al_ppp);
     species_.push_back(PO4_mmm);
-
   }
 
 
@@ -68,7 +66,7 @@ SUITE(GeochemistryTestsKineticRate) {
       set_name("abc123");
       set_identifier(456);
     };
-    virtual ~MockKineticRate() {};
+    virtual ~MockKineticRate() {}
 
     void Setup(const SecondarySpecies& reaction,
                const StringTokenizer& reaction_data,
@@ -79,9 +77,7 @@ SUITE(GeochemistryTestsKineticRate) {
     };  // end Setup()
 
     void Update(const SpeciesArray& primary_species,
-                const std::vector<Mineral>& minerals)
-
-    {
+                const std::vector<Mineral>& minerals) {
       static_cast<void>(primary_species);
       static_cast<void>(minerals);
     }  // end Update()
@@ -163,7 +159,6 @@ SUITE(GeochemistryTestsKineticRate) {
     expeced_ids.push_back(2);
     expeced_ids.push_back(1);
     CHECK_ARRAY_EQUAL(expeced_ids, out_ids, 2);
-
   }  // end TEST_FIXTURE(MockKineticRate_SetSpeciesIds_test_id)
 
   TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_stoich) {
@@ -191,7 +186,5 @@ SUITE(GeochemistryTestsKineticRate) {
     expected_stoich[1] = 0.12;
     expected_stoich[2] = 3.45;
     CHECK_ARRAY_EQUAL(expected_stoich, out_stoichiometry, species_.size());
-
   }  // end TEST_FIXTURE(MockKineticRate_SetSpeciesIds_test_stoich)
-
 }  // end SUITE(GeochemistryTestKineticRate)

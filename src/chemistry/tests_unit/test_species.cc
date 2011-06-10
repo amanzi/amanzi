@@ -1,6 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
+
 #include <iostream>
 #include <vector>
 
@@ -33,7 +34,6 @@ SUITE(GeochemistryTestsSpecies) {
     SpeciesName name_;
 
    private:
-
   };  // end class SpeciesTest
 
   SpeciesTest::SpeciesTest()
@@ -187,6 +187,4 @@ SUITE(GeochemistryTestsSpecies) {
      double ln_activity = 0.0;
      double ln_act_coef = 0.0;
   */
-
-
 }  // end SUITE(GeochemistryTestSpecies)

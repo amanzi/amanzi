@@ -2,6 +2,10 @@
 #ifndef AMANZI_CHEMISTRY_GLENN_HH_
 #define AMANZI_CHEMISTRY_GLENN_HH_
 
+#include <vector>
+#include <string>
+#include <iostream>
+
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "beaker.hh"
@@ -12,13 +16,13 @@
 #include "string_tokenizer.hh"
 #include "mineral_kinetics_factory.hh"
 
-
-#include <vector>
+using std::string;
+using std::cout;
+using std::endl;
 
 class Glenn {
-
  public:
-  Glenn(Beaker* b);
+  explicit Glenn(Beaker* b);
   ~Glenn();
 
   void solve(Beaker::BeakerComponents* components,
@@ -27,11 +31,9 @@ class Glenn {
 
  private:
   Beaker* b_;
-
 };
 
 static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
-
   // primary species
   g->resize(2);
 
@@ -69,13 +71,14 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   charge = -1.;
   mol_wt = 17.0073;
   logK = 13.9951;
-  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-                                                            id,
-                                                            species,
-                                                            stoichiometries,
-                                                            species_ids,
-                                                            h2o_stoich,
-                                                            charge, mol_wt, size, logK));
+  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+      name,
+      id,
+      species,
+      stoichiometries,
+      species_ids,
+      h2o_stoich,
+      charge, mol_wt, size, logK));
 
   species.clear();
   stoichiometries.clear();
@@ -94,13 +97,14 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   charge = -2.;
   mol_wt = 60.0092;
   logK = 10.3288;
-  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-                                                            id,
-                                                            species,
-                                                            stoichiometries,
-                                                            species_ids,
-                                                            h2o_stoich,
-                                                            charge, mol_wt, size, logK));
+  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+      name,
+      id,
+      species,
+      stoichiometries,
+      species_ids,
+      h2o_stoich,
+      charge, mol_wt, size, logK));
 
   species.clear();
   stoichiometries.clear();
@@ -119,18 +123,17 @@ static void createCarbonateSystem(std::vector<double> *total, Beaker* g) {
   charge = 0.;
   mol_wt = 44.0098;
   logK = -6.3447;
-  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-                                                            id,
-                                                            species,
-                                                            stoichiometries,
-                                                            species_ids,
-                                                            h2o_stoich,
-                                                            charge, mol_wt, size, logK));
-
+  g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+      name,
+      id,
+      species,
+      stoichiometries,
+      species_ids,
+      h2o_stoich,
+      charge, mol_wt, size, logK));
 };  // end createCarbonateSystem
 
 static void readChemistryFromFile(string filename, Beaker* g) {
-
   char word[32];
   int ncomp, neqcplx, ngeneral_rxn, nsurfcplx_rxn, nminerals;
 
@@ -180,7 +183,6 @@ static void readChemistryFromFile(string filename, Beaker* g) {
   double logK;
   // for neqcplx secondary speces, each line lists name, Z, a0, etc.
   for (int irxn = 0; irxn < neqcplx; irxn++) {
-
     species.clear();
     stoichiometries.clear();
     species_ids.clear();
@@ -206,8 +208,8 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       species_ids.push_back(tempi);
     }
 #ifdef DEBUG
-    for (int j = 0; j < (int)species_ids.size(); j++) {
-      std::cout << species_ids[j] << " " ;
+    for (unsigned int j = 0; j < species_ids.size(); j++) {
+      std::cout << species_ids[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -222,7 +224,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     }
 #ifdef DEBUG
     for (int j = 0; j < ncomp_in_rxn; j++) {
-      std::cout << stoichiometries[j] << " " ;
+      std::cout << stoichiometries[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -246,11 +248,12 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     std::cout << logK << endl;
     std::cout << "-------------------------\n";
 #endif
-    g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(name,
-                                                              irxn,
-                                                              species, stoichiometries,
-                                                              species_ids, h2o_stoich,
-                                                              charge, mol_wt, size, logK));
+    g->addAqueousEquilibriumComplex(AqueousEquilibriumComplex(
+        name,
+        irxn,
+        species, stoichiometries,
+        species_ids, h2o_stoich,
+        charge, mol_wt, size, logK));
   }
 
 #ifdef DEBUG
@@ -282,7 +285,6 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 
   // for neqcplx secondary speces, each line lists name, Z, a0, etc.
   for (int i = 0; i < ngeneral_rxn; i++) {
-
     // name currently not used
     species.clear();  // currently not used
     stoichiometries.clear();
@@ -308,8 +310,8 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       species_ids.push_back(tempi);
     }
 #ifdef DEBUG
-    for (int j = 0; j < (int)species_ids.size(); j++) {
-      std::cout << species_ids[j] << " " ;
+    for (unsigned int j = 0; j < species_ids.size(); j++) {
+      std::cout << species_ids[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -322,7 +324,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     }
 #ifdef DEBUG
     for (int j = 0; j < ncomp_in_rxn; j++) {
-      std::cout << stoichiometries[j] << " " ;
+      std::cout << stoichiometries[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -344,7 +346,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 #ifdef DEBUG
     std::cout << "IDs\n";
     for (int j = 0; j < ncomp_in_rxn; j++) {
-      std::cout << forward_species_ids[j] << " " ;
+      std::cout << forward_species_ids[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -357,7 +359,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 #ifdef DEBUG
     std::cout << "Stoichiometry\n";
     for (int j = 0; j < ncomp_in_rxn; j++) {
-      std::cout << forward_stoichiometries[j] << " " ;
+      std::cout << forward_stoichiometries[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -379,7 +381,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 #ifdef DEBUG
     std::cout << "IDs\n";
     for (int j = 0; j < ncomp_in_rxn; j++) {
-      std::cout << backward_species_ids[j] << " " ;
+      std::cout << backward_species_ids[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -392,7 +394,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 #ifdef DEBUG
     std::cout << "Stoichiometry\n";
     for (int j = 0; j < ncomp_in_rxn; j++) {
-      std::cout << backward_stoichiometries[j] << " " ;
+      std::cout << backward_stoichiometries[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -431,7 +433,6 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 
   // for neqcplx secondary speces, each line lists name, Z, a0, etc.
   for (int irxn = 0; irxn < nsurfcplx_rxn; irxn++) {
-
     // surface complex name
     file->getLine();
     file->readWord(word);
@@ -449,7 +450,6 @@ static void readChemistryFromFile(string filename, Beaker* g) {
 
     std::vector<SurfaceComplex> surface_complexes;
     for (int icplx = 0; icplx < num_surface_complexes; icplx++) {
-
       species.clear();  // currently not used
       stoichiometries.clear();
       species_ids.clear();
@@ -483,8 +483,8 @@ static void readChemistryFromFile(string filename, Beaker* g) {
         species_ids.push_back(tempi);
       }
 #ifdef DEBUG
-      for (int j = 0; j < (int)species_ids.size(); j++) {
-        std::cout << species_ids[j] << " " ;
+      for (unsigned int j = 0; j < species_ids.size(); j++) {
+        std::cout << species_ids[j] << " ";
       }
       std::cout << endl;
 #endif
@@ -497,7 +497,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       }
 #ifdef DEBUG
       for (int j = 0; j < ncomp_in_rxn; j++) {
-        std::cout << stoichiometries[j] << " " ;
+        std::cout << stoichiometries[j] << " ";
       }
       std::cout << endl;
 #endif
@@ -536,7 +536,6 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       surface_complexes.push_back(
           SurfaceComplex(name, icplx, species, stoichiometries, species_ids,
                          h2o_stoich, free_site_stoich, charge, logK));
-
     }
     // have to pass in a new object here as the SurfaceSite destructor fails when
     // deleting the vector storing mineral pointers
@@ -550,7 +549,6 @@ static void readChemistryFromFile(string filename, Beaker* g) {
   // secondary aqueous complexes
   // for neqcplx secondary speces, each line lists name, Z, a0, etc.
   for (int irxn = 0; irxn < nminerals; irxn++) {
-
     species.clear();
     stoichiometries.clear();
     species_ids.clear();
@@ -574,8 +572,8 @@ static void readChemistryFromFile(string filename, Beaker* g) {
       species_ids.push_back(tempi);
     }
 #ifdef DEBUG
-    for (int j = 0; j < (int)species_ids.size(); j++) {
-      std::cout << species_ids[j] << " " ;
+    for (unsigned int j = 0; j < species_ids.size(); j++) {
+      std::cout << species_ids[j] << " ";
     }
     std::cout << endl;
 #endif
@@ -590,7 +588,7 @@ static void readChemistryFromFile(string filename, Beaker* g) {
     }
 #ifdef DEBUG
     for (int j = 0; j < ncomp_in_rxn; j++) {
-      std::cout << stoichiometries[j] << " " ;
+      std::cout << stoichiometries[j] << " ";
     }
     std::cout << endl;
 #endif

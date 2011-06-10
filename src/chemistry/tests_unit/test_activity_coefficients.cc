@@ -40,7 +40,6 @@ SUITE(GeochemistryTestsActivityModels) {
     ActivityModel* activity_model_;
 
    private:
-
   };
 
   ActivityModelFactoryTest::ActivityModelFactoryTest()
@@ -165,7 +164,7 @@ SUITE(GeochemistryTestsActivityModels) {
     species_.push_back(SO4_mm);
     species_.push_back(Al_ppp);
     species_.push_back(PO4_mmm);
-    // TODO: should add some aqueous complexes to test ionic strength....
+    // TODO(bandre): should add some aqueous complexes to test ionic strength....
     aqueous_complexes_.clear();
   }
 
@@ -293,5 +292,4 @@ SUITE(GeochemistryTestsActivityModels) {
     RunTest("PO4---", &gamma);
     CHECK_CLOSE(0.25, gamma, 1.0e-2);
   }  // end TEST_FIXTURE()
-
 }  // end SUITE(GeochemistryTestActivityModels)

@@ -1,6 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
+
 #include <iostream>
 #include <vector>
 
@@ -31,7 +32,6 @@ SUITE(GeochemistryTestsSurfaceSite) {
     double molar_density_;
     SurfaceSite site_;
    private:
-
   };  // end class SurfaceSiteTest
 
   SurfaceSiteTest::SurfaceSiteTest()
@@ -138,5 +138,4 @@ SUITE(GeochemistryTestsSurfaceSite) {
     // current behavior, should be different when minerals added....
     CHECK_EQUAL(molar_density_, site_.SiteDensity());
   }
-
 }  // end SUITE(GeochemistryTestSurfaceSite)

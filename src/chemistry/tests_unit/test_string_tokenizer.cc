@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include "UnitTest++.h"
+#include <UnitTest++.h>
 
 #include "string_tokenizer.hh"
 
@@ -20,7 +20,6 @@ SUITE(GeochemistryTests_StringTokenizer) {
     CHECK_EQUAL(st.at(6), "\"Hi\".");
     CHECK_EQUAL(st.at(7), "Hello,");
     CHECK_EQUAL(st.at(9), "We'll");
-
   }  // end TEST()
 
   TEST(TestStringTokenizer_tokenize_delimiters) {
@@ -46,6 +45,4 @@ SUITE(GeochemistryTests_StringTokenizer) {
     CHECK_EQUAL(st.size(), 1);
     CHECK_EQUAL(st.at(0), "This is a string.");
   }  // end TEST()
-
-
 }  // end SUITE()

@@ -66,29 +66,28 @@ void ludcmp(double** a, int n, int* indx, double* d) {
 
 #undef TINY
 
-void lubksb(double** a, int n, int* indx, std::vector<double> &b) {
+void lubksb(double** a, int n, int* indx, std::vector<double>* b) {
   int i, ii = 0, ip, j;
   double sum;
 
   for (i = 0; i < n; i++) {
     ip = indx[i];
-    sum = b[ip];
-    b[ip] = b[i];
+    sum = b->at(ip);
+    (*b)[ip] = b->at(i);
     if (ii != 0)
       for (j = ii - 1; j < i; j++) {
-        sum -= a[i][j] * b[j];
-      }
-    else if (sum != 0.0) {
+        sum -= a[i][j] * b->at(j);
+      } else if (sum != 0.0) {
       ii = i + 1;
     }
-    b[i] = sum;
+    (*b)[i] = sum;
   }
   for (i = n - 1; i >= 0; i--) {
-    sum = b[i];
+    sum = b->at(i);
     for (j = i + 1; j < n; j++) {
-      sum -= a[i][j] * b[j];
+      sum -= a[i][j] * b->at(j);
     }
-    b[i] = sum / a[i][i];
+    (*b)[i] = sum / a[i][i];
   }
 }  // end lubksb()
 
@@ -103,8 +102,7 @@ void lubksb(double** a, int n, int* indx, double b[]) {
     if (ii != 0)
       for (j = ii - 1; j < i; j++) {
         sum -= a[i][j] * b[j];
-      }
-    else if (sum != 0.0) {
+      } else if (sum != 0.0) {
       ii = i + 1;
     }
     b[i] = sum;

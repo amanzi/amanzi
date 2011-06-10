@@ -24,18 +24,18 @@ void DirectSolver::Solve(void) {
   LUBackSolve(solution_);
 }  // end Solve()
 
-void DirectSolver::Solve(std::vector<double> &b) {
+void DirectSolver::Solve(std::vector<double>* b) {
   LUDecomposition();
   LUBackSolve(b);
 }  // end Solve()
 
-void DirectSolver::Solve(MatrixBlock* A, std::vector<double> &b) {
+void DirectSolver::Solve(MatrixBlock* A, std::vector<double>* b) {
   A_->SetValues(A);
   LUDecomposition();
   LUBackSolve(b);
 }  // end Solve()
 
-void DirectSolver::Solve(Block* A, std::vector<double> &b) {
+void DirectSolver::Solve(Block* A, std::vector<double>* b) {
   A_->SetValues(A);
   LUDecomposition();
   LUBackSolve(b);
@@ -102,7 +102,6 @@ void DirectSolver::LUDecomposition(void) {
 
   a = NULL;
   factored_ = true;
-
 }  // end LUDecomposition()
 
 
@@ -114,13 +113,13 @@ void DirectSolver::LUBackSolve(void) {
   LUBackSolve(solution_);
 }  // end LUBackSolve()
 
-void DirectSolver::LUBackSolve(std::vector<double> &b) {
+void DirectSolver::LUBackSolve(std::vector<double>* b) {
   double** a = A_->GetValues();
   int ii = 0;
   for (int i = 0; i < system_size(); i++) {
     int ip = pivoting_indices_[i];
-    double sum = b[ip];
-    b[ip] = b[i];
+    double sum = b->at(ip);
+    (*b)[ip] = b->at(i);
     if (ii != 0) {
       for (int j = ii - 1; j < i; j++) {
         sum -= a[i][j] * b[j];
@@ -128,14 +127,14 @@ void DirectSolver::LUBackSolve(std::vector<double> &b) {
     } else if (sum != 0.0) {
       ii = i + 1;
     }
-    b[i] = sum;
+    (*b)[i] = sum;
   }
   for (int i = system_size() - 1; i >= 0; i--) {
-    double sum = b[i];
+    double sum = b->at(i);
     for (int j = i + 1; j < system_size(); j++) {
       sum -= a[i][j] * b[j];
     }
-    b[i] = sum / a[i][i];
+    (*b)[i] = sum / a[i][i];
   }
   a = NULL;
 }  // end LUBackSolve()

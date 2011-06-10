@@ -63,7 +63,6 @@ Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
       }  // end Species constructor
 
 Species::~Species() {
-
 }  // end Species destructor
 
 void Species::update(const double molality) {

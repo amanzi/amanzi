@@ -28,7 +28,6 @@
 class KineticRate;
 
 class Beaker {
-
  public:
   Beaker();
   virtual ~Beaker();
@@ -129,14 +128,14 @@ class Beaker {
   void calculateJacobian(Block* J);
 
   // utilities for updating solution, convergence checks
-  void updateMolalitiesWithTruncation(std::vector<double> &update,
-                                      std::vector<double> &prev_solution,
+  void updateMolalitiesWithTruncation(std::vector<double>* update,
+                                      std::vector<double>* prev_solution,
                                       double max_change);
   double calculateMaxRelChangeInMolality(const std::vector<double>& prev_molal);
   // solvers
   void scaleRHSAndJacobian(double* rhs, Block* J);
-  void scaleRHSAndJacobian(std::vector<double> &rhs, Block* J);
-  void solveLinearSystem(Block* A, std::vector<double> &b);
+  void scaleRHSAndJacobian(std::vector<double>* rhs, Block* J);
+  void solveLinearSystem(Block* A, std::vector<double>* b);
 
   virtual void display(void) const;
   void print_results(void) const;
@@ -355,7 +354,6 @@ class Beaker {
 #ifdef GLENN
   DirectSolver* solver;
 #endif
-
 };
 
 #endif  // AMANZI_CHEMISTRY_BEAKER_HH_

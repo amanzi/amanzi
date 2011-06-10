@@ -95,9 +95,9 @@ void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_specie
 */
 void Mineral::Display(void) const {
   std::cout << "    " << name() << " = ";
-  for (int i = 0; i < (int)species_names_.size(); i++) {
+  for (unsigned int i = 0; i < species_names_.size(); i++) {
     std::cout << std::setprecision(2) << stoichiometry_[i] << " " << species_names_[i];
-    if (i < (int)species_names_.size() - 1) {
+    if (i < species_names_.size() - 1) {
       std::cout << " + ";
     }
   }

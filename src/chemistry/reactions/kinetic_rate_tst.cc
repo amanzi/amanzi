@@ -53,14 +53,14 @@
  **
  **    - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
  **
- **    - TODO: need to calculate the area (DONE) or read from the file.
+ **    - TODO(bandre): need to calculate the area (DONE) or read from the file.
  **
- **    - TODO: DONE: need to obtain log_Keq from the mineral object rather than read from a file.
+ **    - TODO(bandre): DONE: need to obtain log_Keq from the mineral object rather than read from a file.
  **
- **    - TODO: DONE: units of A and k are not consistent with the input
+ **    - TODO(bandre): DONE: units of A and k are not consistent with the input
  **    file. need to pick a set!
  **
- **    - TODO: where should the mineral mass get updated at....?
+ **    - TODO(bandre): where should the mineral mass get updated at....?
  **
  *******************************************************************************/
 #include <cmath>
@@ -204,8 +204,7 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
   double rate = area() * rate_constant() * modifying_term() * sat_state;
 
   // only add contribution if precipitating or mineral exists
-  if (minerals.at(identifier()).volume_fraction() > 0. || sat_state < 0.) {
-
+  if (minerals.at(identifier()).volume_fraction() > 0.0 || sat_state < 0.0) {
     // add or subtract from the residual....
     for (unsigned int p = 0; p < reactant_stoichiometry.size(); p++) {
       int reactant_id = reactant_ids.at(p);
@@ -219,8 +218,7 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
     }
   }
 
-  // TODO: updating the mineral mass.....
-
+  // TODO(bandre): updating the mineral mass.....
 }  // end AddContributionToResidual()
 
 void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_species,
@@ -242,8 +240,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
   double area_rate_constant = area() * rate_constant();  // k*A
 
   // only add contribution if precipitating or mineral exists
-  if (minerals.at(identifier()).volume_fraction() > 0. || one_minus_QK < 0.) {
-
+  if (minerals.at(identifier()).volume_fraction() > 0.0 || one_minus_QK < 0.0) {
     // the contribution to every row of the jacobian has the same dR/dci
     // term. Each colum scaled by the stoichiometric
     // coefficient.
@@ -291,7 +288,6 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
                   << "\ttemp_Q: " << temp_Q
                   << "\trow: " << dRdC_row.at(p)
                   << std::endl;
-
       }
     }
 
@@ -304,7 +300,6 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
       // std::cout << std::endl;
     }
   }
-
 }  // end AddContributionToJacobian()
 
 void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {

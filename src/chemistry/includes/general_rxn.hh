@@ -13,10 +13,9 @@
 class Block;
 
 class GeneralRxn {
-
  public:
   GeneralRxn();
-  GeneralRxn(std::string s);
+  explicit GeneralRxn(std::string s);
   GeneralRxn(SpeciesName name,
              std::vector<SpeciesName>species,
              std::vector<double>stoichiometries,
@@ -34,16 +33,16 @@ class GeneralRxn {
                                  double por_den_sat_vol);
   void addContributionToJacobian(Block* J,
                                  const std::vector<Species> primarySpecies,
-                                 double por_den_sat_vol) ;
+                                 double por_den_sat_vol);
   void display(void) const;
 
  protected:
 
  private:
 
-  int ncomp_;  // # components in reaction
-  int ncomp_forward_;  // # components in forward reaction
-  int ncomp_backward_;  // # components in backward reaction
+  unsigned int ncomp_;  // # components in reaction
+  unsigned int ncomp_forward_;  // # components in forward reaction
+  unsigned int ncomp_backward_;  // # components in backward reaction
   std::vector<SpeciesName> species_names_;
   std::vector<int> species_ids_;       // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
@@ -56,7 +55,6 @@ class GeneralRxn {
 
   double lnQkf_;  // forward rate storage
   double lnQkb_;  // backward rate storage
-
 };
 
 #endif  // AMANZI_CHEMISTRY_GENERAL_RXN_HH_

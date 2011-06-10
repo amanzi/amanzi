@@ -46,7 +46,6 @@ class MineralKineticsFactory {
  private:
   Verbosity verbosity_;
   static const std::string kTST;
-
 };
 
 #endif     /* AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_ */

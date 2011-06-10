@@ -167,12 +167,12 @@ void IonExchangeComplex::Update(const std::vector<Species> primary_species,
   update();  // update the Species portion of this object!
 }  // end Update()
 
-void IonExchangeComplex::AddContributionToTotal(std::vector<double> &total) {
+void IonExchangeComplex::AddContributionToTotal(std::vector<double>* total) {
   // only the primary species are in total, so we only need to update a single entry!
-  total[primary_id()] += primary_stoichiometry() * molality();
+  (*total)[primary_id()] += primary_stoichiometry() * molality();
 }  // end addContributionToTotal()
 
-void IonExchangeComplex::AddContributionToDTotal(const std::vector<Species> primary_species,
+void IonExchangeComplex::AddContributionToDTotal(const std::vector<Species>& primary_species,
                                                  Block* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);

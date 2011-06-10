@@ -7,8 +7,6 @@
 #include "block.hh"
 
 GeneralRxn::GeneralRxn() {
-
-
   ncomp_ = 0;
   ncomp_forward_ = 0;
   ncomp_backward_ = 0;
@@ -24,7 +22,6 @@ GeneralRxn::GeneralRxn() {
 
   lnQkf_ = 0.;
   lnQkb_ = 0.;
-
 }  // end GeneralRxn() constructor
 
 GeneralRxn::GeneralRxn(std::string s) {
@@ -41,9 +38,9 @@ GeneralRxn::GeneralRxn(SpeciesName name,
                        std::vector<int>backward_species_ids,
                        double kf, double kb) {
   static_cast<void>(name);
-  ncomp_ = (int)species_ids.size();
-  ncomp_forward_ = (int)forward_species_ids.size();
-  ncomp_backward_ = (int)backward_species_ids.size();
+  ncomp_ = species_ids.size();
+  ncomp_forward_ = forward_species_ids.size();
+  ncomp_backward_ = backward_species_ids.size();
 
   for (std::vector<SpeciesName>::const_iterator i = species.begin();
        i != species.end(); i++) {
@@ -78,7 +75,6 @@ GeneralRxn::GeneralRxn(SpeciesName name,
 
   kf_ = kf;
   kb_ = kb;
-
 }  // end GeneralRxn() constructor
 
 GeneralRxn::~GeneralRxn() {
@@ -105,7 +101,6 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies) {
           primarySpecies[ backward_species_ids_[i] ].ln_activity();
     }  // end backward species
   }  // end backward expression
-
 }  // end update_rates()
 
 void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
@@ -125,7 +120,6 @@ void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
     // this stoichiometry is for the overall reaction
     (*residual)[icomp] -= stoichiometry_[i] * effective_rate;
   }
-
 }  // end addContributionToResidual()
 
 void GeneralRxn::addContributionToJacobian(
@@ -138,7 +132,6 @@ void GeneralRxn::addContributionToJacobian(
 
   // forward rate expression
   if (kf_ > 0.) {
-
     // column loop
     for (int j = 0; j < ncomp_forward_; j++) {
       int jcomp = forward_species_ids_[j];
@@ -154,7 +147,6 @@ void GeneralRxn::addContributionToJacobian(
 
   // backward rate expression
   if (kb_ > 0.) {
-
     // column loop
     for (int j = 0; j < ncomp_backward_; j++) {
       int jcomp = backward_species_ids_[j];
@@ -167,14 +159,12 @@ void GeneralRxn::addContributionToJacobian(
       }
     }  // end columns
   }  // end backward expression
-
 }  // end addContributionToJacobian()
 
 void GeneralRxn::display(void) const {
-
-  for (int i = 0; i < (int)species_names_.size(); i++) {
+  for (unsigned int i = 0; i < species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
-    if (i < (int)species_names_.size() - 1) {
+    if (i < species_names_.size() - 1) {
       std::cout << " + ";
     }
   }

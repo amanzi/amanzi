@@ -3,6 +3,7 @@
 #define AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
 
 #include <vector>
+#include <string>
 
 #include "species.hh"
 #include "beaker.hh"
@@ -73,7 +74,6 @@ class SimpleThermoDatabase : public Beaker {
 
   std::vector<SurfaceSite> surface_sites_;
   std::vector<SurfaceComplexationRxn> surface_complexation_reactions_;
-
 };
 
 #endif  // AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_

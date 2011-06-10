@@ -44,7 +44,6 @@ SUITE(GeochemistryTestsMineral) {
     Mineral* mineral_;
 
    private:
-
   };  // end class MineralTest
 
   MineralTest::MineralTest()
@@ -100,7 +99,6 @@ SUITE(GeochemistryTestsMineral) {
     primarySpecies_.push_back(H_p);
     primarySpecies_.push_back(HCO3_m);
     primarySpecies_.push_back(Ca_pp);
-
   }
 
 
@@ -148,7 +146,7 @@ SUITE(GeochemistryTestsMineral) {
   }
 
   TEST_FIXTURE(MineralTest, Mineral_surface_area) {
-    // TODO: add to constructor?
+    // TODO(bandre): add to constructor?
     CHECK_CLOSE(mineral_->surface_area(), 0.0, 1.0e-10);
   }
 
@@ -171,5 +169,4 @@ SUITE(GeochemistryTestsMineral) {
     mineral_->set_verbosity(kDebugMineralKinetics);
     CHECK_EQUAL(mineral_->verbosity(), kDebugMineralKinetics);
   }
-
 }  // end SUITE(GeochemistryTestMineral)

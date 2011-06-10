@@ -2,7 +2,7 @@
 #ifndef AMANZI_CHEMISTRY_FILEIO_HH_
 #define AMANZI_CHEMISTRY_FILEIO_HH_
 
-#define MAXCARDLENGTH 5 // add 1 to account of end of line \0
+#define MAXCARDLENGTH 5  // add 1 to account of end of line \0
 #define MAXWORDLENGTH 33
 #define MAXSTRINGLENGTH 1025
 
@@ -10,17 +10,14 @@
 #include <cstring>
 
 #include <fstream>
-#include <iostream>
 #include <sstream>
-
-using namespace std;
+#include <string>
 
 class FileIO {
-
  public:
 
-  FileIO(char* filename);
-  FileIO(string filename);
+  explicit FileIO(char* filename);
+  explicit FileIO(std::string filename);
   virtual ~FileIO();
 
   int getLine();
@@ -40,9 +37,8 @@ class FileIO {
   static void toLower(char* word);
   static void toUpper(char* word);
 
-  fstream file;
-  stringstream* buffer;
-
+  std::fstream file;
+  std::stringstream* buffer;
 };
 
 #endif  // AMANZI_CHEMISTRY_FILEIO_HH_

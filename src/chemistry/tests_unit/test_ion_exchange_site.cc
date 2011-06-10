@@ -34,7 +34,6 @@ SUITE(GeochemistryTestsIonExchangeSite) {
     IonExchangeSite ies_;
 
    private:
-
   };  // end class IonExchangeSiteTest
 
   IonExchangeSiteTest::IonExchangeSiteTest()
@@ -44,7 +43,8 @@ SUITE(GeochemistryTestsIonExchangeSite) {
       molecular_weight_(45.6789),
       size_(9.8),
       exchanger_name_("X--"),
-      ies_(exchanger_name_, exchanger_id_, exchanger_charge_, exchanger_location_, molecular_weight_, size_) {
+      ies_(exchanger_name_, exchanger_id_, exchanger_charge_, 
+           exchanger_location_, molecular_weight_, size_) {
   }
 
   IonExchangeSiteTest::~IonExchangeSiteTest() {
@@ -151,5 +151,4 @@ SUITE(GeochemistryTestsIonExchangeSite) {
     ies_.update(molality);
     CHECK_EQUAL(0.0, ies_.ln_activity());
   }
-
 }  // end SUITE(GeochemistryTestIonExchangeSite)

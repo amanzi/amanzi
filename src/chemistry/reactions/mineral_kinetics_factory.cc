@@ -49,6 +49,7 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
 
   if (kinetic_rate != NULL) {
     kinetic_rate->set_verbosity(verbosity());
+    // TODO(bandre): get rid of the dynamic cast...?
     kinetic_rate->Setup(dynamic_cast<const SecondarySpecies&>(mineral),
                         rate_data, primary_species);
   } else {

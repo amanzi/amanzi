@@ -50,7 +50,7 @@
  **    where foo refers to a vector of component concentrations for a
  **    single component.
  **
- **  TODO: add method RevertToSavedState() which copies (not swaps)
+ **  TODO(bandre): add method RevertToSavedState() which copies (not swaps)
  **  the saved state back into the current state.
  **
  ******************************************************************************/

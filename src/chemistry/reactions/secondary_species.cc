@@ -84,8 +84,7 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
                  << "species_names.size() != species_ids.size()" << std::endl;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
-
-      }  // end SecondarySpecies costructor
+}  // end SecondarySpecies costructor
 
 
 SecondarySpecies::~SecondarySpecies() {
@@ -104,8 +103,9 @@ void SecondarySpecies::AddContributionToTotal(std::vector<double> *total) {
   static_cast<void>(total);
 }  // end addContributionToTotal()
 
-void SecondarySpecies::AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                               Block* dtotal) {
+void SecondarySpecies::AddContributionToDTotal(
+    const std::vector<Species>& primary_species,
+    Block* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
 }  // end addContributionToDTotal()
@@ -118,9 +118,9 @@ void SecondarySpecies::AddContributionToDTotal(const std::vector<Species>& prima
 */
 void SecondarySpecies::Display(void) const {
   std::cout << "    " << name() << " = ";
-  for (int i = 0; i < (int)species_names_.size(); i++) {
+  for (unsigned int i = 0; i < species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
-    if (i < (int)species_names_.size() - 1) {
+    if (i < species_names_.size() - 1) {
       std::cout << " + ";
     }
   }

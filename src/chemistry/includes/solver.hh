@@ -2,14 +2,11 @@
 #ifndef AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_
 #define AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_
 
+#include <vector>
+
 #include "chemistry/includes/matrix_block.hh"
 
-#include <iostream>
-#include <vector>
-using namespace std;
-
 class Solver {
-
  public:
   Solver();
   virtual ~Solver();
@@ -30,7 +27,6 @@ class Solver {
   std::vector<double> right_hand_side_;
   std::vector<double> solution_;
   MatrixBlock* A_;
-
 };
 
 #endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_

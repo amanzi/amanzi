@@ -1,6 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
+
 #include <iostream>
 #include <vector>
 #include <typeinfo>
@@ -36,7 +37,6 @@ SUITE(GeochemistryTestsSecondarySpecies) {
     std::vector<double> stoichiometry_;
     std::vector<SpeciesId> species_ids_;
    private:
-
   };  // end class SecondarySpeciesTest
 
   SecondarySpeciesTest::SecondarySpeciesTest()
@@ -70,7 +70,7 @@ SUITE(GeochemistryTestsSecondarySpecies) {
   //
   class MockSecondarySpecies : public SecondarySpecies {
    public:
-    MockSecondarySpecies() : SecondarySpecies() {};
+    MockSecondarySpecies() : SecondarySpecies() {}
     MockSecondarySpecies(const SpeciesName name, const SpeciesId id,
                          const std::vector<SpeciesName>& species_names,
                          const std::vector<double>& stoichiometry,
@@ -81,7 +81,7 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                          const double size,
                          const double logK)
         : SecondarySpecies(name, id, species_names, stoichiometry, species_ids,
-                           h2o_stoich, charge, mol_wt, size, logK) {};
+                           h2o_stoich, charge, mol_wt, size, logK) {}
     void AddContributionToTotal(std::vector<double> *total) {
       static_cast<void>(total);
     }  // end addContributionToTotal()
@@ -174,7 +174,6 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                                        h2o_stoich_, charge_, gram_molecular_weight_,
                                        ion_size_parameter_, logK_),
         ChemistryException);
-
   }
 
   TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry) {
@@ -206,6 +205,4 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                                        ion_size_parameter_, logK_),
         ChemistryException);
   }
-
-
 }  // end SUITE(GeochemistryTestSecondarySpecies)

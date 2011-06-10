@@ -1,9 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 /*
-** TODO: update mineral volume fractions to components.minerals after kinetics....
+** TODO(bandre): update mineral volume fractions to components.minerals after kinetics....
 **
-** TODO: finish implementing ion exchange jacobian
+** TODO(bandre): finish implementing ion exchange jacobian
 */
 
 #include "beaker.hh"
@@ -60,11 +60,10 @@ Beaker::Beaker()
       sorbed_accumulation_coef_(0.0),
       por_sat_den_vol_(0.0),
       activity_model_(NULL),
-      J(NULL)
+      J(NULL) {
 #ifdef GLENN
-    , solver(NULL)
+  , solver(NULL) {
 #endif
-{
   primarySpecies_.clear();
   minerals_.clear();
   ion_exchange_sites_.clear();
@@ -108,7 +107,7 @@ void Beaker::resize() {
   residual.resize(ncomp());
   prev_molal.resize(ncomp());
   total_.resize(ncomp());
-  // TODO: FIXED? this should only be done if we are actually using sorption.
+  // TODO(bandre): FIXED? this should only be done if we are actually using sorption.
   if (surfaceComplexationRxns_.size() > 0) {
     total_sorbed_.resize(ncomp(), 0.0);
     // for (unsigned int i = 0; i < total_sorbed_.size(); i++)
@@ -136,7 +135,7 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
   SetParameters(parameters);
 
   this->SetupActivityModel(parameters.activity_model_name);
-  this->resize((int)this->primary_species().size());
+  this->resize(static_cast<int>(this->primary_species().size()));
   this->VerifyComponentSizes(components);
 }  // end Setup()
 
@@ -202,7 +201,6 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) {
   if (error) {
     Exceptions::amanzi_throw(ChemistryUnrecoverableError(error_stream.str()));
   }
-
 }  // end VerifyComponentSizes()
 
 void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
@@ -365,7 +363,6 @@ void Beaker::update_por_sat_den_vol(void) {
 
 
 void Beaker::updateActivityCoefficients() {
-
   // return;
   activity_model_->CalculateIonicStrength(primarySpecies_,
                                           aqComplexRxns_);
@@ -375,8 +372,7 @@ void Beaker::updateActivityCoefficients() {
        i != primarySpecies_.end(); i++) {
     i->update();
   }
-
-}
+}  // end updateActivityCoefficients
 
 void Beaker::initializeMolalities(double initial_molality) {
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
@@ -395,13 +391,12 @@ void Beaker::initializeMolalities(const std::vector<double>& initial_molalities)
   }
 
   // iterator doesnt seem to work then passing a vector entry - geh
-  for (int i = 0; i < (int)primarySpecies_.size(); i++) {
+  for (unsigned int i = 0; i < primarySpecies_.size(); i++) {
     primarySpecies_[i].update(initial_molalities[i]);
   }
 }  // end initializeMolalities()
 
 void Beaker::updateEquilibriumChemistry(void) {
-
   //    calculateActivityCoefficients(-1);
 
   // update primary species activities
@@ -437,7 +432,6 @@ void Beaker::updateEquilibriumChemistry(void) {
 
   // calculate total component concentrations
   calculateTotal();
-
 }  // end updateEquilibriumChemistry()
 
 void Beaker::calculateTotal(std::vector<double> *total,
@@ -468,7 +462,6 @@ void Beaker::calculateTotal(std::vector<double> *total,
        i != surfaceComplexationRxns_.end(); i++) {
     i->AddContributionToTotal(total_sorbed);
   }
-
 }  // end calculateTotal()
 
 void Beaker::calculateTotal(void) {
@@ -498,7 +491,6 @@ void Beaker::calculateDTotal(Block* dtotal, Block* dtotal_sorbed) {
        i != surfaceComplexationRxns_.end(); i++) {
     i->AddContributionToDTotal(primarySpecies_, dtotal_sorbed);
   }
-
 }  // end calculateDTotal()
 
 void Beaker::calculateDTotal(void) {
@@ -519,7 +511,6 @@ void Beaker::updateKineticChemistry(void) {
   }
   // add multirate kinetic surface complexation reaction quotient calculations
   // here
-
 }  // end updateKineticChemistry()
 
 void Beaker::addKineticChemistryToResidual(std::vector<double> *residual) {
@@ -536,7 +527,6 @@ void Beaker::addKineticChemistryToResidual(std::vector<double> *residual) {
   }
 
   // add multirate kinetic surface complexation contribution to residual here.
-
 }  // end addKineticChemistryToResidual()
 
 void Beaker::addKineticChemistryToJacobian(Block* J) {
@@ -553,7 +543,6 @@ void Beaker::addKineticChemistryToJacobian(Block* J) {
   }
 
   // add multirate kinetic surface complexation contribution to Jacobian here.
-
 }  // end addKineticChemistryToJacobian()
 
 
@@ -584,7 +573,6 @@ void Beaker::addAccumulation(const std::vector<double>& total,
   for (unsigned int i = 0; i < total_sorbed.size(); i++) {
     (*residual)[i] += sorbed_accumulation_coef() * total_sorbed[i];
   }
-
 }  // end calculateAccumulation()
 
 void Beaker::addAccumulationDerivative(Block* J) {
@@ -603,7 +591,6 @@ void Beaker::addAccumulationDerivative(Block* J,
   // add accumulation derivative term for equilibrium sorption
   // (e.g. Kd, surface complexation) here
   J->addValues(dtotal_sorbed, sorbed_accumulation_coef());
-
 }  // end calculateAccumulationDerivative()
 
 void Beaker::calculateFixedAccumulation(const std::vector<double>& total,
@@ -628,8 +615,6 @@ void Beaker::calculateResidual(std::vector<double> *residual,
 
   // kinetic reaction contribution to residual
   addKineticChemistryToResidual(residual);
-
-
 }  // end calculateResidual()
 
 void Beaker::calculateJacobian(Block* J) {
@@ -644,11 +629,9 @@ void Beaker::calculateJacobian(Block* J) {
 
   // add in derivatives for kinetic chemistry
   addKineticChemistryToJacobian(J);
-
 }  // end calculateJacobian()
 
 void Beaker::scaleRHSAndJacobian(double* rhs, Block* J) {
-
   for (int i = 0; i < J->getSize(); i++) {
     double max = J->getRowAbsMax(i);
     if (max > 1.) {
@@ -659,32 +642,31 @@ void Beaker::scaleRHSAndJacobian(double* rhs, Block* J) {
   }
 }  // end scaleRHSAndJacobian()
 
-void Beaker::scaleRHSAndJacobian(std::vector<double> &rhs, Block* J) {
-
+void Beaker::scaleRHSAndJacobian(std::vector<double>* rhs, Block* J) {
   for (int i = 0; i < J->getSize(); i++) {
     double max = J->getRowAbsMax(i);
     if (max > 1.) {
       double scale = 1. / max;
-      rhs[i] *= scale;
+      (*rhs)[i] *= scale;
       J->scaleRow(i, scale);
     }
   }
 }  // end scaleRHSAndJacobian()
 
-void Beaker::updateMolalitiesWithTruncation(std::vector<double> &update,
-                                            std::vector<double> &prev_solution,
+void Beaker::updateMolalitiesWithTruncation(std::vector<double>* update,
+                                            std::vector<double>* prev_solution,
                                             double max_change) {
   // truncate the update to max_change
   for (int i = 0; i < ncomp(); i++) {
-    if (update[i] > max_change) {
-      update[i] = max_change;
-    } else if (update[i] < -max_change) {
-      update[i] = -max_change;
+    if (update->at(i) > max_change) {
+      (*update)[i] = max_change;
+    } else if (update->at(i) < -max_change) {
+      (*update)[i] = -max_change;
     }
     // store the previous solution
-    prev_solution[i] = primarySpecies_[i].molality();
+    (*prev_solution)[i] = primarySpecies_[i].molality();
     // update primary species molalities (log formulation)
-    double molality = prev_solution[i] * std::exp(-update[i]);
+    double molality = prev_solution->at(i) * std::exp(-update->at(i));
     primarySpecies_[i].update(molality);
   }
 }  // end updateMolalitiesWithTruncation()
@@ -698,13 +680,13 @@ double Beaker::calculateMaxRelChangeInMolality(const std::vector<double>& prev_m
   return max_rel_change;
 }  // end calculateMaxRelChangeInMolality()
 
-void Beaker::solveLinearSystem(Block* A, std::vector<double> &b) {
+void Beaker::solveLinearSystem(Block* A, std::vector<double>* b) {
   // LU direct solve
 #ifndef GLENN
   double D;
   // allocate pivoting array for LU
   int* indices = new int[ncomp()];
-  /* TODO:this is a memory leak? we are new'ing a bunch of memory
+  /* TODO(bandre):this is a memory leak? we are new'ing a bunch of memory
      but not freeing it.  need to change the object level indices
      variable into an int*, then allocate correctly in resize() and
      free in the destructor */
@@ -777,7 +759,6 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
                              &fixed_accumulation);
 
   do {
-
     // update equilibrium and kinetic chemistry (rates, ion activity
     // products, etc.)
     updateEquilibriumChemistry();
@@ -798,7 +779,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     }
 
     // scale the Jacobian
-    scaleRHSAndJacobian(rhs, J);
+    scaleRHSAndJacobian(&rhs, J);
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("after scale", J, rhs);
@@ -814,7 +795,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     }
 
     // solve J dlnc = r
-    solveLinearSystem(J, rhs);
+    solveLinearSystem(J, &rhs);
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("after solve", NULL, rhs);
@@ -823,7 +804,7 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
     // units of solution: mol/kg water (change in molality)
     // calculate update truncating at a maximum of 5 in nat log space
     // update with exp(-dlnc)
-    updateMolalitiesWithTruncation(rhs, prev_molal, 5.);
+    updateMolalitiesWithTruncation(&rhs, &prev_molal, 5.);
     // calculate maximum relative change in concentration over all species
     max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 
@@ -871,14 +852,13 @@ int Beaker::ReactionStep(Beaker::BeakerComponents* components,
   ValidateSolution();
 
   return num_iterations;
-
 }  // end ReactionStep()
 
 void Beaker::ValidateSolution() {
-  // TODO: what checks can we to to verify that the current solution is good?
-  // TODO: check for nan or inf's as a sign that the step was too big?
+  // TODO(bandre): what checks can we to to verify that the current solution is good?
+  // TODO(bandre): check for nan or inf's as a sign that the step was too big?
 
-  // TODO: negative total's (H+) are OK...
+  // TODO(bandre): negative total's (H+) are OK...
 
   // charge balance is error or warning...?
   CheckChargeBalance(total_);
@@ -893,7 +873,6 @@ void Beaker::ValidateSolution() {
       Exceptions::amanzi_throw(ChemistryInvalidSolution(error_stream.str()));
     }
   }
-
 }  // end ValidateSolution()
 
 
@@ -930,7 +909,6 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
   bool calculate_activity_coefs = false;
 
   do {
-
     updateActivityCoefficients();
     updateEquilibriumChemistry();
     calculateDTotal();
@@ -958,7 +936,7 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     }
 
     // scale the Jacobian
-    scaleRHSAndJacobian(rhs, J);
+    scaleRHSAndJacobian(&rhs, J);
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("after scale", J, rhs);
@@ -974,14 +952,14 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
     }
 
     // call solver
-    solveLinearSystem(J, rhs);
+    solveLinearSystem(J, &rhs);
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("after solve", NULL, rhs);
     }
 
     // calculate update truncating at a maximum of 5 in log space
-    updateMolalitiesWithTruncation(rhs, prev_molal, 5.);
+    updateMolalitiesWithTruncation(&rhs, &prev_molal, 5.);
     // calculate maximum relative change in concentration over all species
     max_rel_change = calculateMaxRelChangeInMolality(prev_molal);
 
@@ -1148,7 +1126,6 @@ void Beaker::Display(void) const {
 
   std::cout << "----------------------------------------------------------------------"
             << std::endl;
-
 }  // end Display()
 
 void Beaker::DisplayParameters(void) const {
@@ -1165,7 +1142,6 @@ void Beaker::DisplayParameters(void) const {
   std::cout << "    water density: " << water_density_kg_m3() << " [kg m^-3]" << std::endl;
   std::cout << "    volume: " << volume() << " [m^3]" << std::endl;
   std::cout << std::endl;
-
 }  // end DisplayParameters()
 
 void Beaker::DisplayPrimary(void) const {
@@ -1305,14 +1281,14 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   std::cout << std::setw(15) << "Name"
             << std::setw(15) << "Molarity"
             << std::setw(15) << "Molality"
-      // << std::setw(15) << "Free Ion" // TODO: uncomment and update test results
+      // << std::setw(15) << "Free Ion" // TODO(bandre): uncomment and update test results
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
     std::cout << std::setw(15) << primarySpecies_.at(i).name()
               << std::scientific << std::setprecision(5)
               << std::setw(15) << components.total.at(i) / water_density_kg_L()
               << std::setw(15) << components.total.at(i)
-        // << std::setw(15) << components.free_ion.at(i) // TODO: uncomment and update test results
+        // << std::setw(15) << components.free_ion.at(i) // TODO(bandre): uncomment and update test results
               << std::endl;
   }
 
@@ -1340,7 +1316,6 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   }
   std::cout << "----------------------------------------------------------------------"
             << std::endl;
-
 }  // end DisplayComponents
 
 void Beaker::DisplayResults(void) const {
@@ -1379,7 +1354,7 @@ void Beaker::DisplayResults(void) const {
   }
 
   // same header info as primaries....
-  for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
+  for (unsigned int i = 0; i < aqComplexRxns_.size(); i++) {
     aqComplexRxns_.at(i).DisplayResults();
   }
 
@@ -1434,7 +1409,6 @@ void Beaker::DisplayTotalColumns(const double time, const std::vector<double>& t
     std::cout << std::setw(15) << total.at(i);
   }
   std::cout << std::endl;
-
 }  // end DisplayTotalColumns()
 
 
@@ -1452,7 +1426,7 @@ void Beaker::print_results(void) const {
   }
   std::cout << std::endl;
   std::cout << "Secondary Species -------------------\n";
-  for (int i = 0; i < (int)aqComplexRxns_.size(); i++) {
+  for (unsigned int i = 0; i < aqComplexRxns_.size(); i++) {
     std::cout << "   " << aqComplexRxns_.at(i).name() << std::endl;
     std::cout << "     Free-Ion: " << aqComplexRxns_.at(i).molality() << std::endl;
     std::cout << "Activity Coef: " << aqComplexRxns_.at(i).act_coef() << std::endl;
@@ -1460,7 +1434,6 @@ void Beaker::print_results(void) const {
   }
   std::cout << "-------------------------------------\n";
   std::cout << std::endl;
-
 }  // end print_results()
 
 void Beaker::print_results(double time) const {
@@ -1484,7 +1457,7 @@ void Beaker::print_results(double time) const {
 void Beaker::print_linear_system(const std::string& s, Block* A,
                                  std::vector<double> vector) {
   std::cout << s << std::endl;
-  for (int i = 0; i < (int)vector.size(); i++) {
+  for (unsigned int i = 0; i < vector.size(); i++) {
     std::cout << "RHS: " << primarySpecies_.at(i).name() << " " << vector[i] << std::endl;
   }
   if (A) {

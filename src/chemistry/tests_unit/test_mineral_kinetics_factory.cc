@@ -145,5 +145,4 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_verify_mineral_invalid) {
     CHECK_THROW(mkf_.VerifyMineralName("Pyrite", minerals_), ChemistryException);
   }  // end TEST_FIXTURE()
-
 }  // end SUITE(GeochemistryTestMineralKineticsFactory)

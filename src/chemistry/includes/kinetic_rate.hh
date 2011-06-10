@@ -9,6 +9,7 @@
  **
  *******************************************************************************/
 #include <vector>
+#include <string>
 
 #include "species.hh"
 #include "secondary_species.hh"

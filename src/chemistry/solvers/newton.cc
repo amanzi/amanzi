@@ -2,14 +2,12 @@
 #include "newton.hh"
 
 Newton::Newton(const int n) {
-
   size(n);
   x_.resize(n);
   r_.resize(n);
   J_ = new Block(n);
   indices_.resize(n);
   vv_.resize(n);
-
 }  // end Newton constructor
 
 void Newton::solve() {
@@ -79,29 +77,28 @@ void Newton::LUDecomposition(double** a, int n, int* indx) {
 
 #undef TINY
 
-void Newton::LUBackSolve(double** a, int n, int* indx, std::vector<double> &b) {
+void Newton::LUBackSolve(double** a, int n, int* indx, std::vector<double>* b) {
   int i, ii = 0, ip, j;
   double sum;
 
   for (i = 0; i < n; i++) {
     ip = indx[i];
-    sum = b[ip];
-    b[ip] = b[i];
+    sum = b->at(ip);
+    (*b)[ip] = b->at(i);
     if (ii != 0)
       for (j = ii - 1; j < i; j++) {
-        sum -= a[i][j] * b[j];
-      }
-    else if (sum != 0.0) {
+        sum -= a[i][j] * b->at(j);
+      } else if (sum != 0.0) {
       ii = i + 1;
     }
-    b[i] = sum;
+    (*b)[i] = sum;
   }
   for (i = n - 1; i >= 0; i--) {
-    sum = b[i];
+    sum = b->at(i);
     for (j = i + 1; j < n; j++) {
-      sum -= a[i][j] * b[j];
+      sum -= a[i][j] * b->at(j);
     }
-    b[i] = sum / a[i][i];
+    (*b)[i] = sum / a[i][i];
   }
 }  // end lubksb()
 

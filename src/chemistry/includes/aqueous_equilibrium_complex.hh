@@ -11,7 +11,6 @@
 class Block;
 
 class AqueousEquilibriumComplex : public SecondarySpecies {
-
  public:
   AqueousEquilibriumComplex();
   AqueousEquilibriumComplex(const SpeciesName name,
@@ -29,7 +28,7 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   // update molalities
   virtual void Update(const std::vector<Species>& primary_species);
   // add stoichiometric contribution of complex to total
-  virtual void AddContributionToTotal(std::vector<double> *total);
+  virtual void AddContributionToTotal(std::vector<double>* total);
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        Block* dtotal);
@@ -42,8 +41,6 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
  protected:
 
  private:
-
-
 };
 
 #endif  // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_
