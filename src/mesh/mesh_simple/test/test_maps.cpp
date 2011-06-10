@@ -18,21 +18,21 @@ TEST(MAPS) {
 #endif
 
 
-  Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
+  Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
 
   double xc[] = { 2.0, 2.0, 2.0 };
   Mm.set_coordinate(7,xc,xc+3);
 
-  cout << "number of cells = " << Mm.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::) << endl;
-  cout << "number of faces = " << Mm.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::) << endl;
-  cout << "number of nodes = " << Mm.count_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::) << endl;
+  cout << "number of cells = " << Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED) << endl;
+  cout << "number of faces = " << Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED) << endl;
+  cout << "number of nodes = " << Mm.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED) << endl;
 
   vector<double> x(24);
   vector<unsigned int> nodes(8);
   vector<unsigned int> faces(6);
   vector<int> face_dirs(6);
   
-  for (unsigned int i=0; i<Mm.count_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::); i++)
+  for (unsigned int i=0; i<Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED); i++)
     {
 
       cout << "cell_to_nodes" << endl;
@@ -103,8 +103,8 @@ TEST(MAPS) {
   vector<unsigned int> ss;
   
   for (int is=0; is<Mm.num_sets(Amanzi::AmanziMesh::FACE); is++)  {
-    ss.resize(Mm.get_set_size(is,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::));
-    Mm.get_set(is, Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::,ss.begin(), ss.end());
+    ss.resize(Mm.get_set_size(is,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED));
+    Mm.get_set(is, Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,ss.begin(), ss.end());
 
     for (int k=0; k<ss.size(); k++) {
       cout << is << " : " << ss[k] << endl;
