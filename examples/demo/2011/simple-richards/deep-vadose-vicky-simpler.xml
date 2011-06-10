@@ -41,7 +41,7 @@
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <Parameter name="Viz dump cycle frequency" type="int" value="10"/>
     <ParameterList name="CGNS">
-      <Parameter name="File name" type="string" value="deep-vadose-vicky.cgns"/>
+      <Parameter name="File name" type="string" value="deep-vadose-vicky-simpler.cgns"/>
     </ParameterList>    
   </ParameterList> 
 
@@ -124,7 +124,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
         <ParameterList name="Water retention model 1">
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="Region ID" type="int" value="1"/>
-          <Parameter name="van Genuchten m" type="double" value="0.60112"/>
+          <Parameter name="van Genuchten m" type="double" value="0.56522"/> <!-- reduced!! -->
           <Parameter name="van Genuchten alpha" type="double" value="2.147e-04"/>
           <Parameter name="van Genuchten residual saturation" type="double" value="0.81"/> 
         </ParameterList>
