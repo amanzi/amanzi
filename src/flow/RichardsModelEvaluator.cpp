@@ -66,22 +66,23 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
 
   const Epetra_Vector& phi = FS_->porosity();
   double rho;
+
   problem_->GetFluidDensity(rho);
 
   // assume that porosity is piecewise constant
   dS.Multiply(rho,dS,phi,0.0);
-
+  
   // scale by the cell volumes
   dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
 
   // on the cell unknowns compute f=f+dS*udotc*rho*phi
-  fc->Multiply(1.0,dS,*udotc,1.0); 
+  fc->Multiply(1.0,dS,*udotc,1.0);
   
   //fc->Print(std::cout);
   
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
     {
-      *out << "fun o.k." << std::endl;
+      *out << "fun o.k." <<  std::endl;
     }
 
 }

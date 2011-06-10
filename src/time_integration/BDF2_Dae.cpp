@@ -54,6 +54,8 @@ namespace BDF2 {
     state.mitr = paramList_->get<int>("Nonlinear solver max iterations");
     state.ntol = paramList_->get<double>("Nonlinear solver tolerance");
     
+    mtries = paramList_->get<int>("Maximum number of BDF tries",20);
+
     int maxv = state.mitr-1;
     int mvec = paramList_->get<int>("NKA max vectors");
     maxv = std::min<int>(maxv,mvec);
@@ -177,7 +179,7 @@ namespace BDF2 {
   }
 
   
-  void Dae::bdf2_step(double& h, double hmin, int mtries, Epetra_Vector& u, double& hnext)
+  void Dae::bdf2_step(double& h, double hmin, Epetra_Vector& u, double& hnext)
   {
 
     ASSERT(hmin>=0.0);
