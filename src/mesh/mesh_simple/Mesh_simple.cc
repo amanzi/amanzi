@@ -159,42 +159,42 @@ Mesh_simple::~Mesh_simple()
 
 	   jstart = 9 * node_index_(ix,iy,iz);
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   (node_to_cell_[jstart])++;
 
 	   jstart = 9 * node_index_(ix+1,iy,iz); 
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   (node_to_cell_[jstart])++;
 
 	   jstart = 9 * node_index_(ix+1,iy+1,iz); 
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   (node_to_cell_[jstart])++;
 
 	   jstart = 9 * node_index_(ix,iy+1,iz); 
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   (node_to_cell_[jstart])++;
 
 	   jstart = 9 * node_index_(ix,iy,iz+1);
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   node_to_cell_[jstart]++;
 
 	   jstart = 9 * node_index_(ix+1,iy,iz+1); // 1 extra for num cells
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   (node_to_cell_[jstart])++;
 
 	   jstart = 9 * node_index_(ix+1,iy+1,iz+1); // 1 extra for num cells
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   (node_to_cell_[jstart])++;
 
 	   jstart = 9 * node_index_(ix,iy+1,iz+1); // 1 extra for num cells
 	   ncell = node_to_cell_[jstart];
-	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart+1+ncell] = cell_index_(ix,iy,iz);
 	   (node_to_cell_[jstart])++;
 
    	 }
@@ -259,22 +259,22 @@ Mesh_simple::~Mesh_simple()
 
    	   jstart = 13*node_index_(ix,iy,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix+1,iy,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix+1,iy+1,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix,iy+1,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	 }
@@ -294,22 +294,22 @@ Mesh_simple::~Mesh_simple()
 
    	   jstart = 13*node_index_(ix,iy,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix+1,iy,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix+1,iy,iz+1);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
-   	   jstart = 13*node_index_(ix+2,iy,iz+1);
+   	   jstart = 13*node_index_(ix,iy,iz+1);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	 }
@@ -329,22 +329,22 @@ Mesh_simple::~Mesh_simple()
 
    	   jstart = 13*node_index_(ix,iy,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix,iy+1,iz);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix,iy+1,iz+1);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	   jstart = 13*node_index_(ix,iy,iz+1);
 	   nfaces = node_to_face_[jstart];
-	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   node_to_face_[jstart+1+nfaces] = xyface_index_(ix,iy,iz);
 	   (node_to_face_[jstart])++;
 
    	 }

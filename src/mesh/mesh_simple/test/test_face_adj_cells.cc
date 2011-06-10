@@ -27,7 +27,7 @@ TEST(FACE_ADJ_CELLS) {
 					    {  0,  4,  6, 12, -1, -1},
 					    {  1,  5,  7,  3, 13, -1},
 					    {  2,  8,  4, 14, -1, -1},
-					    {  3,  5, 15, -1, -1, -1},
+					    {  3,  7, 15, -1, -1, -1},
 					    {  4,  8,  6, 16, -1, -1},
 					    {  5,  7, 17, -1, -1, -1},
 
@@ -69,7 +69,7 @@ TEST(FACE_ADJ_CELLS) {
       CHECK_EQUAL(exp_nadj[i],nadj);
       
       for (int j = 0; j < nadj; j++)
-	CHECK_EQUAL(exp_adjcells[i][j],adjcells[i]);
+	CHECK_EQUAL(exp_adjcells[i][j],adjcells[j]);
     }
 
 }

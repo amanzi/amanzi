@@ -309,7 +309,6 @@ private:
   std::vector<unsigned int> face_to_cell_;
   std::vector<unsigned int> node_to_face_;
   std::vector<unsigned int> node_to_cell_;
-  std::vector<unsigned int> cell_to_cell_;
 
   std::vector<std::vector<unsigned int> > side_sets_;
   std::vector<std::vector<unsigned int> > element_blocks_;
