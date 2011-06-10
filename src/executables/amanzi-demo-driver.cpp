@@ -7,8 +7,8 @@
 #endif
 
 #if HAVE_STK_MESH
-#include "Mesh_factory.hh"
-#include "Mesh_maps_stk.hh"
+#include "MeshFactory.hh"
+#include "Mesh_STK.hh"
 #endif
 
 #include "Mesh_simple.hh"
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     {
       string filename = mesh_parameter_list.get<string>("STK File name");
       
-      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::STK::Mesh_STK(MPI_COMM_WORLD, filename.c_str()));            
+      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(MPI_COMM_WORLD, filename.c_str()));            
     }
 #endif
   else

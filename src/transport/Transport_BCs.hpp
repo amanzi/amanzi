@@ -18,7 +18,7 @@ class Transport_BCs {
   std::vector<double> values;
   std::vector<unsigned int> faces;
 
-  std::vector<double>   influx; // accumulated influx and outflux
+  std::vector<double>   influx;  // accumulated influx and outflux
   std::vector<double>  outflux;
 };
 

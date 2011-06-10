@@ -11,19 +11,19 @@
 namespace Amanzi {
 namespace AmanziTransport {
 
-enum Transport_CreateMode {
-CopyPointers,   // copy Teuchos::RCP pointers 
-ViewMemory,     // convert to overlap to non-overlap vectors  
-CopyMemory      // copy non-overlap vector to overlap vectors 
+enum TransportCreateMode {
+CopyPointers,  // copy Teuchos::RCP pointers 
+ViewMemory,    // convert to overlap to non-overlap vectors  
+CopyMemory     // copy non-overlap vector to overlap vectors 
 };
 
 
-// The transport state is equivalent to the global state.
+/* The transport state is equivalent to the global state. */
 class Transport_State {
  public:
   Transport_State() {};
   explicit Transport_State(State& S);
-  Transport_State(Transport_State& S, Transport_CreateMode mode = CopyPointers);
+  Transport_State(Transport_State& S, TransportCreateMode mode = CopyPointers);
   ~Transport_State() {};
 
   // data management
@@ -58,12 +58,12 @@ class Transport_State {
  private:
   // state variables that are relevant to transport 
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
-  Teuchos::RCP<Epetra_Vector>      water_saturation;
-  Teuchos::RCP<Epetra_Vector>      darcy_flux;
-  Teuchos::RCP<Epetra_Vector>      porosity;
-  Teuchos::RCP<Epetra_Vector>      water_density;
+  Teuchos::RCP<Epetra_Vector> water_saturation;
+  Teuchos::RCP<Epetra_Vector> darcy_flux;
+  Teuchos::RCP<Epetra_Vector> porosity;
+  Teuchos::RCP<Epetra_Vector> water_density;
 
-  Teuchos::RCP<AmanziMesh::Mesh>  mesh_maps;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_maps;
 };
 
 }  // namespace AmanziTransport

@@ -105,7 +105,10 @@ void Transport_PK::process_parameter_list()
 
   // global transport parameters
   cfl = parameter_list.get<double>("CFL", 1.0);
+  discretization_order = parameter_list.get<int>("discretization order", 1);
+  if (discretization_order < 1 || discretization_order > 2) discretization_order = 1;
 
+  // control parameter
   verbosity_level = parameter_list.get<int>("verbosity level", 0);
   internal_tests = parameter_list.get<string>("enable internal tests", "no") == "yes";
   tests_tolerance = parameter_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
@@ -267,10 +270,10 @@ double Transport_PK::calculate_transport_dT()
  ****************************************************************** */
 void Transport_PK::advance(double dT_MPC)
 {
-  if (TRANSPORT_AMANZI_VERSION == 1) {  // temporary solution (lipnikov@lanl.gov)
+  if (discretization_order == 1) {  // temporary solution (lipnikov@lanl.gov)
     advance_donor_upwind(dT_MPC);
   }
-  else if (TRANSPORT_AMANZI_VERSION == 2) {
+  else if (discretization_order == 2) {
     advance_second_order_upwind(dT_MPC);
   }
 }
@@ -278,7 +281,7 @@ void Transport_PK::advance(double dT_MPC)
 
 /* ******************************************************************* 
  * We have to advance each component independently due to different
- * reconstructions. We use tcc when only owned data are needed and 
+ * discretizations. We use tcc when only owned data are needed and 
  * tcc_next when owned and ghost data.
  ****************************************************************** */
 void Transport_PK::advance_second_order_upwind(double dT_MPC)

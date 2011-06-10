@@ -100,6 +100,7 @@ class Transport_PK {
   std::vector<double> calculate_accumulated_outflux();
 
   int MyPID;  // parallel information: will be moved to private
+  int discretization_order, limiter_model;
 
   int verbosity_level, internal_tests;  // output information
   double tests_tolerance;
