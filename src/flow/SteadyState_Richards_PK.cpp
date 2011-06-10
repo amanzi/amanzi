@@ -143,7 +143,7 @@ SteadyState_Richards_PK::~SteadyState_Richards_PK()
 };
 
 
-int SteadyState_Richards_PK::advance()
+int SteadyState_Richards_PK::advance_to_steady_state()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());

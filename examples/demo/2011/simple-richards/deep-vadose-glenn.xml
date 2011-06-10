@@ -29,7 +29,7 @@
     <Parameter name="End Cycle" type="int" value="1000"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Richards"/>
-    <Parameter name="disable Transport_PK" type="string" value="yes"/>
+    <Parameter name="disable Transport_PK" type="string" value="no"/>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <Parameter name="Viz dump cycle frequency" type="int" value="10"/>
     <ParameterList name="CGNS">
@@ -65,6 +65,8 @@
       <Parameter name="Steady state calculation final time" type="double" value="30e10"/>
       <Parameter name="Steady state calculation initial time step" type="double" value="1e-9"/>
       
+      <Parameter name="Steady state calculation initial hydrostatic pressure height" type ="double" value="100.0"/>
+
       <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>
 
       <ParameterList name="Richards model evaluator">
@@ -78,6 +80,7 @@
 	<Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
         <Parameter name="NKA max vectors" type="int" value="5"/>
 	<Parameter name="NKA drop tolerance" type="double" value="5.0e-2"/>
+	<Parameter name="Maximum number of BDF tries" type="int" value="50"/>
         <ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="medium"/>
 	</ParameterList>
@@ -116,13 +119,8 @@
 
     <ParameterList name="Flow BC">
       <Parameter name="number of BCs" type="int" value="2"/>
-<!--
-      <ParameterList name="BC00">
-        <Parameter name="Type" type="string" value="Pressure Constant"/>
-        <Parameter name="BC value" type="double" value="1081325.0" />
-        <Parameter name="Side set ID" type="int" value="4" />
-      </ParameterList>      
---> 
+	    
+      
       <ParameterList name="BC00">
         <Parameter name="Type" type="string" value="Time Dependent Pressure Constant"/>
         <Parameter name="Initial BC value" type="double" value="1081325.0" />
@@ -131,15 +129,14 @@
         <Parameter name="Final Time" type="double" value="3e10" />
         <Parameter name="Side set ID" type="int" value="4" />
       </ParameterList>  
-
+      
       <ParameterList name="BC01">
 	<Parameter name="Type" type="string" value="Darcy Constant"/>
 	<Parameter name="BC value" type="double" value="-7.9274e-10" /> <!-- -7.9274e-10  2.5 cm/yr -->
 	<Parameter name="Side set ID" type="int" value="5" />
       </ParameterList>
-     </ParameterList>
-
-
+    </ParameterList>
+    
   </ParameterList>
 
 </ParameterList>

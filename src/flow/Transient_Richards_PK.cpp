@@ -48,7 +48,7 @@ Transient_Richards_PK::~Transient_Richards_PK()
 };
 
 
-int Transient_Richards_PK::advance()
+int Transient_Richards_PK::advance_to_steady_state()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());
@@ -64,7 +64,6 @@ int Transient_Richards_PK::advance()
 
   // create udot
 
-  
   problem->SetInitialPressureProfileCells(ss_z,pressure_cells);
   problem->SetInitialPressureProfileFaces(ss_z,pressure_faces);
 
@@ -107,6 +106,26 @@ int Transient_Richards_PK::advance()
   std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
 
 }
+
+
+int Transient_Richards_PK::advance_transient() 
+{
+  // Set problem parameters.
+  problem->SetFluidDensity(FS->fluid_density());
+  problem->SetFluidViscosity(FS->fluid_viscosity());
+  problem->SetPermeability(FS->permeability());
+  problem->SetGravity(FS->gravity());
+  problem->SetFlowState(FS);
+
+  //time_stepper->bdf2_step(h,0.0,*solution,hnext);
+  //time_stepper->write_bdf2_stepping_statistics();  
+
+}
+
+
+
+
+
 
 void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
 {
