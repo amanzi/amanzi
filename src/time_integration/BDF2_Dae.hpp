@@ -55,7 +55,7 @@ namespace BDF2 {
 
     // attempts to take a BDF2 step, interfaces to bdf2_step_simple, will 
     // try several times with the suggested reduced time step to take the step
-    void bdf2_step(double& h, double hmin, int mtries, Epetra_Vector& u, double& hnext); 
+    void bdf2_step(double& h, double hmin, Epetra_Vector& u, double& hnext); 
 
     // the nonlinear solver (uses NKA)
     void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc);
@@ -82,6 +82,8 @@ namespace BDF2 {
     double rmin; 
     double rmax; 
     double margin;
+    
+    int mtries;
 
     State state;
     nka* fpa;

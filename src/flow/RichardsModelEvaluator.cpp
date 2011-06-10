@@ -23,6 +23,9 @@ RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem,
 
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&plist_,this);
+
+  atol = plist.get<double>("Absolute error tolerance",1.0);
+  rtol = plist.get<double>("Relative error tolerance",1e-5);
   
 }
 
@@ -37,8 +40,6 @@ void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_p
     {
       *out << "initialize o.k." << std::endl;
     }
-  
-
 }
 
 // Overridden from BDF2::fnBase
@@ -53,7 +54,7 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   
  
   // compute F(u)
-  problem_->ComputeF(u, f);
+  problem_->ComputeF(u, f, t);
  
 
   Epetra_Vector *uc     = problem_->CreateCellView(u);  
@@ -63,24 +64,26 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   // compute S'(p)
   Epetra_Vector dS (problem_->CellMap());
   problem_->dSofP(*uc, dS);
+
   const Epetra_Vector& phi = FS_->porosity();
   double rho;
+
   problem_->GetFluidDensity(rho);
 
   // assume that porosity is piecewise constant
   dS.Multiply(rho,dS,phi,0.0);
-
+  
   // scale by the cell volumes
   dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
 
   // on the cell unknowns compute f=f+dS*udotc*rho*phi
-  fc->Multiply(1.0,dS,*udotc,1.0); 
+  fc->Multiply(1.0,dS,*udotc,1.0);
   
   //fc->Print(std::cout);
   
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
     {
-      *out << "fun o.k." << std::endl;
+      *out << "fun o.k." <<  std::endl;
     }
 
 }
@@ -131,9 +134,6 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-
-  double atol = 0.00001;
-  double rtol = 0.0;
 
   double en = 0.0;
   for (int j=0; j<u.MyLength(); j++)
