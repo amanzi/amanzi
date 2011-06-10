@@ -120,6 +120,10 @@ namespace BDF2 {
 				  0.05,
 				  "Drop tolerance for the nonlinear Krylov accelerator.",
 				  &*pl);
+      Teuchos::setIntParameter("Maximum number of BDF tries",
+			       20,
+			       "The number of failed BDF attempts we are tolerating.",
+			       &*pl);
       Teuchos::setupVerboseObjectSublist(&*pl);
       validParams = pl;
     }
