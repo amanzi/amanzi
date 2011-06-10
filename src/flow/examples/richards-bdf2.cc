@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
   double tlast = t0;
   do {
     
-    TS.bdf2_step(h,0.0,20,u,hnext);
+    TS.bdf2_step(h,0.0,u,hnext);
     
     TS.commit_solution(h,u);
 

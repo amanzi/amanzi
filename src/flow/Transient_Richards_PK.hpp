@@ -60,7 +60,7 @@ private:
   double err_tol;   // linear solver convergence error tolerance
   int precon_freq;  // preconditioner update frequency
 
-  double ss_t0, ss_t1, ss_h0;
+  double ss_t0, ss_t1, ss_h0, ss_z;
 
 };
 
