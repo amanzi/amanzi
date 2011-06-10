@@ -5,10 +5,9 @@
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
-#include "Mesh_maps_base.hh"
-#include "Mesh_maps_simple.hh"
+#include "../Mesh_simple.hh"
 
-#include "State.hpp"
+// #include "State.hpp"
 
 TEST(NUMBERING) {
 
@@ -19,12 +18,12 @@ TEST(NUMBERING) {
 #endif
 
   // Create a single-cell mesh;
-  Teuchos::RCP<Mesh_maps_base> mesh(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh(new Amanzi::AmanziMesh::Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm));
   
-  State S(1,mesh);
+  //  State S(1,mesh);
   
-  std::string gmvfile = "out.gmv";
-  S.write_gmv(gmvfile);
+  //  std::string gmvfile = "out.gmv";
+  //  S.write_gmv(gmvfile);
   
   // Write node coordinates
   std::cout << "Node coordinates..." << std::endl;
