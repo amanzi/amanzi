@@ -5,14 +5,14 @@
     
     <ParameterList name="Simple Mesh Parameters">
       <Parameter name="X_Min" type="double" value="0.0"/>
-      <Parameter name="X_Max" type="double" value="3.0"/>
+      <Parameter name="X_Max" type="double" value="1.0"/>
       <Parameter name="Y_Min" type="double" value="0.0"/>
-      <Parameter name="Y_Max" type="double" value="3.0"/>
+      <Parameter name="Y_Max" type="double" value="1.0"/>
       <Parameter name="Z_Min" type="double" value="0.0"/>
       <Parameter name="Z_Max" type="double" value="100.0"/>
-      <Parameter name="Numer of Cells in X" type="int" value="3"/> 
-      <Parameter name="Numer of Cells in Y" type="int" value="3"/> 
-      <Parameter name="Numer of Cells in Z" type="int" value="100"/>
+      <Parameter name="Numer of Cells in X" type="int" value="1"/> 
+      <Parameter name="Numer of Cells in Y" type="int" value="1"/> 
+      <Parameter name="Numer of Cells in Z" type="int" value="200"/>
       <Parameter name="Number of mesh blocks" type="int" value="1"/>
       <ParameterList name="Mesh block 1">
 	<Parameter name="Z0" type="double" value="-0.1"/>
@@ -43,7 +43,7 @@
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1000.0"/>
-    <Parameter name="Constant viscosity" type="double" value="1.0"/>
+    <Parameter name="Constant viscosity" type="double" value="0.001308"/> <!-- water at 10 Celsius -->
     <Parameter name="Gravity x" type="double" value="0.0"/>
     <Parameter name="Gravity y" type="double" value="0.0"/>
     <Parameter name="Gravity z" type="double" value="-9.8"/>
@@ -68,7 +68,7 @@
       <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>
 
       <ParameterList name="Richards model evaluator">
-         <ParameterList name="VerboseObject">
+        <ParameterList name="VerboseObject">
 	  <Parameter name="Verbosity Level" type="string" value="none"/>
 	</ParameterList>       
       </ParameterList>
@@ -116,7 +116,6 @@
 
     <ParameterList name="Flow BC">
       <Parameter name="number of BCs" type="int" value="2"/>
-
 <!--
       <ParameterList name="BC00">
         <Parameter name="Type" type="string" value="Pressure Constant"/>

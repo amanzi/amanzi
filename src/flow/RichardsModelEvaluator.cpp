@@ -23,6 +23,9 @@ RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem,
 
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&plist_,this);
+
+  atol = plist.get<double>("Absolute error tolerance",1.0);
+  rtol = plist.get<double>("Relative error tolerance",1e-5);
   
 }
 
@@ -37,8 +40,6 @@ void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_p
     {
       *out << "initialize o.k." << std::endl;
     }
-  
-
 }
 
 // Overridden from BDF2::fnBase
@@ -133,9 +134,6 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-
-  double atol = 1.0;
-  double rtol = 0.00001;
 
   double en = 0.0;
   for (int j=0; j<u.MyLength(); j++)
