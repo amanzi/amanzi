@@ -39,19 +39,16 @@ SimpleThermoDatabase::SimpleThermoDatabase(void)
       ion_exchange_complex_id_(0),
       surface_site_id_(0),
       surface_complex_id_(0),
-      surface_complexation_rxn_id_(0)
-{
+      surface_complexation_rxn_id_(0) {
   surface_sites_.clear();
   surface_complexation_reactions_.clear();
 }  // end SimpleThermoDatabase constructor
 
-SimpleThermoDatabase::~SimpleThermoDatabase(void)
-{
+SimpleThermoDatabase::~SimpleThermoDatabase(void) {
 }  // end SimpleThermoDatabase destructor
 
 void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
-                                 const Beaker::BeakerParameters& parameters)
-{
+                                 const Beaker::BeakerParameters& parameters) {
   this->SetParameters(parameters);
   this->ReadFile(parameters.thermo_database_file);
   this->SetupActivityModel(parameters.activity_model_name);
@@ -80,8 +77,7 @@ void SimpleThermoDatabase::Setup(const Beaker::BeakerComponents& components,
  **  For example <Primary Species  <Aqueous Equilibrium Complexes
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ReadFile(const std::string& file_name)
-{
+void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ReadFile()...." << std::endl;
   }
@@ -95,16 +91,18 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
   }
 
   enum LineType { kCommentLine, kPrimarySpeciesLine,
-                  kAqueousEquilibriumComplexLine, 
+                  kAqueousEquilibriumComplexLine,
                   kMineralLine, kMineralKineticsLine, kGeneralKineticsLine,
                   kIonExchangeSiteLine, kIonExchangeComplexLine,
                   kSurfaceComplexSiteLine, kSurfaceComplexLine,
-                  kUnknownLine };
+                  kUnknownLine
+  };
   enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection,
                      kMineralSection, kMineralKineticsSection, kGeneralKineticsSection,
-                     kIonExchangeSiteSection, kIonExchangeComplexSection, 
+                     kIonExchangeSiteSection, kIonExchangeComplexSection,
                      kSurfaceComplexSiteSection, kSurfaceComplexSection,
-                     kUnknownSection };
+                     kUnknownSection
+  };
 
   std::string kSectionPrimary("<Primary Species");
   std::string kSectionAqueousEquilibriumComplex("<Aqueous Equilibrium Complexes");
@@ -265,8 +263,8 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
           temp += "primary species ";
         }
         error_stream << temp << "have been specified. Please check for "
-                  << "additional error messages and verify database file is "
-                  << "correct." << std::endl;
+                     << "additional error messages and verify database file is "
+                     << "correct." << std::endl;
         error_stream << "SimpleThermoDatabase::ReadFile(): \n";
         error_stream << "a data order error has occured reading file " << file_name
                      << "       please see output for details.\n";
@@ -274,7 +272,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
       }
     }
 
-  } // end while
+  }  // end while
 
   FinishSurfaceComplexation();
 }  // end ReadFile()
@@ -290,8 +288,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name)
  **  Name ; size parameter ; charge ; gram molecular weight
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data)
-{
+void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParsePrimarySpecies()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -305,22 +302,22 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data)
   // get name
   no_spaces.tokenize(primary_data.at(0), space);
   std::string name(no_spaces.at(0));
-  //std::cout << "name: " << name << "  id: " << primary_id_ << std::endl;
+  // std::cout << "name: " << name << "  id: " << primary_id_ << std::endl;
 
   // get size parameter
   no_spaces.tokenize(primary_data.at(1), space);
   double size_parameter(std::atof(no_spaces.at(0).c_str()));
-  //std::cout << "size parameter: " << size_parameter << std::endl;
+  // std::cout << "size parameter: " << size_parameter << std::endl;
 
   // get charge
   no_spaces.tokenize(primary_data.at(2), space);
   double charge(std::atof(no_spaces.at(0).c_str()));
-  //std::cout << "change: " << charge << std::endl;
+  // std::cout << "change: " << charge << std::endl;
 
   // get gram molecular weight
   no_spaces.tokenize(primary_data.at(3), space);
   double gram_molecular_weight(std::atof(no_spaces.at(0).c_str()));
-  //std::cout << "gmw: " << gram_molecular_weight << std::endl;
+  // std::cout << "gmw: " << gram_molecular_weight << std::endl;
 
   Species primary(primary_id_++, name, charge, gram_molecular_weight, size_parameter);
   this->addPrimarySpecies(primary);
@@ -341,8 +338,7 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data)
  **  Name = coeff reactant ... ; log Keq ; size parameter ; charge ; gram molecular weight
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& data)
-{
+void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseAqueousEquilibriumComplex()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -394,8 +390,7 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
  **  <General Kinetics
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data)
-{
+void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
   std::ostringstream error_stream;
   error_stream << "SimpleThermoDatabase::ParseGeneralKinetics() : not implemented."
                << std::endl;
@@ -414,8 +409,7 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data)
  **  Name = coeff reactant ... ; log Keq ; gram molecular weight [g/mole] ; molar volume [cm^3/mole] ; specific surface area [m^2]
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseMineral(const std::string& data)
-{
+void SimpleThermoDatabase::ParseMineral(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseMineral()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -451,8 +445,8 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data)
                   stoichiometries,
                   species_ids,
                   h2o_stoich,
-                  gram_molecular_weight, 
-                  logKeq, 
+                  gram_molecular_weight,
+                  logKeq,
                   molar_volume,
                   specific_surface_area);
   mineral.set_verbosity(verbosity());
@@ -478,8 +472,7 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data)
  **  remaining fields are processed by the rate class
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data)
-{
+void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseMineralKinetics()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -525,8 +518,7 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data)
  **  coordinate this with surface complexation.
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data)
-{
+void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseIonExchangeSite()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -578,8 +570,7 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data)
  **    primary species and a single exchange site
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data)
-{
+void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseIonExchangeComplex()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -639,8 +630,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data)
  **  coordinate this with surface complexation.
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data)
-{
+void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseSurfaceComplexSite()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -662,16 +652,16 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data)
 
   SurfaceSite site(site_name, surface_site_id_++,
                    site_density);
-  surface_sites_.push_back(site); // local storage to make parsing reactions easier...
+  surface_sites_.push_back(site);  // local storage to make parsing reactions easier...
 
   SurfaceComplexationRxn rxn(site);
   surface_complexation_reactions_.push_back(rxn);
   surface_complexation_rxn_id_++;
 
-  //this->addSurfaceComplexationRxn(rxn);
+  // this->addSurfaceComplexationRxn(rxn);
   if (verbosity() == kDebugInputFile) {
     site.display();
-    //rxn.Display();
+    // rxn.Display();
   }
 
 }  // end ParseSurfaceComplexSite()
@@ -691,8 +681,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data)
  **    - ?
  **
  *******************************************************************************/
-void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data)
-{
+void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::ParseSurfaceComplex()...." << std::endl;
     std::cout << "  data: " << data << std::endl;
@@ -741,8 +730,7 @@ void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data)
   }
 }  // end ParseSurfaceComplex()
 
-void SimpleThermoDatabase::FinishSurfaceComplexation(void)
-{
+void SimpleThermoDatabase::FinishSurfaceComplexation(void) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "SimpleThermoDatabase::FinishSurfaceComplexation() :" << std::endl;
   }
@@ -767,8 +755,7 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
                                          std::vector<SpeciesName>* species,
                                          std::vector<double>* stoichiometries,
                                          std::vector<int>* species_ids,
-                                         double* h2o_stoich)
-{
+                                         double* h2o_stoich) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
@@ -781,7 +768,7 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
   StringTokenizer list(reaction, equal);
   no_spaces.tokenize(list.at(0), space);
   *name = no_spaces.at(0);
-  //std::cout << "  name: " << *name << std::endl;
+  // std::cout << "  name: " << *name << std::endl;
 
   StringTokenizer products(list.at(1), space);
 
@@ -791,18 +778,18 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
     s++;
     std::string primary_name(*s);
 
-    //std::cout << "  " << coeff << " " << primary_name << std::endl;
+    // std::cout << "  " << coeff << " " << primary_name << std::endl;
 
     if (primary_name == "H2O") {
       *h2o_stoich = coeff;
-      //std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
+      // std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
     } else {
       species->push_back(primary_name);
       stoichiometries->push_back(coeff);
       int id = -1;
       for (SpeciesArray::const_iterator primary = primary_species.begin();
            primary != primary_species.end(); primary++) {
-        //std::cout << "    " << primary->name() << "  ??  " << primary_name << std::endl;
+        // std::cout << "    " << primary->name() << "  ??  " << primary_name << std::endl;
         if (primary->name() == primary_name) {
           id = primary->identifier();
           primary = primary_species.end() - 1;
@@ -838,8 +825,7 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
                                                     SpeciesName* exchanger_name,
                                                     double* exchanger_stoichiometry,
                                                     SpeciesId* exchanger_id,
-                                                    double* h2o_stoich)
-{
+                                                    double* h2o_stoich) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
@@ -853,7 +839,7 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
   StringTokenizer list(reaction, equal);
   no_spaces.tokenize(list.at(0), space);
   *name = no_spaces.at(0);
-  //std::cout << "  name: " << *name << std::endl;
+  // std::cout << "  name: " << *name << std::endl;
 
   StringTokenizer products(list.at(1), space);
 
@@ -862,17 +848,17 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
     double coeff = std::atof(search_species->c_str());
     search_species++;
     std::string search_name(*search_species);
-    //std::cout << "  " << coeff << " " << search_name << std::endl;
+    // std::cout << "  " << coeff << " " << search_name << std::endl;
 
     if (search_name == "H2O") {
       *h2o_stoich = coeff;
-      //std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
+      // std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
     } else {
       // check to see if we have a primary species
       int id = -1;
       for (SpeciesArray::const_iterator primary = primary_species.begin();
            primary != primary_species.end(); primary++) {
-        //std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
+        // std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
         if (primary->name() == search_name) {
           id = primary->identifier();
           primary = primary_species.end() - 1;
@@ -928,8 +914,7 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
                                                     std::vector<SpeciesName>* exchange_sites,
                                                     std::vector<double>* exchanger_stoichiometries,
                                                     std::vector<SpeciesId>* exchanger_ids,
-                                                    double* h2o_stoich)
-{
+                                                    double* h2o_stoich) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
@@ -943,7 +928,7 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
   StringTokenizer list(reaction, equal);
   no_spaces.tokenize(list.at(0), space);
   *name = no_spaces.at(0);
-  //std::cout << "  name: " << *name << std::endl;
+  // std::cout << "  name: " << *name << std::endl;
 
   StringTokenizer products(list.at(1), space);
 
@@ -952,17 +937,17 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
     double coeff = std::atof(search_species->c_str());
     search_species++;
     std::string search_name(*search_species);
-    //std::cout << "  " << coeff << " " << search_name << std::endl;
+    // std::cout << "  " << coeff << " " << search_name << std::endl;
 
     if (search_name == "H2O") {
       *h2o_stoich = coeff;
-      //std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
+      // std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
     } else {
       // check to see if we have a primary species
       int id = -1;
       for (SpeciesArray::const_iterator primary = primary_species.begin();
            primary != primary_species.end(); primary++) {
-        //std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
+        // std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
         if (primary->name() == search_name) {
           id = primary->identifier();
           primary = primary_species.end() - 1;
@@ -1018,8 +1003,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
                                                        SpeciesName* surface_site_name,
                                                        double* surface_site_stoichiometry,
                                                        SpeciesId* surface_site_id,
-                                                       double* h2o_stoich)
-{
+                                                       double* h2o_stoich) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
@@ -1032,7 +1016,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
   StringTokenizer list(reaction, equal);
   no_spaces.tokenize(list.at(0), space);
   *name = no_spaces.at(0);
-  //std::cout << "  name: " << *name << std::endl;
+  // std::cout << "  name: " << *name << std::endl;
 
   StringTokenizer products(list.at(1), space);
 
@@ -1041,17 +1025,17 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
     double coeff = std::atof(search_species->c_str());
     search_species++;
     std::string search_name(*search_species);
-    //std::cout << "  " << coeff << " " << search_name << std::endl;
+    // std::cout << "  " << coeff << " " << search_name << std::endl;
 
     if (search_name == "H2O") {
       *h2o_stoich = coeff;
-      //std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
+      // std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
     } else {
       // check to see if we have a primary species
       int id = -1;
       for (SpeciesArray::const_iterator primary = primary_species.begin();
            primary != primary_species.end(); primary++) {
-        //std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
+        // std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
         if (primary->name() == search_name) {
           id = primary->identifier();
           primary = primary_species.end() - 1;
@@ -1066,7 +1050,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
         // did not match a primary. check to see if it is an surface site
         for (std::vector<SurfaceSite>::const_iterator surface = surface_sites_.begin();
              surface != surface_sites_.end(); surface++) {
-          //std::cout << "    " << surface->name() << "  ??  " << search_name << std::endl;
+          // std::cout << "    " << surface->name() << "  ??  " << search_name << std::endl;
           if (surface->name() == search_name) {
             id = surface->identifier();
             surface = surface_sites_.end() - 1;

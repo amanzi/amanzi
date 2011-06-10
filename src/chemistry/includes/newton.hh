@@ -9,25 +9,29 @@
 #include <cmath>
 
 class Newton {
-  
-public:
+
+ public:
   Newton(int);
   virtual ~Newton();
 
-  void LUDecomposition(double **a, int n, int *indx);
-  void LUBackSolve(double **a, int n, int *indx, std::vector<double> &b);
+  void LUDecomposition(double** a, int n, int* indx);
+  void LUBackSolve(double** a, int n, int* indx, std::vector<double> &b);
 
-  void size(int i) { this->size_ = i; }
-  int size(void) const { return this->size_; }
+  void size(int i) {
+    this->size_ = i;
+  }
+  int size(void) const {
+    return this->size_;
+  }
 
   void solve();
-  
+
  private:
 
   int size_;
   std::vector<double> x_;
   std::vector<double> r_;
-  Block *J_;
+  Block* J_;
 
   double d_;
   std::vector<int> indices_;
@@ -35,4 +39,4 @@ public:
 
 };
 
-#endif // AMANZI_CHEMISTRY_NEWTON_HH_
+#endif  // AMANZI_CHEMISTRY_NEWTON_HH_

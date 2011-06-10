@@ -7,7 +7,7 @@
 #include "beaker.hh"
 #include "verbosity.hh"
 
-int CommandLineOptions(int argc, char **argv,
+int CommandLineOptions(int argc, char** argv,
                        Verbosity* verbosity, int* test, std::string* model);
 void ModelSpecificParameters(const std::string model,
                              Beaker::BeakerParameters* parameters);
@@ -66,26 +66,26 @@ void fbasin_minerals(Beaker::BeakerComponents* components);
 void fbasin_sorbed(Beaker::BeakerComponents* components);
 
 void uo2_5_component_initial(const Verbosity& verbosity,
-                    std::string* thermo_database_file,
-                    std::string* activity_model_name,
-                    Beaker::BeakerComponents* components,
-                    double* delta_time,
-                    int* num_time_steps,
-                    int* output_interval);
+                             std::string* thermo_database_file,
+                             std::string* activity_model_name,
+                             Beaker::BeakerComponents* components,
+                             double* delta_time,
+                             int* num_time_steps,
+                             int* output_interval);
 void uo2_5_component_outlet(const Verbosity& verbosity,
-                         std::string* thermo_database_file,
-                         std::string* activity_model_name,
-                         Beaker::BeakerComponents* components,
-                         double* delta_time,
-                         int* num_time_steps,
-                         int* output_interval);
+                            std::string* thermo_database_file,
+                            std::string* activity_model_name,
+                            Beaker::BeakerComponents* components,
+                            double* delta_time,
+                            int* num_time_steps,
+                            int* output_interval);
 void uo2_5_component_source(const Verbosity& verbosity,
-                   std::string* thermo_database_file,
-                   std::string* activity_model_name,
-                   Beaker::BeakerComponents* components,
-                   double* delta_time,
-                   int* num_time_steps,
-                   int* output_interval);
+                            std::string* thermo_database_file,
+                            std::string* activity_model_name,
+                            Beaker::BeakerComponents* components,
+                            double* delta_time,
+                            int* num_time_steps,
+                            int* output_interval);
 void uo2_5_component_aqueous_initial(Beaker::BeakerComponents* components);
 void uo2_5_component_aqueous_outlet(Beaker::BeakerComponents* components);
 void uo2_5_component_aqueous_source(Beaker::BeakerComponents* components);

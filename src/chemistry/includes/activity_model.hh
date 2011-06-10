@@ -23,18 +23,30 @@ class ActivityModel {
       std::vector<AqueousEquilibriumComplex>* secondarySpecies);
   virtual double Evaluate(const Species& species) = 0;
 
-  double ionic_strength(void) const { return this->I_; }
+  double ionic_strength(void) const {
+    return this->I_;
+  }
 
   virtual void Display(void) const = 0;
 
-  void name(const std::string name) { this->name_ = name; }
-  std::string name(void) { return this->name_; }
+  void name(const std::string name) {
+    this->name_ = name;
+  }
+  std::string name(void) {
+    return this->name_;
+  }
 
  protected:
-  double log_to_ln(double d) { return d*2.30258509299; }
-  double ln_to_log(double d) { return d*0.434294481904; }
+  double log_to_ln(double d) {
+    return d * 2.30258509299;
+  }
+  double ln_to_log(double d) {
+    return d * 0.434294481904;
+  }
 
-  void ionic_strength(double d) { this->I_ = d; }
+  void ionic_strength(double d) {
+    this->I_ = d;
+  }
 
   double I_;  // ionic strength
 
@@ -43,4 +55,3 @@ class ActivityModel {
 };
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
-

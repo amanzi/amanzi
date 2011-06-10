@@ -55,7 +55,7 @@
  **
  ******************************************************************************/
 
-Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList &param_list,
+Chemistry_PK::Chemistry_PK(const Teuchos::ParameterList& param_list,
                            Teuchos::RCP<Chemistry_State> chem_state)
     : verbosity_(kSilent),
       max_time_step_(9.9e9),
@@ -142,8 +142,7 @@ void Chemistry_PK::InitializeChemistry(void) {
                 << std::endl;
       chem_->DisplayResults();
     }
-  }
-  catch (ChemistryException& geochem_error) {
+  } catch (ChemistryException& geochem_error) {
     // TODO(bandre): any errer in the constructor is probably fatal.
     // TODO(bandre): write to cout/cerr here or let the catcher handle it?
     std::cout << geochem_error.what() << std::endl;
@@ -168,8 +167,7 @@ void Chemistry_PK::InitializeChemistry(void) {
       // solve for initial free-ion concentrations
       chem_->Speciate(beaker_components_, beaker_parameters_);
       chem_->UpdateComponents(&beaker_components_);
-    }
-    catch (ChemistryException& geochem_error) {
+    } catch (ChemistryException& geochem_error) {
       std::cout << geochem_error.what() << std::endl;
       Exceptions::amanzi_throw(geochem_error);
     }
@@ -177,7 +175,7 @@ void Chemistry_PK::InitializeChemistry(void) {
     CopyBeakerComponentsToCell(icell);
 
 #ifdef GLENN_DEBUG
-    if (icell % (num_cells/10) == 0) {
+    if (icell % (num_cells / 10) == 0) {
       std::cout << "  " << icell * 100 / num_cells
                 << "%" << std::endl;
     }
@@ -286,12 +284,12 @@ void Chemistry_PK::InitializeInternalStorage(InternalStorage* storage) {
       chemistry_state_->get_total_component_concentration()->NumVectors());
   storage->aqueous_components = Teuchos::rcp(new Epetra_MultiVector(
       chemistry_state_->get_mesh_maps()->cell_map(false),
-      number_aqueous_components() ));
+      number_aqueous_components()));
 
   set_number_free_ion(number_aqueous_components());
   storage->free_ion_species = Teuchos::rcp(new Epetra_MultiVector(
       chemistry_state_->get_mesh_maps()->cell_map(false),
-      number_free_ion() ));
+      number_free_ion()));
 
   // don't know yet if we have these... need to look in the xml
   // file... the main state object really should be reading these
@@ -317,13 +315,13 @@ void Chemistry_PK::InitializeInternalStorage(InternalStorage* storage) {
   if (number_minerals() > 0) {
     storage->minerals = Teuchos::rcp(new Epetra_MultiVector(
         chemistry_state_->get_mesh_maps()->cell_map(false),
-        number_minerals() ));
+        number_minerals()));
   }
 
   if (number_ion_exchange_sites()) {
     storage->ion_exchange_sites = Teuchos::rcp(new Epetra_MultiVector(
         chemistry_state_->get_mesh_maps()->cell_map(false),
-        number_ion_exchange_sites() ));
+        number_ion_exchange_sites()));
   }
 
 
@@ -332,12 +330,12 @@ void Chemistry_PK::InitializeInternalStorage(InternalStorage* storage) {
 
     storage->total_sorbed = Teuchos::rcp(new Epetra_MultiVector(
         chemistry_state_->get_mesh_maps()->cell_map(false),
-        number_total_sorbed() ));
+        number_total_sorbed()));
 
     if (number_sorption_sites() > 0) {
       storage->sorption_sites = Teuchos::rcp(new Epetra_MultiVector(
           chemistry_state_->get_mesh_maps()->cell_map(false),
-          number_sorption_sites() ));
+          number_sorption_sites()));
     }
   }
 }  // end InitializeInternalStorage()
@@ -345,34 +343,34 @@ void Chemistry_PK::InitializeInternalStorage(InternalStorage* storage) {
 void Chemistry_PK::SwapCurrentAndSavedStorage(void) {
   InternalStorage temp;
 
-/* geh comment: swapping current and saved state creates errors in geochemistry; skip for now
-  std::swap(current_state_.porosity, saved_state_.porosity);
+  /* geh comment: swapping current and saved state creates errors in geochemistry; skip for now
+     std::swap(current_state_.porosity, saved_state_.porosity);
 
-  std::swap(current_state_.water_saturation,
-            saved_state_.water_saturation);
+     std::swap(current_state_.water_saturation,
+     saved_state_.water_saturation);
 
-  std::swap(current_state_.water_density,
-            saved_state_.water_density);
+     std::swap(current_state_.water_density,
+     saved_state_.water_density);
 
-  std::swap(current_state_.volume, saved_state_.volume);
+     std::swap(current_state_.volume, saved_state_.volume);
 
-  std::swap(current_state_.aqueous_components,
-            saved_state_.aqueous_components);
+     std::swap(current_state_.aqueous_components,
+     saved_state_.aqueous_components);
 
-  std::swap(current_state_.free_ion_species,
-            saved_state_.free_ion_species);
+     std::swap(current_state_.free_ion_species,
+     saved_state_.free_ion_species);
 
-  std::swap(current_state_.minerals, saved_state_.minerals);
+     std::swap(current_state_.minerals, saved_state_.minerals);
 
-  std::swap(current_state_.ion_exchange_sites,
-            saved_state_.ion_exchange_sites);
+     std::swap(current_state_.ion_exchange_sites,
+     saved_state_.ion_exchange_sites);
 
-  std::swap(current_state_.sorption_sites,
-            saved_state_.sorption_sites);
+     std::swap(current_state_.sorption_sites,
+     saved_state_.sorption_sites);
 
-  std::swap(current_state_.total_sorbed,
-            saved_state_.total_sorbed);
-end geh comment */
+     std::swap(current_state_.total_sorbed,
+     saved_state_.total_sorbed);
+     end geh comment */
   //  end SwapCurrentAndSavedStorage()
 }
 
@@ -478,9 +476,9 @@ void Chemistry_PK::LocalInitialConditions(void) {
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.minerals);
         /* geh comment
-        ExtractInitialCondition(type, keyword, number_to_find, block,
-                                mesh_block_list, mesh_block_ID,
-                                saved_state_.minerals);
+           ExtractInitialCondition(type, keyword, number_to_find, block,
+           mesh_block_list, mesh_block_ID,
+           saved_state_.minerals);
         */
       }
 
@@ -495,9 +493,9 @@ void Chemistry_PK::LocalInitialConditions(void) {
                                 mesh_block_list, mesh_block_ID,
                                 current_state_.ion_exchange_sites);
         /* geh comment
-        ExtractInitialCondition(type, keyword, number_to_find, block,
-                                mesh_block_list, mesh_block_ID,
-                                saved_state_.ion_exchange_sites);
+           ExtractInitialCondition(type, keyword, number_to_find, block,
+           mesh_block_list, mesh_block_ID,
+           saved_state_.ion_exchange_sites);
         */
       }
 
@@ -653,12 +651,12 @@ void Chemistry_PK::CopyCellToBeakerComponents(
       double* cell_total_sorbed = (*current_state_.total_sorbed)[c];
       beaker_components_.total_sorbed[c] = cell_total_sorbed[cell_id];
     }
-//     if (number_sorption_sites() > 0) {
-//       for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-//         double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
-//         beaker_components_.sorption_sites[i] = cell_sorption_sites[cell_id];
-//       }
-//     }
+    //     if (number_sorption_sites() > 0) {
+    //       for (unsigned int i = 0; i < number_sorption_sites(); i++) {
+    //         double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
+    //         beaker_components_.sorption_sites[i] = cell_sorption_sites[cell_id];
+    //       }
+    //     }
   }  // end if(using_sorption)
 }  // end CopyCellToBeakerComponents()
 
@@ -691,12 +689,12 @@ void Chemistry_PK::CopyBeakerComponentsToCell(const int cell_id) {
       double* cell_total_sorbed = (*current_state_.total_sorbed)[c];
       cell_total_sorbed[cell_id] = beaker_components_.total_sorbed[c];
     }
-//     if (number_sorption_sites() > 0) {
-//       for (unsigned int i = 0; i < number_sorption_sites(); i++) {
-//         double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
-//         cell_sorption_sites[cell_id] = beaker_components_.total_sorbed[i];
-//       }
-//     }
+    //     if (number_sorption_sites() > 0) {
+    //       for (unsigned int i = 0; i < number_sorption_sites(); i++) {
+    //         double* cell_sorption_sites = (*current_state_.sorption_sites)[i];
+    //         cell_sorption_sites[cell_id] = beaker_components_.total_sorbed[i];
+    //       }
+    //     }
   }  // end if(using_sorption)
 }  // end CopyBeakerComponentsToCell()
 
@@ -774,10 +772,10 @@ void Chemistry_PK::advance(
 
     try {
       // chemistry computations for this cell
-// #ifdef GLENN_DEBUG
+      // #ifdef GLENN_DEBUG
       // TODO(bandre): need a better way to deal with debugging stuff we want to keep
       chem_->CopyComponents(beaker_components_, &beaker_components_copy_);
-// #endif
+      // #endif
       int num_iterations = chem_->ReactionStep(&beaker_components_,
                                                beaker_parameters_, delta_time);
       if (max_iterations < num_iterations) {
@@ -789,8 +787,7 @@ void Chemistry_PK::advance(
         imin = cell;
       }
       ave_iterations += num_iterations;
-    }
-    catch (ChemistryException& geochem_error) {
+    } catch (ChemistryException& geochem_error) {
       std::cout << "ERROR: Chemistry_PR::advance() "
                 << "cell[" << cell << "]: " << std::endl;
       std::cout << geochem_error.what();
@@ -802,7 +799,7 @@ void Chemistry_PK::advance(
       chem_->DisplayTotalColumns(current_time_, beaker_components_.free_ion);
       std::cout << "  Total Sorbed Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_.total_sorbed);
-// #ifdef GLENN_DEBUG
+      // #ifdef GLENN_DEBUG
       // TODO(bandre): these cause an exception if called when the above copy is missing
       std::cout << "\nPrevious Solution" << std::endl;
       std::cout << "  Total Component Concentrations" << std::endl;
@@ -811,7 +808,7 @@ void Chemistry_PK::advance(
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.free_ion);
       std::cout << "  Total Sorbed Concentrations" << std::endl;
       chem_->DisplayTotalColumns(current_time_, beaker_components_copy_.total_sorbed);
-// #endif
+      // #endif
       std::cout << std::endl;
       Exceptions::amanzi_throw(geochem_error);
     }
@@ -822,7 +819,7 @@ void Chemistry_PK::advance(
     // TODO(bandre): was porosity etc changed? copy someplace
 
 #ifdef GLENN_DEBUG
-    if (cell % (num_cells/10) == 0) {
+    if (cell % (num_cells / 10) == 0) {
       std::cout << "  " << cell * 100 / num_cells
                 << "%" << std::endl;
     }
@@ -836,7 +833,7 @@ void Chemistry_PK::advance(
     std::cout << "  Chemistry_PK::advance() : "
               << "min iterations - " << min_iterations << " " << "  cell id: " << imin << std::endl;
     std::cout << "  Chemistry_PK::advance() : "
-              << "ave iterations - " << static_cast<float>(ave_iterations)/num_cells << std::endl;
+              << "ave iterations - " << static_cast<float>(ave_iterations) / num_cells << std::endl;
   }
 #endif
 

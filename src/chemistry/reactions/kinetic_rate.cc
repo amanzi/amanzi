@@ -11,26 +11,23 @@
 KineticRate::KineticRate(void)
     : verbosity_(kSilent),
       name_("KineticRate"),
-      identifier_(0)
-{
+      identifier_(0) {
   reactant_names.clear();
   reactant_stoichiometry.clear();
   reactant_ids.clear();
 }  // end KineticRate constructor
 
 
-KineticRate::~KineticRate(void)
-{
+KineticRate::~KineticRate(void) {
 }  // end KineticRate destructor
 
 
-void KineticRate::SetSpeciesIds(const SpeciesArray& species, 
+void KineticRate::SetSpeciesIds(const SpeciesArray& species,
                                 const std::string& species_type,
                                 const std::vector<SpeciesName>& in_names,
                                 const std::vector<double>& in_stoichiometry,
                                 std::vector<SpeciesId>* out_ids,
-                                std::vector<double>* out_stoichiometry)
-{
+                                std::vector<double>* out_stoichiometry) {
   /*
   ** loop through a list of input names. Compare the names to the
   ** names of the species. When a match is found, set the output id to
@@ -52,34 +49,33 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
         species_found = true;
         out_ids->push_back((*s).identifier());
         if (out_stoichiometry != NULL) {
-//geh          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
+          // geh          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
           (*out_stoichiometry)[(*s).identifier()] = in_stoichiometry.at(current);
         }
         if (verbosity() == kDebugMineralKinetics) {
-          std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type 
+          std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type
                     << " species " << (*s).name() << std::endl;
         }
       }
     }
     if (species_found == false && verbosity() == kDebugMineralKinetics) {
       // TODO(bandre): is this actually a runtime error?
-      std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'" 
-                << in_names.at(current) << "\' in " << species_type 
+      std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'"
+                << in_names.at(current) << "\' in " << species_type
                 << " species list! " << std::endl;
-    } 
+    }
   }
 }  // end SetSpeciesIds()
 
-void KineticRate::DisplayReaction(void) const
-{
+void KineticRate::DisplayReaction(void) const {
   std::cout << "    Reaction: " << std::endl;
   std::cout << "      ";
-  
+
   std::cout << name();
   std::cout << " = ";
-  for (unsigned int species = 0; 
+  for (unsigned int species = 0;
        species < this->reactant_names.size(); species++) {
-    std::cout << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " " 
+    std::cout << std::setprecision(2) << this->reactant_stoichiometry.at(species) << " "
               << this->reactant_names.at(species);
     if (species < this->reactant_names.size() - 1) {
       std::cout << " + ";

@@ -19,26 +19,23 @@
 const std::string MineralKineticsFactory::kTST = "TST";
 
 MineralKineticsFactory::MineralKineticsFactory(void)
-    : verbosity_(kSilent)
-{
+    : verbosity_(kSilent) {
 }  // end MineralKineticsFactory constructor
 
-MineralKineticsFactory::~MineralKineticsFactory(void)
-{
+MineralKineticsFactory::~MineralKineticsFactory(void) {
 }  // end MineralKineticsFactory destructor
 
 
 KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
                                             const StringTokenizer& rate_data,
                                             const Mineral& mineral,
-                                            const SpeciesArray& primary_species)
-{
+                                            const SpeciesArray& primary_species) {
   KineticRate* kinetic_rate = NULL;
 
   std::string space(" ");
-  StringTokenizer rate_name(rate_type, space); // strip out spaces
+  StringTokenizer rate_name(rate_type, space);  // strip out spaces
 
-  //std::cout << "rate_name[0] = \'" << rate_name.at(0) << "\'" << std::endl;
+  // std::cout << "rate_name[0] = \'" << rate_name.at(0) << "\'" << std::endl;
 
   if (!(rate_name.at(0).compare(this->kTST))) {
     kinetic_rate = new KineticRateTST();
@@ -69,8 +66,7 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
 
 
 SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_name,
-                                                    const std::vector<Mineral>& minerals) const
-{
+                                                    const std::vector<Mineral>& minerals) const {
   bool mineral_found = false;
   int mineral_id = -1;
   for (std::vector<Mineral>::const_iterator m = minerals.begin();

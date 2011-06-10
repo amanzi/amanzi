@@ -49,7 +49,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::RCP<Mesh_maps_base> mesh_;
     Teuchos::RCP<State> state_;
 
-  }; // end class SpeciationTest
+  };  // end class SpeciationTest
 
   ChemistryPKTest::ChemistryPKTest() {
     // assume that no errors or exceptions will occur in the
@@ -61,14 +61,14 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::updateParametersFromXmlFile(xml_input_filename, &parameter_list);
 
     // create a dummy mesh?
-    Epetra_SerialComm *comm = new Epetra_SerialComm();
+    Epetra_SerialComm* comm = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
         parameter_list.sublist("Simple Mesh Parameters");
     mesh_ = Teuchos::rcp(new Mesh_maps_simple(mesh_parameter_list, comm));
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
-    state_ = Teuchos::rcp(new State(state_parameter_list, mesh_) );
+    state_ = Teuchos::rcp(new State(state_parameter_list, mesh_));
 
     // create the chemistry state object from the state
     chemistry_state_ = Teuchos::rcp(new Chemistry_State(state_));
@@ -81,7 +81,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     delete cpk_;
   }
 
-  void ChemistryPKTest::RunTest(const std::string name, double* gamma) {
+  void ChemistryPKTest::RunTest(const std::string name, double * gamma) {
 
   }  // end ChemistryPKTest::RunTest()
 

@@ -17,4 +17,3 @@ enum Verbosity { kSilent,
 
 
 #endif     /* AMANZI_CHEMISTRY_VERBOSITY_HH_ */
-

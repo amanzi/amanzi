@@ -13,11 +13,9 @@
 #include "verbosity.hh"
 #include "chemistry_exception.hh"
 
-SUITE(BeakerTests)
-{
+SUITE(BeakerTests) {
 
-  TEST(CheckBadComponentSizes)
-  {
+  TEST(CheckBadComponentSizes) {
     SimpleThermoDatabase chem;
 
     Beaker::BeakerComponents components;
@@ -44,8 +42,7 @@ SUITE(BeakerTests)
     try {
       // should throw an error
       chem.Setup(components, parameters);
-    }
-    catch (ChemistryException& e) {
+    } catch (ChemistryException& e) {
       have_exception = true;
     }
 
@@ -54,8 +51,7 @@ SUITE(BeakerTests)
 
 
 
-  TEST(CheckBadDatabaseFile)
-  {
+  TEST(CheckBadDatabaseFile) {
     SimpleThermoDatabase chem;
 
     Beaker::BeakerComponents components;
@@ -78,8 +74,7 @@ SUITE(BeakerTests)
     try {
       // should throw an error
       chem.Setup(components, parameters);
-    }
-    catch (ChemistryException& e) {
+    } catch (ChemistryException& e) {
       have_exception = true;
     }
     CHECK_EQUAL(true, have_exception);
@@ -87,8 +82,7 @@ SUITE(BeakerTests)
 
   }  // end TEST(CheckBadDatabaseFile)
 
-  TEST(CheckBadActivityModel)
-  {
+  TEST(CheckBadActivityModel) {
     SimpleThermoDatabase chem;
 
     Beaker::BeakerComponents components;
@@ -111,8 +105,7 @@ SUITE(BeakerTests)
     try {
       // should throw an error
       chem.Setup(components, parameters);
-    }
-    catch (ChemistryException& e) {
+    } catch (ChemistryException& e) {
       have_exception = true;
     }
     CHECK_EQUAL(true, have_exception);
@@ -122,5 +115,3 @@ SUITE(BeakerTests)
 
 
 }  // end SUITE(BeakerTests)
-
-

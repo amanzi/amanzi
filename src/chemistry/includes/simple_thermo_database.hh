@@ -28,7 +28,7 @@ class SimpleThermoDatabase : public Beaker {
   void ParseSurfaceComplex(const std::string& data);
   void FinishSurfaceComplexation(void);
   void ParseReaction(const std::string& reaction,
-                     std::string *name,
+                     std::string* name,
                      std::vector<SpeciesName>* species,
                      std::vector<double>* stoichiometries,
                      std::vector<int>* species_ids,
@@ -60,8 +60,8 @@ class SimpleThermoDatabase : public Beaker {
                                    SpeciesName* surface_name,
                                    double* surface_stoichiometry,
                                    SpeciesId* surface_id,
-                                   double* h2o_stoich); 
-private:
+                                   double* h2o_stoich);
+ private:
   SpeciesId primary_id_;
   SpeciesId aqueous_equilibrium_complex_id_;
   SpeciesId mineral_id_;

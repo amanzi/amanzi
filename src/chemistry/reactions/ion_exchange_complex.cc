@@ -12,7 +12,7 @@
 **
 **        1.0 complex = double primary + double exchange_site
 **
-**    - can we assume that the exchanger activity is always one...? 
+**    - can we assume that the exchanger activity is always one...?
 **
 **  Examples:
 **
@@ -74,9 +74,8 @@
 
 
 IonExchangeComplex::IonExchangeComplex()
-    : Species()
-{
-} // end IonExchangeComplex() constructor
+    : Species() {
+}  // end IonExchangeComplex() constructor
 
 IonExchangeComplex::IonExchangeComplex(
     const SpeciesName in_name,
@@ -101,22 +100,19 @@ IonExchangeComplex::IonExchangeComplex(
       h2o_stoich_(in_h2o_stoich),
       log_Keq_(in_log_Keq),
       ln_Keq_(0.0),
-      ln_QKeq_(0.0)
-{
+      ln_QKeq_(0.0) {
   double Keq = std::pow(10.0, log_Keq());
   ln_Keq_ = std::log(Keq);
 }  // end IonExchangeComplex costructor
 
 
-IonExchangeComplex::~IonExchangeComplex()
-{
-} // end IonExchangeComplex() destructor
+IonExchangeComplex::~IonExchangeComplex() {
+}  // end IonExchangeComplex() destructor
 
 
-void IonExchangeComplex::update(void)
-{
+void IonExchangeComplex::update(void) {
   /* update function for species....
-  ** 
+  **
   ** assumes that activity coefficient and molality have already been
   ** set externally so that the activity is correct. Ugly hack....
   **
@@ -128,20 +124,18 @@ void IonExchangeComplex::update(void)
   ln_molality_ = std::log(molality());
   ln_act_coef_ = std::log(act_coef());
   ln_activity_ = std::log(activity());
-} // end Update()
+}  // end Update()
 
-void IonExchangeComplex::update(const double molality)
-{
+void IonExchangeComplex::update(const double molality) {
   // dummy function
   static_cast<void>(molality);
-} // end update()
+}  // end update()
 
 
 void IonExchangeComplex::Update(const std::vector<Species> primary_species,
-                                const std::vector<IonExchangeSite> exchange_sites)
-{
+                                const std::vector<IonExchangeSite> exchange_sites) {
   /* The Q/K calculated in this function is:
-  **   cPX <==> pP + xX 
+  **   cPX <==> pP + xX
   **   K = a_P^p * a_X^x / a_PX^c
   **   c = 1.0
   **   a_PX = Q/K = a_P^p * a_X^x / K
@@ -150,7 +144,7 @@ void IonExchangeComplex::Update(const std::vector<Species> primary_species,
   **   a_PX = gamma_PX * m_PX
   **   a_PX = m_PX * x / CEC
   **   gamma_PX = x / CEC
-  */ 
+  */
 
   double ln_QK = -ln_Keq();
   // + p * ln(a_P), standard aqueous activities for the primary
@@ -171,20 +165,18 @@ void IonExchangeComplex::Update(const std::vector<Species> primary_species,
   molality(std::exp(ln_QK) / act_coef());
 
   update();  // update the Species portion of this object!
-} // end Update()
+}  // end Update()
 
-void IonExchangeComplex::AddContributionToTotal(std::vector<double> &total)
-{
+void IonExchangeComplex::AddContributionToTotal(std::vector<double> &total) {
   // only the primary species are in total, so we only need to update a single entry!
   total[primary_id()] += primary_stoichiometry() * molality();
-} // end addContributionToTotal()
+}  // end addContributionToTotal()
 
 void IonExchangeComplex::AddContributionToDTotal(const std::vector<Species> primary_species,
-                                                 Block *dtotal)
-{
+                                                 Block* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
-} // end addContributionToDTotal()
+}  // end addContributionToDTotal()
 
 
 /*
@@ -192,47 +184,42 @@ void IonExchangeComplex::AddContributionToDTotal(const std::vector<Species> prim
 **  Display functions
 **
 */
-void IonExchangeComplex::display(void) const
-{
+void IonExchangeComplex::display(void) const {
   DisplayReaction();
   std::cout << "      log_Keq: " << log_Keq()
             << std::endl;
-} // end Display()
+}  // end Display()
 
-void IonExchangeComplex::Display(void) const
-{
+void IonExchangeComplex::Display(void) const {
   DisplayReaction();
   std::cout << std::setw(40) << " "
             << std::setw(10) << log_Keq()
             << std::endl;
-} // end Display()
+}  // end Display()
 
-void IonExchangeComplex::DisplayReaction(void) const
-{
+void IonExchangeComplex::DisplayReaction(void) const {
   std::cout << "    " << name() << " = "
             << primary_stoichiometry() << " " << primary_name()
             << exchange_site_stoichiometry() << " "
             << exchange_site_name();
   std::cout << std::endl;
-} // end DisplayReaction()
+}  // end DisplayReaction()
 
 
-void IonExchangeComplex::DisplayResultsHeader(void) const
-{
+void IonExchangeComplex::DisplayResultsHeader(void) const {
   std::cout << std::setw(15) << "Name"
             << std::setw(15) << "Molarity"
             << std::setw(15) << "Activity"
             << std::endl;
-} // end DisplayResultsHeader()
+}  // end DisplayResultsHeader()
 
-void IonExchangeComplex::DisplayResults(void) const
-{
+void IonExchangeComplex::DisplayResults(void) const {
   std::cout << std::setw(15) << name()
             << std::scientific << std::setprecision(5)
             << std::setw(15) << molality()
             << std::setw(15) << activity()
             << std::endl;
-} // end DisplayResults()
+}  // end DisplayResults()
 
 
 
@@ -259,4 +246,4 @@ void IonExchangeComplex::DisplayResults(void) const
 //     }
 //   }
 //   std::cout << std::endl;
-// } // end DisplayReaction_arrays()
+// }  // end DisplayReaction_arrays()

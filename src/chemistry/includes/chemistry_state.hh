@@ -19,16 +19,27 @@ class Chemistry_State {
   ~Chemistry_State();
 
   // access methods
-  Teuchos::RCP<const Epetra_MultiVector> get_total_component_concentration()
-  { return total_component_concentration_; }
+  Teuchos::RCP<const Epetra_MultiVector> get_total_component_concentration() {
+    return total_component_concentration_;
+  }
 
-  Teuchos::RCP<const Epetra_Vector> get_porosity() const { return porosity_; }
-  Teuchos::RCP<const Epetra_Vector> get_water_saturation() const { return water_saturation_; }
-  Teuchos::RCP<const Epetra_Vector> get_water_density() const { return water_density_; }
+  Teuchos::RCP<const Epetra_Vector> get_porosity() const {
+    return porosity_;
+  }
+  Teuchos::RCP<const Epetra_Vector> get_water_saturation() const {
+    return water_saturation_;
+  }
+  Teuchos::RCP<const Epetra_Vector> get_water_density() const {
+    return water_density_;
+  }
 
-  Teuchos::RCP<const Mesh_maps_base> get_mesh_maps() const { return mesh_maps_; }
+  Teuchos::RCP<const Mesh_maps_base> get_mesh_maps() const {
+    return mesh_maps_;
+  }
 
-  Teuchos::RCP<const Epetra_SerialDenseVector> get_volume() const { return volume_; }
+  Teuchos::RCP<const Epetra_SerialDenseVector> get_volume() const {
+    return volume_;
+  }
 
  private:
   // variables that point to main State object

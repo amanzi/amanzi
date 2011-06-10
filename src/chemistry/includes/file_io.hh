@@ -19,30 +19,30 @@ class FileIO {
 
  public:
 
-  FileIO(char *filename);
+  FileIO(char* filename);
   FileIO(string filename);
   virtual ~FileIO();
 
   int getLine();
   int getInputLine();
-  int readDouble(double *d);
+  int readDouble(double* d);
   double readDoubleFast();
-  int readInt(int *i);
-  int readWord(char *word);
-  int readQuotedWords(char *words);
-  static int removeQuotes(char *str);
-  int comparesTo(char *str);
-  int startsWith(char *str);
-  int findStringInFile(char *card);
-  static void checkDefaultMessage(char *word, int *ierr);
-  static void checkErrorMessage(char *word1, char *word2, int ierr);
-  static void checkLineErrorMessage(char *word, int ierr);
-  static void toLower(char *word);
-  static void toUpper(char *word);
+  int readInt(int* i);
+  int readWord(char* word);
+  int readQuotedWords(char* words);
+  static int removeQuotes(char* str);
+  int comparesTo(char* str);
+  int startsWith(char* str);
+  int findStringInFile(char* card);
+  static void checkDefaultMessage(char* word, int* ierr);
+  static void checkErrorMessage(char* word1, char* word2, int ierr);
+  static void checkLineErrorMessage(char* word, int ierr);
+  static void toLower(char* word);
+  static void toUpper(char* word);
 
   fstream file;
-  stringstream *buffer;
+  stringstream* buffer;
 
 };
 
-#endif // AMANZI_CHEMISTRY_FILEIO_HH_
+#endif  // AMANZI_CHEMISTRY_FILEIO_HH_

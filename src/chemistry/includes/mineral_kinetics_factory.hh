@@ -4,12 +4,12 @@
 #define AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_
 
 /*******************************************************************************
-**
-**  File Name: MineralKineticsFactory.h
-**
-**  Description: factory class for building a mineral kinetic rate object
-**
-*******************************************************************************/
+ **
+ **  File Name: MineralKineticsFactory.h
+ **
+ **  Description: factory class for building a mineral kinetic rate object
+ **
+ *******************************************************************************/
 #include <vector>
 #include <string>
 
@@ -20,13 +20,12 @@
 
 class KineticRate;
 
-class MineralKineticsFactory
-{
+class MineralKineticsFactory {
  public:
   MineralKineticsFactory(void);
   ~MineralKineticsFactory(void);
- 
-  KineticRate* Create(const std::string& rate_type, 
+
+  KineticRate* Create(const std::string& rate_type,
                       const StringTokenizer& rate_data,
                       const Mineral& mineral,
                       const SpeciesArray& primary_species);
@@ -35,8 +34,12 @@ class MineralKineticsFactory
                               const std::vector<Mineral>& minerals) const;
 
 
-  void set_verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
-  Verbosity verbosity(void) const { return this->verbosity_; };
+  void set_verbosity(const Verbosity s_verbosity) {
+    this->verbosity_ = s_verbosity;
+  };
+  Verbosity verbosity(void) const {
+    return this->verbosity_;
+  };
 
  protected:
 
@@ -47,4 +50,3 @@ class MineralKineticsFactory
 };
 
 #endif     /* AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_ */
-

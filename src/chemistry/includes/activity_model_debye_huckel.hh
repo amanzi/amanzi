@@ -26,4 +26,3 @@ class ActivityModelDebyeHuckel : public ActivityModel {
 };
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_
-

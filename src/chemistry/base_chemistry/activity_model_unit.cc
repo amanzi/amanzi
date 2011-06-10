@@ -6,7 +6,7 @@
 #include "activity_model_unit.hh"
 
 ActivityModelUnit::ActivityModelUnit()
-  : ActivityModel() {
+    : ActivityModel() {
 }  // end ActivityModelUnit constructor
 
 

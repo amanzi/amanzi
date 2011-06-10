@@ -16,11 +16,11 @@
 
 
 Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
-  : total_component_concentration_(S->get_total_component_concentration()),
-    porosity_(S->get_porosity()),
-    water_density_(S->get_water_density()),
-    water_saturation_(S->get_water_saturation()),
-    mesh_maps_(S->get_mesh_maps()) {
+    : total_component_concentration_(S->get_total_component_concentration()),
+      porosity_(S->get_porosity()),
+      water_density_(S->get_water_density()),
+      water_saturation_(S->get_water_saturation()),
+      mesh_maps_(S->get_mesh_maps()) {
   // TODO(bandre): can we make this the same type as the other state vectors
   volume_ =
       Teuchos::rcp(new Epetra_SerialDenseVector(
@@ -52,7 +52,7 @@ void Chemistry_State::ExtractVolumeFromMesh(void) {
   double xdata[24];  // 8 x 3
   Epetra_SerialDenseMatrix xmatrix(View, xdata, 3, 3, 8);
   for (int j = 0; j < ncell; ++j) {
-    mesh->cell_to_coordinates((unsigned int) j, xdata, xdata+24);
+    mesh->cell_to_coordinates((unsigned int) j, xdata, xdata + 24);
     (*volume_)[j] = cell_geometry::hex_volume(xmatrix);
   }
 }  // end ExtractVolumeFromMesh()

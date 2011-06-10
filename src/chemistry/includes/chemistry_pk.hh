@@ -25,7 +25,7 @@ class Chemistry_PK {
  public:
 
 
-  Chemistry_PK(const Teuchos::ParameterList &param_list,
+  Chemistry_PK(const Teuchos::ParameterList& param_list,
                Teuchos::RCP<Chemistry_State> chem_state);
 
   ~Chemistry_PK();
@@ -38,35 +38,75 @@ class Chemistry_PK {
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration(void) const;
 
 
-  Verbosity verbosity(void) const { return this->verbosity_; }
-  void set_verbosity(const Verbosity verbosity) { this->verbosity_ = verbosity; }
+  Verbosity verbosity(void) const {
+    return this->verbosity_;
+  }
+  void set_verbosity(const Verbosity verbosity) {
+    this->verbosity_ = verbosity;
+  }
 
-  void set_max_time_step(const double mts) { this->max_time_step_ = mts; }
-  double max_time_step(void) const { return this->max_time_step_; }
+  void set_max_time_step(const double mts) {
+    this->max_time_step_ = mts;
+  }
+  double max_time_step(void) const {
+    return this->max_time_step_;
+  }
 
-  int number_aqueous_components(void) const { return this->number_aqueous_components_; }
-  void set_number_aqueous_components(const int nac) { this->number_aqueous_components_ = nac; }
+  int number_aqueous_components(void) const {
+    return this->number_aqueous_components_;
+  }
+  void set_number_aqueous_components(const int nac) {
+    this->number_aqueous_components_ = nac;
+  }
 
-  int have_free_ion_guess(void) const { return this->have_free_ion_guess_; }
-  void set_have_free_ion_guess(const int hfi) { this->have_free_ion_guess_ = hfi; }
+  int have_free_ion_guess(void) const {
+    return this->have_free_ion_guess_;
+  }
+  void set_have_free_ion_guess(const int hfi) {
+    this->have_free_ion_guess_ = hfi;
+  }
 
-  int number_free_ion(void) const { return this->number_free_ion_; }
-  void set_number_free_ion(const int nfi) { this->number_free_ion_ = nfi; }
+  int number_free_ion(void) const {
+    return this->number_free_ion_;
+  }
+  void set_number_free_ion(const int nfi) {
+    this->number_free_ion_ = nfi;
+  }
 
-  int number_total_sorbed(void) const { return this->number_total_sorbed_; }
-  void set_number_total_sorbed(const int nts) { this->number_total_sorbed_ = nts; }
+  int number_total_sorbed(void) const {
+    return this->number_total_sorbed_;
+  }
+  void set_number_total_sorbed(const int nts) {
+    this->number_total_sorbed_ = nts;
+  }
 
-  int number_minerals(void) const { return this->number_minerals_; }
-  void set_number_minerals(const int nm) { this->number_minerals_ = nm; }
+  int number_minerals(void) const {
+    return this->number_minerals_;
+  }
+  void set_number_minerals(const int nm) {
+    this->number_minerals_ = nm;
+  }
 
-  int number_ion_exchange_sites(void) const { return this->number_ion_exchange_sites_; }
-  void set_number_ion_exchange_sites(const int ies) { this->number_ion_exchange_sites_ = ies; }
+  int number_ion_exchange_sites(void) const {
+    return this->number_ion_exchange_sites_;
+  }
+  void set_number_ion_exchange_sites(const int ies) {
+    this->number_ion_exchange_sites_ = ies;
+  }
 
-  int number_sorption_sites(void) const { return this->number_sorption_sites_; }
-  void set_number_sorption_sites(const int scs) { this->number_sorption_sites_ = scs; }
+  int number_sorption_sites(void) const {
+    return this->number_sorption_sites_;
+  }
+  void set_number_sorption_sites(const int scs) {
+    this->number_sorption_sites_ = scs;
+  }
 
-  int using_sorption(void) const { return this->using_sorption_; }
-  void set_using_sorption(const int us) { this->using_sorption_ = us; }
+  int using_sorption(void) const {
+    return this->using_sorption_;
+  }
+  void set_using_sorption(const int us) {
+    this->using_sorption_ = us;
+  }
 
   // Ben: the following two routines provide the interface for
   // output of auxillary cellwise data from chemistry
@@ -119,7 +159,7 @@ class Chemistry_PK {
     Teuchos::RCP<Epetra_MultiVector> ion_exchange_sites;
     Teuchos::RCP<Epetra_MultiVector> sorption_sites;
     Teuchos::RCP<Epetra_MultiVector> total_sorbed;
-// geh can do without for now.    Teuchos::RCP<Epetra_MultiVector> free_site_concentrations;
+    // geh can do without for now.    Teuchos::RCP<Epetra_MultiVector> free_site_concentrations;
   };
 
   Teuchos::RCP<Epetra_MultiVector> aux_data_;

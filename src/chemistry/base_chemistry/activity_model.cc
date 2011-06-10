@@ -51,4 +51,3 @@ void ActivityModel::CalculateActivityCoefficients(
     i->act_coef(gamma);
   }
 }  // end CalculateActivityCoefficients()
-

@@ -39,13 +39,13 @@ class IonExchangeComplex : Species {
   virtual void update(const double molality);
 
   // update molalities
-  virtual void Update(const std::vector<Species>primary_species, 
+  virtual void Update(const std::vector<Species>primary_species,
                       const std::vector<IonExchangeSite>exchange_sites);
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double> &total);
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species> primary_species,
-                                       Block *dtotal);
+                                       Block* dtotal);
 
   void display(void) const;
   void Display(void) const;
@@ -53,21 +53,41 @@ class IonExchangeComplex : Species {
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
 
-  double complex_stoich_coeff(void) const { return complex_stoich_coeff_; };
-  SpeciesName primary_name(void) const { return primary_name_; };
-  double primary_stoichiometry(void) const { return primary_stoichiometry_; };
-  SpeciesId primary_id(void) const { return primary_id_; };
+  double complex_stoich_coeff(void) const {
+    return complex_stoich_coeff_;
+  };
+  SpeciesName primary_name(void) const {
+    return primary_name_;
+  };
+  double primary_stoichiometry(void) const {
+    return primary_stoichiometry_;
+  };
+  SpeciesId primary_id(void) const {
+    return primary_id_;
+  };
 
-  SpeciesName exchange_site_name(void) const { return exchange_site_name_; };
-  double exchange_site_stoichiometry(void) const { return exchange_site_stoichiometry_; };
-  SpeciesId exchange_site_id(void) const { return exchange_site_id_; };
+  SpeciesName exchange_site_name(void) const {
+    return exchange_site_name_;
+  };
+  double exchange_site_stoichiometry(void) const {
+    return exchange_site_stoichiometry_;
+  };
+  SpeciesId exchange_site_id(void) const {
+    return exchange_site_id_;
+  };
 
-  double log_Keq(void) const { return this->log_Keq_; };
-  double ln_Keq(void) const { return this->ln_Keq_; };
+  double log_Keq(void) const {
+    return this->log_Keq_;
+  };
+  double ln_Keq(void) const {
+    return this->ln_Keq_;
+  };
 
  protected:
-  void set_ln_QKeq(double d) { this->ln_QKeq_ = d; };
-  
+  void set_ln_QKeq(double d) {
+    this->ln_QKeq_ = d;
+  };
+
  private:
   double complex_stoich_coeff_;  // stoichiometric coefficient of this species!
   SpeciesName primary_name_;
@@ -85,4 +105,4 @@ class IonExchangeComplex : Species {
 
 };
 
-#endif // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
+#endif  // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_

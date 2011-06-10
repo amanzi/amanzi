@@ -4,10 +4,10 @@
 #define AMANZI_CHEMISTRY_KINETIC_RATE_HH_
 
 /*******************************************************************************
-**
-**  Description: abstract base class for all kinetic rates
-**
-*******************************************************************************/
+ **
+ **  Description: abstract base class for all kinetic rates
+ **
+ *******************************************************************************/
 #include <vector>
 
 #include "species.hh"
@@ -16,10 +16,9 @@
 #include "string_tokenizer.hh"
 #include "verbosity.hh"
 
-class Block; 
+class Block;
 
-class KineticRate
-{
+class KineticRate {
  public:
   virtual ~KineticRate(void);
 
@@ -34,7 +33,7 @@ class KineticRate
   virtual void AddContributionToJacobian(const SpeciesArray& primary_species,
                                          const std::vector<Mineral>& minerals,
                                          const double por_den_sat_vol,
-                                         Block *J) = 0;
+                                         Block* J) = 0;
   virtual void Display(void) const = 0;
 
   virtual void ParseParameters(const StringTokenizer& rate_parameters) = 0;
@@ -48,16 +47,28 @@ class KineticRate
 
   void DisplayReaction(void) const;
 
-  void set_verbosity(const Verbosity s_verbosity) { this->verbosity_ = s_verbosity; };
-  Verbosity verbosity(void) const { return this->verbosity_; };
-  std::string name(void) const { return this->name_; };
-  SpeciesId identifier(void) const { return this->identifier_; };
+  void set_verbosity(const Verbosity s_verbosity) {
+    this->verbosity_ = s_verbosity;
+  };
+  Verbosity verbosity(void) const {
+    return this->verbosity_;
+  };
+  std::string name(void) const {
+    return this->name_;
+  };
+  SpeciesId identifier(void) const {
+    return this->identifier_;
+  };
 
  protected:
   KineticRate(void);
 
-  void set_name(const std::string in_name) { this->name_ = in_name; };
-  void set_identifier(const SpeciesId in_id) { this->identifier_ = in_id; };
+  void set_name(const std::string in_name) {
+    this->name_ = in_name;
+  };
+  void set_identifier(const SpeciesId in_id) {
+    this->identifier_ = in_id;
+  };
 
   std::vector<SpeciesName> reactant_names;
   std::vector<double> reactant_stoichiometry;
@@ -70,4 +81,3 @@ class KineticRate
 };
 
 #endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_HH_ */
-

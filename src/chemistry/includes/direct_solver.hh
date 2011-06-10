@@ -10,8 +10,8 @@ using namespace std;
 #include "chemistry/includes/block.hh"
 
 class DirectSolver : public Solver {
-  
-public:
+
+ public:
   DirectSolver(void);
   virtual ~DirectSolver();
 
@@ -21,9 +21,9 @@ public:
   void LUBackSolve(std::vector<double> &b);
   void Solve(void);
   void Solve(std::vector<double> &b);
-  void Solve(MatrixBlock *A, std::vector<double> &b);
-  void Solve(Block *A, std::vector<double> &b);
-  
+  void Solve(MatrixBlock* A, std::vector<double> &b);
+  void Solve(Block* A, std::vector<double> &b);
+
  private:
 
   double row_interchange_;
@@ -33,4 +33,4 @@ public:
 
 };
 
-#endif // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_DIRECTSOLVER_HH_
+#endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_DIRECTSOLVER_HH_

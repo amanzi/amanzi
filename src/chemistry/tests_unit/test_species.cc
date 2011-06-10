@@ -9,8 +9,7 @@
 #include "species.hh"
 #include "chemistry_exception.hh"
 
-SUITE(GeochemistryTestsSpecies)
-{
+SUITE(GeochemistryTestsSpecies) {
   /*
     Unit tests for the Species object public interface
 
@@ -21,8 +20,7 @@ SUITE(GeochemistryTestsSpecies)
    **  Common testing code
    **
    *****************************************************************************/
-  class SpeciesTest
-  {
+  class SpeciesTest {
    public:
     SpeciesTest();
     ~SpeciesTest();
@@ -33,22 +31,20 @@ SUITE(GeochemistryTestsSpecies)
     double gram_molecular_weight_;
     double ion_size_parameter_;
     SpeciesName name_;
-    
+
    private:
 
-  }; // end class SpeciesTest
+  };  // end class SpeciesTest
 
   SpeciesTest::SpeciesTest()
       : id_(3),
       charge_(2.0),
       gram_molecular_weight_(40.0780),
       ion_size_parameter_(6.0),
-      name_("Ca++")
-      {
-      }
+      name_("Ca++") {
+  }
 
-  SpeciesTest::~SpeciesTest()
-  {
+  SpeciesTest::~SpeciesTest() {
   }
 
   /*****************************************************************************
@@ -64,32 +60,27 @@ SUITE(GeochemistryTestsSpecies)
   //
   // check that the parameter data is set correctly
   //
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_id)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_id) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(id_, species.identifier());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_charge)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_charge) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(charge_, species.charge());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_gmw)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_gmw) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(gram_molecular_weight_, species.gram_molecular_weight());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_isp)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_isp) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(ion_size_parameter_, species.ion_size_parameter());
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_init_name)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_init_name) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(name_, species.name());
   }
@@ -97,20 +88,17 @@ SUITE(GeochemistryTestsSpecies)
   //
   // check that exceptions are thrown for invalid data
   //
-  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_id)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_id) {
     CHECK_THROW(Species species(-1, name_, charge_, gram_molecular_weight_, ion_size_parameter_),
                 ChemistryException);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_molecular_weight)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_molecular_weight) {
     CHECK_THROW(Species species(id_, name_, charge_, -45.678, ion_size_parameter_),
                 ChemistryException);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_ion_size)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_ion_size) {
     CHECK_THROW(Species species(id_, name_, charge_, gram_molecular_weight_, -9.0),
                 ChemistryException);
   }
@@ -118,8 +106,7 @@ SUITE(GeochemistryTestsSpecies)
   //
   // check that updating the concentrations works correctly
   //
-  TEST_FIXTURE(SpeciesTest, Species_update_molality)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_update_molality) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
 
@@ -127,8 +114,7 @@ SUITE(GeochemistryTestsSpecies)
     CHECK_CLOSE(molality, species.molality(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_ln_molality)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_update_ln_molality) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
     double ln_molality = std::log(molality);
@@ -137,8 +123,7 @@ SUITE(GeochemistryTestsSpecies)
     CHECK_CLOSE(ln_molality, species.ln_molality(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_activity_coefficient)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_update_activity_coefficient) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double act_coef = 0.9;
 
@@ -146,19 +131,17 @@ SUITE(GeochemistryTestsSpecies)
     CHECK_CLOSE(act_coef, species.act_coef(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity_coefficient)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity_coefficient) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double act_coef = 0.9;
     double ln_act_coef = std::log(act_coef);
 
-    species.act_coef(act_coef); // does not update ln_act_coef!
-    species.update(); // forces the update of ln_act_coef
+    species.act_coef(act_coef);  // does not update ln_act_coef!
+    species.update();  // forces the update of ln_act_coef
     CHECK_CLOSE(ln_act_coef, species.ln_act_coef(), 1.0e-9);
   }
 
-  TEST_FIXTURE(SpeciesTest, Species_update_activity)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_update_activity) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
     double act_coef = 0.9;
@@ -170,8 +153,7 @@ SUITE(GeochemistryTestsSpecies)
   }
 
 
-  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity)
-  {
+  TEST_FIXTURE(SpeciesTest, Species_update_ln_activity) {
     Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
     double act_coef = 0.9;
@@ -183,7 +165,7 @@ SUITE(GeochemistryTestsSpecies)
   }
 
   //
-  // create with the empty constructor, no initialization 
+  // create with the empty constructor, no initialization
   //
 
   /* We don't really want this interface used, but it appears to be
@@ -205,6 +187,6 @@ SUITE(GeochemistryTestsSpecies)
      double ln_activity = 0.0;
      double ln_act_coef = 0.0;
   */
- 
+
 
 }  // end SUITE(GeochemistryTestSpecies)

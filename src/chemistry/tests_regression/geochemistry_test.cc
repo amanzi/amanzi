@@ -21,13 +21,13 @@ const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
 
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   Verbosity verbosity = kTerse;
   int test = 0;
   std::string model("");
   int error = EXIT_SUCCESS;
 
-  Beaker *chem = NULL;
+  Beaker* chem = NULL;
   Beaker::BeakerComponents components;
   components.free_ion.clear();
   components.minerals.clear();
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         // set up simple 2-species carbonate system (H,HCO3-),
         // debye-huckel activity coefficients
         if (verbosity == kTerse) {
-          std::cout << "Running simple carbonate example, debye-huckel." 
+          std::cout << "Running simple carbonate example, debye-huckel."
                     << std::endl;
         }
         thermo_database_file = "input/carbonate.bgd";
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
         break;
       }
       case 3: {
-        // larger carbonate system, 3 components, 9 secondary, 
+        // larger carbonate system, 3 components, 9 secondary,
         // unit activity coefficients
         if (verbosity == kTerse) {
           std::cout << "Running large carbonate speciation example, "
@@ -277,11 +277,11 @@ int main(int argc, char **argv) {
         std::cout << "-- Test Beaker Reaction Stepping -------------------------------------" << std::endl;
         chem->DisplayTotalColumnHeaders();
         chem->DisplayTotalColumns(0.0, components.total);
-        //parameters.max_iterations = 2;
+        // parameters.max_iterations = 2;
         for (int time_step = 0; time_step < num_time_steps; time_step++) {
           chem->ReactionStep(&components, parameters, delta_time);
-          if ((time_step+1) % output_interval == 0) {
-            chem->DisplayTotalColumns((time_step+1) * delta_time, 
+          if ((time_step + 1) % output_interval == 0) {
+            chem->DisplayTotalColumns((time_step + 1) * delta_time,
                                       components.total);
           }
           if (verbosity >= kDebugNewtonSolver) {
@@ -300,16 +300,13 @@ int main(int argc, char **argv) {
         }
       }
     }
-  }
-  catch (const ChemistryException& geochem_error) {
+  } catch (const ChemistryException& geochem_error) {
     std::cout << geochem_error.what() << std::endl;
     error = EXIT_FAILURE;
-  }
-  catch (const std::runtime_error& rt_error) {
+  } catch (const std::runtime_error& rt_error) {
     std::cout << rt_error.what() << std::endl;
     error = EXIT_FAILURE;
-  }
-  catch (const std::logic_error& lg_error) {
+  } catch (const std::logic_error& lg_error) {
     std::cout << lg_error.what() << std::endl;
     error = EXIT_FAILURE;
   }
@@ -322,22 +319,20 @@ int main(int argc, char **argv) {
 }  // end main()
 
 
-void ModelSpecificParameters(const std::string model, 
-                             Beaker::BeakerParameters* parameters)
-{
+void ModelSpecificParameters(const std::string model,
+                             Beaker::BeakerParameters* parameters) {
   if (model == kCrunch) {
-    parameters->water_density = 1000.0; // kg / m^3
+    parameters->water_density = 1000.0;  // kg / m^3
   } else if (model == kPflotran) {
-    parameters->water_density = 997.16; // kg / m^3
-    // where did this number come from? 
-    // default parameters->water_density = 997.205133945901; // kg / m^3
+    parameters->water_density = 997.16;  // kg / m^3
+    // where did this number come from?
+    // default parameters->water_density = 997.205133945901;  // kg / m^3
   } else {
     // bad model name, how did we get here....
   }
 }  // end ModelSpecificParameters()
 
-void PrintDoubleVector(const std::vector<double> &total)
-{
+void PrintDoubleVector(const std::vector<double> &total) {
   std::cout << "[ ";
   std::vector<double>::const_iterator i;
   for (i = total.begin(); i != total.end(); i++) {
@@ -346,12 +341,11 @@ void PrintDoubleVector(const std::vector<double> &total)
   std::cout << " ]" << std::endl;
 }  // end PrintDoubleVector()
 
-int CommandLineOptions(int argc, char **argv, 
-                       Verbosity* verbosity, int* test, std::string* model)
-{
+int CommandLineOptions(int argc, char** argv,
+                       Verbosity* verbosity, int* test, std::string* model) {
   int error = -2;
   int option;
-  extern char *optarg;
+  extern char* optarg;
 
   while ((option = getopt(argc, argv, "m:ht:v:?")) != -1) {
     switch (option) {
@@ -370,7 +364,8 @@ int CommandLineOptions(int argc, char **argv,
         *verbosity = static_cast<Verbosity>(std::atoi(optarg));
         break;
       }
-      case '?': case 'h': {  /* help mode */
+      case '?':
+      case 'h': {  /* help mode */
         /* print some help stuff and exit without doing anything */
         std::cout << argv[0] << " command line options:" << std::endl;
         std::cout << "    -m string " << std::endl;
@@ -379,7 +374,7 @@ int CommandLineOptions(int argc, char **argv,
         std::cout << "             " << kPflotran << std::endl;
         std::cout << std::endl;
         std::cout << "    -t integer " << std::endl;
-        std::cout << "         run a test case. valid test numbers are: " 
+        std::cout << "         run a test case. valid test numbers are: "
                   << std::endl;
         std::cout << "             0: error test" << std::endl;
         std::cout << "             1: simple carbonate speciation, unit activity coeff" << std::endl;
@@ -447,21 +442,20 @@ void calcite_kinetics(const Verbosity& verbosity,
                       Beaker::BeakerComponents* components,
                       double* delta_time,
                       int* num_time_steps,
-                      int* output_interval)
-{
-        // calcite TST kinetics
-        if (verbosity == kTerse) {
-          std::cout << "Running calcite kinetics tst problem." << std::endl;
-        }
-        *thermo_database_file = "input/calcite.bgd";
-        *activity_model_name = ActivityModelFactory::debye_huckel;
-        components->total.push_back(-2.0e-5);  // H+
-        components->total.push_back(1.0e-3);  // HCO3-
-        components->total.push_back(1.0e-4);  // Ca++
-        components->minerals.push_back(0.2);  // calcite
-        *delta_time = 0.5;
-        *num_time_steps = 500;
-        *output_interval = 1;
+                      int* output_interval) {
+  // calcite TST kinetics
+  if (verbosity == kTerse) {
+    std::cout << "Running calcite kinetics tst problem." << std::endl;
+  }
+  *thermo_database_file = "input/calcite.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  components->total.push_back(-2.0e-5);  // H+
+  components->total.push_back(1.0e-3);  // HCO3-
+  components->total.push_back(1.0e-4);  // Ca++
+  components->minerals.push_back(0.2);  // calcite
+  *delta_time = 0.5;
+  *num_time_steps = 500;
+  *output_interval = 1;
 }  // end calcite_kinetics()
 
 
@@ -471,47 +465,45 @@ void calcite_kinetics_large_time_steps(const Verbosity& verbosity,
                                        Beaker::BeakerComponents* components,
                                        double* delta_time,
                                        int* num_time_steps,
-                                       int* output_interval)
-{
-        // calcite TST kinetics
-        if (verbosity == kTerse) {
-          std::cout << "Running calcite kinetics tst problem." << std::endl;
-        }
-        *thermo_database_file = "input/calcite.bgd";
-        *activity_model_name = ActivityModelFactory::debye_huckel;
-        components->total.push_back(1.0e-3);  // H+
-        components->total.push_back(1.0e-3);  // HCO3-
-        components->total.push_back(0.0);  // Ca++
-        components->minerals.push_back(0.2);  // calcite
-        *delta_time = 30.0 * 24.0 * 3600.0;
-        *num_time_steps = 12;
-        *output_interval = 1;
+                                       int* output_interval) {
+  // calcite TST kinetics
+  if (verbosity == kTerse) {
+    std::cout << "Running calcite kinetics tst problem." << std::endl;
+  }
+  *thermo_database_file = "input/calcite.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  components->total.push_back(1.0e-3);  // H+
+  components->total.push_back(1.0e-3);  // HCO3-
+  components->total.push_back(0.0);  // Ca++
+  components->minerals.push_back(0.2);  // calcite
+  *delta_time = 30.0 * 24.0 * 3600.0;
+  *num_time_steps = 12;
+  *output_interval = 1;
 }  // end calcite_kinetics_large_time_steps()
 
 
 void surface_complexation(const Verbosity& verbosity,
-                      std::string* thermo_database_file,
-                      std::string* activity_model_name,
-                      Beaker::BeakerComponents* components,
-                      double* delta_time,
-                      int* num_time_steps,
-                      int* output_interval)
-{
-        // calcite TST kinetics
-        if (verbosity == kTerse) {
-          std::cout << "Running surface complexation problem." << std::endl;
-        }
-        *thermo_database_file = "input/surface-complexation.bgd";
-        *activity_model_name = ActivityModelFactory::debye_huckel;
-        components->total.push_back(1.0e-3);  // H+
-        components->total.push_back(3.0e-3);  // Cl-
-        components->total.push_back(1.0e-3);  // UO2++
-        components->total_sorbed.push_back(1.0e-4);  // H+
-        components->total_sorbed.push_back(1.0e-4);  // Cl-
-        components->total_sorbed.push_back(1.0e-4);  // UO2++
-        *delta_time = 1.0;
-        *num_time_steps = 10;
-        *output_interval = 1;
+                          std::string* thermo_database_file,
+                          std::string* activity_model_name,
+                          Beaker::BeakerComponents* components,
+                          double* delta_time,
+                          int* num_time_steps,
+                          int* output_interval) {
+  // calcite TST kinetics
+  if (verbosity == kTerse) {
+    std::cout << "Running surface complexation problem." << std::endl;
+  }
+  *thermo_database_file = "input/surface-complexation.bgd";
+  *activity_model_name = ActivityModelFactory::debye_huckel;
+  components->total.push_back(1.0e-3);  // H+
+  components->total.push_back(3.0e-3);  // Cl-
+  components->total.push_back(1.0e-3);  // UO2++
+  components->total_sorbed.push_back(1.0e-4);  // H+
+  components->total_sorbed.push_back(1.0e-4);  // Cl-
+  components->total_sorbed.push_back(1.0e-4);  // UO2++
+  *delta_time = 1.0;
+  *num_time_steps = 10;
+  *output_interval = 1;
 }  // end surface_complexation()
 
 /*******************************************************************************
@@ -525,8 +517,7 @@ void fbasin_initial(const Verbosity& verbosity,
                     Beaker::BeakerComponents* components,
                     double* delta_time,
                     int* num_time_steps,
-                    int* output_interval)
-{
+                    int* output_interval) {
   if (verbosity == kTerse) {
     std::cout << "Running fbasin problem, \'initial\' conditions." << std::endl;
   }
@@ -548,8 +539,7 @@ void fbasin_infiltration(const Verbosity& verbosity,
                          Beaker::BeakerComponents* components,
                          double* delta_time,
                          int* num_time_steps,
-                         int* output_interval)
-{
+                         int* output_interval) {
   if (verbosity == kTerse) {
     std::cout << "Running fbasin problem, \'infiltration\' conditions." << std::endl;
   }
@@ -571,8 +561,7 @@ void fbasin_source(const Verbosity& verbosity,
                    Beaker::BeakerComponents* components,
                    double* delta_time,
                    int* num_time_steps,
-                   int* output_interval)
-{
+                   int* output_interval) {
   if (verbosity == kTerse) {
     std::cout << "Running fbasin problem, \'source\' conditions." << std::endl;
   }
@@ -588,8 +577,7 @@ void fbasin_source(const Verbosity& verbosity,
   fbasin_sorbed(components);
 }  // end fbasin_source
 
-void fbasin_aqueous_initial(Beaker::BeakerComponents* components)
-{
+void fbasin_aqueous_initial(Beaker::BeakerComponents* components) {
   components->total.push_back(1.0000E-05);  // Na+
   components->total.push_back(1.0000E-05);  // Ca++
   components->total.push_back(8.4757E-08);  // Fe++
@@ -609,8 +597,7 @@ void fbasin_aqueous_initial(Beaker::BeakerComponents* components)
   components->total.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_aqueous_initial
 
-void fbasin_aqueous_infiltration(Beaker::BeakerComponents* components)
-{
+void fbasin_aqueous_infiltration(Beaker::BeakerComponents* components) {
   // constraint: infiltration
   components->total.push_back(1.3132E-04);  // Na+
   components->total.push_back(1.0000E-05);  // Ca++
@@ -631,8 +618,7 @@ void fbasin_aqueous_infiltration(Beaker::BeakerComponents* components)
   components->total.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_aqueous_infiltration
 
-void fbasin_aqueous_source(Beaker::BeakerComponents* components)
-{
+void fbasin_aqueous_source(Beaker::BeakerComponents* components) {
   // constraint: source
   components->total.push_back(3.4363E-02);  // Na+
   components->total.push_back(1.2475E-05);  // Ca++
@@ -653,8 +639,7 @@ void fbasin_aqueous_source(Beaker::BeakerComponents* components)
   components->total.push_back(3.5414E-05);  // Tracer
 }  // end fbasin_aqueous_source
 
-void fbasin_free_ions(Beaker::BeakerComponents* components)
-{
+void fbasin_free_ions(Beaker::BeakerComponents* components) {
   // free ion concentrations (better initial guess)
   components->free_ion.push_back(9.9969E-06);  // Na+
   components->free_ion.push_back(9.9746E-06);  // Ca++
@@ -675,8 +660,7 @@ void fbasin_free_ions(Beaker::BeakerComponents* components)
   components->free_ion.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_free_ions()
 
-void fbasin_minerals(Beaker::BeakerComponents* components)
-{
+void fbasin_minerals(Beaker::BeakerComponents* components) {
   components->minerals.push_back(0.0);  // Gibbsite
   components->minerals.push_back(0.21);  // Quartz
   components->minerals.push_back(0.15);  // K-Feldspar
@@ -691,8 +675,7 @@ void fbasin_minerals(Beaker::BeakerComponents* components)
 
 }  // end fbasin_minerals()
 
-void fbasin_sorbed(Beaker::BeakerComponents* components)
-{
+void fbasin_sorbed(Beaker::BeakerComponents* components) {
   components->total_sorbed.resize(components->total.size(), 0.0);
 }  // end fbasin_sorbed
 
@@ -703,13 +686,12 @@ void fbasin_sorbed(Beaker::BeakerComponents* components)
  **
  ******************************************************************************/
 void uo2_5_component_initial(const Verbosity& verbosity,
-                    std::string* thermo_database_file,
-                    std::string* activity_model_name,
-                    Beaker::BeakerComponents* components,
-                    double* delta_time,
-                    int* num_time_steps,
-                    int* output_interval)
-{
+                             std::string* thermo_database_file,
+                             std::string* activity_model_name,
+                             Beaker::BeakerComponents* components,
+                             double* delta_time,
+                             int* num_time_steps,
+                             int* output_interval) {
   if (verbosity == kTerse) {
     std::cout << "Running uo2_5_component problem, \'initial\' conditions." << std::endl;
   }
@@ -726,13 +708,12 @@ void uo2_5_component_initial(const Verbosity& verbosity,
 }  // end uo2_5_component_initial
 
 void uo2_5_component_outlet(const Verbosity& verbosity,
-                         std::string* thermo_database_file,
-                         std::string* activity_model_name,
-                         Beaker::BeakerComponents* components,
-                         double* delta_time,
-                         int* num_time_steps,
-                         int* output_interval)
-{
+                            std::string* thermo_database_file,
+                            std::string* activity_model_name,
+                            Beaker::BeakerComponents* components,
+                            double* delta_time,
+                            int* num_time_steps,
+                            int* output_interval) {
   if (verbosity == kTerse) {
     std::cout << "Running uo2_5_component problem, \'outlet\' conditions." << std::endl;
   }
@@ -749,13 +730,12 @@ void uo2_5_component_outlet(const Verbosity& verbosity,
 }  // end uo2_5_component_outlet
 
 void uo2_5_component_source(const Verbosity& verbosity,
-                   std::string* thermo_database_file,
-                   std::string* activity_model_name,
-                   Beaker::BeakerComponents* components,
-                   double* delta_time,
-                   int* num_time_steps,
-                   int* output_interval)
-{
+                            std::string* thermo_database_file,
+                            std::string* activity_model_name,
+                            Beaker::BeakerComponents* components,
+                            double* delta_time,
+                            int* num_time_steps,
+                            int* output_interval) {
   if (verbosity == kTerse) {
     std::cout << "Running uo2_5_component problem, \'source\' conditions." << std::endl;
   }
@@ -771,8 +751,7 @@ void uo2_5_component_source(const Verbosity& verbosity,
   uo2_5_component_sorbed(components);
 }  // end uo2_5_component_source
 
-void uo2_5_component_aqueous_initial(Beaker::BeakerComponents* components)
-{
+void uo2_5_component_aqueous_initial(Beaker::BeakerComponents* components) {
   components->total.push_back(6.5874E-09);  // Al+++
   components->total.push_back(-3.1408E-07);  // H+
   components->total.push_back(1.0000E-06);  // HPO4--
@@ -780,8 +759,7 @@ void uo2_5_component_aqueous_initial(Beaker::BeakerComponents* components)
   components->total.push_back(1.0000E-15);  // UO2++
 }  // end uo2_5_component_aqueous_initial
 
-void uo2_5_component_aqueous_outlet(Beaker::BeakerComponents* components)
-{
+void uo2_5_component_aqueous_outlet(Beaker::BeakerComponents* components) {
   // constraint: outlet
   components->total.push_back(1.0000E-12);  // Al+++
   components->total.push_back(-1.1407E-09);  // H+
@@ -790,8 +768,7 @@ void uo2_5_component_aqueous_outlet(Beaker::BeakerComponents* components)
   components->total.push_back(1.0000E-15);  // UO2++
 }  // end uo2_5_component_aqueous_outlet
 
-void uo2_5_component_aqueous_source(Beaker::BeakerComponents* components)
-{
+void uo2_5_component_aqueous_source(Beaker::BeakerComponents* components) {
   // constraint: source
   components->total.push_back(2.8909E-05);  // Al+++
   components->total.push_back(1.2786E-03);  // H+
@@ -800,8 +777,7 @@ void uo2_5_component_aqueous_source(Beaker::BeakerComponents* components)
   components->total.push_back(3.5414E-05);  // UO2++
 }  // end uo2_5_component_aqueous_source
 
-void uo2_5_component_free_ions(Beaker::BeakerComponents* components)
-{
+void uo2_5_component_free_ions(Beaker::BeakerComponents* components) {
   // free ion concentrations (better initial guess)
   components->free_ion.push_back(5.2970E-16);  // Al+++
   components->free_ion.push_back(3.2759E-08);  // H+
@@ -810,15 +786,12 @@ void uo2_5_component_free_ions(Beaker::BeakerComponents* components)
   components->free_ion.push_back(1.7609E-20);  // UO2++
 }  // end uo2_5_component_free_ions()
 
-void uo2_5_component_minerals(Beaker::BeakerComponents* components)
-{
+void uo2_5_component_minerals(Beaker::BeakerComponents* components) {
   components->minerals.push_back(0.15);  // Kaolinite
   components->minerals.push_back(0.21);  // Quartz
   components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
 }  // end uo2_5_component_minerals()
 
-void uo2_5_component_sorbed(Beaker::BeakerComponents* components)
-{
+void uo2_5_component_sorbed(Beaker::BeakerComponents* components) {
   components->total_sorbed.resize(components->total.size(), 0.0);
 }  // end uo2_5_component_sorbed
-

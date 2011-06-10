@@ -8,44 +8,42 @@
 
 #include "exceptions.hh"
 
-SecondarySpecies::SecondarySpecies() 
+SecondarySpecies::SecondarySpecies()
     : Species(),
-      ncomp_(0), // # components in reaction
+      ncomp_(0),  // # components in reaction
       h2o_stoich_(0.0),
       lnK_(0.0),
       lnQK_(0.0),
-      logK_(0.0)
-{
+      logK_(0.0) {
   species_names_.clear();
   species_ids_.clear();
   stoichiometry_.clear();
   logK_array_.clear();
-} // end SecondarySpecies() constructor
+}  // end SecondarySpecies() constructor
 
-SecondarySpecies::SecondarySpecies(const SpeciesName in_name, 
+SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
                                    const SpeciesId in_id,
                                    const std::vector<SpeciesName>& in_species,
                                    const std::vector<double>& in_stoichiometries,
                                    const std::vector<SpeciesId>& in_species_ids,
-                                   const double in_h2o_stoich, 
+                                   const double in_h2o_stoich,
                                    const double in_charge,
-                                   const double in_mol_wt, 
+                                   const double in_mol_wt,
                                    const double in_size,
                                    const double in_logK)
     : Species(in_id, in_name, in_charge, in_mol_wt, in_size),
       h2o_stoich_(in_h2o_stoich),
       lnK_(0.0),
       lnQK_(0.0),
-      logK_(in_logK)
-{
+      logK_(in_logK) {
 
   ncomp(static_cast<int>(in_species.size()));
 
   // species names
-  for (std::vector<SpeciesName>::const_iterator i = in_species.begin(); 
+  for (std::vector<SpeciesName>::const_iterator i = in_species.begin();
        i != in_species.end(); i++) {
     species_names_.push_back(*i);
-  } 
+  }
   // species stoichiometries
   for (std::vector<double>::const_iterator i = in_stoichiometries.begin();
        i != in_stoichiometries.end(); i++) {
@@ -87,34 +85,30 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 
-}  // end SecondarySpecies costructor
+      }  // end SecondarySpecies costructor
 
 
-SecondarySpecies::~SecondarySpecies() 
-{
-} // end SecondarySpecies() destructor
+SecondarySpecies::~SecondarySpecies() {
+}  // end SecondarySpecies() destructor
 
 /*
 **
 **  these functions are only needed if SecondarySpecies equilibrium is added.
 **
 */
-void SecondarySpecies::Update(const std::vector<Species>& primary_species) 
-{
+void SecondarySpecies::Update(const std::vector<Species>& primary_species) {
   static_cast<void>(primary_species);
-} // end update()
+}  // end update()
 
-void SecondarySpecies::AddContributionToTotal(std::vector<double> *total) 
-{
+void SecondarySpecies::AddContributionToTotal(std::vector<double> *total) {
   static_cast<void>(total);
-} // end addContributionToTotal()
+}  // end addContributionToTotal()
 
 void SecondarySpecies::AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                               Block *dtotal) 
-{
+                                               Block* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
-} // end addContributionToDTotal()
+}  // end addContributionToDTotal()
 
 
 /*
@@ -122,8 +116,7 @@ void SecondarySpecies::AddContributionToDTotal(const std::vector<Species>& prima
 **  Display functions
 **
 */
-void SecondarySpecies::Display(void) const
-{
+void SecondarySpecies::Display(void) const {
   std::cout << "    " << name() << " = ";
   for (int i = 0; i < (int)species_names_.size(); i++) {
     std::cout << stoichiometry_[i] << " " << species_names_[i];
@@ -132,8 +125,8 @@ void SecondarySpecies::Display(void) const
     }
   }
   std::cout << std::endl;
-  std::cout << std::setw(40) << " " 
+  std::cout << std::setw(40) << " "
             << std::setw(10) << logK_
             << std::setw(10) << gram_molecular_weight()
             << std::endl;
-} // end Display()
+}  // end Display()

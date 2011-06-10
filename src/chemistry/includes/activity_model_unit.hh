@@ -21,4 +21,3 @@ class ActivityModelUnit : public ActivityModel {
 };
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
-

@@ -11,16 +11,14 @@
 #include "chemistry_exception.hh"
 #include "block.hh"
 
-SUITE(GeochemistryTestsAqueousEquilibriumComplex)
-{
+SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
   /*****************************************************************************
    **
    **  Test for AqueousEquilibriumComplex.cpp
    **
    *****************************************************************************/
 
-  class AqueousEquilibriumComplexTest
-  {
+  class AqueousEquilibriumComplexTest {
    public:
 
    protected:
@@ -43,7 +41,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
 
    private:
 
-  }; // end class AqueousEquilibriumComplexTest
+  };  // end class AqueousEquilibriumComplexTest
 
   AqueousEquilibriumComplexTest::AqueousEquilibriumComplexTest()
       : name_("CO3--"),
@@ -52,36 +50,34 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
       charge_(-2),
       gram_molecular_weight_(60.0092),
       ion_size_parameter_(4.5),
-      logK_(10.3288)
-      {
-        species_names_.clear();
-        stoichiometry_.clear();
-        species_ids_.clear();
+      logK_(10.3288) {
+    species_names_.clear();
+    stoichiometry_.clear();
+    species_ids_.clear();
 
-        species_names_.push_back("H+");
-        stoichiometry_.push_back(-1.0);
-        species_ids_.push_back(0);
+    species_names_.push_back("H+");
+    stoichiometry_.push_back(-1.0);
+    species_ids_.push_back(0);
 
-        species_names_.push_back("HCO3-");
-        stoichiometry_.push_back(1.0);
-        species_ids_.push_back(1);
-        SpeciesId id = 0;
-        SpeciesName name = "H+";
-        Species H_p = Species(id, name, 1.0, 1.0079, 9.0);
-        H_p.update(9.0e-4);
-        id = 1;
-        name = "HCO3-";
-        Species HCO3_m = Species(id, name, -1.0, 61.0171, 4.0);
-        HCO3_m.update(1.2e-3);
+    species_names_.push_back("HCO3-");
+    stoichiometry_.push_back(1.0);
+    species_ids_.push_back(1);
+    SpeciesId id = 0;
+    SpeciesName name = "H+";
+    Species H_p = Species(id, name, 1.0, 1.0079, 9.0);
+    H_p.update(9.0e-4);
+    id = 1;
+    name = "HCO3-";
+    Species HCO3_m = Species(id, name, -1.0, 61.0171, 4.0);
+    HCO3_m.update(1.2e-3);
 
-        primarySpecies_.clear();
-        primarySpecies_.push_back(H_p);
-        primarySpecies_.push_back(HCO3_m);
-      }
+    primarySpecies_.clear();
+    primarySpecies_.push_back(H_p);
+    primarySpecies_.push_back(HCO3_m);
+  }
 
 
-  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest()
-  {
+  AqueousEquilibriumComplexTest::~AqueousEquilibriumComplexTest() {
   }
 
   //
@@ -90,8 +86,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
   //
 
   // make sure we can create an object with the constructor
-  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_constructor)
-  {
+  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_constructor) {
     AqueousEquilibriumComplex aec(name_, id_,
                                   species_names_, stoichiometry_, species_ids_,
                                   h2o_stoich_, charge_, gram_molecular_weight_,
@@ -99,8 +94,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
     CHECK_EQUAL(id_, aec.identifier());
   }
 
-  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_lnK)
-  {
+  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_lnK) {
     AqueousEquilibriumComplex aec(name_, id_,
                                   species_names_, stoichiometry_, species_ids_,
                                   h2o_stoich_, charge_, gram_molecular_weight_,
@@ -109,8 +103,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
   }
 
   // public methods
-  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_Update)
-  {
+  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_Update) {
     AqueousEquilibriumComplex aec(name_, id_,
                                   species_names_, stoichiometry_, species_ids_,
                                   h2o_stoich_, charge_, gram_molecular_weight_,
@@ -119,8 +112,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
     CHECK_CLOSE(aec.lnQK(), -23.4952588360233, 1.0e-10);
   }
 
-  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_AddContributionToTotal)
-  {
+  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_AddContributionToTotal) {
     AqueousEquilibriumComplex aec(name_, id_,
                                   species_names_, stoichiometry_, species_ids_,
                                   h2o_stoich_, charge_, gram_molecular_weight_,
@@ -136,8 +128,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex)
     CHECK_ARRAY_CLOSE(total, expected, total.size(), 1.0e-15);
   }
 
-  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_AddContributionToDTotal)
-  {
+  TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_AddContributionToDTotal) {
     AqueousEquilibriumComplex aec(name_, id_,
                                   species_names_, stoichiometry_, species_ids_,
                                   h2o_stoich_, charge_, gram_molecular_weight_,

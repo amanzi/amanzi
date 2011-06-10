@@ -10,16 +10,14 @@
 #include "kinetic_rate.hh"
 #include "chemistry_exception.hh"
 
-SUITE(GeochemistryTestsKineticRate)
-{
+SUITE(GeochemistryTestsKineticRate) {
   /*****************************************************************************
    **
    **  Test for KineticRate.cpp
    **
    *****************************************************************************/
 
-  class KineticRateTest
-  {
+  class KineticRateTest {
    public:
 
    protected:
@@ -29,10 +27,9 @@ SUITE(GeochemistryTestsKineticRate)
     SpeciesArray species_;
    private:
 
-  }; // end class KineticRateTest
+  };  // end class KineticRateTest
 
-  KineticRateTest::KineticRateTest()
-  {
+  KineticRateTest::KineticRateTest() {
     // set primary species
     Species H_p(0, "H+", 1.0, 1.0079, 9.0);
     H_p.update(0.0005);
@@ -53,12 +50,11 @@ SUITE(GeochemistryTestsKineticRate)
     species_.push_back(CO3_mm);
     species_.push_back(Al_ppp);
     species_.push_back(PO4_mmm);
-    
+
   }
 
 
-  KineticRateTest::~KineticRateTest()
-  {
+  KineticRateTest::~KineticRateTest() {
   }
 
   //
@@ -66,8 +62,7 @@ SUITE(GeochemistryTestsKineticRate)
   // create and test. Only test the functions defined in this class,
   // leave the pure virtual functions for the inheriting classes.
   //
-  class MockKineticRate : public KineticRate
-  {
+  class MockKineticRate : public KineticRate {
    public:
     MockKineticRate() : KineticRate() {
       set_name("abc123");
@@ -77,12 +72,11 @@ SUITE(GeochemistryTestsKineticRate)
 
     void Setup(const SecondarySpecies& reaction,
                const StringTokenizer& reaction_data,
-               const SpeciesArray& primary_species)
-    {
+               const SpeciesArray& primary_species) {
       static_cast<void>(reaction);
       static_cast<void>(reaction_data);
       static_cast<void>(primary_species);
-    }; // end Setup()
+    };  // end Setup()
 
     void Update(const SpeciesArray& primary_species,
                 const std::vector<Mineral>& minerals)
@@ -90,35 +84,31 @@ SUITE(GeochemistryTestsKineticRate)
     {
       static_cast<void>(primary_species);
       static_cast<void>(minerals);
-    } // end Update()
+    }  // end Update()
 
     void AddContributionToResidual(const std::vector<Mineral>& minerals,
                                    const double por_den_sat_vol,
-                                   std::vector<double> *residual)
-    {
+                                   std::vector<double> *residual) {
       static_cast<void>(minerals);
       static_cast<void>(por_den_sat_vol);
       static_cast<void>(residual);
-    }; // end addContributionToResidual()
+    };  // end addContributionToResidual()
 
     void AddContributionToJacobian(const SpeciesArray& primary_species,
                                    const std::vector<Mineral>& minerals,
                                    const double por_den_sat_vol,
-                                   Block *J)
-    {
+                                   Block* J) {
       static_cast<void>(primary_species);
       static_cast<void>(minerals);
       static_cast<void>(por_den_sat_vol);
       static_cast<void>(J);
-    }; // end addContributionToJacobian()
+    };  // end addContributionToJacobian()
 
-    void Display(void) const
-    {
+    void Display(void) const {
       std::cout << this->name() << std::endl;
     };  // end Display()
 
-    void ParseParameters(const StringTokenizer& rate_parameters)
-    {
+    void ParseParameters(const StringTokenizer& rate_parameters) {
       static_cast<void>(rate_parameters);
     };  // end ParseParameters()
 
@@ -128,22 +118,19 @@ SUITE(GeochemistryTestsKineticRate)
 
   // make sure we can create an object with the constructor
   // can we set the identifier?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_constructor)
-  {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_constructor) {
     MockKineticRate rate;
     CHECK_EQUAL(rate.identifier(), 456);
   }
 
   // can we set the name?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_name)
-  {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_name) {
     MockKineticRate rate;
     CHECK_EQUAL(rate.name(), "abc123");
   }
 
   // can we set the verbosity?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_verbosity)
-  {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_set_verbosity) {
     MockKineticRate rate;
     rate.set_verbosity(kVerbose);
     CHECK_EQUAL(rate.verbosity(), kVerbose);
@@ -152,8 +139,7 @@ SUITE(GeochemistryTestsKineticRate)
   // does SetSpeciesIds function work?
   // TODO(bandre): what about testing for dummy/unknown species foo...?
   // TODO(bandre): is SetSpecesIds with a null out_stoichimontery used? needed?
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_id)
-  {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_id) {
     MockKineticRate rate;
 
     std::string species_type("primary");
@@ -180,8 +166,7 @@ SUITE(GeochemistryTestsKineticRate)
 
   }  // end TEST_FIXTURE(MockKineticRate_SetSpeciesIds_test_id)
 
-  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_stoich)
-  {
+  TEST_FIXTURE(KineticRateTest, MockKineticRate_SetSpeciesIds_test_stoich) {
     MockKineticRate rate;
 
     std::string species_type("primary");

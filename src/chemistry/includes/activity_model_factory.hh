@@ -22,4 +22,3 @@ class ActivityModelFactory {
 };
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
-

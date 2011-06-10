@@ -14,15 +14,15 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
 
  public:
   AqueousEquilibriumComplex();
-  AqueousEquilibriumComplex(const SpeciesName name, 
+  AqueousEquilibriumComplex(const SpeciesName name,
                             const SpeciesId id,
                             const std::vector<SpeciesName>& species,
                             const std::vector<double>& stoichiometry,
                             const std::vector<SpeciesId>& species_ids,
-                            const double h2o_stoich, 
-                            const double charge, 
+                            const double h2o_stoich,
+                            const double charge,
                             const double mol_wt,
-                            const double size, 
+                            const double size,
                             const double logK);
   ~AqueousEquilibriumComplex();
 
@@ -32,8 +32,8 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   virtual void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                               Block* dtotal);
-  
+                                       Block* dtotal);
+
   void display(void) const;
   void Display(void) const;
   void DisplayResultsHeader(void) const;
@@ -46,4 +46,4 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
 
 };
 
-#endif // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_
+#endif  // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_

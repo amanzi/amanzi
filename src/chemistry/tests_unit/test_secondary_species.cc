@@ -10,16 +10,14 @@
 #include "secondary_species.hh"
 #include "chemistry_exception.hh"
 
-SUITE(GeochemistryTestsSecondarySpecies)
-{
+SUITE(GeochemistryTestsSecondarySpecies) {
   /*****************************************************************************
    **
    **  Test for SecondarySpecies.cpp
    **
    *****************************************************************************/
 
-  class SecondarySpeciesTest
-  {
+  class SecondarySpeciesTest {
    public:
 
    protected:
@@ -39,7 +37,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
     std::vector<SpeciesId> species_ids_;
    private:
 
-  }; // end class SecondarySpeciesTest
+  };  // end class SecondarySpeciesTest
 
   SecondarySpeciesTest::SecondarySpeciesTest()
       : name_("CO3--"),
@@ -48,32 +46,29 @@ SUITE(GeochemistryTestsSecondarySpecies)
       charge_(-2),
       gram_molecular_weight_(60.0092),
       ion_size_parameter_(4.5),
-      logK_(10.3288)
-      {
-        species_names_.clear();
-        stoichiometry_.clear();
-        species_ids_.clear();
+      logK_(10.3288) {
+    species_names_.clear();
+    stoichiometry_.clear();
+    species_ids_.clear();
 
-        species_names_.push_back("H+");
-        stoichiometry_.push_back(-1.0);
-        species_ids_.push_back(0);
+    species_names_.push_back("H+");
+    stoichiometry_.push_back(-1.0);
+    species_ids_.push_back(0);
 
-        species_names_.push_back("HCO3-");
-        stoichiometry_.push_back(1.0);
-        species_ids_.push_back(1);
-      }
+    species_names_.push_back("HCO3-");
+    stoichiometry_.push_back(1.0);
+    species_ids_.push_back(1);
+  }
 
 
-  SecondarySpeciesTest::~SecondarySpeciesTest()
-  {
+  SecondarySpeciesTest::~SecondarySpeciesTest() {
   }
 
   //
   // SecondarySpecies has a pure virtual functions, need a dummy
   // object to create and test.
   //
-  class MockSecondarySpecies : public SecondarySpecies
-  {
+  class MockSecondarySpecies : public SecondarySpecies {
    public:
     MockSecondarySpecies() : SecondarySpecies() {};
     MockSecondarySpecies(const SpeciesName name, const SpeciesId id,
@@ -87,17 +82,15 @@ SUITE(GeochemistryTestsSecondarySpecies)
                          const double logK)
         : SecondarySpecies(name, id, species_names, stoichiometry, species_ids,
                            h2o_stoich, charge, mol_wt, size, logK) {};
-    void AddContributionToTotal(std::vector<double> *total)
-    {
+    void AddContributionToTotal(std::vector<double> *total) {
       static_cast<void>(total);
-    } // end addContributionToTotal()
+    }  // end addContributionToTotal()
 
     void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                 Block *dtotal)
-    {
+                                 Block* dtotal) {
       static_cast<void>(primary_species);
       static_cast<void>(dtotal);
-    } // end addContributionToDTotal()
+    }  // end addContributionToDTotal()
 
    protected:
    private:
@@ -109,8 +102,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
   //
 
   // make sure we can create an object with the constructor
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor) {
     MockSecondarySpecies secondary(name_, secondary_id_,
                                    species_names_, stoichiometry_, species_ids_,
                                    h2o_stoich_, charge_, gram_molecular_weight_,
@@ -119,8 +111,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
   }
 
   // was logK set?
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_logK)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_logK) {
     MockSecondarySpecies secondary(name_, secondary_id_,
                                    species_names_, stoichiometry_, species_ids_,
                                    h2o_stoich_, charge_, gram_molecular_weight_,
@@ -129,8 +120,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
   }
 
   // when logK is set, lnK should also be set
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_lnK)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_lnK) {
     MockSecondarySpecies secondary(name_, secondary_id_,
                                    species_names_, stoichiometry_, species_ids_,
                                    h2o_stoich_, charge_, gram_molecular_weight_,
@@ -139,8 +129,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
   }
 
   // was species_names set?
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_species_names)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_species_names) {
     MockSecondarySpecies secondary(name_, secondary_id_,
                                    species_names_, stoichiometry_, species_ids_,
                                    h2o_stoich_, charge_, gram_molecular_weight_,
@@ -151,8 +140,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
   }
 
   // was stoichiometry set?
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_stoichiometry)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_stoichiometry) {
     MockSecondarySpecies secondary(name_, secondary_id_,
                                    species_names_, stoichiometry_, species_ids_,
                                    h2o_stoich_, charge_, gram_molecular_weight_,
@@ -163,8 +151,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
   }
 
   // was species_ids set?
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_species_ids)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_constructor_species_ids) {
     MockSecondarySpecies secondary(name_, secondary_id_,
                                    species_names_, stoichiometry_, species_ids_,
                                    h2o_stoich_, charge_, gram_molecular_weight_,
@@ -179,8 +166,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
   //
 
   // ncomp is taken from the names array
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_invalid_ncomp)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_invalid_ncomp) {
     species_names_.clear();
     CHECK_THROW(
         MockSecondarySpecies secondary(name_, secondary_id_,
@@ -191,8 +177,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
 
   }
 
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry) {
     species_names_.push_back("Foo");
     CHECK_THROW(
         MockSecondarySpecies secondary(name_, secondary_id_,
@@ -202,8 +187,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
         ChemistryException);
   }
 
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry2)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry2) {
     stoichiometry_.push_back(3.4);
     CHECK_THROW(
         MockSecondarySpecies secondary(name_, secondary_id_,
@@ -213,8 +197,7 @@ SUITE(GeochemistryTestsSecondarySpecies)
         ChemistryException);
   }
 
-  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_ids)
-  {
+  TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_ids) {
     species_ids_.push_back(5);
     CHECK_THROW(
         MockSecondarySpecies secondary(name_, secondary_id_,

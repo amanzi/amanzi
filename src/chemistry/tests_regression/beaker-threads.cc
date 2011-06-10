@@ -23,7 +23,7 @@
 #include "verbosity.hh"
 #include "chemistry_exception.hh"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   Verbosity verbosity = kTerse;
   int test = 0;
   int error = EXIT_SUCCESS;
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   parameters.volume = 1.0;  // m^3
   parameters.water_density = 997.16;
   parameters.tolerance = 1.0e-12;
-  parameters.max_iterations= 250;
+  parameters.max_iterations = 250;
 
   // setup and initialize a beaker object for each thread
   int num_threads = omp_get_max_threads();
@@ -95,14 +95,11 @@ int main(int argc, char **argv) {
       try {
         mixing_cells[thread]->ReactionStep(&cell_components[thread], parameters, delta_time);
         mixing_cells[thread]->Speciate(cell_components[thread], parameters);
-      }
-      catch (const ChemistryException& geochem_error) {
+      } catch (const ChemistryException& geochem_error) {
         std::cout << geochem_error.what() << std::endl;
-      }
-      catch (const std::runtime_error& rt_error) {
+      } catch (const std::runtime_error& rt_error) {
         std::cout << rt_error.what() << std::endl;
-      }
-      catch (const std::logic_error& lg_error) {
+      } catch (const std::logic_error& lg_error) {
         std::cout << lg_error.what() << std::endl;
       }
     }
@@ -118,12 +115,11 @@ int main(int argc, char **argv) {
 }  // end main()
 
 
-int CommandLineOptions(int argc, char **argv, 
-                       Verbosity* verbosity)
-{
+int CommandLineOptions(int argc, char** argv,
+                       Verbosity* verbosity) {
   int error = EXIT_SUCCESS;
   int option;
-  extern char *optarg;
+  extern char* optarg;
 
   while ((option = getopt(argc, argv, "hv:?")) != -1) {
     switch (option) {
@@ -131,7 +127,8 @@ int CommandLineOptions(int argc, char **argv,
         *verbosity = static_cast<Verbosity>(std::atoi(optarg));
         break;
       }
-      case '?': case 'h': {  /* help mode */
+      case '?':
+      case 'h': {  /* help mode */
         /* print some help stuff and exit without doing anything */
         std::cout << argv[0] << " command line options:" << std::endl;
         std::cout << std::endl;
@@ -164,8 +161,7 @@ int CommandLineOptions(int argc, char **argv,
 
 
 
-void fbasin_source(Beaker::BeakerComponents* components)
-{
+void fbasin_source(Beaker::BeakerComponents* components) {
   fbasin_aqueous_source(components);
   fbasin_free_ions(components);
   fbasin_minerals(components);
@@ -173,8 +169,7 @@ void fbasin_source(Beaker::BeakerComponents* components)
 }  // end fbasin_source
 
 
-void fbasin_aqueous_source(Beaker::BeakerComponents* components)
-{
+void fbasin_aqueous_source(Beaker::BeakerComponents* components) {
   // constraint: source
   components->total.push_back(3.4363E-02);  // Na+
   components->total.push_back(1.2475E-05);  // Ca++
@@ -195,8 +190,7 @@ void fbasin_aqueous_source(Beaker::BeakerComponents* components)
   components->total.push_back(3.5414E-05);  // Tracer
 }  // end fbasin_aqueous_source
 
-void fbasin_free_ions(Beaker::BeakerComponents* components)
-{
+void fbasin_free_ions(Beaker::BeakerComponents* components) {
   // free ion concentrations (better initial guess)
   components->free_ion.push_back(9.9969E-06);  // Na+
   components->free_ion.push_back(9.9746E-06);  // Ca++
@@ -217,8 +211,7 @@ void fbasin_free_ions(Beaker::BeakerComponents* components)
   components->free_ion.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_free_ions()
 
-void fbasin_minerals(Beaker::BeakerComponents* components)
-{
+void fbasin_minerals(Beaker::BeakerComponents* components) {
   components->minerals.push_back(0.0);  // Gibbsite
   components->minerals.push_back(0.21);  // Quartz
   components->minerals.push_back(0.15);  // K-Feldspar
@@ -233,9 +226,6 @@ void fbasin_minerals(Beaker::BeakerComponents* components)
 
 }  // end fbasin_minerals()
 
-void fbasin_sorbed(Beaker::BeakerComponents* components)
-{
+void fbasin_sorbed(Beaker::BeakerComponents* components) {
   components->total_sorbed.resize(components->total.size(), 0.0);
 }  // end fbasin_sorbed
-
-

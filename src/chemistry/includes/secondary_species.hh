@@ -20,8 +20,8 @@ class SecondarySpecies : public Species {
                    const std::vector<SpeciesName>& species,
                    const std::vector<double>& stoichiometries,
                    const std::vector<SpeciesId>& species_ids,
-                   const double h2o_stoich, 
-                   const double charge, 
+                   const double h2o_stoich,
+                   const double charge,
                    const double mol_wt,
                    const double size,
                    const double logK);
@@ -34,27 +34,47 @@ class SecondarySpecies : public Species {
   virtual void AddContributionToTotal(std::vector<double> *total) = 0;
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                       Block *dtotal) = 0;
+                                       Block* dtotal) = 0;
 
-  int ncomp(void) const { return this->ncomp_; };
+  int ncomp(void) const {
+    return this->ncomp_;
+  };
 
-  void set_logK(const double in_logK) { this->logK_ = in_logK; };
-  double logK(void) const { return this->logK_; };
-  double lnK(void) const { return this->lnK_; };
-  double lnQK(void) const { return this->lnQK_; };
+  void set_logK(const double in_logK) {
+    this->logK_ = in_logK;
+  };
+  double logK(void) const {
+    return this->logK_;
+  };
+  double lnK(void) const {
+    return this->lnK_;
+  };
+  double lnQK(void) const {
+    return this->lnQK_;
+  };
 
-  std::vector<SpeciesName> species_names(void) const { return this->species_names_; };
-  std::vector<SpeciesId> species_ids(void) const { return this->species_ids_; };
-  std::vector<double> stoichiometry(void) const { return this->stoichiometry_; };
+  std::vector<SpeciesName> species_names(void) const {
+    return this->species_names_;
+  };
+  std::vector<SpeciesId> species_ids(void) const {
+    return this->species_ids_;
+  };
+  std::vector<double> stoichiometry(void) const {
+    return this->stoichiometry_;
+  };
 
   virtual void Display(void) const;
 
  protected:
-  
-  double log_to_ln(double d) { return d*2.30258509299; }
-  double ln_to_log(double d) { return d*0.434294481904; }
 
-  int ncomp_; // # components in reaction
+  double log_to_ln(double d) {
+    return d * 2.30258509299;
+  }
+  double ln_to_log(double d) {
+    return d * 0.434294481904;
+  }
+
+  int ncomp_;  // # components in reaction
   std::vector<SpeciesName> species_names_;
   std::vector<SpeciesId> species_ids_;       // ids of primary species in rxn
   std::vector<double> stoichiometry_;  // stoich of primary species in rxn
@@ -66,8 +86,10 @@ class SecondarySpecies : public Species {
 
  private:
   // should not be able to change ncomp after it is set in the constructor...?
-  //void set_ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
-  void ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
+  // void set_ncomp(const int in_ncomp) { this->ncomp_ = in_ncomp; };
+  void ncomp(const int in_ncomp) {
+    this->ncomp_ = in_ncomp;
+  };
 };
 
 #endif

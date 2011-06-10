@@ -7,7 +7,7 @@
 #include "beaker.hh"
 #include "verbosity.hh"
 
-int CommandLineOptions(int argc, char **argv,
+int CommandLineOptions(int argc, char** argv,
                        Verbosity* verbosity);
 
 void fbasin_source(Beaker::BeakerComponents* components);
@@ -16,4 +16,4 @@ void fbasin_free_ions(Beaker::BeakerComponents* components);
 void fbasin_minerals(Beaker::BeakerComponents* components);
 void fbasin_sorbed(Beaker::BeakerComponents* components);
 
-#endif 
+#endif
