@@ -53,6 +53,16 @@ double vanGenuchtenModel::d_saturation(double p)
     }
 }  
 
+
+double vanGenuchtenModel::pressure(double sl)
+{
+  double se = (sl - sr)/(1.0 - sr);
+  
+  return p_atm - ( pow( pow(se,-1.0/m) - 1.0, 1/n) )/alpha;
+  
+}
+
+
 void vanGenuchtenModel::update_p_atm(double new_p_atm)
 {
   p_atm = new_p_atm;

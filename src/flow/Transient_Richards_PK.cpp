@@ -63,8 +63,8 @@ int Transient_Richards_PK::advance()
   double hnext;
 
   // create udot
-  problem->SetInitialPressureProfileCells(0.0,pressure_cells);
-  problem->SetInitialPressureProfileFaces(0.0,pressure_faces);
+  problem->SetInitialPressureProfileCells(100.0,pressure_cells);
+  problem->SetInitialPressureProfileFaces(100.0,pressure_faces);
 
   Epetra_Vector udot(problem->Map());
   problem->Compute_udot(t0,  *solution, udot);
@@ -78,7 +78,6 @@ int Transient_Richards_PK::advance()
   int i = 0;
   double tlast = t0;
 
-  
   do {
     
     time_stepper->bdf2_step(h,0.0,20,*solution,hnext);
