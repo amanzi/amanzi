@@ -133,13 +133,20 @@ Mesh_simple::~Mesh_simple()
    cell_to_face_dirs_.resize(6*num_cells_);
    cell_to_node_.resize(8*num_cells_);
    face_to_node_.resize(4*num_faces_);
+   node_to_face_.resize(13*num_nodes_); // 1 extra for num faces
+   node_to_cell_.resize(9*num_nodes_); // 1 extra for num cells
+   face_to_cell_.resize(2*num_faces_); 
+   face_to_cell_.assign(2*num_faces_,-1); 
+                                          
 
    // loop over cells and initialize cell_to_node_
    for (int iz=0; iz<nz_; iz++)
      for (int iy=0; iy<ny_; iy++)
        for (int ix=0; ix<nx_; ix++)
    	 {
+	   int jstart=0;
    	   int istart = 8 * cell_index_(ix,iy,iz);
+	   int ncell=0;
 
    	   cell_to_node_[istart]   = node_index_(ix,iy,iz);
    	   cell_to_node_[istart+1] = node_index_(ix+1,iy,iz);
@@ -149,6 +156,47 @@ Mesh_simple::~Mesh_simple()
    	   cell_to_node_[istart+5] = node_index_(ix+1,iy,iz+1);
    	   cell_to_node_[istart+6] = node_index_(ix+1,iy+1,iz+1);
    	   cell_to_node_[istart+7] = node_index_(ix,iy+1,iz+1);
+
+	   jstart = 9 * node_index_(ix,iy,iz);
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   (node_to_cell_[jstart])++;
+
+	   jstart = 9 * node_index_(ix+1,iy,iz); 
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   (node_to_cell_[jstart])++;
+
+	   jstart = 9 * node_index_(ix+1,iy+1,iz); 
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   (node_to_cell_[jstart])++;
+
+	   jstart = 9 * node_index_(ix,iy+1,iz); 
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   (node_to_cell_[jstart])++;
+
+	   jstart = 9 * node_index_(ix,iy,iz+1);
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   node_to_cell_[jstart]++;
+
+	   jstart = 9 * node_index_(ix+1,iy,iz+1); // 1 extra for num cells
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   (node_to_cell_[jstart])++;
+
+	   jstart = 9 * node_index_(ix+1,iy+1,iz+1); // 1 extra for num cells
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   (node_to_cell_[jstart])++;
+
+	   jstart = 9 * node_index_(ix,iy+1,iz+1); // 1 extra for num cells
+	   ncell = node_to_cell_[jstart];
+	   node_to_cell_[jstart+ncell] = cell_index_(ix,iy,iz);
+	   (node_to_cell_[jstart])++;
+
    	 }
 
 
@@ -158,6 +206,7 @@ Mesh_simple::~Mesh_simple()
        for (int ix=0; ix<nx_; ix++)
    	 {
    	   int istart = 6 * cell_index_(ix,iy,iz);
+	   int jstart = 0;
 
    	   cell_to_face_[istart]    = xzface_index_(ix,iy,iz);
    	   cell_to_face_[istart+1]  = yzface_index_(ix+1,iy,iz);
@@ -172,7 +221,24 @@ Mesh_simple::~Mesh_simple()
 	   cell_to_face_dirs_[istart+3] = -1;
 	   cell_to_face_dirs_[istart+4] = -1;
 	   cell_to_face_dirs_[istart+5] = 1;
-	   
+
+	   jstart = 2*xzface_index_(ix,iy,iz);
+	   face_to_cell_[jstart+1] = cell_index_(ix,iy,iz);
+
+	   jstart = 2*yzface_index_(ix+1,iy,iz);
+	   face_to_cell_[jstart+1] = cell_index_(ix,iy,iz);
+
+   	   jstart = 2*xzface_index_(ix,iy+1,iz);
+	   face_to_cell_[jstart] = cell_index_(ix,iy,iz);
+
+   	   jstart = 2*yzface_index_(ix,iy,iz);
+	   face_to_cell_[jstart] = cell_index_(ix,iy,iz);
+
+   	   jstart = 2*xyface_index_(ix,iy,iz);
+	   face_to_cell_[jstart] = cell_index_(ix,iy,iz);
+
+   	   jstart = 2*xyface_index_(ix,iy,iz+1);
+	   face_to_cell_[jstart+1] = cell_index_(ix,iy,iz);
    	 }
 
 
@@ -183,11 +249,34 @@ Mesh_simple::~Mesh_simple()
        for (int ix=0; ix<nx_; ix++)  
    	 {
    	   int istart = 4 * xyface_index_(ix,iy,iz);
+	   int jstart = 0;
+	   int nfaces = 0;
 
    	   face_to_node_[istart]   = node_index_(ix,iy,iz);
    	   face_to_node_[istart+1] = node_index_(ix+1,iy,iz);
    	   face_to_node_[istart+2] = node_index_(ix+1,iy+1,iz);
    	   face_to_node_[istart+3] = node_index_(ix,iy+1,iz);
+
+   	   jstart = 13*node_index_(ix,iy,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix+1,iy,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix+1,iy+1,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix,iy+1,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
    	 }
    // then we do the xz faces
    for (int iz=0; iz<nz_; iz++)
@@ -195,11 +284,34 @@ Mesh_simple::~Mesh_simple()
        for (int ix=0; ix<nx_; ix++)  
    	 {
    	   int istart = 4 * xzface_index_(ix,iy,iz);
+	   int jstart = 0;
+	   int nfaces = 0;
 
    	   face_to_node_[istart]   = node_index_(ix,iy,iz);
    	   face_to_node_[istart+1] = node_index_(ix+1,iy,iz);
    	   face_to_node_[istart+2] = node_index_(ix+1,iy,iz+1);
    	   face_to_node_[istart+3] = node_index_(ix,iy,iz+1);
+
+   	   jstart = 13*node_index_(ix,iy,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix+1,iy,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix+1,iy,iz+1);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix+2,iy,iz+1);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
    	 }
    // finally we do the yz faces
    for (int iz=0; iz<nz_; iz++)
@@ -207,11 +319,34 @@ Mesh_simple::~Mesh_simple()
        for (int ix=0; ix<=nx_; ix++)  
    	 {
    	   int istart = 4 * yzface_index_(ix,iy,iz);
+	   int jstart = 0;
+	   int nfaces = 0;
 
    	   face_to_node_[istart]   = node_index_(ix,iy,iz);
    	   face_to_node_[istart+1] = node_index_(ix,iy+1,iz);
    	   face_to_node_[istart+2] = node_index_(ix,iy+1,iz+1);
    	   face_to_node_[istart+3] = node_index_(ix,iy,iz+1);
+
+   	   jstart = 13*node_index_(ix,iy,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix,iy+1,iz);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix,iy+1,iz+1);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
+   	   jstart = 13*node_index_(ix,iy,iz+1);
+	   nfaces = node_to_face_[jstart];
+	   node_to_face_[jstart+nfaces] = xyface_index_(ix,iy,iz);
+	   (node_to_face_[jstart])++;
+
    	 }
 
 
@@ -352,11 +487,6 @@ Mesh_simple::~Mesh_simple()
      }
    
    
-   
-
-
-
-
 
    build_maps_ ();
 }
@@ -467,13 +597,13 @@ unsigned int Mesh_simple::get_set_size (AmanziMesh::Set_ID set_id,
 void Mesh_simple::cell_get_faces (AmanziMesh::Entity_ID cell, 
 				  AmanziMesh::Entity_ID_List *faceids)  const 
 {
-  unsigned int index = 6*cell;
+  unsigned int offset = 6*cell;
 
   faceids->clear();
 
   for (int i = 0; i < 6; i++) {
-    faceids->push_back(*(cell_to_face_.begin()+index));
-    index++;
+    faceids->push_back(*(cell_to_face_.begin()+offset));
+    offset++;
   }
 }
 
@@ -482,13 +612,13 @@ void Mesh_simple::cell_get_faces (AmanziMesh::Entity_ID cell,
 void Mesh_simple::cell_get_nodes (AmanziMesh::Entity_ID cell, 
 				  AmanziMesh::Entity_ID_List *nodeids) const
 {
-  unsigned int index = 8*cell;
+  unsigned int offset = 8*cell;
 
   nodeids->clear();
 
   for (int i = 0; i < 8; i++) {
-    nodeids->push_back(*(cell_to_node_.begin()+index));
-    index++;
+    nodeids->push_back(*(cell_to_node_.begin()+offset));
+    offset++;
   }
 }
 
@@ -496,13 +626,13 @@ void Mesh_simple::cell_get_nodes (AmanziMesh::Entity_ID cell,
 void Mesh_simple::face_get_nodes (AmanziMesh::Entity_ID face, 
 				  AmanziMesh::Entity_ID_List *nodeids) const
 {
-  unsigned int index = 4*face;
+  unsigned int offset = 4*face;
 
   nodeids->clear();
 
   for (int i = 0; i < 4; i++) {
-    nodeids->push_back(*(face_to_node_.begin()+index));
-    index++;
+    nodeids->push_back(*(face_to_node_.begin()+offset));
+    offset++;
   }
 }
 
@@ -513,11 +643,11 @@ void Mesh_simple::face_get_nodes (AmanziMesh::Entity_ID face,
 void Mesh_simple::node_get_coordinates (const AmanziMesh::Entity_ID local_node_id, 
 					AmanziGeometry::Point *ncoords) const
 {
-  unsigned int index = 3*local_node_id;
+  unsigned int offset = 3*local_node_id;
 
   ncoords->init(3);
   
-  ncoords->set( &(coordinates_[index]) );
+  ncoords->set( &(coordinates_[offset]) );
 }
 
 
@@ -633,12 +763,12 @@ bool Mesh_simple::valid_set_id (AmanziMesh::Entity_ID id,
 void Mesh_simple::cell_get_face_dirs (AmanziMesh::Entity_ID cell, 
 				      std::vector<int> *cfacedirs) const
 {
-  unsigned int index = 6*cell;
+  unsigned int offset = 6*cell;
 
   cfacedirs->clear();
   for (int i = 0; i < 6; i++) {
-    cfacedirs->push_back(*(cell_to_face_dirs_.begin()+index));
-    index++;
+    cfacedirs->push_back(*(cell_to_face_dirs_.begin()+offset));
+    offset++;
   }
 }
 
@@ -647,9 +777,9 @@ void Mesh_simple::set_coordinate(AmanziMesh::Entity_ID local_node_id,
 				 double *source_begin, 
 				 double *source_end)
 {
-  unsigned int index = 3*local_node_id;
+  unsigned int offset = 3*local_node_id;
   
-  std::vector<double>::iterator destination_begin = coordinates_.begin() + index;
+  std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
   std::copy(source_begin, source_end, destination_begin);
 
 }
@@ -660,17 +790,33 @@ void Mesh_simple::node_get_cells (const AmanziMesh::Entity_ID nodeid,
 			   const AmanziMesh::Parallel_type ptype,
 			   AmanziMesh::Entity_ID_List *cellids) const 
 {
-  throw std::exception();
+  unsigned int offset = 9*nodeid;
+  unsigned int ncells = node_to_cell_[offset];
+
+  cellids->clear();
+
+  for (int i = 0; i < ncells; i++) 
+    cellids->push_back(node_to_cell_[offset+i]);
 }
     
+
+
 // Faces of type 'ptype' connected to a node
     
 void Mesh_simple::node_get_faces (const AmanziMesh::Entity_ID nodeid, 
 		     const AmanziMesh::Parallel_type ptype,
 		     AmanziMesh::Entity_ID_List *faceids) const
 {
-  throw std::exception();
+  unsigned int offset = 13*nodeid;
+  unsigned int nfaces = node_to_face_[offset];
+
+  faceids->clear();
+
+  for (int i = 0; i < nfaces; i++) 
+    faceids->push_back(node_to_face_[offset+i]);
 }   
+
+
  
 // Get faces of ptype of a particular cell that are connected to the
 // given node
@@ -680,7 +826,23 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
 			  const AmanziMesh::Parallel_type ptype,
 			  AmanziMesh::Entity_ID_List *faceids) const
 {
-  throw std::exception();
+  unsigned int offset = 6*cellid;
+
+  faceids->clear();
+
+  for (int i = 0; i < 6; i++) {
+    unsigned int cellfaceid = face_to_cell_[offset+i];
+
+    unsigned int offset2 = 4*cellfaceid;
+    
+    for (int j = 0; j < 4; j++) {
+      if (face_to_node_[offset2+j] == nodeid) {
+	faceids->push_back(cellfaceid);
+	break;
+      }
+    }
+  }
+
 }
     
 // Cells connected to a face
@@ -689,7 +851,14 @@ void Mesh_simple::face_get_cells (const AmanziMesh::Entity_ID faceid,
 		     const AmanziMesh::Parallel_type ptype,
 		     AmanziMesh::Entity_ID_List *cellids) const
 {
-  throw std::exception();
+  unsigned int offset = 2*faceid;
+
+  cellids->clear();
+
+  if (face_to_cell_[offset] != -1)
+    cellids->push_back(face_to_cell_[offset]);
+  if (face_to_cell_[offset+1] != -1)
+    cellids->push_back(face_to_cell_[offset+1]);
 }
     
 
@@ -709,7 +878,26 @@ void Mesh_simple::cell_get_face_adj_cells(const AmanziMesh::Entity_ID cellid,
 			     const AmanziMesh::Parallel_type ptype,
 			     AmanziMesh::Entity_ID_List *fadj_cellids) const
 {
-  throw std::exception();
+  unsigned int offset = 6*cellid;
+
+  fadj_cellids->clear();
+
+  for (int i = 0; i < 6; i++) {    
+    unsigned int faceid = cell_to_face_[offset];
+
+    unsigned int foffset = 2*faceid;
+
+    unsigned int adjcell0 = face_to_cell_[foffset];
+    if (adjcell0 != -1 && adjcell0 != cellid)
+      fadj_cellids->push_back(adjcell0);    
+    else {
+      unsigned int adjcell1 = face_to_cell_[foffset+1];
+      if (adjcell1 != -1 && adjcell1 != cellid)
+	fadj_cellids->push_back(adjcell1);
+    }
+
+    offset++;
+  }
 }
 
 // Node connected neighboring cells of given cell
@@ -720,7 +908,33 @@ void Mesh_simple::cell_get_node_adj_cells(const AmanziMesh::Entity_ID cellid,
 			     const AmanziMesh::Parallel_type ptype,
 			     AmanziMesh::Entity_ID_List *nadj_cellids) const
 {
-  throw std::exception();
+  unsigned int offset = 8*cellid;
+
+  nadj_cellids->clear();
+  
+  for (int i = 0; i < 8; i++) {
+    unsigned int nodeid = cell_to_node_[offset+i];
+
+    unsigned int offset2 = 9*nodeid;
+    unsigned int ncell = node_to_cell_[offset2];
+
+    for (int j = 0; j < 8; j++) {
+      unsigned int nodecell = node_to_cell_[offset2+j];
+      
+      unsigned int found = 0;
+      unsigned int size = nadj_cellids->size();
+      for (int k = 0; k < size; k++) {
+	if ((*nadj_cellids)[k] == nodecell) {
+	  found = 1;
+	  break;
+	}
+      }
+
+      if (!found)
+	nadj_cellids->push_back(nodecell);
+    }
+  }
+
 }
 
 
