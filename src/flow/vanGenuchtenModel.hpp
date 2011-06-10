@@ -18,6 +18,8 @@ public:
   void update_p_atm(double new_p_atm);
   const double get_p_atm() { return p_atm; };
 
+  double pressure(double saturation);
+
 private:
   const double m;     // van Genuchten m
   double n;           // van Genuchten n

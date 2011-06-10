@@ -53,7 +53,7 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   
  
   // compute F(u)
-  problem_->ComputeF(u, f);
+  problem_->ComputeF(u, f, t);
  
 
   Epetra_Vector *uc     = problem_->CreateCellView(u);  
@@ -63,6 +63,7 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   // compute S'(p)
   Epetra_Vector dS (problem_->CellMap());
   problem_->dSofP(*uc, dS);
+
   const Epetra_Vector& phi = FS_->porosity();
   double rho;
   problem_->GetFluidDensity(rho);
@@ -132,8 +133,8 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
 
-  double atol = 0.00001;
-  double rtol = 0.0;
+  double atol = 1.0;
+  double rtol = 0.00001;
 
   double en = 0.0;
   for (int j=0; j<u.MyLength(); j++)
