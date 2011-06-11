@@ -4,7 +4,7 @@
 #include "MPC.hpp"
 #include "State.hpp"
 #include "chemistry_state.hh"
-#include "chemistry_pK.hh"
+#include "chemistry_pk.hh"
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
 //#include "SteadyState_Richards_PK.hpp"
