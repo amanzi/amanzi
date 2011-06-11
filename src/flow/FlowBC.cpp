@@ -59,7 +59,12 @@ FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh_maps_base> 
       need_aux = true;
       read_value = true;
     }
-    else {
+    else if (type == "Time Dependent Pressure Constant" ) {
+      bc_[i].Type = TIME_DEPENDENT_PRESSURE_CONSTANT;
+      need_aux = true;
+      read_value = true;
+    }
+    else { 
       throw std::exception();
     }
 
@@ -70,6 +75,18 @@ FlowBC::FlowBC(Teuchos::ParameterList &list, const Teuchos::RCP<Mesh_maps_base> 
     if (read_value) {
       bc_[i].Value = bc_param.get<double>("BC value", DBL_MAX);
       if (bc_[i].Value == DBL_MAX) throw std::exception();
+
+      if (type == "Time Dependent Pressure Constant") {
+	bc_[i].InitialValue = bc_param.get<double>("Initial BC value", DBL_MAX);
+	if (bc_[i].InitialValue == DBL_MAX) throw std::exception();
+	
+	bc_[i].InitialTime = bc_param.get<double>("Initial Time",DBL_MAX);
+	if (bc_[i].InitialTime == DBL_MAX) throw std::exception();
+
+	bc_[i].FinalTime = bc_param.get<double>("Final Time",DBL_MAX);
+	if (bc_[i].FinalTime == DBL_MAX) throw std::exception();
+	
+      }
     }
   }
 }

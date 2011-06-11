@@ -108,13 +108,17 @@ Key bindings:
   :keymap my-flymake-minor-mode-map)
 
 
-(defun amanzi-standards-activate () "Activate Amanzi standards checking on this buffer" (interactive)
+(defun amanzi-standards-activate () 
+  "Activate Amanzi standards checking on this buffer" 
+  (interactive)
   (progn (google-set-c-style)
          (flymake-mode t)
          (my-flymake-minor-mode t)
          ()))
 
-(defun amanzi-standards-deactivate () "Deactivate Amanzi standards checking on this buffer" (interactive)
+(defun amanzi-standards-deactivate ()
+  "Deactivate Amanzi standards checking on this buffer" 
+  (interactive)
   (progn (flymake-mode nil)
          (my-flymake-minor-mode nil)))
 
@@ -129,7 +133,8 @@ Key bindings:
   (whitespace-cleanup)
   (untabify (region-beginning) (region-end))
   (indent-region (region-beginning) (region-end) nil)
-  (amanzi-astyle-chunk (region-beginning) (region-end) (current-buffer)))
+  (amanzi-astyle-chunk
+   (region-beginning) (region-end) (current-buffer)))
 
 
 (defun amanzi-fix-buffer ()
@@ -137,7 +142,8 @@ Key bindings:
   (whitespace-cleanup)
   (untabify (point-min) (point-max))
   (indent-region (point-min) (point-max) nil)
-  (amanzi-astyle-chunk (point-min) (point-max) (current-buffer)))
+  (amanzi-astyle-chunk
+   (point-min) (point-max) (current-buffer)))
 
 
 

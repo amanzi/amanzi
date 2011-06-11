@@ -12,6 +12,8 @@ public:
   
   const int mesh_block() { return meshblock; };
 
+  virtual double pressure(double sl) = 0;
+
 protected:
   void set_mesh_block(const int meshblock_) { meshblock = meshblock_; };
   int meshblock; 

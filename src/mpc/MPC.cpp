@@ -222,9 +222,13 @@ void MPC::cycle_driver () {
   double vizdump_time = 0.0;
   int vizdump_time_count = 0;
 
-  // first solve the flow equation
+  // first solve the flow equation to steady state
   if (flow_enabled) {
-    FPK->advance();
+    FPK->advance_to_steady_state();
+
+    // reset the time after the steady state solve
+    S->set_time(T0);
+    
     S->update_darcy_flux(FPK->Flux());
     S->update_pressure(FPK->Pressure());
     FPK->commit_state(FS);
@@ -305,15 +309,22 @@ void MPC::cycle_driver () {
     vizdump_time_count ++;
   }
 
-  if (chemistry_enabled || transport_enabled) {
+  if (chemistry_enabled || transport_enabled || flow_enabled) {
     // we need to create an EpetraMulitVector that will store the 
     // intermediate value for the total component concentration
     total_component_concentration_star =
       Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
     
     // then iterate transport and chemistry
-    while ( (S->get_time() <= T1)  &&  ((end_cycle == -1) || (iter <= end_cycle)) ) {
-      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99;
+    while (  (S->get_time() <= T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
+      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
+      
+      if (flow_enabled && flow_model == "Richards") 
+	{
+	  
+	  
+	  //flow_dT = FPK->get_flow_dT();
+	}
       
       if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
       
@@ -329,6 +340,7 @@ void MPC::cycle_driver () {
       std::cout << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
       
       if (transport_enabled) {
+
 	// now advance transport
 	TPK->advance( mpc_dT );	
 	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
@@ -347,7 +359,6 @@ void MPC::cycle_driver () {
 	*total_component_concentration_star = *S->get_total_component_concentration();
       }
 
-      
       
       if (chemistry_enabled) {
         try {
@@ -384,7 +395,6 @@ void MPC::cycle_driver () {
       
       // update the time in the state object
       S->advance_time(mpc_dT);
-      
       
       // we're done with this time step, commit the state 
       // in the process kernels

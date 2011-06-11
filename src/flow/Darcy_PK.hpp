@@ -18,7 +18,7 @@ public:
 
   ~Darcy_PK ();
 
-  int advance();
+  int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State>) {}
 
   // After a successful advance() the following routines may be called.

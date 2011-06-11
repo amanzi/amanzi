@@ -116,12 +116,13 @@ DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_ma
   for (int j = 0; j < bc->NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc)[j];
     switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-      case FlowBC::STATIC_HEAD:
-        dir_faces.reserve(dir_faces.size() + BC.Faces.size());
-        for (int i = 0; i < BC.Faces.size(); ++i)
-          dir_faces.push_back(BC.Faces[i]);
-        break;
+    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
+    case FlowBC::PRESSURE_CONSTANT:
+    case FlowBC::STATIC_HEAD:
+      dir_faces.reserve(dir_faces.size() + BC.Faces.size());
+      for (int i = 0; i < BC.Faces.size(); ++i)
+	dir_faces.push_back(BC.Faces[i]);
+      break;
     }
   }
   return new DiffusionMatrix(mesh, dir_faces);
@@ -315,9 +316,12 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
   precon_->Compute();
 }
 
-
-
 void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
+{
+  ComputeF(X,F,0.0);
+}
+
+void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time)
 {
   // The cell and face-based DoF are packed together into the X and F Epetra
   // vectors: cell-based DoF in the first part, followed by the face-based DoF.
@@ -342,7 +346,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   Pface.Import(Pface_own, *face_importer_, Insert);
 
   // Apply initial BC fixups to PFACE.
-  apply_BC_initial_(Pface); // modifies used values
+  apply_BC_initial_(Pface, time); // modifies used values
 
   // Create cell and face result vectors that include ghosts.
   Epetra_Vector Fcell(CellMap(true));
@@ -380,32 +384,53 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
 
 
 // BC fixups for F computation: initial pass.
-void RichardsProblem::apply_BC_initial_(Epetra_Vector &Pface)
+void RichardsProblem::apply_BC_initial_(Epetra_Vector &Pface, double time)
 {
   for (int j = 0; j < (*bc_).NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc_)[j];
     switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          BC.Aux[i] = Pface[n] - BC.Value;
-          Pface[n] = BC.Value;
-        }
-        break;
+    case FlowBC::PRESSURE_CONSTANT:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	BC.Aux[i] = Pface[n] - BC.Value;
+	Pface[n] = BC.Value;
+      }
+      break;
       // WARNING: THIS IS A ONE-OFF HACK.
       // It is assumed that g is aligned with z.
       // The BC value is used to set the height (for the entire
       // set of BC faces) of zero pressure.
-      case FlowBC::STATIC_HEAD:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          double x[3];
-          face_centroid_(n, x);
-          double p = rho_ * g_[2] * ( x[2]  - BC.Value);
-          BC.Aux[i] = Pface[n] - p - p_atm_;
-          Pface[n] = p + p_atm_;
-        }
-        break;
+    case FlowBC::STATIC_HEAD:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	double x[3];
+	face_centroid_(n, x);
+	double p = rho_ * g_[2] * ( x[2]  - BC.Value);
+	BC.Aux[i] = Pface[n] - p - p_atm_;
+	Pface[n] = p + p_atm_;
+      }
+      break;
+      
+    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+
+	double bcvalue;
+	if (time < BC.InitialTime) { bcvalue = BC.InitialValue; }
+	if (time >= BC.InitialTime && time <= BC.FinalTime) {
+	  double step = BC.Value - BC.InitialValue;
+	  double t = (time - BC.InitialTime)/(BC.FinalTime - BC.InitialTime);
+
+	  bcvalue = BC.InitialValue + step* t*t*(3.0 - 2.0*t);
+	  // std::cout << t << " " << bcvalue << std::endl;
+	}
+	if (time > BC.FinalTime) { bcvalue = BC.Value; }
+	 	
+	BC.Aux[i] = Pface[n] - bcvalue;
+	Pface[n] = bcvalue;      
+	
+      }
+      break;
     }
   }
 }
@@ -434,22 +459,23 @@ void RichardsProblem::apply_BC_final_(Epetra_Vector &Fface)
   for (int j = 0; j < (*bc_).NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc_)[j];
     switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-      case FlowBC::STATIC_HEAD:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          Fface[n] = BC.Aux[i];
-        }
-        break;
-      case FlowBC::DARCY_CONSTANT:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          Fface[n] += rho_ * BC.Value * md_->face_area_[n];
-        }
-        break;
-      case FlowBC::NO_FLOW:
-        // The do-nothing boundary condition.
-        break;
+    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
+    case FlowBC::PRESSURE_CONSTANT:
+    case FlowBC::STATIC_HEAD:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	Fface[n] = BC.Aux[i];
+      }
+      break;
+    case FlowBC::DARCY_CONSTANT:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	Fface[n] += rho_ * BC.Value * md_->face_area_[n];
+      }
+      break;
+    case FlowBC::NO_FLOW:
+      // The do-nothing boundary condition.
+      break;
     }
   }
 }
@@ -634,7 +660,7 @@ void RichardsProblem::SetInitialPressureProfileCells(double height, Epetra_Vecto
 	zavg += coords[k];
       zavg /= 8.0;
 
-      (*pressure)[j] = p_atm_ + rho_ * g_[2] * ( zavg - height );
+      (*pressure)[j] = 101325.0 + rho_ * g_[2] * ( zavg - height );
     }
 }
 
@@ -654,5 +680,44 @@ void RichardsProblem::SetInitialPressureProfileFaces(double height, Epetra_Vecto
       zavg /= 4.0;
 
       (*pressure)[j] = 101325.0 + rho_*g_[2] * ( zavg - height );
+    }
+}
+
+void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure)
+{
+  for (int mb=0; mb<WRM.size(); mb++) 
+    {
+      // get mesh block cells
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      std::vector<unsigned int> block(ncells);
+
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      
+      std::vector<unsigned int>::iterator j;
+      for (j = block.begin(); j!=block.end(); j++)
+	{
+	  (*pressure)[*j] = WRM[mb]->pressure(saturation);
+	}
+    }  
+}
+void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure)
+{
+  for (int mb=0; mb<WRM.size(); mb++) 
+    {
+      // get mesh block cells
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      std::vector<unsigned int> block(ncells);
+
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      
+      std::vector<unsigned int>::iterator j;
+      for (j = block.begin(); j!=block.end(); j++)
+	{
+	  (*pressure)[*j] = WRM[mb]->pressure(saturation);
+	}
     }
 }
