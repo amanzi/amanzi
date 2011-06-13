@@ -29,7 +29,7 @@
     <Parameter name="End Cycle" type="int" value="1000"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Richards"/>
-    <Parameter name="disable Transport_PK" type="string" value="no"/>
+    <Parameter name="disable Transport_PK" type="string" value="yes"/>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <Parameter name="Viz dump cycle frequency" type="int" value="10"/>
     <ParameterList name="CGNS">
