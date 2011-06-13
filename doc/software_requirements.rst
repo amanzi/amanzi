@@ -23,8 +23,8 @@ software libraries and tools present.
   not support non-MPI builds at this time.
 * BLAS/LAPACK built and tuned to the target architecture.
 
-Required External Software
-==========================
+Required Third-Party Software
+=============================
 
 Amanzi leverages existing software libraries whenever possible. Amanzi
 can not built until all the required libraries are built
@@ -43,8 +43,8 @@ types.  The build and test suite results for each OS is recorded and
 tracked on the ASCEM Trac site at
 https://software.lanl.gov/ascem/trac/buildbot.
 
-Libraries for Building Amanzi
------------------------------
+Required Libraries for Building Amanzi
+--------------------------------------
 
 CMake:
         :Versions: 2.8.3 required.
@@ -112,7 +112,7 @@ Trilinos:
         :Role: Used throughout Amanzi for data structures and algotithms
         
         - Eperta, a parallel-aware array libarary
-        - STK_mesh, a mesh database libary (optional)
+        - STKmesh, a mesh database libary (optional)
         - More...
 
         :Dependencies: ExodusII, (if STKmesh used) CMake
@@ -121,6 +121,13 @@ Trilinos:
 
 Optional Third-Party Libraries used in Amanzi
 ---------------------------------------------
+
+These libaries are not required to build Amanzi, but will provide it
+with additional capabilities.
+
+Not that, while each one of the mesh database libraries is listed as
+optional: STKMesh (above, in Trilinos) MOAB and MSTK, at least one of
+these is required for Amanzi to function.
 
 UnitTest++:
         :Versions: 1.4
@@ -170,7 +177,7 @@ XDMF:
         :Dependencies:
         :Information: 
 
-Visit:
+VisIt:
         :Versions:
         :Description:
         :Role: 
@@ -179,15 +186,9 @@ Visit:
 
 Doxygen:
         :Versions:
-        :Description:
-        :Role: 
+        :Description: A source-code to documentation tool.
+        :Role: Used to create the Amanzi code documentation and test descriptions.
         :Dependencies:
         :Information: 
-
-
-
-
-
-
 
 
