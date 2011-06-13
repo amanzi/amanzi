@@ -120,8 +120,8 @@ void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 double Reconstruction::getValue(const int cell, const Amanzi::AmanziGeometry::Point& p)
 {
   AmanziGeometry::Point xc(dim);
-  xc = mesh_->cell_centroid(cell); 
-  xc -= p;
+  xc = p;
+  xc -= mesh_->cell_centroid(cell); 
 
   double value = (*scalar_field_)[cell] + (gradient_[cell] * xc);
   return value;

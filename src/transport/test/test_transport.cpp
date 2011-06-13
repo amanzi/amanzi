@@ -89,8 +89,6 @@ TEST(FACES_VOLUMES) {
   RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 1, comm)); 
 
   State mpc_state(num_components, mesh);
-
-  /* create a transport state from the MPC state */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
   /* initialize a transport process kernel from a transport state */
@@ -204,33 +202,30 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
 
 /* **************************************************************** */
-TEST(CONVERGENCE_ANALYSIS) {
+TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
 
-  std::cout << "================ TEST CONVERGENCE ANALISYS ===================" << endl;
+  std::cout << "================ TEST CONVERGENCE ANALISYS: DONOR ==============" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
-  /* create a MPC state with one component */
-  for (int nx=20; nx<641; nx*=2 ) {
+  for (int nx=20; nx<321; nx*=2 ) {
     RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm)); 
 
-    /* create a MPC state with one component */
+    // create a MPC and Transport states with one component
     int num_components = 1;
     State mpc_state(num_components, mesh);
-
-    /* create a transport state from the MPC state and populate it */
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-    double u[3] = {1, 0, 0};
 
+    double u[3] = {1, 0, 0};
     TS->analytic_darcy_flux(u);
     TS->analytic_total_component_concentration(f_cubic);
     TS->analytic_porosity(1.0);
     TS->analytic_water_saturation(1.0);
     TS->analytic_water_density(1.0);
 
-    /* initialize a transport process kernel from a transport state */
+    // initialize a transport process kernel from a transport state
     ParameterList parameter_list;
     string xmlFileName = "test/test_transport.xml";
 
@@ -240,7 +235,7 @@ TEST(CONVERGENCE_ANALYSIS) {
     if (nx == 20) TPK.print_statistics();
     TPK.verbosity_level = 0;
 
-    /* advance the state */
+    // advance the state
     int i, k, iter = 0;
     double T = 0.0, T1 = 1.0;
 
@@ -257,7 +252,7 @@ TEST(CONVERGENCE_ANALYSIS) {
       iter++;
     }
 
-    /* calculate L1 error */
+    // calculate L1 and L2 errors
     double L1, L2;
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
@@ -265,4 +260,6 @@ TEST(CONVERGENCE_ANALYSIS) {
 
   delete comm;
 }
+
+
 

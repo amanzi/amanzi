@@ -59,6 +59,11 @@ if ( BUILD_TESTS )
     target_link_libraries(transport_serial ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(transport_serial transport_serial KIND unit)
 
+    # Test 2: high-order transport with a simple mesh
+    add_executable(transport_high_order test/Main.cc test/test_high_order.cpp)
+    target_link_libraries(transport_high_order ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(transport_high_order transport_high_order KIND unit)
+
     # Tests 2
     if ( ENABLE_MSTK_Mesh )
         include_directories(${MSTK_INCLUDE_DIRS})
