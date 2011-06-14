@@ -54,7 +54,7 @@ target_link_libraries(exodus_read_test exodus)
 # Install Targets
 #
 add_install_binary(exec_reader)
-add_install_binary(exec_read_test)
+add_install_binary(exodus_read_test)
 
 
 
