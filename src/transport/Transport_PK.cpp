@@ -1,3 +1,9 @@
+/*
+This is the transport component of the Amanzi code. 
+License: BSD
+Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <vector>
 
 #include "Epetra_Vector.h"
@@ -34,7 +40,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 
   MyPID = 0;
 
-  Init();
+  Init();  // must be moved out of the constructor (lipnikov@lanl.gov)
 }
 
 
@@ -165,7 +171,7 @@ void Transport_PK::process_parameter_list()
     if (type == "Constant") bcs[i].type = TRANSPORT_BC_CONSTANT_INFLUX;
 
     bcs[i].side_set_id = ssid;
-     if ( !mesh->valid_set_id( ssid, AmanziMesh::FACE )) {
+    if ( !mesh->valid_set_id( ssid, AmanziMesh::FACE )) {
       cout << "MyPID = " << MyPID << endl;
       cout << "Invalid set of mesh faces with ID " << ssid << endl;
       ASSERT(0);
@@ -173,10 +179,10 @@ void Transport_PK::process_parameter_list()
 
     // populate list of n boundary faces: it could be empty
     int n = mesh->get_set_size(ssid, AmanziMesh::FACE, AmanziMesh::OWNED);
-     n = mesh->get_set_size(ssid, AmanziMesh::FACE, AmanziMesh::OWNED);
+    n = mesh->get_set_size(ssid, AmanziMesh::FACE, AmanziMesh::OWNED);
     bcs[i].faces.resize(n);
 
-     mesh->get_set(ssid, AmanziMesh::FACE, AmanziMesh::OWNED, bcs[i].faces.begin(), bcs[i].faces.end());
+    mesh->get_set(ssid, AmanziMesh::FACE, AmanziMesh::OWNED, bcs[i].faces.begin(), bcs[i].faces.end());
 
     // allocate memory for influx and outflux vectors
     bcs[i].influx.resize(number_components);
@@ -193,10 +199,10 @@ void Transport_PK::process_parameter_list()
 void Transport_PK::print_statistics() const
 {
   if (!MyPID && verbosity_level > 0) {
-     cout << "Transport PK: CFL = " << cfl << endl;
-     cout << "              Total number of components = " << number_components << endl;
-     cout << "              Verbosity level = " << verbosity_level << endl;
-     cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+    cout << "Transport PK: CFL = " << cfl << endl;
+    cout << "              Total number of components = " << number_components << endl;
+    cout << "              Verbosity level = " << verbosity_level << endl;
+    cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
 
@@ -421,7 +427,7 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
     u = fabs(darcy_flux[f]);
 
     if (c1 >=0 && c1 <= cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
-      for( i=0; i<num_components; i++ ) {
+      for (i=0; i<num_components; i++) {
         tcc_flux = dT * u * (*tcc)[i][c1];
         (*tcc_next)[i][c1] -= tcc_flux;
         (*tcc_next)[i][c2] += tcc_flux;
@@ -507,7 +513,7 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& s
 
     double umin = std::min(u1, u2);
     double umax = std::max(u1, u2);
-    if (u2f > umax || u2f < umin) (*limiter)[c2] = std::max(0.0, (u1 - u2) / (u2f - u2)); 
+    if (u1f > umax || u1f < umin) (*limiter)[c1] = std::max(0.0, (u1 - u2) / (u1f - u2)); 
   } 
 }
 

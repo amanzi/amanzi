@@ -1,3 +1,9 @@
+/*
+The transport component of the Amanzi code. 
+License: BSD
+Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <cmath>
 #include <vector>
 

@@ -1,3 +1,9 @@
+/*
+The transport component of the Amanzi code, serial unit tests.
+License: BSD
+Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
