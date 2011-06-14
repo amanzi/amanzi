@@ -35,3 +35,10 @@ add_library(cell_geometry cell_geometry.cc)
 #
 add_library(mesh_audit MeshAudit.cc)
 target_link_libraries(mesh_audit error_handling cell_geometry ${Epetra_LIBRARIES})
+
+#
+# Install Targets
+#
+file(GLOB mesh_inc_files "*.hh")
+add_install_include_file(${mesh_inc_files})
+add_install_library(cell_geometry mesh_audit)

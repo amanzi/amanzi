@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(InstallManager)
 
 #
 # Define a project name
@@ -32,6 +33,12 @@ include_directories(${STATE_SOURCE_DIR})
 set(CHEM_INCLUDES_DIR "${CHEM_SOURCE_DIR}/includes")
 set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 include_directories(${CHEM_INCLUDES_DIR})
+
+#
+# Install targets
+#
+file(GLOB chem_inc "${CHEM_INCLUDES_DIR}/*")
+add_install_include_file(${chem_inc})
 
 
 

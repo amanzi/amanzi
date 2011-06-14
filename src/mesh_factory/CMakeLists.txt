@@ -38,10 +38,16 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 #
 # Library: mesh_factory
 #
-
 set(mesh_factory_files MeshFileType.cc MeshFramework.cc MeshFactory.cc FrameworkTraits.cc) 
 add_library(mesh_factory ${mesh_factory_files})
 target_link_libraries(mesh_factory error_handling mesh_data simple_mesh)
+
+#
+# Install Targets
+#
+file(GLOB mesh_factory_inc_files "*.hh")
+add_install_include_file(${mesh_factory_inc_files})
+add_install_library(mesh_factory)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})

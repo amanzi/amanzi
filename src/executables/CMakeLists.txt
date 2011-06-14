@@ -85,6 +85,7 @@ target_link_libraries(amanzi-demo-driver
                       ${demo_driver_pk_libs}
                       ${Trilinos_LIBRARIES}
                       ${Boost_LIBRARIES})
+add_install_binary(amanzi-demo-driver)		  
 
 #
 # Binary: stk_mesh_test_hex
@@ -94,6 +95,7 @@ if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
     target_link_libraries(stk_mesh_test_hex 
                          exodus mesh_data stk_mesh output mesh_audit
                          ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
+    add_install_binary(stk_mesh_test_hex)		     
 endif()
 
 #
@@ -102,6 +104,7 @@ endif()
 if ( ENABLE_STK_Mesh )
     add_executable(verify_stk_mesh verify_stk_mesh.cc)
     target_link_libraries(verify_stk_mesh stk_mesh mesh_audit exodus)
+    add_install_binary(verify_stk_mesh)
 endif()
 
 #
@@ -110,4 +113,5 @@ endif()
 if ( ENABLE_MOAB_Mesh )
     add_executable(verify_moab_mesh verify_moab_mesh.cc)
     target_link_libraries(verify_moab_mesh moab_mesh mesh_audit)
+    add_install_binary(verify_moab_mesh)
 endif()

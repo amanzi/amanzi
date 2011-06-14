@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(InstallManager)
 
 #
 # Define a project name
@@ -36,7 +37,12 @@ set(input_src_files input_base_class.cc simple_mesh_input.cc
 add_library(input ${input_src_files})
 target_link_libraries(input ${Teuchos_LIBRARIES})
 
-
+#
+# Install targets
+#
+file(GLOB include_files "*.hh")
+add_install_include_file(${include_files})
+add_install_library(input)
 
 
 # Add examples

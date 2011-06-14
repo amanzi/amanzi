@@ -50,6 +50,13 @@ target_link_libraries(exec_reader exodus)
 add_executable(exodus_read_test test/exodus_read_test.cc)
 target_link_libraries(exodus_read_test exodus)
 
+#
+# Install Targets
+#
+add_install_binary(exec_reader)
+add_install_binary(exec_read_test)
+
+
 
 if (BUILD_TESTS)
 

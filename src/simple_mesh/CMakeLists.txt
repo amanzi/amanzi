@@ -29,6 +29,13 @@ file(GLOB simple_mesh_source_files "*.cc")
 add_library(simple_mesh ${simple_mesh_source_files})
 target_link_libraries(simple_mesh ${Teuchos_LIBRARIES})
 
+#
+# Install Targets
+#
+file(GLOB simple_inc_files "*.hh")
+add_install_include_file(${simple_inc_files})
+add_install_library(simple_mesh)
+
 if (BUILD_TESTS)
 
     # Add UnitTest include directories

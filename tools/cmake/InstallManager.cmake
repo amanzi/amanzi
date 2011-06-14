@@ -17,7 +17,11 @@ include(PrintVariable)
 # 
 function ( ADD_INSTALL_INCLUDE_FILE )
 
-end function( ADD_INSTALL_INCLUDE_FILE )
+    foreach(_inc_file ${ARGV})
+	install(FILES ${_inc_file} DESTINATION include)
+    endforeach()	
+
+endfunction( ADD_INSTALL_INCLUDE_FILE )
 
 #
 # Usage: ADD_INSTALL_LIBRARY( lib1 lib2 lib3 ... )
@@ -28,7 +32,12 @@ end function( ADD_INSTALL_INCLUDE_FILE )
 # 
 function ( ADD_INSTALL_LIBRARY )
 
-end function( ADD_INSTALL_LIBRARY )
+	install(TARGETS ${ARGV}
+	        LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib
+		)
+
+endfunction( ADD_INSTALL_LIBRARY )
 
 #
 # Usage: ADD_INSTALL_BINARY( exe1 exe2 ... )
@@ -38,7 +47,12 @@ end function( ADD_INSTALL_LIBRARY )
 #
 # 
 function ( ADD_INSTALL_BINARY )
+    
+    foreach(_bin_file ${ARGV})
+	#install(PROGRAMS ${_bin_file} DESTINATION bin)
+	message(STATUS "BROKEN will nto install ${_bin_file}")
+    endforeach()	
 
-end function( ADD_INSTALL_BINARY )
+endfunction( ADD_INSTALL_BINARY )
 
 

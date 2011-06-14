@@ -38,6 +38,13 @@ add_definitions("-DUSE_MPI")
 add_library(transport Transport_PK.cpp Transport_State.cpp)
 target_link_libraries(transport  mesh_data error_handling state flow chemistry ${Epetra_LIBRARIES})
 
+#
+# Install Targets
+#
+file(GLOB transport_inc_files "*.hpp")
+add_install_include_file(${transport_inc_files})
+add_install_library(transport)
+
 if ( BUILD_TESTS )
 
     # Add UnitTest includes
