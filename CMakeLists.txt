@@ -88,6 +88,11 @@ endif()
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
+# Create the export Makefile
+include(InstallManager)
+create_export_makefile()
+
+# Write out the configuration log file and dump to the screen if requested
 option(ENABLE_Config_Report "Print out detailed information at the end of a configuration")
 set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
     CACHE string "Amanzi configuration log file")
@@ -109,4 +114,6 @@ if (ENABLE_Config_Report)
     message(STATUS "end configuration output --")
     message(STATUS "********************************************************************************")
 
-endif()    
+endif()
+
+

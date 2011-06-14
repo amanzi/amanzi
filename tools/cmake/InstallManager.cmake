@@ -54,4 +54,24 @@ function ( ADD_INSTALL_BINARY )
 
 endfunction( ADD_INSTALL_BINARY )
 
+#
+# Usage: create_export_makefile()
+#
+# Arguments: None
+#
+#
+function (CREATE_EXPORT_MAKEFILE)
 
+    # Template file locate in the CMake module directory
+    set(in_makefile "${AMANZI_MODULE_PATH}/MakefileConfig.export.in")
+    set(out_makefile "${AMANZI_BINARY_DIR}/Makefile.export")
+
+    # Find the packages found for Amanzi
+    get_property(AMANZI_TPL_LIST GLOBAL PROPERTY PACKAGES_FOUND) 
+
+    # Write the export Makefile and add to the include install list
+    configure_file("${in_makefile}" "${out_makefile}")
+    add_install_include_file("${out_makefile}")
+
+
+endfunction(CREATE_EXPORT_MAKEFILE)
