@@ -49,8 +49,8 @@ endfunction( ADD_INSTALL_LIBRARY )
 function ( ADD_INSTALL_BINARY )
     
     foreach(_bin_file ${ARGV})
-	#install(PROGRAMS ${_bin_file} DESTINATION bin)
-	message(STATUS "BROKEN will nto install ${_bin_file}")
+	install(TARGETS ${_bin_file} DESTINATION bin)
+	message(STATUS "BROKEN will not install ${_bin_file}")
     endforeach()	
 
 endfunction( ADD_INSTALL_BINARY )
