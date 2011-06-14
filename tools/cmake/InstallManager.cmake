@@ -50,7 +50,6 @@ function ( ADD_INSTALL_BINARY )
     
     foreach(_bin_file ${ARGV})
 	install(TARGETS ${_bin_file} DESTINATION bin)
-	message(STATUS "BROKEN will not install ${_bin_file}")
     endforeach()	
 
 endfunction( ADD_INSTALL_BINARY )
