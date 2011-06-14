@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(InstallManager)
 
 #
 # Define a project name
@@ -34,7 +35,6 @@ set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 include_directories(${CHEM_INCLUDES_DIR})
 
 
-
 add_subdirectory(utility)
 add_subdirectory(solvers)
 add_subdirectory(base_chemistry)
@@ -42,6 +42,11 @@ add_subdirectory(reactions)
 add_subdirectory(process_kernel)
 add_subdirectory(test_drivers)
 
+#
+# Install targets
+#
+file(GLOB chem_inc "${CHEM_INCLUDES_DIR}/*")
+add_install_include_file(${chem_inc})
 
 if (BUILD_TESTS)
   # Add the UnitTest includes

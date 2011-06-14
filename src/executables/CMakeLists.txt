@@ -87,6 +87,7 @@ target_link_libraries(amanzi-demo-driver
                       ${demo_driver_pk_libs}
                       ${Trilinos_LIBRARIES}
                       ${Boost_LIBRARIES})
+add_install_binary(amanzi-demo-driver)		  
 
 #
 # Binary: verify_mesh
@@ -94,3 +95,6 @@ target_link_libraries(amanzi-demo-driver
 add_executable(verify_mesh verify_mesh.cc)
 target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
                       ${Boost_LIBRARIES})
+    add_install_binary(stk_mesh_test_hex)		     
+    add_install_binary(verify_stk_mesh)
+    add_install_binary(verify_moab_mesh)

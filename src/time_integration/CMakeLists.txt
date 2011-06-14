@@ -40,6 +40,14 @@ set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIB
 list(REMOVE_DUPLICATES time_integration_tpl_libs)
 target_link_libraries(time_integration error_handling flow ${time_integration_tpl_libs})
 
+#
+# Install Targets
+#
+file(GLOB time_int_inc_files "*.hpp")
+add_install_include_file(${time_int_inc_files})
+add_install_library(time_integration)
+
+
 if (BUILD_TESTS)
 
     # Add UnitTest include directoy

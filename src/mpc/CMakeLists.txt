@@ -57,6 +57,13 @@ endif()
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 target_link_libraries(mpc solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
+#
+# Install Targets
+#
+file(GLOB mpc_inc_files "*.hpp")
+add_install_include_file(${mpc_inc_files})
+add_install_library(mpc)
+
 if (BUILD_TESTS)
 
   include_directories(${MESH_SIMPLE_SOURCE_DIR})

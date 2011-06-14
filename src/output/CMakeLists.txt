@@ -58,6 +58,13 @@ endif()
 add_library(output ${output_source_files})
 target_link_libraries(output error_handling simple_mesh mesh geometry ${output_tpl_list} )
 
+#
+# Install Targets
+#
+file(GLOB output_inc_files "*.h*")
+add_install_include_file(${output_inc_files})
+add_install_library(output)
+
 
 if (BUILD_TESTS)
 

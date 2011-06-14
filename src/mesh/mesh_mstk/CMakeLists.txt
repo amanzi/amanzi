@@ -43,6 +43,13 @@ set(mstk_mesh_files Mesh_MSTK.cc)
 add_library(mstk_mesh ${mstk_mesh_files})
 target_link_libraries(mstk_mesh mesh geometry error_handling ${MSTK_LIBRARIES} ${ExodusII_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
+#
+# Install Targets
+#
+file(GLOB mstk_inc_files "*.hh")
+add_install_include_file(${mstk_inc_files})
+add_install_library(mstk_mesh)
+
 if (BUILD_TESTS)
     
     # Add UnitTest ExodusII include directories
