@@ -55,19 +55,21 @@ CMake:
 
 
 Boost:
-        :Versions:
+        :Versions: 1.46.0
         :Description: C++ Library which extends the capabilibies of the standard library.
         :Role: Specific Boost libraries are used in various parts of the Amanzi code base.
 
-        - One libary   What it does
-        - Another one. What it does
+        - filesystem. Used to create directories, test directory existence and other
+          file system activities.
+        - graph. Used in the mesh audit tool.
+        - mpl. Meta-programming library used in the mesh factory.  
 
         :Dependencies: A good C++ compiler and reasonably modern platform.
         :Information: http://www.boost.org/
 
 
 zlib:
-        :Versions:
+        :Versions: 1.2.5
         :Description: Compression library
         :Role: Used by HDF5 for input and output.
         :Dependencies: 
@@ -75,7 +77,7 @@ zlib:
 
 
 cURL:
-        :Versions:
+        :Versions: 7.21.2
         :Description: Download tool.
         :Role: Used by netCDF  
         :Dependencies:
@@ -83,7 +85,7 @@ cURL:
 
 
 HDF5:
-        :Versions:
+        :Versions: 1.8.7
         :Description: File format libary
         :Role: Used by Amanzi for input and output of problem data.
         :Dependencies: zlib
@@ -91,15 +93,15 @@ HDF5:
 
 
 netCDF:
-        :Versions:
+        :Versions: 4.1.1
         :Description: File format libary
-        :Role: Used by Amanzi for input and output of problem data.
+        :Role: Used by Amanzi for input and output of mesh data.
         :Dependencies:  cURL, HDF5
         :Information: http://www.unidata.ucar.edu/software/netcdf/
 
 
 ExodusII:
-        :Versions:
+        :Versions: 4.98
         :Description: Mesh data base libary
         :Role: Used by Amanzi to describe mesh geometry for import.
         :Dependencies: netCDF
@@ -107,15 +109,15 @@ ExodusII:
 
 
 Trilinos:
-        :Versions:
+        :Versions: 10.6.4
         :Description: Library collection of tools for numberic computing in C++
         :Role: Used throughout Amanzi for data structures and algotithms
         
         - Eperta, a parallel-aware array libarary
         - STKmesh, a mesh database libary (optional)
-        - More...
+        - NOX. Nonlinear Object-Oriented Solutions package  
 
-        :Dependencies: ExodusII, (if STKmesh used) CMake
+        :Dependencies: ExodusII, (if STKmesh used) CMake, MPI
         :Information: http://trilinos.sandia.gov/
 
 
@@ -125,7 +127,7 @@ Optional Third-Party Libraries used in Amanzi
 These libaries are not required to build Amanzi, but will provide it
 with additional capabilities.
 
-Not that, while each one of the mesh database libraries is listed as
+Note that, while each one of the mesh database libraries is listed as
 optional: STKMesh (above, in Trilinos) MOAB and MSTK, at least one of
 these is required for Amanzi to function.
 
@@ -152,11 +154,11 @@ MSTK:
         :Information:  https://software.lanl.gov/MeshTools/trac
 
 ASCEM-IO:
-        :Versions:
-        :Description:
-        :Role: 
-        :Dependencies:
-        :Information: 
+        :Versions: 1.0
+        :Description: A parallel I/O library
+        :Role: Basis library used by the output class to create problem output.
+        :Dependencies: HDF5, netCDF
+        :Information: http://ascem-io.secure-water.org 
 
 
 
@@ -178,11 +180,11 @@ XDMF:
         :Information: 
 
 VisIt:
-        :Versions:
-        :Description:
-        :Role: 
-        :Dependencies:
-        :Information: 
+        :Versions: 2.2.2
+        :Description: Visualization program
+        :Role: Tool to view output data. 
+        :Dependencies: Pre-built binaries available (VERY difficult to build)
+        :Information: https://wci.llnl.gov/codes/visit/home.html
 
 Doxygen:
         :Versions:
