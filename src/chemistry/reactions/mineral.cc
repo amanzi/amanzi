@@ -1,8 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "mineral.hh"
+
 #include <iostream>
 #include <iomanip>
 
-#include "mineral.hh"
 #include "secondary_species.hh"
 #include "verbosity.hh"
 

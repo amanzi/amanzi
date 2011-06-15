@@ -65,11 +65,11 @@
 **
 **
 */
+#include "ion_exchange_complex.hh"
 
 #include <iostream>
 #include <iomanip>
 
-#include "ion_exchange_complex.hh"
 #include "block.hh"
 
 

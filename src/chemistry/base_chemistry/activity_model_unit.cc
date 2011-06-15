@@ -1,9 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "activity_model_unit.hh"
+
 #include <cmath>
 
 #include <iostream>
-
-#include "activity_model_unit.hh"
 
 ActivityModelUnit::ActivityModelUnit()
     : ActivityModel() {

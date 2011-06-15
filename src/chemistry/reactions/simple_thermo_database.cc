@@ -1,11 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-/*
-**
-** TODO(bandre): need a lot more error checking and helpfull error messages from here.
-**
-*/
-
 #include "simple_thermo_database.hh"
 
 #include <cstdlib>
@@ -29,6 +23,12 @@
 #include "chemistry_exception.hh"
 
 #include "exceptions.hh"
+
+/*
+**
+** TODO(bandre): need a lot more error checking and helpfull error messages from here.
+**
+*/
 
 SimpleThermoDatabase::SimpleThermoDatabase(void)
     : Beaker(),

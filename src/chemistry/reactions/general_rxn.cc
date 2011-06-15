@@ -1,9 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "general_rxn.hh"
+
 #include <cmath>
 
 #include <iostream>
 
-#include "general_rxn.hh"
 #include "block.hh"
 
 GeneralRxn::GeneralRxn() {

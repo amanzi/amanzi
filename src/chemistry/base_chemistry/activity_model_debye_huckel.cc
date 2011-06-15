@@ -1,9 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "activity_model_debye_huckel.hh"
+
 #include <cmath>
 
 #include <iostream>
-
-#include "activity_model_debye_huckel.hh"
 
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
 const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C

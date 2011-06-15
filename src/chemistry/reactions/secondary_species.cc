@@ -1,9 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "secondary_species.hh"
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
-#include "secondary_species.hh"
 #include "chemistry_exception.hh"
 
 #include "exceptions.hh"

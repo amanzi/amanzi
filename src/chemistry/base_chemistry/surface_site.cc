@@ -1,8 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "surface_site.hh"
+
 #include <iostream>
 #include <iomanip>
 
-#include "surface_site.hh"
 #include "block.hh"
 
 SurfaceSite::SurfaceSite()

@@ -1,10 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "activity_model.hh"
+
 #include <cmath>
 
 #include <vector>
 #include <iostream>
-
-#include "activity_model.hh"
 
 ActivityModel::ActivityModel()
     : I_(0.0) {

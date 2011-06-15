@@ -1,11 +1,12 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "species.hh"
+
 #include <cmath>
 
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 
-#include "species.hh"
 #include "chemistry_exception.hh"
 
 #include "exceptions.hh"

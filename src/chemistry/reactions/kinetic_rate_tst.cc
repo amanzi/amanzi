@@ -63,13 +63,14 @@
  **    - TODO(bandre): where should the mineral mass get updated at....?
  **
  *******************************************************************************/
+#include "kinetic_rate_tst.hh"
+
 #include <cmath>
 #include <cstdlib>
 
 #include <iostream>
 
 #include "secondary_species.hh"
-#include "kinetic_rate_tst.hh"
 #include "block.hh"
 #include "string_tokenizer.hh"
 #include "verbosity.hh"

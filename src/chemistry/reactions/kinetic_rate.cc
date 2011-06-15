@@ -1,10 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "kinetic_rate.hh"
+
 #include <cstdlib>
 
 #include <iostream>
 #include <iomanip>
 
-#include "kinetic_rate.hh"
 #include "string_tokenizer.hh"
 #include "verbosity.hh"
 

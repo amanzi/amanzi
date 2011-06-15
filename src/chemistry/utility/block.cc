@@ -1,10 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "block.hh"
+
 #include <cmath>
 
 #include <iostream>
 #include <iomanip>
-
-#include "block.hh"
 
 Block::Block() {
   size = 0;

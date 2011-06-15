@@ -1,10 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+#include "ion_exchange_site.hh"
+
 #include <cmath>
 
 #include <iostream>
 #include <iomanip>
-
-#include "ion_exchange_site.hh"
 
 IonExchangeSite::IonExchangeSite()
     : Species(),
