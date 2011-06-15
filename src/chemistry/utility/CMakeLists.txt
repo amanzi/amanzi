@@ -9,13 +9,12 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(SRCS 
-	 ./Block.cpp 
-	 ./FileIO.cpp 
-	 ./Glenn.cpp 
-	 ./ChemistryException.cpp
-	 ./StringTokenizer.cpp
+	 ./block.cc 
+	 ./file_io.cc 
+	 ./glenn.cc 
+	 ./chemistry_exception.cc
+	 ./string_tokenizer.cc
 )
 
 add_library(geochemutil ${SRCS}) 
-add_install_library(geochemutil)
 

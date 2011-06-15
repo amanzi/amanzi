@@ -9,10 +9,9 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(SRCS 
-	 ./LU.cpp 
-	 ./Newton.cpp 
+	 ./lu.cc
+	 ./newton.cc 
 )
 
 add_library(geochemsolvers ${SRCS}) 
-add_install_library(geochemsolvers)
 

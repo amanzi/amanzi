@@ -1,0 +1,10 @@
+--convert-tabs
+--brackets=attach
+--indent=spaces=2
+--pad-oper
+--unpad-paren
+--pad-header
+--add-brackets
+--align-pointer=type
+--lineend=linux
+

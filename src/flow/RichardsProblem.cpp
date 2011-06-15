@@ -4,6 +4,10 @@
 #include "vanGenuchtenModel.hpp"
 #include "Mesh_maps_base.hh"
 
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+
 RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
 			   Teuchos::ParameterList &list,
 			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
@@ -29,30 +33,57 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
 
+
+  p_atm_ = list.get<double>("Atmospheric pressure");
+  
+  Teuchos::ParameterList &vGsl = list.sublist("Water retention models");
+
   // read the water retention model sublist and create the WRM array
-  int nblocks = list.get<int>("Number of mesh blocks");
+
+  // first figure out how many entries there are
+  int nblocks = 0;
+  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++)
+    {
+      // only count sublists
+      if (vGsl.isSublist(vGsl.name(i))) 
+	{
+	  nblocks++;
+	}
+      else
+	{
+	  // currently we only support van Genuchten, if a user
+	  // specifies something else, throw a meaningful error...
+	  Errors::Message m("RichardsProblem: the Water retention models sublist contains an entry that is not a sublist!");
+	  Exceptions::amanzi_throw(m);
+	}
+    }
+
   WRM.resize(nblocks);
   
-  for (int nb = 0; nb < nblocks; nb++)
+  int iblock = 0;
+  
+  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++)
     {
-      std::stringstream ss;
-      ss << "WRM " << nb;
-      Teuchos::ParameterList &wrmlist = list.sublist(ss.str());
-
-      // which water retention model are we using?
-      if (wrmlist.get<string>("Water Retention Model") == "van Genuchten") 
-	{
-	  // read the mesh block number that this model applies to
-	  int meshblock = wrmlist.get<int>("Mesh Block ID");
-
-	  // read values for the van Genuchten model
-	  double vG_m_      = wrmlist.get<double>("van Genuchten m");
-	  double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
-	  double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
-	  double p_atm_     = wrmlist.get<double>("atmospheric pressure");
-
-	  WRM[nb] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
-						       vG_sr_,p_atm_));
+      if (vGsl.isSublist(vGsl.name(i)))
+	{      
+	  Teuchos::ParameterList &wrmlist = vGsl.sublist( vGsl.name(i) );
+	  
+	  // which water retention model are we using? currently we only have van Genuchten
+	  if ( wrmlist.get<string>("Water retention model") == "van Genuchten") 
+	    {
+	      // read the mesh block number that this model applies to
+	      int meshblock = wrmlist.get<int>("Region ID");
+	      
+	      // read values for the van Genuchten model
+	      double vG_m_      = wrmlist.get<double>("van Genuchten m");
+	      double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
+	      double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
+	      
+	      WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
+							       vG_sr_,p_atm_));
+	    }
+	  
+	  iblock++;
 	}
     }
 
@@ -85,12 +116,13 @@ DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_ma
   for (int j = 0; j < bc->NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc)[j];
     switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-      case FlowBC::STATIC_HEAD:
-        dir_faces.reserve(dir_faces.size() + BC.Faces.size());
-        for (int i = 0; i < BC.Faces.size(); ++i)
-          dir_faces.push_back(BC.Faces[i]);
-        break;
+    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
+    case FlowBC::PRESSURE_CONSTANT:
+    case FlowBC::STATIC_HEAD:
+      dir_faces.reserve(dir_faces.size() + BC.Faces.size());
+      for (int i = 0; i < BC.Faces.size(); ++i)
+	dir_faces.push_back(BC.Faces[i]);
+      break;
     }
   }
   return new DiffusionMatrix(mesh, dir_faces);
@@ -163,10 +195,12 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,Mesh_data::CELL,OWNED);
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -181,10 +215,12 @@ void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,Mesh_data::CELL,OWNED);
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -201,10 +237,12 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int ncells = mesh_->get_set_size(mb,Mesh_data::CELL,OWNED);
+      unsigned int mb_id = WRM[mb]->mesh_block();
+      
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -278,9 +316,12 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
   precon_->Compute();
 }
 
-
-
 void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
+{
+  ComputeF(X,F,0.0);
+}
+
+void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time)
 {
   // The cell and face-based DoF are packed together into the X and F Epetra
   // vectors: cell-based DoF in the first part, followed by the face-based DoF.
@@ -305,7 +346,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   Pface.Import(Pface_own, *face_importer_, Insert);
 
   // Apply initial BC fixups to PFACE.
-  apply_BC_initial_(Pface); // modifies used values
+  apply_BC_initial_(Pface, time); // modifies used values
 
   // Create cell and face result vectors that include ghosts.
   Epetra_Vector Fcell(CellMap(true));
@@ -343,32 +384,53 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
 
 
 // BC fixups for F computation: initial pass.
-void RichardsProblem::apply_BC_initial_(Epetra_Vector &Pface)
+void RichardsProblem::apply_BC_initial_(Epetra_Vector &Pface, double time)
 {
   for (int j = 0; j < (*bc_).NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc_)[j];
     switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          BC.Aux[i] = Pface[n] - BC.Value;
-          Pface[n] = BC.Value;
-        }
-        break;
+    case FlowBC::PRESSURE_CONSTANT:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	BC.Aux[i] = Pface[n] - BC.Value;
+	Pface[n] = BC.Value;
+      }
+      break;
       // WARNING: THIS IS A ONE-OFF HACK.
       // It is assumed that g is aligned with z.
       // The BC value is used to set the height (for the entire
       // set of BC faces) of zero pressure.
-      case FlowBC::STATIC_HEAD:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          double x[3];
-          face_centroid_(n, x);
-          double p = rho_ * g_[2] * ( x[2]  - BC.Value);
-          BC.Aux[i] = Pface[n] - p - p_atm_;
-          Pface[n] = p + p_atm_;
-        }
-        break;
+    case FlowBC::STATIC_HEAD:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	double x[3];
+	face_centroid_(n, x);
+	double p = rho_ * g_[2] * ( x[2]  - BC.Value);
+	BC.Aux[i] = Pface[n] - p - p_atm_;
+	Pface[n] = p + p_atm_;
+      }
+      break;
+      
+    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+
+	double bcvalue;
+	if (time < BC.InitialTime) { bcvalue = BC.InitialValue; }
+	if (time >= BC.InitialTime && time <= BC.FinalTime) {
+	  double step = BC.Value - BC.InitialValue;
+	  double t = (time - BC.InitialTime)/(BC.FinalTime - BC.InitialTime);
+
+	  bcvalue = BC.InitialValue + step* t*t*(3.0 - 2.0*t);
+	  // std::cout << t << " " << bcvalue << std::endl;
+	}
+	if (time > BC.FinalTime) { bcvalue = BC.Value; }
+	 	
+	BC.Aux[i] = Pface[n] - bcvalue;
+	Pface[n] = bcvalue;      
+	
+      }
+      break;
     }
   }
 }
@@ -397,22 +459,23 @@ void RichardsProblem::apply_BC_final_(Epetra_Vector &Fface)
   for (int j = 0; j < (*bc_).NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc_)[j];
     switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-      case FlowBC::STATIC_HEAD:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          Fface[n] = BC.Aux[i];
-        }
-        break;
-      case FlowBC::DARCY_CONSTANT:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          Fface[n] += rho_ * BC.Value * md_->face_area_[n];
-        }
-        break;
-      case FlowBC::NO_FLOW:
-        // The do-nothing boundary condition.
-        break;
+    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
+    case FlowBC::PRESSURE_CONSTANT:
+    case FlowBC::STATIC_HEAD:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	Fface[n] = BC.Aux[i];
+      }
+      break;
+    case FlowBC::DARCY_CONSTANT:
+      for (int i = 0; i < BC.Faces.size(); ++i) {
+	int n = BC.Faces[i];
+	Fface[n] += rho_ * BC.Value * md_->face_area_[n];
+      }
+      break;
+    case FlowBC::NO_FLOW:
+      // The do-nothing boundary condition.
+      break;
     }
   }
 }
@@ -579,4 +642,82 @@ void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetr
   Epetra_Vector *udot_face = CreateFaceView(udot);
   udot_face->PutScalar(0.0);
 
+}
+
+
+
+void RichardsProblem::SetInitialPressureProfileCells(double height, Epetra_Vector *pressure)
+{
+  for (int j=0; j<pressure->MyLength(); j++)
+    {
+      std::vector<double> coords;
+      coords.resize(24);
+      FS->mesh()->cell_to_coordinates(j, coords.begin(), coords.end());
+      
+      // average the x coordinates
+      double zavg = 0.0;
+      for (int k=2; k<24; k+=3)
+	zavg += coords[k];
+      zavg /= 8.0;
+
+      (*pressure)[j] = 101325.0 + rho_ * g_[2] * ( zavg - height );
+    }
+}
+
+
+void RichardsProblem::SetInitialPressureProfileFaces(double height, Epetra_Vector *pressure)
+{
+  for (int j=0; j<pressure->MyLength(); j++)
+    {
+      std::vector<double> coords;
+      coords.resize(12);
+      FS->mesh()->face_to_coordinates(j, coords.begin(), coords.end());
+
+      // average the x coordinates
+      double zavg = 0.0;
+      for (int k=2; k<12; k+=3)
+	zavg += coords[k];
+      zavg /= 4.0;
+
+      (*pressure)[j] = 101325.0 + rho_*g_[2] * ( zavg - height );
+    }
+}
+
+void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure)
+{
+  for (int mb=0; mb<WRM.size(); mb++) 
+    {
+      // get mesh block cells
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      std::vector<unsigned int> block(ncells);
+
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      
+      std::vector<unsigned int>::iterator j;
+      for (j = block.begin(); j!=block.end(); j++)
+	{
+	  (*pressure)[*j] = WRM[mb]->pressure(saturation);
+	}
+    }  
+}
+void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure)
+{
+  for (int mb=0; mb<WRM.size(); mb++) 
+    {
+      // get mesh block cells
+      unsigned int mb_id = WRM[mb]->mesh_block();
+
+      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      std::vector<unsigned int> block(ncells);
+
+      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      
+      std::vector<unsigned int>::iterator j;
+      for (j = block.begin(); j!=block.end(); j++)
+	{
+	  (*pressure)[*j] = WRM[mb]->pressure(saturation);
+	}
+    }
 }

@@ -1,0 +1,75 @@
+<!-- unit test input for the chemistry process kernel -->
+<ParameterList name="Main">
+
+  <ParameterList name="Simple Mesh Parameters">
+      <Parameter name="X_Min" type="double" value="0.0"/>
+      <Parameter name="X_Max" type="double" value="1.0"/>
+      <Parameter name="Y_Min" type="double" value="0.0"/>
+      <Parameter name="Y_Max" type="double" value="1.0"/>
+      <Parameter name="Z_Min" type="double" value="0.0"/>
+      <Parameter name="Z_Max" type="double" value="1.0"/>
+      <Parameter name="Numer of Cells in X" type="int" value="10"/> 
+      <Parameter name="Numer of Cells in Y" type="int" value="1"/> 
+      <Parameter name="Numer of Cells in Z" type="int" value="1"/> 
+  </ParameterList>
+  
+  <ParameterList name="State">
+    <Parameter name="Number of mesh blocks" type="int" value="1"/>
+    <Parameter name="Number of component concentrations" type="int" value="5"/>
+    <Parameter name="Constant water saturation" type="double" value="1.0"/>
+    <Parameter name="Constant water density" type="double" value="1000.0"/>
+    <Parameter name="Constant viscosity" type="double" value="0.001308"/>
+    <Parameter name="Gravity x" type="double" value="0.0"/>
+    <Parameter name="Gravity y" type="double" value="0.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.8"/>
+
+    <ParameterList name="Mesh block 1"> 
+      <Parameter name="Mesh block ID" type="int" value="0"/>
+      <Parameter name="Constant porosity" type="double" value="0.1"/>
+      <Parameter name="Constant permeability" type="double" value="1.0e-10"/>
+      <Parameter name="Constant Darcy flux x" type="double" value="1.0e-7"/>
+      <Parameter name="Constant Darcy flux y" type="double" value="0"/>
+      <Parameter name="Constant Darcy flux z" type="double" value="0"/>
+      <Parameter name="Constant component concentration 0" type="double" value="6.5874E-09"/>  <!-- Al+++ -->
+      <Parameter name="Constant component concentration 1" type="double" value="2.1593E-08"/>  <!-- H+ -->
+      <Parameter name="Constant component concentration 2" type="double" value="1.0000E-06"/>  <!-- HPO4-2 -->
+      <Parameter name="Constant component concentration 3" type="double" value="1.8703E-04"/>  <!-- SiO2(aq) -->
+      <Parameter name="Constant component concentration 4" type="double" value="1.0000E-15"/>  <!-- UO2++ -->
+   </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Chemistry">
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
+    <Parameter name="Thermodynamic Database File" type="string" value="test_chemistry_pk.bgd" />
+    <Parameter name="Verbosity" type="int" value="1" />
+    <Parameter name="Activity Model" type="string" value="debye-huckel" />
+    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
+    <Parameter name="Using sorption" type="string" value="yes"/>
+    <Parameter name="Free ion concentrations provided" type="string" value="yes"/>
+    <ParameterList name="Initial Conditions">
+      <Parameter name="Number of minerals" type="int" value="3"/>
+      <Parameter name="Number of ion exchange sites" type="int" value="0"/>
+      <Parameter name="Number of sorption sites" type="int" value="0"/>
+      <Parameter name="Number of mesh blocks" type="int" value="1"/>
+      <ParameterList name="Mesh block 1"> 
+        <Parameter name="Mesh block ID" type="int" value="0"/>
+        <ParameterList name="Free Ion Species">
+	  <Parameter name="Free Ion Species 0" type="double" value="4.36476e-16"/>  <!-- Al+++ -->
+	  <Parameter name="Free Ion Species 1" type="double" value="3.16772e-08"/>  <!-- H+ -->
+	  <Parameter name="Free Ion Species 2" type="double" value="1.00000e-06"/>  <!-- HPO4-2 -->
+	  <Parameter name="Free Ion Species 3" type="double" value="1.87000e-04"/>  <!-- SiO2(aq) -->
+	  <Parameter name="Free Ion Species 4" type="double" value="1.84374e-20"/>  <!-- UO2++ -->
+        </ParameterList>
+        <ParameterList name="Minerals">
+          <Parameter name="Mineral 0" type="double" value="0.15"/>  <!-- Kaolinite -->
+          <Parameter name="Mineral 1" type="double" value="0.21"/>  <!-- Quartz -->
+          <Parameter name="Mineral 2" type="double" value="0.0"/>   <!-- (UO2)3(PO4)2.4H2O -->
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+
+</ParameterList>

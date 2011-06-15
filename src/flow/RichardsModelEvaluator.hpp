@@ -51,6 +51,8 @@ private:
   Teuchos::ParameterList& plist_;
   Teuchos::RCP<const Flow_State> FS_;
 
+  double atol, rtol;
+
 };
 
 #endif // RICHARDS_MODEL_EVALUATOR_HPP 

@@ -37,6 +37,16 @@ TEST(vanGenuchten) {
 	      (1.0-sr)*(-m)*pow(1.0+pow(alpha*p_atm,1.0/(1.0-m)),-m-1.0)
 	      *(-alpha)*pow(alpha*p_atm,m/(1.0-m))/(1.0-m),1e-15);
   
+
+  // double h = 1e-7;
+  
+  // for (int i=1; i<=1000; i+=20) {
+  //   double p = p_atm - (double)i;
+  
+  //   std::cout << p << " " << vG.d_saturation(p) << " " << (vG.saturation(p+0.5*h)-vG.saturation(p-0.5*h))/(h)<< std::endl;
+  
+  // }
+
 }
 
 

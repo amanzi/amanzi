@@ -19,7 +19,7 @@
 #     another system in a way that is difficult to debug.
 #
 #   - select one of the example configuration files,
-#     dot.amanzi-tpl.XXXXX, that is most appropriate for your system.
+#     amanzi-tpls.XXXXX, that is most appropriate for your system.
 #
 #   - Use your package manager to install: wget, boost, curl, unittest++, etc
 #
@@ -28,11 +28,11 @@
 #   - Download the source for the packages you want installed by this script.
 #     Trilinos and moab must be downloaded manually (download sites are listed 
 #     below). The remaining TPLs can be automatically downloaded with the "-d" 
-#     option to amanzi-tpl.sh.
+#     option to amanzi-tpls.sh.
 #
 #   - Place the package archives into a single directory
 #
-#   - copy your configuration file to ${HOME}/.amanzi-tpl and open it in an editor.
+#   - copy your configuration file to ${HOME}/.amanzi-tpls and open it in an editor.
 #
 #   - Edit the PREFIX variable to be the directory you want to install into.
 #
@@ -70,6 +70,7 @@
 #          -a   : performs configure/build/test
 #          -b   : "clobbers" the repository, tries to remove all generated and 
 #                  CMake files, forces rebuild of everything
+#          -c   : run cmake in the repository
 #          -d   : repository name
 #          -m   : runs make in the repository 
 #          -t   : runs ctest in the repository
@@ -92,9 +93,9 @@
 #       into the build directory.
 #
 #     - You can change paths in the configuration file and regenerate 
-#       just the amanzi-build.sh script by running amanzi-libs.sh 
+#       just the amanzi-build.sh script by running amanzi-tpls.sh 
 #       with no options:
-#       $ ./amanzi-libs.sh
+#       $ ./amanzi-tpls.sh
 # 
 ################################################################################
 #
@@ -119,7 +120,7 @@
 #
 #  - The rm -rf on source/build directories is intentional to start
 #    with a fresh copy of the source every time. It helps with
-#    automation and debugging, but increases debugging time.
+#    automation and debugging, but increases build time.
 #
 #  - exodusii requires a hand modified version of netcdf to use
 #    large meshes. using the package manager to install netcdf will 
@@ -185,11 +186,11 @@
 #
 # Manual downloads:
 #
-# the following files must be downloaded and saved into ${SOURCE}:
+# the following files must be manually downloaded and saved into ${SOURCE}:
 #
-# moab:
+# moab: login required
 # download the amanzi recommend version from: 
-# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/MOAB-r4276.tar.gz
+# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/MOAB-r4276.tar.gz
 #
 # trilinos: registration required
 # http://trilinos.sandia.gov/download/login.html?tid=tr1062
@@ -900,10 +901,11 @@ fi
 function determine_amanzi_dir() {
     AMANZI_DIR=
     case \$1 in
-	/*) AMANZI_DIR=\$1;;
-	*) AMANZI_DIR=\${AMANZI_WORK_DIR}/\$1;;
+	/*) AMANZI_DIR=\$1;; # absolute path specified
+        .) AMANZI_DIR=\$PWD;; # current directory specified
+	*) AMANZI_DIR=\${AMANZI_WORK_DIR}/\$1;; # some other repo name specified
     esac
-    #echo \$AMANZI_DIR
+    #echo "Amanzi directory: \$AMANZI_DIR"
 }
 
 while getopts "abcd:mt" flag
@@ -918,8 +920,8 @@ do
   esac
 done
 
-echo AMANZI_CONFIG=\$AMANZI_CONFIG
 echo AMANZI_DIR=\$AMANZI_DIR
+echo AMANZI_CONFIG=\$AMANZI_CONFIG
 echo AMANZI_MAKE=\$AMANZI_MAKE
 echo AMANZI_TEST=\$AMANZI_TEST
 
@@ -935,9 +937,10 @@ if [ \$AMANZI_CLOBBER -eq 1 ]; then
     if [ -f ./Makefile ]; then
         make clean
     fi
+    # explicitly specify src/*.cmake so we do not accidently remove *.cmake files from tools!
     rm -rf \\
         CMakeCache.txt \\
-        *.cmake */*.cmake */*/*.cmake \\
+        \${AMANZI_DIR}/src/*.cmake \${AMANZI_DIR}/src/*/*.cmake \${AMANZI_DIR}/src/*/*/*.cmake \\
         CMakeFiles */CMakeFiles */*/CMakeFiles \\
         Makefile */Makefile */*/Makefile \\
         Testing \\

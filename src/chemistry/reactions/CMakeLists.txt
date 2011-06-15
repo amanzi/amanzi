@@ -13,23 +13,21 @@ include_directories(${CHEM_INCLUDES_DIR})
 # library
 #
 set(SRCS 
-	./AqueousEquilibriumComplex.cpp 
-	./Beaker.cpp 
-	./GeneralRxn.cpp 
-	./IonExchangeComplex.cpp 
-	./KineticRate.cpp 
-	./KineticRateTST.cpp 
-	./Mineral.cpp 
-	./MineralKineticsFactory.cpp 
-	./Reaction.cpp 
-	./SecondarySpecies.cpp 
-	./SimpleThermoDatabase.cpp
-	./SurfaceComplex.cpp 
-	./SurfaceComplexationRxn.cpp 
+	./aqueous_equilibrium_complex.cc 
+	./beaker.cc 
+	./general_rxn.cc 
+	./ion_exchange_complex.cc 
+	./kinetic_rate.cc 
+	./kinetic_rate_tst.cc 
+	./mineral.cc 
+	./mineral_kinetics_factory.cc 
+	./secondary_species.cc 
+	./simple_thermo_database.cc
+	./surface_complex.cc 
+	./surface_complexation_rxn.cc 
 )
 
 add_library(geochemrxns ${SRCS}) 
-add_install_library(geochemrxns)
 
 #
 # glenn's test program
@@ -37,7 +35,7 @@ add_install_library(geochemrxns)
 set(EXE_NAME simpleMain)
 
 set(EXE_SRCS
-	./SimpleMain.cpp
+	./simple_main.cc
 )
 
 set(GEOCHEM_LIBS

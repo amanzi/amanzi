@@ -3,11 +3,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "MPC.hpp"
 #include "State.hpp"
-#include "Chemistry_State.hpp"
-#include "Chemistry_PK.hpp"
+#include "chemistry_state.hh"
+#include "chemistry_pk.hh"
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
-#include "Richards_PK.hpp"
+//#include "SteadyState_Richards_PK.hpp"
+#include "Transient_Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
@@ -68,16 +69,17 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    // chemistry...
    
    if (chemistry_enabled) {
-     CS = Teuchos::rcp( new Chemistry_State( S ) );
+     try {
+       CS = Teuchos::rcp( new Chemistry_State( S ) );
 
-     Teuchos::ParameterList chemistry_parameter_list = 
-       parameter_list.sublist("Chemistry");
+       Teuchos::ParameterList chemistry_parameter_list = 
+           parameter_list.sublist("Chemistry");
      
-     CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
-
-     if (CPK->status() != ChemistryException::kOkay) {
-       cout << "MPC: Chemistry_PK constructor returned an error status" << endl;
-       throw std::exception();
+       CPK = Teuchos::rcp( new Chemistry_PK(chemistry_parameter_list, CS) );
+     } catch (ChemistryException& chem_error) {
+       std::cout << "MPC: Chemistry_PK constructor returned an error: " 
+                 << std::endl << chem_error.what() << std::endl;
+       amanzi_throw(chem_error);
      }
    }
    
@@ -102,7 +104,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      if (flow_model == "Darcy")
        FPK = Teuchos::rcp( new Darcy_PK(flow_parameter_list, FS) );  
      else if (flow_model == "Richards")
-       FPK = Teuchos::rcp( new Richards_PK(flow_parameter_list, FS) );
+       FPK = Teuchos::rcp( new Transient_Richards_PK(flow_parameter_list, FS) );
      else {
        cout << "MPC: unknown flow model: " << flow_model << endl;
        throw std::exception();
@@ -131,29 +133,43 @@ void MPC::cycle_driver () {
 
 
   if (chemistry_enabled) {
-    // total view needs this to be outside the constructor 
-    CPK->InitializeChemistry();
-    if (CPK->status() != ChemistryException::kOkay) {
-      cout << "MPC: Chemistry_PK.InitializeChemistry returned an error status" << endl;
-      throw std::exception();
+    try {
+      // total view needs this to be outside the constructor 
+      CPK->InitializeChemistry();
+      CPK->set_chemistry_output_names(&auxnames);
+      CPK->set_component_names(&compnames);
+    } catch (ChemistryException& chem_error) {
+      std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
+                << std::endl << chem_error.what() << std::endl;
+      Exceptions::amanzi_throw(chem_error);
     }
   }
   
   bool gmv_output = mpc_parameter_list.isSublist("GMV");
 #ifdef ENABLE_CGNS
   bool cgns_output = mpc_parameter_list.isSublist("CGNS");
-
-
-
-  if (chemistry_enabled) {
-    CPK->set_chemistry_output_names(auxnames);
-    CPK->set_component_names(compnames);
+  if (cgns_output) {
+    cout << "MPC: will write cgns output" << endl;
   }
+
+  // bandre: moved up to the previous chemistry try block
+  // if (chemistry_enabled) {
+  //   try {
+  //     CPK->set_chemistry_output_names(&auxnames);
+  //     CPK->set_component_names(compnames);
+  //   } catch (ChemistryException& chem_error) {
+  //     std::cout << chem_error.what() << std::endl;
+  //     Exceptions::amanzi_throw(chem_error);
+  //   }
+  // }
 #endif
   bool gnuplot_output = mpc_parameter_list.get<bool>("Gnuplot output",false);
-  if ( mesh_maps->get_comm()->NumProc() != 1 ) gnuplot_output = false;
-  
-  cout << "MPC: will write gnuplot output" << endl;
+  if ( mesh_maps->get_comm()->NumProc() != 1 ) {
+    gnuplot_output = false;
+  }
+  if (gnuplot_output) {
+    cout << "MPC: will write gnuplot output" << endl;
+  }
 
   const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",-1);
   const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",-1);
@@ -206,17 +222,21 @@ void MPC::cycle_driver () {
   double vizdump_time = 0.0;
   int vizdump_time_count = 0;
 
-  // first solve the flow equation
+  // first solve the flow equation to steady state
   if (flow_enabled) {
-    FPK->advance();
-    S->update_darcy_flux(FPK->DarcyFlux());
+    FPK->advance_to_steady_state();
+
+    // reset the time after the steady state solve
+    S->set_time(T0);
+    
+    S->update_darcy_flux(FPK->Flux());
     S->update_pressure(FPK->Pressure());
     FPK->commit_state(FS);
-    FPK->GetDarcyVelocity(*S->get_darcy_velocity());
+    FPK->GetVelocity(*S->get_darcy_velocity());
     
     if ( flow_model == "Richards") 
       {
-	Richards_PK *RPK = dynamic_cast<Richards_PK*> (&*FPK); 
+	Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
 	
 	RPK->GetSaturation(*S->get_water_saturation()); 
       }
@@ -236,7 +256,7 @@ void MPC::cycle_driver () {
       write_field_data(*S->get_permeability(), "permeability");
       write_field_data(*S->get_porosity(),"porosity");
    
-      if (flow_mode == "Richards")
+      if (flow_model == "Richards")
 	{
 	  write_field_data(*S->get_water_saturation(),"water saturation");
 	}
@@ -261,17 +281,21 @@ void MPC::cycle_driver () {
       }    
       
       if (chemistry_enabled) {
-	// get the auxillary data
-	Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+        try {
+          // get the auxillary data
+          Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
 
-	// how much of it is there?
-	int naux = aux->NumVectors();
-	for (int i=0; i<naux; i++) {
-	  std::stringstream name;
-	  name << auxnames[i];
-	  
-	  write_field_data( *(*aux)(i), name.str()); 
+          // how much of it is there?
+          int naux = aux->NumVectors();
+          for (int i=0; i<naux; i++) {
+            std::stringstream name;
+            name << auxnames[i];
 
+            write_field_data( *(*aux)(i), name.str());
+          }
+        } catch (ChemistryException& chem_error) {
+          std::cout << chem_error.what() << std::endl;
+          amanzi_throw(chem_error);
 	}
 
       }
@@ -285,15 +309,22 @@ void MPC::cycle_driver () {
     vizdump_time_count ++;
   }
 
-  if (chemistry_enabled || transport_enabled) {
+  if (chemistry_enabled || transport_enabled || flow_enabled) {
     // we need to create an EpetraMulitVector that will store the 
     // intermediate value for the total component concentration
     total_component_concentration_star =
       Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
     
     // then iterate transport and chemistry
-    while ( (S->get_time() <= T1)  &&  ((end_cycle == -1) || (iter <= end_cycle)) ) {
-      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99;
+    while (  (S->get_time() <= T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
+      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
+      
+      if (flow_enabled && flow_model == "Richards") 
+	{
+	  
+	  
+	  //flow_dT = FPK->get_flow_dT();
+	}
       
       if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
       
@@ -309,6 +340,7 @@ void MPC::cycle_driver () {
       std::cout << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
       
       if (transport_enabled) {
+
 	// now advance transport
 	TPK->advance( mpc_dT );	
 	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
@@ -328,14 +360,17 @@ void MPC::cycle_driver () {
       }
 
       
-      
       if (chemistry_enabled) {
-	// now advance chemistry
-	CPK->advance(mpc_dT, total_component_concentration_star);
-	ChemistryException::Status cpk_status = CPK->status();
-        if (cpk_status == ChemistryException::kOkay) {
-	  S->update_total_component_concentration(CPK->get_total_component_concentration());	  
-        } else {
+        try {
+          // now advance chemistry
+          CPK->advance(mpc_dT, total_component_concentration_star);
+	  S->update_total_component_concentration(CPK->get_total_component_concentration());
+        } catch (ChemistryException& chem_error) {
+          std::ostringstream error_message;
+          error_message << "MPC: error... Chemistry_PK.advance returned an error status";
+          error_message << chem_error.what();
+          Errors::Message message(error_message.str());
+	  Exceptions::amanzi_throw(message);
           // dump data and give up...
 // 	  S->update_total_component_concentration(CPK->get_total_component_concentration());
 	  
@@ -349,8 +384,6 @@ void MPC::cycle_driver () {
 // 	  }
 // #endif	
 	  
-	  Errors::Message message("MPC: error... Chemistry_PK.advance returned an error status"); 
-	  Exceptions::amanzi_throw(message);
         }
       } else {
 	// commit total_component_concentration_star to the state
@@ -362,7 +395,6 @@ void MPC::cycle_driver () {
       
       // update the time in the state object
       S->advance_time(mpc_dT);
-      
       
       // we're done with this time step, commit the state 
       // in the process kernels

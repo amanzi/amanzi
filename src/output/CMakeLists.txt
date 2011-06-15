@@ -43,6 +43,12 @@ add_definitions("-DUSE_MPI")
 file(GLOB output_source_files "gmv*.c" "gmv*.cc")
 set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
+if(ENABLE_HDF5)
+    file(GLOB hdf5_source "hdf5_mesh*.cc")
+    list(APPEND output_source_files "${hdf5_source}")
+    list(APPEND output_tpl_list ${HDF5_LIBRARIES})
+endif()
+
 if(ENABLE_CGNS)
     file(GLOB cgns_source "cgns*.cc")
     list(APPEND output_source_files "${cgns_source}")
@@ -75,6 +81,13 @@ if (BUILD_TESTS)
         add_executable(test_cgns_output test/Main.cc test/test_cgns.cc)
         target_link_libraries(test_cgns_output output ${UnitTest_LIBRARIES})
         add_amanzi_test(cgns_output test_cgns_output KIND int)
+    endif()
+
+    # Test: hdf5_output
+    if (ENABLE_HDF5)
+        add_executable(test_hdf5_output test/Main.cc test/test_hdf5.cc)
+        target_link_libraries(test_hdf5_output output ${UnitTest_LIBRARIES})
+        add_test(hdf5_output test_hdf5_output)
     endif()
 
 endif()

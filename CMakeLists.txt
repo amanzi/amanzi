@@ -8,7 +8,7 @@
 # Require cmake 2.8 or higher
 cmake_minimum_required(VERSION 2.8.2)
 
-if ("${CMAKE_PATCH_VERSION}" GREATER 2)
+if ("${CMAKE_PATCH_VERSION}" GREATER 3)
   set(ADJUST_POLICY "True")
 endif()
 
