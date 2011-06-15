@@ -1,5 +1,6 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "chemistry/includes/direct_solver.hh"
-#include "chemistry/includes/Block.hpp"
+#include "chemistry/includes/block.hh"
 
 DirectSolver::DirectSolver(void)
     : Solver(),
@@ -7,7 +8,7 @@ DirectSolver::DirectSolver(void)
       factored_(false) {
   pivoting_indices_.clear();
   row_scaling_.clear();
-} // end DirectSolver constructor
+}  // end DirectSolver constructor
 
 void DirectSolver::Initialize(const int n) {
   set_system_size(n);
@@ -16,56 +17,62 @@ void DirectSolver::Initialize(const int n) {
   A_ = new MatrixBlock(n);
   pivoting_indices_.resize(n);
   row_scaling_.resize(n);
-} // end Init()
+}  // end Init()
 
 void DirectSolver::Solve(void) {
   LUDecomposition();
   LUBackSolve(solution_);
-} // end Solve()
+}  // end Solve()
 
-void DirectSolver::Solve(std::vector<double> &b) {
+void DirectSolver::Solve(std::vector<double>* b) {
   LUDecomposition();
   LUBackSolve(b);
-} // end Solve()
+}  // end Solve()
 
-void DirectSolver::Solve(MatrixBlock *A, std::vector<double> &b) {
+void DirectSolver::Solve(MatrixBlock* A, std::vector<double>* b) {
   A_->SetValues(A);
   LUDecomposition();
   LUBackSolve(b);
-} // end Solve()
+}  // end Solve()
 
-void DirectSolver::Solve(Block *A, std::vector<double> &b) {
+void DirectSolver::Solve(Block* A, std::vector<double>* b) {
   A_->SetValues(A);
   LUDecomposition();
   LUBackSolve(b);
-} // end Solve()
+}  // end Solve()
 
 void DirectSolver::LUDecomposition(void) {
   const double small_number = 1.e-20;
   int imax = 0;
   double temp, dum;
 
-  double **a = A_->GetValues();
+  double** a = A_->GetValues();
   row_interchange_ = 1.0;
   for (int i = 0; i < system_size(); i++) {
     double big = 0.0;
     for (int j = 0; j < system_size(); j++)
-      if ((temp = fabs(a[i][j])) > big) big = temp;
-    if (big == 0.0) std::cout << "Singular matrix in routine ludcmp";
+      if ((temp = fabs(a[i][j])) > big) {
+        big = temp;
+      }
+    if (big == 0.0) {
+      std::cout << "Singular matrix in routine ludcmp";
+    }
     row_scaling_[i] = 1.0 / big;
   }
   for (int j = 0; j < system_size(); j++) {
     for (int i = 0; i < j; i++) {
       double sum = a[i][j];
-      for (int k = 0; k < i; k++) 
+      for (int k = 0; k < i; k++) {
         sum -= a[i][k] * a[k][j];
+      }
       a[i][j] = sum;
     }
     double big = 0.0;
     for (int i = j; i < system_size(); i++) {
       double sum =  a[i][j];
-      for (int k = 0; k < j; k++) 
+      for (int k = 0; k < j; k++) {
         sum -= a[i][k] * a[k][j];
+      }
       a[i][j] = sum;
       if ((dum = row_scaling_[i] * fabs(sum)) >= big) {
         big = dum;
@@ -82,18 +89,20 @@ void DirectSolver::LUDecomposition(void) {
       row_scaling_[imax] = row_scaling_[j];
     }
     pivoting_indices_[j] = imax;
-    if (a[j][j] == 0.0) a[j][j] = small_number;
+    if (a[j][j] == 0.0) {
+      a[j][j] = small_number;
+    }
     if (j != system_size() - 1) {
       dum = 1.0 / (a[j][j]);
-      for (int i = j + 1; i < system_size(); i++) 
+      for (int i = j + 1; i < system_size(); i++) {
         a[i][j] *= dum;
+      }
     }
   }
 
   a = NULL;
   factored_ = true;
-
-} // end LUDecomposition()
+}  // end LUDecomposition()
 
 
 void DirectSolver::LUBackSolve(void) {
@@ -102,32 +111,33 @@ void DirectSolver::LUBackSolve(void) {
     solution_[i] = right_hand_side_[i];
   }
   LUBackSolve(solution_);
-} // end LUBackSolve()
+}  // end LUBackSolve()
 
-void DirectSolver::LUBackSolve(std::vector<double> &b) {
-  double **a = A_->GetValues();
+void DirectSolver::LUBackSolve(std::vector<double>* b) {
+  double** a = A_->GetValues();
   int ii = 0;
   for (int i = 0; i < system_size(); i++) {
-    int ip=pivoting_indices_[i];
-    double sum = b[ip];
-    b[ip] = b[i];
+    int ip = pivoting_indices_[i];
+    double sum = b->at(ip);
+    (*b)[ip] = b->at(i);
     if (ii != 0) {
-      for (int j = ii - 1; j < i; j++) 
+      for (int j = ii - 1; j < i; j++) {
         sum -= a[i][j] * b[j];
+      }
+    } else if (sum != 0.0) {
+      ii = i + 1;
     }
-    else if (sum != 0.0) {
-      ii = i+1;
-    }
-    b[i] = sum;
+    (*b)[i] = sum;
   }
   for (int i = system_size() - 1; i >= 0; i--) {
-    double sum = b[i];
-    for (int j = i+1; j < system_size(); j++) 
+    double sum = b->at(i);
+    for (int j = i + 1; j < system_size(); j++) {
       sum -= a[i][j] * b[j];
-    b[i] = sum / a[i][i];
+    }
+    (*b)[i] = sum / a[i][i];
   }
   a = NULL;
-} // end LUBackSolve()
+}  // end LUBackSolve()
 
 DirectSolver::~DirectSolver() {
-} // end DirectSolver destructor
+}  // end DirectSolver destructor

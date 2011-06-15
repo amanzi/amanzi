@@ -130,12 +130,18 @@ Key bindings:
 
 (defun amanzi-fix-region ()
   (interactive)
+  (whitespace-cleanup)
+  (untabify (region-beginning) (region-end))
+  (indent-region (region-beginning) (region-end) nil)
   (amanzi-astyle-chunk
    (region-beginning) (region-end) (current-buffer)))
 
 
 (defun amanzi-fix-buffer ()
   (interactive)
+  (whitespace-cleanup)
+  (untabify (point-min) (point-max))
+  (indent-region (point-min) (point-max) nil)
   (amanzi-astyle-chunk
    (point-min) (point-max) (current-buffer)))
 
