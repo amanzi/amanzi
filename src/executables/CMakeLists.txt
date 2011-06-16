@@ -80,7 +80,7 @@ add_definitions("-DUSE_MPI")
 #
 add_executable(amanzi-demo-driver amanzi-demo-driver.cpp)
 set(demo_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-set(demo_driver_amanzi_libs mpc state simple_mesh error_handling exodus ${amanzi_mesh_libs})
+set(demo_driver_amanzi_libs time_integration mpc state simple_mesh error_handling exodus ${amanzi_mesh_libs})
 set(demo_driver_pk_libs chemistry transport flow)
 target_link_libraries(amanzi-demo-driver 
                       ${demo_driver_amanzi_libs}
@@ -95,6 +95,8 @@ add_install_binary(amanzi-demo-driver)
 add_executable(verify_mesh verify_mesh.cc)
 target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
                       ${Boost_LIBRARIES})
+    add_install_binary(stk_mesh_test_hex)		     
+    add_install_binary(verify_stk_mesh)
     add_install_binary(stk_mesh_test_hex)		     
     add_install_binary(verify_stk_mesh)
     add_install_binary(verify_moab_mesh)

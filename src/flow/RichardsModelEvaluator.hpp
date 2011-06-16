@@ -54,6 +54,8 @@ private:
   Teuchos::ParameterList& plist_;
   Teuchos::RCP<const Flow_State> FS_;
 
+  double atol, rtol;
+
 };
 
 } // close namespace Amanzi

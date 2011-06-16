@@ -16,7 +16,8 @@ public:
     PRESSURE_CONSTANT = 1,
     NO_FLOW,
     DARCY_CONSTANT,
-    STATIC_HEAD
+    STATIC_HEAD,
+    TIME_DEPENDENT_PRESSURE_CONSTANT
   };
 
   struct bc_spec {
@@ -25,6 +26,9 @@ public:
     std::vector<unsigned int> Faces;
     std::vector<double> Aux;
     double Value;
+    double InitialValue;
+    double FinalTime;
+    double InitialTime;
   };
 
 public:

@@ -30,10 +30,25 @@
 ;;   Hover over a highlighted error with the mouse to see the message
 ;;   in a tooltip.
 ;;
+;; To automatically reformat code:
+;;
+;;    amanzi-fix-region and amanzi-fix-buffer will apply formatting
+;;    corrections to a region of whole buffer respectively. You will
+;;    need the software tool 'astyle' somewhere in your path.
+;;
 ;; Please report errors to mwbuksas@lanl.gov
 ;;
 
 (require 'google-c-style)
+
+(message load-file-name)
+(message default-directory)
+
+(defvar astyle-config-file 
+  (expand-file-name "../formatting/astylerc" (file-name-directory load-file-name)) 
+  "Holds the location of the astyle configuration file.")
+
+(message astyle-config-file)
 
 (eval-after-load "flymake"
   '(progn (add-to-list 'flymake-allowed-file-name-masks
@@ -54,7 +69,7 @@
          (local-file (file-relative-name
                       temp-file
                       (file-name-directory buffer-file-name))))
-    (list "cpplint.py" (list "--filter=-whitespace,+whitespace/end_of_line,+whitespace/tab,-legal/copyright" local-file))))
+    (list "cpplint.py" (list "--filter=-legal/copyright" local-file))))
 
 ;; From http://www.emacswiki.org/emacs/FlyMake
 
@@ -93,15 +108,43 @@ Key bindings:
   :keymap my-flymake-minor-mode-map)
 
 
-(defun amanzi-standards-activate () "Activate Amanzi standards checking on this buffer" (interactive)
-  (progn (google-set-c-style) 
+(defun amanzi-standards-activate () 
+  "Activate Amanzi standards checking on this buffer" 
+  (interactive)
+  (progn (google-set-c-style)
          (flymake-mode t)
          (my-flymake-minor-mode t)
          ()))
 
-(defun amanzi-standards-deactivate () "Deactivate Amanzi standards checking on this buffer" (interactive)
+(defun amanzi-standards-deactivate ()
+  "Deactivate Amanzi standards checking on this buffer" 
+  (interactive)
   (progn (flymake-mode nil)
          (my-flymake-minor-mode nil)))
+
+
+(defun amanzi-astyle-chunk (begin end buffer)
+  (let ((cmd (format "astyle --options=%s" astyle-config-file)))
+    (shell-command-on-region begin end cmd buffer t)))
+
+
+(defun amanzi-fix-region ()
+  (interactive)
+  (whitespace-cleanup)
+  (untabify (region-beginning) (region-end))
+  (indent-region (region-beginning) (region-end) nil)
+  (amanzi-astyle-chunk
+   (region-beginning) (region-end) (current-buffer)))
+
+
+(defun amanzi-fix-buffer ()
+  (interactive)
+  (whitespace-cleanup)
+  (untabify (point-min) (point-max))
+  (indent-region (point-min) (point-max) nil)
+  (amanzi-astyle-chunk
+   (point-min) (point-max) (current-buffer)))
+
 
 
 (provide 'coding_standards)

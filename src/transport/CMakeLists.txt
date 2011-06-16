@@ -46,6 +46,13 @@ file(GLOB transport_inc_files "*.hpp")
 add_install_include_file(${transport_inc_files})
 add_install_library(transport)
 
+#
+# Install Targets
+#
+file(GLOB transport_inc_files "*.hpp")
+add_install_include_file(${transport_inc_files})
+add_install_library(transport)
+
 if ( BUILD_TESTS )
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})

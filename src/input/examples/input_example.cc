@@ -11,6 +11,7 @@
 
 #include "simple_mesh_input.hh"
 #include "transport_input.hh"
+#include "test_input.hh"
 
 typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
 
@@ -22,6 +23,26 @@ int main(int argc, char *argv[])
   using std::cout;
   using std::endl;
   using std::string;
+
+  /* Create a simple test input object */
+  TestInput testme;
+  print_line();
+  cout << "Test Input Object (Default)" << endl;
+  Teuchos::printValidParameters(testme,cout,true);
+  print_line();
+
+  /* Add a simple list to testme */
+  testme.add_sublist(5,1.23456e-9,true);
+  testme.add_sublist(23,1.0045,false);
+  Teuchos::RCP<const Teuchos::ParameterList> testme_list =
+      testme.getParameterList();
+  print_line();
+  cout << "Dump Test Input List information to XML format" << endl;
+  Teuchos::writeParameterListToXmlOStream(*testme_list,std::cout); 
+  print_line();
+
+
+
 
 
   /* Create a input object to print out the defaults */

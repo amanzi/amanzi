@@ -28,6 +28,8 @@ include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
@@ -38,8 +40,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDES})
-endif()    
+    include_directories(${CGNS_INCLUDE_DIRS})
+endif()  
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
@@ -55,7 +57,14 @@ if (ENABLE_CGNS)
     add_definitions("-DENABLE_CGNS")
 endif()    
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
-target_link_libraries(mpc solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
+target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
+
+#
+# Install Targets
+#
+file(GLOB mpc_inc_files "*.hpp")
+add_install_include_file(${mpc_inc_files})
+add_install_library(mpc)
 
 #
 # Install Targets

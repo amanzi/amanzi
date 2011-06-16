@@ -42,7 +42,7 @@ Darcy_PK::~Darcy_PK()
 };
 
 
-int Darcy_PK::advance()
+int Darcy_PK::advance_to_steady_state()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());

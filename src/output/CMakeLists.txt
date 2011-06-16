@@ -65,6 +65,13 @@ file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
 add_install_library(output)
 
+#
+# Install Targets
+#
+file(GLOB output_inc_files "*.h*")
+add_install_include_file(${output_inc_files})
+add_install_library(output)
+
 
 if (BUILD_TESTS)
 

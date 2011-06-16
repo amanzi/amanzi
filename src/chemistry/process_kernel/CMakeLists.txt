@@ -23,7 +23,7 @@ set(GEOCHEM_LIBS
 	geochemutil
 )
 
-add_library(chemistry Chemistry_PK.cc Chemistry_State.cc)
+add_library(chemistry chemistry_pk.cc chemistry_state.cc)
 target_link_libraries(chemistry ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
 add_install_library(chemistry)
 

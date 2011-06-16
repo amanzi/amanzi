@@ -3,11 +3,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "MPC.hpp"
 #include "State.hpp"
-#include "Chemistry_State.hh"
-#include "Chemistry_PK.hh"
+#include "chemistry_state.hh"
+#include "chemistry_pk.hh"
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
-#include "Richards_PK.hpp"
+//#include "SteadyState_Richards_PK.hpp"
+#include "Transient_Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
 #include "gmv_mesh.hh"
@@ -106,7 +107,7 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      if (flow_model == "Darcy")
        FPK = Teuchos::rcp( new Darcy_PK(flow_parameter_list, FS) );  
      else if (flow_model == "Richards")
-       FPK = Teuchos::rcp( new Richards_PK(flow_parameter_list, FS) );
+       FPK = Teuchos::rcp( new Transient_Richards_PK(flow_parameter_list, FS) );
      else {
        cout << "MPC: unknown flow model: " << flow_model << endl;
        throw std::exception();
@@ -138,8 +139,8 @@ void MPC::cycle_driver () {
     try {
       // total view needs this to be outside the constructor 
       CPK->InitializeChemistry();
-      CPK->set_chemistry_output_names(auxnames);
-      CPK->set_component_names(compnames);
+      CPK->set_chemistry_output_names(&auxnames);
+      CPK->set_component_names(&compnames);
     } catch (ChemistryException& chem_error) {
       std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
                 << std::endl << chem_error.what() << std::endl;
@@ -157,7 +158,7 @@ void MPC::cycle_driver () {
   // bandre: moved up to the previous chemistry try block
   // if (chemistry_enabled) {
   //   try {
-  //     CPK->set_chemistry_output_names(auxnames);
+  //     CPK->set_chemistry_output_names(&auxnames);
   //     CPK->set_component_names(compnames);
   //   } catch (ChemistryException& chem_error) {
   //     std::cout << chem_error.what() << std::endl;
@@ -224,17 +225,21 @@ void MPC::cycle_driver () {
   double vizdump_time = 0.0;
   int vizdump_time_count = 0;
 
-  // first solve the flow equation
+  // first solve the flow equation to steady state
   if (flow_enabled) {
-    FPK->advance();
-    S->update_darcy_flux(FPK->DarcyFlux());
+    FPK->advance_to_steady_state();
+
+    // reset the time after the steady state solve
+    S->set_time(T0);
+    
+    S->update_darcy_flux(FPK->Flux());
     S->update_pressure(FPK->Pressure());
     FPK->commit_state(FS);
-    FPK->GetDarcyVelocity(*S->get_darcy_velocity());
+    FPK->GetVelocity(*S->get_darcy_velocity());
     
     if ( flow_model == "Richards") 
       {
-	Richards_PK *RPK = dynamic_cast<Richards_PK*> (&*FPK); 
+	Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
 	
 	RPK->GetSaturation(*S->get_water_saturation()); 
       }
@@ -307,15 +312,22 @@ void MPC::cycle_driver () {
     vizdump_time_count ++;
   }
 
-  if (chemistry_enabled || transport_enabled) {
+  if (chemistry_enabled || transport_enabled || flow_enabled) {
     // we need to create an EpetraMulitVector that will store the 
     // intermediate value for the total component concentration
     total_component_concentration_star =
       Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
     
     // then iterate transport and chemistry
-    while ( (S->get_time() <= T1)  &&  ((end_cycle == -1) || (iter <= end_cycle)) ) {
-      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99;
+    while (  (S->get_time() <= T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
+      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
+      
+      if (flow_enabled && flow_model == "Richards") 
+	{
+	  
+	  
+	  //flow_dT = FPK->get_flow_dT();
+	}
       
       if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
       
@@ -331,6 +343,7 @@ void MPC::cycle_driver () {
       std::cout << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
       
       if (transport_enabled) {
+
 	// now advance transport
 	TPK->advance( mpc_dT );	
 	if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) 
@@ -349,7 +362,6 @@ void MPC::cycle_driver () {
 	*total_component_concentration_star = *S->get_total_component_concentration();
       }
 
-      
       
       if (chemistry_enabled) {
         try {
@@ -386,7 +398,6 @@ void MPC::cycle_driver () {
       
       // update the time in the state object
       S->advance_time(mpc_dT);
-      
       
       // we're done with this time step, commit the state 
       // in the process kernels

@@ -7,13 +7,13 @@
 
 
 set(SRCS 
-	./activity-model-factory.cc
-	./activity-model.cc
-	./activity-model-debye-huckel.cc
-	./activity-model-unit.cc
-	./IonExchangeSite.cpp
-	./Species.cpp 
-	./SurfaceSite.cpp 
+	./activity_model_factory.cc
+	./activity_model.cc
+	./activity_model_debye_huckel.cc
+	./activity_model_unit.cc
+	./ion_exchange_site.cc
+	./species.cc
+	./surface_site.cc
 )
 
 add_library(geochembase ${SRCS}) 
