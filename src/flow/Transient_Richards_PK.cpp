@@ -2,6 +2,9 @@
 
 #include "RichardsProblem.hpp"
 
+namespace Amanzi
+{
+
 Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), richards_plist(plist)
 {
   // Create the flow boundary conditions object.
@@ -136,3 +139,4 @@ void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
 }
 
 
+} // close namespace Amanzi

@@ -690,10 +690,10 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double satura
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
 
-      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -709,10 +709,10 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double satura
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
 
-      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)

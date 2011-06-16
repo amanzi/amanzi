@@ -39,6 +39,9 @@ add_amanzi_test(chemistry chemistry_tests KIND unit)
 file(GLOB chem_inc "${CHEM_INCLUDES_DIR}/*")
 add_install_include_file(${chem_inc})
 
+# Amanzi includes
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # Trilinos related (TPL) includes
 include_directories(${Teuchos_INCLUDE_DIRS})

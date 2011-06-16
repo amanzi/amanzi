@@ -11,9 +11,9 @@
 #include "RichardsProblem.hpp"
 
 namespace Amanzi
+{
 class SteadyState_Richards_PK : public Flow_PK
 {
-
 public:
   SteadyState_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
 

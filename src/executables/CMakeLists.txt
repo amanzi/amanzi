@@ -95,8 +95,17 @@ add_install_binary(amanzi-demo-driver)
 add_executable(verify_mesh verify_mesh.cc)
 target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
                       ${Boost_LIBRARIES})
+add_install_binary(verify_mesh)		     
+
+#
+# Binary: stk_mesh_test_hex
+#
+if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
+    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
+    target_link_libraries(stk_mesh_test_hex 
+                         exodus mesh_data stk_mesh output mesh_audit
+                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
     add_install_binary(stk_mesh_test_hex)		     
-    add_install_binary(verify_stk_mesh)
-    add_install_binary(stk_mesh_test_hex)		     
-    add_install_binary(verify_stk_mesh)
-    add_install_binary(verify_moab_mesh)
+endif()
+
+
