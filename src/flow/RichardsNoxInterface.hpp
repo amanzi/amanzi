@@ -7,6 +7,9 @@
 
 #include "RichardsProblem.hpp"
 
+namespace Amanzi
+{
+
 // This is the interface to the problem as NOX expects it.
 
 class RichardsNoxInterface : public NOX::Epetra::Interface::Required,
@@ -42,5 +45,7 @@ private:
   int lag_count_; // this counts how many times the preconditioner has been lagged
 
 };
+
+} // close namespace Amanzi
 
 #endif

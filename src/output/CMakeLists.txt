@@ -21,9 +21,9 @@ project(OUTPUT)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -56,7 +56,21 @@ if(ENABLE_CGNS)
 endif()
 
 add_library(output ${output_source_files})
-target_link_libraries(output error_handling simple_mesh mesh_data ${output_tpl_list} )
+target_link_libraries(output error_handling simple_mesh mesh geometry ${output_tpl_list} )
+
+#
+# Install Targets
+#
+file(GLOB output_inc_files "*.h*")
+add_install_include_file(${output_inc_files})
+add_install_library(output)
+
+#
+# Install Targets
+#
+file(GLOB output_inc_files "*.h*")
+add_install_include_file(${output_inc_files})
+add_install_library(output)
 
 
 if (BUILD_TESTS)

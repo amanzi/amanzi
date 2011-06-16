@@ -23,6 +23,11 @@ project(ATK)
 
 set(atk_inc_files Utils.hh)
 
+#
+# Install Targets
+#
+add_install_include_file(${atk_inc_files})
+
 
 
 

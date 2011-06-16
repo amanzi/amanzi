@@ -12,8 +12,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntVector.h"
 
-#include "cell_geometry.hh"
-#include "cell_topology.hh"
+#include "Geometry.hh"
 
 #include <iostream>
 #include <iomanip>
@@ -21,12 +20,15 @@
 using namespace std;
 using namespace boost;
 
-MeshAudit:: MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_, ostream& os_) :
+namespace Amanzi
+{
+
+MeshAudit:: MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, ostream& os_) :
       mesh(mesh_), comm(*(mesh_->get_comm())), MyPID(mesh_->get_comm()->MyPID()),
       os(os_),
-      nnode(mesh_->node_map(true).NumMyElements()),
-      nface(mesh_->face_map(true).NumMyElements()),
-      ncell(mesh_->cell_map(true).NumMyElements()),
+      nnode(mesh_->node_epetra_map(true).NumMyElements()),
+      nface(mesh_->face_epetra_map(true).NumMyElements()),
+      ncell(mesh_->cell_epetra_map(true).NumMyElements()),
       MAX_OUT(5)
     { create_test_dependencies(); }
 
@@ -86,231 +88,180 @@ void MeshAudit::create_test_dependencies()
   g[test02].test = &MeshAudit::check_cell_to_nodes;
 
   Graph::vertex_descriptor test03 = add_vertex(g);
-  g[test03].name = "consistency of cell_to_nodes methods";
-  g[test03].test = &MeshAudit::check_cell_to_nodes_consistency;
+  g[test03].name = "node references by cells";
+  g[test03].test = &MeshAudit::check_node_refs_by_cells;
   add_edge(test02, test03, g);
 
-  Graph::vertex_descriptor test04 = add_vertex(g);
-  g[test04].name = "node references by cells";
-  g[test04].test = &MeshAudit::check_node_refs_by_cells;
-  add_edge(test02, test04, g);
-
   // Cell_to_faces tests
+  Graph::vertex_descriptor test04 = add_vertex(g);
+  g[test04].name = "cell_to_faces";
+  g[test04].test = &MeshAudit::check_cell_to_faces;
+
   Graph::vertex_descriptor test05 = add_vertex(g);
-  g[test05].name = "cell_to_faces";
-  g[test05].test = &MeshAudit::check_cell_to_faces;
-
-  Graph::vertex_descriptor test06 = add_vertex(g);
-  g[test06].name = "consistency of cell_to_faces methods";
-  g[test06].test = &MeshAudit::check_cell_to_faces_consistency;
-  add_edge(test05, test06, g);
-
-  Graph::vertex_descriptor test07 = add_vertex(g);
-  g[test07].name = "face references by cells";
-  g[test07].test = &MeshAudit::check_face_refs_by_cells;
-  add_edge(test05, test07, g);
+  g[test05].name = "face references by cells";
+  g[test05].test = &MeshAudit::check_face_refs_by_cells;
+  add_edge(test04, test05, g);
 
   // face_to_nodes tests
+  Graph::vertex_descriptor test06 = add_vertex(g);
+  g[test06].name = "face_to_nodes";
+  g[test06].test = &MeshAudit::check_face_to_nodes;
+
   Graph::vertex_descriptor test08 = add_vertex(g);
-  g[test08].name = "face_to_nodes";
-  g[test08].test = &MeshAudit::check_face_to_nodes;
-
-  Graph::vertex_descriptor test09 = add_vertex(g);
-  g[test09].name = "consistency of face_to_nodes methods";
-  g[test09].test = &MeshAudit::check_face_to_nodes_consistency;
-  add_edge(test08, test09, g);
-
-  Graph::vertex_descriptor test10 = add_vertex(g);
-  g[test10].name = "node references by faces";
-  g[test10].test = &MeshAudit::check_node_refs_by_faces;
-  add_edge(test08, test10, g);
+  g[test08].name = "node references by faces";
+  g[test08].test = &MeshAudit::check_node_refs_by_faces;
+  add_edge(test06, test08, g);
 
   // cell_to_face_dirs tests
-  Graph::vertex_descriptor test11 = add_vertex(g);
-  g[test11].name = "cell_to_face_dirs";
-  g[test11].test = &MeshAudit::check_cell_to_face_dirs;
-
-  Graph::vertex_descriptor test12 = add_vertex(g);
-  g[test12].name = "consistency of cell_to_face_dirs methods";
-  g[test12].test = &MeshAudit::check_cell_to_face_dirs_consistency;
-  add_edge(test11, test12, g);
+  Graph::vertex_descriptor test09 = add_vertex(g);
+  g[test09].name = "cell_to_face_dirs";
+  g[test09].test = &MeshAudit::check_cell_to_face_dirs;
 
   // cell degeneracy test
-  Graph::vertex_descriptor test13 = add_vertex(g);
-  g[test13].name = "topological non-degeneracy of cells";
-  g[test13].test = &MeshAudit::check_cell_degeneracy;
-  add_edge(test02, test13, g);
+  Graph::vertex_descriptor test10 = add_vertex(g);
+  g[test10].name = "topological non-degeneracy of cells";
+  g[test10].test = &MeshAudit::check_cell_degeneracy;
+  add_edge(test02, test10, g);
 
   // Consistency between the various mesh connectivity data.
-  Graph::vertex_descriptor test14 = add_vertex(g);
-  g[test14].name = "consistency of mesh connectivity data";
-  g[test14].test = &MeshAudit::check_cell_to_faces_to_nodes;
-  add_edge(test02, test14, g);
-  add_edge(test05, test14, g);
-  add_edge(test08, test14, g);
-  add_edge(test11, test14, g);
-  add_edge(test13, test14, g);
+  Graph::vertex_descriptor test11 = add_vertex(g);
+  g[test11].name = "consistency of mesh connectivity data";
+  g[test11].test = &MeshAudit::check_cell_to_faces_to_nodes;
+  add_edge(test02, test11, g);
+  add_edge(test04, test11, g);
+  add_edge(test06, test11, g);
+  add_edge(test09, test11, g);
+  add_edge(test10, test11, g);
 
   // node_to_coordinates tests
-  Graph::vertex_descriptor test15 = add_vertex(g);
-  g[test15].name = "node_to_coordinates";
-  g[test15].test = &MeshAudit::check_node_to_coordinates;
-
-  Graph::vertex_descriptor test16 = add_vertex(g);
-  g[test16].name = "consistency of node_to_coordinates methods";
-  g[test16].test = &MeshAudit::check_node_to_coordinates_alt;
-  add_edge(test15, test16, g);
+  Graph::vertex_descriptor test12 = add_vertex(g);
+  g[test12].name = "node_to_coordinates";
+  g[test12].test = &MeshAudit::check_node_to_coordinates;
 
   // cell_to_coordinates tests
-  Graph::vertex_descriptor test17 = add_vertex(g);
-  g[test17].name = "cell_to_coordinates";
-  g[test17].test = &MeshAudit::check_cell_to_coordinates;
-  add_edge(test02, test17, g);
-  add_edge(test15, test17, g);
+  Graph::vertex_descriptor test13 = add_vertex(g);
+  g[test13].name = "cell_to_coordinates";
+  g[test13].test = &MeshAudit::check_cell_to_coordinates;
+  add_edge(test02, test13, g);
+  add_edge(test12, test13, g);
 
-  Graph::vertex_descriptor test18 = add_vertex(g);
-  g[test18].name = "consistency of cell_to_coordinates methods";
-  g[test18].test = &MeshAudit::check_cell_to_coordinates_alt;
-  add_edge(test17, test18, g);
 
   // face_to_coordinates tests
-  Graph::vertex_descriptor test19 = add_vertex(g);
-  g[test19].name = "face_to_coordinates";
-  g[test19].test = &MeshAudit::check_face_to_coordinates;
-  add_edge(test08, test19, g);
-  add_edge(test15, test19, g);
-
-  Graph::vertex_descriptor test20 = add_vertex(g);
-  g[test20].name = "consistency of face_to_coordinates methods";
-  g[test20].test = &MeshAudit::check_face_to_coordinates_alt;
-  add_edge(test19, test20, g);
+  Graph::vertex_descriptor test14 = add_vertex(g);
+  g[test14].name = "face_to_coordinates";
+  g[test14].test = &MeshAudit::check_face_to_coordinates;
+  add_edge(test06, test14, g);
+  add_edge(test12, test14, g);
 
   // cell topology/geometry test
-  Graph::vertex_descriptor test21 = add_vertex(g);
-  g[test21].name = "cell topology/geometry";
-  g[test21].test = &MeshAudit::check_cell_topology;
-  add_edge(test13, test21, g);
-  add_edge(test18, test21, g);
+  Graph::vertex_descriptor test15 = add_vertex(g);
+  g[test15].name = "cell geometry";
+  g[test15].test = &MeshAudit::check_cell_geometry;
+  add_edge(test10, test15, g);
+  add_edge(test13, test15, g);
 
   // map tests
-  Graph::vertex_descriptor test22 = add_vertex(g);
-  g[test22].name = "owned and overlap node maps";
-  g[test22].test = &MeshAudit::check_node_maps;
+  Graph::vertex_descriptor test16 = add_vertex(g);
+  g[test16].name = "owned and overlap node maps";
+  g[test16].test = &MeshAudit::check_node_maps;
 
-  Graph::vertex_descriptor test23 = add_vertex(g);
-  g[test23].name = "owned and overlap face maps";
-  g[test23].test = &MeshAudit::check_face_maps;
+  Graph::vertex_descriptor test17 = add_vertex(g);
+  g[test17].name = "owned and overlap face maps";
+  g[test17].test = &MeshAudit::check_face_maps;
 
-  Graph::vertex_descriptor test24 = add_vertex(g);
-  g[test24].name = "owned and overlap cell maps";
-  g[test24].test = &MeshAudit::check_cell_maps;
+  Graph::vertex_descriptor test18 = add_vertex(g);
+  g[test18].name = "owned and overlap cell maps";
+  g[test18].test = &MeshAudit::check_cell_maps;
 
   // ghost data tests
-  Graph::vertex_descriptor test25 = add_vertex(g);
-  g[test25].name = "node_to_coordinates ghost data";
-  g[test25].test = &MeshAudit::check_node_to_coordinates_ghost_data;
-  add_edge(test15, test25, g);
-  add_edge(test22, test25, g);
+  Graph::vertex_descriptor test19 = add_vertex(g);
+  g[test19].name = "node_to_coordinates ghost data";
+  g[test19].test = &MeshAudit::check_node_to_coordinates_ghost_data;
+  add_edge(test12, test19, g);
+  add_edge(test16, test19, g);
 
-  Graph::vertex_descriptor test26 = add_vertex(g);
-  g[test26].name = "face_to_nodes ghost data";
-  g[test26].test = &MeshAudit::check_face_to_nodes_ghost_data;
-  add_edge(test08, test26, g);
-  add_edge(test22, test26, g);
-  add_edge(test23, test26, g);
+  Graph::vertex_descriptor test20 = add_vertex(g);
+  g[test20].name = "face_to_nodes ghost data";
+  g[test20].test = &MeshAudit::check_face_to_nodes_ghost_data;
+  add_edge(test06, test20, g);
+  add_edge(test16, test20, g);
+  add_edge(test17, test20, g);
 
-  Graph::vertex_descriptor test27 = add_vertex(g);
-  g[test27].name = "cell_to_nodes ghost data";
-  g[test27].test = &MeshAudit::check_cell_to_nodes_ghost_data;
-  add_edge(test02, test27, g);
-  add_edge(test22, test27, g);
-  add_edge(test24, test27, g);
+  Graph::vertex_descriptor test21 = add_vertex(g);
+  g[test21].name = "cell_to_nodes ghost data";
+  g[test21].test = &MeshAudit::check_cell_to_nodes_ghost_data;
+  add_edge(test02, test21, g);
+  add_edge(test16, test21, g);
+  add_edge(test18, test21, g);
 
-  Graph::vertex_descriptor test28 = add_vertex(g);
-  g[test28].name = "cell_to_faces ghost data";
-  g[test28].test = &MeshAudit::check_cell_to_faces_ghost_data;
-  add_edge(test05, test28, g);
-  add_edge(test23, test28, g);
-  add_edge(test24, test28, g);
+  Graph::vertex_descriptor test22 = add_vertex(g);
+  g[test22].name = "cell_to_faces ghost data";
+  g[test22].test = &MeshAudit::check_cell_to_faces_ghost_data;
+  add_edge(test04, test22, g);
+  add_edge(test17, test22, g);
+  add_edge(test18, test22, g);
 
   // node set data tests
+  Graph::vertex_descriptor test23 = add_vertex(g);
+  g[test23].name = "node set IDs";
+  g[test23].test = &MeshAudit::check_node_set_ids;
+
+  Graph::vertex_descriptor test24 = add_vertex(g);
+  g[test24].name = "node sets";
+  g[test24].test = &MeshAudit::check_node_sets;
+  add_edge(test16, test24, g);
+  add_edge(test23, test24, g);
+
+  Graph::vertex_descriptor test25 = add_vertex(g);
+  g[test25].name = "valid node set IDs";
+  g[test25].test = &MeshAudit::check_valid_node_set_id;
+  add_edge(test23, test25, g);
+
+  // face set data tests
+  Graph::vertex_descriptor test26 = add_vertex(g);
+  g[test26].name = "face set IDs";
+  g[test26].test = &MeshAudit::check_face_set_ids;
+
+  Graph::vertex_descriptor test27 = add_vertex(g);
+  g[test27].name = "face sets";
+  g[test27].test = &MeshAudit::check_face_sets;
+  add_edge(test17, test27, g);
+  add_edge(test26, test27, g);
+
+  Graph::vertex_descriptor test28 = add_vertex(g);
+  g[test28].name = "valid face set IDs";
+  g[test28].test = &MeshAudit::check_valid_face_set_id;
+  add_edge(test26, test28, g);
+
+
+  // cell set data tests
   Graph::vertex_descriptor test29 = add_vertex(g);
-  g[test29].name = "node set IDs";
-  g[test29].test = &MeshAudit::check_node_set_ids;
+  g[test29].name = "cell set IDs";
+  g[test29].test = &MeshAudit::check_cell_set_ids;
 
   Graph::vertex_descriptor test30 = add_vertex(g);
-  g[test30].name = "node sets";
-  g[test30].test = &MeshAudit::check_node_sets;
-  add_edge(test22, test30, g);
+  g[test30].name = "cell sets";
+  g[test30].test = &MeshAudit::check_cell_sets;
+  add_edge(test18, test30, g);
   add_edge(test29, test30, g);
 
   Graph::vertex_descriptor test31 = add_vertex(g);
-  g[test31].name = "valid node set IDs";
-  g[test31].test = &MeshAudit::check_valid_node_set_id;
+  g[test31].name = "valid cell set IDs";
+  g[test31].test = &MeshAudit::check_valid_cell_set_id;
   add_edge(test29, test31, g);
 
-  Graph::vertex_descriptor test32 = add_vertex(g);
-  g[test32].name = "alternative node set methods";
-  g[test32].test = &MeshAudit::check_node_sets_alt;
-  add_edge(test29, test32, g);
-  add_edge(test30, test32, g);
-
-  // face set data tests
-  Graph::vertex_descriptor test33 = add_vertex(g);
-  g[test33].name = "face set IDs";
-  g[test33].test = &MeshAudit::check_face_set_ids;
-
-  Graph::vertex_descriptor test34 = add_vertex(g);
-  g[test34].name = "face sets";
-  g[test34].test = &MeshAudit::check_face_sets;
-  add_edge(test23, test34, g);
-  add_edge(test33, test34, g);
-
-  Graph::vertex_descriptor test35 = add_vertex(g);
-  g[test35].name = "valid face set IDs";
-  g[test35].test = &MeshAudit::check_valid_face_set_id;
-  add_edge(test33, test35, g);
-
-  Graph::vertex_descriptor test36 = add_vertex(g);
-  g[test36].name = "alternative face set methods";
-  g[test36].test = &MeshAudit::check_face_sets_alt;
-  add_edge(test33, test36, g);
-  add_edge(test34, test36, g);
-
-  // cell set data tests
-  Graph::vertex_descriptor test37 = add_vertex(g);
-  g[test37].name = "cell set IDs";
-  g[test37].test = &MeshAudit::check_cell_set_ids;
-
-  Graph::vertex_descriptor test38 = add_vertex(g);
-  g[test38].name = "cell sets";
-  g[test38].test = &MeshAudit::check_cell_sets;
-  add_edge(test24, test38, g);
-  add_edge(test37, test38, g);
-
-  Graph::vertex_descriptor test39 = add_vertex(g);
-  g[test39].name = "valid cell set IDs";
-  g[test39].test = &MeshAudit::check_valid_cell_set_id;
-  add_edge(test37, test39, g);
-
-  Graph::vertex_descriptor test40 = add_vertex(g);
-  g[test40].name = "alternative cell set methods";
-  g[test40].test = &MeshAudit::check_cell_sets_alt;
-  add_edge(test37, test40, g);
-  add_edge(test38, test40, g);
-
   // partition tests
-  Graph::vertex_descriptor test41 = add_vertex(g);
-  g[test41].name = "face partition";
-  g[test41].test = &MeshAudit::check_face_partition;
-  add_edge(test23, test41, g);
-  add_edge(test24, test41, g);
+  Graph::vertex_descriptor test32 = add_vertex(g);
+  g[test32].name = "face partition";
+  g[test32].test = &MeshAudit::check_face_partition;
+  add_edge(test17, test32, g);
+  add_edge(test18, test32, g);
 
-  Graph::vertex_descriptor test42 = add_vertex(g);
-  g[test42].name = "node partition";
-  g[test42].test = &MeshAudit::check_node_partition;
-  add_edge(test22, test42, g);
-  add_edge(test24, test42, g);
+  Graph::vertex_descriptor test33 = add_vertex(g);
+  g[test33].name = "node partition";
+  g[test33].test = &MeshAudit::check_node_partition;
+  add_edge(test16, test33, g);
+  add_edge(test18, test33, g);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -337,50 +288,50 @@ bool MeshAudit::check_entity_counts() const
   bool error = false;
 
   // Check the number of owned nodes.
-  n = mesh->count_entities(Mesh_data::NODE,OWNED);
-  nref = mesh->node_map(false).NumMyElements();
+  n = mesh->num_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
+  nref = mesh->node_epetra_map(false).NumMyElements();
   if (n != nref) {
-    os << ": ERROR: count_entities(NODE,OWNED)=" << n << "; should be " << nref << endl;
+    os << ": ERROR: num_entities(NODE,OWNED)=" << n << "; should be " << nref << endl;
     error = true;
   }
 
   // Check the number of used nodes.
-  n = mesh->count_entities(Mesh_data::NODE,USED);
-  nref = mesh->node_map(true).NumMyElements();
+  n = mesh->num_entities(AmanziMesh::NODE,AmanziMesh::USED);
+  nref = mesh->node_epetra_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(NODE,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: num_entities(NODE,USED)=" << n << "; should be " << nref << endl;
     error = true;
   }
 
   // Check the number of owned faces.
-  n = mesh->count_entities(Mesh_data::FACE,OWNED);
-  nref = mesh->face_map(false).NumMyElements();
+  n = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  nref = mesh->face_epetra_map(false).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(FACE,OWNED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: num_entities(FACE,OWNED)=" << n << "; should be " << nref << endl;
     error = true;
   }
 
   // Check the number of used faces.
-  n = mesh->count_entities(Mesh_data::FACE,USED);
-  nref = mesh->face_map(true).NumMyElements();
+  n = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::USED);
+  nref = mesh->face_epetra_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(FACE,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: num_entities(FACE,USED)=" << n << "; should be " << nref << endl;
     error = true;
   }
 
   // Check the number of owned cells.
-  n = mesh->count_entities(Mesh_data::CELL,OWNED);
-  nref = mesh->cell_map(false).NumMyElements();
+  n = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+  nref = mesh->cell_epetra_map(false).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(CELL,OWNED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: num_entities(CELL,OWNED)=" << n << "; should be " << nref << endl;
     error = true;
   }
 
   // Check the number of used cells.
-  n = mesh->count_entities(Mesh_data::CELL,USED);
-  nref = mesh->cell_map(true).NumMyElements();
+  n = mesh->num_entities(AmanziMesh::CELL,AmanziMesh::USED);
+  nref = mesh->cell_epetra_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(CELL,USED)=" << n << "; should be " << nref << endl;
+    os << "ERROR: num_entities(CELL,USED)=" << n << "; should be " << nref << endl;
     error = true;
   }
 
@@ -394,13 +345,13 @@ bool MeshAudit::check_entity_counts() const
 
 bool MeshAudit::check_cell_to_nodes() const
 {
-  vector<unsigned int> bad_cells, bad_cells1;
-  vector<unsigned int> cnode(8);
+  AmanziMesh::Entity_ID_List bad_cells, bad_cells1;
+  AmanziMesh::Entity_ID_List free_nodes;
+  AmanziMesh::Entity_ID_List cnode;
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    cnode.assign(8, UINT_MAX);
     try {
-      mesh->cell_to_nodes(j, cnode.begin(), cnode.end()); // this may fail
+      mesh->cell_get_nodes(j, &cnode); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cnode.size(); ++k) {
         if (cnode[k] < 0 || cnode[k] >= nnode) invalid_refs = true;
@@ -434,11 +385,11 @@ bool MeshAudit::check_cell_to_nodes() const
 
 bool MeshAudit::check_node_refs_by_cells() const
 {
-  vector<unsigned int> cnode(8);
+  vector<unsigned int> cnode;
   vector<bool> ref(nnode, false);
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_nodes(j, cnode.begin(), cnode.end()); // this should not fail
+    mesh->cell_get_nodes(j, &cnode); // this should not fail
     for (int k = 0; k < cnode.size(); ++k) ref[cnode[k]] = true;
   }
 
@@ -465,13 +416,14 @@ bool MeshAudit::check_node_refs_by_cells() const
 
 bool MeshAudit::check_cell_to_faces() const
 {
-  vector<unsigned int> bad_cells, bad_cells1;
-  vector<unsigned int> cface(6);
+  AmanziMesh::Entity_ID_List bad_cells, bad_cells1;
+  AmanziMesh::Entity_ID_List bad_faces;
+  AmanziMesh::Entity_ID_List free_faces;
+  AmanziMesh::Entity_ID_List cface;
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    cface.assign(6, UINT_MAX);
     try {
-      mesh->cell_to_faces(j, cface.begin(), cface.end()); // this may fail
+      mesh->cell_get_faces(j, &cface); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cface.size(); ++k) {
         if (cface[k] < 0 || cface[k] >= nface) invalid_refs = true;
@@ -506,11 +458,12 @@ bool MeshAudit::check_cell_to_faces() const
 
 bool MeshAudit::check_face_refs_by_cells() const
 {
-  vector<unsigned int> cface(6);
+  vector<unsigned int> cface;
   vector<unsigned int> refs(nface, 0);
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_faces(j, cface.begin(), cface.end());
+    mesh->cell_get_faces(j, &cface);
+    mesh->cell_get_faces(j, &cface);
     for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
   }
 
@@ -548,13 +501,12 @@ bool MeshAudit::check_face_refs_by_cells() const
 
 bool MeshAudit::check_face_to_nodes() const
 {
-  vector<unsigned int> bad_faces, bad_faces1;
-  vector<unsigned int> fnode(4);
+  AmanziMesh::Entity_ID_List bad_faces, bad_faces1;
+  AmanziMesh::Entity_ID_List fnode;
 
   for (unsigned int j = 0; j < nface; ++j) {
-    fnode.assign(4, UINT_MAX);
     try {
-      mesh->face_to_nodes(j, fnode.begin(), fnode.end()); // this may fail
+      mesh->face_get_nodes(j, &fnode); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < fnode.size(); ++k) {
         if (fnode[k] < 0 || fnode[k] >= nnode) invalid_refs = true;
@@ -588,11 +540,11 @@ bool MeshAudit::check_face_to_nodes() const
 
 bool MeshAudit::check_node_refs_by_faces() const
 {
-  vector<unsigned int> fnode(4);
+  vector<unsigned int> fnode;
   vector<bool> ref(nnode, false);
 
   for (unsigned int j = 0; j < nface; ++j) {
-    mesh->face_to_nodes(j, fnode.begin(), fnode.end());
+    mesh->face_get_nodes(j, &fnode);
     for (int k = 0; k < fnode.size(); ++k) ref[fnode[k]] = true;
   }
 
@@ -619,13 +571,14 @@ bool MeshAudit::check_node_refs_by_faces() const
 
 bool MeshAudit::check_cell_to_face_dirs() const
 {
-  vector<int> fdirs(6);
+  vector<int> fdirs;
   vector<unsigned int> bad_cells, bad_cells_exc;
 
   for (unsigned int j = 0; j < ncell; ++j) {
     fdirs.assign(6, INT_MAX);
     try {
-      mesh->cell_to_face_dirs(j, fdirs.begin(), fdirs.end());  // this may fail
+      mesh->cell_get_face_dirs(j, &fdirs);  // this may fail
+      mesh->cell_get_face_dirs(j, &fdirs);
       bool bad_data = false;
       for (int k = 0; k < fdirs.size(); ++k)
         if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
@@ -652,160 +605,6 @@ bool MeshAudit::check_cell_to_face_dirs() const
   return global_any(error);
 }
 
-// The mesh interface provides alternative methods for accessing
-// connectivity data.  These alternates should return the same data.
-// Here the accessors using std::vector are considered normative,
-// and it is assumed that they have been verified to return valid
-// (though perhaps not correct) results.  A positive value is
-// returned if any inconsistency is found.  Further tests, which
-// use only the std::vector-based accessors, are safe.
-
-bool MeshAudit::check_cell_to_nodes_consistency() const
-{
-  vector<unsigned int> cnode(8);
-  vector<unsigned int> bad_cells1, bad_cells1_exc;
-
-  for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_nodes(j, cnode.begin(), cnode.end()); // this should not fail
-    try {
-      unsigned int cnode1[8] = { UINT_MAX };
-      mesh->cell_to_nodes(j, cnode1, cnode1+8); // this may fail
-      bool bad_data = false;
-      for (int i = 0; i < 8; ++i)
-        if (cnode1[i] != cnode[i]) bad_data = true;
-      if (bad_data) bad_cells1.push_back(j);
-    } catch (...) {
-      bad_cells1_exc.push_back(j);
-    }
-  }
-
-  bool error = false;
-
-  if (!bad_cells1.empty()) {
-    os << "ERROR: bad values from pointer-based accessor for cells:";
-    write_list(bad_cells1, MAX_OUT);
-    error = true;
-  }
-
-  if (!bad_cells1_exc.empty()) {
-    os << "ERROR: caught exception from pointer-based accessor for cells:";
-    write_list(bad_cells1_exc, MAX_OUT);
-    error = true;
-  }
-
-  return global_any(error);
-}
-
-
-bool MeshAudit::check_face_to_nodes_consistency() const
-{
-  vector<unsigned int> fnode(4);
-  vector<unsigned int> bad_faces1, bad_faces1_exc;
-
-  for (unsigned int j = 0; j < nface; ++j) {
-    mesh->face_to_nodes(j, fnode.begin(), fnode.end()); // this should not fail
-    try {
-      unsigned int fnode1[4] = { UINT_MAX };
-      mesh->face_to_nodes(j, fnode1, fnode1+4); // this may fail
-      bool bad_data = false;
-      for (int i = 0; i < 4; ++i)
-        if (fnode1[i] != fnode[i]) bad_data = true;
-      if (bad_data) bad_faces1.push_back(j);
-    } catch (...) {
-      bad_faces1_exc.push_back(j);
-    }
-  }
-
-  bool error = false;
-
-  if (!bad_faces1.empty()) {
-    os << "ERROR: bad values from pointer-based accessor for faces:";
-    write_list(bad_faces1, MAX_OUT);
-    error = true;
-  }
-
-  if (!bad_faces1_exc.empty()) {
-    os << "ERROR: caught exception from pointer-based accessor for faces:";
-    write_list(bad_faces1_exc, MAX_OUT);
-    error = true;
-  }
-
-  return global_any(error);
-}
-
-
-bool MeshAudit::check_cell_to_faces_consistency() const
-{
-  vector<unsigned int> cface(6);
-  vector<unsigned int> bad_cells1, bad_cells1_exc;
-
-  for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_faces(j, cface.begin(), cface.end()); // this should not fail
-    try {
-      unsigned int cface1[6] = { UINT_MAX };
-      mesh->cell_to_faces(j, cface1, cface1+6); // this may fail
-      bool bad_data = false;
-      for (int i = 0; i < 6; ++i)
-        if (cface1[i] != cface[i]) bad_data = true;
-      if (bad_data) bad_cells1.push_back(j);
-    } catch (...) {
-      bad_cells1_exc.push_back(j);
-    }
-  }
-
-  bool error = false;
-
-  if (!bad_cells1.empty()) {
-    os << "ERROR: bad values from pointer-based accessor for cells:";
-    write_list(bad_cells1, MAX_OUT);
-    error = true;
-  }
-
-  if (!bad_cells1_exc.empty()) {
-    os << "ERROR: caught exception from pointer-based accessor for cells:";
-    write_list(bad_cells1_exc, MAX_OUT);
-    error = true;
-  }
-
-  return global_any(error);
-}
-
-
-bool MeshAudit::check_cell_to_face_dirs_consistency() const
-{
-  vector<int> fdirs(6);
-  vector<unsigned int> bad_cells1, bad_cells1_exc;
-
-  for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_face_dirs(j, fdirs.begin(), fdirs.end());  // this should not fail
-    try {
-      int fdirs1[6] = { INT_MAX };
-      mesh->cell_to_face_dirs(j, fdirs1, fdirs1+6); // this may fail
-      bool bad_data = false;
-      for (int k = 0; k < 6; ++k)
-        if (fdirs1[k] != fdirs[k]) bad_data = true;
-      if (bad_data) bad_cells1.push_back(j);
-    } catch (...) {
-      bad_cells1_exc.push_back(j);
-    }
-  }
-
-  bool error = false;
-
-  if (!bad_cells1.empty()) {
-    os << "ERROR: pointer-based accessor returned inconsistent values for cells:";
-    write_list(bad_cells1, MAX_OUT);
-    error = true;
-  }
-
-  if (!bad_cells1_exc.empty()) {
-    os << "ERROR: caught exception from pointer-based accessor for cells:";
-    write_list(bad_cells1_exc, MAX_OUT);
-    error = true;
-  }
-
-  return global_any(error);
-}
 
 // Check that cells are not topologically degenerate (repeated node index).
 // If this test fails, many further tests involving the cell_to_nodes data
@@ -815,11 +614,11 @@ bool MeshAudit::check_cell_degeneracy() const
 {
   os << "Checking cells for topological degeneracy ..." << endl;
 
-  vector<unsigned int> cnode(8);
-  vector<unsigned int> bad_cells;
+  AmanziMesh::Entity_ID_List cnode;
+  AmanziMesh::Entity_ID_List bad_cells;
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_nodes(j, cnode.begin(), cnode.end()); // should not fail
+    mesh->cell_get_nodes(j, &cnode); // should not fail
     if (!distinct_values(cnode)) bad_cells.push_back(j);
   }
 
@@ -841,33 +640,69 @@ bool MeshAudit::check_cell_degeneracy() const
 // orientation value returned by cell_to_face_dirs is correct.  If this test
 // fails, one or more of the methods cell_to_faces, face_to_nodes, and
 // cell_to_face_dirs are returning incorrect results and that further tests
-// using there values should be avoided.
+// using their values should be avoided.
 
 bool MeshAudit::check_cell_to_faces_to_nodes() const
 {
-  vector<unsigned int> cnode(8);
-  vector<unsigned int> cface(6);
-  vector<unsigned int> fnode_ref(4);
-  vector<unsigned int> fnode(4);
-  vector<int> fdirs(6);
-  vector<unsigned int> bad_cells0;
-  vector<unsigned int> bad_cells1;
+  AmanziMesh::Entity_ID_List cnode;
+  AmanziMesh::Entity_ID_List cface;
+  AmanziMesh::Entity_ID_List fnode_ref;
+  AmanziMesh::Entity_ID_List fnode;
+  vector<int> fdirs;
+  AmanziMesh::Entity_ID_List bad_cells0;
+  AmanziMesh::Entity_ID_List bad_cells1;
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_nodes(j, cnode.begin(), cnode.end()); // this should not fail
-    mesh->cell_to_faces(j, cface.begin(), cface.end()); // this should not fail
-    mesh->cell_to_face_dirs(j, fdirs.begin(), fdirs.end()); // this should not fail
+    AmanziMesh::Cell_type ctype = mesh->cell_get_type(j);
+
+    // If this is a general, non-standard element there is nothing to
+    // to check against
+
+    if (ctype == AmanziMesh::UNKNOWN || 
+	ctype == AmanziMesh::POLYGON || 
+	ctype == AmanziMesh::POLYHED)
+      continue;
+
+    mesh->cell_get_nodes(j, &cnode); // this should not fail
+
+    mesh->cell_get_faces(j, &cface); // this should not fail
+    mesh->cell_get_face_dirs(j, &fdirs); // this should not fail
+
     bool bad_face = false;
     bool bad_dir  = false;
-    for (int k = 0; k < cface.size(); ++k) {
-      for (int i = 0; i < fnode_ref.size(); ++i)
-        fnode_ref[i] = cnode[cell_topology::HexFaceVert[k][i]];
-      mesh->face_to_nodes(cface[k], fnode.begin(), fnode.end()); // this should not fail
-      int dir = same_face(fnode, fnode_ref); // should be the same face
-      if (dir == 0) // wrong face
-        bad_face = true;
-      else if (dir != fdirs[k]) // right face but wrong dir value
-        bad_dir = true;
+
+    if (cface.size() != AmanziMesh::nface_std[ctype])
+      bad_face = true;
+    else {
+
+      for (int k = 0; k < cface.size(); ++k) {
+
+	mesh->face_get_nodes(cface[k], &fnode); // this should not fail
+
+	int nfn = AmanziMesh::nfnodes_std[ctype][k];
+
+	if (fnode.size() != nfn) {
+	  bad_face = true;
+	  break;
+	}
+
+	fnode_ref.clear();
+	for (int i = 0; i < nfn; ++i) {
+	  int nodenum = AmanziMesh::fnodes_std[ctype][k][i];
+	  fnode_ref.push_back(cnode[nodenum]);
+	}
+
+	int dir = same_face(fnode, fnode_ref); // should be the same face
+	if (dir == 0) { // wrong face
+	  bad_face = true;
+	  break;
+	}
+	else if (dir != fdirs[k]) { // right face but wrong dir value
+	  bad_dir = true;
+	  break;
+	}
+      }
+
     }
     if (bad_face) bad_cells0.push_back(j);
     if (bad_dir)  bad_cells1.push_back(j);
@@ -876,13 +711,13 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
   bool error = false;
 
   if (!bad_cells0.empty()) {
-    os << "ERROR: bad cell_to_faces values for cells:";
+    os << "ERROR: bad cell_get_faces values for cells:";
     write_list(bad_cells0, MAX_OUT);
     error = true;
   }
 
   if (!bad_cells1.empty()) {
-    os << "ERROR: bad cell_to_face_dirs values for cells:";
+    os << "ERROR: bad cell_get_face_dirs values for cells:";
     write_list(bad_cells1, MAX_OUT);
     error = true;
   }
@@ -890,23 +725,24 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
   return global_any(error);
 }
 
-// Check that node_to_coordinates successfully returns data for all nodes.
-// The std::vector-based accessor is used here.  The consistency of the
-// alternative accessors is checked elsewhere.  If this test fails, further
-// tests using its data should be avoided.
+// Check that node_get_coordinates successfully returns data for all nodes
+// A negative return value signals a terminal error
 
 bool MeshAudit::check_node_to_coordinates() const
 {
   vector<double> x(3);
-  vector<unsigned int> bad_nodes, bad_nodes_exc;
+  AmanziMesh::Entity_ID_List bad_nodes, bad_nodes_exc;
+  int spdim = mesh->space_dimension();
+  AmanziMesh::Entity_ID_List bad_nodes0;
 
   for (unsigned int j = 0; j < nnode; ++j) {
+    AmanziGeometry::Point x0(spdim);
+    x0.set(DBL_MAX);
     try {
-      x.assign(3,DBL_MAX);
-      mesh->node_to_coordinates(j, x.begin(), x.end()); // this may fail
+      mesh->node_get_coordinates(j, &x0); // this may fail
       bool bad_data = false;
-      for (int k = 0; k < x.size(); ++k)
-        if (x[k] == DBL_MAX) bad_data = true;
+      for (int k = 0; k < spdim; ++k)
+        if (x0[k] == DBL_MAX) bad_data = true;
       if (bad_data) bad_nodes.push_back(j);
     } catch (...) {
       bad_nodes_exc.push_back(j);
@@ -930,73 +766,36 @@ bool MeshAudit::check_node_to_coordinates() const
   return global_any(error);
 }
 
-// Check that the alternative node_to_coordinates accessors successfully
-// return the same data as returned by the std::vector accessor, which is
-// considered normative.  If this test fails, further tests, which use the
-// std::vector-based accessor, are safe.
-
-bool MeshAudit::check_node_to_coordinates_alt() const
-{
-  vector<double> x(3);
-  vector<unsigned int> bad_nodes1, bad_nodes1_exc;
-
-  for (unsigned int j = 0; j < nnode; ++j) {
-    mesh->node_to_coordinates(j, x.begin(), x.end()); // this should not fail
-    try {
-      double x1[3] = { DBL_MAX };
-      mesh->node_to_coordinates(j, x1, x1+3); // this may fail
-      bool bad_data = false;
-      for (int k = 0; k < 3; ++k)
-        if (x1[k] != x[k]) bad_data = true;
-      if (bad_data) bad_nodes1.push_back(j);
-    } catch (...) {
-      bad_nodes1_exc.push_back(j);
-    }
-  }
-
-  bool error = false;
-
-  if (!bad_nodes1.empty()) {
-    os << "ERROR: pointer-based accessor returned inconsistent values for nodes:";
-    write_list(bad_nodes1, MAX_OUT);
-    error = true;
-  }
-
-  if (!bad_nodes1_exc.empty()) {
-    os << "ERROR: caught exception from pointer-based accessor for nodes:";
-    write_list(bad_nodes1_exc, MAX_OUT);
-    error = true;
-  }
-
-  return global_any(error);
-}
-
-// Check that cell_to_coordinates successfully returns data for all cells, and
-// that this data is identical to that returned by composing node_to_coordinates
+// Check that cell_get_coordinates successfully returns data for all
+// cells, and that the data is identical to that returned by composing
 // with cell_to_nodes.  The consistency of the alternative accessors is checked
 // elsewhere.  If this test fails, further tests using cell_to_coordinates data
 // should be avoided.
 
 bool MeshAudit::check_cell_to_coordinates() const
 {
-  vector<double> xref(24), x(24); // 3x8
-  vector<unsigned int> cnode(8);
-  vector<unsigned int> bad_cells, bad_cells_exc;
+  int spdim = mesh->space_dimension();
+  AmanziMesh::Entity_ID_List cnode;
+  AmanziMesh::Entity_ID_List bad_cells, bad_cells_exc;
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_nodes(j, cnode.begin(), cnode.end()); // this should not fail
-    vector<double>::iterator xbeg = xref.begin();
-    for (int k = 0; k < 8; ++k) {
-      mesh->node_to_coordinates(cnode[k], xbeg, xbeg+3); // this should not fail
-      xbeg += 3;
-    }
+    vector<AmanziGeometry::Point> x0;
     try {
-      x.assign(24, DBL_MAX);
-      mesh->cell_to_coordinates(j, x.begin(), x.end()); // this may fail
-      bool bad_data = false;
-      for (int k = 0; k < 24; ++k)
-        if (x[k] != xref[k]) bad_data = true;
-      if (bad_data) bad_cells.push_back(j);
+      mesh->cell_get_coordinates(j, &x0); // this may fail
+      mesh->cell_get_nodes(j, &cnode); // this should not fail
+      for (int k = 0; k < cnode.size(); ++k) {
+	AmanziGeometry::Point xref(spdim);
+	bool bad_data = false;
+        mesh->node_get_coordinates(cnode[k], &xref); // this should not fail
+	for (int i = 0; i < spdim; i++)
+	  if (x0[k][i] != xref[i]) {
+	    bad_data = true;
+	    bad_cells.push_back(j);
+	    break;
+	  }
+	if (bad_data)
+	  break;
+      }
     } catch (...) {
       bad_cells_exc.push_back(j);
     }
@@ -1019,73 +818,39 @@ bool MeshAudit::check_cell_to_coordinates() const
   return global_any(error);
 }
 
-// Check that the alternative cell_to_coordinates accessors successfully
-// return the same data as returned by the std::vector accessor, which is
-// considered normative.  If this test fails, further tests, which use the
-// std::vector-based accessor, are safe.
 
-bool MeshAudit::check_cell_to_coordinates_alt() const
-{
-  vector<double> x(24); // 3x8
-  vector<unsigned int> bad_cells1, bad_cells1_exc;
+// Check that face_get_coordinates successfully returns data for all
+// faces, and that this data is identical to that returned by
+// composing node_get_coordinates with face_get_nodes.  This assumes
+// that the std::vector form of face_get_nodes and pointer-based form
+// of node_get_coordinates have been verified to return valid data. A
+// negative return value signals a terminal error.
 
-  for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_coordinates(j, x.begin(), x.end()); // this should not fail
-    try {
-      double x1[24] = { DBL_MAX };
-      mesh->cell_to_coordinates(j, x1, x1+24); // this may fail
-      bool bad_data = false;
-      for (int k = 0; k < 24; ++k)
-        if (x1[k] != x[k]) bad_data = true;
-      if (bad_data) bad_cells1.push_back(j);
-    } catch (...) {
-      bad_cells1_exc.push_back(j);
-    }
-  }
-
-  bool error = false;
-
-  if (!bad_cells1.empty()) {
-    os << "ERROR: bad values from pointer-based accessor for cells:";
-    write_list(bad_cells1, MAX_OUT);
-    error = true;
-  }
-
-  if (!bad_cells1_exc.empty()) {
-    os << "ERROR: caught exception from pointer-based accessor for cells:";
-    write_list(bad_cells1_exc, MAX_OUT);
-    error = true;
-  }
-
-  return global_any(error);
-}
-
-// Check that face_to_coordinates successfully returns data for all faces, and
-// that this data is identical to that returned by composing node_to_coordinates
-// with face_to_nodes.  The consistency of the alternative accessors is checked
-// elsewhere.  If this test fails, further tests using face_to_coordinates data
-// should be avoided.
 
 bool MeshAudit::check_face_to_coordinates() const
 {
-  vector<double> xref(12), x(12); // 3x4
-  vector<unsigned int> fnode(4);
-  vector<unsigned int> bad_faces, bad_faces_exc;
+  int spdim = mesh->space_dimension();
+  AmanziMesh::Entity_ID_List fnode;
+  AmanziMesh::Entity_ID_List bad_faces, bad_faces_exc;
 
   for (unsigned int j = 0; j < nface; ++j) {
-    mesh->face_to_nodes(j, fnode.begin(), fnode.end()); // this should not fail
-    vector<double>::iterator xbeg = xref.begin();
-    for (int k = 0; k < 4; ++k) {
-      mesh->node_to_coordinates(fnode[k], xbeg, xbeg+3); // this should not fail
-      xbeg += 3;
-    }
     try {
-      x.assign(12, DBL_MAX);
-      mesh->face_to_coordinates(j, x.begin(), x.end()); // this may fail
+      vector<AmanziGeometry::Point> x0;
       bool bad_data = false;
-      for (int k = 0; k < x.size(); ++k)
-        if (x[k] != xref[k]) bad_data = true;
-      if (bad_data) bad_faces.push_back(j);
+      mesh->face_get_coordinates(j, &x0); // this may fail
+      mesh->face_get_nodes(j, &fnode); // this should not fail
+      for (int k = 0; k < fnode.size(); ++k) {
+	AmanziGeometry::Point xref(spdim);
+        mesh->node_get_coordinates(fnode[k], &xref); // this should not fail
+	for (int i = 0; i < spdim; i++)
+	  if (x0[k][i] != xref[i]) {
+	    bad_data = true;
+	    bad_faces.push_back(j);
+	    break;
+	  }
+	if (bad_data)
+	  break;
+      }
     } catch (...) {
       bad_faces_exc.push_back(j);
     }
@@ -1108,69 +873,22 @@ bool MeshAudit::check_face_to_coordinates() const
   return global_any(error);
 }
 
-// Check that the alternative face_to_coordinates accessors successfully
-// return the same data as returned by the std::vector accessor, which is
-// considered normative.  If this test fails, further tests, which use the
-// std::vector-based accessor, are safe.
 
-bool MeshAudit::check_face_to_coordinates_alt() const
+// The cells must not be degenerate, either topologically (repeated
+// node index) or geometrically (with coincident nodes).
+
+
+bool MeshAudit::check_cell_geometry() const
 {
-  vector<double> x(12); // 3x4
-  vector<unsigned int> bad_faces1, bad_faces1_exc;
+  os << "Checking cell geometry ..." << endl;
+  AmanziGeometry::Point centroid;
+  double hvol;
+  AmanziMesh::Entity_ID_List bad_cells;
 
-  for (unsigned int j = 0; j < nface; ++j) {
-    mesh->face_to_coordinates(j, x.begin(), x.end()); // this should not fail
-    try {
-      double x1[12] = { DBL_MAX };
-      mesh->face_to_coordinates(j, x1, x1+12); // this may fail
-      bool bad_data = false;
-      for (int k = 0; k < 12; ++k)
-        if (x1[k] != x[k]) bad_data = true;
-      if (bad_data) bad_faces1.push_back(j);
-    } catch (...) {
-      bad_faces1_exc.push_back(j);
-    }
-  }
-
-  bool error = false;
-
-  if (!bad_faces1.empty()) {
-    os << "ERROR: bad values from pointer-based accessor for faces:";
-    write_list(bad_faces1, MAX_OUT);
-    error = true;
-  }
-
-  if (!bad_faces1_exc.empty()) {
-    os << "ERROR: caught exception from pointer-based accessor for faces:";
-    write_list(bad_faces1_exc, MAX_OUT);
-    error = true;
-  }
-
-  return global_any(error);
-}
-
-// The hexahedral cells must not be degenerate, either topologically (repeated
-// node index) or geometrically (with coincident nodes).  In addition, the
-// cell vertices must be ordered in a pre-defined manner (see cell_topology).
-// To detect geometric degeneracy or bad topology (vertices listed in the
-// wrong order), the corner tet volumes of the hexahedron are evaluated and
-// checked for positivity.  If any are negative this indicates bad topology
-// (is this sufficient?  I think so.)  Geometric degeneracy is indicated
-// by one or more zero corner volumes.
-
-bool MeshAudit::check_cell_topology() const
-{
-  double x[24], hvol, cvol[8];
-  Epetra_SerialDenseMatrix xmat(View, x, 3, 3, 8);
-  vector<unsigned int> bad_cells;
-
-  for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_to_coordinates(j, x, x+24); // should not fail
-    cell_geometry::compute_hex_volumes(xmat, hvol, cvol);
-    bool bad_vol = (hvol <= 0.0);
-    for (int k = 0; k < 8; ++k)
-      if (cvol[k] <= 0.0) bad_vol = true;
-    if (bad_vol) bad_cells.push_back(j);
+  for (AmanziMesh::Entity_ID j = 0; j < ncell; ++j) {
+    hvol = mesh->cell_volume(j);
+      
+    if (hvol <= 0.0) bad_cells.push_back(j);
   }
 
   bool error = false;
@@ -1199,17 +917,17 @@ bool MeshAudit::check_cell_topology() const
 
 bool MeshAudit::check_node_maps() const
 {
-  return check_maps(mesh->node_map(false), mesh->node_map(true));
+  return check_maps(mesh->node_epetra_map(false), mesh->node_epetra_map(true));
 }
 
 bool MeshAudit::check_face_maps() const
 {
-  return check_maps(mesh->face_map(false), mesh->face_map(true));
+  return check_maps(mesh->face_epetra_map(false), mesh->face_epetra_map(true));
 }
 
 bool MeshAudit::check_cell_maps() const
 {
-  return check_maps(mesh->cell_map(false), mesh->cell_map(true));
+  return check_maps(mesh->cell_epetra_map(false), mesh->cell_epetra_map(true));
 }
 
 bool MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use) const
@@ -1308,32 +1026,34 @@ bool MeshAudit::check_maps(const Epetra_Map &map_own, const Epetra_Map &map_use)
 
 bool MeshAudit::check_node_to_coordinates_ghost_data() const
 {
-  const Epetra_Map &node_map_own = mesh->node_map(false);
-  const Epetra_Map &node_map_use = mesh->node_map(true);
+  int spdim = mesh->space_dimension();
+
+  const Epetra_Map &node_map_own = mesh->node_epetra_map(false);
+  const Epetra_Map &node_map_use = mesh->node_epetra_map(true);
 
   int nnode_own = node_map_own.NumMyElements();
   int nnode_use = node_map_use.NumMyElements();
 
-  vector<double> coord(3);
-  vector<unsigned int> bad_nodes;
+  AmanziGeometry::Point coord(spdim);
+  AmanziMesh::Entity_ID_List bad_nodes;
 
-  Epetra_MultiVector coord_use(node_map_use,3);
+  Epetra_MultiVector coord_use(node_map_use,spdim);
   double **data;
   coord_use.ExtractView(&data);
-  Epetra_MultiVector coord_own(View, node_map_own, data, 3);
+  Epetra_MultiVector coord_own(View, node_map_own, data, spdim);
 
   for (unsigned int j = 0; j < nnode_own; ++j) {
-    mesh->node_to_coordinates(j, coord.begin(), coord.end());
-    for (int k = 0; k < 3; ++k) coord_own[k][j] = coord[k];
+    mesh->node_get_coordinates(j, &coord);
+    for (int k = 0; k < spdim; ++k) coord_own[k][j] = coord[k];
   }
 
   Epetra_Import importer(node_map_use, node_map_own);
   coord_use.Import(coord_own, importer, Insert);
 
   for (unsigned int j = nnode_own; j < nnode_use; ++j) {
-    mesh->node_to_coordinates(j, coord.begin(), coord.end());
+    mesh->node_get_coordinates(j, &coord);
     bool bad_data = false;
-    for (int k = 0; k < 3; ++k)
+    for (int k = 0; k < spdim; ++k)
       if (coord[k] != coord_use[k][j]) bad_data = true;
     if (bad_data) bad_nodes.push_back(j);
   }
@@ -1355,27 +1075,36 @@ bool MeshAudit::check_node_to_coordinates_ghost_data() const
 
 bool MeshAudit::check_face_to_nodes_ghost_data() const
 {
-  const Epetra_Map &node_map = mesh->node_map(true);
-  const Epetra_Map &face_map_own = mesh->face_map(false);
-  const Epetra_Map &face_map_use = mesh->face_map(true);
+  const Epetra_Map &node_map = mesh->node_epetra_map(true);
+  const Epetra_Map &face_map_own = mesh->face_epetra_map(false);
+  const Epetra_Map &face_map_use = mesh->face_epetra_map(true);
 
   int nface_own = face_map_own.NumMyElements();
   int nface_use = face_map_use.NumMyElements();
 
-  vector<unsigned int> fnode(4);
-  vector<unsigned int> bad_faces, bad_faces1, bad_faces2;
+  AmanziMesh::Entity_ID_List fnode;
+  AmanziMesh::Entity_ID_List bad_faces, bad_faces1, bad_faces2;
 
   // Create a matrix of the GIDs for all owned faces.
-  Epetra_IntSerialDenseMatrix gids(nface_use,4); // no Epetra_IntMultiVector :(
+
+  int maxnodes = 0;
   for (unsigned int j = 0; j < nface_own; ++j) {
-    mesh->face_to_nodes(j, fnode.begin(), fnode.end());
-    for (int k = 0; k < 4; ++k)
+    mesh->face_get_nodes(j, &fnode);
+    maxnodes = fnode.size() > maxnodes ? fnode.size() : maxnodes;
+  }
+
+  Epetra_IntSerialDenseMatrix gids(nface_use,maxnodes); // no Epetra_IntMultiVector :(
+  for (unsigned int j = 0; j < nface_own; ++j) {
+    mesh->face_get_nodes(j, &fnode);
+    for (int k = 0; k < fnode.size(); ++k)
       gids(j,k) = node_map.GID(fnode[k]);
+    for (int k = fnode.size(); k < maxnodes; ++k)
+      gids(j, k) = 0;
   }
 
   // Import these GIDs to all used faces; sets values on ghost faces.
   Epetra_Import importer(face_map_use, face_map_own);
-  for (int k = 0; k < 4; ++k) {
+  for (int k = 0; k < maxnodes; ++k) {
     Epetra_IntVector kgids_own(View, face_map_own, gids[k]);
     Epetra_IntVector kgids_use(View, face_map_use, gids[k]);
     kgids_use.Import(kgids_own, importer, Insert);
@@ -1383,14 +1112,19 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
 
   // Compare the ghost face GIDs against the reference values just computed.
   for (unsigned int j = nface_own; j < nface_use; ++j) {
-    mesh->face_to_nodes(j, fnode.begin(), fnode.end());
+    mesh->face_get_nodes(j, &fnode);
     bool bad_data = false;
-    for (int k = 0; k < 4; ++k)
-      if (node_map.GID(fnode[k]) != gids(j,k)) bad_data = true;
+    for (int k = 0; k < fnode.size(); ++k)
+      if (node_map.GID(fnode[k]) != gids(j,k)) { 
+        bad_data = true;
+        std::cerr << comm.MyPID() << ": used face " << j << ", node " << k << ": " 
+                  << node_map.GID(fnode[k]) << " != " << gids(j,k)
+                  << std::endl;
+      }
     if (bad_data) {
       // Determine just how bad the data is.
-      vector<unsigned int> fnode_ref(4);
-      for (int k = 0; k < 4; ++k) {
+      AmanziMesh::Entity_ID_List fnode_ref(maxnodes);
+      for (int k = 0; k < maxnodes; ++k) {
         fnode[k] = node_map.GID(fnode[k]);
         fnode_ref[k] = gids(j,k);
       }
@@ -1438,27 +1172,35 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
 
 bool MeshAudit::check_cell_to_nodes_ghost_data() const
 {
-  const Epetra_Map &node_map = mesh->node_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  const Epetra_Map &node_map = mesh->node_epetra_map(true);
+  const Epetra_Map &cell_map_own = mesh->cell_epetra_map(false);
+  const Epetra_Map &cell_map_use = mesh->cell_epetra_map(true);
 
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
 
-  vector<unsigned int> cnode(8);
-  vector<unsigned int> bad_cells;
+  AmanziMesh::Entity_ID_List cnode;
+  AmanziMesh::Entity_ID_List bad_cells;
+
+  int maxnodes = 0;
+  for (unsigned int j = 0; j < ncell_own; ++j) {
+    mesh->cell_get_nodes(j, &cnode);
+    maxnodes = (cnode.size() > maxnodes) ? cnode.size() : maxnodes;
+  }
+  Epetra_IntSerialDenseMatrix gids(ncell_use,maxnodes); // no Epetra_IntMultiVector :(
 
   // Create a matrix of the GIDs for all owned cells.
-  Epetra_IntSerialDenseMatrix gids(ncell_use,8); // no Epetra_IntMultiVector :(
   for (unsigned int j = 0; j < ncell_own; ++j) {
-    mesh->cell_to_nodes(j, cnode.begin(), cnode.end());
-    for (int k = 0; k < 8; ++k)
+    mesh->cell_get_nodes(j, &cnode);
+    for (int k = 0; k < cnode.size(); ++k)
       gids(j,k) = node_map.GID(cnode[k]);
+    for (int k = cnode.size(); k < maxnodes; ++k)
+      gids(j,k) = 0;
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
   Epetra_Import importer(cell_map_use, cell_map_own);
-  for (int k = 0; k < 8; ++k) {
+  for (int k = 0; k < maxnodes; ++k) {
     Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
     Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
     kgids_use.Import(kgids_own, importer, Insert);
@@ -1466,9 +1208,9 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
 
   // Compare the ghost cell GIDs against the reference values just computed.
   for (unsigned int j = ncell_own; j < ncell_use; ++j) {
-    mesh->cell_to_nodes(j, cnode.begin(), cnode.end());
+    mesh->cell_get_nodes(j, &cnode);
     bool bad_data = false;
-    for (int k = 0; k < 8; ++k)
+    for (int k = 0; k < cnode.size(); ++k)
       if (node_map.GID(cnode[k]) != gids(j,k)) bad_data = true;
     if (bad_data) bad_cells.push_back(j);
     // for bad cells we could do a further check to see how bad they are.
@@ -1488,36 +1230,47 @@ bool MeshAudit::check_cell_to_nodes_ghost_data() const
   return global_any(error);
 }
 
-// Check that ghost cells reference the same faces, and in the same order, as their
-// master.  This is part of a ghost being an exact copies the master.  Even if the
-// preceding ghost checks pass it is still possible for this one to fail.  In this
-// case the ghost would reference a different face (by GID) but that face would
-// reference the same nodes as the correct face.  So the two faces would be
+
+// Check that ghost cells reference the same faces, and in the same
+// order, as their master.  This is part of a ghost being an exact
+// copies the master.  Even if the preceding ghost checks pass it is
+// still possible for this one to fail.  In this case the ghost would
+// reference a different face (by GID) but that face would reference
+// the same nodes as the correct face.  So the two faces would be
 // geometrically identical, including orientation, but be distinct.
 
 bool MeshAudit::check_cell_to_faces_ghost_data() const
 {
-  const Epetra_Map &face_map = mesh->face_map(true);
-  const Epetra_Map &cell_map_own = mesh->cell_map(false);
-  const Epetra_Map &cell_map_use = mesh->cell_map(true);
+  const Epetra_Map &face_map = mesh->face_epetra_map(true);
+  const Epetra_Map &cell_map_own = mesh->cell_epetra_map(false);
+  const Epetra_Map &cell_map_use = mesh->cell_epetra_map(true);
 
   int ncell_own = cell_map_own.NumMyElements();
   int ncell_use = cell_map_use.NumMyElements();
 
-  vector<unsigned int> cface(6);
-  vector<unsigned int> bad_cells;
+  AmanziMesh::Entity_ID_List cface;
+  AmanziMesh::Entity_ID_List bad_cells;
 
   // Create a matrix of the GIDs for all owned cells.
-  Epetra_IntSerialDenseMatrix gids(ncell_use,6); // no Epetra_IntMultiVector :(
+  int maxfaces = 0;
   for (unsigned int j = 0; j < ncell_own; ++j) {
-    mesh->cell_to_faces(j, cface.begin(), cface.end());
-    for (int k = 0; k < 6; ++k)
+    mesh->cell_get_faces(j, &cface);
+    maxfaces = (cface.size() > maxfaces) ? cface.size() : maxfaces;
+  }
+
+  Epetra_IntSerialDenseMatrix gids(ncell_use,maxfaces); // no Epetra_IntMultiVector :(
+
+  for (unsigned int j = 0; j < ncell_own; ++j) {
+    mesh->cell_get_faces(j, &cface);
+    for (int k = 0; k < cface.size(); ++k)
       gids(j,k) = face_map.GID(cface[k]);
+    for (int k = cface.size(); k < maxfaces; ++k)
+      gids(j,k) = 0;
   }
 
   // Import these GIDs to all used cells; sets values on ghost cells.
   Epetra_Import importer(cell_map_use, cell_map_own);
-  for (int k = 0; k < 6; ++k) {
+  for (int k = 0; k < maxfaces; ++k) {
     Epetra_IntVector kgids_own(View, cell_map_own, gids[k]);
     Epetra_IntVector kgids_use(View, cell_map_use, gids[k]);
     kgids_use.Import(kgids_own, importer, Insert);
@@ -1525,9 +1278,9 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
 
   // Compare the ghost cell GIDs against the reference values just computed.
   for (unsigned int j = ncell_own; j < ncell_use; ++j) {
-    mesh->cell_to_faces(j, cface.begin(), cface.end());
+    mesh->cell_get_faces(j, &cface);
     bool bad_data = false;
-    for (int k = 0; k < 6; ++k)
+    for (int k = 0; k < cface.size(); ++k)
       if (face_map.GID(cface[k]) != gids(j,k)) bad_data = true;
     if (bad_data) bad_cells.push_back(j);
   }
@@ -1557,20 +1310,20 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
 
 bool MeshAudit::check_node_set_ids() const
 {
-  return check_get_set_ids(Mesh_data::NODE);
+  return check_get_set_ids(AmanziMesh::NODE);
 }
 
 bool MeshAudit::check_face_set_ids() const
 {
-  return check_get_set_ids(Mesh_data::FACE);
+  return check_get_set_ids(AmanziMesh::FACE);
 }
 
 bool MeshAudit::check_cell_set_ids() const
 {
-  return check_get_set_ids(Mesh_data::CELL);
+  return check_get_set_ids(AmanziMesh::CELL);
 }
 
-bool MeshAudit::check_get_set_ids(Mesh_data::Entity_kind kind) const
+bool MeshAudit::check_get_set_ids(AmanziMesh::Entity_kind kind) const
 {
   bool error = false;
 
@@ -1586,9 +1339,9 @@ bool MeshAudit::check_get_set_ids(Mesh_data::Entity_kind kind) const
   if (error) return error;
 
   // Get the vector of set IDs.
-  vector<unsigned int> sids(nset, UINT_MAX);
+  AmanziMesh::Set_ID_List sids(nset, UINT_MAX);
   try {
-    mesh->get_set_ids(kind, sids.begin(), sids.end()); // this may fail
+    mesh->get_set_ids(kind, &sids); // this may fail
   } catch (...) {
     os << "ERROR: caught exception from get_set_ids()" << endl;
     error = true;
@@ -1631,8 +1384,8 @@ bool MeshAudit::check_get_set_ids(Mesh_data::Entity_kind kind) const
 
     if (!error) {
       // Broadcast the set IDs on processor 0.
-      vector<unsigned int> sids(nset);
-      mesh->get_set_ids(kind, sids.begin(), sids.end());
+    AmanziMesh::Set_ID_List sids(nset, UINT_MAX);
+    mesh->get_set_ids(kind, &sids);
       int *sids0 = new int[nset];
       for (int j = 0; j < nset; ++j) sids0[j] = sids[j];
       comm.Broadcast(sids0, nset, 0);
@@ -1657,27 +1410,27 @@ bool MeshAudit::check_get_set_ids(Mesh_data::Entity_kind kind) const
 
 bool MeshAudit::check_valid_node_set_id() const
 {
-  return check_valid_set_id(Mesh_data::NODE);
+  return check_valid_set_id(AmanziMesh::NODE);
 }
 
 bool MeshAudit::check_valid_face_set_id() const
 {
-  return check_valid_set_id(Mesh_data::FACE);
+  return check_valid_set_id(AmanziMesh::FACE);
 }
 
 bool MeshAudit::check_valid_cell_set_id() const
 {
-  return check_valid_set_id(Mesh_data::CELL);
+  return check_valid_set_id(AmanziMesh::CELL);
 }
 
-bool MeshAudit::check_valid_set_id(Mesh_data::Entity_kind kind) const
+bool MeshAudit::check_valid_set_id(AmanziMesh::Entity_kind kind) const
 {
   // Get the list of set IDs.
   int nset = mesh->num_sets(kind); // this should not fail
-  vector<unsigned int> sids(nset);
-  mesh->get_set_ids(kind, sids.begin(), sids.end()); // this should not fail
+  AmanziMesh::Set_ID_List sids(nset);
+  mesh->get_set_ids(kind, &sids); // this should not fail
 
-  // Generate a valid/invalid set ID reference array that encompasses the known ones.
+  AmanziMesh::Set_ID_List bad_sids;
   int max_id = 0;
   for (int j = 0; j < nset; ++j)
     if (max_id < sids[j]) max_id = sids[j];
@@ -1685,7 +1438,7 @@ bool MeshAudit::check_valid_set_id(Mesh_data::Entity_kind kind) const
   for (int j = 0; j < nset; ++j)
     valid[sids[j]] = true;
 
-  vector<unsigned int> bad_sids1, bad_sids2;
+  AmanziMesh::Set_ID_List bad_sids1, bad_sids2;
   for (int n = 0; n < valid.size(); ++n) {
     if (valid[n] && !mesh->valid_set_id(n, kind)) bad_sids1.push_back(n);
     if (!valid[n] && mesh->valid_set_id(n, kind)) bad_sids2.push_back(n);
@@ -1714,35 +1467,37 @@ bool MeshAudit::check_valid_set_id(Mesh_data::Entity_kind kind) const
 
 bool MeshAudit::check_node_sets() const
 {
-  return check_sets(Mesh_data::NODE, mesh->node_map(false), mesh->node_map(true));
+  return check_sets(AmanziMesh::NODE, mesh->node_map(false), mesh->node_map(true));
 }
 
 bool MeshAudit::check_face_sets() const
 {
-  return check_sets(Mesh_data::FACE, mesh->face_map(false), mesh->face_map(true));
+  return check_sets(AmanziMesh::FACE, mesh->face_map(false), mesh->face_map(true));
 }
 
 bool MeshAudit::check_cell_sets() const
 {
-  return check_sets(Mesh_data::CELL, mesh->cell_map(false), mesh->cell_map(true));
+  return check_sets(AmanziMesh::CELL, mesh->cell_map(false), mesh->cell_map(true));
 }
 
-bool MeshAudit::check_sets(Mesh_data::Entity_kind kind,
+bool MeshAudit::check_sets(AmanziMesh::Entity_kind kind,
                           const Epetra_Map &map_own, const Epetra_Map &map_use) const
 {
   bool error = false;
 
   // Get the list of set IDs.
   int nset = mesh->num_sets(kind);
-  vector<unsigned int> sids(nset);
-  mesh->get_set_ids(kind, sids.begin(), sids.end());
+  AmanziMesh::Set_ID_List sids(nset);
+  mesh->get_set_ids(kind, &sids);
 
   for (int n = 0; n < sids.size(); ++n) {
     os << "  Checking set ID=" << sids[n] << " ..." << endl;
 
     // Basic sanity checks of the owned and used sets.
-    bool bad_set = check_get_set(sids[n], kind, OWNED, map_own) ||
-                   check_get_set(sids[n], kind, USED,  map_use);
+    bool bad_set = check_get_set(sids[n], kind, AmanziMesh::OWNED, 
+				 map_own) ||
+                   check_get_set(sids[n], kind, AmanziMesh::USED,  
+				 map_use);
     bad_set = global_any(bad_set);
 
     // Verify the used set relates correctly to the owned set.
@@ -1760,22 +1515,24 @@ bool MeshAudit::check_sets(Mesh_data::Entity_kind kind,
 // to the map.  This test runs independently on each process and returns a
 // per-process pass/fail result.
 
-bool MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
-                             Element_Category category, const Epetra_Map &map) const
+bool MeshAudit::check_get_set(unsigned int sid, 
+			      AmanziMesh::Entity_kind kind,
+			      AmanziMesh::Parallel_type ptype, 
+			      const Epetra_Map &map) const
 {
   // Get the size of the set.
   int n;
   try {
-    n = mesh->get_set_size(sid, kind, category); // this may fail
+    n = mesh->get_set_size(sid, kind, ptype); // this may fail
   } catch (...) {
     os << "  ERROR: caught exception from get_set_size()" << endl;
     return true;
   }
 
   // Get the set.
-  vector<unsigned int> set(n, UINT_MAX);
+  AmanziMesh::Entity_ID_List set;
   try {
-    mesh->get_set(sid, kind, category, set.begin(), set.end());  // this may fail
+    mesh->get_set_entities(sid, kind, ptype, &set);  // this may fail
   } catch (...) {
     os << "  ERROR: caught exception from get_set()" << endl;
     return true;
@@ -1791,7 +1548,7 @@ bool MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
   }
 
   // Check that the LIDs in the set belong to the map.
-  vector<unsigned int> bad_LIDs;
+  AmanziMesh::Entity_ID_List bad_LIDs;
   for (int j = 0; j < set.size(); ++j)
     if (!map.MyLID(set[j])) bad_LIDs.push_back(set[j]);
   if (!bad_LIDs.empty()) {
@@ -1817,26 +1574,29 @@ bool MeshAudit::check_get_set(unsigned int sid, Mesh_data::Entity_kind kind,
 // presented in any order.  This is a collective test, returning a collective
 // pass/fail result.
 
-bool MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
-                               const Epetra_Map &map_own, const Epetra_Map &map_use) const
+bool MeshAudit::check_used_set(AmanziMesh::Set_ID sid, 
+			       AmanziMesh::Entity_kind kind,
+                               const Epetra_Map &map_own, 
+			       const Epetra_Map &map_use) const
 {
   if (comm.NumProc() == 1) {
 
     // In serial, the owned and used sets should be identical.
 
-    int n = mesh->get_set_size(sid, kind, OWNED);
-    vector<unsigned int> set_own(n);
-    mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
+    int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List set_own;
+    mesh->get_set_entities(sid, kind, AmanziMesh::OWNED, &set_own);
 
     // Set sizes had better be the same.
-    if (mesh->get_set_size(sid, kind, USED) != set_own.size()) {
+    if (mesh->get_set_size(sid, kind, AmanziMesh::USED) != 
+	set_own.size()) {
       os << "  ERROR: owned and used set sizes differ" << endl;
       return true;
     }
 
     // Verify that the two sets are identical.
-    vector<unsigned int> set_use(n);
-    mesh->get_set(sid, kind, USED, set_use.begin(), set_use.end());
+    AmanziMesh::Entity_ID_List set_use;
+    mesh->get_set_entities(sid, kind, AmanziMesh::USED, &set_use);
     bool bad_data = false;
     for (int j = 0; j < n; ++j)
       if (set_use[j] != set_own[j]) bad_data = true;
@@ -1849,13 +1609,13 @@ bool MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
 
   } else {
 
-    int n = mesh->get_set_size(sid, kind, OWNED);
-    vector<unsigned int> set_own(n);
-    mesh->get_set(sid, kind, OWNED, set_own.begin(), set_own.end());
+    int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
+    AmanziMesh::Entity_ID_List set_own;
+    mesh->get_set_entities(sid, kind, AmanziMesh::OWNED, &set_own);
 
-    n = mesh->get_set_size(sid, kind, USED);
-    vector<unsigned int> set_use(n);
-    mesh->get_set(sid, kind, USED,  set_use.begin(), set_use.end());
+    n = mesh->get_set_size(sid, kind, AmanziMesh::USED);
+    AmanziMesh::Entity_ID_List set_use(n);
+    mesh->get_set_entities(sid, kind, AmanziMesh::USED,  &set_use);
 
     // Tag all LIDs in the used map that should belong to the used set;
     // the owned set LIDs are taken as definitive.
@@ -1875,7 +1635,7 @@ bool MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
 
     // Check for negative tag values;
     // these mark used LIDs that shouldn't be in the set but are.
-    vector<unsigned int> bad_LIDs;
+    AmanziMesh::Entity_ID_List bad_LIDs;
     for (int j = 0; j < set_use.size(); ++j)
       if (tag_use[j] < 0) bad_LIDs.push_back(j);
     if (!bad_LIDs.empty()) {
@@ -1899,91 +1659,6 @@ bool MeshAudit::check_used_set(unsigned int sid, Mesh_data::Entity_kind kind,
   }
 }
 
-// Check that the alternate pointer-based get_set_ids and get_set accessors
-// give the same results as the normative std::vector-based accessors.  This
-// is a collective test, returning a collective pass/fail result.
-
-bool MeshAudit::check_node_sets_alt() const
-{
-  return check_sets_alt(Mesh_data::NODE);
-}
-
-bool MeshAudit::check_face_sets_alt() const
-{
-  return check_sets_alt(Mesh_data::FACE);
-}
-
-bool MeshAudit::check_cell_sets_alt() const
-{
-  return check_sets_alt(Mesh_data::CELL);
-}
-
-bool MeshAudit::check_sets_alt(Mesh_data::Entity_kind kind) const
-{
-  bool error = false;
-
-  int nset = mesh->num_sets(kind); // this should not fail
-  vector<unsigned int> sids(nset);
-  mesh->get_set_ids(kind, sids.begin(), sids.end()); // this should not fail
-  try {
-    unsigned int *sids1 = new unsigned int[nset];
-    for (int j = 0; j < nset; ++j) sids1[j] = UINT_MAX;
-    mesh->get_set_ids(kind, sids1, sids1+nset); // this may fail
-    bool bad_data = false;
-    for (int j = 0; j < nset; ++j)
-      if (sids1[j] != sids[j]) bad_data = true;
-    if (bad_data) {
-      os << "ERROR: pointer-based get_set_ids() returned inconsistent values." << endl;
-      error = true;
-    }
-  } catch (...) {
-    os << "ERROR: caught exception from pointer-based get_set_ids()." << endl;
-    error = true;
-  }
-  error = global_any(error);
-  if (error) return error;
-
-  for (int n = 0; n < sids.size(); ++n) {
-    os << "  Checking set ID=" << sids[n] << " ..." << endl;
-
-    bool bad_set = check_get_set_alt(sids[n], kind, OWNED) ||
-                   check_get_set_alt(sids[n], kind, USED);
-
-    // OUGHT TO DO TESTING OF THE GHOST SETS
-
-    bad_set = global_any(bad_set);
-    if (bad_set) error = true;
-  }
-
-  return error;
-}
-
-// Check that the alternate pointer-based get_set() returns the same result as
-// the normative std::vector-based method.  This test runs independently on each
-// process and returns a per-process pass/fail result.
-
-bool MeshAudit::check_get_set_alt(unsigned int sid, Mesh_data::Entity_kind kind,
-                                  Element_Category category) const
-{
-  int n = mesh->get_set_size(sid, kind, category);
-  vector<unsigned int> set0(n);
-  mesh->get_set(sid, kind, category, set0.begin(), set0.end()); // this should not fail
-  unsigned int *set1 = new unsigned int[n];
-  try {
-    mesh->get_set(sid, kind, category, set1, set1+n);
-    bool bad_data = false;
-    for (int j = 0; j < n; ++j)
-      if (set1[j] != set0[j]) bad_data = true;
-    if (bad_data) {
-      os << "  ERROR: pointer-based get_set() returned inconsistent values." << endl;
-      return true;
-    }
-  } catch (...) {
-    os << "  ERROR: caught exception from pointer-based get_set()" << endl;
-    return true;
-  }
-  return false;
-}
 
 // SANE PARTITIONING CHECKS.  In parallel the cells, faces and nodes of the
 // mesh are each partitioned across the processes, and while in principle
@@ -1999,15 +1674,15 @@ bool MeshAudit::check_face_partition() const
   // Mark all the faces contained by owned cells.
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
-  unsigned int cface[6];
-  for (unsigned int j = 0; j < mesh->cell_map(false).NumMyElements(); ++j) {
-    mesh->cell_to_faces(j, cface, cface+6);
-    for (int k = 0; k < 6; ++k) owned[cface[k]] = true;
+  AmanziMesh::Entity_ID_List cface;
+  for (unsigned int j = 0; j < mesh->cell_epetra_map(false).NumMyElements(); ++j) {
+    mesh->cell_get_faces(j, &cface);
+    for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
   }
 
   // Verify that every owned face has been marked as belonging to an owned cell.
-  vector<unsigned int> bad_faces;
-  for (unsigned int j = 0; j < mesh->face_map(false).NumMyElements(); ++j)
+  AmanziMesh::Entity_ID_List bad_faces;
+  for (unsigned int j = 0; j < mesh->face_epetra_map(false).NumMyElements(); ++j)
     if (!owned[j]) bad_faces.push_back(j);
 
   if (!bad_faces.empty()) {
@@ -2026,15 +1701,15 @@ bool MeshAudit::check_node_partition() const
   // Mark all the nodes contained by owned cells.
   bool owned[nnode];
   for (int j = 0; j < nnode; ++j) owned[j] = false;
-  unsigned int cnode[8];
-  for (unsigned int j = 0; j < mesh->cell_map(false).NumMyElements(); ++j) {
-    mesh->cell_to_nodes(j, cnode, cnode+8);
-    for (int k = 0; k < 8; ++k) owned[cnode[k]] = true;
+  AmanziMesh::Entity_ID_List cnode;
+  for (unsigned int j = 0; j < mesh->cell_epetra_map(false).NumMyElements(); ++j) {
+    mesh->cell_get_nodes(j, &cnode);
+    for (int k = 0; k < cnode.size(); ++k) owned[cnode[k]] = true;
   }
 
   // Verify that every owned node has been marked as belonging to an owned cell.
-  vector<unsigned int> bad_nodes;
-  for (unsigned int j = 0; j < mesh->node_map(false).NumMyElements(); ++j)
+  AmanziMesh::Entity_ID_List bad_nodes;
+  for (unsigned int j = 0; j < mesh->node_epetra_map(false).NumMyElements(); ++j)
     if (!owned[j]) bad_nodes.push_back(j);
 
   if (!bad_nodes.empty()) {
@@ -2049,20 +1724,13 @@ bool MeshAudit::check_node_partition() const
 
 // Returns true if the values in the list are distinct -- no repeats.
 
-bool MeshAudit::distinct_values(const vector<unsigned int> &list) const
+bool MeshAudit::distinct_values(const AmanziMesh::Entity_ID_List &list) const
 {
-  vector<unsigned int> copy(list);
+  AmanziMesh::Entity_ID_List copy(list);
   sort(copy.begin(), copy.end());
   return (adjacent_find(copy.begin(),copy.end()) == copy.end());
 }
 
-//bool MeshAudit::distinct_values (const std::vector<unsigned int> &list) const
-//{
-//  for (int i = 0; i < list.size(); ++i)
-//    for (int j = i+1; j < list.size(); ++j)
-//      if (list[i] == list[j]) return false;
-//  return true;
-//}
 
 // Returns 1 if the face node lists fnode1 and fnode2 describe the same face
 // with the same orientation.  Returns -1 if the lists describe the same face
@@ -2070,38 +1738,37 @@ bool MeshAudit::distinct_values(const vector<unsigned int> &list) const
 // faces.  Implicitly assumes non-degenerate faces; the results are not
 // reliable otherwise.
 
-int MeshAudit::same_face(const vector<unsigned int> fnode1, const vector<unsigned int> fnode2) const
+int MeshAudit::same_face(const AmanziMesh::Entity_ID_List fnode1, const AmanziMesh::Entity_ID_List fnode2) const
 {
+  int nn = fnode1.size();
+
+  if (nn != fnode2.size()) return 0;
+
   // Locate position in fnode1 of fnode2[0].
-  int n;
-  for (n = 0; n < 4; ++n)
-    if (fnode1[n] == fnode2[0]) break;
-  if (n == 4) return 0; // did not find it -- different faces
+  int i, n;
+  for (i = 0, n = -1; i < nn; ++i)
+    if (fnode1[i] == fnode2[0]) {
+      n = i;
+      break;
+    }
+  if (n == -1) return 0; // did not find it -- different faces
 
-  // Cyclic permutation p such that p[0] = n.
-  int p[4];
-  for (int i = 0; i < 4; ++i) p[i] = (n + i) % 4;
 
-  // Check if fnode1[p] equals fnode2.
-  for (n = 1; n < 4; ++n)
-    if (fnode1[p[n]] != fnode2[n]) break;
-  if (n == 4) return 1;  // they match
+  for (i = 1; i < nn; ++i)
+    if (fnode1[(n+i)%nn] != fnode2[i]) break;
+  if (i == nn) return 1;  // they match
 
   // Modify the permutation to reverse the orientation of fnode1.
-  int s = p[1];
-  p[1] = p[3];
-  p[3] = s;
 
-  // Check if fnode1[p] equals fnode2.
-  for (n = 1; n < 4; ++n)
-    if (fnode1[p[n]] != fnode2[n]) break;
-  if (n == 4) return -1;
+  for (i = 1; i < nn; ++i)
+    if (fnode1[(n-i+nn)%nn] != fnode2[i]) break;
+  if (i == nn) return -1;   // matched nodes but orientation is reversed
 
   return 0; // different faces
 }
 
 
-void MeshAudit::write_list(const vector<unsigned int> &list, unsigned int max_out) const
+void MeshAudit::write_list(const AmanziMesh::Entity_ID_List &list, unsigned int max_out) const
 {
   int num_out = min((unsigned int) list.size(), max_out);
   for (int i = 0; i < num_out; ++i) os << " " << list[i];
@@ -2115,3 +1782,5 @@ bool MeshAudit::global_any(bool value) const
   comm.MaxAll(&lval, &gval, 1);
   return gval;
 }
+
+} // close namespace Amanzi

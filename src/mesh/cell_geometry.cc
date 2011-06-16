@@ -1,8 +1,6 @@
 #include "cell_geometry.hh"
-#include "cell_topology.hh"
+#include "Cell_topology.hh"
 #include <math.h>
-
-using namespace cell_topology;
 
 namespace cell_geometry {
 
@@ -170,7 +168,7 @@ namespace cell_geometry {
     for (int i = 0; i < 3; ++i) c[i] = 0.0;
     
     for (int j = 0; j < 10; ++j) {
-      int *tvert = HexTetVert[j];
+      const int *tvert = Amanzi::AmanziMesh::HexTetVert[j];
       double tvol = tet_volume(x[tvert[0]], x[tvert[1]], x[tvert[2]], x[tvert[3]]);
       hvol += tvol;
       for (int i = 0; i < 3; ++i) {

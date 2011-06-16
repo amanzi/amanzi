@@ -21,9 +21,8 @@ project(MPC)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
@@ -60,7 +59,24 @@ endif()
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
+#
+# Install Targets
+#
+file(GLOB mpc_inc_files "*.hpp")
+add_install_include_file(${mpc_inc_files})
+add_install_library(mpc)
+
+#
+# Install Targets
+#
+file(GLOB mpc_inc_files "*.hpp")
+add_install_include_file(${mpc_inc_files})
+add_install_library(mpc)
+
 if (BUILD_TESTS)
+
+  include_directories(${MESH_SIMPLE_SOURCE_DIR})
+
     
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
@@ -81,7 +97,7 @@ if (BUILD_TESTS)
 
         # Test: mpc-moab
         add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
-        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry transport flow ${UnitTest_LIBRARIES})
+        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry flow transport ${UnitTest_LIBRARIES})
         add_amanzi_test(mpc-moab test_mpc_moab KIND int)
     
     endif()

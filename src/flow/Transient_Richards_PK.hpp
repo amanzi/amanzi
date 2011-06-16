@@ -12,7 +12,8 @@
 #include "RichardsModelEvaluator.hpp"
 #include "BDF2_Dae.hpp"
 
-
+namespace Amanzi
+{
 class Transient_Richards_PK : public Flow_PK
 {
 
@@ -68,5 +69,7 @@ private:
   double h, hnext;
 
 };
+
+} // close namespace Amanzi
 
 #endif

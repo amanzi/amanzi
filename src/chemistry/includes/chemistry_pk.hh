@@ -12,6 +12,7 @@
 #include "chemistry_exception.hh"
 #include "verbosity.hh"
 
+
 // forward declarations
 class Epetra_MultiVector;
 class Epetra_Vector;
@@ -195,5 +196,6 @@ class Chemistry_PK {
   void CopyBeakerComponentsToCell(const int cell_id);
   void CopyStateToBeakerParameters(const int cell_id);
 };
+
 
 #endif  // AMANZI_CHEMISTRY_PK_HH_

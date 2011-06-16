@@ -59,10 +59,10 @@ dump_cgns(const int& me, Mesh_maps_base &maps, const std::string& cgnsout)
   std::vector<double> mypart(nmycell, static_cast<double>(me+1.0));
   part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
   
-  CGNS_PAR::open_data_file(cgnsout);
-  CGNS_PAR::create_timestep(0.0, 0, Mesh_data::CELL);
-  CGNS_PAR::write_field_data(part, "Partition");
-  CGNS_PAR::close_data_file();
+  Amanzi::CGNS_PAR::open_data_file(cgnsout);
+  Amanzi::CGNS_PAR::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
+  Amanzi::CGNS_PAR::write_field_data(part, "Partition");
+  Amanzi::CGNS_PAR::close_data_file();
 }
 
 // -------------------------------------------------------------

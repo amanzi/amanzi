@@ -9,6 +9,9 @@
 
 #include "ml_MultiLevelPreconditioner.h"
 
+namespace Amanzi
+{
+
 class DiffusionPrecon : public Epetra_Operator
 {
 public:
@@ -55,5 +58,7 @@ private:
 
   char *label;
 };
+
+} // close namespace Amanzi
 
 #endif

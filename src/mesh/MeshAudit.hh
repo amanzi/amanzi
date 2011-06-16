@@ -4,16 +4,18 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Comm.h"
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/visitors.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 
+namespace Amanzi {
+
 class MeshAudit {
 public:
 
-  MeshAudit(Teuchos::RCP<Mesh_maps_base> &mesh_, std::ostream& os=std::cout);
+  MeshAudit(Teuchos::RCP<AmanziMesh::Mesh> &mesh_, std::ostream& os=std::cout);
 
   // This is the main method.
   int Verify() const;
@@ -36,14 +38,11 @@ public:
   bool check_face_refs_by_cells() const;
   bool check_node_refs_by_faces() const;
   bool check_cell_degeneracy() const;
+  bool check_cell_geometry() const;
   bool check_cell_to_faces_to_nodes() const;
   bool check_node_to_coordinates() const;
   bool check_cell_to_coordinates() const;
   bool check_face_to_coordinates() const;
-  bool check_node_to_coordinates_alt() const;
-  bool check_cell_to_coordinates_alt() const;
-  bool check_face_to_coordinates_alt() const;
-  bool check_cell_topology() const;
   bool check_node_maps() const;
   bool check_face_maps() const;
   bool check_cell_maps() const;
@@ -64,16 +63,12 @@ public:
   bool check_face_sets() const;
   bool check_cell_sets() const;
   
-  bool check_node_sets_alt() const;
-  bool check_face_sets_alt() const;
-  bool check_cell_sets_alt() const;
-  
   bool check_node_partition() const;
   bool check_face_partition() const;
 
 private:
 
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
   const Epetra_Comm &comm;
   const int MyPID;
@@ -84,19 +79,17 @@ private:
   std::ostream& os;
   unsigned int MAX_OUT;
 
-  bool distinct_values(const std::vector<unsigned int> &list) const;
+  bool distinct_values(const AmanziMesh::Entity_ID_List& list) const;
   void write_list(const std::vector<unsigned int>&, unsigned int) const;
   bool global_any(bool) const;
   int same_face(const std::vector<unsigned int>, const std::vector<unsigned int>) const;
   
   bool check_maps(const Epetra_Map&, const Epetra_Map&) const;
-  bool check_get_set_ids(Mesh_data::Entity_kind) const;
-  bool check_valid_set_id(Mesh_data::Entity_kind) const;
-  bool check_sets(Mesh_data::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  bool check_get_set(unsigned int, Mesh_data::Entity_kind, Element_Category, const Epetra_Map&) const;
-  bool check_used_set(unsigned int, Mesh_data::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
-  bool check_sets_alt(Mesh_data::Entity_kind) const;
-  bool check_get_set_alt(unsigned int, Mesh_data::Entity_kind, Element_Category) const;
+  bool check_get_set_ids(AmanziMesh::Entity_kind) const;
+  bool check_valid_set_id(AmanziMesh::Entity_kind) const;
+  bool check_sets(AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
+  bool check_get_set(unsigned int, AmanziMesh::Entity_kind, AmanziMesh::Parallel_type, const Epetra_Map&) const;
+  bool check_used_set(unsigned int, AmanziMesh::Entity_kind, const Epetra_Map&, const Epetra_Map&) const;
   
   // This is the vertex type for the test dependency graph.
   typedef bool (MeshAudit::* Test)() const;
@@ -119,5 +112,7 @@ private:
   
   void create_test_dependencies();
 };
+
+} // close namespace Amanzi
 
 #endif
