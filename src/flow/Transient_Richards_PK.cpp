@@ -16,7 +16,7 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, cons
   ss_t0 = rlist.get<double>("Steady state calculation initial time");
   ss_t1 = rlist.get<double>("Steady state calculation final time");
   ss_h0 = rlist.get<double>("Steady state calculation initial time step");
-
+  ss_z =  rlist.get<double>("Steady state calculation initial hydrostatic pressure height");
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -48,7 +48,7 @@ Transient_Richards_PK::~Transient_Richards_PK()
 };
 
 
-int Transient_Richards_PK::advance()
+int Transient_Richards_PK::advance_to_steady_state()
 {
   // Set problem parameters.
   problem->SetFluidDensity(FS->fluid_density());
@@ -63,8 +63,9 @@ int Transient_Richards_PK::advance()
   double hnext;
 
   // create udot
-  problem->SetInitialPressureProfileCells(0.0,pressure_cells);
-  problem->SetInitialPressureProfileFaces(0.0,pressure_faces);
+
+  problem->SetInitialPressureProfileCells(ss_z,pressure_cells);
+  problem->SetInitialPressureProfileFaces(ss_z,pressure_faces);
 
   Epetra_Vector udot(problem->Map());
   problem->Compute_udot(t0,  *solution, udot);
@@ -78,10 +79,9 @@ int Transient_Richards_PK::advance()
   int i = 0;
   double tlast = t0;
 
-  
   do {
     
-    time_stepper->bdf2_step(h,0.0,20,*solution,hnext);
+    time_stepper->bdf2_step(h,0.0,*solution,hnext);
     
     time_stepper->commit_solution(h,*solution);
 
@@ -106,6 +106,26 @@ int Transient_Richards_PK::advance()
   std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
 
 }
+
+
+int Transient_Richards_PK::advance_transient() 
+{
+  // Set problem parameters.
+  problem->SetFluidDensity(FS->fluid_density());
+  problem->SetFluidViscosity(FS->fluid_viscosity());
+  problem->SetPermeability(FS->permeability());
+  problem->SetGravity(FS->gravity());
+  problem->SetFlowState(FS);
+
+  //time_stepper->bdf2_step(h,0.0,*solution,hnext);
+  //time_stepper->write_bdf2_stepping_statistics();  
+
+}
+
+
+
+
+
 
 void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
 {

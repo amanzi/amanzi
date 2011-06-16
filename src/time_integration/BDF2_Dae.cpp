@@ -54,6 +54,8 @@ namespace BDF2 {
     state.mitr = paramList_->get<int>("Nonlinear solver max iterations");
     state.ntol = paramList_->get<double>("Nonlinear solver tolerance");
     
+    mtries = paramList_->get<int>("Maximum number of BDF tries",20);
+
     int maxv = state.mitr-1;
     int mvec = paramList_->get<int>("NKA max vectors");
     maxv = std::min<int>(maxv,mvec);
@@ -118,6 +120,10 @@ namespace BDF2 {
 				  0.05,
 				  "Drop tolerance for the nonlinear Krylov accelerator.",
 				  &*pl);
+      Teuchos::setIntParameter("Maximum number of BDF tries",
+			       20,
+			       "The number of failed BDF attempts we are tolerating.",
+			       &*pl);
       Teuchos::setupVerboseObjectSublist(&*pl);
       validParams = pl;
     }
@@ -177,7 +183,7 @@ namespace BDF2 {
   }
 
   
-  void Dae::bdf2_step(double& h, double hmin, int mtries, Epetra_Vector& u, double& hnext)
+  void Dae::bdf2_step(double& h, double hmin, Epetra_Vector& u, double& hnext)
   {
 
     ASSERT(hmin>=0.0);
@@ -231,15 +237,27 @@ namespace BDF2 {
     ASSERT(state.seq>=0);
     ASSERT(h>0);
 
+    double mitr_sav;
+
     switch (state.seq) 
       {
       case 0:
+	mitr_sav = state.mitr;
+	state.mitr = 50;
+
 	trap_step_one(h, u, hnext, errc);
+	
+	state.mitr = mitr_sav;
 	break;
 	
       case 1:
       case 2:
+	mitr_sav = state.mitr;
+	state.mitr = 50;	
+
 	bdf2_step_gen(h, u, hnext, errc, false);
+	
+	state.mitr = mitr_sav;
 	break;
 	
       default:

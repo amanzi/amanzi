@@ -36,8 +36,14 @@ set(input_src_files input_base_class.cc simple_mesh_input.cc
 add_library(input ${input_src_files})
 target_link_libraries(input ${Teuchos_LIBRARIES})
 
-
-
+#
+# Library: input_test
+#
+# This is test input library to exercise language interfaces
+# 
+set(test_input_src test_input.cc)
+add_library(input_test ${test_input_src})
+target_link_libraries(input_test ${Teuchos_LIBRARIES})
 
 # Add examples
 option(ENABLE_INPUT_EXAMPLES "Build input examples" OFF)

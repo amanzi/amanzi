@@ -1,5 +1,8 @@
 \documentclass[12pt]{article}
+
+% LaTeX Packages
 \usepackage{color}
+\usepackage[breaklinks]{hyperref}
 
 
 
@@ -51,9 +54,9 @@ script that automatically builds the TPLs correctly. Users are strongly encourag
 TPLs. The current documentation for a correct TPL configuration is tracked in this tool. Advanced users creating
 their own build process should refer to this script for supported configurations and TPL build order.
 
-Amanzi builds the source located in https://software.lanl.gov/ascem/trac/browser every hour on several OS types.
+Amanzi builds the source located in \url{https://software.lanl.gov/ascem/trac/browser} every hour on several OS types.
 The build and test suite results for each OS is recorded and tracked on the ASCEM Trac
-site at https://software.lanl.gov/ascem/trac/buildbot. 
+site at \url{https://software.lanl.gov/ascem/trac/buildbot}. 
 
 \begin{table}[htdp]
 \begin{center}
@@ -62,26 +65,26 @@ site at https://software.lanl.gov/ascem/trac/buildbot.
 \hline
 Name & Version & Description & Dependencies & Source Location \\
 \hline
-CMake & 2.8 & Cross platform build system & Python 2.6 & http://www.cmake.org/cmake/resources/software.html \\
+CMake & 2.8 & Cross platform build system & Python 2.6 & \url{http://www.cmake.org/cmake/resources/software.html}\\
 \hline
-Boost & 1.44.0 & Supplemental C++ Library & C++ &  http://www.boost.org/users/download/\\
+Boost & 1.44.0 & Supplemental C++ Library & C++ &  \url{http://www.boost.org/users/download/}\\
 \hline
-zlib & 1.2.5 &Compression library (required by HDF5) & C, MPI \& zlib &  http://zlib.net/ \\
+zlib & 1.2.5 &Compression library (required by HDF5) & C, MPI \& zlib &  \url{http://zlib.net/} \\
 \hline
-cURL & 7.21.2 & Download wizard library (required netCDF) & C & http://curl.haxx.se/download.html \\
+cURL & 7.21.2 & Download wizard library (required netCDF) & C & \url{http://curl.haxx.se/download.html} \\
 \hline
-HDF5 &1.8.7 & File format library & C. MPI \& zlib & http://www.hdfgroup.org/HDF5/release/obtain5.html \\
+HDF5 &1.8.7 & File format library & C, MPI \& zlib & \url{http://www.hdfgroup.org/HDF5/release/obtain5.html} \\
 \hline
-netCDF & 4.1.1 & File format library & C, MPI, cURL \& HDF5 & http://www.unidata.ucar.edu/software/netcdf/ \\
+netCDF & 4.1.1 & File format library & C, MPI, cURL \& HDF5 & \url{http://www.unidata.ucar.edu/software/netcdf/} \\
 \hline
-ExodusII & 4.98 & Mesh database library & C, MPI \& netCDF & http://sourceforge.net/projects/exodusii/\\
+ExodusII & 4.98 & Mesh database library & C, MPI \& netCDF & \url{http://sourceforge.net/projects/exodusii/}\\
 \hline
-Trilnos & 10.6 & C++ numerical software library & C++, MPI, Exodus (if STKMesh is enabled) \& CMake & http://trilinos.sandia.gov/download/trilinos-10.6.html \\
+Trilnos & 10.6 & C++ numerical software library & C++, MPI, Exodus (if STKMesh is enabled) \& CMake & \url{http://trilinos.sandia.gov/download/trilinos-10.6.html} \\
 \hline
 \hline
 \end{tabular}
 \end{center}
-\label{default}
+\label{tab:req_tpl}
 \end{table}%
 
 
@@ -101,21 +104,19 @@ Amanzi with at least one of the frameworks.
 \hline
 Name & Version & Description & Dependencies & Source Location \\
 \hline
-UnitTest++ & 1.4 & C++ unit test framework & C++ & http://sourceforge.net/projects/unittest-cpp/ \\
+UnitTest++ & 1.4 & C++ unit test framework & C++ & \url{http://sourceforge.net/projects/unittest-cpp/} \\
 \hline
-MOAB & rev 4225 (SVN) & Mesh framework & C/C++, MPI, Exodus & Tarfile located on Trac site https://software.lanl.gov/ascem/trac/wiki/Amanzi/Building/TPL/MOAB  \\
+MOAB & rev 4225 (SVN) & Mesh framework & C/C++, MPI, Exodus & Tarfile located on Trac site \url{https://software.lanl.gov/ascem/trac/wiki/Amanzi/Building/TPL/MOAB}  \\
 \hline
-MSTK & 1.80 & Mesh framework & C, MPI, Exodus & https://software.lanl.gov/MeshTools/trac\\
+MSTK & 1.80 & Mesh framework & C, MPI, Exodus & \url{https://software.lanl.gov/MeshTools/trac}\\
 \hline
 STKMesh & & Mesh framework available in Trilinos & Exodus, Trilinos & Build with Trilinos with '-D ENABLE\_STKMesh:bool=true'  \\
 \hline
 SWIG &&&& \\
 \hline
-XDMF &&&& \\
+VisIt & 2.2.2 & visualization program & binaries available &  \url{https://wci.llnl.gov/codes/visit/home.html} \\
 \hline
-VisIt &&&& \\
-\hline
-ASCEM-IO &&&& \\
+ASCEM-IO & 1.0 & Parallel I/O library &  & \url{http://ascem-io.secure-water.org} \\
 \hline
 DOxygen &&&& \\
 
@@ -125,7 +126,7 @@ DOxygen &&&& \\
 
 \end{tabular}
 \end{center}
-\label{default}
+\label{tab:opt_tpl}
 \end{table}%
 
 
