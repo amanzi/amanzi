@@ -100,12 +100,12 @@ add_install_binary(verify_mesh)
 #
 # Binary: stk_mesh_test_hex
 #
-if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
-    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
-    target_link_libraries(stk_mesh_test_hex 
-                         exodus mesh_data stk_mesh output mesh_audit
-                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
-    add_install_binary(stk_mesh_test_hex)		     
-endif()
+#if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
+#    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
+#    target_link_libraries(stk_mesh_test_hex 
+#                         exodus mesh_data stk_mesh output mesh_audit
+#                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
+#    add_install_binary(stk_mesh_test_hex)		     
+#endif()
 
 
