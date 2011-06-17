@@ -40,8 +40,7 @@ void Reconstruction::Init()
   fmax_owned = fmin + number_owned_faces - 1;
 
   double *memory;  // we need to allocate sufficient memory for LAPACK routines
-  int maxfaces = AmanziTransport::TRANSPORT_MAX_FACES;
-  memory = new double(maxfaces*maxfaces);
+  memory = new double(TRANSPORT_MAX_FACES * TRANSPORT_MAX_FACES);
   Teuchos::SerialDenseMatrix<int, double> matrix(Teuchos::View, 
                                                  memory, 
                                                  TRANSPORT_MAX_FACES,

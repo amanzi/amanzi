@@ -513,7 +513,10 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& s
 
     double umin = std::min(u1, u2);
     double umax = std::max(u1, u2);
-    if (u1f > umax || u1f < umin) (*limiter)[c1] = std::max(0.0, (u1 - u2) / (u1f - u2)); 
+    if (u1f > umax || u1f < umin) {
+      double limiter_face = std::max(0.0, (u1 - u2) / (u1f - u2)); 
+      (*limiter)[c1] = std::min((*limiter)[c1], limiter_face); 
+    }
   } 
 }
 
