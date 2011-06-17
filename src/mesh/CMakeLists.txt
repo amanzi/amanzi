@@ -1,5 +1,6 @@
 # -*- mode: cmake -*-
 
+
 #
 #  Amanzi
 #    Mesh 
@@ -20,18 +21,65 @@ project(MESH)
 
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) directories
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 #
-# Library: cell_geometry
+# Library: mesh
+#
+add_library(mesh Mesh.cc)
+target_link_libraries(mesh geometry)
+
+
+
+#
+# Library: cell_geometry (WILL GO AWAY WHEN EVERYONE SWITCHES TO THE NEW API)
 #
 add_library(cell_geometry cell_geometry.cc)
 
 #
 # Library: mesh_audit
 #
-add_library(mesh_audit MeshAudit.cc)
-target_link_libraries(mesh_audit error_handling cell_geometry ${Epetra_LIBRARIES})
+add_library(mesh_audit MeshAudit.cc MeshAuditOld.cc)
+target_link_libraries(mesh_audit mesh error_handling cell_geometry ${Epetra_LIBRARIES})
+
+#
+# Install Targets
+#
+file(GLOB mesh_inc_files "*.hh")
+add_install_include_file(${mesh_inc_files})
+add_install_library(cell_geometry mesh_audit)
+
+
+
+# Derived and support classes
+
+add_subdirectory(mesh_data)
+add_subdirectory(mesh_simple)
+add_subdirectory(exodus)
+
+# Mesh Frameworks
+
+# STK (Trilinos Package)
+if (ENABLE_STK_Mesh)
+    add_subdirectory(mesh_stk)
+endif(ENABLE_STK_Mesh)    
+
+# MOAB Mesh framework
+if (ENABLE_MOAB_Mesh)
+    add_subdirectory(mesh_moab)
+endif(ENABLE_MOAB_Mesh)    
+
+# MSTK Mesh framework
+if (ENABLE_MSTK_Mesh)
+    add_subdirectory(mesh_mstk)
+endif(ENABLE_MSTK_Mesh)    
+
+
+# Factory class
+
+add_subdirectory(mesh_factory)
+

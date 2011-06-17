@@ -1,4 +1,4 @@
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 //#include "mpi.h"
 #include "UnitTest++.h"
 
@@ -13,7 +13,7 @@
 
 #include "DarcyProblem.hpp"
 #include "cell_geometry.hh"
-//#include "Mesh_maps_simple.hh"
+//#include "Mesh_simple.hh"
 
 
 #include <iostream>
@@ -21,10 +21,10 @@
 struct problem_setup
 {
   Epetra_Comm *comm;
-  //Teuchos::RCP<Mesh_maps_simple> mesh;
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  //Teuchos::RCP<Mesh_simple> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   Teuchos::ParameterList bc_params;
-  DarcyProblem *problem;
+  Amanzi::DarcyProblem *problem;
   AztecOO *solver;
   Epetra_Vector *solution;
   // parameters for analytic pressure function
@@ -41,13 +41,13 @@ struct problem_setup
 #endif
 
     // Create the mesh.
-    //mesh = Teuchos::rcp(new Mesh_maps_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
+    //mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
     if (comm->NumProc() == 1)
-      mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab("test/4x4x4.g", MPI_COMM_WORLD));
+      mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh_MOAB>(new Amanzi::AmanziMesh::Mesh_MOAB("test/4x4x4.g", MPI_COMM_WORLD));
     else {
       std::ostringstream file;
       file << "test/4x4x4-" << comm->NumProc() << "P.h5m";
-      mesh = Teuchos::rcp<Mesh_maps_moab>(new Mesh_maps_moab(file.str().c_str(), MPI_COMM_WORLD));
+      mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh_MOAB>(new Amanzi::AmanziMesh::Mesh_MOAB(file.str().c_str(), MPI_COMM_WORLD));
     }
 
     // Define the default BC parameter list: no flow on all sides.
@@ -109,10 +109,10 @@ struct problem_setup
     //ml_pl.set("default values", "SA");
 
     // Create the flow BCs from the BC parameter list.
-    Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
+    Teuchos::RCP<Amanzi::FlowBC> bc(new Amanzi::FlowBC(bc_params, mesh));
 
     // Create the problem.
-    problem = new DarcyProblem(mesh, pl, bc);
+    problem = new Amanzi::DarcyProblem(mesh, pl, bc);
 
     // Set Darcy model defaults; these can be overwritten before solving the problem.
     problem->SetFluidDensity(1.0);

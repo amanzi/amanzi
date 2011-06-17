@@ -1,6 +1,6 @@
 #include "UnitTest++.h"
 #include "../cgns_mesh.hh"
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 
 
 TEST(CGNS) {
@@ -17,10 +17,12 @@ TEST(CGNS) {
   string cgns_datafile1 = "test_data.cgns";
   string cgns_fullfile = "test_cgns_full.cgns";
 
-  Mesh_maps_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
+  Amanzi::AmanziMesh::Mesh_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
     
-  unsigned int num_nodes = Mesh.count_entities(Mesh_data::NODE, OWNED);
-  unsigned int num_cells = Mesh.count_entities(Mesh_data::CELL, OWNED);
+  unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, 
+                                               Amanzi::AmanziMesh::OWNED);
+  unsigned int num_cells = Mesh.count_entities(Amanzi::AmanziMesh::CELL, 
+                                               Amanzi::AmanziMesh::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;
@@ -44,14 +46,14 @@ TEST(CGNS) {
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);  
 
   // Write a file which contains both mesh and data.
-  CGNS::create_mesh_file(Mesh, cgns_fullfile);
-  CGNS::open_data_file(cgns_fullfile);
+  Amanzi::CGNS::create_mesh_file(Mesh, cgns_fullfile);
+  Amanzi::CGNS::open_data_file(cgns_fullfile);
      
   double time = 0.0;
   for (int i=0; i<15; i++) {
-      CGNS::create_timestep(time, i, Mesh_data::CELL);
-      CGNS::write_field_data(*cell_quantity, "cell_quantity");
-      CGNS::write_field_data(*fake_pressure, "pressure");
+      Amanzi::CGNS::create_timestep(time, i, Amanzi::AmanziMesh::CELL);
+      Amanzi::CGNS::write_field_data(*cell_quantity, "cell_quantity");
+      Amanzi::CGNS::write_field_data(*fake_pressure, "pressure");
       
       // advance time and values
       time += 1.0;
@@ -64,7 +66,7 @@ TEST(CGNS) {
   }
     
   // close file
-  CGNS::close_data_file();
+  Amanzi::CGNS::close_data_file();
 
 }
 

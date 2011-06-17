@@ -3,18 +3,18 @@
 #include <cmath>
 
 #if HAVE_MOAB_MESH
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 #endif
 
 #if HAVE_STK_MESH
-#include "Mesh_factory.hh"
-#include "Mesh_maps_stk.hh"
+#include "MeshFactory.hh"
+#include "Mesh_STK.hh"
 #endif
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
@@ -90,14 +90,14 @@ int main(int argc, char *argv[])
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   if (mesh_class == "Simple") 
     {
       Teuchos::ParameterList simple_mesh_parameter_list = 
       	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      mesh = Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
+      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(simple_mesh_parameter_list, comm));
     } 
 #ifdef HAVE_MOAB_MESH
   else if (mesh_class == "MOAB")  
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
       std::streambuf *store_buf = std::cout.rdbuf();
       std::cout.rdbuf(0);
 
-      mesh = Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));            
+      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), MPI_COMM_WORLD));            
       std::cout.rdbuf(store_buf);
     }
 #endif
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     {
       string filename = mesh_parameter_list.get<string>("STK File name");
       
-      mesh = Teuchos::rcp(new STK_mesh::Mesh_maps_stk(MPI_COMM_WORLD, filename.c_str()));            
+      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(MPI_COMM_WORLD, filename.c_str()));            
     }
 #endif
   else
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
 
   // create the MPC
-  MPC mpc(driver_parameter_list, mesh);
+  Amanzi::MPC mpc(driver_parameter_list, mesh);
   
   mpc.cycle_driver();
   

@@ -1,0 +1,26 @@
+##############################################################################
+#
+# Make variables for use by Amanzi clients. 
+#
+##############################################################################
+
+# Location of orignal source and the version
+AMANZI_SOURCE_DIR  = @AMANZI_SOURCE_DIR@
+AMANZI_VERSION     = @AMANZI_VERSION@
+
+# Configuration information
+AMANZI_C_COMPILER   = @CMAKE_C_COMPILER@
+AMANZI_CXX_COMPILER = @CMAKE_CXX_COMPILER@
+AMANZI_BUILD_TYPE   = @CMAKE_BUILD_TYPE@
+AMANZI_TPL_LIST     = @AMANZI_TPL_LIST@
+
+
+# Amanzi include directory
+AMANZI_INCLUDE_DIR  = @AMANZI_INSTALL_INCLUDE_PATH@
+AMANZI_INCLUDE_DIRS = @AMANZI_INCLUDE_DIRS@
+
+# Amanzi libraries
+AMANZI_LIB_DIR     = @AMANZI_INSTALL_LIB_PATH@
+AMANZI_LIBRARIES   = @AMANZI_LIBRARIES@
+
+

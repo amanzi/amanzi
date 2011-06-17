@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(InstallManager)
 
 #
 # Define a project name
@@ -21,8 +22,8 @@ project(CHEM)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 
 # Chemistry includes directory
@@ -34,13 +35,17 @@ set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 include_directories(${CHEM_INCLUDES_DIR})
 
 
-
 add_subdirectory(utility)
 add_subdirectory(solvers)
 add_subdirectory(base_chemistry)
 add_subdirectory(reactions)
 add_subdirectory(process_kernel)
 
+#
+# Install targets
+#
+file(GLOB chem_inc "${CHEM_INCLUDES_DIR}/*")
+add_install_include_file(${chem_inc})
 
 if (BUILD_TESTS)
   add_subdirectory(tests_unit)

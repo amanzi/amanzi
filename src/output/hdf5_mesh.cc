@@ -1,6 +1,9 @@
 #include "hdf5_mesh.hh"
 
-void HDF5::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
+namespace Amanzi
+{
+
+  void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
 
   hid_t file, group, dataspace, dataset;
   herr_t status;
@@ -20,8 +23,8 @@ void HDF5::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
   group = H5Gcreate(file, "/Mesh", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // get num_nodes, num_cells
-  int num_nodes = mesh_maps.count_entities(Mesh_data::NODE, OWNED);
-  int num_elems = mesh_maps.count_entities(Mesh_data::CELL, OWNED);
+  int num_nodes = mesh_maps.count_entities(AmanziMesh::NODE, OWNED);
+  int num_elems = mesh_maps.count_entities(AmanziMesh::CELL, OWNED);
 
   // get coords
   double *nodes = new double[num_nodes*3];
@@ -474,3 +477,4 @@ Teuchos::XMLObject HDF5::addXdmfAttribute_(std::string varname,
 std::string HDF5::xdmfHeader_ =
          "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
 
+} // close namespace Amanzi

@@ -3,9 +3,9 @@
 #include "math.h"
 #include "UnitTest++.h"
 
-#include "Mesh_maps_moab.hh"
-#include "Mesh_maps_simple.hh"
-#include "Mesh_maps_base.hh"
+#include "Mesh_MOAB.hh"
+#include "Mesh_simple.hh"
+#include "Mesh.hh"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
@@ -19,6 +19,7 @@
 
 
 TEST(DRIVER) {
+
 
   using namespace std;
 
@@ -41,7 +42,7 @@ TEST(DRIVER) {
 
   std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
 
-  Teuchos::RCP<Mesh_maps_base> mesh;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   cout << mesh_class << endl;
 
@@ -50,8 +51,8 @@ TEST(DRIVER) {
       Teuchos::ParameterList simple_mesh_parameter_list = 
       	mesh_parameter_list.sublist("Simple Mesh Parameters");
 
-      Teuchos::RCP<Mesh_maps_simple> MMS = 
-      	Teuchos::rcp(new Mesh_maps_simple(simple_mesh_parameter_list, comm));
+      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_simple> MMS = 
+      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(simple_mesh_parameter_list, comm));
       
       mesh = MMS;
       
@@ -64,8 +65,8 @@ TEST(DRIVER) {
       
       string filename = moab_mesh_parameter_list.get<string>("Exodus file name");
 
-      Teuchos::RCP<Mesh_maps_moab> MMM = 
-      	Teuchos::rcp(new Mesh_maps_moab(filename.c_str(), MPI_COMM_WORLD));      
+      Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MOAB> MMM = 
+      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), MPI_COMM_WORLD));      
       
       mesh = MMM;
 
@@ -77,7 +78,7 @@ TEST(DRIVER) {
 
 
   // create the MPC
-  MPC mpc(driver_parameter_list, mesh);
+  Amanzi::MPC mpc(driver_parameter_list, mesh);
   
   mpc.cycle_driver();
   

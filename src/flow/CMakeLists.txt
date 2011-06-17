@@ -22,8 +22,8 @@ project(FLOW)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
@@ -50,6 +50,13 @@ add_library(flow ${flow_source_files})
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES flow_tpl_libs)
 target_link_libraries(flow ${flow_tpl_libs})
+
+#
+# Install Targets
+#
+file(GLOB flow_inc_files "*.hpp")
+add_install_include_file(${flow_inc_files})
+add_install_library(flow)
 
 if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
 

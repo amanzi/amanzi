@@ -22,12 +22,15 @@
 #include "boost/filesystem/path.hpp"
 
 
+namespace Amanzi
+{
+
 #ifdef ENABLE_CGNS
 using namespace CGNS_PAR;
 #endif
 
 MPC::MPC(Teuchos::ParameterList parameter_list_,
-	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
+	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
   parameter_list(parameter_list_),
   mesh_maps(mesh_maps_)
   
@@ -85,12 +88,12 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    
    // transport...
    if (transport_enabled) {
-     TS = Teuchos::rcp( new Transport_State( *S ) );
+     TS = Teuchos::rcp( new AmanziTransport::Transport_State( *S ) );
 
      Teuchos::ParameterList transport_parameter_list = 
        parameter_list.sublist("Transport");
      
-     TPK = Teuchos::rcp( new Transport_PK(transport_parameter_list, TS) );
+     TPK = Teuchos::rcp( new AmanziTransport::Transport_PK(transport_parameter_list, TS) );
    }
 
    // flow...
@@ -205,7 +208,7 @@ void MPC::cycle_driver () {
     RNK.PutScalar((double)rank);
 
     open_data_file(cgns_filename);
-    create_timestep(0.0, 0, Mesh_data::CELL);
+    create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
     write_field_data(RNK,"PE");
 
 
@@ -343,10 +346,10 @@ void MPC::cycle_driver () {
 
 	// now advance transport
 	TPK->advance( mpc_dT );	
-	if (TPK->get_transport_status() == Amanzi_Transport::TRANSPORT_STATE_COMPLETE) 
+	if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) 
 	  {
 	    // get the transport state and commit it to the state
-	    Teuchos::RCP<Transport_State> TS_next = TPK->get_transport_state_next();
+	    Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
             *total_component_concentration_star = *TS_next->get_total_component_concentration();
 	  }
 	else
@@ -455,8 +458,8 @@ void MPC::write_gmv_data(std::string gmv_datafile_path,
 {
   
   GMV::open_data_file(gmv_meshfile, gmv_datafile_path,
-		      mesh_maps->count_entities(Mesh_data::NODE, OWNED),
-		      mesh_maps->count_entities(Mesh_data::CELL, OWNED),
+		      mesh_maps->count_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED),
+		      mesh_maps->count_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED),
 		      iter, digits);
   GMV::write_time(S->get_time());
   GMV::write_cycle(iter);
@@ -486,7 +489,7 @@ void MPC::write_cgns_data(std::string filename, int iter)
 {
   open_data_file(filename);
   
-  create_timestep(S->get_time(), iter, Mesh_data::CELL);
+  create_timestep(S->get_time(), iter, Amanzi::AmanziMesh::CELL);
 
   for (int nc=0; nc<S->get_number_of_components(); nc++) {
     
@@ -617,3 +620,5 @@ void MPC::create_gmv_paths(std::string  &gmv_mesh_filename_path_str,
   gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
   gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
 }
+
+} // close namespace Amanzi
