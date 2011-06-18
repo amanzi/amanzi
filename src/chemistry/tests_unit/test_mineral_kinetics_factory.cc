@@ -14,6 +14,7 @@
 #include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsMineralKineticsFactory) {
+  namespace ac = amanzi::chemistry;
   /*****************************************************************************
    **
    **  Test for MineralKineticsFactory.cpp
@@ -35,19 +36,19 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
 
     void RunTest(const std::string name);
 
-    MineralKineticsFactory mkf_;
-    KineticRate* kinetic_rate_;
-    std::vector<Mineral> minerals_;
+    ac::MineralKineticsFactory mkf_;
+    ac::KineticRate* kinetic_rate_;
+    std::vector<ac::Mineral> minerals_;
 
    private:
-    StringTokenizer rate_data_;
-    SpeciesArray species_;
-    Species H_p;
-    Species OH_m;
-    Species Ca_pp;
-    Species CO3_mm;
-    Species Al_ppp;
-    Species PO4_mmm;
+    ac::StringTokenizer rate_data_;
+    ac::SpeciesArray species_;
+    ac::Species H_p;
+    ac::Species OH_m;
+    ac::Species Ca_pp;
+    ac::Species CO3_mm;
+    ac::Species Al_ppp;
+    ac::Species PO4_mmm;
   };
   MineralKineticsFactoryTest::MineralKineticsFactoryTest()
       : mkf_(),
@@ -74,8 +75,8 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     species_.push_back(PO4_mmm);
 
     // setup a list of minerals
-    SpeciesName name("Calcite");
-    SpeciesId id(6);
+    ac::SpeciesName name("Calcite");
+    ac::SpeciesId id(6);
     double h2o_stoich(0.0);
     double charge(0.0);
     double gram_molecular_weight(100.0872);
@@ -83,9 +84,9 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     double logK(1.8487);
     double molar_volume(36.9340);
     double specific_surface_area(0.987654);
-    std::vector<SpeciesName> species_names;
+    std::vector<ac::SpeciesName> species_names;
     std::vector<double> stoichiometry;
-    std::vector<SpeciesId> species_ids;
+    std::vector<ac::SpeciesId> species_ids;
     species_names.clear();
     stoichiometry.clear();
     species_ids.clear();
@@ -103,14 +104,14 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     species_ids.push_back(2);
     minerals_.clear();
     // dummy mineral
-    minerals_.push_back(Mineral("Foo", 0, species_names, stoichiometry, species_ids,
-                                h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+    minerals_.push_back(ac::Mineral("Foo", 0, species_names, stoichiometry, species_ids,
+                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
     // "real" mineral
-    minerals_.push_back(Mineral(name, 1, species_names, stoichiometry, species_ids,
-                                h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+    minerals_.push_back(ac::Mineral(name, 1, species_names, stoichiometry, species_ids,
+                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
     // dummy mineral
-    minerals_.push_back(Mineral("Bar", 2, species_names, stoichiometry, species_ids,
-                                h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+    minerals_.push_back(ac::Mineral("Bar", 2, species_names, stoichiometry, species_ids,
+                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
   }
 
   MineralKineticsFactoryTest::~MineralKineticsFactoryTest() {
@@ -128,21 +129,21 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_create) {
     std::string name("TST");
     RunTest(name);
-    CHECK_EQUAL(typeid(KineticRateTST).name(), typeid(*kinetic_rate_).name());
+    CHECK_EQUAL(typeid(ac::KineticRateTST).name(), typeid(*kinetic_rate_).name());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_invalid_rate) {
     std::string name("invalid-name");
-    CHECK_THROW(RunTest(name), ChemistryException);
+    CHECK_THROW(RunTest(name), ac::ChemistryException);
     CHECK(!kinetic_rate_);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_verify_mineral_valid) {
-    SpeciesId mineral_id = mkf_.VerifyMineralName("Calcite", minerals_);
+    ac::SpeciesId mineral_id = mkf_.VerifyMineralName("Calcite", minerals_);
     CHECK_EQUAL(mineral_id, 1);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(MineralKineticsFactoryTest, MineralKineticsFactory_verify_mineral_invalid) {
-    CHECK_THROW(mkf_.VerifyMineralName("Pyrite", minerals_), ChemistryException);
+    CHECK_THROW(mkf_.VerifyMineralName("Pyrite", minerals_), ac::ChemistryException);
   }  // end TEST_FIXTURE()
 }  // end SUITE(GeochemistryTestMineralKineticsFactory)

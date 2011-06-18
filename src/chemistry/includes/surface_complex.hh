@@ -9,7 +9,10 @@
 #include "species.hh"
 #include "surface_site.hh"
 
-// forward declarations
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class SurfaceComplex {
@@ -142,4 +145,6 @@ class SurfaceComplex {
   double logK_;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_

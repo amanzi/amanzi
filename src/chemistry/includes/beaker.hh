@@ -25,6 +25,9 @@
 #include "chemistry/includes/matrix_block.hh"
 #endif
 
+namespace amanzi {
+namespace chemistry {
+
 class KineticRate;
 
 class Beaker {
@@ -356,4 +359,6 @@ class Beaker {
 #endif
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_BEAKER_HH_

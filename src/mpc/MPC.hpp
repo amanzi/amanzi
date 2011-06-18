@@ -32,7 +32,7 @@ private:
   
   // states
   Teuchos::RCP<State> S;
-  Teuchos::RCP<Chemistry_State> CS;
+  Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
   Teuchos::RCP<AmanziTransport::Transport_State> TS; 
   Teuchos::RCP<Flow_State> FS;
 
@@ -44,7 +44,7 @@ private:
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
 
   // process kernels
-  Teuchos::RCP<Chemistry_PK> CPK;
+  Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
   Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
   Teuchos::RCP<Flow_PK> FPK; 
 

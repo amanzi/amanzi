@@ -5,6 +5,9 @@
 
 #include <iostream>
 
+namespace amanzi {
+namespace chemistry {
+
 ActivityModelUnit::ActivityModelUnit()
     : ActivityModel() {
 }  // end ActivityModelUnit constructor
@@ -24,3 +27,6 @@ void ActivityModelUnit::Display(void) const {
   std::cout << "Activity Model: unit activity coefficients (gamma = 1.0)."
             << std::endl;
 }  // end Display()
+
+}  // namespace chemistry
+}  // namespace amanzi

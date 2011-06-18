@@ -17,6 +17,9 @@
 #include "string_tokenizer.hh"
 #include "verbosity.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class Block;
 
 class KineticRate {
@@ -81,4 +84,6 @@ class KineticRate {
   SpeciesId identifier_;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_HH_ */

@@ -9,6 +9,9 @@
 
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 SecondarySpecies::SecondarySpecies()
     : Species(),
       ncomp_(0),  // # components in reaction
@@ -131,3 +134,6 @@ void SecondarySpecies::Display(void) const {
             << std::setw(10) << gram_molecular_weight()
             << std::endl;
 }  // end Display()
+
+}  // namespace chemistry
+}  // namespace amanzi

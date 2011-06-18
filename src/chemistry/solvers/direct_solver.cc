@@ -2,6 +2,9 @@
 #include "chemistry/includes/direct_solver.hh"
 #include "chemistry/includes/block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 DirectSolver::DirectSolver(void)
     : Solver(),
       row_interchange_(0.),
@@ -141,3 +144,6 @@ void DirectSolver::LUBackSolve(std::vector<double>* b) {
 
 DirectSolver::~DirectSolver() {
 }  // end DirectSolver destructor
+
+}  // namespace chemistry
+}  // namespace amanzi

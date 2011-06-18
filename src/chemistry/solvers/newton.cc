@@ -1,6 +1,9 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "newton.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 Newton::Newton(const int n) {
   size(n);
   x_.resize(n);
@@ -85,10 +88,11 @@ void Newton::LUBackSolve(double** a, int n, int* indx, std::vector<double>* b) {
     ip = indx[i];
     sum = b->at(ip);
     (*b)[ip] = b->at(i);
-    if (ii != 0)
+    if (ii != 0) {
       for (j = ii - 1; j < i; j++) {
         sum -= a[i][j] * b->at(j);
-      } else if (sum != 0.0) {
+      }
+    } else if (sum != 0.0) {
       ii = i + 1;
     }
     (*b)[i] = sum;
@@ -108,3 +112,6 @@ Newton::~Newton() {
   }
   J_ = NULL;
 }  // end Newton destructor
+
+}  // namespace chemistry
+}  // namespace amanzi

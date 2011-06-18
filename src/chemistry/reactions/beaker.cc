@@ -34,6 +34,9 @@
 
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 // solver defaults
 const double Beaker::tolerance_default = 1.0e-12;
 const unsigned int Beaker::max_iterations_default = 250;
@@ -61,9 +64,10 @@ Beaker::Beaker()
       por_sat_den_vol_(0.0),
       activity_model_(NULL),
       J(NULL) {
-#ifdef GLENN
-  , solver(NULL) {
-#endif
+  // this is ifdef is breaking the formatting tools
+  // #ifdef GLENN
+  // , solver(NULL) {
+  // #endif
   primarySpecies_.clear();
   minerals_.clear();
   ion_exchange_sites_.clear();
@@ -1464,3 +1468,6 @@ void Beaker::print_linear_system(const std::string& s, Block* A,
     A->print();
   }
 }  // end print_linear_system()
+
+}  // namespace chemistry
+}  // namespace amanzi

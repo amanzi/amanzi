@@ -11,6 +11,7 @@
 #include "species.hh"
 
 SUITE(GeochemistryTestsSurfaceSite) {
+  namespace ac = amanzi::chemistry;
   /*
     Unit tests for the SurfaceSite object public interface
 
@@ -27,10 +28,10 @@ SUITE(GeochemistryTestsSurfaceSite) {
     ~SurfaceSiteTest();
 
    protected:
-    SpeciesName name_;
-    SpeciesId id_;
+    ac::SpeciesName name_;
+    ac::SpeciesId id_;
     double molar_density_;
-    SurfaceSite site_;
+    ac::SurfaceSite site_;
    private:
   };  // end class SurfaceSiteTest
 
@@ -86,13 +87,13 @@ SUITE(GeochemistryTestsSurfaceSite) {
   // check that updating the individual parameters works correctly
   //
   TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_name) {
-    SpeciesName new_name("Foo");
+    ac::SpeciesName new_name("Foo");
     site_.set_name(new_name);
     CHECK_EQUAL(new_name, site_.name());
   }
 
   TEST_FIXTURE(SurfaceSiteTest, SurfaceSite_set_id) {
-    SpeciesId new_id(543);
+    ac::SpeciesId new_id(543);
     site_.set_identifier(new_id);
     CHECK_EQUAL(new_id, site_.identifier());
   }

@@ -15,6 +15,9 @@
 #include "exceptions.hh"
 
 
+namespace amanzi {
+namespace chemistry {
+
 Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
     : total_component_concentration_(S->get_total_component_concentration()),
       porosity_(S->get_porosity()),
@@ -58,3 +61,6 @@ void Chemistry_State::ExtractVolumeFromMesh(void) {
     (*volume_)[j] = cell_geometry::hex_volume(xmatrix);
   }
 }  // end ExtractVolumeFromMesh()
+
+}  // namespace chemistry
+}  // namespace amanzi

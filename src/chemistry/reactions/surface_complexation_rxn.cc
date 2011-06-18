@@ -12,6 +12,9 @@
 
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
   surface_site_.clear();
@@ -219,3 +222,6 @@ void SurfaceComplexationRxn::DisplayResults(void) const {
     complex->DisplayResults();
   }
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi

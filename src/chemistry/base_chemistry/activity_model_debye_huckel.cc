@@ -5,6 +5,9 @@
 
 #include <iostream>
 
+namespace amanzi {
+namespace chemistry {
+
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
 const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C
 const double ActivityModelDebyeHuckel::debyeBdot = 0.0410;  // 25C
@@ -39,3 +42,6 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
 void ActivityModelDebyeHuckel::Display(void) const {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
 }  // end Display()
+
+}  // namespace chemistry
+}  // namespace amanzi

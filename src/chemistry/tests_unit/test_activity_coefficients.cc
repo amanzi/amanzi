@@ -20,6 +20,7 @@ SUITE(GeochemistryTestsActivityModels) {
    **  Test for ActivityModelFactory.cpp
    **
    *****************************************************************************/
+  namespace ac = amanzi::chemistry;
 
   /*
     if you pass the factory a valid name, it should return the correct
@@ -36,8 +37,8 @@ SUITE(GeochemistryTestsActivityModels) {
 
     void RunTest(const std::string name);
 
-    ActivityModelFactory amf_;
-    ActivityModel* activity_model_;
+    ac::ActivityModelFactory amf_;
+    ac::ActivityModel* activity_model_;
 
    private:
   };
@@ -62,18 +63,18 @@ SUITE(GeochemistryTestsActivityModels) {
   TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_unit) {
     std::string name("unit");
     RunTest(name);
-    CHECK_EQUAL(typeid(ActivityModelUnit).name(), typeid(*activity_model_).name());
+    CHECK_EQUAL(typeid(ac::ActivityModelUnit).name(), typeid(*activity_model_).name());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_debyehuckel) {
     std::string name("debye-huckel");
     RunTest(name);
-    CHECK_EQUAL(typeid(ActivityModelDebyeHuckel).name(), typeid(*activity_model_).name());
+    CHECK_EQUAL(typeid(ac::ActivityModelDebyeHuckel).name(), typeid(*activity_model_).name());
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelFactoryTest, ActivityModelFactory_invalid) {
     std::string name("invalid-name");
-    CHECK_THROW(RunTest(name), ChemistryException);
+    CHECK_THROW(RunTest(name), ac::ChemistryException);
     CHECK(!activity_model_);
   }  // end TEST_FIXTURE()
 
@@ -125,20 +126,20 @@ SUITE(GeochemistryTestsActivityModels) {
     };
 
    protected:
-    ActivityModelFactory amf_;
+    ac::ActivityModelFactory amf_;
 
    private:
     double tolerance_;
-    ActivityModel* activity_model_;
+    ac::ActivityModel* activity_model_;
     std::string activity_model_name_;
-    SpeciesArray species_;
-    Species H_p;
-    Species OH_m;
-    Species Ca_pp;
-    Species SO4_mm;
-    Species Al_ppp;
-    Species PO4_mmm;
-    std::vector<AqueousEquilibriumComplex> aqueous_complexes_;
+    ac::SpeciesArray species_;
+    ac::Species H_p;
+    ac::Species OH_m;
+    ac::Species Ca_pp;
+    ac::Species SO4_mm;
+    ac::Species Al_ppp;
+    ac::Species PO4_mmm;
+    std::vector<ac::AqueousEquilibriumComplex> aqueous_complexes_;
   };  // end class SpeciationTest
 
   ActivityModelTest::ActivityModelTest()
@@ -174,7 +175,7 @@ SUITE(GeochemistryTestsActivityModels) {
 
   void ActivityModelTest::RunTest(const std::string name, double * gamma) {
     int index = -1;
-    for (std::vector<Species>::iterator primary = species_.begin();
+    for (std::vector<ac::Species>::iterator primary = species_.begin();
          primary != species_.end(); primary++) {
       if (primary->name() == name) {
         index = primary->identifier();
@@ -192,7 +193,7 @@ SUITE(GeochemistryTestsActivityModels) {
    **
    *****************************************************************************/
   TEST_FIXTURE(ActivityModelTest, ActivityModelIonicStrength) {
-    set_activity_model_name(ActivityModelFactory::unit);
+    set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("H+", &gamma);
     // std::cout << "ionic strength: " << ionic_strength() << std::endl;
@@ -205,42 +206,42 @@ SUITE(GeochemistryTestsActivityModels) {
    **
    *****************************************************************************/
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_H) {
-    set_activity_model_name(ActivityModelFactory::unit);
+    set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("H+", &gamma);
     CHECK_EQUAL(1.0, gamma);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_OH) {
-    set_activity_model_name(ActivityModelFactory::unit);
+    set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("OH-", &gamma);
     CHECK_EQUAL(1.0, gamma);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Ca) {
-    set_activity_model_name(ActivityModelFactory::unit);
+    set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("Ca++", &gamma);
     CHECK_EQUAL(1.0, gamma);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_SO4) {
-    set_activity_model_name(ActivityModelFactory::unit);
+    set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("SO4--", &gamma);
     CHECK_EQUAL(1.0, gamma);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Al) {
-    set_activity_model_name(ActivityModelFactory::unit);
+    set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("Al+++", &gamma);
     CHECK_EQUAL(1.0, gamma);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_PO4) {
-    set_activity_model_name(ActivityModelFactory::unit);
+    set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("PO4---", &gamma);
     CHECK_EQUAL(1.0, gamma);
@@ -252,42 +253,42 @@ SUITE(GeochemistryTestsActivityModels) {
    **
    *****************************************************************************/
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_H) {
-    set_activity_model_name(ActivityModelFactory::debye_huckel);
+    set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("H+", &gamma);
     CHECK_CLOSE(0.88, gamma, 1.0e-2);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_OH) {
-    set_activity_model_name(ActivityModelFactory::debye_huckel);
+    set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("OH-", &gamma);
     CHECK_CLOSE(0.855, gamma, 1.0e-2);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Ca) {
-    set_activity_model_name(ActivityModelFactory::debye_huckel);
+    set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("Ca++", &gamma);
     CHECK_CLOSE(0.57, gamma, 1.0e-2);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_SO4) {
-    set_activity_model_name(ActivityModelFactory::debye_huckel);
+    set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("SO4--", &gamma);
     CHECK_CLOSE(0.545, gamma, 1.0e-2);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Al) {
-    set_activity_model_name(ActivityModelFactory::debye_huckel);
+    set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("Al+++", &gamma);
     CHECK_CLOSE(0.325, gamma, 1.0e-2);
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_PO4) {
-    set_activity_model_name(ActivityModelFactory::debye_huckel);
+    set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("PO4---", &gamma);
     CHECK_CLOSE(0.25, gamma, 1.0e-2);
