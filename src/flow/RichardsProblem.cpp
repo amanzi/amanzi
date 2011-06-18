@@ -2,13 +2,16 @@
 
 #include "RichardsProblem.hpp"
 #include "vanGenuchtenModel.hpp"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
-RichardsProblem::RichardsProblem(const Teuchos::RCP<Mesh_maps_base> &mesh,
+namespace Amanzi
+{
+
+RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 			   Teuchos::ParameterList &list,
 			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
 {
@@ -108,7 +111,7 @@ RichardsProblem::~RichardsProblem()
 }
 
 
-DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_maps_base> &mesh, const Teuchos::RCP<FlowBC> &bc) const
+DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
 {
   // Generate the list of all Dirichlet-type faces.
   // The provided lists should include all used BC faces.
@@ -129,7 +132,7 @@ DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<Mesh_ma
 }
 
 
-void RichardsProblem::init_mimetic_disc_(Mesh_maps_base &mesh, std::vector<MimeticHexLocal> &MD) const
+void RichardsProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<MimeticHexLocal> &MD) const
 {
   // Local storage for the 8 vertex coordinates of a hexahedral cell.
   double x[8][3];
@@ -196,11 +199,10 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
     {
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
-
-      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -216,11 +218,10 @@ void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
     {
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
-
-      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -238,11 +239,10 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
     {
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
-      
-      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -690,10 +690,10 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double satura
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
 
-      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -709,10 +709,10 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double satura
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
 
-      unsigned int ncells = mesh_->get_set_size(mb_id,Mesh_data::CELL,OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,Mesh_data::CELL,OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -721,3 +721,5 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double satura
 	}
     }
 }
+
+} // close namespace Amanzi

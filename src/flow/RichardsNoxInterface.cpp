@@ -1,6 +1,9 @@
 #include "dbc.hh"
 #include "RichardsNoxInterface.hpp"
 
+namespace Amanzi
+{
+
 bool RichardsNoxInterface::computeF(const Epetra_Vector &x, Epetra_Vector &f, FillType flag)
 {
   (*problem_).ComputeF(x, f);
@@ -28,3 +31,4 @@ bool RichardsNoxInterface::computePreconditioner(const Epetra_Vector &x, Epetra_
 }
 
 
+} // close namespace Amanzi

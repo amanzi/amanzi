@@ -7,8 +7,10 @@
 
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(TestManager)
+include(InstallManager)
 
 # Chemistry includes
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 
 # Add the UnitTest includes
@@ -28,11 +30,18 @@ add_executable(chemistry_tests
 	       test_mineral_kinetics_factory.cc
 	       test_kinetic_rate.cc
 	       test_beaker.cc)
-
 target_link_libraries(chemistry_tests chemistry 
                       error_handling ${UnitTest_LIBRARIES})
 add_amanzi_test(chemistry chemistry_tests KIND unit)
+#
+# Install targets
+#
+file(GLOB chem_inc "${CHEM_INCLUDES_DIR}/*")
+add_install_include_file(${chem_inc})
 
+# Amanzi includes
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # Trilinos related (TPL) includes
 include_directories(${Teuchos_INCLUDE_DIRS})

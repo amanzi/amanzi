@@ -7,13 +7,15 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
+
+namespace Amanzi {
 
 class MimeticHex
 {
 public:
 
-  MimeticHex(const Teuchos::RCP<Mesh_maps_base> &mesh);
+  MimeticHex(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh);
   ~MimeticHex(){}
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
@@ -28,7 +30,7 @@ public:
   Epetra_SerialDenseVector face_area_;
 private:
 
-  Teuchos::RCP<Mesh_maps_base> mesh_;
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
 
   //std::vector<double> volume_;
   //std::vector<double[3]> face_normal_;
@@ -39,5 +41,7 @@ private:
   Epetra_SerialDenseMatrix face_normal_;
 
 };
+
+} // close namespace Amanzi
 
 #endif

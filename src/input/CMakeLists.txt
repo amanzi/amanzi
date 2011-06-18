@@ -8,6 +8,7 @@
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(PrintVariable)
 include(TestManager)
+include(InstallManager)
 
 #
 # Define a project name
@@ -37,13 +38,12 @@ add_library(input ${input_src_files})
 target_link_libraries(input ${Teuchos_LIBRARIES})
 
 #
-# Library: input_test
+# Install targets
 #
-# This is test input library to exercise language interfaces
-# 
-set(test_input_src test_input.cc)
-add_library(input_test ${test_input_src})
-target_link_libraries(input_test ${Teuchos_LIBRARIES})
+file(GLOB include_files "*.hh")
+add_install_include_file(${include_files})
+add_install_library(input)
+
 
 # Add examples
 option(ENABLE_INPUT_EXAMPLES "Build input examples" OFF)

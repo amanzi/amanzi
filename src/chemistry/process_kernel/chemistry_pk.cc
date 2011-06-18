@@ -11,7 +11,7 @@
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
@@ -434,7 +434,7 @@ void Chemistry_PK::LocalInitialConditions(void) {
 
       int mesh_block_ID = mesh_block_list.get<int>("Mesh block ID");
       if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_ID,
-                                                           Mesh_data::CELL)) {
+                                                           Amanzi::AmanziMesh::CELL)) {
         // there is an inconsistency in the xml input file...
         std::string message = "Chemistry_PK::LocalInitialConditions(): inconsistent xml input";
         Exceptions::amanzi_throw(ChemistryInvalidInput(message));
@@ -577,20 +577,21 @@ void Chemistry_PK::set_cell_value_in_mesh_block(const double value,
                                                 Epetra_Vector& vec,
                                                 const int mesh_block_id) {
   if (!chemistry_state_->get_mesh_maps()->valid_set_id(mesh_block_id,
-                                                       Mesh_data::CELL)) {
+                                                       Amanzi::AmanziMesh::CELL)) {
     Exceptions::amanzi_throw(ChemistryInvalidInput(
         "Chemistry_PK::set_cell_value_in_mesh_block(): invalid mesh set id"));
   }
 
   unsigned int mesh_block_size =
       chemistry_state_->get_mesh_maps()->get_set_size(mesh_block_id,
-                                                      Mesh_data::CELL,
-                                                      OWNED);
+                                                      Amanzi::AmanziMesh::CELL,
+                                                      Amanzi::AmanziMesh::OWNED);
 
   std::vector<unsigned int> cell_ids(mesh_block_size);
 
   chemistry_state_->get_mesh_maps()->get_set(mesh_block_id,
-                                             Mesh_data::CELL, OWNED,
+                                             Amanzi::AmanziMesh::CELL, 
+                                             Amanzi::AmanziMesh::OWNED,
                                              cell_ids.begin(), cell_ids.end());
 
   for (std::vector<unsigned int>::iterator c = cell_ids.begin();

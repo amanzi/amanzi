@@ -27,7 +27,8 @@ Chemistry_State::Chemistry_State(Teuchos::RCP<State> S)
   // TODO(bandre): can we make this the same type as the other state vectors
   volume_ =
       Teuchos::rcp(new Epetra_SerialDenseVector(
-          get_mesh_maps()->count_entities(Mesh_data::CELL, OWNED)));
+          get_mesh_maps()->count_entities(Amanzi::AmanziMesh::CELL, 
+                                          Amanzi::AmanziMesh::OWNED)));
 
   ExtractVolumeFromMesh();
 }  // end Chemistry_State
@@ -38,14 +39,15 @@ Chemistry_State::~Chemistry_State() {
 
 
 void Chemistry_State::ExtractVolumeFromMesh(void) {
-  Teuchos::RCP<const Mesh_maps_base> const_mesh = get_mesh_maps();
+  Teuchos::RCP<const Mesh> const_mesh = get_mesh_maps();
 
   // one of the mesh calls below requires removing the const from the
   // mesh pointer....
-  Teuchos::RCP<Mesh_maps_base> mesh =
-      Teuchos::rcp_const_cast<Mesh_maps_base>(const_mesh);
+  Teuchos::RCP<Mesh> mesh =
+      Teuchos::rcp_const_cast<Mesh>(const_mesh);
 
-  int ncell = mesh->count_entities(Mesh_data::CELL, OWNED);
+  int ncell = mesh->count_entities(Amanzi::AmanziMesh::CELL, 
+                                   Amanzi::AmanziMesh::OWNED);
 
   if (ncell != volume_->Length()) {
     Exceptions::amanzi_throw(

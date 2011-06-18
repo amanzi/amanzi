@@ -40,6 +40,33 @@ set(CMAKE_MODULE_PATH  ${AMANZI_MODULE_PATH})
 # Code version defined
 include(AmanziVersion)
 
+#
+# Install locations defined
+#
+# Use CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT
+# to override the /usr/local as the default prefix.
+# This is not working! 
+set(DEFAULT_INSTALL_PREFIX "$ENV{HOME}/amanzi-${AMANZI_VERSION}")
+if (CMAKE_INSTALL_PREFIX_INTIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "${DEFAULT_INSTALL_PREFIX}" 
+                         CACHE STRING "Install path prefix" FORCE)
+    message(STATUS "Using default install prefix")
+else()
+    message(STATUS "User defined install prefix  "
+	           "${CMAKE_INSTALL_PREFIX}")
+endif()    
+set(AMANZI_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+set(AMANZI_INSTALL_INCLUDE_PATH "${AMANZI_INSTALL_PREFIX}/include")
+set(AMANZI_INSTALL_LIB_PATH     "${AMANZI_INSTALL_PREFIX}/lib")
+set(AMANZI_INSTALL_BIN_PATH     "${AMANZI_INSTALL_PREFIX}/bin")
+message(STATUS "Amanzi install prefix ${AMANZI_INSTALL_PREFIX}")
+message(STATUS "\t include files ${AMANZI_INSTALL_INCLUDE_PATH}")
+message(STATUS "\t libraries ${AMANZI_INSTALL_LIB_PATH}")
+message(STATUS "\t binaries ${AMANZI_INSTALL_BIN_PATH}")
+
+
+
+
 # Addtional build options
 include(AmanziOptions)
 
@@ -61,6 +88,11 @@ endif()
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
+# Create the export Makefile
+include(InstallManager)
+create_export_makefile()
+
+# Write out the configuration log file and dump to the screen if requested
 option(ENABLE_Config_Report "Print out detailed information at the end of a configuration")
 set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
     CACHE string "Amanzi configuration log file")
@@ -82,4 +114,6 @@ if (ENABLE_Config_Report)
     message(STATUS "end configuration output --")
     message(STATUS "********************************************************************************")
 
-endif()    
+endif()
+
+

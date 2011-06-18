@@ -19,8 +19,8 @@ TEST(GMV) {
 
   Mesh_maps_simple Mesh (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
 
-  unsigned int num_nodes = Mesh.count_entities(Mesh_data::NODE, OWNED);
-  unsigned int num_cells = Mesh.count_entities(Mesh_data::CELL, OWNED);
+  unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
+  unsigned int num_cells = Mesh.count_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
 
   Teuchos::RCP<Epetra_Vector> node_quantity;
   Teuchos::RCP<Epetra_Vector> cell_quantity;
@@ -44,21 +44,21 @@ TEST(GMV) {
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);  
 
 
-  GMV::create_mesh_file(Mesh, gmv_meshfile);
-  GMV::open_data_file(gmv_meshfile, gmv_datafile1, num_nodes, num_cells);
-  GMV::start_data();
-  GMV::write_node_data(*node_quantity, "node_quantity");
-  GMV::write_cell_data(*cell_quantity, "cell_quantity");
-  GMV::write_cell_data(*fake_pressure, "pressure");
-  GMV::close_data_file();
+  Amanzi::GMV::create_mesh_file(Mesh, gmv_meshfile);
+  Amanzi::GMV::open_data_file(gmv_meshfile, gmv_datafile1, num_nodes, num_cells);
+  Amanzi::GMV::start_data();
+  Amanzi::GMV::write_node_data(*node_quantity, "node_quantity");
+  Amanzi::GMV::write_cell_data(*cell_quantity, "cell_quantity");
+  Amanzi::GMV::write_cell_data(*fake_pressure, "pressure");
+  Amanzi::GMV::close_data_file();
 
   // Write a file which contains both mesh and data.
-  GMV::open_data_file(Mesh, gmv_fullfile);
-  GMV::start_data();
-  GMV::write_node_data(*node_quantity, "node_quantity");
-  GMV::write_cell_data(*cell_quantity, "cell_quantity");
-  GMV::write_cell_data(*fake_pressure, "pressure");
-  GMV::close_data_file();
+  Amanzi::GMV::open_data_file(Mesh, gmv_fullfile);
+  Amanzi::GMV::start_data();
+  Amanzi::GMV::write_node_data(*node_quantity, "node_quantity");
+  Amanzi::GMV::write_cell_data(*cell_quantity, "cell_quantity");
+  Amanzi::GMV::write_cell_data(*fake_pressure, "pressure");
+  Amanzi::GMV::close_data_file();
 
 }
 

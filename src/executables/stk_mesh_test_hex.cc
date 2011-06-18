@@ -31,7 +31,7 @@ namespace bf = boost::filesystem;
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-#include "Mesh_maps_stk.hh"
+#include "Mesh_STK.hh"
 #include "MeshAudit.hh"
 #include "cgns_mesh_par.hh"
 
@@ -47,9 +47,9 @@ namespace po = boost::program_options;
  * @param cgnsout CGNS format file to produce
  */
 void
-dump_cgns(const int& me, Mesh_maps_base &maps, const std::string& cgnsout)
+dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &maps, const std::string& cgnsout)
 {
-  CGNS_PAR::create_mesh_file(maps, cgnsout);
+  Amanzi::CGNS_PAR::create_mesh_file(maps, cgnsout);
 
   Epetra_Vector part(maps.cell_map(false));
   int nmycell(maps.cell_map(false).NumMyElements());
@@ -59,17 +59,17 @@ dump_cgns(const int& me, Mesh_maps_base &maps, const std::string& cgnsout)
   std::vector<double> mypart(nmycell, static_cast<double>(me+1.0));
   part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
   
-  CGNS_PAR::open_data_file(cgnsout);
-  CGNS_PAR::create_timestep(0.0, 0, Mesh_data::CELL);
-  CGNS_PAR::write_field_data(part, "Partition");
-  CGNS_PAR::close_data_file();
+  Amanzi::CGNS_PAR::open_data_file(cgnsout);
+  Amanzi::CGNS_PAR::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
+  Amanzi::CGNS_PAR::write_field_data(part, "Partition");
+  Amanzi::CGNS_PAR::close_data_file();
 }
 
 // -------------------------------------------------------------
 // do_the_audit
 // -------------------------------------------------------------
 int
-do_the_audit(const int& me, Teuchos::RCP<Mesh_maps_base> maps, const std::string& name)
+do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> maps, const std::string& name)
 {
   int lresult(0);
 
@@ -79,7 +79,7 @@ do_the_audit(const int& me, Teuchos::RCP<Mesh_maps_base> maps, const std::string
   std::ofstream ofs(ofile.c_str());
   if (me == 0)
     std::cout << "Writing results to " << ofile.c_str() << ", etc." << std::endl;
-  MeshAudit audit(maps, ofs);
+  Amanzi::MeshAudit audit(maps, ofs);
   lresult = audit.Verify();
 
   int gresult;
@@ -202,8 +202,8 @@ main(int argc, char **argv)
 
   // generate a mesh
   
-  Teuchos::RCP<STK_mesh::Mesh_maps_stk> 
-    maps(new STK_mesh::Mesh_maps_stk(comm, 
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
+    maps(new Amanzi::AmanziMesh::Mesh_STK(comm, 
                                      xcells, ycells, zcells,
                                      xorigin, yorigin, zorigin,
                                      xdelta, ydelta, zdelta));

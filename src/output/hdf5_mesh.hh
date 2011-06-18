@@ -12,6 +12,9 @@ extern "C" {
 #include "hdf5.h"
 };
 
+namespace Amanzi
+{
+
 class HDF5 {
 
 
@@ -113,5 +116,7 @@ class HDF5 {
 
   static std::string xdmfHeader_;
 };
+
+} // close namespace HDF5
 
 #endif  // HDF5_MESH_HH_

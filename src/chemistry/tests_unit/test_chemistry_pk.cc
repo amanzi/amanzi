@@ -12,7 +12,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 #include "State.hpp"
 
 #include "chemistry_pk.hh"
@@ -47,7 +47,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::RCP<ac::Chemistry_State> chemistry_state_;
 
    private:
-    Teuchos::RCP<Mesh_maps_base> mesh_;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
     Teuchos::RCP<State> state_;
   };  // end class SpeciationTest
 
@@ -64,7 +64,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Epetra_SerialComm* comm = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
         parameter_list.sublist("Simple Mesh Parameters");
-    mesh_ = Teuchos::rcp(new Mesh_maps_simple(mesh_parameter_list, comm));
+    mesh_ = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(mesh_parameter_list, comm));
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");

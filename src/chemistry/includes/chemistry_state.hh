@@ -3,6 +3,7 @@
 #define AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Mesh.hh"
 
 // forward declarations
 class Epetra_Vector;
@@ -10,10 +11,11 @@ class Epetra_MultiVector;
 class Epetra_SerialDenseVector;
 
 class State;
-class Mesh_maps_base;
 
 namespace amanzi {
 namespace chemistry {
+
+using Amanzi::AmanziMesh::Mesh;
 
 class Chemistry_State {
  public:
@@ -36,7 +38,7 @@ class Chemistry_State {
     return water_density_;
   }
 
-  Teuchos::RCP<const Mesh_maps_base> get_mesh_maps() const {
+  Teuchos::RCP<const Mesh> get_mesh_maps() const {
     return mesh_maps_;
   }
 
@@ -51,7 +53,7 @@ class Chemistry_State {
   Teuchos::RCP<const Epetra_Vector> water_saturation_;
   Teuchos::RCP<const Epetra_Vector> water_density_;
 
-  Teuchos::RCP<Mesh_maps_base> mesh_maps_;
+  Teuchos::RCP<Mesh> mesh_maps_;
 
   // local variable
   Teuchos::RCP<Epetra_SerialDenseVector> volume_;
