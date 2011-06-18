@@ -45,5 +45,5 @@ class FileIO {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_FILEIO_HH_

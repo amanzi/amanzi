@@ -24,6 +24,6 @@ class ActivityModelUnit : public ActivityModel {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_

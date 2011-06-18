@@ -360,5 +360,5 @@ class Beaker {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_BEAKER_HH_

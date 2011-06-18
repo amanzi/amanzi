@@ -41,5 +41,5 @@ class Newton {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_NEWTON_HH_

@@ -28,5 +28,5 @@ class ActivityModelDebyeHuckel : public ActivityModel {
   static const double debyeBdot;
 };
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_

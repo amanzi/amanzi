@@ -749,5 +749,5 @@ static void readMineralVolFracFromFile(string filename,
 };  // end readMineralsVolFracFromFile
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_GLENN_HH_

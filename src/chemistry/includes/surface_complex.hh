@@ -146,5 +146,5 @@ class SurfaceComplex {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_

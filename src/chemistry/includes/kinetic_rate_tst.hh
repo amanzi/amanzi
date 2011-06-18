@@ -135,5 +135,5 @@ class KineticRateTST : public KineticRate {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_ */

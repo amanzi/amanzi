@@ -55,5 +55,5 @@ class IonExchangeSite : public Species {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_

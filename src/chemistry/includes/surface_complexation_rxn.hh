@@ -65,5 +65,5 @@ class SurfaceComplexationRxn {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_

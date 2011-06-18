@@ -58,6 +58,6 @@ class ActivityModel {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_

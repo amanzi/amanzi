@@ -60,5 +60,5 @@ class Chemistry_State {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_

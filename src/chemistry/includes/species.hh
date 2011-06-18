@@ -134,5 +134,5 @@ class Species {
 typedef std::vector<Species> SpeciesArray;
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SPECIES_HH_

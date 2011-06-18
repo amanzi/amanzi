@@ -80,5 +80,5 @@ class SimpleThermoDatabase : public Beaker {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_

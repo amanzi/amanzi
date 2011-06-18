@@ -52,5 +52,5 @@ class MineralKineticsFactory {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif     /* AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_ */

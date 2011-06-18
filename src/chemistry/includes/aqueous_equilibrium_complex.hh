@@ -50,5 +50,5 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_

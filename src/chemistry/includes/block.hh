@@ -57,5 +57,5 @@ class Block {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_BLOCK_HH_

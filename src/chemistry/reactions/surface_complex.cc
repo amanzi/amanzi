@@ -59,7 +59,7 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-      }  // end SurfaceComplex() constructor
+}  // end SurfaceComplex() constructor
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name,
                                const SpeciesId id,
@@ -106,7 +106,7 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-      }  // end SurfaceComplex() constructor
+}  // end SurfaceComplex() constructor
 
 SurfaceComplex::~SurfaceComplex() {
 }  // end SurfaceComplex() destructor

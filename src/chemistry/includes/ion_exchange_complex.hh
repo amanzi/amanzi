@@ -107,5 +107,5 @@ class IonExchangeComplex : Species {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_

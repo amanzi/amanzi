@@ -29,4 +29,4 @@ void ActivityModelUnit::Display(void) const {
 }  // end Display()
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi

@@ -61,5 +61,5 @@ class GeneralRxn {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_GENERAL_RXN_HH_

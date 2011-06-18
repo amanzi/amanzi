@@ -53,6 +53,6 @@ void Glenn::solve(Beaker::BeakerComponents* components,
     std::cout << times[i] << ' ' << A[i] << ' ' << B[i] << std::endl;
   }
 }  // end solve()
- 
+
 }  // namespace chemistry
 }  // namespace amanzi

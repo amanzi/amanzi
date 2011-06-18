@@ -200,5 +200,5 @@ class Chemistry_PK {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_PK_HH_

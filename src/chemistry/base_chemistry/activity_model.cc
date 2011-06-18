@@ -56,4 +56,4 @@ void ActivityModel::CalculateActivityCoefficients(
 }  // end CalculateActivityCoefficients()
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi

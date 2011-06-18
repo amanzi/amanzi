@@ -23,7 +23,7 @@ IonExchangeSite::IonExchangeSite(const SpeciesName exchanger_name,
     : Species(exchanger_id, exchanger_name, exchanger_charge, mol_wt, size),
       cation_exchange_capacity_(0.0),
       location_(exchanger_location) {
-      }  // end IonExchangeSite constructor
+}  // end IonExchangeSite constructor
 
 IonExchangeSite::~IonExchangeSite() {
 }  // end IonExchangeSite destructor
@@ -72,4 +72,4 @@ void IonExchangeSite::DisplayResults(void) const {
 }  // end DisplayResults()
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi

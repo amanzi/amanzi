@@ -64,9 +64,10 @@ Beaker::Beaker()
       por_sat_den_vol_(0.0),
       activity_model_(NULL),
       J(NULL) {
-#ifdef GLENN
-  , solver(NULL) {
-#endif
+  // this is ifdef is breaking the formatting tools
+  // #ifdef GLENN
+  // , solver(NULL) {
+  // #endif
   primarySpecies_.clear();
   minerals_.clear();
   ion_exchange_sites_.clear();

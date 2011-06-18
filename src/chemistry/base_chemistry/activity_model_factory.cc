@@ -56,4 +56,4 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model) {
 }  // end Create()
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi

@@ -74,9 +74,9 @@ SUITE(GeochemistryTestsMineral) {
     species_ids_.push_back(2);
 
     mineral_ = new ac::Mineral(name_, id_,
-                           species_names_, stoichiometry_, species_ids_,
-                           h2o_stoich_, gram_molecular_weight_, logK_,
-                           molar_volume_, specific_surface_area_);
+                               species_names_, stoichiometry_, species_ids_,
+                               h2o_stoich_, gram_molecular_weight_, logK_,
+                               molar_volume_, specific_surface_area_);
 
     ac::SpeciesId id = 0;
     ac::SpeciesName name = "H+";

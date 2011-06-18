@@ -38,5 +38,5 @@ class StringTokenizer : public std::vector<std::string> {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif     /* AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_ */

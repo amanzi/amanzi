@@ -70,5 +70,5 @@ class ChemistryInvalidSolution : public ChemistryException {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_EXCEPTION_HH_

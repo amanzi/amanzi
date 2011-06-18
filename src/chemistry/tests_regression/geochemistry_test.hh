@@ -9,7 +9,7 @@
 #include "verbosity.hh"
 
 int CommandLineOptions(int argc, char** argv,
-                       amanzi::chemistry::Verbosity* verbosity, 
+                       amanzi::chemistry::Verbosity* verbosity,
                        int* test, std::string* model);
 void ModelSpecificParameters(const std::string model,
                              amanzi::chemistry::Beaker::BeakerParameters* parameters);

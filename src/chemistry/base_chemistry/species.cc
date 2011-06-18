@@ -64,7 +64,7 @@ Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
                  << "(size < 0.0), size = " << ion_size_parameter() << std::endl;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
-      }  // end Species constructor
+}  // end Species constructor
 
 Species::~Species() {
 }  // end Species destructor
@@ -119,4 +119,4 @@ void Species::DisplayResults(void) const {
 }  // end DisplayResults()
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi

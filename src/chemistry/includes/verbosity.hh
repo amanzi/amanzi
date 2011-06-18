@@ -20,5 +20,5 @@ enum Verbosity { kSilent,
 
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif     /* AMANZI_CHEMISTRY_VERBOSITY_HH_ */

@@ -25,5 +25,5 @@ class ActivityModelFactory {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_

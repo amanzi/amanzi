@@ -33,5 +33,5 @@ class Solver {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_

@@ -103,5 +103,5 @@ class SurfaceSite {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACESITE_HH_

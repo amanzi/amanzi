@@ -97,5 +97,5 @@ class Mineral : public SecondarySpecies {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_MINERAL_HH_

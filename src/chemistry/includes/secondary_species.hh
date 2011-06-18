@@ -98,5 +98,5 @@ class SecondarySpecies : public Species {
 };
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_

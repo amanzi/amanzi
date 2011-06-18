@@ -105,13 +105,13 @@ SUITE(GeochemistryTestsMineralKineticsFactory) {
     minerals_.clear();
     // dummy mineral
     minerals_.push_back(ac::Mineral("Foo", 0, species_names, stoichiometry, species_ids,
-                                h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
     // "real" mineral
     minerals_.push_back(ac::Mineral(name, 1, species_names, stoichiometry, species_ids,
-                                h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
     // dummy mineral
     minerals_.push_back(ac::Mineral("Bar", 2, species_names, stoichiometry, species_ids,
-                                h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
+                                    h2o_stoich, gram_molecular_weight, logK, molar_volume, specific_surface_area));
   }
 
   MineralKineticsFactoryTest::~MineralKineticsFactoryTest() {

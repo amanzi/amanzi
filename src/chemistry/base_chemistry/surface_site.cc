@@ -84,4 +84,4 @@ void SurfaceSite::DisplayResults(void) const {
 }  // end DisplayResults()
 
 }  // namespace chemistry
-}  // namespace amanzi 
+}  // namespace amanzi
