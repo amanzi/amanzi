@@ -27,6 +27,9 @@
 #include "mineral.hh"
 #include "string_tokenizer.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class Block;
 
 class KineticRateTST : public KineticRate {
@@ -131,4 +134,6 @@ class KineticRateTST : public KineticRate {
   std::vector<double> modifying_secondary_exponents;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi 
 #endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_ */

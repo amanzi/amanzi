@@ -13,7 +13,7 @@ SUITE(GeochemistryTests_StringTokenizer) {
   TEST(TestStringTokenizer_tokenize_default_delimiters) {
     // default delimiters are space characters, " \t\n"
     std::string test_string("This is a string ; Say \"Hi\". \nHello, World!\tWe'll use it for testing.");
-    StringTokenizer st;
+    amanzi::chemistry::StringTokenizer st;
     st.tokenize(test_string);
     CHECK_EQUAL(st.at(0), "This");
     CHECK_EQUAL(st.at(4), ";");
@@ -24,7 +24,7 @@ SUITE(GeochemistryTests_StringTokenizer) {
 
   TEST(TestStringTokenizer_tokenize_delimiters) {
     std::string test_string("This is a string ; We'll use<it for testing.");
-    StringTokenizer st;
+    amanzi::chemistry::StringTokenizer st;
     st.tokenize(test_string, ";<");
     CHECK_EQUAL(st.at(0), "This is a string ");
     CHECK_EQUAL(st.at(1), " We'll use");
@@ -33,7 +33,7 @@ SUITE(GeochemistryTests_StringTokenizer) {
 
   TEST(TestStringTokenizer_constructor_tokenize) {
     std::string test_string("This is a string ; We'll use<it for testing.");
-    StringTokenizer st(test_string, ";<");
+    amanzi::chemistry::StringTokenizer st(test_string, ";<");
     CHECK_EQUAL(st.at(0), "This is a string ");
     CHECK_EQUAL(st.at(1), " We'll use");
     CHECK_EQUAL(st.at(2), "it for testing.");
@@ -41,7 +41,7 @@ SUITE(GeochemistryTests_StringTokenizer) {
 
   TEST(TestStringTokenizer_no_delimiter_in_string) {
     // no delimiter, don't break anything up.
-    StringTokenizer st("This is a string.", ";<");
+    amanzi::chemistry::StringTokenizer st("This is a string.", ";<");
     CHECK_EQUAL(st.size(), 1);
     CHECK_EQUAL(st.at(0), "This is a string.");
   }  // end TEST()

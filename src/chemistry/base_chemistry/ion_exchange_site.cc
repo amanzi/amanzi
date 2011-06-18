@@ -6,6 +6,9 @@
 #include <iostream>
 #include <iomanip>
 
+namespace amanzi {
+namespace chemistry {
+
 IonExchangeSite::IonExchangeSite()
     : Species(),
       cation_exchange_capacity_(0.0) {
@@ -67,3 +70,6 @@ void IonExchangeSite::DisplayResults(void) const {
             << std::setw(15) << cation_exchange_capacity()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi 

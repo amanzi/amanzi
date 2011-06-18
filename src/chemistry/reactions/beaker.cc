@@ -34,6 +34,9 @@
 
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 // solver defaults
 const double Beaker::tolerance_default = 1.0e-12;
 const unsigned int Beaker::max_iterations_default = 250;
@@ -1464,3 +1467,6 @@ void Beaker::print_linear_system(const std::string& s, Block* A,
     A->print();
   }
 }  // end print_linear_system()
+
+}  // namespace chemistry
+}  // namespace amanzi

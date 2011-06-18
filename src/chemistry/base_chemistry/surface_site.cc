@@ -6,6 +6,9 @@
 
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 SurfaceSite::SurfaceSite()
     : name_(""),
       identifier_(0),
@@ -79,3 +82,6 @@ void SurfaceSite::DisplayResults(void) const {
             << std::setw(15) << free_site_concentration()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi 

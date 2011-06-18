@@ -12,6 +12,7 @@
 #include "block.hh"
 
 SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
+  namespace ac = amanzi::chemistry;
   /*****************************************************************************
    **
    **  Test for AqueousEquilibriumComplex.cpp
@@ -25,19 +26,19 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     AqueousEquilibriumComplexTest();
     ~AqueousEquilibriumComplexTest();
 
-    SpeciesName name_;
-    SpeciesId id_;
+    ac::SpeciesName name_;
+    ac::SpeciesId id_;
     double h2o_stoich_;
     double charge_;
     double gram_molecular_weight_;
     double ion_size_parameter_;
     double logK_;
 
-    std::vector<SpeciesName> species_names_;
+    std::vector<ac::SpeciesName> species_names_;
     std::vector<double> stoichiometry_;
-    std::vector<SpeciesId> species_ids_;
+    std::vector<ac::SpeciesId> species_ids_;
 
-    SpeciesArray primarySpecies_;
+    ac::SpeciesArray primarySpecies_;
 
    private:
   };  // end class AqueousEquilibriumComplexTest
@@ -61,13 +62,13 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     species_names_.push_back("HCO3-");
     stoichiometry_.push_back(1.0);
     species_ids_.push_back(1);
-    SpeciesId id = 0;
-    SpeciesName name = "H+";
-    Species H_p = Species(id, name, 1.0, 1.0079, 9.0);
+    ac::SpeciesId id = 0;
+    ac::SpeciesName name = "H+";
+    ac::Species H_p = ac::Species(id, name, 1.0, 1.0079, 9.0);
     H_p.update(9.0e-4);
     id = 1;
     name = "HCO3-";
-    Species HCO3_m = Species(id, name, -1.0, 61.0171, 4.0);
+    ac::Species HCO3_m = ac::Species(id, name, -1.0, 61.0171, 4.0);
     HCO3_m.update(1.2e-3);
 
     primarySpecies_.clear();
@@ -86,36 +87,36 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
 
   // make sure we can create an object with the constructor
   TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_constructor) {
-    AqueousEquilibriumComplex aec(name_, id_,
-                                  species_names_, stoichiometry_, species_ids_,
-                                  h2o_stoich_, charge_, gram_molecular_weight_,
-                                  ion_size_parameter_, logK_);
+    ac::AqueousEquilibriumComplex aec(name_, id_,
+                                      species_names_, stoichiometry_, species_ids_,
+                                      h2o_stoich_, charge_, gram_molecular_weight_,
+                                      ion_size_parameter_, logK_);
     CHECK_EQUAL(id_, aec.identifier());
   }
 
   TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_lnK) {
-    AqueousEquilibriumComplex aec(name_, id_,
-                                  species_names_, stoichiometry_, species_ids_,
-                                  h2o_stoich_, charge_, gram_molecular_weight_,
-                                  ion_size_parameter_, logK_);
+    ac::AqueousEquilibriumComplex aec(name_, id_,
+                                      species_names_, stoichiometry_, species_ids_,
+                                      h2o_stoich_, charge_, gram_molecular_weight_,
+                                      ion_size_parameter_, logK_);
     CHECK_CLOSE(std::log(std::pow(10.0, logK_)), aec.lnK(), 1.0e-10);
   }
 
   // public methods
   TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_Update) {
-    AqueousEquilibriumComplex aec(name_, id_,
-                                  species_names_, stoichiometry_, species_ids_,
-                                  h2o_stoich_, charge_, gram_molecular_weight_,
-                                  ion_size_parameter_, logK_);
+    ac::AqueousEquilibriumComplex aec(name_, id_,
+                                      species_names_, stoichiometry_, species_ids_,
+                                      h2o_stoich_, charge_, gram_molecular_weight_,
+                                      ion_size_parameter_, logK_);
     aec.Update(primarySpecies_);
     CHECK_CLOSE(aec.lnQK(), -23.4952588360233, 1.0e-10);
   }
 
   TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_AddContributionToTotal) {
-    AqueousEquilibriumComplex aec(name_, id_,
-                                  species_names_, stoichiometry_, species_ids_,
-                                  h2o_stoich_, charge_, gram_molecular_weight_,
-                                  ion_size_parameter_, logK_);
+    ac::AqueousEquilibriumComplex aec(name_, id_,
+                                      species_names_, stoichiometry_, species_ids_,
+                                      h2o_stoich_, charge_, gram_molecular_weight_,
+                                      ion_size_parameter_, logK_);
 
     std::vector<double> expected(aec.ncomp(), 0.0);
     expected[0] = -6.25372437900718e-11;
@@ -128,12 +129,12 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
   }
 
   TEST_FIXTURE(AqueousEquilibriumComplexTest, AqueousEquilibriumComplex_AddContributionToDTotal) {
-    AqueousEquilibriumComplex aec(name_, id_,
-                                  species_names_, stoichiometry_, species_ids_,
-                                  h2o_stoich_, charge_, gram_molecular_weight_,
-                                  ion_size_parameter_, logK_);
+    ac::AqueousEquilibriumComplex aec(name_, id_,
+                                      species_names_, stoichiometry_, species_ids_,
+                                      h2o_stoich_, charge_, gram_molecular_weight_,
+                                      ion_size_parameter_, logK_);
 
-    Block expected(aec.ncomp());
+    ac::Block expected(aec.ncomp());
     expected.zero();
     expected.setValue(0, 0, 6.9485826433413e-08);
     expected.setValue(0, 1, -5.21143698250598e-08);
@@ -141,7 +142,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     expected.setValue(1, 1, 5.21143698250598e-08);
     double** e = expected.getValues();
 
-    Block dtotal(aec.ncomp());
+    ac::Block dtotal(aec.ncomp());
     dtotal.zero();
     aec.Update(primarySpecies_);
     aec.AddContributionToDTotal(primarySpecies_, &dtotal);

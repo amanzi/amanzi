@@ -26,6 +26,10 @@
 using namespace CGNS_PAR;
 #endif
 
+using amanzi::chemistry::Chemistry_State;
+using amanzi::chemistry::Chemistry_PK;
+using amanzi::chemistry::ChemistryException;
+
 MPC::MPC(Teuchos::ParameterList parameter_list_,
 	 Teuchos::RCP<Mesh_maps_base> mesh_maps_):
   parameter_list(parameter_list_),

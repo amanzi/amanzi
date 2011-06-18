@@ -2,6 +2,9 @@
 #include "glenn.hh"
 #include "beaker.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 Glenn::Glenn(Beaker* b) {
   b_ = b;
 }  // end Glenn() constructor
@@ -50,3 +53,6 @@ void Glenn::solve(Beaker::BeakerComponents* components,
     std::cout << times[i] << ' ' << A[i] << ' ' << B[i] << std::endl;
   }
 }  // end solve()
+ 
+}  // namespace chemistry
+}  // namespace amanzi

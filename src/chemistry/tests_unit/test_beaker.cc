@@ -14,6 +14,11 @@
 #include "chemistry_exception.hh"
 
 SUITE(BeakerTests) {
+  using amanzi::chemistry::Beaker;
+  using amanzi::chemistry::SimpleThermoDatabase;
+  using amanzi::chemistry::ActivityModelFactory;
+  using amanzi::chemistry::ChemistryException;
+
   TEST(CheckBadComponentSizes) {
     SimpleThermoDatabase chem;
 

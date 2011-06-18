@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+namespace amanzi {
+namespace chemistry {
 
 class StringTokenizer : public std::vector<std::string> {
  public:
@@ -35,4 +37,6 @@ class StringTokenizer : public std::vector<std::string> {
                 const std::string& delimiters = " \t\n");
 };
 
+}  // namespace chemistry
+}  // namespace amanzi 
 #endif     /* AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_ */

@@ -7,6 +7,9 @@
 
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 GeneralRxn::GeneralRxn() {
   ncomp_ = 0;
   ncomp_forward_ = 0;
@@ -173,3 +176,6 @@ void GeneralRxn::display(void) const {
   std::cout << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
   std::cout << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
 }  // end display()
+
+}  // namespace chemistry
+}  // namespace amanzi

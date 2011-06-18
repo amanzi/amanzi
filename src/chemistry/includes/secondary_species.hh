@@ -8,7 +8,13 @@
 
 #include "species.hh"
 
-// forward declarations
+// forward declarations from outside chemistry
+
+
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class SecondarySpecies : public Species {
@@ -91,4 +97,6 @@ class SecondarySpecies : public Species {
   };
 };
 
-#endif
+}  // namespace chemistry
+}  // namespace amanzi 
+#endif  // AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_

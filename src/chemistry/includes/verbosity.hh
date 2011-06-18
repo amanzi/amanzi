@@ -2,6 +2,9 @@
 #ifndef AMANZI_CHEMISTRY_VERBOSITY_HH_
 #define AMANZI_CHEMISTRY_VERBOSITY_HH_
 
+namespace amanzi {
+namespace chemistry {
+
 enum Verbosity { kSilent,
                  kTerse,
                  kVerbose,
@@ -16,4 +19,6 @@ enum Verbosity { kSilent,
 };
 
 
+}  // namespace chemistry
+}  // namespace amanzi 
 #endif     /* AMANZI_CHEMISTRY_VERBOSITY_HH_ */

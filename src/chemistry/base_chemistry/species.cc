@@ -11,6 +11,9 @@
 
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 Species::Species()
     : molality_(1.e-9),
       activity_(1.0),
@@ -114,3 +117,6 @@ void Species::DisplayResults(void) const {
             << std::setw(15) << activity()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi 

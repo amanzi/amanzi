@@ -8,6 +8,9 @@
 
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class Newton {
  public:
   explicit Newton(const int n);
@@ -37,4 +40,6 @@ class Newton {
   std::vector<double> vv_;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi 
 #endif  // AMANZI_CHEMISTRY_NEWTON_HH_

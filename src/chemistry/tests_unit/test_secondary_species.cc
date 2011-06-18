@@ -12,6 +12,7 @@
 #include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsSecondarySpecies) {
+  namespace ac = amanzi::chemistry;
   /*****************************************************************************
    **
    **  Test for SecondarySpecies.cpp
@@ -25,17 +26,17 @@ SUITE(GeochemistryTestsSecondarySpecies) {
     SecondarySpeciesTest();
     ~SecondarySpeciesTest();
 
-    SpeciesName name_;
-    SpeciesId secondary_id_;
+    ac::SpeciesName name_;
+    ac::SpeciesId secondary_id_;
     double h2o_stoich_;
     double charge_;
     double gram_molecular_weight_;
     double ion_size_parameter_;
     double logK_;
 
-    std::vector<SpeciesName> species_names_;
+    std::vector<ac::SpeciesName> species_names_;
     std::vector<double> stoichiometry_;
-    std::vector<SpeciesId> species_ids_;
+    std::vector<ac::SpeciesId> species_ids_;
    private:
   };  // end class SecondarySpeciesTest
 
@@ -68,13 +69,13 @@ SUITE(GeochemistryTestsSecondarySpecies) {
   // SecondarySpecies has a pure virtual functions, need a dummy
   // object to create and test.
   //
-  class MockSecondarySpecies : public SecondarySpecies {
+  class MockSecondarySpecies : public ac::SecondarySpecies {
    public:
     MockSecondarySpecies() : SecondarySpecies() {}
-    MockSecondarySpecies(const SpeciesName name, const SpeciesId id,
-                         const std::vector<SpeciesName>& species_names,
+    MockSecondarySpecies(const ac::SpeciesName name, const ac::SpeciesId id,
+                         const std::vector<ac::SpeciesName>& species_names,
                          const std::vector<double>& stoichiometry,
-                         const std::vector<SpeciesId>& species_ids,
+                         const std::vector<ac::SpeciesId>& species_ids,
                          const double h2o_stoich,
                          const double charge,
                          const double mol_wt,
@@ -86,8 +87,8 @@ SUITE(GeochemistryTestsSecondarySpecies) {
       static_cast<void>(total);
     }  // end addContributionToTotal()
 
-    void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                 Block* dtotal) {
+    void AddContributionToDTotal(const std::vector<ac::Species>& primary_species,
+                                 ac::Block* dtotal) {
       static_cast<void>(primary_species);
       static_cast<void>(dtotal);
     }  // end addContributionToDTotal()
@@ -173,7 +174,7 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                                        species_names_, stoichiometry_, species_ids_,
                                        h2o_stoich_, charge_, gram_molecular_weight_,
                                        ion_size_parameter_, logK_),
-        ChemistryException);
+        ac::ChemistryException);
   }
 
   TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry) {
@@ -183,7 +184,7 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                                        species_names_, stoichiometry_, species_ids_,
                                        h2o_stoich_, charge_, gram_molecular_weight_,
                                        ion_size_parameter_, logK_),
-        ChemistryException);
+        ac::ChemistryException);
   }
 
   TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_stoichiometry2) {
@@ -193,7 +194,7 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                                        species_names_, stoichiometry_, species_ids_,
                                        h2o_stoich_, charge_, gram_molecular_weight_,
                                        ion_size_parameter_, logK_),
-        ChemistryException);
+        ac::ChemistryException);
   }
 
   TEST_FIXTURE(SecondarySpeciesTest, SecondarySpecies_size_names_ids) {
@@ -203,6 +204,6 @@ SUITE(GeochemistryTestsSecondarySpecies) {
                                        species_names_, stoichiometry_, species_ids_,
                                        h2o_stoich_, charge_, gram_molecular_weight_,
                                        ion_size_parameter_, logK_),
-        ChemistryException);
+        ac::ChemistryException);
   }
 }  // end SUITE(GeochemistryTestSecondarySpecies)

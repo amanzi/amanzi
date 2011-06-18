@@ -13,6 +13,7 @@
 #include "verbosity.hh"
 
 SUITE(GeochemistryTestsMineral) {
+  namespace ac = amanzi::chemistry;
   /*****************************************************************************
    **
    **  Test for Mineral.cpp
@@ -26,8 +27,8 @@ SUITE(GeochemistryTestsMineral) {
     MineralTest();
     ~MineralTest();
 
-    SpeciesName name_;
-    SpeciesId id_;
+    ac::SpeciesName name_;
+    ac::SpeciesId id_;
     double h2o_stoich_;
     double charge_;
     double gram_molecular_weight_;
@@ -36,12 +37,12 @@ SUITE(GeochemistryTestsMineral) {
     double molar_volume_;
     double specific_surface_area_;
 
-    std::vector<SpeciesName> species_names_;
+    std::vector<ac::SpeciesName> species_names_;
     std::vector<double> stoichiometry_;
-    std::vector<SpeciesId> species_ids_;
+    std::vector<ac::SpeciesId> species_ids_;
 
-    SpeciesArray primarySpecies_;
-    Mineral* mineral_;
+    ac::SpeciesArray primarySpecies_;
+    ac::Mineral* mineral_;
 
    private:
   };  // end class MineralTest
@@ -72,26 +73,26 @@ SUITE(GeochemistryTestsMineral) {
     stoichiometry_.push_back(1.0);
     species_ids_.push_back(2);
 
-    mineral_ = new Mineral(name_, id_,
+    mineral_ = new ac::Mineral(name_, id_,
                            species_names_, stoichiometry_, species_ids_,
                            h2o_stoich_, gram_molecular_weight_, logK_,
                            molar_volume_, specific_surface_area_);
 
-    SpeciesId id = 0;
-    SpeciesName name = "H+";
-    Species H_p = Species(id, name, 1.0, 1.0079, 9.0);
+    ac::SpeciesId id = 0;
+    ac::SpeciesName name = "H+";
+    ac::Species H_p = ac::Species(id, name, 1.0, 1.0079, 9.0);
     H_p.act_coef(1.0);
     H_p.update(2.74965e-9);
 
     id = 1;
     name = "HCO3-";
-    Species HCO3_m = Species(id, name, -1.0, 61.0171, 4.0);
+    ac::Species HCO3_m = ac::Species(id, name, -1.0, 61.0171, 4.0);
     HCO3_m.act_coef(1.0);
     HCO3_m.update(9.71848e-4);
 
     id = 2;
     name = "Ca++";
-    Species Ca_pp = Species(id, name, 2.0, 40.0780, 6.0);
+    ac::Species Ca_pp = ac::Species(id, name, 2.0, 40.0780, 6.0);
     Ca_pp.act_coef(1.0);
     Ca_pp.update(9.61037e-5);
 
@@ -166,7 +167,7 @@ SUITE(GeochemistryTestsMineral) {
   }
 
   TEST_FIXTURE(MineralTest, Mineral_verbosity) {
-    mineral_->set_verbosity(kDebugMineralKinetics);
-    CHECK_EQUAL(mineral_->verbosity(), kDebugMineralKinetics);
+    mineral_->set_verbosity(ac::kDebugMineralKinetics);
+    CHECK_EQUAL(mineral_->verbosity(), ac::kDebugMineralKinetics);
   }
 }  // end SUITE(GeochemistryTestMineral)

@@ -4,6 +4,9 @@
 
 #include "activity_model.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class Species;
 
 class ActivityModelUnit : public ActivityModel {
@@ -19,5 +22,8 @@ class ActivityModelUnit : public ActivityModel {
 
  private:
 };
+
+}  // namespace chemistry
+}  // namespace amanzi 
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_

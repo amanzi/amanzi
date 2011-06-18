@@ -8,6 +8,9 @@
 
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 AqueousEquilibriumComplex::AqueousEquilibriumComplex()
     : SecondarySpecies() {
 }  // end AqueousEquilibriumComplex() constructor
@@ -134,3 +137,6 @@ void AqueousEquilibriumComplex::DisplayResults(void) const {
             << std::setw(15) << activity()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi

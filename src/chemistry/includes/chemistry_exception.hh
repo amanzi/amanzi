@@ -5,6 +5,8 @@
 #include <string>
 
 #include "errors.hh"
+namespace amanzi {
+namespace chemistry {
 
 class ChemistryException : public Errors::Message {
  public:
@@ -67,4 +69,6 @@ class ChemistryInvalidSolution : public ChemistryException {
  private:
 };
 
+}  // namespace chemistry
+}  // namespace amanzi 
 #endif  // AMANZI_CHEMISTRY_EXCEPTION_HH_

@@ -12,6 +12,9 @@ class Epetra_SerialDenseVector;
 class State;
 class Mesh_maps_base;
 
+namespace amanzi {
+namespace chemistry {
+
 class Chemistry_State {
  public:
   explicit Chemistry_State(Teuchos::RCP<State> S);
@@ -56,6 +59,6 @@ class Chemistry_State {
   void ExtractVolumeFromMesh(void);
 };
 
-
-
+}  // namespace chemistry
+}  // namespace amanzi 
 #endif  // AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_

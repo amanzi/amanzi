@@ -6,6 +6,9 @@
 
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 SurfaceComplex::SurfaceComplex() {
   species_names_.clear();
   species_ids_.clear();
@@ -183,3 +186,6 @@ void SurfaceComplex::DisplayResults(void) const {
             << std::setw(15) << surface_concentration()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi

@@ -1,6 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "lu.hh"
-#define TINY 1.0e-20
+
+namespace amanzi {
+namespace chemistry {
+
+static const double TINY=1.0e-20;
 
 void ludcmp(double** a, int n, int* indx, double* d) {
   int i, imax, j, k;
@@ -115,3 +119,6 @@ void lubksb(double** a, int n, int* indx, double b[]) {
     b[i] = sum / a[i][i];
   }
 }  // end lubksb()
+
+}  // namespace chemistry
+}  // namespace amanzi

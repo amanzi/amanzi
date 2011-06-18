@@ -7,6 +7,9 @@
 #include "secondary_species.hh"
 #include "verbosity.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 Mineral::Mineral()
     : SecondarySpecies(),
       verbosity_(kSilent),
@@ -128,3 +131,6 @@ void Mineral::DisplayResults(void) const {
             << std::setw(15) << saturation_index()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi

@@ -6,6 +6,9 @@
 #include <iostream>
 #include <iomanip>
 
+namespace amanzi {
+namespace chemistry {
+
 MatrixBlock::MatrixBlock() : size_(0),
                              A_(NULL) {
 }
@@ -204,3 +207,6 @@ MatrixBlock::~MatrixBlock() {
   }
   A_ = NULL;
 }
+
+}  // namespace chemistry
+}  // namespace amanzi

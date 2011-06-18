@@ -10,6 +10,9 @@
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class ActivityModel {
  public:
   ActivityModel();
@@ -53,5 +56,8 @@ class ActivityModel {
  private:
   std::string name_;
 };
+
+}  // namespace chemistry
+}  // namespace amanzi 
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
