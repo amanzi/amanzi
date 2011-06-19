@@ -226,6 +226,20 @@ endif()
 ##############################################################################
 
 ##############################################################################
+# ASCEMIO - http://www.cgns.sourceforge.net/
+##############################################################################
+option(ENABLE_ASCEMIO  "Build Amanzi output library with ASCEM-IO parallelIO" OFF)
+set_feature_info(ASCEMIO
+                  ENABLE_ASCEMIO
+                 "ASCEM-IO Scalable Parallel I/O module for Environmental Management Applications"
+                 "http://ascem-io.secure-water.org"
+                 "Required to produce VisIt files in parallel"
+                 )
+if (ENABLE_ASCEMIO)
+    find_package(ASCEMIO REQUIRED)
+endif() 
+
+##############################################################################
 # CGNS - http://www.cgns.sourceforge.net/
 ##############################################################################
 option(ENABLE_CGNS  "Build Amanzi output library with CGNS" OFF)
