@@ -9,6 +9,9 @@
 #include "string_tokenizer.hh"
 #include "verbosity.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 KineticRate::KineticRate(void)
     : verbosity_(kSilent),
       name_("KineticRate"),
@@ -84,3 +87,6 @@ void KineticRate::DisplayReaction(void) const {
   }
   std::cout << std::endl;
 }  // end DisplayReaction
+
+}  // namespace chemistry
+}  // namespace amanzi

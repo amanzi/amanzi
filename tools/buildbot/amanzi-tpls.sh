@@ -180,7 +180,7 @@
 # http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-4.0.3.tar.gz
 #
 # mstk:
-# https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
+# https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.83rc3.tar.gz
 #
 #################################################################################
 #
@@ -220,7 +220,7 @@ MOAB_VERSION=r4276
 CGNS_VERSION=2.5
 CGNS_PATCH=4
 METIS_VERSION=4.0.3
-MSTK_VERSION=1.80
+MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
 
 ################################################################################
@@ -302,11 +302,11 @@ function download_archives {
     fi
 
     if [  ! -f ${SOURCE}/metis-${METIS_VERSION}.tar.gz ]; then
-        wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-4.0.3.tar.gz
+        wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-${METIS_VERSION}.tar.gz
     fi
 
     if [  ! -f ${SOURCE}/mstk-${MSTK_VERSION}.tar.gz ]; then
-        wget --no-check-certificate https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
+        wget --no-check-certificate https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-${MSTK_VERSION}.tar.gz
     fi
     cd ${SCRIPT_DIR}
 }
@@ -719,13 +719,12 @@ function install_metis {
 #
 ################################################################################
 function install_mstk {
-    MSTK_DIR=${PREFIX}/mstk/mstk-1.8
+    MSTK_DIR=${PREFIX}/mstk/mstk-${MSTK_VERSION}
     rm -rf ${PREFIX}/mstk
     mkdir -p ${PREFIX}/mstk
     cd ${PREFIX}/mstk
     cp ${SOURCE}/mstk-${MSTK_VERSION}.tar.gz .
-    gunzip mstk-${MSTK_VERSION}.tar.gz
-    tar ${TAR_FLAGS} mstk-${MSTK_VERSION}.tar
+    tar ${TAR_FLAGS} mstk-${MSTK_VERSION}.tar.gz
     cd ${MSTK_DIR}
 
     # for some reason installing examples dies on centos with cmake 2.8.4
@@ -736,6 +735,7 @@ function install_mstk {
 	-D CMAKE_BUILD_TYPE:STRING=Release \
 	-D ENABLE_PARALLEL=yes \
 	-D ENABLE_ExodusII=yes \
+	-D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \
 	-D NetCDF_DIR:FILEPATH=${NETCDF_PREFIX} \
 	-D ExodusII_DIR:FILEPATH=${PREFIX} \
 	-D Metis_DIR:FILEPATH=${METIS_PREFIX} \

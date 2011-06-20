@@ -6,6 +6,9 @@
 #include <vector>
 #include <iostream>
 
+namespace amanzi {
+namespace chemistry {
+
 ActivityModel::ActivityModel()
     : I_(0.0) {
 }  // end ActivityModel constructor
@@ -51,3 +54,6 @@ void ActivityModel::CalculateActivityCoefficients(
     i->act_coef(gamma);
   }
 }  // end CalculateActivityCoefficients()
+
+}  // namespace chemistry
+}  // namespace amanzi

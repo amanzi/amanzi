@@ -19,6 +19,9 @@
 
 #include <string>
 
+namespace amanzi {
+namespace chemistry {
+
 StringTokenizer::StringTokenizer(void) {
 } /* end StringTokenizer() */
 
@@ -39,3 +42,6 @@ void StringTokenizer::tokenize(const std::string& source,
     epos = source.find_first_of(delimiters, spos);
   }
 } /* end tokenize(source, delimitiers) */
+
+}  // namespace chemistry
+}  // namespace amanzi

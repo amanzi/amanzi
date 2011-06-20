@@ -21,6 +21,8 @@
 #include "verbosity.hh"
 #include "chemistry_exception.hh"
 
+namespace amanzi {
+namespace chemistry {
 
 /*******************************************************************************
  **
@@ -918,3 +920,6 @@ void Chemistry_PK::set_chemistry_output_names(std::vector<string>* names) {
 void Chemistry_PK::set_component_names(std::vector<string>* names) {
   chem_->GetPrimaryNames(names);
 }  // end set_component_names()
+
+}  // namespace chemistry
+}  // namespace amanzi

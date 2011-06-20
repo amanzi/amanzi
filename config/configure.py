@@ -174,15 +174,21 @@ class ConfigurationManager(object):
 
     self.configDir = os.path.abspath('config')
     self.bsDir     = os.path.join(self.configDir, 'BuildSystem')
+    bsURL = 'http://petsc.cs.iit.edu/petsc/BuildSystem'
+    hgCommand = 'hg clone ' + bsURL +' '+ self.bsDir
     if not os.path.isdir(self.configDir):
       raise RuntimeError('Run configure from $'+self.PROJECT+'_DIR, not '+os.path.abspath('.'))
-    # TODO: This should eventually try to clone BuildSystem via Mercurial; failing that, we then download the tarball.
+    # Try to clone BuildSystem via Mercurial; failing that, we then download the tarball.
     if not os.path.isdir(self.bsDir):
       print '==============================================================================='
       print '''++ Could not locate BuildSystem in %s.''' % self.configDir
-      print '''++ Downloading it from http://petsc.cs.iit.edu/petsc/BuildSystem'''
+      print '''++ Downloading it from %s.''' % bsURL
+      print '''++ Attempting: %s''' % hgCommand
+      (status,output) = commands.getstatusoutput(hgCommand)
+      if status:
+        print '++ Unable to clone BuildSystem.  Attempting download from ' + bsURL + '/archive/tip.tar.gz'
+        self.downloadPackage('http://petsc.cs.iit.edu/petsc/BuildSystem/archive/tip.tar.gz', 'BuildSystem.tar.gz', self.configDir)
       print '==============================================================================='
-      self.downloadPackage('http://petsc.cs.iit.edu/petsc/BuildSystem/archive/tip.tar.gz', 'BuildSystem.tar.gz', self.configDir)
     # to load ~/.pythonrc.py before inserting correct BuildSystem to path
     import user
     sys.path.insert(0, self.bsDir)

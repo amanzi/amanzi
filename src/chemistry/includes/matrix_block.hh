@@ -6,6 +6,9 @@
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
+namespace amanzi {
+namespace chemistry {
+
 class MatrixBlock {
  public:
   MatrixBlock();
@@ -64,4 +67,6 @@ class MatrixBlock {
   double** A_;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_

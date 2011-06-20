@@ -6,6 +6,9 @@
 
 #include "activity_model.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class Species;
 
 class ActivityModelDebyeHuckel : public ActivityModel {
@@ -24,5 +27,6 @@ class ActivityModelDebyeHuckel : public ActivityModel {
   static const double debyeB;
   static const double debyeBdot;
 };
-
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_DEBYE_HUCKEL_HH_

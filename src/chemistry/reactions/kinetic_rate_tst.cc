@@ -75,6 +75,9 @@
 #include "string_tokenizer.hh"
 #include "verbosity.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 KineticRateTST::KineticRateTST(void)
     : KineticRate(),
       area_(0.0),
@@ -345,3 +348,6 @@ void KineticRateTST::Display(void) const {
   }
   std::cout << std::endl;
 }  // end Display()
+
+}  // namespace chemistry
+}  // namespace amanzi
