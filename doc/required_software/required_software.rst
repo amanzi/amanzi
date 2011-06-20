@@ -2,6 +2,9 @@
  Required Environment and Software for Amanzi
 ==============================================
 
+
+
+
 System Software Environment
 ===========================
 
@@ -174,6 +177,13 @@ ASCEM-IO:
 
 Optional Software Tools
 -----------------------
+
+Mercirual:
+        :Versions: TODO: Versions
+        :Description: A dirtributed version control system
+        :Role: Used by Amanzi to record and track changes to the software, and coordinate developer contributions. Required in order to obtain development versions of the Amanzi source.
+        :Dependencies: Python 2.6 (TODO: Correct?)
+        :Information: http://mercurial.selenic.com/
 
 SWIG:  Wait, is this a tool or a library?
         :Versions:
