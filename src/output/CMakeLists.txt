@@ -79,6 +79,7 @@ endif()
 add_library(output ${output_source_files})
 target_link_libraries(output error_handling ${amanzi_mesh_libs} mesh_data 
 	              ${output_tpl_list} )
+link_list_add(output)
 
 #
 # Install Targets

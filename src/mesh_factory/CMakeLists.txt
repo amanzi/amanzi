@@ -41,6 +41,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 set(mesh_factory_files MeshFileType.cc MeshFramework.cc MeshFactory.cc FrameworkTraits.cc) 
 add_library(mesh_factory ${mesh_factory_files})
 target_link_libraries(mesh_factory error_handling mesh_data simple_mesh)
+link_list_add(mesh_factory)
 
 #
 # Install Targets

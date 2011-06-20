@@ -29,12 +29,14 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Library: cell_geometry
 #
 add_library(cell_geometry cell_geometry.cc)
+link_list_add(cell_geometry)
 
 #
 # Library: mesh_audit
 #
 add_library(mesh_audit MeshAudit.cc)
 target_link_libraries(mesh_audit error_handling cell_geometry ${Epetra_LIBRARIES})
+link_list_add(mesh_audit)
 
 #
 # Install Targets
