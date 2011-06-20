@@ -37,6 +37,7 @@ add_definitions("-DUSE_MPI")
 #
 add_library(transport Transport_PK.cpp Transport_State.cpp)
 target_link_libraries(transport  mesh_data error_handling state flow chemistry ${Epetra_LIBRARIES})
+link_list_add(transport)
 
 #
 # Install Targets

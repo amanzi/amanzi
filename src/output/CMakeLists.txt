@@ -57,6 +57,7 @@ endif()
 
 add_library(output ${output_source_files})
 target_link_libraries(output error_handling simple_mesh mesh_data ${output_tpl_list} )
+link_list_add(output)
 
 #
 # Install Targets

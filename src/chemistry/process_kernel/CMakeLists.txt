@@ -25,4 +25,5 @@ set(GEOCHEM_LIBS
 
 add_library(chemistry chemistry_pk.cc chemistry_state.cc)
 target_link_libraries(chemistry ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
+link_list_add(chemistry)
 

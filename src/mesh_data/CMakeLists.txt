@@ -32,6 +32,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 file(GLOB mesh_data_source_files "*.cc")
 add_library(mesh_data ${mesh_data_source_files})
 target_link_libraries(mesh_data error_handling ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
+link_list_add(mesh_data)
 
 #
 # Install Targets

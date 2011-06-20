@@ -49,7 +49,7 @@ file(GLOB stk_inc_files "*.hh")
 add_install_include_file(${stk_inc_files})
 add_install_library(stk_mesh)
 
-link_list_add()
+link_list_add(stk_mesh)
 
 if (BUILD_TESTS)
 

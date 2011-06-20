@@ -14,4 +14,5 @@ set(SRCS
 )
 
 add_library(geochemsolvers ${SRCS}) 
+link_list_add(geochemsolvers)
 

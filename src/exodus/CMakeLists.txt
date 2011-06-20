@@ -37,6 +37,8 @@ add_library(exodus ${exo_source_files})
 target_link_libraries(exodus 
                       error_handling mesh_data
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
+link_list_add(exodus)
+
 
 #
 # Binary: exec_reader

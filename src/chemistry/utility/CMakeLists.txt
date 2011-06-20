@@ -17,4 +17,5 @@ set(SRCS
 )
 
 add_library(geochemutil ${SRCS}) 
+link_list_add(geochemutil)
 
