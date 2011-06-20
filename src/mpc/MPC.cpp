@@ -535,6 +535,32 @@ void MPC::write_gnuplot_data(int iter, double time)
   cout << " ...writing gnuplot output" << endl;
   cout << " ...number of components : " << S->get_number_of_components() << endl;
   
+  if (iter == 0) { // write pressure and saturation
+    std::stringstream fname_p;
+    fname_p << "pressure.dat";
+    
+    std::filebuf fb;
+    fb.open (fname_p.str().c_str(), std::ios::out);
+    ostream os_p(&fb);
+
+    for (int i=0; i< (S->get_pressure())->MyLength(); i++) 
+      os_p << (*S->get_pressure())[i] << endl;    
+    
+    fb.close();
+    
+    std::stringstream fname_s;
+    fname_s << "saturation.dat";
+    
+    fb.open (fname_s.str().c_str(), std::ios::out);
+    ostream os_s(&fb);
+
+    for (int i=0; i< (S->get_water_saturation())->MyLength(); i++) 
+      os_s << (*S->get_water_saturation())[i] << endl;    
+    
+    fb.close();
+    
+  }
+
   for (int nc=0; nc<S->get_number_of_components(); nc++) {
     std::stringstream fname;
     fname << "conc_" << nc;
