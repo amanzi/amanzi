@@ -1,8 +1,5 @@
 #include "UnitTest++.h"
 #include "../hdf5_mesh_par.hh"
-//#include "Mesh_maps_simple.hh"
-#include "../../stk_mesh/Mesh_maps_stk.hh"
-
 TEST(HDF5_PAR) {
   
 #ifdef HAVE_MPI
@@ -15,12 +12,19 @@ TEST(HDF5_PAR) {
   std::string hdf5_datafile1 = "new_data";
   std::string hdf5_fullfile  = "new_full";
   
-  //Mesh_maps_simple Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
-  //STK_mesh::Mesh_maps_stk Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
-  Teuchos::RCP<STK_mesh::Mesh_maps_stk> 
-  Mesh(new STK_mesh::Mesh_maps_stk(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm));
-                                                                         
+  /*
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
+    Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1,
+                                          comm));
 
+  unsigned int num_nodes = Mesh->count_entities(Amanzi::AmanziMesh::NODE, 
+                                                Amanzi::AmanziMesh::OWNED);
+  unsigned int num_cells = Mesh->count_entities(Amanzi::AmanziMesh::CELL, 
+                                                Amanzi::AmanziMesh::OWNED);
+  */
+
+  Teuchos::RCP<Mesh_maps_base> Mesh(new STK_mesh::Mesh_maps_stk(0.0, 0.0, 0.0,
+			            1.0, 1.0, 1.0, 4, 1, 1, comm));
   unsigned int num_nodes = Mesh->count_entities(Mesh_data::NODE, OWNED);
   unsigned int num_cells = Mesh->count_entities(Mesh_data::CELL, OWNED);
 
@@ -46,7 +50,7 @@ TEST(HDF5_PAR) {
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
 
   // Write a file which contains both mesh and data.
-  HDF5_PAR::HDF5_PAR viz_output(*comm);
+  Amanzi::HDF5_PAR viz_output(*comm);
   viz_output.setTrackXdmf(true);
   viz_output.createMeshFile(*Mesh, hdf5_meshfile);
 
@@ -55,9 +59,9 @@ TEST(HDF5_PAR) {
   for (int i = 0; i < 15; i++) {
       // write time step data
       viz_output.createTimestep(time, i);
-      viz_output.writeCellData(*cell_quantity, "cell_quantity");
-      viz_output.writeCellData(*fake_pressure, "pressure");
-      viz_output.writeNodeData(*node_quantity, "node_quantity");
+      viz_output.writeCellDataReal(*cell_quantity, "cell_quantity");
+      viz_output.writeCellDataReal(*fake_pressure, "pressure");
+      viz_output.writeNodeDataReal(*node_quantity, "node_quantity");
 
       // advance time and values
       time += 2.0;

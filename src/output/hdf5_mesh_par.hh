@@ -4,13 +4,14 @@
 #include <string>
 
 #ifdef HAVE_MOAB_MESH
-#include "Mesh_maps_moab.hh"
+#include "Mesh_moab.hh"
 #endif
 #ifdef HAVE_STK_MESH
-#include "Mesh_factory.hh"
+//#include "Mesh_STK.hh"
 #include "Mesh_maps_stk.hh"
 #endif
 
+//#include "Mesh.hh"
 #include "Mesh_maps_base.hh"
 #include "errors.hh"
 #include "Epetra_Vector.h"
@@ -20,6 +21,9 @@ extern "C" {
 #include "hdf5.h"
 #include "parallelIO.h"
 };
+
+namespace Amanzi
+{
 
 class HDF5_PAR {
 
@@ -60,6 +64,7 @@ class HDF5_PAR {
   Teuchos::XMLObject xmlStep() { return xmlStep_; }
 
   // Output mesh data to filename.h5 and filename.xmf
+  //void createMeshFile(AmanziMesh::Mesh &mesh_Maps, std::string filename);
   void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
 
   // Create h5 file for data output, create accompanying Xdmf files for
@@ -73,10 +78,16 @@ class HDF5_PAR {
   void endTimestep();
 
   // Write node data to HDF5 data file.
-  void writeNodeData(const Epetra_Vector &x, const std::string varname);
+  void writeNodeDataReal(const Epetra_Vector &x, const std::string varname);
+  void writeNodeDataInt(const Epetra_Vector &x, const std::string varname);
 
   // Write cell data to HDF5 data file.
-  void writeCellData(const Epetra_Vector &x, const std::string varname);
+  void writeCellDataReal(const Epetra_Vector &x, const std::string varname);
+  void writeCellDataInt(const Epetra_Vector &x, const std::string varname);
+  
+  // Write array data to HDF5 data file. Meant for Restart ONLY not Viz!
+  void writeDataReal(const Epetra_Vector &x, const std::string varname);
+  void writeDataInt(const Epetra_Vector &x, const std::string varname);
   
  private:
 
@@ -100,7 +111,7 @@ class HDF5_PAR {
   void writeXdmfVisitGrid_(std::string filename);
 
   void writeFieldData_(const Epetra_Vector &x, std::string varname,
-                       std::string loc);
+                       datatype_t type, std::string loc);
 
   // parallel info
   Epetra_MpiComm viz_comm_;
@@ -131,5 +142,7 @@ class HDF5_PAR {
 
   static std::string xdmfHeader_;
 };
+  
+} // close namespace HDF5
 
 #endif  // HDF5_MESH_PAR_HH_

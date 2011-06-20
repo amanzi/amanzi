@@ -1,5 +1,8 @@
 #include "hdf5_mesh_par.hh"
 
+namespace Amanzi {
+  
+
 HDF5_PAR::HDF5_PAR(const Epetra_MpiComm &comm)
 : viz_comm_(comm)
 {
@@ -15,7 +18,9 @@ HDF5_PAR::~HDF5_PAR()
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
-void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
+//void HDF5_PAR::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename)
+void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename)
+{
 
   hid_t file, group, dataspace, dataset;
   herr_t status;
@@ -27,12 +32,6 @@ void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
   // build h5 filename
   h5Filename = filename + ".h5";
 
-  /*
-  const Epetra_MpiComm& mycomm = dynamic_cast<const Epetra_MpiComm&> 
-                                 (*mesh_maps.get_comm());
-  viz_comm_ = mycomm;
-  */
-  
   // new parallel
   file = parallelIO_open_file(h5Filename.c_str(), &IOgroup_, FILE_CREATE);
   if (file < 0) {
@@ -68,8 +67,9 @@ void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
   // write out coords
   // TODO(barker): add error handling: can't create/write
   // new parallel
-  parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file, 
-                           "Mesh/Nodes", &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+  parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file,
+                           "Mesh/Nodes", &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
   delete nodes;
   
   // write out node map
@@ -79,8 +79,9 @@ void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
   }
   globaldims[1] = 1;
   localdims[1] = 1;
-  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file, 
-                           "Mesh/NodeMap", &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+  parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file,
+                           "Mesh/NodeMap", &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
   
   
   // get connectivity
@@ -129,7 +130,8 @@ void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
   // write out connectivity
   // TODO(barker): add error handling: can't create/write  // new parallel
   parallelIO_write_dataset(ielem, PIO_INTEGER, 2, globaldims, localdims, file, 
-                           "Mesh/Elements", &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+                           "Mesh/Elements", &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
   delete ielem;
   
   // write out cell map
@@ -140,7 +142,8 @@ void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename) {
   globaldims[1] = 1;
   localdims[1] = 1;
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file, 
-                           "Mesh/ElementMap", &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
+                           "Mesh/ElementMap", &IOgroup_,
+                           NONUNIFORM_CONTIGUOUS_WRITE);
   delete ids;
   
   // close file
@@ -239,14 +242,85 @@ void HDF5_PAR::endTimestep() {
   }
 }
 
-void HDF5_PAR::writeCellData(const Epetra_Vector &x, const std::string varname) {
-  writeFieldData_(x, varname, "Cell");
+void HDF5_PAR::writeDataReal(const Epetra_Vector &x, const std::string varname) 
+{
+  writeFieldData_(x, varname, PIO_DOUBLE, "NONE");
 }
 
-void HDF5_PAR::writeNodeData(const Epetra_Vector &x, const std::string varname) {
-  writeFieldData_(x, varname, "Node");
+void HDF5_PAR::writeDataInt(const Epetra_Vector &x, const std::string varname)
+{
+  writeFieldData_(x, varname, PIO_INTEGER, "NONE");
+}
+  
+void HDF5_PAR::writeCellDataReal(const Epetra_Vector &x,
+                                 const std::string varname)
+{
+  writeFieldData_(x, varname, PIO_DOUBLE, "Cell");
 }
 
+void HDF5_PAR::writeCellDataInt(const Epetra_Vector &x,
+                                const std::string varname)
+{
+  writeFieldData_(x, varname, PIO_INTEGER, "Cell");
+}
+
+void HDF5_PAR::writeNodeDataReal(const Epetra_Vector &x, 
+                                 const std::string varname)
+{
+  writeFieldData_(x, varname, PIO_DOUBLE, "Node");
+}
+
+void HDF5_PAR::writeNodeDataInt(const Epetra_Vector &x, 
+                                const std::string varname)
+{
+  writeFieldData_(x, varname, PIO_INTEGER, "Node");
+}
+
+  
+void HDF5_PAR::writeFieldData_(const Epetra_Vector &x, std::string varname,
+                               datatype_t type, std::string loc) {
+  // write field data
+  double *data;
+  int err = x.ExtractView(&data);
+  hid_t file, group, dataspace, dataset;
+  herr_t status;
+
+  int globaldims[2], localdims[2];
+  globaldims[0] = x.GlobalLength();
+  globaldims[1] = 1;
+  localdims[0] = x.MyLength();
+  localdims[1] = 1;
+
+  // TODO(barker): how to build path name?? probably still need iteration number
+  std::stringstream h5path;
+  h5path << varname;
+
+  // TODO(barker): add error handling: can't write/create
+
+  file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+                              FILE_READWRITE);
+  if (file < 0) {
+    Errors::Message message("HDF5_PAR::writeFieldData_ error opening data file to write field data");
+    Exceptions::amanzi_throw(message);
+  }
+
+  char *tmp;
+  h5path << "/" << Iteration();
+
+  tmp = new char [h5path.str().size()+1];
+  strcpy(tmp,h5path.str().c_str());
+  parallelIO_write_dataset(data, type, 2, globaldims, localdims, file, tmp,
+                           &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);    
+  parallelIO_close_file(file, &IOgroup_);
+
+  // TODO(barker): add error handling: can't write
+  if (TrackXdmf() && viz_comm_.MyPID() == 0) {
+    // TODO(barker): get grid node, node.addChild(addXdmfAttribute)
+    Teuchos::XMLObject node = findMeshNode_(xmlStep());
+    node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
+  }
+}
+  
 
 void HDF5_PAR::createXdmfMesh_(const std::string xmfFilename) {
   // TODO(barker): add error handling: can't open/write
@@ -473,63 +547,6 @@ Teuchos::XMLObject HDF5_PAR::findMeshNode_(Teuchos::XMLObject xmlobject) {
   return node;
 }
 
-void HDF5_PAR::writeFieldData_(const Epetra_Vector &x, std::string varname,
-                       std::string loc) {
-  // write field data
-  double *data;
-  int err = x.ExtractView(&data);
-  hid_t file, group, dataspace, dataset;
-  herr_t status;
-
-  int globaldims[2], localdims[2];
-  globaldims[0] = x.GlobalLength();
-  globaldims[1] = 1;
-  localdims[0] = x.MyLength();
-  localdims[1] = 1;
-
-  // TODO(barker): how to build path name?? probably still need iteration number
-  std::stringstream h5path;
-  h5path << varname;
-
-  // TODO(barker): add error handling: can't write/create
-  
-  file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_, FILE_READWRITE);
-  if (file < 0) {
-    Errors::Message message(
-      "HDF5_PAR::writeFieldData_ error opening data file to write field data");
-    Exceptions::amanzi_throw(message);
-  }
-  
-  char *tmp;
-  /*
-  tmp = new char [h5path.str().size()+1];
-  strcpy(tmp,h5path.str().c_str());
-  // Check if varname group exists; if not, create it
-  group = parallelIO_create_dataset_group(tmp, file, &IOgroup_);
-   */
-  h5path << "/" << Iteration();
-  
-  tmp = new char [h5path.str().size()+1];
-  strcpy(tmp,h5path.str().c_str());
-  parallelIO_write_dataset(data, PIO_DOUBLE, 2, globaldims, localdims, file, 
-                           tmp, &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
-  //parallelIO_write_dataset(data, PIO_DOUBLE, 2, globaldims, localdims, file, 
-  //                         tmp, &IOgroup_, NONUNIFORM_CONTIGUOUS_WRITE);
-  //if (status < 0) {
-  //  Errors::Message message("HDF5_PAR:: error writing field to data file");
-  //  Exceptions::amanzi_throw(message);
-  //}
-  
-  parallelIO_close_file(file, &IOgroup_);
-
-  // TODO(barker): add error handling: can't write
-  if (TrackXdmf() && viz_comm_.MyPID() == 0) {
-    // TODO(barker): get grid node, node.addChild(addXdmfAttribute)
-    Teuchos::XMLObject node = findMeshNode_(xmlStep());
-    node.addChild(addXdmfAttribute_(varname, loc, globaldims[0], h5path.str()));
-  }
-}
-
 Teuchos::XMLObject HDF5_PAR::addXdmfAttribute_(std::string varname,
                                            std::string location,
                                            int length,
@@ -554,4 +571,6 @@ Teuchos::XMLObject HDF5_PAR::addXdmfAttribute_(std::string varname,
 
 std::string HDF5_PAR::xdmfHeader_ =
          "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
+  
+} // close namespace Amanzi
 
