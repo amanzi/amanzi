@@ -1,6 +1,6 @@
 #include "UnitTest++.h"
 #include "../hdf5_mesh.hh"
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 
 
 TEST(HDF5) {
@@ -15,7 +15,7 @@ TEST(HDF5) {
   std::string hdf5_datafile1 = "new_data";
   std::string hdf5_fullfile  = "new_full";
 
-  Mesh_maps_simple Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
+  Amanzi::AmanziMesh::Mesh_simple Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
 
   unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
   unsigned int num_cells = Mesh.count_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
@@ -42,7 +42,7 @@ TEST(HDF5) {
   fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
 
   // Write a file which contains both mesh and data.
-  HDF5 viz_output;
+  Amanzi::HDF5 viz_output;
   viz_output.setTrackXdmf(true);
   viz_output.createMeshFile(Mesh, hdf5_meshfile);
   viz_output.createDataFile(hdf5_meshfile, hdf5_datafile1);
