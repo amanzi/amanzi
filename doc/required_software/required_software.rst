@@ -56,12 +56,12 @@ Boost:
         :Description: C++ Library which extends the capabilibies of the standard library.
         :Role: Specific Boost libraries are used in various parts of the Amanzi code base.
 
-        - filesystem. Used to create directories, test directory existence and other
+        - ``filesystem``: Used to create directories, test directory existence and other
           file system activities.
-        - graph. Used in the mesh audit tool.
-        - mpl. Meta-programming library used in the mesh factory.  
+        - ``graph``: Used in the mesh audit tool.
+        - ``mpl``: Meta-programming library used in the mesh factory.  
 
-        :Dependencies: A good C++ compiler and reasonably modern platform.
+        :Dependencies: A modern C++ compiler. See the Boost website for specifics.
         :Information: http://www.boost.org/
 
 
@@ -110,9 +110,10 @@ Trilinos:
         :Description: Library collection of tools for numberic computing in C++
         :Role: Used throughout Amanzi for data structures and algotithms
         
-        - Eperta, a parallel-aware array libarary
-        - STKmesh, a mesh database libary (optional)
-        - NOX. Nonlinear Object-Oriented Solutions package  
+        - ``Epetra``: a parallel-aware array libarary
+        - ``STKmesh``: a mesh database libary (optional)
+        - ``NOX``: Nonlinear Object-Oriented Solutions package  
+        - TODO: Complete?
 
         :Dependencies: ExodusII, (if STKmesh used) CMake, MPI
         :Information: http://trilinos.sandia.gov/
@@ -125,7 +126,7 @@ CMake:
         :Versions: 2.8.3 required.
         :Description: Cross-platform software build system
         :Role: Forms the basis of the Amanzi build and testing tools
-        :Dependencies: Stand-alone
+        :Dependencies: A suitable build backand. GNU Make is standard.
         :Information: http://www.cmake.org/
 
 
@@ -182,7 +183,7 @@ Mercirual:
         :Versions: TODO: Versions
         :Description: A dirtributed version control system
         :Role: Used by Amanzi to record and track changes to the software, and coordinate developer contributions. Required in order to obtain development versions of the Amanzi source.
-        :Dependencies: Python 2.6 (TODO: Correct?)
+        :Dependencies: Python 2.6
         :Information: http://mercurial.selenic.com/
 
 SWIG:  Wait, is this a tool or a library?
@@ -210,7 +211,7 @@ Doxygen:
         :Versions:
         :Description: A source-code to documentation tool.
         :Role: Used to create the Amanzi code documentation and test descriptions.
-        :Dependencies:
+        :Dependencies: Stand-alone binaries available.
         :Information: 
 
 
