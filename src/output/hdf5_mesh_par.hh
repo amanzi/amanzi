@@ -69,7 +69,7 @@ class HDF5_PAR {
 
   // Create h5 file for data output, create accompanying Xdmf files for
   // ParaView and Visit
-  void createDataFile(std::string mesh_filename, std::string data_filename);
+  void createDataFile(std::string data_filename);
   // Adds time step attributes to ParaView and VisIt Xdmf files.  Creates
   // individual Xdmf for the current step.
   // TODO(barker): The individual step file can be remove after VisIt updates.
@@ -88,6 +88,9 @@ class HDF5_PAR {
   // Write array data to HDF5 data file. Meant for Restart ONLY not Viz!
   void writeDataReal(const Epetra_Vector &x, const std::string varname);
   void writeDataInt(const Epetra_Vector &x, const std::string varname);
+  
+  // Read array data from HDF5 data file.
+  void readData(Epetra_Vector &x, const std::string varname);
   
  private:
 
@@ -112,6 +115,8 @@ class HDF5_PAR {
 
   void writeFieldData_(const Epetra_Vector &x, std::string varname,
                        datatype_t type, std::string loc);
+  void readFieldData_(Epetra_Vector &x, std::string varname,
+                      datatype_t type);
 
   // parallel info
   Epetra_MpiComm viz_comm_;

@@ -162,8 +162,7 @@ void HDF5_PAR::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename)
 
 }
 
-void HDF5_PAR::createDataFile(std::string mesh_filename, 
-                              std::string soln_filename) {
+void HDF5_PAR::createDataFile(std::string soln_filename) {
 
   std::string h5filename, PVfilename, Vfilename;
   hid_t file;
@@ -321,7 +320,39 @@ void HDF5_PAR::writeFieldData_(const Epetra_Vector &x, std::string varname,
   }
 }
   
+void HDF5_PAR::readData(Epetra_Vector &x, const std::string varname)
+{
+  readFieldData_(x, varname, PIO_DOUBLE);
+}
+  
+void HDF5_PAR::readFieldData_(Epetra_Vector &x, std::string varname,
+                               datatype_t type) {
+  
+  
+  char *h5path = new char [varname.size()+1];
+  int ndims;
+  
+  hid_t file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+                                    FILE_READONLY);
+  
+  parallelIO_get_dataset_ndims(&ndims, file, h5path, &IOgroup_);
+  int  globaldims[ndims], localdims[ndims];
+  parallelIO_get_dataset_dims(globaldims, file, h5path, &IOgroup_);
+  localdims[0] = x.MyLength();
+  localdims[1] = globaldims[1];
+  std::vector<int> myidx(localdims[0],0);
+  int start = 0;
+  for (int i=0; i<localdims[0]; i++) myidx[i] = i+start;
+  
+  double *data;
+  parallelIO_read_dataset(data, type, ndims, globaldims, localdims,
+                          file, h5path, &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
+  x.ReplaceMyValues(localdims[0], &data[0], &myidx[0]);
 
+  parallelIO_close_file(file, &IOgroup_);  
+    
+}
+  
 void HDF5_PAR::createXdmfMesh_(const std::string xmfFilename) {
   // TODO(barker): add error handling: can't open/write
   Teuchos::XMLObject mesh("Xdmf");

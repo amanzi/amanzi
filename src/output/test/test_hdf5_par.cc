@@ -10,7 +10,7 @@ TEST(HDF5_PAR) {
   
   std::string hdf5_meshfile  = "new_mesh";
   std::string hdf5_datafile1 = "new_data";
-  std::string hdf5_fullfile  = "new_full";
+  std::string hdf5_datafile2 = "new_restart";
   
   /*
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
@@ -53,8 +53,12 @@ TEST(HDF5_PAR) {
   Amanzi::HDF5_PAR viz_output(*comm);
   viz_output.setTrackXdmf(true);
   viz_output.createMeshFile(*Mesh, hdf5_meshfile);
+  viz_output.createDataFile(hdf5_datafile1);
 
-  viz_output.createDataFile(hdf5_meshfile, hdf5_datafile1);
+  Amanzi::HDF5_PAR restart_output(*comm);
+  restart_output.setTrackXdmf(false);
+  restart_output.createDataFile(hdf5_datafile2);
+
   double time = 0.0;
   for (int i = 0; i < 15; i++) {
       // write time step data
@@ -80,6 +84,10 @@ TEST(HDF5_PAR) {
       viz_output.endTimestep();
   }
    
+  restart_output.writeCellDataReal(*cell_quantity, "cell_quantity");
+  restart_output.writeCellDataReal(*fake_pressure, "pressure");
+  restart_output.writeNodeDataReal(*node_quantity, "node_quantity");
+
 #endif
 }
 
