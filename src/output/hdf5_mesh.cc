@@ -23,8 +23,8 @@ namespace Amanzi
   group = H5Gcreate(file, "/Mesh", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // get num_nodes, num_cells
-  int num_nodes = mesh_maps.count_entities(AmanziMesh::NODE, OWNED);
-  int num_elems = mesh_maps.count_entities(AmanziMesh::CELL, OWNED);
+  int num_nodes = mesh_maps.count_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int num_elems = mesh_maps.count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   // get coords
   double *nodes = new double[num_nodes*3];

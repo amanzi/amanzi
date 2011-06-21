@@ -1,6 +1,9 @@
-=====================================
- Amanzi Extern Software Requirements
-=====================================
+==============================================
+ Required Environment and Software for Amanzi
+==============================================
+
+
+
 
 System Software Environment
 ===========================
@@ -8,8 +11,8 @@ System Software Environment
 The libraries and tools listed in this section are assumed to be part
 of the target platform. Typically, a user would not build these
 libraries from source.  The Amanzi team recommends that users use
-pre-built binaries or tools such as MacPorts, yum, rpm to install
-these libraries.
+pre-built binaries or platform-specific pacakge management tools to
+install these libraries.
 
 At a minimum the build environment must have the following system
 software libraries and tools present.
@@ -23,48 +26,42 @@ software libraries and tools present.
   not support non-MPI builds at this time.
 * BLAS/LAPACK built and tuned to the target architecture.
 
-Required Third-Party Software
-=============================
-
-Amanzi leverages existing software libraries whenever possible. Amanzi
-can not built until all the required libraries are built
-successfully. In some cases (netCDF, Exodus, HDF5 and Trilinos), the
-libraries must be configured in a particular way to work correctly
-with Amanzi and other TPLs. The Amanzi source directory contains a
-script that automatically builds the TPLs correctly. Users are
-strongly encouraged to use this tool to build the TPLs. The current
-documentation for a correct TPL configuration is tracked in this
-tool. Advanced users creating their own build process should refer to
-this script for supported configurations and TPL build order.
-
 Amanzi builds the source located in
 https://software.lanl.gov/ascem/trac/browser every hour on several OS
 types.  The build and test suite results for each OS is recorded and
 tracked on the ASCEM Trac site at
 https://software.lanl.gov/ascem/trac/buildbot.
 
-Required Libraries for Building Amanzi
---------------------------------------
 
-CMake:
-        :Versions: 2.8.3 required.
-        :Description: Cross-platform software build system
-        :Role: Forms the basis of the Amanzi build and testing tools
-        :Dependencies: Stand-alone
-        :Information: http://www.cmake.org/
+Required Third-Party Software
+=============================
 
+Amanzi uses existing software libraries whenever possible and can not
+built unless all the required libraries are present. In some cases
+(netCDF, Exodus, HDF5 and Trilinos), the libraries must be configured
+in a particular way to work correctly with Amanzi and other TPLs. 
+
+The Amanzi source directory (TODO: link) contains scripts that build
+these librarues correctly. Users are strongly encouraged to use the
+appropiate tool for their platform. Advanced users creating their own
+build process should refer to this script for supported configurations
+and TPL build order.
+
+
+Required Libraries
+------------------
 
 Boost:
         :Versions: 1.46.0
         :Description: C++ Library which extends the capabilibies of the standard library.
         :Role: Specific Boost libraries are used in various parts of the Amanzi code base.
 
-        - filesystem. Used to create directories, test directory existence and other
+        - ``filesystem``: Used to create directories, test directory existence and other
           file system activities.
-        - graph. Used in the mesh audit tool.
-        - mpl. Meta-programming library used in the mesh factory.  
+        - ``graph``: Used in the mesh audit tool.
+        - ``mpl``: Meta-programming library used in the mesh factory.  
 
-        :Dependencies: A good C++ compiler and reasonably modern platform.
+        :Dependencies: A modern C++ compiler. See the Boost website for specifics.
         :Information: http://www.boost.org/
 
 
@@ -113,23 +110,40 @@ Trilinos:
         :Description: Library collection of tools for numberic computing in C++
         :Role: Used throughout Amanzi for data structures and algotithms
         
-        - Eperta, a parallel-aware array libarary
-        - STKmesh, a mesh database libary (optional)
-        - NOX. Nonlinear Object-Oriented Solutions package  
+        - ``Epetra``: a parallel-aware array libarary
+        - ``STKmesh``: a mesh database libary (optional)
+        - ``NOX``: Nonlinear Object-Oriented Solutions package  
+        - TODO: Complete?
 
         :Dependencies: ExodusII, (if STKmesh used) CMake, MPI
         :Information: http://trilinos.sandia.gov/
 
 
-Optional Third-Party Libraries used in Amanzi
----------------------------------------------
+Required Software Tools
+-----------------------
 
-These libaries are not required to build Amanzi, but will provide it
-with additional capabilities.
+CMake:
+        :Versions: 2.8.3 required.
+        :Description: Cross-platform software build system
+        :Role: Forms the basis of the Amanzi build and testing tools
+        :Dependencies: A suitable build backand. GNU Make is standard.
+        :Information: http://www.cmake.org/
 
-Note that, while each one of the mesh database libraries is listed as
-optional: STKMesh (above, in Trilinos) MOAB and MSTK, at least one of
-these is required for Amanzi to function.
+
+Optional Third-Party Software
+=============================
+
+These tools and libraries are not essential to create a working Amanzi
+installation, but will enable additional Amanzi features, or provide
+useful when using Amanzi.
+
+
+Optional Libraries
+------------------
+
+Note that, while each of the mesh database libraries is optional:
+STKMesh (above, in Trilinos) MOAB and MSTK, *at least one* of these is
+*required* for Amanzi to function.
 
 UnitTest++:
         :Versions: 1.4
@@ -162,10 +176,17 @@ ASCEM-IO:
 
 
 
-Optional Third-Party Software Tools
------------------------------------
+Optional Software Tools
+-----------------------
 
-SWIG:
+Mercirual:
+        :Versions: TODO: Versions
+        :Description: A dirtributed version control system
+        :Role: Used by Amanzi to record and track changes to the software, and coordinate developer contributions. Required in order to obtain development versions of the Amanzi source.
+        :Dependencies: Python 2.6
+        :Information: http://mercurial.selenic.com/
+
+SWIG:  Wait, is this a tool or a library?
         :Versions:
         :Description:
         :Role: 
@@ -190,7 +211,7 @@ Doxygen:
         :Versions:
         :Description: A source-code to documentation tool.
         :Role: Used to create the Amanzi code documentation and test descriptions.
-        :Dependencies:
+        :Dependencies: Stand-alone binaries available.
         :Information: 
 
 

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
 #include "errors.hh"
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
@@ -51,7 +51,7 @@ class HDF5 {
   Teuchos::XMLObject xmlStep() { return xmlStep_; }
 
   // Output mesh data to filename.h5 and filename.xmf
-  void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
+  void createMeshFile(AmanziMesh::Mesh &mesh_Maps, std::string filename);
 
   // Create h5 file for data output, create accompanying Xdmf files for
   // ParaView and Visit

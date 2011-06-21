@@ -242,22 +242,12 @@ namespace BDF2 {
     switch (state.seq) 
       {
       case 0:
-	mitr_sav = state.mitr;
-	state.mitr = 50;
-
 	trap_step_one(h, u, hnext, errc);
-	
-	state.mitr = mitr_sav;
 	break;
 	
       case 1:
       case 2:
-	mitr_sav = state.mitr;
-	state.mitr = 50;	
-
 	bdf2_step_gen(h, u, hnext, errc, false);
-	
-	state.mitr = mitr_sav;
 	break;
 	
       default:
@@ -477,6 +467,7 @@ namespace BDF2 {
 	  }
 	else  // reject the step; cut h and return error condition.
 	  {
+	    
 	    state.rejected_steps++;
 	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {

@@ -45,9 +45,15 @@ include_directories(${CHEM_INCLUDES_DIR})
 # The mesh frameworks
 set(amanzi_mesh_libs "")
 list(APPEND amanzi_mesh_libs stk_mesh exodus)
-add_definitions("-DHAVE_STK_MESH")
-add_definitions("-DHAVE_MOAB_MESH")
-add_definitions("-DHAVE_MSTK_MESH")
+if(ENABLE_STK_Mesh)
+  add_definitions("-DHAVE_STK_MESH")
+endif()
+if(ENABLE_MOAB_Mesh)
+  add_definitions("-DHAVE_MOAB_MESH")
+endif()
+if(ENABLE_MSTK_Mesh)
+  add_definitions("-DHAVE_MSTK_MESH")
+endif()
 
 # External (TPL) include directories
 include_directories(${Boost_INCLUDE_DIRS})
