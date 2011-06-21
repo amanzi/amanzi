@@ -89,12 +89,34 @@ target_link_libraries(amanzi-demo-driver
 add_install_binary(amanzi-demo-driver)		  
 
 #
+# Binary: amanzi-alt-driver
+#
+add_executable(amanzi-alt-driver amanzi-alt-driver.cpp)
+set(alt_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
+set(alt_driver_amanzi_libs mpc state error_handling mesh_factory)
+set(alt_driver_pk_libs chemistry transport flow)
+target_link_libraries(amanzi-alt-driver
+                      ${alt_driver_amanzi_libs}
+                      ${alt_driver_pk_libs}
+                      ${Trilinos_LIBRARIES}
+                      ${Boost_LIBRARIES})
+#
 # Binary: verify_mesh
 #
 add_executable(verify_mesh verify_mesh.cc)
 target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
                       ${Boost_LIBRARIES})
 add_install_binary(verify_mesh)		     
+
+#
+# Binary: verify_mesh
+#
+if ( ENABLE_CGNS )
+    add_executable(verify_hex verify_hex.cc)
+    target_link_libraries(verify_hex mesh_factory mesh mesh_audit output
+                          ${Boost_LIBRARIES})
+    # add_install_binary(verify_hex)		     
+endif()
 
 #
 # Binary: stk_mesh_test_hex

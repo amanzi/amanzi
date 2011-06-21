@@ -3,7 +3,7 @@
 /**
  * @file   verify_mesh.cc
  * @author William A. Perkins
- * @date Thu May 19 10:56:56 2011
+ * @date Mon Jun 20 11:37:31 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December 13, 2010 by William A. Perkins
-// Last Change: Thu May 19 10:56:56 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Jun 20 11:37:31 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -53,7 +53,7 @@ int main (int argc, char* argv[])
 
   const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
   
-  Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::Simple);
+  Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::MOAB);
   CLP.setOption("framework", &the_framework,
                 numframeworks, frameworks, framework_names,
                 "mesh framework preference", false);

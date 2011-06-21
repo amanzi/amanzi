@@ -1,5 +1,7 @@
 <!--
 
+  For use only with amanzi-alt-driver.
+
   This is a very simple 2D, steady-state diffusion/conduction problem
   solved here as Darcy Flow.  The head on 3 boundaries (in plan view)
   is 0.0 while the head on the fourth boundary is 1.0.  The resulting
@@ -23,25 +25,30 @@
       This case will work in parallel only if the stk::mesh framework
       is compiled in.
 
+      Sideset id's are the same for Simple and stk::mesh.
+
     -->
 
     <!--
-    <Parameter name="Framework" type="string" value="stk::mesh" />
+    <Parameter name="Framework" type="string" value="Simple" />
     -->
     <!--
-    <Parameter name="Framework" type="string" value="Simple" />
+    <Parameter name="Framework" type="string" value="stk::mesh" />
     -->
-    <Parameter name="Framework" type="string" value="Simple" />
     <ParameterList name="Generate">
+
+      <!-- Set mesh resolution here -->
+      <Parameter name="Numer of Cells in X" type="int" value="10"/>
+      <Parameter name="Numer of Cells in Y" type="int" value="10"/>
+      <Parameter name="Numer of Cells in Z" type="int" value=" 3"/>
+
       <Parameter name="X_Min" type="double" value="-1.0" />
       <Parameter name="X_Max" type="double" value=" 1.0" />
       <Parameter name="Y_Min" type="double" value="-1.0" />
       <Parameter name="Y_Max" type="double" value=" 1.0" />
       <Parameter name="Z_Min" type="double" value="-0.075" />
       <Parameter name="Z_Max" type="double" value=" 0.075" />
-      <Parameter name="Numer of Cells in X" type="int" value="10"/>
-      <Parameter name="Numer of Cells in Y" type="int" value="10"/>
-      <Parameter name="Numer of Cells in Z" type="int" value=" 3"/>
+
     </ParameterList>   
   </ParameterList>
   
@@ -107,32 +114,33 @@
 
     <ParameterList name="Flow BC">
       <Parameter name="number of BCs" type="int" value="6"/>
-      <!-- South -->
+
+      <!-- West -->
       <ParameterList name="BC00">
 	<Parameter name="Type" type="string" value="Static Head"/>
 	<Parameter name="BC value" type="double" value="0.0" />
-	<Parameter name="Side set ID" type="int" value="0" />
-      </ParameterList>
-
-      <!-- West -->
-      <ParameterList name="BC01">
-	<Parameter name="Type" type="string" value="Static Head"/>
-	<Parameter name="BC value" type="double" value="1.0" />
-	<Parameter name="Side set ID" type="int" value="1" />
-      </ParameterList>      
-
-      <!-- North -->
-      <ParameterList name="BC02">
-	<Parameter name="Type" type="string" value="Static Head"/>
-	<Parameter name="BC value" type="double" value="0.0" />
-	<Parameter name="Side set ID" type="int" value="2" />
+	<Parameter name="Side set ID" type="int" value="3" />
       </ParameterList>      
 
       <!-- East -->
+      <ParameterList name="BC01">
+	<Parameter name="Type" type="string" value="Static Head"/>
+	<Parameter name="BC value" type="double" value="0.0" />
+	<Parameter name="Side set ID" type="int" value="1" />
+      </ParameterList>      
+
+      <!-- South -->
+      <ParameterList name="BC02">
+	<Parameter name="Type" type="string" value="Static Head"/>
+	<Parameter name="BC value" type="double" value="1.0" />
+	<Parameter name="Side set ID" type="int" value="0" />
+      </ParameterList>
+
+      <!-- North -->
       <ParameterList name="BC03">
 	<Parameter name="Type" type="string" value="Static Head"/>
 	<Parameter name="BC value" type="double" value="0.0" />
-	<Parameter name="Side set ID" type="int" value="3" />
+	<Parameter name="Side set ID" type="int" value="2" />
       </ParameterList>      
 
       <!-- Bottom -->
