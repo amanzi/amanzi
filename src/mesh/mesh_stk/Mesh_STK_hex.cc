@@ -4,7 +4,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Tue May 17 11:45:25 2011
+ * @date Mon Jun 20 13:16:37 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:45:25 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Jun 20 13:16:37 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_STK.hh"
@@ -51,6 +51,7 @@ Mesh_STK::generate_(const unsigned int& ni, const unsigned int& nj, const unsign
   Data::Fields nofields;
   mesh_.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
   build_maps_();
+  redistribute();
 }
 
 // -------------------------------------------------------------

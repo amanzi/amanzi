@@ -231,9 +231,7 @@ SUITE (prism)
     CHECK_EQUAL (params.num_nodes_, 1920);
     CHECK_EQUAL (params.num_elements_, 2634);
     CHECK_EQUAL (params.num_element_blocks_, 1);
-
-    // FIXME: eventually, this file needs to have side sets
-    CHECK_EQUAL (params.num_side_sets_, 0);
+    CHECK_EQUAL (params.num_side_sets_, 6);
 
   }
 }
@@ -248,9 +246,7 @@ SUITE (mixed_coarse)
     CHECK_EQUAL (params.num_nodes_, 361);
     CHECK_EQUAL (params.num_elements_, 592);
     CHECK_EQUAL (params.num_element_blocks_, 5);
-
-    // FIXME: eventually, this file needs to have side sets
-    CHECK_EQUAL (params.num_side_sets_, 0);
+    CHECK_EQUAL (params.num_side_sets_, 6);
 
   }
 }
@@ -265,9 +261,7 @@ SUITE (mixed)
     CHECK_EQUAL (params.num_nodes_, 6495);
     CHECK_EQUAL (params.num_elements_, 23186);
     CHECK_EQUAL (params.num_element_blocks_, 6);
-
-    // FIXME: eventually, this file needs to have side sets
-    CHECK_EQUAL (params.num_side_sets_, 0);
+    CHECK_EQUAL (params.num_side_sets_, 6);
 
   }
 }

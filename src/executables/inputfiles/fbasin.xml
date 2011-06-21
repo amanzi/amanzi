@@ -1,10 +1,7 @@
 <ParameterList name="Main">
 
   <ParameterList name="Mesh">
-    <Parameter name="Mesh Class" type="string" value="MOAB"/>
-    <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Exodus file name" type="string" value="meshes/unstruc_100_V02/fbasin_unstr_100_V02_4P.h5m"/>
-    </ParameterList>   
+    <Parameter name="Read" type="string" value="meshes/unstruc_100_V02/fbasin_unstr_100_V02_4P.h5m"/>
   </ParameterList>
   
 
