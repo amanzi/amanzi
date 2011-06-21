@@ -469,7 +469,7 @@ namespace BDF2 {
 	  {
 	    
 	    state.rejected_steps++;
-	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
+	    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
 	      {
 		*out << "Step REJECTED, perr = " << perr << std::endl;
 	      }
