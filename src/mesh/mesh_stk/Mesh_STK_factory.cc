@@ -790,12 +790,12 @@ Mesh_STK_factory::check_face_ownership_(void)
 }
 
 // -------------------------------------------------------------
-// Mesh_STK_factory::create_cell_ghosting
+// Mesh_STK_factory::add_sides_to_part_
 // -------------------------------------------------------------
 
 void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set, 
-                                       stk::mesh::Part &part,
-                                       const Epetra_Map& cmap)
+                                           stk::mesh::Part &part,
+                                           const Epetra_Map& cmap)
 {
   const unsigned int me(communicator_.MyPID());
 
@@ -830,6 +830,11 @@ void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set,
                      side_set.id() % local_side % global_idx % local_idx);
       Exceptions::amanzi_throw( STK::Error (msg.c_str()) );
     }
+
+    // std::cerr << 
+    //   boost::str(boost::format("%02d: Side set %2d: %5d (%5d) %2d (%5d)") % 
+    //              me % side_set.id() % global_idx % local_idx % local_side % face->identifier())
+    //           << std::endl;
 
     if (face->owner_rank() != me) {
       std::string msg = 
