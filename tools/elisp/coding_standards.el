@@ -63,13 +63,15 @@
 (require 'flymake)
 
 
+(defvar cpplint-options "--filter=-legal/copyright,-whitespace,+whitespace/tab,-build,+build/header_guard")
+
 (defun flymake-cpplint-init ()
   (let* ((temp-file (flymake-init-create-temp-buffer-copy
                      'flymake-create-temp-inplace))
          (local-file (file-relative-name
                       temp-file
                       (file-name-directory buffer-file-name))))
-    (list "cpplint.py" (list "--filter=-legal/copyright" local-file))))
+    (list "cpplint.py" (list cpplint-options local-file))))
 
 ;; From http://www.emacswiki.org/emacs/FlyMake
 
