@@ -1,3 +1,11 @@
+# -*- mode: cmake -*-
+#
+# Functions for building a link-line for linking to Amanzi.
+#
+# See the modified CMakeLists.txt files for usage. 
+#
+# This functionality should be merged with InstallManager.
+
 include(ParseLibraryList)
 include(PrintVariable)
 
