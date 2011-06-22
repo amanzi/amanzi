@@ -64,9 +64,6 @@ set(AMANZI_LINK_LINE "${AMANZI_BINARY_DIR}/link_line")
 message(STATUS, "Creating link line file ${AMANZI_LINK_LINE}")
 create_link_line()
 
-print_variable(AMANZI_INSTALL_PREFIX)
-print_variable(CMAKE_INSTALL_PREFIX)
-
 install(FILES ${AMANZI_LINK_LINE} DESTINATION lib)
 
 # Source files for all binaries and libraries found under src
