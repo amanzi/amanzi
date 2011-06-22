@@ -12,7 +12,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 
-#include "Mesh_maps_simple.hh"
+#include "Mesh_simple.hh"
 #include "State.hpp"
 
 #include "chemistry_pk.hh"
@@ -28,6 +28,7 @@
  *****************************************************************************/
 
 SUITE(GeochemistryTestsChemistryPK) {
+  namespace ac = amanzi::chemistry;
   /*****************************************************************************
    **
    **  Common testing code
@@ -41,12 +42,12 @@ SUITE(GeochemistryTestsChemistryPK) {
     void RunTest(const std::string name, double* gamma);
 
    protected:
-    Chemistry_PK* cpk_;
+    ac::Chemistry_PK* cpk_;
     Teuchos::ParameterList chemistry_parameter_list_;
-    Teuchos::RCP<Chemistry_State> chemistry_state_;
+    Teuchos::RCP<ac::Chemistry_State> chemistry_state_;
 
    private:
-    Teuchos::RCP<Mesh_maps_base> mesh_;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
     Teuchos::RCP<State> state_;
   };  // end class SpeciationTest
 
@@ -63,14 +64,14 @@ SUITE(GeochemistryTestsChemistryPK) {
     Epetra_SerialComm* comm = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
         parameter_list.sublist("Simple Mesh Parameters");
-    mesh_ = Teuchos::rcp(new Mesh_maps_simple(mesh_parameter_list, comm));
+    mesh_ = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(mesh_parameter_list, comm));
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
     state_ = Teuchos::rcp(new State(state_parameter_list, mesh_));
 
     // create the chemistry state object from the state
-    chemistry_state_ = Teuchos::rcp(new Chemistry_State(state_));
+    chemistry_state_ = Teuchos::rcp(new ac::Chemistry_State(state_));
 
     // create the chemistry parameter list
     chemistry_parameter_list_ = parameter_list.sublist("Chemistry");
@@ -92,8 +93,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
-      cpk_ = new Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
-    } catch (ChemistryException chem_error) {
+      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+    } catch (ac::ChemistryException chem_error) {
       std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -106,9 +107,9 @@ SUITE(GeochemistryTestsChemistryPK) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
     try {
-      cpk_ = new Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+      cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
       cpk_->InitializeChemistry();
-    } catch (ChemistryException chem_error) {
+    } catch (ac::ChemistryException chem_error) {
       std::cout << chem_error.what() << std::endl;
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -118,7 +119,7 @@ SUITE(GeochemistryTestsChemistryPK) {
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
-    cpk_ = new Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+    cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
     cpk_->InitializeChemistry();
     std::vector<std::string> names;
     cpk_->set_chemistry_output_names(&names);
@@ -126,7 +127,7 @@ SUITE(GeochemistryTestsChemistryPK) {
   }  // end TEST_FIXTURE()
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_set_component_names) {
-    cpk_ = new Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
+    cpk_ = new ac::Chemistry_PK(chemistry_parameter_list_, chemistry_state_);
     cpk_->InitializeChemistry();
     std::vector<std::string> names;
     cpk_->set_component_names(&names);

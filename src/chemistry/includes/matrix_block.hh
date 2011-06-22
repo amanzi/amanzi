@@ -6,6 +6,9 @@
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
 
+namespace amanzi {
+namespace chemistry {
+
 class MatrixBlock {
  public:
   MatrixBlock();
@@ -35,10 +38,10 @@ class MatrixBlock {
   void SetValues(double** values);
   void SetValues(MatrixBlock* b);
   void SetValues(Block* b);
-  void SetValues(int ioffset, int ioffset, MatrixBlock* b);
+  void SetValues(int ioffset, int joffset, MatrixBlock* b);
   void SetValues(double** values, double scale);
   void SetValues(MatrixBlock* b, double scale);
-  void SetValues(int ioffset, int ioffset, MatrixBlock* b, double scale);
+  void SetValues(int ioffset, int joffset, MatrixBlock* b, double scale);
 
   void AddValue(int i, int j, double value);
   void AddValues(double** values);
@@ -64,4 +67,6 @@ class MatrixBlock {
   double** A_;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_

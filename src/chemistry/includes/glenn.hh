@@ -16,6 +16,9 @@
 #include "string_tokenizer.hh"
 #include "mineral_kinetics_factory.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 using std::string;
 using std::cout;
 using std::endl;
@@ -745,4 +748,6 @@ static void readMineralVolFracFromFile(string filename,
   delete file;
 };  // end readMineralsVolFracFromFile
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_GLENN_HH_

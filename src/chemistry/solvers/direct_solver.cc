@@ -2,6 +2,9 @@
 #include "chemistry/includes/direct_solver.hh"
 #include "chemistry/includes/block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 DirectSolver::DirectSolver(void)
     : Solver(),
       row_interchange_(0.),
@@ -21,7 +24,7 @@ void DirectSolver::Initialize(const int n) {
 
 void DirectSolver::Solve(void) {
   LUDecomposition();
-  LUBackSolve(solution_);
+  LUBackSolve(&solution_);
 }  // end Solve()
 
 void DirectSolver::Solve(std::vector<double>* b) {
@@ -110,7 +113,7 @@ void DirectSolver::LUBackSolve(void) {
   for (int i = 0; i < system_size(); i++) {
     solution_[i] = right_hand_side_[i];
   }
-  LUBackSolve(solution_);
+  LUBackSolve(&solution_);
 }  // end LUBackSolve()
 
 void DirectSolver::LUBackSolve(std::vector<double>* b) {
@@ -122,7 +125,7 @@ void DirectSolver::LUBackSolve(std::vector<double>* b) {
     (*b)[ip] = b->at(i);
     if (ii != 0) {
       for (int j = ii - 1; j < i; j++) {
-        sum -= a[i][j] * b[j];
+        sum -= a[i][j] * b->at(j);
       }
     } else if (sum != 0.0) {
       ii = i + 1;
@@ -132,7 +135,7 @@ void DirectSolver::LUBackSolve(std::vector<double>* b) {
   for (int i = system_size() - 1; i >= 0; i--) {
     double sum = b->at(i);
     for (int j = i + 1; j < system_size(); j++) {
-      sum -= a[i][j] * b[j];
+      sum -= a[i][j] * b->at(j);
     }
     (*b)[i] = sum / a[i][i];
   }
@@ -141,3 +144,6 @@ void DirectSolver::LUBackSolve(std::vector<double>* b) {
 
 DirectSolver::~DirectSolver() {
 }  // end DirectSolver destructor
+
+}  // namespace chemistry
+}  // namespace amanzi

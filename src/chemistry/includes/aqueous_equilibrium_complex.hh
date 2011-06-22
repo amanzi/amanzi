@@ -8,6 +8,12 @@
 
 #include "secondary_species.hh"
 
+// forward declarations from outside chemistry
+
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class AqueousEquilibriumComplex : public SecondarySpecies {
@@ -43,4 +49,6 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
  private:
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_

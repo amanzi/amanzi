@@ -17,10 +17,13 @@ class Epetra_MultiVector;
 class Epetra_Vector;
 class Epetra_SerialDenseVector;
 
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Chemistry_State;
 
-// Chemistry Process Kernel Interface
-
+// Trilinos based chemistry process kernel for the unstructured mesh
 class Chemistry_PK {
  public:
 
@@ -196,4 +199,6 @@ class Chemistry_PK {
   void CopyStateToBeakerParameters(const int cell_id);
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_PK_HH_

@@ -5,6 +5,9 @@
 #include "Epetra_Vector.h"
 #include "Flow_State.hpp"
 
+namespace Amanzi
+{
+
 // Pure virtual base class that the Darcy and Richards flow
 // process kernels should derive from.
 
@@ -30,5 +33,7 @@ public:
   double get_flow_dT() { return 0.0; }; // by default assume that we cannot take a time step
   
 };
+
+}
 
 #endif

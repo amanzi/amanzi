@@ -17,5 +17,5 @@ set(SRCS
 )
 
 add_library(geochembase ${SRCS}) 
-link_list_add(geochembase)
+add_install_library(geochembase)
 

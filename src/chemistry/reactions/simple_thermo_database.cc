@@ -24,6 +24,9 @@
 
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 /*
 **
 ** TODO(bandre): need a lot more error checking and helpfull error messages from here.
@@ -1064,3 +1067,6 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
     }  // else not water
   }  // end for(search_species)
 }  // end ParseSurfaceComplexReaction()
+
+}  // namespace chemistry
+}  // namespace amanzi

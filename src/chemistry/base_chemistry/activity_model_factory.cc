@@ -10,6 +10,9 @@
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
 const std::string ActivityModelFactory::unit = "unit";
 
@@ -51,3 +54,6 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model) {
   }
   return activity_model;
 }  // end Create()
+
+}  // namespace chemistry
+}  // namespace amanzi

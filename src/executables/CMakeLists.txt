@@ -24,15 +24,18 @@ project(EXEC)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${EXO_SOURCE_DIR})
+include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${EXO_SOURCE_DIR})
+
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
@@ -40,23 +43,16 @@ include_directories(${CHEM_INCLUDES_DIR})
 
 # The mesh frameworks
 set(amanzi_mesh_libs "")
-if ( ENABLE_STK_Mesh )
-    include_directories(${STK_INCLUDE_DIRS})
-    include_directories(${STK_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs stk_mesh exodus)
-    add_definitions("-DHAVE_STK_MESH")
+list(APPEND amanzi_mesh_libs stk_mesh exodus)
+if(ENABLE_STK_Mesh)
+  add_definitions("-DHAVE_STK_MESH")
 endif()
 if(ENABLE_MOAB_Mesh)
-    include_directories(${MOAB_INCLUDE_DIRS})
-    include_directories(${MOAB_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs moab_mesh)
-    add_definitions("-DHAVE_MOAB_MESH")
-endif()    
+  add_definitions("-DHAVE_MOAB_MESH")
+endif()
 if(ENABLE_MSTK_Mesh)
-    include_directories(${MSTK_INCLUDE_DIRS})
-    include_directories(${MSTK_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs mstk_mesh)
-endif()    
+  add_definitions("-DHAVE_MSTK_MESH")
+endif()
 
 # External (TPL) include directories
 include_directories(${Boost_INCLUDE_DIRS})
@@ -65,6 +61,15 @@ include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_CGNS)
     include_directories(${CGNS_INCLUDE_DIRS})
 endif()    
+if(ENABLE_MOAB_Mesh)
+    include_directories(${MOAB_INCLUDE_DIRS})
+    include_directories(${MOAB_SOURCE_DIR})
+    list(APPEND amanzi_mesh_libs moab_mesh)
+endif()
+if(ENABLE_STK_Mesh)
+    include_directories(${STK_INCLUDE_DIRS})
+    include_directories(${STK_SOURCE_DIR})
+endif()
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
@@ -90,30 +95,44 @@ target_link_libraries(amanzi-demo-driver
 add_install_binary(amanzi-demo-driver)		  
 
 #
+# Binary: amanzi-alt-driver
+#
+add_executable(amanzi-alt-driver amanzi-alt-driver.cpp)
+set(alt_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
+set(alt_driver_amanzi_libs mpc state error_handling mesh_factory)
+set(alt_driver_pk_libs chemistry transport flow)
+target_link_libraries(amanzi-alt-driver
+                      ${alt_driver_amanzi_libs}
+                      ${alt_driver_pk_libs}
+                      ${Trilinos_LIBRARIES}
+                      ${Boost_LIBRARIES})
+#
+# Binary: verify_mesh
+#
+add_executable(verify_mesh verify_mesh.cc)
+target_link_libraries(verify_mesh mesh_factory mesh mesh_audit
+                      ${Boost_LIBRARIES})
+add_install_binary(verify_mesh)		     
+
+#
+# Binary: verify_mesh
+#
+if ( ENABLE_CGNS )
+    add_executable(verify_hex verify_hex.cc)
+    target_link_libraries(verify_hex mesh_factory mesh mesh_audit output
+                          ${Boost_LIBRARIES})
+    # add_install_binary(verify_hex)		     
+endif()
+
+#
 # Binary: stk_mesh_test_hex
 #
-if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
-    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
-    target_link_libraries(stk_mesh_test_hex 
-                         exodus mesh_data stk_mesh output mesh_audit
-                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
-    add_install_binary(stk_mesh_test_hex)		     
-endif()
+#if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
+#    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
+#    target_link_libraries(stk_mesh_test_hex 
+#                         exodus mesh_data stk_mesh output mesh_audit
+#                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
+#    add_install_binary(stk_mesh_test_hex)		     
+#endif()
 
-#
-# Binary: verify_moab_mesh
-#
-if ( ENABLE_STK_Mesh )
-    add_executable(verify_stk_mesh verify_stk_mesh.cc)
-    target_link_libraries(verify_stk_mesh stk_mesh mesh_audit exodus)
-    add_install_binary(verify_stk_mesh)
-endif()
 
-#
-# Binary: verify_moab_mesh
-#
-if ( ENABLE_MOAB_Mesh )
-    add_executable(verify_moab_mesh verify_moab_mesh.cc)
-    target_link_libraries(verify_moab_mesh moab_mesh mesh_audit)
-    add_install_binary(verify_moab_mesh)
-endif()

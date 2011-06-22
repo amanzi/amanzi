@@ -2,6 +2,9 @@
 
 #include "DarcyProblem.hpp"
 
+namespace Amanzi
+{
+
 Darcy_PK::Darcy_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
 {
   // Create the flow boundary conditions object.
@@ -69,3 +72,5 @@ int Darcy_PK::advance_to_steady_state()
 
   return 0;
 }
+
+} // close namespace Amanzi

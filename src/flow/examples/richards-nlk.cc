@@ -1,4 +1,4 @@
-#include "Mesh_maps_moab.hh"
+#include "Mesh_MOAB.hh"
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
@@ -18,6 +18,7 @@
 
 #include "RichardsProblem.hpp"
 #include "RichardsNoxInterface.hpp"
+#include "FlowBC.hpp"
 #include "gmv_mesh.hh"
 
 int main(int argc, char *argv[])
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 
   // MESH
-  Teuchos::RCP<Mesh_maps_moab> mesh(new Mesh_maps_moab(argv[1], MPI_COMM_WORLD));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MOAB> mesh(new Amanzi::AmanziMesh::Mesh_MOAB(argv[1], MPI_COMM_WORLD));
 
   // BOUNDARY CONDITIONS
   Teuchos::ParameterList bc_params;
@@ -51,11 +52,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList &bc_top = bc_params.sublist("BC05");
     bc_top.set("Side set ID", 6);
     bc_top.set("Type", "No Flow");
-  Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
+    Teuchos::RCP<Amanzi::FlowBC> bc(new Amanzi::FlowBC(bc_params, mesh));
 
   // PROBLEM
   Teuchos::ParameterList pl;
-  RichardsProblem problem(mesh, pl, bc);
+  Amanzi::RichardsProblem problem(mesh, pl, bc);
 
   // MODEL PARAMETERS
   problem.SetFluidDensity(1.0);
@@ -114,7 +115,7 @@ int main(int argc, char *argv[])
 			   NOX::Utils::Error);
 
   // Collect the bits needed to build the NOX linear system.
-  Teuchos::RCP<RichardsNoxInterface> nox_interface(new RichardsNoxInterface(&problem));
+  Teuchos::RCP<Amanzi::RichardsNoxInterface> nox_interface(new Amanzi::RichardsNoxInterface(&problem));
   Teuchos::RCP<NOX::Epetra::Interface::Required> Ireq = nox_interface; // cast to base class
   Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> Iprec = nox_interface; // cast to base class
   Teuchos::RCP<Epetra_Operator> precon = Teuchos::rcpFromRef(problem.Precon());
@@ -145,11 +146,11 @@ int main(int argc, char *argv[])
 
   // Write a GMV file with the cell pressures.
   std::string gmv_file("pressure.gmv");
-  GMV::open_data_file(*mesh, gmv_file);
-  GMV::start_data();
+  Amanzi::GMV::open_data_file(*mesh, gmv_file);
+  Amanzi::GMV::start_data();
   Epetra_Vector &Pcell = *(problem.CreateCellView(final_soln));
-  GMV::write_cell_data(Pcell, std::string("pressure"));
-  GMV::close_data_file();
+  Amanzi::GMV::write_cell_data(Pcell, std::string("pressure"));
+  Amanzi::GMV::close_data_file();
   delete &Pcell;
 
   return 0;

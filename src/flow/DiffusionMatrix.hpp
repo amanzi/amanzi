@@ -7,12 +7,15 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
+
+namespace Amanzi
+{
 
 class DiffusionMatrix {
 public:
 
-  DiffusionMatrix(const Teuchos::RCP<Mesh_maps_base> &mesh, const std::vector<int> &dir_faces);
+  DiffusionMatrix(const Teuchos::RCP<AmanziMesh::Mesh> &mesh, const std::vector<int> &dir_faces);
 
   ~DiffusionMatrix();
 
@@ -33,7 +36,7 @@ public:
 
   // Accessors
 
-  const Mesh_maps_base& Mesh() const { return *mesh_; }
+  const AmanziMesh::Mesh& Mesh() const { return *mesh_; }
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
 
@@ -55,7 +58,7 @@ public:
 
 private:
 
-  Teuchos::RCP<Mesh_maps_base> mesh_;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Vector *Dcc_;
   Epetra_CrsMatrix *Dcf_;
   Epetra_FECrsMatrix *Dff_;
@@ -64,5 +67,7 @@ private:
 
   template <typename T> void Compute(const std::vector<T> &K);
 };
+
+} // close namespace Amanzi
 
 #endif

@@ -63,13 +63,15 @@
 (require 'flymake)
 
 
+(defvar cpplint-options "--filter=-legal/copyright,-whitespace,+whitespace/tab,-build,+build/header_guard")
+
 (defun flymake-cpplint-init ()
   (let* ((temp-file (flymake-init-create-temp-buffer-copy
                      'flymake-create-temp-inplace))
          (local-file (file-relative-name
                       temp-file
                       (file-name-directory buffer-file-name))))
-    (list "cpplint.py" (list "--filter=-legal/copyright" local-file))))
+    (list "cpplint.py" (list cpplint-options local-file))))
 
 ;; From http://www.emacswiki.org/emacs/FlyMake
 
@@ -127,23 +129,33 @@ Key bindings:
   (let ((cmd (format "astyle --options=%s" astyle-config-file)))
     (shell-command-on-region begin end cmd buffer t)))
 
-
+;; NOTE: emacs and astyle format some things differently (public,
+;; private, protected indentation in classes). We consider the emacs
+;; formatted google style "correct", so it needs to come after the
+;; astyle formatting.
+;;
+;; NOTE: need (save-buffer) inorder to use these in batch mode, but do
+;; we want them in interactive mode?
 (defun amanzi-fix-region ()
   (interactive)
   (whitespace-cleanup)
   (untabify (region-beginning) (region-end))
-  (indent-region (region-beginning) (region-end) nil)
   (amanzi-astyle-chunk
-   (region-beginning) (region-end) (current-buffer)))
+   (region-beginning) (region-end) (current-buffer))
+  (indent-region (region-beginning) (region-end) nil)
+  ;;(save-buffer)
+)
 
 
 (defun amanzi-fix-buffer ()
   (interactive)
   (whitespace-cleanup)
   (untabify (point-min) (point-max))
-  (indent-region (point-min) (point-max) nil)
   (amanzi-astyle-chunk
-   (point-min) (point-max) (current-buffer)))
+   (point-min) (point-max) (current-buffer))
+  (indent-region (point-min) (point-max) nil)
+  ;;(save-buffer)
+)
 
 
 

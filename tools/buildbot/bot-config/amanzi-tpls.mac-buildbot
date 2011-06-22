@@ -6,8 +6,8 @@ PREFIX=${HOME}/slaves/amanzi/amanzi-libs
 SOURCE=${HOME}/slaves/amanzi/tpl-source
 WORK_DIR=${HOME}/slaves/amanzi
 
-MPI_PREFIX=/usr
-BOOST_PREFIX=/opt/local
+MPI_PREFIX=${PREFIX}
+BOOST_PREFIX=${PREFIX}
 HDF5_PREFIX=${PREFIX}
 NETCDF_PREFIX=${PREFIX}
 CGNS_PREFIX=${PREFIX}

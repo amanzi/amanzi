@@ -6,6 +6,9 @@
 
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 SurfaceComplex::SurfaceComplex() {
   species_names_.clear();
   species_ids_.clear();
@@ -56,7 +59,7 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-      }  // end SurfaceComplex() constructor
+}  // end SurfaceComplex() constructor
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name,
                                const SpeciesId id,
@@ -103,7 +106,7 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-      }  // end SurfaceComplex() constructor
+}  // end SurfaceComplex() constructor
 
 SurfaceComplex::~SurfaceComplex() {
 }  // end SurfaceComplex() destructor
@@ -183,3 +186,6 @@ void SurfaceComplex::DisplayResults(void) const {
             << std::setw(15) << surface_concentration()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi

@@ -21,27 +21,15 @@ project(OUTPUT)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-
-# mesh framework and ASCEM-IO
-set(amanzi_mesh_libs "simple_mesh")
-if(ENABLE_STK_Mesh)
-    include_directories(${STK_INCLUDE_DIRS})
-    include_directories(${STK_SOURCE_DIR})
-    list(APPEND amanzi_mesh_libs stk_mesh exodus)
-    add_definitions("-DHAVE_STK_MESH")
-endif()
+include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-if(ENABLE_HDFIO)
-    include_directories(${HDF5_INCLUDE_DIRS})
-endif()
-if(ENABLE_ASCEMIO)
-    include_directories(${ASCEMIO_INCLUDE_DIRS})
+if(ENABLE_HDF5)
+    include_directories(${HDF5_C_INCLUDE_DIR})
 endif()
 if(ENABLE_CGNS)
     include_directories(${CGNS_INCLUDE_DIRS})
@@ -58,8 +46,8 @@ add_definitions("-DUSE_MPI")
 file(GLOB output_source_files "gmv*.c" "gmv*.cc")
 set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
-if(ENABLE_HDFIO)
-    file(GLOB hdf5_source "hdf5_mesh.cc")
+if(ENABLE_HDF5)
+    file(GLOB hdf5_source "hdf5_mesh*.cc")
     list(APPEND output_source_files "${hdf5_source}")
     list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 endif()
@@ -77,10 +65,15 @@ if(ENABLE_CGNS)
 endif()
 
 add_library(output ${output_source_files})
-target_link_libraries(output error_handling ${amanzi_mesh_libs} mesh_data 
-	              ${output_tpl_list} )
-link_list_add(output)
+target_link_libraries(output error_handling simple_mesh mesh geometry ${output_tpl_list} )
 
+#
+# Install Targets
+#
+file(GLOB output_inc_files "*.h*")
+add_install_include_file(${output_inc_files})
+add_install_library(output)
+link_list_add(output)
 #
 # Install Targets
 #
@@ -107,17 +100,10 @@ if (BUILD_TESTS)
     endif()
 
     # Test: hdf5_output
-    if (ENABLE_HDFIO AND ENABLE_STK_Mesh)
+    if (ENABLE_HDF5)
         add_executable(test_hdf5_output test/Main.cc test/test_hdf5.cc)
-        target_link_libraries(test_hdf5_output ${amanzi_mesh_libs} output ${UnitTest_LIBRARIES})
-        add_test(hdf5_output test_hdf5_output KIND int)
-    endif()
-
-    # Test: hdf5_par_output
-    if (ENABLE_ASCEMIO AND ENABLE_STK_Mesh)
-        add_executable(test_hdf5par_output test/Main.cc test/test_hdf5_par.cc)
-        target_link_libraries(test_hdf5par_output ${amanzi_mesh_libs} output ${UnitTest_LIBRARIES})
-        add_test(hdf5par_output test_hdf5par_output NPROCS 1 KIND int)
+        target_link_libraries(test_hdf5_output output ${UnitTest_LIBRARIES})
+        add_test(hdf5_output test_hdf5_output)
     endif()
 
 endif()

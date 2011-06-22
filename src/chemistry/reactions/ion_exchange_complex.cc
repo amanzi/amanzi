@@ -72,6 +72,8 @@
 
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
 
 IonExchangeComplex::IonExchangeComplex()
     : Species() {
@@ -247,3 +249,6 @@ void IonExchangeComplex::DisplayResults(void) const {
 //   }
 //   std::cout << std::endl;
 // }  // end DisplayReaction_arrays()
+
+}  // namespace chemistry
+}  // namespace amanzi

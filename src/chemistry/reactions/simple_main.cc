@@ -8,6 +8,7 @@
 #include "verbosity.hh"
 
 using std::cout;
+namespace ac = amanzi::chemistry;
 
 int main(int argc, char** argv) {
   static_cast<void>(argc);
@@ -15,27 +16,27 @@ int main(int argc, char** argv) {
 
   std::string filename;
 
-  Verbosity verbose = kVerbose;
+  ac::Verbosity verbose = ac::kVerbose;
 
   // create geochemistry object
-  Beaker beaker;
+  ac::Beaker beaker;
   beaker.verbosity(verbose);
 
-  Beaker::BeakerComponents components;
+  ac::Beaker::BeakerComponents components;
   components.free_ion.clear();
   components.minerals.clear();
   components.ion_exchange_sites.clear();
   components.total.clear();
   components.total_sorbed.clear();
 
-  Beaker::BeakerParameters parameters = beaker.GetDefaultParameters();
+  ac::Beaker::BeakerParameters parameters = beaker.GetDefaultParameters();
   parameters.porosity = 0.25;
   parameters.saturation = 1.;
   parameters.water_density = 997.205133945901;  // kg / m^3
   parameters.volume = 0.25;  // m^3
 
   // beaker.SetupActivityModel(ActivityModelFactory::debye_huckel);
-  beaker.SetupActivityModel(ActivityModelFactory::unit);
+  beaker.SetupActivityModel(ac::ActivityModelFactory::unit);
 
 #if 0
   // set up simple 2-species carbonate system (H,HCO3-)
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
   readChemistryFromFile(filename, &beaker);
 
   filename = "target_total.dat";
-  readTargetTotalFromFile(filename, beaker.ncomp(), &components.total);
+  ac::readTargetTotalFromFile(filename, beaker.ncomp(), &components.total);
   // convert totals from molality [mol/kg water] -> molarity [mol/L water]
   for (unsigned int i = 0; i < components.total.size(); i++) {
     components.total[i] *= parameters.water_density / 1000.;
@@ -57,14 +58,14 @@ int main(int argc, char** argv) {
   //  readTargetFreeIonFromFile(filename,beaker.ncomp(), &components.free_ion) ;
 
   filename = "minerals.dat";
-  readMineralVolFracFromFile(filename, beaker.minerals(), &components.minerals);
+  ac::readMineralVolFracFromFile(filename, beaker.minerals(), &components.minerals);
 #endif
 #if 1
   filename = "reaction.dat";
   readChemistryFromFile(filename, &beaker);
 
   filename = "target_total.dat";
-  readTargetTotalFromFile(filename, beaker.ncomp(), &components.total);
+  ac::readTargetTotalFromFile(filename, beaker.ncomp(), &components.total);
   // convert totals from molality [mol/kg water] -> molarity [mol/L water]
   for (unsigned int i = 0; i < components.total.size(); i++) {
     components.total[i] *= parameters.water_density / 1000.;
@@ -82,7 +83,7 @@ int main(int argc, char** argv) {
   //  beaker.print_results();
 
   // to test a time stepping loop with kinetic reactions
-  Glenn g(&beaker);
+  ac::Glenn g(&beaker);
 
 
   //  double final_time = 0.25 * 365. * 24. * 3600;  // 1/4 year

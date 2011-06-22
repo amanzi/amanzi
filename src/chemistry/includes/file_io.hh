@@ -13,6 +13,9 @@
 #include <sstream>
 #include <string>
 
+namespace amanzi {
+namespace chemistry {
+
 class FileIO {
  public:
 
@@ -41,4 +44,6 @@ class FileIO {
   std::stringstream* buffer;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_FILEIO_HH_

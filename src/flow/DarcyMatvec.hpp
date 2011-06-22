@@ -6,6 +6,9 @@
 
 #include "DarcyProblem.hpp"
 
+namespace Amanzi
+{
+
 class DarcyMatvec : public Epetra_Operator
 {
 
@@ -44,5 +47,7 @@ private:
   DarcyProblem *problem_;
 
 };
+
+} // close namespace Amanzi
 
 #endif

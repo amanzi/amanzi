@@ -9,7 +9,10 @@
 #include "surface_complex.hh"
 #include "surface_site.hh"
 
-// forward declarations
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class SurfaceComplexationRxn {
@@ -61,4 +64,6 @@ class SurfaceComplexationRxn {
   std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
