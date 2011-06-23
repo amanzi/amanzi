@@ -84,7 +84,8 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 /* *******************************************************************
  * import concentrations to internal Transport state             
  ****************************************************************** */
-void Transport_State::copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target)
+void Transport_State::copymemory_multivector(Epetra_MultiVector& source, 
+                                             Epetra_MultiVector& target)
 {
   int i, c, cmin, cmax, cmax_s, cmax_t, number_vectors;
 
@@ -130,8 +131,8 @@ void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& ta
 #ifdef HAVE_MPI
   if ( fmax_s > fmax_t ) throw std::exception(); 
 
-  Epetra_Import  Importer( target_fmap, source_fmap );
-  target.Import( source, Importer, Insert );
+  Epetra_Import importer(target_fmap, source_fmap);
+  target.Import(source, importer, Insert);
 #endif
 }
 

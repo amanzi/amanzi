@@ -39,6 +39,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   MyPID = 0;
+  mesh_ = TS->get_mesh_maps();
+  dim = mesh_->space_dimension();
 
   Init();  // must be moved out of the constructor (lipnikov@lanl.gov)
 }
@@ -53,21 +55,19 @@ int Transport_PK::Init()
   TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory) );  
   TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, ViewMemory));
 
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
-
-  const Epetra_Map& cmap = mesh->cell_map(true);
-  const Epetra_Map& fmap = mesh->face_map(true);
+  const Epetra_Map& cmap = mesh_->cell_map(true);
+  const Epetra_Map& fmap = mesh_->face_map(true);
 
   cmin = cmap.MinLID();
   cmax = cmap.MaxLID();
 
-  number_owned_cells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  number_owned_cells = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   cmax_owned = cmin + number_owned_cells - 1;
 
   fmin = fmap.MinLID();
   fmax = fmap.MaxLID(); 
 
-  number_owned_faces = mesh->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  number_owned_faces = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   fmax_owned = fmin + number_owned_faces - 1;
 
   number_wghost_cells = cmax + 1;  // assume that enumartion starts with 0 
@@ -77,13 +77,13 @@ int Transport_PK::Init()
   const  Epetra_Comm & comm = cmap.Comm(); 
   MyPID = comm.MyPID();
 
-  const Epetra_Map& source_cmap = mesh->cell_map(false);
-  const Epetra_Map& target_cmap = mesh->cell_map(true);
+  const Epetra_Map& source_cmap = mesh_->cell_map(false);
+  const Epetra_Map& target_cmap = mesh_->cell_map(true);
 
   cell_importer = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
 
-  const Epetra_Map& source_fmap = mesh->face_map(false);
-  const Epetra_Map& target_fmap = mesh->face_map(true);
+  const Epetra_Map& source_fmap = mesh_->face_map(false);
+  const Epetra_Map& target_fmap = mesh_->face_map(true);
 
   face_importer = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
@@ -324,7 +324,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     lifting.reset_field(mesh, component_);
     lifting.calculateCellGradient();
 
-    std::vector<AmanziGeometry::Point>& gradient = lifting.get_gradient();
+    Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
     calculateLimiterBarthJespersen(component_, gradient, limiter_);
     lifting.applyLimiter(limiter_); 
   
@@ -486,9 +486,9 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
 /* *******************************************************************
  * The BJ limiter has been adjusted to linear advection. 
  ****************************************************************** */
-void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& scalar_field, 
-                                                  std::vector<AmanziGeometry::Point>& gradient, 
-                                                  Teuchos::RCP<Epetra_Vector>& limiter)
+void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> scalar_field, 
+                                                  Teuchos::RCP<Epetra_MultiVector> gradient, 
+                                                  Teuchos::RCP<Epetra_Vector> limiter)
 {
   for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1; 
 
@@ -505,11 +505,15 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& s
     const AmanziGeometry::Point& xcf = mesh->face_centroid(f);
 
     double u1, u2, u1f, u2f;  // cell and inteface values
+    AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
+
     u1 = (*scalar_field)[c1];
-    u1f = u1 + (gradient[c1] * (xcf - xc1));
+    for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c1]; 
+    u1f = u1 + (gradient_c1 * (xcf - xc1));
 
     u2 = (*scalar_field)[c2];
-    u2f = u2 + (gradient[c2] * (xcf - xc2));
+    for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
+    u2f = u2 + (gradient_c2 * (xcf - xc2));
 
     double umin = std::min(u1, u2);
     double umax = std::max(u1, u2);
@@ -518,6 +522,14 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& s
       (*limiter)[c1] = std::min((*limiter)[c1], limiter_face); 
     }
   } 
+
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_fmap = (*limiter_).Map();
+  const Epetra_BlockMap& target_fmap = (*limiter_).Map();
+
+  Epetra_Import importer(target_fmap, source_fmap);
+  (*limiter_).Import(*limiter_, importer, Insert);
+#endif
 }
 
 

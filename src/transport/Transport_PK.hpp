@@ -85,9 +85,9 @@ class Transport_PK {
   void advance_second_order_upwind(double dT);
   void advance_arbitrary_order_upwind(double dT);
 
-  void calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector>& scalar_field, 
-                                      std::vector<AmanziGeometry::Point>& gradient, 
-                                      Teuchos::RCP<Epetra_Vector>& limiter);
+  void calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> scalar_field, 
+                                      Teuchos::RCP<Epetra_MultiVector> gradient, 
+                                      Teuchos::RCP<Epetra_Vector> limiter);
 
   void process_parameter_list();
   void identify_upwind_cells();
@@ -131,6 +131,9 @@ class Transport_PK {
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
+
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  int dim;
 };
 
 }  // namespace AmanziTransport
