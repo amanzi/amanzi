@@ -50,7 +50,7 @@ TEST(ADVANCE_WITH_MSTK) {
   int i, k;
   double T = 0.0;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-  RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
+  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
   for (i=0; i<50; i++) {
@@ -60,7 +60,7 @@ TEST(ADVANCE_WITH_MSTK) {
 
     if (i < 10) {
       printf( "T=%6.2f  C_0(x):", T );
-      for( int k=0; k<3; k++ ) printf("%7.4f", (*tcc_next)[0][k]); std::cout << endl;
+      for( int k=0; k<9; k++ ) printf("%7.4f", (*tcc_next)[0][k]); std::cout << endl;
     }
     *tcc = *tcc_next;
   }

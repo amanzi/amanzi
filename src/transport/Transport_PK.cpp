@@ -554,7 +554,7 @@ void Transport_PK::identify_upwind_cells()
     mesh->cell_get_faces(c, &faces);
     mesh->cell_get_face_dirs(c, &fdirs);
 
-    for (int i=0; i<6; i++) {
+    for (int i=0; i<faces.size(); i++) {
       int f = faces[i];
       if (darcy_flux[f] * fdirs[i] >= 0) { 
         (*upwind_cell_)[f] = c; 
