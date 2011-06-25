@@ -46,6 +46,7 @@ const int TRANSPORT_BC_CONSTANT_INFLUX = 1;
 const int TRANSPORT_BC_NULL = 2;
 
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
+const double TRANSPORT_LIMITER_CORRECTION = 0.9999999999999;
 
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These olyhedron parameters must
@@ -87,7 +88,8 @@ class Transport_PK {
 
   void calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> scalar_field, 
                                       Teuchos::RCP<Epetra_MultiVector> gradient, 
-                                      Teuchos::RCP<Epetra_Vector> limiter);
+                                      Teuchos::RCP<Epetra_Vector> limiter,
+                                      const int component);
 
   void process_parameter_list();
   void identify_upwind_cells();

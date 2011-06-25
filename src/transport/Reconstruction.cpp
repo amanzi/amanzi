@@ -84,10 +84,10 @@ void Reconstruction::calculateCellGradient()
       xc2 -= xc;
 
       double value = u[cells[i]] - u[c];
-      if (value > 0) {  
+      if (value > 0.0) {  
         local_min = false; 
       } 
-      else if (value < 0) {
+      else if (value < 0.0) {
         local_max = false;
       } 
       populateLeastSquareSystem(xc2, value, matrix, rhs);

@@ -53,14 +53,15 @@ TEST(ADVANCE_WITH_MSTK) {
   RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
-  for (i=0; i<50; i++) {
+  int iter = 0;
+  while(T < 1.2) {
     dT = TPK.calculate_transport_dT();
     TPK.advance(dT);
     T += dT;
-
-    if (i < 10) {
-      printf( "T=%6.2f  C_0(x):", T );
-      for( int k=0; k<9; k++ ) printf("%7.4f", (*tcc_next)[0][k]); std::cout << endl;
+ 
+    if (T < 0.4) {
+      printf("T=%6.2f  C_0(x):", T);
+      for (int k=0; k<9; k++) printf("%7.4f", (*tcc_next)[0][k]); std::cout << endl;
     }
     *tcc = *tcc_next;
   }

@@ -83,9 +83,9 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
       *tcc = *tcc_next;
       iter++;
     }
+    //for (int k=0; k<nx; k++ ) cout << (*tcc_next)[0][k] << endl;
 
-    // calculate L1 and L2 errors
-    double L1, L2;
+    double L1, L2;  // L1 and L2 errors
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
     printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
   }

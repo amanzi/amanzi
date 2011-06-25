@@ -244,7 +244,7 @@ double Transport_PK::calculate_transport_dT()
 
   // loop over cells and calculate minimal dT
   double influx, dT_cell; 
-  const Epetra_Vector& ws  = TS->ref_water_saturation();
+  const Epetra_Vector& ws = TS->ref_water_saturation();
   const Epetra_Vector& phi = TS->ref_porosity();
 
   dT = dT_cell = TRANSPORT_LARGE_TIME_STEP;
@@ -325,7 +325,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     lifting.calculateCellGradient();
 
     Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
-    calculateLimiterBarthJespersen(component_, gradient, limiter_);
+    calculateLimiterBarthJespersen(component_, gradient, limiter_, i);
     lifting.applyLimiter(limiter_); 
   
     for (f=fmin; f<=fmax; f++) {  // loop over master and slave faces
@@ -488,40 +488,82 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
  ****************************************************************** */
 void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> scalar_field, 
                                                   Teuchos::RCP<Epetra_MultiVector> gradient, 
-                                                  Teuchos::RCP<Epetra_Vector> limiter)
+                                                  Teuchos::RCP<Epetra_Vector> limiter,
+                                                  const int component)
 {
-  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1; 
+  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0; 
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
+
+  double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
+  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
 
   for (int f=fmin; f<=fmax_owned; f++) {
     int c1, c2;
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
-    if (c1<0 || c2<0) continue;  // exclude boundary faces
+    if (c1<0 || c2<0) continue; // boundary faces are considered separately
 
     const AmanziGeometry::Point& xc1 = mesh->cell_centroid(c1);
     const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
     const AmanziGeometry::Point& xcf = mesh->face_centroid(f);
 
-    double u1, u2, u1f, u2f;  // cell and inteface values
-    AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
-
     u1 = (*scalar_field)[c1];
-    for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c1]; 
-    u1f = u1 + (gradient_c1 * (xcf - xc1));
-
     u2 = (*scalar_field)[c2];
-    for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
-    u2f = u2 + (gradient_c2 * (xcf - xc2));
+    umin = std::min(u1, u2);
+    umax = std::max(u1, u2);
 
-    double umin = std::min(u1, u2);
-    double umax = std::max(u1, u2);
-    if (u1f > umax || u1f < umin) {
-      double limiter_face = std::max(0.0, (u1 - u2) / (u1f - u2)); 
-      (*limiter)[c1] = std::min((*limiter)[c1], limiter_face); 
+    for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c1]; 
+    double u_add = gradient_c1 * (xcf - xc1);
+    u1f = u1 + u_add;
+    if (u1f < umin) {
+      (*limiter)[c1] = std::min((*limiter)[c1], (umin - u1) / u_add * TRANSPORT_LIMITER_CORRECTION);
+    }
+    else if (u1f > umax) {
+      (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u_add * TRANSPORT_LIMITER_CORRECTION); 
+    }
+
+    for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
+    u_add = gradient_c2 * (xcf - xc2);
+    u2f = u2 + u_add;
+    if (u2f < umin) {
+      (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u_add * TRANSPORT_LIMITER_CORRECTION);
+    }
+    else if (u2f > umax) {
+      (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u_add * TRANSPORT_LIMITER_CORRECTION); 
     }
   } 
+
+  // limiting gradient on the influx boundary
+  for ( int n=0; n<bcs.size(); n++) {
+    for (int k=0; k<bcs[n].faces.size(); k++) {
+      int f = bcs[n].faces[k];
+      int c2 = (*downwind_cell_)[f]; 
+
+      if (c2 >= 0) {
+        u2 = (*scalar_field)[c2];
+
+        if (bcs[n].type == TRANSPORT_BC_CONSTANT_INFLUX) {
+          u1 = bcs[n].values[component];
+          umin = std::min(u1, u2);
+          umax = std::max(u1, u2);
+
+          const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
+          const AmanziGeometry::Point& xcf = mesh->face_centroid(f);
+
+          for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
+          double u_add = gradient_c2 * (xcf - xc2);
+          u2f = u2 + u_add;
+          if (u2f < umin) {
+            (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u_add * TRANSPORT_LIMITER_CORRECTION);
+          }
+          else if (u2f > umax) {
+            (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u_add * TRANSPORT_LIMITER_CORRECTION); 
+          }
+        } 
+      }
+    }
+  }
 
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_fmap = (*limiter_).Map();
