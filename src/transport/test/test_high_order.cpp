@@ -25,10 +25,11 @@ double f_smooth(double* x, double t) {
   return 0.5 - atan(50*(x[0]-5-t)) / M_PI;
 }
 
-double f_cubic(double* x, double t) { 
+double f_cubic(double* x, double t) {
+return 0;
   if( x[0] < 1 + t ) return 1;
   if( x[0] > 3 + t ) return 0;
-  double z = (*x-1-t) / 2;
+  double z = (x[0]-1-t) / 2;
   return 2*z*z*z - 3*z*z + 1;
 }
 
@@ -42,15 +43,15 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
   std::cout << "================ TEST CONVERGENCE ANALISYS 1ST =================" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
-  for (int nx=20; nx<641; nx*=2 ) {
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 2, 2, comm)); 
+  for (int nx=10; nx<161; nx*=2 ) {
+    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 10, 10, comm)); 
 
     // create a MPC and Transport states with one component
     int num_components = 1;
     State mpc_state(num_components, mesh);
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
-    double u[3] = {1, 0, 0};
+    double u[3] = {1, 2, 0};
     TS->analytic_darcy_flux(u);
     TS->analytic_total_component_concentration(f_cubic);
     TS->analytic_porosity(1.0);
@@ -64,7 +65,7 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
     updateParametersFromXmlFile(xmlFileName, &parameter_list);
     Transport_PK TPK(parameter_list, TS);
 
-    if (nx == 20) TPK.print_statistics();
+    if (nx == 10) TPK.print_statistics();
     TPK.verbosity_level = 0;
 
     // advance the state
@@ -75,15 +76,22 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
     RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
     RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
+    double dT, dT0;
+    if (nx==10) dT0 = TPK.calculate_transport_dT();
+    else dT0 /= 4;
+
     while (T < T1) {
-      double dT = std::min(TPK.calculate_transport_dT(), T1 - T);
+      dT = std::min(TPK.calculate_transport_dT(), T1 - T);
+      dT = std::min(dT, dT0);
+
       TPK.advance(dT);
       T += dT;
+      TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
 
       *tcc = *tcc_next;
       iter++;
     }
-    //for (int k=0; k<nx; k++ ) cout << (*tcc_next)[0][k] << endl;
+    //for (int k=0; k<nx; k++) cout << (*tcc_next)[0][k] << endl;
 
     double L1, L2;  // L1 and L2 errors
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);

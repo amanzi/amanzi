@@ -32,7 +32,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 
   TS = Teuchos::rcp(new Transport_State(*TS_MPC));
 
-  dT = dT_debug = 0.0;
+  dT = dT_debug = T_internal = 0.0;
   status = TRANSPORT_NULL;
   verbosity_level = 0;
   internal_tests = 0;
@@ -202,6 +202,7 @@ void Transport_PK::print_statistics() const
     cout << "Transport PK: CFL = " << cfl << endl;
     cout << "              Total number of components = " << number_components << endl;
     cout << "              Verbosity level = " << verbosity_level << endl;
+    cout << "              method accuracy = " << discretization_order << endl;
     cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
@@ -253,7 +254,9 @@ double Transport_PK::calculate_transport_dT()
     if (influx) dT_cell = mesh->cell_volume(c) * phi[c] * ws[c] / influx;
 
     dT = std::min(dT, dT_cell);
-  }
+  }  
+  if (discretization_order == 2) dT /= 2;
+
 
 #ifdef HAVE_MPI
   double dT_global;
@@ -276,6 +279,7 @@ double Transport_PK::calculate_transport_dT()
  ****************************************************************** */
 void Transport_PK::advance(double dT_MPC)
 {
+  T_internal += dT_MPC;
   if (discretization_order == 1) {  // temporary solution (lipnikov@lanl.gov)
     advance_donor_upwind(dT_MPC);
   }
@@ -296,7 +300,6 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
   dT = dT_MPC;  // overwrite the transport step
 
   int i, f, c, c1, c2;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
@@ -310,30 +313,38 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
   double u, vol_phi_ws, tcc_flux;
   int num_components = tcc->NumVectors();
  
-  Reconstruction lifting(mesh, component_);
+  Reconstruction lifting(mesh_, component_);
   lifting.Init();
 
   for (i=0; i<num_components; i++) {
     for (c=cmin; c<=cmax; c++) (*component_)[c] = (*tcc_next)[i][c];
 
     for (c=cmin; c<=cmax_owned; c++) {  // calculate conservative quantatity 
-      vol_phi_ws = mesh->cell_volume(c) * phi[c] * ws[c]; 
+      vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c]; 
       (*tcc_next)[i][c] = (*tcc)[i][c] * vol_phi_ws;  // after this tcc_next=tcc only for ghost cells
     }
 
-    lifting.reset_field(mesh, component_);
+    lifting.reset_field(mesh_, component_);
     lifting.calculateCellGradient();
 
     Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
-    calculateLimiterBarthJespersen(component_, gradient, limiter_, i);
+    std::vector<double>& field_local_min = lifting.get_field_local_min();
+    std::vector<double>& field_local_max = lifting.get_field_local_max();
+
+    calculateLimiterBarthJespersen(i, 
+                                   component_, 
+                                   gradient, 
+                                   field_local_min, 
+                                   field_local_max, 
+                                   limiter_);
     lifting.applyLimiter(limiter_); 
-  
+ 
     for (f=fmin; f<=fmax; f++) {  // loop over master and slave faces
       c1 = (*upwind_cell_)[f]; 
       c2 = (*downwind_cell_)[f]; 
 
       u = fabs(darcy_flux[f]);
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
       if (c1 >=0 && c1 <= cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
         double upwind_tcc = lifting.getValue(c1, xf);
@@ -354,7 +365,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     } 
 
     int k, n;
-    for (n=0; n<bcs.size(); n++) {  // analyze exterior boundary sets = all boundary sets in DEMO 2
+    for (n=0; n<bcs.size(); n++) {  // analyze boundary sets
       for (k=0; k<bcs[n].faces.size(); k++) {
         f = bcs[n].faces[k];
         c2 = (*downwind_cell_)[f]; 
@@ -372,7 +383,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     }
     
     for (c=cmin; c<=cmax_owned; c++) {  // recover concentration from new conservative state
-      vol_phi_ws = mesh->cell_volume(c) * phi[c] * ws[c]; 
+      vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c]; 
       (*tcc_next)[i][c] = (*tcc_next)[i][c] / vol_phi_ws;
     }
   }
@@ -486,14 +497,19 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
 /* *******************************************************************
  * The BJ limiter has been adjusted to linear advection. 
  ****************************************************************** */
-void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> scalar_field, 
-                                                  Teuchos::RCP<Epetra_MultiVector> gradient, 
-                                                  Teuchos::RCP<Epetra_Vector> limiter,
-                                                  const int component)
+void Transport_PK::calculateLimiterBarthJespersen(const int component,
+                                                  Teuchos::RCP<Epetra_Vector> scalar_field, 
+                                                  Teuchos::RCP<Epetra_MultiVector> gradient,
+                                                  std::vector<double>& field_local_min,
+                                                  std::vector<double>& field_local_max,
+                                                  Teuchos::RCP<Epetra_Vector> limiter)
+                                                  
 {
-  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0; 
-
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
+  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0;
+ 
+  std::vector<double> total_influx(cmax_owned+1, 0.0);  // follows calculation of dT
+  std::vector<double> total_outflux(cmax_owned+1, 0.0);
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
@@ -504,9 +520,9 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> sc
     c2 = (*downwind_cell_)[f];
     if (c1<0 || c2<0) continue; // boundary faces are considered separately
 
-    const AmanziGeometry::Point& xc1 = mesh->cell_centroid(c1);
-    const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
-    const AmanziGeometry::Point& xcf = mesh->face_centroid(f);
+    const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
+    const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
+    const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
     u1 = (*scalar_field)[c1];
     u2 = (*scalar_field)[c2];
@@ -514,30 +530,54 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> sc
     umax = std::max(u1, u2);
 
     for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c1]; 
-    double u_add = gradient_c1 * (xcf - xc1);
-    u1f = u1 + u_add;
+    double u1_add = gradient_c1 * (xcf - xc1);
+    u1f = u1 + u1_add;
     if (u1f < umin) {
-      (*limiter)[c1] = std::min((*limiter)[c1], (umin - u1) / u_add * TRANSPORT_LIMITER_CORRECTION);
+      (*limiter)[c1] = std::min((*limiter)[c1], (umin - u1) / u1_add * TRANSPORT_LIMITER_CORRECTION);
     }
     else if (u1f > umax) {
-      (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u_add * TRANSPORT_LIMITER_CORRECTION); 
+      (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u1_add * TRANSPORT_LIMITER_CORRECTION); 
     }
 
     for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
-    u_add = gradient_c2 * (xcf - xc2);
-    u2f = u2 + u_add;
+    double u2_add = gradient_c2 * (xcf - xc2);
+    u2f = u2 + u2_add;
     if (u2f < umin) {
-      (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u_add * TRANSPORT_LIMITER_CORRECTION);
+      (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u2_add * TRANSPORT_LIMITER_CORRECTION);
     }
     else if (u2f > umax) {
-      (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u_add * TRANSPORT_LIMITER_CORRECTION); 
+      (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u2_add * TRANSPORT_LIMITER_CORRECTION); 
     }
+
+    double diff, psi = 1.0;  
+    if (u1 < u1f) {
+      diff = (*scalar_field)[c1] - field_local_min[c1];
+      if (diff) psi = std::max(-u1_add/diff, 0.0);
+      else (*limiter)[c1] = 0.0;  // local minimum
+    }
+    else if (u1 > u1f) {
+      diff = (*scalar_field)[c1] - field_local_max[c1];
+      if (diff) psi = std::max(-u1_add/diff, 0.0);
+      else (*limiter)[c1] = 0.0;  // local maximum
+    }
+    
+    total_influx[c2] += fabs(darcy_flux[f]);
+    total_outflux[c1] += fabs(darcy_flux[f]) * psi; 
   } 
+
+  // limiting second term in the flux formula (outflow darcy_flux)
+  for (int c=cmin; c<=cmax_owned; c++) {
+    if (total_outflux[c]) {
+      double psi = std::max(total_influx[c] / total_outflux[c], 1.0);
+      (*limiter)[c] = std::min((*limiter)[c], psi);
+    }
+  }
 
   // limiting gradient on the influx boundary
   for ( int n=0; n<bcs.size(); n++) {
     for (int k=0; k<bcs[n].faces.size(); k++) {
       int f = bcs[n].faces[k];
+      int c1 = (*upwind_cell_)[f]; 
       int c2 = (*downwind_cell_)[f]; 
 
       if (c2 >= 0) {
@@ -548,8 +588,8 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> sc
           umin = std::min(u1, u2);
           umax = std::max(u1, u2);
 
-          const AmanziGeometry::Point& xc2 = mesh->cell_centroid(c2);
-          const AmanziGeometry::Point& xcf = mesh->face_centroid(f);
+          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
+          const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
           for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
           double u_add = gradient_c2 * (xcf - xc2);
@@ -561,6 +601,9 @@ void Transport_PK::calculateLimiterBarthJespersen(Teuchos::RCP<Epetra_Vector> sc
             (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u_add * TRANSPORT_LIMITER_CORRECTION); 
           }
         } 
+      }
+      else if (c1 >= 0) {
+        //(*limiter)[c1] = 0.0;  // ad-hoc testing
       }
     }
   }
@@ -679,8 +722,6 @@ void Transport_PK::check_divergence_property()
 void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
 { 
   int i, num_components = tracer.NumVectors();
-  double tol; 
-
   double tr_min[num_components];
   double tr_max[num_components];
 
@@ -694,6 +735,7 @@ void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
         cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
         cout << "    MyPID = " << MyPID << endl;
         cout << "    component = " << i << endl;
+        cout << "    time = " << T_internal << endl;
         cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << endl;
 
         ASSERT(0); 
@@ -701,6 +743,39 @@ void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
     }
   }
 }
+
+
+/* *******************************************************************
+ * Check that te tracer is between 0 and 1                         
+ ****************************************************************** */
+
+void Transport_PK::check_tracer_bounds(Epetra_MultiVector& tracer, 
+                                       int component,
+                                       double lower_bound,
+                                       double upper_bound,
+                                       double tol) const
+{ 
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
+
+  for (int c=cmin; c<cmax_owned; c++) {
+    double value = tracer[component][c];
+    if (value < lower_bound - tol || value > upper_bound + tol) {
+      cout << "Transport_PK: tracer violates bounds" << endl; 
+      cout << "  Make an Amanzi ticket or turn off internal transport tests" << endl;
+      cout << "  MyPID = " << MyPID << endl;
+      cout << "  component = " << component << endl;
+      cout << "  internal time = " << T_internal << endl;
+      cout << "    cell = " << c << endl;
+      cout << "    center = " << mesh_->cell_centroid(c) << endl;
+      cout << "    limiter = " << (*limiter_)[c] << endl;
+      cout << "    value (old) = " << (*tcc)[component][c] << endl;
+      cout << "    value (new) = " << value << endl;
+
+      ASSERT(0); 
+    }
+  }
+}
+
 
 }  // namespace AmanziTransport
 }  // namespace Amanzi

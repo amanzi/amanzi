@@ -50,6 +50,9 @@ void Reconstruction::Init()
   dim = mesh_->space_dimension();
   gradient_ = Teuchos::rcp(new Epetra_MultiVector(cmap, 3));
 
+  field_local_min_.resize(cmax_owned+1);
+  field_local_max_.resize(cmax_owned+1);
+
   status = RECONSTRUCTION_INIT;
 }
 
@@ -73,33 +76,28 @@ void Reconstruction::calculateCellGradient()
     matrix.shape(dim, dim);  // Teuchos will initilize this matrix by zeros
     for (int i=0; i<dim; i++) rhs[i] = 0.0;
 
-    bool local_min = true;
-    bool local_max = true;
-    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells); 
+
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    field_local_min_[c] = field_local_max_[c] = u[c];
 
     for (int i=0; i<cells.size(); i++) {
       xc2  = mesh_->cell_centroid(cells[i]);
       xc2 -= xc;
 
       double value = u[cells[i]] - u[c];
-      if (value > 0.0) {  
-        local_min = false; 
-      } 
-      else if (value < 0.0) {
-        local_max = false;
-      } 
       populateLeastSquareSystem(xc2, value, matrix, rhs);
+
+      value = u[cells[i]];   
+      field_local_min_[c] = std::min(field_local_min_[c], value);
+      field_local_max_[c] = std::max(field_local_max_[c], value);
     }
     //printLeastSquareSystem(matrix, rhs);
 
-    if (local_min || local_max) {
-       rhs[0] = rhs[1] = rhs[2] = 0.0;
-    } else {
-      int info;
-      lapack.POSV('U', dim, 1, matrix.values(), dim, rhs, dim, &info); 
-      if (info) ASSERT(0);
+    int info;
+    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs, dim, &info); 
+    if (info) {  // reduce reconstruction order
+      rhs[0] = rhs[1] = rhs[2] = 0.0;
     }
 
     //rhs[0] = rhs[1] = rhs[2] = 0.0;  // TESTING COMPATABILITY 
@@ -157,7 +155,7 @@ void Reconstruction::populateLeastSquareSystem(AmanziGeometry::Point& centroid,
     double xyz = centroid[i];
 
     matrix(i,i) += xyz * xyz; 
-    for (int j=i; j<dim; j++) matrix(j,i) = matrix(i,j) += xyz * centroid[j];
+    for (int j=i+1; j<dim; j++) matrix(j,i) = matrix(i,j) += xyz * centroid[j];
 
     rhs[i] += xyz * field_value;
   }
