@@ -1,5 +1,5 @@
-#ifndef HDF5_MESH_PAR_HH_
-#define HDF5_MESH_PAR_HH_
+#ifndef HDF5MPI_MESH_HH_
+#define HDF5MPI_MESH_HH_
 
 #include <string>
 
@@ -7,12 +7,12 @@
 #include "Mesh_moab.hh"
 #endif
 #ifdef HAVE_STK_MESH
-//#include "Mesh_STK.hh"
-#include "Mesh_maps_stk.hh"
+#include "Mesh_STK.hh"
+//#include "Mesh_maps_stk.hh"
 #endif
 
-//#include "Mesh.hh"
-#include "Mesh_maps_base.hh"
+#include "Mesh.hh"
+//#include "Mesh_maps_base.hh"
 #include "errors.hh"
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
@@ -25,13 +25,13 @@ extern "C" {
 namespace Amanzi
 {
 
-class HDF5_PAR {
+class HDF5_MPI {
 
 
  public:
 
-  HDF5_PAR(const Epetra_MpiComm &comm);
-  ~HDF5_PAR(void);
+  HDF5_MPI(const Epetra_MpiComm &comm);
+  ~HDF5_MPI(void);
   
   bool TrackXdmf() { return TrackXdmf_; }
   void setTrackXdmf(bool TrackXdmf) { TrackXdmf_ = TrackXdmf; }
@@ -64,8 +64,8 @@ class HDF5_PAR {
   Teuchos::XMLObject xmlStep() { return xmlStep_; }
 
   // Output mesh data to filename.h5 and filename.xmf
-  //void createMeshFile(AmanziMesh::Mesh &mesh_Maps, std::string filename);
-  void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
+  void createMeshFile(AmanziMesh::Mesh &mesh_Maps, std::string filename);
+  //void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
 
   // Create h5 file for data output, create accompanying Xdmf files for
   // ParaView and Visit
@@ -150,4 +150,4 @@ class HDF5_PAR {
   
 } // close namespace HDF5
 
-#endif  // HDF5_MESH_PAR_HH_
+#endif  // HDF5MPI_MESH_HH_
