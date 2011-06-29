@@ -1,25 +1,38 @@
-#ifndef HDF5_MESH_HH_
-#define HDF5_MESH_HH_
+#ifndef HDF5MPI_MESH_HH_
+#define HDF5MPI_MESH__HH_
 
 #include <string>
 
+//#ifdef HAVE_MOAB_MESH
+//#include "Mesh_moab.hh"
+//#endif
+//#ifdef HAVE_STK_MESH
+//#include "Mesh_STK.hh"
+//#include "Mesh_maps_stk.hh"
+//#endif
+
 #include "Mesh.hh"
+//#include "Mesh_maps_base.hh"
 #include "errors.hh"
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
 
 extern "C" {
 #include "hdf5.h"
+#include "parallelIO.h"
 };
 
 namespace Amanzi
 {
 
-class HDF5 {
+class HDF5_MPI {
 
 
  public:
 
+  HDF5_MPI(const Epetra_MpiComm &comm);
+  ~HDF5_MPI(void);
+  
   bool TrackXdmf() { return TrackXdmf_; }
   void setTrackXdmf(bool TrackXdmf) { TrackXdmf_ = TrackXdmf; }
 
@@ -52,6 +65,7 @@ class HDF5 {
 
   // Output mesh data to filename.h5 and filename.xmf
   void createMeshFile(AmanziMesh::Mesh &mesh_Maps, std::string filename);
+  //void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
 
   // Create h5 file for data output, create accompanying Xdmf files for
   // ParaView and Visit
@@ -63,12 +77,21 @@ class HDF5 {
   void createTimestep(const double time, const int iteration);
   void endTimestep();
 
-  // Write data to HDF5 data file.
-  void writeNodeData(const Epetra_Vector &x, const std::string varname);
-  void writeCellData(const Epetra_Vector &x, const std::string varname);
-  void writeData(const Epetra_Vector &x, const std::string varname);
-  void readData(Epetra_Vector &x, const std::string varname);
+  // Write node data to HDF5 data file.
+  void writeNodeDataReal(const Epetra_Vector &x, const std::string varname);
+  void writeNodeDataInt(const Epetra_Vector &x, const std::string varname);
 
+  // Write cell data to HDF5 data file.
+  void writeCellDataReal(const Epetra_Vector &x, const std::string varname);
+  void writeCellDataInt(const Epetra_Vector &x, const std::string varname);
+  
+  // Write array data to HDF5 data file. Meant for Restart ONLY not Viz!
+  void writeDataReal(const Epetra_Vector &x, const std::string varname);
+  void writeDataInt(const Epetra_Vector &x, const std::string varname);
+  
+  // Read array data from HDF5 data file.
+  void readData(Epetra_Vector &x, const std::string varname);
+  
  private:
 
   void createXdmfMesh_(const std::string filename);
@@ -89,11 +112,18 @@ class HDF5 {
                                           const double time,
                                           const int iteration);
   void writeXdmfVisitGrid_(std::string filename);
-  
-  void writeFieldData_(const Epetra_Vector &x, std::string varname,
-                       std::string loc);
-  void readFieldData_(Epetra_Vector &x, std::string varname);
 
+  void writeFieldData_(const Epetra_Vector &x, std::string varname,
+                       datatype_t type, std::string loc);
+  void readFieldData_(Epetra_Vector &x, std::string varname,
+                      datatype_t type);
+
+  // parallel info
+  Epetra_MpiComm viz_comm_;
+  MPI_Info info_;
+  iogroup_conf_t IOconfig_;
+  iogroup_t IOgroup_;
+  
   // track xml for viz
   // TODO(barker): need to set default value
   bool TrackXdmf_;
@@ -117,7 +147,7 @@ class HDF5 {
 
   static std::string xdmfHeader_;
 };
-
+  
 } // close namespace HDF5
 
-#endif  // HDF5_MESH_HH_
+#endif  // HDF5MPI_MESH_HH_
