@@ -17,8 +17,8 @@ class SorptionIsothermLinear : public SorptionIsotherm {
 
   void Init(const double KD);
   // returns sorbed concentration
-  double Evaluate(const Species& primarySpecies) const;
-  double EvaluateDerivative(const Species& primarySpecies) const;
+  double Evaluate(const Species& primarySpecies);
+  double EvaluateDerivative(const Species& primarySpecies);
   void Display(void) const;
 
   double KD(void) const { return KD_; }

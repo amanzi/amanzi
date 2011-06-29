@@ -27,7 +27,7 @@ void SorptionIsothermLangmuir::Init(const double K, const double b) {
   set_b(b);
 }
 
-double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) const {
+double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
   // Csorb = K * activity * b / (1 + K * activity)
   // Units:
   // sorbed_concentration [mol/m^3 bulk] = 
@@ -37,7 +37,8 @@ double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) const {
   return K_activity * b() / (1. + K_activity);
 }  // end Evaluate()
 
-double SorptionIsothermLangmuir::EvaluateDerivative(const Species& primarySpecies) const {
+double SorptionIsothermLangmuir::EvaluateDerivative(
+    const Species& primarySpecies) {
   // Csorb = K * activity * b / (1 + K * activity)
   // dCsorb/dCaq = (K * activity_coef * b / (1 + K * activity)) - 
   //               (K * activity * b / (1 + K * activity)^2 * K * activity_coef)
@@ -46,7 +47,8 @@ double SorptionIsothermLangmuir::EvaluateDerivative(const Species& primarySpecie
   double K_activity = K() * primarySpecies.activity(); // temporary variable
   double C_sorb = K_activity * b() / (1. + K_activity);
   return C_sorb / primarySpecies.molality() - 
-           C_sorb / (1. + K_activity) * K_activity / primarySpecies.molality();
+           (C_sorb / (1. + K_activity) * K_activity / 
+             primarySpecies.molality());
 }  // end EvaluateDerivative()
 
 void SorptionIsothermLangmuir::Display(void) const {

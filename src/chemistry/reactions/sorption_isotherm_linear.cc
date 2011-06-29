@@ -23,7 +23,7 @@ void SorptionIsothermLinear::Init(const double KD) {
   set_KD(KD);
 }
 
-double SorptionIsothermLinear::Evaluate(const Species& primarySpecies ) const {
+double SorptionIsothermLinear::Evaluate(const Species& primarySpecies ) {
   // Csorb = KD * activity
   // Units:
   // sorbed_concentration [mol/m^3 bulk] = KD [kg water/m^3 bulk] * 
@@ -31,7 +31,7 @@ double SorptionIsothermLinear::Evaluate(const Species& primarySpecies ) const {
   return KD() * primarySpecies.activity();
 }  // end Evaluate()
 
-double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies) const {
+double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies) {
   // Csorb = KD * activity
   // dCsorb/dCaq = KD * activity_coef
   // Units:

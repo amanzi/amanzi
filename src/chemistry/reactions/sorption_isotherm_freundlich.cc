@@ -14,9 +14,9 @@ SorptionIsothermFreundlich::SorptionIsothermFreundlich()
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermFreundlich::SorptionIsothermFreundlich(const double KD, 
-                                                       const double n)
+                                                       const double one_over_n)
     : KD_(KD), 
-      one_over_n_(1./n) {
+      one_over_n_(one_over_n) {
 }  // end SorptionIsothermLangmuir() constructor
 
 SorptionIsothermFreundlich::~SorptionIsothermFreundlich() {
@@ -27,13 +27,14 @@ void SorptionIsothermFreundlich::Init(const double KD, const double n) {
   set_n(n);
 }
 
-double SorptionIsothermFreundlich::Evaluate(const Species& primarySpecies) const {
+double SorptionIsothermFreundlich::Evaluate(const Species& primarySpecies) {
   // Csorb = KD * activity^(1/n)
   // Units: The units don't make a whole lot of sense.
   return KD() * std::pow(primarySpecies.activity(), one_over_n());
 }  // end Evaluate()
 
-double SorptionIsothermFreundlich::EvaluateDerivative(const Species& primarySpecies) const {
+double SorptionIsothermFreundlich::EvaluateDerivative(
+    const Species& primarySpecies) {
   // Csorb = KD * activity^(1/n)
   // dCsorb/dCaq = KD * 1/n * activity^(1/n-1) * activity_coef
   // Units:

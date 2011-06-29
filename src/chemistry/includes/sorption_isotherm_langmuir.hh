@@ -17,8 +17,8 @@ class SorptionIsothermLangmuir : public SorptionIsotherm {
 
   void Init(const double K, const double b);
   // returns sorbed concentration
-  double Evaluate(const Species& primarySpecies) const;
-  double EvaluateDerivative(const Species& primarySpecies) const;
+  double Evaluate(const Species& primarySpecies);
+  double EvaluateDerivative(const Species& primarySpecies);
   void Display(void) const;
 
   double K(void) const { return K_; }

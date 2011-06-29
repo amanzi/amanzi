@@ -292,6 +292,10 @@ void Beaker::addSurfaceComplexationRxn(const SurfaceComplexationRxn& r) {
   surfaceComplexationRxns_.push_back(r);
 }  // end addSurfaceComplexationRxn()
 
+void Beaker::AddSorptionIsothermRxn(const SorptionIsothermRxn& r) {
+  sorption_isotherm_rxns_.push_back(r);
+}  // end AddSorptionIsothermRxn()
+
 Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   Beaker::BeakerParameters parameters;
 

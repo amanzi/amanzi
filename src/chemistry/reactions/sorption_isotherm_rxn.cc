@@ -31,7 +31,8 @@ void SorptionIsothermRxn::AddContributionToTotal(std::vector<double> *total) {
 void SorptionIsothermRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
     Block* dtotal) {
-
+  dtotal->addValue(species_id_,species_id_,
+      (*isotherm_).EvaluateDerivative(primarySpecies.at(species_id_)));
 }  // end AddContributionToDTotal()
 
 void SorptionIsothermRxn::Display(void) const {

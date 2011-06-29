@@ -12,11 +12,10 @@ namespace chemistry {
 class SorptionIsotherm {
  public:
   SorptionIsotherm();
-  ~SorptionIsotherm();
+  virtual~SorptionIsotherm();
 
-  virtual double Init() = 0;
-  virtual double Evaluate(const Species& primarySpecies) const = 0;
-  virtual double EvaluateDerivative(const Species& primarySpecies) const = 0;
+  virtual double Evaluate(const Species& primarySpecies) = 0;
+  virtual double EvaluateDerivative(const Species& primarySpecies) = 0;
 
 }; // SorptionIsotherm
 
