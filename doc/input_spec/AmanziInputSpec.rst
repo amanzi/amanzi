@@ -35,11 +35,18 @@ for the evolved field quantities must be communicated as well.
 A number of primitives are supported by Amanzi to aid in communicating this
 data to the executable:
 
- * Region: Generically, this is a subset of the computational domain. The construct can be used also to communicate a particular boundary or computational volume for a variety of purposes, including boundary conditions, line-integrals or volumetric diagnostics.
+ * Domain: This is the definition of the computational domain. For structured AMR simulations, the domain is defined by opposite corners of the domain. For unstructured mesh based simulations, the domain is defined as a union of regions (defined below).
+
+ * Region: Generically, this is a subset of the computational domain. The construct can be used also to communicate a particular boundary or computational volume for a variety of purposes, including boundary conditions, line-integrals or volumetric diagnostics. Regions are defined as a box specified by opposite corners or by a combination of surfaces (defined) below bounding the volume in a watertight manner. Although a computational domain is defined by a list of regions, some regions may be defined for other purposes such as viz or uncertainty quantification. Regions may be assigned names and/or numbers.
+
+ * Surface: Surfaces may be defined analytically or as a triangular mesh embedded in 3D. Not all surfaces are used in the definition of regions; some may be defined for the purpose of visualization or uncertainty quantification. However, urfaces that are used to define a mesh region have additional constraints - they must not extend beyond the extents of the region or be overlapping with each other. In other words, the union of the surfaces defining a region must strictly be the boundary of the region and no post-processing of the surfaces must be required. If a surface is defined as a triangular mesh, it's definition points to a mesh file containing the mesh. Surfaces may be assigned names and/or numbers. Boundary conditions are then assigned to named or numbered surfaces.
 
  * Rock: This contains a characterization of the relevant properties of the flow substrate.  Because of the massive range of length scales involved in typical groundwater flow models, the domain may be comprised of several subregions with sharply distinct rock properties.
 
  * State: The names of each of the state quantities and their ordering in the state, along with a consistent set of initial data and boundary conditions.
+
+ * Mesh: The mesh is defined only in unstructured mesh based simulations and the definition in the input file is merely a link to an input file. Eventually, Amanzi will require that mesh elements be linked to the regions (see above) they reside in and mesh faces be linked to the surfaces (see above) they lie on. This will enable a trivial application of boundary conditions and material properties to any mesh.
+
 
 Given these primitives, a user can complete the problem specification by configuring the source terms for each component (if applicable), and instructions for generating the observation data array to output.  The sections below give a catalogue of parameters that are expected for each of the major sections of communication between Amanzi and the user.  In particular, instructions are provided for generating named sug-regions, which then are used to define other parts of the specification.
 
@@ -49,7 +56,7 @@ Notes:
 
  * This specification incorporates functionality that the HPC developers believe to be sufficient to set up and execute a broad range of simple model problems -- the Platform group has yet to comment on the suitablity or completeness of this specification. Also, as of the writing of this document, not all functionality discussed in this specification is completely implemented in Amanzi. As a final stage in the production of this document, features that are not fully implemented will be clearly identified.
 
- * The Amanzi code has a dual executation path, catering to the special requirements, and exploiting many of the unique advantages of structured versus unstructured mesh implementations, respectively.  Completeness of the implementation of the models discussed here will vary between mesh schemes as well, and will evolve over time.
+ * The Amanzi code has a dual execution path, catering to the special requirements, and exploiting many of the unique advantages of structured versus unstructured mesh implementations, respectively.  Completeness of the implementation of the models discussed here will vary between mesh schemes as well, and will evolve over time.
 
  * On occasion below, we refer to an array type as if it were an XML intrinsic.  Such a construct does not yet exist.  We expect that an `"array double`" value might be something like `"2.3 4.0 6`".  Alternatively, such an array can be easily written as an XML list.
 
@@ -259,7 +266,9 @@ a number of parameters:
 +------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 | `"arbitrary"`          | `"file`"                | string                       | Region enveloped by surface described in specified file (see note below for format of file) |
 +------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"surface"`            | `"file_lo`" `"file_hi`" | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
+| `"layer"`            | `"file_lo`" `"file_hi`" | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
++------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"surface"`            | `"id1`" `"name2`" ... `"idN`" | string, string ,..., string               | Region between surfaces described in specified files (see note below for format of file)    |
 +------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 
 Note: surface file format TBD.
