@@ -44,10 +44,10 @@ double SorptionIsothermFreundlich::EvaluateDerivative(
 }  // end EvaluateDerivative()
 
 void SorptionIsothermFreundlich::Display(void) const {
-  std::cout << std::setw(5) << 'KD:'
+  std::cout << std::setw(5) << "KD:"
             << std::scientific << std::setprecision(5)
             << std::setw(15) << KD() 
-            << std::setw(5) << '1/n:'
+            << std::setw(5) << "1/n:"
             << std::scientific << std::setprecision(5)
             << std::setw(15) << one_over_n() 
             << std::endl;

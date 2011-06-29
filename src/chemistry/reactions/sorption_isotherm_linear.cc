@@ -40,7 +40,7 @@ double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies)
 }  // end EvaluateDerivative()
 
 void SorptionIsothermLinear::Display(void) const {
-  std::cout << std::setw(5) << 'KD:'
+  std::cout << std::setw(5) << "KD:"
             << std::scientific << std::setprecision(5)
             << std::setw(15) << KD() << std::endl;
 }  // end Display()
