@@ -1,7 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "geochemistry_test.hh"
 
+#ifdef WINDOWS
+#include "xgetopt.hh"
+#else
 #include <unistd.h>
+#endif
 
 #include <cstdlib>
 
