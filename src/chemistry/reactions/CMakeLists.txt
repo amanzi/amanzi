@@ -26,6 +26,7 @@ set(SRCS
 	./surface_complex.cc 
 	./surface_complexation_rxn.cc 
 	./sorption_isotherm.cc 
+	./sorption_isotherm_factory.cc 
 	./sorption_isotherm_freundlich.cc 
 	./sorption_isotherm_langmuir.cc 
 	./sorption_isotherm_linear.cc 

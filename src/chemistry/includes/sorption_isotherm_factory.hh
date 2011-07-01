@@ -5,12 +5,12 @@
 #include <string>
 
 #include "species.hh"
-#include "verbosity.hh"
 
 namespace amanzi {
 namespace chemistry {
 
 class SorptionIsotherm;
+enum Verbosity;
 
 class SorptionIsothermFactory {
  public:
