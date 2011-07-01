@@ -245,31 +245,31 @@ simulation: XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC, represent each rectangu
 with the coordinate axis).
 
 
-* "regions" (list) can accept lists for named regions (REGION)
+ * "regions" (list) can accept lists for named regions (REGION)
 
-  * REGION (list) can accept lists (SHAPE) that specify a functional for its shape.  Though Amanzi currently supports only a single shape specifier per region, this limitation may be removed in the future.
+   * REGION (list) can accept lists (SHAPE) that specify a functional for its shape.  Though Amanzi currently supports only a single shape specifier per region, this limitation may be removed in the future.
 
-    * SHAPE (list) can accept lists of shape parameters (SHAPE-PARAMS) 
+     * SHAPE (list) can accept lists of shape parameters (SHAPE-PARAMS) 
 
-      * SHAPE-PARAMS (double array or string) parameters to specify shape
+       * SHAPE-PARAMS (double array or string) parameters to specify shape
 
 Currently, Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex
 definitions based on triangulated surface files: point, box, arbitrary, layer.  Depending on the functional, SHAPE requires
 a number of parameters:
 
-+------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-|  shape functional name | parameters              | type(s)                      | Comment                                                                                     |
-+========================+=========================+==============================+=============================================================================================+
-| `"point"`              | `"loc`"                 | double array                 | Location of point in space                                                                  |
-+------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"box"`                | `"lo`", `"hi`"          | double array, double array   | Location of boundary points of box                                                          |
-+------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"arbitrary"`          | `"file`"                | string                       | Region enveloped by surface described in specified file (see note below for format of file) |
-+------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"layer"`            | `"file_lo`" `"file_hi`" | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
-+------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"surface"`            | `"id1`" `"name2`" ... `"idN`" | string, string ,..., string               | Region between surfaces described in specified files (see note below for format of file)    |
-+------------------------+-------------------------+------------------------------+---------------------------------------------------------------------------------------------+
++------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+|  shape functional name | parameters                    | type(s)                      | Comment                                                                                     |
++========================+===============================+==============================+=============================================================================================+
+| `"point"`              | `"loc`"                       | double array                 | Location of point in space                                                                  |
++------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"box"`                | `"lo`", `"hi`"                | double array, double array   | Location of boundary points of box                                                          |
++------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"arbitrary"`          | `"file`"                      | string                       | Region enveloped by surface described in specified file (see note below for format of file) |
++------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"layer"`              | `"file_lo`" `"file_hi`"       | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
++------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"surface"`            | `"id1`" `"name2`" ... `"idN`" | string, string ,..., string  | Region between surfaces described in specified files (see note below for format of file)    |
++------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 
 Note: surface file format TBD.
 
