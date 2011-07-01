@@ -52,10 +52,10 @@ double SorptionIsothermLangmuir::EvaluateDerivative(
 }  // end EvaluateDerivative()
 
 void SorptionIsothermLangmuir::Display(void) const {
-  std::cout << std::setw(5) << 'K:'
+  std::cout << std::setw(5) << "K:"
             << std::scientific << std::setprecision(5)
             << std::setw(15) << K() 
-            << std::setw(5) << 'b:'
+            << std::setw(5) << "b:"
             << std::scientific << std::setprecision(5)
             << std::setw(15) << b() 
             << std::endl;
