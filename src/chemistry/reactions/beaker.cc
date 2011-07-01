@@ -1027,10 +1027,10 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
       components->total_sorbed[i] = total_sorbed_[i];
     }
   }
-  for (int m = 0; m < minerals_.size(); m++) {
+  for (unsigned int m = 0; m < minerals_.size(); m++) {
     components->minerals[m] = minerals_.at(m).volume_fraction();
   }
-  for (int i = 0; i < ion_exchange_sites_.size(); i++) {
+  for (unsigned int i = 0; i < ion_exchange_sites_.size(); i++) {
     components->ion_exchange_sites[i] = ion_exchange_sites_.at(i).cation_exchange_capacity();
   }
 }  // end UpdateComponents()

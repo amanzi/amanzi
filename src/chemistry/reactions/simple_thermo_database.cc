@@ -17,6 +17,8 @@
 #include "surface_complex.hh"
 #include "ion_exchange_site.hh"
 #include "ion_exchange_complex.hh"
+#include "sorption_isotherm_factory.hh"
+#include "sorption_isotherm.hh"
 #include "beaker.hh"
 #include "species.hh"
 #include "string_tokenizer.hh"
@@ -98,12 +100,14 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
                   kMineralLine, kMineralKineticsLine, kGeneralKineticsLine,
                   kIonExchangeSiteLine, kIonExchangeComplexLine,
                   kSurfaceComplexSiteLine, kSurfaceComplexLine,
+                  kIsothermLine,
                   kUnknownLine
   };
   enum SectionType { kPrimarySpeciesSection, kAqueousEquilibriumComplexSection,
                      kMineralSection, kMineralKineticsSection, kGeneralKineticsSection,
                      kIonExchangeSiteSection, kIonExchangeComplexSection,
                      kSurfaceComplexSiteSection, kSurfaceComplexSection,
+                     kIsothermSection,
                      kUnknownSection
   };
 
@@ -116,6 +120,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
   std::string kSectionIonExchangeComplexes("<Ion Exchange Complexes");
   std::string kSectionSurfaceComplexSites("<Surface Complex Sites");
   std::string kSectionSurfaceComplexes("<Surface Complexes");
+  std::string kSectionIsotherms("<Isotherms");
 
   LineType line_type;
   SectionType current_section;
@@ -168,6 +173,9 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
         line_type = kSurfaceComplexLine;
         current_section = kSurfaceComplexSection;
 
+      } else if (line == kSectionIsotherms) {
+        line_type = kIsothermLine;
+        current_section = kIsothermSection;
       } else {
         std::cout << "SimpleThermoDatabase::ReadFile(): unknown section string \'"
                   << line << "\'" << std::endl;
@@ -246,6 +254,13 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
           } else {
             data_order_error = 4;
           }
+        }
+      } else if (current_section == kIsothermSection) {
+        if (parsed_primaries) {
+          ParseIsotherm(line);
+        } else {
+          error_section = "isotherms";
+          data_order_error = 1;
         }
       } else {
         // should never be here....
@@ -1067,6 +1082,51 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
     }  // else not water
   }  // end for(search_species)
 }  // end ParseSurfaceComplexReaction()
+
+/*******************************************************************************
+ **
+ **  Thermodynamic database file format
+ **
+ **  <Isotherms
+ **
+ **  all isotherm information is contained on a single semicolon delimited line.
+ **
+ **  Field 0 : solute same : assumed to be present as a primary species
+ **  Field 1 : isotherm type ("linear", "langmuir", "freundlich")
+ **  Field 2 : distribution coefficient K
+ **  Field 3 : langmuir b, freundlich 1/n
+ **
+ *******************************************************************************/
+void SimpleThermoDatabase::ParseIsotherm(const std::string& data) {
+  if (verbosity() == kDebugInputFile) { 
+    std::cout << "SimpleThermoDatabase::ParseIsotherm()...." << std::endl;
+    std::cout << "  data: " << data << std::endl;
+  }
+  std::string semicolon(";");
+  std::string space(" ");
+  StringTokenizer no_spaces;
+
+  StringTokenizer isotherm_data(data, semicolon);
+  no_spaces.tokenize(isotherm_data.at(0), space);
+  std::string species_name = no_spaces.at(0);
+  std::string isotherm_type = isotherm_data.at(1);
+  std::string isotherm_K = isotherm_data.at(2);
+
+  isotherm_data.erase(isotherm_data.begin());  // erase species name
+  isotherm_data.erase(isotherm_data.begin());  // erase distribution coefficient
+
+  SorptionIsothermFactory sif;
+  sif.set_verbosity(verbosity());
+  SorptionIsotherm* isotherm = sif.Create(isotherm_type);
+  SpeciesId species_id = sif.VerifySpeciesName(species_name, primary_species());
+  Species species = primary_species().at(species_id);
+  SorptionIsothermRxn isotherm_rxn = 
+    SorptionIsothermRxn(species_name, species_id, isotherm);
+  this->AddSorptionIsothermRxn(isotherm_rxn);
+  if (verbosity() == kDebugInputFile || verbosity() == kDebugSorptionIsotherm) {
+    isotherm_rxn.Display();
+  }
+}  // end ParseIsotherm()
 
 }  // namespace chemistry
 }  // namespace amanzi

@@ -19,7 +19,9 @@ class Block;
 class SorptionIsothermRxn {
  public:
   SorptionIsothermRxn();
-  SorptionIsothermRxn(SpeciesName name, unsigned int id);
+  SorptionIsothermRxn(const SpeciesName species_name, 
+                      const SpeciesId species_id,
+                      SorptionIsotherm *isotherm);
   ~SorptionIsothermRxn();
 
   void Update(const std::vector<Species>& primarySpecies);
@@ -34,7 +36,7 @@ class SorptionIsothermRxn {
 
  private:
 
-  unsigned int species_id_; // ID of primary species
+  SpeciesId species_id_; // ID of primary species
   SpeciesName species_name_; // Name of primary species
   double sorbed_concentration_;
   SorptionIsotherm *isotherm_;

@@ -9,6 +9,7 @@
 #include "sorption_isotherm_langmuir.hh"
 #include "sorption_isotherm_freundlich.hh"
 #include "chemistry_exception.hh"
+#include "verbosity.hh"
 #include "exceptions.hh"
 
 namespace amanzi {
@@ -18,10 +19,10 @@ const std::string SorptionIsothermFactory::linear = "linear";
 const std::string SorptionIsothermFactory::langmuir = "langmuir";
 const std::string SorptionIsothermFactory::freundlich = "freundlich";
 
-SorptionIsothermFactory::SorptionIsothermFactory() {
+SorptionIsothermFactory::SorptionIsothermFactory(void) : verbosity_(kSilent) {
 }  // end ActivityModelFactory constructor
 
-SorptionIsothermFactory::~SorptionIsothermFactory() {
+SorptionIsothermFactory::~SorptionIsothermFactory(void) {
 }  // end ActivityModelFactory destructor
 
 SorptionIsotherm* SorptionIsothermFactory::Create( 
@@ -57,6 +58,29 @@ SorptionIsotherm* SorptionIsothermFactory::Create(
   }
   return sorption_isotherm;
 }  // end Create()
+
+
+SpeciesId SorptionIsothermFactory::VerifySpeciesName(
+    const SpeciesName species_name,
+    const std::vector<Species>& species) const {
+  int species_id = -1;
+  for (std::vector<Species>::const_iterator s = species.begin();
+       s != species.end(); s++) {
+    if (s->name() == species_name) {
+      species_id = s->identifier();
+      break;
+    }
+  }
+  if (species_id < 0) {
+    // print helpful message and exit gracefully
+    std::ostringstream error_stream;
+    error_stream << "SorptionIsothermFactory::VerifySpeciesName(): \n";
+    error_stream << "Did not find species: \'" << species_name << "\'\n"
+                 << "       in the primary species list. " << std::endl;
+    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+  }
+  return species_id;
+}  // end VerifyMineralName()
 
 }  // namespace chemistry
 }  // namespace amanzi
