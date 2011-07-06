@@ -660,7 +660,7 @@ void RichardsProblem::SetInitialPressureProfileCells(double height, Epetra_Vecto
 	zavg += coords[k];
       zavg /= 8.0;
 
-      (*pressure)[j] = 101325.0 + rho_ * g_[2] * ( zavg - height );
+      (*pressure)[j] = p_atm_ + rho_ * g_[2] * ( zavg - height );
     }
 }
 
@@ -679,7 +679,7 @@ void RichardsProblem::SetInitialPressureProfileFaces(double height, Epetra_Vecto
 	zavg += coords[k];
       zavg /= 4.0;
 
-      (*pressure)[j] = 101325.0 + rho_*g_[2] * ( zavg - height );
+      (*pressure)[j] = p_atm_ + rho_*g_[2] * ( zavg - height );
     }
 }
 
