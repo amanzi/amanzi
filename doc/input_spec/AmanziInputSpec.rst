@@ -8,7 +8,7 @@ the ASCEM report entitled "Mathematical Formulation Requirements and
 Specifications for the Process Models`", which we refer to herein as
 the 'Model Requirements Document (MRD)'). The purpose of the present
 document is to specify the type and format of data required to execute
-Amanzi on a problem within its intended scope.  This specification
+Amanzi.  This specification
 should be regarded as a companion to the MRD; it relies heavily on
 the detailed formulations of the models.  Where applicable, the
 relevant sections of the MRD are indicated.
@@ -29,43 +29,36 @@ specified components is given by equation 2.11 of the MRD, where the
 volumetric flow rate has been specified via Darcy's law (equation
 2.10).  For Darcy flow, the properties of the (rock) medium must be identified
 throughout the domain, including the phase component permeabilities,
-etc.  To complete the mathematical specification, any sources/sinks
-for the evolved field quantities must be communicated as well.
+etc. (see `"Rock`" section below for more details).  To complete the mathematical specification, any sources/sinks
+for the evolved field quantities must be communicated.
 
-A number of primitives are supported by Amanzi to aid in communicating this
+A number of primitives are supported by Amanzi to aid in communicating the problem setup
 data to the executable:
 
- * Domain: This is the definition of the computational domain. For structured AMR simulations, the domain is defined by opposite corners of the domain. For unstructured mesh based simulations, the domain is defined as a union of regions (defined below).
+ * *Region*: Definition of the computation domain and named subsets of it.  The entire computational domain is defined as a union of disjoint regions of finite volume.  The boundary is the union of regions that are co-dimension one and physically bound the domain.  Regions are used to communicate instructions for boundary and initial conditions, material properties, solution diagnostics, and source terms.  A number of geometric primitives are supported for specifying regions (discussed below).  The user assigns a unique label to each defined region; *all* is a special label signifying the entire computional domain.
 
- * Region: Generically, this is a subset of the computational domain. The construct can be used also to communicate a particular boundary or computational volume for a variety of purposes, including boundary conditions, line-integrals or volumetric diagnostics. Regions are defined as a box specified by opposite corners or by a combination of surfaces (defined) below bounding the volume in a watertight manner. Although a computational domain is defined by a list of regions, some regions may be defined for other purposes such as viz or uncertainty quantification. Regions may be assigned names and/or numbers.
+ * *Rock*: This contains a characterization of the relevant properties of the flow substrate.  Because of the massive range of length scales involved in typical groundwater flow models, the domain may be comprised of several subregions with sharply distinct rock properties.
 
- * Surface: Surfaces may be defined analytically or as a triangular mesh embedded in 3D. Not all surfaces are used in the definition of regions; some may be defined for the purpose of visualization or uncertainty quantification. However, urfaces that are used to define a mesh region have additional constraints - they must not extend beyond the extents of the region or be overlapping with each other. In other words, the union of the surfaces defining a region must strictly be the boundary of the region and no post-processing of the surfaces must be required. If a surface is defined as a triangular mesh, it's definition points to a mesh file containing the mesh. Surfaces may be assigned names and/or numbers. Boundary conditions are then assigned to named or numbered surfaces.
+ * *State*: The names of each of the state quantities and their ordering in the state, along with a consistent set of initial data and boundary conditions and source terms.
 
- * Rock: This contains a characterization of the relevant properties of the flow substrate.  Because of the massive range of length scales involved in typical groundwater flow models, the domain may be comprised of several subregions with sharply distinct rock properties.
+ * *Mesh*: Information associated with the discretization of physical space.  For unstructured mesh calculations, this includes the name of an externally-generated fixed mesh file.  Note that region definitions must be consistent with the provided mesh - `i.e.` regions declared to represent bounding surfaces must correspond to surfaces provided in the mesh file.  For structured-grid calculations, this section includes grid generation instructions, including `e.g.` the number of cells in each coordinate direction, the grid-spacing ratio between levels of refinement, the maximum level of refinement, etc.  At the present time, the structured-grid option requires that the simulation domain be a parallelepiped, specified on the coarsest refinement level.  In this case, the boundary surfaces are automatically generated as the six surfaces that enclose the domain (see details below).
 
- * State: The names of each of the state quantities and their ordering in the state, along with a consistent set of initial data and boundary conditions.
-
- * Mesh: The mesh is defined only in unstructured mesh based simulations and the definition in the input file is merely a link to an input file. Eventually, Amanzi will require that mesh elements be linked to the regions (see above) they reside in and mesh faces be linked to the surfaces (see above) they lie on. This will enable a trivial application of boundary conditions and material properties to any mesh.
+Once the problem is specified mathematically, the user must provide instructions to control the details of the numerical simulation.  Some of this information is rather generic (`e.g.`, simulation stop time, type and amount of simulation output, etc), while some is more specific to the selected numerical integration algorithms and meshing options.  As a result, the list of available control parameters is tree-like, where available options at the finer level of detail are dependendent on choices made at the higher level.  An example high-level decision is whether to use an unstructured-grid or a stuctured-grid adaptive approach to discretize the model.  Structured-grid calculations, for example, require the user to specify the interval of dynamic remeshing and the scheme for which new fine grids are generated.  this information is irrelevant for fixed-mesh unstructured calculations.
 
 
-Given these primitives, a user can complete the problem specification by configuring the source terms for each component (if applicable), and instructions for generating the observation data array to output.  The sections below give a catalogue of parameters that are expected for each of the major sections of communication between Amanzi and the user.  In particular, instructions are provided for generating named sug-regions, which then are used to define other parts of the specification.
+Additional notes:
 
-Notes:
+ * Currently, problem setup and control data is passed from the user into the Amanzi executable via a parameter list (specifically, a Teuchos::ParameterList). Each entry in a ParameterList object can itself be a ParameterList, or can be data.  Supported data types include double, float, short, int, bool, string), simple arrays of these basic types.  ParameterList objects may be initialized using an XML file; examples of the proper syntax are included below.
 
- * Currently, the data is passed from the user into the Amanzi executable via an XML-capable parameter list object.  Thus, the input data set is described here from the point of view of a user that is constructing such an XML file for this purpose.
-
- * This specification incorporates functionality that the HPC developers believe to be sufficient to set up and execute a broad range of simple model problems -- the Platform group has yet to comment on the suitablity or completeness of this specification. Also, as of the writing of this document, not all functionality discussed in this specification is completely implemented in Amanzi. As a final stage in the production of this document, features that are not fully implemented will be clearly identified.
+ * The specification detailed in this document incorporates functionality that the HPC developers believe to be sufficient to set up and execute a broad range of simple model problems.  It is likely that details of the specification will evolve over time.  A final stage in the production of this document will include a signifer on listed features that are not fully implemented.
 
  * The Amanzi code has a dual execution path, catering to the special requirements, and exploiting many of the unique advantages of structured versus unstructured mesh implementations, respectively.  Completeness of the implementation of the models discussed here will vary between mesh schemes as well, and will evolve over time.
-
- * On occasion below, we refer to an array type as if it were an XML intrinsic.  Such a construct does not yet exist.  We expect that an `"array double`" value might be something like `"2.3 4.0 6`".  Alternatively, such an array can be easily written as an XML list.
-
 
 
 Creating a Parameter List
 =======================================
 
-The XML input file must be framed at the beginning and end by the following statements:
+The Amanzi simulator input file is in ASCII text format, and must be framed at the beginning and end by the following statements:
 
 
 .. code-block:: xml
@@ -74,61 +67,81 @@ The XML input file must be framed at the beginning and end by the following stat
 
   </ParameterList>
 
-where the name can be anything. Here I have named the main list "Main".
+where the name can be anything ("Main" in this example).  Individual parameters in a ParameterList are specified as follows:
 
-We have several sublists that are read and interpreted in various parts of Amanzi.  The sublist names head each of the
-following sections
+
+.. code-block:: xml
+
+  <ParameterList name="Sub">
+    <Parameter name="CFL" type="double" value="0.9"/>
+    <Parameter name="ratio" type="Array int" value="{2, 2, 4}"/>
+  </ParameterList>
+
+In this example, the sublist "Sub" has a parameter named "CFL" that is a "double" and has the value of 0.9, and a Teuchos::Array<int>
+parameter named "ratio" such that ratio[0] = 2. ratio[1]=2 and ratio[2]=4.
+
+It is vital to recognize that the input specification has a irreducibly circular dependence; definitions in one part of the specification
+must be consistent with those of another.  To the extent possible, Amanzi will
+recognize when this expected consistency is violated.  For example, "region" labels referenced in the State section are assumed to
+have been defined in the "regions" section; if the entire input set is scanned and the referenced region label is not defined, an
+error is thrown and the simulation is aborted.
+
+In the remainder of this document, we attempt to adhere to the following standard for presentation.  Reserved keywords and labels are
+`"quoted`" (and italicized) -- these labels or values of parameters in user-generated input files must match (using XML matching rules) the specified
+or allowable values.  User-defined labels are indicated with ALL-CAPS, and are meant to represent a typical name given by a user -
+these can be names or numbers or whatever serves best the organization of the user input data.  Each parameter list entry will either
+be a "list" or a parameter.  List values must include a non-empty "name" field, and a parameter must include a "name", "type" and "value".
+
+Where applicable, the relevant section the MRD is referred to by section or chapter number in parentheses.
+
 
 1. State
 =======================================
 
 The state specifies the distribution of phases, species and pressure in the system.  Generally, there
 can be multiple phases (e.g. gaseous, aqueous, etc), and each is comprised of a number
-of components.  Additionally, each phase may carry a number of trace species.  The tracers are assumed to
-have no impact on the thermodynamic and transport properties of the phases, but may be involved in chemical
-processes.  In this section, each state component is labeled and defined, in terms of physical properties.
-Tracers are defined, and tracer groups are constructed in order to support requirements of the chemistry solver.
-There is an implied consistency between the state identifiers defined here and 
-those referenced elsewhere, such as in the chemistry specification.  To the extent possible, Amanzi will
-recognize when this expected consistency is violated.
+of components (section 2.2).  Additionally, each phase may carry a number of trace species.  
+The tracers are assumed to have no impact on the thermodynamic and transport properties of the phases, but may be involved in chemical
+processes (Section 2.5).  Each state component must be labeled and defined in terms of physical properties: 
+mass density, viscosity, and diffusivity (Section 4.6).  Boundary conditions must be specified along the entire surface
+bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  Tracers are labeled and defined interms of 
+their carrier phase and group memebership, as necessary to support the chemistry model (Section 5).  In particular, 
+the "total concentration" (Equation 5.5) is the weighted sum of all tracers in the the tracer group "Total".
+This is the only group of tracers that actually moves with the phase.  Other tracer groups include minerals
+and surface complexation, and are carried in the state but do not move with the flow (see Section 5).
 
-In this section, "region" labels are assumed to have been defined elsewhere.  These labels are used to
-identify portions of the interior for setting initial state data, and portions of the boundary for setting
-boundary conditions.  We summarize the acceptable data for "state" in a hierarchical list.
-(here, and in the remainder of this document, reserved keywords and labels are `"quoted`"; representative
-user-defined labels are indicated with ALL-CAPS).
+* "state" (list) can accept lists for named components (COMP), `"add tracer`" (list) to add a tracer, or lists for boundary conditions (BC).  Also a label specifies the dominant component, and a string array is used to specify groups of tracers
 
-* "state" (list) can accept lists for named components (COMP), `"add tracer`" (list) to add a tracer, or boundary conditions (BC), a value for the name of the dominant component, and a group (string array) identifying a group of tracers
+  * COMP (list) can accept values for the carrying phase name (string), mass density (double), viscosity (double) and diffusivity (double). `"initial data`" is a list to specify the instructions for constructing the intial state profile
 
-  * COMP (list) can accept values for phase name (string), mass density (double), viscosity (double) and diffusivity (double), and a list for initial data (IC)
+    * IC (list) can accept a number of lists, the name of each list corresponds to the label of a defined region (REGION), or the special denotation of `"default`".  `"default`" instructions will be used to fill the complement of the sum of the named regions.
 
-    * IC (list) can accept a list of region names (REGION) 
+      * REGION or `"default`" (list) can accept a list (IC-FUNC) to specify the parameters of a named functional
 
-      * REGION (list) can accept a list (IC-PARAM) to specify the parameters of a named functional
+        * IC-FUNC (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
 
-        * IC-PARAM (list) can accept a set of parameter values for the functional
-
-    * `"mass density`" (double) the density of this component
+    * `"mass density`" (double) the mass density of this component
 
     * `"viscosity`" (double) the viscosity of this component
 
     * `"diffusivity`" (double) the diffusivity of this component
 
-    * `"phase name`" (string) the phase that this component is in
+    * `"phase name`" (string) the phase that carries component
 
-  * `"add tracer`" (list) can accept a list for initial data (IC), name (string), and name of parent component (string)
+  * `"add tracer`" (list) can accept a name (string), the name of parent component (string), and a list for initial data (IC)
 
     * `"name`" (string) name of tracer
 
-    * IC (list) can accept a list of region names (REGION) 
-
-      * REGION (list) can accept a list (IC-PARAM) to specify the parameters of a named functional
-
-        * IC-PARAM (list) can accept a set of parameter values for the functional
-
     * `"parent phase component`" (string) name of carrying phase component (must be one of COMP defined in this file)
 
-  * BC (list) can accept a list (BC-REG) named after the "region" that defines a surface that bounds the computational domain
+    * IC (list) can accept a number of lists, the name of each list corresponds to the label of a defined region (REGION), or the special
+       denotation of `"default`".  `"default`" instructions will be used to fill the complement of the sum of the named regions.
+
+      * REGION or `"default`" (list) can accept a list with a label corresponding to a named IC functional (IC-FUNC)
+
+        * IC-FUNC (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
+
+  * BC (list) can accept a list (BC-REG) named after the "region" that defines a surface bounding the computational domain
  
     * BC-REG (list) can accept a list (BC-PARAM) to specify the parameters of a named functional
 
@@ -138,32 +151,37 @@ user-defined labels are indicated with ALL-CAPS).
 
   * `"add group`" (string array) an array of strings of names, taken from the `"add tracer`" list defined above
 
-Initial conditions are required for each phase component over the entire computational domain.
-Boundary conditions are required on all domain boundaries.  Both are constructed using a limited number
+Note that IC regions and BC region labels are differentiated in Amanzi based on their geometrical definition.  A label that identifies
+a region of finite volume will be interpreted as an initial condition instruction, whereas a region defined on the boundary of the 
+computational domain will be interpreted as a boundary condition instruction.
+
+Initial conditions are required for each phase over the entire computational domain.
+Boundary conditions are required on all domain boundaries (see Sections 3.3, 4.3).  Both are constructed using a limited number
 of explicitly parameterized functional forms.  If the simulation is to be intialized using a restart file,
-the phase and component definitions are taken from the restart file, and initial condition instructions specified 
+the phase and component definitions are taken from the restart file, and initial condition instructions provided
 here are quietly ignored.  Boundary conditions are required regardless of the initial data, and must be defined
 consistently.
 
-The following parameterized distrubution functional are supported:
+The following parameterized distribution functionals are supported:
  * `"ic: constant`" requires `"value`" (see note below)
- * `"ic: coordinate-aligned linear`"  requires direction `"dir`" (string) of variation, `"x0_y0_slope`" (array double) specifying x0, y0, m for function of the form: `y-y0 = m*(x-x0)`.  Here y is state value, x is coordinate in `"dir`" direction.  For state values however, see note below.
+ * `"ic: coordinate-aligned linear`"  requires direction `"dir`" (string) of variation, `"x0_y0_slope`" (array double) specifying {x0, y0, m} for function
+          of the form: `y-y0 = m*(x-x0)`.  Here y is state value, x is coordinate in `"dir`" direction.  For state values however, see note below.
  * `"ic: quadratic`" similar to linear
  * `"ic: exponential`" similar to linear
 
 The following parameterized boundary conditions are supported:
  * `"bc: inflow`" requires `"bc: distribution`" (string) to set the distribution of the state upstream of the boundary (outside domain)
  * `"bc: outflow`"  requires `"bc: distribution`" (string) to set the distribution of the state downstream of the boundary (outside domain)
- * `"bc: seepage`" requires location `"water table height`" (double) of the water table.  If a more complex specification is needed, this should be changed to require list to define it appropriately.
+ * `"bc: seepage`" requires location `"water table height`" (double) of the water table.  If a more complex specification is needed, this should be changed to require a list to define it appropriately.
  * `"bc:  noflow`" requires no parameter data
 
 NOTES:
 
 In initial data and boundary conditions, the user must be able to specify the desired data to implement for each state
-component.  It is unclear how to create a manageable interface for this.  Additionally, there may be a desire
-to initialize via file when the file is not a restart file.  To add such a method, one requires an implicit
-interpolation operator to map the stored solution to the current one, and that the data files are sufficiently
-self-describing and contain enough information to support this interpolation.  Amanzi does not support such an
+component.  It is unclear how to create a manageable interface for this, given that the state is defined interactively
+in this section.  Additionally, there may be a desire
+to initialize via file when the file is not a formal restart file.  To add such a method, one requires an implicit
+interpolation operator to map the stored solution to the current one.  Amanzi does not support such an
 option at this time.
 
 Due to various physical constraints (e.g. component saturations sum to unity), initial and boundary functionals
@@ -316,7 +334,7 @@ Rock properties must be specified over the entire simulation domain ("all") defi
 defined above, provided that the entire domain is covered.  Currently, the regions used should be disjoint.  Amanzi may eventually support verifying this condition,
 and/or specifying a precedence order for overalapping regions.
 
-Each rock type is given a label (string) and assigned a density (double) and models (string) for porosity, permeability and capillary pressure.  Each rock is assigned to
+Each rock type (Section 2.6) is given a label (string) and assigned a density (double) and models (string) for porosity, permeability and capillary pressure.  Each rock is assigned to
 regions (string array), a list of regions.
 
 * "rock" (list) can accept multiple lists for named rock types (ROCK)
@@ -327,21 +345,21 @@ regions (string array), a list of regions.
 
       * MODEL-PARAMS (double, double array) parameters to specify model (see notes below for details of each model available)
 
-    * `"regions`" (string array) a set of regions defined above
+    * `"regions`" (string array) a set of labels corresponding to defined regions
 
 The following models are currently supported for porosity:
- * `"porosity: file`" requires a single string "filename" specifying the name of a file.  This file must be written in a self-describing format that is consistent with that of the current meshing option (sturctured_grid or unstructured_grid).  In particular, the physical domain of the input data must completely cover the current "all" region, and the data must exist on discrete cells that are consistent with the current meshing configuration.  This option is not currently supported under the unstructured option.
- * `"porosity: uniform`" requires the porosity (double)
+ * `"porosity: file`" requires a string "filename" specifying the name of a file.  This file must be written in a self-describing format that is consistent with that of the current meshing option (sturctured_grid or unstructured_grid).  In particular, the physical domain of the input data must completely cover the current "all" region, and the data must exist on discrete cells that are consistent with the current meshing configuration.  This option is not currently supported under the unstructured option.
+ * `"porosity: uniform`" requires a double specifying the constant value of porosity.
  * `"porosity: random`" requires the mean value of porosity and the percentage fluctuation, "porosity and fluctuation" (double array) to generate
  * `"porosity: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate porosity (plus other data?)
 
-The following models are currently supported for relative permeability:
+The following models are currently supported for relative permeability (Section 2.6):
  * `"perm: perfect`" requires no parameters, krl=krg=1
  * `"perm: linear`" requires no parameters, krl=sl and krg=sg
  * `"perm: quadratic`" requires slr, sgr (double array), krl=sc^2, krg=1-se^2, se=(sl-sg)/(1-slr-sgr)
  * `"perm: vGM`" (van Genuchten-Mualem) requires m, slr, sgr (double array), krl=sqrt(se)(1-(1-se^-m)^m)^2, krg=(1-sekg)^1/3 (1-sekg^-m)^(2m), se=(sl-slr)/(1-slr-sgr), sekg=sl/(1/sgr)
 
-The following models are currently supported for capillary pressure:
+The following models are currently supported for capillary pressure (Section 3.3.2):
  * `"pc: none`" requires no parameters, pc = 0
  * `"pc: linear`" requires no parameters, pc = sl
  * `"pc: vG`" requires m, sigma, slr, sgr (double array), pc=(1/sigma)(se^-m - 1)^-n, se=(sl-slr)/(1-slr-sgr)
@@ -388,8 +406,7 @@ van Genuchten models for relative permeability and capillary pressure.
 5. Source
 =======================================
 
-Specification of volumetric source terms for the various state quantities depends on the definition of regions and state labels.
-
+Volumetric source terms are used to model infiltration (Section 3.7) and other loss processes.
 Each source is given a label (string), state id (string), integrated source strength (double), distribution functional (list) and region (string).
 
 * "source" (list) can accept multiple lists for named sources (SOURCE)
@@ -439,13 +456,15 @@ In this example, there is an infiltration source of water in the top region, and
 6. Observation Data
 =======================================
 
-Observation data generally refers to a small list of diagnostic quantities to extract from a simulation.  This is to be contrasted with the
-detailed field data typically associated with analysis and restart data.  Examples of these quantities include various volume and surface integrals
-used to characterize the response of the system to variations of input data.  Computation of observation data involves applying a parameterized 
-functional on a specified state quantity or flux value at specific values of the simulation time.
+Observation data generally refers to simple diagnostic quantities extracted from a simulation for the purposes of characterizing
+the response of the system to variations of input data.  Unlike very large datasets used for post-processing and simulation
+restart, observation data for any particular simulations tends to consist of only a handful of scalar values.
+Examples include volume and surface integrals, such as the total water mass in the system at a specific time.
+Computation of observation data involves applying a parameterized 
+functional on a specified state quantity or flux value at specific simulation times.
 
 Each observation is given a label (string), state id (string), evaluation functional (list), region (string) and a list of times for evaluation.
-The results are passed to the calling process in a structure that is consistent with the following specification.
+The resulting observations are evaluated during the simulation and returned to the calling process
 
 * "observation" (list) can accept multiple lists for named observations (OBSERVATION)
 
@@ -480,8 +499,11 @@ Example:
 
 In this example, the user requests the volume integral of the water density over the entire domain at three different times.
 Amanzi will also support integrals and point samples of phase fluxes.  Note that times specified may not necessarily fall within
-the time interval of the present simuluation.  The format of the data structure used to convey the observation data includes
-a flag for each time to indicate whether the quantity was successfully filled.
+the time interval of the present simulation.  The format of the data structure used to communicate the observation data back
+to the calling function includes a flag for each requested time to indicate whether the quantity was successfully filled.
+
+
+
 
 7. Chemistry
 =======================================
