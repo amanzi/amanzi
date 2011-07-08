@@ -34,13 +34,13 @@ A number of primitives are provided to support communicating the problem setup t
 
  * *Rock*: Structure to characterize the physical properties of the porous media.
 
- * *State*: List of evolved quantities and their repsective initial/boundary data and source terms.
+ * *State*: List of evolved quantities and their respective initial/boundary data and source terms.
 
 Beyond the mathematical specification of the problem, the user must provide instructions to control the details of the numerical simulation.  Some of this information tends to be generic (`e.g.`, simulation stop time, type and amount of output, etc), while some is more specific to the numerical integration options.  The control parameter database is tree-like: options at a finer level of detail are dependendent on choices made at a higher level.
 
 Additional notes:
 
- * Currently, the problem setup and control data is passed from the user into the Amanzi executable via a parameter list (specifically, a `Teuchos::ParameterList <http://www.python.org/>`_). Each entry in a ParameterList object can itself be a ParameterList, or can be data.  Supported data types include double, float, short, int, bool, string), and simple arrays of these basic types.  ParameterList objects may be initialized using an XML file; examples of the proper syntax are included below.
+ * Currently, the problem setup and control data is passed from the user into the Amanzi executable via a parameter list (specifically, a `Teuchos::ParameterList <http://trilinos.sandia.gov/packages/docs/r7.0/packages/teuchos/doc/html/index.html>`_). Each entry in a ParameterList object can itself be a ParameterList, or can be data.  Supported data types include double, float, short, int, bool, string), and simple arrays of these basic types.  ParameterList objects may be initialized using an XML file; examples of the proper syntax are included below.
 
  * It is intended that this specification be sufficiently detailed and flexible to support set up, solution and analysis of a broad range of simple model problems.  However, it is likely that details of the specification will evolve over time, as new capabilities are implemented within the Amanzi simulator.
 
@@ -98,15 +98,15 @@ processes (Section 2.5).
 Each state component must be labeled and defined in terms of physical properties: 
 mass density, viscosity, and diffusivity (Section 4.6).  Boundary conditions must be specified along the entire surface
 bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  
-Volumetric source terms, used to model infiltration (Section 3.7) and other loss processes, are defined for each state, if applicable.
+Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of source and loss processes, are defined for each state, if applicable.
 
 Tracers are labeled and defined in terms of 
-their carrier phase and group memebership, as necessary to support the chemistry model (Section 5).  In particular, 
+their carrier phase and group membership, as necessary to support the chemistry model (Section 5).  In particular, 
 the "total concentration" (Equation 5.5) is the weighted sum of all tracers in the the tracer group "Total".
 This is the only group of tracers that actually moves with the phase.  Other tracer groups include minerals
 and surface complexation; they occupy a slot in the state but do not move with the flow (see Section 5).
 Tracers may have volumetric sources as well, and like component sources their specification requires a region, strength and distribution functional.
-
+Supported functionals for initial and boundary data and source distributions are listed below.
 
 * "state" (list) can accept lists for named components (COMP), `"add tracer`" (list) to add a tracer, or lists for boundary conditions (BC).  Also a label specifies the dominant component, and a string array is used to specify groups of tracers
 
@@ -171,9 +171,9 @@ computational domain will be interpreted as a boundary condition instruction.
 Initial conditions are required for each phase over the entire computational domain.
 Boundary conditions are required on all domain boundaries (see Sections 3.3, 4.3).  Source terms for all are optional.  All are constructed using a limited number
 of explicitly parameterized functional forms.  If the simulation is to be intialized using a restart file,
-the phase and component definitions are taken from the restart file, and initial condition instructions provided
-here are quietly ignored.  Boundary conditions are required regardless of the initial data, and must be defined
-consistently, along with the source terms.
+the phase component and tracer definitions are taken from the restart file, and initial condition instructions provided
+here are quietly ignored, so that restarts are possible by simply changing a single control parameter (discussed in the control section).  Boundary conditions are
+required regardless of the initial data, and must be defined consistently.
 
 The following parameterized distribution functionals are supported for communicating initial conditions:
  * `"ic: constant`" requires `"value`" (see note below)
@@ -273,55 +273,32 @@ region with an integrated strength of 20.
 
 
 
-Example:
-
-.. code-block:: xml
-
-  <ParameterList name="source">
-    <ParameterList name="infiltration">
-      <Parameter name="state id" type="string" value="water"/>
-      <Parameter name="region" type="string" value="top"/>
-      <Parameter name="strength" type="double" value="7.6e-6"/>
-      <ParameterList name="source: uniform">
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="tracer discharge">
-      <Parameter name="state id" type="string" value="all tracers"/>
-      <Parameter name="region" type="string" value="bottom"/>
-      <Parameter name="strength" type="double" value="3.6e-7"/>
-      <ParameterList name="source: uniform">
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-In this example, there is an infiltration source of water in the top region, and a discharge of all the tracers through the bottom.
-
-
-
-
-
 2. Regions
 =======================================
 
 Regions are used in Amanzi to define the physical extent of the simulation domain and its bounding surfaces.
 Regions are also used to specify initial data and boundary conditions, and to define output data expected
 upon return from the simulator.  The user *must* define the special region labeled `"all`", which is the 
-entire simulation domain, as well as the boundary surface(s) which enclose the domain.
-In both supported meshing options, Amanzi will assume that the union of the specified boundary surfaces 
-envelopes the entire computational domain (*i.e.* is "water-tight").
-The special regions may also serve as generic regions (see the dicussion below for labeling conventions).
-This is also where the user declares which meshing option to use (`"structured`" or `"unstructured`").
+entire simulation domain, as well as the boundary surface(s) which enclose the domain; these regions are
+defined using a special syntax that is dependent on the meshing option (`"structured`" or `"unstructured`") that
+is selected.  Amanzi assumes that the union of the boundary surfaces envelopes the entire computational domain
+(*i.e.* is "water-tight").  The special regions (`"all`" and the boundaries) may also serve as generic
+regions (see the dicussion below for how these regions are labeled) and
+can thus be used to specify other components of the problem (source terms, initial conditions, etc).
+Importantly, this section is where the user declares which of the supported meshing options to use.
 
 Special note:
-For the `"structured`" mesh option, Amanzi supports only coordinate-aligned parallelepiped domains.
-Also, the bounding surfaces are implicitly defined as the planar surfaces that surround the domain.
-The boundary regions have the following (automatic) labels `"xlobc`", `"xhibc`", `"ylobc`", `"yhibc`",
-`"zlobc`", `"zhibc`".
+For the `"structured`" mesh option, Amanzi supports only coordinate-aligned parallelepiped domains,
+specified by the lower and upper bounding points in physical space.
+For this case, the bounding surfaces are implicitly defined as the planar surfaces that surround the domain,
+and are automatically generated with the following labels `"xlobc`", `"xhibc`", `"ylobc`", `"yhibc`",
+`"zlobc`", `"zhibc`" that are accessible throughout the input file.
 
 For the `"unstructured`" mesh option, Amanzi supports fixed meshes in the MOAB and MSTK formats, as well as 
-a simple mesh specification that accommodates a parallelepiped domain.  In all cases, the domain boundaries
-must be identified explicitly in the mesh file.  In most cases, these surfaces will be labeled subsets
-of the mesh faces.
+a simple mesh specification that accommodates a parallelepiped domain.  In the first two cases, the domain boundaries
+must be identified explicitly in the mesh file, for `"simple mesh`", the boundaries are created automatically, as
+following the scheme for the `"structured`" mesh option.  In most cases, these surfaces embedded in the mesh
+files will be labeled subsets of the mesh faces.
 
 Examples for specifying the domain and boundary regions for both the structured and unstructured options:
 
@@ -329,7 +306,7 @@ Examples for specifying the domain and boundary regions for both the structured 
 
   <ParameterList name="regions">
     <ParameterList name="domain">
-      <Parameter name="meshing option" type="string" value="Structured">
+      <Parameter name="meshing option" type="string" value="structured">
         <Parameter name="domain lo" type="Array double" value="{0. 0. 0.}"/>
         <Parameter name="domain hi" type="Array double" value="{1. 1. 1.}"/>
       </ParameterList>
@@ -342,7 +319,7 @@ or,
 
   <ParameterList name="regions">
     <ParameterList name="domain">
-      <Parameter name="meshing option" type="string" value="Unstructured">
+      <Parameter name="meshing option" type="string" value="unstructured">
         <ParameterList name="mesh file">
           <Parameter name="mesh file format" type="string" value="mstk"/>
           <ParameterList name="boundary surface labels">
