@@ -16,7 +16,7 @@ TEST(HDF5_MPI) {
   //Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
   //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1,
   //                                        comm));
-  Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
+  Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm);
 
   unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, 
                                                 Amanzi::AmanziMesh::OWNED);
@@ -96,7 +96,7 @@ TEST(HDF5_MPI) {
   // test reading data back
   Teuchos::RCP<Epetra_Vector> read_quantity;
   read_quantity = Teuchos::rcp(new Epetra_Vector(Mesh.cell_map(false)));
-  cout << endl;
+  //cout << endl;
   restart_output->readData(*read_quantity, "cell_quantity");
   
   //cout << "E>> read back:" << endl << *read_quantity;
