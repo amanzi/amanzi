@@ -344,12 +344,13 @@ void HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   int start = 0;
   for (int i=0; i<localdims[0]; i++) myidx[i] = i+start;
   
-  double *data;
+  double *data = new double[localdims[0]*localdims[1]];
   parallelIO_read_dataset(data, type, ndims, globaldims, localdims,
                           file, h5path, &IOgroup_, NONUNIFORM_CONTIGUOUS_READ);
   x.ReplaceMyValues(localdims[0], &data[0], &myidx[0]);
   
   parallelIO_close_file(file, &IOgroup_); 
+  delete data;
   
 }
   
