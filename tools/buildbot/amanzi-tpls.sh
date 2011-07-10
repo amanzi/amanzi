@@ -114,6 +114,18 @@
 #    compilers. if you want/need fortran support, mpi must be
 #    installed through the package manager or build manually.
 #
+#  - the built in compilers on OSX 10.6 are gcc 4.2.1. mac ports
+#    version of gcc 4.2 won't build on 10.6, so you must use a more
+#    recent version of gcc. More recent version of gcc are not binary
+#    compatible with gcc 4.2, so if you try linking to gcc 4.2
+#    compiled libraries with gcc 4.4 compiled libraries, link time
+#    errors will occur. The only way I've found to get around this is
+#    install gcc 4.4-4.5 with mac ports, then compile all additional
+#    libraries from scratch with this set of compilers. Installing mpi
+#    with macports puts the executables at /opt/local/bin/openmpicxx
+#    instead of /opt/local/bin/mpicxx. It is easier to maintain
+#    compatability in the script if we just compile mpi here as well.
+#
 #  - build files from an existing build by this script are removed. 
 #    if a package is already installed in $PREFIX, the installed files
 #    are not uninstalled! 
@@ -182,6 +194,10 @@
 # mstk:
 # https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.83rc3.tar.gz
 #
+# ccse:
+# https://ccse.lbl.gov/Software/tarfiles/ccse.tar.gz
+#
+#
 #################################################################################
 #
 # Manual downloads:
@@ -222,6 +238,7 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
+CCSE_VERSION=unused
 
 ################################################################################
 #
@@ -308,6 +325,11 @@ function download_archives {
     if [  ! -f ${SOURCE}/mstk-${MSTK_VERSION}.tar.gz ]; then
         wget --no-check-certificate https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-${MSTK_VERSION}.tar.gz
     fi
+
+    if [  ! -f ${SOURCE}/ccse.tar.gz ]; then
+        wget --no-check-certificate https://ccse.lbl.gov/Software/tarfiles/ccse.tar.gz
+    fi
+
     cd ${SCRIPT_DIR}
 }
 
@@ -342,9 +364,7 @@ function install_mpi {
         tar ${TAR_FLAGS} ${SOURCE}/openmpi-${OPENMPI_VERSION}.tar.gz -C ${PREFIX}/mpi
         cd ${MPI_DIR}
         ./configure --prefix=${PREFIX} \
-            --enable-static \
-            --enable-mpi-f90=no \
-            --enable-mpi-f77=no 
+            --enable-static
 
         if [ $? -ne 0 ]; then
             exit 
@@ -605,16 +625,15 @@ function install_exodus {
 
 
     cd ${EXODUS_DIR}
-    # fedora: possible error in next line \{NETCDF_LIBRARY\} should be {NETCDF_LIBRARY} is this failing on osx and ubuntu?
-    perl -w -i -p -e "s@TARGET_LINK_LIBRARIES\(exoIIv2c \$\{NETCDF_LIBRARY\}/libnetcdf\.a\)@TARGET_LINK_LIBRARIES\(exoIIv2c \${NETCDF_LIBRARY}/libnetcdf\.a \${NETCDF_LIBRARY}/libhdf5_hl\.a \${NETCDF_LIBRARY}/libhdf5\.a\)@" cbind/CMakeLists.txt
+
+    perl -w -i -p -e 's@TARGET_LINK_LIBRARIES\(exoIIv2c \${NETCDF_LIBRARY}/libnetcdf\.a\)@TARGET_LINK_LIBRARIES\(exoIIv2c \${NETCDF_DIR}/lib/libnetcdf\.a \${HDF5_PREFIX}/lib/libhdf5_hl\.a \${HDF5_PREFIX}/lib/libhdf5\.a\)@' cbind/CMakeLists.txt
 
     cd ${EXODUS_DIR}/build
 
     cmake \
-        -D MPI_DIR:FILEPATH=${MPI_PREFIX} \
-        -D DISABLE_FORTRAN:BOOL=on \
+        -D NETCDF_DIR:FILEPATH=${NETCDF_DIR} \
+        -D HDF5_PREFIX:PATH=${HDF5_PREFIX} \
         -D CMAKE_EXE_LINKER_FLAGS="-L${HDF5_PREFIX}/lib -lhdf5_hl -lhdf5 -L${MPI_PREFIX}/lib -lmpi -lmpi_cxx -L${ZLIB_PREFIX}/lib -lz " \
-        -D NETCDF_DIR:PATH=${NETCDF_PREFIX} \
         -D CMAKE_INSTALL_PREFIX:PATH=${PREFIX} \
         ..
 
@@ -860,6 +879,87 @@ function install_trilinos {
 
 ################################################################################
 #
+# ccse
+#
+# Notes(bandre): I'm not sure how often the ccse library will change,
+# but it would be nice if we had some fixed reference version to use.
+#
+################################################################################
+function install_ccse {
+    CCSE_DIR=${CCSE_PREFIX}/ccse
+    CCSE_CONFIG=1
+    CCSE_MAKE=1
+    CCSE_TEST=1
+    CCSE_INSTALL=1
+    CCSE_VERBOSE=0
+
+    rm -rf ${CCSE_DIR}
+
+    mkdir -p ${CCSE_PREFIX}
+    cd ${CCSE_PREFIX}
+    tar zxf ${SOURCE}/ccse.tar.gz
+    # TODO(bandre): is this "cd" needed?
+    cd ${CCSE_DIR}/tools/buildbot
+
+    # 1, 2, 3
+    CCSE_SPACEDIM=${AMANZI_SPACEDIM}
+
+    # FLOAT, DOUBLE
+    CCSE_PRECISION=${AMANZI_PRECISION}
+
+    if [ ${ENABLE_MPI} -eq 1 ]; then
+        export MPI_EXEC=${MPI_PREFIX}/bin/mpiexec
+        export MPI_EXEC_NUMPROCS_FLAG=-np
+    fi
+
+    mkdir -p ${CCSE_DIR}/build
+    cd ${CCSE_DIR}/build
+
+    if [ ${CCSE_VERBOSE} -eq 1 ]; then
+        VFLAG="--debug-output"
+    fi
+
+    cmake \
+        -D ENABLE_Config_Report:BOOL=ON \
+        -D MPI_PREFIX:FILEPATH=${MPI_PREFIX} \
+        -D MPI_EXEC:FILEPATH=${MPI_EXEC} \
+        -D MPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG} \
+        -D MPI_EXEC_ARGS:STRING="${MPI_EXEC_ARGS}" \
+        -D ENABLE_TESTS:BOOL=ON \
+        -D ENABLE_MPI:BOOL=${ENABLE_MPI} \
+        -D ENABLE_OpenMP:BOOL=${ENABLE_OpenMP} \
+        -D BL_SPACEDIM:INT=${CCSE_SPACEDIM} \
+        -D BL_PRECISION:STRING="${CCSE_PRECISION}" \
+        ${VFLAG} \
+        ..
+
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    if [ ${CCSE_VERBOSE} -eq 1 ]; then
+        VFLAG="VERBOSE=ON"
+    fi
+    make -j ${PARALLEL_NP} ${VFLAG}
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    make install
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+
+    ctest --timeout 60 --output-on-failure
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+    
+}
+
+
+################################################################################
+#
 # write a script for configuring and building amanzi
 #
 ################################################################################
@@ -874,7 +974,21 @@ AMANZI_DIR=
 AMANZI_MAKE=0
 AMANZI_CLOBBER=0
 AMANZI_TEST=0
+AMANZI_MAKE_NP=${PARALLEL_NP}
+AMANZI_MAKE_VERBOSE=0
 PLATFORM=${PLATFORM}
+
+ENABLE_MPI=${ENABLE_MPI}
+ENABLE_OpenMP=${ENABLE_OpenMP}
+
+# 1, 2, 3
+AMANZI_SPACEDIM=${AMANZI_SPACEDIM}
+
+# FLOAT, DOUBLE
+AMANZI_PRECISION=${AMANZI_PRECISION}
+
+# AMANZI, COREREACT (chooses chemistry evolution module)
+AMANZI_CHEMEVOL_PKG=${AMANZI_CHEMEVOL_PKG}
 
 # ugly centos buildbot hack
 CMAKE=`which cmake`
@@ -908,7 +1022,7 @@ function determine_amanzi_dir() {
     #echo "Amanzi directory: \$AMANZI_DIR"
 }
 
-while getopts "abcd:mt" flag
+while getopts "abcd:mntv" flag
 do
   case \$flag in
     a) AMANZI_CONFIG=1; AMANZI_MAKE=1; AMANZI_TEST=1;;
@@ -916,7 +1030,9 @@ do
     c) AMANZI_CONFIG=1;;
     d) determine_amanzi_dir \${OPTARG};;
     m) AMANZI_MAKE=1;;
+    n) AMANZI_MAKE_NP= \${OPTARG};;
     t) AMANZI_TEST=1;;
+    v) AMANZI_MAKE_VERBOSE=1;;
   esac
 done
 
@@ -955,10 +1071,13 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
 
     export CXX=${MPI_PREFIX}/bin/mpicxx
     export CC=${MPI_PREFIX}/bin/mpicc
+    export FC=${MPI_PREFIX}/bin/mpif90
+    export F90=${MPI_PREFIX}/bin/mpif90
+    export F77=${MPI_PREFIX}/bin/mpif77
 
     \${CMAKE} \\
         -D ENABLE_Config_Report:BOOL=ON \\
-        -D MPI_DIR:FILEPATH=${MPI_PREFIX} \\
+        -D ENABLE_MPI:BOOL=\${ENABLE_MPI} \\
         -D MPI_EXEC:FILEPATH=${MPI_PREFIX}/bin/mpiexec \\
         -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \\
         -D MPI_EXEC_ARGS:STRING="${MPIEXEC_ARGS}" \\
@@ -977,7 +1096,11 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
-        -D ENABLE_OpenMP:BOOL=ON \\
+        -D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
+        -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse/install \\
+        -D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
+        -D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
+        -D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
         ..
 
     if [ \$? -ne 0 ]; then
@@ -985,9 +1108,15 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
     fi
 fi
 
+if [ \${AMANZI_MAKE_VERBOSE} -eq 1 ]; then
+    AMANZI_VFLAG="VERBOSE=1"
+else
+    AMANZI_VLFAG=
+fi
+
 if [ \$AMANZI_MAKE -eq 1 ]; then
     cd \${AMANZI_DIR}/build
-    make -j ${PARALLEL_NP}
+    make -j \${AMANZI_MAKE_NP} \${AMANZI_VFLAG}
     if [ \$? -ne 0 ]; then
         exit 1
     fi
@@ -1028,16 +1157,24 @@ BUILD_TRILINOS=0
 BUILD_ZLIB=0
 BUILD_CURL=0
 BUILD_UNITTEST=0
+BUILD_CCSE=0
 BUILD_CHECK=0
 
-while getopts "abcdeghkmnop:stuwz" flag
+ENABLE_MPI=1
+ENABLE_OpenMP=1
+AMANZI_SPACEDIM=2
+AMANZI_PRECISION=DOUBLE
+AMANZI_CHEMEVOL_PKG=AMANZI
+
+while getopts "abcdefghikmnop:stuwz" flag
 do
   case $flag in
-    a) BUILD_OPENMPI=1; BUILD_BOOST=1; BUILD_CURL=1; BUILD_ZLIB=1; BUILD_HDF5=1; BUILD_NETCDF=1; BUILD_EXODUS=1; BUILD_MOAB=1; BUILD_METIS=1; BUILD_MSTK=1; BUILD_CGNS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1;;
+    a) BUILD_OPENMPI=1; BUILD_BOOST=1; BUILD_CURL=1; BUILD_ZLIB=1; BUILD_HDF5=1; BUILD_NETCDF=1; BUILD_EXODUS=1; BUILD_MOAB=1; BUILD_METIS=1; BUILD_MSTK=1; BUILD_CGNS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CCSE=1;;
     b) BUILD_BOOST=1;;
     c) BUILD_CHECK=1;;
     d) DOWNLOAD_ARCHIVES=1;;
     e) BUILD_EXODUS=1;;
+    f) BUILD_CCSE=1;;
     g) BUILD_CGNS=1;;
     h) BUILD_HDF5=1;;
     k) BUILD_MSTK=1;;
@@ -1075,18 +1212,16 @@ echo "BUILD_MSTK=$BUILD_MSTK      MSTK_PREFIX=$PREFIX"
 echo "BUILD_CGNS=$BUILD_CGNS      CGNS_PREFIX=$CGNS_PREFIX"
 echo "BUILD_UNITTEST=$BUILD_UNITTEST  UNITTEST_PREFIX=$UNITTEST_PREFIX"
 echo "BUILD_TRILINOS=$BUILD_TRILINOS  TRILINOS_PREFIX=$PREFIX"
+echo "BUILD_CCSE=$BUILD_CCSE      CCSE_PREFIX=$PREFIX"
+echo "ENABLE_MPI=$ENABLE_MPI"
+echo "ENABLE_OpenMP=$ENABLE_OpenMP"
+echo "AMANZI_SPACEDIM=$AMANZI_SPACEDIM"
+echo "AMANZI_PRECISION=$AMANZI_PRECISION"
 
 if [ $DOWNLOAD_ARCHIVES -eq 1 ]; then
     download_archives
     cd ${SCRIPT_DIR}
 fi
-
-#
-# don't use fortran for anything
-#
-export FC=/usr/bin/false
-export F77=/usr/bin/false
-export F90=/usr/bin/false
 
 if [ ${PLATFORM} == Fedora -o ${PLATFORM} == RHEL ]; then
     LD_RUN_PATH=$LD_RUN_PATH:${PREFIX}/lib
@@ -1095,8 +1230,38 @@ if [ ${PLATFORM} == Fedora -o ${PLATFORM} == RHEL ]; then
 fi
 
 #
-# build non-mpi dependent libraries and mpi using system compilers
+# build non-mpi dependent libraries and mpi using system compilers.
+# The system compilers may not be the ones we want, so if the user
+# specifies USE_XXX, then we use that.
 #
+if [ ! -z "${USE_CC}" ] && [ -n "${USE_CC}" ]; then
+    # echo "USE_CC exists and is not empty"
+    CC=${USE_CC}
+else
+    CC=gcc
+fi
+if [ ! -z "${USE_CXX}" ] && [ -n "${USE_CXX}" ]; then
+    CXX=${USE_CXX}
+else
+    CXX=g++
+fi
+if [ ! -z "${USE_FC}" ] && [ -n "${USE_FC}" ]; then
+    FC=${USE_FC}
+else
+    FC=gfortran
+fi
+if [ ! -z "${USE_F77}" ] && [ -n "${USE_F77}" ]; then
+    F77=${USE_F77}
+else
+    F77=gfortran
+fi
+if [ ! -z "${USE_F90}" ] && [ -n "${USE_F90}" ]; then
+    F90=${USE_F90}
+else
+    F90=gfortran
+fi
+
+export CC CXX FC F77 F90
 
 if [ $BUILD_CURL -eq 1 ]; then
     install_curl
@@ -1126,11 +1291,21 @@ fi
 #
 #  build mpi dependent libraries using mpi compilers
 #
-export CXX=${MPI_PREFIX}/bin/mpicxx 
-export CC=${MPI_PREFIX}/bin/mpicc 
+if [ $ENABLE_MPI -eq 1 ]; then
+    export CXX=${MPI_PREFIX}/bin/mpicxx 
+    export CC=${MPI_PREFIX}/bin/mpicc 
+    export FC=${MPI_PREFIX}/bin/mpif90
+    export F77=${MPI_PREFIX}/bin/mpif77
+    export F90=${MPI_PREFIX}/bin/mpif90
+fi
 
 if [ $BUILD_HDF5 -eq 1 ]; then
     install_hdf5
+    cd ${SCRIPT_DIR}
+fi
+
+if [ $BUILD_CCSE -eq 1 ]; then
+    install_ccse
     cd ${SCRIPT_DIR}
 fi
 
@@ -1171,3 +1346,4 @@ if [ $BUILD_TRILINOS -eq 1 ]; then
 fi
 
 generate_amanzi_build_script
+

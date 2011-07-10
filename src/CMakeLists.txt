@@ -30,5 +30,14 @@ add_subdirectory(transport)
 # Multiprocess coordinator
 add_subdirectory(mpc)
 
-# Amanzi binaries
+# interfaces
+add_subdirectory(common/interface_platform)
+
+# unstructured grid simualtion driver, and Amanzi binaries
 add_subdirectory(executables)
+
+# structured grid
+add_subdirectory(structured_grid)
+
+# standalone driver (produces mesh-independent executable)
+add_subdirectory(common/standalone_simulation_coordinator)

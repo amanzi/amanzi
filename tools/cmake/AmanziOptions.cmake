@@ -13,6 +13,9 @@
 include(CMakeDependentOption)
 include(FeatureSummary)
 
+enable_language(C)
+enable_language(CXX)
+enable_language(Fortran)
 
 # Set the build type for now we only build
 # a debug version

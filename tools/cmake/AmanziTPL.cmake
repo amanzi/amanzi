@@ -154,6 +154,12 @@ set_feature_info(ExodusII
                  "Required by all the mesh frameworks to read mesh files")
 
 
+##############################################################################
+# CCSE - http://ccse.lbl.gov/Software/ccse_core.html
+##############################################################################
+find_package(CCSE REQUIRED)
+set_feature_info(CCSE
+                 "CCSE BoxLib softare library required for structured grid")
 
 ##############################################################################
 ############################ Option Processing ###############################
