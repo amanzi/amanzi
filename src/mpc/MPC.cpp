@@ -62,8 +62,10 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      cout << "Chemistry ";
    }
    cout << endl;
-
-
+   
+   restart = mpc_parameter_list.get<bool>("Restart",false);
+   restart_file = mpc_parameter_list.get<string>("Restart file","NONE");
+     
    if (transport_enabled || flow_enabled || chemistry_enabled) {
      Teuchos::ParameterList state_parameter_list = 
        parameter_list.sublist("State");
@@ -229,26 +231,40 @@ void MPC::cycle_driver () {
   double vizdump_time = 0.0;
   int vizdump_time_count = 0;
 
-  // first solve the flow equation to steady state
-  if (flow_enabled) {
-    FPK->advance_to_steady_state();
-
-    // reset the time after the steady state solve
-    S->set_time(T0);
-    
-    S->update_darcy_flux(FPK->Flux());
-    S->update_pressure(FPK->Pressure());
-    FPK->commit_state(FS);
-    FPK->GetVelocity(*S->get_darcy_velocity());
-    
-    if ( flow_model == "Richards") 
-      {
-	Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
+  if (restart == false) 
+    {
+      
+      // first solve the flow equation to steady state
+      if (flow_enabled) {
+	FPK->advance_to_steady_state();
 	
-	RPK->GetSaturation(*S->get_water_saturation()); 
+	// reset the time after the steady state solve
+	S->set_time(T0);
+	
+	S->update_darcy_flux(FPK->Flux());
+	S->update_pressure(FPK->Pressure());
+	FPK->commit_state(FS);
+	FPK->GetVelocity(*S->get_darcy_velocity());
+	
+	if ( flow_model == "Richards") 
+	  {
+	    Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
+	    
+	    RPK->GetSaturation(*S->get_water_saturation()); 
+	  }
+	
+	
+	// write restart file after initial flow solve
+	if (restart_file != "NONE") S->write_restart( restart_file );
       }
-  }
-  
+    }
+  else
+    {
+      std::cout << "Reading restart file " << restart_file << std::endl;
+      
+      S->read_restart( restart_file );
+    }
+
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     
     if (gmv_output) {
@@ -407,7 +423,6 @@ void MPC::cycle_driver () {
       // in the process kernels
       if (transport_enabled) TPK->commit_state(TS);
       if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
-      
       
       // advance the iteration count
       iter++;

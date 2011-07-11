@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
 
   if (rank!=0) {
     cout.rdbuf(0);
-  } 
-
+  }
+ 
   Teuchos::CommandLineProcessor CLP;
   
   CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"
