@@ -549,7 +549,7 @@ void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVe
   for (int j = 0; j < Pcell.MyLength(); ++j) {
     mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    double K = (k_[j] / mu_);
+    double K =  (rho_ * k_[j] *k_rl_[j] / mu_); // (k_[j] / mu_);
     MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2);
     MD[j].GravityFlux(g_, gflux);
     for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
