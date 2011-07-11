@@ -199,10 +199,10 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
     {
       // get mesh block cells
       unsigned int mb_id = WRM[mb]->mesh_block();
-      unsigned int ncells = mesh_->get_set_size(mb,AmanziMesh::CELL,AmanziMesh::OWNED);
+      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
+      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -298,15 +298,14 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
   // add the time derivative to the diagonal
   Epetra_Vector celldiag(CellMap(false));
   dSofP(Pcell_own, celldiag);
-
+ 
   // get the porosity
   const Epetra_Vector& phi = FS->porosity();
 
   celldiag.Multiply(rho_,celldiag,phi,0.0);
-
+ 
   celldiag.Multiply(1.0/h,celldiag,*cell_volumes,0.0);
-
-
+  
   D_->add_to_celldiag(celldiag);
 
   // Compute the face Schur complement of the diffusion matrix.
@@ -336,10 +335,11 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   Epetra_Vector &Fface_own = *CreateFaceView(F);
 
 
+
   // Create input cell and face pressure vectors that include ghosts.
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
-
+  
   UpdateVanGenuchtenRelativePermeability(Pcell);
 
   Epetra_Vector Pface(FaceMap(true));
@@ -369,15 +369,22 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
     for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K * gflux[k];
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
+    
   }
+
 
   // Apply final BC fixups to FFACE.
   apply_BC_final_(Fface); // modifies used values
 
+  // double nrm[1];
+  // Fface_own.Norm1(nrm);
+  // std::cout << nrm[0] << std::endl;
 
   // Copy owned part of result into the output vectors.
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
   for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
+    
+
 
   delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
 }
