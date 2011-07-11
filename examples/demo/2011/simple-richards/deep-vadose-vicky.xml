@@ -2,7 +2,7 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
-    <Parameter name="Read" type="string" value="./1D-column.exo"/>
+    <Parameter name="Read" type="string" value="./1D-column.par"/>
   </ParameterList>    
 
   
@@ -17,11 +17,11 @@
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <Parameter name="Viz dump cycle frequency" type="int" value="100"/>
     <ParameterList name="CGNS">
-      <Parameter name="File name" type="string" value="deep-vadose-vicky-1PE.cgns"/>
+      <Parameter name="File name" type="string" value="deep-vadose-vicky-4PE.cgns"/>
     </ParameterList>    
     <Parameter name="Gnuplot output" type="bool" value="false"/>
     <Parameter name="Restart" type="bool" value="true"/>
-    <Parameter name="Restart file" type="string" value="restart-1PE.h5"/>
+    <Parameter name="Restart file" type="string" value="restart-4PE.h5"/>
   </ParameterList> 
 
   

@@ -650,7 +650,7 @@ void State::read_restart ( std::string filename )
   if (rank == 0) {
     restart_output->readData(PE0, "pressure");
   }
-  pressure->Export( PE0, *all_to_one_cell_export, Insert);   
+  pressure->Import( PE0, *all_to_one_cell_export, Insert);   
 
   if (rank == 0) {
     restart_output->readData(PEF, "darcy_flux");

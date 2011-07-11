@@ -263,6 +263,8 @@ void MPC::cycle_driver () {
       std::cout << "Reading restart file " << restart_file << std::endl;
       
       S->read_restart( restart_file );
+
+      S->get_pressure()->Print(std::cout);
     }
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
