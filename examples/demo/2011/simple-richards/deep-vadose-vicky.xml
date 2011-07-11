@@ -17,11 +17,11 @@
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <Parameter name="Viz dump cycle frequency" type="int" value="100"/>
     <ParameterList name="CGNS">
-      <Parameter name="File name" type="string" value="deep-vadose-vicky-4PE.cgns"/>
+      <Parameter name="File name" type="string" value="deep-vadose-vicky-3PE.cgns"/>
     </ParameterList>    
     <Parameter name="Gnuplot output" type="bool" value="false"/>
     <Parameter name="Restart" type="bool" value="true"/>
-    <Parameter name="Restart file" type="string" value="restart-4PE.h5"/>
+    <Parameter name="Restart file" type="string" value="restart-3PE.h5"/>
   </ParameterList> 
 
   
@@ -59,10 +59,10 @@
 
     <Parameter name="CFL" type="double" value="1"/>
     <Parameter name="discretization order" type="int" value="1"/>
-    <Parameter name="enable internal tests" type="string" value="yes"/>
+    <Parameter name="enable internal tests" type="string" value="no"/>
     <Parameter name="internal tests tolerance" type="double" value="1e-06"/>
     <Parameter name="maximal time step" type="double" value="1e+99"/>
-    <Parameter name="verbosity level" type="int" value="0"/>
+    <Parameter name="verbosity level" type="int" value="1"/>
 
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="1"/>

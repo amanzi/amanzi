@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
-  if (rank!=0) {
-    cout.rdbuf(0);
-  }
+  // if (rank!=0) {
+  //   cout.rdbuf(0);
+  // }
  
   Teuchos::CommandLineProcessor CLP;
   

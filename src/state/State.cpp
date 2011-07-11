@@ -542,16 +542,24 @@ void State::init_restart( )
     all_to_one_node_map = Teuchos::rcp(new Epetra_Map(nums[0],nums[0],gids,0, * mesh_maps->get_comm() ));
     delete [] gids;
 
-    gids = new int[nums[2]];
-    for (int i=0; i<nums[2]; i++) gids[i] = i;
-    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(nums[2],nums[2],gids,0, * mesh_maps->get_comm() ));
-    delete [] gids;    
+    // gids = new int[nums[2]];
+    // for (int i=0; i<nums[2]; i++) gids[i] = i;
+    // all_to_one_face_map = Teuchos::rcp(new Epetra_Map(nums[2],nums[2],gids,0, * mesh_maps->get_comm() ));
+    // delete [] gids;  
+
+    int max_gid = mesh_maps->face_map(false).MaxAllGID();
+    int min_gid = mesh_maps->face_map(false).MinAllGID();
+    gids = new int [max_gid-min_gid+1];
+    for (int i=0; i<max_gid-min_gid+1; i++) gids[i] = min_gid+i;
+    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid,max_gid,gids,0, * mesh_maps->get_comm() ));
+    
 
   } else {
     int *gids;
+    int max_gid = mesh_maps->face_map(false).MaxAllGID();
     all_to_one_cell_map = Teuchos::rcp(new Epetra_Map(nums[1],0,gids,0, * mesh_maps->get_comm() ) );
     all_to_one_node_map = Teuchos::rcp(new Epetra_Map(nums[0],0,gids,0, * mesh_maps->get_comm() ) );
-    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(nums[2],0,gids,0, * mesh_maps->get_comm() ) );
+    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid,0,gids,0, * mesh_maps->get_comm() ) );
   }
 
   // make the all to one exporters 
