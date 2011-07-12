@@ -551,7 +551,7 @@ void State::init_restart( )
     int min_gid = mesh_maps->face_map(false).MinAllGID();
     gids = new int [max_gid-min_gid+1];
     for (int i=0; i<max_gid-min_gid+1; i++) gids[i] = min_gid+i;
-    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid,max_gid,gids,0, * mesh_maps->get_comm() ));
+    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid+1,max_gid+1,gids,0, * mesh_maps->get_comm() ));
     
 
   } else {
@@ -559,7 +559,7 @@ void State::init_restart( )
     int max_gid = mesh_maps->face_map(false).MaxAllGID();
     all_to_one_cell_map = Teuchos::rcp(new Epetra_Map(nums[1],0,gids,0, * mesh_maps->get_comm() ) );
     all_to_one_node_map = Teuchos::rcp(new Epetra_Map(nums[0],0,gids,0, * mesh_maps->get_comm() ) );
-    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid,0,gids,0, * mesh_maps->get_comm() ) );
+    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid+1,0,gids,0, * mesh_maps->get_comm() ) );
   }
 
   // make the all to one exporters 
@@ -593,7 +593,9 @@ void State::write_restart ( std::string filename )
     restart_output.writeCellData(PE0, "pressure");
   }
 
+  //darcy_flux->Print(std::cout);
   PEF.Export( *darcy_flux, *all_to_one_face_export, Insert);
+  //PEF.Print(std::cout);
   if (rank == 0) {
     restart_output.writeCellData(PEF, "darcy_flux");
   }

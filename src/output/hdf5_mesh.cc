@@ -486,7 +486,6 @@ void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
     
   status = H5Dclose(dataset);
   status = H5Fclose(file);
-    
 }
   
 Teuchos::XMLObject HDF5::addXdmfAttribute_(std::string varname,
