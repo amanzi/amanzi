@@ -285,7 +285,6 @@ function download_archives {
     if [ ${BOOST_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/boost_${BOOST_VERSION}.tar.bz2 ]; then
 	URL=http://sourceforge.net/projects/boost/files/boost/1.46.1/boost_1_46_1.tar.bz2
         wget $URL
-
     fi
 
     if [ ${UNITTEST_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/unittest-cpp-${UNITTEST_VERSION}.zip ]; then
