@@ -160,7 +160,7 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
     endif()
 
     # Now, make sure the rest are in the same place
-    set(CCSE_LIBRARIES amrlib;mglib;avlib;bndrylib;boxlib)
+    set(CCSE_LIBRARIES amrlib;mglib;avlib;bndrylib;boxlib;gslib)
 
     foreach (L ${CCSE_LIBRARIES})
 
