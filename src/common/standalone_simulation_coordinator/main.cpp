@@ -1,5 +1,9 @@
-#include "amanzi_unstructured_grid_simulation_driver.hpp"
-#include "amanzi_structured_grid_simulation_driver.H"
+#ifdef ENABLE_Unstructured
+  #include "amanzi_unstructured_grid_simulation_driver.hpp"
+#endif
+#ifdef ENABLE_Structured
+  #include "amanzi_structured_grid_simulation_driver.H"
+#endif
 
 #include <iostream>
 
@@ -11,6 +15,9 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+
+#include "dbc.hh"
+#include "errors.hh"
 
 int main(int argc, char *argv[])
 {
@@ -74,11 +81,19 @@ int main(int argc, char *argv[])
   
   if (grid_option=="Structured")
     {
+#ifdef ENABLE_Structured
       simulator = new AmanziStructuredGridSimulationDriver();
+#else
+      amanzi_throw(Errors::Message("Structured not supported in current build"));
+#endif
     }
   else if (grid_option=="Unstructured")
     {
+#ifdef ENABLE_Unstructured
       simulator = new AmanziUnstructuredGridSimulationDriver();
+#else
+      amanzi_throw(Errors::Message("Unstructured not supported in current build"));
+#endif
     }
 
   ObservationData output_observations;  
@@ -86,7 +101,6 @@ int main(int argc, char *argv[])
 
   delete simulator;
   delete comm;
-      
 }
 
 

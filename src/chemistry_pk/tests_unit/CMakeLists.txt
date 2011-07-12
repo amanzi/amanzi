@@ -49,17 +49,17 @@ include_directories(${Epetra_INCLUDE_DIRS})
 
 add_executable(chemistry_pk_tests
                main.cc
-	       test_chemistry_pk.cc)
+               test_chemistry_pk.cc)
 
 target_link_libraries(chemistry_pk_tests chemistry state 
                       simple_mesh error_handling exodus 
                       ${UnitTest_LIBRARIES} 
-		      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_test(chemistry_pk chemistry_pk_tests KIND unit)
 
 if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
   execute_process(COMMAND ${CMAKE_COMMAND} -E
-                  copy_directory ${CHEM_SOURCE_DIR}/tests_unit ${CHEM_BINARY_DIR}/tests_unit)
+                  copy_directory ${CHEMPK_SOURCE_DIR}/tests_unit ${CHEMPK_BINARY_DIR}/tests_unit)
 endif()
 
 

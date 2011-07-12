@@ -976,6 +976,8 @@ AMANZI_TEST=0
 AMANZI_MAKE_NP=${PARALLEL_NP}
 AMANZI_MAKE_VERBOSE=0
 PLATFORM=${PLATFORM}
+ENABLE_Structured=${ENABLE_Structured}
+ENABLE_Unstructured=${ENABLE_Unstructured}
 
 ENABLE_MPI=${ENABLE_MPI}
 ENABLE_OpenMP=${ENABLE_OpenMP}
@@ -1100,6 +1102,8 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
         -D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
         -D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
+        -D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
+        -D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
         ..
 
     if [ \$? -ne 0 ]; then
@@ -1164,6 +1168,8 @@ ENABLE_OpenMP=1
 AMANZI_SPACEDIM=2
 AMANZI_PRECISION=DOUBLE
 AMANZI_CHEMEVOL_PKG=AMANZI
+ENABLE_Structured=0
+ENABLE_Unstructured=1
 
 while getopts "abcdefghikmnop:stuwz" flag
 do
@@ -1216,6 +1222,8 @@ echo "ENABLE_MPI=$ENABLE_MPI"
 echo "ENABLE_OpenMP=$ENABLE_OpenMP"
 echo "AMANZI_SPACEDIM=$AMANZI_SPACEDIM"
 echo "AMANZI_PRECISION=$AMANZI_PRECISION"
+echo "ENABLE_Structured=$ENABLE_Structured"
+echo "ENABLE_Unstructured_=$ENABLE_Unstructured"
 
 if [ $DOWNLOAD_ARCHIVES -eq 1 ]; then
     download_archives
