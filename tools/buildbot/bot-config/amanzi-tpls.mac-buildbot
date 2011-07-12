@@ -2,6 +2,12 @@
 #
 # sudo port install cmake
 
+USE_CC=/opt/local/bin/gcc-mp-4.5
+USE_CXX=/opt/local/bin/g++-mp-4.5
+USE_FC=/opt/local/bin/gfortran-mp-4.5
+USE_F77=/opt/local/bin/gfortran-mp-4.5
+USE_F90=/opt/local/bin/gfortran-mp-4.5
+
 PREFIX=${HOME}/slaves/amanzi/amanzi-libs
 SOURCE=${HOME}/slaves/amanzi/tpl-source
 WORK_DIR=${HOME}/slaves/amanzi
@@ -16,6 +22,7 @@ ZLIB_PREFIX=${PREFIX}
 CURL_PREFIX=${PREFIX}
 METIS_PREFIX=${PREFIX}
 MSTK_PREFIX=${PREFIX}
+CCSE_PREFIX=${PREFIX}
 
 PARALLEL_NP=2
 MPIEXEC_ARGS='-mca mpi_yield_when_idle 1'
