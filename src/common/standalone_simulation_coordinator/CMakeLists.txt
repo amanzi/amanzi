@@ -99,7 +99,7 @@ endif()
 # Binary: amanzi-demo-driver
 #
 if ( ENABLE_Unstructured )
-  set(ssc_unstructured_grid_libs mpc state transport flow udriv chemistry)
+  set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry)
 else()
   set(ssc_unstructured_grid_libs)
 endif()
@@ -128,7 +128,7 @@ endif()
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
 set(ssc_common_libs error_handling ${GEOCHEM_LIBS})
 
-set(ssc_tpl_libs_incl ${ssc_structured_grid_libs} ${ssc_unstructured_grid_libs} ${ssc_common_libs})
+set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
 set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
 
 add_executable(ssc main.cpp)

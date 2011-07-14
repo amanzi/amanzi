@@ -1223,7 +1223,7 @@ echo "ENABLE_OpenMP=$ENABLE_OpenMP"
 echo "AMANZI_SPACEDIM=$AMANZI_SPACEDIM"
 echo "AMANZI_PRECISION=$AMANZI_PRECISION"
 echo "ENABLE_Structured=$ENABLE_Structured"
-echo "ENABLE_Unstructured_=$ENABLE_Unstructured"
+echo "ENABLE_Unstructured=$ENABLE_Unstructured"
 
 if [ $DOWNLOAD_ARCHIVES -eq 1 ]; then
     download_archives
