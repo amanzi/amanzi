@@ -48,4 +48,7 @@ add_subdirectory(reactions)
 file(GLOB chem_inc "${CHEM_INCLUDES_DIR}/*")
 add_install_include_file(${chem_inc})
 
-
+if (BUILD_TESTS)
+  add_subdirectory(tests_unit)
+  add_subdirectory(tests_regression)
+endif()

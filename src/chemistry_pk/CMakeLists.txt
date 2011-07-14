@@ -36,5 +36,4 @@ add_install_library(chemistry)
 
 if (BUILD_TESTS)
   add_subdirectory(tests_unit)
-  add_subdirectory(tests_regression)
 endif()
