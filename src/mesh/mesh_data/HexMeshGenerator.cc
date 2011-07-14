@@ -1,7 +1,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Mon May  2 12:45:31 2011
+ * @date Mon Jun 20 13:22:08 2011
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -9,6 +9,7 @@
  */
 
 #include <algorithm>
+#include <boost/format.hpp>
 #include <boost/lambda/lambda.hpp>
 namespace bl = boost::lambda;
 
@@ -224,14 +225,25 @@ HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
 
     // std::cerr << "cell " << gidx << ": " << i << ", " << j << ", " << k << std::endl;
 
+    // This numbering does not match ExodusII
+    // *(c+0) = global_vertex(i  , j  , k  );
+    // *(c+1) = global_vertex(i+1, j  , k  );
+    // *(c+2) = global_vertex(i+1, j+1, k  );
+    // *(c+3) = global_vertex(i  , j+1, k  );
+    // *(c+4) = global_vertex(i  , j  , k+1);
+    // *(c+5) = global_vertex(i+1, j  , k+1);
+    // *(c+6) = global_vertex(i+1, j+1, k+1);
+    // *(c+7) = global_vertex(i  , j+1, k+1);
+
+    // This numbering matches ExodusII
     *(c+0) = global_vertex(i  , j  , k  );
-    *(c+1) = global_vertex(i+1, j  , k  );
-    *(c+2) = global_vertex(i+1, j+1, k  );
-    *(c+3) = global_vertex(i  , j+1, k  );
-    *(c+4) = global_vertex(i  , j  , k+1);
-    *(c+5) = global_vertex(i+1, j  , k+1);
+    *(c+1) = global_vertex(i  , j  , k+1);
+    *(c+2) = global_vertex(i+1, j  , k+1);
+    *(c+3) = global_vertex(i+1, j  , k  );
+    *(c+4) = global_vertex(i  , j+1, k  );
+    *(c+5) = global_vertex(i  , j+1, k+1);
     *(c+6) = global_vertex(i+1, j+1, k+1);
-    *(c+7) = global_vertex(i  , j+1, k+1);
+    *(c+7) = global_vertex(i+1, j+1, k  );
     c += nvcell;
   }
 
@@ -300,31 +312,38 @@ HexMeshGenerator::generate_the_sidesets(void)
     std::string ssname("Bogus");
 
     // these sides match the sides in shards::Hexahedron<8>:
-
+    
+    int ssid(-1);
     switch (side) {
-    case (0):
-      ssname = "South";
-      jmax = 1;
-      break;
-    case (1):
-      ssname = "West";
-      imax = 1;
-      break;
-    case (2):
-      ssname = "North";
-      jmin = jmax - 1;
-      break;
     case (3):
-      ssname = "East";
-      imin = imax - 1;
-      break;
-    case (4):
       ssname = "Bottom";
       kmax = 1;
+      ssid = 4;
       break;
-    case (5):
+    case (2):
+      ssname = "East";
+      imin = imax - 1;
+      ssid = 1;
+      break;
+    case (1):
       ssname = "Top";
       kmin = kmax - 1;
+      ssid = 5;
+      break;
+    case (0):
+      ssname = "West";
+      imax = 1;
+      ssid = 3;
+      break;
+    case (4):
+      ssname = "South";
+      jmax = 1;
+      ssid = 0;
+      break;
+    case (5):
+      ssname = "North";
+      jmin = jmax - 1;
+      ssid = 2;
       break;
     }
 
@@ -338,12 +357,17 @@ HexMeshGenerator::generate_the_sidesets(void)
           if (cell_idxmap_.find(cellidx) != cell_idxmap_.end()) {
             clist.push_back(cell_idxmap_[cellidx]);
             slist.push_back(side);
+            // std::cerr << 
+            //   boost::str(boost::format("%02d: Side set %2d: %5d (%5d) %2d") % 
+            //              comm_->MyPID() % ssid % cellidx % cell_idxmap_[cellidx] % side)
+            //           << std::endl;
+                         
           }
         }
       }
     }
 
-    Side_set* ss = Side_set::build_from(side, clist, slist, ssname);
+    Side_set* ss = Side_set::build_from(ssid, clist, slist, ssname);
     result.push_back(ss);
   }
 

@@ -62,6 +62,8 @@ private:
   std::vector<string> compnames; 
 
   std::string flow_model;
+  std::string restart_file;
+  bool restart;
 
 };
 

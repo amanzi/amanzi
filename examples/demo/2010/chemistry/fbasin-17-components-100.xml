@@ -13,7 +13,7 @@ time limits, etc.
   <ParameterList name="Mesh">
     <Parameter name="Mesh Class" type="string" value="MOAB"/>
     <ParameterList name="MOAB Mesh Parameters">
-      <Parameter name="Exodus file name" type="string" value="./fbasin_unstr_100_V02_4P.h5m"/>
+      <Parameter name="Exodus file name" type="string" value="unstruc_100_V02/fbasin_unstr_100_V02_4P.h5m"/>
     </ParameterList>   
   </ParameterList>
   

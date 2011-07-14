@@ -90,6 +90,7 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
+    set(amanzi_libs geometry mesh mesh_audit moab_mesh state mpc flow transport chemistry)
     
     if ( ENABLE_MOAB_Mesh )
         include_directories(${MOAB_SOURCE_DIR})

@@ -91,9 +91,9 @@ if ( BUILD_TESTS )
         add_amanzi_test(transport_serial_mstk transport_serial_mstk KIND unit)
 
         # Test: transport (parallel)
-        #add_executable(transport_parallel_mstk test/Main.cc test/test_mstk_parallel.cpp)
-        #target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        #add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
+        add_executable(transport_parallel_mstk test/Main.cc test/test_mstk_parallel.cpp)
+        target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
     endif()    
 
     # Tests 5 and 6

@@ -1,28 +1,22 @@
+// Emacs Mode Line: -*- Mode:c++; c-default-style: "google"; indent-tabs-mode: nil -*-
 // -------------------------------------------------------------
 /**
- * @file   stk_hex_mesh_test.cc
+ * @file   verify_hex.cc
  * @author William A. Perkins
- * @date Thu Dec 30 08:45:38 2010
+ * @date Tue May 24 07:48:43 2011
  * 
- * @brief  
+ * @brief  A simple test of hex-mesh generation -- serial or parallel
  * 
  * 
  */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created December 13, 2010 by William A. Perkins
-// Last Change: Thu Dec 30 08:45:38 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
 
-
-static const char* SCCS_ID = "$Id$ Battelle PNL";
+// -------------------------------------------------------------
+// -------------------------------------------------------------
+// Created May 24, 2011 by William A. Perkins
+// Last Change: Tue May 24 07:48:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// -------------------------------------------------------------
 
 #include <iostream>
-
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Epetra_Vector.h>
-#include <Isorropia_EpetraPartitioner.hpp>
-
 #include <boost/format.hpp>
 // TODO: We are using depreciated parts of boost::filesystem
 #define BOOST_FILESYSTEM_VERSION 2
@@ -31,8 +25,15 @@ namespace bf = boost::filesystem;
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
 
-#include "Mesh_STK.hh"
+#include <Teuchos_GlobalMPISession.hpp>
+#include <Epetra_Vector.h>
+#include <Isorropia_EpetraPartitioner.hpp>
+#include <Epetra_MpiComm.h>
+
+#include "MeshFactory.hh"
 #include "MeshAudit.hh"
+#include "MeshException.hh"
+
 #include "cgns_mesh_par.hh"
 
 // -------------------------------------------------------------
@@ -47,12 +48,12 @@ namespace po = boost::program_options;
  * @param cgnsout CGNS format file to produce
  */
 void
-dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &maps, const std::string& cgnsout)
+dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& cgnsout)
 {
-  Amanzi::CGNS_PAR::create_mesh_file(maps, cgnsout);
+  Amanzi::CGNS_PAR::create_mesh_file(mesh, cgnsout);
 
-  Epetra_Vector part(maps.cell_map(false));
-  int nmycell(maps.cell_map(false).NumMyElements());
+  Epetra_Vector part(mesh.cell_map(false));
+  int nmycell(mesh.cell_map(false).NumMyElements());
   std::vector<int> myidx(nmycell, 0);
   for (unsigned int i = 0; i < nmycell; i++) myidx[i] = i;
 
@@ -65,11 +66,14 @@ dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &maps, const std::string& cgns
   Amanzi::CGNS_PAR::close_data_file();
 }
 
+
 // -------------------------------------------------------------
 // do_the_audit
 // -------------------------------------------------------------
 int
-do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> maps, const std::string& name)
+do_the_audit(const int& me, 
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh, 
+             const std::string& name)
 {
   int lresult(0);
 
@@ -79,12 +83,12 @@ do_the_audit(const int& me, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> maps, const s
   std::ofstream ofs(ofile.c_str());
   if (me == 0)
     std::cout << "Writing results to " << ofile.c_str() << ", etc." << std::endl;
-  Amanzi::MeshAudit audit(maps, ofs);
+  Amanzi::MeshAudit audit(mesh, ofs);
   lresult = audit.Verify();
 
   int gresult;
 
-  maps->get_comm()->MaxAll(&lresult, &gresult, 1);
+  mesh->get_comm()->MaxAll(&lresult, &gresult, 1);
 
   return gresult;
 
@@ -103,16 +107,14 @@ main(int argc, char **argv)
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   const int nproc(comm.NumProc());
   const int me(comm.MyPID());
-  stk::ParallelMachine pm(comm.Comm());
-  
+
   unsigned int xcells(4), ycells(4), zcells(4);
   double xdelta(1.0), ydelta(1.0), zdelta(1.0);
   double xorigin(0.0), yorigin(0.0), zorigin(0.0);
-  std::string outname("stk_mesh_test_hex");
+  std::string outname("verify_hex");
   std::string outcgns;
 
   bool doaudit(true);
-  bool doredist(false);
 
   po::options_description desc("Available options");
 
@@ -122,8 +124,6 @@ main(int argc, char **argv)
       ("help", "produce this help message")
 
       ("noaudit", "do not audit the generated mesh")
-
-      ("redistribute", "redistribute generated mesh over available processors")
 
       ("xcells", po::value<unsigned int>()->default_value(xcells), "number of cells in the x-direction")
       ("ycells", po::value<unsigned int>()->default_value(ycells), "number of cells in the y-direction")
@@ -155,7 +155,6 @@ main(int argc, char **argv)
     }
 
     if (vm.count("noaudit")) doaudit = false;
-    if (vm.count("redistribute")) doredist = true;
 
     xcells = vm["xcells"].as<unsigned int>();
     ycells = vm["ycells"].as<unsigned int>();
@@ -202,33 +201,18 @@ main(int argc, char **argv)
 
   // generate a mesh
   
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
-    maps(new Amanzi::AmanziMesh::Mesh_STK(comm, 
-                                     xcells, ycells, zcells,
-                                     xorigin, yorigin, zorigin,
-                                     xdelta, ydelta, zdelta));
-
-  // redistribute the mesh, if called for
-
-  if (doredist) {
-
-    // set some parameters, just to show we can
-
-    Teuchos::ParameterList params;
-    params.set("PARTITIONING METHOD", "HYPERGRAPH");
-    params.set("IMBALANCE TOL", "1.01");
-    Teuchos::ParameterList& sublist = params.sublist("Zoltan");
-    // don't do this: sublist.set("LB_METHOD", "HYPERGRAPH");
-    sublist.set("PHG_REPART_MULTIPLIER", "1000");
-    sublist.set("PHG_CUT_OBJECTIVE", "CONNECTIVITY");
-
-    maps->redistribute(params);
-  }
-
+  Amanzi::AmanziMesh::MeshFactory factory(comm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+      mesh(factory(xorigin, yorigin, zorigin,
+                   xorigin+xdelta*xcells,
+                   yorigin+ydelta*ycells,
+                   zorigin+zdelta*zcells,
+                   xcells, ycells, zcells));
+  
   // make sure it's OK
 
   if (doaudit) {
-    int notok(do_the_audit(me, maps, outname));
+    int notok(do_the_audit(me, mesh, outname));
     if (me == 0) {
       std::cout << "Mesh \"" << outname << "\" " 
                 << (notok ? "has errors" : "OK") << std::endl;
@@ -237,7 +221,7 @@ main(int argc, char **argv)
 
   // dump it out
 
-  dump_cgns(me, *maps, outcgns);
+  dump_cgns(me, *mesh, outcgns);
 
   return 0;
 }

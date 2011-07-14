@@ -1,0 +1,50 @@
+============================================================================
+
+================================
+Amanzi Input File Specfication
+================================
+
+The Input File Specfication is in the restructured text format
+in the file AmanziInputSpec.rst.  The contents are simply the
+old file, we need to decide what needs to change to make it a 
+spec, and what new content to add before June 30.  
+
+This file is rendered on the Trac/wiki directly from the source
+repository. However, for development of the text, locally we need to
+be able to build html or pdf versions.  We may distribute PDF versions
+anyway.  The catch is that the base docutils tool does not support the
+..code-block directive that we need to render XML.
+
+To work around this we use a wrapper to rst2html, and rst2latex
+that registers this directive and then uses pygments to do the
+sytax highlighting.  These wrappers are called 
+
+  rst2html-pygments
+  rst2latex-pygments
+
+and are available on the web
+
+http://docutils.sourceforge.net/sandbox/code-block-directive/
+
+For the short term I've put these wrappers along with style
+sheets/files in the code-block subdirectory.  There is a rudimentary
+Makefile there to help those using Unix based systems.  To create html
+that you can view locally in a browser use
+
+make html
+
+and to make PDF use
+
+make pdf
+
+to clean up the mess
+
+make clean
+
+---------------------------
+
+Portability at this point is less than ideal here, but its a start.
+We should probably consider scons for building this stuff and work
+on improving portability of these wrappers.
+
+===========================================================================

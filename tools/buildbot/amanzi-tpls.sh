@@ -978,6 +978,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
         -D ENABLE_OpenMP:BOOL=ON \\
+        -D ENABLE_HDF5:BOOL=ON \\
         ..
 
     if [ \$? -ne 0 ]; then

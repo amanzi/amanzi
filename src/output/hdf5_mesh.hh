@@ -9,6 +9,11 @@
 #include "Teuchos_XMLObject.hpp"
 
 extern "C" {
+#define H5Gcreate_vers 2
+#define H5Dcreate_vers 2
+#define H5Gopen_vers 2
+#define H5Dopen_vers 2
+
 #include "hdf5.h"
 };
 
@@ -55,7 +60,7 @@ class HDF5 {
 
   // Create h5 file for data output, create accompanying Xdmf files for
   // ParaView and Visit
-  void createDataFile(std::string mesh_filename, std::string data_filename);
+  void createDataFile(std::string data_filename);
   // Adds time step attributes to ParaView and VisIt Xdmf files.  Creates
   // individual Xdmf for the current step.
   // TODO(barker): The individual step file can be remove after VisIt updates.
@@ -63,11 +68,11 @@ class HDF5 {
   void createTimestep(const double time, const int iteration);
   void endTimestep();
 
-  // Write node data to HDF5 data file.
+  // Write data to HDF5 data file.
   void writeNodeData(const Epetra_Vector &x, const std::string varname);
-
-  // Write cell data to HDF5 data file.
   void writeCellData(const Epetra_Vector &x, const std::string varname);
+  void writeData(const Epetra_Vector &x, const std::string varname);
+  void readData(Epetra_Vector &x, const std::string varname);
 
  private:
 
@@ -89,9 +94,10 @@ class HDF5 {
                                           const double time,
                                           const int iteration);
   void writeXdmfVisitGrid_(std::string filename);
-
+  
   void writeFieldData_(const Epetra_Vector &x, std::string varname,
                        std::string loc);
+  void readFieldData_(Epetra_Vector &x, std::string varname);
 
   // track xml for viz
   // TODO(barker): need to set default value
