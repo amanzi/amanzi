@@ -9,6 +9,9 @@
 include(TestManager)
 include(InstallManager)
 
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
+
 # Chemistry includes
 include_directories(${CHEM_INCLUDES_DIR})
 
@@ -30,7 +33,7 @@ add_executable(chemistry_tests
 	       test_kinetic_rate.cc
 	       test_beaker.cc)
 target_link_libraries(chemistry_tests chemistry 
-                      error_handling ${UnitTest_LIBRARIES})
+                      error_handling ${GEOCHEM_LIBS} ${UnitTest_LIBRARIES})
 add_amanzi_test(chemistry chemistry_tests KIND unit)
 #
 # Install targets
