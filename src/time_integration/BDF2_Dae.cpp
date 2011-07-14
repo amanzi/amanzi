@@ -554,7 +554,7 @@ namespace BDF2 {
 	u_tmp.Update(-1.0/h,u0,1.0/h);
 	
 	fn.fun(t, u, u_tmp, du);
-       
+
 	fn.precon(du, u_tmp);
 
 	// Accelerated correction.

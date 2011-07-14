@@ -9,6 +9,11 @@
 #include "Teuchos_XMLObject.hpp"
 
 extern "C" {
+#define H5Gcreate_vers 2
+#define H5Dcreate_vers 2
+#define H5Gopen_vers 2
+#define H5Dopen_vers 2
+
 #include "hdf5.h"
 };
 

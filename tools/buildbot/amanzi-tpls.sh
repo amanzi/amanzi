@@ -1097,6 +1097,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
+        -D ENABLE_HDF5:BOOL=ON \\
         -D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
         -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse/install \\
         -D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\

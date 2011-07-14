@@ -97,7 +97,7 @@ void HDF5::createDataFile(std::string soln_filename) {
   // ?? input mesh filename or grab global mesh filename
   // ->assumes global name exists!!
   // build h5 filename
-  h5filename = soln_filename + ".h5";
+  h5filename = soln_filename; //  + ".h5";
 
   file = H5Fcreate(h5filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (file < 0) {
@@ -486,7 +486,6 @@ void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
     
   status = H5Dclose(dataset);
   status = H5Fclose(file);
-    
 }
   
 Teuchos::XMLObject HDF5::addXdmfAttribute_(std::string varname,
