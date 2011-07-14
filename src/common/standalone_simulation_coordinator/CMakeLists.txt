@@ -137,9 +137,19 @@ target_link_libraries(ssc ${ssc_tpl_libs_incl} ${ssc_tpl_libs})
 #message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
 
 if (BUILD_TESTS)
+
+  set(UNIT_TEST_DIR tests_unit)
+  add_amanzi_test(ssc-structured-tests ssc "--xml_file=t1-structured.xml" KIND unit)
+
+  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${SSC_SOURCE_DIR}/tests_unit/t1-structured.xml ${SSC_BINARY_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${SSC_SOURCE_DIR}/tests_unit/probin_simple_chem ${SSC_BINARY_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${SSC_SOURCE_DIR}/tests_unit/inputs_simple_chem.pp ${SSC_BINARY_DIR})
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${SSC_SOURCE_DIR}/tests_unit/uo2-5-component.bgd ${SSC_BINARY_DIR})
+  endif()
+
 endif()
-
-
-
-
-

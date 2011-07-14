@@ -2,6 +2,7 @@
 #define _OBSERVATION_H_
 
 #include <string>
+#include <map>
 
 #include <Array.H>
 #include <FArrayBox.H>
@@ -31,7 +32,7 @@ public:
   */
   std::string var_type;
   std::string var_id;
-  Array<int> id;
+  int id;
 
   /* This specifies the region in which the observation is applied. 
      The user give the name but this is internally change 
@@ -40,12 +41,9 @@ public:
   int region;
 
   /* This specifies the observation type
-     0: production
-     1: mass fraction
-     2: mole fraction
-     3: saturation
    */
-  int obs_type;
+  std::string obs_type;
+  std::map<std::string, int> obs_type_list;
 
   /* This specifies the operation type
      0: average
@@ -57,6 +55,8 @@ public:
   Array<Real> times;
   Array<Real> vals;
 
+  Observation();
+
   void process(Real t_old, Real t_new);
   static void setAmrPtr(Amr* amr) {amrp = amr;}
 
@@ -66,5 +66,8 @@ protected:
   Real average(Real time);
   Real volume_integral(Real time);  
   Real volume_time_integral(Real t_old, Real t_new);
+
+  Real val_old, val_new;
+  int  times_idx;
 };
 #endif /*_OBSERVATION_H_*/

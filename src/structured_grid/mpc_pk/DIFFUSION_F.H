@@ -2,7 +2,7 @@
 #define _DIFFUSION_F_H
 
 /*
-** $Id: DIFFUSION_F.H,v 1.8 2011-07-06 17:49:12 gpau Exp $
+** $Id: DIFFUSION_F.H,v 1.9 2011-07-13 00:16:16 gpau Exp $
 */
 
 #ifdef BL_LANG_FORT
@@ -106,6 +106,9 @@ extern "C"
     void FORT_DRHOG_RICHARD(const Real* rg,  ARLIM_P(rglo), ARLIM_P(rghi),
 			    const Real* cx,  ARLIM_P(cxlo), ARLIM_P(cxhi),
 			    const Real* cy,  ARLIM_P(cylo), ARLIM_P(cyhi),
+#if (BL_SPACEDIM == 3)
+			    const Real* cz,  ARLIM_P(czlo), ARLIM_P(czhi),
+#endif
 			    const Real* rho, const int*  lo, const int*  hi,
 			    const Real* dx,  const Real* grav, const Real* mult);
 
@@ -113,6 +116,10 @@ extern "C"
 			    const Real* cx,  ARLIM_P(cxlo), ARLIM_P(cxhi),
 			    const Real* fy,  ARLIM_P(fylo), ARLIM_P(fyhi),
 			    const Real* cy,  ARLIM_P(cylo), ARLIM_P(cyhi),
+#if (BL_SPACEDIM == 3)
+			    const Real* fz,  ARLIM_P(fzlo), ARLIM_P(fzhi),
+			    const Real* cz,  ARLIM_P(czlo), ARLIM_P(czhi),
+#endif
 			    const Real* rho, const int*  lo, const int*  hi,
 			    const Real* dx,  const Real* grav, const Real* mult);
 

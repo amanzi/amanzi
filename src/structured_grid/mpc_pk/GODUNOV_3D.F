@@ -79,6 +79,113 @@ c ::: internal variables
 
       end
 
+      subroutine FORT_EST_EIG_LIN (rphi,  DIMS(rphi), 
+     &     uedge, DIMS(uedge),
+     &     vedge, DIMS(vedge), 
+     &     wedge, DIMS(wedge), 
+     &     lo,hi,eigmax)
+c
+c ::: This subroutine estimates the eigenvalues for timestep prediction
+c
+      implicit none
+      
+c ::: arguments
+      integer DIMDEC(rphi)
+      integer DIMDEC(uedge),DIMDEC(vedge),DIMDEC(wedge)
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  uedge(DIMV(uedge)), vedge(DIMV(vedge)), wedge(DIMV(wedge))
+      REAL_T  rphi(DIMV(rphi))
+      REAL_T  eigmax(SDIM)
+
+c ::: internal variables
+      integer i,j,k
+      REAL_T  eigtmp
+      
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)+1
+               eigtmp = uedge(i,j,k)/(half*(rphi(i,j,k)+rphi(i-1,j,k)))
+               eigmax(1) = max(eigmax(1),dabs(eigtmp))
+            end do
+         end do
+      end do
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)+1
+            do i = lo(1),hi(1)
+               eigtmp = vedge(i,j,k)/(half*(rphi(i,j,k)+rphi(i,j-1,k)))
+               eigmax(2) = max(eigmax(2),dabs(eigtmp))
+            end do
+         end do
+      end do
+      do k = lo(3),hi(3)+1
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               eigtmp = wedge(i,j,k)/(half*(rphi(i,j,k)+rphi(i,j,k-1)))
+               eigmax(3) = max(eigmax(3),dabs(eigtmp))
+            end do
+         end do
+      end do
+
+      end 
+
+      subroutine FORT_EST_EIG_TRC (s, DIMS(s), nc,
+     &     rphi,  DIMS(rphi), 
+     &     uedge, DIMS(uedge),
+     &     vedge, DIMS(vedge), 
+     &     wedge, DIMS(wedge), 
+     &     lo,hi,eigmax)
+c
+c ::: This subroutine estimates the eigenvalues for timestep prediction
+c
+      implicit none
+
+#include "probdata.H"
+      
+c ::: arguments
+      integer nc
+      integer DIMDEC(s)
+      integer DIMDEC(rphi)
+      integer DIMDEC(uedge),DIMDEC(vedge), DIMDEC(wedge)
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  s(DIMV(s),ncomps)
+      REAL_T  uedge(DIMV(uedge)), vedge(DIMV(vedge)), wedge(DIMV(wedge))
+      REAL_T  rphi(DIMV(rphi))
+      REAL_T  eigmax(SDIM)
+
+c ::: internal variables
+      integer i,j,k
+      REAL_T  eigtmp,sat
+      
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)+1
+               sat = half*(s(i,j,k,nc)+s(i-1,j,k,nc))/rhoval(nc)
+               eigtmp = uedge(i,j,k)/(half*(rphi(i,j,k)+rphi(i-1,j,k)))/sat
+               eigmax(1) = max(eigmax(1),dabs(eigtmp))
+            end do
+         end do
+      end do
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)+1
+            do i = lo(1),hi(1)
+               sat = half*(s(i,j,k,nc)+s(i,j-1,k,nc))/rhoval(nc)
+               eigtmp = vedge(i,j,k)/(half*(rphi(i,j,k)+rphi(i,j-1,k)))/sat
+               eigmax(2) = max(eigmax(2),dabs(eigtmp))
+            end do
+         end do
+      end do
+      do k = lo(3),hi(3)+1
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               sat = half*(s(i,j,k,nc)+s(i,j,k-1,nc))/rhoval(nc)
+               eigtmp = wedge(i,j,k)/(half*(rphi(i,j,k)+rphi(i,j,k-1)))/sat
+               eigmax(3) = max(eigmax(3),dabs(eigtmp))
+            end do
+         end do
+      end do
+
+      end 
+
       subroutine FORT_EST_EIG_CPL (s, DIMS(s), lam, dlam, d2lam, DIMS(lam),
      &     rphi, DIMS(rphi), krcoef, DIMS(krcoef), nkrcoef,
      &     pc,DIMS(pc),uedge, DIMS(uedge), kappax, DIMS(kpx),

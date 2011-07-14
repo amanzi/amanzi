@@ -52,7 +52,6 @@ void Rock::build_kmap(MultiFab&      mfdata,
 {
   for (int i = 0; i<region.size(); i++)
     {
-      std::cout<<"permeability_dist_type[i] = "<<permeability_dist_type[i]<<std::endl;
       switch (permeability_dist_type[i])
 	{
 	case 1:

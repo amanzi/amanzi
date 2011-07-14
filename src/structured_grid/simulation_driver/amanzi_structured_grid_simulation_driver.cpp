@@ -68,9 +68,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     if (ParallelDescriptor::IOProcessor())
         std::cout << "Run time = " << run_stop << std::endl;
 
-    // bandre, 2011-07-13: trying to use the default parameter for
-    // BoxLib::Finalize cause linking errors for some reason
-    BoxLib::Finalize(true);
+    BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
 
     return Simulator::SUCCESS;
 }

@@ -1,5 +1,5 @@
 c
-c $Id: MACOPERATOR_3D.F,v 1.39 2011-04-08 22:24:59 lijewski Exp $
+c $Id: MACOPERATOR_3D.F,v 1.40 2011-07-12 17:17:22 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -686,7 +686,7 @@ c     phi is only one node wide in i-direction.
          do j = ARG_L2(phi),ARG_H2(phi)
             k = ARG_L3(phi)
             rhoG_ext = half * rhog(i+1,j,k)  
-            rhog_step = press_lo(1) + rhoG_ext * dx(3) 
+            rhog_step = rhoG_ext * dx(3) 
             phi(i,j,k)  = phi(i,j,k) + rhog_step  
 
             do k = ARG_L3(phi)+1,ARG_H3(phi)
@@ -697,7 +697,7 @@ c     phi is only one node wide in i-direction.
 
             rhosum = phi(i,j,ARG_H3(phi))+half*rhog(i+1,j,ARG_H3(phi)+1)
             do k = ARG_L3(phi),ARG_H3(phi)
-               phi(i,j,k) = phi(i,j,k) - rhosum
+               phi(i,j,k) = phi(i,j,k) - rhosum + press_lo(1);
             end do
 
          end do
@@ -706,7 +706,7 @@ c     phi is only one node wide in i-direction.
          do j = ARG_L2(phi),ARG_H2(phi)
             k = ARG_L3(phi)
             rhoG_ext   = half * rhog(i-1,j,k) 
-            rhog_step  = press_hi(1) + rhoG_ext * dx(3) 
+            rhog_step  = rhoG_ext * dx(3) 
             phi(i,j,k) = phi(i,j,k) + rhog_step  
 
             do k = ARG_L3(phi)+1,ARG_H3(phi)
@@ -717,7 +717,7 @@ c     phi is only one node wide in i-direction.
 
             rhosum = phi(i,j,ARG_H3(phi))+half*rhog(i-1,j,ARG_H3(phi)+1)
             do k = ARG_L3(phi),ARG_H3(phi)
-               phi(i,j,k) = phi(i,j,k) - rhosum
+               phi(i,j,k) = phi(i,j,k) - rhosum + press_hi(1)
             end do
          end do
       end if
@@ -727,7 +727,7 @@ c     phi is only one node wide in i-direction.
          do i = ARG_L1(phi),ARG_H1(phi)
             k = ARG_L3(phi)
             rhoG_ext = half * rhog(i,j+1,k) 
-            rhog_step = press_lo(2) + rhoG_ext * dx(3) 
+            rhog_step = rhoG_ext * dx(3) 
             phi(i,j,k)  = phi(i,j,k) + rhog_step  
 
             do k = ARG_L3(phi)+1,ARG_H3(phi)
@@ -738,7 +738,7 @@ c     phi is only one node wide in i-direction.
 
             rhosum = phi(i,j,ARG_H3(phi))+half*rhog(i,j+1,ARG_H3(phi)+1)
             do k = ARG_L3(phi),ARG_H3(phi)
-               phi(i,j,k) = phi(i,j,k) - rhosum
+               phi(i,j,k) = phi(i,j,k) - rhosum + press_lo(2)
             end do
          end do
 
@@ -746,7 +746,7 @@ c     phi is only one node wide in i-direction.
          do i = ARG_L1(phi),ARG_H1(phi)
             k = ARG_L3(phi)
             rhoG_ext = half * rhog(i,j-1,k)
-            rhog_step = press_hi(2) + rhoG_ext * dx(3) 
+            rhog_step = rhoG_ext * dx(3) 
             phi(i,j,k)  = phi(i,j,k) + rhog_step  
 
             do k = ARG_L3(phi)+1,ARG_H3(phi)
@@ -757,7 +757,7 @@ c     phi is only one node wide in i-direction.
 
             rhosum = phi(i,j,ARG_H3(phi))+half*rhog(i,j-1,ARG_H3(phi)+1)
             do k = ARG_L3(phi),ARG_H3(phi)
-               phi(i,j,k) = phi(i,j,k) - rhosum
+               phi(i,j,k) = phi(i,j,k) - rhosum + press_hi(2)
             end do
 
          end do

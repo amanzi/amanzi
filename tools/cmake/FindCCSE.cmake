@@ -25,6 +25,8 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
+include(CCSEOptions)
+
 
 if ( CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
 
@@ -139,12 +141,12 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
                 find_library(CCSE_LIBRARY
                              NAMES ${ccse_lib_name}
                              HINTS ${CCSE_DIR}
-                             PATH_SUFFIXES "lib" "Lib"
+                             PATH_SUFFIXES "lib${CCSE_LIBDIR_MPI_SUFFIX}${CCSE_LIBDIR_OMP_SUFFIX}"
                              NO_DEFAULT_PATH)
                 get_filename_component(CCSE_LIBRARY_DIR "${CCSE_LIBRARY}" PATH)
 
             else()
-                 message(SEND_ERROR "CCSE libs not found in CCSE_DIR/lib, (CCSE_DIR=${CCSE_DIR})")
+                 message(SEND_ERROR "CCSE libs not found in CCSE_DIR/lib${CCSE_LIBDIR_MPI_SUFFIX}${CCSE_LIBDIR_OMP_SUFFIX}, (CCSE_DIR=${CCSE_DIR})")
                  set(CCSE_LIBRARY "CCSE_LIBRARY-NOTFOUND")
             endif()    
 

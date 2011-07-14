@@ -4,42 +4,71 @@
 
 Amr* Observation::amrp = 0;
 
-void 
-Observation::process(Real t_old, Real t_new)
+Observation::Observation()
 {
-  BL_ASSERT(amrp); // Must set the amr pointer prior to use via Observation::setAmrPtr
+  times_idx = 0;
 
-  /* This specifies the operation type
-     0: average
-     1: integral over space
-     2: integral over space and time
-  */
+  obs_type_list["average"]          = 0;
+  obs_type_list["integral"]         = 1;
+  obs_type_list["time_integral"]    = 2;
+  obs_type_list["squared_integral"] = 3;
+  obs_type_list["flux"]             = 4;
+}  
+
+void 
+Observation::process(Real t_old, 
+		     Real t_new)
+{
+  // Must set the amr pointer prior to use via Observation::setAmrPtr
+  BL_ASSERT(amrp); 
+
   int nObs = vals.size();
-  //BL_ASSERT(nObs == times.size());
 
-  //times.resize(nObs+1);
-  vals.resize(nObs+1);
-
-  switch ( op_type )
+  // determine observation at time t_new
+  switch (obs_type_list[obs_type] )
     {
     case 0:
-      times[nObs] = t_new;
-      vals[nObs] = average(t_new);
+      val_new  = average(t_new);
+
       break;
       
     case 1:
-      times[nObs] = t_new;
-      vals[nObs] = volume_integral(t_new);
+      val_new = volume_integral(t_new);
       break;
       
     case 2:
-      times[nObs] = 0.5*(t_old+t_new);
-      vals[nObs] = volume_time_integral(t_old,t_new);
+      // times[nObs] = 0.5*(t_old+t_new);
+      val_new = volume_time_integral(t_old,t_new);
       break;
 
     default:
       ;// Do nothing
     }
+
+  // determine with the observation is requested at this time step
+  switch (obs_type_list[obs_type] )
+    {
+    case 2:
+      if (vals.size() < 1) 
+	{
+	  vals.resize(1);
+	  vals[0] = 0.;
+	}
+      if (times[0] <= t_old && times[1] >= t_new)
+	vals[0] = vals[0] + val_new;   
+      break;
+
+    default:
+      for (int i=0; i<times.size(); i++)
+	{
+	  if (times[i] >= t_old && times[i] <= t_new)
+	    {
+	      vals.resize(nObs+1);
+	      vals[nObs] = val_old + (t_new-times[i])/(t_new-t_old)*(val_new-val_old);
+	    }
+	}
+    }
+  val_old = val_new;
 }
 
 std::pair<Real,Real>
@@ -51,7 +80,6 @@ Observation::integral_and_volume (Real time)
   Real int_inside = 0.0;
   Real vol_inside = 0;  
   
-  int state_offset = ( var_type=="comp" ? 0 : PorousMedia::ncomps);
   Real vol_scale_lev = 1;
 
   for (int lev = 0; lev <= finest_level; lev++)
@@ -65,8 +93,6 @@ Observation::integral_and_volume (Real time)
         }
 
       const MultiFab& S_new = amrp->getLevel(lev).get_new_data(State_Type);
-      const BoxArray& bac = S_new.boxArray();
-
       BoxArray baf;
       if (lev < finest_level)
         {
@@ -76,6 +102,8 @@ Observation::integral_and_volume (Real time)
 
       FArrayBox fabVOL, fabINT;
       const Real* dx = amrp->Geom(lev).CellSize();
+      Real vol = 1.;
+      for (int i=0;i<BL_SPACEDIM;i++) vol *= dx[i];
 
       for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
         {
@@ -84,7 +112,7 @@ Observation::integral_and_volume (Real time)
 
           // Initialize to zero everywhere, then set to 1 inside region
           fabVOL.setVal(0);
-          PorousMedia::region_array[region]->setVal(fabVOL,1,0,dx,0);
+          PorousMedia::region_array[region]->setVal(fabVOL,vol,0,dx,0);
 
           // Zero where covered with better data
           if (lev < finest_level)
@@ -101,14 +129,13 @@ Observation::integral_and_volume (Real time)
           vol_inside += fabVOL.sum(0) * vol_scale_lev;
           
           fabINT.resize(cbox,1);
-          fabINT.copy(S_new[mfi],state_offset+id[0],0,1);
+          fabINT.copy(S_new[mfi],id,0,1);
           fabINT.mult(fabVOL);
           int_inside += fabINT.sum(0);
         }
     }
   ParallelDescriptor::ReduceRealSum(vol_inside);
   ParallelDescriptor::ReduceRealSum(int_inside);
-  std::cout << "I AM HERE " << int_inside  << " " << vol_inside << std::endl;
   return std::pair<Real,Real>(int_inside,vol_inside);
 }
 

@@ -1,5 +1,5 @@
 c
-c $Id: DIFFUSION_3D.F,v 1.9 2011-04-05 17:33:26 lijewski Exp $
+c $Id: DIFFUSION_3D.F,v 1.10 2011-07-13 00:16:16 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -317,3 +317,186 @@ c
       end
 
 
+
+
+      subroutine FORT_DRHOG_RICHARD(rg,DIMS(rg),
+     &     cx,DIMS(cx),cy,DIMS(cy),cz,DIMS(cz),rho,
+     &     lo,hi,dx,grav,mult)
+c
+c    ----------------------------------------------------------
+c    RHOPRESS
+c      compute gravity term in the pressure equation
+c      \sum_a 1/\rho_a \nabla \rho_a^2 \lambda_a g 
+c    ----------------------------------------------------------
+c
+      implicit none
+      
+      integer DIMDEC(rg)
+      integer DIMDEC(cx)
+      integer DIMDEC(cy)
+      integer DIMDEC(cz)
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  dx(SDIM)
+      REAL_T  rg(DIMV(rg))
+      REAL_T  cx(DIMV(cx))
+      REAL_T  cy(DIMV(cy))
+      REAL_T  cz(DIMV(cz))
+      REAL_T  rho
+      REAL_T  mult,grav
+      
+      integer i, j, k
+c
+c     gravity is nonzero only in the z direction
+c
+      do k = lo(3),hi(3)
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               rg(i,j,k) = rg(i,j,k) - mult*rho*grav*(cz(i,j,k+1) - cz(i,j,k))/dx(3)
+            end do
+         end do
+      end do
+
+      end     
+
+      subroutine FORT_FRHOG_RICHARD(fx, DIMS(fx), cx, DIMS(cx),
+     &     fy, DIMS(fy),cy,DIMS(cy), fz, DIMS(fz), cz, DIMS(cz), rho,
+     &     lo,hi,dx,grav,mult)
+c
+c    ----------------------------------------------------------
+c    RHOPRESS
+c      compute gravity term in the pressure equation
+c      \sum_a 1/\rho_a \nabla \rho_a^2 \lambda_a g 
+c    ----------------------------------------------------------
+c
+      implicit none
+      
+      integer DIMDEC(fx)
+      integer DIMDEC(fy)
+      integer DIMDEC(fz)
+      integer DIMDEC(cx)
+      integer DIMDEC(cy)
+      integer DIMDEC(cz)
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  dx(SDIM)
+      REAL_T  fx(DIMV(fx))
+      REAL_T  fy(DIMV(fy))
+      REAL_T  fz(DIMV(fz))
+      REAL_T  cx(DIMV(cx))
+      REAL_T  cy(DIMV(cy))
+      REAL_T  cz(DIMV(cz))
+      REAL_T  rho
+      REAL_T  mult,grav
+      
+      integer i, j, k
+c
+c     gravity is nonzero only in the z direction
+c
+      do k = lo(3),hi(3)+1
+         do j = lo(2),hi(2)
+            do i = lo(1),hi(1)
+               fz(i,j,k) = fz(i,j,k) - mult*rho*grav*cz(i,j,k) 
+            end do
+         end do
+      end do
+
+      end     
+
+
+c ----------------------------------------------------------------------
+c      
+c     DFXDOTY: Dot product of X and Y
+c     
+c ----------------------------------------------------------------------
+      subroutine FORT_DFXDOTY(
+     &     pw,
+     &     pp, DIMS(pp),np,idxp,
+     &     ww, DIMS(ww),nw,idxw,
+     &     lo, hi )
+      implicit none
+      integer np,nw,idxp,idxw
+      integer lo(BL_SPACEDIM)
+      integer hi(BL_SPACEDIM)
+      integer DIMDEC(ww)
+      REAL_T ww(DIMV(ww),nw)
+      integer DIMDEC(pp)
+      REAL_T pp(DIMV(pp),np)
+      REAL_T pw
+c
+      integer i, j, k
+c
+      pw = 0.0D0
+      do k = lo(3), hi(3)
+         do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+               pw = pw + pp(i,j,k,idxp)*ww(i,j,k,idxw)
+            end do
+         end do
+      end do
+c
+      end
+
+c ----------------------------------------------------------------------
+c      
+c     DFSXAY: S = X + A*Y
+c     
+c ----------------------------------------------------------------------
+      subroutine FORT_DFSXAY(
+     &     ss, DIMS(ss),
+     &     xx, DIMS(xx),
+     &     a,
+     &     yy, DIMS(yy),
+     &     lo, hi, nc
+     &     )
+      implicit none
+      integer nc
+      integer lo(BL_SPACEDIM)
+      integer hi(BL_SPACEDIM)
+      integer DIMDEC(ss)
+      REAL_T ss(DIMV(ss),nc)
+      integer DIMDEC(xx)
+      REAL_T xx(DIMV(xx),nc)
+      integer DIMDEC(yy)
+      REAL_T yy(DIMV(yy),nc)
+      REAL_T a
+c
+      integer i, j, k, n
+c
+      do n = 1, nc
+         do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+               do i = lo(1), hi(1)
+                  ss(i,j,k,n) = xx(i,j,k,n) + a*yy(i,j,k,n)
+               end do
+            end do
+         end do
+      end do
+c
+      end
+
+
+      subroutine FORT_ARNOLDI(soln,H,norm_rhs,nc)
+
+      implicit none
+      integer nc
+      REAL_T  norm_rhs,soln(nc),H(nc,nc)
+      
+      integer IPIV(nc), INFO,i
+
+            
+c     set up right hand side: norm_rhs*e_1
+      do i = 1,nc
+         soln(i) = 0
+      end do
+      soln(1) = norm_rhs
+
+      call DGETRF( nc, nc, H, nc, IPIV, INFO)
+      if (INFO .eq. 0) then
+         call DGETRS( 'N', nc, 1, H, nc, IPIV, soln, nc, INFO )
+         if (INFO .ne. 0) then
+            call bl_abort('FORT_ARNOLDI::DGETRS failed')
+         end if
+      else
+         call bl_abort('FORT_ARNOLDI::DGETRF failed')
+      end if
+
+      end

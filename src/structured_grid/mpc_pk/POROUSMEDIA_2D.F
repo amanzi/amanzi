@@ -1,5 +1,5 @@
 c
-c $Id: POROUSMEDIA_2D.F,v 1.62 2011-07-06 20:37:35 gpau Exp $
+c $Id: POROUSMEDIA_2D.F,v 1.64 2011-07-13 00:16:16 gpau Exp $
 c
 
 #undef  BL_LANG_CC
@@ -859,7 +859,7 @@ c ::: -----------------------------------------------------------
       integer i,j
       integer l_kr_type
       REAL_T  l_kr_coef, l_sat_res
-      REAL_T  ld_tmp(2), s_tmp(2)
+      REAL_T  ld_tmp(3), s_tmp(2)
 
       do j = ARG_L2(lbd),ARG_H2(lbd)
          do i = ARG_L1(lbd),ARG_H1(lbd)
@@ -873,7 +873,7 @@ c ::: -----------------------------------------------------------
             call get_dld(ld_tmp,s_tmp,rhoval,muval,ncomps,
      &           l_kr_type,l_kr_coef,l_sat_res)
 
-            lbd(i,j,1:ncomps) = ld_tmp(1:ncomps)
+            lbd(i,j,:) = ld_tmp
 
          end do 
       end do
@@ -1092,9 +1092,9 @@ c       - Only solve for water ( the first component)
 c ::: ---------------------------------------------------------------    
       subroutine FORT_RICHARD_COEF(lbd, DIMS(lbd), 
      &     dfx, DIMS(dfx), dfy, DIMS(dfy),
+     &     umac, DIMS(umac), vmac, DIMS(vmac),
      &     lo, hi, domlo, domhi, bc, 
-     &     inflow_bc_lo, inflow_bc_hi,
-     &     inflow_vel_lo, inflow_vel_hi, nc)
+     &     inflow_bc_lo, inflow_bc_hi, nc, do_upwind)
 
       implicit none
 
@@ -1105,13 +1105,18 @@ c ::: ---------------------------------------------------------------
       integer DIMDEC(lbd)
       integer DIMDEC(dfx)
       integer DIMDEC(dfy)
+      integer DIMDEC(umac)
+      integer DIMDEC(vmac)
       integer nc
       integer bc(SDIM,2)
       integer inflow_bc_lo(SDIM), inflow_bc_hi(SDIM)
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  dfx(DIMV(dfx))
       REAL_T  dfy(DIMV(dfy))
+      REAL_T  umac(DIMV(umac))
+      REAL_T  vmac(DIMV(vmac))
       REAL_T  inflow_vel_lo(SDIM), inflow_vel_hi(SDIM)
+      logical do_upwind
 
       integer i, j
       REAL_T  H_coef
@@ -1119,7 +1124,11 @@ c ::: ---------------------------------------------------------------
 c ::: diffusion coefficient in x-dir
       do i=lo(1), hi(1)+1
          do j=lo(2), hi(2)
-            H_coef = half*(lbd(i-1,j,nc)+lbd(i,j,nc))
+            if (do_upwind) then
+               H_coef = cvmgp(lbd(i-1,j,nc),lbd(i,j,nc),umac(i,j))
+            else
+               H_coef = half*(lbd(i-1,j,nc)+lbd(i,j,nc))
+            end if
             if (i .eq. domlo(1)) then
                if (bc(1,1) .eq. EXT_DIR) then
                   H_coef = lbd(i-1,j,nc)
@@ -1141,8 +1150,11 @@ c ::: diffusion coefficient in x-dir
 c ::: diffusion coefficient in y-dir
       do j=lo(2), hi(2)+1
          do i=lo(1), hi(1)
-            H_coef = half*(lbd(i,j-1,nc)+lbd(i,j,nc))
-c            H_coef = lbd(i,j,nc)
+            if (do_upwind) then
+               H_coef = cvmgp(lbd(i,j-1,nc),lbd(i,j,nc),vmac(i,j))
+            else
+               H_coef = half*(lbd(i,j-1,nc)+lbd(i,j,nc))
+            end if
             if (j .eq. domlo(2)) then
                if (bc(2,1) .eq. EXT_DIR) then
                   H_coef = lbd(i,j-1,nc) 
@@ -1297,13 +1309,13 @@ c
 c :: ------------------------------------------------------------    
       subroutine FORT_RICHARD_NJAC(s, DIMS(s),
      &     bx,DIMS(bx),by,DIMS(by),
+     &     umac, DIMS(umac), vmac, DIMS(vmac),
      &     lbd,DIMS(lbd),pc,DIMS(pc),
      &     phi,DIMS(phi),kappa,DIMS(kappa),
      &     krcoef,DIMS(krcoef),nkrcoef,
      &     cplcoef,DIMS(cplcoef),ncplcoef,
      &     lo,hi,domlo,domhi,dx, bc, 
-     &     inflow_bc_lo,inflow_bc_hi,
-     &     inflow_vel_lo,inflow_vel_hi,deps)
+     &     inflow_bc_lo,inflow_bc_hi,deps,do_upwind)
 
       implicit none
 
@@ -1312,6 +1324,8 @@ c :: ------------------------------------------------------------
       integer DIMDEC(s)
       integer DIMDEC(bx)
       integer DIMDEC(by)
+      integer DIMDEC(umac)
+      integer DIMDEC(vmac)
       integer DIMDEC(pc)
       integer DIMDEC(lbd)
       integer DIMDEC(phi)
@@ -1327,21 +1341,23 @@ c :: ------------------------------------------------------------
       REAL_T  s(DIMV(s),ncomps)
       REAL_T  bx(DIMV(bx),3)
       REAL_T  by(DIMV(by),3)
+      REAL_T  umac(DIMV(umac))
+      REAL_T  vmac(DIMV(vmac))
       REAL_T  pc(DIMV(pc))
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
       REAL_T  krcoef(DIMV(krcoef),nkrcoef)
       REAL_T  phi(DIMV(phi))
       REAL_T  kappa(DIMV(kappa))
-      REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
       REAL_T  deps
+      logical do_upwind
 
       integer i, j,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
       REAL_T  grav, rg
-      REAL_T  multx(2), multy(2), ldx(2), ldy(2), inflow
-      REAL_T  comp(2)
-      REAL_T  ldtmp(2),ldn(3,3),pcn(3,3),rgtmpx(3),rgtmpy(3), dcx(3), dcy(3)
+      REAL_T  multx(2), multy(2), ldx(2), ldy(2)
+      REAL_T  comp(ncomps)
+      REAL_T  ldtmp(ncomps),ldn(3,3),pcn(3,3),rgtmpx(3),rgtmpy(3), dcx(3), dcy(3)
 c
 c     gravity is nonzero only in the y direction
 c
@@ -1351,13 +1367,19 @@ c
       do j=lo(2), hi(2)
          do i=lo(1), hi(1)
 
-            ldx(1) = half*(lbd(i,j,1)+lbd(i-1,j,1))
-            ldx(2) = half*(lbd(i,j,1)+lbd(i+1,j,1))
-            ldy(1) = half*(lbd(i,j,1)+lbd(i,j-1,1))
-            ldy(2) = half*(lbd(i,j,1)+lbd(i,j+1,1))
+            if (do_upwind) then
+               ldx(1) = cvmgp(lbd(i-1,j,1),lbd(i,j,1),umac(i,j))
+               ldx(2) = cvmgp(lbd(i,j,1),lbd(i+1,j,1),umac(i+1,j))
+               ldy(1) = cvmgp(lbd(i,j-1,1),lbd(i,j,1),vmac(i,j))
+               ldy(2) = cvmgp(lbd(i,j,1),lbd(i,j+1,1),vmac(i,j+1))
+            else
+               ldx(1) = half*(lbd(i,j,1)+lbd(i-1,j,1))
+               ldx(2) = half*(lbd(i,j,1)+lbd(i+1,j,1))
+               ldy(1) = half*(lbd(i,j,1)+lbd(i,j-1,1))
+               ldy(2) = half*(lbd(i,j,1)+lbd(i,j+1,1))
+            end if
             multx = one
             multy = one
-            inflow = zero
             if (i .eq. domlo(1)) then
                if (bc(1,1) .eq. EXT_DIR) then
                   multx(1) = two 
@@ -1366,7 +1388,6 @@ c
                   multx(1) = zero
                   if (inflow_bc_lo(1) .eq. 1) then
                      ldx(1) = zero
-                     inflow = inflow - inflow_vel_lo(1)/dx(1)
                   end if
                end if
             end if
@@ -1378,7 +1399,6 @@ c
                   multx(2) = zero
                   if (inflow_bc_hi(1) .eq. 1) then
                      ldx(2) = zero
-                     inflow = inflow + inflow_vel_hi(1)/dx(1)
                   end if
                end if
             end if
@@ -1390,7 +1410,6 @@ c
                   multy(1) = zero
                   if (inflow_bc_lo(2) .eq. 1) then
                      ldy(1) = zero
-                     inflow = inflow - inflow_vel_lo(2)/dx(2)
                   end if
                end if
             end if
@@ -1402,12 +1421,11 @@ c
                   multy(2) = zero
                   if (inflow_bc_hi(2) .eq. 1) then
                      ldy(2) = zero
-                     inflow = inflow + inflow_vel_hi(2)/dx(2)
                   end if
                end if
             end if
 
-            rg = inflow + (ldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
+            rg = (ldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
      &           ldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)))/dx(1) +
      &           (ldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) - 
      &           ldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav))/dx(2)           
@@ -1422,7 +1440,9 @@ c           x-direction
                   comp(1) = (one-deps)*s(i+n,j,1)
                   dcx(n+2) = - dcx(n+2)
                end if
-               comp(2) = rhoval(2)*(one - comp(1)/rhoval(1))
+               if (ncomps > 1) then 
+                  comp(2) = rhoval(2)*(one - comp(1)/rhoval(1))
+               end if
                l_kr_type  = nint(krcoef(i+n,j,1))
                l_kr_coef  = krcoef(i+n,j,2)
                l_kr_sres  = krcoef(i+n,j,3)
@@ -1434,10 +1454,17 @@ c           x-direction
                l_cpl_sres  = cplcoef(i+n,j,4)
                call get_cpl(pcn(n+2,2),comp,rhoval,phi(i+n,j),kappa(i+n,j),l_sigma,ncomps,
      &              l_cpl_sres,l_cpl_type,l_cpl_coef)
-               ldx(1) = cvmgz(ldx(1),half*(ldn(1,2)+ldn(2,2)),ldx(1))
-               ldx(2) = cvmgz(ldx(2),half*(ldn(2,2)+ldn(3,2)),ldx(2))
-               ldy(1) = cvmgz(ldy(1),half*(ldn(2,1)+ldn(2,2)),ldy(1))
-               ldy(2) = cvmgz(ldy(2),half*(ldn(2,2)+ldn(2,3)),ldy(2))
+               if (do_upwind) then
+                  ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1,2),ldn(2,2),umac(i,j)),ldx(1))
+                  ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2,2),ldn(3,2),umac(i+1,j)),ldx(2))
+                  ldy(1) = cvmgz(ldy(1),cvmgp(ldn(2,1),ldn(2,2),vmac(i,j)),ldy(1))
+                  ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2,2),ldn(2,3),vmac(i,j+1)),ldy(2))
+               else
+                  ldx(1) = cvmgz(ldx(1),half*(ldn(1,2)+ldn(2,2)),ldx(1))
+                  ldx(2) = cvmgz(ldx(2),half*(ldn(2,2)+ldn(3,2)),ldx(2))
+                  ldy(1) = cvmgz(ldy(1),half*(ldn(2,1)+ldn(2,2)),ldy(1))
+                  ldy(2) = cvmgz(ldy(2),half*(ldn(2,2)+ldn(2,3)),ldy(2))
+               end if
                if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
                   ldx(1) = cvmgz(ldx(1),ldn(1,2),ldx(1))
                elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
@@ -1448,7 +1475,7 @@ c           x-direction
                   ldy(2) = cvmgz(ldy(2),ldn(2,3),ldy(2))
                end if
 
-               rgtmpx(n+2) = inflow + (ldx(2)*(-multx(2)*(pcn(3,2)-pcn(2,2))/dx(1)) -
+               rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3,2)-pcn(2,2))/dx(1)) -
      &           ldx(1)*(-multx(1)*(pcn(2,2)-pcn(1,2))/dx(1)))/dx(1) +
      &           (ldy(2)*(-multy(2)*(pcn(2,3)-pcn(2,2))/dx(2) - grav) - 
      &           ldy(1)*(-multy(1)*(pcn(2,2)-pcn(2,1))/dx(2) - grav))/dx(2) 
@@ -1463,8 +1490,10 @@ c           y-direction
                if (comp(1)  > rhoval(1)) then
                   comp(1) = (one-deps)*s(i,j+n,1)
                   dcy(n+2) = - dcy(n+2)
+               end if               
+               if (ncomps > 1) then 
+                  comp(2) = rhoval(2)*(one - comp(1)/rhoval(1))
                end if
-               comp(2) = rhoval(2)*(one - comp(1)/rhoval(1))
                l_kr_type  = nint(krcoef(i,j+n,1))
                l_kr_coef  = krcoef(i,j+n,2)
                l_kr_sres  = krcoef(i,j+n,3)
@@ -1476,11 +1505,17 @@ c           y-direction
                l_cpl_sres  = cplcoef(i,j+n,4)
                call get_cpl(pcn(2,n+2),comp,rhoval,phi(i,j+n),kappa(i,j+n),l_sigma,ncomps,
      &              l_cpl_sres,l_cpl_type,l_cpl_coef)
-            
-               ldx(1) = cvmgz(ldx(1),half*(ldn(1,2)+ldn(2,2)),ldx(1))
-               ldx(2) = cvmgz(ldx(2),half*(ldn(2,2)+ldn(3,2)),ldx(2))
-               ldy(1) = cvmgz(ldy(1),half*(ldn(2,1)+ldn(2,2)),ldy(1))
-               ldy(2) = cvmgz(ldy(2),half*(ldn(2,2)+ldn(2,3)),ldy(2))
+               if (do_upwind) then
+                  ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1,2),ldn(2,2),umac(i,j)),ldx(1))
+                  ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2,2),ldn(3,2),umac(i+1,j)),ldx(2))
+                  ldy(1) = cvmgz(ldy(1),cvmgp(ldn(2,1),ldn(2,2),vmac(i,j)),ldy(1))
+                  ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2,2),ldn(2,3),vmac(i,j+1)),ldy(2))
+               else
+                  ldx(1) = cvmgz(ldx(1),half*(ldn(1,2)+ldn(2,2)),ldx(1))
+                  ldx(2) = cvmgz(ldx(2),half*(ldn(2,2)+ldn(3,2)),ldx(2))
+                  ldy(1) = cvmgz(ldy(1),half*(ldn(2,1)+ldn(2,2)),ldy(1))
+                  ldy(2) = cvmgz(ldy(2),half*(ldn(2,2)+ldn(2,3)),ldy(2))
+               end if
                if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
                   ldx(1) = cvmgz(ldx(1),ldn(1,2),ldx(1))
                elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
@@ -1491,7 +1526,7 @@ c           y-direction
                   ldy(2) = cvmgz(ldy(2),ldn(2,3),ldy(2))
                end if
 
-               rgtmpy(n+2) = inflow + (ldx(2)*(-multx(2)*(pcn(3,2)-pcn(2,2))/dx(1)) -
+               rgtmpy(n+2) = (ldx(2)*(-multx(2)*(pcn(3,2)-pcn(2,2))/dx(1)) -
      &           ldx(1)*(-multx(1)*(pcn(2,2)-pcn(1,2))/dx(1)))/dx(1) +
      &           (ldy(2)*(-multy(2)*(pcn(2,3)-pcn(2,2))/dx(2) - grav) - 
      &           ldy(1)*(-multy(1)*(pcn(2,2)-pcn(2,1))/dx(2) - grav))/dx(2)                
@@ -1701,6 +1736,7 @@ c :: ------------------------------------------------------------
       REAL_T  p(DIMV(p))
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
+      logical do_upwind
 
       integer i, j
       REAL_T  grav, mult, ld
@@ -2044,6 +2080,7 @@ c     Gauss Legendre integration
          end do
       end do 
       end
+
 c ::: ---------------------------------------------------------
 c ::: Define Rockhold boundary condition
 c ::: ---------------------------------------------------------

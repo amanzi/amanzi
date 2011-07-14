@@ -1,5 +1,5 @@
 c
-c $Id: MACOPERATOR_2D.F,v 1.60 2011-05-11 23:03:20 gpau Exp $
+c $Id: MACOPERATOR_2D.F,v 1.61 2011-07-12 17:17:22 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -496,7 +496,7 @@ c     phi is only one node wide in i-direction.
          
          j = ARG_L2(phi)
          rhoG_ext = rhog(i+1,j)
-         rhog_step = press_lo(1) + rhoG_ext*half*dx(2) 
+         rhog_step = rhoG_ext*half*dx(2) 
          phi(i,j)  = phi(i,j) + rhog_step  
          do j = ARG_L2(phi)+1,ARG_H2(phi)
             rhoG_ext  = rhog(i+1,j)
@@ -505,14 +505,14 @@ c     phi is only one node wide in i-direction.
          end do
          rhosum = phi(i,ARG_H2(phi))+half*rhog(i+1,ARG_H2(phi)+1)
          do j = ARG_L2(phi),ARG_H2(phi)
-            phi(i,j) = phi(i,j) - rhosum
+            phi(i,j) = phi(i,j) - rhosum + press_lo(1)
          end do
 
       else if (face .eq. XHI) then
          
          j = ARG_L2(phi)
          rhoG_ext = rhog(i-1,j)
-         rhog_step = press_hi(1) + rhoG_ext*half*dx(2) 
+         rhog_step = rhoG_ext*half*dx(2) 
          phi(i,j)  = phi(i,j) + rhog_step  
          
          do j = ARG_L2(phi)+1,ARG_H2(phi)
@@ -522,7 +522,7 @@ c     phi is only one node wide in i-direction.
          end do
          rhosum = phi(i,ARG_H2(phi))+half*rhog(i-1,ARG_H2(phi)+1)
          do j = ARG_L2(phi),ARG_H2(phi)
-            phi(i,j) = phi(i,j) - rhosum
+            phi(i,j) = phi(i,j) - rhosum + press_hi(1)
          end do
          
       endif

@@ -44,6 +44,7 @@ bool          PorousMedia::do_source_term = false;
 Array<Source> PorousMedia::source_array;
 
 // observation
+std::string PorousMedia::obs_outputfile;
 Array<Observation> PorousMedia::observation_array;
 
 // Phases and components
@@ -108,6 +109,8 @@ int  PorousMedia::sum_interval = -1;
 int  PorousMedia::NUM_SCALARS  = 0;
 int  PorousMedia::NUM_STATE    = 0;
 int  PorousMedia::full_cycle   = 0;
+int  PorousMedia::max_step     = 0;
+Real PorousMedia::stop_time    = 0;
 Array<AdvectionForm> PorousMedia::advectionType;
 Array<DiffusionForm> PorousMedia::diffusionType;
 
@@ -138,6 +141,11 @@ bool PorousMedia::use_funccount = false;
 // lists
 std::map<std::string, int> PorousMedia::model_list;
 std::map<std::string, int> PorousMedia::bc_list;
+std::map<std::string, int> PorousMedia::obs_list;
+std::map<std::string, int> PorousMedia::phase_list;
+std::map<std::string, int> PorousMedia::comp_list;
+std::map<std::string, int> PorousMedia::tracer_list;
+std::map<std::string, int> PorousMedia::region_list;
 
 // AMANZI flags
 #ifdef AMANZI
@@ -287,6 +295,19 @@ PorousMedia::setup_list()
   bc_list["rockhold"] = 3;
   bc_list["zero_total_velocity"] = 4;
   bc_list["richard"] = 5;
+
+  // obs_list
+
+  // default region_list
+  region_list["ALL"] = 0;
+  region_list["XLOBC"] = 1;
+  region_list["XHIBC"] = 2;
+  region_list["YLOBC"] = 3;
+  region_list["YHIBC"] = 4;
+#if BL_SPACEDIM == 3
+  region_list["ZLOBC"] = 5;
+  region_list["ZHIBC"] = 6;
+#endif
 }
 
 void
@@ -549,15 +570,15 @@ void PorousMedia::read_geometry()
       Array<std::string> r_name(nRegion_Read);
 
       pp.getarr("region",r_name,0,nRegion_Read);
-
+      
       for (int i = nRegion_DEF; i<nregion; i++)
 	{
 	  int idx = i-nRegion_DEF;      
+	  region_list[r_name[idx]] = i;
 	  ParmParse::Record ppr = pp.getRecord(r_name[idx]);
 	  ppr->get("purpose",r_purpose);
 	  ppr->get("type",r_type);      
 	  ppr->getarr("param",r_param,0,ppr->countval("param"));
-	  std::cout<<"name = "<<r_name[idx]<<std::endl;
 	  if (r_type == 1) 
 	    {
 	      region_array[i] = new boxRegion(r_name[idx],r_purpose,r_type);
@@ -576,7 +597,6 @@ void PorousMedia::read_geometry()
 
       pp.query("surf_file",surf_file);
     }
-    std::cout<<"region_array.size() "<<region_array.size()<<std::endl;
 
 }
 
@@ -603,6 +623,7 @@ void PorousMedia::read_rock()
       ppr->get("porosity",rock_array[i].porosity);    
       ppr->getarr("permeability",rock_array[i].permeability,
 		  0,ppr->countval("permeability"));
+      BL_ASSERT(rock_array[i].permeability.size() == BL_SPACEDIM);
       // The permeability is specified in mDa.  
       // This needs to be multiplied with 1e-7 to be consistent 
       // with the other units in the code
@@ -641,21 +662,14 @@ void PorousMedia::read_rock()
   bool build_full_pmap = false;
   bool build_full_kmap = false;
   pp.getarr("assign",r_region,0,nassign);
-  
-  std::cout<<"nassign = "<<nassign<<std::endl;
-
+ 
   for (int i = 0; i<nassign; i++)
     {
       ParmParse::Record ppr = pp.getRecord(r_region[i]);
       ppr->get("type",rock_type);
-
-      std::cout<<"nrock = "<<nrock<<std::endl;
-
       for (int j = 0; j< nrock; j++)
 	if (rock_type == r_names[j])
 	  idx = j;
-          std::cout<<"idx = "<<idx<<std::endl;
-
       for (int j = 0; j< region_array.size(); j++) {
 	if (r_region[i] == region_array[j]->name ) {
 	// BL_ASSERT(region_array[j]->purpose==0); 
@@ -751,20 +765,11 @@ void PorousMedia::read_rock()
 	  rock_array[i].fratio = fratio;
 	  rock_array[i].problo = problo;
 	  rock_array[i].probhi = probhi;
-//<<<<<<< PM_setup.cpp
-
- //         std::cout<<"inside: region_array.size() "<<region_array.size()<<std::endl;
-
-
-//=======
-//>>>>>>> 1.48
 	  rock_array[i].build_kmap(kappadata, region_array, gsfile);
 	}
 
       VisMF::Write(kappadata,kfile);
     }
-
-std::cout<<"before build: region_array.size() "<<region_array.size()<<std::endl;
 
   if (build_full_pmap)
     {
@@ -790,6 +795,14 @@ std::cout<<"before build: region_array.size() "<<region_array.size()<<std::endl;
 
 void PorousMedia::read_prob()
 {
+  ParmParse pp;
+
+  max_step  = -1;    
+  stop_time = -1.0;  
+
+  pp.query("max_step",max_step);
+  pp.query("stop_time",stop_time);
+
   //
   // Get run options.
   //  
@@ -942,6 +955,7 @@ void  PorousMedia::read_comp()
   // Get number and names of phases
   nphases = pp.countval("phase");
   pp.getarr("phase",pNames,0,nphases);
+  for (int i = 0; i<nphases; i++) phase_list[pNames[i]] = i;
 
   ParmParse cp("comp");
 
@@ -957,6 +971,7 @@ void  PorousMedia::read_comp()
 
   // Get parameters for each component
   cp.getarr("comp",cNames,0,ncomps);
+  for (int i = 0; i<ncomps; i++) comp_list[cNames[i]] = i;
   pType.resize(ncomps);
   density.resize(ncomps);
   muval.resize(ncomps);
@@ -970,8 +985,9 @@ void  PorousMedia::read_comp()
       ppr->get("density",density[i]);
       ppr->get("viscosity",muval[i]);
       ppr->get("diffusivity",visc_coef[i]);
-      for (int j=0;j<nphases; j++) 
-	if (buffer.compare(pNames[j])==0) pType[i] = j;	   
+      pType[i] = phase_list[buffer];
+      //for (int j=0;j<nphases; j++) 
+      //if (buffer.compare(pNames[j])==0) pType[i] = j;	   
       // Only components have diffusion at the moment.  
       if (visc_coef[i] > 0)
 	{
@@ -987,10 +1003,7 @@ void  PorousMedia::read_comp()
   std::string domName;
   cp.query("dominant",domName);
   if (!domName.empty())
-    {
-      for (int i = 0; i<ncomps; i++)
-	if (domName.compare(cNames[i])==0) idx_dominant = i;
-    }
+    idx_dominant = comp_list[domName];
 
   // Get the boundary conditions for the components
   Array<int> lo_bc(BL_SPACEDIM), hi_bc(BL_SPACEDIM);
@@ -1069,9 +1082,7 @@ void  PorousMedia::read_comp()
   for (int i = 0; i<n_init_region; i++)
     {
       rhoinit_param[i].resize(2);
-      for (int j = 0; j<region_array.size(); j++)
-	if (region_array[j]->name.compare(init_region[i])==0) 
-	  rhoinit_param[i][0] = j;
+      rhoinit_param[i][0] = region_list[init_region[i]];
       ParmParse::Record ppr = cp.getRecord(init_region[i]);
       ppr->get("type",type_name);
       rhoinit_param[i][1]=bc_list[type_name];
@@ -1089,9 +1100,7 @@ void  PorousMedia::read_comp()
       for (int i = 0; i<n_inflow_region; i++)
 	{
 	  rhoinflow_param[i].resize(2);
-	  for (int j = 0; j<region_array.size(); j++)
-	    if (region_array[j]->name.compare(inflow_region[i])==0) 
-	      rhoinflow_param[i][0] = j;
+	  rhoinflow_param[i][0] = region_list[inflow_region[i]];
 	  ParmParse::Record ppr = cp.getRecord(inflow_region[i]);
 	  ppr->get("type",type_name);
 	  rhoinflow_param[i][1] = bc_list[type_name];
@@ -1123,8 +1132,8 @@ void  PorousMedia::read_tracer()
     {
       // Get names of tracer groups
       pp.getarr("group",qNames,0,pp.countval("group"));
-
       pp.getarr("tracer",tNames,0,ntracers);
+      for (int i = 0; i< ntracers; i++) tracer_list[tNames[i]] = i+ncomps;
       tType.resize(ntracers);
       std::string buffer;
       for (int i = 0; i<ntracers; i++)
@@ -1150,9 +1159,7 @@ void  PorousMedia::read_tracer()
       for (int i = 0; i<n_init_region; i++)
 	{
 	  tinit_param[i].resize(2);
-	  for (int j = 0; j<region_array.size(); j++)
-	    if (region_array[j]->name.compare(init_region[i])==0) 
-	      tinit_param[i][0] = j;
+	  tinit_param[i][0] = region_list[init_region[i]];
 	  ParmParse::Record ppr = pp.getRecord(init_region[i]);
 	  ppr->get("type",type_name);
 	  tinit_param[i][1]=bc_list[type_name];
@@ -1171,9 +1178,7 @@ void  PorousMedia::read_tracer()
 	    {
 	      tinflow_param[i].resize(2);
 	      tinflow[i].resize(ntracers);
-	      for (int j = 0; j<region_array.size(); j++)
-		if (region_array[j]->name.compare(inflow_region[i])==0) 
-		  tinflow_param[i][0] = j;
+	      tinflow_param[i][0] = region_list[inflow_region[i]]; 
 	      ParmParse::Record ppr = pp.getRecord(inflow_region[i]);
 	      ppr->get("type",type_name);
 	      tinflow_param[i][1]=bc_list[type_name];
@@ -1312,9 +1317,6 @@ void  PorousMedia::read_source()
               }
           }
           BL_ASSERT(region_set);
-
-          std::cout << "source buffer, region: " << buffer << ", " << source_array[i].region << std::endl;
-
 	  ppr->get("dist_type",buffer);
 	  if (!buffer.compare("constant"))
 	      source_array[i].dist_type = 0;
@@ -1366,62 +1368,29 @@ void PorousMedia::read_observation()
 	{
 	  ParmParse::Record ppr = pp.getRecord(oname[i]);
 	  observation_array[i].name = oname[i];
-	  
+	  obs_list[oname[i]] = i;
+	  ppr->get("obs_type",observation_array[i].obs_type);
 	  ppr->get("var_type",observation_array[i].var_type);
 	  ppr->get("var_id",observation_array[i].var_id);
 
 	  if (!observation_array[i].var_type.compare("comp"))
-	    {
-	      observation_array[i].id.resize(1);
-	      for (int j=0; j<cNames.size();j++)
-		{
-		  if (!observation_array[i].var_id.compare(cNames[j]))
-		    observation_array[i].id[0] = j;
-		}
-	    }
+	    observation_array[i].id = comp_list[observation_array[i].var_id];
 	  else if (!observation_array[i].var_type.compare("tracer"))
-	    {
-	      if (!observation_array[i].var_id.compare("ALL"))
-		{
-		  observation_array[i].id.resize(ntracers);
-		  for (int j=0;j<ntracers;j++)
-		    observation_array[i].id[j] = j ;
-		}
-	      else
-		{
-		  observation_array[i].id.resize(1);
-		  for (int j=0; j<ntracers;j++)
-		    {
-		      if (!observation_array[i].var_id.compare(tNames[j]))
-			observation_array[i].id[0] = j;
-		    }
-		}
-	    }
+	    observation_array[i].id = tracer_list[observation_array[i].var_id];
 
 	  ppr->get("region",buffer);
-          observation_array[i].region = -1;
-	  for (int j=0; j<region_array.size();j++)
-	    {
-	      if (!buffer.compare(region_array[j]->name))
-		observation_array[i].region = j;
-	    }
-          BL_ASSERT(observation_array[i].region>=0);
+          observation_array[i].region = region_list[buffer];
           
-
-	  ppr->get("op_type",buffer);
-	  if (!buffer.compare("average"))
-	      observation_array[i].op_type = 0;
-	  else if (!buffer.compare("integral"))
-	      observation_array[i].op_type = 1;
-	  else if (!buffer.compare("cumulative"))
-	      observation_array[i].op_type = 2;
-
 	  ppr->getarr("times",observation_array[i].times,
 		      0,ppr->countval("times"));
 
-	  //observation_array[i].vals.resize(observation_array[i].times.size());
-	 
+	  //observation_array[i].vals.resize(observation_array[i].times.size());	 
 	}
+      
+      // filename for output
+      obs_outputfile = "observation.out";
+      pp.query("output_file",obs_outputfile);
+      
     }
 }
 

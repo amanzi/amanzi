@@ -921,7 +921,7 @@ Diffusion::residual_richard (ABecLaplacian*         visc_op,
       DEF_CLIMITS(by,by_dat,bylo,byhi);
 	
 #if (BL_SPACEDIM==3)
-	const FArrayBox& bz = (*diffp[2])[fpi];
+	const FArrayBox& bz = (*beta[2])[mfi];
 	DEF_CLIMITS(bz,bz_dat,bzlo,bzhi);
 #endif
 	FORT_DRHOG_RICHARD (rg_dat, ARLIM(rglo), ARLIM(rghi),
@@ -999,6 +999,8 @@ Diffusion::richard_iter (Real                   dt,
 			 const MultiFab* const* beta,
 			 const MultiFab* const* beta_dp,
 			 MultiFab*              pc,
+			 MultiFab*              umac,
+			 const bool             do_upwind,
 			 Real*                  err_nwt)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_iter()");
@@ -1127,7 +1129,7 @@ Diffusion::richard_iter (Real                   dt,
   pm_level->calcLambda(&lambda,Stmp);
   MultiFab** betatmp;
   allocFluxBoxesLevel(betatmp,0,1);
-  pm_level->calc_richard_coef(betatmp,&lambda,0);
+  pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
   // Compute residual
   setBeta (visc_op,0,betatmp,false);
   MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
@@ -1144,7 +1146,7 @@ Diffusion::richard_iter (Real                   dt,
       MultiFab::Add(Stmp,Soln,0,0,1,0);
       pm_level->calcCapillary(&pctmp,Stmp);
       pm_level->calcLambda(&lambda,Stmp);
-      pm_level->calc_richard_coef(betatmp,&lambda,0);
+      pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
       setBeta (visc_op,0,betatmp,false);
       MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
       residual_richard(visc_op,dt*density[0],gravity,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
@@ -1153,9 +1155,7 @@ Diffusion::richard_iter (Real                   dt,
     }
 
   MultiFab::Copy(S_new,Stmp,0,nc,1,0);
-  //MultiFab::Copy(S_new,*pm_level->pcnp1_cc,0,ncomps+2,1,0);
-  //MultiFab::Copy(S_new,Rhs,0,ncomps+1,1,0);
-  //MultiFab::Copy(S_new,Rhsp1,0,ncomps,1,0);
+  MultiFab::Copy(S_new,Rhsp1,0,pm_level->ncomps+pm_level->ntracers,1,0);
 
   // Compute the err_nwt
   // *err_nwt = Soln.norm2(0)/S_new.norm2(0); 
@@ -1173,6 +1173,8 @@ Diffusion::richard_iter_eqb (int                    nc,
 			     const MultiFab* const* beta,
 			     const MultiFab* const* beta_dp,
 			     MultiFab*              pc,
+			     MultiFab*              umac,
+			     const bool             do_upwind,
 			     Real*                  err_nwt)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_iter_eqb()");
@@ -1183,7 +1185,7 @@ Diffusion::richard_iter_eqb (int                    nc,
   MultiFab* alpha = 0;
   Real dt = 1.0;
   richard_iter (dt,nc,gravity,density,res_fix,alpha, 
-		beta,beta_dp,pc,err_nwt);
+		beta,beta_dp,pc,umac,do_upwind,err_nwt);
   
 
 //   MultiFab& S_new = caller->get_new_data(State_Type);
@@ -1411,7 +1413,7 @@ Diffusion::richard_flux( int                    nc,
 	
 #if (BL_SPACEDIM==3)
       FArrayBox& fz = (*flux[2])[mfi];
-      const FArrayBox& bz = (*diffp[2])[fpi];
+      const FArrayBox& bz = (*beta[2])[mfi];
       DEF_LIMITS(fz,fz_dat,fzlo,fzhi);
       DEF_CLIMITS(bz,bz_dat,bzlo,bzhi);
 #endif

@@ -2,7 +2,7 @@
 #define _POROUSMEDIA_F_H_
 
 /*
-** $Id: POROUSMEDIA_F.H,v 1.36 2011-07-05 23:38:54 gpau Exp $
+** $Id: POROUSMEDIA_F.H,v 1.38 2011-07-13 00:16:16 gpau Exp $
 */
 
 #ifdef BL_LANG_FORT
@@ -292,12 +292,16 @@ extern "C" {
 			  const Real* dfy, ARLIM_P(dfylo), ARLIM_P(dfyhi),
 #if (BL_SPACEDIM==3)
 			  const Real* dfz, ARLIM_P(dfzlo), ARLIM_P(dfzhi),
+#endif			  
+			  const Real* ux, ARLIM_P(uxlo), ARLIM_P(uxhi),
+			  const Real* uy, ARLIM_P(uylo), ARLIM_P(uyhi),
+#if (BL_SPACEDIM==3)
+			  const Real* uz, ARLIM_P(uzlo), ARLIM_P(uzhi),
 #endif
 			  const int* lo, const int* hi,
 			  const int* domlo, const int* domhi,const int* bc, 
 			  const int* inflow_bc_lo, const int* inflow_bc_hi,
-			  const Real* inflow_lo, const Real* inflow_hi,
-			  const int* nc);
+			  const int* nc, const bool* do_upwind);
 
   void FORT_RICHARD_AJAC(const Real* S, ARLIM_P(slo), ARLIM_P(shi),
 			 const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
@@ -321,6 +325,11 @@ extern "C" {
 #if (BL_SPACEDIM==3)
 			 const Real* dfz, ARLIM_P(dfzlo), ARLIM_P(dfzhi),
 #endif
+			 const Real* ux, ARLIM_P(uxlo), ARLIM_P(uxhi),
+			 const Real* uy, ARLIM_P(uylo), ARLIM_P(uyhi),
+#if (BL_SPACEDIM==3)
+			 const Real* uz, ARLIM_P(uzlo), ARLIM_P(uzhi),
+#endif
 			 const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 			 const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
 			 const Real* P, ARLIM_P(plo), ARLIM_P(phi), 
@@ -333,8 +342,7 @@ extern "C" {
 			 const int* domlo, const int* domhi, 
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
-			 const Real* inflow_lo, const Real* inflow_hi,
-			 const Real* deps);
+			 const Real* deps, const bool* do_upwind);
 
     void FORT_RICHARD_VELBC(const Real* rg, ARLIM_P(rglo), ARLIM_P(rghi),
 			    const int*  lo,    const int*  hi,

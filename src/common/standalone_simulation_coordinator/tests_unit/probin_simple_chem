@@ -1,0 +1,5 @@
+&fortin 
+	 probtype = 1 
+	 denerr   = 1.0 
+	 adverr   = 10
+/

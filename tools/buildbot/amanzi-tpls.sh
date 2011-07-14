@@ -195,7 +195,7 @@
 # https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.83rc3.tar.gz
 #
 # ccse:
-# https://ccse.lbl.gov/Software/tarfiles/ccse.tar.gz
+# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.1.tar.gz
 #
 #
 #################################################################################
@@ -238,7 +238,7 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
-CCSE_VERSION=unused
+CCSE_VERSION=0.1.1
 
 ################################################################################
 #
@@ -325,8 +325,8 @@ function download_archives {
         wget --no-check-certificate https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-${MSTK_VERSION}.tar.gz
     fi
 
-    if [  ! -f ${SOURCE}/ccse.tar.gz ]; then
-        wget --no-check-certificate https://ccse.lbl.gov/Software/tarfiles/ccse.tar.gz
+    if [  ! -f ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz ]; then
+        wget --no-check-certificate https://ccse.lbl.gov/Software/tarfiles/ccse-${CCSE_VERSION}.tar.gz
     fi
 
     cd ${SCRIPT_DIR}
@@ -896,7 +896,7 @@ function install_ccse {
 
     mkdir -p ${CCSE_PREFIX}
     cd ${CCSE_PREFIX}
-    tar zxf ${SOURCE}/ccse.tar.gz
+    tar zxf ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz
     # TODO(bandre): is this "cd" needed?
     cd ${CCSE_DIR}/tools/buildbot
 
@@ -1169,8 +1169,8 @@ ENABLE_OpenMP=1
 AMANZI_SPACEDIM=2
 AMANZI_PRECISION=DOUBLE
 AMANZI_CHEMEVOL_PKG=AMANZI
-ENABLE_Structured=0
-ENABLE_Unstructured=1
+ENABLE_Structured=1
+ENABLE_Unstructured=0
 
 while getopts "abcdefghikmnop:stuwz" flag
 do

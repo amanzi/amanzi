@@ -1,5 +1,5 @@
 //
-// $Id: Diffusion.H,v 1.23 2011-07-08 08:09:47 marc Exp $
+// $Id: Diffusion.H,v 1.24 2011-07-12 17:17:21 gpau Exp $
 //
 
 #ifndef _Diffusion_H_
@@ -122,6 +122,8 @@ public:
 		       const MultiFab* const* beta,
 		       const MultiFab* const* beta_dp,
 		       MultiFab*              pc,
+		       MultiFab*              umac,
+		       const bool             do_upwind,
 		       Real*                  err_nwt);  
 
     void richard_iter_eqb (int                    nc,
@@ -131,6 +133,8 @@ public:
 			   const MultiFab* const* beta,
 			   const MultiFab* const* beta_dp,
 			   MultiFab*              pc,
+			   MultiFab*              umac,
+			   const bool             do_upwind,
 			   Real*                  err_nwt);    
   
     void jac_richard (int                    nc,

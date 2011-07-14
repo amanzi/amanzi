@@ -1,7 +1,7 @@
 #ifndef _PorousMedia_H_
 #define _PorousMedia_H_
 //
-// $Id: PorousMedia.H,v 1.97 2011-07-08 08:09:47 marc Exp $
+// $Id: PorousMedia.H,v 1.98 2011-07-12 17:17:22 gpau Exp $
 //
 #include <Geometry.H>
 #include <FArrayBox.H>
@@ -606,14 +606,18 @@ protected:
   //
   void calc_richard_coef (MultiFab*  diffusivity[BL_SPACEDIM],
 			  const MultiFab* lbd,
-			  const int  nc = 0);
+			  const MultiFab* u_mac,
+			  const int  nc = 0,
+			  const bool do_upwind = false);
   //
   // Calculate the diffusive term in the jacobian of richard's equation
   //
   void calc_richard_jac (MultiFab*  diffusivity[BL_SPACEDIM],
 			 const MultiFab* lbd,
+			 const MultiFab* umac,
 			 const Real time,
-			 const int  nc = 1);
+			 const int  nc = 0,
+			 const bool do_upwind = false);
   //
   // Calculate divergence of velocity boundary condition 
   //
@@ -714,6 +718,15 @@ protected:
   void check_minmax(MultiFab* umac);
   void compute_divu (MultiFab& soln, MultiFab* umac);
 
+  // list
+  static std::map<std::string, int> model_list;
+  static std::map<std::string, int> bc_list;
+  static std::map<std::string, int> obs_list;
+  static std::map<std::string, int> phase_list;
+  static std::map<std::string, int> comp_list;
+  static std::map<std::string, int> tracer_list;
+  static std::map<std::string, int> region_list;
+
   /*
     Flow model.  Options are
     0: single-phase flow with no precipitate.
@@ -721,8 +734,6 @@ protected:
     2: 2-phase 2-component flow
     3: polymer flow (2-phase 3-component)
   */
-  static std::map<std::string, int> model_list;
-  static std::map<std::string, int> bc_list;
   static std::string model_name;
   static int model;
 
@@ -799,6 +810,7 @@ protected:
   static Array<Source> source_array;
 
   // observations
+  static std::string obs_outputfile;
   static Array<Observation> observation_array;
 
 #ifdef AMANZI
@@ -941,6 +953,8 @@ protected:
   static int  it_pressure;
   static bool do_any_diffuse;
   static int  do_cpl_advect;
+  static int  max_step;
+  static Real stop_time;
 
   //
   // Number of states
