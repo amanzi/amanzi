@@ -27,8 +27,9 @@ if (ENABLE_Unstructured)
 
 endif()
 
-# Grid-option agnostic chemistry
+# Grid-option agnostic chemistry and interfaces
 add_subdirectory(chemistry)
+add_subdirectory(common/interface_platform)
 
 if (ENABLE_Unstructured)
   add_subdirectory(chemistry_pk)
@@ -38,10 +39,9 @@ if (ENABLE_Unstructured)
 
   # Multiprocess coordinator
   add_subdirectory(mpc)
+endif()
 
-  # interfaces
-  add_subdirectory(common/interface_platform)
-
+if (ENABLE_Unstructured)
   # unstructured grid simualtion driver, and Amanzi binaries
   add_subdirectory(executables)
 endif()

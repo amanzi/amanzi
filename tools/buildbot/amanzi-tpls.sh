@@ -1226,6 +1226,11 @@ echo "AMANZI_PRECISION=$AMANZI_PRECISION"
 echo "ENABLE_Structured=$ENABLE_Structured"
 echo "ENABLE_Unstructured=$ENABLE_Unstructured"
 
+if [ ${ENABLE_Structured} == 0 -a ${ENABLE_Unstructured} == 0 ]; then
+  echo "Must enable Structured or Unstructured.  Exiting..."
+  exit 1
+fi
+
 if [ $DOWNLOAD_ARCHIVES -eq 1 ]; then
     download_archives
     cd ${SCRIPT_DIR}

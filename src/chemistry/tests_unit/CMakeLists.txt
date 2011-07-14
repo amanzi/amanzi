@@ -32,7 +32,7 @@ add_executable(chemistry_tests
 	       test_mineral_kinetics_factory.cc
 	       test_kinetic_rate.cc
 	       test_beaker.cc)
-target_link_libraries(chemistry_tests chemistry 
+target_link_libraries(chemistry_tests 
                       error_handling ${GEOCHEM_LIBS} ${UnitTest_LIBRARIES})
 add_amanzi_test(chemistry chemistry_tests KIND unit)
 #
