@@ -22,3 +22,5 @@ PARALLEL_NP=2
 MPIEXEC_ARGS='-mca mpi_yield_when_idle 1'
 
 USE_MSTK=ON
+ENABLE_Structured=1
+ENABLE_Unstructured=0
