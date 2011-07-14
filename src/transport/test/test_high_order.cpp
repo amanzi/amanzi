@@ -26,7 +26,6 @@ double f_smooth(double* x, double t) {
 }
 
 double f_cubic(double* x, double t) {
-return 0;
   if( x[0] < 1 + t ) return 1;
   if( x[0] > 3 + t ) return 0;
   double z = (x[0]-1-t) / 2;
@@ -44,14 +43,14 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
   for (int nx=10; nx<161; nx*=2 ) {
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 10, 10, comm)); 
+    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 2, 2, comm)); 
 
     // create a MPC and Transport states with one component
     int num_components = 1;
     State mpc_state(num_components, mesh);
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
-    double u[3] = {1, 2, 0};
+    double u[3] = {1, 0, 0};
     TS->analytic_darcy_flux(u);
     TS->analytic_total_component_concentration(f_cubic);
     TS->analytic_porosity(1.0);
