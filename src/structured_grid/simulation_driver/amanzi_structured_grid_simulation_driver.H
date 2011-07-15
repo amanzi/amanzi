@@ -8,10 +8,10 @@
 #include "Simulator.H"
 
 struct AmanziStructuredGridSimulationDriver
-  : Simulator
+  : Amanzi::Simulator
 {
   virtual ReturnType Run (const MPI_Comm&               mpi_comm,
                           const Teuchos::ParameterList& input_parameter_list,
-                          ObservationData&              output_observations);
+                          Amanzi::ObservationData&      output_observations);
 };
 #endif

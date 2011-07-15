@@ -1169,8 +1169,8 @@ ENABLE_OpenMP=1
 AMANZI_SPACEDIM=2
 AMANZI_PRECISION=DOUBLE
 AMANZI_CHEMEVOL_PKG=AMANZI
-ENABLE_Structured=1
-ENABLE_Unstructured=0
+ENABLE_Structured=0
+ENABLE_Unstructured=1
 
 while getopts "abcdefghikmnop:stuwz" flag
 do

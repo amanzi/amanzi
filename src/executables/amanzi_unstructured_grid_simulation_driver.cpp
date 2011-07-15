@@ -37,10 +37,10 @@
 
 #include "amanzi_unstructured_grid_simulation_driver.hpp"
 
-Simulator::ReturnType
+Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                              const Teuchos::ParameterList& input_parameter_list,
-                                             ObservationData&              output_observations)
+                                             Amanzi::ObservationData&      output_observations)
 {
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
@@ -119,6 +119,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   
   delete comm;
       
+  return Amanzi::Simulator::SUCCESS;
 }
 
 

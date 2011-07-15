@@ -5,10 +5,10 @@
 
 
 
-Simulator::ReturnType
+Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                            const Teuchos::ParameterList& input_parameter_list,
-                                           ObservationData&              output_observations)
+                                           Amanzi::ObservationData&      output_observations)
 {
     int argc=0;
     char** argv;
@@ -70,5 +70,5 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
 
-    return Simulator::SUCCESS;
+    return Amanzi::Simulator::SUCCESS;
 }

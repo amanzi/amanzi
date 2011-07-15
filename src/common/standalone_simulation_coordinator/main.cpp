@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
       Teuchos::getParameter<std::string>(driver_parameter_list,"grid_option")
       );
 
-  Simulator* simulator = 0;
+  Amanzi::Simulator* simulator = 0;
   
   if (grid_option=="Structured")
     {
@@ -96,8 +96,8 @@ int main(int argc, char *argv[])
 #endif
     }
 
-  ObservationData output_observations;  
-  Simulator::ReturnType ret = simulator->Run(mpi_comm,driver_parameter_list,output_observations);
+  Amanzi::ObservationData output_observations;  
+  Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm,driver_parameter_list,output_observations);
 
   delete simulator;
   delete comm;
