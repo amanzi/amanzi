@@ -1,4 +1,4 @@
 <ParameterList name="t1-structured">
   <Parameter name="grid_option" type="string" value="Structured"/>
-  <Parameter name="PPfile" type="string" value="inputs_simple_chem.pp"/>
+  <Parameter name="PPfile" type="string" value="inputs_test_1.pp"/>
 </ParameterList>

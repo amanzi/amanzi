@@ -404,7 +404,7 @@ prob.init_shrink          = 1  # factor which multiplies the very first time ste
 #*******************************************************************************
 
 # Name of the file which specifies problem-specific parameters (defaults to "probin")
-amr.probin_file 	= probin_simple_chem
+amr.probin_file 	= probin
 
 
 #*******************************************************************************

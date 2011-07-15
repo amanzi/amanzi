@@ -139,14 +139,27 @@ target_link_libraries(ssc ${ssc_tpl_libs_incl} ${ssc_tpl_libs})
 if (BUILD_TESTS)
 
   if (ENABLE_Structured)
-    set(UNIT_TEST_DIR tests_unit)
-    add_amanzi_test(ssc-structured-tests ssc "--xml_file=t1-structured.xml" KIND unit)
+
+    add_amanzi_test(ssc-structured-test-0 ssc "--xml_file=t0-structured.xml" KIND unit)
+    add_amanzi_test(ssc-structured-test-1 ssc "--xml_file=t1-structured.xml" KIND unit)
+    add_amanzi_test(ssc-structured-test-2 ssc "--xml_file=t2-structured.xml" KIND unit)
 
     if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
       execute_process(COMMAND ${CMAKE_COMMAND} -E
+                      copy ${SSC_SOURCE_DIR}/tests_unit/probin ${SSC_BINARY_DIR})
+
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+                      copy ${SSC_SOURCE_DIR}/tests_unit/t0-structured.xml ${SSC_BINARY_DIR})
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_test_0.pp ${SSC_BINARY_DIR})
+
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t1-structured.xml ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/probin_simple_chem ${SSC_BINARY_DIR})
+                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_test_1.pp ${SSC_BINARY_DIR})
+
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+                      copy ${SSC_SOURCE_DIR}/tests_unit/t2-structured.xml ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/inputs_simple_chem.pp ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E

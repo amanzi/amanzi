@@ -7,6 +7,7 @@ Amr* Observation::amrp = 0;
 Observation::Observation()
 {
   times_idx = 0;
+  val_old = 0.;
 
   obs_type_list["average"]          = 0;
   obs_type_list["integral"]         = 1;
@@ -64,7 +65,7 @@ Observation::process(Real t_old,
 	  if (times[i] >= t_old && times[i] <= t_new)
 	    {
 	      vals.resize(nObs+1);
-	      vals[nObs] = val_old + (t_new-times[i])/(t_new-t_old)*(val_new-val_old);
+	      vals[nObs] = val_old + (times[i]-t_old)/(t_new-t_old)*(val_new-val_old);
 	    }
 	}
     }
