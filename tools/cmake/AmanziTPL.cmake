@@ -157,10 +157,11 @@ set_feature_info(ExodusII
 ##############################################################################
 # CCSE - http://ccse.lbl.gov/Software/ccse_core.html
 ##############################################################################
-find_package(CCSE REQUIRED)
-set_feature_info(CCSE
-                 "CCSE BoxLib softare library required for structured grid")
-
+if (ENABLE_Structured)
+  find_package(CCSE REQUIRED)
+  set_feature_info(CCSE
+                   "CCSE BoxLib softare library required for structured grid")
+endif()
 ##############################################################################
 ############################ Option Processing ###############################
 ##############################################################################
