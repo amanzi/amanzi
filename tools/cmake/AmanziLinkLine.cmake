@@ -92,5 +92,5 @@ endmacro()
 
 macro(create_link_line)
   message(STATUS "Writing link line to file ${AMANZI_LINK_LINE}")
-  file(WRITE ${AMANZI_LINK_LINE})
+  file(WRITE ${AMANZI_LINK_LINE} "-L${CMAKE_INSTALL_PREFIX}/lib ")
 endmacro()
