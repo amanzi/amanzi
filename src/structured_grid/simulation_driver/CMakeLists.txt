@@ -23,6 +23,8 @@ include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
 
 add_library(boxdriv amanzi_structured_grid_simulation_driver.cpp)
+add_install_library(boxdriv)
+link_list_add(boxdriv)
 
 if (BUILD_TESTS)
 

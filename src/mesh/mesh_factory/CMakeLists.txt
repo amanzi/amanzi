@@ -39,6 +39,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 #
 set(mesh_factory_files MeshFileType.cc MeshFramework.cc MeshFactory.cc FrameworkTraits.cc) 
 add_library(mesh_factory ${mesh_factory_files})
+add_install_library(mesh_factory)
 target_link_libraries(mesh_factory error_handling simple_mesh)
 link_list_add(mesh_factory)
 #
@@ -46,7 +47,6 @@ link_list_add(mesh_factory)
 #
 file(GLOB mesh_factory_inc_files "*.hh")
 add_install_include_file(${mesh_factory_inc_files})
-add_install_library(mesh_factory)
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})

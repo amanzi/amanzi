@@ -51,6 +51,7 @@ add_definitions("-DUSE_MPI")
 # Library: mpc
 #
 add_library(mpc MPC.cpp)
+add_install_library(mpc)
 set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
 if (ENABLE_CGNS)
     list(APPEND mpc_tpl_libs ${CGNS_LIBRARIES})

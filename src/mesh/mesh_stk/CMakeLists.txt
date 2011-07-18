@@ -40,6 +40,8 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 #
 file(GLOB stk_mesh_files "*.cc") 
 add_library(stk_mesh ${stk_mesh_files})
+add_install_library(stk_mesh)
+link_list_add(stk_mesh)
 target_link_libraries(stk_mesh error_handling mesh_data mesh 
                       ${Trilinos_LIBRARIES} ${ExodusII_LIBRARIES})
 
@@ -48,9 +50,6 @@ target_link_libraries(stk_mesh error_handling mesh_data mesh
 #
 file(GLOB stk_inc_files "*.hh")
 add_install_include_file(${stk_inc_files})
-add_install_library(stk_mesh)
-
-link_list_add(stk_mesh)
 
 if (BUILD_TESTS)
 
