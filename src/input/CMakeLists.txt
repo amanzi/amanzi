@@ -36,6 +36,7 @@ set(input_src_files input_base_class.cc simple_mesh_input.cc
                     transport_input.cc)
 add_library(input ${input_src_files})
 target_link_libraries(input ${Teuchos_LIBRARIES})
+link_list_add(input)
 
 #
 # Install targets

@@ -38,6 +38,7 @@ add_library(solvers ${solvers_source_files})
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 target_link_libraries(solvers error_handling ${solvers_tpl_libs})
+link_list_add(solvers)
 
 #
 # Install Targets

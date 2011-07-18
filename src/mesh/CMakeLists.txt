@@ -1,6 +1,5 @@
 # -*- mode: cmake -*-
 
-
 #
 #  Amanzi
 #    Mesh 
@@ -39,13 +38,14 @@ target_link_libraries(mesh geometry)
 # Library: cell_geometry (WILL GO AWAY WHEN EVERYONE SWITCHES TO THE NEW API)
 #
 add_library(cell_geometry cell_geometry.cc)
+link_list_add(cell_geometry)
 
 #
 # Library: mesh_audit
 #
 add_library(mesh_audit MeshAudit.cc MeshAuditOld.cc)
 target_link_libraries(mesh_audit mesh error_handling cell_geometry ${Epetra_LIBRARIES})
-
+link_list_add(mesh_audit)
 #
 # Install Targets
 #

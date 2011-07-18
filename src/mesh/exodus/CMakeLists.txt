@@ -38,6 +38,8 @@ add_library(exodus ${exo_source_files})
 target_link_libraries(exodus 
                       error_handling mesh_data
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
+link_list_add(exodus)
+
 
 #
 # Binary: exec_reader
@@ -54,6 +56,9 @@ target_link_libraries(exodus_read_test exodus)
 #
 # Install Targets
 #
+file(GLOB exo_inc_files "*.hh")
+add_install_include_file(${exo_inc_files})
+add_install_library(exodus)
 add_install_binary(exec_reader)
 add_install_binary(exodus_read_test)
 

@@ -41,6 +41,7 @@ add_definitions("-DUSE_MPI")
 file(GLOB moab_mesh_files "*.cc") 
 add_library(moab_mesh ${moab_mesh_files})
 target_link_libraries(moab_mesh mesh error_handling geometry ${MOAB_LIBRARIES} ${HDF5_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
+link_list_add(moab_mesh)
 
 #
 # Install Targets 

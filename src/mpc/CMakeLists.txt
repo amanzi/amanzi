@@ -58,6 +58,7 @@ if (ENABLE_CGNS)
 endif()    
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
+link_list_add(mpc)
 
 #
 # Install Targets

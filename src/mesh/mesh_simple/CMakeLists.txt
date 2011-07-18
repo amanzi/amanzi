@@ -29,7 +29,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 file(GLOB simple_mesh_source_files "*.cc")
 add_library(simple_mesh ${simple_mesh_source_files})
 target_link_libraries(simple_mesh mesh geometry error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-
+link_list_add(simple_mesh)
 #
 # Install Targets
 #
