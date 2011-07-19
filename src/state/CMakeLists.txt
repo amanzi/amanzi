@@ -28,6 +28,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
