@@ -8,6 +8,7 @@
 #include <UnitTest++.h>
 
 #include "species.hh"
+#include "aqueous_equilibrium_complex.hh"
 #include "activity_model_factory.hh"
 #include "activity_model_unit.hh"
 #include "activity_model_debye_huckel.hh"
@@ -53,7 +54,10 @@ SUITE(GeochemistryTestsActivityModels) {
   }
 
   void ActivityModelFactoryTest::RunTest(const std::string name) {
-    activity_model_ = amf_.Create(name);
+	std::string dummy(" ");
+	std::vector<ac::Species> dummy_prim;
+	std::vector<ac::AqueousEquilibriumComplex> dummy_sec;
+    activity_model_ = amf_.Create(name,dummy,dummy_prim,dummy_sec);
   }
 
   // use C++ RTTI to determine if the correct type of object was
@@ -182,7 +186,8 @@ SUITE(GeochemistryTestsActivityModels) {
       }
     }
     *gamma = -1.0;  // final value should always be > 0
-    activity_model_ = amf_.Create(activity_model_name());
+    std::string pitzer_db(" ");
+    activity_model_ = amf_.Create(activity_model_name(), pitzer_db, species_, aqueous_complexes_);
     activity_model_->CalculateIonicStrength(species_, aqueous_complexes_);
     *gamma = activity_model_->Evaluate(species_.at(index));
   }  // end ActivityModelTest::RunTest()

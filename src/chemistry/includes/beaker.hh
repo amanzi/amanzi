@@ -51,6 +51,8 @@ class Beaker {
     unsigned int max_iterations;
     // models
     std::string activity_model_name;
+    // Name of the Pitzer virial coefficients database
+    std::string pitzer_database;
     // physical parameters
     double porosity;  // [-]
     double saturation;  // [-]
@@ -72,7 +74,7 @@ class Beaker {
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
-  void SetupActivityModel(std::string model);
+  void SetupActivityModel(std::string model, std::string pitzer_database);
   void VerifyComponentSizes(const Beaker::BeakerComponents& components);
   void CheckChargeBalance(const std::vector<double>& aqueous_totals);
   void SetComponents(const Beaker::BeakerComponents& components);

@@ -21,10 +21,19 @@ class ActivityModel {
   void CalculateIonicStrength(
       const std::vector<Species>& primarySpecies,
       const std::vector<AqueousEquilibriumComplex>& secondarySpecies);
+  void CalculateSumAbsZ(
+        const std::vector<Species>* primarySpecies,
+        const std::vector<AqueousEquilibriumComplex>* secondarySpecies);
+  void CalculateSumC(
+          const std::vector<Species>* primarySpecies,
+          const std::vector<AqueousEquilibriumComplex>* secondarySpecies);
   void CalculateActivityCoefficients(
       std::vector<Species>* primarySpecies,
       std::vector<AqueousEquilibriumComplex>* secondarySpecies);
   virtual double Evaluate(const Species& species) = 0;
+  virtual void EvaluateVector(std::vector<double>& gamma,
+ 		                      const std::vector<Species>* primarySpecies,
+		                      const std::vector<AqueousEquilibriumComplex>* secondarySpecies)=0;
 
   double ionic_strength(void) const {
     return this->I_;
@@ -52,6 +61,10 @@ class ActivityModel {
   }
 
   double I_;  // ionic strength
+
+  double Z_;  // sum ( m_i * abs(z_i) )
+
+  double M_;  // sum ( m_i )
 
  private:
   std::string name_;

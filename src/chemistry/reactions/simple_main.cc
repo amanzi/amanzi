@@ -36,7 +36,8 @@ int main(int argc, char** argv) {
   parameters.volume = 0.25;  // m^3
 
   // beaker.SetupActivityModel(ActivityModelFactory::debye_huckel);
-  beaker.SetupActivityModel(ac::ActivityModelFactory::unit);
+  std::string dummy(" "); // Dummy argument (name of the Pitzer virial coefficients database)
+  beaker.SetupActivityModel(ac::ActivityModelFactory::unit,dummy);
 
 #if 0
   // set up simple 2-species carbonate system (H,HCO3-)
