@@ -29,6 +29,7 @@ set(SRCS
 
 add_library(geochemrxns ${SRCS}) 
 add_install_library(geochemrxns)
+link_list_add(geochemrxns)
 
 #
 # glenn's test program

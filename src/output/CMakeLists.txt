@@ -82,7 +82,7 @@ target_link_libraries(output error_handling simple_mesh mesh geometry ${output_t
 file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
 add_install_library(output)
-
+link_list_add(output)
 #
 # Install Targets
 #

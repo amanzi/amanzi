@@ -1,6 +1,5 @@
 # -*- mode: cmake -*-
 
-
 #
 #  Amanzi
 #    Mesh 
@@ -31,6 +30,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Library: mesh
 #
 add_library(mesh Mesh.cc)
+add_install_library(mesh)
+link_list_add(mesh)
 target_link_libraries(mesh geometry)
 
 
@@ -39,19 +40,22 @@ target_link_libraries(mesh geometry)
 # Library: cell_geometry (WILL GO AWAY WHEN EVERYONE SWITCHES TO THE NEW API)
 #
 add_library(cell_geometry cell_geometry.cc)
+add_install_library(cell_geometry)
+link_list_add(cell_geometry)
 
 #
 # Library: mesh_audit
 #
 add_library(mesh_audit MeshAudit.cc MeshAuditOld.cc)
+add_install_library(mesh_audit)
 target_link_libraries(mesh_audit mesh error_handling cell_geometry ${Epetra_LIBRARIES})
+link_list_add(mesh_audit)
 
 #
-# Install Targets
+# Install Header files
 #
 file(GLOB mesh_inc_files "*.hh")
 add_install_include_file(${mesh_inc_files})
-add_install_library(cell_geometry mesh_audit)
 
 
 

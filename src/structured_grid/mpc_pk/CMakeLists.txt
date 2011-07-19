@@ -35,6 +35,8 @@ endif()
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
 add_library(pmamr ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files})
+add_install_library(pmamr)
+link_list_add(pmamr)
 
 if (BUILD_TESTS)
 endif()
