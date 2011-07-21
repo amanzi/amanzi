@@ -31,10 +31,10 @@ macro(_add_directories directories)
 endmacro()
 
 macro(_add_library library)
-  if(EXISTS ${library})
-    _add_item("${library}")
+  if(EXISTS ${library})  
+    _add_item("${library}")   # If it's a filename, add it as given.
   else()
-    _add_item("-l${library}")
+    _add_item("-l${library}") # Else, add it as a library name
   endif()
 endmacro()
 
@@ -58,7 +58,7 @@ if (library_list)
     GENERAL general_libraries)
 
   if (libraries_split)
-    message("Libraries for ${package} were split")
+    message("Libraries for ${package} are present in multiple debug and/or opt versions")
     if(${CMAKE_BUILD_TYPE} MATCHES "debug")
       message("Adding debug libraries")
       set(${libraries_to_add} "${debug_libraries}" PARENT_SCOPE)
@@ -76,6 +76,7 @@ endfunction()
 
 
 macro(link_list_add parent_library)
+
   SET(package ${PROJECT_NAME})
 
   _add_item("-l${parent_library}")
@@ -86,11 +87,16 @@ macro(link_list_add parent_library)
   _parse_add_libraries("${${package}_LIBRARIES}" to_add)
   _add_libraries("${to_add}")
 
-  file(APPEND ${AMANZI_LINK_LINE} ${value_list} " ")
+  file(APPEND ${AMANZI_LINK_LINE_FILE} ${value_list} " ")
+
+  get_property(link_line GLOBAL PROPERTY AMANZI_LINK_LINE)
+  list(APPEND link_line ${value_list})
+  set_property(GLOBAL PROPERTY AMANZI_LINK_LINE ${link_line})
 
 endmacro()
 
 macro(create_link_line)
-  message(STATUS "Writing link line to file ${AMANZI_LINK_LINE}")
-  file(WRITE ${AMANZI_LINK_LINE} "-L${CMAKE_INSTALL_PREFIX}/lib ")
+  message(STATUS "Writing link line to file ${AMANZI_LINK_LINE_FILE}")
+  file(WRITE ${AMANZI_LINK_LINE_FILE} "-L${CMAKE_INSTALL_PREFIX}/lib ")
+  install(FILES ${AMANZI_LINK_LINE_FILE} DESTINATION lib)
 endmacro()
