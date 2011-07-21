@@ -2,19 +2,8 @@
 #include <cstdlib>
 #include <cmath>
 
-#if HAVE_MOAB_MESH
-#include "Mesh_MOAB.hh"
-#endif
-
-#if HAVE_STK_MESH
-#include "MeshFactory.hh"
-#include "Mesh_STK.hh"
-#endif
-
-#include "Mesh_simple.hh"
 #include "Exodus_readers.hh"
 #include "Parallel_Exodus_file.hh"
-#include "Mesh.hh"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
@@ -28,7 +17,7 @@
 #include "Teuchos_Version.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
-
+#include "MeshFactory.hh"
 #include "State.hpp"
 #include "MPC.hpp"
 
@@ -49,7 +38,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 #endif
 
   // make sure only PE0 can write to std::cout
-  int rank;
+  int rank, ierr, aerr;
   MPI_Comm_rank(mpi_comm,&rank);
 
   if (rank!=0) {
@@ -63,54 +52,101 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   using namespace std;
 
+  Amanzi::AmanziMesh::MeshFactory factory(*comm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+
   // get the Mesh sublist
+
+  ierr = 0;
   Teuchos::ParameterList mesh_parameter_list = input_parameter_list.sublist("Mesh");
 
-  std::string mesh_class = mesh_parameter_list.get<string>("Mesh Class");
+  try {
+    std::string framework = mesh_parameter_list.get<string>("Framework");
+    Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+    if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
+      prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
+    } else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MOAB)) {
+      prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MOAB);
+    } else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
+      prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
+    } else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MSTK)) {
+      prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
+    } else if (framework == "") {
+      // do nothing
+    } else {
+      std::string s(framework);
+      s += ": specified mesh framework preference not understood";
+      amanzi_throw(Errors::Message(s));
+    }
+    factory.preference(prefs);
+  } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
+    // do nothing, this means that the "Framework" parameter was not in the input
+  } catch (const std::exception& e) {
+    std::cerr << rank << ": error: " << e.what() << std::endl;
+    ierr++;
+  }
 
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+  comm->SumAll(&ierr, &aerr, 1);
+  if (aerr > 0) {
+    return Amanzi::Simulator::FAIL;
+  }
+
+
+  std::string file("");
+  try {
+    file = mesh_parameter_list.get<string>("Read");
+  } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
+    // do nothing, this means that the "Read" parameter was not there
+  }
+
+  if (!file.empty()) {
+
+                                // make a mesh from a mesh file
+
+    ierr = 0;
+    try {
+      mesh = factory.create(file);
+    } catch (const std::exception& e) {
+      std::cerr << rank << ": error: " << e.what() << std::endl;
+      ierr++;
+    }
   
-  if (mesh_class == "Simple") 
-    {
-      Teuchos::ParameterList simple_mesh_parameter_list = 
-      	mesh_parameter_list.sublist("Simple Mesh Parameters");
-
-      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(simple_mesh_parameter_list, comm));
-    } 
-#ifdef HAVE_MOAB_MESH
-  else if (mesh_class == "MOAB")  
-    {
-      
-      Teuchos::ParameterList moab_mesh_parameter_list = 
-      	mesh_parameter_list.sublist("MOAB Mesh Parameters");
-      
-      string filename = moab_mesh_parameter_list.get<string>("Exodus file name");
-
-      // shut up moab library..
-      std::streambuf *store_buf = std::cout.rdbuf();
-      std::cout.rdbuf(0);
-
-      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), MPI_COMM_WORLD));            
-      std::cout.rdbuf(store_buf);
+    comm->SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) {
+      return Amanzi::Simulator::FAIL;
     }
-#endif
-#ifdef HAVE_STK_MESH
-  else if (mesh_class == "STK")
-    {
-      string filename = mesh_parameter_list.get<string>("STK File name");
-      
-      mesh = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(MPI_COMM_WORLD, filename.c_str()));            
+  
+  } else {
+
+                                // generate a hex mesh
+
+    ierr = 0;
+
+    try {
+      Teuchos::ParameterList generate_parameter_list(mesh_parameter_list.sublist("Generate"));
+      double x0(generate_parameter_list.get<double>("X_Min"));
+      double y0(generate_parameter_list.get<double>("Y_Min"));
+      double z0(generate_parameter_list.get<double>("Z_Min"));
+      double x1(generate_parameter_list.get<double>("X_Max"));
+      double y1(generate_parameter_list.get<double>("Y_Max")); 
+      double z1(generate_parameter_list.get<double>("Z_Max"));
+      int nx(generate_parameter_list.get<int>("Numer of Cells in X"));
+      int ny(generate_parameter_list.get<int>("Numer of Cells in Y"));
+      int nz(generate_parameter_list.get<int>("Numer of Cells in Z"));
+      mesh = factory(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+    } catch (const std::exception& e) {
+      std::cerr << rank << ": error: " << e.what() << std::endl;
+      ierr++;
     }
-#endif
-  else
-    {
-      ostringstream error_message;
-      error_message << "AMANZI_DEMO_DRIVER: main(): "
-                    << "could not find mesh class \'" << mesh_class
-                    << "\' is not enabled." << std::endl;
-      Exceptions::amanzi_throw(Errors::Message(error_message.str()));
+  
+    comm->SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) {
+      return Amanzi::Simulator::FAIL;
     }
 
+  }
+
+  ASSERT(!mesh.is_null());
 
   // create the MPC
   Amanzi::MPC mpc(input_parameter_list, mesh);

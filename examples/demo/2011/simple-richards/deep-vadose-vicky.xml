@@ -1,4 +1,6 @@
 <ParameterList name="Main">
+  
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
@@ -20,7 +22,7 @@
       <Parameter name="File name" type="string" value="deep-vadose-vicky-3PE.cgns"/>
     </ParameterList>    
     <Parameter name="Gnuplot output" type="bool" value="false"/>
-    <Parameter name="Restart" type="bool" value="true"/>
+    <Parameter name="Restart" type="bool" value="false"/>
     <Parameter name="Restart file" type="string" value="restart-3PE.h5"/>
   </ParameterList> 
 
