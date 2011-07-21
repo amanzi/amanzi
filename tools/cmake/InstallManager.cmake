@@ -68,10 +68,15 @@ function (CREATE_EXPORT_MAKEFILE)
 
     # Find the packages found for Amanzi
     get_property(AMANZI_TPL_LIST GLOBAL PROPERTY PACKAGES_FOUND) 
+    get_property(LINK_LINE GLOBAL PROPERTY AMANZI_LINK_LINE)
+
+    # Convert the list to a string.
+    foreach(arg ${LINK_LINE})
+      set(LINK_LINE_STRING "${LINK_LINE_STRING} ${arg}")
+    endforeach()
 
     # Write the export Makefile and add to the include install list
     configure_file("${in_makefile}" "${out_makefile}")
     install(FILES "${out_makefile}" DESTINATION lib)
-
 
 endfunction(CREATE_EXPORT_MAKEFILE)
