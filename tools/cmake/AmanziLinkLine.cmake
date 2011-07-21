@@ -21,7 +21,7 @@ if (UNIX)
 endif()
 
 macro(_add_item value)
-  list(APPEND value_list "${value} ")
+  list(APPEND value_list "${value}")
 endmacro()
 
 macro(_add_directories directories)
@@ -34,15 +34,8 @@ macro(_add_library library)
   if(EXISTS ${library})  
     _add_item("${library}")   # If it's a filename, add it as given.
   else()
-    _add_item("-l${library}") # Else, add it as a library name
+    _add_item("-l${library}") # Else, add it as a library to be looked up.
   endif()
-endmacro()
-
-
-macro(_add_libraries libraries)
-foreach(library ${libraries})
-  _add_library(${library})
-endforeach()
 endmacro()
 
 
@@ -74,20 +67,18 @@ endif()
 endfunction()
 
 
+macro(add_package_libraries)
 
-macro(link_list_add parent_library)
-
+  # Grab the project name to find the dependent libraries
   SET(package ${PROJECT_NAME})
 
-  _add_item("-l${parent_library}")
-
+  # Add the directory locations of libraries it depends on.
   _add_directories("${${package}_LIBRARY_DIR}")
   _add_directories("${${package}_LIBRARY_DIRS}")
 
+  # ${package}_LIBRARIES may contain debug and opt keywords, so parse the list into to_add:
   _parse_add_libraries("${${package}_LIBRARIES}" to_add)
-  _add_libraries("${to_add}")
-
-  file(APPEND ${AMANZI_LINK_LINE_FILE} ${value_list} " ")
+  add_libraries("${to_add}")
 
   get_property(link_line GLOBAL PROPERTY AMANZI_LINK_LINE)
   list(APPEND link_line ${value_list})
@@ -95,8 +86,27 @@ macro(link_list_add parent_library)
 
 endmacro()
 
+
+
+macro(link_list_add parent_library)
+
+  # Add the library itself to the list.
+  _add_item("-l${parent_library}")
+
+  add_package_libraries()
+
+endmacro()
+
+macro(add_libraries libraries)
+  foreach(library ${libraries})
+    _add_library(${library})
+  endforeach()
+endmacro()
+
+
+
+
 macro(create_link_line)
   message(STATUS "Writing link line to file ${AMANZI_LINK_LINE_FILE}")
-  file(WRITE ${AMANZI_LINK_LINE_FILE} "-L${CMAKE_INSTALL_PREFIX}/lib ")
   install(FILES ${AMANZI_LINK_LINE_FILE} DESTINATION lib)
 endmacro()

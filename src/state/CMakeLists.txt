@@ -45,7 +45,6 @@ add_definitions("-DUSE_MPI")
 #
 add_library(state State.cpp)
 add_install_library(state)
-link_list_add(state)
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 target_link_libraries(state output simple_mesh mesh_data cell_geometry ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
@@ -56,5 +55,4 @@ set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 #
 file(GLOB state_inc_files "*.hpp")
 add_install_include_file(${state_inc_files})
-add_install_library(state)
 
