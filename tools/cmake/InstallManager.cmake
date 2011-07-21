@@ -71,7 +71,7 @@ function (CREATE_EXPORT_MAKEFILE)
 
     # Write the export Makefile and add to the include install list
     configure_file("${in_makefile}" "${out_makefile}")
-    add_install_include_file("${out_makefile}")
+    install(FILES "${out_makefile}" DESTINATION lib)
 
 
 endfunction(CREATE_EXPORT_MAKEFILE)
