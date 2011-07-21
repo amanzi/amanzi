@@ -56,8 +56,8 @@ TEST(ADVANCE_WITH_MOAB) {
     T += dT;
 
     if (i < 10) {
-      printf("T=%6.1f  C_0(x):", T);
-      for (int k=0; k<4; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
+      printf("T=%6.2f  C_0(x):", T);
+      for (int k=0; k<9; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
     }
      *tcc = *tcc_next;
   }

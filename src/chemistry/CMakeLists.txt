@@ -34,12 +34,13 @@ set(CHEM_INCLUDES_DIR "${CHEM_SOURCE_DIR}/includes")
 set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 include_directories(${CHEM_INCLUDES_DIR})
 
+set(GEOCHEM_LIBS geochemrxns geochembase geochemsolvers geochemutil)
+set_property(GLOBAL PROPERTY GEOCHEM_LIBS "${GEOCHEM_LIBS}")
 
 add_subdirectory(utility)
 add_subdirectory(solvers)
 add_subdirectory(base_chemistry)
 add_subdirectory(reactions)
-add_subdirectory(process_kernel)
 
 #
 # Install targets
@@ -51,4 +52,3 @@ if (BUILD_TESTS)
   add_subdirectory(tests_unit)
   add_subdirectory(tests_regression)
 endif()
-

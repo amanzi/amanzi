@@ -31,13 +31,12 @@ file(GLOB dbc_lib_files "*.cc")
 # Define the library 
 # add_library(<libaname> file1 file2 ... )
 add_library(error_handling ${dbc_lib_files})
-link_list_add(error_handling)
+add_install_library(error_handling)
 
 #
 # Install Targets
 #
 add_install_include_file(${dbc_inc_files})
-add_install_library(error_handling)
 
 if (BUILD_TESTS)
    

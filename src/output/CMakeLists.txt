@@ -37,6 +37,12 @@ endif()
 if(ENABLE_CGNS)
     include_directories(${CGNS_INCLUDE_DIRS})
 endif()    
+if(ENABLE_STK_Mesh)
+    add_definitions("-DHAVE_STK_MESH")
+    include_directories(${STK_INCLUDE_DIRS})
+    include_directories(${STK_SOURCE_DIR})
+endif()
+
 
 # Need to move this up to the root level -- lpritch
 add_definitions("-DUSE_MPI")
@@ -50,13 +56,13 @@ file(GLOB output_source_files "gmv*.c" "gmv*.cc")
 set(output_tpl_list ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
 
 if(ENABLE_HDF5)
-    file(GLOB hdf5_source "hdf5_mesh.cc")
+    file(GLOB hdf5_source "hdf5_mesh*.cc")
     list(APPEND output_source_files "${hdf5_source}")
     list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 endif()
 
 if(ENABLE_ASCEMIO)
-    file(GLOB hdf5mpi_source "hdf5mpi_mesh.cc")
+    file(GLOB hdf5mpi_source "hdf5mpi_mesh*.cc")
     list(APPEND output_source_files "${hdf5mpi_source}")
     list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
 endif()
@@ -76,13 +82,11 @@ target_link_libraries(output error_handling simple_mesh mesh geometry ${output_t
 file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
 add_install_library(output)
-link_list_add(output)
 #
 # Install Targets
 #
 file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
-add_install_library(output)
 
 
 if (BUILD_TESTS)
@@ -106,14 +110,11 @@ if (BUILD_TESTS)
     if (ENABLE_HDF5)
         add_executable(test_hdf5_output test/Main.cc test/test_hdf5.cc)
         target_link_libraries(test_hdf5_output output ${UnitTest_LIBRARIES})
-        add_test(hdf5_output test_hdf5_output KIND int)
+        add_test(hdf5_output test_hdf5_output)
     endif()
 
     # Test: hdf5_mpi_output
     if (ENABLE_ASCEMIO AND ENABLE_STK_Mesh)
-        add_definitions("-DHAVE_STK_MESH")
-        include_directories(${STK_INCLUDE_DIRS})
-        include_directories(${STK_SOURCE_DIR})
         add_executable(test_hdf5mpi_output test/Main.cc test/test_hdf5mpi.cc)
         target_link_libraries(test_hdf5mpi_output stk_mesh output ${UnitTest_LIBRARIES})
         add_test(hdf5mpi_output test_hdf5mpi_output NPROCS 2 KIND int)

@@ -32,15 +32,14 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 file(GLOB mesh_data_source_files "*.cc")
 add_library(mesh_data ${mesh_data_source_files})
+add_install_library(mesh_data)
 target_link_libraries(mesh_data error_handling ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
-link_list_add(mesh_data)
 
 #
 # Install Targets
 #
 file(GLOB mesh_data_inc_files "*.hh")
 add_install_include_file(${mesh_data_inc_files})
-add_install_library(mesh_data)
 
 if (BUILD_TESTS)
 

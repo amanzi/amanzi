@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <iterator>
 #include <sstream>
 
 #include <boost/format.hpp>
@@ -623,23 +624,22 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
     for (std::vector< stk::mesh::Entity * >::iterator c = cells.begin();
          c != cells.end(); c++, localidx++) {
 
-      int globalidx((*c)->identifier());
-
       for (unsigned int s = 0; s < topo->side_count; s++) {
 
         // see if the face already exists (on the local
-        // processor); if so, see if this cell is already
-        // related to it (it shouldn't be)
+        // processor); if so, we don't need to bother with
 
         stk::mesh::Entity *rface(get_element_side_face_(**c, s));
-
-        Entity_vector rcells;
         if (rface != NULL) { 
+          // std::cerr << 
+          //   boost::str(boost::format("%d: error: cell %d, side %d: will not make duplicate face") %
+          //              me % (*c)->identifier() % s) << std::endl;
           continue;
         }
                                          
         // get the cell nodes on this side
 
+        Entity_vector rcells;
         Entity_vector snodes(get_element_side_nodes_(**c, s));
 
         // get whatever cells the nodes on this side are
@@ -679,23 +679,29 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
 
         // if the related cell is owned by another
         // process, only make the face if this processor's
-        // rank is less
+        // rank is less; 
+
+        // if the related cell is owned by this process, only make it
+        // for the cell with the lower id
                 
         if (rcell != NULL) {
-          if (rcell->owner_rank() != me) {
-            if (rcell->identifier() < (*c)->identifier())
+          if (rcell->owner_rank() < me) {
+            continue;
+          } else if (rcell->owner_rank() == me) {
+            if (rcell->identifier() < (*c)->identifier()) {
               continue;
+            }
           }
         }
 
 
         if (!justcount) {
           const stk::mesh::Entity& face = 
-              declare_face_(snodes, faceidx, (*c)->identifier());
+            declare_face_(snodes, faceidx, (*c)->identifier());
         }
         faceidx++;
                 
-        // std::cerr << "Cell " << globalidx 
+        // std::cerr << "Cell " << (*c)->identifier() 
         //           << ": side " << s 
         //           << ": face idx = " << faceidx
         //           << std::endl;

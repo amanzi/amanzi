@@ -1,0 +1,53 @@
+#
+# $Id: Make.package,v 1.22 2011-06-06 06:09:30 gpau Exp $
+#
+
+CEXE_sources += main.cpp ViscBndry.cpp  MacBndry.cpp 
+
+CEXE_headers += BC_TYPES_PM.H RegType.H ViscBndry.H MacBndry.H
+
+FEXE_headers += VISCOPERATOR_F.H 
+FEXE_sources += VISCOPERATOR_$(DIM)D.F 
+#
+# Disconnect MacOperators for different mass continuity.
+#
+ifndef ATMOS_MACOP
+  CEXE_sources += MacOperator.cpp
+  CEXE_headers += MacOperator.H MacOpMacDrivers.H
+  FEXE_sources += MACOPERATOR_$(DIM)D.F
+  FEXE_headers += MACOPERATOR_F.H
+endif
+
+CEXE_sources += PorousMedia.cpp MacProj.cpp Godunov.cpp Diffusion.cpp \
+  	        PM_setup.cpp PMBld.cpp Rock.cpp Region.cpp Source.cpp \
+		Observation.cpp
+CEXE_headers += MacProj.H Godunov.H Diffusion.H PorousMedia.H probdata.H \
+	        Rock.H Region.H Source.H Observation.H
+
+FEXE_sources += DERIVE_$(DIM)D.F GODUNOV_F.F GODUNOV_$(DIM)D.F POROUS_$(DIM)D.F \
+                POROUSMEDIA_$(DIM)D.F MACPROJ_$(DIM)D.F DIFFUSION_$(DIM)D.F \
+                PROB_$(DIM)D.F EOS_$(DIM)D.F TURN_F.F EOS_F.F
+
+FEXE_headers += DERIVE_F.H GODCOMM_F.H GODUNOV_F.H \
+                MACPROJ_F.H DIFFUSION_F.H POROUSMEDIA_F.H POROUS_F.H 
+
+fEXE_sources += vode.f math_d.f 
+f90EXE_sources += bivar.f90
+
+ifeq ($(COREREACT),TRUE)
+   CEXE_sources += PChemDriver.cpp
+   CEXE_headers += PChemDriver.H
+   FEXE_sources += CHEMDRIVER_$(DIM)D.F
+   FEXE_headers += CHEMDRIVER_F.H
+   f90EXE_sources += ChemModules.f90 ChemAllocate.f90 ChemBatch.f90 ChemRead.f90 ChemVode.f90
+endif
+
+#
+# GSTAT
+# 
+   CEXE_sources += PGslib.cpp
+   CEXE_headers += PGslib.H
+   FEXE_sources += GSLIB_$(DIM)D.F
+   FEXE_headers += GSLIB_F.H
+   fEXE_sources += acorni.f cova3.f getindx.f locate.f psfill.f scal.f strlen.f backtr.f dlocate.f getz.f rand.f nscore.f psline.f setrot.f beyond.f dpowint.f green.f numtext.f pstext.f setsupr.f blue.f dsortem.f hexa.f ordrel.f sortem.f chknam.f gauinv.f ksol.f picksupr.f red.f sqdist.f chktitle.f gcum.f ktsol.f powint.f resc.f srchsupr.f
+   f90EXE_sources += geostat.f90 sgsim.f90

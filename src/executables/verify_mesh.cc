@@ -3,7 +3,7 @@
 /**
  * @file   verify_mesh.cc
  * @author William A. Perkins
- * @date Mon Jun 20 11:37:31 2011
+ * @date Thu Jul 14 09:50:49 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December 13, 2010 by William A. Perkins
-// Last Change: Mon Jun 20 11:37:31 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Jul 14 09:50:49 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -27,6 +27,8 @@
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
 #include "MeshException.hh"
+
+
 
 int main (int argc, char* argv[])
 {
@@ -60,6 +62,19 @@ int main (int argc, char* argv[])
 
   std::string filename;
   CLP.setOption("file", &filename, "name of file or file set", true);
+
+  bool dump_face_map(false);
+  CLP.setOption("face-map", "no-face-map", &dump_face_map,
+                "print the face Epetra_Map");
+
+  bool dump_cell_map(false);
+  CLP.setOption("cell-map", "no-cell-map", &dump_cell_map,
+                "print the cell Epetra_Map");
+
+  bool dump_node_map(false);
+  CLP.setOption("node-map", "no-node-map", &dump_node_map,
+                "print the node Epetra_Map");
+
 
   CLP.throwExceptions(false);
 
@@ -141,6 +156,27 @@ int main (int argc, char* argv[])
 
   if (me == 0) {
     std::cout << filename << ": " << (status ? "has errors" : "OK") << std::endl;
+  }
+
+  if (dump_node_map) {
+    if (me == 0) {
+      std::cout << "Node Epetra Map: " << std::endl;
+    }
+    (mesh->node_epetra_map(false)).Print(std::cout);
+  }
+
+  if (dump_face_map) {
+    if (me == 0) {
+      std::cout << "Face Epetra Map: " << std::endl;
+    }
+    (mesh->face_epetra_map(false)).Print(std::cout);
+  }
+
+  if (dump_cell_map) {
+    if (me == 0) {
+      std::cout << "Cell Epetra Map: " << std::endl;
+    }
+    (mesh->cell_epetra_map(false)).Print(std::cout);
   }
 
   return status;

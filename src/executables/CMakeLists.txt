@@ -80,6 +80,10 @@ add_definitions("-DUSE_MPI")
           copy_directory ${EXEC_SOURCE_DIR}/inputfiles ${EXEC_BINARY_DIR}/inputfiles ) 
     endif()
 
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
+add_library(udriv amanzi_unstructured_grid_simulation_driver.cpp)
+add_install_library(udriv)
+
 #
 # Binary: amanzi-demo-driver
 #

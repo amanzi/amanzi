@@ -37,21 +37,13 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 # Library: transport
 #
 add_library(transport Transport_PK.cpp Transport_State.cpp Reconstruction.cpp)
+add_install_library(transport)
 target_link_libraries(transport geometry mesh mesh_data error_handling state ${Epetra_LIBRARIES})
-link_list_add(transport)
 #
 # Install Targets
 #
 file(GLOB transport_inc_files "*.hpp")
 add_install_include_file(${transport_inc_files})
-add_install_library(transport)
-
-#
-# Install Targets
-#
-file(GLOB transport_inc_files "*.hpp")
-add_install_include_file(${transport_inc_files})
-add_install_library(transport)
 
 if ( BUILD_TESTS )
     # Add UnitTest includes
@@ -91,9 +83,9 @@ if ( BUILD_TESTS )
         add_amanzi_test(transport_serial_mstk transport_serial_mstk KIND unit)
 
         # Test: transport (parallel)
-        #add_executable(transport_parallel_mstk test/Main.cc test/test_mstk_parallel.cpp)
-        #target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        #add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
+        add_executable(transport_parallel_mstk test/Main.cc test/test_mstk_parallel.cpp)
+        target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
     endif()    
 
     # Tests 5 and 6

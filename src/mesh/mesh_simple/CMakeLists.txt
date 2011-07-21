@@ -28,14 +28,14 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # Library: simple_mesh
 file(GLOB simple_mesh_source_files "*.cc")
 add_library(simple_mesh ${simple_mesh_source_files})
+add_install_library(simple_mesh)
 target_link_libraries(simple_mesh mesh geometry error_handling ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-link_list_add(simple_mesh)
+
 #
 # Install Targets
 #
 file(GLOB simple_inc_files "*.hh")
 add_install_include_file(${simple_inc_files})
-add_install_library(simple_mesh)
 
 if (BUILD_TESTS)
 

@@ -35,10 +35,10 @@ include_directories(${ExodusII_INCLUDE_DIRS})
 #
 file(GLOB exo_source_files "*.cc") 
 add_library(exodus ${exo_source_files})
+add_install_library(exodus)
 target_link_libraries(exodus 
                       error_handling mesh_data
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
-link_list_add(exodus)
 
 
 #
@@ -58,7 +58,6 @@ target_link_libraries(exodus_read_test exodus)
 #
 file(GLOB exo_inc_files "*.hh")
 add_install_include_file(${exo_inc_files})
-add_install_library(exodus)
 add_install_binary(exec_reader)
 add_install_binary(exodus_read_test)
 

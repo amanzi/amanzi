@@ -48,22 +48,21 @@ void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_p
 // Overridden from BDF2::fnBase
 
 void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u, 
-				 const Epetra_Vector& udot, Epetra_Vector& f) 
+				 const Epetra_Vector& udot, Epetra_Vector& f)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
-  
- 
+
   // compute F(u)
   problem_->ComputeF(u, f, t);
- 
 
   Epetra_Vector *uc     = problem_->CreateCellView(u);  
   Epetra_Vector *udotc  = problem_->CreateCellView(udot);
   Epetra_Vector *fc     = problem_->CreateCellView(f);
-  
+
+
   // compute S'(p)
   Epetra_Vector dS (problem_->CellMap());
   problem_->dSofP(*uc, dS);
@@ -81,9 +80,7 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
 
   // on the cell unknowns compute f=f+dS*udotc*rho*phi
   fc->Multiply(1.0,dS,*udotc,1.0);
-  
-  //fc->Print(std::cout);
-  
+
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
     {
       *out << "fun o.k." <<  std::endl;
@@ -98,9 +95,8 @@ void RichardsModelEvaluator::precon(const Epetra_Vector& X, Epetra_Vector& Y)
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-  (problem_->Precon()).ApplyInverse(X, Y);
 
-  //Y.Print(std::cout);
+  (problem_->Precon()).ApplyInverse(X, Y);
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
     {
@@ -116,7 +112,6 @@ void RichardsModelEvaluator::update_precon(const double t, const Epetra_Vector& 
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
-
 
   problem_->ComputePrecon(up,h);
 
@@ -137,14 +132,13 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
 
-
-  double en = 0.0;
+  double en = 0.0; 
   for (int j=0; j<u.MyLength(); j++)
     {
       double tmp = abs(du[j])/(atol+rtol*abs(u[j]));
       en = std::max<double>(en, tmp);
     }
-  
+
   // find the global maximum
 #ifdef HAVE_MPI
   MPI_Allreduce ( &en, &en, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );

@@ -25,9 +25,6 @@ include_directories(${DBC_SOURCE_DIR})
 # geometry library
 #
 add_library(geometry Geometry.cc Point.hh)
-
-#
-# Install targets
-#
 add_install_library(geometry)
+
 
