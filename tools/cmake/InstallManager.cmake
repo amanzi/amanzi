@@ -6,7 +6,9 @@
 
 
 include(CMakeParseArguments)
-include(PrintVariable)
+include(AmanziLinkLine)
+
+export(PACKAGE Amanzi)
 
 #
 # Usage: ADD_INSTALL_INCLUDE_FILE( file1 file2 file3 ... )
@@ -37,21 +39,27 @@ function ( ADD_INSTALL_LIBRARY )
 
 install(
   TARGETS ${ARGV}
-  EXPORT AmanziDepends
+  EXPORT AmanziConfig
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   )
 
 # Add the libraries to our global list
-add_libraries(${ARGV})
+add_amanzi_libraries(${ARGV})
 
 # Add dependency libaries as determined by the pacakge definition.
 add_package_libraries()
 
-
-
-
 endfunction( ADD_INSTALL_LIBRARY )
+
+
+
+
+
+
+
+
+
 
 #
 # Usage: ADD_INSTALL_BINARY( exe1 exe2 ... )
@@ -65,15 +73,17 @@ function ( ADD_INSTALL_BINARY )
 foreach(_bin_file ${ARGV})
   install(
     TARGETS ${_bin_file}
-    EXPORT AmanziDepends
+    EXPORT AmanziConfig
     DESTINATION bin
     )
 endforeach()
 
 endfunction( ADD_INSTALL_BINARY )
 
+
+
 #
-# Usage: create_export_makefile()
+# Usage: create_exports
 #
 # Arguments: None
 #
@@ -91,7 +101,7 @@ foreach (arg ${LINK_LINE})
   set(LINK_LINE_STRING "${LINK_LINE_STRING} ${arg}")
 endforeach()
 
-# Write the link-line file
+# Write and install the link-line file
 file(WRITE ${AMANZI_LINK_LINE_FILE} ${LINK_LINE_STRING})
 install(FILES ${AMANZI_LINK_LINE_FILE} DESTINATION lib)
 
@@ -102,6 +112,6 @@ configure_file("${in_makefile}" "${out_makefile}")
 install(FILES "${out_makefile}" DESTINATION lib)
 
 # Write the CMake configuration file
-install(EXPORT AmanziDepends DESTINATION lib)
+install(EXPORT AmanziConfig DESTINATION lib)
 
 endfunction()

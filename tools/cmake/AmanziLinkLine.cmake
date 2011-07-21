@@ -20,26 +20,6 @@ if (UNIX)
   string(REGEX REPLACE "[\n\r]" "" build_timestamp ${_stdout})
 endif()
 
-macro(_add_item value)
-  list(APPEND value_list "${value}")
-endmacro()
-
-macro(_add_directories directories)
-  foreach(directory ${directories})
-    _add_item("-L${directory}")
-  endforeach()
-endmacro()
-
-macro(_add_library library)
-  if(EXISTS ${library})  
-    _add_item("${library}")   # If it's a filename, add it as given.
-  else()
-    _add_item("-l${library}") # Else, add it as a library to be looked up.
-  endif()
-endmacro()
-
-
-
 function(_parse_add_libraries library_list libraries_to_add)
 
 if (library_list)
@@ -67,46 +47,60 @@ endif()
 endfunction()
 
 
+
+
+
+macro(_add_to_link_line)
+  set_property(GLOBAL APPEND PROPERTY AMANZI_LINK_LINE ${ARGV})
+endmacro()
+
+macro(_add_to_target_list)
+  set_property(GLOBAL APPEND PROPERTY AMANZI_LIBRARY_TARGETS ${ARGV})
+endmacro()
+
+
+
+macro(_add_directories_to_link_line)
+  foreach(directory ${ARGV})
+    _add_to_link_line("-L${directory}")
+  endforeach()
+endmacro()
+
+macro(_add_libraries_to_link_line)
+  foreach(library ${ARGV})
+    if(EXISTS ${library})  
+      _add_to_link_line("${library}")   # If it's a filename, add it as given.
+    else()
+      _add_to_link_line("-l${library}") # Else, add it as a library to be looked up.
+    endif()
+  endforeach()
+endmacro()
+
+
+
 macro(add_package_libraries)
 
   # Grab the project name to find the dependent libraries
   SET(package ${PROJECT_NAME})
 
   # Add the directory locations of libraries it depends on.
-  _add_directories("${${package}_LIBRARY_DIR}")
-  _add_directories("${${package}_LIBRARY_DIRS}")
+  _add_directories_to_link_line("${${package}_LIBRARY_DIR}")
+  _add_directories_to_link_line("${${package}_LIBRARY_DIRS}")
 
   # ${package}_LIBRARIES may contain debug and opt keywords, so parse the list into to_add:
   _parse_add_libraries("${${package}_LIBRARIES}" to_add)
-  add_libraries("${to_add}")
 
-  get_property(link_line GLOBAL PROPERTY AMANZI_LINK_LINE)
-  list(APPEND link_line ${value_list})
-  set_property(GLOBAL PROPERTY AMANZI_LINK_LINE ${link_line})
+  _add_libraries_to_link_line("${to_add}")
 
-endmacro()
-
-
-
-macro(link_list_add parent_library)
-
-  # Add the library itself to the list.
-  _add_item("-l${parent_library}")
-
-  add_package_libraries()
+  # Add the accumulated contents of value_list to the link line property
+  set_property(GLOBAL APPEND PROPERTY AMANZI_LINK_LINE ${value_list})
 
 endmacro()
 
-macro(add_libraries libraries)
-  foreach(library ${libraries})
-    _add_library(${library})
-  endforeach()
+
+
+macro(add_amanzi_libraries libraries)
+  _add_libraries_to_link_line(${libraries})
+  _add_to_target_list(${librarues})
 endmacro()
 
-
-
-
-macro(create_link_line)
-  message(STATUS "Writing link line to file ${AMANZI_LINK_LINE_FILE}")
-  install(FILES ${AMANZI_LINK_LINE_FILE} DESTINATION lib)
-endmacro()
