@@ -7,6 +7,7 @@
 #include "Transport_PK.hpp"
 #include "Flow_State.hpp"
 #include "Flow_PK.hpp"
+#include "ObservationData.H"
 
 namespace Amanzi
 {
@@ -15,12 +16,15 @@ class MPC {
 
 public:
   MPC (Teuchos::ParameterList parameter_list_,
-       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_);
+       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
+       Amanzi::ObservationData&      output_observations_); 
+
   ~MPC () {};
 
   void cycle_driver ();
 
 private:
+  void mpc_init();
   void read_parameter_list();
   void write_gmv_data(std::string gmv_meshfile, std::string gmv_datafile, 
 		      const int iter, const int digits);
@@ -65,6 +69,8 @@ private:
   std::string restart_file;
   bool restart;
 
+  // observations
+  Amanzi::ObservationData&  output_observations;
 };
 
 

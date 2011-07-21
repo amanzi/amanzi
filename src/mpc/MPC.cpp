@@ -26,18 +26,36 @@ namespace Amanzi
 {
 
 #ifdef ENABLE_CGNS
-using namespace CGNS_PAR;
+  using namespace CGNS_PAR;
 #endif
 
-using amanzi::chemistry::Chemistry_State;
-using amanzi::chemistry::Chemistry_PK;
-using amanzi::chemistry::ChemistryException;
-
-MPC::MPC(Teuchos::ParameterList parameter_list_,
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-  parameter_list(parameter_list_),
-  mesh_maps(mesh_maps_)
+  using amanzi::chemistry::Chemistry_State;
+  using amanzi::chemistry::Chemistry_PK;
+  using amanzi::chemistry::ChemistryException;
   
+  // MPC::MPC(Teuchos::ParameterList parameter_list_,
+  // 	   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
+  //   parameter_list(parameter_list_),
+  //   mesh_maps(mesh_maps_),
+  //   output_observations(NULL)
+  // {
+  //   mpc_init();
+  // }
+  
+
+
+  MPC::MPC(Teuchos::ParameterList parameter_list_,
+	   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
+	   Amanzi::ObservationData& output_observations_):
+    parameter_list(parameter_list_),
+    mesh_maps(mesh_maps_),
+    output_observations(output_observations_)
+  {
+    mpc_init();
+  }
+  
+  
+void MPC::mpc_init()
 {
    mpc_parameter_list =  parameter_list.sublist("MPC");
    read_parameter_list();
