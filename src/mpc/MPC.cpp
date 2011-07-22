@@ -493,6 +493,11 @@ void MPC::cycle_driver () {
     }
     
   }
+
+  // dump observations
+  output_observations.print(std::cout);
+  
+
 }
 
 

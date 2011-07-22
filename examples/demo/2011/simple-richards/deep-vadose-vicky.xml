@@ -12,13 +12,13 @@
       <Parameter name="state id" type="string" value="water"/>
       <Parameter name="region" type="string" value="all"/>
       <Parameter name="functional" type="string" value="integral"/>
-      <Parameter name="times" type="Array double" value="{0.0}"/>
+      <Parameter name="times" type="Array double" value="{0.0, 3.0e6}"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="1e+99"/>
+    <Parameter name="End Time" type="double" value="3.1e+6"/>
     <Parameter name="End Cycle" type="int" value="5000"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Richards"/>
