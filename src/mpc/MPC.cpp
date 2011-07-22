@@ -33,16 +33,6 @@ namespace Amanzi
   using amanzi::chemistry::Chemistry_PK;
   using amanzi::chemistry::ChemistryException;
   
-  // MPC::MPC(Teuchos::ParameterList parameter_list_,
-  // 	   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-  //   parameter_list(parameter_list_),
-  //   mesh_maps(mesh_maps_),
-  //   output_observations(NULL)
-  // {
-  //   mpc_init();
-  // }
-  
-
 
   MPC::MPC(Teuchos::ParameterList parameter_list_,
 	   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
@@ -138,6 +128,11 @@ void MPC::mpc_init()
      } 
    }
    // done creating auxilary state objects and  process models
+
+   // create the observations
+   
+   Teuchos::ParameterList observation_plist = parameter_list.sublist("observation");
+   observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
 
 }
 
@@ -270,7 +265,9 @@ void MPC::cycle_driver () {
 	    
 	    RPK->GetSaturation(*S->get_water_saturation()); 
 	  }
-	
+
+	// make observations
+	observations->make_observations(*S);
 	
 	// write restart file after initial flow solve
 	if (restart_file != "NONE") S->write_restart( restart_file );
@@ -282,6 +279,9 @@ void MPC::cycle_driver () {
       
       S->read_restart( restart_file );
     }
+
+  
+
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     
@@ -445,6 +445,11 @@ void MPC::cycle_driver () {
       // advance the iteration count
       iter++;
       
+      // make observations
+      observations->make_observations(*S);
+
+
+
       // TODO: ask the CPK to dump its data someplace....
 
       vizdump_cycle = iter;

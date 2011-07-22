@@ -7,7 +7,14 @@
     <Parameter name="Read" type="string" value="./1D-column.par"/>
   </ParameterList>    
 
-  
+  <ParameterList name="observation">
+    <ParameterList name="mass of water">
+      <Parameter name="state id" type="string" value="water"/>
+      <Parameter name="region" type="string" value="all"/>
+      <Parameter name="functional" type="string" value="integral"/>
+      <Parameter name="times" type="Array double" value="{1.e3, 2.e3, 2.5e3}"/>
+    </ParameterList>
+  </ParameterList>
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
@@ -22,8 +29,8 @@
       <Parameter name="File name" type="string" value="deep-vadose-vicky-3PE.cgns"/>
     </ParameterList>    
     <Parameter name="Gnuplot output" type="bool" value="false"/>
-    <Parameter name="Restart" type="bool" value="false"/>
-    <Parameter name="Restart file" type="string" value="restart-3PE.h5"/>
+    <Parameter name="Restart" type="bool" value="true"/>
+    <Parameter name="Restart file" type="string" value="restart-2PE.h5"/>
   </ParameterList> 
 
   

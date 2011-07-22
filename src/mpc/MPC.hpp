@@ -8,6 +8,7 @@
 #include "Flow_State.hpp"
 #include "Flow_PK.hpp"
 #include "ObservationData.H"
+#include "Unstructured_observations.hpp"
 
 namespace Amanzi
 {
@@ -17,7 +18,7 @@ class MPC {
 public:
   MPC (Teuchos::ParameterList parameter_list_,
        Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
-       Amanzi::ObservationData&      output_observations_); 
+       Amanzi::ObservationData& output_observations_); 
 
   ~MPC () {};
 
@@ -71,6 +72,7 @@ private:
 
   // observations
   Amanzi::ObservationData&  output_observations;
+  Amanzi::Unstructured_observations* observations;
 };
 
 
