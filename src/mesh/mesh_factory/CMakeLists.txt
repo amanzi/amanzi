@@ -41,7 +41,7 @@ set(mesh_factory_files MeshFileType.cc MeshFramework.cc MeshFactory.cc Framework
 add_library(mesh_factory ${mesh_factory_files})
 add_install_library(mesh_factory)
 target_link_libraries(mesh_factory error_handling simple_mesh)
-link_list_add(mesh_factory)
+
 #
 # Install Targets
 #

@@ -36,7 +36,6 @@ add_definitions("-DUSE_MPI")
 file(GLOB solvers_source_files "*.cpp")
 add_library(solvers ${solvers_source_files})
 add_install_library(solvers)
-link_list_add(solvers)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES solvers_tpl_libs)
