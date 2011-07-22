@@ -266,8 +266,6 @@ void MPC::cycle_driver () {
 	    RPK->GetSaturation(*S->get_water_saturation()); 
 	  }
 
-	// make observations
-	observations->make_observations(*S);
 	
 	// write restart file after initial flow solve
 	if (restart_file != "NONE") S->write_restart( restart_file );
@@ -282,9 +280,14 @@ void MPC::cycle_driver () {
 
   
 
+  
 
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     
+    // make observations
+    observations->make_observations(*S);
+
+
     if (gmv_output) {
       // write the GMV data file
       write_gmv_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);

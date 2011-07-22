@@ -706,3 +706,9 @@ void State::read_restart ( std::string filename )
   //   }
 
 }
+
+
+double State::water_mass()
+{
+  return 0.0;
+}

@@ -12,7 +12,7 @@
       <Parameter name="state id" type="string" value="water"/>
       <Parameter name="region" type="string" value="all"/>
       <Parameter name="functional" type="string" value="integral"/>
-      <Parameter name="times" type="Array double" value="{1.e3, 2.e3, 2.5e3}"/>
+      <Parameter name="times" type="Array double" value="{0.0}"/>
     </ParameterList>
   </ParameterList>
 
