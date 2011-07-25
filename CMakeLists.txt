@@ -64,10 +64,7 @@ set_property(GLOBAL PROPERTY AMANZI_LINK_LINE "-L${CMAKE_INSTALL_PREFIX}/lib")
 
 # A property for accumulating amanzi library targets
 set_property(GLOBAL PROPERTY AMANZI_LIBRARY_TARGETS)
-
 set(AMANZI_LINK_LINE_FILE "${AMANZI_BINARY_DIR}/link_line")  # A filename to write link-line to.
-
-
 include(InstallManager)
 
 # Source files for all binaries and libraries found under src
