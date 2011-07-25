@@ -19,12 +19,12 @@ export(PACKAGE Amanzi)
 #
 function ( ADD_INSTALL_INCLUDE_FILE )
 
-foreach(_inc_file ${ARGV})
-  install(
-    FILES ${_inc_file}
-    DESTINATION include
-    )
-endforeach()
+  foreach(_inc_file ${ARGV})
+    install(
+      FILES ${_inc_file}
+      DESTINATION include
+      )
+  endforeach()
 
 endfunction( ADD_INSTALL_INCLUDE_FILE )
 
@@ -37,24 +37,20 @@ endfunction( ADD_INSTALL_INCLUDE_FILE )
 #
 function ( ADD_INSTALL_LIBRARY )
 
-install(
-  TARGETS ${ARGV}
-  EXPORT AmanziConfig
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  )
+  install(
+    TARGETS ${ARGV}
+    EXPORT AmanziConfig
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    )
 
-# Add the libraries to our global list
-add_amanzi_libraries(${ARGV})
+  # Add the libraries to our global list
+  add_amanzi_libraries(${ARGV})
 
-# Add dependency libaries as determined by the pacakge definition.
-add_package_libraries()
+  # Add dependency libaries as determined by the pacakge definition.
+  add_package_libraries()
 
 endfunction( ADD_INSTALL_LIBRARY )
-
-
-
-
 
 
 
