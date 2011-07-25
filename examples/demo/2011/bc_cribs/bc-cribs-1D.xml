@@ -4,7 +4,7 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
-    <Parameter name="Read" type="string" value="./bc-cribs-1D.par"/>
+    <Parameter name="Read" type="string" value="./bc-cribs-1D.exo"/>
   </ParameterList>    
 
   <ParameterList name="observation">
@@ -12,7 +12,7 @@
       <Parameter name="state id" type="string" value="water"/>
       <Parameter name="region" type="string" value="all"/>
       <Parameter name="functional" type="string" value="integral"/>
-      <Parameter name="times" type="Array double" value="{0.0, 3.0e6}"/>
+      <Parameter name="times" type="Array double" value="{0.0}"/>
     </ParameterList>
   </ParameterList>
 
@@ -28,7 +28,7 @@
     <ParameterList name="CGNS">
       <Parameter name="File name" type="string" value="bc-cribs-1D.cgns"/>
     </ParameterList>    
-    <Parameter name="Gnuplot output" type="bool" value="false"/>
+    <Parameter name="Gnuplot output" type="bool" value="true"/>
     <Parameter name="Restart" type="bool" value="false"/>
     <Parameter name="Restart file" type="string" value="restart-bc-cribs-1D-4PE.h5"/>
   </ParameterList> 
@@ -145,8 +145,8 @@ p = p_atmospheric - 9.8 * rho * (z - height)
  -->
 
       <Parameter name="Steady state calculation initial time" type="double" value="0.0"/>
-      <Parameter name="Steady state calculation final time" type="double" value="2e9"/>
-      <Parameter name="Steady state calculation initial time step" type="double" value="1.0e-9"/>
+      <Parameter name="Steady state calculation final time" type="double" value="3e10"/>
+      <Parameter name="Steady state calculation initial time step" type="double" value="1.0e-7"/>
       <Parameter name="Steady state calculation initial hydrostatic pressure height" type ="double" value="103.2"/>
 
       <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>
@@ -293,7 +293,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
         <Parameter name="Initial BC value" type="double" value="1112016.18144" />
         <Parameter name="BC value" type="double" value="101325.0" />
         <Parameter name="Initial Time" type="double" value="0.0" />
-        <Parameter name="Final Time" type="double" value="1e9" />
+        <Parameter name="Final Time" type="double" value="1e10" />
         <Parameter name="Side set ID" type="int" value="2" />
       </ParameterList>  
       
