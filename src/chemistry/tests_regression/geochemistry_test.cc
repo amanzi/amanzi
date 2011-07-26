@@ -101,9 +101,9 @@ int main(int argc, char** argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ac::ActivityModelFactory::unit;
-        components.total.push_back(1.0e-3);  // H+
         components.total.push_back(3.0e-3);  // HCO3-
         components.total.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // H+
         break;
       }
       case 4: {
@@ -115,9 +115,9 @@ int main(int argc, char** argv) {
         }
         thermo_database_file = "input/ca-carbonate.bgd";
         activity_model_name = ac::ActivityModelFactory::debye_huckel;
-        components.total.push_back(1.0e-3);  // H+
         components.total.push_back(3.0e-3);  // HCO3-
         components.total.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // H+
         break;
       }
       case 5: {
@@ -328,7 +328,7 @@ int main(int argc, char** argv) {
 void ModelSpecificParameters(const std::string model,
                              ac::Beaker::BeakerParameters* parameters) {
   if (model == kCrunch) {
-    parameters->water_density = 1000.0;  // kg / m^3
+    parameters->water_density = 997.075;  // kg / m^3
   } else if (model == kPflotran) {
     parameters->water_density = 997.16;  // kg / m^3
     // where did this number come from?

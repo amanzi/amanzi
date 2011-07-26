@@ -1,3 +1,4 @@
+#!/bin/env python
 #
 # cross platform regression testing script...?
 #
@@ -137,9 +138,12 @@ def identify_tests(options, available_suites, available_tests):
 def run_tests(options, tests_to_run):
     num_failed = 0
     for r in tests_to_run.keys():
-        cmdline = "{0} {1} ".format(options.executable[0], setup['extra args'])
+        test_info = tests_to_run[r]
+        cmdline = "{0} ".format(options.executable[0])
+        if test_info['model']:
+            cmdline += "-m {0} ".format(test_info['model'])
         cmdline += "{0} {1} ".format(setup['verbosity arg'], setup['verbosity'])
-        cmdline += "{0} {1} ".format(setup['test arg'], tests_to_run[r]['test id'])
+        cmdline += "{0} {1} ".format(setup['test arg'], test_info['test id'])
         if options.verbose or not options.do_tests:
             print 80*'-'
             print "Running test \'{0}\' with the command:\n\t{1}".format(r, cmdline)
@@ -158,16 +162,19 @@ def run_tests(options, tests_to_run):
                 for line in results:
                     results_hash.update(line)
             #print results_hash.hexdigest()
-            if tests_to_run[r]['hash'] == results_hash.hexdigest():
+            if test_info['hash'] == results_hash.hexdigest():
                     print "Passed"
             else:
                 num_failed += 1
-                print "Failed"
+                print "Failed:"
                 if options.verbose:
-                    verified_results_name = setup['results dir']+r+'.test'
+                    print "Expected hash: {0}".format(test_info['hash'])
+                    print "Received hash: {0}".format(results_hash.hexdigest())
+                    verified_results_name = setup['results dir'] + r + '.test'
                     diff_command = 'diff {0} {1}'.format(results_name, 
                                                          verified_results_name)
                     print diff_command
+
     print 80*'-'
     if not options.do_tests:
         print "End of dry run."

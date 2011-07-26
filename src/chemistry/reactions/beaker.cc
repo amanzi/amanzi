@@ -936,8 +936,11 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
       rhs[i] = residual[i];
     }
 
-    // geh
-    DisplayResults();
+    if (verbosity() >= kDebugBeaker) {
+      // geh
+      std::cout << "\n- Iteration " << num_iterations << " --------" << std::endl;
+      DisplayResults();
+    }
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("before scale", J, rhs);
@@ -1132,7 +1135,7 @@ void Beaker::Display(void) const {
 
   DisplaySurfaceComplexes();
 
-  std::cout << "----------------------------------------------------------------------"
+  std::cout << "------------------------------------------------ Beaker description --"
             << std::endl;
 }  // end Display()
 
@@ -1287,8 +1290,8 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
             << std::endl;
   std::cout << "---- Aqueous Components" << std::endl;
   std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molarity"
             << std::setw(15) << "Molality"
+            << std::setw(15) << "Molarity"
       // << std::setw(15) << "Free Ion" // TODO(bandre): uncomment and update test results
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
@@ -1322,7 +1325,7 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
                 << std::endl;
     }
   }
-  std::cout << "----------------------------------------------------------------------"
+  std::cout << "------------------------------------------------- Input Components ---"
             << std::endl;
 }  // end DisplayComponents
 
@@ -1332,8 +1335,8 @@ void Beaker::DisplayResults(void) const {
             << std::endl;
   std::cout << "---- Components " << std::endl;
   std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molarity"
             << std::setw(15) << "Molality"
+            << std::setw(15) << "Molarity"
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
     std::cout << std::setw(15) << primarySpecies_.at(i).name()
@@ -1398,7 +1401,7 @@ void Beaker::DisplayResults(void) const {
     }
   }
 
-  std::cout << "----------------------------------------------------------------------"
+  std::cout << "---------------------------------------------------------- Solution --"
             << std::endl << std::endl;
 }  // end DisplayResults()
 

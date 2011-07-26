@@ -26,8 +26,8 @@ END
 Condition        initial_condition   
 units            mol/kg
 temperature      25.0
-HCO3-            0.001
-H+               0.001
+HCO3-            0.0010028
+H+               0.0010028
 END
 
 DISCRETIZATION 

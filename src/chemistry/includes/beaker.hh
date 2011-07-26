@@ -37,10 +37,10 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerComponents {
-    std::vector<double> free_ion;
-    std::vector<double> minerals;
+    std::vector<double> free_ion;  // molality
+    std::vector<double> minerals;  // volume fractions
     std::vector<double> ion_exchange_sites;
-    std::vector<double> total;
+    std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
   };
 
