@@ -3,7 +3,7 @@
 /**
  * @file   verify_mesh.cc
  * @author William A. Perkins
- * @date Thu Jul 14 09:50:49 2011
+ * @date Tue Jul 26 09:20:17 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created December 13, 2010 by William A. Perkins
-// Last Change: Thu Jul 14 09:50:49 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Jul 26 09:20:17 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -78,7 +78,7 @@ int main (int argc, char* argv[])
 
   CLP.throwExceptions(false);
 
-  int ierr(0);
+  int ierr(0), aerr(0);
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn;
   try {
     parseReturn = CLP.parse(argc, argv);
@@ -87,9 +87,9 @@ int main (int argc, char* argv[])
     ierr++;
   }
 
-  comm.SumAll(&ierr, &ierr, 1);
+  comm.SumAll(&ierr, &aerr, 1);
 
-  if (ierr > 0) {
+  if (aerr > 0) {
     return 1;
   }
   
@@ -108,6 +108,7 @@ int main (int argc, char* argv[])
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   ierr = 0;
+  aerr = 0;
   try {
     Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
     if (the_framework !=  Amanzi::AmanziMesh::Simple) {
@@ -133,9 +134,9 @@ int main (int argc, char* argv[])
     ierr++;
   }
 
-  comm.SumAll(&ierr, &ierr, 1);
+  comm.SumAll(&ierr, &aerr, 1);
 
-  if (ierr > 0) {
+  if (aerr > 0) {
     return 3;
   }
 
