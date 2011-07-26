@@ -1008,6 +1008,8 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${TRILINOS_PREFIX}/trilinos-${TRILINOS_VERSION}-install \\
+	-D ENABLE_Unstructured:Bool=ON \\
+	-D ENABLE_Structured:Bool=ON \\
         ..
 #        ../src
 # for out of source: ../source    for in source: .
