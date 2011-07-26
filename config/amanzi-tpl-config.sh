@@ -381,7 +381,7 @@ function build_curl {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j${PARALLEL_NP} all
+        make -j${MAKE_NP} all
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -444,7 +444,7 @@ function build_unittest {
         unzip ${DOWNLOAD_DIRECTORY}/unittest-cpp-${UNITTEST_VERSION}.zip -d ${PREFIX}/unittest
 
         cd ${UNITTEST_DIR}
-        make -j${PARALLEL_NP} all
+        make -j${MAKE_NP} all
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -515,7 +515,7 @@ function build_hdf5 {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -574,7 +574,7 @@ function build_netcdf {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -624,7 +624,7 @@ function build_exodus_cmake {
     if [ $? -ne 0 ]; then
         exit 
     fi
-    make -j ${PARALLEL_NP}
+    make -j ${MAKE_NP}
     if [ $? -ne 0 ]; then
         exit 
     fi
@@ -675,7 +675,7 @@ function build_metis {
         perl -w -i -p -e "s@^CC[\s]=.*@CC = ${mpicc_compiler}@" Makefile.in
     
         # no configuration...?
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -719,7 +719,7 @@ function build_cgns {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -783,7 +783,7 @@ function build_trilinos {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j${PARALLEL_NP}
+        make -j${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -831,7 +831,7 @@ function build_mstk {
             if [ $? -ne 0 ]; then
                 exit 
             fi
-            make -j ${PARALLEL_NP}
+            make -j ${MAKE_NP}
             if [ $? -ne 0 ]; then
                 exit 
             fi
@@ -892,7 +892,7 @@ function build_moab {
          if [ $? -ne 0 ]; then
             exit 
          fi
-         make -j ${PARALLEL_NP}
+         make -j ${MAKE_NP}
          if [ $? -ne 0 ]; then
             exit 
          fi
@@ -993,7 +993,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D MPI_DIR:FILEPATH=${MPI_PREFIX} \\
         -D MPI_EXEC:FILEPATH=${MPI_PREFIX}/bin/mpiexec \\
         -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \\
-        -D MPI_EXEC_MAX_NUMPROCS:STRING=${PARALLEL_NP} \\
+        -D MPI_EXEC_MAX_NUMPROCS:STRING=${MAKE_NP} \\
         -D ENABLE_TESTS:BOOL=ON \\
         -D UnitTest_DIR:FILEPATH=${UNITTEST_PREFIX} \\
         -D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \\
@@ -1019,7 +1019,7 @@ fi
 if [ \$AMANZI_MAKE -eq 1 ]; then
     cd \${AMANZI_DIR}/build
 #    cd \${AMANZI_DIR}/src
-    make -j ${PARALLEL_NP}
+    make -j ${MAKE_NP}
     if [ \$? -ne 0 ]; then
         exit 1
     fi
