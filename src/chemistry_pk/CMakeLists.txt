@@ -1,0 +1,39 @@
+# -*- mode: cmake -*-
+
+#
+#  Amanzi
+#    Chemistry Process Kernel
+#
+
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   CHEMPK_SOURCE_DIR
+#   CHEMPK_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(CHEMPK)
+
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
+
+# Chemistry include
+include_directories(${CHEM_INCLUDES_DIR})
+
+# Amanzi include directories
+include_directories(${DBC_SOURCE_DIR})
+include_directories(${ATK_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR})
+
+# External (TPL) include directories
+include_directories(${Epetra_INCLUDE_DIRS})
+
+add_library(chemistry chemistry_pk.cc chemistry_state.cc)
+target_link_libraries(chemistry ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})
+add_install_library(chemistry)
+
+if (BUILD_TESTS)
+  add_subdirectory(tests_unit)
+endif()

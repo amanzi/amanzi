@@ -82,13 +82,11 @@ target_link_libraries(output error_handling simple_mesh mesh geometry ${output_t
 file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
 add_install_library(output)
-
 #
 # Install Targets
 #
 file(GLOB output_inc_files "*.h*")
 add_install_include_file(${output_inc_files})
-add_install_library(output)
 
 
 if (BUILD_TESTS)

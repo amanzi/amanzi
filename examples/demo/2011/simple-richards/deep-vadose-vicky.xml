@@ -1,15 +1,24 @@
 <ParameterList name="Main">
+  
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
     <Parameter name="Read" type="string" value="./1D-column.par"/>
   </ParameterList>    
 
-  
+  <ParameterList name="observation">
+    <ParameterList name="mass of water">
+      <Parameter name="state id" type="string" value="water"/>
+      <Parameter name="region" type="string" value="all"/>
+      <Parameter name="functional" type="string" value="integral"/>
+      <Parameter name="times" type="Array double" value="{0.0, 3.0e6}"/>
+    </ParameterList>
+  </ParameterList>
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="1e+99"/>
+    <Parameter name="End Time" type="double" value="3.1e+6"/>
     <Parameter name="End Cycle" type="int" value="5000"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Richards"/>
@@ -21,7 +30,7 @@
     </ParameterList>    
     <Parameter name="Gnuplot output" type="bool" value="false"/>
     <Parameter name="Restart" type="bool" value="true"/>
-    <Parameter name="Restart file" type="string" value="restart-3PE.h5"/>
+    <Parameter name="Restart file" type="string" value="restart-2PE.h5"/>
   </ParameterList> 
 
   

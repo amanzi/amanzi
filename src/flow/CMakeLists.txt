@@ -47,6 +47,7 @@ add_definitions("-DUSE_MPI")
 #  RichardsModelEvaluator.cpp)
 file(GLOB flow_source_files "*.cpp")
 add_library(flow ${flow_source_files})
+add_install_library(flow)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES flow_tpl_libs)
 target_link_libraries(flow ${flow_tpl_libs})
@@ -56,7 +57,6 @@ target_link_libraries(flow ${flow_tpl_libs})
 #
 file(GLOB flow_inc_files "*.hpp")
 add_install_include_file(${flow_inc_files})
-add_install_library(flow)
 
 if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
 

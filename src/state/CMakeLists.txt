@@ -28,6 +28,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
@@ -43,6 +44,7 @@ add_definitions("-DUSE_MPI")
 # Library: state
 #
 add_library(state State.cpp)
+add_install_library(state)
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 target_link_libraries(state output simple_mesh mesh_data cell_geometry ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
@@ -53,5 +55,4 @@ set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 #
 file(GLOB state_inc_files "*.hpp")
 add_install_include_file(${state_inc_files})
-add_install_library(state)
 

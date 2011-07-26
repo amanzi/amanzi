@@ -1,0 +1,29 @@
+<ParameterList name="sample">
+  <Parameter name="p1" type="double" value="2.3"/>
+  <Parameter name="regions" type="Array string" value="{all, bottom, middle, top}"/>
+  <ParameterList name="all">
+    <ParameterList name="box">
+      <Parameter name="hi" type="Array double" value="{4, 5, 8}"/>
+      <Parameter name="lo" type="Array double" value="{2, 3, 4}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="bottom">
+    <ParameterList name="box">
+      <Parameter name="hi" type="Array double" value="{4, 5, 5}"/>
+      <Parameter name="lo" type="Array double" value="{2, 3, 4}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="middle">
+    <ParameterList name="box">
+      <Parameter name="hi" type="Array double" value="{4, 5, 7}"/>
+      <Parameter name="lo" type="Array double" value="{2, 3, 5}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="top">
+    <ParameterList name="box">
+      <Parameter name="hi" type="Array double" value="{4, 5, 8}"/>
+      <Parameter name="lo" type="Array double" value="{2, 3, 7}"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

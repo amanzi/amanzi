@@ -45,7 +45,7 @@
 (message default-directory)
 
 (defvar astyle-config-file 
-  (expand-file-name "../formatting/astylerc" (file-name-directory load-file-name)) 
+  (expand-file-name "../formatting/astylerc.alpha" (file-name-directory load-file-name)) 
   "Holds the location of the astyle configuration file.")
 
 (message astyle-config-file)

@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
 
   // make sure only PE0 can write to std::cout
-  int rank, ierr;
+  int rank, ierr, aerr;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
     ierr++;
   }
 
-  comm->SumAll(&ierr, &ierr, 1);
-  if (ierr > 0) {
+  comm->SumAll(&ierr, &aerr, 1);
+  if (aerr > 0) {
     return 1;
   }
     
@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
     ierr++;
   }
 
-  comm->SumAll(&ierr, &ierr, 1);
-  if (ierr > 0) {
+  comm->SumAll(&ierr, &aerr, 1);
+  if (aerr > 0) {
     return 3;
   }
 
@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
       ierr++;
     }
   
-    comm->SumAll(&ierr, &ierr, 1);
-    if (ierr > 0) {
+    comm->SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) {
       return 3;
     }
   
@@ -165,8 +165,8 @@ int main(int argc, char *argv[])
       ierr++;
     }
   
-    comm->SumAll(&ierr, &ierr, 1);
-    if (ierr > 0) {
+    comm->SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) {
       return 3;
     }
 
@@ -174,8 +174,11 @@ int main(int argc, char *argv[])
 
   ASSERT(!mesh.is_null());
 
+  // create dummy observation data object
+  Amanzi::ObservationData obs_data;
+
   // create the MPC
-  Amanzi::MPC mpc(driver_parameter_list, mesh);
+  Amanzi::MPC mpc(driver_parameter_list, mesh, obs_data);
   
   mpc.cycle_driver();
   

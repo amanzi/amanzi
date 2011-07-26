@@ -124,14 +124,24 @@ _write_to_log( "\tENABLE_STK_Mesh    ${ENABLE_STK_Mesh}")
 _write_to_log( "\tENABLE_MSTK_Mesh   ${ENABLE_MSTK_Mesh}")
 _write_blank_line()
 
-# Write install target information
+# Write CCSE configuration info
+_write_to_log( "CCSE configuration")
+_write_to_log( "\tENABLE_MPI      ${ENABLE_MPI}")
+_write_to_log( "\tENABLE_OpenMP   ${ENABLE_OpenMP}")
+_write_to_log( "\tSPACEDIM        ${AMANZI_SPACEDIM}")
+_write_to_log( "\tPRECISION       ${AMANZI_PRECISION}")
 _write_blank_line()
+
+# Write install target information
 _write_to_log("Installation paths")
 _write_to_log("\tAMANZI_INSTALL_PREFIX       ${AMANZI_INSTALL_PREFIX}")
 _write_to_log("\tAMANZI_INSTALL_INCLUDE_PATH ${AMANZI_INSTALL_INCLUDE_PATH}")
 _write_to_log("\tAMANZI_INSTALL_LIB_PATH     ${AMANZI_INSTALL_LIB_PATH}")
 _write_to_log("\tAMANZI_INSTALL_BIN_PATH     ${AMANZI_INSTALL_BIN_PATH}")
 _write_blank_line()
+
+
+
 
 #print_enabled_features()
 #print_disabled_features()
