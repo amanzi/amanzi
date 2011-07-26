@@ -11,19 +11,13 @@ geometry.is_periodic = 0 0
 
 geometry.region = Backfill_Region Waste_Region
 
-geometry.Backfill_Region
-{
-  purpose = 0
-  type = 1
-  param = 0 0 16 16
-}
+geometry.Backfill_Region.purpose = 0
+geometry.Backfill_Region.type = 1
+geometry.Backfill_Region.param = 0 0 16 16
 
-geometry.Waste_Region
-{
-  purpose = 0
-  type = 1
-  param = 6 6 10 10
-}
+geometry.Waste_Region.purpose = 0
+geometry.Waste_Region.type = 1
+geometry.Waste_Region.param = 6 6 10 10
 
 
 # Rock
@@ -31,46 +25,32 @@ geometry.Waste_Region
 
 rock.rock = Backfill Waste
 
+rock.Backfill.density = 2.63e3
+rock.Backfill.porosity = 0.35
+rock.Backfill.permeability = 78.58 78.58
+rock.Backfill.kr_type = 3
+rock.Backfill.kr_param = 0.11238 0.1893 0
+rock.Backfill.cpl_type = 3
+rock.Backfill.cpl_param = 0.11238 78 0.1893 0
 
-rock.Backfill
-{
-  density = 2.63e3
-  porosity = 0.35
-  permeability = 78.58 78.58
-  kr_type = 3
-  kr_param = 0.11238 0.1893 0
-  cpl_type = 3
-  cpl_param = 0.11238 78 0.1893 0
-}
-
-rock.Waste
-{
-  density = 2.51e3
-  porosity = 0.266
-  permeability = 0.0372 0.0372
-  kr_type = 3
-  kr_param = 0.48541 0 0
-  cpl_type = 3
-  cpl_param = 0.48541 0.002 0 0
-}
+rock.Waste.density = 2.51e3
+rock.Waste.porosity = 0.266
+rock.Waste.permeability = 0.0372 0.0372
+rock.Waste.kr_type = 3
+rock.Waste.kr_param = 0.48541 0 0
+rock.Waste.cpl_type = 3
+rock.Waste.cpl_param = 0.48541 0.002 0 0
 
 
 rock.assign = Backfill_Region Waste_Region
 
+rock.Backfill_Region.type = Backfill
+rock.Backfill_Region.phi = 1
+rock.Backfill_Region.kappa = 1
 
-rock.Backfill_Region
-{
-  type = Backfill
-  phi = 1
-  kappa = 1
-}
-
-rock.Waste_Region
-{
-  type = Waste
-  phi = 1
-  kappa = 1
-}
+rock.Waste_Region.type = Waste
+rock.Waste_Region.phi = 1
+rock.Waste_Region.kappa = 1
 
 rock.permeability_file = test/kp
 rock.porosity_file = test/pp
@@ -80,47 +60,35 @@ rock.porosity_file = test/pp
 phase.phase  = Liquid Gas
 # water must come before air for now.
 comp.comp = Water Air
-comp.Water
-{
-  phase = Liquid
-  density = 1.0e3
-  viscosity = 1.0
-  diffusivity = 0.0
-}
-comp.Air
-{
-  phase = Gas
-  density = 1.2
-  viscosity = 0.018
-  diffusivity = 0.0
-}
+
+comp.Water.phase = Liquid
+comp.Water.density = 1.0e3
+comp.Water.viscosity = 1.0
+comp.Water.diffusivity = 0.0
+
+comp.Air.phase = Gas
+comp.Air.density = 1.2
+comp.Air.viscosity = 0.018
+comp.Air.diffusivity = 0.0
 
 comp.dominant = Air
 comp.lo_bc = 4 1 
 comp.hi_bc = 4 1
 comp.init = ALL
-comp.ALL
-{
-  type = zero_total_velocity
-  inflow = -2.53e-8
-}
+
+comp.ALL.type = zero_total_velocity
+comp.ALL.inflow = -2.53e-8
 
 # boundary conditions
 comp.inflow = YHIBC YLOBC
 
-comp.YHIBC
-{
-   type = zero_total_velocity
-   rock = Backfill
-   inflow = -2.535e-8
-}
+comp.YHIBC.type = zero_total_velocity
+comp.YHIBC.rock = Backfill
+comp.YHIBC.inflow = -2.535e-8
 
-comp.YLOBC
-{
-   type = scalar
-   Water = 1000
-   Air = 0.
-}
+comp.YLOBC.type = scalar
+comp.YLOBC.Water = 1000
+comp.YLOBC.Air = 0.
 
 
 
@@ -134,150 +102,88 @@ tracer.group   = Total Solid Absorbed
 # these are the correct species names
 tracer.tracer  = Al+++ H+ HPO4-- SiO2 UO2++ Koalinite Quartz Uranium SAl+++ SH+ SHPO4-- SSiO2 SUO2++
 
-tracer.Al+++
-{
-  group = Total
-}
-
-tracer.H+
-{
-  group = Total
-}
-
-tracer.HPO4--
-{
-  group = Total
-}
-
-tracer.SiO2
-{
-  group = Total
-}
-
-tracer.UO2++
-{
-  group = Total
-}
-
-tracer.Koalinite
-{
-  group = Solid
-}
-
-tracer.Quartz
-{ 
-  group = Solid
-}
-
-tracer.Uranium
-{ 
-  group = Solid
-}
-
-tracer.SAl+++
-{ 
-  group = Absorbed
-}
-
-tracer.SH+
-{
-  group = Absorbed
-}
-
-tracer.SHPO4--
-{
-  group = Absorbed
-}
-
-tracer.SSiO2
-{
-  group = Absorbed
-}
-
-tracer.SUO2++
-{
-  group = Absorbed
-}
-
+tracer.Al+++.group = Total
+tracer.H+.group = Total
+tracer.HPO4--.group = Total
+tracer.SiO2.group = Total
+tracer.UO2++.group = Total
+tracer.Koalinite.group = Solid
+tracer.Quartz.group = Solid
+tracer.Uranium.group = Solid
+tracer.SAl+++.group = Absorbed
+tracer.SH+.group = Absorbed
+tracer.SHPO4--.group = Absorbed
+tracer.SSiO2.group = Absorbed
+tracer.SUO2++.group = Absorbed
 
 
 tracer.init = Backfill_Region Waste_Region
-tracer.Backfill_Region
-{
-  type = scalar
-  Al+++     = 6.5874e-9
-  H+        = -3.1408e-7
-  HPO4--    = 1.0000e-6
-  SiO2      = 1.8703e-4
-# UO2++     = 1.000e-15
-  UO2++     = 1.000e-5
-  Koalinite = 0.15
-  Quartz    = 0.21
-  Uranium   = 0.00
-  SAl+++    = 0.00
-  SH+       = 0.00
-  SHPO4--   = 0.00
-  SSiO2     = 0.00
-  SUO2++    = 0.00
-}
 
-tracer.Waste_Region
-{
-  type = scalar
-  Al+++     = 2.8909e-5
-  H+        = 1.2786e-3
-  HPO4--    = 7.1028e-5
-  SiO2      = 2.5280e-4
-# UO2++     = 3.5414e-5
-  UO2++     = 3.5414e-2
-  Koalinite = 0.0
-  Quartz    = 0.0
-  Uranium   = 0.0
-  SAl+++    = 0.0
-  SH+       = 0.00      
-  SHPO4--   = 0.00      
-  SSiO2     = 0.00
-  SUO2++    = 0.00
-}
+tracer.Backfill_Region.type = scalar
+tracer.Backfill_Region.Al+++     = 6.5874e-9
+tracer.Backfill_Region.H+        = -3.1408e-7
+tracer.Backfill_Region.HPO4--    = 1.0000e-6
+tracer.Backfill_Region.SiO2      = 1.8703e-4
+# tracer.Backfill_RegionUO2++     = 1.000e-15
+tracer.Backfill_Region.UO2++     = 1.000e-5
+tracer.Backfill_Region.Koalinite = 0.15
+tracer.Backfill_Region.Quartz    = 0.21
+tracer.Backfill_Region.Uranium   = 0.00
+tracer.Backfill_Region.SAl+++    = 0.00
+tracer.Backfill_Region.SH+       = 0.00
+tracer.Backfill_Region.SHPO4--   = 0.00
+tracer.Backfill_Region.SSiO2     = 0.00
+tracer.Backfill_Region.SUO2++    = 0.00
+
+tracer.Waste_Region.type = scalar
+tracer.Waste_Region.Al+++     = 2.8909e-5
+tracer.Waste_Region.H+        = 1.2786e-3
+tracer.Waste_Region.HPO4--    = 7.1028e-5
+tracer.Waste_Region.SiO2      = 2.5280e-4
+# tracer.Waste_Region.UO2++     = 3.5414e-5
+tracer.Waste_Region.UO2++     = 3.5414e-2
+tracer.Waste_Region.Koalinite = 0.0
+tracer.Waste_Region.Quartz    = 0.0
+tracer.Waste_Region.Uranium   = 0.0
+tracer.Waste_Region.SAl+++    = 0.0
+tracer.Waste_Region.SH+       = 0.00      
+tracer.Waste_Region.SHPO4--   = 0.00      
+tracer.Waste_Region.SSiO2     = 0.00
+tracer.Waste_Region.SUO2++    = 0.00
 
 
 tracer.inflow = YHIBC YLOBC
 
-tracer.YHIBC
-{
-  type = scalar
-  Al+++     = 6.5874e-9
-  H+        = -3.1408e-7
-  HPO4--    = 1.0000e-6
-  SiO2      = 1.8703e-4
-  UO2++     = 1.000e-15
-  Koalinite = 0.15
-  Quartz    = 0.21
-  Uranium   = 0.00
-  SAl+++    = 0.00
-  SH+       = 0.00
-  SHPO4--   = 0.00
-  SSiO2     = 0.00
-  SUO2++    = 0.00
-}
+tracer.YHIBC.type = scalar
+tracer.YHIBC.Al+++     = 6.5874e-9
+tracer.YHIBC.H+        = -3.1408e-7
+tracer.YHIBC.HPO4--    = 1.0000e-6
+tracer.YHIBC.SiO2      = 1.8703e-4
+tracer.YHIBC.UO2++     = 1.000e-15
+tracer.YHIBC.Koalinite = 0.15
+tracer.YHIBC.Quartz    = 0.21
+tracer.YHIBC.Uranium   = 0.00
+tracer.YHIBC.SAl+++    = 0.00
+tracer.YHIBC.SH+       = 0.00
+tracer.YHIBC.SHPO4--   = 0.00
+tracer.YHIBC.SSiO2     = 0.00
+tracer.YHIBC.SUO2++    = 0.00
 
-tracer.YLOBC
-{
-  type = scalar
-  Al+++     = 6.5874e-9
-  H+        = -3.1408e-7
-  HPO4--    = 1.0000e-6
-  SiO2      = 1.8703e-4
-  UO2++     = 1.000e-15
-  Koalinite = 0.15
-  Quartz    = 0.21
-  Uranium   = 0.00
-  SAl+++    = 0.00
-  SH+       = 0.00
-  SHPO4--   = 0.00
-  SSiO2     = 0.00
-  SUO2++    = 0.00
-}
+
+tracer.YLOBC.type = scalar
+tracer.YLOBC.Al+++     = 6.5874e-9
+tracer.YLOBC.H+        = -3.1408e-7
+tracer.YLOBC.HPO4--    = 1.0000e-6
+tracer.YLOBC.SiO2      = 1.8703e-4
+tracer.YLOBC.UO2++     = 1.000e-15
+tracer.YLOBC.Koalinite = 0.15
+tracer.YLOBC.Quartz    = 0.21
+tracer.YLOBC.Uranium   = 0.00
+tracer.YLOBC.SAl+++    = 0.00
+tracer.YLOBC.SH+       = 0.00
+tracer.YLOBC.SHPO4--   = 0.00
+tracer.YLOBC.SSiO2     = 0.00
+tracer.YLOBC.SUO2++    = 0.00
 
 
 # chemistry
@@ -306,16 +212,11 @@ press.water_table_hi = 0
 source.do_source = 0
 source.source = Infiltration 
 
-#Discharge Tracer_Discharge
-
-source.Infiltration
-{
-  var_type  = comp
-  var_id    = Water
-  region    = Top_Region
-  dist_type = constant
-  val       = 9.524e-6
-}
+source.Infiltration.var_type  = comp
+source.Infiltration.var_id    = Water
+source.Infiltration.region    = Top_Region
+source.Infiltration.dist_type = constant
+source.Infiltration.val       = 9.524e-6
 
 # capillary pressure
 prob.have_capillary = 1

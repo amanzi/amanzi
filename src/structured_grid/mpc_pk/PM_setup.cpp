@@ -575,10 +575,11 @@ void PorousMedia::read_geometry()
 	{
 	  int idx = i-nRegion_DEF;      
 	  region_list[r_name[idx]] = i;
-	  ParmParse::Record ppr = pp.getRecord(r_name[idx]);
-	  ppr->get("purpose",r_purpose);
-	  ppr->get("type",r_type);      
-	  ppr->getarr("param",r_param,0,ppr->countval("param"));
+          const std::string prefix("geometry." + r_name[idx]);
+          ParmParse ppr(prefix.c_str());
+	  ppr.get("purpose",r_purpose);
+	  ppr.get("type",r_type);      
+	  ppr.getarr("param",r_param,0,ppr.countval("param"));
 	  if (r_type == 1) 
 	    {
 	      region_array[i] = new boxRegion(r_name[idx],r_purpose,r_type);
@@ -617,12 +618,13 @@ void PorousMedia::read_rock()
   pp.getarr("rock",r_names,0,nrock);
   for (int i = 0; i<nrock; i++)
     {
-      ParmParse::Record ppr = pp.getRecord(r_names[i]);
+      const std::string prefix("rock." + r_names[i]);
+      ParmParse ppr(prefix.c_str());
       rock_array[i].name = r_names[i];
-      ppr->get("density",rock_array[i].density);
-      ppr->get("porosity",rock_array[i].porosity);    
-      ppr->getarr("permeability",rock_array[i].permeability,
-		  0,ppr->countval("permeability"));
+      ppr.get("density",rock_array[i].density);
+      ppr.get("porosity",rock_array[i].porosity);    
+      ppr.getarr("permeability",rock_array[i].permeability,
+		  0,ppr.countval("permeability"));
       BL_ASSERT(rock_array[i].permeability.size() == BL_SPACEDIM);
       // The permeability is specified in mDa.  
       // This needs to be multiplied with 1e-7 to be consistent 
@@ -631,17 +633,17 @@ void PorousMedia::read_rock()
 	rock_array[i].permeability[j] *= 1.e-7;
       // relative permeability: include kr_coef, sat_residual
       rock_array[i].krType = 0;
-      ppr->query("kr_type",rock_array[i].krType);
+      ppr.query("kr_type",rock_array[i].krType);
       if (rock_array[i].krType > 0)
-	ppr->getarr("kr_param",rock_array[i].krParam,
-		    0,ppr->countval("kr_param"));
+	ppr.getarr("kr_param",rock_array[i].krParam,
+		    0,ppr.countval("kr_param"));
 
       // capillary pressure: include cpl_coef, sat_residual, sigma
       rock_array[i].cplType = 0;
-      ppr->query("cpl_type", rock_array[i].cplType);
+      ppr.query("cpl_type", rock_array[i].cplType);
       if (rock_array[i].cplType > 0)
-	ppr->getarr("cpl_param",rock_array[i].cplParam,
-		    0,ppr->countval("cpl_param"));
+	ppr.getarr("cpl_param",rock_array[i].cplParam,
+		    0,ppr.countval("cpl_param"));
     }
 
   // assign rock to regions and specify the distribution
@@ -665,8 +667,9 @@ void PorousMedia::read_rock()
  
   for (int i = 0; i<nassign; i++)
     {
-      ParmParse::Record ppr = pp.getRecord(r_region[i]);
-      ppr->get("type",rock_type);
+      const std::string prefix("rock." + r_region[i]);
+      ParmParse ppr(prefix.c_str());
+      ppr.get("type",rock_type);
       for (int j = 0; j< nrock; j++)
 	if (rock_type == r_names[j])
 	  idx = j;
@@ -678,18 +681,18 @@ void PorousMedia::read_rock()
       }
 
       // distribution parameters
-      ppr->get("phi",type);
+      ppr.get("phi",type);
       if (type > 1)
-	ppr->getarr("phi_param",param,0,ppr->countval("phi_param"));
+	ppr.getarr("phi_param",param,0,ppr.countval("phi_param"));
       rock_array[idx].porosity_dist_type.push_back(type);
       rock_array[idx].porosity_dist_param.push_back(param);
       if (type > 1) build_full_pmap = true;
       if (type == 0) read_full_pmap = true;
       if (type != 1) porosity_from_fine = true;
      
-      ppr->get("kappa",type);   
+      ppr.get("kappa",type);   
       if (type > 1)
-	ppr->getarr("kappa_param",param,0,ppr->countval("kappa_param"));
+	ppr.getarr("kappa_param",param,0,ppr.countval("kappa_param"));
       rock_array[idx].permeability_dist_type.push_back(type);
       rock_array[idx].permeability_dist_param.push_back(param);
       if (type > 1) build_full_kmap = true;
@@ -876,7 +879,7 @@ void PorousMedia::read_prob()
 //
 
 void PorousMedia::assign_bc_coef(int type_id, 
-				 ParmParse::Record& ppr,
+				 ParmParse& ppr,
 				 Array<std::string>& names, 
 				 Array<Real>& coef)
 {
@@ -890,19 +893,19 @@ void PorousMedia::assign_bc_coef(int type_id,
       for (int j = 0; j<ncoef; j++)
 	{
 	  coef[j] = 0;
-	  ppr->get(names[j].c_str(),coef[j]);
+	  ppr.get(names[j].c_str(),coef[j]);
 	}
       break;
 
     case 2:
       coef.resize(1);
-      ppr->get("water_table",coef[0]);
+      ppr.get("water_table",coef[0]);
       break;
 
     case 4:
       coef.resize(ncomps+1);
-      ppr->query("rock",rtype);
-      ppr->get("inflow",vel);
+      ppr.query("rock",rtype);
+      ppr.get("inflow",vel);
       for (int i=0;i<ncomps;i++)
 	coef[i] = density[i];
       coef[ncomps] = vel;
@@ -938,10 +941,10 @@ void PorousMedia::assign_bc_coef(int type_id,
 
     case 5:
       coef.resize(1);
-      ppr->getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
-      ppr->getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
-      ppr->getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
-      ppr->getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
+      ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
+      ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
+      ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
+      ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
     }
 }  
 
@@ -980,11 +983,12 @@ void  PorousMedia::read_comp()
   std::string buffer;
   for (int i = 0; i<ncomps; i++)
     {
-      ParmParse::Record ppr = cp.getRecord(cNames[i]);
-      ppr->get("phase",buffer);
-      ppr->get("density",density[i]);
-      ppr->get("viscosity",muval[i]);
-      ppr->get("diffusivity",visc_coef[i]);
+      const std::string prefix("comp." + cNames[i]);
+      ParmParse ppr(prefix.c_str());
+      ppr.get("phase",buffer);
+      ppr.get("density",density[i]);
+      ppr.get("viscosity",muval[i]);
+      ppr.get("diffusivity",visc_coef[i]);
       pType[i] = phase_list[buffer];
       //for (int j=0;j<nphases; j++) 
       //if (buffer.compare(pNames[j])==0) pType[i] = j;	   
@@ -1083,8 +1087,9 @@ void  PorousMedia::read_comp()
     {
       rhoinit_param[i].resize(2);
       rhoinit_param[i][0] = region_list[init_region[i]];
-      ParmParse::Record ppr = cp.getRecord(init_region[i]);
-      ppr->get("type",type_name);
+      const std::string prefix("comp." + init_region[i]);
+      ParmParse ppr(prefix.c_str());
+      ppr.get("type",type_name);
       rhoinit_param[i][1]=bc_list[type_name];
       assign_bc_coef(rhoinit_param[i][1],ppr,cNames,rhoinit[i]);
     }
@@ -1101,8 +1106,9 @@ void  PorousMedia::read_comp()
 	{
 	  rhoinflow_param[i].resize(2);
 	  rhoinflow_param[i][0] = region_list[inflow_region[i]];
-	  ParmParse::Record ppr = cp.getRecord(inflow_region[i]);
-	  ppr->get("type",type_name);
+          const std::string prefix("comp." + inflow_region[i]);
+	  ParmParse ppr(prefix.c_str());
+	  ppr.get("type",type_name);
 	  rhoinflow_param[i][1] = bc_list[type_name];
 	  assign_bc_coef(rhoinflow_param[i][1],ppr,cNames,rhoinflow[i]);
 	}
@@ -1138,8 +1144,9 @@ void  PorousMedia::read_tracer()
       std::string buffer;
       for (int i = 0; i<ntracers; i++)
 	{
-	  ParmParse::Record ppr = pp.getRecord(tNames[i]);
-	  ppr->get("group",buffer);
+          const std::string prefix("tracer." + tNames[i]);
+	  ParmParse ppr(prefix.c_str());
+	  ppr.get("group",buffer);
 	  for (int j=0;j<qNames.size(); j++) 
 	    if (buffer.compare(qNames[j])==0) tType[i] = j;	   
 	}
@@ -1160,8 +1167,9 @@ void  PorousMedia::read_tracer()
 	{
 	  tinit_param[i].resize(2);
 	  tinit_param[i][0] = region_list[init_region[i]];
-	  ParmParse::Record ppr = pp.getRecord(init_region[i]);
-	  ppr->get("type",type_name);
+          const std::string prefix("tracer." + init_region[i]);
+	  ParmParse ppr(prefix.c_str());
+	  ppr.get("type",type_name);
 	  tinit_param[i][1]=bc_list[type_name];
 	  assign_bc_coef(tinit_param[i][1],ppr,tNames,tinit[i]);
 	}  
@@ -1179,8 +1187,9 @@ void  PorousMedia::read_tracer()
 	      tinflow_param[i].resize(2);
 	      tinflow[i].resize(ntracers);
 	      tinflow_param[i][0] = region_list[inflow_region[i]]; 
-	      ParmParse::Record ppr = pp.getRecord(inflow_region[i]);
-	      ppr->get("type",type_name);
+              const std::string prefix("tracer." + inflow_region[i]);
+	      ParmParse ppr(prefix.c_str());
+	      ppr.get("type",type_name);
 	      tinflow_param[i][1]=bc_list[type_name];
 	      assign_bc_coef(tinflow_param[i][1],ppr,tNames,tinflow[i]);
 	    }
@@ -1272,10 +1281,11 @@ void  PorousMedia::read_source()
       std::string buffer;
       for (int i=0; i<nsource; i++)
 	{
-	  ParmParse::Record ppr = pp.getRecord(sname[i]);
+          const std::string prefix("source." + sname[i]);
+	  ParmParse ppr(prefix.c_str());
 	  source_array[i].name = sname[i];
-	  ppr->get("var_type",source_array[i].var_type);
-	  ppr->get("var_id",source_array[i].var_id);
+	  ppr.get("var_type",source_array[i].var_type);
+	  ppr.get("var_id",source_array[i].var_id);
 	  if (source_array[i].var_type == "comp")
 	    {
 	      source_array[i].id.resize(1);
@@ -1306,7 +1316,7 @@ void  PorousMedia::read_source()
 		}
 	    }
 
-	  ppr->get("region",buffer);
+	  ppr.get("region",buffer);
           bool region_set=false;
 	  for (int j=0; j<region_array.size();j++)
           {
@@ -1317,7 +1327,7 @@ void  PorousMedia::read_source()
               }
           }
           BL_ASSERT(region_set);
-	  ppr->get("dist_type",buffer);
+	  ppr.get("dist_type",buffer);
 	  if (!buffer.compare("constant"))
 	      source_array[i].dist_type = 0;
 	  else if (!buffer.compare("linear"))
@@ -1327,13 +1337,13 @@ void  PorousMedia::read_source()
 	  else if (!buffer.compare("exponential"))
 	      source_array[i].dist_type = 3;
 
-	  ppr->getarr("val",source_array[i].val_param,
-		      0,ppr->countval("val"));
-	  if (ppr->countval("val")< source_array[i].id.size())
+	  ppr.getarr("val",source_array[i].val_param,
+		      0,ppr.countval("val"));
+	  if (ppr.countval("val")< source_array[i].id.size())
 	    std::cout << "Number of values does not match the number of var_id.\n" ;
 	  if (source_array[i].dist_type != 0)
-	    ppr->getarr("dist_param",source_array[i].dist_param,
-			0,ppr->countval("dist_param"));
+	    ppr.getarr("dist_param",source_array[i].dist_param,
+			0,ppr.countval("dist_param"));
 	 
 	}
     }
@@ -1366,23 +1376,24 @@ void PorousMedia::read_observation()
       std::string buffer;
       for (int i=0; i<nobs; i++)
 	{
-	  ParmParse::Record ppr = pp.getRecord(oname[i]);
+          const std::string prefix("observation." + oname[i]);
+	  ParmParse ppr(prefix.c_str());
 	  observation_array[i].name = oname[i];
 	  obs_list[oname[i]] = i;
-	  ppr->get("obs_type",observation_array[i].obs_type);
-	  ppr->get("var_type",observation_array[i].var_type);
-	  ppr->get("var_id",observation_array[i].var_id);
+	  ppr.get("obs_type",observation_array[i].obs_type);
+	  ppr.get("var_type",observation_array[i].var_type);
+	  ppr.get("var_id",observation_array[i].var_id);
 
 	  if (!observation_array[i].var_type.compare("comp"))
 	    observation_array[i].id = comp_list[observation_array[i].var_id];
 	  else if (!observation_array[i].var_type.compare("tracer"))
 	    observation_array[i].id = tracer_list[observation_array[i].var_id];
 
-	  ppr->get("region",buffer);
+	  ppr.get("region",buffer);
           observation_array[i].region = region_list[buffer];
           
-	  ppr->getarr("times",observation_array[i].times,
-		      0,ppr->countval("times"));
+	  ppr.getarr("times",observation_array[i].times,
+		      0,ppr.countval("times"));
 
 	  //observation_array[i].vals.resize(observation_array[i].times.size());	 
 	}

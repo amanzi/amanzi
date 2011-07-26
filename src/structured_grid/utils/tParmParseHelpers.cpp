@@ -36,7 +36,12 @@ int main(int argc, char* argv[])
 
     ParmParse pp;
 
-
+    std::string p1_label("p1");
+    int p1; pp.get(p1_label.c_str(),p1);
+    int tp1 = params.get<int>(p1_label);
+    if (p1 != tp1)
+      BoxLib::Abort("tParmParseHelper:: int translation failied");
+    
     std::string regions_label("regions");
     int num_regions = pp.countval(regions_label.c_str());
     Array<std::string> regions(num_regions);
@@ -44,42 +49,48 @@ int main(int argc, char* argv[])
 
     Teuchos::Array<std::string> tregions = 
       Teuchos::getParameter<Teuchos::Array<std::string> >(params, regions_label);
-    BL_ASSERT(tregions.size()==num_regions);
+    if (tregions.size() != num_regions)
+      BoxLib::Abort("tParmParseHelper:: array string translation failied");
 
     for (int i=0; i<num_regions; ++i)
       {
         BL_ASSERT(tregions[i] == regions[i]);
-        ParmParse::Record ppr = pp.getRecord(regions[i]);
+        ParmParse ppr(regions[i].c_str());
         
         Teuchos::ParameterEntry tregion = params.getEntry(regions[i]);
-        BL_ASSERT(tregion.isList());
+        if (! tregion.isList() )
+          BoxLib::Abort("tParmParseHelper:: sublist translation 1 failed");
         Teuchos::ParameterList& sublist = params.sublist(regions[i]);
         
         std::string box_label("box");
-        ParmParse::Record pprr = ppr->getRecord(box_label);
+        std::string box_pp_label(regions[i] + "." + box_label);
+        ParmParse pprb(box_pp_label);
         const Teuchos::ParameterEntry& tbox = sublist.getEntry(box_label);
-        BL_ASSERT(tbox.isList());
-        
+        if (! tbox.isList())
+          BoxLib::Abort("tParmParseHelper:: sublist translation 2 failed");
+ 
         std::string lo_label("lo");
-        int num_lo = pprr->countval(lo_label.c_str());
+        int num_lo = pprb.countval(lo_label.c_str());
         Array<double> lo(num_lo);
-        pprr->getarr(lo_label.c_str(),lo,0,num_lo);
+        pprb.getarr(lo_label.c_str(),lo,0,num_lo);
         const Teuchos::Array<double>& tlo = sublist.sublist(box_label).get<Teuchos::Array<double> >(lo_label);
         
         for (int j=0; j<num_lo; ++j)
           {
-            BL_ASSERT(std::abs(lo[j] - tlo[j])/(epsilon + lo[j] + tlo[j]) < epsilon);
+            if (std::abs(lo[j] - tlo[j])/(epsilon + lo[j] + tlo[j]) > epsilon)
+              BoxLib::Abort("tParmParseHelper:: real array translation 1 failed");
           }
         
         std::string hi_label("hi");
-        int num_hi = pprr->countval(hi_label.c_str());
+        int num_hi = pprb.countval(hi_label.c_str());
         Array<double> hi(num_hi);
-        pprr->getarr(hi_label.c_str(),hi,0,num_hi);
+        pprb.getarr(hi_label.c_str(),hi,0,num_hi);
         const Teuchos::Array<double>& thi = sublist.sublist(box_label).get<Teuchos::Array<double> >(hi_label);
         
         for (int j=0; j<num_hi; ++j)
           {
-            BL_ASSERT(std::abs(hi[j] - thi[j])/(epsilon + hi[j] + thi[j]) < epsilon);
+            if (std::abs(hi[j] - thi[j])/(epsilon + hi[j] + thi[j]) > epsilon)
+              BoxLib::Abort("tParmParseHelper:: real array translation 2 failed");
           }
         
       }
@@ -89,4 +100,5 @@ int main(int argc, char* argv[])
     BoxLib::Finalize();
     
     return 0;
+
 }
