@@ -141,7 +141,8 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
 
   // find the global maximum
 #ifdef HAVE_MPI
-  MPI_Allreduce ( &en, &en, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+  double buf = en;
+  MPI_Allreduce ( &buf, &en, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
 #endif
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))

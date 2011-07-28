@@ -37,15 +37,12 @@ set(input_src_files input_base_class.cc simple_mesh_input.cc
 add_library(input ${input_src_files})
 add_install_library(input)
 target_link_libraries(input ${Teuchos_LIBRARIES})
-link_list_add(input)
 
 #
 # Install targets
 #
 file(GLOB include_files "*.hh")
 add_install_include_file(${include_files})
-add_install_library(input)
-
 
 # Add examples
 option(ENABLE_INPUT_EXAMPLES "Build input examples" OFF)

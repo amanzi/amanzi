@@ -59,19 +59,19 @@ if ( (NOT ENABLE_STK_Mesh)  AND
 endif()    
 
 
+# A property for accumulating the a global amanzi link line.
 set_property(GLOBAL PROPERTY AMANZI_LINK_LINE "-L${CMAKE_INSTALL_PREFIX}/lib")
-include(AmanziLinkLine)
-include(InstallManager)
+
+# A property for accumulating amanzi library targets
+set_property(GLOBAL PROPERTY AMANZI_LIBRARY_TARGETS)
 set(AMANZI_LINK_LINE_FILE "${AMANZI_BINARY_DIR}/link_line")  # A filename to write link-line to.
-create_link_line()
+include(InstallManager)
 
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
-# Have this depend just on whether an installation location is
-# specified. Installation -> Link line, exported makefile and CMake finder file
-
-#option(ENABLE_Link_Line "Print out a linker path and library specification suitable for linking Amanzi")
+# Make the exports only _after_ doing the build
+create_exports()
 
 option(ENABLE_Config_Report "Print out detailed information at the end of a configuration")
 set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
@@ -96,4 +96,3 @@ if (ENABLE_Config_Report)
 
 endif()    
 
-create_export_makefile()

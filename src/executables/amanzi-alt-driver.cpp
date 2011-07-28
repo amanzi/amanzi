@@ -174,8 +174,11 @@ int main(int argc, char *argv[])
 
   ASSERT(!mesh.is_null());
 
+  // create dummy observation data object
+  Amanzi::ObservationData obs_data;
+
   // create the MPC
-  Amanzi::MPC mpc(driver_parameter_list, mesh);
+  Amanzi::MPC mpc(driver_parameter_list, mesh, obs_data);
   
   mpc.cycle_driver();
   

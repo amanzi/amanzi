@@ -3,7 +3,7 @@
 #include "Amr.H"
 #include "PorousMedia.H"
 
-
+#include "ParmParseHelpers.H"
 
 Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
@@ -17,6 +17,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     BoxLib::Initialize(argc,argv,false,mpi_comm);
     ParmParse::Initialize(argc,argv,PPfile.c_str());
+    BoxLib::Initialize_ParmParse(input_parameter_list);
 
     const Real run_strt = ParallelDescriptor::second();
 

@@ -43,7 +43,6 @@ set(mstk_mesh_files Mesh_MSTK.cc)
 add_library(mstk_mesh ${mstk_mesh_files})
 add_install_library(mstk_mesh)
 target_link_libraries(mstk_mesh mesh geometry error_handling ${MSTK_LIBRARIES} ${ExodusII_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES})
-link_list_add(mstk_mesh)
 
 #
 # Install Targets
