@@ -39,7 +39,6 @@ add_install_library(exodus)
 target_link_libraries(exodus 
                       error_handling mesh_data
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
-link_list_add(exodus)
 
 
 #

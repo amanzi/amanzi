@@ -149,7 +149,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   ASSERT(!mesh.is_null());
 
   // create the MPC
-  Amanzi::MPC mpc(input_parameter_list, mesh);
+  Amanzi::MPC mpc(input_parameter_list, mesh, output_observations);
   
   mpc.cycle_driver();
   

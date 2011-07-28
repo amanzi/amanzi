@@ -238,7 +238,7 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
-CCSE_VERSION=0.1.1
+CCSE_VERSION=0.1.2
 
 ################################################################################
 #

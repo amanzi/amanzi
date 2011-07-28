@@ -1,0 +1,312 @@
+<ParameterList name="Main">
+  
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="stk::mesh"/>
+    <Parameter name="Read" type="string" value="./bc-cribs-1D.exo"/>
+  </ParameterList>    
+
+  <ParameterList name="observation">
+    <ParameterList name="mass of water">
+      <Parameter name="state id" type="string" value="water"/>
+      <Parameter name="region" type="string" value="all"/>
+      <Parameter name="functional" type="string" value="integral"/>
+      <Parameter name="times" type="Array double" value="{0.0}"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="MPC">
+    <Parameter name="Start Time" type="double" value="0.0"/>
+    <Parameter name="End Time" type="double" value="3.1e+6"/>
+    <Parameter name="End Cycle" type="int" value="5000"/>
+    <Parameter name="disable Flow_PK" type="string" value="no"/>
+    <Parameter name="Flow model" type="string" value="Richards"/>
+    <Parameter name="disable Transport_PK" type="string" value="yes"/>
+    <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
+    <Parameter name="Viz dump cycle frequency" type="int" value="100"/>
+    <ParameterList name="CGNS">
+      <Parameter name="File name" type="string" value="bc-cribs-1D.cgns"/>
+    </ParameterList>    
+    <Parameter name="Gnuplot output" type="bool" value="true"/>
+    <Parameter name="Restart" type="bool" value="false"/>
+    <Parameter name="Restart file" type="string" value="restart-bc-cribs-1D-4PE.h5"/>
+  </ParameterList> 
+
+  
+  <ParameterList name="State">
+    <Parameter name="Number of mesh blocks" type="int" value="8"/>
+    <Parameter name="Number of component concentrations" type="int" value="1"/>
+    <Parameter name="Constant water saturation" type="double" value="1.0"/>
+    <Parameter name="Constant water density" type="double" value="998.32"/>
+    <Parameter name="Constant viscosity" type="double" value="8.9e-4"/> 
+    <Parameter name="Gravity x" type="double" value="0.0"/>
+    <Parameter name="Gravity y" type="double" value="0.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.81"/>
+
+    <!-- Backfill -->
+    <ParameterList name="Mesh block 1"> 
+      <Parameter name="Mesh block ID" type="int" value="1"/>
+      <Parameter name="Constant porosity" type="double" value="0.158"/>
+      <Parameter name="Constant permeability" type="double" value="5.4344e-13"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>
+
+    <!-- Hanford Course Sand -->
+    <ParameterList name="Mesh block 2"> 
+      <Parameter name="Mesh block ID" type="int" value="2"/>
+      <Parameter name="Constant porosity" type="double" value="0.364"/>
+      <Parameter name="Constant permeability" type="double" value="4.8346e-12"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>
+
+    <!-- Hanford Fine Sand -->
+    <ParameterList name="Mesh block 3"> 
+      <Parameter name="Mesh block ID" type="int" value="3"/>
+      <Parameter name="Constant porosity" type="double" value="0.388"/>
+      <Parameter name="Constant permeability" type="double" value="2.0447e-12"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>
+
+    <!-- Hanford Gravel -->
+    <ParameterList name="Mesh block 4"> 
+      <Parameter name="Mesh block ID" type="int" value="4"/>
+      <Parameter name="Constant porosity" type="double" value="0.237"/>
+      <Parameter name="Constant permeability" type="double" value="2.9989e-13"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>
+
+    <!-- Cold Creek Unit - caliche -->
+    <ParameterList name="Mesh block 5"> 
+      <Parameter name="Mesh block ID" type="int" value="5"/>
+      <Parameter name="Constant porosity" type="double" value="0.360"/>
+      <Parameter name="Constant permeability" type="double" value="5.0618e-14"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>
+
+    <!-- Cold Creek Unit - gravel -->
+    <ParameterList name="Mesh block 6"> 
+      <Parameter name="Mesh block ID" type="int" value="6"/>
+      <Parameter name="Constant porosity" type="double" value="0.237"/>
+      <Parameter name="Constant permeability" type="double" value="2.9989e-13"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>
+
+    <!-- Ringold Lower Mud -->
+    <ParameterList name="Mesh block 7"> 
+      <Parameter name="Mesh block ID" type="int" value="7"/>
+      <Parameter name="Constant porosity" type="double" value="0.360"/>
+      <Parameter name="Constant permeability" type="double" value="5.0618e-14"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>
+
+    <!-- Ringold - Wooded Island -->
+    <ParameterList name="Mesh block 8"> 
+      <Parameter name="Mesh block ID" type="int" value="8"/>
+      <Parameter name="Constant porosity" type="double" value="0.267"/>
+      <Parameter name="Constant permeability" type="double" value="3.7532e-13"/>
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+    </ParameterList>  
+  </ParameterList>  
+
+  <ParameterList name="Transport">
+
+    <Parameter name="CFL" type="double" value="1"/>
+    <Parameter name="discretization order" type="int" value="1"/>
+    <Parameter name="enable internal tests" type="string" value="no"/>
+    <Parameter name="internal tests tolerance" type="double" value="1e-06"/>
+    <Parameter name="maximal time step" type="double" value="1e+99"/>
+    <Parameter name="verbosity level" type="int" value="1"/>
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      
+      <ParameterList name="BC 0">
+        <Parameter name="Side set ID" type="int" value="1"/>
+        <Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="1.0"/>
+      </ParameterList>
+      
+    </ParameterList>
+  </ParameterList>
+
+
+
+  <ParameterList name="Flow">
+
+    <ParameterList name="Richards Problem">
+
+<!--  
+the following four paramters are for the initial time integration
+in particular, the hydrostatic pressure height is used to initialize
+the initial pressure in the problem so that the entire domain is wet:
+
+p = p_atmospheric - 9.8 * rho * (z - height) 
+ -->
+
+      <Parameter name="Steady state calculation initial time" type="double" value="0.0"/>
+      <Parameter name="Steady state calculation final time" type="double" value="3e10"/>
+      <Parameter name="Steady state calculation initial time step" type="double" value="1.0e-7"/>
+      <Parameter name="Steady state calculation initial hydrostatic pressure height" type ="double" value="103.2"/>
+
+      <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>
+
+      <ParameterList name="Richards model evaluator">
+        <Parameter name="Absolute error tolerance" type="double" value="1.0"/>
+        <Parameter name="Relative error tolerance" type="double" value="1.0e-5"/>
+        <ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="none"/>
+	</ParameterList>       
+      </ParameterList>
+
+      <ParameterList name="Time integrator">
+        <Parameter name="Nonlinear solver max iterations" type="int" value="6"/>
+	<Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
+        <Parameter name="NKA max vectors" type="int" value="5"/>
+	<Parameter name="NKA drop tolerance" type="double" value="5.0e-2"/>
+	<Parameter name="Maximum number of BDF tries" type="int" value="10"/>
+        <ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="medium"/>
+	</ParameterList>
+      </ParameterList>	
+
+      <ParameterList name="Water retention models">
+	
+	<!-- Backfill -->
+        <ParameterList name="Water retention model 0">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="1"/>
+          <Parameter name="van Genuchten m" type="double" value="0.2857"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1.9401e-4"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.103"/> 
+        </ParameterList>
+
+	<!-- Hanford Course Sand -->
+        <ParameterList name="Water retention model 1">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="2"/>
+          <Parameter name="van Genuchten m" type="double" value="0.5115"/>
+          <Parameter name="van Genuchten alpha" type="double" value="7.3518e-4"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.074"/> 
+        </ParameterList>
+
+	<!-- Hanford Fine Sand -->
+        <ParameterList name="Water retention model 2">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="3"/>
+          <Parameter name="van Genuchten m" type="double" value="0.6011"/>
+          <Parameter name="van Genuchten alpha" type="double" value="2.1443e-4"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.089"/> 
+        </ParameterList>
+
+	<!-- Hanford Gravel -->
+        <ParameterList name="Water retention model 3">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="4"/>
+          <Parameter name="van Genuchten m" type="double" value="0.4203"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1.7358e-4"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.134"/> 
+        </ParameterList>
+
+	<!-- Cold Creek Unit - caliche -->
+        <ParameterList name="Water retention model 4">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="5"/>
+          <Parameter name="van Genuchten m" type="double" value="0.5554"/>
+          <Parameter name="van Genuchten alpha" type="double" value="5.1054e-5"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.097"/> 
+        </ParameterList>
+
+	<!-- Cold Creek Unit - gravel -->
+        <ParameterList name="Water retention model 5">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="6"/>
+          <Parameter name="van Genuchten m" type="double" value="0.4203"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1.7358e-4"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.134"/> 
+        </ParameterList>
+
+	<!-- Ringold Lower Mud -->
+        <ParameterList name="Water retention model 6">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="7"/>
+          <Parameter name="van Genuchten m" type="double" value="0.5554"/>
+          <Parameter name="van Genuchten alpha" type="double" value="5.1054e-5"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.097"/> 
+        </ParameterList>
+
+	<!-- Ringold - Wooded Island -->
+        <ParameterList name="Water retention model 7">
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="Region ID" type="int" value="8"/>
+          <Parameter name="van Genuchten m" type="double" value="0.3976"/>
+          <Parameter name="van Genuchten alpha" type="double" value="8.1687e-5"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.135"/> 
+        </ParameterList>
+
+      </ParameterList>
+
+      <ParameterList name="Diffusion Preconditioner">
+	<ParameterList name="ML Parameters">
+	  <Parameter name="ML output" type="int" value="1"/>
+  	  <Parameter name="max levels" type="int" value="40"/>
+	  <Parameter name="prec type" type="string" value="MGW"/>
+	  <Parameter name="cycle applications" type="int" value="2"/>
+	  <Parameter name="aggregation: type" type="string" value="Uncoupled"/> 
+	  <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
+	  <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+	  <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+	  <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+	  <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+	  <Parameter name="smoother: sweeps" type="int" value="2"/>
+	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+	  <Parameter name="smoother: pre or post" type="string" value="both"/>
+	  <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+	  <Parameter name="coarse: type" type="string" value="Gauss-Seidel"/>
+          <Parameter name="coarse: max size" type="int" value="5"/>	   
+          <Parameter name="coarse: sweeps" type="int" value="5"/>	   
+          <Parameter name="coarse: damping factor" type="double" value="1.0"/>	   
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Flow BC">
+      <Parameter name="number of BCs" type="int" value="2"/>
+
+      <!-- 
+	 the following is a special boundary condition that we use to 
+	 drain a domain...
+	 Use the steady state... paramters above to initialize the pressure
+	 so that the entire domain is wet. 
+	 Then calculate the hydrostatic pressure at the bottom of the domain and
+	 set Initital BC to that value.
+	 Set BC value to the desired dirichlet pressure at steady state (eg. atmospheric).
+	 Then define the time span over which the domain gets drained:
+	 Initial Time to Final Time.
+	-->
+      
+      <!-- Bottom BC -->
+      <ParameterList name="BC00">
+        <Parameter name="Type" type="string" value="Time Dependent Pressure Constant"/>
+	<!-- 1112016.18144 equals 101325 + 9.81 * 998.32 * 103.2 -->
+        <Parameter name="Initial BC value" type="double" value="1112016.18144" />
+        <Parameter name="BC value" type="double" value="101325.0" />
+        <Parameter name="Initial Time" type="double" value="0.0" />
+        <Parameter name="Final Time" type="double" value="1e10" />
+        <Parameter name="Side set ID" type="int" value="2" />
+      </ParameterList>  
+      
+      <!-- Top BC -->
+      <ParameterList name="BC01">
+	<Parameter name="Type" type="string" value="Darcy Constant"/>
+	<!-- 3.5 mm/yr equals 1.10984271943176e-10 m/s -->
+	<Parameter name="BC value" type="double" value="-1.10984271943176e-10" />
+	<Parameter name="Side set ID" type="int" value="1" />
+      </ParameterList>
+     </ParameterList>
+
+
+  </ParameterList>
+
+</ParameterList>

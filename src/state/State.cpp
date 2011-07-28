@@ -706,3 +706,28 @@ void State::read_restart ( std::string filename )
   //   }
 
 }
+
+
+double State::water_mass()
+{
+  // compute the total mass of water in the domain
+  
+  Epetra_Vector wm ( *water_saturation );
+  
+  wm.Multiply(1.0,*water_density,wm,0.0);
+  wm.Multiply(1.0,*porosity,wm,0.0);
+  
+  Epetra_Vector cell_volume( mesh_maps->cell_map(false) );
+  
+  for (int i=0; i<(mesh_maps->cell_map(false)).NumMyElements(); i++)
+    {
+      cell_volume[i] = mesh_maps->cell_volume(i);
+    }
+	 
+  wm.Multiply(1.0,cell_volume,wm,0.0);
+       
+  double mass;
+  wm.Norm1(&mass);
+       
+  return mass;
+}
