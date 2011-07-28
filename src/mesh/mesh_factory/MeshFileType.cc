@@ -5,7 +5,7 @@
 /**
  * @file   MeshFileType.cc
  * @author William A. Perkins
- * @date Wed May 18 12:46:37 2011
+ * @date Thu Jul 28 10:50:03 2011
  * 
  * @brief  
  * 
@@ -13,13 +13,14 @@
  */
 // -------------------------------------------------------------
 // Created March 11, 2011 by William A. Perkins
-// Last Change: Wed May 18 12:46:37 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Jul 28 10:50:03 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 #include <boost/regex.hpp>
 
+#define BOOST_FILESYSTEM_VERSION 2
 #include <boost/filesystem.hpp>
 namespace bfs = boost::filesystem;
 
