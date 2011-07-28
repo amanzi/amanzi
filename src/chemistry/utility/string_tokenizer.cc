@@ -17,7 +17,9 @@
  *******************************************************************************/
 #include "string_tokenizer.hh"
 
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace amanzi {
 namespace chemistry {
@@ -42,6 +44,29 @@ void StringTokenizer::tokenize(const std::string& source,
     epos = source.find_first_of(delimiters, spos);
   }
 } /* end tokenize(source, delimitiers) */
+
+void StringTokenizer::tokenize_leave_delimiters(const std::string& source,
+                                               const std::string& delimiters) {
+  clear();
+  std::string::size_type spos(source.find_first_not_of(delimiters, 0));
+  std::string::size_type epos(source.find_first_of(delimiters, spos));
+
+  // add delimeter
+  if (spos > 0) push_back(source.substr(0, spos));
+  while (std::string::npos != epos || std::string::npos != spos) {
+    push_back(source.substr(spos, epos - spos));
+    // find position of delimiter
+    spos = epos;
+    epos = source.find_first_not_of(delimiters, spos);
+    if (std::string::npos != epos) {
+      // add delimeter
+      push_back(source.substr(spos, epos - spos));
+      // find position of non-delimiter
+      spos = source.find_first_not_of(delimiters, epos);
+      epos = source.find_first_of(delimiters, spos);
+    }
+  }
+} /* end tokenize_with_delimiters(source, delimitiers) */
 
 }  // namespace chemistry
 }  // namespace amanzi

@@ -38,6 +38,11 @@ class SimpleThermoDatabase : public Beaker {
                      std::vector<double>* stoichiometries,
                      std::vector<int>* species_ids,
                      double* h2o_stoich);
+  void ParseReactionString(const std::string reaction,
+                           std::vector<SpeciesName>* species,
+                           std::vector<double>* stoichiometries);
+  int SpeciesNameToID(const std::string species_name);
+  void RemoveLeadingAndTrailingSpaces(std::string* s);
   void ParseIonExchangeReaction(const std::string& reaction,
                                 std::string* name,
                                 std::vector<SpeciesName>* primaries,

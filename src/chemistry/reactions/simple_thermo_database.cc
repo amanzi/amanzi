@@ -134,12 +134,16 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
     int data_order_error = 0;
     std::string error_section("");
     std::string line;
-    getline(input, line);
+    while (!input.eof()) {
+      getline(input, line);
+      if (line.size() > 0) break;
+    }
     if ((line.size() > 0) && (line[line.size() - 1] == '\r')) {
       // getline only searches for \n line ends. windows files use \r\n
       // check for a hanging \r and remove it if it is there
       line.resize(line.size() - 1);
     }
+    // the following should crash is line.size() == 0.  It does on windows - geh
     char first = line[0];
     if (first == '#' || first == '\0' || first == ' ') {
       line_type = kCommentLine;
@@ -406,11 +410,209 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
  **
  *******************************************************************************/
 void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
-  std::ostringstream error_stream;
-  error_stream << "SimpleThermoDatabase::ParseGeneralKinetics() : not implemented."
-               << std::endl;
-  Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+  if (verbosity() == kDebugInputFile) {
+    std::cout << "SimpleThermoDatabase::ParseGeneralKinetics()...." << std::endl;
+    std::cout << "  data: " << data << std::endl;
+  }
+  std::string semicolon(";");
+  std::string space(" ");
+  std::string lr_arrow("<->");
+
+  // reaction_string; forward stoichs species; forward rate; 
+  //   backward stoichs species; backward rate
+
+  StringTokenizer substrings(data, semicolon);
+  StringTokenizer substring;
+
+  // parse main reaction string
+  std::vector<SpeciesName> species;
+  std::vector<double> stoichiometries;
+  ParseReactionString(substrings.at(0),&species,&stoichiometries);
+
+  std::vector<int> species_ids;
+  for (std::vector<SpeciesName>::iterator s = species.begin(); 
+       s != species.end(); s++) {
+    species_ids.push_back(SpeciesNameToID(*s));
+  }
+
+  // parse forward rates
+  std::vector<double> forward_stoichiometries;
+  std::vector<int> forward_species_ids;
+  StringTokenizer forward_list(substrings.at(1),", ");
+  for (StringTokenizer::iterator i = forward_list.begin();
+       i != forward_list.end(); ++i) {
+    std::stringstream tempstring(std::stringstream::in | 
+                                 std::stringstream::out);
+    tempstring << *i; // load string into buffer
+    double d;
+    tempstring >> d;
+    if (tempstring.fail()) 
+      d = 1.;  // no stoich specified
+    else
+      tempstring >> *i; // read species name
+    std::string s = *i;
+    RemoveLeadingAndTrailingSpaces(&s);
+    forward_species_ids.push_back(SpeciesNameToID(s));
+    forward_stoichiometries.push_back(d);
+  }
+
+  // parse forward rates
+  std::vector<double> backward_stoichiometries;
+  std::vector<int> backward_species_ids;
+  StringTokenizer backward_list(substrings.at(3),", ");
+  for (StringTokenizer::iterator i = backward_list.begin();
+       i != backward_list.end(); ++i) {
+    std::stringstream tempstring(std::stringstream::in | 
+                                 std::stringstream::out);
+    tempstring << *i; // load string into buffer
+    double d;
+    tempstring >> d;
+    if (tempstring.fail()) 
+      d = 1.;  // no stoich specified
+    else
+      tempstring >> *i; // read species name
+    std::string s = *i;
+    RemoveLeadingAndTrailingSpaces(&s);
+    backward_species_ids.push_back(SpeciesNameToID(s));
+    backward_stoichiometries.push_back(d);
+  }
+
+  std::stringstream tempstream(std::stringstream::in | 
+                               std::stringstream::out);
+  tempstream << substrings.at(2);
+  double forward_rate_constant;
+  tempstream >> forward_rate_constant;
+  if (tempstream.fail()) std::cout << "Error reading forward rate constant\n";
+  tempstream << substrings.at(4);
+  double backward_rate_constant;
+  tempstream >> backward_rate_constant;
+  if (tempstream.fail()) std::cout << "Error reading backward rate constant\n";
+
+  GeneralRxn general("",species,stoichiometries,species_ids,
+                   forward_stoichiometries,forward_species_ids,
+                   backward_stoichiometries,backward_species_ids,
+                   forward_rate_constant,backward_rate_constant);
+  this->addGeneralRxn(general);
+
+//  if (verbosity() == kDebugInputFile || verbosity() == kDebugGeneralKinetics) {
+//    kinetic_rate->Display();
+//  }
+
 }  // end ParseGeneralKinetics()
+
+/* ************************************************************************** /
+  Name: ParseReactionString
+  Purpose: Reads in a reaction string of format:
+      30 A(aq) + 2 B(aq) <-> C(aq) + .3 D(aq) + -4 E(aq)
+    and returns a list of species and ids:
+      species = [5]("A(aq)","B(aq)","C(aq)","D(aq)","E(aq)")
+      stoichiometries = [5](-30.,-2.,1.,0.3,-4.)
+    Reactants and products have negative and positive stoichiometires,
+      respectively.
+  Author: Glenn Hammond
+  Date: 07/28/11
+/ ************************************************************************** */
+void SimpleThermoDatabase::ParseReactionString(const std::string reaction,
+                                       std::vector<std::string>* species,
+                                       std::vector<double>* stoichiometries) {
+  species->clear();
+  stoichiometries->clear();
+  std::string space(" ");
+  std::string lr_arrow("<->");
+  std::string::size_type offset = reaction.find(lr_arrow);
+  std::string reactants = reaction.substr(0, offset);
+  std::string products = reaction.substr(offset+lr_arrow.size(), 
+                                     reaction.size());
+  StringTokenizer list;
+  // reactants
+  list.tokenize_leave_delimiters(reactants,"+-");
+  bool negate = true;
+  for (StringTokenizer::iterator i = list.begin();
+       i != list.end(); ++i) {
+    if (*i == "-" || *i == "+" || *i == " ") {
+      if (*i == "-") negate = !negate;
+    }
+    else {
+      std::string s = *i;
+      RemoveLeadingAndTrailingSpaces(&s);
+      std::stringstream tempstring(std::stringstream::in | 
+                                   std::stringstream::out);
+      if (s.size() > 0) {
+        tempstring << s; // load string into buffer
+        double d;
+        tempstring >> d;  // read stoich
+        if (tempstring.fail()) 
+          d = 1.;  // no stoich specified
+        else
+          tempstring >> s; // read species name
+        if (negate) d *= -1.; // swap sign on stoich
+        RemoveLeadingAndTrailingSpaces(&s);
+        species->push_back(s);
+        stoichiometries->push_back(d);
+        negate = true;
+      }
+    }
+  }
+  // products
+  list.tokenize_leave_delimiters(products,"+-");
+  negate = false;
+  for (StringTokenizer::iterator i = list.begin();
+       i != list.end(); ++i) {
+    if (*i == "-" || *i == "+" || *i == " ") {
+      if (*i == "-") negate = !negate;
+    }
+    else {
+      std::string s = *i;
+      RemoveLeadingAndTrailingSpaces(&s);
+      std::stringstream tempstring(std::stringstream::in | 
+                                   std::stringstream::out);
+      if (s.size() > 0) {
+        tempstring << s; // load string into buffer
+        double d;
+        tempstring >> d;  // read stoich
+        if (tempstring.fail()) 
+          d = 1.;  // no stoich specified
+        else
+          tempstring >> s; // read species name
+        if (negate) d *= -1.; // swap sign on stoich
+        RemoveLeadingAndTrailingSpaces(&s);
+        species->push_back(s);
+        stoichiometries->push_back(d);
+        negate = false;
+      }
+    }
+  }
+}  /* end ParseReactionString */
+
+/* ************************************************************************** /
+  Name: SpeciesNameToID
+  Purpose: Maps a primary species name to an id
+  Author: Glenn Hammond
+  Date: 07/28/11
+/ ************************************************************************** */
+int SimpleThermoDatabase::SpeciesNameToID(const SpeciesName species_name) {
+  for (SpeciesArray::const_iterator primary_species = 
+         this->primary_species().begin();
+       primary_species != this->primary_species().end(); primary_species++) {
+    if (primary_species->name() == species_name) {
+      return primary_species->identifier();
+    }
+  }
+  return -1;
+} /* end SpeciesNameToID
+
+  /* ************************************************************************** /
+  Name: RemoveLeadingAndTrailingSpaces
+  Purpose: Removes leading and trailing spaces in a string
+  Author: Glenn Hammond
+  Date: 07/28/11
+/ ************************************************************************** */
+void SimpleThermoDatabase::RemoveLeadingAndTrailingSpaces(std::string* s) {
+  std::size_t offset = s->find_first_not_of(" "); // leading spaces
+  if (offset > 0) s->erase(0, offset);  // remove them
+  offset = s->find_last_not_of(" ");   // trailing spaces
+  if (s->size() > offset) s->erase(offset+1, s->size());  // remove them
+} /* end RemoveLeadingAndTrailingSpaces
 
 /*******************************************************************************
  **

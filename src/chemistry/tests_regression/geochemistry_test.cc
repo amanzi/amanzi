@@ -237,6 +237,13 @@ int main(int argc, char** argv) {
                                &output_interval);
         break;
       }
+      case 86: {
+        thermo_database_file = "general.bgd";
+        activity_model_name = ac::ActivityModelFactory::debye_huckel;
+        components.total.push_back(1.0e-3);  // A(aq)
+        components.total.push_back(1.0e-40);  // B(aq)
+        break;
+      }
       default: {
         std::cout << "Invalid test number specified on command line. "
                   << "try using the \'-h\' option." << std::endl;
