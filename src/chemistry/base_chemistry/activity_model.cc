@@ -43,41 +43,41 @@ void ActivityModel::CalculateIonicStrength(
 }  // end CalculateIonicStrength()
 
 void ActivityModel::CalculateSumAbsZ(
-    const std::vector<Species>* primarySpecies,
-    const std::vector<AqueousEquilibriumComplex>* secondarySpecies) {
+    const std::vector<Species>& primarySpecies,
+    const std::vector<AqueousEquilibriumComplex>& secondarySpecies) {
   // Z = sum_i(m_i*abs(z_i))
   Z_ = 0.0e0;
 
   // primary species
-  for (std::vector<Species>::const_iterator i = primarySpecies->begin();
-       i != primarySpecies->end(); i++) {
+  for (std::vector<Species>::const_iterator i = primarySpecies.begin();
+       i != primarySpecies.end(); i++) {
     Z_ += i->molality() * abs(i->charge());
   }
 
   // secondary aqueous complexes
-  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies->begin();
-       i != secondarySpecies->end(); i++) {
+  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies.begin();
+       i != secondarySpecies.end(); i++) {
     Z_ += i->molality() * abs(i->charge());
   }
 
 }  // end CalculateSumAbsZ()
 
 void ActivityModel::CalculateSumC(
-    const std::vector<Species>* primarySpecies,
-    const std::vector<AqueousEquilibriumComplex>* secondarySpecies) {
+    const std::vector<Species>& primarySpecies,
+    const std::vector<AqueousEquilibriumComplex>& secondarySpecies) {
   // Z = sum_i(m_i*abs(z_i))
   M_ = 0.0e0;
 
   // primary species
-  for (std::vector<Species>::const_iterator i = primarySpecies->begin();
-       i != primarySpecies->end(); i++) {
+  for (std::vector<Species>::const_iterator i = primarySpecies.begin();
+       i != primarySpecies.end(); i++) {
     if (i->name()!="h2o")
 	   M_ += i->molality();
   }
 
   // secondary aqueous complexes
-  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies->begin();
-       i != secondarySpecies->end(); i++) {
+  for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies.begin();
+       i != secondarySpecies.end(); i++) {
 	  if (i->name()!="h2o")
 	  	   M_ += i->molality();
   }
@@ -96,7 +96,7 @@ for (std::vector<double>::iterator i=gamma.begin(); i!=gamma.end(); i++) (*i)=r1
 //----------------------------------------------------------------------
 // Compute activity coefficients
 //----------------------------------------------------------------------
-this->EvaluateVector (gamma,primarySpecies,secondarySpecies);
+this->EvaluateVector (gamma,*primarySpecies,*secondarySpecies);
 //----------------------------------------------------------------------
 // Set activity coefficients
 //----------------------------------------------------------------------

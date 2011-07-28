@@ -18,7 +18,7 @@ class ActivityModelDebyeHuckel : public ActivityModel {
 
   double Evaluate(const Species& species);
 
-  void EvaluateVector (std::vector<double>& gamma, const std::vector<Species>* prim, const std::vector<AqueousEquilibriumComplex>* sec);
+  void EvaluateVector (std::vector<double>& gamma, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
 
   void Display(void) const;
 

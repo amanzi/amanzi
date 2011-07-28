@@ -26,7 +26,7 @@ const double ActivityModelPitzer::cwater=55.50837e0;
 //!%-------------------------------------------------------------
 //!% Limiting Debye-Hückel slope to 25º   0.39153  0.392
 //!%-------------------------------------------------------------
-const double ActivityModelPitzer::aphi25=0.392e0;
+const double ActivityModelPitzer::aphi25=0.39153;
 //!%-------------------------------------------------------------
 //!% Limiting Debye-Hückel slope to 25º for density calculations
 //!% dAphi/dP??
@@ -67,7 +67,16 @@ ActivityModelPitzer::ActivityModelPitzer(const std::string& namedatabase,
       ithcl(-1),
       ithw(-1),
       ithk(-1),
-      ismacinnes(false)
+      ismacinnes(false),
+      q(NULL),
+      qphi(NULL),
+      qpri(NULL),
+      indnzq(NULL),
+      g_(NULL),
+      g_pri_(NULL),
+      f_(NULL),
+      j_(NULL),
+      j_pri_(NULL)
       {
 //--------------------------------------------------------------------------
 // Read Pitzer virial coefficients database
@@ -78,7 +87,8 @@ ReadDataBase(namedatabase,prim,sec);
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 ActivityModelPitzer::~ActivityModelPitzer() {
-}  // end ActivityModelDebyeHuckel destructor
+//	std::cout << " Destroying object " << std::endl;
+}  // end ActivityModelPitzer destructor
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -91,88 +101,78 @@ double ActivityModelPitzer::Evaluate(const Species& species) {
 // Compute activity coefficients from a vector of species
 // It could be more efficient computationally
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::EvaluateVector(std::vector<double>& gamma, const std::vector<Species>* prim, const std::vector<AqueousEquilibriumComplex>* sec) {
+void ActivityModelPitzer::EvaluateVector(std::vector<double>& gamma, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec) {
 
 const double r0(0.0e0), r1(1.0e0);
-int nsp(prim->size()+sec->size());
+unsigned int nsp(prim.size()+sec.size());
 
 double gcl(r1), gclm(r1), osco(r1);
 // Compute
+ActivityModel::CalculateIonicStrength(prim,sec);
 ActivityModel::CalculateSumAbsZ(prim,sec);
 ActivityModel::CalculateSumC(prim,sec);
-
-std::vector<double> molality;
-std::vector<double> charge;
 //---------------------------------------------------------
 // Is better to use iterators
 //---------------------------------------------------------
-for (std::vector<Species>::const_iterator i = prim->begin();
-          i != prim->end(); i++) {
-	    charge.push_back((*i).charge());
-	    molality.push_back((*i).molality());
+int isp(-1);
+for (std::vector<Species>::const_iterator i = prim.begin();
+          i != prim.end(); i++) {
+	    isp++;
+	    molality[isp]=(*i).molality();
 	    }
-for (std::vector<AqueousEquilibriumComplex>::const_iterator i = sec->begin();
-          i != sec->end(); i++) {
-	    charge.push_back((*i).charge());
-	    molality.push_back((*i).molality());
+for (std::vector<AqueousEquilibriumComplex>::const_iterator i = sec.begin();
+          i != sec.end(); i++) {
+	    isp++;
+		molality[isp]=(*i).molality();
   	    }
-//!%-------------------------------------------------------------
-//!% Resize Q's matrices
-//!%-------------------------------------------------------------
-std::vector<double> q, qphi, qpri;
-std::vector<std::vector<int> > indnzq;
-q.resize(nnzq,r0);
-qphi.resize(nnzq,r0);
-qpri.resize(nnzq,r0);
-indnzq.resize(2);
-for (int i=0; i<2; i++) indnzq[i].resize(nnzq,0);
-for (int i=0; i<nnzq; i++) {
-	q[i]=r0;
-	qphi[i]=r0;
-	qpri[i]=r0;
-	indnzq[0][i]=0;
-	indnzq[1][i]=0;
-}
+//--------------------------------------------------------------------------
+// Allocate local pointers
+//--------------------------------------------------------------------------
+AllocatePointers ();
 //!%-------------------------------------------------------------
 //!% Compute Q's matrices
 //!%-------------------------------------------------------------
-ComputeQmatrices(q,qphi,qpri,indnzq);
+ComputeQmatrices();
 //!%-------------------------------------------------------------
 //!% Compute DH
 //!%-------------------------------------------------------------
-ComputeDH(gamma,osco,gclm,charge);
+ComputeDH(gamma,osco,gclm);
 //!%-------------------------------------------------------------
 //!% Compute q
 //!%-------------------------------------------------------------
-ComputeQ(gamma,osco,q,qpri,qphi,indnzq,molality,charge);
+ComputeQ(gamma,osco);
 //!%-------------------------------------------------------------
 //!% Compute ql
 //!%-------------------------------------------------------------
-ComputeQl(osco,molality);
+ComputeQl(osco);
 //!%-------------------------------------------------------------
 //!% Compute qc
 //!%-------------------------------------------------------------
-ComputeQc(gamma,osco,molality,charge);
+ComputeQc(gamma,osco);
 //!%-------------------------------------------------------------
 //!% Compute t
 //!%-------------------------------------------------------------
-ComputeT(gamma,osco,molality);
+ComputeT(gamma,osco);
 //!%-------------------------------------------------------------
 //!% If ismacinnes=true, activity coefficients are scaled
 //!% according to MacInnes convention (MacInnes, 1919)
 //!%-------------------------------------------------------------
 if (ismacinnes && ithcl>-1) {
    gcl = gamma[ithcl];
-   for (int i=0; i<nsp; i++) {
-	  if (i!=ithw) gamma[i] *= pow((gcl / gclm),charge[i]);
+
+   	   for (int i=0; i<nsp; i++) {
+	    if (i!=ithw) gamma[i] *= pow((gcl / gclm),charge[i]);
    }
 }
+//--------------------------------------------------------------------------
+// Deallocate local pointers
+//--------------------------------------------------------------------------
+DeallocatePointers ();
 }  // end EvaluateVector()
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeQc(std::vector<double>& gamma, double& osco, const std::vector<double>& molality,
-		const std::vector<double>& charge) {
+void ActivityModelPitzer::ComputeQc(std::vector<double>& gamma, double& osco) {
 const double r0(0.0e0);
 int i(0);
 int j(0);
@@ -201,7 +201,7 @@ for (int i=0; i<gamma.size(); i++) gamma[i]+=abs(charge[i])*qc;
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeQl(double& osco, const std::vector<double>& molality) {
+void ActivityModelPitzer::ComputeQl(double& osco) {
 const double r0(0.0e0);
 int i(0);
 int j(0);
@@ -226,15 +226,10 @@ if (ithw>-1 && nnzlamda>0) {
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeQ(std::vector<double>& gamma, double& osco, const std::vector<double>& q,
-		                           const std::vector<double>& qpri, const std::vector<double>& qphi,
-		                           const std::vector<std::vector<int> >& indnzq,
-		                           const std::vector<double>& molality,
-		                           const std::vector<double>& charge) {
+void ActivityModelPitzer::ComputeQ(std::vector<double>& gamma, double& osco) {
 const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
 int i(0), j(0), nz(0);
 //!%-----------------------------------------------------------
-
 double q2phi(r0), q2prim(r0), qij(r0), qpriij(r0), qphiij(r0), mi(r0), mj(r0);
 //!%-----------------------------------------------------------
 for (nz=0; nz<nnzq; nz++) {
@@ -278,7 +273,7 @@ if (ithw>-1) osco+=q2phi;
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeT(std::vector<double>& gamma, double& osco, const std::vector<double>& molality) {
+void ActivityModelPitzer::ComputeT(std::vector<double>& gamma, double& osco) {
 
 const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
 int i(0), j(0), k(0);
@@ -286,9 +281,9 @@ double mi(r0), mj(r0), mk(r0), Psiijk(r0);
 double tril(r0);
 const double ctw1(ActivityModel::M_/cwater), ctw2(r2/cwater);
 
-std::vector<double> vector;
-vector.resize(gamma.size(),r0);
-for (int i=0; i<gamma.size(); i++) vector[i]=r0;
+double* vector(NULL);
+vector = new double [nsp];
+for (int i=0; i<nsp; i++) vector[i]=r0;
 //!%------------------------------------------------------
 //!% Compute t and vect
 //!%------------------------------------------------------
@@ -303,8 +298,7 @@ for (int nz=0; nz<nnzpsi; nz++) {
    mk=molality[k];
    tril+=mi*mj*mk*Psiijk;
 //!%----------------------------------------------------------
-//!% este se utiliza para el cálculo de los coeficientes de
-//!% actividad de las especies acuosas que no sean H2O
+//!%
 //!%----------------------------------------------------------
    vector[i]+=Psiijk*mj*mk;
    vector[j]+=Psiijk*mi*mk;
@@ -313,7 +307,7 @@ for (int nz=0; nz<nnzpsi; nz++) {
 //!%----------------------------------------------------
 //!%
 //!%----------------------------------------------------
-for (int i=0; i<gamma.size(); i++) {
+for (int i=0; i<nsp; i++) {
 
 	if (i==ithw) {
       osco+=tril;
@@ -324,13 +318,14 @@ for (int i=0; i<gamma.size(); i++) {
     	gamma[i]=exp(gamma[i]+vector[i]);
     }
 }
-
+delete [] vector;
+vector=NULL;
 }
 
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeDH(std::vector<double>& gamma, double& osco, double& gclm, const std::vector<double>& charge) {
+void ActivityModelPitzer::ComputeDH(std::vector<double>& gamma, double& osco, double& gclm) {
 
 const double r0(0.0e0), r1(1.0e0), r2(2.0e0), ionstr(ActivityModel::I_), sqri(sqrt(ActivityModel::I_));
 double den(r0), dh(r0);
@@ -381,55 +376,28 @@ return gclm;
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeQmatrices(std::vector<double>& q,
-										   std::vector<double>& qphi,
-										   std::vector<double>& qpri,
-										   std::vector<std::vector<int> >& indnzq) {
+void ActivityModelPitzer::ComputeQmatrices() {
 
-const double r0(0.0e0), rhalf(0.5e0), r2(2.0e0), r3(3.0e0), r4(4.0e0), r8(8.0e0), r16(16.0e0);
-int i(0), j(0), k(0), nz_b(0), nz_lam(0), nz_th(0), funij(0), funii(0), funjj(0);
-double B0ij(r0), B1ij(r0), B2ij(r0), A1_2stri(r0), A2_2stri(r0), expo1(r0), expo2(r0),
-       G1(r0), G2(r0), Gp1(r0), Gp2(r0), G2p1(r0), G2p2(r0), t1(r0), t2(r0),
-       thij(r0), jij(r0), jii(r0), jjj(r0), jpij(r0), jpii(r0), jpjj(r0),
-       j2pij(r0), j2pii(r0), j2pjj(r0), zizj(r0), zizi(r0), zjzj(r0),
-       xij(r0), eth(r0), eth_i(r0), eth_i2(r0), ethpri(r0), ethpri_i(r0),
-       ttij(r0), ttii(r0), ttjj(r0), eth2pri(r0),
-       xii(r0), xjj(r0);
-const double ctw1(ActivityModel::M_/cwater), ctw2(r2/cwater);
-
-std::vector<std::vector<double> > g_;
-std::vector<std::vector<double> > g_pri_;
-std::vector<std::vector<double> > g_2pri_;
-std::vector<std::vector<double> > f_;
-g_.resize(nfunb);
-g_pri_.resize(nfunb);
-g_2pri_.resize(nfunb);
-f_.resize(nfunb);
+int i(0), j(0), k(0), nz_loc(0), funij(0), funii(0), funjj(0);
+double jij(0.0e0), jii(0.0e0), jjj(0.0e0), jpij(0.0e0), jpii(0.0e0), jpjj(0.0e0),
+       j2pij(0.0e0), j2pii(0.0e0), j2pjj(0.0e0), zizj(0.0e0), zizi(0.0e0), zjzj(0.0e0),
+       xij(0.0e0), eth(0.0e0), eth_i(0.0e0), ethpri(0.0e0), ethpri_i(0.0e0),
+       ttij(0.0e0), ttii(0.0e0), ttjj(0.0e0), eth2pri(0.0e0),
+       xii(0.0e0), xjj(0.0e0);
+double B0ij(0.0e0), B1ij(0.0e0), B2ij(0.0e0), expo1(0.0e0), expo2(0.0e0), G1(0.0e0),
+	   G2(0.0e0), Gp1(0.0e0), Gp2(0.0e0), thij(0.0e0);
 for (int i=0; i<nfunb; i++) {
-	g_[i].resize(2,r0);
-	g_pri_[i].resize(2,r0);
-	g_2pri_[i].resize(2,r0);
-	f_[i].resize(2,r0);
-	g_[i][0]=r0;
-	g_[i][1]=r0;
-	g_pri_[i][0]=r0;
-	g_pri_[i][1]=r0;
-	g_2pri_[i][0]=r0;
-	g_2pri_[i][1]=r0;
-	f_[i][0]=r0;
-	f_[i][1]=r0;
+	g_[i][0]=0.0e0;
+	g_[i][1]=0.0e0;
+	g_pri_[i][0]=0.0e0;
+	g_pri_[i][1]=0.0e0;
+	f_[i][0]=0.0e0;
+	f_[i][1]=0.0e0;
 }
 // Local vectors for J's functions
-std::vector<double> j_;
-std::vector<double> j_pri_;
-std::vector<double> j_2pri_;
-j_.resize(nfunj,r0);
-j_pri_.resize(nfunj,r0);
-j_2pri_.resize(nfunj,r0);
 for (int i=0; i<nfunj; i++) {
-	j_[i]=r0;
-	j_pri_[i]=r0;
-	j_2pri_[i]=r0;
+	j_[i]=0.0e0;
+	j_pri_[i]=0.0e0;
 }
 //!%--------------------------------------------------------------------
 //!% Compute constant values
@@ -442,60 +410,49 @@ const double afi_stri(2.352e0*stri);
 //!%--------------------------------------------------------------------
 //!% Computes g functions (eq. A6, A7 and B5)
 //!%--------------------------------------------------------------------
-ComputeFbeta(f_, g_, g_pri_, g_2pri_);
+ComputeFbeta();
 //!%--------------------------------------------------------------------
 //!% Computes j functions (eq. A14, A15, B9, B10, B11 and B12)
 //!%--------------------------------------------------------------------
-ComputeFj(j_, j_pri_, j_2pri_);
+ComputeFj();
 //!%--------------------------------------------------------------------
 int nz(-1);
 //!%--------------------------------------------------------------------
 //!% Computes Q, Q', Qphi, dQphi and dQ' matrices
 //!%--------------------------------------------------------------------
-for (nz_b=0; nz_b<nnzbeta; nz_b++) {
+for (nz_loc=0; nz_loc<nnzbeta; nz_loc++) {
 
       nz++;
 
-      i=indnzbeta[0][nz_b];
-      j=indnzbeta[1][nz_b];
-      k=indnzbeta[2][nz_b];
-//!%-------------
-      B0ij=beta0[nz_b];
-      B1ij=beta1[nz_b];
-      B2ij=beta2[nz_b];
-//!%-------------
-      A1_2stri=alpha[0][k]/(r2*stri);
-      A2_2stri=alpha[1][k]/(r2*stri);
-//!%-------------
+      i=indnzbeta[0][nz_loc];
+      j=indnzbeta[1][nz_loc];
+      k=indnzbeta[2][nz_loc];
+     //!%-------------
+      B0ij=beta0[nz_loc];
+      B1ij=beta1[nz_loc];
+      B2ij=beta2[nz_loc];
+     //!%-------------
       expo1=f_[k][0];
       expo2=f_[k][1];
-//!%-------------
+     //!%-------------
       G1=g_[k][0];
       G2=g_[k][1];
-//!%------------
+     //!%------------
       Gp1=g_pri_[k][0];
       Gp2=g_pri_[k][1];
-//!%-------------
-      G2p1=g_2pri_[k][0];
-      G2p2=g_2pri_[k][1];
-//!%-------------------------------
-//!% Eq. A5
-//!%-------------------------------
+     //!%-------------------------------
+     //!% Eq. A5
+     //!%-------------------------------
       qphi[nz]=B0ij+B1ij*expo1+B2ij*expo2;
-//!%-------------------------------
-//!%  Eq. A3
-//!%-------------------------------
+     //!%-------------------------------
+     //!%  Eq. A3
+     //!%-------------------------------
       q[nz]=B0ij+B1ij*G1+B2ij*G2;
-//!%-------------------------------
-//!%  Eq. A4
-//!%-------------------------------
+     //!%-------------------------------
+     //!%  Eq. A4
+     //!%-------------------------------
       qpri[nz]=B1ij*(Gp1/str)+B2ij*(Gp2/str);
 
-      t1=(str*G2p1*A1_2stri-Gp1)/str2;
-      t2=(str*G2p2*A2_2stri-Gp2)/str2;
-//!%-------------------------------
-//!% Eq. B3
-//!%-------------------------------
       indnzq[0][nz]=i;
       indnzq[1][nz]=j;
 
@@ -508,16 +465,17 @@ for (nz_b=0; nz_b<nnzbeta; nz_b++) {
 //!%--------------------------------------------------------------------
 //!%--------------------------------------------------------------------
 //!%--------------------------------------------------------------------
-for (nz_th=0; nz_th<nnztheta; nz_th++) {
+for (nz_loc=0; nz_loc<nnztheta; nz_loc++) {
 //!%--------------------------------------------------------------------
       nz++;
 //!%--------------------------------------------------------------------
-      i=indnztheta[0][nz_th];
-      j=indnztheta[1][nz_th];
-      funij=indnztheta[2][nz_th];
-      funii=indnztheta[3][nz_th];
-      funjj=indnztheta[4][nz_th];
-      thij=theta[nz_th];
+      i=indnztheta[0][nz_loc];
+      j=indnztheta[1][nz_loc];
+//!%--------------------------------------------------------------------
+      funij=indnztheta[2][nz_loc];
+      funii=indnztheta[3][nz_loc];
+      funjj=indnztheta[4][nz_loc];
+      thij=theta[nz_loc];
 //!%--------------------------------------------------------------------
       jij = j_[funij];
       jii=j_[funii];
@@ -525,9 +483,6 @@ for (nz_th=0; nz_th<nnztheta; nz_th++) {
       jpij=j_pri_[funij];
       jpii=j_pri_[funii];
       jpjj=j_pri_[funjj];
-      j2pij=j_2pri_[funij];
-      j2pii=j_2pri_[funii];
-      j2pjj=j_2pri_[funjj];
 //!%--------------------------------------------------------------------
       zizj=zprod[funij];
       zizi=zprod[funii];
@@ -538,24 +493,16 @@ for (nz_th=0; nz_th<nnztheta; nz_th++) {
 //!%-----------------------------
 //!%  Eq. A12
 //!%-----------------------------
-      eth=(zizj/(r4*str))*(jij-rhalf*jii-rhalf*jjj);
+      eth=(zizj/(4.0e0*str))*(jij-0.5e0*jii-0.5e0*jjj);
       q[nz]=thij+eth;
       eth_i=eth/str;
-      eth_i2=eth/str2;
 //!%----------------------------
 //!% Eq. A13
 //!%----------------------------
-      ethpri=-eth_i+(zizj/(r8*str2))*(xij*jpij-rhalf*xii*jpii-rhalf*xjj*jpjj);
+      ethpri=-eth_i+(zizj/(8.0e0*str2))*(xij*jpij-0.5e0*xii*jpii-0.5e0*xjj*jpjj);
       qpri[nz]=ethpri;
       qphi[nz]=thij+eth+str*ethpri;
-      ethpri_i=ethpri/str;
-//!%----------------------------
-//!%  Eq. B8
-//!%----------------------------
-      ttij=(jpij+xij*j2pij)*xij;
-      ttii=(jpii+xii*j2pii)*xii;
-      ttjj=(jpjj+xjj*j2pjj)*xjj;
-      eth2pri=-r3*ethpri_i-eth_i2+(zizj/(r16*str3))*(ttij-rhalf*ttii-rhalf*ttjj);
+
       indnzq[0][nz]=i;
       indnzq[1][nz]=j;
 
@@ -569,15 +516,16 @@ for (nz_th=0; nz_th<nnztheta; nz_th++) {
 //!%--------------------------------------------------------------------
 //!%--------------------------------------------------------------------
 //!%--------------------------------------------------------------------
-for (nz_lam=0; nz_lam<nnzlamda; nz_lam++) {
+for (nz_loc=0; nz_loc<nnzlamda; nz_loc++) {
  nz++;
- i=indnzlamda[0][nz_lam];
- j=indnzlamda[1][nz_lam];
+ //!%-------------------------------
+ i=indnzlamda[0][nz_loc];
+ j=indnzlamda[1][nz_loc];
 //!%-------------------------------
 //!% Add in Q matrix (mat. 12)
 //!% the Lij terms
 //!%-------------------------------
- q[nz]=lamda[nz_lam];
+ q[nz]=lamda[nz_loc];
  indnzq[0][nz]=i;
  indnzq[1][nz]=j;
 }
@@ -591,10 +539,7 @@ std::cout << "Warning different number non-zero terms in Q's matrices" << std::e
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeFbeta(std::vector<std::vector <double> >& f_,
-		                               std::vector<std::vector <double> >& g_,
-		                               std::vector<std::vector <double> >& g_pri_,
-		                               std::vector<std::vector <double> >& g_2pri_) {
+void ActivityModelPitzer::ComputeFbeta() {
 //!%--------------------------------------------------------------------
 const double r0(0.0e0), r1(1.0e0), r2(2.0e0), r3(3.0e0), r4(4.0e0);
 const double stri(sqrt(ActivityModel::I_));
@@ -604,8 +549,8 @@ int j(0);
 
 for (j=0; j<nfunb; j++) {
 
-	   alfa1=alpha[0][j];
-	   alfa2=alpha[1][j];
+	   alfa1=alpha1[j];
+	   alfa2=alpha2[j];
 
 	   x1=alfa1*stri;
 	   x1q=x1*x1;
@@ -622,10 +567,6 @@ for (j=0; j<nfunb; j++) {
 //!% eq. A7
 //!%---------------------------------------------------------------------
 	   g_pri_[j][0]=-r2*(r1-(r1+x1+(x1q/r2))*expo1)/x1q;
-//!%---------------------------------------------------------------------
-//!% eq. B5
-//!%---------------------------------------------------------------------
-	   g_2pri_[j][0]=r4*(r1-(r1+x1+(x1q/r2)+(x1c/r4))*expo1)/x1c;
 //!%---------------------------------------------------------------------
 //!% when the ions aren't monovalents
 //!%---------------------------------------------------------------------
@@ -645,10 +586,6 @@ for (j=0; j<nfunb; j++) {
 //!% eq. A7
 //!%---------------------------------------------------------------------
 	     g_pri_[j][1]=-r2*(r1-(r1+x2+(x2q/r2))*expo2)/x2q;
-//!%---------------------------------------------------------------------
-//!% eq. B5
-//!%---------------------------------------------------------------------
-	     g_2pri_[j][1]=r4*(r1-(r1+x2+(x2q/r2)+(x2c/r4))*expo2)/x2c;
 	   }
 //!%------------------------------------------------------------
 }
@@ -656,9 +593,7 @@ for (j=0; j<nfunb; j++) {
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::ComputeFj(std::vector<double>& j_,
-		                            std::vector<double>& j_pri_,
-		                            std::vector<double>& j_2pri_) {
+void ActivityModelPitzer::ComputeFj() {
 //!%--------------------------------------------------------------------
 const double r0(0.0e0), r1(1.0e0), r2(2.0e0), r3(3.0e0), r4(4.0e0), r10(10.0e0), r20(20.0e0),
              r50(50.0e0), r200(200.0e0), rhalf(0.5e0), r1_5(1.5e0), r80(80.0e0), r6(6.0e0),
@@ -727,12 +662,6 @@ for (i=0;i<nfunj; i++) {
 	//!% eq.B9
 	//!%-------------------------------------
 	      j_pri_[i]=((r10*x2-r1)*logar-rhalf)*(x/r3)*expo+(s3/s1q);
-	//!%-------------------------------------
-	//!% eq.B10
-	//!%-------------------------------------
-	      j2p=-(s2/s1q)+(r2*s3q/s1c);
-	      j2p+=((r50*x2-r200*x4-r1)*logar+r20*x2-r1_5)*expo/r3;
-	      j_2pri_[i]=j2p;
 	//!%----------------------------------
 
 	} else {
@@ -750,17 +679,6 @@ for (i=0;i<nfunj; i++) {
 	//!% eq. B11
 	//!%-------------------------------------
 	      j_pri_[i]=(j_[i]/x2)*(x+td1*(e2+e3*e4*xc4)*j_[i]);
-	//!%-------------------------------------
-	//!% eq. B12
-	//!%-------------------------------------
-	      termxc4=e3*e4*xc4;
-	      jp_j=j_pri_[i]/j_[i];
-	      jp2_j=jp_j*j_pri_[i];
-	      j2p=e4-e2-termxc4;
-	      j2p=j2p*termxc4/(e2+termxc4)+(jp_j*x-e2);
-	      j2p=j2p*(jp_j*x-r1)+r1;
-	      j_2pri_[i]=j2p*j_[i]/x2-r2*j_pri_[i]/x+jp2_j;
-	//!%-------------------------------------
 
 	}
 
@@ -772,7 +690,106 @@ for (i=0;i<nfunj; i++) {
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 void ActivityModelPitzer::Display(void) const {
-  std::cout << "Activity model: Pitzer" << std::endl;
+  std::cout << "============================================>" << std::endl;
+  std::cout << "Activity model: HWM (Harvie et al., 1984)" << std::endl;
+  std::cout << "============================================>" << std::endl;
+  std::cout << "Species:" << std::endl;
+  std::cout << "---------------------------------------------" << std::endl;
+  for (int i=0; i<nsp; i++) std::cout << namesp[i] << " " << charge[i] << " " << std::endl;
+  std::cout << "============================================>" << std::endl;
+  const double r0(0.0e0);
+  std::cout << "--------------------------------------------------------------------" << std::endl;
+  std::cout << " Virial coefficients" << std::endl;
+  std::cout << "--------------------------------------------------------------------" << std::endl;
+  int isp1(-1),isp2(-1), isp3(-1), nvirial(0);
+  if (nnzbeta>0){
+  std::cout << "=================> B0 ==============>" << std::endl;
+  for (int i=0; i<nnzbeta; i++){
+    isp1=indnzbeta[0][i];
+    isp2=indnzbeta[1][i];
+    if (beta0[i]!=r0){
+  	  nvirial++;
+    	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta0[i] << std::endl;
+      }
+  }
+  std::cout << "=================> B1 ==============>" << std::endl;
+  for (int i=0; i<nnzbeta; i++){
+    isp1=indnzbeta[0][i];
+    isp2=indnzbeta[1][i];
+    if (beta1[i]!=r0){
+  	  nvirial++;
+    	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta1[i] << std::endl;
+      }
+  }
+  std::cout << "=================> B2 ==============>" << std::endl;
+  for (int i=0; i<nnzbeta; i++){
+    isp1=indnzbeta[0][i];
+    isp2=indnzbeta[1][i];
+    if (beta2[i]!=r0){
+  	  nvirial++;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta2[i] << std::endl;
+    }
+
+  }
+  }
+  if (nnzcpz>0){
+  std::cout << "=================> Cfi ==============>" << std::endl;
+  for (int i=0; i<nnzcpz; i++){
+    isp1=indnzcpz[0][i];
+    isp2=indnzcpz[1][i];
+    if (cpz[i]!=r0){
+  	  nvirial++;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << cpz[i] << std::endl;
+    }
+
+  }
+  }
+  if (nnztheta>0){
+  std::cout << "=================> Theta ==============>" << std::endl;
+  for (int i=0; i<nnztheta; i++){
+    isp1=indnztheta[0][i];
+    isp2=indnztheta[1][i];
+    if (theta[i]!=r0){
+  	  nvirial++;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << theta[i] << std::endl;
+    }
+
+  }
+  }
+  if (nnzlamda>0){
+  std::cout << "=================> Lamda ==============>" << std::endl;
+  for (int i=0; i<nnzlamda; i++){
+    isp1=indnzlamda[0][i];
+    isp2=indnzlamda[1][i];
+    if (lamda[i]!=r0){
+  	  nvirial++;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << lamda[i] << std::endl;
+    }
+
+  }
+  }
+  if (nnzpsi>0){
+  std::cout << "=================> Psi ==============>" << std::endl;
+  for (int i=0; i<nnzpsi; i++){
+    isp1=indnzpsi[0][i];
+    isp2=indnzpsi[1][i];
+    isp3=indnzpsi[2][i];
+    if (psi[i]!=r0){
+  	  nvirial++;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << namesp[isp3] << "  " << psi[i] << std::endl;
+    }
+
+  }
+  }
+  std::cout << "=====================================>" << std::endl;
+  std::cout << "Total number of virial coefficients: " << nvirial << std::endl;
+  std::cout << "=====================================>" << std::endl;
+  std::cout << "Total number of Beta's functions: " << nfunb << std::endl;
+  std::cout << "=====================================>" << std::endl;
+  std::cout << "Total number of J's functions: " << nfunj << std::endl;
+  std::cout << "--------------------------------------" << std::endl;
+  for (int i=0; i<nfunj; i++) std::cout << "Zi Zj product:" << zprod[i] << std::endl;
+  std::cout << "=====================================>" << std::endl;
 }  // end Display()
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -780,48 +797,45 @@ void ActivityModelPitzer::Display(void) const {
 void ActivityModelPitzer::ReadDataBase(const std::string& namedatabase,
 		                               const std::vector<Species>& prim,
 		                               const std::vector<AqueousEquilibriumComplex>& sec) {
+	const double r0(0.0e0);
+	const bool isdebug(false);
 	const int mxlines(10000);
 	const int block_b0(0), block_b1(1), block_b2(2), block_cfi(3), block_theta(4), block_lamda(5), block_psi(7), block_exit(8);
     const std::string longspace("                  ");
 	// Create a vector of species
 
-	    int npri=prim.size();
-	    int naqx=sec.size();
-	    std::vector<std::string> namesp;
-	    std::vector<double> charge;
-	    if ((npri+naqx)==0) {
-	       std::cout << "Error, zero number of species" << std::endl;
-	    }
+	    nsp=prim.size()+sec.size();
+	    if (nsp==0) std::cout << "Error, zero number of species" << std::endl;
 	    //---------------------------------------------------------
 	    // Is better to use iterators
 	    //---------------------------------------------------------
 	    for (std::vector<Species>::const_iterator i = prim.begin();
 	           i != prim.end(); i++) {
+	    	 molality.push_back(r0);
 	         charge.push_back((*i).charge());
 	         namesp.push_back((*i).name());
 	    }
 	    for (std::vector<AqueousEquilibriumComplex>::const_iterator i = sec.begin();
 	    	           i != sec.end(); i++) {
-	    	         charge.push_back((*i).charge());
-	    	         namesp.push_back((*i).name());
-	    	    }
-
+	    	 molality.push_back(r0);
+	    	 charge.push_back((*i).charge());
+	    	 namesp.push_back((*i).name());
+	    }
 //---------------------------------------------------------------------------------------------
 // Open Pitzer virial coefficients database
 //---------------------------------------------------------------------------------------------
-std::cout << "=================> Opening Pitzer Data Base ==============>" << namedatabase << std::endl;
+if (isdebug) std::cout << "=================> Opening Pitzer Data Base ==============>" << namedatabase << std::endl;
 std::ifstream database(namedatabase.c_str());
 if (!database) {
 	    std::ostringstream error_stream;
 	    error_stream << "SimpleThermoDatabase::ReadFile(): \n";
 	    error_stream << "file could not be opened.... " << namedatabase << "\n";
 } else {
-		std::cout << "Opening Pitzer virial coefficients database was succefully opened: " << namedatabase << std::endl;
+		if (isdebug) std::cout << "Opening Pitzer virial coefficients database was succefully opened: " << namedatabase << std::endl;
 }
 
 std::string space(" ");
 StringTokenizer no_spaces;
-;
 
 int count(0), iblock(-1);
 while (!database.eof() && count < mxlines) {
@@ -838,35 +852,35 @@ while (!database.eof() && count < mxlines) {
 	    if (line1==space) goto exit;
 	    if (first == '>') {
 	    	iblock++;
-	    	if (iblock==block_b0) std::cout << "=================> Parse B0 ==============>" << std::endl;
-	    	if (iblock==block_b1) std::cout << "=================> Parse B1 ==============>" << std::endl;
-	    	if (iblock==block_b2) std::cout << "=================> Parse B2 ==============>" << std::endl;
-	    	if (iblock==block_cfi) std::cout << "=================> Parse Cfi ==============>" << std::endl;
-	    	if (iblock==block_theta) std::cout << "=================> Parse Theta ==============>" << std::endl;
-	    	if (iblock==block_lamda) std::cout << "=================> Parse Lamda ==============>" << std::endl;
-	    	if (iblock==block_psi) std::cout << "=================> Parse Psi ==============>" << std::endl;
+	    	if (iblock==block_b0 && isdebug) std::cout << "=================> Parse B0 ==============>" << std::endl;
+	    	if (iblock==block_b1 && isdebug) std::cout << "=================> Parse B1 ==============>" << std::endl;
+	    	if (iblock==block_b2 && isdebug) std::cout << "=================> Parse B2 ==============>" << std::endl;
+	    	if (iblock==block_cfi && isdebug) std::cout << "=================> Parse Cfi ==============>" << std::endl;
+	    	if (iblock==block_theta && isdebug) std::cout << "=================> Parse Theta ==============>" << std::endl;
+	    	if (iblock==block_lamda && isdebug) std::cout << "=================> Parse Lamda ==============>" << std::endl;
+	    	if (iblock==block_psi && isdebug) std::cout << "=================> Parse Psi ==============>" << std::endl;
 	    	getline(database,line);
 	    }
 	    if (iblock==block_b0) {
-	    	ParseB0(line,namesp);
+	    	ParseB0(line);
 	    }
 	    if (iblock==block_b1) {
-	       	ParseB1(line,namesp);
+	       	ParseB1(line);
 	    }
 	    if (iblock==block_b2) {
-	    	ParseB2(line,namesp);
+	    	ParseB2(line);
 	    }
 	    if (iblock==block_cfi) {
-	        ParseCfi (line,namesp,charge);
+	        ParseCfi (line);
 	    }
 	    if (iblock==block_theta) {
-	    	ParseTheta (line,namesp,charge);
+	    	ParseTheta (line);
 	    }
 	    if (iblock==block_lamda) {
-	    	ParseLamda (line,namesp);
+	    	ParseLamda (line);
 	    }
 	    if (iblock==block_psi) {
-	    	ParsePsi (line,namesp);
+	    	ParsePsi (line);
 	    }
 
         if (iblock==block_exit) goto exit;
@@ -874,136 +888,51 @@ while (!database.eof() && count < mxlines) {
 }
 
 exit:
-
 //---------------------------------------------
 // Assign Beta's function indices
 //---------------------------------------------
-AssignFbeta(charge);
+if (isdebug) std::cout << "=================> Assign Beta's functions ==============>" << std::endl;
+AssignFbeta();
 //---------------------------------------------
 // Find the new non-zero theta terms and
 // Assign J's function indices
 //---------------------------------------------
-AssignFj(charge);
+if (isdebug) std::cout << "=================> Assign F's functions ==============>" << std::endl;
+AssignFj();
 //---------------------------------------------
 // Compute the total number of non-zeta terms
 //---------------------------------------------
+if (isdebug) std::cout << "=================> Compute total number of non-zero terms ==============>" << std::endl;
 nnzq=nnzbeta+nnztheta+nnzlamda;
 //---------------------------------------------
 // Store the indices for H2O, Cl and K
 //---------------------------------------------
-int isp(-1);
-for (std::vector<std::string>::iterator i=namesp.begin(); i!=namesp.end(); i++) {
-	isp++;
-	if ((*i)=="H2O" || (*i)=="h2o") ithw=isp;
-	if ((*i)=="Cl-" || (*i)=="cl-") ithcl=isp;
-	if ((*i)=="K+" || (*i)=="k+") ithk=isp;
+for (int isp=0; isp<nsp; isp++) {
+	if (namesp[isp]=="H2O" || namesp[isp]=="h2o") ithw=isp;
+	if (namesp[isp]=="Cl-" || namesp[isp]=="cl-") ithcl=isp;
+	if (namesp[isp]=="K+" || namesp[isp]=="k+") ithk=isp;
 }
+//---------------------------------------------
+// If Cl and K are present,
+// MacInnes convention is used
+//---------------------------------------------
+if (ithcl>-1 && ithk>-1) ismacinnes=true;
 //---------------------------------------------
 // Close Pitzer virial database
 //---------------------------------------------
 database.close();
-std::cout << "=================> Closing Pitzer Data Base ==============>" << std::endl;
+if (isdebug) std::cout << "=================> Closing Pitzer Data Base ==============>" << std::endl;
 //------------------------------------------------------------
 // Print the virial coeffients
 //------------------------------------------------------------
-std::cout << "=================> Print stored virial coefficients ==============>" << std::endl;
-Print(namesp);
-std::cout << "=================> End print stored virial coefficients ==============>" << std::endl;
+if (isdebug) std::cout << "=================> Print virial coefficients ==============>" << std::endl;
+if (isdebug) Display();
+if (isdebug) std::cout << "=================> End print virial coefficients ==============>" << std::endl;
 }  // end ReadDataBase()
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void ActivityModelPitzer::Print(const std::vector<std::string>& namesp) {
-const double r0(0.0e0);
-std::cout << "--------------------------------------------------------------------" << std::endl;
-std::cout << " Virial coefficients" << std::endl;
-std::cout << "--------------------------------------------------------------------" << std::endl;
-int isp1(-1),isp2(-1), isp3(-1), nvirial(0);
-if (nnzbeta>0){
-std::cout << "=================> B0 ==============>" << std::endl;
-for (int i=0; i<nnzbeta; i++){
-  isp1=indnzbeta[0][i];
-  isp2=indnzbeta[1][i];
-  if (beta0[i]!=r0){
-	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta0[i] << std::endl;
-    }
-}
-std::cout << "=================> B1 ==============>" << std::endl;
-for (int i=0; i<nnzbeta; i++){
-  isp1=indnzbeta[0][i];
-  isp2=indnzbeta[1][i];
-  if (beta1[i]!=r0){
-	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta1[i] << std::endl;
-    }
-}
-std::cout << "=================> B2 ==============>" << std::endl;
-for (int i=0; i<nnzbeta; i++){
-  isp1=indnzbeta[0][i];
-  isp2=indnzbeta[1][i];
-  if (beta2[i]!=r0){
-	  nvirial++;
-	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta2[i] << std::endl;
-  }
-
-}
-}
-if (nnzcpz>0){
-std::cout << "=================> Cfi ==============>" << std::endl;
-for (int i=0; i<nnzcpz; i++){
-  isp1=indnzcpz[0][i];
-  isp2=indnzcpz[1][i];
-  if (cpz[i]!=r0){
-	  nvirial++;
-	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << cpz[i] << std::endl;
-  }
-
-}
-}
-if (nnztheta>0){
-std::cout << "=================> Theta ==============>" << std::endl;
-for (int i=0; i<nnztheta; i++){
-  isp1=indnztheta[0][i];
-  isp2=indnztheta[1][i];
-  if (theta[i]!=r0){
-	  nvirial++;
-	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << theta[i] << std::endl;
-  }
-
-}
-}
-if (nnzlamda>0){
-std::cout << "=================> Lamda ==============>" << std::endl;
-for (int i=0; i<nnzlamda; i++){
-  isp1=indnzlamda[0][i];
-  isp2=indnzlamda[1][i];
-  if (lamda[i]!=r0){
-	  nvirial++;
-	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << lamda[i] << std::endl;
-  }
-
-}
-}
-if (nnzpsi>0){
-std::cout << "=================> Psi ==============>" << std::endl;
-for (int i=0; i<nnzpsi; i++){
-  isp1=indnzpsi[0][i];
-  isp2=indnzpsi[1][i];
-  isp3=indnzpsi[2][i];
-  if (psi[i]!=r0){
-	  nvirial++;
-	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << namesp[isp3] << "  " << psi[i] << std::endl;
-  }
-
-}
-}
-std::cout << "Total number of virial coefficients: " << nvirial << std::endl;
-}  // Print
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------
-void ActivityModelPitzer::ParseB0 (const std::string& data, std::vector<std::string>& namesp) {
+void ActivityModelPitzer::ParseB0 (const std::string& data) {
 // Local variables and constants
 const double r0(0.0e0);
 bool isstored(false);
@@ -1014,7 +943,6 @@ std::string space(" ");
 StringTokenizer b0(data,space);
 StringTokenizer no_spaces;
 
-int nsp(namesp.size());
 int isp1_old(0), isp2_old(0);
 
 // get name 1
@@ -1049,47 +977,9 @@ exit_sp2:
 
 if(isspecies) {
 
-no_spaces.tokenize(b0.at(2),space);
-double virial(std::atof(no_spaces.at(0).c_str()));
-
-if (nnzbeta>0) {
-	for (int i=0; i<nnzbeta; i++) {
-	   	isp1_old = indnzbeta[0][i];
-	   	isp2_old = indnzbeta[1][i];
-	   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-	   		beta0[i]=virial;
-	   		isstored=true;
-	   	}
-	}
-    // If the virial coefficient is not stored
-	    if (!isstored) {
-	//!%--------------
-	      nnzbeta++;
-	      beta0.push_back(virial);
-	      indnzbeta[0].push_back(isp1);
-	      indnzbeta[1].push_back(isp2);
-	//!%--------------
-	      beta1.push_back(r0);
-	//!%--------------
-	      beta2.push_back(r0);
-	    }
-
-} else {
-		nnzbeta = 1;
-		beta0.push_back(virial);
-		//--------------------------
-		beta1.push_back(r0);
-		beta2.push_back(r0);
-		//--------------------------
-		indnzbeta.resize(3);
-		for (int i=0; i<3; i++) {
-			indnzbeta[i].resize(nnzbeta,0);
-			for (int j=0; j<nnzbeta; j++) indnzbeta[i][j]=0;
-		}
-		indnzbeta[0][nnzbeta-1]=isp1;
-		indnzbeta[1][nnzbeta-1]=isp2;
-
-}
+    no_spaces.tokenize(b0.at(2),space);
+    double virial(std::atof(no_spaces.at(0).c_str()));
+    SetVirial (virial,"b0",isp1,isp2,-1);
     if (isdebug) std::cout << namesp[isp1] << namesp[isp2] << virial <<std::endl;
 
 }
@@ -1097,7 +987,7 @@ if (nnzbeta>0) {
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void ActivityModelPitzer::ParseB1 (const std::string& data, std::vector<std::string>& namesp) {
+void ActivityModelPitzer::ParseB1 (const std::string& data) {
 	// Local variables and constants
 	const double r0(0.0e0);
 	bool isstored(false);
@@ -1108,7 +998,6 @@ void ActivityModelPitzer::ParseB1 (const std::string& data, std::vector<std::str
 	StringTokenizer b1(data,space);
 	StringTokenizer no_spaces;
 
-	int nsp(namesp.size());
 	int isp1_old(0), isp2_old(0);
 
 	// get name 1
@@ -1145,50 +1034,14 @@ void ActivityModelPitzer::ParseB1 (const std::string& data, std::vector<std::str
 
 	no_spaces.tokenize(b1.at(2), space);
 	double virial(std::atof(no_spaces.at(0).c_str()));
-
-	if (nnzbeta>0) {
-		for (int i=0; i<nnzbeta; i++) {
-		   	isp1_old = indnzbeta[0][i];
-		   	isp2_old = indnzbeta[1][i];
-		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-		   		beta1[i]=virial;
-		   		isstored=true;
-		   	}
-		}
-	    // If the virial coefficient is not stored
-		    if (!isstored) {
-		//!%--------------
-		      nnzbeta++;
-		      beta1.push_back(virial);
-		      indnzbeta[0].push_back(isp1);
-		      indnzbeta[1].push_back(isp2);
-		//!%--------------
-		      beta0.push_back(r0);
-		//!%--------------
-		      beta2.push_back(r0);
-		    }
-
-	} else {
-			nnzbeta = 1;
-			beta1.push_back(virial);
-			beta0.push_back(r0);
-			beta2.push_back(r0);
-			indnzbeta.resize(3);
-			for (int i=0; i<3; i++) {
-				indnzbeta[i].resize(nnzbeta,0);
-				for (int j=0; j<nnzbeta; j++) indnzbeta[i][j]=0;
-			}
-			indnzbeta[0][nnzbeta-1]=isp1;
-			indnzbeta[1][nnzbeta-1]=isp2;
-
-}
+	SetVirial (virial,"b1",isp1,isp2,-1);
 	if (isdebug) std::cout << namesp[isp1] << namesp[isp2] << virial <<std::endl;
 }
 }
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void ActivityModelPitzer::ParseB2 (const std::string& data, std::vector<std::string>& namesp) {
+void ActivityModelPitzer::ParseB2 (const std::string& data) {
 	// Local variables and constants
 	const double r0(0.0e0);
 	bool isstored(false);
@@ -1199,7 +1052,6 @@ void ActivityModelPitzer::ParseB2 (const std::string& data, std::vector<std::str
 	StringTokenizer b2(data,space);
 	StringTokenizer no_spaces;
 
-	int nsp(namesp.size());
 	int isp1_old(0), isp2_old(0);
 
 	// get name 1
@@ -1236,49 +1088,14 @@ void ActivityModelPitzer::ParseB2 (const std::string& data, std::vector<std::str
 
 	no_spaces.tokenize(b2.at(2), space);
 	double virial(std::atof(no_spaces.at(0).c_str()));
-
-	if (nnzbeta>0) {
-		for (int i=0; i<nnzbeta; i++) {
-		   	isp1_old = indnzbeta[0][i];
-		   	isp2_old = indnzbeta[1][i];
-		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-		   		beta2[i]=virial;
-		   		isstored=true;
-		   	}
-		}
-	    // If the virial coefficient is not stored
-		    if (!isstored) {
-		//!%--------------
-		      nnzbeta++;
-		      beta2.push_back(virial);
-		      indnzbeta[0].push_back(isp1);
-		      indnzbeta[1].push_back(isp2);
-		//!%--------------
-		      beta0.push_back(r0);
-		//!%--------------
-		      beta1.push_back(r0);
-		    }
-
-	} else {
-			nnzbeta = 1;
-			beta2.push_back(virial);
-			beta0.push_back(r0);
-			beta1.push_back(r0);
-			indnzbeta.resize(3);
-			for (int i=0; i<3; i++) {
-				indnzbeta[i].resize(nnzbeta,0);
-				for (int j=0; j<nnzbeta; j++) indnzbeta[i][j]=0;
-			}
-			indnzbeta[0][nnzbeta-1]=isp1;
-			indnzbeta[1][nnzbeta-1]=isp2;
-}
+	SetVirial (virial,"b2",isp1,isp2,-1);
 	if (isdebug) std::cout << namesp[isp1] << namesp[isp2] << virial <<std::endl;
 }
 }
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void ActivityModelPitzer::ParseCfi (const std::string& data, std::vector<std::string>& namesp, std::vector<double>& charge) {
+void ActivityModelPitzer::ParseCfi (const std::string& data) {
 	// Local variables and constants
 	const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
 	bool isstored(false);
@@ -1289,7 +1106,7 @@ void ActivityModelPitzer::ParseCfi (const std::string& data, std::vector<std::st
 	StringTokenizer cfi(data,space);
 	StringTokenizer no_spaces;
 
-	int nsp(namesp.size());
+
 	int isp1_old(0), isp2_old(0);
 
 	// get name 1
@@ -1327,37 +1144,15 @@ void ActivityModelPitzer::ParseCfi (const std::string& data, std::vector<std::st
 
 	no_spaces.tokenize(cfi.at(2), space);
 	double virial(std::atof(no_spaces.at(0).c_str()));
-
-
-
-	if (nnzcpz>0) {
-		//!%--------------
-   	          nnzcpz++;
-   	          virial/=r2*sqrt(abs(charge[isp1]*charge[isp2]));
-   	          cpz.push_back(virial);
-		      indnzcpz[0].push_back(isp1);
-		      indnzcpz[1].push_back(isp2);
-
-
-	} else {
-		    nnzcpz = 1;
-		    virial/=r2*sqrt(abs(charge[isp1]*charge[isp2]));
-		    cpz.push_back(virial);
-			indnzcpz.resize(2);
-			for (int i=0; i<2; i++) {
-				indnzcpz[i].resize(nnzcpz,0);
-				for (int j=0; j<nnzcpz; j++) indnzcpz[i][j]=0;
-			}
-			indnzcpz[0][nnzcpz-1]=isp1;
-			indnzcpz[1][nnzcpz-1]=isp2;
-}
+	virial/=r2*sqrt(abs(charge[isp1]*charge[isp2]));
+	SetVirial (virial,"cfi",isp1,isp2,-1);
 	if (isdebug) std::cout << namesp[isp1] << namesp[isp2] << virial <<std::endl;
+    }
 }
-}
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void ActivityModelPitzer::ParseTheta (const std::string& data, std::vector<std::string>& namesp, std::vector<double>& charge) {
+void ActivityModelPitzer::ParseTheta (const std::string& data) {
 	// Local variables and constants
 	const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
 	const bool isdebug(false);
@@ -1368,7 +1163,7 @@ void ActivityModelPitzer::ParseTheta (const std::string& data, std::vector<std::
 	StringTokenizer th(data,space);
 	StringTokenizer no_spaces;
 
-	int nsp(namesp.size());
+
 	int isp1_old(0), isp2_old(0);
 
 	// get name 1
@@ -1377,7 +1172,7 @@ void ActivityModelPitzer::ParseTheta (const std::string& data, std::vector<std::
 	// get name 2
 	no_spaces.tokenize(th.at(1),space);
 	std::string name2(no_spaces.at(0));
-	int isp1(0), isp2(0);
+	int isp1(-1), isp2(-1);
 
 	for (int i=0; i<nsp; i++) {
 		if (namesp[i]==name1){
@@ -1406,35 +1201,7 @@ void ActivityModelPitzer::ParseTheta (const std::string& data, std::vector<std::
 
 	no_spaces.tokenize(th.at(2), space);
 	double virial(std::atof(no_spaces.at(0).c_str()));
-
-	if (nnztheta>0) {
-
-		nnztheta++;
-		theta.push_back(virial);
-		indnztheta[0].push_back(isp1);
-		indnztheta[1].push_back(isp2);
-		if (charge[isp1]==r0 || charge[isp2]==r0) std::cout << "Warning electric charge must be different than zero" << std::endl;
-		indnztheta[2].push_back(charge[isp1]*charge[isp2]);
-		indnztheta[3].push_back(charge[isp1]*charge[isp1]);
-		indnztheta[4].push_back(charge[isp2]*charge[isp2]);
-
-
-
-	} else {
-		    nnztheta = 1;
-		    theta.push_back(virial);
-			indnztheta.resize(5);
-			for (int i=0; i<5; i++) {
-				indnztheta[i].resize(nnztheta,0);
-				for (int j=0; j<nnztheta; j++) indnztheta[i][j]=0;
-			}
-			indnztheta[0][nnztheta-1]=isp1;
-			indnztheta[1][nnztheta-1]=isp2;
-			if (charge[isp1]==r0 || charge[isp2]==r0) std::cout << "Warning electric charge must be different than zero" << std::endl;
-			indnztheta[2][nnztheta-1]=charge[isp1]*charge[isp2];
-			indnztheta[3][nnztheta-1]=charge[isp1]*charge[isp1];
-			indnztheta[4][nnztheta-1]=charge[isp2]*charge[isp2];
-}
+	SetVirial (virial,"theta",isp1,isp2,-1);
 	if (isdebug){
 		std::cout << namesp[isp1] << namesp[isp2] << virial <<std::endl;
 		for (int i=0; i<nnztheta; i++){
@@ -1448,7 +1215,7 @@ void ActivityModelPitzer::ParseTheta (const std::string& data, std::vector<std::
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void ActivityModelPitzer::ParseLamda (const std::string& data, std::vector<std::string>& namesp) {
+void ActivityModelPitzer::ParseLamda (const std::string& data) {
 	// Local variables and constants
 	const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
 	bool isstored(false);
@@ -1459,7 +1226,7 @@ void ActivityModelPitzer::ParseLamda (const std::string& data, std::vector<std::
 	StringTokenizer lam(data,space);
 	StringTokenizer no_spaces;
 
-	int nsp(namesp.size());
+
 	int isp1_old(0), isp2_old(0);
 
 	// get name 1
@@ -1497,28 +1264,7 @@ void ActivityModelPitzer::ParseLamda (const std::string& data, std::vector<std::
 
 	no_spaces.tokenize(lam.at(2), space);
 	double virial(std::atof(no_spaces.at(0).c_str()));
-
-
-
-	if (nnzlamda>0) {
-		//!%--------------
-   	          nnzlamda++;
-		      lamda.push_back(virial);
-		      indnzlamda[0].push_back(isp1);
-		      indnzlamda[1].push_back(isp2);
-
-
-	} else {
-		    nnzlamda = 1;
-		    lamda.push_back(virial);
-			indnzlamda.resize(2);
-			for (int i=0; i<2; i++) {
-				indnzlamda[i].resize(nnzlamda,0);
-				for (int j=0; j<nnzlamda; j++) indnzlamda[i][j]=0;
-			}
-			indnzlamda[0][nnzlamda-1]=isp1;
-			indnzlamda[1][nnzlamda-1]=isp2;
-}
+	SetVirial (virial,"lamda",isp1,isp2,-1);
 	if (isdebug) std::cout << namesp[isp1] << namesp[isp2] << virial <<std::endl;
 
 }
@@ -1526,7 +1272,7 @@ void ActivityModelPitzer::ParseLamda (const std::string& data, std::vector<std::
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------
-void ActivityModelPitzer::ParsePsi (const std::string& data, std::vector<std::string>& namesp) {
+void ActivityModelPitzer::ParsePsi (const std::string& data) {
 	// Local variables and constants
 	const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
 	bool isstored(false);
@@ -1537,7 +1283,7 @@ void ActivityModelPitzer::ParsePsi (const std::string& data, std::vector<std::st
 	StringTokenizer psi_loc(data,space);
 	StringTokenizer no_spaces;
 
-	int nsp(namesp.size());
+
 	int isp1_old(0), isp2_old(0);
 
 	// get name 1
@@ -1591,55 +1337,172 @@ void ActivityModelPitzer::ParsePsi (const std::string& data, std::vector<std::st
 
 	no_spaces.tokenize(psi_loc.at(3), space);
 	double virial(std::atof(no_spaces.at(0).c_str()));
-
-
-
-	if (nnzpsi>0) {
-
-   	          nnzpsi++;
-   	          psi.push_back(virial);
-		      indnzpsi[0].push_back(isp1);
-		      indnzpsi[1].push_back(isp2);
-		      indnzpsi[2].push_back(isp3);
-
-
-	} else {
-		    nnzpsi = 1;
-		    psi.push_back(virial);
-			indnzpsi.resize(3);
-			for (int i=0; i<3; i++) {
-				indnzpsi[i].resize(nnzpsi,0);
-				for (int j=0; j<nnzpsi; j++) indnzpsi[i][j]=0;
-			}
-			indnzpsi[0][nnzpsi-1]=isp1;
-			indnzpsi[1][nnzpsi-1]=isp2;
-			indnzpsi[2][nnzpsi-1]=isp3;
-}
+	SetVirial (virial,"psi",isp1,isp2,isp3);
 	if (isdebug) std::cout << namesp[isp1] << namesp[isp2] << namesp[isp3] << virial << std::endl;
 }
 }
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::AssignFbeta (const std::vector<double>& charge) {
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+void ActivityModelPitzer::SetVirial (const double& virial, const std::string& typevirial,
+		                             const int& isp1, const int& isp2, const int& isp3) {
+// Local variables and constants
+const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
+int isp1_old(-1), isp2_old(-1);
+bool isstored(false);
+
+
+if (typevirial=="b0") {
+
+	 if (nnzbeta==0) {
+		indnzbeta.resize(3);
+	 }
+	 for (int i=0; i<nnzbeta; i++) {
+	   	isp1_old = indnzbeta[0][i];
+	   	isp2_old = indnzbeta[1][i];
+	   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
+	   		beta0[i]=virial;
+	   		isstored=true;
+	   		break;
+	   	}
+	 }
+    // If the virial coefficient is not stored
+	 if (!isstored) {
+	//!%--------------
+	    nnzbeta++;
+	    beta0.push_back(virial);
+	    indnzbeta[0].push_back(isp1);
+	    indnzbeta[1].push_back(isp2);
+	    indnzbeta[2].push_back(0);
+	//!%--------------
+	    beta1.push_back(r0);
+	//!%--------------
+	    beta2.push_back(r0);
+	  }
+
+} else if (typevirial=="b1"){
+
+
+	    if (nnzbeta==0) {
+		  indnzbeta.resize(3);
+	    }
+	    for (int i=0; i<nnzbeta; i++) {
+		   	isp1_old = indnzbeta[0][i];
+		   	isp2_old = indnzbeta[1][i];
+		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
+		   		beta1[i]=virial;
+		   		isstored=true;
+		   		break;
+		   	}
+		}
+	    // If the virial coefficient is not stored
+		if (!isstored) {
+		//!%--------------
+		      nnzbeta++;
+		      beta1.push_back(virial);
+		      indnzbeta[0].push_back(isp1);
+		      indnzbeta[1].push_back(isp2);
+		      indnzbeta[2].push_back(0);
+		//!%--------------
+		      beta0.push_back(r0);
+		//!%--------------
+		      beta2.push_back(r0);
+		}
+
+} else if(typevirial=="b2"){
+
+
+	    if (nnzbeta==0) {
+		  indnzbeta.resize(3);
+	    }
+
+		for (int i=0; i<nnzbeta; i++) {
+		   	isp1_old = indnzbeta[0][i];
+		   	isp2_old = indnzbeta[1][i];
+		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
+		   		beta2[i]=virial;
+		   		isstored=true;
+		   		break;
+		   	}
+		}
+	    // If the virial coefficient is not stored
+		if (!isstored) {
+		//!%--------------
+		      nnzbeta++;
+		      beta2.push_back(virial);
+		      indnzbeta[0].push_back(isp1);
+		      indnzbeta[1].push_back(isp2);
+		      indnzbeta[2].push_back(0);
+		//!%--------------
+		      beta0.push_back(r0);
+		//!%--------------
+		      beta1.push_back(r0);
+		}
+} else if (typevirial=="cfi"){
+
+	        if (nnzcpz==0) indnzcpz.resize(2);
+
+		//!%--------------
+   	        nnzcpz++;
+   	        cpz.push_back(virial);
+		    indnzcpz[0].push_back(isp1);
+		    indnzcpz[1].push_back(isp2);
+
+} else if(typevirial=="theta"){
+
+	        if (nnztheta==0) indnztheta.resize(5);
+
+			nnztheta++;
+			theta.push_back(virial);
+			indnztheta[0].push_back(isp1);
+			indnztheta[1].push_back(isp2);
+			indnztheta[2].push_back(int(charge[isp1]*charge[isp2]));
+			indnztheta[3].push_back(int(charge[isp1]*charge[isp1]));
+			indnztheta[4].push_back(int(charge[isp2]*charge[isp2]));
+
+} else if(typevirial=="lamda"){
+
+
+	    if (nnzlamda==0) indnzlamda.resize(2);
+
+	   	nnzlamda++;
+		lamda.push_back(virial);
+		indnzlamda[0].push_back(isp1);
+		indnzlamda[1].push_back(isp2);
+
+} else if(typevirial=="psi"){
+
+	if (nnzpsi==0) indnzpsi.resize(3);
+
+	nnzpsi++;
+	psi.push_back(virial);
+	indnzpsi[0].push_back(isp1);
+	indnzpsi[1].push_back(isp2);
+	indnzpsi[2].push_back(isp3);
+} else {
+	std::cout << "Type virial coefficient not defined" << std::endl;
+}
+
+
+
+}
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void ActivityModelPitzer::AssignFbeta () {
 // Local variables and constants
 int l1(0), l2(0), l3(0), n1(0), n2(0), n3(0), nz(0);
 double z1(0.0e0), z2(0.0e0);
 const double r0(0.0e0), r1(1.0e0), r2(2.0e0), r50(50.0e0), r1_4(1.4e0), r12(12.0e0);
-const int ndim1(2), ndim2(100);
 //!%-----------------------------------------------------------
 //! Assign indices of Beta's functions
 //!%-----------------------------------------------------------
 nfunb=0;
-std::vector<std::vector<double> > alphaloc;
-alphaloc.resize(ndim2);
-for (int i = 0; i < ndim1; ++i){
-	 alphaloc[i].resize(ndim2);
-	 for (int j=0; j<ndim2; j++) alphaloc[i][j]=r0;
-}
-
-
 for (nz=0; nz<nnzbeta; nz++) {
+
    // Take the electric charge
    z1=charge[indnzbeta[0][nz]];
    z2=charge[indnzbeta[1][nz]];
@@ -1651,8 +1514,8 @@ for (nz=0; nz<nnzbeta; nz++) {
 
 						   n1 = nfunb-1;
 
-						   alphaloc[0][nfunb-1]=r2;
-						   alphaloc[1][nfunb-1]=r0;
+						   alpha1.push_back(r2);
+						   alpha2.push_back(r0);
 
 						   l1=1;
                    	} else {
@@ -1672,8 +1535,8 @@ for (nz=0; nz<nnzbeta; nz++) {
 
 							   n2 = nfunb-1;
 
-							   alphaloc[0][nfunb-1]=r2;
-						       alphaloc[1][nfunb-1]=r50;
+							   alpha1.push_back(r2);
+							   alpha2.push_back(r50);
 
 	                           l2=1;
 
@@ -1690,8 +1553,8 @@ for (nz=0; nz<nnzbeta; nz++) {
 						       indnzbeta[2][nz] = nfunb-1;
                                n3=nfunb-1;
 
-							   alphaloc[0][nfunb-1] = r1_4;
-						       alphaloc[1][nfunb-1] = r12;
+                               alpha1.push_back(r1_4);
+                               alpha2.push_back(r12);
 
 	                           l3=1;
 
@@ -1708,29 +1571,17 @@ for (nz=0; nz<nnzbeta; nz++) {
 
 	       }
 
-// Resize alpha array
-if (nfunb>0) {
-	alpha.resize(2);
-	for (int i=0; i<2; i++) alpha[i].resize(nfunb,r0);
-	for (int i=0; i<nfunb; i++) {
-		alpha[0][i]=alphaloc[0][i];
-		alpha[1][i]=alphaloc[1][i];
-	}
-}
 
 }  // end AssignFbeta
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::AssignFj (const std::vector<double>& charge) {
+void ActivityModelPitzer::AssignFj () {
 // Local variables and constants
-const int ndim(100);
 const double r0(0.0e0);
-double zprodloc[ndim];
-double zz;
-int nn(0), isp1(0), isp2(0);
+int isp1(0), isp2(0);
 bool isstored(false);
-const int nsp(charge.size());
+bool isfound(false);
 //---------------------------------------------------------------
 // Find other non-zero theta terms
 //---------------------------------------------------------------
@@ -1740,7 +1591,7 @@ for (int i=0; i<nsp; i++) {
 					   for (int k=0; k<nnztheta; k++) {
 					        isp1=indnztheta[0][k];
 					        isp2=indnztheta[1][k];
-							if ((isp1==i && isp2==j) || (isp1==j || isp2==i)) {
+							if ((isp1==i && isp2==j) || (isp1==j && isp2==i)) {
 								isstored=true;
 								goto exit_1;
 							}
@@ -1750,23 +1601,16 @@ for (int i=0; i<nsp; i++) {
 
 					   if (!isstored) {
 
+						   if (nnztheta==0) indnztheta.resize(5);
+
 						   nnztheta++;
-
-						   if (nnztheta=1){
-							   indnztheta.resize(5);
-							   for (int k=0; k<5; k++) {
-							     indnztheta[k].resize(nnztheta,0);
-							     for (int m=0; m<nnztheta; m++) indnztheta[k][m]=0;
-							   }
-						   }
-
 						   theta.push_back(r0);
 						   indnztheta[0].push_back(i);
 						   indnztheta[1].push_back(j);
-						   if (charge[i]==r0 || charge[j]==r0) std::cout << "Warning electric charge must be different than zero" << std::endl;
-						   indnztheta[2].push_back(charge[i]*charge[j]);
-						   indnztheta[3].push_back(charge[i]*charge[i]);
-						   indnztheta[4].push_back(charge[j]*charge[j]);
+						   indnztheta[2].push_back(int(charge[i]*charge[j]));
+						   indnztheta[3].push_back(int(charge[i]*charge[i]));
+						   indnztheta[4].push_back(int(charge[j]*charge[j]));
+
 
 					   } else {
 						   isstored=false;
@@ -1776,35 +1620,106 @@ for (int i=0; i<nsp; i++) {
 		         }
 
 		     }
-
 }
 //!%-----------------------------------------------------------
 //!% Compute number of functions j and save
 //!%-----------------------------------------------------------
 nfunj=1;
+zprod.push_back(double(indnztheta[2][0]));
 for (int nz=0; nz<nnztheta; nz++) {
-	for (int k=2; k<=4; k++) {
-	    zz=double(indnztheta[k][nz]);
-	    for (int j=0; j<nfunj; j++) {
-	      if (zprodloc[j]==zz) {
-	            nn=j;
-	            goto exit;
+	for (int k=2;k<=4;k++) {
+	   for (int j=0; j<nfunj; j++) {
+	      if (zprod[j]==double(indnztheta[k][nz])) {
+	    	    indnztheta[k][nz]=j;
+	            isfound=true;
+	    	    break;
 	      }
-	    }
-	    zprodloc[nfunj-1] = zz;
-	    nn=nfunj-1;
-	    nfunj++;
-	    exit:
-	    indnztheta[k][nz]=nn;
+	   }
+	   if (isfound){
+		 isfound=false;
+	   } else{
+		 zprod.push_back(double(indnztheta[k][nz]));
+	     nfunj++;
+	     indnztheta[k][nz]=nfunj-1;
+	   }
 	}
 }
-//!%------------------------------------------------------------
-//!% Resize the zprod vector
-//!%------------------------------------------------------------
-zprod.resize(nfunj,r0);
-for (int i=0; i<nfunj; i++)
-zprod[i] = zprodloc[i];
 }  // end AssignFJ
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void ActivityModelPitzer::AllocatePointers() {
+const double r0(0.0e0);
+
+g_ = new double*[nfunb];
+g_pri_ = new double*[nfunb];
+f_ = new double*[nfunb];
+for (int i=0; i<nfunb; i++) {
+		g_[i] = new double[2];
+		g_[i][0]=r0;
+		g_[i][1]=r0;
+		g_pri_[i] = new double[2];
+		g_pri_[i][0]=r0;
+		g_pri_[i][1]=r0;
+		f_[i] = new double[2];
+		f_[i][0]=r0;
+		f_[i][1]=r0;
+}
+// Local vectors for J's functions
+j_ = new double[nfunj];
+j_pri_ = new double[nfunj];
+for (int i=0; i<nfunj; i++) {
+	j_[i]=r0;
+	j_pri_[i]=r0;
+}
+indnzq = new int*[2];
+for (int i=0; i<2; i++) {
+  indnzq[0] = new int[nnzq];
+  indnzq[1] = new int[nnzq];
+}
+q = new double[nnzq];
+qpri = new double[nnzq];
+qphi = new double[nnzq];
+for (int i=0; i<nnzq; i++) {
+  q[i]=r0;
+  qpri[i]=r0;
+  qphi[i]=r0;
+  indnzq[0][i]=0;
+  indnzq[1][i]=0;
+}
+
+}
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void ActivityModelPitzer::DeallocatePointers() {
+
+delete [] q;
+delete [] qphi;
+delete [] qpri;
+for (int i=0; i<2; i++) delete[] indnzq[i];
+delete [] indnzq;
+q=NULL;
+qphi=NULL;
+qpri=NULL;
+indnzq=NULL;
+
+for (int i=0; i<nfunb; i++) delete[] g_[i];
+delete [] g_;
+for (int i=0; i<nfunb; i++) delete[] g_pri_[i];
+delete [] g_pri_;
+for (int i=0; i<nfunb; i++) delete[] f_[i];
+delete [] f_;
+g_=NULL;
+g_pri_=NULL;
+f_=NULL;
+
+delete [] j_;
+delete [] j_pri_;
+j_=NULL;
+j_pri_=NULL;
+
+}
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
