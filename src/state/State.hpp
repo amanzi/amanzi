@@ -77,6 +77,9 @@ public:
   void init_restart ( );
   void write_restart ( std::string filename );
   void read_restart ( std::string filename );
+
+  // observation functions
+  double water_mass();
       
 private:
   void create_storage();

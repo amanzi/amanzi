@@ -26,18 +26,26 @@ namespace Amanzi
 {
 
 #ifdef ENABLE_CGNS
-using namespace CGNS_PAR;
+  using namespace CGNS_PAR;
 #endif
 
-using amanzi::chemistry::Chemistry_State;
-using amanzi::chemistry::Chemistry_PK;
-using amanzi::chemistry::ChemistryException;
-
-MPC::MPC(Teuchos::ParameterList parameter_list_,
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-  parameter_list(parameter_list_),
-  mesh_maps(mesh_maps_)
+  using amanzi::chemistry::Chemistry_State;
+  using amanzi::chemistry::Chemistry_PK;
+  using amanzi::chemistry::ChemistryException;
   
+
+  MPC::MPC(Teuchos::ParameterList parameter_list_,
+	   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
+	   Amanzi::ObservationData& output_observations_):
+    parameter_list(parameter_list_),
+    mesh_maps(mesh_maps_),
+    output_observations(output_observations_)
+  {
+    mpc_init();
+  }
+  
+  
+void MPC::mpc_init()
 {
    mpc_parameter_list =  parameter_list.sublist("MPC");
    read_parameter_list();
@@ -120,6 +128,11 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      } 
    }
    // done creating auxilary state objects and  process models
+
+   // create the observations
+   
+   Teuchos::ParameterList observation_plist = parameter_list.sublist("observation");
+   observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
 
 }
 
@@ -252,7 +265,7 @@ void MPC::cycle_driver () {
 	    
 	    RPK->GetSaturation(*S->get_water_saturation()); 
 	  }
-	
+
 	
 	// write restart file after initial flow solve
 	if (restart_file != "NONE") S->write_restart( restart_file );
@@ -265,8 +278,16 @@ void MPC::cycle_driver () {
       S->read_restart( restart_file );
     }
 
+  
+
+  
+
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     
+    // make observations
+    observations->make_observations(*S);
+
+
     if (gmv_output) {
       // write the GMV data file
       write_gmv_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
@@ -427,6 +448,11 @@ void MPC::cycle_driver () {
       // advance the iteration count
       iter++;
       
+      // make observations
+      observations->make_observations(*S);
+
+
+
       // TODO: ask the CPK to dump its data someplace....
 
       vizdump_cycle = iter;
@@ -467,6 +493,11 @@ void MPC::cycle_driver () {
     }
     
   }
+
+  // dump observations
+  output_observations.print(std::cout);
+  
+
 }
 
 
