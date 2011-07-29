@@ -139,7 +139,7 @@ Cementitious Materials, and Waste Zones Washington Savannah River Company (WSRC-
 
       <ParameterList name="BC01">
 	<Parameter name="Type" type="string" value="Darcy Constant"/>
-	<Parameter name="BC value" type="double" value="-3.75e-8" />  <!-- kg s-1 --> 
+	<Parameter name="BC value" type="double" value="-3.75e-8" />  <!-- m s-1 => m3 m-2 s-1 --> 
 	<Parameter name="Side set ID" type="int" value="5" />
       </ParameterList>
      </ParameterList>
