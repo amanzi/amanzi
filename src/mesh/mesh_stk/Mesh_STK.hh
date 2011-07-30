@@ -1,11 +1,11 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 // file: Mesh_STK.hh
 // -------------------------------------------------------------
 /**
  * @file   Mesh_STK.hh
  * @author William A. Perkins
- * @date Tue May 17 11:42:40 2011
+ * @date Fri Jul 29 09:21:21 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:42:40 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Fri Jul 29 09:21:21 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -34,6 +34,10 @@
 namespace Amanzi {
 namespace AmanziMesh {
 
+namespace Data {
+class HexMeshGenerator;
+}
+
 // -------------------------------------------------------------
 //  class Mesh_STK
 // -------------------------------------------------------------
@@ -53,10 +57,14 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double& ydelta = 1.0, 
            const double& zdelta = 1.0);
 
-  /// Construct hexahedral mesh (Mesh_maps_simple alternative)
+  /// Construct hexahedral mesh (Mesh_simple alternative)
   Mesh_STK(double x0, double y0, double z0,
            double x1, double y1, double z1,
            int nx, int ny, int nz, 
+           Epetra_MpiComm *communicator);
+
+  /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
+  Mesh_STK(Teuchos::ParameterList &parameter_list,
            Epetra_MpiComm *communicator);
 
   /// Construct a mesh from a Exodus II file or file set
@@ -299,7 +307,10 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
     
   /// Build a mesh from a Exodus II file or file set
   void read_exodus_(const std::string& fname);
-  
+
+  /// Generate a mesh with a hexahedral generator
+  void generate_(Data::HexMeshGenerator& generator);
+
   /// Generate a hexahedral mesh 
   void generate_(const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
                  const double& xorigin, 
@@ -308,6 +319,9 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                  const double& xdelta, 
                  const double& ydelta, 
                  const double& zdelta);
+
+  /// Generate a hexahedral mesh (with a parameter list)
+  void generate_(Teuchos::ParameterList &parameter_list);
 
   /// Build and store the required Epetra_Map instances
   void build_maps_ ();
