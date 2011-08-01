@@ -1,7 +1,8 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Mon Jun 20 13:22:08 2011
+ * @date Mon Aug  1 10:38:38 2011
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -22,6 +23,8 @@ namespace Data {
 // -------------------------------------------------------------
 //  class HexMeshGenerator
 // -------------------------------------------------------------
+
+const unsigned int HexMeshGenerator::nvcell(8);
 
 // -------------------------------------------------------------
 // HexMeshGenerator:: constructors / destructor
@@ -55,7 +58,8 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
     ncell_(ni_*nj_*nk_), nvert_((ni_+1)*(nj_+1)*(nk_+1)),
     xorig_(xorigin), yorig_(yorigin), zorig_(zorigin),
     dx_(xdelta), dy_(ydelta), dz_(zdelta),
-    cell_gidx_(), cell_idxmap_(), vertex_gidx_(), vertex_idxmap_()
+    cell_gidx_(), blocks_(),
+    cell_idxmap_(), vertex_gidx_(), vertex_idxmap_()
 {
   ASSERT(ni_ > 0);
   ASSERT(nj_ > 0);
@@ -82,6 +86,12 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
     cell_idxmap_[*c] = lid;
   }
 
+  // Put the default block in the block list
+
+  Block b;
+  b.id = 0;
+  b.region.reset();             // empty region
+  blocks_.push_back(b);
 }
 
 HexMeshGenerator::~HexMeshGenerator(void)
@@ -195,26 +205,50 @@ HexMeshGenerator::global_rcell(const unsigned int& index,
 }  
 
 // -------------------------------------------------------------
+// HexMeshGenerator::add_region
+// -------------------------------------------------------------
+void
+HexMeshGenerator::add_region(const int& id, 
+                             const AmanziGeometry::RegionPtr r)
+{
+  if (id == 0) {
+    std::string msg =
+        boost::str(boost::format("HexMeshGenerator: cannot use %d for region id") % id);
+    Exceptions::amanzi_throw(msg);
+  }
+  for (std::vector<Block>::const_iterator b = blocks_.begin();
+       b != blocks_.end(); ++b) {
+    if (id == b->id) {
+      std::string msg =
+        boost::str(boost::format("HexMeshGenerator: %d: region id already used") % id);
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+
+  Block b;
+  b.id = id,
+  b.region = r;
+  blocks_.push_back(b);
+}
+
+// -------------------------------------------------------------
 // HexMeshGenerator::generate_the_elements
 // -------------------------------------------------------------
 /** 
- * this also generates this->vertex_gidx_ and this->vertex_gidx_
-
+ * Generates the connectivity for @e all (local) elements.  During the
+ * process, each cell index and connectivity is assigned to a block.
+ * This also generates ::vertex_gidx_ and ::vertex_idxmap_
  * 
- * @param connectivity_map cell connectivity to vertexes (local 0-based vertex indexes)
  */
-
-
 void
-HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
+HexMeshGenerator::generate_the_elements_(void)
 {
   static const unsigned int nvcell(8);
   int num_elements(cell_gidx_.size());
 
   ASSERT(num_elements > 0);
 
-  connectivity_map.clear();
-  connectivity_map.resize(num_elements*nvcell);
+  std::vector<int> connectivity_map(num_elements*nvcell);
 
   std::vector<int>::iterator c(connectivity_map.begin());
   for (std::vector<unsigned int>::iterator g = cell_gidx_.begin();
@@ -244,6 +278,28 @@ HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
     *(c+5) = global_vertex(i  , j+1, k+1);
     *(c+6) = global_vertex(i+1, j+1, k+1);
     *(c+7) = global_vertex(i+1, j+1, k  );
+
+    // assign the global index to a block
+
+    AmanziGeometry::Point p(xorig_ + (static_cast<double>(i) + 0.5)*dx_,
+                            yorig_ + (static_cast<double>(j) + 0.5)*dy_,
+                            zorig_ + (static_cast<double>(k) + 0.5)*dz_);
+    
+    std::vector<Block>::iterator r;
+    for (r = blocks_.begin(); r != blocks_.end(); ++r) {
+      if (!r->region.is_null()) {
+        int id = r->id;
+        if (r->region->inside(p)) {
+          break;
+        }
+      }
+    }
+    if (r == blocks_.end()) {
+      r = blocks_.begin();
+    }
+    r->gidx.push_back(gidx);
+    std::copy(c, c+nvcell, std::back_inserter(r->connectivity));
+
     c += nvcell;
   }
 
@@ -271,15 +327,19 @@ HexMeshGenerator::generate_the_elements(std::vector<int>& connectivity_map)
   // replace the global indexes in the connectivity vector with local
   // indexes 
 
-  for (std::vector<int>::iterator i = connectivity_map.begin();
-       i != connectivity_map.end(); i++) {
-    unsigned int gidx(*i);
-    unsigned int lidx(vertex_idxmap_[gidx]);
-    *i = lidx;
+  for (std::vector<Block>::iterator r = blocks_.begin(); 
+       r != blocks_.end(); ++r) {
+    for (std::vector<int>::iterator i = r->connectivity.begin();
+         i != r->connectivity.end(); i++) {
+      unsigned int gidx(*i);
+      unsigned int lidx(vertex_idxmap_[gidx]);
+      *i = lidx;
+    }
   }
 
   return;
 }
+
 
 // -------------------------------------------------------------
 // HexMeshGenerator::generate_the_sidesets
@@ -416,24 +476,26 @@ HexMeshGenerator::generate(void)
 {
   const std::vector<int> one(1, 1);
 
-  Element_block *blk;
   std::vector<double> attribute;
-  {
-    // Just to be safe, put this in a block, so connectivity is not
-    // used after it's destroyed by Element_block::build_from()
+  attribute.clear();
 
-    std::vector<int> connectivity;
-    attribute.clear();
+  // Build the blocks
 
-    generate_the_elements(connectivity);
+  generate_the_elements_();
 
-
-    blk = Element_block::build_from(0, "Generated Elements", 
-                                    cell_gidx_.size(), HEX,
-                                    connectivity,
+  std::vector<Element_block *> tmpe; 
+  std::vector<int> blkids;
+  for (std::vector<Block>::iterator b = blocks_.begin();
+       b != blocks_.end(); ++b) {
+    Element_block *blk;
+    blk = Element_block::build_from(b->id, "Generated Elements", 
+                                    static_cast<int>(b->gidx.size()), HEX,
+                                    b->connectivity,
                                     attribute);
-    attribute.clear();
+    tmpe.push_back(blk);
+    blkids.push_back(b->id);
   }
+  attribute.clear();
 
   // Build a list of nodes for the node set.  All nodes involved in
   // this process's cells are included.
@@ -473,14 +535,11 @@ HexMeshGenerator::generate(void)
   Parameters* params(new Parameters("Generated", 3, 
                                     vertex_gidx_.size(), 
                                     cell_gidx_.size(),
-                                    1, 1, ssids.size(),
-                                    one, one, ssids));
+                                    tmpe.size(), 1, ssids.size(),
+                                    blkids, one, ssids));
 
 
   // finally assemble the mesh data
-
-  std::vector<Element_block *> tmpe; 
-  tmpe.push_back(blk);
 
   std::vector<Node_set *> tmpn;
   tmpn.push_back(nodes);
@@ -514,8 +573,13 @@ HexMeshGenerator::generate(void)
 Epetra_Map*
 HexMeshGenerator::cellmap(bool onebased)
 {
-  std::vector<int> myidx(cell_gidx_.size());
-  std::copy(cell_gidx_.begin(), cell_gidx_.end(), myidx.begin());
+  std::vector<int> myidx;
+  myidx.reserve(cell_gidx_.size());
+  for (std::vector<Block>::const_iterator b = blocks_.begin();
+       b != blocks_.end(); ++b) {
+    std::copy(b->gidx.begin(), b->gidx.end(), 
+              std::back_inserter(myidx));
+  }
   if (onebased)
     std::for_each(myidx.begin(), myidx.end(), bl::_1 += 1);
 
