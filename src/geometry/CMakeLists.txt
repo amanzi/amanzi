@@ -27,7 +27,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 #
 # geometry library
 #
-add_library(geometry Geometry.cc Point.hh Region.hh 
+add_library(geometry Geometry.cc Point.hh 
+                     Region.hh Region.cc
                      RectangularRegion.hh RectangularRegion.cc)
 add_install_library(geometry)
 
