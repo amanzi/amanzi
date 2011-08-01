@@ -38,6 +38,16 @@ namespace Amanzi
         }
     }
     
+    std::vector<std::string> observationLabels() const
+    {
+      std::vector<std::string> result(data.size());
+      int cnt=0;
+      for (std::map<std::string, std::vector<DataTriple> >::const_iterator it = data.begin(); it!=data.end(); ++it)
+        {
+          result[cnt++] = it->first;
+        }
+      return result;
+    }
     
     std::vector<ObservationData::DataTriple>& operator[](const std::string& label)
     {
