@@ -5,6 +5,29 @@
 
 #include "ParmParseHelpers.H"
 
+void
+Structured_observations(const Array<Observation>& observation_array,
+			Amanzi::ObservationData& observation_data)
+{
+  for (int i=0; i<observation_array.size(); ++i)
+    {
+      std::string label = observation_array[i].name;
+      int ntimes = observation_array[i].times.size();
+      std::vector<Amanzi::ObservationData::DataTriple> dt(ntimes);
+      for (int j = 0; j<ntimes; ++j)
+	dt[j].time = observation_array[i].times[j];
+      
+      int nval = observation_array[i].vals.size();
+      for (int j = 0; j<nval; ++j)
+	{
+	  dt[j].value = observation_array[i].vals[j];
+	  dt[j].is_valid = true;
+	}
+      
+      observation_data[label] = dt;
+    }	
+}  
+
 Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
                                            const Teuchos::ParameterList& input_parameter_list,
@@ -13,10 +36,14 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     int argc=0;
     char** argv;
 
-    std::string PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
-
     BoxLib::Initialize(argc,argv,false,mpi_comm);
-    ParmParse::Initialize(argc,argv,PPfile.c_str());
+
+    // Retain (for now) the ability to augment the input parameters with an additional file in the ParmParse format
+    if (0 && input_parameter_list.isParameter("PPfile"))
+      {
+	std::string PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
+	ParmParse::Initialize(argc,argv,PPfile.c_str());
+      }
     BoxLib::Initialize_ParmParse(input_parameter_list);
 
     const Real run_strt = ParallelDescriptor::second();
@@ -59,6 +86,8 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     // Process the observations
     const Array<Observation>& observation_array = PorousMedia::TheObservationArray();
 
+    Structured_observations(observation_array,output_observations);
+
     delete amrptr;
 
     const int IOProc   = ParallelDescriptor::IOProcessorNumber();
@@ -67,9 +96,13 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     ParallelDescriptor::ReduceRealMax(run_stop,IOProc);
 
     if (ParallelDescriptor::IOProcessor())
+      {
         std::cout << "Run time = " << run_stop << std::endl;
+	std::cout << "SCOMPLETED\n";
+      }
 
-    BoxLib::Finalize(false); // Calling routine responsible for MPI_Finalize call
+    bool dump_unused_parameters = false;
+    BoxLib::Finalize(dump_unused_parameters);
 
     return Amanzi::Simulator::SUCCESS;
 }

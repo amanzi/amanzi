@@ -133,17 +133,10 @@ if (BUILD_TESTS)
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t0-structured.xml ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_test_0.pp ${SSC_BINARY_DIR})
-
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t1-structured.xml ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_test_1.pp ${SSC_BINARY_DIR})
-
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t2-structured.xml ${SSC_BINARY_DIR})
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_simple_chem.pp ${SSC_BINARY_DIR})
+
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/uo2-5-component.bgd ${SSC_BINARY_DIR})
     endif()

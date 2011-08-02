@@ -345,9 +345,6 @@ PorousMedia::variableSetUp ()
   // add COREREACT stuff
 #if defined(COREREACT)
     NUM_STATE = NUM_STATE + sz_corereact;
-    NUM_STATE = NUM_STATE + 1;  // FuncCount
-#elif defined(AMANZI)
-    NUM_STATE = NUM_STATE + 1;  // FuncCount
 #endif
 
   //
@@ -495,11 +492,14 @@ PorousMedia::variableSetUp ()
 #endif
 
 #if defined(AMANZI)
+  if (do_chem>-1)
+    {
       // add function count
       desc_lst.addDescriptor(FuncCount_Type, IndexType::TheCellType(),
 			     StateDescriptor::Point,0,1, &cell_cons_interp);
       desc_lst.setComponent(FuncCount_Type, 0, "FuncCount", 
 			    bc, BndryFunc(FORT_ONE_N_FILL));
+    }
 #endif
 
   //
