@@ -39,7 +39,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     BoxLib::Initialize(argc,argv,false,mpi_comm);
 
     // Retain (for now) the ability to augment the input parameters with an additional file in the ParmParse format
-    if (0 && input_parameter_list.isParameter("PPfile"))
+    if (input_parameter_list.isParameter("PPfile"))
       {
 	std::string PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
 	ParmParse::Initialize(argc,argv,PPfile.c_str());
