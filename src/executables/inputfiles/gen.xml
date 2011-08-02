@@ -1,24 +1,16 @@
 <ParameterList name="Main">
-
   <ParameterList name="Mesh">
-
-    <!--
-    <Parameter name="Framework" type="string" value="Simple" />
-    -->
-    <!--
-    <Parameter name="Framework" type="string" value="stk::mesh" />
-    -->
     <ParameterList name="Generate">
 
       <!-- Set mesh resolution here -->
       <Parameter name="Numer of Cells in X" type="int" value="10"/>
-      <Parameter name="Numer of Cells in Y" type="int" value="10"/>
-      <Parameter name="Numer of Cells in Z" type="int" value="10"/>
+      <Parameter name="Numer of Cells in Y" type="int" value=" 3"/>
+      <Parameter name="Numer of Cells in Z" type="int" value="50"/>
 
       <Parameter name="X_Min" type="double" value="0.0" />
       <Parameter name="X_Max" type="double" value="1.0" />
       <Parameter name="Y_Min" type="double" value="0.0" />
-      <Parameter name="Y_Max" type="double" value="1.0" />
+      <Parameter name="Y_Max" type="double" value="0.1" />
       <Parameter name="Z_Min" type="double" value="0.0" />
       <Parameter name="Z_Max" type="double" value="1.0" />
 
@@ -28,8 +20,8 @@
         <Parameter name="Z1" type="double" value=" 0.5"/>
       </ParameterList>
       <ParameterList name="Mesh block 2">
-        <Parameter name="Z0" type="double" value=" 0.5"/>
-        <Parameter name="Z1" type="double" value=" 0.7"/>
+        <Parameter name="Z0" type="double" value=" 0.6"/>
+        <Parameter name="Z1" type="double" value=" 0.8"/>
       </ParameterList>
     </ParameterList>   
   </ParameterList>

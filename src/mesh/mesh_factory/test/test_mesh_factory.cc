@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 18, 2011 by William A. Perkins
-// Last Change: Tue Aug  2 08:06:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Aug  2 10:58:57 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -188,19 +188,19 @@ SUITE (MeshFramework)
     // The Simple framework is always available, but will only
     // generate in serial
 
-    // pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
-    // mesh_factory.preference(pref);
+    pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
+    mesh_factory.preference(pref);
 
-    // if (parallel) {
-    //   CHECK_THROW(mesh = mesh_factory(parameter_list),
-    //               Amanzi::AmanziMesh::Message);
-    //   mesh.reset();
-    // } else {
-    //   mesh = mesh_factory(parameter_list);
-    //   CHECK(!mesh.is_null());
-    //   CHECK_EQUAL(2, mesh->num_sets(Amanzi::AmanziMesh::CELL));
-    //   mesh.reset();
-    // }
+    if (parallel) {
+      CHECK_THROW(mesh = mesh_factory(parameter_list),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+    } else {
+      mesh = mesh_factory(parameter_list);
+      CHECK(!mesh.is_null());
+      // CHECK_EQUAL(2, mesh->num_sets(Amanzi::AmanziMesh::CELL));
+      mesh.reset();
+    }
 
     // The STK, if available, framework will always generate
 

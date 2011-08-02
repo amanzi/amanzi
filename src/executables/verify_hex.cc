@@ -3,7 +3,7 @@
 /**
  * @file   verify_hex.cc
  * @author William A. Perkins
- * @date Tue Aug  2 07:09:08 2011
+ * @date Tue Aug  2 13:27:55 2011
  * 
  * @brief  A simple test of hex-mesh generation -- serial or parallel
  * 
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created May 24, 2011 by William A. Perkins
-// Last Change: Tue Aug  2 07:09:08 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Aug  2 13:27:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -80,7 +80,7 @@ dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& cgns
          g != gids.end(); ++g) {
       int lidx(*g);
       mypart[lidx] = *i;
-      std::cerr << me << ": set " << *i << ", cell " << *g << " (" << lidx << ")" << std::endl;
+      // std::cerr << me << ": set " << *i << ", cell " << *g << " (" << lidx << ")" << std::endl;
     }
   }
 
@@ -204,6 +204,8 @@ main(int argc, char **argv)
       zorigin = vm["zorigin"].as<double>();
     }
 
+    dosimple = (vm.count("simple") > 0);
+
     outname = vm["output"].as<std::string>();
     outcgns = outname;
     outcgns += ".cgns";
@@ -275,6 +277,12 @@ main(int argc, char **argv)
    
     mesh = factory(parameter_list);
   }
+
+  std::cout << "Generated mesh has " 
+            << mesh->num_sets(Amanzi::AmanziMesh::CELL)
+            << " cell sets" 
+            << std::endl;
+
   // make sure it's OK
 
   if (doaudit) {
