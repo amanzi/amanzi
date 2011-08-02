@@ -3,7 +3,7 @@
 /**
  * @file   verify_hex.cc
  * @author William A. Perkins
- * @date Tue May 24 07:48:43 2011
+ * @date Tue Aug  2 07:09:08 2011
  * 
  * @brief  A simple test of hex-mesh generation -- serial or parallel
  * 
@@ -13,7 +13,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created May 24, 2011 by William A. Perkins
-// Last Change: Tue May 24 07:48:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Aug  2 07:09:08 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -29,6 +29,7 @@ namespace po = boost::program_options;
 #include <Epetra_Vector.h>
 #include <Isorropia_EpetraPartitioner.hpp>
 #include <Epetra_MpiComm.h>
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"
@@ -52,17 +53,41 @@ dump_cgns(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& cgns
 {
   Amanzi::CGNS_PAR::create_mesh_file(mesh, cgnsout);
 
-  Epetra_Vector part(mesh.cell_map(false));
-  int nmycell(mesh.cell_map(false).NumMyElements());
+  const Epetra_Map& cmap(mesh.cell_epetra_map(false));
+  Epetra_Vector part(cmap);
+  int nmycell(cmap.NumMyElements());
   std::vector<int> myidx(nmycell, 0);
-  for (unsigned int i = 0; i < nmycell; i++) myidx[i] = i;
 
-  std::vector<double> mypart(nmycell, static_cast<double>(me+1.0));
-  part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
-  
   Amanzi::CGNS_PAR::open_data_file(cgnsout);
   Amanzi::CGNS_PAR::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
+
+  std::vector<double> mypart(nmycell, static_cast<double>(me+1.0));
+  for (unsigned int i = 0; i < nmycell; i++) myidx[i] = i;
+  part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
+  
   Amanzi::CGNS_PAR::write_field_data(part, "Partition");
+
+  std::fill(mypart.begin(), mypart.end(), -1);
+
+  Amanzi::AmanziMesh::Set_ID_List setids;
+  mesh.get_set_ids(Amanzi::AmanziMesh::CELL, &setids);
+  for (Amanzi::AmanziMesh::Set_ID_List::const_iterator i = setids.begin(); 
+       i != setids.end(); ++i) {
+    Amanzi::AmanziMesh::Entity_ID_List gids;
+    mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL, 
+                           Amanzi::AmanziMesh::OWNED, &gids);
+    for (Amanzi::AmanziMesh::Entity_ID_List::const_iterator g = gids.begin();
+         g != gids.end(); ++g) {
+      int lidx(*g);
+      mypart[lidx] = *i;
+      std::cerr << me << ": set " << *i << ", cell " << *g << " (" << lidx << ")" << std::endl;
+    }
+  }
+
+  part.ReplaceMyValues(nmycell, &mypart[0], &myidx[0]);
+  Amanzi::CGNS_PAR::write_field_data(part, "Block");
+
+
   Amanzi::CGNS_PAR::close_data_file();
 }
 
@@ -111,9 +136,11 @@ main(int argc, char **argv)
   unsigned int xcells(4), ycells(4), zcells(4);
   double xdelta(1.0), ydelta(1.0), zdelta(1.0);
   double xorigin(0.0), yorigin(0.0), zorigin(0.0);
+  std::string inname;
   std::string outname("verify_hex");
   std::string outcgns;
 
+  bool dosimple(false);
   bool doaudit(true);
 
   po::options_description desc("Available options");
@@ -124,6 +151,8 @@ main(int argc, char **argv)
       ("help", "produce this help message")
 
       ("noaudit", "do not audit the generated mesh")
+
+      ("simple", "use the Mesh_Simple framework instead of stk::mesh")
 
       ("xcells", po::value<unsigned int>()->default_value(xcells), "number of cells in the x-direction")
       ("ycells", po::value<unsigned int>()->default_value(ycells), "number of cells in the y-direction")
@@ -136,7 +165,8 @@ main(int argc, char **argv)
       ("xorigin", po::value<double>()->default_value(xorigin), "x origin")
       ("yorigin", po::value<double>()->default_value(yorigin), "y origin")
       ("zorigin", po::value<double>()->default_value(zorigin), "z origin")
-      
+
+      ("xml-file", po::value<std::string>(), "XML file from which to parameters")
 
       ("output", po::value<std::string>()->default_value(outname), "output file base name")
       ;
@@ -156,17 +186,23 @@ main(int argc, char **argv)
 
     if (vm.count("noaudit")) doaudit = false;
 
-    xcells = vm["xcells"].as<unsigned int>();
-    ycells = vm["ycells"].as<unsigned int>();
-    zcells = vm["zcells"].as<unsigned int>();
+    if (vm.count("xml-file") > 0) {
+      inname = vm["xml-file"].as<std::string>();
+    } else {
+      inname.clear();
 
-    xdelta = vm["xdelta"].as<double>();
-    ydelta = vm["ydelta"].as<double>();
-    zdelta = vm["zdelta"].as<double>();
-
-    xorigin = vm["xorigin"].as<double>();
-    yorigin = vm["yorigin"].as<double>();
-    zorigin = vm["zorigin"].as<double>();
+      xcells = vm["xcells"].as<unsigned int>();
+      ycells = vm["ycells"].as<unsigned int>();
+      zcells = vm["zcells"].as<unsigned int>();
+      
+      xdelta = vm["xdelta"].as<double>();
+      ydelta = vm["ydelta"].as<double>();
+      zdelta = vm["zdelta"].as<double>();
+      
+      xorigin = vm["xorigin"].as<double>();
+      yorigin = vm["yorigin"].as<double>();
+      zorigin = vm["zorigin"].as<double>();
+    }
 
     outname = vm["output"].as<std::string>();
     outcgns = outname;
@@ -200,15 +236,45 @@ main(int argc, char **argv)
   }
 
   // generate a mesh
-  
+
   Amanzi::AmanziMesh::MeshFactory factory(comm);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(factory(xorigin, yorigin, zorigin,
+  Amanzi::AmanziMesh::FrameworkPreference pref;
+  if (dosimple) {
+    pref.push_back(Amanzi::AmanziMesh::Simple);
+  } else {
+    pref.push_back(Amanzi::AmanziMesh::STKMESH);
+  }
+  factory.preference(pref);
+
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+  if (inname.empty()) {
+    mesh = factory(xorigin, yorigin, zorigin,
                    xorigin+xdelta*xcells,
                    yorigin+ydelta*ycells,
                    zorigin+zdelta*zcells,
-                   xcells, ycells, zcells));
-  
+                   xcells, ycells, zcells);
+  } else {
+    Teuchos::ParameterList parameter_list;
+    
+    int ierr(0), aerr(0);
+
+    try {
+      Teuchos::ParameterList all_parameter_list;
+      Teuchos::updateParametersFromXmlFile(inname, &all_parameter_list);
+      Teuchos::ParameterList mesh_parameter_list = all_parameter_list.sublist("Mesh");
+      parameter_list = mesh_parameter_list.sublist("Generate");
+    } catch (const std::runtime_error& e) {
+      std::cerr << me << ": error parsing xml-file: " << e.what() << std::endl;
+      ierr++;
+    }
+
+    comm.SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) {
+      return 1;
+    }
+   
+    mesh = factory(parameter_list);
+  }
   // make sure it's OK
 
   if (doaudit) {

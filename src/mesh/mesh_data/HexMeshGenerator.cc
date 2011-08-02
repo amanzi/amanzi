@@ -2,7 +2,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Mon Aug  1 10:38:38 2011
+ * @date Tue Aug  2 07:15:32 2011
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -299,6 +299,10 @@ HexMeshGenerator::generate_the_elements_(void)
     }
     r->gidx.push_back(gidx);
     std::copy(c, c+nvcell, std::back_inserter(r->connectivity));
+    
+    // std::cerr << comm_->MyPID() << ": "
+    //           << "cell " << gidx << ": " << i << ", " << j << ", " << k 
+    //           << ": " << p << ": block " << r->id << std::endl;
 
     c += nvcell;
   }
@@ -488,7 +492,11 @@ HexMeshGenerator::generate(void)
   for (std::vector<Block>::iterator b = blocks_.begin();
        b != blocks_.end(); ++b) {
     Element_block *blk;
-    blk = Element_block::build_from(b->id, "Generated Elements", 
+
+    // names need to be unique
+    std::string name = 
+      boost::str(boost::format("Generated Elements Block %d") % b->id);
+    blk = Element_block::build_from(b->id, name, 
                                     static_cast<int>(b->gidx.size()), HEX,
                                     b->connectivity,
                                     attribute);
