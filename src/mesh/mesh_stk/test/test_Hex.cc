@@ -3,7 +3,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Fri Jul 29 09:37:58 2011
+ * @date Mon Aug  1 09:52:47 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Fri Jul 29 09:37:58 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  1 09:52:47 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -256,7 +256,17 @@ SUITE (HexMesh)
     parameter_list.set<double>("Z_Min", 0);
     parameter_list.set<double>("Z_Max", 1);
 
-    parameter_list.set<int>("Number of mesh blocks",0);
+    parameter_list.set<int>("Number of mesh blocks",2);
+
+    Teuchos::ParameterList sublist1;
+    sublist1.set<double>("Z0", 0.1);
+    sublist1.set<double>("Z1", 0.3);
+    parameter_list.set("Mesh block 1", sublist1);
+
+    Teuchos::ParameterList sublist2;
+    sublist2.set<double>("Z0", 0.7);
+    sublist2.set<double>("Z1", 0.9);
+    parameter_list.set("Mesh block 2", sublist2);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
@@ -264,6 +274,8 @@ SUITE (HexMesh)
      
     Auditor audit("stk_mesh_generated_", mesh_map);
     audit();
+
+    CHECK_EQUAL(mesh_map->num_sets(Amanzi::AmanziMesh::CELL), 3);
   }
 
   TEST (HexPartition)

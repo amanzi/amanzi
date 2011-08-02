@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Fri Jul 29 09:45:54 2011
+ * @date Mon Aug  1 09:56:58 2011
  * 
  * @brief  
  * 
@@ -13,13 +13,14 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Fri Jul 29 09:45:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  1 09:56:58 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_STK.hh"
 #include "Mesh_STK_Impl.hh"
 #include "HexMeshGenerator.hh"
 #include "Mesh_STK_factory.hh"
+#include "RectangularRegion.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -88,7 +89,6 @@ Mesh_STK::generate_(Teuchos::ParameterList &parameter_list)
   double ydelta((y1 - y0)/static_cast<double>(ny));
   double zdelta((z1 - z0)/static_cast<double>(nz));
 
-
   Data::HexMeshGenerator g(communicator_.get(), 
                            nx, ny, nz,
                            x0, y0, z0,
@@ -104,11 +104,14 @@ Mesh_STK::generate_(Teuchos::ParameterList &parameter_list)
       s << "Mesh block " << nb;
 
       Teuchos::ParameterList sublist = parameter_list.sublist(s.str());
-      
-      double bz0 = sublist.get<double>("Z0");
-      double bz1 = sublist.get<double>("Z1");
 
       // tell the generator about the zone
+
+      AmanziGeometry::Point p0(x0, y0, sublist.get<double>("Z0"));
+      AmanziGeometry::Point p1(x1, y1, sublist.get<double>("Z1"));
+      AmanziGeometry::RegionPtr r(new AmanziGeometry::RectangularRegion(p0, p1));
+
+      g.add_region(nb, r);
     }
   }
   

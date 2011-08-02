@@ -7,6 +7,7 @@
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
 
+SUITE (MeshSimple) {
 TEST(MAPS) {
   
   using namespace std;
@@ -116,3 +117,46 @@ TEST(MAPS) {
 
 }
 
+TEST (ParameterList) {
+
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
+    // make a parameter list to try out
+    
+    Teuchos::ParameterList parameter_list;
+    parameter_list.set<int>("Numer of Cells in X", 10);
+    parameter_list.set<int>("Numer of Cells in Y", 10);
+    parameter_list.set<int>("Numer of Cells in Z", 10);
+    
+    parameter_list.set<double>("X_Min", 0);
+    parameter_list.set<double>("X_Max", 1);
+    
+    parameter_list.set<double>("Y_Min", 0);
+    parameter_list.set<double>("Y_Max", 1);
+    
+    parameter_list.set<double>("Z_Min", 0);
+    parameter_list.set<double>("Z_Max", 1);
+
+    Teuchos::ParameterList sublist1;
+    sublist1.set<double>("Z0", 0.1);
+    sublist1.set<double>("Z1", 0.3);
+    parameter_list.set("Mesh block 1", sublist1);
+
+    Teuchos::ParameterList sublist2;
+    sublist2.set<double>("Z0", 0.7);
+    sublist2.set<double>("Z1", 1.0);
+    parameter_list.set("Mesh block 2", sublist2);
+
+    parameter_list.set<int>("Number of mesh blocks", 2);
+
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
+      mesh(new Amanzi::AmanziMesh::Mesh_simple(parameter_list, comm));
+    CHECK(!mesh.is_null());
+    CHECK_EQUAL(3, mesh->num_sets(Amanzi::AmanziMesh::CELL));
+    mesh.reset();
+}
+}

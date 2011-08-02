@@ -150,16 +150,7 @@ int main(int argc, char *argv[])
 
     try {
       Teuchos::ParameterList generate_parameter_list(mesh_parameter_list.sublist("Generate"));
-      double x0(generate_parameter_list.get<double>("X_Min"));
-      double y0(generate_parameter_list.get<double>("Y_Min"));
-      double z0(generate_parameter_list.get<double>("Z_Min"));
-      double x1(generate_parameter_list.get<double>("X_Max"));
-      double y1(generate_parameter_list.get<double>("Y_Max")); 
-      double z1(generate_parameter_list.get<double>("Z_Max"));
-      int nx(generate_parameter_list.get<int>("Numer of Cells in X"));
-      int ny(generate_parameter_list.get<int>("Numer of Cells in Y"));
-      int nz(generate_parameter_list.get<int>("Numer of Cells in Z"));
-      mesh = factory(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+      mesh = factory(generate_parameter_list);
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
       ierr++;
