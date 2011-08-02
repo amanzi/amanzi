@@ -8,6 +8,7 @@
 #include <math.h>
 // Base class for activity calculations
 #include "activity_model.hh"
+#include <virial_coefficient.hh>
 
 
 // forward declarations
@@ -20,19 +21,11 @@ namespace chemistry {
 
 class Species;
 
+class VirialCoefficient;
+
 class ActivityModelPitzer : public ActivityModel {
  public:
-	struct theta_i {
-	     double virial;
-	     int fzizi;
-	     int fzjzj;
-	     int fzizj;
-	     double zizj;
-	     double zizi;
-	     double zjzj;
-	     int i;
-	     int j;
-	   };
+
   ActivityModelPitzer(const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
   ~ActivityModelPitzer();
 
@@ -71,6 +64,7 @@ class ActivityModelPitzer : public ActivityModel {
   double gclm_(const double& dhterm);
   void AllocatePointers();
   void DeallocatePointers();
+  void Update(const double& temp, const double& pressure);
   //!%-------------------------------------------------------------
   //!%-------------------------------------------------------------
   //!%-------------------------------------------------------------
@@ -110,19 +104,19 @@ class ActivityModelPitzer : public ActivityModel {
   //--------------------------------------------------------------
   //--------------------------------------------------------------
   //--------------------------------------------------------------
-  std::vector<double> beta0;                           // Beta_0 virial coefficients
+  std::vector<VirialCoefficient> beta0;
 
-  std::vector<double> beta1;                           // Beta_1 virial coefficients
+  std::vector<VirialCoefficient> beta1;
 
-  std::vector<double> beta2;                           // Beta_2 virial coefficients
+  std::vector<VirialCoefficient> beta2;
 
-  std::vector<double> theta;                           // Theta virial coefficients
+  std::vector<VirialCoefficient> theta;
 
-  std::vector<double> lamda;                           // Lambda virial coefficients
+  std::vector<VirialCoefficient> lamda;
 
-  std::vector<double> psi;                             // Psi virial coefficients
+  std::vector<VirialCoefficient> psi;
 
-  std::vector<double> cpz;                             // C pitzer matrix (computed according equation A8)
+  std::vector<VirialCoefficient> cpz;
 
   std::vector<double> zprod;                           // charge products [nfunj]
 
@@ -131,16 +125,6 @@ class ActivityModelPitzer : public ActivityModel {
   std::vector<double> alpha2;                          // [nfunb]
 
   double aphi;                                         // Debye-Hückel limiting slope
-
-  std::vector<std::vector<int> > indnzbeta;           // Non zero indices for theta virial coefficients
-
-  std::vector<std::vector<int> > indnzlamda;           // Non zero indices for lambda virial coefficients
-
-  std::vector<std::vector<int> > indnzpsi;             // Non zero indices for psi virial coefficients
-
-  std::vector<std::vector<int> > indnzcpz;             // Non zero indices for c virial coefficients
-
-  std::vector<std::vector<int> > indnztheta;           // Non zero indices for theta virial coefficients
 
   int nfunb;                                           // Number of beta functions
 
