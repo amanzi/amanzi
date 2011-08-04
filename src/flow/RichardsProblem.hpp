@@ -125,7 +125,7 @@ private:  // Auxillary functions
   void apply_BC_initial_(Epetra_Vector&, double);
   void apply_BC_final_(Epetra_Vector&);
   void face_centroid_(int, double[]);
-
+  void upwind_rel_perm_(const Epetra_Vector&, Epetra_Vector&);
 
 };
 

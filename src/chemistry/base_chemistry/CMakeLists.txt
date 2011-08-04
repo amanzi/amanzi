@@ -11,6 +11,7 @@ set(SRCS
 	./activity_model.cc
 	./activity_model_debye_huckel.cc
 	./activity_model_pitzer.cc 
+	./virial_coefficient.cc
 	./activity_model_unit.cc
 	./ion_exchange_site.cc
 	./species.cc

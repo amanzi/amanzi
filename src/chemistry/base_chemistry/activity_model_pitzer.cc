@@ -10,6 +10,8 @@
 #include <iomanip>
 #include <sstream>
 #include "string_tokenizer.hh"
+#include "virial_coefficient.hh"
+
 
 
 namespace amanzi {
@@ -181,11 +183,11 @@ double ionstrz(ActivityModel::Z_);
 
 //!%-----------------------------------------------------------
 for (int nz=0; nz<nnzcpz; nz++) {
-	      i=indnzcpz[0][nz];
-	      j=indnzcpz[1][nz];
+	      i=cpz[nz].GetIsp1();
+	      j=cpz[nz].GetIsp2();
 	      mi=molality[i];
 	      mj=molality[j];
-	      Cij=cpz[nz];
+	      Cij=cpz[nz].GetVirial();
 	      mjCij=mj*Cij;
 	      miCij=mi*Cij;
 	      mimjCij=mi*mj*Cij;
@@ -211,9 +213,9 @@ if (ithw>-1 && nnzlamda>0) {
 
   for (int nz=0; nz<nnzlamda; nz++) {
 
-      i=indnzlamda[0][nz];
-      j=indnzlamda[1][nz];
-      Lij=lamda[nz];
+      i=lamda[nz].GetIsp1();
+      j=lamda[nz].GetIsp2();
+      Lij=lamda[nz].GetVirial();
       mi=molality[i];
       mj=molality[j];
       osco+=mi*mj*Lij;
@@ -289,10 +291,10 @@ for (int i=0; i<nsp; i++) vector[i]=r0;
 //!%------------------------------------------------------
 for (int nz=0; nz<nnzpsi; nz++) {
 
-   Psiijk=psi[nz];
-   i=indnzpsi[0][nz];
-   j=indnzpsi[1][nz];
-   k=indnzpsi[2][nz];
+   Psiijk=psi[nz].GetVirial();
+   i=psi[nz].GetIsp1();
+   j=psi[nz].GetIsp2();
+   k=psi[nz].GetIsp3();
    mi=molality[i];
    mj=molality[j];
    mk=molality[k];
@@ -424,13 +426,13 @@ for (nz_loc=0; nz_loc<nnzbeta; nz_loc++) {
 
       nz++;
 
-      i=indnzbeta[0][nz_loc];
-      j=indnzbeta[1][nz_loc];
-      k=indnzbeta[2][nz_loc];
+      i=beta0[nz_loc].GetIsp1();
+      j=beta0[nz_loc].GetIsp2();
+      k=beta0[nz_loc].GetIfun1();
      //!%-------------
-      B0ij=beta0[nz_loc];
-      B1ij=beta1[nz_loc];
-      B2ij=beta2[nz_loc];
+      B0ij=beta0[nz_loc].GetVirial();
+      B1ij=beta1[nz_loc].GetVirial();
+      B2ij=beta2[nz_loc].GetVirial();
      //!%-------------
       expo1=f_[k][0];
       expo2=f_[k][1];
@@ -469,13 +471,13 @@ for (nz_loc=0; nz_loc<nnztheta; nz_loc++) {
 //!%--------------------------------------------------------------------
       nz++;
 //!%--------------------------------------------------------------------
-      i=indnztheta[0][nz_loc];
-      j=indnztheta[1][nz_loc];
+      i=theta[nz_loc].GetIsp1();
+      j=theta[nz_loc].GetIsp2();
 //!%--------------------------------------------------------------------
-      funij=indnztheta[2][nz_loc];
-      funii=indnztheta[3][nz_loc];
-      funjj=indnztheta[4][nz_loc];
-      thij=theta[nz_loc];
+      funij=theta[nz_loc].GetIfun1();
+      funii=theta[nz_loc].GetIfun2();
+      funjj=theta[nz_loc].GetIfun3();
+      thij=theta[nz_loc].GetVirial();
 //!%--------------------------------------------------------------------
       jij = j_[funij];
       jii=j_[funii];
@@ -519,13 +521,13 @@ for (nz_loc=0; nz_loc<nnztheta; nz_loc++) {
 for (nz_loc=0; nz_loc<nnzlamda; nz_loc++) {
  nz++;
  //!%-------------------------------
- i=indnzlamda[0][nz_loc];
- j=indnzlamda[1][nz_loc];
+ i=lamda[nz_loc].GetIsp1();
+ j=lamda[nz_loc].GetIsp2();
 //!%-------------------------------
 //!% Add in Q matrix (mat. 12)
 //!% the Lij terms
 //!%-------------------------------
- q[nz]=lamda[nz_loc];
+ q[nz]=lamda[nz_loc].GetVirial();
  indnzq[0][nz]=i;
  indnzq[1][nz]=j;
 }
@@ -705,29 +707,29 @@ void ActivityModelPitzer::Display(void) const {
   if (nnzbeta>0){
   std::cout << "=================> B0 ==============>" << std::endl;
   for (int i=0; i<nnzbeta; i++){
-    isp1=indnzbeta[0][i];
-    isp2=indnzbeta[1][i];
-    if (beta0[i]!=r0){
+    isp1=beta0[i].GetIsp1();
+    isp2=beta0[i].GetIsp2();
+    if (beta0[i].GetVirial()!=r0){
   	  nvirial++;
-    	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta0[i] << std::endl;
-      }
+    	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta0[i].GetVirial() << std::endl;
+    }
   }
   std::cout << "=================> B1 ==============>" << std::endl;
   for (int i=0; i<nnzbeta; i++){
-    isp1=indnzbeta[0][i];
-    isp2=indnzbeta[1][i];
-    if (beta1[i]!=r0){
+    isp1=beta0[i].GetIsp1();
+    isp2=beta0[i].GetIsp2();
+    if (beta1[i].GetVirial()!=r0){
   	  nvirial++;
-    	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta1[i] << std::endl;
+    	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta1[i].GetVirial() << std::endl;
       }
   }
   std::cout << "=================> B2 ==============>" << std::endl;
   for (int i=0; i<nnzbeta; i++){
-    isp1=indnzbeta[0][i];
-    isp2=indnzbeta[1][i];
-    if (beta2[i]!=r0){
+    isp1=beta0[i].GetIsp1();
+    isp2=beta0[i].GetIsp2();
+    if (beta2[i].GetVirial()!=r0){
   	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta2[i] << std::endl;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << beta2[i].GetVirial() << std::endl;
     }
 
   }
@@ -735,11 +737,11 @@ void ActivityModelPitzer::Display(void) const {
   if (nnzcpz>0){
   std::cout << "=================> Cfi ==============>" << std::endl;
   for (int i=0; i<nnzcpz; i++){
-    isp1=indnzcpz[0][i];
-    isp2=indnzcpz[1][i];
-    if (cpz[i]!=r0){
+    isp1=cpz[i].GetIsp1();
+    isp2=cpz[i].GetIsp2();
+    if (cpz[i].GetVirial()!=r0){
   	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << cpz[i] << std::endl;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << cpz[i].GetVirial() << std::endl;
     }
 
   }
@@ -747,11 +749,11 @@ void ActivityModelPitzer::Display(void) const {
   if (nnztheta>0){
   std::cout << "=================> Theta ==============>" << std::endl;
   for (int i=0; i<nnztheta; i++){
-    isp1=indnztheta[0][i];
-    isp2=indnztheta[1][i];
-    if (theta[i]!=r0){
+    isp1=theta[i].GetIsp1();
+    isp2=theta[i].GetIsp2();;
+    if (theta[i].GetVirial()!=r0){
   	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << theta[i] << std::endl;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << theta[i].GetVirial() << std::endl;
     }
 
   }
@@ -759,11 +761,11 @@ void ActivityModelPitzer::Display(void) const {
   if (nnzlamda>0){
   std::cout << "=================> Lamda ==============>" << std::endl;
   for (int i=0; i<nnzlamda; i++){
-    isp1=indnzlamda[0][i];
-    isp2=indnzlamda[1][i];
-    if (lamda[i]!=r0){
+    isp1=lamda[i].GetIsp1();
+    isp2=lamda[i].GetIsp2();
+    if (lamda[i].GetVirial()!=r0){
   	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << lamda[i] << std::endl;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << lamda[i].GetVirial() << std::endl;
     }
 
   }
@@ -771,12 +773,12 @@ void ActivityModelPitzer::Display(void) const {
   if (nnzpsi>0){
   std::cout << "=================> Psi ==============>" << std::endl;
   for (int i=0; i<nnzpsi; i++){
-    isp1=indnzpsi[0][i];
-    isp2=indnzpsi[1][i];
-    isp3=indnzpsi[2][i];
-    if (psi[i]!=r0){
+    isp1=psi[i].GetIsp1();
+    isp2=psi[i].GetIsp2();
+    isp3=psi[i].GetIsp3();
+    if (psi[i].GetVirial()!=r0){
   	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << namesp[isp3] << "  " << psi[i] << std::endl;
+  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << namesp[isp3] << "  " << psi[i].GetVirial() << std::endl;
     }
 
   }
@@ -904,6 +906,11 @@ AssignFj();
 //---------------------------------------------
 if (isdebug) std::cout << "=================> Compute total number of non-zero terms ==============>" << std::endl;
 nnzq=nnzbeta+nnztheta+nnzlamda;
+//---------------------------------------------
+// Update virial coefficients with respect to
+// temperature and pressure
+//---------------------------------------------
+Update(273.15,r0);
 //---------------------------------------------
 // Store the indices for H2O, Cl and K
 //---------------------------------------------
@@ -1205,9 +1212,9 @@ void ActivityModelPitzer::ParseTheta (const std::string& data) {
 	if (isdebug){
 		std::cout << namesp[isp1] << namesp[isp2] << virial <<std::endl;
 		for (int i=0; i<nnztheta; i++){
-		    std::cout << "zi zj" << indnztheta[2][i] << std::endl;
-		    std::cout << "zi zi" << indnztheta[3][i] << std::endl;
-		    std::cout << "zj zj" << indnztheta[4][i] << std::endl;
+		    std::cout << "zi zj" << theta[i].GetIfun1() << std::endl;
+		    std::cout << "zi zi" << theta[i].GetIfun2() << std::endl;
+		    std::cout << "zj zj" << theta[i].GetIfun3() << std::endl;
 	     }
    }
 }
@@ -1352,48 +1359,48 @@ void ActivityModelPitzer::SetVirial (const double& virial, const std::string& ty
 // Local variables and constants
 const double r0(0.0e0), r1(1.0e0), r2(2.0e0);
 int isp1_old(-1), isp2_old(-1);
+VirialCoefficient vir;
+VirialCoefficient vir0;
 bool isstored(false);
 
 
 if (typevirial=="b0") {
 
-	 if (nnzbeta==0) {
-		indnzbeta.resize(3);
-	 }
 	 for (int i=0; i<nnzbeta; i++) {
-	   	isp1_old = indnzbeta[0][i];
-	   	isp2_old = indnzbeta[1][i];
+	   	isp1_old = beta0[i].GetIsp1();
+	   	isp2_old = beta0[i].GetIsp2();
 	   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-	   		beta0[i]=virial;
+	   		beta0[i].SetPol(virial);
 	   		isstored=true;
 	   		break;
 	   	}
 	 }
     // If the virial coefficient is not stored
 	 if (!isstored) {
+
 	//!%--------------
 	    nnzbeta++;
-	    beta0.push_back(virial);
-	    indnzbeta[0].push_back(isp1);
-	    indnzbeta[1].push_back(isp2);
-	    indnzbeta[2].push_back(0);
+	    vir.SetPol(virial);
+	    vir.SetIsp1(isp1);
+	    vir.SetIsp2(isp2);
+	    vir0.SetIsp1(isp1);
+	    vir0.SetIsp2(isp2);
+	    vir.SetIfun1(0);
+	    vir0.SetIfun1(0);
+	    beta0.push_back(vir);
 	//!%--------------
-	    beta1.push_back(r0);
+	    beta1.push_back(vir0);
 	//!%--------------
-	    beta2.push_back(r0);
+	    beta2.push_back(vir0);
 	  }
 
 } else if (typevirial=="b1"){
 
-
-	    if (nnzbeta==0) {
-		  indnzbeta.resize(3);
-	    }
 	    for (int i=0; i<nnzbeta; i++) {
-		   	isp1_old = indnzbeta[0][i];
-		   	isp2_old = indnzbeta[1][i];
+		   	isp1_old = beta1[i].GetIsp1();
+		   	isp2_old = beta1[i].GetIsp2();;
 		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-		   		beta1[i]=virial;
+		   		beta1[i].SetPol(virial);
 		   		isstored=true;
 		   		break;
 		   	}
@@ -1402,28 +1409,28 @@ if (typevirial=="b0") {
 		if (!isstored) {
 		//!%--------------
 		      nnzbeta++;
-		      beta1.push_back(virial);
-		      indnzbeta[0].push_back(isp1);
-		      indnzbeta[1].push_back(isp2);
-		      indnzbeta[2].push_back(0);
+		      vir.SetPol(virial);
+		      vir.SetIsp1(isp1);
+		      vir.SetIsp2(isp2);
+		      vir0.SetIsp1(isp1);
+		      vir0.SetIsp2(isp2);
+		      vir.SetIfun1(0);
+		      vir0.SetIfun1(0);
+		      beta1.push_back(vir);
 		//!%--------------
-		      beta0.push_back(r0);
+		      beta0.push_back(vir0);
 		//!%--------------
-		      beta2.push_back(r0);
+		      beta2.push_back(vir0);
 		}
 
 } else if(typevirial=="b2"){
 
 
-	    if (nnzbeta==0) {
-		  indnzbeta.resize(3);
-	    }
-
 		for (int i=0; i<nnzbeta; i++) {
-		   	isp1_old = indnzbeta[0][i];
-		   	isp2_old = indnzbeta[1][i];
+		   	isp1_old = beta2[i].GetIsp1();
+		   	isp2_old = beta2[i].GetIsp1();
 		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-		   		beta2[i]=virial;
+		   		beta2[i].SetPol(virial);
 		   		isstored=true;
 		   		break;
 		   	}
@@ -1432,56 +1439,56 @@ if (typevirial=="b0") {
 		if (!isstored) {
 		//!%--------------
 		      nnzbeta++;
-		      beta2.push_back(virial);
-		      indnzbeta[0].push_back(isp1);
-		      indnzbeta[1].push_back(isp2);
-		      indnzbeta[2].push_back(0);
+		      vir.SetPol(virial);
+		      vir.SetIsp1(isp1);
+		      vir.SetIsp2(isp2);
+		      vir0.SetIsp1(isp1);
+		      vir0.SetIsp2(isp2);
+		      vir.SetIfun1(0);
+		      vir0.SetIfun1(0);
+		      beta2.push_back(vir);
 		//!%--------------
-		      beta0.push_back(r0);
+		      beta0.push_back(vir0);
 		//!%--------------
-		      beta1.push_back(r0);
+		      beta1.push_back(vir0);
 		}
 } else if (typevirial=="cfi"){
 
-	        if (nnzcpz==0) indnzcpz.resize(2);
-
-		//!%--------------
    	        nnzcpz++;
-   	        cpz.push_back(virial);
-		    indnzcpz[0].push_back(isp1);
-		    indnzcpz[1].push_back(isp2);
+   	        vir.SetPol(virial);
+   	     	vir.SetIsp1(isp1);
+   	     	vir.SetIsp2(isp2);
+   	     	cpz.push_back(vir);
 
 } else if(typevirial=="theta"){
 
-	        if (nnztheta==0) indnztheta.resize(5);
-
 			nnztheta++;
-			theta.push_back(virial);
-			indnztheta[0].push_back(isp1);
-			indnztheta[1].push_back(isp2);
-			indnztheta[2].push_back(int(charge[isp1]*charge[isp2]));
-			indnztheta[3].push_back(int(charge[isp1]*charge[isp1]));
-			indnztheta[4].push_back(int(charge[isp2]*charge[isp2]));
+			vir.SetPol(virial);
+			vir.SetIsp1(isp1);
+			vir.SetIsp2(isp2);
+			vir.SetIfun1(int(charge[isp1]*charge[isp2]));
+			vir.SetIfun2(int(charge[isp1]*charge[isp1]));
+			vir.SetIfun3(int(charge[isp2]*charge[isp2]));
+			theta.push_back(vir);
+
 
 } else if(typevirial=="lamda"){
 
-
-	    if (nnzlamda==0) indnzlamda.resize(2);
-
 	   	nnzlamda++;
-		lamda.push_back(virial);
-		indnzlamda[0].push_back(isp1);
-		indnzlamda[1].push_back(isp2);
+		vir.SetPol(virial);
+		vir.SetIsp1(isp1);
+		vir.SetIsp2(isp2);
+		lamda.push_back(vir);
 
 } else if(typevirial=="psi"){
 
-	if (nnzpsi==0) indnzpsi.resize(3);
-
 	nnzpsi++;
-	psi.push_back(virial);
-	indnzpsi[0].push_back(isp1);
-	indnzpsi[1].push_back(isp2);
-	indnzpsi[2].push_back(isp3);
+	vir.SetPol(virial);
+	vir.SetIsp1(isp1);
+	vir.SetIsp2(isp2);
+	vir.SetIsp3(isp3);
+	psi.push_back(vir);
+
 } else {
 	std::cout << "Type virial coefficient not defined" << std::endl;
 }
@@ -1504,13 +1511,15 @@ nfunb=0;
 for (nz=0; nz<nnzbeta; nz++) {
 
    // Take the electric charge
-   z1=charge[indnzbeta[0][nz]];
-   z2=charge[indnzbeta[1][nz]];
+   z1=charge[beta0[nz].GetIsp1()];
+   z2=charge[beta0[nz].GetIsp2()];
    if (abs(z1)==r1 || abs(z2)==r1) {
 	    	       	if (l1==0) {
 
 						   nfunb++;
-						   indnzbeta[2][nz] = nfunb-1;
+						   beta0[nz].SetIfun1(nfunb-1);
+						   beta1[nz].SetIfun1(nfunb-1);
+						   beta2[nz].SetIfun1(nfunb-1);
 
 						   n1 = nfunb-1;
 
@@ -1520,7 +1529,9 @@ for (nz=0; nz<nnzbeta; nz++) {
 						   l1=1;
                    	} else {
 
-						   indnzbeta[2][nz] = n1;
+                   		beta0[nz].SetIfun1(n1);
+                   		beta1[nz].SetIfun1(n1);
+                   		beta2[nz].SetIfun1(n1);
 
 				       }
 
@@ -1531,7 +1542,9 @@ for (nz=0; nz<nnzbeta; nz++) {
 
 							 if (l2==0) {
 	                           nfunb++;
-						       indnzbeta[2][nz] = nfunb-1;
+						       beta0[nz].SetIfun1(nfunb-1);
+							   beta1[nz].SetIfun1(nfunb-1);
+							   beta2[nz].SetIfun1(nfunb-1);
 
 							   n2 = nfunb-1;
 
@@ -1542,7 +1555,9 @@ for (nz=0; nz<nnzbeta; nz++) {
 
 							 } else {
 
-							         indnzbeta[2][nz]=n2;
+								 beta0[nz].SetIfun1(n2);
+								 beta1[nz].SetIfun1(n2);
+								 beta2[nz].SetIfun1(n2);
 
 	                           }
 
@@ -1550,7 +1565,9 @@ for (nz=0; nz<nnzbeta; nz++) {
 
 						     if (l3==0) {
 						       nfunb++;
-						       indnzbeta[2][nz] = nfunb-1;
+						       beta0[nz].SetIfun1(nfunb-1);
+						       beta1[nz].SetIfun1(nfunb-1);
+						       beta2[nz].SetIfun1(nfunb-1);;
                                n3=nfunb-1;
 
                                alpha1.push_back(r1_4);
@@ -1560,7 +1577,9 @@ for (nz=0; nz<nnzbeta; nz++) {
 
 						     } else {
 
-                               indnzbeta[2][nz]=n3;
+						    	 beta0[nz].SetIfun1(n3);
+						    	 beta1[nz].SetIfun1(n3);
+						    	 beta2[nz].SetIfun1(n3);
 
 						     }
 
@@ -1582,6 +1601,7 @@ const double r0(0.0e0);
 int isp1(0), isp2(0);
 bool isstored(false);
 bool isfound(false);
+VirialCoefficient vir;
 //---------------------------------------------------------------
 // Find other non-zero theta terms
 //---------------------------------------------------------------
@@ -1589,8 +1609,8 @@ for (int i=0; i<nsp; i++) {
 			for (int j=0; j<nsp; j++) {
 			   if (i!=j && ((charge[i]>r0 && charge[j]>r0) || (charge[i]<r0 && charge[j]<r0))) {
 					   for (int k=0; k<nnztheta; k++) {
-					        isp1=indnztheta[0][k];
-					        isp2=indnztheta[1][k];
+					        isp1=theta[k].GetIsp1();
+					        isp2=theta[k].GetIsp2();
 							if ((isp1==i && isp2==j) || (isp1==j && isp2==i)) {
 								isstored=true;
 								goto exit_1;
@@ -1601,16 +1621,14 @@ for (int i=0; i<nsp; i++) {
 
 					   if (!isstored) {
 
-						   if (nnztheta==0) indnztheta.resize(5);
-
 						   nnztheta++;
-						   theta.push_back(r0);
-						   indnztheta[0].push_back(i);
-						   indnztheta[1].push_back(j);
-						   indnztheta[2].push_back(int(charge[i]*charge[j]));
-						   indnztheta[3].push_back(int(charge[i]*charge[i]));
-						   indnztheta[4].push_back(int(charge[j]*charge[j]));
-
+						   vir.SetPol(r0);
+						   vir.SetIsp1(i);
+						   vir.SetIsp2(j);
+						   vir.SetIfun1(int(charge[i]*charge[j]));
+						   vir.SetIfun2(int(charge[i]*charge[i]));
+						   vir.SetIfun3(int(charge[j]*charge[j]));
+						   theta.push_back(vir);
 
 					   } else {
 						   isstored=false;
@@ -1625,24 +1643,56 @@ for (int i=0; i<nsp; i++) {
 //!% Compute number of functions j and save
 //!%-----------------------------------------------------------
 nfunj=1;
-zprod.push_back(double(indnztheta[2][0]));
+zprod.push_back(double(theta[0].GetIfun1()));
+double zz(r0);
 for (int nz=0; nz<nnztheta; nz++) {
-	for (int k=2;k<=4;k++) {
+
 	   for (int j=0; j<nfunj; j++) {
-	      if (zprod[j]==double(indnztheta[k][nz])) {
-	    	    indnztheta[k][nz]=j;
+		  zz=double(theta[nz].GetIfun1());
+		  if (zprod[j]==zz) {
+	    	    theta[nz].SetIfun1(j);
 	            isfound=true;
-	    	    break;
+	            break;
 	      }
-	   }
-	   if (isfound){
-		 isfound=false;
-	   } else{
-		 zprod.push_back(double(indnztheta[k][nz]));
-	     nfunj++;
-	     indnztheta[k][nz]=nfunj-1;
-	   }
-	}
+	    }
+	    if (isfound){
+	   	   isfound=false;
+	   	} else{
+           zprod.push_back(zz);
+    	   nfunj++;
+    	   theta[nz].SetIfun1(nfunj-1);
+        }
+	    for (int j=0; j<nfunj; j++) {
+	       zz=double(theta[nz].GetIfun2());
+	       if (zprod[j]==zz) {
+	      	    theta[nz].SetIfun2(j);
+	            isfound=true;
+	            break;
+	       }
+	     }
+	     if (isfound){
+	    	 isfound=false;
+	     } else{
+	   		 zprod.push_back(zz);
+  	   		 nfunj++;
+   	   	     theta[nz].SetIfun2(nfunj-1);
+	     }
+	     for (int j=0; j<nfunj; j++) {
+	    	 zz=double(theta[nz].GetIfun3());
+	    	 if (zprod[j]==zz) {
+	    	   theta[nz].SetIfun3(j);
+	    	   isfound=true;
+	    	   break;
+	    	 }
+	     }
+	     if (isfound){
+	    	 isfound=false;
+	     } else{
+  	   		 zprod.push_back(zz);
+   	   		 nfunj++;
+   	   	     theta[nz].SetIfun3(nfunj-1);
+         }
+
 }
 }  // end AssignFJ
 //--------------------------------------------------------------------------
@@ -1719,6 +1769,18 @@ delete [] j_pri_;
 j_=NULL;
 j_pri_=NULL;
 
+}
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------
+void ActivityModelPitzer::Update (const double& temp, const double& pressure) {
+  for (std::vector<VirialCoefficient>::iterator i=beta0.begin(); i!=beta0.end(); i++) (*i).UpdateVirial(temp,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=beta1.begin(); i!=beta1.end(); i++) (*i).UpdateVirial(temp,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=beta2.begin(); i!=beta2.end(); i++) (*i).UpdateVirial(temp,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=cpz.begin(); i!=cpz.end(); i++) (*i).UpdateVirial(temp,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=theta.begin(); i!=theta.end(); i++) (*i).UpdateVirial(temp,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=psi.begin(); i!=psi.end(); i++) (*i).UpdateVirial(temp,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=lamda.begin(); i!=lamda.end(); i++) (*i).UpdateVirial(temp,pressure);
 }
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------

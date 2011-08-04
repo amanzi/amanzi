@@ -1,7 +1,8 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /**
  * @file   HexMeshGenerator.hh
  * @author William A. Perkins
- * @date Mon May  2 12:45:20 2011
+ * @date Mon Aug  1 08:22:26 2011
  * 
  * @brief  Declaration of the HexMeshGenerator class
  * 
@@ -17,6 +18,7 @@
 #include <Epetra_MpiComm.h>
 
 #include "Data.hh"
+#include "Region.hh"
 
 
 namespace Amanzi {
@@ -42,68 +44,6 @@ namespace Data {
  */
 class HexMeshGenerator
 {
-protected:
-
-  const Epetra_Comm *comm_;      /**< The parallel environment */
-
-  const unsigned int ni_;       /**< Number of elements in the i-direction */
-  const unsigned int nj_;       /**< Number of elements in the j-direction */
-  const unsigned int nk_;       /**< Number of elements in the k-direction */
-
-  const unsigned int ncell_;    /**< Number of global elemets */
-  const unsigned int nvert_;    /**< Number of global vertexes */
-
-  const double xorig_;          /**< The mesh origin x-coordinate */
-  const double yorig_;          /**< The mesh origin y-coordinate */
-  const double zorig_;          /**< The mesh origin z-coordinate */
-
-  const double dx_;              /**< The element size in the x-direction */
-  const double dy_;              /**< The element size in the y-direction */
-  const double dz_;              /**< The element size in the z-direction */
-
-  /// The global cell ids used in this instance
-  std::vector<unsigned int> cell_gidx_;
-
-  /// A thing to (quickly) identify cells owned by this process
-  std::map<unsigned int, unsigned int> cell_idxmap_;
-
-  /// The global vertex ids used in this instance
-  std::vector<unsigned int> vertex_gidx_;
-
-  /// A map from global vertex id to local vertex id
-  std::map<unsigned int, unsigned int> vertex_idxmap_;
-
-  /// Get a global vertex index from direction indexes
-  unsigned int global_vertex(const unsigned int& i, const unsigned int& j, const unsigned int& k) const;
-  
-  /// Get vertex direction indexes from global index
-  void global_rvertex(const unsigned int& index, 
-                      unsigned int& i, unsigned int& j, unsigned int& k) const;
-  
-  /// Get a global cell index from direction indexes
-  unsigned int global_cell(const unsigned int& i, const unsigned int& j, const unsigned int& k) const;
-
-  /// Get cell direction indexes from a global index
-  void global_rcell(const unsigned int& index,
-                    unsigned int& i, unsigned int& j, unsigned int& k) const;
-
-  /// create the elements (in one block)
-  void generate_the_elements(std::vector<int>& connectivity_map);
-
-  /// create side sets for all sides of the domain
-  std::vector<Side_set *> generate_the_sidesets(void);
-
-  /// compute the vertex coordinates
-  Coordinates<double>* generate_the_coordinates(void);
-
-private:
-
-  /// Private, unimplemented default constructor
-  HexMeshGenerator();
-
-  /// Private, unimplemented copy constructor to avoid copies
-  HexMeshGenerator(const HexMeshGenerator& old);
-
 public:
 
   /// (Collective) Default constructor.
@@ -131,6 +71,9 @@ public:
   /// Get the number of local vertexes 
   unsigned int myvertexes(void) const { return vertex_gidx_.size(); }
 
+  /// Add a region for which a block is to be created
+  void add_region(const int& id, const AmanziGeometry::RegionPtr r);
+
   /// (Collective) Generate the (local local part of the) mesh and fill a Data instance
   Data *generate(void);
 
@@ -139,6 +82,81 @@ public:
 
   /// (Collective) Generate a Epetra_Map for the vertexes
   Epetra_Map *vertexmap(bool onebased = false);
+
+protected:
+
+  static const unsigned int nvcell;     /**< number of vertexes per cell (8) */
+
+  struct Block {
+    
+int id;
+    AmanziGeometry::RegionPtr region;
+    std::vector<unsigned int> gidx;
+    std::vector<int> connectivity;
+  };
+
+  const Epetra_Comm *comm_;      /**< The parallel environment */
+
+  const unsigned int ni_;       /**< Number of elements in the i-direction */
+  const unsigned int nj_;       /**< Number of elements in the j-direction */
+  const unsigned int nk_;       /**< Number of elements in the k-direction */
+
+  const unsigned int ncell_;    /**< Number of global elemets */
+  const unsigned int nvert_;    /**< Number of global vertexes */
+
+  const double xorig_;          /**< The mesh origin x-coordinate */
+  const double yorig_;          /**< The mesh origin y-coordinate */
+  const double zorig_;          /**< The mesh origin z-coordinate */
+
+  const double dx_;              /**< The element size in the x-direction */
+  const double dy_;              /**< The element size in the y-direction */
+  const double dz_;              /**< The element size in the z-direction */
+
+  /// All global cell ids used in this instance
+  std::vector<unsigned int> cell_gidx_;
+
+  /// A list of blocks in this instance
+  std::vector<Block> blocks_;
+
+  /// A thing to (quickly) identify cells owned by this process
+  std::map<unsigned int, unsigned int> cell_idxmap_;
+
+  /// The global vertex ids used in this instance
+  std::vector<unsigned int> vertex_gidx_;
+
+  /// A map from global vertex id to local vertex id
+  std::map<unsigned int, unsigned int> vertex_idxmap_;
+
+  /// Get a global vertex index from direction indexes
+  unsigned int global_vertex(const unsigned int& i, const unsigned int& j, const unsigned int& k) const;
+  
+  /// Get vertex direction indexes from global index
+  void global_rvertex(const unsigned int& index, 
+                      unsigned int& i, unsigned int& j, unsigned int& k) const;
+  
+  /// Get a global cell index from direction indexes
+  unsigned int global_cell(const unsigned int& i, const unsigned int& j, const unsigned int& k) const;
+
+  /// Get cell direction indexes from a global index
+  void global_rcell(const unsigned int& index,
+                    unsigned int& i, unsigned int& j, unsigned int& k) const;
+
+  /// Generate the elements for a block
+  void generate_the_elements_(void);
+
+  /// create side sets for all sides of the domain
+  std::vector<Side_set *> generate_the_sidesets(void);
+
+  /// compute the vertex coordinates
+  Coordinates<double>* generate_the_coordinates(void);
+
+private:
+
+  /// Private, unimplemented default constructor
+  HexMeshGenerator();
+
+  /// Private, unimplemented copy constructor to avoid copies
+  HexMeshGenerator(const HexMeshGenerator& old);
 
 }; // close class HexMeshGenerator
 

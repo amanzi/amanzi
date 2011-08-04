@@ -2,7 +2,7 @@
 /**
  * @file   Region.hh
  * @author William A. Perkins
- * @date Fri Jul 29 12:40:09 2011
+ * @date Mon Aug  1 09:57:42 2011
  * 
  * @brief  Declaration of the abstract Region class 
  * 
@@ -46,8 +46,8 @@ public:
   /// Is the the specified point inside the Region
   virtual bool inside(const Point& p) const = 0;
 
-  /// Get the extents of the Region
-  virtual void extents(Point *pmin, Point *pmax) const = 0;
+  /// Get the extents of the Region (later)
+  // virtual void extents(Point *pmin, Point *pmax) const = 0;
 };
 
 /// A smart pointer to Region instances
