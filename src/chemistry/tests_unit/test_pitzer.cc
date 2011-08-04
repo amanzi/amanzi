@@ -71,12 +71,14 @@ TEST(System_System_1) {
  sp_.push_back(MgOH);
  sp_.push_back(OH);
  vector<double> gamma;
+ double actw;
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
  am_= amfac_.Create("pitzer","phreeqc_pitzer.dat",sp_, aqx_);
  am_->Display();
- am_->EvaluateVector(gamma,sp_, aqx_);
+ am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O);
+ actw=log10(H2O.act_coef());
  for (int i=0; i<sp_.size();i++) {
-	 gamma[i]=log10(gamma[i]);
+	 gamma[i]=log10(sp_[i].act_coef());
 	//std:: cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
  }
  //std::cout << "Testing coeff. 1" << std::endl;
@@ -93,6 +95,7 @@ TEST(System_System_1) {
  CHECK_CLOSE(0.283, gamma[9], 1.0e-2);  // CO2
  CHECK_CLOSE(-0.463, gamma[13], 1.0e-2); // OH
  CHECK_CLOSE(-0.437, gamma[8], 1.0e-2); // HCO3
+ CHECK_CLOSE(-0.055, actw, 1.0e-2); // H2O
 }
 
 TEST(System_System_2) {
@@ -154,12 +157,13 @@ TEST(System_System_2) {
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
  am_= amfac_.Create("pitzer","phreeqc_pitzer.dat",sp_, aqx_);
  am_->Display();
- am_->EvaluateVector(gamma,sp_, aqx_);
+ double actw;
+ am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O);
+ actw=log10(H2O.act_coef());
  for (int i=0; i<sp_.size();i++) {
-	 gamma[i]=log10(gamma[i]);
-	// std:: cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
+	 gamma[i]=log10(sp_[i].act_coef());
+ 	//std:: cout << sp_[i].name() << "  " <<gamma[i] << std::endl;
  }
- //std::cout << "Testing coeff. 1" << std::endl;
  // Results are compared with PHREEQC
  CHECK_CLOSE(-0.241, gamma[0], 1.0e-2); // Cl-
  CHECK_CLOSE(-0.039, gamma[1],1.0e-2);  // Na+
@@ -175,5 +179,6 @@ TEST(System_System_2) {
  CHECK_CLOSE(-0.435, gamma[8], 1.0e-2); // HCO3
  CHECK_CLOSE(-0.321, gamma[14], 1.0e-2); // HSO4
  CHECK_CLOSE(-1.823, gamma[15], 1.0e-2); // SO4
+ CHECK_CLOSE(-0.055, actw, 1.0e-2); // H2O
 }
 }  // end SUITE(TestPitzer)

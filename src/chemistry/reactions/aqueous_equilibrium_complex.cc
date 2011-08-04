@@ -35,7 +35,7 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex(
 AqueousEquilibriumComplex::~AqueousEquilibriumComplex() {
 }  // end AqueousEquilibriumComplex() destructor
 
-void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecies) {
+void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecies, const Species& water_species) {
   /* This is not the true Q/K for the reaction, but is instead
   **   BC <==> cC + bB
   **   K = a_C^c * a_B^b / a_BC^1
@@ -47,6 +47,8 @@ void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecie
     lnQK += stoichiometry_.at(i) *
         primarySpecies.at(species_ids_.at(i)).ln_activity();
   }
+  // Add the contribution of the water activity
+  lnQK += SecondarySpecies::h2o_stoich_ * std::log(water_species.act_coef());
   lnQK_ = lnQK;
   //  molality_ = std::exp(lnQK) / act_coef_;
   update(std::exp(lnQK) / act_coef_);
@@ -93,6 +95,10 @@ void AqueousEquilibriumComplex::display(void) const {
       std::cout << " + ";
     }
   }
+  if (SecondarySpecies::h2o_stoich_!=0.0) {
+  	  std::cout << " + ";
+  	  std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+  }
   std::cout << std::endl;
   std::cout << "        logK = " << logK_ << std::endl;
   std::cout << "        charge = " << charge() << std::endl;
@@ -111,6 +117,10 @@ void AqueousEquilibriumComplex::Display(void) const {
     if (i < species_names_.size() - 1) {
       std::cout << " + ";
     }
+  }
+  if (SecondarySpecies::h2o_stoich_!=0.0) {
+    	  std::cout << " + ";
+    	  std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
   }
   std::cout << std::endl;
   std::cout << std::setw(40) << " " << std::fixed

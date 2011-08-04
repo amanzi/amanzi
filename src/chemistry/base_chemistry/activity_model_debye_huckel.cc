@@ -39,7 +39,7 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
   return gamma;
 }  // end Evaluate()
 
-void ActivityModelDebyeHuckel::EvaluateVector (std::vector<double>& gamma, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec){
+void ActivityModelDebyeHuckel::EvaluateVector (std::vector<double>& gamma, double& actw, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec){
 	// log(gamma_i) = - A * z_i^2 * sqrt(I) / (1 + a0 * B * sqrt(I)) + Bdot * I
 	const double r1(1.0e0), rsmall(1.0e-10);
 	double sqrt_I = std::sqrt(I_);
@@ -73,6 +73,7 @@ void ActivityModelDebyeHuckel::EvaluateVector (std::vector<double>& gamma, const
 					    gamma[isp] = std::exp(log_to_ln(log_gamma));
 			}
 		}
+	actw=r1;
 } // end evaluate
 
 void ActivityModelDebyeHuckel::Display(void) const {

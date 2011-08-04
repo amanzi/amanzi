@@ -29,9 +29,11 @@ class ActivityModel {
           const std::vector<AqueousEquilibriumComplex>& secondarySpecies);
   void CalculateActivityCoefficients(
       std::vector<Species>* primarySpecies,
-      std::vector<AqueousEquilibriumComplex>* secondarySpecies);
+      std::vector<AqueousEquilibriumComplex>* secondarySpecies,
+      Species* water);
   virtual double Evaluate(const Species& species) = 0;
   virtual void EvaluateVector(std::vector<double>& gamma,
+		                      double& actw,
  		                      const std::vector<Species>& primarySpecies,
 		                      const std::vector<AqueousEquilibriumComplex>& secondarySpecies)=0;
 
