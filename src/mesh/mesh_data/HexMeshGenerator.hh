@@ -2,7 +2,7 @@
 /**
  * @file   HexMeshGenerator.hh
  * @author William A. Perkins
- * @date Mon Aug  1 08:22:26 2011
+ * @date Mon Aug  8 11:22:01 2011
  * 
  * @brief  Declaration of the HexMeshGenerator class
  * 
@@ -72,7 +72,8 @@ public:
   unsigned int myvertexes(void) const { return vertex_gidx_.size(); }
 
   /// Add a region for which a block is to be created
-  void add_region(const int& id, const AmanziGeometry::RegionPtr r);
+  void add_region(const int& id, const std::string& name,
+                  const AmanziGeometry::RegionPtr r);
 
   /// (Collective) Generate the (local local part of the) mesh and fill a Data instance
   Data *generate(void);
@@ -88,8 +89,8 @@ protected:
   static const unsigned int nvcell;     /**< number of vertexes per cell (8) */
 
   struct Block {
-    
-int id;
+    int id;
+    std::string name;
     AmanziGeometry::RegionPtr region;
     std::vector<unsigned int> gidx;
     std::vector<int> connectivity;

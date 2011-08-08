@@ -2,7 +2,7 @@
 /**
  * @file   HexMeshGenerator.cc
  * @author William A. Perkins
- * @date Tue Aug  2 07:15:32 2011
+ * @date Mon Aug  8 13:14:41 2011
  * 
  * @brief  Implementation of the HexMeshGenerator class
  * 
@@ -209,6 +209,7 @@ HexMeshGenerator::global_rcell(const unsigned int& index,
 // -------------------------------------------------------------
 void
 HexMeshGenerator::add_region(const int& id, 
+                             const std::string& name, 
                              const AmanziGeometry::RegionPtr r)
 {
   if (id == 0) {
@@ -226,7 +227,8 @@ HexMeshGenerator::add_region(const int& id,
   }
 
   Block b;
-  b.id = id,
+  b.id = id;
+  b.name = name;
   b.region = r;
   blocks_.push_back(b);
 }
@@ -494,8 +496,11 @@ HexMeshGenerator::generate(void)
     Element_block *blk;
 
     // names need to be unique
-    std::string name = 
-      boost::str(boost::format("Generated Elements Block %d") % b->id);
+    std::string name(b->name);
+    if (name.empty()) {
+      name = 
+        boost::str(boost::format("Generated Elements Block %d") % b->id);
+    }
     blk = Element_block::build_from(b->id, name, 
                                     static_cast<int>(b->gidx.size()), HEX,
                                     b->connectivity,

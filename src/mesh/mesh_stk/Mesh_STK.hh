@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.hh
  * @author William A. Perkins
- * @date Fri Jul 29 09:21:21 2011
+ * @date Mon Aug  8 11:58:56 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Fri Jul 29 09:21:21 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  8 11:58:56 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -330,6 +330,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   const Epetra_Map& get_map_(const Entity_kind& kind, 
                              const bool& include_ghost) const;
 
+  /// fill Mesh::tmp_setnameid_map with Cell part name/id
+  void fill_setnameid_map_(void);
 };
 
 } // namespace AmanziMesh

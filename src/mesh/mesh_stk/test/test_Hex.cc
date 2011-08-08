@@ -3,7 +3,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Mon Aug  1 09:52:47 2011
+ * @date Mon Aug  8 13:05:04 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Mon Aug  1 09:52:47 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  8 13:05:04 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -275,7 +275,9 @@ SUITE (HexMesh)
     Auditor audit("stk_mesh_generated_", mesh_map);
     audit();
 
-    CHECK_EQUAL(mesh_map->num_sets(Amanzi::AmanziMesh::CELL), 3);
+    CHECK_EQUAL(3, mesh_map->num_sets(Amanzi::AmanziMesh::CELL));
+    CHECK_EQUAL(1, mesh_map->set_id_from_name("Mesh block 1"));
+    CHECK_EQUAL(2, mesh_map->set_id_from_name("Mesh block 2"));
   }
 
   TEST (HexPartition)
