@@ -10,6 +10,8 @@
 #include "Cell_topology.hh"
 #include "Point.hh"
 
+#include <map>
+
 namespace Amanzi
 {
 
