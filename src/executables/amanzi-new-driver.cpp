@@ -1,9 +1,6 @@
 #include <iostream>
-#include <cstdlib>
-#include <cmath>
-
-#include "Exodus_readers.hh"
-#include "Parallel_Exodus_file.hh"
+#include "stdlib.h"
+#include "math.h"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
@@ -17,48 +14,84 @@
 #include "Teuchos_Version.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 
+#include "dbc.hh"
+#include "errors.hh"
 #include "MeshFactory.hh"
 #include "State.hpp"
 #include "MPC.hpp"
+#include "Region.hh"
+#include "RectangularRegion.hh"
+#include "MeshDefs.hh"
 
-#include "errors.hh"
-#include "exceptions.hh"
+#include "Teuchos_MPISession.hpp"
+#include "InputParser.H"
 
-#include "amanzi_unstructured_grid_simulation_driver.hpp"
-
-Amanzi::Simulator::ReturnType
-AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
-                                             const Teuchos::ParameterList& input_parameter_list,
-                                             Amanzi::ObservationData&      output_observations)
+int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
-#else  
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
 
   // make sure only PE0 can write to std::cout
   int rank, ierr, aerr;
-  MPI_Comm_rank(mpi_comm,&rank);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
-  if (rank!=0) {
-    cout.rdbuf(0);
-  } 
+  // if (rank!=0) {
+  //   cout.rdbuf(0);
+  // }
+ 
+  Teuchos::CommandLineProcessor CLP;
+  
+  CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"
+		   "runs a reactive flow and transport simulation.\n");
+  
+  std::string xmlInFileName = "options.xml";
+  CLP.setOption("xml_file", &xmlInFileName, "XML options file");
+  
+  CLP.throwExceptions(false);
+  
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn
+    parseReturn = CLP.parse(argc, argv);
+  
+  if (parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+    return 0;
+  }
+  if (parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    return 1;
+  }
+  
+  // read the main parameter list
+  Teuchos::ParameterList driver_parameter_list;
+
+  ierr = 0;
+  try {
+    Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+  } catch (const std::runtime_error& e) {
+    std::cerr << rank << ": error: " << e.what() << std::endl;
+    ierr++;
+  }
+
+  comm->SumAll(&ierr, &aerr, 1);
+  if (aerr > 0) {
+    return 1;
+  }
+    
+    
+  ParameterList trans_parameter_list = Amanzi::AmanziInput::translate_state_sublist(driver_parameter_list);
+  driver_parameter_list = trans_parameter_list;
+
 
   // print parameter list
   std::cout << "======================> dumping parameter list <======================" << std::endl;
-  Teuchos::writeParameterListToXmlOStream(input_parameter_list, std::cout);
+  Teuchos::writeParameterListToXmlOStream(driver_parameter_list, std::cout);
   std::cout << "======================> done dumping parameter list. <================"<<std::endl;
-
-  using namespace std;
 
   Amanzi::AmanziMesh::MeshFactory factory(*comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
+  
   // get the Mesh sublist
 
   ierr = 0;
-  Teuchos::ParameterList mesh_parameter_list = input_parameter_list.sublist("Mesh");
+  Teuchos::ParameterList mesh_parameter_list = driver_parameter_list.sublist("Mesh");
 
   try {
     std::string framework = mesh_parameter_list.get<string>("Framework");
@@ -79,6 +112,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
       amanzi_throw(Errors::Message(s));
     }
     factory.preference(prefs);
+
   } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
     // do nothing, this means that the "Framework" parameter was not in the input
   } catch (const std::exception& e) {
@@ -88,7 +122,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   comm->SumAll(&ierr, &aerr, 1);
   if (aerr > 0) {
-    return Amanzi::Simulator::FAIL;
+    return 3;
   }
 
 
@@ -113,7 +147,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   
     comm->SumAll(&ierr, &aerr, 1);
     if (aerr > 0) {
-      return Amanzi::Simulator::FAIL;
+      return 3;
     }
   
   } else {
@@ -123,17 +157,9 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
     ierr = 0;
 
     try {
-      Teuchos::ParameterList generate_parameter_list(mesh_parameter_list.sublist("Generate"));
-      double x0(generate_parameter_list.get<double>("X_Min"));
-      double y0(generate_parameter_list.get<double>("Y_Min"));
-      double z0(generate_parameter_list.get<double>("Z_Min"));
-      double x1(generate_parameter_list.get<double>("X_Max"));
-      double y1(generate_parameter_list.get<double>("Y_Max")); 
-      double z1(generate_parameter_list.get<double>("Z_Max"));
-      int nx(generate_parameter_list.get<int>("Number of Cells in X"));
-      int ny(generate_parameter_list.get<int>("Number of Cells in Y"));
-      int nz(generate_parameter_list.get<int>("Number of Cells in Z"));
-      mesh = factory(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+
+      Teuchos::ParameterList& generate_parameter_list(mesh_parameter_list.sublist("Generate"));
+      mesh = factory(generate_parameter_list);
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
       ierr++;
@@ -141,21 +167,33 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   
     comm->SumAll(&ierr, &aerr, 1);
     if (aerr > 0) {
-      return Amanzi::Simulator::FAIL;
+      return 3;
     }
 
   }
 
   ASSERT(!mesh.is_null());
 
+#if 0
+  std::map<std::string,Amanzi::AmanziMesh::Set_ID> region_label_ID_map;
+  Amanzi::AmanziMesh::Entity_kind kind = Amanzi::AmanziMesh::CELL;
+  for (RegionMap::const_iterator it=region_map.begin(); it!=region_map.end(); ++it) {
+
+    // Does not exist yet
+    // region_label_ID_map[ it->first ] = mesh->define_set( it->second, kind );
+  }
+#endif
+
+  // create dummy observation data object
+  Amanzi::ObservationData obs_data;
+
   // create the MPC
-  Amanzi::MPC mpc(input_parameter_list, mesh, output_observations);
+  Amanzi::MPC mpc(driver_parameter_list, mesh, obs_data);
   
   mpc.cycle_driver();
   
   delete comm;
       
-  return Amanzi::Simulator::SUCCESS;
 }
 
 
