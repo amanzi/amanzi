@@ -31,9 +31,9 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 
   // read the parameters from the parameter list
 
-  nx_ = parameter_list.get<int>("Numer of Cells in X");
-  ny_ = parameter_list.get<int>("Numer of Cells in Y");
-  nz_ = parameter_list.get<int>("Numer of Cells in Z");
+  nx_ = parameter_list.get<int>("Number of Cells in X");
+  ny_ = parameter_list.get<int>("Number of Cells in Y");
+  nz_ = parameter_list.get<int>("Number of Cells in Z");
   
   x0_ = parameter_list.get<double>("X_Min");
   x1_ = parameter_list.get<double>("X_Max");

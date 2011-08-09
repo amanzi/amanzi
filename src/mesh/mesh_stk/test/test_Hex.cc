@@ -243,9 +243,9 @@ SUITE (HexMesh)
   TEST (HexGeneratorParam)
   {
     Teuchos::ParameterList parameter_list;
-    parameter_list.set<int>("Numer of Cells in X", 10);
-    parameter_list.set<int>("Numer of Cells in Y", 10);
-    parameter_list.set<int>("Numer of Cells in Z", 10);
+    parameter_list.set<int>("Number of Cells in X", 10);
+    parameter_list.set<int>("Number of Cells in Y", 10);
+    parameter_list.set<int>("Number of Cells in Z", 10);
     
     parameter_list.set<double>("X_Min", 0);
     parameter_list.set<double>("X_Max", 1);

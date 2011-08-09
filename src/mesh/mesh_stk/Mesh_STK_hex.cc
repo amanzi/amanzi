@@ -72,9 +72,9 @@ Mesh_STK::generate_(Teuchos::ParameterList &parameter_list)
 
   // read the parameters from the parameter list
 
-  nx = parameter_list.get<int>("Numer of Cells in X");
-  ny = parameter_list.get<int>("Numer of Cells in Y");
-  nz = parameter_list.get<int>("Numer of Cells in Z");
+  nx = parameter_list.get<int>("Number of Cells in X");
+  ny = parameter_list.get<int>("Number of Cells in Y");
+  nz = parameter_list.get<int>("Number of Cells in Z");
   
   x0 = parameter_list.get<double>("X_Min", 0);
   x1 = parameter_list.get<double>("X_Max", 1);

@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 
   // simple mesh with two layers
   Teuchos::ParameterList smeshlist;
-  smeshlist.set<int>("Numer of Cells in X",1);
-  smeshlist.set<int>("Numer of Cells in Y",1);
-  smeshlist.set<int>("Numer of Cells in Z",136);
+  smeshlist.set<int>("Number of Cells in X",1);
+  smeshlist.set<int>("Number of Cells in Y",1);
+  smeshlist.set<int>("Number of Cells in Z",136);
   smeshlist.set<double>("X_Min",0.0);
   smeshlist.set<double>("X_Max",1.0);
   smeshlist.set<double>("Y_Min",0.0);
