@@ -25,6 +25,8 @@
 #include "exceptions.hh"
 
 #include "amanzi_unstructured_grid_simulation_driver.hpp"
+#include "InputParser.H"
+#include "Teuchos_StrUtils.hpp"
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
@@ -45,9 +47,11 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
     cout.rdbuf(0);
   } 
 
+  ParameterList params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
+
   // print parameter list
   std::cout << "======================> dumping parameter list <======================" << std::endl;
-  Teuchos::writeParameterListToXmlOStream(input_parameter_list, std::cout);
+  Teuchos::writeParameterListToXmlOStream(params_copy, std::cout);
   std::cout << "======================> done dumping parameter list. <================"<<std::endl;
 
   using namespace std;
@@ -58,7 +62,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   // get the Mesh sublist
 
   ierr = 0;
-  Teuchos::ParameterList mesh_parameter_list = input_parameter_list.sublist("Mesh");
+  Teuchos::ParameterList mesh_parameter_list = params_copy.sublist("Mesh");
 
   try {
     std::string framework = mesh_parameter_list.get<string>("Framework");
@@ -123,17 +127,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
     ierr = 0;
 
     try {
-      Teuchos::ParameterList generate_parameter_list(mesh_parameter_list.sublist("Generate"));
-      double x0(generate_parameter_list.get<double>("X_Min"));
-      double y0(generate_parameter_list.get<double>("Y_Min"));
-      double z0(generate_parameter_list.get<double>("Z_Min"));
-      double x1(generate_parameter_list.get<double>("X_Max"));
-      double y1(generate_parameter_list.get<double>("Y_Max")); 
-      double z1(generate_parameter_list.get<double>("Z_Max"));
-      int nx(generate_parameter_list.get<int>("Number of Cells in X"));
-      int ny(generate_parameter_list.get<int>("Number of Cells in Y"));
-      int nz(generate_parameter_list.get<int>("Number of Cells in Z"));
-      mesh = factory(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+      mesh = factory(mesh_parameter_list.sublist("Generate"));
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
       ierr++;
@@ -149,10 +143,11 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   ASSERT(!mesh.is_null());
 
   // create the MPC
-  Amanzi::MPC mpc(input_parameter_list, mesh, output_observations);
+  Amanzi::MPC mpc(params_copy, mesh, output_observations);
   
   mpc.cycle_driver();
   
+  mesh.reset();
   delete comm;
       
   return Amanzi::Simulator::SUCCESS;

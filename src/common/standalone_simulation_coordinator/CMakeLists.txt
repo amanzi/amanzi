@@ -108,7 +108,7 @@ endif()
 #message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS})
+set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface)
 
 set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
 set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
