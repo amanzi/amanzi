@@ -288,7 +288,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
  -->
 
       <Parameter name="Steady state calculation initial time" type="double" value="0.0"/>
-      <Parameter name="Steady state calculation final time" type="double" value="3e-7"/>
+      <Parameter name="Steady state calculation final time" type="double" value="3e7"/>
       <Parameter name="Steady state calculation initial time step" type="double" value="1.0e-7"/>
       <Parameter name="Steady state calculation initial hydrostatic pressure height" type ="double" value="103.2"/>
 
