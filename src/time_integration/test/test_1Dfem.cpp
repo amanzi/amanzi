@@ -17,6 +17,36 @@
 #include "BDF2_fnBase.hpp"
 #include "BDF2_Dae.hpp"
 
+/*!
+
+@namespace SuiteTimeIntegrationTests
+@test  The test_1D_fem.cpp file is tested in this test.
+@brief A time dependent 1D finite element problem is used to 
+       test Amanzi's BDF2 time integrator.
+@details We set up a 1D time dependent finite element problem as
+      follows:
+      @f[
+       \frac{\partial u(x,t)}{\partial t} = - \nabla A \nabla u(x,t)
+      @f]
+      with Dirichlet boundary conditions
+      @f[
+       u(x_0,t) = u_0
+      @f]
+      and
+      @f[
+       u(x_1,t) = u_1
+      @f]
+      and some initial condition
+      @f[
+       u(x,0) = u_0(x).
+      @f]
+@author Markus Berndt, berndt@lanl.gov
+*/
+
+
+
+SUITE(TimeIntegrationTests) {
+
 
 // 2D array index algebra for 3*n arrays
 #define IND(i,j) ((i)+3*(j))    
@@ -280,6 +310,41 @@ public:
 
 TEST(Nodal_1D_FEM) {
 
+  /*!
+    @class SuiteTimeIntegrationTests::Nodal_1D_FEM
+    @brief This test integrates the time dependent 1D finite
+           element problem.
+    @test  This test integrates the time dependent 1D finite
+           element problem from time 0.0 to time 0.2 and
+           compares the actual final time with a reference
+           time with an initial time step of h=1e-5.
+           It also compares the number of time steps
+           taken to a reference number of time steps.
+
+	   The mesh size is 200 cells, and the diffusion coefficient
+           is @f$ A=0.0002. @f$
+
+           The specific boundary conditions are
+           @f[
+             u(0.0,t) = 0.0
+           @f]
+           and
+           @f[
+             u(1.0,t) = 0.0.
+	   @f]
+
+	   The initial condition is
+           @f[
+             u_0(x) = \sin(\Pi x)
+           @f]
+
+	   The expected behavior of the problem is that the
+           initial sine wave is damped over time with the 
+	   solution approaching zero as time progresses.
+   */
+
+
+
   // create the parameter list for BDF2
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(new Teuchos::ParameterList());
   plist->set("Nonlinear solver max iterations", 10);
@@ -354,4 +419,7 @@ TEST(Nodal_1D_FEM) {
   
   CHECK_EQUAL(i,147);
   CHECK_CLOSE(tlast,0.2044366451977221 ,1.0e-10);
+}
+
+
 }
