@@ -74,7 +74,7 @@
         <Parameter name="permeability" type="double" value="3.7532e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.3976, 8.1687e-5, 0.135}"/> 
+        <Parameter name="m alpha slr" type="Array double" value="{0.2857, 1.9401e-4, 0.103}"/>
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{Rwia region}"/>
     </ParameterList>
@@ -87,7 +87,7 @@
         <Parameter name="permeability" type="double" value="5.0618e-14"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
+        <Parameter name="m alpha slr" type="Array double" value="{0.5115, 7.3518e-4, 0.074}"/>
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{Rlm region}"/>
     </ParameterList>
@@ -100,7 +100,7 @@
         <Parameter name="permeability" type="double" value="2.9989e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
+        <Parameter name="m alpha slr" type="Array double" value="{0.6011, 2.1443e-4, 0.089}"/>
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{CCUg region}"/>
     </ParameterList>
@@ -113,7 +113,7 @@
         <Parameter name="permeability" type="double" value="5.0618e-14"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
+        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{CCuz region}"/>
     </ParameterList>
@@ -126,7 +126,7 @@
         <Parameter name="permeability" type="double" value="2.9989e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
+        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{Hg region}"/>
     </ParameterList>
@@ -139,7 +139,7 @@
         <Parameter name="permeability" type="double" value="2.0447e-12"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.6011, 2.1443e-4, 0.089}"/>
+        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{Hfs region}"/>
     </ParameterList>
@@ -152,7 +152,7 @@
         <Parameter name="permeability" type="double" value="4.8346e-12"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.5115, 7.3518e-4, 0.074}"/>
+        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{Hcs region}"/>
     </ParameterList>
@@ -165,7 +165,7 @@
         <Parameter name="permeability" type="double" value="5.4344e-13"/>
       </ParameterList>
       <ParameterList name="water retention: vG">
-        <Parameter name="m alpha slr" type="Array double" value="{0.2857, 1.9401e-4, 0.103}"/>
+        <Parameter name="m alpha slr" type="Array double" value="{0.3976, 8.1687e-5, 0.135}"/> 
       </ParameterList>
       <Parameter name="regions" type="Array string" value="{Bf region}"/>
     </ParameterList>

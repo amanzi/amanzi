@@ -489,21 +489,46 @@ namespace Amanzi {
       new_state.set<double>("Constant water density",water.mass_density);
       new_state.set<double>("Constant viscosity",water.viscosity);
 
-      // Build mesh block IDs starting from 0
-      std::map<std::string,int> region_ID;
-      int cnt = 1;
-      for (RegionMap::const_iterator rit=region_map.begin(); rit!=region_map.end(); ++rit) {
-        region_ID[rit->first] = cnt++;
-      }
-
+      ParameterList retention_list;
       for (std::map<std::string,InitialCondition>::const_iterator it=water.ic.begin(); it!=water.ic.end(); ++it) {
         ParameterList reg_block;
         std::stringstream reg_block_name;
-        //reg_block_name << "Mesh block " << region_ID[it->first];
         reg_block_name << user_to_mesh_label_map[it->first].first;
         reg_block.set<int>("Mesh block ID",user_to_mesh_label_map[it->first].second);
 
+
         const Rock& rock = find_rock_for_region(rock_list,it->first);
+
+
+        // Retention model
+        std::string this_retention_label = rock.retention_model;
+        const Array<double>& this_retention_values = rock.retention_params;
+
+        ParameterList this_new_retention_list;
+        if (this_retention_label=="water retention: vG") {
+          this_new_retention_list.set<std::string>("Water retention model", "van Genuchten");
+          if (this_retention_values.size() != 3) {
+            if (Teuchos::MPISession::getRank() == 0) {
+              std::cerr << "Wrong number of vG parameters in water retention model for rock: " << rock.rock_label <<  std::endl;
+            }
+            throw std::exception();
+          }
+          this_new_retention_list.set<double>("van Genuchten m",this_retention_values[0]);
+          this_new_retention_list.set<double>("van Genuchten alpha",this_retention_values[1]);
+          this_new_retention_list.set<double>("van Genuchten residual saturation",this_retention_values[2]);
+        }
+        else {
+          if (Teuchos::MPISession::getRank() == 0) {
+            std::cerr << "Unsupported water retention model for rock: " << rock.rock_label <<  std::endl;
+          }
+          throw std::exception();
+        }
+        this_new_retention_list.set<int>("Region ID",user_to_mesh_label_map[it->first].second);
+        std::stringstream retention_label;
+        retention_label << "Water retention model " << user_to_mesh_label_map[it->first].second - 1; // FIXME: Numbering weird!
+        retention_list.set(retention_label.str(), this_new_retention_list);
+
+        // Porosity
         if (rock.porosity_model!="porosity: uniform") {
           if (Teuchos::MPISession::getRank() == 0) {
             std::cerr << "Inputs translater does not support nonuniform porosity" <<  std::endl;
@@ -539,9 +564,12 @@ namespace Amanzi {
         new_state.set(reg_block_name.str(), reg_block);
       }
 
+      new_params.sublist("Flow").sublist("Richards Problem").set("Water retention models",retention_list);
       new_params.set("State", new_state);
+
       new_params.remove("Regions");
       new_params.remove("Rock");
+
 
       return new_params;
     }
