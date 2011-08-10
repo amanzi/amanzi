@@ -372,7 +372,8 @@ void Beaker::updateActivityCoefficients() {
   activity_model_->CalculateIonicStrength(primarySpecies_,
                                           aqComplexRxns_);
   activity_model_->CalculateActivityCoefficients(&primarySpecies_,
-                                                 &aqComplexRxns_);
+                                                 &aqComplexRxns_,
+                                                 &water_);
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++) {
     i->update();
@@ -413,13 +414,13 @@ void Beaker::updateEquilibriumChemistry(void) {
   for (std::vector<AqueousEquilibriumComplex>::iterator aqcplx =
            aqComplexRxns_.begin();
        aqcplx != aqComplexRxns_.end(); aqcplx++) {
-    aqcplx->Update(primarySpecies_);
+    aqcplx->Update(primarySpecies_,water_);
   }
 
   // calculate mineral saturation states
   for (std::vector<Mineral>::iterator m = minerals_.begin();
        m != minerals_.end(); m++) {
-    m->Update(primarySpecies_);
+    m->Update(primarySpecies_,water_);
   }
 
   // add equilibrium surface complexation here

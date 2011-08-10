@@ -86,17 +86,19 @@ void ActivityModel::CalculateSumC(
 
 void ActivityModel::CalculateActivityCoefficients(
     std::vector<Species>* primarySpecies,
-    std::vector<AqueousEquilibriumComplex>* secondarySpecies) {
+    std::vector<AqueousEquilibriumComplex>* secondarySpecies,
+    Species* water) {
 //-----------------------------------------------------
 const  double r0(0.0e0), r1(1.0e0);
 std::vector<double> gamma;
+double actw(r1);
 int nsp(primarySpecies->size()+secondarySpecies->size());
 gamma.resize(nsp,r1);
 for (std::vector<double>::iterator i=gamma.begin(); i!=gamma.end(); i++) (*i)=r1;
 //----------------------------------------------------------------------
 // Compute activity coefficients
 //----------------------------------------------------------------------
-this->EvaluateVector (gamma,*primarySpecies,*secondarySpecies);
+this->EvaluateVector (gamma,actw,*primarySpecies,*secondarySpecies);
 //----------------------------------------------------------------------
 // Set activity coefficients
 //----------------------------------------------------------------------
@@ -113,6 +115,9 @@ for (std::vector<AqueousEquilibriumComplex>::iterator i = secondarySpecies->begi
       isp++;
 	  i->act_coef(gamma[isp]);
 }
+// Set the water activity
+water->act_coef(actw);
+
 }  // end CalculateActivityCoefficients()
 
 }  // namespace chemistry

@@ -103,7 +103,7 @@ double ActivityModelPitzer::Evaluate(const Species& species) {
 // Compute activity coefficients from a vector of species
 // It could be more efficient computationally
 //--------------------------------------------------------------------------
-void ActivityModelPitzer::EvaluateVector(std::vector<double>& gamma, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec) {
+void ActivityModelPitzer::EvaluateVector(std::vector<double>& gamma, double& actw, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec) {
 
 const double r0(0.0e0), r1(1.0e0);
 unsigned int nsp(prim.size()+sec.size());
@@ -166,6 +166,7 @@ if (ismacinnes && ithcl>-1) {
 	    if (i!=ithw) gamma[i] *= pow((gcl / gclm),charge[i]);
    }
 }
+actw=osco;
 //--------------------------------------------------------------------------
 // Deallocate local pointers
 //--------------------------------------------------------------------------
@@ -196,7 +197,7 @@ for (int nz=0; nz<nnzcpz; nz++) {
 	      gamma[j]+=miCij*ionstrz;
 }
 //!%-----------------------------------------------------------
-if (ithw>-1) osco+=ionstrz*qc;
+osco+=ionstrz*qc;
 //!%-----------------------------------------------------------
 for (int i=0; i<gamma.size(); i++) gamma[i]+=abs(charge[i])*qc;
 }
@@ -209,9 +210,9 @@ int i(0);
 int j(0);
 double mi(r0), mj(r0), Lij(r0);
 
-if (ithw>-1 && nnzlamda>0) {
 
-  for (int nz=0; nz<nnzlamda; nz++) {
+
+for (int nz=0; nz<nnzlamda; nz++) {
 
       i=lamda[nz].GetIsp1();
       j=lamda[nz].GetIsp2();
@@ -220,10 +221,10 @@ if (ithw>-1 && nnzlamda>0) {
       mj=molality[j];
       osco+=mi*mj*Lij;
 
-  }
-
-
 }
+
+
+
 }
 //--------------------------------------------------------------------------
 //--------------------------------------------------------------------------
@@ -262,7 +263,7 @@ for (nz=0; nz<nnzq; nz++) {
 //!%------------------------------------------------------------
 //!% Add the above terms to osco and osco = osco + q2_PHi
 //!%------------------------------------------------------------
-if (ithw>-1) osco+=q2phi;
+osco+=q2phi;
 //!%------------------------------------------------------------
  for (i=0; i<gamma.size(); i++) {
 //!%------------------------------------------------------------
@@ -309,15 +310,17 @@ for (int nz=0; nz<nnzpsi; nz++) {
 //!%----------------------------------------------------
 //!%
 //!%----------------------------------------------------
+osco+=tril;
+osco*=ctw2*osco;
+osco+=r1;
+osco*=-ctw1;
+osco=exp(osco);
 for (int i=0; i<nsp; i++) {
 
 	if (i==ithw) {
-      osco+=tril;
-      osco=(ctw2*osco)+r1;
-      gamma[ithw]=-osco*ctw1;
-      gamma[ithw]=exp(gamma[i]);
+      gamma[ithw]=osco;
     } else {
-    	gamma[i]=exp(gamma[i]+vector[i]);
+      gamma[i]=exp(gamma[i]+vector[i]);
     }
 }
 delete [] vector;
@@ -340,7 +343,7 @@ gclm=r1;
 //!%-----------------------------------------------------------
 den = r1+bdh*sqri;
 dh = -aphi*sqri/den;
-if (ithw>-1) osco = ionstr * dh;
+osco = ionstr * dh;
 dh -= (r2/bdh)*aphi*log(den);
 //!%-----------------------------------------------------------
 int isp(-1);

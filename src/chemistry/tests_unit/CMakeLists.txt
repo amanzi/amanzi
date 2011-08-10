@@ -25,6 +25,7 @@ add_executable(chemistry_tests
 	       test_species.cc
 	       test_ion_exchange_site.cc
 	       test_surface_site.cc	       
+	       test_activity_model_factory.cc
 	       test_activity_coefficients.cc
 	       test_pitzer.cc
 	       test_secondary_species.cc

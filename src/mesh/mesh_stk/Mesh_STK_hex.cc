@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Mon Aug  1 09:56:58 2011
+ * @date Mon Aug  8 12:37:33 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Mon Aug  1 09:56:58 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  8 12:37:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_STK.hh"
@@ -45,6 +45,9 @@ Mesh_STK::generate_(Data::HexMeshGenerator& g)
   mesh_.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
   build_maps_();
   redistribute();
+
+  // FIXME: this is supposed to be temporary
+  fill_setnameid_map_();
 }
 
 void
@@ -111,7 +114,7 @@ Mesh_STK::generate_(Teuchos::ParameterList &parameter_list)
       AmanziGeometry::Point p1(x1, y1, sublist.get<double>("Z1"));
       AmanziGeometry::RegionPtr r(new AmanziGeometry::RectangularRegion(p0, p1));
 
-      g.add_region(nb, r);
+      g.add_region(nb, s.str(), r);
     }
   }
   
