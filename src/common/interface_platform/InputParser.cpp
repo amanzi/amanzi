@@ -3,6 +3,8 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_MPISession.hpp"
+#include "Teuchos_StrUtils.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 namespace Amanzi {
   namespace AmanziInput {
@@ -96,7 +98,7 @@ namespace Amanzi {
                                  RegionMap&                    region_map,
                                  RockList&                     rock_list,
                                  ParameterList&                new_generate_sublist,
-                                 StringStringMap&              user_to_mesh_label_map)
+                                 UserToMeshLabelMap&           user_to_mesh_labelID_map)
     {
       rock_list = build_rock_list(parameter_list);
       
@@ -202,24 +204,82 @@ namespace Amanzi {
         // FIXME: This assumes that we know the scheme by which the mesher derives the labels 
         //   and can reproduce it here.
         std::stringstream mesh_label;
-        mesh_label << "Mesh block " << cnt++;
+        mesh_label << "Mesh block " << cnt;
         new_generate_sublist.set(mesh_label.str(), sublist);
         
-        user_to_mesh_label_map[it->label] = mesh_label.str();
+        user_to_mesh_labelID_map[it->label] = std::pair<std::string,int>(mesh_label.str(),cnt);
+        cnt++;
       }
     }
+
+    bool version_at_or_below(const std::string& input_version, const std::string version_id) {
+
+      Array<std::string> version_tokens
+        = Teuchos::StrUtils::stringTokenizer(Teuchos::StrUtils::varSubstitute(input_version,"."," "));
+    
+      Array<std::string> version_id_tokens
+        = Teuchos::StrUtils::stringTokenizer(Teuchos::StrUtils::varSubstitute(version_id,"."," "));
+    
+      if (version_tokens.size() >= 1) {
+          
+        if (version_id_tokens.size() == 0) {
+            
+          // input_version is a number, id is not -> version is newer
+          return false;
+        }
+        else {
+            
+          if (version_id_tokens.size() >= 1) {
+              
+            if (version_tokens[0] > version_id_tokens[0]) {
+                
+              // If first number is higher, is newer
+              return false;
+                
+            } else {
+                
+              if (version_tokens[0] == version_id_tokens[0]) {
+                  
+                if (version_tokens.size() >= 2) {
+                    
+                  if (version_id_tokens.size() >= 2) {
+                      
+                    // Only allowed two digits, if first agrees, then use second to decide
+                    return version_tokens[1] <= version_id_tokens[1];
+                      
+                  }
+                    
+                } else {
+                    
+                  // If first number agrees, and version has less digits, is older
+                  return version_id_tokens.size() >= 2;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     
     ParameterList translate_state_sublist(const ParameterList& orig_params)
     {
+      ParameterList new_params(orig_params);
+
+      std::string input_version = orig_params.get<std::string>("Amanzi input format version");
+
+      // Bail if format is older than 0.1
+      if (version_at_or_below(input_version,"0.1"))
+          return new_params;
+
       // Build a rock list
       RegionMap region_map;
       RockList rock_list;
       ParameterList new_mesh_sublist;
-      StringStringMap user_to_mesh_label_map;
+      UserToMeshLabelMap user_to_mesh_label_map;
 
       define_regions_rock_new_mesh(orig_params, region_map, rock_list, new_mesh_sublist, user_to_mesh_label_map);
 
-      ParameterList new_params(orig_params);
       ParameterList& mesh_sublist = new_params.sublist("Mesh");
       mesh_sublist.remove("Generate");
       mesh_sublist.set("Generate",new_mesh_sublist);
@@ -440,8 +500,8 @@ namespace Amanzi {
         ParameterList reg_block;
         std::stringstream reg_block_name;
         //reg_block_name << "Mesh block " << region_ID[it->first];
-        reg_block_name << user_to_mesh_label_map[it->first];
-        reg_block.set<int>("Mesh block ID",region_ID[it->first]);
+        reg_block_name << user_to_mesh_label_map[it->first].first;
+        reg_block.set<int>("Mesh block ID",user_to_mesh_label_map[it->first].second);
 
         const Rock& rock = find_rock_for_region(rock_list,it->first);
         if (rock.porosity_model!="porosity: uniform") {
@@ -480,6 +540,8 @@ namespace Amanzi {
       }
 
       new_params.set("State", new_state);
+      new_params.remove("Regions");
+      new_params.remove("Rock");
 
       return new_params;
     }

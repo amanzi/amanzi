@@ -77,7 +77,7 @@ namespace Amanzi {
     typedef std::list<Rock> RockList;
     typedef std::map<std::string,Component> ComponentMap;
     typedef std::map<std::string,ComponentMap> PhaseMap;
-    typedef std::map<std::string,std::string> StringStringMap;
+    typedef std::map<std::string,std::pair<std::string,int> > UserToMeshLabelMap;
     
     const Rock&
     find_rock_for_region(const RockList& rock_list,
@@ -92,7 +92,7 @@ namespace Amanzi {
                                  RegionMap&                    region_map,
                                  RockList&                     rock_list,
                                  ParameterList&                new_generate_sublist,
-                                 StringStringMap&              user_to_mesh_label_map);
+                                 UserToMeshLabelMap&           user_to_mesh_labelID_map);
       
     ParameterList translate_state_sublist(const ParameterList& orig_params);
   }
