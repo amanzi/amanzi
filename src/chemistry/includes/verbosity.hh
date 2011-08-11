@@ -2,6 +2,9 @@
 #ifndef AMANZI_CHEMISTRY_VERBOSITY_HH_
 #define AMANZI_CHEMISTRY_VERBOSITY_HH_
 
+#include <string>
+#include <map>
+
 namespace amanzi {
 namespace chemistry {
 
@@ -19,6 +22,15 @@ enum Verbosity { kSilent,
                  kDebugNever  // always last!
 };
 
+static const std::string kSilentName("silent");
+static const std::string kTerseName("terse");
+static const std::string kVerboseName("verbose");
+static const std::string kDebugName("debug");
+static const std::string kDebugBeakerName("debug_beaker");
+
+typedef std::map<std::string, Verbosity> VerbosityMap;
+
+VerbosityMap CreateVerbosityMap(void);
 
 }  // namespace chemistry
 }  // namespace amanzi
