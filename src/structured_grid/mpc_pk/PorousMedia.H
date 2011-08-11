@@ -270,7 +270,7 @@ protected:
   static void read_chem (); 
   static void read_amr ();
   static void assign_bc_coef(int type_id, 
-			     ParmParse::Record& ppr,
+			     ParmParse& ppr,
 			     Array<std::string>& names, 
 			     Array<Real>& coef);
   virtual void sum_integrated_quantities ();

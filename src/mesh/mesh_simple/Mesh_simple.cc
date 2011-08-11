@@ -31,9 +31,9 @@ Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
 
   // read the parameters from the parameter list
 
-  nx_ = parameter_list.get<int>("Numer of Cells in X");
-  ny_ = parameter_list.get<int>("Numer of Cells in Y");
-  nz_ = parameter_list.get<int>("Numer of Cells in Z");
+  nx_ = parameter_list.get<int>("Number of Cells in X");
+  ny_ = parameter_list.get<int>("Number of Cells in Y");
+  nz_ = parameter_list.get<int>("Number of Cells in Z");
   
   x0_ = parameter_list.get<double>("X_Min");
   x1_ = parameter_list.get<double>("X_Max");
@@ -409,64 +409,68 @@ Mesh_simple::~Mesh_simple()
 	       count++;
 	     }
        
-       number_of_mesh_blocks = 1;
-
      } 
    else
      {
-       element_blocks_.resize(number_of_mesh_blocks);
 
-       for (int nb=0; nb< number_of_mesh_blocks; nb++) 
-	 {
-	   
-	   // count the nunber of cells in mesh block nb
-	   count = 0;
-	   for (int ic=0; ic<num_cells_; ic++) 
-	     {
-	       std::vector<AmanziGeometry::Point> coords(8);
-	       cell_get_coordinates(ic,&coords);
-	       
-	       // first check if all z-coordinates are larger than
-	       // mesh_block_z0[nb]
-	       bool inside = true;
-	       for (int i=4; i<8; i++) 
-		 if ( coords[i][2] <= mesh_block_z0[nb] ) inside = false;
-	       for (int i=0; i<8; i++) 
-		 if ( coords[i][2] > mesh_block_z1[nb] ) inside = false;
+       // make 1 extra block (w/ id = 0) for those cells that don't
+       // fall into the declared blocks
 
-	       if (inside) count++;
-	       
-	     }
-	   element_blocks_[nb].resize(count);
-	   
-	   // add cells to mesh block nb
-	   count = 0;
-	   for (int ic=0; ic<num_cells_; ic++) 
-	     {
-	       std::vector<AmanziGeometry::Point> coords;
-	       cell_get_coordinates(ic,&coords);
-	       
-	       // first check if all z-coordinates are larger than
-	       // mesh_block_z0[nb]
-	       bool inside = true;
-	       for (int i=4; i<8; i++) 
-		 if ( coords[i][2] <= mesh_block_z0[nb] ) inside = false;
-	       for (int i=0; i<8; i++) 
-		 if ( coords[3][2] > mesh_block_z1[nb] ) inside = false;
-	       
-	       if (inside) {
-		 element_blocks_[nb][count] = ic;
-		 count++;
-	       }
-	       
-	     }	   
+       element_blocks_.resize(number_of_mesh_blocks + 1);
 
+       // The first pass just counts
+
+       std::vector<int> count(element_blocks_.size(), 0);
+       for (int pass = 0; pass < 2; ++pass) {
+         for (int ic=0; ic<num_cells_; ic++) {
+           
+           std::vector<AmanziGeometry::Point> coords(8);
+           cell_get_coordinates(ic,&coords);
 	   
-	 }
+           // first check if all z-coordinates are larger than
+           // mesh_block_z0[nb]
+           
+           int nb;
+           for (nb=0; nb< number_of_mesh_blocks; nb++) {
+             bool inside = true;
+             for (int i=4; i<8; i++) 
+               if ( coords[i][2] <= mesh_block_z0[nb] ) inside = false;
+             for (int i=0; i<8; i++) 
+               if ( coords[i][2] > mesh_block_z1[nb] ) inside = false;
        
+             if (inside) break;
+           }
+
+           if (nb >= number_of_mesh_blocks) {
+             nb = 0;
+           } else {
+             nb = nb + 1;
+           }
+           switch (pass) {
+           case 0:
+             count[nb] += 1;
+             break;
+           case 1:
+             element_blocks_[nb].push_back(ic);
+             break;
+           }
+         }
+
+         switch (pass) {
+         case 0:
+           for (int nb = 0; nb < element_blocks_.size(); ++nb) {
+             element_blocks_[nb].reserve(count[nb]);
+           }
+           break;
+         default:
+           // do nothing
+           break;
+         }
+       }
+
        // check that all cells have been added to an element block
        int ncb = 0;
-       for (int nb=0; nb< number_of_mesh_blocks; nb++) 
+       for (int nb=0; nb< element_blocks_.size(); nb++) 
 	 {
 	   ncb += element_blocks_[nb].size();
        
@@ -486,7 +490,7 @@ Mesh_simple::~Mesh_simple()
        
      }
    
-   
+   number_of_mesh_blocks = element_blocks_.size();
 
    build_maps_ ();
 }
@@ -563,10 +567,10 @@ unsigned int Mesh_simple::num_sets(AmanziMesh::Entity_kind kind) const
 {
   switch (kind) {
   case AmanziMesh::FACE:
-    return 6;
+    return side_sets_.size();
     break;
   case AmanziMesh::CELL:
-    return 1;
+    return element_blocks_.size();
     break;
   default:
     return 0;
@@ -679,8 +683,6 @@ void Mesh_simple::cell_get_coordinates (AmanziMesh::Entity_ID local_cell_id,
 
   ccoords->clear();
 
-  ccoords->clear();
-
   AmanziGeometry::Point xyz(3);
   for (std::vector<unsigned int>::iterator it = node_indices.begin(); 
        it != node_indices.end(); ++it)
@@ -710,7 +712,8 @@ void Mesh_simple::get_set_ids (AmanziMesh::Entity_kind kind,
     }
   case AmanziMesh::CELL:
     {
-      setids->push_back(0);
+      for (int i = 0; i < element_blocks_.size(); ++i)
+        setids->push_back(i);
       break;
     }      
   default:

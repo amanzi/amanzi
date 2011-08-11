@@ -21,6 +21,22 @@ split_string_to_list(const std::string& str)
   return token_list;
 }
 
+static std::stack<std::string> prefix;
+
+static std::string
+build_prefixed_name(const std::string& name)
+{
+  std::string result = name;
+
+  std::stack<std::string> pre_tmp = prefix;
+  while ( ! pre_tmp.empty() )
+    {
+      result = pre_tmp.top() + "." + result;
+      pre_tmp.pop();
+    }
+  return result;
+}
+
 void
 bldTable (const Teuchos::ParameterList& params,
 	  std::list<ParmParse::PP_entry>& tab)
@@ -32,12 +48,8 @@ bldTable (const Teuchos::ParameterList& params,
 
       if (val.isList() )
         {
-          std::list<ParmParse::PP_entry> stab;
-          
-          bldTable(params.sublist(name), stab);
-          
-          tab.push_back(ParmParse::PP_entry(name,stab));
-          
+          prefix.push(name);
+          bldTable(params.sublist(name), tab);          
         }
       else
         {
@@ -46,9 +58,13 @@ bldTable (const Teuchos::ParameterList& params,
           new_string = Teuchos::StrUtils::varSubstitute(new_string,"}","");
 
           std::list<std::string> vals = split_string_to_list(new_string);
-          tab.push_back(ParmParse::PP_entry(name,vals));
+
+          std::string prefixed_name = build_prefixed_name(name);
+          tab.push_back(ParmParse::PP_entry(prefixed_name,vals));
         }
     }
+  if ( ! prefix.empty() )
+    prefix.pop();
 }
 
 static void

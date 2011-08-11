@@ -2,7 +2,7 @@
 /**
  * @file   test_file_path.cc
  * @author William A. Perkins
- * @date Wed Nov 17 09:06:08 2010
+ * @date Thu Jul 28 10:53:10 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 17, 2010 by William A. Perkins
-// Last Change: Wed Nov 17 09:06:08 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Jul 28 10:53:10 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #ifndef EXODUS_FILE_DIR
@@ -20,6 +20,7 @@
 #define EXODUS_FILE_DIR "test_files"
 #endif
 
+#define BOOST_FILESYSTEM_VERSION 2
 #include <boost/filesystem.hpp>
 namespace bfs = boost::filesystem;
 

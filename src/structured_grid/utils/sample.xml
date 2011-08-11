@@ -1,5 +1,5 @@
 <ParameterList name="sample">
-  <Parameter name="p1" type="double" value="2.3"/>
+  <Parameter name="p1" type="int" value="2.3"/>
   <Parameter name="regions" type="Array string" value="{all, bottom, middle, top}"/>
   <ParameterList name="all">
     <ParameterList name="box">

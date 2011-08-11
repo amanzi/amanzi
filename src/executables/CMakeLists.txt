@@ -110,6 +110,18 @@ target_link_libraries(amanzi-alt-driver
                       ${alt_driver_pk_libs}
                       ${Trilinos_LIBRARIES}
                       ${Boost_LIBRARIES})
+
+#
+# Binary: amanzi-new-driver
+#
+add_executable(amanzi-new-driver amanzi-new-driver.cpp)
+set(new_driver_amanzi_libs mpc state error_handling mesh_factory interface)
+set(new_driver_pk_libs chemistry transport flow)
+target_link_libraries(amanzi-new-driver
+                      ${new_driver_amanzi_libs}
+                      ${new_driver_pk_libs}
+                      ${Trilinos_LIBRARIES}
+                      ${Boost_LIBRARIES})
 #
 # Binary: verify_mesh
 #

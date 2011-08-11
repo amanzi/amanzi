@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <typeinfo>
-
+#include "species.hh"
 #include <UnitTest++.h>
 
 #include "aqueous_equilibrium_complex.hh"
@@ -39,6 +39,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     std::vector<ac::SpeciesId> species_ids_;
 
     ac::SpeciesArray primarySpecies_;
+    ac::Species water_;
 
    private:
   };  // end class AqueousEquilibriumComplexTest
@@ -50,7 +51,8 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
       charge_(-2),
       gram_molecular_weight_(60.0092),
       ion_size_parameter_(4.5),
-      logK_(10.3288) {
+      logK_(10.3288),
+      water_(0,"H2O", 0.0, 18.00, 0.0) {
     species_names_.clear();
     stoichiometry_.clear();
     species_ids_.clear();
@@ -108,7 +110,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
                                       species_names_, stoichiometry_, species_ids_,
                                       h2o_stoich_, charge_, gram_molecular_weight_,
                                       ion_size_parameter_, logK_);
-    aec.Update(primarySpecies_);
+    aec.Update(primarySpecies_,water_);
     CHECK_CLOSE(aec.lnQK(), -23.4952588360233, 1.0e-10);
   }
 
@@ -123,7 +125,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
     expected[1] = 6.25372437900718e-11;
 
     std::vector<double> total(aec.ncomp(), 0.0);
-    aec.Update(primarySpecies_);
+    aec.Update(primarySpecies_,water_);
     aec.AddContributionToTotal(&total);
     CHECK_ARRAY_CLOSE(total, expected, total.size(), 1.0e-15);
   }
@@ -144,7 +146,7 @@ SUITE(GeochemistryTestsAqueousEquilibriumComplex) {
 
     ac::Block dtotal(aec.ncomp());
     dtotal.zero();
-    aec.Update(primarySpecies_);
+    aec.Update(primarySpecies_,water_);
     aec.AddContributionToDTotal(primarySpecies_, &dtotal);
     double** dt = dtotal.getValues();
     CHECK_ARRAY_CLOSE(dt[0], e[0], aec.ncomp(), 1.0e-15);

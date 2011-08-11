@@ -25,6 +25,8 @@ if ( ENABLE_Structured )
   link_directories(${CCSE_LIBRARY_DIR})
   include_directories(${BOXDRIV_SOURCE_DIR})
   link_directories(${BOXDRIV_SOURCE_DIR})
+  include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
+  link_directories(${STRUCTUREDUTILS_SOURCE_DIR})
   add_definitions("-DENABLE_Structured")
 endif()
 
@@ -85,7 +87,7 @@ else()
 endif()
 
 if(ENABLE_Structured)
-  set(structured_grid_libs pmamr gsint boxprob boxdriv ${CCSE_LIBRARIES})
+  set(structured_grid_libs pmamr gsint boxprob boxdriv structutils ${CCSE_LIBRARIES})
   if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
     #message(">>>>>> using darwin ld flags")
     set(ld_flag_prefix -force_load)
@@ -106,7 +108,7 @@ endif()
 #message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS})
+set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface)
 
 set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
 set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
@@ -131,17 +133,10 @@ if (BUILD_TESTS)
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t0-structured.xml ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_test_0.pp ${SSC_BINARY_DIR})
-
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t1-structured.xml ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_test_1.pp ${SSC_BINARY_DIR})
-
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t2-structured.xml ${SSC_BINARY_DIR})
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/inputs_simple_chem.pp ${SSC_BINARY_DIR})
+
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/uo2-5-component.bgd ${SSC_BINARY_DIR})
     endif()
