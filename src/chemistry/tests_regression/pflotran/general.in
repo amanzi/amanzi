@@ -1,0 +1,145 @@
+:Description: 1D problem for testing 
+ 
+: == debugging ================================================================
+DEBUG
+:MATVIEW_JACOBIAN
+:VECVIEW_RESIDUAL
+:VECVIEW_SOLUTION
+/
+
+: == mode =====================================================================
+UNIFORM_VELOCITY 0.d0 0.d0 0.d0
+
+: == chemistry ================================================================
+CHEMISTRY
+  PRIMARY_SPECIES
+    A(aq)
+    B(aq)
+  /
+  GENERAL_REACTION
+    REACTION A(aq) <-> B(aq)
+    FORWARD_RATE 1.15741d-6 ! 0.1 1/d
+    BACKWARD_RATE 0.d0
+  /
+  DATABASE ./hanford.dat
+:  OPERATOR_SPLIT
+:  LOG_FORMULATION
+  OUTPUT
+    All
+  /
+/
+
+: == reference variables ======================================================
+REFERENCE_POROSITY 0.25d0
+
+: == time stepping ============================================================
+TIMESTEPPER
+  TS_ACCELERATION 0
+/
+
+: == discretization ===========================================================
+GRID
+  TYPE structured
+  NXYZ 1 1 1
+  BOUNDS
+    0.d0 1.d0
+    0.d0 1.d0
+    0.d0 1.d0
+  /
+/
+
+: == transport solvers ========================================================
+NEWTON_SOLVER TRANSPORT
+  PRECONDITIONER_MATRIX_TYPE AIJ
+  RTOL 1.d-12
+  ATOL 1.d-12
+  STOL 1.d-30
+:NO_INFINITY_NORM
+:NO_PRINT_CONVERGENCE
+:PRINT_DETAILED_CONVERGENCE
+/
+
+LINEAR_SOLVER TRANSPORT
+  SOLVER DIRECT
+/
+
+: == fluid properties =========================================================
+FLUID_PROPERTY
+  DIFFUSION_COEFFICIENT 1.d-9
+/
+
+: == material properties ======================================================
+MATERIAL_PROPERTY  Hanford
+  ID 1
+  SATURATION_FUNCTION sf1
+  POROSITY 0.25
+  TORTUOSITY 0.5
+/
+
+skip
+: == saturation / permeability functions ======================================
+SATURATION_FUNCTION sf1
+  SATURATION_FUNCTION_TYPE VAN_GENUCHTEN
+  RESIDUAL_SATURATION 0.1d0
+  LAMBDA 2.67d0
+  ALPHA 2.042d-4
+/
+noskip
+
+: == output ===================================================================
+OUTPUT
+  PERIODIC_OBSERVATION TIMESTEP 5
+:  FORMAT TECPLOT POINT
+  FORMAT TECPLOT BLOCK
+  FORMAT HDF5
+  PROCESSOR_ID
+/
+
+: == times ====================================================================
+TIME
+  FINAL_TIME 50 d
+  INITIAL_TIMESTEP_SIZE 0.1 d
+  MAXIMUM_TIMESTEP_SIZE 0.1 d
+/
+
+: == regions ==================================================================
+REGION all
+  COORDINATES
+    0.d0 0.d0 0.d0
+    1.d0 1.d0 1.d0
+  /
+/
+
+: == observation ==============================================================
+OBSERVATION
+  REGION all
+/
+
+: == transport conditions =====================================================
+TRANSPORT_CONDITION Initial
+  TYPE zero_gradient
+  CONSTRAINT_LIST
+    0.d0 Initial
+  /
+/
+
+: == transport constraints ====================================================
+CONSTRAINT Initial
+  CONCENTRATIONS
+    A(aq)    1.d-4            F
+    B(aq)    2.d-5            F
+  /
+/
+
+: == couplers =================================================================
+INITIAL_CONDITION Initial
+  TRANSPORT_CONDITION Initial
+  REGION all
+/
+
+: == stratigraphy =============================================================
+STRATA
+  MATERIAL Hanford
+  REGION all
+/
+
