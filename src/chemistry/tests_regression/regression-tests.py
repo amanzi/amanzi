@@ -53,10 +53,9 @@ def get_configuration(options):
         raise Exception("""
 Config file must contain a \'setup\' section with the following fields:
 [setup]
-test arg : 
-verbosity arg :
-verbosity :
-extra args :
+input arg :
+input dir :
+input suffix :
 results dir : 
 """)
     test_names.remove('setup')
@@ -139,11 +138,9 @@ def run_tests(options, tests_to_run):
     num_failed = 0
     for r in tests_to_run.keys():
         test_info = tests_to_run[r]
+        input_file = setup['input dir'] + r + "." + setup['input suffix']
         cmdline = "{0} ".format(options.executable[0])
-        if test_info['model']:
-            cmdline += "-m {0} ".format(test_info['model'])
-        cmdline += "{0} {1} ".format(setup['verbosity arg'], setup['verbosity'])
-        cmdline += "{0} {1} ".format(setup['test arg'], test_info['test id'])
+        cmdline += "{0} {1} ".format(setup['input arg'], input_file)
         if options.verbose or not options.do_tests:
             print 80*'-'
             print "Running test \'{0}\' with the command:\n\t{1}".format(r, cmdline)

@@ -5,7 +5,7 @@
 /**
  * @file   MeshFileType.cc
  * @author William A. Perkins
- * @date Wed May 18 12:46:37 2011
+ * @date Thu Jul 28 14:16:00 2011
  * 
  * @brief  
  * 
@@ -13,13 +13,14 @@
  */
 // -------------------------------------------------------------
 // Created March 11, 2011 by William A. Perkins
-// Last Change: Wed May 18 12:46:37 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Jul 28 14:16:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 #include <boost/regex.hpp>
 
+#define BOOST_FILESYSTEM_VERSION 2
 #include <boost/filesystem.hpp>
 namespace bfs = boost::filesystem;
 
@@ -95,6 +96,8 @@ namespace AmanziMesh {
   Format
   file_format(const Epetra_Comm& comm, const char *name) 
   {
+    const int np(comm.NumProc());
+    const int me(comm.MyPID());
     Format result(UnknownFormat);
 
     // take a guess at the format using the file name
@@ -106,7 +109,10 @@ namespace AmanziMesh {
       result = MOABHDF5;
     } else if (boost::regex_match(fname, NemesisExt)) {
       result = Nemesis;
-      fname = boost::str(boost::format("%s.%d.%d") % 
+      int ndigits = (int)floor(log10(np)) + 1;
+      std::string fmt = 
+        boost::str(boost::format("%%s.%%d.%%0%dd") % ndigits);
+      fname = boost::str(boost::format(fmt) % 
                          name % comm.NumProc() % comm.MyPID());
     } else {
       result = UnknownFormat;

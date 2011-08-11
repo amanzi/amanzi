@@ -118,6 +118,13 @@ Trilinos:
         :Dependencies: ExodusII, (if STKmesh used) CMake, MPI
         :Information: http://trilinos.sandia.gov/
 
+CCSE:
+        :Version: 0.1.2
+        :Description: Base library for structured-mesh objects
+        :Role: Used by Amanzi to implement structured-grid adaptive integrator
+        :Dependencies: MPI, OpenMPI (if enabled)
+        :Information: https://ccse.lbl.gov/Software/ccse_core.html
+
 
 Required Software Tools
 -----------------------
@@ -179,7 +186,7 @@ ASCEM-IO:
 Optional Software Tools
 -----------------------
 
-Mercirual:
+Mercurial:
         :Versions: TODO: Versions
         :Description: A dirtributed version control system
         :Role: Used by Amanzi to record and track changes to the software, and coordinate developer contributions. Required in order to obtain development versions of the Amanzi source.

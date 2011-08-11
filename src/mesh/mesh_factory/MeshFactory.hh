@@ -1,9 +1,9 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
  * @file   MeshFactory.hh
  * @author William A. Perkins
- * @date Tue Mar 22 08:26:54 2011
+ * @date Mon Aug  1 12:12:13 2011
  * 
  * @brief  declaration of the MeshFactory class
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 10, 2011 by William A. Perkins
-// Last Change: Tue Mar 22 08:26:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  1 12:12:13 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #ifndef _MeshFactory_hh_
@@ -69,8 +69,8 @@ namespace AmanziMesh {
 
     /// Create a hexahedral mesh of the specified dimensions
     Teuchos::RCP<Mesh> create(double x0, double y0, double z0,
-                                        double x1, double y1, double z1,
-                                        int nx, int ny, int nz);
+                              double x1, double y1, double z1,
+                              int nx, int ny, int nz);
     
     /// Create a hexahedral mesh using the specified parameter list
     Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list);
@@ -88,6 +88,13 @@ namespace AmanziMesh {
     { 
       return create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
     }
+
+    /// Create a hexahedral mesh using the specified parameter list
+    Teuchos::RCP<Mesh> operator() (Teuchos::ParameterList &parameter_list)
+    {
+      return create(parameter_list);
+    }
+
 
   };
 

@@ -4,7 +4,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Thu May 19 12:15:07 2011
+ * @date Mon Aug  8 12:16:12 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Thu May 19 12:15:07 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  8 12:16:12 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <algorithm>
@@ -57,6 +57,9 @@ Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
 {
   Mesh::set_comm(communicator_->GetMpiComm());
   build_maps_();
+
+  // FIXME: this is supposed to be temporary
+  fill_setnameid_map_();
 }
 
 Mesh_STK::~Mesh_STK(void)
@@ -738,6 +741,7 @@ Mesh_STK::build_maps_ ()
     map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *communicator_));
     map_used_.insert(MapSet::value_type(kind, map));
   }
+
 }
 
 // -------------------------------------------------------------
@@ -840,6 +844,25 @@ Mesh_STK::redistribute(const Teuchos::ParameterList &paramlist)
   partitioner.partition();
   Teuchos::RCP< Epetra_Map > newcmap(partitioner.createNewMap()); // 0-based
   this->redistribute(*newcmap);
+}
+
+// -------------------------------------------------------------
+// Mesh_STK::fill_setnameid_map_
+// -------------------------------------------------------------
+void
+Mesh_STK::fill_setnameid_map_(void)
+{
+  std::vector<unsigned int> csetids;
+  const int cell_rank = entity_map_.kind_to_rank (CELL);
+  mesh_->get_set_ids(cell_rank, csetids);
+
+  tmp_setnameid_map.clear();
+  for (std::vector<unsigned int>::const_iterator i = csetids.begin();
+       i != csetids.end(); ++i) {
+    stk::mesh::Part *p = mesh_->get_set(*i, cell_rank);
+    std::string s(p->name());
+    tmp_setnameid_map[s] = *i;
+  }
 }
 
 } // namespace AmanziMesh

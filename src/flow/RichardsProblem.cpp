@@ -334,8 +334,6 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   Epetra_Vector &Fcell_own = *CreateCellView(F);
   Epetra_Vector &Fface_own = *CreateFaceView(F);
 
-
-
   // Create input cell and face pressure vectors that include ghosts.
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
@@ -369,9 +367,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
     for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K * gflux[k];
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
-    
   }
-
 
   // Apply final BC fixups to FFACE.
   apply_BC_final_(Fface); // modifies used values
@@ -384,8 +380,6 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
   for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
     
-
-
   delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
 }
 
@@ -485,6 +479,102 @@ void RichardsProblem::apply_BC_final_(Epetra_Vector &Fface)
       break;
     }
   }
+}
+
+
+void RichardsProblem::upwind_rel_perm_(const Epetra_Vector &P, Epetra_Vector &k_rel)
+{
+  ASSERT(P.Map().SameAs(Map()));
+  ASSERT(k_rel.Map().SameAs(FaceMap(false)));
+
+  int fdirs[6];
+  unsigned int cface[6];
+  double aux1[6], aux2[6], gflux[6], dummy;
+
+  // Create a copy of the cell pressure segment of P that includes ghosts.
+  Epetra_Vector &Pcell_own = *CreateCellView(P);
+  Epetra_Vector Pcell(CellMap(true));
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
+
+  // Create a copy of the face pressure segment of P that includes ghosts.
+  Epetra_Vector &Pface_own = *CreateFaceView(P);
+  Epetra_Vector Pface(FaceMap(true));
+  Pface.Import(Pface_own, *face_importer_, Insert);
+
+  // Calculate the mimetic face 'fluxes' that omit the relative permeability.
+  // When P is a converged solution, the following result on interior faces
+  // will be twice the true value (double counting).  For a non-converged
+  // solution (typical case) we view it as an approximation (twice the
+  // average of the adjacent cell fluxes).  Here we are only interested
+  // in the sign of the flux, and then only on interior faces.
+
+  // Looping over all cells gives desired result on *owned* faces.
+  Epetra_Vector Fface(FaceMap(true)); // fills with 0, includes ghosts
+  for (unsigned int j = 0; j < Pcell.MyLength(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces(j, cface, cface+6);
+    // Gather the local face pressures int AUX1.
+    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
+    // Compute the local value of the diffusion operator.
+    double K = (rho_ * k_[j] / mu_);
+    MD[j].diff_op(K, Pcell_own[j], aux1, dummy, aux2);
+    // Gravity contribution
+    MD[j].GravityFlux(g_, gflux);
+    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
+    // Scatter the local face result into FFACE.
+    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
+    for (int k = 0; k < 6; ++k) Fface[cface[k]] += fdirs[k] * aux2[k];
+  }
+
+  // Generate the face-to-cell data structure.  For each face, the pair of
+  // adjacent cell indices is stored, accessed via the members first and
+  // second.  The face is oriented outward with respect to the first cell
+  // of the pair and inward with respect to the second.  Boundary faces are
+  // identified by a -1 value for the second member.
+
+  typedef std::pair<int,int> CellPair;
+  int nface = FaceMap(true).NumMyElements();
+  int nface_own = FaceMap(false).NumMyElements();
+  CellPair *fcell = new CellPair[nface];
+  for (int j = 0; j < nface; ++j) {
+    fcell[j].first  = -1;
+    fcell[j].second = -1;
+  }
+  // Looping over all cells gives desired result on *owned* faces.
+  for (unsigned int j = 0; j < CellMap(true).NumMyElements(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces(j, cface, cface+6);
+    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
+    for (int k = 0; k < 6; ++k) {
+      if (fdirs[k] > 0) {
+        ASSERT(fcell[cface[k]].first == -1);
+        fcell[cface[k]].first = j;
+      } else {
+        ASSERT(fcell[cface[k]].second == -1);
+        fcell[cface[k]].second = j;
+      }
+    }
+  }
+  // Fix-up at boundary faces: move the cell index to the first position.
+  for (int j = 0; j < nface_own; ++j) {
+    if (fcell[j].first == -1) {
+      ASSERT(fcell[j].second != -1);
+      fcell[j].first = fcell[j].second;
+      fcell[j].second = -1; // marks a boundary face
+    }
+  }
+  
+  // Finally, compute the relative permeability on cells and then upwind on faces.
+  UpdateVanGenuchtenRelativePermeability(Pcell); // result goes to k_rl_
+  for (int j = 0; j < nface_own; ++j) {
+    if (fcell[j].second == -1) // boundary face
+      k_rel[j] = k_rl_[fcell[j].first];
+    else
+      k_rel[j] = k_rl_[((Fface[j] >= 0.0) ? fcell[j].first : fcell[j].second)];
+  }
+
+  delete &Pcell_own, &Pface_own;
+  delete [] fcell;
 }
 
 

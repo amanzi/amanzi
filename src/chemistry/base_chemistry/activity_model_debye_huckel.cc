@@ -39,6 +39,43 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
   return gamma;
 }  // end Evaluate()
 
+void ActivityModelDebyeHuckel::EvaluateVector (std::vector<double>& gamma, double& actw, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec){
+	// log(gamma_i) = - A * z_i^2 * sqrt(I) / (1 + a0 * B * sqrt(I)) + Bdot * I
+	const double r1(1.0e0), rsmall(1.0e-10);
+	double sqrt_I = std::sqrt(I_);
+	int isp(-1);
+	// For primary species
+	for (std::vector<Species>::const_iterator i=prim.begin(); i!=prim.end(); i++) {
+		isp++;
+		if (fabs((*i).charge()) < rsmall) {
+			gamma[isp] = r1;
+		} else {
+            double log_gamma = -debyeA * (*i).charge() * (*i).charge() * sqrt_I /
+				        (r1 + (*i).ion_size_parameter() * debyeB * sqrt_I) +
+				        debyeBdot * I_;
+
+				    // bja: why not just std::pow(10.0, log_gamma)?
+				    gamma[isp] = std::exp(log_to_ln(log_gamma));
+				    std::cout << gamma[isp] << std::endl;
+		}
+	}
+	// For aqueous complexes
+	for (std::vector<AqueousEquilibriumComplex>::const_iterator i=sec.begin(); i!=sec.end(); i++) {
+			isp++;
+			if (fabs((*i).charge()) < rsmall) {
+				gamma[isp] = r1;
+			} else {
+	            double log_gamma = -debyeA * (*i).charge() * (*i).charge() * sqrt_I /
+					        (r1 + (*i).ion_size_parameter() * debyeB * sqrt_I) +
+					        debyeBdot * I_;
+
+					    // bja: why not just std::pow(10.0, log_gamma)?
+					    gamma[isp] = std::exp(log_to_ln(log_gamma));
+			}
+		}
+	actw=r1;
+} // end evaluate
+
 void ActivityModelDebyeHuckel::Display(void) const {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
 }  // end Display()

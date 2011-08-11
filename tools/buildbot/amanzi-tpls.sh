@@ -238,7 +238,7 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
-CCSE_VERSION=0.1.2
+CCSE_VERSION=0.1.3
 
 ################################################################################
 #
@@ -1097,7 +1097,6 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
-        -D ENABLE_HDF5:BOOL=ON \\
         -D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
         -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse/install \\
         -D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\

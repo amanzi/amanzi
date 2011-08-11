@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created May  9, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:45:27 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  8 12:16:38 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -61,6 +61,9 @@ Mesh_STK::read_exodus_(const std::string& fname)
   if (aerr != 0) 
     Exceptions::amanzi_throw( STK::Error ("Exodus file read error") );
   build_maps_();
+
+  // FIXME: this is supposed to be temporary
+  fill_setnameid_map_();
 }
 
 // -------------------------------------------------------------
