@@ -312,7 +312,7 @@ void SimpleThermoDatabase::ParsePrimarySpecies(const std::string& data) {
   }
 
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer primary_data(data, semicolon);
   StringTokenizer no_spaces;
 
@@ -360,7 +360,7 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer aqueous_eq(data, semicolon);
@@ -429,7 +429,7 @@ void SimpleThermoDatabase::ParseMineral(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer mineral_eq(data, semicolon);
@@ -491,7 +491,7 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer rate_data(data, semicolon);
@@ -540,7 +540,7 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
   double size = 0.0;  // not used in ion exchange sites
 
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer exchanger_data(data, semicolon);
@@ -587,7 +587,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer complex_data(data, semicolon);
@@ -651,7 +651,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexSite(const std::string& data) {
   double size = 0.0;  // not used in ion exchange sites
 
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer site_data(data, semicolon);
@@ -697,7 +697,7 @@ void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer complex_data(data, semicolon);
@@ -771,7 +771,7 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
     std::cout << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
   std::vector<Species> primary_species = this->primary_species();
 
@@ -841,7 +841,7 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
     std::cout << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
   std::vector<Species> primary_species = this->primary_species();
   std::vector<IonExchangeSite> ion_exchange_sites = this->ion_exchange_sites();
@@ -930,7 +930,7 @@ void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
     std::cout << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
   std::vector<Species> primary_species = this->primary_species();
   std::vector<IonExchangeSite> ion_exchange_sites = this->ion_exchange_sites();
@@ -1019,7 +1019,7 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
     std::cout << "      data: " << reaction << std::endl;
   }
   std::string equal("=");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
   std::vector<Species> primary_species = this->primary_species();
 
@@ -1103,7 +1103,7 @@ void SimpleThermoDatabase::ParseIsotherm(const std::string& data) {
     std::cout << "  data: " << data << std::endl;
   }
   std::string semicolon(";");
-  std::string space(" ");
+  std::string space(" \t");
   StringTokenizer no_spaces;
 
   StringTokenizer isotherm_data(data, semicolon);
