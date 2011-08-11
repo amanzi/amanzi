@@ -2,8 +2,6 @@
 
 #include "Region.hh"
 #include "RectangularRegion.hh"
-#include "MeshDefs.hh"
-#include "Mesh.hh"
 
 #include "Teuchos_MPISession.hpp"
 
@@ -11,7 +9,6 @@ using Amanzi::AmanziGeometry::Region;
 using Amanzi::AmanziGeometry::RegionPtr;
 using Amanzi::AmanziGeometry::RectangularRegion;
 using Amanzi::AmanziGeometry::Point;
-using Amanzi::AmanziMesh::Mesh;
 
 using Teuchos::Array;
 using Teuchos::ParameterList;
