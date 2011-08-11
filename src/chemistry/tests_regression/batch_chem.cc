@@ -298,14 +298,21 @@ void ReadInputFile(const std::string& file_name,
   while (!input_file.eof() && count < max_lines) {
     count++;
     std::string raw_line;
-    getline(input_file, raw_line);
+    // This section was added to skip over lines of length 0
+    // which causes the code to crash below on windows. - geh
+    while (!input_file.eof()) {
+      getline(input_file, raw_line);
+      if (raw_line.size() > 0) break;
+    }
+    if (input_file.eof()) break;
+    // end of added section - geh
     //std::cout << raw_line << std::endl;
     if ((raw_line.size() > 0) && (raw_line[raw_line.size() - 1] == '\r')) {
       // getline only searches for \n line ends. windows files use \r\n
       // check for a hanging \r and remove it if it is there
       raw_line.resize(raw_line.size() - 1);
     }
-
+    // the following should crash is raw_line.size() == 0.  It does on windows - geh
     char first = raw_line[0];
     if (first == '#' || first == '\0') {
       line_type = kCommentLine;
