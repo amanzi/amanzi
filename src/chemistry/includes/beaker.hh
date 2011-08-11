@@ -17,6 +17,7 @@
 #include "kinetic_rate.hh"
 #include "mineral.hh"
 #include "species.hh"
+#include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"
 #include "verbosity.hh"
 
@@ -36,10 +37,10 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerComponents {
-    std::vector<double> free_ion;
-    std::vector<double> minerals;
+    std::vector<double> free_ion;  // molality
+    std::vector<double> minerals;  // volume fractions
     std::vector<double> ion_exchange_sites;
-    std::vector<double> total;
+    std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
   };
 
@@ -88,6 +89,7 @@ class Beaker {
   void AddMineralKineticRate(KineticRate* rate);
   void addGeneralRxn(const GeneralRxn& r);
   void addSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
+  void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
   bool HaveKinetics(void) const;
 
@@ -337,6 +339,7 @@ class Beaker {
   //  vector<GasExchange*> gasRxns_;
   std::vector<IonExchangeComplex> ion_exchange_rxns_;
   std::vector<SurfaceComplexationRxn> surfaceComplexationRxns_;
+  std::vector<SorptionIsothermRxn> sorption_isotherm_rxns_;
 
   // solver data structures
   std::vector<double> fixed_accumulation;  // fixed (time t) portion of accumulation term
