@@ -239,9 +239,12 @@ int main(int argc, char** argv) {
       }
       case 86: {
         thermo_database_file = "general.bgd";
-        activity_model_name = ac::ActivityModelFactory::debye_huckel;
-        components.total.push_back(1.0e-3);  // A(aq)
-        components.total.push_back(1.0e-40);  // B(aq)
+        activity_model_name = ac::ActivityModelFactory::unit;
+        components.total.push_back(1.0e-4);   // A(aq)
+        components.total.push_back(2.0e-5);  // B(aq)
+        delta_time = 0.1 * 24.0 * 3600.0;     // 0.1 days
+        num_time_steps = 50.0 * 24.0 * 3600.0 / delta_time;  // run to 50 days
+        output_interval = 5;                  // plot every 5 steps
         break;
       }
       default: {

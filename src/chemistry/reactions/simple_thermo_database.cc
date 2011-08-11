@@ -134,10 +134,14 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
     int data_order_error = 0;
     std::string error_section("");
     std::string line;
+    // This section was added to skip over lines of length 0
+    // which causes the code to crash below on windows. - geh
     while (!input.eof()) {
       getline(input, line);
       if (line.size() > 0) break;
     }
+    if (input.eof()) break;
+    // end of added section - geh
     if ((line.size() > 0) && (line[line.size() - 1] == '\r')) {
       // getline only searches for \n line ends. windows files use \r\n
       // check for a hanging \r and remove it if it is there
@@ -438,7 +442,9 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
   // parse forward rates
   std::vector<double> forward_stoichiometries;
   std::vector<int> forward_species_ids;
-  StringTokenizer forward_list(substrings.at(1),", ");
+  forward_stoichiometries.clear();
+  forward_species_ids.clear();
+  StringTokenizer forward_list(substrings.at(1),space);
   for (StringTokenizer::iterator i = forward_list.begin();
        i != forward_list.end(); ++i) {
     std::stringstream tempstring(std::stringstream::in | 
@@ -449,8 +455,8 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
     if (tempstring.fail()) 
       d = 1.;  // no stoich specified
     else
-      tempstring >> *i; // read species name
-    std::string s = *i;
+      ++i; // increment substring
+    std::string s = *i;  // read species name
     RemoveLeadingAndTrailingSpaces(&s);
     forward_species_ids.push_back(SpeciesNameToID(s));
     forward_stoichiometries.push_back(d);
@@ -459,7 +465,9 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
   // parse forward rates
   std::vector<double> backward_stoichiometries;
   std::vector<int> backward_species_ids;
-  StringTokenizer backward_list(substrings.at(3),", ");
+  backward_stoichiometries.clear();
+  backward_species_ids.clear();
+  StringTokenizer backward_list(substrings.at(3),space);
   for (StringTokenizer::iterator i = backward_list.begin();
        i != backward_list.end(); ++i) {
     std::stringstream tempstring(std::stringstream::in | 
@@ -470,23 +478,29 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
     if (tempstring.fail()) 
       d = 1.;  // no stoich specified
     else
-      tempstring >> *i; // read species name
-    std::string s = *i;
+      ++i; // increment substring
+    std::string s = *i;  // read species name
     RemoveLeadingAndTrailingSpaces(&s);
     backward_species_ids.push_back(SpeciesNameToID(s));
     backward_stoichiometries.push_back(d);
   }
 
+  double forward_rate_constant(0.);
+  double backward_rate_constant(0.);
   std::stringstream tempstream(std::stringstream::in | 
                                std::stringstream::out);
-  tempstream << substrings.at(2);
-  double forward_rate_constant;
-  tempstream >> forward_rate_constant;
-  if (tempstream.fail()) std::cout << "Error reading forward rate constant\n";
-  tempstream << substrings.at(4);
-  double backward_rate_constant;
-  tempstream >> backward_rate_constant;
-  if (tempstream.fail()) std::cout << "Error reading backward rate constant\n";
+  if (substrings.at(2).size() > 0 && 
+      substrings.at(2).find_first_not_of(space) != std::string::npos) {
+    tempstream << substrings.at(2);
+    tempstream >> forward_rate_constant;
+    if (tempstream.fail()) std::cout << "Error reading forward rate constant\n";
+  }
+  if (substrings.at(4).size() > 0 && 
+      substrings.at(4).find_first_not_of(space) != std::string::npos) {
+    tempstream << substrings.at(4);
+    tempstream >> backward_rate_constant;
+    if (tempstream.fail()) std::cout << "Error reading backward rate constant\n";
+  }
 
   GeneralRxn general("",species,stoichiometries,species_ids,
                    forward_stoichiometries,forward_species_ids,
