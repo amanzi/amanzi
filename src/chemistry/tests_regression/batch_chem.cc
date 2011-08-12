@@ -373,7 +373,10 @@ void ParseSimulationParameter(const std::string& raw_line,
       value.assign(param_value.at(0));
     }
     if (param.at(0).find(kDescriptionParam) != std::string::npos) {
-      params->description.assign(value);
+      // the description probably has spaces in it, so we want to use
+      // the raw parameter value from param.at(1) rather than the
+      // version in value, which has been tokenized by spaces!
+      params->description.assign(param.at(1));
     } else if (param.at(0).find(kVerbosityParam) != std::string::npos) {
       params->verbosity_name.assign(value);
     } else if (param.at(0).find(kComparisonModelParam) != std::string::npos) {
