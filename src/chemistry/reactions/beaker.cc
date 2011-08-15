@@ -237,7 +237,7 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
 void Beaker::SetupActivityModel(std::string model, std::string pitzer_database) {
   if (model != ActivityModelFactory::unit &&
       model != ActivityModelFactory::debye_huckel &&
-      model != ActivityModelFactory::pitzer) {
+      model != ActivityModelFactory::pitzer_hwm) {
     model = ActivityModelFactory::unit;
   }
   if (activity_model_ != NULL) {
