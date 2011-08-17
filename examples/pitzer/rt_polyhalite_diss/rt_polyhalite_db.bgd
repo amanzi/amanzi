@@ -1,0 +1,44 @@
+<Primary Species
+# name               ; debye-huckel a0 ; charge ; GMW     
+
+H+                   ;   9.0 ;   1.0 ;  26.9815
+Ca+2                 ;   9.0 ;   2.0 ;   1.0079
+Cl-                  ;   4.0 ;  -1.0 ;  95.9793
+Na+                  ;   3.0 ;   1.0 ;  60.0843
+CO3-2                ;   3.0 ;  -2.0 ;  60.0843
+Mg+2                 ;   3.0 ;   2.0 ;  60.0843
+K+                   ;   3.0 ;   1.0 ;  60.0843
+SO4-2                ;   3.0 ;  -2.0 ;  60.0843
+Br-                  ;   3.0 ;  -1.0 ;  60.0843
+
+<Aqueous Equilibrium Complexes
+# name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW      
+
+OH-                  =  1.0 H2O   -1.0 H+  ;    13.998 ;   3.5 ;  -1.0 ;  17.0073 
+MgCO3(aq)            =  1.0 Mg+2   1.0 CO3-2 ;   -2.928 ;   3.5 ;  0.0 ;  17.0073 
+CaCO3(aq)            =  1.0 Ca+2   1.0 CO3-2 ;   -3.151 ;   3.5 ;  0.0 ;  17.0073 
+CO2                  =  1.0 CO3-2  -1.00 H2O 2.0 H+  ;   -16.6767 ;   3.5 ;  0.0 ;  17.0073 
+MgOH+                =  1.0 H2O   -1.0 H+ 1.0 Mg+2  ;    11.809 ;   3.5 ;  1.0 ;  17.0073 
+HCO3-                =  1.0 CO3-2  1.0 H+  ;   -10.3393 ;   3.5 ;  -1.0 ;  17.0073 
+HSO4-                =  1.0 SO4-2  1.0 H+  ;    -1.979 ;   3.5 ;  -1.0 ;  17.0073 
+
+<Minerals
+# name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; GMW      ; molar volume [cm^3/mol] ; SSA [m^2/g] 
+
+gypsum               =  2.00 H2O  1.00 SO4-2  1.00 Ca+2 ;   -4.581 ;   172.1722 ;    74.21216 ;   1.0
+halite               =  1.00 Cl-  1.00 Na+ ;   1.57 ;  58.4428 ;   27.05685 ;   1.0 
+polyhalite           =  2.00 H2O   1.00 Mg+2  2.00 Ca+2 2.00 K+ 4.0 SO4-2 ;   -13.7440 ;  218.1 ;  100.9722 ;   1.0
+
+<Mineral Kinetics
+# name               ; TST ; log10_rate_constant double     moles_m2_sec 
+
+gypsum               ; TST ; log10_rate_constant    -10.0 moles_m2_sec 
+halite               ; TST ; log10_rate_constant    -10.0 moles_m2_sec 
+polyhalite           ; TST ; log10_rate_constant    -12.0 moles_m2_sec 
+
+<Surface Complex Sites
+# name               ; surface_density [mol/m^3 bulk]
+
+<Surface Complexes
+# name               =  coeff surface site  coeff primary_name  ; log10(Keq) 25C ; charge 
+
