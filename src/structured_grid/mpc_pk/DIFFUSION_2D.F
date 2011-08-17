@@ -1,5 +1,5 @@
 c
-c $Id: DIFFUSION_2D.F,v 1.13 2011-07-06 17:49:12 gpau Exp $
+c $Id: DIFFUSION_2D.F,v 1.15 2011-08-15 19:50:00 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -435,6 +435,7 @@ c
       do i = lo(1),hi(1)
          do j = lo(2),hi(2)
             rg(i,j) = rg(i,j) - mult*rho*grav*(cy(i,j+1) - cy(i,j))/dx(2)
+
          end do
       end do
 
@@ -561,9 +562,9 @@ c     set up right hand side: norm_rhs*e_1
       end do
       soln(1) = norm_rhs
 
-      call DGETRF( nc, nc, H, nc, IPIV, INFO)
+      call DGETRF_PM( nc, nc, H, nc, IPIV, INFO)
       if (INFO .eq. 0) then
-         call DGETRS( 'N', nc, 1, H, nc, IPIV, soln, nc, INFO )
+         call DGETRS_PM( 'N', nc, 1, H, nc, IPIV, soln, nc, INFO )
          if (INFO .ne. 0) then
             call bl_abort('FORT_ARNOLDI::DGETRS failed')
          end if

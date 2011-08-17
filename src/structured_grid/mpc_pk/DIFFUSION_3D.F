@@ -1,5 +1,5 @@
 c
-c $Id: DIFFUSION_3D.F,v 1.10 2011-07-13 00:16:16 gpau Exp $
+c $Id: DIFFUSION_3D.F,v 1.11 2011-08-15 19:50:00 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -489,9 +489,9 @@ c     set up right hand side: norm_rhs*e_1
       end do
       soln(1) = norm_rhs
 
-      call DGETRF( nc, nc, H, nc, IPIV, INFO)
+      call DGETRF_PM( nc, nc, H, nc, IPIV, INFO)
       if (INFO .eq. 0) then
-         call DGETRS( 'N', nc, 1, H, nc, IPIV, soln, nc, INFO )
+         call DGETRS_PM( 'N', nc, 1, H, nc, IPIV, soln, nc, INFO )
          if (INFO .ne. 0) then
             call bl_abort('FORT_ARNOLDI::DGETRS failed')
          end if

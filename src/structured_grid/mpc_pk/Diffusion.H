@@ -1,5 +1,5 @@
 //
-// $Id: Diffusion.H,v 1.24 2011-07-12 17:17:21 gpau Exp $
+// $Id: Diffusion.H,v 1.26 2011-08-15 17:53:23 gpau Exp $
 //
 
 #ifndef _Diffusion_H_
@@ -124,7 +124,22 @@ public:
 		       MultiFab*              pc,
 		       MultiFab*              umac,
 		       const bool             do_upwind,
-		       Real*                  err_nwt);  
+		       Real*                  err_nwt); 
+
+    void richard_iter_p(Real                   dt,
+			int                    nc,
+			Real                   gravity,
+			Array<Real>            density,
+			MultiFab&              res_fix,
+			const MultiFab*        alpha,
+			const MultiFab*        dalpha,
+			const MultiFab* const* beta,
+			const MultiFab* const* beta_dp,
+			MultiFab*              pc,
+			MultiFab*              umac,
+			const bool             do_upwind,
+			Real*                  err_nwt); 
+ 
 
     void richard_iter_eqb (int                    nc,
 			   Real                   gravity,
@@ -276,7 +291,6 @@ public:
 			   const MultiFab* alpha_in, 
 			   const MultiFab* const* beta,
 			   const Real      a,
-			   const Real      b,
 			   bool  do_volume = true);
 #endif
 
@@ -361,6 +375,9 @@ public:
                          const int                   sComp,
                          const int                   nComp);
 protected:
+
+    static void Initialize ();
+    static void Finalize ();
     //
     // Data Required by Derived Classes
     //
@@ -398,13 +415,11 @@ private:
     // Density at diffusion solve.
     //
     MultiFab* rho;
-
     //
     // Static data.
     //
-    static int         first;
-    static int         do_reflux;
-    static int         max_order;
+    static int do_reflux;
+    static int max_order;
 };
 
 #endif
