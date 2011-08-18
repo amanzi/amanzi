@@ -1,6 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "sorption_isotherm_factory.hh"
 
+#include <cstdlib>
 #include <sstream>
 #include <string>
 
