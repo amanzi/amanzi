@@ -56,7 +56,7 @@ void ActivityModelDebyeHuckel::EvaluateVector (std::vector<double>& gamma, doubl
 
 				    // bja: why not just std::pow(10.0, log_gamma)?
 				    gamma[isp] = std::exp(log_to_ln(log_gamma));
-				    std::cout << gamma[isp] << std::endl;
+				    //std::cout << gamma[isp] << std::endl;
 		}
 	}
 	// For aqueous complexes
