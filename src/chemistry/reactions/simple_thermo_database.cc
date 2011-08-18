@@ -19,6 +19,7 @@
 #include "ion_exchange_complex.hh"
 #include "sorption_isotherm_factory.hh"
 #include "sorption_isotherm.hh"
+#include "sorption_isotherm_linear.hh"
 #include "beaker.hh"
 #include "species.hh"
 #include "string_tokenizer.hh"
@@ -265,7 +266,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
         }
       } else if (current_section == kIsothermSection) {
         if (parsed_primaries) {
-          ParseIsotherm(line);
+          ParseSorptionIsotherm(line);
         } else {
           error_section = "isotherms";
           data_order_error = 1;
@@ -410,6 +411,44 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
  **
  **  Thermodynamic database file format
  **
+ **  <SorptionIsotherm
+ **
+ *******************************************************************************/
+void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
+  if (verbosity() == kDebugInputFile) {
+    std::cout << "SimpleThermoDatabase::ParseSorptionIsotherm()...." << std::endl;
+    std::cout << "  data: " << data << std::endl;
+  }
+  std::string semicolon(";");
+  std::string space(" ");
+  StringTokenizer no_spaces;
+  // reaction_string; forward stoichs species; forward rate; 
+  //   backward stoichs species; backward rate
+
+  StringTokenizer substrings(data, semicolon);
+
+  SorptionIsothermFactory sif;
+
+  // parse main reaction string
+  no_spaces.tokenize(substrings.at(0),space);
+  std::string species_name = no_spaces.at(0);
+  no_spaces.tokenize(substrings.at(1),space);
+  std::string isotherm_type = no_spaces.at(0);
+  StringTokenizer parameters(substrings.at(2),space);
+
+  SorptionIsotherm *sorption_isotherm = sif.Create(isotherm_type,
+                                                   parameters);
+
+  SorptionIsothermRxn rxn(species_name,SpeciesNameToID(species_name),
+                          sorption_isotherm);
+  this->AddSorptionIsothermRxn(rxn);
+
+}  // end ParseSorptionIsotherm()
+
+/*******************************************************************************
+ **
+ **  Thermodynamic database file format
+ **
  **  <General Kinetics
  **
  *******************************************************************************/
@@ -507,10 +546,6 @@ void SimpleThermoDatabase::ParseGeneralKinetics(const std::string& data) {
                    backward_stoichiometries,backward_species_ids,
                    forward_rate_constant,backward_rate_constant);
   this->addGeneralRxn(general);
-
-//  if (verbosity() == kDebugInputFile || verbosity() == kDebugGeneralKinetics) {
-//    kinetic_rate->Display();
-//  }
 
 }  // end ParseGeneralKinetics()
 
@@ -1298,51 +1333,6 @@ void SimpleThermoDatabase::ParseSurfaceComplexReaction(const std::string& reacti
     }  // else not water
   }  // end for(search_species)
 }  // end ParseSurfaceComplexReaction()
-
-/*******************************************************************************
- **
- **  Thermodynamic database file format
- **
- **  <Isotherms
- **
- **  all isotherm information is contained on a single semicolon delimited line.
- **
- **  Field 0 : solute same : assumed to be present as a primary species
- **  Field 1 : isotherm type ("linear", "langmuir", "freundlich")
- **  Field 2 : distribution coefficient K
- **  Field 3 : langmuir b, freundlich 1/n
- **
- *******************************************************************************/
-void SimpleThermoDatabase::ParseIsotherm(const std::string& data) {
-  if (verbosity() == kDebugInputFile) { 
-    std::cout << "SimpleThermoDatabase::ParseIsotherm()...." << std::endl;
-    std::cout << "  data: " << data << std::endl;
-  }
-  std::string semicolon(";");
-  std::string space(" \t");
-  StringTokenizer no_spaces;
-
-  StringTokenizer isotherm_data(data, semicolon);
-  no_spaces.tokenize(isotherm_data.at(0), space);
-  std::string species_name = no_spaces.at(0);
-  std::string isotherm_type = isotherm_data.at(1);
-  std::string isotherm_K = isotherm_data.at(2);
-
-  isotherm_data.erase(isotherm_data.begin());  // erase species name
-  isotherm_data.erase(isotherm_data.begin());  // erase distribution coefficient
-
-  SorptionIsothermFactory sif;
-  sif.set_verbosity(verbosity());
-  SorptionIsotherm* isotherm = sif.Create(isotherm_type);
-  SpeciesId species_id = sif.VerifySpeciesName(species_name, primary_species());
-  Species species = primary_species().at(species_id);
-  SorptionIsothermRxn isotherm_rxn = 
-    SorptionIsothermRxn(species_name, species_id, isotherm);
-  this->AddSorptionIsothermRxn(isotherm_rxn);
-  if (verbosity() == kDebugInputFile || verbosity() == kDebugSorptionIsotherm) {
-    isotherm_rxn.Display();
-  }
-}  // end ParseIsotherm()
 
 }  // namespace chemistry
 }  // namespace amanzi
