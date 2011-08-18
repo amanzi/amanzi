@@ -298,61 +298,61 @@ void ReadInputFile(const std::string& file_name,
   while (!input_file.eof() && count < max_lines) {
     count++;
     std::string raw_line;
-    // This section was added to skip over lines of length 0
-    // which causes the code to crash below on windows. - geh
-    while (!input_file.eof()) {
-      getline(input_file, raw_line);
-      if (raw_line.size() > 0) break;
-    }
-    if (input_file.eof()) break;
-    // end of added section - geh
+    getline(input_file, raw_line);
     //std::cout << raw_line << std::endl;
-    if ((raw_line.size() > 0) && (raw_line[raw_line.size() - 1] == '\r')) {
+    if ((raw_line.size() > 0) && (raw_line.at(raw_line.size() - 1) == '\r')) {
       // getline only searches for \n line ends. windows files use \r\n
       // check for a hanging \r and remove it if it is there
       raw_line.resize(raw_line.size() - 1);
     }
-    // the following should crash is raw_line.size() == 0.  It does on windows - geh
-    char first = raw_line[0];
-    if (first == '#' || first == '\0') {
-      line_type = kCommentLine;
-    } else if (first == '[') {
-      line_type = kSection;
-    } else {
-      line_type = kParameter;
-    }
 
-    if (line_type == kSection) {
-      if (raw_line.find(kSimulationSection) != std::string::npos) {
-        current_section = kSectionSimulation;
-      } else if (raw_line.find(kTotalSection) != std::string::npos) {
-        current_section = kSectionTotal;
-      } else if (raw_line.find(kMineralSection) != std::string::npos) {
-        current_section = kSectionMineral;
-      } else if (raw_line.find(kSorbedSection) != std::string::npos) {
-        current_section = kSectionSorbed;
-      } else if (raw_line.find(kFreeIonSection) != std::string::npos) {
-        current_section = kSectionFreeIon;
+    if (raw_line.size() < 1) {
+      // blank line, consider it a comment
+      line_type = kCommentLine;
+    } else {
+      char first = raw_line.at(0);
+      if (first == '#' || first == '\0') {
+        // the stl sting class doesn't append a null character until
+        // c_str() is called. Do we need the check?
+        line_type = kCommentLine;
+      } else if (first == '[') {
+        line_type = kSection;
       } else {
-        std::cout << "batch_chem::ReadInputFile(): ";
-        std::cout << "unknown section found on line " << count << ":";
-        std::cout << "\'" << raw_line << "\'"<< std::endl;
+        line_type = kParameter;
       }
-    } else if (line_type == kParameter) {
-      // assume parameter line, but it may be empty (just spaces or missing an = )...
-      if (current_section == kSectionSimulation) {
-        ParseSimulationParameter(raw_line, simulation_params);
-      } else if (current_section == kSectionTotal) {
-        ParseComponentValue(raw_line, &(components->total));
-      } else if (current_section == kSectionMineral) {
-        ParseComponentValue(raw_line, &(components->minerals));
-      } else if (current_section == kSectionSorbed) {
-        ParseComponentValue(raw_line, &(components->total_sorbed));
-      } else if (current_section == kSectionFreeIon) {
-        ParseComponentValue(raw_line, &(components->free_ion));
-      }
-    }
-  }
+
+      if (line_type == kSection) {
+        if (raw_line.find(kSimulationSection) != std::string::npos) {
+          current_section = kSectionSimulation;
+        } else if (raw_line.find(kTotalSection) != std::string::npos) {
+          current_section = kSectionTotal;
+        } else if (raw_line.find(kMineralSection) != std::string::npos) {
+          current_section = kSectionMineral;
+        } else if (raw_line.find(kSorbedSection) != std::string::npos) {
+          current_section = kSectionSorbed;
+        } else if (raw_line.find(kFreeIonSection) != std::string::npos) {
+          current_section = kSectionFreeIon;
+        } else {
+          std::cout << "batch_chem::ReadInputFile(): ";
+          std::cout << "unknown section found on line " << count << ":";
+          std::cout << "\'" << raw_line << "\'"<< std::endl;
+        }
+      } else if (line_type == kParameter) {
+        // assume parameter line, but it may be empty (just spaces or missing an = )...
+        if (current_section == kSectionSimulation) {
+          ParseSimulationParameter(raw_line, simulation_params);
+        } else if (current_section == kSectionTotal) {
+          ParseComponentValue(raw_line, &(components->total));
+        } else if (current_section == kSectionMineral) {
+          ParseComponentValue(raw_line, &(components->minerals));
+        } else if (current_section == kSectionSorbed) {
+          ParseComponentValue(raw_line, &(components->total_sorbed));
+        } else if (current_section == kSectionFreeIon) {
+          ParseComponentValue(raw_line, &(components->free_ion));
+        }  // end parameter type
+      }  // end else section type
+    }  // end if (determine line type)
+  }  // end while
 
   input_file.close();
 }  // end ReadInputFile()

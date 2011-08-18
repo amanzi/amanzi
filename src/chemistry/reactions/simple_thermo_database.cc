@@ -134,169 +134,167 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
     int data_order_error = 0;
     std::string error_section("");
     std::string line;
-    // This section was added to skip over lines of length 0
-    // which causes the code to crash below on windows. - geh
-    while (!input.eof()) {
-      getline(input, line);
-      if (line.size() > 0) break;
-    }
-    if (input.eof()) break;
-    // end of added section - geh
-    if ((line.size() > 0) && (line[line.size() - 1] == '\r')) {
+    getline(input, line);
+
+    if ((line.size() > 0) && (line.at(line.size() - 1) == '\r')) {
       // getline only searches for \n line ends. windows files use \r\n
       // check for a hanging \r and remove it if it is there
       line.resize(line.size() - 1);
     }
-    // the following should crash is line.size() == 0.  It does on windows - geh
-    char first = line[0];
-    if (first == '#' || first == '\0' || first == ' ') {
+    if (line.size() < 1) {
+      // consider a blank line a comment
       line_type = kCommentLine;
-    } else if (first == '<') {
-      if (line == kSectionPrimary) {
-        line_type = kPrimarySpeciesLine;
-        current_section = kPrimarySpeciesSection;
-      } else if (line == kSectionAqueousEquilibriumComplex) {
-        line_type = kAqueousEquilibriumComplexLine;
-        current_section = kAqueousEquilibriumComplexSection;
-      } else if (line == kSectionMineral) {
-        line_type = kMineralLine;
-        current_section = kMineralSection;
-      } else if (line == kSectionMineralKinetics) {
-        line_type = kMineralKineticsLine;
-        current_section = kMineralKineticsSection;
-      } else if (line == kSectionGeneralKinetics) {
-        line_type = kGeneralKineticsLine;
-        current_section = kGeneralKineticsSection;
-      } else if (line == kSectionIonExchangeSites) {
-        line_type = kIonExchangeSiteLine;
-        current_section = kIonExchangeSiteSection;
-      } else if (line == kSectionIonExchangeComplexes) {
-        line_type = kIonExchangeComplexLine;
-        current_section = kIonExchangeComplexSection;
-
-      } else if (line == kSectionSurfaceComplexSites) {
-        line_type = kSurfaceComplexSiteLine;
-        current_section = kSurfaceComplexSiteSection;
-      } else if (line == kSectionSurfaceComplexes) {
-        line_type = kSurfaceComplexLine;
-        current_section = kSurfaceComplexSection;
-
-      } else if (line == kSectionIsotherms) {
-        line_type = kIsothermLine;
-        current_section = kIsothermSection;
-      } else {
-        std::cout << "SimpleThermoDatabase::ReadFile(): unknown section string \'"
-                  << line << "\'" << std::endl;
-        current_section = kUnknownSection;
-      }
     } else {
-      // assume we are on a data line within current_section....
-      if (current_section == kPrimarySpeciesSection) {
-        ParsePrimarySpecies(line);
-        parsed_primaries = true;
-      } else if (current_section == kAqueousEquilibriumComplexSection) {
-        if (parsed_primaries) {
-          ParseAqueousEquilibriumComplex(line);
+      char first = line.at(0);
+      if (first == '#' || first == '\0' || first == ' ') {
+        line_type = kCommentLine;
+      } else if (first == '<') {
+        if (line == kSectionPrimary) {
+          line_type = kPrimarySpeciesLine;
+          current_section = kPrimarySpeciesSection;
+        } else if (line == kSectionAqueousEquilibriumComplex) {
+          line_type = kAqueousEquilibriumComplexLine;
+          current_section = kAqueousEquilibriumComplexSection;
+        } else if (line == kSectionMineral) {
+          line_type = kMineralLine;
+          current_section = kMineralSection;
+        } else if (line == kSectionMineralKinetics) {
+          line_type = kMineralKineticsLine;
+          current_section = kMineralKineticsSection;
+        } else if (line == kSectionGeneralKinetics) {
+          line_type = kGeneralKineticsLine;
+          current_section = kGeneralKineticsSection;
+        } else if (line == kSectionIonExchangeSites) {
+          line_type = kIonExchangeSiteLine;
+          current_section = kIonExchangeSiteSection;
+        } else if (line == kSectionIonExchangeComplexes) {
+          line_type = kIonExchangeComplexLine;
+          current_section = kIonExchangeComplexSection;
+
+        } else if (line == kSectionSurfaceComplexSites) {
+          line_type = kSurfaceComplexSiteLine;
+          current_section = kSurfaceComplexSiteSection;
+        } else if (line == kSectionSurfaceComplexes) {
+          line_type = kSurfaceComplexLine;
+          current_section = kSurfaceComplexSection;
+
+        } else if (line == kSectionIsotherms) {
+          line_type = kIsothermLine;
+          current_section = kIsothermSection;
         } else {
-          data_order_error = 1;
-          error_section = "aqueous equilibrium complexes";
-        }
-      } else if (current_section == kGeneralKineticsSection) {
-        if (parsed_primaries) {
-          ParseGeneralKinetics(line);
-        } else {
-          data_order_error = 1;
-          error_section = "general kinetics";
-        }
-      } else if (current_section == kMineralSection) {
-        if (parsed_primaries) {
-          ParseMineral(line);
-          parsed_minerals = true;
-        } else {
-          data_order_error = 1;
-          error_section = "minerals";
-        }
-      } else if (current_section == kMineralKineticsSection) {
-        if (parsed_primaries && parsed_minerals) {
-          ParseMineralKinetics(line);
-        } else {
-          data_order_error = 2;
-          error_section = "mineral kinetics";
-        }
-      } else if (current_section == kIonExchangeSiteSection) {
-        ParseIonExchangeSite(line);
-        parsed_ion_exchange_sites = true;
-      } else if (current_section == kIonExchangeComplexSection) {
-        if (parsed_primaries && parsed_ion_exchange_sites) {
-          ParseIonExchangeComplex(line);
-        } else {
-          error_section = "ion exchange complex";
-          if (parsed_primaries) {
-            if (!parsed_ion_exchange_sites) {
-              data_order_error = 3;
-            }
-          } else if (parsed_ion_exchange_sites) {
-            if (!parsed_primaries) {
-              data_order_error = 1;
-            }
-          } else {
-            data_order_error = 4;
-          }
-        }
-      } else if (current_section == kSurfaceComplexSiteSection) {
-        ParseSurfaceComplexSite(line);
-        parsed_surface_complex_sites = true;
-      } else if (current_section == kSurfaceComplexSection) {
-        if (parsed_primaries && parsed_surface_complex_sites) {
-          ParseSurfaceComplex(line);
-        } else {
-          error_section = "surface complex";
-          if (parsed_primaries) {
-            if (!parsed_surface_complex_sites) {
-              data_order_error = 5;
-            }
-          } else if (parsed_surface_complex_sites) {
-            if (!parsed_primaries) {
-              data_order_error = 1;
-            }
-          } else {
-            data_order_error = 4;
-          }
-        }
-      } else if (current_section == kIsothermSection) {
-        if (parsed_primaries) {
-          ParseIsotherm(line);
-        } else {
-          error_section = "isotherms";
-          data_order_error = 1;
+          std::cout << "SimpleThermoDatabase::ReadFile(): unknown section string \'"
+                    << line << "\'" << std::endl;
+          current_section = kUnknownSection;
         }
       } else {
-        // should never be here....
-      }
-      if (data_order_error) {
-        // print a helpful message and exit gracefully
-        std::ostringstream error_stream;
-        error_stream << "SimpleThermoDatabase::ReadFile() : "
-                     << "Attempting to parse " << error_section << " before ";
-        std::string temp = "";
-        if (data_order_error == 5) {
-          temp += "surface complex sites ";
-        } else if (data_order_error == 3) {
-          temp += "ion exchange sites ";
-        } else if (data_order_error == 2) {
-          temp += "minerals ";
-        } else if (data_order_error == 1) {
-          temp += "primary species ";
+        // assume we are on a data line within current_section....
+        if (current_section == kPrimarySpeciesSection) {
+          ParsePrimarySpecies(line);
+          parsed_primaries = true;
+        } else if (current_section == kAqueousEquilibriumComplexSection) {
+          if (parsed_primaries) {
+            ParseAqueousEquilibriumComplex(line);
+          } else {
+            data_order_error = 1;
+            error_section = "aqueous equilibrium complexes";
+          }
+        } else if (current_section == kGeneralKineticsSection) {
+          if (parsed_primaries) {
+            ParseGeneralKinetics(line);
+          } else {
+            data_order_error = 1;
+            error_section = "general kinetics";
+          }
+        } else if (current_section == kMineralSection) {
+          if (parsed_primaries) {
+            ParseMineral(line);
+            parsed_minerals = true;
+          } else {
+            data_order_error = 1;
+            error_section = "minerals";
+          }
+        } else if (current_section == kMineralKineticsSection) {
+          if (parsed_primaries && parsed_minerals) {
+            ParseMineralKinetics(line);
+          } else {
+            data_order_error = 2;
+            error_section = "mineral kinetics";
+          }
+        } else if (current_section == kIonExchangeSiteSection) {
+          ParseIonExchangeSite(line);
+          parsed_ion_exchange_sites = true;
+        } else if (current_section == kIonExchangeComplexSection) {
+          if (parsed_primaries && parsed_ion_exchange_sites) {
+            ParseIonExchangeComplex(line);
+          } else {
+            error_section = "ion exchange complex";
+            if (parsed_primaries) {
+              if (!parsed_ion_exchange_sites) {
+                data_order_error = 3;
+              }
+            } else if (parsed_ion_exchange_sites) {
+              if (!parsed_primaries) {
+                data_order_error = 1;
+              }
+            } else {
+              data_order_error = 4;
+            }
+          }
+        } else if (current_section == kSurfaceComplexSiteSection) {
+          ParseSurfaceComplexSite(line);
+          parsed_surface_complex_sites = true;
+        } else if (current_section == kSurfaceComplexSection) {
+          if (parsed_primaries && parsed_surface_complex_sites) {
+            ParseSurfaceComplex(line);
+          } else {
+            error_section = "surface complex";
+            if (parsed_primaries) {
+              if (!parsed_surface_complex_sites) {
+                data_order_error = 5;
+              }
+            } else if (parsed_surface_complex_sites) {
+              if (!parsed_primaries) {
+                data_order_error = 1;
+              }
+            } else {
+              data_order_error = 4;
+            }
+          }
+        } else if (current_section == kIsothermSection) {
+          if (parsed_primaries) {
+            ParseIsotherm(line);
+          } else {
+            error_section = "isotherms";
+            data_order_error = 1;
+          }
+        } else {
+          // should never be here....
         }
-        error_stream << temp << "have been specified. Please check for "
-                     << "additional error messages and verify database file is "
-                     << "correct." << std::endl;
-        error_stream << "SimpleThermoDatabase::ReadFile(): \n";
-        error_stream << "a data order error has occured reading file " << file_name
-                     << "       please see output for details.\n";
-        Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-      }
-    }
+        if (data_order_error) {
+          // print a helpful message and exit gracefully
+          std::ostringstream error_stream;
+          error_stream << "SimpleThermoDatabase::ReadFile() : "
+                       << "Attempting to parse " << error_section << " before ";
+          std::string temp = "";
+          if (data_order_error == 5) {
+            temp += "surface complex sites ";
+          } else if (data_order_error == 3) {
+            temp += "ion exchange sites ";
+          } else if (data_order_error == 2) {
+            temp += "minerals ";
+          } else if (data_order_error == 1) {
+            temp += "primary species ";
+          }
+          error_stream << temp << "have been specified. Please check for "
+                       << "additional error messages and verify database file is "
+                       << "correct." << std::endl;
+          error_stream << "SimpleThermoDatabase::ReadFile(): \n";
+          error_stream << "a data order error has occured reading file " << file_name
+                       << "       please see output for details.\n";
+          Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+        }  // end if (data_order_error)
+      }  // end else process data line
+    }  // end if (line.size())
   }  // end while
 
   FinishSurfaceComplexation();
