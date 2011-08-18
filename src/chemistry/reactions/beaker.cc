@@ -713,7 +713,7 @@ void Beaker::CheckChargeBalance(const std::vector<double>& aqueous_totals) {
   for (unsigned int i = 0; i < aqueous_totals.size(); i++) {
     charge_balance += aqueous_totals.at(i) * primarySpecies_.at(i).charge();
   }
-  if (charge_balance > tolerance()) {
+  if (std::fabs(charge_balance) > tolerance()) {
     if (verbosity() > kTerse) {
       std::cout << "WARNING: Beaker::CheckChargeBalance() :\n"
                 << "         charge balance = " << std::scientific
