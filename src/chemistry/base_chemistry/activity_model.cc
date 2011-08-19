@@ -51,13 +51,13 @@ void ActivityModel::CalculateSumAbsZ(
   // primary species
   for (std::vector<Species>::const_iterator i = primarySpecies.begin();
        i != primarySpecies.end(); i++) {
-    Z_ += i->molality() * abs(i->charge());
+	  if (i->name()!="h2o" && i->name()!="H2O") Z_ += i->molality() * abs(i->charge());
   }
 
   // secondary aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies.begin();
        i != secondarySpecies.end(); i++) {
-    Z_ += i->molality() * abs(i->charge());
+	  if (i->name()!="h2o" && i->name()!="H2O") Z_ += i->molality() * abs(i->charge());
   }
 
 }  // end CalculateSumAbsZ()
@@ -71,15 +71,13 @@ void ActivityModel::CalculateSumC(
   // primary species
   for (std::vector<Species>::const_iterator i = primarySpecies.begin();
        i != primarySpecies.end(); i++) {
-    if (i->name()!="h2o")
-	   M_ += i->molality();
+    if (i->name()!="h2o" && i->name()!="H2O") M_ += i->molality();
   }
 
   // secondary aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies.begin();
        i != secondarySpecies.end(); i++) {
-	  if (i->name()!="h2o")
-	  	   M_ += i->molality();
+	if (i->name()!="h2o" && i->name()!="H2O") M_ += i->molality();
   }
 
 }  // end CalculateSumAbsZ()
@@ -107,6 +105,7 @@ for (std::vector<Species>::iterator i = primarySpecies->begin();
        i != primarySpecies->end(); i++) {
 	 isp++;
      i->act_coef(gamma[isp]);
+     i->update();
 }
 
 // secondary aqueous complexes
@@ -114,6 +113,7 @@ for (std::vector<AqueousEquilibriumComplex>::iterator i = secondarySpecies->begi
        i != secondarySpecies->end(); i++) {
       isp++;
 	  i->act_coef(gamma[isp]);
+	  i->update();
 }
 // Set the water activity
 water->act_coef(actw);

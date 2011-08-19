@@ -1,4 +1,4 @@
-C     CVS $Revision: 1.1 $ reposited $Date: 2009-05-06 17:11:37 $
+C     CVS $Revision: 1.2 $ reposited $Date: 2011-08-15 19:50:00 $
 
 C///////////////////////////////////////////////////////////////////////
 C
@@ -887,7 +887,7 @@ C///////////////////////////////////////////////////////////////////////
 *     End of DGETF2
 *
       END
-      SUBROUTINE DGETRF( M, N, A, LDA, IPIV, INFO )
+      SUBROUTINE DGETRF_PM( M, N, A, LDA, IPIV, INFO )
 *
 *  -- LAPACK routine (version 1.1) --
 *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1044,7 +1044,7 @@ C///////////////////////////////////////////////////////////////////////
       END IF
       RETURN
 *
-*     End of DGETRF
+*     End of DGETRF_PM
 *
       END
       SUBROUTINE DGETRI( N, A, LDA, IPIV, WORK, LWORK, INFO )
@@ -1231,7 +1231,7 @@ C///////////////////////////////////////////////////////////////////////
 *     End of DGETRI
 *
       END
-      SUBROUTINE DGETRS( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
+      SUBROUTINE DGETRS_PM( TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO )
 *
 *  -- LAPACK routine (version 1.1) --
 *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,

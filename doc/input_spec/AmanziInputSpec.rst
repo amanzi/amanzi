@@ -278,8 +278,8 @@ region with an integrated strength of 20.
 
 Regions are used in Amanzi to define the physical extent of the simulation domain and its bounding surfaces.
 Regions are also used to specify initial data and boundary conditions, and to define output data expected
-upon return from the simulator.  The user *must* define the special region labeled `"all`", which is the 
-entire simulation domain, as well as the boundary surface(s) which enclose the domain; these regions are
+upon return from the simulator.  Amanzi automatically defines the special region labeled `"all`", which is the 
+entire simulation domain.  The user must define the boundary surface(s) which enclose the domain; these regions are
 defined using a special syntax that is dependent on the meshing option (`"structured`" or `"unstructured`") that
 is selected.  Amanzi assumes that the union of the boundary surfaces envelopes the entire computational domain
 (*i.e.* is "water-tight").  The special regions (`"all`" and the boundaries) may also serve as generic
@@ -300,7 +300,8 @@ must be identified explicitly in the mesh file, for `"simple mesh`", the boundar
 following the scheme for the `"structured`" mesh option.  In most cases, these surfaces embedded in the mesh
 files will be labeled subsets of the mesh faces.
 
-Examples for specifying the domain and boundary regions for both the structured and unstructured options:
+Examples for specifying the domain and boundary regions for the structured option, and for the unstructured options
+which generate uniform-grid parallelepiped domains:
 
 .. code-block:: xml
 
@@ -345,7 +346,7 @@ Generic regions are useful for many aspects of the input specification, and take
 
        * SHAPE-PARAMS (array double or string) parameters to specify shape
 
-Currently, Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex
+Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex
 definitions based on triangulated surface files: point, box, arbitrary, layer.  Depending on the functional, SHAPE requires
 a number of parameters:
 
@@ -356,6 +357,8 @@ a number of parameters:
 +------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 | `"box"`                | `"lo`", `"hi`"                | array double, array double   | Location of boundary points of box                                                          |
 +------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"labeled set"`        | `"label`"                     | string                       | Valid for file-based unstructured mesh options, set label defined in mesh file (see below)  |
++------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 | `"arbitrary"`          | `"file`"                      | string                       | Region enveloped by surface described in specified file (see note below for format of file) |
 +------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 | `"layer"`              | `"file_lo`" `"file_hi`"       | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
@@ -363,15 +366,11 @@ a number of parameters:
 | `"surface"`            | `"id1`" `"name2`" ... `"idN`" | string, string ,..., string  | Region between surfaces described in specified files (see note below for format of file)    |
 +------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 
-Note: Surface files contain labeled triangulated surfaces in a format
-that is yet to be determined.  Regardless of the format, the user is
-responsible for ensuring that the intersections with other surfaces in
-the problem, including the boundaries, are `"exact`" (*i.e.* that
-surface intersections are `"watertight`" where applicable), and that
-the surfaces are contained within the computational domain.  If nodes
-defining surfaces are separated by a distance *s* < `"domain_epsilon`"
-Amanzi will consider them coincident; if they fall outside the domain,
-the elements they define are ignored.
+Notes
+
+* The "labeled set" region is defined by the label given to sets generated in a preprocessing step.  For example, an "exodus" type mesh file can be processed to tag cells and faces with specific labels, using a variety of external tools.  Regions based on such sets will be assigned a user-defined label, which may or may not correspond to the original label in the exodus file.
+
+* Surface files contain labeled triangulated surfaces in a format that is yet to be determined.  Regardless of the format, the user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes defining surfaces are separated by a distance *s* < `"domain_epsilon`" Amanzi will consider them coincident; if they fall outside the domain, the elements they define are ignored.
 
 
 Example:

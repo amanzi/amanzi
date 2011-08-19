@@ -47,27 +47,63 @@ const Real BL_SAFE_BOGUS = -666.e200;
 #define GEOM_GROW 1
 #define HYP_GROW 3
 
-Array<int>  Diffusion::is_diffusive;
-Array<Real> Diffusion::visc_coef;
-Real        Diffusion::visc_tol = 1.0e-16;      
-Real        Diffusion::visc_abs_tol = 1.0e-16;
-
-
-int  Diffusion::first               = 1;
-int  Diffusion::do_reflux           = 1;
-int  Diffusion::use_cg_solve        = 0;
+namespace
+{
+    bool initialized = false;
+}
+//
+// Set defaults in Initialize() !!!
+//
+int  Diffusion::verbose;
+Real Diffusion::visc_tol;
+int  Diffusion::do_reflux;
+int  Diffusion::max_order;
+int  Diffusion::scale_abec;
+Real Diffusion::visc_abs_tol;
+int  Diffusion::use_cg_solve;
+bool Diffusion::use_mg_precond_flag;
 
 #ifdef MG_USE_FBOXLIB
 namespace
 {
-  bool use_fboxlib_mg = false;
+    bool use_fboxlib_mg;
 }
 #endif
 
-bool Diffusion::use_mg_precond_flag = false;
-int  Diffusion::verbose             = 0;
-int  Diffusion::max_order           = 4;
-int  Diffusion::scale_abec          = 0;
+Array<Real> Diffusion::visc_coef;
+Array<int>  Diffusion::is_diffusive;
+
+void
+Diffusion::Finalize ()
+{
+    visc_coef.clear();
+    is_diffusive.clear();
+
+    initialized = false;
+}
+
+void
+Diffusion::Initialize ()
+{
+    if (initialized) return;
+
+    Diffusion::verbose             = 0;
+    Diffusion::visc_tol            = 1.0e-16;      
+    Diffusion::do_reflux           = 1;
+    Diffusion::max_order           = 4;
+    Diffusion::scale_abec          = 0;
+    Diffusion::visc_abs_tol        = 1.0e-16;
+    Diffusion::use_cg_solve        = 0;
+    Diffusion::use_mg_precond_flag = false;
+
+#ifdef MG_USE_FBOXLIB
+    use_fboxlib_mg = false;
+#endif
+
+    BoxLib::ExecOnFinalize(Diffusion::Finalize);
+
+    initialized = true;
+}
 
 static
 Real
@@ -79,15 +115,15 @@ dotxy (const MultiFab& r,
 {
   BL_PROFILE("Diffusion::dotxy");
   BL_ASSERT(idxr < r.nComp() && idxz < z.nComp());
-  int  nz = z.nComp();
-  int  nr = r.nComp();
-  Real rho   = 0.0;
+  int  nz  = z.nComp();
+  int  nr  = r.nComp();
+  Real rho = 0.0;
   for (MFIter mfi(r); mfi.isValid(); ++mfi)
     {
       const int k = mfi.index();
       Real trho;
-      int idxr_f = idxr + 1;
-      int idxz_f = idxz + 1;
+      int  idxr_f = idxr + 1;
+      int  idxz_f = idxz + 1;
       
       FORT_DFXDOTY(&trho,
 		   z[k].dataPtr(),
@@ -128,15 +164,14 @@ Diffusion::Diffusion (Amr*               Parent,
   NUM_SCALARS(num_state),
   viscflux_reg(Viscflux_reg)
 {
-  if (first)
+  if (!initialized)
     {
-      first = 0;
+      Initialize();
 
       ParmParse ppdiff("diffuse");
 
-      ppdiff.query("v",verbose);
-
-      ppdiff.query("use_cg_solve",use_cg_solve);
+      ppdiff.query("v",            verbose);
+      ppdiff.query("use_cg_solve", use_cg_solve);
 
 #ifdef MG_USE_FBOXLIB
       ppdiff.query("use_fboxlib_mg", use_fboxlib_mg);
@@ -146,24 +181,23 @@ Diffusion::Diffusion (Amr*               Parent,
 	}
 #endif
       int use_mg_precond = 0;
-      ppdiff.query("use_mg_precond",use_mg_precond);
-      use_mg_precond_flag = (use_mg_precond ? true : false);
-      ppdiff.query("max_order",max_order);
-      ppdiff.query("scale_abec",scale_abec);
 
-      ppdiff.query("v",verbose);
+      ppdiff.query("max_order",      max_order);
+      ppdiff.query("scale_abec",     scale_abec);
+      ppdiff.query("use_mg_precond", use_mg_precond);
+
+      use_mg_precond_flag = (use_mg_precond ? true : false);
 
       ParmParse pp("prob");
 
-      pp.query("do_reflux",do_reflux);
-      do_reflux = (do_reflux ? 1 : 0);
+      pp.query("visc_tol",     visc_tol);
+      pp.query("do_reflux",    do_reflux);
+      pp.query("visc_abs_tol", visc_abs_tol);
 
-      pp.query("visc_tol",visc_tol);
-      pp.query("visc_abs_tol",visc_abs_tol);
+      do_reflux = (do_reflux ? 1 : 0);
 
       const int n_visc = _visc_coef.size();
       const int n_diff = _is_diffusive.size();
-
       //
       // Check whether number of diffusion coefficients is sufficient.  
       // Coefficients defined for i > NUM_SCALARS are ignored.
@@ -218,15 +252,15 @@ Diffusion::Diffusion (Amr*               Parent,
   NUM_SCALARS(num_state),
   viscflux_reg(Viscflux_reg)
 {
-  if (first)
+  if (!initialized)
     {
-      first = 0;
+      Initialize();
 
       ParmParse ppdiff("diffuse");
 
-      ppdiff.query("v",verbose);
+      ppdiff.query("v",            verbose);
+      ppdiff.query("use_cg_solve", use_cg_solve);
 
-      ppdiff.query("use_cg_solve",use_cg_solve);
 #ifdef MG_USE_FBOXLIB
       ppdiff.query("use_fboxlib_mg", use_fboxlib_mg);
       if ( use_cg_solve && use_fboxlib_mg )
@@ -235,20 +269,20 @@ Diffusion::Diffusion (Amr*               Parent,
 	}
 #endif
       int use_mg_precond = 0;
-      ppdiff.query("use_mg_precond",use_mg_precond);
-      use_mg_precond_flag = (use_mg_precond ? true : false);
-      ppdiff.query("max_order",max_order);
-      ppdiff.query("scale_abec",scale_abec);
 
-      ppdiff.query("v",verbose);
+      ppdiff.query("max_order",      max_order);
+      ppdiff.query("scale_abec",     scale_abec);
+      ppdiff.query("use_mg_precond", use_mg_precond);
+
+      use_mg_precond_flag = (use_mg_precond ? true : false);
 
       ParmParse pp("ns");
 
-      pp.query("do_reflux",do_reflux);
+      pp.query("visc_tol",  visc_tol);
+      pp.query("do_reflux", do_reflux);
+
       do_reflux = (do_reflux ? 1 : 0);
 
-      pp.query("visc_tol",visc_tol);
-        
       echo_settings();
     }
 
@@ -1008,7 +1042,7 @@ Diffusion::richard_iter (Real                   dt,
   // This routine solves the time-dependent richards equation
   //
   MultiFab& S_new = caller->get_new_data(State_Type);
-
+  Real snorm = S_new.norm2(0);
   // setup multifabs for solvers
   MultiFab Rhs(grids,1,0);
   MultiFab Soln(grids,1,1);
@@ -1019,7 +1053,7 @@ Diffusion::richard_iter (Real                   dt,
   Real a = 0;
   Real b = -dt*density[0];
   ViscBndry visc_bndry;
-  //const BCRec& bc     = caller->get_desc_lst()[State_Type].getBC(nc);
+
   const BCRec& bc     = caller->get_desc_lst()[Press_Type].getBC(0);
   const Real cur_time = caller->get_state_data(State_Type).curTime();
   IntVect ref_ratio   = level > 0 ? 
@@ -1030,6 +1064,7 @@ Diffusion::richard_iter (Real                   dt,
   MultiFab::Copy(Rhs,res_fix,0,0,1,0);
   residual_richard(visc_op,dt*density[0],gravity,density,Rhs,pc,beta,alpha);
   Real prev_res_norm = Rhs.norm2(0);
+
   // preconditioning the residual.
   // If beta_dp is the exact Jacobian, then this is the Newton step.
   if (beta_dp != 0)
@@ -1055,7 +1090,7 @@ Diffusion::richard_iter (Real                   dt,
       Real final_resnorm;
       int  fill_bcs_for_gradient = 1;
       MGT_Solver mgt_solver = getOp(0,1,xa,xb,cur_time,visc_bndry,bc,true);
-      coefs_fboxlib_mg (a1_p, bb_p, alpha, beta_dp, a_dp, b_dp, false);
+      coefs_fboxlib_mg (a1_p, bb_p, alpha, beta_dp, a_dp, false);
       mgt_solver.set_porous_coefficients(a1_p, a2_p, bb_p, b_dp, xa, xb, nc_opt);    
       mgt_solver.solve(phi_p, Rhs_p, S_tol, S_tol_abs, 
 		       visc_bndry, fill_bcs_for_gradient, final_resnorm);
@@ -1121,6 +1156,7 @@ Diffusion::richard_iter (Real                   dt,
   Rhsp1.setVal(0.);
   MultiFab::Copy(Stmp,S_new,nc,0,1,1);
   MultiFab::Add(Stmp,Soln,0,0,1,0);
+
   // determie new capillary pressure
   MultiFab pctmp(grids,1,1);
   pm_level->calcCapillary(&pctmp,Stmp);
@@ -1158,8 +1194,152 @@ Diffusion::richard_iter (Real                   dt,
   MultiFab::Copy(S_new,Rhsp1,0,pm_level->ncomps+pm_level->ntracers,1,0);
 
   // Compute the err_nwt
-  // *err_nwt = Soln.norm2(0)/S_new.norm2(0); 
-  *err_nwt = Rhsp1.norm2(0)/S_new.norm2(0);
+  *err_nwt = rhsp1_norm/snorm;
+
+  removeFluxBoxesLevel(betatmp);
+  delete visc_op;
+}
+
+void
+Diffusion::richard_iter_p (Real                   dt,
+			   int                    nc,
+			   Real                   gravity,
+			   Array<Real>            density,
+			   MultiFab&              res_fix,
+			   const MultiFab*        alpha, 
+			   const MultiFab*        dalpha,
+			   const MultiFab* const* beta,
+			   const MultiFab* const* beta_dp,
+			   MultiFab*              pc,
+			   MultiFab*              umac,
+			   const bool             do_upwind,
+			   Real*                  err_nwt)
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_iter_p()");
+ 
+ //
+  // This routine solves the time-dependent richards equation
+  //
+  MultiFab& S_new = caller->get_new_data(State_Type);
+  Real snorm = S_new.norm2(0);
+
+  // setup multifabs for solvers
+  MultiFab Rhs(grids,1,0);
+  MultiFab Soln(grids,1,1);
+  Rhs.setVal(0.);
+  Soln.setVal(0.);
+
+  PorousMedia* pm_level = dynamic_cast<PorousMedia*>(&parent->getLevel(level));
+  // Compute residual
+  Real a = 0;
+  Real b = -dt*density[0];
+  ViscBndry visc_bndry;
+
+  const BCRec& bc     = caller->get_desc_lst()[Press_Type].getBC(0);
+  const Real cur_time = caller->get_state_data(State_Type).curTime();
+  IntVect ref_ratio   = level > 0 ? 
+    parent->refRatio(level-1) : IntVect::TheUnitVector();
+  getBndryData(visc_bndry,nc,1,cur_time);
+  visc_bndry.setScalarValues(bc,ref_ratio,pc);
+  ABecLaplacian* visc_op = getViscOp(visc_bndry,a,b,0,0,beta,alpha,false);
+  MultiFab::Copy(Rhs,res_fix,0,0,1,0);
+  residual_richard(visc_op,dt*density[0],gravity,density,Rhs,pc,beta,alpha);
+  Real prev_res_norm = Rhs.norm2(0);
+
+  // preconditioning the residual.
+  // If beta_dp is the exact Jacobian, then this is the Newton step.
+  if (beta_dp != 0)
+    {
+      Rhs.mult(-1.0);
+      MultiFab* phi_p[1];
+      MultiFab* Rhs_p[1];
+      phi_p[0] = &Soln;
+      Rhs_p[0] = &Rhs;
+      int nc_opt = 2;
+      Real a_dp = 0.0;
+      if (dalpha) a_dp = 1.0;
+      Real b_dp = dt*density[0];  
+      visc_bndry.setdeltaSValues(bc,ref_ratio);
+
+      Array< Array<Real> > xa(1);
+      Array< Array<Real> > xb(1);
+      PArray<MultiFab> a2_p;
+      PArray<MultiFab> a1_p;
+      Array<PArray<MultiFab> > bb_p(BL_SPACEDIM);    
+      const Real S_tol     = visc_tol;
+      const Real S_tol_abs = get_scaled_abs_tol(Rhs, visc_abs_tol);
+      Real final_resnorm;
+      int  fill_bcs_for_gradient = 1;
+      MGT_Solver mgt_solver = getOp(0,1,xa,xb,cur_time,visc_bndry,bc,true);
+      coefs_fboxlib_mg (a1_p, bb_p, dalpha, beta_dp, a_dp, false);
+      mgt_solver.set_porous_coefficients(a1_p, a2_p, bb_p, b_dp, xa, xb, nc_opt);    
+      mgt_solver.solve(phi_p, Rhs_p, S_tol, S_tol_abs, 
+		       visc_bndry, fill_bcs_for_gradient, final_resnorm);
+    }
+
+  // line search 
+  MultiFab Stmp(grids,1,1);
+  MultiFab pctmp(grids,1,1);
+  MultiFab Rhsp1(grids,1,0);
+  Stmp.setVal(0.);
+  Rhsp1.setVal(0.);
+  MultiFab::Copy(pctmp,*pc,nc,0,1,1);
+  MultiFab::Add(pctmp,Soln,0,0,1,0);
+  int iter = 0;
+  // Real pcmin = 1.e20;
+//   for (MFIter mfi(pctmp); mfi.isValid(); ++mfi)
+//     pcmin = std::min(pcmin,pctmp[mfi].min(mfi.validbox(),0));
+//   const int IOProc = ParallelDescriptor::IOProcessorNumber();
+//   ParallelDescriptor::ReduceRealMin(&pcmin, 1, IOProc);
+//   while (pcmin < 0. && iter < 10)
+//     {
+//       Soln.mult(0.3);
+//       MultiFab::Copy(pctmp,*pc,nc,0,1,1);
+//       MultiFab::Add(pctmp,Soln,0,0,1,0);
+
+//       pcmin = 1.e20;
+//       for (MFIter mfi(pctmp); mfi.isValid(); ++mfi)
+// 	pcmin = std::min(pcmin,pctmp[mfi].min(mfi.validbox(),0));
+//       ParallelDescriptor::ReduceRealMin(&pcmin, 1, IOProc);
+//       iter++;
+//     }
+
+  pm_level->calcInvCapillary(Stmp,pctmp);
+  // determine new lambda_1 and beta
+  MultiFab lambda(grids,pm_level->ncomps,1);
+  pm_level->calcLambda(&lambda,Stmp);
+  MultiFab** betatmp;
+  allocFluxBoxesLevel(betatmp,0,1);
+  pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
+  // Compute residual
+  setBeta (visc_op,0,betatmp,false);
+  MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
+  residual_richard(visc_op,dt*density[0],gravity,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
+  Real rhsp1_norm = Rhsp1.norm2(0);
+  Real alphak = 1.0;
+  iter = 0;
+  while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
+    {
+      Rhsp1.setVal(0.);
+      alphak = 0.1*alphak;
+      Soln.mult(0.1);
+      MultiFab::Copy(pctmp,*pc,nc,0,1,1);
+      MultiFab::Add(pctmp,Soln,0,0,1,0);
+      pm_level->calcInvCapillary(Stmp,pctmp);
+      pm_level->calcLambda(&lambda,Stmp);
+      pm_level->calc_richard_coef(betatmp,&lambda,umac,0,do_upwind);
+      setBeta (visc_op,0,betatmp,false);
+      MultiFab::Copy(Rhsp1,res_fix,0,0,1,0);
+      residual_richard(visc_op,dt*density[0],gravity,density,Rhsp1,&pctmp,betatmp,alpha,&Stmp);
+      rhsp1_norm = Rhsp1.norm2(0);
+      iter += 1;
+    }
+
+  MultiFab::Copy(S_new,Stmp,0,nc,1,0);
+  MultiFab::Copy(S_new,Rhsp1,0,pm_level->ncomps+pm_level->ntracers,1,0);
+
+  // Compute the err_nwt
+  *err_nwt = rhsp1_norm/snorm;
 
   removeFluxBoxesLevel(betatmp);
   delete visc_op;
@@ -1187,124 +1367,6 @@ Diffusion::richard_iter_eqb (int                    nc,
   richard_iter (dt,nc,gravity,density,res_fix,alpha, 
 		beta,beta_dp,pc,umac,do_upwind,err_nwt);
   
-
-//   MultiFab& S_new = caller->get_new_data(State_Type);
-
-//   // setup multifabs for solvers
-//   MultiFab Rhs(grids,1,0);
-//   MultiFab Soln(grids,1,1);
-//   Rhs.setVal(0.);
-//   Soln.setVal(0.);
-//   PorousMedia* pm_level = dynamic_cast<PorousMedia*>(&parent->getLevel(level));
- 
-//   // Compute residual
-//   Real a = 0;
-//   Real b = 1;
-//   MultiFab* alpha = 0;
-//   ViscBndry visc_bndry;
-//   const BCRec& bc     = caller->get_desc_lst()[State_Type].getBC(nc);
-//   const Real cur_time = caller->get_state_data(State_Type).curTime();
-//   IntVect ref_ratio   = level > 0 ? 
-//     parent->refRatio(level-1) : IntVect::TheUnitVector();
-//   getBndryData(visc_bndry,nc,1,cur_time);
-//   visc_bndry.setScalarValues(bc,ref_ratio,pc);
-//   ABecLaplacian* visc_op = getViscOp(visc_bndry,a,b,0,0,beta,alpha);
-//   residual_richard(visc_op,1.0,gravity,density,
-// 		   inflow_bc_lo,inflow_bc_hi,inflow_vel_lo,inflow_vel_hi,
-// 		   Rhs,pc,beta);
-//   Real prev_res_norm = Rhs.norm2(0);
-//   // preconditioning the residual.
-//   // If beta_dp is the exact Jacobian, then this is the Newton step.
-//   ABecLaplacian* visc_op_dp = 0;
-//   if (beta_dp != 0)
-//     {
-//       MultiFab* phi_p[1];
-//       MultiFab* Rhs_p[1];
-//       phi_p[0] = &Soln;
-//       Rhs_p[0] = &Rhs;
-//       int nc_opt = 2;
-//       Real a_dp = 0.0;
-//       Real b_dp = -1.0;  
-//       visc_bndry.setdeltaSValues(bc,ref_ratio);
-
-//       Array< Array<Real> > xa(1);
-//       Array< Array<Real> > xb(1);
-//       PArray<MultiFab> a2_p;
-//       PArray<MultiFab> a1_p;
-//       Array<PArray<MultiFab> > bb_p(BL_SPACEDIM);    
-//       const Real S_tol     = visc_tol;
-//       const Real S_tol_abs = get_scaled_abs_tol(Rhs, visc_abs_tol);
-//       Real final_resnorm;
-//       int  fill_bcs_for_gradient = 1;
-//       MGT_Solver mgt_solver = getOp(0,1,xa,xb,cur_time,visc_bndry,true);
-//       coefs_fboxlib_mg (a1_p, bb_p, alpha, beta_dp, a_dp, b_dp, false);
-//       mgt_solver.set_porous_coefficients(a1_p, a2_p, bb_p, b_dp, xa, xb, nc_opt);    
-//       mgt_solver.solve(phi_p, Rhs_p, S_tol, S_tol_abs, 
-// 		       visc_bndry, fill_bcs_for_gradient, final_resnorm);
-//     }
-  
-
-      
-//   // line search 
-//   // Multiply by rho to get \delta n
-//   //MultiFab::Multiply(Soln,*rho,0,0,1,0);
-//   MultiFab Stmp(grids,1,1);
-//   MultiFab Rhsp1(grids,1,0);
-//   Stmp.setVal(0.);
-//   Rhsp1.setVal(0.);
-//   MultiFab::Copy(Stmp,S_new,nc,0,1,1);
-//   MultiFab::Add(Stmp,Soln,0,0,1,0);
-//   // determie new capillary pressure
-//   MultiFab pctmp(grids,1,1);
-//   pm_level->calcCapillary(&pctmp,Stmp);
-//   // determine new lambda_1 and beta
-//   MultiFab lambda(grids,pm_level->ncomps,1);
-//   pm_level->calcLambda(&lambda,Stmp);
-//   MultiFab** betatmp;
-//   allocFluxBoxesLevel(betatmp,0,1);
-//   pm_level->calc_richard_coef(betatmp,&lambda,0);
-//   // Compute residual
-//   setBeta (visc_op,0,betatmp);
-//   residual_richard(visc_op,1.0,gravity,density,
-// 		   inflow_bc_lo,inflow_bc_hi,inflow_vel_lo,inflow_vel_hi,
-// 		   Rhsp1,&pctmp,betatmp);
-//   Real rhsp1_norm = Rhsp1.norm2(0);
-//   Real alphak = 1.0;
-//   int iter = 0;
-
-//   std::cout << "NORM RHS = " << prev_res_norm << " " << rhsp1_norm << "\n " ;
-//   while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
-//     {
-//       Rhsp1.setVal(0.);
-//       alphak = 0.1*alphak;
-//       Soln.mult(0.1);
-//       MultiFab::Copy(Stmp,S_new,nc,0,1,1);
-//       MultiFab::Add(Stmp,Soln,0,0,1,0);
-//       pm_level->calcCapillary(&pctmp,Stmp);
-//       pm_level->calcLambda(&lambda,Stmp);
-//       pm_level->calc_richard_coef(betatmp,&lambda,0);
-//       setBeta (visc_op,0,betatmp);
-//       residual_richard(visc_op,1.0,gravity,density,
-// 		       inflow_bc_lo,inflow_bc_hi,inflow_vel_lo,inflow_vel_hi,
-// 		       Rhsp1,&pctmp,betatmp);
-//       rhsp1_norm = Rhsp1.norm2(0);
-//       iter += 1;
-//     }
-
-//   MultiFab::Copy(S_new,Stmp,0,nc,1,0);
-//   MultiFab::Copy(S_new,*pm_level->pcnp1_cc,0,4,1,0);
-//   MultiFab::Copy(S_new,Rhs,0,3,1,0);
-//   MultiFab::Copy(S_new,Rhsp1,0,2,1,0);
-//   // Compute the err_nwt
-//   // *err_nwt = Soln.norm2(0)/S_new.norm2(0); 
-//   *err_nwt = Rhsp1.norm0(0);//S_new.norm2(0);
-
-//   removeFluxBoxesLevel(betatmp);
-//   delete visc_op;
-//   if (alpha)
-//     delete alpha;
-//   if (visc_op_dp) 
-//     delete visc_op_dp;
 }
 
 void
@@ -2264,7 +2326,6 @@ Diffusion::coefs_fboxlib_mg (PArray<MultiFab>&          acoefs,
 			     const MultiFab*            alpha_in,
 			     const MultiFab* const*     beta,
 			     const Real                 a,
-			     const Real                 b,
 			     bool                       do_volume)
 {		
   //

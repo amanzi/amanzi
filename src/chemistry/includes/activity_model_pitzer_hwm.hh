@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HH_
-#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HH_
+#ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HWM_HH_
+#define AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HWM_HH_
 
 #include <vector>
 #include <string>
@@ -23,11 +23,11 @@ class Species;
 
 class VirialCoefficient;
 
-class ActivityModelPitzer : public ActivityModel {
+class ActivityModelPitzerHWM : public ActivityModel {
  public:
 
-  ActivityModelPitzer(const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
-  ~ActivityModelPitzer();
+  ActivityModelPitzerHWM(const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
+  ~ActivityModelPitzerHWM();
 
   double Evaluate(const Species& species);
 
@@ -35,24 +35,21 @@ class ActivityModelPitzer : public ActivityModel {
 
   void Display(void) const;
 
-  void SetVirial (const double& virial, const std::string& typevirial,
-  		          const int& isp1, const int& isp2, const int& isp3);
-
   private:
 
   //!%-------------------------------------------------------------
   //!% Private services
   //!%-------------------------------------------------------------
-  void ReadDataBase (const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
-  void ParseB0 (const std::string& data);
-  void ParseB1 (const std::string& data);
-  void ParseB2 (const std::string& data);
-  void ParseCfi (const std::string& data);
-  void ParseTheta (const std::string& data);
-  void ParseLamda (const std::string& data);
-  void ParsePsi (const std::string& data);
-  void AssignFbeta ();
-  void AssignFj ();
+  void ReadDataBase(const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
+  void ParseB0(const std::string& data);
+  void ParseB1(const std::string& data);
+  void ParseB2(const std::string& data);
+  void ParseCfi(const std::string& data);
+  void ParseTheta(const std::string& data);
+  void ParseLamda(const std::string& data);
+  void ParsePsi(const std::string& data);
+  void AssignFbeta();
+  void AssignFj();
   void ComputeQ(std::vector<double>& gamma, double& osco);
   void ComputeQl(double& osco);
   void ComputeQc(std::vector<double>& gamma, double& osco);
@@ -62,9 +59,10 @@ class ActivityModelPitzer : public ActivityModel {
   void ComputeFj();
   void ComputeDH(std::vector<double>& gamma, double& osco, double& gclm);
   double gclm_(const double& dhterm);
-  void AllocatePointers();
-  void DeallocatePointers();
+  void PushPrivateVectors();
   void Update(const double& temp, const double& pressure);
+  void SetVirial(const std::vector<double>& virial, const std::string& typevirial,
+    		     const int& isp1, const int& isp2, const int& isp3);
   //!%-------------------------------------------------------------
   //!%-------------------------------------------------------------
   //!%-------------------------------------------------------------
@@ -80,16 +78,9 @@ class ActivityModelPitzer : public ActivityModel {
   //!% Limiting Debye-Hückel slope to 25º   0.39153  0.392
   //!%-------------------------------------------------------------
   static const double aphi25;
-  //!%-------------------------------------------------------------
-  //!% Limiting Debye-Hückel slope to 25º for density calculations
-  //!% dAphi/dP??
-  //!% cm3 kg1/2/mol3/2
-  //!% taken from Monnin (1994)
-  //!%-------------------------------------------------------------
-  static const double aphi25vol;
-  //!%-------------------------------------------------------------
-  //!cprovi aphi25=0.39153d0,   & ! Limiting Debye-Hückel slope to 25º   0.39153  0.392
-  //!%-------------------------------------------------------------
+  //-------------------------------------------------------------
+  // Limiting Debye-Hückel slope to 25º   0.39153  0.392
+  //-------------------------------------------------------------
   static const double c0aphi;                          // Temperature depending coefficients
   static const double c1aphi;                          // Temperature depending coefficients
   static const double c2aphi;                          // Temperature depending coefficients
@@ -100,10 +91,7 @@ class ActivityModelPitzer : public ActivityModel {
   static const double c7aphi;                          // Temperature depending coefficients
   static const double c8aphi;                          // Temperature depending coefficients
   static const double c9aphi;                          // Temperature depending coefficients
-  //--------------------------------------------------------------
-  //--------------------------------------------------------------
-  //--------------------------------------------------------------
-  //--------------------------------------------------------------
+
   std::vector<VirialCoefficient> beta0;
 
   std::vector<VirialCoefficient> beta1;
@@ -152,23 +140,23 @@ class ActivityModelPitzer : public ActivityModel {
 
   bool ismacinnes;                                     // ismacinnes=true, then activity coefficients will be scaled according macinnes convention
 
-  double** g_;
+  std::vector<std::vector<double> > g_;
 
-  double** g_pri_;
+  std::vector<std::vector<double> > g_pri_;
 
-  double** f_;
+  std::vector<std::vector<double> > f_;
 
-  double* j_;
+  std::vector<double> j_;
 
-  double* j_pri_;
+  std::vector<double> j_pri_;
 
-  double* q;
+  std::vector<double> q;
 
-  double* qphi;
+  std::vector<double> qphi;
 
-  double* qpri;
+  std::vector<double> qpri;
 
-  int** indnzq;
+  std::vector<std::vector<int> > indnzq;
 
   std::vector<double> molality;
 
@@ -181,4 +169,4 @@ class ActivityModelPitzer : public ActivityModel {
 };
 }  // namespace chemistry
 }  // namespace amanzi
-#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HH_
+#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_PITZER_HWM_HH_

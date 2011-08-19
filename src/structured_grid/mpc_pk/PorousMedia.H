@@ -1,7 +1,7 @@
 #ifndef _PorousMedia_H_
 #define _PorousMedia_H_
 //
-// $Id: PorousMedia.H,v 1.98 2011-07-12 17:17:22 gpau Exp $
+// $Id: PorousMedia.H,v 1.103 2011-08-15 17:53:23 gpau Exp $
 //
 #include <Geometry.H>
 #include <FArrayBox.H>
@@ -21,6 +21,7 @@
 #ifdef COREREACT
   #include <PChemDriver.H>
 #endif
+#include <ParmParse.H>
 #include <Region.H>
 #include <Rock.H>
 #include <Source.H>
@@ -617,7 +618,14 @@ protected:
 			 const MultiFab* umac,
 			 const Real time,
 			 const int  nc = 0,
-			 const bool do_upwind = false);
+			 const bool do_upwind = false,
+			 const bool do_n = true);
+
+  //
+  // Calculate the dt term in the jacobian for p-formulation
+  //
+  void calc_richard_alpha (MultiFab*     alpha,
+			   const Real    time);
   //
   // Calculate divergence of velocity boundary condition 
   //
@@ -630,10 +638,12 @@ protected:
   //
   void calcCapillary (const Real time);
   void calcCapillary (MultiFab* pc, const MultiFab& S);
+  void smooth_pc (MultiFab* pc);
   //
   // Calculate inverse capillary pressure
   //
   void calcInvCapillary (const Real time);
+  void calcInvCapillary (MultiFab& S,const MultiFab& pc);
   //
   // Calculate lambda = relative permeability/mu
   //
@@ -739,6 +749,8 @@ protected:
 
 protected:
 
+  static void InitializeStaticVariables();
+
   // Deals with the ghost cells 
   AuxBoundaryData aux_boundary_data_old;
   bool            FillPatchedOldState_ok;
@@ -751,8 +763,8 @@ protected:
   // Rock
   static Array<Rock> rock_array;
   static std::string gsfile;
-  static MultiFab    kappadata;
-  static MultiFab    phidata;
+  static MultiFab*   kappadata;
+  static MultiFab*   phidata;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
 

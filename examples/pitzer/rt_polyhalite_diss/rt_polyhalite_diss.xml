@@ -1,0 +1,138 @@
+<!-- 
+The test consists of a one-dimensional reactive transport where a K-enriched solution in equilibrium
+with halite (NaCl) and polyhalite (polyhalite (K2Ca2Mg(SO4)4.2H2O)  flows through a column initially 
+equilibrated with halite (NaCl) and gypsum (CaSO4.2H2O). The length of the domain is 1m 
+(porosity and dispersivity are 0.4 and 0.01 m, respectively), and contains gypsum and halite.
+
+This input file is running on amazi-alt-driver.
+-->
+<ParameterList name="Main">
+
+  <ParameterList name="Mesh">
+    <ParameterList name="Generate">
+      <Parameter name="X_Min" type="double" value="0.0"/>
+      <Parameter name="X_Max" type="double" value="1.0"/>
+      <Parameter name="Y_Min" type="double" value="0.0"/>
+      <Parameter name="Y_Max" type="double" value="1.0"/>
+      <Parameter name="Z_Min" type="double" value="0.0"/>
+      <Parameter name="Z_Max" type="double" value="1.0"/>
+      <Parameter name="Number of Cells in X" type="int" value="101"/> 
+      <Parameter name="Number of Cells in Y" type="int" value="1"/> 
+      <Parameter name="Number of Cells in Z" type="int" value="1"/> 
+    </ParameterList>
+  </ParameterList>
+  
+
+  <ParameterList name="MPC">
+    <Parameter name="Start Time" type="double" value="0.0"/>
+    <Parameter name="End Time" type="double" value="3.1536e9"/> <!-- 100 years --> 
+    <Parameter name="End Cycle" type="int" value="-1"/>      
+    <Parameter name="disable Flow_PK" type="string" value="yes"/>
+    <Parameter name="disable Transport_PK" type="string" value="no"/>
+    <Parameter name="disable Chemistry_PK" type="string" value="no"/>
+   <Parameter name="Viz dump time frequency" type="double" value="3.1536e8"/>
+    <Parameter name="Viz dump cycle frequency" type="int" value="-1"/>
+ <!--   <Parameter name="Gnuplot output" type="bool" value="true"/> -->
+    <ParameterList name="CGNS">
+      <Parameter name="File name" type="string" value="rt_polyhalite_diss.cgns"/>
+    </ParameterList>    
+  </ParameterList> 
+
+
+  <ParameterList name="State">
+    <Parameter name="Number of mesh blocks" type="int" value="1"/>
+    <Parameter name="Number of component concentrations" type="int" value="9"/>
+    <Parameter name="Constant water saturation" type="double" value="1.0"/>
+    <Parameter name="Constant water density" type="double" value="1000.0e0"/> <!-- 1000 [kg m-3] -->
+    <Parameter name="Constant viscosity" type="double" value="1.0e-3"/>            <!-- 1.0e-3 [kg m-1 s-1] => 1.0e-3 [Pa s] --> 
+    <Parameter name="Gravity x" type="double" value="0.0"/>
+    <Parameter name="Gravity y" type="double" value="0.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.806e0"/>  <!-- 9.806 [m s-2] -->
+
+    <ParameterList name="Mesh block 1"> 
+      <Parameter name="Mesh block ID" type="int" value="0"/>
+      <Parameter name="Constant porosity" type="double" value="0.4e0"/>
+      <Parameter name="Constant permeability" type="double" value="1.0"/> <!-- 1.18031e-12 [m2] => 1.15741e-5 [m s-1] --> 
+      <Parameter name="Constant Darcy flux x" type="double" value="4.0e-10"/>     <!-- 4.0e-10 [m s-1] => 1.26e-2 [m year-1] -->
+      <Parameter name="Constant Darcy flux y" type="double" value="0"/>
+      <Parameter name="Constant Darcy flux z" type="double" value="0"/>
+      <Parameter name="Constant component concentration 0" type="double" value="-9.3494e-04"/>  <!-- H+1 -->
+      <Parameter name="Constant component concentration 1" type="double" value="1.08E-02"/>        <!-- Ca+2 -->
+      <Parameter name="Constant component concentration 2" type="double" value="5.9480E+00"/>   <!-- Cl-1 -->
+      <Parameter name="Constant component concentration 3" type="double" value="5.1780E+00"/>   <!-- Na+1 -->
+      <Parameter name="Constant component concentration 4" type="double" value="1.712E-05"/>      <!-- CO3-2 -->
+      <Parameter name="Constant component concentration 5" type="double" value="6.2820E-01"/>   <!-- Mg+2 -->
+      <Parameter name="Constant component concentration 6" type="double" value="1.2080E-01"/>   <!-- K+1 -->
+      <Parameter name="Constant component concentration 7" type="double" value="2.2500E-01"/>   <!-- SO4-2 -->
+      <Parameter name="Constant component concentration 8" type="double" value="1.0000E-09"/>   <!-- Br-1 -->
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="enable internal tests" type="string" value="no"/>   
+    <Parameter name="verbosity level" type="int" value="1"/>  
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      <ParameterList name="BC 0">
+	<Parameter name="Side set ID" type="int" value="3"/>
+	<Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="-1.7768E-04"/>  <!-- H+1 -->  
+        <Parameter name="Component 1" type="double" value="3.8000E-03"/>   <!-- Ca+2 -->
+        <Parameter name="Component 2" type="double" value="6.4880E+00"/>   <!-- Cl-1 -->
+        <Parameter name="Component 3" type="double" value="2.7230E+00"/>   <!-- Na+1 -->
+        <Parameter name="Component 4" type="double" value="4.963E-05"/>   <!-- CO3-2 -->
+        <Parameter name="Component 5" type="double" value="2.1950E+00"/>   <!-- Mg+2 -->
+        <Parameter name="Component 6" type="double" value="7.268E+00"/>   <!-- K+1 -->
+        <Parameter name="Component 7" type="double" value="5.5650E-01"/>   <!-- SO4-2 -->
+        <Parameter name="Component 8" type="double" value="1.0e-6"/>   <!-- Br-1 -->
+     </ParameterList>             
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="Chemistry">
+    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
+    <Parameter name="Thermodynamic Database File" type="string" value="rt_polyhalite_db.bgd" />
+    <Parameter name="Verbosity" type="int" value="1" />
+    <!-- 
+        HWM model is specified 
+    -->
+    <Parameter name="Activity Model" type="string" value="pitzer-hwm" /> 
+    <Parameter name="Pitzer Database File" type="string" value="phreeqc-pitzer.dat" />  <!-- Name of the virial coefficients database (it is based on PHREEQC database)-->
+    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
+    <Parameter name="Maximum Newton Iterations" type="int" value="100"/>
+    <Parameter name="Using sorption" type="string" value="no"/>
+    <Parameter name="Free ion concentrations provided" type="string" value="yes"/> <!-- Initial guess is specified -->
+    <ParameterList name="Initial Conditions">
+      <Parameter name="Number of minerals" type="int" value="3"/>
+      <Parameter name="Number of ion exchange sites" type="int" value="0"/>
+      <Parameter name="Number of sorption sites" type="int" value="0"/>
+      <Parameter name="Number of mesh blocks" type="int" value="1"/>
+      <ParameterList name="Mesh block 1"> 
+        <Parameter name="Mesh block ID" type="int" value="0"/>
+        <ParameterList name="Free Ion Species">
+          <Parameter name="Free Ion Species 0" type="double" value="1.0e-7"/>           <!-- H+1 -->
+          <Parameter name="Free Ion Species 1" type="double" value="1.0850E-02"/>   <!-- Ca+2 -->
+          <Parameter name="Free Ion Species 2" type="double" value="5.9430E+00"/>   <!-- Cl-1 -->
+          <Parameter name="Free Ion Species 3" type="double" value="5.1780E+00"/>   <!-- Na+1 -->
+          <Parameter name="Free Ion Species 4" type="double" value="1.7070E-05"/>   <!-- CO3-2 -->
+          <Parameter name="Free Ion Species 5" type="double" value="6.2820E-01"/>   <!-- Mg+2 -->
+          <Parameter name="Free Ion Species 6" type="double" value="1.2080E-01"/>   <!-- K+1 -->
+          <Parameter name="Free Ion Species 7" type="double" value="2.2500E-01"/>   <!-- SO4-2 -->
+          <Parameter name="Free Ion Species 8" type="double" value="1.0000E-06"/>   <!-- Br-1 -->
+        </ParameterList>
+        <ParameterList name="Minerals">
+          <Parameter name="Mineral 0" type="double" value="0.002968"/>      <!-- gypsum (CaSO4.2H2O) -->
+          <Parameter name="Mineral 1" type="double" value="0.01082274"/>  <!-- halite (NaCl) -->
+          <Parameter name="Mineral 2" type="double" value="0.0"/>                <!-- polyhalite (K2Ca2Mg(SO4)4.2H2O) -->
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+
+</ParameterList>

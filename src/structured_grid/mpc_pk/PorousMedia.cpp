@@ -5,7 +5,6 @@
 #include <cstdio>
 #include <cmath>
 
-#include <ParmParse.H>
 #include <ErrorList.H>
 #include <Interpolater.H>
 #include <MultiGrid.H>
@@ -52,25 +51,30 @@
 //
 // Static objects.
 //
-ErrorList   PorousMedia::err_list;
-BCRec       PorousMedia::phys_bc;
-BCRec       PorousMedia::pres_bc;
-MacProj    *PorousMedia::mac_projector = 0;
-Godunov    *PorousMedia::godunov       = 0;
+ErrorList PorousMedia::err_list;
+BCRec     PorousMedia::phys_bc;
+BCRec     PorousMedia::pres_bc;
+MacProj*  PorousMedia::mac_projector = 0;
+Godunov*  PorousMedia::godunov       = 0;
 
-// The num_state_type actually varies with model.
-// Add 2 if do_chem == 1 later.
-int  PorousMedia::num_state_type = 4;
-
-// Options for parallelization of chemistry solver 
-static std::string solid    = "Solid";
-static std::string absorbed = "Absorbed";
-static std::string ctotal="Total";
+namespace
+{
+  const std::string solid("Solid");
+  const std::string absorbed("Absorbed");
+  const std::string ctotal("Total");
+}
 
 void
 PorousMedia::variableCleanUp ()
 {
   desc_lst.clear();
+  derive_lst.clear();
+  err_list.clear();
+
+  delete kappadata;
+  kappadata = 0;
+  delete phidata;
+  phidata = 0;
 
   delete mac_projector;
   mac_projector = 0;
@@ -78,20 +82,27 @@ PorousMedia::variableCleanUp ()
   delete godunov;
   godunov = 0;
 
+  model_list.clear();
+  bc_list.clear();
+  obs_list.clear();
+  phase_list.clear();
+  comp_list.clear();
+  tracer_list.clear();
+  region_list.clear();
+
   for (int i=0;i<region_array.size();i++)
     delete region_array[i];
 
   region_array.clear();
 
-
 #ifdef AMANZI
   if (do_chem > -1)
     {
       chemSolve.clear();
+      components.clear();
       parameters.clear();
     }
 #endif
-
 }
 
 PorousMedia::PorousMedia ()
@@ -792,6 +803,12 @@ PorousMedia::initData ()
   U_vcr.setVal(0.);
   if (have_capillary) calcCapillary(cur_time);
   
+  
+
+  //pcnp1_cc->setVal(0.4);
+  //smooth_pc(pcnp1_cc);
+  //calcInvCapillary(cur_time);
+
   //
   // compute lambda
   // 
@@ -835,7 +852,7 @@ PorousMedia::initData ()
 	      MultiFab::Copy(tmp,S_new,0,0,1,0);
 	      tmp.mult(-1.0);
 	      richard_scalar_update(dt,curr_nwt_iter,u_mac_curr);
-	      if (curr_nwt_iter <= prev_nwt_iter && curr_nwt_iter < 20)
+	      if (curr_nwt_iter <= prev_nwt_iter && curr_nwt_iter < 20 )
 		dt = dt*1.2;
 	      else if (curr_nwt_iter > prev_nwt_iter )
 		dt = dt*0.9;
@@ -1672,10 +1689,10 @@ PorousMedia::advance_richard (Real time,
   Real dt_nwt = dt; 
   predictDT(u_macG_trac);
   
-  if (curr_nwt_iter <= richard_iter || curr_nwt_iter < 10)
+  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < 2e6)
     dt_nwt = dt_nwt*1.2;
-  else if (curr_nwt_iter > richard_iter )
-    dt_nwt = dt_nwt*0.9;
+  else if (curr_nwt_iter > 10 )
+    dt_nwt = dt_nwt*0.8;
   richard_iter = curr_nwt_iter;
   dt_eig = std::min(dt_eig,dt_nwt); 
 
@@ -4122,10 +4139,14 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
       const Box& box = sat_res_mf[mfi].box();
       sat_res_mf[mfi].minus((*cpl_coef)[mfi],box,3,0,1);
     }
-  diffusion->set_rho(&sat_res_mf); 
+  diffusion->set_rho(&sat_res_mf);
+
+  bool do_n = true;
 
   MultiFab& S_new = get_new_data(State_Type);
   MultiFab* alpha = new MultiFab(grids,1,1);
+  MultiFab* dalpha = 0;
+  if (!do_n) dalpha = new MultiFab(grids,1,1);
   MultiFab::Copy(*alpha,*rock_phi,0,0,1,alpha->nGrow());
 
   // Compute first res_fix = -\phi * n^k + dt*\nabla v_inflow.  
@@ -4153,14 +4174,22 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   calcCapillary(pcTime);
   calcLambda(pcTime);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind);
-  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind);
-  std::cout << "here3\n";
+  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
+  if (!do_n)
+      calc_richard_alpha(dalpha,pcTime);
+
   while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
     {
-      diffusion->richard_iter(dt,nc,gravity,density,res_fix,
-			      alpha,cmp_pcp1,cmp_pcp1_dp,
-			      pcnp1_cc,u_mac,do_upwind,&err_nwt);      
-
+      if (do_n)
+	diffusion->richard_iter(dt,nc,gravity,density,res_fix,
+				alpha,cmp_pcp1,cmp_pcp1_dp,
+				pcnp1_cc,u_mac,do_upwind,&err_nwt);      
+      else
+	{
+	  diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
+				    alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
+				    pcnp1_cc,u_mac,do_upwind,&err_nwt);  
+	}
       if (verbose > 1 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
@@ -4173,7 +4202,9 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
       P_new.mult(-1.0,1);
       compute_vel_phase(u_mac,0,pcTime);
       calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind);
-      calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind);
+      calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
+      if (!do_n)
+	calc_richard_alpha(dalpha,pcTime);
       itr_nwt += 1;
 
       if (verbose > 1)	check_minmax();
@@ -4224,6 +4255,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   }
       
   delete alpha;
+  if (dalpha) delete dalpha;
   diffusion->removeFluxBoxesLevel(cmp_pcp1);
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
   diffusion->removeFluxBoxesLevel(fluxSC);
@@ -5308,7 +5340,7 @@ PorousMedia::init_rock_properties ()
 	}
 
       MultiFab mftmp(ba2,BL_SPACEDIM,0);
-      mftmp.copy(kappadata); 
+      mftmp.copy(*kappadata); 
 
       // mfbig has same CPU distribution as kappa
       MultiFab mfbig_kappa(ba,BL_SPACEDIM,ng_twoexp); 
@@ -5458,7 +5490,7 @@ PorousMedia::init_rock_properties ()
 	}
 
       MultiFab mftmp(ba2,1,0);      
-      mftmp.copy(phidata);     
+      mftmp.copy(*phidata);     
       
       // mfbig has same CPU distribution as phi
       MultiFab mfbig_phi(ba,1,ng_twoexp);
@@ -7569,13 +7601,14 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			       const MultiFab* umac,
 			       const Real      time,
 			       const int       nc,
-			       const bool      do_upwind)
+			       const bool      do_upwind,
+			       const bool      do_n)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_jac()");
 
   MultiFab& S = get_data(State_Type,time);
   const int nGrow = 1;    
- //
+  //
   // Select time level to work with (N or N+1)
   //
   const TimeLevel whichTime = which_time(State_Type,time);
@@ -7587,8 +7620,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
   const int*  domhi    = geom.Domain().hiVect();
   const int n_cpl_coef = cpl_coef->nComp(); 
   const int n_kr_coef  = kr_coef->nComp(); 
-  const int ncp1 = nc + 1;  
-  bool do_analytic_jac = false;
+  bool do_analytic_jac = false;//true;
   for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
        fpi.isValid();
        ++fpi)
@@ -7639,6 +7671,14 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       const int* dfy_hi  = (*diffusivity[1])[idx].hiVect();
       const Real* dfydat = (*diffusivity[1])[idx].dataPtr();
 
+      const int* kpx_lo  = kpedge[0][idx].loVect();
+      const int* kpx_hi  = kpedge[0][idx].hiVect();
+      const Real* kpxdat = kpedge[0][idx].dataPtr();
+
+      const int* kpy_lo  = kpedge[1][idx].loVect();
+      const int* kpy_hi  = kpedge[1][idx].hiVect();
+      const Real* kpydat = kpedge[1][idx].dataPtr();
+
 #if(BL_SPACEDIM==3)    
       const int* uz_lo   = umac[2][idx].loVect();
       const int* uz_hi   = umac[2][idx].hiVect();
@@ -7647,6 +7687,10 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
       const int* dfz_lo  = (*diffusivity[2])[idx].loVect();
       const int* dfz_hi  = (*diffusivity[2])[idx].hiVect();
       const Real* dfzdat = (*diffusivity[2])[idx].dataPtr();
+
+      const int* kpz_lo  = kpedge[2][idx].loVect();
+      const int* kpz_hi  = kpedge[2][idx].hiVect();
+      const Real* kpzdat = kpedge[2][idx].dataPtr();
 #endif 
       const Real* krdat  = (*kr_coef)[fpi].dataPtr(); 
       const int*  kr_lo  = (*kr_coef)[fpi].loVect();
@@ -7660,55 +7704,139 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 
       if (do_analytic_jac) 
 	FORT_RICHARD_AJAC(ndat,   ARLIM(n_lo), ARLIM(n_hi),
-			  lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
-			  dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
-			  dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
+			      dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
+			      dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
 #if(BL_SPACEDIM==3)
-			  dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
+			      dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
+#endif	
+			      uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
+			      uydat, ARLIM(uy_lo), ARLIM(uy_hi),
+#if(BL_SPACEDIM==3)
+			      uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
 #endif
-			  pdat, ARLIM(p_lo), ARLIM(p_hi),
-			  kdat, ARLIM(k_lo), ARLIM(k_hi),
-			  cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-			  &n_cpl_coef,
-			  lo, hi, domlo, domhi,
-			  bc.dataPtr(), &ncp1);
+			      kpxdat, ARLIM(kpx_lo), ARLIM(kpx_hi),
+			      kpydat, ARLIM(kpy_lo), ARLIM(kpy_hi),
+#if(BL_SPACEDIM==3)
+			      kpzdat, ARLIM(kpz_lo), ARLIM(kpz_hi),
+#endif
+			      lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
+			      pcdat, ARLIM(pc_lo), ARLIM(pc_hi),
+			      pdat, ARLIM(p_lo), ARLIM(p_hi),
+			      kdat, ARLIM(k_lo), ARLIM(k_hi),
+			      krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
+			      cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
+			      lo, hi, domlo, domhi, dx, bc.dataPtr(), 
+			      rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
+			      &do_upwind);
       else
 	{
-	  Real deps = 1.e-6;
-	  FORT_RICHARD_NJAC(ndat,   ARLIM(n_lo), ARLIM(n_hi),
-			    dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
-			    dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
+	  Real deps = 1.e-8;
+	  if (do_n)
+	    FORT_RICHARD_NJAC(ndat,   ARLIM(n_lo), ARLIM(n_hi),
+			      dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
+			      dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
 #if(BL_SPACEDIM==3)
-			    dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
+			      dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
 #endif	
-			    uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
-			    uydat, ARLIM(uy_lo), ARLIM(uy_hi),
+			      uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
+			      uydat, ARLIM(uy_lo), ARLIM(uy_hi),
 #if(BL_SPACEDIM==3)
-			    uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
+			      uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
 #endif
-			    lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
-			    pcdat, ARLIM(pc_lo), ARLIM(pc_hi),
-			    pdat, ARLIM(p_lo), ARLIM(p_hi),
-			    kdat, ARLIM(k_lo), ARLIM(k_hi),
-			    krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
-			    cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
-			    lo, hi, domlo, domhi, dx, bc.dataPtr(), 
-			    rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
-			    &deps, &do_upwind);
+			      kpxdat, ARLIM(kpx_lo), ARLIM(kpx_hi),
+			      kpydat, ARLIM(kpy_lo), ARLIM(kpy_hi),
+#if(BL_SPACEDIM==3)
+			      kpzdat, ARLIM(kpz_lo), ARLIM(kpz_hi),
+#endif
+			      lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
+			      pcdat, ARLIM(pc_lo), ARLIM(pc_hi),
+			      pdat, ARLIM(p_lo), ARLIM(p_hi),
+			      kdat, ARLIM(k_lo), ARLIM(k_hi),
+			      krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
+			      cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
+			      lo, hi, domlo, domhi, dx, bc.dataPtr(), 
+			      rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
+			      &deps, &do_upwind);
+	  else
+	    FORT_RICHARD_NJAC2(dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
+			       dfydat, ARLIM(dfy_lo), ARLIM(dfy_hi),
+#if(BL_SPACEDIM==3)
+			       dfzdat, ARLIM(dfz_lo), ARLIM(dfz_hi),
+#endif	
+			       uxdat, ARLIM(ux_lo), ARLIM(ux_hi),
+			       uydat, ARLIM(uy_lo), ARLIM(uy_hi),
+#if(BL_SPACEDIM==3)
+			       uzdat, ARLIM(uz_lo), ARLIM(uz_hi),
+#endif
+			       kpxdat, ARLIM(kpx_lo), ARLIM(kpx_hi),
+			       kpydat, ARLIM(kpy_lo), ARLIM(kpy_hi),
+#if(BL_SPACEDIM==3)
+			       kpzdat, ARLIM(kpz_lo), ARLIM(kpz_hi),
+#endif
+			       lbddat, ARLIM(lbd_lo), ARLIM(lbd_hi),
+			       pcdat, ARLIM(pc_lo), ARLIM(pc_hi),
+			       pdat, ARLIM(p_lo), ARLIM(p_hi),
+			       kdat, ARLIM(k_lo), ARLIM(k_hi),
+			       krdat, ARLIM(kr_lo), ARLIM(kr_hi), &n_kr_coef,
+			       cpdat, ARLIM(cp_lo), ARLIM(cp_hi), &n_cpl_coef,
+			       lo, hi, domlo, domhi, dx, bc.dataPtr(), 
+			       rinflow_bc_lo.dataPtr(),rinflow_bc_hi.dataPtr(), 
+			       &deps, &do_upwind);
 	}
     }
+}
 
+void 
+PorousMedia::calc_richard_alpha (MultiFab*     alpha,
+				 const Real    time)
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::calc_richard_alpha()");
 
-  // multiply by kedge
-  for (int dir = 0; dir < BL_SPACEDIM; dir++)
+  MultiFab& S = get_data(State_Type,time);
+  const int nGrow = 1;    
+
+  const int n_cpl_coef = cpl_coef->nComp(); 
+  for (FillPatchIterator fpi(*this,S,nGrow,time,State_Type,0,ncomps);
+       fpi.isValid();
+       ++fpi)
     {
-      const int ndiff = diffusivity[dir]->nComp();
-      for (MFIter ecMfi(*diffusivity[dir]); ecMfi.isValid(); ++ecMfi)
-        {
-	  for (int i=0; i<ndiff;i++)
-	  (*diffusivity[dir])[ecMfi].mult(kpedge[dir][ecMfi],0,i,1);
-        }
-      (*diffusivity[dir]).FillBoundary();
+      dirichletStateBC(fpi(),nGrow,time);
+
+      const int idx   = fpi.index();
+      const Box box   = BoxLib::grow(grids[idx],nGrow);
+
+      BL_ASSERT(box == fpi().box());
+
+      const Real* ndat = fpi().dataPtr(); 
+      const int*  n_lo = fpi().loVect();
+      const int*  n_hi = fpi().hiVect();
+
+      const Real* adat = (*alpha)[fpi].dataPtr();
+      const int*  a_lo = (*alpha)[fpi].loVect();
+      const int*  a_hi = (*alpha)[fpi].hiVect();
+
+      const Real* pdat   = (*rock_phi)[fpi].dataPtr();
+      const int* p_lo    = (*rock_phi)[fpi].loVect();
+      const int* p_hi    = (*rock_phi)[fpi].hiVect();
+
+      const Real* kdat   = (*kappa)[fpi].dataPtr();
+      const int* k_lo    = (*kappa)[fpi].loVect();
+      const int* k_hi    = (*kappa)[fpi].hiVect();
+
+      const int* lo      = fpi.validbox().loVect();
+      const int* hi      = fpi.validbox().hiVect();
+
+      const Real* cpdat  = (*cpl_coef)[fpi].dataPtr(); 
+      const int*  cp_lo  = (*cpl_coef)[fpi].loVect();
+      const int*  cp_hi  = (*cpl_coef)[fpi].hiVect();
+
+			  
+      FORT_RICHARD_ALPHA(adat, ARLIM(a_lo), ARLIM(a_hi),
+			 ndat, ARLIM(n_lo), ARLIM(n_hi),
+			 pdat, ARLIM(p_lo), ARLIM(p_hi),
+			 kdat, ARLIM(k_lo), ARLIM(k_hi),
+			 cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
+			 &n_cpl_coef, lo, hi);
     }
 }
 
@@ -7900,17 +8028,88 @@ PorousMedia::calcInvCapillary (const Real time)
       const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
       const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
 
-      Array<int> s_bc;
-      s_bc = getBCArray(State_Type,idx,0,1);
+      FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
+		       ndat, ARLIM(n_lo), ARLIM(n_hi),
+		       pdat, ARLIM(p_lo), ARLIM(p_hi),
+		       kdat, ARLIM(k_lo), ARLIM(k_hi),
+		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
+		       &n_cpl_coef, lo, hi);
+    }
+}
+
+void 
+PorousMedia::calcInvCapillary (MultiFab& S,
+			       const MultiFab& pc)
+{
+  //
+  // Calculate inverse capillary pressure
+  //    
+  const int n_cpl_coef = cpl_coef->nComp();
+  for (MFIter mfi(S); mfi.isValid(); ++mfi)
+    {
+      const int idx   = mfi.index();
+
+      const int* lo  = grids[idx].loVect();
+      const int* hi  = grids[idx].hiVect();
+
+      FArrayBox& Sfab   = S[mfi];
+      const Real* ndat  = Sfab.dataPtr(); 
+      const int*  n_lo  = Sfab.loVect();
+      const int*  n_hi  = Sfab.hiVect();
+
+      const Real* ddat  = pc[mfi].dataPtr(); 
+      const int*  d_lo  = pc[mfi].loVect();
+      const int*  d_hi  = pc[mfi].hiVect();
+
+      const Real* pdat = (*rock_phi)[mfi].dataPtr();
+      const int* p_lo  = (*rock_phi)[mfi].loVect();
+      const int* p_hi  = (*rock_phi)[mfi].hiVect();
+
+      const Real* kdat = (*kappa)[mfi].dataPtr();
+      const int* k_lo  = (*kappa)[mfi].loVect();
+      const int* k_hi  = (*kappa)[mfi].hiVect();
+
+      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
+      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
+      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
 
       FORT_MK_INV_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
 		       ndat, ARLIM(n_lo), ARLIM(n_hi),
 		       pdat, ARLIM(p_lo), ARLIM(p_hi),
 		       kdat, ARLIM(k_lo), ARLIM(k_hi),
 		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-		       &n_cpl_coef, lo, hi, s_bc.dataPtr());
+		       &n_cpl_coef, lo, hi);
     }
 }
+
+void 
+PorousMedia::smooth_pc (MultiFab* pc)
+{
+  //
+  // Calculate the capillary pressure for a given state.  
+  //
+  const int n_cpl_coef = cpl_coef->nComp();
+  for (MFIter mfi(*pc); mfi.isValid(); ++mfi) 
+    {
+      const int idx  = mfi.index();
+      const int* lo  = grids[idx].loVect();
+      const int* hi  = grids[idx].hiVect();
+
+      const Real* ddat  = (*pc)[mfi].dataPtr(); 
+      const int*  d_lo  = (*pc)[mfi].loVect();
+      const int*  d_hi  = (*pc)[mfi].hiVect();
+
+      const Real* cpdat  = (*cpl_coef)[mfi].dataPtr(); 
+      const int*  cp_lo  = (*cpl_coef)[mfi].loVect();
+      const int*  cp_hi  = (*cpl_coef)[mfi].hiVect();
+
+      FORT_SMOOTH_CPL( ddat, ARLIM(d_lo), ARLIM(d_hi),
+		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
+		       &n_cpl_coef, lo, hi);
+    }
+  pc->FillBoundary();
+}
+
 
 void 
 PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)

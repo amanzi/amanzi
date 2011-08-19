@@ -1,7 +1,7 @@
 #ifndef _MacProj_H_
 #define _MacProj_H_
 //
-// $Id: MacProj.H,v 1.29 2011-05-11 23:03:20 gpau Exp $
+// $Id: MacProj.H,v 1.30 2011-08-10 17:36:05 lijewski Exp $
 //
 #include <BC_TYPES.H>
 #include <BC_TYPES_PM.H>
@@ -22,8 +22,7 @@ public:
 	   int    _do_any_diffuse);
     
   virtual ~MacProj ();
-  void read_params ();
-    
+
   void install_level (int                   level, 
 		      AmrLevel*             level_data,
 		      MultiFab&             volume,
@@ -89,6 +88,9 @@ public:
 		   int numOutFlowFaces, Real gravity,
 		   const int* lo_bc, const int* hi_bc,
 		   const Real* press_lo, const Real* press_hi);
+
+  static void Initialize ();
+  static void Finalize ();
 
   static void GetOutFlowFaces (bool&        haveOutFlow,
 			       Orientation* outFaces,
