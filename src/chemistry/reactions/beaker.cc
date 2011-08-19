@@ -617,7 +617,9 @@ void Beaker::addAccumulationDerivative(Block* J,
   // (e.g. Kd, surface complexation) here
   // sorbed_accumulation_coef = volume/dt
   // units = (kg water/m^3 bulk)*(m^3 bulk)/(sec) = kg water/sec
-  J->addValues(dtotal_sorbed, sorbed_accumulation_coef());
+  if (dtotal_sorbed) {
+    J->addValues(dtotal_sorbed, sorbed_accumulation_coef());
+  }
 }  // end calculateAccumulationDerivative()
 
 void Beaker::calculateFixedAccumulation(const std::vector<double>& total,
