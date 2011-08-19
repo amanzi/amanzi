@@ -211,7 +211,7 @@ void Chemistry_PK::XMLParameters(void) {
   //---------------------------------------------------------------------------
   // Pitzer virial coefficients database
   //---------------------------------------------------------------------------
-  if (beaker_parameters_.activity_model_name=="pitzer") {
+  if (beaker_parameters_.activity_model_name=="pitzer-hwm") {
      beaker_parameters_.pitzer_database =
        parameter_list_.get<std::string>("Pitzer Database File", "pitzer.dat");
   } else {

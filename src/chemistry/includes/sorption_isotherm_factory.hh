@@ -6,6 +6,7 @@
 
 #include "species.hh"
 #include "verbosity.hh"
+#include "string_tokenizer.hh"
 
 
 namespace amanzi {
@@ -18,7 +19,8 @@ class SorptionIsothermFactory {
   SorptionIsothermFactory();
   ~SorptionIsothermFactory();
 
-  SorptionIsotherm* Create(const std::string& model);
+  SorptionIsotherm* Create(const std::string& model, 
+                           const StringTokenizer parameters);
 
   SpeciesId VerifySpeciesName(const SpeciesName species_name,
                               const std::vector<Species>& species) const;

@@ -1,5 +1,5 @@
 c
-c $Id: GODUNOV_2D.F,v 1.121 2011-07-07 17:30:49 gpau Exp $
+c $Id: GODUNOV_2D.F,v 1.122 2011-08-03 23:19:05 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -3081,7 +3081,6 @@ c     For two-phase system, the values are given by (dv1/ds)/\phi
                eigmax = max(eigmax,dabs(eigtmp))
             end do
          end do
-	write(*,*) 'eigmax', eigmax
       end 
 
       subroutine riemann_est_eig_cpl(s,DIMS(s),lbd,dlbd,d2lbd,DIMS(lbd),

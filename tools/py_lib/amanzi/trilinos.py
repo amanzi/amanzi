@@ -49,6 +49,34 @@ def islist(object):
 def islistroot(object):
     return isinstance(object,_ParameterListRootInterface)
 
+def get_list_type(a):
+    ret_type = type(a[0])
+    for item in a:
+        if type(item) != ret_type:
+            ret_type = types.StringType
+            break
+    return ret_type
+
+def get_str_list_type(a):
+
+    tvalue = get_list_type(a)
+    str_type = None
+    
+    if tvalue == types.FloatType:
+        str_type = 'Array double'
+    elif tvalue == types.IntType:
+        str_type = 'Array int'
+    elif tvalue == types.LongType:
+        str_type = 'Array long'
+    elif tvalue == types.StringType:
+        str_type = 'Array string'
+    elif tvalue == types.BooleanType:
+        str_type = 'Array bool'
+    else:
+        raise ValueError, str(value) + 'unknown value type' + \
+               str(tvalue) 
+    return str_type
+
 def get_str_type(value):
     tvalue = type(value)
     str_type = None
@@ -56,15 +84,19 @@ def get_str_type(value):
         str_type = 'double'
     elif tvalue == types.IntType:
         str_type = 'int'
+    elif tvalue == types.LongType:
+        str_type = 'long'
     elif tvalue == types.StringType:
         str_type = 'string'
     elif tvalue == types.BooleanType:
         str_type = 'bool'
     elif tvalue == types.InstanceType:
         str_type = str(value.__class__)
+    elif tvalue == types.ListType:
+        str_type = get_str_list_type(value)
     else:
-        raise ValueError, value + 'unknown value type' + \
-              tvalue 
+        raise ValueError, str(value) + 'unknown value type' + \
+               str(tvalue) 
     return str_type
 
 def get_py_type(str_type):
@@ -112,9 +144,12 @@ def convert_str_to_type(str,str_type):
     return result
 
 ################################################################################
-class TrilinosParser(XMLParser):
-
-    def __init__(self) 
+#class TrilinosParser(XMLParser):
+#
+#   def __init__(self):
+#
+#       raise NotImplementedError, 'Trilinos Parser class is not implemented'
+#
 ################################################################################
 class _ParameterInterface(_ElementInterface):
 
@@ -146,7 +181,14 @@ class _ParameterInterface(_ElementInterface):
         return convert_str_to_type(value,str_type)
 
     def set_value(self,value):
-        str_value = str(value)
+        import re
+        if type(value) == types.ListType:
+            str1 = str(value)
+            str2 = re.sub('\[','{',str1)
+            str_value = re.sub('\]','}',str2)
+        else:
+            str_value = str(value)
+
         str_type = get_str_type(value)
         self.set('type', str_type)
         self.set('value', str_value)
@@ -438,14 +480,17 @@ if __name__ == '__main__':
    #mpc.dumpXML()
 
 
+   # Example of an array parameter
+   array_list = ParameterList("Array List")
+   a = [0.0, 0.1, 0.2]
+   array_list.add_parameter("Double Array",a)
+   a = [0, 1, 2]
+   array_list.add_parameter("Int Array",a)
+   array_list.dumpXML()
+
 
    # Read Fbasin input file
-   fbasin = InputList(file='fbasin-5-components-025.xml')
-   print type(fbasin).__name__
-   print fbasin
-   flow = fbasin.find_sublist('Flow')
-
-   print
-
-
-
+   #fbasin = InputList(file='fbasin-5-components-025.xml')
+   #print type(fbasin).__name__
+   #print fbasin
+   #flow = fbasin.find_sublist('Flow')

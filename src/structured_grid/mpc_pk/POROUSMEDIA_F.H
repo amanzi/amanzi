@@ -2,7 +2,7 @@
 #define _POROUSMEDIA_F_H_
 
 /*
-** $Id: POROUSMEDIA_F.H,v 1.38 2011-07-13 00:16:16 gpau Exp $
+** $Id: POROUSMEDIA_F.H,v 1.39 2011-08-15 17:53:23 gpau Exp $
 */
 
 #ifdef BL_LANG_FORT
@@ -23,6 +23,7 @@
 #    define FORT_CHEM_DUMMY        chem_dummy
 #    define FORT_MK_CPL            mkcpl
 #    define FORT_MK_INV_CPL        mkinvcpl
+#    define FORT_SMOOTH_CPL        smoothcpl
 #    define FORT_MK_LAMBDA         mklambda
 #    define FORT_MK_DLAMBDA        mkdlambda
 #    define FORT_GETDIFFUSE_CPL    getdiffuse_cpl
@@ -30,6 +31,8 @@
 #    define FORT_RICHARD_COEF      richard_coef
 #    define FORT_RICHARD_AJAC      richard_ajac
 #    define FORT_RICHARD_NJAC      richard_njac
+#    define FORT_RICHARD_NJAC2     richard_njac2
+#    define FORT_RICHARD_ALPHA     richard_alpha
 #    define FORT_RICHARD_VELBC     richard_velbc
 #    define FORT_DIV_UMAC          fdiv_umac
 #    define FORT_UPHASE            fuphase
@@ -59,6 +62,7 @@
 #    define FORT_CHEM_DUMMY        CHEM_DUMMY
 #    define FORT_MK_CPL            MKCPL
 #    define FORT_MK_INV_CPL        MKINVCPL
+#    define FORT_SMOOTH_CPL        smoothcpl
 #    define FORT_MK_LAMBDA         MKLAMBDA
 #    define FORT_MK_DLAMBDA        MKDLAMBDA
 #    define FORT_GETDIFFUSE_CPL    GETDIFFUSE_CPL
@@ -66,6 +70,8 @@
 #    define FORT_RICHARD_COEF      RICHARD_COEF
 #    define FORT_RICHARD_AJAC      RICHARD_AJAC
 #    define FORT_RICHARD_NJAC      RICHARD_NJAC
+#    define FORT_RICHARD_NJAC2     RICHARD_NJAC2
+#    define FORT_RICHARD_ALPHA     RICHARD_ALPHA
 #    define FORT_RICHARD_VELBC     RICHARD_VELBC
 #    define FORT_DIV_UMAC          FDIV_UMAC
 #    define FORT_UPHASE            FUPHASE
@@ -94,6 +100,7 @@
 #    define FORT_CHEM_DUMMY        chem_dummy
 #    define FORT_MK_CPL            mkcpl
 #    define FORT_MK_INV_CPL        mkinvcpl
+#    define FORT_SMOOTH_CPL        smoothcpl
 #    define FORT_MK_LAMBDA         mklambda
 #    define FORT_MK_DLAMBDA        mkdlambda
 #    define FORT_GETDIFFUSE_CPL    getdiffuse_cpl
@@ -101,6 +108,8 @@
 #    define FORT_RICHARD_COEF      richard_coef
 #    define FORT_RICHARD_AJAC      richard_ajac
 #    define FORT_RICHARD_NJAC      richard_njac
+#    define FORT_RICHARD_NJAC2     richard_njac2
+#    define FORT_RICHARD_ALPHA     richard_alpha
 #    define FORT_RICHARD_VELBC     richard_velbc
 #    define FORT_DIV_UMAC          fdiv_umac
 #    define FORT_UPHASE            fuphase
@@ -129,6 +138,7 @@
 #    define FORT_CHEM_DUMMY        chem_dummy_
 #    define FORT_MK_CPL            mkcpl_
 #    define FORT_MK_INV_CPL        mkinvcpl_
+#    define FORT_SMOOTH_CPL        smoothcpl_
 #    define FORT_MK_LAMBDA         mklambda_
 #    define FORT_MK_DLAMBDA        mkdlambda_
 #    define FORT_GETDIFFUSE_CPL    getdiffuse_cpl_
@@ -136,6 +146,8 @@
 #    define FORT_RICHARD_COEF      richard_coef_
 #    define FORT_RICHARD_AJAC      richard_ajac_
 #    define FORT_RICHARD_NJAC      richard_njac_
+#    define FORT_RICHARD_NJAC2     richard_njac2_
+#    define FORT_RICHARD_ALPHA     richard_alpha_
 #    define FORT_RICHARD_VELBC     richard_velbc_
 #    define FORT_DIV_UMAC          fdiv_umac_
 #    define FORT_UPHASE            fuphase_
@@ -243,13 +255,17 @@ extern "C" {
 		     const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
 		     const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
 		     const int* ncf, const int* lo, const int* hi, const int* bc);   
- void FORT_MK_INV_CPL (const Real* pc,  ARLIM_P(pclo),  ARLIM_P(pchi),
-		     const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
-		     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi), 
-		     const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
-		     const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
-		     const int* ncf, const int* lo, const int* hi, const int* bc);   
 
+   void FORT_MK_INV_CPL (const Real* pc,  ARLIM_P(pclo),  ARLIM_P(pchi),
+			 const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
+			 const Real* phi, ARLIM_P(philo), ARLIM_P(phihi), 
+			 const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
+			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
+			 const int* ncf, const int* lo, const int* hi);
+   
+   void FORT_SMOOTH_CPL (const Real* pc,  ARLIM_P(pclo),  ARLIM_P(pchi),
+			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
+			 const int* ncf, const int* lo, const int* hi);  
 
   void FORT_MK_LAMBDA (const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 		       const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
@@ -304,19 +320,35 @@ extern "C" {
 			  const int* nc, const bool* do_upwind);
 
   void FORT_RICHARD_AJAC(const Real* S, ARLIM_P(slo), ARLIM_P(shi),
-			 const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
+
 			 const Real* dfx, ARLIM_P(dfxlo), ARLIM_P(dfxhi),
 			 const Real* dfy, ARLIM_P(dfylo), ARLIM_P(dfyhi),
 #if (BL_SPACEDIM==3)
 			 const Real* dfz, ARLIM_P(dfzlo), ARLIM_P(dfzhi),
 #endif
+			 const Real* ux, ARLIM_P(uxlo), ARLIM_P(uxhi),
+			 const Real* uy, ARLIM_P(uylo), ARLIM_P(uyhi),
+#if (BL_SPACEDIM==3)
+			 const Real* uz, ARLIM_P(uzlo), ARLIM_P(uzhi),
+#endif 
+			 const Real* kpx, ARLIM_P(kpxlo), ARLIM_P(kpxhi),
+			 const Real* kpy, ARLIM_P(kpylo), ARLIM_P(kpyhi),
+#if (BL_SPACEDIM==3)
+			 const Real* kpz, ARLIM_P(kpzlo), ARLIM_P(kpzhi),
+#endif
+			 const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
+			 const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
 			 const Real* P, ARLIM_P(plo), ARLIM_P(phi), 
 			 const Real* K, ARLIM_P(klo), ARLIM_P(khi),
+			 const Real* kr,  ARLIM_P(krlo),  ARLIM_P(krhi),
+			 const int* nkr,
 			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
 			 const int* ncf,
 			 const int* lo, const int* hi,
-			 const int* domlo, const int* domhi, const int* bc, 
-			 const int* nc);
+			 const int* domlo, const int* domhi, 
+			 const Real* dx, const int* bc,
+			 const int* inflow_bc_lo, const int* inflow_bc_hi,
+			 const bool* do_upwind);
 
   void FORT_RICHARD_NJAC(const Real* S, ARLIM_P(slo), ARLIM_P(shi),
 
@@ -329,6 +361,11 @@ extern "C" {
 			 const Real* uy, ARLIM_P(uylo), ARLIM_P(uyhi),
 #if (BL_SPACEDIM==3)
 			 const Real* uz, ARLIM_P(uzlo), ARLIM_P(uzhi),
+#endif
+			 const Real* kpx, ARLIM_P(kpxlo), ARLIM_P(kpxhi),
+			 const Real* kpy, ARLIM_P(kpylo), ARLIM_P(kpyhi),
+#if (BL_SPACEDIM==3)
+			 const Real* kpz, ARLIM_P(kpzlo), ARLIM_P(kpzhi),
 #endif
 			 const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
 			 const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
@@ -343,6 +380,42 @@ extern "C" {
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
 			 const Real* deps, const bool* do_upwind);
+
+  void FORT_RICHARD_NJAC2(const Real* dfx, ARLIM_P(dfxlo), ARLIM_P(dfxhi),
+			  const Real* dfy, ARLIM_P(dfylo), ARLIM_P(dfyhi),
+#if (BL_SPACEDIM==3)
+			  const Real* dfz, ARLIM_P(dfzlo), ARLIM_P(dfzhi),
+#endif
+			  const Real* ux, ARLIM_P(uxlo), ARLIM_P(uxhi),
+			  const Real* uy, ARLIM_P(uylo), ARLIM_P(uyhi),
+#if (BL_SPACEDIM==3)
+			  const Real* uz, ARLIM_P(uzlo), ARLIM_P(uzhi),
+#endif			 
+			  const Real* kpx, ARLIM_P(kpxlo), ARLIM_P(kpxhi),
+			  const Real* kpy, ARLIM_P(kpylo), ARLIM_P(kpyhi),
+#if (BL_SPACEDIM==3)
+			  const Real* kpz, ARLIM_P(kpzlo), ARLIM_P(kpzhi),
+#endif
+			  const Real* lbd, ARLIM_P(lbdlo), ARLIM_P(lbdhi),
+			  const Real* pc, ARLIM_P(pclo), ARLIM_P(pchi),
+			  const Real* P, ARLIM_P(plo), ARLIM_P(phi), 
+			  const Real* K, ARLIM_P(klo), ARLIM_P(khi),
+			  const Real* kr,  ARLIM_P(krlo),  ARLIM_P(krhi),
+			  const int* nkr,
+			  const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
+			  const int* ncf,
+			  const int* lo, const int* hi,
+			  const int* domlo, const int* domhi, 
+			  const Real* dx, const int* bc,
+			  const int* inflow_bc_lo, const int* inflow_bc_hi,
+			  const Real* deps, const bool* do_upwind);
+  
+    void FORT_RICHARD_ALPHA (const Real* alpha,  ARLIM_P(alo),  ARLIM_P(ahi),
+			     const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
+			     const Real* phi, ARLIM_P(philo), ARLIM_P(phihi), 
+			     const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
+			     const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
+			     const int* ncf, const int* lo, const int* hi);
 
     void FORT_RICHARD_VELBC(const Real* rg, ARLIM_P(rglo), ARLIM_P(rghi),
 			    const int*  lo,    const int*  hi,

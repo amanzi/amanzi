@@ -363,12 +363,16 @@ c ::: -----------------------------------------------------------
 
       elseif (cpl_type .eq. 1) then
          sat(2) = one - 0.2d0*log(pc*sqrt(kappa/phi)/sigma)
-         sat(1) = one - sat(2)
+         if (ncomps > 1) then
+            sat(1) = one - sat(2)
+         end if
 
       elseif (cpl_type .eq. 2) then
 c        lambda = 2
          sat(1) = one/(sigma*pc)**2
-         sat(2) = one-sat(1)
+         if (ncomps > 1) then
+            sat(2) = one-sat(1)
+         end if
 
       elseif (cpl_type .eq. 3) then
          
@@ -385,7 +389,9 @@ c         end if
 
          m = cpl_coef
          sat(1) = (one + (pc*sigma)**(one/(one-m)))**(-m)
-         sat(2) = one-sat(1)
+         if (ncomps > 1) then
+            sat(2) = one-sat(1)
+         end if
 
       end if
 
@@ -637,13 +643,13 @@ c ::: -----------------------------------------------------------
       call get_st(sat,s,rho,sres,ncomps)
 
       dld(:) = zero
-      if (kr_type .eq. 1) then
+      if (kr_type .eq. 1 .and. ncomps .gt. 1) then
          dld(1) = 1/muval(1)
          dld(2) = (1-2*sat(1))/(muval(1)*muval(2))
          dld(3) = sat(1)/muval(1)+sat(2)/muval(2)
          dld(3) = -(1/muval(1)-1/muval(2))/dld(3)**2
 
-      elseif (kr_type .eq. 2) then
+      elseif (kr_type .eq. 2 .and. ncomps .gt. 1) then
          dld(1) = 2*sat(1)/muval(1)
          dld(2) = (2*sat(1)-6*sat(1)*sat(1)+4*sat(1)**3)/(muval(1)*muval(2))
          dld(3) = sat(1)*sat(1)/muval(1)+sat(2)*sat(2)/muval(2)
@@ -660,11 +666,11 @@ c       just in case we explicitly test for this case and
 c       set the derivative values to zero.
 c
           m     = kr_coef
-          alpha = .97d0
+          alpha = one
           alphs = alpha*sat(1)
-          tmpa  = 1-alphs**(1/m)
+          tmpa  = one - alphs**(1/m)
           satl  = sat(1)*(one-sres) + sres
-          tmp   = 1 - satl**(1/m)
+          tmp   = one - satl**(1/m)
 
           alpha_scale = dsqrt(alpha)*(one-(one-alpha**(one/m))**m)**2
 
@@ -675,19 +681,17 @@ c
 c     # If the saturation is 1, the derivative of lambda2 wrt s should be 0
 c     # the functional form blows up, so we enforce that condition here
              dld(2) = zero
-             dld(1) = 2*(alphs**(-half+(1/m)))*(tmpa**(-1+m))*(1-tmpa**m) +
-     .            (0half*(1-tmpa**m)**2)/(sqrt(alphs))
+             dld(1) = two*(alphs**(-half+(1/m)))*(tmpa**(-one+m))*(one-tmpa**m) +
+     &            (half*(one-tmpa**m)**two)/(sqrt(alphs))
              dld(1) = dld(1)/alpha_scale
-c             write(*,*) 'sat is 1',dld(1),dld(2),alpha_scale,sat(1),sat(2)
           else 
-             dld(1) = 2*(alphs**(-half+(1/m)))*(tmpa**(-1+m))*(1-tmpa**m) +
-     .            (0half*(1-tmpa**m)**2)/(sqrt(alphs))
+             dld(1) = two*(alphs**(-half+(one/m)))*(tmpa**(-one+m))*(one-tmpa**m) +
+     &            (half*(one-tmpa**m)**two)/(sqrt(alphs))
              dld(1) = dld(1)/alpha_scale
-             dld(2) = -tmp**(2*m)/(3*(1-satl)**(two3rd)) - 
-     .            2*((1-satl)**(third))
-     .            *(satl**(-1+1/m))*(tmp**(-1+2*m))
+             dld(2) = -tmp**(two*m)/(3.0*(one-satl)**(two3rd)) - 
+     &            two*((one-satl)**(third))
+     &            *(satl**(-one+one/m))*(tmp**(-one+two*m))
              dld(2) = dld(2)*(one-sres)
-c             write(*,*) 'first derivative check', dld(1),dld(2),alpha_scale,sat(1),sat(2)
           endif
           dld(2) = -alpha*dld(1)/muval(2)
           dld(1) = alpha*dld(1)/muval(1)

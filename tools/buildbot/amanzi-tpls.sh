@@ -195,7 +195,7 @@
 # https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.83rc3.tar.gz
 #
 # ccse:
-# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.1.tar.gz
+# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.4.tar.gz
 #
 #
 #################################################################################
@@ -238,7 +238,7 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
-CCSE_VERSION=0.1.3
+CCSE_VERSION=0.1.4
 
 ################################################################################
 #

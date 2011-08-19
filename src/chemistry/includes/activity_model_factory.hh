@@ -19,7 +19,7 @@ class ActivityModelFactory {
                         std::vector<Species>& prim,
                         std::vector<AqueousEquilibriumComplex>& sec);
   static const std::string debye_huckel;
-  static const std::string pitzer;
+  static const std::string pitzer_hwm;
   static const std::string unit;
 
 
