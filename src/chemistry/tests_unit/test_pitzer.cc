@@ -350,6 +350,52 @@ TEST(TestInvalidDatabase) {
  sp_.push_back(Na);
  CHECK_THROW(am_= amfac_.Create("pitzer-hwm","invalid data base",sp_, aqx_), ac::ChemistryException);
 }
+/*!
+   @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroNumberSpecies
+
+   @brief TestZeroNumberSpecies
+
+   @details Test that a chemistry exception is thrown when the number of primary species and aquous complexes are zero.
+
+   @test ActivityModelPitzer::Create()
+*/
+TEST(TestZeroNumberSpecies) {
+ ac::ActivityModelFactory amfac_;
+ ac::ActivityModel* am_;
+ vector<ac::Species> sp_;
+ vector<ac::AqueousEquilibriumComplex> aqx_;
+ CHECK_THROW(am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_), ac::ChemistryException);
+}
+/*!
+   @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
+
+   @brief TestZeroConcentrations
+
+   @details Test that a chemistry exception is thrown when zero concentrations are provided.
+
+   @test ActivityModelPitzer::EvauateVector()
+*/
+TEST(TestZeroConcentrations) {
+ ac::ActivityModelFactory amfac_;
+ ac::ActivityModel* am_;
+ vector<ac::Species> sp_;
+ vector<ac::AqueousEquilibriumComplex> aqx_;
+ ac::Species Cl(2, "Cl-", -1.0,0.0,0.0);
+ ac::Species Na(3, "Na+", 1.0,0.0,0.0);
+ ac::Species H2O(3, "H2O", 0.0,0.0,0.0);
+ Cl.update(0.0);
+ Na.update(0.0);
+ H2O.update(0.0);
+ aqx_.clear();
+ sp_.clear();
+ sp_.push_back(Cl);
+ sp_.push_back(Na);
+ vector<double> gamma;
+ for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
+ am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
+ am_->Display();
+ CHECK_THROW(am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O), ac::ChemistryException);
+}
 }  // end SUITE(TestPitzer)
 
 }
