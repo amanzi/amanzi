@@ -20,39 +20,27 @@ VirialCoefficient::VirialCoefficient()
 
 }
 
-
 VirialCoefficient::~VirialCoefficient(){
 }
 
-
 void VirialCoefficient::Display(){
-
 }
+/*!
+    @brief UpdateVirial
 
+    @class VirialCoefficient
+
+    @details Update the virial coefficient as a function of the temperature
+    and liquid pressure (last wasn't implemented yet)
+*/
 void VirialCoefficient::UpdateVirial(const double& temp, const double& pressure)
-{
-	  for (int i=0;i<npol;i++){
-		  switch(i) {
-		  case 0:
-			  virial=pol[i];
-			  break;
-	      case 1:
-			  virial += pol[i]*temp;
-		      break;
-	      case 2:
-			  virial += pol[i]/temp;
-			  break;
-	      case 3:
-	    	  virial += pol[i]*std::log10(temp);
-	    	  break;
-	      case 4:
-	    	  virial += pol[i]/(temp*temp);
-		      break;
-		  }
-
+{	  for (int i=0;i<npol;i++){
+		  if (i==0) {virial=pol[i];}
+		  else if (i==1) {virial += pol[i]*temp;}
+		  else if (i==2) {virial += pol[i]/temp;}
+		  else if (i==3) {virial += pol[i]*std::log10(temp);}
+		  else if (i==4) {virial += pol[i]/(temp*temp);}
 	  }
-
 }
-
 }  // namespace chemistry
 }  // namespace amanzi

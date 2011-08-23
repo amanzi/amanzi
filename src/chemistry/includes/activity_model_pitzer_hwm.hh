@@ -28,55 +28,43 @@ class ActivityModelPitzerHWM : public ActivityModel {
 
   ActivityModelPitzerHWM(const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
   ~ActivityModelPitzerHWM();
-
   double Evaluate(const Species& species);
-
-  void EvaluateVector(std::vector<double>& gamma, double& actw, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
-
+  void EvaluateVector(std::vector<double>& gamma, double& water_activity,
+		              const std::vector<Species>& primary_species,
+		              const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
   void Display(void) const;
 
   private:
 
-  //!%-------------------------------------------------------------
-  //!% Private services
-  //!%-------------------------------------------------------------
-  void ReadDataBase(const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
-  void ParseB0(const std::string& data);
-  void ParseB1(const std::string& data);
-  void ParseB2(const std::string& data);
-  void ParseCfi(const std::string& data);
-  void ParseTheta(const std::string& data);
-  void ParseLamda(const std::string& data);
-  void ParsePsi(const std::string& data);
-  void AssignFbeta();
-  void AssignFj();
+  void ReadDataBase(const std::string& database,
+		            const std::vector<Species>& primary_species,
+		            const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
+  void ParseBeta0VirialCoefficient(const std::string& data);
+  void ParseBeta1VirialCoefficient(const std::string& data);
+  void ParseBeta2VirialCoefficient(const std::string& data);
+  void ParseCfiVirialCoefficient(const std::string& data);
+  void ParseThetaVirialCoefficient(const std::string& data);
+  void ParseLamdaVirialCoefficient(const std::string& data);
+  void ParsePsiVirialCoefficient(const std::string& data);
+  void AssignIndexBetaFunctions();
+  void AssignIndexJFunctions();
   void ComputeQ(std::vector<double>& gamma, double& osco);
   void ComputeQl(double& osco);
   void ComputeQc(std::vector<double>& gamma, double& osco);
   void ComputeT(std::vector<double>& gamma, double& osco);
   void ComputeQmatrices();
-  void ComputeFbeta();
-  void ComputeFj();
-  void ComputeDH(std::vector<double>& gamma, double& osco, double& gclm);
+  void ComputeBetaFunctions();
+  void ComputeJFunctions();
+  void ComputeDebyeHuckelTerm(std::vector<double>& gamma, double& osco, double& gclm);
   double gclm_(const double& dhterm);
   void PushPrivateVectors();
-  void Update(const double& temp, const double& pressure);
-  void SetVirial(const std::vector<double>& virial, const std::string& typevirial,
-    		     const int& isp1, const int& isp2, const int& isp3);
-  //!%-------------------------------------------------------------
-  //!%-------------------------------------------------------------
-  //!%-------------------------------------------------------------
-  static const double debyeA_pitzer;
-  static const double debyeB_pitzer;
-  static const double debyeBdot_pitzer;
+  void Update(const double& temperature, const double& pressure);
+  void SetVirialCoefficient(const std::vector<double>& virial, const std::string& typevirial,
+    		                const int& isp1, const int& isp2, const int& isp3);
+  int GetIndexSpeciesFromName(const std::string& name_species);
+
   static const double cwater;
-  //!%-------------------------------------------------------------
-  //!%-------------------------------------------------------------
-  //!%-------------------------------------------------------------
   static const double bdh;
-  //!%-------------------------------------------------------------
-  //!% Limiting Debye-Hückel slope to 25º   0.39153  0.392
-  //!%-------------------------------------------------------------
   static const double aphi25;
   //-------------------------------------------------------------
   // Limiting Debye-Hückel slope to 25º   0.39153  0.392
