@@ -86,13 +86,36 @@ these can be names or numbers or whatever serves best the organization of the us
 Where applicable, the relevant section the MRD is referred to by section or chapter number in parentheses.
 
 
-1. State
+0. Version
+=======================================
+
+Each input set contains at the top level a string variable `"Amanzi input format version`".  As of the most recent update of this specification, the
+current version of the Amanzi input is `"0.9.1`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  The only difference between 
+`"0.9.0`" and `"0.9.1`" is that the "grid_option" parameter was removed, and the mesh specification was moved from the "Regions" section and into 
+a new "Mesh" section (section 1 below).  Options for `"grid_option`" parameter included `"Structured`" and `"Unstructured`".  In file version
+`0.9.1`", a mesh framework is specified instead (see below).
+
+
+1. Mesh
+=======================================
+
+The computational mesh is specified in this section, based on the `"Mesh Framework`", which can be `"Structured`" or a set of unstructured
+options, including `"Simple`", `"stk:mesh`" (+...).  The `"Generate`" sublist of Mesh takes instructions that are specific to the framework - here 'generate' 
+is a generic term for actual mesh generation (by Amanzi) or ingestion (file reads) to obtain mesh data created by pacakges external to Amanzi.
+
+Notes:
+
+ * A number of frameworks support the generation of logically rectangular, uniformly spaced structured meshes.  Under `"Generate`", all of these take a common set of instructions through three parameters: `"Number of Cells`" (integer array), `"Domain Low Corner`" (double array) and `"Domain High Corner`" (double array).
+
+ * For the options that assume an external package generates the mesh, the data is passed into Amanzi through a file, and the `"Generate`" parameter list includes the name of that file `"filename`".  Additionally, as discussed in the "Regions" section below, mesh files produced by external packages may contain auxiliary data that associates a tag or label with each mesh entity (cells, faces, nodes).  These labeled sets can be assigned to a named region for use here. (see below).
+
+2. State
 =======================================
 
 The state specifies the distribution of phases, species and pressure that are stored on the discrete mesh.  Generally, there
 can be multiple phases (e.g. gaseous, aqueous, etc), and each is comprised of a number
-of components (section 2.2).  Additionally, each phase may carry a number of trace species.  
-The tracers are assumed to have no impact on the thermodynamic and transport properties of the phases, but may be involved in chemical
+of components (section 2.2).  Additionally, each component may carry a number of trace species.  
+The tracers are assumed to have no impact on the thermodynamic and transport properties of the component, but may be involved in chemical
 processes (Section 2.5).
 
 Each state component must be labeled and defined in terms of physical properties: 
@@ -101,22 +124,20 @@ bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).
 Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of source and loss processes, are defined for each state, if applicable.
 
 Tracers are labeled and defined in terms of 
-their carrier phase and group membership, as necessary to support the chemistry model (Section 5).  In particular, 
+their carrier component and group membership, as necessary to support the chemistry model (Section 5).  In particular, 
 the "total concentration" (Equation 5.5) is the weighted sum of all tracers in the the tracer group "Total".
-This is the only group of tracers that actually moves with the phase.  Other tracer groups include minerals
+This is the only group of tracers that actually moves with the phase/component.  Other tracer groups include minerals
 and surface complexation; they occupy a slot in the state but do not move with the flow (see Section 5).
 Tracers may have volumetric sources as well, and like component sources their specification requires a region, strength and distribution functional.
 Supported functionals for initial and boundary data and source distributions are listed below.
 
-* "state" (list) can accept lists for named components (COMP), `"add tracer`" (list) to add a tracer, or lists for boundary conditions (BC).  Also a label specifies the dominant component, and a string array is used to specify groups of tracers
+* "state" (list) can accept lists for named components (COMP).  Also a label specifies the dominant component
 
-  * COMP (list) can accept values for the carrying phase name (string), mass density (double), viscosity (double) and diffusivity (double). `"initial data`" is a list to specify the instructions for constructing the intial state profile, and SOURCE (string) is a list to specify a set of volumetric sources.
+  * COMP (list) can accept values for the carrying phase name (string), mass density (double), viscosity (double) and diffusivity (double). IC is a named list to specify the instructions for constructing the intial state profile, and SOURCE (string) is a list to specify a set of volumetric sources.
 
-    * IC (list) can accept a number of lists, the name of each list corresponds to the label of a defined region (REGION), or the special denotation of `"default`".  `"default`" instructions will be used to fill the complement of the sum of the named regions.
+    * IC (list) is named after a defined REGION, or the special denotation of `"default`".  `"default`" instructions will be used to fill the complement of the sum of the named regions.
 
-      * REGION or `"default`" (list) can accept a list (IC-FUNC) to specify the parameters of a named functional
-
-        * IC-FUNC (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
+      * IC-FUNC (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
 
     * `"mass density`" (double) the mass density of this component
 
@@ -124,51 +145,36 @@ Supported functionals for initial and boundary data and source distributions are
 
     * `"diffusivity`" (double) the diffusivity of this component
 
-    * PHASE (string) the phase that carries component
+    * `"phase`" (string) the name of the phase that carries this component
 
-    * `"source`" (list) can accept a `"region`" (string), a value for `"strength`", and a list specifying the distribution functional (S-FUNC-COMP)
+    * `"source`" (list) can accept a REGION (string)
 
-      * `"region`" (string) the name of a labeled region
+      * REGION (string) the name of a labeled region
 
-      * S-FUNC-COMP (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
+        * S-FUNC-COMP (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
 
-      * `"strength`" (double) specifies the volume-integrated strength of the source
+    * `"tracer`" (list) can accept a name `"name`" (string), the list named `"source`", and a list for initial data (REGION-IC) and boundary data (REGIONBC)
 
-  * `"add tracer`" (list) can accept a name (string), the name of parent component (string), and a list for initial data (IC)
+      * `"name`" (string) the name of the tracer
 
-    * TRACER (string) name of tracer
-
-    * `"parent phase component`" (string) name of carrying phase component (must be one of COMP defined in this file)
-
-    * IC (list) can accept a number of lists, the name of each list corresponds to the label of a defined region (REGION), or the special
-       denotation of `"default`".  `"default`" instructions will be used to fill the complement of the sum of the named regions.
-
-      * REGION or `"default`" (list) can accept a list with a label corresponding to a named IC functional (IC-FUNC)
+      * REGION-IC or `"default`" (list) named after a defined region can accept a list with a label corresponding to a named IC functional (IC-FUNC)
 
         * IC-FUNC (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
 
-    * `"source`" (list) can accept the name of a region (REGION), a value for `"strength`", and a list specifying the distribution functional (S-FUNC-TRACER)
+      * `"source`" (list) can accept the name of a distribution functional (S-FUNC-TRACER)
 
-      * `"region`" (string) the name of a labeled region
+        * S-FUNC-TRACER (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
 
-      * S-FUNC-TRACER (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
-
-      * `"strength`" (double) specifies the volume-integrated strength of the source
-
-  * BC (list) can accept a list (BC-REG) named after the "region" that defines a surface bounding the computational domain
+      * REGION-BC (list) named after a region that defines a surface bounding the computational domain can accept a list (BC-FUNC) named after a boundary data function, BC_FUNC 
  
-    * BC-REG (list) can accept a list (BC-PARAM) to specify the parameters of a named functional
-
-      * BC-PARAM (list) can accept a set of parameter values for the functional
+        * BC-FUNC (list) can accept a list (BC-PARAM) to specify the parameters of a named functional
 
   * `"dominant component`" (string) must be the name of one of the COMP lists defined above
-
-  * `"add group`" (array string) an array of strings of names, taken from the `"add tracer`" list defined above
 
 Note: A label that identifies a region of non-zero volume is interpreted as an initial condition or source function instruction, whereas a region defined on the boundary of the 
 computational domain will be interpreted as a boundary condition instruction.
 
-Initial conditions are required for each phase over the entire computational domain.
+Initial conditions are required for each component and tracer over the entire computational domain.
 Boundary conditions are required on all domain boundaries (see Sections 3.3, 4.3).  Source terms for all are optional.  All are constructed using a limited number
 of explicitly parameterized functional forms.  If the simulation is to be intialized using a restart file,
 the phase component and tracer definitions are taken from the restart file, and initial condition instructions provided
@@ -235,57 +241,81 @@ Example:
       <Parameter name="density" type="double" value="1.e3"/>
       <Parameter name="viscosity" type="double" value="1.0"/>
       <Parameter name="diffusivity" type="double" value="0."/>
-      <ParameterList name="source">
-        <ParameterList name="source: uniform"/>
+      <ParameterList name="source"/>
+        <ParameterList name="middle"/>
+          <ParameterList name="source: uniform"/>
+            <Parameter name="strength" type="double" value="20."/>
+          </ParameterList>
         </ParameterList>
-        <Parameter name="strength" type="double" value="20."/>
-        <Parameter name="region" type="string" value="middle"/>
       </ParameterList>   
-    </ParameterList>   
-    <ParameterList name="boundary conditions">
+      <ParameterList name="default"/>
+        <ParameterList name="ic: uniform"/>
+          <Parameter name="value" type="double" value=".8"/>
+        </ParameterList>
+      </ParameterList>   
+      <ParameterList name="middle"/>
+        <ParameterList name="ic: uniform"/>
+          <Parameter name="strength" type="double" value="20."/>
+        </ParameterList>
+      </ParameterList>   
       <ParameterList name="xlobc">
         <ParameterList name="inflow">
           <ParameterList name="bc: constant">
+            <Parameter name="value" type="double" value="1."/>
           </ParameterList> 
         </ParameterList> 
       </ParameterList> 
       <ParameterList name="xhibc">
         <ParameterList name="outflow">
+          <ParameterList name="bc: constant">
+            <Parameter name="value" type="double" value="1."/>
+          </ParameterList> 
         </ParameterList> 
       </ParameterList> 
-    </ParameterList>
-    <ParameterList name="add tracer">
-      <Parameter name="name" type="string" value="Uranium"/>
-      <Parameter name="parent phase component" type="string" value="water"/>
-      <ParameterList name="all">
-        <ParameterList name="ic: constant">
-          <Parameter name="value" type="double" value=".004"/>
+      <ParameterList name="tracer">
+        <Parameter name="name" type="string" value="Uranium"/>
+        <ParameterList name="all">
+          <ParameterList name="ic: constant">
+            <Parameter name="value" type="double" value=".004"/>
+          </ParameterList> 
+        <ParameterList name="xlobc">
+          <ParameterList name="inflow">
+            <ParameterList name="bc: constant">
+              <Parameter name="value" type="double" value=".005"/>
+            </ParameterList> 
+          </ParameterList> 
+        </ParameterList> 
+        <ParameterList name="xhibc">
+          <ParameterList name="outflow">
+            <ParameterList name="bc: constant">
+              <Parameter name="value" type="double" value="-1"/>
+            </ParameterList> 
+          </ParameterList> 
         </ParameterList> 
       </ParameterList> 
-    </ParameterList>
+    </ParameterList> 
+  </ParameterList> 
 
 In this example, there are 2 phases (water, air).  Each phase consists of a single component.  Three
 volumetric regions ("top", "middle" and "bottom"), and two boundary regions (xlobc and xhibc)
 have been defined elsewhere.  The initial data for the fields are set using a combination of linear and
 constant profile functions over the two volumetric regions.  The boundary conditions are Dirichlet inflow
-on the low side and outflow on the high side.  There is a unifoirm source of water over the "middle" 
+on the low side and outflow on the high side.  There is a uniform source of water over the "middle" 
 region with an integrated strength of 20.
 
 
 
-2. Regions
+3. Regions
 =======================================
 
-Regions are used in Amanzi to define the physical extent of the simulation domain and its bounding surfaces.
-Regions are also used to specify initial data and boundary conditions, and to define output data expected
-upon return from the simulator.  Amanzi automatically defines the special region labeled `"all`", which is the 
-entire simulation domain.  The user must define the boundary surface(s) which enclose the domain; these regions are
-defined using a special syntax that is dependent on the meshing option (`"structured`" or `"unstructured`") that
-is selected.  Amanzi assumes that the union of the boundary surfaces envelopes the entire computational domain
+Regions are used in Amanzi to define subsets of the computational domain in order to specify the problem
+to be solved, and the output desired.  Amanzi automatically defines the special region labeled `"all`", which is the 
+entire simulation domain.  The user must additionally define the boundary surface(s) which enclose the domain.
+Amanzi assumes that the union of the boundary surfaces envelopes the entire computational domain
 (*i.e.* is "water-tight").  The special regions (`"all`" and the boundaries) may also serve as generic
 regions (see the dicussion below for how these regions are labeled) and
 can thus be used to specify other components of the problem (source terms, initial conditions, etc).
-Importantly, this section is where the user declares which of the supported meshing options to use.
+
 
 Special note:
 For the `"structured`" mesh option, Amanzi supports only coordinate-aligned parallelepiped domains,
@@ -350,25 +380,25 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 definitions based on triangulated surface files: point, box, arbitrary, layer.  Depending on the functional, SHAPE requires
 a number of parameters:
 
-+------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-|  shape functional name | parameters                    | type(s)                      | Comment                                                                                     |
-+========================+===============================+==============================+=============================================================================================+
-| `"point"`              | `"loc`"                       | array double                 | Location of point in space                                                                  |
-+------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"box"`                | `"lo`", `"hi`"                | array double, array double   | Location of boundary points of box                                                          |
-+------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"labeled set"`        | `"label`"                     | string                       | Valid for file-based unstructured mesh options, set label defined in mesh file (see below)  |
-+------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"arbitrary"`          | `"file`"                      | string                       | Region enveloped by surface described in specified file (see note below for format of file) |
-+------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"layer"`              | `"file_lo`" `"file_hi`"       | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
-+------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"surface"`            | `"id1`" `"name2`" ... `"idN`" | string, string ,..., string  | Region between surfaces described in specified files (see note below for format of file)    |
-+------------------------+-------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
++------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+|  shape functional name | parameters                             | type(s)                      | Comment                                                                                     |
++========================+========================================+==============================+=============================================================================================+
+| `"point"`              | `"loc`"                                | array double                 | Location of point in space                                                                  |
++------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"box"`                | `"lo`", `"hi`"                         | array double, array double   | Location of boundary points of box                                                          |
++------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"labeled set"`        | `"label`", `"file`", `"mesh framework`"| string, string, string       | Set per label defined in mesh file (see below)                                              |
++------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"arbitrary"`          | `"file`"                               | string                       | Region enveloped by surface described in specified file (see note below for format of file) |
++------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"layer"`              | `"file_lo`" `"file_hi`"                | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
++------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"surface"`            | `"id1`" `"name2`" ... `"idN`"          | string, string ,..., string  | Region between surfaces described in specified files (see note below for format of file)    |
++------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 
 Notes
 
-* The "labeled set" region is defined by the label given to sets generated in a preprocessing step.  For example, an "exodus" type mesh file can be processed to tag cells and faces with specific labels, using a variety of external tools.  Regions based on such sets will be assigned a user-defined label, which may or may not correspond to the original label in the exodus file.
+* The "labeled set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus" type mesh file can be processed to tag cells and/or faces with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  The intersection of this volume and the computational domain defines the region.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  This option is implemented as a special (piecewise-constant) case of a generalized interpolation operator.
 
 * Surface files contain labeled triangulated surfaces in a format that is yet to be determined.  Regardless of the format, the user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes defining surfaces are separated by a distance *s* < `"domain_epsilon`" Amanzi will consider them coincident; if they fall outside the domain, the elements they define are ignored.
 
@@ -408,7 +438,7 @@ In this example, a simulation domain is defined to be 2x2x4 with its lower bound
 purpose.
 
 
-3. Rock
+4. Rock
 =======================================
 
 Rock properties must be specified over the entire simulation domain ("all") defined in the Region section.  This can be implemented using any combination of regions
@@ -420,7 +450,7 @@ regions (string array), a list of regions.
 
 * "rock" (list) can accept multiple lists for named rock types (ROCK)
 
-  * ROCK (list) can accept lists to specify a model (MODEL) for porosity, relative permeability and capillary pressure, and values for the `"density`" (double) and `"permeability`" (array double) - values in the three principal axes (currently assumed to align with the coordinate axes and grid).  It can also accept a string array `"regions`" to specify where these properties apply.
+  * ROCK (list) can accept lists to specify a model (MODEL) in a way that is yet to be determined, and a string array `"regions`" to specify where these properties apply.  Generally, the complete specification of rock properties should include models for porosity, relative permeability, capillary pressure and rock permeability.  However, there appears to be a motivation to specify using porosity, permeability and "water retention".  This needs to be sorted out.
 
     * MODEL (list) can accept model parameters (MODEL-PARAMS) 
 
@@ -429,21 +459,30 @@ regions (string array), a list of regions.
     * `"regions`" (string array) a set of labels corresponding to defined regions
 
 The following models are currently supported for porosity:
- * `"porosity: file`" requires a string "filename" specifying the name of a file.  This file must be written in a self-describing format that is consistent with that of the current meshing option (sturctured_grid or unstructured_grid).  In particular, the physical domain of the input data must completely cover the current "all" region, and the data must exist on discrete cells that are consistent with the current meshing configuration.  This option is not currently supported under the unstructured option.
+ * `"porosity: file`" requires the following strings: `"filename`" (name of a file), `"interpolation`" (the interpolation strategy), `"framework`" (the mesh framework with which the file is compatible), and `"label`" (the label of the scalar field in the file to associate with the values of porosity).  In particular, the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
  * `"porosity: uniform`" requires a double specifying the constant value of porosity.
  * `"porosity: random`" requires the mean value of porosity and the percentage fluctuation, "porosity and fluctuation" (array double) to generate
- * `"porosity: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate porosity (plus other data?)
+ * `"porosity: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate porosity field
+
+The following models are currently supported for the absolute (rock) permeability:
+ * `"permeability: file`" requires the following strings: `"filename`" (name of a file), `"interpolation`" (the interpolation strategy: `"constant`" or `"linear`"), `"framework`" (the mesh framework with which the file is compatible), and `"label`" (the label of the scalar field in the file to associate with the values of permeability).  The physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+ * `"permeability: uniform`" requires a double specifying the constant value of porosity.
+ * `"permeability: random`" requires the mean value of porosity and the percentage fluctuation, "mean permeability and rms fluctuation" (array double) to generate
+ * `"permeability: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate permeability field
 
 The following models are currently supported for relative permeability (Section 2.6):
- * `"perm: perfect`" requires no parameters, krl=krg=1
- * `"perm: linear`" requires no parameters, krl=sl and krg=sg
- * `"perm: quadratic`" requires slr, sgr (array double), krl=sc^2, krg=1-se^2, se=(sl-sg)/(1-slr-sgr)
- * `"perm: vGM`" (van Genuchten-Mualem) requires m, slr, sgr (array double), krl=sqrt(se)(1-(1-se^-m)^m)^2, krg=(1-sekg)^1/3 (1-sekg^-m)^(2m), se=(sl-slr)/(1-slr-sgr), sekg=sl/(1/sgr)
+ * `"relative permeability: perfect`" requires no parameters, krl=krg=1
+ * `"relative permeability: linear`" requires no parameters, krl=sl and krg=sg
+ * `"relative permeability: quadratic`" requires slr, sgr (array double), krl=sc^2, krg=1-se^2, se=(sl-sg)/(1-slr-sgr)
+ * `"relative permeability: vGM`" (van Genuchten-Mualem) requires m, slr, sgr (array double), krl=sqrt(se)(1-(1-se^-m)^m)^2, krg=(1-sekg)^1/3 (1-sekg^-m)^(2m), se=(sl-slr)/(1-slr-sgr), sekg=sl/(1/sgr)
 
 The following models are currently supported for capillary pressure (Section 3.3.2):
- * `"pc: none`" requires no parameters, pc = 0
- * `"pc: linear`" requires no parameters, pc = sl
- * `"pc: vG`" requires m, sigma, slr, sgr (array double), pc=(1/sigma)(se^-m - 1)^-n, se=(sl-slr)/(1-slr-sgr)
+ * `"capillary pressure: none`" requires no parameters, pc = 0
+ * `"capillary pressure: linear`" requires no parameters, pc = sl
+ * `"capillary pressure: vG`" requires m, sigma, slr, sgr (array double), pc=(1/sigma)(se^-m - 1)^-n, se=(sl-slr)/(1-slr-sgr)
+
+The following models are currently supported for water retention (see ):
+ * `"water retention: vG`" requires m, sigma, slr (array double)
 
 Example:
 
@@ -484,7 +523,7 @@ In this example, there are two types of rock, `"backfill`" (which fills bottom a
 van Genuchten models for relative permeability and capillary pressure.
 
 
-4. Observation Data
+5. Observation Data
 =======================================
 
 Observation data generally refers to simple diagnostic quantities extracted from a simulation for the purposes of characterizing
@@ -536,7 +575,7 @@ to the calling function includes a flag for each requested time to indicate whet
 
 
 
-5. Chemistry
+6. Chemistry
 =======================================
 
 This section is completely unintelligible, and needs to be re-written.  In the structured_grid implementation, the following are the only chemistry-related 
@@ -632,15 +671,15 @@ Each initial condition list should contain a parameter name constructed like `"T
 
 '''Note: it is recommended that you include an xml comment with the species or mineral name after each initial condition. The xml parser expects every instance of `"--"` to mark a comment, so species names with negative charges should be written as `"SO4-2"` rather than `"SO4--"`.'''
 
-5.1 Chemistry Thermodynamic data file formats 
+6.1 Chemistry Thermodynamic data file formats 
 -------------------------------------------------
 
-5.1.1 XML Database format
+6.1.1 XML Database format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 not yet implemented
 
-5.1.2 Simple Database format
+6.1.2 Simple Database format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Importing thermodynamic data into the chemistry module using the `"simple"` (file extension `"bgd"`) format requires the user to explicitly specify all the species and reactions for the problem. There is no basis switching or automatic species and reaction selection. Below is an example of a `"simple"` database file for a five component uranium problem with mineral dissolution and surface complexation:
@@ -769,10 +808,10 @@ Note the following about this format:
      # name               ; surface_density [moles sites / m^2 mineral]
 
 
-6. MPC
+7. MPC
 =======================================
 
-Example:
+Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously.  However, for the present time, the following is an example of supported parameters in this list:
 
 .. code-block:: xml
 
@@ -807,10 +846,10 @@ The sublist named "CGNS" is used to specify the filename for the CGNS visualizat
 
 
 
-7. Transport
+8. Transport
 =======================================
 
-Example:
+Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously.  However, for the present time, the following is an example of supported parameters in this list:
 
 
 .. code-block:: xml
@@ -858,10 +897,10 @@ The boundary conditions sublist consists of a few similar sublists related to bo
  * "Component X" specified the value of component X on this boundary. 
 
 
-8. Flow
+9. Flow
 =======================================
 
-The flow parameter list
+Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously. However, for the present time, the following is an example of supported parameters in this list:
 
 .. code-block:: xml
 
@@ -939,10 +978,10 @@ Example
 
 
 
-9. Control
+10. Control
 =======================================
 
-Here's a list of remaining parameters under the general category of "control".
+Here's a partial list of additional parameters under the general category of "control".  Most of these are specific to the structured grid option.  This section will require a complete revamp.
 
  * `"maximum time step`"
  * `"maximum simulation time`"
