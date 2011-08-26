@@ -1,11 +1,11 @@
 <ParameterList name="Main">
   
 
-  <Parameter name="grid_option" type="string" value="Unstructured"/>
-  <Parameter name="Amanzi input format version" type="string" value="0.9"/>
+  <Parameter name="Amanzi input format version" type="string" value="0.9.1"/>
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
+    <!--<Parameter name="Framework" type="string" value="Structured"/>-->
     <!--<Parameter name="Framework" type="string" value="Simple"/>-->
     <ParameterList name="Generate">
       <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
