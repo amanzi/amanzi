@@ -458,8 +458,9 @@ regions (string array), a list of regions.
 
     * `"regions`" (string array) a set of labels corresponding to defined regions
 
+
 The following models are currently supported for porosity:
- * `"porosity: file`" requires the following strings: `"filename`" (name of a file), `"interpolation`" (the interpolation strategy), `"framework`" (the mesh framework with which the file is compatible), and `"label`" (the label of the scalar field in the file to associate with the values of porosity).  In particular, the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+ * `"porosity: file`" requires the following strings: `"filename`" (name of a file), `"interpolation`" (the interpolation strategy: : `"constant`" or `"linear`"), `"framework`" (the mesh framework with which the file is compatible), and `"label`" (the label of the scalar field in the file to associate with the values of porosity).  In particular, the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
  * `"porosity: uniform`" requires a double specifying the constant value of porosity.
  * `"porosity: random`" requires the mean value of porosity and the percentage fluctuation, "porosity and fluctuation" (array double) to generate
  * `"porosity: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate porosity field
@@ -469,6 +470,7 @@ The following models are currently supported for the absolute (rock) permeabilit
  * `"permeability: uniform`" requires a double specifying the constant value of porosity.
  * `"permeability: random`" requires the mean value of porosity and the percentage fluctuation, "mean permeability and rms fluctuation" (array double) to generate
  * `"permeability: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate permeability field
+ *  NOTE: All but `"permeability: file`" may also accept the array parameter `"permeability anisotropy`" (array double) to specify that the permeability is a diagonal tensor; these values are used to scale the X, Y and Z values.
 
 The following models are currently supported for relative permeability (Section 2.6):
  * `"relative permeability: perfect`" requires no parameters, krl=krg=1
@@ -481,7 +483,7 @@ The following models are currently supported for capillary pressure (Section 3.3
  * `"capillary pressure: linear`" requires no parameters, pc = sl
  * `"capillary pressure: vG`" requires m, sigma, slr, sgr (array double), pc=(1/sigma)(se^-m - 1)^-n, se=(sl-slr)/(1-slr-sgr)
 
-The following models are currently supported for water retention (see ):
+The following models are currently supported for water retention (should we support this mode of specification?):
  * `"water retention: vG`" requires m, sigma, slr (array double)
 
 Example:
@@ -491,28 +493,33 @@ Example:
   <ParameterList name="rock">
     <ParameterList name="backfill">
       <Parameter name="density" type="double" value="2.8e3"/>
-      <Parameter name="permeability" type="Array double" value="{1240, 1240, 1240}"/>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="1240"/>
+        <Parameter name="permeability anisotropy" type="Array double" value={1., 0.001, 0.001}"/>
+      </ParameterList>
       <ParameterList name="porosity: uniform">
         <Parameter name="porosity" type="double" value="0.2585"/>
       </ParameterList>
-      <ParameterList name="perm: vGM">
+      <ParameterList name="relative permeability: vGM">
         <Parameter name="m_slr_sgr" type="Array double" value="{0.6585, 0.0774, 0}"/>
       </ParameterList>
-      <ParameterList name="pc: vG">
+      <ParameterList name="capillary pressure: vG">
         <Parameter name="m_sigma_slr_sgr" type="Array double" value="{0.6585, 102.1, 0.0774, 0}"/>
       </ParameterList>
       <Parameter name="regions" type="string array" value="{top, bottom}"/>
     </ParameterList>
     <ParameterList name="fine sand">
       <Parameter name="density" type="double" value="2.8e3"/>
-      <Parameter name="permeability" type="Array double" value="{337.0, 337.0, 337.0}"/>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="337.0"/>
+      </ParameterList>
       <ParameterList name="porosity: uniform">
         <Parameter name="porosity" type="double" value="0.3586"/>
       </ParameterList>
-      <ParameterList name="perm: vGM">
+      <ParameterList name="relative permeability: vGM">
         <Parameter name="m_slr_sgr" type="Array double" value="{0.4694, 0.0837, 0}"/>
       </ParameterList>
-      <ParameterList name="pc: vG">
+      <ParameterList name="capillary pressure: vG">
         <Parameter name="m_sigma_slr_sgr" type="Array double" value="{0.4694, 9.533, 0.0837, 0}"/>
       </ParameterList>
       <Parameter name="regions" type="string array" value="{middle}"/>
@@ -520,7 +527,8 @@ Example:
   </ParameterList>
 
 In this example, there are two types of rock, `"backfill`" (which fills bottom and top regions) and `"fine sand`" (which fills middle region).  Both have
-van Genuchten models for relative permeability and capillary pressure.
+van Genuchten models for relative permeability and capillary pressure.  The backfill has an anisotropic permeability, where the vertical value is 1000 times
+the horizontal values.
 
 
 5. Observation Data
