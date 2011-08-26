@@ -326,6 +326,11 @@ class ParameterList(ElementTree):
 
         return node
 
+    def add_verbose(self,level=None):
+	verbose = self.add_sublist("VerbosityObject")
+	verbose.add_parameter("Verbosity Level", str(level))
+	return verbose
+
     def dumpXML(self,file=sys.stdout,encoding='utf-8',xml_translate=None,*args):
 
         sortflag='name,type,value'
