@@ -61,25 +61,21 @@ int main(int argc, char *argv[])
   // read the main parameter list
   Teuchos::ParameterList driver_parameter_list;
   Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
+  const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
   
-  // Read the "grid_option" from the parameter list so that we know which driver to call
-  // The available options are "Structured" and "Unstructured"
-  Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-    gridOptionValidator = Teuchos::rcp(
-      new Teuchos::StringToIntegralParameterEntryValidator<int>(
-        Teuchos::tuple<std::string>( "Structured", "Unstructured" )
-        ,"grid_option"
-        )
-      );
-
-  std::string
-    grid_option = gridOptionValidator->validateString(
-      Teuchos::getParameter<std::string>(driver_parameter_list,"grid_option")
-      );
+  // Read the "Framework" from the "Mesh" parameter list so that we know which driver to call
+  // The available options are "Structured" and the unstructured options "SimpleMesh", "stk::mesh"
+  typedef Teuchos::StringToIntegralParameterEntryValidator<int> StrValidator;
+  Teuchos::RCP<StrValidator> frameworkValidator
+    = Teuchos::rcp(new StrValidator(Teuchos::tuple<std::string>( "Structured", "SimpleMesh", "stk::mesh" )
+                                    ,"Framework") );
+  
+  std::string framework
+    = frameworkValidator->validateString(Teuchos::getParameter<std::string>(mesh_parameter_list,"Framework"));
 
   Amanzi::Simulator* simulator = 0;
   
-  if (grid_option=="Structured")
+  if (framework=="Structured")
     {
 #ifdef ENABLE_Structured
       simulator = new AmanziStructuredGridSimulationDriver();
@@ -87,7 +83,7 @@ int main(int argc, char *argv[])
       amanzi_throw(Errors::Message("Structured not supported in current build"));
 #endif
     }
-  else if (grid_option=="Unstructured")
+  else
     {
 #ifdef ENABLE_Unstructured
       simulator = new AmanziUnstructuredGridSimulationDriver();

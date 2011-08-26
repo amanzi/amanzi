@@ -1,5 +1,7 @@
 <ParameterList name="t2-structured">
-  <Parameter name="grid_option" type="string" value="Structured"/>
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="Structured"/>
+  </ParameterList>
   <ParameterList name="amr">
     <Parameter name="blocking_factor" type="string" value="16"/>
     <Parameter name="check_file" type="string" value="temp/chk"/>
