@@ -457,7 +457,7 @@ Example:
       <Parameter name="density" type="double" value="2.8e3"/>
       <ParameterList name="permeability: uniform">
         <Parameter name="permeability" type="double" value="1240"/>
-        <Parameter name="permeability anisotropy" type="Array double" value={1., 0.001, 0.001}"/>
+        <Parameter name="permeability anisotropy" type="Array double" value="{1., 0.001, 0.001}"/>
       </ParameterList>
       <ParameterList name="porosity: uniform">
         <Parameter name="porosity" type="double" value="0.2585"/>
