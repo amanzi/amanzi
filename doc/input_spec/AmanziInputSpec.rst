@@ -318,9 +318,7 @@ can thus be used to specify other components of the problem (source terms, initi
 
 
 Special note:
-For the `"structured`" mesh option, Amanzi supports only coordinate-aligned parallelepiped domains,
-specified by the lower and upper bounding points in physical space.
-For this case, the bounding surfaces are implicitly defined as the planar surfaces that surround the domain,
+For the `"structured`" mesh option, the bounding surfaces are implicitly defined as the planar surfaces that surround the domain,
 and are automatically generated with the following labels `"xlobc`", `"xhibc`", `"ylobc`", `"yhibc`",
 `"zlobc`", `"zhibc`" that are accessible throughout the input file.
 
@@ -330,43 +328,7 @@ must be identified explicitly in the mesh file, for `"simple mesh`", the boundar
 following the scheme for the `"structured`" mesh option.  In most cases, these surfaces embedded in the mesh
 files will be labeled subsets of the mesh faces.
 
-Examples for specifying the domain and boundary regions for the structured option, and for the unstructured options
-which generate uniform-grid parallelepiped domains:
-
-.. code-block:: xml
-
-  <ParameterList name="regions">
-    <ParameterList name="domain">
-      <Parameter name="meshing option" type="string" value="structured">
-        <Parameter name="domain lo" type="Array double" value="{0. 0. 0.}"/>
-        <Parameter name="domain hi" type="Array double" value="{1. 1. 1.}"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-or,
-
-.. code-block:: xml
-
-  <ParameterList name="regions">
-    <ParameterList name="domain">
-      <Parameter name="meshing option" type="string" value="unstructured">
-        <ParameterList name="mesh file">
-          <Parameter name="mesh file format" type="string" value="mstk"/>
-          <ParameterList name="boundary surface labels">
-            <Parameter name="surface 0" type="string" value="mstk label A"/>
-            <Parameter name="surface 1" type="string" value="mstk label B"/>
-            <Parameter name="surface 2" type="string" value="mstk label C"/>
-            <Parameter name="surface 3" type="string" value="mstk label C"/>
-            <Parameter name="surface 4" type="string" value="mstk label D"/>
-            <Parameter name="surface 5" type="string" value="mstk label F"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-Generic regions are useful for many aspects of the input specification, and take the following form
+Regions specifications take the following form
 
  * "regions" (list) can accept lists for named regions (REGION)
 
