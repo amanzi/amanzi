@@ -318,15 +318,16 @@ can thus be used to specify other components of the problem (source terms, initi
 
 
 Special note:
-For the `"structured`" mesh option, the bounding surfaces are implicitly defined as the planar surfaces that surround the domain,
+For the `"structured`" mesh framwork option, the bounding surfaces are implicitly defined as the planar surfaces that surround the domain,
 and are automatically generated with the following labels `"xlobc`", `"xhibc`", `"ylobc`", `"yhibc`",
 `"zlobc`", `"zhibc`" that are accessible throughout the input file.
 
 For the `"unstructured`" mesh option, Amanzi supports fixed meshes in the MOAB and MSTK formats, as well as 
 a simple mesh specification that accommodates a parallelepiped domain.  In the first two cases, the domain boundaries
-must be identified explicitly in the mesh file, for `"simple mesh`", the boundaries are created automatically, as
-following the scheme for the `"structured`" mesh option.  In most cases, these surfaces embedded in the mesh
-files will be labeled subsets of the mesh faces.
+must be identified explicitly in the mesh file (see `"labeled set`" region type below).  For `"simple mesh`", the boundaries are created automatically,
+following the scheme for the `"structured`" mesh option discussed above.
+
+Amanzi supports a simple model for compositing functionals to build up regions with complex shape.
 
 Regions specifications take the following form
 
@@ -338,66 +339,77 @@ Regions specifications take the following form
 
        * SHAPE-PARAMS (array double or string) parameters to specify shape
 
+   * `"domain_epsilon`" (double) minimum distance between two distinct nodes used to define regions
+
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex
 definitions based on triangulated surface files: point, box, arbitrary, layer.  Depending on the functional, SHAPE requires
 a number of parameters:
 
-+------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-|  shape functional name | parameters                             | type(s)                      | Comment                                                                                     |
-+========================+========================================+==============================+=============================================================================================+
-| `"point"`              | `"loc`"                                | array double                 | Location of point in space                                                                  |
-+------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"box"`                | `"lo`", `"hi`"                         | array double, array double   | Location of boundary points of box                                                          |
-+------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"labeled set"`        | `"label`", `"file`", `"mesh framework`"| string, string, string       | Set per label defined in mesh file (see below)                                              |
-+------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"arbitrary"`          | `"file`"                               | string                       | Region enveloped by surface described in specified file (see note below for format of file) |
-+------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"layer"`              | `"file_lo`" `"file_hi`"                | string, string               | Region between surfaces described in specified files (see note below for format of file)    |
-+------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"surface"`            | `"id1`" `"name2`" ... `"idN`"          | string, string ,..., string  | Region between surfaces described in specified files (see note below for format of file)    |
-+------------------------+----------------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+|  shape functional name           | parameters                     | type(s)                      | Comment                                                                                     |
++==================================+================================+==============================+=============================================================================================+
+| `"point"`                        | `"loc`"                        | array double                 | Location of point in space                                                                  |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"box"`                          | `"lo`", `"hi`"                 | array double, array double   | Location of boundary points of box                                                          |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"labeled set"`                  | `"label`", `"file`",           | string, string,              |                                                                                             |
+|                                  | `"mesh framework`", `"entity`" | string, string               | Set per label defined in mesh file (see below)                                              |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"volume enclosed by 1 surface"` | `"file`", `"label`"            | string, string               | Region enveloped by surface described in specified file                                     |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"volume enclosed by 2 surfaces"`| `"file#`", `"label#`"          | (#=1,2) string, string       | Region enveloped by surface described in specified file                                     |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
+| `"surface"`                      | `"file`" `"label`"             | string, string               | Labeled triangulated face setin file                                                        |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
 
 Notes
 
-* The "labeled set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus" type mesh file can be processed to tag cells and/or faces with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  The intersection of this volume and the computational domain defines the region.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  This option is implemented as a special (piecewise-constant) case of a generalized interpolation operator.
+* `"box`" can be used to define a point, coordinate-aligned lines and planes and a volume of space.  For the `"structured`", `"SimpleMesh`" and `stk::mesh`" mesh frameworks, the auto-generated
+regions (`"all`", `"xlobc`", ...) are all defined internally as box regions.
 
-* Surface files contain labeled triangulated surfaces in a format that is yet to be determined.  Regardless of the format, the user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes defining surfaces are separated by a distance *s* < `"domain_epsilon`" Amanzi will consider them coincident; if they fall outside the domain, the elements they define are ignored.
+* The "labeled set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus" type mesh file can be processed to tag cells, faces and/or nodes with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  The `"entity`" parameter may be necessary to specify a unique set.  For example, an exodus file requires `"cell`", `"face`" or `"node`" as well as a label (which is an integer).  When the mesh framework for the region is different from the current mesh framework (defined in `"Mesh`" above), the intersection of the specified region and the computational domain defines the region.  This option is not yet supported, but will likely be implemented as a special (piecewise-constant) case of a generalized interpolation operator.
 
+* Surface files contain labeled triangulated face sets.  The user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes defining surfaces are separated by a distance *s* < `"domain_epsilon`" Amanzi will consider them coincident; if they fall outside the domain, the elements they define are ignored.
+
+* Eventually, Amanzi will support a "geometric modeling" syntax such that complex regions can be assembled by composition with logical operators.  A minimal interface to such a capability might simply include the name of an instruction file (and a label to identify a particular region in the file).  However, it is not yet clear how to build this capability into Amanzi in a mesh-independent way.  In the meantime, Amanzi does support composition by union so that a region can be defined as the union of one or more region intrinsics.
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="regions">
-    <ParameterList name="all">
-      <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 4}"/>
-        <Parameter name="hi" type="Array double" value="{4, 5, 8}"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="top">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 6}"/>
+        <Parameter name="lo" type="Array double" value="{2, 3, 5}"/>
         <Parameter name="hi" type="Array double" value="{4, 5, 8}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="middle">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 6}"/>
-        <Parameter name="hi" type="Array double" value="{4, 5, 8}"/>
+        <Parameter name="lo" type="Array double" value="{2, 3, 3}"/>
+        <Parameter name="hi" type="Array double" value="{4, 5, 4}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="sep">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{2, 3, 1}"/>
+        <Parameter name="hi" type="Array double" value="{4, 5, 3}"/>
+      </ParameterList>
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{2, 3, 4}"/>
+        <Parameter name="hi" type="Array double" value="{4, 5, 5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="bottom">
       <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 4}"/>
-        <Parameter name="lo" type="Array double" value="{4, 5, 6}"/>
+        <Parameter name="lo" type="Array double" value="{2, 3, 0}"/>
+        <Parameter name="hi" type="Array double" value="{4, 5, 1}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-In this example, a simulation domain is defined to be 2x2x4 with its lower bound at the point (2,3,4).  Three box-shaped sub-regions are defined for an unspecified
-purpose.
+In this example, "top", "middle" and "bottom" are three box-shaped regions, and "sep" consists of
+two box-shaped regions, separating the three layers.
 
 
 4. Rock
