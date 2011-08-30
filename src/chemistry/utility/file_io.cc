@@ -6,6 +6,9 @@
 #include <fstream>
 #include <sstream>
 
+namespace amanzi {
+namespace chemistry {
+
 using std::string;
 using std::fstream;
 using std::stringstream;
@@ -216,3 +219,6 @@ FileIO::~FileIO() {
   }
   buffer = NULL;
 }  // end FileIO destructor
+
+}  // namespace chemistry
+}  // namespace amanzi

@@ -1,7 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "geochemistry_test.hh"
 
+#ifdef WINDOWS
+#include "xgetopt.hh"
+#else
 #include <unistd.h>
+#endif
 
 #include <cstdlib>
 
@@ -17,18 +21,20 @@
 #include "verbosity.hh"
 #include "chemistry_exception.hh"
 
+namespace ac = amanzi::chemistry;
+
 const std::string kCrunch("crunch");
 const std::string kPflotran("pflotran");
 
 
 int main(int argc, char** argv) {
-  Verbosity verbosity = kTerse;
+  ac::Verbosity verbosity = ac::kTerse;
   int test = 0;
   std::string model("");
   int error = EXIT_SUCCESS;
 
-  Beaker* chem = NULL;
-  Beaker::BeakerComponents components;
+  ac::Beaker* chem = NULL;
+  ac::Beaker::BeakerComponents components;
   components.free_ion.clear();
   components.minerals.clear();
   components.ion_exchange_sites.clear();
@@ -47,11 +53,11 @@ int main(int argc, char** argv) {
     switch (test) {
       case 0: {
         // this is expected to fail with error checking
-        if (verbosity == kTerse) {
+        if (verbosity == ac::kTerse) {
           std::cout << "Running component size sanity check." << std::endl;
         }
         thermo_database_file = "input/carbonate.bgd";
-        activity_model_name = ActivityModelFactory::unit;
+        activity_model_name = ac::ActivityModelFactory::unit;
         components.total.push_back(1.0e-3);  // H+
         components.total.push_back(1.0e-3);  // HCO3-
         components.total.push_back(0.0);
@@ -63,12 +69,12 @@ int main(int argc, char** argv) {
       case 1: {
         // set up simple 2-species carbonate system (H,HCO3-),
         // unit activity coefficients
-        if (verbosity == kTerse) {
+        if (verbosity == ac::kTerse) {
           std::cout << "Running simple carbonate example, "
                     << "unit activity coefficients." << std::endl;
         }
         thermo_database_file = "input/carbonate.bgd";
-        activity_model_name = ActivityModelFactory::unit;
+        activity_model_name = ac::ActivityModelFactory::unit;
         components.total.push_back(1.0e-3);  // H+
         components.total.push_back(1.0e-3);  // HCO3-
         break;
@@ -76,12 +82,12 @@ int main(int argc, char** argv) {
       case 2: {
         // set up simple 2-species carbonate system (H,HCO3-),
         // debye-huckel activity coefficients
-        if (verbosity == kTerse) {
+        if (verbosity == ac::kTerse) {
           std::cout << "Running simple carbonate example, debye-huckel."
                     << std::endl;
         }
         thermo_database_file = "input/carbonate.bgd";
-        activity_model_name = ActivityModelFactory::debye_huckel;
+        activity_model_name = ac::ActivityModelFactory::debye_huckel;
         components.total.push_back(1.0e-3);  // H+
         components.total.push_back(1.0e-3);  // HCO3-
         break;
@@ -89,29 +95,29 @@ int main(int argc, char** argv) {
       case 3: {
         // larger carbonate system, 3 components, 9 secondary,
         // unit activity coefficients
-        if (verbosity == kTerse) {
+        if (verbosity == ac::kTerse) {
           std::cout << "Running large carbonate speciation example, "
                     << "unit activity coefficients." << std::endl;
         }
         thermo_database_file = "input/ca-carbonate.bgd";
-        activity_model_name = ActivityModelFactory::unit;
-        components.total.push_back(1.0e-3);  // H+
+        activity_model_name = ac::ActivityModelFactory::unit;
         components.total.push_back(3.0e-3);  // HCO3-
         components.total.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // H+
         break;
       }
       case 4: {
         // larger carbonate system, 3 components, 9 secondary,
         // debye-huckel activity coefficients
-        if (verbosity == kTerse) {
+        if (verbosity == ac::kTerse) {
           std::cout << "Running large carbonate speciation example, "
                     << "debye-huckel activity coefficients." << std::endl;
         }
         thermo_database_file = "input/ca-carbonate.bgd";
-        activity_model_name = ActivityModelFactory::debye_huckel;
-        components.total.push_back(1.0e-3);  // H+
+        activity_model_name = ac::ActivityModelFactory::debye_huckel;
         components.total.push_back(3.0e-3);  // HCO3-
         components.total.push_back(1.0e-3);  // Ca++
+        components.total.push_back(1.0e-3);  // H+
         break;
       }
       case 5: {
@@ -126,11 +132,11 @@ int main(int argc, char** argv) {
       }
       case 6: {
         // Na+ Ca++ ion exchange
-        if (verbosity == kTerse) {
+        if (verbosity == ac::kTerse) {
           std::cout << "Running Na-Ca ion exchange problem." << std::endl;
         }
         thermo_database_file = "input/na-ca-ion-exchange.bgd";
-        activity_model_name = ActivityModelFactory::debye_huckel;
+        activity_model_name = ac::ActivityModelFactory::debye_huckel;
         components.total.push_back(1.0e-3);  // H+
         components.total.push_back(3.0e-3);  // HCO3-
         components.total.push_back(1.0e-3);  // Ca++
@@ -241,10 +247,10 @@ int main(int argc, char** argv) {
 
   try {
     if (thermo_database_file.size() != 0) {
-      chem = new SimpleThermoDatabase();
+      chem = new ac::SimpleThermoDatabase();
       chem->verbosity(verbosity);
 
-      Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
+      ac::Beaker::BeakerParameters parameters = chem->GetDefaultParameters();
       parameters.thermo_database_file = thermo_database_file;
       parameters.activity_model_name = activity_model_name;
       parameters.porosity = 0.5;  // -
@@ -261,7 +267,7 @@ int main(int argc, char** argv) {
 
       chem->Setup(components, parameters);
 
-      if (verbosity >= kVerbose) {
+      if (verbosity >= ac::kVerbose) {
         chem->Display();
         chem->DisplayComponents(components);
       }
@@ -269,7 +275,7 @@ int main(int argc, char** argv) {
       // solve for free-ion concentrations
       chem->Speciate(components, parameters);
       chem->UpdateComponents(&components);
-      if (verbosity >= kTerse) {
+      if (verbosity >= ac::kTerse) {
         chem->DisplayResults();
       }
 
@@ -284,8 +290,8 @@ int main(int argc, char** argv) {
             chem->DisplayTotalColumns((time_step + 1) * delta_time,
                                       components.total);
           }
-          if (verbosity >= kDebugNewtonSolver) {
-            Beaker::SolverStatus status = chem->status();
+          if (verbosity >= ac::kDebugNewtonSolver) {
+            ac::Beaker::SolverStatus status = chem->status();
             std::cout << "Timestep: " << time_step << std::endl;
             std::cout << "    number of rhs evaluations: " << status.num_rhs_evaluations << std::endl;
             std::cout << "    number of jacobian evaluations: " << status.num_jacobian_evaluations << std::endl;
@@ -295,12 +301,12 @@ int main(int argc, char** argv) {
         }
         std::cout << "---- Final Speciation" << std::endl;
         chem->Speciate(components, parameters);
-        if (verbosity >= kTerse) {
+        if (verbosity >= ac::kTerse) {
           chem->DisplayResults();
         }
       }
     }
-  } catch (const ChemistryException& geochem_error) {
+  } catch (const ac::ChemistryException& geochem_error) {
     std::cout << geochem_error.what() << std::endl;
     error = EXIT_FAILURE;
   } catch (const std::runtime_error& rt_error) {
@@ -320,9 +326,9 @@ int main(int argc, char** argv) {
 
 
 void ModelSpecificParameters(const std::string model,
-                             Beaker::BeakerParameters* parameters) {
+                             ac::Beaker::BeakerParameters* parameters) {
   if (model == kCrunch) {
-    parameters->water_density = 1000.0;  // kg / m^3
+    parameters->water_density = 997.075;  // kg / m^3
   } else if (model == kPflotran) {
     parameters->water_density = 997.16;  // kg / m^3
     // where did this number come from?
@@ -342,7 +348,7 @@ void PrintDoubleVector(const std::vector<double> &total) {
 }  // end PrintDoubleVector()
 
 int CommandLineOptions(int argc, char** argv,
-                       Verbosity* verbosity, int* test, std::string* model) {
+                       ac::Verbosity* verbosity, int* test, std::string* model) {
   int error = -2;
   int option;
   extern char* optarg;
@@ -361,7 +367,7 @@ int CommandLineOptions(int argc, char** argv,
         break;
       }
       case 'v': {
-        *verbosity = static_cast<Verbosity>(std::atoi(optarg));
+        *verbosity = static_cast<ac::Verbosity>(std::atoi(optarg));
         break;
       }
       case '?':
@@ -424,7 +430,7 @@ int CommandLineOptions(int argc, char** argv,
     std::cout << "Run \"" <<  argv[0] << " -h \" for help." << std::endl;
   }
 
-  if (*verbosity >= kVerbose) {
+  if (*verbosity >= ac::kVerbose) {
     std::cout << "Command Line Options: " << std::endl;
     std::cout << "\tModel: " << *model << std::endl;
     std::cout << "\tTest number: " << *test << std::endl;
@@ -436,19 +442,19 @@ int CommandLineOptions(int argc, char** argv,
 }  // end commandLineOptions()
 
 
-void calcite_kinetics(const Verbosity& verbosity,
+void calcite_kinetics(const ac::Verbosity& verbosity,
                       std::string* thermo_database_file,
                       std::string* activity_model_name,
-                      Beaker::BeakerComponents* components,
+                      ac::Beaker::BeakerComponents* components,
                       double* delta_time,
                       int* num_time_steps,
                       int* output_interval) {
   // calcite TST kinetics
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running calcite kinetics tst problem." << std::endl;
   }
   *thermo_database_file = "input/calcite.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   components->total.push_back(-2.0e-5);  // H+
   components->total.push_back(1.0e-3);  // HCO3-
   components->total.push_back(1.0e-4);  // Ca++
@@ -459,19 +465,19 @@ void calcite_kinetics(const Verbosity& verbosity,
 }  // end calcite_kinetics()
 
 
-void calcite_kinetics_large_time_steps(const Verbosity& verbosity,
+void calcite_kinetics_large_time_steps(const ac::Verbosity& verbosity,
                                        std::string* thermo_database_file,
                                        std::string* activity_model_name,
-                                       Beaker::BeakerComponents* components,
+                                       ac::Beaker::BeakerComponents* components,
                                        double* delta_time,
                                        int* num_time_steps,
                                        int* output_interval) {
   // calcite TST kinetics
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running calcite kinetics tst problem." << std::endl;
   }
   *thermo_database_file = "input/calcite.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   components->total.push_back(1.0e-3);  // H+
   components->total.push_back(1.0e-3);  // HCO3-
   components->total.push_back(0.0);  // Ca++
@@ -482,19 +488,19 @@ void calcite_kinetics_large_time_steps(const Verbosity& verbosity,
 }  // end calcite_kinetics_large_time_steps()
 
 
-void surface_complexation(const Verbosity& verbosity,
+void surface_complexation(const ac::Verbosity& verbosity,
                           std::string* thermo_database_file,
                           std::string* activity_model_name,
-                          Beaker::BeakerComponents* components,
+                          ac::Beaker::BeakerComponents* components,
                           double* delta_time,
                           int* num_time_steps,
                           int* output_interval) {
   // calcite TST kinetics
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running surface complexation problem." << std::endl;
   }
   *thermo_database_file = "input/surface-complexation.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   components->total.push_back(1.0e-3);  // H+
   components->total.push_back(3.0e-3);  // Cl-
   components->total.push_back(1.0e-3);  // UO2++
@@ -511,18 +517,18 @@ void surface_complexation(const Verbosity& verbosity,
  ** fbasin UO2 17 component problem
  **
  ******************************************************************************/
-void fbasin_initial(const Verbosity& verbosity,
+void fbasin_initial(const ac::Verbosity& verbosity,
                     std::string* thermo_database_file,
                     std::string* activity_model_name,
-                    Beaker::BeakerComponents* components,
+                    ac::Beaker::BeakerComponents* components,
                     double* delta_time,
                     int* num_time_steps,
                     int* output_interval) {
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running fbasin problem, \'initial\' conditions." << std::endl;
   }
   *thermo_database_file = "input/fbasin-17.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   *delta_time = 30.0 * 24.0 * 3600.0;
   *num_time_steps = 12;
   *output_interval = 1;
@@ -533,18 +539,18 @@ void fbasin_initial(const Verbosity& verbosity,
   fbasin_sorbed(components);
 }  // end fbasin_initial
 
-void fbasin_infiltration(const Verbosity& verbosity,
+void fbasin_infiltration(const ac::Verbosity& verbosity,
                          std::string* thermo_database_file,
                          std::string* activity_model_name,
-                         Beaker::BeakerComponents* components,
+                         ac::Beaker::BeakerComponents* components,
                          double* delta_time,
                          int* num_time_steps,
                          int* output_interval) {
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running fbasin problem, \'infiltration\' conditions." << std::endl;
   }
   *thermo_database_file = "input/fbasin-17.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   *delta_time = 30.0 * 24.0 * 3600.0;
   *num_time_steps = 12;
   *output_interval = 1;
@@ -555,18 +561,18 @@ void fbasin_infiltration(const Verbosity& verbosity,
   fbasin_sorbed(components);
 }  // end fbasin_infiltration
 
-void fbasin_source(const Verbosity& verbosity,
+void fbasin_source(const ac::Verbosity& verbosity,
                    std::string* thermo_database_file,
                    std::string* activity_model_name,
-                   Beaker::BeakerComponents* components,
+                   ac::Beaker::BeakerComponents* components,
                    double* delta_time,
                    int* num_time_steps,
                    int* output_interval) {
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running fbasin problem, \'source\' conditions." << std::endl;
   }
   *thermo_database_file = "input/fbasin-17.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   *delta_time = 30.0 * 24.0 * 3600.0;
   *num_time_steps = 12;
   *output_interval = 1;
@@ -577,7 +583,7 @@ void fbasin_source(const Verbosity& verbosity,
   fbasin_sorbed(components);
 }  // end fbasin_source
 
-void fbasin_aqueous_initial(Beaker::BeakerComponents* components) {
+void fbasin_aqueous_initial(ac::Beaker::BeakerComponents* components) {
   components->total.push_back(1.0000E-05);  // Na+
   components->total.push_back(1.0000E-05);  // Ca++
   components->total.push_back(8.4757E-08);  // Fe++
@@ -597,7 +603,7 @@ void fbasin_aqueous_initial(Beaker::BeakerComponents* components) {
   components->total.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_aqueous_initial
 
-void fbasin_aqueous_infiltration(Beaker::BeakerComponents* components) {
+void fbasin_aqueous_infiltration(ac::Beaker::BeakerComponents* components) {
   // constraint: infiltration
   components->total.push_back(1.3132E-04);  // Na+
   components->total.push_back(1.0000E-05);  // Ca++
@@ -618,7 +624,7 @@ void fbasin_aqueous_infiltration(Beaker::BeakerComponents* components) {
   components->total.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_aqueous_infiltration
 
-void fbasin_aqueous_source(Beaker::BeakerComponents* components) {
+void fbasin_aqueous_source(ac::Beaker::BeakerComponents* components) {
   // constraint: source
   components->total.push_back(3.4363E-02);  // Na+
   components->total.push_back(1.2475E-05);  // Ca++
@@ -639,7 +645,7 @@ void fbasin_aqueous_source(Beaker::BeakerComponents* components) {
   components->total.push_back(3.5414E-05);  // Tracer
 }  // end fbasin_aqueous_source
 
-void fbasin_free_ions(Beaker::BeakerComponents* components) {
+void fbasin_free_ions(ac::Beaker::BeakerComponents* components) {
   // free ion concentrations (better initial guess)
   components->free_ion.push_back(9.9969E-06);  // Na+
   components->free_ion.push_back(9.9746E-06);  // Ca++
@@ -660,7 +666,7 @@ void fbasin_free_ions(Beaker::BeakerComponents* components) {
   components->free_ion.push_back(1.0000E-15);  // Tracer
 }  // end fbasin_free_ions()
 
-void fbasin_minerals(Beaker::BeakerComponents* components) {
+void fbasin_minerals(ac::Beaker::BeakerComponents* components) {
   components->minerals.push_back(0.0);  // Gibbsite
   components->minerals.push_back(0.21);  // Quartz
   components->minerals.push_back(0.15);  // K-Feldspar
@@ -674,7 +680,7 @@ void fbasin_minerals(Beaker::BeakerComponents* components) {
   components->minerals.push_back(0.0);  // Chalcedony
 }  // end fbasin_minerals()
 
-void fbasin_sorbed(Beaker::BeakerComponents* components) {
+void fbasin_sorbed(ac::Beaker::BeakerComponents* components) {
   components->total_sorbed.resize(components->total.size(), 0.0);
 }  // end fbasin_sorbed
 
@@ -684,18 +690,18 @@ void fbasin_sorbed(Beaker::BeakerComponents* components) {
  ** fbasin UO2 5 component problem
  **
  ******************************************************************************/
-void uo2_5_component_initial(const Verbosity& verbosity,
+void uo2_5_component_initial(const ac::Verbosity& verbosity,
                              std::string* thermo_database_file,
                              std::string* activity_model_name,
-                             Beaker::BeakerComponents* components,
+                             ac::Beaker::BeakerComponents* components,
                              double* delta_time,
                              int* num_time_steps,
                              int* output_interval) {
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running uo2_5_component problem, \'initial\' conditions." << std::endl;
   }
   *thermo_database_file = "input/uo2-5-component.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   *delta_time = 30.0 * 24.0 * 3600.0;
   *num_time_steps = 12;
   *output_interval = 1;
@@ -706,18 +712,18 @@ void uo2_5_component_initial(const Verbosity& verbosity,
   uo2_5_component_sorbed(components);
 }  // end uo2_5_component_initial
 
-void uo2_5_component_outlet(const Verbosity& verbosity,
+void uo2_5_component_outlet(const ac::Verbosity& verbosity,
                             std::string* thermo_database_file,
                             std::string* activity_model_name,
-                            Beaker::BeakerComponents* components,
+                            ac::Beaker::BeakerComponents* components,
                             double* delta_time,
                             int* num_time_steps,
                             int* output_interval) {
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running uo2_5_component problem, \'outlet\' conditions." << std::endl;
   }
   *thermo_database_file = "input/uo2-5-component.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   *delta_time = 30.0 * 24.0 * 3600.0;
   *num_time_steps = 12;
   *output_interval = 1;
@@ -728,18 +734,18 @@ void uo2_5_component_outlet(const Verbosity& verbosity,
   uo2_5_component_sorbed(components);
 }  // end uo2_5_component_outlet
 
-void uo2_5_component_source(const Verbosity& verbosity,
+void uo2_5_component_source(const ac::Verbosity& verbosity,
                             std::string* thermo_database_file,
                             std::string* activity_model_name,
-                            Beaker::BeakerComponents* components,
+                            ac::Beaker::BeakerComponents* components,
                             double* delta_time,
                             int* num_time_steps,
                             int* output_interval) {
-  if (verbosity == kTerse) {
+  if (verbosity == ac::kTerse) {
     std::cout << "Running uo2_5_component problem, \'source\' conditions." << std::endl;
   }
   *thermo_database_file = "input/uo2-5-component.bgd";
-  *activity_model_name = ActivityModelFactory::debye_huckel;
+  *activity_model_name = ac::ActivityModelFactory::debye_huckel;
   *delta_time = 30.0 * 24.0 * 3600.0;
   *num_time_steps = 12;
   *output_interval = 1;
@@ -750,7 +756,7 @@ void uo2_5_component_source(const Verbosity& verbosity,
   uo2_5_component_sorbed(components);
 }  // end uo2_5_component_source
 
-void uo2_5_component_aqueous_initial(Beaker::BeakerComponents* components) {
+void uo2_5_component_aqueous_initial(ac::Beaker::BeakerComponents* components) {
   components->total.push_back(6.5874E-09);  // Al+++
   components->total.push_back(-3.1408E-07);  // H+
   components->total.push_back(1.0000E-06);  // HPO4--
@@ -758,7 +764,7 @@ void uo2_5_component_aqueous_initial(Beaker::BeakerComponents* components) {
   components->total.push_back(1.0000E-15);  // UO2++
 }  // end uo2_5_component_aqueous_initial
 
-void uo2_5_component_aqueous_outlet(Beaker::BeakerComponents* components) {
+void uo2_5_component_aqueous_outlet(ac::Beaker::BeakerComponents* components) {
   // constraint: outlet
   components->total.push_back(1.0000E-12);  // Al+++
   components->total.push_back(-1.1407E-09);  // H+
@@ -767,7 +773,7 @@ void uo2_5_component_aqueous_outlet(Beaker::BeakerComponents* components) {
   components->total.push_back(1.0000E-15);  // UO2++
 }  // end uo2_5_component_aqueous_outlet
 
-void uo2_5_component_aqueous_source(Beaker::BeakerComponents* components) {
+void uo2_5_component_aqueous_source(ac::Beaker::BeakerComponents* components) {
   // constraint: source
   components->total.push_back(2.8909E-05);  // Al+++
   components->total.push_back(1.2786E-03);  // H+
@@ -776,7 +782,7 @@ void uo2_5_component_aqueous_source(Beaker::BeakerComponents* components) {
   components->total.push_back(3.5414E-05);  // UO2++
 }  // end uo2_5_component_aqueous_source
 
-void uo2_5_component_free_ions(Beaker::BeakerComponents* components) {
+void uo2_5_component_free_ions(ac::Beaker::BeakerComponents* components) {
   // free ion concentrations (better initial guess)
   components->free_ion.push_back(5.2970E-16);  // Al+++
   components->free_ion.push_back(3.2759E-08);  // H+
@@ -785,12 +791,12 @@ void uo2_5_component_free_ions(Beaker::BeakerComponents* components) {
   components->free_ion.push_back(1.7609E-20);  // UO2++
 }  // end uo2_5_component_free_ions()
 
-void uo2_5_component_minerals(Beaker::BeakerComponents* components) {
+void uo2_5_component_minerals(ac::Beaker::BeakerComponents* components) {
   components->minerals.push_back(0.15);  // Kaolinite
   components->minerals.push_back(0.21);  // Quartz
   components->minerals.push_back(0.0);  // (UO2)3(PO4)2.4H2O
 }  // end uo2_5_component_minerals()
 
-void uo2_5_component_sorbed(Beaker::BeakerComponents* components) {
+void uo2_5_component_sorbed(ac::Beaker::BeakerComponents* components) {
   components->total_sorbed.resize(components->total.size(), 0.0);
 }  // end uo2_5_component_sorbed

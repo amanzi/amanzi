@@ -30,6 +30,9 @@ include_directories(${TRANSPORT_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
+
+
 
 # Chemistry includes directory
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
@@ -50,7 +53,8 @@ add_definitions("-DUSE_MPI")
 #
 # Library: mpc
 #
-add_library(mpc MPC.cpp)
+add_library(mpc MPC.cpp Unstructured_observations.cpp)
+add_install_library(mpc)
 set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
 if (ENABLE_CGNS)
     list(APPEND mpc_tpl_libs ${CGNS_LIBRARIES})
@@ -64,14 +68,12 @@ target_link_libraries(mpc time_integration solvers output state simple_mesh mesh
 #
 file(GLOB mpc_inc_files "*.hpp")
 add_install_include_file(${mpc_inc_files})
-add_install_library(mpc)
 
 #
 # Install Targets
 #
 file(GLOB mpc_inc_files "*.hpp")
 add_install_include_file(${mpc_inc_files})
-add_install_library(mpc)
 
 if (BUILD_TESTS)
 
@@ -90,6 +92,7 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
+    set(amanzi_libs geometry mesh mesh_audit moab_mesh state mpc flow transport chemistry)
     
     if ( ENABLE_MOAB_Mesh )
         include_directories(${MOAB_SOURCE_DIR})

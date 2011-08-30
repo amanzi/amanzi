@@ -15,7 +15,10 @@
 #include "species.hh"
 #include "ion_exchange_site.hh"
 
-// forward declarations
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class IonExchangeComplex : Species {
@@ -103,4 +106,6 @@ class IonExchangeComplex : Species {
   double ln_QKeq_;                  // store lnQK for derivatives later
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_

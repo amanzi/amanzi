@@ -15,6 +15,9 @@
 #include "species.hh"
 #include "block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class IonExchangeSite : public Species {
  public:
   IonExchangeSite();
@@ -51,4 +54,6 @@ class IonExchangeSite : public Species {
  private:
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_

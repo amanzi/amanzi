@@ -14,8 +14,10 @@ set(SRCS
 	 ./glenn.cc 
 	 ./chemistry_exception.cc
 	 ./string_tokenizer.cc
+	 ./verbosity.cc
 )
 
 add_library(geochemutil ${SRCS}) 
 add_install_library(geochemutil)
+
 

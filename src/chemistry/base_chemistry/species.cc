@@ -11,6 +11,9 @@
 
 #include "exceptions.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 Species::Species()
     : molality_(1.e-9),
       activity_(1.0),
@@ -61,7 +64,7 @@ Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
                  << "(size < 0.0), size = " << ion_size_parameter() << std::endl;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
-      }  // end Species constructor
+}  // end Species constructor
 
 Species::~Species() {
 }  // end Species destructor
@@ -100,7 +103,7 @@ void Species::Display(void) const {
 
 void Species::DisplayResultsHeader(void) const {
   std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molarity"
+            << std::setw(15) << "Molality"
             << std::setw(15) << "Activity Coeff"
             << std::setw(15) << "Activity"
             << std::endl;
@@ -114,3 +117,6 @@ void Species::DisplayResults(void) const {
             << std::setw(15) << activity()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi

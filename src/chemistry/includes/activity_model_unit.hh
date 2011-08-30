@@ -4,6 +4,9 @@
 
 #include "activity_model.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class Species;
 
 class ActivityModelUnit : public ActivityModel {
@@ -13,11 +16,16 @@ class ActivityModelUnit : public ActivityModel {
 
   double Evaluate(const Species& species);
 
+  void EvaluateVector (std::vector<double>& gamma, double& actw, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
+
   void Display(void) const;
 
  protected:
 
  private:
 };
+
+}  // namespace chemistry
+}  // namespace amanzi
 
 #endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_

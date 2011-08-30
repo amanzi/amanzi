@@ -1,6 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "lu.hh"
-#define TINY 1.0e-20
+
+namespace amanzi {
+namespace chemistry {
+
+static const double TINY = 1.0e-20;
 
 void ludcmp(double** a, int n, int* indx, double* d) {
   int i, imax, j, k;
@@ -74,10 +78,11 @@ void lubksb(double** a, int n, int* indx, std::vector<double>* b) {
     ip = indx[i];
     sum = b->at(ip);
     (*b)[ip] = b->at(i);
-    if (ii != 0)
+    if (ii != 0) {
       for (j = ii - 1; j < i; j++) {
         sum -= a[i][j] * b->at(j);
-      } else if (sum != 0.0) {
+      }
+    } else if (sum != 0.0) {
       ii = i + 1;
     }
     (*b)[i] = sum;
@@ -102,7 +107,8 @@ void lubksb(double** a, int n, int* indx, double b[]) {
     if (ii != 0)
       for (j = ii - 1; j < i; j++) {
         sum -= a[i][j] * b[j];
-      } else if (sum != 0.0) {
+      }
+    else if (sum != 0.0) {
       ii = i + 1;
     }
     b[i] = sum;
@@ -115,3 +121,6 @@ void lubksb(double** a, int n, int* indx, double b[]) {
     b[i] = sum / a[i][i];
   }
 }  // end lubksb()
+
+}  // namespace chemistry
+}  // namespace amanzi

@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 18, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:51:31 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Aug  2 10:58:57 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -146,6 +146,80 @@ SUITE (MeshFramework)
                   Amanzi::AmanziMesh::Message);
       mesh.reset();
     }
+  }
+
+  TEST (ParameterGenerate)
+  {
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    bool parallel(comm.NumProc() > 1);
+    
+    Amanzi::AmanziMesh::FrameworkPreference pref;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+
+    // make a parameter list to try out
+    
+    Teuchos::ParameterList parameter_list;
+    parameter_list.set<int>("Number of Cells in X", 10);
+    parameter_list.set<int>("Number of Cells in Y", 10);
+    parameter_list.set<int>("Number of Cells in Z", 10);
+    
+    parameter_list.set<double>("X_Min", 0);
+    parameter_list.set<double>("X_Max", 1);
+    
+    parameter_list.set<double>("Y_Min", 0);
+    parameter_list.set<double>("Y_Max", 1);
+    
+    parameter_list.set<double>("Z_Min", 0);
+    parameter_list.set<double>("Z_Max", 1);
+
+    parameter_list.set<int>("Number of mesh blocks",2);
+
+    Teuchos::ParameterList sublist1;
+    sublist1.set<double>("Z0", 0.0);
+    sublist1.set<double>("Z1", 0.3);
+    parameter_list.set("Mesh block 1", sublist1);
+
+    Teuchos::ParameterList sublist2;
+    sublist2.set<double>("Z0", 0.3);
+    sublist2.set<double>("Z1", 1.0);
+    parameter_list.set("Mesh block 2", sublist2);
+
+    // The Simple framework is always available, but will only
+    // generate in serial
+
+    pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
+    mesh_factory.preference(pref);
+
+    if (parallel) {
+      CHECK_THROW(mesh = mesh_factory(parameter_list),
+                  Amanzi::AmanziMesh::Message);
+      mesh.reset();
+    } else {
+      mesh = mesh_factory(parameter_list);
+      CHECK(!mesh.is_null());
+      // CHECK_EQUAL(2, mesh->num_sets(Amanzi::AmanziMesh::CELL));
+      mesh.reset();
+    }
+
+    // The STK, if available, framework will always generate
+
+    if (framework_available(Amanzi::AmanziMesh::STKMESH)) {
+      pref.clear(); pref.push_back(Amanzi::AmanziMesh::STKMESH);
+      mesh_factory.preference(pref);
+      mesh = mesh_factory(parameter_list);
+      CHECK(!mesh.is_null());
+      CHECK_EQUAL(3, mesh->num_sets(Amanzi::AmanziMesh::CELL));
+      mesh.reset();
+    }
+
+    // Other frameworks can't generate, so they should throw
+    pref.clear(); 
+    pref.push_back(Amanzi::AmanziMesh::MOAB);
+    pref.push_back(Amanzi::AmanziMesh::MSTK);
+    mesh_factory.preference(pref);
+    CHECK_THROW(mesh = mesh_factory(parameter_list),
+                Amanzi::AmanziMesh::Message);
   }
 
   // The Simple framework cannot read anything, even if it exists

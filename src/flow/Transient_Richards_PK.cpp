@@ -85,7 +85,7 @@ int Transient_Richards_PK::advance_to_steady_state()
   do {
     
     time_stepper->bdf2_step(h,0.0,*solution,hnext);
-    
+
     time_stepper->commit_solution(h,*solution);
 
     // update the state, but only the cell values of pressure

@@ -17,7 +17,10 @@
 #include "secondary_species.hh"
 #include "verbosity.hh"
 
-// forward declarations
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class Mineral : public SecondarySpecies {
@@ -34,7 +37,7 @@ class Mineral : public SecondarySpecies {
   ~Mineral();
 
   // update molalities
-  virtual void Update(const std::vector<Species>& primary_species);
+  virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double> *total);
   // add derivative of total with respect to free-ion to dtotal
@@ -93,4 +96,6 @@ class Mineral : public SecondarySpecies {
   // void set_specific_surface_area(const double d) { this->specific_surface_area_ = d; }
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_MINERAL_HH_

@@ -1,0 +1,4 @@
+<ParameterList name="dewan_uo2_granite_limestone">
+  <Parameter name="grid_option" type="string" value="Structured"/>
+  <Parameter name="PPfile" type="string" value="dewan_uo2_granite_limestone.pp"/>
+</ParameterList>

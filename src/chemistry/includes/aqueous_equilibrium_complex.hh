@@ -8,6 +8,12 @@
 
 #include "secondary_species.hh"
 
+// forward declarations from outside chemistry
+
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class AqueousEquilibriumComplex : public SecondarySpecies {
@@ -26,7 +32,7 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   ~AqueousEquilibriumComplex();
 
   // update molalities
-  virtual void Update(const std::vector<Species>& primary_species);
+  virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
   // add stoichiometric contribution of complex to total
   virtual void AddContributionToTotal(std::vector<double>* total);
   // add derivative of total with respect to free-ion to dtotal
@@ -43,4 +49,6 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
  private:
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_

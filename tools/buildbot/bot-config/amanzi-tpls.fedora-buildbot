@@ -2,6 +2,12 @@
 #
 # sudo yum install boost-devel
 
+USE_CC=
+USE_CXX=
+USE_FC=
+USE_F77=
+USE_F90=
+
 PREFIX=${HOME}/slaves/amanzi/amanzi-libs
 SOURCE=${HOME}/slaves/amanzi/amanzi-tpl-source
 WORK_DIR=${HOME}/slaves/amanzi
@@ -16,8 +22,11 @@ ZLIB_PREFIX=${PREFIX}
 CURL_PREFIX=${PREFIX}
 METIS_PREFIX=${PREFIX}
 MSTK_PREFIX=${PREFIX}
+CCSE_PREFIX=${PREFIX}
 
 PARALLEL_NP=2
 MPIEXEC_ARGS='-mca mpi_yield_when_idle 1'
 
 USE_MSTK=ON
+ENABLE_Structured=0
+ENABLE_Unstructured=1

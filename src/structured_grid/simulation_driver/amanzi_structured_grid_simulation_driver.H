@@ -1,0 +1,17 @@
+#ifndef _amanzi_structured_grid_simulation_driver_H
+#define _amanzi_structured_grid_simulation_driver_H
+
+#include "BoxLib.H"
+#include "ParallelDescriptor.H"
+#include "Teuchos_ParameterList.hpp"
+#include "ObservationData.H"
+#include "Simulator.H"
+
+struct AmanziStructuredGridSimulationDriver
+  : Amanzi::Simulator
+{
+  virtual ReturnType Run (const MPI_Comm&               mpi_comm,
+                          const Teuchos::ParameterList& input_parameter_list,
+                          Amanzi::ObservationData&      output_observations);
+};
+#endif

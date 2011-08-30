@@ -6,6 +6,9 @@
 
 #include "chemistry/includes/matrix_block.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class Solver {
  public:
   Solver();
@@ -29,4 +32,6 @@ class Solver {
   MatrixBlock* A_;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_SOLVER_HH_

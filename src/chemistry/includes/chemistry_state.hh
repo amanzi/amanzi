@@ -12,6 +12,9 @@ class Epetra_SerialDenseVector;
 
 class State;
 
+namespace amanzi {
+namespace chemistry {
+
 using Amanzi::AmanziMesh::Mesh;
 
 class Chemistry_State {
@@ -58,4 +61,6 @@ class Chemistry_State {
   void ExtractVolumeFromMesh(void);
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_CHEMISTRY_STATE_HH_

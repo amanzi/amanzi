@@ -23,8 +23,8 @@ namespace Amanzi
   group = H5Gcreate(file, "/Mesh", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // get num_nodes, num_cells
-  int num_nodes = mesh_maps.count_entities(AmanziMesh::NODE, OWNED);
-  int num_elems = mesh_maps.count_entities(AmanziMesh::CELL, OWNED);
+  int num_nodes = mesh_maps.count_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int num_elems = mesh_maps.count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   // get coords
   double *nodes = new double[num_nodes*3];
@@ -89,7 +89,7 @@ namespace Amanzi
   }
 }
 
-void HDF5::createDataFile(std::string mesh_filename, std::string soln_filename) {
+void HDF5::createDataFile(std::string soln_filename) {
 
   std::string h5filename, PVfilename, Vfilename;
   hid_t file;
@@ -97,7 +97,7 @@ void HDF5::createDataFile(std::string mesh_filename, std::string soln_filename) 
   // ?? input mesh filename or grab global mesh filename
   // ->assumes global name exists!!
   // build h5 filename
-  h5filename = soln_filename + ".h5";
+  h5filename = soln_filename; //  + ".h5";
 
   file = H5Fcreate(h5filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (file < 0) {
@@ -172,6 +172,13 @@ void HDF5::writeCellData(const Epetra_Vector &x, const std::string varname) {
 
 void HDF5::writeNodeData(const Epetra_Vector &x, const std::string varname) {
   writeFieldData_(x, varname, "Node");
+}
+  
+void HDF5::writeData(const Epetra_Vector &x, const std::string varname) {
+  writeFieldData_(x, varname, "None");
+} 
+void HDF5::readData(Epetra_Vector &x, const std::string varname) {
+  readFieldData_(x, varname);
 }
 
 
@@ -405,6 +412,7 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
   int err = x.ExtractView(&data);
   int length = x.GlobalLength();
   hid_t file, group, dataspace, dataset;
+  herr_t status;
 
   // TODO(barker): how to build path name?? probably still need iteration number
   std::stringstream h5path;
@@ -418,40 +426,68 @@ void HDF5::writeFieldData_(const Epetra_Vector &x, std::string varname,
     Exceptions::amanzi_throw(message);
   }
 
-  // Check if varname group exists; if not, create it
-  htri_t exists = H5Lexists(file, h5path.str().c_str(), H5P_DEFAULT);
-  if (exists) {
-    group = H5Gopen(file, h5path.str().c_str(), H5P_DEFAULT);
-  } else {
-    group = H5Gcreate(file, h5path.str().c_str(),
+  if (TrackXdmf()) {
+    // Check if varname group exists; if not, create it
+    htri_t exists = H5Lexists(file, h5path.str().c_str(), H5P_DEFAULT);
+    if (exists) {
+      cout << "  WRITE>> opening group:"<<h5path.str()<<endl;
+      group = H5Gopen(file, h5path.str().c_str(), H5P_DEFAULT);
+    } else {
+      cout << "  WRITE>> creating group:"<<h5path.str()<<endl;
+      group = H5Gcreate(file, h5path.str().c_str(),
                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    }
+    h5path << "/" << Iteration();
+    status = H5Gclose(group);
   }
-  h5path << "/" << Iteration();
 
   hsize_t hs = static_cast<hsize_t> (length);
   dataspace = H5Screate_simple(1, &hs, NULL);
-  dataset = H5Dcreate(file, h5path.str().c_str(),
-                            H5T_NATIVE_DOUBLE, dataspace,
-                            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  herr_t status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
-                           H5P_DEFAULT, data);
+  dataset = H5Dcreate(file, h5path.str().c_str(), H5T_NATIVE_DOUBLE, dataspace,
+                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                    data);
   if (status < 0) {
     Errors::Message message("HDF5:: error writing field to data file");
     Exceptions::amanzi_throw(message);
   }
   status = H5Dclose(dataset);
   status = H5Sclose(dataspace);
-  status = H5Gclose(group);
   status = H5Fclose(file);
 
   // TODO(barker): add error handling: can't write
-  if (TrackXdmf()) {
+  if (TrackXdmf() and loc != "None") {
     // TODO(barker): get grid node, node.addChild(addXdmfAttribute)
     Teuchos::XMLObject node = findMeshNode_(xmlStep());
     node.addChild(addXdmfAttribute_(varname, loc, length, h5path.str()));
   }
 }
 
+void HDF5::readFieldData_(Epetra_Vector &x, std::string varname) {
+    
+  char *h5path = new char [varname.size()+1];
+  strcpy(h5path,varname.c_str());
+  int ndims;
+  hid_t file = H5Fopen(H5DataFilename().c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
+  int globaldims[2], localdims[2];
+  globaldims[0] = x.GlobalLength();
+  globaldims[1] = 1;
+  localdims[0] = x.MyLength();
+  localdims[1] = 1;
+  std::vector<int> myidx(localdims[0],0);
+  int start = 0;
+  for (int i=0; i<localdims[0]; i++) myidx[i] = i+start;
+  double *data;
+  int err = x.ExtractView(&data);
+    
+  hid_t dataset = H5Dopen(file, h5path, H5P_DEFAULT);
+  herr_t status = H5Dread(dataset, H5T_NATIVE_DOUBLE,  H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+  x.ReplaceMyValues(localdims[0], &data[0], &myidx[0]);
+    
+  status = H5Dclose(dataset);
+  status = H5Fclose(file);
+}
+  
 Teuchos::XMLObject HDF5::addXdmfAttribute_(std::string varname,
                                            std::string location,
                                            int length,

@@ -5,6 +5,7 @@
 #include "Teuchos_MPISession.hpp"
 #include "Mesh.hh"
 #include "cell_geometry.hh"
+#include "hdf5_mesh.hh"
 extern "C" {
 #include "gmvwrite.h"
 }
@@ -37,6 +38,8 @@ State::State( Teuchos::ParameterList &parameter_list_,
 
   initialize_from_parameter_list();
   
+  init_restart();
+
 };
 
 
@@ -507,4 +510,224 @@ void State::write_gmv ( std::string filename )
 
   // done
   gmvwrite_closefile();
+}
+
+
+void State::init_restart( )
+{
+  int rank = mesh_maps->get_comm()->MyPID();  
+
+  unsigned int num_nodes = mesh_maps->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  unsigned int num_cells = mesh_maps->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);  
+  unsigned int num_faces = mesh_maps->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED); 
+
+  int nums[3];
+  int dummy[3];
+  dummy[0] = num_nodes;
+  dummy[1] = num_cells;  
+  dummy[2] = num_faces;
+
+  mesh_maps->get_comm()->SumAll(dummy,nums,3);  
+
+
+  // make the all to one map
+  if (rank == 0) {
+    int *gids = new int[nums[1]];
+    for (int i=0; i<nums[1]; i++) gids[i] = i;
+    all_to_one_cell_map = Teuchos::rcp(new Epetra_Map(nums[1],nums[1],gids,0, * mesh_maps->get_comm() ));
+    delete [] gids;
+    
+    gids = new int[nums[0]];
+    for (int i=0; i<nums[0]; i++) gids[i] = i;    
+    all_to_one_node_map = Teuchos::rcp(new Epetra_Map(nums[0],nums[0],gids,0, * mesh_maps->get_comm() ));
+    delete [] gids;
+
+    // gids = new int[nums[2]];
+    // for (int i=0; i<nums[2]; i++) gids[i] = i;
+    // all_to_one_face_map = Teuchos::rcp(new Epetra_Map(nums[2],nums[2],gids,0, * mesh_maps->get_comm() ));
+    // delete [] gids;  
+
+    int max_gid = mesh_maps->face_map(false).MaxAllGID();
+    int min_gid = mesh_maps->face_map(false).MinAllGID();
+    gids = new int [max_gid-min_gid+1];
+    for (int i=0; i<max_gid-min_gid+1; i++) gids[i] = min_gid+i;
+    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid+1,max_gid+1,gids,0, * mesh_maps->get_comm() ));
+    
+
+  } else {
+    int *gids;
+    int max_gid = mesh_maps->face_map(false).MaxAllGID();
+    all_to_one_cell_map = Teuchos::rcp(new Epetra_Map(nums[1],0,gids,0, * mesh_maps->get_comm() ) );
+    all_to_one_node_map = Teuchos::rcp(new Epetra_Map(nums[0],0,gids,0, * mesh_maps->get_comm() ) );
+    all_to_one_face_map = Teuchos::rcp(new Epetra_Map(max_gid+1,0,gids,0, * mesh_maps->get_comm() ) );
+  }
+
+  // make the all to one exporters 
+  all_to_one_cell_export = Teuchos::rcp(new Epetra_Export(mesh_maps->cell_map(false), *all_to_one_cell_map) );
+  all_to_one_node_export = Teuchos::rcp(new Epetra_Export(mesh_maps->node_map(false), *all_to_one_node_map) );  
+  all_to_one_face_export = Teuchos::rcp(new Epetra_Export(mesh_maps->face_map(false), *all_to_one_face_map) );
+
+}
+
+
+void State::write_restart ( std::string filename )
+{
+  int rank = mesh_maps->get_comm()->MyPID();
+
+  Epetra_Vector PE0(*all_to_one_cell_map);
+  Epetra_Vector PEF(*all_to_one_face_map);
+  Amanzi::HDF5 restart_output;
+
+  if (rank == 0) {
+    restart_output.setTrackXdmf(false);
+    restart_output.createDataFile(filename);
+  }
+       
+  PE0.Export( *water_density, *all_to_one_cell_export, Insert);
+  if (rank == 0) {
+    restart_output.writeCellData(PE0, "water_density");
+  }
+
+  PE0.Export( *pressure, *all_to_one_cell_export, Insert);   
+  if (rank == 0) {
+    restart_output.writeCellData(PE0, "pressure");
+  }
+
+  //darcy_flux->Print(std::cout);
+  PEF.Export( *darcy_flux, *all_to_one_face_export, Insert);
+  //PEF.Print(std::cout);
+  if (rank == 0) {
+    restart_output.writeCellData(PEF, "darcy_flux");
+  }
+
+  PE0.Export( *porosity, *all_to_one_cell_export, Insert);
+  if (rank == 0) {
+    restart_output.writeCellData(PE0, "porosity");
+  }  
+
+  PE0.Export( *water_saturation, *all_to_one_cell_export, Insert);
+  if (rank == 0) {
+    restart_output.writeCellData(PE0, "water_saturation");
+  }   
+  
+  PE0.Export( *permeability, *all_to_one_cell_export, Insert);
+  if (rank == 0) {
+    restart_output.writeCellData(PE0, "permeability");
+  }   
+
+  
+  for (int i=0; i<darcy_velocity->NumVectors(); i++)
+    {
+      std::stringstream fnss;
+      fnss << "darcy_velocity-" << i;
+      
+      PE0.Export( *(*darcy_velocity)(0), *all_to_one_cell_export, Insert);
+      if (rank == 0) {
+	restart_output.writeCellData(PE0, fnss.str() );
+      }   
+    }
+  
+  // for (int i=0; i<total_component_concentration->NumVectors(); i++)
+  //   {
+  //     std::stringstream fnss;
+  //     fnss << "total_component_concentration-" << i;
+      
+  //     PE0.Export( *(*total_component_concentration)(0), *all_to_one_cell_export, Insert);
+  //     if (rank == 0) {
+  // 	restart_output.writeCellData(PE0, fnss.str() );
+  //     }   
+  //   }
+}
+
+void State::read_restart ( std::string filename )
+{
+  int rank = mesh_maps->get_comm()->MyPID();
+  Epetra_Vector PE0(*all_to_one_cell_map); 
+  Epetra_Vector PEF(*all_to_one_face_map); 
+  
+  Amanzi::HDF5 *restart_output = new Amanzi::HDF5();
+
+  if (rank == 0) {
+    restart_output->setTrackXdmf(false);
+    restart_output->setH5DataFilename(filename);
+  }
+
+  if (rank == 0) {
+    restart_output->readData(PE0, "water_density");
+  }
+  water_density->Import( PE0, *all_to_one_cell_export, Insert);
+
+  if (rank == 0) {
+    restart_output->readData(PE0, "pressure");
+  }
+  pressure->Import( PE0, *all_to_one_cell_export, Insert);   
+
+  if (rank == 0) {
+    restart_output->readData(PEF, "darcy_flux");
+  }
+  darcy_flux->Import( PEF, *all_to_one_face_export, Insert);
+
+  if (rank == 0) {
+    restart_output->readData(PE0, "porosity");
+  }  
+  porosity->Import( PE0, *all_to_one_cell_export, Insert);
+
+  if (rank == 0) {
+    restart_output->readData(PE0, "water_saturation");
+  }   
+  water_saturation->Import( PE0, *all_to_one_cell_export, Insert);
+  
+  if (rank == 0) {
+    restart_output->readData(PE0, "permeability");
+  }   
+  permeability->Import( PE0, *all_to_one_cell_export, Insert);
+
+  
+  for (int i=0; i<darcy_velocity->NumVectors(); i++)
+    {
+      std::stringstream fnss;
+      fnss << "darcy_velocity-" << i;
+      
+      if (rank == 0) {
+	restart_output->readData(PE0, fnss.str() );
+      }   
+      (*darcy_velocity)(i)->Import( PE0, *all_to_one_cell_export, Insert);
+    }
+  
+  // for (int i=0; i<total_component_concentration->NumVectors(); i++)
+  //   {
+  //     std::stringstream fnss;
+  //     fnss << "total_component_concentration-" << i;
+      
+  //     if (rank == 0) {
+  // 	restart_output->readData(PE0, fnss.str() );
+  //     }   
+  //     PE0.Import( *(*total_component_concentration)(0), *all_to_one_cell_export, Insert);
+  //   }
+
+}
+
+
+double State::water_mass()
+{
+  // compute the total mass of water in the domain
+  
+  Epetra_Vector wm ( *water_saturation );
+  
+  wm.Multiply(1.0,*water_density,wm,0.0);
+  wm.Multiply(1.0,*porosity,wm,0.0);
+  
+  Epetra_Vector cell_volume( mesh_maps->cell_map(false) );
+  
+  for (int i=0; i<(mesh_maps->cell_map(false)).NumMyElements(); i++)
+    {
+      cell_volume[i] = mesh_maps->cell_volume(i);
+    }
+	 
+  wm.Multiply(1.0,cell_volume,wm,0.0);
+       
+  double mass;
+  wm.Norm1(&mass);
+       
+  return mass;
 }

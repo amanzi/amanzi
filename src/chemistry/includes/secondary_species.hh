@@ -8,7 +8,13 @@
 
 #include "species.hh"
 
-// forward declarations
+// forward declarations from outside chemistry
+
+
+namespace amanzi {
+namespace chemistry {
+
+// forward declarations from chemistry
 class Block;
 
 class SecondarySpecies : public Species {
@@ -29,7 +35,7 @@ class SecondarySpecies : public Species {
 
   // update molalities
   virtual void Update(const std::vector<Species>& primary_species);
-  // add stoichiometric contribution of complex to total
+  // add stoichiometric contribution of complex to totalmembermember
   virtual void AddContributionToTotal(std::vector<double> *total) = 0;
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
@@ -91,4 +97,6 @@ class SecondarySpecies : public Species {
   };
 };
 
-#endif
+}  // namespace chemistry
+}  // namespace amanzi
+#endif  // AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_

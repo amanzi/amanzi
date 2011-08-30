@@ -1,34 +1,55 @@
 # -*- mode: cmake -*-
 
-# Standard utilities -- no dependence on mesh base
+# Standard utilities
 add_subdirectory(error_handling)
-add_subdirectory(utils)
-add_subdirectory(input)
 
 # Geometry
 add_subdirectory(geometry)
 
-# Mesh
-add_subdirectory(mesh)
+if (ENABLE_Unstructured)
+  add_subdirectory(utils)
+  add_subdirectory(input)
 
-# Output
-add_subdirectory(output)
+  # Mesh
+  add_subdirectory(mesh)
 
-# Solvers
-add_subdirectory(solvers)
+  # Output
+  add_subdirectory(output)
 
-# Time integration
-add_subdirectory(time_integration)
+  # Solvers
+  add_subdirectory(solvers)
 
-# Build State
-add_subdirectory(state)
+  # Time integration
+  add_subdirectory(time_integration)
 
+  # Build State
+  add_subdirectory(state)
+
+endif()
+
+# Grid-option agnostic chemistry and interfaces
 add_subdirectory(chemistry)
-add_subdirectory(flow)
-add_subdirectory(transport)
+add_subdirectory(common/interface_platform)
 
-# Multiprocess coordinator
-add_subdirectory(mpc)
+if (ENABLE_Unstructured)
+  add_subdirectory(chemistry_pk)
 
-# Amanzi binaries
-add_subdirectory(executables)
+  add_subdirectory(flow)
+  add_subdirectory(transport)
+
+  # Multiprocess coordinator
+  add_subdirectory(mpc)
+endif()
+
+if (ENABLE_Unstructured)
+  # unstructured grid simualtion driver, and Amanzi binaries
+  add_subdirectory(executables)
+endif()
+
+# structured grid
+if (ENABLE_Structured)
+  add_subdirectory(structured_grid)
+endif()
+
+# standalone driver (produces mesh-independent executable)
+add_subdirectory(common/standalone_simulation_coordinator)

@@ -13,10 +13,10 @@ vanGenuchtenModel::vanGenuchtenModel(int meshblock_, double m_, double alpha_,
  
 double vanGenuchtenModel::k_relative(double p)
 {
-  double pc = p - p_atm; // capillary pressure
-  if (pc < 0.0)
+  double pc = p_atm - p; // capillary pressure
+  if (pc > 0.0)
     {
-      double se = pow(1.0 + pow(-alpha*pc,n),-m);
+      double se = pow(1.0 + pow(alpha*pc,n),-m);
       return sqrt(se) * pow( 1.0 - pow( 1.0 - pow(se,1.0/m),m), 2.0);
     }
   else
@@ -28,10 +28,10 @@ double vanGenuchtenModel::k_relative(double p)
 
 double vanGenuchtenModel::saturation(double p)
 {
-  double pc = p - p_atm; // capillary pressure
-  if (pc < 0.0) 
+  double pc = p_atm - p; // capillary pressure
+  if (pc > 0.0) 
     {
-      return pow(1.0 + pow(-alpha*pc,n),-m) * (1.0 - sr) + sr;
+      return pow(1.0 + pow(alpha*pc,n),-m) * (1.0 - sr) + sr;
     }
   else
     {
@@ -41,11 +41,10 @@ double vanGenuchtenModel::saturation(double p)
 
 double vanGenuchtenModel::d_saturation(double p)
 {
-  double pc = p - p_atm; // capillary pressure
-  if (pc < 0.0) 
+  double pc = p_atm - p; // capillary pressure
+  if (pc > 0.0) 
     {
-      return -m * pow(1.0 + pow(-alpha*pc,n),-m-1.0) 
-	* n * pow(-alpha*pc,n - 1.0) * (-alpha) * (1.0 - sr);
+      return m * n * pow(1.0 + pow(alpha*pc,n),-m-1.0) * pow(alpha*pc,n-1) * alpha  * (1.0 - sr);
     }
   else
     {

@@ -7,6 +7,8 @@
 #include "Transport_PK.hpp"
 #include "Flow_State.hpp"
 #include "Flow_PK.hpp"
+#include "ObservationData.H"
+#include "Unstructured_observations.hpp"
 
 namespace Amanzi
 {
@@ -15,12 +17,15 @@ class MPC {
 
 public:
   MPC (Teuchos::ParameterList parameter_list_,
-       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_);
+       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
+       Amanzi::ObservationData& output_observations_); 
+
   ~MPC () {};
 
   void cycle_driver ();
 
 private:
+  void mpc_init();
   void read_parameter_list();
   void write_gmv_data(std::string gmv_meshfile, std::string gmv_datafile, 
 		      const int iter, const int digits);
@@ -32,7 +37,7 @@ private:
   
   // states
   Teuchos::RCP<State> S;
-  Teuchos::RCP<Chemistry_State> CS;
+  Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
   Teuchos::RCP<AmanziTransport::Transport_State> TS; 
   Teuchos::RCP<Flow_State> FS;
 
@@ -44,7 +49,7 @@ private:
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
 
   // process kernels
-  Teuchos::RCP<Chemistry_PK> CPK;
+  Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
   Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
   Teuchos::RCP<Flow_PK> FPK; 
 
@@ -62,7 +67,12 @@ private:
   std::vector<string> compnames; 
 
   std::string flow_model;
+  std::string restart_file;
+  bool restart;
 
+  // observations
+  Amanzi::ObservationData&  output_observations;
+  Amanzi::Unstructured_observations* observations;
 };
 
 

@@ -6,6 +6,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
+#include "Epetra_Export.h"
 #include "Mesh.hh"
 
 typedef enum { COMPLETE, UPDATING } status_type;
@@ -71,6 +72,14 @@ public:
   void set_gravity(const double *g);
 
   void write_gmv ( std::string filename );
+
+  // restart related 
+  void init_restart ( );
+  void write_restart ( std::string filename );
+  void read_restart ( std::string filename );
+
+  // observation functions
+  double water_mass();
       
 private:
   void create_storage();
@@ -103,6 +112,16 @@ private:
 
   // parameter list
   Teuchos::ParameterList parameter_list;
+
+
+  // restart related maps
+  Teuchos::RCP<Epetra_Map> all_to_one_node_map;
+  Teuchos::RCP<Epetra_Map> all_to_one_cell_map;  
+  Teuchos::RCP<Epetra_Map> all_to_one_face_map;  
+  Teuchos::RCP<Epetra_Export> all_to_one_node_export;
+  Teuchos::RCP<Epetra_Export> all_to_one_cell_export;  
+  Teuchos::RCP<Epetra_Export> all_to_one_face_export;  
+
 }; 
 
 #endif

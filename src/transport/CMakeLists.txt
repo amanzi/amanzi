@@ -37,21 +37,13 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 # Library: transport
 #
 add_library(transport Transport_PK.cpp Transport_State.cpp Reconstruction.cpp)
+add_install_library(transport)
 target_link_libraries(transport geometry mesh mesh_data error_handling state ${Epetra_LIBRARIES})
-
 #
 # Install Targets
 #
 file(GLOB transport_inc_files "*.hpp")
 add_install_include_file(${transport_inc_files})
-add_install_library(transport)
-
-#
-# Install Targets
-#
-file(GLOB transport_inc_files "*.hpp")
-add_install_include_file(${transport_inc_files})
-add_install_library(transport)
 
 if ( BUILD_TESTS )
     # Add UnitTest includes
@@ -78,7 +70,7 @@ if ( BUILD_TESTS )
     target_link_libraries(transport_high_order ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(transport_high_order transport_high_order KIND unit)
 
-    # Tests 2
+    # Tests 3 & 4
     if ( ENABLE_MSTK_Mesh )
         include_directories(${MSTK_INCLUDE_DIRS})
         include_directories(${MSTK_SOURCE_DIR})
@@ -89,9 +81,14 @@ if ( BUILD_TESTS )
         add_executable(transport_serial_mstk test/Main.cc test/test_mstk.cpp)
         target_link_libraries(transport_serial_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_serial_mstk transport_serial_mstk KIND unit)
+
+        # Test: transport (parallel)
+        add_executable(transport_parallel_mstk test/Main.cc test/test_mstk_parallel.cpp)
+        target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
     endif()    
 
-    # Tests 3 and 4
+    # Tests 5 and 6
     if ( ENABLE_MOAB_Mesh )
         include_directories(${MOAB_INCLUDE_DIRS})
         include_directories(${MOAB_SOURCE_DIR})
@@ -104,8 +101,8 @@ if ( BUILD_TESTS )
         add_amanzi_test(transport_serial_moab transport_serial_moab KIND unit)
 
         # Test: transport (parallel)
-        add_executable(transport_parallel test/Main.cc test/test_moab_parallel.cpp)
-        target_link_libraries(transport_parallel ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_executable(transport_parallel_moab test/Main.cc test/test_moab_parallel.cpp)
+        target_link_libraries(transport_parallel_moab ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_parallel_moab transport_parallel_moab NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
     endif()    
 

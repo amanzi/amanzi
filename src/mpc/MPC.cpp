@@ -26,14 +26,26 @@ namespace Amanzi
 {
 
 #ifdef ENABLE_CGNS
-using namespace CGNS_PAR;
+  using namespace CGNS_PAR;
 #endif
 
-MPC::MPC(Teuchos::ParameterList parameter_list_,
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-  parameter_list(parameter_list_),
-  mesh_maps(mesh_maps_)
+  using amanzi::chemistry::Chemistry_State;
+  using amanzi::chemistry::Chemistry_PK;
+  using amanzi::chemistry::ChemistryException;
   
+
+  MPC::MPC(Teuchos::ParameterList parameter_list_,
+	   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
+	   Amanzi::ObservationData& output_observations_):
+    parameter_list(parameter_list_),
+    mesh_maps(mesh_maps_),
+    output_observations(output_observations_)
+  {
+    mpc_init();
+  }
+  
+  
+void MPC::mpc_init()
 {
    mpc_parameter_list =  parameter_list.sublist("MPC");
    read_parameter_list();
@@ -58,8 +70,10 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      cout << "Chemistry ";
    }
    cout << endl;
-
-
+   
+   restart = mpc_parameter_list.get<bool>("Restart",false);
+   restart_file = mpc_parameter_list.get<string>("Restart file","NONE");
+     
    if (transport_enabled || flow_enabled || chemistry_enabled) {
      Teuchos::ParameterList state_parameter_list = 
        parameter_list.sublist("State");
@@ -114,6 +128,11 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
      } 
    }
    // done creating auxilary state objects and  process models
+
+   // create the observations
+   
+   Teuchos::ParameterList observation_plist = parameter_list.sublist("observation");
+   observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
 
 }
 
@@ -225,28 +244,50 @@ void MPC::cycle_driver () {
   double vizdump_time = 0.0;
   int vizdump_time_count = 0;
 
-  // first solve the flow equation to steady state
-  if (flow_enabled) {
-    FPK->advance_to_steady_state();
-
-    // reset the time after the steady state solve
-    S->set_time(T0);
-    
-    S->update_darcy_flux(FPK->Flux());
-    S->update_pressure(FPK->Pressure());
-    FPK->commit_state(FS);
-    FPK->GetVelocity(*S->get_darcy_velocity());
-    
-    if ( flow_model == "Richards") 
-      {
-	Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
+  if (restart == false) 
+    {
+      
+      // first solve the flow equation to steady state
+      if (flow_enabled) {
+	FPK->advance_to_steady_state();
 	
-	RPK->GetSaturation(*S->get_water_saturation()); 
+	// reset the time after the steady state solve
+	S->set_time(T0);
+	
+	S->update_darcy_flux(FPK->Flux());
+	S->update_pressure(FPK->Pressure());
+	FPK->commit_state(FS);
+	FPK->GetVelocity(*S->get_darcy_velocity());
+	
+	if ( flow_model == "Richards") 
+	  {
+	    Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
+	    
+	    RPK->GetSaturation(*S->get_water_saturation()); 
+	  }
+
+	
+	// write restart file after initial flow solve
+	if (restart_file != "NONE") S->write_restart( restart_file );
       }
-  }
+    }
+  else
+    {
+      std::cout << "Reading restart file " << restart_file << std::endl;
+      
+      S->read_restart( restart_file );
+    }
+
   
+
+  
+
   if (flow_enabled || transport_enabled || chemistry_enabled) {
     
+    // make observations
+    observations->make_observations(*S);
+
+
     if (gmv_output) {
       // write the GMV data file
       write_gmv_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
@@ -404,10 +445,14 @@ void MPC::cycle_driver () {
       if (transport_enabled) TPK->commit_state(TS);
       if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
       
-      
       // advance the iteration count
       iter++;
       
+      // make observations
+      observations->make_observations(*S);
+
+
+
       // TODO: ask the CPK to dump its data someplace....
 
       vizdump_cycle = iter;
@@ -448,6 +493,11 @@ void MPC::cycle_driver () {
     }
     
   }
+
+  // dump observations
+  output_observations.print(std::cout);
+  
+
 }
 
 
@@ -531,6 +581,32 @@ void MPC::write_gnuplot_data(int iter, double time)
   cout << " ...writing gnuplot output" << endl;
   cout << " ...number of components : " << S->get_number_of_components() << endl;
   
+  if (iter == 0) { // write pressure and saturation
+    std::stringstream fname_p;
+    fname_p << "pressure.dat";
+    
+    std::filebuf fb;
+    fb.open (fname_p.str().c_str(), std::ios::out);
+    ostream os_p(&fb);
+
+    for (int i=0; i< (S->get_pressure())->MyLength(); i++) 
+      os_p << (*S->get_pressure())[i] << endl;    
+    
+    fb.close();
+    
+    std::stringstream fname_s;
+    fname_s << "saturation.dat";
+    
+    fb.open (fname_s.str().c_str(), std::ios::out);
+    ostream os_s(&fb);
+
+    for (int i=0; i< (S->get_water_saturation())->MyLength(); i++) 
+      os_s << (*S->get_water_saturation())[i] << endl;    
+    
+    fb.close();
+    
+  }
+
   for (int nc=0; nc<S->get_number_of_components(); nc++) {
     std::stringstream fname;
     fname << "conc_" << nc;

@@ -9,6 +9,7 @@
 #include "ion_exchange_site.hh"
 
 SUITE(GeochemistryTestsIonExchangeSite) {
+  namespace ac = amanzi::chemistry;
   /*
     Unit tests for the IonExchangeSite object public interface
 
@@ -25,13 +26,13 @@ SUITE(GeochemistryTestsIonExchangeSite) {
     ~IonExchangeSiteTest();
 
    protected:
-    SpeciesId exchanger_id_;
+    ac::SpeciesId exchanger_id_;
     double exchanger_charge_;
     std::string exchanger_location_;
     double molecular_weight_;
     double size_;
-    SpeciesName exchanger_name_;
-    IonExchangeSite ies_;
+    ac::SpeciesName exchanger_name_;
+    ac::IonExchangeSite ies_;
 
    private:
   };  // end class IonExchangeSiteTest
@@ -43,7 +44,7 @@ SUITE(GeochemistryTestsIonExchangeSite) {
       molecular_weight_(45.6789),
       size_(9.8),
       exchanger_name_("X--"),
-      ies_(exchanger_name_, exchanger_id_, exchanger_charge_, 
+      ies_(exchanger_name_, exchanger_id_, exchanger_charge_,
            exchanger_location_, molecular_weight_, size_) {
   }
 

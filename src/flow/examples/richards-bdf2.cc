@@ -14,6 +14,8 @@
 
 #include "RichardsProblem.hpp"
 #include "RichardsModelEvaluator.hpp"
+#include "FlowBC.hpp"
+#include "Flow_State.hpp"
 #include "BDF2_Dae.hpp"
 #include "gmv_mesh.hh"
 #include "State.hpp"
@@ -28,9 +30,9 @@ int main(int argc, char *argv[])
 
   // simple mesh with two layers
   Teuchos::ParameterList smeshlist;
-  smeshlist.set<int>("Numer of Cells in X",1);
-  smeshlist.set<int>("Numer of Cells in Y",1);
-  smeshlist.set<int>("Numer of Cells in Z",136);
+  smeshlist.set<int>("Number of Cells in X",1);
+  smeshlist.set<int>("Number of Cells in Y",1);
+  smeshlist.set<int>("Number of Cells in Z",136);
   smeshlist.set<double>("X_Min",0.0);
   smeshlist.set<double>("X_Max",1.0);
   smeshlist.set<double>("Y_Min",0.0);
@@ -66,7 +68,8 @@ int main(int argc, char *argv[])
     mblist.set<double>("Z1",1.0);
   }
 
-  Teuchos::RCP<Mesh_maps_base> mesh = Teuchos::rcp(new Mesh_maps_simple(smeshlist,&comm));
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh 
+    = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(smeshlist,&comm));
 
   // BOUNDARY CONDITIONS
   Teuchos::ParameterList bc_params;
@@ -92,7 +95,7 @@ int main(int argc, char *argv[])
   bc_top.set("Type", "Pressure Constant");
   bc_top.set("BC value", -506275.0);   
  
-  Teuchos::RCP<FlowBC> bc(new FlowBC(bc_params, mesh));
+  Teuchos::RCP<Amanzi::FlowBC> bc(new Amanzi::FlowBC(bc_params, mesh));
 
 
   // create the state
@@ -159,7 +162,7 @@ int main(int argc, char *argv[])
   }    
 
   Teuchos::RCP<State> S = Teuchos::rcp(new State(state_plist, mesh));
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  Teuchos::RCP<Amanzi::Flow_State> FS = Teuchos::rcp(new Amanzi::Flow_State(S));
 
   
   // Water Retention Model (here we use van Genuchten)
@@ -209,7 +212,7 @@ int main(int argc, char *argv[])
     mb_vGl.set<double>("van Genuchten residual saturation",0.0774);
   }    
 
-  RichardsProblem problem(mesh, vGl, bc);
+  Amanzi::RichardsProblem problem(mesh, vGl, bc);
 
   // MODEL PARAMETERS
   problem.SetFluidDensity(FS->fluid_density());
@@ -238,7 +241,7 @@ int main(int argc, char *argv[])
   plist.sublist("VerboseObject").set("Verbosity Level","none");
   
   
-  RichardsModelEvaluator RME(&problem, plist, problem.Map(), FS);
+  Amanzi::RichardsModelEvaluator RME(&problem, plist, problem.Map(), FS);
 
   // create the time stepping object
   BDF2::Dae TS( RME, problem.Map() );
@@ -309,13 +312,13 @@ int main(int argc, char *argv[])
   // set up output
   std::string cgns_filename = "out.cgns";
 
-  CGNS::create_mesh_file(*mesh, cgns_filename);
+  Amanzi::CGNS::create_mesh_file(*mesh, cgns_filename);
 
-  CGNS::open_data_file(cgns_filename);
-  CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
+  Amanzi::CGNS::open_data_file(cgns_filename);
+  Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
 
-  CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  CGNS::write_field_data(*(S->get_permeability()), "permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
+  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
   
   // iterate
   int i = 0;
@@ -341,22 +344,22 @@ int main(int argc, char *argv[])
 
     if ( i%5 == 1 ) 
       { 
-	CGNS::open_data_file(cgns_filename);
-	CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
+	Amanzi::CGNS::open_data_file(cgns_filename);
+	Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
 
-	CGNS::write_field_data(*(S->get_pressure()), "pressure");
-	CGNS::write_field_data(*(S->get_permeability()), "permeability");
+	Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
+	Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
 
       }
 
   
   } while (t1 >= tlast);
 
-  CGNS::open_data_file(cgns_filename);
-  CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
+  Amanzi::CGNS::open_data_file(cgns_filename);
+  Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
   
-  CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  CGNS::write_field_data(*(S->get_permeability()), "permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
+  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
 
   
 

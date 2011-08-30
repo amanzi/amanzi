@@ -5,6 +5,9 @@
 
 #include <iostream>
 
+namespace amanzi {
+namespace chemistry {
+
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
 const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C
 const double ActivityModelDebyeHuckel::debyeBdot = 0.0410;  // 25C
@@ -36,6 +39,32 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
   return gamma;
 }  // end Evaluate()
 
+void ActivityModelDebyeHuckel::EvaluateVector (std::vector<double>& gamma, double& actw, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec){
+	int isp(-1);
+	// For primary species
+	for (std::vector<Species>::const_iterator i=prim.begin(); i!=prim.end(); i++) {
+		isp++;
+		if (fabs((*i).charge()) < 1.0e-10) {
+			gamma.at(isp)=1.0;
+		} else {
+            gamma.at(isp)=Evaluate(*i);
+		}
+	}
+	// For aqueous complexes
+	for (std::vector<AqueousEquilibriumComplex>::const_iterator i=sec.begin(); i!=sec.end(); i++) {
+		isp++;
+		if (fabs((*i).charge()) < 1.0e-10) {
+			gamma.at(isp)=1.0;
+		} else {
+			gamma.at(isp)=Evaluate(*i);
+		}
+	}
+	actw=1.0;
+} // end evaluate
+
 void ActivityModelDebyeHuckel::Display(void) const {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
 }  // end Display()
+
+}  // namespace chemistry
+}  // namespace amanzi

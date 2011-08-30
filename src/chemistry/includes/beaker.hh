@@ -17,6 +17,7 @@
 #include "kinetic_rate.hh"
 #include "mineral.hh"
 #include "species.hh"
+#include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"
 #include "verbosity.hh"
 
@@ -24,6 +25,9 @@
 #include "chemistry/includes/direct_solver.hh"
 #include "chemistry/includes/matrix_block.hh"
 #endif
+
+namespace amanzi {
+namespace chemistry {
 
 class KineticRate;
 
@@ -33,10 +37,10 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerComponents {
-    std::vector<double> free_ion;
-    std::vector<double> minerals;
+    std::vector<double> free_ion;  // molality
+    std::vector<double> minerals;  // volume fractions
     std::vector<double> ion_exchange_sites;
-    std::vector<double> total;
+    std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
   };
 
@@ -48,6 +52,8 @@ class Beaker {
     unsigned int max_iterations;
     // models
     std::string activity_model_name;
+    // Name of the Pitzer virial coefficients database
+    std::string pitzer_database;
     // physical parameters
     double porosity;  // [-]
     double saturation;  // [-]
@@ -69,7 +75,7 @@ class Beaker {
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
-  void SetupActivityModel(std::string model);
+  void SetupActivityModel(std::string model, std::string pitzer_database);
   void VerifyComponentSizes(const Beaker::BeakerComponents& components);
   void CheckChargeBalance(const std::vector<double>& aqueous_totals);
   void SetComponents(const Beaker::BeakerComponents& components);
@@ -83,6 +89,7 @@ class Beaker {
   void AddMineralKineticRate(KineticRate* rate);
   void addGeneralRxn(const GeneralRxn& r);
   void addSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
+  void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
   bool HaveKinetics(void) const;
 
@@ -332,6 +339,7 @@ class Beaker {
   //  vector<GasExchange*> gasRxns_;
   std::vector<IonExchangeComplex> ion_exchange_rxns_;
   std::vector<SurfaceComplexationRxn> surfaceComplexationRxns_;
+  std::vector<SorptionIsothermRxn> sorption_isotherm_rxns_;
 
   // solver data structures
   std::vector<double> fixed_accumulation;  // fixed (time t) portion of accumulation term
@@ -356,4 +364,6 @@ class Beaker {
 #endif
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_BEAKER_HH_

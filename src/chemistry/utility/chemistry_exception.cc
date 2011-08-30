@@ -31,6 +31,9 @@
 #include <string>
 #include <iostream>
 
+namespace amanzi {
+namespace chemistry {
+
 /*******************************************************************************
  **
  ** ChemistryException
@@ -135,3 +138,6 @@ ChemistryInvalidSolution::ChemistryInvalidSolution(std::string error_message)
 ChemistryInvalidSolution::~ChemistryInvalidSolution() throw() {
   /* end ~ChemistryInvalidSolution() */
 }
+
+}  // namespace chemistry
+}  // namespace amanzi

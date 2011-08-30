@@ -15,4 +15,3 @@ set(SRCS
 
 add_library(geochemsolvers ${SRCS}) 
 add_install_library(geochemsolvers)
-

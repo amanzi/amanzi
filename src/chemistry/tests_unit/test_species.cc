@@ -11,6 +11,7 @@
 #include "chemistry_exception.hh"
 
 SUITE(GeochemistryTestsSpecies) {
+  namespace ac = amanzi::chemistry;
   /*
     Unit tests for the Species object public interface
 
@@ -27,11 +28,11 @@ SUITE(GeochemistryTestsSpecies) {
     ~SpeciesTest();
 
    protected:
-    SpeciesId id_;
+    ac::SpeciesId id_;
     double charge_;
     double gram_molecular_weight_;
     double ion_size_parameter_;
-    SpeciesName name_;
+    ac::SpeciesName name_;
 
    private:
   };  // end class SpeciesTest
@@ -61,27 +62,27 @@ SUITE(GeochemistryTestsSpecies) {
   // check that the parameter data is set correctly
   //
   TEST_FIXTURE(SpeciesTest, Species_constructor_init_id) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(id_, species.identifier());
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_init_charge) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(charge_, species.charge());
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_init_gmw) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(gram_molecular_weight_, species.gram_molecular_weight());
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_init_isp) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(ion_size_parameter_, species.ion_size_parameter());
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_init_name) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     CHECK_EQUAL(name_, species.name());
   }
 
@@ -89,25 +90,25 @@ SUITE(GeochemistryTestsSpecies) {
   // check that exceptions are thrown for invalid data
   //
   TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_id) {
-    CHECK_THROW(Species species(-1, name_, charge_, gram_molecular_weight_, ion_size_parameter_),
-                ChemistryException);
+    CHECK_THROW(ac::Species species(-1, name_, charge_, gram_molecular_weight_, ion_size_parameter_),
+                ac::ChemistryException);
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_molecular_weight) {
-    CHECK_THROW(Species species(id_, name_, charge_, -45.678, ion_size_parameter_),
-                ChemistryException);
+    CHECK_THROW(ac::Species species(id_, name_, charge_, -45.678, ion_size_parameter_),
+                ac::ChemistryException);
   }
 
   TEST_FIXTURE(SpeciesTest, Species_constructor_invalid_ion_size) {
-    CHECK_THROW(Species species(id_, name_, charge_, gram_molecular_weight_, -9.0),
-                ChemistryException);
+    CHECK_THROW(ac::Species species(id_, name_, charge_, gram_molecular_weight_, -9.0),
+                ac::ChemistryException);
   }
 
   //
   // check that updating the concentrations works correctly
   //
   TEST_FIXTURE(SpeciesTest, Species_update_molality) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
 
     species.update(molality);
@@ -115,7 +116,7 @@ SUITE(GeochemistryTestsSpecies) {
   }
 
   TEST_FIXTURE(SpeciesTest, Species_update_ln_molality) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
     double ln_molality = std::log(molality);
 
@@ -124,7 +125,7 @@ SUITE(GeochemistryTestsSpecies) {
   }
 
   TEST_FIXTURE(SpeciesTest, Species_update_activity_coefficient) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double act_coef = 0.9;
 
     species.act_coef(act_coef);
@@ -132,7 +133,7 @@ SUITE(GeochemistryTestsSpecies) {
   }
 
   TEST_FIXTURE(SpeciesTest, Species_update_ln_activity_coefficient) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double act_coef = 0.9;
     double ln_act_coef = std::log(act_coef);
 
@@ -142,7 +143,7 @@ SUITE(GeochemistryTestsSpecies) {
   }
 
   TEST_FIXTURE(SpeciesTest, Species_update_activity) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
     double act_coef = 0.9;
     double activity = molality * act_coef;
@@ -154,7 +155,7 @@ SUITE(GeochemistryTestsSpecies) {
 
 
   TEST_FIXTURE(SpeciesTest, Species_update_ln_activity) {
-    Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
+    ac::Species species(id_, name_, charge_, gram_molecular_weight_, ion_size_parameter_);
     double molality = 0.001;
     double act_coef = 0.9;
     double ln_activity = std::log(molality * act_coef);

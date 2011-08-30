@@ -7,6 +7,9 @@
 #include "secondary_species.hh"
 #include "verbosity.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 Mineral::Mineral()
     : SecondarySpecies(),
       verbosity_(kSilent),
@@ -70,11 +73,13 @@ void Mineral::UpdateSurfaceAreaFromVolumeFraction(const double total_volume) {
   }
 }  // end UpdateSurfaceAreaFromVolumeFraction()
 
-void Mineral::Update(const std::vector<Species>& primary_species) {
+void Mineral::Update(const std::vector<Species>& primary_species, const Species& water_species) {
   double lnQK = -lnK_;
   for (int i = 0; i < ncomp(); i++) {
     lnQK += stoichiometry_.at(i) * primary_species.at(species_ids_.at(i)).ln_activity();
   }
+  // Add the contribution of the water activity
+  lnQK += SecondarySpecies::h2o_stoich_ * std::log(water_species.act_coef());
   lnQK_ = lnQK;
 }  // end update()
 
@@ -102,6 +107,10 @@ void Mineral::Display(void) const {
       std::cout << " + ";
     }
   }
+  if (SecondarySpecies::h2o_stoich_!=0.0) {
+	  std::cout << " + ";
+	  std::cout << std::setprecision(2) << h2o_stoich_ << " " << "H2O";
+  }
   std::cout << std::endl;
   std::cout << std::setw(40) << " "
             << std::setw(10) << std::setprecision(5) << std::fixed << logK_
@@ -128,3 +137,6 @@ void Mineral::DisplayResults(void) const {
             << std::setw(15) << saturation_index()
             << std::endl;
 }  // end DisplayResults()
+
+}  // namespace chemistry
+}  // namespace amanzi

@@ -8,6 +8,9 @@
 #include "species.hh"
 #include "beaker.hh"
 
+namespace amanzi {
+namespace chemistry {
+
 class SimpleThermoDatabase : public Beaker {
  public:
   SimpleThermoDatabase();
@@ -27,6 +30,7 @@ class SimpleThermoDatabase : public Beaker {
   void ParseIonExchangeComplex(const std::string& data);
   void ParseSurfaceComplexSite(const std::string& data);
   void ParseSurfaceComplex(const std::string& data);
+  void ParseIsotherm(const std::string& data);
   void FinishSurfaceComplexation(void);
   void ParseReaction(const std::string& reaction,
                      std::string* name,
@@ -76,4 +80,6 @@ class SimpleThermoDatabase : public Beaker {
   std::vector<SurfaceComplexationRxn> surface_complexation_reactions_;
 };
 
+}  // namespace chemistry
+}  // namespace amanzi
 #endif  // AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
