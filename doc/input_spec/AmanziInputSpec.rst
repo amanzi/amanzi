@@ -410,6 +410,10 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="state">
+    <ParameterList name="Chemistry Database">
+      <Parameter name="filename" type="string" value="uo2-5-component.bgd"/>    
+      <Parameter name="format" type="string" value="simple"/>    
+    </ParameterList>
     <Parameter name="dominant component" type="string" value="air"/>    
     <ParameterList name="air">
       <ParameterList name="User-defined Mixtures">
