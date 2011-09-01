@@ -329,7 +329,8 @@ information from outside the domain is assumed to propagate into the domain.
 Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of source and loss processes, are defined for each component, and for 
 each mobile chemical constituent. Supported functionals for initial and boundary data and for source distributions are listed below.
 
-Initial, boundary and source terms are specified using a set of user-defined component mixtures.  The detailed specification of mixture definitions remains TBD, however we 
+Initial, boundary and source terms are specified using a set of user-defined component mixtures (sources can optionally be specified in terms of total mass of 
+contaminant - see below).  The detailed specification of mixture definitions remains TBD, however we 
 assume that definitions may be uniquely constructed using a variety of methods (pH, total concentrations, free ion concentrations, etc), and that each mixture 
 consists of a component and a subset of the trace chemical species contained in that component.
 
@@ -367,11 +368,13 @@ consists of a component and a subset of the trace chemical species contained in 
 
     * `"phase`" (string) the name of the phase that carries this component
 
-    * `"source`" (list) can accept a REGION (string)
+    * `"source`" (list) can accept a REGION (string), and (optionally) a double array, (t_start, t_end), specifying the interval 
 
       * REGION (string) the name of a labeled region
 
         * S-FUNC-COMP (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
+
+      * `"time interval`" (array double) specifying the start time, t_start, and the stop time, t_stop, that this source is active
 
     * `"trace species`" (array string) can accept a subset of the primary species listed in the chemistry database file
 
@@ -401,7 +404,11 @@ The following parameterized boundary conditions are supported for communicating 
  * `"bc:  noflow`" requires no parameter data
 
 The following models are currently supported for communicating source distribution:
- * `"source: uniform`" requires `"strength`" (double) and `"mixture`" (string)
+ * `"source: uniform mixture`" requires `"strength`" (double) and `"mixture`" (string).  The specified mass of this mixture will be injected at a constant rate over the time interval specified.
+ * `"source: uniform total mass`" requires a `"component mass`" (double) and a TRACE (named after a trace species that is declared in the state for this component), which is a double indicating the total contaminant mass.  The contaminated component will be injected at a constant rate and uniform distribution over the time interval specified.  NOTE: This functional requires that a finite time interval be specified for this region.
+
+
+
 
 
 
@@ -418,9 +425,6 @@ Example:
     <ParameterList name="air">
       <ParameterList name="User-defined Mixtures">
         <ParameterList name="Pure Air">
-          <ParameterList name="scheme: pH">
-            <Parameter name="pH" type="double" value="0"/>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
       <Parameter name="phase" type="string" value="gaseous"/>
@@ -460,17 +464,20 @@ Example:
           </ParameterList>
         </ParameterList>
         <ParameterList name="Pure Water">
-          <ParameterList name="scheme: free ion concentration">
-            <ParameterList name="UO2+2">
-              <Parameter name="value" type="double" value="0."/>
-            </ParameterList>
-          </ParameterList>
         </ParameterList>
       </ParameterList>
       <ParameterList name="source"/>
+        <ParameterList name="top"/>
+          <Parameter name="time interval" type="array double" value="{5., 15.}"/>
+          <ParameterList name="source: uniform total mass"/>
+            <Parameter name="component mass" type="double" value="20."/>
+            <ParameterList name="contaminant mass">
+              <Parameter name="UO+2" type="double" value="2."/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
         <ParameterList name="middle"/>
           <ParameterList name="source: uniform"/>
-            <Parameter name="strength" type="double" value="20."/>
             <Parameter name="mixture" type="string" value="Contaminated Water"/>
           </ParameterList>
         </ParameterList>
@@ -503,8 +510,9 @@ have been defined elsewhere.  The initial data for the fields are set using the 
 "Pure Air", "Pure Water" and "Contaminated Water".  
 The only boundary condition specified is along `"yhibc`", where the mixture is "Contaminated Water".
 The remaining boundaries are assumed to be outflow.
-There is a uniform source of "Contaminated Water" in the middle region with an integrated strength of 20.
-
+There is a uniform source of "Contaminated Water" in the top region with an integrated strength of 20.
+There is also a uniform source in the middle region of water and UO+2, over the time period 5-15; 
+during this time a mass of 20 of water, and 2 of the UO+2 complex is injected at a constant rate.
 
 
 Regions
