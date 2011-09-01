@@ -63,7 +63,7 @@ if (BUILD_TESTS)
     include_directories(${TIME_INTEGRATION_SOURCE_DIR})
     include_directories(${SOLVERS_SOURCE_DIR})
 
-    add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp) 
+    add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp test/test_Explicit_RK.cpp) 
     target_link_libraries(test_time_integration time_integration solvers error_handling ${UnitTest_LIBRARIES})
     add_amanzi_test(time_integration test_time_integration KIND unit)
 
