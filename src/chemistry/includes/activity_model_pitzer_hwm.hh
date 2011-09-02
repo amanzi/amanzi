@@ -26,7 +26,8 @@ class VirialCoefficient;
 class ActivityModelPitzerHWM : public ActivityModel {
  public:
 
-  ActivityModelPitzerHWM(const std::string& database, const std::vector<Species>& prim, const std::vector<AqueousEquilibriumComplex>& sec);
+  ActivityModelPitzerHWM(const std::string& database, const std::vector<Species>& primary_species,
+		                 const std::vector<AqueousEquilibriumComplex>& aqueous_complexes);
   ~ActivityModelPitzerHWM();
   double Evaluate(const Species& species);
   void EvaluateVector(std::vector<double>& gamma, double& water_activity,
@@ -48,14 +49,14 @@ class ActivityModelPitzerHWM : public ActivityModel {
   void ParsePsiVirialCoefficient(const std::string& data);
   void AssignIndexBetaFunctions();
   void AssignIndexJFunctions();
-  void ComputeQ(std::vector<double>& gamma, double& osco);
-  void ComputeQl(double& osco);
-  void ComputeQc(std::vector<double>& gamma, double& osco);
-  void ComputeT(std::vector<double>& gamma, double& osco);
+  void ComputemQmProduct(std::vector<double>& gamma, double& osmotic_coefficient);
+  void ComputemQlmProduct(double& osmotic_coefficient);
+  void ComputemQcmProduct(std::vector<double>& gamma, double& osmotic_coefficient);
+  void ComputemTmmProduct(std::vector<double>& gamma, double& osmotic_coefficient);
   void ComputeQmatrices();
   void ComputeBetaFunctions();
   void ComputeJFunctions();
-  void ComputeDebyeHuckelTerm(std::vector<double>& gamma, double& osco, double& gclm);
+  void ComputeDebyeHuckelTerm(std::vector<double>& gamma, double& osmotic_coefficient, double& gclm);
   double gclm_(const double& dhterm);
   void PushPrivateVectors();
   void Update(const double& temperature, const double& pressure);
@@ -65,94 +66,56 @@ class ActivityModelPitzerHWM : public ActivityModel {
 
   static const double cwater;
   static const double bdh;
-  static const double aphi25;
+  static const double aphi_debye_huckel_slope25;
   //-------------------------------------------------------------
   // Limiting Debye-Hückel slope to 25º   0.39153  0.392
   //-------------------------------------------------------------
-  static const double c0aphi;                          // Temperature depending coefficients
-  static const double c1aphi;                          // Temperature depending coefficients
-  static const double c2aphi;                          // Temperature depending coefficients
-  static const double c3aphi;                          // Temperature depending coefficients
-  static const double c4aphi;                          // Temperature depending coefficients
-  static const double c5aphi;                          // Temperature depending coefficients
-  static const double c6aphi;                          // Temperature depending coefficients
-  static const double c7aphi;                          // Temperature depending coefficients
-  static const double c8aphi;                          // Temperature depending coefficients
-  static const double c9aphi;                          // Temperature depending coefficients
-
-  std::vector<VirialCoefficient> beta0;
-
-  std::vector<VirialCoefficient> beta1;
-
-  std::vector<VirialCoefficient> beta2;
-
-  std::vector<VirialCoefficient> theta;
-
-  std::vector<VirialCoefficient> lamda;
-
-  std::vector<VirialCoefficient> psi;
-
-  std::vector<VirialCoefficient> cpz;
-
-  std::vector<double> zprod;                           // charge products [nfunj]
-
-  std::vector<double> alpha1;                          // [nfunb]
-
-  std::vector<double> alpha2;                          // [nfunb]
-
-  double aphi;                                         // Debye-Hückel limiting slope
-
-  int nfunb;                                           // Number of beta functions
-
-  int nfunbvol;                                        // Number of beta functions
-
-  int nfunj;                                           // Number of j functions
-
-  int nnzbeta;                                         // Number of non cero Beta matrix terms
-
-  int nnztheta;                                        // Number of non cero theta matrix terms
-
-  int nnzcpz;                                          // Number of non cero C_ca matrix terms
-
-  int nnzlamda;                                        // Number of non cero lambda matrix terms
-
-  int nnzpsi;                                          // Number of non cero Psi matrix terms
-
-  int nnzq;                                            // Number of non cero q matrix terms (q,q',q'',q-fi and q-fi')
-
-  int ithcl;                                           // Local indice of Cl species  (usefull for macinnes convention)
-
-  int ithw;                                            // Local indice of water species  (usefull for macinnes convention)
-
-  int ithk;                                            // Local indice of K species   (usefull for macinnes convention)
-
-  bool ismacinnes;                                     // ismacinnes=true, then activity coefficients will be scaled according macinnes convention
-
+  static const double c0aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c1aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c2aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c3aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c4aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c5aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c6aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c7aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c8aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  static const double c9aphi_debye_huckel_slope;                          // Temperature depending coefficients
+  std::vector<VirialCoefficient> beta0_virial;
+  std::vector<VirialCoefficient> beta1_virial;
+  std::vector<VirialCoefficient> beta2_virial;
+  std::vector<VirialCoefficient> theta_virial;
+  std::vector<VirialCoefficient> lamda_virial;
+  std::vector<VirialCoefficient> psi_virial;
+  std::vector<VirialCoefficient> cphi_virial;
+  std::vector<double> charge_product;                  // charge products [number_j_functions]
+  std::vector<double> alpha1;                          // [number_b_functions]
+  std::vector<double> alpha2;                          // [number_b_functions]
+  double aphi_debye_huckel_slope;                      // Debye-Hückel limiting slope
+  int number_b_functions;                              // Number of beta functions
+  int number_j_functions;                              // Number of j functions
+  int number_non_zero_beta;                            // Number of non cero Beta matrix terms
+  int number_non_zero_theta;                           // Number of non cero theta matrix terms
+  int number_non_zero_cphi;                            // Number of non cero C_ca matrix terms
+  int number_non_zero_lamda;                           // Number of non cero lambda matrix terms
+  int number_non_zero_psi;                             // Number of non cero Psi matrix terms
+  int number_non_zero_q;                               // Number of non cero q matrix terms (q,q',q'',q-fi and q-fi')
+  int index_cl_species;                                // Local indice of Cl species  (usefull for macinnes convention)
+  int index_h2o_species;                               // Local indice of water species  (usefull for macinnes convention)
+  int index_k_species;                                 // Local indice of K species   (usefull for macinnes convention)
+  bool macinnes_scale;                                 // macinnes_scale=true, then activity coefficients will be scaled according macinnes convention
   std::vector<std::vector<double> > g_;
-
   std::vector<std::vector<double> > g_pri_;
-
   std::vector<std::vector<double> > f_;
-
   std::vector<double> j_;
-
   std::vector<double> j_pri_;
-
   std::vector<double> q;
-
   std::vector<double> qphi;
-
   std::vector<double> qpri;
-
-  std::vector<std::vector<int> > indnzq;
-
+  std::vector<std::vector<int> > index_non_zero_q;
   std::vector<double> molality;
-
   std::vector<double> charge;
-
-  std::vector<std::string> namesp;
-
-  int nsp;
+  std::vector<std::string> name_species;
+  int number_species;
 
 };
 }  // namespace chemistry
