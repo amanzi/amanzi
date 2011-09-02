@@ -25,7 +25,13 @@ void Explicit_TI::RK::set_method(const Explicit_TI::RK::method_t method_)
   case forward_euler: 
     order = 1;
     break;
-  case heun_method:
+  case heun_euler:
+    order = 2;
+    break;
+  case midpoint:
+    order = 2;
+    break;
+  case ralston:
     order = 2;
     break;
   case kutta_3rd_order:
@@ -48,7 +54,7 @@ void Explicit_TI::RK::set_method(const Explicit_TI::RK::method_t method_)
     c[0] = 0.0;
     break;
 
-  case heun_method:
+  case heun_euler:
     a(1,0) = 1.0;
 
     b[0] = 0.5;
@@ -56,6 +62,26 @@ void Explicit_TI::RK::set_method(const Explicit_TI::RK::method_t method_)
 
     c[0] = 0.0;
     c[1] = 1.0;
+    break;
+
+  case midpoint:
+    a(1,0) = 0.5;
+    
+    b[0] = 0.0;
+    b[1] = 1.0;
+
+    c[0] = 0.0;
+    c[1] = 0.5;
+    break;
+
+  case ralston:
+    a(1,0) = 2.0/3.0;
+    
+    b[0] = 0.25;
+    b[1] = 0.75;
+    
+    c[0] = 0.0;
+    c[1] = 2.0/3.0;
     break;
 
   case kutta_3rd_order:

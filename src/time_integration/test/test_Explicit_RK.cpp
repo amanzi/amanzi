@@ -59,7 +59,7 @@ SUITE(TimeIntegrationTests) {
     Epetra_Vector y_new(map);
 
     fn1 f;
-    Explicit_TI::RK::method_t method = Explicit_TI::RK::heun_method;
+    Explicit_TI::RK::method_t method = Explicit_TI::RK::heun_euler;
     Explicit_TI::RK explicit_time_integrator(f, method, y); 
 		
     // initial value
@@ -81,6 +81,67 @@ SUITE(TimeIntegrationTests) {
     CHECK_CLOSE(y[0],exp(t),pow(h,2));
   }
        
+
+  TEST(Explicit_RK_Midpoint) {
+    
+    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_Vector y(map);
+    Epetra_Vector y_new(map);
+
+    fn1 f;
+    Explicit_TI::RK::method_t method = Explicit_TI::RK::midpoint;
+    Explicit_TI::RK explicit_time_integrator(f, method, y); 
+		
+    // initial value
+    y.PutScalar(1.0);
+
+    // initial time
+    double t=0.0;
+    // time step
+    double h=.1;
+    
+    // integrate to t=1.0
+    do 
+      {
+	explicit_time_integrator.step(t,h,y,y_new);
+	t=t+h;
+	y = y_new;
+      }
+    while (t<1.0);
+    CHECK_CLOSE(y[0],exp(t),pow(h,2));
+  }
+
+  TEST(Explicit_RK_Ralston) {
+    
+    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_Vector y(map);
+    Epetra_Vector y_new(map);
+
+    fn1 f;
+    Explicit_TI::RK::method_t method = Explicit_TI::RK::ralston;
+    Explicit_TI::RK explicit_time_integrator(f, method, y); 
+		
+    // initial value
+    y.PutScalar(1.0);
+
+    // initial time
+    double t=0.0;
+    // time step
+    double h=.1;
+    
+    // integrate to t=1.0
+    do 
+      {
+	explicit_time_integrator.step(t,h,y,y_new);
+	t=t+h;
+	y = y_new;
+      }
+    while (t<1.0);
+    CHECK_CLOSE(y[0],exp(t),pow(h,2));
+  }
+
 
   TEST(Explicit_RK_Kutta3D) {
     
