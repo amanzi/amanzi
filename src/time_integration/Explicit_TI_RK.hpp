@@ -13,14 +13,21 @@ namespace Explicit_TI {
   class RK {
 
     // this class implements several explicit Runge Kutta methods:
-    // forward Euler (1st order)
-    // Heun's method (2nd order)
-    // Kutta method  (3rd order)
-    // Runge Kutta   (4th order)
+    // forward Euler     (1st order)  --> forward_euler
+    // Heun-Euler method (2nd order)  --> heun_euler 
+    // Midpoint method   (2nd order)  --> midpoint 
+    // Ralston method    (2nd order)  --> ralston 
+    // Kutta method      (3rd order)  --> kutta_3rd_order
+    // Runge Kutta       (4th order)  --> runge_kutta_4th_order
 
   public:
 
-    enum method_t { forward_euler, heun_method, kutta_3rd_order, runge_kutta_4th_order };
+    enum method_t { forward_euler, 
+		    heun_euler, 
+		    midpoint, 
+		    ralston, 
+		    kutta_3rd_order, 
+		    runge_kutta_4th_order };
 
     RK(Explicit_TI::fnBase& fn_, const method_t method, const Epetra_MultiVector& example_vector_);
     ~RK();
