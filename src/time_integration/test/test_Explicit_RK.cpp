@@ -173,6 +173,50 @@ SUITE(TimeIntegrationTests) {
     CHECK_CLOSE(y[0],exp(t),pow(h,3));
   }
 
+  TEST(Explicit_RK_UserDefined) {
+    
+    Epetra_Comm* comm = new Epetra_SerialComm();    
+    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_Vector y(map);
+    Epetra_Vector y_new(map);
+
+    fn1 f;
+    int order = 2;
+    boost::numeric::ublas::matrix<double> a(order,order);
+    std::vector<double> b(order);
+    std::vector<double> c(order);
+    
+    a(1,0) = 1.0;
+
+    b[0] = 0.5;
+    b[1] = 0.5;
+
+    c[0] = 0.0;
+    c[1] = 1.0;
+
+    Explicit_TI::RK explicit_time_integrator(f, order, a, b, c, y); 
+		
+    // initial value
+    y.PutScalar(1.0);
+
+    // initial time
+    double t=0.0;
+    // time step
+    double h=.1;
+    
+    // integrate to t=1.0
+    do 
+      {
+	explicit_time_integrator.step(t,h,y,y_new);
+	t=t+h;
+	y = y_new;
+      }
+    while (t<1.0);
+
+
+    CHECK_CLOSE(y[0],exp(t),pow(h,2));
+  }
+
   TEST(Explicit_RK_RK4) {
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
@@ -202,6 +246,4 @@ SUITE(TimeIntegrationTests) {
     while (t<1.0);
     CHECK_CLOSE(y[0],exp(t),pow(h,4));
   }
-
-
 }

@@ -12,6 +12,32 @@ Explicit_TI::RK::RK(Explicit_TI::fnBase& fn_,
 }
 
 
+
+Explicit_TI::RK::RK(Explicit_TI::fnBase& fn_,
+		    const int order_,
+		    const boost::numeric::ublas::matrix<double> a_,
+		    const std::vector<double> b_,
+		    const std::vector<double> c_,
+		    const Epetra_MultiVector& example_vector):
+  fn(fn_), order(order_), method(Explicit_TI::RK::user_defined)
+{
+  a.resize(a_.size1(), a_.size2());
+  b.resize(b_.size());
+  c.resize(c_.size());
+
+  a = a_;
+  b = b_;
+  c = c_;
+
+  create_storage(example_vector); 
+}
+
+
+
+
+
+
+
 Explicit_TI::RK::~RK()
 {
   delete_storage();
