@@ -137,24 +137,24 @@ State
 =======================================
 
 The `"State`" parameter list is used to specify the phases, chemical composition and pressure that are to be stored on the discrete mesh during the simulation,
-along with the necessary initial and boundary data instructions.   The chemical state, including the definition of the tracer species and their reactions,
+along with the necessary initial and boundary data instructions.   The chemical state, including the definition of the tracer species and their reactions '''Note(bja/geh): a geochemical tracer is an inert species, we recommend "solute".''',
 is specified in conjunction with a chemistry database file, which is discussed below.
 
 In the general problem, multiple phases may coexist on the mesh (e.g. gaseous, aqueous, etc), and each is
 comprised of a number of components (section 2.2).  In turn, each component may carry a number of chemical species that participate
 in reactions.  While these species are assumed to have no direct impact on the thermodynamic properties of the carrying component, certain
-reactions such as percipitation may affect the flow properties of the rock itself during the simulation.  
+reactions such as precipitation may affect the flow properties of the rock itself during the simulation. '''Note(bja/geh): certain solutes can affect the properties of the fluid (e.g. brines affect the density).'''
 
 In Amanzi, trace chemical species in the aqueous phase are treated in "complexes", and it is assumed that each complex is in chemical equilibrium.
 Knowledge of the local concentration of a single species in a complex therefore determines completely the concentrations of the remaining members.
-As a result, for each complex, only a single species need be maintained in the state.  
+As a result, for each complex, only a single species need be maintained in the state.  '''Note(bja/geh):In reactive transport a set of primary or basis species (note that basis and primary are used interchangeably) are specified from which all secondary species (secondary aqueous complexes, surfaces complexes, etc) are constructed. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the aqueous free ion concentration and its stoichiometric contribution to all secondary species. In Amanzi, we split the total component concentration into total aqueous component and total sorbed component concentrations. Give the free ion concentration of each basis species, we can reconstruct the concentration of the secondary species. As a result only the basis species in the state.'''
 
-In addition to reacting trace species in the aqueous phase, the chemistry specification allows for various sets of immobile chemical constituents within the
-background (rock) media.  Examples include "minerals" and "surface complex sites". Bookkeeping for these constituents is managed in Amanzi
-data structures by generalizing trace species concept - a slot in the state is allocated for each of these species, but their concentrations are (optionally)
-not included in the transport/flow components of the numerical integration.  To allow selective treatment of the various trace chemical species, Amanzi
+In addition to reacting ~~trace~~ species in the aqueous phase, the chemistry specification allows for various sets of immobile chemical constituents within the
+background (rock) media.  Examples include "minerals" and "surface complexes". Bookkeeping for these constituents is managed in Amanzi
+data structures by generalizing ~~trace~~ species concept - a slot in the state is allocated for each of these species, but their concentrations are (optionally)
+not included in the transport/flow components of the numerical integration.  ~~To allow selective treatment of the various ~~trace~~ chemical species, Amanzi
 uses the concept of "groups".   The aqueous phase equilibrium complexes are typically treated together as a group, and often represent the only 
-chemical constituents that are transported with the the flow.
+chemical constituents that are transported with the the flow.~~ '''Note(bja/geh): Only the total aqueous component concentrations are considered in transport.'''
 
 Definition of the state depends on the contents of the chemistry database file.  The chemistry database is discussed first, and then the parameters used
 to define the state based on the chemistry database are outlined next.
@@ -169,7 +169,7 @@ Simple Database format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The `"simple"` (file extension `"bgd"`) format
-requires explicit specification of all the species and reactions. There is no basis
+requires explicit specification of all the species and reactions. There is currently no basis
 switching or automatic species and reaction selection. The `"simple`" format supports specifying up to four species groups:
 `"Aqueous Equilibrium Complexes"` `"Minerals"` `"Ion Exchange Sites"` `"Sorption Sites"`.
 Note that a typical chemistry database file defines a superset of the reaction physics
@@ -177,7 +177,7 @@ of interest; the relevant subset is specified via the `"State`" parameter list a
 
 In the `"simple`" format, the `"Aqueous Equilibrium Complexes"` group is assumed to be the only one that is transported with the flow.
 This group lists one chemical species as a `"Primary Species`" for each of the complexes; this is the only species in the complex that
-should be specified as a constituent of the `"State`".
+should be specified as a constituent of the `"State`". '''Note(bja/geh): This is incorrect. The total aqueous component concentrations, one for each primary species, are the solute concentrations that are transported.'''
 
 Below is an example of a `"simple"` database file for a five component uranium problem with mineral dissolution and surface complexation:
 
