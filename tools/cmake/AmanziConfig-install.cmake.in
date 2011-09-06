@@ -1,0 +1,58 @@
+# ############################################################################ #
+#
+#  Amanzi Configuration File 
+#  To import into other CMake projects
+#
+# ############################################################################ #
+
+#
+# Directories
+#
+set(Amanzi_BUILD_DIR  @AMANZI_BINARY_DIR@)
+set(Amanzi_SOURCE_DIR @AMANZI_SOURCE_DIR@)
+
+set(Amanzi_INSTALL_PREFIX @CMAKE_INSTALL_PREFIX@)
+set(Amanzi_INCLUDE_DIR    @CMAKE_INSTALL_PREFIX@/include)
+set(Amanzi_LIB_DIR        @CMAKE_INSTALL_PREFIX@/lib)
+set(Amanzi_BINARY_DIR     @CMAKE_INSTALL_PREFIX@/bin)
+
+#
+# Version
+#
+set(Amanzi_VERSION          @AMANZI_VERSION@)
+
+#
+# Compilation 
+#
+set(Amanzi_BUILD_TYPE        @CMAKE_BUILD_TYPE@)
+
+set(Amanzi_BUILD_SHARED_LIBS @BUILD_SHARED_LIBS@)
+
+set(Amanzi_C_COMPILER        @CMAKE_C_COMPILER@)
+set(Amanzi_CXX_COMPILER      @CMAKE_CXX_COMPILER@)
+set(Amanzi_Fortran_COMPILER  @CMAKE_Fortran_COMPILER@)
+
+set(Amanzi_C_COMPILER_FLAGS  "@CMAKE_C_FLAGS@ ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+set(Amanzi_CXX_COMPILER_FLAGS  "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+set(Amanzi_Fortran_COMPILER_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_DEBUG}")
+
+# 
+# Code configuration options
+#
+
+# Grid support
+set(Amanzi_ENABLE_STRUCTURED      @ENABLE_STRUCTURED@)
+set(Amanzi_ENABLE_UNSTRUCTURED    @ENABLE_UNSTRUCTURED@)
+
+# Mesh frameworks
+set(Amanzi_ENABLE_STK_Mesh        @ENABLE_STK_Mesh@)
+set(Amanzi_ENABLE_MOAB_Mesh       @ENABLE_MOAB_Mesh@)
+set(Amanzi_ENABLE_MSTK_Mesh       @ENABLE_MSTK_Mesh@)
+
+# CCSE Options
+set(Amanzi_CCSE_ENABLE_MPI        @ENABLE_MPI@)
+set(Amanzi_CCSE_ENABLE_OpenMP     @ENABLE_OpenMP@)
+set(Amanzi_CCSE_SPACEDIM          @AMANZI_SPACEDIM@)
+set(Amanzi_CCSE_PRECISION         @AMANZI_PRECISION@)
+
+

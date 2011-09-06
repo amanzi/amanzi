@@ -39,7 +39,7 @@ function ( ADD_INSTALL_LIBRARY )
 
   install(
     TARGETS ${ARGV}
-    EXPORT AmanziConfig
+    EXPORT AmanziTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     )
@@ -69,7 +69,7 @@ function ( ADD_INSTALL_BINARY )
 foreach(_bin_file ${ARGV})
   install(
     TARGETS ${_bin_file}
-    EXPORT AmanziConfig
+    EXPORT AmanziTargets
     DESTINATION bin
     )
 endforeach()
@@ -107,7 +107,22 @@ set(out_makefile "${AMANZI_BINARY_DIR}/Makefile.export")
 configure_file("${in_makefile}" "${out_makefile}")
 install(FILES "${out_makefile}" DESTINATION lib)
 
-# Write the CMake configuration file
-install(EXPORT AmanziConfig DESTINATION lib)
+# Write the AmanziConfig.cmake file
+set(in_config   "${AMANZI_MODULE_PATH}/AmanziConfig-install.cmake.in")
+set(out_config   "${AMANZI_BINARY_DIR}/AmanziConfig.cmake")
+configure_file(${in_config} ${out_config})
+install(FILES ${out_config} DESTINATION lib)
+
+# Write the AmanziConfigVersion.cmake file
+set(in_config   "${AMANZI_MODULE_PATH}/AmanziConfigVersion-install.cmake.in")
+set(out_config   "${AMANZI_BINARY_DIR}/AmanziConfigVersion.cmake")
+configure_file(${in_config} ${out_config} @ONLY)
+install(FILES ${out_config} DESTINATION lib)
+
+# Write the CMake configuration target file
+install(EXPORT AmanziTargets
+        DESTINATION lib
+	NAMESPACE amanzi_
+	FILE AmanziTargets.cmake)
 
 endfunction()
