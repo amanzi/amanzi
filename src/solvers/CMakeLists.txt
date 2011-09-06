@@ -44,7 +44,7 @@ target_link_libraries(solvers error_handling ${solvers_tpl_libs})
 #
 # Install Targets
 #
-file(GLOB solver_inc_files "*.hpp")
+file(GLOB solver_inc_files "*.H")
 add_install_include_file(${solver_inc_files})
 
 if (BUILD_TESTS)
