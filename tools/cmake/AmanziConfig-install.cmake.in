@@ -41,8 +41,8 @@ set(Amanzi_Fortran_COMPILER_FLAGS  "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS
 #
 
 # Grid support
-set(Amanzi_ENABLE_STRUCTURED      @ENABLE_STRUCTURED@)
-set(Amanzi_ENABLE_UNSTRUCTURED    @ENABLE_UNSTRUCTURED@)
+set(Amanzi_ENABLE_STRUCTURED      @ENABLE_Structured@)
+set(Amanzi_ENABLE_UNSTRUCTURED    @ENABLE_Unstructured@)
 
 # Mesh frameworks
 set(Amanzi_ENABLE_STK_Mesh        @ENABLE_STK_Mesh@)
@@ -54,5 +54,29 @@ set(Amanzi_CCSE_ENABLE_MPI        @ENABLE_MPI@)
 set(Amanzi_CCSE_ENABLE_OpenMP     @ENABLE_OpenMP@)
 set(Amanzi_CCSE_SPACEDIM          @AMANZI_SPACEDIM@)
 set(Amanzi_CCSE_PRECISION         @AMANZI_PRECISION@)
+
+# External Packages
+
+#
+# Trilinos
+#
+set(Amanzi_TPL_Trilinos_DIR                @Trilinos_DIR@)
+set(Amanzi_TPL_Trilinos_INCLUDE_DIRS       @Trilinos_INCLUDE_DIRS@)
+set(Amanzi_TPL_Trilinos_LIBRARY_DIRS       @Trilinos_LIBRARY_DIRS@)
+
+#
+# HDF5
+#
+set(Amanzi_TPL_HDF5_DIR                @HDF5_DIR@)
+set(Amanzi_TPL_HDF5_INCLUDE_DIRS       @HDF5_INCLUDE_DIRS@)
+set(Amanzi_TPL_HDF5_LIBRARY_DIRS       @HDF5_LIBRARY_DIRS@)
+
+#
+# CGNS
+#
+set(Amanzi_TPL_CGNS_DIR                @CGNS_DIR@)
+set(Amanzi_TPL_CGNS_INCLUDE_DIRS       @CGNS_INCLUDE_DIRS@)
+set(Amanzi_TPL_CGNS_LIBRARY_DIRS       @CGNS_LIBRARY_DIR@)
+
 
 
