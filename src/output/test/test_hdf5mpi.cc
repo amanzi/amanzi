@@ -18,7 +18,7 @@ TEST(HDF5_MPI) {
   //Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
   //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1,
   //                                        comm));
-  Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
+  Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm);
 
   unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, 
                                                 Amanzi::AmanziMesh::OWNED);
@@ -42,8 +42,8 @@ TEST(HDF5_MPI) {
   node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
 
   // Setup cell quantity
-  int cell_index_list[] = {0, 1, 2, 3};
-  double cell_values[] = {10.0, 20.0, 30.0, 40.0};
+  int cell_index_list[] = {0, 1, 2, 3, 4, 5, 6, 7};
+  double cell_values[] = {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0};
   cell_quantity = Teuchos::rcp(new Epetra_Vector(Mesh.cell_map(false)));
   cell_quantity->ReplaceGlobalValues(4, cell_values, cell_index_list);
 
@@ -61,11 +61,12 @@ TEST(HDF5_MPI) {
   Amanzi::HDF5_MPI *restart_output = new Amanzi::HDF5_MPI(*comm);
   restart_output->setTrackXdmf(false);
   restart_output->createDataFile(hdf5_datafile2);
+  restart_output->createMeshFile(Mesh, hdf5_datafile2);
 
   double time = 0.0;
   for (int i = 0; i < 15; i++) {
     
-    cell_quantity->ReplaceGlobalValues(4, cell_values, cell_index_list);
+    cell_quantity->ReplaceGlobalValues(8, cell_values, cell_index_list);
     fake_pressure->ReplaceGlobalValues(4, fake_values, cell_index_list);
     node_quantity->ReplaceGlobalValues(12, node_values, node_index_list);
     
@@ -93,15 +94,15 @@ TEST(HDF5_MPI) {
   restart_output->writeCellDataReal(*fake_pressure, "pressure");
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
   
-  //cout << "E>> compare results" << endl;
-  //cout << "E>> original:" << endl << *cell_quantity;
+  cout << "E>> compare results" << endl;
+  cout << "E>> original:" << endl << *cell_quantity;
   // test reading data back
   Teuchos::RCP<Epetra_Vector> read_quantity;
   read_quantity = Teuchos::rcp(new Epetra_Vector(Mesh.cell_map(false)));
   cout << endl;
   restart_output->readData(*read_quantity, "cell_quantity");
   
-  //cout << "E>> read back:" << endl << *read_quantity;
+  cout << "E>> read back:" << endl << *read_quantity;
   
   delete viz_output;
   delete restart_output;
