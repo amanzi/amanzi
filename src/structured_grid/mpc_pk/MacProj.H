@@ -1,7 +1,7 @@
 #ifndef _MacProj_H_
 #define _MacProj_H_
 //
-// $Id: MacProj.H,v 1.30 2011-08-10 17:36:05 lijewski Exp $
+// $Id: MacProj.H,v 1.33 2011-08-28 05:54:53 gpau Exp $
 //
 #include <BC_TYPES.H>
 #include <BC_TYPES_PM.H>
@@ -9,7 +9,7 @@
 #include <Amr.H>
 #include <AmrLevel.H>
 #include <FluxRegister.H>
-#include <MacBndry.H>
+#include <PressBndry.H>
 #include "Godunov.H"
 
 class MacProj
@@ -36,7 +36,7 @@ public:
 		    MultiFab*        RhoD,
 		    MultiFab*        forces,
 		    MultiFab*        pressure,
-		    const MacBndry&  mac_bndry,
+		    const PressBndry&  mac_bndry,
 		    const BCRec&     p_bc);
 
   void print_min_max (MultiFab* u_mac);

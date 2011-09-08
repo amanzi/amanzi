@@ -987,6 +987,78 @@ Diffusion::residual_richard (ABecLaplacian*         visc_op,
 	}
     }
 }
+
+void 
+Diffusion::residual_richard (MGT_Solver&               mgt_solver,
+			     Real                      dt,
+			     Real                      gravity,
+			     Array<Real>               density,
+			     MultiFab**                Rhs,
+			     PArray<MultiFab>&         pc,
+			     Array<PArray<MultiFab> >& beta,
+			     PArray<MultiFab>&         alpha,
+			     PArray<MultiFab>&         res_fix,
+			     MultiFab**                S,
+			     ViscBndry                 visc_bndry)
+{ 
+  int nlevs = alpha.size();
+  MultiFab* soln[alpha.size()];
+  
+  for (int lev=0; lev<nlevs;lev++)
+    soln[lev] = &pc[lev];
+
+  mgt_solver.applyop(soln,Rhs,visc_bndry);
+
+  for (int lev = 0; lev < nlevs; lev++) 
+    { 
+      MultiFab::Add(*Rhs[lev],res_fix[lev],0,0,1,0);
+      // gravity term
+      const Real* dx   = parent->Geom(lev).CellSize();
+      for (MFIter mfi(*Rhs[lev]); mfi.isValid(); ++mfi)
+	{
+	  const int* lo   = mfi.validbox().loVect();
+	  const int* hi   = mfi.validbox().hiVect();
+	  
+	  FArrayBox& rg       = (*Rhs[lev])[mfi];  
+	  const FArrayBox& bx = beta[0][lev][mfi];
+	  const FArrayBox& by = beta[1][lev][mfi];
+	  
+	  DEF_LIMITS (rg,rg_dat,rglo,rghi);
+	  DEF_CLIMITS(bx,bx_dat,bxlo,bxhi);
+	  DEF_CLIMITS(by,by_dat,bylo,byhi);
+#if (BL_SPACEDIM==3)
+	  const FArrayBox& bz = beta[2][lev][mfi];
+	  DEF_CLIMITS(bz,bz_dat,bzlo,bzhi);
+#endif
+	  FORT_DRHOG_RICHARD (rg_dat, ARLIM(rglo), ARLIM(rghi),
+			      bx_dat, ARLIM(bxlo), ARLIM(bxhi),
+			      by_dat, ARLIM(bylo), ARLIM(byhi),
+#if (BL_SPACEDIM==3)
+			      bz_dat, ARLIM(bzlo), ARLIM(bzhi),
+#endif
+			      &density[0],lo,hi,dx,&gravity,&dt);
+	}
+
+      // res  = res + \phi (n(t+dt))
+      const BoxArray& grd = alpha[lev].boxArray();
+      MultiFab Tmp(grd,1,0);
+      MultiFab::Copy(Tmp,*S[lev],0,0,1,0);
+      for (MFIter mfi(Tmp); mfi.isValid(); ++mfi)
+	{
+	  const Box& box = mfi.validbox();
+	  Tmp[mfi].mult(alpha[lev][mfi],box,0,0,1);
+	  (*Rhs[lev])[mfi].plus(Tmp[mfi],box,0,0,1);
+	}
+    }
+
+    for (int lev = nlevs-2; lev >= 0; lev--)
+    {
+      PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+      pm->avgDown(Rhs[lev],lev,Rhs[lev+1],lev+1);
+    }
+}
+
+
 #endif
 
 void 
@@ -1198,6 +1270,200 @@ Diffusion::richard_iter (Real                   dt,
 
   removeFluxBoxesLevel(betatmp);
   delete visc_op;
+}
+
+void
+Diffusion::richard_composite_iter (Real                      dt,
+				   int                       nlevs,
+				   int                       nc,
+				   Real                      gravity,
+				   Array<Real>               density,
+				   PArray<MultiFab>&         res_fix,
+				   PArray<MultiFab>&         alpha, 
+				   Array<PArray<MultiFab> >& beta,
+				   Array<PArray<MultiFab> >& beta_dp,
+				   PArray<MultiFab>&         pc,
+				   const bool                do_upwind,
+				   Real*                     err_nwt)
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richard_composite_iter()");
+  //
+  // This routine solves the time-dependent richards equation based on 
+  // composite solve.
+  //
+
+  // setup multilevel objects
+  Real b = -dt*density[0];
+  MultiFab* Rhs[nlevs];
+  MultiFab* Soln[nlevs];
+  std::vector<BoxArray> bav(nlevs);
+  std::vector<DistributionMapping> dmv(nlevs);
+  std::vector<Geometry> geom(nlevs);    
+  for (int lev = 0; lev < nlevs; lev++) 
+    {
+      MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
+      bav[lev]  = S.boxArray();
+      dmv[lev]  = S.DistributionMap();
+      geom[lev] = parent->Geom(lev+level);
+
+      Rhs[lev]  = new MultiFab(bav[lev],1,0);
+      Rhs[lev]->setVal(0.);
+      Soln[lev] = new MultiFab(bav[lev],1,1);
+      MultiFab::Copy(*Soln[lev],S,nc,0,1,1);
+    }
+  Real snorm = (*Soln[0]).norm2(0);
+  
+  ViscBndry visc_bndry;     
+  const BCRec& bc     = caller->get_desc_lst()[Press_Type].getBC(0);
+  const Real cur_time = caller->get_state_data(State_Type).curTime();
+  IntVect ref_ratio   = level > 0 ? 
+    parent->refRatio(level-1) : IntVect::TheUnitVector();
+  getBndryData(visc_bndry,nc,1,cur_time);
+  visc_bndry.setScalarValues(bc,ref_ratio,&pc[0]);
+
+  int nc_opt = 2;
+  Array< Array<Real> > xa(nlevs);
+  Array< Array<Real> > xb(nlevs);
+  PArray<MultiFab> a1_p(nlevs,PArrayManage);
+  PArray<MultiFab> a2_p;
+
+  for (int lev=0; lev<nlevs; lev++)
+    {
+      a1_p.set(lev,new MultiFab(alpha[lev].boxArray(),alpha[lev].nComp(),
+				alpha[lev].nGrow()));
+      a1_p[lev].setVal(0.);
+    }
+
+  MGT_Solver mgt_solver = getOp(0,nlevs,geom,bav,dmv, xa, xb,cur_time,
+				visc_bndry,bc,true);
+  
+  // Setup RHS
+  mgt_solver.set_maxorder(2);
+  mgt_solver.set_porous_coefficients(a1_p, a2_p, beta, b, xa, xb, nc_opt); 
+  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhs,
+		   pc,beta,alpha,res_fix,Soln,visc_bndry);
+  Real prev_res_norm = (*Rhs[0]).norm2(0);
+
+  // preconditioning the residual.
+  // If beta_dp is the exact Jacobian, then this is the Newton step.
+  
+  if (beta_dp.size() > 0)
+    {
+      for (int lev=0; lev<nlevs; lev++)
+	{
+	  (*Rhs[lev]).mult(-1.0);
+	  (*Soln[lev]).setVal(0.);
+	}
+
+      Real b_dp = dt*density[0];   
+      const Real S_tol     = visc_tol;
+      const Real S_tol_abs = visc_abs_tol;
+      Real final_resnorm;
+      int  fill_bcs_for_gradient = 1; 
+      mgt_solver.set_maxorder(2);
+      mgt_solver.set_porous_coefficients(alpha, a2_p, beta_dp, b_dp, xa, xb, nc_opt);    
+      mgt_solver.solve(Soln, Rhs, S_tol, S_tol_abs, 
+		       fill_bcs_for_gradient, final_resnorm);
+
+      for (int lev = nlevs-2; lev >= 0; lev--)
+	{
+	  PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+	  pm->avgDown(Soln[lev],lev,Soln[lev+1],lev+1);
+	}
+    }
+  
+  // line search 
+  MultiFab* Stmp[nlevs];
+  MultiFab* Rhsp1[nlevs];
+  PArray<MultiFab> pctmp(nlevs, PArrayManage);
+  Array<PArray<MultiFab> > betatmp(BL_SPACEDIM);
+
+  for (int dir=0; dir<BL_SPACEDIM; dir++)
+    betatmp[dir].resize(nlevs,PArrayNoManage);
+  
+  for (int lev=0; lev<nlevs; lev++)
+    {  
+      PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+
+      pctmp.set(lev,new MultiFab(bav[lev],1,1));
+
+      for (int dir=0; dir<BL_SPACEDIM; dir++)
+	{
+	  BoxArray ba = bav[lev];
+	  ba.surroundingNodes(dir);
+	  betatmp[dir].set(lev, new MultiFab(ba,beta[dir][lev].nComp(),0));
+	}
+
+      Stmp[lev]  = new MultiFab(bav[lev],1,1);
+      MultiFab& S = pm->get_new_data(State_Type);
+      MultiFab::Copy(*Stmp[lev],S,nc,0,1,1);
+      MultiFab::Add(*Stmp[lev],*Soln[lev],0,0,1,0);
+      
+      MultiFab* tmp_betatmp[BL_SPACEDIM];
+      MultiFab* tmp_umac = pm->u_mac_curr;
+      for (int dir=0;dir<BL_SPACEDIM;dir++)
+	tmp_betatmp[dir] = &betatmp[dir][lev];
+      pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
+      MultiFab lambda(bav[lev],pm->ncomps,1);
+      pm->calcLambda(&lambda,*Stmp[lev]);
+      pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
+      Rhsp1[lev] = new MultiFab(bav[lev],1,0);
+    }
+  mgt_solver.set_maxorder(2);
+  mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
+  residual_richard(mgt_solver,dt*density[0],gravity,density,Rhsp1,
+		   pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
+
+  Real rhsp1_norm = (*Rhsp1[0]).norm2(0);
+  Real alphak = 1.0;
+  int iter = 0;
+  while (iter < 10 && rhsp1_norm > prev_res_norm && alphak > 1.e-3) 
+    {
+        for (int lev=0; lev<nlevs; lev++)
+	  {
+	    (*Rhsp1[lev]).setVal(0.);
+	    alphak = 0.1*alphak;
+	    (*Soln[lev]).mult(0.1);
+	    MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
+	    MultiFab::Copy(*Stmp[lev],S,nc,0,1,1);
+	    MultiFab::Add(*Stmp[lev],*Soln[lev],0,0,1,0);
+      
+	    PorousMedia* pm = dynamic_cast<PorousMedia*>(&parent->getLevel(lev));
+
+	    MultiFab* tmp_betatmp[BL_SPACEDIM];
+	    MultiFab* tmp_umac = pm->u_mac_curr;
+	    for (int dir=0;dir<BL_SPACEDIM;dir++)
+	      tmp_betatmp[dir] = &betatmp[dir][lev];
+
+	    MultiFab lambda(bav[lev],pm->ncomps,1);
+	    pm->calcLambda(&lambda,*Stmp[lev]);
+	    pm->calcCapillary(&pctmp[lev],*Stmp[lev]);
+	    pm->calc_richard_coef(tmp_betatmp,&lambda,tmp_umac,0,do_upwind);
+	  }
+	mgt_solver.set_porous_coefficients(a1_p, a2_p, betatmp, b, xa, xb, nc_opt); 
+	residual_richard(mgt_solver,dt*density[0],gravity,density,
+			 Rhsp1,pctmp,betatmp,alpha,res_fix,Stmp,visc_bndry);
+
+	rhsp1_norm = (*Rhsp1[0]).norm2(0);
+    }
+
+  for (int lev=0; lev<nlevs;lev++)
+    {
+      MultiFab& S = parent->getLevel(lev).get_new_data(State_Type);
+      MultiFab::Copy(S,*Stmp[lev],0,nc,1,1);
+    }
+
+  // Compute the err_nwt
+  *err_nwt = rhsp1_norm/snorm;
+
+  for (int lev = 0; lev < nlevs; lev++)
+    {
+      delete Soln[lev];
+      delete Rhs[lev];
+      delete Stmp[lev];
+      delete Rhsp1[lev];
+    }
+
 }
 
 void
@@ -1441,7 +1707,7 @@ Diffusion::richard_flux( int                    nc,
   Real a = 0.0;
   Real b = be_cn_theta;
   ViscBndry visc_bndry;
-  //const BCRec& bc     = caller->get_desc_lst()[State_Type].getBC(nc); 
+
   const BCRec& bc     = caller->get_desc_lst()[Press_Type].getBC(0);
   const Real cur_time = caller->get_state_data(State_Type).curTime();
   IntVect ref_ratio   = level > 0 ? 
@@ -1453,8 +1719,7 @@ Diffusion::richard_flux( int                    nc,
   MultiFab::Copy(Soln,*pc,0,0,1,1);
   visc_op->compFlux(D_DECL(*flux[0],*flux[1],*flux[2]),Soln);
   for (int i = 0; i < BL_SPACEDIM; ++i)
-    (*flux[i]).mult(density[0]*b/caller->Geom().CellSize()[i]);
-
+    (*flux[i]).mult(b);
   delete visc_op;
 
   const Real* dx   = caller->Geom().CellSize();
@@ -1488,6 +1753,15 @@ Diffusion::richard_flux( int                    nc,
 			    bz_dat, ARLIM(bzlo), ARLIM(bzhi),
 #endif
 			    &density[0],lo,hi,dx,&gravity,&b);
+    }
+
+  for (int i = 0; i < BL_SPACEDIM; ++i)
+    {
+      for (MFIter fmfi(*flux[i]); fmfi.isValid(); ++fmfi)
+	{
+	  const int idx = fmfi.index();
+	  (*flux[i])[idx].mult((area[i])[idx],0,0,1);
+	}
     }
 }
 
@@ -2187,14 +2461,14 @@ Diffusion::setBeta (ABecLaplacian*         visc_op,
 
 #ifdef MG_USE_FBOXLIB
 MGT_Solver
-Diffusion::getOp (int        comp,
-		  int        nlevs,
+Diffusion::getOp (int                   comp,
+		  int                   nlevs,
 		  Array< Array<Real> >& xa,
 		  Array< Array<Real> >& xb,
-		  Real       time,
-		  ViscBndry& visc_bndry,
-		  const BCRec& bc, 
-		  bool	 bndry_already_filled)
+		  Real                  time,
+		  ViscBndry&            visc_bndry,
+		  const BCRec&          bc, 
+		  bool	                bndry_already_filled)
 {
 
   bool nodal = false;
@@ -2259,17 +2533,17 @@ Diffusion::getOp (int        comp,
 }
 
 MGT_Solver
-Diffusion::getOp (int        comp,
-		  int        nlevs,
-		  std::vector<Geometry> geom,
-		  std::vector<BoxArray> bav,
+Diffusion::getOp (int                              comp,
+		  int                              nlevs,
+		  std::vector<Geometry>            geom,
+		  std::vector<BoxArray>            bav,
 		  std::vector<DistributionMapping> dmv,
-		  Array< Array<Real> >& xa,
-		  Array< Array<Real> >& xb,
-		  Real       time,
-		  ViscBndry& visc_bndry,
-		  const BCRec& bc, 
-		  bool	 bndry_already_filled)
+		  Array< Array<Real> >&            xa,
+		  Array< Array<Real> >&            xb,
+		  Real                             time,
+		  ViscBndry&                       visc_bndry,
+		  const BCRec&                     bc, 
+		  bool	                           bndry_already_filled)
 {
   bool nodal = false;
 
@@ -2394,6 +2668,52 @@ Diffusion::coefs_fboxlib_mg (PArray<MultiFab>&          acoefs,
 	bcoefs[dir][0][idx].mult(dx[dir]);
     }
   }
+}
+
+void
+Diffusion::coefs_fboxlib_mg (PArray<MultiFab>&          acoefs,
+			     Array< PArray<MultiFab> >& bcoefs,
+			     PArray<MultiFab>&          alpha,
+			     Array< PArray<MultiFab> >& beta,
+			     const Real                 a,
+			     int                        nlevs)
+{		
+  //
+  // Compute the alpha and beta for fboxlib.
+  // Quantities are not multiplied by volume.
+  //
+  if (acoefs.size() == 0)
+    {
+      acoefs.resize(nlevs,PArrayManage);
+      for (int lev=0; lev<nlevs; lev++)
+	{
+	  acoefs.set(lev,new MultiFab(alpha[lev].boxArray(),1,0,Fab_allocate));
+	  acoefs[lev].setVal(0.);
+	}
+    }  
+ 
+  if (a > 0) 
+    {
+      for (int lev=0; lev<nlevs; lev++)
+	MultiFab::Copy(acoefs[lev],alpha[lev],0,0,1,0);
+    }  
+
+
+  int n_comps = beta[0][0].nComp();
+  for (int dir = 0; dir < BL_SPACEDIM; dir++)
+    {
+      if (bcoefs[dir].size()==0)
+	{
+	  bcoefs[dir].resize(nlevs,PArrayManage);
+	  for (int lev=0; lev<nlevs; lev++)
+	    {
+	      bcoefs[dir].set(lev,new MultiFab(beta[dir][lev].boxArray(),
+					       n_comps,0,Fab_allocate));
+	      MultiFab::Copy(bcoefs[dir][lev],beta[dir][lev],0,0,n_comps,0);
+	    }
+	}
+    }
+
 }
 #endif
 

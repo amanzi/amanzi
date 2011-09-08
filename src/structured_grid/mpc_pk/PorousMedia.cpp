@@ -93,6 +93,9 @@ PorousMedia::variableCleanUp ()
   for (int i=0;i<region_array.size();i++)
     delete region_array[i];
 
+  rock_array.clear();
+  observation_array.clear();
+  source_array.clear();
   region_array.clear();
 
 #ifdef AMANZI
@@ -924,6 +927,7 @@ PorousMedia::init (AmrLevel& old)
   {
     P_new[fpi.index()].copy(fpi());
   }
+
   //
   // Get best edge-centered velocity data: from old.
   //
@@ -939,6 +943,15 @@ PorousMedia::init (AmrLevel& old)
 	}
       is_grid_changed_after_regrid = false;
     }
+
+
+  /*  if (!is_grid_changed_after_regrid && model == model_list["richard"])
+    {
+      MultiFab P_tmp(grids,1,1);
+      MultiFab::Copy(P_tmp,P_new,0,0,1,1);
+      P_tmp.mult(-1.0);
+      calcInvCapillary(S_new,P_tmp);
+      }*/
 
   //
   // Get best cell-centered velocity data: from old.
@@ -1239,133 +1252,316 @@ PorousMedia::advance (Real time,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::advance()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
-    {
-      std::cout << "Advancing grids at level " << level
-		<< " : starting time = "       << time
-		<< " with dt = "               << dt << '\n';
-    }
-
-  advance_setup(time,dt,iteration,ncycle);
-
-  FillPatchedOldState_ok = true;
-  //
-  // Advance the old state for a Strang-split dt/2.  Include grow cells in
-  // advance, and squirrel these away for diffusion and Godunov guys to
-  // access for overwriting non-advanced fill-patched grow cell data.
-  //
-  MultiFab& S_new = get_new_data(State_Type);
-  MultiFab& S_old = get_old_data(State_Type);
-
-  MultiFab& P_new = get_new_data(Press_Type);
-  MultiFab& P_old = get_old_data(Press_Type);
-
-  MultiFab::Copy(S_new,S_old,0,0,NUM_SCALARS,S_old.nGrow()); 
-  MultiFab::Copy(P_new,P_old,0,0,1,P_old.nGrow());
-
-  const Real pcTime = state[State_Type].curTime();
-
-  FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
-  FillStateBndry (pcTime,Press_Type,0,1);
-  //
-  // If do_chem <= -1, then no reaction.
-  // Otherwise, type of reactions depends on magnitude of do_chem.
-  //
-  if (do_chem > -1)
-    {
-      if (do_full_strang)
-	{
-	  if (verbose && ParallelDescriptor::IOProcessor())
-	    std::cout << "... advancing 1/2 strang step for chemistry\n";
-          //
-	  // tmpFABs holds data from aux_boundary_data_old after reaction.
-          //
-          // We force it to have same distribution as aux_boundary_data_old.
-          //
-	  MultiFab tmpFABs;
-
-          BL_ASSERT(aux_boundary_data_old.nComp() == ncomps+ntracers);
-
-	  tmpFABs.define(aux_boundary_data_old.equivBoxArray(),
-			 ncomps+ntracers,
-                         0,
-			 aux_boundary_data_old.DistributionMap(),
-			 Fab_allocate);
-
-          tmpFABs.setVal(1.e30);
-
-          const int ngrow = aux_boundary_data_old.nGrow();
-
-          BoxArray ba(S_old.boxArray());
-
-          ba.grow(ngrow);
-          //
-          // This MF is guaranteed to cover tmpFABs & valid region of S_old.
-          //
-          MultiFab tmpS_old(ba,ntracers,0);
-          //
-          // Note that S_old & tmpS_old have the same distribution.
-          //
-          for (FillPatchIterator fpi(*this,S_old,ngrow,time,State_Type,ncomps,ntracers);
-               fpi.isValid();
-               ++fpi)
-          {
-              tmpS_old[fpi.index()].copy(fpi());
-          }
-
-          tmpFABs.copy(tmpS_old,0,ncomps,ntracers);
-
-          tmpS_old.clear();
-          //
-          // strang_chem() expects ncomps+ntracers but only uses and/or modifies ntracers.
-          //
-	  strang_chem(tmpFABs,dt/2,ngrow);
-          //
-          // Only copy the tracer stuff.
-          //
-	  aux_boundary_data_old.copyFrom(tmpFABs,ncomps,ncomps,ntracers);
-
-          tmpFABs.clear();
-
-	  strang_chem(S_old,dt/2);
-
-	  FillPatchedOldState_ok = false;
-	}
-    }
-  // 
-  // do_simple: 2 ==> Only solve the tracer equations; assume steady state.
-  //            1 ==> Only solve the pressure equation at time 0.
-  //            0 ==> Solve the pressure equation at every timestep.
-  //
-#ifdef MG_USE_FBOXLIB
-  if (model == model_list["richard"]) 
-    {
-      advance_richard(time,dt);
-    }
+  if (do_multilevel_full) 
+  {
+    if (level == 0)
+      multilevel_advance(time,dt,iteration,ncycle);
+    else
+      if (verbose && ParallelDescriptor::IOProcessor())
+	std::cout << " Doing multilevel solve : skipping level advance.\n";
+  }
   else
-#endif
-    {
-      if (do_simple == 2 && !is_grid_changed_after_regrid)
-	advance_tracer(time,dt);
-      else if (do_simple == 1  && !is_grid_changed_after_regrid)
-	advance_simple(time,dt);
-      else
-	advance_incompressible(time,dt);
-    }
+  {
+    if (verbose && ParallelDescriptor::IOProcessor())
+      {
+	std::cout << "Advancing grids at level " << level
+		  << " : starting time = "       << time
+		  << " with dt = "               << dt << '\n';
+      }
 
-  is_grid_changed_after_regrid = false;
+    advance_setup(time,dt,iteration,ncycle);
+
+    FillPatchedOldState_ok = true;
+    //
+    // Advance the old state for a Strang-split dt/2.  Include grow cells in
+    // advance, and squirrel these away for diffusion and Godunov guys to
+    // access for overwriting non-advanced fill-patched grow cell data.
+    //
+    MultiFab& S_new = get_new_data(State_Type);
+    MultiFab& S_old = get_old_data(State_Type);
     
+    MultiFab& P_new = get_new_data(Press_Type);
+    MultiFab& P_old = get_old_data(Press_Type);
+    
+    MultiFab::Copy(S_new,S_old,0,0,NUM_SCALARS,S_old.nGrow()); 
+    MultiFab::Copy(P_new,P_old,0,0,1,P_old.nGrow());
+    
+    const Real pcTime = state[State_Type].curTime();
+    
+    FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
+    FillStateBndry (pcTime,Press_Type,0,1);
+    //
+    // If do_chem <= -1, then no reaction.
+    // Otherwise, type of reactions depends on magnitude of do_chem.
+    //
+    if (do_chem > -1)
+      {
+	if (do_full_strang)
+	  {
+	    if (verbose && ParallelDescriptor::IOProcessor())
+	      std::cout << "... advancing 1/2 strang step for chemistry\n";
+	    //
+	    // tmpFABs holds data from aux_boundary_data_old after reaction.
+	    //
+	    // We force it to have same distribution as aux_boundary_data_old.
+	    //
+	    MultiFab tmpFABs;
+	    
+	    BL_ASSERT(aux_boundary_data_old.nComp() == ncomps+ntracers);
+	    
+	    tmpFABs.define(aux_boundary_data_old.equivBoxArray(),
+			   ncomps+ntracers,
+			   0,
+			   aux_boundary_data_old.DistributionMap(),
+			   Fab_allocate);
+	    
+	    tmpFABs.setVal(1.e30);
+	    
+	    const int ngrow = aux_boundary_data_old.nGrow();
+
+	    BoxArray ba(S_old.boxArray());
+
+	    ba.grow(ngrow);
+	    //
+	    // This MF is guaranteed to cover tmpFABs & valid region of S_old.
+	    //
+	    MultiFab tmpS_old(ba,ntracers,0);
+	    //
+	    // Note that S_old & tmpS_old have the same distribution.
+	    //
+	    for (FillPatchIterator fpi(*this,S_old,ngrow,time,State_Type,ncomps,ntracers);
+		 fpi.isValid();
+		 ++fpi)
+	      {
+		tmpS_old[fpi.index()].copy(fpi());
+	      }
+	    
+	    tmpFABs.copy(tmpS_old,0,ncomps,ntracers);
+	    
+	    tmpS_old.clear();
+	    //
+	    // strang_chem() expects ncomps+ntracers but only uses and/or modifies ntracers.
+	    //
+	    strang_chem(tmpFABs,dt/2,ngrow);
+	    //
+	    // Only copy the tracer stuff.
+	    //
+	    aux_boundary_data_old.copyFrom(tmpFABs,ncomps,ncomps,ntracers);
+	    
+	    tmpFABs.clear();
+	    
+	    strang_chem(S_old,dt/2);
+	    
+	    FillPatchedOldState_ok = false;
+	  }
+      }
+    // 
+    // do_simple: 2 ==> Only solve the tracer equations; assume steady state.
+    //            1 ==> Only solve the pressure equation at time 0.
+    //            0 ==> Solve the pressure equation at every timestep.
+    //
+#ifdef MG_USE_FBOXLIB
+    if (model == model_list["richard"]) 
+      {
+	advance_richard(time,dt);
+      }
+    else
+#endif
+      {
+	if (do_simple == 2 && !is_grid_changed_after_regrid)
+	  advance_tracer(time,dt);
+	else if (do_simple == 1  && !is_grid_changed_after_regrid)
+	  advance_simple(time,dt);
+	else
+	  advance_incompressible(time,dt);
+      }
+    
+    is_grid_changed_after_regrid = false;
+    
+    // second half of the strang splitting
+    if (do_chem > -1)
+      {      
+	if (do_full_strang)
+	  {
+	    if (verbose && ParallelDescriptor::IOProcessor())
+	      std::cout << "Second 1/2 Strang step of chemistry\n";
+	    
+	    strang_chem(S_new,dt/2.0);
+	    
+	    FillPatchedOldState_ok = true;
+	  }
+	else
+	  {
+	    if (n_chem_interval == 0)
+	      {
+		if (verbose && ParallelDescriptor::IOProcessor())
+		  std::cout << "... advancing full strang step for chemistry\n";
+		strang_chem(S_new,dt);
+	      }
+	    else
+	      {
+		if (level == 0)
+		  {
+		    it_chem += 1;
+		    dt_chem += dt;
+		  }
+		
+		if (it_chem == n_chem_interval &&
+		    parent->levelSteps(level)%parent->nCycle(level)==parent->nCycle(level)-1 &&
+		    level == parent->finestLevel())
+		  {
+		    if (verbose && ParallelDescriptor::IOProcessor())
+		      std::cout << "... advancing full strang step for chemistry with dt ="
+				<< dt_chem << "\n";
+		    
+		    strang_chem(S_new,dt_chem);
+		    
+		    it_chem = 0;
+		    dt_chem = 0;
+		    
+		  }
+	      }
+	  }
+      }
+    
+    // 
+    // Check sum of components
+    //
+    if (verbose) check_sum();
+    
+    //predictDT(u_macG_curr);
+    
+    //
+    // Clean up after the predicted value at t^n+1.
+    // Estimate new timestep from umac cfl.
+    //
+    advance_cleanup(dt,iteration,ncycle);
+  }
+
+  // Dummy value : not used for determining time step.
+  Real dt_test = 1.e20; 
+  return dt_test; 
+
+}
+
+void
+PorousMedia::multilevel_advance (Real time,
+				 Real dt,
+				 int  iteration,
+				 int  ncycle)
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::multilevel_advance()");
+
+  BL_ASSERT(do_multilevel_full);
+
+  if (level == 0) 
+  {
+    for (int lev = 0; lev <= parent->finestLevel(); lev++)
+    {
+      PorousMedia&    pm_lev   = getLevel(lev);
+      
+      pm_lev.advance_setup(time,dt,iteration,ncycle);
+      FillPatchedOldState_ok = true;
+
+      MultiFab& S_new = pm_lev.get_new_data(State_Type);
+      MultiFab& S_old = pm_lev.get_old_data(State_Type);
+
+      MultiFab& P_new = pm_lev.get_new_data(Press_Type);
+      MultiFab& P_old = pm_lev.get_old_data(Press_Type);
+
+      S_new.setVal(0.);
+      P_new.setVal(0.);
+      MultiFab::Copy(S_new,S_old,0,0,ncomps+ntracers,S_old.nGrow()); 
+      MultiFab::Copy(P_new,P_old,0,0,1,P_old.nGrow());
+
+      Real pcTime = pm_lev.state[State_Type].curTime();
+      pm_lev.FillStateBndry (pcTime,State_Type,0,ncomps+ntracers);
+      pm_lev.FillStateBndry (pcTime,Press_Type,0,1);
+
+      if (have_capillary)	pm_lev.calcCapillary(pcTime);
+
+    }
+    
+    // If do_chem <= -1, then no reaction.
+    // Otherwise, type of reactions depends on magnitude of have_corereact.
+    if (do_chem > -1)
+      {
+	if (do_full_strang)
+	  {
+	    if (verbose && ParallelDescriptor::IOProcessor())
+	      std::cout << "... advancing 1/2 strang step for chemistry\n";
+	    
+	    for (int lev = 0; lev <= parent->finestLevel(); lev++)
+	      {
+		PorousMedia& pm_lev = getLevel(lev);
+		MultiFab&    S_old  = pm_lev.get_old_data(State_Type);
+		
+		//tmpFABs holds data from aux_boundary_data_old after reaction.
+		MultiFab tmpFABs;
+		
+		BL_ASSERT(pm_lev.aux_boundary_data_old.nComp() == ncomps+ntracers);
+		
+		tmpFABs.define(pm_lev.aux_boundary_data_old.equivBoxArray(),
+			       ncomps,0,
+			       pm_lev.aux_boundary_data_old.DistributionMap(),
+			       Fab_allocate);
+		
+		tmpFABs.setVal(1.e30);
+		
+		const int ngrow = pm_lev.aux_boundary_data_old.nGrow();
+		
+		BoxArray ba(S_old.boxArray());
+		
+		ba.grow(ngrow);
+      
+		// This MF is guaranteed to cover tmpFABs & valid region of S_old.
+		MultiFab tmpS_old(ba,ntracers,0);
+      
+		// Note that S_old & tmpS_old have the same distribution.
+		for (FillPatchIterator fpi(pm_lev,S_old,ngrow,time,State_Type,ncomps,ntracers);
+		     fpi.isValid();++fpi) 
+		  tmpS_old[fpi.index()].copy(fpi());
+      
+		tmpFABs.copy(tmpS_old,0,ncomps,ntracers);
+		
+		tmpS_old.clear();
+		
+		pm_lev.strang_chem(tmpFABs,dt/2,ngrow);
+
+		pm_lev.aux_boundary_data_old.copyFrom(tmpFABs,ncomps,ncomps,ntracers);
+   
+		// Activate hook in FillPatch hack to get better data now.
+		FillPatchedOldState_ok = false;
+	      }
+
+	    if (verbose && ParallelDescriptor::IOProcessor())
+	      std::cout << "PorousMedia::advance(): end of first 1/2 Strang step\n";
+	  }
+      }
+  }
+#ifdef MG_USE_FBOXLIB
+    if (model == model_list["richard"]) 
+      {
+	advance_multilevel_richard(time,dt);
+      }
+#endif
+  
+  //
   // second half of the strang splitting
+  //
   if (do_chem > -1)
-    {      
+    {
       if (do_full_strang)
 	{
 	  if (verbose && ParallelDescriptor::IOProcessor())
 	    std::cout << "Second 1/2 Strang step of chemistry\n";
-
-	  strang_chem(S_new,dt/2.0);
-
-	  FillPatchedOldState_ok = true;
+	  
+	  for (int lev = 0; lev <= parent->finestLevel(); lev++)
+	    {
+	      PorousMedia&  pm_lev = getLevel(lev);
+	      MultiFab&     S_new  = pm_lev.get_new_data(State_Type);	      
+	      pm_lev.strang_chem(S_new,dt/2.0);
+	    }
 	}
       else
 	{
@@ -1373,50 +1569,56 @@ PorousMedia::advance (Real time,
 	    {
 	      if (verbose && ParallelDescriptor::IOProcessor())
 		std::cout << "... advancing full strang step for chemistry\n";
-	      strang_chem(S_new,dt);
+	      
+	      for (int lev = 0; lev <= parent->finestLevel(); lev++)
+		{
+		  PorousMedia&  pm_lev = getLevel(lev);
+		  MultiFab&     S_new  = pm_lev.get_new_data(State_Type);
+		  
+		  pm_lev.strang_chem(S_new,dt);
+		}
 	    }
 	  else
 	    {
-	      if (level == 0)
-		{
-		  it_chem += 1;
-		  dt_chem += dt;
-		}
-	  
-	      if (it_chem == n_chem_interval &&
-		  parent->levelSteps(level)%parent->nCycle(level)==parent->nCycle(level)-1 &&
-		  level == parent->finestLevel())
+	      it_chem += 1;
+	      dt_chem += dt;
+	      
+	      if (it_chem == n_chem_interval)
 		{
 		  if (verbose && ParallelDescriptor::IOProcessor())
 		    std::cout << "... advancing full strang step for chemistry with dt ="
 			      << dt_chem << "\n";
-
-		  strang_chem(S_new,dt_chem);
-
+		  for (int lev = 0; lev <= parent->finestLevel(); lev++)
+		    {
+		      PorousMedia&  pm_lev = getLevel(lev);
+		      MultiFab&     S_new  = pm_lev.get_new_data(State_Type);
+		  
+		      pm_lev.strang_chem(S_new,dt_chem);
+		    }
+		  
 		  it_chem = 0;
 		  dt_chem = 0;
-	    
+		  
 		}
-	    }
+	    }	    
 	}
+
+      FillPatchedOldState_ok = true;
     }
 
-  // 
-  // Check sum of components
-  //
-  if (verbose) check_sum();
+  for (int lev = parent->finestLevel(); lev >= 0; lev--)
+  {
+    PorousMedia&  pm_lev     = getLevel(lev);
 
-  //predictDT(u_macG_curr);
+    pm_lev.avgDown();
 
-  //
-  // Clean up after the predicted value at t^n+1.
-  // Estimate new timestep from umac cfl.
-  //
-  advance_cleanup(dt,iteration,ncycle);
+    if (verbose) pm_lev.check_sum();      
 
-  // Dummy value : not used for determining time step.
-  Real dt_test = 1.e20; 
-  return dt_test; 
+    pm_lev.advance_cleanup(dt,iteration,ncycle);
+  }
+
+  if (verbose && ParallelDescriptor::IOProcessor())
+    std::cout << "PorousMedia::advance(): end of multilevel advance\n";
 
 }
 
@@ -1689,13 +1891,60 @@ PorousMedia::advance_richard (Real time,
   Real dt_nwt = dt; 
   predictDT(u_macG_trac);
   
-  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < 2e6)
+  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < 1e6)
     dt_nwt = dt_nwt*1.2;
   else if (curr_nwt_iter > 10 )
     dt_nwt = dt_nwt*0.8;
   richard_iter = curr_nwt_iter;
   dt_eig = std::min(dt_eig,dt_nwt); 
 
+}
+
+void
+PorousMedia::advance_multilevel_richard (Real time,
+					 Real dt)
+{
+  // 
+  // Time stepping for richard's equation
+  //
+  int curr_nwt_iter;
+  int nlevs = parent->finestLevel() - level + 1;
+  richard_composite_update(dt,curr_nwt_iter);
+
+  for (int lev=0; lev<nlevs; lev++)
+    {
+      PorousMedia&    fine_lev   = getLevel(lev);  
+      fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,time+dt);
+
+      if (lev == 0) 
+	fine_lev.create_umac_grown(fine_lev.u_mac_curr,
+				   fine_lev.u_macG_trac);
+      else 
+	{
+	  PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
+	  fine_lev.GetCrseUmac(u_macG_crse,time);
+	  fine_lev.create_umac_grown(fine_lev.u_mac_curr,u_macG_crse,
+				     fine_lev.u_macG_trac); 
+	}
+
+      fine_lev.umac_edge_to_cen(fine_lev.u_mac_curr,Vel_Type); 
+      if (ntracers > 0)
+	{
+	  int ltracer = ncomps+ntracers-1;
+	  fine_lev.tracer_advection(fine_lev.u_macG_trac,dt,ncomps,ltracer,true);
+	}
+ 
+      // predict the next time step. 
+      Real dt_nwt = dt; 
+      fine_lev.predictDT(fine_lev.u_macG_trac);
+  
+      if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < 1e6)
+	dt_nwt = dt_nwt*1.2;
+      else if (curr_nwt_iter > 10 )
+	dt_nwt = dt_nwt*0.8;
+      richard_iter = curr_nwt_iter;
+      dt_eig = std::min(dt_eig,dt_nwt); 
+    }
 }
 #endif
 
@@ -1849,7 +2098,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
 
   phi->FillBoundary();
 
-  MacBndry mac_bndry(grids,1,geom);
+  PressBndry mac_bndry(grids,1,geom);
   const int src_comp   = 0;
   const int dest_comp  = 0;
   const int num_comp   = 1;
@@ -1874,7 +2123,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
   // get source term
   //
   int do_rho_scale = 1;
-    
+
   MultiFab* forces = 0;
 
   if (do_source_term)
@@ -1890,7 +2139,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
   const Real strt_time = ParallelDescriptor::second();
   mac_projector->mac_project(level,u_mac,lambda,RhoD,forces,
 			     phi,mac_bndry,p_bc);
-    
+  
   if (do_source_term)
     delete forces;
     
@@ -4157,7 +4406,6 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
     res_fix[mfi].mult((*alpha)[mfi],mfi.validbox(),0,0,1);
   res_fix.mult(-1.0);
   calc_richard_velbc(res_fix,dt*density[0]);
-
   // Newton method.
   // initialization
   bool do_upwind = true;
@@ -4185,11 +4433,10 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 				alpha,cmp_pcp1,cmp_pcp1_dp,
 				pcnp1_cc,u_mac,do_upwind,&err_nwt);      
       else
-	{
-	  diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
-				    alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
-				    pcnp1_cc,u_mac,do_upwind,&err_nwt);  
-	}
+	diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
+				  alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
+				  pcnp1_cc,u_mac,do_upwind,&err_nwt);  
+    
       if (verbose > 1 && ParallelDescriptor::IOProcessor())
 	std::cout << "Newton iteration " << itr_nwt 
 	          << " : Error = "       << err_nwt << "\n"; 
@@ -4221,19 +4468,21 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 	std::cout << "Newton failed to converged: termination error is "
 		  <<  err_nwt << '\n'; 
     }
-
   
   //
   // Increment the viscous flux registers
   // The fluxes are - beta \nabla p_c. We accummulate flux assuming 
   // it is on the LHS.  Thus, we need to multiply by -dt.
   // 
-
   if (do_reflux) {
 
     FArrayBox fluxtot;
 	  
     for (int d = 0; d < BL_SPACEDIM; d++) {
+
+      MultiFab fluxes;
+      if (level < parent->finestLevel())
+	fluxes.define((*fluxSC[d]).boxArray(), 1, 0, Fab_allocate);
       for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
         {
 	  // for component nc
@@ -4245,7 +4494,6 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 
 	  if (level < parent->finestLevel())
 	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nc,nComp,dt);
-		  
 	  if (level > 0)
 	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nc,nComp,-dt);
 	}
@@ -4259,6 +4507,155 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   diffusion->removeFluxBoxesLevel(cmp_pcp1);
   diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
   diffusion->removeFluxBoxesLevel(fluxSC);
+    
+  if (verbose > 1)
+    {
+      const int IOProc   = ParallelDescriptor::IOProcessorNumber();
+      Real      run_time = ParallelDescriptor::second() - strt_time;
+
+      ParallelDescriptor::ReduceRealMax(run_time,IOProc);
+
+      if (ParallelDescriptor::IOProcessor())
+        std::cout << "PorousMedia::richard_update(): time: " 
+		  << run_time << '\n';
+    }
+  //
+  // Write out the min and max of each component of the new state.
+  //
+  if (verbose > 1) check_minmax();
+
+}
+
+//
+// Richard equation: Time-dependent solver.  Only doing a first-order implicit scheme
+//
+void
+PorousMedia::richard_composite_update (Real dt, int& total_nwt_iter)
+
+{
+  BL_PROFILE(BL_PROFILE_THIS_NAME() + "::richards_composite_update()");
+  BL_ASSERT(have_capillary == 1);
+
+  const Real strt_time = ParallelDescriptor::second();
+
+  int nlevs = parent->finestLevel() - level + 1;
+  int nc = 0;
+
+  // Create a nlevs-level array for the coefficients
+
+  PArray <MultiFab> alpha(nlevs,PArrayManage);
+  PArray <MultiFab> res_fix(nlevs,PArrayManage);
+  PArray <MultiFab> pc(nlevs,PArrayManage);
+  Array < PArray <MultiFab> > cmp_pcp1(BL_SPACEDIM);
+  Array < PArray <MultiFab> > cmp_pcp1_dp(BL_SPACEDIM);
+    
+  for (int dir=0; dir<BL_SPACEDIM; dir++)
+    {
+      cmp_pcp1[dir].resize(nlevs,PArrayManage);
+      cmp_pcp1_dp[dir].resize(nlevs,PArrayManage);
+    }
+
+  bool do_n = true;
+  bool do_upwind = true;
+  int  max_itr_nwt = 20;
+  Real max_err_nwt = 1e-12;
+  int  itr_nwt = 0;
+  Real err_nwt = 1e10;
+  Real pcTime = state[State_Type].curTime();
+  for (int lev=0; lev<nlevs; lev++)
+    {
+      PorousMedia&    fine_lev   = getLevel(lev);
+      const BoxArray& fine_grids = fine_lev.boxArray();      
+      MultiFab& S_lev = fine_lev.get_new_data(State_Type);
+      
+      alpha.set(lev,new MultiFab(fine_grids,1,1));
+      MultiFab::Copy(alpha[lev],*(fine_lev.rock_phi),0,0,1,1);
+
+      res_fix.set(lev,new MultiFab(fine_grids,1,1));
+      MultiFab::Copy(res_fix[lev],S_lev,nc,0,1,0);
+      for (MFIter mfi(res_fix[lev]); mfi.isValid(); ++mfi)
+	res_fix[lev][mfi].mult(alpha[lev][mfi],mfi.validbox(),0,0,1);
+      res_fix[lev].mult(-1.0);
+      fine_lev.calc_richard_velbc(res_fix[lev],dt*density[0]);
+
+      MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
+      MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
+      for (int dir=0;dir<BL_SPACEDIM;dir++)
+      {
+	BoxArray ba = fine_grids;
+	ba.surroundingNodes(dir);
+	cmp_pcp1[dir].set(lev, new MultiFab(ba,1,0));
+	cmp_pcp1_dp[dir].set(lev, new MultiFab(ba,3,0));
+	tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
+	tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
+      }
+      
+      fine_lev.calcCapillary(pcTime);
+      fine_lev.calcLambda(pcTime);
+
+      pc.set(lev,new MultiFab(fine_grids,1,1));
+      MultiFab::Copy(pc[lev],*(fine_lev.pcnp1_cc),0,0,1,1);
+      fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,pcTime);
+      fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
+				 fine_lev.u_mac_curr,0,do_upwind);
+      fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
+				fine_lev.u_mac_curr,pcTime,0,do_upwind,do_n);
+    }
+
+  while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+    {
+      diffusion->richard_composite_iter(dt,nlevs,nc,gravity,density,res_fix,
+					alpha,cmp_pcp1,cmp_pcp1_dp,pc,
+					do_upwind,&err_nwt); 
+
+      if (verbose > 1 && ParallelDescriptor::IOProcessor())
+	std::cout << "Newton iteration " << itr_nwt 
+	          << " : Error = "       << err_nwt << "\n"; 
+
+      for (int lev=0; lev<nlevs; lev++)
+	{
+	  PorousMedia&    fine_lev   = getLevel(lev);   
+	  MultiFab& P_lev = fine_lev.get_new_data(Press_Type);
+
+	  fine_lev.FillStateBndry(pcTime,State_Type,0,ncomps);
+	  fine_lev.calcCapillary(pcTime);
+	  fine_lev.calcLambda(pcTime);
+
+	  MultiFab::Copy(P_lev,*(fine_lev.pcnp1_cc),0,0,1,1);
+	  P_lev.mult(-1.0,1);
+
+	  MultiFab* tmp_cmp_pcp1[BL_SPACEDIM];
+	  MultiFab* tmp_cmp_pcp1_dp[BL_SPACEDIM];
+	  for (int dir=0;dir<BL_SPACEDIM;dir++)
+	    {
+	      tmp_cmp_pcp1[dir] = &cmp_pcp1[dir][lev];
+	      tmp_cmp_pcp1_dp[dir] = &cmp_pcp1_dp[dir][lev];
+	    }
+	  MultiFab::Copy(pc[lev],*(fine_lev.pcnp1_cc),0,0,1,1);
+	  fine_lev.compute_vel_phase(fine_lev.u_mac_curr,0,pcTime);
+	  fine_lev.calc_richard_coef(tmp_cmp_pcp1,fine_lev.lambdap1_cc,
+				     fine_lev.u_mac_curr,0,do_upwind);
+	  fine_lev.calc_richard_jac(tmp_cmp_pcp1_dp,fine_lev.lambdap1_cc,
+				    fine_lev.u_mac_curr,pcTime,0,do_upwind,do_n);
+
+	}
+
+      itr_nwt += 1;
+
+      if (verbose > 1)	check_minmax();
+    }
+
+  total_nwt_iter = itr_nwt;
+
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+    {
+      if (itr_nwt < max_itr_nwt)
+	std::cout << "Newton converged at iteration " << itr_nwt
+		  << " with error " << err_nwt << '\n';
+      else
+	std::cout << "Newton failed to converged: termination error is "
+		  <<  err_nwt << '\n'; 
+    }
     
   if (verbose > 1)
     {
@@ -5160,7 +5557,7 @@ PorousMedia::post_timestep (int crse_iteration)
 
   if (level < finest_level)
     {
-      avgDown();
+      //avgDown();
       
       if (do_reflux) 
 	{
@@ -5982,6 +6379,23 @@ PorousMedia::SyncProjInterp (MultiFab& phi,
 //
 // This should be an Amrlevel or Multifab function
 //
+void
+PorousMedia::avgDown (MultiFab* s_crse,
+		      int c_lev,
+		      MultiFab* s_fine, 
+		      int f_lev) 
+{
+    PorousMedia&   fine_lev = getLevel(f_lev);
+    PorousMedia&   crse_lev = getLevel(c_lev);
+    const BoxArray& fgrids  = fine_lev.grids;
+    MultiFab&       fvolume = fine_lev.volume;
+    const BoxArray& cgrids  = crse_lev.grids;
+    MultiFab&       cvolume = crse_lev.volume;
+    IntVect         ratio   = parent->refRatio(c_lev);
+
+    int nc = (*s_crse).nComp();
+    avgDown(cgrids,fgrids,*s_crse,*s_fine,cvolume,fvolume,c_lev,f_lev,0,nc,ratio);
+}
 
 void
 PorousMedia::avgDown (const BoxArray& cgrids,
@@ -6751,8 +7165,7 @@ PorousMedia::richard_sync ()
 
   BL_ASSERT(have_capillary);
 
-  const int  numscal   = ncomps; 
-  const Real dt        = parent->dtLevel(level);
+  const Real dt = parent->dtLevel(level);
        
   //
   //   Ssync is the source for a rate of change to rock_phi*S over the time step, so
@@ -6764,131 +7177,156 @@ PorousMedia::richard_sync ()
       Real tmp = (*Ssync).norm2(0);
       if (ParallelDescriptor::IOProcessor())
 	std::cout << "SSYNC NORM  AFTER = " << tmp << '\n';
-      Ssync->mult(dt,Ssync->nGrow());
     }
-    
-    
+
   // 
   // Capillary-solve.  Since capillary function is nonlinear, we cannot
   // do a simple capillary-diffuse solve for Ssync.  A full nonlinear
   // parabolic solve is needed to determine the new solution at the end of 
   // coarse timestep.  
   //
-  if (have_capillary)
+
+  // Build single component edge-centered array of MultiFabs for fluxes
+  MultiFab** fluxSC;
+  const int nGrow = 0;
+  const int nComp = 1;
+  diffusion->allocFluxBoxesLevel(fluxSC,nGrow,nComp);
+  
+  int nc = 0; 
+  MultiFab** cmp_pcp1    = 0;
+  MultiFab** cmp_pcp1_dp = 0;
+  MultiFab sat_res_mf(grids,1,1);
+  sat_res_mf.setVal(1.);
+  for (MFIter mfi(sat_res_mf); mfi.isValid();++mfi)
     {
-      // Build single component edge-centered array of MultiFabs for fluxes
-      MultiFab** fluxSC;
-      const int nGrow = 0;
-      const int nComp = 1;
-      diffusion->allocFluxBoxesLevel(fluxSC,nGrow,nComp);
+      const Box& box = sat_res_mf[mfi].box();
+      sat_res_mf[mfi].minus((*cpl_coef)[mfi],box,3,0,1);
+    }
+  diffusion->set_rho(&sat_res_mf); 
 
-      int nc = 0; 
-      MultiFab** cmp_pcp1    = 0;
-      MultiFab** cmp_pcp1_dp = 0;
-      MultiFab sat_res_mf(grids,1,1);
-      sat_res_mf.setVal(1.);
-      for (MFIter mfi(sat_res_mf); mfi.isValid();++mfi)
-	{
-	  const Box& box = sat_res_mf[mfi].box();
-	  sat_res_mf[mfi].minus((*cpl_coef)[mfi],box,3,0,1);
-	}
-      diffusion->set_rho(&sat_res_mf); 
+  bool do_n = true;
+  bool sync_n = true;
+
+  MultiFab& S_new  = get_new_data(State_Type);
+  MultiFab& S_old  = get_old_data(State_Type);
+  MultiFab& P_new  = get_new_data(Press_Type);
+  MultiFab* alpha  = new MultiFab(grids,1,1);
+  MultiFab* dalpha = 0;
+  MultiFab Tmp(grids,1,1);
+  
+  if (sync_n)
+    MultiFab::Copy(Tmp,S_new,0,0,1,1);
+  else
+    MultiFab::Copy(Tmp,P_new,0,0,1,1);
+  MultiFab::Copy(*alpha,*rock_phi,0,0,1,alpha->nGrow());
+  
+  if (!do_n) dalpha = new MultiFab(grids,1,1);
       
-      MultiFab& S_new = get_new_data(State_Type);
+  // Compute first res_fix = -\phi * n^k + dt*\nabla v_inflow.  
+  // Its value does not change.
+  MultiFab res_fix(grids,1,0);
+  MultiFab::Copy(res_fix,S_old,nc,0,1,0);
+  for (MFIter mfi(res_fix); mfi.isValid(); ++mfi)
+    res_fix[mfi].mult((*alpha)[mfi],mfi.validbox(),0,0,1);
+  res_fix.mult(-1.0);
+  Ssync->mult(-dt*density[0]);
+  MultiFab::Add(res_fix,*Ssync,nc,0,1,0);
+  calc_richard_velbc(res_fix,dt*density[0]);
+  // Newton method.
+  // initialization
+  bool do_upwind = true;
+  int  max_itr_nwt = 20;
+  Real max_err_nwt = 1e-12;
+  int  itr_nwt = 0;
+  Real err_nwt = 1e10;
+  Real pcTime = state[State_Type].curTime();
+  FillStateBndry(pcTime,State_Type,0,ncomps);
+  diffusion->allocFluxBoxesLevel(cmp_pcp1,0,1);
+  diffusion->allocFluxBoxesLevel(cmp_pcp1_dp,0,3);
+  
+  calcCapillary(pcTime);
+  calcLambda(pcTime);
+  calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind);
+  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
 
-      MultiFab S_tmp(grids,ncomps,1);
-      MultiFab::Copy(S_tmp,S_new,0,0,ncomps,1);
+  
+  if (!do_n) calc_richard_alpha(dalpha,pcTime);
 
-      MultiFab* alpha = new MultiFab(grids,1,1);
-      MultiFab::Copy(*alpha,*rock_phi,0,0,1,alpha->nGrow());
-      
-      // Compute first res_fix = -\phi * n^k + dt*\nabla v_inflow.  
-      // Its value does not change.
-      MultiFab res_fix(grids,1,0);
-      MultiFab::Copy(res_fix,S_new,nc,0,1,0);
-      for (MFIter mfi(res_fix); mfi.isValid(); ++mfi)
-	res_fix[mfi].mult((*alpha)[mfi],mfi.validbox(),0,0,1);
-      res_fix.mult(-1.0);
-      Ssync->mult(-1.0);
-      MultiFab::Add(res_fix,*Ssync,nc,0,1,0);
-      calc_richard_velbc(res_fix,dt*density[0]);
-      
-      // Newton method.
-      // initialization
-      bool do_upwind = true;
-      int  max_itr_nwt = 30;
-      Real max_err_nwt = 1e-12;
-      int  itr_nwt = 0;
-      Real err_nwt = 1e10;
-      Real pcTime = state[State_Type].curTime();
-      MultiFab& P_new = get_new_data(Press_Type);
-      FillStateBndry(pcTime,State_Type,0,ncomps);
-      diffusion->allocFluxBoxesLevel(cmp_pcp1,0,1);
-      diffusion->allocFluxBoxesLevel(cmp_pcp1_dp,0,3);
-      calcCapillary(pcTime);
-      calcLambda(pcTime);
-      calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind);
-      calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind);
-      while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
-	{
-	  diffusion->richard_iter(dt,nc,gravity,density,res_fix,
-				  alpha,cmp_pcp1,cmp_pcp1_dp,
-				  pcnp1_cc,u_mac_curr,do_upwind,&err_nwt);      
-	  
-	  if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	    std::cout << "Newton iteration " << itr_nwt 
-		      << " : Error = "       << err_nwt << "\n"; 
-	  if (model != model_list["richard"])
-	    scalar_adjust_constraint(0,ncomps-1);
-	  FillStateBndry(pcTime,State_Type,0,ncomps);
-	  calcCapillary(pcTime);
-	  calcLambda(pcTime);
-	  MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
-	  P_new.mult(-1.0,1);
-	  compute_vel_phase(u_mac_curr,0,pcTime);
-	  calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind);
-	  calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind);
-	  itr_nwt += 1;
-
-	  if (verbose > 1)  check_minmax();
-	}
-      diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+  while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
+    {
+      if (do_n)
+	diffusion->richard_iter(dt,nc,gravity,density,res_fix,
+				alpha,cmp_pcp1,cmp_pcp1_dp,
+				pcnp1_cc,u_mac_curr,do_upwind,&err_nwt);      
+      else
+	diffusion->richard_iter_p(dt,nc,gravity,density,res_fix,
+				  alpha,dalpha,cmp_pcp1,cmp_pcp1_dp,
+				  pcnp1_cc,u_mac_curr,do_upwind,&err_nwt);  
 
       if (verbose > 1 && ParallelDescriptor::IOProcessor())
-	{
-	  if (itr_nwt < max_itr_nwt)
-	    std::cout << "Newton converged at iteration " << itr_nwt
-		      << " with error " << err_nwt << '\n';
-	  else
-	    std::cout << "Newton failed to converged: termination error is "
-		      <<  err_nwt << '\n'; 
-	}
-  
-      if (level > 0) 
-	{
-	  for (int d = 0; d < BL_SPACEDIM; d++) 
-	    {
-	      for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
-		getViscFluxReg().FineAdd((*fluxSC[d])[fmfi],d,fmfi.index(),0,nc,nComp,-dt);
-	    }
-	}
+	std::cout << "Newton iteration " << itr_nwt 
+		  << " : Error = "       << err_nwt << "\n"; 
+      if (model != model_list["richard"])
+	scalar_adjust_constraint(0,ncomps-1);
 
-      // Determine the corrector after capillary-solve
-      for (MFIter mfi(*Ssync); mfi.isValid();++mfi)
-	{
-	  const Box& box = mfi.validbox();
-	  (*Ssync)[mfi].copy(S_new[mfi],box,0,box,0,ncomps);
-	  (*Ssync)[mfi].minus(S_tmp[mfi],box,0,0,ncomps);
-	}
-      
-      MultiFab::Copy(S_new,*Ssync,0,ncomps+ntracers,1,0);
-      delete alpha;
-      diffusion->removeFluxBoxesLevel(cmp_pcp1);
-      diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
-      diffusion->removeFluxBoxesLevel(fluxSC);
+      FillStateBndry(pcTime,State_Type,0,ncomps);
+      calcCapillary(pcTime);
+      calcLambda(pcTime);
+      MultiFab::Copy(P_new,*pcnp1_cc,0,0,1,1);
+      P_new.mult(-1.0,1);
+      compute_vel_phase(u_mac_curr,0,pcTime);
+      calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac_curr,0,do_upwind);
+      calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac_curr,pcTime,0,do_upwind,do_n);
+      if (!do_n) calc_richard_alpha(dalpha,pcTime);
+      itr_nwt += 1;
 
+      if (verbose > 1)  check_minmax();
     }
-      
+  diffusion->richard_flux(nc,-1.0,gravity,density,fluxSC,pcnp1_cc,cmp_pcp1);
+
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
+    {
+      if (itr_nwt < max_itr_nwt)
+	std::cout << "Newton converged at iteration " << itr_nwt
+		  << " with error " << err_nwt << '\n';
+      else
+	std::cout << "Newton failed to converged: termination error is "
+		  <<  err_nwt << '\n'; 
+    }
+  
+  if (level > 0) 
+    {
+      for (int d = 0; d < BL_SPACEDIM; d++) 
+	{
+	  for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
+	    getViscFluxReg().FineAdd((*fluxSC[d])[fmfi],d,fmfi.index(),0,nc,nComp,-dt);
+	}
+    }
+  
+  // Determine the corrector after capillary-solve
+  for (MFIter mfi(*Ssync); mfi.isValid();++mfi)
+    {
+      const Box& box = mfi.validbox();
+      if (sync_n)
+	{
+	  (*Ssync)[mfi].copy(S_new[mfi],box,0,box,0,ncomps);
+	  (*Ssync)[mfi].minus(Tmp[mfi],box,0,0,ncomps);
+	}
+      else
+	{
+	  (*Ssync)[mfi].copy(P_new[mfi],box,0,box,0,1);
+	  (*Ssync)[mfi].minus(Tmp[mfi],box,0,0,1);
+	}
+    }
+
+  MultiFab::Copy(S_new,*Ssync,0,ncomps+ntracers,1,0);
+
+  delete alpha;
+  if (dalpha) delete dalpha;
+  diffusion->removeFluxBoxesLevel(cmp_pcp1);
+  diffusion->removeFluxBoxesLevel(cmp_pcp1_dp);
+  diffusion->removeFluxBoxesLevel(fluxSC);
+  
   //
   // Get boundary conditions.
   //
@@ -6897,7 +7335,7 @@ PorousMedia::richard_sync ()
       
   for (int i = 0; i < grids.size(); i++)
     {
-      sync_bc_array[i] = getBCArray(State_Type,i,0,numscal);
+      sync_bc_array[i] = getBCArray(Press_Type,i,0,1);
       sync_bc[i]       = sync_bc_array[i].dataPtr();
     }
 
@@ -6911,16 +7349,31 @@ PorousMedia::richard_sync ()
       ratio                     *= parent->refRatio(lev-1);
       PorousMedia&     fine_lev  = getLevel(lev);
       const BoxArray& fine_grids = fine_lev.boxArray();
-      MultiFab sync_incr(fine_grids,numscal,0);
+      MultiFab sync_incr(fine_grids,1,0);
       sync_incr.setVal(0.0);
       
       SyncInterp(*Ssync,level,sync_incr,lev,ratio,0,0,
-		 numscal,1,mult,sync_bc.dataPtr());
-      
-      MultiFab& S_new = fine_lev.get_new_data(State_Type);
-      for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
-	S_new[mfi].plus(sync_incr[mfi],fine_grids[mfi.index()],
-			0,0,numscal);
+		 1,1,mult,sync_bc.dataPtr());
+
+      MultiFab& S_new = fine_lev.get_new_data(Press_Type);
+      if (sync_n)
+	{
+	  for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+	    S_new[mfi].plus(sync_incr[mfi],fine_grids[mfi.index()],
+			      0,0,1);
+	}
+      else
+	{	    
+	  MultiFab& P_new = fine_lev.get_new_data(Press_Type);
+	  for (MFIter mfi(P_new); mfi.isValid(); ++mfi)
+	    P_new[mfi].plus(sync_incr[mfi],fine_grids[mfi.index()],
+			    0,0,1);
+	  MultiFab P_tmp(fine_grids,1,0);
+	  MultiFab::Copy(P_tmp,P_new,0,0,1,0);
+	  P_tmp.mult(-1.0);
+	  fine_lev.calcInvCapillary(sync_incr,P_tmp);
+	  MultiFab::Copy(S_new,sync_incr,0,0,1,0);
+	}
     }
 }
 #endif
@@ -8002,11 +8455,6 @@ PorousMedia::calcInvCapillary (const Real time)
 
   for (MFIter mfi(*pc_cc); mfi.isValid(); ++mfi)
     {
-      const int idx   = mfi.index();
-
-      const int* lo  = grids[idx].loVect();
-      const int* hi  = grids[idx].hiVect();
-
       FArrayBox& Sfab   = S[mfi];
       const Real* ndat  = Sfab.dataPtr(); 
       const int*  n_lo  = Sfab.loVect();
@@ -8033,7 +8481,7 @@ PorousMedia::calcInvCapillary (const Real time)
 		       pdat, ARLIM(p_lo), ARLIM(p_hi),
 		       kdat, ARLIM(k_lo), ARLIM(k_hi),
 		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-		       &n_cpl_coef, lo, hi);
+		       &n_cpl_coef);
     }
 }
 
@@ -8047,10 +8495,6 @@ PorousMedia::calcInvCapillary (MultiFab& S,
   const int n_cpl_coef = cpl_coef->nComp();
   for (MFIter mfi(S); mfi.isValid(); ++mfi)
     {
-      const int idx   = mfi.index();
-
-      const int* lo  = grids[idx].loVect();
-      const int* hi  = grids[idx].hiVect();
 
       FArrayBox& Sfab   = S[mfi];
       const Real* ndat  = Sfab.dataPtr(); 
@@ -8078,7 +8522,8 @@ PorousMedia::calcInvCapillary (MultiFab& S,
 		       pdat, ARLIM(p_lo), ARLIM(p_hi),
 		       kdat, ARLIM(k_lo), ARLIM(k_hi),
 		       cpdat, ARLIM(cp_lo), ARLIM(cp_hi),
-		       &n_cpl_coef, lo, hi);
+		       &n_cpl_coef);
+      
     }
 }
 

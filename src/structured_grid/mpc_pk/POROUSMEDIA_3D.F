@@ -1,5 +1,5 @@
 c
-c $Id: POROUSMEDIA_3D.F,v 1.37 2011-08-15 17:53:23 gpau Exp $
+c $Id: POROUSMEDIA_3D.F,v 1.38 2011-08-30 19:00:04 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -704,7 +704,7 @@ c ::: Compute the capillary pressure, p_c
 c ::: -----------------------------------------------------------
       subroutine FORT_MK_INV_CPL(pc,DIMS(pc),s,DIMS(s),
      &     phi,DIMS(phi),kappa,DIMS(kappa),
-     &     coef,DIMS(coef),n_coef,lo,hi)
+     &     coef,DIMS(coef),n_coef)
 
       implicit none
 
@@ -716,7 +716,6 @@ c ::: -----------------------------------------------------------
       integer DIMDEC(kappa)
       integer DIMDEC(coef)
       integer n_coef
-      integer lo(SDIM),hi(SDIM)
       REAL_T  pc(DIMV(pc))
       REAL_T  s(DIMV(s),ncomps)
       REAL_T  phi(DIMV(phi))
@@ -728,9 +727,9 @@ c ::: -----------------------------------------------------------
       REAL_T  l_cpl_coef, l_sigma, l_sat_res
 
 !$omp parallel do private(i,j,k)
-      do k = lo(3)-1,hi(3)+1
-         do j = lo(2)-1,hi(2)+1
-            do i = lo(1)-1,hi(1)+1
+      do k = ARG_L3(s),ARG_H3(s)
+         do j =  ARG_L2(s),ARG_H2(s)
+            do i = ARG_L1(s),ARG_H1(s)
                l_cpl_type = nint(coef(i,j,k,1))
                l_cpl_coef = coef(i,j,k,2)
                l_sigma    = coef(i,j,k,3)

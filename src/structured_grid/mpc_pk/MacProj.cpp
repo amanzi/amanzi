@@ -1,5 +1,5 @@
 //
-// $Id: MacProj.cpp,v 1.78 2011-08-10 17:36:05 lijewski Exp $
+// $Id: MacProj.cpp,v 1.81 2011-08-28 05:54:53 gpau Exp $
 //
 #include <winstd.H>
 
@@ -7,7 +7,7 @@
 #include <Geometry.H>
 #include <ParmParse.H>
 #include <MacProj.H>
-#include <MacBndry.H>
+#include <PressBndry.H>
 #include <MacOpMacDrivers.H>
 #include <PorousMedia.H>
 #include <MACPROJ_F.H>
@@ -273,7 +273,7 @@ MacProj::mac_project (int             level,
 		      MultiFab*       RhoD,
 		      MultiFab*       forces,
                       MultiFab*       phi,
-                      const MacBndry& mac_bndry,
+                      const PressBndry& mac_bndry,
 		      const BCRec&    p_bc)
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::mac_project()");
@@ -479,7 +479,7 @@ MacProj::mac_sync_solve (int       level,
   //
   // store the Dirichlet boundary condition for mac_sync_phi in mac_bndry
   //
-  MacBndry mac_bndry(grids,1,geom);
+  PressBndry mac_bndry(grids,1,geom);
   const int src_comp = 0;
   const int dest_comp = 0;
   const int num_comp = 1;

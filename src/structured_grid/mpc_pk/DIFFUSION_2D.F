@@ -1,5 +1,5 @@
 c
-c $Id: DIFFUSION_2D.F,v 1.15 2011-08-15 19:50:00 gpau Exp $
+c $Id: DIFFUSION_2D.F,v 1.16 2011-08-30 19:00:04 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -435,7 +435,6 @@ c
       do i = lo(1),hi(1)
          do j = lo(2),hi(2)
             rg(i,j) = rg(i,j) - mult*rho*grav*(cy(i,j+1) - cy(i,j))/dx(2)
-
          end do
       end do
 
@@ -472,7 +471,7 @@ c     gravity is nonzero only in the y direction
 c
       do j = lo(2),hi(2)+1
          do i = lo(1),hi(1)
-            fy(i,j) = fy(i,j) - mult*rho*grav*cy(i,j) 
+            fy(i,j) = fy(i,j) + mult*rho*grav*cy(i,j) 
          end do
       end do
 
