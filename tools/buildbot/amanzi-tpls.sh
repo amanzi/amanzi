@@ -894,6 +894,7 @@ function install_ccse {
     CCSE_VERBOSE=0
 
     rm -rf ${CCSE_DIR}
+    mkdir -p ${CCSE_PREFIX}
     cd ${CCSE_PREFIX}
     tar zxf ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz
     cd ${CCSE_DIR}
