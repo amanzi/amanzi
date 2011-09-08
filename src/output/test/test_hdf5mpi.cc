@@ -45,7 +45,7 @@ TEST(HDF5_MPI) {
   int cell_index_list[] = {0, 1, 2, 3, 4, 5, 6, 7};
   double cell_values[] = {10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0};
   cell_quantity = Teuchos::rcp(new Epetra_Vector(Mesh.cell_map(false)));
-  cell_quantity->ReplaceGlobalValues(4, cell_values, cell_index_list);
+  cell_quantity->ReplaceGlobalValues(8, cell_values, cell_index_list);
 
   // Setup second cell quantity -- called fake pressure
   double fake_values[] = {9, 8, 7, 6};
@@ -64,6 +64,7 @@ TEST(HDF5_MPI) {
   restart_output->createMeshFile(Mesh, hdf5_datafile2);
 
   double time = 0.0;
+  int cycle = 0;
   for (int i = 0; i < 15; i++) {
     
     cell_quantity->ReplaceGlobalValues(8, cell_values, cell_index_list);
@@ -78,8 +79,11 @@ TEST(HDF5_MPI) {
 
     // advance time and values
     time += 2.0;
-    for (int j = 0; j < 4; j++) {
+    cycle += 1;
+    for (int j = 0; j < 8; j++) {
       cell_values[j] += 10.0;
+    }
+    for (int j = 0; j < 4; j++) {
       fake_values[j] += 1.0;
     }
     for (int j = 0; j < 12; j++) {
@@ -90,19 +94,29 @@ TEST(HDF5_MPI) {
     viz_output->endTimestep();
   }
    
+  // write out restart
+  restart_output->writeAttrReal(time, "time");
+  restart_output->writeAttrInt(cycle, "cycle");
   restart_output->writeCellDataReal(*cell_quantity, "cell_quantity");
   restart_output->writeCellDataReal(*fake_pressure, "pressure");
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
   
+  // test reading data back
+  double newtime;
+  int newcycle;
+  restart_output->readAttrReal(newtime,"time");
+  cout << "E>> read back attribute time = " << newtime << endl;
+  restart_output->readAttrInt(newcycle,"cycle");
+  cout << "E>> read back attribute cycle = " << newcycle << endl;
   cout << "E>> compare results" << endl;
   cout << "E>> original:" << endl << *cell_quantity;
-  // test reading data back
   Teuchos::RCP<Epetra_Vector> read_quantity;
   read_quantity = Teuchos::rcp(new Epetra_Vector(Mesh.cell_map(false)));
   cout << endl;
   restart_output->readData(*read_quantity, "cell_quantity");
   
   cout << "E>> read back:" << endl << *read_quantity;
+  cout << "E>> cell map:" << endl << Mesh.cell_map(false);
   
   delete viz_output;
   delete restart_output;

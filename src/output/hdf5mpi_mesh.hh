@@ -19,6 +19,7 @@
 
 extern "C" {
 #include "hdf5.h"
+#include "hdf5_hl.h"
 #include "parallelIO.h"
 };
 
@@ -76,6 +77,12 @@ class HDF5_MPI {
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
   void createTimestep(const double time, const int iteration);
   void endTimestep();
+
+  // Write attribute to HDF5 data file.
+  void writeAttrReal(double value, const std::string attrname);
+  void writeAttrInt(int value, const std::string attrname);
+  void readAttrReal(double &value, const std::string attrname);
+  void readAttrInt(int &value, const std::string attrname);
 
   // Write node data to HDF5 data file.
   void writeNodeDataReal(const Epetra_Vector &x, const std::string varname);
