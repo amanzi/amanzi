@@ -118,7 +118,7 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
     #  (2) CCSE_DIR/<lib,Lib>
     #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
     #
-    set(ccse_lib_name boxlib)
+    set(ccse_lib_name box_c)
     if (CCSE_LIBRARY_DIR)
 
         if (EXISTS "${CCSE_LIBRARY_DIR}")
