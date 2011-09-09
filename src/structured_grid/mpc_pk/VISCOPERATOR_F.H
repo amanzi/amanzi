@@ -2,7 +2,7 @@
 #define _VISCOPERATOR_F_H_
 
 /*
-** $Id: VISCOPERATOR_F.H,v 1.1.1.1 2006-09-08 21:35:00 almgren Exp $
+** $Id: VISCOPERATOR_F.H,v 1.1 2006-09-08 21:35:00 almgren Exp $
 */
 
 #ifdef BL_LANG_FORT

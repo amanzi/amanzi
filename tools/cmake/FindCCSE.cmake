@@ -118,7 +118,7 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
     #  (2) CCSE_DIR/<lib,Lib>
     #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
     #
-    set(ccse_lib_name boxlib)
+    set(ccse_lib_name box_c)
     if (CCSE_LIBRARY_DIR)
 
         if (EXISTS "${CCSE_LIBRARY_DIR}")
@@ -162,7 +162,7 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
     endif()
 
     # Now, make sure the rest are in the same place
-    set(CCSE_LIBRARIES amrlib;mglib;avlib;bndrylib;boxlib;gslib)
+    set(CCSE_LIBRARIES box_camr;box_cmg;box_camrdata;box_cbndry;box_c;box_f;box_fmg;box_cfmg;gslib)
 
     foreach (L ${CCSE_LIBRARIES})
 

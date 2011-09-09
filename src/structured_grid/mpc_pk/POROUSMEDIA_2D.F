@@ -1,5 +1,5 @@
 c
-c $Id: POROUSMEDIA_2D.F,v 1.65 2011-08-15 17:53:23 gpau Exp $
+c $Id: POROUSMEDIA_2D.F,v 1.66 2011-08-30 19:00:04 gpau Exp $
 c
 
 #undef  BL_LANG_CC
@@ -704,7 +704,7 @@ c ::: -----------------------------------------------------------
 
       subroutine FORT_MK_INV_CPL(pc,DIMS(pc),s,DIMS(s),
      &     phi,DIMS(phi),kappa,DIMS(kappa),
-     &     coef,DIMS(coef),n_coef,lo,hi)
+     &     coef,DIMS(coef),n_coef)
 
       implicit none
 
@@ -716,7 +716,6 @@ c ::: -----------------------------------------------------------
       integer DIMDEC(kappa)
       integer DIMDEC(coef)
       integer n_coef
-      integer lo(SDIM),hi(SDIM)
       REAL_T  pc(DIMV(pc))
       REAL_T  s(DIMV(s),ncomps)
       REAL_T  phi(DIMV(phi))
@@ -726,9 +725,8 @@ c ::: -----------------------------------------------------------
       integer i,j
       integer l_cpl_type
       REAL_T  l_cpl_coef, l_sigma, l_sat_res
-
-      do j = lo(2)-1,hi(2)+1
-         do i = lo(1)-1,hi(1)+1
+      do j =  ARG_L2(s),ARG_H2(s)
+         do i = ARG_L1(s),ARG_H1(s)
             l_cpl_type = nint(coef(i,j,1))
             l_cpl_coef = coef(i,j,2)
             l_sigma    = coef(i,j,3)
@@ -1851,16 +1849,16 @@ c           x-direction
                ldn(n+2) = ldtmp(1)
                pcn(n+2) = cap
                if (do_upwind) then
-                  ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1),ldn(2),umac(i,j)),ldx(1))
-                  ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2),ldn(3),umac(i+1,j)),ldx(2))
+                  ldx(1) = cvmgz(ldx(1),cvmgp(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)),ldx(1))
+                  ldx(2) = cvmgz(ldx(2),cvmgp(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)),ldx(2))
                else
-                  ldx(1) = cvmgz(ldx(1),half*(ldn(1)+ldn(2)),ldx(1))
-                  ldx(2) = cvmgz(ldx(2),half*(ldn(2)+ldn(3)),ldx(2))
+                  ldx(1) = cvmgz(ldx(1),kpx(i,j)*half*(ldn(1)+ldn(2)),ldx(1))
+                  ldx(2) = cvmgz(ldx(2),kpx(i+1,j)*half*(ldn(2)+ldn(3)),ldx(2))
                end if
                if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
-                  ldx(1) = cvmgz(ldx(1),ldn(1),ldx(1))
+                  ldx(1) = cvmgz(ldx(1),kpx(i,j)*ldn(1),ldx(1))
                elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
-                  ldx(2) = cvmgz(ldx(2),ldn(3),ldx(2))
+                  ldx(2) = cvmgz(ldx(2),kpx(i+1,j)*ldn(3),ldx(2))
                end if
 
                rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1)) -
@@ -1886,16 +1884,16 @@ c           y-direction
                ldn(n+2) = ldtmp(1)
                pcn(n+2) = cap
                if (do_upwind) then
-                  ldy(1) = cvmgz(ldy(1),cvmgp(ldn(1),ldn(2),vmac(i,j)),ldy(1))
-                  ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2),ldn(3),vmac(i,j+1)),ldy(2))
+                  ldy(1) = cvmgz(ldy(1),cvmgp(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)),ldy(1))
+                  ldy(2) = cvmgz(ldy(2),cvmgp(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)),ldy(2))
                else
-                  ldy(1) = cvmgz(ldy(1),half*(ldn(1)+ldn(2)),ldy(1))
-                  ldy(2) = cvmgz(ldy(2),half*(ldn(2)+ldn(3)),ldy(2))
+                  ldy(1) = cvmgz(ldy(1),kpy(i,j)*half*(ldn(1)+ldn(2)),ldy(1))
+                  ldy(2) = cvmgz(ldy(2),kpy(i,j+1)*half*(ldn(2)+ldn(3)),ldy(2))
                end if
                if (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
-                  ldy(1) = cvmgz(ldy(1),ldn(1),ldy(1))
+                  ldy(1) = cvmgz(ldy(1),kpy(i,j)*ldn(1),ldy(1))
                elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
-                  ldy(2) = cvmgz(ldy(2),ldn(3),ldy(2))
+                  ldy(2) = cvmgz(ldy(2),kpy(i,j+1)*ldn(3),ldy(2))
                end if
                rgtmpy(n+2) = (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2) - grav) - 
      &           ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2) - grav))/dx(2)                
@@ -1906,7 +1904,7 @@ c           y-direction
             bx(i+1,j,1) = (rgtmpx(3) - rgx)/dcx(3)
             bx(i,j,3)   = (rgtmpx(2) - rgx)/dcx(2)
             by(i,j,2)   = (rgtmpy(1) - rgy)/dcy(1)
-            by(i,j+1,1) = (rgtmpy(3) - rgy)/dcy(3)
+            by(i,j+1,1) = (rgtmpy(3) - rgy)/dcy(3) 
             by(i,j,3)   = (rgtmpy(2) - rgy)/dcy(2)
          end do
       end do

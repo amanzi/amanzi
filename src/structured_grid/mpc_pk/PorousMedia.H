@@ -1,7 +1,7 @@
 #ifndef _PorousMedia_H_
 #define _PorousMedia_H_
 //
-// $Id: PorousMedia.H,v 1.103 2011-08-15 17:53:23 gpau Exp $
+// $Id: PorousMedia.H,v 1.104 2011-08-30 19:00:04 gpau Exp $
 //
 #include <Geometry.H>
 #include <FArrayBox.H>
@@ -75,7 +75,7 @@ public:
 			std::istream& is,
 			bool          bReadSpecial = false);
   //
-  // Read problem input file. GP 08/06/2007.
+  // Read problem input file. 
   //
   void probDefine(char * filename);
   //
@@ -211,6 +211,11 @@ public:
 			int  iteration,
 			int  ncycle);
 
+  void multilevel_advance (Real time,
+			   Real dt,
+			   int  iteration,
+			   int  ncycle);
+
   void advance_incompressible  (Real time,
 				Real dt);
 
@@ -219,7 +224,10 @@ public:
 
 #ifdef MG_USE_FBOXLIB
   void advance_richard  (Real time,
-			Real dt);
+			 Real dt); 
+ 
+  void advance_multilevel_richard  (Real time,
+				    Real dt);
 #endif
 
   void advance_tracer  (Real time,
@@ -395,6 +403,10 @@ protected:
   void richard_scalar_update (Real dt, 
 			      int& total_nwt_iter,
 			      MultiFab* u_mac = 0);
+
+  void richard_composite_update (Real dt, 
+				 int& total_nwt_iter);
+
 #endif
 
   void scalar_adjust_constraint (int  first_scalar,
@@ -485,6 +497,11 @@ protected:
   //
   // Average a fine multifab down onto a coarse one.
   //
+  void avgDown (MultiFab* s_crse,
+		int c_lev,
+		MultiFab* s_fine, 
+		int f_lev);
+
   void avgDown (const BoxArray& grids,
 		const BoxArray& fgrids,
 		MultiFab&       S_crse,
@@ -957,6 +974,7 @@ protected:
   //
   static int  do_simple;
   static int  do_sync_proj;
+  static int  do_multilevel_full;
   static int  do_reflux;
   static int  do_correct;
   static int  no_corrector;

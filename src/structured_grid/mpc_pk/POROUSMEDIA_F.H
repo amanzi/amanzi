@@ -2,7 +2,7 @@
 #define _POROUSMEDIA_F_H_
 
 /*
-** $Id: POROUSMEDIA_F.H,v 1.39 2011-08-15 17:53:23 gpau Exp $
+** $Id: POROUSMEDIA_F.H,v 1.40 2011-08-30 19:00:04 gpau Exp $
 */
 
 #ifdef BL_LANG_FORT
@@ -260,8 +260,7 @@ extern "C" {
 			 const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),
 			 const Real* phi, ARLIM_P(philo), ARLIM_P(phihi), 
 			 const Real* kp,  ARLIM_P(kplo),  ARLIM_P(kphi),
-			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),
-			 const int* ncf, const int* lo, const int* hi);
+			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi), const int* ncf);
    
    void FORT_SMOOTH_CPL (const Real* pc,  ARLIM_P(pclo),  ARLIM_P(pchi),
 			 const Real* cf,  ARLIM_P(cflo),  ARLIM_P(cfhi),

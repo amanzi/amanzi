@@ -1,5 +1,5 @@
 //
-// $Id: Diffusion.H,v 1.26 2011-08-15 17:53:23 gpau Exp $
+// $Id: Diffusion.H,v 1.27 2011-08-30 19:00:04 gpau Exp $
 //
 
 #ifndef _Diffusion_H_
@@ -126,6 +126,18 @@ public:
 		       const bool             do_upwind,
 		       Real*                  err_nwt); 
 
+    void richard_composite_iter (Real                      dt,
+				 int                       nlevs,
+				 int                       nc,
+				 Real                      gravity,
+				 Array<Real>               density,
+				 PArray<MultiFab>&         res_fix,
+				 PArray<MultiFab>&         alpha, 
+				 Array<PArray<MultiFab> >& beta,
+				 Array<PArray<MultiFab> >& beta_dp,
+				 PArray<MultiFab>&         pc,
+				 const bool                do_upwind,
+				 Real*                     err_nwt);
     void richard_iter_p(Real                   dt,
 			int                    nc,
 			Real                   gravity,
@@ -178,6 +190,19 @@ public:
 			   const MultiFab* const* beta,
 			   const MultiFab*        alpha = 0,
 			   const MultiFab*        Stmp = 0 );
+
+    void residual_richard (MGT_Solver&               mgt_solver,
+			   Real                      dt,
+			   Real                      gravity,
+			   Array<Real>               density,
+			   MultiFab**                Rhs,
+			   PArray<MultiFab>&         pc,
+			   Array<PArray<MultiFab> >& beta,
+			   PArray<MultiFab>&         alpha,
+			   PArray<MultiFab>&         res_fix,
+			   MultiFab**                S,
+			   ViscBndry                 visc_bndry);
+
 #endif  
 
     void residual_CPL (ViscBndry             visc_bndry,
@@ -284,7 +309,7 @@ public:
 		      Real                  time,
 		      ViscBndry&            visc_bndry,
 		      const BCRec&          bc,
-		      bool	 bndry_already_filled);
+		      bool	 bndry_already_filled = true);
 
     void coefs_fboxlib_mg (PArray<MultiFab>& acoefs,
 			   Array< PArray<MultiFab> >& bcoefs,
@@ -292,6 +317,13 @@ public:
 			   const MultiFab* const* beta,
 			   const Real      a,
 			   bool  do_volume = true);
+
+    void coefs_fboxlib_mg (PArray<MultiFab>&          acoefs,
+			   Array< PArray<MultiFab> >& bcoefs,
+			   PArray<MultiFab>&          alpha,
+			   Array< PArray<MultiFab> >& beta,
+			   const Real                 a,
+			   int                        nlevs);
 #endif
 
     void setBeta (ABecLaplacian*         visc_op,

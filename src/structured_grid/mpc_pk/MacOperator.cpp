@@ -1,9 +1,9 @@
 //
-// $Id: MacOperator.cpp,v 1.49 2011-02-17 19:53:31 gpau Exp $
+// $Id: MacOperator.cpp,v 1.50 2011-08-27 18:04:11 gpau Exp $
 //
 #include <winstd.H>
 
-#include <MacBndry.H>
+#include <PressBndry.H>
 #include <MacOperator.H>
 #include <MacOpMacDrivers.H>
 #include <MACOPERATOR_F.H>
@@ -513,7 +513,7 @@ MacOperator::syncRhs (const MultiFab& Volume,
 //
 
 void
-mac_level_driver (const MacBndry& mac_bndry,
+mac_level_driver (const PressBndry& mac_bndry,
 		  const BCRec&    phys_bc,
                   const BoxArray& grids,
                   int             the_solver,
@@ -538,7 +538,7 @@ mac_level_driver (const MacBndry& mac_bndry,
   mac_op.setCoefficients(area,mac_coef,dx,phys_bc,domain);
   mac_op.defRHS(area,volume,Rhs,u_mac,RhoD,phys_bc,domain,rhs_scale);
   mac_op.maxOrder(4);
-
+  
   if (verbose > 1)
   {
     Real sum = 0.0;
@@ -648,7 +648,7 @@ mac_level_driver (const MacBndry& mac_bndry,
 //
 
 void
-mac_sync_driver (const MacBndry& mac_bndry,
+mac_sync_driver (const PressBndry& mac_bndry,
 	         const BCRec&    phys_bc,
                  const BoxArray& grids,
                  int             the_solver,

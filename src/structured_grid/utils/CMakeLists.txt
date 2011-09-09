@@ -39,7 +39,7 @@ if (BUILD_TESTS)
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(reqd_libs structutils boxlib)
+  set(reqd_libs structutils box_c)
   set(structured_grid_libs)
   foreach(lib ${reqd_libs})
     list(APPEND structured_grid_libs ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
