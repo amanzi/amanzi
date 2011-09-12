@@ -56,28 +56,11 @@ set(Amanzi_CCSE_SPACEDIM          @AMANZI_SPACEDIM@)
 set(Amanzi_CCSE_PRECISION         @AMANZI_PRECISION@)
 
 # External Packages
+# Configuration file that defines the TPL include paths
 set(Amanzi_ENABLED_TPLS           @AMANZI_ENABLED_TPLS@)
+include("@CMAKE_INSTALL_PREFIX@/lib/AmanziConfigTPL.cmake")
 
-#
-# Trilinos
-#
-set(Amanzi_TPL_Trilinos_DIR                @Trilinos_DIR@)
-set(Amanzi_TPL_Trilinos_INCLUDE_DIRS       @Trilinos_INCLUDE_DIRS@)
-set(Amanzi_TPL_Trilinos_LIBRARY_DIRS       @Trilinos_LIBRARY_DIRS@)
-
-#
-# HDF5
-#
-set(Amanzi_TPL_HDF5_DIR                @HDF5_DIR@)
-set(Amanzi_TPL_HDF5_INCLUDE_DIRS       @HDF5_INCLUDE_DIRS@)
-set(Amanzi_TPL_HDF5_LIBRARY_DIRS       @HDF5_LIBRARY_DIRS@)
-
-#
-# CGNS
-#
-set(Amanzi_TPL_CGNS_DIR                @CGNS_DIR@)
-set(Amanzi_TPL_CGNS_INCLUDE_DIRS       @CGNS_INCLUDE_DIRS@)
-set(Amanzi_TPL_CGNS_LIBRARY_DIRS       @CGNS_LIBRARY_DIR@)
-
-
-
+# 
+# Exported Targets
+# File that defines the Amanzi exported targets
+include("@CMAKE_INSTALL_PREFIX@/lib/AmanziTargets.cmake")
