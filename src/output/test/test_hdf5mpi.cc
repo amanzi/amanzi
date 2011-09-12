@@ -97,6 +97,7 @@ TEST(HDF5_MPI) {
   // write out restart
   restart_output->writeAttrReal(time, "time");
   restart_output->writeAttrInt(cycle, "cycle");
+  restart_output->writeAttrString("string value", "attr name");
   restart_output->writeCellDataReal(*cell_quantity, "cell_quantity");
   restart_output->writeCellDataReal(*fake_pressure, "pressure");
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
@@ -104,10 +105,13 @@ TEST(HDF5_MPI) {
   // test reading data back
   double newtime;
   int newcycle;
+  std::string newstring;
   restart_output->readAttrReal(newtime,"time");
   cout << "E>> read back attribute time = " << newtime << endl;
   restart_output->readAttrInt(newcycle,"cycle");
   cout << "E>> read back attribute cycle = " << newcycle << endl;
+  restart_output->readAttrString(newstring,"attr name");
+  cout << "E>> read back attribute string = " << newstring.c_str() << endl;
   cout << "E>> compare results" << endl;
   cout << "E>> original:" << endl << *cell_quantity;
   Teuchos::RCP<Epetra_Vector> read_quantity;
