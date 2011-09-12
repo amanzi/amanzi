@@ -198,6 +198,7 @@ Array<amanzi::chemistry::Beaker::BeakerParameters> PorousMedia::parameters;
 // Internal switches.
 //
 int  PorousMedia::do_simple;
+int  PorousMedia::do_multilevel_full;
 int  PorousMedia::do_reflux;
 int  PorousMedia::do_correct;
 int  PorousMedia::no_corrector;
@@ -419,6 +420,7 @@ PorousMedia::InitializeStaticVariables ()
 #endif
 
   PorousMedia::do_simple           = 0;
+  PorousMedia::do_multilevel_full  = 0;
   PorousMedia::do_reflux           = 1;
   PorousMedia::do_correct          = 0;
   PorousMedia::no_corrector        = 0;
@@ -914,6 +916,7 @@ void PorousMedia::read_rock()
 	  rock_array[i].build_kmap(*kappadata, region_array, gsfile);
 	}
 
+      VisMF::SetNOutFiles(10);
       VisMF::Write(*kappadata,kfile);
     }
 
@@ -939,6 +942,7 @@ void PorousMedia::read_rock()
 	  rock_array[i].build_pmap(*phidata, region_array, gsfile);
 	}
 
+      VisMF::SetNOutFiles(10);
       VisMF::Write(*phidata,pfile);
     }
 }
@@ -987,6 +991,7 @@ void PorousMedia::read_prob()
   // Get algorithmic flags and options
   pb.query("full_cycle", full_cycle);
   //pb.query("algorithm", algorithm);
+  pb.query("do_multilevel_full",  do_multilevel_full );
   pb.query("do_simple",  do_simple );
   pb.query("do_reflux",  do_reflux );
   pb.query("do_correct", do_correct);

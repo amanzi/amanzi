@@ -1,8 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include "activity_model_debye_huckel.hh"
-
 #include <cmath>
-
 #include <iostream>
 
 namespace amanzi {

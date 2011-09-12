@@ -1,0 +1,19 @@
+# ############################################################################ #
+#
+# Amanzi version information
+# 
+# ############################################################################ #
+SET(PACKAGE_VERSION       @AMANZI_VERSION@)
+SET(PACKAGE_VERSION_MAJOR @AMANZI_VERSION_MAJOR@)
+SET(PACKAGE_VERSION_MINOR @AMANZI_VERSION_MINOR@)
+SET(PACKAGE_VERSION_PATCH @AMANZI_VERSION_PATCH@)
+
+#
+# Logic to help find_package(AMANZI xx.xx.xx) searches
+# For now will assume major number matches are ALL compatible
+IF( "${PACKAGE_FIND_VERSION_MAJOR}" EQUAL @AMANZI_VERSION_MAJOR@)
+  SET(PACKAGE_VERSION_COMPATIBLE 1)
+  IF( "${PACKAGE_FIND_VERSION}" VERSION_EQUAL @AMANZI_VERSION@)
+    SET(PACKAGE_VERSION_EXACT 1)
+  ENDIF()
+ENDIF()

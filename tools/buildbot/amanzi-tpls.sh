@@ -195,7 +195,7 @@
 # https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.83rc3.tar.gz
 #
 # ccse:
-# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.4.tar.gz
+# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.5.tar.gz
 #
 #
 #################################################################################
@@ -238,7 +238,7 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
-CCSE_VERSION=0.1.4
+CCSE_VERSION=0.1.5
 
 ################################################################################
 #
@@ -301,7 +301,8 @@ function download_archives {
     fi
 
     if [  ${HDF5_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/hdf5-${HDF5_VERSION}.tar.gz ]; then
-        wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-${HDF5_VERSION}.tar.gz
+        #wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-${HDF5_VERSION}.tar.gz
+        wget http://www.hdfgroup.org/ftp/HDF5/prev-releases/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
     fi
 
     if [  ${NETCDF_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/netcdf-${NETCDF_VERSION}.tar.gz ]; then
@@ -885,7 +886,7 @@ function install_trilinos {
 #
 ################################################################################
 function install_ccse {
-    CCSE_DIR=${CCSE_PREFIX}/ccse
+    CCSE_DIR=${CCSE_PREFIX}/ccse-${CCSE_VERSION}
     CCSE_CONFIG=1
     CCSE_MAKE=1
     CCSE_TEST=1
@@ -893,12 +894,10 @@ function install_ccse {
     CCSE_VERBOSE=0
 
     rm -rf ${CCSE_DIR}
-
     mkdir -p ${CCSE_PREFIX}
     cd ${CCSE_PREFIX}
     tar zxf ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz
-    # TODO(bandre): is this "cd" needed?
-    cd ${CCSE_DIR}/tools/buildbot
+    cd ${CCSE_DIR}
 
     # 1, 2, 3
     CCSE_SPACEDIM=${AMANZI_SPACEDIM}
@@ -1098,7 +1097,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
         -D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
-        -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse/install \\
+        -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse-${CCSE_VERSION}/install \\
         -D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
         -D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
         -D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\

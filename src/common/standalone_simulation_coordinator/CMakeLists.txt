@@ -125,6 +125,7 @@ if (BUILD_TESTS)
     add_amanzi_test(ssc-structured-test-0 ssc "--xml_file=t0-structured.xml" KIND unit)
     add_amanzi_test(ssc-structured-test-1 ssc "--xml_file=t1-structured.xml" KIND unit)
     add_amanzi_test(ssc-structured-test-2 ssc "--xml_file=t2-structured.xml" KIND unit)
+    add_amanzi_test(ssc-structured-test-2 ssc "--xml_file=t3-structured.xml" KIND unit)
 
     if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
       execute_process(COMMAND ${CMAKE_COMMAND} -E
@@ -136,6 +137,8 @@ if (BUILD_TESTS)
                       copy ${SSC_SOURCE_DIR}/tests_unit/t1-structured.xml ${SSC_BINARY_DIR})
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/t2-structured.xml ${SSC_BINARY_DIR})
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+                      copy ${SSC_SOURCE_DIR}/tests_unit/t3-structured.xml ${SSC_BINARY_DIR})
 
       execute_process(COMMAND ${CMAKE_COMMAND} -E
                       copy ${SSC_SOURCE_DIR}/tests_unit/uo2-5-component.bgd ${SSC_BINARY_DIR})

@@ -22,20 +22,20 @@ const double ActivityModelPitzerHWM::cwater=55.50837;
 //-------------------------------------------------------------
 // Limiting Debye-Hückel slope to 25º   0.39153  0.392
 //-------------------------------------------------------------
-const double ActivityModelPitzerHWM::aphi25=0.392;
+const double ActivityModelPitzerHWM::aphi_debye_huckel_slope25=0.392;
 //-------------------------------------------------------------
-// aphi25=0.39153d0,   & ! Limiting Debye-Hückel slope to 25º   0.39153  0.392
+// aphi_debye_huckel_slope25=0.39153d0,   & ! Limiting Debye-Hückel slope to 25º   0.39153  0.392
 //-------------------------------------------------------------
-const double ActivityModelPitzerHWM::c0aphi=0.13422;      //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c1aphi=0.0368329;    //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c2aphi=14.62718;     //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c3aphi=1530.1474;    //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c4aphi=80.40631;     //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c5aphi=4.1725332;    //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c6aphi=0.1481291;    //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c7aphi=1.5188505;    //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c8aphi=1.8016317;    //   Temperature depending coefficients
-const double ActivityModelPitzerHWM::c9aphi=9.3816144;    //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c0aphi_debye_huckel_slope=0.13422;      //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c1aphi_debye_huckel_slope=0.0368329;    //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c2aphi_debye_huckel_slope=14.62718;     //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c3aphi_debye_huckel_slope=1530.1474;    //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c4aphi_debye_huckel_slope=80.40631;     //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c5aphi_debye_huckel_slope=4.1725332;    //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c6aphi_debye_huckel_slope=0.1481291;    //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c7aphi_debye_huckel_slope=1.5188505;    //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c8aphi_debye_huckel_slope=1.8016317;    //   Temperature depending coefficients
+const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope=9.3816144;    //   Temperature depending coefficients
 /*!
     @brief ActivityModelPitzerHWM
 
@@ -44,25 +44,25 @@ const double ActivityModelPitzerHWM::c9aphi=9.3816144;    //   Temperature depen
     @details Create the object
 */
 ActivityModelPitzerHWM::ActivityModelPitzerHWM(const std::string& namedatabase,
-		                                 const std::vector<Species>& prim,
-		                                 const std::vector<AqueousEquilibriumComplex>& sec)
+		                                 const std::vector<Species>& primary_species,
+		                                 const std::vector<AqueousEquilibriumComplex>& aqueous_complexes)
     : ActivityModel(),
-      aphi(aphi25),
-      nfunb(0),
-      nfunbvol(0),
-      nfunj(0),
-      nnzbeta(0),
-      nnztheta(0),
-      nnzcpz(0),
-      nnzlamda(0),
-      nnzpsi(0),
-      nnzq(0),
-      ithcl(-1),
-      ithw(-1),
-      ithk(-1),
-      ismacinnes(false)
+      aphi_debye_huckel_slope(aphi_debye_huckel_slope25),
+      number_b_functions(0),
+      number_j_functions(0),
+      number_non_zero_beta(0),
+      number_non_zero_theta(0),
+      number_non_zero_cphi(0),
+      number_non_zero_lamda(0),
+      number_non_zero_psi(0),
+      number_non_zero_q(0),
+      index_cl_species(-1),
+      index_h2o_species(-1),
+      index_k_species(-1),
+      number_species(0),
+      macinnes_scale(false)
       {
-ReadDataBase(namedatabase,prim,sec);
+ReadDataBase(namedatabase,primary_species,aqueous_complexes);
 }  // end ActivityModelPitzer constructor
 /*!
     @brief ~ActivityModelPitzerHWM
@@ -96,7 +96,7 @@ void ActivityModelPitzerHWM::EvaluateVector(std::vector<double>& gamma, double& 
 unsigned int nsp(primary_species.size()+aqueous_complexes.size());
 double gcl(1.0);
 double gclm(1.0);
-double osmotic_coeff(1.0);
+double osmotic_coefficient(1.0);
 CalculateIonicStrength(primary_species,aqueous_complexes);
 CalculateSumAbsZ(primary_species,aqueous_complexes);
 CalculateSumC(primary_species,aqueous_complexes);
@@ -106,25 +106,25 @@ if (I_==0.0 || Z_==0.0 || M_==0.0) {
   Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
 }
 int isp(-1);
-for (std::vector<Species>::const_iterator i = primary_species.begin(); i != primary_species.end(); i++) {
+for (std::vector<Species>::const_iterator i=primary_species.begin(); i!=primary_species.end(); i++) {
 isp++;
 molality.at(isp)=(*i).molality();
 }
-for (std::vector<AqueousEquilibriumComplex>::const_iterator i = aqueous_complexes.begin(); i !=aqueous_complexes.end(); i++) {
+for (std::vector<AqueousEquilibriumComplex>::const_iterator i=aqueous_complexes.begin(); i!=aqueous_complexes.end(); i++) {
 isp++;
 molality.at(isp)=(*i).molality();
 }
 ComputeQmatrices();
-ComputeDebyeHuckelTerm(gamma,osmotic_coeff,gclm);
-ComputeQ(gamma,osmotic_coeff);
-ComputeQl(osmotic_coeff);
-ComputeQc(gamma,osmotic_coeff);
-ComputeT(gamma,osmotic_coeff);
-if (ismacinnes && ithcl>-1) {
-   gcl=gamma.at(ithcl);
-   for (int i=0; i<nsp; i++) if (i!=ithw) gamma.at(i)*= pow((gcl/gclm),charge.at(i));
+ComputeDebyeHuckelTerm(gamma,osmotic_coefficient,gclm);
+ComputemQmProduct(gamma,osmotic_coefficient);
+ComputemQlmProduct(osmotic_coefficient);
+ComputemQcmProduct(gamma,osmotic_coefficient);
+ComputemTmmProduct(gamma,osmotic_coefficient);
+if (macinnes_scale && index_cl_species>-1) {
+   gcl=gamma.at(index_cl_species);
+   for (int i=0; i<nsp; i++) if (i!=index_h2o_species) gamma.at(i)*= pow((gcl/gclm),charge.at(i));
 }
-water_activity=osmotic_coeff;
+water_activity=osmotic_coefficient;
 }  // end EvaluateVector()
 /*!
     @brief ComputeQc
@@ -133,14 +133,14 @@ water_activity=osmotic_coeff;
 
     @details Compute the m(Qc)m product.
 */
-void ActivityModelPitzerHWM::ComputeQc(std::vector<double>& gamma, double& osco) {
+void ActivityModelPitzerHWM::ComputemQcmProduct(std::vector<double>& gamma, double& osmotic_coefficient) {
 double qc(0.0);
-for (int nz=0; nz<nnzcpz; nz++) {
- int i(cpz.at(nz).GetIsp1());
- int j(cpz.at(nz).GetIsp2());
+for (int nz=0; nz<number_non_zero_cphi; nz++) {
+ int i(cphi_virial.at(nz).GetIsp1());
+ int j(cphi_virial.at(nz).GetIsp2());
  double mi(molality.at(i));
  double mj(molality.at(j));
- double Cij(cpz.at(nz).GetVirial());
+ double Cij(cphi_virial.at(nz).GetVirial());
  double mjCij(mj*Cij);
  double miCij(mi*Cij);
  double mimjCij(mi*mj*Cij);
@@ -148,7 +148,7 @@ for (int nz=0; nz<nnzcpz; nz++) {
  gamma.at(i)+=mjCij*Z_;
  gamma.at(j)+=miCij*Z_;
 }
-osco+=Z_*qc;
+osmotic_coefficient+=Z_*qc;
 for (int i=0; i<gamma.size(); i++) gamma.at(i)+=abs(charge.at(i))*qc;
 }
 /*!
@@ -158,14 +158,14 @@ for (int i=0; i<gamma.size(); i++) gamma.at(i)+=abs(charge.at(i))*qc;
 
     @details Compute the m(Ql)m product.
 */
-void ActivityModelPitzerHWM::ComputeQl(double& osco) {
-for (int nz=0; nz<nnzlamda; nz++) {
- int i(lamda.at(nz).GetIsp1());
- int j(lamda.at(nz).GetIsp2());
- double Lij(lamda.at(nz).GetVirial());
+void ActivityModelPitzerHWM::ComputemQlmProduct(double& osmotic_coefficient) {
+for (int nz=0; nz<number_non_zero_lamda; nz++) {
+ int i(lamda_virial.at(nz).GetIsp1());
+ int j(lamda_virial.at(nz).GetIsp2());
+ double Lij(lamda_virial.at(nz).GetVirial());
  double mi(molality.at(i));
  double mj(molality.at(j));
- osco+=mi*mj*Lij;
+ osmotic_coefficient+=mi*mj*Lij;
 }
 } // end ComputeQl
 /*!
@@ -175,14 +175,14 @@ for (int nz=0; nz<nnzlamda; nz++) {
 
     @details Compute mQm product.
 */
-void ActivityModelPitzerHWM::ComputeQ(std::vector<double>& gamma, double& osco) {
+void ActivityModelPitzerHWM::ComputemQmProduct(std::vector<double>& gamma, double& osmotic_coefficient) {
 double q2phi(0.0),q2prim(0.0);
-for (int nz=0; nz<nnzq; nz++) {
+for (int nz=0; nz<number_non_zero_q; nz++) {
  double qij(q.at(nz));
  double qpriij(qpri.at(nz));
  double qphiij(qphi.at(nz));
- int i(indnzq.at(0).at(nz));
- int j(indnzq.at(1).at(nz));
+ int i(index_non_zero_q.at(0).at(nz));
+ int j(index_non_zero_q.at(1).at(nz));
  double mi(molality.at(i));
  double mj(molality.at(j));
  q2phi+=mi*mj*qphiij;
@@ -190,7 +190,7 @@ for (int nz=0; nz<nnzq; nz++) {
  gamma.at(i)+=2.0*qij*mj;
  gamma.at(j)+=2.0*qij*mi;
 }
-osco+=q2phi;
+osmotic_coefficient+=q2phi;
 for (int i=0; i<gamma.size(); i++) gamma.at(i)+=charge.at(i)*charge.at(i)*q2prim;
 }
 /*!
@@ -200,15 +200,15 @@ for (int i=0; i<gamma.size(); i++) gamma.at(i)+=charge.at(i)*charge.at(i)*q2prim
 
     @details Compute mTmm product.
 */
-void ActivityModelPitzerHWM::ComputeT(std::vector<double>& gamma, double& osco) {
+void ActivityModelPitzerHWM::ComputemTmmProduct(std::vector<double>& gamma, double& osmotic_coefficient) {
 double tril(0.0);
 std::vector<double> vector;
-for (int i=0; i<nsp; i++) vector.push_back(0.0);
-for (int nz=0; nz<nnzpsi; nz++) {
-   double Psiijk(psi.at(nz).GetVirial());
-   int i(psi.at(nz).GetIsp1());
-   int j(psi.at(nz).GetIsp2());
-   int k(psi.at(nz).GetIsp3());
+for (int i=0; i<number_species; i++) vector.push_back(0.0);
+for (int nz=0; nz<number_non_zero_psi; nz++) {
+   double Psiijk(psi_virial.at(nz).GetVirial());
+   int i(psi_virial.at(nz).GetIsp1());
+   int j(psi_virial.at(nz).GetIsp2());
+   int k(psi_virial.at(nz).GetIsp3());
    double mi(molality.at(i));
    double mj(molality.at(j));
    double mk(molality.at(k));
@@ -217,14 +217,14 @@ for (int nz=0; nz<nnzpsi; nz++) {
    vector.at(j)+=Psiijk*mi*mk;
    vector.at(k)+=Psiijk*mj*mi;
 }
-osco+=tril;
-osco*=2.0/(M_+1.0e-20);
-osco+=1.0;
-osco*=-M_/cwater;
-osco=exp(osco);
-for (int i=0; i<nsp; i++) {
- if (i==ithw) {
-   gamma.at(ithw)=osco;
+osmotic_coefficient+=tril;
+osmotic_coefficient*=2.0/(M_+1.0e-20);
+osmotic_coefficient+=1.0;
+osmotic_coefficient*=-M_/cwater;
+osmotic_coefficient=exp(osmotic_coefficient);
+for (int i=0; i<number_species; i++) {
+ if (i==index_h2o_species) {
+   gamma.at(index_h2o_species)=osmotic_coefficient;
  } else {
    gamma.at(i)=exp(gamma.at(i)+vector.at(i));
  }
@@ -237,30 +237,31 @@ for (int i=0; i<nsp; i++) {
 
     @details Compute the Debye-Huckel term.
 */
-void ActivityModelPitzerHWM::ComputeDebyeHuckelTerm(std::vector<double>& gamma, double& osco, double& gclm) {
+void ActivityModelPitzerHWM::ComputeDebyeHuckelTerm(std::vector<double>& gamma, double& osmotic_coefficient, double& gclm) {
 gclm=1.0;
 double den(1.0+bdh*sqrt(I_));
-double dh(-aphi*sqrt(I_)/den);
-osco=I_*dh;
-dh-=(2.0/bdh)*aphi*log(den);
+double dh(-aphi_debye_huckel_slope*sqrt(I_)/den);
+osmotic_coefficient=I_*dh;
+dh-=(2.0/bdh)*aphi_debye_huckel_slope*log(den);
 int isp(-1);
 for (std::vector<double>::iterator i=gamma.begin(); i!=gamma.end(); i++) {
  isp++;
  (*i)=charge.at(isp)*charge.at(isp)*dh;
 }
-if (ismacinnes) gclm=gclm_(dh);
+if (macinnes_scale) gclm=gclm_(dh);
 }
 /*!
     @brief gclm_
 
     @class ActivityModelPitzerHWM
 
-    @details Compute the activity coefficient Cl- in a KCl-K system.
+    @details Compute the activity coefficient for Cl- in a KCl-K system
+    (performed for the MacIness convention).
 */
 double ActivityModelPitzerHWM::gclm_(const double& dhterm) {
-const double mtb0kcl(0.04835e0);
-const double mtb1kcl(0.2122e0);
-const double mtc0kcl(-0.00084e0);
+const double mtb0kcl(0.04835);
+const double mtb1kcl(0.2122);
+const double mtc0kcl(-0.00084);
 double x(2.0*sqrt(I_));
 double xxx(-2.0*(1.0-(1.0+x+0.5*x*x)*exp(-x))/(x*x));
 xxx*=mtb1kcl/I_;
@@ -278,7 +279,7 @@ return exp(dhterm+I_*I_*xxx+I_*(2.0*yyy+I_*mtc0kcl)+I_*I_*mtc0kcl/2.0);
     them in sparse storage
 */
 void ActivityModelPitzerHWM::ComputeQmatrices() {
-for (int i=0; i<nfunb; i++) {
+for (int i=0; i<number_b_functions; i++) {
  g_.at(i).at(0)=0.0;
  g_.at(i).at(1)=0.0;
  g_pri_.at(i).at(0)=0.0;
@@ -286,21 +287,21 @@ for (int i=0; i<nfunb; i++) {
  f_.at(i).at(0)=0.0;
  f_.at(i).at(1)=0.0;
 }
-for (int i=0; i<nfunj; i++) {
+for (int i=0; i<number_j_functions; i++) {
  j_.at(i)=0.0;
  j_pri_.at(i)=0.0;
 }
 ComputeBetaFunctions();
 ComputeJFunctions();
 int nz(-1);
-for (int nz_loc=0; nz_loc<nnzbeta; nz_loc++) {
+for (int nz_loc=0; nz_loc<number_non_zero_beta; nz_loc++) {
   nz++;
-  int i(beta0.at(nz_loc).GetIsp1());
-  int j(beta0.at(nz_loc).GetIsp2());
-  int k(beta0.at(nz_loc).GetIfun1());
-  double B0ij(beta0.at(nz_loc).GetVirial());
-  double B1ij(beta1.at(nz_loc).GetVirial());
-  double B2ij(beta2.at(nz_loc).GetVirial());
+  int i(beta0_virial.at(nz_loc).GetIsp1());
+  int j(beta0_virial.at(nz_loc).GetIsp2());
+  int k(beta0_virial.at(nz_loc).GetIfun1());
+  double B0ij(beta0_virial.at(nz_loc).GetVirial());
+  double B1ij(beta1_virial.at(nz_loc).GetVirial());
+  double B2ij(beta2_virial.at(nz_loc).GetVirial());
   double expo1(f_.at(k).at(0));
   double expo2(f_.at(k).at(1));
   double G1(g_.at(k).at(0));
@@ -310,26 +311,26 @@ for (int nz_loc=0; nz_loc<nnzbeta; nz_loc++) {
   qphi.at(nz)=B0ij+B1ij*expo1+B2ij*expo2;
   q.at(nz)=B0ij+B1ij*G1+B2ij*G2;
   qpri.at(nz)=B1ij*(Gp1/I_)+B2ij*(Gp2/I_);
-  indnzq.at(0).at(nz)=i;
-  indnzq.at(1).at(nz)=j;
+  index_non_zero_q.at(0).at(nz)=i;
+  index_non_zero_q.at(1).at(nz)=j;
 }
-for (int nz_loc=0; nz_loc<nnztheta; nz_loc++) {
+for (int nz_loc=0; nz_loc<number_non_zero_theta; nz_loc++) {
   nz++;
-  int i(theta.at(nz_loc).GetIsp1());
-  int j(theta.at(nz_loc).GetIsp2());
-  int funij(theta.at(nz_loc).GetIfun1());
-  int funii(theta.at(nz_loc).GetIfun2());
-  int funjj(theta.at(nz_loc).GetIfun3());
-  double thij(theta.at(nz_loc).GetVirial());
+  int i(theta_virial.at(nz_loc).GetIsp1());
+  int j(theta_virial.at(nz_loc).GetIsp2());
+  int funij(theta_virial.at(nz_loc).GetIfun1());
+  int funii(theta_virial.at(nz_loc).GetIfun2());
+  int funjj(theta_virial.at(nz_loc).GetIfun3());
+  double thij(theta_virial.at(nz_loc).GetVirial());
   double jij(j_.at(funij));
   double jii(j_.at(funii));
   double jjj(j_.at(funjj));
   double jpij(j_pri_.at(funij));
   double jpii(j_pri_.at(funii));
   double jpjj(j_pri_.at(funjj));
-  double zizj(zprod.at(funij));
-  double zizi(zprod.at(funii));
-  double zjzj(zprod.at(funjj));
+  double zizj(charge_product.at(funij));
+  double zizi(charge_product.at(funii));
+  double zjzj(charge_product.at(funjj));
   double xij(2.352*sqrt(I_)*zizj);
   double xii(2.352*sqrt(I_)*zizi);
   double xjj(2.352*sqrt(I_)*zjzj);
@@ -339,18 +340,18 @@ for (int nz_loc=0; nz_loc<nnztheta; nz_loc++) {
   double ethpri(-eth_i+(zizj/(8.0*I_*I_))*(xij*jpij-0.5*xii*jpii-0.5*xjj*jpjj));
   qpri.at(nz)=ethpri;
   qphi.at(nz)=thij+eth+I_*ethpri;
-  indnzq.at(0).at(nz)=i;
-  indnzq.at(1).at(nz)=j;
+  index_non_zero_q.at(0).at(nz)=i;
+  index_non_zero_q.at(1).at(nz)=j;
 }
-for (int nz_loc=0; nz_loc<nnzlamda; nz_loc++) {
+for (int nz_loc=0; nz_loc<number_non_zero_lamda; nz_loc++) {
   nz++;
-  int i(lamda.at(nz_loc).GetIsp1());
-  int j(lamda.at(nz_loc).GetIsp2());
-  q.at(nz)=lamda.at(nz_loc).GetVirial();
-  indnzq.at(0).at(nz)=i;
-  indnzq.at(1).at(nz)=j;
+  int i(lamda_virial.at(nz_loc).GetIsp1());
+  int j(lamda_virial.at(nz_loc).GetIsp2());
+  q.at(nz)=lamda_virial.at(nz_loc).GetVirial();
+  index_non_zero_q.at(0).at(nz)=i;
+  index_non_zero_q.at(1).at(nz)=j;
 }
-if ((nz+1)!=nnzq) {
+if ((nz+1)!=number_non_zero_q) {
   std::ostringstream error_stream;
   error_stream << "Warning different number non-zero terms in Q's matrices" << "\n";
   Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
@@ -364,7 +365,7 @@ if ((nz+1)!=nnzq) {
     @details Compute the Beta functions
 */
 void ActivityModelPitzerHWM::ComputeBetaFunctions() {
-for (int j=0; j<nfunb; j++) {
+for (int j=0; j<number_b_functions; j++) {
 	   double x1(alpha1.at(j)*sqrt(I_));
 	   double x1q(x1*x1);
 	   double x1c(x1q*x1);
@@ -399,8 +400,8 @@ d[3]=-4.408;
 d[4]=1.837;
 d[5]=-0.251;
 d[6]=0.0164;
-for (int i=0;i<nfunj; i++) {
- double zizj(zprod.at(i));
+for (int i=0;i<number_j_functions; i++) {
+ double zizj(charge_product.at(i));
  double x(2.352*sqrt(I_)*zizj);
  double x2(x*x);
  double x3(x2*x);
@@ -440,7 +441,7 @@ void ActivityModelPitzerHWM::Display(void) const {
   std::cout << "============================================>" << std::endl;
   std::cout << "Species:" << std::endl;
   std::cout << "---------------------------------------------" << std::endl;
-  for (int i=0; i<nsp; i++) std::cout << namesp.at(i) << " " << charge.at(i) << " " << std::endl;
+  for (int i=0; i<number_species; i++) std::cout << name_species.at(i) << " " << charge.at(i) << " " << std::endl;
   std::cout << "============================================>" << std::endl;
   std::cout << "--------------------------------------------------------------------" << std::endl;
   std::cout << " Virial coefficients" << std::endl;
@@ -449,81 +450,81 @@ void ActivityModelPitzerHWM::Display(void) const {
   int isp2(-1);
   int isp3(-1);
   int nvirial(0);
-  if (nnzbeta>0){
+  if (number_non_zero_beta>0){
   std::cout << "=================> B0 ==============>" << std::endl;
-  for (int i=0; i<nnzbeta; i++){
-    isp1=beta0.at(i).GetIsp1();
-    isp2=beta0.at(i).GetIsp2();
-    if (beta0.at(i).GetVirial()!=0.0){
+  for (int i=0; i<number_non_zero_beta; i++){
+    isp1=beta0_virial.at(i).GetIsp1();
+    isp2=beta0_virial.at(i).GetIsp2();
+    if (beta0_virial.at(i).GetVirial()!=0.0){
   	  nvirial++;
-      std::cout << namesp.at(isp1) << "  " << namesp.at(isp2) << "  " << beta0.at(i).GetVirial() << std::endl;
+      std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta0_virial.at(i).GetVirial() << std::endl;
     }
   }
   std::cout << "=================> B1 ==============>" << std::endl;
-  for (int i=0; i<nnzbeta; i++){
-    isp1=beta1.at(i).GetIsp1();
-    isp2=beta1.at(i).GetIsp2();
-    if (beta1.at(i).GetVirial()!=0.0){
+  for (int i=0; i<number_non_zero_beta; i++){
+    isp1=beta1_virial.at(i).GetIsp1();
+    isp2=beta1_virial.at(i).GetIsp2();
+    if (beta1_virial.at(i).GetVirial()!=0.0){
   	  nvirial++;
-    	  std::cout << namesp.at(isp1) << "  " << namesp.at(isp2) << "  " << beta1.at(i).GetVirial() << std::endl;
+    	  std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta1_virial.at(i).GetVirial() << std::endl;
       }
   }
   std::cout << "=================> B2 ==============>" << std::endl;
-  for (int i=0; i<nnzbeta; i++){
-    isp1=beta2.at(i).GetIsp1();
-    isp2=beta2.at(i).GetIsp2();
-    if (beta2.at(i).GetVirial()!=0.0){
+  for (int i=0; i<number_non_zero_beta; i++){
+    isp1=beta2_virial.at(i).GetIsp1();
+    isp2=beta2_virial.at(i).GetIsp2();
+    if (beta2_virial.at(i).GetVirial()!=0.0){
   	  nvirial++;
-  	  std::cout << namesp.at(isp1) << "  " << namesp.at(isp2) << "  " << beta2.at(i).GetVirial() << std::endl;
+  	  std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta2_virial.at(i).GetVirial() << std::endl;
     }
 
   }
   }
-  if (nnzcpz>0){
+  if (number_non_zero_cphi>0){
   std::cout << "=================> Cfi ==============>" << std::endl;
-  for (int i=0; i<nnzcpz; i++){
-    isp1=cpz.at(i).GetIsp1();
-    isp2=cpz.at(i).GetIsp2();
-    if (cpz.at(i).GetVirial()!=0.0){
+  for (int i=0; i<number_non_zero_cphi; i++){
+    isp1=cphi_virial.at(i).GetIsp1();
+    isp2=cphi_virial.at(i).GetIsp2();
+    if (cphi_virial.at(i).GetVirial()!=0.0){
   	  nvirial++;
-  	  std::cout << namesp.at(isp1) << "  " << namesp.at(isp2) << "  " << cpz.at(i).GetVirial() << std::endl;
+  	  std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << cphi_virial.at(i).GetVirial() << std::endl;
     }
 
   }
   }
-  if (nnztheta>0){
+  if (number_non_zero_theta>0){
   std::cout << "=================> Theta ==============>" << std::endl;
-  for (int i=0; i<nnztheta; i++){
-    isp1=theta.at(i).GetIsp1();
-    isp2=theta.at(i).GetIsp2();;
-    if (theta.at(i).GetVirial()!=0.0){
+  for (int i=0; i<number_non_zero_theta; i++){
+    isp1=theta_virial.at(i).GetIsp1();
+    isp2=theta_virial.at(i).GetIsp2();;
+    if (theta_virial.at(i).GetVirial()!=0.0){
   	  nvirial++;
-  	  std::cout << namesp[isp1] << "  " << namesp[isp2] << "  " << theta.at(i).GetVirial() << std::endl;
+  	  std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << theta_virial.at(i).GetVirial() << std::endl;
     }
 
   }
   }
-  if (nnzlamda>0){
+  if (number_non_zero_lamda>0){
   std::cout << "=================> Lamda ==============>" << std::endl;
-  for (int i=0; i<nnzlamda; i++){
-    isp1=lamda.at(i).GetIsp1();
-    isp2=lamda.at(i).GetIsp2();
-    if (lamda.at(i).GetVirial()!=0.0){
+  for (int i=0; i<number_non_zero_lamda; i++){
+    isp1=lamda_virial.at(i).GetIsp1();
+    isp2=lamda_virial.at(i).GetIsp2();
+    if (lamda_virial.at(i).GetVirial()!=0.0){
   	  nvirial++;
-  	  std::cout << namesp.at(isp1) << "  " << namesp.at(isp2) << "  " << lamda.at(i).GetVirial() << std::endl;
+  	  std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << lamda_virial.at(i).GetVirial() << std::endl;
     }
 
   }
   }
-  if (nnzpsi>0){
+  if (number_non_zero_psi>0){
   std::cout << "=================> Psi ==============>" << std::endl;
-  for (int i=0; i<nnzpsi; i++){
-    isp1=psi.at(i).GetIsp1();
-    isp2=psi.at(i).GetIsp2();
-    isp3=psi.at(i).GetIsp3();
-    if (psi.at(i).GetVirial()!=0.0){
+  for (int i=0; i<number_non_zero_psi; i++){
+    isp1=psi_virial.at(i).GetIsp1();
+    isp2=psi_virial.at(i).GetIsp2();
+    isp3=psi_virial.at(i).GetIsp3();
+    if (psi_virial.at(i).GetVirial()!=0.0){
   	  nvirial++;
-  	  std::cout << namesp.at(isp1) << "  " << namesp.at(isp2) << "  " << namesp.at(isp3) << "  " << psi.at(i).GetVirial() << std::endl;
+  	  std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << name_species.at(isp3) << "  " << psi_virial.at(i).GetVirial() << std::endl;
     }
 
   }
@@ -531,11 +532,11 @@ void ActivityModelPitzerHWM::Display(void) const {
   std::cout << "=====================================>" << std::endl;
   std::cout << "Total number of virial coefficients: " << nvirial << std::endl;
   std::cout << "=====================================>" << std::endl;
-  std::cout << "Total number of Beta's functions: " << nfunb << std::endl;
+  std::cout << "Total number of Beta's functions: " << number_b_functions << std::endl;
   std::cout << "=====================================>" << std::endl;
-  std::cout << "Total number of J's functions: " << nfunj << std::endl;
+  std::cout << "Total number of J's functions: " << number_j_functions << std::endl;
   std::cout << "--------------------------------------" << std::endl;
-  for (int i=0; i<nfunj; i++) std::cout << "Zi Zj product:" << zprod[i] << std::endl;
+  for (int i=0; i<number_j_functions; i++) std::cout << "Zi Zj product:" << charge_product[i] << std::endl;
   std::cout << "=====================================>" << std::endl;
 }  // end Display()
 /*!
@@ -552,8 +553,8 @@ const bool isdebug(true);
 const int mxlines(10000);
 const int block_b0(0), block_b1(1), block_b2(2), block_cfi(3), block_theta(4), block_lamda(5), block_psi(7), block_exit(8);
 const std::string longspace("                  ");
-nsp=primary_species.size()+aqueous_complexes.size();
-if (nsp==0){
+number_species=primary_species.size()+aqueous_complexes.size();
+if (number_species==0){
   std::ostringstream error_stream;
   error_stream << "Error, zero number of species" << "\n";
   Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
@@ -562,13 +563,13 @@ for (std::vector<Species>::const_iterator i=primary_species.begin();
      i!=primary_species.end(); i++) {
   	 molality.push_back(0.0);
      charge.push_back((*i).charge());
-     namesp.push_back((*i).name());
+     name_species.push_back((*i).name());
 }
 for (std::vector<AqueousEquilibriumComplex>::const_iterator i=aqueous_complexes.begin();
      i!=aqueous_complexes.end(); i++) {
   	 molality.push_back(0.0);
   	 charge.push_back((*i).charge());
-   	 namesp.push_back((*i).name());
+  	name_species.push_back((*i).name());
 }
 //---------------------------------------------------------------------------------------------
 // Open Pitzer virial coefficients database
@@ -581,7 +582,7 @@ if (!database) {
 	    error_stream << "file could not be opened.... " << namedatabase << "\n";
 	    Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
 } else {
-		if (isdebug) std::cout << "Opening Pitzer virial coefficients was successful: " << namedatabase << std::endl;
+		if (isdebug) std::cout << "Opening Pitzer virial coefficients database was successful: " << namedatabase << std::endl;
 }
 
 std::string space(" ");
@@ -643,15 +644,15 @@ AssignIndexBetaFunctions();
 if (isdebug) std::cout << "=================> Assign F's functions ==============>" << std::endl;
 AssignIndexJFunctions();
 if (isdebug) std::cout << "=================> Compute total number of non-zero terms ==============>" << std::endl;
-nnzq=nnzbeta+nnztheta+nnzlamda;
+number_non_zero_q=number_non_zero_beta+number_non_zero_theta+number_non_zero_lamda;
 PushPrivateVectors();
 Update(273.15,0.0);
-for (int isp=0; isp<nsp; isp++) {
-	if (namesp.at(isp)=="H2O" || namesp.at(isp)=="h2o") ithw=isp;
-	if (namesp.at(isp)=="Cl-" || namesp.at(isp)=="cl-") ithcl=isp;
-	if (namesp.at(isp)=="K+"  || namesp.at(isp)=="k+") ithk=isp;
+for (int isp=0; isp<number_species; isp++) {
+	if (name_species.at(isp)=="H2O" || name_species.at(isp)=="h2o") index_h2o_species=isp;
+	if (name_species.at(isp)=="Cl-" || name_species.at(isp)=="cl-") index_cl_species=isp;
+	if (name_species.at(isp)=="K+"  || name_species.at(isp)=="k+") index_k_species=isp;
 }
-if (ithcl>-1 && ithk>-1) ismacinnes=true;
+if (index_cl_species>-1 && index_k_species>-1) macinnes_scale=true;
 database.close();
 if (isdebug) std::cout << "=================> Closing Pitzer Data Base ==============>" << std::endl;
 if (isdebug) std::cout << "=================> Print virial coefficients ==============>" << std::endl;
@@ -687,7 +688,7 @@ if(isp1>-1 && isp2>-1) {
     virial_vec.push_back(virial);
     SetVirialCoefficient(virial_vec,"b0",isp1,isp2,-1);
     bool isdebug(false);
-    if (isdebug) std::cout << namesp.at(isp1) << namesp.at(isp2) << virial <<std::endl;
+    if (isdebug) std::cout << name_species.at(isp1) << name_species.at(isp2) << virial <<std::endl;
 }
 }  // ParseB0
 /*!
@@ -720,7 +721,7 @@ void ActivityModelPitzerHWM::ParseBeta1VirialCoefficient(const std::string& data
 	virial_vec.push_back(virial);
 	SetVirialCoefficient(virial_vec,"b1",isp1,isp2,-1);
 	bool isdebug(false);
-	if (isdebug) std::cout << namesp.at(isp1) << namesp.at(isp2) << virial <<std::endl;
+	if (isdebug) std::cout << name_species.at(isp1) << name_species.at(isp2) << virial <<std::endl;
 }
 }
 /*!
@@ -752,7 +753,7 @@ void ActivityModelPitzerHWM::ParseBeta2VirialCoefficient(const std::string& data
 	virial_vec.push_back(virial);
 	SetVirialCoefficient(virial_vec,"b2",isp1,isp2,-1);
 	bool isdebug(false);
-	if (isdebug) std::cout << namesp.at(isp1) << namesp.at(isp2) << virial <<std::endl;
+	if (isdebug) std::cout << name_species.at(isp1) << name_species.at(isp2) << virial <<std::endl;
 }
 }
 /*!
@@ -785,7 +786,7 @@ void ActivityModelPitzerHWM::ParseCfiVirialCoefficient(const std::string& data) 
 	virial_vec.push_back(virial);
 	SetVirialCoefficient(virial_vec,"cfi",isp1,isp2,-1);
 	bool isdebug(false);
-	if (isdebug) std::cout << namesp.at(isp1) << namesp.at(isp2) << virial <<std::endl;
+	if (isdebug) std::cout << name_species.at(isp1) << name_species.at(isp2) << virial <<std::endl;
     }
 }
 /*!
@@ -818,11 +819,11 @@ void ActivityModelPitzerHWM::ParseThetaVirialCoefficient(const std::string& data
 	 SetVirialCoefficient(virial_vec,"theta",isp1,isp2,-1);
 	 bool isdebug(false);
 	 if (isdebug){
-		std::cout << namesp.at(isp1) << namesp.at(isp2) << virial <<std::endl;
-		for (int i=0; i<nnztheta; i++){
-		    std::cout << "zi zj" << theta.at(i).GetIfun1() << std::endl;
-		    std::cout << "zi zi" << theta.at(i).GetIfun2() << std::endl;
-		    std::cout << "zj zj" << theta.at(i).GetIfun3() << std::endl;
+		std::cout << name_species.at(isp1) << name_species.at(isp2) << virial <<std::endl;
+		for (int i=0; i<number_non_zero_theta; i++){
+		    std::cout << "zi zj" << theta_virial.at(i).GetIfun1() << std::endl;
+		    std::cout << "zi zi" << theta_virial.at(i).GetIfun2() << std::endl;
+		    std::cout << "zj zj" << theta_virial.at(i).GetIfun3() << std::endl;
 	    }
       }
 }
@@ -856,7 +857,7 @@ void ActivityModelPitzerHWM::ParseLamdaVirialCoefficient(const std::string& data
 	  virial_vec.push_back(virial);
 	  SetVirialCoefficient(virial_vec,"lamda",isp1,isp2,-1);
       bool isdebug(false);
-	  if (isdebug) std::cout << namesp.at(isp1) << namesp.at(isp2) << virial <<std::endl;
+	  if (isdebug) std::cout << name_species.at(isp1) << name_species.at(isp2) << virial <<std::endl;
     }
 }
 /*!
@@ -893,7 +894,7 @@ void ActivityModelPitzerHWM::ParsePsiVirialCoefficient(const std::string& data) 
 	 virial_vec.push_back(virial);
 	 SetVirialCoefficient(virial_vec,"psi",isp1,isp2,isp3);
 	 bool isdebug(false);
-	 if (isdebug) std::cout << namesp.at(isp1) << namesp.at(isp2) << namesp.at(isp3) << virial << std::endl;
+	 if (isdebug) std::cout << name_species.at(isp1) << name_species.at(isp2) << name_species.at(isp3) << virial << std::endl;
     }
 }
 /*!
@@ -909,16 +910,16 @@ VirialCoefficient vir;
 VirialCoefficient vir0;
 bool not_stored(true);
 if (typevirial=="b0") {
-	 for (int i=0; i<nnzbeta && not_stored; i++) {
-	   	int isp1_old=beta0[i].GetIsp1();
-	   	int isp2_old=beta0[i].GetIsp2();
+	 for (int i=0; i<number_non_zero_beta && not_stored; i++) {
+	   	int isp1_old=beta0_virial.at(i).GetIsp1();
+	   	int isp2_old=beta0_virial.at(i).GetIsp2();
 	   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-	   		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) beta0[i].SetPol((*j));
+	   		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) beta0_virial.at(i).SetPol((*j));
 	   		not_stored=false;
 	   	}
 	 }
 	 if (not_stored) {
-	    nnzbeta++;
+	    number_non_zero_beta++;
 	    for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) vir.SetPol((*j));
 	    vir.SetIsp1(isp1);
 	    vir.SetIsp2(isp2);
@@ -926,23 +927,23 @@ if (typevirial=="b0") {
 	    vir0.SetIsp2(isp2);
 	    vir.SetIfun1(0);
 	    vir0.SetIfun1(0);
-	    beta0.push_back(vir);
-	    beta1.push_back(vir0);
-	    beta2.push_back(vir0);
+	    beta0_virial.push_back(vir);
+	    beta1_virial.push_back(vir0);
+	    beta2_virial.push_back(vir0);
 	  }
 
 } else if (typevirial=="b1"){
 
-	    for (int i=0; i<nnzbeta && not_stored; i++) {
-		   	int isp1_old=beta1.at(i).GetIsp1();
-		   	int isp2_old=beta1.at(i).GetIsp2();;
+	    for (int i=0; i<number_non_zero_beta && not_stored; i++) {
+		   	int isp1_old=beta1_virial.at(i).GetIsp1();
+		   	int isp2_old=beta1_virial.at(i).GetIsp2();;
 		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-		   		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) beta1.at(i).SetPol((*j));
+		   		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) beta1_virial.at(i).SetPol((*j));
 		   		not_stored=false;
 		   	}
 		}
 		if (not_stored) {
-		      nnzbeta++;
+		      number_non_zero_beta++;
 		      for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) vir.SetPol((*j));
 		      vir.SetIsp1(isp1);
 		      vir.SetIsp2(isp2);
@@ -950,24 +951,24 @@ if (typevirial=="b0") {
 		      vir0.SetIsp2(isp2);
 		      vir.SetIfun1(0);
 		      vir0.SetIfun1(0);
-		      beta1.push_back(vir);
-		      beta0.push_back(vir0);
-		      beta2.push_back(vir0);
+		      beta1_virial.push_back(vir);
+		      beta0_virial.push_back(vir0);
+		      beta2_virial.push_back(vir0);
 		}
 
 } else if(typevirial=="b2"){
 
 
-		for (int i=0; i<nnzbeta && not_stored; i++) {
-		   	int isp1_old=beta2[i].GetIsp1();
-		   	int isp2_old=beta2[i].GetIsp1();
+		for (int i=0; i<number_non_zero_beta && not_stored; i++) {
+		   	int isp1_old=beta2_virial.at(i).GetIsp1();
+		   	int isp2_old=beta2_virial.at(i).GetIsp1();
 		   	if ((isp1==isp1_old && isp2==isp2_old) || (isp1==isp2_old && isp2==isp1_old)) {
-		   		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) beta2.at(i).SetPol((*j));
+		   		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) beta2_virial.at(i).SetPol((*j));
 		   		not_stored=false;
 		   	}
 		}
 		if (not_stored) {
-		nnzbeta++;
+		number_non_zero_beta++;
 		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) vir.SetPol((*j));
 		vir.SetIsp1(isp1);
 		vir.SetIsp2(isp2);
@@ -975,46 +976,46 @@ if (typevirial=="b0") {
 		vir0.SetIsp2(isp2);
 		vir.SetIfun1(0);
 		vir0.SetIfun1(0);
-		beta2.push_back(vir);
-		beta0.push_back(vir0);
-		beta1.push_back(vir0);
+		beta2_virial.push_back(vir);
+		beta0_virial.push_back(vir0);
+		beta1_virial.push_back(vir0);
 		}
 } else if (typevirial=="cfi"){
 
-   	    nnzcpz++;
+   	    number_non_zero_cphi++;
    	    for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) vir.SetPol((*j));
    	    vir.SetIsp1(isp1);
    	    vir.SetIsp2(isp2);
-   	    cpz.push_back(vir);
+   	    cphi_virial.push_back(vir);
 
 } else if(typevirial=="theta"){
 
-		nnztheta++;
+		number_non_zero_theta++;
 		for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) vir.SetPol((*j));
 		vir.SetIsp1(isp1);
 		vir.SetIsp2(isp2);
 		vir.SetIfun1(int(charge.at(isp1)*charge.at(isp2)));
 		vir.SetIfun2(int(charge.at(isp1)*charge.at(isp1)));
 		vir.SetIfun3(int(charge.at(isp2)*charge.at(isp2)));
-		theta.push_back(vir);
+		theta_virial.push_back(vir);
 
 
 } else if(typevirial=="lamda"){
 
-	   	nnzlamda++;
+	   	number_non_zero_lamda++;
 	   	for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) vir.SetPol((*j));
 		vir.SetIsp1(isp1);
 		vir.SetIsp2(isp2);
-		lamda.push_back(vir);
+		lamda_virial.push_back(vir);
 
 } else if(typevirial=="psi"){
 
-	    nnzpsi++;
+	    number_non_zero_psi++;
 	    for (std::vector<double>::const_iterator j=virial.begin();j!=virial.end();j++) vir.SetPol((*j));
 	    vir.SetIsp1(isp1);
 	    vir.SetIsp2(isp2);
 	    vir.SetIsp3(isp3);
-	    psi.push_back(vir);
+	    psi_virial.push_back(vir);
 
 } else {
 	    std::ostringstream error_stream;
@@ -1035,55 +1036,55 @@ if (typevirial=="b0") {
 void ActivityModelPitzerHWM::AssignIndexBetaFunctions() {
 // Local variables and constants
 int l1(0), l2(0), l3(0), n1(0), n2(0), n3(0), nz(0);
-nfunb=0;
-for (nz=0; nz<nnzbeta; nz++) {
-   double z1(charge.at(beta0.at(nz).GetIsp1()));
-   double z2(charge.at(beta0.at(nz).GetIsp2()));
+number_b_functions=0;
+for (nz=0; nz<number_non_zero_beta; nz++) {
+   double z1(charge.at(beta0_virial.at(nz).GetIsp1()));
+   double z2(charge.at(beta0_virial.at(nz).GetIsp2()));
    if (abs(z1)==1.0 || abs(z2)==1.0) {
 	    	       	if (l1==0) {
-	    	       		   nfunb++;
-						   beta0.at(nz).SetIfun1(nfunb-1);
-						   beta1.at(nz).SetIfun1(nfunb-1);
-						   beta2.at(nz).SetIfun1(nfunb-1);
-						   n1 = nfunb-1;
+	    	       		   number_b_functions++;
+						   beta0_virial.at(nz).SetIfun1(number_b_functions-1);
+						   beta1_virial.at(nz).SetIfun1(number_b_functions-1);
+						   beta2_virial.at(nz).SetIfun1(number_b_functions-1);
+						   n1 = number_b_functions-1;
 						   alpha1.push_back(2.0);
 						   alpha2.push_back(12.0);
 						   l1=1;
                    	} else {
-                   		beta0[nz].SetIfun1(n1);
-                   		beta1[nz].SetIfun1(n1);
-                   		beta2[nz].SetIfun1(n1);
+                   		beta0_virial.at(nz).SetIfun1(n1);
+                   		beta1_virial.at(nz).SetIfun1(n1);
+                   		beta2_virial.at(nz).SetIfun1(n1);
 				    }
 	       } else {
 					 if (abs(z1)!=abs(z2)) {
 							 if (l2==0) {
-							   nfunb++;
-						       beta0.at(nz).SetIfun1(nfunb-1);
-							   beta1.at(nz).SetIfun1(nfunb-1);
-							   beta2.at(nz).SetIfun1(nfunb-1);
-							   n2 = nfunb-1;
+							   number_b_functions++;
+						       beta0_virial.at(nz).SetIfun1(number_b_functions-1);
+							   beta1_virial.at(nz).SetIfun1(number_b_functions-1);
+							   beta2_virial.at(nz).SetIfun1(number_b_functions-1);
+							   n2 = number_b_functions-1;
 							   alpha1.push_back(2.0);
 							   alpha2.push_back(50.0);
 	                           l2=1;
 							 } else {
-								 beta0.at(nz).SetIfun1(n2);
-								 beta1.at(nz).SetIfun1(n2);
-								 beta2.at(nz).SetIfun1(n2);
+								 beta0_virial.at(nz).SetIfun1(n2);
+								 beta1_virial.at(nz).SetIfun1(n2);
+								 beta2_virial.at(nz).SetIfun1(n2);
 	                           }
 					 } else {
 						     if (l3==0) {
-						       nfunb++;
-						       beta0.at(nz).SetIfun1(nfunb-1);
-						       beta1.at(nz).SetIfun1(nfunb-1);
-						       beta2.at(nz).SetIfun1(nfunb-1);
-						       n3=nfunb-1;
+						       number_b_functions++;
+						       beta0_virial.at(nz).SetIfun1(number_b_functions-1);
+						       beta1_virial.at(nz).SetIfun1(number_b_functions-1);
+						       beta2_virial.at(nz).SetIfun1(number_b_functions-1);
+						       n3=number_b_functions-1;
                                alpha1.push_back(1.4);
                                alpha2.push_back(12.0);
 	                           l3=1;
 						     } else {
-						    	 beta0.at(nz).SetIfun1(n3);
-						    	 beta1.at(nz).SetIfun1(n3);
-						    	 beta2.at(nz).SetIfun1(n3);
+						    	 beta0_virial.at(nz).SetIfun1(n3);
+						    	 beta1_virial.at(nz).SetIfun1(n3);
+						    	 beta2_virial.at(nz).SetIfun1(n3);
 						     }
 					 }
                    	}
@@ -1098,24 +1099,24 @@ for (nz=0; nz<nnzbeta; nz++) {
 */
 void ActivityModelPitzerHWM::AssignIndexJFunctions() {
 VirialCoefficient vir;
-for (int i=0; i<nsp; i++) {
-			for (int j=0; j<nsp; j++) {
+for (int i=0; i<number_species; i++) {
+			for (int j=0; j<number_species; j++) {
 			   if (i!=j && ((charge.at(i)>0.0 && charge.at(j)>0.0) || (charge.at(i)<0.0 && charge.at(j)<0.0))) {
 				       bool not_found(true);
-					   for (int k=0; k<nnztheta && not_found; k++) {
-					        int isp1(theta.at(k).GetIsp1());
-					        int isp2(theta.at(k).GetIsp2());
+					   for (int k=0; k<number_non_zero_theta && not_found; k++) {
+					        int isp1(theta_virial.at(k).GetIsp1());
+					        int isp2(theta_virial.at(k).GetIsp2());
 							if ((isp1==i && isp2==j) || (isp1==j && isp2==i)) not_found=false;
 					   }
 					   if (not_found) {
-						   nnztheta++;
+						   number_non_zero_theta++;
 						   vir.SetPol(0.0);
 						   vir.SetIsp1(i);
 						   vir.SetIsp2(j);
 						   vir.SetIfun1(int(charge.at(i)*charge.at(j)));
 						   vir.SetIfun2(int(charge.at(i)*charge.at(i)));
 						   vir.SetIfun3(int(charge.at(j)*charge.at(j)));
-						   theta.push_back(vir);
+						   theta_virial.push_back(vir);
 					   }
 		         }
 		     }
@@ -1123,51 +1124,50 @@ for (int i=0; i<nsp; i++) {
 //-----------------------------------------------------------
 // Compute number of functions j and save
 //-----------------------------------------------------------
-if (nnztheta>0) {
-nfunj=1;
-std::cout << "Pasa por aca" << nnztheta << std::endl;
-zprod.push_back(double(theta.at(0).GetIfun1()));
+if (number_non_zero_theta>0) {
+number_j_functions=1;
+charge_product.push_back(double(theta_virial.at(0).GetIfun1()));
 double zz(0.0);
 bool not_found(true);
-for (int nz=0; nz<nnztheta; nz++) {
+for (int nz=0; nz<number_non_zero_theta; nz++) {
 	   not_found=true;
-	   for (int j=0; j<nfunj && not_found; j++) {
-		  zz=double(theta.at(nz).GetIfun1());
-		  if (zprod.at(j)==zz) {
-	    	    theta.at(nz).SetIfun1(j);
+	   for (int j=0; j<number_j_functions && not_found; j++) {
+		  zz=double(theta_virial.at(nz).GetIfun1());
+		  if (charge_product.at(j)==zz) {
+	    	    theta_virial.at(nz).SetIfun1(j);
 	            not_found=false;
 	      }
 	    }
 	    if (not_found){
-	   	   zprod.push_back(zz);
-    	   nfunj++;
-    	   theta.at(nz).SetIfun1(nfunj-1);
+	   	   charge_product.push_back(zz);
+    	   number_j_functions++;
+    	   theta_virial.at(nz).SetIfun1(number_j_functions-1);
         }
 	    not_found=true;
-	    for (int j=0; j<nfunj && not_found; j++) {
-	       zz=double(theta.at(nz).GetIfun2());
-	       if (zprod.at(j)==zz) {
-	      	    theta.at(nz).SetIfun2(j);
+	    for (int j=0; j<number_j_functions && not_found; j++) {
+	       zz=double(theta_virial.at(nz).GetIfun2());
+	       if (charge_product.at(j)==zz) {
+	      	    theta_virial.at(nz).SetIfun2(j);
 	            not_found=false;
 	       }
 	     }
 	     if (not_found){
-	   		 zprod.push_back(zz);
-  	   		 nfunj++;
-   	   	     theta.at(nz).SetIfun2(nfunj-1);
+	   		 charge_product.push_back(zz);
+  	   		 number_j_functions++;
+   	   	     theta_virial.at(nz).SetIfun2(number_j_functions-1);
 	     }
 	     not_found=true;
-	     for (int j=0; j<nfunj && not_found; j++) {
-	    	 zz=double(theta.at(nz).GetIfun3());
-	    	 if (zprod.at(j)==zz) {
-	    	   theta.at(nz).SetIfun3(j);
+	     for (int j=0; j<number_j_functions && not_found; j++) {
+	    	 zz=double(theta_virial.at(nz).GetIfun3());
+	    	 if (charge_product.at(j)==zz) {
+	    	   theta_virial.at(nz).SetIfun3(j);
 	    	   not_found=false;
 	    	 }
 	     }
 	     if (not_found){
-  	   		 zprod.push_back(zz);
-   	   		 nfunj++;
-   	   	     theta.at(nz).SetIfun3(nfunj-1);
+  	   		 charge_product.push_back(zz);
+   	   		 number_j_functions++;
+   	   	     theta_virial.at(nz).SetIfun3(number_j_functions-1);
          }
 }
 }
@@ -1180,11 +1180,11 @@ for (int nz=0; nz<nnztheta; nz++) {
     @details Push back private vectors.
 */
 void ActivityModelPitzerHWM::PushPrivateVectors() {
-g_.resize(nfunb);
-g_pri_.resize(nfunb);
-g_.resize(nfunb);
-f_.resize(nfunb);
-for (int i=0;i<nfunb;i++) {
+g_.resize(number_b_functions);
+g_pri_.resize(number_b_functions);
+g_.resize(number_b_functions);
+f_.resize(number_b_functions);
+for (int i=0;i<number_b_functions;i++) {
  g_.at(i).push_back(0.0);
  g_.at(i).push_back(0.0);
  g_pri_.at(i).push_back(0.0);
@@ -1192,14 +1192,14 @@ for (int i=0;i<nfunb;i++) {
  f_.at(i).push_back(0.0);
  f_.at(i).push_back(0.0);
 }
-for (int i=0;i<nfunj;i++) {
+for (int i=0;i<number_j_functions;i++) {
  j_.push_back(0.0);
  j_pri_.push_back(0.0);
 }
-indnzq.resize(2);
-for (int i=0; i<nnzq; i++) {
- indnzq.at(0).push_back(0);
- indnzq.at(1).push_back(0);
+index_non_zero_q.resize(2);
+for (int i=0; i<number_non_zero_q; i++) {
+ index_non_zero_q.at(0).push_back(0);
+ index_non_zero_q.at(1).push_back(0);
  q.push_back(0.0);
  qpri.push_back(0.0);
  qphi.push_back(0.0);
@@ -1213,13 +1213,13 @@ for (int i=0; i<nnzq; i++) {
     @details Update virial coefficients with temperature and liquid pressure.
 */
 void ActivityModelPitzerHWM::Update(const double& temperature, const double& pressure) {
-  for (std::vector<VirialCoefficient>::iterator i=beta0.begin(); i!=beta0.end(); i++) (*i).UpdateVirial(temperature,pressure);
-  for (std::vector<VirialCoefficient>::iterator i=beta1.begin(); i!=beta1.end(); i++) (*i).UpdateVirial(temperature,pressure);
-  for (std::vector<VirialCoefficient>::iterator i=beta2.begin(); i!=beta2.end(); i++) (*i).UpdateVirial(temperature,pressure);
-  for (std::vector<VirialCoefficient>::iterator i=cpz.begin(); i!=cpz.end(); i++) (*i).UpdateVirial(temperature,pressure);
-  for (std::vector<VirialCoefficient>::iterator i=theta.begin(); i!=theta.end(); i++) (*i).UpdateVirial(temperature,pressure);
-  for (std::vector<VirialCoefficient>::iterator i=psi.begin(); i!=psi.end(); i++) (*i).UpdateVirial(temperature,pressure);
-  for (std::vector<VirialCoefficient>::iterator i=lamda.begin(); i!=lamda.end(); i++) (*i).UpdateVirial(temperature,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=beta0_virial.begin(); i!=beta0_virial.end(); i++) (*i).UpdateVirial(temperature,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=beta1_virial.begin(); i!=beta1_virial.end(); i++) (*i).UpdateVirial(temperature,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=beta2_virial.begin(); i!=beta2_virial.end(); i++) (*i).UpdateVirial(temperature,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=cphi_virial.begin(); i!=cphi_virial.end(); i++) (*i).UpdateVirial(temperature,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=theta_virial.begin(); i!=theta_virial.end(); i++) (*i).UpdateVirial(temperature,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=psi_virial.begin(); i!=psi_virial.end(); i++) (*i).UpdateVirial(temperature,pressure);
+  for (std::vector<VirialCoefficient>::iterator i=lamda_virial.begin(); i!=lamda_virial.end(); i++) (*i).UpdateVirial(temperature,pressure);
 }
 /*!
     @brief Update
@@ -1228,11 +1228,11 @@ void ActivityModelPitzerHWM::Update(const double& temperature, const double& pre
 
     @details Return the index of name species.
 */
-int ActivityModelPitzerHWM::GetIndexSpeciesFromName(const std::string& name_species) {
+int ActivityModelPitzerHWM::GetIndexSpeciesFromName(const std::string& name_species_) {
 bool not_found(true);
 int isp(-1);
-for (int i=0; (i<nsp && not_found); i++) {
-	if (namesp.at(i)==name_species){
+for (int i=0; (i<number_species && not_found); i++) {
+	if (name_species.at(i)==name_species_){
 		isp=i;
 		not_found=false;
 	}

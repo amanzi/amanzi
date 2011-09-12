@@ -86,7 +86,7 @@ these can be names or numbers or whatever serves best the organization of the us
 Where applicable, the relevant section the MRD is referred to by section or chapter number in parentheses.
 
 
-0. Version
+Version
 =======================================
 
 Each input set contains at the top level a string variable `"Amanzi input format version`".  As of the most recent update of this specification, the
@@ -96,44 +96,265 @@ a new "Mesh" section (section 1 below).  Options for `"grid_option`" parameter i
 `0.9.1`", a mesh framework is specified instead (see below).
 
 
-1. Mesh
+Mesh
 =======================================
 
 The computational mesh is specified in this section, based on the `"Mesh Framework`", which can be `"Structured`" or a set of unstructured
-options, including `"Simple`", `"stk:mesh`" (+...).  The `"Generate`" sublist of Mesh takes instructions that are specific to the framework - here 'generate' 
+options, including `"SimpleMesh`", `"stk:mesh`" (+...).  The `"Generate`" sublist of Mesh takes instructions that are specific to the framework - here 'generate' 
 is a generic term for actual mesh generation (by Amanzi) or ingestion (file reads) to obtain mesh data created by pacakges external to Amanzi.
 
 Notes:
 
- * A number of frameworks support the generation of logically rectangular, uniformly spaced structured meshes.  Under `"Generate`", all of these take a common set of instructions through three parameters: `"Number of Cells`" (integer array), `"Domain Low Corner`" (double array) and `"Domain High Corner`" (double array).
+ * A number of frameworks support the generation of logically rectangular, uniformly spaced structured meshes.  Under `"Generate`", all of these take a common set of instructions through three parameters: `"Number of Cells`" (integer array), `"Domain Low Corner`" (double array) and `"Domain High Corner`" (double array).  All of these also automatically generate a default set of predefined regions, as discused in the "Regions" section below.
 
  * For the options that assume an external package generates the mesh, the data is passed into Amanzi through a file, and the `"Generate`" parameter list includes the name of that file `"filename`".  Additionally, as discussed in the "Regions" section below, mesh files produced by external packages may contain auxiliary data that associates a tag or label with each mesh entity (cells, faces, nodes).  These labeled sets can be assigned to a named region for use here. (see below).
 
-2. State
+Structured-grid example:
+
+.. code-block:: xml
+
+   <Parameter name="Framework" type="string" value="Structured"/>
+    <ParameterList name="Generate">
+      <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+      <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+    </ParameterList>   
+  </ParameterList>
+
+
+MOAB mesh example:
+
+.. code-block:: xml
+
+   <Parameter name="Framework" type="string" value="stk::moab"/>
+    <ParameterList name="Generate">
+      <Parameter name="filename" type="string" value="moab_filename"/>
+    </ParameterList>   
+  </ParameterList>
+
+
+State
 =======================================
 
-The state specifies the distribution of phases, species and pressure that are stored on the discrete mesh.  Generally, there
-can be multiple phases (e.g. gaseous, aqueous, etc), and each is comprised of a number
-of components (section 2.2).  Additionally, each component may carry a number of trace species.  
-The tracers are assumed to have no impact on the thermodynamic and transport properties of the component, but may be involved in chemical
-processes (Section 2.5).
+The `"State`" parameter list is used to specify the phases, chemical composition and pressure that are to be stored on the discrete mesh during the simulation,
+along with the necessary initial and boundary data instructions.   The chemical state, including the definition of the tracer species and their reactions '''Note(bja/geh): a geochemical tracer is an inert species, we recommend "solute".''',
+is specified in conjunction with a chemistry database file, which is discussed below.
 
-Each state component must be labeled and defined in terms of physical properties: 
-mass density, viscosity, and diffusivity (Section 4.6).  Boundary conditions must be specified along the entire surface
-bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  
-Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of source and loss processes, are defined for each state, if applicable.
+In the general problem, multiple phases may coexist on the mesh (e.g. gaseous, aqueous, etc), and each is
+comprised of a number of components (section 2.2).  In turn, each component may carry a number of chemical species that participate
+in reactions.  While these species are assumed to have no direct impact on the thermodynamic properties of the carrying component, certain
+reactions such as precipitation may affect the flow properties of the rock itself during the simulation. '''Note(bja/geh): certain solutes can affect the properties of the fluid (e.g. brines affect the density).'''
 
-Tracers are labeled and defined in terms of 
-their carrier component and group membership, as necessary to support the chemistry model (Section 5).  In particular, 
-the "total concentration" (Equation 5.5) is the weighted sum of all tracers in the the tracer group "Total".
-This is the only group of tracers that actually moves with the phase/component.  Other tracer groups include minerals
-and surface complexation; they occupy a slot in the state but do not move with the flow (see Section 5).
-Tracers may have volumetric sources as well, and like component sources their specification requires a region, strength and distribution functional.
-Supported functionals for initial and boundary data and source distributions are listed below.
+In Amanzi, trace chemical species in the aqueous phase are treated in "complexes", and it is assumed that each complex is in chemical equilibrium.
+Knowledge of the local concentration of a single species in a complex therefore determines completely the concentrations of the remaining members.
+As a result, for each complex, only a single species need be maintained in the state.  '''Note(bja/geh):In reactive transport a set of primary or basis species (note that basis and primary are used interchangeably) are specified from which all secondary species (secondary aqueous complexes, surfaces complexes, etc) are constructed. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the aqueous free ion concentration and its stoichiometric contribution to all secondary species. In Amanzi, we split the total component concentration into total aqueous component and total sorbed component concentrations. Give the free ion concentration of each basis species, we can reconstruct the concentration of the secondary species. As a result only the basis species in the state.'''
 
-* "state" (list) can accept lists for named components (COMP).  Also a label specifies the dominant component
+In addition to reacting ~~trace~~ species in the aqueous phase, the chemistry specification allows for various sets of immobile chemical constituents within the
+background (rock) media.  Examples include "minerals" and "surface complexes". Bookkeeping for these constituents is managed in Amanzi
+data structures by generalizing ~~trace~~ species concept - a slot in the state is allocated for each of these species, but their concentrations are (optionally)
+not included in the transport/flow components of the numerical integration.  ~~To allow selective treatment of the various ~~trace~~ chemical species, Amanzi
+uses the concept of "groups".   The aqueous phase equilibrium complexes are typically treated together as a group, and often represent the only 
+chemical constituents that are transported with the the flow.~~ '''Note(bja/geh): Only the total aqueous component concentrations are considered in transport.'''
 
-  * COMP (list) can accept values for the carrying phase name (string), mass density (double), viscosity (double) and diffusivity (double). IC is a named list to specify the instructions for constructing the intial state profile, and SOURCE (string) is a list to specify a set of volumetric sources.
+Definition of the state depends on the contents of the chemistry database file.  The chemistry database is discussed first, and then the parameters used
+to define the state based on the chemistry database are outlined next.
+
+Chemistry Thermodynamic data specification
+-------------------------------------------------
+
+The chemistry database file and format are specified as strings in this parameter list (see below).
+
+
+Simple Database format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `"simple"` (file extension `"bgd"`) format
+requires explicit specification of all the species and reactions. There is currently no basis
+switching or automatic species and reaction selection. The `"simple`" format supports specifying up to four species groups:
+`"Aqueous Equilibrium Complexes"` `"Minerals"` `"Ion Exchange Sites"` `"Sorption Sites"`.
+Note that a typical chemistry database file defines a superset of the reaction physics
+of interest; the relevant subset is specified via the `"State`" parameter list as discussed below.
+
+In the `"simple`" format, the `"Aqueous Equilibrium Complexes"` group is assumed to be the only one that is transported with the flow.
+This group lists one chemical species as a `"Primary Species`" for each of the complexes; this is the only species in the complex that
+should be specified as a constituent of the `"State`". '''Note(bja/geh): This is incorrect. The total aqueous component concentrations, one for each primary species, are the solute concentrations that are transported.'''
+
+Below is an example of a `"simple"` database file for a five component uranium problem with mineral dissolution and surface complexation:
+
+::
+
+ <Primary Species
+ # name               ; debye-huckel a0 ; charge ; GMW     
+
+ Al+++                ;   9.0 ;   3.0 ;  26.9815
+ H+                   ;   9.0 ;   1.0 ;   1.0079
+ HPO4--               ;   4.0 ;  -2.0 ;  95.9793
+ SiO2(aq)             ;   3.0 ;   0.0 ;  60.0843
+ UO2++                ;   4.5 ;   2.0 ;  270.028
+
+ <Aqueous Equilibrium Complexes
+ # name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW      
+
+ OH-                  =  1.0 H2O  -1.0 H+                ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
+ AlOH++               =  1.0 H2O  1.0 Al+++  -1.0 H+     ;     4.9571 ;   4.5 ;   2.0 ;  43.9889 
+ Al(OH)2+             =  2.0 H2O  1.0 Al+++  -2.0 H+     ;    10.5945 ;   4.0 ;   1.0 ;  60.9962 
+ Al(OH)3(aq)          =  3.0 H2O  1.0 Al+++  -3.0 H+     ;    16.1577 ;   3.0 ;   0.0 ;  78.0034 
+ Al(OH)4-             =  4.0 H2O  1.0 Al+++  -4.0 H+     ;    22.8833 ;   4.0 ;  -1.0 ;  95.0107 
+ UO2OH+               =  1.0 H2O  -1.0 H+  1.0 UO2++     ;     5.2073 ;   4.0 ;   1.0 ;  287.035 
+ UO2(OH)2(aq)         =  2.0 H2O  -2.0 H+  1.0 UO2++     ;    10.3146 ;   3.0 ;   0.0 ;  304.042 
+ UO2(OH)3-            =  3.0 H2O  -3.0 H+  1.0 UO2++     ;    19.2218 ;   4.0 ;  -1.0 ;   321.05 
+ UO2(OH)4--           =  4.0 H2O  -4.0 H+  1.0 UO2++     ;    33.0291 ;   4.0 ;  -2.0 ;  338.057 
+ (UO2)2OH+++          =  1.0 H2O  -1.0 H+  2.0 UO2++     ;     2.7072 ;   5.0 ;   3.0 ;  557.063 
+ (UO2)2(OH)2++        =  2.0 H2O  -2.0 H+  2.0 UO2++     ;     5.6346 ;   4.5 ;   2.0 ;   574.07 
+ (UO2)3(OH)4++        =  4.0 H2O  -4.0 H+  3.0 UO2++     ;     11.929 ;   4.5 ;   2.0 ;  878.112 
+ (UO2)3(OH)5+         =  5.0 H2O  -5.0 H+  3.0 UO2++     ;    15.5862 ;   4.0 ;   1.0 ;   895.12 
+ (UO2)3(OH)7-         =  7.0 H2O  -7.0 H+  3.0 UO2++     ;    31.0508 ;   4.0 ;  -1.0 ;  929.135 
+ (UO2)4(OH)7+         =  7.0 H2O  -7.0 H+  4.0 UO2++     ;    21.9508 ;   4.0 ;   1.0 ;  1199.16 
+ UO2(H2PO4)(H3PO4)+   =  3.0 H+  2.0 HPO4--  1.0 UO2++   ;   -22.7537 ;   4.0 ;   1.0 ;   465.01 
+ UO2(H2PO4)2(aq)      =  2.0 H+  2.0 HPO4--  1.0 UO2++   ;   -21.7437 ;   3.0 ;   0.0 ;  464.002 
+ UO2HPO4(aq)          =  1.0 HPO4--  1.0 UO2++           ;    -8.4398 ;   3.0 ;   0.0 ;  366.007 
+ UO2H2PO4+            =  1.0 H+  1.0 HPO4--  1.0 UO2++   ;   -11.6719 ;   4.0 ;   1.0 ;  367.015 
+ UO2H3PO4++           =  2.0 H+  1.0 HPO4--  1.0 UO2++   ;   -11.3119 ;   4.5 ;   2.0 ;  368.023 
+ UO2PO4-              =  -1.0 H+  1.0 HPO4--  1.0 UO2++  ;    -2.0798 ;   4.0 ;  -1.0 ;  364.999 
+
+ <Minerals
+ # name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
+
+ Kaolinite            =  5.00 H2O  2.00 Al+++  -6.00 H+  2.00 SiO2(aq)  ;     6.8101 ;   258.16 ;    99.52 ;   1.0 
+ Quartz               =  1.00 SiO2(aq)  ;    -3.9993 ;  60.0843 ;   22.688 ;   1.0 
+ (UO2)3(PO4)2.4H2O    =  4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++  ;   -27.0349 ;  1072.09 ;    500.0 ;   1.0 
+
+ <Mineral Kinetics
+ # name               ; TST ; log10_rate_constant double     moles_m2_sec 
+
+ Kaolinite            ; TST ; log10_rate_constant    -16.699 moles_m2_sec 
+ Quartz               ; TST ; log10_rate_constant      -18.0 moles_m2_sec 
+ (UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
+
+ <Surface Complex Sites
+ # name               ; surface_density
+
+ >FeOH                ; 6.3600E-03
+ >AlOH                ; 6.3600E-03
+ >SiOH                ; 6.3600E-03
+
+ <Surface Complexes
+ # name               =  coeff surface site  coeff primary_name  ; log10(Keq) 25C ; charge 
+
+ >SiOUO3H3++          =  1.0 >SiOH  1.0 H2O  1.0 UO2++  ;       5.18 ;   2.0 
+ >SiOUO3H2+           =  1.0 >SiOH  1.0 H2O  -1.0 H+  1.0 UO2++  ;       5.18 ;   1.0 
+ >SiOUO3H             =  1.0 >SiOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       5.18 ;   0.0 
+ >SiOUO3-             =  1.0 >SiOH  1.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
+ >SiOUO2(OH)2-        =  1.0 >SiOH  2.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
+ >FeOHUO3             =  1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       3.05 ;   0.0 
+ >FeOHUO2++           =  1.0 >FeOH  1.0 UO2++  ;      -6.63 ;   2.0 
+ >AlOUO2+             =  1.0 >AlOH  -1.0 H+  1.0 UO2++  ;      -3.13 ;   1.0 
+
+Note the following about this format:
+
+ * IMPORTANT: The xml parser expects every instance of `"--"` to mark a comment, so species names with multiple negative charges should be written in the xml as `"SO4-2"` rather than `"SO4--"` (an appended comment with the traditional species or mineral name can help to clarify this).
+
+ * Any line in the database file starting with a `"#"` or space character is a comment. 
+
+ * The data file is separated into sections, where each section of the file is starts with a line containing `"<Section Name"`. The valid section names are: `"Primary Species"`, `"Aqueous Equilibrium Complexes"`, `"Minerals"`, `"Mineral Kinetics"`, `"General Kinetics"`, `"Ion Exchange Sites"`, `"Ion Exchange Complexes"`, `"Surface Complex Sites"`, `"Surface Complexes"`. The less than character, `"<"`, must be the first character on the line and no space is permitted between the character and the section name.
+
+ * Sections should be ordered in the file so that the primary species, minerals, and exchange sites appear before any reactions using those species.
+
+ * Within a section, lines may be concatenated provided they are separated with a semi-colon.
+
+ * A primary species line must contain the Debye-Huckel "A" parameter, charge and molecular weight (5.2):
+
+   ::
+
+     # name               ; debye-huckel a0 ; charge ; GMW [grams/mole]    
+     Al+++                ;   9.0 ;   3.0 ;  26.9815
+
+ * An aqueous equilibrium complex line contains a reaction and species data (for the reaction partner) on a single line:
+
+   ::
+
+     # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW [grams/mole]     
+     OH-                  =  1.0 H2O  -1.0 H+  ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
+
+   The reaction is written as product species = reactants.... The coefficient of the product aqueous complex is assumed to be 1.0, and one of the reactants must be primary species. The equilibrium constant is for a fixed temperature of 25C.
+
+ * Minerals and other complexes follow the same convention as aqueous equilibrium complexes, with additional data as needed.
+
+   ::
+
+     <Minerals
+     # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
+
+     <Surface Complexes
+     # name               =  coeff surface site  coeff primary_name ... ; log10(Keq) 25C ; charge 
+
+     These are all minerals present in the system during the simulation, including those that may precipitate later. They are used for calculating saturation states, but not equilibrium or kinetic calculations.
+
+ * The mineral kinetics section lists the name of a mineral found in the mineral section, the type of rate law, and rate parameters for that law.
+
+   :: 
+
+     <Mineral Kinetics
+     # name               ; TST ; log10_rate_constant double     moles_m2_sec ; primary_name coeff ....
+ 
+   Currently only the `"TST"` rate law (5.1) is implemented. The keywords "log10_rate_constant" and "moles_m2_sec" must be present in the line, but no unit conversions are currently preformed. FIXME: The modifying primary species terms follow the rate constant, along with their exponent coefficients.
+
+ * Surface complex sites are listed by name and surface density:
+
+   ::
+
+     <Surface Complex Sites 
+     # name               ; surface_density [moles sites / m^2 mineral]
+
+
+
+XML Database format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A more general specification is planned for Amanzi based on an xml file format.  This option is not yet implemented.
+
+
+
+
+State specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In order to specify the state, the parameter list is organized around phase components; 
+each component definition includes a label and a set of physical properties, including mass density, viscosity, and diffusivity (Section 4.6).  
+Trace chemical complexes are are selected from the `"Primary Species`" listed in the chemical database.
+The mobile group `"Aqueous Equilibrium Complexes"` is defined explicitly, along with other immobile groups, if applicable.
+
+Phase components and mobile chemical constituents require boundary conditions along the entire surface
+bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  Any boundary conditions not explicitly set in this section are defaulted to `"outflow`" and no 
+information from outside the domain is assumed to propagate into the domain.
+Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of source and loss processes, are defined for each component, and for 
+each mobile chemical constituent. Supported functionals for initial and boundary data and for source distributions are listed below.
+
+Initial, boundary and source terms are specified using a set of user-defined component mixtures (sources can optionally be specified in terms of total mass of 
+contaminant - see below).  The detailed specification of mixture definitions remains TBD, however we 
+assume that definitions may be uniquely constructed using a variety of methods (pH, total concentrations, free ion concentrations, etc), and that each mixture 
+consists of a component and a subset of the trace chemical species contained in that component.
+
+* "state" (list) can accept lists for the chemistry database, and named components (COMP).  Also a label specifies the dominant component
+
+  * `"Chemistry Database`" (list) 
+
+    * `"filename`" (string) the name of a chemistry database file
+
+    * `"format`" (string) [optional] format of chemistry database, currently supports only `"simple`"
+
+  * COMP (list) can accept values for the carrying phase name (string), mass density (double), viscosity (double) and diffusivity (double). IC is a named list to specify the instructions for constructing the intial state profile, BC is a named list to specify instructions for boundary conditions, SOURCE (string) is a list to specify a set of volumetric sources.
+
+    * `"User-defined Mixtures`" (list) accepts lists named after user-defined labels, MIXTURE
+
+      * MIXTURE (list)
+
+        * `"scheme`" (string) is the scheme used for this definition (`"scheme: total concentration`", `"scheme: free ion concentration`", `"scheme: pH`", ...?), accepts lists of trace species TRACE, and `"pH`" (if relevant)
+
+          * TRACE (list)  accepts a value defining the amount of this consituent.  TRACE must appear below in the list, `"trace species`"
+
+            * `"value`" (double) the concentration of TRACE
+
+          * `"pH`" (double) pH of the mixture (if relevant)
 
     * IC (list) is named after a defined REGION, or the special denotation of `"default`".  `"default`" instructions will be used to fill the complement of the sum of the named regions.
 
@@ -147,65 +368,48 @@ Supported functionals for initial and boundary data and source distributions are
 
     * `"phase`" (string) the name of the phase that carries this component
 
-    * `"source`" (list) can accept a REGION (string)
+    * `"source`" (list) can accept a REGION (string), and (optionally) a double array, (t_start, t_end), specifying the interval 
 
       * REGION (string) the name of a labeled region
 
         * S-FUNC-COMP (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
 
-    * `"tracer`" (list) can accept a name `"name`" (string), the list named `"source`", and a list for initial data (REGION-IC) and boundary data (REGIONBC)
+      * `"time interval`" (array double) specifying the start time, t_start, and the stop time, t_stop, that this source is active
 
-      * `"name`" (string) the name of the tracer
+    * `"trace species`" (array string) can accept a subset of the primary species listed in the chemistry database file
 
-      * REGION-IC or `"default`" (list) named after a defined region can accept a list with a label corresponding to a named IC functional (IC-FUNC)
-
-        * IC-FUNC (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
-
-      * `"source`" (list) can accept the name of a distribution functional (S-FUNC-TRACER)
-
-        * S-FUNC-TRACER (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
-
-      * REGION-BC (list) named after a region that defines a surface bounding the computational domain can accept a list (BC-FUNC) named after a boundary data function, BC_FUNC 
+    * BC (list) named after a region that defines a surface bounding the computational domain, can accept a list (BC-FUNC) named after a boundary data function, BC_FUNC 
  
-        * BC-FUNC (list) can accept a list (BC-PARAM) to specify the parameters of a named functional
+      * BC-FUNC (list) can accept a list (BC-PARAM) to specify the parameters of a named functional
 
   * `"dominant component`" (string) must be the name of one of the COMP lists defined above
 
-Note: A label that identifies a region of non-zero volume is interpreted as an initial condition or source function instruction, whereas a region defined on the boundary of the 
-computational domain will be interpreted as a boundary condition instruction.
+Note: For an N-dimensional problem, initial data is specified over a collection of N-dimensional regions and boundary data is specified over a collection of (N-1)-dimensional regions.
 
-Initial conditions are required for each component and tracer over the entire computational domain.
+Initial conditions are required for each component over the entire computational domain.
 Boundary conditions are required on all domain boundaries (see Sections 3.3, 4.3).  Source terms for all are optional.  All are constructed using a limited number
 of explicitly parameterized functional forms.  If the simulation is to be intialized using a restart file,
-the phase component and tracer definitions are taken from the restart file, and initial condition instructions provided
+the phase, component and tracer definitions are taken from the restart file, and initial condition instructions provided
 here are quietly ignored, so that restarts are possible by simply changing a single control parameter (discussed in the control section).  Boundary conditions are
 required regardless of the initial data, and must be defined consistently.
 
 The following parameterized distribution functionals are supported for communicating initial conditions:
- * `"ic: constant`" requires `"value`" (see note below)
- * `"ic: coordinate-aligned linear`"  requires direction `"dir`" (string) of variation, `"x0_y0_slope`" (array double) specifying {x0, y0, m} for function
-          of the form: `y-y0 = m*(x-x0)`.  Here y is state value, x is coordinate in `"dir`" direction.  For state values however, see note below.
- * `"ic: quadratic`" similar to linear
- * `"ic: exponential`" similar to linear
+ * `"ic: constant`" requires `"mixture`" (see note below)
+ * `"ic: file`" requires `"file`" (string), `"label`" (string) - the label of the field to use, `"format`" (string)
 
 The following parameterized boundary conditions are supported for communicating boundary conditions:
- * `"bc: inflow`" requires `"bc: distribution`" (string) to set the distribution of the state upstream of the boundary (outside domain)
- * `"bc: outflow`"  requires `"bc: distribution`" (string) to set the distribution of the state downstream of the boundary (outside domain)
+ * `"bc: inflow`" requires `"mixture`" to set state upstream of the boundary (outside domain)
+ * `"bc: outflow`"  requires no parameter data
  * `"bc: seepage`" requires location `"water table height`" (double) of the water table.  If a more complex specification is needed, this should be changed to require a list to define it appropriately.
  * `"bc:  noflow`" requires no parameter data
 
 The following models are currently supported for communicating source distribution:
- * `"source: uniform`" requires no parameters
- * `"source: linear`" requires location `"loc`" (array double) of a point or two locations, `"lo`", `"hi`" specifying a line or a rectangular plane
- * `"source: quadratic`" requires location `"loc`" (array double) of a point or two locations, `"lo`", `"hi`" specifying a line or a rectangular plane
- * `"source: exponential`" requires the exponent, `"exp`" and location `"loc`" (array double) of a point or two locations, `"lo`", `"hi`" specifying a line or a rectangular plane
+ * `"source: uniform mixture`" requires `"strength`" (double) and `"mixture`" (string).  The specified mass of this mixture will be injected at a constant rate over the time interval specified.
+ * `"source: uniform total mass`" requires a `"component mass`" (double) and a TRACE (named after a trace species that is declared in the state for this component), which is a double indicating the total contaminant mass.  The contaminated component will be injected at a constant rate and uniform distribution over the time interval specified.  NOTE: This functional requires that a finite time interval be specified for this region.
 
 
-NOTE:
 
-Because of various physical constraints (e.g. component saturations sum to unity), initial and boundary functionals
-not explicitly specified will be derived, if possible.  If insufficient or contradicting information is detected,
-an error will be thrown.
+
 
 
 Example:
@@ -213,26 +417,33 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="state">
+    <ParameterList name="Chemistry Database">
+      <Parameter name="filename" type="string" value="uo2-5-component.bgd"/>    
+      <Parameter name="format" type="string" value="simple"/>    
+    </ParameterList>
     <Parameter name="dominant component" type="string" value="air"/>    
     <ParameterList name="air">
+      <ParameterList name="User-defined Mixtures">
+        <ParameterList name="Pure Air">
+        </ParameterList>
+      </ParameterList>
       <Parameter name="phase" type="string" value="gaseous"/>
       <Parameter name="mass density" type="double" value="1.2"/>
       <Parameter name="viscosity" type="double" value="0.018"/>
       <Parameter name="diffusivity" type="double" value="0."/>
       <ParameterList name="top">
         <ParameterList name="ic: constant">
-          <Parameter name="value" type="double" value=".5"/>
+          <Parameter name="mixture" type="string" value="Pure Air"/>
         </ParameterList>   
       </ParameterList>   
       <ParameterList name="middle">
         <ParameterList name="ic: constant">
-          <Parameter name="value" type="double" value=".4"/>
+          <Parameter name="mixture" type="string" value="Pure Air"/>
         </ParameterList>   
       </ParameterList>   
       <ParameterList name="bottom">
-        <ParameterList name="ic: coordinate-aligned linear"/>
-          <Parameter name="direction" type="string" value="x"/>
-          <Parameter name="x0_y0_slope" type="Array double" value="{.4, .9, 3}"/>
+        <ParameterList name="ic: constant"/>
+          <Parameter name="mixture" type="string" value="Pure Air"/>
         </ParameterList>   
       </ParameterList>   
     </ParameterList> 
@@ -241,71 +452,70 @@ Example:
       <Parameter name="density" type="double" value="1.e3"/>
       <Parameter name="viscosity" type="double" value="1.0"/>
       <Parameter name="diffusivity" type="double" value="0."/>
+      <ParameterList name="User-defined Mixtures">
+        <ParameterList name="Contaminated Water">
+          <ParameterList name="scheme: free ion concentration">
+            <ParameterList name="UO2+2">
+              <Parameter name="value" type="double" value=".001"/>
+            </ParameterList>
+            <ParameterList name="H+">
+              <Parameter name="value" type="double" value="0."/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="Pure Water">
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="source"/>
+        <ParameterList name="top"/>
+          <Parameter name="time interval" type="array double" value="{5., 15.}"/>
+          <ParameterList name="source: uniform total mass"/>
+            <Parameter name="component mass" type="double" value="20."/>
+            <ParameterList name="contaminant mass">
+              <Parameter name="UO+2" type="double" value="2."/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
         <ParameterList name="middle"/>
           <ParameterList name="source: uniform"/>
-            <Parameter name="strength" type="double" value="20."/>
+            <Parameter name="mixture" type="string" value="Contaminated Water"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>   
       <ParameterList name="default"/>
         <ParameterList name="ic: uniform"/>
-          <Parameter name="value" type="double" value=".8"/>
+          <Parameter name="mixture" type="string" value="Pure Water"/>
         </ParameterList>
       </ParameterList>   
       <ParameterList name="middle"/>
         <ParameterList name="ic: uniform"/>
-          <Parameter name="strength" type="double" value="20."/>
+          <Parameter name="mixture" type="string" value="Contaminated Water"/>
         </ParameterList>
       </ParameterList>   
-      <ParameterList name="xlobc">
+      <ParameterList name="yhibc">
         <ParameterList name="inflow">
           <ParameterList name="bc: constant">
-            <Parameter name="value" type="double" value="1."/>
+            <Parameter name="mixture" type="string" value="Contaminated Water"/>
           </ParameterList> 
         </ParameterList> 
       </ParameterList> 
-      <ParameterList name="xhibc">
-        <ParameterList name="outflow">
-          <ParameterList name="bc: constant">
-            <Parameter name="value" type="double" value="1."/>
-          </ParameterList> 
-        </ParameterList> 
-      </ParameterList> 
-      <ParameterList name="tracer">
-        <Parameter name="name" type="string" value="Uranium"/>
-        <ParameterList name="all">
-          <ParameterList name="ic: constant">
-            <Parameter name="value" type="double" value=".004"/>
-          </ParameterList> 
-        <ParameterList name="xlobc">
-          <ParameterList name="inflow">
-            <ParameterList name="bc: constant">
-              <Parameter name="value" type="double" value=".005"/>
-            </ParameterList> 
-          </ParameterList> 
-        </ParameterList> 
-        <ParameterList name="xhibc">
-          <ParameterList name="outflow">
-            <ParameterList name="bc: constant">
-              <Parameter name="value" type="double" value="-1"/>
-            </ParameterList> 
-          </ParameterList> 
-        </ParameterList> 
-      </ParameterList> 
+      <Parameter name="trace species" type="Array string" value="{UO+2 H+}"/>
     </ParameterList> 
   </ParameterList> 
 
-In this example, there are 2 phases (water, air).  Each phase consists of a single component.  Three
-volumetric regions ("top", "middle" and "bottom"), and two boundary regions (xlobc and xhibc)
-have been defined elsewhere.  The initial data for the fields are set using a combination of linear and
-constant profile functions over the two volumetric regions.  The boundary conditions are Dirichlet inflow
-on the low side and outflow on the high side.  There is a uniform source of water over the "middle" 
-region with an integrated strength of 20.
+In this example, there are 2 phases (water, air).  Each phase consists of a single component.  The aqueous 
+phase contains the complexes which have UO++ and H+ as a primary species.  Three
+volumetric regions ("top", "middle" and "bottom"), and the boundary region `"yhibc`"
+have been defined elsewhere.  The initial data for the fields are set using the user-defined fluids 
+"Pure Air", "Pure Water" and "Contaminated Water".  
+The only boundary condition specified is along `"yhibc`", where the mixture is "Contaminated Water".
+The remaining boundaries are assumed to be outflow.
+There is a uniform source of "Contaminated Water" in the top region with an integrated strength of 20.
+There is also a uniform source in the middle region of water and UO+2, over the time period 5-15; 
+during this time a mass of 20 of water, and 2 of the UO+2 complex is injected at a constant rate.
 
 
-
-3. Regions
+Regions
 =======================================
 
 Regions are used in Amanzi to define subsets of the computational domain in order to specify the problem
@@ -345,29 +555,32 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 definitions based on triangulated surface files: point, box, arbitrary, layer.  Depending on the functional, SHAPE requires
 a number of parameters:
 
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-|  shape functional name           | parameters                     | type(s)                      | Comment                                                                                     |
-+==================================+================================+==============================+=============================================================================================+
-| `"point"`                        | `"loc`"                        | array double                 | Location of point in space                                                                  |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"box"`                          | `"lo`", `"hi`"                 | array double, array double   | Location of boundary points of box                                                          |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"labeled set"`                  | `"label`", `"file`",           | string, string,              |                                                                                             |
-|                                  | `"mesh framework`", `"entity`" | string, string               | Set per label defined in mesh file (see below)                                              |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"volume enclosed by 1 surface"` | `"file`", `"label`"            | string, string               | Region enveloped by surface described in specified file                                     |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"volume enclosed by 2 surfaces"`| `"file#`", `"label#`"          | (#=1,2) string, string       | Region enveloped by surface described in specified file                                     |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
-| `"surface"`                      | `"file`" `"label`"             | string, string               | Labeled triangulated face setin file                                                        |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------------------------------+
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
+|  shape functional name           | parameters                     | type(s)                      | Comment                                                             |
++==================================+================================+==============================+=====================================================================+
+| `"point"`                        | `"loc`"                        | array double                 | Location of point in space                                          |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
+| `"box"`                          | `"lo`", `"hi`"                 | array double, array double   | Location of boundary points of box                                  |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
+| `"labeled set"`                  | `"label`", `"file`",           | string, string,              |                                                                     |
+|                                  | `"mesh framework`", `"entity`" | string, string               | Set per label defined in mesh file (see below)                      |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
+| `"volume enclosed by 1 surface"` | `"file`", `"label`"            | string, string               | Region enveloped by surface described in specified file             |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
+| `"volume enclosed by 2 surfaces"`| `"file#`", `"label#`"          | (#=1,2) string, string       | Region enveloped by surface described in specified file             |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
+| `"surface"`                      | `"file`" `"label`"             | string, string               | Labeled triangulated face set in file                               |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
+| `"LaGriT set"`                   | `"label`", `"file`",`"entity`" | string, string, string       | Labeled geometrical region defined via a LaGriT input control file  |
++----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
 
 Notes
 
-* `"box`" can be used to define a point, coordinate-aligned lines and planes and a volume of space.  For the `"structured`", `"SimpleMesh`" and `stk::mesh`" mesh frameworks, the auto-generated
-regions (`"all`", `"xlobc`", ...) are all defined internally as box regions.
+* `"box`" can be used to define a point, coordinate-aligned lines and planes and a volume of space.  For the `"structured`", `"SimpleMesh`" and `"stk::mesh`" mesh frameworks, the auto-generated regions (`"all`", `"xlobc`", ...) are all defined internally as box regions.
 
-* The "labeled set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus" type mesh file can be processed to tag cells, faces and/or nodes with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  The `"entity`" parameter may be necessary to specify a unique set.  For example, an exodus file requires `"cell`", `"face`" or `"node`" as well as a label (which is an integer).  When the mesh framework for the region is different from the current mesh framework (defined in `"Mesh`" above), the intersection of the specified region and the computational domain defines the region.  This option is not yet supported, but will likely be implemented as a special (piecewise-constant) case of a generalized interpolation operator.
+* `"LaGriT`" input files can be used to specify extremely complex geometrical regions in a mesh-independent way.  The input file passed here will be parsed by LaGriT to define the geometrical region, and cell/face/point sets will be generated based on the mesh framework details (declared above in the `"Mesh`" section).
+
+* The "labeled set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus" type mesh file can be processed to tag cells, faces and/or nodes with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  The `"entity`" parameter may be necessary to specify a unique set.  For example, an exodus file requires `"cell`", `"face`" or `"node`" as well as a label (which is an integer).  When the mesh framework for the region is different from the current mesh framework (defined in `"Mesh`" above), the intersection of the specified region and the computational domain defines the region.  This latter option is not yet supported, but will likely be implemented as a special (piecewise-constant) case of a generalized interpolation operator.
 
 * Surface files contain labeled triangulated face sets.  The user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes defining surfaces are separated by a distance *s* < `"domain_epsilon`" Amanzi will consider them coincident; if they fall outside the domain, the elements they define are ignored.
 
@@ -412,7 +625,7 @@ In this example, "top", "middle" and "bottom" are three box-shaped regions, and 
 two box-shaped regions, separating the three layers.
 
 
-4. Rock
+Rock
 =======================================
 
 Rock properties must be specified over the entire simulation domain ("all") defined in the Region section.  This can be implemented using any combination of regions
@@ -505,7 +718,7 @@ van Genuchten models for relative permeability and capillary pressure.  The back
 the horizontal values.
 
 
-5. Observation Data
+Observation Data
 =======================================
 
 Observation data generally refers to simple diagnostic quantities extracted from a simulation for the purposes of characterizing
@@ -557,25 +770,31 @@ to the calling function includes a flag for each requested time to indicate whet
 
 
 
-6. Chemistry
+Chemistry Solver
 =======================================
 
-This section is completely unintelligible, and needs to be re-written.  In the structured_grid implementation, the following are the only chemistry-related 
-inputs currently allowed:
+The following parameters are optional in the Chemistry parameter list:
 
-+---------------------+--------+----------------------------------------------------------------------+
-| Name                | Type   | Description                                                          |
-+=====================+========+======================================================================+
-| `"do chemistry`"    | int    | If 0, disable chemistry                                              |
-+---------------------+--------+----------------------------------------------------------------------+
-| `"chemistry file`"  | string | Amanzi-formatted chemistry input file                                |
-+---------------------+--------+----------------------------------------------------------------------+
-| `"interval`"        | int    | Number of coarse-grid time steps between chemistry solver invocation |
-+---------------------+--------+----------------------------------------------------------------------+
-| `"splitting order`" | int    | Accuracy order of chemistry evolution (1, 2)                         |
-+---------------------+--------+----------------------------------------------------------------------+
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+|  Parameter name                       | Type          | Default Value    | Optional Values             | Purpose                                                                             |
++=======================================+===============+==================+=============================+=====================================================================================+
+| `"Verbosity"`                         | int           | 0                | 0, 1, 2, 3, 4, 5, 6, ...    | set the verbosity level of chemistry: 0=silent, 1=terse warnings, 2=verbose details,|
+|                                       |               |                  |                             |  3=debug, 4=debug beaker, 5=debug database file, ....                               | 
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+| `"Activity Model"`                    | string        | `"unit`"         | `"unit"`, `"debye-huckel"`  | set the model used for activity corrections                                         |
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+| `"Tolerance"`                         | double        | 1.0e-12          |  ---                        | set the tolerance for newton iterations within chemistry                            |
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+| `"Maximum Newton Iterations"`         | int           | 200              | ---                         | set the maximum number of newton iterations for chemistry.                          |
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+| `"Max Time Step (s)"`                 | double        | 9.9e9            | ---                         | set the maximum time step allowed for chemistry.                                    |
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+| `"Using sorption"`                    | string        | `"no"`           | `"yes"`                     | Tells the chemistry module whether to allocate memory for sorption.                 |
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+| `"Free ion concentrations provided"`  | string        | `"no"`           | `"yes"`                     | Tells chemistry that in initial guess for free ion concentrations is provided in    |
+|                                       |               |                  |                             | the xml file.                                                                       |
++---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
 
-....original text...
 
 Example:
 
@@ -617,180 +836,9 @@ Example:
 
 '''Note: all chemistry names and values are case sensitive.'''
 
-+------------------------------------+---------------+------------------+-----------------------------+----------------------------------------------------------------------------------------+
-|  Parameter name                    |  Type         |  Default Value   | Optional Values             | Purpose                                                                                |
-+====================================+===============+==================+=============================+========================================================================================+
-| `"Thermodynamic Database Format"`  | string        | `"simple`"       | `"simple"`                  | set the format of the database                                                         |
-+------------------------------------+---------------+------------------+-----------------------------+----------------------------------------------------------------------------------------+
-| `"Thermodynamic Database File"`    | string        | `"dummy.dbs"`    |  ---                        | path name to the chemistry database file, relative to the program execution directory. |
-+------------------------------------+---------------+------------------+-----------------------------+----------------------------------------------------------------------------------------+
-
-The following parameters are optional in the Chemistry parameter list:
-
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-|  Parameter name                       | Type          | Default Value    | Optional Values             | Purpose                                                                             |
-+=======================================+===============+==================+=============================+=====================================================================================+
-| `"Verbosity"`                         | int           | 0                | 0, 1, 2, 3, 4, 5, 6, ...    | set the verbosity level of chemistry: 0=silent, 1=terse warnings, 2=verbose details,|
-|                                       |               |                  |                             |  3=debug, 4=debug beaker, 5=debug database file, ....                               | 
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Activity Model"`                    | string        | `"unit`"         | `"unit"`, `"debye-huckel"`  | set the model used for activity corrections                                         |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Tolerance"`                         | double        | 1.0e-12          |  ---                        | set the tolerance for newton iterations within chemistry                            |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Maximum Newton Iterations"`         | int           | 200              | ---                         | set the maximum number of newton iterations for chemistry.                          |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Max Time Step (s)"`                 | double        | 9.9e9            | ---                         | set the maximum time step allowed for chemistry.                                    |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Using sorption"`                    | string        | `"no"`           | `"yes"`                     | Tells the chemistry module whether to allocate memory for sorption.                 |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Free ion concentrations provided"`  | string        | `"no"`           | `"yes"`                     | Tells chemistry that in initial guess for free ion concentrations is provided in    |
-|                                       |               |                  |                             | the xml file.                                                                       |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-
-The initial condition list must have a `"Mesh Block"` parameter list for each mesh block, mesh block numbering should correspond to the other mesh block lists. Each mesh block list will have parameter lists for the non-zero elements of the chemistry. Valid parameter list names are: `"Free Ion Species"` `"Minerals"` `"Ion Exchange Sites"` `"Sorption Sites"`.
-
-Each initial condition list should contain a parameter name constructed like `"Type #"` where `"Type"` is `"Mineral"`, `"Free Ion Species"`, `"Ion Exchange Site"` `"Sorption Site"` and `"#"` in the integer identifier, starting with zero.  
-
-'''Note: it is recommended that you include an xml comment with the species or mineral name after each initial condition. The xml parser expects every instance of `"--"` to mark a comment, so species names with negative charges should be written as `"SO4-2"` rather than `"SO4--"`.'''
-
-6.1 Chemistry Thermodynamic data file formats 
--------------------------------------------------
-
-6.1.1 XML Database format
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-not yet implemented
-
-6.1.2 Simple Database format
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Importing thermodynamic data into the chemistry module using the `"simple"` (file extension `"bgd"`) format requires the user to explicitly specify all the species and reactions for the problem. There is no basis switching or automatic species and reaction selection. Below is an example of a `"simple"` database file for a five component uranium problem with mineral dissolution and surface complexation:
-
-::
-
- <Primary Species
- # name               ; debye-huckel a0 ; charge ; GMW     
-
- Al+++                ;   9.0 ;   3.0 ;  26.9815
- H+                   ;   9.0 ;   1.0 ;   1.0079
- HPO4--               ;   4.0 ;  -2.0 ;  95.9793
- SiO2(aq)             ;   3.0 ;   0.0 ;  60.0843
- UO2++                ;   4.5 ;   2.0 ;  270.028
-
- <Aqueous Equilibrium Complexes
- # name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW      
-
- OH-                  =  1.0 H2O  -1.0 H+                ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
- AlOH++               =  1.0 H2O  1.0 Al+++  -1.0 H+     ;     4.9571 ;   4.5 ;   2.0 ;  43.9889 
- Al(OH)2+             =  2.0 H2O  1.0 Al+++  -2.0 H+     ;    10.5945 ;   4.0 ;   1.0 ;  60.9962 
- Al(OH)3(aq)          =  3.0 H2O  1.0 Al+++  -3.0 H+     ;    16.1577 ;   3.0 ;   0.0 ;  78.0034 
- Al(OH)4-             =  4.0 H2O  1.0 Al+++  -4.0 H+     ;    22.8833 ;   4.0 ;  -1.0 ;  95.0107 
- UO2OH+               =  1.0 H2O  -1.0 H+  1.0 UO2++     ;     5.2073 ;   4.0 ;   1.0 ;  287.035 
- UO2(OH)2(aq)         =  2.0 H2O  -2.0 H+  1.0 UO2++     ;    10.3146 ;   3.0 ;   0.0 ;  304.042 
- UO2(OH)3-            =  3.0 H2O  -3.0 H+  1.0 UO2++     ;    19.2218 ;   4.0 ;  -1.0 ;   321.05 
- UO2(OH)4--           =  4.0 H2O  -4.0 H+  1.0 UO2++     ;    33.0291 ;   4.0 ;  -2.0 ;  338.057 
- (UO2)2OH+++          =  1.0 H2O  -1.0 H+  2.0 UO2++     ;     2.7072 ;   5.0 ;   3.0 ;  557.063 
- (UO2)2(OH)2++        =  2.0 H2O  -2.0 H+  2.0 UO2++     ;     5.6346 ;   4.5 ;   2.0 ;   574.07 
- (UO2)3(OH)4++        =  4.0 H2O  -4.0 H+  3.0 UO2++     ;     11.929 ;   4.5 ;   2.0 ;  878.112 
- (UO2)3(OH)5+         =  5.0 H2O  -5.0 H+  3.0 UO2++     ;    15.5862 ;   4.0 ;   1.0 ;   895.12 
- (UO2)3(OH)7-         =  7.0 H2O  -7.0 H+  3.0 UO2++     ;    31.0508 ;   4.0 ;  -1.0 ;  929.135 
- (UO2)4(OH)7+         =  7.0 H2O  -7.0 H+  4.0 UO2++     ;    21.9508 ;   4.0 ;   1.0 ;  1199.16 
- UO2(H2PO4)(H3PO4)+   =  3.0 H+  2.0 HPO4--  1.0 UO2++   ;   -22.7537 ;   4.0 ;   1.0 ;   465.01 
- UO2(H2PO4)2(aq)      =  2.0 H+  2.0 HPO4--  1.0 UO2++   ;   -21.7437 ;   3.0 ;   0.0 ;  464.002 
- UO2HPO4(aq)          =  1.0 HPO4--  1.0 UO2++           ;    -8.4398 ;   3.0 ;   0.0 ;  366.007 
- UO2H2PO4+            =  1.0 H+  1.0 HPO4--  1.0 UO2++   ;   -11.6719 ;   4.0 ;   1.0 ;  367.015 
- UO2H3PO4++           =  2.0 H+  1.0 HPO4--  1.0 UO2++   ;   -11.3119 ;   4.5 ;   2.0 ;  368.023 
- UO2PO4-              =  -1.0 H+  1.0 HPO4--  1.0 UO2++  ;    -2.0798 ;   4.0 ;  -1.0 ;  364.999 
-
- <Minerals
- # name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
-
- Kaolinite            =  5.00 H2O  2.00 Al+++  -6.00 H+  2.00 SiO2(aq)  ;     6.8101 ;   258.16 ;    99.52 ;   1.0 
- Quartz               =  1.00 SiO2(aq)  ;    -3.9993 ;  60.0843 ;   22.688 ;   1.0 
- (UO2)3(PO4)2.4H2O    =  4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++  ;   -27.0349 ;  1072.09 ;    500.0 ;   1.0 
-
- <Mineral Kinetics
- # name               ; TST ; log10_rate_constant double     moles_m2_sec 
-
- Kaolinite            ; TST ; log10_rate_constant    -16.699 moles_m2_sec 
- Quartz               ; TST ; log10_rate_constant      -18.0 moles_m2_sec 
- (UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
-
- <Surface Complex Sites
- # name               ; surface_density
-
- >FeOH                ; 6.3600E-03
- >AlOH                ; 6.3600E-03
- >SiOH                ; 6.3600E-03
-
- <Surface Complexes
- # name               =  coeff surface site  coeff primary_name  ; log10(Keq) 25C ; charge 
-
- >SiOUO3H3++          =  1.0 >SiOH  1.0 H2O  1.0 UO2++  ;       5.18 ;   2.0 
- >SiOUO3H2+           =  1.0 >SiOH  1.0 H2O  -1.0 H+  1.0 UO2++  ;       5.18 ;   1.0 
- >SiOUO3H             =  1.0 >SiOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       5.18 ;   0.0 
- >SiOUO3-             =  1.0 >SiOH  1.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
- >SiOUO2(OH)2-        =  1.0 >SiOH  2.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
- >FeOHUO3             =  1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       3.05 ;   0.0 
- >FeOHUO2++           =  1.0 >FeOH  1.0 UO2++  ;      -6.63 ;   2.0 
- >AlOUO2+             =  1.0 >AlOH  -1.0 H+  1.0 UO2++  ;      -3.13 ;   1.0 
-
-Note the following about this format:
-
- * Any line starting with a `"#"` or space character is a comment. 
-
- * Data is separated into sections, where each section of the file is starts with a line containing `"<Section Name"`. The valid section names are: `"Primary Species"`, `"Aqueous Equilibrium Complexes"`, `"Minerals"`, `"Mineral Kinetics"`, `"General Kinetics"`, `"Ion Exchange Sites"`, `"Ion Exchange Complexes"`, `"Surface Complex Sites"`, `"Surface Complexes"`. The less than character, `"<"`, should be the first character on the line and there is no space between the character and the section name.
-
- * Sections should be ordered so that the primary species, minerals, and exchange sites come before any reactions using those species.
-
- * Each line within a section is a semi-colon delimited
-
- * A primary species line contains the primary species must contain:
-
-   ::
-
-     # name               ; debye-huckel a0 ; charge ; GMW [grams/mole]    
-     Al+++                ;   9.0 ;   3.0 ;  26.9815
-
- * An aqueous equilibrium complex line contains a reaction and data for the reaction on a single line:
-
-   ::
-
-     # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW [grams/mole]     
-     OH-                  =  1.0 H2O  -1.0 H+  ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
-
-   The reaction is written as product species = reactants.... The coefficient of the product aqueous complex is assumed to be 1.0, and the reactants must be primary species. The equilibrium constant is for a fixed temperature of 25C.
-
- * Minerals and other complexes follow the same convention as aqueous equilibrium complexes, with additional data as needed.
-
-   ::
-
-     <Minerals
-     # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
-
-     <Surface Complexes
-     # name               =  coeff surface site  coeff primary_name ... ; log10(Keq) 25C ; charge 
-
-     These are all minerals present in the system during the simulation, including those that may precipitate later. They are used for calculating saturation states, but not equilibrium or kinetic calculations.
-
- * The mineral kinetics section lists the name of a mineral found in the mineral section, the type of rate law, and rate parameters for that law.
-
-   :: 
-
-     <Mineral Kinetics
-     # name               ; TST ; log10_rate_constant double     moles_m2_sec ; primary_name coeff ....
- 
-   Currently only the `"TST"` rate law is implemented. The keywords "log10_rate_constant" and "moles_m2_sec" must be present in the line, but no unit conversion are currently preformed. The    modifying primary species terms follow the rate constant, along with their exponent coefficients.
-
- * Surface complex sites are listed by name and surface density:
-
-   ::
-
-     <Surface Complex Sites 
-     # name               ; surface_density [moles sites / m^2 mineral]
 
 
-7. MPC
+MPC
 =======================================
 
 Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously.  However, for the present time, the following is an example of supported parameters in this list:
@@ -828,7 +876,7 @@ The sublist named "CGNS" is used to specify the filename for the CGNS visualizat
 
 
 
-8. Transport
+Transport
 =======================================
 
 Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously.  However, for the present time, the following is an example of supported parameters in this list:
@@ -879,7 +927,7 @@ The boundary conditions sublist consists of a few similar sublists related to bo
  * "Component X" specified the value of component X on this boundary. 
 
 
-9. Flow
+Flow
 =======================================
 
 Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously. However, for the present time, the following is an example of supported parameters in this list:
@@ -960,7 +1008,7 @@ Example
 
 
 
-10. Control
+Control
 =======================================
 
 Here's a partial list of additional parameters under the general category of "control".  Most of these are specific to the structured grid option.  This section will require a complete revamp.

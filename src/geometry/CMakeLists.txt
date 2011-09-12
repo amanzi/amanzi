@@ -30,6 +30,12 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 add_library(geometry Geometry.cc Point.hh 
                      Region.hh Region.cc
                      RectangularRegion.hh RectangularRegion.cc)
+
+#
+# Install Targets
+#
 add_install_library(geometry)
+file(GLOB _inc_files "*.h*")
+add_install_include_file(${_inc_files})
 
 

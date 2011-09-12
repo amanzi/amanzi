@@ -20,7 +20,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})
 
-set(CXX_source_files Diffusion.cpp Godunov.cpp MacOperator.cpp MacProj.cpp Observation.cpp PMBld.cpp PM_setup.cpp PorousMedia.cpp Region.cpp Rock.cpp Source.cpp ViscBndry.cpp)
+set(CXX_source_files Diffusion.cpp Godunov.cpp MacOperator.cpp MacProj.cpp Observation.cpp PMBld.cpp PM_setup.cpp PorousMedia.cpp Region.cpp Rock.cpp Source.cpp ViscBndry.cpp PressBndry.cpp)
 set(F90_source_files bivar.f90)
 set(F77_source_files math_d.f vode.f)
 
@@ -36,6 +36,9 @@ preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
 
 add_library(pmamr ${FPP_out_files} ${CXX_source_files} ${F90_source_files} ${F77_source_files})
 add_install_library(pmamr)
+
+file(GLOB _inc_files "*.H")
+add_install_include_file(${_inc_files})
 
 if (BUILD_TESTS)
 endif()

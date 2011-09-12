@@ -1,5 +1,5 @@
 c
-c $Id: GODUNOV_F.F,v 1.46 2011-08-15 17:53:23 gpau Exp $
+c $Id: GODUNOV_F.F,v 1.47 2011-08-30 19:00:04 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -687,7 +687,7 @@ c     find arg min of flux if there is a minimum in the interval
       stmp = slr(1,:)
       dtmp = df(1,:)
       ncycle = 1
-      if (dtmp(1)*dtmp(2) .lt. zero) then
+      if (dtmp(1)*dtmp(2) .le. zero) then
          do nc = 1,100
             sat(1) = half*(stmp(1)+stmp(2))
             sat(2) = one-sat(1)
