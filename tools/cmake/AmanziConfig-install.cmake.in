@@ -56,6 +56,7 @@ set(Amanzi_CCSE_SPACEDIM          @AMANZI_SPACEDIM@)
 set(Amanzi_CCSE_PRECISION         @AMANZI_PRECISION@)
 
 # External Packages
+set(Amanzi_ENABLED_TPLS           @AMANZI_ENABLED_TPLS@)
 
 #
 # Trilinos
