@@ -44,6 +44,8 @@ public:
 
   void SetFlowState( Teuchos::RCP<const Flow_State> FS_ );
 
+  void ComputeRelPerm(const Epetra_Vector&, Epetra_Vector&) const;
+  void ComputeUpwindRelPerm(const Epetra_Vector&, const Epetra_Vector&, Epetra_Vector&) const;
   void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P);
   void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
   void dSofP(const Epetra_Vector &P, Epetra_Vector &dS);
@@ -106,6 +108,7 @@ private:
   
   std::vector<MimeticHexLocal>  MD;
   MimeticHex *md_;
+  bool upwind_k_rel_;
 
   DiffusionPrecon *precon_;
 

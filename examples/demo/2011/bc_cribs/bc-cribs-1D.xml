@@ -4,7 +4,7 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
-    <Parameter name="Read" type="string" value="./bc-cribs-1D.exo"/>
+    <Parameter name="Read" type="string" value="./bc-cribs-1D-20cm.exo"/>
   </ParameterList>    
 
   <ParameterList name="observation">
@@ -136,6 +136,7 @@
 
     <ParameterList name="Richards Problem">
 
+      <Parameter name="Upwind relative permeability" type="bool" value="true"/>
 <!--  
 the following four paramters are for the initial time integration
 in particular, the hydrostatic pressure height is used to initialize
