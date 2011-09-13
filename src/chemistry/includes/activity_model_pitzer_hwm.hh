@@ -70,23 +70,23 @@ class ActivityModelPitzerHWM : public ActivityModel {
   //-------------------------------------------------------------
   // Limiting Debye-Hückel slope to 25º   0.39153  0.392
   //-------------------------------------------------------------
-  static const double c0aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c1aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c2aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c3aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c4aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c5aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c6aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c7aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c8aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  static const double c9aphi_debye_huckel_slope;                          // Temperature depending coefficients
-  std::vector<VirialCoefficient> beta0_virial;
-  std::vector<VirialCoefficient> beta1_virial;
-  std::vector<VirialCoefficient> beta2_virial;
-  std::vector<VirialCoefficient> theta_virial;
-  std::vector<VirialCoefficient> lamda_virial;
-  std::vector<VirialCoefficient> psi_virial;
-  std::vector<VirialCoefficient> cphi_virial;
+  static const double c0aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c1aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c2aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c3aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c4aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c5aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c6aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c7aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c8aphi_debye_huckel_slope;       // Temperature depending coefficients
+  static const double c9aphi_debye_huckel_slope;       // Temperature depending coefficients
+  std::vector<VirialCoefficient> beta0_virial;         // Beta0 virial coefficients
+  std::vector<VirialCoefficient> beta1_virial;         // Beta1 virial coefficients
+  std::vector<VirialCoefficient> beta2_virial;         // Beta2 virial coefficients
+  std::vector<VirialCoefficient> theta_virial;         // Theta virial coefficients
+  std::vector<VirialCoefficient> lamda_virial;         // Lamda virial coefficients
+  std::vector<VirialCoefficient> psi_virial;           // Psi virial coefficients
+  std::vector<VirialCoefficient> cphi_virial;          // Cphi virial coefficients
   std::vector<double> charge_product;                  // charge products [number_j_functions]
   std::vector<double> alpha1;                          // [number_b_functions]
   std::vector<double> alpha2;                          // [number_b_functions]
@@ -100,22 +100,22 @@ class ActivityModelPitzerHWM : public ActivityModel {
   int number_non_zero_psi;                             // Number of non cero Psi matrix terms
   int number_non_zero_q;                               // Number of non cero q matrix terms (q,q',q'',q-fi and q-fi')
   int index_cl_species;                                // Local indice of Cl species  (usefull for macinnes convention)
-  int index_h2o_species;                               // Local indice of water species  (usefull for macinnes convention)
+  int index_h2o_species;                               // Local indice of water species
   int index_k_species;                                 // Local indice of K species   (usefull for macinnes convention)
-  bool macinnes_scale;                                 // macinnes_scale=true, then activity coefficients will be scaled according macinnes convention
-  std::vector<std::vector<double> > g_;
-  std::vector<std::vector<double> > g_pri_;
-  std::vector<std::vector<double> > f_;
-  std::vector<double> j_;
-  std::vector<double> j_pri_;
-  std::vector<double> q;
-  std::vector<double> qphi;
-  std::vector<double> qpri;
+  bool macinnes_scaled;                                // macinnes_scaled=true, then activity coefficients will be scaled according macinnes convention
+  std::vector<std::vector<double> > g_function;
+  std::vector<std::vector<double> > g_pri_function;
+  std::vector<std::vector<double> > f_function;
+  std::vector<double> j_function;
+  std::vector<double> j_pri_function;
+  std::vector<double> q_matrix;
+  std::vector<double> qphi_matrix;
+  std::vector<double> qpri_matrix;
   std::vector<std::vector<int> > index_non_zero_q;
-  std::vector<double> molality;
-  std::vector<double> charge;
-  std::vector<std::string> name_species;
-  int number_species;
+  std::vector<double> molality;                        // Molality of aqueous species [number_species]
+  std::vector<double> charge;                          // Electric charge of the aqueous species [number_species]
+  std::vector<std::string> name_species;               // Name of the aqueous species [number_species]
+  int number_species;                                  // Number of aqueous species
 
 };
 }  // namespace chemistry
