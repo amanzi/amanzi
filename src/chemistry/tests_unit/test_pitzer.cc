@@ -43,16 +43,16 @@ TEST(TestComputeActivityCoeff_System_I) {
  ac::Species OH(1, "OH-", -1.0,0.0,0.0);
  ac::Species Cl(2, "Cl-", -1.0,0.0,0.0);
  ac::Species Na(3, "Na+", 1.0,0.0,0.0);
- ac::Species K(3, "K+", 1.0,0.0,0.0);
- ac::Species Ca(3, "Ca+2", 2.0,0.0,0.0);
- ac::Species Mg(3, "Mg+2", 2.0,0.0,0.0);
- ac::Species CO3(3, "CO3-2", -2.0,0.0,0.0);
- ac::Species CO2(3, "CO2", 0.0,0.0,0.0);
- ac::Species HCO3(3, "HCO3-", -1.0,0.0,0.0);
- ac::Species MgOH(3, "MgOH+", 1.0,0.0,0.0);
- ac::Species MgCO3(3, "MgCO3", 0.0,0.0,0.0);
- ac::Species CaCO3(3, "CaCO3", 0.0,0.0,0.0);
- ac::Species H2O(3, "H2O", 0.0,0.0,0.0);
+ ac::Species K(4, "K+", 1.0,0.0,0.0);
+ ac::Species Ca(5, "Ca+2", 2.0,0.0,0.0);
+ ac::Species Mg(6, "Mg+2", 2.0,0.0,0.0);
+ ac::Species CO3(7, "CO3-2", -2.0,0.0,0.0);
+ ac::Species CO2(8, "CO2", 0.0,0.0,0.0);
+ ac::Species HCO3(9, "HCO3-", -1.0,0.0,0.0);
+ ac::Species MgOH(10, "MgOH+", 1.0,0.0,0.0);
+ ac::Species MgCO3(11, "MgCO3", 0.0,0.0,0.0);
+ ac::Species CaCO3(12, "CaCO3", 0.0,0.0,0.0);
+ ac::Species H2O(13, "H2O", 0.0,0.0,0.0);
  H.update(4.776e-08);
  OH.update(2.570e-07);
  Cl.update(3.0e0);
@@ -129,18 +129,18 @@ TEST(TestComputeActivityCoeff_System_II) {
  ac::Species OH(1, "OH-", -1.0,0.0,0.0);
  ac::Species Cl(2, "Cl-", -1.0,0.0,0.0);
  ac::Species Na(3, "Na+", 1.0,0.0,0.0);
- ac::Species K(3, "K+", 1.0,0.0,0.0);
- ac::Species Ca(3, "Ca+2", 2.0,0.0,0.0);
- ac::Species Mg(3, "Mg+2", 2.0,0.0,0.0);
- ac::Species CO3(3, "CO3-2", -2.0,0.0,0.0);
- ac::Species CO2(3, "CO2", 0.0,0.0,0.0);
- ac::Species HCO3(3, "HCO3-", -1.0,0.0,0.0);
- ac::Species MgOH(3, "MgOH+", 1.0,0.0,0.0);
- ac::Species MgCO3(3, "MgCO3", 0.0,0.0,0.0);
- ac::Species CaCO3(3, "CaCO3", 0.0,0.0,0.0);
- ac::Species HSO4(3, "HSO4-", -1.0,0.0,0.0);
- ac::Species SO4(3, "SO4-2", -2.0,0.0,0.0);
- ac::Species H2O(3, "H2O", 0.0,0.0,0.0);
+ ac::Species K(4, "K+", 1.0,0.0,0.0);
+ ac::Species Ca(5, "Ca+2", 2.0,0.0,0.0);
+ ac::Species Mg(6, "Mg+2", 2.0,0.0,0.0);
+ ac::Species CO3(7, "CO3-2", -2.0,0.0,0.0);
+ ac::Species CO2(8, "CO2", 0.0,0.0,0.0);
+ ac::Species HCO3(9, "HCO3-", -1.0,0.0,0.0);
+ ac::Species MgOH(10, "MgOH+", 1.0,0.0,0.0);
+ ac::Species MgCO3(11, "MgCO3", 0.0,0.0,0.0);
+ ac::Species CaCO3(12, "CaCO3", 0.0,0.0,0.0);
+ ac::Species HSO4(13, "HSO4-", -1.0,0.0,0.0);
+ ac::Species SO4(14, "SO4-2", -2.0,0.0,0.0);
+ ac::Species H2O(15, "H2O", 0.0,0.0,0.0);
  H.update(4.98e-08);
  OH.update(2.574e-07);
  Cl.update(3.0e0);
@@ -223,19 +223,19 @@ TEST(TestComputeActivityCoeff_System_III) {
  ac::Species OH(1, "OH-", -1.0,0.0,0.0);
  ac::Species Cl(2, "Cl-", -1.0,0.0,0.0);
  ac::Species Na(3, "Na+", 1.0,0.0,0.0);
- ac::Species K(3, "K+", 1.0,0.0,0.0);
- ac::Species Ca(3, "Ca+2", 2.0,0.0,0.0);
- ac::Species Mg(3, "Mg+2", 2.0,0.0,0.0);
- ac::Species CO3(3, "CO3-2", -2.0,0.0,0.0);
- ac::Species CO2(3, "CO2", 0.0,0.0,0.0);
- ac::Species HCO3(3, "HCO3-", -1.0,0.0,0.0);
- ac::Species MgOH(3, "MgOH+", 1.0,0.0,0.0);
- ac::Species MgCO3(3, "MgCO3", 0.0,0.0,0.0);
- ac::Species CaCO3(3, "CaCO3", 0.0,0.0,0.0);
- ac::Species HSO4(3, "HSO4-", -1.0,0.0,0.0);
- ac::Species SO4(3, "SO4-2", -2.0,0.0,0.0);
- ac::Species H2O(3, "H2O", 0.0,0.0,0.0);
- ac::Species Br(3, "Br-", -1.0,0.0,0.0);
+ ac::Species K(4, "K+", 1.0,0.0,0.0);
+ ac::Species Ca(5, "Ca+2", 2.0,0.0,0.0);
+ ac::Species Mg(6, "Mg+2", 2.0,0.0,0.0);
+ ac::Species CO3(7, "CO3-2", -2.0,0.0,0.0);
+ ac::Species CO2(8, "CO2", 0.0,0.0,0.0);
+ ac::Species HCO3(9, "HCO3-", -1.0,0.0,0.0);
+ ac::Species MgOH(10, "MgOH+", 1.0,0.0,0.0);
+ ac::Species MgCO3(11, "MgCO3", 0.0,0.0,0.0);
+ ac::Species CaCO3(12, "CaCO3", 0.0,0.0,0.0);
+ ac::Species HSO4(13, "HSO4-", -1.0,0.0,0.0);
+ ac::Species SO4(14, "SO4-2", -2.0,0.0,0.0);
+ ac::Species H2O(15, "H2O", 0.0,0.0,0.0);
+ ac::Species Br(16, "Br-", -1.0,0.0,0.0);
  H.update(9.326e-010);
  OH.update(4.644e-006);
  Cl.update(5.948e+000);
@@ -315,8 +315,8 @@ TEST(TestInvalidActivityModel) {
  ac::ActivityModel* am_;
  vector<ac::Species> sp_;
  vector<ac::AqueousEquilibriumComplex> aqx_;
- ac::Species Cl(2, "Cl-", -1.0,0.0,0.0);
- ac::Species Na(3, "Na+", 1.0,0.0,0.0);
+ ac::Species Cl(0, "Cl-", -1.0,0.0,0.0);
+ ac::Species Na(1, "Na+", 1.0,0.0,0.0);
  Cl.update(1.0);
  Na.update(1.0);
  aqx_.clear();
@@ -340,8 +340,8 @@ TEST(TestInvalidDatabase) {
  ac::ActivityModel* am_;
  vector<ac::Species> sp_;
  vector<ac::AqueousEquilibriumComplex> aqx_;
- ac::Species Cl(2, "Cl-", -1.0,0.0,0.0);
- ac::Species Na(3, "Na+", 1.0,0.0,0.0);
+ ac::Species Cl(0, "Cl-", -1.0,0.0,0.0);
+ ac::Species Na(1, "Na+", 1.0,0.0,0.0);
  Cl.update(1.0);
  Na.update(1.0);
  aqx_.clear();
@@ -373,16 +373,16 @@ TEST(TestZeroNumberSpecies) {
 
    @details Test that a chemistry exception is thrown when zero concentrations are provided.
 
-   @test ActivityModelPitzer::EvauateVector()
+   @test ActivityModelPitzer::EvaluateVector()
 */
 TEST(TestZeroConcentrations) {
  ac::ActivityModelFactory amfac_;
  ac::ActivityModel* am_;
  vector<ac::Species> sp_;
  vector<ac::AqueousEquilibriumComplex> aqx_;
- ac::Species Cl(2, "Cl-", -1.0,0.0,0.0);
- ac::Species Na(3, "Na+", 1.0,0.0,0.0);
- ac::Species H2O(3, "H2O", 0.0,0.0,0.0);
+ ac::Species Cl(0, "Cl-", -1.0,0.0,0.0);
+ ac::Species Na(1, "Na+", 1.0,0.0,0.0);
+ ac::Species H2O(2, "H2O", 0.0,0.0,0.0);
  Cl.update(0.0);
  Na.update(0.0);
  H2O.update(0.0);
@@ -394,6 +394,40 @@ TEST(TestZeroConcentrations) {
  for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
  am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
  am_->Display();
+ CHECK_THROW(am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O), ac::ChemistryException);
+}
+/*!
+   @class amanzi::chemistry::unit_tests::ActivityModelPitzer::TestZeroConcentrations
+
+   @brief TestNumberSpecies
+
+   @details Test the number of species.
+
+   @test ActivityModelPitzer::EvaluateVector()
+*/
+TEST(TestNumberSpecies) {
+ ac::ActivityModelFactory amfac_;
+ ac::ActivityModel* am_;
+ vector<ac::Species> sp_;
+ vector<ac::AqueousEquilibriumComplex> aqx_;
+ ac::Species Cl(0, "Cl-", -1.0,0.0,0.0);
+ ac::Species Na(1, "Na+", 1.0,0.0,0.0);
+ ac::Species H2O(2, "H2O", 0.0,0.0,0.0);
+ ac::Species Ca(3, "Ca+2", 2.0,0.0,0.0);
+ Cl.update(3.0);
+ Na.update(1.0);
+ Ca.update(1.0);
+ H2O.update(1.0);
+ aqx_.clear();
+ sp_.clear();
+ sp_.push_back(Cl);
+ sp_.push_back(Na);
+ sp_.push_back(Ca);
+ vector<double> gamma;
+ for (int i=0; i<sp_.size();i++) gamma.push_back(1.0);
+ am_= amfac_.Create("pitzer-hwm","phreeqc_pitzer.dat",sp_, aqx_);
+ am_->Display();
+ sp_.pop_back();
  CHECK_THROW(am_->CalculateActivityCoefficients(&sp_,&aqx_,&H2O), ac::ChemistryException);
 }
 }  // end SUITE(TestPitzer)

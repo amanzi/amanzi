@@ -1,0 +1,33 @@
+## /opt/cubit/12.2-44513/bin/clarox
+## Cubit Version 12.2
+## Cubit Build 44513
+## Revised 2010-10-07 12:42:34 -0600 (Thu, 07 Oct 2010)
+## Running 09/13/2011 02:10:45 PM
+## Command Options:
+## -warning = On
+## -information = On
+brick x 0.1 y 0.1 z 103.2
+volume 1 move x 0.05 y 0.05 z 51.6
+webcut volume 1 with plane zplane offset 96 noimprint nomerge
+webcut volume 2 with plane zplane offset 82.2 noimprint nomerge
+webcut volume 3 with plane zplane offset 23.4 noimprint nomerge
+webcut volume 4 with plane zplane offset 22.2 noimprint nomerge
+webcut volume 5 with plane zplane offset 18 noimprint nomerge
+webcut volume 6 with plane zplane offset 11.4 noimprint nomerge
+webcut volume 7 with plane zplane offset 6 noimprint nomerge
+imprint volume all
+merge volume all
+volume all size 0.1
+mesh volume all
+block 1 volume 1
+block 2 volume 2
+block 3 volume 3
+block 4 volume 4
+block 5 volume 5
+block 6 volume 6
+block 7 volume 7
+block 8 volume 8
+sideset 2 surface 2
+sideset 1 surface 1
+set large exodus file off
+export genesis "bc-cribs-1D-10cm.exo" overwrite

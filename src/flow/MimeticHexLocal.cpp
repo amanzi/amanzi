@@ -169,6 +169,30 @@ void MimeticHexLocal::diff_op(double coef,
 }
 
 
+void MimeticHexLocal::diff_op(double coef, double upwind_coef[],
+    const double &pcell, const double pface[],
+    double &rcell, double rface[]) const
+{
+  Epetra_SerialDenseVector aux1(6);
+  Epetra_SerialDenseMatrix Minv(6,6);
+
+  // Inverse of the mass matrix.
+  mass_matrix(Minv, coef, true);
+
+  for (int i = 0; i < 6; ++i)
+    aux1(i) = pface[i] - pcell;
+
+  Epetra_SerialDenseVector aux2(View, rface, 6);
+  Minv.Multiply(false, aux1, aux2);
+  
+  for (int i = 0; i < 6; ++i) rface[i] *= upwind_coef[i];
+
+  rcell = 0.0;
+  for (int i = 0; i < 6; ++i)
+    rcell -= rface[i];
+}
+
+
 void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
     const double &pcell, const double pface[],
     double &rcell, double rface[]) const

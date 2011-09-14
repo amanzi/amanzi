@@ -70,6 +70,10 @@ include(InstallManager)
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
 
+# Define a list of all enabled TPLs. Must do this AFTER all the 
+# CMakelist.txt files have been processed!
+get_property(AMANZI_ENABLED_TPLS GLOBAL PROPERTY PACKAGES_FOUND)
+
 # Make the exports only _after_ doing the build
 create_exports()
 

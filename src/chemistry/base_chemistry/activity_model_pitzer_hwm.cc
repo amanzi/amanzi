@@ -60,7 +60,7 @@ ActivityModelPitzerHWM::ActivityModelPitzerHWM(const std::string& namedatabase,
       index_h2o_species(-1),
       index_k_species(-1),
       number_species(0),
-      macinnes_scale(false)
+      macinnes_scaled(false)
       {
 ReadDataBase(namedatabase,primary_species,aqueous_complexes);
 }  // end ActivityModelPitzer constructor
@@ -93,7 +93,15 @@ double ActivityModelPitzerHWM::Evaluate(const Species& species) {
 void ActivityModelPitzerHWM::EvaluateVector(std::vector<double>& gamma, double& water_activity,
 		                                    const std::vector<Species>& primary_species,
 		                                    const std::vector<AqueousEquilibriumComplex>& aqueous_complexes) {
-unsigned int nsp(primary_species.size()+aqueous_complexes.size());
+unsigned int number_species_(primary_species.size()+aqueous_complexes.size());
+//---------------------------------------------------------------------------------------------
+// Check the number of species
+//---------------------------------------------------------------------------------------------
+if (number_species_!=number_species) {
+ std::ostringstream error_stream;
+ error_stream << "Error, different number of aqueous species" << "\n";
+ Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
+}
 double gcl(1.0);
 double gclm(1.0);
 double osmotic_coefficient(1.0);
@@ -120,9 +128,9 @@ ComputemQmProduct(gamma,osmotic_coefficient);
 ComputemQlmProduct(osmotic_coefficient);
 ComputemQcmProduct(gamma,osmotic_coefficient);
 ComputemTmmProduct(gamma,osmotic_coefficient);
-if (macinnes_scale && index_cl_species>-1) {
+if (macinnes_scaled && index_cl_species>-1) {
    gcl=gamma.at(index_cl_species);
-   for (int i=0; i<nsp; i++) if (i!=index_h2o_species) gamma.at(i)*= pow((gcl/gclm),charge.at(i));
+   for (int i=0; i<number_species; i++) if (i!=index_h2o_species) gamma.at(i)*= pow((gcl/gclm),charge.at(i));
 }
 water_activity=osmotic_coefficient;
 }  // end EvaluateVector()
@@ -178,9 +186,9 @@ for (int nz=0; nz<number_non_zero_lamda; nz++) {
 void ActivityModelPitzerHWM::ComputemQmProduct(std::vector<double>& gamma, double& osmotic_coefficient) {
 double q2phi(0.0),q2prim(0.0);
 for (int nz=0; nz<number_non_zero_q; nz++) {
- double qij(q.at(nz));
- double qpriij(qpri.at(nz));
- double qphiij(qphi.at(nz));
+ double qij(q_matrix.at(nz));
+ double qpriij(qpri_matrix.at(nz));
+ double qphiij(qphi_matrix.at(nz));
  int i(index_non_zero_q.at(0).at(nz));
  int j(index_non_zero_q.at(1).at(nz));
  double mi(molality.at(i));
@@ -248,7 +256,7 @@ for (std::vector<double>::iterator i=gamma.begin(); i!=gamma.end(); i++) {
  isp++;
  (*i)=charge.at(isp)*charge.at(isp)*dh;
 }
-if (macinnes_scale) gclm=gclm_(dh);
+if (macinnes_scaled) gclm=gclm_(dh);
 }
 /*!
     @brief gclm_
@@ -280,16 +288,16 @@ return exp(dhterm+I_*I_*xxx+I_*(2.0*yyy+I_*mtc0kcl)+I_*I_*mtc0kcl/2.0);
 */
 void ActivityModelPitzerHWM::ComputeQmatrices() {
 for (int i=0; i<number_b_functions; i++) {
- g_.at(i).at(0)=0.0;
- g_.at(i).at(1)=0.0;
- g_pri_.at(i).at(0)=0.0;
- g_pri_.at(i).at(1)=0.0;
- f_.at(i).at(0)=0.0;
- f_.at(i).at(1)=0.0;
+ g_function.at(i).at(0)=0.0;
+ g_function.at(i).at(1)=0.0;
+ g_pri_function.at(i).at(0)=0.0;
+ g_pri_function.at(i).at(1)=0.0;
+ f_function.at(i).at(0)=0.0;
+ f_function.at(i).at(1)=0.0;
 }
 for (int i=0; i<number_j_functions; i++) {
- j_.at(i)=0.0;
- j_pri_.at(i)=0.0;
+ j_function.at(i)=0.0;
+ j_pri_function.at(i)=0.0;
 }
 ComputeBetaFunctions();
 ComputeJFunctions();
@@ -302,15 +310,15 @@ for (int nz_loc=0; nz_loc<number_non_zero_beta; nz_loc++) {
   double B0ij(beta0_virial.at(nz_loc).GetVirial());
   double B1ij(beta1_virial.at(nz_loc).GetVirial());
   double B2ij(beta2_virial.at(nz_loc).GetVirial());
-  double expo1(f_.at(k).at(0));
-  double expo2(f_.at(k).at(1));
-  double G1(g_.at(k).at(0));
-  double G2(g_.at(k).at(1));
-  double Gp1(g_pri_.at(k).at(0));
-  double Gp2(g_pri_.at(k).at(1));
-  qphi.at(nz)=B0ij+B1ij*expo1+B2ij*expo2;
-  q.at(nz)=B0ij+B1ij*G1+B2ij*G2;
-  qpri.at(nz)=B1ij*(Gp1/I_)+B2ij*(Gp2/I_);
+  double expo1(f_function.at(k).at(0));
+  double expo2(f_function.at(k).at(1));
+  double G1(g_function.at(k).at(0));
+  double G2(g_function.at(k).at(1));
+  double Gp1(g_pri_function.at(k).at(0));
+  double Gp2(g_pri_function.at(k).at(1));
+  qphi_matrix.at(nz)=B0ij+B1ij*expo1+B2ij*expo2;
+  q_matrix.at(nz)=B0ij+B1ij*G1+B2ij*G2;
+  qpri_matrix.at(nz)=B1ij*(Gp1/I_)+B2ij*(Gp2/I_);
   index_non_zero_q.at(0).at(nz)=i;
   index_non_zero_q.at(1).at(nz)=j;
 }
@@ -322,12 +330,12 @@ for (int nz_loc=0; nz_loc<number_non_zero_theta; nz_loc++) {
   int funii(theta_virial.at(nz_loc).GetIfun2());
   int funjj(theta_virial.at(nz_loc).GetIfun3());
   double thij(theta_virial.at(nz_loc).GetVirial());
-  double jij(j_.at(funij));
-  double jii(j_.at(funii));
-  double jjj(j_.at(funjj));
-  double jpij(j_pri_.at(funij));
-  double jpii(j_pri_.at(funii));
-  double jpjj(j_pri_.at(funjj));
+  double jij(j_function.at(funij));
+  double jii(j_function.at(funii));
+  double jjj(j_function.at(funjj));
+  double jpij(j_pri_function.at(funij));
+  double jpii(j_pri_function.at(funii));
+  double jpjj(j_pri_function.at(funjj));
   double zizj(charge_product.at(funij));
   double zizi(charge_product.at(funii));
   double zjzj(charge_product.at(funjj));
@@ -335,11 +343,11 @@ for (int nz_loc=0; nz_loc<number_non_zero_theta; nz_loc++) {
   double xii(2.352*sqrt(I_)*zizi);
   double xjj(2.352*sqrt(I_)*zjzj);
   double eth((zizj/(4.0*I_))*(jij-0.5*jii-0.5*jjj));
-  q.at(nz)=thij+eth;
+  q_matrix.at(nz)=thij+eth;
   double eth_i(eth/I_);
   double ethpri(-eth_i+(zizj/(8.0*I_*I_))*(xij*jpij-0.5*xii*jpii-0.5*xjj*jpjj));
-  qpri.at(nz)=ethpri;
-  qphi.at(nz)=thij+eth+I_*ethpri;
+  qpri_matrix.at(nz)=ethpri;
+  qphi_matrix.at(nz)=thij+eth+I_*ethpri;
   index_non_zero_q.at(0).at(nz)=i;
   index_non_zero_q.at(1).at(nz)=j;
 }
@@ -347,7 +355,7 @@ for (int nz_loc=0; nz_loc<number_non_zero_lamda; nz_loc++) {
   nz++;
   int i(lamda_virial.at(nz_loc).GetIsp1());
   int j(lamda_virial.at(nz_loc).GetIsp2());
-  q.at(nz)=lamda_virial.at(nz_loc).GetVirial();
+  q_matrix.at(nz)=lamda_virial.at(nz_loc).GetVirial();
   index_non_zero_q.at(0).at(nz)=i;
   index_non_zero_q.at(1).at(nz)=j;
 }
@@ -369,16 +377,16 @@ for (int j=0; j<number_b_functions; j++) {
 	   double x1(alpha1.at(j)*sqrt(I_));
 	   double x1q(x1*x1);
 	   double x1c(x1q*x1);
-	   f_.at(j).at(0)=exp(-x1);
-	   g_.at(j).at(0)=2.0*(1.0-(1.0+x1)*exp(-x1))/x1q;
-	   g_pri_.at(j).at(0)=-2.0*(1.0-(1.0+x1+(x1q/2.0))*exp(-x1))/x1q;
+	   f_function.at(j).at(0)=exp(-x1);
+	   g_function.at(j).at(0)=2.0*(1.0-(1.0+x1)*exp(-x1))/x1q;
+	   g_pri_function.at(j).at(0)=-2.0*(1.0-(1.0+x1+(x1q/2.0))*exp(-x1))/x1q;
 	   if(alpha2.at(j)!=0.0) {
 	     double x2(alpha2.at(j)*sqrt(I_));
 	     double x2q(x2*x2);
 	     double x2c(x2q*x2);
-	     f_.at(j).at(1)=exp(-x2);
-	     g_.at(j).at(1)=2.0*(1.0-(1.0+x2)*exp(-x2))/x2q;
-	     g_pri_.at(j).at(1)=-2.0*(1.0-(1.0+x2+(x2q/2.0))*exp(-x2))/x2q;
+	     f_function.at(j).at(1)=exp(-x2);
+	     g_function.at(j).at(1)=2.0*(1.0-(1.0+x2)*exp(-x2))/x2q;
+	     g_pri_function.at(j).at(1)=-2.0*(1.0-(1.0+x2+(x2q/2.0))*exp(-x2))/x2q;
 	   }
 }
 }
@@ -415,16 +423,16 @@ for (int i=0;i<number_j_functions; i++) {
   }
   s3=s3/x;
   double s1q(s1*s1);
-  j_.at(i)=-(1.0/6.0)*x2*log(x)*exp(-10.0*x2)+(1.0/s1);
-  j_pri_.at(i)=((10.0*x2-1.0)*log(x)-0.5)*(x/3.0)*exp(-10.0*x2)+(s3/s1q);
+  j_function.at(i)=-(1.0/6.0)*x2*log(x)*exp(-10.0*x2)+(1.0/s1);
+  j_pri_function.at(i)=((10.0*x2-1.0)*log(x)-0.5)*(x/3.0)*exp(-10.0*x2)+(s3/s1q);
 
  } else {
   double xc4(pow(x,e4));
   double xc2(pow(x,-e2));
   double td1(e1*xc2*exp(-e3*xc4));
   double td(4.0+td1);
-  j_.at(i)=x/td;
-  j_pri_.at(i)=(j_[i]/x2)*(x+td1*(e2+e3*e4*xc4)*j_.at(i));
+  j_function.at(i)=x/td;
+  j_pri_function.at(i)=(j_function.at(i)/x2)*(x+td1*(e2+e3*e4*xc4)*j_function.at(i));
  }
 }
 }
@@ -451,7 +459,7 @@ void ActivityModelPitzerHWM::Display(void) const {
   int isp3(-1);
   int nvirial(0);
   if (number_non_zero_beta>0){
-  std::cout << "=================> B0 ==============>" << std::endl;
+  std::cout << "=================> Beta0 ==============>" << std::endl;
   for (int i=0; i<number_non_zero_beta; i++){
     isp1=beta0_virial.at(i).GetIsp1();
     isp2=beta0_virial.at(i).GetIsp2();
@@ -460,7 +468,7 @@ void ActivityModelPitzerHWM::Display(void) const {
       std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta0_virial.at(i).GetVirial() << std::endl;
     }
   }
-  std::cout << "=================> B1 ==============>" << std::endl;
+  std::cout << "=================> Beta1 ==============>" << std::endl;
   for (int i=0; i<number_non_zero_beta; i++){
     isp1=beta1_virial.at(i).GetIsp1();
     isp2=beta1_virial.at(i).GetIsp2();
@@ -469,7 +477,7 @@ void ActivityModelPitzerHWM::Display(void) const {
     	  std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << beta1_virial.at(i).GetVirial() << std::endl;
       }
   }
-  std::cout << "=================> B2 ==============>" << std::endl;
+  std::cout << "=================> Beta2 ==============>" << std::endl;
   for (int i=0; i<number_non_zero_beta; i++){
     isp1=beta2_virial.at(i).GetIsp1();
     isp2=beta2_virial.at(i).GetIsp2();
@@ -481,7 +489,7 @@ void ActivityModelPitzerHWM::Display(void) const {
   }
   }
   if (number_non_zero_cphi>0){
-  std::cout << "=================> Cfi ==============>" << std::endl;
+  std::cout << "=================> Cphi ==============>" << std::endl;
   for (int i=0; i<number_non_zero_cphi; i++){
     isp1=cphi_virial.at(i).GetIsp1();
     isp2=cphi_virial.at(i).GetIsp2();
@@ -589,7 +597,8 @@ std::string space(" ");
 StringTokenizer no_spaces;
 
 int count(0), iblock(-1);
-while (!database.eof() && count < mxlines) {
+bool exit_loop(false);
+while (!database.eof() && count < mxlines && !exit_loop) {
 	    count++;
 	    std::string error_section("");
 	    std::string line;
@@ -600,13 +609,13 @@ while (!database.eof() && count < mxlines) {
 	    StringTokenizer input(line,space);
 	    no_spaces.tokenize(input.at(0),space);
 	    std::string line1(no_spaces.at(0));
-	    if (line1==space) goto exit;
+	    if (line1==space) exit_loop=true;
 	    if (first == '>') {
 	    	iblock++;
-	    	if (iblock==block_b0 && isdebug) std::cout << "=================> Parse B0 ==============>" << std::endl;
-	    	if (iblock==block_b1 && isdebug) std::cout << "=================> Parse B1 ==============>" << std::endl;
-	    	if (iblock==block_b2 && isdebug) std::cout << "=================> Parse B2 ==============>" << std::endl;
-	    	if (iblock==block_cfi && isdebug) std::cout << "=================> Parse Cfi ==============>" << std::endl;
+	    	if (iblock==block_b0 && isdebug) std::cout << "=================> Parse Beta0 ==============>" << std::endl;
+	    	if (iblock==block_b1 && isdebug) std::cout << "=================> Parse Beta1 ==============>" << std::endl;
+	    	if (iblock==block_b2 && isdebug) std::cout << "=================> Parse Beta2 ==============>" << std::endl;
+	    	if (iblock==block_cfi && isdebug) std::cout << "=================> Parse Cphi ==============>" << std::endl;
 	    	if (iblock==block_theta && isdebug) std::cout << "=================> Parse Theta ==============>" << std::endl;
 	    	if (iblock==block_lamda && isdebug) std::cout << "=================> Parse Lamda ==============>" << std::endl;
 	    	if (iblock==block_psi && isdebug) std::cout << "=================> Parse Psi ==============>" << std::endl;
@@ -634,11 +643,9 @@ while (!database.eof() && count < mxlines) {
 	    	ParsePsiVirialCoefficient(line);
 	    }
 
-        if (iblock==block_exit) goto exit;
+        if (iblock==block_exit) exit_loop=true;
 
 }
-
-exit:
 if (isdebug) std::cout << "=================> Assign Beta's functions ==============>" << std::endl;
 AssignIndexBetaFunctions();
 if (isdebug) std::cout << "=================> Assign F's functions ==============>" << std::endl;
@@ -652,7 +659,7 @@ for (int isp=0; isp<number_species; isp++) {
 	if (name_species.at(isp)=="Cl-" || name_species.at(isp)=="cl-") index_cl_species=isp;
 	if (name_species.at(isp)=="K+"  || name_species.at(isp)=="k+") index_k_species=isp;
 }
-if (index_cl_species>-1 && index_k_species>-1) macinnes_scale=true;
+if (index_cl_species>-1 && index_k_species>-1) macinnes_scaled=true;
 database.close();
 if (isdebug) std::cout << "=================> Closing Pitzer Data Base ==============>" << std::endl;
 if (isdebug) std::cout << "=================> Print virial coefficients ==============>" << std::endl;
@@ -1180,29 +1187,29 @@ for (int nz=0; nz<number_non_zero_theta; nz++) {
     @details Push back private vectors.
 */
 void ActivityModelPitzerHWM::PushPrivateVectors() {
-g_.resize(number_b_functions);
-g_pri_.resize(number_b_functions);
-g_.resize(number_b_functions);
-f_.resize(number_b_functions);
+g_function.resize(number_b_functions);
+g_pri_function.resize(number_b_functions);
+g_function.resize(number_b_functions);
+f_function.resize(number_b_functions);
 for (int i=0;i<number_b_functions;i++) {
- g_.at(i).push_back(0.0);
- g_.at(i).push_back(0.0);
- g_pri_.at(i).push_back(0.0);
- g_pri_.at(i).push_back(0.0);
- f_.at(i).push_back(0.0);
- f_.at(i).push_back(0.0);
+ g_function.at(i).push_back(0.0);
+ g_function.at(i).push_back(0.0);
+ g_pri_function.at(i).push_back(0.0);
+ g_pri_function.at(i).push_back(0.0);
+ f_function.at(i).push_back(0.0);
+ f_function.at(i).push_back(0.0);
 }
 for (int i=0;i<number_j_functions;i++) {
- j_.push_back(0.0);
- j_pri_.push_back(0.0);
+ j_function.push_back(0.0);
+ j_pri_function.push_back(0.0);
 }
 index_non_zero_q.resize(2);
 for (int i=0; i<number_non_zero_q; i++) {
  index_non_zero_q.at(0).push_back(0);
  index_non_zero_q.at(1).push_back(0);
- q.push_back(0.0);
- qpri.push_back(0.0);
- qphi.push_back(0.0);
+ q_matrix.push_back(0.0);
+ qpri_matrix.push_back(0.0);
+ qphi_matrix.push_back(0.0);
 }
 }
 /*!
