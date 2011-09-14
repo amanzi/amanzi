@@ -83,7 +83,7 @@ In the remainder of this document, we attempt to adhere to the following standar
 or allowable values.  User-defined labels are indicated with ALL-CAPS, and are meant to represent a typical name given by a user -
 these can be names or numbers or whatever serves best the organization of the user input data.
 
-Where applicable, the relevant section the MRD is referred to by section or chapter number in parentheses.
+Where applicable, the relevant section of the MRD is referred to by section or chapter number in parentheses.
 
 
 Version
@@ -126,7 +126,7 @@ MOAB mesh example:
 
 .. code-block:: xml
 
-   <Parameter name="Framework" type="string" value="stk::moab"/>
+   <Parameter name="Framework" type="string" value="moab"/>
     <ParameterList name="Generate">
       <Parameter name="filename" type="string" value="moab_filename"/>
     </ParameterList>   
@@ -532,8 +532,9 @@ For the `"structured`" mesh framwork option, the bounding surfaces are implicitl
 and are automatically generated with the following labels `"xlobc`", `"xhibc`", `"ylobc`", `"yhibc`",
 `"zlobc`", `"zhibc`" that are accessible throughout the input file.
 
-For the `"unstructured`" mesh option, Amanzi supports fixed meshes in the MOAB and MSTK formats, as well as 
-a simple mesh specification that accommodates a parallelepiped domain.  In the first two cases, the domain boundaries
+For the `"unstructured`" mesh option, Amanzi supports import of meshes in
+the Exodus II formats, as well as 
+a generation of a simple mesh that accommodates a parallelepiped domain.  In the first cases, the domain boundaries
 must be identified explicitly in the mesh file (see `"labeled set`" region type below).  For `"simple mesh`", the boundaries are created automatically,
 following the scheme for the `"structured`" mesh option discussed above.
 
@@ -576,7 +577,7 @@ a number of parameters:
 
 Notes
 
-* `"box`" can be used to define a point, coordinate-aligned lines and planes and a volume of space.  For the `"structured`", `"SimpleMesh`" and `"stk::mesh`" mesh frameworks, the auto-generated regions (`"all`", `"xlobc`", ...) are all defined internally as box regions.
+* `"box`" can be used to define a point, coordinate-aligned lines and planes and a volume of space.  For the `"structured`", `"SimpleMesh`" and `"STKmesh`" mesh frameworks, the auto-generated regions (`"all`", `"xlobc`", ...) are all defined internally as box regions.
 
 * `"LaGriT`" input files can be used to specify extremely complex geometrical regions in a mesh-independent way.  The input file passed here will be parsed by LaGriT to define the geometrical region, and cell/face/point sets will be generated based on the mesh framework details (declared above in the `"Mesh`" section).
 
