@@ -40,4 +40,8 @@ add_library(interface InputParser.H InputParser.cpp
                       ObservationData.H Simulator.H)
 add_install_library(interface)
 
-
+#
+# Add include files to the installation target
+#
+file(GLOB _inc_files "*.H")
+add_install_include_file(${_inc_files})
