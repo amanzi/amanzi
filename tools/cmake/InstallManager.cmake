@@ -84,97 +84,119 @@ endfunction( ADD_INSTALL_BINARY )
 #
 function( CREATE_TPL_EXPORT_FILE )
 
-  # MACROS
+  message(STATUS "BEGIN CREATE_TPL_EXPORT_FILE")
 
   # Print the usage
   macro( _print_usage )
-    message("\nUsage: create_tpl_export_file(<package list> | package1 package2 ... )\n")
+    message("\nUsage: create_tpl_export_file( outfile PACKAGES <package list> | package1 package2 ... )\n")
   endmacro()
 
-  # Write the header for the file
-  macro(_write_header _outfile)
+  # Parse Arguments
+  set(_options "")
+  set(_oneValue "")
+  set(_multiValue "PACKAGES")
+  cmake_parse_arguments(BUILD_TPL "${_options}" "${_oneValue}" "${_multiValue}" ${ARGN})
 
-    file(WRITE ${_outfile} "# ############################################################################ #\n")
-    file(APPEND ${_outfile} "#\n")
-    file(APPEND ${_outfile} "# Amanzi TPL (External Software Packages) Configuration\n")
-    file(APPEND ${_outfile} "#\n")
-    file(APPEND ${_outfile} "# ############################################################################ #\n")
-    file(APPEND ${_outfile} "\n")
+  if (NOT BUILD_TPL_PACKAGES)
+    _print_usage()
+    message(FATAL_ERROR "Require a package list to build export file")
+  endif()
+
+  list(GET BUILD_TPL_UNPARSED_ARGUMENTS 0 BUILD_TPL_OUTFILE)
+  if (NOT BUILD_TPL_OUTFILE)
+    _print_usage()
+    message(FATAL_ERROR "Must define an output file")
+  endif()  
+
+  # BEGIN MACROS
+
+  # Write the header for the file
+  macro(_write_header)
+
+    file(WRITE ${BUILD_TPL_OUTFILE} "# ############################################################################ #\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "#\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "# Amanzi TPL (External Software Packages) Configuration\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "#\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "# ############################################################################ #\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "\n")
 
   endmacro(_write_header)
 
-  macro(_write_variable _var_name _var_value _outfile)
+  # Write a CMake set variable command
+  macro(_write_cmake_variable _cmake_var_name _var_value)
 
-    file(APPEND ${_outfile} "set(${_var_name} ${_var_value})\n")
+    message(STATUS "IN _write_variable macro")
+    print_variable(_cmake_var_name)
+    print_variable(${_cmake_var_name})
+    print_variable(_var_value)
+    print_variable(${_var_value})
 
-  endmacro(_write_variable)  
+    if (${_var_value})
+      message("Writing to ${BUILD_TPL_OUTFILE}")
+      file(APPEND ${BUILD_TPL_OUTFILE} "set(${_cmake_var_name} ${${_var_value}})\n")
+    else()
+      print_variable(_var_value)
+      print_variable(${_var_value})
+      message("Not defined")
+    endif()  
 
-  # Add packge to the file
-  macro( _add_package _package _outfile )
+  endmacro(_write_cmake_variable)  
+
+  # Add package to the file
+  macro( _add_package _package )
+
+    message(STATUS "In _add_package")
+    print_variable(_package)
+    print_variable(${_package})
+
+    file(APPEND ${BUILD_TPL_OUTFILE} "\n#\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "# TPL: ${_package}\n")
+    file(APPEND ${BUILD_TPL_OUTFILE} "#\n")
 
     set(found_package_flag ${_package}_FOUND)
+    print_variable(found_package_flag)
+    set(_package_enabled_flag_var "Amanzi_TPL_${_package}_ENABLED")
+    set(_package_dir_var          "Amanzi_TPL_${_package}_DIR")
 
     if ( ${found_package_flag} ) 
-      set(_package_enabled_flag_var "Amanzi_TPL_${_package}_ENABLED")
-      set(_package_dir_var          "Amanzi_TPL_${_package}_DIR")
-      set(_package_include_dir_var  "Amanzi_TPL_${_package}_INCLUDE_DIR")
-      set(_package_include_dirs_var "Amanzi_TPL_${_package}_INCLUDE_DIRS")
-      set(_package_libraries_var    "Amanzi_TPL_${_package}_LIBRARIES")
-      set(_package_library_dir_var  "Amanzi_TPL_${_package}_LIBRARY_DIR")
-      set(_package_library_dirs_var "Amanzi_TPL_${_package}_LIBRARY_DIRS")
 
-      file(APPEND ${_outfile} "\n#\n")
-      file(APPEND ${_outfile} "# TPL: ${_package}\n")
-      file(APPEND ${_outfile} "#\n")
-      
-      file(APPEND ${_outfile} "set(${_package_enabled_flag_var} ON)\n")
-      file(APPEND ${_outfile} "set(${_package_dir_var}          ${${_package}_DIR})\n")
+      file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_enabled_flag_var} ON)\n")
+      file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_dir_var}          ${${_package}_DIR})\n")
 
-      # Include directories
-      if ( ${_package}_INCLUDE_DIR ) 
-	_write_variable(${_package_include_dir_var} ${${_package}_INCLUDE_DIR} ${_outfile})
-      endif()	
-      #file(APPEND ${_outfile} "set(${_package_include_dir_var}  ${${_package}_INCLUDE_DIR})\n")
-      file(APPEND ${_outfile} "set(${_package_include_dirs_var} ${${_package}_INCLUDE_DIRS})\n")
-     
-      # Libraries and library directories
-      file(APPEND ${_outfile} "set(${_package_libraries_var} ${${_package}_LIBRARIES})\n")
-      if ( ${_package}_LIBRARY_DIR )
-	_write_variable(${_package_library_dir_var} ${${_package}_LIBRARY_DIR} ${_outfile})
-      endif()	
-      if ( ${_package}_LIBRARY_DIRS )
-	_write_variable(${_package_library_dirs_var} ${${_package}_LIBRARY_DIRS} ${_outfile})
-      endif()	
-      
+      set(_var_name_list "INCLUDE_DIR;INCLUDE_DIRS;LIBRARIES;LIBRARY_DIR;LIBRARY_DIRS")
+      print_variable(_var_name_list)
+
+      foreach (_append_name ${_var_name_list})
+	print_variable(_append_name)
+	set(_write_var_name "Amanzi_TPL_${_package}_${_append_name}")
+	set(_var_name       "${_package}_${_append_name}")
+	print_variable(_write_var_name)
+	print_variable(_var_name)
+	_write_cmake_variable(${_write_var_name} ${_var_name})
+      endforeach(_append_name)	
+
     else()
-      file(APPEND ${_outfile} "set(${_package_enabled_flag_var} OFF)\n")
+
+      file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_enabled_flag_var} OFF)\n")
+
     endif()
+
+    message(STATUS "Leaving _add_package")
 
   endmacro(_add_package) 
 
 
   # Begin MAIN
-  set(_package_list ${ARGV})
 
-  if(NOT _package_list)
-    message(FATAL_ERROR "\nUsage create_tpl_export_file(<package_list>| package1 package2..)\n")
-  endif(NOT _package_list)
-
-  set(outfile "${AMANZI_BINARY_DIR}/AmanziConfigTPL.cmake")
-  install(FILES ${outfile} DESTINATION lib) 
-  #print_variable(outfile)
-
-  if (NOT EXISTS ${outfile})
-    _write_header(${outfile})
+  
+  if (NOT EXISTS ${BUILD_TPL_OUTFILE})
+    _write_header(${BUILD_TPL_OUTFILE})
   endif()  
 
-  # Write the header
-  _write_header(${outfile})
+  foreach(_package IN LISTS BUILD_TPL_PACKAGES)
 
-  foreach(_package IN LISTS _package_list)
-
-    #print_variable(_package)
-    _add_package(${_package} ${outfile}) 
+    print_variable(_package)
+    _add_package(${_package}) 
 
   endforeach()  
 
@@ -205,7 +227,12 @@ file(WRITE ${AMANZI_LINK_LINE_FILE} ${LINK_LINE_STRING})
 install(FILES ${AMANZI_LINK_LINE_FILE} DESTINATION lib)
 
 # Write the TPL file
-create_tpl_export_file(${AMANZI_ENABLED_TPLS})
+set(tpl_config_file "${AMANZI_BINARY_DIR}/AmanziConfigTPL.cmake")
+if ( EXISTS ${tpl_config_file} )
+  file(REMOVE ${tpl_config_file})
+endif()  
+create_tpl_export_file(${tpl_config_file}
+                       PACKAGES ${AMANZI_ENABLED_TPLS})
 
 # Write the export Makefile and add to the include install list
 set(in_makefile  "${AMANZI_MODULE_PATH}/MakefileConfig.export.in")
