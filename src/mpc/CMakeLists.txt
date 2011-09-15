@@ -23,6 +23,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${STK_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
@@ -44,7 +45,8 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 if(ENABLE_CGNS)
     include_directories(${CGNS_INCLUDE_DIRS})
-endif()  
+endif()
+include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
@@ -53,7 +55,7 @@ add_definitions("-DUSE_MPI")
 #
 # Library: mpc
 #
-add_library(mpc MPC.cpp Unstructured_observations.cpp)
+add_library(mpc MPC.cpp Unstructured_observations.cpp Vis.cpp)
 add_install_library(mpc)
 set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
 if (ENABLE_CGNS)
@@ -104,5 +106,9 @@ if (BUILD_TESTS)
         add_amanzi_test(mpc-moab test_mpc_moab KIND int)
     
     endif()
+
+    add_executable(test_vis test/Main.cc test/test_vis.cpp)
+    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
+    add_amanzi_test(vis test_vis KIND int)
 
 endif()
