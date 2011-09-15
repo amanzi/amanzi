@@ -4,7 +4,7 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
-    <Parameter name="Read" type="string" value="./bc-cribs-1D-20cm.exo"/>
+    <Parameter name="Read" type="string" value="./bc-cribs-1D-20cm.par"/>
   </ParameterList>    
 
   <ParameterList name="observation">
@@ -18,21 +18,26 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="3.1e+6"/>
-    <Parameter name="End Cycle" type="int" value="5000"/>
+    <Parameter name="End Time" type="double" value="3.1e+100"/>
+    <Parameter name="End Cycle" type="int" value="1000"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Richards"/>
-    <Parameter name="disable Transport_PK" type="string" value="yes"/>
+    <Parameter name="disable Transport_PK" type="string" value="no"/>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
-    <Parameter name="Viz dump cycle frequency" type="int" value="100"/>
-    <ParameterList name="CGNS">
-      <Parameter name="File name" type="string" value="bc-cribs-1D.cgns"/>
-    </ParameterList>    
-    <Parameter name="Gnuplot output" type="bool" value="true"/>
-    <Parameter name="Restart" type="bool" value="false"/>
+    <Parameter name="Restart" type="bool" value="true"/>
     <Parameter name="Restart file" type="string" value="restart-bc-cribs-1D-4PE.h5"/>
-  </ParameterList> 
+  </ParameterList>
 
+  <ParameterList name="Visualization">
+    <Parameter name="file base name" type="string" value="bc-cribs"/>
+    <ParameterList name="Interval 1">
+      <ParameterList name="cycle range">
+         <Parameter name="cycle frequency" type="int" value="100"/>
+         <Parameter name="start cycle" type="int" value="0"/>
+         <Parameter name="end cycle" type="int" value="1000"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
   
   <ParameterList name="State">
     <Parameter name="Number of mesh blocks" type="int" value="8"/>
