@@ -125,19 +125,8 @@ function( CREATE_TPL_EXPORT_FILE )
   # Write a CMake set variable command
   macro(_write_cmake_variable _cmake_var_name _var_value)
 
-    message(STATUS "IN _write_variable macro")
-    print_variable(_cmake_var_name)
-    print_variable(${_cmake_var_name})
-    print_variable(_var_value)
-    print_variable(${_var_value})
-
     if (${_var_value})
-      message("Writing to ${BUILD_TPL_OUTFILE}")
       file(APPEND ${BUILD_TPL_OUTFILE} "set(${_cmake_var_name} ${${_var_value}})\n")
-    else()
-      print_variable(_var_value)
-      print_variable(${_var_value})
-      message("Not defined")
     endif()  
 
   endmacro(_write_cmake_variable)  
@@ -145,33 +134,23 @@ function( CREATE_TPL_EXPORT_FILE )
   # Add package to the file
   macro( _add_package _package )
 
-    message(STATUS "In _add_package")
-    print_variable(_package)
-    print_variable(${_package})
-
     file(APPEND ${BUILD_TPL_OUTFILE} "\n#\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# TPL: ${_package}\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "#\n")
 
     set(found_package_flag ${_package}_FOUND)
-    print_variable(found_package_flag)
     set(_package_enabled_flag_var "Amanzi_TPL_${_package}_ENABLED")
     set(_package_dir_var          "Amanzi_TPL_${_package}_DIR")
 
     if ( ${found_package_flag} ) 
 
       file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_enabled_flag_var} ON)\n")
-      file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_dir_var}          ${${_package}_DIR})\n")
+      file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_dir_var} ${${_package}_DIR})\n")
 
       set(_var_name_list "INCLUDE_DIR;INCLUDE_DIRS;LIBRARIES;LIBRARY_DIR;LIBRARY_DIRS")
-      print_variable(_var_name_list)
-
       foreach (_append_name ${_var_name_list})
-	print_variable(_append_name)
 	set(_write_var_name "Amanzi_TPL_${_package}_${_append_name}")
 	set(_var_name       "${_package}_${_append_name}")
-	print_variable(_write_var_name)
-	print_variable(_var_name)
 	_write_cmake_variable(${_write_var_name} ${_var_name})
       endforeach(_append_name)	
 
@@ -180,8 +159,6 @@ function( CREATE_TPL_EXPORT_FILE )
       file(APPEND ${BUILD_TPL_OUTFILE} "set(${_package_enabled_flag_var} OFF)\n")
 
     endif()
-
-    message(STATUS "Leaving _add_package")
 
   endmacro(_add_package) 
 
@@ -193,11 +170,10 @@ function( CREATE_TPL_EXPORT_FILE )
     _write_header(${BUILD_TPL_OUTFILE})
   endif()  
 
+  # Loop through each package and update the output file
   foreach(_package IN LISTS BUILD_TPL_PACKAGES)
-
-    print_variable(_package)
+    #print_variable(_package)
     _add_package(${_package}) 
-
   endforeach()  
 
 endfunction ( CREATE_TPL_EXPORT_FILE )
