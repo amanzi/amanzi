@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
   Amanzi::ObservationData obs_data;
 
   // create the MPC
-  Amanzi::MPC mpc(driver_parameter_list, mesh, obs_data);
+  Amanzi::MPC mpc(driver_parameter_list, mesh, comm, obs_data);
   
   mpc.cycle_driver();
   

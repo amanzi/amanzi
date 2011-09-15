@@ -4,7 +4,7 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
-    <Parameter name="Read" type="string" value="./bc-cribs-1D.exo"/>
+    <Parameter name="Read" type="string" value="./bc-cribs-1D.par"/>
   </ParameterList>    
 
   <ParameterList name="observation">
@@ -29,9 +29,20 @@
       <Parameter name="File name" type="string" value="bc-cribs-1D.cgns"/>
     </ParameterList>    
     <Parameter name="Gnuplot output" type="bool" value="true"/>
-    <Parameter name="Restart" type="bool" value="false"/>
+    <Parameter name="Restart" type="bool" value="true"/>
     <Parameter name="Restart file" type="string" value="restart-bc-cribs-1D-4PE.h5"/>
   </ParameterList> 
+
+  <ParameterList name="Visualization">
+    <Parameter name="file base name" type="string" value="bc-cribs-1D"/>
+    <ParameterList name="Interval 1">
+      <ParameterList name="visdump cycles">
+        <Parameter name="cycle frequency" type="int" value="100"/>
+        <Parameter name="start cycle" type="int" value="0"/>
+        <Parameter name="end cycle" type="int" value="10000"/> 
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
   
   <ParameterList name="State">
@@ -258,6 +269,7 @@ p = p_atmospheric - 9.8 * rho * (z - height)
 	  <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
 	  <Parameter name="eigen-analysis: type" type="string" value="cg"/>
 	  <Parameter name="eigen-analysis: iterations" type="int" value="10"/>
+	  <Parameter name="energy minimization: enable" type="bool" value="true"/>
 	  <Parameter name="smoother: sweeps" type="int" value="2"/>
 	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
 	  <Parameter name="smoother: pre or post" type="string" value="both"/>
