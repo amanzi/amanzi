@@ -30,6 +30,7 @@
 
   <ParameterList name="Visualization">
     <Parameter name="file base name" type="string" value="bc-cribs"/>
+    <Parameter name="enable gnuplot" type="bool" value="false"/>
     <ParameterList name="Interval 1">
       <ParameterList name="cycle range">
          <Parameter name="cycle frequency" type="int" value="100"/>
@@ -37,8 +38,15 @@
          <Parameter name="end cycle" type="int" value="1000"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Interval 2">
+      <ParameterList name="time range">
+         <Parameter name="time frequency" type="double" value="1e+10"/>
+         <Parameter name="start time" type="double" value="0.0"/>
+         <Parameter name="end time" type="double" value="1e+100"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
-  
+ 
   <ParameterList name="State">
     <Parameter name="Number of mesh blocks" type="int" value="8"/>
     <Parameter name="Number of component concentrations" type="int" value="1"/>

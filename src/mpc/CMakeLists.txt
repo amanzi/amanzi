@@ -43,9 +43,6 @@ include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-if(ENABLE_CGNS)
-    include_directories(${CGNS_INCLUDE_DIRS})
-endif()
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # Need to move this up to the root -- lpritch
@@ -58,10 +55,6 @@ add_definitions("-DUSE_MPI")
 add_library(mpc MPC.cpp Unstructured_observations.cpp Vis.cpp)
 add_install_library(mpc)
 set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
-if (ENABLE_CGNS)
-    list(APPEND mpc_tpl_libs ${CGNS_LIBRARIES})
-    add_definitions("-DENABLE_CGNS")
-endif()    
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
 target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
