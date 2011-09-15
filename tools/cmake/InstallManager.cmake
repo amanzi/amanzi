@@ -84,8 +84,6 @@ endfunction( ADD_INSTALL_BINARY )
 #
 function( CREATE_TPL_EXPORT_FILE )
 
-  message(STATUS "BEGIN CREATE_TPL_EXPORT_FILE")
-
   # Print the usage
   macro( _print_usage )
     message("\nUsage: create_tpl_export_file( outfile PACKAGES <package list> | package1 package2 ... )\n")
