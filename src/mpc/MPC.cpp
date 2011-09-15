@@ -13,11 +13,6 @@
 #include "Transient_Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
-#include "gmv_mesh.hh"
-#ifdef ENABLE_CGNS
-#include "cgns_mesh_par.hh"
-#include "cgns_mesh.hh"
-#endif
 // TODO: We are using depreciated parts of boost::filesystem
 #define BOOST_FILESYSTEM_VERSION 2
 #include "boost/filesystem/operations.hpp"
@@ -140,7 +135,7 @@ void MPC::mpc_init()
        
        Teuchos::ParameterList vis_parameter_list = 
 	 parameter_list.sublist("Visualization");
-       visualization = new Amanzi::Vis(vis_parameter_list, *comm);
+       visualization = new Amanzi::Vis(vis_parameter_list, comm);
        visualization->create_files(*mesh_maps);
      }
    else
@@ -169,17 +164,27 @@ void MPC::cycle_driver () {
 
   if (chemistry_enabled) {
     try {
+      // these are the vectors that chemistry will populate with
+      // the names for the auxillary output vectors and the
+      // names of components
+      std::vector<string> auxnames;
+      std::vector<string> compnames; 
+      
       // total view needs this to be outside the constructor 
       CPK->InitializeChemistry();
       CPK->set_chemistry_output_names(&auxnames);
       CPK->set_component_names(&compnames);
+
+      // set the names in the visualization object
+      visualization->set_compnames(compnames);
+      visualization->set_auxnames(auxnames);
+
     } catch (ChemistryException& chem_error) {
       std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
                 << std::endl << chem_error.what() << std::endl;
       Exceptions::amanzi_throw(chem_error);
     }
   }
-  
 
   int iter = 0;
   
@@ -217,14 +222,27 @@ void MPC::cycle_driver () {
       S->read_restart( restart_file );
     }
   
-  // write visualization data before the transient problem starts 
-  visualization->dump_state(S->get_time(), S->get_time(), iter, *S);	
+
+  // write visualization output
+  if (chemistry_enabled) 
+    {
+      // get the auxillary data
+      Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+      
+      // write visualization data for timestep if requested
+      visualization->dump_state(S->get_time(), S->get_time(), iter, *S, &(*aux));
+    }
+  else
+    {
+      visualization->dump_state(S->get_time(), S->get_time(), iter, *S);
+    }
+  
 
   if (flow_enabled || transport_enabled || chemistry_enabled) 
     {
       // make observations
       observations->make_observations(*S);
-      
+
       // we need to create an EpetraMulitVector that will store the 
       // intermediate value for the total component concentration
       total_component_concentration_star =
@@ -314,12 +332,25 @@ void MPC::cycle_driver () {
 	// make observations
 	observations->make_observations(*S);
 
-	// write visualization data for timestep if requested
-	visualization->dump_state(S->get_time()-mpc_dT, S->get_time(), iter, *S);	
+	
+	if (chemistry_enabled) 
+	  {
+	    // get the auxillary data
+	    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+	    
+	    // write visualization data for timestep if requested
+	    visualization->dump_state(S->get_time()-mpc_dT, S->get_time(), iter, *S, &(*aux));
+	  }
+	else
+	  {
+	    visualization->dump_state(S->get_time()-mpc_dT, S->get_time(), iter, *S);
+	  }
       }
       
     }
-  
+ 
+
+
   // dump observations
   output_observations.print(std::cout);
   

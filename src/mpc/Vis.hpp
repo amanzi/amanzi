@@ -12,15 +12,19 @@ namespace Amanzi {
   class Vis {
 
   public:
-    Vis(Teuchos::ParameterList& plist, const Epetra_MpiComm& comm); 
+    Vis(Teuchos::ParameterList& plist, Epetra_MpiComm *comm); 
     Vis(); // this object will not create any output 
     ~Vis();
    
-    void dump_state (double time, double prev_time, int cycle, State& S);
+    void dump_state (double time, double prev_time, int cycle, State& S, Epetra_MultiVector *auxdata = NULL);
     void create_files (Amanzi::AmanziMesh::Mesh& mesh);
     void read_parameters(Teuchos::ParameterList& plist);
     bool dump_requested(double time, double prev_time, int cycle);
     void set_compnames(std::vector<std::string>& compnames_);
+    void set_auxnames(std::vector<std::string>& auxnames_);
+
+  private:
+    void write_gnuplot(int cycle, State& S, Epetra_MultiVector* auxdata);
 
   private:    
     std::string filebasename; 
@@ -45,10 +49,16 @@ namespace Amanzi {
 
     // names for the components
     std::vector<std::string> compnames;
+    std::vector<std::string> auxnames;
+    
+    // enable gnuplot output
+    bool enable_gnuplot;
 
     // disable visualization dumps alltogether
     bool disabled;
 
+    // the Epetra communicator
+    Epetra_MpiComm *comm;
   };
 
 }

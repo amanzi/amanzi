@@ -1,12 +1,15 @@
 #include "Vis.hpp"
 #include "Epetra_MpiComm.h"
 
-Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, const Epetra_MpiComm& comm):
-  plist(plist_), disabled(false)
+Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
+  plist(plist_), disabled(false), comm(comm_)
 {
   read_parameters(plist);
 
-  viz_output = new Amanzi::HDF5_MPI(comm);
+  auxnames.resize(0);
+  compnames.resize(0);
+
+  viz_output = new Amanzi::HDF5_MPI(*comm);
   viz_output->setTrackXdmf(true);
   
 }
@@ -16,9 +19,14 @@ Amanzi::Vis::Vis (): disabled(true)
 {
 }
 
-void Amanzi::Vis::set_compnames (std::vector<string>& compnames_)
+void Amanzi::Vis::set_compnames (std::vector<string>& compnames_ )
 {
   compnames = compnames_;
+}
+
+void Amanzi::Vis::set_auxnames (std::vector<string>& auxnames_ )
+{
+  auxnames = auxnames_;
 }
 
 
@@ -44,6 +52,9 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 {
   filebasename = plist.get<string>("file base name","amanzi_vis");
   
+  enable_gnuplot = plist.get<bool>("enable gnuplot",false);
+  if (comm->NumProc() != 1) enable_gnuplot = false;
+
   number_of_cycle_intervals = 0;
   number_of_time_intervals  = 0;
 
@@ -93,7 +104,7 @@ Amanzi::Vis::~Vis ()
 
 
 void Amanzi::Vis::dump_state(double prev_time, double time, int cycle,
-		       State& S)
+			     State& S, Epetra_MultiVector *auxdata)
 {
   
   if (!disabled) 
@@ -115,13 +126,47 @@ void Amanzi::Vis::dump_state(double prev_time, double time, int cycle,
 	  for (int i=0; i<S.get_number_of_components(); i++)
 	    {
 	      std::stringstream tcc_name;
-	      tcc_name << "component " << i;
+	      
+	      if (compnames.size() == S.get_number_of_components()) 
+		{
+		  tcc_name << compnames[i]; 
+		}
+	      else
+		tcc_name << "component " << i;
 	      
 	      viz_output->writeCellDataReal(*(*S.get_total_component_concentration())(i),tcc_name.str());
 	    }
 	  
+	  // write auxillary data
+	  if (auxdata != NULL) 
+	    {
+	      for (int i=0; i<auxdata->NumVectors(); i++)
+		{
+		  std::stringstream tcc_name;
+		  
+		  if (auxnames.size() == auxdata->NumVectors()) 
+		    {
+		      tcc_name << auxnames[i]; 
+		    }
+		  else
+		    tcc_name << "aux " << i;
+		  
+		  viz_output->writeCellDataReal( *(*auxdata)(i) ,tcc_name.str());
+		}	      
+
+	    }
+
+
+
 	  viz_output->endTimestep();
 	  
+
+	  // now do a gnuplot dump, if gnuplot output is enabled
+	  // but only if we are runnung on one processor
+	  if (comm->NumProc() == 1  && enable_gnuplot)
+	    {
+	      write_gnuplot(cycle, S, auxdata);
+	    }
 	}
     }
 }
@@ -165,3 +210,82 @@ bool Amanzi::Vis::dump_requested(double prev_time, double time, int cycle)
   return false;
 
 }
+
+
+
+void Amanzi::Vis::write_gnuplot(int cycle, State& S, Epetra_MultiVector* auxdata)
+{
+  // write each variable to a separate file
+  // only works on one PE, not on a truly parallel run
+
+  if (cycle==0) 
+    {
+      std::stringstream fname_p;
+      fname_p << "pressure.dat";
+      
+      std::filebuf fb;
+      fb.open (fname_p.str().c_str(), std::ios::out);
+      ostream os_p(&fb);
+      
+      for (int i=0; i< (S.get_pressure())->MyLength(); i++) 
+	os_p << (*S.get_pressure())[i] << endl;    
+      
+      fb.close();
+      
+      std::stringstream fname_s;
+      fname_s << "saturation.dat";
+      
+      fb.open (fname_s.str().c_str(), std::ios::out);
+      ostream os_s(&fb);
+      
+      for (int i=0; i< (S.get_water_saturation())->MyLength(); i++) 
+	os_s << (*S.get_water_saturation())[i] << endl;    
+      
+      fb.close();
+    }
+
+  for (int nc=0; nc<S.get_number_of_components(); nc++) 
+    {
+      std::stringstream fname;
+      fname << "conc_" << nc;
+      
+      if (compnames.size() == S.get_number_of_components())
+	{
+	  fname << "_" << compnames[nc];
+	}
+
+      fname << "_" << std::setfill('0') << std::setw(5) << cycle << ".dat";
+      
+      std::filebuf fb;
+      fb.open (fname.str().c_str(), std::ios::out);
+      ostream os(&fb);
+
+      // now dump the Epetra Vector
+      for (int i=0; i< (S.get_total_component_concentration())->MyLength(); i++) 
+	os << (*(*S.get_total_component_concentration())(nc))[i] << endl;
+      
+      fb.close();
+    }
+  
+  // get the auxillary data
+  if (auxdata != NULL) 
+    {
+      int naux = auxdata->NumVectors();
+      for (int n=0; n<naux; n++) {
+	std::stringstream fname;
+	fname << auxnames[n];
+	
+	fname << "_" << std::setfill('0') << std::setw(5) << cycle << ".dat";
+	
+	std::filebuf fb;
+	fb.open (fname.str().c_str(), std::ios::out);
+	ostream os(&fb);      
+	
+	// now dump the Epetra Vector
+	for (int i=0; i< auxdata->MyLength(); i++) 
+	  os << (*(*auxdata)(n))[i] << endl;
+	fb.close();
+      }
+    }
+}
+

@@ -56,11 +56,7 @@ private:
 
   bool flow_enabled, transport_enabled, chemistry_enabled;
 
-  // these are the vectors that chemistry will populate with
-  // the names for the auxillary output vectors and the
-  // names of components
-  std::vector<string> auxnames;
-  std::vector<string> compnames; 
+
 
   std::string flow_model;
   std::string restart_file;
