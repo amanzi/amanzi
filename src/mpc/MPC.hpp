@@ -1,5 +1,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Epetra_MpiComm.h"
 #include "State.hpp"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"
@@ -9,6 +10,7 @@
 #include "Flow_PK.hpp"
 #include "ObservationData.H"
 #include "Unstructured_observations.hpp"
+#include "Vis.hpp"
 
 namespace Amanzi
 {
@@ -18,6 +20,7 @@ class MPC {
 public:
   MPC (Teuchos::ParameterList parameter_list_,
        Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
+       Epetra_MpiComm* comm_,
        Amanzi::ObservationData& output_observations_); 
 
   ~MPC () {};
@@ -27,13 +30,6 @@ public:
 private:
   void mpc_init();
   void read_parameter_list();
-  void write_gmv_data(std::string gmv_meshfile, std::string gmv_datafile, 
-		      const int iter, const int digits);
-  void create_gmv_paths(std::string&, std::string&, std::string&, Teuchos::ParameterList&);
-#ifdef ENABLE_CGNS
-  void write_cgns_data(std::string filename, int iter);
-#endif
-  void write_gnuplot_data(int iter, double time);
   
   // states
   Teuchos::RCP<State> S;
@@ -60,19 +56,22 @@ private:
 
   bool flow_enabled, transport_enabled, chemistry_enabled;
 
-  // these are the vectors that chemistry will populate with
-  // the names for the auxillary output vectors and the
-  // names of components
-  std::vector<string> auxnames;
-  std::vector<string> compnames; 
+
 
   std::string flow_model;
   std::string restart_file;
   bool restart;
 
+  // Epetra communicator
+  Epetra_MpiComm* comm;
+
   // observations
   Amanzi::ObservationData&  output_observations;
   Amanzi::Unstructured_observations* observations;
+
+  // visualization
+  Amanzi::Vis *visualization;
+
 };
 
 
