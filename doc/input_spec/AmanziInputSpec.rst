@@ -436,7 +436,7 @@ Additionally, certain reactions such as precipitation may affect the flow proper
 some might affect the properties of the fluid (e.g. brines affect the liquid density). While Amanzi does not currently support chemical reactions and thermal processes, the specification here allows for the existence of
 the necessary data structures and input data framework.
 
-Currently in Amanzi, inert solutes are transported in the various phase components and are treated in "complexes".  reacting or not, it is assumed that each complex is in chemical equilibrium with itself, and does not undergo phase change.
+Currently in Amanzi, inert solutes are transported in the various phase components and are treated in "complexes".  Each complex is in chemical equilibrium with itself and does not undergo phase change.
 Under these conditions, knowledge of the local concentration of the "basis" or "primary" species (the terms are used here interchangeably) in a chemical complex is sufficient to determine the concentrations of all related secondary species
 in the phase. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the
 free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phases
@@ -451,8 +451,8 @@ not included in the transport/flow components of the numerical integration.  To 
 uses the concept of solute groups.   The aqueous solute concentrations are typically treated together as a group, for example, and often represent the only 
 chemical constituents that are mobile.
 
-Specification of Amanzi's numerical state is organized fundamentally around the list of phases that are present.  Each phase consists of multiple components; for each of these,
-Amanzi requires a label, a set of models that specify its physical properties (Section 4.6), and a list of solutes contained in that component.  For each solute, a group membership is specified.
+Specification of Amanzi's numerical state is organized fundamentally around the list of phases that are present.  Each phase consists of multiple components.  For each of these,
+Amanzi requires a label, a set of models that specify its physical properties (Section 4.6), and a list of solutes.  For each solute, a group membership is specified.
 Note that Amanzi will eventually support the use of a master chemistry database, where the solute complexes and their chemical activity are defined.  In that case, inclusion of a particular solute in the
 Amanzi input file will be conditioned on its presence in the appropriate section of the master list.
 
@@ -469,7 +469,7 @@ Boundary conditions and source terms may be time-dependent, in general.
 
 The generalized specification is as follows:
 
-* `"Phase Definitions`" (list) can accept lists named phases (PHASE).
+* `"Mobile Phases`" (list) can accept lists named phases (PHASE).
 
  * PHASE (list) can accept the following lists: `"Phase Properties`", `"Phase Components`"
 
