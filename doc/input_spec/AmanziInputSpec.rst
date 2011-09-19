@@ -715,7 +715,7 @@ Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Checkpoint Data">
+  <ParameterList name="Visualization Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
     <ParameterList name="Cycle Data">
