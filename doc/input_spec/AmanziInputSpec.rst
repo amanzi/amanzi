@@ -6,7 +6,7 @@ Amanzi XML Input Specification
 
 
 Overview
-========================================
+========
 
 The Amanzi simulator evolves a system of conservation
 equations for reacting flow in porous media, as detailed in
@@ -14,43 +14,59 @@ the ASCEM report entitled "Mathematical Formulation Requirements and
 Specifications for the Process Models`" (hereafter referred to
 as the 'Model Requirements Document (MRD)'). The purpose of the present
 document is to specify the data required to execute Amanzi.  This specification
-should be regarded as a companion to the MRD; it relies heavily on
-the detailed formulations of the models.  Where applicable, the
+should be regarded as a companion to the MRD, and parameterizations of
+the individual submodels are consistent between Amanzi, the MRD and this
+document. Where applicable, the
 relevant sections of the MRD are indicated.
 
 
-Each Amanzi simulation requires specification of a set of phase and
-tracer components, and corresponding initial data, boundary conditions and source terms.  Conservation of mass for each of the
-specified components is given by equation 2.11 of the MRD, where the
-volumetric flow rate has been specified via Darcy's law (equation
-2.10).  For Darcy flow, the properties of the (rock) medium must be identified
-throughout the domain, including the phase component permeabilities,
-etc. (see `"Rock`" section below for more details).  To complete the mathematical specification, any sources/sinks
-for the evolved field quantities must be communicated.
+Preliminary Concepts
+--------------------
 
-A number of primitives are provided to support communicating the problem setup to Amanzi:
+Amanzi solves a set of parameterized models for multiphase flow in porous media.  An Amanzi simulation is specified by providing:
 
- * *Region*: Used to define the computation domain and labeled sub-regions for the purposes of communicating boundary and initial conditions, material properties, solution diagnostics, and source terms. 
+* values for a parameterized PDE-based transport model, including boundary and initial conditions, constituitive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,
 
- * *Rock*: Structure to characterize the physical properties of the porous media.
+* parameters controlling the selection of key algorithmic options and output, 
 
- * *State*: List of evolved quantities and their respective initial/boundary data and source terms.
+* a description of the (discrete) state of the computational sytem, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
 
-Beyond the mathematical specification of the problem, the user must provide instructions to control the details of the numerical simulation.  Some of this information tends to be generic (`e.g.`, simulation stop time, type and amount of output, etc), while some is more specific to the numerical integration options.  The control parameter database is tree-like: options at a finer level of detail are dependendent on choices made at a higher level.
+The primary software interface to Amanzi is a compiled C++ function, and much of the input data required is communicated through a single `Teuchos::ParameterList <http://trilinos.sandia.gov/packages/docs/r7.0/packages/teuchos/doc/html/index.html>`_.
+A ParameterList consist of a simple hierarchy of parameters and lists of parameters, and is constructed directly from a similarly structured XML file.  The Amanzi input specification is defined in terms of the XML file format
+used to construct a `Teuchos::ParameterList <http://trilinos.sandia.gov/packages/docs/r7.0/packages/teuchos/doc/html/index.html>`_.
 
-Additional notes:
-
- * Currently, the problem setup and control data is passed from the user into the Amanzi executable via a parameter list (specifically, a `Teuchos::ParameterList <http://trilinos.sandia.gov/packages/docs/r7.0/packages/teuchos/doc/html/index.html>`_). Each entry in a ParameterList object can itself be a ParameterList, or can be data.  Supported data types include double, float, short, int, bool, string), and simple arrays of these basic types.  ParameterList objects may be initialized using an XML file; examples of the proper syntax are included below.
-
- * It is intended that this specification be sufficiently detailed and flexible to support set up, solution and analysis of a broad range of simple model problems.  However, it is likely that details of the specification will evolve over time, as new capabilities are implemented within the Amanzi simulator.
-
- * The Amanzi code has a dual execution path, catering to the special requirements, and exploiting many of the unique advantages of structured versus unstructured mesh implementations, respectively.  Completeness of the implementation of the models discussed here will vary between mesh schemes, and will evolve over time as well.
+In practice, Amanzi is called by a "simulation coordinator" which manages the simulation instructions and orchestrates the flow of data.  A basic simulation coordinator is
+provided with the Amanzi source code distribution.  This simple stand-alone coordinator can be used to drive a simple sequence of Amanzi runs, or can serve as a template for user-generated extensions supporting more intricate workflows.  
 
 
-Creating a Parameter List
---------------------------------------------
+Model Characterization
+~~~~~~~~~~~~~~~~~~~~~~
 
-The Amanzi simulator input file is an XML file in ASCII text format, and must be framed at the beginning and end by the following statements:
+For each phase in the model system, Amanzi requires the specification of component fluids and the chemical solutes they contain.  If a component exists in multiple phases, a relationship is required to compute its phase distribution as a function of the state of the stystem.
+Equation 2.11 of the MRD governs the conservation and transport of each component, where the volumetric flow rate has been specified via Darcy's law (equation 2.10).  For Darcy flow, the properties of the porous medium must be specified over the entire simulation domain.  All transported phases
+require an appropriate set of boundary conditions along the edge of the simulation domain.  Source/sink terms and initial data are provided for each phase component and any solutes they contain.  Additionally, the extent of physical domain
+is specified, along with its discrete representation (i.e., the mesh).
+
+Categories of Output Data
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Output data from Amanzi is currently organized into four specific groups:
+
+* `"Observation Data`": values generated during a run that characterize a particular feature of interest in the solution.  Such data would be used, for example, when quantifying the "response" of Amanzi to a set of targeted parameter variations.  `"Observation data`" is evaluated according to instructions given via the input parameter list, and is assembled into a special data structure that is returned to the calling routine through Amanzi's simulation driver function arguments.
+
+* `"Visualization Data`": field-data intended for post-processing, and may include various subsets and transformations of the simulation's state data or material properties.
+
+* `"Checkpoint Data`": the complete set of information that is required to duplicate a given execution of Amanzi.  Typically `"Checkpoint Data`" is created at periodic intervals during a long run in order to facilitate a repeatable simulation restart capability and archiving procedures. Unlike the first two data groups, there are no user-settable parameters to control the contents of a `"Checkpoint`" file - the implementation will determine the quantity, format and precision of this data in order to guarantee reproducibility.
+
+* `"Log Data`": running commentary on the performance and status of Amanzi's execution.  Typically such data is written to a C++ stream which may be directed to a pipe or file.  The amount and detail of log data is determined by a range of verbosity controls.
+
+Generally, `"Visualization Data`" and `"Checkpoint Data`" consists of high-dimensional field data representing snapshots of the evolving discrete variables.  These are large datasets, relative to the other types, and are most often written to disk in a file format that allows a direct repesentation of the underlying discrete mesh and parallel data distribution.
+
+
+ParameterList XML
+-----------------
+
+The Amanzi input file is an ASCII text XML-formatted file that must be framed at the beginning and end by the following statements:
 
 
 .. code-block:: xml
@@ -59,8 +75,7 @@ The Amanzi simulator input file is an XML file in ASCII text format, and must be
 
   </ParameterList>
 
-The value in the "name" can be anything ("Main" in this example).  Individual parameters in a ParameterList are specified as follows:
-
+The value in the "name" can be anything ("Main" in this example).  A ParameterList consists of just two types of entries: Parameter and ParameterList.  ParameterLists are labeled with a `"name`" [string], while Parameters have a separate fields for `"name`" [string], `"type`" [string] and `"value`" [TYPE], where "TYPE" can be any of the following: double, float, short, int, bool, string, Array double, Array float, Array short, Array int, Array bool, Array string.  The value of the parameter is given in quotes (e.g. "2.7e3").  Array data is specified as a single comma-deliminated string bounded by {}'s (e.g. "{2.4, 2.1, 5.7}").
 
 .. code-block:: xml
 
@@ -72,976 +87,1260 @@ The value in the "name" can be anything ("Main" in this example).  Individual pa
 In this example, the sublist "Sub" has a parameter named "CFL" that is a "double" and has the value of 0.9, and a Teuchos::Array<int>
 parameter named "ratio" such that ratio[0] = 2. ratio[1]=2 and ratio[2]=4.
 
-It is vital to recognize that the input specification has a irreducibly circular dependence; definitions in one part of the specification
-must be consistent with those of another.  To the extent possible, Amanzi will
-recognize when this expected consistency is violated.  For example, "region" labels referenced in the State section are assumed to
-have been defined in the "regions" section; if the entire input set is scanned and the referenced region label is not defined, an
-error is thrown and the simulation is aborted.
 
-In the remainder of this document, we attempt to adhere to the following standard for presentation.  Reserved keywords and labels are
-`"quoted`" (and italicized) -- these labels or values of parameters in user-generated input files must match (using XML matching rules) the specified
-or allowable values.  User-defined labels are indicated with ALL-CAPS, and are meant to represent a typical name given by a user -
-these can be names or numbers or whatever serves best the organization of the user input data.
+Syntax of the Specification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Where applicable, the relevant section of the MRD is referred to by section or chapter number in parentheses.
+* Input specification for each ParameterList entry in the input hierarchy consists of two parts.  First, a bulleted list defines the complete set of options available.  This is followed by example snipets of XML code to demonstrate usage.
 
+* In many cases, Amanzi supports multiple parameterized models for a particular process.  This will be indicated in the specification by using the keyword `"MODEL(<prefix>)`".  A list of supported models is provided at the end of the section.  Each model will be given in the XML as a sublist labeled "<prefix>: STR" and the sublist will contain values for each of the specified parameters.  For example, the specification might be listed as:
 
-Version
-=======================================
 
-Each input set contains at the top level a string variable `"Amanzi input format version`".  As of the most recent update of this specification, the
-current version of the Amanzi input is `"0.9.1`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  The only difference between 
-`"0.9.0`" and `"0.9.1`" is that the "grid_option" parameter was removed, and the mesh specification was moved from the "Regions" section and into 
-a new "Mesh" section (section 1 below).  Options for `"grid_option`" parameter included `"Structured`" and `"Unstructured`".  In file version
-`0.9.1`", a mesh framework is specified instead (see below).
+ * `"Material Properties`" [list] 
 
+  * MODEL(Porosity)
 
-Mesh
-=======================================
+  * `"mass density`" [double]
 
-The computational mesh is specified in this section, based on the `"Mesh Framework`", which can be `"Structured`" or a set of unstructured
-options, including `"SimpleMesh`", `"stk:mesh`" (+...).  The `"Generate`" sublist of Mesh takes instructions that are specific to the framework - here 'generate' 
-is a generic term for actual mesh generation (by Amanzi) or ingestion (file reads) to obtain mesh data created by pacakges external to Amanzi.
+  Here [list] indicates that this must be a ParameterList.  This specifcation will be followed by a list of valid models:
 
-Notes:
-
- * A number of frameworks support the generation of logically rectangular, uniformly spaced structured meshes.  Under `"Generate`", all of these take a common set of instructions through three parameters: `"Number of Cells`" (integer array), `"Domain Low Corner`" (double array) and `"Domain High Corner`" (double array).  All of these also automatically generate a default set of predefined regions, as discused in the "Regions" section below.
-
- * For the options that assume an external package generates the mesh, the data is passed into Amanzi through a file, and the `"Generate`" parameter list includes the name of that file `"filename`".  Additionally, as discussed in the "Regions" section below, mesh files produced by external packages may contain auxiliary data that associates a tag or label with each mesh entity (cells, faces, nodes).  These labeled sets can be assigned to a named region for use here. (see below).
-
-Structured-grid example:
-
-.. code-block:: xml
-
-   <Parameter name="Framework" type="string" value="Structured"/>
-    <ParameterList name="Generate">
-      <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
-      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-      <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
-    </ParameterList>   
-  </ParameterList>
-
-
-MOAB mesh example:
-
-.. code-block:: xml
-
-   <Parameter name="Framework" type="string" value="moab"/>
-    <ParameterList name="Generate">
-      <Parameter name="filename" type="string" value="moab_filename"/>
-    </ParameterList>   
-  </ParameterList>
-
-
-State
-=======================================
-
-The `"State`" parameter list is used to specify the phases, chemical composition and pressure that are to be stored on the discrete mesh during the simulation,
-along with the necessary initial and boundary data instructions.   The chemical state, including the definition of the tracer species and their reactions '''Note(bja/geh): a geochemical tracer is an inert species, we recommend "solute".''',
-is specified in conjunction with a chemistry database file, which is discussed below.
-
-In the general problem, multiple phases may coexist on the mesh (e.g. gaseous, aqueous, etc), and each is
-comprised of a number of components (section 2.2).  In turn, each component may carry a number of chemical species that participate
-in reactions.  While these species are assumed to have no direct impact on the thermodynamic properties of the carrying component, certain
-reactions such as precipitation may affect the flow properties of the rock itself during the simulation. '''Note(bja/geh): certain solutes can affect the properties of the fluid (e.g. brines affect the density).'''
-
-In Amanzi, trace chemical species in the aqueous phase are treated in "complexes", and it is assumed that each complex is in chemical equilibrium.
-Knowledge of the local concentration of a single species in a complex therefore determines completely the concentrations of the remaining members.
-As a result, for each complex, only a single species need be maintained in the state.  '''Note(bja/geh):In reactive transport a set of primary or basis species (note that basis and primary are used interchangeably) are specified from which all secondary species (secondary aqueous complexes, surfaces complexes, etc) are constructed. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the aqueous free ion concentration and its stoichiometric contribution to all secondary species. In Amanzi, we split the total component concentration into total aqueous component and total sorbed component concentrations. Give the free ion concentration of each basis species, we can reconstruct the concentration of the secondary species. As a result only the basis species in the state.'''
-
-In addition to reacting ~~trace~~ species in the aqueous phase, the chemistry specification allows for various sets of immobile chemical constituents within the
-background (rock) media.  Examples include "minerals" and "surface complexes". Bookkeeping for these constituents is managed in Amanzi
-data structures by generalizing ~~trace~~ species concept - a slot in the state is allocated for each of these species, but their concentrations are (optionally)
-not included in the transport/flow components of the numerical integration.  ~~To allow selective treatment of the various ~~trace~~ chemical species, Amanzi
-uses the concept of "groups".   The aqueous phase equilibrium complexes are typically treated together as a group, and often represent the only 
-chemical constituents that are transported with the the flow.~~ '''Note(bja/geh): Only the total aqueous component concentrations are considered in transport.'''
-
-Definition of the state depends on the contents of the chemistry database file.  The chemistry database is discussed first, and then the parameters used
-to define the state based on the chemistry database are outlined next.
-
-Chemistry Thermodynamic data specification
--------------------------------------------------
-
-The chemistry database file and format are specified as strings in this parameter list (see below).
-
-
-Simple Database format
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The `"simple"` (file extension `"bgd"`) format
-requires explicit specification of all the species and reactions. There is currently no basis
-switching or automatic species and reaction selection. The `"simple`" format supports specifying up to four species groups:
-`"Aqueous Equilibrium Complexes"` `"Minerals"` `"Ion Exchange Sites"` `"Sorption Sites"`.
-Note that a typical chemistry database file defines a superset of the reaction physics
-of interest; the relevant subset is specified via the `"State`" parameter list as discussed below.
-
-In the `"simple`" format, the `"Aqueous Equilibrium Complexes"` group is assumed to be the only one that is transported with the flow.
-This group lists one chemical species as a `"Primary Species`" for each of the complexes; this is the only species in the complex that
-should be specified as a constituent of the `"State`". '''Note(bja/geh): This is incorrect. The total aqueous component concentrations, one for each primary species, are the solute concentrations that are transported.'''
-
-Below is an example of a `"simple"` database file for a five component uranium problem with mineral dissolution and surface complexation:
-
-::
-
- <Primary Species
- # name               ; debye-huckel a0 ; charge ; GMW     
-
- Al+++                ;   9.0 ;   3.0 ;  26.9815
- H+                   ;   9.0 ;   1.0 ;   1.0079
- HPO4--               ;   4.0 ;  -2.0 ;  95.9793
- SiO2(aq)             ;   3.0 ;   0.0 ;  60.0843
- UO2++                ;   4.5 ;   2.0 ;  270.028
-
- <Aqueous Equilibrium Complexes
- # name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW      
-
- OH-                  =  1.0 H2O  -1.0 H+                ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
- AlOH++               =  1.0 H2O  1.0 Al+++  -1.0 H+     ;     4.9571 ;   4.5 ;   2.0 ;  43.9889 
- Al(OH)2+             =  2.0 H2O  1.0 Al+++  -2.0 H+     ;    10.5945 ;   4.0 ;   1.0 ;  60.9962 
- Al(OH)3(aq)          =  3.0 H2O  1.0 Al+++  -3.0 H+     ;    16.1577 ;   3.0 ;   0.0 ;  78.0034 
- Al(OH)4-             =  4.0 H2O  1.0 Al+++  -4.0 H+     ;    22.8833 ;   4.0 ;  -1.0 ;  95.0107 
- UO2OH+               =  1.0 H2O  -1.0 H+  1.0 UO2++     ;     5.2073 ;   4.0 ;   1.0 ;  287.035 
- UO2(OH)2(aq)         =  2.0 H2O  -2.0 H+  1.0 UO2++     ;    10.3146 ;   3.0 ;   0.0 ;  304.042 
- UO2(OH)3-            =  3.0 H2O  -3.0 H+  1.0 UO2++     ;    19.2218 ;   4.0 ;  -1.0 ;   321.05 
- UO2(OH)4--           =  4.0 H2O  -4.0 H+  1.0 UO2++     ;    33.0291 ;   4.0 ;  -2.0 ;  338.057 
- (UO2)2OH+++          =  1.0 H2O  -1.0 H+  2.0 UO2++     ;     2.7072 ;   5.0 ;   3.0 ;  557.063 
- (UO2)2(OH)2++        =  2.0 H2O  -2.0 H+  2.0 UO2++     ;     5.6346 ;   4.5 ;   2.0 ;   574.07 
- (UO2)3(OH)4++        =  4.0 H2O  -4.0 H+  3.0 UO2++     ;     11.929 ;   4.5 ;   2.0 ;  878.112 
- (UO2)3(OH)5+         =  5.0 H2O  -5.0 H+  3.0 UO2++     ;    15.5862 ;   4.0 ;   1.0 ;   895.12 
- (UO2)3(OH)7-         =  7.0 H2O  -7.0 H+  3.0 UO2++     ;    31.0508 ;   4.0 ;  -1.0 ;  929.135 
- (UO2)4(OH)7+         =  7.0 H2O  -7.0 H+  4.0 UO2++     ;    21.9508 ;   4.0 ;   1.0 ;  1199.16 
- UO2(H2PO4)(H3PO4)+   =  3.0 H+  2.0 HPO4--  1.0 UO2++   ;   -22.7537 ;   4.0 ;   1.0 ;   465.01 
- UO2(H2PO4)2(aq)      =  2.0 H+  2.0 HPO4--  1.0 UO2++   ;   -21.7437 ;   3.0 ;   0.0 ;  464.002 
- UO2HPO4(aq)          =  1.0 HPO4--  1.0 UO2++           ;    -8.4398 ;   3.0 ;   0.0 ;  366.007 
- UO2H2PO4+            =  1.0 H+  1.0 HPO4--  1.0 UO2++   ;   -11.6719 ;   4.0 ;   1.0 ;  367.015 
- UO2H3PO4++           =  2.0 H+  1.0 HPO4--  1.0 UO2++   ;   -11.3119 ;   4.5 ;   2.0 ;  368.023 
- UO2PO4-              =  -1.0 H+  1.0 HPO4--  1.0 UO2++  ;    -2.0798 ;   4.0 ;  -1.0 ;  364.999 
-
- <Minerals
- # name               =  coeff primary_name  coeff primary_name  ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
-
- Kaolinite            =  5.00 H2O  2.00 Al+++  -6.00 H+  2.00 SiO2(aq)  ;     6.8101 ;   258.16 ;    99.52 ;   1.0 
- Quartz               =  1.00 SiO2(aq)  ;    -3.9993 ;  60.0843 ;   22.688 ;   1.0 
- (UO2)3(PO4)2.4H2O    =  4.00 H2O  -2.00 H+  2.00 HPO4--  3.00 UO2++  ;   -27.0349 ;  1072.09 ;    500.0 ;   1.0 
-
- <Mineral Kinetics
- # name               ; TST ; log10_rate_constant double     moles_m2_sec 
-
- Kaolinite            ; TST ; log10_rate_constant    -16.699 moles_m2_sec 
- Quartz               ; TST ; log10_rate_constant      -18.0 moles_m2_sec 
- (UO2)3(PO4)2.4H2O    ; TST ; log10_rate_constant      -10.0 moles_m2_sec 
-
- <Surface Complex Sites
- # name               ; surface_density
-
- >FeOH                ; 6.3600E-03
- >AlOH                ; 6.3600E-03
- >SiOH                ; 6.3600E-03
-
- <Surface Complexes
- # name               =  coeff surface site  coeff primary_name  ; log10(Keq) 25C ; charge 
-
- >SiOUO3H3++          =  1.0 >SiOH  1.0 H2O  1.0 UO2++  ;       5.18 ;   2.0 
- >SiOUO3H2+           =  1.0 >SiOH  1.0 H2O  -1.0 H+  1.0 UO2++  ;       5.18 ;   1.0 
- >SiOUO3H             =  1.0 >SiOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       5.18 ;   0.0 
- >SiOUO3-             =  1.0 >SiOH  1.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
- >SiOUO2(OH)2-        =  1.0 >SiOH  2.0 H2O  -3.0 H+  1.0 UO2++  ;      12.35 ;  -1.0 
- >FeOHUO3             =  1.0 >FeOH  1.0 H2O  -2.0 H+  1.0 UO2++  ;       3.05 ;   0.0 
- >FeOHUO2++           =  1.0 >FeOH  1.0 UO2++  ;      -6.63 ;   2.0 
- >AlOUO2+             =  1.0 >AlOH  -1.0 H+  1.0 UO2++  ;      -3.13 ;   1.0 
-
-Note the following about this format:
-
- * IMPORTANT: The xml parser expects every instance of `"--"` to mark a comment, so species names with multiple negative charges should be written in the xml as `"SO4-2"` rather than `"SO4--"` (an appended comment with the traditional species or mineral name can help to clarify this).
-
- * Any line in the database file starting with a `"#"` or space character is a comment. 
-
- * The data file is separated into sections, where each section of the file is starts with a line containing `"<Section Name"`. The valid section names are: `"Primary Species"`, `"Aqueous Equilibrium Complexes"`, `"Minerals"`, `"Mineral Kinetics"`, `"General Kinetics"`, `"Ion Exchange Sites"`, `"Ion Exchange Complexes"`, `"Surface Complex Sites"`, `"Surface Complexes"`. The less than character, `"<"`, must be the first character on the line and no space is permitted between the character and the section name.
-
- * Sections should be ordered in the file so that the primary species, minerals, and exchange sites appear before any reactions using those species.
-
- * Within a section, lines may be concatenated provided they are separated with a semi-colon.
-
- * A primary species line must contain the Debye-Huckel "A" parameter, charge and molecular weight (5.2):
-
-   ::
-
-     # name               ; debye-huckel a0 ; charge ; GMW [grams/mole]    
-     Al+++                ;   9.0 ;   3.0 ;  26.9815
-
- * An aqueous equilibrium complex line contains a reaction and species data (for the reaction partner) on a single line:
-
-   ::
-
-     # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; debye-huckel a0 ; charge ; GMW [grams/mole]     
-     OH-                  =  1.0 H2O  -1.0 H+  ;    13.9951 ;   3.5 ;  -1.0 ;  17.0073 
-
-   The reaction is written as product species = reactants.... The coefficient of the product aqueous complex is assumed to be 1.0, and one of the reactants must be primary species. The equilibrium constant is for a fixed temperature of 25C.
-
- * Minerals and other complexes follow the same convention as aqueous equilibrium complexes, with additional data as needed.
-
-   ::
-
-     <Minerals
-     # name               =  coeff primary_name  coeff primary_name ... ; log10(Keq) 25C ; GMW      ; molar volume [cm^2/mol] ; SSA [m^2/g] 
-
-     <Surface Complexes
-     # name               =  coeff surface site  coeff primary_name ... ; log10(Keq) 25C ; charge 
-
-     These are all minerals present in the system during the simulation, including those that may precipitate later. They are used for calculating saturation states, but not equilibrium or kinetic calculations.
-
- * The mineral kinetics section lists the name of a mineral found in the mineral section, the type of rate law, and rate parameters for that law.
-
-   :: 
-
-     <Mineral Kinetics
-     # name               ; TST ; log10_rate_constant double     moles_m2_sec ; primary_name coeff ....
- 
-   Currently only the `"TST"` rate law (5.1) is implemented. The keywords "log10_rate_constant" and "moles_m2_sec" must be present in the line, but no unit conversions are currently preformed. FIXME: The modifying primary species terms follow the rate constant, along with their exponent coefficients.
-
- * Surface complex sites are listed by name and surface density:
-
-   ::
-
-     <Surface Complex Sites 
-     # name               ; surface_density [moles sites / m^2 mineral]
-
-
-
-XML Database format
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A more general specification is planned for Amanzi based on an xml file format.  This option is not yet implemented.
-
-
-
-
-State specification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In order to specify the state, the parameter list is organized around phase components; 
-each component definition includes a label and a set of physical properties, including mass density, viscosity, and diffusivity (Section 4.6).  
-Trace chemical complexes are are selected from the `"Primary Species`" listed in the chemical database.
-The mobile group `"Aqueous Equilibrium Complexes"` is defined explicitly, along with other immobile groups, if applicable.
-
-Phase components and mobile chemical constituents require boundary conditions along the entire surface
-bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  Any boundary conditions not explicitly set in this section are defaulted to `"outflow`" and no 
-information from outside the domain is assumed to propagate into the domain.
-Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of source and loss processes, are defined for each component, and for 
-each mobile chemical constituent. Supported functionals for initial and boundary data and for source distributions are listed below.
-
-Initial, boundary and source terms are specified using a set of user-defined component mixtures (sources can optionally be specified in terms of total mass of 
-contaminant - see below).  The detailed specification of mixture definitions remains TBD, however we 
-assume that definitions may be uniquely constructed using a variety of methods (pH, total concentrations, free ion concentrations, etc), and that each mixture 
-consists of a component and a subset of the trace chemical species contained in that component.
-
-* "state" (list) can accept lists for the chemistry database, and named components (COMP).  Also a label specifies the dominant component
-
-  * `"Chemistry Database`" (list) 
-
-    * `"filename`" (string) the name of a chemistry database file
-
-    * `"format`" (string) [optional] format of chemistry database, currently supports only `"simple`"
-
-  * COMP (list) can accept values for the carrying phase name (string), mass density (double), viscosity (double) and diffusivity (double). IC is a named list to specify the instructions for constructing the intial state profile, BC is a named list to specify instructions for boundary conditions, SOURCE (string) is a list to specify a set of volumetric sources.
-
-    * `"User-defined Mixtures`" (list) accepts lists named after user-defined labels, MIXTURE
-
-      * MIXTURE (list)
-
-        * `"scheme`" (string) is the scheme used for this definition (`"scheme: total concentration`", `"scheme: free ion concentration`", `"scheme: pH`", ...?), accepts lists of trace species TRACE, and `"pH`" (if relevant)
-
-          * TRACE (list)  accepts a value defining the amount of this consituent.  TRACE must appear below in the list, `"trace species`"
-
-            * `"value`" (double) the concentration of TRACE
-
-          * `"pH`" (double) pH of the mixture (if relevant)
-
-    * IC (list) is named after a defined REGION, or the special denotation of `"default`".  `"default`" instructions will be used to fill the complement of the sum of the named regions.
-
-      * IC-FUNC (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
-
-    * `"mass density`" (double) the mass density of this component
-
-    * `"viscosity`" (double) the viscosity of this component
-
-    * `"diffusivity`" (double) the diffusivity of this component
-
-    * `"phase`" (string) the name of the phase that carries this component
-
-    * `"source`" (list) can accept a REGION (string), and (optionally) a double array, (t_start, t_end), specifying the interval 
-
-      * REGION (string) the name of a labeled region
-
-        * S-FUNC-COMP (list) can accept a set of parameter values for the functional (see table below for parameters required for each supported functional)
-
-      * `"time interval`" (array double) specifying the start time, t_start, and the stop time, t_stop, that this source is active
-
-    * `"trace species`" (array string) can accept a subset of the primary species listed in the chemistry database file
-
-    * BC (list) named after a region that defines a surface bounding the computational domain, can accept a list (BC-FUNC) named after a boundary data function, BC_FUNC 
- 
-      * BC-FUNC (list) can accept a list (BC-PARAM) to specify the parameters of a named functional
-
-  * `"dominant component`" (string) must be the name of one of the COMP lists defined above
-
-Note: For an N-dimensional problem, initial data is specified over a collection of N-dimensional regions and boundary data is specified over a collection of (N-1)-dimensional regions.
-
-Initial conditions are required for each component over the entire computational domain.
-Boundary conditions are required on all domain boundaries (see Sections 3.3, 4.3).  Source terms for all are optional.  All are constructed using a limited number
-of explicitly parameterized functional forms.  If the simulation is to be intialized using a restart file,
-the phase, component and tracer definitions are taken from the restart file, and initial condition instructions provided
-here are quietly ignored, so that restarts are possible by simply changing a single control parameter (discussed in the control section).  Boundary conditions are
-required regardless of the initial data, and must be defined consistently.
-
-The following parameterized distribution functionals are supported for communicating initial conditions:
- * `"ic: constant`" requires `"mixture`" (see note below)
- * `"ic: file`" requires `"file`" (string), `"label`" (string) - the label of the field to use, `"format`" (string)
-
-The following parameterized boundary conditions are supported for communicating boundary conditions:
- * `"bc: inflow`" requires `"mixture`" to set state upstream of the boundary (outside domain)
- * `"bc: outflow`"  requires no parameter data
- * `"bc: seepage`" requires location `"water table height`" (double) of the water table.  If a more complex specification is needed, this should be changed to require a list to define it appropriately.
- * `"bc:  noflow`" requires no parameter data
-
-The following models are currently supported for communicating source distribution:
- * `"source: uniform mixture`" requires `"strength`" (double) and `"mixture`" (string).  The specified mass of this mixture will be injected at a constant rate over the time interval specified.
- * `"source: uniform total mass`" requires a `"component mass`" (double) and a TRACE (named after a trace species that is declared in the state for this component), which is a double indicating the total contaminant mass.  The contaminated component will be injected at a constant rate and uniform distribution over the time interval specified.  NOTE: This functional requires that a finite time interval be specified for this region.
-
-
-
-
-
+  * `"Porosity: Uniform`" requires `"Value`" [double] 
+  * `"Porosity: GSLib`" requires `"Filename`" [string] 
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="state">
-    <ParameterList name="Chemistry Database">
-      <Parameter name="filename" type="string" value="uo2-5-component.bgd"/>    
-      <Parameter name="format" type="string" value="simple"/>    
-    </ParameterList>
-    <Parameter name="dominant component" type="string" value="air"/>    
-    <ParameterList name="air">
-      <ParameterList name="User-defined Mixtures">
-        <ParameterList name="Pure Air">
-        </ParameterList>
-      </ParameterList>
-      <Parameter name="phase" type="string" value="gaseous"/>
-      <Parameter name="mass density" type="double" value="1.2"/>
-      <Parameter name="viscosity" type="double" value="0.018"/>
-      <Parameter name="diffusivity" type="double" value="0."/>
-      <ParameterList name="top">
-        <ParameterList name="ic: constant">
-          <Parameter name="mixture" type="string" value="Pure Air"/>
-        </ParameterList>   
+    <ParameterList name="Material Properties">
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="0.7"/>
       </ParameterList>   
-      <ParameterList name="middle">
-        <ParameterList name="ic: constant">
-          <Parameter name="mixture" type="string" value="Pure Air"/>
-        </ParameterList>   
-      </ParameterList>   
-      <ParameterList name="bottom">
-        <ParameterList name="ic: constant"/>
-          <Parameter name="mixture" type="string" value="Pure Air"/>
-        </ParameterList>   
-      </ParameterList>   
-    </ParameterList> 
-    <ParameterList name="water">
-      <Parameter name="phase" type="string" value="aqueous"/>
-      <Parameter name="density" type="double" value="1.e3"/>
-      <Parameter name="viscosity" type="double" value="1.0"/>
-      <Parameter name="diffusivity" type="double" value="0."/>
-      <ParameterList name="User-defined Mixtures">
-        <ParameterList name="Contaminated Water">
-          <ParameterList name="scheme: free ion concentration">
-            <ParameterList name="UO2+2">
-              <Parameter name="value" type="double" value=".001"/>
-            </ParameterList>
-            <ParameterList name="H+">
-              <Parameter name="value" type="double" value="0."/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="Pure Water">
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="source"/>
-        <ParameterList name="top"/>
-          <Parameter name="time interval" type="array double" value="{5., 15.}"/>
-          <ParameterList name="source: uniform total mass"/>
-            <Parameter name="component mass" type="double" value="20."/>
-            <ParameterList name="contaminant mass">
-              <Parameter name="UO+2" type="double" value="2."/>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="middle"/>
-          <ParameterList name="source: uniform"/>
-            <Parameter name="mixture" type="string" value="Contaminated Water"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>   
-      <ParameterList name="default"/>
-        <ParameterList name="ic: uniform"/>
-          <Parameter name="mixture" type="string" value="Pure Water"/>
-        </ParameterList>
-      </ParameterList>   
-      <ParameterList name="middle"/>
-        <ParameterList name="ic: uniform"/>
-          <Parameter name="mixture" type="string" value="Contaminated Water"/>
-        </ParameterList>
-      </ParameterList>   
-      <ParameterList name="yhibc">
-        <ParameterList name="inflow">
-          <ParameterList name="bc: constant">
-            <Parameter name="mixture" type="string" value="Contaminated Water"/>
-          </ParameterList> 
-        </ParameterList> 
-      </ParameterList> 
-      <Parameter name="trace species" type="Array string" value="{UO+2 H+}"/>
-    </ParameterList> 
-  </ParameterList> 
+    </ParameterList>   
+ 
 
-In this example, there are 2 phases (water, air).  Each phase consists of a single component.  The aqueous 
-phase contains the complexes which have UO++ and H+ as a primary species.  Three
-volumetric regions ("top", "middle" and "bottom"), and the boundary region `"yhibc`"
-have been defined elsewhere.  The initial data for the fields are set using the user-defined fluids 
-"Pure Air", "Pure Water" and "Contaminated Water".  
-The only boundary condition specified is along `"yhibc`", where the mixture is "Contaminated Water".
-The remaining boundaries are assumed to be outflow.
-There is a uniform source of "Contaminated Water" in the top region with an integrated strength of 20.
-There is also a uniform source in the middle region of water and UO+2, over the time period 5-15; 
-during this time a mass of 20 of water, and 2 of the UO+2 complex is injected at a constant rate.
+Notation:
+
+* Reserved keywords and labels are `"quoted and italicized`" -- these labels or values of parameters in user-generated input files must match (using XML matching rules) the specified or allowable values.  User-defined labels are indicated with ALL-CAPS, and are meant to represent a typical name given by a user - these can be names or numbers or whatever serves best the organization of the user input data.
+
+* Where applicable, the relevant section of the MRD is referred to by section or chapter number in parentheses.
+
+
+
+Version
+=======
+
+Each input set contains at the top level a string variable `"Amanzi Input Format Version`".  As of the most recent update of this specification, the
+current version of the Amanzi input is `"1.0.0`".  If the version is unspecified, it is assumed to be earlier than `"0.9.0`".  Release notes documenting the
+evolving input specification version can be found *here*.
+
+* "Amanzi Input Format Version" [string] Three part version string
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Main">
+    <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
+  </ParameterList>
+
+Documentation
+=============
+
+The `"Documenation`" parameter list can be used to provide a brief description of the problem specified in the file.  Any number of string entries can be provided
+with any label that may be useful for the user own purposes
+
+* LABEL [string] A descriptive string
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Main">
+    <ParameterList name="Documentation">
+      <Parameter name="Simulation Objective" type="string" value="Validate workflow for parameter estimation"/>
+      <Parameter name="Spatial Dimension" type="string" value="2"/>
+      <Parameter name="Domain Shape" type="string" value="Rectangle: 2x1 aspect ratio"/>
+      <Parameter name="Author" type="string" value="M. Day"/>
+    </ParameterList>
+  </ParameterList>
+
+
+
+Mesh
+=======================================
+
+Amanzi supports a number of mesh "frameworks" used to discretize the simulation domain, including support for structured and unstructured grids.  The structured-grid option supports dynamic solution-adaptive grid generation.  Amanzi's unstructured grid options include variants that generate meshes internally "on-the-fly", and others that require the user to specify an externally-generated mesh.
+
+Generally, the set of options for the mesh frameworks depend on whether the grid is to be generated or read in from a file.
+
+
+Amanzi-generated grids:
+
+* FRAMEWORK [list] labeled after mesh framework, accepts the following types: `"Structured-grid`", `"SimpleMesh`", `"stk::mesh`"
+
+ * `"Domain Low Corner`" [Array double] Location of low corner of box
+
+ * `"Domain High Corner`" [Array double] Location of high corner of box
+
+ * `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+
+.. code-block:: xml
+
+   <ParameterList name="Mesh">
+     <ParameterList name="Structured"/>
+       <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+       <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+       <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+     </ParameterList>   
+   </ParameterList>
+
+Pre-generated grids:
+
+* `"Framework`" [string] labeled after mesh framework, accepts the following types: `"MOAB`", `"Exodus`"
+
+ * `"File`" [string] name of pre-generated mesh file
+
+ * `"Format`" [string] format of pre-generated mesh file
+
+Example
+
+.. code-block:: xml
+
+  <ParameterList name="Mesh">
+    <ParameterList name="MOAB">
+      <Parameter name="File" type="string" value="moab_filename"/>
+      <Parameter name="Format" type="string" value="moab_default"/>
+    </ParameterList>   
+  </ParameterList>
 
 
 Regions
 =======================================
 
 Regions are used in Amanzi to define subsets of the computational domain in order to specify the problem
-to be solved, and the output desired.  Amanzi automatically defines the special region labeled `"all`", which is the 
+to be solved, and the output desired.  Amanzi automatically defines the special region labeled `"All`", which is the 
 entire simulation domain.  The user must additionally define the boundary surface(s) which enclose the domain.
 Amanzi assumes that the union of the boundary surfaces envelopes the entire computational domain
-(*i.e.* is "water-tight").  The special regions (`"all`" and the boundaries) may also serve as generic
+(*i.e.* is "water-tight").  The special regions (`"All`" and the boundaries) may also serve as generic
 regions (see the dicussion below for how these regions are labeled) and
 can thus be used to specify other components of the problem (source terms, initial conditions, etc).
 
-
-Special note:
-For the `"structured`" mesh framwork option, the bounding surfaces are implicitly defined as the planar surfaces that surround the domain,
-and are automatically generated with the following labels `"xlobc`", `"xhibc`", `"ylobc`", `"yhibc`",
-`"zlobc`", `"zhibc`" that are accessible throughout the input file.
-
-For the `"unstructured`" mesh option, Amanzi supports import of meshes in
-the Exodus II formats, as well as 
-a generation of a simple mesh that accommodates a parallelepiped domain.  In the first cases, the domain boundaries
-must be identified explicitly in the mesh file (see `"labeled set`" region type below).  For `"simple mesh`", the boundaries are created automatically,
-following the scheme for the `"structured`" mesh option discussed above.
-
-Amanzi supports a simple model for compositing functionals to build up regions with complex shape.
+For the mesh framework options that support the `"Generate`" keyword, Amanzi implicitly defines the planes bounding the domain as regions that
+automatically available to the input specification, using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`"
 
 Regions specifications take the following form
 
- * "regions" (list) can accept lists for named regions (REGION)
+ * "Regions" (list) can accept a number of lists for named regions (REGION)
 
-   * REGION (list) can accept lists (SHAPE) that specify a functional for its shape.
-
-     * SHAPE (list) can accept lists of shape parameters (SHAPE-PARAMS) 
-
-       * SHAPE-PARAMS (array double or string) parameters to specify shape
-
-   * `"domain_epsilon`" (double) minimum distance between two distinct nodes used to define regions
+   * MODEL(Region)
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex
-definitions based on triangulated surface files: point, box, arbitrary, layer.  Depending on the functional, SHAPE requires
-a number of parameters:
+definitions based on triangulated surface files.  
 
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
-|  shape functional name           | parameters                     | type(s)                      | Comment                                                             |
-+==================================+================================+==============================+=====================================================================+
-| `"point"`                        | `"loc`"                        | array double                 | Location of point in space                                          |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
-| `"box"`                          | `"lo`", `"hi`"                 | array double, array double   | Location of boundary points of box                                  |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
-| `"labeled set"`                  | `"label`", `"file`",           | string, string,              |                                                                     |
-|                                  | `"mesh framework`", `"entity`" | string, string               | Set per label defined in mesh file (see below)                      |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
-| `"volume enclosed by 1 surface"` | `"file`", `"label`"            | string, string               | Region enveloped by surface described in specified file             |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
-| `"volume enclosed by 2 surfaces"`| `"file#`", `"label#`"          | (#=1,2) string, string       | Region enveloped by surface described in specified file             |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
-| `"surface"`                      | `"file`" `"label`"             | string, string               | Labeled triangulated face set in file                               |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
-| `"LaGriT set"`                   | `"label`", `"file`",`"entity`" | string, string, string       | Labeled geometrical region defined via a LaGriT input control file  |
-+----------------------------------+--------------------------------+------------------------------+---------------------------------------------------------------------+
++------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
+|  shape functional name | parameters                              | type(s)                      | Comment                                                      |
++========================+=========================================+==============================+==============================================================+
+| `"Point"`              | `"Coordinate`"                          | Array double                 | Location of point in space                                   |
++------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
+| `"Box"`                | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                           |
++------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
+| `"Plane"`              | `"Direction`", `"Location`"             | Array double, Array double   | Location of boundary points of box                           |
++------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
+| `"Labeled Set"`        | `"label`", `"file`",                    | string, string,              | Set per label defined in mesh file (see below)               |
+|                        | `"mesh framework`", `"entity`"          | string, string               |  (available for frameworks supporting the `"File`" keyword)  |
++------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
+| `"Layer"`              | `"file#`", `"label#`"                   | (#=1,2) string, string       | Region between two surfaces                                  |
++------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
+| `"Surface"`            | `"file`" `"label`"                      | string, string               | Labeled triangulated face set in file                        |
++------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
 
 Notes
 
-* `"box`" can be used to define a point, coordinate-aligned lines and planes and a volume of space.  For the `"structured`", `"SimpleMesh`" and `"STKmesh`" mesh frameworks, the auto-generated regions (`"all`", `"xlobc`", ...) are all defined internally as box regions.
+* `"Box`" and "Plane" must be bounded by coordinate-aligned lines and planes.
 
-* `"LaGriT`" input files can be used to specify extremely complex geometrical regions in a mesh-independent way.  The input file passed here will be parsed by LaGriT to define the geometrical region, and cell/face/point sets will be generated based on the mesh framework details (declared above in the `"Mesh`" section).
+* The "Labeled Set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus::mesh" type mesh file can be processed to tag cells, faces and/or nodes with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  The `"entity`" parameter may be necessary to specify a unique set.  For example, an exodus file requires `"Cell`", `"Face`" or `"Node`" as well as a label (which is an integer).  When the mesh framework for the region is different from the current mesh framework (defined in `"Mesh`" above), the intersection of the specified region and the computational domain defines the region.  This latter option is not yet supported, but will likely be implemented as a special (piecewise-constant) case of a generalized interpolation operator.
 
-* The "labeled set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus" type mesh file can be processed to tag cells, faces and/or nodes with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  The `"entity`" parameter may be necessary to specify a unique set.  For example, an exodus file requires `"cell`", `"face`" or `"node`" as well as a label (which is an integer).  When the mesh framework for the region is different from the current mesh framework (defined in `"Mesh`" above), the intersection of the specified region and the computational domain defines the region.  This latter option is not yet supported, but will likely be implemented as a special (piecewise-constant) case of a generalized interpolation operator.
+* Surface files contain labeled triangulated face sets.  The user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes in the surface fall outside the domain, the elements they define are ignored.
 
-* Surface files contain labeled triangulated face sets.  The user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes defining surfaces are separated by a distance *s* < `"domain_epsilon`" Amanzi will consider them coincident; if they fall outside the domain, the elements they define are ignored.
-
-* Eventually, Amanzi will support a "geometric modeling" syntax such that complex regions can be assembled by composition with logical operators.  A minimal interface to such a capability might simply include the name of an instruction file (and a label to identify a particular region in the file).  However, it is not yet clear how to build this capability into Amanzi in a mesh-independent way.  In the meantime, Amanzi does support composition by union so that a region can be defined as the union of one or more region intrinsics.
+* Eventually, Amanzi will support a "geometric modeling" syntax such that complex regions can be assembled by composition with logical operators.  The next step toward this capability will likely be to allow the definition of a single region as a concatentation of a number of basic shapes.  A more general capability might include the name of an instruction file (and a label to identify a particular region in the file) to interface to a scripted modeler.
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="regions">
-    <ParameterList name="top">
-      <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 5}"/>
-        <Parameter name="hi" type="Array double" value="{4, 5, 8}"/>
+  <ParameterList name="Regions">
+    <ParameterList name="Top Section">
+      <ParameterList name="Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 5}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 8}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="middle">
-      <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 3}"/>
-        <Parameter name="hi" type="Array double" value="{4, 5, 4}"/>
+    <ParameterList name="Middle Section">
+      <ParameterList name="Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 3}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 5}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="sep">
-      <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 1}"/>
-        <Parameter name="hi" type="Array double" value="{4, 5, 3}"/>
-      </ParameterList>
-      <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 4}"/>
-        <Parameter name="hi" type="Array double" value="{4, 5, 5}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="bottom">
-      <ParameterList name="box">
-        <Parameter name="lo" type="Array double" value="{2, 3, 0}"/>
-        <Parameter name="hi" type="Array double" value="{4, 5, 1}"/>
+    <ParameterList name="Bottom Section">
+      <ParameterList name="Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{4, 5, 3}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
-In this example, "top", "middle" and "bottom" are three box-shaped regions, and "sep" consists of
-two box-shaped regions, separating the three layers.
+In this example, "Top Section", "Middle Section" and "Bottom Section" are three box-shaped regions.
 
 
-Rock
-=======================================
 
-Rock properties must be specified over the entire simulation domain ("all") defined in the Region section.  This can be implemented using any combination of regions
-defined above, provided that the entire domain is covered.  Currently, the regions used should be disjoint.  Amanzi may eventually support verifying this condition,
-and/or specifying a precedence order for overalapping regions.
+Soil Properties
+====================
 
-Each rock type (Section 2.6) is given a label (string) and assigned a density (double) and models (string) for porosity, permeability and capillary pressure.  Each rock is assigned to
-regions (string array), a list of regions.
+Soil properties must be specified over the entire simulation domain (`"All`") defined in the Region section.  This can be implemented using any combination of regions
+defined above, provided that the entire domain is covered.  The regions used should be disjoint.  Each soil type (Section 2.6) is given a label (string) and assigned
+physical properties using from a selection of models.  A model can be as simple as `"Porosity: Uniform`", which sets the porosity in every cell to a single value, or it may be extremely 
+complex.  The available models for each property are listed below the specification.  Each soil that is defined is assigned to a list of regions.
 
-* "rock" (list) can accept multiple lists for named rock types (ROCK)
+* "Soil Properties" (list) can accept multiple lists for named soil types (SOIL)
 
-  * ROCK (list) can accept lists to specify a model (MODEL) in a way that is yet to be determined, and a string array `"regions`" to specify where these properties apply.  Generally, the complete specification of rock properties should include models for porosity, relative permeability, capillary pressure and rock permeability.  However, there appears to be a motivation to specify using porosity, permeability and "water retention".  This needs to be sorted out.
+ * SOIL (list) can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-    * MODEL (list) can accept model parameters (MODEL-PARAMS) 
+  * MODEL(Porosity)
 
-      * MODEL-PARAMS (double, array double) parameters to specify model (see notes below for details of each model available)
+  * MODEL(Mass Density)
 
-    * `"regions`" (string array) a set of labels corresponding to defined regions
+  * MODEL(Intrinsic Permeability)
 
+  * MODEL(Capillary Pressure)
+
+  * `"Assigned Regions`" (Array string) a set of labels corresponding to defined regions
 
 The following models are currently supported for porosity:
- * `"porosity: file`" requires the following strings: `"filename`" (name of a file), `"interpolation`" (the interpolation strategy: : `"constant`" or `"linear`"), `"framework`" (the mesh framework with which the file is compatible), and `"label`" (the label of the scalar field in the file to associate with the values of porosity).  In particular, the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
- * `"porosity: uniform`" requires a double specifying the constant value of porosity.
- * `"porosity: random`" requires the mean value of porosity and the percentage fluctuation, "porosity and fluctuation" (array double) to generate
- * `"porosity: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate porosity field
 
-The following models are currently supported for the absolute (rock) permeability:
- * `"permeability: file`" requires the following strings: `"filename`" (name of a file), `"interpolation`" (the interpolation strategy: `"constant`" or `"linear`"), `"framework`" (the mesh framework with which the file is compatible), and `"label`" (the label of the scalar field in the file to associate with the values of permeability).  The physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
- * `"permeability: uniform`" requires a double specifying the constant value of porosity.
- * `"permeability: random`" requires the mean value of porosity and the percentage fluctuation, "mean permeability and rms fluctuation" (array double) to generate
- * `"permeability: gslib`" requires the name of a gslib-formatted file "gslib filename" to generate permeability field
- *  NOTE: All but `"permeability: file`" may also accept the array parameter `"permeability anisotropy`" (array double) to specify that the permeability is a diagonal tensor; these values are used to scale the X, Y and Z values.
+* `"Porosity: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of porosity).  Optionally `"Interpolation`" (the interpolation strategy: : `"Constant`" [default] or `"Linear`").  Optionally `"Framework`" (if the mesh framework with which the file was written is different from current) will indicate the format of the file.  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+
+* `"Porosity: Uniform`" requires `"Value`" [double] to specify the constant value of porosity.
+
+* `"Porosity: Random`" requires the `"Mean And RMS Values`" [Array double]
+
+* `"Porosity: GSLib`" requires `"File`" [string], the name of a gslib input file 
+
+
+The following models are currently supported for mass density:
+
+* `"Mass Density: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of mass density).  Optionally `"Interpolation`" (the interpolation strategy: : `"Constant`" [default] or `"Linear`").  Optionally `"Framework`" (if the mesh framework with which the file was written is different from current) will indicate the format of the file.  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+
+* `"Mass Density: Uniform`" requires `"Value`" [double] to specify the constant value of mass density of the soil.
+
+
+The following models are currently supported for the absolute (soil) permeability:
+
+* `"Intrinsic Permeability: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of intrinsic permeability).  Optionally `"Interpolation`" (the interpolation strategy: : `"Constant`" [default] or `"Linear`").  Optionally `"Framework`" (if the mesh framework with which the file was written is different from current) will indicate the format of the file.  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+
+* `"Intrinsic Permeability: Uniform`" requires `"Value`" [double] to specify the constant value of the intrinsic permeability
+
+* `"Intrinsic Permeability: Random`" requires the `"Mean And RMS Values`" [Array double]
+
+* `"Intrinsic Permeability: GSLib`" requires `"File`" [string], the name of a gslib input file 
+
+* Additionally, all intrinsic permeability models optionally accept the following parameter:
+
+  * `"Intrinsic Permeability Anisotropy`" [Array double] - (optional) indicates that the intrinsic permeability is a diagonal tensor, an the XX, YY, and ZZ are given by the specifed X value and scaled by these values.
+
 
 The following models are currently supported for relative permeability (Section 2.6):
- * `"relative permeability: perfect`" requires no parameters, krl=krg=1
- * `"relative permeability: linear`" requires no parameters, krl=sl and krg=sg
- * `"relative permeability: quadratic`" requires slr, sgr (array double), krl=sc^2, krg=1-se^2, se=(sl-sg)/(1-slr-sgr)
- * `"relative permeability: vGM`" (van Genuchten-Mualem) requires m, slr, sgr (array double), krl=sqrt(se)(1-(1-se^-m)^m)^2, krg=(1-sekg)^1/3 (1-sekg^-m)^(2m), se=(sl-slr)/(1-slr-sgr), sekg=sl/(1/sgr)
+
+* `"Relative Permeability: Perfect`" requires no parameters, krl=krg=1
+
+* `"Relative Permeability: Linear`" requires no parameters, krl=sl and krg=sg
+
+* `"Relative Permeability: Quadratic`" requires slr, sgr [Array double]
+
+* `"Relative Permeability: vGM`" (van Genuchten-Mualem) requires m, slr, sgr [Array double]
 
 The following models are currently supported for capillary pressure (Section 3.3.2):
- * `"capillary pressure: none`" requires no parameters, pc = 0
- * `"capillary pressure: linear`" requires no parameters, pc = sl
- * `"capillary pressure: vG`" requires m, sigma, slr, sgr (array double), pc=(1/sigma)(se^-m - 1)^-n, se=(sl-slr)/(1-slr-sgr)
 
-The following models are currently supported for water retention (should we support this mode of specification?):
- * `"water retention: vG`" requires m, sigma, slr (array double)
+* `"Capillary Pressure: None`" requires no parameters, pc = 0
+
+* `"Capillary Pressure: Linear`" requires no parameters, pc = sl
+
+* `"Capillary Pressure: vG`" requires m, sigma, slr, sgr [Array double]
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="rock">
-    <ParameterList name="backfill">
-      <Parameter name="density" type="double" value="2.8e3"/>
-      <ParameterList name="permeability: uniform">
-        <Parameter name="permeability" type="double" value="1240"/>
-        <Parameter name="permeability anisotropy" type="Array double" value="{1., 0.001, 0.001}"/>
+  <ParameterList name="Soil Properties">
+    <ParameterList name="Backfill">
+      <ParameterList name="Mass Density: Uniform">
+        <Parameter name="Value" type="double" value="2.8e3"/>
       </ParameterList>
-      <ParameterList name="porosity: uniform">
-        <Parameter name="porosity" type="double" value="0.2585"/>
+      <ParameterList name="Intrinsic Permeability: Uniform">
+        <Parameter name="Value" type="double" value="1240"/>
+        <Parameter name="Permeability Anisotropy" type="Array double" value="{1., 0.001, 0.001}"/>
       </ParameterList>
-      <ParameterList name="relative permeability: vGM">
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="0.2585"/>
+      </ParameterList>
+      <ParameterList name="Relative permeability: vGM">
         <Parameter name="m_slr_sgr" type="Array double" value="{0.6585, 0.0774, 0}"/>
       </ParameterList>
-      <ParameterList name="capillary pressure: vG">
+      <ParameterList name="Capillary Pressure: vG">
         <Parameter name="m_sigma_slr_sgr" type="Array double" value="{0.6585, 102.1, 0.0774, 0}"/>
       </ParameterList>
-      <Parameter name="regions" type="string array" value="{top, bottom}"/>
+      <Parameter name="Assigned regions" type="string array" value="{Top Region, Bottom Region}"/>
     </ParameterList>
-    <ParameterList name="fine sand">
-      <Parameter name="density" type="double" value="2.8e3"/>
-      <ParameterList name="permeability: uniform">
-        <Parameter name="permeability" type="double" value="337.0"/>
+    <ParameterList name="Fine Sand">
+      <ParameterList name="Mass Density: Uniform">
+        <Parameter name="Value" type="double" value="2.8e3"/>
       </ParameterList>
-      <ParameterList name="porosity: uniform">
-        <Parameter name="porosity" type="double" value="0.3586"/>
+      <ParameterList name="Intrinsic Permeability: Uniform">
+        <Parameter name="Value" type="double" value="337"/>
       </ParameterList>
-      <ParameterList name="relative permeability: vGM">
+      <ParameterList name="Porosity: Uniform">
+        <Parameter name="Value" type="double" value="0.3586"/>
+      </ParameterList>
+      <ParameterList name="Relative Permeability: vGM">
         <Parameter name="m_slr_sgr" type="Array double" value="{0.4694, 0.0837, 0}"/>
       </ParameterList>
-      <ParameterList name="capillary pressure: vG">
+      <ParameterList name="Capillary Pressure: vG">
         <Parameter name="m_sigma_slr_sgr" type="Array double" value="{0.4694, 9.533, 0.0837, 0}"/>
       </ParameterList>
-      <Parameter name="regions" type="string array" value="{middle}"/>
+      <Parameter name="Assigned Regions" type="string array" value="{middle}"/>
     </ParameterList>
   </ParameterList>
 
-In this example, there are two types of rock, `"backfill`" (which fills bottom and top regions) and `"fine sand`" (which fills middle region).  Both have
-van Genuchten models for relative permeability and capillary pressure.  The backfill has an anisotropic permeability, where the vertical value is 1000 times
+In this example, there are two types of soil, `"Backfill`" (which fills `"Bottom Region`" and `"Top Region`") and `"Fine Sand`" (which fills `"Middle Region`").  Both have
+van Genuchten models for relative permeability and capillary pressure.  `"Backfill`" has an anisotropic permeability, where the vertical value is 1000 times
 the horizontal values.
 
 
+
+
+Mobile Phases
+=======================================
+
+The `"Mobile Phases`" parameter list is used to specify components of each of the phases that are mobile, and solutes that are contained within them.  For each such 
+phase, the list identifies the set of all independent variables that are to be stored on each discrete mesh cell.
+For organizational convenience, the `"Mobile Phases`" parameter list is also where the initial conditions, boundary data and source
+terms are defined for each phase component.  Future versions of Amanzi will support mass transfer between phases, and this is also where
+the phase distribution models will be specified.
+
+Phases, components and solutes
+------------------------------
+
+In the general problem, multiple phases may coexist in the domain (e.g. gaseous, aqueous, etc), and each is
+comprised of a number of components (section 2.2).  In turn, each component may carry a number of solutes and some of these may participate
+in chemical reactions.  As a result of reactions, a chemical source or sink term may appear for the solutes involved in the reaction, including solutes in other mobile phases or in the soil matrix.  
+Additionally, certain reactions such as precipitation may affect the flow properties of the soil itself during the simulation, and 
+some might affect the properties of the fluid (e.g. brines affect the liquid density). While Amanzi does not currently support chemical reactions and thermal processes, the specification here allows for the existence of
+the necessary data structures and input data framework.
+
+Currently in Amanzi, inert solutes are transported in the various phase components and are treated in "complexes".  reacting or not, it is assumed that each complex is in chemical equilibrium with itself, and does not undergo phase change.
+Under these conditions, knowledge of the local concentration of the "basis" or "primary" species (the terms are used here interchangeably) in a chemical complex is sufficient to determine the concentrations of all related secondary species
+in the phase. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the
+free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phases
+and total sorbed concentration. Given the free ion concentration of each basis species (and if there is more than one phase, a specification of the 
+equilibrium phase distribution of components that appear in more than one phase), we can reconstruct the concentration of the secondary species in each phase. As a result only the basis species are maintained in the state
+data structures for each phases component.
+
+In addition to solutes in the transported phases, there may be various immobile chemical constituents within the
+porous media (soil) matrix, such as "minerals" and "surface complexes". Bookkeeping for these constituents is managed in Amanzi
+data structures by generalizing the "solute" concept - a slot in the state is allocated for each of these immobile species, but their concentrations are
+not included in the transport/flow components of the numerical integration.  To allow selective transport of the various solutes, Amanzi
+uses the concept of solute groups.   The aqueous solute concentrations are typically treated together as a group, for example, and often represent the only 
+chemical constituents that are mobile.
+
+Specification of Amanzi's numerical state is organized fundamentally around the list of phases that are present.  Each phase consists of multiple components; for each of these,
+Amanzi requires a label, a set of models that specify its physical properties (Section 4.6), and a list of solutes contained in that component.  For each solute, a group membership is specified.
+Note that Amanzi will eventually support the use of a master chemistry database, where the solute complexes and their chemical activity are defined.  In that case, inclusion of a particular solute in the
+Amanzi input file will be conditioned on its presence in the appropriate section of the master list.
+
+Sources and Initial and Boundary Data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Mobile phase components, and solutes contained in them, require boundary conditions along the entire surface bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  Generally, phase component boundary conditions are
+specified in porous media systems by giving either the component pressure or Darcy velocity on the boundary, along with the phase saturation on the bounding surface.  Since mobile solutes are carried with the resulting flow,
+inflowing boundary conditions for solutes are typically specified using Dirichlet conditions that define the effective solute concentration in the incoming flow.  On outflow boundaries,
+no solute information is carried into the domain so no data is required. For simplicity here, any boundary conditions not explicitly set in the input are defaulted to outflow.
+
+Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of production and loss processes, are defined for each phase component, if applicable, and include the distribution of any solutes that are carried into the domain with the phase component.
+
+Boundary conditions and source terms may be time-dependent, in general.
+
+The generalized specification is as follows:
+
+* `"Phase Definitions`" (list) can accept lists named phases (PHASE).
+
+ * PHASE (list) can accept the following lists: `"Phase Properties`", `"Phase Components`"
+
+  * `"Phase Properties`" can accept models for viscosity and density
+
+   * MODEL(Density)
+
+   * MODEL(Viscosity)
+
+  * `"Phase Components`" can accept COMP [list] named after a user-defined phase component.
+
+   * COMP (list) can accept `"Solute Properties`" [list] to define solutes carried by the component.  Also, accepts`"Component Initial Conditions`" [list], `"Component Boundary Conditions`" [list], `"Component Sources`" [list]
+
+    * `"Component Initial Conditions`" (list) accepts lists IC-REGION named after the user-defined region that IC function will apply over
+
+     * IC-REGION (list) can accept a model for initial conditions, list for solute initial conditions
+
+      * MODEL(Initial Conditions)
+
+      * `"Solute Initial Conditions`" can accept lists SOLUTE named after indivual solutes
+
+       * SOLUTE can accept a model for initial conditions, and a flag for the units of Dirichlet values in the model
+
+        * MODEL(Initial Conditions)
+
+        * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+
+    * `"Component Boundary Conditions`" (list) accepts lists BC-REGION named after the user-defined region that BC function will apply over
+
+     * BC-REGION (list) can accept a model for boundary conditions, and list for solute booundary conditions
+
+      * MODEL(Boundary Conditions)
+
+      * `"Solute Boundary Conditions`" can accept lists SOLUTE named after indivual solutes
+
+       * SOLUTE can accept a model for boundary conditions, and a flag for the units of Dirichlet values in the model
+
+        * MODEL(Boundary Conditions)
+
+        * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+
+    * `"Component Boundary Sources`" (list) accepts lists S-REGION named after the user-defined region that source function will apply over
+
+     * S-REGION (list) can accept a model for a source, and list for solute sources
+
+      * MODEL(Source)
+
+      * `"Solute Source`" can accept lists SOLUTE named after indivual solutes
+
+       * SOLUTE can accept a model for a source, and a flag for the units of Dirichlet values in the model
+
+        * MODEL(Source)
+
+        * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+
+Initial conditions are required for each phase component, and the solutes contained in them, over the entire computational domain.
+Boundary conditions are required on all domain boundaries (see Sections 3.3, 4.3).  Source terms for all are optional.  All are constructed using a limited number
+of explicitly parameterized model are supported for communicating initial conditions:
+
+* `"Initial Conditions: Uniform`" requires `"Value`" [double]
+
+* `"Initial Conditions: Gradient`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double)
+
+* `"Initial Conditions: File`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
+
+The following parameterized boundary conditions are supported for communicating boundary conditions:
+
+* `"Boundary Conditions: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Extensive Volumetric Flux`" [double] or `"Extensive Mass Flux`" [double], `"Intensive Volumetric Flux`" [double] or `"Intensive Mass Flux`" [double]
+
+* `"Boundary Conditions: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* `"Boundary Conditions: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
+
+* `"Boundary Conditions: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
+
+* `"Boundary Conditions: Impermeable`" requires no data
+
+* `"Boundary Conditions: Outflow`" requires no data
+
+The following models are currently supported for communicating source distribution:
+
+* `"Source: Uniform Volumetric Rate`" requires `"Times`" [Array double], `"Time Functions`" [Array string], and `"Values`" [Array double].  
+
+* `"Source: Uniform Mass Rate`" requires `"Times`" [Array double], `"Time Functions`" [Array string],  `"Values`" [Array double].  
+
+Time Functions
+~~~~~~~~~~~~~~
+
+Boundary data and source models utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
+
+.. code-block:: xml
+
+      <Parameter name="Times" type="Array double" value="{1, 2, 3}"/>
+      <Parameter name="Time Values" type="Array double" value="{10, 20, 30}"/>
+      <Parameter name="Time Functions" type="Array string" value="{Constant, Linear}"/>    
+
+
+This define four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
+two intervals are speicified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
+20 over the interval t=2 to t=3, and then is constant at 30 for t>3.
+
+
+Example Phase Definition
+~~~~~~~~~~~~~~~~~~~~~~~~
+Due to its length, an XML example of the `"Mobile Phases`" parameter list appears in the attached file:XXX.
+
+
+Output
+======
+
+Output data from Amanzi is currently organized into four specific groups: `"Observation Data`", `"Visualization Data`", `"Checkpoint Data`" and `"Log Data`".  
+Each of these is controlled in different ways, reflecting their intended use.
+
+* `"Checkpoint Data`" is intended to represent all that is necesary to repeat or continue an Amanzi run.  The specific data contained in a checkpoint dump is specific to the algorithm optoins and mesh framework selected.  Checkpoint data is special in that no interpolation is perfomed prior to writing the data files; the raw binary state is necessary.  As a result, the user is allowed to only write checkpoint information at the discrete intervals of the simulation.
+
+* `"Visualization Data`" is intended to represent spatially complete snapshots of the solution at defined instances during the simulation.  Dependeing on the control parameters provided here, visualizatoin files may include only a fraction of the state data, and may contiain auxiliary "derived" information (see below for more discussion).
+
+* `"Observation Data`" is intended to represent diagnostic values to be returned to the calling routine from Amanzi's simulation driver.  Observations are typically generated at arbitrary times, and frequently involve various point samplings and volumetric reductions that are interpolated in time to the desired instant.  Observations may involve derived quantities (see discussion below) or state fields.
+
+* `"Log Data`" is intended to represent runtime diagnostics to indicate the status of the simulation in progress.  This data is typically written by the simulation code to the screen or some other stream or file pipe.  The volume of `"Log Data`" generated is typically a function of various verbosity settings for a given run.
+
+"`Log Data`" is not explicitly controlled in this section, since it is easier to control in the context of specifying details of the algorithms.  The remaining data types are discussed in the section below.
+
+
 Observation Data
-=======================================
+----------------
 
-Observation data generally refers to simple diagnostic quantities extracted from a simulation for the purposes of characterizing
-the response of the system to variations of input data.  Unlike very large datasets used for post-processing and simulation
-restart, observation data for any particular simulations tends to consist of only a handful of scalar values.
-Examples include volume and surface integrals, such as the total water mass in the system at a specific time.
-Computation of observation data involves applying a parameterized 
-functional on a specified state quantity or flux value at specific simulation times.
+A user may request any number of specific observations from Amanzi.  Each labeled observation involves a state or derived component, a model, a region from which it will extract its source data, and a list of discrete times 
+for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-Each observation is given a label (string), state id (string), evaluation functional (list), region (string) and a list of times for evaluation.
-The resulting observations are evaluated during the simulation and returned to the calling process
+* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
-* "observation" (list) can accept multiple lists for named observations (OBSERVATION)
+  * OBSERVATION [list] user-defined label, can accept values for `"Phase`", `"Component`", `"Solute`", `"Region`", `"Times`" and a model.
 
-  * OBSERVATION (list) can accept values for `"state id`", `"region`", `"functional`" and `"times`"
+    * `"Phase`" [string] the label of a phase defined above
 
-    * `"region`" (string) a region defined above
+    * `"Component`" [string] the label of one of the components defined for this phase
 
-    * `"state id`" (string) a state quantity defined above
+    * `"Region`" [string] the label of a user-defined region
 
-    * `"functional`" (string) choses which funcitional to apply (see below)
+    * `"Solute`" [string] (optional) the label of one of the solutes defined for this phase component
 
-    * `"times`" (array double) values of time where this quantity is desired
+    * `"Times`" [Array double] values of time where this quantity is desired
 
-The following observation functionals are currently supported
- * `"observation: average`" 
- * `"observation: integral`" 
- * `"observation: squared integral`" 
- * `"observation: peak value`" 
+    * MODEL(Observation)
+
+The following observation models are currently supported.  All of them operate on the state quantity identified.
+* `"Observation: Mean`" returns the mean value of the phase or component saturation, or the solute concentration over the region
+* `"Observation: Integral`" returns the integral of the phase or component saturation, or the solute concentration over the region
+* `"Observation: Flux Integral`" returns the integral of the flux of the phase, component, or solute over the region
+* `"Observation: Peak Value`" returns the peak value of the phase or component saturation, or the solute concentration over the region
+* `"Observation: Distance to Center of Mass`" returns the distance from a given location of the center of mass of the phase or component saturation, or the solute concentration over the region.  Requires a single parameter, "Reference Location" [Array double] specifying the refnerece location.
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="observation">
-    <ParameterList name="mass of water">
-      <Parameter name="state id" type="string" value="water"/>
-      <Parameter name="region" type="string" value="all"/>
-      <Parameter name="functional" type="string" value="integral"/>
-      <Parameter name="times" type="Array double" value="{1.e3, 2.e3, 2.5e3}"/>
+  <ParameterList name="Observation">
+    <ParameterList name="Center of UO+2 Mass">
+      <Parameter name="Phase" type="string" value="Aqueous"/>
+      <Parameter name="Component" type="string" value="Water"/>
+      <Parameter name="Solute" type="string" value="UO+2"/>
+      <Parameter name="Region" type="string" value="All"/>
+      <ParameterList name="Observation: Distance to Center of Mass">
+        <Parameter name="Reference Location" type="Array double" value="{0, 0, 100}"/>
+      </ParameterList>
+      <Parameter name="Times" type="Array double" value="{10, 30 , 50}">
     </ParameterList>
   </ParameterList>
 
-In this example, the user requests the volume integral of the water density over the entire domain at three different times.
-Amanzi will also support integrals and point samples of phase fluxes.  Note that times specified may not necessarily fall within
-the time interval of the present simulation.  The format of the data structure used to communicate the observation data back
-to the calling function includes a flag for each requested time to indicate whether the quantity was successfully filled.
+In this example, the user requests that the center of mass for the solute UO+2 be computed, and that the distance from that location to the point (0, 0, 100) be returned at t={10, 30 and 50}.
+The format of the data structure used to communicate the observation data back to the calling function includes a flag for each requested time to indicate whether the quantity was successfully filled.
 
 
+Checkpoint Data
+---------------------------------
+
+A user may request periodic dumps of Amanzi checkpoint data.  The user has not explicit control over the content of these files, but has the guarantee that the Amanzi run will be reproducible (with accuracies determined
+by machine round errors and randomness due to execution in a parallel computing environment.  Therefore, output controls for checkpoint data are limited to file name generation and writing frequency, by numerical cycle number.
+
+* `"Checkpoint Data`" [list] can accept a file name base [string], cycle data [list] and number of digits [int] used to generate the file name (e.g. file00050 if 5 digits and time step 50)
+
+  * `"File Name Base`" [string]
+
+  * `"Cycle Data`" [string] can accept start, end and interval data for cycle number
+
+    * `"Start`" [int] step number of first file
+
+    * `"End`" [int] step number of last file, if < 0 or not present then value is not used (no stopping condition)
+
+    * `"Interval`" [int] number of steps per file write
+
+    * `"Steps`" [Array int] specific step numbers to write (if parameter present, the (Start, Step, Interval) ignored
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Checkpoint Data">
+    <Parameter name="File Name Base" type="string" value="chk"/>
+    <Parameter name="File Name Digits" type="int" value="5"/>
+    <ParameterList name="Cycle Data">
+      <Parameter name="Start" type="int" value="0"/>
+      <Parameter name="End" type="int" value="-1"/>
+      <Parameter name="Interval" type="int" value="5"/>
+    </ParameterList>
+  </ParameterList>
+
+In this example, checkpoint data is written when the cycle number is evenly divisble by 5.
 
 
-Chemistry Solver
-=======================================
+Visualization Data
+---------------------------------
 
-The following parameters are optional in the Chemistry parameter list:
+A user may request periodic writes of field data for the purposes of vizualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
+at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
 
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-|  Parameter name                       | Type          | Default Value    | Optional Values             | Purpose                                                                             |
-+=======================================+===============+==================+=============================+=====================================================================================+
-| `"Verbosity"`                         | int           | 0                | 0, 1, 2, 3, 4, 5, 6, ...    | set the verbosity level of chemistry: 0=silent, 1=terse warnings, 2=verbose details,|
-|                                       |               |                  |                             |  3=debug, 4=debug beaker, 5=debug database file, ....                               | 
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Activity Model"`                    | string        | `"unit`"         | `"unit"`, `"debye-huckel"`  | set the model used for activity corrections                                         |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Tolerance"`                         | double        | 1.0e-12          |  ---                        | set the tolerance for newton iterations within chemistry                            |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Maximum Newton Iterations"`         | int           | 200              | ---                         | set the maximum number of newton iterations for chemistry.                          |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Max Time Step (s)"`                 | double        | 9.9e9            | ---                         | set the maximum time step allowed for chemistry.                                    |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Using sorption"`                    | string        | `"no"`           | `"yes"`                     | Tells the chemistry module whether to allocate memory for sorption.                 |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
-| `"Free ion concentrations provided"`  | string        | `"no"`           | `"yes"`                     | Tells chemistry that in initial guess for free ion concentrations is provided in    |
-|                                       |               |                  |                             | the xml file.                                                                       |
-+---------------------------------------+---------------+------------------+-----------------------------+-------------------------------------------------------------------------------------+
+* `"Visualization Data`" [list] can accept a file name base [string], cycle data [list] and number of digits [int] used to generate the file name (e.g. file00050 if 5 digits and time step 50).  It can also accept a set of lists to specify which state variables to write.
+
+  * `"File Name Base`" [string]
+
+  * `"Cycle Data`" [string] can accept start, end and interval data for cycle number
+
+    * `"Start`" [int] step number of first file
+
+    * `"End`" [int] step number of last file, if < 0 or not present then value is not used (no stopping condition)
+
+    * `"Interval`" [int] number of steps per file write
+
+    * `"Steps`" [Array int] specific step numbers to write (if parameter present, the (Start, Step, Interval) ignored
+
+  * `"Variable`" [list] can accept `"Phase`" [string], `"Component`" [string] (optional), `"Solute`" [string]
+
+    * `"Phase`" [string] the label of a phase defined above, or "All" to write all phases
+
+    * `"Component`" [string] the label of one of the components defined for this phase, or "All" to write all components of the selected phase(s)
+
+    * `"Solute`" [string] the label of a solute defined above, or "All" to write all solutes of the component, or "None" to write none of them.
+
 
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Chemistry">
-    <Parameter name="Thermodynamic Database Format" type="string" value="simple" />
-    <Parameter name="Thermodynamic Database File" type="string" value="fbasin-uo2-5-component.bgd" />
-    <Parameter name="Verbosity" type="int" value="1" />
-    <Parameter name="Activity Model" type="string" value="debye-huckel" />
-    <Parameter name="Tolerance" type="double" value="1.5e-12"/>
-    <Parameter name="Max Time Step (s)" type="double" value="86400.0"/>
-    <Parameter name="Maximum Newton Iterations" type="int" value="150"/>
-    <Parameter name="Using sorption" type="string" value="yes"/>
-    <Parameter name="Free ion concentrations provided" type="string" value="yes"/>
-    <ParameterList name="Initial Conditions">
-      <Parameter name="Number of minerals" type="int" value="3"/>
-      <Parameter name="Number of ion exchange sites" type="int" value="0"/>
-      <Parameter name="Number of sorption sites" type="int" value="0"/>
-      <Parameter name="Number of mesh blocks" type="int" value="1"/>
-      <ParameterList name="Mesh block 1"> 
-        <Parameter name="Mesh block ID" type="int" value="0"/>
-        <ParameterList name="Free Ion Species">
-	  <Parameter name="Free Ion Species 0" type="double" value="4.36476e-16"/>  <!-- Al+++ -->
-	  <Parameter name="Free Ion Species 1" type="double" value="3.16772e-08"/>  <!-- H+ -->
-	  <Parameter name="Free Ion Species 2" type="double" value="1.00000e-06"/>  <!-- HPO4-2 -->
-	  <Parameter name="Free Ion Species 3" type="double" value="1.87000e-04"/>  <!-- SiO2(aq) -->
-	  <Parameter name="Free Ion Species 4" type="double" value="1.84374e-20"/>  <!-- UO2++ -->
-        </ParameterList>
-        <ParameterList name="Minerals">
-          <Parameter name="Mineral 0" type="double" value="0.15"/>  <!-- Kaolinite -->
-          <Parameter name="Mineral 1" type="double" value="0.21"/>  <!-- Quartz -->
-          <Parameter name="Mineral 2" type="double" value="0.0"/>   <!-- (UO2)3(PO4)2.4H2O -->
-        </ParameterList>
-      </ParameterList>
+  <ParameterList name="Checkpoint Data">
+    <Parameter name="File Name Base" type="string" value="chk"/>
+    <Parameter name="File Name Digits" type="int" value="5"/>
+    <ParameterList name="Cycle Data">
+      <Parameter name="Start" type="int" value="0"/>
+      <Parameter name="End" type="int" value="-1"/>
+      <Parameter name="Interval" type="int" value="5"/>
+    </ParameterList>
+    <ParameterList name="Variable">
+      <Parameter name="Phase" type="string" value="Aqueous"/>
+      <Parameter name="Component" type="string" value="Water"/>
+      <Parameter name="Solute" type="string" value="UO+2"/>
+    </ParameterList>
+    <ParameterList name="Variable">
+      <Parameter name="Phase" type="string" value="Gas"/>
+      <Parameter name="Component" type="string" value="All"/>
+      <Parameter name="Solute" type="string" value="All"/>
     </ParameterList>
   </ParameterList>
 
-
-'''Note: all chemistry names and values are case sensitive.'''
-
-
-
-MPC
-=======================================
-
-Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously.  However, for the present time, the following is an example of supported parameters in this list:
-
-.. code-block:: xml
-
-  <ParameterList name="MPC">
-    <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="0.1"/>
-    <Parameter name="End Cycle" type="int" value="10000"/>
-    <Parameter name="Flow model" type="string" value="Darcy"/>
-    <Parameter name="disable Flow_PK" type="string" value="no"/>
-    <Parameter name="disable Transport_PK" type="string" value="no"/>
-    <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
-    <Parameter name="Viz dump cycle frequency" type="int" value="10"/>
-    <Parameter name="Viz dump time frequency" type="double" value="0.05"/>
-    <ParameterList name="CGNS">
-      <Parameter name="File name" type="string" value="test1.cgns"/>
-    </ParameterList>
-  </ParameterList> 
-
-In the MPC parameter list, the user specifies the following parameters:
-
- * "Start Time" the start time of the simulation
- * "End Time" the end time of the simulation
- * "End Cycle" the end cycle of the simulation 
- * "Flow model" specifies the choice of flow model.  The choices are currently `"Darcy"` for saturated flow and  `"Richards"` for unsaturated flow.
- * "disable Flow_PK" is used to disable flow in the simulation. In this case the user should specify a mesh block wise constant darcy flow field in the State namelist.
- * "disable Transport_PK" is used to disable transport in the simulation.
- * "disable Chemistry_PK" is used to disable chemistry in the simulation.
- * "Viz dump cycle frequency" is used to generate visualization dumps every so many cycles.
- * "Viz dump time frequency" is used to generate visualization dumps every so many time increments.
-
-The sublist named "CGNS" is used to specify the filename for the CGNS visualization dumps. 
+In this example, visalization data is written when the cycle number is evenly divisble by 5.  The files will include the concentration of UO+2 in the Aqueous Water component, and all the solues in the Gas Phase.
 
 
 
-Transport
-=======================================
+Execution Control
+=================
 
-Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously.  However, for the present time, the following is an example of supported parameters in this list:
+       This section is highly specific to the numerical algorithm details, which
+       will be a sensitive function of the mesh framework, the type of problem 
+       selected, the mode requested for time integration, whether the mesh
+       is dynamically adaptive, and a host of more detailed algorithm and model
+       decisions.  
 
+       The parameter set below represents a fictional calculation and depicts 
+       an organization of the numerical parameters that might be appropriate.       
+       The main ParameterList here is named after a labeled "type" of solve
+       one might like to do.  Had this been an unsteady simulation, many of the
+       linear and nonlinear solver parameters may not be applicable at all.
+
+       It is unclear whether the inputs for this section can or should be orgainized
+       at any finer a level of granularity.
+
+       See the example XML file for a typical set of control parameters.
+
+
+
+Complete Example
+=================
+
+Presented below is a complete example of an Amanzi input file.  It does not exercise all the options provided for in this specification, but rather provides a concrete example of a set of self-consistent definitions
+required to specify a real simulation with Amanzi envisioned functional for the Phase 2 demo deadline.
 
 .. code-block:: xml
 
-  <ParameterList name="Transport">
-    <Parameter name="CFL" type="double" value="0.5"/>   
-    <!-- debug and developers options -->
-    <Parameter name="enable internal tests" type="string" value="no"/>   
-    <Parameter name="internal tests tolerance" type="double" value="1e-6"/>   
-    <Parameter name="verbosity level" type="int" value="0"/>  
-    <Parameter name="maximal time step" type="double" value="10"/>
-    <!-- end of debug and developers options -->
-    
-    <ParameterList name="Transport BCs">
-      <Parameter name="number of BCs" type="int" value="1"/>
-      <ParameterList name="BC 0">
-	<Parameter name="Side set ID" type="int" value="3"/>
-	<Parameter name="Type" type="string" value="Constant"/>
-	<Parameter name="Component 0" type="double" value="1.0"/>
-	<Parameter name="Component 1" type="double" value="0.6"/>
-	<Parameter name="Component 2" type="double" value="0.2"/>
-      </ParameterList>  
-      <ParameterList name="BC 1"> 
-        <Parameter name="Side set ID" type="int" value="50001"/> 
-        <Parameter name="Type" type="string" value="Constant"/> 
-        <Parameter name="Component 0" type="double" value="1.0"/> 
-        <Parameter name="Component 2" type="double" value="1.0e-4"/>     
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-In the Transport sublist the user specifies the following parameters: 
- 
- * "CFL" is the Courant–Friedrichs–Lewy number. It must be strictly bigger than 0 and less or equal to 1. Default value is 1. 
- * "enable internal tests" turns on/off build-in tests. This option is useful for code development; therefore its default value is "no". 
- * "verbosity level" sets up the volume of information printed out by the transport. It must be any non-negative integer. This option is useful for code development; therefore, its default value is 0.
- * "internal tests tolerance" is the relative tolerance for internal tests. This is the developers option. Default value is 1e-6.
- * "maximal time step" overwrites the calculated time step. This is the developers option.  
- 	 
-The boundary conditions sublist consists of a few similar sublists related to boundary side sets. The number of these sublists can be both bigger or smaller than the number of defined side sets. Each of the sublists may contain only a few components. The other components will be automatically set to zero. Note that the boundary conditions have to be set up mathematically only on influx boundaries. If it is not done, the default boundary condition is always zero.   
-
- * "number of BCs" is the total number of boundary conditions (i.e. subsequent sublists). 
- * "Side set ID" is the side set id in the mesh model. 
- * "Type" specifies the boundary condition. At the moment only constant boundary conditions are available. Put a ticket if you need a different type of boundary condition. 
- * "Component X" specified the value of component X on this boundary. 
-
-
-Flow
-=======================================
-
-Note that this section is highly specific to the unstructured mesh options, and to running a Richards model.  The parameter list will need to be completely revamped to more generally control the structured and unstructured options simultaneously. However, for the present time, the following is an example of supported parameters in this list:
-
-.. code-block:: xml
-
-  <ParameterList name="Flow">
-    ...
-  </ParameterList>
-
-
-
-specifies the parameters required by the flow process kernel.  This includes
-numerical solver parameters and the specification of flow boundary conditions.
-This parameter list is required if flow is enabled in the MPC parameter list
-with the "disable Flow_PK" parameter.
-[*This is ugly and ought to be changed to 'enabling'.*]
-
-
-The following parameters must be specified in the  Flow parameter list:
-
-* `"Max Iterations"` (int) defines the maximum number of iterations the
-  flow solver is allowed to take.
-  
-* `"Error Tolerance"` (double) defines the error tolerance to which the
-  flow solver will attempt to solve the flow equation.
-
-* `"Nonlinear Solver"` (string) defines the choice of nonlinear solver when
-  using the Richards flow model.  The valid  choices are `"JFNK"` for
-  Jacobian-free Newton-Krylov and `"NLK"` for the Nonlinear Krylov method.
-  This parameter is unused for the Darcy flow model.
-  
-* `"Preconditioner Update Frequency"` (int) sets how frequently the
-  preconditioner will be recomputed during the iterative nonlinear solve of
-  the Richards flow model.  With the value 1 it will be recomputed every
-  iteration, with 2 every other iteration, and so forth.
-  This parameter is unused for the Darcy flow model.
-
-* `"Flow BC"` (list) defines the boundary conditions for the flow equations.
-  This list consists of 0 or more primitive BC sublists and a parameter that
-  gives the number of sublists to expect.
-  * `"number of BCs"`
-  The number of these conditions that are specified is defined by the parameter named "number of BCs". The boundary condition sublists must be named "BC00", "BC01" and so forth. Each of these boundary condition sublists must contain the following paramters:
-
- * "Type" defines the boundary condition type, allowed values are "Darcy Constant", "Pressure Constant", "Static Head", or "No Flow".
- * "BC value" is the value that should be applied, its interpretation depends on the parameter "Type" above.
- * "Side set ID" is the ID number of the side set in the mesh where the boundary condition should be applied.
-
-The default boundary condition is "No Flow". It is applied to all boundary faces that are in side sets that do not have a corresponding boundary condition sublist.
-
-
-Example
--------
-
-.. code-block:: xml
-
-  <ParameterList name="Flow">
-
-    <Parameter name="Max Iterations" type="int" value="100"/>
-    <Parameter name="Error Tolerance" type="double" value="1.0e-13"/>
-    <Parameter name="Nonlinear Solver" type="string" value="NLK"/>
-    <Parameter name="Preconditioner Update Frequency" type="int" value="1"/>
-    
-    <ParameterList name="Flow BC">
-      <Parameter name="number of BCs" type="int" value="2"/>
-      <ParameterList name="BC00">
-	<Parameter name="Type" type="string" value="Darcy Constant"/>
-	<Parameter name="BC value" type="double" value="-1.0" />
-	<Parameter name="Side set ID" type="int" value="3" />
-      </ParameterList>  
-      <ParameterList name="BC01">
-	<Parameter name="Type" type="string" value="Pressure Constant"/>
-	<Parameter name="BC value" type="double" value="0.0" />
-	<Parameter name="Side set ID" type="int" value="1" />
-      </ParameterList>  
-     </ParameterList>
-  </ParameterList>
-
-
-
-Control
-=======================================
-
-Here's a partial list of additional parameters under the general category of "control".  Most of these are specific to the structured grid option.  This section will require a complete revamp.
-
- * `"maximum time step`"
- * `"maximum simulation time`"
- * `"CFL`"
- * `"initial time step`"
- * `"max step size change fraction`"
- * `"fixed time step size`"
- * `"small time step size cutoff`"
- * `"gravity vector`"
- * `"number of coarse cells across domain`"
- * `"maximum refinement level`"
- * `"refinement ratio between AMR levels`"
- * `"interval between regrid`"
- * `"regrid on restart`"
- * `"grid efficiency`"
- * `"number of error buffer cells`"
- * `"maximum grid size`"
- * `"grid blocking factor`"
- * `"fixed grid file`"
- * `"checkpoint file prefix`"
- * `"checkpoint file interval`"
- * `"restart file`"
- * `"write checkpoint files`"
- * `"number CPUs used to write checkpoint files`"
- * `"plotfile prefix`"
- * `"plotfile interval`"
- * `"write plotfiles`"
- * `"number CPUs used to write checkpoint files`"
- * `"state ids in plotfile`"
- * `"derived variables in plotfile`"
-
-
+       <!--
+          Simple test problem for variably saturated flow, solute transport, spatially-
+          variable properties, and time-dependent boundary conditions. This example
+          could represent a basic setup for a Hanford deep vadose zone problem. 
+          Note, however, that the listed parameter values are not necessarily accurate for
+          such an application. 
+          
+          Submitted by Mark Rockhold and Vicky Freedman, PNNL, September 6, 2011.
+          Rearranged and generalized by Marc Day, 9/9/11, LBNL
+          Futher rearranged and generalized by Marc Day to incorporate ascem-phi comments, 9/16/11, LBNL
+         -->
+       <ParameterList name="Main">  
+       
+         <Parameter name="Amanzi input format version" type="string" value="1.0.0"/>
+       
+         <ParameterList name="Documentation">
+           <Parameter name="Model Name" type="string" value="Steady Richards"/>
+           <Parameter name="Description" type="string" value="BC Cribs" />
+         </ParameterList>
+       
+         <ParameterList name="Mesh">
+           <ParameterList name="STK::mesh">
+             <Parameter name="File" type="string" value="mesh.par" />
+           </ParameterList>
+         </ParameterList>
+         
+         <!-- Region Definitions -->
+         <ParameterList name="Regions">    
+           <ParameterList name="Ringold Region">
+             <ParameterList name="Block">
+               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0"/>
+               <Parameter name="High Coordinate" type="Array double" value="{100.0, 100.0, 20.0}"/>
+             </ParameterList>
+           </ParameterList>
+           
+           <ParameterList name="Caliche Region">
+             <ParameterList name="Block">
+               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 20.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{100.0, 100.0, 25.0}"/>
+             </ParameterList>
+           </ParameterList>
+           
+           <ParameterList name="Hanford Region">
+             <ParameterList name="Block">
+               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 25.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{100.0, 100.0, 100.0}"/>
+             </ParameterList>
+           </ParameterList>
+           
+           <ParameterList name="Top Surface region">
+             <ParameterList name="Coordinate Plane">
+               <Parameter name="Coordinate Direction" type="string" value="Z"/>
+               <Parameter name="Coordinate Location" type="double" value="100.0"/>
+             </ParameterList>
+           </ParameterList>
+           
+           <ParameterList name="Bottom Surface Region">
+             <ParameterList name="Coordinate Plane">
+               <Parameter name="Coordinate Direction" type="string" value="Z"/>
+               <Parameter name="Coordinate Location" type="double" value="0.0"/>
+             </ParameterList>
+           </ParameterList>
+           
+           <ParameterList name="Crib 1 Region">
+             <ParameterList name="Block">
+               <Parameter name="Low Coordinate" type="Array double" value="{20.0, 20.0, 97.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{23.0, 23.0, 100.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Crib 2 Region">
+             <ParameterList name="Block">
+               <Parameter name="Low Coordiante" type="Array double" value="{40.0, 40.0, 97.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{43.0, 43.0, 100.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Sample Point Region">
+             <ParameterList name="point">
+               <Parameter name="Coord" type="Array double" value="{50.0, 50.0, 0.0}"/>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList> <!-- End of Region Definitions -->
+       
+       
+         <ParameterList name="Soil Properties">
+       
+           <ParameterList name="Ringold Material">
+             <Parameter name="Assigned Regions" type="Array string" value="{Ringold Region}" />
+             <ParameterList name="Porosity: Uniform">
+               <Parameter name="Porosity" type="double" value="0.38" />
+               <Parameter name="Porosity Units" type="string" value="Null" />
+             </ParameterList>
+             <ParameterList name="Intrinsic Permeability: Uniform">
+               <Parameter name="Intrinsic Permeability" type="double" value="200" />
+               <Parameter name="Intrinsic Permeability units" type="string" value="mD" />
+             </ParameterList>
+             <Parameter name="Intrinsic Permeability Anisotropy" type="Array double" value="{1., 1., 0.1}" />      
+             <ParameterList name="Relative Permeability: Mualem">
+               <Parameter name="Pore Interaction Term ???" type="Array double" value="{0.5, 0.5, 0.5}" />
+               <Parameter name="Pore Interaction Term ??? Units" type="Array string" value="{Null, Null, Null}" />
+             </ParameterList>
+             <ParameterList name="Capillary Pressure: vG">
+               <Parameter name="vG_alpha_n_Sr" type="Array double" value="{0.03, 2.7, 0.0234}" />
+               <Parameter name="vG alpha units" type="Array string" value="{cm^-1, Null,  Null}" />
+             </ParameterList>      
+             <ParameterList name="Dispersivity: Uniform">
+               <Parameter name="Dispersivity" type="double" value="0.5" />
+               <Parameter name="Dispersivity units" type="string" value="cm"/>
+             </ParameterList>    
+             <Parameter name="Dispersivity Anisotropy" type="Array double" value="{10., 10., 1.0}" />
+           </ParameterList>
+           
+           <ParameterList name="Caliche Material">
+             <Parameter name="Assigned Regions" type="Array string" value="{Caliche Region}" />
+             <ParameterList name="Porosity: Uniform">
+               <Parameter name="Porosity" type="double" value="0.40" />
+             </ParameterList>
+             <ParameterList name="Intrinsic Permeability: Uniform">
+               <Parameter name="Intrinsic Permeability" type="double" value="500" />
+               <Parameter name="Intrinsic Permeability units" type="string" value="mD" />
+             </ParameterList>      
+             <Parameter name="Intrinsic Permeability Anisotropy" type="Array double" value="{1., 1., 0.1}" />
+             <ParameterList name="Relative Permeability: vG">
+               <Parameter name="Pore Interaction Term ???" type="Array double" value="{0.5, 0.5, 0.5}" />
+               <Parameter name="Pore Interaction Term ??? Units" type="Array string" value="{}" />
+             </ParameterList>
+             <ParameterList name="Capillary Pressure: vG">
+               <Parameter name="vG_alpha_n_Sr" type="Array double" value="{0.03, 2.7, 0.0234}" />
+               <Parameter name="vG alpha units" type="Array string" value="{cm^-1, Null, Null}" />
+             </ParameterList>
+             <ParameterList name="Dispersivity: Uniform">
+               <Parameter name="Dispersivity" type="double" value="0.5" />
+               <Parameter name="Dispersivity units" type="string" value="cm"/>
+             </ParameterList>    
+             <Parameter name="Dispersivity Anisotropy" type="Array double" value="{10., 10., 1.0}" />
+           </ParameterList>
+       
+           <ParameterList name="Hanford Material">
+             <Parameter name="Assigned Regions" type="Array string" value="{Hanford Region}" />
+             <Parameter name="Particle Density" type="double" value="2.65" />
+             <Parameter name="Particle Density Units" type="string" value="g cm^-3"/>
+             <ParameterList name="Porosity: Uniform">
+               <Parameter name="Porosity" type="double" value="0.25" />
+             </ParameterList>
+             <Parameter name="Compressibility" type="double" value="1.e-6" />
+             <Parameter name="Compressibility units" type="string" value="psi" />
+             <ParameterList name="Intrinsic Permeability: Uniform">
+               <Parameter name="Intrinsic Permeability" type="double" value="500" />
+               <Parameter name="Intrinsic Permeability units" type="string" value="mD" />
+             </ParameterList>      
+             <Parameter name="Intrinsic Permeability Anisotropy" type="Array double" value="{1., 1., 0.1}" />
+             <ParameterList name="Relative Permeability: Mualem">
+               <Parameter name="Pore Interaction Term ???" type="Array double" value="{0.5, 0.5, 0.5}" />
+               <Parameter name="Pore Interaction Term ??? Units" type="Array string" value="{}" />
+             </ParameterList>
+             <ParameterList name="Capillary Pressure: vG">
+               <Parameter name="vG_alpha_n_Sr" type="Array double" value="{0.03 2.7 0.0234}" />
+               <Parameter name="vG alpha units" type="Array string" value="{cm^-1, Null, Null}" />
+             </ParameterList>
+             <ParameterList name="Dispersivity: Uniform">
+               <Parameter name="Dispersivity" type="double" value="0.5" />
+               <Parameter name="Dispersivity units" type="string" value="cm"/>
+             </ParameterList>    
+             <Parameter name="Dispersivity Anisotropy" type="Array double" value="{10., 10., 1.0}" />
+           </ParameterList>
+       
+         </ParameterList> <!-- End of soil specification -->
+         
+         <ParameterList name="Phase Definitions" >
+           
+           <!-- Definitions for Aqueous Phase -->
+           <ParameterList name="Aqueous" >
+       
+             <!-- Definitions for Aqueous Phase Properties -->
+             <ParameterList name="Phase Properties" >
+               <ParameterList name="Viscosity: Uniform">
+                 <Parameter name="Viscosity" type="double" value="0.01" />
+                 <Parameter name="Viscosity Units" type="string" value="g cm^-1 s^-1" />
+               </ParameterList>        
+               <ParameterList name="Density: Uniform">
+                 <Parameter name="Density" type="double" value="0.998" />
+                 <Parameter name="Density Units" type="double" value="g cm^-3" />
+               </ParameterList>        
+             </ParameterList> <!-- End of Definitions for Aqueous Phase Properties -->
+               
+             <!-- Definitions for Aqueous Phase -->
+             <ParameterList name="Phase Components" >
+               
+               <!-- Definitions for Aqueous Water + solutes -->
+               <ParameterList name="Aqueous Water">        
+       
+                 <ParameterList name="Solute Properties">        
+                   <ParameterList name="Sodium-nitrate">
+                     <ParameterList name="Diffusion Coefficient: Uniform">
+                       <Parameter name="Diffusion Coefficient" type="double" value="1.57e-9" />
+                       <Parameter name="Diffusion Coefficient Units" type="string" value="m^2 s^-1" />
+                     </ParameterList>
+                   </ParameterList>
+                   
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="Diffusion Coefficient: Uniform">
+                       <Parameter name="Diffusion Coefficient" type="double" value="2.e-9" />
+                       <Parameter name="Diffusion Coefficient Units" type="string" value="m^2 s^-1" />
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList> <!-- End of Aqueous Phase Water Solute Properties definitions -->
+                 
+                 <!-- Initial Conditions for Aqueous Water + solutes -->
+                 <ParameterList name="Component Initial Conditions">
+                   <ParameterList name="All">
+                     <!--
+                        <ParameterList name="Initial Condition: Steady Richards">
+                          <Parameter name="Water Table Height" type="double" value="0." />          
+                          <Parameter name="Water Table Height Units" type="string" value="m" />          
+                          <Parameter name="Water Pressure" type="double" value="0." />          
+                          <Parameter name="Water Pressure Units" type="string" value="m" />          
+                          <Parameter name="Water Pressure Location" type="double" value="0." />          
+                          <Parameter name="Water Pressure Location Units" type="string" value="m" />          
+                        </ParameterList>          
+                        -->
+                     <ParameterList name="Initial Condition: Linear">
+                       <Parameter name="Saturation" type="double" value="0.5" />
+                       <Parameter name="Reference Coordinate" type="Array double" value="{500, 1000, 97}" />
+                       <Parameter name="Reference Coordinate Units" type="Array string" value="{m, m, m}"/>
+                       <Parameter name="Gradient Value" type="Array double" value="{0, 0, -9793.5192}" />
+                       <Parameter name="Gradient Value Units" type="Array double" value="{1/m, 1/m, 1/m}" />
+                     </ParameterList>          
+                     <ParameterList name="Solute Initial Conditions">        
+                       <ParameterList name="Sodium-Nitrate">
+                         <ParameterList name="Initial Condition: Uniform">
+                           <Parameter name="Molar Concentration" type="double" value="0.0" />
+                           <Parameter name="Molar Concentration Units" type="string" value="mol/L" />
+                         </ParameterList>
+                       </ParameterList>
+                       <ParameterList name="Tc-99">
+                         <ParameterList name="Initial Condition: Uniform">
+                           <Parameter name="Molal Concentration" type="double" value="0.0" />
+                           <Parameter name="Molal Concentration Units" type="string" value="mol/L_water" />
+                         </ParameterList>
+                       </ParameterList>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList> <!-- End of Initial Conditions for Aqueous Water + solutes --> 
+                 
+                 
+                 <!-- Boundary Conditions for Aqueous Water + solutes -->
+                 <ParameterList name="Component Boundary Conditions">
+                   
+                   <!-- Note: BC must specify (1) Darcy flux or pressure, and saturation, -->
+                   <!-- (2) Hydrostatic + water table, (3) impermeable, (4) outflow -->
+                   <!-- ...plus, requires solute concentrations, unless outflow -->
+                   <!-- Also: Time functions assume piecewise constant, unless specified linear -->
+                   <ParameterList name="Top Region">
+                     <ParameterList name="BC: Flux">
+                       <Parameter name="Times" type="Array double" value="{0, 100, 1000}" />
+                       <Parameter name="Time function" type="string" value="Piecewise Linear" />
+                       <Parameter name="time units" type="Array string" value="{s, yr, yr}" />
+                       <Parameter name="Integrated Volumetric Flux" type="Array double" value="{-500, -100, -50}" />
+                       <Parameter name="Integrated Volumetric Flux Units" type="Array string" value="{mm/yr,  mm/yr,  mm/yr}" />
+                       
+                       <ParameterList name="Solute Boundary Conditions">
+                         <ParameterList name="Sodium Nitrate">
+                           <Parameter name="Times" type="Array double" value="{0.0, 50.0, 100.0}" />
+                           <Parameter name="Times units" type="Array string" value="{s, yr, yr}" />
+                           <Parameter name="Molar Concentration" type="Array double" value="{0.0, 5.0e-03, 1.0e-01}" />
+                           <Parameter name="Molar Concentration Units" type="Array string" value="{mol/L, mol/L, mol/L}" />
+                         </ParameterList>
+                         <ParameterList name="Tc-99">
+                           <Parameter name="Times" type="Array double" value="{0.0, 50.0, 100.0}" />
+                           <Parameter name="Times units" type="Array string" value="{s, yr, yr}" />
+                           <Parameter name="Molar Concentration" type="Array double" value="{0.0, 5.0e-03, 1.0e-01}" />
+                           <Parameter name="Molar Concentration Units" type="Array string" value="{mol/L, mol/L, mol/L}" />
+                         </ParameterList>
+                       </ParameterList>
+                     </ParameterList>
+                   </ParameterList>
+                   
+                   <ParameterList name="Bottom Region">
+                     <ParameterList name="BC: Dirichlet Pressure">
+                       <Parameter name="Times" type="Array double" value="{0.0}" />
+                       <Parameter name="Time units" type="Array string" value="{s}" />
+                       <Parameter name="Value" type="Array double" value="{101325}" />
+                       <Parameter name="Pressure Units" type="Array string" value="{Pa}" />
+                     </ParameterList>
+                     <ParameterList name="BC: Dirichlet Saturation">
+                       <Parameter name="Times" type="Array double" value="{0.0}" />
+                       <Parameter name="Time units" type="Array string" value="{s}" />
+                       <Parameter name="Value" type="Array double" value="{1.}" />
+                     </ParameterList>
+                     <ParameterList name="Solute Boundary Conditions">
+                       <ParameterList name="BC: Outflow">
+                         <Parameter name="Times" type="Array double" value="{0.0}" />
+                         <Parameter name="Time Units" type="Array string" value="s" />
+                       </ParameterList>
+                     </ParameterList>
+                   </ParameterList>
+                   
+                 </ParameterList>    <!-- End of Boundary Conditions for Aqueous Water + solutes -->
+                 
+                 
+                 <!-- Sources for Aqueous Water + solutes -->
+                 <ParameterList name="Component Sources">
+                   
+                   <ParameterList name="Crib 1 Region">
+                     <ParameterList name="Source: Volumetric Rate">
+                       <Parameter name="Times" type="Array double" value="{0.0, 0.25}" />
+                       <Parameter name="Times Units" type="Array string" value="{s, yr}" />
+                       <Parameter name="Value" type="Array double" value="{0.35, 0.35}" />
+                       <Parameter name="Value Units" type="Array string" value="{m^3/d,  m^3/d}" />
+                     </ParameterList>
+                     <ParameterList name="Solute Sources">
+                       <ParameterList name="Sodium Nitrate">
+                         <ParameterList name="Source: Mass Rate">
+                           <Parameter name="Times" type="Array double" value="{0.0, 0.25}" />
+                           <Parameter name="Time Units" type="Array string" value="{yr, yr}" />
+                           <Parameter name="Value" type="Array double" value="{0.2, 0.2}" />
+                           <Parameter name="Value Units" type="Array string" value="{kg/d,  kg/d}" />
+                         </ParameterList>
+                       </ParameterList>
+                     </ParameterList>
+                   </ParameterList>
+                   
+                   <ParameterList name="Crib 2 Region">
+                     <ParameterList name="Source: Volumetric">
+                       <Parameter name="Times" type="Array double" value="{0.0, 0.25}" />
+                       <Parameter name="Times Units" type="Array string" value="{s, yr}" />
+                       <Parameter name="Value" type="Array double" value="{0.35, 0.35}" />
+                       <Parameter name="Value Units" type="Array string" value="{m^3/d, m^3/d}" />
+                     </ParameterList>
+                     
+                     <ParameterList name="Solute Sources">
+                       <ParameterList name="Sodium Nitrate">
+                         <ParameterList name="Source: Mass Rate">
+                           <Parameter name="Times" type="Array double" value="{0.0, 0.25}" />
+                           <Parameter name="Times Units" type="Array string" value="{yr, yr}" />
+                           <Parameter name="Value" type="Array double" value="{0.2, 0.2}" />
+                           <Parameter name="Value Units" type="Array string" value="{kg/d, kg/d}" />
+                         </ParameterList>
+                       </ParameterList>
+                     </ParameterList>
+                   </ParameterList>
+                   
+                 </ParameterList> <!-- End of Sources for Aqueous Water + solutes -->
+                 
+               </ParameterList> <!-- End of Definitions for Aqueous Water + solutes -->
+       
+             </ParameterList> <!-- End of aqueous components definitions -->
+             <!--
+                <ParameterList name="...some other aqueous component">
+                </ParameterList>
+                -->
+       
+           </ParameterList> <!-- End of Definitions for Aqueous Phase -->
+       
+           <!--
+              <ParameterList name="...some other phase">
+              </ParameterList>
+              -->
+           
+           <!-- NOTE: if the same component is multiple phases, requires specify mass transfer/phase eqm model -->
+           
+           <!-- May want to define profiles for immobile species in the soil matrix, though not sure if -->
+           <!-- it should go here or in the soil definition
+           
+                <ParameterList name="Immobile Solutes">
+                  <ParameterList name="Initial Conditions">
+                    <ParameterList name="All">
+                      <ParameterList name="Solutes">        
+                        <ParameterList name="Quartz">
+                          <ParameterList name="Initial Condition: Uniform">
+                            <Parameter name="Molar Concentration" type="double" value="1.e-5" />
+                            <Parameter name="Molar Concentration Units" type="string" value="mol/L" />
+                          </ParameterList>
+                        </ParameterList>
+                        <ParameterList name="Kaolinite">
+                          <ParameterList name="Initial Condition: Uniform">
+                            <Parameter name="Molal Concentration" type="double" value="1.e-3" />
+                            <Parameter name="Molal Concentration Units" type="string" value="mol/L_water" />
+                          </ParameterList>
+                        </ParameterList>
+                      </ParameterList>
+                    </ParameterList>
+                  </ParameterList>
+                </ParameterList>       
+       
+                -->    
+         </ParameterList> <!-- End of Phase Definitions -->
+         
+         <!-- Definitions for Output -->
+         <ParameterList name="Output">
+                  
+           <!-- Definitions for Observations -->
+           <ParameterList name="Observations">
+             <ParameterList name="Observation 1: Volume Integrals">        
+               <Parameter name="Region" type="string" value="all"/>
+               <ParameterList name="Times">
+                 <Parameter name="Times" type="Array double"       value="{0.0, 0.5,  1.0,  10.0,  50.0, 100.0}" />
+                 <Parameter name="Times Units" type="Array string" value="{  d,   d,    d,     d,     d,     d}" />
+               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation: Volume Integral"/>
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+               <Parameter name="Include Solutes" type="bool" value="True"/>
+             </ParameterList>
+             
+             <ParameterList name="Observation 2: Point Samples">
+               <Parameter name="Region" type="string" value="Sample Point"/>
+               <ParameterList name="Cycles">
+                 <Parameter name="Cycle Frequency" type="integer" value="5" />
+                 <Parameter name="Start Cycle" type="integer" value="15" />
+                 <Parameter name="End Cycle" type="integer" value="150" />
+               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation: Point Sample"/>
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+               <Parameter name="Include Solutes" type="bool" value="True"/>
+             </ParameterList>
+             
+             <ParameterList name="Observation 3: Flux Integrals">
+               <Parameter name="Region" type="string" value="Bottom Surface"/>
+               <ParameterList name="Sample Times">
+                 <Parameter name="Cycle Frequency" type="integer" value="5" />
+                 <Parameter name="Cycle Start" type="integer" value="15" />
+                 <Parameter name="Cycle End" type="integer" value="150" />
+               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation: Mass Flux Integral"/>
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+               <Parameter name="Include Solutes" type="bool" value="False"/>
+             </ParameterList>
+           </ParameterList> <!-- End of Definitions for Observations -->
+           
+           <!-- Definitions for Checkpoints -->
+           <ParameterList name="Checkpoint Data">
+             <Parameter name="File Base Name" type="string" value="dump-" />
+             <ParameterList name="Cycle Data">
+               <Parameter name="Start" type="int" value="0"/>
+               <Parameter name="End" type="int" value="500000"/>
+               <Parameter name="Interval" type="int" value="5"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <!-- Definitions for Visualization -->
+           <ParameterList name="Visualization Data">
+             <Parameter name="File Base Name" type="string" value="viz-" />
+             <ParameterList name="Cycle Data">
+               <Parameter name="Start" type="int" value="0"/>
+               <Parameter name="End" type="int" value="500000"/>
+               <Parameter name="Interval" type="int" value="5"/>
+             </ParameterList>
+           </ParameterList>
+       
+         </ParameterList>  <!-- End of Definitions for Output -->
+       
+       
+         <ParameterList name="Execution control">
+       
+           <!--
+              This section is highly specific to the numerical algorithm details, which
+              will be a sensitive function of the mesh framework, the type of problem 
+              selected, the mode requested for time integration, whether the mesh
+              is dynamically adaptive, and a host of more detailed algorithm and model
+              decisions.  
+       
+              The parameter set below represents a fictional calculation and depicts 
+              an organization of the numerical parameters that might be appropriate.       
+              The main ParameterList here is named after a labeled "type" of solve
+              one might like to do.  Had this been an unsteady simulation, many of the
+              linear and nonlinear solver parameters may not be applicable at all.
+       
+              It is unclear whether the inputs for this section can or should be orgainized
+              at any finer a level of granularity.
+       
+              -->
+           <ParameterList name="Amanzi Custom Steady Unstructured Flow Solver">
+       
+             <Parameter name="Simulation Start Time" type="double" value="0" />
+             <Parameter name="Simulation End Time" type="double" value="3e7" />
+             <Parameter name="Initial Delta-t" type="double" value="1.e-7" />
+             
+             <Parameter name="Max iterations" type="int" value="500" />
+             <Parameter name="Relative or Absolute Tolerance" type="string" value="rel"/>
+             <Parameter name="Tolerance" type="double" value="1.e-6"/>
+             <Parameter name="Solver" type="string" value="Bi-CGSTAB" />
+             <Parameter name="Preconditioner" type="string" value="ILU" />
+             
+             <ParameterList name="ODE Integrator">
+               <Parameter name="Nonlinear Solver Max Iterations" type="int" value="5"/>
+       	<Parameter name="Nonlinear Solver Tolerance" type="double" value="0.05"/>
+               <Parameter name="NKA Max vectors" type="int" value="5"/>
+       	<Parameter name="NKA Drop Tolerance" type="double" value="5.0e-2"/>
+       	<Parameter name="Maximum Number of BDF Tries" type="int" value="50"/>
+               <ParameterList name="Verbosit">
+       	  <Parameter name="Value" type="string" value="Medium"/>
+       	</ParameterList>
+             </ParameterList>	
+             
+             <ParameterList name="Diffusion Preconditioner">
+       	<ParameterList name="ML Parameters">
+       	  <Parameter name="ML output" type="int" value="0"/>
+         	  <Parameter name="max levels" type="int" value="40"/>
+       	  <Parameter name="prec type" type="string" value="MGW"/>
+       	  <Parameter name="cycle applications" type="int" value="5"/>
+       	  <Parameter name="aggregation: type" type="string" value="Uncoupled"/> 
+       	  <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
+       	  <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+       	  <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+       	  <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+       	  <Parameter name="eigen-analysis: iterations" type="int" value="30"/>
+       	  <Parameter name="smoother: sweeps" type="int" value="5"/>
+       	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+       	  <Parameter name="smoother: pre or post" type="string" value="both"/>
+       	  <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+       	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+       	  <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+                 <Parameter name="coarse: max size" type="int" value="100"/>	   
+                 <Parameter name="coarse: damping factor" type="double" value="1.0"/>	   
+       	</ParameterList>
+             </ParameterList>
+           </ParameterList>	
+       
+         </ParameterList>	
+       
+       
+           <!-- <ParameterList name="Structured"> -->
+           <!-- Mesh-framework/model-ID - specific numerical control parameters -->
+           <!--   <ParameterList name="Time Step control">
+                      <Parameter name="cfl" type="string" value="0.8"/>
+                      <Parameter name="init_shrink" type="string" value="1"/>
+                      <Parameter name="Verbosity" type="string" value="3"/>
+                  </ParameterList>
+       
+                  <ParameterList name="AMR">
+                    <Parameter name="blocking_factor" type="string" value="16"/>
+                    <Parameter name="derive_plot_vars" type="string" value="gradpx gradpy gradn"/>
+                    <Parameter name="grid_eff" type="string" value="0.75"/>
+                    <Parameter name="max_grid_size" type="string" value="64"/>
+                    <Parameter name="max_level" type="string" value="0"/>
+                    <Parameter name="n_cell" type="string" value="64 64"/>
+                    <Parameter name="n_error_buf" type="string" value="2 2 2"/>
+                    <Parameter name="plot_file" type="string" value="temp/plt"/>
+                    <Parameter name="plot_int" type="string" value="1"/>
+                    <Parameter name="probin_file" type="string" value="probin"/>
+                    <Parameter name="ref_ratio" type="string" value="2 2"/>
+                    <Parameter name="regrid_int" type="string" value="2"/>
+                  </ParameterList>
+       
+                  <ParameterList name="Solver Controls">
+                    <ParameterList name="diffuse">
+                      <Parameter name="Verbosity" type="string" value="2"/>
+                      <Parameter name="diff_abs_tol" type="string" value="1.e-14"/>
+                      <Parameter name="diff_tol" type="string" value="1.e-12"/>
+                    </ParameterList>
+                    <ParameterList name="mac">
+                      <Parameter name="Verbosity" type="string" value="3"/>
+                      <Parameter name="mac_abs_tol" type="string" value="1.e-14"/>
+                      <Parameter name="mac_sync_tol" type="string" value="1.e-12"/>
+                      <Parameter name="mac_tol" type="string" value="1.e-12"/>
+                    </ParameterList>
+                    <ParameterList name="mg">
+                      <Parameter name="cg_solver" type="string" value="1"/>
+                      <Parameter name="maxiter" type="string" value="100"/>
+                      <Parameter name="smooth_on_cg_unstable" type="string" value="1"/>
+                      <Parameter name="Verbosity" type="string" value="1"/>
+                    </ParameterList>
+                    <ParameterList name="cg">
+                      <Parameter name="unstable_criterion" type="string" value="100"/>
+                      <Parameter name="use_jacobi_precond" type="string" value="1"/>
+                      <Parameter name="Verbosity" type="string" value="0"/>
+                    </ParameterList>
+                  </ParameterList>           
+         </ParameterList>  -->
+           -->      
+       
+       
+       
+       </ParameterList>
