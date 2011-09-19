@@ -218,6 +218,7 @@ if ( EXISTS ${tpl_config_file} )
 endif()  
 create_tpl_export_file(${tpl_config_file}
                        PACKAGES ${AMANZI_ENABLED_TPLS})
+install(FILES ${tpl_config_file} DESTINATION lib)				   
 
 # Write the export Makefile and add to the include install list
 set(in_makefile  "${AMANZI_MODULE_PATH}/MakefileConfig.export.in")
