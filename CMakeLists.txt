@@ -75,9 +75,7 @@ add_subdirectory(src)
 get_property(AMANZI_ENABLED_TPLS GLOBAL PROPERTY PACKAGES_FOUND)
 
 # Make the exports only _after_ doing the build
-message(STATUS "Before create_exports")
 create_exports()
-message(STATUS "After create_exports")
 
 option(ENABLE_Config_Report "Print out detailed information at the end of a configuration")
 set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
