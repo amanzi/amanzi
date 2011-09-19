@@ -84,6 +84,8 @@ endfunction( ADD_INSTALL_BINARY )
 #
 function( CREATE_TPL_EXPORT_FILE )
 
+  message(STATUS "Entering CREATE_TPL_EXPORT_FILE")
+
   # Print the usage
   macro( _print_usage )
     message("\nUsage: create_tpl_export_file( outfile PACKAGES <package list> | package1 package2 ... )\n")
@@ -110,6 +112,7 @@ function( CREATE_TPL_EXPORT_FILE )
 
   # Write the header for the file
   macro(_write_header)
+  message(STATUS "Write header file ${BUILD_TPL_OUTFILE}")
 
     file(WRITE ${BUILD_TPL_OUTFILE} "# ############################################################################ #\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "#\n")
@@ -131,6 +134,9 @@ function( CREATE_TPL_EXPORT_FILE )
 
   # Add package to the file
   macro( _add_package _package )
+    message(STATUS "Entering _add_package")
+	
+	  print_variable(_package)
 
     file(APPEND ${BUILD_TPL_OUTFILE} "\n#\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# TPL: ${_package}\n")
@@ -172,7 +178,9 @@ function( CREATE_TPL_EXPORT_FILE )
   foreach(_package IN LISTS BUILD_TPL_PACKAGES)
     #print_variable(_package)
     _add_package(${_package}) 
-  endforeach()  
+  endforeach() 
+
+  message(STATUS "Leaving create_tpl_export_file") 
 
 endfunction ( CREATE_TPL_EXPORT_FILE )
 
@@ -186,6 +194,8 @@ endfunction ( CREATE_TPL_EXPORT_FILE )
 function (CREATE_EXPORTS)
 
 # Template file located in the CMake module directory
+
+message(STATUS "Entering create_exports")
 
 # Find the packages found for Amanzi
 get_property(AMANZI_TPL_LIST GLOBAL PROPERTY PACKAGES_FOUND)
@@ -202,6 +212,7 @@ install(FILES ${AMANZI_LINK_LINE_FILE} DESTINATION lib)
 
 # Write the TPL file
 set(tpl_config_file "${AMANZI_BINARY_DIR}/AmanziConfigTPL.cmake")
+print_variable(tpl_config_file)
 if ( EXISTS ${tpl_config_file} )
   file(REMOVE ${tpl_config_file})
 endif()  
