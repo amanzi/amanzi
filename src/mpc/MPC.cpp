@@ -145,11 +145,11 @@ void MPC::mpc_init()
 
 
    // create the restart object
-   if (parameter_list.isSublist("Restart"))
+   if (parameter_list.isSublist("Checkpoint Data"))
      {
        
        Teuchos::ParameterList restart_parameter_list = 
-	 parameter_list.sublist("Restart");
+	 parameter_list.sublist("Checkpoint Data");
        restart = new Amanzi::Restart(restart_parameter_list, comm);
      }
    else
