@@ -23,15 +23,18 @@ namespace Amanzi {
 
   private:    
     std::string filebasename; 
+    int filenamedigits;
+
     Teuchos::ParameterList plist;
     
     int restart_cycle;
     int number_of_cycle_intervals;
 
-    std::vector<int> cycle_freq;
-
-    std::vector<int> cycle_start;
-    std::vector<int> cycle_end;
+    int interval;
+    int start;
+    int end;
+    
+    Teuchos::Array<int> steps;
 
     Amanzi::HDF5_MPI *restart_output; 
 

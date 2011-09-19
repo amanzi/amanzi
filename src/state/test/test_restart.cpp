@@ -1,6 +1,7 @@
 #include "UnitTest++.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "State.hpp"
@@ -10,27 +11,19 @@
 
 SUITE(RESTART) {
 
-  TEST(RESTART_DUMP_REQUIRED) {
+  TEST(RESTART_DUMP_REQUIRED_INTERVAL) {
     
     Teuchos::ParameterList plist;
 
-    plist.set<string>("file base name","restartdump");
+    plist.set<string>("File Name Base","restartdump");
 
-    Teuchos::ParameterList& i3 = plist.sublist("Interval 1");
-    Teuchos::ParameterList& i3_ = i3.sublist("cycle range");
+    Teuchos::ParameterList& i3_ = plist.sublist("Cycle Data");
     
-    i3_.set<int>("start cycle",0);
-    i3_.set<int>("end cycle",10);
-    i3_.set<int>("cycle frequency",3);
+    i3_.set<int>("Start",0);
+    i3_.set<int>("End",10);
+    i3_.set<int>("Interval",3);
+    
 
-    Teuchos::ParameterList& i4 = plist.sublist("Interval 2");
-    Teuchos::ParameterList& i4_ = i4.sublist("cycle range");
-    
-    i4_.set<int>("start cycle",15);
-    i4_.set<int>("end cycle",30);
-    i4_.set<int>("cycle frequency",10);
-   
-    
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Restart R(plist, &comm);
 
@@ -39,8 +32,71 @@ SUITE(RESTART) {
     // we store the computed result in cycles
     
     int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-                        0, 0, 0, 0,
-                        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0  };
+                        0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
+    int cycles [31];
+    for (int ic = 0; ic<=30; ic++)
+      {
+  	cycles[ic] = R.dump_requested(ic);
+      }
+    CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
+
+  }
+
+  TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED1) {
+    
+    Teuchos::ParameterList plist;
+
+    plist.set<string>("File Name Base","restartdump");
+
+    Teuchos::ParameterList& i3_ = plist.sublist("Cycle Data");
+    
+    i3_.set<int>("Start",0);
+    i3_.set<int>("End",-1);
+    i3_.set<int>("Interval",3);
+    
+
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Amanzi::Restart R(plist, &comm);
+
+    
+    // test the cycle stuff, the expected result is in cycles_ and 
+    // we store the computed result in cycles
+    
+    int cycles_[31] = { 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 
+                        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1  };
+    int cycles [31];
+    for (int ic = 0; ic<=30; ic++)
+      {
+  	cycles[ic] = R.dump_requested(ic);
+      }
+    CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
+
+  }
+
+
+  TEST(RESTART_DUMP_REQUIRED_INTERVAL_OPENENDED2) {
+    
+    Teuchos::ParameterList plist;
+
+    plist.set<string>("File Name Base","restartdump");
+
+    Teuchos::ParameterList& i3_ = plist.sublist("Cycle Data");
+    
+    i3_.set<int>("Start",5);
+    i3_.set<int>("End",-1);
+    i3_.set<int>("Interval",3);
+    
+
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Amanzi::Restart R(plist, &comm);
+
+    
+    // test the cycle stuff, the expected result is in cycles_ and 
+    // we store the computed result in cycles
+    
+    int cycles_[31] = { 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 
+                        0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0  };
     int cycles [31];
     for (int ic = 0; ic<=30; ic++)
       {
@@ -52,16 +108,57 @@ SUITE(RESTART) {
 
 
 
+  TEST(RESTART_DUMP_REQUIRED_STEPS) {
+    
+    Teuchos::ParameterList plist;
+
+    plist.set<string>("File Name Base","restartdump");
+
+    Teuchos::ParameterList& i3_ = plist.sublist("Cycle Data");
+    
+    i3_.set<int>("Start",0);
+    i3_.set<int>("End",10);
+    i3_.set<int>("Interval",3);
+    
+    Teuchos::Array<int> steps(3);
+    steps[0] = 2;
+    steps[1] = 3;
+    steps[2] = 4;
+    i3_.set<Teuchos::Array<int> >("Steps",steps);
+    
+
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    Amanzi::Restart R(plist, &comm);
+
+    
+    // test the cycle stuff, the expected result is in cycles_ and 
+    // we store the computed result in cycles
+    
+    int cycles_[31] = { 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  };
+    int cycles [31];
+    for (int ic = 0; ic<=30; ic++)
+      {
+  	cycles[ic] = R.dump_requested(ic);
+      }
+    CHECK_ARRAY_EQUAL(cycles_, cycles, 31);
+
+  }
+
+
+
+
   TEST(DUMP_DATA) 
   {
     Teuchos::ParameterList plist;
-    plist.set<string>("file base name","restart_dump");
-    Teuchos::ParameterList& i1 = plist.sublist("Interval 1");
-    Teuchos::ParameterList& i1_ = i1.sublist("cycle range");
+    plist.set<string>("File Name Base","restart_dump");
+    plist.set<int>("File Name Digits",4);
+    Teuchos::ParameterList& i1_ = plist.sublist("Cycle Data");
     
-    i1_.set<int>("start cycle",0);
-    i1_.set<int>("end cycle",10);
-    i1_.set<int>("cycle frequency",1);
+    i1_.set<int>("Start",0);
+    i1_.set<int>("End",10);
+    i1_.set<int>("Interval",1);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Restart R(plist, &comm);   
@@ -70,7 +167,7 @@ SUITE(RESTART) {
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> Mesh
       = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, &comm));
 
-    R.create_files(); 
+    // R.create_file(); 
 
     // create a state object with some data in it
     int number_of_components = 2;
@@ -153,7 +250,7 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	CHECK_EQUAL((*S0.get_darcy_flux())[i],(*S1.get_darcy_flux())[i]);
+  	CHECK_EQUAL((*S0.get_darcy_flux())[i],(*S1.get_darcy_flux())[i]);
       }
 
 
@@ -163,7 +260,7 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	CHECK_EQUAL((*S0.get_water_saturation())[i],(*S1.get_water_saturation())[i]);
+  	CHECK_EQUAL((*S0.get_water_saturation())[i],(*S1.get_water_saturation())[i]);
       }    
 
     
@@ -173,7 +270,7 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	CHECK_EQUAL((*S0.get_water_density())[i],(*S1.get_water_density())[i]);
+  	CHECK_EQUAL((*S0.get_water_density())[i],(*S1.get_water_density())[i]);
       }    
     
     s0_size = S0.get_pressure()->MyLength();
@@ -182,7 +279,7 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	CHECK_EQUAL((*S0.get_pressure())[i],(*S1.get_pressure())[i]);
+  	CHECK_EQUAL((*S0.get_pressure())[i],(*S1.get_pressure())[i]);
       }    
 
     s0_size = S0.get_porosity()->MyLength();
@@ -191,7 +288,7 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	CHECK_EQUAL((*S0.get_porosity())[i],(*S1.get_porosity())[i]);
+  	CHECK_EQUAL((*S0.get_porosity())[i],(*S1.get_porosity())[i]);
       }    
 
     s0_size = S0.get_permeability()->MyLength();
@@ -200,7 +297,7 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	CHECK_EQUAL((*S0.get_permeability())[i],(*S1.get_permeability())[i]);
+  	CHECK_EQUAL((*S0.get_permeability())[i],(*S1.get_permeability())[i]);
       }    
 
     s0_size = S0.get_darcy_velocity()->MyLength();
@@ -209,9 +306,9 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(0))[i], (*(*S1.get_darcy_velocity())(0))[i]);
-	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(1))[i], (*(*S1.get_darcy_velocity())(1))[i]);
-	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(2))[i], (*(*S1.get_darcy_velocity())(2))[i]);
+  	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(0))[i], (*(*S1.get_darcy_velocity())(0))[i]);
+  	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(1))[i], (*(*S1.get_darcy_velocity())(1))[i]);
+  	CHECK_EQUAL( (*(*S0.get_darcy_velocity())(2))[i], (*(*S1.get_darcy_velocity())(2))[i]);
 
       }    
 
@@ -222,11 +319,11 @@ SUITE(RESTART) {
 
     for (int i=0; i<s0_size; i++) 
       {
-	for (int n=0; n<S0.get_number_of_components(); n++)
-	  {
-	    CHECK_EQUAL( (*(*S0.get_total_component_concentration())(n))[i], 
-			 (*(*S1.get_total_component_concentration())(n))[i]);
-	  }
+  	for (int n=0; n<S0.get_number_of_components(); n++)
+  	  {
+  	    CHECK_EQUAL( (*(*S0.get_total_component_concentration())(n))[i], 
+  			 (*(*S1.get_total_component_concentration())(n))[i]);
+  	  }
       }    
 
   }

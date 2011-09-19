@@ -1,5 +1,7 @@
 #include "Restart.hpp"
 #include "Epetra_MpiComm.h"
+#include <iostream>
+#include <iomanip>
 
 Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
   plist(plist_), disabled(false), comm(comm_)
@@ -22,60 +24,67 @@ Amanzi::Restart::~Restart()
 }
 
 
-void Amanzi::Restart::create_files()
-{
-  if (!disabled)
-    {
-      // create file name for the data
-      std::stringstream datafilename;  
-      datafilename << filebasename << "_data";  
+// void Amanzi::Restart::create_file()
+// {
+//   if (!disabled)
+//     {
+//       // create file name for the data
+//       std::stringstream datafilename;  
+//       datafilename << filebasename <<   
       
-      restart_output->createDataFile(datafilename.str());
-    }
-}
+//       restart_output->createDataFile(datafilename.str());
+//     }
+// }
 
 void Amanzi::Restart::read_parameters(Teuchos::ParameterList& plist)
 {
-  filebasename = plist.get<string>("file base name","amanzi_restart");
-  
+  filebasename = plist.get<string>("File Name Base","amanzi_restart");
+  filenamedigits = plist.get<int>("File Name Digits",5);
+
   number_of_cycle_intervals = 0;
 
-  // read the interval namelists
-  for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++)
-    {
-      // we assume that all sublists will contain one interval sublist
-      // and we do not care about the name of the sublist
-      if (plist.isSublist(plist.name(i)))
-	{      
-	  const Teuchos::ParameterList &ilist = plist.sublist( plist.name(i) );
+  // read the cycle data namelist
 
-	  if ( ilist.isSublist("cycle range") ) 
-	    {
-	      const Teuchos::ParameterList &iclist = ilist.sublist("cycle range");
-	      
-	      cycle_freq.push_back(iclist.get<int>("cycle frequency"));
-	      cycle_start.push_back(iclist.get<int>("start cycle"));
-	      cycle_end.push_back(iclist.get<int>("end cycle"));
-	      
-	      number_of_cycle_intervals++;
-	    }
-	  else
-	    {
-	      // error
-	    }
-	  
+  if ( plist.isSublist("Cycle Data") ) 
+    {
+      Teuchos::ParameterList &iclist = plist.sublist("Cycle Data");
+      
+      interval = iclist.get<int>("Interval",1);
+      start = iclist.get<int>("Start",0);
+      end = iclist.get<int>("End",-1);
+      
+      if (iclist.isParameter("Steps"))
+	{
+	  steps = iclist.get<Teuchos::Array<int> >("Steps");  
 	}
+    }	
+  else
+    {
+      // error
     }
+
 }
 
 
 void Amanzi::Restart::dump_state(State& S)
 {
-  
+
   if (!disabled) 
     {
       if (dump_requested(S.get_cycle()))
 	{
+	  // create the restart file
+	  std::ostringstream oss; 
+	  oss.flush();
+
+	  oss << filebasename;
+	  oss.fill('0'); 
+	  oss.width(filenamedigits);
+	  oss << std::right << S.get_cycle(); 
+	  
+	  restart_output->createDataFile(oss.str());	  
+
+
 	  // dump all the state vectors into the restart file
 	  restart_output->writeCellDataReal(*S.get_pressure(),"pressure");
 	  restart_output->writeCellDataReal(*S.get_porosity(),"porosity");
@@ -204,22 +213,30 @@ void Amanzi::Restart::read_state(State& S)
 
 bool Amanzi::Restart::dump_requested(int cycle)
 {
-  // cycle intervals
-  for (int i=0; i<number_of_cycle_intervals; i++)
+  if (steps.size() > 0) 
     {
-      if ( (cycle_start[i]<=cycle) && (cycle<=cycle_end[i]) ) 
+      for (int i=0; i<steps.size(); i++) 
 	{
-	  int cycle_loc = cycle - cycle_start[i];
+	  if (cycle == steps[i])
+	    {
+	      return true;
+	    }
+	}
+    }
+  else if ( (end<0) || (cycle<=end) ) 
+    {
+      if (start<=cycle)  
+	{
+	  int cycle_loc = cycle - start;
 	  
-	  // check if a vis dump is requested
-	  if (cycle_loc % cycle_freq[i] == 0) 
+	  if (cycle_loc % interval == 0) 
 	    {
 	      return true;
 	    }
 	  
 	}
-     }
-
+    }
+      
   // if none of the conditions apply we do not dump
   return false;
 
