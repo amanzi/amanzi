@@ -1,3 +1,7 @@
+#ifndef _MPC_HPP_
+#define _MPC_HPP_
+
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MpiComm.h"
@@ -11,6 +15,7 @@
 #include "ObservationData.H"
 #include "Unstructured_observations.hpp"
 #include "Vis.hpp"
+#include "Restart.hpp"
 
 namespace Amanzi
 {
@@ -56,11 +61,8 @@ private:
 
   bool flow_enabled, transport_enabled, chemistry_enabled;
 
-
-
   std::string flow_model;
-  std::string restart_file;
-  bool restart;
+  bool restart_requested;
 
   // Epetra communicator
   Epetra_MpiComm* comm;
@@ -72,7 +74,12 @@ private:
   // visualization
   Amanzi::Vis *visualization;
 
+  // restart
+  Amanzi::Restart *restart;
+
 };
 
 
 } // close namespace Amanzi
+
+#endif
