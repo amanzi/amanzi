@@ -151,7 +151,6 @@ void MPC::mpc_init()
        Teuchos::ParameterList restart_parameter_list = 
 	 parameter_list.sublist("Restart");
        restart = new Amanzi::Restart(restart_parameter_list, comm);
-       restart->create_files();
      }
    else
      {
