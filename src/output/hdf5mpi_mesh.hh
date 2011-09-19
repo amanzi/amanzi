@@ -1,5 +1,5 @@
 #ifndef HDF5MPI_MESH_HH_
-#define HDF5MPI_MESH__HH_
+#define HDF5MPI_MESH_HH_
 
 #include <string>
 

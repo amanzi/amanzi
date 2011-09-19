@@ -66,8 +66,8 @@ void MPC::mpc_init()
    }
    cout << endl;
    
-   restart = mpc_parameter_list.get<bool>("Restart",false);
-   restart_file = mpc_parameter_list.get<string>("Restart file","NONE");
+   // restart = mpc_parameter_list.get<bool>("Restart",false);
+   // restart_file = mpc_parameter_list.get<string>("Restart file","NONE");
      
    if (transport_enabled || flow_enabled || chemistry_enabled) {
      Teuchos::ParameterList state_parameter_list = 
@@ -142,6 +142,23 @@ void MPC::mpc_init()
      {
        visualization = new Amanzi::Vis();
      }
+
+
+   // create the restart object
+   if (parameter_list.isSublist("Restart"))
+     {
+       
+       Teuchos::ParameterList restart_parameter_list = 
+	 parameter_list.sublist("Restart");
+       restart = new Amanzi::Restart(restart_parameter_list, comm);
+       restart->create_files();
+     }
+   else
+     {
+       restart = new Amanzi::Restart();
+     }   
+
+
 }
 
 
@@ -188,7 +205,12 @@ void MPC::cycle_driver () {
 
   int iter = 0;
   
-  if (restart == false) 
+  // we cannot at the moment restart in the middle of the 
+  // steady state flow calculation, so we check whether a
+  // restart was requested, and if not we do the steady
+  // state flow calculation
+
+  if (restart_requested == false)
     {
       
       // first solve the flow equation to steady state
@@ -210,16 +232,24 @@ void MPC::cycle_driver () {
 	    RPK->GetSaturation(*S->get_water_saturation()); 
 	  }
 
-	
-	// write restart file after initial flow solve
-	if (restart_file != "NONE") S->write_restart( restart_file );
       }
     }
   else
     {
-      std::cout << "Reading restart file " << restart_file << std::endl;
+      // first figure out what the restart file is that
+      // we need to read from
+      std::string restart_file;
       
-      S->read_restart( restart_file );
+      Teuchos::ParameterList restart_parameter_list = 
+	parameter_list.sublist("Restart");      
+     
+      restart_file = restart_parameter_list.get<string>("restart from file");
+
+      restart->read_state( *S );
+
+      // initialize the iteration counter
+      iter = S->get_cycle();
+
     }
   
 
@@ -237,6 +267,10 @@ void MPC::cycle_driver () {
       visualization->dump_state(S->get_time(), S->get_time(), iter, *S);
     }
   
+  
+  // write a restart dump if requested
+  restart->dump_state(*S);
+
 
   if (flow_enabled || transport_enabled || chemistry_enabled) 
     {
@@ -333,6 +367,7 @@ void MPC::cycle_driver () {
 	observations->make_observations(*S);
 
 	
+	// write visualization if requested
 	if (chemistry_enabled) 
 	  {
 	    // get the auxillary data
@@ -345,6 +380,10 @@ void MPC::cycle_driver () {
 	  {
 	    visualization->dump_state(S->get_time()-mpc_dT, S->get_time(), iter, *S);
 	  }
+
+	// write restart dump if requested
+	restart->dump_state(*S);
+
       }
       
     }
