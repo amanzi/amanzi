@@ -157,6 +157,9 @@ void MPC::mpc_init()
        restart = new Amanzi::Restart();
      }   
 
+   // we cannot yet restart from a file
+   restart_requested = false;
+
 
 }
 
@@ -237,17 +240,11 @@ void MPC::cycle_driver () {
     {
       // first figure out what the restart file is that
       // we need to read from
-      std::string restart_file;
       
-      Teuchos::ParameterList restart_parameter_list = 
-	parameter_list.sublist("Restart");      
-     
-      restart_file = restart_parameter_list.get<string>("restart from file");
-
-      restart->read_state( *S );
+      // restart->read_state( *S );
 
       // initialize the iteration counter
-      iter = S->get_cycle();
+      // iter = S->get_cycle();
 
     }
   
