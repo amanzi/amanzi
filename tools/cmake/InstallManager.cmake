@@ -131,7 +131,6 @@ function( CREATE_TPL_EXPORT_FILE )
 
   # Add package to the file
   macro( _add_package _package )
-    message(STATUS "Entering _add_package")
 	
     file(APPEND ${BUILD_TPL_OUTFILE} "\n#\n")
     file(APPEND ${BUILD_TPL_OUTFILE} "# TPL: ${_package}\n")
