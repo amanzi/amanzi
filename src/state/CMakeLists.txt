@@ -75,12 +75,8 @@ if (BUILD_TESTS)
     
     set(amanzi_libs geometry mesh state)
      
-    add_executable(test_restart test/Main.cc test/test_restart.cpp)
-    target_link_libraries(test_restart state stk_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(restart test_restart KIND int)
-
-    add_executable(test_vis test/Main.cc test/test_vis.cpp)
-    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
-    add_amanzi_test(vis test_vis KIND int)    
+    add_executable(test_state test/Main.cc test/test_restart.cpp test/test_vis.cpp)
+    target_link_libraries(test_state state stk_mesh ${UnitTest_LIBRARIES})
+    add_amanzi_test(state test_state KIND int)
 
 endif()
