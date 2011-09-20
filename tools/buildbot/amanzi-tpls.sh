@@ -239,6 +239,7 @@ METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
 CCSE_VERSION=0.1.5
+ASCEMIO_VERSION=1.1
 
 ################################################################################
 #
@@ -734,6 +735,35 @@ function install_metis {
 
 ################################################################################
 #
+# ascemio
+#
+################################################################################
+function install_ascemio {
+    ASCEMIO_DIR=${PREFIX}/ascem-io/ascem-io-${ASCEMIO_VERSION}
+    rm -rf ${ASCEMIO_DIR}
+    mkdir -p ${PREFIX}/ascem-io
+    tar ${TAR_FLAGS} ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tgz -C ${PREFIX}/ascem-io
+    cd ${ASCEMIO_DIR}
+
+    # no configuration, just make
+    cd ${ASCEMIO_DIR}/src
+    make CC=${CC} \
+	HDF5_INCLUDE_DIR=${HDF5_PREFIX}/include
+
+    if [ $? -ne 0 ]; then
+        exit
+    fi
+    # testing...?
+
+    # install
+    make ASCEMIO_INSTALL_DIR=${PREFIX} install
+    if [ $? -ne 0 ]; then
+        exit
+    fi
+}
+
+################################################################################
+#
 # mstk
 #
 ################################################################################
@@ -977,6 +1007,7 @@ AMANZI_MAKE_VERBOSE=0
 PLATFORM=${PLATFORM}
 ENABLE_Structured=${ENABLE_Structured}
 ENABLE_Unstructured=${ENABLE_Unstructured}
+ENABLE_ASCEMIO=${ENABLE_ASCEMIO}
 
 ENABLE_MPI=${ENABLE_MPI}
 ENABLE_OpenMP=${ENABLE_OpenMP}
@@ -1103,6 +1134,8 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
         -D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
         -D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
+        -D ENABLE_ASCEMIO:BOOL=\${ENABLE_ASCEMIO} \\
+        -D ASCEMIO_DIR:FILEPATH=${PREFIX} \\
         ..
 
     if [ \$? -ne 0 ]; then
@@ -1149,6 +1182,7 @@ DOWNLOAD_ARCHIVES=0
 BUILD_OPENMPI=0
 BUILD_BOOST=0
 BUILD_HDF5=0
+BUILD_ASCEMIO=0
 BUILD_NETCDF=0
 BUILD_CGNS=0
 BUILD_EXODUS=0
@@ -1169,6 +1203,7 @@ AMANZI_PRECISION=DOUBLE
 AMANZI_CHEMEVOL_PKG=AMANZI
 ENABLE_Structured=0
 ENABLE_Unstructured=1
+ENABLE_ASCEMIO=0
 
 while getopts "abcdefghikmnop:stuwz" flag
 do
@@ -1181,6 +1216,7 @@ do
     f) BUILD_CCSE=1;;
     g) BUILD_CGNS=1;;
     h) BUILD_HDF5=1;;
+    i) BUILD_ASCEMIO=1;;
     k) BUILD_MSTK=1;;
     m) BUILD_MOAB=1;;
     n) BUILD_NETCDF=1;;
@@ -1208,6 +1244,7 @@ echo "BUILD_BOOST=$BUILD_BOOST     BOOST_PREFIX=$BOOST_PREFIX"
 echo "BUILD_CURL=$BUILD_CURL      CURL_PREFIX=$CURL_PREFIX"
 echo "BUILD_ZLIB=$BUILD_ZLIB      ZLIB_PREFIX=$ZLIB_PREFIX"
 echo "BUILD_HDF5=$BUILD_HDF5      HDF5_PREFIX=$HDF5_PREFIX"
+echo "BUILD_ASCEMIO=$BUILD_ASCEMIO      ASCEMIO_PREFIX=$PREFIX"
 echo "BUILD_NETCDF=$BUILD_NETCDF    NETCDF_PREFIX=$NETCDF_PREFIX"
 echo "BUILD_EXODUS=$BUILD_EXODUS    EXODUS_PREFIX=$PREFIX"
 echo "BUILD_MOAB=$BUILD_MOAB      MOAB_PREFIX=$PREFIX"
@@ -1223,6 +1260,7 @@ echo "AMANZI_SPACEDIM=$AMANZI_SPACEDIM"
 echo "AMANZI_PRECISION=$AMANZI_PRECISION"
 echo "ENABLE_Structured=$ENABLE_Structured"
 echo "ENABLE_Unstructured=$ENABLE_Unstructured"
+echo "ENABLE_ASCEMIO=$ENABLE_ASCEMIO"
 
 if [ ${ENABLE_Structured} == 0 -a ${ENABLE_Unstructured} == 0 ]; then
   echo "Must enable Structured or Unstructured.  Exiting..."
@@ -1312,6 +1350,11 @@ fi
 
 if [ $BUILD_HDF5 -eq 1 ]; then
     install_hdf5
+    cd ${SCRIPT_DIR}
+fi
+
+if [ $BUILD_ASCEMIO -eq 1 ]; then
+    install_ascemio
     cd ${SCRIPT_DIR}
 fi
 
