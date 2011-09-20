@@ -34,14 +34,18 @@ void Amanzi::Vis::create_files(Amanzi::AmanziMesh::Mesh& mesh)
 {
   if (!disabled)
     {
-
+      
       // create file name for the mesh 
       std::stringstream meshfilename;  
-      meshfilename << filebasename << "_mesh";
-      
+      meshfilename.flush();
+      meshfilename << filebasename; 
+      meshfilename << "_mesh";
+
       // create file name for the data
       std::stringstream datafilename;  
-      datafilename << filebasename << "_data";  
+      datafilename.flush();
+      datafilename << filebasename; 
+      datafilename << "_data";
       
       viz_output->createMeshFile(mesh, meshfilename.str());
       viz_output->createDataFile(datafilename.str());
@@ -55,46 +59,24 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
   enable_gnuplot = plist.get<bool>("enable gnuplot",false);
   if (comm->NumProc() != 1) enable_gnuplot = false;
 
-  number_of_cycle_intervals = 0;
-  number_of_time_intervals  = 0;
-
-  // read the interval namelists
-  for (Teuchos::ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++)
+  if ( plist.isSublist("Cycle Data") ) 
     {
-      // we assume that all sublists will contain one interval sublist
-      // and we do not care about the name of the sublist
-      if (plist.isSublist(plist.name(i)))
-	{      
-	  const Teuchos::ParameterList &ilist = plist.sublist( plist.name(i) );
-
-	  if ( ilist.isSublist("time range") )
-	    {
-	      const Teuchos::ParameterList &itlist = ilist.sublist("time range");
-	      
-	      time_freq.push_back(itlist.get<double>("time frequency"));
-	      time_start.push_back(itlist.get<double>("start time"));
-	      time_end.push_back(itlist.get<double>("end time"));
-	      
-	      number_of_time_intervals++;	      
-	    }
-	  else if ( ilist.isSublist("cycle range") ) 
-	    {
-	      const Teuchos::ParameterList &iclist = ilist.sublist("cycle range");
-
-	      cycle_freq.push_back(iclist.get<int>("cycle frequency"));
-	      cycle_start.push_back(iclist.get<int>("start cycle"));
-	      cycle_end.push_back(iclist.get<int>("end cycle"));
-
-	      number_of_cycle_intervals++;
-	    }
-	  else
-	    {
-	      // error
-	    }
-
+      Teuchos::ParameterList &ilist = plist.sublist("Cycle Data");
+      
+      interval = ilist.get<int>("Interval");
+      start = ilist.get<int>("Start");
+      end = ilist.get<int>("End");
+      
+      if (ilist.isParameter("Steps"))
+	{
+	  steps = ilist.get<Teuchos::Array<int> >("Steps");  
 	}
+    }  
+  else
+    {
+      // error
     }
-};
+}
 
 
 Amanzi::Vis::~Vis () 
@@ -103,15 +85,26 @@ Amanzi::Vis::~Vis ()
 }
 
 
-void Amanzi::Vis::dump_state(double prev_time, double time, int cycle,
-			     State& S, Epetra_MultiVector *auxdata)
+void Amanzi::Vis::dump_state(State& S, Epetra_MultiVector *auxdata)
 {
-  
   if (!disabled) 
     {
-      if (dump_requested(prev_time, time, cycle))
+      if (dump_requested(S.get_cycle()))
 	{
-	  viz_output->createTimestep(time,cycle);
+	  
+	  using Teuchos::OSTab;
+	  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+	  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+	  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+ 	  
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
+	    {
+	      *out << "Amanzi::Vis... writing visualization files, cycle = " << S.get_cycle() << std::endl;
+	    }
+	  
+
+
+	  viz_output->createTimestep(S.get_time(),S.get_cycle());
 	  
 	  // dump all the state vectors into the vis file
 	  viz_output->writeCellDataReal(*S.get_pressure(),"pressure");
@@ -165,47 +158,40 @@ void Amanzi::Vis::dump_state(double prev_time, double time, int cycle,
 	  // but only if we are runnung on one processor
 	  if (comm->NumProc() == 1  && enable_gnuplot)
 	    {
-	      write_gnuplot(cycle, S, auxdata);
+	      write_gnuplot(S.get_cycle(), S, auxdata);
 	    }
 	}
     }
 }
 
 
-bool Amanzi::Vis::dump_requested(double prev_time, double time, int cycle)
+bool Amanzi::Vis::dump_requested(int cycle)
 {
-  // cycle intervals
-  for (int i=0; i<number_of_cycle_intervals; i++)
+
+  if (steps.size() > 0) 
     {
-      if ( (cycle_start[i]<=cycle) && (cycle<=cycle_end[i]) ) 
+      for (int i=0; i<steps.size(); i++) 
 	{
-	  int cycle_loc = cycle - cycle_start[i];
+	  if (cycle == steps[i])
+	    {
+	      return true;
+	    }
+	}
+    }
+  else if ( (end<0) || (cycle<=end) ) 
+    {
+      if (start<=cycle)  
+	{
+	  int cycle_loc = cycle - start;
 	  
-	  // check if a vis dump is requested
-	  if (cycle_loc % cycle_freq[i] == 0) 
+	  if (cycle_loc % interval == 0) 
 	    {
 	      return true;
 	    }
 	  
 	}
-     }
-
-   // time intervals 
-   for (int i=0; i<number_of_time_intervals; i++)
-    {
-      if ( (time_start[i]<=time) && (time <= time_end[i]) )
-	{
-	  double time_loc = time - time_start[i];
-	  double prev_time_loc = prev_time - time_start[i];
-	  
-	  if (  floor(time_loc/time_freq[i]) > floor(prev_time_loc/time_freq[i]) )
-	    {
-	      return true;
-	    }
-	}
-	
-     }
-
+    }
+      
   // if none of the conditions apply we do not dump
   return false;
 
