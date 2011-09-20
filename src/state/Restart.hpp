@@ -2,13 +2,15 @@
 #define _RESTART_HPP_
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Epetra_Comm.h"
 #include "State.hpp"
 #include "hdf5mpi_mesh.hh"
 
 namespace Amanzi {
 
-  class Restart {
+  class Restart : public Teuchos::VerboseObject<Restart>
+  {
 
   public:
     Restart(Teuchos::ParameterList& plist, Epetra_MpiComm *comm); 

@@ -24,6 +24,7 @@
     <Parameter name="Flow model" type="string" value="Richards"/>
     <Parameter name="disable Transport_PK" type="string" value="no"/>
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
+    <Parameter name="disable Flow_PK" type="string" value="yes"/>
   </ParameterList>
 
   <ParameterList name="Visualization">
@@ -51,8 +52,11 @@
     <ParameterList name="Cycle Data">
       <Parameter name="Start" type="int" value="0"/>
       <Parameter name="End" type="int" value="-1"/>
-      <Parameter name="Interval" type="int" value="50"/>
+      <Parameter name="Interval" type="int" value="10"/>
     </ParameterList>  
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
+    </ParameterList>
   </ParameterList>  
 
   <ParameterList name="State">

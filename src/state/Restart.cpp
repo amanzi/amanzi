@@ -68,13 +68,23 @@ void Amanzi::Restart::read_parameters(Teuchos::ParameterList& plist)
 
 void Amanzi::Restart::dump_state(State& S)
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   if (!disabled) 
     {
       if (dump_requested(S.get_cycle()))
 	{
+	  
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
+	    {
+	      *out << "Amanzi::Restart... writing checkpoint, cycle = " << S.get_cycle() << std::endl;
+	    }
+	  
 	  // create the restart file
-	  std::ostringstream oss; 
+	  std::stringstream oss; 
 	  oss.flush();
 
 	  oss << filebasename;
@@ -125,6 +135,17 @@ void Amanzi::Restart::dump_state(State& S)
 
 void Amanzi::Restart::read_state(State& S)
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
+    {
+      *out << "Amanzi::Restart... reading checkpoint" << std::endl;
+    }
+  
+
   
   int idummy;
   double dummy;

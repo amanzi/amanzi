@@ -263,10 +263,8 @@ void MPC::cycle_driver () {
       visualization->dump_state(S->get_time(), S->get_time(), iter, *S);
     }
   
-  
   // write a restart dump if requested
   restart->dump_state(*S);
-
 
   if (flow_enabled || transport_enabled || chemistry_enabled) 
     {
@@ -358,7 +356,9 @@ void MPC::cycle_driver () {
 	
 	// advance the iteration count
 	iter++;
-	
+	S->set_cycle(iter);
+
+
 	// make observations
 	observations->make_observations(*S);
 
