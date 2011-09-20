@@ -88,6 +88,13 @@ HDF5:
         :Dependencies: zlib
         :Information: http://www.hdfgroup.org/HDF5/
 
+ASCEM-IO:
+        :Versions: 1.1p 
+        :Description: Parallel IO load balance libary
+        :Role: Used by Amanzi output of problem data and restarts.
+        :Dependencies: HDF5, MPI
+        :Information: http://ascem-io.secure-water.org
+
 
 netCDF:
         :Versions: 4.1.1
@@ -173,14 +180,6 @@ MSTK:
         :Role: An optional backend for Amanzi meshing
         :Dependencies: ExodusII
         :Information:  https://software.lanl.gov/MeshTools/trac
-
-ASCEM-IO:
-        :Versions: 1.0
-        :Description: A parallel I/O library
-        :Role: Basis library used by the output class to create problem output.
-        :Dependencies: HDF5, netCDF
-        :Information: http://ascem-io.secure-water.org 
-
 
 
 Optional Software Tools

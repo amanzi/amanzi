@@ -66,7 +66,9 @@ PLATFORM=
 # 
 # Define the prefix directories
 #
-PREFIX=`pwd`
+if [ !  ${PREFIX} ]; then
+	PREFIX=`pwd`
+fi
 SOURCE_PREFIX=${PREFIX}/src
 BUILD_PREFIX=${PREFIX}/build
 
@@ -132,6 +134,13 @@ CURL_VERSION=7.21.6
 BUILD_HDF5=0
 HDF5_PREFIX=${PREFIX}
 HDF5_VERSION=1.8.7
+
+#
+# ASCEM-IO
+#
+BUILD_ASCEMIO=0
+ASCEMIO_PREFIX=${PREFIX}
+ASCEMIO_VERSION=1.1p
 
 #
 # netCDF
@@ -210,6 +219,7 @@ function help_message {
 
     TPL build flags
     -a              Build all TPLs
+    -A              Build ASCEM-IO
     -b              Build Boost
     -e              Build Exodus
     -g              Build CGNS
@@ -357,6 +367,7 @@ function print_build_status {
     echo "BUILD_CURL=$BUILD_CURL          CURL_PREFIX=$CURL_PREFIX"
     echo "BUILD_ZLIB=$BUILD_ZLIB          ZLIB_PREFIX=$ZLIB_PREFIX"
     echo "BUILD_HDF5=$BUILD_HDF5          HDF5_PREFIX=$HDF5_PREFIX"
+    echo "BUILD_ASCEMIO=$BUILD_ASCEMIO    ASCEMIO_PREFIX=$ASCEMIO_PREFIX"
     echo "BUILD_NETCDF=$BUILD_NETCDF      NETCDF_PREFIX=$NETCDF_PREFIX"
     echo "BUILD_EXODUS=$BUILD_EXODUS      EXODUS_PREFIX=$PREFIX"
     echo "BUILD_MOAB=$BUILD_MOAB          MOAB_PREFIX=$PREFIX"
@@ -510,7 +521,7 @@ function build_hdf5 {
 
         ./configure --prefix=${PREFIX} \
             --disable-fortran \
-	    --disable-cxx \
+	        --disable-cxx \
             --enable-production \
             --enable-largefile \
             --enable-parallel 
@@ -533,7 +544,70 @@ function build_hdf5 {
         echo Using hdf5 from ${HDF5_PREFIX}
     fi   
 }
+################################################################################
+#
+# ASCEM-IO
+# 
+# http://ascem-io.secure-water.org/
+#
+# Parallel IO library Requires HDF5
+#
+################################################################################
+function download_ascemio {
 
+   ASCEMIO_SVN_ROOT="//ascem-io.secure-water.org/ascem-io"
+   if [ ${ASCEMIO_VERSION} == "trunk" ]
+   then
+	   ASCEMIO_DOWNLOAD_LOCATION="${ASCEMIO_SVN_ROOT}/trunk"
+   else
+	   ASCEMIO_DOWNLOAD_LOCATION="${ASCEMIO_SVN_ROOT}/releases/${ASCEMIO_VERSION}"
+   fi
+
+   echo "Download ASCEM-IO from ${ASCEMIO_DOWNLOAD_LOCATION}"
+
+   svn co http:${ASCEMIO_DOWNLOAD_LOCATION} --username amanzi_dev --password gr0undw@t3r
+
+   if [ $? -ne 0 ]; then
+	   echo "Failed to download ASCEMIO"
+	   exit
+   fi
+
+}
+    
+function build_ascemio {
+    echo "Build ASCEMIO"
+
+    if [ ${ASCEMIO_PREFIX} == ${PREFIX} ]; then
+		SAVE_DIR=`pwd`
+		ASCEMIO_DIR=${PREFIX}/ascem-io
+		if [ ! -e ${ASCEMIO_DIR} ]; then
+		   	mkdir -p ${ASCEMIO_DIR}
+		fi
+		ASCEMIO_SRC_DIR=${ASCEMIO_DIR}/src
+		if [ ! -e ${ASCEMIO_SRC_DIR} ]; then
+		   	mkdir -p ${ASCEMIO_SRC_DIR}
+		fi
+		cd ${ASCEMIO_SRC_DIR}
+        download_ascemio
+		cd ${ASCEMIO_VERSION}/src
+	
+		export CC=${MPICC}
+		export CXX=${MPICXX}
+		echo "Building ASCEM-IO against HDF5 located in ${HDF5_PREFIX}"
+        make HDF5_INCLUDE_DIR=${HDF5_PREFIX}/include
+		if [ $? -ne 0 ]; then
+			echo "Failed to build ASCEM-IO"
+			exit
+		fi
+		make ASCEMIO_INSTALL_DIR=${ASCEMIO_PREFIX} install
+		if [ $? -ne 0 ]; then
+			echo "Failed tp install ASCEM-IO package"
+			exit
+		fi
+		cd ${SAVE_DIR}
+	fi
+    
+}
 ################################################################################
 #
 # netcdf
@@ -590,7 +664,6 @@ function build_netcdf {
         echo Using netcdf from ${NETCDF_PREFIX}
     fi
 }
-
 ################################################################################
 #
 # exodus
@@ -1077,12 +1150,13 @@ PRINT_HELP=0
 OPTS_OK=1
 
 # Process command line
-while getopts "hd:abBegHkmnstuwz" flag
+while getopts "hd:aAbBegHkmnstuwz" flag
 do
   case $flag in
       h) PRINT_HELP=1;;
       d) DOWNLOAD_DIRECTORY=${OPTARG};;
       a) BUILD_BOOST=1; BUILD_EXODUS=1; BUILD_CGNS=1; BUILD_HDF5=1; BUILD_MSTK=1; BUILD_MOAB=1; BUILD_NETCDF=1; BUILD_METIS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CURL=1; BUILD_ZLIB=1;;
+	  A) BUILD_ASCEMIO=1;;
       b) BUILD_BOOST=1;;
       B) BUILD_AMANZI_SCRIPT=1;;
       e) BUILD_EXODUS=1;;
@@ -1155,6 +1229,11 @@ fi
 
 if [ $BUILD_HDF5 -eq 1 ]; then
     build_hdf5
+    cd ${SCRIPT_DIR}
+fi
+
+if [ $BUILD_ASCEMIO -eq 1 ]; then
+    build_ascemio
     cd ${SCRIPT_DIR}
 fi
 
