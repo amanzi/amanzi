@@ -204,6 +204,10 @@
 #
 # the following files must be manually downloaded and saved into ${SOURCE}:
 #
+# ascemio: login required
+# download the amanzi release version from:
+# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/ASCEMIO/ascem-io-1.1.tgz
+#
 # moab: login required
 # download the amanzi recommend version from: 
 # https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/MOAB-r4276.tar.gz
