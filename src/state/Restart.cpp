@@ -83,14 +83,14 @@ void Amanzi::Restart::dump_state(State& S)
 
 
 	  // dump all the state vectors into the restart file
-	  restart_output->writeCellDataReal(*S.get_pressure(),"pressure");
-	  restart_output->writeCellDataReal(*S.get_porosity(),"porosity");
-	  restart_output->writeCellDataReal(*S.get_water_saturation(),"water saturation");
-	  restart_output->writeCellDataReal(*S.get_water_density(),"water density");
-	  restart_output->writeCellDataReal(*S.get_permeability(),"permeability");
-	  restart_output->writeCellDataReal(*(*S.get_darcy_velocity())(0),"darcy velocity x");
-	  restart_output->writeCellDataReal(*(*S.get_darcy_velocity())(1),"darcy velocity y");
-	  restart_output->writeCellDataReal(*(*S.get_darcy_velocity())(2),"darcy velocity z");
+	  restart_output->writeDataReal(*S.get_pressure(),"pressure");
+	  restart_output->writeDataReal(*S.get_porosity(),"porosity");
+	  restart_output->writeDataReal(*S.get_water_saturation(),"water saturation");
+	  restart_output->writeDataReal(*S.get_water_density(),"water density");
+	  restart_output->writeDataReal(*S.get_permeability(),"permeability");
+	  restart_output->writeDataReal(*(*S.get_darcy_velocity())(0),"darcy velocity x");
+	  restart_output->writeDataReal(*(*S.get_darcy_velocity())(1),"darcy velocity y");
+	  restart_output->writeDataReal(*(*S.get_darcy_velocity())(2),"darcy velocity z");
 	  
 	  for (int i=0; i<S.get_number_of_components(); i++)
 	    {
@@ -98,10 +98,10 @@ void Amanzi::Restart::dump_state(State& S)
 	      
 	      tcc_name << "component " << i;
 	      
-	      restart_output->writeCellDataReal(*(*S.get_total_component_concentration())(i),tcc_name.str());
+	      restart_output->writeDataReal(*(*S.get_total_component_concentration())(i),tcc_name.str());
 	    }
 
-	  restart_output->writeCellDataReal(*S.get_darcy_flux(),"darcy flux");	  
+	  restart_output->writeDataReal(*S.get_darcy_flux(),"darcy flux");	  
 
 
 	  restart_output->writeAttrReal(S.get_time(),"time");
