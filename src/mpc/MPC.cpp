@@ -256,11 +256,11 @@ void MPC::cycle_driver () {
       Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
       
       // write visualization data for timestep if requested
-      visualization->dump_state(S->get_time(), S->get_time(), iter, *S, &(*aux));
+      visualization->dump_state(*S, &(*aux));
     }
   else
     {
-      visualization->dump_state(S->get_time(), S->get_time(), iter, *S);
+      visualization->dump_state(*S);
     }
   
   // write a restart dump if requested
@@ -370,11 +370,11 @@ void MPC::cycle_driver () {
 	    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
 	    
 	    // write visualization data for timestep if requested
-	    visualization->dump_state(S->get_time()-mpc_dT, S->get_time(), iter, *S, &(*aux));
+	    visualization->dump_state(*S, &(*aux));
 	  }
 	else
 	  {
-	    visualization->dump_state(S->get_time()-mpc_dT, S->get_time(), iter, *S);
+	    visualization->dump_state(*S);
 	  }
 
 	// write restart dump if requested

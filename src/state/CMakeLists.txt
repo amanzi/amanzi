@@ -45,7 +45,7 @@ add_definitions("-DUSE_MPI")
 #
 # Library: state
 #
-add_library(state State.cpp Restart.cpp)
+add_library(state State.cpp Restart.cpp Vis.cpp)
 add_install_library(state)
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 target_link_libraries(state output simple_mesh mesh_data cell_geometry ${state_tpl_libs})
@@ -78,6 +78,9 @@ if (BUILD_TESTS)
     add_executable(test_restart test/Main.cc test/test_restart.cpp)
     target_link_libraries(test_restart state stk_mesh ${UnitTest_LIBRARIES})
     add_amanzi_test(restart test_restart KIND int)
-    
+
+    add_executable(test_vis test/Main.cc test/test_vis.cpp)
+    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
+    add_amanzi_test(vis test_vis KIND int)    
 
 endif()
