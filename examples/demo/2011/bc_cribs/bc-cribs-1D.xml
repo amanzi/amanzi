@@ -28,21 +28,15 @@
   </ParameterList>
 
   <ParameterList name="Visualization">
-    <Parameter name="file base name" type="string" value="bc-cribs"/>
-    <Parameter name="enable gnuplot" type="bool" value="false"/>
-    <ParameterList name="Interval 1">
-      <ParameterList name="cycle range">
-         <Parameter name="cycle frequency" type="int" value="100"/>
-         <Parameter name="start cycle" type="int" value="0"/>
-         <Parameter name="end cycle" type="int" value="1000"/>
-      </ParameterList>
+    <Parameter name="File Name Base" type="string" value="bc-cribs"/>
+    <Parameter name="Enable Gnuplot" type="bool" value="false"/>
+    <ParameterList name="Cycle Data">
+      <Parameter name="Interval" type="int" value="25"/>
+      <Parameter name="Start" type="int" value="0"/>
+      <Parameter name="End" type="int" value="1000"/>
     </ParameterList>
-    <ParameterList name="Interval 2">
-      <ParameterList name="time range">
-         <Parameter name="time frequency" type="double" value="1e+10"/>
-         <Parameter name="start time" type="double" value="0.0"/>
-         <Parameter name="end time" type="double" value="1e+100"/>
-      </ParameterList>
+    <ParameterList name="VerboseObject">
+      <Parameter name="Verbosity Level" type="string" value="medium"/>
     </ParameterList>
   </ParameterList>
 
