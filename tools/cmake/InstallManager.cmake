@@ -53,6 +53,23 @@ function ( ADD_INSTALL_LIBRARY )
 endfunction( ADD_INSTALL_LIBRARY )
 
 
+#
+# Usage: ADD_INSTALL_SHELLSCRIPT( script1 script2 ... )
+#
+# Arguments:
+#  A list of shell scripts that will be installed in the AMANZI_INSTALL_BIN_DIR
+#
+#
+function ( ADD_INSTALL_SHELLSCRIPT )
+
+foreach(_shellscript_file ${ARGV})
+  install(
+    FILES ${_shellscript_file}
+    DESTINATION bin
+    )
+endforeach()
+
+endfunction( ADD_INSTALL_SHELLSCRIPT )
 
 
 

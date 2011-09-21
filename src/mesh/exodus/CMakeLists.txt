@@ -58,8 +58,8 @@ target_link_libraries(exodus_read_test exodus)
 #
 file(GLOB exo_inc_files "*.hh")
 add_install_include_file(${exo_inc_files})
-add_install_binary(exec_reader)
-add_install_binary(exodus_read_test)
+#add_install_binary(exec_reader)
+#add_install_binary(exodus_read_test)
 
 
 
