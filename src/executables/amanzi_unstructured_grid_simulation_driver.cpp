@@ -30,7 +30,7 @@
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
-                                             const Teuchos::ParameterList& input_parameter_list,
+                                             Teuchos::ParameterList& input_parameter_list,
                                              Amanzi::ObservationData&      output_observations)
 {
 #ifdef HAVE_MPI
@@ -47,7 +47,18 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
     cout.rdbuf(0);
   } 
 
-  ParameterList params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
+  bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
+  
+  ParameterList params_copy;
+  
+  if (! native)
+    {
+      params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
+    }
+  else
+    {
+      params_copy = input_parameter_list;
+    }
 
   // print parameter list
   std::cout << "======================> dumping parameter list <======================" << std::endl;
