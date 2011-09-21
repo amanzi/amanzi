@@ -2,11 +2,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
-#include "Teuchos_MPISession.hpp"
 #include "Mesh.hh"
 #include "cell_geometry.hh"
-#include "hdf5_mesh.hh"
-
 
 State::State( int number_of_components_,
 	      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
@@ -79,27 +76,27 @@ void State::initialize_from_parameter_list()
 
     int mesh_block_ID = sublist.get<int>("Mesh block ID");
 
-    if (!mesh_maps->valid_set_id(mesh_block_ID,Amanzi::AmanziMesh::CELL)) {
-      // there is an inconsistency in the xml input file, report and die
+    // if (!mesh_maps->valid_set_id(mesh_block_ID,Amanzi::AmanziMesh::CELL)) {
+    //   // there is an inconsistency in the xml input file, report and die
       
-      int myrank = Teuchos::MPISession::getRank();
+    //   int myrank = Teuchos::MPISession::getRank();
 
-      if (myrank == 0) {
-	std::cerr << "State::initialize_from_parameter_list... the mesh block with ID ";
-	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
+    //   if (myrank == 0) {
+    // 	std::cerr << "State::initialize_from_parameter_list... the mesh block with ID ";
+    // 	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
 
-	// get the mesh block IDs 
-	int num_blks = mesh_maps->num_sets(Amanzi::AmanziMesh::CELL);
-	std::vector<unsigned int> setids(num_blks);
-	mesh_maps->get_set_ids(Amanzi::AmanziMesh::CELL,setids.begin(),setids.end());
-	std::cerr << "valid mesh block IDs are: ";
-	for (int i=0; i<num_blks; i++) std::cerr << setids[i] << " ";
-	std::cerr << std::endl;
+    // 	// get the mesh block IDs 
+    // 	int num_blks = mesh_maps->num_sets(Amanzi::AmanziMesh::CELL);
+    // 	std::vector<unsigned int> setids(num_blks);
+    // 	mesh_maps->get_set_ids(Amanzi::AmanziMesh::CELL,setids.begin(),setids.end());
+    // 	std::cerr << "valid mesh block IDs are: ";
+    // 	for (int i=0; i<num_blks; i++) std::cerr << setids[i] << " ";
+    // 	std::cerr << std::endl;
 
 
-	throw std::exception();
-      }
-    }
+    // 	throw std::exception();
+    //  }
+    // }
 	
 
     // initialize the arrays with some constants from the input file

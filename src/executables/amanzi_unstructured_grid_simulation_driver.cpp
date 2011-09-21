@@ -33,19 +33,20 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
                                              Teuchos::ParameterList& input_parameter_list,
                                              Amanzi::ObservationData&      output_observations)
 {
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+
+
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
 #else  
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  // make sure only PE0 can write to std::cout
   int rank, ierr, aerr;
   MPI_Comm_rank(mpi_comm,&rank);
-
-  if (rank!=0) {
-    cout.rdbuf(0);
-  } 
 
   bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
   
@@ -60,10 +61,13 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
       params_copy = input_parameter_list;
     }
 
-  // print parameter list
-  std::cout << "======================> dumping parameter list <======================" << std::endl;
-  Teuchos::writeParameterListToXmlOStream(params_copy, std::cout);
-  std::cout << "======================> done dumping parameter list. <================"<<std::endl;
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
+    {  
+      // print parameter list
+      *out << "======================> dumping parameter list <======================" << std::endl;
+      Teuchos::writeParameterListToXmlOStream(params_copy, *out);
+      *out << "======================> done dumping parameter list. <================"<<std::endl;
+    }
 
   using namespace std;
 

@@ -4,6 +4,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
 #include "State.hpp"
 #include "chemistry_state.hh"
@@ -20,7 +21,7 @@
 namespace Amanzi
 {
 
-class MPC {
+  class MPC : public Teuchos::VerboseObject<MPC> {
 
 public:
   MPC (Teuchos::ParameterList parameter_list_,

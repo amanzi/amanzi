@@ -100,18 +100,18 @@ add_install_library(udriv)
 #add_install_binary(amanzi-demo-driver)		  
 
 #
-# Binary: amanzi-unstructured-driver
+# Binary: amanzi-alt-driver
 #
-#add_executable(amanzi-unstructured-driver amanzi-unstructured-driver.cpp)
-#set(amanzi-unstructured_driver ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-#set(unstructured_driver_amanzi_libs mpc state error_handling mesh_factory)
-#set(unstructured_driver_pk_libs chemistry transport flow)
-#target_link_libraries(amanzi-unstructured-driver
-#                      ${unstructured_driver_amanzi_libs}
-#                      ${unstructured_driver_pk_libs}
+#add_executable(amanzi-alt-driver amanzi-alt-driver.cpp)
+#set(amanzi-alt-driver ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
+#set(alt_driver_amanzi_libs mpc state error_handling mesh_factory)
+#set(alt_driver_pk_libs chemistry transport flow)
+#target_link_libraries(amanzi-alt-driver
+#                      ${alt_driver_amanzi_libs}
+#                      ${alt_driver_pk_libs}
 #                      ${Trilinos_LIBRARIES}
 #                      ${Boost_LIBRARIES})
-#add_install_binary(amanzi-unstructured-driver)
+#add_install_binary(amanzi-alt-driver)
 
 #
 # Binary: amanzi-new-driver
