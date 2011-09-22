@@ -242,8 +242,11 @@ set_feature_info(ASCEMIO
                  "http://ascem-io.secure-water.org"
                  "Required to produce VisIt files in parallel"
                  )
-if (ENABLE_ASCEMIO)
+#if (ENABLE_ASCEMIO)
+if (ENABLE_Unstructured)
     find_package(ASCEMIO REQUIRED)
+else()
+    find_package(ASCEMIO)
 endif() 
 
 ##############################################################################
