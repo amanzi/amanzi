@@ -159,18 +159,27 @@ void MPC::mpc_init()
    if (parameter_list.isSublist("Checkpoint Data"))
      {
        
-       Teuchos::ParameterList restart_parameter_list = 
+       Teuchos::ParameterList checkpoint_parameter_list = 
 	 parameter_list.sublist("Checkpoint Data");
-       restart = new Amanzi::Restart(restart_parameter_list, comm);
+       restart = new Amanzi::Restart(checkpoint_parameter_list, comm);
      }
    else
      {
        restart = new Amanzi::Restart();
      }   
 
-   // we cannot yet restart from a file
-   restart_requested = false;
 
+   // are we restarting from a file?
+
+   if (parameter_list.isSublist("Restart from Checkpoint File"))
+     {
+       restart_requested = true;
+       
+       Teuchos::ParameterList restart_parameter_list = 
+	 parameter_list.sublist("Restart from Checkpoint File");
+       
+       restart_from_filename = restart_parameter_list.get<string>("Checkpoint File Name");
+     }
 }
 
 
