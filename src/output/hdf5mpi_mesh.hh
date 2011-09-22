@@ -32,6 +32,7 @@ class HDF5_MPI {
  public:
 
   HDF5_MPI(const Epetra_MpiComm &comm);
+  HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename);
   ~HDF5_MPI(void);
   
   bool TrackXdmf() { return TrackXdmf_; }
