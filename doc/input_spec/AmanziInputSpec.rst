@@ -760,6 +760,32 @@ Execution Control
        See the example XML file for a typical set of control parameters.
 
 
+Restart from Checkpoint File
+---------------------------------
+
+A user may request a restart from a checkpoint file by including the sublist 
+`"Restart from Checkpoint File`" in the Execution Control list. This mode of restarting
+will overwrite all other initializations of data that are called out in the input file.
+The purpose of restarting Amanzi in this fashion is mostly to continue a run that has been 
+terminated because its allocation of time ran out.
+
+
+* `"Restart from Checkpoint File`" [list]
+
+  * `"Checkpoint File Name`" [string] file name of the specific checkpoint file to restart from
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Restart from Checkpoint File">
+     <Parameter name="Checkpoint File Name" type="string" value="chk00123.h5"/>
+  </ParameterList>
+
+In this example, Amanzi is restarted with all state data initialized from the checkpoint 
+file named chk00123.h5. All other initialization of field variabled that might be called 
+out in the input file is ignored.
+
 
 Complete Example
 =================
@@ -1259,7 +1285,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="NKA Max vectors" type="int" value="5"/>
        	<Parameter name="NKA Drop Tolerance" type="double" value="5.0e-2"/>
        	<Parameter name="Maximum Number of BDF Tries" type="int" value="50"/>
-               <ParameterList name="Verbosit">
+               <ParameterList name="Verbosity">
        	  <Parameter name="Value" type="string" value="Medium"/>
        	</ParameterList>
              </ParameterList>	
