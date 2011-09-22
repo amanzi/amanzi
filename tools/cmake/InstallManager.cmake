@@ -211,8 +211,8 @@ get_property(AMANZI_TPL_LIST GLOBAL PROPERTY PACKAGES_FOUND)
 get_property(LINK_LINE GLOBAL PROPERTY AMANZI_LINK_LINE)
 
 # Define AMANZI_INCLUDE_DIRS and AMANZI_LIBRARY_DIRS
-set(AMANZI_INCLUDE_DIRS "")
-set(AMANZI_LIBRARY_DIRS "")
+set(AMANZI_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+set(AMANZI_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
 foreach( package ${AMANZI_TPL_LIST} )
   set(tpl_include_dir "${${package}_INCLUDE_DIR}")
   set(tpl_include_dirs "${${package}_INCLUDE_DIRS}")
