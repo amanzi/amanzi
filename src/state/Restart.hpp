@@ -18,7 +18,7 @@ namespace Amanzi {
     ~Restart();
    
     void dump_state (State& S);
-    void read_state (State& S);
+    void read_state (State& S, std::string& filename);
     void create_files ();
     void read_parameters(Teuchos::ParameterList& plist);
     bool dump_requested(int cycle);

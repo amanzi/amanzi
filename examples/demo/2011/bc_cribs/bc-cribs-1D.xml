@@ -18,7 +18,7 @@
 
   <ParameterList name="MPC">
     <Parameter name="Start Time" type="double" value="0.0"/>
-    <Parameter name="End Time" type="double" value="3.1e+100"/>
+    <Parameter name="End Time" type="double" value="3.1e+200"/>
     <Parameter name="End Cycle" type="int" value="1000"/>
     <Parameter name="disable Flow_PK" type="string" value="no"/>
     <Parameter name="Flow model" type="string" value="Richards"/>
@@ -26,7 +26,13 @@
     <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
     <Parameter name="disable Flow_PK" type="string" value="yes"/>
   </ParameterList>
-<!--
+
+  <ParameterList name="Execution Control">
+    <ParameterList name="Restart from Checkpoint File">
+      <Parameter name="Checkpoint File Name" type="string" value="chk00030.h5"/>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="Visualization">
     <Parameter name="File Name Base" type="string" value="bc-cribs"/>
     <Parameter name="Enable Gnuplot" type="bool" value="false"/>
@@ -39,7 +45,7 @@
       <Parameter name="Verbosity Level" type="string" value="medium"/>
     </ParameterList>
   </ParameterList>
--->
+
   <ParameterList name="Checkpoint Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int"  value="5"/>

@@ -120,7 +120,7 @@ void Amanzi::Restart::dump_state(State& S)
 }
 
 
-void Amanzi::Restart::read_state(State& S)
+void Amanzi::Restart::read_state(State& S, std::string& filename)
 {
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -129,73 +129,76 @@ void Amanzi::Restart::read_state(State& S)
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
     {
-      *out << "Amanzi::Restart... reading checkpoint" << std::endl;
+      *out << "Amanzi::Restart... reading checkpoint from file " << filename << std::endl;
     }
   
+  
+  Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm, filename); 
+
   int idummy;
   double dummy;
 
   // first we must read the number of components
-  restart_output->readAttrInt(idummy,"number of components");
+  restart_input->readAttrInt(idummy,"number of components");
   S.set_number_of_components(idummy);
 
   // now we can create storage
   S.create_storage();
     
   // read the attributes
-  restart_output->readAttrReal(dummy,"time");
+  restart_input->readAttrReal(dummy,"time");
   S.set_time(dummy);  
 
-  restart_output->readAttrInt(idummy,"cycle");
+  restart_input->readAttrInt(idummy,"cycle");
   S.set_cycle(idummy);
 
   double g[3];
-  restart_output->readAttrReal(g[0],"gravity x");
-  restart_output->readAttrReal(g[1],"gravity y");
-  restart_output->readAttrReal(g[2],"gravity z");
+  restart_input->readAttrReal(g[0],"gravity x");
+  restart_input->readAttrReal(g[1],"gravity y");
+  restart_input->readAttrReal(g[2],"gravity z");
   S.set_gravity(g);
   
-  restart_output->readAttrReal(dummy,"viscosity");
+  restart_input->readAttrReal(dummy,"viscosity");
   S.set_viscosity(dummy);
 
-  restart_output->readAttrReal(dummy,"density");
+  restart_input->readAttrReal(dummy,"density");
   S.set_water_density(dummy);
   
   // read the vectors
   Epetra_Vector* face_vector = new Epetra_Vector(S.get_mesh().face_epetra_map(false));
-  restart_output->readData(*face_vector,"darcy flux");
+  restart_input->readData(*face_vector,"darcy flux");
   S.set_darcy_flux(*face_vector);
   delete face_vector;
 
   Epetra_Vector* cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
-  restart_output->readData(*cell_vector,"water saturation");
+  restart_input->readData(*cell_vector,"water saturation");
   S.set_water_saturation(*cell_vector);
   delete cell_vector;
   
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
-  restart_output->readData(*cell_vector,"water density");
+  restart_input->readData(*cell_vector,"water density");
   S.set_water_density(*cell_vector);
   delete cell_vector;
 
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
-  restart_output->readData(*cell_vector,"pressure");
+  restart_input->readData(*cell_vector,"pressure");
   S.set_pressure(*cell_vector);
   delete cell_vector;
   
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
-  restart_output->readData(*cell_vector,"porosity");
+  restart_input->readData(*cell_vector,"porosity");
   S.set_porosity(*cell_vector);
   delete cell_vector;
 
   cell_vector = new Epetra_Vector(S.get_mesh().cell_epetra_map(false));
-  restart_output->readData(*cell_vector,"permeability");
+  restart_input->readData(*cell_vector,"permeability");
   S.set_permeability(*cell_vector);
   delete cell_vector;
 
   Epetra_MultiVector* cell_multivector = new Epetra_MultiVector(S.get_mesh().cell_epetra_map(false), 3);
-  restart_output->readData(*(*cell_multivector)(0),"darcy velocity x");
-  restart_output->readData(*(*cell_multivector)(1),"darcy velocity y");
-  restart_output->readData(*(*cell_multivector)(2),"darcy velocity z");
+  restart_input->readData(*(*cell_multivector)(0),"darcy velocity x");
+  restart_input->readData(*(*cell_multivector)(1),"darcy velocity y");
+  restart_input->readData(*(*cell_multivector)(2),"darcy velocity z");
   S.set_darcy_velocity(*cell_multivector);
   delete cell_multivector;        
 
@@ -205,10 +208,12 @@ void Amanzi::Restart::read_state(State& S)
       std::stringstream tcc_name;
       tcc_name << "component " << i;
 
-      restart_output->readData(*(*cell_multivector)(i),tcc_name.str()); 
+      restart_input->readData(*(*cell_multivector)(i),tcc_name.str()); 
     }
   S.set_total_component_concentration(*cell_multivector);
   delete cell_multivector;        
+
+  delete restart_input;
 
 }
 

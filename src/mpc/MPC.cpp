@@ -170,18 +170,20 @@ void MPC::mpc_init()
 
 
    // are we restarting from a file?
-
-   if (parameter_list.isSublist("Restart from Checkpoint File"))
+   
+   if (parameter_list.isSublist("Execution Control"))
      {
-       restart_requested = true;
-       
-       Teuchos::ParameterList restart_parameter_list = 
-	 parameter_list.sublist("Restart from Checkpoint File");
-       
-       restart_from_filename = restart_parameter_list.get<string>("Checkpoint File Name");
+       if (parameter_list.sublist("Execution Control").isSublist("Restart from Checkpoint File"))
+	 {
+	   restart_requested = true;
+	   
+	   Teuchos::ParameterList restart_parameter_list = 
+	     parameter_list.sublist("Execution Control").sublist("Restart from Checkpoint File");
+	   
+	   restart_from_filename = restart_parameter_list.get<string>("Checkpoint File Name");
+	 }
      }
 }
-
 
 void MPC::read_parameter_list()
 {
@@ -263,14 +265,10 @@ void MPC::cycle_driver ()
     }
   else
     {
-      // first figure out what the restart file is that
-      // we need to read from
-      
-      // restart->read_state( *S );
+      // re-initialize the state object
+      restart->read_state( *S, restart_from_filename );
 
-      // initialize the iteration counter
-      // iter = S->get_cycle();
-
+      iter = S->get_cycle();
     }
   
   // write visualization output
