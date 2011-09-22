@@ -229,8 +229,6 @@ foreach( package ${AMANZI_TPL_LIST} )
 endforeach()
 list(REMOVE_DUPLICATES AMANZI_INCLUDE_DIRS)
 list(REMOVE_DUPLICATES AMANZI_LIBRARY_DIRS)
-print_variable(AMANZI_INCLUDE_DIRS)
-print_variable(AMANZI_LIBRARY_DIRS)
 
 # Convert the link line to a space deliminated string
 foreach (arg ${LINK_LINE})
