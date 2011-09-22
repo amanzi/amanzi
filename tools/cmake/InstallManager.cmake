@@ -210,6 +210,28 @@ function (CREATE_EXPORTS)
 get_property(AMANZI_TPL_LIST GLOBAL PROPERTY PACKAGES_FOUND)
 get_property(LINK_LINE GLOBAL PROPERTY AMANZI_LINK_LINE)
 
+# Define AMANZI_INCLUDE_DIRS and AMANZI_LIBRARY_DIRS
+set(AMANZI_INCLUDE_DIRS "")
+set(AMANZI_LIBRARY_DIRS "")
+foreach( package ${AMANZI_TPL_LIST} )
+  set(tpl_include_dir "${${package}_INCLUDE_DIR}")
+  set(tpl_include_dirs "${${package}_INCLUDE_DIRS}")
+  list(APPEND AMANZI_INCLUDE_DIRS ${tpl_include_dir} ${tpl_include_dirs})
+
+  set(tpl_library_dir  "${${package}_LIBRARY_DIR}")
+  set(tpl_library_dirs "${${package}_LIBRARY_DIRS}")
+  list(APPEND AMANZI_LIBRARY_DIRS ${tpl_library_dir} ${tpl_library_dirs})
+  set(tpl_libraries    "${${package}_LIBRARIES}")
+  foreach( extra_tpl_library ${tpl_libraries} )
+    get_filename_component(extra_library_path ${extra_tpl_library} PATH)
+    list(APPEND AMANZI_LIBRARY_DIR ${extra_library_path})
+  endforeach()
+endforeach()
+list(REMOVE_DUPLICATES AMANZI_INCLUDE_DIRS)
+list(REMOVE_DUPLICATES AMANZI_LIBRARY_DIRS)
+print_variable(AMANZI_INCLUDE_DIRS)
+print_variable(AMANZI_LIBRARY_DIRS)
+
 # Convert the link line to a space deliminated string
 foreach (arg ${LINK_LINE})
   set(LINK_LINE_STRING "${LINK_LINE_STRING} ${arg}")
