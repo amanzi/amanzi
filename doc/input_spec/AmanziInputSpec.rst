@@ -650,7 +650,7 @@ Checkpoint Data
 A user may request periodic dumps of Amanzi checkpoint data.  The user has not explicit control over the content of these files, but has the guarantee that the Amanzi run will be reproducible (with accuracies determined
 by machine round errors and randomness due to execution in a parallel computing environment.  Therefore, output controls for checkpoint data are limited to file name generation and writing frequency, by numerical cycle number.
 
-* `"Checkpoint Data`" [list] can accept a file name base [string], cycle data [list] and number of digits [int] used to generate the file name (e.g. file00050 if 5 digits and time step 50)
+* `"Checkpoint Data`" [list] can accept a file name base [string] and cycle data [list] used to generate the file base name or directory base name that is used in writing checkpoint data. 
 
   * `"File Name Base`" [string]
 
@@ -687,10 +687,10 @@ Visualization Data
 A user may request periodic writes of field data for the purposes of vizualization.  The user will specify explicitly what is to be included in the file at each snapshot.  Visualization files can only be written 
 at intervals corresponding to the numerical time step values; writes are controlled by timestep cycle number.
 
-* `"Visualization Data`" [list] can accept a file name base [string], cycle data [list] and number of digits [int] used to generate the file name (e.g. file00050 if 5 digits and time step 50).  It can also accept a set of lists to specify which state variables to write.
+* `"Visualization Data`" [list] can accept a file name base [string] and cycle data [list] that is used to generate the file base name or directory base name that is used in writing visualization data.  It can also accept a set of lists to specify which state variables to write. 
 
   * `"File Name Base`" [string]
-
+  
   * `"Cycle Data`" [string] can accept start, end and interval data for cycle number
 
     * `"Start`" [int] step number of first file
