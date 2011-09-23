@@ -206,7 +206,7 @@
 #
 # ascemio: login required
 # download the amanzi release version from:
-# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/ASCEMIO/ascem-io-1.1.tgz
+# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/ASCEMIO/ascem-io-1.1p.tgz
 #
 # moab: login required
 # download the amanzi recommend version from: 
@@ -243,7 +243,7 @@ METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
 CCSE_VERSION=0.1.5
-ASCEMIO_VERSION=1.1
+ASCEMIO_VERSION=1.1p
 
 ################################################################################
 #
@@ -1011,7 +1011,6 @@ AMANZI_MAKE_VERBOSE=0
 PLATFORM=${PLATFORM}
 ENABLE_Structured=${ENABLE_Structured}
 ENABLE_Unstructured=${ENABLE_Unstructured}
-ENABLE_ASCEMIO=${ENABLE_ASCEMIO}
 
 ENABLE_MPI=${ENABLE_MPI}
 ENABLE_OpenMP=${ENABLE_OpenMP}
@@ -1138,7 +1137,6 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
         -D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
         -D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
-        -D ENABLE_ASCEMIO:BOOL=\${ENABLE_ASCEMIO} \\
         -D ASCEMIO_DIR:FILEPATH=${PREFIX} \\
         ..
 
@@ -1207,12 +1205,11 @@ AMANZI_PRECISION=DOUBLE
 AMANZI_CHEMEVOL_PKG=AMANZI
 ENABLE_Structured=0
 ENABLE_Unstructured=1
-ENABLE_ASCEMIO=0
 
 while getopts "abcdefghikmnop:stuwz" flag
 do
   case $flag in
-    a) BUILD_OPENMPI=1; BUILD_BOOST=1; BUILD_CURL=1; BUILD_ZLIB=1; BUILD_HDF5=1; BUILD_NETCDF=1; BUILD_EXODUS=1; BUILD_MOAB=1; BUILD_METIS=1; BUILD_MSTK=1; BUILD_CGNS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CCSE=1;;
+    a) BUILD_OPENMPI=1; BUILD_BOOST=1; BUILD_CURL=1; BUILD_ZLIB=1; BUILD_HDF5=1; BUILD_ASCEMIO=1; BUILD_NETCDF=1; BUILD_EXODUS=1; BUILD_MOAB=1; BUILD_METIS=1; BUILD_MSTK=1; BUILD_CGNS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CCSE=1;;
     b) BUILD_BOOST=1;;
     c) BUILD_CHECK=1;;
     d) DOWNLOAD_ARCHIVES=1;;
@@ -1264,7 +1261,6 @@ echo "AMANZI_SPACEDIM=$AMANZI_SPACEDIM"
 echo "AMANZI_PRECISION=$AMANZI_PRECISION"
 echo "ENABLE_Structured=$ENABLE_Structured"
 echo "ENABLE_Unstructured=$ENABLE_Unstructured"
-echo "ENABLE_ASCEMIO=$ENABLE_ASCEMIO"
 
 if [ ${ENABLE_Structured} == 0 -a ${ENABLE_Unstructured} == 0 ]; then
   echo "Must enable Structured or Unstructured.  Exiting..."
