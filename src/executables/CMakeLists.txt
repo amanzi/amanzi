@@ -70,6 +70,7 @@ if(ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIRS})
     include_directories(${STK_SOURCE_DIR})
 endif()
+include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # Need to move this up to the root -- lpritch
