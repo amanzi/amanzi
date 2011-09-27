@@ -773,44 +773,36 @@ PorousMedia::initData ()
 	}
 
       if (ntracers > 0)
-	{
+	{		  
+	  
 	  for (int i = 0; i < tinit.size(); i++)
 	    {
-	      switch (tinit_param[i][1])
+	      if (tinit_param[i][1] == bc_list["file"]) 
 		{
-		case 0:
 		  std::cerr << "Initialization of initial condition based on "
 			    << "a file has not been implemented yet.\n";
 		  BoxLib::Abort("PorousMedia::initData()");
-		  break;
-
-		case 1:
-		  // set constant value
+		}
+	      else if (tinit_param[i][1] == bc_list["scalar"]) 
+		{
 		  region_array[tinit_param[i][0]]->setVal(S_new[mfi],tinit[i],
 							  dx,0,ncomps,
 							  ncomps+ntracers);
-		  break;
-
-		default:
-		  FORT_INIT_TRACER(&level,&cur_time,
-				   s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-				   tinit[i].dataPtr(), 
-				   &ncomps, &ntracers, dx);
 		}
+	      else
+		FORT_INIT_TRACER(&level,&cur_time,
+				 s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
+				 tinit[i].dataPtr(), 
+				 &ncomps, &ntracers, dx);
 	    }
 	}
     }
+
   FillStateBndry(cur_time,State_Type,0,ncomps+ntracers);
   P_new.setVal(0.);
   U_new.setVal(0.);
   U_vcr.setVal(0.);
   if (have_capillary) calcCapillary(cur_time);
-  
-  
-
-  //pcnp1_cc->setVal(0.4);
-  //smooth_pc(pcnp1_cc);
-  //calcInvCapillary(cur_time);
 
   //
   // compute lambda
@@ -834,7 +826,7 @@ PorousMedia::initData ()
   //
   // Richard initialization
   //
-  bool do_brute_force = false ;
+  bool do_brute_force = false;
   //do_brute_force = true;
 #ifdef MG_USE_FBOXLIB
   if (rhoinit_param[0][1] == bc_list["richard"]) 
@@ -1890,14 +1882,12 @@ PorousMedia::advance_richard (Real time,
   // predict the next time step. 
   Real dt_nwt = dt; 
   predictDT(u_macG_trac);
-  
-  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < 1e6)
+  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < richard_max_dt)
     dt_nwt = dt_nwt*1.2;
   else if (curr_nwt_iter > 10 )
     dt_nwt = dt_nwt*0.8;
   richard_iter = curr_nwt_iter;
   dt_eig = std::min(dt_eig,dt_nwt); 
-
 }
 
 void
@@ -1938,7 +1928,7 @@ PorousMedia::advance_multilevel_richard (Real time,
       Real dt_nwt = dt; 
       fine_lev.predictDT(fine_lev.u_macG_trac);
   
-      if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < 1e6)
+      if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < richard_max_dt)
 	dt_nwt = dt_nwt*1.2;
       else if (curr_nwt_iter > 10 )
 	dt_nwt = dt_nwt*0.8;
@@ -2868,6 +2858,7 @@ PorousMedia::scalar_advection_update (Real dt,
       godunov->Add_aofs_tf(S_old[i],S_new[i],first_scalar,nscal,
 			   Aofs[i],first_scalar,tforces,0,Rockphi[i],grids[i],dt);
     }
+
 
   FillStateBndry(pcTime,State_Type,first_scalar,nscal);
   S_new.FillBoundary();
@@ -3821,7 +3812,7 @@ PorousMedia::scalar_capillary_update (Real      dt,
   calcDiffusivity_CPL(cmp_pcnp1,lambdap1_cc);
   calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
 
-  int  max_itr_nwt = 50;
+  int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
   Real max_err_nwt = 1e-10;
 #else
@@ -4063,7 +4054,7 @@ PorousMedia::diff_capillary_update (Real      dt,
   calcDiffusivity_CPL(tmp,lambdap1_cc);
   calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
 
-  int  max_itr_nwt = 10;
+  int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
   Real max_err_nwt = 1e-10;
 #else
@@ -4421,6 +4412,7 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
 
   calcCapillary(pcTime);
   calcLambda(pcTime);
+  compute_vel_phase(u_mac,0,pcTime);
   calc_richard_coef(cmp_pcp1,lambdap1_cc,u_mac,0,do_upwind);
   calc_richard_jac (cmp_pcp1_dp,lambdap1_cc,u_mac,pcTime,0,do_upwind,do_n);
   if (!do_n)
@@ -5625,6 +5617,8 @@ PorousMedia::post_timestep (int crse_iteration)
 	{
 	  std::ofstream out;
 	  out.open(obs_outputfile.c_str(),std::ios::out);
+	  out.precision(16);
+	  out.setf(std::ios::scientific);
 	  for (int i=0; i<observation_array.size(); ++i)
 	    {
 	      for (int j = 0; j <observation_array[i].vals.size(); ++j)
@@ -7008,7 +7002,7 @@ PorousMedia::mac_sync ()
       calcDiffusivity_CPL(cmp_pcnp1,lambdap1_cc);
       calcDiffusivity_CPL_dp(cmp_pcnp1_dp,lambdap1_cc,pcTime,1);
       
-      int  max_itr_nwt = 200;
+      int  max_itr_nwt = 20;
 #if (BL_SPACEDIM == 3)
       Real max_err_nwt = 1e-10;
 #else
@@ -8183,7 +8177,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			      &do_upwind);
       else
 	{
-	  Real deps = 1.e-8;
+	  Real deps = 1.e-12;
 	  if (do_n)
 	    FORT_RICHARD_NJAC(ndat,   ARLIM(n_lo), ARLIM(n_hi),
 			      dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),

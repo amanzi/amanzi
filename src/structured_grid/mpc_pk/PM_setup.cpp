@@ -128,6 +128,7 @@ Real PorousMedia::cfl;
 Real PorousMedia::init_shrink;
 Real PorousMedia::change_max;
 Real PorousMedia::fixed_dt;
+Real PorousMedia::richard_max_dt;
 Real PorousMedia::dt_cutoff;
 Real PorousMedia::gravity;
 int  PorousMedia::initial_step;
@@ -384,6 +385,7 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::init_shrink  = 1.0;
   PorousMedia::change_max   = 1.1;
   PorousMedia::fixed_dt     = -1.0;
+  PorousMedia::richard_max_dt = 5.e5;
   PorousMedia::dt_cutoff    = 0.0;
   PorousMedia::gravity      = 9.70297e-5; // 9.81/1.01e5
   PorousMedia::initial_step = false;
@@ -978,6 +980,7 @@ void PorousMedia::read_prob()
   pb.query("dt_cutoff",dt_cutoff);
   pb.query("change_max",change_max);
   pb.query("fixed_dt",fixed_dt);
+  pb.query("richard_max_dt",richard_max_dt);
   pb.query("sum_interval",sum_interval);
 
   // Gravity are specified as m/s^2 in the input file
