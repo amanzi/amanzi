@@ -176,7 +176,8 @@ Generally, the set of options for the mesh frameworks depend on whether the grid
 
 Amanzi-generated grids:
 
-* FRAMEWORK [list] labeled after mesh framework, accepts the following types: `"Structured-grid`", `"SimpleMesh`", `"stk::mesh`"
+* FRAMEWORK [list] labeled after mesh framework, accepts the following
+  types: `"Structured-grid`", `"SimpleMesh`", `"STKmesh`"
 
  * `"Domain Low Corner`" [Array double] Location of low corner of box
 
@@ -196,7 +197,8 @@ Amanzi-generated grids:
 
 Pre-generated grids:
 
-* `"Framework`" [string] labeled after mesh framework, accepts the following types: `"MOAB`", `"Exodus`"
+* `"Framework`" [string] labeled after mesh framework, accepts the
+  following types: `"STKmesh`", `"MSTK`", `"MOAB`"
 
  * `"File`" [string] name of pre-generated mesh file
 
@@ -207,9 +209,9 @@ Example
 .. code-block:: xml
 
   <ParameterList name="Mesh">
-    <ParameterList name="MOAB">
-      <Parameter name="File" type="string" value="moab_filename"/>
-      <Parameter name="Format" type="string" value="moab_default"/>
+    <ParameterList name="MSTK">
+      <Parameter name="File" type="string" value="mesh_filename"/>
+      <Parameter name="Format" type="string" value="Exodus II"/>
     </ParameterList>   
   </ParameterList>
 
@@ -247,7 +249,7 @@ definitions based on triangulated surface files.
 | `"Plane"`              | `"Direction`", `"Location`"             | Array double, Array double   | Location of boundary points of box                           |
 +------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
 | `"Labeled Set"`        | `"label`", `"file`",                    | string, string,              | Set per label defined in mesh file (see below)               |
-|                        | `"mesh framework`", `"entity`"          | string, string               |  (available for frameworks supporting the `"File`" keyword)  |
+|                        | `"mesh format`", `"entity`"             | string, string               |  (available for frameworks supporting the `"File`" keyword)  |
 +------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
 | `"Layer"`              | `"file#`", `"label#`"                   | (#=1,2) string, string       | Region between two surfaces                                  |
 +------------------------+-----------------------------------------+------------------------------+--------------------------------------------------------------+
@@ -258,11 +260,42 @@ Notes
 
 * `"Box`" and "Plane" must be bounded by coordinate-aligned lines and planes.
 
-* The "Labeled Set" region is defined by a label that was given to sets generated in a preprocessing step and stored in a mesh-dependent data file.  For example, an "exodus::mesh" type mesh file can be processed to tag cells, faces and/or nodes with specific labels, using a variety of external tools.  Regions based on such sets are assigned a user-defined label for Amanzi, which may or may not correspond to the original label in the exodus file.  Note that the file used to express this labeled set may be in any Amanzi-supported mesh framework (the mesh framework is specified in the parameters for this option).  The `"entity`" parameter may be necessary to specify a unique set.  For example, an exodus file requires `"Cell`", `"Face`" or `"Node`" as well as a label (which is an integer).  When the mesh framework for the region is different from the current mesh framework (defined in `"Mesh`" above), the intersection of the specified region and the computational domain defines the region.  This latter option is not yet supported, but will likely be implemented as a special (piecewise-constant) case of a generalized interpolation operator.
+* The "Labeled Set" region is defined by a label that was given to
+  sets generated in a preprocessing step and stored in a
+  mesh-dependent data file.  For example, a mesh file in the Exodus II
+  format can be processed to tag cells, faces and/or nodes with
+  specific labels, using a variety of external tools.  Regions based
+  on such sets are assigned a user-defined label for Amanzi, which may
+  or may not correspond to the original label in the exodus file.
+  Note that the file used to express this labeled set may be in any
+  Amanzi-supported mesh format (the mesh format is specified in the
+  parameters for this option).  The `"entity`" parameter may be
+  necessary to specify a unique set.  For example, an exodus file
+  requires `"Cell`", `"Face`" or `"Node`" as well as a label (which is
+  an integer).
 
-* Surface files contain labeled triangulated face sets.  The user is responsible for ensuring that the intersections with other surfaces in the problem, including the boundaries, are `"exact`" (*i.e.* that surface intersections are `"watertight`" where applicable), and that the surfaces are contained within the computational domain.  If nodes in the surface fall outside the domain, the elements they define are ignored.
+* When the mesh file/format for the region is different
+  from that used for specifying the `"Mesh`" above, the region is
+  defined by the intersection of the input region and the
+  computational domain.  This latter option is `not yet supported`,
+  but will likely be implemented as a special (piecewise-constant)
+  case of a generalized interpolation operator.
 
-* Eventually, Amanzi will support a "geometric modeling" syntax such that complex regions can be assembled by composition with logical operators.  The next step toward this capability will likely be to allow the definition of a single region as a concatentation of a number of basic shapes.  A more general capability might include the name of an instruction file (and a label to identify a particular region in the file) to interface to a scripted modeler.
+* Surface files contain labeled triangulated face sets.  The user is
+  responsible for ensuring that the intersections with other surfaces
+  in the problem, including the boundaries, are `"exact`" (*i.e.* that
+  surface intersections are `"watertight`" where applicable), and that
+  the surfaces are contained within the computational domain.  If
+  nodes in the surface fall outside the domain, the elements they
+  define are ignored.
+
+* Eventually, Amanzi will support a "geometric modeling" syntax such
+  that complex regions can be assembled by composition with logical
+  operators.  The next step toward this capability will likely be to
+  allow the definition of a single region as a concatentation of a
+  number of basic shapes.  A more general capability might include the
+  name of an instruction file (and a label to identify a particular
+  region in the file) to interface to a scripted modeler.
 
 Example:
 
@@ -287,6 +320,14 @@ Example:
         <Parameter name="High Coordinate" type="Array double" value="{4, 5, 3}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Inflow Surface">
+      <ParameterList name="Labeled Set">
+        <Parameter name="label"  type="string" value="sideset_2"/>
+	<Parameter name="file"   type="string" value="F_area_mesh.exo"/>
+	<Parameter name="format" type="string" value="Exodus II"/>
+	<Parameter name="entity" type="string" value="Cell"/>
+      </ParameterList>
+    </ParamterList>
   </ParameterList>
 
 In this example, "Top Section", "Middle Section" and "Bottom Section" are three box-shaped regions.
