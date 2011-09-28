@@ -325,7 +325,7 @@ Example:
         <Parameter name="label"  type="string" value="sideset_2"/>
 	<Parameter name="file"   type="string" value="F_area_mesh.exo"/>
 	<Parameter name="format" type="string" value="Exodus II"/>
-	<Parameter name="entity" type="string" value="Cell"/>
+	<Parameter name="entity" type="string" value="Face"/>
       </ParameterList>
     </ParamterList>
   </ParameterList>
