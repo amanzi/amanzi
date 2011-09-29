@@ -66,7 +66,7 @@ if(ENABLE_CGNS)
 endif()
 
 add_library(output ${output_source_files})
-target_link_libraries(output error_handling simple_mesh mesh geometry ${output_tpl_list} )
+target_link_libraries(output simple_mesh mesh geometry error_handling ${output_tpl_list} )
 
 #
 # Install Targets
