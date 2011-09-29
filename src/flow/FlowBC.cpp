@@ -236,9 +236,33 @@ namespace Amanzi
 		    m << " is refered to in another sublist of the Flow BC list.";
 		    Exceptions::amanzi_throw(m);
 		  }
+		
+		i++;
 
 	      }
 	  }
+
       }
+
+    // dump the data structure
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+      {
+	*out << "Dumping the BC data structure..." << std::endl;
+	for (std::vector<bc_spec>::iterator it = bc_.begin(); 
+	     it != bc_.end();
+	     it++)
+	  {
+	    *out << "Type          = " << it->Type << std::endl;
+	    *out << "SetID         = " << it->SetID << std::endl;
+	    *out << "#faces        = " << it->Faces.size() << std::endl;
+	    *out << "Value         = " << it->Value << std::endl;
+	    *out << "Initial Value = " << it->InitialValue << std::endl;
+	    *out << "Final Value   = " << it->InitialValue << std::endl;
+	    *out << "Initial Time  = " << it->InitialValue << std::endl << std::endl;
+	  }
+      }        
+
+
+
   }
 } // close namespace Amanzi
