@@ -171,13 +171,15 @@ Mesh
 
 Amanzi supports a number of mesh "frameworks" used to discretize the simulation domain, including support for structured and unstructured grids.  The structured-grid option supports dynamic solution-adaptive grid generation.  Amanzi's unstructured grid options include variants that generate meshes internally "on-the-fly", and others that require the user to specify an externally-generated mesh.
 
+
+
 Generally, the set of options for the mesh frameworks depend on whether the grid is to be generated or read in from a file.
 
 
-Amanzi-generated grids:
+* MESHTYPE [list] accepts `"Structured`" or `"Unstructured`"
 
-* FRAMEWORK [list] labeled after mesh framework, accepts the following
-  types: `"Structured-grid`", `"SimpleMesh`", `"STKmesh`"
+* If MESHTYPE is `"Structured`", the following parameters are to be
+  specified:
 
  * `"Domain Low Corner`" [Array double] Location of low corner of box
 
@@ -195,24 +197,50 @@ Amanzi-generated grids:
      </ParameterList>   
    </ParameterList>
 
-Pre-generated grids:
+* If MESHTYPE is `"Unstructured`", then one must specify if it is
+  internally generated or to be read from a file, 
 
-* `"Framework`" [string] labeled after mesh framework, accepts the
-  following types: `"STKmesh`", `"MSTK`", `"MOAB`"
+  METHOD [list] can be `"Generate`" or `"Read`"
 
- * `"File`" [string] name of pre-generated mesh file
+* If METHOD is `"Generate`" the following parameters must be specified:
 
- * `"Format`" [string] format of pre-generated mesh file
+ * `"Domain Low Corner`" [Array double] Location of low corner of box
+
+ * `"Domain High Corner`" [Array double] Location of high corner of box
+
+ * `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+
+* If METHOD is `"Read`" the following parameters must be specified:
+
+ * `"File`" [string] File from which to read the mesh
+
+ * `"Format`" [string] Format in which mesh is stored in file
+
+* An optional parameter list called `"Expert`" may be specified to
+  chose more advanced options. For now, this list contains only one
+  possible parameter
+
+ * `"Framework`" [string] `"SimpleMesh`", `"STKmesh`", `"MSTK`",
+   `"MOAB`"
+
+   Indicates which unstructured mesh library/framework to use behind
+   the scenes. Note that not all frameworks support all meshing
+   options. For example, SimpleMesh does not support reading and MSTK
+   does not support generating meshes. So, this option must be used
+   only if a user knows something about Amanzi internals.
 
 Example
 
 .. code-block:: xml
 
   <ParameterList name="Mesh">
-    <ParameterList name="MSTK">
-      <Parameter name="File" type="string" value="mesh_filename"/>
+    <ParameterList name="Unstructured">
       <Parameter name="Format" type="string" value="Exodus II"/>
+      <Parameter name="File" type="string" value="mesh_filename"/>
     </ParameterList>   
+    <ParameterList name="Expert">
+      <Parameter name="Framework" type="string" value="MSTK"/>
+    </ParameterList>
   </ParameterList>
 
 
