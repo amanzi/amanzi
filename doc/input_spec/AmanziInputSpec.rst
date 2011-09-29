@@ -212,7 +212,8 @@ Generally, the set of options for the mesh frameworks depend on whether the grid
 
 * If METHOD is `"Read`" the following parameters must be specified:
 
- * `"File`" [string] File from which to read the mesh
+ * `"File`" [string] File from which to read the mesh (only Exodus II
+   supported for now)
 
  * `"Format`" [string] Format in which mesh is stored in file
 
