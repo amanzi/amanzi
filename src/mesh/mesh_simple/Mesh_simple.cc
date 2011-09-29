@@ -776,7 +776,7 @@ void Mesh_simple::node_get_cells (const AmanziMesh::Entity_ID nodeid,
   cellids->clear();
 
   for (int i = 0; i < ncells; i++) 
-    cellids->push_back(node_to_cell_[offset+i]);
+    cellids->push_back(node_to_cell_[offset+i+1]);
 }
     
 
@@ -793,7 +793,7 @@ void Mesh_simple::node_get_faces (const AmanziMesh::Entity_ID nodeid,
   faceids->clear();
 
   for (int i = 0; i < nfaces; i++) 
-    faceids->push_back(node_to_face_[offset+i]);
+    faceids->push_back(node_to_face_[offset+i+1]);
 }   
 
 
@@ -811,16 +811,21 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
   faceids->clear();
 
   for (int i = 0; i < 6; i++) {
-    unsigned int cellfaceid = face_to_cell_[offset+i];
+    unsigned int cellfaceid = cell_to_face_[offset+i];
 
     unsigned int offset2 = 4*cellfaceid;
-    
+
+    Amanzi::AmanziMesh::Entity_ID_List fnodes;
+    face_get_nodes(cellfaceid,&fnodes);
+ 
     for (int j = 0; j < 4; j++) {
+
       if (face_to_node_[offset2+j] == nodeid) {
 	faceids->push_back(cellfaceid);
 	break;
       }
     }
+  std:cerr << std::endl << std::endl;
   }
 
 }
