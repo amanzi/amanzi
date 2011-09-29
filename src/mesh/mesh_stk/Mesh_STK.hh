@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.hh
  * @author William A. Perkins
- * @date Mon Aug  8 11:58:56 2011
+ * @date Wed Sep 28 08:59:54 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Mon Aug  8 11:58:56 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed Sep 28 08:59:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -37,6 +37,7 @@ namespace AmanziMesh {
 namespace Data {
 class HexMeshGenerator;
 }
+class GenerationSpec;
 
 // -------------------------------------------------------------
 //  class Mesh_STK
@@ -63,8 +64,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            int nx, int ny, int nz, 
            Epetra_MpiComm *communicator);
 
-  /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
-  Mesh_STK(Teuchos::ParameterList &parameter_list,
+  /// Construct a hexedral mesh from specs (Mesh_simple alternative)
+  Mesh_STK(const GenerationSpec& gspec,
            Epetra_MpiComm *communicator);
 
   /// Construct a mesh from a Exodus II file or file set
@@ -320,11 +321,11 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                  const double& ydelta, 
                  const double& zdelta);
 
-  /// Generate a hexahedral mesh (with a parameter list)
-  void generate_(Teuchos::ParameterList &parameter_list);
+  /// Generate a hexahedral mesh (with specifications)
+  void generate_(const GenerationSpec& gspec);
 
   /// Build and store the required Epetra_Map instances
-  void build_maps_ ();
+  void build_maps_();
 
   /// Get the appropriate map for the specified @c kind
   const Epetra_Map& get_map_(const Entity_kind& kind, 

@@ -29,7 +29,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # Library: mesh
 #
-add_library(mesh Mesh.cc)
+add_library(mesh Mesh.cc GenerationSpec.cc)
 add_install_library(mesh)
 target_link_libraries(mesh geometry)
 

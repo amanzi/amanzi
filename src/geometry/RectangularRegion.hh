@@ -2,7 +2,7 @@
 /**
  * @file   RectangularRegion.hh
  * @author William A. Perkins
- * @date Fri Jul 29 12:27:24 2011
+ * @date Wed Sep 28 08:54:19 2011
  * 
  * @brief  Declaration of RectangularRegion class
  * 
@@ -34,6 +34,12 @@ public:
   /// Destructor
   ~RectangularRegion(void);
 
+  /// Get the first point defining the region
+  const Point& point0(void) const { return p0_; }
+
+  /// Get the second point defining the region
+  const Point& point1(void) const { return p1_; }
+
   /// Is the the specified point inside this region
   bool inside(const Point& p) const;
 
@@ -46,6 +52,9 @@ protected:
   static bool between_(const double& x, const double& x0, const double& x1);
 
 };
+
+/// A smart pointer to RectangularRegion instances
+typedef Teuchos::RCP<RectangularRegion> RectangularRegionPtr;
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

@@ -1,3 +1,4 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef _MESH_SIMPLE_H_
 #define _MESH_SIMPLE_H_
 
@@ -10,10 +11,13 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Mesh.hh"
+#include "Region.hh"
 
 namespace Amanzi {
 
 namespace AmanziMesh {
+
+class GenerationSpec;
 
 class Mesh_simple : public virtual Mesh
 {
@@ -24,7 +28,7 @@ public:
 	       double x1, double y1, double z1,
 	       int nx, int ny, int nz, Epetra_Comm *communicator);
   
-  Mesh_simple ( Teuchos::ParameterList &parameter_list,
+  Mesh_simple ( const GenerationSpec& gspec,
 		Epetra_Comm *communicator );
   
   virtual ~Mesh_simple ();
@@ -294,8 +298,8 @@ private:
 
   int nx_, ny_, nz_;  // number of cells in the three coordinate directions
   double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
-  int number_of_mesh_blocks;
-  double *mesh_block_z0, *mesh_block_z1;
+
+  AmanziGeometry::RegionVector mesh_blocks_;
 
   int num_cells_;
   int num_nodes_;

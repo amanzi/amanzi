@@ -6,6 +6,7 @@
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
 #include "Epetra_SerialComm.h"
+#include "GenerationSpec.hh"
 
 SUITE (MeshSimple) {
 TEST(MAPS) {
@@ -153,8 +154,10 @@ TEST (ParameterList) {
 
     parameter_list.set<int>("Number of mesh blocks", 2);
 
+    Amanzi::AmanziMesh::GenerationSpec g(parameter_list);
+
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_simple(parameter_list, comm));
+      mesh(new Amanzi::AmanziMesh::Mesh_simple(g, comm));
     CHECK(!mesh.is_null());
     CHECK_EQUAL(3, mesh->num_sets(Amanzi::AmanziMesh::CELL));
     mesh.reset();

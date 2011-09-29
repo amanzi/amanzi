@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Mon Aug  8 12:37:33 2011
+ * @date Wed Sep 28 10:32:43 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Mon Aug  8 12:37:33 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed Sep 28 10:32:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_STK.hh"
@@ -21,6 +21,7 @@
 #include "HexMeshGenerator.hh"
 #include "Mesh_STK_factory.hh"
 #include "RectangularRegion.hh"
+#include "GenerationSpec.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
@@ -67,55 +68,32 @@ Mesh_STK::generate_(const unsigned int& ni, const unsigned int& nj, const unsign
 }
 
 void
-Mesh_STK::generate_(Teuchos::ParameterList &parameter_list)
+Mesh_STK::generate_(const GenerationSpec& gspec)
 {
-  int nx, ny, nz;
-  double x0, y0, z0;
-  double x1, y1, z1;
+  int nx(gspec.xcells());
+  int ny(gspec.ycells());
+  int nz(gspec.zcells());
 
-  // read the parameters from the parameter list
+  AmanziGeometry::Point p0(gspec.domain().point0());
+  AmanziGeometry::Point p1(gspec.domain().point1());
 
-  nx = parameter_list.get<int>("Number of Cells in X");
-  ny = parameter_list.get<int>("Number of Cells in Y");
-  nz = parameter_list.get<int>("Number of Cells in Z");
-  
-  x0 = parameter_list.get<double>("X_Min", 0);
-  x1 = parameter_list.get<double>("X_Max", 1);
-
-  y0 = parameter_list.get<double>("Y_Min", 0);
-  y1 = parameter_list.get<double>("Y_Max", 1);
-
-  z0 = parameter_list.get<double>("Z_Min", 0);
-  z1 = parameter_list.get<double>("Z_Max", 1);
-
-  double xdelta((x1 - x0)/static_cast<double>(nx));
-  double ydelta((y1 - y0)/static_cast<double>(ny));
-  double zdelta((z1 - z0)/static_cast<double>(nz));
+  double xdelta((p1.x() - p0.x())/static_cast<double>(nx));
+  double ydelta((p1.y() - p0.y())/static_cast<double>(ny));
+  double zdelta((p1.z() - p0.z())/static_cast<double>(nz));
 
   Data::HexMeshGenerator g(communicator_.get(), 
                            nx, ny, nz,
-                           x0, y0, z0,
+                           p0.x(), p0.y(), p0.z(),
                            xdelta, ydelta, zdelta);
 
-  int nblk;
+  int nblk(0);
 
-  nblk = parameter_list.get<int>("Number of mesh blocks",0);
-  
-  if (nblk > 0) {
-    for (int nb = 1; nb <= nblk; nb++) {
-      std::stringstream s; 
-      s << "Mesh block " << nb;
+  AmanziGeometry::RegionVector::const_iterator r;
+  for (r = gspec.block_begin(); r != gspec.block_end(); ++r, nblk++) {
+    std::stringstream s; 
+    s << "Mesh block " << nblk + 1;
 
-      Teuchos::ParameterList sublist = parameter_list.sublist(s.str());
-
-      // tell the generator about the zone
-
-      AmanziGeometry::Point p0(x0, y0, sublist.get<double>("Z0"));
-      AmanziGeometry::Point p1(x1, y1, sublist.get<double>("Z1"));
-      AmanziGeometry::RegionPtr r(new AmanziGeometry::RectangularRegion(p0, p1));
-
-      g.add_region(nb, s.str(), r);
-    }
+    g.add_region(nblk+1, s.str(), *r);
   }
   
   generate_(g);
@@ -162,7 +140,7 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
             x0, y0, z0, xdelta, ydelta, zdelta);
 }
 
-Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
+Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
                    Epetra_MpiComm *communicator)
   : communicator_(new Epetra_MpiComm(*communicator)),
     mesh_(), 
@@ -170,7 +148,7 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
     map_owned_(), map_used_()
 {
   Mesh::set_comm(communicator_->GetMpiComm());
-  generate_(parameter_list);
+  generate_(gspec);
 }
 
 } // namespace AmanziMesh
