@@ -1,3 +1,5 @@
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
 #include "FlowBC.hpp"
 
 #include "float.h"
@@ -18,7 +20,10 @@ namespace Amanzi
     this->setLinePrefix("Amanzi::FlowBC");
     // make sure that the line prefix is printed
     this->getOStream()->setShowLinePrefix(true);
-    
+
+    // Read the sublist for verbosity settings.
+    Teuchos::readVerboseObjectSublist(&list,this);    
+
     // set up the verbose output stream
     using Teuchos::OSTab;
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -236,9 +241,34 @@ namespace Amanzi
 		    m << " is refered to in another sublist of the Flow BC list.";
 		    Exceptions::amanzi_throw(m);
 		  }
+		
+		// increment the boundary condition counter
+		i++;
 
 	      }
 	  }
+
       }
+
+    //dump the data structure
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+      {
+    	*out << "Dumping the BC data structure..." << std::endl;
+    	for (std::vector<bc_spec>::iterator it = bc_.begin(); 
+    	     it != bc_.end();
+    	     it++)
+    	  {
+    	    *out << "Type          = " << it->Type << std::endl;
+    	    *out << "SetID         = " << it->SetID << std::endl;
+    	    *out << "#faces        = " << it->Faces.size() << std::endl;
+    	    *out << "Value         = " << it->Value << std::endl;
+    	    *out << "Initial Value = " << it->InitialValue << std::endl;
+    	    *out << "Final Value   = " << it->InitialValue << std::endl;
+    	    *out << "Initial Time  = " << it->InitialValue << std::endl << std::endl;
+    	  }
+      }        
+
+
+
   }
 } // close namespace Amanzi
