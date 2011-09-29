@@ -28,11 +28,34 @@ Mesh_simple::Mesh_simple (double x0, double y0, double z0,
   Mesh::set_comm(communicator);
 }
 
+Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
+                           Epetra_Comm *communicator ) :
+  communicator_(communicator)
+{
+  GenerationSpec gspec(parameter_list);
+  generate_(gspec);
+  Mesh::set_comm(communicator);
+}
+
 Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
                           Epetra_Comm *communicator ) :
     communicator_(communicator)
 {
+  generate_(gspec);
+  Mesh::set_comm(communicator);
+}
 
+
+Mesh_simple::~Mesh_simple()
+{
+  delete cell_map_;
+  delete face_map_;
+  delete node_map_;
+}
+
+void 
+Mesh_simple::generate_(const GenerationSpec& gspec)
+{
   // read the parameters from the specification
 
   nx_ = gspec.xcells();
@@ -53,18 +76,7 @@ Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
             std::back_inserter(mesh_blocks_));
   
   update();
-
-  Mesh::set_comm(communicator);
 }
-
-
-Mesh_simple::~Mesh_simple()
-{
-  delete cell_map_;
-  delete face_map_;
-  delete node_map_;
-}
-
 
 
 void Mesh_simple::update ()

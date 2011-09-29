@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.hh
  * @author William A. Perkins
- * @date Wed Sep 28 08:59:54 2011
+ * @date Thu Sep 29 10:51:22 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Wed Sep 28 08:59:54 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Sep 29 10:51:22 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -62,6 +62,10 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   Mesh_STK(double x0, double y0, double z0,
            double x1, double y1, double z1,
            int nx, int ny, int nz, 
+           Epetra_MpiComm *communicator);
+
+  /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
+  Mesh_STK(Teuchos::ParameterList &parameter_list,
            Epetra_MpiComm *communicator);
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)

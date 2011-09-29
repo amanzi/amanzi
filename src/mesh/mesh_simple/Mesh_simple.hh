@@ -30,6 +30,9 @@ public:
   
   Mesh_simple ( const GenerationSpec& gspec,
 		Epetra_Comm *communicator );
+
+  Mesh_simple ( Teuchos::ParameterList &parameter_list,
+		Epetra_Comm *communicator );
   
   virtual ~Mesh_simple ();
   
@@ -280,6 +283,7 @@ public:
 		      double* source_begin, double* source_end);
 
 private:
+  void generate_(const GenerationSpec& g);
   void update_internals_();
   void clear_internals_();
   void build_maps_();

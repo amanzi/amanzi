@@ -5,7 +5,7 @@
 /**
  * @file   Mesh_STK.cc
  * @author William A. Perkins
- * @date Wed Sep 28 10:32:43 2011
+ * @date Thu Sep 29 10:52:46 2011
  * 
  * @brief  
  * 
@@ -13,7 +13,7 @@
  */
 // -------------------------------------------------------------
 // Created May  2, 2011 by William A. Perkins
-// Last Change: Wed Sep 28 10:32:43 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Thu Sep 29 10:52:46 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include "Mesh_STK.hh"
@@ -138,6 +138,18 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
             static_cast<unsigned int>(ny), 
             static_cast<unsigned int>(nz), 
             x0, y0, z0, xdelta, ydelta, zdelta);
+}
+
+Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
+                   Epetra_MpiComm *communicator)
+  : communicator_(new Epetra_MpiComm(*communicator)),
+    mesh_(), 
+    entity_map_ (3), 
+    map_owned_(), map_used_()
+{
+  Mesh::set_comm(communicator_->GetMpiComm());
+  GenerationSpec g(parameter_list);
+  generate_(g);
 }
 
 Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
