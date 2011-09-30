@@ -1,5 +1,3 @@
-#include "Mesh_MOAB.hh"
-//#include "mpi.h"
 #include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
@@ -13,14 +11,14 @@
 
 #include "DarcyProblem.hpp"
 #include "cell_geometry.hh"
-//#include "Mesh_simple.hh"
-
+#include "Mesh.hh"
+#include "Mesh_STK.hh"
 
 #include <iostream>
 
 struct problem_setup
 {
-  Epetra_Comm *comm;
+  Epetra_MpiComm *comm;
   //Teuchos::RCP<Mesh_simple> mesh;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   Teuchos::ParameterList bc_params;
@@ -34,25 +32,26 @@ struct problem_setup
 
   problem_setup()
   {
-#ifdef HAVE_MPI
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-    comm = new Epetra_SerialComm;
-#endif
+
+    std::ostringstream file;
+    file << "test/4x4x4";
 
     // Create the mesh.
-    //mesh = Teuchos::rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4, comm));
     if (comm->NumProc() == 1)
-      mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh_MOAB>(new Amanzi::AmanziMesh::Mesh_MOAB("test/4x4x4.g", MPI_COMM_WORLD));
-    else {
-      std::ostringstream file;
-      file << "test/4x4x4-" << comm->NumProc() << "P.h5m";
-      mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh_MOAB>(new Amanzi::AmanziMesh::Mesh_MOAB(file.str().c_str(), MPI_COMM_WORLD));
-    }
+      {
+	file << ".g";
+      }
+    else 
+      {
+	file << ".par";
+      }
+
+    mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh>(new Amanzi::AmanziMesh::Mesh_STK(comm->GetMpiComm(), file.str().c_str()));
+
 
     // Define the default BC parameter list: no flow on all sides.
     // Can overwrite the BC on selected sides before creating the problem.
-    bc_params.set("number of BCs", 6);
     set_bc(LEFT,   "No Flow");
     set_bc(RIGHT,  "No Flow");
     set_bc(FRONT,  "No Flow");
