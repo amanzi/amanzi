@@ -326,7 +326,7 @@ struct FrameworkTraits {
   // FrameworkTraits<M>::canread
   // -------------------------------------------------------------
   /// A type to indicate whether this framework can mesh of a specific format
-  // FIXME: Doesn't MOAB read exodus files
+
   template < int FMT = 0 > 
   struct canread {
 
@@ -348,7 +348,7 @@ struct FrameworkTraits {
     struct serial :
         mpl::eval_if<
       mpl::bool_< M == MOAB >
-      , mpl::bool_< FMT == MOABHDF5 >
+      , mpl::bool_< FMT == ExodusII >
       , mpl::eval_if<
           mpl::bool_< M == STKMESH >
           , mpl::bool_< FMT == ExodusII >
