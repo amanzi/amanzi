@@ -837,7 +837,6 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
 	break;
       }
     }
-  std:cerr << std::endl << std::endl;
   }
 
 }
