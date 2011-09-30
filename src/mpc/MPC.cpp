@@ -1,6 +1,7 @@
 #include "errors.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 #include "MPC.hpp"
@@ -42,6 +43,14 @@ namespace Amanzi
   
 void MPC::mpc_init()
 {
+  // set the line prefix for output
+  this->setLinePrefix("Amanzi::MPC         ");
+  // make sure that the line prefix is printed
+  this->getOStream()->setShowLinePrefix(true);
+  
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&parameter_list,this);    
+
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -64,7 +73,7 @@ void MPC::mpc_init()
    
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
     {
-      *out << "Amanzi::MPC  The following process kernels are enabled: ";
+      *out << "The following process kernels are enabled: ";
       
       if (flow_enabled) {
 	*out << "Flow ";
@@ -136,16 +145,16 @@ void MPC::mpc_init()
    // done creating auxilary state objects and  process models
 
    // create the observations
-   Teuchos::ParameterList observation_plist = parameter_list.sublist("observation");
+   Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation");
    observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
 
 
    // create the visualization object
-   if (parameter_list.isSublist("Visualization"))
+   if (parameter_list.isSublist("Visualization Data"))
      {
        
        Teuchos::ParameterList vis_parameter_list = 
-	 parameter_list.sublist("Visualization");
+	 parameter_list.sublist("Visualization Data");
        visualization = new Amanzi::Vis(vis_parameter_list, comm);
        visualization->create_files(*mesh_maps);
      }
@@ -319,7 +328,6 @@ void MPC::cycle_driver ()
 	
 	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
 	  {
-	    *out << "Amanzi::MPC ";
 	    *out << "Cycle = " << iter; 
 	    *out << ",  Time = "<< S->get_time() / (60*60*24);
 	    *out << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;

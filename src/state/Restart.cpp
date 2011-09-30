@@ -1,5 +1,6 @@
 #include "Restart.hpp"
 #include "Epetra_MpiComm.h"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include <iostream>
 #include <iomanip>
 
@@ -8,6 +9,13 @@ Amanzi::Restart::Restart (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_)
 {
   read_parameters(plist);
 
+  // set the line prefix for output
+  this->setLinePrefix("Amanzi::Restart     ");
+  // make sure that the line prefix is printed
+  this->getOStream()->setShowLinePrefix(true);
+  
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&plist,this);
   restart_output = new Amanzi::HDF5_MPI(*comm);
   restart_output->setTrackXdmf(false);
   
@@ -68,7 +76,7 @@ void Amanzi::Restart::dump_state(State& S)
 
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
 	    {
-	      *out << "Amanzi::Restart... writing checkpoint, cycle = " << S.get_cycle() << std::endl;
+	      *out << "Writing checkpoint, cycle = " << S.get_cycle() << std::endl;
 	    }
 	  
 	  // create the restart file

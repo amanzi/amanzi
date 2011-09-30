@@ -1,11 +1,20 @@
 #include "Vis.hpp"
 #include "Epetra_MpiComm.h"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
   plist(plist_), disabled(false), comm(comm_)
 {
   read_parameters(plist);
 
+  // set the line prefix for output
+  this->setLinePrefix("Amanzi::Vis         ");
+  // make sure that the line prefix is printed
+  this->getOStream()->setShowLinePrefix(true);
+  
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&plist,this);
+    
   auxnames.resize(0);
   compnames.resize(0);
 
@@ -99,7 +108,7 @@ void Amanzi::Vis::dump_state(State& S, Epetra_MultiVector *auxdata)
  	  
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
 	    {
-	      *out << "Amanzi::Vis... writing visualization files, cycle = " << S.get_cycle() << std::endl;
+	      *out << "Writing visualization files, cycle = " << S.get_cycle() << std::endl;
 	    }
 	  
 

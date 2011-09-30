@@ -17,7 +17,7 @@ namespace Amanzi
   {
     
     // set the line prefix for output
-    this->setLinePrefix("Amanzi::FlowBC");
+    this->setLinePrefix("Amanzi::FlowBC      ");
     // make sure that the line prefix is printed
     this->getOStream()->setShowLinePrefix(true);
 
