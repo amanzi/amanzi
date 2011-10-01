@@ -833,12 +833,11 @@ void Mesh_simple::node_get_cell_faces (const AmanziMesh::Entity_ID nodeid,
     for (int j = 0; j < 4; j++) {
 
       if (face_to_node_[offset2+j] == nodeid) {
-	faceids->push_back(cellfaceid);
-	break;
+        faceids->push_back(cellfaceid);
+	      break;
       }
     }
   }
-
 }
     
 // Cells connected to a face

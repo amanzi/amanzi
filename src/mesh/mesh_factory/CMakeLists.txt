@@ -42,7 +42,7 @@ set(mesh_factory_files
     MeshFactory.cc FrameworkTraits.cc) 
 add_library(mesh_factory ${mesh_factory_files})
 add_install_library(mesh_factory)
-target_link_libraries(mesh_factory error_handling simple_mesh)
+target_link_libraries(mesh_factory simple_mesh)
 
 #
 # Install Targets

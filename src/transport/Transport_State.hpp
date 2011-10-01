@@ -33,21 +33,22 @@ class Transport_State {
   // access methods for state variables
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration() { return total_component_concentration; }
 
-  Teuchos::RCP<Epetra_Vector> get_porosity()         { return porosity; }
+  Teuchos::RCP<Epetra_Vector> get_porosity() { return porosity; }
   Teuchos::RCP<Epetra_Vector> get_water_saturation() { return water_saturation; }
-  Teuchos::RCP<Epetra_Vector> get_darcy_flux()       { return darcy_flux; }
-  Teuchos::RCP<Epetra_Vector> get_water_density()    { return water_density; }
-  Teuchos::RCP<AmanziMesh::Mesh> get_mesh_maps()     { return mesh_maps; }
+  Teuchos::RCP<Epetra_Vector> get_darcy_flux() { return darcy_flux; }
+  Teuchos::RCP<Epetra_Vector> get_water_density() { return water_density; }
+  Teuchos::RCP<AmanziMesh::Mesh> get_mesh_maps() { return mesh_maps; }
 
-  Epetra_MultiVector&  ref_total_component_concentration() { return *total_component_concentration; }
+  Epetra_MultiVector& ref_total_component_concentration() { return *total_component_concentration; }
 
-  Epetra_Vector& ref_porosity()         { return *porosity; }
+  Epetra_Vector& ref_porosity() { return *porosity; }
   Epetra_Vector& ref_water_saturation() { return *water_saturation; }
-  Epetra_Vector& ref_darcy_flux()       { return *darcy_flux; }
-  Epetra_Vector& ref_water_density()    { return *water_density; }
+  Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
+  Epetra_Vector& ref_water_density() { return *water_density; }
   
   // debug routines
   void analytic_total_component_concentration(double f(double*, double), double t = 0.0);
+  void analytic_total_component_concentration(double tcc);
   void analytic_darcy_flux(double* u);
   void analytic_porosity(double phi = 0.2);
   void analytic_water_saturation(double ws = 1.0);
