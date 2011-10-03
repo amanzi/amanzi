@@ -138,7 +138,7 @@ void Beaker::Setup(const Beaker::BeakerComponents& components,
                    const Beaker::BeakerParameters& parameters) {
   SetParameters(parameters);
 
-  this->SetupActivityModel(parameters.activity_model_name);
+  this->SetupActivityModel(parameters.activity_model_name, parameters.pitzer_database);
   this->resize(static_cast<int>(this->primary_species().size()));
   this->VerifyComponentSizes(components);
 }  // end Setup()
@@ -234,17 +234,18 @@ void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
   }
 }  // end SetComponents()
 
-void Beaker::SetupActivityModel(std::string model) {
+void Beaker::SetupActivityModel(std::string model, std::string pitzer_database) {
   if (model != ActivityModelFactory::unit &&
-      model != ActivityModelFactory::debye_huckel) {
+      model != ActivityModelFactory::debye_huckel &&
+      model != ActivityModelFactory::pitzer_hwm) {
     model = ActivityModelFactory::unit;
   }
   if (activity_model_ != NULL) {
     delete activity_model_;
   }
   ActivityModelFactory amf;
-
-  activity_model_ = amf.Create(model);
+  // HWM model was added
+  activity_model_ = amf.Create(model, pitzer_database, primarySpecies_, aqComplexRxns_);
   if (verbosity() == kDebugBeaker) {
     activity_model_->Display();
   }
@@ -291,6 +292,10 @@ void Beaker::addGeneralRxn(const GeneralRxn& r) {
 void Beaker::addSurfaceComplexationRxn(const SurfaceComplexationRxn& r) {
   surfaceComplexationRxns_.push_back(r);
 }  // end addSurfaceComplexationRxn()
+
+void Beaker::AddSorptionIsothermRxn(const SorptionIsothermRxn& r) {
+  sorption_isotherm_rxns_.push_back(r);
+}  // end AddSorptionIsothermRxn()
 
 Beaker::BeakerParameters Beaker::GetDefaultParameters(void) const {
   Beaker::BeakerParameters parameters;
@@ -371,7 +376,8 @@ void Beaker::updateActivityCoefficients() {
   activity_model_->CalculateIonicStrength(primarySpecies_,
                                           aqComplexRxns_);
   activity_model_->CalculateActivityCoefficients(&primarySpecies_,
-                                                 &aqComplexRxns_);
+                                                 &aqComplexRxns_,
+                                                 &water_);
   for (std::vector<Species>::iterator i = primarySpecies_.begin();
        i != primarySpecies_.end(); i++) {
     i->update();
@@ -412,13 +418,13 @@ void Beaker::updateEquilibriumChemistry(void) {
   for (std::vector<AqueousEquilibriumComplex>::iterator aqcplx =
            aqComplexRxns_.begin();
        aqcplx != aqComplexRxns_.end(); aqcplx++) {
-    aqcplx->Update(primarySpecies_);
+    aqcplx->Update(primarySpecies_,water_);
   }
 
   // calculate mineral saturation states
   for (std::vector<Mineral>::iterator m = minerals_.begin();
        m != minerals_.end(); m++) {
-    m->Update(primarySpecies_);
+    m->Update(primarySpecies_,water_);
   }
 
   // add equilibrium surface complexation here
@@ -932,8 +938,11 @@ int Beaker::Speciate(const Beaker::BeakerComponents& components,
       rhs[i] = residual[i];
     }
 
-    // geh
-    DisplayResults();
+    if (verbosity() >= kDebugBeaker) {
+      // geh
+      std::cout << "\n- Iteration " << num_iterations << " --------" << std::endl;
+      DisplayResults();
+    }
 
     if (verbosity() == kDebugBeaker) {
       print_linear_system("before scale", J, rhs);
@@ -1023,10 +1032,10 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
       components->total_sorbed[i] = total_sorbed_[i];
     }
   }
-  for (int m = 0; m < minerals_.size(); m++) {
+  for (unsigned int m = 0; m < minerals_.size(); m++) {
     components->minerals[m] = minerals_.at(m).volume_fraction();
   }
-  for (int i = 0; i < ion_exchange_sites_.size(); i++) {
+  for (unsigned int i = 0; i < ion_exchange_sites_.size(); i++) {
     components->ion_exchange_sites[i] = ion_exchange_sites_.at(i).cation_exchange_capacity();
   }
 }  // end UpdateComponents()
@@ -1128,7 +1137,7 @@ void Beaker::Display(void) const {
 
   DisplaySurfaceComplexes();
 
-  std::cout << "----------------------------------------------------------------------"
+  std::cout << "------------------------------------------------ Beaker description --"
             << std::endl;
 }  // end Display()
 
@@ -1283,8 +1292,8 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
             << std::endl;
   std::cout << "---- Aqueous Components" << std::endl;
   std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molarity"
             << std::setw(15) << "Molality"
+            << std::setw(15) << "Molarity"
       // << std::setw(15) << "Free Ion" // TODO(bandre): uncomment and update test results
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
@@ -1318,7 +1327,7 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
                 << std::endl;
     }
   }
-  std::cout << "----------------------------------------------------------------------"
+  std::cout << "------------------------------------------------- Input Components ---"
             << std::endl;
 }  // end DisplayComponents
 
@@ -1328,8 +1337,8 @@ void Beaker::DisplayResults(void) const {
             << std::endl;
   std::cout << "---- Components " << std::endl;
   std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molarity"
             << std::setw(15) << "Molality"
+            << std::setw(15) << "Molarity"
             << std::endl;
   for (int i = 0; i < ncomp(); i++) {
     std::cout << std::setw(15) << primarySpecies_.at(i).name()
@@ -1394,7 +1403,7 @@ void Beaker::DisplayResults(void) const {
     }
   }
 
-  std::cout << "----------------------------------------------------------------------"
+  std::cout << "---------------------------------------------------------- Solution --"
             << std::endl << std::endl;
 }  // end DisplayResults()
 

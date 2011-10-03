@@ -30,6 +30,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${MPC_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
@@ -44,9 +45,15 @@ include_directories(${CHEM_INCLUDES_DIR})
 # The mesh frameworks
 set(amanzi_mesh_libs "")
 list(APPEND amanzi_mesh_libs stk_mesh exodus)
-add_definitions("-DHAVE_STK_MESH")
-add_definitions("-DHAVE_MOAB_MESH")
-add_definitions("-DHAVE_MSTK_MESH")
+if(ENABLE_STK_Mesh)
+  add_definitions("-DHAVE_STK_MESH")
+endif()
+if(ENABLE_MOAB_Mesh)
+  add_definitions("-DHAVE_MOAB_MESH")
+endif()
+if(ENABLE_MSTK_Mesh)
+  add_definitions("-DHAVE_MSTK_MESH")
+endif()
 
 # External (TPL) include directories
 include_directories(${Boost_INCLUDE_DIRS})
@@ -64,6 +71,8 @@ if(ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIRS})
     include_directories(${STK_SOURCE_DIR})
 endif()
+include_directories(${HDF5_C_INCLUDE_DIR})
+include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
@@ -74,32 +83,50 @@ add_definitions("-DUSE_MPI")
           copy_directory ${EXEC_SOURCE_DIR}/inputfiles ${EXEC_BINARY_DIR}/inputfiles ) 
     endif()
 
+include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
+add_library(udriv amanzi_unstructured_grid_simulation_driver.cpp)
+add_install_library(udriv)
+
 #
 # Binary: amanzi-demo-driver
 #
-add_executable(amanzi-demo-driver amanzi-demo-driver.cpp)
-set(demo_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-set(demo_driver_amanzi_libs time_integration mpc state simple_mesh error_handling exodus ${amanzi_mesh_libs})
-set(demo_driver_pk_libs chemistry transport flow)
-target_link_libraries(amanzi-demo-driver 
-                      ${demo_driver_amanzi_libs}
-                      ${demo_driver_pk_libs}
-                      ${Trilinos_LIBRARIES}
-                      ${Boost_LIBRARIES})
-add_install_binary(amanzi-demo-driver)		  
+#add_executable(amanzi-demo-driver amanzi-demo-driver.cpp)
+#set(demo_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
+#set(demo_driver_amanzi_libs time_integration mpc state simple_mesh error_handling exodus ${amanzi_mesh_libs})
+#set(demo_driver_pk_libs chemistry transport flow)
+#target_link_libraries(amanzi-demo-driver 
+#                      ${demo_driver_amanzi_libs}
+#                      ${demo_driver_pk_libs}
+#                      ${Trilinos_LIBRARIES}
+#                      ${Boost_LIBRARIES})
+#add_install_binary(amanzi-demo-driver)		  
 
 #
 # Binary: amanzi-alt-driver
 #
-add_executable(amanzi-alt-driver amanzi-alt-driver.cpp)
-set(alt_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-set(alt_driver_amanzi_libs mpc state error_handling mesh_factory)
-set(alt_driver_pk_libs chemistry transport flow)
-target_link_libraries(amanzi-alt-driver
-                      ${alt_driver_amanzi_libs}
-                      ${alt_driver_pk_libs}
-                      ${Trilinos_LIBRARIES}
-                      ${Boost_LIBRARIES})
+#add_executable(amanzi-alt-driver amanzi-alt-driver.cpp)
+#set(amanzi-alt-driver ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
+#set(alt_driver_amanzi_libs mpc state error_handling mesh_factory)
+#set(alt_driver_pk_libs chemistry transport flow)
+#target_link_libraries(amanzi-alt-driver
+#                      ${alt_driver_amanzi_libs}
+#                      ${alt_driver_pk_libs}
+#                      ${Trilinos_LIBRARIES}
+#                      ${Boost_LIBRARIES})
+#add_install_binary(amanzi-alt-driver)
+
+#
+# Binary: amanzi-new-driver
+#
+#add_executable(amanzi-new-driver amanzi-new-driver.cpp)
+#set(new_driver_amanzi_libs mpc state error_handling mesh_factory interface)
+#set(new_driver_pk_libs chemistry transport flow)
+#target_link_libraries(amanzi-new-driver
+#                      ${new_driver_amanzi_libs}
+#                      ${new_driver_pk_libs}
+#                      ${Trilinos_LIBRARIES}
+#                      ${Boost_LIBRARIES})
+
 #
 # Binary: verify_mesh
 #
@@ -129,4 +156,7 @@ endif()
 #    add_install_binary(stk_mesh_test_hex)		     
 #endif()
 
-
+#
+#
+#
+add_install_shellscript(splitexo.sh)

@@ -38,10 +38,10 @@ class MatrixBlock {
   void SetValues(double** values);
   void SetValues(MatrixBlock* b);
   void SetValues(Block* b);
-  void SetValues(int ioffset, int ioffset, MatrixBlock* b);
+  void SetValues(int ioffset, int joffset, MatrixBlock* b);
   void SetValues(double** values, double scale);
   void SetValues(MatrixBlock* b, double scale);
-  void SetValues(int ioffset, int ioffset, MatrixBlock* b, double scale);
+  void SetValues(int ioffset, int joffset, MatrixBlock* b, double scale);
 
   void AddValue(int i, int j, double value);
   void AddValues(double** values);

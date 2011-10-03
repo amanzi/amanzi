@@ -9,9 +9,9 @@
       <Parameter name="Y_Max" type="double" value="0.10"/>
       <Parameter name="Z_Min" type="double" value="0.0"/>
       <Parameter name="Z_Max" type="double" value="0.10"/>
-      <Parameter name="Numer of Cells in X" type="int" value="50"/> 
-      <Parameter name="Numer of Cells in Y" type="int" value="2"/> 
-      <Parameter name="Numer of Cells in Z" type="int" value="2"/> 
+      <Parameter name="Number of Cells in X" type="int" value="50"/> 
+      <Parameter name="Number of Cells in Y" type="int" value="2"/> 
+      <Parameter name="Number of Cells in Z" type="int" value="2"/> 
     </ParameterList>
   </ParameterList>
   

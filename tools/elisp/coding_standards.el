@@ -45,7 +45,7 @@
 (message default-directory)
 
 (defvar astyle-config-file 
-  (expand-file-name "../formatting/astylerc" (file-name-directory load-file-name)) 
+  (expand-file-name "../formatting/astylerc.alpha" (file-name-directory load-file-name)) 
   "Holds the location of the astyle configuration file.")
 
 (message astyle-config-file)
@@ -63,13 +63,15 @@
 (require 'flymake)
 
 
+(defvar cpplint-options "--filter=-legal/copyright,-whitespace,+whitespace/tab,-build,+build/header_guard")
+
 (defun flymake-cpplint-init ()
   (let* ((temp-file (flymake-init-create-temp-buffer-copy
                      'flymake-create-temp-inplace))
          (local-file (file-relative-name
                       temp-file
                       (file-name-directory buffer-file-name))))
-    (list "cpplint.py" (list "--filter=-legal/copyright" local-file))))
+    (list "cpplint.py" (list cpplint-options local-file))))
 
 ;; From http://www.emacswiki.org/emacs/FlyMake
 

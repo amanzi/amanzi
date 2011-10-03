@@ -13,6 +13,7 @@ Usage:
 #include <vector>
 
 #include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -50,7 +51,9 @@ class Reconstruction {
  
   // access
   double getValue(const int cell, const AmanziGeometry::Point& p);
-  std::vector<AmanziGeometry::Point>& get_gradient() { return gradient_; }
+  Teuchos::RCP<Epetra_MultiVector> get_gradient() { return gradient_; }
+  std::vector<double>& get_field_local_min() { return field_local_min_; }
+  std::vector<double>& get_field_local_max() { return field_local_max_; }
 
  private:
   void populateLeastSquareSystem(AmanziGeometry::Point& centroid, 
@@ -62,7 +65,10 @@ class Reconstruction {
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 
   Teuchos::RCP<Epetra_Vector> scalar_field_;  // scalar cell-centered field
-  std::vector<AmanziGeometry::Point> gradient_;
+  Teuchos::RCP<Epetra_MultiVector> gradient_;
+
+  std::vector<double> field_local_min_;
+  std::vector<double> field_local_max_;
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;

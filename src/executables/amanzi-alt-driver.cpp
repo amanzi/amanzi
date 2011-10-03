@@ -26,14 +26,14 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
 
   // make sure only PE0 can write to std::cout
-  int rank, ierr;
+  int rank, ierr, aerr;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
-  if (rank!=0) {
-    cout.rdbuf(0);
-  } 
-
+  // if (rank!=0) {
+  //   cout.rdbuf(0);
+  // }
+ 
   Teuchos::CommandLineProcessor CLP;
   
   CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"
@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
     ierr++;
   }
 
-  comm->SumAll(&ierr, &ierr, 1);
-  if (ierr > 0) {
+  comm->SumAll(&ierr, &aerr, 1);
+  if (aerr > 0) {
     return 1;
   }
     
@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
     ierr++;
   }
 
-  comm->SumAll(&ierr, &ierr, 1);
-  if (ierr > 0) {
+  comm->SumAll(&ierr, &aerr, 1);
+  if (aerr > 0) {
     return 3;
   }
 
@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
       ierr++;
     }
   
-    comm->SumAll(&ierr, &ierr, 1);
-    if (ierr > 0) {
+    comm->SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) {
       return 3;
     }
   
@@ -150,23 +150,14 @@ int main(int argc, char *argv[])
 
     try {
       Teuchos::ParameterList generate_parameter_list(mesh_parameter_list.sublist("Generate"));
-      double x0(generate_parameter_list.get<double>("X_Min"));
-      double y0(generate_parameter_list.get<double>("Y_Min"));
-      double z0(generate_parameter_list.get<double>("Z_Min"));
-      double x1(generate_parameter_list.get<double>("X_Max"));
-      double y1(generate_parameter_list.get<double>("Y_Max")); 
-      double z1(generate_parameter_list.get<double>("Z_Max"));
-      int nx(generate_parameter_list.get<int>("Numer of Cells in X"));
-      int ny(generate_parameter_list.get<int>("Numer of Cells in Y"));
-      int nz(generate_parameter_list.get<int>("Numer of Cells in Z"));
-      mesh = factory(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+      mesh = factory(generate_parameter_list);
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
       ierr++;
     }
   
-    comm->SumAll(&ierr, &ierr, 1);
-    if (ierr > 0) {
+    comm->SumAll(&ierr, &aerr, 1);
+    if (aerr > 0) {
       return 3;
     }
 
@@ -174,8 +165,11 @@ int main(int argc, char *argv[])
 
   ASSERT(!mesh.is_null());
 
+  // create dummy observation data object
+  Amanzi::ObservationData obs_data;
+
   // create the MPC
-  Amanzi::MPC mpc(driver_parameter_list, mesh);
+  Amanzi::MPC mpc(driver_parameter_list, mesh, comm, obs_data);
   
   mpc.cycle_driver();
   

@@ -13,14 +13,14 @@
 include(CMakeDependentOption)
 include(FeatureSummary)
 
+enable_language(C)
+enable_language(CXX)
+enable_language(Fortran)
 
-# Set the build type for now we only build
-# a debug version
-if ( (DEFINED ${CMAKE_BUILD_TYPE}) AND ( NOT ( ${CMAKE_BUILD_TYPE} MATCHES "Debug" ) ) )
-    message(WARNING "At this time only Debug builds are allowed")
+# Set the build type for now we only fully support a debug version
+if (CMAKE_BUILD_TYPE) 
+  message(WARNING "Only Debug builds are fully supported. You may not get the TPL versions you expect.")
 endif()
-set(CMAKE_BUILD_TYPE debug)
-
 
 # No idea why we need this.
 # I think it was required for Franklin build. -- lpritch

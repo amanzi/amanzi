@@ -25,6 +25,7 @@ public:
   void mass_matrix(Epetra_SerialDenseMatrix &matrix, const Epetra_SerialSymDenseMatrix &K, bool invert = false) const;
 
   void diff_op(double, const double&, const double[], double&, double[]) const;
+  void diff_op(double, double[], const double&, const double[], double&, double[]) const;
   void diff_op(const Epetra_SerialSymDenseMatrix&, const double&, const double[], double&, double[]) const;
   void diff_op(double, const double&, const Epetra_SerialDenseVector&, double&, Epetra_SerialDenseVector&) const;
   void diff_op(const Epetra_SerialSymDenseMatrix&, const double&, const Epetra_SerialDenseVector&, double&, Epetra_SerialDenseVector&) const;

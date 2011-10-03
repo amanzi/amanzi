@@ -66,9 +66,9 @@ int DiffusionPrecon::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVecto
   Epetra_MultiVector Tf(face_map, X.NumVectors());
 
   // FORWARD ELIMINATION
-  // Tf <- Xf - P (Dcf)^T (Dcc)^(-1) Xc
+  // Tf <- Xf - P Dfc (Dcc)^(-1) Xc
   Tc.ReciprocalMultiply(1.0, D->Dcc(), Xc, 0.0);
-  D->Dcf().Multiply(true, Tc, Tf);  // this should do the required parallel comm
+  D->Dfc_t().Multiply(true, Tc, Tf);  // this should do the required parallel comm
   D->ApplyDirichletProjection(Tf);
   Tf.Update(1.0, Xf, -1.0);
 

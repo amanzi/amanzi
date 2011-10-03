@@ -103,7 +103,7 @@ void Species::Display(void) const {
 
 void Species::DisplayResultsHeader(void) const {
   std::cout << std::setw(15) << "Name"
-            << std::setw(15) << "Molarity"
+            << std::setw(15) << "Molality"
             << std::setw(15) << "Activity Coeff"
             << std::setw(15) << "Activity"
             << std::endl;

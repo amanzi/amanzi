@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <typeinfo>
-
+#include "species.hh"
 #include <UnitTest++.h>
 
 #include "mineral.hh"
@@ -42,6 +42,7 @@ SUITE(GeochemistryTestsMineral) {
     std::vector<ac::SpeciesId> species_ids_;
 
     ac::SpeciesArray primarySpecies_;
+    ac::Species water_;
     ac::Mineral* mineral_;
 
    private:
@@ -56,7 +57,8 @@ SUITE(GeochemistryTestsMineral) {
       ion_size_parameter_(0.0),
       logK_(1.8487),
       molar_volume_(36.9340),
-      specific_surface_area_(0.987654) {
+      specific_surface_area_(0.987654),
+      water_(0,"H2O", 0.0, 18.00, 0.0) {
     species_names_.clear();
     stoichiometry_.clear();
     species_ids_.clear();
@@ -96,6 +98,9 @@ SUITE(GeochemistryTestsMineral) {
     Ca_pp.act_coef(1.0);
     Ca_pp.update(9.61037e-5);
 
+    water_.act_coef(1.0);
+    water_.update(1.0);
+
     primarySpecies_.clear();
     primarySpecies_.push_back(H_p);
     primarySpecies_.push_back(HCO3_m);
@@ -106,6 +111,87 @@ SUITE(GeochemistryTestsMineral) {
   MineralTest::~MineralTest() {
     delete mineral_;
   }
+
+  class MineralTestHydrated {
+     public:
+
+     protected:
+      MineralTestHydrated();
+      ~MineralTestHydrated();
+
+      ac::SpeciesName name_;
+      ac::SpeciesId id_;
+      double h2o_stoich_;
+      double charge_;
+      double gram_molecular_weight_;
+      double ion_size_parameter_;
+      double logK_;
+      double molar_volume_;
+      double specific_surface_area_;
+
+      std::vector<ac::SpeciesName> species_names_;
+      std::vector<double> stoichiometry_;
+      std::vector<ac::SpeciesId> species_ids_;
+
+      ac::SpeciesArray primarySpecies_;
+      ac::Species water_;
+      ac::Mineral* mineral_;
+
+     private:
+    };  // end class MineralTest
+
+    MineralTestHydrated::MineralTestHydrated()
+        : name_("Alunogen"),
+        id_(2),
+        h2o_stoich_(17.0),
+        charge_(0.0),
+        gram_molecular_weight_(0.0),
+        ion_size_parameter_(0.0),
+        logK_(-6.204e0),
+        molar_volume_(0.0),
+        specific_surface_area_(0.0),
+        water_(0,"H2O", 0.0, 18.00, 0.0) {
+      species_names_.clear();
+      stoichiometry_.clear();
+      species_ids_.clear();
+
+      species_names_.push_back("Al+3");
+      stoichiometry_.push_back(2.0);
+      species_ids_.push_back(0);
+
+      species_names_.push_back("SO4-2");
+      stoichiometry_.push_back(3.0);
+      species_ids_.push_back(1);
+
+      mineral_ = new ac::Mineral(name_, id_,
+                                 species_names_, stoichiometry_, species_ids_,
+                                 h2o_stoich_, gram_molecular_weight_, logK_,
+                                 molar_volume_, specific_surface_area_);
+
+      ac::SpeciesId id = 0;
+      ac::SpeciesName name = "Al+3";
+      ac::Species Al = ac::Species(id, name, 3.0, 0.0, 0.0);
+      Al.act_coef(1.0);
+      Al.update(0.5);
+
+      id = 1;
+      name = "SO4-2";
+      ac::Species SO4 = ac::Species(id, name, -2.0, 0.0, 0.0);
+      SO4.act_coef(1.0);
+      SO4.update(0.5);
+
+      water_.act_coef(0.5);
+      water_.update(1.0);
+
+      primarySpecies_.clear();
+      primarySpecies_.push_back(Al);
+      primarySpecies_.push_back(SO4);
+    }
+
+
+    MineralTestHydrated::~MineralTestHydrated() {
+      delete mineral_;
+    }
 
   //
   // most of the basic functionality comes from the parent SecondarySpecies class.
@@ -121,7 +207,7 @@ SUITE(GeochemistryTestsMineral) {
   // virtual public methods from parent class
   //
   TEST_FIXTURE(MineralTest, Mineral_Update) {
-    mineral_->Update(primarySpecies_);
+    mineral_->Update(primarySpecies_,water_);
     CHECK_CLOSE(mineral_->lnQK(), -0.731390740816932, 1.0e-10);
   }
 
@@ -133,12 +219,12 @@ SUITE(GeochemistryTestsMineral) {
   // local public methods
   //
   TEST_FIXTURE(MineralTest, Mineral_QoverK) {
-    mineral_->Update(primarySpecies_);
+    mineral_->Update(primarySpecies_,water_);
     CHECK_CLOSE(mineral_->Q_over_K(), 0.481239245416214, 1.0e-10);
   }
 
   TEST_FIXTURE(MineralTest, Mineral_saturation_index) {
-    mineral_->Update(primarySpecies_);
+    mineral_->Update(primarySpecies_,water_);
     CHECK_CLOSE(mineral_->saturation_index(), -0.317638962851925, 1.0e-10);
   }
 
@@ -169,5 +255,12 @@ SUITE(GeochemistryTestsMineral) {
   TEST_FIXTURE(MineralTest, Mineral_verbosity) {
     mineral_->set_verbosity(ac::kDebugMineralKinetics);
     CHECK_EQUAL(mineral_->verbosity(), ac::kDebugMineralKinetics);
+  }
+  //---------------------------------------------------------------
+  // Test the log10(IAP/K) for Alunogen
+  //---------------------------------------------------------------
+  TEST_FIXTURE(MineralTestHydrated, Mineral_saturation_index) {
+      mineral_->Update(primarySpecies_,water_);
+      CHECK_CLOSE(mineral_->saturation_index(),-0.418659904607586, 1.0e-10);
   }
 }  // end SUITE(GeochemistryTestMineral)

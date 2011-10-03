@@ -35,7 +35,7 @@ class SecondarySpecies : public Species {
 
   // update molalities
   virtual void Update(const std::vector<Species>& primary_species);
-  // add stoichiometric contribution of complex to total
+  // add stoichiometric contribution of complex to totalmembermember
   virtual void AddContributionToTotal(std::vector<double> *total) = 0;
   // add derivative of total with respect to free-ion to dtotal
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,

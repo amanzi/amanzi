@@ -5,7 +5,7 @@
     <Parameter name="Type" type="string" value="No Flow"/>
   </ParameterList>  
   <ParameterList name="BC01">
-    <Parameter name="Side set ID" type="int" value="3" />
+    <Parameter name="Side set ID" type="int" value="2" />
     <Parameter name="Type" type="string" value="No Flow"/>
   </ParameterList>  
   <ParameterList name="BC02">
@@ -27,6 +27,6 @@
     <Parameter name="Side set ID" type="int" value="3" />
     <Parameter name="Type" type="string" value="Pressure Constant"/>
     <Parameter name="BC value"  type="double" value="1.0"/>
-  </ParameterList>  
+  </ParameterList> 
 </ParameterList>
 

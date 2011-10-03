@@ -11,11 +11,12 @@ include_directories(${CHEM_INCLUDES_DIR})
 #
 # ben's test program
 #
-set(EXE_NAME geochemistryTest)
+set(GEOCHEM_EXE_NAME geochemistryTest)
+set(GEOCHEM_EXE_SRCS geochemistry_test.cc)
 
-set(EXE_SRCS 
-	./geochemistry_test.cc
-)
+set(BATCH_EXE_NAME batch_chem)
+
+set(BATCH_EXE_SRCS batch_chem.cc)
 
 set(GEOCHEM_LIBS
 	geochemrxns
@@ -25,8 +26,11 @@ set(GEOCHEM_LIBS
 )
 
 
-add_executable(${EXE_NAME} ${EXE_SRCS})
-target_link_libraries(${EXE_NAME} ${GEOCHEM_LIBS} error_handling)
+add_executable(${GEOCHEM_EXE_NAME} ${GEOCHEM_EXE_SRCS})
+target_link_libraries(${GEOCHEM_EXE_NAME} ${GEOCHEM_LIBS} error_handling)
+
+add_executable(${BATCH_EXE_NAME} ${BATCH_EXE_SRCS})
+target_link_libraries(${BATCH_EXE_NAME} ${GEOCHEM_LIBS} error_handling)
 
 if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
   execute_process(COMMAND ${CMAKE_COMMAND} -E 

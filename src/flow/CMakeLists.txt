@@ -47,6 +47,7 @@ add_definitions("-DUSE_MPI")
 #  RichardsModelEvaluator.cpp)
 file(GLOB flow_source_files "*.cpp")
 add_library(flow ${flow_source_files})
+add_install_library(flow)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES flow_tpl_libs)
 target_link_libraries(flow ${flow_tpl_libs})
@@ -56,12 +57,14 @@ target_link_libraries(flow ${flow_tpl_libs})
 #
 file(GLOB flow_inc_files "*.hpp")
 add_install_include_file(${flow_inc_files})
-add_install_library(flow)
 
-if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
+if (BUILD_TESTS) 
 
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Add the STK mesh source directory
+    include_directories(${STK_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
     if (NOT (${FLOW_SOURCE_DIR} EQUAL ${FLOW_BINARY_DIR}) )
@@ -74,17 +77,14 @@ if (BUILD_TESTS AND ENABLE_MOAB_Mesh)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     # Test: flow
-    # Test depends on MOAB mesh framework
-    if ( ENABLE_MOAB_Mesh )
-        include_directories(${MOAB_SOURCE_DIR})
-        include_directories(${MOAB_INCLUDE_DIRS})
         
-        add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp  test/test_vanGenuchten.cpp)
-        target_link_libraries(test_flow flow moab_mesh simple_mesh cell_geometry ${UnitTest_LIBRARIES})
-        add_amanzi_test(flow test_flow KIND int)
-      
-    endif()    
-
+    add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp  test/test_vanGenuchten.cpp)
+    target_link_libraries(test_flow flow stk_mesh exodus simple_mesh cell_geometry ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow test_flow KIND int)
+    add_amanzi_test(flow_parallel_2pe test_flow NPROCS 2 KIND unit)
+    add_amanzi_test(flow_parallel_4pe test_flow NPROCS 4 KIND unit)
+    add_amanzi_test(flow_parallel_8pe test_flow NPROCS 8 KIND unit)
+ 
 
 endif()
 

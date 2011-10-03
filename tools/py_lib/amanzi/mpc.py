@@ -56,6 +56,8 @@ class MPC(ParameterList):
         self.set_parameter('Start Time',0.0)
         self.end_time = 0.0
         self.set_parameter('End Time', 0.0)
+        self.end_cycle = -1
+        self.set_parameter('End Cycle', -1)
         self.enable_flow = bool(True)
         self.set_parameter('enable Flow', bool(True))
         self.enable_transport = bool(True)
@@ -76,6 +78,11 @@ class MPC(ParameterList):
         self.end_time = value
         node = self.set_parameter('End Time',value)
         return node
+
+    def set_end_cycle(self,value):
+	self.end_cycle = value
+	node = self.set_parameter('End Cycle',value)
+	return node
 
 ###############################################################################
 
