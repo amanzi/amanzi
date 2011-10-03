@@ -27,6 +27,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${EXO_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -94,21 +95,21 @@ if ( BUILD_TESTS )
     endif()    
 
     # Tests 6 and 7
-    if ( ENABLE_MOAB_Mesh )
-        include_directories(${MOAB_INCLUDE_DIRS})
-        include_directories(${MOAB_SOURCE_DIR})
+    if ( ENABLE_STK_Mesh )
+        include_directories(${STK_INCLUDE_DIRS})
+        include_directories(${STK_SOURCE_DIR})
 
-        set(amanzi_libs geometry mesh mesh_audit moab_mesh state transport whetstone)
+        set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus state transport whetstone)
 
         # Test: transport (serial)
-        add_executable(transport_serial_moab test/Main.cc test/test_moab.cpp)
-        target_link_libraries(transport_serial_moab ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_serial_moab transport_serial_moab KIND unit)
+        add_executable(transport_serial_stk test/Main.cc test/test_stk.cpp)
+        target_link_libraries(transport_serial_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_serial_stk transport_serial_stk KIND unit)
 
         # Test: transport (parallel)
-        add_executable(transport_parallel_moab test/Main.cc test/test_moab_parallel.cpp)
-        target_link_libraries(transport_parallel_moab ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_parallel_moab transport_parallel_moab NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
+        add_executable(transport_parallel_stk test/Main.cc test/test_stk_parallel.cpp)
+        target_link_libraries(transport_parallel_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_parallel_stk transport_parallel_stk NPROCS 4 KIND uint)
     endif()    
 
 endif()

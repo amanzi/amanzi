@@ -7,9 +7,15 @@
   <!-- end of debug and developers options -->
 
   <ParameterList name="Transport BCs">
-    <Parameter name="number of BCs" type="int" value="1"/>
+    <Parameter name="number of BCs" type="int" value="2"/>
     <ParameterList name="BC 0">
-      <Parameter name="Side set ID" type="int" value="103"/>
+      <Parameter name="Side set ID" type="int" value="4"/>
+      <Parameter name="Type" type="string" value="Constant"/>
+      <Parameter name="Component 0" type="double" value="1.0"/>
+      <Parameter name="Component 1" type="double" value="1.0"/>
+    </ParameterList>  
+    <ParameterList name="BC 1">
+      <Parameter name="Side set ID" type="int" value="1"/>
       <Parameter name="Type" type="string" value="Constant"/>
       <Parameter name="Component 0" type="double" value="1.0"/>
       <Parameter name="Component 1" type="double" value="1.0"/>

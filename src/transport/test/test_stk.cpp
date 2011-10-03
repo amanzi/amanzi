@@ -4,7 +4,10 @@
 #include "UnitTest++.h"
 #include <vector>
 
-#include "Mesh_MOAB.hh"
+#include "Mesh_STK.hh"
+#include "Exodus_readers.hh"
+#include "Parallel_Exodus_file.hh"
+
 #include "State.hpp"
 #include "Transport_PK.hpp"
 
@@ -14,14 +17,14 @@
 
 
 
-TEST(ADVANCE_WITH_MOAB) {
+TEST(ADVANCE_WITH_STK) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
 
-  std::cout << "================ TEST ADVANCE WITH MOAB ===================" << endl;
+  std::cout << "== TEST ADVANCE WITH STK ===" << endl;
   int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_MOAB("../mesh/mesh_moab/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD));
+  RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4-nonortho.g", MPI_COMM_WORLD));
 
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
@@ -34,7 +37,7 @@ TEST(ADVANCE_WITH_MOAB) {
 
   // initialize a transport process kernel from a transport state
   ParameterList parameter_list;
-  string xmlFileName = "test/test_moab.xml";
+  string xmlFileName = "test/test_stk.xml";
 
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
   Transport_PK TPK(parameter_list, TS);
