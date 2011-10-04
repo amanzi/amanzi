@@ -3,7 +3,7 @@
 /**
  * @file   FrameworkTraits.cc
  * @author William A. Perkins
- * @date Wed Sep 28 09:21:00 2011
+ * @date Tue Oct  4 06:14:05 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Wed Sep 28 09:21:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Oct  4 06:14:05 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <boost/format.hpp>
@@ -348,7 +348,7 @@ struct FrameworkTraits {
     struct serial :
         mpl::eval_if<
       mpl::bool_< M == MOAB >
-      , mpl::bool_< FMT == ExodusII >
+      , mpl::bool_< FMT == ExodusII || FMT == MOABHDF5 >
       , mpl::eval_if<
           mpl::bool_< M == STKMESH >
           , mpl::bool_< FMT == ExodusII >
