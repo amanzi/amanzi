@@ -86,8 +86,6 @@ void MPC::mpc_init()
       }
       *out << std::endl;
     }
-   // restart = mpc_parameter_list.get<bool>("Restart",false);
-   // restart_file = mpc_parameter_list.get<string>("Restart file","NONE");
      
    if (transport_enabled || flow_enabled || chemistry_enabled) {
      Teuchos::ParameterList state_parameter_list = 
@@ -179,7 +177,10 @@ void MPC::mpc_init()
 
 
    // are we restarting from a file?
+   // assume we're not
+   restart_requested = false;
    
+   // then check if indeed we are
    if (parameter_list.isSublist("Execution Control"))
      {
        if (parameter_list.sublist("Execution Control").isSublist("Restart from Checkpoint File"))
