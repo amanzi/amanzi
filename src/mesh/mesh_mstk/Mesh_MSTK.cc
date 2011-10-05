@@ -830,7 +830,7 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
       List_ptr efaces = ME_Faces(me);
       int idx2 = 0;
       MFace_ptr mf2;
-      while ((mf2 = List_Next_Entry(fedges,&idx2))) {
+      while ((mf2 = List_Next_Entry(efaces,&idx2))) {
 	if (mf2 != mf) {
 	  if (MEnt_PType(mf2) == PGHOST) {
 	    if (ptype == GHOST || ptype == USED) {
