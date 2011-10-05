@@ -46,7 +46,7 @@ TEST(CONSTRUCTOR) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
 
-  std::cout << "================ TEST XML FILE ===================" << endl;
+  std::cout << "=== TEST XML FILE ===" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -84,7 +84,7 @@ TEST(FACES_VOLUMES) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
 
-  std::cout << "================ TEST FACES AND VOLUMES ===================" << endl;
+  std::cout << "=== TEST FACES AND VOLUMES ===" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -141,8 +141,9 @@ TEST(ADVANCE_WITH_SIMPLE) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "================ TEST ADVANCE ===================" << endl;
+  std::cout << "=== TEST ADVANCE ===" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -157,7 +158,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-  double u[3] = {1, 0, 0};
+  Point u(1.0, 0.0, 0.0);
 
   TS->analytic_darcy_flux(u);
   TS->analytic_porosity();
@@ -212,8 +213,9 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "================ TEST CONVERGENCE ANALISYS: DONOR ==============" << endl;
+  std::cout << "=== TEST CONVERGENCE ANALISYS: DONOR ===" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
   for (int nx=20; nx<321; nx*=2 ) {
@@ -224,7 +226,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     State mpc_state(num_components, mesh);
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
-    double u[3] = {1, 0, 0};
+    Point u(1.0, 0.0, 0.0);
     TS->analytic_darcy_flux(u);
     TS->analytic_total_component_concentration(f_cubic);
     TS->analytic_porosity(1.0);

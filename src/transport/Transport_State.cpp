@@ -2,8 +2,9 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
 
+#include "Point.hh"
+
 #include "State.hpp"
-#include "cell_geometry.hh"
 #include "Transport_State.hpp"
 
 using namespace Teuchos;
@@ -140,14 +141,13 @@ void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& ta
 /* *******************************************************************
  * DEBUG: create constant analytical Darcy velocity fieldx u     
  ****************************************************************** */
-void Transport_State::analytic_darcy_flux(double* u)
+void Transport_State::analytic_darcy_flux(const AmanziGeometry::Point& u)
 {
   const Epetra_BlockMap& fmap = (*darcy_flux).Map();
 
   for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) { 
     const AmanziGeometry::Point& normal = mesh_maps->face_normal(f);    
-
-    (*darcy_flux)[f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
+    (*darcy_flux)[f] = u * normal;
   }
 }
 

@@ -6,6 +6,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
+#include "Point.hh"
 
 
 namespace Amanzi {
@@ -49,7 +50,7 @@ class Transport_State {
   // debug routines
   void analytic_total_component_concentration(double f(double*, double), double t = 0.0);
   void analytic_total_component_concentration(double tcc);
-  void analytic_darcy_flux(double* u);
+  void analytic_darcy_flux(const AmanziGeometry::Point& u);
   void analytic_porosity(double phi = 0.2);
   void analytic_water_saturation(double ws = 1.0);
   void analytic_water_density(double wd = 1000.0);
