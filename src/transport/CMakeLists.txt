@@ -92,6 +92,12 @@ if ( BUILD_TESTS )
         add_executable(transport_parallel_mstk test/Main.cc test/test_mstk_parallel.cpp)
         target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
+
+        # Test: transport in 2D
+        add_executable(transport_serial_2D test/Main.cc test/test_transport_2D.cpp)
+        target_link_libraries(transport_serial_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_serial_2D transport_serial_2D KIND unit)
+
     endif()    
 
     # Tests 6 and 7

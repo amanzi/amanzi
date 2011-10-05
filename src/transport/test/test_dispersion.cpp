@@ -38,8 +38,9 @@ TEST(DISPERSION) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "================ DISPERSION =================" << endl;
+  std::cout << "=== DISPERSION ===" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
   int nx = 20;
@@ -50,7 +51,7 @@ TEST(DISPERSION) {
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
-  double u[3] = {1, 0, 0};
+  Point u(1.0, 0.0, 0.0);
   TS->analytic_darcy_flux(u);
   TS->analytic_total_component_concentration(f_step);
   TS->analytic_porosity(1.0);

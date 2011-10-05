@@ -21,6 +21,7 @@ TEST(ADVANCE_WITH_STK) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::AmanziGeometry;
 
   std::cout << "== TEST ADVANCE WITH STK ===" << endl;
   int num_components = 3;
@@ -28,7 +29,7 @@ TEST(ADVANCE_WITH_STK) {
 
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-  double u[3] = {1, 0, 0};
+  Point u(1.0, 0.0, 0.0);
 
   TS->analytic_darcy_flux(u);
   TS->analytic_porosity();

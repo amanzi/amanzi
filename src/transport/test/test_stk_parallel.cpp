@@ -29,6 +29,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::AmanziGeometry;
 
   cout << "=== TEST PARALLEL STK MESH ===" << endl;
 
@@ -46,7 +47,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
 
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-  double u[3] = {1, 0, 0};
+  Point u(1.0, 0.0, 0.0);
 
   TS->analytic_total_component_concentration(f_step);
   TS->analytic_porosity();

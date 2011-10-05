@@ -26,9 +26,9 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::AmanziGeometry;
 
-  cout << "================ TEST PARALLEL MSTK MESH ===================" << endl;
-
+  cout << "===TEST PARALLEL MSTK MESH ===" << endl;
   int num_components = 2;
   RCP<Mesh> mesh = rcp(new Mesh_MSTK( "../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD));
 
@@ -40,7 +40,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   // create a MPC state with one component 
   State mpc_state(num_components, mesh);
   RCP<Transport_State>  TS = rcp(new Transport_State(mpc_state));
-  double u[3] = {1, 0, 0};
+  Point u(1.0, 0.0, 0.0);
 
   TS->analytic_total_component_concentration(f_step);
   TS->analytic_porosity();

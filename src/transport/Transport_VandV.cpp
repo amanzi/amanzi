@@ -21,12 +21,12 @@ namespace AmanziTransport {
 void Transport_PK::check_divergence_property()
 {
   int i, c, f;
-  double div, u, umax, L8_error;
+  double div, u, umax, error_max, error_avg;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
   Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  L8_error = 0;
+  error_max = error_avg = 0.0;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> fdirs;
@@ -34,9 +34,10 @@ void Transport_PK::check_divergence_property()
   for (int c=cmin; c<=cmax_owned; c++) {
     mesh->cell_get_faces(c, &faces);
     mesh->cell_get_face_dirs(c, &fdirs);
+    int nfaces = faces.size();
 
     div = umax = 0;
-    for (i=0; i<6; i++) {
+    for (i=0; i<nfaces; i++) {
       f = faces[i];
       u = darcy_flux[f];
       div += u * fdirs[i];
@@ -44,7 +45,10 @@ void Transport_PK::check_divergence_property()
     }
     div /= mesh->cell_volume(c);
 
-    if (umax) L8_error = std::max(L8_error, fabs(div) / umax);
+    if (umax) {
+      error_max = std::max(error_max, fabs(div) / umax);
+      error_avg += fabs(div) / umax;
+    }
 
     /* verify that divergence complies with the flow model  */
     int flag = 0;
@@ -66,16 +70,20 @@ void Transport_PK::check_divergence_property()
       ASSERT(0);
     }
   }
+  error_avg /= (cmax_owned + 1);
 
   if (verbosity_level > 3) {
 #ifdef HAVE_MPI
-    double L8_global;
+    double global_max;
     const Epetra_Comm& comm = darcy_flux.Comm(); 
  
-    comm.MinAll(&L8_error, &L8_global, 1);
-    L8_error = L8_global;
+    comm.MinAll(&error_max, &global_max, 1);
+    error_max = global_max;
 #endif
-    if (! MyPID) cout << "Transport_PK: maximal (divergence / flux) = " << L8_error << endl;
+    if (! MyPID) {
+      cout << "Transport_PK: maximal (divergence / flux) = " << error_max << endl;
+      cout << "              average (divergence / flux) = " << error_avg << endl; 
+    }
   }
 }
 
