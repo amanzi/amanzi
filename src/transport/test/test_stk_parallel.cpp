@@ -4,7 +4,10 @@
 #include "UnitTest++.h"
 #include <vector>
 
-#include "Mesh_MOAB.hh"
+#include "Mesh_STK.hh"
+#include "Exodus_readers.hh"
+#include "Parallel_Exodus_file.hh"
+
 #include "State.hpp"
 #include "Transport_PK.hpp"
 
@@ -21,23 +24,22 @@ double f_step( double* x, double t ) {
 }
 
 
-TEST(ADVANCE_WITH_MOAB_PARALLEL) {
+TEST(ADVANCE_WITH_STK_PARALLEL) {
   using namespace std;
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
 
-  cout << "================ TEST PARALLEL MOAB MESH ===================" << endl;
+  cout << "=== TEST PARALLEL STK MESH ===" << endl;
 
   /* read and verify the mesh */
   int num_components = 2;
-  RCP<Mesh> mesh = rcp(new Mesh_MOAB( "../mesh/mesh_moab/test/hex_4x4x4_ss_4P.h5m", MPI_COMM_WORLD));
+  RCP<Mesh> mesh = rcp(new Mesh_STK( "../flow/test/4x4x4.par", MPI_COMM_WORLD));
 
   /*
   MeshAudit audit(mesh);
   audit.Verify();
   */
-  return;
 
   // create a MPC state with one component 
   State mpc_state(num_components, mesh);
@@ -53,7 +55,7 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
 
   // initialize a transport process kernel from a transport state
   ParameterList parameter_list;
-  string xmlFileName = "test/test_moab_parallel.xml";
+  string xmlFileName = "test/test_stk_parallel.xml";
 
   updateParametersFromXmlFile( xmlFileName, &parameter_list );
   Transport_PK  TPK( parameter_list, TS );
@@ -76,7 +78,7 @@ TEST(ADVANCE_WITH_MOAB_PARALLEL) {
     T += dT;
     iter++;
 
-    if (iter < 10 && TPK.MyPID == 3) {
+    if (iter < 10 && TPK.MyPID == 2) {
       printf("T=%7.2f  C_0(x):", T);
       for (int k=0; k<2; k++) printf("%7.4f", (*tcc_next)[0][k]); cout << endl;
     }
