@@ -22,8 +22,7 @@
 #include "block.hh"
 #include "general_rxn.hh"
 #include "chemistry_exception.hh"
-#include "ion_exchange_complex.hh"
-#include "ion_exchange_site.hh"
+#include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
 #include "lu.hh"
 #include "mineral.hh"
@@ -70,7 +69,6 @@ Beaker::Beaker()
   // #endif
   primarySpecies_.clear();
   minerals_.clear();
-  ion_exchange_sites_.clear();
   aqComplexRxns_.clear();
   generalKineticRxns_.clear();
   mineral_rates_.clear();
@@ -112,7 +110,7 @@ void Beaker::resize() {
   prev_molal.resize(ncomp());
   total_.resize(ncomp());
   // TODO(bandre): FIXED? this should only be done if we are actually using sorption.
-  if (surfaceComplexationRxns_.size() > 0) {
+  if (surfaceComplexationRxns_.size() > 0 || ion_exchange_rxns_.size() > 0) {
     total_sorbed_.resize(ncomp(), 0.0);
     // for (unsigned int i = 0; i < total_sorbed_.size(); i++)
     //  total_sorbed_[i] = 0.;
@@ -174,9 +172,9 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) {
                  << ") do not match.\n";
   }
 
-  if (this->ion_exchange_sites().size() != components.ion_exchange_sites.size()) {
+  if (this->ion_exchange_rxns().size() != components.ion_exchange_sites.size()) {
     error = true;
-    error_stream << "ion_exchange_sites.size(" << this->ion_exchange_sites().size()
+    error_stream << "ion_exchange_rxns.size(" << this->ion_exchange_rxns().size()
                  << ") and components.ion_exchange_sites.size(" << components.ion_exchange_sites.size()
                  << ") do not match.\n";
   }
@@ -209,9 +207,10 @@ void Beaker::VerifyComponentSizes(const Beaker::BeakerComponents& components) {
 
 void Beaker::SetComponents(const Beaker::BeakerComponents& components) {
   unsigned int size = components.ion_exchange_sites.size();
-  if (ion_exchange_sites().size() == size) {
+  if (ion_exchange_rxns().size() == size) {
+    // for now, we will set the size of total_sorbed = ncomp() if # sites > 0
     for (unsigned int ies = 0; ies < size; ies++) {
-      ion_exchange_sites_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
+      ion_exchange_rxns_[ies].set_cation_exchange_capacity(components.ion_exchange_sites.at(ies));
     }
   } else {
     std::ostringstream error_stream;
@@ -255,13 +254,13 @@ void Beaker::addPrimarySpecies(const Species& s) {
   primarySpecies_.push_back(s);
 }  // end addPrimarySpecies()
 
-void Beaker::AddIonExchangeSite(const IonExchangeSite& exchanger) {
-  ion_exchange_sites_.push_back(exchanger);
-}  // end AddIonExchangeSites()
+void Beaker::AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn) {
+  ion_exchange_rxns_.push_back(ionx_rxn);
+}  // end AddIonExchangeRxn()
 
-void Beaker::AddIonExchangeComplex(const IonExchangeComplex& exchange_complex) {
-  ion_exchange_rxns_.push_back(exchange_complex);
-}  // end AddIonExchangeSites()
+void Beaker::AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex) {
+  ion_exchange_rxns_[irxn].AddIonExchangeComplex(ionx_complex);
+}  // end AddIonExchangeRxn()
 
 void Beaker::addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c) {
   aqComplexRxns_.push_back(c);
@@ -435,9 +434,9 @@ void Beaker::updateEquilibriumChemistry(void) {
   }
 
   // add equilibrium ion exchange here?
-  for (std::vector<IonExchangeComplex>::iterator iec = ion_exchange_rxns_.begin();
-       iec != ion_exchange_rxns_.end(); iec++) {
-    iec->Update(primary_species(), ion_exchange_sites());
+  for (std::vector<IonExchangeRxn>::iterator ier = ion_exchange_rxns_.begin();
+       ier != ion_exchange_rxns_.end(); ier++) {
+    ier->Update(primary_species());
   }
 
   // calculate total component concentrations
@@ -472,6 +471,12 @@ void Beaker::calculateTotal(std::vector<double> *total,
        i != surfaceComplexationRxns_.end(); i++) {
     i->AddContributionToTotal(total_sorbed);
   }
+  // add ion exchange
+  for (std::vector<IonExchangeRxn>::iterator ier = ion_exchange_rxns_.begin();
+       ier != ion_exchange_rxns_.end(); ier++) {
+    ier->AddContributionToTotal(total_sorbed);
+  }
+
 }  // end calculateTotal()
 
 void Beaker::calculateTotal(void) {
@@ -500,6 +505,12 @@ void Beaker::calculateDTotal(Block* dtotal, Block* dtotal_sorbed) {
            surfaceComplexationRxns_.begin();
        i != surfaceComplexationRxns_.end(); i++) {
     i->AddContributionToDTotal(primarySpecies_, dtotal_sorbed);
+  }
+  // ion exchange
+  // add ion exchange
+  for (std::vector<IonExchangeRxn>::iterator ier = ion_exchange_rxns_.begin();
+       ier != ion_exchange_rxns_.end(); ier++) {
+    ier->AddContributionToDTotal(primarySpecies_,dtotal_sorbed);
   }
 }  // end calculateDTotal()
 
@@ -1035,8 +1046,8 @@ void Beaker::UpdateComponents(Beaker::BeakerComponents* components) {
   for (unsigned int m = 0; m < minerals_.size(); m++) {
     components->minerals[m] = minerals_.at(m).volume_fraction();
   }
-  for (unsigned int i = 0; i < ion_exchange_sites_.size(); i++) {
-    components->ion_exchange_sites[i] = ion_exchange_sites_.at(i).cation_exchange_capacity();
+  for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
+    components->ion_exchange_sites[i] = ion_exchange_rxns_.at(i).site().cation_exchange_capacity();
   }
 }  // end UpdateComponents()
 
@@ -1225,17 +1236,17 @@ void Beaker::DisplayMineralKinetics(void) const {
 }  // end DisplayMineralKinetics()
 
 void Beaker::DisplayIonExchangeSites(void) const {
-  if (ion_exchange_sites_.size() > 0) {
+  if (ion_exchange_rxns_.size() > 0) {
     std::cout << "---- Ion Exchange Sites" << std::endl;
     std::cout << std::setw(15) << "Species"
               << std::setw(15) << "Location"
               << std::setw(10) << "Charge"
               << std::setw(10) << "CEC"
               << std::endl;
-    std::vector<IonExchangeSite>::const_iterator exchanger;
-    for (exchanger = ion_exchange_sites_.begin();
-         exchanger != ion_exchange_sites_.end(); exchanger++) {
-      exchanger->Display();
+    std::vector<IonExchangeRxn>::const_iterator rxn;
+    for (rxn = ion_exchange_rxns_.begin();
+         rxn != ion_exchange_rxns_.end(); rxn++) {
+      rxn->site().Display();
     }
     std::cout << std::endl;
   }
@@ -1245,12 +1256,12 @@ void Beaker::DisplayIonExchangeComplexes(void) const {
   if (ion_exchange_rxns_.size() > 0) {
     std::cout << "---- Ion Exchange Complexes" << std::endl;
     std::cout << std::setw(12) << "Reaction"
-              << std::setw(38) << "log Keq"
+              << std::setw(38) << "K"
               << std::endl;
-    std::vector<IonExchangeComplex>::const_iterator iec;
-    for (iec = ion_exchange_rxns_.begin();
-         iec != ion_exchange_rxns_.end(); iec++) {
-      iec->Display();
+    std::vector<IonExchangeRxn>::const_iterator ier;
+    for (ier = ion_exchange_rxns_.begin();
+         ier != ion_exchange_rxns_.end(); ier++) {
+      ier->Display();
     }
     std::cout << std::endl;
   }
@@ -1379,11 +1390,11 @@ void Beaker::DisplayResults(void) const {
     }
   }
 
-  if (ion_exchange_sites_.size() > 0) {
+  if (ion_exchange_rxns_.size() > 0) {
     std::cout << "---- Ion Exchange Sites " << std::endl;
-    ion_exchange_sites_[0].DisplayResultsHeader();
-    for (unsigned int i = 0; i < ion_exchange_sites_.size(); i++) {
-      ion_exchange_sites_[i].DisplayResults();
+    ion_exchange_rxns_[0].DisplayResultsHeader();
+    for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
+      ion_exchange_rxns_[i].site().DisplayResults();
     }
   }
 
@@ -1391,7 +1402,9 @@ void Beaker::DisplayResults(void) const {
     std::cout << "---- Ion Exchange Complexes " << std::endl;
     ion_exchange_rxns_[0].DisplayResultsHeader();
     for (unsigned int i = 0; i < ion_exchange_rxns_.size(); i++) {
-      ion_exchange_rxns_[i].DisplayResults();
+      for (unsigned int j = 0; j < ion_exchange_rxns_[i].ionx_complexes().size(); j++) {
+        (ion_exchange_rxns_[i].ionx_complexes())[j].DisplayResults();
+      }
     }
   }
 

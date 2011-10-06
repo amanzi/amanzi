@@ -12,8 +12,7 @@
 #include "aqueous_equilibrium_complex.hh"
 #include "block.hh"
 #include "general_rxn.hh"
-#include "ion_exchange_complex.hh"
-#include "ion_exchange_site.hh"
+#include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
 #include "mineral.hh"
 #include "species.hh"
@@ -82,8 +81,8 @@ class Beaker {
   void UpdateComponents(Beaker::BeakerComponents* components);
 
   void addPrimarySpecies(const Species& s);
-  void AddIonExchangeSite(const IonExchangeSite& exchanger);
-  void AddIonExchangeComplex(const IonExchangeComplex& exchange_complex);
+  void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
+  void AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex);
   void addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
   void addMineral(const Mineral& m);
   void AddMineralKineticRate(KineticRate* rate);
@@ -158,6 +157,7 @@ class Beaker {
   void DisplayAqueousEquilibriumComplexes(void) const;
   void DisplayMinerals(void) const;
   void DisplayMineralKinetics(void) const;
+  void DisplayIonExchangeRxns(void) const;
   void DisplayIonExchangeSites(void) const;
   void DisplayIonExchangeComplexes(void) const;
   void DisplaySurfaceSites(void) const;
@@ -280,8 +280,8 @@ class Beaker {
   const std::vector<Species>& primary_species(void) const {
     return this->primarySpecies_;
   };
-  const std::vector<IonExchangeSite>& ion_exchange_sites(void) const {
-    return this->ion_exchange_sites_;
+  const std::vector<IonExchangeRxn>& ion_exchange_rxns(void) const {
+    return this->ion_exchange_rxns_;
   };
   const std::vector<double>& total(void) const {
     return this->total_;
@@ -329,7 +329,6 @@ class Beaker {
   Species water_;
   std::vector<Species> primarySpecies_;  // list of primary species
   std::vector<Mineral> minerals_;  // list of mineral species
-  std::vector<IonExchangeSite> ion_exchange_sites_;
 
   ActivityModel* activity_model_;
 
@@ -337,7 +336,7 @@ class Beaker {
   std::vector<GeneralRxn> generalKineticRxns_;  // list of general kinetic reactions
   std::vector<KineticRate*> mineral_rates_;
   //  vector<GasExchange*> gasRxns_;
-  std::vector<IonExchangeComplex> ion_exchange_rxns_;
+  std::vector<IonExchangeRxn> ion_exchange_rxns_;
   std::vector<SurfaceComplexationRxn> surfaceComplexationRxns_;
   std::vector<SorptionIsothermRxn> sorption_isotherm_rxns_;
 

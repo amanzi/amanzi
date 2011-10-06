@@ -289,7 +289,8 @@ void ReadInputFile(const std::string& file_name,
     kSectionTotal,
     kSectionMineral,
     kSectionSorbed,
-    kSectionFreeIon
+    kSectionFreeIon,
+    kSectionIonExchange
   } current_section;
 
   int count = 0;
@@ -305,7 +306,8 @@ void ReadInputFile(const std::string& file_name,
       raw_line.resize(raw_line.size() - 1);
     }
 
-    char first = raw_line[0];
+    char first = '\0';
+    if (raw_line.length() > 0) first = raw_line[0];
     if (first == '#' || first == '\0') {
       line_type = kCommentLine;
     } else if (first == '[') {
@@ -321,6 +323,8 @@ void ReadInputFile(const std::string& file_name,
         current_section = kSectionTotal;
       } else if (raw_line.find(kMineralSection) != std::string::npos) {
         current_section = kSectionMineral;
+      } else if (raw_line.find(kIonExchangeSection) != std::string::npos) {
+        current_section = kSectionIonExchange;
       } else if (raw_line.find(kSorbedSection) != std::string::npos) {
         current_section = kSectionSorbed;
       } else if (raw_line.find(kFreeIonSection) != std::string::npos) {
@@ -338,6 +342,8 @@ void ReadInputFile(const std::string& file_name,
         ParseComponentValue(raw_line, &(components->total));
       } else if (current_section == kSectionMineral) {
         ParseComponentValue(raw_line, &(components->minerals));
+      } else if (current_section == kSectionIonExchange) {
+        ParseComponentValue(raw_line, &(components->ion_exchange_sites));
       } else if (current_section == kSectionSorbed) {
         ParseComponentValue(raw_line, &(components->total_sorbed));
       } else if (current_section == kSectionFreeIon) {
@@ -500,6 +506,8 @@ void PrintComponents(const ac::Beaker::BeakerComponents& components)
   PrintDoubleVector(components.total_sorbed);
   std::cout << "  Free Ion: " << std::endl;
   PrintDoubleVector(components.free_ion);
+  std::cout << "  Ion Exchange: " << std::endl;
+  PrintDoubleVector(components.ion_exchange_sites);
 
 }  // end PrintComponents()
 
