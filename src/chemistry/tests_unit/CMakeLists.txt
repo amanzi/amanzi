@@ -23,7 +23,6 @@ add_executable(chemistry_tests
 	       test_string_tokenizer.cc
 	       test_chemistry_exceptions.cc
 	       test_species.cc
-	       test_ion_exchange_site.cc
 	       test_surface_site.cc	       
 	       test_activity_model_factory.cc
 	       test_activity_coefficients.cc
