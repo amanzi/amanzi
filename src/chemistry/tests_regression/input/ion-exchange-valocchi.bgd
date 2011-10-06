@@ -1,0 +1,22 @@
+# ion-exchange test problem for ascem geochemistry code validation
+
+<Primary Species
+Na+ ; 4.0 ; 1.0 ; 22.9898
+Ca++ ; 6.0 ; 2.0 ; 40.0780
+Mg++ ; 8.0 ; 2.0 ; 24.3050
+Cl- ; 3.0 ; -1.0 ; 35.4527
+
+<Minerals
+Halite = 1.0000 Na+ 1.0000 Cl- ; 1.5855 ; 58.4425 ; 27.0150 ; 1.0
+
+<Mineral Kinetics
+Halite ; TST ; log10_rate_constant -40.0 moles_m2_sec
+
+<Ion Exchange Sites
+X- ; -1.0 ; Halite
+
+<Ion Exchange Complexes
+NaX = 1.0 Na+ 1.0 X- ; 1.
+CaX = 1.0 Ca++ 2.0 X- ; 0.2953
+MgX = 1.0 Mg++ 2.0 X- ; 0.1666
+
