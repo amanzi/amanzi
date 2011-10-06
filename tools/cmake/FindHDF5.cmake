@@ -450,3 +450,21 @@ mark_as_advanced(
 # HDF5_INCLUDE_DIRS
 set( HDF5_INCLUDE_DIR "${HDF5_INCLUDE_DIRS}" )
 
+
+# Checking HDF5 verion
+if (EXISTS "${HDF5_INCLUDE_DIR}/H5public.h")
+    file (STRINGS "${HDF5_INCLUDE_DIR}/H5public.h" vstrings REGEX "#define H5_VERS_(MAJOR|MINOR|RELEASE)")
+    foreach (line ${vstrings})
+        string (REGEX REPLACE "[ /	]" ";" fields ${line})
+        list (GET fields 1 var)
+        list (GET fields 2 val)
+        set (${var} ${val})
+    endforeach ()
+    if (H5_VERS_MAJOR)
+      set (HDF5_VERSION "${H5_VERS_MAJOR}.${H5_VERS_MINOR}.${H5_VERS_RELEASE}")
+      set (FIND_VERSION "${HDF5_FIND_VERSION_MAJOR}.${HDF5_FIND_VERSION_MINOR}.${HDF5_FIND_VERSION_PATCH}")
+      if (${HDF5_VERSION} VERSION_LESS ${FIND_VERSION})
+          message (FATAL_ERROR  "Found HDF5 version ${HDF5_VERSION}.  Require version ${FIND_VERSION} or higher!")
+      endif()
+    endif()
+endif()

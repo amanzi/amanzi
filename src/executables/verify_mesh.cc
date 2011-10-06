@@ -55,7 +55,7 @@ int main (int argc, char* argv[])
 
   const int numframeworks = sizeof(frameworks)/sizeof(Amanzi::AmanziMesh::Framework);
   
-  Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::MOAB);
+  Amanzi::AmanziMesh::Framework the_framework(Amanzi::AmanziMesh::STKMESH);
   CLP.setOption("framework", &the_framework,
                 numframeworks, frameworks, framework_names,
                 "mesh framework preference", false);

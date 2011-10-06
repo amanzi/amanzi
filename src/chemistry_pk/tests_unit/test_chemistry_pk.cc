@@ -13,6 +13,7 @@
 #include "Epetra_SerialComm.h"
 
 #include "Mesh_simple.hh"
+#include "GenerationSpec.hh"
 #include "State.hpp"
 
 #include "chemistry_pk.hh"
@@ -64,7 +65,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     Epetra_SerialComm* comm = new Epetra_SerialComm();
     Teuchos::ParameterList mesh_parameter_list =
         parameter_list.sublist("Simple Mesh Parameters");
-    mesh_ = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(mesh_parameter_list, comm));
+    Amanzi::AmanziMesh::GenerationSpec g(mesh_parameter_list);
+    mesh_ = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(g, comm));
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");

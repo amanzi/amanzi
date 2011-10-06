@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created March 11, 2011 by William A. Perkins
-# Last Change: Tue Mar 22 10:55:55 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+# Last Change: Wed Sep 28 09:07:13 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 # -------------------------------------------------------------
 # Amanzi module, include files found in AMANZI_MODULE_PATH
 include(TestManager)
@@ -37,10 +37,12 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 #
 # Library: mesh_factory
 #
-set(mesh_factory_files MeshFileType.cc MeshFramework.cc MeshFactory.cc FrameworkTraits.cc) 
+set(mesh_factory_files 
+    MeshFileType.cc MeshFramework.cc 
+    MeshFactory.cc FrameworkTraits.cc) 
 add_library(mesh_factory ${mesh_factory_files})
 add_install_library(mesh_factory)
-target_link_libraries(mesh_factory error_handling simple_mesh)
+target_link_libraries(mesh_factory simple_mesh)
 
 #
 # Install Targets
@@ -103,8 +105,8 @@ if (BUILD_TESTS)
      test/test_mesh_framework.cc
      test/test_mesh_factory.cc)
    target_link_libraries(test_mesh_factory mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES})
-   add_amanzi_test(mesh_factory test_mesh_factory KIND int)
-   add_amanzi_test(mesh_factory_parallel test_mesh_factory KIND int)
+   add_amanzi_test(mesh_factory test_mesh_factory KIND uint)
+   add_amanzi_test(mesh_factory_parallel test_mesh_factory KIND uint)
 
 endif()
    

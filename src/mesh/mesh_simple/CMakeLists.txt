@@ -50,7 +50,7 @@ if (BUILD_TESTS)
     # defined in the mpc and that is not part of the build.
     # Will comment out for now and create a ticket #329
     # to remind me to change this when the mpc is back in the build system
-    add_executable(test_simple_mesh test/Main.cc test/test_maps.cpp test/test_cell_numbering.cc test/test_face_adj_cells.cc)
+    add_executable(test_simple_mesh test/Main.cc test/test_maps.cpp test/test_cell_numbering.cc test/test_face_adj_cells.cc test/test_node_cell_faces.cc)
     target_link_libraries(test_simple_mesh simple_mesh ${UnitTest_LIBRARIES})
     add_test(simple_mesh test_simple_mesh)
 

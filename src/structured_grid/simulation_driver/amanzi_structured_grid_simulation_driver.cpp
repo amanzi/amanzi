@@ -30,7 +30,7 @@ Structured_observations(const Array<Observation>& observation_array,
 
 Amanzi::Simulator::ReturnType
 AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
-                                           const Teuchos::ParameterList& input_parameter_list,
+                                           Teuchos::ParameterList&       input_parameter_list,
                                            Amanzi::ObservationData&      output_observations)
 {
     int argc=0;

@@ -215,8 +215,12 @@ SUITE (MeshFramework)
 
     // Other frameworks can't generate, so they should throw
     pref.clear(); 
-    pref.push_back(Amanzi::AmanziMesh::MOAB);
-    pref.push_back(Amanzi::AmanziMesh::MSTK);
+    if (framework_available(Amanzi::AmanziMesh::MOAB)) {
+      pref.push_back(Amanzi::AmanziMesh::MOAB);
+    }
+    if (framework_available(Amanzi::AmanziMesh::MSTK)) {
+      pref.push_back(Amanzi::AmanziMesh::MSTK);
+    }
     mesh_factory.preference(pref);
     CHECK_THROW(mesh = mesh_factory(parameter_list),
                 Amanzi::AmanziMesh::Message);

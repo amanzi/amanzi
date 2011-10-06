@@ -26,7 +26,7 @@ namespace BDF2 {
     fn(fn_), map(map_)
   {
     // set the line prefix for output
-    this->setLinePrefix("BDF2::Dae");
+    this->setLinePrefix("BDF2::Dae           ");
     
     // make sure that the line prefix is printed
     this->getOStream()->setShowLinePrefix(true);

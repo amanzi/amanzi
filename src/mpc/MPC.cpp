@@ -1,6 +1,7 @@
 #include "errors.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 #include "MPC.hpp"
@@ -42,8 +43,24 @@ namespace Amanzi
   
 void MPC::mpc_init()
 {
-   mpc_parameter_list =  parameter_list.sublist("MPC");
-   read_parameter_list();
+  // set the line prefix for output
+  this->setLinePrefix("Amanzi::MPC         ");
+  // make sure that the line prefix is printed
+  this->getOStream()->setShowLinePrefix(true);
+  
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&parameter_list,this);    
+
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  
+
+  
+  mpc_parameter_list =  parameter_list.sublist("MPC");
+  
+  read_parameter_list();
 
    // let users selectively disable individual process kernels
    // to allow for testing of the process kernels separately
@@ -54,20 +71,21 @@ void MPC::mpc_init()
    flow_enabled =
      (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
    
-   cout << "MPC: The following process kernels are enabled: ";
-   if (flow_enabled) {
-     cout << "Flow ";
-   }
-   if (transport_enabled) {
-     cout << "Transport "; 
-   }
-   if (chemistry_enabled) {
-     cout << "Chemistry ";
-   }
-   cout << endl;
-   
-   // restart = mpc_parameter_list.get<bool>("Restart",false);
-   // restart_file = mpc_parameter_list.get<string>("Restart file","NONE");
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
+    {
+      *out << "The following process kernels are enabled: ";
+      
+      if (flow_enabled) {
+	*out << "Flow ";
+      }
+      if (transport_enabled) {
+	*out << "Transport "; 
+      }
+      if (chemistry_enabled) {
+	*out << "Chemistry ";
+      }
+      *out << std::endl;
+    }
      
    if (transport_enabled || flow_enabled || chemistry_enabled) {
      Teuchos::ParameterList state_parameter_list = 
@@ -125,16 +143,16 @@ void MPC::mpc_init()
    // done creating auxilary state objects and  process models
 
    // create the observations
-   Teuchos::ParameterList observation_plist = parameter_list.sublist("observation");
+   Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation");
    observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
 
 
    // create the visualization object
-   if (parameter_list.isSublist("Visualization"))
+   if (parameter_list.isSublist("Visualization Data"))
      {
        
        Teuchos::ParameterList vis_parameter_list = 
-	 parameter_list.sublist("Visualization");
+	 parameter_list.sublist("Visualization Data");
        visualization = new Amanzi::Vis(vis_parameter_list, comm);
        visualization->create_files(*mesh_maps);
      }
@@ -148,21 +166,34 @@ void MPC::mpc_init()
    if (parameter_list.isSublist("Checkpoint Data"))
      {
        
-       Teuchos::ParameterList restart_parameter_list = 
+       Teuchos::ParameterList checkpoint_parameter_list = 
 	 parameter_list.sublist("Checkpoint Data");
-       restart = new Amanzi::Restart(restart_parameter_list, comm);
+       restart = new Amanzi::Restart(checkpoint_parameter_list, comm);
      }
    else
      {
        restart = new Amanzi::Restart();
      }   
 
-   // we cannot yet restart from a file
+
+   // are we restarting from a file?
+   // assume we're not
    restart_requested = false;
-
-
+   
+   // then check if indeed we are
+   if (parameter_list.isSublist("Execution Control"))
+     {
+       if (parameter_list.sublist("Execution Control").isSublist("Restart from Checkpoint File"))
+	 {
+	   restart_requested = true;
+	   
+	   Teuchos::ParameterList restart_parameter_list = 
+	     parameter_list.sublist("Execution Control").sublist("Restart from Checkpoint File");
+	   
+	   restart_from_filename = restart_parameter_list.get<string>("Checkpoint File Name");
+	 }
+     }
 }
-
 
 void MPC::read_parameter_list()
 {
@@ -172,8 +203,13 @@ void MPC::read_parameter_list()
 }
 
 
-void MPC::cycle_driver () {
-  
+void MPC::cycle_driver ()
+{
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     // start at time T=T0;
     S->set_time(T0);
@@ -206,7 +242,8 @@ void MPC::cycle_driver () {
   }
 
   int iter = 0;
-  
+  S->set_cycle(iter);
+
   // we cannot at the moment restart in the middle of the 
   // steady state flow calculation, so we check whether a
   // restart was requested, and if not we do the steady
@@ -238,17 +275,12 @@ void MPC::cycle_driver () {
     }
   else
     {
-      // first figure out what the restart file is that
-      // we need to read from
-      
-      // restart->read_state( *S );
+      // re-initialize the state object
+      restart->read_state( *S, restart_from_filename );
 
-      // initialize the iteration counter
-      // iter = S->get_cycle();
-
+      iter = S->get_cycle();
     }
   
-
   // write visualization output
   if (chemistry_enabled) 
     {
@@ -262,7 +294,7 @@ void MPC::cycle_driver () {
     {
       visualization->dump_state(*S);
     }
-  
+
   // write a restart dump if requested
   restart->dump_state(*S);
 
@@ -270,7 +302,7 @@ void MPC::cycle_driver () {
     {
       // make observations
       observations->make_observations(*S);
-
+	
       // we need to create an EpetraMulitVector that will store the 
       // intermediate value for the total component concentration
       total_component_concentration_star =
@@ -288,18 +320,20 @@ void MPC::cycle_driver () {
 	  }
 	
 	if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
-	
+
 	if (chemistry_enabled) {
 	  chemistry_dT = CPK->max_time_step();
 	}
 	
 	mpc_dT = std::min( transport_dT, chemistry_dT );
 	
-	std::cout << "MPC: ";
-	std::cout << "Cycle = " << iter; 
-	std::cout << ",  Time = "<< S->get_time() / (60*60*24);
-	std::cout << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
-	
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
+	  {
+	    *out << "Cycle = " << iter; 
+	    *out << ",  Time = "<< S->get_time() / (60*60*24);
+	    *out << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
+	  }
+
 	if (transport_enabled) {
 	  
 	  // now advance transport

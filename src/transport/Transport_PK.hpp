@@ -16,6 +16,8 @@ Usage:
 #include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 
+#include "tensor.hpp"
+
 #include "State.hpp"
 #include "Transport_State.hpp"
 #include "Transport_BCs.hpp"
@@ -39,11 +41,14 @@ const int TRANSPORT_FLOW_AVAILABLE = 1;
 const int TRANSPORT_STATE_BEGIN = 2;
 const int TRANSPORT_STATE_COMPLETE = 3;
 
+const int TRANSPORT_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
+
 const double TRANSPORT_LARGE_TIME_STEP = 1e+99;
 const double TRANSPORT_SMALL_TIME_STEP = 1e-12;
 
-const int TRANSPORT_BC_CONSTANT_INFLUX = 1;
-const int TRANSPORT_BC_NULL = 2;
+const int TRANSPORT_BC_CONSTANT_TCC = 1;
+const int TRANSPORT_BC_DISPERSION_FLUX = 2;
+const int TRANSPORT_BC_NULL = 3;
 
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
 const double TRANSPORT_LIMITER_CORRECTION = 0.9999999999999;
@@ -51,6 +56,11 @@ const double TRANSPORT_LIMITER_CORRECTION = 0.9999999999999;
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These olyhedron parameters must
 const int TRANSPORT_MAX_EDGES = 60;  // be calculated in Init().
+
+const int TRANSPORT_DISPERSIVITY_MODEL_NULL = 1;
+const int TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC = 2;
+const int TRANSPORT_DISPERSIVITY_MODEL_BEAR = 3;
+const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
 
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
@@ -87,6 +97,7 @@ class Transport_PK {
   void print_statistics() const;
  
  private:
+  // advection routines
   void advance_donor_upwind(double dT);
   void advance_second_order_upwind(double dT);
   void advance_arbitrary_order_upwind(double dT);
@@ -103,6 +114,21 @@ class Transport_PK {
 
   const Teuchos::RCP<Epetra_IntVector>& get_upwind_cell() { return upwind_cell_; }
   const Teuchos::RCP<Epetra_IntVector>& get_downwind_cell() { return downwind_cell_; }  
+
+  // dispersion routines
+  void calculate_dispersion_tensor();
+  void extract_boundary_conditions(const int component,
+                                   std::vector<int>& bc_face_id,
+                                   std::vector<double>& bc_face_value);
+  void populate_harmonic_points_values(int component,
+                                       Teuchos::RCP<Epetra_MultiVector> tcc,
+                                       std::vector<int>& bc_face_id,
+                                       std::vector<double>& bc_face_values);
+  void add_dispersive_fluxes(int component,
+                             Teuchos::RCP<Epetra_MultiVector> tcc,
+                             std::vector<int>& bc_face_id,
+                             std::vector<double>& bc_face_values,
+                             Teuchos::RCP<Epetra_MultiVector> tcc_next);
 
  public:
   std::vector<double> calculate_accumulated_influx();
@@ -132,6 +158,14 @@ class Transport_PK {
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
+  int dispersivity_model;  // data for dispersion 
+  double dispersivity_longitudinal, dispersivity_transverse;
+
+  std::vector<AmanziGeometry::Point> harmonic_points;
+  std::vector<double> harmonic_points_weight;
+  std::vector<double> harmonic_points_value;
+  std::vector<WhetStone::Tensor> dispersion_tensor;
+
   double cfl, dT, dT_debug, T_internal;  
   int number_components; 
   int status;
@@ -140,7 +174,7 @@ class Transport_PK {
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
-
+ 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   int dim;
 };

@@ -11,7 +11,7 @@ struct AmanziStructuredGridSimulationDriver
   : Amanzi::Simulator
 {
   virtual ReturnType Run (const MPI_Comm&               mpi_comm,
-                          const Teuchos::ParameterList& input_parameter_list,
+                          Teuchos::ParameterList&       input_parameter_list,
                           Amanzi::ObservationData&      output_observations);
 };
 #endif

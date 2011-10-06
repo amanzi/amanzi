@@ -14,8 +14,8 @@ namespace Amanzi
     enum ReturnType {SUCCESS, FAIL, NUM_RETURN_TYPES};
     
     virtual Amanzi::Simulator::ReturnType Run(const MPI_Comm&               mpi_comm,
-                                              const Teuchos::ParameterList& input_parameter_list,
-                                              Amanzi::ObservationData&       output_observations) = 0;
+                                              Teuchos::ParameterList&       input_parameter_list,
+                                              Amanzi::ObservationData&      output_observations) = 0;
   };
 } // end namespace amanzi
 

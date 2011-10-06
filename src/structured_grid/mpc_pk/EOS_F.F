@@ -506,9 +506,9 @@ c
          m      = kr_coef
          n      = 1.d0/m
          twom   = 2.d0*m
-         alpha  = 1.d0
+         alpha  = 0.97d0
          alpha_scale = dsqrt(alpha)*(one-(one-alpha**n)**m)**2
-         kr(1) = sqrt(alpha*sat(1))*(1-(1-(alpha*sat(1))**n)**m)**2
+         kr(1) = sqrt(alpha*sat(1))*(one-(one-(alpha*sat(1))**n)**m)**2
          kr(1) = kr(1)/alpha_scale
 c     # no scaling for the gas permeability function, add checks in the derivatives
 c     # to avoid blow-up
@@ -666,11 +666,11 @@ c       just in case we explicitly test for this case and
 c       set the derivative values to zero.
 c
           m     = kr_coef
-          alpha = one
+          alpha = 0.97d0
           alphs = alpha*sat(1)
-          tmpa  = one - alphs**(1/m)
+          tmpa  = one - alphs**(one/m)
           satl  = sat(1)*(one-sres) + sres
-          tmp   = one - satl**(1/m)
+          tmp   = one - satl**(one/m)
 
           alpha_scale = dsqrt(alpha)*(one-(one-alpha**(one/m))**m)**2
 
@@ -681,7 +681,7 @@ c
 c     # If the saturation is 1, the derivative of lambda2 wrt s should be 0
 c     # the functional form blows up, so we enforce that condition here
              dld(2) = zero
-             dld(1) = two*(alphs**(-half+(1/m)))*(tmpa**(-one+m))*(one-tmpa**m) +
+             dld(1) = two*(alphs**(-half+(one/m)))*(tmpa**(-one+m))*(one-tmpa**m) +
      &            (half*(one-tmpa**m)**two)/(sqrt(alphs))
              dld(1) = dld(1)/alpha_scale
           else 

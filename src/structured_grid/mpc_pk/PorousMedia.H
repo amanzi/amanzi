@@ -933,6 +933,7 @@ protected:
   static Real cfl;           // desired maximum cfl
   static Real change_max;    // maximum change in dt over a timestep
   static Real fixed_dt;      // set > 0 to specify dt
+  static Real richard_max_dt; // define maximum time step for the richard solver
   static int  initial_iter;  // flag for initial pressure iterations
   static int  initial_step;  // flag for initial iterations
   static Real dt_cutoff;     // minimum dt allowed

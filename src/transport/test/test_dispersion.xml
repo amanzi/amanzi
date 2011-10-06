@@ -1,0 +1,47 @@
+<ParameterList name="Transport">
+  <Parameter name="CFL" type="double" value="0.5"/>   
+  <Parameter name="discretization order" type="int" value="2"/>   
+  <Parameter name="dispersivity model" type="string" value="Bear"/>
+  <Parameter name="dispersivity longitudinal" type="double" value="0.1"/>
+  <Parameter name="dispersivity transverse" type="double" value="0.01"/>
+  <!-- debug and developers options --> 
+  <Parameter name="enable internal tests" type="string" value="yes"/>   
+  <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+  <Parameter name="verbosity level" type="int" value="10"/>  
+  <!-- end of debug and developers options -->
+
+  <ParameterList name="Transport BCs">
+    <Parameter name="number of BCs" type="int" value="6"/>
+    <ParameterList name="BC 0">
+      <Parameter name="Side set ID" type="int" value="0"/>
+      <Parameter name="Type" type="string" value="Dispersion Flux"/>
+      <Parameter name="Component 0" type="double" value="0.0"/>
+    </ParameterList>  
+    <ParameterList name="BC 1">
+      <Parameter name="Side set ID" type="int" value="1"/>
+      <Parameter name="Type" type="string" value="Dispersion Flux"/>
+      <Parameter name="Component 0" type="double" value="0.0"/>
+    </ParameterList>  
+    <ParameterList name="BC 2">
+      <Parameter name="Side set ID" type="int" value="2"/>
+      <Parameter name="Type" type="string" value="Dispersion Flux"/>
+      <Parameter name="Component 0" type="double" value="0.0"/>
+    </ParameterList>  
+    <ParameterList name="BC 3">
+      <Parameter name="Side set ID" type="int" value="3"/>
+      <Parameter name="Type" type="string" value="Constant"/>
+      <Parameter name="Component 0" type="double" value="1.0"/>
+    </ParameterList>  
+    <ParameterList name="BC 4">
+      <Parameter name="Side set ID" type="int" value="4"/>
+      <Parameter name="Type" type="string" value="Dispersion Flux"/>
+      <Parameter name="Component 0" type="double" value="0.0"/>
+    </ParameterList>  
+    <ParameterList name="BC 5">
+      <Parameter name="Side set ID" type="int" value="5"/>
+      <Parameter name="Type" type="string" value="Dispersion Flux"/>
+      <Parameter name="Component 0" type="double" value="0.0"/>
+    </ParameterList>  
+  </ParameterList>
+</ParameterList>
+

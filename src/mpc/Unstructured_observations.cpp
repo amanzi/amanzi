@@ -56,12 +56,12 @@ namespace Amanzi {
   
   void Unstructured_observations::make_observations(State& state)
   {
-    
     for (std::map<std::string, Observable>::iterator i = observations.begin();
 	 i != observations.end();
 	 i++)
 
       {
+
 	if ( (i->second).region != "all" )
 	  {
 	    Errors::Message m("Unstructured_observations: can only handle region == all");
@@ -101,17 +101,8 @@ namespace Amanzi {
 		      }
 	     	  }
 	      }
-
 	  }
-
-
       }
-
-
-    
-
-    
   }
-  
-
+ 
 }

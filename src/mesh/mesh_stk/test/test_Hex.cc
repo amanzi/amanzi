@@ -3,7 +3,7 @@
 /**
  * @file   test_Hex.cc
  * @author William A. Perkins
- * @date Mon Aug  8 13:05:04 2011
+ * @date Wed Sep 28 09:03:25 2011
  * 
  * @brief  
  * 
@@ -12,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 18, 2010 by William A. Perkins
-// Last Change: Mon Aug  8 13:05:04 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Wed Sep 28 09:03:25 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -24,6 +24,7 @@
 #include "../Mesh_STK_factory.hh"
 #include "../Data_structures.hh"
 #include "HexMeshGenerator.hh"
+#include "GenerationSpec.hh"
 #include "Auditor.hh"
 
 
@@ -268,9 +269,11 @@ SUITE (HexMesh)
     sublist2.set<double>("Z1", 0.9);
     parameter_list.set("Mesh block 2", sublist2);
 
+    Amanzi::AmanziMesh::GenerationSpec gspec(parameter_list);
+
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(parameter_list, &comm));
+        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(gspec, &comm));
      
     Auditor audit("stk_mesh_generated_", mesh_map);
     audit();

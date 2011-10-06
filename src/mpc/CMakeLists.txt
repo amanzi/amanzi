@@ -28,6 +28,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${CHEM_SOURCE_DIR})
 include_directories(${TRANSPORT_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${FLOW_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
@@ -43,6 +44,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # Need to move this up to the root -- lpritch
@@ -87,7 +89,7 @@ if (BUILD_TESTS)
           copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs geometry mesh mesh_audit moab_mesh state mpc flow transport chemistry)
+    set(amanzi_libs geometry mesh mesh_audit moab_mesh state mpc flow transport chemistry whetstone)
     
     if ( ENABLE_MOAB_Mesh )
         include_directories(${MOAB_SOURCE_DIR})
@@ -95,7 +97,7 @@ if (BUILD_TESTS)
 
         # Test: mpc-moab
         add_executable(test_mpc_moab test/Main.cc test/test_driver.cpp)
-        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry flow transport ${UnitTest_LIBRARIES})
+        target_link_libraries(test_mpc_moab mpc moab_mesh chemistry flow transport whetstone ${UnitTest_LIBRARIES})
         add_amanzi_test(mpc-moab test_mpc_moab KIND int)
     
     endif()

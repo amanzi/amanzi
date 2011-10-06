@@ -167,8 +167,6 @@ SUITE(RESTART) {
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> Mesh
       = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, &comm));
 
-    // R.create_file(); 
-
     // create a state object with some data in it
     int number_of_components = 2;
     State S0(number_of_components, Mesh);
@@ -231,7 +229,10 @@ SUITE(RESTART) {
     // now read the file into a new state object
 
     State S1(Mesh);
-    R.read_state(S1);
+
+    std::string filename = "restart_dump0004.h5";
+
+    R.read_state(S1, filename);
 
     // and compare with the original
 

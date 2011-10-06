@@ -13,6 +13,17 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm)
   parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
 }
 
+HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
+: viz_comm_(comm), H5DataFilename_(dataFilename)
+{
+  viz_comm_ = comm;
+  H5DataFilename_ = dataFilename;
+  info_ = MPI_INFO_NULL;
+  IOconfig_.numIOgroups = 1;
+  IOconfig_.commIncoming = comm.Comm();
+  parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
+}
+
 HDF5_MPI::~HDF5_MPI()
 {
   parallelIO_IOgroup_cleanup(&IOgroup_);

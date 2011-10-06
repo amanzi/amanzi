@@ -53,6 +53,23 @@ function ( ADD_INSTALL_LIBRARY )
 endfunction( ADD_INSTALL_LIBRARY )
 
 
+#
+# Usage: ADD_INSTALL_SHELLSCRIPT( script1 script2 ... )
+#
+# Arguments:
+#  A list of shell scripts that will be installed in the AMANZI_INSTALL_BIN_DIR
+#
+#
+function ( ADD_INSTALL_SHELLSCRIPT )
+
+foreach(_shellscript_file ${ARGV})
+  install(
+    FILES ${_shellscript_file}
+    DESTINATION bin
+    )
+endforeach()
+
+endfunction( ADD_INSTALL_SHELLSCRIPT )
 
 
 
@@ -192,6 +209,26 @@ function (CREATE_EXPORTS)
 # Find the packages found for Amanzi
 get_property(AMANZI_TPL_LIST GLOBAL PROPERTY PACKAGES_FOUND)
 get_property(LINK_LINE GLOBAL PROPERTY AMANZI_LINK_LINE)
+
+# Define AMANZI_INCLUDE_DIRS and AMANZI_LIBRARY_DIRS
+set(AMANZI_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
+set(AMANZI_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib")
+foreach( package ${AMANZI_TPL_LIST} )
+  set(tpl_include_dir "${${package}_INCLUDE_DIR}")
+  set(tpl_include_dirs "${${package}_INCLUDE_DIRS}")
+  list(APPEND AMANZI_INCLUDE_DIRS ${tpl_include_dir} ${tpl_include_dirs})
+
+  set(tpl_library_dir  "${${package}_LIBRARY_DIR}")
+  set(tpl_library_dirs "${${package}_LIBRARY_DIRS}")
+  list(APPEND AMANZI_LIBRARY_DIRS ${tpl_library_dir} ${tpl_library_dirs})
+  set(tpl_libraries    "${${package}_LIBRARIES}")
+  foreach( extra_tpl_library ${tpl_libraries} )
+    get_filename_component(extra_library_path ${extra_tpl_library} PATH)
+    list(APPEND AMANZI_LIBRARY_DIR ${extra_library_path})
+  endforeach()
+endforeach()
+list(REMOVE_DUPLICATES AMANZI_INCLUDE_DIRS)
+list(REMOVE_DUPLICATES AMANZI_LIBRARY_DIRS)
 
 # Convert the link line to a space deliminated string
 foreach (arg ${LINK_LINE})
