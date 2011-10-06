@@ -28,6 +28,7 @@ include_directories(${STATE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${EXO_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -76,12 +77,12 @@ if ( BUILD_TESTS )
     target_link_libraries(transport_dispersion ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(transport_dispersion transport_dispersion KIND unit)
 
-    # Tests 4 & 5
+    # Tests 4-6
     if ( ENABLE_MSTK_Mesh )
         include_directories(${MSTK_INCLUDE_DIRS})
         include_directories(${MSTK_SOURCE_DIR})
 
-        set(amanzi_libs geometry mesh mesh_audit mstk_mesh state transport whetstone)
+        set(amanzi_libs geometry mesh mesh_audit mstk_mesh state transport whetstone output)
 
         # Test: transport (serial)
         add_executable(transport_serial_mstk test/Main.cc test/test_mstk.cpp)
@@ -100,7 +101,7 @@ if ( BUILD_TESTS )
 
     endif()    
 
-    # Tests 6 and 7
+    # Tests 7-8
     if ( ENABLE_STK_Mesh )
         include_directories(${STK_INCLUDE_DIRS})
         include_directories(${STK_SOURCE_DIR})

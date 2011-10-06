@@ -13,8 +13,8 @@ if (ENABLE_Unstructured)
   # Mesh
   add_subdirectory(mesh)
 
-# Discretization
-add_subdirectory(whetstone)
+  # Discretization
+  add_subdirectory(whetstone)
 
   # Output
   add_subdirectory(output)
