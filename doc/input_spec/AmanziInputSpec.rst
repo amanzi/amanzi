@@ -93,21 +93,21 @@ Syntax of the Specification
 
 * Input specification for each ParameterList entry consists of two parts.  First, a bulleted list defines the usage syntax and available options.  This is followed by example snipets of XML code to demonstrate usage.
 
-* In many cases, the input data specifies a particular parameterized model, and a number of parameterizations are supported.  For example, initial data might be uniform, or linear in y.  Whenever Amanzi supports a number of models for input for a given process X, this will be indicated as `"MODEL(<X>)`".  Below the usage descriptor, a bulleted list will appear to list the available models and the parameters required for each one.  For example, the specification might begin with a usage line:
+* In many cases, the input specifies data for a particular parameterized model, and Amanzi supports a number of parameterizations.  For example, initial data might be uniform (the value is required), or linear in y (the value and its gradient are required).  Where Amanzi supports a number of parameterized models for quantity Z, the available models will be listed by name, and then will be described in the subsequent section.  For example, the specification might begin with the following:
 
 
  * `"X`" [list] 
 
   * `"Y`" [string]
 
-  * MODEL(Z)
+  * Z [list] Model for Z, choose exactly one of the following: (1) `"Z: z1`", or (2) `"Z: z2`" (see below) 
 
-Here, a `"X`" is defined by a `"Y`" and a `"Z`".  The `"Y`" is a string parameter but the `"Z`" is given by a model (which will require its own set of parameters)
-The usage line for `"X`" will be followed by a bulleted list of options of Z:
+Here, an `"X`" is defined by a `"Y`" and a `"Z`".  The `"Y`" is a string parameter but the `"Z`" is given by a model (which will require its own set of parameters).
+The optoins for `"Z`" will then be described:
 
- * `"Z: z1`" requires `"z1a`" [string]
+ * `"Z: z1`" applies model z1.  Requires `"z1a`" [string]
 
- * `"Z: z2`" requires `"z2a`" [double] and `"z2b`" [int]
+ * `"Z: z2`" applies model z2.  Requires `"z2a`" [double] and `"z2b`" [int]
 
 An example of using such a specification:
 
@@ -202,7 +202,7 @@ Usage:
 
   * `"Generate Mesh`" [list] accepts parameters of generated mesh (currently only `"Uniform`" supported)
 
-   * `"Uniform`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
+   * `"Uniform Structured`" [list] accepts coordinates defining the extents of simulation domain, and number of cells in each direction.
 
     * `"Domain Low Coordinate`" [Array double] Location of low corner of domain
 
@@ -253,34 +253,33 @@ User-defined regions are constructed using the following syntax
 
  * "Regions" [list] can accept a number of lists for named regions (REGION)
 
-   * MODEL(Region)
+   * Shape [list] Geometric model primitive, choose exactly one of the following [see table below]: `"Region: Point`", `"Region: Box`", `"Region: Plane`", `"Region: Labeled Set`", `"Region: Layer`", `"Region: Surface`"
 
-Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex
-definitions based on triangulated surface files.  
+Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex definitions based on triangulated surface files.  
 
-+------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-|  shape functional name | parameters                              | type(s)                      | Comment                                                                |
-+========================+=========================================+==============================+========================================================================+
-| `"Point"`              | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
-+------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Box"`                | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
-+------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Plane"`              | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
-+------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
-|                        | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
-+------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
-+------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Surface"`            | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
-+------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+|  shape functional name         | parameters                              | type(s)                      | Comment                                                                |
++================================+=========================================+==============================+========================================================================+
+| `"Region: Point"`              | `"Coordinate`"                          | Array double                 | Location of point in space                                             |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Box"`                | `"Low Coordinate`", `"High Coordinate`" | Array double, Array double   | Location of boundary points of box                                     |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Plane"`              | `"Direction`", `"Location`"             | string, double               | direction: `"X`", `"-X`", etc, and `"Location`" is coordinate value    |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
+|                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region: Surface"`            | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 
 Notes
 
-* `"Box`" defines a region bounded by coordinate-aligned planes.
+* `"Region: Box`" defines a region bounded by coordinate-aligned planes.
   Currently, `"Plane`" is constrained to be coordinate-aligned.
 
-* The "Labeled Set" region requires a `"Label`" that was given to
+* The "Region: Labeled Set" region requires a `"Label`" that was given to
   sets generated in a preprocessing step and stored in a
   formatted data file.  For example, a mesh file in the Exodus II
   format can be processed to tag cells, faces and/or nodes with
@@ -295,7 +294,7 @@ Notes
   an integer).  The resulting region will have the dimensionality 
   associated with the entities in the indicated set.
 
-  Amanzi supports `"Labeled Set`" regions in the following
+  Amanzi supports `"Region: Labeled Set`" regions in the following
   formats: `"Structured`" (example), `"Exodus II`" (example).  Note that
   the format of the labeled set file does not have to match that
   of the `"Mesh Framework`" selected in the `"Mesh`" section.
@@ -317,25 +316,25 @@ Example:
 
   <ParameterList name="Regions">
     <ParameterList name="Top Section">
-      <ParameterList name="Box">
+      <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 5}"/>
         <Parameter name="High Coordinate" type="Array double" value="{4, 5, 8}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Middle Section">
-      <ParameterList name="Box">
+      <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 3}"/>
         <Parameter name="High Coordinate" type="Array double" value="{4, 5, 5}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom Section">
-      <ParameterList name="Box">
+      <ParameterList name="Region: Box">
         <Parameter name="Low Coordinate" type="Array double" value="{2, 3, 0}"/>
         <Parameter name="High Coordinate" type="Array double" value="{4, 5, 3}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Inflow Surface">
-      <ParameterList name="Labeled Set">
+      <ParameterList name="Region: Labeled Set">
         <Parameter name="Label"  type="string" value="sideset_2"/>
 	<Parameter name="File"   type="string" value="F_area_mesh.exo"/>
 	<Parameter name="Format" type="string" value="Exodus II"/>
@@ -361,19 +360,17 @@ the following set of physical properties using the supported models described be
 
  * MATERIAL [list] can accept lists to specify models, and `"Assigned Regions`" to specify where this model applies
 
-  * MODEL(Porosity)
+  * Porosity [list] Parameterized model for porosity.  Choose exactly one of the following: `"Porosity: Uniform`", `"Porosity: Random`", `"Porosity: GSLib`", `"Porosity: File`" (see below)
 
-  * MODEL(Mass Density)
+  * Mass Density [list] Parameterized model for mass density.  Choose exactly one of the following: `"Mass Density: Uniform`", `"Mass Density: File`" (see below)
 
-  * MODEL(Intrinsic Permeability)
+  * Intrinsic Permeability [list] Parameterized model for intrinsic permeability.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`", `"Intrinsic Permeability: GSLib`", `"Intrinsic Permeability: File`" (see below)
 
-  * MODEL(Capillary Pressure)
+  * Capillary Pressure [list] Parameterized mass density model.  Choose exactly one of the following: `"Intrinsic Permeability: Uniform`", `"Intrinsic Permeability: Anisotropic Uniform`", `"Intrinsic Permeability: GSLib`", `"Intrinsic Permeability: File`" (see below)
 
   * `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown.
 
 The following models are currently supported for porosity:
-
-* `"Porosity: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of porosity).  Optionally `"Interpolation`" (the interpolation strategy: : `"Constant`" [default] or `"Linear`").  Optionally `"Framework`" (if the mesh framework with which the file was written is different from current) will indicate the format of the file.  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
 
 * `"Porosity: Uniform`" requires `"Value`" [double] to specify the constant value of porosity.
 
@@ -381,23 +378,26 @@ The following models are currently supported for porosity:
 
 * `"Porosity: GSLib`" requires `"File`" [string], the name of a gslib input file 
 
+* `"Porosity: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of porosity).  Optionally `"Interpolation`" (the interpolation strategy: : `"Constant`" [default] or `"Linear`").  Optionally `"Framework`" (if the mesh framework with which the file was written is different from current) will indicate the format of the file.  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+
 
 The following models are currently supported for mass density:
 
-* `"Mass Density: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of mass density), `"Interpolation`" (the interpolation strategy: : `"Constant`" or `"Linear`"), `"Format`" (format of the file).  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
-
 * `"Mass Density: Uniform`" requires `"Value`" [double] to specify the constant value of mass density of the material.
+
+* `"Mass Density: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of mass density), `"Interpolation`" (the interpolation strategy: : `"Constant`" or `"Linear`"), `"Format`" (format of the file).  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
 
 
 The following models are currently supported for the intrinsic permeability of the material:
-
-* `"Intrinsic Permeability: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of intrinsic permeability).  Optionally `"Interpolation`" (the interpolation strategy: `"Constant`" [default] or `"Linear`"), `"Format`" (format of the file).  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
 
 * `"Intrinsic Permeability: Uniform`" requires `"Value`" [double] to specify the constant value of the intrinsic permeability
 
 * `"Intrinsic Permeability: Anisotropic Uniform`" requires `"Horizontal`" [double] and `"Vertical`" [double] to specify the constant value of the intrinsic permeability in the horizontal and vertical directions, respectively
 
 * `"Intrinsic Permeability: GSLib`" requires `"File`" [string], the name of a gslib input file 
+
+* `"Intrinsic Permeability: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of intrinsic permeability).  Optionally `"Interpolation`" (the interpolation strategy: `"Constant`" [default] or `"Linear`"), `"Format`" (format of the file).  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+
 
 Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
 
@@ -440,28 +440,27 @@ anisotropic permeability which is uniform throughout the domain.
 Phases
 =======================================
 
-The `"Phases`" parameter list is used to specify components of each of the phases that are mobile, and solutes that are contained within them.  For each such 
+The `"Phases`" parameter list is used to specify components of each of the phases that are mobile, and solutes that are contained within them.  For each
 phase, the list identifies the set of all independent variables that are to be stored on each discrete mesh cell.
-For organizational convenience, the `"Phases`" parameter list is also where the initial conditions, boundary data and source
-terms are defined for each phase component.  Future versions of Amanzi will support mass transfer between phases, and this is also where
-the phase distribution models will be specified.
 
 Phases, components and solutes
 ------------------------------
 
-In the general problem, multiple phases may coexist in the domain (e.g. gaseous, aqueous, etc), and each is
-comprised of a number of components (section 2.2).  In turn, each component may carry a number of solutes and some of these may participate
+The terminology for flow in porous media can be somewhat ambiguous between the multiphase and groundwater communities, particurly in regards to "components", "solutes" and "chemicals".  Since Amanzi is designed to handle a 
+wide variety of problems, we must settle on a nomenclature for our use here.  In the general problem, multiple "phases" may coexist in the domain (e.g. gaseous, aqueous/liquid, etc), and each is
+comprised of a number of "components" (section 2.2).  In turn, each component may carry a number of "solutes" and some of these may participate
 in chemical reactions.  As a result of reactions, a chemical source or sink term may appear for the solutes involved in the reaction, including solutes in other mobile phases or in the material matrix.  
 Additionally, certain reactions such as precipitation may affect the flow properties of the material itself during the simulation, and 
 some might affect the properties of the fluid (e.g. brines affect the liquid density). While Amanzi does not currently support chemical reactions and thermal processes, the specification here allows for the existence of
-the necessary data structures and input data framework.
+the necessary data structures and input data framework.  Note that if solute concentrations are significant, the system may be better modeled with that solute treated as a separate component.  Clearly, these definitions
+are highly problem-dependent, so Amanzi provide a generalized interface to accommodate a variety of scenarios.
 
-Currently in Amanzi, inert solutes are transported in the various phase components and are treated in "complexes".  Each complex is in chemical equilibrium with itself and does not undergo phase change.
+Currently in Amanzi, solutes are transported in the various phase components, and are treated in "complexes".  Each complex is typically in chemical equilibrium with itself and does not undergo phase change.
 Under these conditions, knowledge of the local concentration of the "basis" or "primary" species (the terms are used here interchangeably) in a chemical complex is sufficient to determine the concentrations of all related secondary species
 in the phase. Each basis species has a total component concentration and a free ion concentration. The total component concentration for each basis species is a sum of the
-free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phases
-and total sorbed concentration. Given the free ion concentration of each basis species (and if there is more than one phase, a specification of the 
-equilibrium phase distribution of components that appear in more than one phase), we can reconstruct the concentration of the secondary species in each phase. As a result only the basis species are maintained in the state
+free ion concentrations in the phase components and its stoichiometric contribution to all secondary species. Amanzi splits the total component concentration into a set of totals for each of the transported phase components,
+and a total sorbed concentration. Given the free ion concentration of each basis species (and if there is more than one phase, a specification of the thermodynamic relationships that determine the partitioning 
+between phase components (if mass transfer is allowed - not in current Amanzi), we can reconstruct the concentration of the primary and secondary species in each phase. As a result only the basis species are maintained in the state
 data structures for each phases component.
 
 In addition to solutes in the transported phases, there may be various immobile chemical constituents within the
@@ -469,25 +468,23 @@ porous media (material) matrix, such as "minerals" and "surface complexes". Book
 data structures by generalizing the "solute" concept - a slot in the state is allocated for each of these immobile species, but their concentrations are
 not included in the transport/flow components of the numerical integration.  To allow selective transport of the various solutes, Amanzi
 uses the concept of solute groups.   The aqueous solute concentrations are typically treated together as a group, for example, and often represent the only 
-chemical constituents that are mobile.
+chemical constituents that are mobile.  Thus, the current Amanzi will assume that any other groups specified in an Aqueous phase are immobile.
 
-Specification of Amanzi's numerical state is organized fundamentally around the list of phases that are present.  Each phase consists of multiple components.  For each of these,
-Amanzi requires a label, a set of models that specify its physical properties (Section 4.6), and a list of solutes.  For each solute, a group membership is specified.
+Specification of Amanzi's state is organized fundamentally around the list of phases that are present.  Each phase requires a 
+a specification of its physical properties (Section 4.6), and a list of its components.  For each component,
+Amanzi requires a label, and a list of solutes.  For each solute, a group membership is specified.
 Note that Amanzi will eventually support the use of a master chemistry database, where the solute complexes and their chemical activity are defined.  In that case, inclusion of a particular solute in the
 Amanzi input file will be conditioned on its presence in the appropriate section of the master list.
 
 Sources and Initial and Boundary Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Mobile phase components, and solutes contained in them, require boundary conditions along the entire surface bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  Generally, phase component boundary conditions are
-specified in porous media systems by giving either the component pressure or Darcy velocity on the boundary, along with the phase saturation on the bounding surface.  Since mobile solutes are carried with the resulting flow,
-inflowing boundary conditions for solutes are typically specified using Dirichlet conditions that define the effective solute concentration in the incoming flow.  On outflow boundaries,
-no solute information is carried into the domain so no data is required. For simplicity here, any boundary conditions not explicitly set in the input are defaulted to outflow.
+Mobile phase components, and solutes contained in them, require boundary conditions along the entire surface bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3).  Generally, boundary conditions are
+specified in porous media systems by giving either the phase pressure or Darcy velocity on the boundary, and/or the component saturations.  Since mobile solutes are carried with the resulting flow,
+inflowing boundary conditions for solutes are typically specified using Dirichlet conditions that define the effective solute concentration in the incoming flow.
+For simplicity here, any boundary conditions not explicitly set in the input are defaulted to outflow with a zero gradient applied to any transport solutes. 
+Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of production and loss processes, are defined for each phase component, if applicable, and include the distribution of any solutes that are carried into the domain with the phase component.  However, sources are not currently supported in Amanzi.
 
-Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of production and loss processes, are defined for each phase component, if applicable, and include the distribution of any solutes that are carried into the domain with the phase component.
-
-Boundary conditions and source terms may be time-dependent, in general.
-
-The generalized specification is as follows:
+In order to support the rather general specification requirements (involving combinations of phase pressures and component saturations), we must first define the composition of the "state" of the simulations by identifying all phases, components and solutes that will be present in the system.  We do this hierarchically, first by phase then by component:
 
 * `"Phases`" [list] can accept lists named phases (PHASE).
 
@@ -495,92 +492,92 @@ The generalized specification is as follows:
 
   * `"Phase Properties`" can accept models for viscosity and density
 
-   * MODEL(Density)
+   * Density [list] Parameterized model for phase mass density.  Choose exactly one of the following: `"Phase Mass Density: Uniform`", `"Phase Mass Density: File`" (see below)
 
-   * MODEL(Viscosity)
+   * Viscosity [list] Parameterized model for phase viscosity.  Choose exactly one of the following: `"Phase Viscosity: Uniform`", `"Phase Viscosity: File`" (see below)
 
   * `"Phase Components`" can accept COMP [list] named after a user-defined phase component.
 
-   * COMP [list] can accept `"Solutes`" [list] to define solutes carried by the component.  Also, accepts`"Component Initial Conditions`" [list], `"Component Boundary Conditions`" [list], `"Component Sources`" [list]
+   * COMP [list] can accept a list of solutes carried by the component.
 
-    * `"Solutes`" [Array string] lists the solute names
+    * `"Component Solutes`" [Array string] lists the solute names
 
-    * `"Component Initial Conditions`" [list] accepts lists IC-REGION named after the user-defined region that IC function will apply over
+Next, we specify the initial conditions.  Note that support is provided for specifying initial data on the phases and/or components simultaneously (the capillary pressure relationships are used to convert between the various options).  Thus, boundary conditions on the phases and components are specified together.  The solutes are specified afterward, organized first by phase then component.  If a solute exists in more than one phase/component, a thermodynamic relationship is required to partition the distribution - Amanzi does not currently support such a situation.
 
-     * IC-REGION [list] can accept a model for initial conditions, list for solute initial conditions
+* `"Initial Conditions`" [list] accepts lists IC-REGION named after the user-defined region that the IC function will apply over
 
-      * MODEL(Initial Conditions)
+ * IC-Region accepts a model for phase/component initial conditions, and a list for solute initial conditions
 
-      * `"Solute Initial Conditions`" can accept lists SOLUTE named after indivual solutes
+  * IC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
 
-       * SOLUTE can accept a model for initial conditions, and a flag for the units of Dirichlet values in the model
+  * `"Solute IC`" can accept PHASE (labels of phases defined above)
 
-        * MODEL(Initial Conditions)
+   * PHASE [list] can accept COMPONENT (labels of components defined above)
 
-        * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+    * COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-    * `"Component Boundary Conditions`" [list] accepts lists BC-REGION named after the user-defined region that BC function will apply over
+     * Component IC [list] Parameterized model for initial component conditions.  Choose exactly one of the following: `"IC: Uniform Concentration`"
 
-     * BC-REGION [list] can accept a model for boundary conditions, and list for solute booundary conditions
+     * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
-      * MODEL(Boundary Conditions)
 
-      * `"Solute Boundary Conditions`" can accept lists SOLUTE named after indivual solutes
+Finally, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
 
-       * SOLUTE can accept a model for boundary conditions, and a flag for the units of Dirichlet values in the model
+* `"Boundary Conditions`" [list] accepts lists BC-REGION named after the user-defined region that the BC function will apply over
 
-        * MODEL(Boundary Conditions)
+ * BC-Region accepts a model for phase/component boundary conditions, and a list for solute boundary conditions
 
-        * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
+  * BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
 
-    * `"Component Sources`" [list] accepts lists S-REGION named after the user-defined region that source function will apply over
+  * `"Solute BC`" can accept PHASE (labels of phases defined above)
 
-     * S-REGION [list] can accept a model for a source, and list for solute sources
+   * PHASE [list] can accept COMPONENT (labels of components defined above)
 
-      * MODEL(Source)
+    * COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-      * `"Solute Sources`" can accept lists SOLUTE named after indivual solutes
+     * BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradaient`" (see below)
 
-       * SOLUTE can accept a model for a source, and a flag for the units of Dirichlet values in the model
+      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
-        * MODEL(Source)
 
-        * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
-Initial conditions are required for each phase component, and the solutes contained in them, over the entire computational domain.
-Boundary conditions are required on all domain boundaries (see Sections 3.3, 4.3).  Source terms for all are optional.  All are constructed using a limited number
-of explicitly parameterized model are supported for communicating initial conditions:
+The following initial condition parameterizations are supported:
 
-* `"Initial Conditions: Uniform`" requires `"Value`" [double]
+* `"IC: Uniform`" requires `"Value`" [double]
 
-* `"Initial Conditions: Linear`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double)
+* `"IC: Linear`" requires `"Reference Coordinate`" (Array double), `"Reference Value`" [double], and  `"Gradient Value`" (Array double)
 
-* `"Initial Conditions: File`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
+* `"IC: File`" requires `"File`" [string] and `"Label`" [string] - the label of the field to use.  If the file format is not compatible with the current mesh framework, `"Format`" [string] is also required.
 
-The following parameterized boundary conditions are supported:
+The following boundary condition parameterizations are supported:
 
-* `"Boundary Conditions: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Extensive Volumetric Flux`" [double] or `"Extensive Mass Flux`" [double], `"Intensive Volumetric Flux`" [double] or `"Intensive Mass Flux`" [double]
+* `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Extensive Volumetric Flux`" [double] or `"Extensive Mass Flux`" [double], `"Intensive Volumetric Flux`" [double] or `"Intensive Mass Flux`" [double]
 
-* `"Boundary Conditions: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+* `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"Boundary Conditions: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
+* `"BC: Linear Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
-* `"Boundary Conditions: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
+* `"BC: Uniform Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"Boundary Conditions: Impermeable`" requires no data
+* `"BC: Uniform Concentration`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
-* `"Boundary Conditions: Zero Flow`" requires no data
+* `"BC: Linear Saturation`" requires `"Times`" [Array double], `"Time Functions`" [Array string], `"Reference Values`" [Array double] `"Reference Coordinates`" [Array double] `"Gradient`" [Array double]
 
-The following models are currently supported:
+* `"BC: Seepage`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
 
-* `"Source: Uniform Volumetric Rate`" requires `"Times`" [Array double], `"Time Functions`" [Array string], and `"Values`" [Array double].  
+* `"BC: Hydrostatic`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Water Table Height`" [double] (see below)
 
-* `"Source: Uniform Mass Rate`" requires `"Times`" [Array double], `"Time Functions`" [Array string],  `"Values`" [Array double].  
+* `"BC: Impermeable`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* `"BC: Zero Flow`"  requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
+* `"BC: Zero Gradient`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
+
 
 Time Functions
 ~~~~~~~~~~~~~~
 
-Boundary data and source models utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
+Boundary condition functions utilize a parameterized model for time variations that is either piecewise constant or piecewise linear.  For example:
 
 .. code-block:: xml
 
@@ -589,7 +586,7 @@ Boundary data and source models utilize a parameterized model for time variation
       <Parameter name="Time Functions" type="Array string" value="{Constant, Linear}"/>    
 
 
-This define four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
+This defines four time intervals: (-inf,1), (1,2), (2,3), (3,+inf).  By assumption the function is constant over the first and last intervals.  The remaining 
 two intervals are speicified by the `"Time Functions`" parameter.  Thus, the value here is 10 anytime prior to t=2. The value increases linearly from 10 to 
 20 over the interval t=2 to t=3, and then is constant at 30 for t>3.
 
@@ -616,49 +613,83 @@ Each of these is controlled in different ways, reflecting their intended use.
 "`Log Data`" is not explicitly controlled in this section, since it is easier to control in the context of specifying details of the algorithms.  The remaining data types are discussed in the section below.
 
 
+Time values, Cycles and Variables
+---------------------------------
+
+The user must specify when the various types of output are desired.  For Observation Data, this can be in terms of time or cycle number.  For Visualization Data or Checkpoint Data, this can only be in terms of cycle number.  We support the definition of useful macros to specify these quantities.  Additionally, one must provide a list of quantities over which these operators must function.  For example, you may want the integral of water at various times as Observation Data, or the concentration of a solute at periodic cycles as Viscualization Data.
+
+
+Time macros specify a rule to generate or list time values.  They take the form:
+
+* `"Time Macros`" [list] can accept multiple lists for user-named macros TMACRO
+
+ * TMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
+
+  * `"Values`" [Array double] values of time, or 
+
+  * `"Start_Period_Stop`" [Array double] values of start time (ts), period (dt) and (optionally) end time (te) to generate times, t=ts + dt*i, for any integer i. If stop time is omitted, will not end.
+
+
+Cycle macros specify a rule to generate or list cycle values.  They take the form:
+
+* `"Cycle Macros`" [list] can accept multiple lists for user-named macros CMACRO
+
+ * CMACRO [list] can accept either `"Values`" or `"Start_Period_Stop`"
+
+  * `"Values`" [Array int] values of cycle number, or 
+
+  * `"Start_Period_Stop`" [Array int] values of start cycle (cs), period (dc) and (optionally) end cycle (ce) to generate cycle numbers, c=cs + dc*i, for any integer i. If stop cycle is omitted, will not end.
+
+
+
+Variable macros specify a set of variables.  They take the form:
+
+* `"Variable Macros`" [list] can accept multiple lists for user-named variable macros, VMACRO:
+
+ * VMACRO [list] can accept PHASE, the name of the one of the user-defined phases
+
+  * PHASE [string] can accept COMPONENT, the name of the one of the user-defined components of PHASE.  If blank, assumes desired variable is pressure of PHASE.  If `"All`" assumes all phases.
+
+   * COMPONENT [string] can accept SOLUTE, the name of the one of the user-defined solutes in COMPONENT.  If blank, assumes desired variable is mass density of COMPONENT.  If `"All`" assumes all components in this phase.
+
+    * SOLUTE [string] Assumes desired variable is mass density of SOLUTE.  If `"All`" assumes all solutes in this component.
+
+For example usage of these macros, see the examples below in each Data section.
+
+
 Observation Data
 ----------------
 
 A user may request any number of specific observations from Amanzi.  Each labeled Observation Data quantity involves a state quantity, a model, a region from which it will extract its source data, and a list of discrete times 
 for its evaluation.  The observations are evaluated during the simulation and returned to the calling process through one of Amanzi arguments.
 
-* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION), or`"Time Macro`" [list] to define a rule for generating output times
+* `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
-  * `"Time Macro`" accepts the label of a user-defined time macro
+  * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`" and `"Time Macro`"
 
-   * TIMEMACRO requires either (1) `"Values`" [Array double], or (2) `"Start_Stop_Interval`" [list] (cannot specify both)
- 
-    * `"Values`" [Array double], or
+    * `"Variables`" [Array string] a list of labels of variables defined above
 
-    * `"Start_Stop_Interval`" [Array double] to specify that dump times = i*{Interval} when tin between {Start} and {Stop}
-
-  * OBSERVATION [list] user-defined label, can accept values for `"Phase`", `"Component`", `"Solute`", `"Region`", `"Times`" and a model.
-
-    * `"Phase`" [string] the label of a phase defined above
-
-    * `"Component`" [string] the label of one of the components defined for this phase
+    * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
     * `"Region`" [string] the label of a user-defined region
 
-    * `"Solute`" [string] (optional) the label of one of the solutes defined for this phase component
+    * `"Time Macro`" [string] one of the labeled time macros (see below)
 
-    * `"Time Macro`" [string] one of the labeled time macros defined above
+    * `"Cycle Macro`" [string] one of the labeled cycle macros (see below)
 
-    * MODEL(Observation)
+The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
-The following Observation Data models are currently supported.  All of them operate on the state quantity identified.
+* `"Observation Data: Mean`" returns the mean value of the phase, component or solute mass density
 
-* `"Observation Data: Mean`" returns the mean value of the phase or component saturation, or the solute concentration over the region
+* `"Observation Data: Integral`" returns the integral of the phase, component or solute mass density
 
-* `"Observation Data: Integral`" returns the integral of the phase or component saturation, or the solute concentration over the region
-
-* `"Observation Data: Cummulative Integral`" returns the integral of the phase or component saturation, or the solute concentration over the region integrated over time
+* `"Observation Data: Cummulative Integral`" returns the integral of the phase, component or solute mass density, accumulated over the intervals defined by the time macro
 
 * `"Observation Data: Flux Integral`" returns the integral of the flux of the phase, component, or solute over the region
 
-* `"Observation Data: Peak Value`" returns the peak value of the phase or component saturation, or the solute concentration over the region
+* `"Observation Data: Peak Value`" returns the peak value of the phase, component or solute mass density
 
-* `"Observation Data: Distance to Center of Mass`" returns the distance from a given location of the center of mass of the phase or component saturation, or the solute concentration over the region.  Requires a single parameter, "Reference Location" [Array double] specifying the refnerece location.
+* `"Observation Data: Center of Mass`" returns the location of the center of mass of the phase, component or solute.
 
 
 Example:
@@ -666,23 +697,33 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Observation Data">
-    <ParameterList name="Time Macro">
-      <ParameterList name="mytimes">
-        <Parameter name="Values" type="Array double" value="{10, 30 , 50}"/>
-    <ParameterList name="Center of UO+2 Mass">
-      <Parameter name="Phase" type="string" value="Aqueous"/>
-      <Parameter name="Component" type="string" value="Water"/>
-      <Parameter name="Solute" type="string" value="UO+2"/>
-      <Parameter name="Region" type="string" value="All"/>
-      <ParameterList name="Observation: Distance to Center of Mass">
-        <Parameter name="Reference Location" type="Array double" value="{0, 0, 100}"/>
+    <ParameterList name="Time Macros">
+      <ParameterList name="Annual">
+        <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7}"/>
       </ParameterList>
-      <Parameter name="Time Macro" type="string" value="mytimes">
+    </ParameterList>
+
+    <ParameterList name="Variable Macros">
+      <ParameterList name="Water Mass Density">
+        <Parameter name="Phase" type="string" value="Aqueous"/>
+        <Parameter name="Component" type="string" value="Water"/>
+      </ParameterList>
+      <ParameterList name="Tc-99 Molar Concentration">
+        <Parameter name="Phase" type="string" value="Aqueous"/>
+        <Parameter name="Component" type="string" value="Water"/>
+        <Parameter name="Solute" type="string" value="Tc-99"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Integrated Mass">
+      <Parameter name="Region" type="string" value="All"/>
+      <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
+      <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+      <Parameter name="Time Macro" type="string" value="Annual"/>
     </ParameterList>
   </ParameterList>
 
-In this example, the user requests that the center of mass for the solute UO+2 be computed, and that the distance from that location to the point (0, 0, 100) be returned at t={10, 30 and 50}.
-The format of the data structure used to communicate the Observation Data back to the calling function includes a flag for each requested time to indicate whether the quantity was successfully filled.
+In this example, the user requests an annual report of the integrated mass of water and a solute is desired over the entire domain.
 
 
 Checkpoint Data
@@ -695,28 +736,23 @@ by machine round errors and randomness due to execution in a parallel computing 
 
   * `"File Name Base`" [string]
 
-  * `"Cycle Data`" [string] can accept start, end and interval data for cycle number
+  * `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
 
-    * `"Start`" [int] step number of first file
-
-    * `"End`" [int] step number of last file, if < 0 or not present then value is not used (no stopping condition)
-
-    * `"Interval`" [int] number of steps per file write
-
-    * `"Steps`" [Array int] specific step numbers to write (if parameter present, the (Start, Step, Interval) ignored
 
 Example:
 
 .. code-block:: xml
 
+  <ParameterList name="Cycle Macros">
+    <ParameterList name="Every-5">
+      <Parameter name="Start_Period" type="Array int" value="{0, 5}"/>
+    </ParameterList>
+  </ParameterList>
+
   <ParameterList name="Checkpoint Data">
     <Parameter name="File Name Base" type="string" value="chk"/>
     <Parameter name="File Name Digits" type="int" value="5"/>
-    <ParameterList name="Cycle Data">
-      <Parameter name="Start" type="int" value="0"/>
-      <Parameter name="End" type="int" value="-1"/>
-      <Parameter name="Interval" type="int" value="5"/>
-    </ParameterList>
+    <Parameter name="Cycle Macro" type="string" value="Every-5"/>
   </ParameterList>
 
 In this example, Checkpoint Data files are written when the cycle number is evenly divisble by 5.
@@ -732,51 +768,39 @@ at intervals corresponding to the numerical time step values; writes are control
 
   * `"File Name Base`" [string]
   
-  * `"Cycle Data`" [string] can accept start, end and interval data for cycle number
+  * `"Cycle Macro`" [string] can accept label of user-defined Cycle Macro (see above)
 
-    * `"Start`" [int] step number of first file
-
-    * `"End`" [int] step number of last file, if < 0 or not present then value is not used (no stopping condition)
-
-    * `"Interval`" [int] number of steps per file write
-
-    * `"Steps`" [Array int] specific step numbers to write (if parameter present, the (Start, Step, Interval) ignored
-
-  * `"Variable`" [list] can accept `"Phase`" [string], `"Component`" [string] (optional), `"Solute`" [string]
-
-    * `"Phase`" [string] the label of a phase defined above, or "All" to write all phases
-
-    * `"Component`" [string] the label of one of the components defined for this phase, or "All" to write all components of the selected phase(s)
-
-    * `"Solute`" [string] the label of a solute defined above, or "All" to write all solutes of the component, or "None" to write none of them.
-
+  * `"Variable Macro`" [string] can accept label of user-defined Variable Macro (see above)
 
 
 Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Visualization Data">
-    <Parameter name="File Name Base" type="string" value="chk"/>
-    <Parameter name="File Name Digits" type="int" value="5"/>
-    <ParameterList name="Cycle Data">
-      <Parameter name="Start" type="int" value="0"/>
-      <Parameter name="End" type="int" value="-1"/>
-      <Parameter name="Interval" type="int" value="5"/>
-    </ParameterList>
-    <ParameterList name="Variable">
-      <Parameter name="Phase" type="string" value="Aqueous"/>
-      <Parameter name="Component" type="string" value="Water"/>
-      <Parameter name="Solute" type="string" value="UO+2"/>
-    </ParameterList>
-    <ParameterList name="Variable">
-      <Parameter name="Phase" type="string" value="Gas"/>
-      <Parameter name="Component" type="string" value="All"/>
-      <Parameter name="Solute" type="string" value="All"/>
+  <ParameterList name="Cycle Macros">
+    <ParameterList name="Every-10">
+      <Parameter name="Start_Period" type="Array int" value="{0, 10}"/>
     </ParameterList>
   </ParameterList>
 
-In this example, visalization data is written when the cycle number is evenly divisble by 5.  The files will include the concentration of UO+2 in the Aqueous Water component, and all the solues in the Gas Phase.
+  <ParameterList name="Variable Macros">
+    <ParameterList name="Liquid Pressure">
+      <Parameter name="Phase" type="string" value="Aqueous"/>
+    </ParameterList>
+    <ParameterList name="Water Mass Density">
+      <Parameter name="Phase" type="string" value="Aqueous"/>
+      <Parameter name="Component" type="string" value="Water"/>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Visualization Data">
+    <Parameter name="File Name Base" type="string" value="chk"/>
+    <Parameter name="File Name Digits" type="int" value="5"/>
+    <Parameter name="Cycle Macro" type="string" value="Every-10"}>
+    <Parameter name="Variable Macro" type="string" value="{Liquid Pressure, Water Mass Density"}>
+  </ParameterList>
+
+In this example, the liquid pressure and water density are written when the cycle number is evenly divisble by 5.
 
 
 
@@ -1080,19 +1104,21 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Porosity" type="double" value="0.38"/>
              </ParameterList>
        
-             <ParameterList name="Intrinsic Permeability: Anisotropic">
-               <Parameter name="Permeability" type="double" value="2.05e-8"/>
-               <Parameter name="Anisotropy Ratio" type="Array double" value="{1., 1., 0.1}"/>
+             <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+               <Parameter name="Horizontal" type="double" value="2.05e-8"/>
+               <Parameter name="Vertical" type="double" value="2.05e-7"/>
              </ParameterList>
        
              <!-- GEH: Pressure-saturation function: van Genuchten-->
-             <ParameterList name="Capillary Pressure: van Genutchten">
+             <ParameterList name="Capillary Pressure: van Genuchten">
                <Parameter name="alpha" type="double" value="2.14e-4"/> <!-- 0.021 cm^-1 -> Pa^-1 -->
                <Parameter name="Sr" type="double" value="0.0"/>
                <Parameter name="m" type="double" value="0.601"/>
                <Parameter name="Relative Permeability" type="string" value="Mualem"/>
              </ParameterList>
        
+             <Parameter name="Assigned Regions" type="Array string" value="{Material 1 Region}"/>
+
            </ParameterList>
        
            <ParameterList name="Material 2">
@@ -1101,18 +1127,20 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Porosity" type="double" value="0.36"/>
              </ParameterList>
        
-             <ParameterList name="Intrinsic Permeability: Anisotropic">
-               <Parameter name="Permeability" type="double" value="4.84e-8"/>
-               <Parameter name="Anisotropy Ratio" type="Array double" value="{1., 1., 0.1}"/>
+             <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+               <Parameter name="Horizontal" type="double" value="4.84e-8"/>
+               <Parameter name="Vertical" type="double" value="4.84e-7"/>
              </ParameterList>
        
-             <ParameterList name="Capillary Pressure: van Genutchten">
+             <ParameterList name="Capillary Pressure: van Genuchten">
                <Parameter name="alpha" type="double" value="7.35e-4"/>
                <Parameter name="Sr" type="double" value="0.0"/>
                <Parameter name="m" type="double" value="0.511"/>
                <Parameter name="Relative Permeability" type="string" value="Mualem"/>
              </ParameterList>
        
+             <Parameter name="Assigned Regions" type="Array string" value="{Material 2 Region}"/>
+
            </ParameterList>
        
            <ParameterList name="Material 3">
@@ -1121,25 +1149,24 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <Parameter name="Porosity" type="double" value="0.23"/>
              </ParameterList>
        
-             <ParameterList name="Intrinsic Permeability: Anisotropic">
-               <Parameter name="Permeability" type="double" value="3.00e-9"/>
-               <Parameter name="Anisotropy Ratio" type="Array double" value="{1., 1., 0.1}"/>
+             <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+               <Parameter name="Horizontal" type="double" value="3.00e-9"/>
+               <Parameter name="Vertical" type="double" value="3.00e-8"/>
              </ParameterList>
-       
-             <ParameterList name="Capillary Pressure: van Genutchten">
+
+             <ParameterList name="Capillary Pressure: van Genuchten">
                <Parameter name="alpha" type="double" value="1.74e-4"/>
                <Parameter name="Sr" type="double" value="0.0"/>
                <Parameter name="m" type="double" value="0.420"/>
                <Parameter name="Relative Permeability" type="string" value="Mualem"/>
              </ParameterList>
        
+             <Parameter name="Assigned Regions" type="Array string" value="{Material 3 Region}"/>
+
            </ParameterList>
        
          </ParameterList>
        
-         <!-- GEH: With the below, I am adhering to the current input spec.  However, I would argue that
-                   vast majority of subsurface scientists would say that this is not intuitive.  But we
-                   will concede for this beta release. -->
          <ParameterList name="Phase Definitions">
            <ParameterList name="Aqueous">
              <ParameterList name="Phase Properties">
@@ -1155,148 +1182,178 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                          reflects this, although it refers to "Aqueous Water" instead of "Water". -->
                <ParameterList name="Water">
                  <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
-                 <ParameterList name="Component Initial Conditions">
-                   <ParameterList name="All">
-                     <!-- GEH: The following line differs from the input spec, but somehow we have to 
-                             differentiate between the initial condition for the water component and
-                             the other components/solutes -->
-                     <ParameterList name="IC: Linear Pressure">
-                       <Parameter name="Reference Value" type="double" value="101325."/>
-                       <Parameter name="Reference Coordinate" type="Array double" value="{0., 0., 0.}"/>
-                         <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
-                       <Parameter name="Gradient Value" type="Array double" value="{0., 0., -9793.5192}"/>
-                     </ParameterList>
-                       <!-- GEH: If we are going to refer to solutes such as Tc-99 as a component, this
-                           block would need to move out one level. -->
-                     <ParameterList name="Solutes Initial Conditions">
-                       <ParameterList name="Tc-99">
-                         <ParameterList name="IC: Uniform">
-                           <Parameter name="Value" type="double" value="0.0"/>
-                         </ParameterList>
-                         <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-                       </ParameterList>
-                     </ParameterList>
-                   </ParameterList>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
 
-                 <ParameterList name="Component Boundary Conditions">
-                   <ParameterList name="Top Surface Outside Cribs Region">
-                     <ParameterList name="Boundary Conditions: Flux">
-                         <!-- GEH/VLF: These recharge intervals/rates will change. -->
-                         <!-- 1956, 1984 in seconds-->
-                       <Parameter name="Times" type="Array double" value="{0., 883008000.}"/>
-                       <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-                         <!-- Recharge = 77 mm/yr, 25mm/yr -->
-                       <Parameter name="Extensive Flux" type="Array double" value="{2.44e-9, 7.93e-10}"/>
-                     </ParameterList>
-                     <ParameterList name="Solute Boundary Conditions">
-                       <ParameterList name="Tc-99">
-                         <ParameterList name="Boundary Conditions: Uniform">
-                           <!-- GEH: Throughout entire simulation, no solute enters through top surface -->
-                           <Parameter name="Times" type="Array double" value="{0.}"/>
-                           <Parameter name="Time functions" type="Array string" value="{Constant}"/>
-                           <Parameter name="Values" type="Array double" value="{0.}"/>
-                           <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
-                         </ParameterList>
-                       </ParameterList>
-                     </ParameterList>
-                   </ParameterList>
 
-               <ParameterList name="Crib 1 Region">
-                 <ParameterList name="BC: Flux">
-                   <!-- GEH/VLF: These recharge intervals/rates will change. -->
-                   <!-- 1956, 1956.25 in seconds-->
-                   <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
-                   <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
-                   <!-- 11.25, 0. m/d-->
-                   <Parameter name="Flux" type="Array double" value="{1.302e-4, 0.}"/>
-                 </ParameterList>
-                 <ParameterList name="Solute Boundary Conditions">
-                   <ParameterList name="BC: Inflow">
-                     <ParameterList name="Tc-99">
-                       <!-- 1956, 1956.25 in seconds-->
-                       <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
-                       <Parameter name="Molar Concentration" type="Array double" value="{1000., 0.}"/>
-                     </ParameterList>
-                   </ParameterList>
-                 </ParameterList>
-               </ParameterList>
-               <ParameterList name="Crib 2 Region">
-                 <ParameterList name="BC: Flux">
-                   <!-- GEH/VLF: These recharge intervals/rates will change. -->
-                   <!-- 1956, 1956.33, 1956.66 in seconds-->
-                   <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
-                   <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
-                   <!-- 0., 8.75, 0. m/d-->
-                   <Parameter name="Flux" type="Array double" value="{0., 1.013e-4, 0.}"/>
-                 </ParameterList>
-                 <ParameterList name="Solute Boundary Conditions">
-                   <ParameterList name="BC: Inflow">
-                     <ParameterList name="Tc-99">
-                       <!-- 1956, 1956.33, 1956.66 in seconds-->
-                       <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
-                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
-                       <Parameter name="Molar Concentration" type="Array double" value="{0., 900., 0.}"/>
-                     </ParameterList>
-                   </ParameterList>
-                 </ParameterList>
-               </ParameterList>
-       
-               <ParameterList name="Bottom Surface Region">
-                 <ParameterList name="BC: Uniform Pressure">
-                   <Parameter name="Times" type="Array double" value="{0.}"/>
-                   <Parameter name="Time functions" type="Array string" value="{Constant}"/>
-                   <Parameter name="Pressure" type="Array double" value="{101325.}"/>
-                 </ParameterList>
-                 <ParameterList name="Solute Boundary Conditions">
-                   <ParameterList name="BC: Outflow">
-                     <ParameterList name="Tc-99">
-                         <Parameter name="Times" type="Array double" value="{0.}"/>
-                         <Parameter name="Time functions" type="Array string" value="{Constant}"/>
-                     </ParameterList>
-                     </ParameterList>
-                   </ParameterList>
-               </ParameterList>
-       
-               <ParameterList name="East Surface Region">
-                 <Parameter name="BC: No Flow"/>
-                 <!-- GEH: Do we need the time(s) explicitly entered for no flow/zero flux? -->
-                 <ParameterList name="Solute Boundary Conditions">
+
+         <ParameterList name="Initial Conditions">
+           <ParameterList name="All">
+             <ParameterList name="IC: Linear Pressure">
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+               <Parameter name="Reference Value" type="double" value="101325."/>
+               <Parameter name="Reference Coordinate" type="Array double" value="{0., 0., 0.}"/>
+                 <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
+               <Parameter name="Gradient Value" type="Array double" value="{0., 0., -9793.5192}"/>
+             </ParameterList>
+             <ParameterList name="Solute IC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
                    <ParameterList name="Tc-99">
-                     <Parameter name="BC: Zero Flux"/>
-                   </ParameterList>
-                 </ParameterList>
-               </ParameterList>
-               <ParameterList name="West Surface Region">
-                 <Parameter name="BC: No Flow"/>
-                 <ParameterList name="Solute Boundary Conditions">
-                   <ParameterList name="Tc-99">
-                     <Parameter name="BC: Zero Flux"/>
-                   </ParameterList>
-                 </ParameterList>
-               </ParameterList>
-               <ParameterList name="South Surface Region">
-                 <Parameter name="BC: No Flow"/>
-                 <ParameterList name="Solute Boundary Conditions">
-                   <ParameterList name="Tc-99">
-                     <Parameter name="BC: Zero Flux"/>
-                   </ParameterList>
-                 </ParameterList>
-               </ParameterList>
-               <ParameterList name="North Surface Region">
-                 <Parameter name="BC: No Flow"/>
-                 <ParameterList name="Solute Boundary Conditions">
-                   <ParameterList name="Tc-99">
-                     <Parameter name="BC: Zero Flux"/>
-                   </ParameterList>
+                     <ParameterList name="IC: Uniform">
+                       <Parameter name="Value" type="double" value="0.0"/>
+                     </ParameterList>
+                   <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
                  </ParameterList>
                </ParameterList>
              </ParameterList>
            </ParameterList>
          </ParameterList>
+
+
+
+         <ParameterList name="Boundary Conditions">
+           <ParameterList name="Top Surface Outside Cribs Region">
+             <ParameterList name="BC: Flux">
+                 <!-- GEH/VLF: These recharge intervals/rates will change. -->
+                 <!-- 1956, 1984 in seconds-->
+               <Parameter name="Times" type="Array double" value="{0., 883008000.}"/>
+               <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
+                 <!-- Recharge = 77 mm/yr, 25mm/yr -->
+               <Parameter name="Extensive Flux" type="Array double" value="{2.44e-9, 7.93e-10}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Inflow">
+                         <!-- GEH: Throughout entire simulation, no solute enters through top surface -->
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{0.}"/>
+                     </ParameterList>
+                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+           <ParameterList name="Crib 1 Region">
+             <ParameterList name="BC: Flux">
+                 <!-- GEH/VLF: These recharge intervals/rates will change. -->
+                 <!-- 1956, 1956.25 in seconds-->
+               <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
+                 <!-- 11.25, 0. m/d-->
+               <Parameter name="Extensive Flux" type="Array double" value="{1.302e-4, 0.}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Inflow">
+                         <!-- 1956, 1956.25 in seconds-->
+                       <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{1000., 0.}"/>
+                     </ParameterList>
+                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+           <ParameterList name="Crib 2 Region">
+             <ParameterList name="BC: Flux">
+                 <!-- GEH/VLF: These recharge intervals/rates will change. -->
+                 <!-- 1956, 1956.33, 1956.66 in seconds-->
+               <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
+                   <!-- 0., 8.75, 0. m/d-->
+               <Parameter name="Extensive Flux" type="Array double" value="{0., 1.013e-4, 0.}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Inflow">
+                         <!-- 1956, 1956.33, 1956.66 in seconds-->
+                       <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{0., 900., 0.}"/>
+                     </ParameterList>
+                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Bottom Surface Region">
+             <ParameterList name="BC: Uniform Pressure">
+               <Parameter name="Times" type="Array double" value="{0.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Values" type="Array double" value="{101325.}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Outflow">
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="West Surface Region">
+             <Parameter name="BC: No Flow"/>
+               <Parameter name="Times" type="Array double" value="{0.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <Parameter name="BC: Zero Flux"/>
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+           <ParameterList name="East Surface Region">
+             <Parameter name="BC: No Flow"/>
+               <Parameter name="Times" type="Array double" value="{0.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <Parameter name="BC: Zero Flux"/>
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+         </ParameterList>
        
          <ParameterList name="Output">
-       
+
            <!-- GEH: The following are desired for output:
              1. Integrated water and Tc-99 mass over time (yearly) (mass balance)
              2. Water saturation, water pressure and Tc-99 concentration throughout space at specified times (plot file)
@@ -1306,284 +1363,132 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
              I will attempt these calculations based on the "Observation Data" section of the input spec.
              -->
-       
-           <!-- GEH:  Global water and Tc-99 mass over time -->
-       
-           <ParameterList name="Observation: Integral">
-             <ParameterList name="Water Mass">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Region" type="string" value="All"/>
-               <Parameter name="Functional" type="string" value="Mass"/>
-               <!-- GEH: I assume that Amanzi can differentiate between <Parameter name="Times"> and
-                         <ParameterList name="Times">.   This allows one to either specify an array
-                         of times or parameters (e.g. start, end, frequency) for constructing an
-                         array of times internally.-->
-               <ParameterList name="Times">
-                 <!-- GEH: "Time Frequency" allows the user to specify a periodic time in which
-                         they desire data sampled.  Output should support both "Cycle Frequency" 
-                         and "Time Frequency" (or something along those lines). -->
-                 <!-- yearly -->
-                 <Parameter name="Time Frequency" type="double" value="3.1536e7"/>
-                 <Parameter name="Start Time" type="double" value="0."/>
-                 <!-- 2006 -->
-                 <Parameter name="End Time" type="integer" value="1.5768e9"/>
-               </ParameterList>
-             </ParameterList>
-             <ParameterList name="Tc-99 Mass">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <!-- GEH: How will Amanzi know whether to print water mass or Tc-99 mass? -->
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
-               <Parameter name="Region" type="string" value="All"/>
-               <Parameter name="Functional" type="string" value="Mass"/>
-               <ParameterList name="Times">
-                 <Parameter name="Time Frequency" type="double" value="3.1536e7"/>
-                 <Parameter name="Start Time" type="double" value="0."/>
-                 <Parameter name="End Time" type="integer" value="1.5768e9"/>
-               </ParameterList>
+
+
+           <!-- define some handy cycle macros -->
+           <ParameterList name="Cycle Macros">
+             <ParameterList name="Every-5-steps">
+               <Parameter name="Start_Stop_Frequency" type="Array int" value="{0, -1, 5}"/>
              </ParameterList>
            </ParameterList>
-       
-           <!-- GEH: Water saturation, water pressure and Tc-99 concentration throughout space at points in time -->
-       
-           <ParameterList name="Observation: Cell by Cell"><!-- GEH: Better ideas? -->
-             <ParameterList name="Water Saturation">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Region" type="string" value="All"/>
-               <Parameter name="Functional" type="string" value="Saturation"/>
+
+           <!-- define some handy time macros -->
+           <ParameterList name="Time Macros">
+             <ParameterList name="Annual">
+               <Parameter name="Start_Stop_Frequency" type="Array double" value="{0, -1, 3.1536e7}"/>
+             </ParameterList>
+
+             <ParameterList name="My_times">
                <!-- 1956, 1956.1, 1956.2, 1956.3, 1956.4, 1956.4, 1956.5, 1956.6, 1956.7, 1956.8, 1956.9, 1957, 1958, 1960, 1970, 1980, 1990, 2000, 2006 -->
-               <!-- GEH: I assume that Amanzi can differentiate between <Parameter name="Times"> and
-                         <ParameterList name="Times">-->
-               <Parameter name="Times" type="Array double" value="{0., 3153600., 6307200., 9460800., 12614400., 1576800., 18921600., 22075200., 25228800., 28382400., 31536000., 63072000., 126144000., 441504000., 756864000., 1072224000., 1387584000., 1576800000. }"/>
+               <Parameter name="Values" type="Array double" value="{0., 3153600., 6307200., 9460800., 12614400., 1576800., 18921600., 22075200., 25228800., 28382400., 31536000., 63072000., 126144000., 441504000., 756864000., 1072224000., 1387584000., 1576800000. }"/>
              </ParameterList>
-             <ParameterList name="Water Pressure">
+
+             <ParameterList name="Daily_1957-1967">
+               <Parameter name="Start_Stop_Frequency" type="Array double" value="{3.1536e7, 3.46896e8, 86400.}"/>
+             </ParameterList>
+
+             <ParameterList name="Daily_1957-2006">
+               <Parameter name="Start_Stop_Frequency" type="Array double" value="{3.1536e7, 1.5768e9, 86400.}"/>
+             </ParameterList>
+
+           </ParameterList>
+
+
+           <!-- Define variable labels -->
+           <ParameterList name="Variable Macros">
+             <ParameterList name="Aqueous Pressure">
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+             </ParameterList>
+             <ParameterList name="Water Mass Density">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Region" type="string" value="All"/>
-               <Parameter name="Functional" type="string" value="Pressure"/>
-               <Parameter name="Times" type="Array double" value="{0., 3153600., 6307200., 9460800., 12614400., 1576800., 18921600., 22075200., 25228800., 28382400., 31536000., 63072000., 126144000., 441504000., 756864000., 1072224000., 1387584000., 1576800000. }"/>
              </ParameterList>
-             <ParameterList name="Tc-99 Concentration">
+             <ParameterList name="Tc-99 Molar Concentration">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Component" type="string" value="Water"/>
                <Parameter name="Solute" type="string" value="Tc-99"/>
-               <Parameter name="Region" type="string" value="All"/>
-               <Parameter name="Functional" type="string" value="Molar Concentration"/>
-               <Parameter name="Times" type="Array double" value="{0., 3153600., 6307200., 9460800., 12614400., 1576800., 18921600., 22075200., 25228800., 28382400., 31536000., 63072000., 126144000., 441504000., 756864000., 1072224000., 1387584000., 1576800000. }"/>
              </ParameterList>
            </ParameterList>
+
+
        
-           <!-- GEH: Water saturation, water pressure and Tc-99 concentration over time at points in space -->
        
-           <ParameterList name="Observation: Point Samples">
-             <ParameterList name="Point Sample 1: Water Saturation">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
+           <ParameterList name="Observation Data">
+
+             <!-- Global water and Tc-99 mass -->
+             <ParameterList name="Integrated Mass">
+               <Parameter name="Region" type="string" value="All"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Annual"/>
+             </ParameterList>
+
+             <!-- Point samples of water and Tc-99 -->
+             <ParameterList name="Point Sample 1">
                <Parameter name="Region" type="string" value="Sample Point 1 Region"/>
-               <Parameter name="Functional" type="string" value="Saturation"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
-             <ParameterList name="Point Sample 1: Water Pressure">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Region" type="string" value="Sample Point 1 Region"/>
-               <Parameter name="Functional" type="string" value="Pressure"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
-             </ParameterList>
-             <ParameterList name="Point Sample 1: Tc-99 Concentration">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
-               <Parameter name="Region" type="string" value="Sample Point 1 Region"/>
-               <Parameter name="Functional" type="string" value="Molar Concentration"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
-             </ParameterList>
-             <ParameterList name="Point Sample 2: Water Saturation">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
+
+             <ParameterList name="Point Sample 2">
                <Parameter name="Region" type="string" value="Sample Point 2 Region"/>
-               <Parameter name="Functional" type="string" value="Saturation"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
-             <ParameterList name="Point Sample 2: Water Pressure">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Region" type="string" value="Sample Point 2 Region"/>
-               <Parameter name="Functional" type="string" value="Pressure"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
-             </ParameterList>
-             <ParameterList name="Point Sample 2: Tc-99 Concentration">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
-               <Parameter name="Region" type="string" value="Sample Point 2 Region"/>
-               <Parameter name="Functional" type="string" value="Molar Concentration"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
-             </ParameterList>
-             <ParameterList name="Point Sample 3: Water Saturation">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
+
+             <ParameterList name="Point Sample 3">
                <Parameter name="Region" type="string" value="Sample Point 3 Region"/>
-               <Parameter name="Functional" type="string" value="Saturation"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
-             <ParameterList name="Point Sample 3: Water Pressure">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Region" type="string" value="Sample Point 3 Region"/>
-               <Parameter name="Functional" type="string" value="Pressure"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
-             </ParameterList>
-             <ParameterList name="Point Sample 3: Tc-99 Concentration">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
-               <Parameter name="Region" type="string" value="Sample Point 3 Region"/>
-               <Parameter name="Functional" type="string" value="Molar Concentration"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <!-- 1957 -->
-                 <Parameter name="Start Time" type="integer" value="3.1536e7"/>
-                 <!-- 1967 -->
-                 <Parameter name="End Time" type="integer" value="3.46896e8"/>
-               </ParameterList>
-             </ParameterList>
-           </ParameterList>
-       
-           <!-- GEH: Integrate Tc-99 mass crossing the cribs and bottom boundaries over time -->
-       
-           <ParameterList name="Observation: Flux Integral">
-             <ParameterList name="Bottom Tc-99 Flux">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
+
+             <!-- cummulative flux of Tc-99 -->
+             <ParameterList name="Cummulative Tc-99 Flux Integral - Bottom">
                <Parameter name="Region" type="string" value="Bottom Surface Region"/>
-               <Parameter name="Functional" type="string" value="Cumulative Integral Mass"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <Parameter name="Start Time" type="double" value="0."/>
-                 <!-- 2006 -->
-                 <Parameter name="End Time" type="integer" value="1.5768e9"/>
-               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
-             <ParameterList name="Crib 1 Tc-99 Flux">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
+
+             <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 1">
                <Parameter name="Region" type="string" value="Crib 1 Region"/>
-               <Parameter name="Functional" type="string" value="Cumulative Integral Mass"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <Parameter name="Start Time" type="double" value="0."/>
-                 <!-- 2006 -->
-                 <Parameter name="End Time" type="integer" value="1.5768e9"/>
-               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
-             <ParameterList name="Crib 2 Tc-99 Flux">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
+
+             <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 2">
                <Parameter name="Region" type="string" value="Crib 2 Region"/>
-               <Parameter name="Functional" type="string" value="Cumulative Integral Mass"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <Parameter name="Start Time" type="double" value="0."/>
-                 <!-- 2006 -->
-                 <Parameter name="End Time" type="integer" value="1.5768e9"/>
-               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
-             <ParameterList name="90 Meter Tc-99 Flux">
-               <Parameter name="Phase" type="string" value="Aqueous"/>
-               <Parameter name="Component" type="string" value="Water"/>
-               <Parameter name="Solute" type="string" value="Tc-99"/>
+
+             <ParameterList name="Cummulative Tc-99 Flux Integral - 90m">
                <Parameter name="Region" type="string" value="90 Meter Plane Region"/>
-               <Parameter name="Functional" type="string" value="Cumulative Integral Mass"/>
-               <ParameterList name="Times">
-                 <!-- daily -->
-                 <Parameter name="Time Frequency" type="double" value="86400."/>
-                 <Parameter name="Start Time" type="double" value="0."/>
-                 <!-- 2006 -->
-                 <Parameter name="End Time" type="integer" value="1.5768e9"/>
-               </ParameterList>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
+
            </ParameterList>
        
-           <!-- GEH: Checkpoint files every N time steps -->
-       
-           <ParameterList name="Checkpoints">
-             <Parameter name="File base name" type="string" value="dump-"/>
-             <ParameterList name="Checkpoint Times">
-               <!-- Every 100 time steps -->
-               <Parameter name="Cycle Frequency" type="int" value="100"/>
-               <!-- 1956 -->
-               <Parameter name="Start Time" type="double" value="0."/>
-               <!-- 2006 -->
-               <Parameter name="End Time" type="double" value="1.5768e9"/>
-             </ParameterList>
+
+           <ParameterList name="Visualization Data">
+             <Parameter name="File Name Base" type="string" value="viz-"/>
+             <Parameter name="Cycle Macro" type="string" value="Every-10-steps"/>
+             <Parameter name="Variables" type="Array string" value="{Aqueous Pressure, Water Mass Density, Tc-99 Molar Concentration}"/>
            </ParameterList>
-         </ParameterList>
+
+           <ParameterList name="Checkpoint Data">
+             <Parameter name="File Name Base" type="string" value="dump-"/>
+             <Parameter name="Cycle Macro" type="string" value="Every-100-steps"/>
+           </ParameterList>
+
+         </ParameterList> <!-- End of Output -->
        
-       </ParameterList>
+       </ParameterList> <!-- End of Main -->
        
