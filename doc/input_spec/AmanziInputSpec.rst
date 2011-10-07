@@ -504,11 +504,13 @@ In order to support the rather general specification requirements (involving com
 
 Next, we specify the initial conditions.  Note that support is provided for specifying initial data on the phases and/or components simultaneously (the capillary pressure relationships are used to convert between the various options).  Thus, boundary conditions on the phases and components are specified together.  The solutes are specified afterward, organized first by phase then component.  If a solute exists in more than one phase/component, a thermodynamic relationship is required to partition the distribution - Amanzi does not currently support such a situation.
 
-* `"Initial Conditions`" [list] accepts lists IC-REGION named after the user-defined region that the IC function will apply over
+* `"Initial Conditions`" [list] accepts labels, IC, of named initial condition specifications 
 
- * IC-Region accepts a model for phase/component initial conditions, and a list for solute initial conditions
+ * IC [list] label for an initial condition, accepts initial condition function names, and parameters to specify assigned regions and solute initial conditions
 
-  * IC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+  * Function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"IC: Uniform Saturation`", `"IC: Linear Saturation`", `"IC: File Saturation`", `"IC: Uniform Pressure`", `"IC: Linear Pressure`", `"IC: File Pressure`" (see below)
+
+  * `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
   * `"Solute IC`" can accept PHASE (labels of phases defined above)
 
@@ -523,11 +525,13 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
 Finally, we specify boundary conditions.  Again, support is provided for specifying boundary conditions on the phases and/or components simultaneously.  Boundary conditions for the solutes follow afterward.
 
-* `"Boundary Conditions`" [list] accepts lists BC-REGION named after the user-defined region that the BC function will apply over
+* `"Boundary Conditions`" [list] accepts labels, BC, of named boundary condition specifications 
 
- * BC-Region accepts a model for phase/component boundary conditions, and a list for solute boundary conditions
+ * BC [list] label for a boundary condition, accepts boundary condition function names, and parameters to specify assigned regions and solute boundary conditions
 
-  * BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
+  * Function [list] Parameterized model to specify boundary conditions.  Choose exactly one of the following: `"BC: Uniform Pressure`", `"BC: Uniform Saturation`", `"BC: Hydrostatic`", `"BC: Flux`", `"BC: Inflow`", `"BC: Impermeable`", `"BC: Zero Flow`" (see below)
+
+  * `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
   * `"Solute BC`" can accept PHASE (labels of phases defined above)
 
@@ -991,23 +995,27 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
        
-           <ParameterList name="Top Surface Outside Cribs Region">
              <!-- GEH:  
                                Crib 1        Crib 2  
                    ___________xxxxxxxx______xxxxxxxx___________ 
                   |                                            |
        
            -->
+           <ParameterList name="Top Surface Outside Cribs Region A">
              <ParameterList name="Box">
                <!-- GEH: These are approximate as placeholders for how.  Vicky will provide more
                          accurate values soon. -->
                <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 110.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{170.0, 1.0, 110.0}"/>
              </ParameterList>
+           </ParameterList>
+           <ParameterList name="Top Surface Outside Cribs Region B">
              <ParameterList name="Box">
                <Parameter name="Low Coordinate" type="Array double" value="{173.0, 0.0, 110.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{190.0, 1.0, 110.0}"/>
              </ParameterList>
+           </ParameterList>
+           <ParameterList name="Top Surface Outside Cribs Region C">
              <ParameterList name="Box">
                <Parameter name="Low Coordinate" type="Array double" value="{193.0, 0.0, 110.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 110.0}"/>
@@ -1188,8 +1196,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
 
 
 
-         <ParameterList name="Initial Conditions">
-           <ParameterList name="All">
+         <ParameterList name="Initial Conditions For Domain">
+             <ParameterList name="Assigned Regions" type="Array string" value="{All}">
              <ParameterList name="IC: Linear Pressure">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Reference Value" type="double" value="101325."/>
@@ -1214,7 +1222,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
 
 
          <ParameterList name="Boundary Conditions">
-           <ParameterList name="Top Surface Outside Cribs Region">
+           <ParameterList name="BC For Top Surface Outside Cribs Region">
+             <ParameterList name="Assigned Regions" type="Array string" value="{Top Surface Outside Cribs Region A, Top Surface Outside Cribs Region B, Top Surface Outside Cribs Region C}"/>
              <ParameterList name="BC: Flux">
                  <!-- GEH/VLF: These recharge intervals/rates will change. -->
                  <!-- 1956, 1984 in seconds-->
@@ -1240,7 +1249,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
 
-           <ParameterList name="Crib 1 Region">
+           <ParameterList name="BC For Crib 1 Region">
+             <ParameterList name="Assigned Regions" type="Array string" value="{Crib 1 Region}">
              <ParameterList name="BC: Flux">
                  <!-- GEH/VLF: These recharge intervals/rates will change. -->
                  <!-- 1956, 1956.25 in seconds-->
@@ -1266,7 +1276,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
 
-           <ParameterList name="Crib 2 Region">
+           <ParameterList name="BC For Crib 2 Region">
+             <ParameterList name="Assigned Regions" type="Array string" value="{Crib 2 Region}">
              <ParameterList name="BC: Flux">
                  <!-- GEH/VLF: These recharge intervals/rates will change. -->
                  <!-- 1956, 1956.33, 1956.66 in seconds-->
@@ -1292,7 +1303,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
        
-           <ParameterList name="Bottom Surface Region">
+           <ParameterList name="BC For Bottom Surface Region">
+             <ParameterList name="Assigned Regions" type="Array string" value="{Bottom Surface Region}">
              <ParameterList name="BC: Uniform Pressure">
                <Parameter name="Times" type="Array double" value="{0.}"/>
                <Parameter name="Time functions" type="Array string" value="{Constant}"/>
@@ -1312,7 +1324,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
        
-           <ParameterList name="West Surface Region">
+           <ParameterList name="BC For West Surface Region">
+             <ParameterList name="Assigned Regions" type="Array string" value="{West Surface Region}">
              <Parameter name="BC: No Flow"/>
                <Parameter name="Times" type="Array double" value="{0.}"/>
                <Parameter name="Time functions" type="Array string" value="{Constant}"/>
@@ -1331,7 +1344,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
 
-           <ParameterList name="East Surface Region">
+           <ParameterList name="BC For East Surface Region">
+             <ParameterList name="Assigned Regions" type="Array string" value="{East Surface Region}">
              <Parameter name="BC: No Flow"/>
                <Parameter name="Times" type="Array double" value="{0.}"/>
                <Parameter name="Time functions" type="Array string" value="{Constant}"/>
