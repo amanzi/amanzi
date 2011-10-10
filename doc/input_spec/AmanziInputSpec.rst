@@ -948,6 +948,596 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
          </ParameterList>
        
+         <ParameterList name="Mesh">	   
+           <Parameter name="Framework" type="string" value="Structured"/>
+           <ParameterList name="Structured">
+             <!-- Domain width could decease.  Testing is in progress. - 10/4/11 -->
+             <Parameter name="Number of Cells" type="Array int" value="{800, 1, 220}"/>
+             <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+             <Parameter name="Domain High Corner" type="Array double" value="{400., 1.0, 110.}" />
+           </ParameterList>
+         </ParameterList>
+       
+         <ParameterList name="Regions">
+       
+         <!--
+                   ____________________________________________  110.
+                  |                                            |
+                  |     Material 3 Region                      |
+                  |                                            |
+                  |____________________________________________| 60.
+                  |                                            |
+                  |     Material 2 Region                      |
+                  |____________________________________________| 30.
+                  |                                            |
+                  |     Material 1 Region                      |
+                  |____________________________________________| 0.
+       
+           -->
+       
+           <ParameterList name="Material 1 Region">
+             <ParameterList name="Box">
+               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 30.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Material 2 Region">
+             <ParameterList name="Box">
+               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 30.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 60.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Material 3 Region">
+             <ParameterList name="Box">
+               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 60.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 110.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+             <!-- GEH:  
+                               Crib 1        Crib 2  
+                   ___________xxxxxxxx______xxxxxxxx___________ 
+                  |                                            |
+       
+           -->
+           <ParameterList name="Top Surface Outside Cribs Region A">
+             <ParameterList name="Box">
+               <!-- GEH: These are approximate as placeholders for how.  Vicky will provide more
+                         accurate values soon. -->
+               <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{170.0, 1.0, 110.0}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="Top Surface Outside Cribs Region B">
+             <ParameterList name="Box">
+               <Parameter name="Low Coordinate" type="Array double" value="{173.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{190.0, 1.0, 110.0}"/>
+             </ParameterList>
+           </ParameterList>
+           <ParameterList name="Top Surface Outside Cribs Region C">
+             <ParameterList name="Box">
+               <Parameter name="Low Coordinate" type="Array double" value="{193.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 110.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="90 Meter Plane Region">
+             <!-- GEH: Note that we could use a 2D box for these regions too. -->
+             <ParameterList name="Plane">
+               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 90.}"/>
+               <!-- GEH: Note the downward unit vector -->
+               <Parameter name="Direction"  type="Array double" value="{0., 0., 1.}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Bottom Surface Region">
+             <!-- GEH: Note that we could use a 2D box for these regions too. -->
+             <ParameterList name="Plane">
+               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
+               <!-- GEH: Note the downward unit vector -->
+               <Parameter name="Direction"  type="Array double" value="{0., 0., -1.}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="West Surface Region">
+             <ParameterList name="Plane">
+               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
+               <Parameter name="Direction"  type="Array double" value="{-1., 0., 0.}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="East Surface Region">
+             <ParameterList name="Plane">
+               <Parameter name="Coordinate"  type="Array double" value="{100., 0., 0.}"/>
+               <Parameter name="Direction"  type="Array double" value="{1., 0., 0.}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="South Surface Region">
+             <ParameterList name="Plane">
+               <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
+               <Parameter name="Direction"  type="Array double" value="{0., -1., 0.}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="North Surface Region">
+             <ParameterList name="Plane">
+               <Parameter name="Coordinate"  type="Array double" value="{100., 0., 0.}"/>
+               <Parameter name="Direction"  type="Array double" value="{0., 1., 0.}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Crib 1 Region">
+             <ParameterList name="Box">
+               <!-- GEH: Assuming unit cell width in Y -->
+               <Parameter name="Low Coordinate" type="Array double" value="{170.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{173.0, 1.0, 110.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Crib 2 Region">
+             <ParameterList name="Box">
+               <!-- GEH: Assuming unit cell width in Y -->
+               <Parameter name="Low Coordinate" type="Array double" value="{190.0, 0.0, 110.0}"/>
+               <Parameter name="High Coordinate" type="Array double" value="{193.0, 1.0, 110.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Sample Point 1 Region">
+             <ParameterList name="Point">
+               <Parameter name="Coordinate"  type="Array double" value="{171.5, 0.5, 50.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Sample Point 2 Region">
+             <ParameterList name="Point">
+               <Parameter name="Coordinate"  type="Array double" value="{191.5, 0.5, 50.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="Sample Point 3 Region">
+             <ParameterList name="Point">
+               <Parameter name="Coordinate"  type="Array double" value="{181.5, 0.5, 50.0}"/>
+             </ParameterList>
+           </ParameterList>
+       
+         </ParameterList>
+       
+         <ParameterList name="Material Properties">
+       
+           <ParameterList name="Material 1">
+       
+             <ParameterList name="Porosity: Uniform">
+               <Parameter name="Porosity" type="double" value="0.38"/>
+             </ParameterList>
+       
+             <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+               <Parameter name="Horizontal" type="double" value="2.05e-8"/>
+               <Parameter name="Vertical" type="double" value="2.05e-7"/>
+             </ParameterList>
+       
+             <!-- GEH: Pressure-saturation function: van Genuchten-->
+             <ParameterList name="Capillary Pressure: van Genuchten">
+               <Parameter name="alpha" type="double" value="2.14e-4"/> <!-- 0.021 cm^-1 -> Pa^-1 -->
+               <Parameter name="Sr" type="double" value="0.0"/>
+               <Parameter name="m" type="double" value="0.601"/>
+               <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+             </ParameterList>
+       
+             <Parameter name="Assigned Regions" type="Array string" value="{Material 1 Region}"/>
+
+           </ParameterList>
+       
+           <ParameterList name="Material 2">
+       
+             <ParameterList name="Porosity: Uniform">
+               <Parameter name="Porosity" type="double" value="0.36"/>
+             </ParameterList>
+       
+             <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+               <Parameter name="Horizontal" type="double" value="4.84e-8"/>
+               <Parameter name="Vertical" type="double" value="4.84e-7"/>
+             </ParameterList>
+       
+             <ParameterList name="Capillary Pressure: van Genuchten">
+               <Parameter name="alpha" type="double" value="7.35e-4"/>
+               <Parameter name="Sr" type="double" value="0.0"/>
+               <Parameter name="m" type="double" value="0.511"/>
+               <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+             </ParameterList>
+       
+             <Parameter name="Assigned Regions" type="Array string" value="{Material 2 Region}"/>
+
+           </ParameterList>
+       
+           <ParameterList name="Material 3">
+       
+             <ParameterList name="Porosity: Uniform">
+               <Parameter name="Porosity" type="double" value="0.23"/>
+             </ParameterList>
+       
+             <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
+               <Parameter name="Horizontal" type="double" value="3.00e-9"/>
+               <Parameter name="Vertical" type="double" value="3.00e-8"/>
+             </ParameterList>
+
+             <ParameterList name="Capillary Pressure: van Genuchten">
+               <Parameter name="alpha" type="double" value="1.74e-4"/>
+               <Parameter name="Sr" type="double" value="0.0"/>
+               <Parameter name="m" type="double" value="0.420"/>
+               <Parameter name="Relative Permeability" type="string" value="Mualem"/>
+             </ParameterList>
+       
+             <Parameter name="Assigned Regions" type="Array string" value="{Material 3 Region}"/>
+
+           </ParameterList>
+       
+         </ParameterList>
+       
+         <ParameterList name="Phase Definitions">
+           <ParameterList name="Aqueous">
+             <ParameterList name="Phase Properties">
+               <ParameterList name="Viscosity: Uniform">
+                 <Parameter name="Viscosity" type="double" value="8.9e-4"/>
+               </ParameterList>
+               <ParameterList name="Density: Uniform">
+                 <Parameter name="Density" type="double" value="998."/>
+               </ParameterList>
+             </ParameterList>
+             <ParameterList name="Phase Components">
+               <!-- GEH: Note sure if this is what we want.  Water component with solutes.  The input spec
+                         reflects this, although it refers to "Aqueous Water" instead of "Water". -->
+               <ParameterList name="Water">
+                 <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>           
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+
+
+         <ParameterList name="Initial Conditions">
+           <ParameterList name="IC For Domain">
+             <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
+             <ParameterList name="IC: Linear Pressure">
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+               <Parameter name="Reference Value" type="double" value="101325."/>
+               <Parameter name="Reference Coordinate" type="Array double" value="{0., 0., 0.}"/>
+               <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
+               <Parameter name="Gradient Value" type="Array double" value="{0., 0., -9793.5192}"/>
+             </ParameterList>
+             <ParameterList name="Solute IC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="IC: Uniform">
+                       <Parameter name="Value" type="double" value="0.0"/>
+                     </ParameterList>
+               	     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>     
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+
+
+
+         <ParameterList name="Boundary Conditions">
+           <ParameterList name="BC For Top Surface Outside Cribs Region">
+             <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Outside Cribs Region A, Top Surface Outside Cribs Region B, Top Surface Outside Cribs Region C}"/>
+             <ParameterList name="BC: Flux">
+	       <!-- GEH/VLF: These recharge intervals/rates will change. -->
+               <!-- 1956, 1984 in seconds-->
+               <Parameter name="Times" type="Array double" value="{0., 883008000.}"/>
+               <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
+               <!-- Recharge = 77 mm/yr, 25mm/yr -->
+               <Parameter name="Extensive Flux" type="Array double" value="{2.44e-9, 7.93e-10}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Inflow">
+                         <!-- GEH: Throughout entire simulation, no solute enters through top surface -->
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{0.}"/>
+                     </ParameterList>
+                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+           <ParameterList name="BC For Crib 1 Region">
+             <Parameter name="Assigned Regions" type="Array string" value="{Crib 1 Region}"/>
+             <ParameterList name="BC: Flux">
+                 <!-- GEH/VLF: These recharge intervals/rates will change. -->
+                 <!-- 1956, 1956.25 in seconds-->
+               <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
+                 <!-- 11.25, 0. m/d-->
+               <Parameter name="Extensive Flux" type="Array double" value="{1.302e-4, 0.}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Inflow">
+                        <!-- 1956, 1956.25 in seconds-->
+                       <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{1000., 0.}"/>
+                     </ParameterList>
+                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+           <ParameterList name="BC For Crib 2 Region">
+             <Parameter name="Assigned Regions" type="Array string" value="{Crib 2 Region}"/>
+             <ParameterList name="BC: Flux">
+                 <!-- GEH/VLF: These recharge intervals/rates will change. -->
+                 <!-- 1956, 1956.33, 1956.66 in seconds-->
+               <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
+                   <!-- 0., 8.75, 0. m/d-->
+               <Parameter name="Extensive Flux" type="Array double" value="{0., 1.013e-4, 0.}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Inflow">
+                       <!-- 1956, 1956.33, 1956.66 in seconds-->
+                       <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
+                       <Parameter name="Values" type="Array double" value="{0., 900., 0.}"/>
+                     </ParameterList>
+                     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="BC For Bottom Surface Region">
+             <Parameter name="Assigned Regions" type="Array string" value="{Bottom Surface Region}"/>
+             <ParameterList name="BC: Uniform Pressure">
+               <Parameter name="Times" type="Array double" value="{0.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+               <Parameter name="Values" type="Array double" value="{101325.}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Outflow">
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+       
+           <ParameterList name="BC For West Surface Region">
+             <Parameter name="Assigned Regions" type="Array string" value="{West Surface Region}"/>
+             <ParameterList name="BC: No Flow">
+               <Parameter name="Times" type="Array double" value="{0.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Zero Flux">
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+           <ParameterList name="BC For East Surface Region">
+             <Parameter name="Assigned Regions" type="Array string" value="{East Surface Region}"/>
+             <ParameterList name="BC: No Flow">
+               <Parameter name="Times" type="Array double" value="{0.}"/>
+               <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+             </ParameterList>
+             <ParameterList name="Solute BC">
+               <ParameterList name="Aqueous">
+                 <ParameterList name="Water">
+                   <ParameterList name="Tc-99">
+                     <ParameterList name="BC: Zero Flux">
+                       <Parameter name="Times" type="Array double" value="{0.}"/>
+                       <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+                     </ParameterList>
+                   </ParameterList>
+                 </ParameterList>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+
+         </ParameterList>
+       
+         <ParameterList name="Output">
+
+           <!-- GEH: The following are desired for output:
+             1. Integrated water and Tc-99 mass over time (yearly) (mass balance)
+             2. Water saturation, water pressure and Tc-99 concentration throughout space at specified times (plot file)
+             3. Water saturation, water pressure and Tc-99 concentration over time at points in space (breakthrough)
+             4. Integrate Tc-99 mass crossing the cribs and bottom boundaries over time (flux)
+             5. Checkpoint files every N time steps
+       
+             I will attempt these calculations based on the "Observation Data" section of the input spec.
+             -->
+
+
+           <!-- define some handy cycle macros -->
+           <ParameterList name="Cycle Macros">
+             <ParameterList name="Every-5-steps">
+               <Parameter name="Start_Stop_Frequency" type="Array int" value="{0, -1, 5}"/>
+             </ParameterList>
+           </ParameterList>
+
+           <!-- define some handy time macros -->
+           <ParameterList name="Time Macros">
+             <ParameterList name="Annual">
+               <Parameter name="Start_Stop_Frequency" type="Array double" value="{0, -1, 3.1536e7}"/>
+             </ParameterList>
+
+             <ParameterList name="My_times">
+               <!-- 1956, 1956.1, 1956.2, 1956.3, 1956.4, 1956.4, 1956.5, 1956.6, 1956.7, 1956.8, 1956.9, 1957, 1958, 1960, 1970, 1980, 1990, 2000, 2006 -->
+               <Parameter name="Values" type="Array double" value="{0., 3153600., 6307200., 9460800., 12614400., 1576800., 18921600., 22075200., 25228800., 28382400., 31536000., 63072000., 126144000., 441504000., 756864000., 1072224000., 1387584000., 1576800000. }"/>
+             </ParameterList>
+
+             <ParameterList name="Daily_1957-1967">
+               <Parameter name="Start_Stop_Frequency" type="Array double" value="{3.1536e7, 3.46896e8, 86400.}"/>
+             </ParameterList>
+
+             <ParameterList name="Daily_1957-2006">
+               <Parameter name="Start_Stop_Frequency" type="Array double" value="{3.1536e7, 1.5768e9, 86400.}"/>
+             </ParameterList>
+
+           </ParameterList>
+
+
+           <!-- Define variable labels -->
+           <ParameterList name="Variable Macros">
+             <ParameterList name="Aqueous Pressure">
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+             </ParameterList>
+             <ParameterList name="Water Mass Density">
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+               <Parameter name="Component" type="string" value="Water"/>
+             </ParameterList>
+             <ParameterList name="Tc-99 Molar Concentration">
+               <Parameter name="Phase" type="string" value="Aqueous"/>
+               <Parameter name="Component" type="string" value="Water"/>
+               <Parameter name="Solute" type="string" value="Tc-99"/>
+             </ParameterList>
+           </ParameterList>
+
+
+       
+       
+           <ParameterList name="Observation Data">
+
+             <!-- Global water and Tc-99 mass -->
+             <ParameterList name="Integrated Mass">
+               <Parameter name="Region" type="string" value="All"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Annual"/>
+             </ParameterList>
+
+             <!-- Point samples of water and Tc-99 -->
+             <ParameterList name="Point Sample 1">
+               <Parameter name="Region" type="string" value="Sample Point 1 Region"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
+             </ParameterList>
+
+             <ParameterList name="Point Sample 2">
+               <Parameter name="Region" type="string" value="Sample Point 2 Region"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
+             </ParameterList>
+
+             <ParameterList name="Point Sample 3">
+               <Parameter name="Region" type="string" value="Sample Point 3 Region"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
+               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
+             </ParameterList>
+
+             <!-- cummulative flux of Tc-99 -->
+             <ParameterList name="Cummulative Tc-99 Flux Integral - Bottom">
+               <Parameter name="Region" type="string" value="Bottom Surface Region"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+             </ParameterList>
+
+             <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 1">
+               <Parameter name="Region" type="string" value="Crib 1 Region"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+             </ParameterList>
+
+             <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 2">
+               <Parameter name="Region" type="string" value="Crib 2 Region"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+             </ParameterList>
+
+             <ParameterList name="Cummulative Tc-99 Flux Integral - 90m">
+               <Parameter name="Region" type="string" value="90 Meter Plane Region"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
+               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
+             </ParameterList>
+
+           </ParameterList>
+       
+
+           <ParameterList name="Visualization Data">
+             <Parameter name="File Name Base" type="string" value="viz-"/>
+             <Parameter name="Cycle Macro" type="string" value="Every-10-steps"/>
+             <Parameter name="Variables" type="Array string" value="{Aqueous Pressure, Water Mass Density, Tc-99 Molar Concentration}"/>
+           </ParameterList>
+
+           <ParameterList name="Checkpoint Data">
+             <Parameter name="File Name Base" type="string" value="dump-"/>
+             <Parameter name="Cycle Macro" type="string" value="Every-100-steps"/>
+           </ParameterList>
+
+         </ParameterList> <!-- End of Output -->
+       
+       </ParameterList> <!-- End of Main -->
+       
+       <ParameterList name="Main">
+       
+         <Parameter name="Amanzi input format version" type="string" value="0.9.2"/>
+       
+         <ParameterList name="General Description">
+           <Parameter name="Model ID" type="string" value="Transient Richards"/>
+           <Parameter name="Model name" type="string" value="BC Cribs PE Template"/>
+           <Parameter name="Description" type="string" value="Unsat flow and transport"/>
+           <Parameter name="Purpose" type="string" value="Provide input req. for Phase II Demo"/>
+           <Parameter name="Creation date" type="string" value="09.25.11 01:28"/>
+           <Parameter name="Last modified" type="string" value="09.25.11 01:28"/>
+         </ParameterList>
+       
+         <ParameterList name="Execution control">
+       
+           <!-- 1956 -->
+           <Parameter name="Start Time" type="double" value="0."/>
+           <!-- 2006 -->
+           <Parameter name="End Time" type="double" value="1.5768e9"/>
+       
+           <!-- GEH: TBD by HPC -->
+           <!-- GEH: This conceptual model will simulate variably saturated flow modeled through
+                     the Richards equation and solute transport.  We assume zero diffusion/
+                     dispersion and no geochemistry. -->
+           <!-- GEH/VLF/MLR: The experienced users will want to be able to control execution. Otherwise,
+                             they will feel as if this is a black box. -->
+       
+         </ParameterList>
+       
          <ParameterList name="Mesh">
            <ParameterList name="Structured">
              <!-- Domain width could decease.  Testing is in progress. - 10/4/11 -->
@@ -1195,14 +1785,14 @@ required to specify a real simulation with Amanzi envisioned functional for the 
          </ParameterList>
 
 
-
-         <ParameterList name="Initial Conditions For Domain">
-             <ParameterList name="Assigned Regions" type="Array string" value="{All}">
+         <ParameterList name="Initial Conditions">
+           <ParameterList name="IC For Domain">
+             <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
              <ParameterList name="IC: Linear Pressure">
                <Parameter name="Phase" type="string" value="Aqueous"/>
                <Parameter name="Reference Value" type="double" value="101325."/>
                <Parameter name="Reference Coordinate" type="Array double" value="{0., 0., 0.}"/>
-                 <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
+               <!-- GEH: Units of gradient are Pa/m = rho*g = 998.32 kg/m^3 * 9.81 m/s^2-->
                <Parameter name="Gradient Value" type="Array double" value="{0., 0., -9793.5192}"/>
              </ParameterList>
              <ParameterList name="Solute IC">
@@ -1212,7 +1802,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                      <ParameterList name="IC: Uniform">
                        <Parameter name="Value" type="double" value="0.0"/>
                      </ParameterList>
-                   <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+               	     <Parameter name="Concentration Units" type="string" value="Molar Concentration"/>
+                   </ParameterLst>     
                  </ParameterList>
                </ParameterList>
              </ParameterList>
@@ -1223,13 +1814,13 @@ required to specify a real simulation with Amanzi envisioned functional for the 
 
          <ParameterList name="Boundary Conditions">
            <ParameterList name="BC For Top Surface Outside Cribs Region">
-             <ParameterList name="Assigned Regions" type="Array string" value="{Top Surface Outside Cribs Region A, Top Surface Outside Cribs Region B, Top Surface Outside Cribs Region C}"/>
+             <Parameter name="Assigned Regions" type="Array string" value="{Top Surface Outside Cribs Region A, Top Surface Outside Cribs Region B, Top Surface Outside Cribs Region C}"/>
              <ParameterList name="BC: Flux">
-                 <!-- GEH/VLF: These recharge intervals/rates will change. -->
-                 <!-- 1956, 1984 in seconds-->
+	       <!-- GEH/VLF: These recharge intervals/rates will change. -->
+               <!-- 1956, 1984 in seconds-->
                <Parameter name="Times" type="Array double" value="{0., 883008000.}"/>
                <Parameter name="Time Functions" type="Array string" value="{Constant, Constant}"/>
-                 <!-- Recharge = 77 mm/yr, 25mm/yr -->
+               <!-- Recharge = 77 mm/yr, 25mm/yr -->
                <Parameter name="Extensive Flux" type="Array double" value="{2.44e-9, 7.93e-10}"/>
              </ParameterList>
              <ParameterList name="Solute BC">
@@ -1250,7 +1841,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
 
            <ParameterList name="BC For Crib 1 Region">
-             <ParameterList name="Assigned Regions" type="Array string" value="{Crib 1 Region}">
+             <ParameterList name="Assigned Regions" type="Array string" value="{Crib 1 Region}"/>
              <ParameterList name="BC: Flux">
                  <!-- GEH/VLF: These recharge intervals/rates will change. -->
                  <!-- 1956, 1956.25 in seconds-->
@@ -1264,7 +1855,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                  <ParameterList name="Water">
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Inflow">
-                         <!-- 1956, 1956.25 in seconds-->
+                        <!-- 1956, 1956.25 in seconds-->
                        <Parameter name="Times" type="Array double" value="{0., 7884000.}"/>
                        <Parameter name="Time functions" type="Array string" value="{Constant, Constant}"/>
                        <Parameter name="Values" type="Array double" value="{1000., 0.}"/>
@@ -1277,7 +1868,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
 
            <ParameterList name="BC For Crib 2 Region">
-             <ParameterList name="Assigned Regions" type="Array string" value="{Crib 2 Region}">
+             <Parameter name="Assigned Regions" type="Array string" value="{Crib 2 Region}"/>
              <ParameterList name="BC: Flux">
                  <!-- GEH/VLF: These recharge intervals/rates will change. -->
                  <!-- 1956, 1956.33, 1956.66 in seconds-->
@@ -1291,7 +1882,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                  <ParameterList name="Water">
                    <ParameterList name="Tc-99">
                      <ParameterList name="BC: Inflow">
-                         <!-- 1956, 1956.33, 1956.66 in seconds-->
+                       <!-- 1956, 1956.33, 1956.66 in seconds-->
                        <Parameter name="Times" type="Array double" value="{0., 10406880., 20813760.}"/>
                        <Parameter name="Time functions" type="Array string" value="{Constant, Constant, Constant}"/>
                        <Parameter name="Values" type="Array double" value="{0., 900., 0.}"/>
@@ -1304,7 +1895,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
        
            <ParameterList name="BC For Bottom Surface Region">
-             <ParameterList name="Assigned Regions" type="Array string" value="{Bottom Surface Region}">
+             <Parameter name="Assigned Regions" type="Array string" value="{Bottom Surface Region}"/>
              <ParameterList name="BC: Uniform Pressure">
                <Parameter name="Times" type="Array double" value="{0.}"/>
                <Parameter name="Time functions" type="Array string" value="{Constant}"/>
@@ -1325,8 +1916,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
        
            <ParameterList name="BC For West Surface Region">
-             <ParameterList name="Assigned Regions" type="Array string" value="{West Surface Region}">
-             <Parameter name="BC: No Flow"/>
+             <Parameter name="Assigned Regions" type="Array string" value="{West Surface Region}"/>
+             <ParameterList name="BC: No Flow">
                <Parameter name="Times" type="Array double" value="{0.}"/>
                <Parameter name="Time functions" type="Array string" value="{Constant}"/>
              </ParameterList>
@@ -1334,7 +1925,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
                    <ParameterList name="Tc-99">
-                     <Parameter name="BC: Zero Flux"/>
+                     <ParameterList name="BC: Zero Flux">
                        <Parameter name="Times" type="Array double" value="{0.}"/>
                        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
                      </ParameterList>
@@ -1345,8 +1936,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
 
            <ParameterList name="BC For East Surface Region">
-             <ParameterList name="Assigned Regions" type="Array string" value="{East Surface Region}">
-             <Parameter name="BC: No Flow"/>
+             <Parameter name="Assigned Regions" type="Array string" value="{East Surface Region}"/>
+             <ParameterList name="BC: No Flow">
                <Parameter name="Times" type="Array double" value="{0.}"/>
                <Parameter name="Time functions" type="Array string" value="{Constant}"/>
              </ParameterList>
@@ -1354,7 +1945,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                <ParameterList name="Aqueous">
                  <ParameterList name="Water">
                    <ParameterList name="Tc-99">
-                     <Parameter name="BC: Zero Flux"/>
+                     <ParameterList name="BC: Zero Flux">
                        <Parameter name="Times" type="Array double" value="{0.}"/>
                        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
                      </ParameterList>
