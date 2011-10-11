@@ -327,6 +327,8 @@ Notes
   Examples of surface files are given in the `"Exodus II`" file 
   format here.
 
+* Region names must NOT be repeated
+
 Example:
 
 .. code-block:: xml
