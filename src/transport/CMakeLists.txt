@@ -106,7 +106,7 @@ if ( BUILD_TESTS )
         include_directories(${STK_INCLUDE_DIRS})
         include_directories(${STK_SOURCE_DIR})
 
-        set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus state transport whetstone)
+        set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus_reader state transport whetstone)
 
         # Test: transport (serial)
         add_executable(transport_serial_stk test/Main.cc test/test_stk.cpp)
