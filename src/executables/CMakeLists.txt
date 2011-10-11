@@ -44,7 +44,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 
 # The mesh frameworks
 set(amanzi_mesh_libs "")
-list(APPEND amanzi_mesh_libs stk_mesh exodus)
+list(APPEND amanzi_mesh_libs stk_mesh exodus_reader)
 if(ENABLE_STK_Mesh)
   add_definitions("-DHAVE_STK_MESH")
 endif()
@@ -92,7 +92,7 @@ add_install_library(udriv)
 #
 #add_executable(amanzi-demo-driver amanzi-demo-driver.cpp)
 #set(demo_driver_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-#set(demo_driver_amanzi_libs time_integration mpc state simple_mesh error_handling exodus ${amanzi_mesh_libs})
+#set(demo_driver_amanzi_libs time_integration mpc state simple_mesh error_handling exodus_reader ${amanzi_mesh_libs})
 #set(demo_driver_pk_libs chemistry transport flow)
 #target_link_libraries(amanzi-demo-driver 
 #                      ${demo_driver_amanzi_libs}
@@ -151,7 +151,7 @@ endif()
 #if ( ENABLE_STK_Mesh AND ENABLE_CGNS )
 #    add_executable(stk_mesh_test_hex stk_mesh_test_hex.cc)
 #    target_link_libraries(stk_mesh_test_hex 
-#                         exodus mesh_data stk_mesh output mesh_audit
+#                         exodus_reader mesh_data stk_mesh output mesh_audit
 #                         ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES})
 #    add_install_binary(stk_mesh_test_hex)		     
 #endif()

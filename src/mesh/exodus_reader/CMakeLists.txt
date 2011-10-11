@@ -31,12 +31,12 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${ExodusII_INCLUDE_DIRS})
 
 #
-# Library: exodus
+# Library: exodus_reader
 #
 file(GLOB exo_source_files "*.cc") 
-add_library(exodus ${exo_source_files})
-add_install_library(exodus)
-target_link_libraries(exodus 
+add_library(exodus_reader ${exo_source_files})
+add_install_library(exodus_reader)
+target_link_libraries(exodus_reader 
                       error_handling mesh_data
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES})
 
@@ -45,13 +45,13 @@ target_link_libraries(exodus
 # Binary: exec_reader
 #
 add_executable(exec_reader test/exec_Reader.cc)
-target_link_libraries(exec_reader exodus)
+target_link_libraries(exec_reader exodus_reader)
 
 #
 # Binary: exodus_read_test
 #
 add_executable(exodus_read_test test/exodus_read_test.cc)
-target_link_libraries(exodus_read_test exodus)
+target_link_libraries(exodus_read_test exodus_reader)
 
 #
 # Install Targets
@@ -83,32 +83,32 @@ if (BUILD_TESTS)
     #  test result may not have warnings on other systems. Error appears 
     #  for each test below. See ticket #333
 
-    # Test: exodus
+    # Test: exodus_reader
     add_executable(test_exodus test/Main.cc test/test_Reader.cc test/test_file_path.cc)
-    target_link_libraries(test_exodus exodus ${UnitTest_LIBRARIES}
+    target_link_libraries(test_exodus exodus_reader ${UnitTest_LIBRARIES}
                           ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY}) 
-    add_amanzi_test(exodus test_exodus KIND unit)
-    # set_tests_properties(exodus PROPERTIES WILL_FAIL true) -- lpritch This was commented out in the original file
+    add_amanzi_test(exodus_reader test_exodus KIND unit)
+    # set_tests_properties(exodus_reader PROPERTIES WILL_FAIL true) -- lpritch This was commented out in the original file
 
 
     # Test: test_pexodus_2
     add_executable(test_pexodus_2 test/ParallelMain.cc 
                    test/test_pread_2.cc test/test_pread_checkit.cc test/test_file_path.cc)
-    target_link_libraries(test_pexodus_2 exodus ${UnitTest_LIBRARIES} 
+    target_link_libraries(test_pexodus_2 exodus_reader ${UnitTest_LIBRARIES} 
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
     add_amanzi_test(pexodus_2proc test_pexodus_2 NPROCS 2 KIND int)
 
     # Test: test_pexodus_3
     add_executable(test_pexodus_3 test/ParallelMain.cc 
                    test/test_pread_3.cc test/test_pread_checkit.cc test/test_file_path.cc)
-    target_link_libraries(test_pexodus_3 exodus ${UnitTest_LIBRARIES} 
+    target_link_libraries(test_pexodus_3 exodus_reader ${UnitTest_LIBRARIES} 
                           ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
     add_amanzi_test(pexodus_3proc test_pexodus_3 NPROCS 3 KIND int)
 
     # Test: test_pexodus_4       
     add_executable(test_pexodus_4 test/ParallelMain.cc 
                    test/test_pread_4.cc test/test_pread_checkit.cc test/test_file_path.cc)
-    target_link_libraries(test_pexodus_4 exodus  ${UnitTest_LIBRARIES}
+    target_link_libraries(test_pexodus_4 exodus_reader  ${UnitTest_LIBRARIES}
                         ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
     add_amanzi_test(pexodus_4proc test_pexodus_4 NPROCS 4 KIND int)
      
