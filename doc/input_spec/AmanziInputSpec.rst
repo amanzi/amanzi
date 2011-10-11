@@ -169,7 +169,47 @@ Example:
     </ParameterList>
   </ParameterList>
 
+Execution Control
+=================
 
+**GEH: The format for the `"Execution Control`" section may differ from other sections in the input specification.  This format can change.  I am solely using a format that is confortable and an alternative option to what has been used by others.**
+
+Amanzi supports both single-phase fully saturated and variably saturated groundwater flow and solute transport on structured and unstructured grids.  As part of the execution control, the user must specify the process models to be employed to run such simulations.  There are currently three process models or modes that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry (chemistry is currently a placeholder).
+
+Usage:
+
+* `"Start Time`" <double>: time at start of simulation
+* `"End Time`" <double>: time at end of simulation
+* `"Flow Mode`" <string>: flow process model employed
+
+  options:
+    * `"steady state single phase variably saturated flow`"
+    * `"steady state single phase fully saturated flow`"
+    * `"transient single phase fully saturated flow`"
+    * `"transient single phase variably saturated flow`"
+
+* `"Transport Mode`" <string>: transport process model employed
+
+  options:
+    * `"explicit first order transport`"
+    * `"explicit second order transport`"
+
+* `"Chemistry Mode`" <string>: chemistry process model employed
+
+  options:
+    * `"none`"
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Execution control">
+    <Parameter name="Start Time" type="double" value="0."/>
+    <Parameter name="End Time" type="double" value="1.5768e9"/>
+    <Parameter name="Flow Mode" type="string" value="transient single phase variably saturated flow"/>
+    <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
+    <Parameter name="Chemistry Mode" type="string" value="none"/>
+  </ParameterList>
 
 Mesh
 =======================================
