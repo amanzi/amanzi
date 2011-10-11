@@ -211,8 +211,25 @@ Example:
     <Parameter name="Chemistry Mode" type="string" value="none"/>
   </ParameterList>
 
+Domain
+======
+
+The `"Domain`" parameter list contains a simple high-level description of the
+domain in terms of the spatial dimension and domain extents.
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Domain">
+    <Parameter name="Spatial Dimension" type="integer" value="2"/>
+    <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0}" />
+    <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0}" />
+  </ParameterList>
+
+
 Mesh
-=======================================
+====
 
 Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface.  "Mesh`" is used to select between the following options:
 
