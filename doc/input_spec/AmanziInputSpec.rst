@@ -948,7 +948,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
 
            <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
            <!-- GEH: other transport options
-           <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
+           <Parameter name="Transport Mode" type="string" value="explicit first order transport"/>
            -->
 
            <Parameter name="Chemistry Mode" type="string" value="none"/>
