@@ -52,7 +52,7 @@ add_install_include_file(${mesh_factory_inc_files})
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
-    target_link_libraries(mesh_factory stk_mesh exodus mesh_data)
+    target_link_libraries(mesh_factory stk_mesh exodus_reader mesh_data)
     add_definitions("-DHAVE_STK_MESH")
 endif()
 

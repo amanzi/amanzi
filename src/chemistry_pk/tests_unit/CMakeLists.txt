@@ -35,7 +35,7 @@ add_executable(chemistry_pk_tests
                test_chemistry_pk.cc)
 
 target_link_libraries(chemistry_pk_tests chemistry state 
-                      simple_mesh error_handling exodus 
+                      simple_mesh error_handling exodus_reader  
                       ${UnitTest_LIBRARIES} 
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_test(chemistry_pk chemistry_pk_tests KIND unit)

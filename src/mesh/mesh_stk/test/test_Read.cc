@@ -151,7 +151,7 @@ SUITE (Exodus)
   TEST_FIXTURE (SerialReadFixture, SerialReader1)
   {
     if (nproc == 1) {
-      read("../exodus/test_files/hex_11x11x11_ss.exo");
+      read("../exodus_reader/test_files/hex_11x11x11_ss.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 11*11*11);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED), 10*10*11*3);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 10*10*10);
@@ -185,7 +185,7 @@ SUITE (Exodus)
   TEST_FIXTURE (SerialReadFixture, PrismReader)
   {
     if (nproc == 1) {
-      read("../exodus/test_files/prism.exo");
+      read("../exodus_reader/test_files/prism.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 1920);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 2634);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 1);
@@ -199,7 +199,7 @@ SUITE (Exodus)
   TEST_FIXTURE (SerialReadFixture, MixedCoarseReader)
   {
     if (nproc == 1) {
-      read("../exodus/test_files/mixed-coarse.exo");
+      read("../exodus_reader/test_files/mixed-coarse.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 361);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 592);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 5);
@@ -214,7 +214,7 @@ SUITE (Exodus)
   TEST_FIXTURE (SerialReadFixture, MixedReader)
   {
     if (nproc == 1) {
-      read("../exodus/test_files/mixed.exo");
+      read("../exodus_reader/test_files/mixed.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 6495);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 23186);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 6);
@@ -230,7 +230,7 @@ SUITE (Exodus)
   TEST_FIXTURE (SerialReadFixture, SerialReader2)
   {
     if (nproc == 1) {
-      read("../exodus/test_files/hex_4x4x4_ss.exo");
+      read("../exodus_reader/test_files/hex_4x4x4_ss.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 4*4*4);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED), 3*3*4*3);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 3*3*3);
@@ -264,7 +264,7 @@ SUITE (Exodus)
   TEST_FIXTURE (ParallelReadFixture, ParallelReader1)
   {
     if (nproc > 1 && nproc <= 4) {
-      read("../exodus/test_files/split1/hex_11x11x11_ss.par");
+      read("../exodus_reader/test_files/split1/hex_11x11x11_ss.par");
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 20);
@@ -307,7 +307,7 @@ SUITE (Exodus)
   TEST_FIXTURE (ParallelReadFixture, ParallelReader2)
   {
     if (nproc > 1 && nproc < 4) {
-      read("../exodus/test_files/split1/hex_4x4x4_ss.par");
+      read("../exodus_reader/test_files/split1/hex_4x4x4_ss.par");
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
@@ -351,7 +351,7 @@ SUITE (Exodus)
   TEST_FIXTURE (ParallelReadFixture, PrismParallelReader)
   {
     if (nproc == 2 || nproc == 4) {
-      read("../exodus/test_files/split1/prism.par");
+      read("../exodus_reader/test_files/split1/prism.par");
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 1);
       int local, global;
       local = mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED);
@@ -377,7 +377,7 @@ SUITE (Exodus)
   TEST_FIXTURE (ParallelReadFixture, MixedCoarseParallelReader)
   {
     if (nproc == 2 || nproc == 4) {
-      read("../exodus/test_files/split1/mixed-coarse.par");
+      read("../exodus_reader/test_files/split1/mixed-coarse.par");
       CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 5);
       int local, global;
       local = mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED);
@@ -418,7 +418,7 @@ SUITE (Exodus)
 
     // FIXME: need to be able to assign path from configuration
 
-    std::string fpath("../exodus/test_files/");
+    std::string fpath("../exodus_reader/test_files/");
     std::string fname("hex_11x11x11_ss");
     if (comm.NumProc() == 1) {
       fname += ".exo";
