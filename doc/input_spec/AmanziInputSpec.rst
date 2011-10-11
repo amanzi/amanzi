@@ -939,10 +939,20 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <!-- 2006 -->
            <Parameter name="End Time" type="double" value="1.5768e9"/>
        
-           <!-- GEH: TBD by HPC -->
-           <!-- GEH: This conceptual model will simulate variably saturated flow modeled through
-                     the Richards equation and solute transport.  We assume zero diffusion/
-                     dispersion and no geochemistry. -->
+           <Parameter name="Flow Mode" type="string" value="transient single phase variably saturated flow"/>
+           <!-- GEH: other flow options
+           <Parameter name="Flow Mode" type="string" value="steady state single phase variably saturated flow"/>
+           <Parameter name="Flow Mode" type="string" value="steady state single phase fully saturated flow"/>
+           <Parameter name="Flow Mode" type="string" value="transient single phase fully saturated flow"/>
+           -->
+
+           <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
+           <!-- GEH: other transport options
+           <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
+           -->
+
+           <Parameter name="Chemistry Mode" type="string" value="none"/>
+
            <!-- GEH/VLF/MLR: The experienced users will want to be able to control execution. Otherwise,
                              they will feel as if this is a black box. -->
        
@@ -1050,7 +1060,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
            <ParameterList name="East Surface Region">
              <ParameterList name="Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{100., 0., 0.}"/>
+               <Parameter name="Coordinate"  type="Array double" value="{400., 0., 0.}"/>
                <Parameter name="Direction"  type="Array double" value="{1., 0., 0.}"/>
              </ParameterList>
            </ParameterList>
@@ -1064,7 +1074,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
            <ParameterList name="North Surface Region">
              <ParameterList name="Plane">
-               <Parameter name="Coordinate"  type="Array double" value="{100., 0., 0.}"/>
+               <Parameter name="Coordinate"  type="Array double" value="{0., 1., 0.}"/>
                <Parameter name="Direction"  type="Array double" value="{0., 1., 0.}"/>
              </ParameterList>
            </ParameterList>
@@ -1115,7 +1125,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
                <Parameter name="Horizontal" type="double" value="2.05e-8"/>
-               <Parameter name="Vertical" type="double" value="2.05e-7"/>
+               <Parameter name="Vertical" type="double" value="2.05e-9"/>
              </ParameterList>
        
              <!-- GEH: Pressure-saturation function: van Genuchten-->
@@ -1138,7 +1148,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
                <Parameter name="Horizontal" type="double" value="4.84e-8"/>
-               <Parameter name="Vertical" type="double" value="4.84e-7"/>
+               <Parameter name="Vertical" type="double" value="4.84e-9"/>
              </ParameterList>
        
              <ParameterList name="Capillary Pressure: van Genuchten">
@@ -1160,7 +1170,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
                <Parameter name="Horizontal" type="double" value="3.00e-9"/>
-               <Parameter name="Vertical" type="double" value="3.00e-8"/>
+               <Parameter name="Vertical" type="double" value="3.00e-10"/>
              </ParameterList>
 
              <ParameterList name="Capillary Pressure: van Genuchten">
@@ -1183,7 +1193,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                  <Parameter name="Viscosity" type="double" value="8.9e-4"/>
                </ParameterList>
                <ParameterList name="Density: Uniform">
-                 <Parameter name="Density" type="double" value="998."/>
+                 <Parameter name="Density" type="double" value="998.32"/>
                </ParameterList>
              </ParameterList>
              <ParameterList name="Phase Components">
