@@ -174,7 +174,7 @@ Execution Control
 
 **GEH: The format for the `"Execution Control`" section may differ from other sections in the input specification.  This format can change.  I am solely using a format that is confortable and an alternative option to what has been used by others.**
 
-Amanzi supports both single-phase fully saturated and variably saturated groundwater flow and solute transport on structured and unstructured grids.  As part of the execution control, the user must specify the process models to be employed to run such simulations.  There are currently three process models or modes that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry (chemistry is currently a placeholder).
+Amanzi supports both single-phase saturated and variably saturated groundwater flow and solute transport on structured and unstructured grids.  As part of the execution control, the user must specify the process models to be employed to run such simulations.  There are currently three process models or modes that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry (chemistry is currently a placeholder).
 
 Usage:
 
@@ -184,8 +184,8 @@ Usage:
 
   options:
     * `"steady state single phase variably saturated flow`"
-    * `"steady state single phase fully saturated flow`"
-    * `"transient single phase fully saturated flow`"
+    * `"steady state single phase saturated flow`"
+    * `"transient single phase saturated flow`"
     * `"transient single phase variably saturated flow`"
 
 * `"Transport Mode`" <string>: transport process model employed
@@ -949,7 +949,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
               Bear in mind that this is hypothetical and does not reflect that actual lithofacies at
               HDVZ.  Characters { ,*,#} indicate materials.
        
-                  <-                    100m                 ->
+                  <-                    400m                 ->
                                Crib 1        Crib 2  
                    ___________xxxxxxxx______xxxxxxxx___________ <-BC: flow = Neumann, transport = inflow 
                   |                                            |   ^
@@ -999,8 +999,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <Parameter name="Flow Mode" type="string" value="transient single phase variably saturated flow"/>
            <!-- GEH: other flow options
            <Parameter name="Flow Mode" type="string" value="steady state single phase variably saturated flow"/>
-           <Parameter name="Flow Mode" type="string" value="steady state single phase fully saturated flow"/>
-           <Parameter name="Flow Mode" type="string" value="transient single phase fully saturated flow"/>
+           <Parameter name="Flow Mode" type="string" value="steady state single phase saturated flow"/>
+           <Parameter name="Flow Mode" type="string" value="transient single phase saturated flow"/>
            -->
 
            <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
