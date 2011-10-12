@@ -169,6 +169,48 @@ Example:
     </ParameterList>
   </ParameterList>
 
+Execution Control
+=================
+
+**GEH: The format for the `"Execution Control`" section may differ from other sections in the input specification.  This format can change.  I am solely using a format that is confortable and an alternative option to what has been used by others.**
+
+Amanzi supports both single-phase saturated and variably saturated groundwater flow and solute transport on structured and unstructured grids.  As part of the execution control, the user must specify the process models to be employed to run such simulations.  There are currently three process models or modes that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry (chemistry is currently a placeholder).
+
+Usage:
+
+* `"Start Time`" <double>: time at start of simulation
+* `"End Time`" <double>: time at end of simulation
+* `"Flow Mode`" <string>: flow process model employed
+
+  options:
+    * `"steady state single phase variably saturated flow`"
+    * `"steady state single phase saturated flow`"
+    * `"transient single phase saturated flow`"
+    * `"transient single phase variably saturated flow`"
+
+* `"Transport Mode`" <string>: transport process model employed
+
+  options:
+    * `"explicit first order transport`"
+    * `"explicit second order transport`"
+
+* `"Chemistry Mode`" <string>: chemistry process model employed
+
+  options:
+    * `"none`"
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="Execution control">
+    <Parameter name="Start Time" type="double" value="0."/>
+    <Parameter name="End Time" type="double" value="1.5768e9"/>
+    <Parameter name="Flow Mode" type="string" value="transient single phase variably saturated flow"/>
+    <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
+    <Parameter name="Chemistry Mode" type="string" value="none"/>
+  </ParameterList>
+
 Domain
 ======
 
@@ -186,10 +228,8 @@ Example:
   </ParameterList>
 
 
-
-
 Mesh
-=======================================
+====
 
 Amanzi supports both structured and unstructured numerical solution approaches.  This flexibility has a direct impact on the selection and design of the underlying numerical algorithms, the style of the software implementations, and, ultimately, the complexity of the user-interface.  "Mesh`" is used to select between the following options:
 
@@ -911,7 +951,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
               Bear in mind that this is hypothetical and does not reflect that actual lithofacies at
               HDVZ.  Characters { ,*,#} indicate materials.
        
-                  <-                    100m                 ->
+                  <-                    400m                 ->
                                Crib 1        Crib 2  
                    ___________xxxxxxxx______xxxxxxxx___________ <-BC: flow = Neumann, transport = inflow 
                   |                                            |   ^
@@ -961,8 +1001,8 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <Parameter name="Flow Mode" type="string" value="transient single phase variably saturated flow"/>
            <!-- GEH: other flow options
            <Parameter name="Flow Mode" type="string" value="steady state single phase variably saturated flow"/>
-           <Parameter name="Flow Mode" type="string" value="steady state single phase fully saturated flow"/>
-           <Parameter name="Flow Mode" type="string" value="transient single phase fully saturated flow"/>
+           <Parameter name="Flow Mode" type="string" value="steady state single phase saturated flow"/>
+           <Parameter name="Flow Mode" type="string" value="transient single phase saturated flow"/>
            -->
 
            <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
