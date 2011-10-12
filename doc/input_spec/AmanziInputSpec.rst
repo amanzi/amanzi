@@ -300,9 +300,6 @@ to be solved, and the output desired.  Regions may represents zero-, one-, two- 
 for a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional 
 regions.  If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
-For all supported mesh frameworks, Amanzi automatically defines the special region labeled `"All`", which is the 
-entire simulation domain, and this region is available throughout the input file.
-
 Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinat-aligned planes that bound the domain,
 using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`"
 
@@ -366,6 +363,8 @@ Notes
 
   Examples of surface files are given in the `"Exodus II`" file 
   format here.
+
+* Region names must NOT be repeated
 
 Example:
 
