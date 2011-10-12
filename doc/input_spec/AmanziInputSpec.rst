@@ -178,26 +178,31 @@ Amanzi supports both single-phase saturated and variably saturated groundwater f
 
 Usage:
 
-* `"Start Time`" <double>: time at start of simulation
-* `"End Time`" <double>: time at end of simulation
-* `"Flow Mode`" <string>: flow process model employed
+* `"Execution Control`"
 
-  options:
-    * `"steady state single phase variably saturated flow`"
-    * `"steady state single phase saturated flow`"
-    * `"transient single phase saturated flow`"
-    * `"transient single phase variably saturated flow`"
+  * `"Start Time`" [double]: time at start of simulation
 
-* `"Transport Mode`" <string>: transport process model employed
+  * `"End Time`" [double]: time at end of simulation
 
-  options:
-    * `"explicit first order transport`"
-    * `"explicit second order transport`"
+  * `"Flow Mode`" [string]: flow process model employed
 
-* `"Chemistry Mode`" <string>: chemistry process model employed
+      1. `"steady state single phase variably saturated flow`"
 
-  options:
-    * `"none`"
+      2. `"steady state single phase saturated flow`"
+
+      3. `"transient single phase saturated flow`"
+
+      4. `"transient single phase variably saturated flow`"
+
+  * `"Transport Mode`" [string]: transport process model employed
+
+      1. `"explicit first order transport`"
+
+      2. `"explicit second order transport`"
+
+  * `"Chemistry Mode`" [string]: chemistry process model employed (chemistry is implemented, but not supported in current input spec)
+
+      1. `"none`"
 
 Example:
 
@@ -280,17 +285,34 @@ Example of `"Structured`" mesh:
      </ParameterList>   
    </ParameterList>
 
-Example of `"Unstructured`" mesh:
+Example of `"Unstructured`" mesh generated internally:
 
 .. code-block:: xml
 
-  <ParameterList name="Mesh">
-    <ParameterList name="Unstructured">
-      <Parameter name="File" type="string" value="mesh_filename"/>
-      <Parameter name="Format" type="string" value="Exodus II"/>
-    </ParameterList>   
-  </ParameterList>
+   <ParameterList name="Mesh">
+     <ParameterList name="Unstructured"/>
+       <ParameterList name="Generate Mesh"/>
+         <ParameterList name="Uniform Structured"/>
+           <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+           <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+           <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+         </ParameterList>   
+       </ParameterList>   
+     </ParameterList>   
+   </ParameterList>
 
+Example of `"Unstructured`" mesh read from an external file:
+
+.. code-block:: xml
+
+    <ParameterList name="Mesh">
+      <ParameterList name="Unstructured">
+        <ParameterList name="Read Mesh File">
+          <Parameter name="File" type="string" value="mesh_filename"/>
+          <Parameter name="Format" type="string" value="Exodus II"/>
+        </ParameterList>   
+      </ParameterList>   
+    </ParameterList>
 
 Regions
 =======================================
@@ -1018,7 +1040,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <Parameter name="Spatial Dimension" type="integer" value="2"/>
          </ParameterList>
          <ParameterList name="Mesh">
-         <!-- Uncomment this block for unstructured
+         <!-- Uncomment this block for unstructured with a internally generated mesh
            <ParameterList name="Unstructured">
              <ParameterList name="Generate Mesh">
                <ParameterList name="Uniform Structured">
@@ -1029,13 +1051,20 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
          -->
+         <!-- Uncomment this block for unstructured with a externally generated mesh
+           <ParameterList name="Unstructured">
+             <ParameterList name="Read Mesh File">
+               <Parameter name="File" type="string" value="mesh_filename"/>
+               <Parameter name="Format" type="string" value="Exodus II"/>
+             </ParameterList>
+           </ParameterList>
+         -->
          <!-- Uncomment this block for structured
            <ParameterList name="Structured">
              <Parameter name="Number of Cells" type="Array int" value="{800, 1, 220}"/>
              <Parameter name="Domain Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}" />
              <Parameter name="Domain High Coordinate" type="Array double" value="{400., 1.0, 110.}" />
            </ParameterList>
-         </ParameterList>
          -->
          </ParameterList>
        
