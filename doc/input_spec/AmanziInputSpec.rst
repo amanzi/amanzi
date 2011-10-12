@@ -1037,7 +1037,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <Parameter name="Spatial Dimension" type="integer" value="2"/>
          </ParameterList>
          <ParameterList name="Mesh">
-         <!-- Uncomment this block for unstructured with a internally generated mesh
+         <!-- Uncomment this block for unstructured with an internally generated mesh
            <ParameterList name="Unstructured">
              <ParameterList name="Generate Mesh">
                <ParameterList name="Uniform Structured">
@@ -1048,7 +1048,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
          -->
-         <!-- Uncomment this block for unstructured with a externally generated mesh
+         <!-- Uncomment this block for unstructured with an externally generated mesh
            <ParameterList name="Unstructured">
              <ParameterList name="Read Mesh File">
                <Parameter name="File" type="string" value="mesh_filename"/>
