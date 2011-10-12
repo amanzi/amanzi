@@ -1014,15 +1014,30 @@ required to specify a real simulation with Amanzi envisioned functional for the 
                              they will feel as if this is a black box. -->
        
          </ParameterList>
-       
-         <ParameterList name="Mesh">	   
-           <Parameter name="Framework" type="string" value="Structured"/>
-           <ParameterList name="Structured">
-             <!-- Domain width could decease.  Testing is in progress. - 10/4/11 -->
-             <Parameter name="Number of Cells" type="Array int" value="{800, 1, 220}"/>
-             <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
-             <Parameter name="Domain High Corner" type="Array double" value="{400., 1.0, 110.}" />
+
+         <ParameterList name="Domain">
+           <Parameter name="Spatial Dimension" type="integer" value="2"/>
+         </ParameterList>
+         <ParameterList name="Mesh">
+         <!-- Uncomment this block for unstructured
+           <ParameterList name="Unstructured">
+             <ParameterList name="Generate Mesh">
+               <ParameterList name="Uniform Structured">
+                 <Parameter name="Number of Cells" type="Array int" value="{800, 1, 220}"/>
+                 <Parameter name="Domain Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}" />
+                 <Parameter name="Domain High Coordinate" type="Array double" value="{400., 1.0, 110.}" />
+               </ParameterList>
+             </ParameterList>
            </ParameterList>
+         -->
+         <!-- Uncomment this block for structured
+           <ParameterList name="Structured">
+             <Parameter name="Number of Cells" type="Array int" value="{800, 1, 220}"/>
+             <Parameter name="Domain Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}" />
+             <Parameter name="Domain High Coordinate" type="Array double" value="{400., 1.0, 110.}" />
+           </ParameterList>
+         </ParameterList>
+         -->
          </ParameterList>
        
          <ParameterList name="Regions">
