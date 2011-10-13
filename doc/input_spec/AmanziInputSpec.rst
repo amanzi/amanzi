@@ -319,6 +319,11 @@ to be solved, and the output desired.  Regions may represents zero-, one-, two- 
 for a three-dimensional problem, the simulation domain will be a three-dimensional region bounded by a set of two-dimensional 
 regions.  If the simulation domain is N-dimensional, the boundary conditions must be specified over a set of regions are (N-1)-dimensional.
 
+Amanzi automatically defines the special region labeled `"All`", which is the 
+entire simulation domain. Currently, the unstructured framework does
+not support the `"All`" region, but it is expected to do so in the
+near future.
+
 Under the `"Structured`" option, Amanzi also automatically defines regions for the coordinat-aligned planes that bound the domain,
 using the following labels: `"XLOBC`", `"XHIBC`", `"YLOBC`", `"YHIBC`", `"ZLOBC`", `"ZHIBC`"
 
