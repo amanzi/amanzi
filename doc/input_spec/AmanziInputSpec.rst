@@ -355,7 +355,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 Notes
 
 * `"Region: Box`" defines a region bounded by coordinate-aligned planes.
-  Currently, `"Plane`" is constrained to be coordinate-aligned.
+  Currently, `"Region: Plane`" is constrained to be coordinate-aligned.
 
 * The "Region: Labeled Set" region requires a `"Label`" that was given to
   sets generated in a preprocessing step and stored in a
@@ -1088,21 +1088,21 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            -->
        
            <ParameterList name="Material 1 Region">
-             <ParameterList name="Box">
+             <ParameterList name="Region: Box">
                <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 30.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Material 2 Region">
-             <ParameterList name="Box">
+             <ParameterList name="Region: Box">
                <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 30.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 60.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Material 3 Region">
-             <ParameterList name="Box">
+             <ParameterList name="Region: Box">
                <Parameter name="Low Coordinate" type="Array double" value="{0.0, 0.0, 60.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 110.0}"/>
              </ParameterList>
@@ -1123,13 +1123,13 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
            </ParameterList>
            <ParameterList name="Top Surface Outside Cribs Region B">
-             <ParameterList name="Box">
+             <ParameterList name="Region: Box">
                <Parameter name="Low Coordinate" type="Array double" value="{173.0, 0.0, 110.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{190.0, 1.0, 110.0}"/>
              </ParameterList>
            </ParameterList>
            <ParameterList name="Top Surface Outside Cribs Region C">
-             <ParameterList name="Box">
+             <ParameterList name="Region: Box">
                <Parameter name="Low Coordinate" type="Array double" value="{193.0, 0.0, 110.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{400.0, 1.0, 110.0}"/>
              </ParameterList>
@@ -1137,7 +1137,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
            <ParameterList name="90 Meter Plane Region">
              <!-- GEH: Note that we could use a 2D box for these regions too. -->
-             <ParameterList name="Plane">
+             <ParameterList name="Region: Plane">
                <Parameter name="Coordinate"  type="Array double" value="{0., 0., 90.}"/>
                <!-- GEH: Note the downward unit vector -->
                <Parameter name="Direction"  type="Array double" value="{0., 0., 1.}"/>
@@ -1146,7 +1146,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
        
            <ParameterList name="Bottom Surface Region">
              <!-- GEH: Note that we could use a 2D box for these regions too. -->
-             <ParameterList name="Plane">
+             <ParameterList name="Region: Plane">
                <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
                <!-- GEH: Note the downward unit vector -->
                <Parameter name="Direction"  type="Array double" value="{0., 0., -1.}"/>
@@ -1154,35 +1154,35 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
        
            <ParameterList name="West Surface Region">
-             <ParameterList name="Plane">
+             <ParameterList name="Region: Plane">
                <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
                <Parameter name="Direction"  type="Array double" value="{-1., 0., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="East Surface Region">
-             <ParameterList name="Plane">
+             <ParameterList name="Region: Plane">
                <Parameter name="Coordinate"  type="Array double" value="{400., 0., 0.}"/>
                <Parameter name="Direction"  type="Array double" value="{1., 0., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="South Surface Region">
-             <ParameterList name="Plane">
+             <ParameterList name="Region: Plane">
                <Parameter name="Coordinate"  type="Array double" value="{0., 0., 0.}"/>
                <Parameter name="Direction"  type="Array double" value="{0., -1., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="North Surface Region">
-             <ParameterList name="Plane">
+             <ParameterList name="Region: Plane">
                <Parameter name="Coordinate"  type="Array double" value="{0., 1., 0.}"/>
                <Parameter name="Direction"  type="Array double" value="{0., 1., 0.}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Crib 1 Region">
-             <ParameterList name="Box">
+             <ParameterList name="Region: Box">
                <!-- GEH: Assuming unit cell width in Y -->
                <Parameter name="Low Coordinate" type="Array double" value="{170.0, 0.0, 110.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{173.0, 1.0, 110.0}"/>
@@ -1190,7 +1190,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
        
            <ParameterList name="Crib 2 Region">
-             <ParameterList name="Box">
+             <ParameterList name="Region: Box">
                <!-- GEH: Assuming unit cell width in Y -->
                <Parameter name="Low Coordinate" type="Array double" value="{190.0, 0.0, 110.0}"/>
                <Parameter name="High Coordinate" type="Array double" value="{193.0, 1.0, 110.0}"/>
@@ -1198,19 +1198,19 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            </ParameterList>
        
            <ParameterList name="Sample Point 1 Region">
-             <ParameterList name="Point">
+             <ParameterList name="Region: Point">
                <Parameter name="Coordinate"  type="Array double" value="{171.5, 0.5, 50.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Sample Point 2 Region">
-             <ParameterList name="Point">
+             <ParameterList name="Region: Point">
                <Parameter name="Coordinate"  type="Array double" value="{191.5, 0.5, 50.0}"/>
              </ParameterList>
            </ParameterList>
        
            <ParameterList name="Sample Point 3 Region">
-             <ParameterList name="Point">
+             <ParameterList name="Region: Point">
                <Parameter name="Coordinate"  type="Array double" value="{181.5, 0.5, 50.0}"/>
              </ParameterList>
            </ParameterList>
