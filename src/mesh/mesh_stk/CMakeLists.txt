@@ -83,7 +83,7 @@ if (BUILD_TESTS)
 
     # Test: Create sets and respond to set queries
     add_executable(test_stk_sets test/Main.cc test/test_Sets.cc)
-    target_link_libraries(test_stk_sets stk_mesh exodus ${UnitTest_LIBRARIES})
+    target_link_libraries(test_stk_sets stk_mesh exodus_reader ${UnitTest_LIBRARIES})
     add_amanzi_test(stk_mesh_sets test_stk_sets KIND int)
 
 
