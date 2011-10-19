@@ -33,7 +33,11 @@ TEST(MSTK_HEX_4x4x4_4P)
 
   int rank, size;
 
-  MPI_Init(NULL,NULL);
+  int initialized;
+  MPI_Initialized(&initialized);
+  
+  if (!initialized)
+    MPI_Init(NULL,NULL);
 
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   MPI_Comm_size(MPI_COMM_WORLD,&size);
@@ -108,20 +112,6 @@ TEST(MSTK_HEX_4x4x4_4P)
 
     }
   
-
-  // Verify cell sets
-
-  int ns;
-  ns = mesh.num_sets(Amanzi::AmanziMesh::CELL);
-  CHECK_EQUAL(3,ns);
-
-  std::vector<unsigned int> csetids(3);
-  unsigned int expcsetids[3] = {10000,20000,30000};
-
-  mesh.get_set_ids(Amanzi::AmanziMesh::CELL,&csetids);
-
-  for (int i = 0; i < 3; i++)
-    CHECK_EQUAL(expcsetids[i],csetids[i]);
 
   MPI_Finalize();
 
