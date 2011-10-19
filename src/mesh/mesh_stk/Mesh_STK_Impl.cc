@@ -320,7 +320,8 @@ Mesh_STK_Impl::add_set (const std::string setname, unsigned int setid,
 {
   stk::mesh::Part *part;
 
-  meta_data_->enable_modification();
+  // FIXME: How can we allow modification of meta data
+  //  meta_data_->enable_modification();
 
   Entity_kind kind;
 
@@ -377,7 +378,8 @@ Mesh_STK_Impl::add_set (const std::string setname, unsigned int setid,
     bulk_data_->change_entity_parts(*entity, parts_to_add);
   }
 
-  meta_data_->commit();
+  // If we are able to enable modification of meta_data we can commit here
+  // meta_data_->commit();
 
   return part;
 
