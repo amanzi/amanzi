@@ -53,8 +53,8 @@ class Point {
   const int dim() const { return d; }
   
   /* operators */
-  Point& operator=( const double& val ) { for( int i=0; i<d; i++ ) xyz[i] = val;  return *this; }
-  Point& operator=( const Point& p)     { for( int i=0; i<d; i++ ) xyz[i] = p[i]; return *this; }         
+  //  Point& operator=( const double& val ) {for( int i=0; i<d; i++ ) xyz[i] = val;  return *this; }
+  Point& operator=( const Point& p)     {int d=p.d; init(d); for( int i=0; i<d; i++ ) xyz[i] = p[i]; return *this; }         
   
   Point& operator+=( const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] += p[i]; return *this; }
   Point& operator-=( const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] -= p[i]; return *this; }
