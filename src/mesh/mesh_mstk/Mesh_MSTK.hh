@@ -3,8 +3,9 @@
 
 #include <Mesh.hh>
 #include <Point.hh>
+#include <GeometricModel.hh>
+#include <LabeledSetRegion.hh>
 
-using namespace std;
 #include <memory>
 #include <vector>
 #include <sstream>
@@ -77,23 +78,6 @@ private:
   Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
   
   
-  // Sets (material sets, sidesets, nodesets)
-  // We store the number of sets in the whole problem regardless of whether
-  // they are represented on this processor or not
-  // We also store the IDs of the sets and the dimension of entities 
-  // in those sets
-  
-  // We could also store a single array of setids and another array of setdims
-  // like we do for Mesh_MOAB. Some code is easier this way and some code
-  // easier the other way
-
-  // Cannot use std::vector<int> because we cannot pass it into MPI routines
-
-  int nmatsets, nsidesets, nnodesets;
-  int *matset_ids, *sideset_ids, *nodeset_ids; 
-                                              
-  
-  
   // flag whether to flip a face dir or not when returning nodes of a face
   
   bool *faceflip;
@@ -122,7 +106,13 @@ private:
 
 public:
 
-  Mesh_MSTK (const char *filename, MPI_Comm comm, int space_dimension = 3);
+  Mesh_MSTK (const char *filename, MPI_Comm comm,
+	     const AmanziGeometry::GeometricModelPtr& gm = 
+	     (AmanziGeometry::GeometricModelPtr) NULL);
+
+  Mesh_MSTK (const char *filename, MPI_Comm comm, int space_dimension,
+	     const AmanziGeometry::GeometricModelPtr& gm = 
+	     (AmanziGeometry::GeometricModelPtr) NULL);
   ~Mesh_MSTK ();
 
 
@@ -334,20 +324,6 @@ public:
   //----------------------------
   //
     
-  // Number of sets containing entities of type 'kind' in mesh
-    
-  unsigned int num_sets(const Entity_kind kind) const;
-    
-    
-  // Ids of sets containing entities of 'kind'
-
-  void get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const;
-
-
-  // Is this is a valid ID of a set containing entities of 'kind'
-
-  bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
-
 
   // Get number of entities of type 'category' in set
 
@@ -355,6 +331,14 @@ public:
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
+  unsigned int get_set_size (const Set_Name setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
+
+  unsigned int get_set_size (const char *setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
 
   // Get list of entities of type 'category' in set
 
@@ -362,6 +346,18 @@ public:
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 Entity_ID_List *entids) const; 
+
+  void get_set_entities (const Set_Name setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
+
+  void get_set_entities (const char *setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
 
 };
 
