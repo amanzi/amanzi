@@ -9,7 +9,7 @@
  * 
  */
 
-#include "RectangularRegion.hh"
+#include "BoxRegion.hh"
 
 namespace Teuchos {
   class ParameterList;
@@ -39,7 +39,7 @@ class GenerationSpec {
   ~GenerationSpec(void);
 
   /// Get the overall spatial domain
-  const AmanziGeometry::RectangularRegion& domain(void) const
+  const AmanziGeometry::BoxRegion& domain(void) const
   { return *domain_; }
 
   /// Get the mesh dimensions in the x-direction
@@ -61,8 +61,9 @@ class GenerationSpec {
 
  protected:
   
-  /// overall mesh domain
-  AmanziGeometry::RectangularRegionPtr domain_;
+  /// overall mesh domain  FIXME: We already have a domain
+
+  AmanziGeometry::BoxRegionPtr domain_;
 
   unsigned int nx_;                     /**< number of cells in the x-direction */
   unsigned int ny_;                     /**< number of cells in the y-direction */
