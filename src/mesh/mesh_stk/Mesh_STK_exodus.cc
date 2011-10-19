@@ -62,35 +62,35 @@ Mesh_STK::read_exodus_(const std::string& fname)
     Exceptions::amanzi_throw( STK::Error ("Exodus file read error") );
   build_maps_();
 
-  // FIXME: this is supposed to be temporary
-  fill_setnameid_map_();
 }
 
 // -------------------------------------------------------------
 // Mesh_STK::Mesh_STK
 // -------------------------------------------------------------
 Mesh_STK::Mesh_STK(const Epetra_MpiComm& comm, 
-                   const std::string& fname)
+                   const std::string& fname,
+		   const AmanziGeometry::GeometricModelPtr& gm)
     : communicator_(new Epetra_MpiComm(comm)),
       mesh_(), 
       entity_map_(3),            // FIXME: needs to come from the file
       map_owned_(), map_used_()
-
       
 {
   Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_geometric_model(gm);
   read_exodus_(fname);
 }
 
-Mesh_STK::Mesh_STK(const char *fname, MPI_Comm comm)
+  Mesh_STK::Mesh_STK(const char *fname, MPI_Comm comm,
+		     const AmanziGeometry::GeometricModelPtr& gm)
     : communicator_(new Epetra_MpiComm(comm)),
       mesh_(), 
       entity_map_(3),           // FIXME: needs to come from the file
       map_owned_(), map_used_()
-
       
 {
   Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_geometric_model(gm);
   read_exodus_(fname);
 }
 
