@@ -1,13 +1,11 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Region.hh"
-#include "RectangularRegion.hh"
 
 #include "Teuchos_MPISession.hpp"
 
 using Amanzi::AmanziGeometry::Region;
 using Amanzi::AmanziGeometry::RegionPtr;
-using Amanzi::AmanziGeometry::RectangularRegion;
 using Amanzi::AmanziGeometry::Point;
 
 using Teuchos::Array;
