@@ -60,13 +60,15 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
  public:
   
   /// Default constructor.
-  bogus_maps(const char *filename, MPI_Comm c) 
+  bogus_maps(const char *filename, MPI_Comm c,
+             const Amanzi::AmanziGeometry::GeometricModelPtr& gm) 
       : Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
   
-  bogus_maps(const char *filename, MPI_Comm c, int dim) 
+  bogus_maps(const char *filename, MPI_Comm c, int dim,
+             const Amanzi::AmanziGeometry::GeometricModelPtr& gm) 
       : Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
@@ -75,14 +77,16 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
   bogus_maps(double x0, double y0, double z0,
 	     double x1, double y1, double z1,
 	     int nx, int ny, int nz, 
-	     Epetra_MpiComm *communicator)
+	     Epetra_MpiComm *communicator,
+             const Amanzi::AmanziGeometry::GeometricModelPtr& gm)
       : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
   }
 
   bogus_maps(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
-             Epetra_MpiComm *communicator)
+             Epetra_MpiComm *communicator,
+             const Amanzi::AmanziGeometry::GeometricModelPtr& gm)
       : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
@@ -190,22 +194,33 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
   const Epetra_Map& node_epetra_map (const bool include_ghost) const
   { return *bogus_map_; }
 
-  unsigned int num_sets(const Amanzi::AmanziMesh::Entity_kind kind) const
+
+  unsigned int get_set_size (const std::string setname, 
+                             const Amanzi::AmanziMesh::Entity_kind kind,
+                             const Amanzi::AmanziMesh::Parallel_type ptype) const
   { return 0; }
 
-  void get_set_ids (const Amanzi::AmanziMesh::Entity_kind kind, 
-                    Amanzi::AmanziMesh::Set_ID_List *setids) const
-  {}
-
-  bool valid_set_id (const Amanzi::AmanziMesh::Set_ID setid, 
-                     const Amanzi::AmanziMesh::Entity_kind kind) const
-  { return false; }
+  unsigned int get_set_size (const char *setname, 
+                             const Amanzi::AmanziMesh::Entity_kind kind,
+                             const Amanzi::AmanziMesh::Parallel_type ptype) const
+  { return 0; }
 
   unsigned int get_set_size (const Amanzi::AmanziMesh::Set_ID setid, 
                              const Amanzi::AmanziMesh::Entity_kind kind,
                              const Amanzi::AmanziMesh::Parallel_type ptype) const
   { return 0; }
 
+  void get_set_entities (const std::string setname, 
+                         const Amanzi::AmanziMesh::Entity_kind kind, 
+                         const Amanzi::AmanziMesh::Parallel_type ptype, 
+                         Amanzi::AmanziMesh::Entity_ID_List *entids) const
+  {}
+
+  void get_set_entities (const char *setid, 
+                         const Amanzi::AmanziMesh::Entity_kind kind, 
+                         const Amanzi::AmanziMesh::Parallel_type ptype, 
+                         Amanzi::AmanziMesh::Entity_ID_List *entids) const
+  {}
   void get_set_entities (const Amanzi::AmanziMesh::Set_ID setid, 
                          const Amanzi::AmanziMesh::Entity_kind kind, 
                          const Amanzi::AmanziMesh::Parallel_type ptype, 
@@ -326,7 +341,7 @@ struct FrameworkTraits {
   // FrameworkTraits<M>::canread
   // -------------------------------------------------------------
   /// A type to indicate whether this framework can mesh of a specific format
-
+  // FIXME: Doesn't MOAB read exodus files
   template < int FMT = 0 > 
   struct canread {
 
@@ -348,7 +363,7 @@ struct FrameworkTraits {
     struct serial :
         mpl::eval_if<
       mpl::bool_< M == MOAB >
-      , mpl::bool_< FMT == ExodusII >
+      , mpl::bool_< FMT == MOABHDF5 >
       , mpl::eval_if<
           mpl::bool_< M == STKMESH >
           , mpl::bool_< FMT == ExodusII >
@@ -363,10 +378,11 @@ struct FrameworkTraits {
 
   /// Construct a mesh from a Exodus II file or file set
   static Teuchos::RCP<Mesh>
-  read(Epetra_MpiComm& comm, const std::string& fname)
+read(Epetra_MpiComm& comm, const std::string& fname,
+     const AmanziGeometry::GeometricModelPtr& gm)
   {
     Teuchos::RCP<Mesh> 
-        result(new typename read_maps::type(fname.c_str(), comm.Comm()));
+    result(new typename read_maps::type(fname.c_str(), comm.Comm(), gm));
     return result;
   }
 
@@ -380,24 +396,27 @@ struct FrameworkTraits {
     {};
   };
 
-  /// Generate a hex mesh 
+/// Generate a hex mesh from explicit arguments
   static Teuchos::RCP<Mesh>
   generate(const double& x0, const double& y0, const double& z0,
            const double& x1, const double& y1, const double& z1,
            const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
-           Epetra_MpiComm& comm)
+         Epetra_MpiComm& comm, 
+         const AmanziGeometry::GeometricModelPtr& gm)
   {
     Teuchos::RCP<Mesh> 
-        result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm));
+    result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm, gm));
     return result;
   }
 
+/// Generate a hex mesh from arguments sent in through a parameter list
   static Teuchos::RCP<Mesh>
-  generate(Teuchos::ParameterList &parameter_list, Epetra_MpiComm& comm)
+generate(Teuchos::ParameterList &parameter_list, Epetra_MpiComm& comm,
+         const AmanziGeometry::GeometricModelPtr& gm)
   {
     GenerationSpec gspec(parameter_list);
     Teuchos::RCP<Mesh> 
-        result(new typename generate_maps::type(gspec, &comm));
+    result(new typename generate_maps::type(gspec, &comm, gm));
     return result;
   }
 };
@@ -505,21 +524,22 @@ framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
 // framework_read
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
-framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fname)
+framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fname, 
+               const AmanziGeometry::GeometricModelPtr& gm)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
     case Simple:
-      result = FrameworkTraits<Simple>::read(comm, fname);
+      result = FrameworkTraits<Simple>::read(comm, fname, gm);
       break;
     case STKMESH:
-      result = FrameworkTraits<STKMESH>::read(comm, fname);
+      result = FrameworkTraits<STKMESH>::read(comm, fname, gm);
       break;
     case MOAB:
-      result = FrameworkTraits<MOAB>::read(comm, fname);
+      result = FrameworkTraits<MOAB>::read(comm, fname, gm);
       break;
     case MSTK:
-      result = FrameworkTraits<MSTK>::read(comm, fname);
+      result = FrameworkTraits<MSTK>::read(comm, fname, gm);
       break;
     default:
       {
@@ -568,21 +588,22 @@ Teuchos::RCP<Mesh>
 framework_generate(Epetra_MpiComm& comm, const Framework& f, 
                    const double& x0, const double& y0, const double& z0,
                    const double& x1, const double& y1, const double& z1,
-                   const unsigned int& nx, const unsigned int& ny, const unsigned int& nz)
+                   const unsigned int& nx, const unsigned int& ny, const unsigned int& nz,
+                   const AmanziGeometry::GeometricModelPtr& gm)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
     case Simple:
-      result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+      result = FrameworkTraits<Simple>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
       break;
     case STKMESH:
-      result = FrameworkTraits<STKMESH>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+      result = FrameworkTraits<STKMESH>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
       break;
     case MOAB:
-      result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+      result = FrameworkTraits<MOAB>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
       break;
     case MSTK:
-      result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm);
+      result = FrameworkTraits<MSTK>::generate(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm);
       break;
     default:
       {
@@ -595,21 +616,23 @@ framework_generate(Epetra_MpiComm& comm, const Framework& f,
 }
 
 Teuchos::RCP<Mesh> 
-framework_generate(Epetra_MpiComm& comm, const Framework& f, Teuchos::ParameterList &parameter_list)
+framework_generate(Epetra_MpiComm& comm, const Framework& f, 
+                   Teuchos::ParameterList &parameter_list,
+                   const AmanziGeometry::GeometricModelPtr& gm)
 {
   Teuchos::RCP<Mesh> result;
   switch (f) {
     case Simple:
-      result = FrameworkTraits<Simple>::generate(parameter_list, comm);
+      result = FrameworkTraits<Simple>::generate(parameter_list, comm, gm);
       break;
     case STKMESH:
-      result = FrameworkTraits<STKMESH>::generate(parameter_list, comm);
+      result = FrameworkTraits<STKMESH>::generate(parameter_list, comm, gm);
       break;
     case MOAB:
-      result = FrameworkTraits<MOAB>::generate(parameter_list, comm);
+      result = FrameworkTraits<MOAB>::generate(parameter_list, comm, gm);
       break;
     case MSTK:
-      result = FrameworkTraits<MSTK>::generate(parameter_list, comm);
+      result = FrameworkTraits<MSTK>::generate(parameter_list, comm, gm);
       break;
     default:
       {
@@ -623,4 +646,4 @@ framework_generate(Epetra_MpiComm& comm, const Framework& f, Teuchos::ParameterL
 
 
 } // namespace AmanziMesh
-  } // namespace Amanzi
+} // namespace Amanzi

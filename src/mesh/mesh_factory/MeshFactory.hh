@@ -28,6 +28,8 @@
 #include "MeshFramework.hh"
 #include "Mesh.hh"
 
+#include "GeometricModel.hh"
+
 namespace Amanzi {
 namespace AmanziMesh {
 
@@ -64,35 +66,48 @@ class MeshFactory {
   void preference(const FrameworkPreference& pref);
 
   /// Create a mesh by reading the specified file (or set of files)
-  Teuchos::RCP<Mesh> create(const std::string& filename);
+  Teuchos::RCP<Mesh> create(const std::string& filename, 
+                            const AmanziGeometry::GeometricModelPtr &gm = 
+                            (AmanziGeometry::GeometricModelPtr) NULL);
 
 
   /// Create a hexahedral mesh of the specified dimensions
   Teuchos::RCP<Mesh> create(double x0, double y0, double z0,
                             double x1, double y1, double z1,
-                            int nx, int ny, int nz);
+                            int nx, int ny, int nz, 
+                            const AmanziGeometry::GeometricModelPtr &gm = 
+                            (AmanziGeometry::GeometricModelPtr) NULL);
+
     
   /// Create a hexahedral mesh using the specified parameter list
-  Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list);
+  Teuchos::RCP<Mesh> create(Teuchos::ParameterList &parameter_list, 
+                            const AmanziGeometry::GeometricModelPtr &gm = 
+                            (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Create a mesh by reading the specified file (or set of files) -- operator
-  Teuchos::RCP<Mesh> operator() (const std::string& filename)
+  Teuchos::RCP<Mesh> operator() (const std::string& filename, 
+                                 const AmanziGeometry::GeometricModelPtr &gm = 
+                                 (AmanziGeometry::GeometricModelPtr) NULL)
   {
-    return create(filename);
+    return create(filename, gm);
   }
   
   /// Create a hexahedral mesh of the specified dimensions -- operator
   Teuchos::RCP<Mesh> operator() (double x0, double y0, double z0,
                                  double x1, double y1, double z1,
-                                 int nx, int ny, int nz)
+                                 int nx, int ny, int nz, 
+                                 const AmanziGeometry::GeometricModelPtr &gm = 
+                                 (AmanziGeometry::GeometricModelPtr) NULL)
   { 
-    return create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+    return create(x0, y0, z0, x1, y1, z1, nx, ny, nz, gm);
   }
 
   /// Create a hexahedral mesh using the specified parameter list
-  Teuchos::RCP<Mesh> operator() (Teuchos::ParameterList &parameter_list)
+  Teuchos::RCP<Mesh> operator() (Teuchos::ParameterList &parameter_list, 
+                                 const AmanziGeometry::GeometricModelPtr &gm = 
+                                 (AmanziGeometry::GeometricModelPtr) NULL)
   {
-    return create(parameter_list);
+    return create(parameter_list, gm);
   }
 
 
