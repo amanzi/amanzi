@@ -20,7 +20,6 @@
 #include "Mesh_STK_Impl.hh"
 #include "HexMeshGenerator.hh"
 #include "Mesh_STK_factory.hh"
-#include "RectangularRegion.hh"
 #include "GenerationSpec.hh"
 
 namespace Amanzi {
