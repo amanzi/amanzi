@@ -1,0 +1,34 @@
+<ParameterList name="Regions">
+  <ParameterList name="Bottom Box">
+    <ParameterList name="Region: Box">
+      <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
+      <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.33}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Bottom+Middle Box">
+    <ParameterList name="Region: Box">
+      <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
+      <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.66}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Vertical Box">
+    <ParameterList name="Region: Box">
+      <Parameter name="Low Coordinate" type="Array double" value="{0.33,0.0,0.0}"/>
+      <Parameter name="High Coordinate" type="Array double" value="{0.66,1.0,1.0}"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- sidesets -->
+  <ParameterList name="ZLO FACE Plane">
+    <ParameterList name="Region: Plane">
+      <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
+      <Parameter name="Direction" type="Array double" value="{0.0,0.0,1.0}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="YLO FACE Box">
+    <ParameterList name="Region: Box">
+      <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.66}"/>
+      <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0,1.0}"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
