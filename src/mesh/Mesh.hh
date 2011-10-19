@@ -9,6 +9,9 @@
 #include "MeshDefs.hh"
 #include "Cell_topology.hh"
 #include "Point.hh"
+#include "GeometricModel.hh"
+#include "Region.hh"
+
 
 #include <map>
 
@@ -29,18 +32,19 @@ class Mesh
   mutable std::vector<double> cell_volumes, face_areas;
   mutable std::vector<AmanziGeometry::Point> cell_centroids,
     face_centroids, face_normals;
+  AmanziGeometry::GeometricModelPtr geometric_model_;
 
   Epetra_Comm *comm; // temporary until we get an amanzi communicator
 
  protected:
-  std::map<std::string,int> tmp_setnameid_map; // just for the demo
 
  public:
 
   // constructor
 
   Mesh()
-      : spacedim(3), celldim(3), geometry_precomputed(false), comm(NULL)
+    : spacedim(3), celldim(3), geometry_precomputed(false), comm(NULL),
+      geometric_model_(NULL)
   {
   }
 
@@ -70,9 +74,20 @@ class Mesh
     return celldim;
   }
 
+  inline
+  void set_geometric_model(const AmanziGeometry::GeometricModelPtr &gm) {
+    geometric_model_ = gm;
+  }
+
+  inline
+  AmanziGeometry::GeometricModelPtr geometric_model() const
+  {
+    return geometric_model_;
+  }
 
 
-  // Get parallel type of eneity
+
+  // Get parallel type of entity
 
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
@@ -351,39 +366,66 @@ class Mesh
 
 
   //
-  // Boundary Conditions or Sets
-  //----------------------------
+  // Mesh Sets for ICs, BCs, Material Properties and whatever else
+  //--------------------------------------------------------------
   //
 
   // Number of sets containing entities of type 'kind' in mesh
+  // 
+  // DEPRECATED due to ambiguity in determining what types of sets
+  // some regions are supposed to create (a planar region can 
+  // result in sidesets or nodesets
 
-  virtual
-  unsigned int num_sets(const Entity_kind kind) const = 0;
+  unsigned int num_sets(const Entity_kind kind) const;
 
 
   // Ids of sets containing entities of 'kind'
+  // 
+  // DEPRECATED due to ambiguity in determining what types of sets
+  // some regions are supposed to create (a planar region can 
+  // result in sidesets or nodesets
 
-  virtual
   void get_set_ids (const Entity_kind kind,
-                    Set_ID_List *setids) const = 0;
+                    Set_ID_List *setids) const;
+
+
 
 
   // Is this is a valid ID of a set containing entities of 'kind'
 
-  virtual
   bool valid_set_id (const Set_ID setid,
-                     const Entity_kind kind) const = 0;
+                     const Entity_kind kind) const;
+
+  // Is this is a valid ID of a set containing entities of 'kind'
+
+  bool valid_set_name (const std::string setname,
+                       const Entity_kind kind) const;
 
 
   // Get set ID from set name - returns 0 if no match is found
+  
+  unsigned int set_id_from_name(const std::string setname) const;
 
-  unsigned int set_id_from_name(const std::string setname);
+
+  // Get set name from set ID - returns 0 if no match is found
+  
+  std::string set_name_from_id(const int setid) const;
 
 
   // Get number of entities of type 'category' in set
 
   virtual
   unsigned int get_set_size (const Set_ID setid,
+                             const Entity_kind kind,
+                             const Parallel_type ptype) const = 0;
+
+  virtual
+  unsigned int get_set_size (const Set_Name setname,
+                             const Entity_kind kind,
+                             const Parallel_type ptype) const = 0;
+
+  virtual
+  unsigned int get_set_size (const char *setname,
                              const Entity_kind kind,
                              const Parallel_type ptype) const = 0;
 
@@ -396,6 +438,17 @@ class Mesh
                          const Parallel_type ptype,
                          Entity_ID_List *entids) const = 0;
 
+  virtual
+  void get_set_entities (const Set_Name setname,
+                         const Entity_kind kind,
+                         const Parallel_type ptype,
+                         Entity_ID_List *entids) const = 0;
+
+  virtual
+  void get_set_entities (const char *setname,
+                         const Entity_kind kind,
+                         const Parallel_type ptype,
+                         Entity_ID_List *entids) const = 0;
 
 
 
@@ -496,24 +549,6 @@ class Mesh
   unsigned int count_entities (Entity_kind kind,
                                Parallel_type ptype) const;
 
-  // Unchanged in new interface
-  // unsigned int num_sets(Entity_kind kind) const {};
-
-  // Unchanged in new interface
-  // unsigned int get_set_size (unsigned int set_id,
-  //                   Entity_kind kind,
-  //                   Parallel_type ptype) const {};
-
-  // Id numbers
-  void get_set_ids (Entity_kind kind,
-                    std::vector<unsigned int>::iterator begin,
-                    std::vector<unsigned int>::iterator end) const;
-  void get_set_ids (Entity_kind kind,
-                    unsigned int * begin,
-                    unsigned int * end) const;
-
-  // Unchanged in new interface
-  // bool valid_set_id (unsigned int id, Entity_kind kind) const {};
 
   void get_set (unsigned int set_id, Entity_kind kind,
                 Parallel_type ptype,
@@ -523,6 +558,15 @@ class Mesh
                 Parallel_type ptype,
                 unsigned int * begin,
                 unsigned int * end) const;
+
+  // Id numbers
+  // DEPRECATED - DO NOT USE
+  void get_set_ids (Entity_kind kind,
+                    std::vector<unsigned int>::iterator begin,
+                    std::vector<unsigned int>::iterator end) const;
+  void get_set_ids (Entity_kind kind,
+                    unsigned int * begin,
+                    unsigned int * end) const;
 
 }; // End class Mesh
 
