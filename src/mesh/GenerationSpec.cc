@@ -59,33 +59,38 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   z0 = parameter_list.get<double>("Z_Min");
   z1 = parameter_list.get<double>("Z_Max");
 
-  AmanziGeometry::Point p0(x0, y0, z0);
-  AmanziGeometry::Point p1(x1, y1, z1);
-  domain_.reset(new AmanziGeometry::RectangularRegion(p0, p1));
 
-  int nblk(0);
-  try {
-    nblk = parameter_list.get<int>("Number of mesh blocks");
-  } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
-    // this is OK, just eat the exception
-  }
+  // This part is encapsulated in geometric model
+  // The mesh specific mesh generation procedures will
+  // read the geometric model and create the necessary regions
+
+  //  AmanziGeometry::Point p0(x0, y0, z0);
+  //  AmanziGeometry::Point p1(x1, y1, z1);
+  //  domain_.reset(new AmanziGeometry::RectangularRegion(p0, p1));
+  //
+  //  int nblk(0);
+  //  try {
+  //    nblk = parameter_list.get<int>("Number of mesh blocks");
+  //  } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
+  //    // this is OK, just eat the exception
+  // }
   
-  if (nblk > 0) {
-    for (int nb = 1; nb <= nblk; nb++) {
-      std::stringstream s; 
-      s << "Mesh block " << nb;
+  // if (nblk > 0) {
+  //   for (int nb = 1; nb <= nblk; nb++) {
+  //     std::stringstream s; 
+  //     s << "Mesh block " << nb;
 
-      Teuchos::ParameterList sublist = parameter_list.sublist(s.str());
+  //     Teuchos::ParameterList sublist = parameter_list.sublist(s.str());
 
-      // tell the generator about the zone
+  //     // tell the generator about the zone
 
-      AmanziGeometry::Point p0(x0, y0, sublist.get<double>("Z0"));
-      AmanziGeometry::Point p1(x1, y1, sublist.get<double>("Z1"));
-      AmanziGeometry::RegionPtr r(new AmanziGeometry::RectangularRegion(p0, p1));
+  //     AmanziGeometry::Point p0(x0, y0, sublist.get<double>("Z0"));
+  //     AmanziGeometry::Point p1(x1, y1, sublist.get<double>("Z1"));
+  //     AmanziGeometry::RegionPtr r(new AmanziGeometry::RectangularRegion(p0, p1));
 
-      blocks_.push_back(r);
-    }
-  }
+  //     blocks_.push_back(r);
+  //   }
+  // }
 }
 
 } // end namespace AmanziMesh
