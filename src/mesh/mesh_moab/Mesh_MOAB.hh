@@ -18,6 +18,7 @@
 #include <Epetra_SerialComm.h>
 
 #include "Mesh.hh"
+#include "GeometricModel.hh"
 
 #include <memory>
 #include <vector>
@@ -149,7 +150,9 @@ class Mesh_MOAB : public Mesh
 
 public:
   
-  Mesh_MOAB (const char *filename, MPI_Comm comm);
+  Mesh_MOAB (const char *filename, MPI_Comm comm, 
+	     const AmanziGeometry::GeometricModelPtr& gm = 
+	     (AmanziGeometry::GeometricModelPtr) NULL);
   ~Mesh_MOAB();
   
   void update ();
@@ -377,9 +380,22 @@ public:
   bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
 
 
+  // Is this is a valid name of a set containing entities of 'kind'
+
+  bool valid_set_name (const Set_Name setname, const Entity_kind kind) const;
+
+
   // Get number of entities of type 'category' in set
 
   unsigned int get_set_size (const Set_ID setid, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
+  unsigned int get_set_size (const Set_Name setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
+  unsigned int get_set_size (const char *setname, 
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
@@ -390,6 +406,16 @@ public:
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 Entity_ID_List *entids) const;   
+
+  void get_set_entities (const Set_Name setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
+  void get_set_entities (const char *setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
 };
 
 } // close namespace AmanziMesh
