@@ -9,45 +9,25 @@
 **
 */
 
-
 #include <vector>
 
 #include "species.hh"
-#include "ion_exchange_site.hh"
 
 namespace amanzi {
 namespace chemistry {
 
-// forward declarations from chemistry
-class Block;
+typedef std::string IonxComplexName;
+typedef int IonxComplexId; 
 
-class IonExchangeComplex : Species {
+class IonExchangeComplex {
  public:
   IonExchangeComplex();
-  IonExchangeComplex(const SpeciesName name,
-                     const SpeciesId complex_id,
+  IonExchangeComplex(const IonxComplexName,
+                     const IonxComplexId complex_id,
                      const SpeciesName primary_name,
-                     const double primary_stoichiometry,
                      const SpeciesId primary_id,
-                     const SpeciesName exchange_site_name,
-                     const double exchange_site_stoichiometry,
-                     const SpeciesId exchange_site_id,
-                     const double h2o_stoich,
-                     const double log_Keq);
+                     const double K);
   virtual ~IonExchangeComplex();
-
-  // over ride Species.update()!
-  virtual void update(void);
-  virtual void update(const double molality);
-
-  // update molalities
-  virtual void Update(const std::vector<Species>primary_species,
-                      const std::vector<IonExchangeSite>exchange_sites);
-  // add stoichiometric contribution of complex to total
-  virtual void AddContributionToTotal(std::vector<double>* total);
-  // add derivative of total with respect to free-ion to dtotal
-  virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
-                                       Block* dtotal);
 
   void display(void) const;
   void Display(void) const;
@@ -55,55 +35,37 @@ class IonExchangeComplex : Species {
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
 
-  double complex_stoich_coeff(void) const {
-    return complex_stoich_coeff_;
+  std::string name(void) const {
+    return name_;
   };
-  SpeciesName primary_name(void) const {
+  std::string primary_name(void) const {
     return primary_name_;
   };
-  double primary_stoichiometry(void) const {
-    return primary_stoichiometry_;
-  };
-  SpeciesId primary_id(void) const {
+  int primary_id(void) const {
     return primary_id_;
   };
-
-  SpeciesName exchange_site_name(void) const {
-    return exchange_site_name_;
+  double K(void) const {
+    return K_;
   };
-  double exchange_site_stoichiometry(void) const {
-    return exchange_site_stoichiometry_;
+  double X(void) const {
+    return X_;
   };
-  SpeciesId exchange_site_id(void) const {
-    return exchange_site_id_;
-  };
-
-  double log_Keq(void) const {
-    return this->log_Keq_;
-  };
-  double ln_Keq(void) const {
-    return this->ln_Keq_;
+  double concentration(void) const {
+    return concentration_;
   };
 
- protected:
-  void set_ln_QKeq(double d) {
-    this->ln_QKeq_ = d;
-  };
+  void set_X(const double d) { X_ = d; };
+  void set_concentration(const double d) { concentration_ = d; };
 
  private:
-  double complex_stoich_coeff_;  // stoichiometric coefficient of this species!
+  IonxComplexName name_;
+  IonxComplexId id_;
   SpeciesName primary_name_;
-  double primary_stoichiometry_;
   SpeciesId primary_id_;
 
-  SpeciesName exchange_site_name_;
-  double exchange_site_stoichiometry_;
-  SpeciesId exchange_site_id_;
-
-  double h2o_stoich_;               // stoichiometry of water in equation
-  double log_Keq_;                  // log10 value of equlibrium constant
-  double ln_Keq_;                   // natural log value of equlibrium constant
-  double ln_QKeq_;                  // store lnQK for derivatives later
+  double concentration_;
+  double K_;
+  double X_;
 };
 
 }  // namespace chemistry

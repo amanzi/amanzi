@@ -17,6 +17,7 @@ set(SRCS
 	./beaker.cc 
 	./general_rxn.cc 
 	./ion_exchange_complex.cc 
+	./ion_exchange_rxn.cc 
 	./kinetic_rate.cc 
 	./kinetic_rate_tst.cc 
 	./mineral.cc 

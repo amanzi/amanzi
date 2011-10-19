@@ -1,12 +1,19 @@
+/*
+The transport component of the Amanzi code, serial unit tests.
+License: BSD
+Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-#include "UnitTest++.h"
 #include <vector>
 
-#include "MSTK_types.h"
+#include "UnitTest++.h"
 
+#include "MSTK_types.h"
 #include "Mesh_MSTK.hh"
+
 #include "State.hpp"
 #include "Transport_PK.hpp"
 
@@ -15,20 +22,20 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 
-
 TEST(ADVANCE_WITH_MSTK) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
+  using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "================ TEST ADVANCE WITH MSTK ===================" << endl;
+  std::cout << "=== TEST ADVANCE WITH MSTK ===" << endl;
   int num_components = 3;
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD));
 
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-  double u[3] = {1, 0, 0};
+  Point u(1.0, 0.0, 0.0);
 
   TS->analytic_darcy_flux(u);
   TS->analytic_porosity();

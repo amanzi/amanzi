@@ -371,8 +371,8 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
                                    field_local_min, 
                                    field_local_max, 
                                    limiter_);
-    lifting.applyLimiter(limiter_); 
- 
+    lifting.applyLimiter(limiter_);
+
     // ADVECTION FLUXES
     for (f=fmin; f<=fmax; f++) {  // loop over master and slave faces
       c1 = (*upwind_cell_)[f]; 

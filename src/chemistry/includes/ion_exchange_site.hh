@@ -12,44 +12,40 @@
 #include <string>
 #include <vector>
 
-#include "species.hh"
 #include "block.hh"
 
 namespace amanzi {
 namespace chemistry {
 
-class IonExchangeSite : public Species {
+typedef std::string IonxSiteName;
+typedef int IonxSiteId; 
+
+class IonExchangeSite {
  public:
   IonExchangeSite();
-  IonExchangeSite(const SpeciesName exchanger_name,
-                  const SpeciesId exchanger_id,
-                  const double exchanger_charge,
-                  const std::string exchanger_location,
-                  const double mol_wt,
-                  const double size);
-
+  IonExchangeSite(const IonxSiteName in_name);
   virtual ~IonExchangeSite();
 
-  virtual void update(void);
-  virtual void update(const double in_molality);
   virtual void Display(void) const;
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
 
   void set_cation_exchange_capacity(const double in_value) {
-    this->cation_exchange_capacity_ = in_value;
+    cation_exchange_capacity_ = in_value;
+  };
+  void set_name(const IonxSiteName in_name) {
+    name_ = in_name;
   };
   double cation_exchange_capacity(void) const {
-    return this->cation_exchange_capacity_;
+    return cation_exchange_capacity_;
   };
-
-  std::string location(void) const {
-    return this->location_;
+  IonxSiteName name(void) const {
+    return name_;
   };
 
  protected:
+  IonxSiteName name_;
   double cation_exchange_capacity_;  // units...
-  std::string location_;
 
  private:
 };

@@ -28,6 +28,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})
 
 # Need to move this to the root level -- lpritch
 add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")

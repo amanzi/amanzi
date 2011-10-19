@@ -52,7 +52,7 @@ add_install_include_file(${mesh_factory_inc_files})
 
 if (ENABLE_STK_Mesh)
     include_directories(${STK_INCLUDE_DIR} ${STK_SOURCE_DIR})
-    target_link_libraries(mesh_factory stk_mesh exodus mesh_data)
+    target_link_libraries(mesh_factory stk_mesh exodus_reader mesh_data)
     add_definitions("-DHAVE_STK_MESH")
 endif()
 
@@ -105,8 +105,8 @@ if (BUILD_TESTS)
      test/test_mesh_framework.cc
      test/test_mesh_factory.cc)
    target_link_libraries(test_mesh_factory mesh_factory ${UnitTest_LIBRARIES} ${Boost_LIBRARIES})
-   add_amanzi_test(mesh_factory test_mesh_factory KIND int)
-   add_amanzi_test(mesh_factory_parallel test_mesh_factory KIND int)
+   add_amanzi_test(mesh_factory test_mesh_factory KIND uint)
+   add_amanzi_test(mesh_factory_parallel test_mesh_factory KIND uint)
 
 endif()
    

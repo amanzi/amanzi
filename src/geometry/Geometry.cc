@@ -185,11 +185,11 @@ namespace Amanzi
 
 	  moment_1x += ( ((coords[i].x())*(coords[(i+1)%np].y()) - 
 			  (coords[(i+1)%np].x())*(coords[i].y())) *
-			 (coords[i].x()+coords[i+1].x()) );
+			 (coords[i].x()+coords[(i+1)%np].x()) );
 
 	  moment_1y += ( ((coords[i].x())*(coords[(i+1)%np].y()) - 
 			  (coords[(i+1)%np].x())*(coords[i].y())) *
-			 (coords[i].y()+coords[i+1].y()) );
+			 (coords[i].y()+coords[(i+1)%np].y()) );
 	}
 	    
 	(*area) /= 2;

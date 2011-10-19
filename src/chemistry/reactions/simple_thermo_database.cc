@@ -15,6 +15,7 @@
 #include "mineral.hh"
 #include "surface_site.hh"
 #include "surface_complex.hh"
+#include "ion_exchange_rxn.hh"
 #include "ion_exchange_site.hh"
 #include "ion_exchange_complex.hh"
 #include "sorption_isotherm_factory.hh"
@@ -140,7 +141,8 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
       // check for a hanging \r and remove it if it is there
       line.resize(line.size() - 1);
     }
-    char first = line[0];
+    char first = '\0';
+    if (line.length() > 0) first = line[0];
     if (first == '#' || first == '\0' || first == ' ') {
       line_type = kCommentLine;
     } else if (first == '<') {
@@ -553,13 +555,12 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
   no_spaces.tokenize(exchanger_data.at(2), space);
   std::string exchanger_location(no_spaces.at(0));
 
-  IonExchangeSite exchanger(exchanger_name, ion_exchange_site_id_++,
-                            exchanger_charge, exchanger_location,
-                            mol_wt, size);
+  IonExchangeSite exchanger(exchanger_name);
+  IonExchangeRxn ionx_rxn(exchanger);
 
-  this->AddIonExchangeSite(exchanger);
+  this->AddIonExchangeRxn(ionx_rxn);
   if (verbosity() == kDebugInputFile) {
-    exchanger.display();
+    exchanger.Display();
   }
 }  // end ParseIonExchangeSite()
 
@@ -588,38 +589,39 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
   }
   std::string semicolon(";");
   std::string space(" \t");
-  StringTokenizer no_spaces;
+  StringTokenizer tokenizer;
 
   StringTokenizer complex_data(data, semicolon);
 
-  std::string name;
-  SpeciesName primary_name;
-  double primary_stoichiometry;
-  SpeciesId primary_id;
-  SpeciesName exchange_site_name;
-  double exchange_site_stoichiometry;
-  SpeciesId exchange_site_id;
-  double h2o_stoich = 0;
-  std::string reaction(complex_data.at(0));
-  ParseIonExchangeReaction(reaction, &name,
-                           &primary_name, &primary_stoichiometry, &primary_id,
-                           &exchange_site_name, &exchange_site_stoichiometry, &exchange_site_id,
-                           &h2o_stoich);
+  tokenizer.tokenize(complex_data.at(0),"=");
+  std::string complex_name = tokenizer.at(0);
+  std::string products = tokenizer.at(1);
+  tokenizer.tokenize(products,space);
+  SpeciesName primary_name = tokenizer.at(1);
+  IonxSiteName site_name = tokenizer.at(3);
+  tokenizer.tokenize(complex_data.at(1), space);
+  double K(std::atof(tokenizer.at(0).c_str()));
 
-  no_spaces.tokenize(complex_data.at(1), space);
-  double logKeq(std::atof(no_spaces.at(0).c_str()));
+  int primary_id(-999);
+  for (unsigned int i = 0; i < primary_species().size(); ++i) {
+    if (primary_name == primary_species().at(i).name()) {
+      primary_id = i;
+      break;
+    }
+  }
 
-  IonExchangeComplex exchange_complex(name,
+  IonExchangeComplex exchange_complex(complex_name,
                                       ion_exchange_complex_id_++,
                                       primary_name,
-                                      primary_stoichiometry,
                                       primary_id,
-                                      exchange_site_name,
-                                      exchange_site_stoichiometry,
-                                      exchange_site_id,
-                                      h2o_stoich,
-                                      logKeq);
-  this->AddIonExchangeComplex(exchange_complex);
+                                      K);
+
+  for (unsigned int i = 0; i < ion_exchange_rxns().size(); i++) {
+    if (site_name == ion_exchange_rxns().at(i).site().name()) {
+      AddIonExchangeComplex(i,exchange_complex);
+      break;
+    }
+  }
 
   if (verbosity() == kDebugInputFile) {
     exchange_complex.display();
@@ -830,168 +832,12 @@ void SimpleThermoDatabase::ParseReaction(const std::string& reaction,
 void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
                                                     std::string* name,
                                                     SpeciesName* primary_name,
-                                                    double* primary_stoichiometry,
-                                                    SpeciesId* primary_id,
-                                                    SpeciesName* exchanger_name,
-                                                    double* exchanger_stoichiometry,
-                                                    SpeciesId* exchanger_id,
-                                                    double* h2o_stoich) {
+                                                    SpeciesId* primary_id) {
   if (verbosity() == kDebugInputFile) {
     std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
     std::cout << "      data: " << reaction << std::endl;
   }
-  std::string equal("=");
-  std::string space(" \t");
-  StringTokenizer no_spaces;
-  std::vector<Species> primary_species = this->primary_species();
-  std::vector<IonExchangeSite> ion_exchange_sites = this->ion_exchange_sites();
 
-  StringTokenizer list(reaction, equal);
-  no_spaces.tokenize(list.at(0), space);
-  *name = no_spaces.at(0);
-  // std::cout << "  name: " << *name << std::endl;
-
-  StringTokenizer products(list.at(1), space);
-
-  for (StringTokenizer::iterator search_species = products.begin();
-       search_species != products.end(); search_species++) {
-    double coeff = std::atof(search_species->c_str());
-    search_species++;
-    std::string search_name(*search_species);
-    // std::cout << "  " << coeff << " " << search_name << std::endl;
-
-    if (search_name == "H2O") {
-      *h2o_stoich = coeff;
-      // std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
-    } else {
-      // check to see if we have a primary species
-      int id = -1;
-      for (SpeciesArray::const_iterator primary = primary_species.begin();
-           primary != primary_species.end(); primary++) {
-        // std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
-        if (primary->name() == search_name) {
-          id = primary->identifier();
-          primary = primary_species.end() - 1;
-        }
-      }
-      if (id >= 0) {
-        // matched a primary species
-        *primary_name = search_name;
-        *primary_stoichiometry = coeff;
-        *primary_id = id;
-      } else if (id < 0) {
-        // did not match a primary. check to see if it is an ion exchange site
-        for (std::vector<IonExchangeSite>::const_iterator exchanger = ion_exchange_sites.begin();
-             exchanger != ion_exchange_sites.end(); exchanger++) {
-          if (exchanger->name() == search_name) {
-            id = exchanger->identifier();
-            exchanger = ion_exchange_sites.end() - 1;
-          }
-        }
-        if (id >= 0) {
-          // matched an exchange site
-          *exchanger_name = search_name;
-          *exchanger_stoichiometry = coeff;
-          *exchanger_id = id;
-        }
-      } else {
-        // did not match an exchange site or primary species
-        std::cout << "SimpleThermoDatabase::ParseIonExchangeReaction(): reaction species \'"
-                  << search_name << "\' was not found in the primary species "
-                  << "list or the ion exchange site list...."
-                  << std::endl;
-      }  // else unknown species
-    }  // else not water
-  }  // end for(search_species)
-}  // end ParseIonExchangeReaction()
-
-/*******************************************************************************
- **
- **  parse ion exchange reaction, reaction products are an array of
- **  primary species and an array of exchange sites. The order of
- **  primary species and exchange sites does not matter.
- **
- **  Fields:
- **
- **  SpeciesName = coeff PrimaryName coeff IonExchangeSite ...
- **
- *******************************************************************************/
-void SimpleThermoDatabase::ParseIonExchangeReaction(const std::string& reaction,
-                                                    std::string* name,
-                                                    std::vector<SpeciesName>* primaries,
-                                                    std::vector<double>* primary_stoichiometries,
-                                                    std::vector<SpeciesId>* primary_ids,
-                                                    std::vector<SpeciesName>* exchange_sites,
-                                                    std::vector<double>* exchanger_stoichiometries,
-                                                    std::vector<SpeciesId>* exchanger_ids,
-                                                    double* h2o_stoich) {
-  if (verbosity() == kDebugInputFile) {
-    std::cout << "    SimpleThermoDatabase::ParseReaction()...." << std::endl;
-    std::cout << "      data: " << reaction << std::endl;
-  }
-  std::string equal("=");
-  std::string space(" \t");
-  StringTokenizer no_spaces;
-  std::vector<Species> primary_species = this->primary_species();
-  std::vector<IonExchangeSite> ion_exchange_sites = this->ion_exchange_sites();
-
-  StringTokenizer list(reaction, equal);
-  no_spaces.tokenize(list.at(0), space);
-  *name = no_spaces.at(0);
-  // std::cout << "  name: " << *name << std::endl;
-
-  StringTokenizer products(list.at(1), space);
-
-  for (StringTokenizer::iterator search_species = products.begin();
-       search_species != products.end(); search_species++) {
-    double coeff = std::atof(search_species->c_str());
-    search_species++;
-    std::string search_name(*search_species);
-    // std::cout << "  " << coeff << " " << search_name << std::endl;
-
-    if (search_name == "H2O") {
-      *h2o_stoich = coeff;
-      // std::cout << "  " << *h2o_stoich << " H2O" << std::endl;
-    } else {
-      // check to see if we have a primary species
-      int id = -1;
-      for (SpeciesArray::const_iterator primary = primary_species.begin();
-           primary != primary_species.end(); primary++) {
-        // std::cout << "    " << primary->name() << "  ??  " << search_name << std::endl;
-        if (primary->name() == search_name) {
-          id = primary->identifier();
-          primary = primary_species.end() - 1;
-        }
-      }
-      if (id >= 0) {
-        // matched a primary species
-        primaries->push_back(search_name);
-        primary_stoichiometries->push_back(coeff);
-        primary_ids->push_back(id);
-      } else if (id < 0) {
-        // did not match a primary. check to see if it is an ion exchange site
-        for (std::vector<IonExchangeSite>::const_iterator exchanger = ion_exchange_sites.begin();
-             exchanger != ion_exchange_sites.end(); exchanger++) {
-          if (exchanger->name() == search_name) {
-            id = exchanger->identifier();
-            exchanger = ion_exchange_sites.end() - 1;
-          }
-        }
-        if (id >= 0) {
-          // matched an exchange site
-          exchange_sites->push_back(search_name);
-          exchanger_stoichiometries->push_back(coeff);
-          exchanger_ids->push_back(id);
-        }
-      } else {
-        // did not match an exchange site or primary species
-        std::cout << "SimpleThermoDatabase::ParseIonExchangeReaction(): reaction species \'"
-                  << search_name << "\' was not found in the primary species "
-                  << "list or the ion exchange site list...."
-                  << std::endl;
-      }  // else unknown species
-    }  // else not water
-  }  // end for(search_species)
 }  // end ParseIonExchangeReaction()
 
 /*******************************************************************************

@@ -77,7 +77,7 @@ if (BUILD_TESTS)
      
     # Test: stk_mesh_read (serial and parallel)
     add_executable(test_stk_mesh_read test/Main.cc test/test_Read.cc)
-    target_link_libraries(test_stk_mesh_read exodus stk_mesh mesh_audit ${UnitTest_LIBRARIES})
+    target_link_libraries(test_stk_mesh_read exodus_reader stk_mesh mesh_audit ${UnitTest_LIBRARIES})
     add_amanzi_test(stk_mesh_read test_stk_mesh_read KIND int)
     add_amanzi_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4 KIND int)
 

@@ -2,7 +2,7 @@
 /**
  * @file   test_mesh_framework.cc
  * @author William A. Perkins
- * @date Tue May 17 11:51:39 2011
+ * @date Tue Oct  4 06:15:36 2011
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Tue May 17 11:51:39 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Oct  4 06:15:36 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <iostream>
@@ -93,7 +93,7 @@ SUITE (Framework)
     CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::Nemesis, parallel));
     CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::Simple, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
-    CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::ExodusII, parallel));
+    CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::ExodusII, parallel));
     CHECK(!Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::Nemesis, parallel));
     CHECK(Amanzi::AmanziMesh::framework_reads(Amanzi::AmanziMesh::MOAB, Amanzi::AmanziMesh::MOABHDF5, parallel));
 
