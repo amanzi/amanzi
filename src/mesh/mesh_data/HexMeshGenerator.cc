@@ -31,6 +31,8 @@ const unsigned int HexMeshGenerator::nvcell(8);
 // -------------------------------------------------------------
 /** 
  * All the constructor does is decide how many cells each process owns
+ *
+ * Also, initializes the blocks from the geometric model regions
  * 
  * @param comm parallel environment
  * @param ni number of cells in the i-direction
@@ -89,8 +91,7 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
   // Put the default block in the block list
 
   Block b;
-  b.id = 0;
-  b.region.reset();             // empty region
+  b.region = NULL;
   blocks_.push_back(b);
 }
 
@@ -205,35 +206,6 @@ HexMeshGenerator::global_rcell(const unsigned int& index,
 }  
 
 // -------------------------------------------------------------
-// HexMeshGenerator::add_region
-// -------------------------------------------------------------
-void
-HexMeshGenerator::add_region(const int& id, 
-                             const std::string& name, 
-                             const AmanziGeometry::RegionPtr r)
-{
-  if (id == 0) {
-    std::string msg =
-        boost::str(boost::format("HexMeshGenerator: cannot use %d for region id") % id);
-    Exceptions::amanzi_throw(msg);
-  }
-  for (std::vector<Block>::const_iterator b = blocks_.begin();
-       b != blocks_.end(); ++b) {
-    if (id == b->id) {
-      std::string msg =
-        boost::str(boost::format("HexMeshGenerator: %d: region id already used") % id);
-      Exceptions::amanzi_throw(msg);
-    }
-  }
-
-  Block b;
-  b.id = id;
-  b.name = name;
-  b.region = r;
-  blocks_.push_back(b);
-}
-
-// -------------------------------------------------------------
 // HexMeshGenerator::generate_the_elements
 // -------------------------------------------------------------
 /** 
@@ -289,8 +261,8 @@ HexMeshGenerator::generate_the_elements_(void)
     
     std::vector<Block>::iterator r;
     for (r = blocks_.begin(); r != blocks_.end(); ++r) {
-      if (!r->region.is_null()) {
-        int id = r->id;
+      if (r->region) {
+        int id = r->region->id();
         if (r->region->inside(p)) {
           break;
         }
@@ -352,15 +324,7 @@ HexMeshGenerator::generate_the_elements_(void)
 // -------------------------------------------------------------
 
 /** 
- * Cell indexes are 0-based and local.  Side indexes are 0-based:
- * 
- *  - West = side 4 (i = 0)
- *  - East = side 2
- *  - South = side 1 (j = 0)
- *  - North = side 3
- *  - Bottom = side 0 (k = 0)
- *  - Top = side 5
- * 
+    Now these will be generated on demand based on the input specification
  * @return 
  */
 std::vector<Side_set *>
@@ -368,74 +332,6 @@ HexMeshGenerator::generate_the_sidesets(void)
 {
   std::map<unsigned int, bool> mine;
   std::vector<Side_set *> result;
-
-  static const int SIX(6);
-  for (int side = 0; side < SIX; side++) {
-    int imin(0), imax(ni_);
-    int jmin(0), jmax(nj_);
-    int kmin(0), kmax(nk_);
-
-    std::string ssname("Bogus");
-
-    // these sides match the sides in shards::Hexahedron<8>:
-    
-    int ssid(-1);
-    switch (side) {
-    case (3):
-      ssname = "Bottom";
-      kmax = 1;
-      ssid = 4;
-      break;
-    case (2):
-      ssname = "East";
-      imin = imax - 1;
-      ssid = 1;
-      break;
-    case (1):
-      ssname = "Top";
-      kmin = kmax - 1;
-      ssid = 5;
-      break;
-    case (0):
-      ssname = "West";
-      imax = 1;
-      ssid = 3;
-      break;
-    case (4):
-      ssname = "South";
-      jmax = 1;
-      ssid = 0;
-      break;
-    case (5):
-      ssname = "North";
-      jmin = jmax - 1;
-      ssid = 2;
-      break;
-    }
-
-    std::vector<int> clist;
-    std::vector<int> slist;
-
-    for (unsigned int i = imin; i < imax; i++) {
-      for (unsigned int j = jmin; j < jmax; j++) {
-        for (unsigned int k = kmin; k < kmax; k++) {
-          unsigned cellidx(global_cell(i, j, k));
-          if (cell_idxmap_.find(cellidx) != cell_idxmap_.end()) {
-            clist.push_back(cell_idxmap_[cellidx]);
-            slist.push_back(side);
-            // std::cerr << 
-            //   boost::str(boost::format("%02d: Side set %2d: %5d (%5d) %2d") % 
-            //              comm_->MyPID() % ssid % cellidx % cell_idxmap_[cellidx] % side)
-            //           << std::endl;
-                         
-          }
-        }
-      }
-    }
-
-    Side_set* ss = Side_set::build_from(ssid, clist, slist, ssname);
-    result.push_back(ss);
-  }
 
   // Note: result contains pointers to allocate memory that must be
   // deleted elsewhere
@@ -489,51 +385,21 @@ HexMeshGenerator::generate(void)
 
   generate_the_elements_();
 
+
   std::vector<Element_block *> tmpe; 
   std::vector<int> blkids;
-  for (std::vector<Block>::iterator b = blocks_.begin();
-       b != blocks_.end(); ++b) {
-    Element_block *blk;
+  
+  // Cell sets will be generated on demand at the Mesh_STK level based
+  // on the input spec. Nothing to do here
 
-    // names need to be unique
-    std::string name(b->name);
-    if (name.empty()) {
-      name = 
-        boost::str(boost::format("Generated Elements Block %d") % b->id);
-    }
-    blk = Element_block::build_from(b->id, name, 
-                                    static_cast<int>(b->gidx.size()), HEX,
-                                    b->connectivity,
-                                    attribute);
-    tmpe.push_back(blk);
-    blkids.push_back(b->id);
-  }
-  attribute.clear();
-
-  // Build a list of nodes for the node set.  All nodes involved in
-  // this process's cells are included.
+  // Node sets will be generated on demand at the Mesh_STK level based
+  // on the input spec. Nothing to do here
 
   Node_set *nodes;
-  { 
-    // Just to be safe, put this in a block, so nodelist is not
-    // used after it's destroyed by Node_set::build_from()
 
-    std::vector<int> nodelist(vertex_gidx_.size());
-    {
-      int i(0);
-      for (std::vector<int>::iterator n = nodelist.begin();
-           n != nodelist.end(); n++, i++) *n = i;
-    }
-
-    // the temporary string seems necessary for some reason
-
-    attribute.clear();
-    std::string n("Generated Nodes");
-    nodes = Node_set::build_from(0, nodelist, attribute, n);
-    attribute.clear();
-  }
-
-  // generate side sets
+  // generate side sets. This is also a dummy call since the side sets
+  // will be generated on demand at the Mesh_STK level based on the
+  // input spec
 
   std::vector<Side_set *> side_sets(generate_the_sidesets());
   std::vector<int> ssids(side_sets.size());
@@ -555,7 +421,7 @@ HexMeshGenerator::generate(void)
   // finally assemble the mesh data
 
   std::vector<Node_set *> tmpn;
-  tmpn.push_back(nodes);
+  // FIXME: delete  tmpn.push_back(nodes);
 
   Data *result = Data::build_from(params, coords, tmpe, side_sets, tmpn);
 
