@@ -85,6 +85,9 @@ add_definitions("-DUSE_MPI")
 
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 add_library(udriv amanzi_unstructured_grid_simulation_driver.cpp)
+target_link_libraries(udriv ${Epetra_LIBRARIES} 
+                            ${Teuchos_LIBRARIES}
+                            mesh state mpc error_handling)
 add_install_library(udriv)
 
 #
