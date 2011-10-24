@@ -41,6 +41,7 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 add_library(transport Transport_PK.cpp Transport_State.cpp Transport_VandV.cpp Reconstruction.cpp)
 target_link_libraries(transport geometry mesh mesh_data error_handling state ${Epetra_LIBRARIES})
+add_install_library(transport)
 #
 # Install Targets
 #
