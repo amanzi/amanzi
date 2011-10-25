@@ -39,7 +39,7 @@ add_library(time_integration ${time_integration_source_files})
 add_install_library(time_integration)
 set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES time_integration_tpl_libs)
-target_link_libraries(time_integration error_handling flow ${time_integration_tpl_libs})
+target_link_libraries(time_integration error_handling solvers flow ${time_integration_tpl_libs})
 
 #
 # Install Targets
