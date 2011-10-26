@@ -18,12 +18,11 @@ set(CURL_install_dir "${CMAKE_BINARY_DIR}/external-projects/curl")
 set(CURL_target curl)
 
 # Add the external project and tie to curl target
-ExternalProject_Add(
-    ${CURL_target}
+ExternalProject_Add(${CURL_target}
     SOURCE_DIR ${CURL_source_dir}
     BINARY_DIR ${CURL_binary_dir}
     INSTALL_DIR ${CURL_install_dir}
-    URL ${CURL_DOWNLOAD_LOCATION}/${CURL_ARCHIVE_FILE}
+    URL ${CURL_URL_STRING}/${CURL_ARCHIVE_FILE}
     URL_MD5 ${CURL_MD5_SUM}
     CONFIGURE_COMMAND
                    <SOURCE_DIR>/configure --prefix=<INSTALL_DIR> --enable-static
