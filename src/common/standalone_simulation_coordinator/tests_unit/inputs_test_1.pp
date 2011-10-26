@@ -16,65 +16,48 @@ geometry.is_periodic = 0  0
 # Define regions
 geometry.region = left_region right_region obs_region
 
-geometry.left_region
-{
-  purpose = 0
-  type = 1
-  param = 0. 0. 4. 8.
-}
+geometry.left_region.purpose = 0
+geometry.left_region.type = 1
+geometry.left_region.param = 0. 0. 4. 8.
 
-geometry.right_region
-{
-  purpose = 0
-  type = 1
-  param = 4. 0. 8. 8.
-}
+geometry.right_region.purpose = 0
+geometry.right_region.type = 1
+geometry.right_region.param = 4. 0. 8. 8.
 
-geometry.obs_region
-{
-  purpose = 0
-  type = 1
-  param = 0. 0. 2. 8.
-}
+geometry.obs_region.purpose = 0
+geometry.obs_region.type = 1
+geometry.obs_region.param = 0. 0. 2. 8.
 
 # Rock
 # ----
 rock.rock = left right
-rock.left
-{
-  density      = 2.8e3
-  porosity     = 0.258
-  permeability = 336 336
-  kr_type      = 3
-  kr_param     = 0.4203 0.081 0
-  cpl_type     = 3
-  cpl_param    = 0.4203 17.329 0.081 0
-}
-rock.right
-{
-  density      = 2.8e3
-  porosity     = 0.422
-  permeability = 2294 2294
-  kr_type      = 3
-  kr_param     = 0.6011 0.081 0
-  cpl_type     = 3
-  cpl_param    = 0.6011 21.41 0.081 0
-}
+
+rock.left.density      = 2.8e3
+rock.left.porosity     = 0.258
+rock.left.permeability = 336 336
+rock.left.kr_type      = 3
+rock.left.kr_param     = 0.4203 0.081 0
+rock.left.cpl_type     = 3
+rock.left.cpl_param    = 0.4203 17.329 0.081 0
+
+rock.right.density      = 2.8e3
+rock.right.porosity     = 0.422
+rock.right.permeability = 2294 2294
+rock.right.kr_type      = 3
+rock.right.kr_param     = 0.6011 0.081 0
+rock.right.cpl_type     = 3
+rock.right.cpl_param    = 0.6011 21.41 0.081 0
 
 # assign rock properties to region
 rock.assign = left_region right_region
-rock.left_region
-{
-  type  = left
-  phi   = 1
-  kappa = 1
-}
-rock.right_region
-{
-  type  = right
-  phi   = 1
-  kappa = 1
-}
+
+rock.left_region.type  = left
+rock.left_region.phi   = 1
+rock.left_region.kappa = 1
+
+rock.right_region.type  = right
+rock.right_region.phi   = 1
+rock.right_region.kappa = 1
 
 # save the generated map of the permeability and porosity
 rock.permeability_file = test_1/kp
@@ -85,41 +68,34 @@ rock.porosity_file     = test_1/pp
 phase.phase  = Liquid Gas
 # water must come before air for now.
 comp.comp = Water Air
-comp.Water
-{
-  phase       = Liquid
-  density     = 1.0e3
-  viscosity   = 1.0
-  diffusivity = 0.0
-}
-comp.Air
-{
-  phase       = Gas
-  density     = 1.2
-  viscosity   = 0.018
-  diffusivity = 0.0
-}
+
+comp.Water.phase       = Liquid
+comp.Water.density     = 1.0e3
+comp.Water.viscosity   = 1.0
+comp.Water.diffusivity = 0.0
+
+comp.Air.phase       = Gas
+comp.Air.density     = 1.2
+comp.Air.viscosity   = 0.018
+comp.Air.diffusivity = 0.0
+
 comp.dominant = Air
 comp.lo_bc = 1 4 
 comp.hi_bc = 2 4
 
 # initialization of component
 comp.init = ALL
-comp.ALL
-{
-   type  = scalar
-   Water = 400
-   Air   = 0.72
-}
+
+comp.ALL.type  = scalar
+comp.ALL.Water = 400
+comp.ALL.Air   = 0.72
 
 # boundary condition
 comp.inflow = XLOBC 
-comp.XLOBC
-{
-   type  = scalar
-   Water = 900
-   Air   = 0.12
-}
+
+comp.XLOBC.type  = scalar
+comp.XLOBC.Water = 900
+comp.XLOBC.Air   = 0.12
 
 # tracer
 # ------
@@ -152,14 +128,12 @@ source.do_source = 0
 observation.nobs = 1
 observation.observation = output1
 observation.output_file = test_1/obs.out
-observation.output1
-{
-  var_type  = comp
-  var_id    = Air
-  region    = obs_region
-  obs_type  = integral
-  times     = 1000
-}
+
+observation.output1.var_type  = comp
+observation.output1.var_id    = Air
+observation.output1.region    = obs_region
+observation.output1.obs_type  = integral
+observation.output1.times     = 1000
 
 # flow related
 prob.have_capillary = 0

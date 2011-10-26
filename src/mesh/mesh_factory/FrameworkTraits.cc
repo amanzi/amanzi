@@ -1,8 +1,9 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
  * @file   FrameworkTraits.cc
  * @author William A. Perkins
- * @date Thu May 19 07:16:00 2011
+ * @date Tue Oct  4 06:14:05 2011
  * 
  * @brief  
  * 
@@ -11,7 +12,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 14, 2011 by William A. Perkins
-// Last Change: Thu May 19 07:16:00 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Tue Oct  4 06:14:05 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #include <boost/format.hpp>
@@ -25,6 +26,7 @@
 namespace mpl = boost::mpl;
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 // How stupid is this? MOAB mesh stuff evidently cannot be included
 // before Epetra_MpiComm.h
@@ -43,6 +45,7 @@ namespace mpl = boost::mpl;
 #include "MeshFileType.hh"
 #include "MeshException.hh"
 #include "Mesh.hh"
+#include "GenerationSpec.hh"
 
 // -------------------------------------------------------------
 //  class bogus_maps
@@ -73,6 +76,13 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
 	     double x1, double y1, double z1,
 	     int nx, int ny, int nz, 
 	     Epetra_MpiComm *communicator)
+      : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
+  {
+    Exceptions::amanzi_throw(Errors::Message("generation not supported"));
+  }
+
+  bogus_maps(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
+             Epetra_MpiComm *communicator)
       : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("generation not supported"));
@@ -273,7 +283,7 @@ namespace AmanziMesh {
 // -------------------------------------------------------------
 template < int M = 0 > 
 struct FrameworkTraits {
-    
+  
   // a type that's used to see if a the specified mesh framework (M)
   // is available
   typedef mpl::bool_<
@@ -283,105 +293,113 @@ struct FrameworkTraits {
     ( M == MSTK && MSTK_FLAG ) 
     > available;
   
-// this defines a type, there constructor of which is used to
-// instantiate a mesh when it's generated
-typedef mpl::eval_if<
-  mpl::bool_<M == Simple>
-  , mpl::identity<Mesh_simple>
-  , mpl::eval_if<
-      mpl::bool_<M == STKMESH>
-      , mpl::identity<Mesh_STK>
-      , mpl::identity<bogus_maps>
-      >
-  > generate_maps;
+  // this defines a type, there constructor of which is used to
+  // instantiate a mesh when it's generated
+  typedef mpl::eval_if<
+    mpl::bool_<M == Simple>
+    , mpl::identity<Mesh_simple>
+    , mpl::eval_if<
+        mpl::bool_<M == STKMESH>
+        , mpl::identity<Mesh_STK>
+        , mpl::identity<bogus_maps>
+        >
+    > generate_maps;
+
+  // this defines a type, there constructor of which is used to
+  // instantiate a mesh when it's read from a file or file set
+  typedef mpl::eval_if<
+    mpl::bool_<M == MOAB>
+    , mpl::identity<Mesh_MOAB>
+    , mpl::eval_if<
+        mpl::bool_<M == STKMESH>
+        , mpl::identity<Mesh_STK>
+        , mpl::eval_if<
+            mpl::bool_<M == MSTK>
+            , mpl::identity<Mesh_MSTK>
+            , mpl::identity<bogus_maps>
+            >
+        >
+    > read_maps;
     
-// this defines a type, there constructor of which is used to
-// instantiate a mesh when it's read from a file or file set
-typedef mpl::eval_if<
-  mpl::bool_<M == MOAB>
-  , mpl::identity<Mesh_MOAB>
-  , mpl::eval_if<
-      mpl::bool_<M == STKMESH>
-      , mpl::identity<Mesh_STK>
+    
+  // -------------------------------------------------------------
+  // FrameworkTraits<M>::canread
+  // -------------------------------------------------------------
+  /// A type to indicate whether this framework can mesh of a specific format
+
+  template < int FMT = 0 > 
+  struct canread {
+
+    struct parallel :
+        mpl::eval_if<
+      mpl::bool_< M == MOAB >
+      , mpl::bool_< FMT == MOABHDF5 >
       , mpl::eval_if<
-          mpl::bool_<M == MSTK>
-          , mpl::identity<Mesh_MSTK>
-          , mpl::identity<bogus_maps>
+          mpl::bool_< M == STKMESH >
+          , mpl::bool_< FMT == Nemesis >
+          , mpl::eval_if<
+              mpl::bool_< M == MSTK >
+              , mpl::bool_< FMT == ExodusII >
+              , mpl::false_
+              >
           >
-      >
-  > read_maps;
-    
-    
-// -------------------------------------------------------------
-// FrameworkTraits<M>::canread
-// -------------------------------------------------------------
-/// A type to indicate whether this framework can mesh of a specific format
-// FIXME: Doesn't MOAB read exodus files
-template < int FMT = 0 > 
-struct canread {
+      >::type {};
 
-  struct parallel :
-      mpl::eval_if<
-    mpl::bool_< M == MOAB >
-    , mpl::bool_< FMT == MOABHDF5 >
-    , mpl::eval_if<
-        mpl::bool_< M == STKMESH >
-        , mpl::bool_< FMT == Nemesis >
-        , mpl::eval_if<
-            mpl::bool_< M == MSTK >
-            , mpl::bool_< FMT == ExodusII >
-            , mpl::false_
-            >
-        >
-    >::type {};
+    struct serial :
+        mpl::eval_if<
+      mpl::bool_< M == MOAB >
+      , mpl::bool_< FMT == ExodusII || FMT == MOABHDF5 >
+      , mpl::eval_if<
+          mpl::bool_< M == STKMESH >
+          , mpl::bool_< FMT == ExodusII >
+          , mpl::eval_if<
+              mpl::bool_< M == MSTK >
+              , mpl::bool_< FMT == ExodusII >
+              , mpl::false_
+              >
+          >
+      >::type {};
+  };
 
-  struct serial :
-      mpl::eval_if<
-    mpl::bool_< M == MOAB >
-    , mpl::bool_< FMT == MOABHDF5 >
-    , mpl::eval_if<
-        mpl::bool_< M == STKMESH >
-        , mpl::bool_< FMT == ExodusII >
-        , mpl::eval_if<
-            mpl::bool_< M == MSTK >
-            , mpl::bool_< FMT == ExodusII >
-            , mpl::false_
-            >
-        >
-    >::type {};
-};
+  /// Construct a mesh from a Exodus II file or file set
+  static Teuchos::RCP<Mesh>
+  read(Epetra_MpiComm& comm, const std::string& fname)
+  {
+    Teuchos::RCP<Mesh> 
+        result(new typename read_maps::type(fname.c_str(), comm.Comm()));
+    return result;
+  }
 
-/// Construct a mesh from a Exodus II file or file set
-static Teuchos::RCP<Mesh>
-read(Epetra_MpiComm& comm, const std::string& fname)
-{
-  Teuchos::RCP<Mesh> 
-      result(new typename read_maps::type(fname.c_str(), comm.Comm()));
-  return result;
-}
+  /// A type to indicate whether this framework can generate meshes
+  struct cangenerate {
+    struct parallel : 
+        mpl::bool_< M == STKMESH >::type
+    {};
+    struct serial :
+        mpl::bool_<M == Simple || M == STKMESH >::type
+    {};
+  };
 
-/// A type to indicate whether this framework can generate meshes
-struct cangenerate {
-  struct parallel : 
-      mpl::bool_< M == STKMESH >::type
-  {};
-  struct serial :
-      mpl::bool_<M == Simple || M == STKMESH >::type
-  {};
-};
+  /// Generate a hex mesh 
+  static Teuchos::RCP<Mesh>
+  generate(const double& x0, const double& y0, const double& z0,
+           const double& x1, const double& y1, const double& z1,
+           const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
+           Epetra_MpiComm& comm)
+  {
+    Teuchos::RCP<Mesh> 
+        result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm));
+    return result;
+  }
 
-/// Generate a hex mesh 
-static Teuchos::RCP<Mesh>
-generate(const double& x0, const double& y0, const double& z0,
-         const double& x1, const double& y1, const double& z1,
-         const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
-         Epetra_MpiComm& comm)
-{
-  Teuchos::RCP<Mesh> 
-      result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm));
-  return result;
-}
-
+  static Teuchos::RCP<Mesh>
+  generate(Teuchos::ParameterList &parameter_list, Epetra_MpiComm& comm)
+  {
+    GenerationSpec gspec(parameter_list);
+    Teuchos::RCP<Mesh> 
+        result(new typename generate_maps::type(gspec, &comm));
+    return result;
+  }
 };
 
 // -------------------------------------------------------------
@@ -544,7 +562,7 @@ framework_generates(const Framework& f, const bool& parallel)
 }
 
 // -------------------------------------------------------------
-// framework_generates
+// framework_generate
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
 framework_generate(Epetra_MpiComm& comm, const Framework& f, 
@@ -576,6 +594,33 @@ framework_generate(Epetra_MpiComm& comm, const Framework& f,
   return result;
 }
 
+Teuchos::RCP<Mesh> 
+framework_generate(Epetra_MpiComm& comm, const Framework& f, Teuchos::ParameterList &parameter_list)
+{
+  Teuchos::RCP<Mesh> result;
+  switch (f) {
+    case Simple:
+      result = FrameworkTraits<Simple>::generate(parameter_list, comm);
+      break;
+    case STKMESH:
+      result = FrameworkTraits<STKMESH>::generate(parameter_list, comm);
+      break;
+    case MOAB:
+      result = FrameworkTraits<MOAB>::generate(parameter_list, comm);
+      break;
+    case MSTK:
+      result = FrameworkTraits<MSTK>::generate(parameter_list, comm);
+      break;
+    default:
+      {
+        std::string msg = 
+            boost::str(boost::format("unknown mesh framework: %d") % static_cast<int>(f));
+        Exceptions::amanzi_throw(Errors::Message(msg.c_str()));
+      }
+  }
+  return result;
+}
+
 
 } // namespace AmanziMesh
-} // namespace Amanzi
+  } // namespace Amanzi

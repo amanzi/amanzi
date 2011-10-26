@@ -88,6 +88,13 @@ HDF5:
         :Dependencies: zlib
         :Information: http://www.hdfgroup.org/HDF5/
 
+ASCEM-IO:
+        :Versions: 1.1p 
+        :Description: Parallel IO load balance libary
+        :Role: Used by Amanzi output of problem data and restarts.
+        :Dependencies: HDF5, MPI
+        :Information: http://ascem-io.secure-water.org
+
 
 netCDF:
         :Versions: 4.1.1
@@ -117,6 +124,13 @@ Trilinos:
 
         :Dependencies: ExodusII, (if STKmesh used) CMake, MPI
         :Information: http://trilinos.sandia.gov/
+
+CCSE:
+        :Version: 0.1.2
+        :Description: Base library for structured-mesh objects
+        :Role: Used by Amanzi to implement structured-grid adaptive integrator
+        :Dependencies: MPI, OpenMPI (if enabled)
+        :Information: https://ccse.lbl.gov/Software/ccse_core.html
 
 
 Required Software Tools
@@ -167,19 +181,11 @@ MSTK:
         :Dependencies: ExodusII
         :Information:  https://software.lanl.gov/MeshTools/trac
 
-ASCEM-IO:
-        :Versions: 1.0
-        :Description: A parallel I/O library
-        :Role: Basis library used by the output class to create problem output.
-        :Dependencies: HDF5, netCDF
-        :Information: http://ascem-io.secure-water.org 
-
-
 
 Optional Software Tools
 -----------------------
 
-Mercirual:
+Mercurial:
         :Versions: TODO: Versions
         :Description: A dirtributed version control system
         :Role: Used by Amanzi to record and track changes to the software, and coordinate developer contributions. Required in order to obtain development versions of the Amanzi source.

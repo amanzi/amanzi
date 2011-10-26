@@ -54,7 +54,9 @@ MAKE_NP=4
 MPI_PREFIX=${MPI_ROOT}
 MPICC=${MPI_PREFIX}/bin/mpicc
 MPICXX=${MPI_PREFIX}/bin/mpicxx
-MPIEXEC=${MPI_PREFIX}/bin/mpirun
+MPIEXEC=${MPI_PREFIX}/bin/mpiexec
+MPIEXEC_NUMPROCS_FLAG=-np
+MPIEXEC_MAX_NUMPROCS=4
 
 # Platform (Platforms:MacOS,RedHat,Ubuntu,Fedora) us this to gate 
 # Use this variable to gate configuration requirements for particular
@@ -64,14 +66,16 @@ PLATFORM=
 # 
 # Define the prefix directories
 #
-PREFIX=/local/lpritch/test/projects/ascem/tpl
+if [ !  ${PREFIX} ]; then
+	PREFIX=`pwd`
+fi
 SOURCE_PREFIX=${PREFIX}/src
 BUILD_PREFIX=${PREFIX}/build
 
 #
 # Define the download directory
 # Location of tar and zip source files
-DOWNLOAD_DIRECTORY=
+DOWNLOAD_DIRECTORY=$PWD
 
 #
 # Amanzi Build Script
@@ -80,7 +84,8 @@ DOWNLOAD_DIRECTORY=
 # that will build amanzi using the TPL
 # locations defined in this script
 #
-AMANZI_BUILD_SCRIPT=${HOME}/projects/ascem/amanzi-build.sh
+BUILD_AMANZI_SCRIPT=0
+AMANZI_BUILD_SCRIPT=amanzi-build.sh
 
 #
 # TPL
@@ -129,6 +134,13 @@ CURL_VERSION=7.21.6
 BUILD_HDF5=0
 HDF5_PREFIX=${PREFIX}
 HDF5_VERSION=1.8.7
+
+#
+# ASCEM-IO
+#
+BUILD_ASCEMIO=0
+ASCEMIO_PREFIX=${PREFIX}
+ASCEMIO_VERSION=1.1p
 
 #
 # netCDF
@@ -207,6 +219,7 @@ function help_message {
 
     TPL build flags
     -a              Build all TPLs
+    -A              Build ASCEM-IO
     -b              Build Boost
     -e              Build Exodus
     -g              Build CGNS
@@ -354,6 +367,7 @@ function print_build_status {
     echo "BUILD_CURL=$BUILD_CURL          CURL_PREFIX=$CURL_PREFIX"
     echo "BUILD_ZLIB=$BUILD_ZLIB          ZLIB_PREFIX=$ZLIB_PREFIX"
     echo "BUILD_HDF5=$BUILD_HDF5          HDF5_PREFIX=$HDF5_PREFIX"
+    echo "BUILD_ASCEMIO=$BUILD_ASCEMIO    ASCEMIO_PREFIX=$ASCEMIO_PREFIX"
     echo "BUILD_NETCDF=$BUILD_NETCDF      NETCDF_PREFIX=$NETCDF_PREFIX"
     echo "BUILD_EXODUS=$BUILD_EXODUS      EXODUS_PREFIX=$PREFIX"
     echo "BUILD_MOAB=$BUILD_MOAB          MOAB_PREFIX=$PREFIX"
@@ -381,7 +395,7 @@ function build_curl {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j${PARALLEL_NP} all
+        make -j${MAKE_NP} all
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -444,7 +458,7 @@ function build_unittest {
         unzip ${DOWNLOAD_DIRECTORY}/unittest-cpp-${UNITTEST_VERSION}.zip -d ${PREFIX}/unittest
 
         cd ${UNITTEST_DIR}
-        make -j${PARALLEL_NP} all
+        make -j${MAKE_NP} all
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -507,7 +521,7 @@ function build_hdf5 {
 
         ./configure --prefix=${PREFIX} \
             --disable-fortran \
-	    --disable-cxx \
+	        --disable-cxx \
             --enable-production \
             --enable-largefile \
             --enable-parallel 
@@ -515,7 +529,7 @@ function build_hdf5 {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -530,7 +544,70 @@ function build_hdf5 {
         echo Using hdf5 from ${HDF5_PREFIX}
     fi   
 }
+################################################################################
+#
+# ASCEM-IO
+# 
+# http://ascem-io.secure-water.org/
+#
+# Parallel IO library Requires HDF5
+#
+################################################################################
+function download_ascemio {
 
+   ASCEMIO_SVN_ROOT="//ascem-io.secure-water.org/ascem-io"
+   if [ ${ASCEMIO_VERSION} == "trunk" ]
+   then
+	   ASCEMIO_DOWNLOAD_LOCATION="${ASCEMIO_SVN_ROOT}/trunk"
+   else
+	   ASCEMIO_DOWNLOAD_LOCATION="${ASCEMIO_SVN_ROOT}/releases/${ASCEMIO_VERSION}"
+   fi
+
+   echo "Download ASCEM-IO from ${ASCEMIO_DOWNLOAD_LOCATION}"
+
+   svn co http:${ASCEMIO_DOWNLOAD_LOCATION} --username amanzi_dev --password gr0undw@t3r
+
+   if [ $? -ne 0 ]; then
+	   echo "Failed to download ASCEMIO"
+	   exit
+   fi
+
+}
+    
+function build_ascemio {
+    echo "Build ASCEMIO"
+
+    if [ ${ASCEMIO_PREFIX} == ${PREFIX} ]; then
+		SAVE_DIR=`pwd`
+		ASCEMIO_DIR=${PREFIX}/ascem-io
+		if [ ! -e ${ASCEMIO_DIR} ]; then
+		   	mkdir -p ${ASCEMIO_DIR}
+		fi
+		ASCEMIO_SRC_DIR=${ASCEMIO_DIR}/src
+		if [ ! -e ${ASCEMIO_SRC_DIR} ]; then
+		   	mkdir -p ${ASCEMIO_SRC_DIR}
+		fi
+		cd ${ASCEMIO_SRC_DIR}
+        download_ascemio
+		cd ${ASCEMIO_VERSION}/src
+	
+		export CC=${MPICC}
+		export CXX=${MPICXX}
+		echo "Building ASCEM-IO against HDF5 located in ${HDF5_PREFIX}"
+        make HDF5_INCLUDE_DIR=${HDF5_PREFIX}/include
+		if [ $? -ne 0 ]; then
+			echo "Failed to build ASCEM-IO"
+			exit
+		fi
+		make ASCEMIO_INSTALL_DIR=${ASCEMIO_PREFIX} install
+		if [ $? -ne 0 ]; then
+			echo "Failed tp install ASCEM-IO package"
+			exit
+		fi
+		cd ${SAVE_DIR}
+	fi
+    
+}
 ################################################################################
 #
 # netcdf
@@ -574,7 +651,7 @@ function build_netcdf {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -587,7 +664,6 @@ function build_netcdf {
         echo Using netcdf from ${NETCDF_PREFIX}
     fi
 }
-
 ################################################################################
 #
 # exodus
@@ -624,7 +700,7 @@ function build_exodus_cmake {
     if [ $? -ne 0 ]; then
         exit 
     fi
-    make -j ${PARALLEL_NP}
+    make -j ${MAKE_NP}
     if [ $? -ne 0 ]; then
         exit 
     fi
@@ -675,7 +751,7 @@ function build_metis {
         perl -w -i -p -e "s@^CC[\s]=.*@CC = ${mpicc_compiler}@" Makefile.in
     
         # no configuration...?
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -719,7 +795,7 @@ function build_cgns {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j ${PARALLEL_NP}
+        make -j ${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -783,7 +859,7 @@ function build_trilinos {
         if [ $? -ne 0 ]; then
             exit 
         fi
-        make -j${PARALLEL_NP}
+        make -j${MAKE_NP}
         if [ $? -ne 0 ]; then
             exit 
         fi
@@ -831,7 +907,7 @@ function build_mstk {
             if [ $? -ne 0 ]; then
                 exit 
             fi
-            make -j ${PARALLEL_NP}
+            make -j ${MAKE_NP}
             if [ $? -ne 0 ]; then
                 exit 
             fi
@@ -892,7 +968,7 @@ function build_moab {
          if [ $? -ne 0 ]; then
             exit 
          fi
-         make -j ${PARALLEL_NP}
+         make -j ${MAKE_NP}
          if [ $? -ne 0 ]; then
             exit 
          fi
@@ -915,8 +991,8 @@ function build_moab {
 ################################################################################
 function generate_amanzi_build_script {
     cd ${SCRIPT_DIR}
-    if [ -e amanzi-build.sh ]; then mv amanzi-build.sh amanzi-build.sh.save; fi
-    cat > amanzi-build.sh <<EOF
+    if [ -e ${AMANZI_BUILD_SCRIPT} ]; then mv ${AMANZI_BUILD_SCRIPT} ${AMANZI_BUILD_SCRIPT}.save; fi
+    cat > ${AMANZI_BUILD_SCRIPT} <<EOF
 #!/bin/bash
 
 AMANZI_WORK_DIR=${WORK_DIR}
@@ -927,6 +1003,24 @@ AMANZI_CLOBBER=0
 AMANZI_TEST=0
 PLATFORM=${PLATFORM}
 
+# Add module command if available
+if [[ \$MODULESHOME ]]; then
+    . \$MODULESHOME/init/bash
+fi
+
+# If runnnig on NERSC machines (Franklin, Hopper, etc.), use Amanzi module.
+if [[ \$NERSC_HOST ]]; then
+    module use /project/projectdirs/m1012/modulefiles/\$NERSC_HOST
+    
+    if [[ \$PE_ENV ]]; then
+	compiler_loaded=`echo \$PE_ENV | tr "[A-Z]" "[a-z]"`
+	module unload PrgEnv-\${compiler_loaded}
+    fi
+
+    module load AmanziEnv-gnu
+
+fi
+
 function determine_amanzi_dir() {
     AMANZI_PATH=
     case \$1 in
@@ -936,6 +1030,7 @@ function determine_amanzi_dir() {
     #echo \$AMANZI_DIR
 }
 
+# Process the command line arguments
 while getopts "abcd:mt" flag
 do
   case \$flag in
@@ -984,19 +1079,21 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
     # for in source builds
 #    cd \${AMANZI_DIR}/src
 
-    export CXX=${MPI_PREFIX}/bin/mpicxx
-    export CC=${MPI_PREFIX}/bin/mpicc
+    export CXX=${MPICXX}
+    export CC=${MPICC}
     export BOOST_ROOT=${BOOST_PREFIX}
 
     cmake \\
         -D ENABLE_Config_Report:BOOL=ON \\
         -D MPI_DIR:FILEPATH=${MPI_PREFIX} \\
-        -D MPI_EXEC:FILEPATH=${MPI_PREFIX}/bin/mpiexec \\
-        -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \\
-        -D MPI_EXEC_MAX_NUMPROCS:STRING=${PARALLEL_NP} \\
+        -D MPI_EXEC:FILEPATH=${MPIEXEC} \\
+        -D MPI_EXEC_NUMPROCS_FLAG:STRING=${MPIEXEC_NUMPROCS_FLAG} \\
+        -D MPI_EXEC_MAX_NUMPROCS:STRING=${MPIEXEC_MAX_NUMPROCS} \\
         -D ENABLE_TESTS:BOOL=ON \\
         -D UnitTest_DIR:FILEPATH=${UNITTEST_PREFIX} \\
         -D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \\
+		-D ENABLE_ASCEMIO:BOOL=ON \\
+		-D ASCEMIO_DIR=${ASCEMIO_PREFIX} \\
         -D NetCDF_DIR:FILEPATH=${NETCDF_PREFIX} \\
         -D ExodusII_DIR:FILEPATH=${EXODUS_PREFIX} \\
         -D ENABLE_MOAB_Mesh:BOOL=ON \\
@@ -1008,6 +1105,8 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${TRILINOS_PREFIX}/trilinos-${TRILINOS_VERSION}-install \\
+	-D ENABLE_Unstructured:Bool=ON \\
+	-D ENABLE_Structured:Bool=ON \\
         ..
 #        ../src
 # for out of source: ../source    for in source: .
@@ -1019,7 +1118,7 @@ fi
 if [ \$AMANZI_MAKE -eq 1 ]; then
     cd \${AMANZI_DIR}/build
 #    cd \${AMANZI_DIR}/src
-    make -j ${PARALLEL_NP}
+    make -j ${MAKE_NP}
     if [ \$? -ne 0 ]; then
         exit 1
     fi
@@ -1053,13 +1152,15 @@ PRINT_HELP=0
 OPTS_OK=1
 
 # Process command line
-while getopts "hd:abegHkmnstuwz" flag
+while getopts "hd:aAbBegHkmnstuwz" flag
 do
   case $flag in
       h) PRINT_HELP=1;;
       d) DOWNLOAD_DIRECTORY=${OPTARG};;
       a) BUILD_BOOST=1; BUILD_EXODUS=1; BUILD_CGNS=1; BUILD_HDF5=1; BUILD_MSTK=1; BUILD_MOAB=1; BUILD_NETCDF=1; BUILD_METIS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CURL=1; BUILD_ZLIB=1;;
+	  A) BUILD_ASCEMIO=1;;
       b) BUILD_BOOST=1;;
+      B) BUILD_AMANZI_SCRIPT=1;;
       e) BUILD_EXODUS=1;;
       g) BUILD_CGNS=1;;
       H) BUILD_HDF5=1;;
@@ -1133,6 +1234,11 @@ if [ $BUILD_HDF5 -eq 1 ]; then
     cd ${SCRIPT_DIR}
 fi
 
+if [ $BUILD_ASCEMIO -eq 1 ]; then
+    build_ascemio
+    cd ${SCRIPT_DIR}
+fi
+
 if [ $BUILD_NETCDF -eq 1 ]; then
     build_netcdf
     cd ${SCRIPT_DIR}
@@ -1168,4 +1274,7 @@ if [ $BUILD_MOAB -eq 1 ]; then
     cd ${SCRIPT_DIR}
 fi
 
-generate_amanzi_build_script
+if [ $BUILD_AMANZI_SCRIPT -eq 1 ]; then
+    generate_amanzi_build_script
+    echo "Writing ${AMANZI_BUILD_SCRIPT}"
+fi

@@ -1,5 +1,5 @@
 //
-// $Id: Godunov.cpp,v 1.41 2011-07-07 17:30:49 gpau Exp $
+// $Id: Godunov.cpp,v 1.42 2011-08-10 17:32:38 lijewski Exp $
 //
 
 //
@@ -22,10 +22,59 @@
 #define YVEL 1
 #define ZVEL 2
 
-int Godunov::verbose               = 0;
-int Godunov::slope_order           = 4;
-int Godunov::use_forces_in_trans   = 0;
-const int use_unlimited_slopes_DEF = 0;
+namespace
+{
+    bool initialized = false;
+
+    const int use_unlimited_slopes_DEF = 0;
+}
+//
+// Set defaults in Initialize()!!!
+//
+int Godunov::verbose;
+int Godunov::slope_order;
+int Godunov::use_forces_in_trans;
+
+void
+Godunov::Initialize ()
+{
+    if (initialized) return;
+    //
+    // Set defaults here!!!
+    //
+    Godunov::verbose             = 0;
+    Godunov::slope_order         = 4;
+    Godunov::use_forces_in_trans = 0;
+    //
+    // Read parameters from input file and command line.
+    //
+    int use_unlimited_slopes = use_unlimited_slopes_DEF;
+
+    ParmParse pp("godunov");
+
+    pp.query("v",                    verbose);
+    pp.query("slope_order",          slope_order);
+    pp.query("use_forces_in_trans",  use_forces_in_trans);
+    pp.query("use_unlimited_slopes", use_unlimited_slopes);
+
+#if (BL_SPACEDIM==2)
+    BL_ASSERT(slope_order==1 || slope_order==2 || slope_order==4);
+#else
+    BL_ASSERT(slope_order==1 || slope_order==4);
+#endif
+
+    FORT_SET_PARAMS(slope_order,use_unlimited_slopes);
+
+    BoxLib::ExecOnFinalize(Godunov::Finalize);
+
+    initialized = true;
+}
+
+void
+Godunov::Finalize ()
+{
+    initialized = false;
+}
 
 //
 // Construct the Godunov Object.
@@ -35,8 +84,7 @@ Godunov::Godunov ()
   :
   max_1d(0)
 {
-  read_params();
-    
+  Initialize();
   ZeroScratch();
   SetScratch(128);
 }
@@ -49,36 +97,9 @@ Godunov::Godunov (int max_size)
   :
   max_1d(max_size)
 {
-  read_params();
+  Initialize();
   ZeroScratch();
   SetScratch(max_size);
-}
-
-//
-// Read parameters from input file and command line.
-//
-
-void
-Godunov::read_params ()
-{
-  //
-  // Read parameters from input file and command line.
-  //
-  ParmParse pp("godunov");
-
-  pp.query("v",verbose);
-
-  pp.query("slope_order",slope_order);
-#if (BL_SPACEDIM==2)
-  BL_ASSERT(slope_order==1 || slope_order==2 || slope_order==4);
-#else
-  BL_ASSERT(slope_order==1 || slope_order==4);
-#endif
-  pp.query("use_forces_in_trans",use_forces_in_trans);
-  int use_unlimited_slopes=use_unlimited_slopes_DEF;
-  pp.query("use_unlimited_slopes",use_unlimited_slopes);
-
-  FORT_SET_PARAMS(slope_order,use_unlimited_slopes);
 }
 
 //

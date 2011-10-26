@@ -58,11 +58,9 @@ file(GLOB hdf5_source "hdf5_mesh*.cc")
 list(APPEND output_source_files "${hdf5_source}")
 list(APPEND output_tpl_list ${HDF5_LIBRARIES})
 
-if(ENABLE_ASCEMIO)
-    file(GLOB hdf5mpi_source "hdf5mpi_mesh*.cc")
-    list(APPEND output_source_files "${hdf5mpi_source}")
-    list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
-endif()
+file(GLOB hdf5mpi_source "hdf5mpi_mesh*.cc")
+list(APPEND output_source_files "${hdf5mpi_source}")
+list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
 
 if(ENABLE_CGNS)
     file(GLOB cgns_source "cgns*.cc")
@@ -109,7 +107,7 @@ if (BUILD_TESTS)
     add_test(hdf5_output test_hdf5_output)
 
     # Test: hdf5_mpi_output
-    if (ENABLE_ASCEMIO AND ENABLE_STK_Mesh)
+    if (ENABLE_STK_Mesh)
         add_executable(test_hdf5mpi_output test/Main.cc test/test_hdf5mpi.cc)
         target_link_libraries(test_hdf5mpi_output stk_mesh output ${UnitTest_LIBRARIES})
         add_test(hdf5mpi_output test_hdf5mpi_output NPROCS 2 KIND int)

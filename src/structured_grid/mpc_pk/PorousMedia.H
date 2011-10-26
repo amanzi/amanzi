@@ -1,7 +1,7 @@
 #ifndef _PorousMedia_H_
 #define _PorousMedia_H_
 //
-// $Id: PorousMedia.H,v 1.98 2011-07-12 17:17:22 gpau Exp $
+// $Id: PorousMedia.H,v 1.104 2011-08-30 19:00:04 gpau Exp $
 //
 #include <Geometry.H>
 #include <FArrayBox.H>
@@ -21,6 +21,7 @@
 #ifdef COREREACT
   #include <PChemDriver.H>
 #endif
+#include <ParmParse.H>
 #include <Region.H>
 #include <Rock.H>
 #include <Source.H>
@@ -74,7 +75,7 @@ public:
 			std::istream& is,
 			bool          bReadSpecial = false);
   //
-  // Read problem input file. GP 08/06/2007.
+  // Read problem input file. 
   //
   void probDefine(char * filename);
   //
@@ -210,6 +211,11 @@ public:
 			int  iteration,
 			int  ncycle);
 
+  void multilevel_advance (Real time,
+			   Real dt,
+			   int  iteration,
+			   int  ncycle);
+
   void advance_incompressible  (Real time,
 				Real dt);
 
@@ -218,7 +224,10 @@ public:
 
 #ifdef MG_USE_FBOXLIB
   void advance_richard  (Real time,
-			Real dt);
+			 Real dt); 
+ 
+  void advance_multilevel_richard  (Real time,
+				    Real dt);
 #endif
 
   void advance_tracer  (Real time,
@@ -270,7 +279,7 @@ protected:
   static void read_chem (); 
   static void read_amr ();
   static void assign_bc_coef(int type_id, 
-			     ParmParse::Record& ppr,
+			     ParmParse& ppr,
 			     Array<std::string>& names, 
 			     Array<Real>& coef);
   virtual void sum_integrated_quantities ();
@@ -394,6 +403,10 @@ protected:
   void richard_scalar_update (Real dt, 
 			      int& total_nwt_iter,
 			      MultiFab* u_mac = 0);
+
+  void richard_composite_update (Real dt, 
+				 int& total_nwt_iter);
+
 #endif
 
   void scalar_adjust_constraint (int  first_scalar,
@@ -484,6 +497,11 @@ protected:
   //
   // Average a fine multifab down onto a coarse one.
   //
+  void avgDown (MultiFab* s_crse,
+		int c_lev,
+		MultiFab* s_fine, 
+		int f_lev);
+
   void avgDown (const BoxArray& grids,
 		const BoxArray& fgrids,
 		MultiFab&       S_crse,
@@ -617,7 +635,14 @@ protected:
 			 const MultiFab* umac,
 			 const Real time,
 			 const int  nc = 0,
-			 const bool do_upwind = false);
+			 const bool do_upwind = false,
+			 const bool do_n = true);
+
+  //
+  // Calculate the dt term in the jacobian for p-formulation
+  //
+  void calc_richard_alpha (MultiFab*     alpha,
+			   const Real    time);
   //
   // Calculate divergence of velocity boundary condition 
   //
@@ -630,10 +655,12 @@ protected:
   //
   void calcCapillary (const Real time);
   void calcCapillary (MultiFab* pc, const MultiFab& S);
+  void smooth_pc (MultiFab* pc);
   //
   // Calculate inverse capillary pressure
   //
   void calcInvCapillary (const Real time);
+  void calcInvCapillary (MultiFab& S,const MultiFab& pc);
   //
   // Calculate lambda = relative permeability/mu
   //
@@ -739,6 +766,8 @@ protected:
 
 protected:
 
+  static void InitializeStaticVariables();
+
   // Deals with the ghost cells 
   AuxBoundaryData aux_boundary_data_old;
   bool            FillPatchedOldState_ok;
@@ -751,8 +780,8 @@ protected:
   // Rock
   static Array<Rock> rock_array;
   static std::string gsfile;
-  static MultiFab    kappadata;
-  static MultiFab    phidata;
+  static MultiFab*   kappadata;
+  static MultiFab*   phidata;
   static bool        porosity_from_fine;
   static bool        permeability_from_fine;
 
@@ -904,6 +933,7 @@ protected:
   static Real cfl;           // desired maximum cfl
   static Real change_max;    // maximum change in dt over a timestep
   static Real fixed_dt;      // set > 0 to specify dt
+  static Real richard_max_dt; // define maximum time step for the richard solver
   static int  initial_iter;  // flag for initial pressure iterations
   static int  initial_step;  // flag for initial iterations
   static Real dt_cutoff;     // minimum dt allowed
@@ -945,6 +975,7 @@ protected:
   //
   static int  do_simple;
   static int  do_sync_proj;
+  static int  do_multilevel_full;
   static int  do_reflux;
   static int  do_correct;
   static int  no_corrector;

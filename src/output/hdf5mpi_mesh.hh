@@ -1,5 +1,5 @@
 #ifndef HDF5MPI_MESH_HH_
-#define HDF5MPI_MESH__HH_
+#define HDF5MPI_MESH_HH_
 
 #include <string>
 
@@ -19,6 +19,7 @@
 
 extern "C" {
 #include "hdf5.h"
+#include "hdf5_hl.h"
 #include "parallelIO.h"
 };
 
@@ -31,6 +32,7 @@ class HDF5_MPI {
  public:
 
   HDF5_MPI(const Epetra_MpiComm &comm);
+  HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename);
   ~HDF5_MPI(void);
   
   bool TrackXdmf() { return TrackXdmf_; }
@@ -76,6 +78,14 @@ class HDF5_MPI {
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
   void createTimestep(const double time, const int iteration);
   void endTimestep();
+
+  // Write attribute to HDF5 data file.
+  void writeAttrReal(double value, const std::string attrname);
+  void writeAttrInt(int value, const std::string attrname);
+  void writeAttrString(const std::string value, const std::string attrname);
+  void readAttrReal(double &value, const std::string attrname);
+  void readAttrInt(int &value, const std::string attrname);
+  void readAttrString(std::string &value, const std::string attrname);
 
   // Write node data to HDF5 data file.
   void writeNodeDataReal(const Epetra_Vector &x, const std::string varname);

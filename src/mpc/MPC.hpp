@@ -1,5 +1,11 @@
+#ifndef _MPC_HPP_
+#define _MPC_HPP_
+
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Epetra_MpiComm.h"
 #include "State.hpp"
 #include "chemistry_state.hh"
 #include "chemistry_pk.hh"
@@ -7,65 +13,77 @@
 #include "Transport_PK.hpp"
 #include "Flow_State.hpp"
 #include "Flow_PK.hpp"
+#include "ObservationData.H"
+#include "Unstructured_observations.hpp"
+#include "Vis.hpp"
+#include "Restart.hpp"
 
 namespace Amanzi
 {
 
-class MPC {
+  class MPC : public Teuchos::VerboseObject<MPC> {
 
-public:
-  MPC (Teuchos::ParameterList parameter_list_,
-       Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_);
-  ~MPC () {};
+  public:
+    MPC (Teuchos::ParameterList parameter_list_,
+	 Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
+	 Epetra_MpiComm* comm_,
+	 Amanzi::ObservationData& output_observations_); 
+    
+    ~MPC () {};
+    
+    void cycle_driver ();
+    
+  private:
+    void mpc_init();
+    void read_parameter_list();
+    
+    // states
+    Teuchos::RCP<State> S;
+    Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
+    Teuchos::RCP<AmanziTransport::Transport_State> TS; 
+    Teuchos::RCP<Flow_State> FS;
+    
+    // misc setup information
+    Teuchos::ParameterList parameter_list;
+    Teuchos::RCP<AmanziMesh::Mesh> mesh_maps;
+    
+    // storage for the component concentration intermediate values
+    Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
+    
+    // process kernels
+    Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
+    Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
+    Teuchos::RCP<Flow_PK> FPK; 
+    
+    Teuchos::ParameterList mpc_parameter_list;
+    
+    double T0, T1;
+    int end_cycle;
+    
+    bool flow_enabled, transport_enabled, chemistry_enabled;
+    
+    std::string flow_model;
+    
+    // restart from checkpoint file
+    bool restart_requested;
+    std::string restart_from_filename;
 
-  void cycle_driver ();
-
-private:
-  void read_parameter_list();
-  void write_gmv_data(std::string gmv_meshfile, std::string gmv_datafile, 
-		      const int iter, const int digits);
-  void create_gmv_paths(std::string&, std::string&, std::string&, Teuchos::ParameterList&);
-#ifdef ENABLE_CGNS
-  void write_cgns_data(std::string filename, int iter);
-#endif
-  void write_gnuplot_data(int iter, double time);
+    // Epetra communicator
+    Epetra_MpiComm* comm;
+    
+    // observations
+    Amanzi::ObservationData&  output_observations;
+    Amanzi::Unstructured_observations* observations;
+    
+    // visualization
+    Amanzi::Vis *visualization;
+    
+    // checkpoint/restart 
+    Amanzi::Restart *restart;
+    
+  };
   
-  // states
-  Teuchos::RCP<State> S;
-  Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
-  Teuchos::RCP<AmanziTransport::Transport_State> TS; 
-  Teuchos::RCP<Flow_State> FS;
-
-  // misc setup information
-  Teuchos::ParameterList parameter_list;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_maps;
-
-  // storage for the component concentration intermediate values
-  Teuchos::RCP<Epetra_MultiVector> total_component_concentration_star;
-
-  // process kernels
-  Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
-  Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
-  Teuchos::RCP<Flow_PK> FPK; 
-
-  Teuchos::ParameterList mpc_parameter_list;
-
-  double T0, T1;
-  int end_cycle;
-
-  bool flow_enabled, transport_enabled, chemistry_enabled;
-
-  // these are the vectors that chemistry will populate with
-  // the names for the auxillary output vectors and the
-  // names of components
-  std::vector<string> auxnames;
-  std::vector<string> compnames; 
-
-  std::string flow_model;
-  std::string restart_file;
-  bool restart;
-
-};
-
-
+  
 } // close namespace Amanzi
+
+#endif

@@ -19,19 +19,20 @@ include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${UnitTest_INCLUDE_DIRS})
 
 add_executable(chemistry_tests
-               main.cc
+               main.cc   
 	       test_string_tokenizer.cc
 	       test_chemistry_exceptions.cc
 	       test_species.cc
-	       test_ion_exchange_site.cc
-	       test_surface_site.cc
+	       test_surface_site.cc	       
+	       test_activity_model_factory.cc
 	       test_activity_coefficients.cc
+	       test_pitzer.cc
 	       test_secondary_species.cc
 	       test_aqueous_equilibrium_complex.cc
 	       test_mineral.cc
 	       test_mineral_kinetics_factory.cc
 	       test_kinetic_rate.cc
-	       test_beaker.cc)
+	       test_beaker.cc)	       
 target_link_libraries(chemistry_tests 
                       error_handling ${GEOCHEM_LIBS} ${UnitTest_LIBRARIES})
 add_amanzi_test(chemistry chemistry_tests KIND unit)

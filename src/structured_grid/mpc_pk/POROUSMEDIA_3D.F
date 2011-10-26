@@ -1,5 +1,5 @@
 c
-c $Id: POROUSMEDIA_3D.F,v 1.36 2011-07-13 00:16:16 gpau Exp $
+c $Id: POROUSMEDIA_3D.F,v 1.38 2011-08-30 19:00:04 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -674,9 +674,9 @@ c ::: ----------------------------------------------------------
 c ::: CHEM_DUMMY
 c :::    a dummy chemical reaction.
 c ::: ----------------------------------------------------------
-      subroutine FORT_CHEM_DUMMY(s,DIMS(s),lo,hi,dt,nc)
+      subroutine FORT_CHEM_DUMMY(s,DIMS(s),dt,nc)
       implicit none
-      integer lo(SDIM),hi(SDIM), nc
+      integer nc
       integer DIMDEC(s)
       REAL_T  s(DIMV(s),nc), dt
 
@@ -704,7 +704,7 @@ c ::: Compute the capillary pressure, p_c
 c ::: -----------------------------------------------------------
       subroutine FORT_MK_INV_CPL(pc,DIMS(pc),s,DIMS(s),
      &     phi,DIMS(phi),kappa,DIMS(kappa),
-     &     coef,DIMS(coef),n_coef,lo,hi,bc)
+     &     coef,DIMS(coef),n_coef)
 
       implicit none
 
@@ -716,8 +716,6 @@ c ::: -----------------------------------------------------------
       integer DIMDEC(kappa)
       integer DIMDEC(coef)
       integer n_coef
-      integer lo(SDIM),hi(SDIM)
-      integer bc(SDIM,2)
       REAL_T  pc(DIMV(pc))
       REAL_T  s(DIMV(s),ncomps)
       REAL_T  phi(DIMV(phi))
@@ -729,9 +727,9 @@ c ::: -----------------------------------------------------------
       REAL_T  l_cpl_coef, l_sigma, l_sat_res
 
 !$omp parallel do private(i,j,k)
-      do k = lo(3)-1,hi(3)+1
-         do j = lo(2)-1,hi(2)+1
-            do i = lo(1)-1,hi(1)+1
+      do k = ARG_L3(s),ARG_H3(s)
+         do j =  ARG_L2(s),ARG_H2(s)
+            do i = ARG_L1(s),ARG_H1(s)
                l_cpl_type = nint(coef(i,j,k,1))
                l_cpl_coef = coef(i,j,k,2)
                l_sigma    = coef(i,j,k,3)
@@ -810,6 +808,54 @@ c ::: -----------------------------------------------------------
          end do 
       end do
 !$omp end parallel do
+
+      end
+
+
+c ::: -----------------------------------------------------------
+c ::: Smooth the capillary pressure, p_c.
+c ::: -----------------------------------------------------------
+
+      subroutine FORT_SMOOTH_CPL(pc,DIMS(pc),
+     &     coef,DIMS(coef),n_coef,lo,hi)
+
+      implicit none
+
+#include "probdata.H"
+
+      integer DIMDEC(pc)
+      integer DIMDEC(coef)
+      integer n_coef
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  pc(DIMV(pc))
+      REAL_T  coef(DIMV(coef),n_coef)
+
+      integer i,j,k
+      integer l_cpl_type
+      REAL_T  l_cpl_coef, l_sigma, l_sat_res
+      REAL_T, allocatable :: pctmp(:,:,:)
+      
+      allocate(pctmp(DIMV(pc)))
+      pctmp = pc
+
+!$omp parallel do private(i,j,k)
+      do k = lo(3)-1,hi(3)+1
+         do j = lo(2)-1,hi(2)+1
+            do i = lo(1)-1,hi(1)+1
+               l_cpl_type = nint(coef(i,j,k,1))
+               l_cpl_coef = coef(i,j,k,2)
+               l_sigma    = coef(i,j,k,3)
+               l_sat_res  = coef(i,j,k,4)
+
+               pc(i,j,k) = pctmp(i,j,k)+pctmp(i-1,j,k)+pctmp(i+1,j,k)
+     &              +pctmp(i,j-1,k)+pctmp(i,j+1,k)+pctmp(i,j,k-1)+pctmp(i,j,k+1)
+               pc(i,j,k) = pc(i,j,k)/7.d0
+            end do
+         end do 
+      end do
+!$omp end parallel do
+
+      deallocate(pctmp)
 
       end
 
@@ -1333,134 +1379,303 @@ c     dfy(i,j,2) = lbdy(i,j,1)*dpcdn(i+1,j)
 c     dfy(i,j,3) = (lbdy(i,j,1)+lbdy(i+1,j,1))*dpcdn(i,j)
 c
 c :: ------------------------------------------------------------         
-      subroutine FORT_RICHARD_AJAC(s, DIMS(s), 
-     &     lbd, DIMS(lbd),
-     &     dfx, DIMS(dfx), dfy, DIMS(dfy), dfz, DIMS(dfz), 
-     &     phi, DIMS(phi), kappa, DIMS(kappa),
-     &     coef,DIMS(coef),n_coef,
-     &     lo, hi, domlo, domhi, bc, nc)
+      subroutine FORT_RICHARD_AJAC(s, DIMS(s),
+     &     bx,DIMS(bx),by,DIMS(by),bz,DIMS(bz),
+     &     umac, DIMS(umac), vmac, DIMS(vmac), wmac, DIMS(wmac),
+     &     kpx, DIMS(kpx), kpy, DIMS(kpy), kpz, DIMS(kpz),
+     &     lbd,DIMS(lbd),pc,DIMS(pc),
+     &     phi,DIMS(phi),kappa,DIMS(kappa),
+     &     krcoef,DIMS(krcoef),nkrcoef,
+     &     cplcoef,DIMS(cplcoef),ncplcoef,
+     &     lo,hi,domlo,domhi,dx, bc, 
+     &     inflow_bc_lo,inflow_bc_hi,do_upwind)
 
       implicit none
 
 #include "probdata.H"
 
       integer DIMDEC(s)
+      integer DIMDEC(bx)
+      integer DIMDEC(by)
+      integer DIMDEC(bz)
+      integer DIMDEC(umac)
+      integer DIMDEC(vmac)
+      integer DIMDEC(wmac)
+      integer DIMDEC(kpx)
+      integer DIMDEC(kpy)
+      integer DIMDEC(kpz)
+      integer DIMDEC(pc)
       integer DIMDEC(lbd)
-      integer DIMDEC(dfx)
-      integer DIMDEC(dfy)
-      integer DIMDEC(dfz)
       integer DIMDEC(phi)
       integer DIMDEC(kappa)
-      integer DIMDEC(coef)
-      integer n_coef
+      integer DIMDEC(krcoef)
+      integer DIMDEC(cplcoef)
       integer lo(SDIM),hi(SDIM)
-      integer domlo(SDIM),domhi(SDIM)
+      integer domlo(SDIM), domhi(SDIM)
       integer bc(SDIM,2)
-      integer nc
+      integer inflow_bc_lo(SDIM),inflow_bc_hi(SDIM)
+      integer nkrcoef,ncplcoef
+      REAL_T  dx(SDIM)
       REAL_T  s(DIMV(s),ncomps)
+      REAL_T  bx(DIMV(bx),3)
+      REAL_T  by(DIMV(by),3)
+      REAL_T  bz(DIMV(bz),3)
+      REAL_T  umac(DIMV(umac))
+      REAL_T  vmac(DIMV(vmac))
+      REAL_T  wmac(DIMV(wmac))      
+      REAL_T  kpx(DIMV(kpx))
+      REAL_T  kpy(DIMV(kpy))
+      REAL_T  kpz(DIMV(kpz))
+      REAL_T  pc(DIMV(pc))
       REAL_T  lbd(DIMV(lbd),ncomps)
-      REAL_T  dfx(DIMV(dfx),3)
-      REAL_T  dfy(DIMV(dfy),3)
-      REAL_T  dfz(DIMV(dfz),3)
+      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
+      REAL_T  krcoef(DIMV(krcoef),nkrcoef)
       REAL_T  phi(DIMV(phi))
       REAL_T  kappa(DIMV(kappa))
-      REAL_T  coef(DIMV(coef),n_coef)
+      logical do_upwind
 
-      integer i, j, k
-      integer l_cpl_type
-      REAL_T  l_cpl_coef, l_sigma, l_sat_res
-      REAL_T  sat(2), stmp(2), rtmp(2), lambda(2)
-      REAL_T, allocatable :: dpcdn(:,:,:)
+      integer i,j,k,n,l_kr_type,l_cpl_type
+      REAL_T  l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
+      REAL_T  grav
+      REAL_T  multx(2), multy(2), multz(2)
+      REAL_T  ldx(2), ldy(2), ldz(2)
+      REAL_T  dldx(4), dldy(4), dldz(4)
+      REAL_T  sat(ncomps), stmp(ncomps), rtmp(ncomps), dltmp(3)
+      REAL_T, allocatable :: dpcdn(:,:,:), dlddn(:,:,:,:)
 
       allocate(dpcdn(DIMV(s)))
-      rtmp(:) = one
+      allocate(dlddn(DIMV(s),ncomps))
 
+      rtmp(:) = one
       do k = ARG_L3(s),ARG_H3(s)
          do j = ARG_L2(s),ARG_H2(s)
-            do i = ARG_L1(s),ARG_H1(s)
-               l_cpl_type = nint(coef(i,j,k,1))
-               l_cpl_coef = coef(i,j,k,2)
-               l_sigma    = coef(i,j,k,3)
-               l_sat_res  = coef(i,j,k,4)
+            do i = ARG_L1(s),ARG_H1(s)           
+               l_kr_type  = nint(krcoef(i+n,j,k,1))
+               l_kr_coef  = krcoef(i+n,j,k,2)
+               l_kr_sres  = krcoef(i+n,j,k,3)
+               l_cpl_type = nint(cplcoef(i+n,j,k,1))
+               l_cpl_coef = cplcoef(i+n,j,k,2)
+               l_sigma    = cplcoef(i+n,j,k,3)
+               l_cpl_sres = cplcoef(i+n,j,k,4)
 
                stmp = zero
                stmp(1:ncomps) = s(i,j,k,1:ncomps) 
 
-               call get_st(sat,stmp,rhoval,l_sat_res,ncomps)
+               call get_st(sat,stmp,rhoval,l_kr_sres,ncomps)
+               if (one-sat(1) .lt. 1.d-6) then
+                  sat(1) = one - 1.d-6
+                  if (ncomps > 1) then
+                     sat(2) = 1.d-6
+                  end if
+               end if
                
-               if (dabs(sat(1)) .lt. 1.d-6) then
-                  sat(1) = rhoval(1) - 1.d-6
-                  sat(2) = 1.d-6
-               end if
-
-               dpcdn(i,j,k) = zero
-               if (sat(1) .gt. l_sat_res) then
-                  call get_dcplds(dpcdn,sat,rtmp,phi(i,j,k),
-     &                 kappa(i,j,k),l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
-               end if
-               dpcdn(i,j,k) = dpcdn(i,j,k)/(rhoval(1)*(one-l_sat_res))
+               call get_dcplds(dpcdn(i,j,k),sat,rtmp,phi(i,j,k),
+     &              kappa(i,j,k),l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
+               call get_dld(dltmp,sat,rtmp,muval, 
+     &              l_kr_type,l_kr_coef,l_kr_sres)
+               
+               dpcdn(i,j,k) = dpcdn(i,j,k)/(rhoval(1)*(one-l_cpl_sres))
+               dlddn(i,j,k,1) = dltmp(1)/(rhoval(1)*(one-l_kr_sres))
             end do
          end do
       end do
 
+      grav = -rhoval(1)*gravity
+      bx = zero
+      by = zero
+      bz = zero
       do k=lo(3),hi(3)
          do j=lo(2), hi(2)
             do i=lo(1), hi(1)
-c              diffusion coefficient in x-dir
-               lambda(1) = half*(lbd(i,j,k,1) + lbd(i-1,j,k,1))
-               lambda(2) = half*(lbd(i,j,k,1) + lbd(i+1,j,k,1))
+               if (do_upwind) then
+                  ldx(1)  = cvmgp(lbd(i-1,j,k,1),lbd(i,j,k,1),umac(i,j,k))
+                  ldx(2)  = cvmgp(lbd(i,j,k,1),lbd(i+1,j,k,1),umac(i+1,j,k))
+                  ldy(1)  = cvmgp(lbd(i,j-1,k,1),lbd(i,j,k,1),vmac(i,j,k))
+                  ldy(2)  = cvmgp(lbd(i,j,k,1),lbd(i,j+1,k,1),vmac(i,j+1,k))
+                  ldz(1)  = cvmgp(lbd(i,j,k-1,1),lbd(i,j,k,1),wmac(i,j,k))
+                  ldz(2)  = cvmgp(lbd(i,j,k,1),lbd(i,j,k+1,1),wmac(i,j,k+1))
+                  dldx(1) = cvmgp(dlddn(i-1,j,k,1),zero,umac(i,j,k))
+                  dldx(2) = cvmgp(zero,dlddn(i+1,j,k,1),umac(i+1,j,k)) 
+                  dldx(3) = cvmgp(zero,dlddn(i,j,k,1),umac(i,j,k))
+                  dldx(4) = cvmgp(dlddn(i,j,k,1),zero,umac(i+1,j,k)) 
+                  dldy(1) = cvmgp(dlddn(i,j-1,k,1),zero,vmac(i,j,k))
+                  dldy(2) = cvmgp(zero,dlddn(i,j+1,k,1),vmac(i,j+1,k)) 
+                  dldy(3) = cvmgp(zero,dlddn(i,j,k,1),vmac(i,j,k))
+                  dldy(4) = cvmgp(dlddn(i,j,k,1),zero,vmac(i,j+1,k))
+                  dldz(1) = cvmgp(dlddn(i,j,k-1,1),zero,wmac(i,j,k))
+                  dldz(2) = cvmgp(zero,dlddn(i,j,k+1,1),wmac(i,j,k+1)) 
+                  dldz(3) = cvmgp(zero,dlddn(i,j,k,1),wmac(i,j,k))
+                  dldz(4) = cvmgp(dlddn(i,j,k,1),zero,wmac(i,j,k+1))
+
+                  ldx(1)  = kpx(i,j,k)*ldx(1)
+                  ldx(2)  = kpx(i+1,j,k)*ldx(2)
+                  ldy(1)  = kpy(i,j,k)*ldy(1)
+                  ldy(2)  = kpy(i,j+1,k)*ldy(2)
+                  ldz(1)  = kpy(i,j,k)*ldz(1)
+                  ldz(2)  = kpy(i,j,k+1)*ldz(2)
+                  dldx(1) = kpx(i,j,k)*dldx(1)
+                  dldx(2) = kpx(i+1,j,k)*dldx(2)
+                  dldx(3) = kpx(i,j,k)*dldx(3)
+                  dldx(4) = kpx(i+1,j,k)*dldx(4)
+                  dldy(1) = kpy(i,j,k)*dldy(1)
+                  dldy(2) = kpy(i,j+1,k)*dldy(2)
+                  dldy(3) = kpy(i,j,k)*dldy(3)
+                  dldy(4) = kpy(i,j+1,k)*dldy(4)
+                  dldz(1) = kpz(i,j,k)*dldz(1)
+                  dldz(2) = kpz(i,j,k+1)*dldz(2)
+                  dldz(3) = kpz(i,j,k)*dldz(3)
+                  dldz(4) = kpz(i,j,k+1)*dldz(4)
+               else
+                  ldx(1)  = kpx(i,j,k)*half*(lbd(i,j,k,1)+lbd(i-1,j,k,1))
+                  ldx(2)  = kpx(i+1,j,k)*half*(lbd(i,j,k,1)+lbd(i+1,j,k,1))
+                  ldy(1)  = kpy(i,j,k)*half*(lbd(i,j,k,1)+lbd(i,j-1,k,1))
+                  ldy(2)  = kpy(i,j+1,k)*half*(lbd(i,j,k,1)+lbd(i,j+1,k,1))
+                  ldz(1)  = kpy(i,j,k)*half*(lbd(i,j,k,1)+lbd(i,j,k-1,1))
+                  ldz(2)  = kpy(i,j,k+1)*half*(lbd(i,j,k,1)+lbd(i,j,k+1,1))
+                  dldx(1) = kpx(i,j,k)*half*dlddn(i-1,j,k,1)
+                  dldx(2) = kpx(i+1,j,k)*half*dlddn(i+1,j,k,1)
+                  dldx(3) = kpx(i,j,k)*half*dlddn(i,j,k,1)
+                  dldx(4) = kpx(i+1,j,k)*half*dlddn(i,j,k,1)
+                  dldy(1) = kpy(i,j,k)*half*dlddn(i,j-1,k,1)
+                  dldy(2) = kpy(i,j+1,k)*half*dlddn(i,j+1,k,1)
+                  dldy(3) = kpy(i,j,k)*half*dlddn(i,j,k,1)
+                  dldy(4) = kpy(i,j+1,k)*half*dlddn(i,j,k,1)
+                  dldz(1) = kpz(i,j,k)*half*dlddn(i,j,k-1,1)
+                  dldz(2) = kpz(i,j,k+1)*half*dlddn(i,j,k+1,1)
+                  dldz(3) = kpz(i,j,k)*half*dlddn(i,j,k,1)
+                  dldz(4) = kpz(i,j,k+1)*half*dlddn(i,j,k,1)
+               end if
+
+               multx = one
+               multy = one
+               multz = one
+
                if (i .eq. domlo(1)) then
-                  if (bc(1,1) .eq. FOEXTRAP) then
-                     lambda(1) = zero
+                  if (bc(1,1) .eq. EXT_DIR) then
+                     multx(1) = two
+                     ldx(1)  = kpx(i,j,k)*lbd(i-1,j,k,1)
+                     dldx(1) = kpx(i,j,k)*dlddn(i-1,j,k,1)
+                     dldx(3) = zero
+                  elseif (bc(1,1) .eq. FOEXTRAP) then
+                     multx(1) = zero
+                     if (inflow_bc_lo(1) .eq. 1) then
+                        ldx(1)  = zero
+                        dldx(1) = zero
+                        dldx(3) = zero
+                     end if
                   end if
                end if
+
                if (i .eq. domhi(1)) then
-                  if (bc(1,2) .eq. FOEXTRAP) then
-                     lambda(2) = zero
-                  end if
-               end if 
-               dfx(i,j,k,1)   = lambda(1)*dpcdn(i-1,j,k)
-               dfx(i+1,j,k,2) = lambda(2)*dpcdn(i+1,j,k)
-               dfx(i,j,k,3)   = (lambda(1)+lambda(2))*dpcdn(i,j,k)
-
-c              diffusion coefficient in y-dir
-               lambda(1) = half*(lbd(i,j,k,1) + lbd(i,j-1,k,1))
-               lambda(2) = half*(lbd(i,j,k,1) + lbd(i,j+1,k,1))
-               if (j .eq. domlo(2)) then
-                  if (bc(2,1) .eq. FOEXTRAP) then
-                     lambda(1) = zero
+                  if (bc(1,2) .eq. EXT_DIR) then
+                     multx(2) = two
+                     ldx(2)  = kpx(i+1,j,k)*lbd(i+1,j,k,1)
+                     dldx(2) = kpx(i+1,j,k)*dlddn(i+1,j,k,1)
+                     dldx(4) = zero
+                  elseif (bc(1,2) .eq. FOEXTRAP) then
+                     multx(2) = zero
+                     if (inflow_bc_hi(1) .eq. 1) then
+                        ldx(2)  = zero
+                        dldx(2) = zero
+                        dldx(4) = zero
+                     end if
                   end if
                end if
-               if (j .eq. domhi(2)) then
-                  if (bc(2,2) .eq. FOEXTRAP) then
-                     lambda(2) = zero
-                  end if
-               end if 
-               dfy(i,j,k,1)   = lambda(1)*dpcdn(i,j-1,k)
-               dfy(i,j+1,k,2) = lambda(2)*dpcdn(i,j+1,k)
-               dfy(i,j,k,3)   = (lambda(1)+lambda(2))*dpcdn(i,j,k)
 
-c              diffusion coefficient in z-dir
-               lambda(1) = half*(lbd(i,j,k,1) + lbd(i,j,k-1,1))
-               lambda(2) = half*(lbd(i,j,k,1) + lbd(i,j,k+1,1))
                if (j .eq. domlo(2)) then
-                  if (bc(3,1) .eq. FOEXTRAP) then
-                     lambda(1) = zero
+                  if (bc(2,1) .eq. EXT_DIR) then
+                     multy(1) = two
+                     ldy(1)  = kpy(i,j,k)*lbd(i,j-1,k,1)
+                     dldy(1) = kpy(i,j,k)*dlddn(i,j-1,k,1)
+                     dldy(3) = zero
+                  elseif (bc(2,1) .eq. FOEXTRAP) then
+                     multy(1) = zero
+                     if (inflow_bc_lo(2) .eq. 1) then
+                        ldy(1)  = zero
+                        dldy(1) = zero
+                        dldy(3) = zero
+                     end if
                   end if
                end if
+
                if (j .eq. domhi(2)) then
-                  if (bc(3,2) .eq. FOEXTRAP) then
-                     lambda(2) = zero
+                  if (bc(2,2) .eq. EXT_DIR) then
+                     multy(2) = two
+                     ldy(2)  = kpy(i,j+1,k)*lbd(i,j+1,k,1)
+                     dldy(2) = kpy(i,j+1,k)*dlddn(i,j+1,k,1)
+                     dldy(4) = zero
+                  elseif (bc(2,2) .eq. FOEXTRAP) then
+                     multy(2) = zero
+                     if (inflow_bc_hi(2) .eq. 1) then
+                        ldy(2)  = zero
+                        dldy(2) = zero
+                        dldy(4) = zero
+                     end if
                   end if
-               end if 
-               dfz(i,j,k,1)   = lambda(1)*dpcdn(i,j,k-1)
-               dfz(i,j,k+1,2) = lambda(2)*dpcdn(i,j,k+1)
-               dfz(i,j,k,3)   = (lambda(1)+lambda(2))*dpcdn(i,j,k)
+               end if
+
+               if (k .eq. domlo(3)) then
+                  if (bc(3,1) .eq. EXT_DIR) then
+                     multz(1) = two
+                     ldz(1)  = kpz(i,j,k)*lbd(i,j,k-1,1)
+                     dldz(1) = kpz(i,j,k)*dlddn(i,j,k-1,1)
+                     dldz(3) = zero
+                  elseif (bc(3,1) .eq. FOEXTRAP) then
+                     multz(1) = zero
+                     if (inflow_bc_lo(3) .eq. 1) then
+                        ldz(1)  = zero
+                        dldz(1) = zero
+                        dldz(3) = zero
+                     end if
+                  end if
+               end if
+
+               if (k .eq. domhi(3)) then
+                  if (bc(3,2) .eq. EXT_DIR) then
+                     multz(2) = two
+                     ldz(2)  = kpz(i,j,k)*lbd(i,j,k+1,1)
+                     dldz(2) = kpz(i,j,k)*dlddn(i,j,k+1,1)
+                     dldz(4) = zero
+                  elseif (bc(3,2) .eq. FOEXTRAP) then
+                     multz(2) = zero
+                     if (inflow_bc_hi(3) .eq. 1) then
+                        ldz(2)  = zero
+                        dldz(2) = zero
+                        dldz(4) = zero
+                     end if
+                  end if
+               end if
+
+
+               bx(i,j,k,2)   = (-dldx(1)*(-multx(1)*(pc(i,j,k)-pc(i-1,j,k))/dx(1)) -
+     &              ldx(1)*(multx(1)*dpcdn(i-1,j,k)/dx(1)))/dx(1)
+               bx(i+1,j,k,1) = (dldx(2)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) -
+     &              ldx(2)*(multx(2)*dpcdn(i+1,j,k)/dx(1)))/dx(1)
+               bx(i,j,k,3)   = (dldx(4)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) - 
+     &              dldx(3)*(-multx(1)*(pc(i,j,k)-pc(i-1,j,k))/dx(1)) +
+     &              (ldx(1)+ldx(2))*dpcdn(i,j,k)/dx(1))/dx(1)
+               
+               by(i,j,k,2)   = (-dldy(1)*(-multy(1)*(pc(i,j,k)-pc(i,j-1,k))/dx(2)) -
+     &              ldy(1)*(multy(1)*dpcdn(i,j-1,k)/dx(2)))/dx(2)
+               by(i,j+1,k,1) = (dldy(2)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) -
+     &              ldy(2)*(multy(2)*dpcdn(i,j+1,k)/dx(2)))/dx(2)
+               by(i,j,k,3)   = (dldy(4)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) - 
+     &              dldy(3)*(-multy(1)*(pc(i,j,k)-pc(i,j-1,k))/dx(2) - grav) +
+     &              (ldy(1)+ldy(2))*dpcdn(i,j,k)/dx(2))/dx(2)
+
+               bz(i,j,k,2)   = (-dldz(1)*(-multz(1)*(pc(i,j,k)-pc(i,j,k-1))/dx(3) - grav) -
+     &              ldz(1)*(multz(1)*dpcdn(i,j,k-1)/dx(3)))/dx(3)
+               bz(i,j+1,k,1) = (dldz(2)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) -
+     &              ldz(2)*(multz(2)*dpcdn(i,j,k+1)/dx(3)))/dx(3)
+               bz(i,j,k,3)   = (dldz(4)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) - 
+     &              dldz(3)*(-multz(1)*(pc(i,j,k)-pc(i,j,k-1))/dx(3) - grav) +
+     &              (ldy(1)+ldy(2))*dpcdn(i,j,k)/dx(3))/dx(3)
             end do
          end do
       end do
 
       deallocate(dpcdn)
+      deallocate(dlddn)
 
       end
 
@@ -1480,6 +1695,7 @@ c :: ------------------------------------------------------------
       subroutine FORT_RICHARD_NJAC(s, DIMS(s),
      &     bx,DIMS(bx),by,DIMS(by),bz,DIMS(bz),
      &     umac, DIMS(umac), vmac, DIMS(vmac), wmac, DIMS(wmac),
+     &     kpx, DIMS(kpx), kpy, DIMS(kpy), kpz, DIMS(kpz),
      &     lbd,DIMS(lbd),pc,DIMS(pc),
      &     phi,DIMS(phi),kappa,DIMS(kappa),
      &     krcoef,DIMS(krcoef),nkrcoef,
@@ -1498,6 +1714,9 @@ c :: ------------------------------------------------------------
       integer DIMDEC(umac)
       integer DIMDEC(vmac)
       integer DIMDEC(wmac)
+      integer DIMDEC(kpx)
+      integer DIMDEC(kpy)
+      integer DIMDEC(kpz)
       integer DIMDEC(pc)
       integer DIMDEC(lbd)
       integer DIMDEC(phi)
@@ -1516,7 +1735,10 @@ c :: ------------------------------------------------------------
       REAL_T  bz(DIMV(bz),3)
       REAL_T  umac(DIMV(umac))
       REAL_T  vmac(DIMV(vmac))
-      REAL_T  wmac(DIMV(wmac))
+      REAL_T  wmac(DIMV(wmac))      
+      REAL_T  kpx(DIMV(kpx))
+      REAL_T  kpy(DIMV(kpy))
+      REAL_T  kpz(DIMV(kpz))
       REAL_T  pc(DIMV(pc))
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
@@ -1528,10 +1750,10 @@ c :: ------------------------------------------------------------
 
       integer i,j,k,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
-      REAL_T  grav, rg
+      REAL_T  grav, rgx, rgy, rgz
       REAL_T  multx(2), multy(2), multz(2), ldx(2), ldy(2), ldz(2)
       REAL_T  comp(ncomps)
-      REAL_T  ldtmp(ncomps),ldn(3,3,3),pcn(3,3,3)
+      REAL_T  ldtmp(ncomps),ldn(3),pcn(3)
       REAL_T  rgtmpx(3), rgtmpy(3), rgtmpz(3), dcx(3), dcy(3), dcz(3)
 c
 c     gravity is nonzero only in the y direction
@@ -1544,19 +1766,19 @@ c
          do j=lo(2), hi(2)
             do i=lo(1), hi(1)
                if (do_upwind) then
-                  ldx(1) = cvmgp(lbd(i-1,j,k,1),lbd(i,j,k,1),umac(i,j,k))
-                  ldx(2) = cvmgp(lbd(i,j,k,1),lbd(i+1,j,k,1),umac(i+1,j,k))
-                  ldy(1) = cvmgp(lbd(i,j-1,k,1),lbd(i,j,k,1),vmac(i,j,k))
-                  ldy(2) = cvmgp(lbd(i,j,k,1),lbd(i,j+1,k,1),vmac(i,j+1,k))
-                  ldz(1) = cvmgp(lbd(i,j,k-1,1),lbd(i,j,k,1),wmac(i,j,k))
-                  ldz(2) = cvmgp(lbd(i,j,k,1),lbd(i,j,k+1,1),wmac(i,j,k+1))
+                  ldx(1) = cvmgp(kpx(i,j,k)*lbd(i-1,j,k,1),kpx(i,j,k)*lbd(i,j,k,1),umac(i,j,k))
+                  ldx(2) = cvmgp(kpx(i+1,j,k)*lbd(i,j,k,1),kpx(i+1,j,k)*lbd(i+1,j,k,1),umac(i+1,j,k))
+                  ldy(1) = cvmgp(kpy(i,j,k)*lbd(i,j-1,k,1),kpy(i,j,k)*lbd(i,j,k,1),vmac(i,j,k))
+                  ldy(2) = cvmgp(kpy(i,j+1,k)*lbd(i,j,k,1),kpy(i,j+1,k)*lbd(i,j+1,k,1),vmac(i,j+1,k))
+                  ldz(1) = cvmgp(kpz(i,j,k)*lbd(i,j,k-1,1),kpz(i,j,k)*lbd(i,j,k,1),wmac(i,j,k))
+                  ldz(2) = cvmgp(kpz(i,j,k+1)*lbd(i,j,k,1),kpz(i,j,k+1)*lbd(i,j,k+1,1),wmac(i,j,k+1))
                else
-                  ldx(1) = half*(lbd(i,j,k,1)+lbd(i-1,j,k,1))
-                  ldx(2) = half*(lbd(i,j,k,1)+lbd(i+1,j,k,1))
-                  ldy(1) = half*(lbd(i,j,k,1)+lbd(i,j-1,k,1))
-                  ldy(2) = half*(lbd(i,j,k,1)+lbd(i,j+1,k,1))
-                  ldz(1) = half*(lbd(i,j,k,1)+lbd(i,j,k-1,1))
-                  ldz(2) = half*(lbd(i,j,k,1)+lbd(i,j,k+1,1))
+                  ldx(1) = kpx(i,j,k)*half*(lbd(i,j,k,1)+lbd(i-1,j,k,1))
+                  ldx(2) = kpx(i+1,j,k)*half*(lbd(i,j,k,1)+lbd(i+1,j,k,1))
+                  ldy(1) = kpy(i,j,k)*half*(lbd(i,j,k,1)+lbd(i,j-1,k,1))
+                  ldy(2) = kpy(i,j+1,k)*half*(lbd(i,j,k,1)+lbd(i,j+1,k,1))
+                  ldz(1) = kpz(i,j,k)*half*(lbd(i,j,k,1)+lbd(i,j,k-1,1))
+                  ldz(2) = kpz(i,j,k+1)*half*(lbd(i,j,k,1)+lbd(i,j,k+1,1))
                end if
                multx = one
                multy = one
@@ -1564,7 +1786,7 @@ c
                if (i .eq. domlo(1)) then
                   if (bc(1,1) .eq. EXT_DIR) then
                      multx(1) = two 
-                     ldx(1) = lbd(i-1,j,k,1)
+                     ldx(1) = kpx(i,j,k)*lbd(i-1,j,k,1)
                   elseif (bc(1,1) .eq. FOEXTRAP) then
                      multx(1) = zero
                      if (inflow_bc_lo(1) .eq. 1) then
@@ -1575,7 +1797,7 @@ c
                if (i .eq. domhi(1)) then
                   if (bc(1,2) .eq. EXT_DIR) then
                      multx(2) = two
-                     ldx(2) = lbd(i+1,j,k,1)
+                     ldx(2) = kpx(i+1,j,k)*lbd(i+1,j,k,1)
                   elseif (bc(1,2) .eq. FOEXTRAP) then
                      multx(2) = zero
                      if (inflow_bc_hi(1) .eq. 1) then
@@ -1586,7 +1808,7 @@ c
                if (j .eq. domlo(2)) then
                   if (bc(2,1) .eq. EXT_DIR) then
                      multy(1) = two
-                     ldy(1) = lbd(i,j-1,k,1)
+                     ldy(1) =  kpx(i,j,k)*lbd(i,j-1,k,1)
                   elseif (bc(2,1) .eq. FOEXTRAP) then
                      multy(1) = zero
                      if (inflow_bc_lo(2) .eq. 1) then
@@ -1597,7 +1819,7 @@ c
                if (j .eq. domhi(2)) then
                   if (bc(2,2) .eq. EXT_DIR) then
                      multy(2) = two 
-                     ldy(2) = lbd(i,j+1,k,1)
+                     ldy(2) =  kpx(i,j+1,k)*lbd(i,j+1,k,1)
                   elseif (bc(2,2) .eq. FOEXTRAP) then
                      multy(2) = zero
                      if (inflow_bc_hi(2) .eq. 1) then
@@ -1608,7 +1830,7 @@ c
                if (k .eq. domlo(3)) then
                   if (bc(3,1) .eq. EXT_DIR) then
                      multz(1) = two
-                     ldz(1) = lbd(i,j,k-1,1)
+                     ldz(1) =  kpz(i,j,k)*lbd(i,j,k-1,1)
                   elseif (bc(3,1) .eq. FOEXTRAP) then
                      multz(1) = zero
                      if (inflow_bc_lo(3) .eq. 1) then
@@ -1619,7 +1841,7 @@ c
                if (k .eq. domhi(3)) then
                   if (bc(3,2) .eq. EXT_DIR) then
                      multz(2) = two 
-                     ldz(2) = lbd(i,j,k+1,1)
+                     ldz(2) =  kpz(i,j,k+1)*lbd(i,j,k+1,1)
                   elseif (bc(3,2) .eq. FOEXTRAP) then
                      multz(2) = zero
                      if (inflow_bc_hi(3) .eq. 1) then
@@ -1627,17 +1849,17 @@ c
                      end if
                   end if
                end if
-               rg = (ldx(2)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) -
-     &              ldx(1) *(-multx(1)*(pc(i,j,k)-pc(i-1,j,k))/dx(1)))/dx(1) +
-     &              (ldy(2)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) - 
-     &              ldy(1) *(-multy(1)*(pc(i,j,k)-pc(i,j-1,k))/dx(2)))/dx(2) +
-     &              (ldz(2)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) - 
+               rgx = (ldx(2)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) -
+     &              ldx(1) *(-multx(1)*(pc(i,j,k)-pc(i-1,j,k))/dx(1)))/dx(1) 
+               rgy = (ldy(2)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) - 
+     &              ldy(1) *(-multy(1)*(pc(i,j,k)-pc(i,j-1,k))/dx(2)))/dx(2) 
+               rgz = (ldz(2)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) - 
      &              ldz(1) *(-multz(1)*(pc(i,j,k)-pc(i,j,k-1))/dx(3) - grav))/dx(3)           
                
 c              x-direction
                do n = -1,1
-                  ldn = lbd(i-1:i+1,j-1:j+1,k-1:k+1,1)
-                  pcn = pc(i-1:i+1,j-1:j+1,k-1:k+1)
+                  ldn = lbd(i-1:i+1,j,k,1)
+                  pcn = pc(i-1:i+1,j,k)
                   comp(1) = (one+deps)*s(i+n,j,k,1)
                   dcx(n+2) = deps*s(i+n,j,k,1)
                   if (comp(1)  > rhoval(1)) then
@@ -1651,54 +1873,34 @@ c              x-direction
                   l_kr_coef  = krcoef(i+n,j,k,2)
                   l_kr_sres  = krcoef(i+n,j,k,3)
                   call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
-                  ldn(n+2,2,2) = ldtmp(1)
+                  ldn(n+2) = ldtmp(1)
                   l_cpl_type  = nint(cplcoef(i+n,j,k,1))
                   l_cpl_coef  = cplcoef(i+n,j,k,2)
                   l_sigma     = cplcoef(i+n,j,k,3)
                   l_cpl_sres  = cplcoef(i+n,j,k,4)
-                  call get_cpl(pcn(n+2,2,2),comp,rhoval,phi(i+n,j,k),kappa(i+n,j,k),l_sigma,ncomps,
+                  call get_cpl(pcn(n+2),comp,rhoval,phi(i+n,j,k),kappa(i+n,j,k),l_sigma,ncomps,
      &                 l_cpl_sres,l_cpl_type,l_cpl_coef)
                   if (do_upwind) then
-                     ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1,2,2),ldn(2,2,2),umac(i,j,k)),ldx(1))
-                     ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2,2,2),ldn(3,2,2),umac(i+1,j,k)),ldx(2))
-                     ldy(1) = cvmgz(ldy(1),cvmgp(ldn(2,1,2),ldn(2,2,2),vmac(i,j,k)),ldy(1))
-                     ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2,2,2),ldn(2,3,2),vmac(i,j+1,k)),ldy(2))
-                     ldz(1) = cvmgz(ldz(1),cvmgp(ldn(2,2,1),ldn(2,2,2),wmac(i,j,k)),ldz(1))
-                     ldz(2) = cvmgz(ldz(2),cvmgp(ldn(2,2,2),ldn(2,2,3),wmac(i,j,k+1)),ldz(2))
+                     ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1),ldn(2),umac(i,j,k)),ldx(1))
+                     ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2),ldn(3),umac(i+1,j,k)),ldx(2))
                   else
-                     ldx(1) = cvmgz(ldx(1),half*(ldn(1,2,2)+ldn(2,2,2)),ldx(1))
-                     ldx(2) = cvmgz(ldx(2),half*(ldn(2,2,2)+ldn(3,2,2)),ldx(2))
-                     ldy(1) = cvmgz(ldy(1),half*(ldn(2,1,2)+ldn(2,2,2)),ldy(1))
-                     ldy(2) = cvmgz(ldy(2),half*(ldn(2,2,2)+ldn(2,3,2)),ldy(2))
-                     ldz(1) = cvmgz(ldz(1),half*(ldn(2,2,1)+ldn(2,2,2)),ldz(1))
-                     ldz(2) = cvmgz(ldz(2),half*(ldn(2,2,2)+ldn(2,2,3)),ldz(2))
+                     ldx(1) = cvmgz(ldx(1),half*(ldn(1)+ldn(2)),ldx(1))
+                     ldx(2) = cvmgz(ldx(2),half*(ldn(2)+ldn(3)),ldx(2))
                   end if
                   if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
-                     ldx(1) = cvmgz(ldx(1),ldn(1,2,2),ldx(1))
+                     ldx(1) = cvmgz(ldx(1),ldn(1),ldx(1))
                   elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
-                     ldx(2) = cvmgz(ldx(2),ldn(3,2,2),ldx(2))
-                  elseif (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
-                     ldy(1) = cvmgz(ldy(1),ldn(2,1,2),ldy(1))
-                  elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
-                     ldy(2) = cvmgz(ldy(2),ldn(2,3,2),ldy(2))               
-                  elseif (k .eq. domlo(3) .and. bc(3,1) .eq. EXT_DIR) then
-                     ldz(1) = cvmgz(ldz(1),ldn(2,2,1),ldz(1))
-                  elseif (k .eq. domhi(3) .and. bc(3,2) .eq. EXT_DIR) then
-                     ldz(2) = cvmgz(ldz(2),ldn(2,2,3),ldz(2))
+                     ldx(2) = cvmgz(ldx(2),ldn(3),ldx(2))
                   end if
 
-                  rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3,2,2)-pcn(2,2,2))/dx(1)) -
-     &                 ldx(1)*(-multx(1)*(pcn(2,2,2)-pcn(1,2,2))/dx(1)))/dx(1) +
-     &                 (ldy(2)*(-multy(2)*(pcn(2,3,2)-pcn(2,2,2))/dx(2)) - 
-     &                 ldy(1)*(-multy(1)*(pcn(2,2,2)-pcn(2,1,2))/dx(2)))/dx(2) +
-     &                 (ldz(2)*(-multz(2)*(pcn(2,2,3)-pcn(2,2,2))/dx(3) - grav) - 
-     &                 ldz(1)*(-multz(1)*(pcn(2,2,2)-pcn(2,2,1))/dx(3) - grav))/dx(3) 
+                  rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1)) -
+     &                 ldx(1)*(-multx(1)*(pcn(2)-pcn(1))/dx(1)))/dx(1) 
                end do
 
 c              y-direction
                do n = -1,1
-                  ldn = lbd(i-1:i+1,j-1:j+1,k-1:k+1,1)
-                  pcn = pc(i-1:i+1,j-1:j+1,k-1:k+1)
+                  ldn = lbd(i,j-1:j+1,k,1)
+                  pcn = pc(i,j-1:j+1,k)
                   comp(1) = (one+deps)*s(i,j+n,k,1)
                   dcy(n+2) = deps*s(i,j+n,k,1)
                   if (comp(1)  > rhoval(1)) then
@@ -1712,55 +1914,35 @@ c              y-direction
                   l_kr_coef  = krcoef(i,j+n,k,2)
                   l_kr_sres  = krcoef(i,j+n,k,3)
                   call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
-                  ldn(2,n+2,2) = ldtmp(1)
+                  ldn(n+2) = ldtmp(1)
                   l_cpl_type  = nint(cplcoef(i,j+n,k,1))
                   l_cpl_coef  = cplcoef(i,j+n,k,2)
                   l_sigma     = cplcoef(i,j+n,k,3)
                   l_cpl_sres  = cplcoef(i,j+n,k,4)
-                  call get_cpl(pcn(2,n+2,2),comp,rhoval,phi(i,j+n,k),kappa(i,j+n,k),l_sigma,ncomps,
+                  call get_cpl(pcn(n+2),comp,rhoval,phi(i,j+n,k),kappa(i,j+n,k),l_sigma,ncomps,
      &                 l_cpl_sres,l_cpl_type,l_cpl_coef)
                   if (do_upwind) then
-                     ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1,2,2),ldn(2,2,2),umac(i,j,k)),ldx(1))
-                     ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2,2,2),ldn(3,2,2),umac(i+1,j,k)),ldx(2))
-                     ldy(1) = cvmgz(ldy(1),cvmgp(ldn(2,1,2),ldn(2,2,2),vmac(i,j,k)),ldy(1))
-                     ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2,2,2),ldn(2,3,2),vmac(i,j+1,k)),ldy(2))
-                     ldz(1) = cvmgz(ldz(1),cvmgp(ldn(2,2,1),ldn(2,2,2),wmac(i,j,k)),ldz(1))
-                     ldz(2) = cvmgz(ldz(2),cvmgp(ldn(2,2,2),ldn(2,2,3),wmac(i,j,k+1)),ldz(2))
+                     ldy(1) = cvmgz(ldy(1),cvmgp(ldn(1),ldn(2),vmac(i,j,k)),ldy(1))
+                     ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2),ldn(3),vmac(i,j+1,k)),ldy(2))
                   else
-                     ldx(1) = cvmgz(ldx(1),half*(ldn(1,2,2)+ldn(2,2,2)),ldx(1))
-                     ldx(2) = cvmgz(ldx(2),half*(ldn(2,2,2)+ldn(3,2,2)),ldx(2))
-                     ldy(1) = cvmgz(ldy(1),half*(ldn(2,1,2)+ldn(2,2,2)),ldy(1))
-                     ldy(2) = cvmgz(ldy(2),half*(ldn(2,2,2)+ldn(2,3,2)),ldy(2))
-                     ldz(1) = cvmgz(ldz(1),half*(ldn(2,2,1)+ldn(2,2,2)),ldz(1))
-                     ldz(2) = cvmgz(ldz(2),half*(ldn(2,2,2)+ldn(2,2,3)),ldz(2))
+                     ldy(1) = cvmgz(ldy(1),half*(ldn(1)+ldn(2)),ldy(1))
+                     ldy(2) = cvmgz(ldy(2),half*(ldn(2)+ldn(3)),ldy(2))
                   end if
-                  if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
-                     ldx(1) = cvmgz(ldx(1),ldn(1,2,2),ldx(1))
-                  elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
-                     ldx(2) = cvmgz(ldx(2),ldn(3,2,2),ldx(2))
-                  elseif (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
-                     ldy(1) = cvmgz(ldy(1),ldn(2,1,2),ldy(1))
+                  if (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
+                     ldy(1) = cvmgz(ldy(1),ldn(1),ldy(1))
                   elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
-                     ldy(2) = cvmgz(ldy(2),ldn(2,3,2),ldy(2))               
-                  elseif (k .eq. domlo(3) .and. bc(3,1) .eq. EXT_DIR) then
-                     ldz(1) = cvmgz(ldz(1),ldn(2,2,1),ldz(1))
-                  elseif (k .eq. domhi(3) .and. bc(3,2) .eq. EXT_DIR) then
-                     ldz(2) = cvmgz(ldz(2),ldn(2,2,3),ldz(2))
+                     ldy(2) = cvmgz(ldy(2),ldn(3),ldy(2))             
                   end if
 
-                  rgtmpy(n+2) = (ldx(2)*(-multx(2)*(pcn(3,2,2)-pcn(2,2,2))/dx(1)) -
-     &                 ldx(1)*(-multx(1)*(pcn(2,2,2)-pcn(1,2,2))/dx(1)))/dx(1) +
-     &                 (ldy(2)*(-multy(2)*(pcn(2,3,2)-pcn(2,2,2))/dx(2)) - 
-     &                 ldy(1)*(-multy(1)*(pcn(2,2,2)-pcn(2,1,2))/dx(2)))/dx(2) +
-     &                 (ldz(2)*(-multz(2)*(pcn(2,2,3)-pcn(2,2,2))/dx(3) - grav) - 
-     &                 ldz(1)*(-multz(1)*(pcn(2,2,2)-pcn(2,2,1))/dx(3) - grav))/dx(3)         
+                  rgtmpy(n+2) = (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2)) - 
+     &                 ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2)))/dx(2)        
                end do
 
 
 c              z-direction
                do n = -1,1
-                  ldn = lbd(i-1:i+1,j-1:j+1,k-1:k+1,1)
-                  pcn = pc(i-1:i+1,j-1:j+1,k-1:k+1)
+                  ldn = lbd(i,j,k-1:k+1,1)
+                  pcn = pc(i,j,k-1:k+1)
                   comp(1) = (one+deps)*s(i,j,k+n,1)
                   dcz(n+2) = deps*s(i,j,k+n,1)
                   if (comp(1)  > rhoval(1)) then
@@ -1774,61 +1956,401 @@ c              z-direction
                   l_kr_coef  = krcoef(i,j,k+n,2)
                   l_kr_sres  = krcoef(i,j,k+n,3)
                   call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
-                  ldn(2,2,n+2) = ldtmp(1)
+                  ldn(n+2) = ldtmp(1)
                   l_cpl_type  = nint(cplcoef(i,j,k+n,1))
                   l_cpl_coef  = cplcoef(i,j,k+n,2)
                   l_sigma     = cplcoef(i,j,k+n,3)
                   l_cpl_sres  = cplcoef(i,j,k+n,4)
-                  call get_cpl(pcn(2,2,n+2),comp,rhoval,phi(i,j,k+n),kappa(i,j,k+n),l_sigma,ncomps,
+                  call get_cpl(pcn(n+2),comp,rhoval,phi(i,j,k+n),kappa(i,j,k+n),l_sigma,ncomps,
      &                 l_cpl_sres,l_cpl_type,l_cpl_coef)
                   if (do_upwind) then
-                     ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1,2,2),ldn(2,2,2),umac(i,j,k)),ldx(1))
-                     ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2,2,2),ldn(3,2,2),umac(i+1,j,k)),ldx(2))
-                     ldy(1) = cvmgz(ldy(1),cvmgp(ldn(2,1,2),ldn(2,2,2),vmac(i,j,k)),ldy(1))
-                     ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2,2,2),ldn(2,3,2),vmac(i,j+1,k)),ldy(2))
-                     ldz(1) = cvmgz(ldz(1),cvmgp(ldn(2,2,1),ldn(2,2,2),wmac(i,j,k)),ldz(1))
-                     ldz(2) = cvmgz(ldz(2),cvmgp(ldn(2,2,2),ldn(2,2,3),wmac(i,j,k+1)),ldz(2))
+                     ldz(1) = cvmgz(ldz(1),cvmgp(ldn(1),ldn(2),wmac(i,j,k)),ldz(1))
+                     ldz(2) = cvmgz(ldz(2),cvmgp(ldn(2),ldn(3),wmac(i,j,k+1)),ldz(2))
                   else
-                     ldx(1) = cvmgz(ldx(1),half*(ldn(1,2,2)+ldn(2,2,2)),ldx(1))
-                     ldx(2) = cvmgz(ldx(2),half*(ldn(2,2,2)+ldn(3,2,2)),ldx(2))
-                     ldy(1) = cvmgz(ldy(1),half*(ldn(2,1,2)+ldn(2,2,2)),ldy(1))
-                     ldy(2) = cvmgz(ldy(2),half*(ldn(2,2,2)+ldn(2,3,2)),ldy(2))
-                     ldz(1) = cvmgz(ldz(1),half*(ldn(2,2,1)+ldn(2,2,2)),ldz(1))
-                     ldz(2) = cvmgz(ldz(2),half*(ldn(2,2,2)+ldn(2,2,3)),ldz(2))
+                     ldz(1) = cvmgz(ldz(1),half*(ldn(1)+ldn(2)),ldz(1))
+                     ldz(2) = cvmgz(ldz(2),half*(ldn(2)+ldn(3)),ldz(2))
                   end if
-                  if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
-                     ldx(1) = cvmgz(ldx(1),ldn(1,2,2),ldx(1))
-                  elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
-                     ldx(2) = cvmgz(ldx(2),ldn(3,2,2),ldx(2))
-                  elseif (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
-                     ldy(1) = cvmgz(ldy(1),ldn(2,1,2),ldy(1))
-                  elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
-                     ldy(2) = cvmgz(ldy(2),ldn(2,3,2),ldy(2))               
-                  elseif (k .eq. domlo(3) .and. bc(3,1) .eq. EXT_DIR) then
-                     ldz(1) = cvmgz(ldz(1),ldn(2,2,1),ldz(1))
+                  if (k .eq. domlo(3) .and. bc(3,1) .eq. EXT_DIR) then
+                     ldz(1) = cvmgz(ldz(1),ldn(1),ldz(1))
                   elseif (k .eq. domhi(3) .and. bc(3,2) .eq. EXT_DIR) then
-                     ldz(2) = cvmgz(ldz(2),ldn(2,2,3),ldz(2))
+                     ldz(2) = cvmgz(ldz(2),ldn(3),ldz(2))
                   end if
                   
-                  rgtmpz(n+2) = (ldx(2)*(-multx(2)*(pcn(3,2,2)-pcn(2,2,2))/dx(1)) -
-     &                 ldx(1)*(-multx(1)*(pcn(2,2,2)-pcn(1,2,2))/dx(1)))/dx(1) +
-     &                 (ldy(2)*(-multy(2)*(pcn(2,3,2)-pcn(2,2,2))/dx(2)) - 
-     &                 ldy(1)*(-multy(1)*(pcn(2,2,2)-pcn(2,1,2))/dx(2)))/dx(2) +
-     &                 (ldz(2)*(-multz(2)*(pcn(2,2,3)-pcn(2,2,2))/dx(3) - grav) - 
-     &                 ldz(1)*(-multz(1)*(pcn(2,2,2)-pcn(2,2,1))/dx(3) - grav))/dx(3)         
+                  rgtmpz(n+2) = (ldz(2)*(-multz(2)*(pcn(3)-pcn(2))/dx(3) - grav) - 
+     &                 ldz(1)*(-multz(1)*(pcn(2)-pcn(1))/dx(3) - grav))/dx(3)         
                end do
                
-               bx(i,j,k,2)   = (rgtmpx(1) - rg)/dcx(1)
-               bx(i+1,j,k,1) = (rgtmpx(3) - rg)/dcx(3)
-               bx(i,j,k,3)   = (1.0/3.0)*(rgtmpx(2) - rg)/dcx(2)
-               by(i,j,k,2)   = (rgtmpy(1) - rg)/dcy(1)
-               by(i,j+1,k,1) = (rgtmpy(3) - rg)/dcy(3)
-               by(i,j,k,3)   = (1.0/3.0)*(rgtmpy(2) - rg)/dcy(2)
-               bz(i,j,k,2)   = (rgtmpz(1) - rg)/dcz(1)
-               bz(i,j,k+1,1) = (rgtmpz(3) - rg)/dcz(3)
-               bz(i,j,k,3)   = (1.0/3.0)*(rgtmpz(2) - rg)/dcz(2)
+               bx(i,j,k,2)   = (rgtmpx(1) - rgx)/dcx(1)
+               bx(i+1,j,k,1) = (rgtmpx(3) - rgx)/dcx(3)
+               bx(i,j,k,3)   = (rgtmpx(2) - rgx)/dcx(2)
+               by(i,j,k,2)   = (rgtmpy(1) - rgy)/dcy(1)
+               by(i,j+1,k,1) = (rgtmpy(3) - rgy)/dcy(3)
+               by(i,j,k,3)   = (rgtmpy(2) - rgy)/dcy(2)
+               bz(i,j,k,2)   = (rgtmpz(1) - rgz)/dcz(1)
+               bz(i,j,k+1,1) = (rgtmpz(3) - rgz)/dcz(3)
+               bz(i,j,k,3)   = (rgtmpz(2) - rgz)/dcz(2)
             end do
          end do
+      end do
+
+      end
+
+c :: ------------------------------------------------------------
+c :: RICHARD_NJAC2
+c      Compute the coefficient for the numerical jacobian in the  
+c      equilibrium richard's equation.  
+c
+c     dfx(i,j,1) = dDF(i,j)/dp(i-1,j)
+c     dfx(i,j,2) = dDF(i,j)/dp(i+1,j)
+c     dfx(i,j,3) = dDF(i,j)/dp(i,j) 
+c     dfy(i,j,1) = dDF(i,j)/dp(i,j-1)
+c     dfy(i,j,2) = dDF(i,j)/dp(i,j+1)
+c     dfy(i,j,3) = dDF(i,j)/dp(i,j)
+c
+c :: ------------------------------------------------------------    
+      subroutine FORT_RICHARD_NJAC2(
+     &     bx,DIMS(bx),by,DIMS(by),bz,DIMS(bz),
+     &     umac, DIMS(umac), vmac, DIMS(vmac), wmac, DIMS(wmac),
+     &     kpx, DIMS(kpx), kpy, DIMS(kpy), kpz, DIMS(kpz),
+     &     lbd,DIMS(lbd),pc,DIMS(pc),
+     &     phi,DIMS(phi),kappa,DIMS(kappa),
+     &     krcoef,DIMS(krcoef),nkrcoef,
+     &     cplcoef,DIMS(cplcoef),ncplcoef,
+     &     lo,hi,domlo,domhi,dx, bc, 
+     &     inflow_bc_lo,inflow_bc_hi,deps,do_upwind)
+
+      implicit none
+
+#include "probdata.H"
+
+      integer DIMDEC(bx)
+      integer DIMDEC(by)
+      integer DIMDEC(bz)
+      integer DIMDEC(umac)
+      integer DIMDEC(vmac)
+      integer DIMDEC(wmac)
+      integer DIMDEC(kpx)
+      integer DIMDEC(kpy)
+      integer DIMDEC(kpz)
+      integer DIMDEC(pc)
+      integer DIMDEC(lbd)
+      integer DIMDEC(phi)
+      integer DIMDEC(kappa)
+      integer DIMDEC(krcoef)
+      integer DIMDEC(cplcoef)
+      integer lo(SDIM),hi(SDIM)
+      integer domlo(SDIM), domhi(SDIM)
+      integer bc(SDIM,2)
+      integer inflow_bc_lo(SDIM),inflow_bc_hi(SDIM)
+      integer nkrcoef,ncplcoef
+      REAL_T  dx(SDIM)
+      REAL_T  bx(DIMV(bx),3)
+      REAL_T  by(DIMV(by),3)
+      REAL_T  bz(DIMV(bz),3)
+      REAL_T  umac(DIMV(umac))
+      REAL_T  vmac(DIMV(vmac))
+      REAL_T  wmac(DIMV(wmac))      
+      REAL_T  kpx(DIMV(kpx))
+      REAL_T  kpy(DIMV(kpy))
+      REAL_T  kpz(DIMV(kpz))
+      REAL_T  pc(DIMV(pc))
+      REAL_T  lbd(DIMV(lbd),ncomps)
+      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
+      REAL_T  krcoef(DIMV(krcoef),nkrcoef)
+      REAL_T  phi(DIMV(phi))
+      REAL_T  kappa(DIMV(kappa))
+      REAL_T  deps
+      logical do_upwind
+
+      integer i,j,k,n,l_kr_type,l_cpl_type
+      REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
+      REAL_T  grav, rgx, rgy, rgz, cap
+      REAL_T  multx(2), multy(2), multz(2), ldx(2), ldy(2), ldz(2)
+      REAL_T  comp(ncomps)
+      REAL_T  ldtmp(ncomps),ldn(3),pcn(3)
+      REAL_T  rgtmpx(3), rgtmpy(3), rgtmpz(3), dcx(3), dcy(3), dcz(3)
+c
+c     gravity is nonzero only in the z direction
+c
+      grav = -rhoval(1)*gravity
+      bx = zero
+      by = zero
+      bz = zero
+      do k = lo(3), hi(3)
+         do j=lo(2), hi(2)
+            do i=lo(1), hi(1)
+               if (do_upwind) then
+                  ldx(1) = cvmgp(kpx(i,j,k)*lbd(i-1,j,k,1),kpx(i,j,k)*lbd(i,j,k,1),umac(i,j,k))
+                  ldx(2) = cvmgp(kpx(i+1,j,k)*lbd(i,j,k,1),kpx(i+1,j,k)*lbd(i+1,j,k,1),umac(i+1,j,k))
+                  ldy(1) = cvmgp(kpy(i,j,k)*lbd(i,j-1,k,1),kpy(i,j,k)*lbd(i,j,k,1),vmac(i,j,k))
+                  ldy(2) = cvmgp(kpy(i,j+1,k)*lbd(i,j,k,1),kpy(i,j+1,k)*lbd(i,j+1,k,1),vmac(i,j+1,k))
+                  ldz(1) = cvmgp(kpz(i,j,k)*lbd(i,j,k-1,1),kpz(i,j,k)*lbd(i,j,k,1),wmac(i,j,k))
+                  ldz(2) = cvmgp(kpz(i,j,k+1)*lbd(i,j,k,1),kpz(i,j,k+1)*lbd(i,j,k+1,1),wmac(i,j,k+1))
+               else
+                  ldx(1) = kpx(i,j,k)*half*(lbd(i,j,k,1)+lbd(i-1,j,k,1))
+                  ldx(2) = kpx(i+1,j,k)*half*(lbd(i,j,k,1)+lbd(i+1,j,k,1))
+                  ldy(1) = kpy(i,j,k)*half*(lbd(i,j,k,1)+lbd(i,j-1,k,1))
+                  ldy(2) = kpy(i,j+1,k)*half*(lbd(i,j,k,1)+lbd(i,j+1,k,1))
+                  ldz(1) = kpz(i,j,k)*half*(lbd(i,j,k,1)+lbd(i,j,k-1,1))
+                  ldz(2) = kpz(i,j,k+1)*half*(lbd(i,j,k,1)+lbd(i,j,k+1,1))
+               end if
+               multx = one
+               multy = one
+               multz = one
+               if (i .eq. domlo(1)) then
+                  if (bc(1,1) .eq. EXT_DIR) then
+                     multx(1) = two 
+                     ldx(1) = kpx(i,j,k)*lbd(i-1,j,k,1)
+                  elseif (bc(1,1) .eq. FOEXTRAP) then
+                     multx(1) = zero
+                     if (inflow_bc_lo(1) .eq. 1) then
+                        ldx(1) = zero
+                     end if
+                  end if
+               end if
+               if (i .eq. domhi(1)) then
+                  if (bc(1,2) .eq. EXT_DIR) then
+                     multx(2) = two
+                     ldx(2) = kpx(i+1,j,k)*lbd(i+1,j,k,1)
+                  elseif (bc(1,2) .eq. FOEXTRAP) then
+                     multx(2) = zero
+                     if (inflow_bc_hi(1) .eq. 1) then
+                        ldx(2) = zero
+                     end if
+                  end if
+               end if
+               if (j .eq. domlo(2)) then
+                  if (bc(2,1) .eq. EXT_DIR) then
+                     multy(1) = two
+                     ldy(1) = kpy(i,j,k)*lbd(i,j-1,k,1)
+                  elseif (bc(2,1) .eq. FOEXTRAP) then
+                     multy(1) = zero
+                     if (inflow_bc_lo(2) .eq. 1) then
+                        ldy(1) = zero
+                     end if
+                  end if
+               end if
+               if (j .eq. domhi(2)) then
+                  if (bc(2,2) .eq. EXT_DIR) then
+                     multy(2) = two 
+                     ldy(2) = kpy(i,j+1,k)*lbd(i,j+1,k,1)
+                  elseif (bc(2,2) .eq. FOEXTRAP) then
+                     multy(2) = zero
+                     if (inflow_bc_hi(2) .eq. 1) then
+                        ldy(2) = zero
+                     end if
+                  end if
+               end if
+               if (k .eq. domlo(3)) then
+                  if (bc(3,1) .eq. EXT_DIR) then
+                     multz(1) = two
+                     ldz(1) = kpz(i,j,k)*lbd(i,j,k-1,1)
+                  elseif (bc(3,1) .eq. FOEXTRAP) then
+                     multz(1) = zero
+                     if (inflow_bc_lo(3) .eq. 1) then
+                        ldy(1) = zero
+                     end if
+                  end if
+               end if
+               if (k .eq. domhi(3)) then
+                  if (bc(3,2) .eq. EXT_DIR) then
+                     multz(2) = two 
+                     ldz(2) = kpz(i,j,k+1)*lbd(i,j,k+1,1)
+                  elseif (bc(3,2) .eq. FOEXTRAP) then
+                     multz(2) = zero
+                     if (inflow_bc_hi(3) .eq. 1) then
+                        ldz(2) = zero
+                     end if
+                  end if
+               end if
+               rgx = (ldx(2)*(-multx(2)*(pc(i+1,j,k)-pc(i,j,k))/dx(1)) -
+     &              ldx(1) *(-multx(1)*(pc(i,j,k)-pc(i-1,j,k))/dx(1)))/dx(1) 
+               rgy = (ldy(2)*(-multy(2)*(pc(i,j+1,k)-pc(i,j,k))/dx(2)) - 
+     &              ldy(1) *(-multy(1)*(pc(i,j,k)-pc(i,j-1,k))/dx(2)))/dx(2) 
+               rgz = (ldz(2)*(-multz(2)*(pc(i,j,k+1)-pc(i,j,k))/dx(3) - grav) - 
+     &              ldz(1) *(-multz(1)*(pc(i,j,k)-pc(i,j,k-1))/dx(3) - grav))/dx(3)           
+               
+c              x-direction
+               do n = -1,1
+                  l_kr_type  = nint(krcoef(i+n,j,k,1))
+                  l_kr_coef  = krcoef(i+n,j,k,2)
+                  l_kr_sres  = krcoef(i+n,j,k,3)
+                  l_cpl_type = nint(cplcoef(i+n,j,k,1))
+                  l_cpl_coef = cplcoef(i+n,j,k,2)
+                  l_sigma    = cplcoef(i+n,j,k,3)
+                  l_cpl_sres = cplcoef(i+n,j,k,4)
+                  ldn = lbd(i-1:i+1,j,k,1)
+                  pcn = pc(i-1:i+1,j,k)
+                  cap = pc(i+n,j,k) + deps/l_sigma
+                  dcx(n+2) = deps/l_sigma
+                  call get_invcpl(comp,cap,rhoval,phi(i+n,j,k),kappa(i+n,j,k),l_sigma,ncomps,
+     &                 l_cpl_sres,l_cpl_type,l_cpl_coef)
+                  call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
+                  ldn(n+2) = ldtmp(1)
+                  pcn(n+2) = cap
+                  if (do_upwind) then
+                     ldx(1) = cvmgz(ldx(1),cvmgp(ldn(1),ldn(2),umac(i,j,k)),ldx(1))
+                     ldx(2) = cvmgz(ldx(2),cvmgp(ldn(2),ldn(3),umac(i+1,j,k)),ldx(2))
+                  else
+                     ldx(1) = cvmgz(ldx(1),half*(ldn(1)+ldn(2)),ldx(1))
+                     ldx(2) = cvmgz(ldx(2),half*(ldn(2)+ldn(3)),ldx(2))
+                  end if
+                  if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
+                     ldx(1) = cvmgz(ldx(1),ldn(1),ldx(1))
+                  elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
+                     ldx(2) = cvmgz(ldx(2),ldn(3),ldx(2))
+                  end if
+
+                  rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1)) -
+     &                 ldx(1)*(-multx(1)*(pcn(2)-pcn(1))/dx(1)))/dx(1) 
+               end do
+
+c              y-direction
+               do n = -1,1
+                  l_kr_type  = nint(krcoef(i,j+n,k,1))
+                  l_kr_coef  = krcoef(i,j+n,k,2)
+                  l_kr_sres  = krcoef(i,j+n,k,3)
+                  l_cpl_type = nint(cplcoef(i,j+n,k,1))
+                  l_cpl_coef = cplcoef(i,j+n,k,2)
+                  l_sigma    = cplcoef(i,j+n,k,3)
+                  l_cpl_sres = cplcoef(i,j+n,k,4)
+                  ldn = lbd(i,j-1:j+1,k,1)
+                  pcn = pc(i,j-1:j+1,k)
+                  cap = pc(i,j+n,k) + deps/l_sigma
+                  dcy(n+2) = deps/l_sigma
+                  call get_invcpl(comp,cap,rhoval,phi(i,j+n,k),kappa(i,j+n,k),l_sigma,ncomps,
+     &                 l_cpl_sres,l_cpl_type,l_cpl_coef)
+                  call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
+                  ldn(n+2) = ldtmp(1)
+                  pcn(n+2) = cap
+                  if (do_upwind) then
+                     ldy(1) = cvmgz(ldy(1),cvmgp(ldn(1),ldn(2),vmac(i,j,k)),ldy(1))
+                     ldy(2) = cvmgz(ldy(2),cvmgp(ldn(2),ldn(3),vmac(i,j+1,k)),ldy(2))
+                  else
+                     ldy(1) = cvmgz(ldy(1),half*(ldn(1)+ldn(2)),ldy(1))
+                     ldy(2) = cvmgz(ldy(2),half*(ldn(2)+ldn(3)),ldy(2))
+                  end if
+                  if (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
+                     ldy(1) = cvmgz(ldy(1),ldn(1),ldy(1))
+                  elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
+                     ldy(2) = cvmgz(ldy(2),ldn(3),ldy(2))      
+                  end if
+
+                  rgtmpy(n+2) = (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2)) - 
+     &                 ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2)))/dx(2)          
+               end do
+
+
+c              z-direction
+               do n = -1,1
+                  l_kr_type  = nint(krcoef(i,j,k+n,1))
+                  l_kr_coef  = krcoef(i,j,k+n,2)
+                  l_kr_sres  = krcoef(i,j,k+n,3)
+                  l_cpl_type = nint(cplcoef(i,j,k+n,1))
+                  l_cpl_coef = cplcoef(i,j,k+n,2)
+                  l_sigma    = cplcoef(i,j,k+n,3)
+                  l_cpl_sres = cplcoef(i,j,k+n,4)
+                  ldn = lbd(i,j,k-1:k+1,1)
+                  pcn = pc(i,j,k-1:k+1)
+                  cap = pc(i,j,k+n) + deps/l_sigma
+                  dcz(n+2) = deps/l_sigma
+                  call get_invcpl(comp,cap,rhoval,phi(i,j,k+n),kappa(i,j,k+n),l_sigma,ncomps,
+     &                 l_cpl_sres,l_cpl_type,l_cpl_coef)
+                  call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
+                  ldn(n+2) = ldtmp(1)
+                  pcn(n+2) = cap
+                  if (do_upwind) then
+                     ldz(1) = cvmgz(ldz(1),cvmgp(ldn(1),ldn(2),wmac(i,j,k)),ldz(1))
+                     ldz(2) = cvmgz(ldz(2),cvmgp(ldn(2),ldn(3),wmac(i,j,k+1)),ldz(2))
+                  else
+                     ldz(1) = cvmgz(ldz(1),half*(ldn(1)+ldn(2)),ldz(1))
+                     ldz(2) = cvmgz(ldz(2),half*(ldn(2)+ldn(3)),ldz(2))
+                  end if
+                  if (k .eq. domlo(3) .and. bc(3,1) .eq. EXT_DIR) then
+                     ldz(1) = cvmgz(ldz(1),ldn(1),ldz(1))
+                  elseif (k .eq. domhi(3) .and. bc(3,2) .eq. EXT_DIR) then
+                     ldz(2) = cvmgz(ldz(2),ldn(3),ldz(2))
+                  end if
+                  
+                  rgtmpz(n+2) = (ldz(2)*(-multz(2)*(pcn(3)-pcn(2))/dx(3) - grav) - 
+     &                 ldz(1)*(-multz(1)*(pcn(2)-pcn(1))/dx(3) - grav))/dx(3)         
+               end do
+               
+               bx(i,j,k,2)   = (rgtmpx(1) - rgx)/dcx(1)
+               bx(i+1,j,k,1) = (rgtmpx(3) - rgx)/dcx(3)
+               bx(i,j,k,3)   = (rgtmpx(2) - rgx)/dcx(2)
+               by(i,j,k,2)   = (rgtmpy(1) - rgy)/dcy(1)
+               by(i,j+1,k,1) = (rgtmpy(3) - rgy)/dcy(3)
+               by(i,j,k,3)   = (rgtmpy(2) - rgy)/dcy(2)
+               bz(i,j,k,2)   = (rgtmpz(1) - rgz)/dcz(1)
+               bz(i,j,k+1,1) = (rgtmpz(3) - rgz)/dcz(3)
+               bz(i,j,k,3)   = (rgtmpz(2) - rgz)/dcz(2)
+
+            end do
+         end do
+      end do
+
+      end
+
+
+c ::: -----------------------------------------------------------
+c ::: Compute the capillary pressure, p_c.
+c :::    It calls get_cpl in EOS_F.F. 
+c ::: -----------------------------------------------------------
+
+      subroutine FORT_RICHARD_ALPHA(alpha,DIMS(alpha),s,DIMS(s),
+     &     phi,DIMS(phi),kappa,DIMS(kappa),
+     &     coef,DIMS(coef),n_coef,lo,hi)
+
+      implicit none
+
+#include "probdata.H"
+
+      integer DIMDEC(alpha)
+      integer DIMDEC(s)
+      integer DIMDEC(phi)
+      integer DIMDEC(kappa)
+      integer DIMDEC(coef)
+      integer n_coef
+      integer lo(SDIM),hi(SDIM)
+      REAL_T  alpha(DIMV(alpha))
+      REAL_T  s(DIMV(s),ncomps)
+      REAL_T  phi(DIMV(phi))
+      REAL_T  kappa(DIMV(kappa))
+      REAL_T  coef(DIMV(coef),n_coef)
+
+      integer i,j,k
+      integer l_cpl_type
+      REAL_T  l_cpl_coef, l_sigma, l_sat_res, dpcdn
+      REAL_T  rtmp(ncomps), stmp(ncomps), sat(ncomps)
+
+      rtmp = one
+      do k = lo(3)-1,hi(3)+1
+         do j = lo(2)-1,hi(2)+1
+            do i = lo(1)-1,hi(1)+1
+               l_cpl_type = nint(coef(i,j,k,1))
+               l_cpl_coef = coef(i,j,k,2)
+               l_sigma    = coef(i,j,k,3)
+               l_sat_res  = coef(i,j,k,4)
+
+               stmp = zero
+               stmp(1:ncomps) = s(i,j,k,1:ncomps) 
+               call get_st(sat,stmp,rhoval,l_sat_res,ncomps)
+
+               if (dabs(one-sat(1)) .lt. 1.d-6) then
+                  sat(1) = one - 1.d-6
+               end if
+               if (ncomps > 1) then
+                  sat(2) = 1.d-6
+               end if
+
+               call get_dcplds(dpcdn,sat,rtmp,phi(i,j,k),
+     &              kappa(i,j,k),l_sigma,ncomps,zero,l_cpl_type,l_cpl_coef)
+         
+               alpha(i,j,k) = phi(i,j,k)/dpcdn*rhoval(1)*(one-l_sat_res)
+
+            end do
+         end do 
       end do
 
       end
@@ -2075,8 +2597,9 @@ c :: ------------------------------------------------------------
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
 
+      logical do_upwind
       integer i, j, k
-      REAL_T  grav, mult, ld
+      REAL_T  grav, mult, ld, dp
 c
 c     gravity is nonzero only in the z direction
 c
@@ -2084,11 +2607,17 @@ c
       ux = zero
       uy = zero
       uz = zero
+      do_upwind = .true.
       do k = lo(3),hi(3)
          do j=lo(2), hi(2)
             do i=lo(1), hi(1)+1
+               dp = -(p(i,j,k)-p(i-1,j,k))/dx(1)
                mult = one
-               ld   = half*(lbd(i,j,k,1)+lbd(i-1,j,k,1))
+               if (do_upwind) then
+                  ld   =  cvmgp(lbd(i-1,j,k,1),lbd(i,j,k,1),dp)
+               else
+                  ld   = half*(lbd(i,j,k,1)+lbd(i-1,j,k,1))
+               end if
                if (i .eq. domlo(1)) then
                   if (bc(1,1) .eq. EXT_DIR) then
                      mult = two 
@@ -2113,7 +2642,7 @@ c
                      end if
                   end if
                end if
-               ux(i,j,k) = ux(i,j,k) - ld*mult*(p(i,j,k)-p(i-1,j,k))/dx(1)
+               ux(i,j,k) = ux(i,j,k) + ld*mult*dp
             end do
          end do
       end do
@@ -2121,8 +2650,13 @@ c
       do k = lo(3),hi(3)
          do j=lo(2), hi(2)+1
             do i=lo(1), hi(1)
+               dp = - (p(i,j,k)-p(i,j-1,k))/dx(2)  
                mult = one
-               ld   = half*(lbd(i,j,k,1)+lbd(i,j-1,k,1))
+               if (do_upwind) then
+                  ld   = cvmgp(lbd(i,j-1,k,1),lbd(i,j,k,1),dp)
+               else
+                  ld   = half*(lbd(i,j,k,1)+lbd(i,j-1,k,1))
+               end if
                if (j .eq. domlo(2)) then
                   if (bc(2,1) .eq. EXT_DIR) then
                      mult = two
@@ -2147,7 +2681,7 @@ c
                      end if
                   end if
                end if
-               uy(i,j,k) = uy(i,j,k) - ld*mult*(p(i,j,k)-p(i,j-1,k))/dx(2)  
+               uy(i,j,k) = uy(i,j,k) + ld*mult*dp
             end do
          end do
       end do      
@@ -2155,8 +2689,13 @@ c
       do k = lo(3),hi(3)+1
          do j=lo(2), hi(2)
             do i=lo(1), hi(1)
+               dp = - ((p(i,j,k)-p(i,j,k-1))/dx(3) - grav) 
                mult = one
-               ld   = half*(lbd(i,j,k,1)+lbd(i,j,k-1,1))
+               if (do_upwind) then
+                  ld   = cvmgp(lbd(i,j,k-1,1),lbd(i,j,k,1),dp)
+               else
+                  ld   = half*(lbd(i,j,k,1)+lbd(i,j,k-1,1))
+               end if
                if (k .eq. domlo(3)) then
                   if (bc(3,1) .eq. EXT_DIR) then
                      mult = two

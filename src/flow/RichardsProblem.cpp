@@ -24,6 +24,8 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   // Create the MimeticHexLocal objects.
   init_mimetic_disc_(*mesh, MD);
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
+  
+  upwind_k_rel_ = list.get<bool>("Upwind relative permeability", true);
 
   // Create the diffusion matrix (structure only, no values)
   D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh, bc));
@@ -35,7 +37,6 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   // resize the vectors for permeability
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
-
 
   p_atm_ = list.get<double>("Atmospheric pressure");
   
@@ -192,6 +193,23 @@ void RichardsProblem::SetFlowState( Teuchos::RCP<const Flow_State> FS_ )
 }
 
 
+void RichardsProblem::ComputeRelPerm(const Epetra_Vector &P, Epetra_Vector &k_rel) const
+{
+  ASSERT(P.Map().SameAs(CellMap(true)));
+  ASSERT(k_rel.Map().SameAs(CellMap(true)));
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    unsigned int mb_id = WRM[mb]->mesh_block();
+    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
+    std::vector<unsigned int> block(ncells);
+    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) {
+      k_rel[*j] = WRM[mb]->k_relative(P[*j]);
+    }
+  }
+}
+
 
 void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P)
 {
@@ -254,46 +272,65 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
 }
 
 
-void RichardsProblem::ComputePrecon(const Epetra_Vector &X)
+void RichardsProblem::ComputePrecon(const Epetra_Vector &P)
 {
-  // Fill the diffusion matrix with values.
-  // THIS IS WHERE WE USE THE CELL PRESSURE PART OF X TO EVALUATE THE RELATIVE PERMEABILITY
   std::vector<double> K(k_);
 
-  Epetra_Vector &Pcell_own = *CreateCellView(X);
+  Epetra_Vector &Pcell_own = *CreateCellView(P);
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
 
-  UpdateVanGenuchtenRelativePermeability(Pcell);
-  
-  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
+  Epetra_Vector &Pface_own = *CreateFaceView(P);
+  Epetra_Vector Pface(FaceMap(true));
+  Pface.Import(Pface_own, *face_importer_, Insert);
 
-  D_->Compute(K);
+  // Fill the diffusion matrix with values.
+  if (upwind_k_rel_) {
+    Epetra_Vector K_upwind(Pface.Map());
+    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
+    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] / mu_;
+    D_->Compute(K, K_upwind);
+  } else {
+    Epetra_Vector k_rel(Pcell.Map());
+    ComputeRelPerm(Pcell, k_rel);
+    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] * k_rel[j] / mu_;
+    D_->Compute(K);
+  }
 
   // Compute the face Schur complement of the diffusion matrix.
   D_->ComputeFaceSchur();
 
   // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
   precon_->Compute();
+
+  delete &Pcell_own, &Pface_own;
 }
 
 
 
-void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
+void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
 {
-  // Fill the diffusion matrix with values.
-  // THIS IS WHERE WE USE THE CELL PRESSURE PART OF X TO EVALUATE THE RELATIVE PERMEABILITY
   std::vector<double> K(k_);
 
-  Epetra_Vector &Pcell_own = *CreateCellView(X);
+  Epetra_Vector &Pcell_own = *CreateCellView(P);
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
 
-  UpdateVanGenuchtenRelativePermeability(Pcell);
+  Epetra_Vector &Pface_own = *CreateFaceView(P);
+  Epetra_Vector Pface(FaceMap(true));
+  Pface.Import(Pface_own, *face_importer_, Insert);
   
-  for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] * k_rl_[j] / mu_;
-
-  D_->Compute(K);
+  if (upwind_k_rel_) {
+    Epetra_Vector K_upwind(Pface.Map());
+    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
+    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] / mu_;
+    D_->Compute(K, K_upwind);
+  } else {
+    Epetra_Vector k_rel(Pcell.Map());
+    ComputeRelPerm(Pcell, k_rel);
+    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] * k_rel[j] / mu_;
+    D_->Compute(K);
+  }
 
   // add the time derivative to the diagonal
   Epetra_Vector celldiag(CellMap(false));
@@ -313,6 +350,8 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &X, const double h)
 
   // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
   precon_->Compute();
+
+  delete &Pcell_own, &Pface_own;
 }
 
 void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
@@ -334,65 +373,14 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   Epetra_Vector &Fcell_own = *CreateCellView(F);
   Epetra_Vector &Fface_own = *CreateFaceView(F);
 
-
-
   // Create input cell and face pressure vectors that include ghosts.
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
-  
-  UpdateVanGenuchtenRelativePermeability(Pcell);
-
   Epetra_Vector Pface(FaceMap(true));
   Pface.Import(Pface_own, *face_importer_, Insert);
 
-  // Apply initial BC fixups to PFACE.
-  apply_BC_initial_(Pface, time); // modifies used values
-
-  // Create cell and face result vectors that include ghosts.
-  Epetra_Vector Fcell(CellMap(true));
-  Epetra_Vector Fface(FaceMap(true));
-
-  int cface[6];
-  double aux1[6], aux2[6], gflux[6];
-
-  Fface.PutScalar(0.0);
-  for (int j = 0; j < Pcell.MyLength(); ++j) {
-    // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
-    // Gather the local face pressures int AUX1.
-    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] * k_rl_[j] / mu_);
-    MD[j].diff_op(K, Pcell[j], aux1, Fcell[j], aux2);
-    // Gravity contribution
-    MD[j].GravityFlux(g_, gflux);
-    for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K * gflux[k];
-    // Scatter the local face result into FFACE.
-    for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
-    
-  }
-
-
-  // Apply final BC fixups to FFACE.
-  apply_BC_final_(Fface); // modifies used values
-
-  // double nrm[1];
-  // Fface_own.Norm1(nrm);
-  // std::cout << nrm[0] << std::endl;
-
-  // Copy owned part of result into the output vectors.
-  for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
-  for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
-    
-
-
-  delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
-}
-
-
-// BC fixups for F computation: initial pass.
-void RichardsProblem::apply_BC_initial_(Epetra_Vector &Pface, double time)
-{
+  // APPLY INITIAL BC FIXUPS TO PFACE //////////////////////////////////////////
+  
   for (int j = 0; j < (*bc_).NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc_)[j];
     switch (BC.Type) {
@@ -440,29 +428,54 @@ void RichardsProblem::apply_BC_initial_(Epetra_Vector &Pface, double time)
       break;
     }
   }
-}
 
-void RichardsProblem::face_centroid_(int face, double xc[])
-{
-   // Local storage for the 4 vertex coordinates of a face.
-  double x[4][3];
-  double *xBegin = &x[0][0];  // begin iterator
-  double *xEnd = xBegin+12;   // end iterator
+  // GENERIC COMPUTATION OF THE FUNCTIONAL /////////////////////////////////////
 
-  mesh_->face_to_coordinates((unsigned int) face, xBegin, xEnd);
-
-  for (int k = 0; k < 3; ++k) {
-    double s = 0.0;
-    for (int i = 0; i < 4; ++i)
-       s += x[i][k];
-    xc[k] = s / 4.0;
+  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
+  if (upwind_k_rel_) {
+    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
+    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] / mu_);
+  } else {
+    ComputeRelPerm(Pcell, K);
+    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] * K[j] / mu_);
   }
-}
 
+  // Create cell and face result vectors that include ghosts.
+  Epetra_Vector Fcell(CellMap(true));
+  Epetra_Vector Fface(FaceMap(true));
 
-// BC fixups for F computation: final pass.
-void RichardsProblem::apply_BC_final_(Epetra_Vector &Fface)
-{
+  int cface[6];
+  double aux1[6], aux2[6], aux3[6], gflux[6];
+
+  Fface.PutScalar(0.0);
+  for (int j = 0; j < Pcell.MyLength(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
+    // Gather the local face pressures int AUX1.
+    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
+    // Compute the local value of the diffusion operator.
+    if (upwind_k_rel_) {
+      for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
+      MD[j].diff_op(K[j], aux3, Pcell[j], aux1, Fcell[j], aux2);
+      // Gravity contribution
+      MD[j].GravityFlux(g_, gflux);
+      for (int k = 0; k < 6; ++k) gflux[k] *= rho_ * K[j] * aux3[k];
+      for (int k = 0; k < 6; ++k) {
+        aux2[k] -= gflux[k];
+        Fcell[j] += gflux[k];
+      }
+    } else {
+      MD[j].diff_op(K[j], Pcell[j], aux1, Fcell[j], aux2);
+      // Gravity contribution
+      MD[j].GravityFlux(g_, gflux);
+      for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K[j] * gflux[k];
+    }
+    // Scatter the local face result into FFACE.
+    for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
+  }
+
+  // APPLY FINAL BC FIXUPS TO FFACE ////////////////////////////////////////////
+
   for (int j = 0; j < (*bc_).NumBC(); ++j) {
     FlowBC::bc_spec& BC = (*bc_)[j];
     switch (BC.Type) {
@@ -485,6 +498,125 @@ void RichardsProblem::apply_BC_final_(Epetra_Vector &Fface)
       break;
     }
   }
+
+  // Copy owned part of result into the output vectors.
+  for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
+  for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
+    
+  delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
+}
+
+
+void RichardsProblem::face_centroid_(int face, double xc[])
+{
+   // Local storage for the 4 vertex coordinates of a face.
+  double x[4][3];
+  double *xBegin = &x[0][0];  // begin iterator
+  double *xEnd = xBegin+12;   // end iterator
+
+  mesh_->face_to_coordinates((unsigned int) face, xBegin, xEnd);
+
+  for (int k = 0; k < 3; ++k) {
+    double s = 0.0;
+    for (int i = 0; i < 4; ++i)
+       s += x[i][k];
+    xc[k] = s / 4.0;
+  }
+}
+
+
+void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector &Pcell,
+    const Epetra_Vector &Pface, Epetra_Vector &k_rel) const
+{
+  ASSERT(Pcell.Map().SameAs(CellMap(true)));
+  ASSERT(Pface.Map().SameAs(FaceMap(true)));
+  ASSERT(k_rel.Map().SameAs(FaceMap(true)));
+
+  int fdirs[6];
+  unsigned int cface[6];
+  double aux1[6], aux2[6], gflux[6], dummy;
+
+  // Calculate the mimetic face 'fluxes' that omit the relative permeability.
+  // When P is a converged solution, the following result on interior faces
+  // will be twice the true value (double counting).  For a non-converged
+  // solution (typical case) we view it as an approximation (twice the
+  // average of the adjacent cell fluxes).  Here we are only interested
+  // in the sign of the flux, and then only on interior faces, so we omit
+  // bothering with the scaling.
+
+  // Looping over all cells gives desired result on *owned* faces.
+  Epetra_Vector Fface(FaceMap(true)); // fills with 0, includes ghosts
+  for (unsigned int j = 0; j < Pcell.MyLength(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces(j, cface, cface+6);
+    // Gather the local face pressures int AUX1.
+    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
+    // Compute the local value of the diffusion operator.
+    double K = (rho_ * k_[j] / mu_);
+    MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2); // aux2 is inward flux
+    // Gravity contribution; aux2 becomes outward flux
+    MD[j].GravityFlux(g_, gflux);
+    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
+    // Scatter the local face result into FFACE.
+    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
+    for (int k = 0; k < 6; ++k) Fface[cface[k]] += fdirs[k] * aux2[k];
+  }
+
+  // Generate the face-to-cell data structure.  For each face, the pair of
+  // adjacent cell indices is stored, accessed via the members first and
+  // second.  The face is oriented outward with respect to the first cell
+  // of the pair and inward with respect to the second.  Boundary faces are
+  // identified by a -1 value for the second member.
+
+  typedef std::pair<int,int> CellPair;
+  int nface = FaceMap(true).NumMyElements();
+  int nface_own = FaceMap(false).NumMyElements();
+  CellPair *fcell = new CellPair[nface];
+  for (int j = 0; j < nface; ++j) {
+    fcell[j].first  = -1;
+    fcell[j].second = -1;
+  }
+  // Looping over all cells gives desired result on *owned* faces.
+  for (unsigned int j = 0; j < CellMap(true).NumMyElements(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces(j, cface, cface+6);
+    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
+    for (int k = 0; k < 6; ++k) {
+      if (fdirs[k] > 0) {
+        ASSERT(fcell[cface[k]].first == -1);
+        fcell[cface[k]].first = j;
+      } else {
+        ASSERT(fcell[cface[k]].second == -1);
+        fcell[cface[k]].second = j;
+      }
+    }
+  }
+  // Fix-up at boundary faces: move the cell index to the first position.
+  for (int j = 0; j < nface_own; ++j) {
+    if (fcell[j].first == -1) {
+      ASSERT(fcell[j].second != -1);
+      fcell[j].first = fcell[j].second;
+      fcell[j].second = -1; // marks a boundary face
+    }
+  }
+  
+  // Compute the relative permeability on cells and then upwind on owned faces.
+  Epetra_Vector k_rel_cell(Pcell.Map());
+  ComputeRelPerm(Pcell, k_rel_cell);
+  for (int j = 0; j < nface_own; ++j) {
+    if (fcell[j].second == -1) // boundary face
+      k_rel[j] = k_rel_cell[fcell[j].first];
+    else
+      k_rel[j] = k_rel_cell[((Fface[j] >= 0.0) ? fcell[j].first : fcell[j].second)];
+  }
+
+  // Communicate the values computed above to the ghosts.
+  double *k_rel_data;
+  k_rel.ExtractView(&k_rel_data);
+  Epetra_Vector k_rel_own(View, FaceMap(false), k_rel_data);
+  k_rel.Import(k_rel_own, *face_importer_, Insert);
+  
+  delete [] fcell;
 }
 
 
@@ -526,40 +658,56 @@ Epetra_Vector* RichardsProblem::CreateFaceView(const Epetra_Vector &X) const
 
 void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const
 {
-  // should verify X.Map() is Map()
-  // should verify Q.Map() is CellMap(false)
-  // should verify Q.NumVectors() is 3
+  ASSERT(X.Map().SameAs(Map()));
+  ASSERT(Q.Map().SameAs(CellMap(false)));
+  ASSERT(Q.NumVectors() == 3);
 
-  // Create views into the cell and face segments of X and F
-  Epetra_Vector &Pcell = *CreateCellView(X);
+  // Cell pressure vectors without and with ghosts.
+  Epetra_Vector &Pcell_own = *CreateCellView(X);
+  Epetra_Vector Pcell(CellMap(true));
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
+
+  // Face pressure vectors without and with ghosts.
   Epetra_Vector &Pface_own = *CreateFaceView(X);
-
-  // Create face vectors that include ghosts.
   Epetra_Vector Pface(FaceMap(true));
-
-  // Populate the face pressure vector from the input.
   Pface.Import(Pface_own, *face_importer_, Insert);
 
-  int cface[6];
-  double aux1[6], aux2[6], aux3[3], gflux[6], dummy;
-
-  for (int j = 0; j < CellMap(false).NumMyElements(); ++j) {
-
+  // The pressure gradient coefficient split as K * K_upwind: K gets
+  // incorporated into the mimetic discretization and K_upwind is applied
+  // afterwards to the computed mimetic flux.  Note that density (rho) is
+  // not included here because we want the Darcy velocity and not mass flux.
+  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
+  if (upwind_k_rel_) {
+    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
+    for (int j = 0; j < K.MyLength(); ++j) K[j] = (k_[j] / mu_);
+  } else {
+    ComputeRelPerm(Pcell, K);
+    for (int j = 0; j < K.MyLength(); ++j) K[j] = (k_[j] / mu_) * K[j];
   }
-  for (int j = 0; j < Pcell.MyLength(); ++j) {
+
+  int cface[6];
+  double aux1[6], aux2[6], aux3[6], aux4[3], gflux[6], dummy;
+
+  for (int j = 0; j < Pcell_own.MyLength(); ++j) {
     mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    double K =  (rho_ * k_[j] *k_rl_[j] / mu_); // (k_[j] / mu_);
-    MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2);
-    MD[j].GravityFlux(g_, gflux);
-    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
-    MD[j].CellFluxVector(aux2, aux3);
-    Q[0][j] = aux3[0];
-    Q[1][j] = aux3[1];
-    Q[2][j] = aux3[2];
+    if (upwind_k_rel_) {
+      for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
+      MD[j].diff_op(K[j], aux3, Pcell_own[j], aux1, dummy, aux2);
+      MD[j].GravityFlux(g_, gflux);
+      for (int k = 0; k < 6; ++k) aux2[k] = aux3[k] * K[j] * rho_ * gflux[k] - aux2[k];
+    } else {
+      MD[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
+      MD[j].GravityFlux(g_, gflux);
+      for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
+    }
+    MD[j].CellFluxVector(aux2, aux4);
+    Q[0][j] = aux4[0];
+    Q[1][j] = aux4[1];
+    Q[2][j] = aux4[2];
   }
 
-  delete &Pcell, &Pface_own;
+  delete &Pcell_own, &Pface_own;
 }
 
 
@@ -570,10 +718,12 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
 
   int fdirs[6];
   unsigned int cface[6];
-  double aux1[6], aux2[6], gflux[6], dummy;
+  double aux1[6], aux2[6], aux3[6], gflux[6], dummy;
 
   // Create a view into the cell pressure segment of P.
   Epetra_Vector &Pcell_own = *CreateCellView(P);
+  Epetra_Vector Pcell(CellMap(true));
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
 
   // Create a copy of the face pressure segment of P that includes ghosts.
   Epetra_Vector &Pface_own = *CreateFaceView(P);
@@ -585,18 +735,30 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
   Epetra_Vector error(FaceMap(true)); // fills with 0
   Epetra_IntVector count(FaceMap(true)); // fills with 0
 
-  // Process-local assembly of the face mass fluxes.
+  // The pressure gradient coefficient split as K * K_upwind: K gets
+  // incorporated into the mimetic discretization and K_upwind is applied
+  // afterwards to the computed mimetic flux.
+  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
+  if (upwind_k_rel_) {
+    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
+    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] / mu_);
+  } else {
+    ComputeRelPerm(Pcell, K);
+    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] * K[j] / mu_);
+    K_upwind.PutScalar(1.0);  // whole coefficient used in mimetic disc
+  }
+
+  // Process-local assembly of the mimetic face fluxes.
   for (unsigned int j = 0; j < Pcell_own.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
     mesh_->cell_to_faces(j, cface, cface+6);
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] *k_rl_[j] / mu_);
-    MD[j].diff_op(K, Pcell_own[j], aux1, dummy, aux2);
+    MD[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
     // Gravity contribution
     MD[j].GravityFlux(g_, gflux);
-    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
+    for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
     mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) {
@@ -618,9 +780,10 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
   count_own.Export(count, *face_importer_, Add);
 
   // Correct the double counting of fluxes on interior faces and convert
-  // mass flux to Darcy flux by dividing by the constant fluid density.
+  // the mimetic flux to Darcy flux by dividing by the constant fluid density
+  // and multiplying by the K_upwind on faces.
   for (int j = 0; j < F.MyLength(); ++j)
-    F[j] = F[j] / (rho_ * count[j]);
+    F[j] = K_upwind[j] * F[j] / (rho_ * count[j]);
 
   // Create an owned face error vector that overlays the error vector with ghosts.
   double *error_data;
@@ -631,8 +794,10 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
   error_own.Export(error, *face_importer_, Add);
 
   // Set the flux discrepancy error to 0 on boundary faces where there was only one flux computed.
-  for (int j = 0; j < F.MyLength(); ++j)
+  for (int j = 0; j < F.MyLength(); ++j) {
+    error_own[j] = K_upwind[j] * error_own[j];
     if (count[j] == 1) error_own[j] = 0.0;
+  }
 
   // Compute the norm of the flux discrepancy.
   error_own.Norm2(&l2_error);

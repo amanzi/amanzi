@@ -20,8 +20,10 @@ public:
   ~DiffusionMatrix();
 
   void Compute(const std::vector<double> &K);
+  void Compute(const std::vector<double> &K, const Epetra_Vector&);
 
   void Compute(const std::vector<Epetra_SerialSymDenseMatrix> &K);
+  void Compute(const std::vector<Epetra_SerialSymDenseMatrix> &K, const Epetra_Vector&);
 
   void ComputeFaceSchur();
 
@@ -50,6 +52,8 @@ public:
 
   const Epetra_CrsMatrix& Dcf() const { return *Dcf_; }
 
+  const Epetra_CrsMatrix& Dfc_t() const { return *Dfc_t_; }
+
   const Epetra_FECrsMatrix& Dff() const { return *Dff_; }
 
   const Epetra_FECrsMatrix& Sff();
@@ -61,11 +65,13 @@ private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Vector *Dcc_;
   Epetra_CrsMatrix *Dcf_;
+  Epetra_CrsMatrix *Dfc_t_;
   Epetra_FECrsMatrix *Dff_;
   std::vector<int> dir_faces_;
   Epetra_FECrsMatrix *Sff_;
 
-  template <typename T> void Compute(const std::vector<T> &K);
+  template <typename T> void Compute(const std::vector<T>&);
+  template <typename T> void Compute(const std::vector<T>&, const Epetra_Vector&);
 };
 
 } // close namespace Amanzi

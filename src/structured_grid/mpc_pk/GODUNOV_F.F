@@ -1,5 +1,5 @@
 c
-c $Id: GODUNOV_F.F,v 1.43 2011-06-06 06:09:30 gpau Exp $
+c $Id: GODUNOV_F.F,v 1.47 2011-08-30 19:00:04 gpau Exp $
 c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -177,11 +177,15 @@ c     compute flux based on upwind scheme
       integer l_kr_type, r_kr_type
       REAL_T flux, ulp, urp, vtot, mu(2)
       REAL_T gstar, l_kr_coef, r_kr_coef
-      REAL_T ld(2),le(2),rtmp(2),vlr(2),lam(2),vtmp
+      REAL_T ur(2),ul(2),ld(2),le(2),rtmp(2),vlr(2),lam(2),vtmp
 
       rtmp = one
-      call get_ld(le,urp,rtmp,mu,2,r_kr_type,r_kr_coef,zero)
-      call get_ld(ld,ulp,rtmp,mu,2,l_kr_type,l_kr_coef,zero)
+      ur(1) = urp
+      ur(2) = one - urp
+      ul(1) = ulp
+      ul(2) = one - ulp
+      call get_ld(le,ur,rtmp,mu,2,r_kr_type,r_kr_coef,zero)
+      call get_ld(ld,ul,rtmp,mu,2,l_kr_type,l_kr_coef,zero)
       vlr(1) = ld(1)/(ld(1)+ld(2))*(vtot+ld(2)*gstar)
       vlr(2) = le(1)/(le(1)+le(2))*(vtot+le(2)*gstar)
       vtmp   = half*(vlr(1)+vlr(2))
@@ -207,22 +211,27 @@ c ::: compute argument for upwind flux
       REAL_T  flux, u_arg(2), ulp, urp, vtot, mu(2)
       REAL_T  gstar,l_kr_coef, r_kr_coef
       REAL_T  ld(2),le(2),rtmp(2),vlr(2),lam(2),vtmp
+      REAL_T  ur(2), ul(2)
 
       rtmp = one
-      call get_ld(le,urp,rtmp,mu,2,r_kr_type,r_kr_coef,zero)
-      call get_ld(ld,ulp,rtmp,mu,2,l_kr_type,l_kr_coef,zero)
+      ur(1) = urp
+      ur(2) = one - urp
+      ul(1) = ulp
+      ul(2) = one - ulp
+      call get_ld(le,ur,rtmp,mu,2,r_kr_type,r_kr_coef,zero)
+      call get_ld(ld,ul,rtmp,mu,2,l_kr_type,l_kr_coef,zero)
       vlr(1) = ld(1)/(ld(1)+ld(2))*(vtot+ld(2)*gstar)
       vlr(2) = le(1)/(le(1)+le(2))*(vtot+le(2)*gstar)
       vtmp   = half*(vlr(1)+vlr(2))
       vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
       lam(1) = cvmgp(ld(1),le(1),vtmp)
-      u_arg(1) = cvmgp(urp(1),ulp(1),vtmp)
+      u_arg(1) = cvmgp(ur(1),ul(1),vtmp)
       vlr(1) = ld(2)/(ld(1)+ld(2))*(vtot-ld(1)*gstar)
       vlr(2) = le(2)/(le(1)+le(2))*(vtot-le(1)*gstar)
       vtmp   = half*(vlr(1)+vlr(2))
       vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
       lam(2) = cvmgp(ld(2),le(2),vtmp)
-      u_arg(2) = cvmgp(urp(2),ulp(2),vtmp)
+      u_arg(2) = cvmgp(ur(2),ul(2),vtmp)
       flux   = lam(1)/(lam(1)+lam(2))*(vtot+lam(2)*gstar)
 
       end
@@ -678,7 +687,7 @@ c     find arg min of flux if there is a minimum in the interval
       stmp = slr(1,:)
       dtmp = df(1,:)
       ncycle = 1
-      if (dtmp(1)*dtmp(2) .lt. zero) then
+      if (dtmp(1)*dtmp(2) .le. zero) then
          do nc = 1,100
             sat(1) = half*(stmp(1)+stmp(2))
             sat(2) = one-sat(1)
@@ -734,7 +743,7 @@ c
      &           - lam(1)*(vel+krhog*lam(2))*(d2lam(1)+d2lam(2))/lt**2
          end if
          df(2,2)  = df(1,2)
-         d2f(2,2) = d2f(2,2)
+         d2f(2,2) = d2f(1,2)
       end if
                
       do m = 1,ncycle
@@ -824,7 +833,6 @@ c ::: Arguments
       REAL_T dlbd_l(3),  dlbd_r(3)
       REAL_T krcoef(nkrcoef)
       REAL_T vel
-      REAL_T rhoval(ncomps)
       REAL_T krhog
       REAL_T eigmax
 

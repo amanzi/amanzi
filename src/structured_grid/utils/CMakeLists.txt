@@ -1,0 +1,61 @@
+# -*- mode: cmake -*-
+#
+# Define a project name
+# After this command the following varaibles are defined
+#   STRUCTUREDUTILS_SOURCE_DIR
+#   STRUCTUREDUTILS_BINARY_DIR
+# Other projects (subdirectories) can reference this directory
+# through these variables.
+project(STRUCTUREDUTILS)
+
+include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
+
+# External (TPL) include directories
+include_directories(${Teuchos_INCLUDE_DIRS})
+
+set(CXX_header_files ParmParseHelpers.H)
+set(CXX_source_files ParmParseHelpers.cpp)
+
+add_install_include_file(${CXX_header_files})
+
+add_library(structutils ${CXX_source_files})
+add_install_library(structutils)
+
+if (BUILD_TESTS)
+
+  if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
+    #message(">>>>>> using darwin ld flags")
+    set(ld_flag_prefix -force_load)
+    set(ld_flag_suffix)
+  elseif (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+    #message(">>>>>> using linux ld flags")
+    set(ld_flag_prefix -Wl,-whole-archive)
+    set(ld_flag_suffix -Wl,-no-whole-archive)
+  else()
+    message(FATAL_ERROR "Linking of structured grid is not supported on this system: '${CMAKE_SYSTEM_NAME}'")
+  endif()
+
+  include_directories(${CCSE_INCLUDE_DIRS})
+  link_directories(${CCSE_LIBRARY_DIR})
+  add_definitions("-DENABLE_Structured")
+
+  set(reqd_libs structutils box_c)
+  set(structured_grid_libs)
+  foreach(lib ${reqd_libs})
+    list(APPEND structured_grid_libs ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
+  endforeach(lib)
+
+  set(tpl_libs ${Teuchos_LIBRARIES})
+
+  add_executable(tPPH tParmParseHelpers.cpp)
+  target_link_libraries(tPPH ${structured_grid_libs} ${tpl_libs})
+
+  add_amanzi_test(tPPH tPPH KIND unit)
+
+  if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
+    execute_process(COMMAND ${CMAKE_COMMAND} -E
+                    copy ${STRUCTUREDUTILS_SOURCE_DIR}/sample.xml ${STRUCTUREDUTILS_BINARY_DIR})
+  endif()
+
+endif()
+

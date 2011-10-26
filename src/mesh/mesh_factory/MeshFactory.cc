@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 10, 2011 by William A. Perkins
-// Last Change: Mon Jul 18 08:47:16 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: Mon Aug  1 13:46:30 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 
@@ -206,29 +206,32 @@ MeshFactory::create(double x0, double y0, double z0,
 Teuchos::RCP<Mesh> 
 MeshFactory::create(Teuchos::ParameterList &parameter_list)
 {
-  double x0, y0, z0, x1, y1, z1;
-  int nx, ny, nz, nblock;
+  Teuchos::RCP<Mesh> result;
+  Message e("MeshFactory::create: error: ");
+  int ierr[1], aerr[1];
+  ierr[0] = 0;
+  aerr[0] = 0;
 
-  // read the parameters from the parameter list
-    
-  nx = parameter_list.get<int>("Numer of Cells in X");
-  ny = parameter_list.get<int>("Numer of Cells in Y");
-  nz = parameter_list.get<int>("Numer of Cells in Z");
-    
-  x0 = parameter_list.get<double>("X_Min");
-  x1 = parameter_list.get<double>("X_Max");
-    
-  y0 = parameter_list.get<double>("Y_Min");
-  y1 = parameter_list.get<double>("Y_Max");
-    
-  z0 = parameter_list.get<double>("Z_Min");
-  z1 = parameter_list.get<double>("Z_Max");
-    
-  // Note that this is ignored.  It doesn't seem to be used by
-  // Mesh_maps_simple anyway.
-  nblock = parameter_list.get<int>("Number of mesh blocks", 0);
-      
-  return create(x0, y0, z0, x1, y1, z1, nx, ny, nz);
+  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
+       i != my_preference.end(); i++) {
+    if (framework_generates(*i, my_comm.NumProc() > 1)) {
+      try {
+        result = framework_generate(my_comm, *i, parameter_list);
+        return result;
+      } catch (const Message& msg) {
+        ierr[0] += 1;
+        e.add_data(msg.what());
+      } catch (const std::exception& stde) {
+        ierr[0] += 1;
+        e.add_data("internal error: ");
+        e.add_data(stde.what());
+      }
+      my_comm.SumAll(ierr, aerr, 1);
+      if (aerr[0] > 0) amanzi_throw(e);
+    }
+  }
+  e.add_data("unable to generate mesh");
+  amanzi_throw(e);
 }
 
 } // namespace AmanziMesh

@@ -6,14 +6,18 @@
 
 #include "activity_model.hh"
 #include "activity_model_debye_huckel.hh"
+// Pitzer equations were implemented (Sergio A Bea)
+#include "activity_model_pitzer_hwm.hh"
 #include "activity_model_unit.hh"
 #include "chemistry_exception.hh"
+#include "species.hh"
 #include "exceptions.hh"
 
 namespace amanzi {
 namespace chemistry {
 
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
+const std::string ActivityModelFactory::pitzer_hwm = "pitzer-hwm";
 const std::string ActivityModelFactory::unit = "unit";
 
 ActivityModelFactory::ActivityModelFactory() {
@@ -22,11 +26,16 @@ ActivityModelFactory::ActivityModelFactory() {
 ActivityModelFactory::~ActivityModelFactory() {
 }  // end ActivityModelFactory destructor
 
-ActivityModel* ActivityModelFactory::Create(const std::string& model) {
+ActivityModel* ActivityModelFactory::Create(const std::string& model,
+		                                    const std::string& database,
+		                                    std::vector<Species>& prim,
+		                                    std::vector<AqueousEquilibriumComplex>& sec) {
   ActivityModel* activity_model = NULL;
 
   if (model == debye_huckel) {
     activity_model = new ActivityModelDebyeHuckel();
+  } else if (model == pitzer_hwm) {
+    activity_model = new ActivityModelPitzerHWM(database,prim,sec);
   } else if (model == unit) {
     activity_model = new ActivityModelUnit();
   } else {
@@ -35,7 +44,8 @@ ActivityModel* ActivityModelFactory::Create(const std::string& model) {
     error_stream << "ActivityModelFactory::Create(): \n"
                  << "Unknown activity model name: " << model << "\n"
                  << "       valid names: " << unit << "\n"
-                 << "                    " << debye_huckel << "\n";
+                 << "                    " << debye_huckel << "\n"
+                 << "                    " << pitzer_hwm << "\n" ;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
 

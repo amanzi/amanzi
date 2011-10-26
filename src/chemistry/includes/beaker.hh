@@ -12,11 +12,11 @@
 #include "aqueous_equilibrium_complex.hh"
 #include "block.hh"
 #include "general_rxn.hh"
-#include "ion_exchange_complex.hh"
-#include "ion_exchange_site.hh"
+#include "ion_exchange_rxn.hh"
 #include "kinetic_rate.hh"
 #include "mineral.hh"
 #include "species.hh"
+#include "sorption_isotherm_rxn.hh"
 #include "surface_complexation_rxn.hh"
 #include "verbosity.hh"
 
@@ -36,10 +36,10 @@ class Beaker {
   virtual ~Beaker();
 
   struct BeakerComponents {
-    std::vector<double> free_ion;
-    std::vector<double> minerals;
+    std::vector<double> free_ion;  // molality
+    std::vector<double> minerals;  // volume fractions
     std::vector<double> ion_exchange_sites;
-    std::vector<double> total;
+    std::vector<double> total;  // molarity
     std::vector<double> total_sorbed;
   };
 
@@ -51,6 +51,8 @@ class Beaker {
     unsigned int max_iterations;
     // models
     std::string activity_model_name;
+    // Name of the Pitzer virial coefficients database
+    std::string pitzer_database;
     // physical parameters
     double porosity;  // [-]
     double saturation;  // [-]
@@ -72,20 +74,21 @@ class Beaker {
   // inheriting classes setup the species, etc
   virtual void Setup(const Beaker::BeakerComponents& components,
                      const Beaker::BeakerParameters& parameters);
-  void SetupActivityModel(std::string model);
+  void SetupActivityModel(std::string model, std::string pitzer_database);
   void VerifyComponentSizes(const Beaker::BeakerComponents& components);
   void CheckChargeBalance(const std::vector<double>& aqueous_totals);
   void SetComponents(const Beaker::BeakerComponents& components);
   void UpdateComponents(Beaker::BeakerComponents* components);
 
   void addPrimarySpecies(const Species& s);
-  void AddIonExchangeSite(const IonExchangeSite& exchanger);
-  void AddIonExchangeComplex(const IonExchangeComplex& exchange_complex);
+  void AddIonExchangeRxn(const IonExchangeRxn& ionx_rxn);
+  void AddIonExchangeComplex(const int irxn, const IonExchangeComplex& ionx_complex);
   void addAqueousEquilibriumComplex(const AqueousEquilibriumComplex& c);
   void addMineral(const Mineral& m);
   void AddMineralKineticRate(KineticRate* rate);
   void addGeneralRxn(const GeneralRxn& r);
   void addSurfaceComplexationRxn(const SurfaceComplexationRxn& r);
+  void AddSorptionIsothermRxn(const SorptionIsothermRxn& r);
 
   bool HaveKinetics(void) const;
 
@@ -154,6 +157,7 @@ class Beaker {
   void DisplayAqueousEquilibriumComplexes(void) const;
   void DisplayMinerals(void) const;
   void DisplayMineralKinetics(void) const;
+  void DisplayIonExchangeRxns(void) const;
   void DisplayIonExchangeSites(void) const;
   void DisplayIonExchangeComplexes(void) const;
   void DisplaySurfaceSites(void) const;
@@ -276,8 +280,8 @@ class Beaker {
   const std::vector<Species>& primary_species(void) const {
     return this->primarySpecies_;
   };
-  const std::vector<IonExchangeSite>& ion_exchange_sites(void) const {
-    return this->ion_exchange_sites_;
+  const std::vector<IonExchangeRxn>& ion_exchange_rxns(void) const {
+    return this->ion_exchange_rxns_;
   };
   const std::vector<double>& total(void) const {
     return this->total_;
@@ -325,7 +329,6 @@ class Beaker {
   Species water_;
   std::vector<Species> primarySpecies_;  // list of primary species
   std::vector<Mineral> minerals_;  // list of mineral species
-  std::vector<IonExchangeSite> ion_exchange_sites_;
 
   ActivityModel* activity_model_;
 
@@ -333,8 +336,9 @@ class Beaker {
   std::vector<GeneralRxn> generalKineticRxns_;  // list of general kinetic reactions
   std::vector<KineticRate*> mineral_rates_;
   //  vector<GasExchange*> gasRxns_;
-  std::vector<IonExchangeComplex> ion_exchange_rxns_;
+  std::vector<IonExchangeRxn> ion_exchange_rxns_;
   std::vector<SurfaceComplexationRxn> surfaceComplexationRxns_;
+  std::vector<SorptionIsothermRxn> sorption_isotherm_rxns_;
 
   // solver data structures
   std::vector<double> fixed_accumulation;  // fixed (time t) portion of accumulation term

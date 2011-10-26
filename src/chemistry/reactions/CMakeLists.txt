@@ -17,6 +17,7 @@ set(SRCS
 	./beaker.cc 
 	./general_rxn.cc 
 	./ion_exchange_complex.cc 
+	./ion_exchange_rxn.cc 
 	./kinetic_rate.cc 
 	./kinetic_rate_tst.cc 
 	./mineral.cc 
@@ -25,6 +26,12 @@ set(SRCS
 	./simple_thermo_database.cc
 	./surface_complex.cc 
 	./surface_complexation_rxn.cc 
+	./sorption_isotherm.cc 
+	./sorption_isotherm_factory.cc 
+	./sorption_isotherm_freundlich.cc 
+	./sorption_isotherm_langmuir.cc 
+	./sorption_isotherm_linear.cc 
+	./sorption_isotherm_rxn.cc 
 )
 
 add_library(geochemrxns ${SRCS}) 

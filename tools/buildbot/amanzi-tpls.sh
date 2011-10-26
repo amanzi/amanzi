@@ -195,7 +195,7 @@
 # https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.83rc3.tar.gz
 #
 # ccse:
-# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.1.tar.gz
+# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.5.tar.gz
 #
 #
 #################################################################################
@@ -203,6 +203,10 @@
 # Manual downloads:
 #
 # the following files must be manually downloaded and saved into ${SOURCE}:
+#
+# ascemio: login required
+# download the amanzi release version from:
+# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/ASCEMIO/ascem-io-1.1p.tgz
 #
 # moab: login required
 # download the amanzi recommend version from: 
@@ -238,7 +242,8 @@ CGNS_PATCH=4
 METIS_VERSION=4.0.3
 MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
-CCSE_VERSION=0.1.1
+CCSE_VERSION=0.1.5
+ASCEMIO_VERSION=1.1p
 
 ################################################################################
 #
@@ -301,7 +306,8 @@ function download_archives {
     fi
 
     if [  ${HDF5_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/hdf5-${HDF5_VERSION}.tar.gz ]; then
-        wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-${HDF5_VERSION}.tar.gz
+        #wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-${HDF5_VERSION}.tar.gz
+        wget http://www.hdfgroup.org/ftp/HDF5/prev-releases/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
     fi
 
     if [  ${NETCDF_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/netcdf-${NETCDF_VERSION}.tar.gz ]; then
@@ -733,6 +739,35 @@ function install_metis {
 
 ################################################################################
 #
+# ascemio
+#
+################################################################################
+function install_ascemio {
+    ASCEMIO_DIR=${PREFIX}/ascem-io/ascem-io-${ASCEMIO_VERSION}
+    rm -rf ${ASCEMIO_DIR}
+    mkdir -p ${PREFIX}/ascem-io
+    tar ${TAR_FLAGS} ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tgz -C ${PREFIX}/ascem-io
+    cd ${ASCEMIO_DIR}
+
+    # no configuration, just make
+    cd ${ASCEMIO_DIR}/src
+    make CC=${CC} \
+	HDF5_INCLUDE_DIR=${HDF5_PREFIX}/include
+
+    if [ $? -ne 0 ]; then
+        exit
+    fi
+    # testing...?
+
+    # install
+    make ASCEMIO_INSTALL_DIR=${PREFIX} install
+    if [ $? -ne 0 ]; then
+        exit
+    fi
+}
+
+################################################################################
+#
 # mstk
 #
 ################################################################################
@@ -885,7 +920,7 @@ function install_trilinos {
 #
 ################################################################################
 function install_ccse {
-    CCSE_DIR=${CCSE_PREFIX}/ccse
+    CCSE_DIR=${CCSE_PREFIX}/ccse-${CCSE_VERSION}
     CCSE_CONFIG=1
     CCSE_MAKE=1
     CCSE_TEST=1
@@ -893,12 +928,10 @@ function install_ccse {
     CCSE_VERBOSE=0
 
     rm -rf ${CCSE_DIR}
-
     mkdir -p ${CCSE_PREFIX}
     cd ${CCSE_PREFIX}
     tar zxf ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz
-    # TODO(bandre): is this "cd" needed?
-    cd ${CCSE_DIR}/tools/buildbot
+    cd ${CCSE_DIR}
 
     # 1, 2, 3
     CCSE_SPACEDIM=${AMANZI_SPACEDIM}
@@ -1097,14 +1130,14 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
         -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
         -D ENABLE_STK_Mesh:BOOL=ON \\
         -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
-        -D ENABLE_HDF5:BOOL=ON \\
         -D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
-        -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse/install \\
+        -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse-${CCSE_VERSION}/install \\
         -D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
         -D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
         -D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
         -D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
         -D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
+        -D ASCEMIO_DIR:FILEPATH=${PREFIX} \\
         ..
 
     if [ \$? -ne 0 ]; then
@@ -1151,6 +1184,7 @@ DOWNLOAD_ARCHIVES=0
 BUILD_OPENMPI=0
 BUILD_BOOST=0
 BUILD_HDF5=0
+BUILD_ASCEMIO=0
 BUILD_NETCDF=0
 BUILD_CGNS=0
 BUILD_EXODUS=0
@@ -1175,7 +1209,7 @@ ENABLE_Unstructured=1
 while getopts "abcdefghikmnop:stuwz" flag
 do
   case $flag in
-    a) BUILD_OPENMPI=1; BUILD_BOOST=1; BUILD_CURL=1; BUILD_ZLIB=1; BUILD_HDF5=1; BUILD_NETCDF=1; BUILD_EXODUS=1; BUILD_MOAB=1; BUILD_METIS=1; BUILD_MSTK=1; BUILD_CGNS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CCSE=1;;
+    a) BUILD_OPENMPI=1; BUILD_BOOST=1; BUILD_CURL=1; BUILD_ZLIB=1; BUILD_HDF5=1; BUILD_ASCEMIO=1; BUILD_NETCDF=1; BUILD_EXODUS=1; BUILD_MOAB=1; BUILD_METIS=1; BUILD_MSTK=1; BUILD_CGNS=1; BUILD_TRILINOS=1; BUILD_UNITTEST=1; BUILD_CCSE=1;;
     b) BUILD_BOOST=1;;
     c) BUILD_CHECK=1;;
     d) DOWNLOAD_ARCHIVES=1;;
@@ -1183,6 +1217,7 @@ do
     f) BUILD_CCSE=1;;
     g) BUILD_CGNS=1;;
     h) BUILD_HDF5=1;;
+    i) BUILD_ASCEMIO=1;;
     k) BUILD_MSTK=1;;
     m) BUILD_MOAB=1;;
     n) BUILD_NETCDF=1;;
@@ -1210,6 +1245,7 @@ echo "BUILD_BOOST=$BUILD_BOOST     BOOST_PREFIX=$BOOST_PREFIX"
 echo "BUILD_CURL=$BUILD_CURL      CURL_PREFIX=$CURL_PREFIX"
 echo "BUILD_ZLIB=$BUILD_ZLIB      ZLIB_PREFIX=$ZLIB_PREFIX"
 echo "BUILD_HDF5=$BUILD_HDF5      HDF5_PREFIX=$HDF5_PREFIX"
+echo "BUILD_ASCEMIO=$BUILD_ASCEMIO      ASCEMIO_PREFIX=$PREFIX"
 echo "BUILD_NETCDF=$BUILD_NETCDF    NETCDF_PREFIX=$NETCDF_PREFIX"
 echo "BUILD_EXODUS=$BUILD_EXODUS    EXODUS_PREFIX=$PREFIX"
 echo "BUILD_MOAB=$BUILD_MOAB      MOAB_PREFIX=$PREFIX"
@@ -1314,6 +1350,11 @@ fi
 
 if [ $BUILD_HDF5 -eq 1 ]; then
     install_hdf5
+    cd ${SCRIPT_DIR}
+fi
+
+if [ $BUILD_ASCEMIO -eq 1 ]; then
+    install_ascemio
     cd ${SCRIPT_DIR}
 fi
 

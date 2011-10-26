@@ -1,6 +1,9 @@
 #include "errors.hh"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Epetra_Comm.h"
+#include "Epetra_MpiComm.h"
 #include "MPC.hpp"
 #include "State.hpp"
 #include "chemistry_state.hh"
@@ -11,11 +14,6 @@
 #include "Transient_Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
-#include "gmv_mesh.hh"
-#ifdef ENABLE_CGNS
-#include "cgns_mesh_par.hh"
-#include "cgns_mesh.hh"
-#endif
 // TODO: We are using depreciated parts of boost::filesystem
 #define BOOST_FILESYSTEM_VERSION 2
 #include "boost/filesystem/operations.hpp"
@@ -25,22 +23,44 @@
 namespace Amanzi
 {
 
-#ifdef ENABLE_CGNS
-using namespace CGNS_PAR;
-#endif
-
-using amanzi::chemistry::Chemistry_State;
-using amanzi::chemistry::Chemistry_PK;
-using amanzi::chemistry::ChemistryException;
-
-MPC::MPC(Teuchos::ParameterList parameter_list_,
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-  parameter_list(parameter_list_),
-  mesh_maps(mesh_maps_)
+  using amanzi::chemistry::Chemistry_State;
+  using amanzi::chemistry::Chemistry_PK;
+  using amanzi::chemistry::ChemistryException;
   
+
+  MPC::MPC(Teuchos::ParameterList parameter_list_,
+	   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
+	   Epetra_MpiComm* comm_,
+	   Amanzi::ObservationData& output_observations_):
+    parameter_list(parameter_list_),
+    mesh_maps(mesh_maps_),
+    comm(comm_),
+    output_observations(output_observations_)
+  {
+    mpc_init();
+  }
+  
+  
+void MPC::mpc_init()
 {
-   mpc_parameter_list =  parameter_list.sublist("MPC");
-   read_parameter_list();
+  // set the line prefix for output
+  this->setLinePrefix("Amanzi::MPC         ");
+  // make sure that the line prefix is printed
+  this->getOStream()->setShowLinePrefix(true);
+  
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&parameter_list,this);    
+
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  
+
+  
+  mpc_parameter_list =  parameter_list.sublist("MPC");
+  
+  read_parameter_list();
 
    // let users selectively disable individual process kernels
    // to allow for testing of the process kernels separately
@@ -51,20 +71,21 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    flow_enabled =
      (mpc_parameter_list.get<string>("disable Flow_PK","no") == "no");
    
-   cout << "MPC: The following process kernels are enabled: ";
-   if (flow_enabled) {
-     cout << "Flow ";
-   }
-   if (transport_enabled) {
-     cout << "Transport "; 
-   }
-   if (chemistry_enabled) {
-     cout << "Chemistry ";
-   }
-   cout << endl;
-   
-   restart = mpc_parameter_list.get<bool>("Restart",false);
-   restart_file = mpc_parameter_list.get<string>("Restart file","NONE");
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
+    {
+      *out << "The following process kernels are enabled: ";
+      
+      if (flow_enabled) {
+	*out << "Flow ";
+      }
+      if (transport_enabled) {
+	*out << "Transport "; 
+      }
+      if (chemistry_enabled) {
+	*out << "Chemistry ";
+      }
+      *out << std::endl;
+    }
      
    if (transport_enabled || flow_enabled || chemistry_enabled) {
      Teuchos::ParameterList state_parameter_list = 
@@ -121,8 +142,58 @@ MPC::MPC(Teuchos::ParameterList parameter_list_,
    }
    // done creating auxilary state objects and  process models
 
-}
+   // create the observations
+   Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation");
+   observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
 
+
+   // create the visualization object
+   if (parameter_list.isSublist("Visualization Data"))
+     {
+       
+       Teuchos::ParameterList vis_parameter_list = 
+	 parameter_list.sublist("Visualization Data");
+       visualization = new Amanzi::Vis(vis_parameter_list, comm);
+       visualization->create_files(*mesh_maps);
+     }
+   else
+     {
+       visualization = new Amanzi::Vis();
+     }
+
+
+   // create the restart object
+   if (parameter_list.isSublist("Checkpoint Data"))
+     {
+       
+       Teuchos::ParameterList checkpoint_parameter_list = 
+	 parameter_list.sublist("Checkpoint Data");
+       restart = new Amanzi::Restart(checkpoint_parameter_list, comm);
+     }
+   else
+     {
+       restart = new Amanzi::Restart();
+     }   
+
+
+   // are we restarting from a file?
+   // assume we're not
+   restart_requested = false;
+   
+   // then check if indeed we are
+   if (parameter_list.isSublist("Execution Control"))
+     {
+       if (parameter_list.sublist("Execution Control").isSublist("Restart from Checkpoint File"))
+	 {
+	   restart_requested = true;
+	   
+	   Teuchos::ParameterList restart_parameter_list = 
+	     parameter_list.sublist("Execution Control").sublist("Restart from Checkpoint File");
+	   
+	   restart_from_filename = restart_parameter_list.get<string>("Checkpoint File Name");
+	 }
+     }
+}
 
 void MPC::read_parameter_list()
 {
@@ -132,8 +203,13 @@ void MPC::read_parameter_list()
 }
 
 
-void MPC::cycle_driver () {
-  
+void MPC::cycle_driver ()
+{
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
   if (transport_enabled || flow_enabled || chemistry_enabled) {
     // start at time T=T0;
     S->set_time(T0);
@@ -143,95 +219,37 @@ void MPC::cycle_driver () {
 
   if (chemistry_enabled) {
     try {
+      // these are the vectors that chemistry will populate with
+      // the names for the auxillary output vectors and the
+      // names of components
+      std::vector<string> auxnames;
+      std::vector<string> compnames; 
+      
       // total view needs this to be outside the constructor 
       CPK->InitializeChemistry();
       CPK->set_chemistry_output_names(&auxnames);
       CPK->set_component_names(&compnames);
+
+      // set the names in the visualization object
+      visualization->set_compnames(compnames);
+      visualization->set_auxnames(auxnames);
+
     } catch (ChemistryException& chem_error) {
       std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
                 << std::endl << chem_error.what() << std::endl;
       Exceptions::amanzi_throw(chem_error);
     }
   }
-  
-  bool gmv_output = mpc_parameter_list.isSublist("GMV");
-#ifdef ENABLE_CGNS
-  bool cgns_output = mpc_parameter_list.isSublist("CGNS");
-  if (cgns_output) {
-    cout << "MPC: will write cgns output" << endl;
-  }
-
-  // bandre: moved up to the previous chemistry try block
-  // if (chemistry_enabled) {
-  //   try {
-  //     CPK->set_chemistry_output_names(&auxnames);
-  //     CPK->set_component_names(compnames);
-  //   } catch (ChemistryException& chem_error) {
-  //     std::cout << chem_error.what() << std::endl;
-  //     Exceptions::amanzi_throw(chem_error);
-  //   }
-  // }
-#endif
-  bool gnuplot_output = mpc_parameter_list.get<bool>("Gnuplot output",false);
-  if ( mesh_maps->get_comm()->NumProc() != 1 ) {
-    gnuplot_output = false;
-  }
-  if (gnuplot_output) {
-    cout << "MPC: will write gnuplot output" << endl;
-  }
-
-  const int vizdump_cycle_freq = mpc_parameter_list.get<int>("Viz dump cycle frequency",-1);
-  const double vizdump_time_freq = mpc_parameter_list.get<double>("Viz dump time frequency",-1);
-
-  string gmv_mesh_filename_str;
-  string gmv_data_filename_path_str;
-  string gmv_mesh_filename_path_str;  
-
-  if (gmv_output) {
-    // get the GMV data from the parameter list  
-    Teuchos::ParameterList gmv_parameter_list =  mpc_parameter_list.sublist("GMV");
-    
-    create_gmv_paths(gmv_mesh_filename_path_str, gmv_data_filename_path_str,
-		     gmv_mesh_filename_str, gmv_parameter_list);
-    
-    // write the GMV mesh file
-    GMV::create_mesh_file(*mesh_maps, gmv_mesh_filename_path_str);
-  }
-  
-#ifdef ENABLE_CGNS
-  std::string cgns_filename;
-  if (cgns_output) {
-    Teuchos::ParameterList cgns_parameter_list =  mpc_parameter_list.sublist("CGNS");
-    
-    cgns_filename = cgns_parameter_list.get<string>("File name");
-    create_mesh_file(*mesh_maps, cgns_filename);
-
-
-    // print out the parallel distribution
-    int rank = mesh_maps->get_comm()->MyPID(); 
-    
-    Epetra_Vector RNK(mesh_maps->cell_map(false));
-    RNK.PutScalar((double)rank);
-
-    open_data_file(cgns_filename);
-    create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
-    write_field_data(RNK,"PE");
-
-
-    
-    if (!flow_enabled && !transport_enabled && !chemistry_enabled) close_data_file();
-    
-  }
-#endif  
-
 
   int iter = 0;
-  
-  int vizdump_cycle = 0;
-  double vizdump_time = 0.0;
-  int vizdump_time_count = 0;
+  S->set_cycle(iter);
 
-  if (restart == false) 
+  // we cannot at the moment restart in the middle of the 
+  // steady state flow calculation, so we check whether a
+  // restart was requested, and if not we do the steady
+  // state flow calculation
+
+  if (restart_requested == false)
     {
       
       // first solve the flow equation to steady state
@@ -252,418 +270,161 @@ void MPC::cycle_driver () {
 	    
 	    RPK->GetSaturation(*S->get_water_saturation()); 
 	  }
-	
-	
-	// write restart file after initial flow solve
-	if (restart_file != "NONE") S->write_restart( restart_file );
+
       }
     }
   else
     {
-      std::cout << "Reading restart file " << restart_file << std::endl;
+      // re-initialize the state object
+      restart->read_state( *S, restart_from_filename );
+
+      iter = S->get_cycle();
+    }
+  
+  // write visualization output
+  if (chemistry_enabled) 
+    {
+      // get the auxillary data
+      Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
       
-      S->read_restart( restart_file );
+      // write visualization data for timestep if requested
+      visualization->dump_state(*S, &(*aux));
+    }
+  else
+    {
+      visualization->dump_state(*S);
     }
 
-  if (flow_enabled || transport_enabled || chemistry_enabled) {
-    
-    if (gmv_output) {
-      // write the GMV data file
-      write_gmv_data(gmv_data_filename_path_str, gmv_mesh_filename_str, iter, 6);
-    }
-#ifdef ENABLE_CGNS
-    if (cgns_output) {
-      // data file is already open, see above
+  // write a restart dump if requested
+  restart->dump_state(*S);
 
-      write_field_data(*S->get_pressure(), "pressure");
-      write_field_data(*S->get_permeability(), "permeability");
-      write_field_data(*S->get_porosity(),"porosity");
-   
-      if (flow_model == "Richards")
-	{
-	  write_field_data(*S->get_water_saturation(),"water saturation");
+  if (flow_enabled || transport_enabled || chemistry_enabled) 
+    {
+      // make observations
+      observations->make_observations(*S);
+	
+      // we need to create an EpetraMulitVector that will store the 
+      // intermediate value for the total component concentration
+      total_component_concentration_star =
+	Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
+      
+      // then iterate transport and chemistry
+      while (  (S->get_time() <= T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
+	double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
+	
+	if (flow_enabled && flow_model == "Richards") 
+	  {
+	    
+	    
+	    //flow_dT = FPK->get_flow_dT();
+	  }
+	
+	if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
+
+	if (chemistry_enabled) {
+	  chemistry_dT = CPK->max_time_step();
 	}
+	
+	mpc_dT = std::min( transport_dT, chemistry_dT );
+	
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
+	  {
+	    *out << "Cycle = " << iter; 
+	    *out << ",  Time = "<< S->get_time() / (60*60*24);
+	    *out << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
+	  }
 
-      for (int nc=0; nc<S->get_number_of_components(); nc++) {
-	std::stringstream cname;
-	cname << "concentration " << nc;
+	if (transport_enabled) {
+	  
+	  // now advance transport
+	  TPK->advance( mpc_dT );	
+	  if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) 
+	    {
+	      // get the transport state and commit it to the state
+	      Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
+	      *total_component_concentration_star = *TS_next->get_total_component_concentration();
+	    }
+	  else
+	    {
+	      Errors::Message message("MPC: error... Transport_PK.advance returned an error status"); 
+	      Exceptions::amanzi_throw(message);
+	    }
+	} else {
+	  
+	  *total_component_concentration_star = *S->get_total_component_concentration();
+	}
+	
 	
 	if (chemistry_enabled) {
-	  cname << " " << compnames[nc];
+	  try {
+	    // now advance chemistry
+	    CPK->advance(mpc_dT, total_component_concentration_star);
+	    S->update_total_component_concentration(CPK->get_total_component_concentration());
+	  } catch (ChemistryException& chem_error) {
+	    std::ostringstream error_message;
+	    error_message << "MPC: error... Chemistry_PK.advance returned an error status";
+	    error_message << chem_error.what();
+	    Errors::Message message(error_message.str());
+	    Exceptions::amanzi_throw(message);
+	    // dump data and give up...
+	    // 	  S->update_total_component_concentration(CPK->get_total_component_concentration());
+	    
+	    // 	  S->advance_time(mpc_dT);
+	    // 	  iter++;
+	  }
+	} else {
+	  // commit total_component_concentration_star to the state
+	  
+	  S->update_total_component_concentration(*total_component_concentration_star);
 	}
-
-	write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
-      }
-
-      if (flow_enabled) {
-	const Epetra_MultiVector &DV = *S->get_darcy_velocity();
 	
-	write_field_data( *DV(0), "darcy velocity x");
-	write_field_data( *DV(1), "darcy velocity y");
-	write_field_data( *DV(2), "darcy velocity z");
-      }    
-      
-      if (chemistry_enabled) {
-        try {
-          // get the auxillary data
-          Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-
-          // how much of it is there?
-          int naux = aux->NumVectors();
-          for (int i=0; i<naux; i++) {
-            std::stringstream name;
-            name << auxnames[i];
-
-            write_field_data( *(*aux)(i), name.str());
-          }
-        } catch (ChemistryException& chem_error) {
-          std::cout << chem_error.what() << std::endl;
-          amanzi_throw(chem_error);
-	}
-
-      }
-      
-      close_data_file();
-    }
-#endif
-    if (gnuplot_output) write_gnuplot_data(0, 0.0);
+	
+	
+	// update the time in the state object
+	S->advance_time(mpc_dT);
+	
+	// we're done with this time step, commit the state 
+	// in the process kernels
+	if (transport_enabled) TPK->commit_state(TS);
+	if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
+	
+	// advance the iteration count
+	iter++;
+	S->set_cycle(iter);
 
 
-    vizdump_time_count ++;
-  }
+	// make observations
+	observations->make_observations(*S);
 
-  if (chemistry_enabled || transport_enabled || flow_enabled) {
-    // we need to create an EpetraMulitVector that will store the 
-    // intermediate value for the total component concentration
-    total_component_concentration_star =
-      Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
-    
-    // then iterate transport and chemistry
-    while (  (S->get_time() <= T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
-      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
-      
-      if (flow_enabled && flow_model == "Richards") 
-	{
-	  
-	  
-	  //flow_dT = FPK->get_flow_dT();
-	}
-      
-      if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
-      
-      if (chemistry_enabled) {
-        chemistry_dT = CPK->max_time_step();
-      }
-      
-      mpc_dT = std::min( transport_dT, chemistry_dT );
-      
-      std::cout << "MPC: ";
-      std::cout << "Cycle = " << iter; 
-      std::cout << ",  Time = "<< S->get_time() / (60*60*24);
-      std::cout << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
-      
-      if (transport_enabled) {
-
-	// now advance transport
-	TPK->advance( mpc_dT );	
-	if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) 
+	
+	// write visualization if requested
+	if (chemistry_enabled) 
 	  {
-	    // get the transport state and commit it to the state
-	    Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();
-            *total_component_concentration_star = *TS_next->get_total_component_concentration();
+	    // get the auxillary data
+	    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
+	    
+	    // write visualization data for timestep if requested
+	    visualization->dump_state(*S, &(*aux));
 	  }
 	else
 	  {
-	    Errors::Message message("MPC: error... Transport_PK.advance returned an error status"); 
-	    Exceptions::amanzi_throw(message);
+	    visualization->dump_state(*S);
 	  }
-      } else {
-	
-	*total_component_concentration_star = *S->get_total_component_concentration();
-      }
 
-      
-      if (chemistry_enabled) {
-        try {
-          // now advance chemistry
-          CPK->advance(mpc_dT, total_component_concentration_star);
-	  S->update_total_component_concentration(CPK->get_total_component_concentration());
-        } catch (ChemistryException& chem_error) {
-          std::ostringstream error_message;
-          error_message << "MPC: error... Chemistry_PK.advance returned an error status";
-          error_message << chem_error.what();
-          Errors::Message message(error_message.str());
-	  Exceptions::amanzi_throw(message);
-          // dump data and give up...
-// 	  S->update_total_component_concentration(CPK->get_total_component_concentration());
-	  
-// 	  S->advance_time(mpc_dT);
-// 	  iter++;
-	  
-// #ifdef ENABLE_CGNS
-// 	  if (cgns_output) {
-// 	    cout << "MPC: Writing to CGNS file at cycle "<< vizdump_cycle << endl;
-// 	    write_cgns_data(cgns_filename, iter);
-// 	  }
-// #endif	
-	  
-        }
-      } else {
-	// commit total_component_concentration_star to the state
-	
-	S->update_total_component_concentration(*total_component_concentration_star);
-      }
-      
-      
-      
-      // update the time in the state object
-      S->advance_time(mpc_dT);
-      
-      // we're done with this time step, commit the state 
-      // in the process kernels
-      if (transport_enabled) TPK->commit_state(TS);
-      if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
-      
-      // advance the iteration count
-      iter++;
-      
-      // TODO: ask the CPK to dump its data someplace....
-
-      vizdump_cycle = iter;
-      vizdump_time = S->get_time();
-      
-      if (  (vizdump_cycle_freq > 0) && (vizdump_cycle % vizdump_cycle_freq == 0) ) {
-	if (gmv_output) {
-	  cout << "MPC: Writing GMV file at cycle " << vizdump_cycle << endl;
-	  write_gmv_data(gmv_data_filename_path_str, 
-			  gmv_mesh_filename_str, iter, 6);
-	}
-#ifdef ENABLE_CGNS
-	if (cgns_output) {
-	  cout << "MPC: Writing to CGNS file at cycle "<< vizdump_cycle << endl;
-	  write_cgns_data(cgns_filename, iter);
-	}
-#endif	
-	if (gnuplot_output) write_gnuplot_data(iter, vizdump_time + mpc_dT);
-
-      } else if ( (vizdump_time_freq > 0) && ((vizdump_time + mpc_dT/1000.0) / vizdump_time_freq  > vizdump_time_count) ) {
-	
-	vizdump_time_count ++;
-	
-	if (gmv_output) {
-	  cout << "MPC: Writing GMV file at time T=" << vizdump_time << endl;
-	  write_gmv_data(gmv_data_filename_path_str, 
-			  gmv_mesh_filename_str, iter, 6);
-	}
-#ifdef ENABLE_CGNS
-	if (cgns_output) {
-	  cout << "MPC: Writing to CGNS file at time T=" << vizdump_time << endl;
-	  write_cgns_data(cgns_filename, iter);
-	}
-#endif
-	if (gnuplot_output) write_gnuplot_data(iter, vizdump_time + mpc_dT);
+	// write restart dump if requested
+	restart->dump_state(*S);
 
       }
+      
     }
-    
-  }
-}
-
-
-
-
-void MPC::write_gmv_data(std::string gmv_datafile_path,
-			 std::string gmv_meshfile, const int iter, const int digits)
-{
-  
-  GMV::open_data_file(gmv_meshfile, gmv_datafile_path,
-		      mesh_maps->count_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED),
-		      mesh_maps->count_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED),
-		      iter, digits);
-  GMV::write_time(S->get_time());
-  GMV::write_cycle(iter);
-  GMV::start_data();
-  
-  string basestring = "concentration";
-  string suffix = ".00";
-  
-  for (int nc=0; nc<S->get_number_of_components(); nc++) {
-    string concstring(basestring);
-    GMV::suffix_no(suffix,nc);
-    concstring.append(suffix);
-    
-    GMV::write_cell_data( *(*S->get_total_component_concentration())(nc), concstring);
-  }
-  
-  GMV::write_cell_data(*S->get_pressure(), "pressure");
-  GMV::write_cell_data(*S->get_permeability(), "permeability");
-  GMV::write_cell_data(*S->get_porosity(),"porosity");
-  
-  GMV::close_data_file();     
  
+
+
+  // dump observations
+  output_observations.print(std::cout);
+  
+  
 }
 
-#ifdef ENABLE_CGNS
-void MPC::write_cgns_data(std::string filename, int iter)
-{
-  open_data_file(filename);
-  
-  create_timestep(S->get_time(), iter, Amanzi::AmanziMesh::CELL);
-
-  for (int nc=0; nc<S->get_number_of_components(); nc++) {
-    
-    std::stringstream cname;
-    cname << "concentration " << nc;
-    
-    if (chemistry_enabled) {
-      cname << " " << compnames[nc];
-    }
-
-    write_field_data( *(*S->get_total_component_concentration())(nc), cname.str());
-  }
-  
-  if (chemistry_enabled) {
-    // get the auxillary data
-    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-    
-    // how much of it is there?
-    int naux = aux->NumVectors();
-    for (int i=0; i<naux; i++) {
-      std::stringstream name;
-      name << auxnames[i];
-      
-      write_field_data( *(*aux)(i), name.str()); 
-      
-    }
-    
-  }
-  close_data_file();     
-}
-#endif
-
-
-void MPC::write_gnuplot_data(int iter, double time)
-{
-  // write each variable to a separate file
-  // only works on one PE, not on a truly parallel run
-  
-  cout << " ...writing gnuplot output" << endl;
-  cout << " ...number of components : " << S->get_number_of_components() << endl;
-  
-  if (iter == 0) { // write pressure and saturation
-    std::stringstream fname_p;
-    fname_p << "pressure.dat";
-    
-    std::filebuf fb;
-    fb.open (fname_p.str().c_str(), std::ios::out);
-    ostream os_p(&fb);
-
-    for (int i=0; i< (S->get_pressure())->MyLength(); i++) 
-      os_p << (*S->get_pressure())[i] << endl;    
-    
-    fb.close();
-    
-    std::stringstream fname_s;
-    fname_s << "saturation.dat";
-    
-    fb.open (fname_s.str().c_str(), std::ios::out);
-    ostream os_s(&fb);
-
-    for (int i=0; i< (S->get_water_saturation())->MyLength(); i++) 
-      os_s << (*S->get_water_saturation())[i] << endl;    
-    
-    fb.close();
-    
-  }
-
-  for (int nc=0; nc<S->get_number_of_components(); nc++) {
-    std::stringstream fname;
-    fname << "conc_" << nc;
-    
-    if (chemistry_enabled) {
-      fname << "_" << compnames[nc];
-    }    
-    
-    fname << "_" << std::setfill('0') << std::setw(5) << iter << ".dat";
-
-    std::filebuf fb;
-    fb.open (fname.str().c_str(), std::ios::out);
-    ostream os(&fb);
-    os << "# time = " << time / (60.0 * 60.0 * 24.0 * 365.25) << " years" << std::endl;
-
-    // now dump the Epetra Vector
-    for (int i=0; i< (S->get_total_component_concentration())->MyLength(); i++) 
-      os << (*(*S->get_total_component_concentration())(nc))[i] << endl;
-
-    fb.close();
-  }
-  
-  if (chemistry_enabled) {
-    // get the auxillary data
-    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
-    
-    // how much of it is there?
-    int naux = aux->NumVectors();
-    for (int n=0; n<naux; n++) {
-      std::stringstream fname;
-      fname << auxnames[n];
-      
-      fname << "_" << std::setfill('0') << std::setw(5) << iter << ".dat";
-      
-      std::filebuf fb;
-      fb.open (fname.str().c_str(), std::ios::out);
-      ostream os(&fb);      
-      os << "# time = " << time / (60.0 * 60.0 * 24.0 * 365.25) << " years" << std::endl;
-
-
-      // now dump the Epetra Vector
-      for (int i=0; i< aux->MyLength(); i++) 
-	os << (*(*aux)(n))[i] << endl;
-      fb.close();
-    }
-  }
-}
-
-
-
-void MPC::create_gmv_paths(std::string  &gmv_mesh_filename_path_str,
-			   std::string  &gmv_data_filename_path_str,
-			   std::string  &gmv_mesh_filename_str,
-			   Teuchos::ParameterList &gmv_parameter_list)
-{
-  string gmv_meshfile_str = gmv_parameter_list.get<string>("Mesh file name");
-  string gmv_datafile_str = gmv_parameter_list.get<string>("Data file name");
-  string gmv_prefix_str = gmv_parameter_list.get<string>("GMV prefix","./");
-  
-  // create the GMV subdirectory if does not exist already
-  boost::filesystem::path gmv_prefix_path(gmv_prefix_str);
-  if (!boost::filesystem::is_directory(gmv_prefix_path.directory_string())) {
-    boost::filesystem::create_directory(gmv_prefix_path.directory_string());
-  }
-  
-  // convert strings to paths
-  boost::filesystem::path gmv_meshfile_path(gmv_meshfile_str);
-  boost::filesystem::path gmv_datafile_path(gmv_datafile_str);
-  boost::filesystem::path slash("/");
-  
-  // create a portable mesh file path string 
-  std::stringstream  gmv_mesh_filename_path_sstr;
-  gmv_mesh_filename_path_sstr << gmv_prefix_path.directory_string(); 
-  gmv_mesh_filename_path_sstr << slash.directory_string();
-  gmv_mesh_filename_path_sstr << gmv_meshfile_path.directory_string();
-  gmv_mesh_filename_path_str = gmv_mesh_filename_path_sstr.str();
-  
-  // create a portable data file path string
-  std::stringstream  gmv_data_filename_path_sstr;
-  gmv_data_filename_path_sstr << gmv_prefix_path.directory_string(); 
-  gmv_data_filename_path_sstr << slash.directory_string();
-  gmv_data_filename_path_sstr << gmv_datafile_path.directory_string();
-  gmv_data_filename_path_str = gmv_data_filename_path_sstr.str();
-  
-  // create a portable mesh file string
-  std::stringstream  gmv_mesh_filename_sstr;
-  gmv_mesh_filename_sstr << gmv_meshfile_path.directory_string();
-  gmv_mesh_filename_str = gmv_mesh_filename_sstr.str();  
-}
 
 } // close namespace Amanzi

@@ -208,7 +208,16 @@ void Chemistry_PK::XMLParameters(void) {
   // activity model
   beaker_parameters_.activity_model_name =
       parameter_list_.get<std::string>("Activity Model", "unit");
-
+  //---------------------------------------------------------------------------
+  // Pitzer virial coefficients database
+  //---------------------------------------------------------------------------
+  if (beaker_parameters_.activity_model_name=="pitzer-hwm") {
+     beaker_parameters_.pitzer_database =
+       parameter_list_.get<std::string>("Pitzer Database File", "pitzer.dat");
+  } else {
+	 beaker_parameters_.pitzer_database = " ";
+  }
+  //--------------------------------------------------------------------------
   // solver parameters here....
   beaker_parameters_.tolerance =
       parameter_list_.get<double>("Tolerance", 1.0e-12);

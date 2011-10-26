@@ -64,14 +64,15 @@ set_property(GLOBAL PROPERTY AMANZI_LINK_LINE "-L${CMAKE_INSTALL_PREFIX}/lib")
 
 # A property for accumulating amanzi library targets
 set_property(GLOBAL PROPERTY AMANZI_LIBRARY_TARGETS)
-
 set(AMANZI_LINK_LINE_FILE "${AMANZI_BINARY_DIR}/link_line")  # A filename to write link-line to.
-
-
 include(InstallManager)
 
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
+
+# Define a list of all enabled TPLs. Must do this AFTER all the 
+# CMakelist.txt files have been processed!
+get_property(AMANZI_ENABLED_TPLS GLOBAL PROPERTY PACKAGES_FOUND)
 
 # Make the exports only _after_ doing the build
 create_exports()

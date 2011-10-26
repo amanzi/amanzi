@@ -3,15 +3,18 @@
 # Standard utilities
 add_subdirectory(error_handling)
 
+# Geometry
+add_subdirectory(geometry)
+
 if (ENABLE_Unstructured)
   add_subdirectory(utils)
   add_subdirectory(input)
 
-  # Geometry
-  add_subdirectory(geometry)
-
   # Mesh
   add_subdirectory(mesh)
+
+  # Discretization
+  add_subdirectory(whetstone)
 
   # Output
   add_subdirectory(output)

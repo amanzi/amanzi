@@ -13,6 +13,17 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm)
   parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
 }
 
+HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
+: viz_comm_(comm), H5DataFilename_(dataFilename)
+{
+  viz_comm_ = comm;
+  H5DataFilename_ = dataFilename;
+  info_ = MPI_INFO_NULL;
+  IOconfig_.numIOgroups = 1;
+  IOconfig_.commIncoming = comm.Comm();
+  parallelIO_IOgroup_init(&IOconfig_, &IOgroup_);
+}
+
 HDF5_MPI::~HDF5_MPI()
 {
   parallelIO_IOgroup_cleanup(&IOgroup_);
@@ -241,6 +252,215 @@ void HDF5_MPI::endTimestep() {
   }
 }
 
+void HDF5_MPI::writeAttrString(const std::string value, const std::string attrname)
+{
+  
+  hid_t file, fid, dataspace_id, attribute_id, atype;
+  hsize_t dims[1]={1};
+  herr_t status;
+  
+  /* Open the file */
+  hid_t acc_tpl1 = H5Pcreate (H5P_FILE_ACCESS);
+  herr_t ret = H5Pset_fapl_mpio(acc_tpl1, viz_comm_.Comm(), info_);
+  file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
+    
+  if (file < 0) {
+    Errors::Message message("HDF5_MPI::writeAttrReal error opening data file to write attribute");
+    Exceptions::amanzi_throw(message);
+  }
+  
+  /* Create a dataset attribute. */
+  dataspace_id = H5Screate(H5S_SCALAR);
+  atype = H5Tcopy(H5T_C_S1);
+  H5Tset_size(atype, strlen(value.c_str())+1);
+  H5Tset_strpad(atype,H5T_STR_NULLTERM);
+  H5Tset_order(atype,H5T_ORDER_NONE);
+  attribute_id = H5Acreate (file, attrname.c_str(), atype, 
+                            dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  
+  /* Write the attribute data. */
+  status = H5Awrite(attribute_id, atype, value.c_str());
+  
+  /* Close everything. */
+  status = H5Aclose(attribute_id);  
+  status = H5Sclose(dataspace_id);  
+  status = H5Tclose(atype);  
+  status = H5Pclose(acc_tpl1);
+  status = H5Fclose(file);
+}
+  
+  
+void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
+{
+  
+  hid_t file, fid, dataspace_id, attribute_id;
+  hsize_t dims;
+  herr_t status;
+  
+  /* Setup dataspace */
+  dims = 1;
+  dataspace_id = H5Screate_simple(1, &dims, NULL);
+  
+  /* Open the file */
+  hid_t acc_tpl1 = H5Pcreate (H5P_FILE_ACCESS);
+  herr_t ret = H5Pset_fapl_mpio(acc_tpl1, viz_comm_.Comm(), info_);
+  file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
+    
+  if (file < 0) {
+    Errors::Message message("HDF5_MPI::writeAttrReal error opening data file to write attribute");
+    Exceptions::amanzi_throw(message);
+  }
+    
+  /* Create a dataset attribute. */
+  attribute_id = H5Acreate (file, attrname.c_str(), H5T_NATIVE_DOUBLE, 
+                            dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  
+  /* Write the attribute data. */
+  status = H5Awrite(attribute_id, H5T_NATIVE_DOUBLE, &value);
+  
+  /* Close everything. */
+  status = H5Aclose(attribute_id);  
+  status = H5Sclose(dataspace_id);  
+  status = H5Pclose(acc_tpl1);
+  status = H5Fclose(file);
+}
+  
+void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
+{
+  
+  hid_t file, dataspace_id, attribute_id;
+  hsize_t dims;
+  herr_t status;
+
+  /* Setup dataspace */
+  dims = 1;
+  dataspace_id = H5Screate_simple(1, &dims, NULL);
+  
+  /* Open the file */
+  //file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
+  //                            FILE_READWRITE);
+  //iofile_t *curr_file = IOgroup_.file[file];
+  hid_t acc_tpl1 = H5Pcreate (H5P_FILE_ACCESS);
+  herr_t ret = H5Pset_fapl_mpio(acc_tpl1, viz_comm_.Comm(), info_);
+  file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
+    
+  if (file < 0) {
+    Errors::Message message("HDF5_MPI::writeAttrReal error opening data file to write attribute");
+    Exceptions::amanzi_throw(message);
+  }
+    
+  /* Create/Write a dataset attribute. */
+  attribute_id = H5Acreate (file, attrname.c_str(), H5T_NATIVE_INT,
+                            dataspace_id, H5P_DEFAULT, H5P_DEFAULT);
+  status = H5Awrite(attribute_id, H5T_NATIVE_INT, &value);
+  
+  /* Set the attribute data. */
+  //H5LTset_attribute_int(curr_file->fid, "/", attrname.c_str(), &value, 1);
+  //H5LTset_attribute_int(file, "/", attrname.c_str(), &value, 1);
+  
+  /* Close everything. */
+  status = H5Aclose(attribute_id);  
+  status = H5Sclose(dataspace_id); 
+  status = H5Pclose(acc_tpl1);
+  status = H5Fclose(file);
+  //parallelIO_close_file(file, &IOgroup_);
+  
+}
+
+void HDF5_MPI::readAttrString(std::string &value, const std::string attrname)
+{
+  
+  hid_t file, fid, attribute_id, atype, root;
+  herr_t status;
+  
+  /* Open the file */
+  hid_t acc_tpl1 = H5Pcreate (H5P_FILE_ACCESS);
+  herr_t ret = H5Pset_fapl_mpio(acc_tpl1, viz_comm_.Comm(), info_);
+  file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
+  root = H5Gopen(file, "/", H5P_DEFAULT);
+    
+  if (file < 0) {
+    Errors::Message message("HDF5_MPI::writeAttrReal error opening data file to write attribute");
+    Exceptions::amanzi_throw(message);
+  }
+  
+  atype = H5Tcopy(H5T_C_S1);
+  attribute_id = H5Aopen(root, attrname.c_str(), H5P_DEFAULT);
+  hid_t ftype = H5Aget_type(attribute_id);
+  size_t size = H5Tget_size(ftype);
+  H5Tset_size(atype, size);
+  
+  /* Write the attribute data. */
+  char string_out[size];
+  status = H5Aread(attribute_id, atype, string_out);
+  value = string_out;
+
+  /* Close everything. */ 
+  status = H5Tclose(atype);    
+  status = H5Tclose(ftype);  
+  status = H5Pclose(acc_tpl1);
+  status = H5Aclose(attribute_id); 
+  status = H5Gclose(root);
+  status = H5Fclose(file);
+}
+  
+void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
+{
+    
+  hid_t file, fid, attribute_id;
+  herr_t status;
+    
+  /* Open the file */
+  hid_t acc_tpl1 = H5Pcreate (H5P_FILE_ACCESS);
+  herr_t ret = H5Pset_fapl_mpio(acc_tpl1, viz_comm_.Comm(), info_);
+  file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
+    
+  if (file < 0) {
+    Errors::Message message("HDF5_MPI::writeAttrReal error opening data file to write attribute");
+    Exceptions::amanzi_throw(message);
+  }
+    
+  /* Create a dataset attribute. */
+  attribute_id = H5Aopen(file, attrname.c_str(), H5P_DEFAULT);
+    
+  /* Write the attribute data. */
+  status = H5Aread(attribute_id, H5T_NATIVE_DOUBLE, &value);
+    
+  /* Close everything. */
+  status = H5Aclose(attribute_id);  
+  status = H5Pclose(acc_tpl1);
+  status = H5Fclose(file);
+  
+}
+  
+  void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
+  {
+    
+    hid_t file, fid, attribute_id;
+    herr_t status;
+    
+    /* Open the file */
+    hid_t acc_tpl1 = H5Pcreate (H5P_FILE_ACCESS);
+    herr_t ret = H5Pset_fapl_mpio(acc_tpl1, viz_comm_.Comm(), info_);
+    file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
+    
+    if (file < 0) {
+      Errors::Message message("HDF5_MPI::writeAttrReal error opening data file to write attribute");
+      Exceptions::amanzi_throw(message);
+    }
+    
+    /* Create a dataset attribute. */
+    attribute_id = H5Aopen(file, attrname.c_str(), H5P_DEFAULT);
+    
+    /* Write the attribute data. */
+    status = H5Aread(attribute_id, H5T_NATIVE_INT, &value);
+    
+    /* Close everything. */
+    status = H5Aclose(attribute_id);  
+    status = H5Pclose(acc_tpl1);
+    status = H5Fclose(file);
+  }
+  
 void HDF5_MPI::writeDataReal(const Epetra_Vector &x, const std::string varname) 
 {
   writeFieldData_(x, varname, PIO_DOUBLE, "NONE");

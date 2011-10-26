@@ -22,6 +22,9 @@ include_directories(${CGNS_INCLUDE_DIRS})
 
 if ( ENABLE_MOAB_Mesh )
 
+    include_directories(${MOAB_INCLUDE_DIRS})
+    include_directories(${MOAB_SOURCE_DIR})
+
     # Binary: richards-nlk
     add_executable(richards-nlk richards-nlk.cc)
     target_link_libraries(richards-nlk solvers moab_mesh flow cell_geometry output)

@@ -166,10 +166,10 @@ endif(METIS_LIBRARIES AND METIS_INCLUDE_DIRS )
 
 # Send useful message if everything is found
 find_package_handle_standard_args(METIS DEFAULT_MSG
-                                           METIS_LIBRARIES
-                                           METIS_INCLUDE_DIRS)
+                                  METIS_LIBRARIES
+                                  METIS_INCLUDE_DIRS)
 
-# find_package)handle)standard_args should set METIS_FOUND but it does not!
+# find_package_handle_standard_args should set METIS_FOUND but it does not!
 if ( METIS_LIBRARIES AND METIS_INCLUDE_DIRS)
     set(METIS_FOUND TRUE)
 else()

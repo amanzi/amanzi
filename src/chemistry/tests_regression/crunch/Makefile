@@ -1,4 +1,4 @@
-CRUNCHFLOW = ~/projects/crunchflow2007/bin/CrunchFlow2007
+CRUNCHFLOW = CrunchFlow2007
 
 TESTS = \
 	carbonate-unit \

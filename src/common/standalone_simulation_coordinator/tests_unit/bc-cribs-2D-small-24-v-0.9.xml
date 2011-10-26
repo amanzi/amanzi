@@ -1,0 +1,379 @@
+<ParameterList name="Main">
+  
+
+  <Parameter name="Amanzi input format version" type="string" value="0.9.1"/>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="stk::mesh"/>
+    <!--<Parameter name="Framework" type="string" value="Structured"/>-->
+    <!--<Parameter name="Framework" type="string" value="Simple"/>-->
+    <ParameterList name="Generate">
+      <Parameter name="Number of Cells" type="Array int" value="{100, 1, 100}"/>
+      <Parameter name="Domain Low Corner" type="Array double" value="{0.0, 0.0, 0.0}" />
+      <Parameter name="Domain High Corner" type="Array double" value="{103.2, 1.0, 103.2}" />
+    </ParameterList>   
+  </ParameterList>
+
+  <ParameterList name="Regions">
+    <ParameterList name="Rwia region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0., 0.}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 6.}"/>
+      </ParameterList>   
+    </ParameterList>   
+    <ParameterList name="Rlm region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0.,  6.0}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 11.4}"/>
+      </ParameterList>   
+    </ParameterList>   
+    <ParameterList name="CCUg region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0., 11.4}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 18.0}"/>
+      </ParameterList>   
+    </ParameterList>   
+    <ParameterList name="CCuz region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0., 18.0}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 22.2}"/>
+      </ParameterList>   
+    </ParameterList>   
+    <ParameterList name="Hg region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0., 22.2}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 23.4}"/>
+      </ParameterList>   
+    </ParameterList>   
+    <ParameterList name="Hfs region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0., 23.4}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 82.2}"/>
+      </ParameterList>   
+    </ParameterList>   
+    <ParameterList name="Hcs region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0., 82.2}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 96.0}"/>
+      </ParameterList>   
+    </ParameterList>   
+    <ParameterList name="Bf region">
+      <ParameterList name="box">
+        <Parameter name="lo" type="Array double" value="{  0.0, 0.,  96.0}"/>
+        <Parameter name="hi" type="Array double" value="{103.2, 0., 103.2}"/>
+      </ParameterList>   
+    </ParameterList>   
+  </ParameterList>
+
+  <ParameterList name="Rock">
+    <ParameterList name="Rwia"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.267"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="3.7532e-13"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.2857, 1.9401e-4, 0.103}"/>
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{Rwia region}"/>
+    </ParameterList>
+
+    <ParameterList name="Rlm"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.360"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="5.0618e-14"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.5115, 7.3518e-4, 0.074}"/>
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{Rlm region}"/>
+    </ParameterList>
+
+    <ParameterList name="CCUg"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.237"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="2.9989e-13"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.6011, 2.1443e-4, 0.089}"/>
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{CCUg region}"/>
+    </ParameterList>
+
+    <ParameterList name="CCuz"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.360"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="5.0618e-14"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{CCuz region}"/>
+    </ParameterList>
+
+    <ParameterList name="Hg"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.237"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="2.9989e-13"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{Hg region}"/>
+    </ParameterList>
+
+    <ParameterList name="Hfs"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.388"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="2.0447e-12"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.4203, 1.7358e-4, 0.134}"/>
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{Hfs region}"/>
+    </ParameterList>
+
+    <ParameterList name="Hcs"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.364"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="4.8346e-12"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.5554, 5.1054e-5, 0.097}"/>
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{Hcs region}"/>
+    </ParameterList>
+
+    <ParameterList name="Bf"> 
+      <ParameterList name="porosity: uniform">
+        <Parameter name="porosity" type="double" value="0.158"/>
+      </ParameterList>
+      <ParameterList name="permeability: uniform">
+        <Parameter name="permeability" type="double" value="5.4344e-13"/>
+      </ParameterList>
+      <ParameterList name="water retention: vG">
+        <Parameter name="m alpha slr" type="Array double" value="{0.3976, 8.1687e-5, 0.135}"/> 
+      </ParameterList>
+      <Parameter name="regions" type="Array string" value="{Bf region}"/>
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="State">
+
+    <Parameter name="Gravity" type="Array double" value="{0.0, 0.0, -9.81}"/>
+
+    <ParameterList name="Water">
+      <Parameter name="mass density" type="double" value="998.32"/>
+      <Parameter name="viscosity" type="double" value="8.9e-4"/> 
+      <Parameter name="phase" type="string" value="Aqueous"/> 
+
+      <ParameterList name="Rwia region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+      <ParameterList name="Rlm region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+      <ParameterList name="CCUg region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+      <ParameterList name="CCuz region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+      <ParameterList name="Hg region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+      <ParameterList name="Hfs region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+      <ParameterList name="Hcs region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+      <ParameterList name="Bf region">
+        <ParameterList name="ic: uniform">
+          <Parameter name="value" type="double" value="1.0"/>
+        </ParameterList>  
+      </ParameterList>  
+    </ParameterList>  
+
+  </ParameterList>  
+
+
+  <ParameterList name="observation">
+    <ParameterList name="mass of water">
+      <Parameter name="state id" type="string" value="water"/>
+      <Parameter name="region" type="string" value="all"/>
+      <Parameter name="functional" type="string" value="integral"/>
+      <Parameter name="times" type="Array double" value="{0.0}"/>
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="MPC">
+    <Parameter name="Start Time" type="double" value="0.0"/>
+    <Parameter name="End Time" type="double" value="3.1e+6"/>
+    <Parameter name="End Cycle" type="int" value="5000"/>
+    <Parameter name="disable Flow_PK" type="string" value="no"/>
+    <Parameter name="Flow model" type="string" value="Richards"/>
+    <Parameter name="disable Transport_PK" type="string" value="yes"/>
+    <Parameter name="disable Chemistry_PK" type="string" value="yes"/>
+    <Parameter name="Viz dump cycle frequency" type="int" value="100"/>
+    <ParameterList name="CGNS">
+      <Parameter name="File name" type="string" value="bc-cribs-2D-small.cgns"/>
+    </ParameterList>    
+    <Parameter name="Gnuplot output" type="bool" value="false"/>
+    <Parameter name="Restart" type="bool" value="false"/>
+    <Parameter name="Restart file" type="string" value="restart-bc-cribs-2D-24.h5"/>
+  </ParameterList> 
+  
+
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="1"/>
+    <Parameter name="discretization order" type="int" value="1"/>
+    <Parameter name="enable internal tests" type="string" value="no"/>
+    <Parameter name="internal tests tolerance" type="double" value="1e-06"/>
+    <Parameter name="maximal time step" type="double" value="1e+99"/>
+    <Parameter name="verbosity level" type="int" value="1"/>
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      
+      <ParameterList name="BC 0">
+        <Parameter name="Side set ID" type="int" value="1"/>
+        <Parameter name="Type" type="string" value="Constant"/>
+        <Parameter name="Component 0" type="double" value="1.0"/>
+      </ParameterList>
+      
+    </ParameterList>
+  </ParameterList>
+
+
+  <ParameterList name="Flow">
+
+    <ParameterList name="Richards Problem">
+
+<!--  
+the following four paramters are for the initial time integration
+in particular, the hydrostatic pressure height is used to initialize
+the initial pressure in the problem so that the entire domain is wet:
+
+p = p_atmospheric - 9.8 * rho * (z - height) 
+ -->
+
+      <Parameter name="Steady state calculation initial time" type="double" value="0.0"/>
+      <Parameter name="Steady state calculation final time" type="double" value="3e7"/>
+      <Parameter name="Steady state calculation initial time step" type="double" value="1.0e-7"/>
+      <Parameter name="Steady state calculation initial hydrostatic pressure height" type ="double" value="103.2"/>
+
+      <Parameter name="Atmospheric pressure" type="double" value="101325.0"/>
+
+      <ParameterList name="Richards model evaluator">
+        <Parameter name="Absolute error tolerance" type="double" value="1.0"/>
+        <Parameter name="Relative error tolerance" type="double" value="1.0e-5"/>
+        <ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="none"/>
+	</ParameterList>       
+      </ParameterList>
+
+      <ParameterList name="Time integrator">
+        <Parameter name="Nonlinear solver max iterations" type="int" value="5"/>
+	<Parameter name="Nonlinear solver tolerance" type="double" value="0.05"/>
+        <Parameter name="NKA max vectors" type="int" value="5"/>
+	<Parameter name="NKA drop tolerance" type="double" value="5.0e-2"/>
+	<Parameter name="Maximum number of BDF tries" type="int" value="50"/>
+        <ParameterList name="VerboseObject">
+	  <Parameter name="Verbosity Level" type="string" value="medium"/>
+	</ParameterList>
+      </ParameterList>	
+
+
+      <ParameterList name="Diffusion Preconditioner">
+	<ParameterList name="ML Parameters">
+	  <Parameter name="ML output" type="int" value="0"/>
+  	  <Parameter name="max levels" type="int" value="40"/>
+	  <Parameter name="prec type" type="string" value="MGW"/>
+	  <Parameter name="cycle applications" type="int" value="5"/>
+	  <Parameter name="aggregation: type" type="string" value="Uncoupled"/> 
+	  <Parameter name="aggregation: damping factor" type="double" value="1.333"/>
+	  <Parameter name="aggregation: threshold" type="double" value="0.0"/>
+	  <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
+	  <Parameter name="eigen-analysis: type" type="string" value="cg"/>
+	  <Parameter name="eigen-analysis: iterations" type="int" value="30"/>
+	  <Parameter name="smoother: sweeps" type="int" value="5"/>
+	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+	  <Parameter name="smoother: pre or post" type="string" value="both"/>
+	  <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
+	  <Parameter name="smoother: damping factor" type="double" value="1.0"/>
+	  <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
+          <Parameter name="coarse: max size" type="int" value="100"/>	   
+          <Parameter name="coarse: damping factor" type="double" value="1.0"/>	   
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Flow BC">
+      <Parameter name="number of BCs" type="int" value="2"/>
+
+      <!-- 
+	 the following is a special boundary condition that we use to 
+	 drain a domain...
+	 Use the steady state... paramters above to initialize the pressure
+	 so that the entire domain is wet. 
+	 Then calculate the hydrostatic pressure at the bottom of the domain and
+	 set Initital BC to that value.
+	 Set BC value to the desired dirichlet pressure at steady state (eg. atmospheric).
+	 Then define the time span over which the domain gets drained:
+	 Initial Time to Final Time.
+	-->
+      
+      <!-- Bottom BC -->
+      <ParameterList name="BC00">
+        <Parameter name="Type" type="string" value="Time Dependent Pressure Constant"/>
+	<!-- 1112016.18144 equals 101325 + 9.81 * 998.32 * 103.2 -->
+        <Parameter name="Initial BC value" type="double" value="1112016.18144" />
+        <Parameter name="BC value" type="double" value="101325.0" />
+        <Parameter name="Initial Time" type="double" value="0.0" />
+        <Parameter name="Final Time" type="double" value="1e10" />
+        <Parameter name="Side set ID" type="int" value="2" />
+      </ParameterList>  
+      
+      <!-- Top BC -->
+      <ParameterList name="BC01">
+	<Parameter name="Type" type="string" value="Darcy Constant"/>
+	<!-- 3.5 mm/yr equals 1.10984271943176e-10 m/s -->
+	<Parameter name="BC value" type="double" value="-1.10984271943176e-10" />
+	<Parameter name="Side set ID" type="int" value="1" />
+      </ParameterList>
+     </ParameterList>
+
+
+  </ParameterList>
+
+</ParameterList>

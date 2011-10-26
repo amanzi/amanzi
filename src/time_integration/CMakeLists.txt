@@ -39,7 +39,7 @@ add_library(time_integration ${time_integration_source_files})
 add_install_library(time_integration)
 set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REMOVE_DUPLICATES time_integration_tpl_libs)
-target_link_libraries(time_integration error_handling flow ${time_integration_tpl_libs})
+target_link_libraries(time_integration error_handling solvers flow ${time_integration_tpl_libs})
 
 #
 # Install Targets
@@ -63,8 +63,8 @@ if (BUILD_TESTS)
     include_directories(${TIME_INTEGRATION_SOURCE_DIR})
     include_directories(${SOLVERS_SOURCE_DIR})
 
-    add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp) 
-    target_link_libraries(test_time_integration time_integration solvers error_handling ${UnitTest_LIBRARIES})
+    add_executable(test_time_integration test/Main.cc test/test_solhist.cpp test/test_1Dfem.cpp test/test_Explicit_RK.cpp) 
+    target_link_libraries(test_time_integration time_integration solvers error_handling ${UnitTest_LIBRARIES} ${time_integration_tpl_libs})
     add_amanzi_test(time_integration test_time_integration KIND unit)
 
 endif()

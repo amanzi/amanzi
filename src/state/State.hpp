@@ -12,10 +12,12 @@
 typedef enum { COMPLETE, UPDATING } status_type;
 
 class State {
-
+  
 public:
 
   State( int, Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
+
+  State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
 
   State( Teuchos::ParameterList &parameter_list, 
 	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh> );
@@ -42,11 +44,15 @@ public:
   const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
   const double get_time () const { return time; };
+  const int get_cycle () const { return cycle; };
 
   const int get_number_of_components() const { return number_of_components; };
 
+  const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
+
   // modify methods
   void set_time ( double new_time );
+  void set_cycle ( int new_cycle );
   void advance_time(double dT);
   void update_total_component_concentration(Teuchos::RCP<Epetra_MultiVector>);
   void update_total_component_concentration(const Epetra_MultiVector&);
@@ -70,16 +76,31 @@ public:
   void set_permeability (const double kappa, const int mesh_block_id);
   void set_viscosity(const double mu);
   void set_gravity(const double *g);
+  void set_number_of_components(const int n);
 
-  void write_gmv ( std::string filename );
 
-  // restart related 
-  void init_restart ( );
-  void write_restart ( std::string filename );
-  void read_restart ( std::string filename );
+  // set methods 
+  void set_darcy_flux ( const Epetra_Vector& darcy_flux_ );
+  void set_water_saturation ( const Epetra_Vector& water_saturation_ );
+  void set_water_density ( const Epetra_Vector& water_density_ );
+  void set_porosity ( const Epetra_Vector& porosity_ );
+  void set_permeability ( const Epetra_Vector& permeability_ );
+  void set_pressure ( const Epetra_Vector& pressure_ );
+  void set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ );
+  void set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ );
+
+  // // restart related 
+  // void init_restart ( );
+  // void write_restart ( std::string filename );
+  // void read_restart ( std::string filename );
+
+  // observation functions
+  double water_mass();
       
-private:
+
   void create_storage();
+
+private:
   void initialize_from_parameter_list();
 
   void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
@@ -102,6 +123,7 @@ private:
   int number_of_components;
 
   double time;
+  int cycle;
   status_type status;
 
   // mesh
@@ -111,13 +133,13 @@ private:
   Teuchos::ParameterList parameter_list;
 
 
-  // restart related maps
-  Teuchos::RCP<Epetra_Map> all_to_one_node_map;
-  Teuchos::RCP<Epetra_Map> all_to_one_cell_map;  
-  Teuchos::RCP<Epetra_Map> all_to_one_face_map;  
-  Teuchos::RCP<Epetra_Export> all_to_one_node_export;
-  Teuchos::RCP<Epetra_Export> all_to_one_cell_export;  
-  Teuchos::RCP<Epetra_Export> all_to_one_face_export;  
+  // // restart related maps
+  // Teuchos::RCP<Epetra_Map> all_to_one_node_map;
+  // Teuchos::RCP<Epetra_Map> all_to_one_cell_map;  
+  // Teuchos::RCP<Epetra_Map> all_to_one_face_map;  
+  // Teuchos::RCP<Epetra_Export> all_to_one_node_export;
+  // Teuchos::RCP<Epetra_Export> all_to_one_cell_export;  
+  // Teuchos::RCP<Epetra_Export> all_to_one_face_export;  
 
 }; 
 

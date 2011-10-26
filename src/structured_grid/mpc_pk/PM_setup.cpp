@@ -24,30 +24,53 @@
 #include "activity_model_factory.hh"
 #endif
 
-const std::string solid = "Solid";
-const std::string absorbed = "Absorbed";
+namespace
+{
+  const std::string solid("Solid");
+  const std::string absorbed("Absorbed");
+}
 
-// Region
+//
+//**********************************************************************
+//
+// Set all default values for static variables in InitializeStaticVariables()!!!
+//
+//**********************************************************************
+//
+
+//
+// The num_state_type actually varies with model.
+//
+// Add 2 if do_chem == 1 later.
+//
+int PorousMedia::num_state_type;
+//
+// Region.
+//
 Array<Region*> PorousMedia::region_array;
 std::string    PorousMedia::surf_file;
-
+//
 // Rock
+//
 Array<Rock> PorousMedia::rock_array;
 std::string PorousMedia::gsfile;
-MultiFab    PorousMedia::kappadata;
-MultiFab    PorousMedia::phidata;
-bool        PorousMedia::porosity_from_fine = false;
-bool        PorousMedia::permeability_from_fine = false;
-
-// source
-bool          PorousMedia::do_source_term = false;
+MultiFab*   PorousMedia::kappadata;
+MultiFab*   PorousMedia::phidata;
+bool        PorousMedia::porosity_from_fine;
+bool        PorousMedia::permeability_from_fine;
+//
+// Source.
+//
+bool          PorousMedia::do_source_term;
 Array<Source> PorousMedia::source_array;
-
-// observation
-std::string PorousMedia::obs_outputfile;
+//
+// Observation.
+//
+std::string        PorousMedia::obs_outputfile;
 Array<Observation> PorousMedia::observation_array;
-
-// Phases and components
+//
+// Phases and components.
+//
 Array<std::string>  PorousMedia::pNames;
 Array<std::string>  PorousMedia::cNames;
 Array<int >         PorousMedia::pType;
@@ -57,30 +80,32 @@ Array<Array<int> >  PorousMedia::rhoinit_param;
 Array<Array<Real> > PorousMedia::rhoinflow;
 Array<Array<int> >  PorousMedia::rhoinflow_param;
 Array<Real>         PorousMedia::muval;
-std::string PorousMedia::model_name;
-int   PorousMedia::model   = 0;
-int   PorousMedia::nphases = 0;
-int   PorousMedia::ncomps  = 0; 
-int   PorousMedia::ndiff   = 0;
-int   PorousMedia::idx_dominant = -1;
-
-// Tracers
+std::string         PorousMedia::model_name;
+int                 PorousMedia::model;
+int                 PorousMedia::nphases;
+int                 PorousMedia::ncomps;
+int                 PorousMedia::ndiff;
+int                 PorousMedia::idx_dominant;
+//
+// Tracers.
+//
 Array<std::string>  PorousMedia::qNames;
 Array<std::string>  PorousMedia::tNames;
-int                 PorousMedia::ntracers = 0; 
+int                 PorousMedia::ntracers;
 Array<int>          PorousMedia::tType; 
 Array<Real>         PorousMedia::tDen;
 Array<Array<Real> > PorousMedia::tinit;
 Array<Array<int> >  PorousMedia::tinit_param;
 Array<Array<Real> > PorousMedia::tinflow;
 Array<Array<int> >  PorousMedia::tinflow_param;
-
-// Pressure
+//
+// Pressure.
+//
 #ifdef MG_USE_FBOXLIB
-int         PorousMedia::richard_iter = 100;
+int         PorousMedia::richard_iter;
 #endif
-Real        PorousMedia::wt_lo = 0;
-Real        PorousMedia::wt_hi = 0;
+Real        PorousMedia::wt_lo;
+Real        PorousMedia::wt_hi;
 Array<Real> PorousMedia::press_lo;
 Array<Real> PorousMedia::press_hi;
 Array<int>  PorousMedia::inflow_bc_lo;
@@ -91,54 +116,64 @@ Array<int>  PorousMedia::rinflow_bc_lo;
 Array<int>  PorousMedia::rinflow_bc_hi;
 Array<Real> PorousMedia::rinflow_vel_lo;
 Array<Real> PorousMedia::rinflow_vel_hi;
+//
+// Temperature.
+//
+Real  PorousMedia::temperature;
+//
+// Flow.
+//
+int  PorousMedia::verbose;
+Real PorousMedia::cfl;
+Real PorousMedia::init_shrink;
+Real PorousMedia::change_max;
+Real PorousMedia::fixed_dt;
+Real PorousMedia::richard_max_dt;
+Real PorousMedia::dt_cutoff;
+Real PorousMedia::gravity;
+int  PorousMedia::initial_step;
+int  PorousMedia::initial_iter;
+int  PorousMedia::sum_interval;
+int  PorousMedia::NUM_SCALARS;
+int  PorousMedia::NUM_STATE;
+int  PorousMedia::full_cycle;
+int  PorousMedia::max_step;
+Real PorousMedia::stop_time;
 
-// Temperature 
-Real  PorousMedia::temperature = 300;
-
-// Flow
-int  PorousMedia::verbose      = 0;
-Real PorousMedia::cfl          = 0.8;
-Real PorousMedia::init_shrink  = 1.0;
-Real PorousMedia::change_max   = 1.1;
-Real PorousMedia::fixed_dt     = -1.0;
-Real PorousMedia::dt_cutoff    = 0.0;
-Real PorousMedia::gravity      = 9.70297e-5; // 9.81/1.01e5
-int  PorousMedia::initial_step = false;
-int  PorousMedia::initial_iter = false;
-int  PorousMedia::sum_interval = -1;
-int  PorousMedia::NUM_SCALARS  = 0;
-int  PorousMedia::NUM_STATE    = 0;
-int  PorousMedia::full_cycle   = 0;
-int  PorousMedia::max_step     = 0;
-Real PorousMedia::stop_time    = 0;
 Array<AdvectionForm> PorousMedia::advectionType;
 Array<DiffusionForm> PorousMedia::diffusionType;
+//
+// Viscosity parameters.
+//
+Real PorousMedia::be_cn_theta;
+Real PorousMedia::visc_tol;
+Real PorousMedia::visc_abs_tol;
+bool PorousMedia::def_harm_avg_cen2edge;
+//
+// Capillary pressure flag.
+//
+int  PorousMedia::have_capillary;
+//
+// Molecular diffusion flag.
+//
+int  PorousMedia::variable_scal_diff;
 
-// viscosity parameters.
-Real PorousMedia::be_cn_theta  = 0.5;
-Real PorousMedia::visc_tol     = 1.0e-10;  
-Real PorousMedia::visc_abs_tol = 1.0e-10;  
-bool PorousMedia::def_harm_avg_cen2edge = false;
-
-// Capillary pressure flag
-int  PorousMedia::have_capillary = 0;
-
-// Molecular diffusion flag
-int  PorousMedia::variable_scal_diff = 1; 
 Array<int>  PorousMedia::is_diffusive;
 Array<Real> PorousMedia::visc_coef;
-
-// Chemistry flag
-int  PorousMedia::do_chem  = -1;
-int  PorousMedia::do_full_strang  = 1;
-int  PorousMedia::n_chem_interval = 0;
-int  PorousMedia::it_chem = 0;
-Real PorousMedia::dt_chem = 0;
-int  PorousMedia::max_grid_size_chem   = 16;
-bool PorousMedia::no_initial_values    = true;
-bool PorousMedia::use_funccount = false;
-
-// lists
+//
+// Chemistry flag.
+//
+int  PorousMedia::do_chem;
+int  PorousMedia::do_full_strang;
+int  PorousMedia::n_chem_interval;
+int  PorousMedia::it_chem;
+Real PorousMedia::dt_chem;
+int  PorousMedia::max_grid_size_chem;
+bool PorousMedia::no_initial_values;
+bool PorousMedia::use_funccount;
+//
+// Lists.
+//
 std::map<std::string, int> PorousMedia::model_list;
 std::map<std::string, int> PorousMedia::bc_list;
 std::map<std::string, int> PorousMedia::obs_list;
@@ -146,30 +181,33 @@ std::map<std::string, int> PorousMedia::phase_list;
 std::map<std::string, int> PorousMedia::comp_list;
 std::map<std::string, int> PorousMedia::tracer_list;
 std::map<std::string, int> PorousMedia::region_list;
-
-// AMANZI flags
+//
+// AMANZI flags.
+//
 #ifdef AMANZI
+int         PorousMedia::n_total;
+int         PorousMedia::n_minerals;
+int         PorousMedia::n_sorbed;
 std::string PorousMedia::amanzi_input_file;
 std::string PorousMedia::amanzi_activity_model;
-PArray<amanzi::chemistry::SimpleThermoDatabase> PorousMedia::chemSolve(PArrayManage);
+
+PArray<amanzi::chemistry::SimpleThermoDatabase>    PorousMedia::chemSolve(PArrayManage);
 Array<amanzi::chemistry::Beaker::BeakerComponents> PorousMedia::components;
 Array<amanzi::chemistry::Beaker::BeakerParameters> PorousMedia::parameters;
-int PorousMedia::n_total = 0;
-int PorousMedia::n_minerals = 0;
-int PorousMedia::n_sorbed = 0;
 #endif
-
+//
 // Internal switches.
-//int  PorousMedia::algorithm = 1;
-int  PorousMedia::do_simple   =  0;
-int  PorousMedia::do_reflux   =  1;
-int  PorousMedia::do_correct  =  0;
-int  PorousMedia::no_corrector = 0;
-int  PorousMedia::do_kappa_refine = 0;
-int  PorousMedia::n_pressure_interval = 0;
-int  PorousMedia::it_pressure = 0;  
-bool PorousMedia::do_any_diffuse  = false;
-int  PorousMedia::do_cpl_advect = 0;
+//
+int  PorousMedia::do_simple;
+int  PorousMedia::do_multilevel_full;
+int  PorousMedia::do_reflux;
+int  PorousMedia::do_correct;
+int  PorousMedia::no_corrector;
+int  PorousMedia::do_kappa_refine;
+int  PorousMedia::n_pressure_interval;
+int  PorousMedia::it_pressure;
+bool PorousMedia::do_any_diffuse;
+int  PorousMedia::do_cpl_advect;
 
 static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
@@ -311,8 +349,97 @@ PorousMedia::setup_list()
 }
 
 void
+PorousMedia::InitializeStaticVariables ()
+{
+  //
+  // Set all default values for static variables here!!!
+  //
+  PorousMedia::num_state_type = 4;
+
+  PorousMedia::kappadata = 0;
+  PorousMedia::phidata   = 0;
+
+  PorousMedia::porosity_from_fine     = false;
+  PorousMedia::permeability_from_fine = false;
+
+  PorousMedia::do_source_term = false;
+
+  PorousMedia::model        = 0;
+  PorousMedia::nphases      = 0;
+  PorousMedia::ncomps       = 0; 
+  PorousMedia::ndiff        = 0;
+  PorousMedia::idx_dominant = -1;
+
+  PorousMedia::ntracers = 0; 
+
+#ifdef MG_USE_FBOXLIB
+  PorousMedia::richard_iter = 100;
+#endif
+  PorousMedia::wt_lo = 0;
+  PorousMedia::wt_hi = 0;
+
+  PorousMedia::temperature = 300;
+
+  PorousMedia::verbose      = 0;
+  PorousMedia::cfl          = 0.8;
+  PorousMedia::init_shrink  = 1.0;
+  PorousMedia::change_max   = 1.1;
+  PorousMedia::fixed_dt     = -1.0;
+  PorousMedia::richard_max_dt = 5.e5;
+  PorousMedia::dt_cutoff    = 0.0;
+  PorousMedia::gravity      = 9.70297e-5; // 9.81/1.01e5
+  PorousMedia::initial_step = false;
+  PorousMedia::initial_iter = false;
+  PorousMedia::sum_interval = -1;
+  PorousMedia::NUM_SCALARS  = 0;
+  PorousMedia::NUM_STATE    = 0;
+  PorousMedia::full_cycle   = 0;
+  PorousMedia::max_step     = 0;
+  PorousMedia::stop_time    = 0;
+
+  PorousMedia::be_cn_theta           = 0.5;
+  PorousMedia::visc_tol              = 1.0e-10;  
+  PorousMedia::visc_abs_tol          = 1.0e-10;  
+  PorousMedia::def_harm_avg_cen2edge = false;
+
+  PorousMedia::have_capillary = 0;
+
+  PorousMedia::variable_scal_diff = 1; 
+
+  PorousMedia::do_chem            = -1;
+  PorousMedia::do_full_strang     = 1;
+  PorousMedia::n_chem_interval    = 0;
+  PorousMedia::it_chem            = 0;
+  PorousMedia::dt_chem            = 0;
+  PorousMedia::max_grid_size_chem = 16;
+  PorousMedia::no_initial_values  = true;
+  PorousMedia::use_funccount      = false;
+
+#ifdef AMANZI
+  PorousMedia::n_total    = 0;
+  PorousMedia::n_minerals = 0;
+  PorousMedia::n_sorbed   = 0;
+#endif
+
+  PorousMedia::do_simple           = 0;
+  PorousMedia::do_multilevel_full  = 0;
+  PorousMedia::do_reflux           = 1;
+  PorousMedia::do_correct          = 0;
+  PorousMedia::no_corrector        = 0;
+  PorousMedia::do_kappa_refine     = 0;
+  PorousMedia::n_pressure_interval = 0;
+  PorousMedia::it_pressure         = 0;  
+  PorousMedia::do_any_diffuse      = false;
+  PorousMedia::do_cpl_advect       = 0;
+}
+
+void
 PorousMedia::variableSetUp ()
 {
+
+  InitializeStaticVariables();
+
+
   BL_ASSERT(desc_lst.size() == 0);
 
   for (int dir = 0; dir < BL_SPACEDIM; dir++)
@@ -345,9 +472,6 @@ PorousMedia::variableSetUp ()
   // add COREREACT stuff
 #if defined(COREREACT)
     NUM_STATE = NUM_STATE + sz_corereact;
-    NUM_STATE = NUM_STATE + 1;  // FuncCount
-#elif defined(AMANZI)
-    NUM_STATE = NUM_STATE + 1;  // FuncCount
 #endif
 
   //
@@ -409,7 +533,6 @@ PorousMedia::variableSetUp ()
   diffusionType.resize(NUM_SCALARS);
 
   // For components.
-  std::string solid = "Solid";
   for (int i=0; i<ncomps; i++) 
     {
       advectionType[i] = Conservative;
@@ -495,17 +618,27 @@ PorousMedia::variableSetUp ()
 #endif
 
 #if defined(AMANZI)
+  if (do_chem>-1)
+    {
       // add function count
       desc_lst.addDescriptor(FuncCount_Type, IndexType::TheCellType(),
 			     StateDescriptor::Point,0,1, &cell_cons_interp);
       desc_lst.setComponent(FuncCount_Type, 0, "FuncCount", 
 			    bc, BndryFunc(FORT_ONE_N_FILL));
+    }
 #endif
 
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************
   //
   err_list.add("gradn",1,ErrorRec::Special,FORT_ADVERROR);
+
+  if (verbose && ParallelDescriptor::IOProcessor())
+  {
+      std::cout << "\nDumping ParmParse table:\n \n";
+      ParmParse::dumpTable(std::cout);
+      std::cout << "\n... done dumping ParmParse table.\n" << '\n';
+  }
 }
 
 //
@@ -575,10 +708,11 @@ void PorousMedia::read_geometry()
 	{
 	  int idx = i-nRegion_DEF;      
 	  region_list[r_name[idx]] = i;
-	  ParmParse::Record ppr = pp.getRecord(r_name[idx]);
-	  ppr->get("purpose",r_purpose);
-	  ppr->get("type",r_type);      
-	  ppr->getarr("param",r_param,0,ppr->countval("param"));
+          const std::string prefix("geometry." + r_name[idx]);
+          ParmParse ppr(prefix.c_str());
+	  ppr.get("purpose",r_purpose);
+	  ppr.get("type",r_type);      
+	  ppr.getarr("param",r_param,0,ppr.countval("param"));
 	  if (r_type == 1) 
 	    {
 	      region_array[i] = new boxRegion(r_name[idx],r_purpose,r_type);
@@ -617,12 +751,13 @@ void PorousMedia::read_rock()
   pp.getarr("rock",r_names,0,nrock);
   for (int i = 0; i<nrock; i++)
     {
-      ParmParse::Record ppr = pp.getRecord(r_names[i]);
+      const std::string prefix("rock." + r_names[i]);
+      ParmParse ppr(prefix.c_str());
       rock_array[i].name = r_names[i];
-      ppr->get("density",rock_array[i].density);
-      ppr->get("porosity",rock_array[i].porosity);    
-      ppr->getarr("permeability",rock_array[i].permeability,
-		  0,ppr->countval("permeability"));
+      ppr.get("density",rock_array[i].density);
+      ppr.get("porosity",rock_array[i].porosity);    
+      ppr.getarr("permeability",rock_array[i].permeability,
+		  0,ppr.countval("permeability"));
       BL_ASSERT(rock_array[i].permeability.size() == BL_SPACEDIM);
       // The permeability is specified in mDa.  
       // This needs to be multiplied with 1e-7 to be consistent 
@@ -631,17 +766,17 @@ void PorousMedia::read_rock()
 	rock_array[i].permeability[j] *= 1.e-7;
       // relative permeability: include kr_coef, sat_residual
       rock_array[i].krType = 0;
-      ppr->query("kr_type",rock_array[i].krType);
+      ppr.query("kr_type",rock_array[i].krType);
       if (rock_array[i].krType > 0)
-	ppr->getarr("kr_param",rock_array[i].krParam,
-		    0,ppr->countval("kr_param"));
+	ppr.getarr("kr_param",rock_array[i].krParam,
+		    0,ppr.countval("kr_param"));
 
       // capillary pressure: include cpl_coef, sat_residual, sigma
       rock_array[i].cplType = 0;
-      ppr->query("cpl_type", rock_array[i].cplType);
+      ppr.query("cpl_type", rock_array[i].cplType);
       if (rock_array[i].cplType > 0)
-	ppr->getarr("cpl_param",rock_array[i].cplParam,
-		    0,ppr->countval("cpl_param"));
+	ppr.getarr("cpl_param",rock_array[i].cplParam,
+		    0,ppr.countval("cpl_param"));
     }
 
   // assign rock to regions and specify the distribution
@@ -665,8 +800,9 @@ void PorousMedia::read_rock()
  
   for (int i = 0; i<nassign; i++)
     {
-      ParmParse::Record ppr = pp.getRecord(r_region[i]);
-      ppr->get("type",rock_type);
+      const std::string prefix("rock." + r_region[i]);
+      ParmParse ppr(prefix.c_str());
+      ppr.get("type",rock_type);
       for (int j = 0; j< nrock; j++)
 	if (rock_type == r_names[j])
 	  idx = j;
@@ -678,18 +814,18 @@ void PorousMedia::read_rock()
       }
 
       // distribution parameters
-      ppr->get("phi",type);
+      ppr.get("phi",type);
       if (type > 1)
-	ppr->getarr("phi_param",param,0,ppr->countval("phi_param"));
+	ppr.getarr("phi_param",param,0,ppr.countval("phi_param"));
       rock_array[idx].porosity_dist_type.push_back(type);
       rock_array[idx].porosity_dist_param.push_back(param);
       if (type > 1) build_full_pmap = true;
       if (type == 0) read_full_pmap = true;
       if (type != 1) porosity_from_fine = true;
      
-      ppr->get("kappa",type);   
+      ppr.get("kappa",type);   
       if (type > 1)
-	ppr->getarr("kappa_param",param,0,ppr->countval("kappa_param"));
+	ppr.getarr("kappa_param",param,0,ppr.countval("kappa_param"));
       rock_array[idx].permeability_dist_type.push_back(type);
       rock_array[idx].permeability_dist_param.push_back(param);
       if (type > 1) build_full_kmap = true;
@@ -725,14 +861,22 @@ void PorousMedia::read_rock()
     {
       std::cout << "Current code only allows reading in "
 		<< "the distribution in full." << std::endl;
-      VisMF::Read(kappadata,kfile);
+
+      if (kappadata == 0)
+          kappadata = new MultiFab;
+
+      VisMF::Read(*kappadata,kfile);
     }
 
   if (read_full_pmap)
     {
       std::cout << "Current code only allows reading in "
 		<< "the distribution in full.\n";
-      VisMF::Read(phidata,pfile);
+
+      if (phidata == 0)
+          phidata = new MultiFab;
+
+      VisMF::Read(*phidata,pfile);
     }
 
   // determine parameters needed to build kappadata and phidata
@@ -754,8 +898,14 @@ void PorousMedia::read_rock()
   // construct permeability field based on the specified parameters
   if (build_full_kmap)
     {
+
       BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
-      kappadata.define(ba,BL_SPACEDIM,0,Fab_allocate);
+
+      if (kappadata == 0)
+          kappadata = new MultiFab;
+
+      kappadata->define(ba,BL_SPACEDIM,0,Fab_allocate);
+
       for (int i=0; i<nrock; i++)
 	{
 	  // these are temporary work around.   
@@ -765,16 +915,21 @@ void PorousMedia::read_rock()
 	  rock_array[i].fratio = fratio;
 	  rock_array[i].problo = problo;
 	  rock_array[i].probhi = probhi;
-	  rock_array[i].build_kmap(kappadata, region_array, gsfile);
+	  rock_array[i].build_kmap(*kappadata, region_array, gsfile);
 	}
 
-      VisMF::Write(kappadata,kfile);
+      VisMF::SetNOutFiles(10);
+      VisMF::Write(*kappadata,kfile);
     }
 
   if (build_full_pmap)
     {
       BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
-      phidata.define(ba,1,0,Fab_allocate);
+
+      if (phidata == 0)
+          phidata = new MultiFab;
+
+      phidata->define(ba,1,0,Fab_allocate);
       
       for (int i=0; i<nrock; i++)
 	{
@@ -786,10 +941,11 @@ void PorousMedia::read_rock()
 	  rock_array[i].problo = problo;
 	  rock_array[i].probhi = probhi;
 
-	  rock_array[i].build_pmap(phidata, region_array, gsfile);
+	  rock_array[i].build_pmap(*phidata, region_array, gsfile);
 	}
 
-      VisMF::Write(phidata,pfile);
+      VisMF::SetNOutFiles(10);
+      VisMF::Write(*phidata,pfile);
     }
 }
 
@@ -824,6 +980,7 @@ void PorousMedia::read_prob()
   pb.query("dt_cutoff",dt_cutoff);
   pb.query("change_max",change_max);
   pb.query("fixed_dt",fixed_dt);
+  pb.query("richard_max_dt",richard_max_dt);
   pb.query("sum_interval",sum_interval);
 
   // Gravity are specified as m/s^2 in the input file
@@ -837,6 +994,7 @@ void PorousMedia::read_prob()
   // Get algorithmic flags and options
   pb.query("full_cycle", full_cycle);
   //pb.query("algorithm", algorithm);
+  pb.query("do_multilevel_full",  do_multilevel_full );
   pb.query("do_simple",  do_simple );
   pb.query("do_reflux",  do_reflux );
   pb.query("do_correct", do_correct);
@@ -876,7 +1034,7 @@ void PorousMedia::read_prob()
 //
 
 void PorousMedia::assign_bc_coef(int type_id, 
-				 ParmParse::Record& ppr,
+				 ParmParse& ppr,
 				 Array<std::string>& names, 
 				 Array<Real>& coef)
 {
@@ -890,19 +1048,19 @@ void PorousMedia::assign_bc_coef(int type_id,
       for (int j = 0; j<ncoef; j++)
 	{
 	  coef[j] = 0;
-	  ppr->get(names[j].c_str(),coef[j]);
+	  ppr.get(names[j].c_str(),coef[j]);
 	}
       break;
 
     case 2:
       coef.resize(1);
-      ppr->get("water_table",coef[0]);
+      ppr.get("water_table",coef[0]);
       break;
 
     case 4:
       coef.resize(ncomps+1);
-      ppr->query("rock",rtype);
-      ppr->get("inflow",vel);
+      ppr.query("rock",rtype);
+      ppr.get("inflow",vel);
       for (int i=0;i<ncomps;i++)
 	coef[i] = density[i];
       coef[ncomps] = vel;
@@ -938,10 +1096,10 @@ void PorousMedia::assign_bc_coef(int type_id,
 
     case 5:
       coef.resize(1);
-      ppr->getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
-      ppr->getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
-      ppr->getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
-      ppr->getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
+      ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
+      ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
+      ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
+      ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
     }
 }  
 
@@ -980,11 +1138,12 @@ void  PorousMedia::read_comp()
   std::string buffer;
   for (int i = 0; i<ncomps; i++)
     {
-      ParmParse::Record ppr = cp.getRecord(cNames[i]);
-      ppr->get("phase",buffer);
-      ppr->get("density",density[i]);
-      ppr->get("viscosity",muval[i]);
-      ppr->get("diffusivity",visc_coef[i]);
+      const std::string prefix("comp." + cNames[i]);
+      ParmParse ppr(prefix.c_str());
+      ppr.get("phase",buffer);
+      ppr.get("density",density[i]);
+      ppr.get("viscosity",muval[i]);
+      ppr.get("diffusivity",visc_coef[i]);
       pType[i] = phase_list[buffer];
       //for (int j=0;j<nphases; j++) 
       //if (buffer.compare(pNames[j])==0) pType[i] = j;	   
@@ -1083,8 +1242,9 @@ void  PorousMedia::read_comp()
     {
       rhoinit_param[i].resize(2);
       rhoinit_param[i][0] = region_list[init_region[i]];
-      ParmParse::Record ppr = cp.getRecord(init_region[i]);
-      ppr->get("type",type_name);
+      const std::string prefix("comp." + init_region[i]);
+      ParmParse ppr(prefix.c_str());
+      ppr.get("type",type_name);
       rhoinit_param[i][1]=bc_list[type_name];
       assign_bc_coef(rhoinit_param[i][1],ppr,cNames,rhoinit[i]);
     }
@@ -1101,8 +1261,9 @@ void  PorousMedia::read_comp()
 	{
 	  rhoinflow_param[i].resize(2);
 	  rhoinflow_param[i][0] = region_list[inflow_region[i]];
-	  ParmParse::Record ppr = cp.getRecord(inflow_region[i]);
-	  ppr->get("type",type_name);
+          const std::string prefix("comp." + inflow_region[i]);
+	  ParmParse ppr(prefix.c_str());
+	  ppr.get("type",type_name);
 	  rhoinflow_param[i][1] = bc_list[type_name];
 	  assign_bc_coef(rhoinflow_param[i][1],ppr,cNames,rhoinflow[i]);
 	}
@@ -1138,8 +1299,9 @@ void  PorousMedia::read_tracer()
       std::string buffer;
       for (int i = 0; i<ntracers; i++)
 	{
-	  ParmParse::Record ppr = pp.getRecord(tNames[i]);
-	  ppr->get("group",buffer);
+          const std::string prefix("tracer." + tNames[i]);
+	  ParmParse ppr(prefix.c_str());
+	  ppr.get("group",buffer);
 	  for (int j=0;j<qNames.size(); j++) 
 	    if (buffer.compare(qNames[j])==0) tType[i] = j;	   
 	}
@@ -1160,8 +1322,9 @@ void  PorousMedia::read_tracer()
 	{
 	  tinit_param[i].resize(2);
 	  tinit_param[i][0] = region_list[init_region[i]];
-	  ParmParse::Record ppr = pp.getRecord(init_region[i]);
-	  ppr->get("type",type_name);
+          const std::string prefix("tracer." + init_region[i]);
+	  ParmParse ppr(prefix.c_str());
+	  ppr.get("type",type_name);
 	  tinit_param[i][1]=bc_list[type_name];
 	  assign_bc_coef(tinit_param[i][1],ppr,tNames,tinit[i]);
 	}  
@@ -1179,8 +1342,9 @@ void  PorousMedia::read_tracer()
 	      tinflow_param[i].resize(2);
 	      tinflow[i].resize(ntracers);
 	      tinflow_param[i][0] = region_list[inflow_region[i]]; 
-	      ParmParse::Record ppr = pp.getRecord(inflow_region[i]);
-	      ppr->get("type",type_name);
+              const std::string prefix("tracer." + inflow_region[i]);
+	      ParmParse ppr(prefix.c_str());
+	      ppr.get("type",type_name);
 	      tinflow_param[i][1]=bc_list[type_name];
 	      assign_bc_coef(tinflow_param[i][1],ppr,tNames,tinflow[i]);
 	    }
@@ -1272,10 +1436,11 @@ void  PorousMedia::read_source()
       std::string buffer;
       for (int i=0; i<nsource; i++)
 	{
-	  ParmParse::Record ppr = pp.getRecord(sname[i]);
+          const std::string prefix("source." + sname[i]);
+	  ParmParse ppr(prefix.c_str());
 	  source_array[i].name = sname[i];
-	  ppr->get("var_type",source_array[i].var_type);
-	  ppr->get("var_id",source_array[i].var_id);
+	  ppr.get("var_type",source_array[i].var_type);
+	  ppr.get("var_id",source_array[i].var_id);
 	  if (source_array[i].var_type == "comp")
 	    {
 	      source_array[i].id.resize(1);
@@ -1306,7 +1471,7 @@ void  PorousMedia::read_source()
 		}
 	    }
 
-	  ppr->get("region",buffer);
+	  ppr.get("region",buffer);
           bool region_set=false;
 	  for (int j=0; j<region_array.size();j++)
           {
@@ -1317,7 +1482,7 @@ void  PorousMedia::read_source()
               }
           }
           BL_ASSERT(region_set);
-	  ppr->get("dist_type",buffer);
+	  ppr.get("dist_type",buffer);
 	  if (!buffer.compare("constant"))
 	      source_array[i].dist_type = 0;
 	  else if (!buffer.compare("linear"))
@@ -1327,13 +1492,13 @@ void  PorousMedia::read_source()
 	  else if (!buffer.compare("exponential"))
 	      source_array[i].dist_type = 3;
 
-	  ppr->getarr("val",source_array[i].val_param,
-		      0,ppr->countval("val"));
-	  if (ppr->countval("val")< source_array[i].id.size())
+	  ppr.getarr("val",source_array[i].val_param,
+		      0,ppr.countval("val"));
+	  if (ppr.countval("val")< source_array[i].id.size())
 	    std::cout << "Number of values does not match the number of var_id.\n" ;
 	  if (source_array[i].dist_type != 0)
-	    ppr->getarr("dist_param",source_array[i].dist_param,
-			0,ppr->countval("dist_param"));
+	    ppr.getarr("dist_param",source_array[i].dist_param,
+			0,ppr.countval("dist_param"));
 	 
 	}
     }
@@ -1366,23 +1531,24 @@ void PorousMedia::read_observation()
       std::string buffer;
       for (int i=0; i<nobs; i++)
 	{
-	  ParmParse::Record ppr = pp.getRecord(oname[i]);
+          const std::string prefix("observation." + oname[i]);
+	  ParmParse ppr(prefix.c_str());
 	  observation_array[i].name = oname[i];
 	  obs_list[oname[i]] = i;
-	  ppr->get("obs_type",observation_array[i].obs_type);
-	  ppr->get("var_type",observation_array[i].var_type);
-	  ppr->get("var_id",observation_array[i].var_id);
+	  ppr.get("obs_type",observation_array[i].obs_type);
+	  ppr.get("var_type",observation_array[i].var_type);
+	  ppr.get("var_id",observation_array[i].var_id);
 
 	  if (!observation_array[i].var_type.compare("comp"))
 	    observation_array[i].id = comp_list[observation_array[i].var_id];
 	  else if (!observation_array[i].var_type.compare("tracer"))
 	    observation_array[i].id = tracer_list[observation_array[i].var_id];
 
-	  ppr->get("region",buffer);
+	  ppr.get("region",buffer);
           observation_array[i].region = region_list[buffer];
           
-	  ppr->getarr("times",observation_array[i].times,
-		      0,ppr->countval("times"));
+	  ppr.getarr("times",observation_array[i].times,
+		      0,ppr.countval("times"));
 
 	  //observation_array[i].vals.resize(observation_array[i].times.size());	 
 	}

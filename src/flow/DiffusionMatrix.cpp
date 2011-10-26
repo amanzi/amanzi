@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "dbc.hh"
+
 namespace Amanzi
 {
 
@@ -34,6 +36,9 @@ DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 
   // Create the cell-face matrix; structure only, no values yet.
   Dcf_ = new Epetra_CrsMatrix(Copy, cf_graph);
+  
+  // To start, the face-cell matrix is the cell-face matrix.
+  Dfc_t_ = Dcf_;
 
   // Create the face-face matrix; structure only, no values yet.
   Dff_ = new Epetra_FECrsMatrix(Copy, ff_graph);
@@ -47,6 +52,7 @@ DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 DiffusionMatrix::~DiffusionMatrix()
 {
   if (Sff_) delete Sff_;
+  if (Dfc_t_ && Dfc_t_ != Dcf_) delete Dfc_t_;
   delete Dff_, Dcf_, Dcc_;
 }
 
@@ -71,9 +77,22 @@ void DiffusionMatrix::Compute(const std::vector<double> &K)
 }
 
 
+void DiffusionMatrix::Compute(const std::vector<double> &K, const Epetra_Vector &K_upwind)
+{
+  Compute<double>(K, K_upwind);
+}
+
+
 void DiffusionMatrix::Compute(const std::vector<Epetra_SerialSymDenseMatrix> &K)
 {
   Compute<Epetra_SerialSymDenseMatrix>(K);
+}
+
+
+void DiffusionMatrix::Compute(const std::vector<Epetra_SerialSymDenseMatrix> &K,
+     const Epetra_Vector &K_upwind)
+{
+  Compute<Epetra_SerialSymDenseMatrix>(K, K_upwind);
 }
 
 
@@ -86,6 +105,12 @@ void DiffusionMatrix::Compute(const std::vector<T> &K)
   int l_indices[6];
   Epetra_IntSerialDenseVector g_indices(6);
   Epetra_SerialDenseMatrix minv(6,6);
+
+  // Symmetric system: Ensure Dfc_t_ is just an alias for Dcf_
+  if (Dfc_t_ != Dcf_) {
+    delete Dfc_t_;
+    Dfc_t_ = Dcf_;
+  }
 
   (*Dff_).PutScalar(0.0);
   for (int j = 0; j < cell_map.NumMyElements(); ++j) {
@@ -118,6 +143,59 @@ void DiffusionMatrix::Compute(const std::vector<T> &K)
 }
 
 
+template <typename T>
+void DiffusionMatrix::Compute(const std::vector<T> &K, const Epetra_Vector &K_upwind)
+{
+  Epetra_Map cell_map = CellMap(false); // owned cells
+  Epetra_Map face_map_use = FaceMap(true);  // all used faces
+
+  int l_indices[6];
+  Epetra_IntSerialDenseVector g_indices(6);
+  Epetra_SerialDenseMatrix minv(6,6);
+
+  // Non-symmetric system: ensure Dfc_t_ is an independent matrix
+  if (!Dfc_t_ || Dfc_t_ == Dcf_) Dfc_t_ = new Epetra_CrsMatrix(Copy, (*Dcf_).Graph());
+  
+  (*Dff_).PutScalar(0.0);
+  for (int j = 0; j < cell_map.NumMyElements(); ++j) {
+
+    // Compute the inverse of the cell face mass matrix.
+    double x[24];
+    mesh_->cell_to_coordinates((unsigned int) j, x, x+24);
+    MimeticHexLocal mhex(x);
+    mhex.mass_matrix(minv, K[j], true);
+
+    // Get the cell face indices; we need both process-local and global indices.
+    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) l_indices, (unsigned int*) l_indices+6);
+    for (int k = 0; k < 6; ++k) g_indices[k] = face_map_use.GID(l_indices[k]);
+
+    // Scale the rows of the cell face mass matrix inverse with the upwind coeffs.
+    for (int k = 0; k < 6; ++k) {
+      for (int i = 0; i < 6; ++i) minv(k,i) *= K_upwind[l_indices[k]];
+    }
+    
+    double w_cf[6], w_fc[6];
+    double matsum = 0.0;
+    for (int k = 0; k < 6; ++k) {
+      double colsum = 0.0;
+      double rowsum = 0.0;
+      for (int i = 0; i < 6; ++i) colsum += minv(i,k);
+      for (int i = 0; i < 6; ++i) rowsum += minv(k,i);
+      w_cf[k] = -colsum;
+      w_fc[k] = -rowsum;
+      matsum += colsum;
+    }
+
+    (*Dcc_)[j] = matsum;
+    (*Dcf_).ReplaceMyValues(j, 6, w_cf, l_indices);
+    (*Dfc_t_).ReplaceMyValues(j, 6, w_fc, l_indices);
+    (*Dff_).SumIntoGlobalValues(g_indices, minv);
+  }
+  ApplyDirichletProjection(*Dff_);
+  (*Dff_).GlobalAssemble();
+}
+
+
 void DiffusionMatrix::ComputeFaceSchur()
 {
   // Copy matrix values from Dff.
@@ -133,14 +211,15 @@ void DiffusionMatrix::ComputeFaceSchur()
     for (int j = 0; j < (*Dff_).NumMyNonzeros(); ++j) target[j] = source[j];
   }
 
-  double *w;
+  double *wcf, *wfc;
   int n, *l_indices;
   for (int j = 0; j < (*Dcc_).Map().NumMyElements(); ++j) {
-    (*Dcf_).ExtractMyRowView(j, n, w, l_indices);
+    (*Dcf_).ExtractMyRowView(j, n, wcf, l_indices);
+    (*Dfc_t_).ExtractMyRowView(j, n, wfc, l_indices); // note: same n, l_indices
     Epetra_SerialDenseMatrix update(n,n);
     for (int k = 0; k < n; ++k) {
       for (int i = 0; i < n; ++i) {
-        update(i,k) = -w[i]*(w[k]/(*Dcc_)[j]);
+        update(i,k) = -wfc[i]*(wcf[k]/(*Dcc_)[j]);
       }
     }
     Epetra_IntSerialDenseVector g_indices(n);

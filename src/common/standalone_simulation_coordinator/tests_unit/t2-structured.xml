@@ -1,4 +1,282 @@
 <ParameterList name="t2-structured">
-  <Parameter name="grid_option" type="string" value="Structured"/>
-  <Parameter name="PPfile" type="string" value="inputs_simple_chem.pp"/>
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="Structured"/>
+  </ParameterList>
+  <ParameterList name="amr">
+    <Parameter name="blocking_factor" type="string" value="16"/>
+    <Parameter name="check_file" type="string" value="temp/chk"/>
+    <Parameter name="check_int" type="string" value="100"/>
+    <Parameter name="derive_plot_vars" type="string" value="gradpx gradpy gradn"/>
+    <Parameter name="grid_eff" type="string" value="0.75"/>
+    <Parameter name="max_grid_size" type="string" value="64"/>
+    <Parameter name="max_level" type="string" value="0"/>
+    <Parameter name="n_cell" type="string" value="64 64"/>
+    <Parameter name="n_error_buf" type="string" value="2 2 2"/>
+    <Parameter name="plot_file" type="string" value="temp/plt"/>
+    <Parameter name="plot_int" type="string" value="1"/>
+    <Parameter name="probin_file" type="string" value="probin"/>
+    <Parameter name="ref_ratio" type="string" value="2 2"/>
+    <Parameter name="regrid_int" type="string" value="2"/>
+    <Parameter name="v" type="string" value="2"/>
+  </ParameterList>
+  <ParameterList name="cg">
+    <Parameter name="unstable_criterion" type="string" value="100"/>
+    <Parameter name="use_jacobi_precond" type="string" value="1"/>
+    <Parameter name="v" type="string" value="0"/>
+  </ParameterList>
+  <ParameterList name="comp">
+    <ParameterList name="ALL">
+      <Parameter name="inflow" type="string" value="-2.53e-8"/>
+      <Parameter name="type" type="string" value="zero_total_velocity"/>
+    </ParameterList>
+    <ParameterList name="Air">
+      <Parameter name="density" type="string" value="1.2"/>
+      <Parameter name="diffusivity" type="string" value="0.0"/>
+      <Parameter name="phase" type="string" value="Gas"/>
+      <Parameter name="viscosity" type="string" value="0.018"/>
+    </ParameterList>
+    <ParameterList name="Water">
+      <Parameter name="density" type="string" value="1.0e3"/>
+      <Parameter name="diffusivity" type="string" value="0.0"/>
+      <Parameter name="phase" type="string" value="Liquid"/>
+      <Parameter name="viscosity" type="string" value="1.0"/>
+    </ParameterList>
+    <ParameterList name="YHIBC">
+      <Parameter name="inflow" type="string" value="-2.535e-8"/>
+      <Parameter name="rock" type="string" value="Backfill"/>
+      <Parameter name="type" type="string" value="zero_total_velocity"/>
+    </ParameterList>
+    <ParameterList name="YLOBC">
+      <Parameter name="Air" type="string" value="0."/>
+      <Parameter name="Water" type="string" value="1000"/>
+      <Parameter name="type" type="string" value="scalar"/>
+    </ParameterList>
+    <Parameter name="comp" type="string" value="Water Air"/>
+    <Parameter name="dominant" type="string" value="Air"/>
+    <Parameter name="hi_bc" type="string" value="4 1"/>
+    <Parameter name="inflow" type="string" value="YHIBC YLOBC"/>
+    <Parameter name="init" type="string" value="ALL"/>
+    <Parameter name="lo_bc" type="string" value="4 1"/>
+  </ParameterList>
+  <ParameterList name="diffuse">
+    <Parameter name="v" type="string" value="2"/>
+  </ParameterList>
+  <ParameterList name="geometry">
+    <ParameterList name="Backfill_Region">
+      <Parameter name="param" type="string" value="0 0 16 16"/>
+      <Parameter name="purpose" type="string" value="0"/>
+      <Parameter name="type" type="string" value="1"/>
+    </ParameterList>
+    <ParameterList name="Waste_Region">
+      <Parameter name="param" type="string" value="6 6 10 10"/>
+      <Parameter name="purpose" type="string" value="0"/>
+      <Parameter name="type" type="string" value="1"/>
+    </ParameterList>
+    <Parameter name="coord_sys" type="string" value="0"/>
+    <Parameter name="is_periodic" type="string" value="0 0"/>
+    <Parameter name="prob_hi" type="string" value="16 16"/>
+    <Parameter name="prob_lo" type="string" value="0. 0."/>
+    <Parameter name="region" type="string" value="Backfill_Region Waste_Region"/>
+  </ParameterList>
+  <ParameterList name="mac">
+    <Parameter name="mac_abs_tol" type="string" value="1.e-14"/>
+    <Parameter name="mac_sync_tol" type="string" value="1.e-12"/>
+    <Parameter name="mac_tol" type="string" value="1.e-12"/>
+    <Parameter name="v" type="string" value="3"/>
+  </ParameterList>
+  <Parameter name="max_step" type="string" value="2"/>
+  <ParameterList name="mg">
+    <Parameter name="cg_solver" type="string" value="1"/>
+    <Parameter name="maxiter" type="string" value="100"/>
+    <Parameter name="smooth_on_cg_unstable" type="string" value="1"/>
+    <Parameter name="v" type="string" value="1"/>
+  </ParameterList>
+  <ParameterList name="phase">
+    <Parameter name="phase" type="string" value="Liquid Gas"/>
+  </ParameterList>
+  <ParameterList name="press">
+    <Parameter name="hi_bc" type="string" value="4 1"/>
+    <Parameter name="inflow_bc_hi" type="string" value="0 1"/>
+    <Parameter name="inflow_bc_lo" type="string" value="0 0"/>
+    <Parameter name="inflow_vel_hi" type="string" value="0 0"/>
+    <Parameter name="inflow_vel_lo" type="string" value="0 0"/>
+    <Parameter name="lo_bc" type="string" value="4 1"/>
+    <Parameter name="press_hi" type="string" value="0 0"/>
+    <Parameter name="press_lo" type="string" value="0 0"/>
+    <Parameter name="water_table_hi" type="string" value="0"/>
+    <Parameter name="water_table_lo" type="string" value="0"/>
+  </ParameterList>
+  <ParameterList name="prob">
+    <ParameterList name="amanzi">
+      <Parameter name="file" type="string" value="uo2-5-component.bgd"/>
+    </ParameterList>
+    <Parameter name="cfl" type="string" value="0.8"/>
+    <Parameter name="do_chem" type="string" value="2"/>
+    <Parameter name="do_reflux" type="string" value="1"/>
+    <Parameter name="full_cycle" type="string" value="1"/>
+    <Parameter name="have_capillary" type="string" value="1"/>
+    <Parameter name="init_shrink" type="string" value="1"/>
+    <Parameter name="model" type="string" value="2"/>
+    <Parameter name="n_chem_interval" type="string" value="0"/>
+    <Parameter name="no_corrector" type="string" value="0"/>
+    <Parameter name="v" type="string" value="3"/>
+    <Parameter name="visc_abs_tol" type="string" value="1.e-14"/>
+    <Parameter name="visc_tol" type="string" value="1.e-12"/>
+  </ParameterList>
+  <ParameterList name="rock">
+    <ParameterList name="Backfill">
+      <Parameter name="cpl_param" type="string" value="0.11238 78 0.1893 0"/>
+      <Parameter name="cpl_type" type="string" value="3"/>
+      <Parameter name="density" type="string" value="2.63e3"/>
+      <Parameter name="kr_param" type="string" value="0.11238 0.1893 0"/>
+      <Parameter name="kr_type" type="string" value="3"/>
+      <Parameter name="permeability" type="string" value="78.58 78.58"/>
+      <Parameter name="porosity" type="string" value="0.35"/>
+    </ParameterList>
+    <ParameterList name="Backfill_Region">
+      <Parameter name="kappa" type="string" value="1"/>
+      <Parameter name="phi" type="string" value="1"/>
+      <Parameter name="type" type="string" value="Backfill"/>
+    </ParameterList>
+    <ParameterList name="Waste">
+      <Parameter name="cpl_param" type="string" value="0.48541 0.002 0 0"/>
+      <Parameter name="cpl_type" type="string" value="3"/>
+      <Parameter name="density" type="string" value="2.51e3"/>
+      <Parameter name="kr_param" type="string" value="0.48541 0 0"/>
+      <Parameter name="kr_type" type="string" value="3"/>
+      <Parameter name="permeability" type="string" value="0.0372 0.0372"/>
+      <Parameter name="porosity" type="string" value="0.266"/>
+    </ParameterList>
+    <ParameterList name="Waste_Region">
+      <Parameter name="kappa" type="string" value="1"/>
+      <Parameter name="phi" type="string" value="1"/>
+      <Parameter name="type" type="string" value="Waste"/>
+    </ParameterList>
+    <Parameter name="assign" type="string" value="Backfill_Region Waste_Region"/>
+    <Parameter name="permeability_file" type="string" value="test/kp"/>
+    <Parameter name="porosity_file" type="string" value="test/pp"/>
+    <Parameter name="rock" type="string" value="Backfill Waste"/>
+  </ParameterList>
+  <ParameterList name="source">
+    <ParameterList name="Infiltration">
+      <Parameter name="dist_type" type="string" value="constant"/>
+      <Parameter name="region" type="string" value="Top_Region"/>
+      <Parameter name="val" type="string" value="9.524e-6"/>
+      <Parameter name="var_id" type="string" value="Water"/>
+      <Parameter name="var_type" type="string" value="comp"/>
+    </ParameterList>
+    <Parameter name="do_source" type="string" value="0"/>
+    <Parameter name="source" type="string" value="Infiltration"/>
+  </ParameterList>
+  <ParameterList name="tracer">
+    <ParameterList name="Al+++">
+      <Parameter name="group" type="string" value="Total"/>
+    </ParameterList>
+    <ParameterList name="Backfill_Region">
+      <Parameter name="Al+++" type="string" value="6.5874e-9"/>
+      <Parameter name="H+" type="string" value="-3.1408e-7"/>
+      <Parameter name="HPO4--" type="string" value="1.0000e-6"/>
+      <Parameter name="Koalinite" type="string" value="0.15"/>
+      <Parameter name="Quartz" type="string" value="0.21"/>
+      <Parameter name="SAl+++" type="string" value="0.00"/>
+      <Parameter name="SH+" type="string" value="0.00"/>
+      <Parameter name="SHPO4--" type="string" value="0.00"/>
+      <Parameter name="SSiO2" type="string" value="0.00"/>
+      <Parameter name="SUO2++" type="string" value="0.00"/>
+      <Parameter name="SiO2" type="string" value="1.8703e-4"/>
+      <Parameter name="UO2++" type="string" value="1.000e-5"/>
+      <Parameter name="Uranium" type="string" value="0.00"/>
+      <Parameter name="type" type="string" value="scalar"/>
+    </ParameterList>
+    <ParameterList name="H+">
+      <Parameter name="group" type="string" value="Total"/>
+    </ParameterList>
+    <ParameterList name="HPO4--">
+      <Parameter name="group" type="string" value="Total"/>
+    </ParameterList>
+    <ParameterList name="Koalinite">
+      <Parameter name="group" type="string" value="Solid"/>
+    </ParameterList>
+    <ParameterList name="Quartz">
+      <Parameter name="group" type="string" value="Solid"/>
+    </ParameterList>
+    <ParameterList name="SAl+++">
+      <Parameter name="group" type="string" value="Absorbed"/>
+    </ParameterList>
+    <ParameterList name="SH+">
+      <Parameter name="group" type="string" value="Absorbed"/>
+    </ParameterList>
+    <ParameterList name="SHPO4--">
+      <Parameter name="group" type="string" value="Absorbed"/>
+    </ParameterList>
+    <ParameterList name="SSiO2">
+      <Parameter name="group" type="string" value="Absorbed"/>
+    </ParameterList>
+    <ParameterList name="SUO2++">
+      <Parameter name="group" type="string" value="Absorbed"/>
+    </ParameterList>
+    <ParameterList name="SiO2">
+      <Parameter name="group" type="string" value="Total"/>
+    </ParameterList>
+    <ParameterList name="UO2++">
+      <Parameter name="group" type="string" value="Total"/>
+    </ParameterList>
+    <ParameterList name="Uranium">
+      <Parameter name="group" type="string" value="Solid"/>
+    </ParameterList>
+    <ParameterList name="Waste_Region">
+      <Parameter name="Al+++" type="string" value="2.8909e-5"/>
+      <Parameter name="H+" type="string" value="1.2786e-3"/>
+      <Parameter name="HPO4--" type="string" value="7.1028e-5"/>
+      <Parameter name="Koalinite" type="string" value="0.0"/>
+      <Parameter name="Quartz" type="string" value="0.0"/>
+      <Parameter name="SAl+++" type="string" value="0.0"/>
+      <Parameter name="SH+" type="string" value="0.00"/>
+      <Parameter name="SHPO4--" type="string" value="0.00"/>
+      <Parameter name="SSiO2" type="string" value="0.00"/>
+      <Parameter name="SUO2++" type="string" value="0.00"/>
+      <Parameter name="SiO2" type="string" value="2.5280e-4"/>
+      <Parameter name="UO2++" type="string" value="3.5414e-2"/>
+      <Parameter name="Uranium" type="string" value="0.0"/>
+      <Parameter name="type" type="string" value="scalar"/>
+    </ParameterList>
+    <ParameterList name="YHIBC">
+      <Parameter name="Al+++" type="string" value="6.5874e-9"/>
+      <Parameter name="H+" type="string" value="-3.1408e-7"/>
+      <Parameter name="HPO4--" type="string" value="1.0000e-6"/>
+      <Parameter name="Koalinite" type="string" value="0.15"/>
+      <Parameter name="Quartz" type="string" value="0.21"/>
+      <Parameter name="SAl+++" type="string" value="0.00"/>
+      <Parameter name="SH+" type="string" value="0.00"/>
+      <Parameter name="SHPO4--" type="string" value="0.00"/>
+      <Parameter name="SSiO2" type="string" value="0.00"/>
+      <Parameter name="SUO2++" type="string" value="0.00"/>
+      <Parameter name="SiO2" type="string" value="1.8703e-4"/>
+      <Parameter name="UO2++" type="string" value="1.000e-15"/>
+      <Parameter name="Uranium" type="string" value="0.00"/>
+      <Parameter name="type" type="string" value="scalar"/>
+    </ParameterList>
+    <ParameterList name="YLOBC">
+      <Parameter name="Al+++" type="string" value="6.5874e-9"/>
+      <Parameter name="H+" type="string" value="-3.1408e-7"/>
+      <Parameter name="HPO4--" type="string" value="1.0000e-6"/>
+      <Parameter name="Koalinite" type="string" value="0.15"/>
+      <Parameter name="Quartz" type="string" value="0.21"/>
+      <Parameter name="SAl+++" type="string" value="0.00"/>
+      <Parameter name="SH+" type="string" value="0.00"/>
+      <Parameter name="SHPO4--" type="string" value="0.00"/>
+      <Parameter name="SSiO2" type="string" value="0.00"/>
+      <Parameter name="SUO2++" type="string" value="0.00"/>
+      <Parameter name="SiO2" type="string" value="1.8703e-4"/>
+      <Parameter name="UO2++" type="string" value="1.000e-15"/>
+      <Parameter name="Uranium" type="string" value="0.00"/>
+      <Parameter name="type" type="string" value="scalar"/>
+    </ParameterList>
+    <Parameter name="group" type="string" value="Total Solid Absorbed"/>
+    <Parameter name="inflow" type="string" value="YHIBC YLOBC"/>
+    <Parameter name="init" type="string" value="Backfill_Region Waste_Region"/>
+    <Parameter name="ntracer" type="string" value="13"/>
+    <Parameter name="tracer" type="string" value="Al+++ H+ HPO4-- SiO2 UO2++ Koalinite Quartz Uranium SAl+++ SH+ SHPO4-- SSiO2 SUO2++"/>
+  </ParameterList>
 </ParameterList>
+

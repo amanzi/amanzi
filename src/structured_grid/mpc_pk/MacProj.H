@@ -1,7 +1,7 @@
 #ifndef _MacProj_H_
 #define _MacProj_H_
 //
-// $Id: MacProj.H,v 1.29 2011-05-11 23:03:20 gpau Exp $
+// $Id: MacProj.H,v 1.33 2011-08-28 05:54:53 gpau Exp $
 //
 #include <BC_TYPES.H>
 #include <BC_TYPES_PM.H>
@@ -9,7 +9,7 @@
 #include <Amr.H>
 #include <AmrLevel.H>
 #include <FluxRegister.H>
-#include <MacBndry.H>
+#include <PressBndry.H>
 #include "Godunov.H"
 
 class MacProj
@@ -22,8 +22,7 @@ public:
 	   int    _do_any_diffuse);
     
   virtual ~MacProj ();
-  void read_params ();
-    
+
   void install_level (int                   level, 
 		      AmrLevel*             level_data,
 		      MultiFab&             volume,
@@ -37,7 +36,7 @@ public:
 		    MultiFab*        RhoD,
 		    MultiFab*        forces,
 		    MultiFab*        pressure,
-		    const MacBndry&  mac_bndry,
+		    const PressBndry&  mac_bndry,
 		    const BCRec&     p_bc);
 
   void print_min_max (MultiFab* u_mac);
@@ -89,6 +88,9 @@ public:
 		   int numOutFlowFaces, Real gravity,
 		   const int* lo_bc, const int* hi_bc,
 		   const Real* press_lo, const Real* press_hi);
+
+  static void Initialize ();
+  static void Finalize ();
 
   static void GetOutFlowFaces (bool&        haveOutFlow,
 			       Orientation* outFaces,

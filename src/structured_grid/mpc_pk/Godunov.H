@@ -2,7 +2,7 @@
 #define _GODUNOV_CLASS_H_ 
 
 //
-// $Id: Godunov.H,v 1.25 2011-07-07 17:30:49 gpau Exp $
+// $Id: Godunov.H,v 1.26 2011-08-10 17:32:38 lijewski Exp $
 //
 //
 // A useful enumeration of the forms for the advective terms
@@ -28,8 +28,8 @@ public:
   // size 1d work space explicitly
   Godunov( int max_size );
 
-  // read parameters
-  void read_params();
+  static void Initialize();
+  static void Finalize();
     
   // destruct the advection object
   ~Godunov();

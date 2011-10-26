@@ -36,7 +36,7 @@ if (${ADJUST_POLICY})
   cmake_policy(SET CMP0017 OLD)
 endif()
 
-find_package(HDF5 REQUIRED)
+find_package(HDF5 1.8.0 REQUIRED)
 if ( NOT HDF5_IS_PARALLEL ) 
     message(WARNING     "The HDF5 installation found in ${HDF5_DIR} is not "
                         "a parallel build. At this time, this installation "
@@ -242,8 +242,11 @@ set_feature_info(ASCEMIO
                  "http://ascem-io.secure-water.org"
                  "Required to produce VisIt files in parallel"
                  )
-if (ENABLE_ASCEMIO)
+#if (ENABLE_ASCEMIO)
+if (ENABLE_Unstructured)
     find_package(ASCEMIO REQUIRED)
+else()
+    find_package(ASCEMIO)
 endif() 
 
 ##############################################################################

@@ -22,7 +22,12 @@ include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-add_library(boxdriv amanzi_structured_grid_simulation_driver.cpp)
+set(CXX_header_files amanzi_structured_grid_simulation_driver.H)
+set(CXX_source_files amanzi_structured_grid_simulation_driver.cpp)
+
+add_install_include_file(${CXX_header_files})
+
+add_library(boxdriv ${CXX_source_files})
 add_install_library(boxdriv)
 
 if (BUILD_TESTS)

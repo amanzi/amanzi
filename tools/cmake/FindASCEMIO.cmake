@@ -73,17 +73,16 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
 
     else() 
 
-	set(ascemio_inc_suffixes "")
+	set(ascemio_inc_suffixes "include")
         if(ASCEMIO_DIR)
 
             if (EXISTS "${ASCEMIO_DIR}" )
 
-		#find_path(ASCEMIO_INCLUDE_DIR
-		#          NAMES ${netcdf_inc_names}
-		#          HINTS ${ASCEMIO_DIR}
-		#          PATH_SUFFIXES ${netcdf_inc_suffixes}
-		#          NO_DEFAULT_PATH)
-		set(ASCEMIO_INCLUDE_DIR "${ASCEMIO_DIR}")
+		find_path(ASCEMIO_INCLUDE_DIR
+		          NAMES ${ascemio_inc_names}
+		          HINTS ${ASCEMIO_DIR}
+		          PATH_SUFFIXES ${ascemio_inc_suffixes}
+		          NO_DEFAULT_PATH)
 
             else()
                  message(SEND_ERROR "ASCEMIO_DIR=${ASCEMIO_DIR} does not exist")

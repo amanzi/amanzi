@@ -1,4 +1,177 @@
 <ParameterList name="t0-structured">
-  <Parameter name="grid_option" type="string" value="Structured"/>
-  <Parameter name="PPfile" type="string" value="inputs_test_0.pp"/>
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="Structured"/>
+  </ParameterList>
+  <ParameterList name="amr">
+    <Parameter name="blocking_factor" type="string" value="4"/>
+    <Parameter name="check_file" type="string" value="test_0/chk"/>
+    <Parameter name="check_int" type="string" value="1000"/>
+    <Parameter name="derive_plot_vars" type="string" value="gradpx gradpy gradn"/>
+    <Parameter name="grid_eff" type="string" value="0.75"/>
+    <Parameter name="max_grid_size" type="string" value="32"/>
+    <Parameter name="max_level" type="string" value="0"/>
+    <Parameter name="n_cell" type="string" value="16 16"/>
+    <Parameter name="n_error_buf" type="string" value="2 2 2"/>
+    <Parameter name="plot_file" type="string" value="test_0/plt"/>
+    <Parameter name="plot_int" type="string" value="1000"/>
+    <Parameter name="probin_file" type="string" value="probin"/>
+    <Parameter name="ref_ratio" type="string" value="2 2"/>
+    <Parameter name="regrid_int" type="string" value="2"/>
+    <Parameter name="v" type="string" value="1"/>
+  </ParameterList>
+  <ParameterList name="cg">
+    <Parameter name="unstable_criterion" type="string" value="100"/>
+    <Parameter name="use_jacobi_precond" type="string" value="1"/>
+    <Parameter name="v" type="string" value="0"/>
+  </ParameterList>
+  <ParameterList name="comp">
+    <ParameterList name="ALL">
+      <Parameter name="Air" type="string" value="0"/>
+      <Parameter name="Water" type="string" value="1000"/>
+      <Parameter name="type" type="string" value="scalar"/>
+    </ParameterList>
+    <ParameterList name="Air">
+      <Parameter name="density" type="string" value="1.0e3"/>
+      <Parameter name="diffusivity" type="string" value="0.0"/>
+      <Parameter name="phase" type="string" value="Liquid"/>
+      <Parameter name="viscosity" type="string" value="1.0"/>
+    </ParameterList>
+    <ParameterList name="Water">
+      <Parameter name="density" type="string" value="1.0e3"/>
+      <Parameter name="diffusivity" type="string" value="0.0"/>
+      <Parameter name="phase" type="string" value="Liquid"/>
+      <Parameter name="viscosity" type="string" value="1.0"/>
+    </ParameterList>
+    <ParameterList name="XLOBC">
+      <Parameter name="Air" type="string" value="1000"/>
+      <Parameter name="Water" type="string" value="0"/>
+      <Parameter name="type" type="string" value="scalar"/>
+    </ParameterList>
+    <Parameter name="comp" type="string" value="Water Air"/>
+    <Parameter name="dominant" type="string" value="Water"/>
+    <Parameter name="hi_bc" type="string" value="2 4"/>
+    <Parameter name="inflow" type="string" value="XLOBC"/>
+    <Parameter name="init" type="string" value="ALL"/>
+    <Parameter name="lo_bc" type="string" value="1 4"/>
+  </ParameterList>
+  <ParameterList name="diffuse">
+    <Parameter name="v" type="string" value="0"/>
+  </ParameterList>
+  <ParameterList name="geometry">
+    <Parameter name="coord_sys" type="string" value="0"/>
+    <Parameter name="is_periodic" type="string" value="0 0"/>
+    <ParameterList name="left_region">
+      <Parameter name="param" type="string" value="0. 0. 4. 8."/>
+      <Parameter name="purpose" type="string" value="0"/>
+      <Parameter name="type" type="string" value="1"/>
+    </ParameterList>
+    <ParameterList name="obs_region">
+      <Parameter name="param" type="string" value="0. 0. 2. 8."/>
+      <Parameter name="purpose" type="string" value="0"/>
+      <Parameter name="type" type="string" value="1"/>
+    </ParameterList>
+    <Parameter name="prob_hi" type="string" value="8. 8."/>
+    <Parameter name="prob_lo" type="string" value="0. 0."/>
+    <Parameter name="region" type="string" value="left_region right_region obs_region"/>
+    <ParameterList name="right_region">
+      <Parameter name="param" type="string" value="4. 0. 8. 8."/>
+      <Parameter name="purpose" type="string" value="0"/>
+      <Parameter name="type" type="string" value="1"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="mac">
+    <Parameter name="mac_abs_tol" type="string" value="1.e-14"/>
+    <Parameter name="mac_sync_tol" type="string" value="1.e-16"/>
+    <Parameter name="mac_tol" type="string" value="1.e-14"/>
+    <Parameter name="v" type="string" value="0"/>
+  </ParameterList>
+  <ParameterList name="mg">
+    <Parameter name="cg_solver" type="string" value="1"/>
+    <Parameter name="maxiter" type="string" value="100"/>
+    <Parameter name="smooth_on_cg_unstable" type="string" value="1"/>
+    <Parameter name="v" type="string" value="2"/>
+  </ParameterList>
+  <ParameterList name="observation">
+    <Parameter name="nobs" type="string" value="1"/>
+    <Parameter name="observation" type="string" value="output1"/>
+    <ParameterList name="output1">
+      <Parameter name="obs_type" type="string" value="integral"/>
+      <Parameter name="region" type="string" value="obs_region"/>
+      <Parameter name="times" type="string" value="1000"/>
+      <Parameter name="var_id" type="string" value="Air"/>
+      <Parameter name="var_type" type="string" value="comp"/>
+    </ParameterList>
+    <Parameter name="output_file" type="string" value="test_0/obs.out"/>
+  </ParameterList>
+  <ParameterList name="phase">
+    <Parameter name="phase" type="string" value="Liquid"/>
+  </ParameterList>
+  <ParameterList name="press">
+    <Parameter name="hi_bc" type="string" value="2 4"/>
+    <Parameter name="inflow_bc_hi" type="string" value="0 0"/>
+    <Parameter name="inflow_bc_lo" type="string" value="0 0"/>
+    <Parameter name="inflow_vel_hi" type="string" value="0 0"/>
+    <Parameter name="inflow_vel_lo" type="string" value="0 0"/>
+    <Parameter name="lo_bc" type="string" value="2 4"/>
+    <Parameter name="press_hi" type="string" value="0. 0."/>
+    <Parameter name="press_lo" type="string" value="1. 0."/>
+    <Parameter name="water_table_hi" type="string" value="0"/>
+    <Parameter name="water_table_lo" type="string" value="0"/>
+  </ParameterList>
+  <ParameterList name="prob">
+    <Parameter name="cfl" type="string" value=".8"/>
+    <Parameter name="do_chem" type="string" value="-1"/>
+    <Parameter name="do_kappa_refine" type="string" value="1"/>
+    <Parameter name="do_reflux" type="string" value="1"/>
+    <Parameter name="full_cycle" type="string" value="1"/>
+    <Parameter name="have_capillary" type="string" value="0"/>
+    <Parameter name="init_shrink" type="string" value=".1"/>
+    <Parameter name="model_name" type="string" value="single-phase"/>
+    <Parameter name="no_corrector" type="string" value="0"/>
+    <Parameter name="v" type="string" value="2"/>
+    <Parameter name="visc_abs_tol" type="string" value="1.e-14"/>
+    <Parameter name="visc_tol" type="string" value="1.e-12"/>
+  </ParameterList>
+  <ParameterList name="rock">
+    <Parameter name="assign" type="string" value="left_region right_region"/>
+    <ParameterList name="left">
+      <Parameter name="cpl_param" type="string" value="0.4203 17.329 0.081 0"/>
+      <Parameter name="cpl_type" type="string" value="3"/>
+      <Parameter name="density" type="string" value="2.8e3"/>
+      <Parameter name="kr_param" type="string" value="0.4203 0.081 0"/>
+      <Parameter name="kr_type" type="string" value="3"/>
+      <Parameter name="permeability" type="string" value="336 336"/>
+      <Parameter name="porosity" type="string" value="0.258"/>
+    </ParameterList>
+    <ParameterList name="left_region">
+      <Parameter name="kappa" type="string" value="1"/>
+      <Parameter name="phi" type="string" value="1"/>
+      <Parameter name="type" type="string" value="left"/>
+    </ParameterList>
+    <Parameter name="permeability_file" type="string" value="test_0/kp"/>
+    <Parameter name="porosity_file" type="string" value="test_0/pp"/>
+    <ParameterList name="right">
+      <Parameter name="cpl_param" type="string" value="0.6011 21.41 0.081 0"/>
+      <Parameter name="cpl_type" type="string" value="3"/>
+      <Parameter name="density" type="string" value="2.8e3"/>
+      <Parameter name="kr_param" type="string" value="0.6011 0.081 0"/>
+      <Parameter name="kr_type" type="string" value="3"/>
+      <Parameter name="permeability" type="string" value="2294 2294"/>
+      <Parameter name="porosity" type="string" value="0.422"/>
+    </ParameterList>
+    <ParameterList name="right_region">
+      <Parameter name="kappa" type="string" value="1"/>
+      <Parameter name="phi" type="string" value="1"/>
+      <Parameter name="type" type="string" value="right"/>
+    </ParameterList>
+    <Parameter name="rock" type="string" value="left right"/>
+  </ParameterList>
+  <ParameterList name="source">
+    <Parameter name="do_source" type="string" value="0"/>
+  </ParameterList>
+  <Parameter name="stop_time" type="string" value="1000"/>
+  <ParameterList name="tracer">
+    <Parameter name="ntracer" type="string" value="0"/>
+  </ParameterList>
 </ParameterList>
+
