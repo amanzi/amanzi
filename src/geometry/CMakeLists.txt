@@ -30,6 +30,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 add_library(geometry Geometry.cc Point.hh 
                      Region.hh Region.cc
                      RectangularRegion.hh RectangularRegion.cc)
+target_link_libraries(geometry error_handling)
 
 #
 # Install Targets
