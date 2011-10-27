@@ -57,7 +57,9 @@ add_definitions("-DUSE_MPI")
 add_library(mpc MPC.cpp Unstructured_observations.cpp)
 add_install_library(mpc)
 set(mpc_tpl_libs ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ) 
+list(REVERSE mpc_tpl_libs)
 list(REMOVE_DUPLICATES mpc_tpl_libs) # Concerned about command line length! --lpritch
+list(REVERSE mpc_tpl_libs)
 target_link_libraries(mpc time_integration solvers output state simple_mesh mesh_data cell_geometry ${mpc_tpl_libs})
 
 #

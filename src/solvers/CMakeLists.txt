@@ -38,7 +38,9 @@ add_library(solvers ${solvers_source_files})
 add_install_library(solvers)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
+list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
+list(REVERSE solvers_tpl_libs)
 target_link_libraries(solvers error_handling ${solvers_tpl_libs})
 
 #
