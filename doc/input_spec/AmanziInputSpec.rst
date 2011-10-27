@@ -755,6 +755,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
 * `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
+  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+
   * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`" and `"Time Macro`"
 
     * `"Variables`" [Array string] a list of labels of variables defined above
@@ -766,6 +768,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     * `"Time Macro`" [string] one of the labeled time macros (see below)
 
     * `"Cycle Macro`" [string] one of the labeled cycle macros (see below)
+
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
@@ -787,6 +790,7 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Observation Data">
+    <Parameter name="Observation output Filename" type="string" value="obs_output.out"/>
     <ParameterList name="Time Macros">
       <ParameterList name="Annual">
         <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7}"/>
@@ -845,7 +849,7 @@ Example:
     <Parameter name="Cycle Macro" type="string" value="Every-5"/>
   </ParameterList>
 
-In this example, Checkpoint Data files are written when the cycle number is evenly divisble by 5.
+In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
 
 
 Visualization Data
@@ -940,6 +944,16 @@ Example:
 In this example, Amanzi is restarted with all state data initialized from the Checkpoint 
 Data file named chk00123.h5. All other initialization of field variables that might be called 
 out in the input file is ignored.
+
+Output format of Observation Output File
+========================================
+ASCII format will be used.  It will follow the following format:
+
+`"label for the observation`" `"time`" `"value`"
+
+For example,
+
+Integrated Water Mass Density 1000 1.00e3
 
 
 Complete Example
