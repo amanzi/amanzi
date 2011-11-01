@@ -18,26 +18,20 @@ include(PrintVariable)
 # through these variables.
 project(PLATFORM_INTERFACE)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CCSE_INCLUDE_DIRS})
-
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
-include_directories(${MESH_BASE_SOURCE_DIR})
-include_directories(${MESH_DATA_SOURCE_DIR})
-include_directories(${EXO_SOURCE_DIR})
-
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${CCSE_INCLUDE_DIRS})
 
 #
 # interface library
 #
 add_library(interface InputParser.H InputParser.cpp
                       ObservationData.H Simulator.H)
+target_link_libraries(interface error_handling geometry ${Teuchos_LIBRARIES}) 		    
 add_install_library(interface)
 
 #
