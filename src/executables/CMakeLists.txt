@@ -163,3 +163,8 @@ endif()
 #
 #
 add_install_shellscript(splitexo.sh)
+
+#
+# Install include files
+#
+add_install_include_file(amanzi_unstructured_grid_simulation_driver.hpp)
