@@ -25,7 +25,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
 
 // Constructor - load up mesh from file
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension,
+Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, 
+		      int space_dimension,
 		      const AmanziGeometry::GeometricModelPtr& gm)
 {
   int ok;
@@ -140,6 +141,382 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension
 }
 
 
+
+// Construct a 3D regular hexahedral mesh internally
+
+Mesh_MSTK::Mesh_MSTK(double x0, double y0, double z0,
+		     double x1, double y1, double z1,
+		     int nx, int ny, int nz, 
+		     MPI_Comm incomm,
+		     const AmanziGeometry::GeometricModelPtr& gm) 
+{
+  int ok;
+  int ring = 1; // One layer of ghost cells in parallel meshes
+  int with_attr = 1;  // update of attributes in parallel meshes
+
+  clear_internals_();
+
+  MSTK_Init();
+
+  Mesh::set_geometric_model(gm);
+
+  set_space_dimension(3);
+
+  mpicomm = incomm;
+  MPI_Comm_rank(mpicomm,&myprocid);
+  MPI_Comm_size(mpicomm,&numprocs);
+
+  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
+
+  Mesh::set_comm(mpicomm);
+
+    if (myprocid == 0) {
+    int DebugWait=0;
+    while (DebugWait);
+    }
+
+  if (serial_run) {
+
+    // Load serial mesh
+
+    mesh = MESH_New(F1);
+    ok = generate_regular_mesh(mesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
+
+    set_cell_dimension(3);
+
+    myprocid = 0;
+  }
+  else {
+    Mesh_ptr globalmesh;
+    int dim=3;
+    
+    if (myprocid == 0) {
+      globalmesh = MESH_New(F1);
+
+      ok = generate_regular_mesh(globalmesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
+      
+      mesh = globalmesh;
+    }
+    else {
+      mesh = MESH_New(UNKNOWN_REP);
+      ok = 1;
+    }
+
+    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+					numprocs,mpicomm);
+
+    if (myprocid == 0)
+      MESH_Delete(globalmesh);
+
+    set_cell_dimension(3);
+  }
+
+  if (!ok) {
+    std::cerr << "FAILED" << std::endl;
+    std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
+    assert(ok);
+  }
+
+
+  // Pre-process the mesh to remove degenerate edges
+  
+  collapse_degen_edges();
+
+  label_celltype();
+
+
+
+
+  { // Keep together and in this order 
+
+    init_pvert_lists();
+    init_pcell_lists(); // cells MUST be initialized before faces
+    init_pface_lists();
+
+    
+    // Create maps from local IDs to MSTK entity handles (must be after
+    // the various init_p*_list calls)
+    
+    init_id_handle_maps();
+
+
+  }
+    
+    
+  init_global_ids();
+
+
+  init_pface_dirs();
+
+
+  // Create Epetra_maps
+  
+  init_cell_map();
+  init_face_map();
+  init_node_map();
+  
+  if (gm != NULL)
+    init_set_info();
+
+}
+
+
+
+// Create a 2D regular quadrilateral mesh internally
+
+Mesh_MSTK::Mesh_MSTK(double x0, double y0,
+		     double x1, double y1,
+		     int nx, int ny, 
+		     MPI_Comm incomm,
+		     const AmanziGeometry::GeometricModelPtr& gm) 
+{
+  int ok;
+  int ring = 1; // One layer of ghost cells in parallel meshes
+  int with_attr = 1;  // update of attributes in parallel meshes
+
+  clear_internals_();
+
+  MSTK_Init();
+
+  Mesh::set_geometric_model(gm);
+
+  set_space_dimension(2);
+
+  mpicomm = incomm;
+  MPI_Comm_rank(mpicomm,&myprocid);
+  MPI_Comm_size(mpicomm,&numprocs);
+
+  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
+
+  Mesh::set_comm(mpicomm);
+
+    if (myprocid == 0) {
+    int DebugWait=0;
+    while (DebugWait);
+    }
+
+  if (serial_run) {
+
+    // Load serial mesh
+
+    mesh = MESH_New(F1);
+    ok = generate_regular_mesh(mesh,x0,y0,x1,y1,nx,ny);
+
+    set_cell_dimension(2);
+
+    myprocid = 0;
+  }
+  else {
+    Mesh_ptr globalmesh;
+    int dim=2;
+    
+    if (myprocid == 0) {
+      globalmesh = MESH_New(F1);
+
+      ok = generate_regular_mesh(globalmesh,x0,y0,x1,y1,nx,ny);
+      
+      mesh = globalmesh;
+    }
+    else {
+      mesh = MESH_New(UNKNOWN_REP);
+      ok = 1;
+    }
+
+    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+					numprocs,mpicomm);
+
+    if (myprocid == 0)
+      MESH_Delete(globalmesh);
+
+    set_cell_dimension(2);
+  }
+
+  if (!ok) {
+    std::cerr << "FAILED" << std::endl;
+    std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
+    assert(ok);
+  }
+
+
+  // Pre-process the mesh to remove degenerate edges
+  
+  collapse_degen_edges();
+
+  label_celltype();
+
+
+
+
+  { // Keep together and in this order 
+
+    init_pvert_lists();
+    init_pcell_lists(); // cells MUST be initialized before faces
+    init_pface_lists();
+
+    
+    // Create maps from local IDs to MSTK entity handles (must be after
+    // the various init_p*_list calls)
+    
+    init_id_handle_maps();
+
+
+  }
+    
+    
+  init_global_ids();
+
+
+  init_pface_dirs();
+
+
+  // Create Epetra_maps
+  
+  init_cell_map();
+  init_face_map();
+  init_node_map();
+  
+  if (gm != NULL)
+    init_set_info();
+
+}
+
+
+  // Construct a hexahedral mesh from specs 
+Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
+		     MPI_Comm incomm,
+		     const AmanziGeometry::GeometricModelPtr& gm)
+{
+  int ok;
+  int ring = 1; // One layer of ghost cells in parallel meshes
+  int with_attr = 1;  // update of attributes in parallel meshes
+
+  clear_internals_();
+
+  MSTK_Init();
+
+  Mesh::set_geometric_model(gm);
+
+  mpicomm = incomm;
+  MPI_Comm_rank(mpicomm,&myprocid);
+  MPI_Comm_size(mpicomm,&numprocs);
+
+  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
+
+  Mesh::set_comm(mpicomm);
+
+  if (myprocid == 0) {
+    int DebugWait=0;
+    while (DebugWait);
+  }
+
+  // Get info about the domain from the generation specification class
+
+  AmanziGeometry::Point p0(gspec.domain().point0());
+  AmanziGeometry::Point p1(gspec.domain().point1());
+
+  int dim = p0.dim();
+  set_space_dimension(dim);
+
+  if (serial_run) {
+
+    // Load serial mesh
+
+    mesh = MESH_New(F1);
+
+    if (dim == 2) {
+      generate_regular_mesh(mesh,p0.x(),p0.y(),p1.x(),p1.y(),
+			    gspec.xcells(),gspec.ycells());
+    }
+    else if (dim == 3) {
+      generate_regular_mesh(mesh,p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
+			    gspec.xcells(),gspec.ycells(),gspec.zcells());
+    }
+
+    set_cell_dimension(dim);
+
+    myprocid = 0;
+  }
+  else {
+    Mesh_ptr globalmesh;
+    int dim=2;
+    
+    if (myprocid == 0) {
+      globalmesh = MESH_New(F1);
+
+      if (dim == 2) {
+	generate_regular_mesh(globalmesh,p0.x(),p0.y(),p1.x(),p1.y(),
+			      gspec.xcells(),gspec.ycells());
+      }
+      else if (dim == 3) {
+	generate_regular_mesh(globalmesh,
+			      p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
+			      gspec.xcells(),gspec.ycells(),gspec.zcells());
+      }
+      
+      mesh = globalmesh;
+    }
+    else {
+      mesh = MESH_New(UNKNOWN_REP);
+      ok = 1;
+    }
+
+    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+					numprocs,mpicomm);
+
+    if (myprocid == 0)
+      MESH_Delete(globalmesh);
+
+    set_cell_dimension(dim);
+  }
+
+  if (!ok) {
+    std::cerr << "FAILED" << std::endl;
+    std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
+    assert(ok);
+  }
+
+
+  // Pre-process the mesh to remove degenerate edges
+  
+  collapse_degen_edges();
+
+  label_celltype();
+
+
+
+
+  { // Keep together and in this order 
+
+    init_pvert_lists();
+    init_pcell_lists(); // cells MUST be initialized before faces
+    init_pface_lists();
+
+    
+    // Create maps from local IDs to MSTK entity handles (must be after
+    // the various init_p*_list calls)
+    
+    init_id_handle_maps();
+
+
+  }
+    
+    
+  init_global_ids();
+
+
+  init_pface_dirs();
+
+
+  // Create Epetra_maps
+  
+  init_cell_map();
+  init_face_map();
+  init_node_map();
+  
+  if (gm != NULL)
+    init_set_info();
+
+}
 
 
 Mesh_MSTK::~Mesh_MSTK() {
@@ -1971,8 +2348,14 @@ void Mesh_MSTK::init_pface_dirs() {
     // are oriented the same way; if not, turn on flag to flip the directions
     // when returning to the application code
 
-    attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MFACE);
-    attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MFACE);
+    if (cell_dimension() == 3) {
+      attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MFACE);
+      attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MFACE);
+    }
+    else if (cell_dimension() == 2) {
+      attfc0 = MAttrib_New(mesh,"TMP_FC0_ATT",INT,MEDGE);
+      attfc1 = MAttrib_New(mesh,"TMP_FC1_ATT",INT,MEDGE);
+    }
 
     if (cell_dimension() == 3) {
     
@@ -2005,7 +2388,7 @@ void Mesh_MSTK::init_pface_dirs() {
 
 	    face0 = List_Entry(efaces,1);
 	    if (face0) {
-	      if (MF_EdgeDir(face0,edge) == -1)     // Sanity check
+	      if (MF_EdgeDir(face0,edge) == 1)     // Sanity check
 		MEnt_Set_AttVal(edge,attfc0,MEnt_GlobalID(face0),0.0,NULL);
 	      else
 		std::cerr << "Two faces using edge in same direction in 2D mesh" << std::endl;
@@ -2509,6 +2892,461 @@ const Epetra_Map& Mesh_MSTK::node_epetra_map (const bool include_ghost) const
     return (include_ghost ? *node_map_w_ghosts_ : *node_map_wo_ghosts_);
 }
 
+
+
+int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, 
+				     double z0, double x1, double y1, 
+				     double z1, int nx, int ny, int nz)
+{
+/*
+
+  Index directions for classification templates
+
+  k   j
+  |  /
+  | /
+  |/___ i
+
+
+  Model vertex, edge and face enumeration for classification templates 
+
+
+         MODEL                   MODEL                  MODEL
+         VERTICES                EDGES                  FACES
+
+     7 ____________ 8          ______7_____           ____________  
+      /|          /|          /|          /|         /|      2   /| 
+     / |         / |       12/ |8      11/ | 	    / |  4      / | 
+   5/___________/6 |        /_____3_____/  |6	   /___________/  | 
+    |  |        |  |        |  |        |  | 	   |  |        | 5| 
+    |  |________|__|        |  |_____5__|__| 	   |6 |_1______|__| 
+    |  /3       |  /4      4|  /        |  / 	   |  /        |  / 
+    | /         | /         | /9       2| /10	   | /      3  | /  
+    |/__________|/          |/__________|/   	   |/__________|/   
+   1             2                1
+                                                   
+                                                    Front  - Face1
+						    Back   - Face2
+						    Bottom - Face3
+						    Top    - Face4
+						    Left   - Face6
+						    Right  - Face5
+
+  Classification of mesh regions onto multiple material regions is not done
+  here since the "geometric model" could have overlapping regions. Instead
+  mesh sets are created as necessary based on point location in regions.
+
+*/
+
+  int i, j, k, ii, jj, kk, gid, gdim;
+  double xyz[3], dx, dy, dz;
+  MVertex_ptr ***verts, mv, rverts[8], fverts[4], everts[2];
+  MEdge_ptr me;
+  MFace_ptr mf;
+  MRegion_ptr mr;
+  int vgid_tmpl[3][3][3] = {{{1,4,5},{9,6,12},{3,8,7}},{{1,1,3},{3,1,4},{5,2,7}},{{2,2,6},{10,5,11},{4,6,8}}};
+  int vgdim_tmpl[3][3][3]= {{{0,1,0},{1,2,1}, {0,1,0}},{{1,2,1},{2,3,2},{1,2,1}},{{0,1,0},{1,2,1},{0,1,0}}};
+  int egdim_tmpl[3][3] = {{1,2,1},{2,3,2},{1,2,1}};
+  int egid_tmpl2[3][3] = {{4,6,8},{1,1,2},{2,5,6}};  /* Y direction edges (iterating over i,k) */
+  int egid_tmpl1[3][3] = {{9,6,12},{3,1,4},{10,5,11}}; /* Z direction edges (iterating over i,j)*/
+  int egid_tmpl0[3][3] = {{1,1,3},{3,1,4},{5,2,7}}; /* X direction edges (iterating over j,k) */
+  int fgdim_tmpl[3] = {2,3,2};
+  int fgid_tmpl0[3] = {6,1,5};
+  int fgid_tmpl1[3] = {3,1,4};
+  int fgid_tmpl2[3] = {1,1,2};
+
+  dx = (x1-x0)/nx;
+  dy = (y1-y0)/ny;
+  dz = (z1-z0)/nz;
+
+  verts = (MVertex_ptr ***) malloc((nx+1)*sizeof(MVertex_ptr **));
+  for (j = 0; j < nx+1; j++) {
+    verts[j] = (MVertex_ptr **) malloc((ny+1)*sizeof(MVertex_ptr *)); 
+    for (k = 0; k < ny+1; k++) 
+      verts[j][k] = (MVertex_ptr *) malloc((nz+1)*sizeof(MVertex_ptr));
+  }
+
+  for (k = 0; k < nz+1; k++) {
+    xyz[2] = (k == nz) ? z1 : z0 + k*dz;
+    kk =  (k%nz) ? 1 : (k ? 2 : 0);
+
+    for (j = 0; j < ny+1; j++) {
+      xyz[1] = (j == ny) ? y1 : y0 + j*dy;      
+      jj = (j%ny) ? 1 : (j ? 2 : 0);
+
+      for (i = 0; i < nx+1; i++) {
+	xyz[0] = (i == nx) ? x1 : x0 + i*dx;
+	ii = (i%nx) ? 1 : (i ? 2 : 0);
+	
+	mv = MV_New(mesh);
+	MV_Set_Coords(mv,xyz);	
+	verts[i][j][k] = mv;
+
+	gdim  = vgdim_tmpl[ii][jj][kk];
+	MV_Set_GEntDim(mv,gdim);
+
+	gid = vgid_tmpl[ii][jj][kk];
+	MV_Set_GEntID(mv,gid);
+      }
+    }
+  }
+
+
+  /* Create the edges explicitly to get the classification right */
+  for (i = 0; i < nx+1; i++) {
+    for (j = 0; j < ny+1; j++) {
+      for (k = 0; k < nz; k++) {
+	me = ME_New(mesh);
+
+	everts[0] = verts[i][j][k];
+	everts[1] = verts[i][j][k+1];
+	ME_Set_Vertex(me,0,everts[0]);
+	ME_Set_Vertex(me,1,everts[1]);
+
+	ii = (i%nx) ? 1 : (i ? 2 : 0);
+	jj = (j%ny) ? 1 : (j ? 2 : 0);
+	gdim = egdim_tmpl[ii][jj];
+	gid = egid_tmpl2[ii][jj];
+
+	ME_Set_GEntDim(me,gdim);
+	ME_Set_GEntID(me,gid);
+      }
+    }
+  }
+	
+  for (i = 0; i < nx+1; i++) {
+    for (k = 0; k < nz+1; k++) {
+      for (j = 0; j < ny; j++) {
+	me = ME_New(mesh);
+
+	everts[0] = verts[i][j][k];
+	everts[1] = verts[i][j+1][k];
+	ME_Set_Vertex(me,0,everts[0]);
+	ME_Set_Vertex(me,1,everts[1]);
+
+	ii = (i%nx) ? 1 : (i ? 2 : 0);
+	kk = (k%nz) ? 1 : (k ? 2 : 0);
+	gdim = egdim_tmpl[ii][kk];
+	gid = egid_tmpl1[ii][kk];
+
+	ME_Set_GEntDim(me,gdim);
+	ME_Set_GEntID(me,gid);
+      }
+    }
+  }
+	
+  for (j = 0; j < ny+1; j++) {
+    for (k = 0; k < nz+1; k++) {
+      for (i = 0; i < nx; i++) {
+	me = ME_New(mesh);
+
+	everts[0] = verts[i][j][k];
+	everts[1] = verts[i+1][j][k];
+	ME_Set_Vertex(me,0,everts[0]);
+	ME_Set_Vertex(me,1,everts[1]);
+
+	jj = (j%ny) ? 1 : (j ? 2 : 0);
+	kk = (k%nz) ? 1 : (k ? 2 : 0);
+	gdim = egdim_tmpl[jj][kk];
+	gid = egid_tmpl0[jj][kk];
+
+	ME_Set_GEntDim(me,gdim);
+	ME_Set_GEntID(me,gid);
+      }
+    }
+  }
+	
+
+
+  /* Create the faces explicitly to get the classification right */
+  for (i = 0; i < nx+1; i++) {
+    for (j = 0; j < ny; j++) {
+      for (k = 0; k < nz; k++) {
+	mf = MF_New(mesh);
+
+	fverts[0] = verts[i][j][k];
+	fverts[1] = verts[i][j+1][k];
+	fverts[2] = verts[i][j+1][k+1];
+	fverts[3] = verts[i][j][k+1];
+	MF_Set_Vertices(mf,4,fverts);
+
+	ii = (i%nx) ? 1 : (i ? 2 : 0);
+	gdim = fgdim_tmpl[ii];
+	gid = fgid_tmpl0[ii];
+
+	MF_Set_GEntDim(mf,gdim);
+	MF_Set_GEntID(mf,gid);
+      }
+    }
+  }
+	
+  for (j = 0; j < ny+1; j++) {
+    for (i = 0; i < nx; i++) {
+      for (k = 0; k < nz; k++) {
+	mf = MF_New(mesh);
+
+	fverts[0] = verts[i][j][k];
+	fverts[1] = verts[i+1][j][k];
+	fverts[2] = verts[i+1][j][k+1];
+	fverts[3] = verts[i][j][k+1];
+	MF_Set_Vertices(mf,4,fverts);
+
+	jj = (j%ny) ? 1 : (j ? 2 : 0);
+	gdim = fgdim_tmpl[jj];
+	gid = fgid_tmpl1[jj];
+
+	MF_Set_GEntDim(mf,gdim);
+	MF_Set_GEntID(mf,gid);
+      }
+    }
+  }
+	
+  for (k = 0; k < nz+1; k++) {
+    for (i = 0; i < nx; i++) {
+      for (j = 0; j < ny; j++) {
+	mf = MF_New(mesh);
+
+	fverts[0] = verts[i][j][k];
+	fverts[1] = verts[i+1][j][k];
+	fverts[2] = verts[i+1][j+1][k];
+	fverts[3] = verts[i][j+1][k];
+	MF_Set_Vertices(mf,4,fverts);
+
+	kk = (k%nz) ? 1 : (k ? 2 : 0);
+	gdim = fgdim_tmpl[kk];
+	gid = fgid_tmpl2[kk];
+
+	MF_Set_GEntDim(mf,gdim);
+	MF_Set_GEntID(mf,gid);
+      }
+    }
+  }
+	
+
+  /* Not the most efficient way but the easiest to code */
+
+  for (i = 0; i < nx; i++) {
+    for (j = 0; j < ny; j++) {
+      for (k = 0; k < nz; k++) {
+	mr = MR_New(mesh);
+	MR_Set_GEntID(mr,1);
+	
+	rverts[0] = verts[i][j][k];       rverts[1] = verts[i+1][j][k]; 
+	rverts[2] = verts[i+1][j+1][k];   rverts[3] = verts[i][j+1][k];
+	rverts[4] = verts[i][j][k+1];     rverts[5] = verts[i+1][j][k+1]; 
+	rverts[6] = verts[i+1][j+1][k+1]; rverts[7] = verts[i][j+1][k+1];
+
+	MR_Set_Vertices(mr, 8, rverts, 6, NULL);
+      }
+    }
+  }
+      
+  for (i = 0; i < nx+1; i++) {
+    for (j = 0; j < ny+1; j++)
+      free(verts[i][j]);
+    free(verts[i]);
+  }
+  free(verts);
+
+  return 1;
+}
+
+
+int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, 
+				     double x1, double y1, int nx, int ny)
+{
+  int i, j, dir[4];
+  double xyz[3], llx, lly, urx, ury, dx, dy;
+  MVertex_ptr **verts, v0, v1, mv;
+  MEdge_ptr fedges[4], me;
+  MFace_ptr mf;
+
+  dx = (x1-x0)/nx;
+  dy = (y1-y0)/ny;
+
+  verts = (MVertex_ptr **) malloc((nx+1)*sizeof(MVertex_ptr *));
+  for (i = 0; i < nx+1; i++)
+    verts[i] = (MVertex_ptr *) malloc((ny+1)*sizeof(MVertex_ptr));
+ 
+  xyz[2] = 0.0;
+  for (j = 0; j < ny+1; j++) {
+    xyz[1] = (j == ny) ? y1 : y0 + j*dy;
+
+    for (i = 0; i < nx+1; i++) {
+      xyz[0] = (i == nx) ? x1 : x0 + i*dx;
+
+      mv = MV_New(mesh);
+      MV_Set_Coords(mv,xyz);
+
+      if (i == 0) {
+	if (j == 0) {
+	  MV_Set_GEntDim(mv,0);
+	  MV_Set_GEntID(mv,1);
+	}
+	else if (j == ny) {
+	  MV_Set_GEntDim(mv,0);
+	  MV_Set_GEntID(mv,4);	  
+	}
+	else {
+	  MV_Set_GEntDim(mv,1);
+	  MV_Set_GEntID(mv,4);
+	}
+      }
+      else if (i == nx) {
+	if (j == 0) {
+	  MV_Set_GEntDim(mv,0);
+	  MV_Set_GEntID(mv,2);
+	}
+	else if (j == ny) {
+	  MV_Set_GEntDim(mv,0);
+	  MV_Set_GEntID(mv,3);	  
+	}
+	else {
+	  MV_Set_GEntDim(mv,1);
+	  MV_Set_GEntID(mv,2);
+	}
+      }
+      else {
+	if (j == 0) {
+	  MV_Set_GEntDim(mv,1);
+	  MV_Set_GEntID(mv,1);
+	}
+	else if (j == ny) {
+	  MV_Set_GEntDim(mv,1);
+	  MV_Set_GEntID(mv,3);
+	}
+	else {
+	  MV_Set_GEntDim(mv,2);
+	  MV_Set_GEntID(mv,1);
+	}
+      }
+
+      verts[i][j] = mv;
+    }
+  }
+
+
+  for (i = 0; i < nx; i++) {
+    for (j = 0; j < ny; j++) {
+      mf = MF_New(mesh);
+      
+      /* edge 0 */
+      v0 = verts[i][j];
+      v1 = verts[i+1][j];
+      fedges[0] = MVs_CommonEdge(v0,v1);
+      if (fedges[0])
+	dir[0] = (ME_Vertex(fedges[0],0) == v0) ? 1 : 0;
+      else {
+	me = ME_New(mesh);
+	
+	ME_Set_Vertex(me,0,v0);
+	ME_Set_Vertex(me,1,v1);
+	
+	if (j == 0) {
+	  ME_Set_GEntDim(me,1);
+	  ME_Set_GEntID(me,1);
+	}
+	else {
+	  ME_Set_GEntDim(me,2);
+	  ME_Set_GEntID(me,1);
+	}
+	
+	fedges[0] = me;
+	dir[0] = 1;
+      }
+      
+      
+      /* edge 1 */
+      v0 = verts[i+1][j];
+      v1 = verts[i+1][j+1];
+      fedges[1] = MVs_CommonEdge(v0,v1);
+      if (fedges[1])
+	dir[1] = (ME_Vertex(fedges[1],0) == v0) ? 1 : 0;
+      else {
+	me = ME_New(mesh);
+	
+	ME_Set_Vertex(me,0,v0);
+	ME_Set_Vertex(me,1,v1);
+	
+	if (i+1 == nx) {
+	  ME_Set_GEntDim(me,1);
+	  ME_Set_GEntID(me,2);
+	}
+	else {
+	  ME_Set_GEntDim(me,2);
+	  ME_Set_GEntID(me,1);
+	}
+	
+	fedges[1] = me;
+	dir[1] = 1;
+      }
+      
+      
+      /* edge 2 */
+      v0 = verts[i+1][j+1];
+      v1 = verts[i][j+1];
+      fedges[2] = MVs_CommonEdge(v0,v1);
+      if (fedges[2])
+	dir[2] = (ME_Vertex(fedges[2],0) == v0) ? 1 : 0;
+      else {
+	me = ME_New(mesh);
+	
+	ME_Set_Vertex(me,0,v0);
+	ME_Set_Vertex(me,1,v1);
+	
+	if (j+1 == nx) {
+	  ME_Set_GEntDim(me,1);
+	  ME_Set_GEntID(me,3);
+	}
+	else {
+	  ME_Set_GEntDim(me,2);
+	  ME_Set_GEntID(me,1);
+	}
+	
+	fedges[2] = me;
+	dir[2] = 1;
+      }
+      
+      
+      /* edge 3 */
+      v0 = verts[i][j+1];
+      v1 = verts[i][j];
+      fedges[3] = MVs_CommonEdge(v0,v1);
+      if (fedges[3])
+	dir[3] = (ME_Vertex(fedges[3],0) == v0) ? 1 : 0;
+      else {
+	me = ME_New(mesh);
+	
+	ME_Set_Vertex(me,0,v0);
+	ME_Set_Vertex(me,1,v1);
+	
+	if (i == 0) {
+	  ME_Set_GEntDim(me,1);
+	  ME_Set_GEntID(me,4);
+	}
+	else {
+	  ME_Set_GEntDim(me,2);
+	  ME_Set_GEntID(me,1);
+	}
+	
+	fedges[3] = me;
+	dir[3] = 1;
+      }
+
+
+      MF_Set_Edges(mf,4,fedges,dir);
+
+      MF_Set_GEntDim(mf,2);
+      MF_Set_GEntID(mf,1);
+    }
+  }
+   
+  for (i = 0; i < nx; i++)
+    free(verts[i]);
+  free(verts);
+
+  return 1;
+}
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi
