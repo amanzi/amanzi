@@ -68,7 +68,9 @@ if (BUILD_TESTS)
                    test/test_hex_2x2x2.cc
                    test/test_hex_3x3x2.cc
                    test/test_hex_4x4x4.cc
-	           test/test_hex_4x4x4_sets.cc)
+	           test/test_hex_4x4x4_sets.cc
+		   test/test_hex_gen_4x4x4.cc
+		   test/test_quad_gen_4x4.cc)
     target_link_libraries(test_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
     add_amanzi_test(mstk_mesh test_mstk_mesh KIND unit)
 
@@ -76,7 +78,9 @@ if (BUILD_TESTS)
     add_executable(test_parallel_mstk_mesh
         test/Main.cc
         test/test_hex_4x4x4_4P.cc
-	test/test_hex_4x4x4_sets_4P.cc)
+	test/test_hex_4x4x4_sets_4P.cc
+	test/test_quad_gen_4x4_4P.cc
+	test/test_hex_gen_4x4x4_4P.cc)
     target_link_libraries(test_parallel_mstk_mesh mstk_mesh ${UnitTest_LIBRARIES})
     add_amanzi_test(mstk_mesh_parallel test_parallel_mstk_mesh NPROCS 4 KIND unit)
 
