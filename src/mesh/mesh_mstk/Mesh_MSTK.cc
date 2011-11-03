@@ -2449,8 +2449,8 @@ void Mesh_MSTK::init_pface_dirs() {
       idx = 0;
       while ((edge = MSet_Next_Entry(NotOwnedFaces,&idx))) {
       
-	MEnt_Get_AttVal(edge,attfc0,&remote_regid0,&rval,&pval);
-	MEnt_Get_AttVal(edge,attfc1,&remote_regid1,&rval,&pval);
+	MEnt_Get_AttVal(edge,attfc0,&remote_faceid0,&rval,&pval);
+	MEnt_Get_AttVal(edge,attfc1,&remote_faceid1,&rval,&pval);
       
 	List_ptr efaces = ME_Faces(edge);
 	face0 = List_Entry(efaces,0);
