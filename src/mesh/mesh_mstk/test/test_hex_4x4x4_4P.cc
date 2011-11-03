@@ -112,8 +112,5 @@ TEST(MSTK_HEX_4x4x4_4P)
 
     }
   
-
-  MPI_Finalize();
-
 }
 
