@@ -1,3 +1,6 @@
+#ifndef __H_GenerationSpec
+#define __H_GenerationSpec
+
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /**
  * @file   GenerationSpec.hh
@@ -85,3 +88,5 @@ class GenerationSpec {
 
 } // end namespace AmanziMesh
 } // end namespace Amanzi
+
+#endif
