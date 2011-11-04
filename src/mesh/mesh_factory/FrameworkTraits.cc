@@ -316,7 +316,11 @@ struct FrameworkTraits {
     , mpl::eval_if<
         mpl::bool_<M == STKMESH>
         , mpl::identity<Mesh_STK>
-        , mpl::identity<bogus_maps>
+        , mpl::eval_if<
+            mpl::bool_<M == MSTK>
+            , mpl::identity<Mesh_MSTK>
+            , mpl::identity<bogus_maps>
+            >
         >
     > generate_maps;
 
@@ -389,10 +393,10 @@ read(Epetra_MpiComm& comm, const std::string& fname,
   /// A type to indicate whether this framework can generate meshes
   struct cangenerate {
     struct parallel : 
-        mpl::bool_< M == STKMESH >::type
+        mpl::bool_< M == STKMESH || M == MSTK >::type
     {};
     struct serial :
-        mpl::bool_<M == Simple || M == STKMESH >::type
+        mpl::bool_<M == Simple || M == STKMESH || M == MSTK >::type
     {};
   };
 
