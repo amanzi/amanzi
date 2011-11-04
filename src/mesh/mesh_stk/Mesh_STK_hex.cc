@@ -45,9 +45,6 @@ Mesh_STK::generate_(Data::HexMeshGenerator& g)
   mesh_.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
   build_maps_();
   redistribute();
-
-  // FIXME: this is supposed to be temporary
-  // fill_setnameid_map_();
 }
 
 void
