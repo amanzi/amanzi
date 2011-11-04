@@ -88,6 +88,8 @@ private:
   
   void clear_internals_();
 
+  void post_create_steps_();
+
   void collapse_degen_edges();
   void label_celltype();
 
@@ -125,26 +127,34 @@ public:
   // Constructors that generate a mesh internally (regular hexahedral mesh only)
 
   // 3D
-  Mesh_MSTK(double x0, double y0, double z0,
-           double x1, double y1, double z1,
-           int nx, int ny, int nz, 
+  Mesh_MSTK(const double x0, const double y0, const double z0,
+	    const double x1, const double y1, const double z1,
+	    const unsigned int nx, const unsigned int ny, const unsigned int nz, 
            MPI_Comm comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
+  Mesh_MSTK(const double x0, const double y0, const double z0,
+	    const double x1, const double y1, const double z1,
+	    const unsigned int nx, const unsigned int ny, 
+	    const unsigned int nz, 
+	    Epetra_MpiComm *comm,
+	    const AmanziGeometry::GeometricModelPtr& gm = 
+	    (AmanziGeometry::GeometricModelPtr) NULL);
+
   // 2D
-  Mesh_MSTK(double x0, double y0,
-           double x1, double y1,
-           int nx, int ny, 
-           MPI_Comm comm,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+  Mesh_MSTK(const double x0, const double y0,
+	    const double x1, const double y1,
+	    const int nx, const int ny, 
+	    MPI_Comm comm,
+	    const AmanziGeometry::GeometricModelPtr& gm = 
+	    (AmanziGeometry::GeometricModelPtr) NULL);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
-           MPI_Comm comm,
-           const AmanziGeometry::GeometricModelPtr& gm = 
-           (AmanziGeometry::GeometricModelPtr) NULL);
+	    Epetra_MpiComm *comm,
+	    const AmanziGeometry::GeometricModelPtr& gm = 
+	    (AmanziGeometry::GeometricModelPtr) NULL);
 
 
   ~Mesh_MSTK ();

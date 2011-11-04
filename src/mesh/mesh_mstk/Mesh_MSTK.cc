@@ -17,6 +17,8 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
 
+  // RVG: I don't think calling one constructor from another works FIXME FIXME
+
   int space_dimension = 3;
 
   Mesh_MSTK(filename,incomm,space_dimension,gm);
@@ -98,55 +100,104 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
   }
 
 
-  // Pre-process the mesh to remove degenerate edges
+  // Do all the processing required for setting up the mesh for Amanzi 
   
-  collapse_degen_edges();
+  post_create_steps_();
 
-  label_celltype();
-
-
+}
 
 
-  { // Keep together and in this order 
+// Construct a 3D regular hexahedral mesh internally
 
-    init_pvert_lists();
-    init_pcell_lists(); // cells MUST be initialized before faces
-    init_pface_lists();
+Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
+		     const double x1, const double y1, const double z1,
+		     const unsigned int nx, const unsigned int ny, 
+		     const unsigned int nz, 
+		     Epetra_MpiComm *incomm,
+		     const AmanziGeometry::GeometricModelPtr& gm) 
+{
+  int ok;
+  int ring = 1; // One layer of ghost cells in parallel meshes
+  int with_attr = 1;  // update of attributes in parallel meshes
 
-    
-    // Create maps from local IDs to MSTK entity handles (must be after
-    // the various init_p*_list calls)
-    
-    init_id_handle_maps();
+  clear_internals_();
 
+  MSTK_Init();
 
+  Mesh::set_geometric_model(gm);
+
+  set_space_dimension(3);
+
+  mpicomm = incomm->GetMpiComm();
+  MPI_Comm_rank(mpicomm,&myprocid);
+  MPI_Comm_size(mpicomm,&numprocs);
+
+  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
+
+  Mesh::set_comm(mpicomm);
+
+    if (myprocid == 0) {
+    int DebugWait=0;
+    while (DebugWait);
+    }
+
+  if (serial_run) {
+
+    // Load serial mesh
+
+    mesh = MESH_New(F1);
+    ok = generate_regular_mesh(mesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
+
+    set_cell_dimension(3);
+
+    myprocid = 0;
   }
+  else {
+    Mesh_ptr globalmesh;
+    int dim=3;
     
-    
-  init_global_ids();
+    if (myprocid == 0) {
+      globalmesh = MESH_New(F1);
 
+      ok = generate_regular_mesh(globalmesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
+      
+      mesh = globalmesh;
+    }
+    else {
+      mesh = MESH_New(UNKNOWN_REP);
+      ok = 1;
+    }
 
-  init_pface_dirs();
+    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+					numprocs,mpicomm);
 
+    if (myprocid == 0)
+      MESH_Delete(globalmesh);
 
-  // Create Epetra_maps
+    set_cell_dimension(3);
+  }
+
+  if (!ok) {
+    std::cerr << "FAILED" << std::endl;
+    std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
+    assert(ok);
+  }
+
+  // Do all the processing required for setting up the mesh for Amanzi 
   
-  init_cell_map();
-  init_face_map();
-  init_node_map();
-  
-  if (gm != NULL)
-    init_set_info();
+  post_create_steps_();
 
 }
 
 
 
+
 // Construct a 3D regular hexahedral mesh internally
 
-Mesh_MSTK::Mesh_MSTK(double x0, double y0, double z0,
-		     double x1, double y1, double z1,
-		     int nx, int ny, int nz, 
+Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
+		     const double x1, const double y1, const double z1,
+		     const unsigned int nx, const unsigned int ny, 
+		     const unsigned int nz, 
 		     MPI_Comm incomm,
 		     const AmanziGeometry::GeometricModelPtr& gm) 
 {
@@ -217,46 +268,9 @@ Mesh_MSTK::Mesh_MSTK(double x0, double y0, double z0,
     assert(ok);
   }
 
-
-  // Pre-process the mesh to remove degenerate edges
+  // Do all the processing required for setting up the mesh for Amanzi 
   
-  collapse_degen_edges();
-
-  label_celltype();
-
-
-
-
-  { // Keep together and in this order 
-
-    init_pvert_lists();
-    init_pcell_lists(); // cells MUST be initialized before faces
-    init_pface_lists();
-
-    
-    // Create maps from local IDs to MSTK entity handles (must be after
-    // the various init_p*_list calls)
-    
-    init_id_handle_maps();
-
-
-  }
-    
-    
-  init_global_ids();
-
-
-  init_pface_dirs();
-
-
-  // Create Epetra_maps
-  
-  init_cell_map();
-  init_face_map();
-  init_node_map();
-  
-  if (gm != NULL)
-    init_set_info();
+  post_create_steps_();
 
 }
 
@@ -264,9 +278,9 @@ Mesh_MSTK::Mesh_MSTK(double x0, double y0, double z0,
 
 // Create a 2D regular quadrilateral mesh internally
 
-Mesh_MSTK::Mesh_MSTK(double x0, double y0,
-		     double x1, double y1,
-		     int nx, int ny, 
+Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
+		     const double x1, const double y1,
+		     const int nx, const int ny, 
 		     MPI_Comm incomm,
 		     const AmanziGeometry::GeometricModelPtr& gm) 
 {
@@ -338,52 +352,16 @@ Mesh_MSTK::Mesh_MSTK(double x0, double y0,
   }
 
 
-  // Pre-process the mesh to remove degenerate edges
+  // Do all the processing required for setting up the mesh for Amanzi 
   
-  collapse_degen_edges();
-
-  label_celltype();
-
-
-
-
-  { // Keep together and in this order 
-
-    init_pvert_lists();
-    init_pcell_lists(); // cells MUST be initialized before faces
-    init_pface_lists();
-
-    
-    // Create maps from local IDs to MSTK entity handles (must be after
-    // the various init_p*_list calls)
-    
-    init_id_handle_maps();
-
-
-  }
-    
-    
-  init_global_ids();
-
-
-  init_pface_dirs();
-
-
-  // Create Epetra_maps
-  
-  init_cell_map();
-  init_face_map();
-  init_node_map();
-  
-  if (gm != NULL)
-    init_set_info();
+  post_create_steps_();
 
 }
 
 
   // Construct a hexahedral mesh from specs 
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
-		     MPI_Comm incomm,
+		     Epetra_MpiComm *incomm,
 		     const AmanziGeometry::GeometricModelPtr& gm)
 {
   int ok;
@@ -396,7 +374,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 
   Mesh::set_geometric_model(gm);
 
-  mpicomm = incomm;
+  mpicomm = incomm->GetMpiComm();
   MPI_Comm_rank(mpicomm,&myprocid);
   MPI_Comm_size(mpicomm,&numprocs);
 
@@ -476,45 +454,9 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
   }
 
 
-  // Pre-process the mesh to remove degenerate edges
+  // Do all the processing required for setting up the mesh for Amanzi 
   
-  collapse_degen_edges();
-
-  label_celltype();
-
-
-
-
-  { // Keep together and in this order 
-
-    init_pvert_lists();
-    init_pcell_lists(); // cells MUST be initialized before faces
-    init_pface_lists();
-
-    
-    // Create maps from local IDs to MSTK entity handles (must be after
-    // the various init_p*_list calls)
-    
-    init_id_handle_maps();
-
-
-  }
-    
-    
-  init_global_ids();
-
-
-  init_pface_dirs();
-
-
-  // Create Epetra_maps
-  
-  init_cell_map();
-  init_face_map();
-  init_node_map();
-  
-  if (gm != NULL)
-    init_set_info();
+  post_create_steps_();
 
 }
 
@@ -563,7 +505,6 @@ Mesh_MSTK::~Mesh_MSTK() {
 
   // MESH_Delete(mesh);
 }
-
 
 
 // Number of OWNED, GHOST or USED entities of different types
@@ -2164,6 +2105,53 @@ unsigned int Mesh_MSTK::GID(const Entity_ID lid, const Entity_kind kind) const
 
 
 
+// Procedure to perform all the post-mesh creation steps in a constructor
+
+void Mesh_MSTK::post_create_steps_()
+{
+
+
+  // Pre-process the mesh to remove degenerate edges
+  
+  collapse_degen_edges();
+
+  label_celltype();
+
+
+
+
+  { // Keep together and in this order 
+
+    init_pvert_lists();
+    init_pcell_lists(); // cells MUST be initialized before faces
+    init_pface_lists();
+
+    
+    // Create maps from local IDs to MSTK entity handles (must be after
+    // the various init_p*_list calls)
+    
+    init_id_handle_maps();
+
+
+  }
+    
+    
+  init_global_ids();
+
+
+  init_pface_dirs();
+
+
+  // Create Epetra_maps
+  
+  init_cell_map();
+  init_face_map();
+  init_node_map();
+  
+  if (Mesh::geometric_model() != NULL)
+    init_set_info();
+
+}
 
 
 // Some initializations
