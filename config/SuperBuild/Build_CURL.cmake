@@ -5,13 +5,14 @@
 #    
 
 include(ExternalProject)
+include(BuildLibraryName)
 
 include(TPLVersions)
 
 
 # Define source, build and install directories
-set(CURL_source_dir "${CMAKE_BINARY_DIR}/external-projects/curl/src")
-set(CURL_binary_dir "${CMAKE_BINARY_DIR}/external-projects/curl-build")
+set(CURL_source_dir "${CMAKE_BINARY_DIR}/external-projects/curl/curl-${CURL_VERSION}-source")
+set(CURL_binary_dir "${CMAKE_BINARY_DIR}/external-projects/curl/curl-${CURL_VERSION}-build")
 set(CURL_install_dir "${CMAKE_BINARY_DIR}/external-projects/curl")
 
 # Make target: build curl with 'make curl' command
@@ -29,12 +30,13 @@ ExternalProject_Add(${CURL_target}
 )
                                       
 # Define variables needed by other packages
+# These should match the final output from FindCURL.cmake
+
+# Include directories
 set(CURL_INCLUDE_DIR "${CURL_install_dir}/include")
 set(CURL_INCLUDE_DIRS "${CURL_install_dir}/include")
 
-# We'll need a macro to build library name when shared is on or off
-#define_library_name(curl BUILD_SHARED CURL_LIBRARY)
-set(CURL_LIBRARY ${CURL_install_dir}/lib/libcurl.a)
+# Libraries
+build_library_name(curl CURL_LIBRARY_FILENAME STATIC)
+set(CURL_LIBRARY ${CURL_install_dir}/lib/${CURL_LIBRARY_FILENAME})
 set(CURL_LIBRARIES "${CURL_LIBRARY}")
-
-
