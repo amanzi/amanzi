@@ -947,14 +947,29 @@ out in the input file is ignored.
 
 Output format of Observation Output File
 ========================================
-ASCII format will be used.  It will follow the following format:
+ASCII format will be used.   The file is preceded by two header lines:
 
-`"label for the observation`" `"time`" `"value`"
+`Observation Name, Region, Functional, Variable, Time, Value`
+`======================================`
 
-For example,
+the first line describes what information are being displayed in entries in subsequent lines.  Each subsequent line
+consists of 6 entries separated by the delimiter ",":
 
-Integrated Water Mass Density 1000 1.00e3
+* Entry 1: `"ParameterList name`" for a particular observation output. 
 
+* Entry 2: `"Region`" in the above `"ParameterList`".
+
+* Entry 3: `"Functional`" in the above `"ParameterList`".
+
+* Entry 4: `"Variable`" in the above `"ParameterList`".
+
+* Entry 5: Time at which the observation is requested.
+
+* Entry 6: Value of the observation at time specified in Entry 5.
+
+An example is given by the following:
+
+`Integrated Mass, All, Observation Data: Integral, Water Mass Density, 1000, 1.00e3`
 
 Complete Example
 =================
