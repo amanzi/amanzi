@@ -17,6 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "tensor.hpp"
 #include "mfd3d.hpp"
+#include "Explicit_TI_RK.hpp"
 
 #include "Transport_PK.hpp"
 #include "Reconstruction.hpp"
@@ -97,9 +98,16 @@ int Transport_PK::Init()
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));  // The maps include both owned and ghosts
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
 
+  // advection block installation
+  current_component_ = -1;  // default value may be useful in the future
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
+  lifting.reset_field(mesh_, component_);
+  lifting.Init();
+
+  // dispersivity block installation
   if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
     harmonic_points.resize(number_wghost_faces);
     for (int f=fmin; f<=fmax; f++) harmonic_points[f].init(dim);
@@ -319,8 +327,93 @@ void Transport_PK::advance(double dT_MPC)
   }
   else if (discretization_order == 2) {
     advance_second_order_upwind(dT_MPC);
+    //advance_second_order_upwind_testing(dT_MPC);
   }
 }
+
+
+/* ******************************************************************* 
+ * We have to advance each component independently due to different
+ * discretizations. We use tcc when only owned data are needed and 
+ * tcc_next when owned and ghost data.
+ *
+ * Data flow: loop over components C and for each C apply the 
+ * second-order RK method. 
+ ****************************************************************** */
+void Transport_PK::advance_second_order_upwind_testing(double dT_MPC)
+{
+  status = TRANSPORT_STATE_BEGIN;
+  dT = dT_MPC;  // overwrite the transport step
+
+  int i, f, v, c, c1, c2;
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
+  const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
+ 
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->get_total_component_concentration();
+ 
+  Explicit_TI::RK TVD_RK(*this,  // it has only one member function fun
+                         Explicit_TI::RK::heun_euler,  // integration method
+                         *component_);
+
+  int num_components = tcc->NumVectors();
+  for (i=0; i<num_components; i++) {
+    current_component_ = i;  // it is needed in BJ called inside RK:fun
+
+    Epetra_Vector*& tcc_component = (*tcc)(i);
+    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector 
+
+    const double t = 0.0;  // provide simulation time (lipnikov@lanl.gov)
+    TVD_RK.step(t, dT, *component_, *component_next_);
+
+    for (c=cmin; c<=cmax_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
+
+    // BOUNDARY CONDITIONS for ADVECTION
+    int k, n;
+    double u, tcc_flux;
+ 
+    for (n=0; n<bcs.size(); n++) {  // analyze boundary sets
+      for (k=0; k<bcs[n].faces.size(); k++) {
+        f = bcs[n].faces[k];
+        c2 = (*downwind_cell_)[f]; 
+
+        if (c2 >= 0) {
+          u = fabs(darcy_flux[f]);
+
+          if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
+            double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2]; 
+            tcc_flux = dT * u * bcs[n].values[i];
+            (*tcc_next)[i][c2] += tcc_flux / vol_phi_ws;
+            bcs[n].influx[i] += tcc_flux;
+          }
+        } 
+      }
+    }
+     
+    /*
+    // DISPERSION FLUXES
+    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+      calculate_dispersion_tensor();
+
+      std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated only once (lipnikov@lanl.gov)
+      std::vector<double> bc_face_values(number_wghost_faces);
+
+      extract_boundary_conditions(i, bc_face_id, bc_face_values);
+      populate_harmonic_points_values(i, tcc, bc_face_id, bc_face_values);
+      add_dispersive_fluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
+    }
+    */
+  }
+
+  if (internal_tests) {
+    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
+    check_GEDproperty(*tcc_nextMPC);
+  }
+
+  status = TRANSPORT_STATE_COMPLETE;
+}
+
 
 
 /* ******************************************************************* 
@@ -347,8 +440,10 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
   double u, vol_phi_ws, tcc_flux;
   int num_components = tcc->NumVectors();
  
-  Reconstruction lifting(mesh_, component_);
+  lifting.reset_field(mesh_, component_);
   lifting.Init();
+
+  //Explicit_TI::RK::method_t TVD_RK = Explicit_TI::RK::heun_euler;
 
   for (i=0; i<num_components; i++) {
     for (c=cmin; c<=cmax; c++) (*component_)[c] = (*tcc_next)[i][c];

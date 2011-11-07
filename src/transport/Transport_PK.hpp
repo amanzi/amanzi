@@ -17,10 +17,12 @@ Usage:
 #include "Teuchos_RCP.hpp"
 
 #include "tensor.hpp"
+#include "Explicit_TI_fnBase.hpp"
 
 #include "State.hpp"
 #include "Transport_State.hpp"
 #include "Transport_BCs.hpp"
+#include "Reconstruction.hpp"
 
 /*
 This is Amanzi Transport Process Kernel (PK), release Beta.
@@ -65,7 +67,7 @@ const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
 
-class Transport_PK {
+class Transport_PK : public Explicit_TI::fnBase {
  public:
   Transport_PK();
   Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
@@ -100,7 +102,9 @@ class Transport_PK {
   // advection routines
   void advance_donor_upwind(double dT);
   void advance_second_order_upwind(double dT);
+  void advance_second_order_upwind_testing(double dT);
   void advance_arbitrary_order_upwind(double dT);
+  void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   void calculateLimiterBarthJespersen(const int component,
                                       Teuchos::RCP<Epetra_Vector> scalar_field, 
@@ -152,8 +156,10 @@ class Transport_PK {
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
-  Teuchos::RCP<Epetra_Vector> component_;
+  int current_component_;
+  Teuchos::RCP<Epetra_Vector> component_, component_next_;
   Teuchos::RCP<Epetra_Vector> limiter_;
+  Reconstruction lifting;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
@@ -174,6 +180,7 @@ class Transport_PK {
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
+  int vmin, vmax;
  
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   int dim;

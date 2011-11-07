@@ -88,19 +88,18 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 void Transport_State::copymemory_multivector(Epetra_MultiVector& source, 
                                              Epetra_MultiVector& target)
 {
-  int i, c, cmin, cmax, cmax_s, cmax_t, number_vectors;
-
   const Epetra_BlockMap& source_cmap = source.Map();
   const Epetra_BlockMap& target_cmap = target.Map();
 
+  int cmin, cmax, cmax_s, cmax_t;
   cmin   = source_cmap.MinLID();
   cmax_s = source_cmap.MaxLID();
   cmax_t = target_cmap.MaxLID();
   cmax   = std::min(cmax_s, cmax_t);
 
-  number_vectors = source.NumVectors();
-  for (c=cmin; c<=cmax; c++) {
-     for(i=0; i<number_vectors; i++) target[i][c] = source[i][c];
+  int number_vectors = source.NumVectors();
+  for (int c=cmin; c<=cmax; c++) {
+     for (int i=0; i<number_vectors; i++) target[i][c] = source[i][c];
   }
 
 #ifdef HAVE_MPI
@@ -117,20 +116,19 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
  ****************************************************************** */
 void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& target)
 {
-  int f, fmin, fmax, fmax_s, fmax_t;
-
   const Epetra_BlockMap& source_fmap = source.Map();
   const Epetra_BlockMap& target_fmap = target.Map();
 
+  int fmin, fmax, fmax_s, fmax_t;
   fmin   = source_fmap.MinLID();
   fmax_s = source_fmap.MaxLID();
   fmax_t = target_fmap.MaxLID();
   fmax   = std::min(fmax_s, fmax_t);
 
-  for( f=fmin; f<=fmax; f++ ) target[f] = source[f];
+  for (int f=fmin; f<=fmax; f++) target[f] = source[f];
 
 #ifdef HAVE_MPI
-  if ( fmax_s > fmax_t ) throw std::exception(); 
+  if (fmax_s > fmax_t) throw std::exception(); 
 
   Epetra_Import importer(target_fmap, source_fmap);
   target.Import(source, importer, Insert);

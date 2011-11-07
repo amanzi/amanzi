@@ -43,7 +43,7 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
   std::cout << "=== TEST CONVERGENCE ANALISYS 2ND ===" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
-  for (int nx=10; nx<161; nx*=2 ) {
+  for (int nx=10; nx<41; nx*=2 ) {
     RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 2, 2, comm)); 
 
     // create a MPC and Transport states with one component
@@ -70,7 +70,7 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
 
     // advance the state
     int i, k, iter = 0;
-    double T = 0.0, T1 = 1.0;
+    double T = 0.0, T1 = 2.0;
 
     RCP<Transport_State>    TS_next  = TPK.get_transport_state_next();
     RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
@@ -78,7 +78,7 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
 
     double dT, dT0;
     if (nx==10) dT0 = TPK.calculate_transport_dT();
-    else dT0 /= 4;
+    else dT0 /= 2;
 
     while (T < T1) {
       dT = std::min(TPK.calculate_transport_dT(), T1 - T);
@@ -86,12 +86,14 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
 
       TPK.advance(dT);
       T += dT;
-      TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+      if (TPK.internal_tests) {
+        TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+      }
 
       *tcc = *tcc_next;
       iter++;
     }
-    //for (int k=0; k<nx; k++) cout << (*tcc_next)[0][k] << endl;
+    for (int k=0; k<nx; k++) cout << (*tcc_next)[0][k] << endl;
 
     double L1, L2;  // L1 and L2 errors
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
