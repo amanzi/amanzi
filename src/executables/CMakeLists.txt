@@ -36,6 +36,7 @@ include_directories(${MPC_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${EXO_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 
 
 # Chemistry includes directory
@@ -85,6 +86,9 @@ add_definitions("-DUSE_MPI")
 
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
 add_library(udriv amanzi_unstructured_grid_simulation_driver.cpp)
+target_link_libraries(udriv ${Epetra_LIBRARIES} 
+                            ${Teuchos_LIBRARIES}
+                            mesh state mpc error_handling)
 add_install_library(udriv)
 
 #
@@ -160,3 +164,8 @@ endif()
 #
 #
 add_install_shellscript(splitexo.sh)
+
+#
+# Install include files
+#
+add_install_include_file(amanzi_unstructured_grid_simulation_driver.hpp)

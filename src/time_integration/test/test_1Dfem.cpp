@@ -343,7 +343,7 @@ TEST(Nodal_1D_FEM) {
 	   solution approaching zero as time progresses.
    */
 
-
+  cout << "Test: Nodal_1D_FEM" << endl;    
 
   // create the parameter list for BDF2
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::rcp(new Teuchos::ParameterList());

@@ -15,6 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Point.hh"
 #include "dbc.hh"
 
+#include "Transport_PK.hpp"
 #include "Reconstruction.hpp"
 
 namespace Amanzi {

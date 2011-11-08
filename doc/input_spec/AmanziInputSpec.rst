@@ -25,11 +25,11 @@ Preliminary Concepts
 
 Amanzi solves a set of parameterized models for multiphase flow in porous media.  An Amanzi simulation is specified by providing:
 
-* values for a parameterized PDE-based transport model, including boundary and initial conditions, constituitive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,
+* values for a parameterized PDE-based transport model, including boundary and initial conditions, constitutive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,
 
 * parameters controlling the selection of key algorithmic options and output, 
 
-* a description of the (discrete) state of the computational sytem, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
+* a description of the (discrete) state of the computational system, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
 
 The primary software interface to Amanzi is a compiled C++ function, and much of the input data required is communicated through a single `Teuchos::ParameterList <http://trilinos.sandia.gov/packages/docs/r7.0/packages/teuchos/doc/html/index.html>`_.
 A ParameterList consist of a simple hierarchy of parameters and lists of parameters, and is constructed directly from a similarly structured XML file.  The Amanzi input specification is defined in terms of the XML file format
@@ -42,7 +42,7 @@ provided with the Amanzi source code distribution.  This simple stand-alone coor
 Model Characterization
 ~~~~~~~~~~~~~~~~~~~~~~
 
-For each phase in the model system, Amanzi requires the specification of component fluids and the chemical solutes they contain.  If a component exists in multiple phases, a relationship is required to compute its phase distribution as a function of the state of the stystem.
+For each fluid phase in the model system, Amanzi requires the specification of the fluid composition.  If a component exists in multiple phases, a relationship is required to compute its phase distribution as a function of the state of the system.
 Equation 2.11 of the MRD governs the conservation and transport of each component, where the volumetric flow rate has been specified via Darcy's law (equation 2.10).  For Darcy flow, the properties of the porous medium must be specified over the entire simulation domain.  All transported phases
 require an appropriate set of boundary conditions along the edge of the simulation domain.  Source/sink terms and initial data are provided for each phase component and any solutes they contain.  Additionally, the extent of physical domain
 is specified, along with its discrete representation (i.e., the mesh).
@@ -430,7 +430,7 @@ In this example, "Top Section", "Middle Section" and "Bottom Section" are three 
 Material Properties
 ===================
 
-The "material" in this context is meant to represent the media through with the mobile phases are transported.  In the literature, this is also referred to as the "soil", "rock", "matrix", etc.
+The "material" in this context is meant to represent the media through with  fluid phases are transported.  In the literature, this is also referred to as the "soil", "rock", "matrix", etc.
 Properties of the material must be specified over the entire simulation domain, and is carried out using the Region constructs defined above. For example, a single material 
 may be defined over the `"All`" region (see above), or a set of materials can be defined over subsets of the domain via user-defined regions.
 If multiple regions are used for this purpose, they should be disjoint, but should collectively tile the entire domain.  Each material requires (Section 2.6) a label and 
@@ -517,7 +517,7 @@ anisotropic permeability which is uniform throughout the domain.
 
 
 Fluid Phases====================================
-The "Fluid Phases" parameter list is used to specify fluid phases. A phase is defined as a homogeneous mixture of its chemical constituents. In the current version of Amanzi the aqueous phase serves as a reference phase in terms of which the composition all other fluid phases are derived through chemical equilibrium relations in the form of mass action equations. For the aqueous phase, the `”Fluid Phases`” parameter list identifies a set of independent variables through a flow mode (pressure equation) and a list of primary species (also referred to as basis species or components) that fully determine the chemical composition of each fluid phase in the system.  In the current version of the Amanzi the flow mode corresponds to a single liquid phase in a variably saturated porous medium, commonly referred to as Richards equation. The flow equation and primary species reactive transport equations are sequentially coupled. Primary species, basis species or chemical components-------------------------------------------------
+The "Fluid Phases" parameter list is used to specify fluid phases. A phase is defined as a homogeneous mixture of its chemical constituents. In the current version of Amanzi the aqueous phase serves as a reference phase in terms of which the composition all other fluid phases are derived through chemical equilibrium relations in the form of mass action equations. For the aqueous phase, the `"Fluid Phases`" parameter list identifies a set of independent variables through a flow mode (pressure equation) and a list of primary species (also referred to as basis species or components) that fully determine the chemical composition of each fluid phase in the system.  In the current version of the Amanzi the flow mode corresponds to a single liquid phase in a variably saturated porous medium, commonly referred to as Richards equation. The flow equation and primary species reactive transport equations are sequentially coupled. Primary species, basis species or chemical components-----------------------------------------------------
 The primary species must be chosen from chemical constituents in the aqueous reference phase, but their choice is otherwise arbitrary except that they must form a linearly independent set of species, i.e. no linear combination of the primary species can exist which forms a valid chemical reaction. The concentrations of the remaining chemical constituents in the various fluid phases, referred to as secondary species, are obtained from the primary species concentrations through appropriate mass action relations under conditions of chemical equilibrium for given temperature and pressure conditions.Each primary species has associated with it a total component concentration and a free ion concentration. The total concentration for each primary species is a sum of its free ion concentration in the aqueous phase and its stoichiometric contribution to all secondary species, which may also include other fluid phases for which it is in equilibrium. Amanzi splits the total primary species concentrations into a set of total concentrations for each fluid phase, and a total sorbed concentration. Mineral concentrations are not included in the total primary species concentrations. In a general problem, multiple fluid phases may coexist in a mesh cell (e.g. aqueous/liquid, gaseous, etc.), with each phase comprised of a number of chemical constituents. The chemical constituents making up a fluid phase are typically divided into the solvent, the dominant species in the phase such as H2O in an aqueous phase, and the remaining "solute" species. All of these species may participate in various chemical reactions either as homogeneous reactions within a particular phase, or heterogeneous reactions involving more than one phase, for example, aqueous, solid and gas phases. Mineral reactions are treated as kinetically controlled with a reaction rate term appearing in the primary species transport equations. For each mineral an additional mass transfer equation is solved to obtain its spatial distribution throughout the computational domain. Sorbed species involving ion exchange and surface complexation reactions are treated as local equilibrium reactions with the sorbed concentration obtained through a mass action relation.During initialization, Amanzi performs a distribution of species calculation that partitions the primary species concentrations among the secondary species within each fluid phase and equilibrates the aqueous solution with any specified minerals or gases. Various options may be used to constrain the speciation calculation, such as specifying charge balance, pH, total or free ion primary species concentration, total aqueous plus sorbed concentration, equilibrium with minerals and gases, and other options. In addition, certain reactions such as mineral precipitation and dissolution may affect the flow properties of the porous medium itself during the simulation through changes in porosity, permeability and tortuosity. Fluid properties (e.g. fluid density) may be affected through changes in species concentrations, temperature and pressure. While Amanzi does not currently support the effect of chemical reactions on material or fluid properties - the specification here, however, allows for the existence of the necessary input data framework and data structures to include such processes. Clearly, these specifications are highly problem dependent, so Amanzi attempts to provide a generalized interface to accommodate a variety of scenarios.Given the free ion concentration of each primary species (and if there is more than one phase, a specification of the thermodynamic relationships that determine the partitioning between fluid phases, one can reconstruct the concentration of the primary and secondary species in each fluid phase. As a result only the primary species are maintained in the state data structures for each fluid phase. In addition, mineral concentrations and corresponding specific surface areas must also be stored in a state data structure.Specification of Amanzi's numerical state is organized fundamentally around the list of fluid and solid phases that are present. Each fluid phase requires a specification of its physical properties (Section 4.6), and a list of its primary species. For each phase, Amanzi requires a label, and a list of chemical constituents. For each species, a group membership is specified. Note that Amanzi will eventually support the use of a master chemistry database, where a list of chemical species including aqueous, gaseous, surface complexes and mineral species together with their reaction stoichiometry, equilibrium constants over a range of temperatures and pressures, charge and other properties are defined. In that case, inclusion of a particular species in the Amanzi input file is conditioned on its presence in the appropriate section of the master thermodynamic database.Sources and Initial and Boundary Data~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Fluid phases and the chemical constituents contained in them, require boundary conditions over the surface bounding the computational domain (Sections 3.3, 3.6, 3.10 and 4.3). Generally, boundary conditions are determined by specifying the phase pressure (Dirichlet condition), Darcy velocity (Neumann condition), or the phase saturation (Dirichlet condition) at the boundary. The fluid composition at a boundary may be specified either through Dirichlet or Neumann conditions. For simplicity, any boundary conditions not explicitly set in the input are defaulted to outflow with a zero gradient applied to each primary species. Volumetric source terms, used to model infiltration (Section 3.7) and a wide variety of production and loss processes, are defined for each phase, if applicable, and include the concentration or flux of any species that are carried into the domain with that phase. However, sources and sinks are not currently supported in Amanzi.In order to support the rather general specification requirements (involving combinations of different fluid phases), it is necessary to first define the composition of the "state" of the system being simulated by identifying all fluid phases and chemical constituents that will be present in the system. We do this hierarchically, first by fluid phase then by chemical constituent:
 Generalized Specification
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -625,7 +625,7 @@ Finally, we specify boundary conditions.  Again, support is provided for specify
 
     * COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradaient`" (see below)
+     * BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
@@ -755,6 +755,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
 * `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
+  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+
   * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`" and `"Time Macro`"
 
     * `"Variables`" [Array string] a list of labels of variables defined above
@@ -766,6 +768,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     * `"Time Macro`" [string] one of the labeled time macros (see below)
 
     * `"Cycle Macro`" [string] one of the labeled cycle macros (see below)
+
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
@@ -787,6 +790,7 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Observation Data">
+    <Parameter name="Observation output Filename" type="string" value="obs_output.out"/>
     <ParameterList name="Time Macros">
       <ParameterList name="Annual">
         <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7}"/>
@@ -845,7 +849,7 @@ Example:
     <Parameter name="Cycle Macro" type="string" value="Every-5"/>
   </ParameterList>
 
-In this example, Checkpoint Data files are written when the cycle number is evenly divisble by 5.
+In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
 
 
 Visualization Data
@@ -941,6 +945,31 @@ In this example, Amanzi is restarted with all state data initialized from the Ch
 Data file named chk00123.h5. All other initialization of field variables that might be called 
 out in the input file is ignored.
 
+Output format of Observation Output File
+========================================
+ASCII format will be used.   The file is preceded by two header lines:
+
+`Observation Name, Region, Functional, Variable, Time, Value`
+`======================================`
+
+the first line describes what information are being displayed in entries in subsequent lines.  Each subsequent line
+consists of 6 entries separated by the delimiter ",":
+
+* Entry 1: `"ParameterList name`" for a particular observation output. 
+
+* Entry 2: `"Region`" in the above `"ParameterList`".
+
+* Entry 3: `"Functional`" in the above `"ParameterList`".
+
+* Entry 4: `"Variable`" in the above `"ParameterList`".
+
+* Entry 5: Time at which the observation is requested.
+
+* Entry 6: Value of the observation at time specified in Entry 5.
+
+An example is given by the following:
+
+`Integrated Mass, All, Observation Data: Integral, Water Mass Density, 1000, 1.00e3`
 
 Complete Example
 =================

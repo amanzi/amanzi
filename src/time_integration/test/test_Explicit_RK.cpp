@@ -8,20 +8,20 @@
 #include "Epetra_SerialComm.h"
 
 SUITE(TimeIntegrationTests) {
+using namespace Amanzi;
 
   // ODE: y' = y
   class fn1 : public Explicit_TI::fnBase {
   public:
-    void fun(const double t, const Epetra_MultiVector& y, Epetra_MultiVector& y_new)
+    void fun(const double t, const Epetra_Vector& y, Epetra_Vector& y_new)
     {
       y_new = y;
     }
-
   };
 
 
   TEST(Explicit_RK_Euler) {
-    
+    cout << "Test: Explicit_RK_Euler" << endl;    
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
     Epetra_Vector y(map);
@@ -52,6 +52,7 @@ SUITE(TimeIntegrationTests) {
        
 
   TEST(Explicit_RK_Heun) {
+    cout << "Test: Explicit_RK_Heun" << endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -83,6 +84,7 @@ SUITE(TimeIntegrationTests) {
        
 
   TEST(Explicit_RK_Midpoint) {
+    cout << "Test: Explicit_RK_Midpoint" << endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -113,6 +115,7 @@ SUITE(TimeIntegrationTests) {
   }
 
   TEST(Explicit_RK_Ralston) {
+    cout << "Test: Explicit_RK_Rapson" << endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -144,6 +147,7 @@ SUITE(TimeIntegrationTests) {
 
 
   TEST(Explicit_RK_Kutta3D) {
+    cout << "Test: Explicit_RK_Kutta3D" << endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -174,6 +178,7 @@ SUITE(TimeIntegrationTests) {
   }
 
   TEST(Explicit_RK_UserDefined) {
+    cout << "Test: Explicit_RK_UserDefined" << endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -208,7 +213,7 @@ SUITE(TimeIntegrationTests) {
     do 
       {
 	explicit_time_integrator.step(t,h,y,y_new);
-	t=t+h;
+	t = t + h;
 	y = y_new;
       }
     while (t<1.0);
@@ -218,6 +223,7 @@ SUITE(TimeIntegrationTests) {
   }
 
   TEST(Explicit_RK_RK4) {
+    cout << "Test: Explicit_RK_RK4" << endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
     Epetra_BlockMap map(1,1,0,*comm);
@@ -239,8 +245,8 @@ SUITE(TimeIntegrationTests) {
     // integrate to t=1.0
     do 
       {
-	explicit_time_integrator.step(t,h,y,y_new);
-	t=t+h;
+	explicit_time_integrator.step(t, h, y, y_new);
+	t = t + h;
 	y = y_new;
       }
     while (t<1.0);

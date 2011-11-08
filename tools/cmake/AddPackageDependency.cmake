@@ -104,7 +104,9 @@ function(ADD_PACKAGE_DEPENDENCY)
             endif()    
             if ( target_gen_libs OR req_gen_libs )
                 set(_save_gen_list "${target_gen_libs}" "${req_gen_libs}")
+                list(REVERSE _save_gen_list)
                 list(REMOVE_DUPLICATES _save_gen_list)
+                list(REVERSE _save_gen_list)
                 #print_variable(_save_gen_list)
             endif()    
 
@@ -128,7 +130,9 @@ function(ADD_PACKAGE_DEPENDENCY)
 
             #  Neither list has keywords
             set(_save_lib_list "${${target_package}_LIBRARIES}" "${${req_package}_LIBRARIES}")
+            list(REVERSE _save_lib_list)
             list(REMOVE_DUPLICATES _save_lib_list)
+            list(REVERSE _save_lib_list)
 
         endif()    
 

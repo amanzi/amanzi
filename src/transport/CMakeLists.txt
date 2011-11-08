@@ -29,6 +29,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${EXO_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -39,8 +40,10 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: transport
 #
-add_library(transport Transport_PK.cpp Transport_State.cpp Transport_VandV.cpp Reconstruction.cpp)
-target_link_libraries(transport geometry mesh mesh_data error_handling state ${Epetra_LIBRARIES})
+add_library(transport Transport_PK.cpp Transport_State.cpp Transport_TI.cpp Transport_VandV.cpp 
+                      Reconstruction.cpp)
+target_link_libraries(transport geometry mesh mesh_data error_handling state time_integration ${Epetra_LIBRARIES})
+add_install_library(transport)
 #
 # Install Targets
 #

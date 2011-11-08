@@ -1,24 +1,24 @@
-
 #include "Explicit_TI_RK.hpp"
 
-Explicit_TI::RK::RK(Explicit_TI::fnBase& fn_, 
-		    const Explicit_TI::RK::method_t method_, 
-		    const Epetra_MultiVector& example_vector):
-  fn(fn_)
+namespace Amanzi {
+namespace Explicit_TI {
 
+RK::RK(Explicit_TI::fnBase& fn_, 
+       const Explicit_TI::RK::method_t method_, 
+       const Epetra_Vector& example_vector):
+    fn(fn_)
 { 
   set_method(method_);
   create_storage(example_vector); 
 }
 
 
-
-Explicit_TI::RK::RK(Explicit_TI::fnBase& fn_,
-		    const int order_,
-		    const boost::numeric::ublas::matrix<double> a_,
-		    const std::vector<double> b_,
-		    const std::vector<double> c_,
-		    const Epetra_MultiVector& example_vector):
+RK::RK(fnBase& fn_,
+       const int order_,
+       const boost::numeric::ublas::matrix<double> a_,
+       const std::vector<double> b_,
+       const std::vector<double> c_,
+       const Epetra_Vector& example_vector):
   fn(fn_), order(order_), method(Explicit_TI::RK::user_defined)
 {
   a.resize(a_.size1(), a_.size2());
@@ -33,17 +33,13 @@ Explicit_TI::RK::RK(Explicit_TI::fnBase& fn_,
 }
 
 
-
-
-
-
-
-Explicit_TI::RK::~RK()
+RK::~RK()
 {
   delete_storage();
 }
 
-void Explicit_TI::RK::set_method(const Explicit_TI::RK::method_t method_)
+
+void RK::set_method(const Explicit_TI::RK::method_t method_)
 {
   method = method_;
   
@@ -131,7 +127,7 @@ void Explicit_TI::RK::set_method(const Explicit_TI::RK::method_t method_)
     a(3,0) = 0.0;
     
     a(2,1) = 0.5;
-    a(3,2) = 0.0;
+    a(3,1) = 0.0;
     
     a(3,2) = 1.0;
     
@@ -144,22 +140,21 @@ void Explicit_TI::RK::set_method(const Explicit_TI::RK::method_t method_)
     c[1] = 0.5;
     c[2] = 0.5;
     c[3] = 1.0;
-
   }
 }
 
 
-void Explicit_TI::RK::create_storage(const Epetra_MultiVector& example_vector)
+void RK::create_storage(const Epetra_Vector& example_vector)
 {
   k.resize(order);
   for (int i=0; i<order; i++)
     {
-      k[i] = new Epetra_MultiVector(example_vector);
+      k[i] = new Epetra_Vector(example_vector);
     }
 }
 
 
-void Explicit_TI::RK::delete_storage()
+void RK::delete_storage()
 {
   for (int i=0; i<k.size(); i++)
     {
@@ -168,20 +163,16 @@ void Explicit_TI::RK::delete_storage()
 }
 
 
-
-
-
-void Explicit_TI::RK::step(const double t, const double h, const Epetra_MultiVector& y, Epetra_MultiVector& y_new)
+void RK::step(const double t, const double h, const Epetra_Vector& y, Epetra_Vector& y_new)
 {
-  std::vector<Epetra_MultiVector*> k;
+  std::vector<Epetra_Vector*> k;
   k.resize(order);
   for (int i=0; i<order; i++)
     {
-      k[i] = new Epetra_MultiVector(y);
-    }
+      k[i] = new Epetra_Vector(y);
+    } 
   
-  
-  Epetra_MultiVector sum_vec(y);
+  Epetra_Vector sum_vec(y);
   double sum_time;
   for (int i=0; i<order; i++) 
     {
@@ -200,7 +191,6 @@ void Explicit_TI::RK::step(const double t, const double h, const Epetra_MultiVec
       k[i]->Scale(h);
     }
 
-  
   y_new = y;
       
   for (int i=0; i<order; i++)
@@ -210,6 +200,7 @@ void Explicit_TI::RK::step(const double t, const double h, const Epetra_MultiVec
            y_new.Update(b[i],*k[i],1.0);
         }
     }
-
-
 }
+
+}  // namespace Explicit_TI
+}  // namespace Amanzi
