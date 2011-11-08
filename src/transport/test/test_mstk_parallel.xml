@@ -1,6 +1,7 @@
 <ParameterList name="Transport">
   <Parameter name="CFL" type="double" value="0.5"/>   
-  <Parameter name="discretization order" type="int" value="2"/>   
+  <Parameter name="spatial discretization order" type="int" value="2"/>   
+  <Parameter name="temporal discretization order" type="int" value="1"/>   
   <!-- debug and developers options --> 
   <Parameter name="enable internal tests" type="string" value="yes"/>   
   <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   

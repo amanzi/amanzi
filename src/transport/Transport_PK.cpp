@@ -135,8 +135,10 @@ void Transport_PK::process_parameter_list()
   // global transport parameters
   cfl = parameter_list.get<double>("CFL", 1.0);
 
-  discretization_order = parameter_list.get<int>("discretization order", 1);
-  if (discretization_order < 1 || discretization_order > 2) discretization_order = 1;
+  spatial_disc_order = parameter_list.get<int>("spatial discretization order", 1);
+  if (spatial_disc_order < 1 || spatial_disc_order > 2) spatial_disc_order = 1;
+  temporal_disc_order = parameter_list.get<int>("temporal discretization order", 1);
+  if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
   string dispersivity_name = parameter_list.get<string>("dispersivity model", "none");
   if (dispersivity_name == "isotropic") { 
@@ -244,7 +246,8 @@ void Transport_PK::print_statistics() const
     cout << "Transport PK: CFL = " << cfl << endl;
     cout << "              Total number of components = " << number_components << endl;
     cout << "              Verbosity level = " << verbosity_level << endl;
-    cout << "              method accuracy = " << discretization_order << endl;
+    cout << "              spatial discretication order = " << spatial_disc_order << endl;
+    cout << "              temporal discretication order = " << temporal_disc_order << endl;
     cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
@@ -297,7 +300,7 @@ double Transport_PK::calculate_transport_dT()
 
     dT = std::min(dT, dT_cell);
   }  
-  if (discretization_order == 2) dT /= 2;
+  if (spatial_disc_order == 2) dT /= 2;
 
 
 #ifdef HAVE_MPI
@@ -322,11 +325,13 @@ double Transport_PK::calculate_transport_dT()
 void Transport_PK::advance(double dT_MPC)
 {
   T_internal += dT_MPC;
-  if (discretization_order == 1) {  // temporary solution (lipnikov@lanl.gov)
+  if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
     advance_donor_upwind(dT_MPC);
   }
-  else if (discretization_order == 2) {
-    //advance_second_order_upwind(dT_MPC);
+  else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
+    advance_second_order_upwind(dT_MPC);
+  }
+  else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
     advance_second_order_upwind_testing(dT_MPC);
   }
 }

@@ -256,7 +256,8 @@
 
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="1"/>
-    <Parameter name="discretization order" type="int" value="1"/>
+    <Parameter name="spatial discretization order" type="int" value="1"/>
+    <Parameter name="temporal discretization order" type="int" value="1"/>
     <Parameter name="enable internal tests" type="string" value="no"/>
     <Parameter name="internal tests tolerance" type="double" value="1e-06"/>
     <Parameter name="maximal time step" type="double" value="1e+99"/>

@@ -1,6 +1,7 @@
 <ParameterList name="Transport">
   <Parameter name="CFL" type="double" value="0.5"/>   
-  <Parameter name="discretization order" type="int" value="2"/>   
+  <Parameter name="spatial discretization order" type="int" value="2"/>   
+  <Parameter name="temporal discretization order" type="int" value="1"/>   
   <Parameter name="dispersivity model" type="string" value="Bear"/>
   <Parameter name="dispersivity longitudinal" type="double" value="0.1"/>
   <Parameter name="dispersivity transverse" type="double" value="0.01"/>
