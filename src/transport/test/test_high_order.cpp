@@ -34,16 +34,16 @@ double f_cubic(double* x, double t) {
 
 
 /* **************************************************************** */
-TEST(CONVERGENCE_ANALYSIS_1ST) {
+TEST(CONVERGENCE_ANALYSIS_2ND) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "=== TEST CONVERGENCE ANALISYS 2ND ===" << endl;
+  cout << "Test: Convergence analysis, 2nd order scheme" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
-  for (int nx=10; nx<41; nx*=2 ) {
+  for (int nx=10; nx<81; nx*=2 ) {
     RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 2, 2, comm)); 
 
     // create a MPC and Transport states with one component
@@ -93,7 +93,7 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
       *tcc = *tcc_next;
       iter++;
     }
-    for (int k=0; k<nx; k++) cout << (*tcc_next)[0][k] << endl;
+    //for (int k=0; k<nx; k++) cout << (*tcc_next)[0][k] << endl;
 
     double L1, L2;  // L1 and L2 errors
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);

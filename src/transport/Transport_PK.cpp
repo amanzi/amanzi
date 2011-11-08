@@ -326,8 +326,8 @@ void Transport_PK::advance(double dT_MPC)
     advance_donor_upwind(dT_MPC);
   }
   else if (discretization_order == 2) {
-    advance_second_order_upwind(dT_MPC);
-    //advance_second_order_upwind_testing(dT_MPC);
+    //advance_second_order_upwind(dT_MPC);
+    advance_second_order_upwind_testing(dT_MPC);
   }
 }
 
@@ -369,28 +369,6 @@ void Transport_PK::advance_second_order_upwind_testing(double dT_MPC)
 
     for (c=cmin; c<=cmax_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
 
-    // BOUNDARY CONDITIONS for ADVECTION
-    int k, n;
-    double u, tcc_flux;
- 
-    for (n=0; n<bcs.size(); n++) {  // analyze boundary sets
-      for (k=0; k<bcs[n].faces.size(); k++) {
-        f = bcs[n].faces[k];
-        c2 = (*downwind_cell_)[f]; 
-
-        if (c2 >= 0) {
-          u = fabs(darcy_flux[f]);
-
-          if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-            double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2]; 
-            tcc_flux = dT * u * bcs[n].values[i];
-            (*tcc_next)[i][c2] += tcc_flux / vol_phi_ws;
-            bcs[n].influx[i] += tcc_flux;
-          }
-        } 
-      }
-    }
-     
     /*
     // DISPERSION FLUXES
     if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {

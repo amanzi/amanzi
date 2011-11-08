@@ -35,12 +35,13 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   lifting.applyLimiter(limiter_);
 
   // ADVECTIVE FLUXES
+  int f, c1, c2;
   double u, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
   for (int f=fmin; f<=fmax; f++) {  // loop over master and slave faces
-    int c1 = (*upwind_cell_)[f]; 
-    int c2 = (*downwind_cell_)[f]; 
+    c1 = (*upwind_cell_)[f]; 
+    c2 = (*downwind_cell_)[f]; 
 
     u = fabs(darcy_flux[f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -67,6 +68,25 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c]; 
     f_component[c] /= vol_phi_ws; 
   }
+
+  // BOUNDARY CONDITIONS for ADVECTION
+  for (int n=0; n<bcs.size(); n++) {  // analyze boundary sets
+    for (int k=0; k<bcs[n].faces.size(); k++) {
+      f = bcs[n].faces[k];
+      c2 = (*downwind_cell_)[f]; 
+
+      if (c2 >= 0) {
+        u = fabs(darcy_flux[f]);
+
+        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
+          double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2]; 
+          tcc_flux = u * bcs[n].values[current_component_];
+          f_component[c2] += tcc_flux / vol_phi_ws;
+          bcs[n].influx[current_component_] += tcc_flux;
+        }
+      } 
+    }
+  }   
 }
 
 }  // namespace AmanziTransport
