@@ -24,7 +24,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_PK.hpp"
 
 
-Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t) { 
+Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t ) { 
   return Amanzi::AmanziGeometry::Point(1.0, 1.0);
 }
 
@@ -37,7 +37,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: Advance on a 2D square mesh" << endl;
+  std::cout << "=== TEST ADVANCE in 2D ===" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -46,7 +46,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
 
   /* create a MPC state with three component */
   int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_ss.exo", MPI_COMM_WORLD, 2));
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_50x50_ss.exo", MPI_COMM_WORLD, 2));
 
   State mpc_state(num_components, mesh);
 
@@ -76,7 +76,8 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
   iter = 0;
-  while (T < 1.0) {
+  bool flag = true;
+  while (T < 0.3) {
     double dT = TPK.calculate_transport_dT();
     TPK.advance(dT);
     T += dT;
@@ -91,9 +92,8 @@ cout << "Test: Advance on a 2D square mesh" << endl;
       printf("\n");
     }
 
-    //for( int k=0; k<8; k++ )
-    //  CHECK( ((*tcc_next)[0][k+1] - (*tcc_next)[0][k]) > -1e-15 );
-    if (iter == 15) {
+    if (T > 0.2 && flag) {
+      flag = false;
       GMV::open_data_file(*mesh, (std::string)"transport.gmv");
       GMV::start_data();
       GMV::write_cell_data(*tcc_next, 0, "component0");
@@ -104,11 +104,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
 
     *tcc = *tcc_next;
   }
-
-  /* check that the final state is constant */
-  for (int k=0; k<10; k++) 
-    CHECK_CLOSE(1.0, (*tcc_next)[0][k], 1e-6);
-
+ 
   delete comm;
 }
 

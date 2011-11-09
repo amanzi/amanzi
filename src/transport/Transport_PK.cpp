@@ -451,7 +451,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
                                    limiter_);
     lifting.applyLimiter(limiter_);
 
-    // ADVECTION FLUXES
+    // ADVECTIVE FLUXES
     for (f=fmin; f<=fmax; f++) {  // loop over master and slave faces
       c1 = (*upwind_cell_)[f]; 
       c2 = (*downwind_cell_)[f]; 
@@ -496,7 +496,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
       }
     }
     
-    // DISPERSION FLUXES
+    // DISPERSIVE FLUXES
     if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
       calculate_dispersion_tensor();
 

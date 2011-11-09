@@ -19,8 +19,8 @@
       <Parameter name="Side set ID" type="int" value="3"/>
       <Parameter name="Type" type="string" value="Constant"/>
       <Parameter name="Component 0" type="double" value="1.0"/>
-      <Parameter name="Component 1" type="double" value="1.0"/>
-      <Parameter name="Component 2" type="double" value="1.0"/>
+      <Parameter name="Component 1" type="double" value="0.5"/>
+      <Parameter name="Component 2" type="double" value="0.1"/>
     </ParameterList>  
   </ParameterList>
 </ParameterList>
