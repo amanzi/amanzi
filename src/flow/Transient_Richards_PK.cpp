@@ -7,14 +7,17 @@ namespace Amanzi
 
 Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), richards_plist(plist)
 {
-  // Create the flow boundary conditions object.
-  Teuchos::ParameterList bc_plist = richards_plist.sublist("Flow BC");
-  bc = Teuchos::rcp<FlowBC>(new FlowBC(bc_plist, FS->mesh()));
-
+  // Add some parameters to the Richards problem constructor parameter list.
+  Teuchos::ParameterList &rp_list = plist.sublist("Richards Problem");
+  rp_list.set("fluid density", FS->fluid_density());
+  rp_list.set("fluid viscosity", FS->fluid_viscosity());
+  const double *gravity = FS->gravity();
+  //TODO: assuming gravity[0] = gravity[1] = 0 -- needs to be reconciled somehow
+  rp_list.set("gravity", -gravity[2]);
+  
   // Create the Richards flow problem.
   Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
-
-  problem = new RichardsProblem(FS->mesh(), rlist, bc);
+  problem = new RichardsProblem(FS->mesh(), rlist);
 
   ss_t0 = rlist.get<double>("Steady state calculation initial time");
   ss_t1 = rlist.get<double>("Steady state calculation final time");
@@ -54,10 +57,7 @@ Transient_Richards_PK::~Transient_Richards_PK()
 int Transient_Richards_PK::advance_to_steady_state()
 {
   // Set problem parameters.
-  problem->SetFluidDensity(FS->fluid_density());
-  problem->SetFluidViscosity(FS->fluid_viscosity());
   problem->SetPermeability(FS->permeability());
-  problem->SetGravity(FS->gravity());
   problem->SetFlowState(FS);
 
   double t0 = ss_t0;
@@ -114,10 +114,7 @@ int Transient_Richards_PK::advance_to_steady_state()
 int Transient_Richards_PK::advance_transient() 
 {
   // Set problem parameters.
-  problem->SetFluidDensity(FS->fluid_density());
-  problem->SetFluidViscosity(FS->fluid_viscosity());
   problem->SetPermeability(FS->permeability());
-  problem->SetGravity(FS->gravity());
   problem->SetFlowState(FS);
 
   //time_stepper->bdf2_step(h,0.0,*solution,hnext);

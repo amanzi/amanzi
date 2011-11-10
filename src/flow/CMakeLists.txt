@@ -27,6 +27,8 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -45,14 +47,14 @@ add_definitions("-DUSE_MPI")
 #  Richards_PK.cpp RichardsProblem.cpp RichardsNoxInterface.cpp
 #  NKA.cpp NKADirFactory.cpp NKADirection.cpp
 #  RichardsModelEvaluator.cpp)
-file(GLOB flow_source_files "*.cpp")
+file(GLOB flow_source_files "*.cpp" "*.cc")
 add_library(flow ${flow_source_files})
 add_install_library(flow)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
-target_link_libraries(flow ${flow_tpl_libs} time_integration)
+target_link_libraries(flow functions mesh_functions ${flow_tpl_libs} time_integration)
 
 #
 # Install Targets
@@ -67,6 +69,7 @@ if (BUILD_TESTS)
 
     # Add the STK mesh source directory
     include_directories(${STK_SOURCE_DIR})
+    include_directories(${MESH_FACTORY_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
     if (NOT (${FLOW_SOURCE_DIR} EQUAL ${FLOW_BINARY_DIR}) )
@@ -87,7 +90,11 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_parallel_4pe test_flow NPROCS 4 KIND unit)
     add_amanzi_test(flow_parallel_8pe test_flow NPROCS 8 KIND unit)
  
-
+    # Test: flow-bc-factory
+    add_executable(flow-bc-factory-test test/flow-bc-factory-test.cc)
+    target_link_libraries(flow-bc-factory-test flow mesh_factory mesh error_handling ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow-bc-factory flow-bc-factory-test KIND unit)
+    
 endif()
 
 option(ENABLE_FLOW_EXAMPLES "Build flow examples" OFF)
