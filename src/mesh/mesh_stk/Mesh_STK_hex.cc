@@ -42,7 +42,7 @@ Mesh_STK::generate_(Data::HexMeshGenerator& g)
   stk::ParallelMachine pm(communicator_->GetMpiComm());
   STK::Mesh_STK_factory mf(pm, 1000);
   Data::Fields nofields;
-  mesh_.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
+  mesh_.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, Mesh::geometric_model()));
   build_maps_();
   redistribute();
 }
