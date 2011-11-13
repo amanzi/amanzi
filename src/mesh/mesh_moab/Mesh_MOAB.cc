@@ -1365,11 +1365,23 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
 }
   
 
+void Mesh_MOAB::get_set_entities (const Set_Name set_name, 
+                                  const Entity_kind kind, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *setents) const {
+}
 
-void Mesh_MOAB::get_set_entities (Set_ID set_id, 
-				       Entity_kind kind, 
-				       Parallel_type ptype,
-				       Entity_ID_List *setents) const {
+void Mesh_MOAB::get_set_entities (const char *set_name, 
+                                  const Entity_kind kind, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *setents) const {
+}
+
+
+void Mesh_MOAB::get_set_entities (const Set_ID set_id, 
+                                  const Entity_kind kind, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *setents) const {
 
   int result;
   const void *valarr[1] = {&set_id};
@@ -1511,9 +1523,19 @@ void Mesh_MOAB::get_set_entities (Set_ID set_id,
     
 }
 
-unsigned int Mesh_MOAB::get_set_size(Set_ID set_id, 
-					  Entity_kind kind, 
-					  Parallel_type ptype) const {   
+unsigned int Mesh_MOAB::get_set_size(const Set_Name set_name, 
+                                     const Entity_kind kind, 
+                                     const Parallel_type ptype) const {   
+}
+  
+unsigned int Mesh_MOAB::get_set_size(const char *set_name, 
+                                     const Entity_kind kind, 
+                                     const Parallel_type ptype) const {   
+}  
+
+unsigned int Mesh_MOAB::get_set_size(const Set_ID set_id, 
+                                     const Entity_kind kind, 
+                                     const Parallel_type ptype) const {   
   
   const int loc_setid = set_id;
   const void* valarr[1];
