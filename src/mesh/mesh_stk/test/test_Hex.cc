@@ -74,7 +74,7 @@ SUITE (HexMesh)
     Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(pm, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
     Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
-        mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
+      mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
 
     CHECK_EQUAL (mesh->rank_id (), me);
         
@@ -153,7 +153,7 @@ SUITE (HexMesh)
     Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(pm, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
     Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
-        mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
+      mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
 
     Amanzi::AmanziMesh::STK::Entity_vector e;
 
