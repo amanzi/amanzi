@@ -365,26 +365,6 @@ public:
   //----------------------------
   //
     
-  // Number of sets containing entities of type 'kind' in mesh
-    
-  unsigned int num_sets(const Entity_kind kind) const;
-    
-    
-  // Ids of sets containing entities of 'kind'
-
-  void get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const;
-
-
-  // Is this is a valid ID of a set containing entities of 'kind'
-
-  bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
-
-
-  // Is this is a valid name of a set containing entities of 'kind'
-
-  bool valid_set_name (const Set_Name setname, const Entity_kind kind) const;
-
-
   // Get number of entities of type 'category' in set
 
   unsigned int get_set_size (const Set_ID setid, 
