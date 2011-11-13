@@ -89,5 +89,18 @@ BoxRegion::inside(const Point& p) const
   return result;
 }
 
+// -------------------------------------------------------------
+// BoxRegion::is_degenerate
+// -------------------------------------------------------------
+bool
+BoxRegion::is_degenerate() const
+{
+  for (int i = 0; i < p0_.dim(); ++i) {
+    if (p0_[i] == p1_[i]) return true;
+  }
+
+  return false;
+}
+
 } // namespace AmanziGeometry
 } // namespace Amanzi

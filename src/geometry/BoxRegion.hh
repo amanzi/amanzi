@@ -65,6 +65,9 @@ public:
     hi_corner->set(p1_);
   }
 
+  // Is the box degenerate - zero length in one direction?
+  bool is_degenerate() const;
+
 protected:
   
   const Point p0_;              /**< one corner of the region  */
