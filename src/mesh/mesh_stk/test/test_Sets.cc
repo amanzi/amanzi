@@ -60,13 +60,13 @@ SUITE (STK_SETS)
   unsigned int fsetsize, expfsetsizes[7] = {9,9,3,3,3,9,9};
 
 
-  unsigned int expfsetfaces[7][9] = {{4,19,9,32,23,14,36,27,40},
-   				      {0,6,42,11,47,75,51,80,84},
-   				      {30,35,39,0,0,0,0,0,0},
-   				      {66,70,73,0,0,0,0,0,0},
-   				      {99,103,106,0,0,0,0,0,0},
-				      {4,9,14,19,23,27,32,36,40},
-				      {0,6,11,42,47,51,75,80,84}};
+  unsigned int expfsetfaces[7][9] = {{4,9,14,19,23,27,32,36,40},
+				     {0,6,11,42,47,51,75,80,84},
+				     {30,35,39,0,0,0,0,0,0},
+				     {66,70,73,0,0,0,0,0,0},
+				     {99,103,106,0,0,0,0,0,0},
+				     {4,9,14,19,23,27,32,36,40},
+				     {0,6,11,42,47,51,75,80,84}};
 
 			   
 
@@ -283,17 +283,17 @@ SUITE (STK_SETS)
 				   "Vertical Box"};
     unsigned int csetsize, expcsetsizes[5] = {9,18,9};
   
-    unsigned int expcsetcells[3][18] = {{0,3,6,1,4,7,2,5,8},
-					{0,9,3,12,6,15,1,10,4,13,7,16,2,11,5,14,8,17},
-					{1,10,19,4,13,22,7,16,25}};
+    unsigned int expcsetcells[3][18] = {{0,1,2,3,4,5,6,7,8},
+					{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
+					{1,4,7,10,13,16,19,22,25}};
 
     std::string expfsetnames[2] = {"ZLO FACE Plane", "YLO FACE Box"};
 
     unsigned int fsetsize, expfsetsizes[2] = {9,3};
 
 
-    unsigned int expfsetfaces[6][9] = {{0,3,6,1,4,7,2,5,8},
-				       {60,61,62,-1,-1,-1,-1,-1,-1}};
+    unsigned int expfsetfaces[6][9] = {{3,8,13,19,23,27,32,36,40},
+				       {78,82,86,-1,-1,-1,-1,-1,-1}};
 
 
     std::string infilename = "test/hex_3x3x3.xml";
@@ -394,6 +394,7 @@ SUITE (STK_SETS)
 	    mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents);
 	  
 	    CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
+
 	  }
 	else 
 	  {
