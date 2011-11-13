@@ -43,14 +43,15 @@ Mesh_STK::read_exodus_(const std::string& fname)
   try {
     if (nproc == 1) {
       meshdata.reset(Exodus::read_exodus_file(fname.c_str()));
-      mesh_.reset(mf.build_mesh(*meshdata, nofields));
+      mesh_.reset(mf.build_mesh(*meshdata, nofields, Mesh::geometric_model()));
     } else {
       Exodus::Parallel_Exodus_file thefile(*communicator_, fname);
       meshdata = thefile.read_mesh();
       mesh_.reset(mf.build_mesh(*meshdata, 
                                 *(thefile.cellmap()), 
                                 *(thefile.vertexmap()), 
-                                nofields));
+                                nofields,
+				Mesh::geometric_model()));
     }
   } catch (const std::exception& e) {
     std::cerr << communicator_->MyPID() << ": error: " << e.what() << std::endl;
