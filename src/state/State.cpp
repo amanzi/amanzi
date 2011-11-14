@@ -74,7 +74,7 @@ void State::initialize_from_parameter_list()
 
     Teuchos::ParameterList sublist = parameter_list.sublist(pname.str());
 
-    int mesh_block_ID = sublist.get<int>("Mesh block ID");
+    std::string region = sublist.get<std::string>("Region");
 
     // if (!mesh_maps->valid_set_id(mesh_block_ID,Amanzi::AmanziMesh::CELL)) {
     //   // there is an inconsistency in the xml input file, report and die
@@ -100,13 +100,13 @@ void State::initialize_from_parameter_list()
 	
 
     // initialize the arrays with some constants from the input file
-    set_porosity(sublist.get<double>("Constant porosity"),mesh_block_ID);
-    set_permeability(sublist.get<double>("Constant permeability"),mesh_block_ID);
+    set_porosity(sublist.get<double>("Constant porosity"),region);
+    set_permeability(sublist.get<double>("Constant permeability"),region);
     
     u[0] = sublist.get<double>("Constant Darcy flux x",0.0);
     u[1] = sublist.get<double>("Constant Darcy flux y",0.0);
     u[2] = sublist.get<double>("Constant Darcy flux z",0.0);
-    set_darcy_flux(u, mesh_block_ID);
+    set_darcy_flux(u, region);
     
     // read the component concentrations from the xml file
     // and initialize them in mesh block mesh_block_ID
@@ -117,7 +117,7 @@ void State::initialize_from_parameter_list()
 
       tcc_const[nc] = sublist.get<double>(s.str());
     }
-    set_total_component_concentration(tcc_const, mesh_block_ID);
+    set_total_component_concentration(tcc_const, region);
   }
 }
 
@@ -192,8 +192,36 @@ void State::advance_time(double dT)
 }
 
 
+void State::set_cell_value_in_region(double value, Epetra_Vector &v, 
+				     std::string region)
+{
+  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
+    throw std::exception();
+  }
+  
+  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
+							 Amanzi::AmanziMesh::CELL,
+							 Amanzi::AmanziMesh::OWNED);
+
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  
+  //mesh_maps->get_set(mesh_block_id, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+  //cell_ids.begin(),cell_ids.end());
+  
+  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+			      &cell_ids);
+  
+
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); 
+       c != cell_ids.end();  c++) {
+    v[*c] = value;  
+  } 
+
+}
+
+
 void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v, 
-				    int mesh_block_id)
+					int mesh_block_id)
 {
   if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
     throw std::exception();
@@ -214,6 +242,7 @@ void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
   } 
 
 }
+
 
 void State::set_darcy_flux( const double* u, const int mesh_block_id )
 {
@@ -260,6 +289,49 @@ void State::set_darcy_flux( const double* u, const int mesh_block_id )
   }
 }
 
+void State::set_darcy_flux( const double* u, const std::string region )
+{
+  int  i, f;
+  double x[4][3], normal[3];
+
+  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
+    throw std::exception();
+  }
+  
+  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
+							 Amanzi::AmanziMesh::CELL,
+							 Amanzi::AmanziMesh::OWNED);
+  
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  
+
+
+  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+			    &cell_ids);
+
+  
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); 
+       c != cell_ids.end();  c++) {
+    
+    std::vector<unsigned int> cface(6);
+    mesh_maps->cell_to_faces(*c, cface.begin(), cface.end());
+
+    for (std::vector<unsigned int>::iterator f = cface.begin();
+	 f != cface.end(); f++) {
+      
+      if (mesh_maps->face_map(false).MyLID(*f) ) {
+	
+	mesh_maps->face_to_coordinates( *f, (double*) x, (double*) x+12 );
+	
+	cell_geometry::quad_face_normal(x[0], x[1], x[2], x[3], normal);
+	
+	(*darcy_flux)[*f] = u[0] * normal[0] + u[1] * normal[1] + u[2] * normal[2];
+      }
+      
+    }
+  }
+}
+
 
 void State::set_water_density( const double wd )
 {
@@ -284,6 +356,10 @@ void State::set_porosity( const double phi, const int mesh_block_id )
   set_cell_value_in_mesh_block(phi,*porosity,mesh_block_id);
 }
 
+void State::set_porosity( const double phi, const std::string region )
+{
+  set_cell_value_in_region(phi,*porosity,region);
+}
 
 void State::set_zero_total_component_concentration()
 {
@@ -295,6 +371,13 @@ void State::set_total_component_concentration( const double* conc, const int mes
 {
   for (int nc=0; nc<number_of_components; nc++) {
     set_cell_value_in_mesh_block(conc[nc], *(*total_component_concentration)(nc),mesh_block_id);
+  }
+}
+
+void State::set_total_component_concentration( const double* conc, const std::string region )
+{
+  for (int nc=0; nc<number_of_components; nc++) {
+    set_cell_value_in_region(conc[nc], *(*total_component_concentration)(nc),region);
   }
 }
 
@@ -310,6 +393,10 @@ void State::set_permeability( const double kappa, const int mesh_block_id)
   set_cell_value_in_mesh_block(kappa,*permeability,mesh_block_id);
 }
 
+void State::set_permeability( const double kappa, const std::string region)
+{
+  set_cell_value_in_region(kappa,*permeability,region);
+}
 
 void State::set_viscosity(const double mu)
 {
