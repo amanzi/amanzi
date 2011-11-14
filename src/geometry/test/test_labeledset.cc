@@ -26,7 +26,7 @@ TEST(LABELEDSET_REGION)
 
   // read the parameter list from input file
 
-  std::string infilename = "labeledsetregion.xml";
+  std::string infilename = "test/labeledsetregion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());

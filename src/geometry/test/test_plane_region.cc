@@ -25,7 +25,7 @@ TEST(PLANE_REGION)
 
   // read the parameter list from input file
 
-  std::string infilename = "planeregion.xml";
+  std::string infilename = "test/planeregion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());

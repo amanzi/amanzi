@@ -19,7 +19,7 @@ TEST(BOX_REGION_2D)
 
   // read the parameter list from input file
 
-  std::string infilename = "boxregion_2D.xml";
+  std::string infilename = "test/boxregion_2D.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
@@ -95,7 +95,7 @@ TEST(BOX_REGION_3D)
 
   // read the parameter list from input file
 
-  std::string infilename = "boxregion_3D.xml";
+  std::string infilename = "test/boxregion_3D.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());

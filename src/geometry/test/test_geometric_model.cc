@@ -29,7 +29,7 @@ TEST(GEOMETRIC_MODEL)
 
   // read the parameter list from input file
 
-  std::string infilename = "manyregions.xml";
+  std::string infilename = "test/manyregions.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
