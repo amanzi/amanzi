@@ -54,7 +54,7 @@ class Point {
   
   /* operators */
   Point& operator=(const double& val) { for( int i=0; i<d; i++ ) xyz[i] = val;  return *this; }
-  Point& operator=(const Point& p)    { for( int i=0; i<d; i++ ) xyz[i] = p[i]; return *this; }         
+  Point& operator=(const Point& p)    { init(p.dim()); for( int i=0; i<d; i++ ) xyz[i] = p[i]; return *this; }         
   
   Point& operator+=(const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] += p[i]; return *this; }
   Point& operator-=(const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] -= p[i]; return *this; }
