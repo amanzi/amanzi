@@ -15,7 +15,7 @@
 #include "MeshAudit.hh"
 
 
-double f_step( double* x, double t ) { 
+double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) { 
   if ( x[0] <= t ) return 1;
   return 0;
 }

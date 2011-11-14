@@ -148,21 +148,29 @@ void Transport_State::analytic_darcy_flux(const AmanziGeometry::Point& u)
     (*darcy_flux)[f] = u * normal;
   }
 }
+void Transport_State::analytic_darcy_flux(
+    AmanziGeometry::Point f_vel(const AmanziGeometry::Point&, double), double t)
+{
+  const Epetra_BlockMap& fmap = (*darcy_flux).Map();
+
+  for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) { 
+    const AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
+    const AmanziGeometry::Point& fc = mesh_maps->face_centroid(f);
+    (*darcy_flux)[f] = f_vel(fc, t) * normal;
+  }
+}
 
 
 /* *******************************************************************
  * DEBUG: create analytical concentration C = f(x, t)       
  ****************************************************************** */
-void Transport_State::analytic_total_component_concentration(double f(double*, double), double t)
+void Transport_State::analytic_total_component_concentration(double f(const AmanziGeometry::Point&, double), double t)
 {
-  double center[3];
   const Epetra_BlockMap& cmap = (*total_component_concentration).Map();
 
   for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
     const AmanziGeometry::Point& xc = mesh_maps->cell_centroid(c);    
-
-    for (int i=0; i<xc.dim(); i++) center[i] = xc[i];
-    (*total_component_concentration)[0][c] = f(center, t);
+    (*total_component_concentration)[0][c] = f(xc, t);
   }
 }
 void Transport_State::analytic_total_component_concentration(double tcc)
@@ -177,21 +185,16 @@ void Transport_State::analytic_total_component_concentration(double tcc)
 
 /* **************************************************************** */
 void Transport_State::error_total_component_concentration(
-    double f(double*, double), double t, double* L1, double* L2)
+    double f(const AmanziGeometry::Point&, double), double t, double* L1, double* L2)
 {
   int i, j, c;
-  double d, center[3];
+  double d;
   const Epetra_BlockMap& cmap = (*total_component_concentration).Map();
 
   *L1 = *L2 = 0.0;
   for (c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
-    const AmanziGeometry::Point xc = mesh_maps->cell_centroid(c);
-
-    center[0] = xc.x();  // should re-write local functions
-    center[1] = xc.y();
-    center[2] = xc.z();
-
-    d = (*total_component_concentration)[0][c] - f(center, t); 
+    const AmanziGeometry::Point& xc = mesh_maps->cell_centroid(c);
+    d = (*total_component_concentration)[0][c] - f(xc, t); 
 
     double volume = mesh_maps->cell_volume(c);
     *L1 += fabs(d) * volume;

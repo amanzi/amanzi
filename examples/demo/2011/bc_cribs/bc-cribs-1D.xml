@@ -296,43 +296,68 @@ p = p_atmospheric - 9.8 * rho * (z - height)
           <Parameter name="coarse: damping factor" type="double" value="1.0"/>	   
 	</ParameterList>
       </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="Flow BC">
-      <Parameter name="number of BCs" type="int" value="2"/>
-
-      <!-- 
-	 the following is a special boundary condition that we use to 
-	 drain a domain...
-	 Use the steady state... paramters above to initialize the pressure
-	 so that the entire domain is wet. 
-	 Then calculate the hydrostatic pressure at the bottom of the domain and
-	 set Initital BC to that value.
-	 Set BC value to the desired dirichlet pressure at steady state (eg. atmospheric).
-	 Then define the time span over which the domain gets drained:
-	 Initial Time to Final Time.
-	-->
       
-      <!-- Bottom BC -->
-      <ParameterList name="BC00">
-        <Parameter name="Type" type="string" value="Time Dependent Pressure Constant"/>
-	<!-- 1112016.18144 equals 101325 + 9.81 * 998.32 * 103.2 -->
-        <Parameter name="Initial BC value" type="double" value="1112016.18144" />
-        <Parameter name="BC value" type="double" value="101325.0" />
-        <Parameter name="Initial Time" type="double" value="0.0" />
-        <Parameter name="Final Time" type="double" value="1e10" />
-        <Parameter name="Side set ID" type="int" value="2" />
-      </ParameterList>  
-      
-      <!-- Top BC -->
-      <ParameterList name="BC01">
-	<Parameter name="Type" type="string" value="Darcy Constant"/>
-	<!-- 3.5 mm/yr equals 1.10984271943176e-10 m/s -->
-	<Parameter name="BC value" type="double" value="-1.10984271943176e-10" />
-	<Parameter name="Side set ID" type="int" value="1" />
+      <ParameterList name="boundary conditions">
+        <!-- All the pressure Dirichlet conditions go in this list except for
+             static pressure head conditions which are treated specially -->
+        <ParameterList name="pressure">
+          <ParameterList name="bottom">
+            <Parameter name="regions" type="Array int" value="{2}" />
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-smooth-step">
+                <!-- Drop the water table from z=103.2 (top) to z=0 (bottom)
+                     over the time interval [0, 1e10].  The initial pressure is
+	             p0 = 1112016.18144 = 101325 + 9.81 * 998.32 * 103.2 -->
+                <Parameter name="x0" type="double" value="0.0" />
+                <Parameter name="x1" type="double" value="1.0e10" />
+                <Parameter name="y0" type="double" value="1112016.18144" />
+                <Parameter name="y1" type="double" value="101325.0" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <!-- All the static head pressure conditions go in this list -->
+        <ParameterList name="static head">
+          <!-- This specification is equivalent to the "bottom" specification
+               given in the "pressure" list and is probably preferable.
+          <ParameterList name="bottom">
+            <Parameter name="regions" type="Array int" value="{2}" />
+            <ParameterList name="water table elevation">
+              <ParameterList name="function-smooth-step">
+                <Parameter name="x0" type="double" value="0.0" />
+                <Parameter name="x1" type="double" value="1.0e10" />
+                <Parameter name="y0" type="double" value="103.2" />
+                <Parameter name="y1" type="double" value="0.0" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList> -->
+        </ParameterList>
+        <!-- All the mass flux conditions go in this list -->
+        <ParameterList name="mass flux">
+          <ParameterList name="top surface">
+            <Parameter name="regions" type="Array int" value="{1}" />
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <!-- 3.5mm/yr = 1.109842719e-10 m/s = 0.0035/3.1536e7 -->
+                <!-- mass influx = 998.32 * 1.109842719e-10 kg/s-m2   -->
+                <Parameter name="value" type="double" value="-1.107978184e-7" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <!-- Eventually we will require explicit BC on entire boundary, but
+               for now "no flow" is the default.
+          <ParameterList name="vertical sides">
+            <Parameter name="regions" type="Array int" value="{...}" />
+            <ParameterList name="outward mass flux">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0" />
+              </ParameterList>
+            </ParameterList>
+          </ParameterList> -->
+        </ParameterList>
       </ParameterList>
-     </ParameterList>
-
+      
+    </ParameterList>
 
   </ParameterList>
 

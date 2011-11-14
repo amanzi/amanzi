@@ -94,11 +94,11 @@ void Reconstruction::calculateCellGradient()
       field_local_max_[c] = std::max(field_local_max_[c], value);
     }
     //printLeastSquareSystem(matrix, rhs);
-
+ 
     int info;
     lapack.POSV('U', dim, 1, matrix.values(), dim, rhs, dim, &info); 
     if (info) {  // reduce reconstruction order
-      rhs[0] = rhs[1] = rhs[2] = 0.0;
+      for (int i=0; i<dim; i++) rhs[i] = 0.0; 
     }
 
     //rhs[0] = rhs[1] = rhs[2] = 0.0;  // TESTING COMPATABILITY 
@@ -122,7 +122,7 @@ void Reconstruction::calculateCellGradient()
 ****************************************************************** */
 void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 {
-  for (int c=cmin; c<cmax; c++) { 
+  for (int c=cmin; c<=cmax; c++) { 
     for (int i=0; i<dim; i++) (*gradient_)[i][c] *= (*limiter)[c];
   }
 }
@@ -131,7 +131,7 @@ void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 /* ******************************************************************
  * calculates a value at point p using gradinet and centroid
 ****************************************************************** */
-double Reconstruction::getValue(const int cell, const Amanzi::AmanziGeometry::Point& p)
+double Reconstruction::getValue(const int cell, const AmanziGeometry::Point& p)
 {
   AmanziGeometry::Point xc(dim);
   xc = p;
@@ -139,6 +139,22 @@ double Reconstruction::getValue(const int cell, const Amanzi::AmanziGeometry::Po
 
   double value = (*scalar_field_)[cell];
   for (int i=0; i<dim; i++) value += (*gradient_)[i][cell] * xc[i];
+
+  return value;
+}
+
+
+/* ******************************************************************
+ * calculates a value at point p using gradinet and centroid
+****************************************************************** */
+double Reconstruction::getValue(
+    AmanziGeometry::Point& gradient, const int cell, const AmanziGeometry::Point& p)
+{
+  AmanziGeometry::Point xc(dim);
+  xc = p;
+  xc -= mesh_->cell_centroid(cell); 
+
+  double value = (*scalar_field_)[cell] + (gradient * xc);
 
   return value;
 }

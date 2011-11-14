@@ -1,8 +1,12 @@
 #include "Epetra_IntVector.h"
 
+#include <algorithm>
+
 #include "RichardsProblem.hpp"
+#include "boundary-function.hh"
 #include "vanGenuchtenModel.hpp"
 #include "Mesh.hh"
+#include "flow-bc-factory.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
@@ -12,8 +16,7 @@ namespace Amanzi
 {
 
 RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
-			   Teuchos::ParameterList &list,
-			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
+			   Teuchos::ParameterList &list) : mesh_(mesh)
 {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
@@ -26,9 +29,23 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
   
   upwind_k_rel_ = list.get<bool>("Upwind relative permeability", true);
+  
+  p_atm_   = list.get<double>("Atmospheric pressure");
+  rho_ = list.get<double>("fluid density");
+  mu_ = list.get<double>("fluid viscosity");
+  gravity_ = list.get<double>("gravity");
+  gvec_[0] = 0.0; gvec_[1] = 0.0; gvec_[2] = -gravity_;
+  
+  // Create the BC objects.
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(list.sublist("boundary conditions",true));
+  FlowBCFactory bc_factory(mesh, bc_list);
+  bc_press_ = bc_factory.CreatePressure();
+  bc_head_  = bc_factory.CreateStaticHead(p_atm_, rho_, gravity_);
+  bc_flux_  = bc_factory.CreateMassFlux();
+  validate_boundary_conditions();
 
   // Create the diffusion matrix (structure only, no values)
-  D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh, bc));
+  D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh));
 
   // Create the preconditioner (structure only, no values)
   Teuchos::ParameterList diffprecon_plist = list.sublist("Diffusion Preconditioner");
@@ -38,8 +55,6 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
 
-  p_atm_ = list.get<double>("Atmospheric pressure");
-  
   Teuchos::ParameterList &vGsl = list.sublist("Water retention models");
 
   // read the water retention model sublist and create the WRM array
@@ -109,26 +124,87 @@ RichardsProblem::~RichardsProblem()
   delete precon_;
 
   delete cell_volumes;
+  delete bc_press_;
+  delete bc_head_;
+  delete bc_flux_;
+}
+
+  
+void RichardsProblem::validate_boundary_conditions() const
+{
+  // Create sets of the face indices belonging to each BC type.
+  std::set<int> press_faces, head_faces, flux_faces;
+  BoundaryFunction::Iterator bc;
+  for (bc = bc_press_->begin(); bc != bc_press_->end(); ++bc) press_faces.insert(bc->first);
+  for (bc = bc_head_->begin();  bc != bc_head_->end();  ++bc) head_faces.insert(bc->first);
+  for (bc = bc_flux_->begin();  bc != bc_flux_->end();  ++bc) flux_faces.insert(bc->first);
+  
+  std::set<int> overlap;
+  std::set<int>::iterator overlap_end;
+  int local_overlap, global_overlap;
+  
+  // Check for overlap between pressure and static head BC.
+  std::set_intersection(press_faces.begin(), press_faces.end(),
+                         head_faces.begin(),  head_faces.end(),
+                        std::inserter(overlap, overlap.end()));
+  local_overlap = overlap.size();
+  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
+  if (global_overlap != 0) {
+    Errors::Message m;
+    std::stringstream s;
+    s << global_overlap;
+    m << "RichardsProblem: \"static head\" BC overlap \"dirichlet\" BC on "
+      << s.str().c_str() << " faces";
+    Exceptions::amanzi_throw(m);
+  }
+  
+  // Check for overlap between pressure and flux BC.
+  overlap.clear();
+  std::set_intersection(press_faces.begin(), press_faces.end(),
+                         flux_faces.begin(),  flux_faces.end(),
+                        std::inserter(overlap, overlap.end()));
+  local_overlap = overlap.size();
+  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
+  if (global_overlap != 0) {
+    Errors::Message m;
+    std::stringstream s;
+    s << global_overlap;
+    m << "RichardsProblem: \"flux\" BC overlap \"dirichlet\" BC on "
+      << s.str().c_str() << " faces";
+    Exceptions::amanzi_throw(m);
+  }
+  
+  // Check for overlap between static head and flux BC.
+  overlap.clear();
+  std::set_intersection(head_faces.begin(), head_faces.end(),
+                        flux_faces.begin(), flux_faces.end(),
+                        std::inserter(overlap, overlap.end()));
+  local_overlap = overlap.size();
+  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
+  if (global_overlap != 0) {
+    Errors::Message m;
+    std::stringstream s;
+    s << global_overlap;
+    m << "RichardsProblem: \"flux\" BC overlap \"static head\" BC on "
+      << s.str().c_str() << " faces";
+    Exceptions::amanzi_throw(m);
+  }
+  
+  //TODO: Verify that a BC has been applied to every boundary face.
+  //      Right now faces without BC are considered no-mass-flux.
 }
 
 
-DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
+DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh) const
 {
   // Generate the list of all Dirichlet-type faces.
-  // The provided lists should include all used BC faces.
+  // The provided list should include USED BC faces.
   std::vector<int> dir_faces;
-  for (int j = 0; j < bc->NumBC(); ++j) {
-    FlowBC::bc_spec& BC = (*bc)[j];
-    switch (BC.Type) {
-    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
-    case FlowBC::PRESSURE_CONSTANT:
-    case FlowBC::STATIC_HEAD:
-      dir_faces.reserve(dir_faces.size() + BC.Faces.size());
-      for (int i = 0; i < BC.Faces.size(); ++i)
-	dir_faces.push_back(BC.Faces[i]);
-      break;
-    }
-  }
+  for (BoundaryFunction::Iterator i = bc_press_->begin(); i != bc_press_->end(); ++i)
+    dir_faces.push_back(i->first);
+  for (BoundaryFunction::Iterator i = bc_head_->begin();  i != bc_head_->end();  ++i)
+    dir_faces.push_back(i->first);
+  
   return new DiffusionMatrix(mesh, dir_faces);
 }
 
@@ -145,26 +221,6 @@ void RichardsProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<Mim
     mesh.cell_to_coordinates((unsigned int) j, xBegin, xEnd);
     MD[j].update(x);
   }
-}
-
-
-void RichardsProblem::SetFluidDensity(double rho)
-{
-  /// should verify rho > 0
-  rho_ = rho;
-}
-
-
-void RichardsProblem::SetFluidViscosity(double mu)
-{
-  /// should verify mu > 0
-  mu_ = mu;
-}
-
-
-void RichardsProblem::SetGravity(const double g[3])
-{
-  for (int i = 0; i < 3; ++i) g_[i] = g[i];
 }
 
 
@@ -379,56 +435,21 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   Epetra_Vector Pface(FaceMap(true));
   Pface.Import(Pface_own, *face_importer_, Insert);
 
-  // APPLY INITIAL BC FIXUPS TO PFACE //////////////////////////////////////////
-  
-  for (int j = 0; j < (*bc_).NumBC(); ++j) {
-    FlowBC::bc_spec& BC = (*bc_)[j];
-    switch (BC.Type) {
-    case FlowBC::PRESSURE_CONSTANT:
-      for (int i = 0; i < BC.Faces.size(); ++i) {
-	int n = BC.Faces[i];
-	BC.Aux[i] = Pface[n] - BC.Value;
-	Pface[n] = BC.Value;
-      }
-      break;
-      // WARNING: THIS IS A ONE-OFF HACK.
-      // It is assumed that g is aligned with z.
-      // The BC value is used to set the height (for the entire
-      // set of BC faces) of zero pressure.
-    case FlowBC::STATIC_HEAD:
-      for (int i = 0; i < BC.Faces.size(); ++i) {
-	int n = BC.Faces[i];
-	double x[3];
-	face_centroid_(n, x);
-	double p = rho_ * g_[2] * ( x[2]  - BC.Value);
-	BC.Aux[i] = Pface[n] - p - p_atm_;
-	Pface[n] = p + p_atm_;
-      }
-      break;
-      
-    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
-      for (int i = 0; i < BC.Faces.size(); ++i) {
-	int n = BC.Faces[i];
-
-	double bcvalue;
-	if (time < BC.InitialTime) { bcvalue = BC.InitialValue; }
-	if (time >= BC.InitialTime && time <= BC.FinalTime) {
-	  double step = BC.Value - BC.InitialValue;
-	  double t = (time - BC.InitialTime)/(BC.FinalTime - BC.InitialTime);
-
-	  bcvalue = BC.InitialValue + step* t*t*(3.0 - 2.0*t);
-	  // std::cout << t << " " << bcvalue << std::endl;
-	}
-	if (time > BC.FinalTime) { bcvalue = BC.Value; }
-	 	
-	BC.Aux[i] = Pface[n] - bcvalue;
-	Pface[n] = bcvalue;      
-	
-      }
-      break;
-    }
+  // Precompute the Dirichlet-type BC residuals for later use.
+  // Impose the Dirichlet boundary data on the face pressure vector.
+  bc_press_->Compute(time);
+  std::map<int,double> Fpress;
+  for (BoundaryFunction::Iterator bc = bc_press_->begin(); bc != bc_press_->end(); ++bc) {
+    Fpress[bc->first] = Pface[bc->first] - bc->second;
+    Pface[bc->first] = bc->second;
   }
-
+  bc_head_->Compute(time);
+  std::map<int,double> Fhead;
+  for (BoundaryFunction::Iterator bc = bc_head_->begin(); bc != bc_head_->end(); ++bc) {
+    Fhead[bc->first] = Pface[bc->first] - bc->second;
+    Pface[bc->first] = bc->second;
+  }
+  
   // GENERIC COMPUTATION OF THE FUNCTIONAL /////////////////////////////////////
 
   Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
@@ -458,7 +479,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
       for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
       MD[j].diff_op(K[j], aux3, Pcell[j], aux1, Fcell[j], aux2);
       // Gravity contribution
-      MD[j].GravityFlux(g_, gflux);
+      MD[j].GravityFlux(gvec_, gflux);
       for (int k = 0; k < 6; ++k) gflux[k] *= rho_ * K[j] * aux3[k];
       for (int k = 0; k < 6; ++k) {
         aux2[k] -= gflux[k];
@@ -467,61 +488,28 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
     } else {
       MD[j].diff_op(K[j], Pcell[j], aux1, Fcell[j], aux2);
       // Gravity contribution
-      MD[j].GravityFlux(g_, gflux);
+      MD[j].GravityFlux(gvec_, gflux);
       for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K[j] * gflux[k];
     }
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
   }
 
-  // APPLY FINAL BC FIXUPS TO FFACE ////////////////////////////////////////////
-
-  for (int j = 0; j < (*bc_).NumBC(); ++j) {
-    FlowBC::bc_spec& BC = (*bc_)[j];
-    switch (BC.Type) {
-    case FlowBC::TIME_DEPENDENT_PRESSURE_CONSTANT:
-    case FlowBC::PRESSURE_CONSTANT:
-    case FlowBC::STATIC_HEAD:
-      for (int i = 0; i < BC.Faces.size(); ++i) {
-	int n = BC.Faces[i];
-	Fface[n] = BC.Aux[i];
-      }
-      break;
-    case FlowBC::DARCY_CONSTANT:
-      for (int i = 0; i < BC.Faces.size(); ++i) {
-	int n = BC.Faces[i];
-	Fface[n] += rho_ * BC.Value * md_->face_area_[n];
-      }
-      break;
-    case FlowBC::NO_FLOW:
-      // The do-nothing boundary condition.
-      break;
-    }
-  }
-
+  // Dirichlet-type condition residuals; overwrite with the pre-computed values.
+  std::map<int,double>::const_iterator i;
+  for (i = Fpress.begin(); i != Fpress.end(); ++i) Fface[i->first] = i->second;
+  for (i = Fhead.begin();  i != Fhead.end();  ++i) Fface[i->first] = i->second;
+  
+  // Mass flux BC contribution.
+  bc_flux_->Compute(time);
+  for (BoundaryFunction::Iterator bc = bc_flux_->begin(); bc != bc_flux_->end(); ++bc)
+    Fface[bc->first] += bc->second * md_->face_area_[bc->first];
+  
   // Copy owned part of result into the output vectors.
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
   for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
     
   delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
-}
-
-
-void RichardsProblem::face_centroid_(int face, double xc[])
-{
-   // Local storage for the 4 vertex coordinates of a face.
-  double x[4][3];
-  double *xBegin = &x[0][0];  // begin iterator
-  double *xEnd = xBegin+12;   // end iterator
-
-  mesh_->face_to_coordinates((unsigned int) face, xBegin, xEnd);
-
-  for (int k = 0; k < 3; ++k) {
-    double s = 0.0;
-    for (int i = 0; i < 4; ++i)
-       s += x[i][k];
-    xc[k] = s / 4.0;
-  }
 }
 
 
@@ -555,7 +543,7 @@ void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector &Pcell,
     double K = (rho_ * k_[j] / mu_);
     MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2); // aux2 is inward flux
     // Gravity contribution; aux2 becomes outward flux
-    MD[j].GravityFlux(g_, gflux);
+    MD[j].GravityFlux(gvec_, gflux);
     for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
     // Scatter the local face result into FFACE.
     mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
@@ -694,11 +682,11 @@ void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVe
     if (upwind_k_rel_) {
       for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
       MD[j].diff_op(K[j], aux3, Pcell_own[j], aux1, dummy, aux2);
-      MD[j].GravityFlux(g_, gflux);
+      MD[j].GravityFlux(gvec_, gflux);
       for (int k = 0; k < 6; ++k) aux2[k] = aux3[k] * K[j] * rho_ * gflux[k] - aux2[k];
     } else {
       MD[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
-      MD[j].GravityFlux(g_, gflux);
+      MD[j].GravityFlux(gvec_, gflux);
       for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
     }
     MD[j].CellFluxVector(aux2, aux4);
@@ -757,7 +745,7 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
     // Compute the local value of the diffusion operator.
     MD[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
     // Gravity contribution
-    MD[j].GravityFlux(g_, gflux);
+    MD[j].GravityFlux(gvec_, gflux);
     for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
     mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     // Scatter the local face result into FFACE.
@@ -832,7 +820,7 @@ void RichardsProblem::SetInitialPressureProfileCells(double height, Epetra_Vecto
 	zavg += coords[k];
       zavg /= 8.0;
 
-      (*pressure)[j] = p_atm_ + rho_ * g_[2] * ( zavg - height );
+      (*pressure)[j] = p_atm_ + rho_ * gvec_[2] * ( zavg - height );
     }
 }
 
@@ -851,7 +839,7 @@ void RichardsProblem::SetInitialPressureProfileFaces(double height, Epetra_Vecto
 	zavg += coords[k];
       zavg /= 4.0;
 
-      (*pressure)[j] = p_atm_ + rho_*g_[2] * ( zavg - height );
+      (*pressure)[j] = p_atm_ + rho_*gvec_[2] * ( zavg - height );
     }
 }
 

@@ -1,0 +1,11 @@
+TODO
+
+Get rid of the operator() method and associated typedefs -- its use
+is deprecated in favor of the Compute/begin/end scheme.
+
+Turn the BoundaryFunction class into a virtual base class with methods
+Compute and begin and end iterators -- this is exactly the interface
+that the flow PKs use (and that other PKs like transport could use too).
+Then move the existing BoundaryFunction class into a concrete implementation
+that is based on a piecewise (by region) functional definition -- we can
+imagine others.

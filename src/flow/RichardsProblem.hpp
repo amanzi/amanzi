@@ -7,7 +7,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Mesh.hh"
 
-#include "FlowBC.hpp"
 #include "DiffusionMatrix.hpp"
 #include "DiffusionPrecon.hpp"
 #include "MimeticHexLocal.hpp"
@@ -17,23 +16,14 @@
 
 namespace Amanzi {
 
+class BoundaryFunction; // forward declaration
+
 class RichardsProblem 
 {
 public:
 
-  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
-	       Teuchos::ParameterList&, const Teuchos::RCP<FlowBC> &bc);
+  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>&, Teuchos::ParameterList&);
   ~RichardsProblem();
-
-
-  // Set the constant value of fluid density.
-  void SetFluidDensity(double rho);
-
-  // Set the constant value of fluid viscosity.
-  void SetFluidViscosity(double mu);
-
-  // Set the gravitational acceleration (3-vector).
-  void SetGravity(const double g[3]);
 
   // Sets a constant (scalar) permeability.
   void SetPermeability(double k);
@@ -76,7 +66,7 @@ public:
 
   void GetFluidDensity(double &rho) const { rho = rho_; }
   void GetFluidViscosity(double &mu) const { mu = mu_; }
-  void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = g_[i]; }
+  void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = gvec_[i]; }
 
   void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
   
@@ -90,14 +80,10 @@ public:
 private:
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<FlowBC> bc_;
   Epetra_Map *dof_map_;
   Epetra_Import *face_importer_;
   Epetra_Import *cell_importer_;
 
-  double rho_;  // constant fluid density
-  double mu_;   // constant fluid viscosity
-  double g_[3]; // gravitational acceleration
   std::vector<double> k_; // spatially variable permeability
   std::vector<double> k_rl_;  // relative permeability
   //double vG_m_;     // van Genuchten m
@@ -105,6 +91,14 @@ private:
   //double vG_alpha_; // van Genuchten alpha
   //double vG_sr_;    // van Genuchten effective saturation
   double p_atm_;    // atmospheric pressure
+  double rho_;      // fluid density
+  double mu_;       // fluid viscosity
+  double gravity_;  // gravitational acceleration (positive coef, directed in -z direction)
+  double gvec_[3];  // set to {0,0,-gravity_}
+  
+  BoundaryFunction *bc_press_;  // Pressure Dirichlet conditions, excluding static head
+  BoundaryFunction *bc_head_;   // Static pressure head conditions; also Dirichlet-type
+  BoundaryFunction *bc_flux_;   // Outward mass flux conditions
   
   std::vector<MimeticHexLocal>  MD;
   MimeticHex *md_;
@@ -123,11 +117,9 @@ private:
 private:  // Auxillary functions
 
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
-  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&, const Teuchos::RCP<FlowBC>&) const;
+  void validate_boundary_conditions() const;
+  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&) const;
   void init_mimetic_disc_(AmanziMesh::Mesh&, std::vector<MimeticHexLocal>&) const;
-  void apply_BC_initial_(Epetra_Vector&, double);
-  void apply_BC_final_(Epetra_Vector&);
-  void face_centroid_(int, double[]);
   void upwind_rel_perm_(const Epetra_Vector&, Epetra_Vector&);
 
 };

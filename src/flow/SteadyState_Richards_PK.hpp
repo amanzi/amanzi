@@ -40,7 +40,6 @@ public:
 private:
 
   Teuchos::RCP<const Flow_State> FS;
-  Teuchos::RCP<FlowBC> bc;
 
   RichardsProblem *problem;
 
