@@ -25,11 +25,11 @@ Preliminary Concepts
 
 Amanzi solves a set of parameterized models for multiphase flow in porous media.  An Amanzi simulation is specified by providing:
 
-* values for a parameterized PDE-based transport model, including boundary and initial conditions, constituitive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,
+* values for a parameterized PDE-based transport model, including boundary and initial conditions, constitutive laws, and parameterized/phenomenological models for fluid and chemical sources and characterizations of the porous medium,
 
 * parameters controlling the selection of key algorithmic options and output, 
 
-* a description of the (discrete) state of the computational sytem, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
+* a description of the (discrete) state of the computational system, including a list of the independent variables and instructions for obtaining or generating the discrete mesh, and a characterization of the (parallel) computing environment.
 
 The primary software interface to Amanzi is a compiled C++ function, and much of the input data required is communicated through a single `Teuchos::ParameterList <http://trilinos.sandia.gov/packages/docs/r7.0/packages/teuchos/doc/html/index.html>`_.
 A ParameterList consist of a simple hierarchy of parameters and lists of parameters, and is constructed directly from a similarly structured XML file.  The Amanzi input specification is defined in terms of the XML file format
@@ -42,7 +42,7 @@ provided with the Amanzi source code distribution.  This simple stand-alone coor
 Model Characterization
 ~~~~~~~~~~~~~~~~~~~~~~
 
-For each phase in the model system, Amanzi requires the specification of component fluids and the chemical solutes they contain.  If a component exists in multiple phases, a relationship is required to compute its phase distribution as a function of the state of the stystem.
+For each fluid phase in the model system, Amanzi requires the specification of the fluid composition.  If a component exists in multiple phases, a relationship is required to compute its phase distribution as a function of the state of the system.
 Equation 2.11 of the MRD governs the conservation and transport of each component, where the volumetric flow rate has been specified via Darcy's law (equation 2.10).  For Darcy flow, the properties of the porous medium must be specified over the entire simulation domain.  All transported phases
 require an appropriate set of boundary conditions along the edge of the simulation domain.  Source/sink terms and initial data are provided for each phase component and any solutes they contain.  Additionally, the extent of physical domain
 is specified, along with its discrete representation (i.e., the mesh).
@@ -625,7 +625,7 @@ Finally, we specify boundary conditions.  Again, support is provided for specify
 
     * COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradaient`" (see below)
+     * BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
@@ -755,6 +755,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
 * `"Observation Data`" [list] can accept multiple lists for named observations (OBSERVATION)
 
+  * `"Observation Output Filename`" [string] user-defined name for the file that the observations are written to.
+
   * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`" and `"Time Macro`"
 
     * `"Variables`" [Array string] a list of labels of variables defined above
@@ -766,6 +768,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
     * `"Time Macro`" [string] one of the labeled time macros (see below)
 
     * `"Cycle Macro`" [string] one of the labeled cycle macros (see below)
+
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
 
@@ -787,6 +790,7 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Observation Data">
+    <Parameter name="Observation output Filename" type="string" value="obs_output.out"/>
     <ParameterList name="Time Macros">
       <ParameterList name="Annual">
         <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7}"/>
@@ -845,7 +849,7 @@ Example:
     <Parameter name="Cycle Macro" type="string" value="Every-5"/>
   </ParameterList>
 
-In this example, Checkpoint Data files are written when the cycle number is evenly divisble by 5.
+In this example, Checkpoint Data files are written when the cycle number is evenly divisible by 5.
 
 
 Visualization Data
@@ -941,6 +945,31 @@ In this example, Amanzi is restarted with all state data initialized from the Ch
 Data file named chk00123.h5. All other initialization of field variables that might be called 
 out in the input file is ignored.
 
+Output format of Observation Output File
+========================================
+ASCII format will be used.   The file is preceded by two header lines:
+
+`Observation Name, Region, Functional, Variable, Time, Value`
+`======================================`
+
+the first line describes what information are being displayed in entries in subsequent lines.  Each subsequent line
+consists of 6 entries separated by the delimiter ",":
+
+* Entry 1: `"ParameterList name`" for a particular observation output. 
+
+* Entry 2: `"Region`" in the above `"ParameterList`".
+
+* Entry 3: `"Functional`" in the above `"ParameterList`".
+
+* Entry 4: `"Variable`" in the above `"ParameterList`".
+
+* Entry 5: Time at which the observation is requested.
+
+* Entry 6: Value of the observation at time specified in Entry 5.
+
+An example is given by the following:
+
+`Integrated Mass, All, Observation Data: Integral, Water Mass Density, 1000, 1.00e3`
 
 Complete Example
 =================

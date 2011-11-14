@@ -11,21 +11,22 @@
 
 #include "Mesh_simple.hh"
 #include "MeshAudit.hh"
+#include "Point.hh"
 
 #include "State.hpp"
 #include "Transport_PK.hpp"
 
 
-double f_step(double* x, double t) { 
+double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
   if (x[0] <= 1 + t) return 1;
   return 0;
 }
 
-double f_smooth(double* x, double t) { 
+double f_smooth(const Amanzi::AmanziGeometry::Point& x, double t) { 
   return 0.5 - atan(50*(x[0]-5-t)) / M_PI;
 }
 
-double f_cubic(double* x, double t) {
+double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) {
   if( x[0] < 1 + t ) return 1;
   if( x[0] > 3 + t ) return 0;
   double z = (x[0]-1-t) / 2;
@@ -34,16 +35,16 @@ double f_cubic(double* x, double t) {
 
 
 /* **************************************************************** */
-TEST(CONVERGENCE_ANALYSIS_1ST) {
+TEST(CONVERGENCE_ANALYSIS_2ND) {
   using namespace Teuchos;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "=== TEST CONVERGENCE ANALISYS 2ND ===" << endl;
+  cout << "Test: Convergence analysis, 2nd order scheme" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
-  for (int nx=10; nx<161; nx*=2 ) {
+  for (int nx=10; nx<81; nx*=2 ) {
     RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 2, 2, comm)); 
 
     // create a MPC and Transport states with one component
@@ -70,7 +71,7 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
 
     // advance the state
     int i, k, iter = 0;
-    double T = 0.0, T1 = 1.0;
+    double T = 0.0, T1 = 2.0;
 
     RCP<Transport_State>    TS_next  = TPK.get_transport_state_next();
     RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
@@ -78,7 +79,7 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
 
     double dT, dT0;
     if (nx==10) dT0 = TPK.calculate_transport_dT();
-    else dT0 /= 4;
+    else dT0 /= 2;
 
     while (T < T1) {
       dT = std::min(TPK.calculate_transport_dT(), T1 - T);
@@ -86,7 +87,9 @@ TEST(CONVERGENCE_ANALYSIS_1ST) {
 
       TPK.advance(dT);
       T += dT;
-      TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+      if (TPK.internal_tests) {
+        TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-12);
+      }
 
       *tcc = *tcc_next;
       iter++;

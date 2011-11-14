@@ -48,14 +48,15 @@ class Transport_State {
   Epetra_Vector& ref_water_density() { return *water_density; }
   
   // debug routines
-  void analytic_total_component_concentration(double f(double*, double), double t = 0.0);
+  void analytic_total_component_concentration(double f_tcc(const AmanziGeometry::Point&, double), double t = 0.0);
   void analytic_total_component_concentration(double tcc);
   void analytic_darcy_flux(const AmanziGeometry::Point& u);
+  void analytic_darcy_flux(AmanziGeometry::Point f_vel(const AmanziGeometry::Point&, double), double t = 0.0);
   void analytic_porosity(double phi = 0.2);
   void analytic_water_saturation(double ws = 1.0);
   void analytic_water_density(double wd = 1000.0);
 
-  void error_total_component_concentration(double f(double*, double), double t, double* L1, double* L2);
+  void error_total_component_concentration(double f_tcc(const AmanziGeometry::Point&, double), double t, double* L1, double* L2);
 
  private:
   // state variables that are relevant to transport 

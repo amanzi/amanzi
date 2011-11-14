@@ -36,6 +36,7 @@ include_directories(${MPC_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${EXO_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 
 
 # Chemistry includes directory
@@ -144,7 +145,7 @@ add_install_binary(verify_mesh)
 if ( ENABLE_CGNS )
     add_executable(verify_hex verify_hex.cc)
     target_link_libraries(verify_hex mesh_factory mesh mesh_audit output
-                          ${Boost_LIBRARIES})
+                          ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
     # add_install_binary(verify_hex)		     
 endif()
 
@@ -163,3 +164,8 @@ endif()
 #
 #
 add_install_shellscript(splitexo.sh)
+
+#
+# Install include files
+#
+add_install_include_file(amanzi_unstructured_grid_simulation_driver.hpp)

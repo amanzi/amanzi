@@ -29,6 +29,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${EXO_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
@@ -39,8 +40,10 @@ add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 #
 # Library: transport
 #
-add_library(transport Transport_PK.cpp Transport_State.cpp Transport_VandV.cpp Reconstruction.cpp)
-target_link_libraries(transport geometry mesh mesh_data error_handling state ${Epetra_LIBRARIES})
+add_library(transport Transport_PK.cpp Transport_State.cpp Transport_TI.cpp 
+                      Transport_Limiters.cpp Transport_VandV.cpp 
+                      Reconstruction.cpp)
+target_link_libraries(transport geometry mesh mesh_data error_handling state time_integration ${Epetra_LIBRARIES})
 add_install_library(transport)
 #
 # Install Targets
@@ -100,6 +103,10 @@ if ( BUILD_TESTS )
         target_link_libraries(transport_serial_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_serial_2D transport_serial_2D KIND unit)
 
+        # Test: transport in 2D  LONG
+        add_executable(transport_serial_2D_long test/Main.cc test/test_transport_2D_long.cpp)
+        target_link_libraries(transport_serial_2D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_serial_2D_long transport_serial_2D_long KIND unit)
     endif()    
 
     # Tests 7-8

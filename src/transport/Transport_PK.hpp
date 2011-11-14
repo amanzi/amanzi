@@ -17,10 +17,12 @@ Usage:
 #include "Teuchos_RCP.hpp"
 
 #include "tensor.hpp"
+#include "Explicit_TI_fnBase.hpp"
 
 #include "State.hpp"
 #include "Transport_State.hpp"
 #include "Transport_BCs.hpp"
+#include "Reconstruction.hpp"
 
 /*
 This is Amanzi Transport Process Kernel (PK), release Beta.
@@ -51,7 +53,6 @@ const int TRANSPORT_BC_DISPERSION_FLUX = 2;
 const int TRANSPORT_BC_NULL = 3;
 
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
-const double TRANSPORT_LIMITER_CORRECTION = 0.9999999999999;
 
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These olyhedron parameters must
@@ -62,10 +63,13 @@ const int TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC = 2;
 const int TRANSPORT_DISPERSIVITY_MODEL_BEAR = 3;
 const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
 
+const int TRANSPORT_LIMITER_BARTH_JESPERSEN = 1; 
+const int TRANSPORT_LIMITER_TENSORIAL = 2;
+
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
 
-class Transport_PK {
+class Transport_PK : public Explicit_TI::fnBase {
  public:
   Transport_PK();
   Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
@@ -100,14 +104,25 @@ class Transport_PK {
   // advection routines
   void advance_donor_upwind(double dT);
   void advance_second_order_upwind(double dT);
+  void advance_second_order_upwind_testing(double dT);
   void advance_arbitrary_order_upwind(double dT);
+  void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
-  void calculateLimiterBarthJespersen(const int component,
-                                      Teuchos::RCP<Epetra_Vector> scalar_field, 
-                                      Teuchos::RCP<Epetra_MultiVector> gradient, 
-                                      std::vector<double>& field_local_min,
-                                      std::vector<double>& field_local_max,
-                                      Teuchos::RCP<Epetra_Vector> limiter);
+  void limiterBarthJespersen(const int component,
+                             Teuchos::RCP<Epetra_Vector> scalar_field, 
+                             Teuchos::RCP<Epetra_MultiVector> gradient, 
+                             std::vector<double>& field_local_min,
+                             std::vector<double>& field_local_max,
+                             Teuchos::RCP<Epetra_Vector> limiter);
+
+  void limiterTensorial(const int component,
+                        Teuchos::RCP<Epetra_Vector> scalar_field, 
+                        Teuchos::RCP<Epetra_MultiVector> gradient);
+
+  void apply_directional_limiter(AmanziGeometry::Point& normal, 
+                                 AmanziGeometry::Point& p,
+                                 AmanziGeometry::Point& direction, 
+                                 AmanziGeometry::Point& gradient);
 
   void process_parameter_list();
   void identify_upwind_cells();
@@ -135,7 +150,7 @@ class Transport_PK {
   std::vector<double> calculate_accumulated_outflux();
 
   int MyPID;  // parallel information: will be moved to private
-  int discretization_order, limiter_model;
+  int spatial_disc_order, temporal_disc_order, limiter_model;
 
   int verbosity_level, internal_tests;  // output information
   double tests_tolerance;
@@ -152,8 +167,10 @@ class Transport_PK {
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
-  Teuchos::RCP<Epetra_Vector> component_;
+  int current_component_;
+  Teuchos::RCP<Epetra_Vector> component_, component_next_;
   Teuchos::RCP<Epetra_Vector> limiter_;
+  Reconstruction lifting;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
@@ -166,6 +183,8 @@ class Transport_PK {
   std::vector<double> harmonic_points_value;
   std::vector<WhetStone::Tensor> dispersion_tensor;
 
+  int advection_limiter;  // data for limiters
+
   double cfl, dT, dT_debug, T_internal;  
   int number_components; 
   int status;
@@ -174,6 +193,7 @@ class Transport_PK {
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
+  int vmin, vmax;
  
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   int dim;

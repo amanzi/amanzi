@@ -88,19 +88,18 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 void Transport_State::copymemory_multivector(Epetra_MultiVector& source, 
                                              Epetra_MultiVector& target)
 {
-  int i, c, cmin, cmax, cmax_s, cmax_t, number_vectors;
-
   const Epetra_BlockMap& source_cmap = source.Map();
   const Epetra_BlockMap& target_cmap = target.Map();
 
+  int cmin, cmax, cmax_s, cmax_t;
   cmin   = source_cmap.MinLID();
   cmax_s = source_cmap.MaxLID();
   cmax_t = target_cmap.MaxLID();
   cmax   = std::min(cmax_s, cmax_t);
 
-  number_vectors = source.NumVectors();
-  for (c=cmin; c<=cmax; c++) {
-     for(i=0; i<number_vectors; i++) target[i][c] = source[i][c];
+  int number_vectors = source.NumVectors();
+  for (int c=cmin; c<=cmax; c++) {
+     for (int i=0; i<number_vectors; i++) target[i][c] = source[i][c];
   }
 
 #ifdef HAVE_MPI
@@ -117,20 +116,19 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
  ****************************************************************** */
 void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& target)
 {
-  int f, fmin, fmax, fmax_s, fmax_t;
-
   const Epetra_BlockMap& source_fmap = source.Map();
   const Epetra_BlockMap& target_fmap = target.Map();
 
+  int fmin, fmax, fmax_s, fmax_t;
   fmin   = source_fmap.MinLID();
   fmax_s = source_fmap.MaxLID();
   fmax_t = target_fmap.MaxLID();
   fmax   = std::min(fmax_s, fmax_t);
 
-  for( f=fmin; f<=fmax; f++ ) target[f] = source[f];
+  for (int f=fmin; f<=fmax; f++) target[f] = source[f];
 
 #ifdef HAVE_MPI
-  if ( fmax_s > fmax_t ) throw std::exception(); 
+  if (fmax_s > fmax_t) throw std::exception(); 
 
   Epetra_Import importer(target_fmap, source_fmap);
   target.Import(source, importer, Insert);
@@ -150,21 +148,29 @@ void Transport_State::analytic_darcy_flux(const AmanziGeometry::Point& u)
     (*darcy_flux)[f] = u * normal;
   }
 }
+void Transport_State::analytic_darcy_flux(
+    AmanziGeometry::Point f_vel(const AmanziGeometry::Point&, double), double t)
+{
+  const Epetra_BlockMap& fmap = (*darcy_flux).Map();
+
+  for (int f=fmap.MinLID(); f<=fmap.MaxLID(); f++) { 
+    const AmanziGeometry::Point& normal = mesh_maps->face_normal(f);
+    const AmanziGeometry::Point& fc = mesh_maps->face_centroid(f);
+    (*darcy_flux)[f] = f_vel(fc, t) * normal;
+  }
+}
 
 
 /* *******************************************************************
  * DEBUG: create analytical concentration C = f(x, t)       
  ****************************************************************** */
-void Transport_State::analytic_total_component_concentration(double f(double*, double), double t)
+void Transport_State::analytic_total_component_concentration(double f(const AmanziGeometry::Point&, double), double t)
 {
-  double center[3];
   const Epetra_BlockMap& cmap = (*total_component_concentration).Map();
 
   for (int c=cmap.MinLID(); c<=cmap.MaxLID(); c++) { 
     const AmanziGeometry::Point& xc = mesh_maps->cell_centroid(c);    
-
-    for (int i=0; i<xc.dim(); i++) center[i] = xc[i];
-    (*total_component_concentration)[0][c] = f(center, t);
+    (*total_component_concentration)[0][c] = f(xc, t);
   }
 }
 void Transport_State::analytic_total_component_concentration(double tcc)
@@ -179,21 +185,16 @@ void Transport_State::analytic_total_component_concentration(double tcc)
 
 /* **************************************************************** */
 void Transport_State::error_total_component_concentration(
-    double f(double*, double), double t, double* L1, double* L2)
+    double f(const AmanziGeometry::Point&, double), double t, double* L1, double* L2)
 {
   int i, j, c;
-  double d, center[3];
+  double d;
   const Epetra_BlockMap& cmap = (*total_component_concentration).Map();
 
   *L1 = *L2 = 0.0;
   for (c=cmap.MinLID(); c<=cmap.MaxLID(); c++ ) { 
-    const AmanziGeometry::Point xc = mesh_maps->cell_centroid(c);
-
-    center[0] = xc.x();  // should re-write local functions
-    center[1] = xc.y();
-    center[2] = xc.z();
-
-    d = (*total_component_concentration)[0][c] - f(center, t); 
+    const AmanziGeometry::Point& xc = mesh_maps->cell_centroid(c);
+    d = (*total_component_concentration)[0][c] - f(xc, t); 
 
     double volume = mesh_maps->cell_volume(c);
     *L1 += fabs(d) * volume;

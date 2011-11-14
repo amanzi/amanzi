@@ -22,19 +22,19 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_PK.hpp"
 
 
-double f_step(double* x, double t) { 
+double f_step(const Amanzi::AmanziGeometry::Point& x, double t) { 
   if (x[0] <= 1 + t) return 1;
   return 0;
 }
 
-double f_smooth(double* x, double t) { 
+double f_smooth(const Amanzi::AmanziGeometry::Point& x, double t) { 
   return 0.5 - atan(50*(x[0]-5-t)) / M_PI;
 }
 
-double f_cubic(double* x, double t) { 
+double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) { 
   if( x[0] < 1 + t ) return 1;
   if( x[0] > 3 + t ) return 0;
-  double z = (*x-1-t) / 2;
+  double z = (x[0]-1-t) / 2;
   return 2*z*z*z - 3*z*z + 1;
 }
 

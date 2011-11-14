@@ -17,6 +17,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "tensor.hpp"
 #include "mfd3d.hpp"
+#include "Explicit_TI_RK.hpp"
 
 #include "Transport_PK.hpp"
 #include "Reconstruction.hpp"
@@ -97,9 +98,18 @@ int Transport_PK::Init()
   upwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));  // The maps include both owned and ghosts
   downwind_cell_ = Teuchos::rcp(new Epetra_IntVector(fmap));
 
+  // advection block installation
+  current_component_ = -1;  // default value may be useful in the future
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
+
+  advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
+  lifting.reset_field(mesh_, component_);
+  lifting.Init();
+
+  // dispersivity block installation
   if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {  // populate arrays for dispersive transport
     harmonic_points.resize(number_wghost_faces);
     for (int f=fmin; f<=fmax; f++) harmonic_points[f].init(dim);
@@ -127,8 +137,10 @@ void Transport_PK::process_parameter_list()
   // global transport parameters
   cfl = parameter_list.get<double>("CFL", 1.0);
 
-  discretization_order = parameter_list.get<int>("discretization order", 1);
-  if (discretization_order < 1 || discretization_order > 2) discretization_order = 1;
+  spatial_disc_order = parameter_list.get<int>("spatial discretization order", 1);
+  if (spatial_disc_order < 1 || spatial_disc_order > 2) spatial_disc_order = 1;
+  temporal_disc_order = parameter_list.get<int>("temporal discretization order", 1);
+  if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
   string dispersivity_name = parameter_list.get<string>("dispersivity model", "none");
   if (dispersivity_name == "isotropic") { 
@@ -140,9 +152,17 @@ void Transport_PK::process_parameter_list()
   else if (dispersivity_name == "Lichtner") {
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
   }
- 
+
   dispersivity_longitudinal = parameter_list.get<double>("dispersivity longitudinal", 0.0);
   dispersivity_transverse = parameter_list.get<double>("dispersivity transverse", 0.0);
+
+  string advection_limiter_name = parameter_list.get<string>("advection limiter", "none");
+  if (advection_limiter_name == "BarthJespersen") {
+    advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
+  }
+  else if (advection_limiter_name == "Tensorial" || advection_limiter_name == "none") {
+    advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
+  }
    
   // control parameter
   verbosity_level = parameter_list.get<int>("verbosity level", 0);
@@ -236,7 +256,8 @@ void Transport_PK::print_statistics() const
     cout << "Transport PK: CFL = " << cfl << endl;
     cout << "              Total number of components = " << number_components << endl;
     cout << "              Verbosity level = " << verbosity_level << endl;
-    cout << "              method accuracy = " << discretization_order << endl;
+    cout << "              spatial discretication order = " << spatial_disc_order << endl;
+    cout << "              temporal discretication order = " << temporal_disc_order << endl;
     cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
@@ -289,7 +310,7 @@ double Transport_PK::calculate_transport_dT()
 
     dT = std::min(dT, dT_cell);
   }  
-  if (discretization_order == 2) dT /= 2;
+  if (spatial_disc_order == 2) dT /= 2;
 
 
 #ifdef HAVE_MPI
@@ -314,13 +335,78 @@ double Transport_PK::calculate_transport_dT()
 void Transport_PK::advance(double dT_MPC)
 {
   T_internal += dT_MPC;
-  if (discretization_order == 1) {  // temporary solution (lipnikov@lanl.gov)
+  if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
     advance_donor_upwind(dT_MPC);
   }
-  else if (discretization_order == 2) {
+  else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
     advance_second_order_upwind(dT_MPC);
   }
+  else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
+    advance_second_order_upwind_testing(dT_MPC);
+  }
 }
+
+
+/* ******************************************************************* 
+ * We have to advance each component independently due to different
+ * discretizations. We use tcc when only owned data are needed and 
+ * tcc_next when owned and ghost data.
+ *
+ * Data flow: loop over components C and for each C apply the 
+ * second-order RK method. 
+ ****************************************************************** */
+void Transport_PK::advance_second_order_upwind_testing(double dT_MPC)
+{
+  status = TRANSPORT_STATE_BEGIN;
+  dT = dT_MPC;  // overwrite the transport step
+
+  int i, f, v, c, c1, c2;
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
+  const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
+ 
+  Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
+  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->get_total_component_concentration();
+ 
+  Explicit_TI::RK TVD_RK(*this,  // it has only one member function fun
+                         Explicit_TI::RK::heun_euler,  // integration method
+                         *component_);
+
+  int num_components = tcc->NumVectors();
+  for (i=0; i<num_components; i++) {
+    current_component_ = i;  // it is needed in BJ called inside RK:fun
+
+    Epetra_Vector*& tcc_component = (*tcc)(i);
+    TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector 
+
+    const double t = 0.0;  // provide simulation time (lipnikov@lanl.gov)
+    TVD_RK.step(t, dT, *component_, *component_next_);
+
+    for (c=cmin; c<=cmax_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
+
+    /*
+    // DISPERSION FLUXES
+    if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+      calculate_dispersion_tensor();
+
+      std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated only once (lipnikov@lanl.gov)
+      std::vector<double> bc_face_values(number_wghost_faces);
+
+      extract_boundary_conditions(i, bc_face_id, bc_face_values);
+      populate_harmonic_points_values(i, tcc, bc_face_id, bc_face_values);
+      add_dispersive_fluxes(i, tcc, bc_face_id, bc_face_values, tcc_next);
+    }
+    */
+  }
+
+  if (internal_tests) {
+    Teuchos::RCP<Epetra_MultiVector> tcc_nextMPC = TS_nextMPC->get_total_component_concentration();
+    check_GEDproperty(*tcc_nextMPC);
+  }
+
+  status = TRANSPORT_STATE_COMPLETE;
+}
+
 
 
 /* ******************************************************************* 
@@ -347,7 +433,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
   double u, vol_phi_ws, tcc_flux;
   int num_components = tcc->NumVectors();
  
-  Reconstruction lifting(mesh_, component_);
+  lifting.reset_field(mesh_, component_);
   lifting.Init();
 
   for (i=0; i<num_components; i++) {
@@ -362,18 +448,14 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     lifting.calculateCellGradient();
 
     Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
-    std::vector<double>& field_local_min = lifting.get_field_local_min();
+    std::vector<double>& field_local_min = lifting.get_field_local_min();  // not used (lipnikov@lanl.gov)
     std::vector<double>& field_local_max = lifting.get_field_local_max();
 
-    calculateLimiterBarthJespersen(i, 
-                                   component_, 
-                                   gradient, 
-                                   field_local_min, 
-                                   field_local_max, 
-                                   limiter_);
+    limiterBarthJespersen(
+        i, component_, gradient, field_local_min, field_local_max, limiter_);
     lifting.applyLimiter(limiter_);
-
-    // ADVECTION FLUXES
+ 
+    // ADVECTIVE FLUXES
     for (f=fmin; f<=fmax; f++) {  // loop over master and slave faces
       c1 = (*upwind_cell_)[f]; 
       c2 = (*downwind_cell_)[f]; 
@@ -418,7 +500,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
       }
     }
     
-    // DISPERSION FLUXES
+    // DISPERSIVE FLUXES
     if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
       calculate_dispersion_tensor();
 
@@ -535,130 +617,6 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
   }
 
   status = TRANSPORT_STATE_COMPLETE;
-}
-
-
-/* *******************************************************************
- * The BJ limiter has been adjusted to linear advection. 
- ****************************************************************** */
-void Transport_PK::calculateLimiterBarthJespersen(const int component,
-                                                  Teuchos::RCP<Epetra_Vector> scalar_field, 
-                                                  Teuchos::RCP<Epetra_MultiVector> gradient,
-                                                  std::vector<double>& field_local_min,
-                                                  std::vector<double>& field_local_max,
-                                                  Teuchos::RCP<Epetra_Vector> limiter)
-                                                  
-{
-  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0;
- 
-  std::vector<double> total_influx(number_wghost_cells, 0.0);  // follows calculation of dT
-  std::vector<double> total_outflux(number_wghost_cells, 0.0);
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-
-  double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
-  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
-
-  for (int f=fmin; f<=fmax_owned; f++) {
-    int c1, c2;
-    c1 = (*upwind_cell_)[f];
-    c2 = (*downwind_cell_)[f];
-    if (c1<0 || c2<0) continue; // boundary faces are considered separately
-
-    const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
-    const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-    const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-
-    u1 = (*scalar_field)[c1];
-    u2 = (*scalar_field)[c2];
-    umin = std::min(u1, u2);
-    umax = std::max(u1, u2);
-
-    for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c1]; 
-    double u1_add = gradient_c1 * (xcf - xc1);
-    u1f = u1 + u1_add;
-    if (u1f < umin) {
-      (*limiter)[c1] = std::min((*limiter)[c1], (umin - u1) / u1_add * TRANSPORT_LIMITER_CORRECTION);
-    }
-    else if (u1f > umax) {
-      (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u1_add * TRANSPORT_LIMITER_CORRECTION); 
-    }
-
-    for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
-    double u2_add = gradient_c2 * (xcf - xc2);
-    u2f = u2 + u2_add;
-    if (u2f < umin) {
-      (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u2_add * TRANSPORT_LIMITER_CORRECTION);
-    }
-    else if (u2f > umax) {
-      (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u2_add * TRANSPORT_LIMITER_CORRECTION); 
-    }
-
-    double diff, psi = 1.0;  
-    if (u1 < u1f) {
-      diff = (*scalar_field)[c1] - field_local_min[c1];
-      if (diff) psi = std::max(-u1_add/diff, 0.0);
-      else (*limiter)[c1] = 0.0;  // local minimum
-    }
-    else if (u1 > u1f) {
-      diff = (*scalar_field)[c1] - field_local_max[c1];
-      if (diff) psi = std::max(-u1_add/diff, 0.0);
-      else (*limiter)[c1] = 0.0;  // local maximum
-    }
-     
-    total_influx[c2] += fabs(darcy_flux[f]);
-    total_outflux[c1] += fabs(darcy_flux[f]) * psi; 
-  } 
- 
-  // limiting second term in the flux formula (outflow darcy_flux)
-  for (int c=cmin; c<=cmax_owned; c++) {
-    if (total_outflux[c]) {
-      double psi = std::max(total_influx[c] / total_outflux[c], 1.0);
-      (*limiter)[c] = std::min((*limiter)[c], psi);
-    }
-  }
-
-  // limiting gradient on the Dirichlet boundary
-  for ( int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
-      int c1 = (*upwind_cell_)[f]; 
-      int c2 = (*downwind_cell_)[f]; 
-
-      if (c2 >= 0) {
-        u2 = (*scalar_field)[c2];
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-          u1 = bcs[n].values[component];
-          umin = std::min(u1, u2);
-          umax = std::max(u1, u2);
-
-          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-          const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-
-          for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
-          double u_add = gradient_c2 * (xcf - xc2);
-          u2f = u2 + u_add;
-          if (u2f < umin) {
-            (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u_add * TRANSPORT_LIMITER_CORRECTION);
-          }
-          else if (u2f > umax) {
-            (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u_add * TRANSPORT_LIMITER_CORRECTION); 
-          }
-        } 
-      }
-      else if (c1 >= 0) {
-        //(*limiter)[c1] = 0.0;  // ad-hoc testing (lipnikov@lanl.gov)
-      }
-    }
-  }
-
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = (*limiter_).Map();
-  const Epetra_BlockMap& target_fmap = (*limiter_).Map();
-
-  Epetra_Import importer(target_fmap, source_fmap);
-  (*limiter_).Import(*limiter_, importer, Insert);
-#endif
 }
 
 

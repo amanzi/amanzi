@@ -15,6 +15,7 @@
 
 TEST(SolutionHistory_1) {
 
+  cout << "Test: SolutionHistory_1" << endl;    
   Epetra_Comm *comm = new Epetra_SerialComm();
 
   // create an Epetra_Vector
@@ -101,6 +102,7 @@ TEST(SolutionHistory_1) {
 
 TEST(SolutionHistory_2) {
 
+  cout << "Test: SolutionHistory_2" << endl;    
   Epetra_Comm *comm = new Epetra_SerialComm();
 
   // create an Epetra_Vector
