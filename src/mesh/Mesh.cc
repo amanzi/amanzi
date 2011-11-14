@@ -166,6 +166,7 @@ int Mesh::precompute_geometric_quantities() const {
 
 unsigned int Mesh::set_id_from_name(const std::string setname) const
 {
+  if (!geometric_model_) return 0;
 
   unsigned int ngr = geometric_model_->Num_Regions();
   for (int i = 0; i < ngr; i++) {
@@ -182,6 +183,9 @@ unsigned int Mesh::set_id_from_name(const std::string setname) const
 
 std::string Mesh::set_name_from_id(const int setid) const
 {
+  std::string nullname("");
+ 
+  if (!geometric_model_) return nullname;
 
   unsigned int ngr = geometric_model_->Num_Regions();
   for (int i = 0; i < ngr; i++) {
@@ -200,6 +204,8 @@ std::string Mesh::set_name_from_id(const int setid) const
 
 bool Mesh::valid_set_id(unsigned int id, Entity_kind kind) const
 {
+
+  if (!geometric_model_) return false;
 
   unsigned int gdim = geometric_model_->dimension();    
   
@@ -500,10 +506,12 @@ unsigned int Mesh::num_sets(const Entity_kind kind) const
 {
   int nsets = 0;
 
-  std::cerr << "THIS ROUTINE IS DEPRECATED" << std::endl;
+  std::cerr << "THIS ROUTINE (num_sets) IS DEPRECATED" << std::endl;
   std::cerr << "It might work but there is no guarantee" << std::endl;
   std::cerr << "that it will work in general situations" << std::endl;
   
+  if (!geometric_model_) return 0;
+
   unsigned int gdim = geometric_model_->dimension();    
   
   unsigned int ngr = geometric_model_->Num_Regions();
@@ -551,7 +559,7 @@ void Mesh::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) con
 {
   int i, nsets=0;
 
-  std::cerr << "THIS ROUTINE IS DEPRECATED" << std::endl;
+  std::cerr << "THIS ROUTINE (get_set_ids_) IS DEPRECATED" << std::endl;
   std::cerr << "It might work but there is no guarantee" << std::endl;
   std::cerr << "that it will work in general situations" << std::endl;
   
@@ -559,6 +567,7 @@ void Mesh::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) con
 
   setids->clear();
 
+  if (!geometric_model_) return;
   
   int ngr = geometric_model_->Num_Regions();
   for (int i = 0; i < ngr; i++) {
