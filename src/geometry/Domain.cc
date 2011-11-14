@@ -26,7 +26,7 @@ namespace AmanziGeometry {
 
 Domain::Domain(const unsigned int dim): spatial_dimension_(dim)
 {
-  if (dim != 2 || dim != 3) {
+  if (dim < 2u || dim > 3u) {
     std::cerr << "Only 2D and 3D domains are supported" << std::endl;
     throw std::exception();
   }

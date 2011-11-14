@@ -86,6 +86,12 @@ namespace Amanzi {
 	  phase_comp_name = phase_list.sublist(phase_name).sublist("Phase Components").name(phase_list.sublist(phase_name).sublist("Phase Components").begin());
 	  
 	  comp_names = phase_list.sublist(phase_name).sublist("Phase Components").sublist(phase_comp_name).get<Teuchos::Array<std::string> >("Component Solutes");
+	  
+	  // create a map for the components
+	  for (int i=0; i<comp_names.size(); i++)
+	    {
+	      comp_names_map[comp_names[i]] = i;
+	    }
 	}
       else
 	{
@@ -239,11 +245,11 @@ namespace Amanzi {
 		{
 		  Teuchos::ParameterList& generate = plist.sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured");
 		  Teuchos::Array<int> ncells = generate.get<Teuchos::Array<int> >("Number of Cells");
-		  Teuchos::Array<double> low = generate.get<Teuchos::Array<double> >("Domain Low Coordinate");
-		  Teuchos::Array<double> high = generate.get<Teuchos::Array<double> >("Domain High Coordinate");		  
+		  Teuchos::Array<double> low = generate.get<Teuchos::Array<double> >("Domain Low Corner");
+		  Teuchos::Array<double> high = generate.get<Teuchos::Array<double> >("Domain High Corner");		  
 		  
-		  msh_list.set<std::string>("Framework","MSTK");
-		  Teuchos::ParameterList& msh_gen = msh_list.sublist("Generate");
+		  // msh_list.set<std::string>("Framework","MSTK");
+		  Teuchos::ParameterList& msh_gen = msh_list.sublist("Unstructured").sublist("Generate Mesh");
 		  
 		  msh_gen.set<int>("Number of Cells in X",ncells[0]);
 		  msh_gen.set<int>("Number of Cells in Y",ncells[1]);
@@ -425,27 +431,47 @@ namespace Amanzi {
 	      int bc_counter = 0;
 	      for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++)
 		{
+		  // read the assigned regions
+		  Teuchos::Array<std::string> regs = bc_sublist.sublist(bc_sublist.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
+		  
 		  // only count sublists
 		  if (bc_sublist.isSublist(bc_sublist.name(i))) 
 		    {
 		      if ( bc_sublist.sublist((bc_sublist.name(i))).isSublist("Solute BC"))
 			{
+			  // read the solute bc stuff
+			  Teuchos::ParameterList& solbc = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC");
 			  
+			  Teuchos::ParameterList& comps = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC").sublist(phase_name).sublist(phase_comp_name);
+			  			  
 			  std::stringstream ss; 
 			  ss << "BC " << bc_counter;
 			  bc_counter++;
 
-			  Teuchos::ParameterList& bc_sublist = tbc_list.sublist(ss.str());			
+			  Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());			
 			  
 			  for (Teuchos::Array<std::string>::const_iterator i = comp_names.begin();
 			       i != comp_names.end(); i++)
 			    {
-
-			      // TODO...
-			      // GENERATE ACTUAL BC
-			      
+			      if (  comps.isSublist(*i) )
+				{
+				  std::stringstream compss;
+				  compss << "Component " << comp_names_map[*i];
+				  
+				  // for now just read the first value from the 
+				  if ( comps.sublist(*i).isSublist("BC: Inflow") )
+				    {
+				      Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Inflow");
+				      
+				      Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+				      
+				      bc.set<int>(compss.str(), values[0] );
+				      bc.set<std::string>("Type","Constant");
+				      bc.set<Teuchos::Array<std::string> >("Region", regs);
+				    }
+				  
+				}
 			    }
-
 			}
 		    }
 	      	}
