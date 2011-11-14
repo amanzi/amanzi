@@ -45,6 +45,12 @@ if (BUILD_TESTS)
     # Test uses Epetra
     include_directories(${Epetra_INCLUDE_DIRS})
 
+   # Need to copy files for the tests 
+    if (NOT (${MESH_SIMPLE_SOURCE_DIR} EQUAL ${MESH_SIMPLE_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${MESH_SIMPLE_SOURCE_DIR}/test ${MESH_SIMPLE_BINARY_DIR}/test) 
+    endif()
+
     # Test: simple_mesh
 
     add_executable(test_simple_mesh 
