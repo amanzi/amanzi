@@ -378,19 +378,30 @@ HexMeshGenerator::generate(void)
 {
   const std::vector<int> one(1, 1);
 
-  std::vector<double> attribute;
-  attribute.clear();
-
   // Build the blocks
 
   generate_the_elements_();
 
 
+  std::vector<double> attribute;
+  attribute.clear();
+
   std::vector<Element_block *> tmpe; 
   std::vector<int> blkids;
-  
-  // Cell sets will be generated on demand at the Mesh_STK level based
-  // on the input spec. Nothing to do here
+
+  Block& b = blocks_[0];
+  Element_block *blk;
+
+    // names need to be unique
+  std::string name("All elements");
+  int id=0;
+  blk = Element_block::build_from(id, name, 
+                                  static_cast<int>(b.gidx.size()), HEX,
+                                  b.connectivity,
+                                  attribute);
+  tmpe.push_back(blk);
+  blkids.push_back(1);
+  attribute.clear();
 
   // Node sets will be generated on demand at the Mesh_STK level based
   // on the input spec. Nothing to do here
