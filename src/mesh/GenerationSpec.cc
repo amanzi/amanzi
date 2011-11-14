@@ -25,7 +25,7 @@ namespace AmanziMesh {
 // GenerationSpec:: constructors / destructor
 // -------------------------------------------------------------
 GenerationSpec::GenerationSpec(const Teuchos::ParameterList& parameter_list)
-  : domain_(), nx_(0), ny_(0), nz_(0), blocks_()
+  : domain_(NULL), nx_(0), ny_(0), nz_(0), blocks_()
 {
   parse_(parameter_list);
 }
@@ -60,14 +60,15 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   z1 = parameter_list.get<double>("Z_Max");
 
 
+  AmanziGeometry::Point p0(x0, y0, z0);
+  AmanziGeometry::Point p1(x1, y1, z1);
+  domain_ = new AmanziGeometry::BoxRegion("GenDomain", 0, p0, p1);
+  
+
   // This part is encapsulated in geometric model
   // The mesh specific mesh generation procedures will
   // read the geometric model and create the necessary regions
 
-  //  AmanziGeometry::Point p0(x0, y0, z0);
-  //  AmanziGeometry::Point p1(x1, y1, z1);
-  //  domain_.reset(new AmanziGeometry::RectangularRegion(p0, p1));
-  //
   //  int nblk(0);
   //  try {
   //    nblk = parameter_list.get<int>("Number of mesh blocks");
