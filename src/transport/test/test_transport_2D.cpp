@@ -24,6 +24,11 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Transport_PK.hpp"
 
 
+Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t) { 
+  return Amanzi::AmanziGeometry::Point(1.0, 1.0);
+}
+
+
 /* **************************************************************** */
 TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Teuchos;
@@ -32,7 +37,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "=== TEST ADVANCE in 2D ===" << endl;
+cout << "Test: Advance on a 2D square mesh" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -47,9 +52,8 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-  Point u(1.0, 1.0);
 
-  TS->analytic_darcy_flux(u);
+  TS->analytic_darcy_flux(f_velocity);
   TS->analytic_porosity();
   TS->analytic_water_saturation();
   TS->analytic_water_density();
@@ -94,6 +98,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
       GMV::start_data();
       GMV::write_cell_data(*tcc_next, 0, "component0");
       GMV::write_cell_data(*tcc_next, 1, "component1");
+      GMV::write_cell_data(*tcc_next, 2, "component2");
       GMV::close_data_file();
     }
 

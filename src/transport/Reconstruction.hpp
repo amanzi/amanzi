@@ -50,6 +50,8 @@ class Reconstruction {
  
   // access
   double getValue(const int cell, const AmanziGeometry::Point& p);
+  double getValue(AmanziGeometry::Point& gradient, const int cell, const AmanziGeometry::Point& p);
+
   Teuchos::RCP<Epetra_MultiVector> get_gradient() { return gradient_; }
   std::vector<double>& get_field_local_min() { return field_local_min_; }
   std::vector<double>& get_field_local_max() { return field_local_max_; }
