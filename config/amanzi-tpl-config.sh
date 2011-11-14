@@ -168,7 +168,7 @@ METIS_VERSION=4.0.3
 #
 BUILD_MSTK=0
 MSTK_PREFIX=${PREFIX}
-MSTK_VERSION=1.80
+MSTK_VERSION=1.83rc4
 
 #
 # MOAB
@@ -881,11 +881,11 @@ function build_trilinos {
 ################################################################################
 function build_mstk {
     if [ ${MSTK_PREFIX} == $PREFIX ]; then
-        MSTK_DIR=${PREFIX}/mstk/mstk-1.8
+        MSTK_DIR=${PREFIX}/mstk/mstk-${MSTK_VERSION}
         rm -rf ${MSTK_DIR}
         mkdir -p ${PREFIX}/mstk
-        #tar ${TAR_FLAGS} ${SOURCE}/mstk-${MSTK_VERSION}.tar.gz -C ${PREFIX}/mstk
-        tar xvf ${DOWNLOAD_DIRECTORY}/mstk-${MSTK_VERSION}.tar -C ${PREFIX}/mstk
+        tar ${TAR_FLAGS} ${DOWNLOAD_DIRECTORY}/mstk-${MSTK_VERSION}.tgz -C ${PREFIX}/mstk
+        #tar xvf ${DOWNLOAD_DIRECTORY}/mstk-${MSTK_VERSION}.tar -C ${PREFIX}/mstk
         cd ${MSTK_DIR}
    
 	mkdir -p ${MSTK_DIR}/build
@@ -894,6 +894,7 @@ function build_mstk {
     	    -D CMAKE_BUILD_TYPE:STRING=Release \
     	    -D ENABLE_PARALLEL=yes \
     	    -D ENABLE_ExodusII=yes \
+	    -D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \
     	    -D NetCDF_DIR:FILEPATH=${NETCDF_PREFIX} \
     	    -D ExodusII_DIR:FILEPATH=${EXODUS_PREFIX} \
     	    -D Metis_DIR:FILEPATH=${METIS_PREFIX} \
