@@ -420,7 +420,7 @@ namespace Amanzi {
 	{
 	  Teuchos::ParameterList& tbc_list = trp_list.sublist("Transport BCs");
 	  
-	  tbc_list.set<int>("number of BCs", n_transport_bcs);
+
 
 	  Teuchos::ParameterList& phase_list = plist.sublist("Phase Definitions");
 
@@ -443,13 +443,9 @@ namespace Amanzi {
 			  Teuchos::ParameterList& solbc = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC");
 			  
 			  Teuchos::ParameterList& comps = bc_sublist.sublist((bc_sublist.name(i))).sublist("Solute BC").sublist(phase_name).sublist(phase_comp_name);
-			  			  
-			  std::stringstream ss; 
-			  ss << "BC " << bc_counter;
-			  bc_counter++;
-
-			  Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());			
 			  
+
+
 			  for (Teuchos::Array<std::string>::const_iterator i = comp_names.begin();
 			       i != comp_names.end(); i++)
 			    {
@@ -461,21 +457,32 @@ namespace Amanzi {
 				  // for now just read the first value from the 
 				  if ( comps.sublist(*i).isSublist("BC: Inflow") )
 				    {
+				      
+				      std::stringstream ss; 
+				      ss << "BC " << bc_counter;	
+				      Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
+
 				      Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Inflow");
 				      
 				      Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
+				      Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
+				      Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time functions");
+				      bc.set<Teuchos::Array<double> >(compss.str(), values );
+				      bc.set<Teuchos::Array<double> >("Times", times);
+				      bc.set<Teuchos::Array<std::string> >("Time functions", time_fns);
+				      bc.set<Teuchos::Array<std::string> >("Regions", regs);
+
+				      bc_counter++;
 				      
-				      bc.set<int>(compss.str(), values[0] );
-				      bc.set<std::string>("Type","Constant");
-				      bc.set<Teuchos::Array<std::string> >("Region", regs);
 				    }
 				  
 				}
+			      
 			    }
 			}
 		    }
+		  tbc_list.set<int>("number of BCs", bc_counter);
 	      	}
-	      
 	    }
 	  else
 	    {
@@ -736,6 +743,7 @@ namespace Amanzi {
 	  
 	  stt_list.set<double>("Constant viscosity", viscosity);
 	  stt_list.set<double>("Constant water density", density);
+	  stt_list.set<double>("Constant water saturation",1.0);
 
 	  int region_counter = 0;
 	  int comp_counter;
@@ -754,7 +762,7 @@ namespace Amanzi {
 	      for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++)
 		{
 		  std::stringstream sss;
-		  sss << "Mesh Block " << region_counter++;
+		  sss << "Mesh block " << ++region_counter;
 
 		  Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
 
