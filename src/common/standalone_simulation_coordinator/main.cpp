@@ -23,14 +23,6 @@ int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
 
-  // make sure only PE0 can write to std::cout
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-
-  //if (rank!=0) {
-  //  cout.rdbuf(0);
-  //} 
-
   Teuchos::CommandLineProcessor CLP;
   
   CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"

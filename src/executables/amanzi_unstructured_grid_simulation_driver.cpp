@@ -94,7 +94,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
       Teuchos::writeParameterListToXmlOStream(new_list, *out);
       *out << "======================> done dumping parameter list. <================"<<std::endl;
     }
-  return Amanzi::Simulator::SUCCESS;
+  //return Amanzi::Simulator::SUCCESS;
   using namespace std;
 
   Amanzi::AmanziMesh::MeshFactory factory(*comm);
