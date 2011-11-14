@@ -1,9 +1,4 @@
 #include <iostream>
-#include <cstdlib>
-#include <cmath>
-
-#include "Exodus_readers.hh"
-#include "Parallel_Exodus_file.hh"
 
 #include <Epetra_Comm.h>
 #include <Epetra_MpiComm.h>
@@ -11,22 +6,17 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_Version.hpp"
-#include "Teuchos_DefaultMpiComm.hpp"
 
 #include "MeshFactory.hh"
 #include "State.hpp"
 #include "MPC.hpp"
 
+#include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 
 #include "amanzi_unstructured_grid_simulation_driver.hpp"
 #include "InputParserIS.H"
-#include "Teuchos_StrUtils.hpp"
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
