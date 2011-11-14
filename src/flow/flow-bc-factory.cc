@@ -85,12 +85,12 @@ void FlowBCFactory::process_pressure_spec(Teuchos::ParameterList &list, Boundary
 {
   Errors::Message m;
   // Get the regions parameter value.
-  std::vector<int> regions;
+  std::vector<std::string> regions;
   if (list.isParameter("regions")) {
-    if (list.isType<Teuchos::Array<int> >("regions")) {
-      regions = list.get<Teuchos::Array<int> >("regions").toVector();
+    if (list.isType<Teuchos::Array<std::string> >("regions")) {
+      regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
     } else { // ERROR -- "regions" is not of type Array<int>
-      m << "parameter \"regions\" is not of type Array<int>";
+      m << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(m);
     }
   } else { // ERROR -- "regions" is missing
@@ -153,12 +153,12 @@ void FlowBCFactory::process_mass_flux_spec(Teuchos::ParameterList &list,
 {
   Errors::Message m;
   // Get the regions parameter value.
-  std::vector<int> regions;
+  std::vector<std::string> regions;
   if (list.isParameter("regions")) {
-    if (list.isType<Teuchos::Array<int> >("regions")) {
-      regions = list.get<Teuchos::Array<int> >("regions").toVector();
+    if (list.isType<Teuchos::Array<std::string> >("regions")) {
+      regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
     } else { // ERROR -- "regions" is not of type Array<int>
-      m << "parameter \"regions\" is not of type Array<int>";
+      m << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(m);
     }
   } else { // ERROR -- "regions" is missing
@@ -221,12 +221,12 @@ void FlowBCFactory::process_static_head_spec(double p0, double density, double g
 {
   Errors::Message m;
   // Get the regions parameter value.
-  std::vector<int> regions;
+  std::vector<std::string> regions;
   if (list.isParameter("regions")) {
-    if (list.isType<Teuchos::Array<int> >("regions")) {
-      regions = list.get<Teuchos::Array<int> >("regions").toVector();
+    if (list.isType<Teuchos::Array<std::string> >("regions")) {
+      regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
     } else { // ERROR -- "regions" is not of type Array<int>
-      m << "parameter \"regions\" is not of type Array<int>";
+      m << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(m);
     }
   } else { // ERROR -- "regions" is missing

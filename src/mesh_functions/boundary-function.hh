@@ -23,8 +23,8 @@ class BoundaryFunction {
  public:
   BoundaryFunction(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh) : mesh_(mesh) {}
   
-  void Define(const std::vector<int> &regions, const Teuchos::RCP<const Function> &f);
-  void Define(int region, const Teuchos::RCP<const Function> &f);
+  void Define(const std::vector<std::string> &regions, const Teuchos::RCP<const Function> &f);
+  void Define(const std::string region, const Teuchos::RCP<const Function> &f);
   
   typedef const std::map<int,double>& Value;
   typedef std::map<int,double>::const_iterator ValueIterator;
