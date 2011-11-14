@@ -37,7 +37,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "=== TEST ADVANCE in 2D ===" << endl;
+cout << "Test: 2D transport for a long time" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -45,7 +45,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
 #endif
 
   /* create a MPC state with three component */
-  int num_components = 3;
+  int num_components = 1;
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_50x50_ss.exo", MPI_COMM_WORLD, 2));
 
   State mpc_state(num_components, mesh);
@@ -60,7 +60,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   /* initialize a transport process kernel from a transport state */
   ParameterList parameter_list;
-  string xmlFileName = "test/test_transport_2D.xml";
+  string xmlFileName = "test/test_transport_2D_long.xml";
 
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
   Transport_PK TPK(parameter_list, TS);
@@ -77,29 +77,21 @@ TEST(ADVANCE_WITH_2D_MESH) {
 
   iter = 0;
   bool flag = true;
-  while (T < 0.3) {
+  while (T < 0.2) {
     double dT = TPK.calculate_transport_dT();
     TPK.advance(dT);
     T += dT;
     iter++;
 
-    if (iter < 15) {
-      printf( "T=%6.2f  C_0(x):", T );
-      for( int k=0; k<9; k++ ) {
-        int k1 = 9 - k;  // reflects cell numbering in the exodus file
-        printf("%7.4f", (*tcc_next)[0][k1]); 
-      }
-      printf("\n");
-    }
-
-    if (T > 0.2 && flag) {
+    if (T>0.2 && flag) {
       flag = false;
       GMV::open_data_file(*mesh, (std::string)"transport.gmv");
       GMV::start_data();
       GMV::write_cell_data(*tcc_next, 0, "component0");
-      GMV::write_cell_data(*tcc_next, 1, "component1");
-      GMV::write_cell_data(*tcc_next, 2, "component2");
+      //GMV::write_cell_data(*tcc_next, 1, "component1");
+      //GMV::write_cell_data(*tcc_next, 2, "component2");
       GMV::close_data_file();
+      break;
     }
 
     *tcc = *tcc_next;

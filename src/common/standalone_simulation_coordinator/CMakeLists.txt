@@ -115,7 +115,7 @@ set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${
 
 add_executable(amanzi main.cpp)
 
-target_link_libraries(amanzi ${ssc_tpl_libs_incl} ${ssc_tpl_libs})
+target_link_libraries(amanzi ${ssc_tpl_libs_incl} ${ssc_tpl_libs} z)
 #message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
 add_install_binary(amanzi)
 

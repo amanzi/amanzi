@@ -102,6 +102,8 @@ int Transport_PK::Init()
   current_component_ = -1;  // default value may be useful in the future
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
   component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
+
+  advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   lifting.reset_field(mesh_, component_);
@@ -150,9 +152,17 @@ void Transport_PK::process_parameter_list()
   else if (dispersivity_name == "Lichtner") {
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
   }
- 
+
   dispersivity_longitudinal = parameter_list.get<double>("dispersivity longitudinal", 0.0);
   dispersivity_transverse = parameter_list.get<double>("dispersivity transverse", 0.0);
+
+  string advection_limiter_name = parameter_list.get<string>("advection limiter", "none");
+  if (advection_limiter_name == "BarthJespersen") {
+    advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
+  }
+  else if (advection_limiter_name == "Tensorial" || advection_limiter_name == "none") {
+    advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
+  }
    
   // control parameter
   verbosity_level = parameter_list.get<int>("verbosity level", 0);
@@ -426,8 +436,6 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
   lifting.reset_field(mesh_, component_);
   lifting.Init();
 
-  //Explicit_TI::RK::method_t TVD_RK = Explicit_TI::RK::heun_euler;
-
   for (i=0; i<num_components; i++) {
     for (c=cmin; c<=cmax; c++) (*component_)[c] = (*tcc_next)[i][c];
 
@@ -440,17 +448,13 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     lifting.calculateCellGradient();
 
     Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
-    std::vector<double>& field_local_min = lifting.get_field_local_min();
+    std::vector<double>& field_local_min = lifting.get_field_local_min();  // not used (lipnikov@lanl.gov)
     std::vector<double>& field_local_max = lifting.get_field_local_max();
 
-    calculateLimiterBarthJespersen(i, 
-                                   component_, 
-                                   gradient, 
-                                   field_local_min, 
-                                   field_local_max, 
-                                   limiter_);
+    limiterBarthJespersen(
+        i, component_, gradient, field_local_min, field_local_max, limiter_);
     lifting.applyLimiter(limiter_);
-
+ 
     // ADVECTIVE FLUXES
     for (f=fmin; f<=fmax; f++) {  // loop over master and slave faces
       c1 = (*upwind_cell_)[f]; 
@@ -613,130 +617,6 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
   }
 
   status = TRANSPORT_STATE_COMPLETE;
-}
-
-
-/* *******************************************************************
- * The BJ limiter has been adjusted to linear advection. 
- ****************************************************************** */
-void Transport_PK::calculateLimiterBarthJespersen(const int component,
-                                                  Teuchos::RCP<Epetra_Vector> scalar_field, 
-                                                  Teuchos::RCP<Epetra_MultiVector> gradient,
-                                                  std::vector<double>& field_local_min,
-                                                  std::vector<double>& field_local_max,
-                                                  Teuchos::RCP<Epetra_Vector> limiter)
-                                                  
-{
-  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0;
- 
-  std::vector<double> total_influx(number_wghost_cells, 0.0);  // follows calculation of dT
-  std::vector<double> total_outflux(number_wghost_cells, 0.0);
-  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
-
-  double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
-  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
-
-  for (int f=fmin; f<=fmax_owned; f++) {
-    int c1, c2;
-    c1 = (*upwind_cell_)[f];
-    c2 = (*downwind_cell_)[f];
-    if (c1<0 || c2<0) continue; // boundary faces are considered separately
-
-    const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
-    const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-    const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-
-    u1 = (*scalar_field)[c1];
-    u2 = (*scalar_field)[c2];
-    umin = std::min(u1, u2);
-    umax = std::max(u1, u2);
-
-    for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c1]; 
-    double u1_add = gradient_c1 * (xcf - xc1);
-    u1f = u1 + u1_add;
-    if (u1f < umin) {
-      (*limiter)[c1] = std::min((*limiter)[c1], (umin - u1) / u1_add * TRANSPORT_LIMITER_CORRECTION);
-    }
-    else if (u1f > umax) {
-      (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u1_add * TRANSPORT_LIMITER_CORRECTION); 
-    }
-
-    for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
-    double u2_add = gradient_c2 * (xcf - xc2);
-    u2f = u2 + u2_add;
-    if (u2f < umin) {
-      (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u2_add * TRANSPORT_LIMITER_CORRECTION);
-    }
-    else if (u2f > umax) {
-      (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u2_add * TRANSPORT_LIMITER_CORRECTION); 
-    }
-
-    double diff, psi = 1.0;  
-    if (u1 < u1f) {
-      diff = (*scalar_field)[c1] - field_local_min[c1];
-      if (diff) psi = std::max(-u1_add/diff, 0.0);
-      else (*limiter)[c1] = 0.0;  // local minimum
-    }
-    else if (u1 > u1f) {
-      diff = (*scalar_field)[c1] - field_local_max[c1];
-      if (diff) psi = std::max(-u1_add/diff, 0.0);
-      else (*limiter)[c1] = 0.0;  // local maximum
-    }
-     
-    total_influx[c2] += fabs(darcy_flux[f]);
-    total_outflux[c1] += fabs(darcy_flux[f]) * psi; 
-  } 
- 
-  // limiting second term in the flux formula (outflow darcy_flux)
-  for (int c=cmin; c<=cmax_owned; c++) {
-    if (total_outflux[c]) {
-      double psi = std::max(total_influx[c] / total_outflux[c], 1.0);
-      (*limiter)[c] = std::min((*limiter)[c], psi);
-    }
-  }
-
-  // limiting gradient on the Dirichlet boundary
-  for ( int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
-      int c1 = (*upwind_cell_)[f]; 
-      int c2 = (*downwind_cell_)[f]; 
-
-      if (c2 >= 0) {
-        u2 = (*scalar_field)[c2];
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-          u1 = bcs[n].values[component];
-          umin = std::min(u1, u2);
-          umax = std::max(u1, u2);
-
-          const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-          const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-
-          for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
-          double u_add = gradient_c2 * (xcf - xc2);
-          u2f = u2 + u_add;
-          if (u2f < umin) {
-            (*limiter)[c2] = std::min((*limiter)[c2], (umin-u2) / u_add * TRANSPORT_LIMITER_CORRECTION);
-          }
-          else if (u2f > umax) {
-            (*limiter)[c2] = std::min((*limiter)[c2], (umax-u2) / u_add * TRANSPORT_LIMITER_CORRECTION); 
-          }
-        } 
-      }
-      else if (c1 >= 0) {
-        //(*limiter)[c1] = 0.0;  // ad-hoc testing (lipnikov@lanl.gov)
-      }
-    }
-  }
-
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = (*limiter_).Map();
-  const Epetra_BlockMap& target_fmap = (*limiter_).Map();
-
-  Epetra_Import importer(target_fmap, source_fmap);
-  (*limiter_).Import(*limiter_, importer, Insert);
-#endif
 }
 
 

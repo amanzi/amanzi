@@ -53,7 +53,6 @@ const int TRANSPORT_BC_DISPERSION_FLUX = 2;
 const int TRANSPORT_BC_NULL = 3;
 
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
-const double TRANSPORT_LIMITER_CORRECTION = 0.9999999999999;
 
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These olyhedron parameters must
@@ -63,6 +62,9 @@ const int TRANSPORT_DISPERSIVITY_MODEL_NULL = 1;
 const int TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC = 2;
 const int TRANSPORT_DISPERSIVITY_MODEL_BEAR = 3;
 const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
+
+const int TRANSPORT_LIMITER_BARTH_JESPERSEN = 1; 
+const int TRANSPORT_LIMITER_TENSORIAL = 2;
 
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
@@ -106,12 +108,21 @@ class Transport_PK : public Explicit_TI::fnBase {
   void advance_arbitrary_order_upwind(double dT);
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
-  void calculateLimiterBarthJespersen(const int component,
-                                      Teuchos::RCP<Epetra_Vector> scalar_field, 
-                                      Teuchos::RCP<Epetra_MultiVector> gradient, 
-                                      std::vector<double>& field_local_min,
-                                      std::vector<double>& field_local_max,
-                                      Teuchos::RCP<Epetra_Vector> limiter);
+  void limiterBarthJespersen(const int component,
+                             Teuchos::RCP<Epetra_Vector> scalar_field, 
+                             Teuchos::RCP<Epetra_MultiVector> gradient, 
+                             std::vector<double>& field_local_min,
+                             std::vector<double>& field_local_max,
+                             Teuchos::RCP<Epetra_Vector> limiter);
+
+  void limiterTensorial(const int component,
+                        Teuchos::RCP<Epetra_Vector> scalar_field, 
+                        Teuchos::RCP<Epetra_MultiVector> gradient);
+
+  void apply_directional_limiter(AmanziGeometry::Point& normal, 
+                                 AmanziGeometry::Point& p,
+                                 AmanziGeometry::Point& direction, 
+                                 AmanziGeometry::Point& gradient);
 
   void process_parameter_list();
   void identify_upwind_cells();
@@ -171,6 +182,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> harmonic_points_weight;
   std::vector<double> harmonic_points_value;
   std::vector<WhetStone::Tensor> dispersion_tensor;
+
+  int advection_limiter;  // data for limiters
 
   double cfl, dT, dT_debug, T_internal;  
   int number_components; 
