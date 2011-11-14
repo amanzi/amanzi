@@ -23,14 +23,6 @@ int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
 
-  // make sure only PE0 can write to std::cout
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
-
-  //if (rank!=0) {
-  //  cout.rdbuf(0);
-  //} 
-
   Teuchos::CommandLineProcessor CLP;
   
   CLP.setDocString("\nThe Amanzi driver reads an XML input file and\n"
@@ -63,17 +55,31 @@ int main(int argc, char *argv[])
   Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
   const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
   
-  // Read the "Framework" from the "Mesh" parameter list so that we know which driver to call
-  // The available options are "Structured" and the unstructured options "SimpleMesh", "stk::mesh"
-  typedef Teuchos::StringToIntegralParameterEntryValidator<int> StrValidator;
-  Teuchos::RCP<StrValidator> frameworkValidator
-    = Teuchos::rcp(new StrValidator(Teuchos::tuple<std::string>( "Structured", "SimpleMesh", "stk::mesh" )
-                                    ,"Framework") );
-  
-  std::string framework
-    = frameworkValidator->validateString(Teuchos::getParameter<std::string>(mesh_parameter_list,"Framework"));
+  std::string framework;
 
   Amanzi::Simulator* simulator = 0;
+
+  if ( mesh_parameter_list.isSublist("Structured") && mesh_parameter_list.isSublist("Unstructured") ) 
+    {
+      amanzi_throw(Errors::Message("You can only specify one of either Unstructured or Structured"));
+    }
+  
+  if ( !mesh_parameter_list.isSublist("Structured") && !mesh_parameter_list.isSublist("Unstructured") )  
+    {
+      amanzi_throw(Errors::Message("You must specify either Unstructured or Structured"));
+    }
+
+  if ( mesh_parameter_list.isSublist("Unstructured") ) 
+    {
+      framework = "Unstructured";
+    }
+  
+  if ( mesh_parameter_list.isSublist("Structured") ) 
+    {
+      framework = "Structured";
+    }
+   
+     
   
   if (framework=="Structured")
     {
