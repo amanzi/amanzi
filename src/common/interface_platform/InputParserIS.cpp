@@ -245,11 +245,11 @@ namespace Amanzi {
 		{
 		  Teuchos::ParameterList& generate = plist.sublist("Mesh").sublist("Unstructured").sublist("Generate Mesh").sublist("Uniform Structured");
 		  Teuchos::Array<int> ncells = generate.get<Teuchos::Array<int> >("Number of Cells");
-		  Teuchos::Array<double> low = generate.get<Teuchos::Array<double> >("Domain Low Coordinate");
-		  Teuchos::Array<double> high = generate.get<Teuchos::Array<double> >("Domain High Coordinate");		  
+		  Teuchos::Array<double> low = generate.get<Teuchos::Array<double> >("Domain Low Corner");
+		  Teuchos::Array<double> high = generate.get<Teuchos::Array<double> >("Domain High Corner");		  
 		  
-		  msh_list.set<std::string>("Framework","MSTK");
-		  Teuchos::ParameterList& msh_gen = msh_list.sublist("Generate");
+		  // msh_list.set<std::string>("Framework","MSTK");
+		  Teuchos::ParameterList& msh_gen = msh_list.sublist("Unstructured").sublist("Generate Mesh");
 		  
 		  msh_gen.set<int>("Number of Cells in X",ncells[0]);
 		  msh_gen.set<int>("Number of Cells in Y",ncells[1]);

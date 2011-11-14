@@ -75,7 +75,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   Teuchos::ParameterList domain_params = new_list.sublist("Domain");
   unsigned int spdim = domain_params.get<int>("Spatial Dimension");
-
+  
   Amanzi::AmanziGeometry::Domain *simdomain_ptr = new Amanzi::AmanziGeometry::Domain(spdim);
 
 
@@ -175,12 +175,10 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
 	if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::Simple)) {
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::Simple);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MOAB)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MOAB);
-	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
-	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
 	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::MSTK)) {
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
+	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
+	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
 	} else if (framework == "") {
 	  // do nothing
 	} else {
@@ -277,11 +275,11 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   } // If Read parameters are specified
 
-  else if (unstr_mesh_params.isSublist("Generate")) {
+  else if (unstr_mesh_params.isSublist("Generate Mesh")) {
 
-    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("Generate");
+    Teuchos::ParameterList gen_params = unstr_mesh_params.sublist("Generate Mesh");
     ierr = 0;
-
+    
     try {
 
       // create the mesh by internal generation
