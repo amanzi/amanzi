@@ -53,6 +53,14 @@ if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
+   # Need to copy files for the tests 
+    if (NOT (${STK_SOURCE_DIR} EQUAL ${STK_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${STK_SOURCE_DIR}/test ${STK_BINARY_DIR}/test) 
+    endif()
+
+
+
     # Test: stk_mesh
     add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
                      test/test_Maps.cc test/test_Hex.cc)
