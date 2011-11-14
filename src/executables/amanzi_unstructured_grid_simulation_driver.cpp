@@ -45,42 +45,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   
   if (! native)
     {
-
       new_list = Amanzi::AmanziInput::translate(input_parameter_list);
-
-      // Amanzi::AmanziInput::init_global_info(input_parameter_list);
-
-      // sub_list = Amanzi::AmanziInput::create_Checkpoint_Data_List (input_parameter_list);
-      // new_list.sublist("Checkpoint Data") = sub_list;    
-      
-      // sub_list = Amanzi::AmanziInput::create_Visualization_Data_List (input_parameter_list);
-      // new_list.sublist("Visualization Data") = sub_list;    
-
-      // sub_list = Amanzi::AmanziInput::create_Observation_Data_List (input_parameter_list); 
-      // new_list.sublist("Observation Data") = sub_list;
-
-      // sub_list = Amanzi::AmanziInput::get_Regions_List(input_parameter_list);
-      // new_list.sublist("Regions") = sub_list;
-      
-      // sub_list = Amanzi::AmanziInput::get_Mesh_List(input_parameter_list);
-      // new_list.sublist("Mesh") = sub_list;
-
-      // sub_list = Amanzi::AmanziInput::get_Domain_List(input_parameter_list);
-      // new_list.sublist("Domain") = sub_list;
-
-      // sub_list = Amanzi::AmanziInput::create_MPC_List(input_parameter_list);
-      // new_list.sublist("MPC") = sub_list;
-      
-      // sub_list = Amanzi::AmanziInput::create_Transport_List(input_parameter_list);
-      // new_list.sublist("Transport") = sub_list;
-       
-      // sub_list = Amanzi::AmanziInput::create_State_List(input_parameter_list);
-      // new_list.sublist("State") = sub_list;
-
-      // sub_list = Amanzi::AmanziInput::create_Flow_List(input_parameter_list);
-      // new_list.sublist("Flow") = sub_list;
-
-      //params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
     }
   else
     {
@@ -94,7 +59,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
       Teuchos::writeParameterListToXmlOStream(new_list, *out);
       *out << "======================> done dumping parameter list. <================"<<std::endl;
     }
-  //return Amanzi::Simulator::SUCCESS;
+
   using namespace std;
 
   Amanzi::AmanziMesh::MeshFactory factory(*comm);
@@ -182,6 +147,8 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   }
 
   ASSERT(!mesh.is_null());
+  
+  std::cout << "MESH HAS BEEN CREATED" << std::endl;
 
   // create the MPC
   Amanzi::MPC mpc(new_list, mesh, comm, output_observations);
