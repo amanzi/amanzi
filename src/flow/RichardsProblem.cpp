@@ -54,7 +54,12 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   // resize the vectors for permeability
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
-
+  
+  if ( ! list.isSublist("Water retention models") )
+    {
+      Errors::Message m("There is no Water retention models list");
+      Exceptions::amanzi_throw(m);
+    }
   Teuchos::ParameterList &vGsl = list.sublist("Water retention models");
 
   // read the water retention model sublist and create the WRM array
@@ -91,14 +96,15 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 	  if ( wrmlist.get<string>("Water retention model") == "van Genuchten") 
 	    {
 	      // read the mesh block number that this model applies to
-	      int meshblock = wrmlist.get<int>("Region ID");
-	      
+	      //int meshblock = wrmlist.get<int>("Region ID");
+	      std::string region = wrmlist.get<std::string>("Region");
+
 	      // read values for the van Genuchten model
 	      double vG_m_      = wrmlist.get<double>("van Genuchten m");
 	      double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
 	      double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
 	      
-	      WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m_,vG_alpha_,
+	      WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_,
 							       vG_sr_,p_atm_));
 	    }
 	  
@@ -255,10 +261,10 @@ void RichardsProblem::ComputeRelPerm(const Epetra_Vector &P, Epetra_Vector &k_re
   ASSERT(k_rel.Map().SameAs(CellMap(true)));
   for (int mb=0; mb<WRM.size(); mb++) {
     // get mesh block cells
-    unsigned int mb_id = WRM[mb]->mesh_block();
-    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
+    std::string region = WRM[mb]->region();
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::USED);
     std::vector<unsigned int> block(ncells);
-    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::USED,&block);
     std::vector<unsigned int>::iterator j;
     for (j = block.begin(); j!=block.end(); j++) {
       k_rel[*j] = WRM[mb]->k_relative(P[*j]);
@@ -272,11 +278,11 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int mb_id = WRM[mb]->mesh_block();
-      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
+      std::string region = WRM[mb]->region();
+      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::USED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
+      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::USED,&block);
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -291,11 +297,11 @@ void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int mb_id = WRM[mb]->mesh_block();
-      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
+      std::string region = WRM[mb]->region();
+      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
+      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -312,11 +318,11 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int mb_id = WRM[mb]->mesh_block();
-      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
+      std::string region = WRM[mb]->region();
+      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
+      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -848,12 +854,11 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double satura
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int mb_id = WRM[mb]->mesh_block();
-
-      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
+      std::string region = WRM[mb]->region();
+      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
+      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)
@@ -867,12 +872,12 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double satura
   for (int mb=0; mb<WRM.size(); mb++) 
     {
       // get mesh block cells
-      unsigned int mb_id = WRM[mb]->mesh_block();
+      std::string region = WRM[mb]->region();
 
-      unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
+      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
       std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
+      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
       std::vector<unsigned int>::iterator j;
       for (j = block.begin(); j!=block.end(); j++)

@@ -26,17 +26,17 @@ class BoundaryFunction {
   void Define(const std::vector<std::string> &regions, const Teuchos::RCP<const Function> &f);
   void Define(const std::string region, const Teuchos::RCP<const Function> &f);
   
-  typedef const std::map<int,double>& Value;
-  typedef std::map<int,double>::const_iterator ValueIterator;
-  Value operator() (double t) { Compute(t); return value_; }
+  void Compute(double);
+  typedef std::map<int,double>::const_iterator Iterator;
+  Iterator begin() const { return value_.begin(); }
+  Iterator end() const  { return value_.end(); }
+  Iterator find(const int j) const { return value_.find(j); }
   
   std::map<int,double>::size_type size() { return value_.size(); }
   
-  // another possible scheme
-  void Compute(double);
-  typedef std::map<int,double>::const_iterator Iterator;
-  Iterator begin() { return value_.begin(); }
-  Iterator end()   { return value_.end(); }
+  //typedef const std::map<int,double>& Value;
+  //typedef std::map<int,double>::const_iterator ValueIterator;
+  //Value operator() (double t) { Compute(t); return value_; }
   
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
