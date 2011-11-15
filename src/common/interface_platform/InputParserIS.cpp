@@ -545,7 +545,7 @@ namespace Amanzi {
 		  flow_bc = create_SS_FlowBC_List(plist);
 
 		  // insert the diffusion preconditioner sublist
-		  Teuchos::ParameterList &diffprecon = flw_list.sublist("Diffusion Preconditioner"); 
+		  Teuchos::ParameterList &diffprecon = richards_problem.sublist("Diffusion Preconditioner"); 
 		  diffprecon = create_DPC_List(plist);		  
 		}
 	      else
