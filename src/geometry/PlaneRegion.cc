@@ -65,7 +65,7 @@ PlaneRegion::inside(const Point& p) const
     }
   res -= d;
 
-  if (fabs(res) <= 1.0e-32)
+  if (fabs(res) <= 1.0e-12)
     result = true;
   else
     result = false;

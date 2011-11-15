@@ -56,7 +56,7 @@ PointRegion::inside(const Point& p) const
 
   for (int i = 0; i < p.dim(); ++i) 
     {
-      result = result & (fabs(p[i]-p_[i]) < 1e-20);
+      result = result & (fabs(p[i]-p_[i]) < 1e-12);
     }
 
   return result;
