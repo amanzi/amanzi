@@ -68,6 +68,10 @@ SUITE (STK_SETS)
 				     {4,9,14,19,23,27,32,36,40},
 				     {0,6,11,42,47,51,75,80,84}};
 
+  std::string expnsetnames[1] = {"Sample Point 1"};
+
+  unsigned int nsetsize, expnsetsizes[1] = {1};
+  unsigned int expnsetnodes[1][1] = {{21}};
 			   
 
   std::string infilename = "test/hex_4x4x4.xml";
@@ -198,6 +202,38 @@ SUITE (STK_SETS)
 	  CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	}
     }
+    else if (shape == "Region: Point") {
+
+      Teuchos::ParameterList point_params = reg_params.sublist(shape);
+      Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
+
+      // Do we have a valid set by this name
+      
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+	  
+      int j;
+      for (j = 0; j < 1; j++) {
+        if (expnsetnames[j] == reg_name) break;
+      }
+	  
+      CHECK(j < 1);
+	  
+	  
+      // Verify that we can get the right number of entities in the set
+	  
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+	  
+      CHECK_EQUAL(expnsetsizes[j],set_size);
+	  
+	  
+      // Verify that we can get the correct set entities
+      
+      Amanzi::AmanziMesh::Entity_ID_List setents;
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents);
+	  
+      CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
+
+    }
     else if (shape == "Region: Labeled Set") {
 
       Teuchos::ParameterList lsparams = reg_params.sublist(shape);
@@ -295,6 +331,12 @@ SUITE (STK_SETS)
     unsigned int expfsetfaces[6][9] = {{3,8,13,19,23,27,32,36,40},
 				       {78,82,86,-1,-1,-1,-1,-1,-1}};
 
+
+    std::string expnsetnames[1] = {"Sample Point 1"};
+
+    unsigned int nsetsize, expnsetsizes[1] = {1};
+    unsigned int expnsetnodes[1][1] = {{21}};
+			   
 
     std::string infilename = "test/hex_3x3x3.xml";
     Teuchos::ParameterXMLFileReader xmlreader(infilename);
@@ -423,6 +465,38 @@ SUITE (STK_SETS)
 	  
 	    CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	  }
+      }
+      else if (shape == "Region: Point") {
+        
+        Teuchos::ParameterList point_params = reg_params.sublist(shape);
+        Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
+        
+        // Do we have a valid set by this name
+        
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+        
+        int j;
+        for (j = 0; j < 1; j++) {
+          if (expnsetnames[j] == reg_name) break;
+        }
+        
+        CHECK(j < 1);
+        
+	
+        // Verify that we can get the right number of entities in the set
+        
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+        
+        CHECK_EQUAL(expnsetsizes[j],set_size);
+        
+	
+        // Verify that we can get the correct set entities
+        
+        Amanzi::AmanziMesh::Entity_ID_List setents;
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents);
+        
+        CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
+        
       }
       else if (shape == "Region: Labeled Set") {
 
