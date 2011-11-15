@@ -23,7 +23,7 @@ namespace bl = boost::lambda;
 // STK_mesh
 #include "Mesh_STK_factory.hh"
 #include "Element_field_types.hh"
-#include "Cell_topology.hh"
+#include "Cell_type_to_shards.hh"
 #include "Mesh_common.hh"
 #include "stk_mesh_error.hh"
 
