@@ -199,6 +199,7 @@ void MPC::read_parameter_list()
 {
   T0 = mpc_parameter_list.get<double>("Start Time");
   T1 = mpc_parameter_list.get<double>("End Time");
+  dT0 = mpc_parameter_list.get<double>("Initial time step");
   end_cycle = mpc_parameter_list.get<int>("End Cycle",-1);
 }
 
@@ -249,31 +250,32 @@ void MPC::cycle_driver ()
   // restart was requested, and if not we do the steady
   // state flow calculation
 
-  if (restart_requested == false)
-    {
+  // if (restart_requested == false)
+  //   {
       
-      // first solve the flow equation to steady state
-      if (flow_enabled) {
-	FPK->advance_to_steady_state();
+  //     // first solve the flow equation to steady state
+  //     if (flow_enabled) {
+  // 	FPK->advance_to_steady_state();
 	
-	// reset the time after the steady state solve
-	S->set_time(T0);
+  // 	// reset the time after the steady state solve
+  // 	S->set_time(T0);
 	
-	S->update_darcy_flux(FPK->Flux());
-	S->update_pressure(FPK->Pressure());
-	FPK->commit_state(FS);
-	FPK->GetVelocity(*S->get_darcy_velocity());
+  // 	S->update_darcy_flux(FPK->Flux());
+  // 	S->update_pressure(FPK->Pressure());
+  // 	FPK->commit_state(FS);
+  // 	FPK->GetVelocity(*S->get_darcy_velocity());
 	
-	if ( flow_model == "Richards") 
-	  {
-	    Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
+  // 	if ( flow_model == "Richards") 
+  // 	  {
+  // 	    Transient_Richards_PK *RPK = dynamic_cast<Transient_Richards_PK*> (&*FPK); 
 	    
-	    RPK->GetSaturation(*S->get_water_saturation()); 
-	  }
+  // 	    RPK->GetSaturation(*S->get_water_saturation()); 
+  // 	  }
 
-      }
-    }
-  else
+  //     }
+  //   }
+  // else
+  if (restart_requested == true)
     {
       // re-initialize the state object
       restart->read_state( *S, restart_from_filename );
@@ -298,6 +300,12 @@ void MPC::cycle_driver ()
   // write a restart dump if requested
   restart->dump_state(*S);
 
+  if (flow_enabled)
+    {
+      FPK->init_transient(T0, dT0);
+    }
+
+
   if (flow_enabled || transport_enabled || chemistry_enabled) 
     {
       // make observations
@@ -314,9 +322,10 @@ void MPC::cycle_driver ()
 	
 	if (flow_enabled && flow_model == "Richards") 
 	  {
-	    
-	    
-	    //flow_dT = FPK->get_flow_dT();
+	    flow_dT = FPK->get_flow_dT();
+
+	    std::cout << flow_dT << std::endl;
+
 	  }
 	
 	if (transport_enabled) transport_dT = TPK->calculate_transport_dT();
@@ -325,7 +334,7 @@ void MPC::cycle_driver ()
 	  chemistry_dT = CPK->max_time_step();
 	}
 	
-	mpc_dT = std::min( transport_dT, chemistry_dT );
+	mpc_dT = std::min( std::min(flow_dT, transport_dT), chemistry_dT );
 	
 	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
 	  {
@@ -333,6 +342,13 @@ void MPC::cycle_driver ()
 	    *out << ",  Time = "<< S->get_time() / (60*60*24);
 	    *out << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
 	  }
+
+	
+	if (flow_enabled)
+	  {
+	    FPK->advance_transient(mpc_dT);
+	  }
+
 
 	if (transport_enabled) {
 	  

@@ -110,16 +110,35 @@ int Transient_Richards_PK::advance_to_steady_state()
 
 }
 
+int Transient_Richards_PK::init_transient(double t0, double h_)
+{
+  h = h_;
+  hnext = h_;
 
-int Transient_Richards_PK::advance_transient() 
+  // Set problem parameters.
+  problem->SetPermeability(FS->permeability());
+  problem->SetFlowState(FS);
+
+  Epetra_Vector udot(problem->Map());
+  problem->Compute_udot(t0,  *solution, udot);
+  
+  time_stepper->set_initial_state(t0, *solution, udot);
+  
+  int errc;
+  RME->update_precon(t0, *solution, h, errc);
+}
+
+
+int Transient_Richards_PK::advance_transient(double h) 
 {
   // Set problem parameters.
   problem->SetPermeability(FS->permeability());
   problem->SetFlowState(FS);
 
-  //time_stepper->bdf2_step(h,0.0,*solution,hnext);
-  //time_stepper->write_bdf2_stepping_statistics();  
+  time_stepper->bdf2_step(h,0.0,*solution,hnext);
+  time_stepper->commit_solution(h,*solution);  
 
+  time_stepper->write_bdf2_stepping_statistics();
 }
 
 

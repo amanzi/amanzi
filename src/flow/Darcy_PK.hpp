@@ -21,6 +21,9 @@ public:
 
   ~Darcy_PK ();
 
+  int advance_transient(double h) {}; 
+  int init_transient(double t0, double h0) {}; 
+  
   int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State>) {}
 
@@ -35,6 +38,8 @@ public:
   // Computes the components of the Darcy velocity on cells.
   void GetVelocity (Epetra_MultiVector &q) const
       { problem->DeriveDarcyVelocity(*solution, q); }
+
+  double get_flow_dT() { return 0.0; };
 
 private:
 

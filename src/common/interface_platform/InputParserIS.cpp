@@ -314,7 +314,10 @@ namespace Amanzi {
 	  mpc_list.set<double>("Start Time", exe_sublist.get<double>("Start Time"));
 	  mpc_list.set<double>("End Time", exe_sublist.get<double>("End Time"));
 	  mpc_list.set<int>("End Cycle",-1); // not in input spec, set reasonable value
-	  
+
+	  mpc_list.set<double>("Initial time step",exe_sublist.get<double>("Initial time step")); 
+
+
 	  // now interpret the modes
 	  if ( exe_sublist.isParameter("Transport Mode") ) 
 	    {
@@ -534,7 +537,7 @@ namespace Amanzi {
 		  time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
 
 		  // insert the water retention models sublist
-		  Teuchos::ParameterList &water_retention_models = flw_list.sublist("Water retention models"); 
+		  Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models"); 
 		  water_retention_models = create_WRM_List(plist);
 		  
 		  // insert the flow BC sublist
@@ -542,7 +545,7 @@ namespace Amanzi {
 		  flow_bc = create_SS_FlowBC_List(plist);
 
 		  // insert the diffusion preconditioner sublist
-		  Teuchos::ParameterList &diffprecon = flw_list.sublist("Diffusion Preconditioner"); 
+		  Teuchos::ParameterList &diffprecon = richards_problem.sublist("Diffusion Preconditioner"); 
 		  diffprecon = create_DPC_List(plist);		  
 		}
 	      else
@@ -652,17 +655,23 @@ namespace Amanzi {
 
 	      if ( bc.isSublist("BC:No Flow") )
 		{
-		  // this is the natural BC for flow and we need not list it explicitly
-
+		  // this is the natural BC for flow and we need not list it explicitly			    
 		}
 	      
-	      if ( bc.isSublist("BC: Flux") )
+	      else if ( bc.isSublist("BC: Flux") )
 		{
 		  Teuchos::ParameterList& bc_flux = bc.sublist("BC: Flux");
 
 		  Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time functions");
-		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Extensive Flux");
+		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
+		  
+		  if (!bc_flux.isParameter("Extensive Mass Flux"))
+		    {
+		      // we can only handle mass fluxes right now
+		      Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Extensive Mass Flux"));
+		    }
+
+		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Extensive Mass Flux");
 		  
 		  std::stringstream ss;
 		  ss << "BC " << bc_counter++;
@@ -685,7 +694,25 @@ namespace Amanzi {
 		      tbcs.set<Teuchos::Array<double> >("x values", times);
 		      tbcs.set<Teuchos::Array<double> >("y values", flux);
 		      
-		      //tbc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);  
+		      std::vector<std::string> forms_(time_fns.size());
+
+		      for (int i=0; i<time_fns.size(); i++)
+			if (time_fns[i] == "Linear")
+			  {
+			    forms_[i] = "linear";
+			  }
+			else if (time_fns[i] == "Constant")
+			  {
+			    forms_[i] = "constant";
+			  }
+			else
+			  {
+			    Exceptions::amanzi_throw(Errors::Message("Tabular function can only be Linear or Constant"));
+			  }
+		      
+		      Teuchos::Array<std::string> forms = forms_;		      
+		      tbcs.set<Teuchos::Array<std::string> >("forms", forms);
+
 		    }		      
 		  
 		  
@@ -693,12 +720,12 @@ namespace Amanzi {
 
 		}
 
-	      if ( bc.isSublist("BC: Uniform Pressure") ) 
+	      else if ( bc.isSublist("BC: Uniform Pressure") ) 
 		{
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 	  
 		  
@@ -724,9 +751,78 @@ namespace Amanzi {
 		      tbcs.set<Teuchos::Array<double> >("x values", times);
 		      tbcs.set<Teuchos::Array<double> >("y values", values);
 		      
-		      //tbc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);  
+		      
+		      std::vector<std::string> forms_(time_fns.size());
+
+		      for (int i=0; i<time_fns.size(); i++)
+			if (time_fns[i] == "Linear")
+			  {
+			    forms_[i] = "linear";
+			  }
+			else if (time_fns[i] == "Constant")
+			  {
+			    forms_[i] = "constant";
+			  }
+			else
+			  {
+			    Exceptions::amanzi_throw(Errors::Message("Tabular function can only be Linear or Constant"));
+			  }
+		      Teuchos::Array<std::string> forms = forms_;
+		      tbcs.set<Teuchos::Array<std::string> >("forms", forms);
 		    }
 		      
+		}
+	      else if (  bc.isSublist("BC: Hydrostatic") ) 
+		{
+		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
+		  
+		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
+		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
+	  
+		  
+		  std::stringstream ss;
+		  ss << "BC " << bc_counter++;
+		  
+		  
+		  Teuchos::ParameterList& tbc = ssf_list.sublist("static head").sublist(ss.str());
+		  tbc.set<Teuchos::Array<std::string> >("regions", regions );
+		  
+		  
+
+		  if ( times.size() == 1 )
+		    {
+		      Teuchos::ParameterList& tbcs = tbc.sublist("water table elevation").sublist("function-constant");
+		      tbcs.set<double>("value",values[0]);
+		      
+		    }
+		  else
+		    {
+		      Teuchos::ParameterList& tbcs = tbc.sublist("water table elevation").sublist("function-tabular");
+		      
+		      tbcs.set<Teuchos::Array<double> >("x values", times);
+		      tbcs.set<Teuchos::Array<double> >("y values", values);
+		      
+		      
+		      std::vector<std::string> forms_(time_fns.size());
+
+		      for (int i=0; i<time_fns.size(); i++)
+			if (time_fns[i] == "Linear")
+			  {
+			    forms_[i] = "linear";
+			  }
+			else if (time_fns[i] == "Constant")
+			  {
+			    forms_[i] = "constant";
+			  }
+			else
+			  {
+			    Exceptions::amanzi_throw(Errors::Message("Tabular function can only be Linear or Constant"));
+			  }
+		      Teuchos::Array<std::string> forms = forms_;
+		      tbcs.set<Teuchos::Array<std::string> >("forms", forms);
+		    }
+		  
 		}
 
 	      // TODO...
