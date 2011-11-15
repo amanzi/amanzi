@@ -314,7 +314,10 @@ namespace Amanzi {
 	  mpc_list.set<double>("Start Time", exe_sublist.get<double>("Start Time"));
 	  mpc_list.set<double>("End Time", exe_sublist.get<double>("End Time"));
 	  mpc_list.set<int>("End Cycle",-1); // not in input spec, set reasonable value
-	  
+
+	  mpc_list.set<double>("Initial time step",exe_sublist.get<double>("Initial time step")); 
+
+
 	  // now interpret the modes
 	  if ( exe_sublist.isParameter("Transport Mode") ) 
 	    {
