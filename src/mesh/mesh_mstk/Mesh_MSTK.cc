@@ -11,50 +11,32 @@ namespace AmanziMesh
 {
 
 
+//--------------------------------------
+// Constructor - load up mesh from file
+//--------------------------------------
+
 Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
 		      const AmanziGeometry::GeometricModelPtr& gm)
 {
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
 
-  // RVG: I don't think calling one constructor from another works FIXME FIXME
+  int ok;
+
+
+  // Pre-processing (init, MPI queries etc)
 
   int space_dimension = 3;
+  pre_create_steps_(space_dimension, incomm, gm);
 
-  Mesh_MSTK(filename,incomm,space_dimension,gm);
 
-}
 
-// Constructor - load up mesh from file
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, 
-		      int space_dimension,
-		      const AmanziGeometry::GeometricModelPtr& gm)
-{
-  int ok;
-  int ring = 1; // One layer of ghost cells in parallel meshes
-  int with_attr = 1;  // update of attributes in parallel meshes
-
-  clear_internals_();
-
-  MSTK_Init();
-
-  Mesh::set_geometric_model(gm);
-
-  set_space_dimension(space_dimension);
-
-  mpicomm = incomm;
-  MPI_Comm_rank(mpicomm,&myprocid);
-  MPI_Comm_size(mpicomm,&numprocs);
-
-  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
-
-  Mesh::set_comm(mpicomm);
-
-    if (myprocid == 0) {
+  if (myprocid == 0) {
     int DebugWait=0;
     while (DebugWait);
-    }
+  }
+
 
   if (serial_run) {
 
@@ -69,13 +51,15 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
   }
   else {
     Mesh_ptr globalmesh;
-    int dim=3;
+    int topo_dim=3; // What is the topological dimension of the mesh
+    int ring = 1; // One layer of ghost cells in parallel meshes
+    int with_attr = 1;  // update of attributes in parallel meshes
     
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
       ok = MESH_ImportFromExodusII(globalmesh,filename);
       
-      dim = MESH_Num_Regions(globalmesh) ? 3 : 2;
+      topo_dim = MESH_Num_Regions(globalmesh) ? 3 : 2;
       
       mesh = globalmesh;
     }
@@ -84,13 +68,13 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
-					numprocs,mpicomm);
+    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+                                   numprocs,mpicomm);
 
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 
-    set_cell_dimension(dim);
+    set_cell_dimension(topo_dim);
   }
 
   if (!ok) {
@@ -100,6 +84,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
   }
 
 
+
   // Do all the processing required for setting up the mesh for Amanzi 
   
   post_create_steps_();
@@ -107,7 +92,87 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
 }
 
 
+//--------------------------------------
+// Constructor - load up mesh from file
+//--------------------------------------
+
+Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, 
+		      int space_dimension,
+		      const AmanziGeometry::GeometricModelPtr& gm)
+{
+  int ok;
+
+  pre_create_steps_(space_dimension, incomm, gm);
+
+
+
+
+
+  if (myprocid == 0) {
+    int DebugWait=0;
+    while (DebugWait);
+  }
+
+  if (serial_run) {
+
+    // Load serial mesh
+
+    mesh = MESH_New(F1);
+    ok = MESH_ImportFromExodusII(mesh,filename);
+
+    set_cell_dimension((MESH_Num_Regions(mesh) ? 3 : 2));
+
+    myprocid = 0;
+  }
+  else {
+    Mesh_ptr globalmesh;
+    int topo_dim=3; // What is the topological dimension of the mesh
+    int ring = 1; // One layer of ghost cells in parallel meshes
+    int with_attr = 1;  // update of attributes in parallel meshes
+    
+    if (myprocid == 0) {
+      globalmesh = MESH_New(F1);
+      ok = MESH_ImportFromExodusII(globalmesh,filename);
+      
+      topo_dim = MESH_Num_Regions(globalmesh) ? 3 : 2;
+      
+      mesh = globalmesh;
+    }
+    else {
+      mesh = MESH_New(UNKNOWN_REP);
+      ok = 1;
+    }
+
+    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+                                   numprocs,mpicomm);
+
+    if (myprocid == 0)
+      MESH_Delete(globalmesh);
+    
+    set_cell_dimension(topo_dim);
+  }
+
+  if (!ok) {
+    std::cerr << "FAILED" << std::endl;
+    std::cerr << "Failed to load " << filename << " on processor " << myprocid << std::endl;
+    assert(ok);
+  }
+
+
+
+
+
+  // Do all the processing required for setting up the mesh for Amanzi 
+  
+  post_create_steps_();
+
+}
+
+
+//--------------------------------------
 // Construct a 3D regular hexahedral mesh internally
+//--------------------------------------
+
 
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const double x1, const double y1, const double z1,
@@ -117,29 +182,17 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const AmanziGeometry::GeometricModelPtr& gm) 
 {
   int ok;
-  int ring = 1; // One layer of ghost cells in parallel meshes
-  int with_attr = 1;  // update of attributes in parallel meshes
 
-  clear_internals_();
+  int space_dimension = 3;
+  pre_create_steps_(space_dimension, incomm->GetMpiComm(), gm);
 
-  MSTK_Init();
 
-  Mesh::set_geometric_model(gm);
 
-  set_space_dimension(3);
 
-  mpicomm = incomm->GetMpiComm();
-  MPI_Comm_rank(mpicomm,&myprocid);
-  MPI_Comm_size(mpicomm,&numprocs);
-
-  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
-
-  Mesh::set_comm(mpicomm);
-
-    if (myprocid == 0) {
+  if (myprocid == 0) {
     int DebugWait=0;
     while (DebugWait);
-    }
+  }
 
   if (serial_run) {
 
@@ -154,7 +207,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
   }
   else {
     Mesh_ptr globalmesh;
-    int dim=3;
+    int topo_dim=3; // What is the topological dimension of the mesh
+    int ring = 1; // One layer of ghost cells in parallel meshes
+    int with_attr = 1;  // update of attributes in parallel meshes
+
     
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
@@ -168,13 +224,13 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 
-    set_cell_dimension(3);
+    set_cell_dimension(topo_dim);
   }
 
   if (!ok) {
@@ -182,6 +238,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
     assert(ok);
   }
+
+
+
 
   // Do all the processing required for setting up the mesh for Amanzi 
   
@@ -192,7 +251,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
 
 
+//--------------------------------------
 // Construct a 3D regular hexahedral mesh internally
+//--------------------------------------
+
 
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const double x1, const double y1, const double z1,
@@ -202,29 +264,17 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const AmanziGeometry::GeometricModelPtr& gm) 
 {
   int ok;
-  int ring = 1; // One layer of ghost cells in parallel meshes
-  int with_attr = 1;  // update of attributes in parallel meshes
 
-  clear_internals_();
+  int space_dimension = 3;
+  pre_create_steps_(space_dimension, incomm, gm);
 
-  MSTK_Init();
 
-  Mesh::set_geometric_model(gm);
 
-  set_space_dimension(3);
 
-  mpicomm = incomm;
-  MPI_Comm_rank(mpicomm,&myprocid);
-  MPI_Comm_size(mpicomm,&numprocs);
-
-  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
-
-  Mesh::set_comm(mpicomm);
-
-    if (myprocid == 0) {
+  if (myprocid == 0) {
     int DebugWait=0;
     while (DebugWait);
-    }
+  }
 
   if (serial_run) {
 
@@ -239,8 +289,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
   }
   else {
     Mesh_ptr globalmesh;
-    int dim=3;
-    
+    int topo_dim=3; // What is the topological dimension of the mesh
+    int ring = 1; // One layer of ghost cells in parallel meshes
+    int with_attr = 1;  // update of attributes in parallel meshes
+      
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
 
@@ -253,13 +305,13 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 
-    set_cell_dimension(3);
+    set_cell_dimension(topo_dim);
   }
 
   if (!ok) {
@@ -267,6 +319,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
     assert(ok);
   }
+
+
+
 
   // Do all the processing required for setting up the mesh for Amanzi 
   
@@ -276,7 +331,10 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
 
 
-// Create a 2D regular quadrilateral mesh internally
+//--------------------------------------
+// Construct a 2D regular quadrilateral mesh internally
+//--------------------------------------
+
 
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const double x1, const double y1,
@@ -285,29 +343,21 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const AmanziGeometry::GeometricModelPtr& gm) 
 {
   int ok;
-  int ring = 1; // One layer of ghost cells in parallel meshes
-  int with_attr = 1;  // update of attributes in parallel meshes
 
-  clear_internals_();
+  int space_dim = 2;
+  pre_create_steps_(space_dim, incomm, gm);
 
-  MSTK_Init();
 
-  Mesh::set_geometric_model(gm);
 
-  set_space_dimension(2);
 
-  mpicomm = incomm;
-  MPI_Comm_rank(mpicomm,&myprocid);
-  MPI_Comm_size(mpicomm,&numprocs);
-
-  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
-
-  Mesh::set_comm(mpicomm);
-
-    if (myprocid == 0) {
+  if (myprocid == 0) {
     int DebugWait=0;
     while (DebugWait);
     }
+
+
+  int topo_dim=space_dim; // What is the topological dimension of the mesh
+  set_cell_dimension(topo_dim);
 
   if (serial_run) {
 
@@ -316,14 +366,14 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     mesh = MESH_New(F1);
     ok = generate_regular_mesh(mesh,x0,y0,x1,y1,nx,ny);
 
-    set_cell_dimension(2);
 
     myprocid = 0;
   }
   else {
     Mesh_ptr globalmesh;
-    int dim=2;
-    
+    int ring = 1; // One layer of ghost cells in parallel meshes
+    int with_attr = 1;  // update of attributes in parallel meshes
+
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
 
@@ -336,13 +386,11 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
       MESH_Delete(globalmesh);
-
-    set_cell_dimension(2);
   }
 
   if (!ok) {
@@ -352,6 +400,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
   }
 
 
+
+
   // Do all the processing required for setting up the mesh for Amanzi 
   
   post_create_steps_();
@@ -359,41 +409,37 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 }
 
 
-  // Construct a hexahedral mesh from specs 
+
+//-------------------------------------- 
+// Construct a 2D or 3D regular mesh using input from the
+// GenerationSpec class 
+//--------------------------------------
+
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 		     Epetra_MpiComm *incomm,
 		     const AmanziGeometry::GeometricModelPtr& gm)
 {
   int ok;
-  int ring = 1; // One layer of ghost cells in parallel meshes
-  int with_attr = 1;  // update of attributes in parallel meshes
 
-  clear_internals_();
-
-  MSTK_Init();
-
-  Mesh::set_geometric_model(gm);
-
-  mpicomm = incomm->GetMpiComm();
-  MPI_Comm_rank(mpicomm,&myprocid);
-  MPI_Comm_size(mpicomm,&numprocs);
-
-  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
-
-  Mesh::set_comm(mpicomm);
-
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
 
   // Get info about the domain from the generation specification class
 
   AmanziGeometry::Point p0(gspec.domain().point0());
   AmanziGeometry::Point p1(gspec.domain().point1());
 
-  int dim = p0.dim();
-  set_space_dimension(dim);
+  int space_dim = p0.dim();
+  pre_create_steps_(space_dim, incomm->GetMpiComm(), gm);
+
+
+
+
+  if (myprocid == 0) {
+    int DebugWait=0;
+    while (DebugWait);
+  }
+
+  int topo_dim=space_dim;
+  set_cell_dimension(topo_dim);
 
   if (serial_run) {
 
@@ -401,31 +447,31 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
 
     mesh = MESH_New(F1);
 
-    if (dim == 2) {
+    if (topo_dim == 2) {
       generate_regular_mesh(mesh,p0.x(),p0.y(),p1.x(),p1.y(),
 			    gspec.xcells(),gspec.ycells());
     }
-    else if (dim == 3) {
+    else if (topo_dim == 3) {
       generate_regular_mesh(mesh,p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
 			    gspec.xcells(),gspec.ycells(),gspec.zcells());
     }
 
-    set_cell_dimension(dim);
 
     myprocid = 0;
   }
   else {
     Mesh_ptr globalmesh;
-    int dim=2;
+    int ring = 1; // One layer of ghost cells in parallel meshes
+    int with_attr = 1;  // update of attributes in parallel meshes
     
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
 
-      if (dim == 2) {
+      if (topo_dim == 2) {
 	generate_regular_mesh(globalmesh,p0.x(),p0.y(),p1.x(),p1.y(),
 			      gspec.xcells(),gspec.ycells());
       }
-      else if (dim == 3) {
+      else if (topo_dim == 3) {
 	generate_regular_mesh(globalmesh,
 			      p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
 			      gspec.xcells(),gspec.ycells(),gspec.zcells());
@@ -438,13 +484,11 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
       MESH_Delete(globalmesh);
-
-    set_cell_dimension(dim);
   }
 
   if (!ok) {
@@ -452,6 +496,8 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
     std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
     assert(ok);
   }
+
+
 
 
   // Do all the processing required for setting up the mesh for Amanzi 
@@ -3334,6 +3380,29 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
   free(verts);
 
   return 1;
+}
+
+void Mesh_MSTK::pre_create_steps_(const int space_dimension, 
+                                  const MPI_Comm incomm, 
+                                  const AmanziGeometry::GeometricModelPtr& gm) 
+{
+
+  clear_internals_();
+
+  MSTK_Init();
+
+  Mesh::set_geometric_model(gm);
+
+  set_space_dimension(space_dimension);
+
+  mpicomm = incomm;
+  MPI_Comm_rank(mpicomm,&myprocid);
+  MPI_Comm_size(mpicomm,&numprocs);
+
+  serial_run =  (!mpicomm || numprocs == 1) ? true : false;
+
+  Mesh::set_comm(mpicomm);
+
 }
 
 } // close namespace AmanziMesh

@@ -88,6 +88,8 @@ private:
   
   void clear_internals_();
 
+  void pre_create_steps_(const int space_dimension, const MPI_Comm incomm, 
+                         const AmanziGeometry::GeometricModelPtr& gm);
   void post_create_steps_();
 
   void collapse_degen_edges();
