@@ -1004,8 +1004,10 @@ void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricM
           break;
         }
         case AmanziGeometry::POINT: {
-          // Not implemented
-          
+
+          // Node set
+
+          add_node_set_(greg->name(), greg->id());
 
           break;
         }
@@ -1184,8 +1186,30 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
           break;
         }
         case AmanziGeometry::POINT: {
-          // Not implemented
-          
+
+	  part = meta_data_->get_part (greg->name());
+          ASSERT (part);
+	  parts_to_add.push_back(part);
+	  
+	  
+	  ASSERT (part->primary_entity_rank () == node_rank_);
+
+	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
+	  stk::mesh::EntityVector nodes;
+	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Node), nodes);
+	  
+	  stk::mesh::EntityVector::iterator n;
+	  for (n = nodes.begin(); n != nodes.end(); n++) {
+	    
+            double *xyz = stk::mesh::field_data(*coordinate_field_, *(*n));
+            AmanziGeometry::Point pxyz(space_dim);
+            pxyz.set(xyz);
+		
+            if (greg->inside(pxyz)) {
+              bulk_data_->change_entity_parts(*(*n),parts_to_add);
+              break;
+            }
+	  }
 
           break;
         }
