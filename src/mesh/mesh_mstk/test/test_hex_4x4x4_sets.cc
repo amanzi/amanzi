@@ -45,6 +45,14 @@ TEST(MSTK_HEX_4x4x4_SETS)
 				      {4,9,14,19,23,27,32,36,40},
 				      {0,6,11,42,47,51,75,80,84}};
 
+  std::string expnsetnames[3] = {"Sample Point 1", "INTERIOR XY PLANE", 
+                                 "TOP BOX"};
+
+  unsigned int nsetsize, expnsetsizes[3] = {1, 16, 4};
+  unsigned int expnsetnodes[3][16] = {{21,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
+                                      {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31},
+                                      {53,54,57,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}};
+
 			   
 
   std::string infilename = "test/hex_4x4x4.xml";
@@ -84,31 +92,63 @@ TEST(MSTK_HEX_4x4x4_SETS)
 
     if (shape == "Region: Plane") {
 
-      // Do we have a valid sideset by this name
+      if (reg_name == "ZLO FACE Plane") {
 
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
-
-      int j;
-      for (j = 0; j < 7; j++) {
-        if (expfsetnames[j] == reg_name) break;
+        // Do we have a valid sideset by this name
+        
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+        
+        int j;
+        for (j = 0; j < 7; j++) {
+          if (expfsetnames[j] == reg_name) break;
+        }
+        
+        CHECK(j < 7);
+        
+        
+        // Verify that we can get the right number of entities in the set
+        
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+        
+        CHECK_EQUAL(expfsetsizes[j],set_size);
+        
+        
+        // Verify that we can get the correct set entities
+        
+        Amanzi::AmanziMesh::Entity_ID_List setents;
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+        
+        CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
       }
+      else if (reg_name == "INTERIOR XY PLANE") {
 
-      CHECK(j < 7);
+        // Do we have a valid nodeset by this name
+        
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+        
+        int j;
+        for (j = 0; j < 3; j++) {
+          if (expnsetnames[j] == reg_name) break;
+        }
 
-
-      // Verify that we can get the right number of entities in the set
-
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-
-      CHECK_EQUAL(expfsetsizes[j],set_size);
-
-
-      // Verify that we can get the correct set entities
-     
-      Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-
-      CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
+        CHECK(j < 3);
+        
+        
+        // Verify that we can get the right number of entities in the set
+        
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+        
+        CHECK_EQUAL(expnsetsizes[j],set_size);
+        
+        
+        // Verify that we can get the correct set entities
+        
+        Amanzi::AmanziMesh::Entity_ID_List setents;
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+        
+        CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);
+        
+      }
 
     }
     else if (shape == "Region: Box") {
@@ -118,34 +158,69 @@ TEST(MSTK_HEX_4x4x4_SETS)
       Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
 
       if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2])
-	{
-	  // This is a reduced dimensionality box - request a faceset
+	{          
 
-	  // Do we have a valid sideset by this name
+	  // This is a reduced dimensionality box - request a faceset or nodeset
 
-	  CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
-	  
-	  int j;
-	  for (j = 0; j < 7; j++) {
-	    if (expfsetnames[j] == reg_name) break;
-	  }
-	  
-	  CHECK(j < 7);
-	  
-	  
-	  // Verify that we can get the right number of entities in the set
-	  
-	  int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-	  
-	  CHECK_EQUAL(expfsetsizes[j],set_size);
-	  
-	  
-	  // Verify that we can get the correct set entities
-	  
-	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-	  
-	  CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
+          if (reg_name == "YLO FACE BOX") {
+
+            // Do we have a valid sideset by this name
+            
+            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+            
+            int j;
+            for (j = 0; j < 7; j++) {
+              if (expfsetnames[j] == reg_name) break;
+            }
+            
+            CHECK(j < 7);
+            
+            
+            // Verify that we can get the right number of entities in the set
+            
+            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+            
+            CHECK_EQUAL(expfsetsizes[j],set_size);
+            
+            
+            // Verify that we can get the correct set entities
+            
+            Amanzi::AmanziMesh::Entity_ID_List setents;
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+            
+            CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
+            
+          }
+          else if (reg_name == "TOP BOX") {
+
+            // Do we have a valid set by this name
+            
+            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+            
+            int j;
+            for (j = 0; j < 3; j++) {
+              if (expnsetnames[j] == reg_name) break;
+            }
+            
+            CHECK(j < 3);
+            
+            
+            // Verify that we can get the right number of entities in the set
+            
+            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+            
+            CHECK_EQUAL(expnsetsizes[j],set_size);
+            
+            
+            // Verify that we can get the correct set entities
+            
+            Amanzi::AmanziMesh::Entity_ID_List setents;
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+            
+            CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
+                        
+          }
+
 	}
       else 
 	{
@@ -174,6 +249,35 @@ TEST(MSTK_HEX_4x4x4_SETS)
 	  
 	  CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
 	}
+    }
+    else if (shape == "Region: Point") {
+
+      // Do we have a valid set by this name
+      
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+      
+      int j;
+      for (j = 0; j < 3; j++) {
+        if (expnsetnames[j] == reg_name) break;
+      }
+      
+      CHECK(j < 3);
+            
+            
+      // Verify that we can get the right number of entities in the set
+      
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+      
+      CHECK_EQUAL(expnsetsizes[j],set_size);
+      
+      
+      // Verify that we can get the correct set entities
+      
+      Amanzi::AmanziMesh::Entity_ID_List setents;
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+      
+      CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
+                        
     }
     else if (shape == "Region: Labeled Set") {
 
