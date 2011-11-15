@@ -1751,7 +1751,8 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
         case NODE:
 
           if (rgn->type() == AmanziGeometry::BOX ||
-              rgn->type() == AmanziGeometry::PLANE) 
+              rgn->type() == AmanziGeometry::PLANE ||
+              rgn->type() == AmanziGeometry::POINT) 
             {
               mset1 = MSet_New(mesh,setname.c_str(),MVERTEX);
 
@@ -1766,6 +1767,11 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
                   if (rgn->inside(vpnt)) 
                     {
                       MSet_Add(mset1,vtx_id_to_handle[inode]);
+
+                      // Only one node per point region
+
+                      if (rgn->type() == AmanziGeometry::POINT)
+                        break;      
                     }
                 }
             }
