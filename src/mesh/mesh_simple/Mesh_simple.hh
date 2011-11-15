@@ -336,8 +336,10 @@ private:
 
   mutable std::vector<std::vector<unsigned int> > side_sets_;
   mutable std::vector<std::vector<unsigned int> > element_blocks_;
+  mutable std::vector<std::vector<unsigned int> > node_sets_;
   mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;
   mutable std::vector<AmanziGeometry::RegionPtr> side_set_regions_;
+  mutable std::vector<AmanziGeometry::RegionPtr> node_set_regions_;
 
   Epetra_Comm  *communicator_;
 

@@ -1119,9 +1119,60 @@ void Mesh_simple::get_set_entities (const std::string setname,
       *setents = cs;
       break;
       }
-    default:
-      // we do not have anything for NODE, yet
-      throw std::exception();
+  case AmanziMesh::NODE:
+    {
+      std::vector<unsigned int> ns;
+
+      // Does this set exist?
+
+      int nns = node_sets_.size();  // number of node sets
+      bool found = false;
+      for (int i = 0; i < nns; i++) {
+        if ((node_set_regions_[i])->name() == setname) {
+          found = true;
+          ns = node_sets_[i];
+        }
+      }
+
+      if (!found) // create the side set from the region definition
+        {
+          AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
+          
+          if (rgn == NULL) 
+            {
+              std::cerr << "Geometric model has no region named " << setname << std::endl;
+              std::cerr << "Cannot construct set by this name" << std::endl;
+              throw std::exception();
+            }
+
+
+          bool done=false;
+          for (int ix=0; ix<nx_+1 && !done; ix++)
+            for (int iy=0; iy<ny_+1 && !done; iy++)
+              for (int iz=0; iz<nz_+1 && !done; iz++)
+                {
+                  int node = node_index_(ix,iy,iz);
+                  AmanziGeometry::Point nxyz;
+                  node_get_coordinates(node,&nxyz);
+                  
+                  if (rgn->inside(nxyz)) {
+                    ns.push_back(node);
+                    
+                    if (rgn->type() == AmanziGeometry::POINT)
+                      done = true;
+                  }                   
+                }
+              
+          node_sets_.push_back(ns);
+          node_set_regions_.push_back(rgn);
+        }      
+      
+      *setents = ns;
+      break;
+    }
+  default:
+    // set type not recognized
+    throw std::exception();
   }
 }
 
