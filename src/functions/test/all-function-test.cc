@@ -88,6 +88,34 @@ TEST(tabular_test)
   z = 3.0;
   CHECK_EQUAL((*g)(&z), 2.0);
   delete g;
+  // Now try with optional form argument
+  TabularFunction::Form form[3] = {TabularFunction::CONSTANT,
+      TabularFunction::LINEAR, TabularFunction::CONSTANT};
+  std::vector<TabularFunction::Form> formvec(form, form+3);
+  f = new TabularFunction(xvec, yvec, formvec);
+  z = -1.0;
+  CHECK_EQUAL((*f)(&z), 1.0);
+  z = 0.0;
+  CHECK_EQUAL((*f)(&z), 1.0);
+  z = 0.5;
+  CHECK_EQUAL((*f)(&z), 1.0);
+  z = 1.0;
+  CHECK_EQUAL((*f)(&z), 3.0);
+  z = 2.0;
+  CHECK_EQUAL((*f)(&z), 2.5);
+  z = 3.0;
+  CHECK_EQUAL((*f)(&z), 2.0);
+  z = 3.25;
+  CHECK_EQUAL((*f)(&z), 2.0);
+  z = 3.5;
+  CHECK_EQUAL((*f)(&z), 0.0);
+  z = 4.0;
+  CHECK_EQUAL((*f)(&z), 0.0);
+  g = f->Clone();
+  delete f;
+  z = 3.0;
+  CHECK_EQUAL((*g)(&z), 2.0);
+  delete g;
   // Verify the constructor fails with only a single table entry.
   xvec.assign(x, x+1);
   yvec.assign(y, y+1);
@@ -102,6 +130,11 @@ TEST(tabular_test)
   xvec.pop_back();
   //f = new TabularFunction(xvec, yvec);
   CHECK_THROW(f = new TabularFunction(xvec, yvec), Errors::Message);
+  // Verify the constructor fails with the wrong number of form values.
+  yvec.pop_back(); // same number of x and y values now
+  formvec.pop_back();
+  //f = new TabularFunction(xvec, yvec, formvec);
+  CHECK_THROW(f = new TabularFunction(xvec, yvec, formvec), Errors::Message);
 }
 
 SUITE(polynomial_test) {
