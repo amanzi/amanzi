@@ -31,4 +31,23 @@
       <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0,1.0}"/>
     </ParameterList>
   </ParameterList>
+
+  <!-- nodesets -->
+  <ParameterList name="Sample Point 1">
+    <ParameterList name="Region: Point">
+      <Parameter name="Coordinate" type="Array double" value="{0.33333333333333333,0.33333333333333333333,0.3333333333333333333}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="INTERIOR XY PLANE">
+    <ParameterList name="Region: Plane">
+      <Parameter name="Location" type="Array double" value="{0.0,0.0,0.3333333333333333}"/>
+      <Parameter name="Direction" type="Array double" value="{0.0,0.0,1.0}"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="TOP BOX">
+    <ParameterList name="Region: Box">
+      <Parameter name="Low Coordinate" type="Array double" value="{0.2,0.2,1.0}"/>
+      <Parameter name="High Coordinate" type="Array double" value="{0.8,0.8,1.0}"/>
+    </ParameterList>
+  </ParameterList>
 </ParameterList>
