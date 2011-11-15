@@ -87,7 +87,7 @@ public:
     return id_;
   }
 
-  // Topological dimension of region (1 - curve, 2 - surface, 3 - volume)
+  // Topological dimension of region (0 - point, 1 - curve, 2 - surface, 3 - volume)
   inline 
   unsigned int dimension(void) const
   {
@@ -108,7 +108,7 @@ public:
 
 private:
   
-  // Topological dimension of region (1, 2, 3)
+  // Topological dimension of region (0, 1, 2, 3)
 
   unsigned int topo_dimension_;
 
