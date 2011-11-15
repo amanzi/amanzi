@@ -112,6 +112,14 @@ void Transport_PK::limiterTensorial(const int component,
     }
   }
 
+  // cleaning local extrema (due to round-off errors)
+  for (int c=cmin; c<=cmax_owned; c++) {
+    u1 = (*scalar_field)[c];
+    if (u1 <= lifting.get_field_local_min()[c] || u1 >= lifting.get_field_local_max()[c]) {
+      for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
+    } 
+  }
+
   // limiting second term in the flux formula (outflow darcy_flux)
   for (int c=cmin; c<=cmax_owned; c++) {
     if (total_outflux[c]) {

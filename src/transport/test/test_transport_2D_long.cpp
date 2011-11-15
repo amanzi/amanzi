@@ -25,7 +25,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t ) { 
-  return Amanzi::AmanziGeometry::Point(1.0, 1.0);
+  return Amanzi::AmanziGeometry::Point(1.0, 1.5+x[0]);
 }
 
 
@@ -58,7 +58,7 @@ cout << "Test: 2D transport for a long time" << endl;
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
-  /* initialize a transport process kernel from a transport state */
+  /* initialize a transport process kernel from the transport state */
   ParameterList parameter_list;
   string xmlFileName = "test/test_transport_2D_long.xml";
 
@@ -67,7 +67,7 @@ cout << "Test: 2D transport for a long time" << endl;
 
   TPK.print_statistics();
 
-  /* advance the state */
+  /* advance the transport state */
   int iter, k;
   double T = 0.0;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
@@ -77,7 +77,7 @@ cout << "Test: 2D transport for a long time" << endl;
 
   iter = 0;
   bool flag = true;
-  while (T < 0.2) {
+  while (T < 0.3) {
     double dT = TPK.calculate_transport_dT();
     TPK.advance(dT);
     T += dT;
