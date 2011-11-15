@@ -13,6 +13,7 @@
 #include "BoxRegion.hh"
 #include "PlaneRegion.hh"
 #include "LabeledSetRegion.hh"
+#include "PointRegion.hh"
 #include "RegionFactory.hh"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
@@ -115,6 +116,28 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         entity_str = "NODE";
 
       RegionPtr regptr = new LabeledSetRegion(reg_name, reg_id, entity_str, file, format, name);
+      return regptr;
+    }
+  else if (shape == "Region: Point")
+    {
+      Teuchos::ParameterList point_params = reg_params.sublist(shape);
+
+      Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
+        
+      Point pnt, n;
+
+      if (p_vec.size() == 3) 
+        {
+          pnt.init(3);
+          pnt.set(p_vec[0], p_vec[1], p_vec[2]);
+        }
+      else if (p_vec.size() == 2)
+        {
+          pnt.init(2);
+          pnt.set(p_vec[0], p_vec[1]);
+        }
+
+      RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt);
       return regptr;
     }
   else 
