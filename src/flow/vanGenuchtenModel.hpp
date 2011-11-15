@@ -6,7 +6,7 @@
 class vanGenuchtenModel : public WaterRetentionBaseModel {
   
 public:
-  vanGenuchtenModel(int meshblock_, double m_, double alpha_, 
+  vanGenuchtenModel(std::string region_, double m_, double alpha_, 
 		    double sr_, double p_atm_);
 
   

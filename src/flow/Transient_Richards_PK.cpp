@@ -19,10 +19,10 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, cons
   Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
   problem = new RichardsProblem(FS->mesh(), rlist);
 
-  ss_t0 = rlist.get<double>("Steady state calculation initial time");
-  ss_t1 = rlist.get<double>("Steady state calculation final time");
-  ss_h0 = rlist.get<double>("Steady state calculation initial time step");
-  ss_z =  rlist.get<double>("Steady state calculation initial hydrostatic pressure height");
+  // ss_t0 = rlist.get<double>("Steady state calculation initial time");
+  // ss_t1 = rlist.get<double>("Steady state calculation final time");
+  // ss_h0 = rlist.get<double>("Steady state calculation initial time step");
+  // ss_z =  rlist.get<double>("Steady state calculation initial hydrostatic pressure height");
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());

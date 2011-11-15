@@ -320,6 +320,10 @@ namespace Amanzi {
 	    {
 	      mpc_list.set<std::string>("disable Transport_PK","no");
 	    }
+	  else
+	    {
+	      mpc_list.set<std::string>("disable Transport_PK","yes");
+	    }
 	  
 	  if ( exe_sublist.isParameter("Flow Mode") )
 	    {
@@ -534,7 +538,7 @@ namespace Amanzi {
 		  water_retention_models = create_WRM_List(plist);
 		  
 		  // insert the flow BC sublist
-		  Teuchos::ParameterList& flow_bc = flw_list.sublist("Flow BC");
+		  Teuchos::ParameterList& flow_bc = richards_problem.sublist("boundary conditions");
 		  flow_bc = create_SS_FlowBC_List(plist);
 
 		  // insert the diffusion preconditioner sublist
@@ -632,7 +636,9 @@ namespace Amanzi {
       Teuchos::ParameterList ssf_list;
 
       Teuchos::ParameterList& bc_sublist = plist.sublist("Boundary Conditions");
-      
+
+      int bc_counter = 0;
+
       for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++)
 	{
 	  // look at sublists
@@ -646,18 +652,7 @@ namespace Amanzi {
 
 	      if ( bc.isSublist("BC:No Flow") )
 		{
-		  for (Teuchos::Array<std::string>::const_iterator i = regions.begin();
-		       i != regions.end(); i++)
-		    {
-		      std::stringstream ss;
-		      ss << "Boundary Condition for Region " << *i;
-		      
-		      Teuchos::ParameterList& tbc = ssf_list.sublist(ss.str());
-		      
-		      tbc.set<std::string>("Type", "No Flow");
-		      tbc.set<std::string>("Region Tag", ss.str() );
-	       
-		    }
+		  // this is the natural BC for flow and we need not list it explicitly
 
 		}
 	      
@@ -669,45 +664,69 @@ namespace Amanzi {
 		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time functions");
 		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Extensive Flux");
 		  
-		  for (Teuchos::Array<std::string>::const_iterator i = regions.begin();
-		       i != regions.end(); i++)		  
+		  std::stringstream ss;
+		  ss << "BC " << bc_counter++;
+
+
+		  Teuchos::ParameterList& tbc = ssf_list.sublist("mass flux").sublist(ss.str());
+		  tbc.set<Teuchos::Array<std::string> >("regions", regions );
+		  
+		 
+		  if ( times.size() == 1 )
 		    {
-		      std::stringstream ss;
-		      ss << "Boundary Condition for Region " << *i;
+		      Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-constant");
+		      tbcs.set<double>("value",flux[0]);
 		      
-		      Teuchos::ParameterList& tbc = ssf_list.sublist(ss.str());
-		      
-		      tbc.set<std::string>("Type", "Darcy Constant");
-		      tbc.set<std::string>("Region Tag", ss.str() );
-		      tbc.set<Teuchos::Array<double> >("Times", times);
-		      tbc.set<Teuchos::Array<double> >("Extensive Flux", flux);
-		      tbc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);  
 		    }
+		  else
+		    {
+		      Teuchos::ParameterList& tbcs = tbc.sublist("outward mass flux").sublist("function-tabular");
+		      
+		      tbcs.set<Teuchos::Array<double> >("x values", times);
+		      tbcs.set<Teuchos::Array<double> >("y values", flux);
+		      
+		      //tbc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);  
+		    }		      
+		  
+		  
+
+
 		}
 
 	      if ( bc.isSublist("BC: Uniform Pressure") ) 
 		{
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
 		  
-		  Teuchos::Array<double> times = bc_dir.get<Teuchos::Array<double> >("Times");
+		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
 		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
-		  Teuchos::Array<double> values = bc_dir.get<Teuchos::Array<double> >("Values");
+		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 	  
-		  for (Teuchos::Array<std::string>::const_iterator i = regions.begin();
-		       i != regions.end(); i++)		  
+		  
+		  std::stringstream ss;
+		  ss << "BC " << bc_counter++;
+		  
+		  
+		  Teuchos::ParameterList& tbc = ssf_list.sublist("pressure").sublist(ss.str());
+		  tbc.set<Teuchos::Array<std::string> >("regions", regions );
+		  
+		  
+
+		  if ( times.size() == 1 )
 		    {
-		      std::stringstream ss;
-		      ss << "Boundary Condition for Region " << *i;
+		      Teuchos::ParameterList& tbcs = tbc.sublist("boundary pressure").sublist("function-constant");
+		      tbcs.set<double>("value",values[0]);
 		      
-		      Teuchos::ParameterList& tbc = ssf_list.sublist(ss.str());
-		      
-		      tbc.set<std::string>("Type", "Pressure Constant");
-		      tbc.set<std::string>("Region Tag", ss.str() );
-		      tbc.set<Teuchos::Array<double> >("Times", times);
-		      tbc.set<Teuchos::Array<double> >("Values", values);
-		      tbc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);  
 		    }
-	  
+		  else
+		    {
+		      Teuchos::ParameterList& tbcs = tbc.sublist("boundary pressure").sublist("function-tabular");
+		      
+		      tbcs.set<Teuchos::Array<double> >("x values", times);
+		      tbcs.set<Teuchos::Array<double> >("y values", values);
+		      
+		      //tbc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);  
+		    }
+		      
 		}
 
 	      // TODO...
