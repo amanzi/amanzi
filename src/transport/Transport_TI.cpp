@@ -95,19 +95,17 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
-  for (int n=0; n<bcs.size(); n++) {  // analyze boundary sets
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      f = bcs[n].faces[k];
-      c2 = (*downwind_cell_)[f]; 
+  for (int n=0; n<bcs.size(); n++) {
+    if (current_component_ == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        f = bc->first;
+        c2 = (*downwind_cell_)[f]; 
 
-      if (c2 >= 0) {
-        u = fabs(darcy_flux[f]);
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
+        if (c2 >= 0) {
+          u = fabs(darcy_flux[f]);
           double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2]; 
-          tcc_flux = u * bcs[n].values[current_component_];
+          tcc_flux = u * bc->second;
           f_component[c2] += tcc_flux / vol_phi_ws;
-          bcs[n].influx[current_component_] += tcc_flux;
         }
       } 
     }

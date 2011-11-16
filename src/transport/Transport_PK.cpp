@@ -13,7 +13,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "dbc.hh"
+#include "errors.hh"
+#include "tabular-function.hh"
 
 #include "tensor.hpp"
 #include "mfd3d.hpp"
@@ -30,7 +31,7 @@ namespace AmanziTransport {
 * each variable initialization
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
-			                     Teuchos::RCP<Transport_State> TS_MPC)
+			   Teuchos::RCP<Transport_State> TS_MPC)
 { 
   parameter_list = parameter_list_MPC;
   number_components = TS_MPC->get_total_component_concentration()->NumVectors();
@@ -121,6 +122,9 @@ int Transport_PK::Init()
     for (int c=cmin; c<=cmax; c++) dispersion_tensor[c].init(dim, 2);
   }
 
+  // boundary conditions installation at time T=0
+  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(0.0);
+
   return 0;
 }
 
@@ -170,77 +174,59 @@ void Transport_PK::process_parameter_list()
   tests_tolerance = parameter_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
   dT_debug = parameter_list.get<double>("maximal time step", TRANSPORT_LARGE_TIME_STEP);
  
-  // read number of boundary consitions
-  Teuchos::ParameterList  BC_list;
- 
-  BC_list = parameter_list.get<Teuchos::ParameterList>("Transport BCs");
-  int nBCs = BC_list.get<int>("number of BCs");
+  // extract list of lists of boundary conditions
+  Teuchos::ParameterList BCs_list;
+  BCs_list = parameter_list.get<Teuchos::ParameterList>("Transport BCs");
 
-  // create list of boundary data
-  bcs.resize(nBCs);
+  // populate the list of boundary influx functions
+  int nBCs = BCs_list.get<int>("number of BCs");
+  bcs.clear();
+  bcs_tcc_index.clear();
 
-  int i, k;
-  for (i=0; i<nBCs; i++) bcs[i] = Transport_BCs(0, number_components);
-  
-  for (i=0; i<nBCs; i++) {
+  for (int n=0; n<nBCs; n++) {
     char bc_char_name[10];
     
-    sprintf(bc_char_name, "BC %d", i);
+    sprintf(bc_char_name, "BC %d", n);
     string bc_name(bc_char_name);
 
-    if (!BC_list.isSublist(bc_name)) {
-      cout << "MyPID = " << MyPID << endl;
-      cout << "Boundary condition with name " << bc_char_name << " does not exist" << endl;
-      ASSERT(0);
+    if (!BCs_list.isSublist(bc_name)) {
+      Errors::Message msg;
+      msg << "Boundary condition with name " << bc_char_name << " does not exist" << "\n";
+      Exceptions::amanzi_throw(msg);
     }
-
-    Teuchos::ParameterList bc_ss = BC_list.sublist(bc_name);
+    Teuchos::ParameterList BC_list = BC_list.sublist(bc_name);  // A single sublist. 
  
-    double value;
-    int ssid = bc_ss.get<int>("Side set ID");
-    string type = bc_ss.get<string>("Type");
-
-    // check all existing components: right now we check by id 
-    // but it is possible to check by name in the future 
-    for (k=0; k<number_components; k++) {
+    for (int i=0; i<number_components; i++) {
       char tcc_char_name[20];
 
-      sprintf(tcc_char_name, "Component %d", k);
+      sprintf(tcc_char_name, "Component %d", i);
       string tcc_name(tcc_char_name);
 
-      if (bc_ss.isParameter(tcc_name)) { 
-        value = bc_ss.get<double>(tcc_name); 
+      if (BC_list.isParameter(tcc_name)) { 
+        std::vector<std::string> regions, functions;
+        std::vector<double> times, values;
+
+        regions = BC_list.get<Teuchos::Array<std::string> >("Regions").toVector();
+        times = BC_list.get<Teuchos::Array<double> >("Times").toVector();
+        values = BC_list.get<Teuchos::Array<double> >(tcc_name).toVector();
+        functions = BC_list.get<Teuchos::Array<std::string> >("Time functions").toVector();
+
+        int nfunctions = functions.size();  // convert strings to forms
+        std::vector<TabularFunction::Form> forms;
+        for (int k=0; k<nfunctions; k++) {
+          forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
+        }
+
+        Teuchos::RCP<Function> f;
+        f = Teuchos::rcp(new TabularFunction(times, values, forms));
+
+        BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
+        bnd_fun->Define(regions, f);
+        bcs.push_back(bnd_fun);
+        bcs_tcc_index.push_back(i);
+        break;
       }
-      else { 
-        value = 0.0; 
-      }
-      bcs[i].values[k] = value;
     }
-
-    if (type == "Constant") { 
-      bcs[i].type = TRANSPORT_BC_CONSTANT_TCC;
-    }
-    else { 
-      bcs[i].type = TRANSPORT_BC_DISPERSION_FLUX;
-    }
-
-    bcs[i].side_set_id = ssid;
-    if ( !mesh->valid_set_id(ssid, AmanziMesh::FACE)) {
-      cout << "MyPID = " << MyPID << endl;
-      cout << "Invalid set of mesh faces with ID " << ssid << endl;
-      ASSERT(0);
-    }
-
-    // populate list of n boundary faces: it could be empty
-    int n = mesh->get_set_size(ssid, AmanziMesh::FACE, AmanziMesh::OWNED);
-    n = mesh->get_set_size(ssid, AmanziMesh::FACE, AmanziMesh::OWNED);
-    bcs[i].faces.resize(n);
-
-    mesh->get_set(ssid, AmanziMesh::FACE, AmanziMesh::OWNED, bcs[i].faces.begin(), bcs[i].faces.end());
-
-    // allocate memory for influx and outflux vectors
-    bcs[i].influx.resize(number_components);
-    bcs[i].outflux.resize(number_components);
   }
 }
 
@@ -482,19 +468,16 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     } 
 
     // BOUNDARY CONDITIONS for ADVECTION
-    int k, n;
-    for (n=0; n<bcs.size(); n++) {  // analyze boundary sets
-      for (k=0; k<bcs[n].faces.size(); k++) {
-        f = bcs[n].faces[k];
-        c2 = (*downwind_cell_)[f]; 
+    for (int n=0; n<bcs.size(); n++) {  // analyze boundary sets
+      if (i == bcs_tcc_index[n]) {
+        for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+          f = bc->first;
+          c2 = (*downwind_cell_)[f]; 
 
-        if (c2 >= 0) {
-          u = fabs(darcy_flux[f]);
-
-          if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-            tcc_flux = dT * u * bcs[n].values[i];
+          if (c2 >= 0) {
+            u = fabs(darcy_flux[f]);
+            tcc_flux = dT * u * bc->second;
             (*tcc_next)[i][c2] += tcc_flux;
-            bcs[n].influx[i] += tcc_flux;
           }
         } 
       }
@@ -587,20 +570,15 @@ void Transport_PK::advance_donor_upwind(double dT_MPC)
 
   // loop over exterior boundary sets
   for (int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
+    int i = bcs_tcc_index[n];
+    for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+      int f = bc->first;
       int c2 = (*downwind_cell_)[f]; 
 
       if (c2 >= 0) {
         u = fabs(darcy_flux[f]);
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-          for (int i=0; i<num_components; i++) {
-            tcc_flux = dT * u * bcs[n].values[i];
-            (*tcc_next)[i][c2] += tcc_flux;
-            bcs[n].influx[i] += tcc_flux;
-          }
-        } 
+        tcc_flux = dT * u * bc->second;
+        (*tcc_next)[i][c2] += tcc_flux; 
       }
     }
   }
@@ -690,10 +668,12 @@ void Transport_PK::extract_boundary_conditions(const int component,
   bc_face_id.assign(number_wghost_faces, 0);
 
   for (int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
-      bc_face_id[f] = bcs[n].type;
-      bc_face_value[f] = bcs[n].values[component];
+    if (component == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        bc_face_id[f] = TRANSPORT_BC_CONSTANT_TCC;
+        bc_face_value[f] = bc->second;
+      }
     }
   }
 }

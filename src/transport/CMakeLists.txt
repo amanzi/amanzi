@@ -30,6 +30,9 @@ include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${EXO_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
+
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})

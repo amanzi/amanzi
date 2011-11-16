@@ -75,17 +75,16 @@ void Transport_PK::limiterTensorial(const int component,
   }
  
   // limiting gradient on the Dirichlet boundary
-  for ( int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
-      int c1 = (*upwind_cell_)[f]; 
-      int c2 = (*downwind_cell_)[f]; 
+  for (int n=0; n<bcs.size(); n++) {
+    if (component == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        int c1 = (*upwind_cell_)[f]; 
+        int c2 = (*downwind_cell_)[f]; 
 
-      if (c2 >= 0) {
-        u2 = (*scalar_field)[c2];
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-          u1 = bcs[n].values[component];
+        if (c2 >= 0) {
+          u2 = (*scalar_field)[c2];
+          u1 = bc->second;
           umin = std::min(u1, u2);
           umax = std::max(u1, u2);
 
@@ -110,6 +109,14 @@ void Transport_PK::limiterTensorial(const int component,
         } 
       }
     }
+  }
+
+  // cleaning local extrema (due to round-off errors)
+  for (int c=cmin; c<=cmax_owned; c++) {
+    u1 = (*scalar_field)[c];
+    if (u1 <= lifting.get_field_local_min()[c] || u1 >= lifting.get_field_local_max()[c]) {
+      for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
+    } 
   }
 
   // limiting second term in the flux formula (outflow darcy_flux)
@@ -199,17 +206,16 @@ void Transport_PK::limiterBarthJespersen(const int component,
   }
 
   // limiting gradient on the Dirichlet boundary
-  for ( int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
-      int c1 = (*upwind_cell_)[f]; 
-      int c2 = (*downwind_cell_)[f]; 
+  for (int n=0; n<bcs.size(); n++) {
+    if (component == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        int c1 = (*upwind_cell_)[f]; 
+        int c2 = (*downwind_cell_)[f]; 
 
-      if (c2 >= 0) {
-        u2 = (*scalar_field)[c2];
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-          u1 = bcs[n].values[component];
+        if (c2 >= 0) {
+          u2 = (*scalar_field)[c2];
+          u1 = bc->second;
           umin = std::min(u1, u2);
           umax = std::max(u1, u2);
 
@@ -227,9 +233,9 @@ void Transport_PK::limiterBarthJespersen(const int component,
             (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u_add); 
           }
         } 
-      }
-      else if (c1 >= 0) {
-        //(*limiter)[c1] = 0.0;  // ad-hoc testing (lipnikov@lanl.gov)
+        else if (c1 >= 0) {
+          //(*limiter)[c1] = 0.0;  // ad-hoc testing (lipnikov@lanl.gov)
+        }
       }
     }
   }

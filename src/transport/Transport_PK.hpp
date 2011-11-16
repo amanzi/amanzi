@@ -18,10 +18,10 @@ Usage:
 
 #include "tensor.hpp"
 #include "Explicit_TI_fnBase.hpp"
+#include "boundary-function.hh"
 
 #include "State.hpp"
 #include "Transport_State.hpp"
-#include "Transport_BCs.hpp"
 #include "Reconstruction.hpp"
 
 /*
@@ -189,7 +189,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   int number_components; 
   int status;
 
-  std::vector<Transport_BCs> bcs;  // BCs for each components and each side set
+  std::vector<BoundaryFunction*> bcs;  // influx BCs for each components
+  std::vector<int> bcs_tcc_index; 
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
