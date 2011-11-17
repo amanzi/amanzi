@@ -138,15 +138,18 @@ void Transport_PK::process_parameter_list()
 {
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
-  // global transport parameters
-  cfl = parameter_list.get<double>("CFL", 1.0);
+  Teuchos::ParameterList transport_list;
+  transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
 
-  spatial_disc_order = parameter_list.get<int>("spatial discretization order", 1);
+  // global transport parameters
+  cfl = transport_list.get<double>("CFL", 1.0);
+
+  spatial_disc_order = transport_list.get<int>("spatial discretization order", 1);
   if (spatial_disc_order < 1 || spatial_disc_order > 2) spatial_disc_order = 1;
-  temporal_disc_order = parameter_list.get<int>("temporal discretization order", 1);
+  temporal_disc_order = transport_list.get<int>("temporal discretization order", 1);
   if (temporal_disc_order < 1 || temporal_disc_order > 2) temporal_disc_order = 1;
 
-  string dispersivity_name = parameter_list.get<string>("dispersivity model", "none");
+  string dispersivity_name = transport_list.get<string>("dispersivity model", "none");
   if (dispersivity_name == "isotropic") { 
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_ISOTROPIC;
   }
@@ -157,10 +160,10 @@ void Transport_PK::process_parameter_list()
     dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_LICHTNER;
   }
 
-  dispersivity_longitudinal = parameter_list.get<double>("dispersivity longitudinal", 0.0);
-  dispersivity_transverse = parameter_list.get<double>("dispersivity transverse", 0.0);
+  dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
+  dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
 
-  string advection_limiter_name = parameter_list.get<string>("advection limiter", "none");
+  string advection_limiter_name = transport_list.get<string>("advection limiter", "none");
   if (advection_limiter_name == "BarthJespersen") {
     advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
   }
@@ -169,15 +172,15 @@ void Transport_PK::process_parameter_list()
   }
    
   // control parameter
-  verbosity_level = parameter_list.get<int>("verbosity level", 0);
-  internal_tests = parameter_list.get<string>("enable internal tests", "no") == "yes";
-  tests_tolerance = parameter_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
-  dT_debug = parameter_list.get<double>("maximal time step", TRANSPORT_LARGE_TIME_STEP);
+  verbosity_level = transport_list.get<int>("verbosity level", 0);
+  internal_tests = transport_list.get<string>("enable internal tests", "no") == "yes";
+  tests_tolerance = transport_list.get<double>("internal tests tolerance", TRANSPORT_CONCENTRATION_OVERSHOOT);
+  dT_debug = transport_list.get<double>("maximal time step", TRANSPORT_LARGE_TIME_STEP);
  
   // extract list of lists of boundary conditions
   Teuchos::ParameterList BCs_list;
-  BCs_list = parameter_list.get<Teuchos::ParameterList>("Transport BCs");
-
+  BCs_list = transport_list.get<Teuchos::ParameterList>("Transport BCs");
+ 
   // populate the list of boundary influx functions
   int nBCs = BCs_list.get<int>("number of BCs");
   bcs.clear();
@@ -194,7 +197,7 @@ void Transport_PK::process_parameter_list()
       msg << "Boundary condition with name " << bc_char_name << " does not exist" << "\n";
       Exceptions::amanzi_throw(msg);
     }
-    Teuchos::ParameterList BC_list = BC_list.sublist(bc_name);  // A single sublist. 
+    Teuchos::ParameterList BC_list = BCs_list.sublist(bc_name);  // A single sublist. 
  
     for (int i=0; i<number_components; i++) {
       char tcc_char_name[20];
@@ -212,7 +215,7 @@ void Transport_PK::process_parameter_list()
         functions = BC_list.get<Teuchos::Array<std::string> >("Time functions").toVector();
 
         int nfunctions = functions.size();  // convert strings to forms
-        std::vector<TabularFunction::Form> forms;
+        std::vector<TabularFunction::Form> forms(functions.size());
         for (int k=0; k<nfunctions; k++) {
           forms[k] = (functions[k] == "Constant") ? TabularFunction::CONSTANT : TabularFunction::LINEAR;
         }
@@ -221,7 +224,9 @@ void Transport_PK::process_parameter_list()
         f = Teuchos::rcp(new TabularFunction(times, values, forms));
 
         BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
+cout << "name= " << regions[0] << endl;
         bnd_fun->Define(regions, f);
+cout << "name= " << regions[0] << endl;
         bcs.push_back(bnd_fun);
         bcs_tcc_index.push_back(i);
         break;

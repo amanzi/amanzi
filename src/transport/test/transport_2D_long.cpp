@@ -60,7 +60,7 @@ cout << "Test: 2D transport for a long time" << endl;
 
   /* initialize a transport process kernel from the transport state */
   ParameterList parameter_list;
-  string xmlFileName = "test/test_transport_2D_long.xml";
+  string xmlFileName = "test/transport_2D_long.xml";
 
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
   Transport_PK TPK(parameter_list, TS);

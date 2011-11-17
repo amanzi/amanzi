@@ -70,9 +70,9 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone)
 
     # Test 1: transport with a simple mesh
-    add_executable(transport_serial test/Main.cc test/test_transport.cpp)
-    target_link_libraries(transport_serial ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(transport_serial transport_serial KIND unit)
+    add_executable(transport_mics test/Main.cc test/transport_mics.cpp)
+    target_link_libraries(transport_mics ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(transport_mics transport_mics KIND unit)
 
     # Test 2: high-order transport with a simple mesh
     add_executable(transport_high_order test/Main.cc test/test_high_order.cpp)
@@ -107,9 +107,9 @@ if ( BUILD_TESTS )
         add_amanzi_test(transport_serial_2D transport_serial_2D KIND unit)
 
         # Test: transport in 2D  LONG
-        add_executable(transport_serial_2D_long test/Main.cc test/test_transport_2D_long.cpp)
-        target_link_libraries(transport_serial_2D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_serial_2D_long transport_serial_2D_long KIND unit)
+        add_executable(transport_2D_long test/Main.cc test/transport_2D_long.cpp)
+        target_link_libraries(transport_2D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_2D_long transport_2D_long KIND unit)
     endif()    
 
     # Tests 7-8
