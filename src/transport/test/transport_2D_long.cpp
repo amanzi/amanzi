@@ -69,6 +69,7 @@ cout << "Test: 2D transport for a long time" << endl;
   /* initialize a transport process kernel from the transport state */
   Transport_PK TPK(parameter_list, TS);
   TPK.print_statistics();
+  TPK.set_standalone_mode(true);
  
   /* advance the transport state */
   int iter, k;

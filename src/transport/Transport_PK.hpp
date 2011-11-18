@@ -98,6 +98,8 @@ class Transport_PK : public Explicit_TI::fnBase {
   inline double get_cfl() { return cfl; }
   inline int get_transport_status() { return status; }
 
+  // control members
+  inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void print_statistics() const;
  
  private:
@@ -188,6 +190,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   double cfl, dT, dT_debug, T_internal, T_physical;  
   int number_components; 
   int status;
+  bool standalone_mode;
 
   std::vector<BoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 

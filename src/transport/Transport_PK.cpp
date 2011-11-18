@@ -49,6 +49,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   mesh_ = TS->get_mesh_maps();
   dim = mesh_->space_dimension();
 
+  standalone_mode = false;
+
   Init();  // must be moved out of the constructor (lipnikov@lanl.gov)
 }
 
@@ -128,7 +130,6 @@ int Transport_PK::Init()
 
   return 0;
 }
-
 
 
 /* ******************************************************************
@@ -235,8 +236,6 @@ void Transport_PK::process_parameter_list()
 }
 
 
-
-
 /* ************************************************************* */
 /* Printing information about Transport status                   */
 /* ************************************************************* */
@@ -251,8 +250,6 @@ void Transport_PK::print_statistics() const
     cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
   }
 }
-
-
 
 
 /* *******************************************************************
@@ -324,10 +321,12 @@ double Transport_PK::calculate_transport_dT()
  ****************************************************************** */
 void Transport_PK::advance(double dT_MPC)
 {
-  T_internal += dT_MPC;
-
   T_physical = TS->get_time();
-  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(T_physical);
+
+  double time = (standalone_mode) ? T_internal : T_physical;
+  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
+ 
+  T_internal += dT_MPC;
 
   if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
     advance_donor_upwind(dT_MPC);
