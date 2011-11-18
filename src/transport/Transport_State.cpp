@@ -21,6 +21,8 @@ Transport_State::Transport_State(State& S)
   water_saturation = S.get_water_saturation();
   water_density = S.get_water_density();
   mesh_maps = S.get_mesh_maps();
+
+  S_ = &S;
 }
 
 
@@ -79,6 +81,8 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
     tcc.ExtractView(&data_tcc);     
     total_component_concentration = rcp(new Epetra_MultiVector(View, cmap, data_tcc, tcc.NumVectors()));
   }
+
+  S_ = S.S_;
 }
 
 

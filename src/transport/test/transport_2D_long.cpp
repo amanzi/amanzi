@@ -25,7 +25,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t ) { 
-  return Amanzi::AmanziGeometry::Point(1.0, 1.5+x[0]);
+  return Amanzi::AmanziGeometry::Point(0.0, 1.0);
 }
 
 
@@ -44,12 +44,20 @@ cout << "Test: 2D transport for a long time" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 #endif
 
-  /* create a MPC state with three component */
+  /* read parameter list */
+  ParameterList parameter_list;
+  string xmlFileName = "test/transport_2D_long.xml";
+  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+
+  /* create an MSTK mesh framework */
+  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  GeometricModelPtr gm = new GeometricModel(2, region_list);
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_50x50_ss.exo", MPI_COMM_WORLD, 2, gm));
+  
+  /* create a MPC state with one component */
   int num_components = 1;
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_50x50_ss.exo", MPI_COMM_WORLD, 2));
-
   State mpc_state(num_components, mesh);
-
+ 
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
@@ -59,14 +67,9 @@ cout << "Test: 2D transport for a long time" << endl;
   TS->analytic_water_density();
 
   /* initialize a transport process kernel from the transport state */
-  ParameterList parameter_list;
-  string xmlFileName = "test/transport_2D_long.xml";
-
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   Transport_PK TPK(parameter_list, TS);
-
   TPK.print_statistics();
-
+ 
   /* advance the transport state */
   int iter, k;
   double T = 0.0;

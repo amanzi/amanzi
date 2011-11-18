@@ -69,67 +69,60 @@ if ( BUILD_TESTS )
 
     set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone)
 
-    # Test 1: transport with a simple mesh
+    # Test: miscaleneous transport routines
     add_executable(transport_mics test/Main.cc test/transport_mics.cpp)
     target_link_libraries(transport_mics ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(transport_mics transport_mics KIND unit)
 
-    # Test 2: high-order transport with a simple mesh
-    add_executable(transport_high_order test/Main.cc test/test_high_order.cpp)
-    target_link_libraries(transport_high_order ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(transport_high_order transport_high_order KIND unit)
+    add_executable(transport_advance_simple test/Main.cc test/transport_advance_simple.cpp)
+    target_link_libraries(transport_advance_simple ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(transport_advance_simple transport_advance_simple KIND unit)
 
-    # Test 3: dispersive transport with a simple mesh
-    add_executable(transport_dispersion test/Main.cc test/test_dispersion.cpp)
+    add_executable(transport_convergence test/Main.cc test/transport_convergence.cpp)
+    target_link_libraries(transport_convergence ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(transport_convergence transport_convergence KIND unit)
+
+    add_executable(transport_dispersion test/Main.cc test/transport_dispersion.cpp)
     target_link_libraries(transport_dispersion ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(transport_dispersion transport_dispersion KIND unit)
 
-    # Tests 4-6
     if ( ENABLE_MSTK_Mesh )
         include_directories(${MSTK_INCLUDE_DIRS})
         include_directories(${MSTK_SOURCE_DIR})
 
         set(amanzi_libs geometry mesh mesh_audit mstk_mesh state transport whetstone output)
 
-        # Test: transport (serial)
-        add_executable(transport_serial_mstk test/Main.cc test/test_mstk.cpp)
-        target_link_libraries(transport_serial_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_serial_mstk transport_serial_mstk KIND unit)
+        add_executable(transport_advance_mstk test/Main.cc test/transport_advance_mstk.cpp)
+        target_link_libraries(transport_advance_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_advance_mstk transport_advance_mstk KIND unit)
 
-        # Test: transport (parallel)
-        add_executable(transport_parallel_mstk test/Main.cc test/test_mstk_parallel.cpp)
+        add_executable(transport_parallel_mstk test/Main.cc test/transport_parallel_mstk.cpp)
         target_link_libraries(transport_parallel_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_parallel_mstk transport_parallel_mstk NPROCS ${MPI_EXEC_MAX_NPROCS} KIND int)
 
-        # Test: transport in 2D
-        add_executable(transport_serial_2D test/Main.cc test/test_transport_2D.cpp)
-        target_link_libraries(transport_serial_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_serial_2D transport_serial_2D KIND unit)
+        add_executable(transport_2D test/Main.cc test/transport_2D.cpp)
+        target_link_libraries(transport_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_2D transport_2D KIND unit)
 
-        # Test: transport in 2D  LONG
         add_executable(transport_2D_long test/Main.cc test/transport_2D_long.cpp)
         target_link_libraries(transport_2D_long ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_2D_long transport_2D_long KIND unit)
     endif()    
 
-    # Tests 7-8
     if ( ENABLE_STK_Mesh )
         include_directories(${STK_INCLUDE_DIRS})
         include_directories(${STK_SOURCE_DIR})
 
         set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus_reader state transport whetstone)
 
-        # Test: transport (serial)
-        add_executable(transport_serial_stk test/Main.cc test/test_stk.cpp)
-        target_link_libraries(transport_serial_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
-        add_amanzi_test(transport_serial_stk transport_serial_stk KIND unit)
+        add_executable(transport_advance_stk test/Main.cc test/transport_advance_stk.cpp)
+        target_link_libraries(transport_advance_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(transport_advance_stk transport_advance_stk KIND unit)
 
-        # Test: transport (parallel)
-        add_executable(transport_parallel_stk test/Main.cc test/test_stk_parallel.cpp)
+        add_executable(transport_parallel_stk test/Main.cc test/transport_parallel_stk.cpp)
         target_link_libraries(transport_parallel_stk ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(transport_parallel_stk transport_parallel_stk NPROCS 4 KIND uint)
     endif()    
-
 endif()
 
 

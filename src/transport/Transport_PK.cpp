@@ -31,7 +31,7 @@ namespace AmanziTransport {
 * each variable initialization
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
-			   Teuchos::RCP<Transport_State> TS_MPC)
+			                     Teuchos::RCP<Transport_State> TS_MPC)
 { 
   parameter_list = parameter_list_MPC;
   number_components = TS_MPC->get_total_component_concentration()->NumVectors();
@@ -122,8 +122,9 @@ int Transport_PK::Init()
     for (int c=cmin; c<=cmax; c++) dispersion_tensor[c].init(dim, 2);
   }
 
-  // boundary conditions installation at time T=0
-  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(0.0);
+  // boundary conditions installation at initial time
+  T_physical = TS->get_time();
+  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(T_physical);
 
   return 0;
 }
@@ -224,9 +225,7 @@ void Transport_PK::process_parameter_list()
         f = Teuchos::rcp(new TabularFunction(times, values, forms));
 
         BoundaryFunction* bnd_fun = new BoundaryFunction(mesh_);
-cout << "name= " << regions[0] << endl;
         bnd_fun->Define(regions, f);
-cout << "name= " << regions[0] << endl;
         bcs.push_back(bnd_fun);
         bcs_tcc_index.push_back(i);
         break;
@@ -326,6 +325,10 @@ double Transport_PK::calculate_transport_dT()
 void Transport_PK::advance(double dT_MPC)
 {
   T_internal += dT_MPC;
+
+  T_physical = TS->get_time();
+  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(T_physical);
+
   if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
     advance_donor_upwind(dT_MPC);
   }

@@ -74,7 +74,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Transport_PK();
   Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                Teuchos::RCP<Transport_State> TS_MPC);
-  ~Transport_PK() {};
+  ~Transport_PK() { for (int i=0; i<bcs.size(); i++) delete bcs[i]; }
 
   // primary members
   double calculate_transport_dT();
@@ -185,7 +185,7 @@ class Transport_PK : public Explicit_TI::fnBase {
 
   int advection_limiter;  // data for limiters
 
-  double cfl, dT, dT_debug, T_internal;  
+  double cfl, dT, dT_debug, T_internal, T_physical;  
   int number_components; 
   int status;
 
