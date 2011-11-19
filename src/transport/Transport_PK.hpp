@@ -106,7 +106,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   // advection routines
   void advance_donor_upwind(double dT);
   void advance_second_order_upwind(double dT);
-  void advance_second_order_upwind_testing(double dT);
+  void advance_second_order_upwind_obsolete(double dT);
   void advance_arbitrary_order_upwind(double dT);
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 

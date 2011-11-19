@@ -21,7 +21,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
 
   lifting.reset_field(mesh_, component_rcp);
   lifting.calculateCellGradient();
-
+ 
   Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
   std::vector<double>& field_local_min = lifting.get_field_local_min();
   std::vector<double>& field_local_max = lifting.get_field_local_max();
@@ -34,6 +34,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
     limiterTensorial(current_component_, component_rcp, gradient);
   }
+cout << "passed " << MyPID << endl;
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors. 

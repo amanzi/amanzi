@@ -41,13 +41,21 @@ TEST(DISPERSION) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "=== DISPERSION ===" << endl;
+  std::cout << "Test: dispersion" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
+  // read parameter list
+  ParameterList parameter_list;
+  string xmlFileName = "test/transport_dispersion.xml";
+  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  
+  // create an MSTK mesh framework
+  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  GeometricModelPtr gm = new GeometricModel(3, region_list);
   int nx = 20;
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 1, 1, comm)); 
 
-  // create a MPC and Transport states with one component
+  // create a transport states with one component
   int num_components = 1;
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
@@ -59,11 +67,6 @@ TEST(DISPERSION) {
   TS->analytic_water_saturation(1.0);
   TS->analytic_water_density(1.0);
 
-  // initialize a transport process kernel from a transport state
-  ParameterList parameter_list;
-  string xmlFileName = "test/test_dispersion.xml";
-
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   Transport_PK TPK(parameter_list, TS);
   TPK.print_statistics();
   TPK.verbosity_level = 0;

@@ -330,12 +330,10 @@ void Transport_PK::advance(double dT_MPC)
 
   if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
     advance_donor_upwind(dT_MPC);
-  }
-  else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
+  } else if (spatial_disc_order == 2) {
     advance_second_order_upwind(dT_MPC);
-  }
-  else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
-    advance_second_order_upwind_testing(dT_MPC);
+  //} else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
+  //  advance_second_order_upwind_obsolete(dT_MPC);
   }
 }
 
@@ -348,7 +346,7 @@ void Transport_PK::advance(double dT_MPC)
  * Data flow: loop over components C and for each C apply the 
  * second-order RK method. 
  ****************************************************************** */
-void Transport_PK::advance_second_order_upwind_testing(double dT_MPC)
+void Transport_PK::advance_second_order_upwind(double dT_MPC)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_MPC;  // overwrite the transport step
@@ -361,9 +359,12 @@ void Transport_PK::advance_second_order_upwind_testing(double dT_MPC)
   Teuchos::RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
   Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->get_total_component_concentration();
  
-  Explicit_TI::RK TVD_RK(*this,  // it has only one member function fun
-                         Explicit_TI::RK::heun_euler,  // integration method
-                         *component_);
+  // define time integration method
+  Explicit_TI::RK::method_t ti_method = Explicit_TI::RK::forward_euler;  
+  if (temporal_disc_order == 2) {
+    ti_method = Explicit_TI::RK::heun_euler;
+  }
+  Explicit_TI::RK TVD_RK(*this, ti_method, *component_);
 
   int num_components = tcc->NumVectors();
   for (i=0; i<num_components; i++) {
@@ -407,7 +408,7 @@ void Transport_PK::advance_second_order_upwind_testing(double dT_MPC)
  * discretizations. We use tcc when only owned data are needed and 
  * tcc_next when owned and ghost data.
  ****************************************************************** */
-void Transport_PK::advance_second_order_upwind(double dT_MPC)
+void Transport_PK::advance_second_order_upwind_obsolete(double dT_MPC)
 {
   status = TRANSPORT_STATE_BEGIN;
   dT = dT_MPC;  // overwrite the transport step

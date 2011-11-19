@@ -41,17 +41,25 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "=== TEST CONVERGENCE ANALISYS: DONOR ===" << endl;
+  std::cout << "TEST: convergence analysis of the donor scheme" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 
-  for (int nx=20; nx<321; nx*=2 ) {
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm)); 
+  // read parameter list
+  ParameterList parameter_list;
+  string xmlFileName = "test/transport_convergence.xml";
+  updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-    // create a MPC and Transport states with one component
+  for (int nx=20; nx<321; nx*=2 ) {
+    // create an MSTK mesh framework 
+    ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+    GeometricModelPtr gm = new GeometricModel(3, region_list);
+    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 2, comm, gm));
+
+    // create a transport state with one component 
     int num_components = 1;
     State mpc_state(num_components, mesh);
     RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-
+ 
     Point u(1.0, 0.0, 0.0);
     TS->analytic_darcy_flux(u);
     TS->analytic_total_component_concentration(f_cubic);
@@ -59,22 +67,17 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     TS->analytic_water_saturation(1.0);
     TS->analytic_water_density(1.0);
 
-    // initialize a transport process kernel from a transport state
-    ParameterList parameter_list;
-    string xmlFileName = "test/test_transport.xml";
-
-    updateParametersFromXmlFile(xmlFileName, &parameter_list);
     Transport_PK TPK(parameter_list, TS);
-
     if (nx == 20) TPK.print_statistics();
     TPK.verbosity_level = 0;
-
+    TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
+ 
     // advance the state
     int i, k, iter = 0;
     double T = 0.0, T1 = 1.0;
 
-    RCP<Transport_State>    TS_next  = TPK.get_transport_state_next();
-    RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
+    RCP<Transport_State> TS_next = TPK.get_transport_state_next();
+    RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
     RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
     while (T < T1) {
@@ -110,7 +113,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   ParameterList parameter_list;
   string xmlFileName = "test/transport_convergence.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
- 
+  
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list);
@@ -133,6 +136,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     Transport_PK TPK(parameter_list, TS);
     if (nx == 10) TPK.print_statistics();
     TPK.verbosity_level = 0;
+    TPK.spatial_disc_order = TPK.temporal_disc_order = 2;
 
     // advance the state
     int i, k, iter = 0;

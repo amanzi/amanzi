@@ -3,7 +3,7 @@
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="simple::mesh"/>
+    <Parameter name="Framework" type="string" value="mesh::simple"/>
   </ParameterList>    
    
   <ParameterList name="Regions">
@@ -13,7 +13,6 @@
         <Parameter name="High Coordinate" type="Array double" value="{5.0,1.0,1.0}"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
@@ -24,8 +23,8 @@
  
   <ParameterList name="Transport">
     <Parameter name="CFL" type="double" value="0.5"/>   
-    <Parameter name="spatial discretization order" type="int" value="2"/>   
-    <Parameter name="temporal discretization order" type="int" value="2"/>   
+    <Parameter name="spatial discretization order" type="int" value="1"/>   
+    <Parameter name="temporal discretization order" type="int" value="1"/>   
     <!-- developers parameters --> 
     <Parameter name="enable internal tests" type="string" value="yes"/>   
     <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   

@@ -3,7 +3,7 @@
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="mstk::mesh"/>
+    <Parameter name="Framework" type="string" value="stk::mesh"/>
   </ParameterList>    
    
   <ParameterList name="Regions">

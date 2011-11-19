@@ -7,17 +7,9 @@
   </ParameterList>    
    
   <ParameterList name="Regions">
-    <ParameterList name="Computational domain">
-      <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="String" value="101"/>
-        <Parameter name="File" type="String" value="../mesh/mesh_mstk/test/hex_4x4x4_ss.exo"/>
-        <Parameter name="Format" type="String" value="Exodus II"/>
-        <Parameter name="Entity" type="String" value="Cell"/>
-      </ParameterList>
-    </ParameterList>
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
-        <Parameter name="Label" type="String" value="101"/>
+        <Parameter name="Label" type="String" value="103"/>
         <Parameter name="File" type="String" value="../mesh/mesh_mstk/test/hex_4x4x4_ss.exo"/>
         <Parameter name="Format" type="String" value="Unknown"/>
         <Parameter name="Entity" type="String" value="Face"/>

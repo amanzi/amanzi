@@ -31,7 +31,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "Test: advance with STK in parallel" << endl;
+  std::cout << "Test: advance using parallel STK mesh" << endl;
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_parallel_stk.xml";
