@@ -27,6 +27,8 @@ namespace AmanziTransport {
 const int RECONSTRUCTION_NULL = 0;
 const int RECONSTRUCTION_INIT = 1;
 
+const double RECONSTRUCTION_MATRIX_CORRECTION = 1e-15;
+
 class Reconstruction {  
  public:
   Reconstruction() { status = RECONSTRUCTION_NULL; }
@@ -61,6 +63,9 @@ class Reconstruction {
                                  double field_value, 
                                  Teuchos::SerialDenseMatrix<int, double>& matrix, 
                                  double* rhs);
+  double calculate_matrix_norm(Teuchos::SerialDenseMatrix<int, double>& matrix);
+  double calculate_matrix_determinant(Teuchos::SerialDenseMatrix<int, double>& matrix);
+  int find_minimal_diagonal_entry(Teuchos::SerialDenseMatrix<int, double>& matrix);
   void printLeastSquareSystem(Teuchos::SerialDenseMatrix<int, double>matrix, double* rhs);
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

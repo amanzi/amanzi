@@ -34,7 +34,6 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
     limiterTensorial(current_component_, component_rcp, gradient);
   }
-cout << "passed " << MyPID << endl;
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors. 

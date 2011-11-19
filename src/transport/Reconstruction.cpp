@@ -93,6 +93,14 @@ void Reconstruction::calculateCellGradient()
       field_local_min_[c] = std::min(field_local_min_[c], value);
       field_local_max_[c] = std::max(field_local_max_[c], value);
     }
+
+    // improve robustness w.r.t degenerate matrices
+    double det = calculate_matrix_determinant(matrix);
+    double norm = calculate_matrix_norm(matrix);
+
+    if (det < pow(norm, 1.0/dim)) {
+      for (int i=0; i<dim; i++) matrix(i,i) += RECONSTRUCTION_MATRIX_CORRECTION;
+    }
     //printLeastSquareSystem(matrix, rhs);
  
     int info;
@@ -161,7 +169,7 @@ double Reconstruction::getValue(
 
 
 /* ******************************************************************
- * A few technical routines are listed below 
+ * Assemble a SPD least square matrix
 ****************************************************************** */
 void Reconstruction::populateLeastSquareSystem(AmanziGeometry::Point& centroid, 
                                                double field_value, 
@@ -179,6 +187,54 @@ void Reconstruction::populateLeastSquareSystem(AmanziGeometry::Point& centroid,
 }
 
 
+/* ******************************************************************
+ * Optimized linear algebra: norm, determinant, etc
+****************************************************************** */
+double Reconstruction::calculate_matrix_norm(Teuchos::SerialDenseMatrix<int, double>& matrix)
+{
+  double a = 0.0;
+  for (int i=0; i<dim; i++) {
+    for (int j=i; j<dim; j++) a = std::max(a, matrix(i,j));
+  }
+  return a;
+}
+
+double Reconstruction::calculate_matrix_determinant(Teuchos::SerialDenseMatrix<int, double>& matrix)
+{
+  double a = 0.0;
+  if (dim == 2) {
+    a = matrix(0,0) * matrix(1,1) - matrix(0,1) * matrix(0,1);    
+  } else if (dim == 3) {
+    a = matrix(0,0) * matrix(1,1) * matrix(2,2)
+      + matrix(0,1) * matrix(1,2) * matrix(2,0) * 2
+      - matrix(0,2) * matrix(1,1) * matrix(2,0)
+      - matrix(0,1) * matrix(1,0) * matrix(2,2)
+      - matrix(0,0) * matrix(1,2) * matrix(2,1);
+  } else {
+    a = matrix(0,0);
+  }
+  return a;
+}
+
+int Reconstruction::find_minimal_diagonal_entry(Teuchos::SerialDenseMatrix<int, double>& matrix)
+{
+  double a = matrix(0,0);  // We assume that matrix is SPD.
+  int k = 0;
+
+  for (int i=1; i<dim; i++) {
+    double b = matrix(i,i);
+    if (b < a) { 
+      a = b;
+      k = i;
+    }
+  }
+  return k;
+}
+
+
+/* ******************************************************************
+ * I/O routines
+****************************************************************** */
 void Reconstruction::printLeastSquareSystem(Teuchos::SerialDenseMatrix<int, double>matrix, double* rhs)
 {
   for (int i=0; i<dim; i++) {
