@@ -480,7 +480,7 @@ void Mesh_simple::node_get_coordinates (const AmanziMesh::Entity_ID local_node_i
   unsigned int offset = 3*local_node_id;
 
   ncoords->init(3);
-  
+
   ncoords->set( &(coordinates_[offset]) );
 }
 

@@ -46,43 +46,44 @@ TEST(ADVANCE_WITH_SIMPLE) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "=== TEST ADVANCE ===" << endl;
+  std::cout << "Test: advance using simple mesh" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 #endif
 
-  /* create a MPC state with three component */
-  int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 20, 2, 2, comm)); 
+  // read parameter list
+  ParameterList parameter_list;
+  string xmlFileName = "test/transport_advance_simple.xml";
+  updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
+  // create an MSTK mesh framework 
+  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  GeometricModelPtr gm = new GeometricModel(3, region_list);
+  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 2, 2, comm, gm)); 
+  
+  // create a transport state with one component 
+  int num_components = 1;
   State mpc_state(num_components, mesh);
-
-  /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
+ 
   Point u(1.0, 0.0, 0.0);
-
   TS->analytic_darcy_flux(u);
   TS->analytic_porosity();
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
-  /* initialize a transport process kernel from a transport state */
-  ParameterList parameter_list;
-  string xmlFileName = "test/test_transport.xml";
-
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   Transport_PK TPK(parameter_list, TS);
-
   TPK.print_statistics();
+return;
 
-  /* advance the state */
+  // advance the state
   int iter, k;
   double T = 0.0;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
 
-  RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
+  RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 
   iter = 0;
@@ -103,74 +104,12 @@ TEST(ADVANCE_WITH_SIMPLE) {
     *tcc = *tcc_next;
   }
 
-  /* check that the final state is constant */
-  for (int k=0; k<20; k++) 
+  for (int k=0; k<20; k++)  // check that the final state is constant
     CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
 
   delete comm;
 }
 
-
-/* **************************************************************** */
-TEST(CONVERGENCE_ANALYSIS_DONOR) {
-  using namespace Teuchos;
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziTransport;
-  using namespace Amanzi::AmanziGeometry;
-
-  std::cout << "=== TEST CONVERGENCE ANALISYS: DONOR ===" << endl;
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
-
-  for (int nx=20; nx<321; nx*=2 ) {
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0, 0.0, 0.0, 5.0, 1.0, 1.0, nx, 1, 1, comm)); 
-
-    // create a MPC and Transport states with one component
-    int num_components = 1;
-    State mpc_state(num_components, mesh);
-    RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-
-    Point u(1.0, 0.0, 0.0);
-    TS->analytic_darcy_flux(u);
-    TS->analytic_total_component_concentration(f_cubic);
-    TS->analytic_porosity(1.0);
-    TS->analytic_water_saturation(1.0);
-    TS->analytic_water_density(1.0);
-
-    // initialize a transport process kernel from a transport state
-    ParameterList parameter_list;
-    string xmlFileName = "test/test_transport.xml";
-
-    updateParametersFromXmlFile(xmlFileName, &parameter_list);
-    Transport_PK TPK(parameter_list, TS);
-
-    if (nx == 20) TPK.print_statistics();
-    TPK.verbosity_level = 0;
-
-    // advance the state
-    int i, k, iter = 0;
-    double T = 0.0, T1 = 1.0;
-
-    RCP<Transport_State>    TS_next  = TPK.get_transport_state_next();
-    RCP<Epetra_MultiVector> tcc      = TS->get_total_component_concentration();
-    RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
-
-    while (T < T1) {
-      double dT = std::min(TPK.calculate_transport_dT(), T1 - T);
-      TPK.advance(dT);
-      T += dT;
-
-      *tcc = *tcc_next;
-      iter++;
-    }
-
-    // calculate L1 and L2 errors
-    double L1, L2;
-    TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
-    printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
-  }
-
-  delete comm;
-}
 
 
 

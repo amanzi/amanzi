@@ -44,12 +44,20 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   Epetra_SerialComm  *comm = new Epetra_SerialComm();
 #endif
 
-  /* create a MPC state with three component */
-  int num_components = 3;
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_ss.exo", MPI_COMM_WORLD, 2));
+  /* read parameter list */
+  ParameterList parameter_list;
+  string xmlFileName = "test/transport_2D.xml";
+  updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
+  /* create an MSTK mesh framework */
+  ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+  GeometricModelPtr gm = new GeometricModel(2, region_list);
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_10x10_ss.exo", MPI_COMM_WORLD, 2, gm));
+  
+  /* create a MPC state with two component */
+  int num_components = 2;
   State mpc_state(num_components, mesh);
-
+ 
   /* create a transport state from the MPC state and populate it */
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
 
@@ -59,12 +67,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   TS->analytic_water_density();
 
   /* initialize a transport process kernel from a transport state */
-  ParameterList parameter_list;
-  string xmlFileName = "test/test_transport_2D.xml";
-
-  updateParametersFromXmlFile(xmlFileName, &parameter_list);
   Transport_PK TPK(parameter_list, TS);
-
   TPK.print_statistics();
 
   /* advance the state */
@@ -98,7 +101,6 @@ cout << "Test: Advance on a 2D square mesh" << endl;
       GMV::start_data();
       GMV::write_cell_data(*tcc_next, 0, "component0");
       GMV::write_cell_data(*tcc_next, 1, "component1");
-      GMV::write_cell_data(*tcc_next, 2, "component2");
       GMV::close_data_file();
     }
 

@@ -83,23 +83,23 @@ TEST(FACES_VOLUMES) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  /* read parameter list */
+  // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_mics.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
  
-  /* create an MSTK mesh framework */
+  // create an simple mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list);
   RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, comm, gm)); 
  
-  /* create a transport state with two components */
+  // create a transport state with two components
   int num_components = 2;
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
   Transport_PK TPK(parameter_list, TS);
 
-  /* printing face areas */
+  // printing face areas
   int f;
   double area;
   const Epetra_Map& face_map = mesh->face_map(true);

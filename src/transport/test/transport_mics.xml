@@ -3,7 +3,7 @@
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="mstk::simple"/>
+    <Parameter name="Framework" type="string" value="mesh::simple"/>
   </ParameterList>    
    
   <ParameterList name="Regions">
@@ -17,7 +17,7 @@
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
         <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,0.0,-1.0}"/>
+        <Parameter name="Direction" type="Array double" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">

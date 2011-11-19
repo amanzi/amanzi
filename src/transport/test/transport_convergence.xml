@@ -1,27 +1,46 @@
-<ParameterList name="Transport">
-  <Parameter name="CFL" type="double" value="0.5"/>   
-  <Parameter name="spatial discretization order" type="int" value="2"/>   
-  <Parameter name="temporal discretization order" type="int" value="2"/>   
-  <!-- debug and developers options --> 
-  <Parameter name="enable internal tests" type="string" value="yes"/>   
-  <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
-  <Parameter name="verbosity level" type="int" value="10"/>  
-  <!-- end of debug and developers options -->
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Transport BCs">
-    <Parameter name="number of BCs" type="int" value="2"/>
-    <ParameterList name="BC 0">
-      <Parameter name="Side set ID" type="int" value="3"/>
-      <Parameter name="Type" type="string" value="Constant"/>
-      <Parameter name="Component 0" type="double" value="1.0"/>
-      <Parameter name="Component 1" type="double" value="1.0"/>
-    </ParameterList>  
-    <ParameterList name="BC 1">
-      <Parameter name="Side set ID" type="int" value="1"/>
-      <Parameter name="Type" type="string" value="Constant"/>
-      <Parameter name="Component 2" type="double" value="1.0"/>
-      <Parameter name="Component 1" type="double" value="1.0"/>
-    </ParameterList>  
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="simple::mesh"/>
+  </ParameterList>    
+   
+  <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{5.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{-1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
+ 
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="spatial discretization order" type="int" value="2"/>   
+    <Parameter name="temporal discretization order" type="int" value="2"/>   
+    <!-- developers parameters --> 
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+    <Parameter name="verbosity level" type="int" value="10"/>  
+    <!-- end of developers parameters -->
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      <ParameterList name="BC 0">
+        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Left side}"/>
+        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
+      </ParameterList>  
+    </ParameterList>  
+   </ParameterList>
 </ParameterList>
 

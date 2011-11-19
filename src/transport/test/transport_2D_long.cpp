@@ -21,6 +21,12 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
+/*
+The transport component of the Amanzi code, serial unit tests.
+License: BSD
+Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #include "Transport_PK.hpp"
 
 
@@ -37,7 +43,7 @@ TEST(ADVANCE_WITH_2D_MESH) {
   using namespace Amanzi::AmanziTransport;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: 2D transport for a long time" << endl;
+cout << "Test: 2D transport on a square mesh for long time" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
