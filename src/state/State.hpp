@@ -8,6 +8,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Export.h"
 #include "Mesh.hh"
+#include "function.hh"
 
 typedef enum { COMPLETE, UPDATING } status_type;
 
@@ -93,10 +94,10 @@ public:
   void set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ );
   void set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ );
 
-  // // restart related 
-  // void init_restart ( );
-  // void write_restart ( std::string filename );
-  // void read_restart ( std::string filename );
+  void set_linear_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
+  void set_uniform_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
+  void set_linear_saturation ( const Teuchos::ParameterList& ic_list, const std::string& region );
+  void set_uniform_saturation ( const Teuchos::ParameterList& ic_list, const std::string& region );
 
   // observation functions
   double water_mass();
@@ -107,11 +108,16 @@ public:
 private:
   void initialize_from_parameter_list();
 
-  void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
-				    int mesh_block_id);
+  void set_cell_value_in_mesh_block(const double& value, Epetra_Vector &v,
+				    const int& mesh_block_id);
 
-  void set_cell_value_in_region(double value, Epetra_Vector &v,
-				std::string region);
+  void set_cell_value_in_region(const double& value, Epetra_Vector& v,
+				const std::string& region);
+
+  void set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector &v,
+				const std::string& region);
+  
+
   // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  
   Teuchos::RCP<Epetra_Vector> pressure;
