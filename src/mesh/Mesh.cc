@@ -249,6 +249,8 @@ bool Mesh::valid_set_id(unsigned int id, Entity_kind kind) const
 bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
 {
 
+  if (!geometric_model_) return false;
+
   unsigned int gdim = geometric_model_->dimension();    
   
   unsigned int ngr = geometric_model_->Num_Regions();
