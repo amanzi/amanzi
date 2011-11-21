@@ -99,7 +99,8 @@ void Reconstruction::calculateCellGradient()
     double norm = calculate_matrix_norm(matrix);
 
     if (det < pow(norm, 1.0/dim)) {
-      for (int i=0; i<dim; i++) matrix(i,i) += RECONSTRUCTION_MATRIX_CORRECTION;
+      norm *= RECONSTRUCTION_MATRIX_CORRECTION;
+      for (int i=0; i<dim; i++) matrix(i,i) += norm;
     }
     //printLeastSquareSystem(matrix, rhs);
  

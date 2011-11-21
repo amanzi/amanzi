@@ -17,64 +17,71 @@ void Transport_PK::limiterTensorial(const int component,
                                     Teuchos::RCP<Epetra_Vector> scalar_field, 
                                     Teuchos::RCP<Epetra_MultiVector> gradient)
 {
-  std::vector<double> total_influx(number_wghost_cells, 0.0);  // follows calculation of dT
-  std::vector<double> total_outflux(number_wghost_cells, 0.0);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  double u1, u2, u1f, u2f, umin, umax;
-  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim), direction(dim), p(dim);
+  double u1, u2, u1f, u2f, umin, umax, L22normal_new;
+  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
+  AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
+
+  std::vector<AmanziGeometry::Point> normals;
+  AmanziMesh::Entity_ID_List faces;
 
   for (int c=cmin; c<=cmax_owned; c++) {
-    AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c]; 
 
-    // find the first violation of feasible set 
-    bool flag;
+    // project along direction to the feasible set 
+    normals.clear();
     for (int loop=0; loop<2; loop++) {
-      flag = true;
       for (int i=0; i<nfaces; i++) {
         int f = faces[i];
         int c1 = (*upwind_cell_)[f];
         int c2 = (*downwind_cell_)[f];
-        if (c1<0 || c2<0) continue; // boundary faces are considered separately
 
-        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-
-        u1 = (*scalar_field)[c1];
-        u2 = (*scalar_field)[c2];
+        if (c1>=0 && c2>=0) {
+          u1 = (*scalar_field)[c1];
+          u2 = (*scalar_field)[c2];
+        } else if (c1==c) {
+          u1 = u2 = (*scalar_field)[c1];
+        } else {  // This case is analyze by influx b.c.
+          continue;
+        }
         umin = std::min(u1, u2);
         umax = std::max(u1, u2);
 
+        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+        u1f = lifting.getValue(gradient_c1, c, xcf);
+
         // check if umin <= u1f <= umax
-        u1f = lifting.getValue(gradient_c1, c1, xcf);
-        direction = xcf - xc1;
-
         if (u1f < umin) {
-          p = ((umin - u1) / L22(direction)) * direction;
-          apply_directional_limiter(direction, p, direction, gradient_c1);
-          flag = false;
-        }
-        else if (u1f > umax) {
-          p = ((umax - u1) / L22(direction)) * direction;
-          apply_directional_limiter(direction, p, direction, gradient_c1);
-          flag = false;
-        }
-
-        if (loop == 0) { 
-          total_influx[c2] += fabs(darcy_flux[f]);
-          total_outflux[c1] += fabs(darcy_flux[f]); 
+          normal_new = xcf - xc;
+          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+ 
+          p = ((umin - u1) / sqrt(L22normal_new)) * direction;
+           apply_directional_limiter(normal_new, p, direction, gradient_c1);
+        } else if (u1f > umax) {
+          normal_new = xcf - xc;
+          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+ 
+          p = ((umax - u1) / sqrt(L22normal_new)) * direction;
+          apply_directional_limiter(normal_new, p, direction, gradient_c1);
         }
       }
-      if (flag) break;  // No limiters were needed. 
+      if (normals.size() == 0) break;  // No limiters were imposed. 
     }
+
+    double grad_norm = norm(gradient_c1);
+    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE) gradient_c1 = 0.0;
+
     for (int i=0; i<dim; i++) (*gradient)[i][c] = gradient_c1[i];
   }
  
   // limiting gradient on the Dirichlet boundary
+  std::vector<double> influx(number_wghost_cells, 0.0);
+
   for (int n=0; n<bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
       for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
@@ -105,28 +112,20 @@ void Transport_PK::limiterTensorial(const int component,
           }
 
           for (int i=0; i<dim; i++) (*gradient)[i][c2] = gradient_c2[i]; 
-          total_influx[c2] += fabs(u1);
+          influx[c2] += fabs(u1);
         } 
       }
     }
   }
-
-  // cleaning local extrema (due to round-off errors)
-  for (int c=cmin; c<=cmax_owned; c++) {
-    u1 = (*scalar_field)[c];
-    if (u1 <= lifting.get_field_local_min()[c] || u1 >= lifting.get_field_local_max()[c]) {
-      for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
-    } 
-  }
-
-  // limiting second term in the flux formula (outflow darcy_flux)
-  for (int c=cmin; c<=cmax_owned; c++) {
-    if (total_outflux[c]) {
-      double psi = std::min(total_influx[c] / total_outflux[c], 1.0);
-      for (int i=0; i<dim; i++) (*gradient)[i][c] *= psi; 
-    }
-  }
-
+ 
+  // cleaning local extrema (experimental lipnikov@lanl.gov)
+  //for (int c=cmin; c<=cmax_owned; c++) {
+  //  u1 = (*scalar_field)[c];
+  //   if (u1 <= lifting.get_field_local_min()[c] || u1 >= lifting.get_field_local_max()[c]) {
+  //    for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
+  //  } 
+  //}
+ 
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_fmap = (*limiter_).Map();
   const Epetra_BlockMap& target_fmap = (*limiter_).Map();
@@ -249,6 +248,42 @@ void Transport_PK::limiterBarthJespersen(const int component,
 #endif
 }
  
+
+/* *******************************************************************
+ * Descent direction is obtained by orthogonalizing normal direction
+ * 'normal_new' to previous normals. A few exceptions are analyzed.  
+ ****************************************************************** */
+void Transport_PK::calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
+                                               AmanziGeometry::Point& normal_new,
+                                               double& L22normal_new, 
+                                               AmanziGeometry::Point& direction)
+{
+  L22normal_new = L22(normal_new);
+  normal_new /= sqrt(L22normal_new);
+  direction = normal_new;
+
+  int nnormals = normals.size();
+  if (nnormals == dim) {
+    normals.clear();    
+  } else {
+    double a;
+    for (int n=0; n<nnormals; n++) {
+      a = normals[n] * direction;
+      for (int i=0; i<dim; i++) direction[i] -= a * normals[n][i];
+    }
+
+    // verify new direction
+    a = L22(direction);
+    if (a < L22normal_new * TRANSPORT_LIMITER_TOLERANCE) {
+      normals.clear();
+      direction = normal_new;
+    } else {
+      for (int i=0; i<dim; i++) direction[i] /= sqrt(a);
+    }
+  }
+  normals.push_back(direction); 
+}
+
 
 /* *******************************************************************
  * Routine projects gradient on a plane defined by normal and point p.

@@ -70,16 +70,14 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
-    } 
-    else if (c1 >= 0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0)) {
+    } else if (c1 >= 0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0)) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
-    } 
-    else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    } else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
@@ -110,6 +108,20 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       } 
     }
   }   
+
+  // DISPERSIVE FLUXES
+  /*
+  if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+    calculate_dispersion_tensor();
+
+    std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated only once (lipnikov@lanl.gov)
+    std::vector<double> bc_face_values(number_wghost_faces);
+
+    extract_boundary_conditions(current_component_, bc_face_id, bc_face_values);
+    populate_harmonic_points_values(current_component_, component, bc_face_id, bc_face_values);
+    add_dispersive_fluxes(component, scalar_field, bc_face_id, bc_face_values, tcc_next);
+  }
+  */
 }
 
 }  // namespace AmanziTransport

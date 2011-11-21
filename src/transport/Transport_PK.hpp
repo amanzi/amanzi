@@ -65,6 +65,7 @@ const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
 
 const int TRANSPORT_LIMITER_BARTH_JESPERSEN = 1; 
 const int TRANSPORT_LIMITER_TENSORIAL = 2;
+const double TRANSPORT_LIMITER_TOLERANCE = 1e-15;
 
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
@@ -106,7 +107,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   // advection routines
   void advance_donor_upwind(double dT);
   void advance_second_order_upwind(double dT);
-  void advance_second_order_upwind_obsolete(double dT);
   void advance_arbitrary_order_upwind(double dT);
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
@@ -120,6 +120,11 @@ class Transport_PK : public Explicit_TI::fnBase {
   void limiterTensorial(const int component,
                         Teuchos::RCP<Epetra_Vector> scalar_field, 
                         Teuchos::RCP<Epetra_MultiVector> gradient);
+
+  void calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
+                                   AmanziGeometry::Point& normal_new,
+                                   double& L22normal_new, 
+                                   AmanziGeometry::Point& direction);
 
   void apply_directional_limiter(AmanziGeometry::Point& normal, 
                                  AmanziGeometry::Point& p,
