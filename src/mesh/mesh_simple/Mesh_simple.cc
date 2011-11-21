@@ -915,7 +915,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
 
 
               for (int ix=0; ix<nx_; ix++)
-                for (int iy=0; iy<nz_; iy++)
+                for (int iy=0; iy<ny_; iy++)
                   {
                     int face;
                     std::vector<AmanziGeometry::Point> fxyz;
@@ -978,7 +978,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
                       ss.push_back(face);
                   }
 
-              for (int iy=0; iy<nx_; iy++)
+              for (int iy=0; iy<ny_; iy++)
                 for (int iz=0; iz<nz_; iz++)
                   {
                     int face;
