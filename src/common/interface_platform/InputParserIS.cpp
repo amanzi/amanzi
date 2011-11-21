@@ -42,7 +42,7 @@ namespace Amanzi {
       if ( plist.sublist("Output").sublist("Time Macros").isSublist(macro_name) )
 	{
 	  time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
-	    .get<Teuchos::Array<double> >("Start_Stop_Frequency");
+	    .get<Teuchos::Array<double> >("Start_Period_Stop");
 	}
       else
 	{
@@ -63,7 +63,7 @@ namespace Amanzi {
       if ( plist.sublist("Output").sublist("Cycle Macros").isSublist(macro_name) )
 	{
 	  cycle_range = plist.sublist("Output").sublist("Cycle Macros").sublist(macro_name)
-	    .get<Teuchos::Array<int> >("Start_Stop_Frequency");
+	    .get<Teuchos::Array<int> >("Start_Period_Stop");
 	}
       else
 	{
@@ -153,7 +153,7 @@ namespace Amanzi {
 	      if ( vis_list.isParameter("Cycle Macro") )
 		{
 		  std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
-		  vis_list.set("Start_Stop_Cycle_Frequency",get_Cycle_Macro(cycle_macro, plist));
+		  vis_list.set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
 		  // now delete the Cycle Macro paramter
 		  vis_list.remove("Cycle Macro");
 		}
@@ -189,14 +189,14 @@ namespace Amanzi {
 		      if ( obs_list.sublist(i->first).isParameter("Time Macro") )
 			{
 			  std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
-			  obs_list.sublist(i->first).set("Start_Stop_Time_Frequency",get_Time_Macro(time_macro, plist));
+			  obs_list.sublist(i->first).set("Start_Period_Stop",get_Time_Macro(time_macro, plist));
 			  obs_list.sublist(i->first).remove("Time Macro");
 			}
 		      
 		      if ( obs_list.sublist(i->first).isParameter("Cycle Macro") )
 			{
 			  std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
-			  obs_list.sublist(i->first).set("Start_Stop_Cycle_Frequency",get_Cycle_Macro(cycle_macro, plist));
+			  obs_list.sublist(i->first).set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
 			  obs_list.sublist(i->first).remove("Cycle Macro");
 			}
 	            }
@@ -873,6 +873,7 @@ namespace Amanzi {
 	      double perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
 	      double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
 	      
+	      
 	 
 	      for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++)
 		{
@@ -899,6 +900,33 @@ namespace Amanzi {
 
 		      stt_mat.set<double>(ss.str(), conc);
 		    }
+		  
+		  Teuchos::ParameterList& ic_domain = plist.sublist("Initial Conditions").sublist("IC For Domain");
+		  // write the initial conditions for pressure or saturation
+		  if ( ic_domain.isSublist("IC: Uniform Pressure")  ) 
+		    {
+		      Teuchos::ParameterList& sublist = stt_mat.sublist("uniform pressure");
+		      sublist.set<double>("value",ic_domain.sublist("IC: Uniform Pressure").get<double>("Value"));
+		    }
+		  else if (ic_domain.isSublist("IC: Linear Pressure"))
+		    {
+		      Teuchos::ParameterList& sublist = stt_mat.sublist("linear pressure");
+		      sublist.set<Teuchos::Array<double> >("gradient", ic_domain.sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Gradient Value"));
+		      sublist.set<Teuchos::Array<double> >("reference coordinate", ic_domain.sublist("IC: Linear Pressure").get<Teuchos::Array<double> >("Reference Coordinate"));
+		      sublist.set<double>("reference value", ic_domain.sublist("IC: Linear Pressure").get<double>("Reference Value"));
+		    }
+		  
+		  if ( ic_domain.isSublist("IC: Uniform Saturation") ) 
+		    {
+		      Teuchos::ParameterList& sublist = stt_mat.sublist("uniform saturation");		      
+		      sublist.set<double>("value",ic_domain.sublist("IC: Uniform Saturation").get<double>("Value"));
+		    }
+		  else if (ic_domain.isSublist("IC: Linear Saturation"))
+		    {
+		      Teuchos::ParameterList& sublist = stt_mat.sublist("linear saturation");
+		    }
+
+
 		}
 	      
 	      stt_list.set<int>("Number of component concentrations", comp_counter);
