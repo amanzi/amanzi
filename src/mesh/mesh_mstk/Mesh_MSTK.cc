@@ -68,7 +68,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
                                    numprocs,mpicomm);
 
     if (myprocid == 0)
@@ -143,7 +143,7 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
                                    numprocs,mpicomm);
 
     if (myprocid == 0)
@@ -224,7 +224,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
@@ -305,7 +305,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
@@ -386,7 +386,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
@@ -448,12 +448,12 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
     mesh = MESH_New(F1);
 
     if (topo_dim == 2) {
-      generate_regular_mesh(mesh,p0.x(),p0.y(),p1.x(),p1.y(),
-			    gspec.xcells(),gspec.ycells());
+      ok = generate_regular_mesh(mesh,p0.x(),p0.y(),p1.x(),p1.y(),
+				 gspec.xcells(),gspec.ycells());
     }
     else if (topo_dim == 3) {
-      generate_regular_mesh(mesh,p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
-			    gspec.xcells(),gspec.ycells(),gspec.zcells());
+      ok = generate_regular_mesh(mesh,p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
+				 gspec.xcells(),gspec.ycells(),gspec.zcells());
     }
 
 
@@ -468,13 +468,13 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
       globalmesh = MESH_New(F1);
 
       if (topo_dim == 2) {
-	generate_regular_mesh(globalmesh,p0.x(),p0.y(),p1.x(),p1.y(),
-			      gspec.xcells(),gspec.ycells());
+	ok = generate_regular_mesh(globalmesh,p0.x(),p0.y(),p1.x(),p1.y(),
+				   gspec.xcells(),gspec.ycells());
       }
       else if (topo_dim == 3) {
-	generate_regular_mesh(globalmesh,
-			      p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
-			      gspec.xcells(),gspec.ycells(),gspec.zcells());
+	ok = generate_regular_mesh(globalmesh,
+				   p0.x(),p0.y(),p0.z(),p1.x(),p1.y(),p1.z(),
+				   gspec.xcells(),gspec.ycells(),gspec.zcells());
       }
       
       mesh = globalmesh;
@@ -484,7 +484,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
       ok = 1;
     }
 
-    ok = ok & MSTK_Mesh_Distribute(&mesh,topo_dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
