@@ -4,6 +4,9 @@
 #include "Epetra_MultiVector.h"
 #include "Mesh.hh"
 #include "cell_geometry.hh"
+#include "Point.hh"
+#include "Geometry.hh"
+#include "linear-function.hh"
 
 State::State( int number_of_components_,
 	      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
@@ -64,7 +67,7 @@ void State::initialize_from_parameter_list()
 
   set_zero_total_component_concentration();
   set_water_density(parameter_list.get<double>("Constant water density"));
-  set_water_saturation(parameter_list.get<double>("Constant water saturation"));
+  // set_water_saturation(parameter_list.get<double>("Constant water saturation"));
   set_viscosity(parameter_list.get<double>("Constant viscosity"));
   
   for (int nb=1; nb<=num_blocks; nb++) {
@@ -76,28 +79,6 @@ void State::initialize_from_parameter_list()
 
     std::string region = sublist.get<std::string>("Region");
 
-    // if (!mesh_maps->valid_set_id(mesh_block_ID,Amanzi::AmanziMesh::CELL)) {
-    //   // there is an inconsistency in the xml input file, report and die
-      
-    //   int myrank = Teuchos::MPISession::getRank();
-
-    //   if (myrank == 0) {
-    // 	std::cerr << "State::initialize_from_parameter_list... the mesh block with ID ";
-    // 	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
-
-    // 	// get the mesh block IDs 
-    // 	int num_blks = mesh_maps->num_sets(Amanzi::AmanziMesh::CELL);
-    // 	std::vector<unsigned int> setids(num_blks);
-    // 	mesh_maps->get_set_ids(Amanzi::AmanziMesh::CELL,setids.begin(),setids.end());
-    // 	std::cerr << "valid mesh block IDs are: ";
-    // 	for (int i=0; i<num_blks; i++) std::cerr << setids[i] << " ";
-    // 	std::cerr << std::endl;
-
-
-    // 	throw std::exception();
-    //  }
-    // }
-	
 
     // initialize the arrays with some constants from the input file
     set_porosity(sublist.get<double>("Constant porosity"),region);
@@ -108,6 +89,41 @@ void State::initialize_from_parameter_list()
     u[2] = sublist.get<double>("Constant Darcy flux z",0.0);
     set_darcy_flux(u, region);
     
+    // set the pressure
+    if (sublist.isSublist("uniform pressure"))
+      {
+	const Teuchos::ParameterList&  unif_p_list = sublist.sublist("uniform pressure");
+	set_uniform_pressure( unif_p_list, region );
+      }
+    else if (sublist.isSublist("linear pressure"))
+      {
+	const Teuchos::ParameterList&  lin_p_list = sublist.sublist("linear pressure");
+	set_linear_pressure( lin_p_list, region );	
+      }
+    else
+      {
+	// maybe throw an exception
+      }
+
+    // set the saturation
+    // set the pressure
+    if (sublist.isSublist("uniform saturation"))
+      {
+	const Teuchos::ParameterList&  unif_s_list = sublist.sublist("uniform saturation");
+	set_uniform_saturation( unif_s_list, region );
+      }
+    else if (sublist.isSublist("linear saturation"))
+      {
+	const Teuchos::ParameterList&  lin_s_list = sublist.sublist("linear saturation");
+	set_uniform_saturation( lin_s_list, region );	
+      }
+    else
+      {
+	// maybe throw an exception
+      }    
+
+
+
     // read the component concentrations from the xml file
     // and initialize them in mesh block mesh_block_ID
     double tcc_const[number_of_components];
@@ -192,8 +208,8 @@ void State::advance_time(double dT)
 }
 
 
-void State::set_cell_value_in_region(double value, Epetra_Vector &v, 
-				     std::string region)
+void State::set_cell_value_in_region(const double& value, Epetra_Vector& v, 
+				     const std::string& region)
 {
   if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
     throw std::exception();
@@ -220,8 +236,31 @@ void State::set_cell_value_in_region(double value, Epetra_Vector &v,
 }
 
 
-void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v, 
-					int mesh_block_id)
+void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector& v, 
+				     const std::string& region)
+{
+  if (!mesh_maps->valid_set_name(region,Amanzi::AmanziMesh::CELL)) {
+    throw std::exception();
+  }
+  
+  unsigned int mesh_block_size = mesh_maps->get_set_size(region,
+							 Amanzi::AmanziMesh::CELL,
+							 Amanzi::AmanziMesh::OWNED);
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  mesh_maps->get_set_entities(region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+			      &cell_ids);
+  
+  for( std::vector<unsigned int>::iterator c = cell_ids.begin(); c != cell_ids.end();  c++) {
+    // get location of centroid for cell *c
+    Amanzi::AmanziGeometry::Point p( mesh_maps->cell_centroid(*c) );    
+    v[*c] = fun( &p[0] );  
+  } 
+
+}
+
+
+void State::set_cell_value_in_mesh_block(const double& value, Epetra_Vector& v, 
+					 const int& mesh_block_id)
 {
   if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
     throw std::exception();
@@ -672,3 +711,46 @@ void State::set_total_component_concentration ( const Epetra_MultiVector& total_
   *total_component_concentration = total_component_concentration_;
 };
 
+void State::set_uniform_pressure ( const Teuchos::ParameterList& unif_p_list, const std::string& region )
+{
+  // get value from paramter list
+  const double value = unif_p_list.get<double>("value");
+  set_cell_value_in_region( value, *pressure, region );
+};
+
+void State::set_linear_pressure ( const Teuchos::ParameterList& lin_p_list, const std::string& region )
+{
+  // get parameters from parameter list
+  const double ref_value = lin_p_list.get<double>("reference value");
+  const Teuchos::Array<double>& ref_coord = lin_p_list.get<Teuchos::Array<double> >("reference coordinate");
+  const Teuchos::Array<double>& gradient = lin_p_list.get<Teuchos::Array<double> >("gradient");
+
+  // create function
+  Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
+
+  set_cell_value_in_region ( lin_p, *pressure, region );
+
+};
+
+void State::set_uniform_saturation ( const Teuchos::ParameterList& unif_s_list, const std::string& region )
+{
+  // get value from paramter list
+  const double value = unif_s_list.get<double>("value");
+  set_cell_value_in_region( value, *water_saturation, region );
+};
+
+void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, const std::string& region )
+{
+  // get parameters from parameter list
+  const double ref_value = lin_s_list.get<double>("reference value");
+  const Teuchos::Array<double>& ref_coord = lin_s_list.get<Teuchos::Array<double> >("reference coordinate");
+  const Teuchos::Array<double>& gradient = lin_s_list.get<Teuchos::Array<double> >("gradient");
+
+  // create function
+  Amanzi::LinearFunction lin_p(ref_value, gradient.toVector(), ref_coord.toVector());
+
+  set_cell_value_in_region ( lin_p, *water_saturation, region );
+  
+
+
+};

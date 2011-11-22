@@ -63,27 +63,30 @@ void Amanzi::Vis::create_files(Amanzi::AmanziMesh::Mesh& mesh)
 
 void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 {
-  filebasename = plist.get<string>("file base name","amanzi_vis");
+  filebasename = plist.get<string>("File Name Base","amanzi_vis");
   
   enable_gnuplot = plist.get<bool>("enable gnuplot",false);
   if (comm->NumProc() != 1) enable_gnuplot = false;
 
-  if ( plist.isSublist("Cycle Data") ) 
+  if (plist.isParameter("Start_Period_Stop") ) 
     {
-      Teuchos::ParameterList &ilist = plist.sublist("Cycle Data");
-      
-      interval = ilist.get<int>("Interval");
-      start = ilist.get<int>("Start");
-      end = ilist.get<int>("End");
-      
-      if (ilist.isParameter("Steps"))
+      Teuchos::Array<int> sscf = plist.get<Teuchos::Array<int> >("Start_Period_Stop");
+      if (sscf.size()==3)
 	{
-	  steps = ilist.get<Teuchos::Array<int> >("Steps");  
+	  start = sscf[0];
+	  end = sscf[2];
+	  interval = sscf[1];
 	}
-    }  
-  else
+      else if (sscf.size()==2) 
+	{
+	  start = sscf[0];
+	  interval = sscf[1];
+	  end = -1;
+	}
+    }
+  else if (plist.isParameter("Values") )
     {
-      // error
+
     }
 }
 

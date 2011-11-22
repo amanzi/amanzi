@@ -52,6 +52,9 @@ const int TRANSPORT_BC_CONSTANT_TCC = 1;
 const int TRANSPORT_BC_DISPERSION_FLUX = 2;
 const int TRANSPORT_BC_NULL = 3;
 
+const int TRANSPORT_FLOW_STEADYSTATE = 1;
+const int TRANSPORT_FLOW_TRANSIENT = 2;
+
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
 
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
@@ -195,10 +198,12 @@ class Transport_PK : public Explicit_TI::fnBase {
   double cfl, dT, dT_debug, T_internal, T_physical;  
   int number_components; 
   int status;
-  bool standalone_mode;
+  bool standalone_mode;  // If it is true the internal time will be used.
+  int flow_mode;  // steady-sate or transient
 
   std::vector<BoundaryFunction*> bcs;  // influx BCs for each components
   std::vector<int> bcs_tcc_index; 
+  double bc_scaling;
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;

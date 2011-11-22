@@ -76,7 +76,6 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   Transport_PK TPK(parameter_list, TS);
   TPK.print_statistics();
-return;
 
   // advance the state
   int iter, k;

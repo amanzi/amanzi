@@ -31,7 +31,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t ) { 
-  return Amanzi::AmanziGeometry::Point(0.0, 1.0);
+  return Amanzi::AmanziGeometry::Point(1.0, 1.0);
 }
 
 

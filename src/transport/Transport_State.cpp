@@ -96,14 +96,14 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
   const Epetra_BlockMap& target_cmap = target.Map();
 
   int cmin, cmax, cmax_s, cmax_t;
-  cmin   = source_cmap.MinLID();
+  cmin = source_cmap.MinLID();
   cmax_s = source_cmap.MaxLID();
   cmax_t = target_cmap.MaxLID();
-  cmax   = std::min(cmax_s, cmax_t);
+  cmax = std::min(cmax_s, cmax_t);
 
   int number_vectors = source.NumVectors();
   for (int c=cmin; c<=cmax; c++) {
-     for (int i=0; i<number_vectors; i++) target[i][c] = source[i][c];
+    for (int i=0; i<number_vectors; i++) target[i][c] = source[i][c];
   }
 
 #ifdef HAVE_MPI

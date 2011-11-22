@@ -33,13 +33,14 @@ namespace AmanziTransport {
 Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 			                     Teuchos::RCP<Transport_State> TS_MPC)
 { 
+  status = TRANSPORT_NULL;
+
   parameter_list = parameter_list_MPC;
   number_components = TS_MPC->get_total_component_concentration()->NumVectors();
 
   TS = Teuchos::rcp(new Transport_State(*TS_MPC));
 
   dT = dT_debug = T_internal = 0.0;
-  status = TRANSPORT_NULL;
   verbosity_level = 0;
   internal_tests = 0;
   dispersivity_model = TRANSPORT_DISPERSIVITY_MODEL_NULL;
@@ -50,6 +51,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   dim = mesh_->space_dimension();
 
   standalone_mode = false;
+  flow_mode = TRANSPORT_FLOW_STEADYSTATE;
+  bc_scaling = 0.0;
 
   Init();  // must be moved out of the constructor (lipnikov@lanl.gov)
 }
@@ -172,6 +175,12 @@ void Transport_PK::process_parameter_list()
   else if (advection_limiter_name == "Tensorial" || advection_limiter_name == "none") {
     advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   }
+
+  flow_mode = TRANSPORT_FLOW_STEADYSTATE;
+  string flow_mode_name = transport_list.get<string>("flow mode", "steady-state");
+  if (flow_mode_name == "transient") {
+    flow_mode = TRANSPORT_FLOW_TRANSIENT;
+  }  
    
   // control parameter
   verbosity_level = transport_list.get<int>("verbosity level", 0);
@@ -266,6 +275,13 @@ double Transport_PK::calculate_transport_dT()
     TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
 
     check_divergence_property();
+    identify_upwind_cells();
+
+    status = TRANSPORT_FLOW_AVAILABLE;
+  } else if (flow_mode == TRANSPORT_FLOW_TRANSIENT) {
+    TS->copymemory_vector(TS->ref_darcy_flux(), TS_nextBIG->ref_darcy_flux());
+
+    //check_divergence_property();
     identify_upwind_cells();
 
     status = TRANSPORT_FLOW_AVAILABLE;
