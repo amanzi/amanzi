@@ -51,6 +51,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 
   standalone_mode = false;
 
+  bc_scaling = 0.0;
+
   Init();  // must be moved out of the constructor (lipnikov@lanl.gov)
 }
 

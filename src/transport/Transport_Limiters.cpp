@@ -74,7 +74,7 @@ void Transport_PK::limiterTensorial(const int component,
     }
 
     double grad_norm = norm(gradient_c1);
-    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE) gradient_c1 = 0.0;
+    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c1 = 0.0;
 
     for (int i=0; i<dim; i++) (*gradient)[i][c] = gradient_c1[i];
   }
@@ -94,6 +94,8 @@ void Transport_PK::limiterTensorial(const int component,
           u1 = bc->second;
           umin = std::min(u1, u2);
           umax = std::max(u1, u2);
+
+          bc_scaling = std::max(bc_scaling, u1);
 
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
