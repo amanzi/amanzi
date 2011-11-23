@@ -8,7 +8,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "dbc.hh"
+#include "errors.hh"
 
 #include "Transport_PK.hpp"
 
@@ -67,7 +67,9 @@ void Transport_PK::check_divergence_property()
       cout << "    cell  = " << c << endl;
       cout << "    divergence = " << div << endl;
       cout << "    maximal velocity = " << umax << endl;
-      ASSERT(0);
+      Errors::Message msg;
+      msg << "Velocity field is not divergence free " << "\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
   error_avg /= (cmax_owned + 1);
@@ -103,14 +105,16 @@ void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
   if (TRANSPORT_AMANZI_VERSION == 1) {
     for (i=0; i<num_components; i++) {
       if (tr_min[i] < 0) {
-        cout << "Transport_PK: concentration violated GED property" << endl; 
+        cout << "Transport_PK: concentration violates GED property" << endl; 
         cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
         cout << "    MyPID = " << MyPID << endl;
         cout << "    component = " << i << endl;
         cout << "    time = " << T_internal << endl;
         cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << endl;
 
-        ASSERT(0); 
+        Errors::Message msg;
+        msg << "Concentration violates GED property." << "\n";
+        Exceptions::amanzi_throw(msg);
       }
     }
   }
@@ -142,7 +146,10 @@ void Transport_PK::check_tracer_bounds(Epetra_MultiVector& tracer,
       cout << "    value (old) = " << (*tcc)[component][c] << endl;
       cout << "    value (new) = " << value << endl;
 
-      ASSERT(0); 
+ 
+      Errors::Message msg;
+      msg << "Tracer violates bounds." << "\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
 }

@@ -13,7 +13,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "dbc.hh"
 
 #include "Transport_PK.hpp"
 #include "Reconstruction.hpp"

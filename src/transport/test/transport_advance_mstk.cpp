@@ -54,7 +54,7 @@ TEST(ADVANCE_WITH_MSTK) {
   Transport_PK TPK(parameter_list, TS);
 
   // advance the state
-  double  dT = TPK.calculate_transport_dT();
+  double dT = TPK.calculate_transport_dT();
   TPK.advance(dT);
 
   // printing cell concentration 

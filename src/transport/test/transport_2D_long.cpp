@@ -59,6 +59,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_50x50_ss.exo", MPI_COMM_WORLD, 2, gm));
+return;
   
   /* create a MPC state with one component */
   int num_components = 1;

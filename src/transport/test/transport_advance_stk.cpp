@@ -52,10 +52,9 @@ TEST(ADVANCE_WITH_STK) {
   TPK.advance(dT);
 
   // printing cell concentration  
-  int  i, k;
+  int i, k;
   double T = 0.0;
   RCP<Transport_State> TS_next = TPK.get_transport_state_next();
-
   RCP<Epetra_MultiVector> tcc = TS->get_total_component_concentration();
   RCP<Epetra_MultiVector> tcc_next = TS_next->get_total_component_concentration();
 

@@ -53,11 +53,11 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   TS->analytic_darcy_flux(u);
   TS->analytic_water_saturation();
 
-  Transport_PK  TPK( parameter_list, TS );
+  Transport_PK TPK(parameter_list, TS);
 
   // advance the state
-  double  dT = TPK.calculate_transport_dT();  
-  TPK.advance( dT );
+  double dT = TPK.calculate_transport_dT();  
+  TPK.advance(dT);
 
   // printing cell concentration
   int  iter, k;
