@@ -68,6 +68,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
 
   /* initialize a transport process kernel from a transport state */
   Transport_PK TPK(parameter_list, TS);
+  TPK.set_standalone_mode(true);
   TPK.print_statistics();
 
   /* advance the state */
@@ -86,7 +87,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
     iter++;
 
     if (iter < 15) {
-      printf( "T=%6.2f  C_0(x):", T );
+      printf( "T=%8.4f  C_0(x):", T );
       for( int k=0; k<9; k++ ) {
         int k1 = 9 - k;  // reflects cell numbering in the exodus file
         printf("%7.4f", (*tcc_next)[0][k1]); 

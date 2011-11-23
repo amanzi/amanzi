@@ -49,6 +49,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   TS->analytic_water_saturation();
 
   Transport_PK TPK(parameter_list, TS);
+  TPK.set_standalone_mode(true);
 
   // advance the state
   double dT = TPK.calculate_transport_dT();

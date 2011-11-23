@@ -68,6 +68,7 @@ TEST(DISPERSION) {
   TS->analytic_water_density(1.0);
 
   Transport_PK TPK(parameter_list, TS);
+  TPK.set_standalone_mode(true);
   TPK.print_statistics();
   TPK.verbosity_level = 0;
 

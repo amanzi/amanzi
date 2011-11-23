@@ -134,6 +134,7 @@ void Transport_PK::print_statistics() const
 {
   if (!MyPID && verbosity_level > 0) {
     cout << "Transport PK: CFL = " << cfl << endl;
+    cout << "              Execution mode standalone = " << standalone_mode << endl;
     cout << "              Total number of components = " << number_components << endl;
     cout << "              Verbosity level = " << verbosity_level << endl;
     cout << "              spatial discretication order = " << spatial_disc_order << endl;

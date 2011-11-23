@@ -129,7 +129,8 @@ int Transport_PK::Init()
 
   // boundary conditions installation at initial time
   T_physical = TS->get_time();
-  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(T_physical);
+  double time = (standalone_mode) ? T_internal : T_physical;
+  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
 
   return 0;
 }
@@ -222,8 +223,6 @@ void Transport_PK::advance(double dT_MPC)
     advance_donor_upwind(dT_MPC);
   } else if (spatial_disc_order == 2) {
     advance_second_order_upwind(dT_MPC);
-  //} else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
-  //  advance_second_order_upwind_obsolete(dT_MPC);
   }
 }
 

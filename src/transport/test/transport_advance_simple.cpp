@@ -75,6 +75,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   TS->analytic_water_density();
 
   Transport_PK TPK(parameter_list, TS);
+  TPK.set_standalone_mode(true);
   TPK.print_statistics();
 
   // advance the state

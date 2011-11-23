@@ -18,7 +18,7 @@
     <ParameterList name="Left side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="String" value="3"/>
-        <Parameter name="File" type="String" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="File" type="String" value="rect2D_10x10_ss.exo"/>
         <Parameter name="Format" type="String" value="Exodus II"/>
         <Parameter name="Entity" type="String" value="Face"/>
       </ParameterList>
@@ -26,7 +26,7 @@
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Labeled Set">
         <Parameter name="Label" type="String" value="2"/>
-        <Parameter name="File" type="String" value="rect2D_50x50_ss.exo"/>
+        <Parameter name="File" type="String" value="rect2D_10x10_ss.exo"/>
         <Parameter name="Format" type="String" value="Exodus II"/>
         <Parameter name="Entity" type="String" value="Face"/>
       </ParameterList>
@@ -46,13 +46,13 @@
     <ParameterList name="Transport BCs">
       <Parameter name="number of BCs" type="int" value="4"/>
       <ParameterList name="BC 0">
-        <Parameter name="Component 0" type="Array double" value="{1.0, 0.0}"/>
+        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
         <Parameter name="Regions" type="Array string" value="{Left side}"/>
         <Parameter name="Time functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
       </ParameterList>  
       <ParameterList name="BC 1">
-        <Parameter name="Component 0" type="Array double" value="{1.0, 0.5}"/>
+        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
         <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
         <Parameter name="Time functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>

@@ -68,9 +68,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     TS->analytic_water_density(1.0);
 
     Transport_PK TPK(parameter_list, TS);
+    TPK.set_standalone_mode(true);
+    TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
     if (nx == 20) TPK.print_statistics();
     TPK.verbosity_level = 0;
-    TPK.spatial_disc_order = TPK.temporal_disc_order = 1;
  
     // advance the state
     int i, k, iter = 0;

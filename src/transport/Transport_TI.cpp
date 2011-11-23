@@ -98,7 +98,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
         f = bc->first;
         c2 = (*downwind_cell_)[f]; 
-
+ 
         if (c2 >= 0) {
           u = fabs(darcy_flux[f]);
           double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2]; 
