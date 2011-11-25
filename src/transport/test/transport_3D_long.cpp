@@ -21,12 +21,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
-/*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
 #include "Transport_PK.hpp"
 
 
@@ -58,7 +52,10 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect3D_5x5x1.exo", MPI_COMM_WORLD, 3, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect3D_50x50x1.exo", MPI_COMM_WORLD, 3, gm));
+
+  //Amanzi::MeshAudit audit(mesh);
+  //audit.Verify();   
   
   /* create a MPC state with one component */
   int num_components = 1;
@@ -93,12 +90,14 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
     T += dT;
     iter++;
 
-    if (T>0.2 && flag) {
+    if (T>0.1 && flag) {
       flag = false;
-      GMV::open_data_file(*mesh, (std::string)"transport.gmv");
-      GMV::start_data();
-      GMV::write_cell_data(*tcc_next, 0, "component0");
-      GMV::close_data_file();
+      if (TPK.MyPID == 0) {
+        GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+        GMV::start_data();
+        GMV::write_cell_data(*tcc_next, 0, "component0");
+        GMV::close_data_file();
+      }
       break;
     }
 

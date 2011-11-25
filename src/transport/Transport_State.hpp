@@ -30,6 +30,8 @@ class Transport_State {
   // data management
   void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target);
   void copymemory_vector(Epetra_Vector& source, Epetra_Vector& target);
+  void distribute_cell_vector(Epetra_Vector& v);
+  void distribute_cell_multivector(Epetra_MultiVector& v);
 
   // access methods for state variables
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration() { return total_component_concentration; }

@@ -3,11 +3,10 @@
 #include "Epetra_Import.h"
 
 #include "Point.hh"
+#include "errors.hh"
 
 #include "State.hpp"
 #include "Transport_State.hpp"
-
-using namespace Teuchos;
 
 namespace Amanzi {
 namespace AmanziTransport {
@@ -55,8 +54,8 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 
     int number_vectors = S.get_total_component_concentration()->NumVectors();
 
-    total_component_concentration = rcp(new Epetra_MultiVector(cmap, number_vectors));
-    darcy_flux = rcp(new Epetra_Vector(fmap));
+    total_component_concentration = Teuchos::rcp(new Epetra_MultiVector(cmap, number_vectors));
+    darcy_flux = Teuchos::rcp(new Epetra_Vector(fmap));
 
     copymemory_multivector(S.ref_total_component_concentration(), *total_component_concentration);
     copymemory_vector(S.ref_darcy_flux(), *darcy_flux);
@@ -75,11 +74,11 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 
     Epetra_Vector& df = S.ref_darcy_flux();
     df.ExtractView(&data_df);     
-    darcy_flux = rcp(new Epetra_Vector(View, fmap, data_df));
+    darcy_flux = Teuchos::rcp(new Epetra_Vector(View, fmap, data_df));
 
     Epetra_MultiVector & tcc = S.ref_total_component_concentration();
     tcc.ExtractView(&data_tcc);     
-    total_component_concentration = rcp(new Epetra_MultiVector(View, cmap, data_tcc, tcc.NumVectors()));
+    total_component_concentration = Teuchos::rcp(new Epetra_MultiVector(View, cmap, data_tcc, tcc.NumVectors()));
   }
 
   S_ = S.S_;
@@ -87,7 +86,7 @@ Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 
 
 /* *******************************************************************
- * import concentrations to internal Transport state             
+ * Routine imports a short multivector to a parallel overlaping vector.
  ****************************************************************** */
 void Transport_State::copymemory_multivector(Epetra_MultiVector& source, 
                                              Epetra_MultiVector& target)
@@ -107,7 +106,11 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
   }
 
 #ifdef HAVE_MPI
-  if (cmax_s > cmax_t) throw std::exception();  // must be replaced by amanziException
+  if (cmax_s > cmax_t) {
+    Errors::Message msg;
+    msg << "Source map (in copy_multivector) is larger than target map.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   Epetra_Import importer(target_cmap, source_cmap);
   target.Import(source, importer, Insert);
@@ -116,7 +119,7 @@ void Transport_State::copymemory_multivector(Epetra_MultiVector& source,
 
 
 /* *******************************************************************
- * Routine imports Darcy flux to internal Transport state                 
+ * Routine imports a short vector to a parallel overlaping vector.                
  ****************************************************************** */
 void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& target)
 {
@@ -132,10 +135,52 @@ void Transport_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& ta
   for (int f=fmin; f<=fmax; f++) target[f] = source[f];
 
 #ifdef HAVE_MPI
-  if (fmax_s > fmax_t) throw std::exception(); 
+  if (fmax_s > fmax_t)  {
+    Errors::Message msg;
+    msg << "Source map (in copy_vector) is larger than target map.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   Epetra_Import importer(target_fmap, source_fmap);
   target.Import(source, importer, Insert);
+#endif
+}
+
+
+/* *******************************************************************
+ * Copy data in ghost positions for a vector.              
+ ****************************************************************** */
+void Transport_State::distribute_cell_vector(Epetra_Vector& v)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_cmap = mesh_maps->cell_map(false);
+  const Epetra_BlockMap& target_cmap = mesh_maps->cell_map(true);
+  Epetra_Import importer(target_cmap, source_cmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vv(View, source_cmap, vdata);
+
+  v.Import(vv, importer, Insert);
+#endif
+}
+
+
+/* *******************************************************************
+ * Copy data in ghost positions for a multivector.              
+ ****************************************************************** */
+void Transport_State::distribute_cell_multivector(Epetra_MultiVector& v)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_cmap = mesh_maps->cell_map(false);
+  const Epetra_BlockMap& target_cmap = mesh_maps->cell_map(true);
+  Epetra_Import importer(target_cmap, source_cmap);
+
+  double** vdata;
+  v.ExtractView(&vdata);
+  Epetra_MultiVector vv(View, source_cmap, vdata, v.NumVectors());
+
+  v.Import(vv, importer, Insert);
 #endif
 }
 

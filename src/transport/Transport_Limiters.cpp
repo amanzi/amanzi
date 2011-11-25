@@ -32,7 +32,7 @@ void Transport_PK::limiterTensorial(const int component,
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c]; 
-
+ 
     // project along direction to the feasible set 
     normals.clear();
     for (int loop=0; loop<2; loop++) {
@@ -127,14 +127,8 @@ void Transport_PK::limiterTensorial(const int component,
   //    for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
   //  } 
   //}
- 
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = (*limiter_).Map();
-  const Epetra_BlockMap& target_fmap = (*limiter_).Map();
 
-  Epetra_Import importer(target_fmap, source_fmap);
-  (*limiter_).Import(*limiter_, importer, Insert);
-#endif
+  TS_nextBIG->distribute_cell_multivector(*gradient);
 }
 
 
@@ -241,13 +235,7 @@ void Transport_PK::limiterBarthJespersen(const int component,
     }
   }
 
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = (*limiter_).Map();
-  const Epetra_BlockMap& target_fmap = (*limiter_).Map();
-
-  Epetra_Import importer(target_fmap, source_fmap);
-  (*limiter_).Import(*limiter_, importer, Insert);
-#endif
+  TS_nextBIG->distribute_cell_vector(*limiter_);
 }
  
 

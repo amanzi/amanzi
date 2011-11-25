@@ -9,13 +9,17 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziTransport {
 
+/* ******************************************************************* 
+ * Routine takes a parallel overlapping vector C and returns a parallel
+ * overlapping vector F(C).
+ ****************************************************************** */
 void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
 
-  // transport routines need RCP pointer
+  // transport routines need an RCP pointer
   Epetra_Vector* component_tmp = const_cast<Epetra_Vector*> (&component);  
   const Teuchos::RCP<Epetra_Vector> component_rcp(component_tmp, false);
 
@@ -85,13 +89,13 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       tcc_flux = u * upwind_tcc;
       f_component[c2] += tcc_flux;
     }
-  } 
+  }
 
   for (int c=cmin; c<=cmax_owned; c++) {  // calculate conservative quantatity 
     double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c]; 
     f_component[c] /= vol_phi_ws; 
   }
-
+ 
   // BOUNDARY CONDITIONS for ADVECTION
   for (int n=0; n<bcs.size(); n++) {
     if (current_component_ == bcs_tcc_index[n]) {
@@ -99,8 +103,8 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
         f = bc->first;
         c2 = (*downwind_cell_)[f]; 
  
-        if (c2 >= 0) {
-          u = fabs(darcy_flux[f]);
+        if (c2 >= 0 && f <= fmax_owned) {
+          u = fabs(darcy_flux[f]);    
           double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2]; 
           tcc_flux = u * bc->second;
           f_component[c2] += tcc_flux / vol_phi_ws;
@@ -122,6 +126,8 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
     add_dispersive_fluxes(component, scalar_field, bc_face_id, bc_face_values, tcc_next);
   }
   */
+
+  TS_nextBIG->distribute_cell_vector(f_component);
 }
 
 }  // namespace AmanziTransport

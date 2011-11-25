@@ -15,7 +15,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-//#include "MeshAudit.hh"
+#include "MeshAudit.hh"
 
 
 double f_step(const Amanzi::AmanziGeometry::Point& x, double t ) { 
@@ -41,7 +41,10 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list);
   RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4.par", MPI_COMM_WORLD, gm));
-  
+
+  //Amanzi::MeshAudit audit(mesh);
+  //audit.Verify();
+   
   // create a transport state with two component 
   int num_components = 2;
   State mpc_state(num_components, mesh);
