@@ -1004,6 +1004,7 @@ AMANZI_WORK_DIR=${WORK_DIR}
 AMANZI_CONFIG=0
 AMANZI_DIR=
 AMANZI_MAKE=0
+AMANZI_INSTALL=0
 AMANZI_CLOBBER=0
 AMANZI_TEST=0
 AMANZI_MAKE_NP=${PARALLEL_NP}
@@ -1056,13 +1057,14 @@ function determine_amanzi_dir() {
     #echo "Amanzi directory: \$AMANZI_DIR"
 }
 
-while getopts "abcd:mntv" flag
+while getopts "abcd:imntv" flag
 do
   case \$flag in
-    a) AMANZI_CONFIG=1; AMANZI_MAKE=1; AMANZI_TEST=1;;
+    a) AMANZI_CONFIG=1; AMANZI_MAKE=1; AMANZI_TEST=1; AMANZI_INSTALL=1;;
     b) AMANZI_CLOBBER=1;;
     c) AMANZI_CONFIG=1;;
     d) determine_amanzi_dir \${OPTARG};;
+    i) AMANZI_INSTALL=1;;
     m) AMANZI_MAKE=1;;
     n) AMANZI_MAKE_NP= \${OPTARG};;
     t) AMANZI_TEST=1;;
@@ -1101,6 +1103,7 @@ fi
 
 if [ \$AMANZI_CONFIG -eq 1 ]; then
     mkdir -p \${AMANZI_DIR}/build
+    mkdir -p \${AMANZI_DIR}/install
     cd \${AMANZI_DIR}/build
 
     export CXX=${MPI_PREFIX}/bin/mpicxx
@@ -1110,6 +1113,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
     export F77=${MPI_PREFIX}/bin/mpif77
 
     \${CMAKE} \\
+        -D CMAKE_INSTALL_PREFIX:FILEPATH=\${AMANZI_DIR}/install \\
         -D ENABLE_Config_Report:BOOL=ON \\
         -D ENABLE_MPI:BOOL=\${ENABLE_MPI} \\
         -D MPI_EXEC:FILEPATH=${MPI_PREFIX}/bin/mpiexec \\
@@ -1162,6 +1166,14 @@ fi
 if [ \$AMANZI_TEST -eq 1 ]; then
     cd \${AMANZI_DIR}/build
     \${CTEST} --timeout 60 --output-on-failure
+    if [ \$? -ne 0 ]; then
+        exit 1
+    fi
+fi
+
+if [ \$AMANZI_INSTALL -eq 1 ]; then
+    cd \${AMANZI_DIR}/build
+    make install
     if [ \$? -ne 0 ]; then
         exit 1
     fi
