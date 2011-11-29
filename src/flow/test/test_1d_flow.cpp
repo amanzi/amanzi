@@ -9,55 +9,70 @@
 
 #include "AztecOO.h"
 
+#include "Mesh.hh"
+#include "MeshFactory.hh"
 #include "DarcyProblem.hpp"
 #include "cell_geometry.hh"
-#include "Mesh.hh"
-#include "Mesh_STK.hh"
 
 #include <iostream>
+
+using namespace Amanzi;
+using namespace Amanzi::AmanziMesh;
+using namespace Amanzi::AmanziGeometry;
 
 struct problem_setup
 {
   Epetra_MpiComm *comm;
   //Teuchos::RCP<Mesh_simple> mesh;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-  Teuchos::ParameterList bc_params;
+  Teuchos::RCP<Mesh> mesh;
+  GeometricModel *gm;
+  Teuchos::ParameterList params;
   Amanzi::DarcyProblem *problem;
   AztecOO *solver;
   Epetra_Vector *solution;
   // parameters for analytic pressure function
   double p0, pgrad[3];
-
-  enum Side { LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP };
+  // other parameters
+  double rho, mu, g[3];
 
   problem_setup()
   {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
-    std::ostringstream file;
-    file << "test/4x4x4";
+    // Generate the mesh file name.
+    std::string filename;
+    if (comm->NumProc() == 1)
+      filename = "test/4x4x4.exo";
+    else 
+      filename = "test/4x4x4.par";
+    
+    // Create the geometric model.
+    Teuchos::ParameterList regions;
+    regions.sublist("FRONT").sublist("Region: Labeled Set").
+        set("File",filename).set("Format","Exodus II").set("Label","1").set("Entity","Face");
+    regions.sublist("RIGHT").sublist("Region: Labeled Set").
+        set("File",filename).set("Format","Exodus II").set("Label","2").set("Entity","Face");
+    regions.sublist("BACK").sublist("Region: Labeled Set").
+        set("File",filename).set("Format","Exodus II").set("Label","3").set("Entity","Face");
+    regions.sublist("LEFT").sublist("Region: Labeled Set").
+        set("File",filename).set("Format","Exodus II").set("Label","4").set("Entity","Face");
+    regions.sublist("BOTTOM").sublist("Region: Labeled Set").
+        set("File",filename).set("Format","Exodus II").set("Label","5").set("Entity","Face");
+    regions.sublist("TOP").sublist("Region: Labeled Set").
+        set("File",filename).set("Format","Exodus II").set("Label","6").set("Entity","Face");
+    gm = new GeometricModel(3,regions);
 
     // Create the mesh.
-    if (comm->NumProc() == 1)
-      {
-	file << ".g";
-      }
-    else 
-      {
-	file << ".par";
-      }
+    MeshFactory mesh_fact(*comm);
+    mesh = mesh_fact(filename, gm);
 
-    mesh = Teuchos::rcp<Amanzi::AmanziMesh::Mesh>(new Amanzi::AmanziMesh::Mesh_STK(comm->GetMpiComm(), file.str().c_str()));
-
-
-    // Define the default BC parameter list: no flow on all sides.
-    // Can overwrite the BC on selected sides before creating the problem.
-    set_bc(LEFT,   "No Flow");
-    set_bc(RIGHT,  "No Flow");
-    set_bc(FRONT,  "No Flow");
-    set_bc(BACK,   "No Flow");
-    set_bc(BOTTOM, "No Flow");
-    set_bc(TOP,    "No Flow");
+    // Set default model parameters.
+    rho = 1.0;
+    mu = 1.0;
+    for (int i=0; i<3; ++i) g[i] = 0.0;
+    
+    // Default boundary conditions are no-flux
+    params.sublist("boundary conditions");
   }
 
   ~problem_setup()
@@ -67,58 +82,40 @@ struct problem_setup
     delete problem;
   }
 
-  void set_bc(Side side, std::string type, double value = 0.0) {
-    Teuchos::ParameterList *bc;
-    switch (side) {
-    case LEFT:
-      bc = &bc_params.sublist("BC00");
-      bc->set("Side set ID", 4);
-      break;
-    case RIGHT:
-      bc = &bc_params.sublist("BC01");
-      bc->set("Side set ID", 2);
-      break;
-    case FRONT:
-      bc = &bc_params.sublist("BC02");
-      bc->set("Side set ID", 1);
-      break;
-    case BACK:
-      bc = &bc_params.sublist("BC03");
-      bc->set("Side set ID", 3);
-      break;
-    case BOTTOM:
-      bc = &bc_params.sublist("BC04");
-      bc->set("Side set ID", 5);
-      break;
-    case TOP:
-      bc = &bc_params.sublist("BC05");
-      bc->set("Side set ID", 6);
-      break;
+  void set_bc(const char *side, const char *type, double value) {
+    Teuchos::Array<std::string> reg(1,side);
+    std::string func_list_name;
+    if (type == "pressure") {
+      func_list_name = "boundary pressure";
+    } else if (type == "static head") {
+      func_list_name = "water table elevation";
+    } else if (type == "mass flux") {
+      func_list_name = "outward mass flux";
     }
-    bc->set("Type", type);
-    bc->set("BC value", value);
+    params.sublist("boundary conditions").sublist(type).sublist(side).set("regions",reg).
+        sublist(func_list_name).sublist("function-constant").set("value",value);
   }
+  
+  void setFluidDensity(double value) { rho = value; }
+  void setFluidViscosity(double value) { mu = value; }
+  void setGravity(double *value) { for (int i=0; i<3; ++i) g[i] = value[i]; }
 
   void create_problem()
   {
     // Create the Darcy problem parameter list.
-    Teuchos::ParameterList pl;
     //Teuchos::ParameterList &precon_pl = pl.sublist("Diffusion Preconditioner");
     //Teuchos::ParameterList &ml_pl = precon_pl.sublist("ML Parameters");
     //ml_pl.set("default values", "SA");
-
-    // Create the flow BCs from the BC parameter list.
-    Teuchos::RCP<Amanzi::FlowBC> bc(new Amanzi::FlowBC(bc_params, mesh));
+    
+    params.set("fluid density", rho);
+    params.set("fluid viscosity", mu);
+    params.set("gravity", -g[2]);
 
     // Create the problem.
-    problem = new Amanzi::DarcyProblem(mesh, pl, bc);
+    problem = new Amanzi::DarcyProblem(mesh, params);
 
-    // Set Darcy model defaults; these can be overwritten before solving the problem.
-    problem->SetFluidDensity(1.0);
-    problem->SetFluidViscosity(1.0);
+    // Other model parameters; we won't be messing with these.
     problem->SetPermeability(1.0);
-    double g[3] = { 0.0 };
-    problem->SetGravity(g);
   }
 
   void solve_problem()
@@ -221,13 +218,12 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(LEFT,  "Pressure Constant", 1.0);
-    set_bc(RIGHT, "Pressure Constant", 0.0);
+    set_bc("LEFT",  "pressure", 1.0);
+    set_bc("RIGHT", "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Define the analytic pressure solution:
@@ -254,15 +250,14 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(LEFT,  "Static Head", 1.0);
-    set_bc(RIGHT, "Static Head", 0.0);
+    set_bc("LEFT",  "static head", 1.0);
+    set_bc("RIGHT", "static head", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Define the analytic pressure solution:
@@ -287,21 +282,20 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(LEFT,  "Darcy Constant", -1.0);
-    set_bc(RIGHT, "Pressure Constant", 0.0);
+    set_bc("LEFT",  "mass flux", -1.0);
+    set_bc("RIGHT", "pressure", 0.0);
 
+    // Set non-default model parameters before create_problem().
+    
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 1.0;
     double pgrad[3] = {-1.0, 0.0, 0.0};
     set_pressure_constants(p0, pgrad);
@@ -319,23 +313,22 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(LEFT,  "Darcy Constant", -1.0);
-    set_bc(RIGHT, "Static Head", 0.0);
+    set_bc("LEFT",  "mass flux", -1.0);
+    set_bc("RIGHT", "static head", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 1.0;
     double pgrad[3] = {-1.0, 0.0, -1.0};
     set_pressure_constants(p0, pgrad);
@@ -353,21 +346,20 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(BACK,  "Pressure Constant", 1.0);
-    set_bc(FRONT, "Pressure Constant", 0.0);
+    set_bc("BACK",  "pressure", 1.0);
+    set_bc("FRONT", "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 0.0;
     double pgrad[3] = {0.0, 1.0, 0.0};
     set_pressure_constants(p0, pgrad);
@@ -384,23 +376,22 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(BACK,  "Static Head", 1.0);
-    set_bc(FRONT, "Static Head", 0.0);
+    set_bc("BACK",  "static head", 1.0);
+    set_bc("FRONT", "static head", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 0.0;
     double pgrad[3] = {0.0, 1.0, -1.0};
     set_pressure_constants(p0, pgrad);
@@ -417,21 +408,20 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(BACK,  "Darcy Constant", -1.0);
-    set_bc(FRONT, "Pressure Constant", 0.0);
+    set_bc("BACK",  "mass flux", -1.0);
+    set_bc("FRONT", "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 0.0;
     double pgrad[3] = {0.0, 1.0, 0.0};
     set_pressure_constants(p0, pgrad);
@@ -449,15 +439,14 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(BACK,  "Darcy Constant", -1.0);
-    set_bc(FRONT, "Static Head", 0.0);
+    set_bc("BACK",  "mass flux", -1.0);
+    set_bc("FRONT", "static head", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Define the analytic pressure solution:
@@ -483,21 +472,20 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(TOP,    "Pressure Constant", 0.0);
-    set_bc(BOTTOM, "Pressure Constant", 1.0);
+    set_bc("TOP",    "pressure", 0.0);
+    set_bc("BOTTOM", "pressure", 1.0);
+
+    // Set non-default model parameters before create_problem().
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 1.0;
     double pgrad[3] = {0.0, 0.0, -1.0};
     set_pressure_constants(p0, pgrad);
@@ -515,15 +503,14 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(TOP,    "Pressure Constant", 0.0);
-    set_bc(BOTTOM, "Pressure Constant", 2.0);
+    set_bc("TOP",    "pressure", 0.0);
+    set_bc("BOTTOM", "pressure", 2.0);
+
+    // Set non-default model parameters before create_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Define the analytic pressure solution:
@@ -549,21 +536,20 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(TOP,    "Darcy Constant", 1.0);
-    set_bc(BOTTOM, "Pressure Constant", 1.0);
+    set_bc("TOP",    "mass flux", 1.0);
+    set_bc("BOTTOM", "pressure", 1.0);
+
+    // Set non-default model parameters before create_problem().
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 1.0;
     double pgrad[3] = {0.0, 0.0, -1.0};
     set_pressure_constants(p0, pgrad);
@@ -581,23 +567,22 @@ SUITE(Simple_1D_Flow) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(TOP,    "Darcy Constant", 1.0);
-    set_bc(BOTTOM, "Pressure Constant", 2.0);
+    set_bc("TOP",    "mass flux", 1.0);
+    set_bc("BOTTOM", "pressure", 2.0);
+
+    // Set non-default model parameters before create_problem().
+    double g[3] = {0.0, 0.0, -1.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Define the analytic pressure solution:
     // p0 = pressure at (0,0,0).
     // pgrad = constant pressure gradient.
     // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
+    //   vector and f is the expected constant mass flux
     double p0 = 2.0;
     double pgrad[3] = {0.0, 0.0, -2.0};
     set_pressure_constants(p0, pgrad);
@@ -620,13 +605,12 @@ SUITE(Darcy_Flux) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(LEFT,  "Pressure Constant", 1.0);
-    set_bc(RIGHT, "Pressure Constant", 0.0);
+    set_bc("LEFT",  "pressure", 1.0);
+    set_bc("RIGHT", "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Darcy velocity
@@ -642,13 +626,12 @@ SUITE(Darcy_Flux) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(FRONT, "Pressure Constant", 1.0);
-    set_bc(BACK,  "Pressure Constant", 0.0);
+    set_bc("FRONT", "pressure", 1.0);
+    set_bc("BACK",  "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Darcy velocity
@@ -664,13 +647,12 @@ SUITE(Darcy_Flux) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(BOTTOM, "Pressure Constant", 1.0);
-    set_bc(TOP,    "Pressure Constant", 0.0);
-
-    create_problem();
+    set_bc("BOTTOM", "pressure", 1.0);
+    set_bc("TOP",    "pressure", 0.0);
 
     // Set non-default model parameters before solve_problem().
 
+    create_problem();
     solve_problem();
 
     // Darcy velocity
@@ -690,15 +672,14 @@ SUITE(Darcy_Velocity) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(LEFT,  "Pressure Constant", 1.0);
-    set_bc(RIGHT, "Pressure Constant", 0.0);
+    set_bc("LEFT",  "pressure", 1.0);
+    set_bc("RIGHT", "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    setFluidViscosity(2.0);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
     problem->SetPermeability(2.0);
-    problem->SetFluidViscosity(2.0);
-
     solve_problem();
 
     // Darcy velocity
@@ -714,15 +695,14 @@ SUITE(Darcy_Velocity) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(FRONT, "Pressure Constant", 1.0);
-    set_bc(BACK,  "Pressure Constant", 0.0);
+    set_bc("FRONT", "pressure", 1.0);
+    set_bc("BACK",  "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    setFluidViscosity(2.0);
 
     create_problem();
     problem->SetPermeability(2.0);
-    problem->SetFluidViscosity(2.0);
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Darcy velocity
@@ -738,15 +718,14 @@ SUITE(Darcy_Velocity) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(BOTTOM, "Pressure Constant", 1.0);
-    set_bc(TOP,    "Pressure Constant", 0.0);
+    set_bc("BOTTOM", "pressure", 1.0);
+    set_bc("TOP",    "pressure", 0.0);
+
+    // Set non-default model parameters before solve_problem().
+    setFluidViscosity(2.0);
 
     create_problem();
     problem->SetPermeability(2.0);
-    problem->SetFluidViscosity(2.0);
-
-    // Set non-default model parameters before solve_problem().
-
     solve_problem();
 
     // Darcy velocity
@@ -762,18 +741,17 @@ SUITE(Darcy_Velocity) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(LEFT,  "Static Head", 1.0);
-    set_bc(RIGHT, "Static Head", 0.0);
+    set_bc("LEFT",  "static head", 1.0);
+    set_bc("RIGHT", "static head", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    setFluidViscosity(2.0);
+    setFluidDensity(0.5);
+    double g[3] = {0.0, 0.0, -2.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
     problem->SetPermeability(2.0);
-    problem->SetFluidViscosity(2.0);
-    problem->SetFluidDensity(0.5);
-    double g[3] = {0.0, 0.0, -2.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Darcy velocity
@@ -789,18 +767,17 @@ SUITE(Darcy_Velocity) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(FRONT, "Static Head", 1.0);
-    set_bc(BACK,  "Static Head", 0.0);
+    set_bc("FRONT", "static head", 1.0);
+    set_bc("BACK",  "static head", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    setFluidViscosity(2.0);
+    setFluidDensity(0.5);
+    double g[3] = {0.0, 0.0, -2.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
     problem->SetPermeability(2.0);
-    problem->SetFluidViscosity(2.0);
-    problem->SetFluidDensity(0.5);
-    double g[3] = {0.0, 0.0, -2.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Darcy velocity
@@ -816,18 +793,17 @@ SUITE(Darcy_Velocity) {
   {
 
     // Set non-default BC before create_problem().
-    set_bc(BOTTOM, "Pressure Constant", 2.0);
-    set_bc(TOP,    "Pressure Constant", 0.0);
+    set_bc("BOTTOM", "pressure", 2.0);
+    set_bc("TOP",    "pressure", 0.0);
+
+    // Set non-default model parameters before create_problem().
+    setFluidViscosity(2.0);
+    setFluidDensity(0.5);
+    double g[3] = {0.0, 0.0, -2.0};
+    setGravity(g);
 
     create_problem();
-
-    // Set non-default model parameters before solve_problem().
     problem->SetPermeability(2.0);
-    problem->SetFluidViscosity(2.0);
-    problem->SetFluidDensity(0.5);
-    double g[3] = {0.0, 0.0, -2.0};
-    problem->SetGravity(g);
-
     solve_problem();
 
     // Darcy velocity

@@ -83,8 +83,8 @@ if (BUILD_TESTS)
 
     # Test: flow
         
-    add_executable(test_flow test/Main.cc test/test_FlowBC.cpp test/test_1d_flow.cpp  test/test_vanGenuchten.cpp)
-    target_link_libraries(test_flow flow stk_mesh exodus_reader simple_mesh cell_geometry ${UnitTest_LIBRARIES})
+    add_executable(test_flow test/Main.cc test/test_1d_flow.cpp  test/test_vanGenuchten.cpp)
+    target_link_libraries(test_flow flow mesh_factory mesh cell_geometry ${UnitTest_LIBRARIES})
     add_amanzi_test(flow test_flow KIND int)
     add_amanzi_test(flow_parallel_2pe test_flow NPROCS 2 KIND unit)
     add_amanzi_test(flow_parallel_4pe test_flow NPROCS 4 KIND unit)
