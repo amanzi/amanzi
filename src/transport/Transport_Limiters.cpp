@@ -61,7 +61,7 @@ void Transport_PK::limiterTensorial(const int component,
           calculate_descent_direction(normals, normal_new, L22normal_new, direction);
  
           p = ((umin - u1) / sqrt(L22normal_new)) * direction;
-           apply_directional_limiter(normal_new, p, direction, gradient_c1);
+          apply_directional_limiter(normal_new, p, direction, gradient_c1);
         } else if (u1f > umax) {
           normal_new = xcf - xc;
           calculate_descent_direction(normals, normal_new, L22normal_new, direction);
@@ -100,10 +100,9 @@ void Transport_PK::limiterTensorial(const int component,
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
           u2f = lifting.getValue(c2, xcf);
-
           for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
           direction = xcf - xc2;
-
+ 
           if (u2f < umin) {
             p = ((umin - u2) / L22(direction)) * direction;
             apply_directional_limiter(direction, p, direction, gradient_c2);
@@ -283,9 +282,7 @@ void Transport_PK::apply_directional_limiter(AmanziGeometry::Point& normal,
                                              AmanziGeometry::Point& direction, 
                                              AmanziGeometry::Point& gradient)
 {
-  double norm = L22(direction);
-  double a = ((p - gradient) * direction) / norm;
- 
+  double a = ((p - gradient) * normal) / (direction * normal); 
   gradient += a * direction;
 }
   
