@@ -51,7 +51,7 @@ State::State( Teuchos::ParameterList &parameter_list_,
 
 State::~State()
 {
-  //delete [] (*gravity);
+  delete [] (*gravity);
 }
 
 
