@@ -396,6 +396,7 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
 {
   stk::mesh::EntityId global_face_id = 
       this->face_epetra_map(true).GID(faceid);
+  global_face_id += 1;
   
   STK::Entity_Ids cell_ids;
   mesh_->face_to_elements(global_face_id, cell_ids);
