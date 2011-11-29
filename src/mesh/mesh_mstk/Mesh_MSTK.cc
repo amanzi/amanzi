@@ -743,7 +743,7 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
       int lid = MEnt_ID(edge);
       faceids->push_back(lid-1);
     }
-
+    List_Delete(fedges);
   }
   
 } // Mesh_MSTK::cell_get_faces
@@ -1445,6 +1445,7 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Amanzi
   }
   else if (celldim == 2) {
     List_ptr fverts = MF_Vertices(cell,1,0);
+
     nn = List_Num_Entries(fverts);
 
     for (int i = 0; i < nn; i++) {
@@ -1457,6 +1458,8 @@ void Mesh_MSTK::cell_get_coordinates (const Entity_ID cellid, std::vector<Amanzi
 
       ccoords->push_back(xyz);
     }
+
+    List_Delete(fverts);
   }
 
 } // Mesh_MSTK::cell_get_coordinates_4viz
@@ -1501,6 +1504,8 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Amanzi
 	  fcoords->push_back(xyz);
 	}	  
       }
+
+      List_Delete(fverts);
     }
     else { // Surface mesh embedded in 3D
       MEdge_ptr edge = face_id_to_handle[faceid];
@@ -1522,6 +1527,7 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Amanzi
       xyz.set(coords[0],coords[1],coords[2]);
       fcoords->push_back(xyz);
     }
+
   }
   else {  // 2D Mesh
     AmanziGeometry::Point xyz(2);
@@ -2433,6 +2439,8 @@ void Mesh_MSTK::init_pface_dirs() {
 	      else
 		std::cerr << "Two faces using edge in same direction in 2D mesh" << std::endl;
 	    }
+
+            List_Delete(efaces);
 	  }
 	  else
 	    MEnt_Set_AttVal(edge,attfc0,MEnt_GlobalID(face0),0.0,NULL);
@@ -2792,6 +2800,8 @@ void Mesh_MSTK::collapse_degen_edges() {
 		(*orig_vids)[i] = (Entity_ID) MV_ID(vkeep);
               }
 	  }
+
+          List_Delete(vfaces);
 	}
       }
 
