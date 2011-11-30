@@ -26,8 +26,8 @@
 #   - Optional: Use the package manager to install standard versions of: netcdf, hdf5-18
 #
 #   - Download the source for the packages you want installed by this script.
-#     Trilinos and moab must be downloaded manually (download sites are listed 
-#     below). The remaining TPLs can be automatically downloaded with the "-d" 
+#     Trilinos and moab must be downloaded manually (download sites are listed
+#     below). The remaining TPLs can be automatically downloaded with the "-d"
 #     option to amanzi-tpls.sh.
 #
 #   - Place the package archives into a single directory
@@ -40,39 +40,39 @@
 #
 #   - Edit the SOURCE variable to be the directory where you saved the source.
 #
-#   - Edit the PACKAGE_NAME_PREFIX variables to point to the location for each 
-#     package. If you are using a system package, it should point to the system 
-#     location. If you are installing the package from this script, it should 
-#     point to the PREFIX directory. For example: 
+#   - Edit the PACKAGE_NAME_PREFIX variables to point to the location for each
+#     package. If you are using a system package, it should point to the system
+#     location. If you are installing the package from this script, it should
+#     point to the PREFIX directory. For example:
 #
 #     MPI_PREFIX=/usr
 #     NetCDF_PREFIX=${PREFIX}
 #
-#   - Edit the PARALLEL_NP variable to be the number of parallel processes you want 
+#   - Edit the PARALLEL_NP variable to be the number of parallel processes you want
 #     to use to for building (make -j 4) and running MPI (mpiexec -np 4)
 #
 #   - To download, configure and build all packages, run this script as:
 #
-#     $ ./amanzi-libs.sh -d -a 
+#     $ ./amanzi-libs.sh -d -a
 #
 #   - Individual packages can be built by using the appropriate
 #     commandline options. See below.
 #
-#   - Wait.... The script should stop if any problems arise while 
+#   - Wait.... The script should stop if any problems arise while
 #     configuring, building or installing a package.
 #
-#   - this script creates another script called "amanzi-build.sh". This script 
-#     is used to configure, build and test amanzi. The -d flag is used to specify 
-#     which directory to work in. For example, "-d amanzi-debug" will look for an 
-#     amanzi repository within ${WORK_DIR}/amanzi-debug. Additional flags 
-#     control the build/configure/test/cleanup process. 
-#     Key flags are: 
+#   - this script creates another script called "amanzi-build.sh". This script
+#     is used to configure, build and test amanzi. The -d flag is used to specify
+#     which directory to work in. For example, "-d amanzi-debug" will look for an
+#     amanzi repository within ${WORK_DIR}/amanzi-debug. Additional flags
+#     control the build/configure/test/cleanup process.
+#     Key flags are:
 #          -a   : performs configure/build/test
-#          -b   : "clobbers" the repository, tries to remove all generated and 
+#          -b   : "clobbers" the repository, tries to remove all generated and
 #                  CMake files, forces rebuild of everything
 #          -c   : run cmake in the repository
 #          -d   : repository name
-#          -m   : runs make in the repository 
+#          -m   : runs make in the repository
 #          -t   : runs ctest in the repository
 #
 #     Examples:
@@ -81,22 +81,22 @@
 #         $ ./amanzi-build -d amanzi-debug -a -b
 #
 #       - Configure/make/test:
-#         $ ./amanzi-build -d amanzi-debug -a 
+#         $ ./amanzi-build -d amanzi-debug -a
 #
 #       - recompile modified files and run the tests:
 #         $ ./amanzi-build -d amanzi-debug -m -t
 #
 #   - Usage Notes:
 #
-#     - This does out of source builds by default. If you modify an input 
-#       file, you need to rerun the configure process to copy the input file 
+#     - This does out of source builds by default. If you modify an input
+#       file, you need to rerun the configure process to copy the input file
 #       into the build directory.
 #
-#     - You can change paths in the configuration file and regenerate 
-#       just the amanzi-build.sh script by running amanzi-tpls.sh 
+#     - You can change paths in the configuration file and regenerate
+#       just the amanzi-build.sh script by running amanzi-tpls.sh
 #       with no options:
 #       $ ./amanzi-tpls.sh
-# 
+#
 ################################################################################
 #
 # PREFIX : where the packages are installed, e.g. ${HOME}/local
@@ -126,16 +126,16 @@
 #    instead of /opt/local/bin/mpicxx. It is easier to maintain
 #    compatability in the script if we just compile mpi here as well.
 #
-#  - build files from an existing build by this script are removed. 
+#  - build files from an existing build by this script are removed.
 #    if a package is already installed in $PREFIX, the installed files
-#    are not uninstalled! 
+#    are not uninstalled!
 #
 #  - The rm -rf on source/build directories is intentional to start
 #    with a fresh copy of the source every time. It helps with
 #    automation and debugging, but increases build time.
 #
 #  - exodusii requires a hand modified version of netcdf to use
-#    large meshes. using the package manager to install netcdf will 
+#    large meshes. using the package manager to install netcdf will
 #    most likeley not have this modification.
 #
 ################################################################################
@@ -150,70 +150,68 @@
 #
 #  - HDF5 test is very long and locks up the machine....
 #
-#  - check the platform, look for a package manager and run the package 
+#  - check the platform, look for a package manager and run the package
 #    manager automatically?
 #
 #################################################################################
 #
 # Automatic downloads:
 #
-# the following files can be automatically downloaded if you have wget
-# on your system by calling the download_archives function (-d). They
-# will be saved into ${SOURCE}:
+# The supported version of the TPLs can be automatically
+# downloaded if you have wget on your system by calling the
+# download_archives function (-d). They will be saved into ${SOURCE}.
+#
+#################################################################################
+#
+# TPL project home pages:
 #
 # openmpi:
-# http://www.open-mpi.org/software/ompi/v1.5/downloads/openmpi-1.5.tar.gz
+# http://www.open-mpi.org
 #
 # boost:
-# http://sourceforge.net/projects/boost/files/boost/1.46.1/boost_1_46_1.tar.bz2
+# http://boost.org
 #
 # unittest++:
-# http://sourceforge.net/projects/unittest-cpp/files/UnitTest%2B%2B/1.4/unittest-cpp-1.4.zip
+# http://sourceforge.net/projects/unittest-cpp
 #
 # zlib:
-# http://zlib.net/zlib-1.2.5.tar.gz
+# http://zlib.net
 #
 # curl:
-# http://curl.haxx.se/download/curl-7.21.2.tar.gz
+# http://curl.haxx.se
 #
 # hdf5:
-# http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.6.tar.gz
+# http://www.hdfgroup.org
 #
 # netcdf:
-# http://www.unidata.ucar.edu/downloads/netcdf/ftp/netcdf-4.1.1.tar.gz
+# http://www.unidata.ucar.edu
 #
 # exodusii:
-# http://sourceforge.net/projects/exodusii/files/exodusii-4.98.tar.gz
+# http://sourceforge.net/projects/exodusii
 #
 # cgns:
-# http://sourceforge.net/projects/cgns/files/cgnslib_2.5/Release%204/cgnslib_2.5-4.tar.gz
+# http://sourceforge.net/projects/cgns
 #
 # metis:
 # http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-4.0.3.tar.gz
 #
 # mstk:
-# https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.83rc3.tar.gz
+# https://software.lanl.gov/MeshTools/trac
 #
 # ccse:
 # https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.5.tar.gz
 #
+# trilinos:
+# http://trilinos.sandia.gov
 #
-#################################################################################
+# ascemio:
 #
-# Manual downloads:
 #
-# the following files must be manually downloaded and saved into ${SOURCE}:
 #
-# ascemio: login required
-# download the amanzi release version from:
-# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/ASCEMIO/ascem-io-1.1p.tgz
+# moab:
 #
-# moab: login required
-# download the amanzi recommend version from: 
-# https://software.lanl.gov/ascem/trac/attachment/wiki/Amanzi/Building/MOAB-r4276.tar.gz
 #
-# trilinos: registration required
-# http://trilinos.sandia.gov/download/login.html?tid=tr1062
+#
 #
 ################################################################################
 
@@ -240,10 +238,13 @@ MOAB_VERSION=r4276
 CGNS_VERSION=2.5
 CGNS_PATCH=4
 METIS_VERSION=4.0.3
-MSTK_VERSION=1.83rc3
+MSTK_VERSION=1.83
 TRILINOS_VERSION=10.6.2
 CCSE_VERSION=0.1.5
 ASCEMIO_VERSION=1.1p
+
+AMANZI_TPL_ARCHIVES=https://software.lanl.gov/ascem/tpls
+WGET_FLAGS=--no-check-certificate
 
 ################################################################################
 #
@@ -283,56 +284,78 @@ function download_archives {
     mkdir -p ${SOURCE}
     cd ${SOURCE}
     if [ ${MPI_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/openmpi-${OPENMPI_VERSION}.tar.gz ]; then
-	URL=http://www.open-mpi.org/software/ompi/v${OPENMPI_VERSION}/downloads/openmpi-${OPENMPI_VERSION}.tar.gz
-        wget $URL
+	URL=${AMANZI_TPL_ARCHIVES}/openmpi-${OPENMPI_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [ ${BOOST_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/boost_${BOOST_VERSION}.tar.bz2 ]; then
-	URL=http://sourceforge.net/projects/boost/files/boost/1.46.1/boost_1_46_1.tar.bz2
-        wget $URL
+	URL=${AMANZI_TPL_ARCHIVES}/boost_${BOOST_VERSION}.tar.bz2
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [ ${UNITTEST_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/unittest-cpp-${UNITTEST_VERSION}.zip ]; then
-	URL=http://sourceforge.net/projects/unittest-cpp/files/UnitTest%2B%2B/${UNITTEST_VERSION}/unittest-cpp-${UNITTEST_VERSION}.zip
-        wget $URL
+	URL=${AMANZI_TPL_ARCHIVES}/unittest-cpp-${UNITTEST_VERSION}.zip
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [ ${ZLIB_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/zlib-${ZLIB_VERSION}.tar.gz ]; then
-        wget http://zlib.net/zlib-${ZLIB_VERSION}.tar.gz
+	URL=${AMANZI_TPL_ARCHIVES}/zlib-${ZLIB_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [  ${CURL_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/curl-${CURL_VERSION}.tar.gz ]; then
-        wget http://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz
+	URL=${AMANZI_TPL_ARCHIVES}/curl-${CURL_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [  ${HDF5_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/hdf5-${HDF5_VERSION}.tar.gz ]; then
-        #wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-${HDF5_VERSION}.tar.gz
-        wget http://www.hdfgroup.org/ftp/HDF5/prev-releases/hdf5-${HDF5_VERSION}/src/hdf5-${HDF5_VERSION}.tar.gz
+	URL=${AMANZI_TPL_ARCHIVES}/hdf5-${HDF5_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [  ${NETCDF_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/netcdf-${NETCDF_VERSION}.tar.gz ]; then
-        wget http://www.unidata.ucar.edu/downloads/netcdf/ftp/netcdf-${NETCDF_VERSION}.tar.gz
+	URL=${AMANZI_TPL_ARCHIVES}/netcdf-${NETCDF_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [  ! -f ${SOURCE}/exodusii-${EXODUS_VERSION}.tar.gz ]; then
-        wget http://sourceforge.net/projects/exodusii/files/exodusii-${EXODUS_VERSION}.tar.gz
+	URL=${AMANZI_TPL_ARCHIVES}/exodusii-${EXODUS_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [  ${CGNS_PREFIX} == ${PREFIX} -a ! -f ${SOURCE}/cgnslib_${CGNS_VERSION}-${CGNS_PATCH}.tar.gz ]; then
-	URL=http://sourceforge.net/projects/cgns/files/cgnslib_${CGNS_VERSION}/Release%204/cgnslib_${CGNS_VERSION}-${CGNS_PATCH}.tar.gz
-        wget $URL 
+	URL=${AMANZI_TPL_ARCHIVES}/cgnslib_${CGNS_VERSION}-${CGNS_PATCH}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [  ! -f ${SOURCE}/metis-${METIS_VERSION}.tar.gz ]; then
-        wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-${METIS_VERSION}.tar.gz
+	URL=${AMANZI_TPL_ARCHIVES}/metis-${METIS_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
-    if [  ! -f ${SOURCE}/mstk-${MSTK_VERSION}.tar.gz ]; then
-        wget --no-check-certificate https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-${MSTK_VERSION}.tar.gz
+    if [  ! -f ${SOURCE}/mstk-${MSTK_VERSION}.tgz ]; then
+	URL=${AMANZI_TPL_ARCHIVES}/mstk-${MSTK_VERSION}.tgz
+	wget ${WGET_FLAGS} $URL
     fi
 
     if [  ! -f ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz ]; then
-        wget --no-check-certificate https://ccse.lbl.gov/Software/tarfiles/ccse-${CCSE_VERSION}.tar.gz
+	URL=${AMANZI_TPL_ARCHIVES}/ccse-${CCSE_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
+    fi
+
+    if [  ! -f ${SOURCE}/ascem-io-${ASCEMIO_VERSION}.tgz ]; then
+	URL=${AMANZI_TPL_ARCHIVES}/ascem-io-${ASCEMIO_VERSION}.tgz
+	wget ${WGET_FLAGS} $URL
+    fi
+
+    if [  ! -f ${SOURCE}/MOAB-${MOAB_VERSION}.tar.gz ]; then
+	URL=${AMANZI_TPL_ARCHIVES}/MOAB-${MOAB_VERSION}.tar.gz
+	wget ${WGET_FLAGS} $URL
+    fi
+
+    if [  ! -f ${SOURCE}/trilinos-${TRILINOS_VERSION}-Source.tar.gz ]; then
+	URL=${AMANZI_TPL_ARCHIVES}/trilinos-${TRILINOS_VERSION}-Source.tar.gz
+	wget ${WGET_FLAGS} $URL
     fi
 
     cd ${SCRIPT_DIR}
@@ -347,9 +370,9 @@ function download_archives {
 # NOTE: in macports, netcdf depends on hdf5-18, not hdf5.
 function install_macports {
     sudo port install boost
-    sudo port install unittest-cpp 
-#    sudo port install hdf5-18 +openmpi -universal 
-#    sudo port install netcdf +openmpi -universal 
+    sudo port install unittest-cpp
+#    sudo port install hdf5-18 +openmpi -universal
+#    sudo port install netcdf +openmpi -universal
 }
 
 function install_apt_get {
@@ -363,27 +386,27 @@ function install_apt_get {
 ################################################################################
 function install_mpi {
     if [ ${MPI_PREFIX} == ${PREFIX} ]; then
-        MPI_DIR=${PREFIX}/mpi/openmpi-${OPENMPI_VERSION}
-        rm -rf ${MPI_DIR}
-        mkdir -p ${PREFIX}/mpi
-        tar ${TAR_FLAGS} ${SOURCE}/openmpi-${OPENMPI_VERSION}.tar.gz -C ${PREFIX}/mpi
-        cd ${MPI_DIR}
-        ./configure --prefix=${PREFIX} \
-            --enable-static
+	MPI_DIR=${PREFIX}/mpi/openmpi-${OPENMPI_VERSION}
+	rm -rf ${MPI_DIR}
+	mkdir -p ${PREFIX}/mpi
+	tar ${TAR_FLAGS} ${SOURCE}/openmpi-${OPENMPI_VERSION}.tar.gz -C ${PREFIX}/mpi
+	cd ${MPI_DIR}
+	./configure --prefix=${PREFIX} \
+	    --enable-static
 
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make -j${PARALLEL_NP} all
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make install
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make -j${PARALLEL_NP} all
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make install
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
     else
-        echo Using mpi from ${MPI_PREFIX}
+	echo Using mpi from ${MPI_PREFIX}
     fi
 }
 
@@ -396,27 +419,27 @@ function install_mpi {
 ################################################################################
 function install_boost {
     if [ ${BOOST_PREFIX} == ${PREFIX} ]; then
-        BOOST_DIR=${PREFIX}/boost/boost_${BOOST_VERSION}
-        rm -rf ${BOOST_DIR}
-        mkdir -p ${PREFIX}/boost
-        tar ${TAR_FLAGS} ${SOURCE}/boost_${BOOST_VERSION}.tar.bz2 -C ${PREFIX}/boost
-        cd ${BOOST_DIR}
+	BOOST_DIR=${PREFIX}/boost/boost_${BOOST_VERSION}
+	rm -rf ${BOOST_DIR}
+	mkdir -p ${PREFIX}/boost
+	tar ${TAR_FLAGS} ${SOURCE}/boost_${BOOST_VERSION}.tar.bz2 -C ${PREFIX}/boost
+	cd ${BOOST_DIR}
 
-        ./bootstrap.sh --prefix=${PREFIX} \
-            --with-libraries=system,filesystem,program_options,regex
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        ./bjam
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        ./bjam install
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
+	./bootstrap.sh --prefix=${PREFIX} \
+	    --with-libraries=system,filesystem,program_options,regex
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	./bjam
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	./bjam install
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
     else
-        echo Using Boost from ${BOOST_PREFIX}
+	echo Using Boost from ${BOOST_PREFIX}
     fi
 }
 
@@ -431,28 +454,28 @@ function install_boost {
 ################################################################################
 function install_zlib {
     if [ ${ZLIB_PREFIX} == ${PREFIX} ]; then
-        ZLIB_DIR=${PREFIX}/zlib/zlib-${ZLIB_VERSION}
-        rm -rf ${ZLIB_DIR}
-        mkdir -p ${PREFIX}/zlib
-        tar ${TAR_FLAGS} ${SOURCE}/zlib-${ZLIB_VERSION}.tar.gz -C ${PREFIX}/zlib
-        cd ${ZLIB_DIR}
-        ./configure \
-            --prefix=${PREFIX}
+	ZLIB_DIR=${PREFIX}/zlib/zlib-${ZLIB_VERSION}
+	rm -rf ${ZLIB_DIR}
+	mkdir -p ${PREFIX}/zlib
+	tar ${TAR_FLAGS} ${SOURCE}/zlib-${ZLIB_VERSION}.tar.gz -C ${PREFIX}/zlib
+	cd ${ZLIB_DIR}
+	./configure \
+	    --prefix=${PREFIX}
 
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        # zlib doesn't play nice with parallel builds...?
-        make all
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make install
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	# zlib doesn't play nice with parallel builds...?
+	make all
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make install
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
     else
-        echo Using zlib from ${ZLIB_PREFIX}
+	echo Using zlib from ${ZLIB_PREFIX}
     fi
 }
 
@@ -463,25 +486,25 @@ function install_zlib {
 ################################################################################
 function install_curl {
     if [ ${CURL_PREFIX} == ${PREFIX} ]; then
-        CURL_DIR=${PREFIX}/curl/curl-${CURL_VERSION}
-        rm -rf ${CURL_DIR}
-        mkdir -p ${PREFIX}/curl
-        tar ${TAR_FLAGS} ${SOURCE}/curl-${CURL_VERSION}.tar.gz -C ${PREFIX}/curl
-        cd ${CURL_DIR}
-        ./configure --prefix=${PREFIX} --enable-static
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make -j${PARALLEL_NP} all
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make install
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
+	CURL_DIR=${PREFIX}/curl/curl-${CURL_VERSION}
+	rm -rf ${CURL_DIR}
+	mkdir -p ${PREFIX}/curl
+	tar ${TAR_FLAGS} ${SOURCE}/curl-${CURL_VERSION}.tar.gz -C ${PREFIX}/curl
+	cd ${CURL_DIR}
+	./configure --prefix=${PREFIX} --enable-static
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make -j${PARALLEL_NP} all
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make install
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
     else
-        echo Using curl from ${CURL_PREFIX}
+	echo Using curl from ${CURL_PREFIX}
     fi
 }
 
@@ -492,27 +515,27 @@ function install_curl {
 ################################################################################
 function install_unittest {
     if [ ${UNITTEST_PREFIX} == ${PREFIX} ]; then
-        UNITTEST_DIR=${PREFIX}/unittest/UnitTest++
-        rm -rf ${UNITTEST_DIR}
-        mkdir -p ${PREFIX}/unittest
-        unzip ${SOURCE}/unittest-cpp-${UNITTEST_VERSION}.zip -d ${PREFIX}/unittest
+	UNITTEST_DIR=${PREFIX}/unittest/UnitTest++
+	rm -rf ${UNITTEST_DIR}
+	mkdir -p ${PREFIX}/unittest
+	unzip ${SOURCE}/unittest-cpp-${UNITTEST_VERSION}.zip -d ${PREFIX}/unittest
 
-        cd ${UNITTEST_DIR}
-        make -j${PARALLEL_NP} all
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        # ugh... manual install
-        echo Copying UnitTest++ files to ${UNITTEST_PREFIX}
-        cp libUnitTest++.a ${UNITTEST_PREFIX}/lib
-        mkdir -p ${UNITTEST_PREFIX}/include/unittest++/Posix
-        cp src/*.h ${UNITTEST_PREFIX}/include/unittest++
-        cp src/Posix/*.h ${UNITTEST_PREFIX}/include/unittest++/Posix
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
+	cd ${UNITTEST_DIR}
+	make -j${PARALLEL_NP} all
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	# ugh... manual install
+	echo Copying UnitTest++ files to ${UNITTEST_PREFIX}
+	cp libUnitTest++.a ${UNITTEST_PREFIX}/lib
+	mkdir -p ${UNITTEST_PREFIX}/include/unittest++/Posix
+	cp src/*.h ${UNITTEST_PREFIX}/include/unittest++
+	cp src/Posix/*.h ${UNITTEST_PREFIX}/include/unittest++/Posix
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
     else
-        echo Using unittest++ from ${UNITTEST_PREFIX}
+	echo Using unittest++ from ${UNITTEST_PREFIX}
     fi
 }
 
@@ -520,43 +543,43 @@ function install_unittest {
 #
 # hdf5
 #
-# parallel is not compatible with c++ 
+# parallel is not compatible with c++
 # (http://www.hdfgroup.org/hdf5-quest.html#p5thread) so which is necessary
 # for amanzi?
 #
 ################################################################################
 function install_hdf5 {
     if [ ${HDF5_PREFIX} == ${PREFIX} ]; then
-        HDF5_DIR=${PREFIX}/hdf5/hdf5-${HDF5_VERSION}
-        rm -rf ${HDF5_DIR}
-        mkdir -p ${PREFIX}/hdf5
-        tar ${TAR_FLAGS} ${SOURCE}/hdf5-${HDF5_VERSION}.tar.gz -C ${PREFIX}/hdf5
+	HDF5_DIR=${PREFIX}/hdf5/hdf5-${HDF5_VERSION}
+	rm -rf ${HDF5_DIR}
+	mkdir -p ${PREFIX}/hdf5
+	tar ${TAR_FLAGS} ${SOURCE}/hdf5-${HDF5_VERSION}.tar.gz -C ${PREFIX}/hdf5
 
-        cd ${HDF5_DIR}
+	cd ${HDF5_DIR}
 
-        ./configure --prefix=${PREFIX} \
-            --disable-fortran \
-            --enable-production \
-            --enable-largefile \
-            --enable-parallel 
+	./configure --prefix=${PREFIX} \
+	    --disable-fortran \
+	    --enable-production \
+	    --enable-largefile \
+	    --enable-parallel
 
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make -j ${PARALLEL_NP}
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        if [ $BUILD_CHECK -eq 1]; then
-            make check 
-            if [ $? -ne 0 ]; then
-                exit
-            fi
-        fi
-        make install
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make -j ${PARALLEL_NP}
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	if [ $BUILD_CHECK -eq 1]; then
+	    make check
+	    if [ $? -ne 0 ]; then
+		exit
+	    fi
+	fi
+	make install
     else
-        echo Using hdf5 from ${HDF5_PREFIX}
-    fi   
+	echo Using hdf5 from ${HDF5_PREFIX}
+    fi
 }
 
 ################################################################################
@@ -566,16 +589,16 @@ function install_hdf5 {
 ################################################################################
 function install_netcdf {
     if [ ${NETCDF_PREFIX} == ${PREFIX} ]; then
-        NETCDF_DIR=${PREFIX}/netcdf/netcdf-${NETCDF_VERSION}
-        rm -rf ${NETCDF_DIR}
-        mkdir -p ${PREFIX}/netcdf
-        tar ${TAR_FLAGS} ${SOURCE}/netcdf-${NETCDF_VERSION}.tar.gz -C ${PREFIX}/netcdf
-        
-        cd ${NETCDF_DIR}
-        
-        perl -w -i -p -e 's@#define NC_MAX_DIMS[\s]+[\d]+@#define NC_MAX_DIMS 65536@' libsrc/netcdf.h libsrc4/netcdf.h libsrc4/netcdf_base.h
-        perl -w -i -p -e 's@#define NC_MAX_VARS[\s]+[\d]+@#define NC_MAX_VARS 524288@' libsrc/netcdf.h libsrc4/netcdf.h libsrc4/netcdf_base.h
-        perl -w -i -p -e 's@#define NC_MAX_VAR_DIMS[\s]+NC_MAX_DIMS@#define NC_MAX_VAR_DIMS 8@' libsrc/netcdf.h libsrc4/netcdf.h libsrc4/netcdf_base.h
+	NETCDF_DIR=${PREFIX}/netcdf/netcdf-${NETCDF_VERSION}
+	rm -rf ${NETCDF_DIR}
+	mkdir -p ${PREFIX}/netcdf
+	tar ${TAR_FLAGS} ${SOURCE}/netcdf-${NETCDF_VERSION}.tar.gz -C ${PREFIX}/netcdf
+
+	cd ${NETCDF_DIR}
+
+	perl -w -i -p -e 's@#define NC_MAX_DIMS[\s]+[\d]+@#define NC_MAX_DIMS 65536@' libsrc/netcdf.h libsrc4/netcdf.h libsrc4/netcdf_base.h
+	perl -w -i -p -e 's@#define NC_MAX_VARS[\s]+[\d]+@#define NC_MAX_VARS 524288@' libsrc/netcdf.h libsrc4/netcdf.h libsrc4/netcdf_base.h
+	perl -w -i -p -e 's@#define NC_MAX_VAR_DIMS[\s]+NC_MAX_DIMS@#define NC_MAX_VAR_DIMS 8@' libsrc/netcdf.h libsrc4/netcdf.h libsrc4/netcdf_base.h
 
 #        grep -e NC_MAX_DIMS libsrc4/netcdf.h
 #        grep -e NC_MAX_VARS libsrc4/netcdf.h
@@ -586,30 +609,30 @@ function install_netcdf {
 	    USE_NETCDF4='--enable-netcdf-4 --enable-cxx-4'
 	fi
 
-        ./configure --prefix=${PREFIX} \
-            --disable-fortran \
-            --disable-f90 \
-            --disable-f77 \
-            --disable-fortran-compiler-check \
-            ${USE_NETCDF4} \
-            --disable-dap \
-            --with-mpi=${MPI_PREFIX} \
-            --with-hdf5=${HDF5_PREFIX} \
-            --with-zlib=${ZLIB_PREFIX}
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make -j ${PARALLEL_NP}
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        #make check 
-        if [ $? -ne 0 ]; then
-            exit
-        fi
-        make install
+	./configure --prefix=${PREFIX} \
+	    --disable-fortran \
+	    --disable-f90 \
+	    --disable-f77 \
+	    --disable-fortran-compiler-check \
+	    ${USE_NETCDF4} \
+	    --disable-dap \
+	    --with-mpi=${MPI_PREFIX} \
+	    --with-hdf5=${HDF5_PREFIX} \
+	    --with-zlib=${ZLIB_PREFIX}
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make -j ${PARALLEL_NP}
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	#make check
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make install
     else
-        echo Using netcdf from ${NETCDF_PREFIX}
+	echo Using netcdf from ${NETCDF_PREFIX}
     fi
 }
 
@@ -636,24 +659,24 @@ function install_exodus {
     cd ${EXODUS_DIR}/build
 
     cmake \
-        -D NETCDF_DIR:FILEPATH=${NETCDF_DIR} \
-        -D HDF5_PREFIX:PATH=${HDF5_PREFIX} \
-        -D CMAKE_EXE_LINKER_FLAGS="-L${HDF5_PREFIX}/lib -lhdf5_hl -lhdf5 -L${MPI_PREFIX}/lib -lmpi -lmpi_cxx -L${ZLIB_PREFIX}/lib -lz " \
-        -D CMAKE_INSTALL_PREFIX:PATH=${PREFIX} \
-        ..
+	-D NETCDF_DIR:FILEPATH=${NETCDF_DIR} \
+	-D HDF5_PREFIX:PATH=${HDF5_PREFIX} \
+	-D CMAKE_EXE_LINKER_FLAGS="-L${HDF5_PREFIX}/lib -lhdf5_hl -lhdf5 -L${MPI_PREFIX}/lib -lmpi -lmpi_cxx -L${ZLIB_PREFIX}/lib -lz " \
+	-D CMAKE_INSTALL_PREFIX:PATH=${PREFIX} \
+	..
 
 #       -D BUILD_TESTING:BOOL=off \
 
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     make -j ${PARALLEL_NP}
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     #make check
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     make install
 }
@@ -679,7 +702,7 @@ function install_moab {
     mkdir -p ${PREFIX}/moab
     tar ${TAR_FLAGS} ${SOURCE}/MOAB-${MOAB_VERSION}.tar.gz -C ${PREFIX}/moab
     cd ${MOAB_DIR}
-    
+
     # need to uncomment this if compiling tests
     #perl -w -i -p -e "s@malloc\.h@stdlib.h@" ${MOAB_DIR}/itaps/imesh/testc_cbind.c
 
@@ -687,22 +710,22 @@ function install_moab {
     export LDFLAGS="-L${MPI_PREFIX}/lib -lmpi -L${HDF5_PREFIX}/lib -lhdf5_hl -lhdf5 -L${ZLIB_PREFIX}/lib -lz"
 
     ./configure --prefix=${PREFIX} \
-        --disable-fortran \
-        --with-mpi=${MPI_PREFIX} \
-        --with-hdf5=${HDF5_PREFIX} \
-        --with-netcdf=${NETCDF_PREFIX} 
+	--disable-fortran \
+	--with-mpi=${MPI_PREFIX} \
+	--with-hdf5=${HDF5_PREFIX} \
+	--with-netcdf=${NETCDF_PREFIX}
 
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     make -j ${PARALLEL_NP}
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     # moab tests don't compile...
     #make check
     #if [ $? -ne 0 ]; then
-    #   exit 
+    #   exit
     #fi
     make install
 
@@ -726,7 +749,7 @@ function install_metis {
     # no configuration...?
     make -j ${PARALLEL_NP}
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     # need a manual install
     # copy the binary files:
@@ -755,14 +778,14 @@ function install_ascemio {
 	HDF5_INCLUDE_DIR=${HDF5_PREFIX}/include
 
     if [ $? -ne 0 ]; then
-        exit
+	exit
     fi
     # testing...?
 
     # install
     make ASCEMIO_INSTALL_DIR=${PREFIX} install
     if [ $? -ne 0 ]; then
-        exit
+	exit
     fi
 }
 
@@ -775,9 +798,7 @@ function install_mstk {
     MSTK_DIR=${PREFIX}/mstk/mstk-${MSTK_VERSION}
     rm -rf ${PREFIX}/mstk
     mkdir -p ${PREFIX}/mstk
-    cd ${PREFIX}/mstk
-    cp ${SOURCE}/mstk-${MSTK_VERSION}.tar.gz .
-    tar ${TAR_FLAGS} mstk-${MSTK_VERSION}.tar.gz
+    tar ${TAR_FLAGS} ${SOURCE}/mstk-${MSTK_VERSION}.tgz -C ${PREFIX}/mstk
     cd ${MSTK_DIR}
 
     # for some reason installing examples dies on centos with cmake 2.8.4
@@ -785,6 +806,7 @@ function install_mstk {
     perl -w -i -p -e 's/(install\(TARGETS parallel_example)/#$1/' ${MSTK_DIR}/example/CMakeLists.txt
 
     cmake \
+	-Wno-dev \
 	-D CMAKE_BUILD_TYPE:STRING=Release \
 	-D ENABLE_PARALLEL=yes \
 	-D ENABLE_ExodusII=yes \
@@ -800,15 +822,15 @@ function install_mstk {
 	./
 
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     make -j ${PARALLEL_NP}
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     make install
 
-    # Copy the library 
+    # Copy the library
     cp libmstk.a ${MSTK_PREFIX}/lib
 
 }
@@ -820,34 +842,34 @@ function install_mstk {
 ################################################################################
 function install_cgns {
     if [ ${CGNS_PREFIX} == ${PREFIX} ]; then
-        # Simple configure from amanzi do_configure stript
-        # Build without Fortran, 64bit support and largefiles (>2Gb)
+	# Simple configure from amanzi do_configure stript
+	# Build without Fortran, 64bit support and largefiles (>2Gb)
 
-        CGNS_DIR=${PREFIX}/cgns/cgnslib_${CGNS_VERSION}
-        rm -rf ${CGNS_DIR}
-        mkdir -p ${PREFIX}/cgns
-        tar ${TAR_FLAGS} ${SOURCE}/cgnslib_${CGNS_VERSION}-${CGNS_PATCH}.tar.gz -C ${PREFIX}/cgns
-        cd ${CGNS_DIR}
-        
-        ./configure --prefix=${PREFIX} \
-            --enable-lfs \
-            --enable-64bit \
-            --with-fortran=no
-        
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make -j ${PARALLEL_NP}
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        #make check
-        if [ $? -ne 0 ]; then
-            exit 
-        fi
-        make install
+	CGNS_DIR=${PREFIX}/cgns/cgnslib_${CGNS_VERSION}
+	rm -rf ${CGNS_DIR}
+	mkdir -p ${PREFIX}/cgns
+	tar ${TAR_FLAGS} ${SOURCE}/cgnslib_${CGNS_VERSION}-${CGNS_PATCH}.tar.gz -C ${PREFIX}/cgns
+	cd ${CGNS_DIR}
+
+	./configure --prefix=${PREFIX} \
+	    --enable-lfs \
+	    --enable-64bit \
+	    --with-fortran=no
+
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make -j ${PARALLEL_NP}
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	#make check
+	if [ $? -ne 0 ]; then
+	    exit
+	fi
+	make install
     else
-        echo Using cgns from ${CGNS_PREFIX}
+	echo Using cgns from ${CGNS_PREFIX}
     fi
 }
 
@@ -859,7 +881,7 @@ function install_cgns {
 function install_trilinos {
     TRILINOS_SRC=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-Source
     TRILINOS_BUILD=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-build
-    TRILINOS_INSTALL=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install 
+    TRILINOS_INSTALL=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install
 
     rm -rf ${TRILINOS_BUILD} ${TRILINOS_INSTALL} ${TRILINOS_SRC}
     mkdir -p ${PREFIX}/trilinos
@@ -873,40 +895,40 @@ function install_trilinos {
 #        -D Boost_LIBRARY_DIRS:FILEPATH=${BOOST_PREFIX}/lib \
 
     cmake \
-        -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
-        -D Trilinos_ENABLE_Fortran:BOOL=OFF \
-        -D Trilions_ENABLE_TESTS:BOOL=OFF \
-        -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
-        -D Trilinos_ENABLE_Teuchos:BOOL=ON \
-        -D Trilinos_ENABLE_Epetra:BOOL=ON \
-        -D Trilinos_ENABLE_NOX:BOOL=ON \
-        -D Trilinos_ENABLE_STK:BOOL=ON \
-        -D Trilinos_ENABLE_Rythmos:BOOL=ON \
-        -D Trilinos_ENABLE_Boost:BOOL=ON \
-        -D BOOST_ROOT:FILEPATH=${BOOST_PREFIX} \
+	-D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
+	-D Trilinos_ENABLE_Fortran:BOOL=OFF \
+	-D Trilions_ENABLE_TESTS:BOOL=OFF \
+	-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+	-D Trilinos_ENABLE_Teuchos:BOOL=ON \
+	-D Trilinos_ENABLE_Epetra:BOOL=ON \
+	-D Trilinos_ENABLE_NOX:BOOL=ON \
+	-D Trilinos_ENABLE_STK:BOOL=ON \
+	-D Trilinos_ENABLE_Rythmos:BOOL=ON \
+	-D Trilinos_ENABLE_Boost:BOOL=ON \
+	-D BOOST_ROOT:FILEPATH=${BOOST_PREFIX} \
 	-D NOX_ENABLE_EXAMPLES:BOOL=ON \
-        -D Didasko_ENABLE_EXAMPLES:BOOL=OFF \
-        -D TPL_ENABLE_MPI:BOOL=ON \
-        -D MPI_BASE_DIR:PATH=${MPI_PREFIX} \
-        -D TPL_ENABLE_ExodusII:BOOL=ON \
-        -D TPL_ExodusII_LIBRARIES:FILEPATH=${PREFIX}/lib \
-        -D TPL_ExodusII_INCLUDE_DIRS:FILEPATH=${PREFIX}/include \
-        -D DART_TESTING_TIMEOUT:STRING=600 \
-        -D CMAKE_BUILD_TYPE:STRING=DEBUG \
-        -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
-        -D CMAKE_INSTALL_PREFIX:PATH=${TRILINOS_INSTALL} \
-        ${TRILINOS_SRC}
+	-D Didasko_ENABLE_EXAMPLES:BOOL=OFF \
+	-D TPL_ENABLE_MPI:BOOL=ON \
+	-D MPI_BASE_DIR:PATH=${MPI_PREFIX} \
+	-D TPL_ENABLE_ExodusII:BOOL=ON \
+	-D TPL_ExodusII_LIBRARIES:FILEPATH=${PREFIX}/lib \
+	-D TPL_ExodusII_INCLUDE_DIRS:FILEPATH=${PREFIX}/include \
+	-D DART_TESTING_TIMEOUT:STRING=600 \
+	-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+	-D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
+	-D CMAKE_INSTALL_PREFIX:PATH=${TRILINOS_INSTALL} \
+	${TRILINOS_SRC}
 
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     make -j${PARALLEL_NP}
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     ctest -W 100
     if [ $? -ne 0 ]; then
-        exit 
+	exit
     fi
     make install
 }
@@ -940,53 +962,53 @@ function install_ccse {
     CCSE_PRECISION=${AMANZI_PRECISION}
 
     if [ ${ENABLE_MPI} -eq 1 ]; then
-        export MPI_EXEC=${MPI_PREFIX}/bin/mpiexec
-        export MPI_EXEC_NUMPROCS_FLAG=-np
+	export MPI_EXEC=${MPI_PREFIX}/bin/mpiexec
+	export MPI_EXEC_NUMPROCS_FLAG=-np
     fi
 
     mkdir -p ${CCSE_DIR}/build
     cd ${CCSE_DIR}/build
 
     if [ ${CCSE_VERBOSE} -eq 1 ]; then
-        VFLAG="--debug-output"
+	VFLAG="--debug-output"
     fi
 
     cmake \
-        -D ENABLE_Config_Report:BOOL=ON \
-        -D MPI_PREFIX:FILEPATH=${MPI_PREFIX} \
-        -D MPI_EXEC:FILEPATH=${MPI_EXEC} \
-        -D MPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG} \
-        -D MPI_EXEC_ARGS:STRING="${MPI_EXEC_ARGS}" \
-        -D ENABLE_TESTS:BOOL=ON \
-        -D ENABLE_MPI:BOOL=${ENABLE_MPI} \
-        -D ENABLE_OpenMP:BOOL=${ENABLE_OpenMP} \
-        -D BL_SPACEDIM:INT=${CCSE_SPACEDIM} \
-        -D BL_PRECISION:STRING="${CCSE_PRECISION}" \
-        ${VFLAG} \
-        ..
+	-D ENABLE_Config_Report:BOOL=ON \
+	-D MPI_PREFIX:FILEPATH=${MPI_PREFIX} \
+	-D MPI_EXEC:FILEPATH=${MPI_EXEC} \
+	-D MPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG} \
+	-D MPI_EXEC_ARGS:STRING="${MPI_EXEC_ARGS}" \
+	-D ENABLE_TESTS:BOOL=ON \
+	-D ENABLE_MPI:BOOL=${ENABLE_MPI} \
+	-D ENABLE_OpenMP:BOOL=${ENABLE_OpenMP} \
+	-D BL_SPACEDIM:INT=${CCSE_SPACEDIM} \
+	-D BL_PRECISION:STRING="${CCSE_PRECISION}" \
+	${VFLAG} \
+	..
 
     if [ $? -ne 0 ]; then
-        exit 1
+	exit 1
     fi
 
     if [ ${CCSE_VERBOSE} -eq 1 ]; then
-        VFLAG="VERBOSE=ON"
+	VFLAG="VERBOSE=ON"
     fi
     make -j ${PARALLEL_NP} ${VFLAG}
     if [ $? -ne 0 ]; then
-        exit 1
+	exit 1
     fi
 
     make install
     if [ $? -ne 0 ]; then
-        exit 1
+	exit 1
     fi
 
     ctest --timeout 60 --output-on-failure
     if [ $? -ne 0 ]; then
-        exit 1
+	exit 1
     fi
-    
+
 }
 
 
@@ -1028,21 +1050,21 @@ AMANZI_CHEMEVOL_PKG=${AMANZI_CHEMEVOL_PKG}
 CMAKE=`which cmake`
 if [ -z \${CMAKE} ]; then
     if [ -n ${CMAKE_EXE} ]; then
-        CMAKE=${CMAKE_EXE}
-        echo "Using \${CMAKE}"
+	CMAKE=${CMAKE_EXE}
+	echo "Using \${CMAKE}"
     else
-        echo "Could not find cmake in path, set CMAKE_EXE in the config file."
-        exit
+	echo "Could not find cmake in path, set CMAKE_EXE in the config file."
+	exit
     fi
 fi
 CTEST=`which ctest`
 if [ -z \${CTEST} ]; then
     if [ -n ${CTEST_EXE} ]; then
-        CTEST=${CTEST_EXE}
-        echo "Using \${CTEST}"
+	CTEST=${CTEST_EXE}
+	echo "Using \${CTEST}"
     else
-        echo "Could not find ctest in path, set CTEST_EXE in the config file."
-        exit
+	echo "Could not find ctest in path, set CTEST_EXE in the config file."
+	exit
     fi
 fi
 
@@ -1050,7 +1072,7 @@ function determine_amanzi_dir() {
     AMANZI_DIR=
     case \$1 in
 	/*) AMANZI_DIR=\$1;; # absolute path specified
-        .) AMANZI_DIR=\$PWD;; # current directory specified
+	.) AMANZI_DIR=\$PWD;; # current directory specified
 	*) AMANZI_DIR=\${AMANZI_WORK_DIR}/\$1;; # some other repo name specified
     esac
     #echo "Amanzi directory: \$AMANZI_DIR"
@@ -1085,17 +1107,17 @@ if [ \$AMANZI_CLOBBER -eq 1 ]; then
     rm -rf \${AMANZI_DIR}/build
     cd \${AMANZI_DIR}/src
     if [ -f ./Makefile ]; then
-        make clean
+	make clean
     fi
     # explicitly specify src/*.cmake so we do not accidently remove *.cmake files from tools!
     rm -rf \\
-        CMakeCache.txt \\
-        \${AMANZI_DIR}/src/*.cmake \${AMANZI_DIR}/src/*/*.cmake \${AMANZI_DIR}/src/*/*/*.cmake \\
-        CMakeFiles */CMakeFiles */*/CMakeFiles \\
-        Makefile */Makefile */*/Makefile \\
-        Testing \\
-        *~ */*~ */*/*~ \\
-        *.rej */*.rej */*/*.rej
+	CMakeCache.txt \\
+	\${AMANZI_DIR}/src/*.cmake \${AMANZI_DIR}/src/*/*.cmake \${AMANZI_DIR}/src/*/*/*.cmake \\
+	CMakeFiles */CMakeFiles */*/CMakeFiles \\
+	Makefile */Makefile */*/Makefile \\
+	Testing \\
+	*~ */*~ */*/*~ \\
+	*.rej */*.rej */*/*.rej
 fi
 
 
@@ -1110,38 +1132,38 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
     export F77=${MPI_PREFIX}/bin/mpif77
 
     \${CMAKE} \\
-        -D ENABLE_Config_Report:BOOL=ON \\
-        -D ENABLE_MPI:BOOL=\${ENABLE_MPI} \\
-        -D MPI_EXEC:FILEPATH=${MPI_PREFIX}/bin/mpiexec \\
-        -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \\
-        -D MPI_EXEC_ARGS:STRING="${MPIEXEC_ARGS}" \\
-        -D ENABLE_TESTS:BOOL=ON \\
-        -D BOOST_ROOT:FILEPATH=${BOOST_PREFIX} \\
-        -D UnitTest_DIR:FILEPATH=${UNITTEST_PREFIX} \\
-        -D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \\
-        -D NetCDF_DIR:FILEPATH=${NETCDF_PREFIX} \\
-        -D ExodusII_DIR:FILEPATH=${PREFIX} \\
-        -D ENABLE_MOAB_Mesh:BOOL=ON \\
-        -D MOAB_DIR:FILEPATH=${PREFIX} \\
-        -D ENABLE_MSTK_Mesh:BOOL=${USE_MSTK} \\
-        -D MSTK_DIR:FILEPATH=${MSTK_PREFIX} \\
-        -D METIS_DIR:FILEPATH=${METIS_PREFIX} \\
-        -D ENABLE_CGNS:BOOL=ON \\
-        -D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
-        -D ENABLE_STK_Mesh:BOOL=ON \\
-        -D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
-        -D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
-        -D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse-${CCSE_VERSION}/install \\
-        -D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
-        -D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
-        -D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
-        -D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
-        -D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
-        -D ASCEMIO_DIR:FILEPATH=${PREFIX} \\
-        ..
+	-D ENABLE_Config_Report:BOOL=ON \\
+	-D ENABLE_MPI:BOOL=\${ENABLE_MPI} \\
+	-D MPI_EXEC:FILEPATH=${MPI_PREFIX}/bin/mpiexec \\
+	-D MPI_EXEC_NUMPROCS_FLAG:STRING=-np \\
+	-D MPI_EXEC_ARGS:STRING="${MPIEXEC_ARGS}" \\
+	-D ENABLE_TESTS:BOOL=ON \\
+	-D BOOST_ROOT:FILEPATH=${BOOST_PREFIX} \\
+	-D UnitTest_DIR:FILEPATH=${UNITTEST_PREFIX} \\
+	-D HDF5_DIR:FILEPATH=${HDF5_PREFIX} \\
+	-D NetCDF_DIR:FILEPATH=${NETCDF_PREFIX} \\
+	-D ExodusII_DIR:FILEPATH=${PREFIX} \\
+	-D ENABLE_MOAB_Mesh:BOOL=ON \\
+	-D MOAB_DIR:FILEPATH=${PREFIX} \\
+	-D ENABLE_MSTK_Mesh:BOOL=${USE_MSTK} \\
+	-D MSTK_DIR:FILEPATH=${MSTK_PREFIX} \\
+	-D METIS_DIR:FILEPATH=${METIS_PREFIX} \\
+	-D ENABLE_CGNS:BOOL=ON \\
+	-D CGNS_DIR:FILEPATH=${CGNS_PREFIX} \\
+	-D ENABLE_STK_Mesh:BOOL=ON \\
+	-D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
+	-D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
+	-D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse-${CCSE_VERSION}/install \\
+	-D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
+	-D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
+	-D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
+	-D ENABLE_Structured:BOOL=\${ENABLE_Structured} \\
+	-D ENABLE_Unstructured:BOOL=\${ENABLE_Unstructured} \\
+	-D ASCEMIO_DIR:FILEPATH=${PREFIX} \\
+	..
 
     if [ \$? -ne 0 ]; then
-        exit 1
+	exit 1
     fi
 fi
 
@@ -1155,7 +1177,7 @@ if [ \$AMANZI_MAKE -eq 1 ]; then
     cd \${AMANZI_DIR}/build
     make -j \${AMANZI_MAKE_NP} \${AMANZI_VFLAG}
     if [ \$? -ne 0 ]; then
-        exit 1
+	exit 1
     fi
 fi
 
@@ -1163,7 +1185,7 @@ if [ \$AMANZI_TEST -eq 1 ]; then
     cd \${AMANZI_DIR}/build
     \${CTEST} --timeout 60 --output-on-failure
     if [ \$? -ne 0 ]; then
-        exit 1
+	exit 1
     fi
 fi
 
@@ -1341,8 +1363,8 @@ fi
 #  build mpi dependent libraries using mpi compilers
 #
 if [ $ENABLE_MPI -eq 1 ]; then
-    export CXX=${MPI_PREFIX}/bin/mpicxx 
-    export CC=${MPI_PREFIX}/bin/mpicc 
+    export CXX=${MPI_PREFIX}/bin/mpicxx
+    export CC=${MPI_PREFIX}/bin/mpicc
     export FC=${MPI_PREFIX}/bin/mpif90
     export F77=${MPI_PREFIX}/bin/mpif77
     export F90=${MPI_PREFIX}/bin/mpif90
