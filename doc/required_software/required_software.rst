@@ -175,7 +175,7 @@ MOAB:
         :Information: 
 
 MSTK:
-        :Versions: 1.83rc3
+        :Versions: 1.83
         :Description: A meshing database library
         :Role: An optional backend for Amanzi meshing
         :Dependencies: ExodusII
