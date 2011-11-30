@@ -189,11 +189,6 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
 
 
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
-
   if (serial_run) {
 
     // Load serial mesh
