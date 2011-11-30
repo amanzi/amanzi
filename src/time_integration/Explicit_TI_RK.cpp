@@ -165,13 +165,6 @@ void RK::delete_storage()
 
 void RK::step(const double t, const double h, const Epetra_Vector& y, Epetra_Vector& y_new)
 {
-  std::vector<Epetra_Vector*> k;
-  k.resize(order);
-  for (int i=0; i<order; i++)
-    {
-      k[i] = new Epetra_Vector(y);
-    } 
-  
   Epetra_Vector sum_vec(y);
   double sum_time;
   for (int i=0; i<order; i++) 
