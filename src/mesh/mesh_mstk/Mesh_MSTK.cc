@@ -15,8 +15,6 @@ namespace AmanziMesh
 Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension)
 {
   int ok;
-  int ring = 1; // One layer of ghost cells in parallel meshes
-  int with_attr = 1;  // update of attributes in parallel meshes
 
   clear_internals_();
 
@@ -45,13 +43,15 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension
   }
   else {
     Mesh_ptr globalmesh;
-    int dim=3;
+    int topo_dim=3;
+    int ring = 1; // One layer of ghost cells in parallel meshes
+    int with_attr = 1;  // update of attributes in parallel meshes
     
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
       ok = MESH_ImportFromExodusII(globalmesh,filename);
       
-      dim = MESH_Num_Regions(globalmesh) ? 3 : 2;
+      topo_dim = MESH_Num_Regions(globalmesh) ? 3 : 2;
       
       mesh = globalmesh;
     }
@@ -60,18 +60,13 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, int space_dimension
       ok = 1;
     }
 
-    if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-    }
-    
-    ok = ok & MSTK_Mesh_Distribute(&mesh,dim,ring,with_attr,myprocid,
+    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
 					numprocs,mpicomm);
 
     if (myprocid == 0)
       MESH_Delete(globalmesh);
 
-    set_cell_dimension(dim);
+    set_cell_dimension(topo_dim);
   }
 
   if (!ok) {
