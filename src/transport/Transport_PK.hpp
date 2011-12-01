@@ -68,7 +68,7 @@ const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
 
 const int TRANSPORT_LIMITER_BARTH_JESPERSEN = 1; 
 const int TRANSPORT_LIMITER_TENSORIAL = 2;
-const double TRANSPORT_LIMITER_TOLERANCE = 1e-15;
+const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
@@ -116,8 +116,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   void limiterBarthJespersen(const int component,
                              Teuchos::RCP<Epetra_Vector> scalar_field, 
                              Teuchos::RCP<Epetra_MultiVector> gradient, 
-                             std::vector<double>& field_local_min,
-                             std::vector<double>& field_local_max,
                              Teuchos::RCP<Epetra_Vector> limiter);
 
   void limiterTensorial(const int component,
@@ -177,10 +175,13 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
+  int advection_limiter;  // data for limiters
   int current_component_;
   Teuchos::RCP<Epetra_Vector> component_, component_next_;
   Teuchos::RCP<Epetra_Vector> limiter_;
   Reconstruction lifting;
+  std::vector<double> component_local_min_;
+  std::vector<double> component_local_max_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
@@ -192,8 +193,6 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> harmonic_points_weight;
   std::vector<double> harmonic_points_value;
   std::vector<WhetStone::Tensor> dispersion_tensor;
-
-  int advection_limiter;  // data for limiters
 
   double cfl, dT, dT_debug, T_internal, T_physical;  
   int number_components; 

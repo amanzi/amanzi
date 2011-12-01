@@ -36,7 +36,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD, 3, gm));
-  
+   
   // create a transport state with two component 
   int num_components = 2;
   State mpc_state(num_components, mesh);
@@ -50,6 +50,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   Transport_PK TPK(parameter_list, TS);
   TPK.set_standalone_mode(true);
+  TPK.print_statistics();
 
   // advance the state
   double dT = TPK.calculate_transport_dT();

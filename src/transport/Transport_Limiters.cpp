@@ -26,6 +26,7 @@ void Transport_PK::limiterTensorial(const int component,
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List faces;
 
+  // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   for (int c=cmin; c<=cmax_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -33,8 +34,7 @@ void Transport_PK::limiterTensorial(const int component,
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c]; 
  
-    // project along direction to the feasible set 
-    normals.clear();
+    normals.clear();  // normals to planes the define the feasiable set
     for (int loop=0; loop<2; loop++) {
       for (int i=0; i<nfaces; i++) {
         int f = faces[i];
@@ -46,7 +46,7 @@ void Transport_PK::limiterTensorial(const int component,
           u2 = (*scalar_field)[c2];
         } else if (c1==c) {
           u1 = u2 = (*scalar_field)[c1];
-        } else {  // This case is analyze by influx b.c.
+        } else {
           continue;
         }
         umin = std::min(u1, u2);
@@ -78,10 +78,22 @@ void Transport_PK::limiterTensorial(const int component,
 
     for (int i=0; i<dim; i++) (*gradient)[i][c] = gradient_c1[i];
   }
- 
-  // limiting gradient on the Dirichlet boundary
-  std::vector<double> influx(number_wghost_cells, 0.0);
 
+  // Local extrema are calculated here and updated in Step 2. 
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
+
+    for (int i=0; i<cells.size(); i++) {
+      double value = (*scalar_field)[cells[i]];
+      component_local_min_[c] = std::min(component_local_min_[c], value);
+      component_local_max_[c] = std::max(component_local_max_[c], value);
+    }
+  }
+ 
+  // Step 2: limit gradient on the Dirichlet boundary
   for (int n=0; n<bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
       for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
@@ -89,13 +101,15 @@ void Transport_PK::limiterTensorial(const int component,
         int c1 = (*upwind_cell_)[f]; 
         int c2 = (*downwind_cell_)[f]; 
 
-        if (c2 >= 0) {
+        if (c2 >= 0 && c2 <= cmax_owned) {
           u2 = (*scalar_field)[c2];
           u1 = bc->second;
           umin = std::min(u1, u2);
           umax = std::max(u1, u2);
 
           bc_scaling = std::max(bc_scaling, u1);
+          component_local_max_[c2] = std::max(component_local_max_[c2], u1);  
+          component_local_min_[c2] = std::min(component_local_min_[c2], u1);  
 
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
@@ -113,19 +127,49 @@ void Transport_PK::limiterTensorial(const int component,
           }
 
           for (int i=0; i<dim; i++) (*gradient)[i][c2] = gradient_c2[i]; 
-          influx[c2] += fabs(u1);
         } 
       }
     }
   }
  
-  // cleaning local extrema (experimental lipnikov@lanl.gov)
-  //for (int c=cmin; c<=cmax_owned; c++) {
-  //  u1 = (*scalar_field)[c];
-  //   if (u1 <= lifting.get_field_local_min()[c] || u1 >= lifting.get_field_local_max()[c]) {
-  //    for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
-  //  } 
-  //}
+  // Step 3: enforcing a priori time step estimate (division of dT by 2). 
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    double a, b;
+    double flux, outflux = 0.0, outflux_weigted = 0.0;
+    for (int i=0; i<nfaces; i++) {
+      int f = faces[i];
+      int c1 = (*upwind_cell_)[f];  
+
+      if (c == c1) {
+        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+        u1f = lifting.getValue(c, xcf);
+        u1 = (*scalar_field)[c];
+
+        a = u1f - u1;
+        if (fabs(a) > TRANSPORT_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1))) {
+          if (a > 0) b = u1 - component_local_min_[c];
+          else       b = u1 - component_local_max_[c];     
+
+          flux = fabs(darcy_flux[f]);
+          outflux += flux;
+          if (b) {
+            outflux_weigted += flux * a / b;  
+          } else {
+            for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
+            break;
+          }
+        }
+      }
+    }
+
+    if (outflux_weigted > outflux) {
+      double psi = outflux / outflux_weigted;
+      for (int i=0; i<dim; i++) (*gradient)[i][c] *= psi;
+    }
+  }
 
 
   TS_nextBIG->distribute_cell_multivector(*gradient);
@@ -142,16 +186,12 @@ void Transport_PK::limiterTensorial(const int component,
 void Transport_PK::limiterBarthJespersen(const int component,
                                          Teuchos::RCP<Epetra_Vector> scalar_field, 
                                          Teuchos::RCP<Epetra_MultiVector> gradient,
-                                         std::vector<double>& field_local_min,
-                                         std::vector<double>& field_local_max,
                                          Teuchos::RCP<Epetra_Vector> limiter)
 {
-  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0;
- 
-  std::vector<double> total_influx(number_wghost_cells, 0.0);  // follows calculation of dT
-  std::vector<double> total_outflux(number_wghost_cells, 0.0);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
+  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0;
+ 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
 
@@ -186,20 +226,8 @@ void Transport_PK::limiterBarthJespersen(const int component,
     else if (u2f > umax && u2_add) {
       (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u2_add); 
     }
-
-    total_influx[c2] += fabs(darcy_flux[f]);
-    total_outflux[c1] += fabs(darcy_flux[f]); 
   } 
  
-  // limiting second term in the flux formula (outflow darcy_flux)
-  // has to be moved down, after BC. (lipnikov@lan.gov)
-  for (int c=cmin; c<=cmax_owned; c++) {
-    if (total_outflux[c]) {
-      double psi = std::min(total_influx[c] / total_outflux[c], 1.0);
-      (*limiter)[c] = std::min((*limiter)[c], psi);
-    }
-  }
-
   // limiting gradient on the Dirichlet boundary
   for (int n=0; n<bcs.size(); n++) {
     if (component == bcs_tcc_index[n]) {
@@ -268,7 +296,8 @@ void Transport_PK::calculate_descent_direction(std::vector<AmanziGeometry::Point
       normals.clear();
       direction = normal_new;
     } else {
-      for (int i=0; i<dim; i++) direction[i] /= sqrt(a);
+      a = sqrt(a);
+      for (int i=0; i<dim; i++) direction[i] /= a;
     }
   }
   normals.push_back(direction); 

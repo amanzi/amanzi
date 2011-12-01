@@ -55,8 +55,6 @@ class Reconstruction {
   double getValue(AmanziGeometry::Point& gradient, const int cell, const AmanziGeometry::Point& p);
 
   Teuchos::RCP<Epetra_MultiVector> get_gradient() { return gradient_; }
-  std::vector<double>& get_field_local_min() { return field_local_min_; }
-  std::vector<double>& get_field_local_max() { return field_local_max_; }
 
  private:
   void populateLeastSquareSystem(AmanziGeometry::Point& centroid, 
@@ -72,9 +70,6 @@ class Reconstruction {
 
   Teuchos::RCP<Epetra_Vector> scalar_field_;  // scalar cell-centered field
   Teuchos::RCP<Epetra_MultiVector> gradient_;
-
-  std::vector<double> field_local_min_;
-  std::vector<double> field_local_max_;
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;

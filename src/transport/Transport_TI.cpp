@@ -25,14 +25,10 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
 
   lifting.reset_field(mesh_, component_rcp);
   lifting.calculateCellGradient();
- 
   Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
-  std::vector<double>& field_local_min = lifting.get_field_local_min();
-  std::vector<double>& field_local_max = lifting.get_field_local_max();
 
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {  
-    limiterBarthJespersen(
-        current_component_, component_rcp, gradient, field_local_min, field_local_max, limiter_);
+    limiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
     lifting.applyLimiter(limiter_);
   }
   else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
@@ -41,7 +37,7 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors. 
-  // Min-max condition will enforce robustness for these errors.
+  // Min-max condition will enforce robustness w.r.t. these errors.
   int f, c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 

@@ -82,9 +82,9 @@ if ( BUILD_TESTS )
     target_link_libraries(transport_convergence ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(transport_convergence transport_convergence KIND unit)
 
-    add_executable(transport_dispersion test/Main.cc test/transport_dispersion.cpp)
-    target_link_libraries(transport_dispersion ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(transport_dispersion transport_dispersion KIND unit)
+    # add_executable(transport_dispersion test/Main.cc test/transport_dispersion.cpp)
+    # target_link_libraries(transport_dispersion ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # add_amanzi_test(transport_dispersion transport_dispersion KIND unit)
 
     if ( ENABLE_MSTK_Mesh )
         include_directories(${MSTK_INCLUDE_DIRS})
