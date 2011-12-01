@@ -87,7 +87,7 @@ void Transport_PK::limiterTensorial(const int component,
     component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
 
     for (int i=0; i<cells.size(); i++) {
-      double value = (*scalar_field)[cells[i]];   
+      double value = (*scalar_field)[cells[i]];
       component_local_min_[c] = std::min(component_local_min_[c], value);
       component_local_max_[c] = std::max(component_local_max_[c], value);
     }
@@ -155,7 +155,12 @@ void Transport_PK::limiterTensorial(const int component,
 
           flux = fabs(darcy_flux[f]);
           outflux += flux;
-          if (b) outflux_weigted += flux * a / b;       
+          if (b) {
+            outflux_weigted += flux * a / b;  
+          } else {
+            for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
+            break;
+          }
         }
       }
     }
