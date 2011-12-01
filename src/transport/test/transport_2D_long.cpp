@@ -93,7 +93,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
     T += dT;
     iter++;
 
-    if (T>0.2 && flag) {
+    if (T>0.1 && flag) {
       flag = false;
       if (TPK.MyPID == 0) {
         GMV::open_data_file(*mesh, (std::string)"transport.gmv");

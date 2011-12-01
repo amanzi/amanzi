@@ -131,9 +131,8 @@ int Transport_PK::Init()
   }
 
   // boundary conditions installation at initial time
-  T_physical = TS->get_time();
-  double time = (standalone_mode) ? T_internal : T_physical;
-  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
+   double time = T_internal;
+   for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
 
   return 0;
 }
@@ -190,7 +189,7 @@ double Transport_PK::calculate_transport_dT()
     if (influx) dT_cell = mesh->cell_volume(c) * phi[c] * ws[c] / influx;
 
     dT = std::min(dT, dT_cell);
-  }  
+  }
   if (spatial_disc_order == 2) dT /= 2;
 
 
@@ -260,7 +259,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
 
   int num_components = tcc->NumVectors();
   for (i=0; i<num_components; i++) {
-   current_component_ = i;  // it is needed in BJ called inside RK:fun
+    current_component_ = i;  // it is needed in BJ called inside RK:fun
 
     Epetra_Vector*& tcc_component = (*tcc)(i);
     TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector 
@@ -275,7 +274,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
     if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
       calculate_dispersion_tensor();
 
-      std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated only once (lipnikov@lanl.gov)
+      std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated once (lipnikov@lanl.gov)
       std::vector<double> bc_face_values(number_wghost_faces);
 
       extract_boundary_conditions(i, bc_face_id, bc_face_values);

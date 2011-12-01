@@ -101,7 +101,7 @@ void Transport_PK::limiterTensorial(const int component,
         int c1 = (*upwind_cell_)[f]; 
         int c2 = (*downwind_cell_)[f]; 
 
-        if (c2 >= 0) {
+        if (c2 >= 0 && c2 <= cmax_owned) {
           u2 = (*scalar_field)[c2];
           u1 = bc->second;
           umin = std::min(u1, u2);
