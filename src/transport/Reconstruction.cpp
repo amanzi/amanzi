@@ -50,9 +50,6 @@ void Reconstruction::Init()
   dim = mesh_->space_dimension();
   gradient_ = Teuchos::rcp(new Epetra_MultiVector(cmap, 3));
 
-  field_local_min_.resize(cmax_owned+1);
-  field_local_max_.resize(cmax_owned+1);
-
   status = RECONSTRUCTION_INIT;
 }
 
@@ -77,9 +74,7 @@ void Reconstruction::calculateCellGradient()
     for (int i=0; i<dim; i++) rhs[i] = 0.0;
 
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells); 
-
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    field_local_min_[c] = field_local_max_[c] = u[c];
 
     for (int i=0; i<cells.size(); i++) {
       xc2  = mesh_->cell_centroid(cells[i]);
@@ -87,10 +82,6 @@ void Reconstruction::calculateCellGradient()
 
       double value = u[cells[i]] - u[c];
       populateLeastSquareSystem(xc2, value, matrix, rhs);
-
-      value = u[cells[i]];   
-      field_local_min_[c] = std::min(field_local_min_[c], value);
-      field_local_max_[c] = std::max(field_local_max_[c], value);
     }
 
     // improve robustness w.r.t degenerate matrices

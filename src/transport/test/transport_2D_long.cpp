@@ -31,7 +31,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t ) { 
-  return Amanzi::AmanziGeometry::Point(1.0, 1.0);
+  return Amanzi::AmanziGeometry::Point(0.0, 1.0);
 }
 
 
@@ -59,7 +59,6 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_50x50_ss.exo", MPI_COMM_WORLD, 2, gm));
-return;
   
   /* create a MPC state with one component */
   int num_components = 1;
@@ -96,12 +95,14 @@ return;
 
     if (T>0.2 && flag) {
       flag = false;
-      GMV::open_data_file(*mesh, (std::string)"transport.gmv");
-      GMV::start_data();
-      GMV::write_cell_data(*tcc_next, 0, "component0");
-      //GMV::write_cell_data(*tcc_next, 1, "component1");
-      //GMV::write_cell_data(*tcc_next, 2, "component2");
-      GMV::close_data_file();
+      if (TPK.MyPID == 0) {
+        GMV::open_data_file(*mesh, (std::string)"transport.gmv");
+        GMV::start_data();
+        GMV::write_cell_data(*tcc_next, 0, "component0");
+        //GMV::write_cell_data(*tcc_next, 1, "component1");
+        //GMV::write_cell_data(*tcc_next, 2, "component2");
+        GMV::close_data_file();
+      }
       break;
     }
 

@@ -109,6 +109,9 @@ int Transport_PK::Init()
   component_ = Teuchos::rcp(new Epetra_Vector(cmap));
   component_next_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
+  component_local_min_.resize(cmax_owned + 1);
+  component_local_max_.resize(cmax_owned + 1);
+
   advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
@@ -257,7 +260,7 @@ void Transport_PK::advance_second_order_upwind(double dT_MPC)
 
   int num_components = tcc->NumVectors();
   for (i=0; i<num_components; i++) {
-    current_component_ = i;  // it is needed in BJ called inside RK:fun
+   current_component_ = i;  // it is needed in BJ called inside RK:fun
 
     Epetra_Vector*& tcc_component = (*tcc)(i);
     TS_nextBIG->copymemory_vector(*tcc_component, *component_);  // tcc is a short vector 
