@@ -45,6 +45,10 @@ if (BUILD_TESTS)
     list(APPEND structured_grid_libs ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
   endforeach(lib)
 
+  if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+    list(APPEND structured_grid_libs gfortran)
+  endif()
+
   set(tpl_libs ${Teuchos_LIBRARIES})
 
   add_executable(tPPH tParmParseHelpers.cpp)
