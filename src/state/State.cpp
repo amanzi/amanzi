@@ -51,7 +51,7 @@ State::State( Teuchos::ParameterList &parameter_list_,
 
 State::~State()
 {
-  delete [] (*gravity);
+  // delete [] (*gravity);
 }
 
 
@@ -122,6 +122,27 @@ void State::initialize_from_parameter_list()
 	// maybe throw an exception
       }    
 
+    // read the component names if they are spelled out
+    Teuchos::Array<std::string> comp_names;
+    if (parameter_list.isParameter("Component Names")) 
+      {
+	comp_names = parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
+      }
+    else
+      {
+	comp_names.resize(number_of_components);
+	for (int i=0; i<number_of_components; i++)
+	  {
+	    std::stringstream ss;
+	    ss << "comp " << i;
+	    comp_names[i] = ss.str();
+	  }
+      }
+    // now create the map
+    for (int i=0; i<comp_names.size(); i++)
+      {
+	comp_no[comp_names[i]] = i;
+      }
 
 
     // read the component concentrations from the xml file
@@ -163,6 +184,7 @@ void State::create_storage ()
 void State::set_time ( double new_time ) {
 
   time = new_time;
+  last_time = time;
 
 }
 
@@ -204,6 +226,7 @@ void State::update_pressure(const Epetra_Vector &new_pressure)
 
 void State::advance_time(double dT)
 {
+  last_time = time;
   time = time + dT;
 }
 
@@ -669,6 +692,56 @@ double State::water_mass()
        
   return mass;
 }
+
+
+double State::point_value(const std::string& point_region, const std::string& name)
+{
+  if (!mesh_maps->valid_set_name(point_region,Amanzi::AmanziMesh::CELL)) 
+    {
+      // throw
+    }
+  
+
+  unsigned int mesh_block_size = mesh_maps->get_set_size(point_region,
+							 Amanzi::AmanziMesh::CELL,
+							 Amanzi::AmanziMesh::OWNED);
+  
+  if (mesh_block_size > 1)
+    {
+      // throw
+    }
+  
+  double value(0.0);
+
+  if (mesh_block_size == 1)
+    {
+      std::vector<unsigned int> cell_ids(mesh_block_size);
+      
+      mesh_maps->get_set_entities(point_region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+				  &cell_ids);
+      
+      // extract the value if it is a component
+      if ( comp_no.find(name) != comp_no.end() )
+	{
+	  value =   (*(*total_component_concentration)( comp_no[name] )) [cell_ids[0]];
+	}
+
+      // extract other point information
+      // ...
+      
+    }  
+
+
+  // syncronize the result across processors
+  
+  double result;
+  mesh_maps->get_comm()->SumAll(&value,&result,1);
+
+
+  return result;
+}
+
+
 
 
 void State::set_darcy_flux ( const Epetra_Vector& darcy_flux_ )

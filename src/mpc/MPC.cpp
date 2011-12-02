@@ -143,7 +143,7 @@ void MPC::mpc_init()
    // done creating auxilary state objects and  process models
 
    // create the observations
-   Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation");
+   Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data");
    observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
 
 

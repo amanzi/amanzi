@@ -45,6 +45,7 @@ public:
   const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
   const double get_time () const { return time; };
+  const double get_last_time () const { return last_time; }
   const int get_cycle () const { return cycle; };
 
   const int get_number_of_components() const { return number_of_components; };
@@ -101,7 +102,7 @@ public:
 
   // observation functions
   double water_mass();
-      
+  double point_value(const std::string& point_region, const std::string& comp_name);
 
   void create_storage();
 
@@ -133,8 +134,9 @@ private:
   Teuchos::RCP<double> viscosity;
   
   int number_of_components;
+  std::map<std::string,int> comp_no;
 
-  double time;
+  double time, last_time;
   int cycle;
   status_type status;
 
