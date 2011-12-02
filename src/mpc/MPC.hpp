@@ -77,6 +77,7 @@ namespace Amanzi
     
     // visualization
     Amanzi::Vis *visualization;
+    std::vector<std::string> auxnames;
     
     // checkpoint/restart 
     Amanzi::Restart *restart;

@@ -5,16 +5,17 @@
 #include "Mesh.hh"
 #include "cell_geometry.hh"
 
-State::State( int number_of_components_,
+
+State::State( int number_of_components_, 
 	      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
   number_of_components(number_of_components_),
   mesh_maps(mesh_maps_)
 {
   // create the Eptera_Vector objects
-
   create_storage();
 
 };
+
 
 
 State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
@@ -27,7 +28,7 @@ State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
 
 State::State( Teuchos::ParameterList &parameter_list_,
 	      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-  mesh_maps(mesh_maps_),
+  mesh_maps(mesh_maps_), 
   parameter_list(parameter_list_)
 {
 
@@ -40,9 +41,6 @@ State::State( Teuchos::ParameterList &parameter_list_,
   create_storage();
 
   initialize_from_parameter_list();
-  
-  // init_restart();
-
 };
 
 
@@ -76,29 +74,6 @@ void State::initialize_from_parameter_list()
 
     int mesh_block_ID = sublist.get<int>("Mesh block ID");
 
-    // if (!mesh_maps->valid_set_id(mesh_block_ID,Amanzi::AmanziMesh::CELL)) {
-    //   // there is an inconsistency in the xml input file, report and die
-      
-    //   int myrank = Teuchos::MPISession::getRank();
-
-    //   if (myrank == 0) {
-    // 	std::cerr << "State::initialize_from_parameter_list... the mesh block with ID ";
-    // 	std::cerr << mesh_block_ID << " does not exist in the mesh" << std::endl;
-
-    // 	// get the mesh block IDs 
-    // 	int num_blks = mesh_maps->num_sets(Amanzi::AmanziMesh::CELL);
-    // 	std::vector<unsigned int> setids(num_blks);
-    // 	mesh_maps->get_set_ids(Amanzi::AmanziMesh::CELL,setids.begin(),setids.end());
-    // 	std::cerr << "valid mesh block IDs are: ";
-    // 	for (int i=0; i<num_blks; i++) std::cerr << setids[i] << " ";
-    // 	std::cerr << std::endl;
-
-
-    // 	throw std::exception();
-    //  }
-    // }
-	
-
     // initialize the arrays with some constants from the input file
     set_porosity(sublist.get<double>("Constant porosity"),mesh_block_ID);
     set_permeability(sublist.get<double>("Constant permeability"),mesh_block_ID);
@@ -119,6 +94,7 @@ void State::initialize_from_parameter_list()
     }
     set_total_component_concentration(tcc_const, mesh_block_ID);
   }
+
 }
 
 
@@ -585,3 +561,54 @@ void State::set_total_component_concentration ( const Epetra_MultiVector& total_
   *total_component_concentration = total_component_concentration_;
 };
 
+
+
+
+void State::write_vis(Amanzi::Vis& vis)
+{
+  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() )
+    {	  
+      // create the new time step...
+      vis.create_timestep(get_time(),get_cycle());
+	  
+      // dump all the state vectors into the file
+      vis.write_vector(*get_pressure(), "pressure");
+      vis.write_vector(*get_porosity(),"porosity");
+      vis.write_vector(*get_water_saturation(),"water saturation");
+      vis.write_vector(*get_water_density(),"water density");
+      vis.write_vector(*get_permeability(),"permeability");
+
+      std::vector<std::string> names(3);
+      names[0] = "darcy velocity x";
+      names[1] = "darcy velocity y";
+      names[1] = "darcy velocity z";
+      vis.write_vector(*get_darcy_velocity(), names);
+
+      // write component data
+      vis.write_vector( *get_total_component_concentration(), compnames);
+    }
+}
+
+
+      
+void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames)
+{
+  write_vis(vis);
+  
+  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() )
+    {
+      // write auxillary data
+      if (auxdata != NULL) 
+	{
+	  vis.write_vector( *auxdata , auxnames);
+	}
+      
+      vis.finalize_timestep(); 
+    }
+}
+
+
+void State::set_compnames(std::vector<std::string>& compnames_)
+{
+  compnames = compnames_;
+}
