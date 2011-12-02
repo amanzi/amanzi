@@ -141,7 +141,7 @@ else(CCSE_LIBRARIES AND CCSE_INCLUDE_DIRS AND CCSE_PERL_DIR)
                 find_library(CCSE_LIBRARY
                              NAMES ${ccse_lib_name}
                              HINTS ${CCSE_DIR}
-                             PATH_SUFFIXES "lib${CCSE_LIBDIR_MPI_SUFFIX}${CCSE_LIBDIR_OMP_SUFFIX}"
+                             PATH_SUFFIXES "lib"
                              NO_DEFAULT_PATH)
                 get_filename_component(CCSE_LIBRARY_DIR "${CCSE_LIBRARY}" PATH)
 
