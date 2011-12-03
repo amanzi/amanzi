@@ -11,6 +11,8 @@ Array<int>  Rock::fratio;
 Array<Real> Rock::problo;
 Array<Real> Rock::probhi;
 
+std::map<std::string,int> Rock::rock_dist_map = Rock::create_rock_dist_map();
+
 BoxArray
 Rock::build_finest_data(int        max_level, 
 			Array<int>& n_cell,
@@ -52,34 +54,27 @@ void Rock::build_kmap(MultiFab&      mfdata,
 {
   for (int i = 0; i<region.size(); i++)
     {
-      switch (permeability_dist_type[i])
+      if (porosity_dist_type == rock_dist_map["uniform"])
+	set_constant_kval(mfdata,region_array[region[i]]);
+      else if (porosity_dist_type == rock_dist_map["random"])
 	{
-	case 1:
-          BL_ASSERT(region_array.size()>region[i]);
-          set_constant_kval(mfdata,region_array[region[i]]);
-	  break;
-	case 2:
 	  PGslib::parRand(permeability,
-			  permeability_dist_param[i][0],
+			  permeability_dist_param[0],
 			  n_cell,
 			  twoexp,
 			  mfdata);
-
-	  std::cout << mfdata[0];
-	  break;
-	case 3:
+	}
+      else if (porosity_dist_type == rock_dist_map["geostatistic"])
+	{
 	  gsfile = "sgsim.inc";
 	  PGslib::rdpGaussianSim(permeability,
-				 permeability_dist_param[i][0],
+				 permeability_dist_param[0],
 				 n_cell,
 				 problo,
 				 probhi,
 				 twoexp,
 				 mfdata,
 				 gsfile); 
-	  break;
-	default:
-	  std::cerr << "shouldn't be here";
 	}
     }
 }
@@ -89,36 +84,30 @@ void Rock::build_pmap(MultiFab& mfdata,
 		      std::string& gsfile)
 {
   Array<Real> porosity_array(1);
+  porosity_array[0] = porosity;
   for (int i= 0; i<region.size(); i++)
     {
-      switch (porosity_dist_type[i])
+      if (porosity_dist_type == rock_dist_map["uniform"])
+	set_constant_pval(mfdata,region_array[region[i]]);
+      else if (porosity_dist_type == rock_dist_map["random"])
 	{
-	case 1:
-	  set_constant_pval(mfdata,region_array[region[i]]);
-	  break;
-	  
-	case 2:
-	  porosity_array[0] = porosity;
 	  PGslib::parRand(porosity_array,
-			  porosity_dist_param[i][0],
+			  porosity_dist_param[0],
 			  n_cell,
 			  twoexp,
 			  mfdata);
-	  break;
-
-	case 3:
+	} 
+      else if (porosity_dist_type == rock_dist_map["geostatistic"])
+	{
 	  gsfile = "sgsim.inc";
 	  PGslib::rdpGaussianSim(porosity_array,
-				 porosity_dist_param[i][0],
+				 porosity_dist_param[0],
 				 n_cell,
 				 problo,
 				 probhi,
 				 twoexp,
 				 mfdata,
 				 gsfile);
-	  break;
-	default:
-	  std::cerr << "shouldn't be here";
 	}
     }
 }

@@ -19,7 +19,18 @@ class Region
 {
 public: 
 
-  Region(std::string r_name, int r_purpose, int r_type);
+  static std::map<std::string,int> create_region_map()
+  {
+    std::map<std::string,int> m;
+    m["point"] = 0;
+    m["box"]   = 1;
+
+    return m;
+  };
+
+  static std::map<std::string,int> region_map;
+
+  Region(std::string r_name, std::string r_purpose, std::string r_type);
 
   void setVal(FArrayBox& fab, 
 	      Array<Real>& val, 
@@ -37,8 +48,23 @@ public:
 
   // Identifier for the region 
   std::string name;
-  int purpose;
-  int type;
+  std::string purpose;
+  std::string type;
+};
+
+class pointRegion : public Region
+{
+
+public: 
+  
+  pointRegion (std::string r_name, std::string r_purpose, std::string r_type)
+    : Region(r_name,r_purpose,r_type) {} ;
+
+  virtual void set (Array<Real>& param);
+  virtual bool inregion (Array<Real>& x);
+
+  Real coor[BL_SPACEDIM];
+
 };
 
 class boxRegion : public Region 
@@ -46,7 +72,7 @@ class boxRegion : public Region
 
 public: 
   
-  boxRegion (std::string r_name, int r_purpose, int r_type)
+  boxRegion (std::string r_name, std::string r_purpose, std::string r_type)
     : Region(r_name,r_purpose,r_type) {} ;
 
   virtual void set (Array<Real>& param);
@@ -63,7 +89,7 @@ class allRegion : public Region
 public: 
   
   allRegion ()
-    : Region("ALL",0,100) {};
+    : Region("ALL","any","all") {};
 
   virtual void set (Array<Real>& param);
   virtual bool inregion (Array<Real>& x);

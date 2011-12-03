@@ -1,10 +1,6 @@
 #ifndef _MACPROJ_F_H
 #define _MACPROJ_F_H
 
-/*
-** $Id: MACPROJ_F.H,v 1.4 2009-05-30 18:20:59 gpau Exp $
-*/
-
 #ifdef BL_LANG_FORT
 #    define FORT_MACDIV      macdiv
 #    define FORT_UCORUPDT    ucorupdt

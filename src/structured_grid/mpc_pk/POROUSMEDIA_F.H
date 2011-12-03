@@ -1,10 +1,6 @@
 #ifndef _POROUSMEDIA_F_H_
 #define _POROUSMEDIA_F_H_
 
-/*
-** $Id: POROUSMEDIA_F.H,v 1.40 2011-08-30 19:00:04 gpau Exp $
-*/
-
 #ifdef BL_LANG_FORT
 #    define FORT_FILCC             filcc
 #    define FORT_AVGDOWN           avgdown

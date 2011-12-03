@@ -2,10 +2,6 @@
 #ifndef _VISCBNDRYDATA_H_
 #define _VISCBNDRYDATA_H_
 
-//
-// $Id: ViscBndry.H,v 1.6 2011-06-06 06:09:30 gpau Exp $
-//
-
 #include <InterpBndryData.H>
 #include <BC_TYPES.H>
 #include <BC_TYPES_PM.H>

@@ -1,8 +1,4 @@
 
-//
-// $Id: PMBld.cpp,v 1.2 2011-08-10 17:27:52 lijewski Exp $
-//
-
 #include <winstd.H>
 
 #include <PorousMedia.H>
