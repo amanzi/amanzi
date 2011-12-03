@@ -199,7 +199,7 @@
 # https://software.lanl.gov/MeshTools/trac
 #
 # ccse:
-# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.5.tar.gz
+# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.7.tar.gz
 #
 # trilinos:
 # http://trilinos.sandia.gov
@@ -231,16 +231,20 @@ BOOST_VERSION=1_46_1
 UNITTEST_VERSION=1.4
 ZLIB_VERSION=1.2.5
 CURL_VERSION=7.21.2
+CURL_VERSION=7.21.6
 HDF5_VERSION=1.8.7
 NETCDF_VERSION=4.1.1
+NETCDF_VERSION=4.1.3
 EXODUS_VERSION=4.98
+EXODUS_VERSION=5.10
 MOAB_VERSION=r4276
 CGNS_VERSION=2.5
 CGNS_PATCH=4
 METIS_VERSION=4.0.3
-MSTK_VERSION=1.83
+METIS_VERSION=5.0.2
+MSTK_VERSION=1.83rc3
 TRILINOS_VERSION=10.6.2
-CCSE_VERSION=0.1.5
+CCSE_VERSION=0.1.7
 ASCEMIO_VERSION=1.1p
 
 AMANZI_TPL_ARCHIVES=https://software.lanl.gov/ascem/tpls
@@ -942,12 +946,13 @@ function install_trilinos {
 #
 ################################################################################
 function install_ccse {
-    CCSE_DIR=${CCSE_PREFIX}/ccse-${CCSE_VERSION}
+    CCSE_DIR=${CCSE_PREFIX}/ccse
     CCSE_CONFIG=1
     CCSE_MAKE=1
     CCSE_TEST=1
     CCSE_INSTALL=1
     CCSE_VERBOSE=0
+    CCSE_INSTALL_DIR=${PREFIX}/ccse/install
 
     rm -rf ${CCSE_DIR}
     mkdir -p ${CCSE_PREFIX}
@@ -984,6 +989,7 @@ function install_ccse {
 	-D ENABLE_OpenMP:BOOL=${ENABLE_OpenMP} \
 	-D BL_SPACEDIM:INT=${CCSE_SPACEDIM} \
 	-D BL_PRECISION:STRING="${CCSE_PRECISION}" \
+        -D CMAKE_INSTALL_PREFIX:FILEPATH="${CCSE_INSTALL_DIR}" \
 	${VFLAG} \
 	..
 
@@ -1125,11 +1131,13 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
     mkdir -p \${AMANZI_DIR}/build
     cd \${AMANZI_DIR}/build
 
-    export CXX=${MPI_PREFIX}/bin/mpicxx
-    export CC=${MPI_PREFIX}/bin/mpicc
-    export FC=${MPI_PREFIX}/bin/mpif90
-    export F90=${MPI_PREFIX}/bin/mpif90
-    export F77=${MPI_PREFIX}/bin/mpif77
+    if [ ${ENABLE_MPI} -eq 1 ]; then
+        export CXX=${MPI_PREFIX}/bin/mpicxx
+        export CC=${MPI_PREFIX}/bin/mpicc
+        export FC=${MPI_PREFIX}/bin/mpif90
+        export F90=${MPI_PREFIX}/bin/mpif90
+        export F77=${MPI_PREFIX}/bin/mpif77
+    fi
 
     \${CMAKE} \\
 	-D ENABLE_Config_Report:BOOL=ON \\
@@ -1153,7 +1161,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
 	-D ENABLE_STK_Mesh:BOOL=ON \\
 	-D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
 	-D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
-	-D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse-${CCSE_VERSION}/install \\
+	-D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse/install \\
 	-D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
 	-D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
 	-D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\
