@@ -50,11 +50,11 @@ void Transport_PK::process_parameter_list()
   dispersivity_longitudinal = transport_list.get<double>("dispersivity longitudinal", 0.0);
   dispersivity_transverse = transport_list.get<double>("dispersivity transverse", 0.0);
 
-  string advection_limiter_name = transport_list.get<string>("advection limiter", "none");
+  string advection_limiter_name = transport_list.get<string>("advection limiter", "Tensorial");
   if (advection_limiter_name == "BarthJespersen") {
     advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
   }
-  else if (advection_limiter_name == "Tensorial" || advection_limiter_name == "none") {
+  else if (advection_limiter_name == "Tensorial") {
     advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   }
 
@@ -134,12 +134,13 @@ void Transport_PK::print_statistics() const
 {
   if (!MyPID && verbosity_level > 0) {
     cout << "Transport PK: CFL = " << cfl << endl;
-    cout << "              Execution mode standalone = " << standalone_mode << endl;
-    cout << "              Total number of components = " << number_components << endl;
-    cout << "              Verbosity level = " << verbosity_level << endl;
-    cout << "              spatial discretication order = " << spatial_disc_order << endl;
-    cout << "              temporal discretication order = " << temporal_disc_order << endl;
-    cout << "              Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+    cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
+    cout << "    Total number of components = " << number_components << endl;
+    cout << "    Verbosity level = " << verbosity_level << endl;
+    cout << "    Spatial/temporal discretication orders = " << spatial_disc_order 
+         << " " << temporal_disc_order << endl;
+    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+    cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen") << endl;
   }
 }
  

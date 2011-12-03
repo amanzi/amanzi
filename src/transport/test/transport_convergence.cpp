@@ -94,6 +94,8 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     double L1, L2;
     TS->error_total_component_concentration(f_cubic, T, &L1, &L2);
     printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
+
+    delete gm;
   }
 
   delete comm;
@@ -171,6 +173,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
   }
 
+  delete gm;
   delete comm;
 }
 

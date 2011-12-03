@@ -31,7 +31,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 Amanzi::AmanziGeometry::Point f_velocity(const Amanzi::AmanziGeometry::Point& x, double t ) { 
-  return Amanzi::AmanziGeometry::Point(0.0, 1.0);
+  return Amanzi::AmanziGeometry::Point(1.0, 0.5);
 }
 
 
@@ -108,6 +108,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
 
     *tcc = *tcc_next;
   }
+  TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-20);
  
   delete comm;
 }

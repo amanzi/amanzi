@@ -83,8 +83,9 @@ void Transport_PK::check_divergence_property()
     error_max = global_max;
 #endif
     if (! MyPID) {
-      cout << "Transport_PK: maximal (divergence / flux) = " << error_max << endl;
-      cout << "              average (divergence / flux) = " << error_avg << endl; 
+      cout << "Transport_PK: " << endl; 
+      cout << "    maximal (divergence / flux) = " << error_max << endl;
+      cout << "    average (divergence / flux) = " << error_avg << endl; 
     }
   }
 }
@@ -116,7 +117,7 @@ void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
         msg << "Concentration violates GED property." << "\n";
         Exceptions::amanzi_throw(msg);
       }
-    }
+    } 
   }
 }
 
@@ -136,16 +137,15 @@ void Transport_PK::check_tracer_bounds(Epetra_MultiVector& tracer,
     double value = tracer[component][c];
     if (value < lower_bound - tol || value > upper_bound + tol) {
       cout << "Transport_PK: tracer violates bounds" << endl; 
-      cout << "  Make an Amanzi ticket or turn off internal transport tests" << endl;
-      cout << "  MyPID = " << MyPID << endl;
-      cout << "  component = " << component << endl;
-      cout << "  internal time = " << T_internal << endl;
-      cout << "    cell = " << c << endl;
-      cout << "    center = " << mesh_->cell_centroid(c) << endl;
-      cout << "    limiter = " << (*limiter_)[c] << endl;
-      cout << "    value (old) = " << (*tcc)[component][c] << endl;
-      cout << "    value (new) = " << value << endl;
-
+      cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
+      cout << "    MyPID = " << MyPID << endl;
+      cout << "    component = " << component << endl;
+      cout << "    internal time = " << T_internal << endl;
+      cout << "      cell = " << c << endl;
+      cout << "      center = " << mesh_->cell_centroid(c) << endl;
+      cout << "      limiter = " << (*limiter_)[c] << endl;
+      cout << "      value (old) = " << (*tcc)[component][c] << endl;
+      cout << "      value (new) = " << value << endl;
  
       Errors::Message msg;
       msg << "Tracer violates bounds." << "\n";

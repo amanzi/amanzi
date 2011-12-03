@@ -112,7 +112,7 @@ int Transport_PK::Init()
   component_local_min_.resize(cmax_owned + 1);
   component_local_max_.resize(cmax_owned + 1);
 
-  advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
+  //advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
   limiter_ = Teuchos::rcp(new Epetra_Vector(cmap));
 
   lifting.reset_field(mesh_, component_);
