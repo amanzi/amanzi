@@ -14,16 +14,14 @@ Structured_observations(const Array<Observation>& observation_array,
       std::string label = observation_array[i].name;
       int ntimes = observation_array[i].times.size();
       std::vector<Amanzi::ObservationData::DataTriple> dt(ntimes);
-      for (int j = 0; j<ntimes; ++j)
-	dt[j].time = observation_array[i].times[j];
-      
-      int nval = observation_array[i].vals.size();
-      for (int j = 0; j<nval; ++j)
-	{
-	  dt[j].value = observation_array[i].vals[j];
-	  dt[j].is_valid = true;
-	}
-      
+      const std::map<int, Real> vals = observation_array[i].vals;
+      for (std::map<int, Real>::const_iterator it = vals.begin();
+           it != vals.end(); ++it) {
+        int j = it->first;
+        dt[j].value = it->second;
+        dt[j].time = observation_array[i].times[j];
+        dt[j].is_valid = true;
+      }
       observation_data[label] = dt;
     }	
 }  
