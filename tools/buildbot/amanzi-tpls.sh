@@ -231,18 +231,14 @@ BOOST_VERSION=1_46_1
 UNITTEST_VERSION=1.4
 ZLIB_VERSION=1.2.5
 CURL_VERSION=7.21.2
-CURL_VERSION=7.21.6
 HDF5_VERSION=1.8.7
 NETCDF_VERSION=4.1.1
-NETCDF_VERSION=4.1.3
 EXODUS_VERSION=4.98
-EXODUS_VERSION=5.10
 MOAB_VERSION=r4276
 CGNS_VERSION=2.5
 CGNS_PATCH=4
-METIS_VERSION=4.0.3
 METIS_VERSION=5.0.2
-MSTK_VERSION=1.83rc3
+MSTK_VERSION=1.83
 TRILINOS_VERSION=10.6.2
 CCSE_VERSION=0.1.7
 ASCEMIO_VERSION=1.1p
@@ -941,12 +937,9 @@ function install_trilinos {
 #
 # ccse
 #
-# Notes(bandre): I'm not sure how often the ccse library will change,
-# but it would be nice if we had some fixed reference version to use.
-#
 ################################################################################
 function install_ccse {
-    CCSE_DIR=${CCSE_PREFIX}/ccse
+    CCSE_DIR=${CCSE_PREFIX}/ccse/ccse-${CCSE_VERSION}
     CCSE_CONFIG=1
     CCSE_MAKE=1
     CCSE_TEST=1
@@ -955,8 +948,8 @@ function install_ccse {
     CCSE_INSTALL_DIR=${PREFIX}/ccse/install
 
     rm -rf ${CCSE_DIR}
-    mkdir -p ${CCSE_PREFIX}
-    cd ${CCSE_PREFIX}
+    mkdir -p ${CCSE_DIR}
+    cd ${CCSE_PREFIX}/ccse
     tar zxf ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz
     cd ${CCSE_DIR}
 
@@ -981,9 +974,6 @@ function install_ccse {
     cmake \
 	-D ENABLE_Config_Report:BOOL=ON \
 	-D MPI_PREFIX:FILEPATH=${MPI_PREFIX} \
-	-D MPI_EXEC:FILEPATH=${MPI_EXEC} \
-	-D MPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG} \
-	-D MPI_EXEC_ARGS:STRING="${MPI_EXEC_ARGS}" \
 	-D ENABLE_TESTS:BOOL=ON \
 	-D ENABLE_MPI:BOOL=${ENABLE_MPI} \
 	-D ENABLE_OpenMP:BOOL=${ENABLE_OpenMP} \
