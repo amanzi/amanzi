@@ -111,14 +111,19 @@ void Transport_PK::check_influx_bc() const
       }
     }
 
-    for (int f=0; f<=fmax_owned; f++) {
-      if (darcy_flux[f] < 0 && influx_face[f] == 0) {
-        char component[3];
-        std::sprintf(component, "%3d", i);
+    for (int n=0; n<bcs.size(); n++) {
+      if (i == bcs_tcc_index[n]) {
+        for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+          int f = bc->first;
+          if (darcy_flux[f] < 0 && influx_face[f] == 0) {
+            char component[3];
+            std::sprintf(component, "%3d", i);
 
-        Errors::Message msg;
-        msg << "No influx boundary condition has been found for component " << component << ".\n";
-        Exceptions::amanzi_throw(msg);
+            Errors::Message msg;
+            msg << "No influx boundary condition has been found for component " << component << ".\n";
+            Exceptions::amanzi_throw(msg);
+          }
+        }
       }
     }
   }
