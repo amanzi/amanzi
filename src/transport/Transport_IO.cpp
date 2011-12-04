@@ -92,13 +92,15 @@ void Transport_PK::process_parameter_list()
     }
     Teuchos::ParameterList BC_list = BCs_list.sublist(bc_name);  // A single sublist. 
  
+    bool flag_BCX = false;
     for (int i=0; i<number_components; i++) {
       char tcc_char_name[20];
 
       sprintf(tcc_char_name, "Component %d", i);
       string tcc_name(tcc_char_name);
 
-      if (BC_list.isParameter(tcc_name)) { 
+      if (BC_list.isParameter(tcc_name)) {
+        flag_BCX = true; 
         std::vector<std::string> regions, functions;
         std::vector<double> times, values;
 
@@ -122,6 +124,11 @@ void Transport_PK::process_parameter_list()
         bcs_tcc_index.push_back(i);
         break;
       }
+    }
+    if (!flag_BCX) {
+      Errors::Message msg;
+      msg << "Sublist BC X was not found.\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
 }

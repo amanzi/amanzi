@@ -92,6 +92,7 @@ class Transport_PK : public Explicit_TI::fnBase {
                            double lower_bound,
                            double upper_bound,
                            double tol = 0.0) const;
+  void check_influx_bc() const;
 
   // access members  
   Teuchos::RCP<Transport_State> get_transport_state() { return TS; }

@@ -64,7 +64,7 @@ void Reconstruction::calculateCellGradient()
   Teuchos::LAPACK<int, double> lapack;
 
   AmanziMesh::Entity_ID_List cells;
-  AmanziGeometry::Point xc2(dim);
+  AmanziGeometry::Point xcc(dim);
  
   double *rhs; 
   rhs = new double[dim]; 
@@ -76,12 +76,12 @@ void Reconstruction::calculateCellGradient()
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells); 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-    for (int i=0; i<cells.size(); i++) {
-      xc2  = mesh_->cell_centroid(cells[i]);
-      xc2 -= xc;
+    for (int n=0; n<cells.size(); n++) {
+      const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
+      for (int i=0; i<dim; i++) xcc[i] = xc2[i] - xc[i];
 
-      double value = u[cells[i]] - u[c];
-      populateLeastSquareSystem(xc2, value, matrix, rhs);
+      double value = u[cells[n]] - u[c];
+      populateLeastSquareSystem(xcc, value, matrix, rhs);
     }
 
     // improve robustness w.r.t degenerate matrices
@@ -132,12 +132,10 @@ void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 ****************************************************************** */
 double Reconstruction::getValue(const int cell, const AmanziGeometry::Point& p)
 {
-  AmanziGeometry::Point xc(dim);
-  xc = p;
-  xc -= mesh_->cell_centroid(cell); 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
   double value = (*scalar_field_)[cell];
-  for (int i=0; i<dim; i++) value += (*gradient_)[i][cell] * xc[i];
+  for (int i=0; i<dim; i++) value += (*gradient_)[i][cell] * (p[i] - xc[i]);
 
   return value;
 }
@@ -149,11 +147,10 @@ double Reconstruction::getValue(const int cell, const AmanziGeometry::Point& p)
 double Reconstruction::getValue(
     AmanziGeometry::Point& gradient, const int cell, const AmanziGeometry::Point& p)
 {
-  AmanziGeometry::Point xc(dim);
-  xc = p;
-  xc -= mesh_->cell_centroid(cell); 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
-  double value = (*scalar_field_)[cell] + (gradient * xc);
+  double value = (*scalar_field_)[cell];
+  for (int i=0; i<dim; i++) value += gradient[i] * (p[i] - xc[i]);
 
   return value;
 }

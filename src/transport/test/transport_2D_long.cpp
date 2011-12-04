@@ -52,7 +52,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/transport_2D_long.xml";
+  string xmlFileName = "test/transport_2D_long_test.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   /* create an MSTK mesh framework */

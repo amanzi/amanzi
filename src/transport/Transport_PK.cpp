@@ -131,8 +131,10 @@ int Transport_PK::Init()
   }
 
   // boundary conditions installation at initial time
-   double time = T_internal;
-   for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
+  double time = T_internal;
+  for (int i=0; i<bcs.size(); i++) bcs[i]->Compute(time);
+
+  check_influx_bc();
 
   return 0;
 }

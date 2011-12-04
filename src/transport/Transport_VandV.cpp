@@ -92,6 +92,40 @@ void Transport_PK::check_divergence_property()
 
 
 /* *******************************************************************
+ * Check for completeness of influx boundary conditions.                        
+ ****************************************************************** */
+void Transport_PK::check_influx_bc() const
+{
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  std::vector<int> influx_face(fmax + 1);
+
+  for (int i=0; i<number_components; i++) {
+    influx_face.assign(fmax + 1, 0);    
+
+    for (int n=0; n<bcs.size(); n++) {
+      if (i == bcs_tcc_index[n]) {
+        for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+          int f = bc->first;
+          influx_face[f] = 1; 
+        }
+      }
+    }
+
+    for (int f=0; f<=fmax_owned; f++) {
+      if (darcy_flux[f] < 0 && influx_face[f] == 0) {
+        char component[3];
+        std::sprintf(component, "%3d", i);
+
+        Errors::Message msg;
+        msg << "No influx boundary condition has been found for component " << component << ".\n";
+        Exceptions::amanzi_throw(msg);
+      }
+    }
+  }
+}
+
+
+/* *******************************************************************
  * Check that global extrema diminished                          
  ****************************************************************** */
 void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
