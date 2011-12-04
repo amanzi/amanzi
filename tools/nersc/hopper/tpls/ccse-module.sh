@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # configure CCSE
-CCSE_VERSION=0.1.5
-CCSE_VERBOSE=1
+CCSE_VERSION=0.1.7
+CCSE_VERBOSE=0
 SPACEDIM=2
 ENABLE_MPI=1
 ENABLE_OpenMP=1
@@ -38,13 +38,9 @@ function install_ccse {
     CCSE_PRECISION=DOUBLE
 
     CCSE_BUILD_DIR=${CCSE_DIR}/build-${CCSE_SPACEDIM}D
-    #rm -rf ${CCSE_BUILD_DIR}
+    rm -rf ${CCSE_BUILD_DIR}
     mkdir -p ${CCSE_BUILD_DIR}
     cd ${CCSE_BUILD_DIR}
-
-
-    export MPI_EXEC_NUMPROCS_FLAG=-np
-    export MPI_EXEC_ARGS=
 
 
     if [ ${CCSE_VERBOSE} -eq 1 ]; then
@@ -56,16 +52,12 @@ function install_ccse {
     export FC=`which ftn`
 
     cmake \
+	-D CMAKE_INSTALL_PREFIX:FILEPATH=${CCSE_INSTALL_DIR} \
 	-D ENABLE_Config_Report:BOOL=ON \
         -D CMAKE_C_COMPILER:FILEPATH=$CC \
         -D CMAKE_CXX_COMPILER:FILEPATH=$CXX \
         -D CMAKE_Fortran_COMPILER:FILEPATH=$FC \
-	-D MPI_C_COMPILER:FILEPATH=$CC \
-	-D MPI_CXX_COMPILER:FILEPATH=$CXX \
-	-D MPI_Fortran_COMPILER:FILEPATH=$FC \
-	-D MPI_EXEC:FILEPATH=/usr/bin/aprun \
-	-D MPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG} \
-	-D MPI_EXEC_ARGS:STRING="${MPI_EXEC_ARGS}" \
+	-D ENABLE_MPI:BOOL=${ENABLE_MPI} \
 	-D ENABLE_OpenMP:BOOL=${ENABLE_OpenMP} \
 	-D ENABLE_TESTS:BOOL=ON \
 	-D BL_SPACEDIM:INT=${CCSE_SPACEDIM} \
@@ -94,9 +86,6 @@ function install_ccse {
     if [ $? -ne 0 ]; then
 	exit 1
     fi
-    # this step goes away in ccse-0.1.7
-    mkdir -p ${CCSE_INSTALL_DIR}
-    cp -a ${CCSE_DIR}/install/* ${CCSE_INSTALL_DIR}
     
 }
 
