@@ -56,6 +56,7 @@ const int TRANSPORT_FLOW_STEADYSTATE = 1;
 const int TRANSPORT_FLOW_TRANSIENT = 2;
 
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
+const double TRANSPORT_CONCENTRATION_INFINITY = 1e+99;
 
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These olyhedron parameters must
@@ -68,6 +69,7 @@ const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
 
 const int TRANSPORT_LIMITER_BARTH_JESPERSEN = 1; 
 const int TRANSPORT_LIMITER_TENSORIAL = 2;
+const int TRANSPORT_LIMITER_KUZMIN = 3;
 const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
 const int TRANSPORT_AMANZI_VERSION = 2;  
@@ -122,6 +124,10 @@ class Transport_PK : public Explicit_TI::fnBase {
   void limiterTensorial(const int component,
                         Teuchos::RCP<Epetra_Vector> scalar_field, 
                         Teuchos::RCP<Epetra_MultiVector> gradient);
+
+  void limiterKuzmin(const int component,
+                     Teuchos::RCP<Epetra_Vector> scalar_field, 
+                     Teuchos::RCP<Epetra_MultiVector> gradient);
 
   void calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
                                    AmanziGeometry::Point& normal_new,

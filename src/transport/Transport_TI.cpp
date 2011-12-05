@@ -30,9 +30,10 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {  
     limiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
     lifting.applyLimiter(limiter_);
-  }
-  else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
+  } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
     limiterTensorial(current_component_, component_rcp, gradient);
+  } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
+    limiterKuzmin(current_component_, component_rcp, gradient);
   }
 
   // ADVECTIVE FLUXES

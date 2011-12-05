@@ -53,9 +53,10 @@ void Transport_PK::process_parameter_list()
   string advection_limiter_name = transport_list.get<string>("advection limiter", "Tensorial");
   if (advection_limiter_name == "BarthJespersen") {
     advection_limiter = TRANSPORT_LIMITER_BARTH_JESPERSEN;
-  }
-  else if (advection_limiter_name == "Tensorial") {
+  } else if (advection_limiter_name == "Tensorial") {
     advection_limiter = TRANSPORT_LIMITER_TENSORIAL;
+  } else if (advection_limiter_name == "Kuzmin") {
+    advection_limiter = TRANSPORT_LIMITER_KUZMIN;
   }
 
   flow_mode = TRANSPORT_FLOW_STEADYSTATE;
@@ -147,7 +148,7 @@ void Transport_PK::print_statistics() const
     cout << "    Spatial/temporal discretication orders = " << spatial_disc_order 
          << " " << temporal_disc_order << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
-    cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen") << endl;
+    cout << "    Advection limiter = " << (advection_limiter == TRANSPORT_LIMITER_TENSORIAL ? "Tensorial" : "BarthJespersen or Kuzmin(experimental)") << endl;
   }
 }
  

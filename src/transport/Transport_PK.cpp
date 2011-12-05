@@ -81,6 +81,10 @@ int Transport_PK::Init()
   number_owned_faces = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   fmax_owned = fmin + number_owned_faces - 1;
 
+  const Epetra_Map& vmap = mesh_->node_map(true);
+  vmin = vmap.MinLID();
+  vmax = vmap.MaxLID(); 
+
   number_wghost_cells = cmax + 1;  // assume that enumartion starts with 0 
   number_wghost_faces = fmax + 1;
 
