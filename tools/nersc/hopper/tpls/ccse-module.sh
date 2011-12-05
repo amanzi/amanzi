@@ -1,4 +1,15 @@
 #!/bin/bash
+#
+# copy this file to /project/projectdirs/m1012/tpls/ccse
+#
+# expand the ccse source tarbal into the same directory
+#
+# run this script
+#
+# copy the module file to ${project_home}/modulefiles/${HOST}/ccse/${CCSE_VERSION}
+#
+# update the ccse version in /project/projectdirs/m1012/modulefiles/hopper/AmanziEnv-gnu
+#
 
 # configure CCSE
 CCSE_VERSION=0.1.7
@@ -261,6 +272,7 @@ echo "CCSE_VERSION = ${CCSE_VERSION}" >> $DUMP_FILE
 echo "CCSE_PREFIX = ${CCSE_PREFIX}" >> $DUMP_FILE
 echo "CCSE_INSTALL_DIR = ${CCSE_INSTALL_DIR}" >> $DUMP_FILE
 
+mkdir -p ${CCSE_INSTALL_DIR}
 install_ccse
 cd ${BASE_DIR}
 write_module_file
