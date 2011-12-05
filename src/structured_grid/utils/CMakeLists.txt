@@ -13,8 +13,8 @@ include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(CXX_header_files ParmParseHelpers.H)
-set(CXX_source_files ParmParseHelpers.cpp)
+set(CXX_header_files ParmParseHelpers.H InputParser_Structured.H)
+set(CXX_source_files ParmParseHelpers.cpp InputParser_Structured.cpp)
 
 add_install_include_file(${CXX_header_files})
 

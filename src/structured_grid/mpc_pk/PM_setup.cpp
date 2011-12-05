@@ -1539,7 +1539,6 @@ void PorousMedia::read_observation()
 	}
       
       // filename for output
-      obs_outputfile = "observation.out";
       pp.query("output_file",obs_outputfile);
       
     }
