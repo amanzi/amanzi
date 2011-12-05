@@ -1,8 +1,6 @@
 #ifndef _PorousMedia_H_
 #define _PorousMedia_H_
-//
-// $Id: PorousMedia.H,v 1.104 2011-08-30 19:00:04 gpau Exp $
-//
+
 #include <Geometry.H>
 #include <FArrayBox.H>
 #include <BoxDomain.H>
@@ -37,6 +35,13 @@ enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type};
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
 enum VcrNames { Xvcr=0, Yvcr, Zvcr};
+
+typedef struct
+{
+  int type;
+  Array<int>    region;
+  Array<double> param;
+} BCData;
 
 class PMBld
   :
@@ -260,6 +265,13 @@ public:
 
   static const Array<Observation>& TheObservationArray() {return observation_array;}
 
+  static void getDirichletFaces (Array<Orientation>& Faces,
+				 const int           comp_Type,
+				 const BCRec&        _bc);
+
+  static bool grids_on_side_of_domain (const BoxArray&    _grids,
+				       const Box&         _domain,
+				       const Orientation& _Face); 
 protected:
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
@@ -738,11 +750,12 @@ protected:
   //
   // diagnostics
   //
+  static void check_minmax(MultiFab& mf);
+  static void check_minmax(MultiFab* umac);
+
   void check_sum();
   void check_minmax();
   void check_minmax(int fscalar, int lscalar);
-  void check_minmax(MultiFab& mf);
-  void check_minmax(MultiFab* umac);
   void compute_divu (MultiFab& soln, MultiFab* umac);
 
   // list
@@ -794,10 +807,8 @@ protected:
   static Array<std::string> pNames;
   static Array<std::string> cNames;
   static Array<Real> density;
-  static Array< Array<Real> > rhoinit;
-  static Array< Array<int> > rhoinit_param;
-  static Array< Array<Real> > rhoinflow;
-  static Array< Array<int> > rhoinflow_param;
+  static Array<BCData> ic_array;
+  static Array<BCData> bc_array;
   static Array<Real> muval;
   
   // Tracers
@@ -806,10 +817,8 @@ protected:
   static int  ntracers; 
   static Array<int> tType; 
   static Array<Real> tDen;
-  static Array<Array<Real> > tinit;
-  static Array< Array<int> > tinit_param;  
-  static Array< Array<Real> > tinflow;
-  static Array< Array<int> > tinflow_param;
+  static Array<BCData> tic_array;
+  static Array<BCData> tbc_array;
   static Array<Real> tInflow;
 
   // Pressure

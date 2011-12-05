@@ -3,7 +3,11 @@
 
 #include "Region.H"
 
-Region::Region (std::string r_name, int r_purpose, int r_type)
+std::map<std::string,int> Region::region_map = Region::create_region_map();
+
+Region::Region (std::string r_name, 
+		std::string r_purpose, 
+		std::string r_type)
   : name(r_name),
     purpose(r_purpose),
     type(r_type)
@@ -102,6 +106,27 @@ Region::setVal(FArrayBox&  fab,
 #endif
 }
 
+void 
+pointRegion::set (Array<Real>& param)
+{
+  for (int i = 0; i<BL_SPACEDIM; i++)
+    coor[i] = param[i];
+}
+
+bool 
+pointRegion::inregion (Array<Real>& x)
+{
+  bool inflag = false;
+#if (BL_SPACEDIM == 2)
+  if (x[0]>=coor[0] && x[1]>=coor[1])
+    inflag = true;
+#else
+  if (x[0]>=coor[0] && x[1]>=coor[1] && x[2]>=coor[2] )
+    inflag = true;
+#endif
+  return inflag;
+}
+
 void
 boxRegion::set (Array<Real>& param)
 {
@@ -149,7 +174,7 @@ allRegion::inregion(Array<Real>& x)
 
 
 allBCRegion::allBCRegion (int dir, int lo_or_hi)
-  : Region("BC",4,101)
+  : Region("BC","bc","bc")
 {
   p_dir  = dir;
   p_lohi = lo_or_hi;

@@ -1,6 +1,3 @@
-c
-c $Id: GODUNOV_F.F,v 1.47 2011-08-30 19:00:04 gpau Exp $
-c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
 #define BL_LANG_FORT
@@ -189,13 +186,13 @@ c     compute flux based on upwind scheme
       vlr(1) = ld(1)/(ld(1)+ld(2))*(vtot+ld(2)*gstar)
       vlr(2) = le(1)/(le(1)+le(2))*(vtot+le(2)*gstar)
       vtmp   = half*(vlr(1)+vlr(2))
-      vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
-      lam(1) = cvmgp(ld(1),le(1),vtmp)
+      vtmp   = merge(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
+      lam(1) = merge(ld(1),le(1),vtmp>=zero)
       vlr(1) = ld(2)/(ld(1)+ld(2))*(vtot-ld(1)*gstar)
       vlr(2) = le(2)/(le(1)+le(2))*(vtot-le(1)*gstar)
       vtmp   = half*(vlr(1)+vlr(2))
-      vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
-      lam(2) = cvmgp(ld(2),le(2),vtmp)
+      vtmp   = merge(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
+      lam(2) = merge(ld(2),le(2),vtmp>=zero)
       flux = lam(1)/(lam(1)+lam(2))*(vtot+lam(2)*gstar)
       
       end
@@ -223,15 +220,15 @@ c ::: compute argument for upwind flux
       vlr(1) = ld(1)/(ld(1)+ld(2))*(vtot+ld(2)*gstar)
       vlr(2) = le(1)/(le(1)+le(2))*(vtot+le(2)*gstar)
       vtmp   = half*(vlr(1)+vlr(2))
-      vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
-      lam(1) = cvmgp(ld(1),le(1),vtmp)
-      u_arg(1) = cvmgp(ur(1),ul(1),vtmp)
+      vtmp   = merge(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
+      lam(1) = merge(ld(1),le(1),vtmp>=zero)
+      u_arg(1) = merge(ur(1),ul(1),vtmp>=zero)
       vlr(1) = ld(2)/(ld(1)+ld(2))*(vtot-ld(1)*gstar)
       vlr(2) = le(2)/(le(1)+le(2))*(vtot-le(1)*gstar)
       vtmp   = half*(vlr(1)+vlr(2))
-      vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
-      lam(2) = cvmgp(ld(2),le(2),vtmp)
-      u_arg(2) = cvmgp(ur(2),ul(2),vtmp)
+      vtmp   = merge(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
+      lam(2) = merge(ld(2),le(2),vtmp>=zero)
+      u_arg(2) = merge(ur(2),ul(2),vtmp>=zero)
       flux   = lam(1)/(lam(1)+lam(2))*(vtot+lam(2)*gstar)
 
       end
@@ -347,9 +344,9 @@ c     ::: compute the argument for riemann solver for quadratic permeability
             flux_r = fg(ur,amua,amul,vtot,gstar)
             
             if (ul .lt. ur) then
-               u_arg  = cvmgt(ul,ur,flux_l .lt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .lt. flux_r)
             else
-               u_arg  = cvmgt(ul,ur,flux_l .gt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .gt. flux_r)
                call findmin(smin,vtot,gstar,amua,amul)
                if ((ul-smin)*(ur-smin) .lt. zero) then
                   u_arg = smin
@@ -363,9 +360,9 @@ c     ::: compute the argument for riemann solver for quadratic permeability
             flux_l = fg(ul,amua,amul,vtot,gstar)
             flux_r = fg(ur,amua,amul,vtot,gstar)
             if (ul .gt. ur) then
-               u_arg  = cvmgt(ul,ur,flux_l .gt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .gt. flux_r)
             else
-               u_arg  = cvmgt(ul,ur,flux_l .lt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .lt. flux_r)
                call findmin(smin,vtot,gstar,amua,amul)
                if ((ul-smin)*(ur-smin).lt. zero ) then
                   u_arg = smin
@@ -392,9 +389,9 @@ c     ::: compute the argument for riemann solver
             flux_r = fg_vang(ur,amua,amul,vtot,gstar,kr_coef)
             
             if (ul .lt. ur) then
-               u_arg  = cvmgt(ul,ur,flux_l .lt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .lt. flux_r)
             else
-               u_arg  = cvmgt(ul,ur,flux_l .gt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .gt. flux_r)
                call findext_vang2(smin,vtot,gstar,amua,amul,kr_coef)
                if ((ul-smin)*(ur-smin) .lt. zero) then
                   u_arg = smin
@@ -408,9 +405,9 @@ c     ::: compute the argument for riemann solver
             flux_l = fg_vang(ul,amua,amul,vtot,gstar,kr_coef)
             flux_r = fg_vang(ur,amua,amul,vtot,gstar,kr_coef)
             if (ul .gt. ur) then
-               u_arg  = cvmgt(ul,ur,flux_l .gt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .gt. flux_r)
             else
-               u_arg  = cvmgt(ul,ur,flux_l .lt. flux_r)
+               u_arg  = merge(ul,ur,flux_l .lt. flux_r)
                call findext_vang2(smin,vtot,gstar,amua,amul,kr_coef)
                if ((ul-smin)*(ur-smin).lt. zero ) then
                   u_arg = smin
@@ -849,17 +846,17 @@ c ::: Internal variables
       vlr(1) = lbd_r(1)/(lbd_r(1)+lbd_r(2))*(vel+lbd_r(2)*krhog)
       vlr(2) = lbd_l(1)/(lbd_l(1)+lbd_l(2))*(vel+lbd_l(2)*krhog)
       vtmp   = half*(vlr(1)+vlr(2))
-      vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
-      lam(1) = cvmgp(lbd_l(1),lbd_r(1),vtmp)
-      dlam(1) = cvmgp(dlbd_l(1),dlbd_r(1),vtmp)
+      vtmp   = merge(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
+      lam(1) = merge(lbd_l(1),lbd_r(1),vtmp>=zero)
+      dlam(1) = merge(dlbd_l(1),dlbd_r(1),vtmp>=zero)
 
       vlr(1) = lbd_r(2)/(lbd_r(1)+lbd_r(2))*(vel-lbd_r(1)*krhog)
       vlr(2) = lbd_l(2)/(lbd_l(1)+lbd_l(2))*(vel-lbd_l(1)*krhog)
       vtmp   = half*(vlr(1)+vlr(2))
-      vtmp   = cvmgt(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
-      lam(2) = cvmgp(lbd_l(2),lbd_r(2),vtmp)
-      dlam(2) = cvmgp(dlbd_l(2),dlbd_r(2),vtmp)
-      dlam(3) = cvmgp(dlbd_l(3),dlbd_r(3),vtmp)
+      vtmp   = merge(zero,vtmp,dabs(vtmp) .lt. 1.d-15)
+      lam(2) = merge(lbd_l(2),lbd_r(2),vtmp>=zero)
+      dlam(2) = merge(dlbd_l(2),dlbd_r(2),vtmp>=zero)
+      dlam(3) = merge(dlbd_l(3),dlbd_r(3),vtmp>=zero)
       lt = lam(1) + lam(2)
       if (l_kr_type .eq. 2) then
          eigtmp = vel*(dlam(1)/lt+lam(1)*dlam(3))+
@@ -1038,7 +1035,7 @@ c     local variables
       
       vt = vel
       s  = u(1)
-      c  = cvmgt(u(2)/s, zero, s .gt. zero)
+      c  = merge(u(2)/s, zero, s .gt. zero)
 
       amua = amuw+athick*c
       akrl = (one-s)**2
@@ -1066,7 +1063,7 @@ c     local variables
      &     (dvds*amobl+v*(amoba*dmoblds-amobl*dmobads)/amobt)/(amua*amobt)
 
       eigval(1) = dvds
-      eigval(2) = cvmgt(v/s, dvds, s .gt. 1.d-12)
+      eigval(2) = merge(v/s, dvds, s .gt. 1.d-12)
 
       diff=eigval(2)-eigval(1)
       ldefic = (dabs(diff)-dabs(dvdc)) .le. eps
@@ -1171,7 +1168,7 @@ c$$$      if (dabs(up(1)).gt.1.0d-10) then
 c$$$        cr=up(2)/up(1)
 c$$$      endif
 c$$$      dsmax=dmax1(dabs(cl-cr),dabs(satl-satr))
-c$$$      dsmax=cvmgt(.2d0*dsmax,zero,dsmax.gt..2)
+c$$$      dsmax=merge(.2d0*dsmax,zero,dsmax.gt..2)
 c$$$      dsmax=0.
 c$$$      avisc=dmax1(zero,sp1,sp2,dx*dsmax/dt)
 c$$$
@@ -1299,15 +1296,15 @@ c$$$      end do
             ampl1 = zero
             ampl2 = zero
          else
-            ampl1 = cvmgp(one,zero,dusq - small)
+            ampl1 = merge(one,zero,(dusq - small)>=zero)
             ampl2 = zero
          endif
       endif
 
       if (isdef.eq. 0)then
          
-         eigrex(1,1) = cvmgp(du1,one,dusq-small)
-         eigrex(2,1) = cvmgp(du2,zero,dusq-small)
+         eigrex(1,1) = merge(du1,one,(dusq-small)>=zero)
+         eigrex(2,1) = merge(du2,zero,(dusq-small)>=zero)
          eigrex(1,2) = zero
          eigrex(2,2) = zero
          lleft(1)  = dmax1(eigvall(2),eigvall(1))
@@ -1327,8 +1324,8 @@ c$$$      end do
       call flxinc(ampl2,lleft(2),lright(2),kleft(2),kright(2),
      &     spbar,da(2))
 
-      fluxg(1) = cvmgp(fluxl(1),fluxr(1),spbar)
-      fluxg(2) = cvmgp(fluxl(2),fluxr(2),spbar)
+      fluxg(1) = merge(fluxl(1),fluxr(1),spbar>=zero)
+      fluxg(2) = merge(fluxl(2),fluxr(2),spbar>=zero)
 
       fluxg(1) = fluxg(1) + da(1)*eigrex(1,1) + da(2)*eigrex(1,2)
       fluxg(2) = fluxg(2) + da(1)*eigrex(2,1) + da(2)*eigrex(2,2)
@@ -1400,7 +1397,7 @@ c
 
       integer kk, k, ktot
 
-      al = cvmgp(al,-smalsp,abs(al) - smalsp)
+      al = merge(al,-smalsp,(abs(al) - smalsp)>=zero)
       dela = (ar - al)
       dl = - dela + kl*amp
       dr = dela - kr*amp

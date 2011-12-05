@@ -172,7 +172,7 @@ c ::: -----------------------------------------------------------
          do k = lo(3),hi(3)
             do j = lo(2), hi(2)
                do i = lo(1), hi(1)
-                  tag(i,j,k) = cvmgt(set,tag(i,j,k),adv(i,j,k,1) .gt. adverr)
+                  tag(i,j,k) = merge(set,tag(i,j,k),adv(i,j,k,1) .gt. adverr)
                end do
            end do
 	end do
@@ -268,7 +268,10 @@ c     internal variables
       do j=1,2
          do i=1,SDIM
             bctmp(i,j) = bc(i,j)
-            if (bc(i,j) .eq. SEEPAGE) bctmp(i,j) = FOEXTRAP
+            if (bc(i,j) .eq. SEEPAGE .or.
+     &           bc(i,j) .eq. REFLECT_ODD) then
+               bctmp(i,j) = FOEXTRAP
+            end if
          end do
       end do
 
@@ -1438,7 +1441,7 @@ c ::: -----------------------------------------------------------
                grad = max(dabs(kappa(i+1,j,k)-kappa(i-1,j,k))/(2*dx(1)),
      &            dabs(kappa(i,j+1,k)-kappa(i,j-1,k))/(2*dx(2))) 
                grad = max(grad,dabs(kappa(i,j,k+1)-kappa(i,j,k-1))/(2*dx(3)))
-               tag(i,j,k) = cvmgt(set,tag(i,j,k),grad/kappa(i,j,k) .gt. val)
+               tag(i,j,k) = merge(set,tag(i,j,k),grad/kappa(i,j,k) .gt. val)
             end do
          end do
       end do

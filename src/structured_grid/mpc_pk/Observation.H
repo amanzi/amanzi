@@ -53,7 +53,7 @@ public:
   int op_type;
 
   Array<Real> times;
-  Array<Real> vals;
+  std::map<int,Real> vals;
 
   Observation();
 
@@ -66,8 +66,9 @@ protected:
   Real average(Real time);
   Real volume_integral(Real time);  
   Real volume_time_integral(Real t_old, Real t_new);
+  Real point_sample (Real time);
 
   Real val_old, val_new;
-  int  times_idx;
+  bool initialized;
 };
 #endif /*_OBSERVATION_H_*/

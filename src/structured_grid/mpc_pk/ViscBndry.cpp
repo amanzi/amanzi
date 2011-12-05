@@ -1,6 +1,3 @@
-//
-// $Id: ViscBndry.cpp,v 1.10 2011-06-06 06:09:31 gpau Exp $
-//
 #include <winstd.H>
 
 #include <LO_BCTYPES.H>
@@ -49,7 +46,7 @@ ViscBndry::setBndryConds (const BCRec&   bc,
                 }
                 else if (p_bc == REFLECT_ODD)
                 {
-                    bctag[i][comp] = LO_REFLECT_ODD;
+		    bctag[i][comp] = LO_NEUMANN;//LO_REFLECT_ODD;
                     bloc[i] = 0.;
                  }
             }
@@ -108,7 +105,7 @@ ViscBndry::setScalarBndryConds (const BCRec&   bc,
                 }
                 else if (p_bc == REFLECT_ODD)
                 {
-                    bctag[i][comp] = LO_REFLECT_ODD;
+		    bctag[i][comp] = LO_NEUMANN; //LO_REFLECT_ODD;
                     bloc[i] = 0.;
                  }
             }

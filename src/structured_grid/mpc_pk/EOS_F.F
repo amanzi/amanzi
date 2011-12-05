@@ -543,6 +543,9 @@ c ::: ---------------------------------------------------------------
       REAL_T  rho(ncomps)
       REAL_T  sres
 
+      s(1) = min(rho(1),s(1))
+      s(1) = max(zero,s(1))
+
       st(1) = (s(1)/rho(1)-sres)/(one-sres)
       st(1) = min(one,st(1))
       st(1) = max(zero,st(1))

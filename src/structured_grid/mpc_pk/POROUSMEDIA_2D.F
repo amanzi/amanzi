@@ -1,6 +1,3 @@
-c
-c $Id: POROUSMEDIA_2D.F,v 1.66 2011-08-30 19:00:04 gpau Exp $
-c
 
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
@@ -960,9 +957,9 @@ c            H_coef = one/tmp(1) + one/tmp(2)
 c            H_coef = two/H_coef
             if (i .eq. domlo(1)) then
                if (bc(1,1) .eq. EXT_DIR) then
-                  lambda = lbd(i,j,:)
+                  lambda = lbd(i-1,j,:)
                elseif (bc(1,1) .eq. SEEPAGE) then
-                  lambda = lbd(i,j,:)
+                  lambda = lbd(i-1,j,:)
                end if
                H_coef  = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
             elseif (i .eq. domhi(1)+1) then
@@ -991,9 +988,9 @@ c            H_coef = one/tmp(1) + one/tmp(2)
 c            H_coef = two/H_coef
             if (j .eq. domlo(2)) then
                if (bc(2,1) .eq. EXT_DIR) then
-                  lambda = lbd(i,j,:)
+                  lambda = lbd(i,j-1,:)
                elseif (bc(2,1) .eq. SEEPAGE) then
-                  lambda = lbd(i,j,:)
+                  lambda = lbd(i,j-1,:)
                end if
                H_coef = lambda(1)*lambda(2)/(lambda(1)+lambda(2))
             elseif (j .eq. domhi(2)+1) then
@@ -1006,7 +1003,6 @@ c            H_coef = two/H_coef
             end if
 
             dfy(i,j,1) = H_coef*rhoval(1)
-
          end do
       end do
 
@@ -1118,9 +1114,7 @@ c            H_coef = two/H_coef
                   H_coef = h_cc(i,j)
                end if 
             end if
-
             dfy(i,j,1) = H_coef
-
          end do
       end do
 
@@ -1165,7 +1159,7 @@ c ::: diffusion coefficient in x-dir
       do i=lo(1), hi(1)+1
          do j=lo(2), hi(2)
             if (do_upwind) then
-               H_coef = cvmgp(lbd(i-1,j,nc),lbd(i,j,nc),umac(i,j))
+               H_coef = merge(lbd(i-1,j,nc),lbd(i,j,nc),umac(i,j)>=zero)
             else
                H_coef = half*(lbd(i-1,j,nc)+lbd(i,j,nc))
             end if
@@ -1191,7 +1185,7 @@ c ::: diffusion coefficient in y-dir
       do j=lo(2), hi(2)+1
          do i=lo(1), hi(1)
             if (do_upwind) then
-               H_coef = cvmgp(lbd(i,j-1,nc),lbd(i,j,nc),vmac(i,j))
+               H_coef = merge(lbd(i,j-1,nc),lbd(i,j,nc),vmac(i,j)>=zero)
             else
                H_coef = half*(lbd(i,j-1,nc)+lbd(i,j,nc))
             end if
@@ -1329,18 +1323,18 @@ c :: ------------------------------------------------------------
       do j = lo(2), hi(2)
          do i = lo(1), hi(1)
             if (do_upwind) then
-               ldx(1)  = cvmgp(lbd(i-1,j,1),lbd(i,j,1),umac(i,j))
-               ldx(2)  = cvmgp(lbd(i,j,1),lbd(i+1,j,1),umac(i+1,j))
-               ldy(1)  = cvmgp(lbd(i,j-1,1),lbd(i,j,1),vmac(i,j))
-               ldy(2)  = cvmgp(lbd(i,j,1),lbd(i,j+1,1),vmac(i,j+1))
-               dldx(1) = cvmgp(dlddn(i-1,j,1),zero,umac(i,j))
-               dldx(2) = cvmgp(zero,dlddn(i+1,j,1),umac(i+1,j)) 
-               dldx(3) = cvmgp(zero,dlddn(i,j,1),umac(i,j))
-               dldx(4) = cvmgp(dlddn(i,j,1),zero,umac(i+1,j)) 
-               dldy(1) = cvmgp(dlddn(i,j-1,1),zero,vmac(i,j))
-               dldy(2) = cvmgp(zero,dlddn(i,j+1,1),vmac(i,j+1)) 
-               dldy(3) = cvmgp(zero,dlddn(i,j,1),vmac(i,j))
-               dldy(4) = cvmgp(dlddn(i,j,1),zero,vmac(i,j+1))
+               ldx(1)  = merge(lbd(i-1,j,1),lbd(i,j,1),umac(i,j)>=zero)
+               ldx(2)  = merge(lbd(i,j,1),lbd(i+1,j,1),umac(i+1,j)>=zero)
+               ldy(1)  = merge(lbd(i,j-1,1),lbd(i,j,1),vmac(i,j)>=zero)
+               ldy(2)  = merge(lbd(i,j,1),lbd(i,j+1,1),vmac(i,j+1)>=zero)
+               dldx(1) = merge(dlddn(i-1,j,1),zero,umac(i,j)>=zero)
+               dldx(2) = merge(zero,dlddn(i+1,j,1),umac(i+1,j)>=zero) 
+               dldx(3) = merge(zero,dlddn(i,j,1),umac(i,j)>=zero)
+               dldx(4) = merge(dlddn(i,j,1),zero,umac(i+1,j)>=zero) 
+               dldy(1) = merge(dlddn(i,j-1,1),zero,vmac(i,j)>=zero)
+               dldy(2) = merge(zero,dlddn(i,j+1,1),vmac(i,j+1)>=zero) 
+               dldy(3) = merge(zero,dlddn(i,j,1),vmac(i,j)>=zero)
+               dldy(4) = merge(dlddn(i,j,1),zero,vmac(i,j+1)>=zero)
 
                ldx(1)  = kpx(i,j)*ldx(1)
                ldx(2)  = kpx(i+1,j)*ldx(2)
@@ -1535,10 +1529,10 @@ c
          do i=lo(1), hi(1)
 
             if (do_upwind) then
-               ldx(1) = cvmgp(kpx(i,j)*lbd(i-1,j,1),kpx(i,j)*lbd(i,j,1),umac(i,j))
-               ldx(2) = cvmgp(kpx(i+1,j)*lbd(i,j,1),kpx(i+1,j)*lbd(i+1,j,1),umac(i+1,j))
-               ldy(1) = cvmgp(kpy(i,j)*lbd(i,j-1,1),kpy(i,j)*lbd(i,j,1),vmac(i,j))
-               ldy(2) = cvmgp(kpy(i,j+1)*lbd(i,j,1),kpy(i,j+1)*lbd(i,j+1,1),vmac(i,j+1))
+               ldx(1) = merge(kpx(i,j)*lbd(i-1,j,1),kpx(i,j)*lbd(i,j,1),umac(i,j)>=zero)
+               ldx(2) = merge(kpx(i+1,j)*lbd(i,j,1),kpx(i+1,j)*lbd(i+1,j,1),umac(i+1,j)>=zero)
+               ldy(1) = merge(kpy(i,j)*lbd(i,j-1,1),kpy(i,j)*lbd(i,j,1),vmac(i,j)>=zero)
+               ldy(2) = merge(kpy(i,j+1)*lbd(i,j,1),kpy(i,j+1)*lbd(i,j+1,1),vmac(i,j+1)>=zero)
             else
                ldx(1) = kpx(i,j)*half*(lbd(i,j,1)+lbd(i-1,j,1))
                ldx(2) = kpx(i+1,j)*half*(lbd(i,j,1)+lbd(i+1,j,1))
@@ -1594,7 +1588,7 @@ c
 
             rgx = (ldx(2)*(-multx(2)*(pc(i+1,j)-pc(i,j))/dx(1)) -
      &           ldx(1)*(-multx(1)*(pc(i,j)-pc(i-1,j))/dx(1)))/dx(1) 
-            rgy =  (ldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) - 
+            rgy = (ldy(2)*(-multy(2)*(pc(i,j+1)-pc(i,j))/dx(2) - grav) - 
      &           ldy(1)*(-multy(1)*(pc(i,j)-pc(i,j-1))/dx(2) - grav))/dx(2)           
 
 c           x-direction
@@ -1622,16 +1616,16 @@ c           x-direction
                call get_cpl(pcn(n+2),comp,rhoval,phi(i+n,j),kappa(i+n,j),l_sigma,ncomps,
      &              l_cpl_sres,l_cpl_type,l_cpl_coef)
                if (do_upwind) then
-                  ldx(1) = cvmgz(ldx(1),cvmgp(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)),ldx(1))
-                  ldx(2) = cvmgz(ldx(2),cvmgp(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)),ldx(2))
+                  ldx(1) = merge(ldx(1),merge(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)>=zero),ldx(1)==zero)
+                  ldx(2) = merge(ldx(2),merge(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)>=zero),ldx(2)==zero)
                else
-                  ldx(1) = cvmgz(ldx(1),kpx(i,j)*half*(ldn(1)+ldn(2)),ldx(1))
-                  ldx(2) = cvmgz(ldx(2),kpx(i+1,j)*half*(ldn(2)+ldn(3)),ldx(2))
+                  ldx(1) = merge(ldx(1),kpx(i,j)*half*(ldn(1)+ldn(2)),ldx(1)==zero)
+                  ldx(2) = merge(ldx(2),kpx(i+1,j)*half*(ldn(2)+ldn(3)),ldx(2)==zero)
                end if
                if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
-                  ldx(1) = cvmgz(ldx(1),kpx(i,j)*ldn(1),ldx(1))
+                  ldx(1) = merge(ldx(1),kpx(i,j)*ldn(1),ldx(1)==zero)
                elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
-                  ldx(2) = cvmgz(ldx(2),kpx(i+1,j)*ldn(3),ldx(2))
+                  ldx(2) = merge(ldx(2),kpx(i+1,j)*ldn(3),ldx(2)==zero)
                end if
 
                rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1)) -
@@ -1663,16 +1657,16 @@ c           y-direction
                call get_cpl(pcn(n+2),comp,rhoval,phi(i,j+n),kappa(i,j+n),l_sigma,ncomps,
      &              l_cpl_sres,l_cpl_type,l_cpl_coef)
                if (do_upwind) then
-                  ldy(1) = cvmgz(ldy(1),cvmgp(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)),ldy(1))
-                  ldy(2) = cvmgz(ldy(2),cvmgp(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)),ldy(2))
+                  ldy(1) = merge(ldy(1),merge(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)>=zero),ldy(1)==zero)
+                  ldy(2) = merge(ldy(2),merge(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)>=zero),ldy(2)==zero)
                else
-                  ldy(1) = cvmgz(ldy(1),kpy(i,j)*half*(ldn(1)+ldn(2)),ldy(1))
-                  ldy(2) = cvmgz(ldy(2),kpy(i,j+1)*half*(ldn(2)+ldn(3)),ldy(2))
+                  ldy(1) = merge(ldy(1),kpy(i,j)*half*(ldn(1)+ldn(2)),ldy(1)==zero)
+                  ldy(2) = merge(ldy(2),kpy(i,j+1)*half*(ldn(2)+ldn(3)),ldy(2)==zero)
                end if
                if (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
-                  ldy(1) = cvmgz(ldy(1),kpy(i,j)*ldn(1),ldy(1))
+                  ldy(1) = merge(ldy(1),kpy(i,j)*ldn(1),ldy(1)==zero)
                elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
-                  ldy(2) = cvmgz(ldy(2),kpy(i,j+1)*ldn(3),ldy(2))
+                  ldy(2) = merge(ldy(2),kpy(i,j+1)*ldn(3),ldy(2)==zero)
                end if
 
                rgtmpy(n+2) =  (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2) - grav) - 
@@ -1768,10 +1762,10 @@ c
          do i=lo(1), hi(1)
 
             if (do_upwind) then
-               ldx(1) = cvmgp(kpx(i,j)*lbd(i-1,j,1),kpx(i,j)*lbd(i,j,1),umac(i,j))
-               ldx(2) = cvmgp(kpx(i+1,j)*lbd(i,j,1),kpx(i+1,j)*lbd(i+1,j,1),umac(i+1,j))
-               ldy(1) = cvmgp(kpy(i,j)*lbd(i,j-1,1),kpy(i,j)*lbd(i,j,1),vmac(i,j))
-               ldy(2) = cvmgp(kpy(i,j+1)*lbd(i,j,1),kpy(i,j+1)*lbd(i,j+1,1),vmac(i,j+1))
+               ldx(1) = merge(kpx(i,j)*lbd(i-1,j,1),kpx(i,j)*lbd(i,j,1),umac(i,j)>=zero)
+               ldx(2) = merge(kpx(i+1,j)*lbd(i,j,1),kpx(i+1,j)*lbd(i+1,j,1),umac(i+1,j)>=zero)
+               ldy(1) = merge(kpy(i,j)*lbd(i,j-1,1),kpy(i,j)*lbd(i,j,1),vmac(i,j)>=zero)
+               ldy(2) = merge(kpy(i,j+1)*lbd(i,j,1),kpy(i,j+1)*lbd(i,j+1,1),vmac(i,j+1)>=zero)
             else
                ldx(1) = kpx(i,j)*half*(lbd(i,j,1)+lbd(i-1,j,1))
                ldx(2) = kpx(i+1,j)*half*(lbd(i,j,1)+lbd(i+1,j,1))
@@ -1849,16 +1843,16 @@ c           x-direction
                ldn(n+2) = ldtmp(1)
                pcn(n+2) = cap
                if (do_upwind) then
-                  ldx(1) = cvmgz(ldx(1),cvmgp(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)),ldx(1))
-                  ldx(2) = cvmgz(ldx(2),cvmgp(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)),ldx(2))
+                  ldx(1) = merge(ldx(1),merge(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)>=zero),ldx(1)==zero)
+                  ldx(2) = merge(ldx(2),merge(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)>=zero),ldx(2)==zero)
                else
-                  ldx(1) = cvmgz(ldx(1),kpx(i,j)*half*(ldn(1)+ldn(2)),ldx(1))
-                  ldx(2) = cvmgz(ldx(2),kpx(i+1,j)*half*(ldn(2)+ldn(3)),ldx(2))
+                  ldx(1) = merge(ldx(1),kpx(i,j)*half*(ldn(1)+ldn(2)),ldx(1)==zero)
+                  ldx(2) = merge(ldx(2),kpx(i+1,j)*half*(ldn(2)+ldn(3)),ldx(2)==zero)
                end if
                if (i .eq. domlo(1) .and. bc(1,1) .eq. EXT_DIR) then
-                  ldx(1) = cvmgz(ldx(1),kpx(i,j)*ldn(1),ldx(1))
+                  ldx(1) = merge(ldx(1),kpx(i,j)*ldn(1),ldx(1)==zero)
                elseif (i .eq. domhi(1) .and. bc(1,2) .eq. EXT_DIR) then
-                  ldx(2) = cvmgz(ldx(2),kpx(i+1,j)*ldn(3),ldx(2))
+                  ldx(2) = merge(ldx(2),kpx(i+1,j)*ldn(3),ldx(2)==zero)
                end if
 
                rgtmpx(n+2) = (ldx(2)*(-multx(2)*(pcn(3)-pcn(2))/dx(1)) -
@@ -1884,16 +1878,16 @@ c           y-direction
                ldn(n+2) = ldtmp(1)
                pcn(n+2) = cap
                if (do_upwind) then
-                  ldy(1) = cvmgz(ldy(1),cvmgp(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)),ldy(1))
-                  ldy(2) = cvmgz(ldy(2),cvmgp(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)),ldy(2))
+                  ldy(1) = merge(ldy(1),merge(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)>=zero),ldy(1)==zero)
+                  ldy(2) = merge(ldy(2),merge(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)>=zero),ldy(2)==zero)
                else
-                  ldy(1) = cvmgz(ldy(1),kpy(i,j)*half*(ldn(1)+ldn(2)),ldy(1))
-                  ldy(2) = cvmgz(ldy(2),kpy(i,j+1)*half*(ldn(2)+ldn(3)),ldy(2))
+                  ldy(1) = merge(ldy(1),kpy(i,j)*half*(ldn(1)+ldn(2)),ldy(1)==zero)
+                  ldy(2) = merge(ldy(2),kpy(i,j+1)*half*(ldn(2)+ldn(3)),ldy(2)==zero)
                end if
                if (j .eq. domlo(2) .and. bc(2,1) .eq. EXT_DIR) then
-                  ldy(1) = cvmgz(ldy(1),kpy(i,j)*ldn(1),ldy(1))
+                  ldy(1) = merge(ldy(1),kpy(i,j)*ldn(1),ldy(1)==zero)
                elseif (j .eq. domhi(2) .and. bc(2,2) .eq. EXT_DIR) then
-                  ldy(2) = cvmgz(ldy(2),kpy(i,j+1)*ldn(3),ldy(2))
+                  ldy(2) = merge(ldy(2),kpy(i,j+1)*ldn(3),ldy(2)==zero)
                end if
                rgtmpy(n+2) = (ldy(2)*(-multy(2)*(pcn(3)-pcn(2))/dx(2) - grav) - 
      &           ldy(1)*(-multy(1)*(pcn(2)-pcn(1))/dx(2) - grav))/dx(2)                
@@ -2179,7 +2173,7 @@ c
             dp = - (p(i,j)-p(i-1,j))/dx(1)
             mult = one
             if (do_upwind) then
-               ld   =  cvmgp(lbd(i-1,j,1),lbd(i,j,1),dp)
+               ld   = merge(lbd(i-1,j,1),lbd(i,j,1),dp>=zero)
             else
                ld   = half*(lbd(i,j,1)+lbd(i-1,j,1))
             end if
@@ -2218,7 +2212,7 @@ c
             dp = - ((p(i,j)-p(i,j-1))/dx(2) - grav)
             mult = one
             if (do_upwind) then
-               ld   =  cvmgp(lbd(i,j-1,1),lbd(i,j,1),dp)
+               ld   = merge(lbd(i,j-1,1),lbd(i,j,1),dp>=zero)
             else
                ld   = half*(lbd(i,j,1)+lbd(i,j-1,1))
             end if
@@ -2357,7 +2351,7 @@ c     dummy
                y = (dble(j)+half+qd(k))*dx(2)
                if (y .le. wt_loc) then
                   rho(i,j,1) = rho(i,j,1) + rhoval(1)*wt(k)
-                  rho(i,j,2) = rho(i,j,2) + rhoval(2)*wt(k)
+                  rho(i,j,2) = zero
                else
                   l_cpl_type = nint(cplcoef(i,j,1))
                   l_cpl_coef = cplcoef(i,j,2)
@@ -2501,9 +2495,6 @@ c     Gauss Legendre integration
                else
                   zlo = nint(y/dz+0.5)
                   zhi = nint(y/dz+0.5)+1
-                  if (zlo .lt. 1 .or. zhi .lt. 1) then
-                     print *, zlo, zhi,y
-                  end if
                   pc = pressure(zlo) + (y-depth(zlo))/(depth(zhi)-depth(zlo))*(pressure(zhi)-pressure(zlo))
                   pc = -pc*grav*rhoval(1)
                   l_cpl_type = nint(cplcoef(i,j,1))

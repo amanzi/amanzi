@@ -19,6 +19,19 @@ class Rock
 {
 public: 
 
+  static std::map<std::string,int> create_rock_dist_map()
+  {
+    std::map<std::string,int> m;
+    m["file"]         = 0;
+    m["uniform"]      = 1;
+    m["random"]       = 2;
+    m["geostatistic"] = 3;
+
+    return m;
+  };
+
+  static std::map<std::string,int> rock_dist_map;
+
   std::string name;
   Real density;
   Real porosity;
@@ -55,10 +68,10 @@ public:
      *_dist_param gives the parameters needed to generate 
      the above distribtuion.
   */
-  Array<int> porosity_dist_type;
-  Array<int> permeability_dist_type;
-  Array< Array<Real> > porosity_dist_param;
-  Array< Array<Real> > permeability_dist_param;
+  int porosity_dist_type;
+  int permeability_dist_type;
+  Array<Real> porosity_dist_param;
+  Array<Real> permeability_dist_param;
 
   // parameters for constructing maps
   static int twoexp;

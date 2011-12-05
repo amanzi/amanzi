@@ -1,6 +1,3 @@
-c
-c $Id: GODUNOV_2D.F,v 1.122 2011-08-03 23:19:05 gpau Exp $
-c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
 #define BL_LANG_FORT
@@ -306,8 +303,8 @@ c
 
       do j = jmin-1,jmax+1
          do i = imin,  imax+1
-            fu  = cvmgt(zero,one,abs(uedge(i,j)).lt.eps)
-            stx = cvmgp(xlo(i,j),xhi(i,j),uedge(i,j))
+            fu  = merge(zero,one,abs(uedge(i,j)).lt.eps)
+            stx = merge(xlo(i,j),xhi(i,j),uedge(i,j)>=zero)
             xlo(i,j) = fu*stx + (one - fu)*half*(xhi(i,j)+xlo(i,j))
          end do
       end do
@@ -343,8 +340,8 @@ c
 
       do j = jmin,  jmax+1
          do i = imin-1,imax+1
-            fv  = cvmgt(zero,one,abs(vedge(i,j)).lt.eps)
-            sty = cvmgp(ylo(i,j),yhi(i,j),vedge(i,j))
+            fv  = merge(zero,one,abs(vedge(i,j)).lt.eps)
+            sty = merge(ylo(i,j),yhi(i,j),vedge(i,j)>=zero)
             ylo(i,j) = fv*sty + (one - fv)*half*(yhi(i,j)+ylo(i,j))
          end do
       end do
@@ -418,8 +415,8 @@ c
             end if
             
             do i = imin, imax+1
-               xstate(i,j) = cvmgp(stxlo(i),stxhi(i),uedge(i,j))
-               xstate(i,j) = cvmgt(half*(stxlo(i)+stxhi(i)),xstate(i,j)
+               xstate(i,j) = merge(stxlo(i),stxhi(i),uedge(i,j)>=zero)
+               xstate(i,j) = merge(half*(stxlo(i)+stxhi(i)),xstate(i,j)
      &              ,abs(uedge(i,j)).lt.eps)
             end do
       end do
@@ -491,8 +488,8 @@ c
                styhi(jmax+1) = zero
             end if
             do j=jmin,jmax+1
-               ystate(i,j) = cvmgp(stylo(j),styhi(j),vedge(i,j))
-               ystate(i,j) = cvmgt(half*(stylo(j)+styhi(j)),ystate(i,j),
+               ystate(i,j) = merge(stylo(j),styhi(j),vedge(i,j)>=zero)
+               ystate(i,j) = merge(half*(stylo(j)+styhi(j)),ystate(i,j),
      &              abs(vedge(i,j)).lt.eps)
             end do
       end do
@@ -667,7 +664,6 @@ c ::: internal variables
       ALLOCATE(ylo(DIMV(vedge),nscal))
       ALLOCATE(xhi(DIMV(uedge),nscal))
       ALLOCATE(yhi(DIMV(vedge),nscal)) 
-
 
 c ::: compute eigen solutions
       call eigsol_mp(eigvx,eiglx,eigrx,lbd_cc,dlbd_cc,DIMS(work),
@@ -2073,8 +2069,8 @@ c ::: internal variables
             end do
  
             do nd = 1,ncomps  
-               alphalo = cvmgt(zero, one, eigv(i-ix,j-iy,nd) .lt. zero)
-               alphahi = cvmgt(zero, one, eigv(i,j,nd) .gt. zero)
+               alphalo = merge(zero, one, eigv(i-ix,j-iy,nd) .lt. zero)
+               alphahi = merge(zero, one, eigv(i,j,nd) .gt. zero)
          
               do nc = 1,ncomps   
                   vlo(i,j,nc) = vlo(i,j,nc) + half*
@@ -2162,8 +2158,9 @@ c ::: local variables
 c                        if (vel(i,j) .gt. zero) then
 c                           vlo(i,j,nc) = s(i-ix,j-iy,nc)
 c                        else
-                           vlo(i,j,nc) = vhi(i,j,nc)
+c                           vlo(i,j,nc) = vhi(i,j,nc)
 c                        end if
+                        vlo(i,j,nc) = s(i-ix,j-iy,nc)
                      end do
                   end do
                end do
@@ -2171,11 +2168,11 @@ c                        end if
                do nc = idx_first,nscal
                   do i = imin,imax
                      do j = jmin,jmax
-                        if (vel(i,j)  .gt. zero) then
+c                        if (vel(i,j)  .gt. zero) then
                            vlo(i,j,nc) = 0.5d0 * (s(i-ix,j-iy,nc) + sn(i-ix,j-iy,nc))
-                        else
-                           vlo(i,j,nc) = vhi(i,j,nc)
-                        end if
+c                        else
+c                           vlo(i,j,nc) = vhi(i,j,nc)
+c                        end if
                      end do
                   end do
                end do
@@ -2189,11 +2186,11 @@ c                        end if
                do nc = idx_first,nscal
                   do i = imin,imax
                      do j = jmin,jmax
-                        if (vel(i,j)  .gt. zero) then
+c                        if (vel(i,j)  .gt. zero) then
                            vlo(i,j,nc) = s(i-ix,j-iy,nc)
-                        else
-                           vlo(i,j,nc) = vhi(i,j,nc)
-                        end if
+c                        else
+c                           vlo(i,j,nc) = vhi(i,j,nc)
+c                        end if
                      end do
                   end do
                end do
@@ -2201,11 +2198,11 @@ c                        end if
                do nc = idx_first,nscal
                    do i = imin,imax
                      do j = jmin,jmax
-                        if (vel(i,j)  .gt. zero) then
+c                        if (vel(i,j)  .gt. zero) then
                            vlo(i,j,nc) = 0.5d0 * (s(i-ix,j-iy,nc) + sn(i-ix,j-iy,nc))
-                        else
-                           vlo(i,j,nc) = vhi(i,j,nc)
-                        end if
+c                        else
+c                           vlo(i,j,nc) = vhi(i,j,nc)
+c                        end if
                      end do
                   end do
                end do
@@ -2233,8 +2230,8 @@ c$$$                     call get_st(sat,s(i,j,:),rhoval,sat_residual,ncomps)
 c$$$                  else 
 c$$$                     call get_st(sat,sn(i,j,:),rhoval,sat_residual,ncomps)
 c$$$                  end if
-c$$$                  vlo(i,j,1) = cvmgt(zero, rhoval(1), sat(1).lt.sat_threshold)
-c$$$                  vlo(i,j,2) = cvmgt(rhoval(2), zero, sat(1).lt.sat_threshold)
+c$$$                  vlo(i,j,1) = merge(zero, rhoval(1), sat(1).lt.sat_threshold)
+c$$$                  vlo(i,j,2) = merge(rhoval(2), zero, sat(1).lt.sat_threshold)
 c$$$                  vhi(i,j,1:2) = vlo(i,j,1:2)
 c$$$               end do
 c$$$            end do
@@ -2346,8 +2343,8 @@ c                     call get_st(sat,s(i-ix,j-iy,:),rhoval,sat_residual,ncomps)
 c                  else
 c                     call get_st(sat,sn(i-ix,j-iy,:),rhoval,sat_residual,ncomps)
 c                  end if
-c                  vlo(i,j,1) = cvmgt(zero, rhoval(1), sat(1).lt.sat_threshold)
-c                  vlo(i,j,2) = cvmgt(rhoval(2), zero, sat(1).lt.sat_threshold)
+c                  vlo(i,j,1) = merge(zero, rhoval(1), sat(1).lt.sat_threshold)
+c                  vlo(i,j,2) = merge(rhoval(2), zero, sat(1).lt.sat_threshold)
 c                  vhi(i,j,1:2) = vlo(i,j,1:2)
 c                  vhi(i,j,1) = zero
 c                  if (nscal .gt. 1) then
@@ -2629,8 +2626,8 @@ c ::: internal variables
       do nc = 1,nscal
          do j = jmin,jmax
             do i = imin,imax 
-               flux(i,j,nc) = cvmgp(vlo(i,j,nc),vhi(i,j,nc),vel(i,j))
-               flux(i,j,nc) = cvmgt(half*(vlo(i,j,nc)+vhi(i,j,nc)),
+               flux(i,j,nc) = merge(vlo(i,j,nc),vhi(i,j,nc),vel(i,j)>=zero)
+               flux(i,j,nc) = merge(half*(vlo(i,j,nc)+vhi(i,j,nc)),
      &              flux(i,j,nc),abs(vel(i,j)).lt. 1.d-16)
                flux(i,j,nc) = flux(i,j,nc) * vel(i,j)
             end do
@@ -3344,8 +3341,8 @@ c ::: internal variables
       do j = lo(2),hi(2)+iy
          do i = lo(1),hi(1)+ix
             do nc = 1,nscal
-               flux(i,j,nc) = cvmgp(vlo(i,j,nc),vhi(i,j,nc),uedge(i,j))
-               flux(i,j,nc) = cvmgt(half*(vlo(i,j,nc)+vhi(i,j,nc)),
+               flux(i,j,nc) = merge(vlo(i,j,nc),vhi(i,j,nc),uedge(i,j)>=zero)
+               flux(i,j,nc) = merge(half*(vlo(i,j,nc)+vhi(i,j,nc)),
      &              flux(i,j,nc),abs(uedge(i,j)).lt. 1.d-16)
                flux(i,j,nc) = flux(i,j,nc) * uedge(i,j)
             end do
@@ -4220,7 +4217,7 @@ c
          else
            do j = jmin-1,jmax+1
                ltest = uad(imin,j).le.eps
-               stx   = cvmgt(xhi(imin,j),s(imin-1,j),ltest)
+               stx   = merge(xhi(imin,j),s(imin-1,j),ltest)
                xhi(imin,j) = stx
                xlo(imin,j) = stx
             end do
@@ -4251,7 +4248,7 @@ c
          else
             do j = jmin-1,jmax+1
                ltest = uad(imax+1,j).ge.-eps
-               stx   = cvmgt(xlo(imax+1,j),s(imax+1,j),ltest)
+               stx   = merge(xlo(imax+1,j),s(imax+1,j),ltest)
                xhi(imax+1,j) = stx
                xlo(imax+1,j) = stx
             end do
@@ -4314,7 +4311,7 @@ c
          else
             do i = imin-1,imax+1
                ltest = vad(i,jmin).le.eps
-               sty   = cvmgt(yhi(i,jmin),s(i,jmin-1),ltest)
+               sty   = merge(yhi(i,jmin),s(i,jmin-1),ltest)
                yhi(i,jmin) = sty
                ylo(i,jmin) = sty
             end do
@@ -4344,7 +4341,7 @@ c
          else
             do i = imin-1,imax+1
                ltest = vad(i,jmax+1).ge.-eps
-               sty   = cvmgt(ylo(i,jmax+1),s(i,jmax+1),ltest)
+               sty   = merge(ylo(i,jmax+1),s(i,jmax+1),ltest)
                yhi(i,jmax+1) = sty
                ylo(i,jmax+1) = sty
             end do
@@ -4412,7 +4409,7 @@ c ::: ::::: added to prevent underflow for small s values
 c
       do j = lo(2)-ng, hi(2)+ng
         do i = lo(1)-ng, hi(1)+ng
-	  s(i,j) = cvmgt(s(i,j), zero, abs(s(i,j)).gt.1.0D-20)
+	  s(i,j) = merge(s(i,j), zero, abs(s(i,j)).gt.1.0D-20)
         end do
       end do
 c
@@ -4465,7 +4462,7 @@ c
                   dpls = two*(s(i+1,j) - s(i ,j))
                   dmin = two*(s(i ,j) - s(i-1,j))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   slx(i,j)= sflg*min(slim,abs(del))
                end do
@@ -4478,7 +4475,7 @@ c
                   dpls = two*(s(imin+1,j) - s(imin  ,j))
                   dmin = two*(s(imin  ,j) - s(imin-1,j))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   slx(imin,j)= sflg*min(slim,abs(del))
                end do
@@ -4490,7 +4487,7 @@ c
                   dpls = two*(s(imax+1,j) - s(imax  ,j))
                   dmin = two*(s(imax  ,j) - s(imax-1,j))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   slx(imax,j)= sflg*min(slim,abs(del))
                end do
@@ -4524,7 +4521,7 @@ c
                   dpls = two*(s(i,j+1) - s(i,j ))
                   dmin = two*(s(i,j ) - s(i,j-1))
                   slim = min(abs(dpls),abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   sly(i,j)= sflg*min(slim,abs(del))
                end do
@@ -4537,7 +4534,7 @@ c
                   dpls = two*(s(i,jmin+1) - s(i,jmin  ))
                   dmin = two*(s(i,jmin  ) - s(i,jmin-1))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   sly(i,jmin)= sflg*min(slim,abs(del))
                end do
@@ -4549,7 +4546,7 @@ c
                   dpls = two*(s(i,jmax+1) - s(i,jmax  ))
                   dmin = two*(s(i,jmax  ) - s(i,jmax-1))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   sly(i,jmax)= sflg*min(slim,abs(del))
                end do
@@ -4601,7 +4598,7 @@ c
                   dpls           = two*(s(i+1,j)-s(i  ,j))
                   slxscr(i,cen)  = half*(s(i+1,j)-s(i-1,j))
                   slxscr(i,lim)  = min(abs(dmin),abs(dpls))
-                  slxscr(i,lim)  = cvmgp(slxscr(i,lim),zero,dpls*dmin)
+                  slxscr(i,lim)  = merge(slxscr(i,lim),zero,dpls*dmin>=zero)
                   slxscr(i,flag) = sign(one,slxscr(i,cen))
                   slxscr(i,fromm)= slxscr(i,flag)*
      &                 min(slxscr(i,lim),abs(slxscr(i,cen)))
@@ -4621,7 +4618,7 @@ c              At boundaries, we use a less steep gradient (1 instead of 2)
                   dmin = (s(imin  ,j)-s(imin-1,j))
                   dpls = (s(imin+1,j)-s(imin  ,j))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   slx(imin-1,j) = zero
                   slx(imin,  j) = sflg*min(slim,abs(del))
@@ -4639,7 +4636,7 @@ c                 Recalculate the slope at imin+1 using the revised slxscr(imin,
                   dmin = (s(imax  ,j)-s(imax-1,j))
                   dpls = (s(imax+1,j)-s(imax  ,j))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   slx(imax,  j) = sflg*min(slim,abs(del))
                   slx(imax+1,j) = zero
@@ -4687,7 +4684,7 @@ c
                   dpls           = two* (s(i,j+1)-s(i,j  ))
                   slyscr(j,cen)  = half*(s(i,j+1)-s(i,j-1))
                   slyscr(j,lim)  = min(abs(dmin),abs(dpls))
-                  slyscr(j,lim)  = cvmgp(slyscr(j,lim),zero,dpls*dmin)
+                  slyscr(j,lim)  = merge(slyscr(j,lim),zero,dpls*dmin>=zero)
                   slyscr(j,flag) = sign(one,slyscr(j,cen))
                   slyscr(j,fromm)= slyscr(j,flag)*
      &                 min(slyscr(j,lim),abs(slyscr(j,cen)))
@@ -4706,7 +4703,7 @@ c              At boundaries, we use a less steep gradient (1 instead of 2)
                   dmin = (s(i,jmin  )-s(i,jmin-1))
                   dpls = (s(i,jmin+1)-s(i,jmin  ))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   sly(i,jmin-1) = zero
                   sly(i,jmin  ) = sflg*min(slim,abs(del))
@@ -4724,7 +4721,7 @@ c                 Recalculate the slope at jmin+1 using the revised slyscr(jmin,
                   dmin = (s(i,jmax  )-s(i,jmax-1))
                   dpls = (s(i,jmax+1)-s(i,jmax  ))
                   slim = min(abs(dpls), abs(dmin))
-                  slim = cvmgp(slim, zero, dpls*dmin)
+                  slim = merge(slim, zero, dpls*dmin>=zero)
                   sflg = sign(one,del)
                   sly(i,jmax  ) = sflg*min(slim,abs(del))
                   sly(i,jmax+1) = zero
@@ -5115,7 +5112,7 @@ c     ::: added to prevent underflow for small s values
          do n = 1,ncomps
             do j = jmin-ng, jmax+ng
                do i = imin-ng, imax+ng
-                  s(i,j,n) = cvmgt(s(i,j,n), zero, abs(s(i,j,n)).gt.1.0D-20)
+                  s(i,j,n) = merge(s(i,j,n), zero, abs(s(i,j,n)).gt.1.0D-20)
                end do
             end do
          end do
@@ -5182,7 +5179,7 @@ c     :::::: x-slopes
                      anslp = dmin1(faclim*dabs(alpl(n)),
      &                    dabs(alpc(n)),faclim*dabs(alpr(n)))
      &                    *dmax1(zero,dsign(one,alpl(n)*alpr(n)))
-                     den=cvmgt(dabs(alpc(n)),one,dabs(alpc(n)).gt.1.d-15)
+                     den=merge(dabs(alpc(n)),one,dabs(alpc(n)).gt.1.d-15)
                      slx(i,j,n)=anslp/den
 
                   end do
@@ -5270,7 +5267,7 @@ c :::::: y-slopes
                      anslp = dmin1(faclim*dabs(alpl(n)),
      &                    dabs(alpc(n)),faclim*dabs(alpr(n)))
      &                    *dmax1(0.d0,dsign(1.d0,alpl(n)*alpr(n)))
-                     den=cvmgt(dabs(alpc(n)),1.d0,dabs(alpc(n)).ne.0.)
+                     den=merge(dabs(alpc(n)),1.d0,dabs(alpc(n)).ne.0.)
                      sly(i,j,n)=anslp/den
                   end do
                   

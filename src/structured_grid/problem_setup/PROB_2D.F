@@ -167,7 +167,7 @@ c ::: -----------------------------------------------------------
       if (model .ge. 0) then
          do i = lo(1), hi(1)
             do j = lo(2), hi(2)
-              tag(i,j) = cvmgt(set,tag(i,j),adv(i,j,1) .gt. adverr)
+              tag(i,j) = merge(set,tag(i,j),adv(i,j,1) .gt. adverr)
            end do
         end do
       else
@@ -264,7 +264,10 @@ c ::: -----------------------------------------------------------
       do j=1,2
          do i=1,SDIM
             bctmp(i,j) = bc(i,j)
-            if (bc(i,j) .eq. SEEPAGE) bctmp(i,j) = FOEXTRAP
+            if (bc(i,j) .eq. SEEPAGE .or. 
+     &           bc(i,j) .eq. REFLECT_ODD) then
+               bctmp(i,j) = FOEXTRAP
+            end if
          end do
       end do
       
@@ -1067,7 +1070,7 @@ c ::: -----------------------------------------------------------
          do j = lo(2), hi(2)
            grad = max(dabs(kappa(i+1,j)-kappa(i-1,j))/(2*dx(1)),
      &            dabs(kappa(i,j+1)-kappa(i,j-1))/(2*dx(2))) 
-           tag(i,j) = cvmgt(set,tag(i,j),grad .gt. val)
+           tag(i,j) = merge(set,tag(i,j),grad .gt. val)
         end do
       end do
       

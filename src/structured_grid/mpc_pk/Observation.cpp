@@ -5,15 +5,14 @@
 Amr* Observation::amrp = 0;
 
 Observation::Observation()
+    : initialized(false)
 {
-  times_idx = 0;
-  val_old = 0.;
-
   obs_type_list["average"]          = 0;
   obs_type_list["integral"]         = 1;
   obs_type_list["time_integral"]    = 2;
   obs_type_list["squared_integral"] = 3;
   obs_type_list["flux"]             = 4;
+  obs_type_list["point_sample"]     = 5;
 }  
 
 void 
@@ -22,8 +21,6 @@ Observation::process(Real t_old,
 {
   // Must set the amr pointer prior to use via Observation::setAmrPtr
   BL_ASSERT(amrp); 
-
-  int nObs = vals.size();
 
   // determine observation at time t_new
   switch (obs_type_list[obs_type] )
@@ -42,17 +39,25 @@ Observation::process(Real t_old,
       val_new = volume_time_integral(t_old,t_new);
       break;
 
+    case 5:
+      val_new = point_sample(t_new);
+      break;
+
     default:
       ;// Do nothing
     }
 
-  // determine with the observation is requested at this time step
+  if (!initialized) {
+      val_old = val_new;
+      initialized = true;
+  }
+
+  // determine which of the observations are requested at this time step
   switch (obs_type_list[obs_type] )
     {
     case 2:
       if (vals.size() < 1) 
 	{
-	  vals.resize(1);
 	  vals[0] = 0.;
 	}
       if (times[0] <= t_old && times[1] >= t_new)
@@ -64,12 +69,72 @@ Observation::process(Real t_old,
 	{
 	  if (times[i] >= t_old && times[i] <= t_new)
 	    {
-	      vals.resize(nObs+1);
-	      vals[nObs] = val_old + (times[i]-t_old)/(t_new-t_old)*(val_new-val_old);
+              Real eta = std::min(1.,std::max(0.,(times[i]-t_old)/(t_new-t_old)));
+	      vals[i] = val_old*(1 - eta) + val_new*eta;
 	    }
 	}
     }
   val_old = val_new;
+}
+
+static IntVect
+Index (const pointRegion& region,
+       int                lev,
+       const Amr*         amr)
+{
+    BL_ASSERT(amr != 0);
+    BL_ASSERT(lev >= 0 && lev <= amr->finestLevel());
+
+    IntVect iv;
+
+    const Geometry& geom = amr->Geom(lev);
+
+    D_TERM(iv[0]=floor((region.coor[0]-geom.ProbLo(0))/geom.CellSize(0));,
+           iv[1]=floor((region.coor[1]-geom.ProbLo(1))/geom.CellSize(1));,
+           iv[2]=floor((region.coor[2]-geom.ProbLo(2))/geom.CellSize(2)););
+
+    iv += geom.Domain().smallEnd();
+
+    return iv;
+}
+
+Real
+Observation::point_sample (Real time)
+{
+  const int finest_level = amrp->finestLevel();
+  const Array<IntVect>& refRatio = amrp->refRatio();
+
+  const pointRegion* ptreg = dynamic_cast<const pointRegion*>(PorousMedia::region_array[region]);
+  if (ptreg == 0) 
+  {
+      BoxLib::Abort("Point Sample observation requires a point region");
+  }
+
+  int proc_with_data = -1;
+  Real value;
+  for (int lev = finest_level; lev >= 0 && proc_with_data<0; lev--)
+  {
+      // Compute IntVect at this level of cell containing this point
+      IntVect idx = Index(*ptreg,lev,amrp);
+
+      // Decide if this processor owns a state fab at this level containing this point
+      const MultiFab& S_new = amrp->getLevel(lev).get_new_data(State_Type);
+
+      for (MFIter mfi(S_new); mfi.isValid() && proc_with_data<0; ++mfi)
+      {
+          const Box& box = mfi.validbox();
+
+          if (box.contains(idx))
+          {
+              proc_with_data = ParallelDescriptor::MyProc();
+              value = S_new[mfi](idx,id);
+          }
+      }
+      ParallelDescriptor::ReduceIntMax(proc_with_data);
+  }
+
+  ParallelDescriptor::Bcast(&value,1,proc_with_data);
+  return value;
 }
 
 std::pair<Real,Real>

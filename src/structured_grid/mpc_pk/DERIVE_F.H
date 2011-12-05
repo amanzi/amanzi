@@ -1,10 +1,6 @@
 #ifndef _DERIVE_F_H
 #define _DERIVE_F_H
 
-/*
-** $Id: DERIVE_F.H,v 1.5 2007-11-28 17:17:46 gpau Exp $
-*/
-
 #ifdef BL_LANG_FORT
 #    define FORT_DERGRDPX    dergrdpx
 #    define FORT_DERGRDPY    dergrdpy

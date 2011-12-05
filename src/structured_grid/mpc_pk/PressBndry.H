@@ -1,10 +1,6 @@
 #ifndef _PRESSBNDRYDATA_H_
 #define _PRESSBNDRYDATA_H_
 
-//
-// $Id: PressBndry.H,v 1.1 2011-08-27 18:04:11 gpau Exp $
-//
-
 #include <InterpBndryData.H>
 #include <BC_TYPES.H>
 #include <BC_TYPES_PM.H>
