@@ -119,6 +119,9 @@ int main(int argc, char *argv[])
 	  out.precision(16);
 	  out.setf(std::ios::scientific);
 	  std::vector<std::string> labellist = output_observations.observationLabels();
+
+	  out << "Observation Name, Region, Functional, Variable, Time, Value\n";
+	  out << "===========================================================\n";
 	  for (int i = 0; i < labellist.size(); i++)
 	    {	  
 	      const Teuchos::ParameterList& ind_obs_list = 
