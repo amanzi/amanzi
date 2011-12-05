@@ -108,7 +108,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
 
     *tcc = *tcc_next;
   }
-  TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, 1e-20);
+  TPK.check_tracer_bounds(*tcc_next, 0, 0.0, 1.0, AmanziTransport::TRANSPORT_LIMITER_TOLERANCE);
  
   delete comm;
 }

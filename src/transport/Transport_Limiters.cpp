@@ -339,8 +339,8 @@ void Transport_PK::limiterKuzmin(const int component,
 
   AmanziMesh::Entity_ID_List nodes;
 
-  component_node_min.assign(vmax + 1, -TRANSPORT_CONCENTRATION_INFINITY);
-  component_node_max.assign(vmax + 1,  TRANSPORT_CONCENTRATION_INFINITY);
+  component_node_min.assign(vmax + 1,  TRANSPORT_CONCENTRATION_INFINITY);
+  component_node_max.assign(vmax + 1, -TRANSPORT_CONCENTRATION_INFINITY);
 
   for (int c=cmin; c<=cmax_owned; c++) {
     mesh_->cell_get_nodes(c, &nodes);
