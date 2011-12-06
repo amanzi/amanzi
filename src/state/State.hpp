@@ -99,10 +99,10 @@ public:
   void write_vis (Amanzi::Vis& vis);
   void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames);
   void set_compnames(std::vector<std::string>& compnames_);
- 
+
 private:
   void initialize_from_parameter_list();
-
+  void create_default_compnames(int n);
   void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 				    int mesh_block_id);
 

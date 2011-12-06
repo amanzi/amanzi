@@ -115,30 +115,33 @@ const bool Amanzi::Vis::is_disabled()
 const bool Amanzi::Vis::dump_requested(int cycle)
 {
 
-  if (steps.size() > 0) 
+  if (!is_disabled())
     {
-      for (int i=0; i<steps.size(); i++) 
-	{
-	  if (cycle == steps[i])
-	    {
-	      return true;
-	    }
-	}
-    }
-  else if ( (end<0) || (cycle<=end) ) 
-    {
-      if (start<=cycle)  
-	{
-	  int cycle_loc = cycle - start;
-	  
-	  if (cycle_loc % interval == 0) 
-	    {
-	      return true;
-	    }
-	  
-	}
-    }
       
+      if (steps.size() > 0) 
+	{
+	  for (int i=0; i<steps.size(); i++) 
+	    {
+	      if (cycle == steps[i])
+		{
+		  return true;
+		}
+	    }
+	}
+      else if ( (end<0) || (cycle<=end) ) 
+	{
+	  if (start<=cycle)  
+	    {
+	      int cycle_loc = cycle - start;
+	      
+	      if (cycle_loc % interval == 0) 
+		{
+		  return true;
+		}
+	      
+	    }
+	}
+    }
   // if none of the conditions apply we do not write a visualization dump
   return false;
 

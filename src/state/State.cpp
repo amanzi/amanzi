@@ -13,7 +13,7 @@ State::State( int number_of_components_,
 {
   // create the Eptera_Vector objects
   create_storage();
-
+  create_default_compnames(number_of_components);
 };
 
 
@@ -39,8 +39,8 @@ State::State( Teuchos::ParameterList &parameter_list_,
   // create the Eptera_Vector objects
 
   create_storage();
-
   initialize_from_parameter_list();
+  create_default_compnames(number_of_components);
 };
 
 
@@ -48,6 +48,20 @@ State::~State()
 {
   //delete [] (*gravity);
 }
+
+
+void State::create_default_compnames(int n)
+{
+  compnames.resize(n);
+  for (int i=0; i<n; i++)
+    {
+      std::stringstream ss;
+      ss << "component " << i;
+      compnames[i] = ss.str();
+    }
+}
+
+
 
 
 void State::initialize_from_parameter_list()
