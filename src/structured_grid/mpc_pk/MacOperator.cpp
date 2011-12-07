@@ -1,6 +1,3 @@
-//
-// $Id: MacOperator.cpp,v 1.50 2011-08-27 18:04:11 gpau Exp $
-//
 #include <winstd.H>
 
 #include <PressBndry.H>
@@ -536,7 +533,7 @@ mac_level_driver (const PressBndry& mac_bndry,
   BL_PROFILE("mac_level_driver");
   MacOperator mac_op(mac_bndry,dx);
   mac_op.setCoefficients(area,mac_coef,dx,phys_bc,domain);
-  mac_op.defRHS(area,volume,Rhs,u_mac,RhoD,phys_bc,domain,rhs_scale);
+  mac_op.defRHS(area,volume,Rhs,u_mac,RhoD,phys_bc,domain,rhs_scale);   
   mac_op.maxOrder(4);
   
   if (verbose > 1)
@@ -611,7 +608,7 @@ mac_level_driver (const PressBndry& mac_bndry,
       }
       
       MGT_Solver mgt_solver(geom, mg_bc, bav, dmv, nodal);
-      mgt_solver.set_maxorder(2);
+      mgt_solver.set_maxorder(4);
 
       const MultiFab* aa_p[1]; 
       aa_p[0] = &(mac_op.aCoefficients());

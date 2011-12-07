@@ -169,6 +169,7 @@ SUITE(RESTART) {
 
     // create a state object with some data in it
     int number_of_components = 2;
+
     State S0(number_of_components, Mesh);
 
     S0.set_time(1.02);

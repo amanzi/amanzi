@@ -67,7 +67,7 @@ SUITE(VISUALIZATION) {
       = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, &comm));
 
     V.create_files(*Mesh);
-
+    
     State S(1, Mesh);
     S.set_cycle(3);
 
@@ -80,10 +80,9 @@ SUITE(VISUALIZATION) {
     compnames[0] = "comp test";
     auxnames[0] = "aux test";
 
-    V.set_compnames(compnames);
-    V.set_auxnames(auxnames);
-
-    V.dump_state(S, &aux);
+    S.set_compnames(compnames);
+    
+    S.write_vis(V, &aux, auxnames);
 
   }
 

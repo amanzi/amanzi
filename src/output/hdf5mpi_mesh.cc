@@ -30,7 +30,7 @@ HDF5_MPI::~HDF5_MPI()
 }
 
 //void HDF5_MPI::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename)
-void HDF5_MPI::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename)
+void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string filename)
 {
 
   hid_t file, group, dataspace, dataset;

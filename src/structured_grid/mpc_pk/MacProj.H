@@ -1,8 +1,6 @@
 #ifndef _MacProj_H_
 #define _MacProj_H_
-//
-// $Id: MacProj.H,v 1.33 2011-08-28 05:54:53 gpau Exp $
-//
+
 #include <BC_TYPES.H>
 #include <BC_TYPES_PM.H>
 #include <BCRec.H>
@@ -38,8 +36,6 @@ public:
 		    MultiFab*        pressure,
 		    const PressBndry&  mac_bndry,
 		    const BCRec&     p_bc);
-
-  void print_min_max (MultiFab* u_mac);
 
   void contribute_to_mac_reg (int       level,
 			      MultiFab* u_mac);
@@ -83,31 +79,9 @@ public:
 			  const Array<Real>& press_lo,
 			  const Array<Real>& press_hi);
 
-  void computeRhoG(FArrayBox* RhoG, FArrayBox* phi,
-		   const Geometry& geom, Orientation* outFaces,
-		   int numOutFlowFaces, Real gravity,
-		   const int* lo_bc, const int* hi_bc,
-		   const Real* press_lo, const Real* press_hi);
-
   static void Initialize ();
   static void Finalize ();
 
-  static void GetOutFlowFaces (bool&        haveOutFlow,
-			       Orientation* outFaces,
-			       BCRec*       _phys_bc,
-			       const BCRec& p_bc,
-			       int&         numOutFlowFaces);
-
-  static void GetInFlowFaces  (bool&        haveInFlow,
-			       Orientation* InFaces,
-			       BCRec*       _phys_bc,
-			       const BCRec& p_bc,
-			       int&         numInFlowFaces);
-
-  static void GetDirichletFaces  (bool&        haveInFlow,
-				  Orientation* InFaces,
-				  const BCRec& p_bc,
-				  int&         numInFlowFaces);
   //
   // Test the divergence constraint.
   //

@@ -75,10 +75,8 @@ Array<std::string>  PorousMedia::pNames;
 Array<std::string>  PorousMedia::cNames;
 Array<int >         PorousMedia::pType;
 Array<Real>         PorousMedia::density;
-Array<Array<Real> > PorousMedia::rhoinit;
-Array<Array<int> >  PorousMedia::rhoinit_param;
-Array<Array<Real> > PorousMedia::rhoinflow;
-Array<Array<int> >  PorousMedia::rhoinflow_param;
+Array<BCData>       PorousMedia::ic_array;
+Array<BCData>       PorousMedia::bc_array;
 Array<Real>         PorousMedia::muval;
 std::string         PorousMedia::model_name;
 int                 PorousMedia::model;
@@ -94,10 +92,8 @@ Array<std::string>  PorousMedia::tNames;
 int                 PorousMedia::ntracers;
 Array<int>          PorousMedia::tType; 
 Array<Real>         PorousMedia::tDen;
-Array<Array<Real> > PorousMedia::tinit;
-Array<Array<int> >  PorousMedia::tinit_param;
-Array<Array<Real> > PorousMedia::tinflow;
-Array<Array<int> >  PorousMedia::tinflow_param;
+Array<BCData>       PorousMedia::tic_array;
+Array<BCData>       PorousMedia::tbc_array;
 //
 // Pressure.
 //
@@ -217,7 +213,8 @@ static Box grow_box_by_one (const Box& b) { return BoxLib::grow(b,1); }
 
 static int scalar_bc[] =
   {
-    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, SEEPAGE
+    //    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, FOEXTRAP, SEEPAGE
+    INT_DIR, EXT_DIR, FOEXTRAP, REFLECT_EVEN, REFLECT_ODD, SEEPAGE
   };
 
 static int press_bc[] =
@@ -648,9 +645,10 @@ void PorousMedia::read_geometry()
 {
   //
   // Get geometry-related parameters.  
-  // Note: The domain size and periodity information are read in 
-  //       automatically.  This function deals primarily with region
-  //       definition.
+  // Note: 1. The domain size and periodity information are read in 
+  //          automatically.  This function deals primarily with region
+  //          definition.
+  //       2. region_array defined in PorousMedia.H as Array<*Region>
   //
   ParmParse pp("geometry");
 
@@ -664,13 +662,10 @@ void PorousMedia::read_geometry()
       BoxLib::Abort("PorousMedia::read_geometry()");
     }
   
-  // add  1+2*BL_SPACEDIM default regions
+  // set up  1+2*BL_SPACEDIM default regions
   int nRegion_DEF = 1 + 2*BL_SPACEDIM;
   nregion = nregion + nRegion_DEF;
 
-  // region_array defined in PorousMedia.cpp as Array<*Region>
-
-  // ALL
   region_array.resize(nregion);
   int cnt=0;
   region_array[cnt++] = new allRegion();
@@ -697,8 +692,7 @@ void PorousMedia::read_geometry()
   // Get parameters for each user defined region 
   if (nregion > nRegion_DEF)
     {
-      int r_purpose, r_type;
-      Array<Real> r_param;
+      std::string r_purpose, r_type;
       int nRegion_Read = nregion-nRegion_DEF;
       Array<std::string> r_name(nRegion_Read);
 
@@ -712,23 +706,35 @@ void PorousMedia::read_geometry()
           ParmParse ppr(prefix.c_str());
 	  ppr.get("purpose",r_purpose);
 	  ppr.get("type",r_type);      
-	  ppr.getarr("param",r_param,0,ppr.countval("param"));
-	  if (r_type == 1) 
+	  if (Region::region_map[r_type] == Region::region_map["point"])
 	    {
+	      Array<Real> coor;
+	      ppr.getarr("coordinate",coor,0,BL_SPACEDIM);
+	      region_array[i] = new pointRegion(r_name[idx],r_purpose,r_type);
+	      region_array[i]->set(coor);
+	    }
+	  else if (Region::region_map[r_type] == Region::region_map["box"])
+	    {
+	      Array<Real> lo_coor,hi_coor;
+	      ppr.getarr("lo_coordinate",lo_coor,0,BL_SPACEDIM);
+	      ppr.getarr("hi_coordinate",hi_coor,0,BL_SPACEDIM);
 	      region_array[i] = new boxRegion(r_name[idx],r_purpose,r_type);
+	      
 	      // check if it is at the boundary.  If yes, then include boundary.
+	      Array<Real>r_param(2*BL_SPACEDIM);
 	      for (int dir=0;dir<BL_SPACEDIM; dir++)
 		{
-		  if (r_param[dir] == problo[dir]) 
-		    r_param[dir] = -2e20;
-		  if (r_param[dir+BL_SPACEDIM] == probhi[dir])
-		    r_param[dir+BL_SPACEDIM] = 2e20;
+		  if (lo_coor[dir] == problo[dir]) 
+		    lo_coor[dir] = -2e20;
+		  if (hi_coor[dir] == probhi[dir])
+		    hi_coor[dir] = 2e20;
+		  r_param[dir]=lo_coor[dir];
+		  r_param[dir+BL_SPACEDIM] = hi_coor[dir];
 		}
 	      region_array[i]->set(r_param);
 	    }
           else BoxLib::Abort("type not supported");
 	}
-
       pp.query("surf_file",surf_file);
     }
 
@@ -777,66 +783,40 @@ void PorousMedia::read_rock()
       if (rock_array[i].cplType > 0)
 	ppr.getarr("cpl_param",rock_array[i].cplParam,
 		    0,ppr.countval("cpl_param"));
+      
+      Array<std::string> assign_region_name;
+      std::string permeability_dist, porosity_dist;
+      // assigned rock to regions      
+      ppr.getarr("region",assign_region_name,0,ppr.countval("region"));
+      ppr.get("permeability_dist",permeability_dist);
+      ppr.get("porosity_dist",porosity_dist);
+
+      for (Array<std::string>::iterator it=assign_region_name.begin(); 
+	   it!=assign_region_name.end(); it++)
+	rock_array[i].region.push_back(region_list[*it]);	
+
+      rock_array[i].porosity_dist_type = Rock::rock_dist_map[porosity_dist];
+      if (rock_array[i].porosity_dist_type > 1)
+	{
+	  Array<Real> param;   
+	  ppr.getarr("porosity_dist_param",param,0,ppr.countval("porosity_dist_param"));
+	  rock_array[i].porosity_dist_param = param;
+	}
+
+      rock_array[i].permeability_dist_type = Rock::rock_dist_map[permeability_dist];
+      if (rock_array[i].permeability_dist_type > 1)
+	{
+	  Array<Real> param;
+	  ppr.getarr("permeability_dist_param",param,0,ppr.countval("permeability_dist_param"));
+	  rock_array[i].permeability_dist_param = param;
+	}
     }
 
-  // assign rock to regions and specify the distribution
-  int nassign = pp.countval("assign");
-  if (nassign <= 0)
-    {
-      std::cerr << "rock properties must be assigned to a region.\n";
-      BoxLib::Abort("read_rock()");
-    }
-
-  Array<std::string> r_region;
-  std::string rock_type;
-  int idx = 0;
-  int type;
-  Array<Real> param;
   bool read_full_pmap  = false;
   bool read_full_kmap  = false;
-  bool build_full_pmap = false;
-  bool build_full_kmap = false;
-  pp.getarr("assign",r_region,0,nassign);
- 
-  for (int i = 0; i<nassign; i++)
-    {
-      const std::string prefix("rock." + r_region[i]);
-      ParmParse ppr(prefix.c_str());
-      ppr.get("type",rock_type);
-      for (int j = 0; j< nrock; j++)
-	if (rock_type == r_names[j])
-	  idx = j;
-      for (int j = 0; j< region_array.size(); j++) {
-	if (r_region[i] == region_array[j]->name ) {
-	// BL_ASSERT(region_array[j]->purpose==0); 
-	 rock_array[idx].region.push_back(j);
-       }
-      }
-
-      // distribution parameters
-      ppr.get("phi",type);
-      if (type > 1)
-	ppr.getarr("phi_param",param,0,ppr.countval("phi_param"));
-      rock_array[idx].porosity_dist_type.push_back(type);
-      rock_array[idx].porosity_dist_param.push_back(param);
-      if (type > 1) build_full_pmap = true;
-      if (type == 0) read_full_pmap = true;
-      if (type != 1) porosity_from_fine = true;
-     
-      ppr.get("kappa",type);   
-      if (type > 1)
-	ppr.getarr("kappa_param",param,0,ppr.countval("kappa_param"));
-      rock_array[idx].permeability_dist_type.push_back(type);
-      rock_array[idx].permeability_dist_param.push_back(param);
-      if (type > 1) build_full_kmap = true;
-      if (type == 0) read_full_pmap = true;
-      if (type != 1) permeability_from_fine = true;
-    }
-  
-  // hack that builds the permeability and porosity map by default
-  build_full_kmap = true;
+  bool build_full_pmap = true;
+  bool build_full_kmap = true;
   permeability_from_fine = true;
-  build_full_pmap = true;
   porosity_from_fine = true;
 
   std::string kfile, pfile,gsfile;
@@ -1041,23 +1021,22 @@ void PorousMedia::assign_bc_coef(int type_id,
   int ncoef = names.size();
   std::string rtype;
   Real vel;
-  switch (type_id)
+  if (type_id == bc_list["scalar"])
     {
-    case 1:
       coef.resize(ncoef);
       for (int j = 0; j<ncoef; j++)
 	{
 	  coef[j] = 0;
 	  ppr.get(names[j].c_str(),coef[j]);
 	}
-      break;
-
-    case 2:
+    }
+  else if (type_id == bc_list["hydrostatic"])
+    {
       coef.resize(1);
       ppr.get("water_table",coef[0]);
-      break;
-
-    case 4:
+    }
+  else if (type_id == bc_list["zero_total_velocity"])
+    {
       coef.resize(ncomps+1);
       ppr.query("rock",rtype);
       ppr.get("inflow",vel);
@@ -1092,14 +1071,14 @@ void PorousMedia::assign_bc_coef(int type_id,
 	  if (ncomps > 1)
 	    coef[1] = density[1]*(1.0-coef[0]/density[0]);
 	}
-      break;
-
-    case 5:
-      coef.resize(1);
-      ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
-      ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
-      ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
-      ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
+      else if (type_id == bc_list["richard"])
+	{
+	  coef.resize(1);
+	  ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
+	  ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
+	  ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
+	  ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
+	}
     }
 }  
 
@@ -1145,8 +1124,7 @@ void  PorousMedia::read_comp()
       ppr.get("viscosity",muval[i]);
       ppr.get("diffusivity",visc_coef[i]);
       pType[i] = phase_list[buffer];
-      //for (int j=0;j<nphases; j++) 
-      //if (buffer.compare(pNames[j])==0) pType[i] = j;	   
+
       // Only components have diffusion at the moment.  
       if (visc_coef[i] > 0)
 	{
@@ -1227,45 +1205,49 @@ void  PorousMedia::read_comp()
     }
 
   // Initial condition and boundary condition
-  Array<std::string> init_region;
-  int n_init_region = cp.countval("init");
-  if (n_init_region <= 0)
+  Array<std::string> ic_array_name;
+  int n_ic_array = cp.countval("init");
+  if (n_ic_array <= 0)
     {
       std::cerr << "the domain must be initialized.\n";
       BoxLib::Abort("read_comp()");
     }
-  cp.getarr("init",init_region,0,n_init_region);
-  rhoinit_param.resize(n_init_region);
-  rhoinit.resize(n_init_region);
+  cp.getarr("init",ic_array_name,0,n_ic_array);
+  ic_array.resize(n_ic_array);
   std::string type_name;
-  for (int i = 0; i<n_init_region; i++)
+  Array<std::string> region_name;
+  for (int i = 0; i<n_ic_array; i++)
     {
-      rhoinit_param[i].resize(2);
-      rhoinit_param[i][0] = region_list[init_region[i]];
-      const std::string prefix("comp." + init_region[i]);
+      const std::string prefix("comp." + ic_array_name[i]);
       ParmParse ppr(prefix.c_str());
       ppr.get("type",type_name);
-      rhoinit_param[i][1]=bc_list[type_name];
-      assign_bc_coef(rhoinit_param[i][1],ppr,cNames,rhoinit[i]);
+      ic_array[i].type = bc_list[type_name];
+      int n_ic_region = ppr.countval("region");
+      ppr.getarr("region",region_name,0,n_ic_region);
+      ic_array[i].region.resize(n_ic_region);
+      for (int j=0;j<region_name.size();j++)
+	ic_array[i].region[j] = region_list[region_name[j]];
+      assign_bc_coef(ic_array[i].type,ppr,cNames,ic_array[i].param);
     }
 
-  Array<std::string> inflow_region;
-  
-  int n_inflow_region = cp.countval("inflow");
-  if (n_inflow_region > 0)
+  Array<std::string> bc_array_name;
+  int n_bc_array = cp.countval("inflow");
+  if (n_bc_array > 0)
     {
-      cp.getarr("inflow",inflow_region,0,n_inflow_region);
-      rhoinflow_param.resize(n_inflow_region);
-      rhoinflow.resize(n_inflow_region);
-      for (int i = 0; i<n_inflow_region; i++)
+      cp.getarr("inflow",bc_array_name,0,n_bc_array);
+      bc_array.resize(n_bc_array);
+      for (int i = 0; i<n_bc_array; i++)
 	{
-	  rhoinflow_param[i].resize(2);
-	  rhoinflow_param[i][0] = region_list[inflow_region[i]];
-          const std::string prefix("comp." + inflow_region[i]);
+	  const std::string prefix("comp." + bc_array_name[i]);
 	  ParmParse ppr(prefix.c_str());
 	  ppr.get("type",type_name);
-	  rhoinflow_param[i][1] = bc_list[type_name];
-	  assign_bc_coef(rhoinflow_param[i][1],ppr,cNames,rhoinflow[i]);
+	  bc_array[i].type = bc_list[type_name];
+	  int n_bc_region = ppr.countval("region");
+	  ppr.getarr("region",region_name,0,n_bc_region);
+	  bc_array[i].region.resize(n_bc_region);
+	  for (int j=0;j<region_name.size();j++)
+	    bc_array[i].region[j] = region_list[region_name[j]];
+	  assign_bc_coef(bc_array[i].type,ppr,cNames,bc_array[i].param);
 	}
     }
 }
@@ -1306,47 +1288,50 @@ void  PorousMedia::read_tracer()
 	    if (buffer.compare(qNames[j])==0) tType[i] = j;	   
 	}
       
-      // Initial condition and boundary condition
-      Array<std::string> init_region;
-      int n_init_region = pp.countval("init");
-      if (n_init_region <= 0)
+      // Initial condition and boundary condition  
+      Array<std::string> ic_array_name;
+      int n_ic_array = pp.countval("init");
+      if (n_ic_array <= 0)
 	{
 	  std::cerr << "the domain must be initialized.\n";
-	  BoxLib::Abort("read_comp()");
+	  BoxLib::Abort("read_tracer()");
 	}
-      pp.getarr("init",init_region,0,n_init_region);
-      tinit_param.resize(n_init_region);
-      tinit.resize(n_init_region);
+      pp.getarr("init",ic_array_name,0,n_ic_array);
+      tic_array.resize(n_ic_array);
       std::string type_name;
-      for (int i = 0; i<n_init_region; i++)
+      Array<std::string> region_name;
+      for (int i = 0; i<n_ic_array; i++)
 	{
-	  tinit_param[i].resize(2);
-	  tinit_param[i][0] = region_list[init_region[i]];
-          const std::string prefix("tracer." + init_region[i]);
+	  const std::string prefix("tracer." + ic_array_name[i]);
 	  ParmParse ppr(prefix.c_str());
 	  ppr.get("type",type_name);
-	  tinit_param[i][1]=bc_list[type_name];
-	  assign_bc_coef(tinit_param[i][1],ppr,tNames,tinit[i]);
-	}  
-      
-      Array<std::string> inflow_region;
-      int n_inflow_region = pp.countval("inflow");
-      if (n_inflow_region > 0)
+	  tic_array[i].type = bc_list[type_name];
+	  int n_ic_region = ppr.countval("region");
+	  ppr.getarr("region",region_name,0,n_ic_region);
+	  tic_array[i].region.resize(n_ic_region);
+	  for (int j=0;j<region_name.size();j++)
+	    tic_array[i].region[j] = region_list[region_name[j]];
+	  assign_bc_coef(tic_array[i].type,ppr,tNames,tic_array[i].param);
+	}
+
+      Array<std::string> bc_array_name;
+      int n_bc_array = pp.countval("inflow");
+      if (n_bc_array > 0)
 	{
-	  pp.getarr("inflow",inflow_region,0,n_inflow_region);
-	  tinflow_param.resize(n_inflow_region);
-	  tinflow.resize(n_inflow_region);
-	  
-	  for (int i = 0; i<n_inflow_region; i++)
+	  pp.getarr("inflow",bc_array_name,0,n_bc_array);
+	  tbc_array.resize(n_bc_array);
+	  for (int i = 0; i<n_bc_array; i++)
 	    {
-	      tinflow_param[i].resize(2);
-	      tinflow[i].resize(ntracers);
-	      tinflow_param[i][0] = region_list[inflow_region[i]]; 
-              const std::string prefix("tracer." + inflow_region[i]);
+	      const std::string prefix("tracer." + bc_array_name[i]);
 	      ParmParse ppr(prefix.c_str());
 	      ppr.get("type",type_name);
-	      tinflow_param[i][1]=bc_list[type_name];
-	      assign_bc_coef(tinflow_param[i][1],ppr,tNames,tinflow[i]);
+	      tbc_array[i].type = bc_list[type_name];
+	      int n_bc_region = ppr.countval("region");
+	      ppr.getarr("region",region_name,0,n_bc_region);
+	      tbc_array[i].region.resize(n_bc_region);
+	      for (int j=0;j<region_name.size();j++)
+		tbc_array[i].region[j] = region_list[region_name[j]];
+	      assign_bc_coef(tbc_array[i].type,ppr,tNames,tbc_array[i].param);
 	    }
 	}
     }
@@ -1554,7 +1539,6 @@ void PorousMedia::read_observation()
 	}
       
       // filename for output
-      obs_outputfile = "observation.out";
       pp.query("output_file",obs_outputfile);
       
     }

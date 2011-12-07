@@ -1,26 +1,18 @@
 #include "Vis.hpp"
 #include "Epetra_MpiComm.h"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+
 
 Amanzi::Vis::Vis (Teuchos::ParameterList& plist_, Epetra_MpiComm* comm_):
   plist(plist_), disabled(false), comm(comm_)
 {
   read_parameters(plist);
 
-  // set the line prefix for output
-  this->setLinePrefix("Amanzi::Vis         ");
-  // make sure that the line prefix is printed
-  this->getOStream()->setShowLinePrefix(true);
-  
-  // Read the sublist for verbosity settings.
-  Teuchos::readVerboseObjectSublist(&plist,this);
-    
-  auxnames.resize(0);
-  compnames.resize(0);
-
   viz_output = new Amanzi::HDF5_MPI(*comm);
   viz_output->setTrackXdmf(true);
-  
 }
 
 // this constructor makes an object that will not create any output
@@ -28,22 +20,42 @@ Amanzi::Vis::Vis (): disabled(true)
 {
 }
 
-void Amanzi::Vis::set_compnames (std::vector<string>& compnames_ )
-{
-  compnames = compnames_;
-}
 
-void Amanzi::Vis::set_auxnames (std::vector<string>& auxnames_ )
+void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 {
-  auxnames = auxnames_;
-}
-
-
-void Amanzi::Vis::create_files(Amanzi::AmanziMesh::Mesh& mesh)
-{
-  if (!disabled)
+  filebasename = plist.get<string>("file base name","amanzi_vis");
+  
+  if ( plist.isSublist("Cycle Data") ) 
     {
+      Teuchos::ParameterList &ilist = plist.sublist("Cycle Data");
       
+      interval = ilist.get<int>("Interval");
+      start = ilist.get<int>("Start");
+      end = ilist.get<int>("End");
+      
+      if (ilist.isParameter("Steps"))
+	{
+	  steps = ilist.get<Teuchos::Array<int> >("Steps");  
+	}
+    }  
+  else
+    {
+      Errors::Message m("Amanzi::Vis::read_parameters... Cycle Data sublist does not exist on the Visualization Data list");
+      Exceptions::amanzi_throw(m);
+    }
+}
+
+
+Amanzi::Vis::~Vis () 
+{
+  delete viz_output;
+}
+
+
+void Amanzi::Vis::create_files(const Amanzi::AmanziMesh::Mesh& mesh)
+{
+  if (!is_disabled())
+    {
       // create file name for the mesh 
       std::stringstream meshfilename;  
       meshfilename.flush();
@@ -61,226 +73,77 @@ void Amanzi::Vis::create_files(Amanzi::AmanziMesh::Mesh& mesh)
     }
 }
 
-void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
+
+void Amanzi::Vis::write_vector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const
 {
-  filebasename = plist.get<string>("file base name","amanzi_vis");
+  if (names.size() < vec.NumVectors()) 
+    {
+      Errors::Message m("Amanzi::Vis::write_vector... not enough names were specified for the the components of the multi vector");
+      Exceptions::amanzi_throw(m);
+    }
   
-  enable_gnuplot = plist.get<bool>("enable gnuplot",false);
-  if (comm->NumProc() != 1) enable_gnuplot = false;
-
-  if ( plist.isSublist("Cycle Data") ) 
+  for (int i=0; i< vec.NumVectors(); i++)
     {
-      Teuchos::ParameterList &ilist = plist.sublist("Cycle Data");
-      
-      interval = ilist.get<int>("Interval");
-      start = ilist.get<int>("Start");
-      end = ilist.get<int>("End");
-      
-      if (ilist.isParameter("Steps"))
-	{
-	  steps = ilist.get<Teuchos::Array<int> >("Steps");  
-	}
-    }  
-  else
-    {
-      // error
+      viz_output->writeCellDataReal( *vec(i), names[i] );  
     }
 }
 
 
-Amanzi::Vis::~Vis () 
+void Amanzi::Vis::write_vector(const Epetra_Vector& vec, const std::string name ) const
 {
-  delete viz_output;
+  viz_output->writeCellDataReal( vec ,name );  
 }
 
 
-void Amanzi::Vis::dump_state(State& S, Epetra_MultiVector *auxdata)
+void Amanzi::Vis::create_timestep(const double& time, const int& cycle)
 {
-  if (!disabled) 
+  viz_output->createTimestep(time,cycle);
+}
+
+
+void Amanzi::Vis::finalize_timestep() const
+{
+  viz_output->endTimestep();
+}
+
+const bool Amanzi::Vis::is_disabled() const
+{
+  return disabled;
+}
+
+
+const bool Amanzi::Vis::dump_requested(const int cycle) const
+{
+
+  if (!is_disabled())
     {
-      if (dump_requested(S.get_cycle()))
+      
+      if (steps.size() > 0) 
 	{
-	  
-	  using Teuchos::OSTab;
-	  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-	  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-	  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
- 	  
-	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
+	  for (int i=0; i<steps.size(); i++) 
 	    {
-	      *out << "Writing visualization files, cycle = " << S.get_cycle() << std::endl;
-	    }
-	  
-
-
-	  viz_output->createTimestep(S.get_time(),S.get_cycle());
-	  
-	  // dump all the state vectors into the vis file
-	  viz_output->writeCellDataReal(*S.get_pressure(),"pressure");
-	  viz_output->writeCellDataReal(*S.get_porosity(),"porosity");
-	  viz_output->writeCellDataReal(*S.get_water_saturation(),"water saturation");
-	  viz_output->writeCellDataReal(*S.get_water_density(),"water density");
-	  viz_output->writeCellDataReal(*S.get_permeability(),"permeability");
-	  viz_output->writeCellDataReal(*(*S.get_darcy_velocity())(0),"darcy velocity x");
-	  viz_output->writeCellDataReal(*(*S.get_darcy_velocity())(1),"darcy velocity y");
-	  viz_output->writeCellDataReal(*(*S.get_darcy_velocity())(2),"darcy velocity z");
-	  
-	  for (int i=0; i<S.get_number_of_components(); i++)
-	    {
-	      std::stringstream tcc_name;
-	      
-	      if (compnames.size() == S.get_number_of_components()) 
+	      if (cycle == steps[i])
 		{
-		  tcc_name << compnames[i]; 
+		  return true;
 		}
-	      else
-		tcc_name << "component " << i;
+	    }
+	}
+      else if ( (end<0) || (cycle<=end) ) 
+	{
+	  if (start<=cycle)  
+	    {
+	      int cycle_loc = cycle - start;
 	      
-	      viz_output->writeCellDataReal(*(*S.get_total_component_concentration())(i),tcc_name.str());
-	    }
-	  
-	  // write auxillary data
-	  if (auxdata != NULL) 
-	    {
-	      for (int i=0; i<auxdata->NumVectors(); i++)
+	      if (cycle_loc % interval == 0) 
 		{
-		  std::stringstream tcc_name;
-		  
-		  if (auxnames.size() == auxdata->NumVectors()) 
-		    {
-		      tcc_name << auxnames[i]; 
-		    }
-		  else
-		    tcc_name << "aux " << i;
-		  
-		  viz_output->writeCellDataReal( *(*auxdata)(i) ,tcc_name.str());
-		}	      
-
-	    }
-
-
-
-	  viz_output->endTimestep();
-	  
-
-	  // now do a gnuplot dump, if gnuplot output is enabled
-	  // but only if we are runnung on one processor
-	  if (comm->NumProc() == 1  && enable_gnuplot)
-	    {
-	      write_gnuplot(S.get_cycle(), S, auxdata);
+		  return true;
+		}
+	      
 	    }
 	}
     }
-}
-
-
-bool Amanzi::Vis::dump_requested(int cycle)
-{
-
-  if (steps.size() > 0) 
-    {
-      for (int i=0; i<steps.size(); i++) 
-	{
-	  if (cycle == steps[i])
-	    {
-	      return true;
-	    }
-	}
-    }
-  else if ( (end<0) || (cycle<=end) ) 
-    {
-      if (start<=cycle)  
-	{
-	  int cycle_loc = cycle - start;
-	  
-	  if (cycle_loc % interval == 0) 
-	    {
-	      return true;
-	    }
-	  
-	}
-    }
-      
-  // if none of the conditions apply we do not dump
+  // if none of the conditions apply we do not write a visualization dump
   return false;
 
-}
-
-
-
-void Amanzi::Vis::write_gnuplot(int cycle, State& S, Epetra_MultiVector* auxdata)
-{
-  // write each variable to a separate file
-  // only works on one PE, not on a truly parallel run
-
-  if (cycle==0) 
-    {
-      std::stringstream fname_p;
-      fname_p << "pressure.dat";
-      
-      std::filebuf fb;
-      fb.open (fname_p.str().c_str(), std::ios::out);
-      ostream os_p(&fb);
-      
-      for (int i=0; i< (S.get_pressure())->MyLength(); i++) 
-	os_p << (*S.get_pressure())[i] << endl;    
-      
-      fb.close();
-      
-      std::stringstream fname_s;
-      fname_s << "saturation.dat";
-      
-      fb.open (fname_s.str().c_str(), std::ios::out);
-      ostream os_s(&fb);
-      
-      for (int i=0; i< (S.get_water_saturation())->MyLength(); i++) 
-	os_s << (*S.get_water_saturation())[i] << endl;    
-      
-      fb.close();
-    }
-
-  for (int nc=0; nc<S.get_number_of_components(); nc++) 
-    {
-      std::stringstream fname;
-      fname << "conc_" << nc;
-      
-      if (compnames.size() == S.get_number_of_components())
-	{
-	  fname << "_" << compnames[nc];
-	}
-
-      fname << "_" << std::setfill('0') << std::setw(5) << cycle << ".dat";
-      
-      std::filebuf fb;
-      fb.open (fname.str().c_str(), std::ios::out);
-      ostream os(&fb);
-
-      // now dump the Epetra Vector
-      for (int i=0; i< (S.get_total_component_concentration())->MyLength(); i++) 
-	os << (*(*S.get_total_component_concentration())(nc))[i] << endl;
-      
-      fb.close();
-    }
-  
-  // get the auxillary data
-  if (auxdata != NULL) 
-    {
-      int naux = auxdata->NumVectors();
-      for (int n=0; n<naux; n++) {
-	std::stringstream fname;
-	fname << auxnames[n];
-	
-	fname << "_" << std::setfill('0') << std::setw(5) << cycle << ".dat";
-	
-	std::filebuf fb;
-	fb.open (fname.str().c_str(), std::ios::out);
-	ostream os(&fb);      
-	
-	// now dump the Epetra Vector
-	for (int i=0; i< auxdata->MyLength(); i++) 
-	  os << (*(*auxdata)(n))[i] << endl;
-	fb.close();
-      }
-    }
 }
 

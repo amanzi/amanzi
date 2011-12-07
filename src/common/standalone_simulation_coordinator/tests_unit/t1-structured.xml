@@ -1,4 +1,5 @@
 <ParameterList name="t1-structured">
+  <Parameter name="Native Structured Input" type="bool" value="1"/>
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="Structured"/>
   </ParameterList>
@@ -25,9 +26,10 @@
     <Parameter name="v" type="string" value="0"/>
   </ParameterList>
   <ParameterList name="comp">
-    <ParameterList name="ALL">
-      <Parameter name="Air" type="string" value="0.72"/>
-      <Parameter name="Water" type="string" value="400"/>
+    <ParameterList name="ic_scalar">
+      <Parameter name="Air" type="string" value="0"/>
+      <Parameter name="Water" type="string" value="1000"/>
+      <Parameter name="region" type="string" value="ALL"/>
       <Parameter name="type" type="string" value="scalar"/>
     </ParameterList>
     <ParameterList name="Air">
@@ -42,16 +44,17 @@
       <Parameter name="phase" type="string" value="Liquid"/>
       <Parameter name="viscosity" type="string" value="1.0"/>
     </ParameterList>
-    <ParameterList name="XLOBC">
-      <Parameter name="Air" type="string" value="0.12"/>
-      <Parameter name="Water" type="string" value="900"/>
+    <ParameterList name="bc_scalar">
+      <Parameter name="Air" type="string" value="1000"/>
+      <Parameter name="Water" type="string" value="0"/>     
+      <Parameter name="region" type="string" value="XLOBC"/>
       <Parameter name="type" type="string" value="scalar"/>
     </ParameterList>
     <Parameter name="comp" type="string" value="Water Air"/>
     <Parameter name="dominant" type="string" value="Air"/>
     <Parameter name="hi_bc" type="string" value="2 4"/>
-    <Parameter name="inflow" type="string" value="XLOBC"/>
-    <Parameter name="init" type="string" value="ALL"/>
+    <Parameter name="inflow" type="string" value="bc_scalar"/>
+    <Parameter name="init" type="string" value="ic_scalar"/>
     <Parameter name="lo_bc" type="string" value="1 4"/>
   </ParameterList>
   <ParameterList name="diffuse">
@@ -61,22 +64,25 @@
     <Parameter name="coord_sys" type="string" value="0"/>
     <Parameter name="is_periodic" type="string" value="0 0"/>
     <ParameterList name="left_region">
-      <Parameter name="param" type="string" value="0. 0. 4. 8."/>
-      <Parameter name="purpose" type="string" value="0"/>
-      <Parameter name="type" type="string" value="1"/>
+      <Parameter name="hi_coordinate" type="string" value="{4. 8.}"/>
+      <Parameter name="lo_coordinate" type="string" value="{0. 0.}"/>
+      <Parameter name="purpose" type="string" value="all"/>
+      <Parameter name="type" type="string" value="box"/>
     </ParameterList>
     <ParameterList name="obs_region">
-      <Parameter name="param" type="string" value="0. 0. 2. 8."/>
-      <Parameter name="purpose" type="string" value="0"/>
-      <Parameter name="type" type="string" value="1"/>
+      <Parameter name="hi_coordinate" type="string" value="{2. 8.}"/>
+      <Parameter name="lo_coordinate" type="string" value="{0. 0.}"/>
+      <Parameter name="purpose" type="string" value="all"/>
+      <Parameter name="type" type="string" value="box"/>
     </ParameterList>
     <Parameter name="prob_hi" type="string" value="8. 8."/>
     <Parameter name="prob_lo" type="string" value="0. 0."/>
     <Parameter name="region" type="string" value="left_region right_region obs_region"/>
     <ParameterList name="right_region">
-      <Parameter name="param" type="string" value="4. 0. 8. 8."/>
-      <Parameter name="purpose" type="string" value="0"/>
-      <Parameter name="type" type="string" value="1"/>
+      <Parameter name="hi_coordinate" type="string" value="{8. 8.}"/>
+      <Parameter name="lo_coordinate" type="string" value="{4. 0.}"/>
+      <Parameter name="purpose" type="string" value="all"/>
+      <Parameter name="type" type="string" value="box"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="mac">
@@ -132,8 +138,7 @@
     <Parameter name="visc_abs_tol" type="string" value="1.e-14"/>
     <Parameter name="visc_tol" type="string" value="1.e-12"/>
   </ParameterList>
-  <ParameterList name="rock">
-    <Parameter name="assign" type="string" value="left_region right_region"/>
+  <ParameterList name="rock">   
     <ParameterList name="left">
       <Parameter name="cpl_param" type="string" value="0.4203 17.329 0.081 0"/>
       <Parameter name="cpl_type" type="string" value="3"/>
@@ -141,15 +146,13 @@
       <Parameter name="kr_param" type="string" value="0.4203 0.081 0"/>
       <Parameter name="kr_type" type="string" value="3"/>
       <Parameter name="permeability" type="string" value="336 336"/>
+      <Parameter name="permeability_dist" type="string" value="uniform"/>
       <Parameter name="porosity" type="string" value="0.258"/>
+      <Parameter name="porosity_dist" type="string" value="uniform"/>
+      <Parameter name="region" type="string" value="left_region"/>
     </ParameterList>
-    <ParameterList name="left_region">
-      <Parameter name="kappa" type="string" value="1"/>
-      <Parameter name="phi" type="string" value="1"/>
-      <Parameter name="type" type="string" value="left"/>
-    </ParameterList>
-    <Parameter name="permeability_file" type="string" value="test_1/kp"/>
-    <Parameter name="porosity_file" type="string" value="test_1/pp"/>
+    <Parameter name="permeability_file" type="string" value="test_0/kp"/>
+    <Parameter name="porosity_file" type="string" value="test_0/pp"/>
     <ParameterList name="right">
       <Parameter name="cpl_param" type="string" value="0.6011 21.41 0.081 0"/>
       <Parameter name="cpl_type" type="string" value="3"/>
@@ -157,12 +160,10 @@
       <Parameter name="kr_param" type="string" value="0.6011 0.081 0"/>
       <Parameter name="kr_type" type="string" value="3"/>
       <Parameter name="permeability" type="string" value="2294 2294"/>
+      <Parameter name="permeability_dist" type="string" value="uniform"/>
       <Parameter name="porosity" type="string" value="0.422"/>
-    </ParameterList>
-    <ParameterList name="right_region">
-      <Parameter name="kappa" type="string" value="1"/>
-      <Parameter name="phi" type="string" value="1"/>
-      <Parameter name="type" type="string" value="right"/>
+      <Parameter name="porosity_dist" type="string" value="uniform"/>
+      <Parameter name="region" type="string" value="right_region"/>
     </ParameterList>
     <Parameter name="rock" type="string" value="left right"/>
   </ParameterList>

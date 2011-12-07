@@ -4,6 +4,7 @@
 #include "PorousMedia.H"
 
 #include "ParmParseHelpers.H"
+#include "InputParser_Structured.H"
 
 void
 Structured_observations(const Array<Observation>& observation_array,
@@ -14,16 +15,14 @@ Structured_observations(const Array<Observation>& observation_array,
       std::string label = observation_array[i].name;
       int ntimes = observation_array[i].times.size();
       std::vector<Amanzi::ObservationData::DataTriple> dt(ntimes);
-      for (int j = 0; j<ntimes; ++j)
-	dt[j].time = observation_array[i].times[j];
-      
-      int nval = observation_array[i].vals.size();
-      for (int j = 0; j<nval; ++j)
-	{
-	  dt[j].value = observation_array[i].vals[j];
-	  dt[j].is_valid = true;
-	}
-      
+      const std::map<int, Real> vals = observation_array[i].vals;
+      for (std::map<int, Real>::const_iterator it = vals.begin();
+           it != vals.end(); ++it) {
+        int j = it->first;
+        dt[j].value = it->second;
+        dt[j].time = observation_array[i].times[j];
+        dt[j].is_valid = true;
+      }
       observation_data[label] = dt;
     }	
 }  
@@ -42,7 +41,20 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 	std::string PPfile = Teuchos::getParameter<std::string>(input_parameter_list, "PPfile");
 	ParmParse::Initialize(argc,argv,PPfile.c_str());
       }
-    BoxLib::Initialize_ParmParse(input_parameter_list);
+
+    // Determine whether we need to convert to input file to 
+    //native structured format
+    bool native = input_parameter_list.get<bool>("Native Structured Input",false);
+    Teuchos::ParameterList converted_parameter_list;
+    if (!native) 
+      converted_parameter_list =
+	Amanzi::AmanziInput::convert_to_structured(input_parameter_list);
+    else
+      converted_parameter_list = input_parameter_list;
+
+    Teuchos::writeParameterListToXmlFile(converted_parameter_list,"tmpfile");
+
+    BoxLib::Initialize_ParmParse(converted_parameter_list);
 
     const Real run_strt = ParallelDescriptor::second();
 

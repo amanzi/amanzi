@@ -1,10 +1,6 @@
 #ifndef _MACOPERATOR_H_
 #define _MACOPERATOR_H_
 
-//
-// $Id: MacOperator.H,v 1.9 2011-02-17 19:53:30 gpau Exp $
-//
-
 #include <ABecLaplacian.H>
 #include <BndryData.H>
 

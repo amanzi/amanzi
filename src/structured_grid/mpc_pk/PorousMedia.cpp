@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <vector>
-#include <cstdio>
 #include <cmath>
 
 #include <ErrorList.H>
@@ -535,9 +534,7 @@ PorousMedia::restart (Amr&          papa,
       u_mac_prev[dir].define(edge_grids,1,0,Fab_allocate);
     }
 
-  char buf[64];
-  sprintf(buf, "Level_%d", level);
-  std::string Level = buf;
+  std::string Level = BoxLib::Concatenate("Level_", level, 1);
   std::string FullPath = papa.theRestartFile();
   if (!FullPath.empty() && FullPath[FullPath.length()-1] != '/')
     FullPath += '/';
@@ -661,11 +658,10 @@ PorousMedia::initData ()
   MultiFab&   U_vcr    = get_new_data(  Vcr_Type);
     
   const Real  cur_time = state[State_Type].curTime();
-
   S_new.setVal(0.);
 
   //
-  // May need to build based on finescale data in the future
+  // Initialized only based on solutions at the current level
   //
   for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
     {
@@ -673,20 +669,23 @@ PorousMedia::initData ()
 
       FArrayBox& sdat = S_new[mfi];
       DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
-      for (int i = 0; i < rhoinit.size(); i++)
+
+      for (Array<BCData>::iterator it = ic_array.begin(); it < ic_array.end(); it++)
 	{
-	  if (rhoinit_param[i][1] == bc_list["file"]) 
+	  if ((*it).type == bc_list["file"]) 
 	    {
 	      std::cerr << "Initialization of initial condition based on "
 			<< "a file has not been implemented yet.\n";
 	      BoxLib::Abort("PorousMedia::initData()");
 	    }
-	  else if (rhoinit_param[i][1] == bc_list["scalar"]) 
+	  else if ((*it).type == bc_list["scalar"]) 
 	    {
-	      region_array[rhoinit_param[i][0]]->setVal(S_new[mfi],rhoinit[i],
-							dx,0,0,ncomps);
+	      for (Array<int>::iterator jt = (*it).region.begin(); 
+		   jt < (*it).region.end(); jt++)
+		region_array[*jt]->setVal(S_new[mfi],(*it).param,
+					  dx,0,0,ncomps);
 	    }
-	  else if (rhoinit_param[i][1] == bc_list["hydrostatic"]) 
+	  else if ((*it).type == bc_list["hydrostatic"]) 
 	    {
 	      BL_ASSERT(model >= 2);
 	      FArrayBox& cdat = (*cpl_coef)[mfi];
@@ -695,9 +694,9 @@ PorousMedia::initData ()
 	      FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
 			 density.dataPtr(),&ncomps, 
 			 c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
-			 dx, &rhoinit[i][0], &gravity);
+			 dx, &(*it).param[0], &gravity);
 	    }
-	  else if (rhoinit_param[i][1] == bc_list["rockhold"])
+	  else if ((*it).type == bc_list["rockhold"])
 	    {
 	      BL_ASSERT(model >= 2);
 	      const Real* prob_hi   = geom.ProbHi();
@@ -726,7 +725,7 @@ PorousMedia::initData ()
 			    c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
 			    dx,  &gravity, prob_hi);
 	    }
-	  else if (rhoinit_param[i][1] == bc_list["zero_total_velocity"])
+	  else if ((*it).type == bc_list["zero_total_velocity"])
 	    {	     
 	      BL_ASSERT(model != model_list["single-phase"] && 
 			model != model_list["single-phase-solid"]);
@@ -740,15 +739,14 @@ PorousMedia::initData ()
 			       density.dataPtr(),muval.dataPtr(),&ncomps,
 			       p_ptr, ARLIM(p_lo),ARLIM(p_hi), 
 			       k_ptr, ARLIM(k_lo),ARLIM(k_hi), &n_kr_coef,
-			       dx, &rhoinit[i][ncomps], &nc, &gravity);
+			       dx, &(*it).param[ncomps], &nc, &gravity);
 	    }
 #ifdef MG_USE_FBOXLIB
-	  else if (rhoinit_param[i][1] == bc_list["richard"]) 
+	  else if ((*it).type == bc_list["richard"]) 
 	    {
 	      BL_ASSERT(model != model_list["single-phase"] && 
 			model != model_list["single-phase-solid"]);
 	      BL_ASSERT(have_capillary == 1);
-	      BL_ASSERT(rhoinit.size() == 1);
 	      int nc = 1;
 	      FArrayBox& kdat = (*kr_coef)[mfi];
 	      FArrayBox& pdat = (*kappa)[mfi];
@@ -760,8 +758,6 @@ PorousMedia::initData ()
 			       p_ptr, ARLIM(p_lo),ARLIM(p_hi), 
 			       k_ptr, ARLIM(k_lo),ARLIM(k_hi), &n_kr_coef,
 			       dx, &rinflow_vel_hi[1], &nc, &gravity);
-	      //region_array[rhoinit_param[i][0]]->setVal(S_new[mfi],rhoinit[i],
-	      //					dx,0,0,ncomps);
 	    }
 #endif
 	  else
@@ -774,25 +770,26 @@ PorousMedia::initData ()
 
       if (ntracers > 0)
 	{		  
-	  
-	  for (int i = 0; i < tinit.size(); i++)
+	  for (Array<BCData>::iterator it=tic_array.begin(); it<tic_array.end(); it++)
 	    {
-	      if (tinit_param[i][1] == bc_list["file"]) 
+	      if ((*it).type == bc_list["file"]) 
 		{
 		  std::cerr << "Initialization of initial condition based on "
 			    << "a file has not been implemented yet.\n";
 		  BoxLib::Abort("PorousMedia::initData()");
 		}
-	      else if (tinit_param[i][1] == bc_list["scalar"]) 
+	      else if ((*it).type == bc_list["scalar"]) 
 		{
-		  region_array[tinit_param[i][0]]->setVal(S_new[mfi],tinit[i],
-							  dx,0,ncomps,
-							  ncomps+ntracers);
+		  for (Array<int>::iterator jt = (*it).region.begin(); 
+		       jt < (*it).region.end(); jt++)
+		    region_array[*jt]->setVal(S_new[mfi],(*it).param,
+					      dx,0,ncomps,
+					      ncomps+ntracers);
 		}
 	      else
 		FORT_INIT_TRACER(&level,&cur_time,
 				 s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-				 tinit[i].dataPtr(), 
+				 (*it).param.dataPtr(), 
 				 &ncomps, &ntracers, dx);
 	    }
 	}
@@ -829,7 +826,7 @@ PorousMedia::initData ()
   bool do_brute_force = false;
   //do_brute_force = true;
 #ifdef MG_USE_FBOXLIB
-  if (rhoinit_param[0][1] == bc_list["richard"]) 
+  if (ic_array[0].type == bc_list["richard"]) 
     {
       if (do_brute_force)
 	richard_eqb_update(u_mac_curr);
@@ -1882,10 +1879,12 @@ PorousMedia::advance_richard (Real time,
   // predict the next time step. 
   Real dt_nwt = dt; 
   predictDT(u_macG_trac);
-  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < richard_max_dt)
-    dt_nwt = dt_nwt*1.2;
-  else if (curr_nwt_iter > 10 )
-    dt_nwt = dt_nwt*0.8;
+  if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 4 && dt_nwt < richard_max_dt)
+    dt_nwt = dt_nwt*1.1;
+  else if (curr_nwt_iter > 5)
+    dt_nwt = dt_nwt*0.75;
+  else if (curr_nwt_iter < 2) 
+    dt_nwt = dt_nwt*1.1;
   richard_iter = curr_nwt_iter;
   dt_eig = std::min(dt_eig,dt_nwt); 
 }
@@ -1928,10 +1927,12 @@ PorousMedia::advance_multilevel_richard (Real time,
       Real dt_nwt = dt; 
       fine_lev.predictDT(fine_lev.u_macG_trac);
   
-      if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 5 && dt_nwt < richard_max_dt)
-	dt_nwt = dt_nwt*1.2;
-      else if (curr_nwt_iter > 10 )
-	dt_nwt = dt_nwt*0.8;
+      if (curr_nwt_iter <= richard_iter && curr_nwt_iter < 4 && dt_nwt < richard_max_dt)
+	dt_nwt = dt_nwt*1.1;
+      else if (curr_nwt_iter > 5 )
+	dt_nwt = dt_nwt*0.75;
+      else if (curr_nwt_iter < 2 ) 
+	dt_nwt = dt_nwt*1.1;
       richard_iter = curr_nwt_iter;
       dt_eig = std::min(dt_eig,dt_nwt); 
     }
@@ -2054,7 +2055,7 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
   if (verbose && ParallelDescriptor::IOProcessor())
     std::cout << "... mac_projection at level " << level 
 	      << " at time " << time << '\n';
-
+  
   create_lambda(time);
 
   MultiFab RhoG(grids,1,1); 
@@ -2085,7 +2086,6 @@ PorousMedia::mac_project (MultiFab* u_mac, MultiFab* RhoD, Real time)
   // so the values will end up in mac_bndry
   mac_projector->set_dirichlet_bcs(level, phi, RhoG, p_bc, 
 				   press_lo, press_hi);
-
   phi->FillBoundary();
 
   PressBndry mac_bndry(grids,1,geom);
@@ -3821,7 +3821,6 @@ PorousMedia::scalar_capillary_update (Real      dt,
   int  itr_nwt = 0;
   Real err_nwt = 1e10;
   Real be_theta = be_cn_theta;
-    
   while ((itr_nwt < max_itr_nwt) && (err_nwt > max_err_nwt)) 
     {
       diffusion->diffuse_iter_CPL(dt,nc,ncomps,be_theta,
@@ -3893,37 +3892,38 @@ PorousMedia::scalar_capillary_update (Real      dt,
 
     FArrayBox fluxtot;
 	  
-    for (int d = 0; d < BL_SPACEDIM; d++) {
-      for (MFIter fmfi(*fluxSCn[d]); fmfi.isValid(); ++fmfi)
-        {
-	  // for component nc
-	  const Box& ebox = (*fluxSCn[d])[fmfi].box();
+    for (int d = 0; d < BL_SPACEDIM; d++) 
+      {
+	MultiFab fluxes;
 
-	  fluxtot.resize(ebox,nComp);
-	  fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,0,nComp);
-	  fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,0,nComp);
+	if (level < parent->finestLevel())
+	  fluxes.define((*fluxSCn[d]).boxArray(), ncomps, 0, Fab_allocate);
 
-	  if (level < parent->finestLevel())
-	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nc,nComp,dt);
+	for (MFIter fmfi(*fluxSCn[d]); fmfi.isValid(); ++fmfi)
+	  {
+	    // for component nc
+	    const Box& ebox = (*fluxSCn[d])[fmfi].box();
+
+	    fluxtot.resize(ebox,ncomps);
+	    fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,nc,1);
+	    fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,nc,1);
+
+	    (*fluxSCn[d])[fmfi].mult(-density[nd]/density[nc]);
+	    (*fluxSCnp1[d])[fmfi].mult(-density[nd]/density[nc]);
+	    fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,nd,1);
+	    fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,nd,1);
+
+	    if (level < parent->finestLevel())
+	      fluxes[fmfi].copy(fluxtot);
+
+	    if (level > 0)
+	      getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,0,ncomps,-dt);
+	  }
+
+	if (level < parent->finestLevel())
+	  getLevel(level+1).getViscFluxReg().CrseInit(fluxes,d,0,0,ncomps,dt);
 		  
-	  if (level > 0)
-	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nc,nComp,-dt);
-
-	  // for component nd
-	  (*fluxSCn[d])[fmfi].mult(-density[nd]/density[nc]);
- 	  (*fluxSCnp1[d])[fmfi].mult(-density[nd]/density[nc]);
- 	  fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,0,nComp);
- 	  fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,0,nComp);
- 	  if (level < parent->finestLevel())
- 	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nd,nComp,dt);
-		  
- 	  if (level > 0)
- 	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nd,nComp,-dt);
-	}
-    }
-
-    if (level < parent->finestLevel())
-      getLevel(level+1).getViscFluxReg().CrseInitFinish();
+      }
   }
     
   //     nc = 0; 
@@ -4135,37 +4135,38 @@ PorousMedia::diff_capillary_update (Real      dt,
 
     FArrayBox fluxtot;
 	  
-    for (int d = 0; d < BL_SPACEDIM; d++) {
-      for (MFIter fmfi(*fluxSCn[d]); fmfi.isValid(); ++fmfi)
-        {
-	  // for component nc
-	  const Box& ebox = (*fluxSCn[d])[fmfi].box();
+    for (int d = 0; d < BL_SPACEDIM; d++) 
+      {
+	MultiFab fluxes;
+	
+	if (level < parent->finestLevel())
+	  fluxes.define((*fluxSCn[d]).boxArray(), ncomps, 0, Fab_allocate);
+	
+	for (MFIter fmfi(*fluxSCn[d]); fmfi.isValid(); ++fmfi)
+	  {
+	    // for component nc
+	    const Box& ebox = (*fluxSCn[d])[fmfi].box();
+	    
+	    fluxtot.resize(ebox,ncomps);
+	    fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,nc,1);
+	    fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,nc,1);
 
-	  fluxtot.resize(ebox,nComp);
-	  fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,0,nComp);
-	  fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,0,nComp);
+	    (*fluxSCn[d])[fmfi].mult(-density[nd]/density[nc]);
+	    (*fluxSCnp1[d])[fmfi].mult(-density[nd]/density[nc]);
+	    fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,nd,1);
+	    fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,nd,1);
 
-	  if (level < parent->finestLevel())
-	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nc,nComp,dt);
+	    if (level < parent->finestLevel())
+	      fluxes[fmfi].copy(fluxtot);
+
+	    if (level > 0)
+	      getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,0,ncomps,-dt);
+	  }
+
+	if (level < parent->finestLevel())
+	  getLevel(level+1).getViscFluxReg().CrseInit(fluxes,d,0,0,ncomps,dt);
 		  
-	  if (level > 0)
-	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nc,nComp,-dt);
-
-	  // for component nd
-	  (*fluxSCn[d])[fmfi].mult(-density[nd]/density[nc]);
- 	  (*fluxSCnp1[d])[fmfi].mult(-density[nd]/density[nc]);
- 	  fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,0,nComp);
- 	  fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,0,nComp);
- 	  if (level < parent->finestLevel())
- 	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nd,nComp,dt);
-		  
- 	  if (level > 0)
- 	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nd,nComp,-dt);
-	}
-    }
-
-    if (level < parent->finestLevel())
-      getLevel(level+1).getViscFluxReg().CrseInitFinish();
+      }
   }
 
   delete delta_rhs;
@@ -4293,39 +4294,32 @@ PorousMedia::richard_eqb_update (MultiFab* u_mac)
 
   if (do_reflux && corrector) {
 
-    FArrayBox fluxtot;
+      FArrayBox fluxtot;
+      for (int d = 0; d < BL_SPACEDIM; d++) 
+	{
+	  MultiFab fluxes;
 	  
-    for (int d = 0; d < BL_SPACEDIM; d++) {
-      for (MFIter fmfi(*fluxSCn[d]); fmfi.isValid(); ++fmfi)
-        {
-	  // for component nc
-	  const Box& ebox = (*fluxSCn[d])[fmfi].box();
-
-	  fluxtot.resize(ebox,nComp);
-	  fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,0,nComp);
-	  fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,0,nComp);
-
 	  if (level < parent->finestLevel())
-	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nc,nComp,dt);
-		  
-	  if (level > 0)
-	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nc,nComp,-dt);
+	    fluxes.define((*fluxSC[d]).boxArray(), nComp, 0, Fab_allocate);
+	  
+	  for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
+	    {
+	      // for component nc
+	      const Box& ebox = (*fluxSC[d])[fmfi].box();
+	      
+	      fluxtot.resize(ebox,nComp);
+	      fluxtot.copy((*fluxSC[d])[fmfi],ebox,0,ebox,0,1);
 
-	  // for component nd
-	  (*fluxSCn[d])[fmfi].mult(-density[nd]/density[nc]);
- 	  (*fluxSCnp1[d])[fmfi].mult(-density[nd]/density[nc]);
- 	  fluxtot.copy((*fluxSCn[d])[fmfi],ebox,0,ebox,0,nComp);
- 	  fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,0,nComp);
- 	  if (level < parent->finestLevel())
- 	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nd,nComp,dt);
-		  
- 	  if (level > 0)
- 	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nd,nComp,-dt);
-	}
-    }
-
-    if (level < parent->finestLevel())
-      getLevel(level+1).getViscFluxReg().CrseInitFinish();
+	      if (level < parent->finestLevel())
+		fluxes[fmfi].copy(fluxtot);
+	      
+	      if (level > 0)
+		getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,0,nComp,-dt);
+	    }
+	  
+	  if (level < parent->finestLevel())
+	    getLevel(level+1).getViscFluxReg().CrseInit(fluxes,d,0,0,nComp,dt);
+      }
   }
   */
     
@@ -4466,32 +4460,35 @@ PorousMedia::richard_scalar_update (Real dt, int& total_nwt_iter, MultiFab* u_ma
   // The fluxes are - beta \nabla p_c. We accummulate flux assuming 
   // it is on the LHS.  Thus, we need to multiply by -dt.
   // 
-  if (do_reflux) {
+  if (do_reflux) 
+    {
 
-    FArrayBox fluxtot;
+      FArrayBox fluxtot;
+      for (int d = 0; d < BL_SPACEDIM; d++) 
+	{
+	  MultiFab fluxes;
 	  
-    for (int d = 0; d < BL_SPACEDIM; d++) {
-
-      MultiFab fluxes;
-      if (level < parent->finestLevel())
-	fluxes.define((*fluxSC[d]).boxArray(), 1, 0, Fab_allocate);
-      for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
-        {
-	  // for component nc
-	  const Box& ebox = (*fluxSC[d])[fmfi].box();
-
-	  fluxtot.resize(ebox,nComp);
-	  fluxtot.copy((*fluxSC[d])[fmfi],ebox,0,ebox,0,nComp);
-	  //fluxtot.plus((*fluxSCnp1[d])[fmfi],ebox,0,0,nComp);
-
 	  if (level < parent->finestLevel())
-	    getLevel(level+1).getViscFluxReg().CrseInit(fluxtot,ebox,d,0,nc,nComp,dt);
-	  if (level > 0)
-	    getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,nc,nComp,-dt);
-	}
-    }
-    if (level < parent->finestLevel())
-      getLevel(level+1).getViscFluxReg().CrseInitFinish();
+	    fluxes.define((*fluxSC[d]).boxArray(), nComp, 0, Fab_allocate);
+	  
+	  for (MFIter fmfi(*fluxSC[d]); fmfi.isValid(); ++fmfi)
+	    {
+	      // for component nc
+	      const Box& ebox = (*fluxSC[d])[fmfi].box();
+	      
+	      fluxtot.resize(ebox,nComp);
+	      fluxtot.copy((*fluxSC[d])[fmfi],ebox,0,ebox,0,1);
+	      
+	      if (level < parent->finestLevel())
+		fluxes[fmfi].copy(fluxtot);
+	      
+	      if (level > 0)
+		getViscFluxReg().FineAdd(fluxtot,d,fmfi.index(),0,0,nComp,-dt);
+	    }
+	  
+	  if (level < parent->finestLevel())
+	    getLevel(level+1).getViscFluxReg().CrseInit(fluxes,d,0,0,nComp,dt);
+      }
   }
       
   delete alpha;
@@ -5017,9 +5014,8 @@ PorousMedia::writePlotFile (const std::string& dir,
   // The name is relative to the directory containing the Header file.
   //
   static const std::string BaseName = "/Cell";
-  char buf[64];
-  sprintf(buf, "Level_%d", level);
-  std::string Level = buf;
+
+  std::string Level = BoxLib::Concatenate("Level_", level, 1);
   //
   // Now for the full pathname of that directory.
   //
@@ -5594,43 +5590,45 @@ PorousMedia::post_timestep (int crse_iteration)
       Observation::setAmrPtr(parent);
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
-
       for (int i=0; i<observation_array.size(); ++i)
           observation_array[i].process(prev_time, curr_time);
     }
 
-  if  (parent->cumTime() >=  stop_time || 
-       parent->levelSteps(0) >= max_step)
-    {
+  if  ( (parent->cumTime() >=  stop_time || 
+         parent->levelSteps(0) >= max_step)
+        && ParallelDescriptor::IOProcessor())
+  {
       if (verbose)
 	{
 	  for (int i=0; i<observation_array.size(); ++i)
 	    {
-	      for (int j = 0; j <observation_array[i].vals.size(); ++j)
-		std::cout << i << " " << observation_array[i].name << " " 
-			  << j << " " << observation_array[i].times[j] << " "
-			  << observation_array[i].vals[j] << std::endl;
-	    }
+                const std::map<int,Real> vals = observation_array[i].vals;
+                for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
+                {
+                    int j = it->first;
+                    std::cout << i << " " << observation_array[i].name << " " 
+                              << j << " " << observation_array[i].times[j] << " "
+                              << it->second << std::endl;
+                }
+            }
 	}
-
-      if (ParallelDescriptor::IOProcessor())
-	{
-	  std::ofstream out;
-	  out.open(obs_outputfile.c_str(),std::ios::out);
-	  out.precision(16);
-	  out.setf(std::ios::scientific);
-	  for (int i=0; i<observation_array.size(); ++i)
-	    {
-	      for (int j = 0; j <observation_array[i].vals.size(); ++j)
-		out << i << " " << observation_array[i].name << " " 
-		    << j << " " << observation_array[i].times[j] << " "
-		    << observation_array[i].vals[j] << std::endl;
-	    }
-	  out.close();
-        }
-
-   
-
+      
+      std::ofstream out;
+      out.open(obs_outputfile.c_str(),std::ios::out);
+      out.precision(16);
+      out.setf(std::ios::scientific);
+      for (int i=0; i<observation_array.size(); ++i)
+      {
+          const std::map<int,Real> vals = observation_array[i].vals;
+          for (std::map<int,Real>::const_iterator it=vals.begin();it!=vals.end(); ++it) 
+          {
+              int j = it->first;
+              out << i << " " << observation_array[i].name << " " 
+                  << j << " "  << observation_array[i].times[j] << " "
+                  << it->second << std::endl;
+          }
+      }
+      out.close();
     }
 
   old_intersect_new          = grids;
@@ -5643,6 +5641,14 @@ PorousMedia::post_timestep (int crse_iteration)
 //
 void PorousMedia::post_restart()
 {
+  if (level == 0)
+    {
+      Observation::setAmrPtr(parent);
+      Real prev_time = state[State_Type].prevTime();
+      Real curr_time = state[State_Type].curTime();
+      for (int i=0; i<observation_array.size(); ++i)
+          observation_array[i].process(prev_time, curr_time);
+    }
 }
 
 //
@@ -5957,6 +5963,7 @@ PorousMedia::init_rock_properties ()
   
   if (model != model_list["single-phase"] || model != model_list["single-phase-solid"])
     {
+      bool do_fine_average = true;
       // relative permeability
       FArrayBox tmpfab;
       Real dxf[BL_SPACEDIM];
@@ -5965,56 +5972,71 @@ PorousMedia::init_rock_properties ()
       int n_kr_coef = kr_coef->nComp();
       for (MFIter mfi(*kr_coef); mfi.isValid(); ++mfi)
 	{
-	  // build data on finest grid
-	  Box bx = (*kr_coef)[mfi].box();
-	  bx.refine(twoexp);
-	  tmpfab.resize(bx,n_kr_coef);
-	  tmpfab.setVal(0.);
+	  if (do_fine_average)
+	    {
+	      // build data on finest grid
+	      Box bx = (*kr_coef)[mfi].box();
+	      bx.refine(twoexp);
+	      tmpfab.resize(bx,n_kr_coef);
+	      tmpfab.setVal(0.);
 
-	  for (int i=0; i<rock_array.size(); i++)
-	    rock_array[i].set_constant_krval(tmpfab,region_array,dxf);
+	      for (int i=0; i<rock_array.size(); i++)
+		rock_array[i].set_constant_krval(tmpfab,region_array,dxf);
 
-	  // average onto coarse grid
-	  const int* p_lo  = (*kr_coef)[mfi].loVect();
-	  const int* p_hi  = (*kr_coef)[mfi].hiVect();
-	  const Real* pdat = (*kr_coef)[mfi].dataPtr();
+	      // average onto coarse grid
+	      const int* p_lo  = (*kr_coef)[mfi].loVect();
+	      const int* p_hi  = (*kr_coef)[mfi].hiVect();
+	      const Real* pdat = (*kr_coef)[mfi].dataPtr();
 	  
-	  const int*  mfp_lo = tmpfab.loVect();
-	  const int*  mfp_hi = tmpfab.hiVect();
-	  const Real* mfpdat = tmpfab.dataPtr();
-	  
-	  FORT_INITKR (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
-		       pdat,ARLIM(p_lo),ARLIM(p_hi),&n_kr_coef,
-		       &level, &max_level, &fratio);
+	      const int*  mfp_lo = tmpfab.loVect();
+	      const int*  mfp_hi = tmpfab.hiVect();
+	      const Real* mfpdat = tmpfab.dataPtr();
+	      
+	      FORT_INITKR (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
+			   pdat,ARLIM(p_lo),ARLIM(p_hi),&n_kr_coef,
+			   &level, &max_level, &fratio);
+	    }
+	  else
+	    {
+	      for (int i=0; i<rock_array.size(); i++)
+		rock_array[i].set_constant_krval((*kr_coef)[mfi],region_array,dx);
+	    }
 	}
       // capillary pressure
       int n_cpl_coef = cpl_coef->nComp();
       for (MFIter mfi(*cpl_coef); mfi.isValid(); ++mfi)
 	{
-	  // build data on finest grid
-	  Box bx = (*cpl_coef)[mfi].box();
-	  bx.refine(twoexp);
-	  tmpfab.resize(bx,n_cpl_coef);
-	  tmpfab.setVal(0.);
+	  if (do_fine_average)
+	    {
+	      // build data on finest grid
+	      Box bx = (*cpl_coef)[mfi].box();
+	      bx.refine(twoexp);
+	      tmpfab.resize(bx,n_cpl_coef);
+	      tmpfab.setVal(0.);
 
-	  for (int i=0; i<rock_array.size(); i++)
-	    rock_array[i].set_constant_cplval(tmpfab,region_array,dxf);
+	      for (int i=0; i<rock_array.size(); i++)
+		rock_array[i].set_constant_cplval(tmpfab,region_array,dxf);
+	      
+	      // average onto coarse grid
+	      const int* p_lo  = (*cpl_coef)[mfi].loVect();
+	      const int* p_hi  = (*cpl_coef)[mfi].hiVect();
+	      const Real* pdat = (*cpl_coef)[mfi].dataPtr();
+	      
+	      const int*  mfp_lo = tmpfab.loVect();
+	      const int*  mfp_hi = tmpfab.hiVect();
+	      const Real* mfpdat = tmpfab.dataPtr();
 	  
-	  // average onto coarse grid
-	  const int* p_lo  = (*cpl_coef)[mfi].loVect();
-	  const int* p_hi  = (*cpl_coef)[mfi].hiVect();
-	  const Real* pdat = (*cpl_coef)[mfi].dataPtr();
-	  
-	  const int*  mfp_lo = tmpfab.loVect();
-	  const int*  mfp_hi = tmpfab.hiVect();
-	  const Real* mfpdat = tmpfab.dataPtr();
-	  
-	  FORT_INITKR (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
-		       pdat,ARLIM(p_lo),ARLIM(p_hi),&n_cpl_coef,
-		       &level,&max_level, &fratio);
+	      FORT_INITKR (mfpdat, ARLIM(mfp_lo), ARLIM(mfp_hi),
+			   pdat,ARLIM(p_lo),ARLIM(p_hi),&n_cpl_coef,
+			   &level,&max_level, &fratio);
+	    }
+	  else
+	    {
+	      for (int i=0; i<rock_array.size(); i++)
+		rock_array[i].set_constant_cplval((*cpl_coef)[mfi],region_array,dx);
+	    }
 	}
     }
-
 }
 
 //
@@ -6060,6 +6082,14 @@ PorousMedia::post_init (Real stop_time)
   if (sum_interval > 0)
     sum_integrated_quantities();
 
+  if (level == 0)
+    {
+      Observation::setAmrPtr(parent);
+      Real prev_time = state[State_Type].prevTime();
+      Real curr_time = state[State_Type].curTime();
+      for (int i=0; i<observation_array.size(); ++i)
+          observation_array[i].process(prev_time, curr_time);
+    }
 }
 
 //
@@ -8177,7 +8207,7 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
 			      &do_upwind);
       else
 	{
-	  Real deps = 1.e-12;
+	  Real deps = 1.e-8;
 	  if (do_n)
 	    FORT_RICHARD_NJAC(ndat,   ARLIM(n_lo), ARLIM(n_hi),
 			      dfxdat, ARLIM(dfx_lo), ARLIM(dfx_hi),
@@ -8744,11 +8774,10 @@ PorousMedia::center_to_edge_plain (const FArrayBox& ccfab,
 // Boundary Conditions
 // ===================
 
-static 
 void
-getDirichletFaces (Array<Orientation>& Faces,
-		   const int           comp_Type,
-		   const BCRec&        _bc)
+PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
+				const int           comp_Type,
+				const BCRec&        _bc)
 {
   Faces.resize(0);
   for (int idir = 0; idir < BL_SPACEDIM; idir++)
@@ -8770,11 +8799,10 @@ getDirichletFaces (Array<Orientation>& Faces,
     }
 }
 
-static
 bool
-grids_on_side_of_domain (const BoxArray&    _grids,
-			 const Box&         _domain,
-			 const Orientation& _Face) 
+PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
+				      const Box&         _domain,
+				      const Orientation& _Face) 
 {
     const int idir = _Face.coordDir();
 
@@ -8807,7 +8835,7 @@ PorousMedia::dirichletStateBC (const Real time)
   const BCRec& bc = desc_lst[State_Type].getBC(0);
   getDirichletFaces(Faces,State_Type,bc);
 
-  BL_ASSERT(rhoinflow.size() >= Faces.size());
+  BL_ASSERT(bc_array.size() >= Faces.size());
 
   if (Faces.size()>0)
     {
@@ -8848,22 +8876,25 @@ PorousMedia::dirichletStateBC (const Real time)
 	      sdat.setVal(0.0);
 	      
 	      int face  = int(Faces[iface]);
-	      for (int i = 0; i < rhoinflow.size(); i++)
+      
+	      for (Array<BCData>::iterator it = bc_array.begin(); 
+		   it < bc_array.end(); it++)
 		{
-		  if (rhoinflow_param[i][1] == bc_list["file"])
+		  if ((*it).type == bc_list["file"]) 
 		    {
 		      std::cerr << "Initialization of boundary condition based on "
 				<< "a file has not been implemented yet.\n";
 		      BoxLib::Abort("PorousMedia::dirichletStateBC()");
 		    }
-		  else if (rhoinflow_param[i][1] == bc_list["scalar"] || 
-			   rhoinflow_param[i][1] == bc_list["zero_total_velocity"])
+		  else if ((*it).type == bc_list["scalar"] || 
+			   (*it).type == bc_list["zero_total_velocity"]) 
 		    {
-		      // set constant value
-		      int idx = rhoinflow_param[i][0];
-		      region_array[idx]->setVal(sdat,rhoinflow[i],dx,0,0,ncomps);
+		      for (Array<int>::iterator jt = (*it).region.begin(); 
+			   jt < (*it).region.end(); jt++)
+			region_array[*jt]->setVal(sdat,(*it).param,
+						  dx,0,0,ncomps);
 		    }
-		  else if (rhoinflow_param[i][1] == bc_list["hydrostatic"])
+		  else if ((*it).type == bc_list["hydrostatic"])
 		    {
 		      const int inDir = Faces[iface].coordDir();
 		      if (inDir != BL_SPACEDIM - 1)
@@ -8884,9 +8915,10 @@ PorousMedia::dirichletStateBC (const Real time)
 			  if (Faces[iface].faceDir() == Orientation::high)
 			    wt_loc = wt_hi;
 
-			  FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), density.dataPtr(), &ncomps, 
-				     c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
-				     dx, &wt_loc, &gravity);
+			  FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
+				     density.dataPtr(), &ncomps, 
+				     c_ptr, ARLIM(c_lo),ARLIM(c_hi), 
+				     &n_cpl_coef, dx, &wt_loc, &gravity);
 			}
 		    }
 		}
@@ -8919,7 +8951,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
   const BCRec& bc = desc_lst[State_Type].getBC(0);
   getDirichletFaces(Faces,State_Type,bc);
 
-  BL_ASSERT(rhoinflow.size() >= Faces.size());
+  BL_ASSERT(bc_array.size() >= Faces.size());
   if (Faces.size()>0)
     {
       const Box& domain = geom.Domain();
@@ -8945,6 +8977,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
 		ccBoxList.push_back(valid_ccBndBox);
 	    }
 	}
+
       if (!ccBoxList.isEmpty())
 	{  
 	  const Real* dx   = geom.CellSize();
@@ -8960,28 +8993,34 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
 	      sdat.setVal(0.0);
 	      
 	      int face  = int(Faces[iface]);
-	      for (int i = 0; i < rhoinflow.size(); i++)
-		{ 
-		  if (rhoinflow_param[i][1] == bc_list["file"])
+
+	      for (Array<BCData>::iterator it = bc_array.begin(); 
+		   it < bc_array.end(); it++)
+		{
+		  if ((*it).type == bc_list["file"]) 
 		    {
 		      std::cerr << "Initialization of boundary condition based on "
 				<< "a file has not been implemented yet.\n";
 		      BoxLib::Abort("PorousMedia::dirichletStateBC()");
 		    }
-		  else if (rhoinflow_param[i][1] == bc_list["scalar"] ||
-			   rhoinflow_param[i][1] == bc_list["zero_total_velocity"])
+		  else if ((*it).type == bc_list["scalar"] || 
+			   (*it).type == bc_list["zero_total_velocity"]) 
 		    {
-		      // set constant value
-		      int idx = rhoinflow_param[i][0];
-		      region_array[idx]->setVal(sdat,rhoinflow[i],dx,0,0,ncomps);
+		      for (Array<int>::iterator jt = (*it).region.begin(); 
+			   jt < (*it).region.end(); jt++)
+			{
+			  region_array[*jt]->setVal(sdat,(*it).param,
+						    dx,0,0,ncomps);
+			}
 		    }
-		  else if (rhoinflow_param[i][1] == bc_list["hydrostatic"])
+		  else if ((*it).type == bc_list["hydrostatic"])
 		    {
 		      const int inDir = Faces[iface].coordDir();
 		      if (inDir != BL_SPACEDIM - 1)
 			{
 			  const int n_cpl_coef = cpl_coef->nComp();
 			  cdat.resize(ccBoxArray[iface],n_cpl_coef);
+
 			  for (MFIter mfi(*cpl_coef); mfi.isValid(); ++mfi)
 			    {
 			      Box ovlp = (*cpl_coef)[mfi].box() & cdat.box();
@@ -8994,9 +9033,11 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
 			  Real wt_loc = wt_lo;
 			  if (Faces[iface].faceDir() == Orientation::high)
 			    wt_loc = wt_hi;
-			  FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), density.dataPtr(), &ncomps, 
-				     c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
-				     dx, &wt_loc, &gravity);
+
+			  FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
+				     density.dataPtr(), &ncomps, 
+				     c_ptr, ARLIM(c_lo),ARLIM(c_hi), 
+				     &n_cpl_coef, dx, &wt_loc, &gravity);
 			}
 		    }
 		}
@@ -9021,8 +9062,6 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
   Array<Orientation> Faces;
   const BCRec& bc = desc_lst[State_Type].getBC(0);
   getDirichletFaces(Faces,State_Type,bc);
-
-  BL_ASSERT(tinflow.size() >= Faces.size());
 
   if (Faces.size()>0)
     {
@@ -9068,13 +9107,22 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
 	      sdat.setVal(0.0);
 	      
 	      int face  = int(Faces[iface]);
-	      for (int i = 0; i < tinflow.size(); i++)
+
+	      for (Array<BCData>::iterator it = tbc_array.begin(); 
+		   it < tbc_array.end(); it++)
 		{
-		  if (tinflow_param[i][1] == bc_list["scalar"]) 
+		  if ((*it).type == bc_list["file"]) 
 		    {
-		      // set constant value
-		      int idx = tinflow_param[i][0];
-		      region_array[idx]->setVal(sdat,tinflow[i],dx,0,0,ntracers);
+		      std::cerr << "Initialization of boundary condition based on "
+				<< "a file has not been implemented yet.\n";
+		      BoxLib::Abort("PorousMedia::dirichletTracerBC()");
+		    }
+		  else if ((*it).type == bc_list["scalar"]) 
+		    {
+		      for (Array<int>::iterator jt = (*it).region.begin(); 
+			   jt < (*it).region.end(); jt++)
+			region_array[*jt]->setVal(sdat,(*it).param,
+						  dx,0,0,ntracers);
 		    }
 		}
 	      Box ovlp = fab.box() & sdat.box();
@@ -9433,7 +9481,7 @@ PorousMedia::fill_from_plotfile (MultiFab&          mf,
     std::cout << "fill_from_plotfile(): reading data from: " << pltfile << '\n';
 
   DataServices::SetBatchMode();
-  FileType fileType(NEWPLT);
+  Amrvis::FileType fileType(Amrvis::NEWPLT);
   DataServices dataServices(pltfile, fileType);
 
   if (!dataServices.AmrDataOk())
@@ -9491,9 +9539,7 @@ PorousMedia::checkPoint (const std::string& dir,
 {
   AmrLevel::checkPoint(dir,os,how,dump_old);
 
-  char buf[64];
-  sprintf(buf, "Level_%d", level);
-  std::string Level = buf;
+  std::string Level = BoxLib::Concatenate("Level_", level, 1);
   std::string uxfile = "/umac_x";
   std::string uyfile = "/umac_y";
   std::string FullPath = dir;

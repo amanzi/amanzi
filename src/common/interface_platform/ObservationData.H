@@ -1,7 +1,6 @@
 #ifndef OBSERVATIONDATA_H
 #define OBSERVATIONDATA_H
 
-#include "mpi.h"
 #include "list"
 #include "vector"
 

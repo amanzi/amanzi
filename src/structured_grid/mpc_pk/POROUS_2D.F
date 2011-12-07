@@ -341,7 +341,7 @@ c ::: -----------------------------------------------------------
       REAL_T  lbd(DIMV(lbd),ncomps)
 
       integer i, j
-      REAL_T  ld(ncomps),x
+      REAL_T  ld(ncomps)
 
 c ::: kpedge in x-dir
       do i = lo(1),hi(1)+1

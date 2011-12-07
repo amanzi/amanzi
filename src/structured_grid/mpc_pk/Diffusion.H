@@ -1,6 +1,3 @@
-//
-// $Id: Diffusion.H,v 1.27 2011-08-30 19:00:04 gpau Exp $
-//
 
 #ifndef _Diffusion_H_
 #define _Diffusion_H_

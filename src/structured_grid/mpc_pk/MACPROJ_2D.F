@@ -1,6 +1,3 @@
-c
-c $Id: MACPROJ_2D.F,v 1.7 2011-01-14 02:45:01 gpau Exp $
-c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
 #define BL_LANG_FORT
