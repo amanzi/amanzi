@@ -1,0 +1,9 @@
+#!/bin/sh
+
+AMANZI_INSTALL_DIR=${AMANZI_HOME}
+ATS_DIR=${ATS_HOME}
+
+cmake -D \
+    Amanzi_DIR=${AMANZI_INSTALL_DIR}/lib  \
+    ATS_INSTALL_DIR=${ATS_DIR} \
+    ..

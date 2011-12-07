@@ -1,10 +1,3 @@
-#ifdef ENABLE_Unstructured
-  #include "amanzi_unstructured_grid_simulation_driver.hpp"
-#endif
-#ifdef ENABLE_Structured
-  #include "amanzi_structured_grid_simulation_driver.H"
-#endif
-
 #include <iostream>
 
 #include <Epetra_Comm.h>
@@ -18,6 +11,7 @@
 
 #include "dbc.hh"
 #include "errors.hh"
+#include "amanzi_unstructured_grid_simulation_driver.hh"
 
 int main(int argc, char *argv[])
 {

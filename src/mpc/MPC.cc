@@ -9,7 +9,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_MpiComm.h"
 
-#include "MPC.hpp"
+#include "MPC.hh"
 #include "State.hh"
 // TODO: We are using depreciated parts of boost::filesystem
 #define BOOST_FILESYSTEM_VERSION 2

@@ -1,151 +1,45 @@
 # -*- mode: cmake -*-
-#
-# Define a project name
-# After this command the following varaibles are defined
-#   SSC_SOURCE_DIR
-#   SSC_BINARY_DIR
-# Other projects (subdirectories) can reference this directory
-# through these variables.
-project(SSC)
-
-include(CCSEOptions)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
-
-# The interfaces
-include_directories(${INTERFACE_PLATFORM_DIR})
 
 #
-# The structured grid pieces
+#  ATS
+#    MPC class
 #
-if ( ENABLE_Structured )
-  include_directories(${CCSE_INCLUDE_DIRS})
-  include_directories(${PMAMR_INCLUDE_DIRS})
-  link_directories(${CCSE_LIBRARY_DIR})
-  include_directories(${BOXDRIV_SOURCE_DIR})
-  link_directories(${BOXDRIV_SOURCE_DIR})
-  include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
-  link_directories(${STRUCTUREDUTILS_SOURCE_DIR})
-  add_definitions("-DENABLE_Structured")
-endif()
 
+# This state library will move to a new location
+# once Markus has created the data manager.
+# I use global properties since all the PROJECT_NAME
+# variables in this directory are tied to the MPC.
+# These properties will be replaced with the appropriate
+# directory project name once it is moved.
 #
-# The common pieces
+# Library: state
 #
-include_directories(${DBC_SOURCE_DIR})
-include_directories(${CHEM_INCLUDES_DIR})
+link_directories(${ATS_BINARY_DIR}/state)
+link_directories(${ATS_BINARY_DIR}/pks)
+link_directories(${ATS_BINARY_DIR}/pks/flow)
+link_directories(${ATS_BINARY_DIR}/mpc)
 
-#
-# The unstructured grid pieces
-#
-if ( ENABLE_Unstructured )
-  include_directories(${ATK_SOURCE_DIR})
-  include_directories(${MESH_FACTORY_SOURCE_DIR})
-  include_directories(${GEOMETRY_SOURCE_DIR})
-  include_directories(${OUTPUT_SOURCE_DIR})
-  include_directories(${STATE_SOURCE_DIR})
-  include_directories(${TRANSPORT_SOURCE_DIR})
-  include_directories(${FLOW_SOURCE_DIR})
-  include_directories(${MPC_SOURCE_DIR})
-  include_directories(${EXO_SOURCE_DIR})
-  include_directories(${EXEC_SOURCE_DIR})
-
-  link_directories(${EXEC_SOURCE_DIR})
-
-# The mesh frameworks
-  set(amanzi_mesh_libs "mesh_factory")
-
-  add_definitions("-DENABLE_Unstructured")
-endif()
-
-# External (TPL) include directories
-include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${Teuchos_INCLUDE_DIRS})
-include_directories(${Epetra_INCLUDE_DIRS})
-
-#
-# More unstructured grid pieces
-#
-if ( ENABLE_Unstructured )
-  if(ENABLE_CGNS)
-      include_directories(${CGNS_INCLUDE_DIRS})
-  endif()    
-
-  # Need to move this up to the root -- lpritch
-  add_definitions("-DUSE_MPI")
-endif()
+include_directories(${ATS_SOURCE_DIR}/src/state)
+include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow)
+include_directories(${ATS_SOURCE_DIR}/src/mpc)
 
 
-#
-# Binary: amanzi-demo-driver
-#
-if ( ENABLE_Unstructured )
-#  set(ssc_unstructured_grid_libs udriv mpc state transport flow chemistry whetstone)
-  set(ssc_unstructured_grid_libs udriv mpc state flow whetstone)
-else()
-  set(ssc_unstructured_grid_libs)
-endif()
+add_executable(ats main.cc amanzi_unstructured_grid_simulation_driver.cc)
 
-if(ENABLE_Structured)
-  set(structured_grid_libs pmamr gsint boxprob boxdriv structutils ${CCSE_LIBRARIES})
-  if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
-    #message(">>>>>> using darwin ld flags")
-    set(ld_flag_prefix -force_load)
-    set(ld_flag_suffix)
-  elseif (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-    #message(">>>>>> using linux ld flags")
-    set(ld_flag_prefix -Wl,-whole-archive)
-    set(ld_flag_suffix -Wl,-no-whole-archive)
-  else()
-    message(FATAL_ERROR "Linking of structured grid is not supported on this system: '${CMAKE_SYSTEM_NAME}'")
-  endif()
-  foreach(lib ${structured_grid_libs})
-    set(ssc_structured_grid_libs ${ssc_structured_grid_libs} ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
-  endforeach(lib)
-else()
-  set(ssc_structured_grid_libs)
-endif()
-#message(">>>>> ssc_structured_grid_libs = ${ssc_structured_grid_libs}")
-
-get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface)
-
-set(ssc_tpl_libs_incl ${ssc_unstructured_grid_libs} ${ssc_structured_grid_libs} ${ssc_common_libs})
-set(ssc_tpl_libs ${amanzi_mesh_libs} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES})
-
-add_executable(amanzi main.cpp)
-
-target_link_libraries(amanzi ${ssc_tpl_libs_incl} ${ssc_tpl_libs} z)
-#message(">>>>>> ssc_tpl_libs_incl = ${ssc_tpl_libs_incl}")
-add_install_binary(amanzi)
+target_link_libraries(ats
+                      state
+                      pks
+                      flow
+                      mpc
+                      amanzi_solvers
+                      amanzi_time_integration
+                      amanzi_mesh
+                      amanzi_flow
+                      amanzi_output)
 
 
-if (BUILD_TESTS)
 
-  if (ENABLE_Structured)
 
-    add_amanzi_test(ssc-structured-test-0 amanzi "--xml_file=t0-structured.xml" KIND unit)
-    add_amanzi_test(ssc-structured-test-1 amanzi "--xml_file=t1-structured.xml" KIND unit)
-    add_amanzi_test(ssc-structured-test-2 amanzi "--xml_file=t2-structured.xml" KIND unit)
-    add_amanzi_test(ssc-structured-test-2 amanzi "--xml_file=t3-structured.xml" KIND unit)
 
-    if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/probin ${SSC_BINARY_DIR})
 
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/t0-structured.xml ${SSC_BINARY_DIR})
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/t1-structured.xml ${SSC_BINARY_DIR})
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/t2-structured.xml ${SSC_BINARY_DIR})
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/t3-structured.xml ${SSC_BINARY_DIR})
-
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-                      copy ${SSC_SOURCE_DIR}/tests_unit/uo2-5-component.bgd ${SSC_BINARY_DIR})
-    endif()
-  endif()
-
-endif()

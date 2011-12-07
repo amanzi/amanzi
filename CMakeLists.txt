@@ -17,6 +17,7 @@ enable_testing()
 #     ATS_SOURCE_DIR
 #     ATS_BINARY_DIR
 project(ATS)
+message(STATUS "in ats_dir: ATS_SOURCE_DIR=${ATS_SOURCE_DIR}")
 
 # --------------------------------------------------------------------------- #
 # Search for Amanzi
@@ -59,6 +60,8 @@ include_directories(${Amanzi_INCLUDE_DIR})
 # See AmanziConfigTPL.cmake for the entire list
 include_directories(${Amanzi_TPL_Teuchos_INCLUDE_DIRS})
 include_directories(${Amanzi_TPL_Epetra_INCLUDE_DIRS})
+include_directories(${Amanzi_TPL_ASCEMIO_INCLUDE_DIRS})
+
 
 # Each TPL is flagged as enabled ON(TRUE)|OFF(FALSE)
 if ( Amanzi_TPL_CGNS_ENABLED )
@@ -104,3 +107,4 @@ link_directories(${Amanzi_TPL_Trilinos_LIBRARY_DIRS})
 
 # Source files for all binaries and libraries found under src
 add_subdirectory(src)
+

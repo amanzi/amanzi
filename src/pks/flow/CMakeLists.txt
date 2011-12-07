@@ -2,12 +2,12 @@
 
 #
 #  ATS
-#    MPC class
+#    Flow PK class
 #
+
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow)
 
 # This state library will move to a new location
 # once Markus has created the data manager.
@@ -18,5 +18,6 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow)
 #
 # Library: state
 #
-add_library(mpc MPC.cc Unstructured_observations.cc)
+add_library(flow Darcy_PK.cc)
+
 
