@@ -66,7 +66,7 @@ class HDF5_MPI {
   Teuchos::XMLObject xmlStep() { return xmlStep_; }
 
   // Output mesh data to filename.h5 and filename.xmf
-  void createMeshFile(AmanziMesh::Mesh &mesh_Maps, std::string filename);
+  void createMeshFile(const AmanziMesh::Mesh &mesh_Maps, std::string filename);
   //void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
 
   // Create h5 file for data output, create accompanying Xdmf files for

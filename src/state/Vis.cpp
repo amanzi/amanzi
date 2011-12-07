@@ -52,7 +52,7 @@ Amanzi::Vis::~Vis ()
 }
 
 
-void Amanzi::Vis::create_files(Amanzi::AmanziMesh::Mesh& mesh)
+void Amanzi::Vis::create_files(const Amanzi::AmanziMesh::Mesh& mesh)
 {
   if (!is_disabled())
     {
@@ -74,7 +74,7 @@ void Amanzi::Vis::create_files(Amanzi::AmanziMesh::Mesh& mesh)
 }
 
 
-void Amanzi::Vis::write_vector(Epetra_MultiVector& vec, std::vector<std::string>& names )
+void Amanzi::Vis::write_vector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const
 {
   if (names.size() < vec.NumVectors()) 
     {
@@ -89,7 +89,7 @@ void Amanzi::Vis::write_vector(Epetra_MultiVector& vec, std::vector<std::string>
 }
 
 
-void Amanzi::Vis::write_vector(Epetra_Vector& vec, std::string name )
+void Amanzi::Vis::write_vector(const Epetra_Vector& vec, const std::string name ) const
 {
   viz_output->writeCellDataReal( vec ,name );  
 }
@@ -101,18 +101,18 @@ void Amanzi::Vis::create_timestep(const double& time, const int& cycle)
 }
 
 
-void Amanzi::Vis::finalize_timestep()
+void Amanzi::Vis::finalize_timestep() const
 {
   viz_output->endTimestep();
 }
 
-const bool Amanzi::Vis::is_disabled()
+const bool Amanzi::Vis::is_disabled() const
 {
   return disabled;
 }
 
 
-const bool Amanzi::Vis::dump_requested(int cycle)
+const bool Amanzi::Vis::dump_requested(const int cycle) const
 {
 
   if (!is_disabled())
