@@ -59,6 +59,31 @@ list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
 target_link_libraries(flow functions mesh_functions ${flow_tpl_libs} time_integration)
 
+# create two libraries, one for the interface to the flow pk
+# and one for the flow implementation
+# (this is meant to be used when linking to amanzi from ATS)
+add_library(flow_implementation DarcyMatvec.cpp 
+                                DarcyProblem.cpp
+				DiffusionMap.cpp 
+				DiffusionMatrix.cpp
+                                DiffusionPrecon.cpp
+                                FlowBC.cpp
+                                MimeticHex.cpp 
+				MimeticHexLocal.cpp 
+				RichardsModelEvaluator.cpp 
+				RichardsNoxInterface.cpp 
+				RichardsProblem.cpp 
+				vanGenuchtenModel.cpp
+				flow-bc-factory.cc)
+add_install_library(flow_implementation)
+target_link_libraries(flow_implementation functions mesh_functions ${flow_tpl_libs} time_integration)
+
+add_library(flow_interface Darcy_PK.cpp 
+                           SteadyState_Richards_PK.cpp 
+			   Transient_Richards_PK.cpp )
+add_install_library(flow_interface)
+target_link_libraries(flow_interface flow_implementation functions mesh_functions ${flow_tpl_libs} time_integration)
+
 #
 # Install Targets
 #
