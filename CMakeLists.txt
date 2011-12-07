@@ -42,6 +42,9 @@ endif()
 set(CMAKE_C_COMPILER ${Amanzi_C_COMPILER})
 set(CMAKE_CXX_COMPILER ${Amanzi_CXX_COMPILER})
 
+# set debug
+set(CMAKE_BUILD_TYPE Debug)
+
 # --------------------------------------------------------------------------- #
 #  Define the include paths
 # --------------------------------------------------------------------------- #
@@ -62,17 +65,26 @@ include_directories(${Amanzi_TPL_Teuchos_INCLUDE_DIRS})
 include_directories(${Amanzi_TPL_Epetra_INCLUDE_DIRS})
 include_directories(${Amanzi_TPL_ASCEMIO_INCLUDE_DIRS})
 
-
 # Each TPL is flagged as enabled ON(TRUE)|OFF(FALSE)
+
 if ( Amanzi_TPL_CGNS_ENABLED )
   include_directories(${Amanzi_TPL_CGNS_INCLUDE_DIRS})
+  add_definitions(-DENABLE_CGNS)
 endif()
 
-# --------------------------------------------------------------------------- #
-#  Compile defines
-# --------------------------------------------------------------------------- #
-if ( Amanzi_TPL_CGNS_ENABLED )
-  add_definitions(-DENABLE_CGNS)
+if ( Amanzi_TPL_STK_ENABLED )
+  include_directories(${Amanzi_TPL_STK_INCLUDE_DIRS})
+  add_definitions(-DENABLE_STK_Mesh)
+endif()
+
+
+# enable structured/unstructured
+if ( Amanzi_ENABLE_UNSTRUCTURED )
+  add_definitions(-DENABLE_Unstructured)
+endif()
+
+if ( Amanzi_ENABLE_STRUCTURED )
+  add_definitions(-DENABLE_Structured)
 endif()
 
 # We make every effort in the Amanzi build system to include TPL libraries 

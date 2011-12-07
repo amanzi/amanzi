@@ -34,7 +34,7 @@ public:
                          Teuchos::RCP<State> S1) { return 0; }
 
   // Transient does nothing, so commit not needed.
-  void commit_state(double, Teuchos::RCP<State>) {}
+  void commit_state(double dt, Teuchos::RCP<State> S) {}
 
   // Access to solution (are these necessary?)
   const Epetra_MultiVector& get_pressure() const { return *pressure; }
