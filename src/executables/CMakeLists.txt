@@ -28,15 +28,23 @@ include_directories(${ATS_SOURCE_DIR}/src/mpc)
 add_executable(ats main.cc amanzi_unstructured_grid_simulation_driver.cc)
 
 target_link_libraries(ats
-                      state
+                      mpc
                       pks
                       flow
-                      mpc
+                      state
                       amanzi_solvers
                       amanzi_time_integration
                       amanzi_mesh
-                      amanzi_flow
-                      amanzi_output)
+                      amanzi_cell_geometry
+                      amanzi_mesh_factory
+                      amanzi_flow_implementation
+                      amanzi_input
+                      amanzi_output
+                      amanzi_interface
+                      amanzi_stk_mesh
+                      )
+
+install(TARGETS ats DESTINATION ${ATS_SOURCE_DIR}/bin)
 
 
 

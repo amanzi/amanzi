@@ -1,4 +1,4 @@
-#include "Unstructured_observations.hpp"
+#include "Unstructured_observations.hh"
 
 #include "dbc.hh"
 #include "errors.hh"
