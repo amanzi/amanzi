@@ -45,8 +45,10 @@ if (BUILD_TESTS)
     list(APPEND structured_grid_libs ${ld_flag_prefix} ${lib} ${ld_flag_suffix})
   endforeach(lib)
 
-  if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
-    list(APPEND structured_grid_libs gfortran)
+  if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
+    if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
+      list(APPEND structured_grid_libs gfortran)
+    endif()
   endif()
 
   set(tpl_libs ${Teuchos_LIBRARIES})
