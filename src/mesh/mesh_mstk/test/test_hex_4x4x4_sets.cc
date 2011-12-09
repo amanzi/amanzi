@@ -17,16 +17,21 @@
 TEST(MSTK_HEX_4x4x4_SETS)
 {
 
-  std::string expcsetnames[5] = {"Bottom LS", "Middle LS", "Top LS", 
-                                 "Bottom+Middle Box", "Top Box"};
-  unsigned int csetsize, expcsetsizes[5] = {9,9,9,18,9};
+  std::string expcsetnames[9] = {"Bottom LS", "Middle LS", "Top LS", 
+                                 "Bottom+Middle Box", "Top Box",
+                                 "Sample Point InCell", "Sample Point OnFace",
+                                 "Sample Point OnEdge", "Sample Point OnVertex"};
+  unsigned int csetsize, expcsetsizes[9] = {9,9,9,18,9,1,2,4,8};
   
-  unsigned int expcsetcells[5][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
+  unsigned int expcsetcells[9][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
 				      {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
 				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
 				      {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
-				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0}
-};
+				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
+                                      {13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                      {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                      {9,10,12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                      {0,1,3,4,9,10,12,13,0,0,0,0,0,0,0,0,0,0}};
 
   std::string expfsetnames[7] = {"Face 101", "Face 102", 
 				  "Face 10005", "Face 20004", "Face 30004",
@@ -45,12 +50,10 @@ TEST(MSTK_HEX_4x4x4_SETS)
 				      {4,9,14,19,23,27,32,36,40},
 				      {0,6,11,42,47,51,75,80,84}};
 
-  std::string expnsetnames[3] = {"Sample Point 1", "INTERIOR XY PLANE", 
-                                 "TOP BOX"};
+  std::string expnsetnames[2] = {"INTERIOR XY PLANE", "TOP BOX"};
 
-  unsigned int nsetsize, expnsetsizes[3] = {1, 16, 4};
-  unsigned int expnsetnodes[3][16] = {{21,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
-                                      {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31},
+  unsigned int nsetsize, expnsetsizes[2] = {16, 4};
+  unsigned int expnsetnodes[2][16] = {{16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31},
                                       {53,54,57,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}};
 
 			   
@@ -127,11 +130,11 @@ TEST(MSTK_HEX_4x4x4_SETS)
         CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
         
         int j;
-        for (j = 0; j < 3; j++) {
+        for (j = 0; j < 2; j++) {
           if (expnsetnames[j] == reg_name) break;
         }
 
-        CHECK(j < 3);
+        CHECK(j < 2);
         
         
         // Verify that we can get the right number of entities in the set
@@ -198,11 +201,11 @@ TEST(MSTK_HEX_4x4x4_SETS)
             CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
             
             int j;
-            for (j = 0; j < 3; j++) {
+            for (j = 0; j < 2; j++) {
               if (expnsetnames[j] == reg_name) break;
             }
             
-            CHECK(j < 3);
+            CHECK(j < 2);
             
             
             // Verify that we can get the right number of entities in the set
@@ -231,10 +234,10 @@ TEST(MSTK_HEX_4x4x4_SETS)
 	  // Find the expected cell set info corresponding to this name 
 	  
 	  int j;
-	  for (j = 0; j < 5; j++)
+	  for (j = 0; j < 9; j++)
 	    if (reg_name == expcsetnames[j]) break;
 	  
-	  CHECK(j < 5);
+	  CHECK(j < 9);
 	  
 	  // Verify that we can get the right number of entities in the set
 	  
@@ -252,31 +255,31 @@ TEST(MSTK_HEX_4x4x4_SETS)
     }
     else if (shape == "Region: Point") {
 
-      // Do we have a valid set by this name
+      // Do we have a valid cell set by this name
       
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
       
       int j;
-      for (j = 0; j < 3; j++) {
-        if (expnsetnames[j] == reg_name) break;
+      for (j = 0; j < 9; j++) {
+        if (expcsetnames[j] == reg_name) break;
       }
       
-      CHECK(j < 3);
+      CHECK(j < 9);
             
             
       // Verify that we can get the right number of entities in the set
       
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
       
-      CHECK_EQUAL(expnsetsizes[j],set_size);
+      CHECK_EQUAL(expcsetsizes[j],set_size);
       
       
       // Verify that we can get the correct set entities
       
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
       
-      CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
+      CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
                         
     }
     else if (shape == "Region: Labeled Set") {
