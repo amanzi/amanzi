@@ -54,6 +54,12 @@ if (BUILD_TESTS)
          copy_directory ${GEOMETRY_SOURCE_DIR}/test ${GEOMETRY_BINARY_DIR}/test) 
    endif()
 
+   # Test: test geometric operators
+
+   add_executable(test_geomops
+                  test/Main.cc
+		  test/test_geometric_ops.cc)
+   target_link_libraries(test_geomops geometry ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
 
    # Test: test region creation
    add_executable(test_region 
@@ -70,7 +76,7 @@ if (BUILD_TESTS)
    target_link_libraries(test_geometric_model geometry ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
 
 
-   add_amanzi_test(geometry test_region test_geometric_model KIND unit)
+   add_amanzi_test(geometry test_region test_geometric_model test_geomops KIND unit)
 
     # Test: test geometric model creation from regions
 #    add_executable(test_geometric_model
