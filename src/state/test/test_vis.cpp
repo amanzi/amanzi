@@ -15,14 +15,13 @@ SUITE(VISUALIZATION) {
     Teuchos::ParameterList plist;
 
     plist.set<string>("File Name Base","visdump");
-    plist.set<int>("File Name Digits",5);
 
-    Teuchos::ParameterList& i1_ = plist.sublist("Cycle Data");
+    Teuchos::Array<int> sps(3);
+    sps[0] = 0;
+    sps[1] = 4;
+    sps[2] = 10;
+    plist.set<Teuchos::Array<int> >("Start_Period_Stop",sps);
     
-    i1_.set<int>("Start",0);
-    i1_.set<int>("End",10);
-    i1_.set<int>("Interval",4);
-
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Vis V(plist, &comm);
 
