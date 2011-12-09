@@ -40,16 +40,23 @@ SUITE (STK_SETS)
   TEST (SETS_READ)
   {
 
-  std::string expcsetnames[5] = {"Bottom LS", "Middle LS", "Top LS", 
-                                 "Bottom+Middle Box", "Top Box"};
-  unsigned int csetsize, expcsetsizes[5] = {9,9,9,18,9};
+  std::string expcsetnames[9] = {"Bottom LS", "Middle LS", "Top LS", 
+                                 "Bottom+Middle Box", "Top Box",
+                                 "Sample Point InCell", "Sample Point OnFace",
+                                 "Sample Point OnEdge", "Sample Point OnVertex"};  
   
-  unsigned int expcsetcells[5][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
+  unsigned int csetsize, expcsetsizes[9] = {9,9,9,18,9,1,2,4,8};
+  
+  unsigned int expcsetcells[9][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
 				      {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
 				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
 				      {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
-				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0}
-};
+				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
+                                      {13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                      {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                      {9,10,12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                      {0,1,3,4,9,10,12,13,0,0,0,0,0,0,0,0,0,0}
+                                      };
 
   std::string expfsetnames[7] = {"Face 101", "Face 102", 
 				  "Face 10005", "Face 20004", "Face 30004",
@@ -68,11 +75,6 @@ SUITE (STK_SETS)
 				     {4,9,14,19,23,27,32,36,40},
 				     {0,6,11,42,47,51,75,80,84}};
 
-  std::string expnsetnames[1] = {"Sample Point 1"};
-
-  unsigned int nsetsize, expnsetsizes[1] = {1};
-  unsigned int expnsetnodes[1][1] = {{21}};
-			   
 
   std::string infilename = "test/hex_4x4x4.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
@@ -204,34 +206,36 @@ SUITE (STK_SETS)
     }
     else if (shape == "Region: Point") {
 
+      // Get cells around this point
+
       Teuchos::ParameterList point_params = reg_params.sublist(shape);
       Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
 
       // Do we have a valid set by this name
       
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
 	  
       int j;
-      for (j = 0; j < 1; j++) {
-        if (expnsetnames[j] == reg_name) break;
+      for (j = 0; j < 9; j++) {
+        if (expcsetnames[j] == reg_name) break;
       }
 	  
-      CHECK(j < 1);
+      CHECK(j < 9);
 	  
 	  
       // Verify that we can get the right number of entities in the set
 	  
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
 	  
-      CHECK_EQUAL(expnsetsizes[j],set_size);
+      CHECK_EQUAL(expcsetsizes[j],set_size);
 	  
 	  
       // Verify that we can get the correct set entities
       
       Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents);
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
 	  
-      CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
+      CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
 
     }
     else if (shape == "Region: Labeled Set") {
@@ -315,13 +319,15 @@ SUITE (STK_SETS)
     Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-    std::string expcsetnames[3] = {"Bottom Box", "Bottom+Middle Box",
-				   "Vertical Box"};
-    unsigned int csetsize, expcsetsizes[5] = {9,18,9};
+    std::string expcsetnames[4] = {"Bottom Box", "Bottom+Middle Box",
+				   "Vertical Box", "Sample Point 1"};
+    unsigned int csetsize, expcsetsizes[4] = {9,18,9,8};
   
-    unsigned int expcsetcells[3][18] = {{0,1,2,3,4,5,6,7,8},
+    unsigned int expcsetcells[4][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0,0},
 					{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
-					{1,4,7,10,13,16,19,22,25}};
+					{1,4,7,10,13,16,19,22,25,0,0,0,0,0,0,0,0,0},
+                                        {0,1,3,4,9,10,12,13,0,0,0,0,0,0,0,0,0,0}
+    };
 
     std::string expfsetnames[2] = {"ZLO FACE Plane", "YLO FACE Box"};
 
@@ -331,12 +337,6 @@ SUITE (STK_SETS)
     unsigned int expfsetfaces[6][9] = {{3,8,13,19,23,27,32,36,40},
 				       {78,82,86,-1,-1,-1,-1,-1,-1}};
 
-
-    std::string expnsetnames[1] = {"Sample Point 1"};
-
-    unsigned int nsetsize, expnsetsizes[1] = {1};
-    unsigned int expnsetnodes[1][1] = {{21}};
-			   
 
     std::string infilename = "test/hex_3x3x3.xml";
     Teuchos::ParameterXMLFileReader xmlreader(infilename);
@@ -473,29 +473,29 @@ SUITE (STK_SETS)
         
         // Do we have a valid set by this name
         
-        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::NODE));
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
         
         int j;
-        for (j = 0; j < 1; j++) {
-          if (expnsetnames[j] == reg_name) break;
+        for (j = 0; j < 4; j++) {
+          if (expcsetnames[j] == reg_name) break;
         }
         
-        CHECK(j < 1);
+        CHECK(j < 4);
         
 	
         // Verify that we can get the right number of entities in the set
         
-        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
         
-        CHECK_EQUAL(expnsetsizes[j],set_size);
+        CHECK_EQUAL(expcsetsizes[j],set_size);
         
 	
         // Verify that we can get the correct set entities
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
-        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
         
-        CHECK_ARRAY_EQUAL(expnsetnodes[j],setents,set_size);	  
+        CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
         
       }
       else if (shape == "Region: Labeled Set") {
