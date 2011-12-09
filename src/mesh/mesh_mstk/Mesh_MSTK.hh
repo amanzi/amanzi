@@ -5,6 +5,7 @@
 #include <Point.hh>
 #include <GeometricModel.hh>
 #include <LabeledSetRegion.hh>
+#include <PointRegion.hh>
 #include <GenerationSpec.hh>
 
 #include <memory>

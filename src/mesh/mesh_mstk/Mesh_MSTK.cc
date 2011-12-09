@@ -1631,6 +1631,46 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   else
     {
       mset1 = MESH_MSetByName(mesh,setname.c_str());
+
+      // Make sure we retrieved a mesh set with the right kind of entities
+
+      MType entdim;
+
+      switch (kind)
+        {
+        case CELL:
+          if (celldim == 3)
+            entdim = MREGION;
+          else if (celldim == 2)
+            entdim = MFACE;
+          break;
+        case FACE:
+          if (celldim == 3)
+            entdim = MFACE;
+          else if (celldim == 2)
+            entdim = MEDGE;
+          break;
+        case NODE:
+          entdim = MVERTEX;
+        }
+
+      // If not, can we find a mesh set with the right name and right
+      // kind of entities
+
+      char setname1[256];
+
+      if (mset1 && MSet_EntDim(mset1) != entdim) 
+        {
+          idx = 0;
+          while ((mset1 = MESH_Next_MSet(mesh,&idx))) 
+            {
+              MSet_Name(mset1,setname1);
+              
+              if (MSet_EntDim(mset) == entdim &&
+                  strcmp(setname1,setname.c_str()) == 0)
+                break;
+            }
+        }
     }
 
   if (mset1 == NULL) 
@@ -1645,13 +1685,6 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
           // cellsets
 
         case CELL:
-
-          if (rgn->dimension() != celldim) 
-            {
-              std::cerr << "No region of dimension " << celldim << " defined in geometric model" << std::endl;
-              std::cerr << "Cannot construct cell set from region " << setname << std::endl;
-            }
-
 
           if (rgn->type() == AmanziGeometry::BOX) 
             {
@@ -1668,6 +1701,63 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
                     {
                       MSet_Add(mset1,cell_id_to_handle[icell]);
                     }
+                }
+            }
+          else if (rgn->type() == AmanziGeometry::POINT)
+            {
+              if (celldim == 3)
+                mset1 = MSet_New(mesh,setname.c_str(),MREGION);
+              else
+                mset1 = MSet_New(mesh,setname.c_str(),MFACE);
+
+              AmanziGeometry::Point vpnt(spacedim);
+              AmanziGeometry::Point rgnpnt(spacedim);
+
+              rgnpnt = ((AmanziGeometry::PointRegionPtr)rgn)->point();
+
+
+              int nnode = num_entities(NODE, USED);
+              double mindist2 = 1.e+16;
+              int minnode = -1;
+
+              int inode;
+              for (inode = 0; inode < nnode; inode++)
+                {
+                  
+                  node_get_coordinates(inode, &vpnt);
+                  
+                  double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
+ 
+                  if (dist2 < mindist2) 
+                    {
+                      mindist2 = dist2;
+                      minnode = inode;
+                      if (mindist2 <= 1.0e-32)
+                        break;
+                    }
+                }
+
+              Entity_ID_List cells, cells1;
+
+              node_get_cells(minnode,USED,&cells);
+
+              int ncells = cells.size();
+              for (int ic = 0; ic < ncells; ic++) 
+                {
+                  Entity_ID icell = cells[ic];
+                  
+                  // Check if point is contained in cell
+                  
+                  if (point_in_cell(rgnpnt,icell))
+                    {
+                      MSet_Add(mset1,cell_id_to_handle[icell]);
+                    }
+                }
+
+              if (!MSet_Num_Entries(mset1))
+                {
+                  std::cerr << "Need to expand search for cells containing point" << std::endl;
+                  throw std::exception();
                 }
             }
           else
