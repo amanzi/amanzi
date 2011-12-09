@@ -21,51 +21,42 @@ int Mesh::precompute_geometric_quantities() const {
 
     for (int i = 0; i < ncells; i++) {
 
-      if (cell_get_type(i) == TET) {
+      // 3D Elements with possibly curved faces
+      // We have to build a description of the element topology
+      // and send it into the polyhedron volume and centroid
+      // calculation routine
 
-        cell_get_coordinates(i,&ccoords);
-        AmanziGeometry::tet_get_vol_centroid(ccoords,&volume,&centroid);
+      int nf;
+      std::vector<Entity_ID> faces;
+      std::vector<unsigned int> nfnodes;
+      std::vector<int> fdirs;
+      std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
 
-      }
-      else {
-        // 3D Elements with possibly curved faces
-        // We have to build a description of the element topology
-        // and send it into the polyhedron volume and centroid
-        // calculation routine
+      cell_get_faces(i,&faces);
+      cell_get_face_dirs(i,&fdirs);
 
-        int nf;
-        std::vector<Entity_ID> faces;
-        std::vector<unsigned int> nfnodes;
-        std::vector<int> fdirs;
-        std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
+      nf = faces.size();
 
-        cell_get_faces(i,&faces);
-        cell_get_face_dirs(i,&fdirs);
+      for (int j = 0; j < nf; j++) {
 
-        nf = faces.size();
+        face_get_coordinates(faces[j],&fcoords);
+        nfnodes.push_back(fcoords.size());
 
-        for (int j = 0; j < nf; j++) {
-
-          face_get_coordinates(faces[j],&fcoords);
-          nfnodes.push_back(fcoords.size());
-
-          if (fdirs[j] == 1) {
-            for (int k = 0; k < nfnodes[j]; k++)
-              cfcoords.push_back(fcoords[k]);
-          }
-          else {
-            for (int k = nfnodes[j]-1; k >=0; k--)
-              cfcoords.push_back(fcoords[k]);
-          }
+        if (fdirs[j] == 1) {
+          for (int k = 0; k < nfnodes[j]; k++)
+            cfcoords.push_back(fcoords[k]);
         }
-
-        cell_get_coordinates(i,&ccoords);
-
-        AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
-                                                 cfcoords,&volume,
-                                                 &centroid);
+        else {
+          for (int k = nfnodes[j]-1; k >=0; k--)
+            cfcoords.push_back(fcoords[k]);
+        }
       }
 
+      cell_get_coordinates(i,&ccoords);
+
+      AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
+                                               cfcoords,&volume,
+                                               &centroid);
       cell_volumes.push_back(volume);
       cell_centroids.push_back(centroid);
     }
@@ -267,9 +258,10 @@ bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
       if (rgn->type() == AmanziGeometry::LABELEDSET) return true;
 
       // If we are looking for a cell set the region has to be 
-      // of the same topological dimension as the cells
+      // of the same topological dimension as the cells or it
+      // has to be a point region
       
-      if (kind == CELL && rdim == celldim) return true;
+      if (kind == CELL && (rdim == celldim || rdim == 0)) return true;
       
       // If we are looking for a side set, the region has to be 
       // one topological dimension less than the cells
@@ -603,7 +595,59 @@ void Mesh::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) con
     
   }
 }
-  
+
+
+bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) const
+{
+  std::vector<AmanziGeometry::Point> ccoords;
+
+  if (celldim == 3) {
+
+    // 3D Elements with possibly curved faces
+    // We have to build a description of the element topology
+    // and send it into the polyhedron volume and centroid
+    // calculation routine
+    
+    int nf;
+    std::vector<Entity_ID> faces;
+    std::vector<unsigned int> nfnodes;
+    std::vector<int> fdirs;
+    std::vector<AmanziGeometry::Point> cfcoords;
+    
+    cell_get_faces(cellid,&faces);
+    cell_get_face_dirs(cellid,&fdirs);
+    
+    nf = faces.size();
+    
+    for (int j = 0; j < nf; j++) {
+      std::vector<AmanziGeometry::Point> fcoords;
+
+      face_get_coordinates(faces[j],&fcoords);
+      nfnodes.push_back(fcoords.size());
+      
+      if (fdirs[j] == 1) {
+        for (int k = 0; k < nfnodes[j]; k++)
+          cfcoords.push_back(fcoords[k]);
+      }
+      else {
+        for (int k = nfnodes[j]-1; k >=0; k--)
+          cfcoords.push_back(fcoords[k]);
+      }
+    }
+    
+    cell_get_coordinates(cellid,&ccoords);
+    
+    return AmanziGeometry::point_in_polyhed(p,ccoords,nf,nfnodes,cfcoords);
+
+  }
+  else if (celldim == 2) {
+    
+    cell_get_coordinates(cellid,&ccoords);
+    
+    return AmanziGeometry::point_in_polygon(p,ccoords);
+    
+  }
+}
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi

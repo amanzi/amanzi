@@ -348,6 +348,13 @@ class Mesh
   }
 
 
+  // Point in cell
+
+  bool point_in_cell (const AmanziGeometry::Point &p, 
+                      const Entity_ID cellid) const;
+
+
+
   //
   // Epetra maps
   //------------
@@ -449,8 +456,6 @@ class Mesh
                          const Entity_kind kind,
                          const Parallel_type ptype,
                          Entity_ID_List *entids) const = 0;
-
-
 
 
 
