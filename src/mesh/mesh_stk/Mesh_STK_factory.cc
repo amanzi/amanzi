@@ -18,7 +18,9 @@ namespace bl = boost::lambda;
 #include "Entity_map.hh"
 
 // AmanziGeometry
+#include "Geometry.hh"
 #include "BoxRegion.hh"
+#include "PointRegion.hh"
 
 // STK_mesh
 #include "Mesh_STK_factory.hh"
@@ -1005,9 +1007,9 @@ void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricM
         }
         case AmanziGeometry::POINT: {
 
-          // Node set
+          // Cell set based on points
 
-          add_node_set_(greg->name(), greg->id());
+          add_element_block_(greg->name(), greg->id());
 
           break;
         }
@@ -1140,8 +1142,6 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
 	  
 	  ASSERT (part->primary_entity_rank () == face_rank_);
 
-            // Assumption is that user wants to extract cell sets
-          
 	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
 	  stk::mesh::EntityVector faces;
 	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Face), faces);
@@ -1192,24 +1192,119 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
 	  parts_to_add.push_back(part);
 	  
 	  
-	  ASSERT (part->primary_entity_rank () == node_rank_);
-
 	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
 	  stk::mesh::EntityVector nodes;
 	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Node), nodes);
-	  
+	 
+
+          AmanziGeometry::Point rgnpnt(((AmanziGeometry::PointRegionPtr)greg)->point());
+
+          double mindist2 = 1.0e+16;
+          stk::mesh::Entity *minnode = NULL;
+ 
 	  stk::mesh::EntityVector::iterator n;
 	  for (n = nodes.begin(); n != nodes.end(); n++) {
 	    
             double *xyz = stk::mesh::field_data(*coordinate_field_, *(*n));
-            AmanziGeometry::Point pxyz(space_dim);
-            pxyz.set(xyz);
+            AmanziGeometry::Point vpnt(space_dim);
+            vpnt.set(xyz);
+
+            double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
+
+            if (dist2 < mindist2) {              
+              mindist2 = dist2;
+              minnode = *n;
+              if (mindist2 <= 1.0e-32)
+                break;
+            }            
 		
-            if (greg->inside(pxyz)) {
-              bulk_data_->change_entity_parts(*(*n),parts_to_add);
-              break;
-            }
 	  }
+
+          stk::mesh::PairIterRelation cells = minnode->relations (element_rank_);
+	    
+          for (stk::mesh::PairIterRelation::iterator it = cells.begin(); 
+               it != cells.end(); it++) {
+
+            stk::mesh::Entity *element = it->entity();
+
+
+            // build up a description of the element in terms of its nodes ...
+
+            std::vector<AmanziGeometry::Point> ccoord;
+
+            stk::mesh::PairIterRelation elnodes = element->relations(node_rank_);
+            for (stk::mesh::PairIterRelation::iterator jt = elnodes.begin();
+                 jt != elnodes.end(); jt++) {
+
+              stk::mesh::Entity *elnode = jt->entity();
+
+              double *xyz = stk::mesh::field_data(*coordinate_field_, *elnode);
+              AmanziGeometry::Point vpnt(space_dim);
+              vpnt.set(xyz);
+              ccoord.push_back(vpnt);
+              
+            }
+
+            
+            // ... and its faces (while ensuring that they are pointing out of
+            // the element)
+
+            std::vector<AmanziGeometry::Point> fcoord;
+            std::vector<unsigned int> nfnodes;
+
+            stk::mesh::PairIterRelation elfaces = element->relations(face_rank_);
+
+            int nf = elfaces.size();
+
+            for (stk::mesh::PairIterRelation::iterator jt = elfaces.begin (); 
+                 jt != elfaces.end (); ++jt)
+              {
+                stk::mesh::Entity *elface = jt->entity();
+                
+                stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
+                  stk::mesh::field_data<Id_field_type>(*face_owner_, *elface);
+                
+                int dir = (*owner == element->identifier()) ? 1 : -1;
+                
+                
+                stk::mesh::PairIterRelation fnodes = elface->relations(node_rank_);                
+                nfnodes.push_back(fnodes.size());
+                
+                std::vector<AmanziGeometry::Point> thisfcoord;
+                for (stk::mesh::PairIterRelation::iterator kt = fnodes.begin();
+                     kt != fnodes.end(); ++kt)
+                  {
+                    stk::mesh::Entity *fnode = kt->entity();
+                    
+                    double *xyz = stk::mesh::field_data(*coordinate_field_, *fnode);
+                    AmanziGeometry::Point vpnt(space_dim);
+                    vpnt.set(xyz);
+                    thisfcoord.push_back(vpnt);
+                  }       
+                
+                if (dir == 1) {
+                  for (std::vector<AmanziGeometry::Point>::iterator kt = thisfcoord.begin(); kt != thisfcoord.end(); ++kt)
+                    {
+                      fcoord.push_back(*kt);
+                    }
+                }
+                else {
+                  for (std::vector<AmanziGeometry::Point>::reverse_iterator kt = thisfcoord.rbegin(); kt != thisfcoord.rend(); ++kt)
+                    {
+                      fcoord.push_back(*kt);
+                    }
+                }
+              }
+                        
+
+            // Test if the element polyhedron contains the rgn pnt
+
+            if (AmanziGeometry::point_in_polyhed(rgnpnt,ccoord,nf,nfnodes,
+                                                       fcoord)) {
+              bulk_data_->change_entity_parts(*element,parts_to_add);
+            }
+
+          }
 
           break;
         }
