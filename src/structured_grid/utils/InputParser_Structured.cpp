@@ -149,6 +149,9 @@ namespace Amanzi {
       if (eclist.isSublist("prob"))
 	prob_list = eclist.sublist("prob");
 
+      if (eclist.isSublist("amr")) 
+	amr_list = eclist.sublist("amr");
+
       if (eclist.isSublist("mg"))
 	mg_list = eclist.sublist("mg");
 
@@ -162,37 +165,43 @@ namespace Amanzi {
 	diffuse_list = eclist.sublist("diffuse");
 
       std::string flowmode = eclist.get<std::string>("Flow Mode");
-      if (!flowmode.compare("transient single phase variably saturated flow"))
-	prob_list.set("model_name","richard");
+      if (!flowmode.compare("transient single phase variably saturated flow") ||
+	  !flowmode.compare("steady state single phase variably saturated flow"))
+	{
+	  prob_list.set("model_name","richard");
+	  prob_list.set("have_capillary",1);
+	  prob_list.set("visc_abs_tol",1.e-16);
+	  prob_list.set("visc_tol",1.e-14);
+	  prob_list.set("cfl",1);
+	  prob_list.set("richard_max_dt",prob_list.get<double>("max_dt"));
+	}
+      else if (!flowmode.compare("transient single phase saturated flow"))
+	{
+	  prob_list.set("model_name","single-phase");
+	  prob_list.set("cfl",0.95);
+	  prob_list.set("do_simple",1);
+	}
+      else if (!flowmode.compare("steady state single phase saturated flow"))
+	{
+	  prob_list.set("model_name","single-phase");
+	  prob_list.set("cfl",0.95);
+	  prob_list.set("do_simple",2);
+	}
 
       std::string chemmode = eclist.get<std::string>("Chemistry Mode");
       if (!chemmode.compare("none"))
 	prob_list.set("do_chem",-1);    
 
       const ParameterList& mlist = parameter_list.sublist("Mesh").sublist("Structured");
+      
       int nlevel = 0;
       if (mlist.isParameter("Maximum Level"))
 	nlevel = mlist.get<int>("Maximum Level");
       amr_list.set("max_level",nlevel);
-
-      if (eclist.isSublist("Amr")) {
-	ParameterList alist = eclist.sublist("Amr");
-	amr_list.set("blocking_factor",alist.get<int>("blocking_factor",2)); 
-	amr_list.set("max_grid_size",alist.get<int>( "max_grid_size",64));
-	amr_list.set("nosub",alist.get<int>("nosub", 0));
-	amr_list.set("probin_file",alist.get<std::string>("probin_file", "probin"));
-	amr_list.set("v",alist.get<int>("v",1)); 
-
-	if (alist.isParameter("derive_plot_vars"))
-	  amr_list.set("derive_plot_vars",alist.get<std::string>("derive_plot_vars"));
-		   
-	if (nlevel == 0) nlevel = 1;
-	Array<int> n_buf(nlevel,2);	      
-	amr_list.set("grid_eff",alist.get<double>("grid_eff", 0.75));
-	amr_list.set("regrid_int",alist.get<int>("regrid_int", 2));
-	amr_list.set("n_error_buf",alist.get<Array<int> >("n_error_buf",n_buf));
-	amr_list.set("ref_ratio",alist.get<Array<int> >("ref_ratio",n_buf));
-      }
+      if (nlevel == 0) nlevel = 1;
+      Array<int> n_buf(nlevel,2);
+      if (!amr_list.isParameter("ref_ratio"))
+	amr_list.set("ref_ratio",n_buf);
     }
 
     //
