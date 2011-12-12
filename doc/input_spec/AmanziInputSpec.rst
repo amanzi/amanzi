@@ -216,7 +216,7 @@ Example:
     <Parameter name="Chemistry Mode" type="string" value="none"/>
   </ParameterList>
 
-`"Execution Control`" section also contains subsections that are specific to the implementation details of `"Structured"` and `"Unstructured"` numerical solution approaches.  All options for `"Structured`" are optional at the moment.  
+`"Execution Control`" section also contains subsections that are specific to the implementation details of `"Structured"` and `"Unstructured"` numerical solution approaches.  These subsections are highly specific to the numerical algorithm details, which will be a sensitive function of the mesh framework, the type of problem selected, the mode requested for time integration, whether the mesh is dynamically adaptive, and a host of more detailed algorithm and model decisions.  All options for `"Structured`" are optional at the moment and see the example XML file for a typical set of control parameters.
 
 Usage for `"Structured`":
 
@@ -962,28 +962,6 @@ Example:
   </ParameterList>
 
 In this example, the liquid pressure and water density are written when the cycle number is evenly divisble by 5.
-
-
-
-Execution Control
-=================
-
-       This section is highly specific to the numerical algorithm details, which
-       will be a sensitive function of the mesh framework, the type of problem 
-       selected, the mode requested for time integration, whether the mesh
-       is dynamically adaptive, and a host of more detailed algorithm and model
-       decisions.  
-
-       The parameter set below represents a fictional calculation and depicts 
-       an organization of the numerical parameters that might be appropriate.       
-       The main ParameterList here is named after a labeled "type" of solve
-       one might like to do.  Had this been an unsteady simulation, many of the
-       linear and nonlinear solver parameters may not be applicable at all.
-
-       It is unclear whether the inputs for this section can or should be orgainized
-       at any finer a level of granularity.
-
-       See the example XML file for a typical set of control parameters.
 
 
 Restart from Checkpoint Data File
