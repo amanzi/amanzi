@@ -1,10 +1,6 @@
 #ifndef _DIFFUSION_F_H
 #define _DIFFUSION_F_H
 
-/*
-** $Id: DIFFUSION_F.H,v 1.9 2011-07-13 00:16:16 gpau Exp $
-*/
-
 #ifdef BL_LANG_FORT
 #    define FORT_VISCFLUX_VC      vscflxvc
 #    define FORT_VISCFLUX_CC      vscflxcc

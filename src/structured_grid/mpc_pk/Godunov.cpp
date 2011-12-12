@@ -1,8 +1,4 @@
 //
-// $Id: Godunov.cpp,v 1.42 2011-08-10 17:32:38 lijewski Exp $
-//
-
-//
 // Godunov is the object which calculates advective terms.
 //
 #include <winstd.H>

@@ -1,10 +1,6 @@
 #ifndef _GODUNOV_F_H_
 #define _GODUNOV_F_H_
 
-/*
-** $Id: GODUNOV_F.H,v 1.29 2011-07-07 17:30:49 gpau Exp $
-*/
-
 #ifdef BL_LANG_FORT
 #    define FORT_TEST_UMAC          testumac
 #    define FORT_ESTATE_FPU         estatefpu

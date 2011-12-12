@@ -8,16 +8,16 @@
 #include "Geometry.hh"
 #include "linear-function.hh"
 
-State::State( int number_of_components_,
+State::State( int number_of_components_, 
 	      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
   number_of_components(number_of_components_),
   mesh_maps(mesh_maps_)
 {
   // create the Eptera_Vector objects
-
   create_storage();
-
+  create_default_compnames(number_of_components);
 };
+
 
 
 State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
@@ -30,7 +30,7 @@ State::State( Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
 
 State::State( Teuchos::ParameterList &parameter_list_,
 	      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
-  mesh_maps(mesh_maps_),
+  mesh_maps(mesh_maps_), 
   parameter_list(parameter_list_)
 {
 
@@ -41,18 +41,28 @@ State::State( Teuchos::ParameterList &parameter_list_,
   // create the Eptera_Vector objects
 
   create_storage();
-
   initialize_from_parameter_list();
-  
-  // init_restart();
-
+  create_default_compnames(number_of_components);
 };
 
 
 State::~State()
 {
-  // delete [] (*gravity);
+  //delete [] (*gravity);
 }
+
+
+void State::create_default_compnames(int n)
+{
+  compnames.resize(n);
+  for (int i=0; i<n; i++)
+    {
+      std::stringstream ss;
+      ss << "component " << i;
+      compnames[i] = ss.str();
+    }
+}
+
 
 
 void State::initialize_from_parameter_list()
@@ -159,6 +169,8 @@ void State::initialize_from_parameter_list()
 }
 
 
+
+
 void State::create_storage ()
 {
   // create the Eptera_Vector objects
@@ -184,7 +196,6 @@ void State::create_storage ()
 void State::set_time ( double new_time ) {
 
   time = new_time;
-  last_time = time;
 
 }
 
@@ -226,9 +237,9 @@ void State::update_pressure(const Epetra_Vector &new_pressure)
 
 void State::advance_time(double dT)
 {
-  last_time = time;
   time = time + dT;
 }
+
 
 
 void State::set_cell_value_in_region(const double& value, Epetra_Vector& v, 
@@ -282,8 +293,8 @@ void State::set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector&
 }
 
 
-void State::set_cell_value_in_mesh_block(const double& value, Epetra_Vector& v, 
-					 const int& mesh_block_id)
+void State::set_cell_value_in_mesh_block(double value, Epetra_Vector &v, 
+				    int mesh_block_id)
 {
   if (!mesh_maps->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
     throw std::exception();
@@ -304,7 +315,6 @@ void State::set_cell_value_in_mesh_block(const double& value, Epetra_Vector& v,
   } 
 
 }
-
 
 void State::set_darcy_flux( const double* u, const int mesh_block_id )
 {
@@ -743,7 +753,6 @@ double State::point_value(const std::string& point_region, const std::string& na
 
 
 
-
 void State::set_darcy_flux ( const Epetra_Vector& darcy_flux_ )
 {
   *darcy_flux = darcy_flux_;
@@ -827,3 +836,53 @@ void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, co
 
 
 };
+
+
+void State::write_vis(Amanzi::Vis& vis)
+{
+  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() )
+    {	  
+      // create the new time step...
+      vis.create_timestep(get_time(),get_cycle());
+	  
+      // dump all the state vectors into the file
+      vis.write_vector(*get_pressure(), "pressure");
+      vis.write_vector(*get_porosity(),"porosity");
+      vis.write_vector(*get_water_saturation(),"water saturation");
+      vis.write_vector(*get_water_density(),"water density");
+      vis.write_vector(*get_permeability(),"permeability");
+
+      std::vector<std::string> names(3);
+      names[0] = "darcy velocity x";
+      names[1] = "darcy velocity y";
+      names[1] = "darcy velocity z";
+      vis.write_vector(*get_darcy_velocity(), names);
+
+      // write component data
+      vis.write_vector( *get_total_component_concentration(), compnames);
+    }
+}
+
+
+      
+void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames)
+{
+  write_vis(vis);
+  
+  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() )
+    {
+      // write auxillary data
+      if (auxdata != NULL) 
+	{
+	  vis.write_vector( *auxdata , auxnames);
+	}
+      
+      vis.finalize_timestep(); 
+    }
+}
+
+
+void State::set_compnames(std::vector<std::string>& compnames_)
+{
+  compnames = compnames_;
+}

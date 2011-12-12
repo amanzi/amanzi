@@ -1,6 +1,3 @@
-c
-c $Id: DIFFUSION_2D.F,v 1.16 2011-08-30 19:00:04 gpau Exp $
-c
 #undef  BL_LANG_CC
 #ifndef BL_LANG_FORT
 #define BL_LANG_FORT

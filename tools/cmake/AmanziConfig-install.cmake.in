@@ -57,6 +57,7 @@ set(Amanzi_CCSE_ENABLE_MPI        @ENABLE_MPI@)
 set(Amanzi_CCSE_ENABLE_OpenMP     @ENABLE_OpenMP@)
 set(Amanzi_CCSE_SPACEDIM          @AMANZI_SPACEDIM@)
 set(Amanzi_CCSE_PRECISION         @AMANZI_PRECISION@)
+set(Amanzi_CCSE_DEFINES           @BL_DEFINES@)
 
 # External Packages
 # Configuration file that defines the TPL include paths

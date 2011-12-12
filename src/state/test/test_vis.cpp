@@ -15,13 +15,14 @@ SUITE(VISUALIZATION) {
     Teuchos::ParameterList plist;
 
     plist.set<string>("File Name Base","visdump");
+    plist.set<int>("File Name Digits",5);
 
-    Teuchos::Array<int> sps(3);
-    sps[0] = 0;
-    sps[1] = 4;
-    sps[2] = 10;
-    plist.set<Teuchos::Array<int> >("Start_Period_Stop",sps);
+    Teuchos::ParameterList& i1_ = plist.sublist("Cycle Data");
     
+    i1_.set<int>("Start",0);
+    i1_.set<int>("End",10);
+    i1_.set<int>("Interval",4);
+
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::Vis V(plist, &comm);
 
@@ -66,7 +67,7 @@ SUITE(VISUALIZATION) {
       = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, &comm));
 
     V.create_files(*Mesh);
-
+    
     State S(1, Mesh);
     S.set_cycle(3);
 
@@ -79,10 +80,9 @@ SUITE(VISUALIZATION) {
     compnames[0] = "comp test";
     auxnames[0] = "aux test";
 
-    V.set_compnames(compnames);
-    V.set_auxnames(auxnames);
-
-    V.dump_state(S, &aux);
+    S.set_compnames(compnames);
+    
+    S.write_vis(V, &aux, auxnames);
 
   }
 

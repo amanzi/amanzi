@@ -8,6 +8,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Export.h"
 #include "Mesh.hh"
+#include "Vis.hpp"
 #include "function.hh"
 
 typedef enum { COMPLETE, UPDATING } status_type;
@@ -103,21 +104,25 @@ public:
   // observation functions
   double water_mass();
   double point_value(const std::string& point_region, const std::string& comp_name);
+      
 
   void create_storage();
 
+  void write_vis (Amanzi::Vis& vis);
+  void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames);
+  void set_compnames(std::vector<std::string>& compnames_);
+
 private:
   void initialize_from_parameter_list();
-
-  void set_cell_value_in_mesh_block(const double& value, Epetra_Vector &v,
-				    const int& mesh_block_id);
+  void create_default_compnames(int n);
+  void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
+				    int mesh_block_id);
 
   void set_cell_value_in_region(const double& value, Epetra_Vector& v,
 				const std::string& region);
 
   void set_cell_value_in_region(const Amanzi::Function& fun, Epetra_Vector &v,
 				const std::string& region);
-  
 
   // state vectors
   Teuchos::RCP<Epetra_Vector> water_density;  
@@ -146,15 +151,9 @@ private:
   // parameter list
   Teuchos::ParameterList parameter_list;
 
+  // names for components
+  std::vector<std::string> compnames;
 
-  // // restart related maps
-  // Teuchos::RCP<Epetra_Map> all_to_one_node_map;
-  // Teuchos::RCP<Epetra_Map> all_to_one_cell_map;  
-  // Teuchos::RCP<Epetra_Map> all_to_one_face_map;  
-  // Teuchos::RCP<Epetra_Export> all_to_one_node_export;
-  // Teuchos::RCP<Epetra_Export> all_to_one_cell_export;  
-  // Teuchos::RCP<Epetra_Export> all_to_one_face_export;  
-
-}; 
+};
 
 #endif

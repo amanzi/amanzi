@@ -27,9 +27,14 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
+include_directories(${OUTPUT_SOURCE_DIR})
+
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
+include_directories(${ASCEMIO_INCLUDE_DIR})
+
 
 add_library(chemistry chemistry_pk.cc chemistry_state.cc)
 target_link_libraries(chemistry ${GEOCHEM_LIBS} ${Epetra_LIBRARIES})

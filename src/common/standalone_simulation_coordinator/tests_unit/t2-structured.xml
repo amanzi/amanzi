@@ -1,4 +1,5 @@
 <ParameterList name="t2-structured">
+  <Parameter name="Native Structured Input" type="bool" value="1"/>
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="Structured"/>
   </ParameterList>
@@ -25,8 +26,9 @@
     <Parameter name="v" type="string" value="0"/>
   </ParameterList>
   <ParameterList name="comp">
-    <ParameterList name="ALL">
+    <ParameterList name="ic_scalar">
       <Parameter name="inflow" type="string" value="-2.53e-8"/>
+      <Parameter name="region" type="string" value="ALL"/>
       <Parameter name="type" type="string" value="zero_total_velocity"/>
     </ParameterList>
     <ParameterList name="Air">
@@ -41,21 +43,23 @@
       <Parameter name="phase" type="string" value="Liquid"/>
       <Parameter name="viscosity" type="string" value="1.0"/>
     </ParameterList>
-    <ParameterList name="YHIBC">
+    <ParameterList name="bc_inflow">
       <Parameter name="inflow" type="string" value="-2.535e-8"/>
+      <Parameter name="region" type="string" value="YHIBC"/>
       <Parameter name="rock" type="string" value="Backfill"/>
       <Parameter name="type" type="string" value="zero_total_velocity"/>
     </ParameterList>
-    <ParameterList name="YLOBC">
+    <ParameterList name="bc_scalar">
       <Parameter name="Air" type="string" value="0."/>
       <Parameter name="Water" type="string" value="1000"/>
+      <Parameter name="region" type="string" value="YLOBC"/>
       <Parameter name="type" type="string" value="scalar"/>
     </ParameterList>
     <Parameter name="comp" type="string" value="Water Air"/>
     <Parameter name="dominant" type="string" value="Air"/>
     <Parameter name="hi_bc" type="string" value="4 1"/>
-    <Parameter name="inflow" type="string" value="YHIBC YLOBC"/>
-    <Parameter name="init" type="string" value="ALL"/>
+    <Parameter name="inflow" type="string" value="bc_inflow bc_scalar"/>
+    <Parameter name="init" type="string" value="ic_scalar"/>
     <Parameter name="lo_bc" type="string" value="4 1"/>
   </ParameterList>
   <ParameterList name="diffuse">
@@ -63,14 +67,16 @@
   </ParameterList>
   <ParameterList name="geometry">
     <ParameterList name="Backfill_Region">
-      <Parameter name="param" type="string" value="0 0 16 16"/>
-      <Parameter name="purpose" type="string" value="0"/>
-      <Parameter name="type" type="string" value="1"/>
+      <Parameter name="hi_coordinate" type="string" value="{16. 16.}"/>
+      <Parameter name="lo_coordinate" type="string" value="{0. 0.}"/>
+      <Parameter name="purpose" type="string" value="all"/>
+      <Parameter name="type" type="string" value="box"/>
     </ParameterList>
     <ParameterList name="Waste_Region">
-      <Parameter name="param" type="string" value="6 6 10 10"/>
-      <Parameter name="purpose" type="string" value="0"/>
-      <Parameter name="type" type="string" value="1"/>
+      <Parameter name="hi_coordinate" type="string" value="{10. 10.}"/>
+      <Parameter name="lo_coordinate" type="string" value="{6. 6.}"/>
+      <Parameter name="purpose" type="string" value="all"/>
+      <Parameter name="type" type="string" value="box"/>
     </ParameterList>
     <Parameter name="coord_sys" type="string" value="0"/>
     <Parameter name="is_periodic" type="string" value="0 0"/>
@@ -131,7 +137,10 @@
       <Parameter name="kr_param" type="string" value="0.11238 0.1893 0"/>
       <Parameter name="kr_type" type="string" value="3"/>
       <Parameter name="permeability" type="string" value="78.58 78.58"/>
+      <Parameter name="permeability_dist" type="string" value="uniform"/>
       <Parameter name="porosity" type="string" value="0.35"/>
+      <Parameter name="porosity_dist" type="string" value="uniform"/>
+      <Parameter name="region" type="string" value="Backfill_Region"/>
     </ParameterList>
     <ParameterList name="Backfill_Region">
       <Parameter name="kappa" type="string" value="1"/>
@@ -145,14 +154,11 @@
       <Parameter name="kr_param" type="string" value="0.48541 0 0"/>
       <Parameter name="kr_type" type="string" value="3"/>
       <Parameter name="permeability" type="string" value="0.0372 0.0372"/>
+      <Parameter name="permeability_dist" type="string" value="uniform"/>
       <Parameter name="porosity" type="string" value="0.266"/>
+      <Parameter name="porosity_dist" type="string" value="uniform"/>
+      <Parameter name="region" type="string" value="Waste_Region"/>
     </ParameterList>
-    <ParameterList name="Waste_Region">
-      <Parameter name="kappa" type="string" value="1"/>
-      <Parameter name="phi" type="string" value="1"/>
-      <Parameter name="type" type="string" value="Waste"/>
-    </ParameterList>
-    <Parameter name="assign" type="string" value="Backfill_Region Waste_Region"/>
     <Parameter name="permeability_file" type="string" value="test/kp"/>
     <Parameter name="porosity_file" type="string" value="test/pp"/>
     <Parameter name="rock" type="string" value="Backfill Waste"/>
@@ -172,7 +178,7 @@
     <ParameterList name="Al+++">
       <Parameter name="group" type="string" value="Total"/>
     </ParameterList>
-    <ParameterList name="Backfill_Region">
+    <ParameterList name="ic_backfill">
       <Parameter name="Al+++" type="string" value="6.5874e-9"/>
       <Parameter name="H+" type="string" value="-3.1408e-7"/>
       <Parameter name="HPO4--" type="string" value="1.0000e-6"/>
@@ -187,6 +193,7 @@
       <Parameter name="UO2++" type="string" value="1.000e-5"/>
       <Parameter name="Uranium" type="string" value="0.00"/>
       <Parameter name="type" type="string" value="scalar"/>
+      <Parameter name="region" type="string" value="Backfill_Region"/>
     </ParameterList>
     <ParameterList name="H+">
       <Parameter name="group" type="string" value="Total"/>
@@ -224,7 +231,7 @@
     <ParameterList name="Uranium">
       <Parameter name="group" type="string" value="Solid"/>
     </ParameterList>
-    <ParameterList name="Waste_Region">
+    <ParameterList name="ic_waste">
       <Parameter name="Al+++" type="string" value="2.8909e-5"/>
       <Parameter name="H+" type="string" value="1.2786e-3"/>
       <Parameter name="HPO4--" type="string" value="7.1028e-5"/>
@@ -239,8 +246,9 @@
       <Parameter name="UO2++" type="string" value="3.5414e-2"/>
       <Parameter name="Uranium" type="string" value="0.0"/>
       <Parameter name="type" type="string" value="scalar"/>
+      <Parameter name="region" type="string" value="Waste_Region"/>
     </ParameterList>
-    <ParameterList name="YHIBC">
+    <ParameterList name="bc_hi">
       <Parameter name="Al+++" type="string" value="6.5874e-9"/>
       <Parameter name="H+" type="string" value="-3.1408e-7"/>
       <Parameter name="HPO4--" type="string" value="1.0000e-6"/>
@@ -255,8 +263,9 @@
       <Parameter name="UO2++" type="string" value="1.000e-15"/>
       <Parameter name="Uranium" type="string" value="0.00"/>
       <Parameter name="type" type="string" value="scalar"/>
+      <Parameter name="region" type="string" value="YHIBC"/>
     </ParameterList>
-    <ParameterList name="YLOBC">
+    <ParameterList name="bc_lo">
       <Parameter name="Al+++" type="string" value="6.5874e-9"/>
       <Parameter name="H+" type="string" value="-3.1408e-7"/>
       <Parameter name="HPO4--" type="string" value="1.0000e-6"/>
@@ -271,10 +280,11 @@
       <Parameter name="UO2++" type="string" value="1.000e-15"/>
       <Parameter name="Uranium" type="string" value="0.00"/>
       <Parameter name="type" type="string" value="scalar"/>
+      <Parameter name="region" type="string" value="YLOBC"/>
     </ParameterList>
     <Parameter name="group" type="string" value="Total Solid Absorbed"/>
-    <Parameter name="inflow" type="string" value="YHIBC YLOBC"/>
-    <Parameter name="init" type="string" value="Backfill_Region Waste_Region"/>
+    <Parameter name="inflow" type="string" value="bc_hi bc_lo"/>
+    <Parameter name="init" type="string" value="ic_backfill ic_waste"/>
     <Parameter name="ntracer" type="string" value="13"/>
     <Parameter name="tracer" type="string" value="Al+++ H+ HPO4-- SiO2 UO2++ Koalinite Quartz Uranium SAl+++ SH+ SHPO4-- SSiO2 SUO2++"/>
   </ParameterList>

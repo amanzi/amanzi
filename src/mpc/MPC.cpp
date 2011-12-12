@@ -199,7 +199,7 @@ void MPC::read_parameter_list()
 {
   T0 = mpc_parameter_list.get<double>("Start Time");
   T1 = mpc_parameter_list.get<double>("End Time");
-  dT0 = mpc_parameter_list.get<double>("Initial time step");
+  dT0 = mpc_parameter_list.get<double>("Initial time step",0.0);
   end_cycle = mpc_parameter_list.get<int>("End Cycle",-1);
 }
 
@@ -223,7 +223,6 @@ void MPC::cycle_driver ()
       // these are the vectors that chemistry will populate with
       // the names for the auxillary output vectors and the
       // names of components
-      std::vector<string> auxnames;
       std::vector<string> compnames; 
       
       // total view needs this to be outside the constructor 
@@ -232,8 +231,7 @@ void MPC::cycle_driver ()
       CPK->set_component_names(&compnames);
 
       // set the names in the visualization object
-      visualization->set_compnames(compnames);
-      visualization->set_auxnames(auxnames);
+      S->set_compnames(compnames);
 
     } catch (ChemistryException& chem_error) {
       std::cout << "MPC: Chemistry_PK.InitializeChemistry returned an error " 
@@ -290,11 +288,11 @@ void MPC::cycle_driver ()
       Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
       
       // write visualization data for timestep if requested
-      visualization->dump_state(*S, &(*aux));
+      S->write_vis(*visualization, &(*aux), auxnames);
     }
   else
     {
-      visualization->dump_state(*S);
+      S->write_vis(*visualization);
     }
 
   // write a restart dump if requested
@@ -420,11 +418,11 @@ void MPC::cycle_driver ()
 	    Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
 	    
 	    // write visualization data for timestep if requested
-	    visualization->dump_state(*S, &(*aux));
+	    S->write_vis(*visualization, &(*aux), auxnames);
 	  }
 	else
 	  {
-	    visualization->dump_state(*S);
+	    S->write_vis(*visualization);
 	  }
 
 	// write restart dump if requested

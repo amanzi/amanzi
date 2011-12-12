@@ -199,7 +199,7 @@
 # https://software.lanl.gov/MeshTools/trac
 #
 # ccse:
-# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.5.tar.gz
+# https://ccse.lbl.gov/Software/tarfiles/ccse-0.1.7.tar.gz
 #
 # trilinos:
 # http://trilinos.sandia.gov
@@ -238,10 +238,10 @@ MOAB_VERSION=r4276
 CGNS_VERSION=2.5
 CGNS_PATCH=4
 METIS_VERSION=4.0.3
-MSTK_VERSION=1.83
-TRILINOS_VERSION=10.6.2
-CCSE_VERSION=0.1.5
-ASCEMIO_VERSION=1.1p
+MSTK_VERSION=1.84
+TRILINOS_VERSION=10.6.4
+CCSE_VERSION=0.1.7
+ASCEMIO_VERSION=1.2
 
 AMANZI_TPL_ARCHIVES=https://software.lanl.gov/ascem/tpls
 WGET_FLAGS=--no-check-certificate
@@ -937,21 +937,19 @@ function install_trilinos {
 #
 # ccse
 #
-# Notes(bandre): I'm not sure how often the ccse library will change,
-# but it would be nice if we had some fixed reference version to use.
-#
 ################################################################################
 function install_ccse {
-    CCSE_DIR=${CCSE_PREFIX}/ccse-${CCSE_VERSION}
+    CCSE_DIR=${CCSE_PREFIX}/ccse/ccse-${CCSE_VERSION}
     CCSE_CONFIG=1
     CCSE_MAKE=1
     CCSE_TEST=1
     CCSE_INSTALL=1
     CCSE_VERBOSE=0
+    CCSE_INSTALL_DIR=${PREFIX}/ccse/install
 
     rm -rf ${CCSE_DIR}
-    mkdir -p ${CCSE_PREFIX}
-    cd ${CCSE_PREFIX}
+    mkdir -p ${CCSE_DIR}
+    cd ${CCSE_PREFIX}/ccse
     tar zxf ${SOURCE}/ccse-${CCSE_VERSION}.tar.gz
     cd ${CCSE_DIR}
 
@@ -976,14 +974,12 @@ function install_ccse {
     cmake \
 	-D ENABLE_Config_Report:BOOL=ON \
 	-D MPI_PREFIX:FILEPATH=${MPI_PREFIX} \
-	-D MPI_EXEC:FILEPATH=${MPI_EXEC} \
-	-D MPI_EXEC_NUMPROCS_FLAG:STRING=${MPI_EXEC_NUMPROCS_FLAG} \
-	-D MPI_EXEC_ARGS:STRING="${MPI_EXEC_ARGS}" \
 	-D ENABLE_TESTS:BOOL=ON \
 	-D ENABLE_MPI:BOOL=${ENABLE_MPI} \
 	-D ENABLE_OpenMP:BOOL=${ENABLE_OpenMP} \
 	-D BL_SPACEDIM:INT=${CCSE_SPACEDIM} \
 	-D BL_PRECISION:STRING="${CCSE_PRECISION}" \
+        -D CMAKE_INSTALL_PREFIX:FILEPATH="${CCSE_INSTALL_DIR}" \
 	${VFLAG} \
 	..
 
@@ -1125,11 +1121,13 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
     mkdir -p \${AMANZI_DIR}/build
     cd \${AMANZI_DIR}/build
 
-    export CXX=${MPI_PREFIX}/bin/mpicxx
-    export CC=${MPI_PREFIX}/bin/mpicc
-    export FC=${MPI_PREFIX}/bin/mpif90
-    export F90=${MPI_PREFIX}/bin/mpif90
-    export F77=${MPI_PREFIX}/bin/mpif77
+    if [ ${ENABLE_MPI} -eq 1 ]; then
+        export CXX=${MPI_PREFIX}/bin/mpicxx
+        export CC=${MPI_PREFIX}/bin/mpicc
+        export FC=${MPI_PREFIX}/bin/mpif90
+        export F90=${MPI_PREFIX}/bin/mpif90
+        export F77=${MPI_PREFIX}/bin/mpif77
+    fi
 
     \${CMAKE} \\
 	-D ENABLE_Config_Report:BOOL=ON \\
@@ -1153,7 +1151,7 @@ if [ \$AMANZI_CONFIG -eq 1 ]; then
 	-D ENABLE_STK_Mesh:BOOL=ON \\
 	-D Trilinos_DIR:FILEPATH=${PREFIX}/trilinos/trilinos-${TRILINOS_VERSION}-install \\
 	-D ENABLE_OpenMP:BOOL=\${ENABLE_OpenMP} \\
-	-D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse-${CCSE_VERSION}/install \\
+	-D CCSE_DIR:FILEPATH=${CCSE_PREFIX}/ccse/install \\
 	-D AMANZI_SPACEDIM:INT=\${AMANZI_SPACEDIM} \\
 	-D AMANZI_CHEMEVOL_PKG:STRING="\${AMANZI_CHEMEVOL_PKG}" \\
 	-D AMANZI_PRECISION:STRING="\${AMANZI_PRECISION}" \\

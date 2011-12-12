@@ -1,6 +1,3 @@
-//
-// $Id: PressBndry.cpp,v 1.1 2011-08-27 18:04:11 gpau Exp $
-//
 #include <winstd.H>
 
 #include <LO_BCTYPES.H>

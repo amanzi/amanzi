@@ -1,6 +1,3 @@
-//
-// $Id: MacProj.cpp,v 1.81 2011-08-28 05:54:53 gpau Exp $
-//
 #include <winstd.H>
 
 #include <LO_BCTYPES.H>
@@ -225,43 +222,6 @@ MacProj::BuildPhiBC (int level)
     }
 }
 
-
-//
-// Projection functions follow ...
-//
-static
-bool
-grids_on_side_of_domain (const BoxArray&    grids,
-                         const Box&         domain,
-                         const Orientation& outFace)
-{
-  const int idir = outFace.coordDir();
-
-  if (outFace.isLow())
-    {
-      for (int igrid = 0; igrid < grids.size(); igrid++)
-        { 
-	  if (grids[igrid].smallEnd(idir) == domain.smallEnd(idir))
-            { 
-	      return true;
-            }
-        }
-    }
-  
-  if (outFace.isHigh())
-    {
-      for (int igrid = 0; igrid < grids.size(); igrid++)
-        {
-	  if (grids[igrid].bigEnd(idir) == domain.bigEnd(idir))
-            {
-	      return true;
-            }
-        }
-    }
-
-  return false;
-}
-
 //
 // Compute the level advance mac projection.
 //
@@ -323,7 +283,7 @@ MacProj::mac_project (int             level,
   if (verbose == 2)
     check_div_cond(level, u_mac, RhoD);
 
-  print_min_max(u_mac);
+  PorousMedia::check_minmax(u_mac);
 }
 
 void
@@ -878,287 +838,116 @@ MacProj::set_dirichlet_bcs (int             level,
 			    const Array<Real>&  press_lo,
 			    const Array<Real>&  press_hi)
 {
-
   //
   // Set dirichlet boundary condition with hydrostatic condition
   //
 
-  bool hasDirichlet;
-  Orientation Faces[2*BL_SPACEDIM];
-  int numDirichlet;
-
-  GetDirichletFaces(hasDirichlet,Faces,p_bc,numDirichlet);
-
   const BoxArray&   grids  = LevelData[level].boxArray();
   const Geometry&   geom   = parent->Geom(level);
-  const Box&        domain = parent->Geom(level).Domain();
+  const Box&        domain = geom.Domain();
 
   //
   // Create 1-wide cc box just outside boundary to hold phi.
   // Create 2-wide cc box just inside  boundary to hold rho
   //
-
-  BoxList  ccBoxList;
-  BoxList phiBoxList;
-
-  Array<IntVect> idx(numDirichlet);
-
   PorousMedia* pm_level = dynamic_cast<PorousMedia*>(&parent->getLevel(level));
   Real gravity = pm_level->getGravity();
 
-  for (int iface = 0; iface < numDirichlet; iface++)
+  Array<Orientation> Faces;
+  PorousMedia::getDirichletFaces(Faces,Press_Type,p_bc);
+
+  if (Faces.size()>0)
     {
-      idx[iface] = IntVect::TheZeroVector();
-
-      if (grids_on_side_of_domain(grids,geom.Domain(),Faces[iface])) 
-	{
-	  const int outDir    = Faces[iface].coordDir();
-
-	  Box ccBndBox;
-	  if (Faces[iface].faceDir() == Orientation::high)
-	    {
-	      ccBndBox = Box(BoxLib::adjCellHi(domain,outDir,2));
-	      ccBndBox.shift(outDir,-2);
-	      idx[iface].setVal(outDir,0);
-	    } 
-	  else 
-	    {
-	      ccBndBox = Box(BoxLib::adjCellLo(domain,outDir,2));
-	      ccBndBox.shift(outDir,2);
-	      idx[iface].setVal(outDir,0);
-	    }
-	  ccBndBox.grow(1);
-	  ccBoxList.push_back(ccBndBox);
-
-	  Box phiBox  = BoxLib::adjCell(domain,Faces[iface],1);
-	  phiBoxList.push_back(phiBox);
-
-	  const Box      valid_ccBndBox       = ccBndBox & domain;
-	  const BoxArray uncovered_ba = BoxLib::complementIn(valid_ccBndBox,grids);
-	  if (uncovered_ba.size() && 
-	      BoxLib::intersect(grids,valid_ccBndBox).size() )
-	    BoxLib::Error("MacProj: Cannot yet handle partially refined outflow");
-	}
-    }
-
-  if ( !ccBoxList.isEmpty() ) 
-    {
-      BoxArray  ccBoxArray( ccBoxList);
-      BoxArray phiBoxArray(phiBoxList);
- 
-      FArrayBox rhodat[2*BL_SPACEDIM];
-      FArrayBox phidat[2*BL_SPACEDIM];
-
-      BoxArray batmp = grids;
-      batmp.grow(1);
-      MultiFab rhotmp(batmp,1,0);
-      for (MFIter mfi(rhotmp); mfi.isValid(); ++mfi)
-	rhotmp[mfi].copy(RhoG[mfi]);
-
-      for ( int iface = 0; iface < numDirichlet; ++iface) 
-	{
-	  rhodat[iface].resize(ccBoxArray[iface], 1);
-	  phidat[iface].resize(phiBoxArray[iface], 1);
-	
-	  phidat[iface].setVal(0.0);
-	  rhodat[iface].setVal(0.0);
-
-	  rhotmp.shift(idx[iface]);
-	  rhotmp.copy(rhodat[iface], 0, 0, 1);
-	  rhotmp.shift(-idx[iface]);
-	
-	}
+      BoxList  ccBoxList;
+      BoxList phiBoxList;
+      Array<int> face;
+      Array<IntVect> idx(Faces.size());
       
-      const int* lo_bc = phys_bc->lo();
-      const int* hi_bc = phys_bc->hi();
-
-      computeRhoG (rhodat, phidat, geom, Faces, numDirichlet, gravity,
-		   lo_bc, hi_bc, press_lo.dataPtr(), press_hi.dataPtr());
-
-      // Must do this kind of copy instead of mac_phi->copy(phidat);
-      //   because we're copying onto the ghost cells of the FABs,
-      //   not the valid regions.
-      for ( int iface =0; iface < numDirichlet; ++iface )
+      for (int iface = 0; iface < Faces.size(); iface++)
 	{
-	  for (MFIter mfi(*mac_phi); mfi.isValid(); ++mfi)
+	  idx[iface] = IntVect::TheZeroVector();
+
+	  if (PorousMedia::grids_on_side_of_domain(grids,domain,Faces[iface])) 
 	    {
-	      Box ovlp = (*mac_phi)[mfi].box() & phidat[iface].box();
-	      if (ovlp.ok()) 
-		(*mac_phi)[mfi].copy(phidat[iface],ovlp,0,ovlp,0,1);
+	      const int outDir    = Faces[iface].coordDir();
+	      Box phiBox  = BoxLib::adjCell(domain,Faces[iface],1);
+
+	      if (phiBox.ok())
+		{
+		  phiBoxList.push_back(phiBox);
+		  Box ccBndBox;
+		  if (Faces[iface].faceDir() == Orientation::high)
+		    {
+		      ccBndBox = Box(BoxLib::adjCellHi(domain,outDir,2));
+		      ccBndBox.shift(outDir,-2);
+		      idx[iface].setVal(outDir,0);
+		    } 
+		  else 
+		    {
+		      ccBndBox = Box(BoxLib::adjCellLo(domain,outDir,2));
+		      ccBndBox.shift(outDir,2);
+		      idx[iface].setVal(outDir,0);
+		    }
+		  ccBndBox.grow(1);
+		  ccBoxList.push_back(ccBndBox);
+		  face.push_back(int(Faces[iface]));
+
+		  const Box      valid_ccBndBox       = ccBndBox & domain;
+		  const BoxArray uncovered_ba = BoxLib::complementIn(valid_ccBndBox,grids);
+		  if (uncovered_ba.size() && 
+		      BoxLib::intersect(grids,valid_ccBndBox).size() )
+		    BoxLib::Error("MacProj: Cannot yet handle partially refined outflow");
+		}
+	    }
+	}
+
+      if ( !ccBoxList.isEmpty() ) 
+	{  
+	  const Real* dx    = geom.CellSize();
+	  const int* domlo  = domain.loVect();
+	  const int* domhi  = domain.hiVect();
+	  const int* lo_bc  = phys_bc->lo();
+	  const int* hi_bc  = phys_bc->hi();
+
+	  BoxArray  ccBoxArray( ccBoxList);
+	  BoxArray phiBoxArray(phiBoxList);
+
+	  BoxArray batmp = grids;
+	  batmp.grow(1);
+	  MultiFab rhotmp(batmp,1,0);
+	  for (MFIter mfi(rhotmp); mfi.isValid(); ++mfi)
+	    rhotmp[mfi].copy(RhoG[mfi]);
+	  
+	  for ( int iface = 0; iface < ccBoxList.size(); ++iface) 
+	    {   
+ 
+	      FArrayBox rhodat(ccBoxArray[iface],1);
+	      FArrayBox phidat(phiBoxArray[iface],1);
+	      
+	      phidat.setVal(0.0);
+	      rhodat.setVal(0.0);
+	      rhotmp.shift(idx[iface]);
+	      rhotmp.copy(rhodat, 0, 0, 1);
+	      rhotmp.shift(-idx[iface]);
+
+	      DEF_LIMITS(phidat, phiPtr,philo,phihi);
+	      DEF_LIMITS(rhodat, rhoPtr,rholo,rhohi);
+
+	      FORT_RHOGBC(rhoPtr,ARLIM(rholo),ARLIM(rhohi),
+			  phiPtr,ARLIM(philo),ARLIM(phihi),
+			  &face[iface],&gravity,dx,domlo,domhi,
+			  lo_bc,hi_bc, press_lo.dataPtr(), press_hi.dataPtr());
+	
+	      // Must do this kind of copy instead of mac_phi->copy(phidat);
+	      //   because we're copying onto the ghost cells of the FABs,
+	      //   not the valid regions.
+	      for (MFIter mfi(*mac_phi); mfi.isValid(); ++mfi)
+		{
+		  Box ovlp = (*mac_phi)[mfi].box() & phidat.box();
+		  if (ovlp.ok()) 
+		    (*mac_phi)[mfi].copy(phidat,ovlp,0,ovlp,0,1);
+		}
 	    }
 	} 
     }
 }
-
-void
-MacProj::computeRhoG (FArrayBox*         rhoG,
-                      FArrayBox*         phiMF,
-                      const Geometry&    geom,
-                      Orientation*       outFaces,
-                      int                numOutFlowFaces,
-                      Real               gravity,
-                      const int*         lo_bc,
-                      const int*         hi_bc,
-		      const Real*        press_in,
-		      const Real*        press_out)
-
-{
-  const Real* dx    = geom.CellSize();
-  const Box& domain = geom.Domain();
-  const int* domlo  = domain.loVect();
-  const int* domhi  = domain.hiVect();
-
-  for (int iface = 0; iface < numOutFlowFaces; iface++) 
-    {
-
-      int face          = int(outFaces[iface]);
-
-      DEF_LIMITS(phiMF[iface], phiPtr,philo,phihi);
-      DEF_LIMITS(rhoG[iface], rhoPtr,rholo,rhohi);
-      
-      FORT_RHOGBC(rhoPtr,ARLIM(rholo),ARLIM(rhohi),
-		  phiPtr,ARLIM(philo),ARLIM(phihi),
-		  &face,&gravity,dx,domlo,domhi,
-		  lo_bc,hi_bc,press_in,press_out);
-      
-    }
-}
-
-void
-MacProj::GetOutFlowFaces (bool&        haveOutFlow,
-                          Orientation* outFaces,
-                          BCRec*       _phys_bc,
-			  const BCRec& p_bc,
-                          int&         numOutFlowBC)
-{
-  haveOutFlow = false;
-
-  numOutFlowBC = 0;
-
-  for (int idir = 0; idir < BL_SPACEDIM; idir++)
-    {
-      if ((_phys_bc->lo(idir) == Outflow || _phys_bc->lo(idir) == SEEPAGE)
-	  &&  p_bc.lo(idir) == EXT_DIR)
-        {
-	  haveOutFlow = true;
-	  outFaces[numOutFlowBC] = Orientation(idir,Orientation::low);
-	  numOutFlowBC++;
-        }
-
-      if ((_phys_bc->hi(idir) == Outflow || _phys_bc->hi(idir) == SEEPAGE)
-	  &&  p_bc.hi(idir) == EXT_DIR)
-        {
-	  haveOutFlow = true;
-	  outFaces[numOutFlowBC] = Orientation(idir,Orientation::high);
-	  numOutFlowBC++;
-        }
-
-    }
-}
-
-void
-MacProj::GetInFlowFaces  (bool&        haveInFlow,
-                          Orientation* inFaces,
-                          BCRec*       _phys_bc,
-			  const BCRec& p_bc,
-                          int&         numInFlowBC)
-{
-  haveInFlow = false;
-
-  numInFlowBC = 0;
-
-  for (int idir = 0; idir < BL_SPACEDIM; idir++)
-    {
-      if (_phys_bc->lo(idir) == Inflow &&  p_bc.lo(idir) == EXT_DIR)
-        {
-	  haveInFlow = true;
-	  inFaces[numInFlowBC] = Orientation(idir,Orientation::low);
-	  numInFlowBC++;
-        }
-
-      if (_phys_bc->hi(idir) == Inflow &&  p_bc.hi(idir) == EXT_DIR)
-        {
-	  haveInFlow = true;
-	  inFaces[numInFlowBC] = Orientation(idir,Orientation::high);
-	  numInFlowBC++;
-        }
-
-    }
-}
-
-void
-MacProj::GetDirichletFaces  (bool&        haveDirichlet,
-			     Orientation* Faces,
-			     const BCRec& p_bc,
-			     int&         numDirichlet)
-{
-  // 
-  //  find the dirichlet faces.
-  //
-
-  haveDirichlet = false;
-
-  numDirichlet = 0;
-
-  for (int idir = 0; idir < BL_SPACEDIM; idir++)
-    {
-      if (p_bc.lo(idir) == EXT_DIR)
-        {
-	  haveDirichlet = true;
-	  Faces[numDirichlet] = Orientation(idir,Orientation::low);
-	  numDirichlet++;
-        }
-
-      if (p_bc.hi(idir) == EXT_DIR)
-        {
-	  haveDirichlet = true;
-	  Faces[numDirichlet] = Orientation(idir,Orientation::high);
-	  numDirichlet++;
-        }
-    }
-}
-
-void
-MacProj::print_min_max (MultiFab* u_mac)
-{
-
-  // Write out the min and max of the MAC velocities
-  Real umax =  -1.e20;
-  Real vmax =  -1.e20;
-  Real umin =   1.e20;
-  Real vmin =   1.e20;
-#if(BL_SPACEDIM == 3)
-  Real wmax =  -1.e20;
-  Real wmin =   1.e20;
-#endif
-  if (verbose) {
-    for (MFIter mfi(u_mac[0]); mfi.isValid(); ++mfi)
-      {
-	int i = mfi.index();
-	umax = std::max(umax,u_mac[0][i].max(u_mac[0].boxArray()[i]));
-	umin = std::min(umin,u_mac[0][i].min(u_mac[0].boxArray()[i]));
-	vmax = std::max(vmax,u_mac[1][i].max(u_mac[1].boxArray()[i]));
-	vmin = std::min(vmin,u_mac[1][i].min(u_mac[1].boxArray()[i]));
-#if(BL_SPACEDIM == 3)
-	wmax = std::max(wmax,u_mac[2][i].max(u_mac[2].boxArray()[i]));
-	wmin = std::min(wmin,u_mac[2][i].min(u_mac[2].boxArray()[i]));
-#endif
-      }
-    ParallelDescriptor::ReduceRealMax(umax);
-    ParallelDescriptor::ReduceRealMin(umin);
-    ParallelDescriptor::ReduceRealMax(vmax);
-    ParallelDescriptor::ReduceRealMin(vmin);
-#if(BL_SPACEDIM == 3)
-    ParallelDescriptor::ReduceRealMax(wmax);
-    ParallelDescriptor::ReduceRealMin(wmin);
-#endif
-    if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "   UMAC MAX/MIN  " << umax << "  " << umin << std::endl;
-      std::cout << "   VMAC MAX/MIN  " << vmax << "  " << vmin << std::endl;
-#if(BL_SPACEDIM == 3)
-      std::cout << "   WMAC MAX/MIN  " << wmax << "  " << wmin << std::endl;
-#endif
-    }
-  }
-}
-
