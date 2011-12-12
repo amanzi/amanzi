@@ -216,6 +216,73 @@ Example:
     <Parameter name="Chemistry Mode" type="string" value="none"/>
   </ParameterList>
 
+`"Execution Control`" section also contains subsections that are specific to the implementation details of `"Structured"` and `"Unstructured"` numerical solution approaches.  All options for `"Structured`" are optional at the moment.  
+
+Usage for `"Structured`":
+
+* `"prob`" [list] accepts a list of input parameters that further define the algorithmic details of the flow, transport and chemistry modes. Optional.
+
+ * `"cfl`" [double] CFL number.  Default=1. Optional. 
+
+ * `"v`" [integer] Verbosity level (0-2). Default=0. Optional. 
+
+ * `"full_cycle`" [integer] 1 if the pressure equation is solved at the beginning of each timestep; 0 otherwise.  Default = 0. Optional.
+
+ * `"no_corrector`" [integer] 1 if corrector step is skipped; 0 otherwise.  Default = 0. Optional.
+
+ * `"do_kappa_refine`" [integer] 1 if refinement criteria looks at gradient of permeability; 0 otherwise.  Default = 0. Optional.
+
+ * `"do_reflux`" [integer] 1 if reflux is done; 0 otherwise.  Optional.
+
+ * `"initial_dt`" [double] The initial level 0 time step regardless of other settings.  Optional. 
+
+ * `"init_shrink`" [double] The initial time step is equal to the prescribed time step multiplied by this factor. Optional.
+
+ * `"change_max`" [double] The factor by which the time step can grow in subsequent step. Optional.
+
+ * `"fixed_dt`" [double] Level 0 time step regardless of cfl or other settings. Optional.
+
+ * `"max_dt`" [double] Maximum level 0 time step regardless of cfl or other settings. Optional except for variably saturated flow.
+
+ * `"dt_cutoff`" [double] The time step below which calculation will abort. Optional.
+
+ * `"visc_abs_tol`" [double] Absolute tolerance for the linear solver in the component equations. Default=1e-10. Optional.
+
+ * `"visc_tol`" [double] Relative tolerance for the linear solver in the component equations. Default=1e-10. Optional.
+
+
+* `"amr`" [list] accepts a list of input parameters that pertains to adaptive mesh refinement algorithm. Optional.
+
+ * `"probin_file`" [String] Name of additional AMR fortran parameter file.  Default = probin. Optional.
+
+ * `"max_level`" [integer] The maximum level of refinement above the coarsest level.  Default=0. Optional.
+
+ * `"ref_ratio`" [Array integer] The ratio of coarse to fine grid spacing between subsequent levels.  Default=2 at each finer level. Optional. 
+
+ * `"n_error_buf`" [Array integer] The number of additional cells around already tagged cells that will be tagged at each AMR level. Default=1. Optional.
+
+ * `"regrid_int`" [Array integer] Number of coarse time steps before a regrid attempt.  Default=1. Optional.
+
+ * `"v`" [integer] Verbosity level (0-1). Default=0. Optional. 
+
+ * `"max_grid_size`" [integer] The maximum size of a grid in any direction.  Optional. 
+
+ * `"blocking factor`" [integer] The minimum block size; `"max_grid_size`" must be a multiple of this. Optional. 
+
+ * `"nosub`" [integer] 1 if no subcycling; 0 otherwise. Default=0. Optional. 
+
+ * `"regrid_on_restart`" [integer] 1 if regrid at restart; 0 otherwise.  Default=0. Optional.
+
+ * `"grid_eff`" [double] Grid efficiency during a regrid.  0 for lowest efficiency and 1 for highest efficiency. Default=0.75.  Optional. 
+
+* `"diffuse`" [list] Algorithmic options for the diffusion solver. Optional.  Details to be added.
+
+* `"mac`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
+
+* `"cg`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
+
+* `"mg`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
+
 Domain
 ======
 
