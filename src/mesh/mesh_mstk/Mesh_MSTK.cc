@@ -903,12 +903,12 @@ void Mesh_MSTK::face_get_nodes (const Entity_ID faceid,
   else {                // Surface mesh or 2D mesh
 
     if (faceflip[faceid]) {
-      nodeids->push_back(MEnt_ID(ME_Vertex(genface,1)));
-      nodeids->push_back(MEnt_ID(ME_Vertex(genface,0)));
+      nodeids->push_back(MEnt_ID(ME_Vertex(genface,1))-1);
+      nodeids->push_back(MEnt_ID(ME_Vertex(genface,0))-1);
     }
     else {
-      nodeids->push_back(MEnt_ID(ME_Vertex(genface,0)));
-      nodeids->push_back(MEnt_ID(ME_Vertex(genface,1)));
+      nodeids->push_back(MEnt_ID(ME_Vertex(genface,0))-1);
+      nodeids->push_back(MEnt_ID(ME_Vertex(genface,1))-1);
     }
   }
 
