@@ -164,8 +164,9 @@ struct problem_setup
       cell_geometry::hex_centroid(x, xc);
       p_error[j] = pressure(xc) - p_solve[j];
     }
-  p_error.Norm2(&l2error);
-  delete &p_solve;
+
+    p_error.Norm2(&l2error);
+    delete &p_solve;
   }
 
   void face_pressure_error(double &l2error)
@@ -204,10 +205,16 @@ struct problem_setup
   {
     Epetra_MultiVector qcell(problem->CellMap(),3);
     problem->DeriveDarcyVelocity(*solution, qcell);
-    for (int j = 0; j < qcell.MyLength(); ++j)
-      for (int k = 0; k < 3; ++k)
-        qcell[k][j] -= q[k];
-    qcell.Norm2(&error);
+    for (int j=0; j<qcell.MyLength(); ++j) {
+      for (int k=0; k<3; ++k) qcell[k][j] -= q[k];
+    }
+
+    double multi_error[3];
+    qcell.Norm2(multi_error);
+
+    error = 0.0;
+    for (int k=0; k<3; k++) error += std::pow(multi_error[0], 2.0);
+    error = std::sqrt(error);
   }
 
 };
@@ -216,7 +223,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, x_p_p)
   {
-
+    std::cout <<"Flow 1D: test 1" << std::endl;
     // Set non-default BC before create_problem().
     set_bc("LEFT",  "pressure", 1.0);
     set_bc("RIGHT", "pressure", 0.0);
@@ -248,6 +255,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, xg_p_p)
   {
+    std::cout <<"Flow 1D: test 2" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("LEFT",  "static head", 1.0);
@@ -280,6 +288,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, x_q_p)
   {
+    std::cout <<"Flow 1D: test 3" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("LEFT",  "mass flux", -1.0);
@@ -311,6 +320,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, xg_q_p)
   {
+    std::cout <<"Flow 1D: test 4" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("LEFT",  "mass flux", -1.0);
@@ -344,6 +354,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, y_p_p)
   {
+    std::cout <<"Flow 1D: test 5" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("BACK",  "pressure", 1.0);
@@ -374,6 +385,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, yg_p_p)
   {
+    std::cout <<"Flow 1D: test 6" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("BACK",  "static head", 1.0);
@@ -406,6 +418,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, y_q_p)
   {
+    std::cout <<"Flow 1D: test 7" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("BACK",  "mass flux", -1.0);
@@ -437,6 +450,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, yg_q_p)
   {
+    std::cout <<"Flow 1D: test 8" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("BACK",  "mass flux", -1.0);
@@ -470,6 +484,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, z_p_p)
   {
+    std::cout <<"Flow 1D: test 9" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("TOP",    "pressure", 0.0);
@@ -501,6 +516,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, zg_p_p)
   {
+    std::cout <<"Flow 1D: test 10" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("TOP",    "pressure", 0.0);
@@ -534,6 +550,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, z_q_p)
   {
+    std::cout <<"Flow 1D: test 11" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("TOP",    "mass flux", 1.0);
@@ -565,6 +582,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(problem_setup, zg_q_p)
   {
+    std::cout <<"Flow 1D: test 12" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("TOP",    "mass flux", 1.0);
@@ -603,6 +621,7 @@ SUITE(Darcy_Flux) {
 
   TEST_FIXTURE(problem_setup, Darcy_Flux_X)
   {
+    std::cout <<"Darcy flux: test 1" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("LEFT",  "pressure", 1.0);
@@ -624,6 +643,7 @@ SUITE(Darcy_Flux) {
 
   TEST_FIXTURE(problem_setup, Darcy_Flux_Y)
   {
+    std::cout <<"Darcy flux: test 2" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("FRONT", "pressure", 1.0);
@@ -645,6 +665,7 @@ SUITE(Darcy_Flux) {
 
   TEST_FIXTURE(problem_setup, Darcy_Flux_Z)
   {
+    std::cout <<"Darcy flux: test 3" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("BOTTOM", "pressure", 1.0);
@@ -662,7 +683,6 @@ SUITE(Darcy_Flux) {
     CHECK(error1 < 1.0e-9); // flux error norm
     CHECK(error2 < 1.0e-9); // flux discrepancy norm
   }
-
 }
 
 
@@ -670,6 +690,7 @@ SUITE(Darcy_Velocity) {
 
   TEST_FIXTURE(problem_setup, Darcy_Velocity_X)
   {
+    std::cout <<"Darcy velocity: test 1" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("LEFT",  "pressure", 1.0);
@@ -683,16 +704,16 @@ SUITE(Darcy_Velocity) {
     solve_problem();
 
     // Darcy velocity
-    double q[3] = { 1.0, 0.0, 0.0 };
+    double q[3] = {1.0, 0.0, 0.0};
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    //std::cout << "error " << error << std::endl;
   }
 
 
   TEST_FIXTURE(problem_setup, Darcy_Velocity_Y)
   {
+    std::cout <<"Darcy velocity: test 2" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("FRONT", "pressure", 1.0);
@@ -716,6 +737,7 @@ SUITE(Darcy_Velocity) {
 
   TEST_FIXTURE(problem_setup, Darcy_Velocity_Z)
   {
+    std::cout <<"Darcy velocity: test 3" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("BOTTOM", "pressure", 1.0);
@@ -739,6 +761,7 @@ SUITE(Darcy_Velocity) {
 
   TEST_FIXTURE(problem_setup, Darcy_Velocity_X_Gravity)
   {
+    std::cout <<"Darcy velocity: test 4" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("LEFT",  "static head", 1.0);
@@ -759,12 +782,12 @@ SUITE(Darcy_Velocity) {
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    //std::cout << "error " << error << std::endl;
   }
 
 
   TEST_FIXTURE(problem_setup, Darcy_Velocity_Y_Gravity)
   {
+    std::cout <<"Darcy velocity: test 5" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("FRONT", "static head", 1.0);
@@ -791,6 +814,7 @@ SUITE(Darcy_Velocity) {
 
   TEST_FIXTURE(problem_setup, Darcy_Velocity_Z_Gravity)
   {
+    std::cout <<"Darcy velocity: test 6" << std::endl;
 
     // Set non-default BC before create_problem().
     set_bc("BOTTOM", "pressure", 2.0);
@@ -813,6 +837,5 @@ SUITE(Darcy_Velocity) {
     CHECK(error < 1.0e-8);
     //std::cout << "error " << error << std::endl;
   }
-
 }
 

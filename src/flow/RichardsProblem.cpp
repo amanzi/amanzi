@@ -86,15 +86,12 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   
   int iblock = 0;
   
-  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++)
-    {
-      if (vGsl.isSublist(vGsl.name(i)))
-	{      
-	  Teuchos::ParameterList &wrmlist = vGsl.sublist( vGsl.name(i) );
+  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++) {
+    if (vGsl.isSublist(vGsl.name(i))) {
+   	  Teuchos::ParameterList &wrmlist = vGsl.sublist( vGsl.name(i) );
 	  
-	  // which water retention model are we using? currently we only have van Genuchten
-	  if ( wrmlist.get<string>("Water retention model") == "van Genuchten") 
-	    {
+	    // which water retention model are we using? currently we only have van Genuchten
+	    if ( wrmlist.get<string>("Water retention model") == "van Genuchten") {
 	      // read the mesh block number that this model applies to
 	      //int meshblock = wrmlist.get<int>("Region ID");
 	      std::string region = wrmlist.get<std::string>("Region");
@@ -107,17 +104,15 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
 	      WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_,
 							       vG_sr_,p_atm_));
 	    }
-	  
-	  iblock++;
-	}
-    }
+      iblock++;
+	  }
+  }
 
-  // store the cell volumes in a convenient way
+  // store the cell volumes in a convenient way 
   cell_volumes = new Epetra_Vector(mesh->cell_map(false)); 
-  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++)
-    {
-      (*cell_volumes)[n] = md_->Volume(n);
-    }  
+  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
+    (*cell_volumes)[n] = mesh_->cell_volume(n);
+  }  
 }
 
 
