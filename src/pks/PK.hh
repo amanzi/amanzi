@@ -22,19 +22,18 @@ public:
   //virtual ~PK() = 0;
 
   // Initialize owned (dependent) variables.
-  virtual void initialize_state(Teuchos::RCP<State> S) = 0;
+  virtual void initialize(Teuchos::RCP<State> &S) = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dT() = 0;
 
   // Advance from state S0 to state S1 at time S0.time + dt.
-  virtual bool advance_transient(double dt, const Teuchos::RCP<State> S0,
-                                 Teuchos::RCP<State> S1) = 0;
+  virtual bool advance_transient(double dt, const Teuchos::RCP<State> &S0,
+                                 Teuchos::RCP<State> &S1) = 0;
 
   // Commit any secondary (dependent) variables.
-  virtual void commit_state(double dt, Teuchos::RCP<State> S) = 0;
+  virtual void commit_state(double dt, Teuchos::RCP<State> &S) = 0;
 };
-
 } // namespace
 
 #endif

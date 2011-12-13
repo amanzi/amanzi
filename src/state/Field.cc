@@ -7,11 +7,11 @@
 namespace Amanzi {
 
 Field::Field(std::string fieldname, int location,
-             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps,
-             std::string owner,
-             int num_dofs):
-  fieldname_(fieldname), location_(location),
-  owner_(owner), mesh_maps_(mesh_maps), num_dofs_(num_dofs) {
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps,
+             std::string owner, int num_dofs):
+    fieldname_(fieldname), location_(location),
+    owner_(owner), mesh_maps_(mesh_maps), num_dofs_(num_dofs),
+    io_restart_(true), io_vis_(false) {
 
   if (location_ == Amanzi::AmanziMesh::FACE) {
     data_ = Teuchos::rcp(new Epetra_MultiVector(mesh_maps->face_map(false),num_dofs_));
@@ -67,12 +67,12 @@ Teuchos::RCP<Epetra_MultiVector> Field::get_data(std::string pk_name) {
   }
 };
 
-void Field::set_data(std::string pk_name, Data data) {
+void Field::set_data(std::string pk_name, Teuchos::RCP<Epetra_MultiVector> &data) {
   assert_owner_or_die(pk_name);
   *data_ = *data;
 };
 
-void Field::set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector> data) {
+void Field::set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector> &data) {
   assert_owner_or_die(pk_name);
   *((*data_)(0)) = *data;
 };

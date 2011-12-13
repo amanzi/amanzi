@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 
-State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps):
+State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps):
   mesh_maps_(mesh_maps) {
 
   density_ = Teuchos::rcp(new double);
@@ -20,7 +20,7 @@ State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps):
 };
 
 State::State( Teuchos::ParameterList &parameter_list,
-              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps):
+              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps):
   mesh_maps_(mesh_maps),
   parameter_list_(parameter_list) {
 
@@ -108,6 +108,7 @@ void State::initialize_from_parameter_list() {
           // attempt to pick out constant values for the field
           if (parameter_list_.isParameter("Constant "+subfield_names[lcv])) {
             u[lcv] = parameter_list_.get<double>("Constant "+subfield_names[lcv]);
+            std::cout << "  got value:" << (*field)->get_fieldname() << "=" << u[lcv] << std::endl;
           } else {
             got_them_all = false;
             break;
@@ -115,7 +116,7 @@ void State::initialize_from_parameter_list() {
         }
 
         if (got_them_all) {
-          std::cout << "initializing in state:" << (*field)->get_fieldname() << "=" << u << std::endl;
+          std::cout << "got them all, assigning" << std::endl;
           (*field)->set_data((*field)->get_owner(), u);
         }
       }
@@ -229,12 +230,12 @@ Teuchos::RCP<Epetra_MultiVector> State::get_field(std::string fieldname,
 };
 
 void State::set_field(std::string fieldname, std::string pk_name,
-                      Teuchos::RCP<Epetra_MultiVector> data) {
+                      Teuchos::RCP<Epetra_MultiVector> &data) {
   get_field_record(fieldname)->set_data(pk_name, data);
 };
 
 void State::set_field(std::string fieldname, std::string pk_name,
-                      Teuchos::RCP<Epetra_Vector> data) {
+                      Teuchos::RCP<Epetra_Vector> &data) {
   get_field_record(fieldname)->set_data(pk_name, data);
 };
 

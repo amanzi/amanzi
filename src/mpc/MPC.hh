@@ -12,7 +12,7 @@
 #include "PK_Factory.hh"
 #include "ObservationData.H"
 #include "Unstructured_observations.hpp"
-#include "Vis.hh"
+#include "Vis.hpp"
 
 namespace Amanzi
 {
@@ -23,17 +23,17 @@ namespace Amanzi
     // types
     typedef std::vector<Teuchos::RCP<PK> > PKs;
 
-    MPC(Teuchos::ParameterList parameter_list_,
-        Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_,
+    MPC(Teuchos::ParameterList& parameter_list_,
+        Teuchos::RCP<AmanziMesh::Mesh>& mesh_maps_,
         Epetra_MpiComm* comm_,
         Amanzi::ObservationData& output_observations_);
 
     ~MPC() {};
 
-    void initialize_state(Teuchos::RCP<State>);
+    void initialize(Teuchos::ParameterList& plist, Teuchos::RCP<State>&);
     double get_dT();
-    bool advance_transient(double, Teuchos::RCP<State>, Teuchos::RCP<State>);
-    void commit_state(double, Teuchos::RCP<State>);
+    bool advance_transient(double, Teuchos::RCP<State>&, Teuchos::RCP<State>&);
+    void commit_state(double, Teuchos::RCP<State>&);
     void cycle_driver ();
 
   private:

@@ -42,6 +42,7 @@ target_link_libraries(ats
                       amanzi_output
                       amanzi_interface
                       amanzi_stk_mesh
+                      amanzi_state
                       )
 
 install(TARGETS ats DESTINATION ${ATS_SOURCE_DIR}/bin)

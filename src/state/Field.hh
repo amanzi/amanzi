@@ -14,12 +14,11 @@ namespace Amanzi {
 class Field {
 
 public:
-  typedef Teuchos::RCP<Epetra_MultiVector> Data;
 
   Field() {};
 
   Field(std::string fieldname, int location,
-        Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps,
+        Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps,
         std::string owner="state",
         int num_dofs=1);
 
@@ -42,8 +41,8 @@ public:
   void set_io_restart(bool io_restart) { io_restart_ = io_restart; }
   void set_io_vis(bool io_vis) { io_vis_ = io_vis; }
 
-  void set_data(std::string pk_name, Data);
-  void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>);
+  void set_data(std::string pk_name, Teuchos::RCP<Epetra_MultiVector>&);
+  void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>&);
   void set_data(std::string pk_name, Epetra_Vector&);
   void set_data(std::string pk_name, Epetra_MultiVector&);
   void set_data(std::string pk_name, const double* u);
@@ -58,7 +57,7 @@ private:
   void assert_location_or_die(int location) const;
   void assert_valid_block_id_or_die(int mesh_block_id) const;
 
-  Data data_;
+  Teuchos::RCP<Epetra_MultiVector> data_;
   std::string fieldname_;
   std::string owner_;
   std::vector<std::string> subfieldnames_;

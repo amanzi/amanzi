@@ -11,7 +11,7 @@
 
 #include "PK.hh"
 #include "State.hh"
-#include "DarcyProblem.hpp"
+#include "DarcyProblem.hh"
 
 namespace Amanzi {
 
@@ -19,22 +19,20 @@ class Darcy_PK : public PK {
 
 public:
   // Populate state with pressure, porosity, perm
-  Darcy_PK(Teuchos::ParameterList&, Teuchos::RCP<State>);
-
-  ~Darcy_PK ();
+  Darcy_PK(Teuchos::ParameterList &plist, Teuchos::RCP<State> &S);
 
   // Initialize will do all the work, running to steady state.
-  void initialize_state(Teuchos::RCP<State> S);
+  void initialize(Teuchos::RCP<State> &S);
 
   // Steady state Darcy -- no timestep limitations
   double get_dT() { return 1.e99; }
 
   // Steady state Darcy -- transient does nothing.
-  bool advance_transient(double dt, const Teuchos::RCP<State> S0,
-                         Teuchos::RCP<State> S1) { return 0; }
+  bool advance_transient(double dt, const Teuchos::RCP<State> &S0,
+                         Teuchos::RCP<State> &S1) { return 0; }
 
   // Transient does nothing, so commit not needed.
-  void commit_state(double dt, Teuchos::RCP<State> S) {}
+  void commit_state(double dt, Teuchos::RCP<State> &S) {}
 
   // Access to solution (are these necessary?)
   const Epetra_MultiVector& get_pressure() const { return *pressure; }
@@ -45,18 +43,19 @@ public:
     problem->DeriveDarcyVelocity(*solution, q); }
 
 private:
-  int advance_to_steady_state(Teuchos::RCP<State> S);
+  void advance_to_steady_state();
 
-  Teuchos::RCP<FlowBC> bc;
-  DarcyProblem *problem;
-  AztecOO *solver;
+  Teuchos::RCP<DarcyProblem> problem;
+  Teuchos::RCP<AztecOO> solver;
 
-  Epetra_Vector *solution;   // full cell/face solution
-  Epetra_Vector *pressure;   // cell pressures
-  Epetra_Vector *darcy_flux; // Darcy face fluxes
+  Teuchos::RCP<Epetra_Vector> solution;   // full cell/face solution
+  Teuchos::RCP<Epetra_Vector> pressure;   // cell pressures
+  Teuchos::RCP<Epetra_Vector> darcy_flux; // Darcy face fluxes
 
   int max_itr;      // max number of linear solver iterations
   double err_tol;   // linear solver convergence error tolerance
+
+  Teuchos::ParameterList plist;
 };
 
 } //namespace
