@@ -20,8 +20,8 @@
 namespace Amanzi
 {
 
-MPC::MPC(Teuchos::ParameterList parameter_list_,
-         Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_,
+MPC::MPC(Teuchos::ParameterList &parameter_list_,
+         Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps_,
          Epetra_MpiComm* comm_,
          Amanzi::ObservationData& output_observations_):
   parameter_list(parameter_list_),
@@ -90,7 +90,7 @@ double MPC::get_dT() {
   return dt;
 }
 
-bool MPC::advance_transient(double dt, Teuchos::RCP<State> S0, Teuchos::RCP<State> S1) {
+bool MPC::advance_transient(double dt, Teuchos::RCP<State> &S0, Teuchos::RCP<State> &S1) {
   bool fail = 0;
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = pks.begin(); pk != pks.end(); ++pk) {
     fail = (*pk)->advance_transient(dt, S0, S1);
@@ -103,17 +103,18 @@ bool MPC::advance_transient(double dt, Teuchos::RCP<State> S0, Teuchos::RCP<Stat
   return fail;
 }
 
-void MPC::initialize_state(Teuchos::RCP<State> S) {
+void MPC::initialize(Teuchos::ParameterList& plist, Teuchos::RCP<State> &S) {
   // initialize the state (which should initialize all independent variables)
   S->initialize();
 
   // initialize the process kernels (which should initialize all dependent variables)
+  //Teuchos::ParameterList pks_list = parameter_list.sublist("PKs");
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = pks.begin(); pk != pks.end(); ++pk) {
-    (*pk)->initialize_state(S);
+    (*pk)->initialize(S);
   }
 }
 
-void MPC::commit_state(double dt, Teuchos::RCP<State> S) {
+void MPC::commit_state(double dt, Teuchos::RCP<State> &S) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = pks.begin(); pk != pks.end(); ++pk) {
     (*pk)->commit_state(dt, S);
   }
@@ -140,11 +141,14 @@ void MPC::cycle_driver () {
   // initialize the state.  In a flow steady-state problem,
   // this should include advancing flow to steady state
   // (which should be done by flow_pk->initialize_state(S)
-  initialize_state(S);
+  initialize(parameter_list, S);
   S->set_time(T0); // in case steady state solve changed this
 
   // make observations
   observations->make_observations(*S);
+
+  // write visualization if requested at IC
+  S->write_vis(*visualization);
 
   // we need to create an intermediate state that will store the 
   // updated solution until we know it has succeeded

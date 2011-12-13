@@ -15,6 +15,7 @@ message(STATUS "in state_dir: ATS_SOURCE_DIR=${ATS_SOURCE_DIR}")
 #
 # Library: state
 #
-add_library(state Field.cc State.cc Vis.cc)
+#add_library(state Field.cc State.cc Vis.cc)
+add_library(state Field.cc State.cc)
 
 

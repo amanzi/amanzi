@@ -10,7 +10,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Export.h"
 #include "Mesh.hh"
-#include "Vis.hh"
+#include "Vis.hpp"
 #include "Field.hh"
 
 namespace Amanzi {
@@ -24,10 +24,10 @@ public:
   typedef std::vector< Teuchos::RCP<Field> > Fields;
   typedef std::map<std::string, Fields::size_type> FieldNameMap;
 
-  State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
+  State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>&);
 
   State(Teuchos::ParameterList&,
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh>);
+	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh>&);
 
   State(const State&); // copy constructor
   State& operator=(const State&); // assignment
@@ -53,6 +53,8 @@ public:
   // This access method should be used by PKs who own the field.
   Teuchos::RCP<Epetra_MultiVector> get_field(std::string fieldname,
                                              std::string pk_name);
+  // Access to the full field instance, not just the data.
+  Teuchos::RCP<Field> get_field_record(std::string fieldname);
 
   Teuchos::RCP<double> get_density() { return density_; }
   Teuchos::RCP<double> get_viscosity() { return viscosity_; }
@@ -67,9 +69,9 @@ public:
 
   // modify methods
   void set_field(std::string fieldname, std::string pk_name,
-                 Teuchos::RCP<Epetra_MultiVector>);
+                 Teuchos::RCP<Epetra_MultiVector>&);
   void set_field(std::string fieldname, std::string pk_name,
-                 Teuchos::RCP<Epetra_Vector>);
+                 Teuchos::RCP<Epetra_Vector>&);
   void set_field(std::string fieldname, std::string pk_name,
                  Epetra_Vector&);
   void set_field(std::string fieldname, std::string pk_name,
@@ -108,7 +110,6 @@ public:
   void write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames);
 
 private:
-  Teuchos::RCP<Field> get_field_record(std::string fieldname);
   Teuchos::RCP<const Field> get_field_record(std::string fieldname) const;
 
   void set_cell_value_in_mesh_block(double value, Epetra_MultiVector &v,
