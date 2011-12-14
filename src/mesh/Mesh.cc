@@ -21,51 +21,42 @@ int Mesh::precompute_geometric_quantities() const {
 
     for (int i = 0; i < ncells; i++) {
 
-      if (cell_get_type(i) == TET) {
+      // 3D Elements with possibly curved faces
+      // We have to build a description of the element topology
+      // and send it into the polyhedron volume and centroid
+      // calculation routine
 
-        cell_get_coordinates(i,&ccoords);
-        AmanziGeometry::tet_get_vol_centroid(ccoords,&volume,&centroid);
+      int nf;
+      std::vector<Entity_ID> faces;
+      std::vector<unsigned int> nfnodes;
+      std::vector<int> fdirs;
+      std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
 
-      }
-      else {
-        // 3D Elements with possibly curved faces
-        // We have to build a description of the element topology
-        // and send it into the polyhedron volume and centroid
-        // calculation routine
+      cell_get_faces(i,&faces);
+      cell_get_face_dirs(i,&fdirs);
 
-        int nf;
-        std::vector<Entity_ID> faces;
-        std::vector<unsigned int> nfnodes;
-        std::vector<int> fdirs;
-        std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
+      nf = faces.size();
 
-        cell_get_faces(i,&faces);
-        cell_get_face_dirs(i,&fdirs);
+      for (int j = 0; j < nf; j++) {
 
-        nf = faces.size();
+        face_get_coordinates(faces[j],&fcoords);
+        nfnodes.push_back(fcoords.size());
 
-        for (int j = 0; j < nf; j++) {
-
-          face_get_coordinates(faces[j],&fcoords);
-          nfnodes.push_back(fcoords.size());
-
-          if (fdirs[j] == 1) {
-            for (int k = 0; k < nfnodes[j]; k++)
-              cfcoords.push_back(fcoords[k]);
-          }
-          else {
-            for (int k = nfnodes[j]-1; k >=0; k--)
-              cfcoords.push_back(fcoords[k]);
-          }
+        if (fdirs[j] == 1) {
+          for (int k = 0; k < nfnodes[j]; k++)
+            cfcoords.push_back(fcoords[k]);
         }
-
-        cell_get_coordinates(i,&ccoords);
-
-        AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
-                                                 cfcoords,&volume,
-                                                 &centroid);
+        else {
+          for (int k = nfnodes[j]-1; k >=0; k--)
+            cfcoords.push_back(fcoords[k]);
+        }
       }
 
+      cell_get_coordinates(i,&ccoords);
+
+      AmanziGeometry::polyhed_get_vol_centroid(ccoords,nf,nfnodes,
+                                               cfcoords,&volume,
+                                               &centroid);
       cell_volumes.push_back(volume);
       cell_centroids.push_back(centroid);
     }
@@ -164,15 +155,135 @@ int Mesh::precompute_geometric_quantities() const {
 
 // Get set ID given the name of the set - return 0 if no match is found
 
-unsigned int Mesh::set_id_from_name(const std::string setname) {
-  unsigned int result(0);
-  std::map<std::string,int>::const_iterator i = 
-    tmp_setnameid_map.find(setname);
-  if (i != tmp_setnameid_map.end()) {
-    result = i->second;
+unsigned int Mesh::set_id_from_name(const std::string setname) const
+{
+  if (!geometric_model_) return 0;
+
+  unsigned int ngr = geometric_model_->Num_Regions();
+  for (int i = 0; i < ngr; i++) {
+    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    
+    if (rgn->name() == setname)
+      return rgn->id();
   }
-  return result;
+
+  return 0;
 }
+
+// Get set name given the ID of the set - return 0 if no match is found
+
+std::string Mesh::set_name_from_id(const int setid) const
+{
+  std::string nullname("");
+ 
+  if (!geometric_model_) return nullname;
+
+  unsigned int ngr = geometric_model_->Num_Regions();
+  for (int i = 0; i < ngr; i++) {
+    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    
+    if (rgn->id() == setid)
+      return rgn->name();
+  }
+
+  return 0;
+}
+
+
+
+// Is there a set with this id and entity type
+
+bool Mesh::valid_set_id(unsigned int id, Entity_kind kind) const
+{
+
+  if (!geometric_model_) return false;
+
+  unsigned int gdim = geometric_model_->dimension();    
+  
+  unsigned int ngr = geometric_model_->Num_Regions();
+  for (int i = 0; i < ngr; i++) {
+    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    
+    unsigned int rdim = rgn->dimension();
+    
+    if (rgn->id() == id) {
+      
+      // For regions of type Labeled Set, the dimension parameter is
+      // not guaranteed to be correct
+
+      if (rgn->type() == AmanziGeometry::LABELEDSET) return true;
+
+      // If we are looking for a cell set the region has to be 
+      // of the same topological dimension as the cells
+      
+      if (kind == CELL && rdim == celldim) return true;
+      
+      // If we are looking for a side set, the region has to be 
+      // one topological dimension less than the cells
+      
+      if (kind == FACE && rdim == celldim-1) return true;
+      
+      // If we are looking for a node set, the region can be of any
+      // dimension upto the spatial dimension of the domain
+      
+      if (kind == NODE) return true;
+      
+    }
+  }
+  
+}
+
+
+
+// Is there a set with this name and entity type
+
+bool Mesh::valid_set_name(std::string name, Entity_kind kind) const
+{
+
+  if (!geometric_model_) return false;
+
+  unsigned int gdim = geometric_model_->dimension();    
+  
+  unsigned int ngr = geometric_model_->Num_Regions();
+  for (int i = 0; i < ngr; i++) {
+    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    
+    unsigned int rdim = rgn->dimension();
+    
+    if (rgn->name() == name) {
+
+      // For regions of type Labeled Set, the dimension parameter is
+      // not guaranteed to be correct
+
+      if (rgn->type() == AmanziGeometry::LABELEDSET) return true;
+
+      // If we are looking for a cell set the region has to be 
+      // of the same topological dimension as the cells or it
+      // has to be a point region
+      
+      if (kind == CELL && (rdim == celldim || rdim == 0)) return true;
+      
+      // If we are looking for a side set, the region has to be 
+      // one topological dimension less than the cells
+      
+      if (kind == FACE && rdim == celldim-1) return true;
+      
+      // If we are looking for a node set, the region can be of any
+      // dimension upto the spatial dimension of the domain
+      
+      if (kind == NODE) return true;
+      
+    }
+  }
+  
+}
+
+
+
+
+
+
+
 
 
 
@@ -333,15 +444,11 @@ unsigned int Mesh::count_entities (Entity_kind kind,
 };
 
 
-// Unchanged in new interface
-// unsigned int num_sets(Entity_kind kind) const {};
 
-// Unchanged in new interface
-// unsigned int get_set_size (unsigned int set_id,
-//                           Entity_kind kind,
-//                           Parallel_type ptype) const {};
+  // Number of sets containing entities of type 'kind' in mesh
 
-// Id numbers
+
+  // Id numbers
 void Mesh::get_set_ids (Entity_kind kind,
                         std::vector<unsigned int>::iterator begin,
                         std::vector<unsigned int>::iterator end) const
@@ -359,9 +466,6 @@ void Mesh::get_set_ids (Entity_kind kind,
   assert (setids.size() <= (end-begin));
   std::copy (setids.begin(), setids.end(), begin);
 };
-
-// Unchanged in new interface
-// bool valid_set_id (unsigned int id, Entity_kind kind) const {};
 
 
 void Mesh::get_set (unsigned int set_id, Entity_kind kind,
@@ -384,6 +488,166 @@ void Mesh::get_set (unsigned int set_id, Entity_kind kind,
   std::copy (setents.begin(), setents.end(), begin);
 };
 
+
+
+  // Number of sets containing entities of type 'kind' in mesh
+  // 
+  // DEPRECATED due to ambiguity in determining what types of sets
+  // some regions are supposed to create (a planar region can 
+  // result in sidesets or nodesets
+
+unsigned int Mesh::num_sets(const Entity_kind kind) const
+{
+  int nsets = 0;
+
+  std::cerr << "THIS ROUTINE (num_sets) IS DEPRECATED" << std::endl;
+  std::cerr << "It might work but there is no guarantee" << std::endl;
+  std::cerr << "that it will work in general situations" << std::endl;
+  
+  if (!geometric_model_) return 0;
+
+  unsigned int gdim = geometric_model_->dimension();    
+  
+  unsigned int ngr = geometric_model_->Num_Regions();
+  for (int i = 0; i < ngr; i++) {
+    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    
+    unsigned int rdim = rgn->dimension();
+    
+    // If we are looking for a cell set the region has to be 
+    // of the same topological dimension as the cells
+    
+    if (kind == CELL && rdim == celldim) 
+      {
+        nsets++;
+      }
+    
+    // If we are looking for a side set, the region has to be 
+    // one topological dimension less than the cells
+    
+    else if (kind == FACE && rdim == celldim-1) 
+      {
+        nsets++;
+      }
+    
+    // If we are looking for a node set, the region can be of any
+    // dimension upto the cell dimension
+    
+    else if (kind == NODE && rdim <= celldim)
+      {
+        nsets++;
+      }
+  }
+  
+}
+
+
+
+  // Ids of sets containing entities of 'kind'
+  // 
+  // DEPRECATED due to ambiguity in determining what types of sets
+  // some regions are supposed to create (a planar region can 
+  // result in sidesets or nodesets
+
+void Mesh::get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const 
+{
+  int i, nsets=0;
+
+  std::cerr << "THIS ROUTINE (get_set_ids_) IS DEPRECATED" << std::endl;
+  std::cerr << "It might work but there is no guarantee" << std::endl;
+  std::cerr << "that it will work in general situations" << std::endl;
+  
+  assert(setids != NULL);
+
+  setids->clear();
+
+  if (!geometric_model_) return;
+  
+  int ngr = geometric_model_->Num_Regions();
+  for (int i = 0; i < ngr; i++) {
+    AmanziGeometry::RegionPtr rgn = geometric_model_->Region_i(i);
+    
+    unsigned int rdim = rgn->dimension();
+    
+    // If we are looking for a cell set the region has to be 
+    // of the same topological dimension as the cells
+    
+    if (kind == CELL && rdim == celldim)
+      {
+        setids->push_back(rgn->id());
+      }
+
+      // If we are looking for a side set, the region has to be 
+      // one topological dimension less than the cells
+      
+    else if (kind == FACE && rdim == celldim-1)
+      {
+        setids->push_back(rgn->id());
+      }
+
+      // If we are looking for a node set, the region can be of any
+      // dimension upto the cell dimension
+      
+    else if (kind == NODE && rdim <= celldim) 
+      {
+        setids->push_back(rgn->id());
+      }
+    
+  }
+}
+
+
+bool Mesh::point_in_cell(const AmanziGeometry::Point &p, const Entity_ID cellid) const
+{
+  std::vector<AmanziGeometry::Point> ccoords;
+
+  if (celldim == 3) {
+
+    // 3D Elements with possibly curved faces
+    // We have to build a description of the element topology
+    // and send it into the polyhedron volume and centroid
+    // calculation routine
+    
+    int nf;
+    std::vector<Entity_ID> faces;
+    std::vector<unsigned int> nfnodes;
+    std::vector<int> fdirs;
+    std::vector<AmanziGeometry::Point> cfcoords;
+    
+    cell_get_faces(cellid,&faces);
+    cell_get_face_dirs(cellid,&fdirs);
+    
+    nf = faces.size();
+    
+    for (int j = 0; j < nf; j++) {
+      std::vector<AmanziGeometry::Point> fcoords;
+
+      face_get_coordinates(faces[j],&fcoords);
+      nfnodes.push_back(fcoords.size());
+      
+      if (fdirs[j] == 1) {
+        for (int k = 0; k < nfnodes[j]; k++)
+          cfcoords.push_back(fcoords[k]);
+      }
+      else {
+        for (int k = nfnodes[j]-1; k >=0; k--)
+          cfcoords.push_back(fcoords[k]);
+      }
+    }
+    
+    cell_get_coordinates(cellid,&ccoords);
+    
+    return AmanziGeometry::point_in_polyhed(p,ccoords,nf,nfnodes,cfcoords);
+
+  }
+  else if (celldim == 2) {
+    
+    cell_get_coordinates(cellid,&ccoords);
+    
+    return AmanziGeometry::point_in_polygon(p,ccoords);
+    
+  }
+}
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi

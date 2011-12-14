@@ -85,8 +85,8 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
     {
       *out << "fun o.k." <<  std::endl;
     }
-
 }
+
 
 void RichardsModelEvaluator::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {

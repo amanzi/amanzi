@@ -97,8 +97,7 @@ namespace Amanzi {
     define_regions_rock_new_mesh(const Teuchos::ParameterList& parameter_list,
                                  RegionMap&                    region_map,
                                  RockList&                     rock_list,
-                                 ParameterList&                new_generate_sublist,
-                                 UserToMeshLabelMap&           user_to_mesh_labelID_map)
+                                 ParameterList&                new_generate_sublist)
     {
       rock_list = build_rock_list(parameter_list);
       
@@ -114,7 +113,7 @@ namespace Amanzi {
       const ParameterList& mesh_sublist = parameter_list.sublist("Mesh");
       const ParameterList& generate_sublist = mesh_sublist.sublist("Generate");
       
-      std::set<Layer,LayerLT> layers;
+      int region_num=1;
       
       // As we build the regions, check for ones used in setting the rocks, and pull additional information
       const ParameterList& region_sublist = parameter_list.sublist("Regions");
@@ -154,24 +153,18 @@ namespace Amanzi {
         
         const ParameterList& params_sublist = region_def.sublist(region_type);
         
-        const Array<double>& lo = params_sublist.get<Array<double> >("lo");
-        const Array<double>& hi = params_sublist.get<Array<double> >("hi");
-        
-        Point p0(lo[0],lo[1],lo[2]);
-        Point p1(hi[0],hi[1],hi[2]);
-        region_map[region_name] = RegionPtr(new RectangularRegion(p0,p1));
-        
-        layers.insert(Layer(p0,p1,region_name));
+        const Array<double>& lo = params_sublist.get<Array<double> >("Low Coordinate");
+        const Array<double>& hi = params_sublist.get<Array<double> >("High Coordinate");
+  
+        region_map[region_name] = region_num++;
+
       }
       
       // Add default regions
-      const Array<double> lo = generate_sublist.get<Array<double> >("Domain Low Corner");
-      const Array<double> hi = generate_sublist.get<Array<double> >("Domain High Corner");
-      Point p0(lo[0],lo[1],lo[2]);
-      Point p1(hi[0],hi[1],hi[2]);
-      region_map["all"] = RegionPtr(new RectangularRegion(p0,p1));
-      
-      
+
+      std::string default_name = "all";
+      region_map[default_name] = region_num++;
+
       // Make a new Mesh sublist
       ParameterList new_mesh_sublist = ParameterList(parameter_list.sublist("Mesh"));
       new_generate_sublist = new_mesh_sublist.sublist("Generate");
@@ -193,24 +186,10 @@ namespace Amanzi {
       new_generate_sublist.set<double>("Z_Max",dhi[2]);
       new_generate_sublist.remove("Domain High Corner");
       
-      new_generate_sublist.set<int>("Number of mesh blocks",layers.size());
-      int cnt = 1;
-      for (std::set<Layer>::const_iterator it=layers.begin(); it!=layers.end(); ++it) {
-        
-        ParameterList sublist;
-        sublist.set<double>("Z0", it->p0[2]);
-        sublist.set<double>("Z1", it->p1[2]);
-        
-        // FIXME: This assumes that we know the scheme by which the mesher derives the labels 
-        //   and can reproduce it here.
-        std::stringstream mesh_label;
-        mesh_label << "Mesh block " << cnt;
-        new_generate_sublist.set(mesh_label.str(), sublist);
-        
-        user_to_mesh_labelID_map[it->label] = std::pair<std::string,int>(mesh_label.str(),cnt);
-        cnt++;
-      }
     }
+
+
+    // Compare two versions so that code can branch appropriately
 
     bool version_at_or_below(const std::string& input_version, const std::string version_id) {
 
@@ -262,6 +241,9 @@ namespace Amanzi {
     }
 
     
+
+// Routine for translating parameters into older format
+
     ParameterList translate_state_sublist(const ParameterList& orig_params)
     {
       ParameterList new_params(orig_params);
@@ -276,9 +258,8 @@ namespace Amanzi {
       RegionMap region_map;
       RockList rock_list;
       ParameterList new_mesh_sublist;
-      UserToMeshLabelMap user_to_mesh_label_map;
 
-      define_regions_rock_new_mesh(orig_params, region_map, rock_list, new_mesh_sublist, user_to_mesh_label_map);
+      define_regions_rock_new_mesh(orig_params, region_map, rock_list, new_mesh_sublist);
 
       ParameterList& mesh_sublist = new_params.sublist("Mesh");
       mesh_sublist.remove("Generate");
@@ -483,7 +464,9 @@ namespace Amanzi {
       new_state.set<double>("Gravity y",g[1]);
       new_state.set<double>("Gravity z",g[2]);
 
+      //FIXME: Do we still need the "Number of mesh blocks" parameter?
       new_state.set<int>("Number of mesh blocks",water.ic.size());
+
       new_state.set<int>("Number of component concentrations",number_of_aqueous_components);
       new_state.set<double>("Constant water saturation",water.ic.begin()->second.value[0]);
       new_state.set<double>("Constant water density",water.mass_density);
@@ -491,10 +474,12 @@ namespace Amanzi {
 
       ParameterList retention_list;
       for (std::map<std::string,InitialCondition>::const_iterator it=water.ic.begin(); it!=water.ic.end(); ++it) {
+
         ParameterList reg_block;
-        std::stringstream reg_block_name;
-        reg_block_name << user_to_mesh_label_map[it->first].first;
-        reg_block.set<int>("Mesh block ID",user_to_mesh_label_map[it->first].second);
+        std::string reg_block_name;
+        reg_block_name = it->first;
+        RegionMap::const_iterator jt=region_map.find(reg_block_name);
+        reg_block.set<int>("Mesh block ID",jt->second);
 
 
         const Rock& rock = find_rock_for_region(rock_list,it->first);
@@ -523,9 +508,9 @@ namespace Amanzi {
           }
           throw std::exception();
         }
-        this_new_retention_list.set<int>("Region ID",user_to_mesh_label_map[it->first].second);
+        this_new_retention_list.set<int>("Region ID",jt->second);
         std::stringstream retention_label;
-        retention_label << "Water retention model " << user_to_mesh_label_map[it->first].second - 1; // FIXME: Numbering weird!
+        retention_label << "Water retention model " << jt->second - 1; // FIXME: Numbering weird!
         retention_list.set(retention_label.str(), this_new_retention_list);
 
         // Porosity
@@ -561,7 +546,7 @@ namespace Amanzi {
           throw std::exception();
         }
 
-        new_state.set(reg_block_name.str(), reg_block);
+        new_state.set(reg_block_name, reg_block);
       }
 
       new_params.sublist("Flow").sublist("Richards Problem").set("Water retention models",retention_list);

@@ -128,56 +128,6 @@ TEST(MSTK_HEX_3x3x2)
   }
 
 
-  // Verify the sidesets
-
-  int ns;
-  ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
-  CHECK_EQUAL(7,ns);
-
-  unsigned int expsetids[7]={1,101,102,103,104,105,106};
-  std::vector<Amanzi::AmanziMesh::Set_ID> setids(7);
-  mesh.get_set_ids(Amanzi::AmanziMesh::FACE,&setids);
-  
-  CHECK_ARRAY_EQUAL(expsetids,setids,7);
-
-  unsigned int setsize, expsetsizes[7] = {16,4,4,2,2,2,2};
-  unsigned int expsetfaces[7][16] = {{3,8,14,18,1,6,12,16,0,11,4,9,7,17,15,19},
-				     {3,8,14,18,0,0,0,0,0,0,0,0,0,0,0,0},
-				     {1,6,12,16,0,0,0,0,0,0,0,0,0,0,0,0},
-				     {0,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				     {4,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				     {7,17,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				     {15,19,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
-
-
-  for (i = 0; i < ns; i++) {
-    std::vector<Amanzi::AmanziMesh::Entity_ID> setfaces(16);
-
-    setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-    CHECK_EQUAL(expsetsizes[i],setsize);
-
-
-    mesh.get_set_entities(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, &setfaces);
-    
-    int allfound = 1;
-    for (j = 0; j < setsize; j++) {
-      int found = 0;
-      for (k = 0; k < setsize; k++) {
-	if (expsetfaces[i][j] == setfaces[k]) {
-	  found = 1;
-	  break;
-	}
-      }
-      if (!found) {
-	allfound = 0;
-	cerr << "Could not find FACE " << expsetfaces[i][j] << " in returned set\n";
-	CHECK_EQUAL(found,1);
-	break;
-      }
-    }
-    
-  }
-
 
 
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);

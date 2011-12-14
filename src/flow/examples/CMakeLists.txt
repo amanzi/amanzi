@@ -20,7 +20,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${CGNS_INCLUDE_DIRS})
 
 
-if ( ENABLE_MOAB_Mesh )
+if ( ENABLE_MSTK_Mesh )
 
     include_directories(${MOAB_INCLUDE_DIRS})
     include_directories(${MOAB_SOURCE_DIR})

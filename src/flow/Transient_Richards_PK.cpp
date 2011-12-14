@@ -19,10 +19,10 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, cons
   Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
   problem = new RichardsProblem(FS->mesh(), rlist);
 
-  ss_t0 = rlist.get<double>("Steady state calculation initial time");
-  ss_t1 = rlist.get<double>("Steady state calculation final time");
-  ss_h0 = rlist.get<double>("Steady state calculation initial time step");
-  ss_z =  rlist.get<double>("Steady state calculation initial hydrostatic pressure height");
+  // ss_t0 = rlist.get<double>("Steady state calculation initial time");
+  // ss_t1 = rlist.get<double>("Steady state calculation final time");
+  // ss_h0 = rlist.get<double>("Steady state calculation initial time step");
+  // ss_z =  rlist.get<double>("Steady state calculation initial hydrostatic pressure height");
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -110,16 +110,35 @@ int Transient_Richards_PK::advance_to_steady_state()
 
 }
 
+int Transient_Richards_PK::init_transient(double t0, double h_)
+{
+  h = h_;
+  hnext = h_;
 
-int Transient_Richards_PK::advance_transient() 
+  // Set problem parameters.
+  problem->SetPermeability(FS->permeability());
+  problem->SetFlowState(FS);
+
+  Epetra_Vector udot(problem->Map());
+  problem->Compute_udot(t0,  *solution, udot);
+  
+  time_stepper->set_initial_state(t0, *solution, udot);
+  
+  int errc;
+  RME->update_precon(t0, *solution, h, errc);
+}
+
+
+int Transient_Richards_PK::advance_transient(double h) 
 {
   // Set problem parameters.
   problem->SetPermeability(FS->permeability());
   problem->SetFlowState(FS);
 
-  //time_stepper->bdf2_step(h,0.0,*solution,hnext);
-  //time_stepper->write_bdf2_stepping_statistics();  
+  time_stepper->bdf2_step(h,0.0,*solution,hnext);
+  time_stepper->commit_solution(h,*solution);  
 
+  time_stepper->write_bdf2_stepping_statistics();
 }
 
 

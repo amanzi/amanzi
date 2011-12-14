@@ -30,6 +30,8 @@ class Transport_State {
   // data management
   void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target);
   void copymemory_vector(Epetra_Vector& source, Epetra_Vector& target);
+  void distribute_cell_vector(Epetra_Vector& v);
+  void distribute_cell_multivector(Epetra_MultiVector& v);
 
   // access methods for state variables
   Teuchos::RCP<Epetra_MultiVector> get_total_component_concentration() { return total_component_concentration; }
@@ -46,6 +48,9 @@ class Transport_State {
   Epetra_Vector& ref_water_saturation() { return *water_saturation; }
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
   Epetra_Vector& ref_water_density() { return *water_density; }
+
+  // miscaleneous
+  double get_time() { return S_->get_time(); }
   
   // debug routines
   void analytic_total_component_concentration(double f_tcc(const AmanziGeometry::Point&, double), double t = 0.0);
@@ -60,6 +65,7 @@ class Transport_State {
 
  private:
   // state variables that are relevant to transport 
+  State* S_;  
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration;
   Teuchos::RCP<Epetra_Vector> water_saturation;
   Teuchos::RCP<Epetra_Vector> darcy_flux;

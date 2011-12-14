@@ -11,59 +11,69 @@ using namespace std;
 namespace Amanzi
 {
 
-  namespace AmanziGeometry
-  {
+namespace AmanziGeometry
+{
 
-      // Return the volume and centroid of a general polyhedron
-      //
-      // ccoords  - vertices of the polyhedron (in no particular order)
-      // nf       - number of faces of polyhedron
-      // nfnodes  - number of nodes for each face
-      // fcoords  - linear array of face coordinates in in ccw manner
-      //            assuming normal of face is pointing out (
-      //
-      // So if the polyhedron has 5 faces with 5,3,3,3 and 3 nodes each
-      // then entries 1-5 of fcoords describes face 1, entries 6-9
-      // describes face 2 and so on
-      //
-      // So much common work has to be done for computing the centroid
-      // and volume calculations that they have been combined into one
-      //
-      // The volume of all polyhedra except tets is computed as a sum of
-      // volumes of tets created by connecting the polyhedron center to
-      // a face center and an edge of the face      
+  // Return the volume and centroid of a general polyhedron
+  //
+  // ccoords  - vertices of the polyhedron (in no particular order)
+  // nf       - number of faces of polyhedron
+  // nfnodes  - number of nodes for each face
+  // fcoords  - linear array of face coordinates in in ccw manner
+  //            assuming normal of face is pointing out (
+  //
+  // So if the polyhedron has 5 faces with 5,3,3,3 and 3 nodes each
+  // then entries 1-5 of fcoords describes face 1, entries 6-9
+  // describes face 2 and so on
+  //
+  // So much common work has to be done for computing the centroid
+  // and volume calculations that they have been combined into one
+  //
+  // The volume of all polyhedra except tets is computed as a sum of
+  // volumes of tets created by connecting the polyhedron center to
+  // a face center and an edge of the face      
+  
+  void polyhed_get_vol_centroid(const std::vector<Point> ccoords,
+                                const unsigned int nf,
+                                const std::vector<unsigned int> nfnodes,
+                                const std::vector<Point> fcoords,
+                                double *volume,
+                                Point *centroid);
+  
+  // Is point in polyhed
 
-      void polyhed_get_vol_centroid(const std::vector<Point> ccoords,
-				    const unsigned int nf,
-				    const std::vector<unsigned int> nfnodes,
-				    const std::vector<Point> fcoords,
-				    double *volume,
-				    Point *centroid);
+  bool point_in_polyhed(const Point testpnt,
+                        const std::vector<Point> ccoords,
+                        const unsigned int nf,
+                        const std::vector<unsigned int> nfnodes,
+                        const std::vector<Point> fcoords);
 
-      // Special function for tet volume
+  
+  // Compute area of polygon 
+  
+  // In 2D, the area is computed by a contour integral around the
+  // perimeter. In 3D, the area is computed by connecting a
+  // "center" point of the polygon to the edges of the polygon and
+  // summing the areas of the resulting triangles
+  
+  void polygon_get_area_centroid(const std::vector<Point> coords,
+                                 double *area, Point *centroid);
+  
+  
+  // Get area weighted normal of polygon
+  // In 2D, the normal is unambiguous - the normal is evaluated at one corner
+  // In 3D, the procedure evaluates the normal at each corner and averages it
+  
+  Point polygon_get_normal(const std::vector<Point> coords);
+  
 
-      void tet_get_vol_centroid(const std::vector<Point> ccoords, 
-				double *volume, Point *centroid);
+  // Is point in polygon
 
-      
-      // Compute area of polygon 
-      
-      // In 2D, the area is computed by a contour integral around the
-      // perimeter. In 3D, the area is computed by connecting a
-      // "center" point of the polygon to the edges of the polygon and
-      // summing the areas of the resulting triangles
+  bool point_in_polygon(const Point testpnt,
+                        const std::vector<Point> coords);
+  
 
-      void polygon_get_area_centroid(const std::vector<Point> coords,
-				     double *area, Point *centroid);
-
-
-      // Get area weighted normal of polygon
-      // In 2D, the normal is unambiguous - the normal is evaluated at one corner
-      // In 3D, the procedure evaluates the normal at each corner and averages it
-
-      Point polygon_get_normal(const std::vector<Point> coords);
-
-  } // end namespace AmanziGeometry
+} // end namespace AmanziGeometry
 
 } // end namespace Amanzi
 

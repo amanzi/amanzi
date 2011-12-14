@@ -45,14 +45,23 @@ if (BUILD_TESTS)
     # Test uses Epetra
     include_directories(${Epetra_INCLUDE_DIRS})
 
+   # Need to copy files for the tests 
+    if (NOT (${MESH_SIMPLE_SOURCE_DIR} EQUAL ${MESH_SIMPLE_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${MESH_SIMPLE_SOURCE_DIR}/test ${MESH_SIMPLE_BINARY_DIR}/test) 
+    endif()
+
     # Test: simple_mesh
-    # Test does not build. Errors about State. This is a class
-    # defined in the mpc and that is not part of the build.
-    # Will comment out for now and create a ticket #329
-    # to remind me to change this when the mpc is back in the build system
-    add_executable(test_simple_mesh test/Main.cc test/test_maps.cpp test/test_cell_numbering.cc test/test_face_adj_cells.cc test/test_node_cell_faces.cc)
+
+    add_executable(test_simple_mesh 
+      test/Main.cc 
+      test/test_maps.cpp 
+      test/test_cell_numbering.cc 
+      test/test_face_adj_cells.cc 
+      test/test_node_cell_faces.cc
+      test/test_sets.cc)
     target_link_libraries(test_simple_mesh simple_mesh ${UnitTest_LIBRARIES})
-    add_test(simple_mesh test_simple_mesh)
+    add_amanzi_test(simple_mesh test_simple_mesh KIND unit)
 
 endif()
 

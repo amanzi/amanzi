@@ -21,11 +21,13 @@ project(MESH_DATA)
 # Amanzi include directories
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${Teuchos_INCLUDE_DIRS})
 
 #
 # Library: mesh_data
@@ -33,7 +35,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 file(GLOB mesh_data_source_files "*.cc")
 add_library(mesh_data ${mesh_data_source_files})
 add_install_library(mesh_data)
-target_link_libraries(mesh_data error_handling ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
+target_link_libraries(mesh_data error_handling geometry ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
 
 #
 # Install Targets

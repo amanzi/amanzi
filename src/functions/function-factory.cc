@@ -84,7 +84,24 @@ Function* FunctionFactory::create_tabular(Teuchos::ParameterList &params) const
   try {
     std::vector<double> x(params.get<Teuchos::Array<double> >("x values").toVector());
     std::vector<double> y(params.get<Teuchos::Array<double> >("y values").toVector());
-    f = new TabularFunction(x, y);
+    if (params.isParameter("forms")) {
+      Teuchos::Array<std::string> form_strings(params.get<Teuchos::Array<std::string> >("forms"));
+      std::vector<TabularFunction::Form> form(form_strings.size());
+      for (int i = 0; i < form_strings.size(); ++i) {
+        if (form_strings[i] == "linear")
+          form[i] = TabularFunction::LINEAR;
+        else if (form_strings[i] == "constant")
+          form[i] = TabularFunction::CONSTANT;
+        else {
+          Errors::Message m;
+          m << "unknown form \"" << form_strings[i].c_str() << "\"";
+          Exceptions::amanzi_throw(m);
+        }
+      }
+      f = new TabularFunction(x, y, form);
+    } else {
+      f = new TabularFunction(x, y);
+    }
   }
   catch (Teuchos::Exceptions::InvalidParameter &msg) {
     Errors::Message m;

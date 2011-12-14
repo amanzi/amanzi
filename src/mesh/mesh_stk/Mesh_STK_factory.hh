@@ -5,6 +5,7 @@
 #include "Field_data.hh"
 #include "Mesh_STK_Impl.hh"
 #include "Data_structures.hh"
+#include "GeometricModel.hh"
 
 // Trilinos STK_mesh includes.
 #include <Shards_BasicTopologies.hpp>
@@ -52,16 +53,21 @@ class Mesh_STK_factory {
 
   void add_coordinates_ (const Data::Coordinates<double>& data, 
                          const Epetra_Map& vertmap);
-  void build_meta_data_ (const Data::Data& data, const Data::Fields& fields);
+  void build_meta_data_ (const Data::Data& data, const Data::Fields& fields,
+			 const AmanziGeometry::GeometricModelPtr& gm);
   void build_bulk_data_ (const Data::Data& data, 
                          const Epetra_Map& cellmap, 
                          const Epetra_Map& vertmap,
-                         const Data::Fields& fields);
+                         const Data::Fields& fields,
+			 const AmanziGeometry::GeometricModelPtr& gm);
 
   // Add parts to the meta-data.
   stk::mesh::Part* add_element_block_ (const Data::Element_block& block);
+  stk::mesh::Part* add_element_block_ (const std::string name, const int id);
   stk::mesh::Part* add_side_set_      (const Data::Side_set& set);
+  stk::mesh::Part* add_side_set_      (const std::string name, const int id);
   stk::mesh::Part* add_node_set_      (const Data::Node_set& set);
+  stk::mesh::Part* add_node_set_      (const std::string name, const int id);
 
   // Populate parts with elements and fields via the bulk-data
   void add_elements_to_part_ (const Data::Element_block& block, stk::mesh::Part& part,
@@ -101,6 +107,11 @@ class Mesh_STK_factory {
   stk::mesh::Entity *
   get_element_side_face_(const stk::mesh::Entity& element, const unsigned int& s);
     
+
+  // Build extra part info from the geometric model
+  void init_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm);
+  void fill_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm);
+
   // Temporary information for the mesh currently under construction.
 
   stk::mesh::BulkData *bulk_data_;
@@ -132,13 +143,15 @@ class Mesh_STK_factory {
 
   //! Build a mesh from data.
   Mesh_STK_Impl* build_mesh (const Data::Data& data, 
-                             const Data::Fields& fields);
+                             const Data::Fields& fields,
+			     const AmanziGeometry::GeometricModelPtr& gm);
 
   //! Build a mesh from data with global indexes specified.
   Mesh_STK_Impl* build_mesh (const Data::Data& data, 
                              const Epetra_Map& cellmap,
                              const Epetra_Map& vertmap,
-                             const Data::Fields& fields);
+                             const Data::Fields& fields,
+			     const AmanziGeometry::GeometricModelPtr& gm);
 
 };
 

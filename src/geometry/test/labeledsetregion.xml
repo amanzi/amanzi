@@ -1,0 +1,18 @@
+<ParameterList name="Regions">
+  <ParameterList name="Top Section">
+    <ParameterList name="Region: Labeled Set">
+      <Parameter name="Label" type="String" value="Sideset1"/>
+      <Parameter name="File" type="String" value="mesh.exo"/>
+      <Parameter name="Format" type="String" value="Exodus II"/>
+      <Parameter name="Entity" type="String" value="FACE"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Middle">
+    <ParameterList name="Region: Labeled Set">
+      <Parameter name="Label" type="String" value="CellSet2"/>
+      <Parameter name="File" type="String" value="mesh.exo"/>
+      <Parameter name="Format" type="String" value="Exodus II"/>
+      <Parameter name="Entity" type="String" value="CELL"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

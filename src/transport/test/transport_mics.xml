@@ -1,0 +1,70 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="mesh::simple"/>
+  </ParameterList>    
+   
+  <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,0.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{-1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+ 
+  <ParameterList name="Transport">
+    <Parameter name="CFL" type="double" value="0.5"/>   
+    <Parameter name="spatial discretization order" type="int" value="1"/>   
+    <Parameter name="temporal discretization order" type="int" value="1"/>   
+    <!-- developers parameters --> 
+    <Parameter name="enable internal tests" type="string" value="yes"/>   
+    <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
+    <Parameter name="verbosity level" type="int" value="10"/>  
+    <!-- end of developers parameters -->
+
+    <ParameterList name="Transport BCs">
+      <Parameter name="number of BCs" type="int" value="4"/>
+      <ParameterList name="BC 0">
+        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Left side}"/>
+        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
+      </ParameterList>  
+      <ParameterList name="BC 1">
+        <Parameter name="Component 1" type="Array double" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Left side}"/>
+        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
+      </ParameterList>  
+      <ParameterList name="BC 2">
+        <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
+        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
+      </ParameterList>  
+      <ParameterList name="BC 3">
+        <Parameter name="Component 1" type="Array double" value="{1.0, 1.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
+        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 1.0}"/>
+      </ParameterList>  
+    </ParameterList>  
+   </ParameterList>
+</ParameterList>
+

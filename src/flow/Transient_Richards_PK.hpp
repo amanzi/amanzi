@@ -23,7 +23,8 @@ public:
   ~Transient_Richards_PK ();
 
   int advance_to_steady_state();
-  int advance_transient();
+  int advance_transient(double h);
+  int init_transient(double t0, double h0);
   void commit_state(Teuchos::RCP<Flow_State>) {}
 
   // After a successful advance() the following routines may be called.
@@ -41,7 +42,7 @@ public:
   // Computes the fluid saturation on cells.
   void GetSaturation(Epetra_Vector &s) const;
   
-  double get_flow_dT() { return h; }
+  double get_flow_dT() { return hnext; }
 
 
 private:

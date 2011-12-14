@@ -3,8 +3,11 @@
 
 #include <Mesh.hh>
 #include <Point.hh>
+#include <GeometricModel.hh>
+#include <LabeledSetRegion.hh>
+#include <PointRegion.hh>
+#include <GenerationSpec.hh>
 
-using namespace std;
 #include <memory>
 #include <vector>
 #include <sstream>
@@ -77,23 +80,6 @@ private:
   Epetra_Map *cell_map_w_ghosts_, *face_map_w_ghosts_, *node_map_w_ghosts_;
   
   
-  // Sets (material sets, sidesets, nodesets)
-  // We store the number of sets in the whole problem regardless of whether
-  // they are represented on this processor or not
-  // We also store the IDs of the sets and the dimension of entities 
-  // in those sets
-  
-  // We could also store a single array of setids and another array of setdims
-  // like we do for Mesh_MOAB. Some code is easier this way and some code
-  // easier the other way
-
-  // Cannot use std::vector<int> because we cannot pass it into MPI routines
-
-  int nmatsets, nsidesets, nnodesets;
-  int *matset_ids, *sideset_ids, *nodeset_ids; 
-                                              
-  
-  
   // flag whether to flip a face dir or not when returning nodes of a face
   
   bool *faceflip;
@@ -102,6 +88,10 @@ private:
   // ----------------------------
   
   void clear_internals_();
+
+  void pre_create_steps_(const int space_dimension, const MPI_Comm incomm, 
+                         const AmanziGeometry::GeometricModelPtr& gm);
+  void post_create_steps_();
 
   void collapse_degen_edges();
   void label_celltype();
@@ -120,9 +110,56 @@ private:
   
   void init_set_info();
 
+  int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0, double z0,
+			     double x1, double y1, double z1, int nx,
+			     int ny, int nz);
+  int  generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
+			     double x1, double y1, int nx, int ny);
 public:
 
-  Mesh_MSTK (const char *filename, MPI_Comm comm, int space_dimension = 3);
+  // Constructors that read the mesh from a file
+
+  Mesh_MSTK (const char *filename, MPI_Comm comm,
+	     const AmanziGeometry::GeometricModelPtr& gm = 
+	     (AmanziGeometry::GeometricModelPtr) NULL);
+
+  Mesh_MSTK (const char *filename, MPI_Comm comm, int space_dimension,
+	     const AmanziGeometry::GeometricModelPtr& gm = 
+	     (AmanziGeometry::GeometricModelPtr) NULL);
+
+  // Constructors that generate a mesh internally (regular hexahedral mesh only)
+
+  // 3D
+  Mesh_MSTK(const double x0, const double y0, const double z0,
+	    const double x1, const double y1, const double z1,
+	    const unsigned int nx, const unsigned int ny, const unsigned int nz, 
+           MPI_Comm comm,
+           const AmanziGeometry::GeometricModelPtr& gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL);
+
+  Mesh_MSTK(const double x0, const double y0, const double z0,
+	    const double x1, const double y1, const double z1,
+	    const unsigned int nx, const unsigned int ny, 
+	    const unsigned int nz, 
+	    Epetra_MpiComm *comm,
+	    const AmanziGeometry::GeometricModelPtr& gm = 
+	    (AmanziGeometry::GeometricModelPtr) NULL);
+
+  // 2D
+  Mesh_MSTK(const double x0, const double y0,
+	    const double x1, const double y1,
+	    const int nx, const int ny, 
+	    MPI_Comm comm,
+	    const AmanziGeometry::GeometricModelPtr& gm = 
+	    (AmanziGeometry::GeometricModelPtr) NULL);
+
+  // Construct a hexahedral mesh from specs 
+  Mesh_MSTK(const GenerationSpec& gspec,
+	    Epetra_MpiComm *comm,
+	    const AmanziGeometry::GeometricModelPtr& gm = 
+	    (AmanziGeometry::GeometricModelPtr) NULL);
+
+
   ~Mesh_MSTK ();
 
 
@@ -334,20 +371,6 @@ public:
   //----------------------------
   //
     
-  // Number of sets containing entities of type 'kind' in mesh
-    
-  unsigned int num_sets(const Entity_kind kind) const;
-    
-    
-  // Ids of sets containing entities of 'kind'
-
-  void get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const;
-
-
-  // Is this is a valid ID of a set containing entities of 'kind'
-
-  bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
-
 
   // Get number of entities of type 'category' in set
 
@@ -355,6 +378,14 @@ public:
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
+  unsigned int get_set_size (const Set_Name setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
+
+  unsigned int get_set_size (const char *setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
 
   // Get list of entities of type 'category' in set
 
@@ -362,6 +393,18 @@ public:
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 Entity_ID_List *entids) const; 
+
+  void get_set_entities (const Set_Name setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
+
+  void get_set_entities (const char *setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
 
 };
 

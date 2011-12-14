@@ -34,8 +34,8 @@ class Point {
     for( int i=0; i<d; i++) xyz[i] = 0.0;
   }
   
-  void set(const double& val) { for( int i=0; i<d; i++ ) xyz[i] = val;  }
-  void set(const Point& p)    { for( int i=0; i<d; i++ ) xyz[i] = p[i]; }
+  void set(const double& val) { for (int i=0; i<d; i++) xyz[i] = val;  }
+  void set(const Point& p)    { for (int i=0; i<d; i++) xyz[i] = p[i]; }
   void set(const double *val) { if (!val) throw std::exception(); for( int i=0; i<d; i++ ) xyz[i] = val[i]; }
   void set(const double& x, const double& y) { xyz[0] = x; xyz[1] = y; }
   void set(const double& x, const double& y, const double& z) { xyz[0] = x; xyz[1] = y; xyz[2] = z; }
@@ -43,7 +43,7 @@ class Point {
   int is_valid() { return (d==2 || d==3) ? 1 : 0; } 
   
   /* access */
-  double& operator[] (const int i)       { return xyz[i]; }
+  double& operator[] (const int i) { return xyz[i]; }
   const double& operator[] (const int i) const { return xyz[i]; }
   
   const double x() const { return xyz[0]; }
@@ -54,16 +54,16 @@ class Point {
   
   /* operators */
   Point& operator=(const double& val) { for( int i=0; i<d; i++ ) xyz[i] = val;  return *this; }
-  Point& operator=(const Point& p)    { for( int i=0; i<d; i++ ) xyz[i] = p[i]; return *this; }         
+  Point& operator=(const Point& p) { init(p.dim()); for( int i=0; i<d; i++ ) xyz[i] = p[i]; return *this; }         
   
-  Point& operator+=(const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] += p[i]; return *this; }
-  Point& operator-=(const Point& p )  { for( int i=0; i<d; i++ ) xyz[i] -= p[i]; return *this; }
-  Point& operator*=(const double& c ) { for( int i=0; i<d; i++ ) xyz[i] *= c;    return *this; }
-  Point& operator/=(const double& c ) { for( int i=0; i<d; i++ ) xyz[i] /= c;    return *this; }
+  Point& operator+=(const Point& p)  { for( int i=0; i<d; i++ ) xyz[i] += p[i]; return *this; }
+  Point& operator-=(const Point& p)  { for( int i=0; i<d; i++ ) xyz[i] -= p[i]; return *this; }
+  Point& operator*=(const double& c) { for( int i=0; i<d; i++ ) xyz[i] *= c;    return *this; }
+  Point& operator/=(const double& c) { for( int i=0; i<d; i++ ) xyz[i] /= c;    return *this; }
   
-  friend Point  operator*(const double& r, const Point& p ) { return (p.d==2) ? Point( r*p[0], r*p[1] ) : Point( r*p[0], r*p[1], r*p[2] ); }
-  friend Point  operator*(const Point& p, const double& r ) { return r*p; }
-  friend double operator*(const Point& p, const Point& q ) { double s = 0.; for( int i=0; i<p.d; i++ ) s += p[i]*q[i]; return s; }
+  friend Point  operator*(const double& r, const Point& p) { return (p.d==2) ? Point(r*p[0], r*p[1]) : Point(r*p[0], r*p[1], r*p[2]); }
+  friend Point  operator*(const Point& p, const double& r) { return r*p; }
+  friend double operator*(const Point& p, const Point& q) { double s = 0.; for( int i=0; i<p.d; i++ ) s += p[i]*q[i]; return s; }
   
   friend Point  operator/(const Point& p, const double& r) { return p * (1./r); }
   

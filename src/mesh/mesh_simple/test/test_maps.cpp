@@ -102,64 +102,6 @@ TEST(MAPS) {
 
     }
   
-  vector<unsigned int> ss;
-  
-  for (int is=0; is<Mm.num_sets(Amanzi::AmanziMesh::FACE); is++)  {
-    ss.resize(Mm.get_set_size(is,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED));
-    Mm.get_set(is, Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,ss.begin(), ss.end());
-
-    for (int k=0; k<ss.size(); k++) {
-      cout << is << " : " << ss[k] << endl;
-    }
-    cout<< endl;
-  }
-
-
-
 }
 
-TEST (ParameterList) {
-
-#ifdef HAVE_MPI
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm *comm = new Epetra_SerialComm();
-#endif
-
-    // make a parameter list to try out
-    
-    Teuchos::ParameterList parameter_list;
-    parameter_list.set<int>("Number of Cells in X", 10);
-    parameter_list.set<int>("Number of Cells in Y", 10);
-    parameter_list.set<int>("Number of Cells in Z", 10);
-    
-    parameter_list.set<double>("X_Min", 0);
-    parameter_list.set<double>("X_Max", 1);
-    
-    parameter_list.set<double>("Y_Min", 0);
-    parameter_list.set<double>("Y_Max", 1);
-    
-    parameter_list.set<double>("Z_Min", 0);
-    parameter_list.set<double>("Z_Max", 1);
-
-    Teuchos::ParameterList sublist1;
-    sublist1.set<double>("Z0", 0.1);
-    sublist1.set<double>("Z1", 0.3);
-    parameter_list.set("Mesh block 1", sublist1);
-
-    Teuchos::ParameterList sublist2;
-    sublist2.set<double>("Z0", 0.7);
-    sublist2.set<double>("Z1", 1.0);
-    parameter_list.set("Mesh block 2", sublist2);
-
-    parameter_list.set<int>("Number of mesh blocks", 2);
-
-    Amanzi::AmanziMesh::GenerationSpec g(parameter_list);
-
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_simple(g, comm));
-    CHECK(!mesh.is_null());
-    CHECK_EQUAL(3, mesh->num_sets(Amanzi::AmanziMesh::CELL));
-    mesh.reset();
-}
 }

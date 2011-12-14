@@ -25,6 +25,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${STK_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -48,7 +49,7 @@ add_definitions("-DUSE_MPI")
 add_library(state State.cpp Restart.cpp Vis.cpp)
 add_install_library(state)
 set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-target_link_libraries(state output simple_mesh mesh_data cell_geometry ${state_tpl_libs})
+target_link_libraries(state functions output simple_mesh mesh_data cell_geometry ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 

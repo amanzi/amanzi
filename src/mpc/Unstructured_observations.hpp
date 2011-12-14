@@ -17,17 +17,21 @@ namespace Amanzi {
 
     struct Observable 
     {
-      Observable (std::string state_id_,
+      Observable (Teuchos::Array<std::string> variable_,
 		  std::string region_,
 		  std::string functional_,
-		  Teuchos::Array<double> times_):
-	state_id(state_id_), region(region_),
-	functional(functional_), times(times_) {};
-
-      std::string state_id;
+		  Teuchos::Array<double> times_,
+		  Teuchos::Array<double> sps_):
+	variable(variable_), region(region_),
+	functional(functional_), times(times_),
+	sps(sps_)
+      {};
+      
+      Teuchos::Array<std::string> variable;
       std::string region;
       std::string functional;
       Teuchos::Array<double> times;
+      Teuchos::Array<double> sps;   // start period stop
     };
 
 
@@ -35,7 +39,7 @@ namespace Amanzi {
 			       Amanzi::ObservationData& observation_data_);
 
     void make_observations(State& state);
-
+    bool observation_requested(double time, double last_time, Teuchos::Array<double>& T, Teuchos::Array<double>& SPS);
   private:
     
     Amanzi::ObservationData& observation_data;

@@ -43,10 +43,14 @@ static inline void write_mesh_to_file_(AmanziMesh::Mesh &mesh_map, std::string f
     int nnodes = cnodes.size();
     for (int j=0; j<nnodes; j++) xh[j] = cnodes[j] + 1;
 
-    if (dim == 3)
+    if (dim == 3) {
       gmvwrite_cell_type((char*) "phex8", 8, xh);
-    else 
-      gmvwrite_cell_type((char*) "quad", 4, xh);
+    } else if (dim == 2) {
+      if (nnodes == 4) 
+        gmvwrite_cell_type((char*) "quad", 4, xh);
+      else
+        gmvwrite_cell_type((char*) "general 1", nnodes, xh);
+    }
   }
 
   delete [] xh;

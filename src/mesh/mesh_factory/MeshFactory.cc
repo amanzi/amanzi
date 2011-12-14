@@ -83,7 +83,8 @@ MeshFactory::preference(const FrameworkPreference& pref)
  * @return mesh instance
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(const std::string& filename)
+MeshFactory::create(const std::string& filename, 
+                    const AmanziGeometry::GeometricModelPtr &gm)
 {
   // check the file format
   Format fmt = file_format(my_comm, filename);
@@ -105,7 +106,7 @@ MeshFactory::create(const std::string& filename)
        i != my_preference.end(); i++) {
     if (framework_reads(*i, fmt, my_comm.NumProc() > 1)) {
       try {
-        result = framework_read(my_comm, *i, filename);
+        result = framework_read(my_comm, *i, filename, gm);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -147,7 +148,8 @@ MeshFactory::create(const std::string& filename)
 Teuchos::RCP<Mesh> 
 MeshFactory::create(double x0, double y0, double z0,
                     double x1, double y1, double z1,
-                    int nx, int ny, int nz)
+                    int nx, int ny, int nz, 
+                    const AmanziGeometry::GeometricModelPtr &gm)
 {
   Teuchos::RCP<Mesh> result;
   Message e("MeshFactory::create: error: ");
@@ -177,7 +179,8 @@ MeshFactory::create(double x0, double y0, double z0,
       try {
         result = framework_generate(my_comm, *i, 
                                     x0, y0, z0, x1, y1, z1, 
-                                    nx, ny, nz);
+                                    nx, ny, nz,
+                                    gm);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -204,7 +207,8 @@ MeshFactory::create(double x0, double y0, double z0,
  * @return 
  */
 Teuchos::RCP<Mesh> 
-MeshFactory::create(Teuchos::ParameterList &parameter_list)
+MeshFactory::create(Teuchos::ParameterList &parameter_list, 
+                    const AmanziGeometry::GeometricModelPtr &gm)
 {
   Teuchos::RCP<Mesh> result;
   Message e("MeshFactory::create: error: ");
@@ -216,7 +220,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list)
        i != my_preference.end(); i++) {
     if (framework_generates(*i, my_comm.NumProc() > 1)) {
       try {
-        result = framework_generate(my_comm, *i, parameter_list);
+        result = framework_generate(my_comm, *i, parameter_list, gm);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
