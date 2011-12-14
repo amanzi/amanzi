@@ -12,6 +12,7 @@
 #include "MimeticHexLocal.hpp"
 #include "MimeticHex.hpp"
 #include "SaturationCurve.hh"
+#include "SaturationCurveFactory.hh"
 
 namespace Amanzi {
 
@@ -56,6 +57,8 @@ public:
   // - intermediate steps
   void DerivePermeability(const Epetra_Vector &phi,
                           Teuchos::RCP<Epetra_Vector> &perm) const;
+  void DeriveLiquidRelPerm(const Epetra_Vector &saturation,
+                           Teuchos::RCP<Epetra_Vector> &rel_perm) const;
   void DeriveGasDensity(const Epetra_Vector &pressure, const Epetra_Vector &temp,
                         Teuchos::RCP<Epetra_Vector> &rho) const;
   void DeriveLiquidDensity(const Epetra_Vector &pressure, const Epetra_Vector &temp,
@@ -64,8 +67,6 @@ public:
                            Teuchos::RCP<Epetra_Vector> &rho) const;
   void DeriveLiquidViscosity(const Epetra_Vector &pressure, const Epetra_Vector &temp,
                              Teuchos::RCP<Epetra_Vector> &viscosity) const;
-  void DeriveGasPressure(const Epetra_Vector &rho_gas,
-                         Teuchos::RCP<Epetra_Vector> &pressure) const;
   void DeriveSaturation(const Epetra_Vector &pressure_gas,
                         const Epetra_Vector &pressure_liquid,
                         const Epetra_Vector &temp,
@@ -77,6 +78,11 @@ public:
                         const Epetra_Vector &k_rel, const Epetra_Vector &k,
                         const Epetra_Vector &viscosity, Teuchos::RCP<Epetra_Vector> &flux,
                         double &l1_error) const;
+
+  // hmm...
+  void ComputeUpwindRelPerm(const Epetra_Vector& Pcell, const Epetra_Vector& Pface,
+                            Epetra_Vector& k_rel) const;
+  void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector& P);
 
   // timestepping
   void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
@@ -105,14 +111,14 @@ public:
 
   void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = gvec_[i]; }
 
-
   Epetra_Vector* CreateCellView(const Epetra_Vector&) const;
   Epetra_Vector* CreateFaceView(const Epetra_Vector&) const;
 
   const Epetra_Map& Map() const { return *dof_map_; }
   const Epetra_Map& CellMap(bool ghost=false) const { return mesh_->cell_map(ghost); }
   const Epetra_Map& FaceMap(bool ghost=false) const { return mesh_->face_map(ghost); }
-  DiffusionMatrix& Matrix() const { return *D_; }
+  DiffusionMatrix& Matrix() { return *D_; }
+  Epetra_Operator& Precon() { return *precon_; }
 
   // residuals/preconditioners for model evaluator
   void ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time);
@@ -121,22 +127,16 @@ public:
   void ComputePrecon(const Epetra_Vector &X);
   void ComputePrecon(const Epetra_Vector &X, double h);
   void dSofP(const Epetra_Vector& P, Epetra_Vector& dS);
-  Epetra_Operator& Precon() { return *precon_; }
+
 private:
 
   // intermediate steps
-  void ComputeRelPerm(const Epetra_Vector&, Epetra_Vector&) const;
-  void ComputeUpwindRelPerm(const Epetra_Vector& Pcell, const Epetra_Vector& Pface,
-                            Epetra_Vector& k_rel) const;
-  void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector& P);
-
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
-
   Teuchos::RCP<Epetra_Map> create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
   void validate_boundary_conditions_() const;
   DiffusionMatrix* create_diff_matrix_(Teuchos::RCP<AmanziMesh::Mesh>&) const;
   void init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh>&, std::vector<MimeticHexLocal>&) const;
-  void upwind_rel_perm_(const Epetra_Vector&, Epetra_Vector&);
+  //  void upwind_rel_perm_(const Epetra_Vector&, Epetra_Vector&);
 
   // maps and access to Vectors
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
@@ -157,9 +157,10 @@ private:
   const double T0_ = 273.15;
   const double h_iw0;
 
+  bool upwind_k_rel_;
+
   // constitutive relations
-  std::vector< Teuchos::RCP<SaturationCurve> > sat_curves_il_;
-  std::vector< Teuchos::RCP<SaturationCurve> > sat_curves_gl_;
+  std::vector< Teuchos::RCP<SaturationCurve> > sat_curves_;
   Teuchos::RCP<EOS> gas_eos_;
   Teuchos::RCP<EOS> liquid_eos_;
   Teuchos::RCP<EOS> ice_eos_;
