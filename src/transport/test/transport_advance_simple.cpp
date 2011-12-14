@@ -58,7 +58,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
   string xmlFileName = "test/transport_advance_simple.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-  // create an MSTK mesh framework 
+  // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list);
   RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 20, 2, comm, gm)); 

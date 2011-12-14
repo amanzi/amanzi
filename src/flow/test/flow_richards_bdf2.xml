@@ -1,0 +1,76 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+  <Parameter name="grid_option" type="string" value="Unstructured"/>
+
+  <ParameterList name="Mesh">
+    <Parameter name="Framework" type="string" value="mstk::mesh"/>
+  </ParameterList>    
+   
+  <ParameterList name="Regions">
+    <ParameterList name="Computational domain">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-68.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Subregion 1">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-68.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-48.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Subregion 2">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-48.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-45.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Subregion 3">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-45.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-39.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Subregion 4">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-39.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-16.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Subregion 5">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-16.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Left side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{0.0,0.5,0.5}"/>
+        <Parameter name="Direction" type="Array double" value="{1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{0.0,0.0,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Flow">
+    <Parameter name="verbosity level" type="int" value="10"/>  
+
+    <ParameterList name="Flow BCs">
+      <Parameter name="number of BCs" type="int" value="1"/>
+      <ParameterList name="BC 0">
+        <Parameter name="Component 0" type="Array double" value="{1.0, 0.0}"/>
+        <Parameter name="Regions" type="Array string" value="{Left side}"/>
+        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
+      </ParameterList>  
+    </ParameterList>  
+  </ParameterList>
+</ParameterList>
+

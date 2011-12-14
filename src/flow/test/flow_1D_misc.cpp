@@ -731,7 +731,6 @@ SUITE(Darcy_Velocity) {
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    //std::cout << "error " << error << std::endl;
   }
 
 
@@ -755,7 +754,6 @@ SUITE(Darcy_Velocity) {
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    //std::cout << "error " << error << std::endl;
   }
 
 
@@ -804,11 +802,10 @@ SUITE(Darcy_Velocity) {
     solve_problem();
 
     // Darcy velocity
-    double q[3] = { 0.0, 1.0, 0.0 };
+    double q[3] = {0.0, 1.0, 0.0};
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-    //std::cout << "error " << error << std::endl;
   }
 
 
@@ -831,11 +828,10 @@ SUITE(Darcy_Velocity) {
     solve_problem();
 
     // Darcy velocity
-    double q[3] = { 0.0, 0.0, 1.0 };
+    double q[3] = {0.0, 0.0, 1.0};
     double error;
     darcy_velocity_error(q, error);
-    CHECK(error < 1.0e-8);
-    //std::cout << "error " << error << std::endl;
+    CHECK(error < 1.1e-8);
   }
 }
 
