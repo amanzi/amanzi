@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <iostream>
 
-#include "RichardsProblem.hh"
+#include "PermafrostProblem.hh"
 #include "boundary-function.hh"
-#include "vanGenuchtenModel.hpp"
+#include "vanGenuchtenModel.hh"
 #include "Mesh.hh"
 #include "flow-bc-factory.hh"
 
@@ -16,8 +16,8 @@
 namespace Amanzi
 {
 
-RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                                 Teuchos::ParameterList& richards_plist) : mesh_(mesh) {
+PermafrostProblem::PermafrostProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                                 Teuchos::ParameterList& permafrost_plist) : mesh_(mesh) {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
 
@@ -28,33 +28,33 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   init_mimetic_disc_(mesh_, MD_);
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
 
-  // resize the vectors for permeability
-  k_.resize(CellMap(true).NumMyElements());
-  k_rl_.resize(CellMap(true).NumMyElements());
+  // work vectors for within the problem
+  pressure_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  sat_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  sat_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  sat_ice_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  rho_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  rho_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  rho_ice_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  mu_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  k_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  k_rel_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
 
-  // porosity
-  phi_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-
-  // gravity
-  gvec_ = Teuchos::rcp(new double*);
-  *gvec_ = new double[3];
-
-  // store the cell volumes in a convenient way
+  // store the cell volumes and mean height in a convenient way
   cell_volumes_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
-    (*cell_volumes_)[n] = md_->Volume(n);
-  }
+  DeriveCellVolumes(cell_volumes_);
+  cell_heights_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  DeriveCellHeights(cell_heights_);
 };
 
-void  RichardsProblem::InitializeProblem(Teuchos::ParameterList& richards_plist) {
+void  PermafrostProblem::InitializeProblem(Teuchos::ParameterList& permafrost_plist) {
   // get problem-specific parameters
-  p_atm_ = richards_plist.get<double>("Atmospheric pressure");
-  upwind_k_rel_ = richards_plist.get<bool>("Upwind relative permeability", true);
+  p_atm_ = permafrost_plist.get<double>("Atmospheric pressure");
+  upwind_k_rel_ = permafrost_plist.get<bool>("Upwind relative permeability", true);
 
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(richards_plist.sublist("boundary conditions",true));
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(permafrost_plist.sublist("boundary conditions",true));
   FlowBCFactory bc_factory(mesh_, bc_list);
-
   bc_press_ = Teuchos::rcp(bc_factory.CreatePressure());
   bc_head_  = Teuchos::rcp(bc_factory.CreateStaticHead(p_atm_, rho_, gravity_));
   bc_flux_  = Teuchos::rcp(bc_factory.CreateMassFlux());
@@ -64,58 +64,31 @@ void  RichardsProblem::InitializeProblem(Teuchos::ParameterList& richards_plist)
   D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh_));
 
   // Create the preconditioner (structure only, no values)
-  Teuchos::ParameterList diffprecon_plist = richards_plist.sublist("Diffusion Preconditioner");
+  Teuchos::ParameterList diffprecon_plist = permafrost_plist.sublist("Diffusion Preconditioner");
   precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
 
-  // read the water retention model sublist and create the WRM array
-  Teuchos::ParameterList &wrm_plist = richards_plist.sublist("Water retention models");
+  // parse sublists to create saturations curves
+  SaturationCurveFactory sat_curve_factory;
+  Teuchos::ParameterList &satcurve_plist = permafrost_plist.sublist("Saturation Curves");
+  sat_curve_factory.parse_saturation_curves(satcurve_plist, sat_curves_);
 
-  // first figure out how many entries there are
-  int nblocks = 0;
-  for (Teuchos::ParameterList::ConstIterator i = wrm_plist.begin(); i != wrm_plist.end(); i++) {
-    // only count sublists
-    if (wrm_plist.isSublist(wrm_plist.name(i))) {
-	  nblocks++;
-	} else {
-	  // currently we only support van Genuchten, if a user
-	  // specifies something else, throw a meaningful error...
-	  Errors::Message m("RichardsProblem: the Water retention models sublist contains an entry that is not a sublist!");
-	  Exceptions::amanzi_throw(m);
-	}
-  }
-
-  WRM_.resize(nblocks);
-
-  int iblock = 0;
-  for (Teuchos::ParameterList::ConstIterator i = wrm_plist.begin(); i != wrm_plist.end(); i++) {
-    if (wrm_plist.isSublist(wrm_plist.name(i))) {
-      Teuchos::ParameterList &block_wrm_plist = wrm_plist.sublist( wrm_plist.name(i) );
-
-      // which water retention model are we using? currently we only have van Genuchten
-      if ( block_wrm_plist.get<string>("Water retention model") == "van Genuchten") {
-        // read the mesh block number that this model applies to
-        int meshblock = block_wrm_plist.get<int>("Region ID");
-
-        // read values for the van Genuchten model
-        double vG_m = block_wrm_plist.get<double>("van Genuchten m");
-        double vG_alpha = block_wrm_plist.get<double>("van Genuchten alpha");
-        double vG_sr = block_wrm_plist.get<double>("van Genuchten residual saturation");
-
-        WRM_[iblock] = Teuchos::rcp(new vanGenuchtenModel(meshblock,vG_m,vG_alpha,
-                                                          vG_sr,p_atm_));
-      }
-      iblock++;
-    }
-  }
+  // create EOS curves
+  EOSFactory eos_factory;
+  Teuchos::ParameterList &gas_eos_plist = permafrost_plist.sublist("Gas EOS");
+  gas_eos_ = Teuchos::rcp(eos_factory.create_eos(gas_eos_plist));
+  Teuchos::ParameterList &liquid_eos_plist = permafrost_plist.sublist("Liquid EOS");
+  liquid_eos_ = Teuchos::rcp(eos_factory.create_eos(liquid_eos_plist));
+  Teuchos::ParameterList &ice_eos_plist = permafrost_plist.sublist("Ice EOS");
+  ice_eos_ = Teuchos::rcp(eos_factory.create_eos(ice_eos_plist));
 };
 
-
-RichardsProblem::~RichardsProblem() {
+PermafrostProblem::~PermafrostProblem() {
   delete md_;
   delete precon_;
 };
 
-Teuchos::RCP<Epetra_Map> RichardsProblem::create_dof_map_(const Epetra_Map &cell_map, const Epetra_Map &face_map) const {
+// private methods
+Teuchos::RCP<Epetra_Map> PermafrostProblem::create_dof_map_(const Epetra_Map &cell_map, const Epetra_Map &face_map) const {
   // Create the combined cell/face DoF map
   int ncell_tot = cell_map.NumGlobalElements();
   int ndof_tot = ncell_tot + face_map.NumGlobalElements();
@@ -130,7 +103,7 @@ Teuchos::RCP<Epetra_Map> RichardsProblem::create_dof_map_(const Epetra_Map &cell
   return map;
 }
 
-void RichardsProblem::validate_boundary_conditions_() const {
+void PermafrostProblem::validate_boundary_conditions_() const {
   // Create sets of the face indices belonging to each BC type.
   std::set<int> press_faces, head_faces, flux_faces;
   BoundaryFunction::Iterator bc;
@@ -152,7 +125,7 @@ void RichardsProblem::validate_boundary_conditions_() const {
     Errors::Message m;
     std::stringstream s;
     s << global_overlap;
-    m << "RichardsProblem: \"static head\" BC overlap \"dirichlet\" BC on "
+    m << "PermafrostProblem: \"static head\" BC overlap \"dirichlet\" BC on "
       << s.str().c_str() << " faces";
     Exceptions::amanzi_throw(m);
   }
@@ -168,7 +141,7 @@ void RichardsProblem::validate_boundary_conditions_() const {
     Errors::Message m;
     std::stringstream s;
     s << global_overlap;
-    m << "RichardsProblem: \"flux\" BC overlap \"dirichlet\" BC on "
+    m << "PermafrostProblem: \"flux\" BC overlap \"dirichlet\" BC on "
       << s.str().c_str() << " faces";
     Exceptions::amanzi_throw(m);
   }
@@ -184,7 +157,7 @@ void RichardsProblem::validate_boundary_conditions_() const {
     Errors::Message m;
     std::stringstream s;
     s << global_overlap;
-    m << "RichardsProblem: \"flux\" BC overlap \"static head\" BC on "
+    m << "PermafrostProblem: \"flux\" BC overlap \"static head\" BC on "
       << s.str().c_str() << " faces";
     Exceptions::amanzi_throw(m);
   }
@@ -193,7 +166,7 @@ void RichardsProblem::validate_boundary_conditions_() const {
   //      Right now faces without BC are considered no-mass-flux.
 };
 
-DiffusionMatrix* RichardsProblem::create_diff_matrix_(Teuchos::RCP<AmanziMesh::Mesh> &mesh) const {
+DiffusionMatrix* PermafrostProblem::create_diff_matrix_(Teuchos::RCP<AmanziMesh::Mesh> &mesh) const {
   // Generate the list of all Dirichlet-type faces.
   // The provided list should include USED BC faces.
   std::vector<int> dir_faces;
@@ -205,7 +178,7 @@ DiffusionMatrix* RichardsProblem::create_diff_matrix_(Teuchos::RCP<AmanziMesh::M
   return new DiffusionMatrix(mesh, dir_faces);
 }
 
-void RichardsProblem::init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh> &mesh,
+void PermafrostProblem::init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh> &mesh,
                                          std::vector<MimeticHexLocal> &MD) const {
   // Local storage for the 8 vertex coordinates of a hexahedral cell.
   double x[8][3];
@@ -219,46 +192,10 @@ void RichardsProblem::init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   }
 };
 
-void RichardsProblem::SetPermeability(double k) {
-  /// should verify k > 0
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k;
-};
-
-void RichardsProblem::SetPermeability(const Epetra_Vector &k) {
-  /// should verify k.Map() is CellMap()
-  /// should verify k values are all > 0
-  Epetra_Vector k_ovl(mesh_->cell_map(true));
-  Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
-
-  k_ovl.Import(k, importer, Insert);
-
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
-};
-
-void RichardsProblem::SetPorosity(double phi) {
-  /// verify 0 <= phi <= 1
-  phi_->PutScalar(phi);
-};
-
-void RichardsProblem::SetPorosity(const Epetra_Vector& phi) {
-  /// verify 0 <= phi <= 1
-  *phi_ = phi;
-};
-
-void RichardsProblem::SetFluidDensity(double rho) {
-  /// should verify rho > 0
-  rho_ = rho;
-};
-
-void RichardsProblem::SetFluidViscosity(double mu) {
-  /// should verify mu > 0
-  mu_ = mu;
-};
-
-void RichardsProblem::SetGravity(const double g[3])
-{
+// Set Methods
+void PermafrostProblem::SetGravity(const double g[3]) {
   if (g[0] != 0. || g[1] != 0.) {
-    Errors::Message message("RichardsProblem currently requires gravity g = g_z");
+    Errors::Message message("PermafrostProblem currently requires gravity g = g_z");
     Exceptions::amanzi_throw(message);
   } else {
     (*gvec_)[0] = 0.;
@@ -268,31 +205,139 @@ void RichardsProblem::SetGravity(const double g[3])
   }
 };
 
-void RichardsProblem::SetGravity(double g)
-{
+void PermafrostProblem::SetGravity(double g) {
   (*gvec_)[0] = 0.;
   (*gvec_)[1] = 0.;
   (*gvec_)[2] = -g;
   gravity_ = g;
 };
 
-void RichardsProblem::ComputeRelPerm(const Epetra_Vector& P, Epetra_Vector& k_rel) const {
+// Derive methods
+void PermafrostProblem::DeriveCellVolumes(Teuchos::RCP<Epetra_Vector> &cell_volumes) const {
+  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
+    (*cell_volumes)[n] = md_->Volume(n);
+  }
+};
+
+void PermafrostProblem::DeriveCellHeights(Teuchos::RCP<Epetra_Vector> &cell_heights) const {
+  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
+    std::vector<double> coords;
+    coords.resize(24);
+    mesh_->cell_to_coordinates(n, coords.begin(), coords.end());
+
+    double zavg = 0.0;
+    for (int k=2; k<24; k+=3) {
+      zavg += coords[k];
+    }
+    (*cell_heights)[n] = zavg / 8.0;
+  }
+};
+
+void PermafrostProblem::DerivePermeability(const Epetra_Vector &phi,
+                                           Teuchos::RCP<Epetra_Vector> &perm) const {
+  // currently do nothing... this might get set eventually, but for now
+  // assuming fixed permeability
+};
+
+void PermafrostProblem::DeriveLiquidRelPerm(const Epetra_Vector &saturation,
+                                            Teuchos::RCP<Epetra_Vector> &rel_perm) const {
+  for (int mb=0; mb<sat_curves_.size(); ++mb) {
+    // get mesh block cells
+    unsigned int mb_id = sat_curves_[mb]->mesh_block();
+    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
+    std::vector<unsigned int> block(ncells);
+
+    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
+
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); ++j) {
+      (*rel_perm)[*j] = sat_curves_[mb]->k_relative(saturation[*j])
+	}
+  }
+};
+
+void PermafrostProblem::DeriveGasDensity(const Epetra_Vector &pressure,
+                                         const Epetra_Vector &temp,
+                                         Teuchos::RCP<Epetra_Vector> &rho) const {
+  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+    (*rho)[i] = gas_eos_->density(pressure[i], temp[i]);
+  }
+};
+
+void PermafrostProblem::DeriveLiquidDensity(const Epetra_Vector &pressure,
+                                         const Epetra_Vector &temp,
+                                         Teuchos::RCP<Epetra_Vector> &rho) const {
+  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+    (*rho)[i] = liquid_eos_->density(pressure[i], temp[i]);
+  }
+};
+
+void PermafrostProblem::DeriveIceDensity(const Epetra_Vector &pressure,
+                                         const Epetra_Vector &temp,
+                                         Teuchos::RCP<Epetra_Vector> &rho) const {
+  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+    (*rho)[i] = ice_eos_->density(pressure[i], temp[i]);
+  }
+};
+
+void PermafrostProblem::DeriveLiquidViscosity(const Epetra_Vector &pressure,
+                                              const Epetra_Vector &temp,
+                                              Teuchos::RCP<Epetra_Vector> &viscosity)const {
+  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+    (*rho)[i] = liquid_eos_->viscosity(pressure[i], temp[i]);
+  }
+};
+
+void PermafrostProblem::DeriveSaturation(const Epetra_Vector &pressure_gas,
+                                         const Epetra_Vector &pressure_liquid,
+                                         const Epetra_Vector &temp,
+                                         const Epetra_Vector &density_ice,
+                                         Teuchos::RCP<Epetra_Vector> &sat_gas,
+                                         Teuchos::RCP<Epetra_Vector> &sat_liquid,
+                                         Teuchos::RCP<Epetra_Vector> &sat_ice) const {
+  for (int mb=0; mb<sat_curves_.size(); ++mb) {
+    // get mesh block cells
+    unsigned int mb_id = sat_curves_[mb]->mesh_block();
+    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
+    std::vector<unsigned int> block(ncells);
+
+    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
+
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); ++j) {
+      // workA and workB correspond to A and B notation in permafrost notes, 1.2.2
+      double workA = 1.0/sat_curves_[mb]->s_star(sigma_gl_/sigma_il_*h_iw0 *
+                                                density_ice[j]*(T0_-temp[j])/T0_);
+      double workB = 1.0/sat_curves_[mb]->s_star(pressure_gas[j] - pressure_liquid[j]);
+
+      double sat_l = 1.0/(workA + workB - 1.0);
+      (*sat_liquid)[j] = sat_l;
+      (*sat_gas)[j] = sat_l*(workB - 1.0);
+      (*sat_ice)[j] = sat_l*(workA - 1.0);
+	}
+  }
+};
+
+
+//// STOPPING HERE
+
+void PermafrostProblem::ComputeRelPerm(const Epetra_Vector& P, Epetra_Vector& k_rel) const {
   ASSERT(P.Map().SameAs(CellMap(true)));
   ASSERT(k_rel.Map().SameAs(CellMap(true)));
-  for (int mb=0; mb<WRM_.size(); mb++) {
+  for (int mb=0; mb<WRM_.size(); ++mb) {
     // get mesh block cells
     unsigned int mb_id = WRM_[mb]->mesh_block();
     unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
     std::vector<unsigned int> block(ncells);
     mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
     std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); j++) {
+    for (j = block.begin(); j!=block.end(); ++j) {
       k_rel[*j] = WRM_[mb]->k_relative(P[*j]);
     }
   }
 };
 
-void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
+void PermafrostProblem::ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
     const Epetra_Vector& Pface, Epetra_Vector& k_rel) const {
   ASSERT(Pcell.Map().SameAs(CellMap(true)));
   ASSERT(Pface.Map().SameAs(FaceMap(true)));
@@ -384,8 +429,8 @@ void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
   delete [] fcell;
 };
 
-void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector& P) {
-  for (int mb=0; mb<WRM_.size(); mb++) {
+void PermafrostProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector& P) {
+  for (int mb=0; mb<WRM_.size(); ++mb) {
     // get mesh block cells
     unsigned int mb_id = WRM_[mb]->mesh_block();
     unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
@@ -394,14 +439,14 @@ void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector
     mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
 
     std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); j++) {
+    for (j = block.begin(); j!=block.end(); ++j) {
 	  k_rl_[*j] = WRM_[mb]->k_relative(P[*j]);
 	}
   }
 };
 
-void RichardsProblem::DeriveSaturation(const Epetra_Vector& P, Epetra_Vector& S) const {
-  for (int mb=0; mb<WRM_.size(); mb++) {
+void PermafrostProblem::dSofP(const Epetra_Vector& P, Epetra_Vector& dS) {
+  for (int mb=0; mb<WRM_.size(); ++mb) {
     // get mesh block cells
     unsigned int mb_id = WRM_[mb]->mesh_block();
     unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
@@ -410,29 +455,13 @@ void RichardsProblem::DeriveSaturation(const Epetra_Vector& P, Epetra_Vector& S)
     mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
 
     std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); j++) {
-	  S[*j] = WRM_[mb]->saturation(P[*j]);
-	}
-  }
-};
-
-void RichardsProblem::dSofP(const Epetra_Vector& P, Epetra_Vector& dS) {
-  for (int mb=0; mb<WRM_.size(); mb++) {
-    // get mesh block cells
-    unsigned int mb_id = WRM_[mb]->mesh_block();
-    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
-    std::vector<unsigned int> block(ncells);
-
-    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
-
-    std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); j++) {
+    for (j = block.begin(); j!=block.end(); ++j) {
 	  dS[*j] = WRM_[mb]->d_saturation(P[*j]);
 	}
   }
 };
 
-void RichardsProblem::ComputePrecon(const Epetra_Vector& P) {
+void PermafrostProblem::ComputePrecon(const Epetra_Vector& P) {
   std::vector<double> K(k_);
 
   Epetra_Vector &Pcell_own = *CreateCellView(P);
@@ -465,7 +494,7 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector& P) {
   delete &Pcell_own, &Pface_own;
 };
 
-void RichardsProblem::ComputePrecon(const Epetra_Vector& P, double h) {
+void PermafrostProblem::ComputePrecon(const Epetra_Vector& P, double h) {
   std::vector<double> K(k_);
 
   Epetra_Vector &Pcell_own = *CreateCellView(P);
@@ -505,11 +534,11 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector& P, double h) {
   delete &Pcell_own, &Pface_own;
 }
 
-void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F) {
+void PermafrostProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F) {
   ComputeF(X,F,0.0);
 };
 
-void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time) {
+void PermafrostProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time) {
   // The cell and face-based DoF are packed together into the X and F Epetra
   // vectors: cell-based DoF in the first part, followed by the face-based DoF.
   // In addition, only the owned DoF belong to the vectors.
@@ -604,7 +633,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
 }
 
-Epetra_Vector* RichardsProblem::CreateCellView(const Epetra_Vector &X) const {
+Epetra_Vector* PermafrostProblem::CreateCellView(const Epetra_Vector &X) const {
   // should verify that X.Map() is the same as Map()
   double *data;
   X.ExtractView(&data);
@@ -612,7 +641,7 @@ Epetra_Vector* RichardsProblem::CreateCellView(const Epetra_Vector &X) const {
 }
 
 
-Epetra_Vector* RichardsProblem::CreateFaceView(const Epetra_Vector &X) const {
+Epetra_Vector* PermafrostProblem::CreateFaceView(const Epetra_Vector &X) const {
   // should verify that X.Map() is the same as Map()
   double *data;
   X.ExtractView(&data);
@@ -620,7 +649,7 @@ Epetra_Vector* RichardsProblem::CreateFaceView(const Epetra_Vector &X) const {
   return new Epetra_Vector(View, FaceMap(), data+ncell);
 }
 
-void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const {
+void PermafrostProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const {
   ASSERT(X.Map().SameAs(Map()));
   ASSERT(Q.Map().SameAs(CellMap(false)));
   ASSERT(Q.NumVectors() == 3);
@@ -673,7 +702,7 @@ void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVe
   delete &Pcell_own, &Pface_own;
 };
 
-void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l2_error) const {
+void PermafrostProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l2_error) const {
   /// should verify P.Map() is Map()
   /// should verify F.Map() is FaceMap()
 
@@ -779,7 +808,7 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
 };
 
 
-void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot) {
+void PermafrostProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot) {
   ComputeF(u,udot);
 
   // zero out the face part
@@ -787,8 +816,8 @@ void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetr
   udot_face->PutScalar(0.0);
 };
 
-void RichardsProblem::SetInitialPressureProfileCells(double height, Teuchos::RCP<Epetra_Vector> &pressure) {
-  for (int j=0; j<pressure->MyLength(); j++) {
+void PermafrostProblem::SetInitialPressureProfileCells(double height, Teuchos::RCP<Epetra_Vector> &pressure) {
+  for (int j=0; j<pressure->MyLength(); ++j) {
     std::vector<double> coords;
     coords.resize(24);
     mesh_->cell_to_coordinates(j, coords.begin(), coords.end());
@@ -804,8 +833,8 @@ void RichardsProblem::SetInitialPressureProfileCells(double height, Teuchos::RCP
   }
 };
 
-void RichardsProblem::SetInitialPressureProfileFaces(double height, Teuchos::RCP<Epetra_Vector> &pressure) {
-  for (int j=0; j<pressure->MyLength(); j++) {
+void PermafrostProblem::SetInitialPressureProfileFaces(double height, Teuchos::RCP<Epetra_Vector> &pressure) {
+  for (int j=0; j<pressure->MyLength(); ++j) {
     std::vector<double> coords;
     coords.resize(12);
     mesh_->face_to_coordinates(j, coords.begin(), coords.end());
@@ -821,8 +850,8 @@ void RichardsProblem::SetInitialPressureProfileFaces(double height, Teuchos::RCP
   }
 };
 
-void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double saturation, Teuchos::RCP<Epetra_Vector> &pressure) {
-  for (int mb=0; mb<WRM_.size(); mb++) {
+void PermafrostProblem::SetInitialPressureProfileFromSaturationCells(double saturation, Teuchos::RCP<Epetra_Vector> &pressure) {
+  for (int mb=0; mb<WRM_.size(); ++mb) {
     // get mesh block cells
     unsigned int mb_id = WRM_[mb]->mesh_block();
 
@@ -832,14 +861,14 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double satura
     mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
 
     std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); j++) {
+    for (j = block.begin(); j!=block.end(); ++j) {
 	  (*pressure)[*j] = WRM_[mb]->pressure(saturation);
 	}
   }
 };
 
-void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double saturation, Teuchos::RCP<Epetra_Vector> &pressure) {
-  for (int mb=0; mb<WRM_.size(); mb++) {
+void PermafrostProblem::SetInitialPressureProfileFromSaturationFaces(double saturation, Teuchos::RCP<Epetra_Vector> &pressure) {
+  for (int mb=0; mb<WRM_.size(); ++mb) {
     // get mesh block cells
     unsigned int mb_id = WRM_[mb]->mesh_block();
 
@@ -849,7 +878,7 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double satura
     mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
 
     std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); j++) {
+    for (j = block.begin(); j!=block.end(); ++j) {
 	  (*pressure)[*j] = WRM_[mb]->pressure(saturation);
 	}
   }
