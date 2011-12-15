@@ -101,8 +101,7 @@ namespace Amanzi {
 
 		else if ((i->second).functional == "Observation Data: Value")
 		  {
-		    // variable must be a component
-		    // data_triplet.value   = state.component_point_value((i->second).region, var);
+		    data_triplet.value   = state.point_value((i->second).region, var);
 		  }
 		
 		data_triplet.is_valid = true;

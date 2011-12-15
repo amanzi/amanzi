@@ -321,9 +321,6 @@ void MPC::cycle_driver ()
 	if (flow_enabled && flow_model == "Richards") 
 	  {
 	    flow_dT = FPK->get_flow_dT();
-
-	    std::cout << flow_dT << std::endl;
-
 	  }
 	
 	if (transport_enabled) transport_dT = TPK->calculate_transport_dT();

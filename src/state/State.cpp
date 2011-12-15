@@ -8,6 +8,11 @@
 #include "Geometry.hh"
 #include "linear-function.hh"
 
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+
+
 State::State( int number_of_components_, 
 	      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_):
   number_of_components(number_of_components_),
@@ -69,6 +74,28 @@ void State::initialize_from_parameter_list()
 {
   int num_blocks = parameter_list.get<int>("Number of mesh blocks");
 
+  // read the component names if they are spelled out
+  Teuchos::Array<std::string> comp_names;
+  if (parameter_list.isParameter("Component Solutes")) 
+    {
+      comp_names = parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
+    }
+  else
+    {
+      comp_names.resize(number_of_components);
+      for (int i=0; i<number_of_components; i++)
+	{
+	  std::stringstream ss;
+	  ss << "comp " << i;
+	  comp_names[i] = ss.str();
+	}
+    }
+  // now create the map
+  for (int i=0; i<comp_names.size(); i++)
+    {
+      comp_no[comp_names[i]] = i;
+    }
+  
   double u[3];
   u[0] = parameter_list.get<double>("Gravity x");		   
   u[1] = parameter_list.get<double>("Gravity y");		   
@@ -132,27 +159,6 @@ void State::initialize_from_parameter_list()
 	// maybe throw an exception
       }    
 
-    // read the component names if they are spelled out
-    Teuchos::Array<std::string> comp_names;
-    if (parameter_list.isParameter("Component Names")) 
-      {
-	comp_names = parameter_list.get<Teuchos::Array<std::string> >("Component Solutes");
-      }
-    else
-      {
-	comp_names.resize(number_of_components);
-	for (int i=0; i<number_of_components; i++)
-	  {
-	    std::stringstream ss;
-	    ss << "comp " << i;
-	    comp_names[i] = ss.str();
-	  }
-      }
-    // now create the map
-    for (int i=0; i<comp_names.size(); i++)
-      {
-	comp_no[comp_names[i]] = i;
-      }
 
 
     // read the component concentrations from the xml file
@@ -716,39 +722,57 @@ double State::point_value(const std::string& point_region, const std::string& na
 							 Amanzi::AmanziMesh::CELL,
 							 Amanzi::AmanziMesh::OWNED);
   
-  if (mesh_block_size > 1)
+  double value(0.0);
+  double volume(0.0);
+
+  std::vector<unsigned int> cell_ids(mesh_block_size);
+  
+  mesh_maps->get_set_entities(point_region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+			      &cell_ids);
+  
+  
+  // extract the value if it is a component
+  if ( comp_no.find(name) != comp_no.end() )
     {
-      // throw
+      value = 0.0;
+      volume = 0.0;
+      for (int i=0; i<mesh_block_size; i++)
+	{
+	  int ic = cell_ids[i];
+	  value += (*(*total_component_concentration)( comp_no[name] ))[ic] *  mesh_maps->cell_volume(ic);
+	  
+	  volume += mesh_maps->cell_volume(ic); 
+	}
+    }
+  else if ( name == "Water" )
+    {
+      value = 0.0;				\
+      volume = 0.0;
+      for (int i=0; i<mesh_block_size; i++)
+	{
+	  int ic = cell_ids[i];
+	  value += (*water_density)[ic] * (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+	  volume += mesh_maps->cell_volume(ic); 
+	}
+    }
+  else
+    {
+      std::stringstream ss;
+      ss << "State::point_value: cannot make an observation for variable " << name;
+      Errors::Message m(ss.str().c_str());
+      Exceptions::amanzi_throw(m);
     }
   
-  double value(0.0);
-
-  if (mesh_block_size == 1)
-    {
-      std::vector<unsigned int> cell_ids(mesh_block_size);
-      
-      mesh_maps->get_set_entities(point_region, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
-				  &cell_ids);
-      
-      // extract the value if it is a component
-      if ( comp_no.find(name) != comp_no.end() )
-	{
-	  value =   (*(*total_component_concentration)( comp_no[name] )) [cell_ids[0]];
-	}
-
-      // extract other point information
-      // ...
-      
-    }  
-
 
   // syncronize the result across processors
   
   double result;
   mesh_maps->get_comm()->SumAll(&value,&result,1);
 
+  double vresult;
+  mesh_maps->get_comm()->SumAll(&volume,&vresult,1);  
 
-  return result;
+  return result/vresult;
 }
 
 

@@ -153,8 +153,14 @@ namespace Amanzi {
 	      if ( vis_list.isParameter("Cycle Macro") )
 		{
 		  std::string cycle_macro = vis_list.get<std::string>("Cycle Macro");
-		  vis_list.set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
-		  // now delete the Cycle Macro paramter
+		  Teuchos::ParameterList &cdata = vis_list.sublist("Cycle Data");
+		  Teuchos::Array<int> cm = get_Cycle_Macro(cycle_macro,plist);
+		  
+		  cdata.set("Start",cm[0]);
+		  cdata.set("End",cm[2]);
+		  cdata.set("Interval",cm[1]);
+		  
+		  // delete the cycle macro
 		  vis_list.remove("Cycle Macro");
 		}
 	    }
