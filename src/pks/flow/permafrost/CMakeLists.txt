@@ -8,6 +8,8 @@
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/utils/eos)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/utils/saturation_curves)
 
 # This state library will move to a new location
 # once Markus has created the data manager.

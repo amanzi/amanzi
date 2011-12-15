@@ -26,8 +26,8 @@ PermafrostProblem::PermafrostProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   cell_importer_ = Teuchos::rcp(new Epetra_Import(CellMap(true),CellMap(false)));
 
   // Create the MimeticHexLocal objects.
-  init_mimetic_disc_(mesh_, MD_);
-  md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
+  Teuchos::ParameterList disc_plist = permafrost_plist.sublist("Mimetic Discretization");
+  disc_ = Teuchos::rcp(new MimeticDiscretization(mesh_, disc_plist))
 
   // work vectors for within the problem
   pressure_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
@@ -43,7 +43,7 @@ PermafrostProblem::PermafrostProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
 
   // store the cell volumes and mean height in a convenient way
   cell_volumes_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  DeriveCellVolumes(cell_volumes_);
+  disc_->DeriveCellVolumes(cell_volumes_);
   cell_heights_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
   DeriveCellHeights(cell_heights_);
 };
@@ -84,7 +84,6 @@ void PermafrostProblem::InitializeProblem(Teuchos::ParameterList& permafrost_pli
 };
 
 PermafrostProblem::~PermafrostProblem() {
-  delete md_;
   delete precon_;
 };
 
@@ -181,20 +180,6 @@ DiffusionMatrix* PermafrostProblem::create_diff_matrix_(
   return new DiffusionMatrix(mesh, dir_faces);
 }
 
-void PermafrostProblem::init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh> &mesh,
-        std::vector<MimeticHexLocal> &MD) const {
-  // Local storage for the 8 vertex coordinates of a hexahedral cell.
-  double x[8][3];
-  double *xBegin = &x[0][0];  // begin iterator
-  double *xEnd = xBegin+24;   // end iterator
-
-  MD.resize(mesh->cell_map(true).NumMyElements());
-  for (int j = 0; j < MD.size(); ++j) {
-    mesh->cell_to_coordinates((unsigned int) j, xBegin, xEnd);
-    MD[j].update(x);
-  }
-};
-
 // Set Methods
 void PermafrostProblem::SetGravity(const double g[3]) {
   if (g[0] != 0. || g[1] != 0.) {
@@ -215,19 +200,10 @@ void PermafrostProblem::SetGravity(double g) {
   gravity_ = g;
 };
 
-// Derive methods
-void PermafrostProblem::DeriveCellVolumes(Teuchos::RCP<Epetra_Vector> &cell_volumes) const {
-  ASSERT(cell_volumes->Map().SameAs(md_->CellMap()));
-  // cell volumes must be non-ghosted
-  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
-    (*cell_volumes)[n] = md_->Volume(n);
-  }
-};
-
 void PermafrostProblem::DeriveCellHeights(Teuchos::RCP<Epetra_Vector> &cell_heights) const {
-  ASSERT(cell_heights->Map().SameAs(md_->CellMap()));
+  ASSERT(cell_heights->Map().SameAs(CellMap()));
   // cell heights must be non-ghosted
-  for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
+  for (int n=0; n<(CellMap()).NumMyElements(); n++) {
     std::vector<double> coords;
     coords.resize(24);
     mesh_->cell_to_coordinates(n, coords.begin(), coords.end());
@@ -270,7 +246,7 @@ void PermafrostProblem::DeriveGasDensity(const Epetra_Vector &pressure,
         const Epetra_Vector &temp, Teuchos::RCP<Epetra_Vector> &rho) const {
   ASSERT(pressure.Map().SameAs(temp.Map()));
   ASSERT(pressure.Map().SameAs(rho->Map()));
-  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+  for (int i=0; i < (CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = gas_eos_->density(pressure[i], temp[i]);
   }
 };
@@ -279,7 +255,7 @@ void PermafrostProblem::DeriveLiquidDensity(const Epetra_Vector &pressure,
         const Epetra_Vector &temp, Teuchos::RCP<Epetra_Vector> &rho) const {
   ASSERT(pressure.Map().SameAs(temp.Map()));
   ASSERT(pressure.Map().SameAs(rho->Map()));
-  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+  for (int i=0; i < (CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = liquid_eos_->density(pressure[i], temp[i]);
   }
 };
@@ -289,7 +265,7 @@ void PermafrostProblem::DeriveIceDensity(const Epetra_Vector &pressure,
                                          Teuchos::RCP<Epetra_Vector> &rho) const {
   ASSERT(pressure.Map().SameAs(temp.Map()));
   ASSERT(pressure.Map().SameAs(rho->Map()));
-  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+  for (int i=0; i < (CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = ice_eos_->density(pressure[i], temp[i]);
   }
 };
@@ -298,7 +274,7 @@ void PermafrostProblem::DeriveLiquidViscosity(const Epetra_Vector &pressure,
         const Epetra_Vector &temp, Teuchos::RCP<Epetra_Vector> &viscosity)const {
   ASSERT(pressure.Map().SameAs(temp.Map()));
   ASSERT(pressure.Map().SameAs(viscosity->Map()));
-  for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
+  for (int i=0; i < (CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = liquid_eos_->viscosity(pressure[i], temp[i]);
   }
 };

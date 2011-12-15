@@ -36,6 +36,7 @@ public:
 
   // initialize values over blocks
   void initialize();
+  bool check_all_initialized();
 
   // Add things to the state.  Location is one of the AmanziMesh::Entity_kind
   // enum, own indicates whether the PK requiring the field would like write
@@ -49,13 +50,11 @@ public:
   // flow accessing a temperature field if an energy PK owns the temperature field.
   // This ensures a PK cannot mistakenly alter data it doesn't own.
   Teuchos::RCP<const Epetra_MultiVector> get_field(std::string fieldname) const;
-  Teuchos::RCP<const Epetra_Vector> get_field(std::string fieldname) const;
 
   // This access method should be used by PKs who own the field.
   Teuchos::RCP<Epetra_MultiVector> get_field(std::string fieldname,
                                              std::string pk_name);
-  Teuchos::RCP<Epetra_Vector> get_field(std::string fieldname,
-                                             std::string pk_name);
+
   // Access to the full field instance, not just the data.
   Teuchos::RCP<Field> get_field_record(std::string fieldname);
 
