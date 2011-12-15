@@ -100,9 +100,11 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_bc_factory flow_bc_factory KIND unit)
  
     # Test: flow-richards
-    #add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
-    #target_link_libraries(flow_richards_bdf2 flow mesh_factory mesh error_handling ${UnitTest_LIBRARIES})
-    #add_amanzi_test(flow_richards_bdf2 flow_richards_bdf2 KIND unit)
+    set(amanzi_libs geometry mesh mesh_audit simple_mesh state flow whetstone solvers output state)
+
+    add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
+    target_link_libraries(flow_richards_bdf2 ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_richards_bdf2 flow_richards_bdf2 KIND unit)
     
 endif()
 

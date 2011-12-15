@@ -18,10 +18,8 @@ namespace Amanzi {
 
 class BoundaryFunction; // forward declaration
 
-class RichardsProblem 
-{
-public:
-
+class RichardsProblem {
+ public:
   RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>&, Teuchos::ParameterList&);
   ~RichardsProblem();
 
@@ -32,7 +30,7 @@ public:
   //void SetPermeability(const std::vector<double> &k);
   void SetPermeability(const Epetra_Vector &k);
 
-  void SetFlowState( Teuchos::RCP<const Flow_State> FS_ );
+  void SetFlowState(Teuchos::RCP<const Flow_State> FS_);
 
   void ComputeRelPerm(const Epetra_Vector&, Epetra_Vector&) const;
   void ComputeUpwindRelPerm(const Epetra_Vector&, const Epetra_Vector&, Epetra_Vector&) const;
@@ -77,8 +75,7 @@ public:
   void SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure);
   void SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure);
 
-private:
-
+ private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map *dof_map_;
   Epetra_Import *face_importer_;
@@ -86,10 +83,6 @@ private:
 
   std::vector<double> k_; // spatially variable permeability
   std::vector<double> k_rl_;  // relative permeability
-  //double vG_m_;     // van Genuchten m
-  //double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
-  //double vG_alpha_; // van Genuchten alpha
-  //double vG_sr_;    // van Genuchten effective saturation
   double p_atm_;    // atmospheric pressure
   double rho_;      // fluid density
   double mu_;       // fluid viscosity
@@ -114,8 +107,7 @@ private:
 
   Teuchos::RCP<const Flow_State> FS;  
 
-private:  // Auxillary functions
-
+ private:  // Auxillary functions
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
   void validate_boundary_conditions() const;
   DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&) const;
