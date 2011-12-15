@@ -1,3 +1,5 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
 #include "Epetra_IntVector.h"
 
 #include <algorithm>
@@ -13,8 +15,7 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
 
 PermafrostProblem::PermafrostProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                                  Teuchos::ParameterList& permafrost_plist) : mesh_(mesh) {
@@ -29,16 +30,16 @@ PermafrostProblem::PermafrostProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
 
   // work vectors for within the problem
-  pressure_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  sat_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  sat_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  sat_ice_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  rho_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  rho_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  rho_ice_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  mu_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  k_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
-  k_rel_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
+  pressure_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  sat_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  sat_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  sat_ice_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  rho_gas_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  rho_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  rho_ice_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  mu_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  k_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
+  k_rel_liquid_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(true)));
 
   // store the cell volumes and mean height in a convenient way
   cell_volumes_ = Teuchos::rcp(new Epetra_Vector(mesh->cell_map(false)));
@@ -214,20 +215,24 @@ void PermafrostProblem::SetGravity(double g) {
 
 // Derive methods
 void PermafrostProblem::DeriveCellVolumes(Teuchos::RCP<Epetra_Vector> &cell_volumes) const {
+  ASSERT(cell_volumes->Map().SameAs(md_->CellMap()));
+  // cell volumes must be non-ghosted
   for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
     (*cell_volumes)[n] = md_->Volume(n);
   }
 };
 
 void PermafrostProblem::DeriveCellHeights(Teuchos::RCP<Epetra_Vector> &cell_heights) const {
+  ASSERT(cell_heights->Map().SameAs(md_->CellMap()));
+  // cell heights must be non-ghosted
   for (int n=0; n<(md_->CellMap()).NumMyElements(); n++) {
     std::vector<double> coords;
     coords.resize(24);
     mesh_->cell_to_coordinates(n, coords.begin(), coords.end());
 
     double zavg = 0.0;
-    for (int k=2; k<24; k+=3) {
-      zavg += coords[k];
+    for (int i=2; i<24; i+=3) {
+      zavg += coords[i];
     }
     (*cell_heights)[n] = zavg / 8.0;
   }
@@ -235,12 +240,15 @@ void PermafrostProblem::DeriveCellHeights(Teuchos::RCP<Epetra_Vector> &cell_heig
 
 void PermafrostProblem::DerivePermeability(const Epetra_Vector &phi,
                                            Teuchos::RCP<Epetra_Vector> &perm) const {
+  ASSERT(phi.Map().SameAs(perm->Map()));
   // currently do nothing... this might get set eventually, but for now
   // assuming fixed permeability
 };
 
 void PermafrostProblem::DeriveLiquidRelPerm(const Epetra_Vector &saturation,
                                             Teuchos::RCP<Epetra_Vector> &rel_perm) const {
+  ASSERT(saturation.Map().SameAs(rel_perm->Map()));
+
   for (int mb=0; mb<sat_curves_.size(); ++mb) {
     // get mesh block cells
     unsigned int mb_id = sat_curves_[mb]->mesh_block();
@@ -259,6 +267,8 @@ void PermafrostProblem::DeriveLiquidRelPerm(const Epetra_Vector &saturation,
 void PermafrostProblem::DeriveGasDensity(const Epetra_Vector &pressure,
                                          const Epetra_Vector &temp,
                                          Teuchos::RCP<Epetra_Vector> &rho) const {
+  ASSERT(pressure.Map().SameAs(temp.Map()));
+  ASSERT(pressure.Map().SameAs(rho->Map()));
   for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = gas_eos_->density(pressure[i], temp[i]);
   }
@@ -267,6 +277,8 @@ void PermafrostProblem::DeriveGasDensity(const Epetra_Vector &pressure,
 void PermafrostProblem::DeriveLiquidDensity(const Epetra_Vector &pressure,
                                          const Epetra_Vector &temp,
                                          Teuchos::RCP<Epetra_Vector> &rho) const {
+  ASSERT(pressure.Map().SameAs(temp.Map()));
+  ASSERT(pressure.Map().SameAs(rho->Map()));
   for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = liquid_eos_->density(pressure[i], temp[i]);
   }
@@ -275,6 +287,8 @@ void PermafrostProblem::DeriveLiquidDensity(const Epetra_Vector &pressure,
 void PermafrostProblem::DeriveIceDensity(const Epetra_Vector &pressure,
                                          const Epetra_Vector &temp,
                                          Teuchos::RCP<Epetra_Vector> &rho) const {
+  ASSERT(pressure.Map().SameAs(temp.Map()));
+  ASSERT(pressure.Map().SameAs(rho->Map()));
   for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = ice_eos_->density(pressure[i], temp[i]);
   }
@@ -283,6 +297,8 @@ void PermafrostProblem::DeriveIceDensity(const Epetra_Vector &pressure,
 void PermafrostProblem::DeriveLiquidViscosity(const Epetra_Vector &pressure,
                                               const Epetra_Vector &temp,
                                               Teuchos::RCP<Epetra_Vector> &viscosity)const {
+  ASSERT(pressure.Map().SameAs(temp.Map()));
+  ASSERT(pressure.Map().SameAs(viscosity->Map()));
   for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
     (*rho)[i] = liquid_eos_->viscosity(pressure[i], temp[i]);
   }
@@ -295,6 +311,13 @@ void PermafrostProblem::DeriveSaturation(const Epetra_Vector &pressure_gas,
                                          Teuchos::RCP<Epetra_Vector> &sat_gas,
                                          Teuchos::RCP<Epetra_Vector> &sat_liquid,
                                          Teuchos::RCP<Epetra_Vector> &sat_ice) const {
+  ASSERT(pressure_gas.Map().SameAs(pressure_liquid.Map()));
+  ASSERT(pressure_gas.Map().SameAs(temp.Map()));
+  ASSERT(pressure_gas.Map().SameAs(density_ice.Map()));
+  ASSERT(pressure_gas.Map().SameAs(sat_gas->Map()));
+  ASSERT(pressure_gas.Map().SameAs(sat_liquid->Map()));
+  ASSERT(pressure_gas.Map().SameAs(sat_ice->Map()));
+
   for (int mb=0; mb<sat_curves_.size(); ++mb) {
     // get mesh block cells
     unsigned int mb_id = sat_curves_[mb]->mesh_block();
@@ -318,405 +341,29 @@ void PermafrostProblem::DeriveSaturation(const Epetra_Vector &pressure_gas,
   }
 };
 
-
-//// STOPPING HERE
-
-void PermafrostProblem::ComputeRelPerm(const Epetra_Vector& P, Epetra_Vector& k_rel) const {
-  ASSERT(P.Map().SameAs(CellMap(true)));
-  ASSERT(k_rel.Map().SameAs(CellMap(true)));
-  for (int mb=0; mb<WRM_.size(); ++mb) {
-    // get mesh block cells
-    unsigned int mb_id = WRM_[mb]->mesh_block();
-    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
-    std::vector<unsigned int> block(ncells);
-    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
-    std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); ++j) {
-      k_rel[*j] = WRM_[mb]->k_relative(P[*j]);
-    }
-  }
-};
-
-void PermafrostProblem::ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
-    const Epetra_Vector& Pface, Epetra_Vector& k_rel) const {
-  ASSERT(Pcell.Map().SameAs(CellMap(true)));
-  ASSERT(Pface.Map().SameAs(FaceMap(true)));
-  ASSERT(k_rel.Map().SameAs(FaceMap(true)));
-
-  int fdirs[6];
-  unsigned int cface[6];
-  double aux1[6], aux2[6], gflux[6], dummy;
-
-  // Calculate the mimetic face 'fluxes' that omit the relative permeability.
-  // When P is a converged solution, the following result on interior faces
-  // will be twice the true value (double counting).  For a non-converged
-  // solution (typical case) we view it as an approximation (twice the
-  // average of the adjacent cell fluxes).  Here we are only interested
-  // in the sign of the flux, and then only on interior faces, so we omit
-  // bothering with the scaling.
-
-  // Looping over all cells gives desired result on *owned* faces.
-  Epetra_Vector Fface(FaceMap(true)); // fills with 0, includes ghosts
-  for (unsigned int j = 0; j < Pcell.MyLength(); ++j) {
-    // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces(j, cface, cface+6);
-    // Gather the local face pressures int AUX1.
-    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] / mu_);
-    MD_[j].diff_op(K, Pcell[j], aux1, dummy, aux2); // aux2 is inward flux
-    // Gravity contribution; aux2 becomes outward flux
-    MD_[j].GravityFlux(*gvec_, gflux);
-    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
-    // Scatter the local face result into FFACE.
-    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
-    for (int k = 0; k < 6; ++k) Fface[cface[k]] += fdirs[k] * aux2[k];
-  }
-
-  // Generate the face-to-cell data structure.  For each face, the pair of
-  // adjacent cell indices is stored, accessed via the members first and
-  // second.  The face is oriented outward with respect to the first cell
-  // of the pair and inward with respect to the second.  Boundary faces are
-  // identified by a -1 value for the second member.
-  typedef std::pair<int,int> CellPair;
-  int nface = FaceMap(true).NumMyElements();
-  int nface_own = FaceMap(false).NumMyElements();
-  CellPair *fcell = new CellPair[nface];
-  for (int j = 0; j < nface; ++j) {
-    fcell[j].first  = -1;
-    fcell[j].second = -1;
-  }
-  // Looping over all cells gives desired result on *owned* faces.
-  for (unsigned int j = 0; j < CellMap(true).NumMyElements(); ++j) {
-    // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces(j, cface, cface+6);
-    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
-    for (int k = 0; k < 6; ++k) {
-      if (fdirs[k] > 0) {
-        ASSERT(fcell[cface[k]].first == -1);
-        fcell[cface[k]].first = j;
-      } else {
-        ASSERT(fcell[cface[k]].second == -1);
-        fcell[cface[k]].second = j;
-      }
-    }
-  }
-  // Fix-up at boundary faces: move the cell index to the first position.
-  for (int j = 0; j < nface_own; ++j) {
-    if (fcell[j].first == -1) {
-      ASSERT(fcell[j].second != -1);
-      fcell[j].first = fcell[j].second;
-      fcell[j].second = -1; // marks a boundary face
-    }
-  }
-
-  // Compute the relative permeability on cells and then upwind on owned faces.
-  Epetra_Vector k_rel_cell(Pcell.Map());
-  ComputeRelPerm(Pcell, k_rel_cell);
-  for (int j = 0; j < nface_own; ++j) {
-    if (fcell[j].second == -1) // boundary face
-      k_rel[j] = k_rel_cell[fcell[j].first];
-    else
-      k_rel[j] = k_rel_cell[((Fface[j] >= 0.0) ? fcell[j].first : fcell[j].second)];
-  }
-
-  // Communicate the values computed above to the ghosts.
-  double *k_rel_data;
-  k_rel.ExtractView(&k_rel_data);
-  Epetra_Vector k_rel_own(View, FaceMap(false), k_rel_data);
-  k_rel.Import(k_rel_own, *face_importer_, Insert);
-
-  delete [] fcell;
-};
-
-void PermafrostProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector& P) {
-  for (int mb=0; mb<WRM_.size(); ++mb) {
-    // get mesh block cells
-    unsigned int mb_id = WRM_[mb]->mesh_block();
-    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::USED);
-    std::vector<unsigned int> block(ncells);
-
-    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::USED,block.begin(),block.end());
-
-    std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); ++j) {
-	  k_rl_[*j] = WRM_[mb]->k_relative(P[*j]);
-	}
-  }
-};
-
-void PermafrostProblem::dSofP(const Epetra_Vector& P, Epetra_Vector& dS) {
-  for (int mb=0; mb<WRM_.size(); ++mb) {
-    // get mesh block cells
-    unsigned int mb_id = WRM_[mb]->mesh_block();
-    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
-    std::vector<unsigned int> block(ncells);
-
-    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
-
-    std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); ++j) {
-	  dS[*j] = WRM_[mb]->d_saturation(P[*j]);
-	}
-  }
-};
-
-void PermafrostProblem::ComputePrecon(const Epetra_Vector& P) {
-  std::vector<double> K(k_);
-
-  Epetra_Vector &Pcell_own = *CreateCellView(P);
-  Epetra_Vector Pcell(CellMap(true));
-  Pcell.Import(Pcell_own, *cell_importer_, Insert);
-
-  Epetra_Vector &Pface_own = *CreateFaceView(P);
-  Epetra_Vector Pface(FaceMap(true));
-  Pface.Import(Pface_own, *face_importer_, Insert);
-
-  // Fill the diffusion matrix with values.
-  if (upwind_k_rel_) {
-    Epetra_Vector K_upwind(Pface.Map());
-    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] / mu_;
-    D_->Compute(K, K_upwind);
-  } else {
-    Epetra_Vector k_rel(Pcell.Map());
-    ComputeRelPerm(Pcell, k_rel);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] * k_rel[j] / mu_;
-    D_->Compute(K);
-  }
-
-  // Compute the face Schur complement of the diffusion matrix.
-  D_->ComputeFaceSchur();
-
-  // Compute the preconditioner from the newly computed diffusion matrix and Schur complement.
-  precon_->Compute();
-
-  delete &Pcell_own, &Pface_own;
-};
-
-void PermafrostProblem::ComputePrecon(const Epetra_Vector& P, double h) {
-  std::vector<double> K(k_);
-
-  Epetra_Vector &Pcell_own = *CreateCellView(P);
-  Epetra_Vector Pcell(CellMap(true));
-  Pcell.Import(Pcell_own, *cell_importer_, Insert);
-
-  Epetra_Vector &Pface_own = *CreateFaceView(P);
-  Epetra_Vector Pface(FaceMap(true));
-  Pface.Import(Pface_own, *face_importer_, Insert);
-
-  if (upwind_k_rel_) {
-    Epetra_Vector K_upwind(Pface.Map());
-    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] / mu_;
-    D_->Compute(K, K_upwind);
-  } else {
-    Epetra_Vector k_rel(Pcell.Map());
-    ComputeRelPerm(Pcell, k_rel);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] * k_rel[j] / mu_;
-    D_->Compute(K);
-  }
-
-  // add the time derivative to the diagonal
-  Epetra_Vector celldiag(CellMap(false));
-  dSofP(Pcell_own, celldiag);
-
-  celldiag.Multiply(rho_, celldiag, *phi_, 0.0);
-  celldiag.Multiply(1.0/h, celldiag, *cell_volumes_, 0.0);
-  D_->add_to_celldiag(celldiag);
-
-  // Compute the face Schur complement of the diffusion matrix.
-  D_->ComputeFaceSchur();
-
-  // Compute the preconditioner from the newly computed diffusion matrix and
-  // Schur complement.
-  precon_->Compute();
-  delete &Pcell_own, &Pface_own;
-}
-
-void PermafrostProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F) {
-  ComputeF(X,F,0.0);
-};
-
-void PermafrostProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time) {
-  // The cell and face-based DoF are packed together into the X and F Epetra
-  // vectors: cell-based DoF in the first part, followed by the face-based DoF.
-  // In addition, only the owned DoF belong to the vectors.
-
-  // Create views into the cell and face segments of X and F
-  Epetra_Vector &Pcell_own = *CreateCellView(X);
-  Epetra_Vector &Pface_own = *CreateFaceView(X);
-
-  Epetra_Vector &Fcell_own = *CreateCellView(F);
-  Epetra_Vector &Fface_own = *CreateFaceView(F);
-
-  // Create input cell and face pressure vectors that include ghosts.
-  Epetra_Vector Pcell(CellMap(true));
-  Pcell.Import(Pcell_own, *cell_importer_, Insert);
-  Epetra_Vector Pface(FaceMap(true));
-  Pface.Import(Pface_own, *face_importer_, Insert);
-
-  // Precompute the Dirichlet-type BC residuals for later use.
-  // Impose the Dirichlet boundary data on the face pressure vector.
-  bc_press_->Compute(time);
-  std::map<int,double> Fpress;
-  for (BoundaryFunction::Iterator bc = bc_press_->begin(); bc != bc_press_->end(); ++bc) {
-    Fpress[bc->first] = Pface[bc->first] - bc->second;
-    Pface[bc->first] = bc->second;
-  }
-  bc_head_->Compute(time);
-  std::map<int,double> Fhead;
-  for (BoundaryFunction::Iterator bc = bc_head_->begin(); bc != bc_head_->end(); ++bc) {
-    Fhead[bc->first] = Pface[bc->first] - bc->second;
-    Pface[bc->first] = bc->second;
-  }
-
-  // GENERIC COMPUTATION OF THE FUNCTIONAL /////////////////////////////////////
-
-  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
-  if (upwind_k_rel_) {
-    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] / mu_);
-  } else {
-    ComputeRelPerm(Pcell, K);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] * K[j] / mu_);
-  }
-
-  // Create cell and face result vectors that include ghosts.
-  Epetra_Vector Fcell(CellMap(true));
-  Epetra_Vector Fface(FaceMap(true));
-
-  int cface[6];
-  double aux1[6], aux2[6], aux3[6], gflux[6];
-
-  Fface.PutScalar(0.0);
-  for (int j = 0; j < Pcell.MyLength(); ++j) {
-    // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
-    // Gather the local face pressures int AUX1.
-    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    // Compute the local value of the diffusion operator.
-    if (upwind_k_rel_) {
-      for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
-      MD_[j].diff_op(K[j], aux3, Pcell[j], aux1, Fcell[j], aux2);
-      // Gravity contribution
-      MD_[j].GravityFlux(*gvec_, gflux);
-      for (int k = 0; k < 6; ++k) gflux[k] *= rho_ * K[j] * aux3[k];
-      for (int k = 0; k < 6; ++k) {
-        aux2[k] -= gflux[k];
-        Fcell[j] += gflux[k];
-      }
-    } else {
-      MD_[j].diff_op(K[j], Pcell[j], aux1, Fcell[j], aux2);
-      // Gravity contribution
-      MD_[j].GravityFlux(*gvec_, gflux);
-      for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K[j] * gflux[k];
-    }
-    // Scatter the local face result into FFACE.
-    for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
-  }
-
-  // Dirichlet-type condition residuals; overwrite with the pre-computed values.
-  std::map<int,double>::const_iterator i;
-  for (i = Fpress.begin(); i != Fpress.end(); ++i) Fface[i->first] = i->second;
-  for (i = Fhead.begin();  i != Fhead.end();  ++i) Fface[i->first] = i->second;
-
-  // Mass flux BC contribution.
-  bc_flux_->Compute(time);
-  for (BoundaryFunction::Iterator bc = bc_flux_->begin(); bc != bc_flux_->end(); ++bc)
-    Fface[bc->first] += bc->second * md_->face_area_[bc->first];
-
-  // Copy owned part of result into the output vectors.
-  for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
-  for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
-
-  delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
-}
-
-Epetra_Vector* PermafrostProblem::CreateCellView(const Epetra_Vector &X) const {
-  // should verify that X.Map() is the same as Map()
-  double *data;
-  X.ExtractView(&data);
-  return new Epetra_Vector(View, CellMap(), data);
-}
-
-
-Epetra_Vector* PermafrostProblem::CreateFaceView(const Epetra_Vector &X) const {
-  // should verify that X.Map() is the same as Map()
-  double *data;
-  X.ExtractView(&data);
-  int ncell = CellMap().NumMyElements();
-  return new Epetra_Vector(View, FaceMap(), data+ncell);
-}
-
-void PermafrostProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const {
-  ASSERT(X.Map().SameAs(Map()));
-  ASSERT(Q.Map().SameAs(CellMap(false)));
-  ASSERT(Q.NumVectors() == 3);
-
-  // Cell pressure vectors without and with ghosts.
-  Epetra_Vector &Pcell_own = *CreateCellView(X);
-  Epetra_Vector Pcell(CellMap(true));
-  Pcell.Import(Pcell_own, *cell_importer_, Insert);
-
-  // Face pressure vectors without and with ghosts.
-  Epetra_Vector &Pface_own = *CreateFaceView(X);
-  Epetra_Vector Pface(FaceMap(true));
-  Pface.Import(Pface_own, *face_importer_, Insert);
-
-  // The pressure gradient coefficient split as K * K_upwind: K gets
-  // incorporated into the mimetic discretization and K_upwind is applied
-  // afterwards to the computed mimetic flux.  Note that density (rho) is
-  // not included here because we want the Darcy velocity and not mass flux.
-  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
-  if (upwind_k_rel_) {
-    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (k_[j] / mu_);
-  } else {
-    ComputeRelPerm(Pcell, K);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (k_[j] / mu_) * K[j];
-  }
-
-  int cface[6];
-  double aux1[6], aux2[6], aux3[6], aux4[3], gflux[6], dummy;
-
-  for (int j = 0; j < Pcell_own.MyLength(); ++j) {
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
-    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    if (upwind_k_rel_) {
-      for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
-      MD_[j].diff_op(K[j], aux3, Pcell_own[j], aux1, dummy, aux2);
-      MD_[j].GravityFlux(*gvec_, gflux);
-      for (int k = 0; k < 6; ++k) aux2[k] = aux3[k] * K[j] * rho_ * gflux[k] - aux2[k];
-    } else {
-      MD_[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
-      MD_[j].GravityFlux(*gvec_, gflux);
-      for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
-    }
-    MD_[j].CellFluxVector(aux2, aux4);
-    Q[0][j] = aux4[0];
-    Q[1][j] = aux4[1];
-    Q[2][j] = aux4[2];
-  }
-
-  delete &Pcell_own, &Pface_own;
-};
-
-void PermafrostProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l2_error) const {
-  /// should verify P.Map() is Map()
-  /// should verify F.Map() is FaceMap()
+void PermafrostProblem::DeriveLiquidFlux(const Epetra_Vector &pressure,
+                         const Epetra_Vector &rho, const Epetra_Vector &k_rel,
+                         const Epetra_Vector &k, const Epetra_Vector &mu,
+                         Teuchos::RCP<Epetra_Vector> &flux,
+                         double &l2_error) const {
+  ASSERT(pressure.Map().SameAs(Map())); // cells and faces
+  ASSERT(rho.Map().SameAs(CellMap(true))); // ghosted cells
+  ASSERT(rho.Map().SameAs(k_rel.Map()));
+  ASSERT(rho.Map().SameAs(k.Map()));
+  ASSERT(rho.Map().SameAs(mu.Map()));
+  ASSERT(flux->Map().SameAs(FaceMap(true)));
 
   int fdirs[6];
   unsigned int cface[6];
   double aux1[6], aux2[6], aux3[6], gflux[6], dummy;
 
   // Create a view into the cell pressure segment of P.
-  Epetra_Vector &Pcell_own = *CreateCellView(P);
+  Epetra_Vector &Pcell_own = *CreateCellView(pressure);
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
 
   // Create a copy of the face pressure segment of P that includes ghosts.
-  Epetra_Vector &Pface_own = *CreateFaceView(P);
+  Epetra_Vector &Pface_own = *CreateFaceView(pressure);
   Epetra_Vector Pface(FaceMap(true));
   Pface.Import(Pface_own, *face_importer_, Insert);
 
@@ -730,19 +377,14 @@ void PermafrostProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F
   // afterwards to the computed mimetic flux.
   Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
   if (upwind_k_rel_) {
-    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] / mu_);
-    std::cout << "perm: " << K[0] << std::endl;
-    std::cout << "rho: " << rho_ << std::endl;
-    std::cout << "rel perm: " << k_[0] << std::endl;
-    std::cout << "mu: " << mu_ << std::endl;
+    for (int j = 0; j < K.MyLength(); ++j) {
+      K[j] = (rho[j] * k[j] / mu[j]);
+    }
+    ComputeUpwindRelPerm(Pcell, Pface, k_rel, K, rho, K_upwind);
   } else {
-    ComputeRelPerm(Pcell, K);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] * K[j] / mu_);
-    std::cout << "perm: " << K[0] << std::endl;
-    std::cout << "rho: " << rho_ << std::endl;
-    std::cout << "rel perm: " << k_[0] << std::endl;
-    std::cout << "mu: " << mu_ << std::endl;
+    for (int j = 0; j < K.MyLength(); ++j) {
+      K[j] = (rho[j] * k[j] * k_rel[j]) / mu[j];
+    }
     K_upwind.PutScalar(1.0);  // whole coefficient used in mimetic disc
   }
 
@@ -751,20 +393,19 @@ void PermafrostProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F
     // Get the list of process-local face indices for this cell.
     mesh_->cell_to_faces(j, cface, cface+6);
     // Gather the local face pressures int AUX1.
-    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
+    for (int i = 0; i < 6; ++i) aux1[i] = Pface[cface[i]];
     // Compute the local value of the diffusion operator.
     MD_[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
     // Gravity contribution
     MD_[j].GravityFlux(*gvec_, gflux);
-    if (j==0) std::cout << "gflux = " << gflux[0] << std::endl;
-    if (j==0) std::cout << "gvec = " << (*gvec_)[0] << (*gvec_)[1] << (*gvec_)[2] << std::endl;
-    for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
+
+    for (int i = 0; i < 6; ++i) aux2[i] = K[j] * rho_ * gflux[i] - aux2[i];
     mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     // Scatter the local face result into FFACE.
-    for (int k = 0; k < 6; ++k) {
-      Fface[cface[k]] += fdirs[k] * aux2[k];
-      error[cface[k]] += aux2[k]; // sums to the flux discrepancy
-      count[cface[k]]++;
+    for (int i = 0; i < 6; ++i) {
+      Fface[cface[i]] += fdirs[i] * aux2[i];
+      error[cface[i]] += aux2[i]; // sums to the flux discrepancy
+      count[cface[i]]++;
     }
     if (j == 0) std::cout << "Fface = " << Fface[cface[0]] << std::endl;
     if (j == 0) std::cout << "error = " << error[cface[0]] << std::endl;
@@ -785,7 +426,7 @@ void PermafrostProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F
   // the mimetic flux to Darcy flux by dividing by the constant fluid density
   // and multiplying by the K_upwind on faces.
   for (int j = 0; j < F.MyLength(); ++j)
-    F[j] = K_upwind[j] * F[j] / (rho_ * count[j]);
+    F[j] = K_upwind[j] * F[j] / (rho[j] * count[j]);
 
   // Create an owned face error vector that overlays the error vector with ghosts.
   double *error_data;
@@ -806,6 +447,184 @@ void PermafrostProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F
 
   delete &Pcell_own, &Pface_own;
 };
+
+void PermafrostProblem::DeriveLiquidVelocity(const Epetra_Vector &pressure,
+                         const Epetra_Vector &rho, const Epetra_Vector &k_rel,
+                         const Epetra_Vector &k, const Epetra_Vector &mu,
+                         Teuchos::RCP<Epetra_MultiVector> &velocity) {
+  ASSERT(pressure.Map().SameAs(Map())); // cells and faces
+  ASSERT(rho.Map().SameAs(CellMap(true))); // ghosted cells
+  ASSERT(rho.Map().SameAs(k_rel.Map()));
+  ASSERT(rho.Map().SameAs(k.Map()));
+  ASSERT(rho.Map().SameAs(mu.Map()));
+  ASSERT(rho.Map().SameAs(velocity->Map()));
+  ASSERT(velocity.NumVectors() == 3);
+
+  // Cell pressure vectors without and with ghosts.
+  Epetra_Vector &Pcell_own = *CreateCellView(pressure);
+  Epetra_Vector Pcell(CellMap(true));
+  Pcell.Import(Pcell_own, *cell_importer_, Insert);
+
+  // Face pressure vectors without and with ghosts.
+  Epetra_Vector &Pface_own = *CreateFaceView(pressure);
+  Epetra_Vector Pface(FaceMap(true));
+  Pface.Import(Pface_own, *face_importer_, Insert);
+
+  // The pressure gradient coefficient split as K * K_upwind: K gets
+  // incorporated into the mimetic discretization and K_upwind is applied
+  // afterwards to the computed mimetic flux.  Note that density (rho) is
+  // not included here because we want the Darcy velocity and not mass flux.
+  // The pressure gradient coefficient split as K * K_upwind: K gets
+  // incorporated into the mimetic discretization and K_upwind is applied
+  // afterwards to the computed mimetic flux.
+  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
+  if (upwind_k_rel_) {
+    for (int j = 0; j < K.MyLength(); ++j) {
+      K[j] = (k[j] / mu[j]);
+    }
+    ComputeUpwindRelPerm(Pcell, Pface, k_rel, K, rho, K_upwind);
+  } else {
+    for (int j = 0; j < K.MyLength(); ++j) {
+      K[j] = (k[j] * k_rel[j]) / mu[j];
+    }
+    K_upwind.PutScalar(1.0);  // whole coefficient used in mimetic disc
+  }
+
+  unsigned int cface[6];
+  double aux1[6], aux2[6], aux3[6], aux4[3], gflux[6], dummy;
+
+  for (unsigned int j = 0; j < Pcell_own.MyLength(); ++j) {
+    mesh_->cell_to_faces(j, cface, cface+6);
+    for (int i = 0; i < 6; ++i) aux1[i] = Pface[cface[i]];
+
+    for (int i = 0; i < 6; ++i) aux3[i] = K_upwind[cface[i]];
+    MD_[j].diff_op(K[j], aux3, Pcell_own[j], aux1, dummy, aux2);
+    MD_[j].GravityFlux(*gvec_, gflux);
+    for (int i = 0; i < 6; ++i) aux2[i] = aux3[i] * K[j] * rho[j] * gflux[i] - aux2[i];
+
+    MD_[j].CellFluxVector(aux2, aux4);
+    velocity[0][j] = aux4[0];
+    velocity[1][j] = aux4[1];
+    velocity[2][j] = aux4[2];
+  }
+
+  delete &Pcell_own, &Pface_own;
+};
+
+void PermafrostProblem::ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
+                                             const Epetra_Vector& Pface,
+                                             const Epetra_Vector& k_rel_cell,
+                                             const Epetra_Vector& k,
+                                             const Epetra_Vector& rho,
+                                             Epetra_Vector& k_rel_face) const {
+  ASSERT(Pcell.Map().SameAs(CellMap(true)));
+  ASSERT(k_rel_cell.Map().SameAs(CellMap(true)));
+  ASSERT(k.Map().SameAs(CellMap(true)));
+  ASSERT(rho.Map().SameAs(CellMap(true)));
+  ASSERT(Pface.Map().SameAs(FaceMap(true)));
+  ASSERT(k_rel_face.Map().SameAs(FaceMap(true)));
+
+  int fdirs[6];
+  unsigned int cface[6];
+  double aux1[6], aux2[6], gflux[6], dummy;
+
+  // Calculate the mimetic face 'fluxes' that omit the relative permeability.
+  // When P is a converged solution, the following result on interior faces
+  // will be twice the true value (double counting).  For a non-converged
+  // solution (typical case) we view it as an approximation (twice the
+  // average of the adjacent cell fluxes).  Here we are only interested
+  // in the sign of the flux, and then only on interior faces, so we omit
+  // bothering with the scaling.
+
+  // Looping over all cells gives desired result on *owned* faces.
+  Epetra_Vector Fface(FaceMap(true)); // fills with 0, includes ghosts
+  for (unsigned int j = 0; j < Pcell.MyLength(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces(j, cface, cface+6);
+    // Gather the local face pressures int AUX1.
+    for (int i = 0; i < 6; ++i) aux1[i] = Pface[cface[i]];
+    // Compute the local value of the diffusion operator.
+    MD_[j].diff_op(k[j], Pcell[j], aux1, dummy, aux2); // aux2 is inward flux
+    // Gravity contribution; aux2 becomes outward flux
+    MD_[j].GravityFlux(*gvec_, gflux);
+    for (int i = 0; i < 6; ++i) aux2[i] = rho[j] * K * gflux[i] - aux2[i];
+    // Scatter the local face result into FFACE.
+    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
+    for (int i = 0; i < 6; ++i) Fface[cface[i]] += fdirs[i] * aux2[i];
+  }
+
+  // Generate the face-to-cell data structure.  For each face, the pair of
+  // adjacent cell indices is stored, accessed via the members first and
+  // second.  The face is oriented outward with respect to the first cell
+  // of the pair and inward with respect to the second.  Boundary faces are
+  // identified by a -1 value for the second member.
+  typedef std::pair<int,int> CellPair;
+  int nface = FaceMap(true).NumMyElements();
+  int nface_own = FaceMap(false).NumMyElements();
+  CellPair *fcell = new CellPair[nface];
+  for (int j = 0; j < nface; ++j) {
+    fcell[j].first  = -1;
+    fcell[j].second = -1;
+  }
+  // Looping over all cells gives desired result on *owned* faces.
+  for (unsigned int j = 0; j < CellMap(true).NumMyElements(); ++j) {
+    // Get the list of process-local face indices for this cell.
+    mesh_->cell_to_faces(j, cface, cface+6);
+    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
+    for (int i = 0; i < 6; ++i) {
+      if (fdirs[i] > 0) {
+        ASSERT(fcell[cface[i]].first == -1);
+        fcell[cface[i]].first = j;
+      } else {
+        ASSERT(fcell[cface[i]].second == -1);
+        fcell[cface[i]].second = j;
+      }
+    }
+  }
+  // Fix-up at boundary faces: move the cell index to the first position.
+  for (int j = 0; j < nface_own; ++j) {
+    if (fcell[j].first == -1) {
+      ASSERT(fcell[j].second != -1);
+      fcell[j].first = fcell[j].second;
+      fcell[j].second = -1; // marks a boundary face
+    }
+  }
+
+  // Compute the relative permeability on cells and then upwind on owned faces.
+  for (int j = 0; j < nface_own; ++j) {
+    if (fcell[j].second == -1) // boundary face
+      k_rel_face[j] = k_rel_cell[fcell[j].first];
+    else
+      k_rel_face[j] = k_rel_cell[((Fface[j] >= 0.0) ? fcell[j].first : fcell[j].second)];
+  }
+
+  // Communicate the values computed above to the ghosts.
+  double *k_rel_data;
+  k_rel_face.ExtractView(&k_rel_data);
+  Epetra_Vector k_rel_own(View, FaceMap(false), k_rel_data);
+  k_rel_face.Import(k_rel_own, *face_importer_, Insert);
+
+  delete [] fcell;
+};
+
+Epetra_Vector* PermafrostProblem::CreateCellView(const Epetra_Vector &X) const {
+  // should verify that X.Map() is the same as Map()
+  double *data;
+  X.ExtractView(&data);
+  return new Epetra_Vector(View, CellMap(), data);
+}
+
+
+Epetra_Vector* PermafrostProblem::CreateFaceView(const Epetra_Vector &X) const {
+  // should verify that X.Map() is the same as Map()
+  double *data;
+  X.ExtractView(&data);
+  int ncell = CellMap().NumMyElements();
+  return new Epetra_Vector(View, FaceMap(), data+ncell);
+}
+
+
+////// done through here
 
 
 void PermafrostProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot) {

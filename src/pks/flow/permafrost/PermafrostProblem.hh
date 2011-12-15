@@ -76,12 +76,23 @@ public:
                         Teuchos::RCP<Epetra_Vector> &sat_ice) const;
   void DeriveLiquidFlux(const Epetra_Vector &pressure, const Epetra_Vector &rho,
                         const Epetra_Vector &k_rel, const Epetra_Vector &k,
-                        const Epetra_Vector &viscosity, Teuchos::RCP<Epetra_Vector> &flux,
-                        double &l1_error) const;
+                        const Epetra_Vector &mu,
+                        Teuchos::RCP<Epetra_Vector> &flux,
+                        double &l2_error) const;
+  void DeriveLiquidVelocity(const Epetra_Vector &pressure,
+                            const Epetra_Vector &rho,
+                            const Epetra_Vector &k_rel,
+                            const Epetra_Vector &k,
+                            const Epetra_Vector &mu,
+                            Teuchos::RCP<Epetra_Vector> &velocity) const;
 
   // hmm...
-  void ComputeUpwindRelPerm(const Epetra_Vector& Pcell, const Epetra_Vector& Pface,
-                            Epetra_Vector& k_rel) const;
+  void ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
+                            const Epetra_Vector& Pface,
+                            const Epetra_Vector& k_rel_cell,
+                            const Epetra_Vector& k,
+                            const Epetra_Vector& rho,
+                            Epetra_Vector& k_rel_face) const;
   void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector& P);
 
   // timestepping
