@@ -20,14 +20,14 @@ class BoundaryFunction; // forward declaration
 
 class RichardsProblem {
  public:
-  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>&, Teuchos::ParameterList&);
+  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, 
+                  const Teuchos::ParameterList& parameter_list);
   ~RichardsProblem();
 
   // Sets a constant (scalar) permeability.
   void SetPermeability(double k);
 
   // Sets a spatially variable (scalar) permeability, one value per cell.
-  //void SetPermeability(const std::vector<double> &k);
   void SetPermeability(const Epetra_Vector &k);
 
   void SetFlowState(Teuchos::RCP<const Flow_State> FS_);

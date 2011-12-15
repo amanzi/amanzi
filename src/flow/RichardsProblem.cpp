@@ -1,4 +1,6 @@
 #include "Epetra_IntVector.h"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <algorithm>
 
@@ -15,8 +17,8 @@
 namespace Amanzi
 {
 
-RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
-			   Teuchos::ParameterList &list) : mesh_(mesh)
+RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
+                                 const Teuchos::ParameterList& parameter_list) : mesh_(mesh)
 {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
@@ -24,20 +26,24 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   face_importer_ = new Epetra_Import(FaceMap(true),FaceMap(false));
   cell_importer_ = new Epetra_Import(CellMap(true),CellMap(false));
 
-  // Create the MimeticHexLocal objects.
+  // create the MimeticHexLocal objects.
   init_mimetic_disc_(*mesh, MD);
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
   
-  upwind_k_rel_ = list.get<bool>("Upwind relative permeability", true);
+  Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+  Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
+  Teuchos::ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
+
+  upwind_k_rel_ = richards_list.get<bool>("Upwind relative permeability", true);
   
-  p_atm_   = list.get<double>("Atmospheric pressure");
-  rho_ = list.get<double>("fluid density");
-  mu_ = list.get<double>("fluid viscosity");
-  gravity_ = list.get<double>("gravity");
+  p_atm_   = richards_list.get<double>("Atmospheric pressure");
+  rho_ = state_list.get<double>("Constant water density");
+  mu_ = state_list.get<double>("Constant viscosity");
+  gravity_ = state_list.get<double>("Gravity z");
   gvec_[0] = 0.0; gvec_[1] = 0.0; gvec_[2] = -gravity_;
   
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(list.sublist("boundary conditions",true));
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(richards_list.sublist("boundary conditions",true));
   FlowBCFactory bc_factory(mesh, bc_list);
   bc_press_ = bc_factory.CreatePressure();
   bc_head_  = bc_factory.CreateStaticHead(p_atm_, rho_, gravity_);
@@ -48,64 +54,53 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh));
 
   // Create the preconditioner (structure only, no values)
-  Teuchos::ParameterList diffprecon_plist = list.sublist("Diffusion Preconditioner");
+  Teuchos::ParameterList diffprecon_plist = richards_list.sublist("Diffusion Preconditioner");
   precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
   
   // resize the vectors for permeability
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
   
-  if ( ! list.isSublist("Water retention models") )
-    {
-      Errors::Message m("There is no Water retention models list");
-      Exceptions::amanzi_throw(m);
-    }
-  Teuchos::ParameterList &vGsl = list.sublist("Water retention models");
-
-  // read the water retention model sublist and create the WRM array
+  if (!richards_list.isSublist("Water retention models")) {
+    Errors::Message m("There is no Water retention models list");
+    Exceptions::amanzi_throw(m);
+  }
+  Teuchos::ParameterList &vGsl = richards_list.sublist("Water retention models");
 
   // first figure out how many entries there are
   int nblocks = 0;
-  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++)
-    {
-      // only count sublists
-      if (vGsl.isSublist(vGsl.name(i))) 
-	{
-	  nblocks++;
-	}
-      else
-	{
-	  // currently we only support van Genuchten, if a user
-	  // specifies something else, throw a meaningful error...
-	  Errors::Message m("RichardsProblem: the Water retention models sublist contains an entry that is not a sublist!");
-	  Exceptions::amanzi_throw(m);
-	}
+  for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++) {
+    if (vGsl.isSublist(vGsl.name(i))) {
+      nblocks++;
+    } else {
+      // currently we only support van Genuchten, if a user
+      // specifies something else, throw a meaningful error...
+      Errors::Message m("RichardsProblem: the Water retention models sublist contains an entry that is not a sublist!");
+      Exceptions::amanzi_throw(m);
     }
+  }
 
   WRM.resize(nblocks);
   
   int iblock = 0;
-  
   for (Teuchos::ParameterList::ConstIterator i = vGsl.begin(); i != vGsl.end(); i++) {
     if (vGsl.isSublist(vGsl.name(i))) {
-   	  Teuchos::ParameterList &wrmlist = vGsl.sublist( vGsl.name(i) );
-	  
-	    // which water retention model are we using? currently we only have van Genuchten
-	    if ( wrmlist.get<string>("Water retention model") == "van Genuchten") {
-	      // read the mesh block number that this model applies to
-	      //int meshblock = wrmlist.get<int>("Region ID");
-	      std::string region = wrmlist.get<std::string>("Region");
+      Teuchos::ParameterList &wrmlist = vGsl.sublist( vGsl.name(i) );
 
-	      // read values for the van Genuchten model
-	      double vG_m_      = wrmlist.get<double>("van Genuchten m");
-	      double vG_alpha_  = wrmlist.get<double>("van Genuchten alpha");
-	      double vG_sr_     = wrmlist.get<double>("van Genuchten residual saturation");
+      if ( wrmlist.get<string>("Water retention model") == "van Genuchten") {
+        // read the mesh block number that this model applies to
+        //int meshblock = wrmlist.get<int>("Region ID");
+        std::string region = wrmlist.get<std::string>("Region");
+
+        // read values for the van Genuchten model
+        double vG_m_ = wrmlist.get<double>("van Genuchten m");
+        double vG_alpha_ = wrmlist.get<double>("van Genuchten alpha");
+        double vG_sr_ = wrmlist.get<double>("van Genuchten residual saturation");
 	      
-	      WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_,
-							       vG_sr_,p_atm_));
-	    }
+        WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region,vG_m_,vG_alpha_, vG_sr_,p_atm_));
+      }
       iblock++;
-	  }
+    }
   }
 
   // store the cell volumes in a convenient way 

@@ -177,26 +177,25 @@
         </ParameterList>
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
-             <ParameterList name="boundary pressure">
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="-506275.0"/>
-               </ParameterList>
-             </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Top side}"/>
-           </ParameterList>
-         </ParameterList>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="-506275.0"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="regions" type="Array string" value="{Top side}"/>
+          </ParameterList>
           <ParameterList name="BC 2">
-             <ParameterList name="boundary pressure">
-               <ParameterList name="function-constant">
-                 <Parameter name="value" type="double" value="101325"/>
-               </ParameterList>
-             </ParameterList>
-             <Parameter name="regions" type="Array string" value="{Bottom side}"/>
-           </ParameterList>
-         </ParameterList>
-       </ParameterList>
-     </ParameterList>
-   </ParameterList>
+            <ParameterList name="boundary pressure">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="101325"/>
+              </ParameterList>
+            </ParameterList>
+            <Parameter name="regions" type="Array string" value="{Bottom side}"/>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
 
   <!--  STATE: this super input desk will be used to cut-off smaller 
   input deks for other flow tests -->

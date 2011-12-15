@@ -9,9 +9,7 @@
 namespace Amanzi {
 
 class Flow_State {
-
-public:
-
+ public:
   Flow_State(Teuchos::RCP<State> S) :
       mesh_maps_(S->get_mesh_maps()),
       gravity_(S->get_gravity()),
@@ -37,10 +35,8 @@ public:
 
   const Epetra_Vector& porosity() const { return *porosity_; }
 
-private:
-
+ private:
   // object doesn't own anything -- all smart pointers to the real thing.
-
   const Teuchos::RCP<double> fluid_density_;
   const Teuchos::RCP<double> fluid_viscosity_;
   const Teuchos::RCP<double*> gravity_;

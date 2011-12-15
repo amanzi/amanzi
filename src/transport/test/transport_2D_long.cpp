@@ -21,12 +21,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
-/*
-The transport component of the Amanzi code, serial unit tests.
-License: BSD
-Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-*/
-
 #include "Transport_PK.hpp"
 
 

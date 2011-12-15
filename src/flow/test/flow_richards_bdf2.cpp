@@ -28,7 +28,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 
 /* **************************************************************** */
-TEST(FLOW_RICHARDS) {
+TEST(FLOW_1D_RICHARDS) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -57,17 +57,18 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   RCP<Amanzi::Flow_State> FS = Teuchos::rcp(new Amanzi::Flow_State(S));
 
   // create Richards problem
-  ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  RichardsProblem problem(mesh, flow_list);
+  RichardsProblem problem(mesh, parameter_list);
   problem.SetFlowState(FS);
 
   // create the Richards Model Evaluator
-  ParameterList model_evaluator_list = flow_list.get<Teuchos::ParameterList>("Richards model evaluator");  
+  ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+  ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
+  ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
   Amanzi::RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
 
   // create the time stepping object
   Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList);
-  *bdf2_list = flow_list.get<Teuchos::ParameterList>("Time integrator");  
+  *bdf2_list = richards_list.get<Teuchos::ParameterList>("Time integrator");  
   BDF2::Dae TS(RME, problem.Map());
   TS.setParameterList(bdf2_list);
 
