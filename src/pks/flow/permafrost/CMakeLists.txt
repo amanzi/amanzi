@@ -18,6 +18,6 @@ include_directories(${ATS_SOURCE_DIR}/src/pks)
 #
 # Library: state
 #
-add_library(flow PermafrostProblem.cc PermafrostModelEvaluator.cc Permafrost_PK.cc)
+add_library(permafrost PermafrostProblem.cc PermafrostModelEvaluator.cc Permafrost_PK.cc)
 
 

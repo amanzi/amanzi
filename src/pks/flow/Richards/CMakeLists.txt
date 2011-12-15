@@ -18,6 +18,6 @@ include_directories(${ATS_SOURCE_DIR}/src/pks)
 #
 # Library: state
 #
-add_library(flow RichardsProblem.cc RichardsModelEvaluator.cc Richards_PK.cc)
+add_library(richards RichardsProblem.cc RichardsModelEvaluator.cc Richards_PK.cc)
 
 

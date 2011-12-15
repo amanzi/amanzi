@@ -18,7 +18,7 @@
 namespace Amanzi {
 
 PermafrostProblem::PermafrostProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                                 Teuchos::ParameterList& permafrost_plist) : mesh_(mesh) {
+        Teuchos::ParameterList& permafrost_plist) : mesh_(mesh) {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
 
@@ -48,7 +48,7 @@ PermafrostProblem::PermafrostProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   DeriveCellHeights(cell_heights_);
 };
 
-void  PermafrostProblem::InitializeProblem(Teuchos::ParameterList& permafrost_plist) {
+void PermafrostProblem::InitializeProblem(Teuchos::ParameterList& permafrost_plist) {
   // get problem-specific parameters
   p_atm_ = permafrost_plist.get<double>("Atmospheric pressure");
   upwind_k_rel_ = permafrost_plist.get<bool>("Upwind relative permeability", true);
@@ -89,7 +89,8 @@ PermafrostProblem::~PermafrostProblem() {
 };
 
 // private methods
-Teuchos::RCP<Epetra_Map> PermafrostProblem::create_dof_map_(const Epetra_Map &cell_map, const Epetra_Map &face_map) const {
+Teuchos::RCP<Epetra_Map> PermafrostProblem::create_dof_map_(const Epetra_Map &cell_map,
+        const Epetra_Map &face_map) const {
   // Create the combined cell/face DoF map
   int ncell_tot = cell_map.NumGlobalElements();
   int ndof_tot = ncell_tot + face_map.NumGlobalElements();
@@ -167,7 +168,8 @@ void PermafrostProblem::validate_boundary_conditions_() const {
   //      Right now faces without BC are considered no-mass-flux.
 };
 
-DiffusionMatrix* PermafrostProblem::create_diff_matrix_(Teuchos::RCP<AmanziMesh::Mesh> &mesh) const {
+DiffusionMatrix* PermafrostProblem::create_diff_matrix_(
+        Teuchos::RCP<AmanziMesh::Mesh> &mesh) const {
   // Generate the list of all Dirichlet-type faces.
   // The provided list should include USED BC faces.
   std::vector<int> dir_faces;
@@ -180,7 +182,7 @@ DiffusionMatrix* PermafrostProblem::create_diff_matrix_(Teuchos::RCP<AmanziMesh:
 }
 
 void PermafrostProblem::init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh> &mesh,
-                                         std::vector<MimeticHexLocal> &MD) const {
+        std::vector<MimeticHexLocal> &MD) const {
   // Local storage for the 8 vertex coordinates of a hexahedral cell.
   double x[8][3];
   double *xBegin = &x[0][0];  // begin iterator
@@ -246,7 +248,7 @@ void PermafrostProblem::DerivePermeability(const Epetra_Vector &phi,
 };
 
 void PermafrostProblem::DeriveLiquidRelPerm(const Epetra_Vector &saturation,
-                                            Teuchos::RCP<Epetra_Vector> &rel_perm) const {
+        Teuchos::RCP<Epetra_Vector> &rel_perm) const {
   ASSERT(saturation.Map().SameAs(rel_perm->Map()));
 
   for (int mb=0; mb<sat_curves_.size(); ++mb) {
@@ -265,8 +267,7 @@ void PermafrostProblem::DeriveLiquidRelPerm(const Epetra_Vector &saturation,
 };
 
 void PermafrostProblem::DeriveGasDensity(const Epetra_Vector &pressure,
-                                         const Epetra_Vector &temp,
-                                         Teuchos::RCP<Epetra_Vector> &rho) const {
+        const Epetra_Vector &temp, Teuchos::RCP<Epetra_Vector> &rho) const {
   ASSERT(pressure.Map().SameAs(temp.Map()));
   ASSERT(pressure.Map().SameAs(rho->Map()));
   for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
@@ -275,8 +276,7 @@ void PermafrostProblem::DeriveGasDensity(const Epetra_Vector &pressure,
 };
 
 void PermafrostProblem::DeriveLiquidDensity(const Epetra_Vector &pressure,
-                                         const Epetra_Vector &temp,
-                                         Teuchos::RCP<Epetra_Vector> &rho) const {
+        const Epetra_Vector &temp, Teuchos::RCP<Epetra_Vector> &rho) const {
   ASSERT(pressure.Map().SameAs(temp.Map()));
   ASSERT(pressure.Map().SameAs(rho->Map()));
   for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
@@ -295,8 +295,7 @@ void PermafrostProblem::DeriveIceDensity(const Epetra_Vector &pressure,
 };
 
 void PermafrostProblem::DeriveLiquidViscosity(const Epetra_Vector &pressure,
-                                              const Epetra_Vector &temp,
-                                              Teuchos::RCP<Epetra_Vector> &viscosity)const {
+        const Epetra_Vector &temp, Teuchos::RCP<Epetra_Vector> &viscosity)const {
   ASSERT(pressure.Map().SameAs(temp.Map()));
   ASSERT(pressure.Map().SameAs(viscosity->Map()));
   for (int i=0; i < (md_->CellMap()).NumMyElements(); ++i) {
@@ -305,12 +304,10 @@ void PermafrostProblem::DeriveLiquidViscosity(const Epetra_Vector &pressure,
 };
 
 void PermafrostProblem::DeriveSaturation(const Epetra_Vector &pressure_gas,
-                                         const Epetra_Vector &pressure_liquid,
-                                         const Epetra_Vector &temp,
-                                         const Epetra_Vector &density_ice,
-                                         Teuchos::RCP<Epetra_Vector> &sat_gas,
-                                         Teuchos::RCP<Epetra_Vector> &sat_liquid,
-                                         Teuchos::RCP<Epetra_Vector> &sat_ice) const {
+        const Epetra_Vector &pressure_liquid, const Epetra_Vector &temp,
+        const Epetra_Vector &density_ice, Teuchos::RCP<Epetra_Vector> &sat_gas,
+        Teuchos::RCP<Epetra_Vector> &sat_liquid,
+        Teuchos::RCP<Epetra_Vector> &sat_ice) const {
   ASSERT(pressure_gas.Map().SameAs(pressure_liquid.Map()));
   ASSERT(pressure_gas.Map().SameAs(temp.Map()));
   ASSERT(pressure_gas.Map().SameAs(density_ice.Map()));
@@ -342,10 +339,8 @@ void PermafrostProblem::DeriveSaturation(const Epetra_Vector &pressure_gas,
 };
 
 void PermafrostProblem::DeriveLiquidFlux(const Epetra_Vector &pressure,
-                         const Epetra_Vector &rho, const Epetra_Vector &k_rel,
-                         const Epetra_Vector &k, const Epetra_Vector &mu,
-                         Teuchos::RCP<Epetra_Vector> &flux,
-                         double &l2_error) const {
+        const Epetra_Vector &rho, const Epetra_Vector &k_rel, const Epetra_Vector &k,
+        const Epetra_Vector &mu, Teuchos::RCP<Epetra_Vector> &flux,double &l2_error) const {
   ASSERT(pressure.Map().SameAs(Map())); // cells and faces
   ASSERT(rho.Map().SameAs(CellMap(true))); // ghosted cells
   ASSERT(rho.Map().SameAs(k_rel.Map()));
@@ -399,7 +394,7 @@ void PermafrostProblem::DeriveLiquidFlux(const Epetra_Vector &pressure,
     // Gravity contribution
     MD_[j].GravityFlux(*gvec_, gflux);
 
-    for (int i = 0; i < 6; ++i) aux2[i] = K[j] * rho_ * gflux[i] - aux2[i];
+    for (int i = 0; i < 6; ++i) aux2[i] = K[j] * rho[j] * gflux[i] - aux2[i];
     mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     // Scatter the local face result into FFACE.
     for (int i = 0; i < 6; ++i) {
@@ -449,9 +444,8 @@ void PermafrostProblem::DeriveLiquidFlux(const Epetra_Vector &pressure,
 };
 
 void PermafrostProblem::DeriveLiquidVelocity(const Epetra_Vector &pressure,
-                         const Epetra_Vector &rho, const Epetra_Vector &k_rel,
-                         const Epetra_Vector &k, const Epetra_Vector &mu,
-                         Teuchos::RCP<Epetra_MultiVector> &velocity) {
+        const Epetra_Vector &rho, const Epetra_Vector &k_rel, const Epetra_Vector &k,
+        const Epetra_Vector &mu, Teuchos::RCP<Epetra_MultiVector> &velocity) {
   ASSERT(pressure.Map().SameAs(Map())); // cells and faces
   ASSERT(rho.Map().SameAs(CellMap(true))); // ghosted cells
   ASSERT(rho.Map().SameAs(k_rel.Map()));
@@ -512,11 +506,8 @@ void PermafrostProblem::DeriveLiquidVelocity(const Epetra_Vector &pressure,
 };
 
 void PermafrostProblem::ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
-                                             const Epetra_Vector& Pface,
-                                             const Epetra_Vector& k_rel_cell,
-                                             const Epetra_Vector& k,
-                                             const Epetra_Vector& rho,
-                                             Epetra_Vector& k_rel_face) const {
+        const Epetra_Vector& Pface, const Epetra_Vector& k_rel_cell, const Epetra_Vector& k,
+        const Epetra_Vector& rho, Epetra_Vector& k_rel_face) const {
   ASSERT(Pcell.Map().SameAs(CellMap(true)));
   ASSERT(k_rel_cell.Map().SameAs(CellMap(true)));
   ASSERT(k.Map().SameAs(CellMap(true)));
@@ -611,7 +602,7 @@ Epetra_Vector* PermafrostProblem::CreateCellView(const Epetra_Vector &X) const {
   // should verify that X.Map() is the same as Map()
   double *data;
   X.ExtractView(&data);
-  return new Epetra_Vector(View, CellMap(), data);
+  return new Epetra_Vector(View, CellMap(ghosted), data);
 }
 
 
@@ -620,14 +611,11 @@ Epetra_Vector* PermafrostProblem::CreateFaceView(const Epetra_Vector &X) const {
   double *data;
   X.ExtractView(&data);
   int ncell = CellMap().NumMyElements();
-  return new Epetra_Vector(View, FaceMap(), data+ncell);
+  return new Epetra_Vector(View, FaceMap(ghosted), data+ncell);
 }
 
-
-////// done through here
-
-
-void PermafrostProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot) {
+void PermafrostProblem::ComputeUDot(const double t, const Epetra_Vector& u,
+        Epetra_Vector &udot) {
   ComputeF(u,udot);
 
   // zero out the face part
@@ -635,24 +623,18 @@ void PermafrostProblem::Compute_udot(const double t, const Epetra_Vector& u, Epe
   udot_face->PutScalar(0.0);
 };
 
-void PermafrostProblem::SetInitialPressureProfileCells(double height, Teuchos::RCP<Epetra_Vector> &pressure) {
+void PermafrostProblem::SetInitialPressureProfileCells(double ref_height, double rho,
+        Epetra_Vector &cell_heights, Teuchos::RCP<Epetra_Vector> &pressure) {
+  ASSERT(pressure->Map().SameAs(cell_heights.Map()));
+  ASSERT(rho.Map().SameAs(cell_heights.Map()));
   for (int j=0; j<pressure->MyLength(); ++j) {
-    std::vector<double> coords;
-    coords.resize(24);
-    mesh_->cell_to_coordinates(j, coords.begin(), coords.end());
-
-    // average the x coordinates
-    double zavg = 0.0;
-    for (int k=2; k<24; k+=3) {
-      zavg += coords[k];
-    }
-    zavg /= 8.0;
-
-    (*pressure)[j] = p_atm_ + rho_*(*gvec_)[2]*(zavg-height);
+    (*pressure)[j] = p_atm_ + rho*(*gvec_)[2]*(cell_heights[j]-ref_height);
   }
 };
 
-void PermafrostProblem::SetInitialPressureProfileFaces(double height, Teuchos::RCP<Epetra_Vector> &pressure) {
+void PermafrostProblem::SetInitialPressureProfileFaces(double ref_height,
+        Teuchos::RCP<Epetra_Vector> &pressure) {
+  ASSERT(pressure->Map().SameAs(FaceMap()));
   for (int j=0; j<pressure->MyLength(); ++j) {
     std::vector<double> coords;
     coords.resize(12);
@@ -665,42 +647,7 @@ void PermafrostProblem::SetInitialPressureProfileFaces(double height, Teuchos::R
     }
     zavg /= 4.0;
 
-    (*pressure)[j] = p_atm_ + rho_*(*gvec_)[2]*(zavg-height);
+    (*pressure)[j] = p_atm_ + rho_*(*gvec_)[2]*(zavg-ref_height);
   }
 };
-
-void PermafrostProblem::SetInitialPressureProfileFromSaturationCells(double saturation, Teuchos::RCP<Epetra_Vector> &pressure) {
-  for (int mb=0; mb<WRM_.size(); ++mb) {
-    // get mesh block cells
-    unsigned int mb_id = WRM_[mb]->mesh_block();
-
-    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
-    std::vector<unsigned int> block(ncells);
-
-    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
-
-    std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); ++j) {
-	  (*pressure)[*j] = WRM_[mb]->pressure(saturation);
-	}
-  }
-};
-
-void PermafrostProblem::SetInitialPressureProfileFromSaturationFaces(double saturation, Teuchos::RCP<Epetra_Vector> &pressure) {
-  for (int mb=0; mb<WRM_.size(); ++mb) {
-    // get mesh block cells
-    unsigned int mb_id = WRM_[mb]->mesh_block();
-
-    unsigned int ncells = mesh_->get_set_size(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED);
-    std::vector<unsigned int> block(ncells);
-
-    mesh_->get_set(mb_id,AmanziMesh::CELL,AmanziMesh::OWNED,block.begin(),block.end());
-
-    std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); ++j) {
-	  (*pressure)[*j] = WRM_[mb]->pressure(saturation);
-	}
-  }
-};
-
 } // close namespace Amanzi
