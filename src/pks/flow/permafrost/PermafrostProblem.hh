@@ -86,23 +86,20 @@ public:
                             const Epetra_Vector &mu,
                             Teuchos::RCP<Epetra_Vector> &velocity) const;
 
-  // hmm...
+  // helper function for getting rel perm on the face
   void ComputeUpwindRelPerm(const Epetra_Vector& Pcell,
                             const Epetra_Vector& Pface,
                             const Epetra_Vector& k_rel_cell,
                             const Epetra_Vector& k,
                             const Epetra_Vector& rho,
                             Epetra_Vector& k_rel_face) const;
-  void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector& P);
 
   // timestepping
-  void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
-  void SetInitialPressureProfileCells(double height, Teuchos::RCP<Epetra_Vector> &pressure);
-  void SetInitialPressureProfileFaces(double height, Teuchos::RCP<Epetra_Vector> &pressure);
-  void SetInitialPressureProfileFromSaturationCells(double saturation,
-                                                    Teuchos::RCP<Epetra_Vector> &pressure);
-  void SetInitialPressureProfileFromSaturationFaces(double saturation,
-                                                    Teuchos::RCP<Epetra_Vector> &pressure);
+  void ComputeUDot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
+  void SetInitialPressureProfileCells(double ref_height, const Epetra_Vector &cell_heights,
+                                      Teuchos::RCP<Epetra_Vector> &pressure);
+  void SetInitialPressureProfileFaces(double ref_height,
+                                      Teuchos::RCP<Epetra_Vector> &pressure);
 
   // access
   Teuchos::RCP<Epetra_Vector> GetPorosity() { return phi_; }
@@ -132,12 +129,11 @@ public:
   Epetra_Operator& Precon() { return *precon_; }
 
   // residuals/preconditioners for model evaluator
-  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time);
-  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
+  //  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time);
+  //  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
 
-  void ComputePrecon(const Epetra_Vector &X);
-  void ComputePrecon(const Epetra_Vector &X, double h);
-  void dSofP(const Epetra_Vector& P, Epetra_Vector& dS);
+  //  void ComputePrecon(const Epetra_Vector &X);
+  //  void ComputePrecon(const Epetra_Vector &X, double h);
 
 private:
 
