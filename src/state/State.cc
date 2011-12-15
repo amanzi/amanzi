@@ -75,7 +75,15 @@ void State::initialize() {
   // may eventually (through restart?) be alternative ways of initializing the
   // state?
   initialize_from_parameter_list();
-}
+};
+
+bool State::check_all_initialized() {
+  for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
+       field != fields_.end(); ++field) {
+    if (!(*field)->initialized()) return false;
+  }
+  return true;
+};
 
 void State::initialize_from_parameter_list() {
   // Initialize data that sits outside of a PK (TODO: fix this, they should go with a PK).
@@ -118,6 +126,7 @@ void State::initialize_from_parameter_list() {
         if (got_them_all) {
           std::cout << "got them all, assigning" << std::endl;
           (*field)->set_data((*field)->get_owner(), u);
+          (*field)->set_initialized();
         }
       }
     }
@@ -156,6 +165,7 @@ void State::initialize_from_parameter_list() {
 
           if (got_them_all) {
             (*field)->set_data((*field)->get_owner(), u, mesh_block_id);
+            (*field)->set_initialized();
             std::cout << "got them all, assigning" << std::endl;
           }
         }
@@ -172,6 +182,7 @@ void State::initialize_from_parameter_list() {
 
             std::cout << "initializing in state:" << fieldname << "=" << u << std::endl;
             (*field)->set_vector_data((*field)->get_owner(), u, mesh_block_id);
+            (*field)->set_initialized();
           }
         }
       }

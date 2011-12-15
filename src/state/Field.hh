@@ -30,6 +30,7 @@ public:
   const std::vector<std::string>& get_subfield_names() const { return subfieldnames_; }
   bool io_restart() const { return io_restart_; }
   bool io_vis() const { return io_vis_; }
+  bool initialized() const { return initialized_; }
   Teuchos::RCP<const Epetra_MultiVector> get_data() const { return data_; }
   Teuchos::RCP<Epetra_MultiVector> get_data(std::string pk_name);
   Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps_; }
@@ -40,6 +41,7 @@ public:
     subfieldnames_ = subfieldnames; }
   void set_io_restart(bool io_restart) { io_restart_ = io_restart; }
   void set_io_vis(bool io_vis) { io_vis_ = io_vis; }
+  void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
   void set_data(std::string pk_name, Teuchos::RCP<Epetra_MultiVector>&);
   void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>&);
@@ -65,6 +67,7 @@ private:
   int num_dofs_;
   bool io_restart_;
   bool io_vis_;
+  bool initialized_;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_maps_;
 
 }; // class Field

@@ -10,7 +10,9 @@ add_subdirectory(flow)
 # ATS include directories
 include_directories(${ATS_SOURCE_DIR}/src/state)
 include_directories(${ATS_SOURCE_DIR}/src/pks)
-include_directories(${ATS_SOURCE_DIR}/src/pks/flow)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/Darcy)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/Richards)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/permafrost)
 
 # This state library will move to a new location
 # once Markus has created the data manager.

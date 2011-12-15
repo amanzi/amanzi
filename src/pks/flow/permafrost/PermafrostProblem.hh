@@ -1,5 +1,7 @@
-#ifndef __RICHARDSPROBLEM_HH__
-#define __RICHARDSPROBLEM_HH__
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+
+#ifndef __PERMAFROSTPROBLEM_HH__
+#define __PERMAFROSTPROBLEM_HH__
 
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
@@ -18,8 +20,7 @@ namespace Amanzi {
 
 class BoundaryFunction; // forward declaration
 
-class RichardsProblem
-{
+class RichardsProblem {
 public:
   RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                   Teuchos::ParameterList& richards_plist);
@@ -51,7 +52,6 @@ public:
 
   // derive things
   // - mesh based
-  void DeriveCellVolumes(Teuchos::RCP<Epetra_Vector> &cell_volumes) const;
   void DeriveCellHeights(Teuchos::RCP<Epetra_Vector> &cell_heights) const;
 
   // - intermediate steps
@@ -142,7 +142,6 @@ private:
   Teuchos::RCP<Epetra_Map> create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
   void validate_boundary_conditions_() const;
   DiffusionMatrix* create_diff_matrix_(Teuchos::RCP<AmanziMesh::Mesh>&) const;
-  void init_mimetic_disc_(Teuchos::RCP<AmanziMesh::Mesh>&, std::vector<MimeticHexLocal>&) const;
   //  void upwind_rel_perm_(const Epetra_Vector&, Epetra_Vector&);
 
   // maps and access to Vectors
@@ -198,8 +197,7 @@ private:
   Teuchos::RCP<BoundaryFunction> bc_flux_;   // Outward mass flux conditions
 
   // discretizations, discrete objects
-  std::vector<MimeticHexLocal>  MD_;
-  MimeticHex *md_;
+  Teuchos::RCP<MimeticDiscretization> disc_;
   DiffusionPrecon *precon_;
   Teuchos::RCP<DiffusionMatrix> D_;
 };
