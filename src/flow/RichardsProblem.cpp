@@ -4,18 +4,18 @@
 
 #include <algorithm>
 
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
+#include "Point.hh"
+
 #include "RichardsProblem.hpp"
 #include "boundary-function.hh"
 #include "vanGenuchtenModel.hpp"
 #include "Mesh.hh"
 #include "flow-bc-factory.hh"
 
-#include "dbc.hh"
-#include "errors.hh"
-#include "exceptions.hh"
-
-namespace Amanzi
-{
+namespace Amanzi {
 
 RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                                  const Teuchos::ParameterList& parameter_list) : mesh_(mesh)
@@ -40,7 +40,9 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   rho_ = state_list.get<double>("Constant water density");
   mu_ = state_list.get<double>("Constant viscosity");
   gravity_ = state_list.get<double>("Gravity z");
-  gvec_[0] = 0.0; gvec_[1] = 0.0; gvec_[2] = -gravity_;
+  gvec_[0] = 0.0; 
+  gvec_[1] = 0.0; 
+  gvec_[2] = -gravity_;
   
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(richards_list.sublist("boundary conditions",true));
@@ -57,7 +59,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   Teuchos::ParameterList diffprecon_plist = richards_list.sublist("Diffusion Preconditioner");
   precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
   
-  // resize the vectors for permeability
+  // set permeability
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
   
@@ -220,28 +222,22 @@ void RichardsProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<Mim
 }
 
 
-void RichardsProblem::SetPermeability(double k)
+void RichardsProblem::set_absolute_permeability(double k)
 {
-  /// should verify k > 0
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k;
+  for (int c=0; c<k_.size(); ++c) k_[c] = k;  // should verify k > 0
 }
 
 
-void RichardsProblem::SetPermeability(const Epetra_Vector &k)
+void RichardsProblem::set_absolute_permeability(const Epetra_Vector &k)
 {
-  /// should verify k.Map() is CellMap()
-  /// should verify k values are all > 0
+  // should verify k.Map() is CellMap()
+  // should verify k values are all > 0
   Epetra_Vector k_ovl(mesh_->cell_map(true));
   Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
 
   k_ovl.Import(k, importer, Insert);
 
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
-}
-
-void RichardsProblem::SetFlowState( Teuchos::RCP<const Flow_State> FS_ )
-{
-  FS = FS_;
+  for (int i=0; i<k_.size(); ++i) k_[i] = k_ovl[i];
 }
 
 
@@ -265,62 +261,49 @@ void RichardsProblem::ComputeRelPerm(const Epetra_Vector &P, Epetra_Vector &k_re
 
 void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P)
 {
-  for (int mb=0; mb<WRM.size(); mb++) 
-    {
-      // get mesh block cells
-      std::string region = WRM[mb]->region();
-      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::USED);
-      std::vector<unsigned int> block(ncells);
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    std::string region = WRM[mb]->region();
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::USED);
+    std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::USED,&block);
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::USED,&block);
       
-      std::vector<unsigned int>::iterator j;
-      for (j = block.begin(); j!=block.end(); j++)
-	{
-	  k_rl_[*j] = WRM[mb]->k_relative(P[*j]);
-	}
-    }
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) k_rl_[*j] = WRM[mb]->k_relative(P[*j]);
+  }
 }
+
 
 void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
 {
-  for (int mb=0; mb<WRM.size(); mb++) 
-    {
-      // get mesh block cells
-      std::string region = WRM[mb]->region();
-      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
-      std::vector<unsigned int> block(ncells);
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    std::string region = WRM[mb]->region();
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
+    std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
-      std::vector<unsigned int>::iterator j;
-      for (j = block.begin(); j!=block.end(); j++)
-	{
-	  dS[*j] = WRM[mb]->d_saturation(P[*j]);
-	}
-
-    }
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) dS[*j] = WRM[mb]->d_saturation(P[*j]);
+  }
 }
 
 
 void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S)
 {
-  for (int mb=0; mb<WRM.size(); mb++) 
-    {
-      // get mesh block cells
-      std::string region = WRM[mb]->region();
-      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
-      std::vector<unsigned int> block(ncells);
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    std::string region = WRM[mb]->region();
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
+    std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
-      std::vector<unsigned int>::iterator j;
-      for (j = block.begin(); j!=block.end(); j++)
-	{
-	  S[*j] = WRM[mb]->saturation(P[*j]);
-	}
-
-    }
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) S[*j] = WRM[mb]->saturation(P[*j]);
+  }
 }
 
 
@@ -389,11 +372,11 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
   dSofP(Pcell_own, celldiag);
  
   // get the porosity
-  const Epetra_Vector& phi = FS->porosity();
+  const Epetra_Vector& phi = FS->get_porosity();
 
-  celldiag.Multiply(rho_,celldiag,phi,0.0);
+  celldiag.Multiply(rho_, celldiag, phi, 0.0);
  
-  celldiag.Multiply(1.0/h,celldiag,*cell_volumes,0.0);
+  celldiag.Multiply(1.0/h, celldiag, *cell_volumes, 0.0);
   
   D_->add_to_celldiag(celldiag);
 
@@ -406,18 +389,14 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
   delete &Pcell_own, &Pface_own;
 }
 
-void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
-{
-  ComputeF(X,F,0.0);
-}
 
+/* ******************************************************************
+* The cell and face-based DoF are packed together into the X and F 
+* Epetra vectors: cell-based DoF in the first part, followed by the 
+* face-based DoF. In addition, only the owned DoF belong to the vectors.
+****************************************************************** */
 void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time)
 {
-  // The cell and face-based DoF are packed together into the X and F Epetra
-  // vectors: cell-based DoF in the first part, followed by the face-based DoF.
-  // In addition, only the owned DoF belong to the vectors.
-
-
   // Create views into the cell and face segments of X and F
   Epetra_Vector &Pcell_own = *CreateCellView(X);
   Epetra_Vector &Pface_own = *CreateFaceView(X);
@@ -790,91 +769,68 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
 }
 
 
-void RichardsProblem::Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot)
+void RichardsProblem::compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot)
 {
-  ComputeF(u,udot);
+  ComputeF(u, udot);
 
   // zero out the face part
   Epetra_Vector *udot_face = CreateFaceView(udot);
   udot_face->PutScalar(0.0);
-
 }
 
 
-
-void RichardsProblem::SetInitialPressureProfileCells(double height, Epetra_Vector *pressure)
+void RichardsProblem::set_pressure_cells(double height, Epetra_Vector *pressure)
 {
-  for (int j=0; j<pressure->MyLength(); j++)
-    {
-      std::vector<double> coords;
-      coords.resize(24);
-      FS->mesh()->cell_to_coordinates(j, coords.begin(), coords.end());
-      
-      // average the x coordinates
-      double zavg = 0.0;
-      for (int k=2; k<24; k+=3)
-	zavg += coords[k];
-      zavg /= 8.0;
-
-      (*pressure)[j] = p_atm_ + rho_ * gvec_[2] * ( zavg - height );
-    }
+  for (int c=0; c<pressure->MyLength(); c++) {
+    const AmanziGeometry::Point& xc = FS->get_mesh_maps()->cell_centroid(c);
+    (*pressure)[c] = p_atm_ + rho_ * gvec_[2] * (xc[2] - height);
+  }
 }
 
 
-void RichardsProblem::SetInitialPressureProfileFaces(double height, Epetra_Vector *pressure)
+void RichardsProblem::set_pressure_faces(double height, Epetra_Vector *pressure)
 {
-  for (int j=0; j<pressure->MyLength(); j++)
-    {
-      std::vector<double> coords;
-      coords.resize(12);
-      FS->mesh()->face_to_coordinates(j, coords.begin(), coords.end());
-
-      // average the x coordinates
-      double zavg = 0.0;
-      for (int k=2; k<12; k+=3)
-	zavg += coords[k];
-      zavg /= 4.0;
-
-      (*pressure)[j] = p_atm_ + rho_*gvec_[2] * ( zavg - height );
-    }
+  for (int f=0; f<pressure->MyLength(); f++) {
+    const AmanziGeometry::Point& xf = FS->get_mesh_maps()->face_centroid(f);
+    (*pressure)[f] = p_atm_ + rho_*gvec_[2] * (xf[2] - height);
+  }
 }
+
 
 void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure)
 {
-  for (int mb=0; mb<WRM.size(); mb++) 
-    {
-      // get mesh block cells
-      std::string region = WRM[mb]->region();
-      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
-      std::vector<unsigned int> block(ncells);
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    std::string region = WRM[mb]->region();
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
+    std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
-      std::vector<unsigned int>::iterator j;
-      for (j = block.begin(); j!=block.end(); j++)
-	{
-	  (*pressure)[*j] = WRM[mb]->pressure(saturation);
-	}
-    }  
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) {
+      (*pressure)[*j] = WRM[mb]->pressure(saturation);
+	  }
+  }  
 }
+
+
 void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure)
 {
-  for (int mb=0; mb<WRM.size(); mb++) 
-    {
-      // get mesh block cells
-      std::string region = WRM[mb]->region();
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    std::string region = WRM[mb]->region();
 
-      unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
-      std::vector<unsigned int> block(ncells);
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
+    std::vector<unsigned int> block(ncells);
 
-      mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
       
-      std::vector<unsigned int>::iterator j;
-      for (j = block.begin(); j!=block.end(); j++)
-	{
-	  (*pressure)[*j] = WRM[mb]->pressure(saturation);
-	}
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) {
+      (*pressure)[*j] = WRM[mb]->pressure(saturation);
     }
+  }
 }
 
-} // close namespace Amanzi
+}  // namespace Amanzi

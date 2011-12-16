@@ -58,7 +58,8 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
 
   // create Richards problem
   RichardsProblem problem(mesh, parameter_list);
-  problem.SetFlowState(FS);
+  problem.set_flow_state(FS);
+  problem.set_absolute_permeability(FS->get_permeability());
 
   // create the Richards Model Evaluator
   ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
@@ -75,34 +76,16 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   // create the initial condition
   Epetra_Vector u(problem.Map());
 
-  // first for the cells
   Epetra_Vector *ucells = problem.CreateCellView(u);
-  for (int j=0; j<ucells->MyLength(); j++) {
-    std::vector<double> coords;
-    coords.resize(24);
-    mesh->cell_to_coordinates(j, coords.begin(), coords.end());
-
-    // average the x coordinates
-    double zavg = 0.0;
-    for (int k=2; k<24; k+=3) zavg += coords[k];
-    zavg /= 8.0;
-
-    (*ucells)[j] = 101325.0 - 9800 * (zavg + 62.0);
+  for (int c=0; c<ucells->MyLength(); c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    (*ucells)[c] = 101325.0 - 9800 * (xc[2] + 62.0);
   }
 
-  // then for faces
   Epetra_Vector *ufaces = problem.CreateFaceView(u);
-  for (int j=0; j<ufaces->MyLength(); j++) {
-    std::vector<double> coords;
-    coords.resize(12);
-    mesh->face_to_coordinates(j, coords.begin(), coords.end());
-
-    // average the x coordinates
-    double zavg = 0.0;
-    for (int k=2; k<12; k+=3) zavg += coords[k];
-    zavg /= 4.0;
-
-    (*ufaces)[j] = 101325.0 - 9800 * (zavg + 62.0);
+  for (int f=0; f<ufaces->MyLength(); f++) {
+    const Point& xf = mesh->face_centroid(f);
+    (*ufaces)[f] = 101325.0 - 9800 * (xf[2] + 62.0);
   }
   
   // initialize the state
@@ -115,18 +98,14 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
 
   // compute the initial udot
   Epetra_Vector udot(problem.Map());
-  problem.Compute_udot(t0,u,udot);
-
+  problem.compute_udot(t0, u, udot);
   udot.PutScalar(0.0);
 
-  // initial time step
-  double h = 1.0e-5;
-  double hnext;
-
   // intialize the state of the time stepper
-  TS.set_initial_state(t0,u,udot);
+  TS.set_initial_state(t0, u, udot);
  
   int errc;
+  double hnext, h = 1.0e-5;  // initial time step
   RME.update_precon(t0, u, h, errc);
 
   // set up output
@@ -143,8 +122,8 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   int i = 0;
   double tlast = t0;
   do {    
-    TS.bdf2_step(h,0.0,u,hnext);
-    TS.commit_solution(h,u);
+    TS.bdf2_step(h, 0.0, u, hnext);
+    TS.commit_solution(h, u);
 
     S->advance_time(h);    
     S->update_pressure(*problem.CreateCellView(u));  // update only the cell-based pressure

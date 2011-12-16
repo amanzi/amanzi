@@ -115,7 +115,7 @@ struct problem_setup
     problem = new Amanzi::DarcyProblem(mesh, params);
 
     // Other model parameters; we won't be messing with these.
-    problem->SetPermeability(1.0);
+    problem->set_absolute_permeability(1.0);
   }
 
   void solve_problem()
@@ -700,7 +700,7 @@ SUITE(Darcy_Velocity) {
     setFluidViscosity(2.0);
 
     create_problem();
-    problem->SetPermeability(2.0);
+    problem->set_absolute_permeability(2.0);
     solve_problem();
 
     // Darcy velocity
@@ -723,7 +723,7 @@ SUITE(Darcy_Velocity) {
     setFluidViscosity(2.0);
 
     create_problem();
-    problem->SetPermeability(2.0);
+    problem->set_absolute_permeability(2.0);
     solve_problem();
 
     // Darcy velocity
@@ -746,7 +746,7 @@ SUITE(Darcy_Velocity) {
     setFluidViscosity(2.0);
 
     create_problem();
-    problem->SetPermeability(2.0);
+    problem->set_absolute_permeability(2.0);
     solve_problem();
 
     // Darcy velocity
@@ -772,7 +772,7 @@ SUITE(Darcy_Velocity) {
     setGravity(g);
 
     create_problem();
-    problem->SetPermeability(2.0);
+    problem->set_absolute_permeability(2.0);
     solve_problem();
 
     // Darcy velocity
@@ -798,7 +798,7 @@ SUITE(Darcy_Velocity) {
     setGravity(g);
 
     create_problem();
-    problem->SetPermeability(2.0);
+    problem->set_absolute_permeability(2.0);
     solve_problem();
 
     // Darcy velocity
@@ -824,7 +824,7 @@ SUITE(Darcy_Velocity) {
     setGravity(g);
 
     create_problem();
-    problem->SetPermeability(2.0);
+    problem->set_absolute_permeability(2.0);
     solve_problem();
 
     // Darcy velocity

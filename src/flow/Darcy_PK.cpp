@@ -9,15 +9,15 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_S
 {
   // Add some parameters to the Darcy problem constructor parameter list.
   Teuchos::ParameterList &dp_list = list.sublist("Darcy Problem");
-  dp_list.set("fluid density", FS->fluid_density());
-  dp_list.set("fluid viscosity", FS->fluid_viscosity());
-  const double *gravity = FS->gravity();
+  dp_list.set("fluid density", FS->get_fluid_density());
+  dp_list.set("fluid viscosity", FS->get_fluid_viscosity());
+  const double *gravity = FS->get_gravity();
   //TODO: assuming gravity[0] = gravity[1] = 0 -- needs to be reconciled somehow
   dp_list.set("gravity", -gravity[2]);
   
   // Create the Darcy flow problem.
   Teuchos::ParameterList darcy_plist = list.sublist("Darcy Problem");
-  problem = new DarcyProblem(FS->mesh(),darcy_plist);
+  problem = new DarcyProblem(FS->get_mesh_maps(), darcy_plist);
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -49,7 +49,7 @@ Darcy_PK::~Darcy_PK()
 int Darcy_PK::advance_to_steady_state()
 {
   // Set problem parameters.
-  problem->SetPermeability(FS->permeability());
+  problem->set_absolute_permeability(FS->get_permeability());
 
   // Perform the final "assembly" of the problem.
   problem->Assemble();

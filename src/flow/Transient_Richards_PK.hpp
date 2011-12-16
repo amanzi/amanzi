@@ -12,14 +12,11 @@
 #include "RichardsModelEvaluator.hpp"
 #include "BDF2_Dae.hpp"
 
-namespace Amanzi
-{
-class Transient_Richards_PK : public Flow_PK
-{
+namespace Amanzi {
 
-public:
+class Transient_Richards_PK : public Flow_PK {
+ public:
   Transient_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
-
   ~Transient_Richards_PK ();
 
   int advance_to_steady_state();
@@ -28,7 +25,6 @@ public:
   void commit_state(Teuchos::RCP<Flow_State>) {}
 
   // After a successful advance() the following routines may be called.
-
   // Returns a reference to the cell pressure vector.
   const Epetra_Vector& Pressure() const { return *pressure_cells; }
 
@@ -44,9 +40,7 @@ public:
   
   double get_flow_dT() { return hnext; }
 
-
 private:
-
   Teuchos::RCP<const Flow_State> FS;
   Teuchos::ParameterList &richards_plist;
   
@@ -67,9 +61,8 @@ private:
   double ss_t0, ss_t1, ss_h0, ss_z;
 
   double h, hnext;
-
 };
 
-} // close namespace Amanzi
+}  // namespace Amanzi
 
 #endif

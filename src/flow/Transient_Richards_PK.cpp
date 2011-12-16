@@ -9,15 +9,15 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist,
 {
   // Add some parameters to the Richards problem constructor parameter list.
   Teuchos::ParameterList &rp_list = plist.sublist("Richards Problem");
-  rp_list.set("fluid density", FS->fluid_density());
-  rp_list.set("fluid viscosity", FS->fluid_viscosity());
-  const double *gravity = FS->gravity();
+  rp_list.set("fluid density", FS->get_fluid_density());
+  rp_list.set("fluid viscosity", FS->get_fluid_viscosity());
+  const double *gravity = FS->get_gravity();
   //TODO: assuming gravity[0] = gravity[1] = 0 -- needs to be reconciled somehow
   rp_list.set("gravity", -gravity[2]);
   
   // Create the Richards flow problem.
   Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
-  problem = new RichardsProblem(FS->mesh(), plist);
+  problem = new RichardsProblem(FS->get_mesh_maps(), plist);
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -37,6 +37,7 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist,
 
 };
 
+
 Transient_Richards_PK::~Transient_Richards_PK()
 {
   delete richards_flux;
@@ -50,8 +51,8 @@ Transient_Richards_PK::~Transient_Richards_PK()
 int Transient_Richards_PK::advance_to_steady_state()
 {
   // Set problem parameters.
-  problem->SetPermeability(FS->permeability());
-  problem->SetFlowState(FS);
+  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_flow_state(FS);
 
   double t0 = ss_t0;
   double t1 = ss_t1;
@@ -60,11 +61,11 @@ int Transient_Richards_PK::advance_to_steady_state()
 
   // create udot
 
-  problem->SetInitialPressureProfileCells(ss_z,pressure_cells);
-  problem->SetInitialPressureProfileFaces(ss_z,pressure_faces);
+  problem->set_pressure_cells(ss_z, pressure_cells);
+  problem->set_pressure_faces(ss_z, pressure_faces);
 
   Epetra_Vector udot(problem->Map());
-  problem->Compute_udot(t0,  *solution, udot);
+  problem->compute_udot(t0, *solution, udot);
 
   time_stepper->set_initial_state(t0, *solution, udot);
 
@@ -76,31 +77,23 @@ int Transient_Richards_PK::advance_to_steady_state()
   double tlast = t0;
 
   do {
-    
     time_stepper->bdf2_step(h,0.0,*solution,hnext);
-
     time_stepper->commit_solution(h,*solution);
 
     // update the state, but only the cell values of pressure
     // FS->update_pressure( * problem->CreateCellView(*solution) );
-
     time_stepper->write_bdf2_stepping_statistics();
 
     h = hnext;
     i++;
 
     tlast=time_stepper->most_recent_time();
-
-
   } while (t1 >= tlast);    
   
-
-
   // Derive the Richards fluxes on faces
   double l1_error;
   problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
   std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
-
 }
 
 int Transient_Richards_PK::init_transient(double t0, double h_)
@@ -109,11 +102,11 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
   hnext = h_;
 
   // Set problem parameters.
-  problem->SetPermeability(FS->permeability());
-  problem->SetFlowState(FS);
+  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_flow_state(FS);
 
   Epetra_Vector udot(problem->Map());
-  problem->Compute_udot(t0,  *solution, udot);
+  problem->compute_udot(t0, *solution, udot);
   
   time_stepper->set_initial_state(t0, *solution, udot);
   
@@ -125,8 +118,8 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
 int Transient_Richards_PK::advance_transient(double h) 
 {
   // Set problem parameters.
-  problem->SetPermeability(FS->permeability());
-  problem->SetFlowState(FS);
+  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_flow_state(FS);
 
   time_stepper->bdf2_step(h,0.0,*solution,hnext);
   time_stepper->commit_solution(h,*solution);  
@@ -135,17 +128,10 @@ int Transient_Richards_PK::advance_transient(double h)
 }
 
 
-
-
-
-
 void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
 {
   //for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
-
   problem->DeriveVanGenuchtenSaturation(*pressure_cells, s);
-
 }
 
-
-} // close namespace Amanzi
+}  // close namespace Amanzi

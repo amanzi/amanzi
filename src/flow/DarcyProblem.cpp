@@ -209,23 +209,22 @@ void DarcyProblem::SetGravity(const double g[3])
 }
 
 
-void DarcyProblem::SetPermeability(double k)
+void DarcyProblem::set_absolute_permeability(double k)
 {
-  /// should verify k > 0
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k;
+  for (int c=0; c<k_.size(); ++c) k_[c] = k;  // should verify k > 0 (lipnikov@lanl.gov)
 }
 
 
-void DarcyProblem::SetPermeability(const Epetra_Vector &k)
+void DarcyProblem::set_absolute_permeability(const Epetra_Vector &k)
 {
-  /// should verify k.Map() is CellMap()
-  /// should verify k values are all > 0
+  // should verify k.Map() is CellMap()
+  // should verify k values are all > 0
   Epetra_Vector k_ovl(mesh_->cell_map(true));
   Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
 
   k_ovl.Import(k, importer, Insert);
 
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
+  for (int i=0; i<k_.size(); ++i) k_[i] = k_ovl[i];
 }
 
 

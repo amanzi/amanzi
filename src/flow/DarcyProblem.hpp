@@ -26,21 +26,12 @@ public:
 	       Teuchos::ParameterList &darcy_plist);
   ~DarcyProblem();
 
-  // Set the constant value of fluid density.
+  // explicit initialization
   void SetFluidDensity(double rho);
-
-  // Set the constant value of fluid viscosity.
   void SetFluidViscosity(double mu);
-
-  // Set the gravitational acceleration (3-vector).
   void SetGravity(const double g[3]);
-
-  // Sets a constant (scalar) permeability.
-  void SetPermeability(double k);
-
-  // Sets a spatially variable (scalar) permeability, one value per cell.
-  //void SetPermeability(const std::vector<double> &k);
-  void SetPermeability(const Epetra_Vector &k);
+  void set_absolute_permeability(double k);
+  void set_absolute_permeability(const Epetra_Vector &k);
 
   // Assemble the problem
   void Assemble();

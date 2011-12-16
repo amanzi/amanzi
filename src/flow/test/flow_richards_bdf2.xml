@@ -164,7 +164,7 @@
 
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
-          <ParameterList name="BC 1">
+          <ParameterList name="BC 0">
             <ParameterList name="outward mass flux">
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array string" value="{constant}"/>
@@ -271,7 +271,7 @@
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
       <Parameter name="Constant permeability" type="double" value="1.24e-12"/>
       <Parameter name="Constant porosity" type="double" value="0.2586"/>
-      <Parameter name="Region" type="string" value="Material 4 Region"/>
+      <Parameter name="Region" type="string" value="Material 5 Region"/>
       <ParameterList name="linear pressure">
         <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
