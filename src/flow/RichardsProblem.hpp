@@ -18,21 +18,22 @@ namespace Amanzi {
 
 class BoundaryFunction; // forward declaration
 
-class RichardsProblem 
-{
-public:
-
-  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>&, Teuchos::ParameterList&);
+class RichardsProblem {
+ public:
+  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, 
+                  const Teuchos::ParameterList& parameter_list);
   ~RichardsProblem();
 
-  // Sets a constant (scalar) permeability.
-  void SetPermeability(double k);
+  // explicit initialization
+  void set_absolute_permeability(double k);
+  void set_absolute_permeability(const Epetra_Vector &k);
 
-  // Sets a spatially variable (scalar) permeability, one value per cell.
-  //void SetPermeability(const std::vector<double> &k);
-  void SetPermeability(const Epetra_Vector &k);
+  void set_pressure_cells(double height, Epetra_Vector *pressure);
+  void set_pressure_faces(double height, Epetra_Vector *pressure);
+  void SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure);
+  void SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure);
 
-  void SetFlowState( Teuchos::RCP<const Flow_State> FS_ );
+  void set_flow_state(Teuchos::RCP<const Flow_State> FS_) { FS = FS_; } 
 
   void ComputeRelPerm(const Epetra_Vector&, Epetra_Vector&) const;
   void ComputeUpwindRelPerm(const Epetra_Vector&, const Epetra_Vector&, Epetra_Vector&) const;
@@ -40,16 +41,15 @@ public:
   void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
   void dSofP(const Epetra_Vector &P, Epetra_Vector &dS);
   
-  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time);
-  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F);
+  void ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time = 0.0);
 
   void ComputePrecon(const Epetra_Vector &X);
   void ComputePrecon(const Epetra_Vector &X, const double h);
 
-  Epetra_Operator& Precon() const { return *precon_; }
-
+  void compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector& udot);
+  
+  // maps
   const Epetra_Map& Map() const { return *dof_map_; }
-
   const Epetra_Map& CellMap(bool ghost=false) const { return mesh_->cell_map(ghost); }
   const Epetra_Map& FaceMap(bool ghost=false) const { return mesh_->face_map(ghost); }
 
@@ -59,40 +59,29 @@ public:
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
 
   DiffusionMatrix& Matrix() const { return *D_; }
-
   void DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, double &l1_error) const;
-
   void DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVector &Q) const;
 
+  // access
   void GetFluidDensity(double &rho) const { rho = rho_; }
   void GetFluidViscosity(double &mu) const { mu = mu_; }
-  void GetGravity(double g[]) const { for(int i = 0; i < 3; ++i) g[i] = gvec_[i]; }
+  void GetGravity(double g[]) const { for(int i=0; i<3; ++i) g[i] = gvec_[i]; }
 
-  void Compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot);
-  
+  Epetra_Operator& Precon() const { return *precon_; }
+
   const Epetra_Vector* cell_vols() { return cell_volumes; }
 
-  void SetInitialPressureProfileCells(double height, Epetra_Vector *pressure);
-  void SetInitialPressureProfileFaces(double height, Epetra_Vector *pressure);
-  void SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure);
-  void SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure);
-
-private:
-
+ private:
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map *dof_map_;
   Epetra_Import *face_importer_;
   Epetra_Import *cell_importer_;
 
-  std::vector<double> k_; // spatially variable permeability
+  std::vector<double> k_;  // spatially variable permeability
   std::vector<double> k_rl_;  // relative permeability
-  //double vG_m_;     // van Genuchten m
-  //double vG_n_;     // van Genuchten n = 1/(1-vG_m_)
-  //double vG_alpha_; // van Genuchten alpha
-  //double vG_sr_;    // van Genuchten effective saturation
-  double p_atm_;    // atmospheric pressure
-  double rho_;      // fluid density
-  double mu_;       // fluid viscosity
+  double p_atm_;  // atmospheric pressure
+  double rho_;  // constant fluid density
+  double mu_;  // constant fluid viscosity
   double gravity_;  // gravitational acceleration (positive coef, directed in -z direction)
   double gvec_[3];  // set to {0,0,-gravity_}
   
@@ -114,8 +103,7 @@ private:
 
   Teuchos::RCP<const Flow_State> FS;  
 
-private:  // Auxillary functions
-
+ private:  // Auxillary functions
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
   void validate_boundary_conditions() const;
   DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&) const;

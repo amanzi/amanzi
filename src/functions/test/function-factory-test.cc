@@ -78,23 +78,42 @@ SUITE(constant_factory) {
 }
 
 SUITE(tabular_factory) {
-  TEST(create)
-  {
-    Teuchos::ParameterList list;
-    Teuchos::ParameterList &sublist = list.sublist("function-tabular");
-    Teuchos::Array<double> x(2);
-    Teuchos::Array<double> y(2);
-    x[0] = 0.0;
-    x[1] = 1.0;
-    y[0] = 2.0;
-    y[1] = 3.0;
-    sublist.set("x values", x);
-    sublist.set("y values", y);
-    FunctionFactory fact;
-    Function *f = fact.Create(list);
-    double t = 0.5;
-    CHECK_EQUAL((*f)(&t), 2.5);
-  }
+ TEST(create)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-tabular");
+   Teuchos::Array<double> x(2);
+   Teuchos::Array<double> y(2);
+   x[0] = 0.0;
+   x[1] = 1.0;
+   y[0] = 2.0;
+   y[1] = 3.0;
+   sublist.set("x values", x);
+   sublist.set("y values", y);
+   FunctionFactory fact;
+   Function *f = fact.Create(list);
+   double t = 0.5;
+   CHECK_EQUAL((*f)(&t), 2.5);
+ }
+ TEST(create_with_form)
+ {
+   Teuchos::ParameterList list;
+   Teuchos::ParameterList &sublist = list.sublist("function-tabular");
+   Teuchos::Array<double> x(2);
+   Teuchos::Array<double> y(2);
+   x[0] = 0.0;
+   x[1] = 1.0;
+   y[0] = 2.0;
+   y[1] = 3.0;
+   sublist.set("x values", x);
+   sublist.set("y values", y);
+   Teuchos::Array<std::string> forms(1,"constant");
+   sublist.set("forms", forms);
+   FunctionFactory fact;
+   Function *f = fact.Create(list);
+   double t = 0.5;
+   CHECK_EQUAL(2.0, (*f)(&t));
+ }
   TEST(missing_parameter)
   {
     Teuchos::ParameterList list;
@@ -151,6 +170,30 @@ SUITE(tabular_factory) {
     sublist.set("x values", x);
     sublist.set("y values", y);
     FunctionFactory fact;
+    //Function *f = fact.Create(list);
+    CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+  }
+  TEST(bad_forms)
+  {
+    Teuchos::ParameterList list;
+    Teuchos::ParameterList &sublist = list.sublist("function-tabular");
+    Teuchos::Array<double> x(2);
+    Teuchos::Array<double> y(2);
+    x[0] = 0.0;
+    x[1] = 1.0;
+    y[0] = 2.0;
+    y[1] = 3.0;
+    sublist.set("x values", x);
+    sublist.set("y values", y);
+    Teuchos::Array<std::string> forms(2,"constant");
+    sublist.set("forms", forms);
+    FunctionFactory fact;
+    //Function *f = fact.Create(list);
+    CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
+    forms.pop_back();
+    forms[0] = "fubar";
+    sublist.remove("forms");
+    sublist.set("forms", forms);
     //Function *f = fact.Create(list);
     CHECK_THROW(Function *f = fact.Create(list), Errors::Message);
   }

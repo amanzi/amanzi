@@ -7,7 +7,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Mesh.hh"
 
-#include "FlowBC.hpp"
 #include "DiffusionMatrix.hpp"
 #include "DiffusionPrecon.hpp"
 #include "MimeticHexLocal.hpp"
@@ -16,33 +15,23 @@
 namespace Amanzi
 {
 
-// Forward declaration
-class DarcyMatvec;
+class DarcyMatvec; // forward declaration
+class BoundaryFunction; // forward declaration
 
 class DarcyProblem
 {
 public:
 
   DarcyProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh, 
-	       Teuchos::ParameterList &darcy_plist,
-	       const Teuchos::RCP<FlowBC> &bc);
+	       Teuchos::ParameterList &darcy_plist);
   ~DarcyProblem();
 
-  // Set the constant value of fluid density.
+  // explicit initialization
   void SetFluidDensity(double rho);
-
-  // Set the constant value of fluid viscosity.
   void SetFluidViscosity(double mu);
-
-  // Set the gravitational acceleration (3-vector).
   void SetGravity(const double g[3]);
-
-  // Sets a constant (scalar) permeability.
-  void SetPermeability(double k);
-
-  // Sets a spatially variable (scalar) permeability, one value per cell.
-  //void SetPermeability(const std::vector<double> &k);
-  void SetPermeability(const Epetra_Vector &k);
+  void set_absolute_permeability(double k);
+  void set_absolute_permeability(const Epetra_Vector &k);
 
   // Assemble the problem
   void Assemble();
@@ -78,7 +67,6 @@ public:
 private:
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<FlowBC> bc_;
   Epetra_Map *dof_map_;
   Epetra_Import *face_importer_;
   Epetra_Import *cell_importer_;
@@ -86,7 +74,12 @@ private:
   double rho_;  // constant fluid density
   double mu_;   // constant fluid viscosity
   double g_[3]; // gravitational acceleration
+  double gravity_;  // gravitational acceleration (positive coef, directed in -z direction)
   std::vector<double> k_; // spatially variable permeability
+  
+  BoundaryFunction *bc_press_;  // Pressure Dirichlet conditions, excluding static head
+  BoundaryFunction *bc_head_;   // Static pressure head conditions; also Dirichlet-type
+  BoundaryFunction *bc_flux_;   // Outward mass flux conditions
 
   std::vector<MimeticHexLocal>  MD;
   MimeticHex *md_; // evolving replacement for MD
@@ -101,11 +94,9 @@ private:
 private:  // Auxillary functions
 
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
-  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&, const Teuchos::RCP<FlowBC>&) const;
+  void validate_boundary_conditions() const;
+  DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&) const;
   void init_mimetic_disc_(AmanziMesh::Mesh&, std::vector<MimeticHexLocal>&) const;
-  void apply_BC_initial_(Epetra_Vector&);
-  void apply_BC_final_(Epetra_Vector&);
-  void face_centroid_(int, double[]);
 
 };
 

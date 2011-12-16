@@ -1,8 +1,7 @@
 #include "MimeticHex.hpp"
 #include "cell_geometry.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
 
 MimeticHex::MimeticHex(const Teuchos::RCP<AmanziMesh::Mesh> &mesh) : mesh_(mesh)
 {
@@ -35,25 +34,4 @@ MimeticHex::MimeticHex(const Teuchos::RCP<AmanziMesh::Mesh> &mesh) : mesh_(mesh)
     face_area_[j] = cell_geometry::vector_length(face_normal_[j], 3);
 }
 
-
-void MimeticHex::DeriveFluxes(const Epetra_Vector &X, Epetra_Vector &F) const
-{
-//  // Local storage for the 8 vertex coordinates of a hexahedral cell.
-//  double x[8][3];
-//  double *xBegin = &x[0][0];  // begin iterator
-//  double *xEnd = xBegin+24;   // end iterator
-//
-//  Epetra_SerialDenseMatrix minv(6,6);
-//  const bool invert = true;
-//
-//  for (int j = 0; j < nface; ++j) {
-//    d
-//    // Compute the inverse of the cell face mass matrix.
-//    mesh_->cell_to_coordinates((unsigned int) j, xBegin, xEnd);
-//    MimeticHexLocal mhex(x);
-//    mhex.mass_matrix(minv, K[j], true);
-//
-//  }
-}
-
-} // close namespace Amanzi
+}  // namespace Amanzi

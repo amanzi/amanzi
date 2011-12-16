@@ -27,6 +27,10 @@
 #include <Epetra_MpiComm.h>
 #include <memory>
 
+#include "GeometricModel.hh"
+#include "LabeledSetRegion.hh"
+
+
 #include "Mesh.hh"
 #include "Data_structures.hh"
 #include "Entity_map.hh"
@@ -56,28 +60,40 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double& zorigin = 0.0, 
            const double& xdelta = 1.0, 
            const double& ydelta = 1.0, 
-           const double& zdelta = 1.0);
+           const double& zdelta = 1.0,
+           const AmanziGeometry::GeometricModelPtr& gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct hexahedral mesh (Mesh_simple alternative)
   Mesh_STK(double x0, double y0, double z0,
            double x1, double y1, double z1,
            int nx, int ny, int nz, 
-           Epetra_MpiComm *communicator);
+           Epetra_MpiComm *communicator,
+           const AmanziGeometry::GeometricModelPtr& gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
-           Epetra_MpiComm *communicator);
+           Epetra_MpiComm *communicator,
+           const AmanziGeometry::GeometricModelPtr& gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)
   Mesh_STK(const GenerationSpec& gspec,
-           Epetra_MpiComm *communicator);
+           Epetra_MpiComm *communicator,
+           const AmanziGeometry::GeometricModelPtr& gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const Epetra_MpiComm& comm, 
-           const std::string& fname);
+           const std::string& fname,
+           const AmanziGeometry::GeometricModelPtr& gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a mesh from a Exodus II file or file set
-  Mesh_STK(const char *filename, MPI_Comm comm);
+  Mesh_STK(const char *filename, MPI_Comm comm,
+           const AmanziGeometry::GeometricModelPtr& gm = 
+           (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Destructor
   ~Mesh_STK(void);
@@ -251,18 +267,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   //----------------------------
   //
     
-  // Number of sets containing entities of type 'kind' in mesh
-  unsigned int num_sets(const Entity_kind kind) const;
-    
-    
-  // Ids of sets containing entities of 'kind'
-  void get_set_ids (const Entity_kind kind, 
-                    Set_ID_List *setids) const;
-
-
-  // Is this is a valid ID of a set containing entities of 'kind'
-  bool valid_set_id (const Set_ID setid, 
-                     const Entity_kind kind) const;
 
 
   // Get number of entities of type 'category' in set
@@ -270,12 +274,33 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                              const Entity_kind kind,
                              const Parallel_type ptype) const;
 
+  unsigned int get_set_size (const Set_Name setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
+
+  unsigned int get_set_size (const char *setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
 
   // Get list of entities of type 'category' in set
   void get_set_entities (const Set_ID setid, 
                          const Entity_kind kind, 
                          const Parallel_type ptype, 
                          Entity_ID_List *entids) const; 
+
+  void get_set_entities (const Set_Name setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
+
+  void get_set_entities (const char *setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
 
   /// Make a cell-to-cell graph from the mesh
   Teuchos::RCP<Epetra_CrsGraph> cellgraph(void) const;
@@ -336,7 +361,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
                              const bool& include_ghost) const;
 
   /// fill Mesh::tmp_setnameid_map with Cell part name/id
-  void fill_setnameid_map_(void);
+  /// void fill_setnameid_map_(void);
 };
 
 } // namespace AmanziMesh

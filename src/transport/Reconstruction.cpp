@@ -13,7 +13,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Mesh.hh"
 #include "Point.hh"
-#include "dbc.hh"
 
 #include "Transport_PK.hpp"
 #include "Reconstruction.hpp"
@@ -51,9 +50,6 @@ void Reconstruction::Init()
   dim = mesh_->space_dimension();
   gradient_ = Teuchos::rcp(new Epetra_MultiVector(cmap, 3));
 
-  field_local_min_.resize(cmax_owned+1);
-  field_local_max_.resize(cmax_owned+1);
-
   status = RECONSTRUCTION_INIT;
 }
 
@@ -68,7 +64,7 @@ void Reconstruction::calculateCellGradient()
   Teuchos::LAPACK<int, double> lapack;
 
   AmanziMesh::Entity_ID_List cells;
-  AmanziGeometry::Point xc2(dim);
+  AmanziGeometry::Point xcc(dim);
  
   double *rhs; 
   rhs = new double[dim]; 
@@ -78,20 +74,23 @@ void Reconstruction::calculateCellGradient()
     for (int i=0; i<dim; i++) rhs[i] = 0.0;
 
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells); 
-
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    field_local_min_[c] = field_local_max_[c] = u[c];
 
-    for (int i=0; i<cells.size(); i++) {
-      xc2  = mesh_->cell_centroid(cells[i]);
-      xc2 -= xc;
+    for (int n=0; n<cells.size(); n++) {
+      const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
+      for (int i=0; i<dim; i++) xcc[i] = xc2[i] - xc[i];
 
-      double value = u[cells[i]] - u[c];
-      populateLeastSquareSystem(xc2, value, matrix, rhs);
+      double value = u[cells[n]] - u[c];
+      populateLeastSquareSystem(xcc, value, matrix, rhs);
+    }
 
-      value = u[cells[i]];   
-      field_local_min_[c] = std::min(field_local_min_[c], value);
-      field_local_max_[c] = std::max(field_local_max_[c], value);
+    // improve robustness w.r.t degenerate matrices
+    double det = calculate_matrix_determinant(matrix);
+    double norm = calculate_matrix_norm(matrix);
+
+    if (det < pow(norm, 1.0/dim)) {
+      norm *= RECONSTRUCTION_MATRIX_CORRECTION;
+      for (int i=0; i<dim; i++) matrix(i,i) += norm;
     }
     //printLeastSquareSystem(matrix, rhs);
  
@@ -133,12 +132,10 @@ void Reconstruction::applyLimiter(Teuchos::RCP<Epetra_Vector>& limiter)
 ****************************************************************** */
 double Reconstruction::getValue(const int cell, const AmanziGeometry::Point& p)
 {
-  AmanziGeometry::Point xc(dim);
-  xc = p;
-  xc -= mesh_->cell_centroid(cell); 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
   double value = (*scalar_field_)[cell];
-  for (int i=0; i<dim; i++) value += (*gradient_)[i][cell] * xc[i];
+  for (int i=0; i<dim; i++) value += (*gradient_)[i][cell] * (p[i] - xc[i]);
 
   return value;
 }
@@ -150,18 +147,17 @@ double Reconstruction::getValue(const int cell, const AmanziGeometry::Point& p)
 double Reconstruction::getValue(
     AmanziGeometry::Point& gradient, const int cell, const AmanziGeometry::Point& p)
 {
-  AmanziGeometry::Point xc(dim);
-  xc = p;
-  xc -= mesh_->cell_centroid(cell); 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(cell);
 
-  double value = (*scalar_field_)[cell] + (gradient * xc);
+  double value = (*scalar_field_)[cell];
+  for (int i=0; i<dim; i++) value += gradient[i] * (p[i] - xc[i]);
 
   return value;
 }
 
 
 /* ******************************************************************
- * A few technical routines are listed below 
+ * Assemble a SPD least square matrix
 ****************************************************************** */
 void Reconstruction::populateLeastSquareSystem(AmanziGeometry::Point& centroid, 
                                                double field_value, 
@@ -179,6 +175,54 @@ void Reconstruction::populateLeastSquareSystem(AmanziGeometry::Point& centroid,
 }
 
 
+/* ******************************************************************
+ * Optimized linear algebra: norm, determinant, etc
+****************************************************************** */
+double Reconstruction::calculate_matrix_norm(Teuchos::SerialDenseMatrix<int, double>& matrix)
+{
+  double a = 0.0;
+  for (int i=0; i<dim; i++) {
+    for (int j=i; j<dim; j++) a = std::max(a, matrix(i,j));
+  }
+  return a;
+}
+
+double Reconstruction::calculate_matrix_determinant(Teuchos::SerialDenseMatrix<int, double>& matrix)
+{
+  double a = 0.0;
+  if (dim == 2) {
+    a = matrix(0,0) * matrix(1,1) - matrix(0,1) * matrix(0,1);    
+  } else if (dim == 3) {
+    a = matrix(0,0) * matrix(1,1) * matrix(2,2)
+      + matrix(0,1) * matrix(1,2) * matrix(2,0) * 2
+      - matrix(0,2) * matrix(1,1) * matrix(2,0)
+      - matrix(0,1) * matrix(1,0) * matrix(2,2)
+      - matrix(0,0) * matrix(1,2) * matrix(2,1);
+  } else {
+    a = matrix(0,0);
+  }
+  return a;
+}
+
+int Reconstruction::find_minimal_diagonal_entry(Teuchos::SerialDenseMatrix<int, double>& matrix)
+{
+  double a = matrix(0,0);  // We assume that matrix is SPD.
+  int k = 0;
+
+  for (int i=1; i<dim; i++) {
+    double b = matrix(i,i);
+    if (b < a) { 
+      a = b;
+      k = i;
+    }
+  }
+  return k;
+}
+
+
+/* ******************************************************************
+ * I/O routines
+****************************************************************** */
 void Reconstruction::printLeastSquareSystem(Teuchos::SerialDenseMatrix<int, double>matrix, double* rhs)
 {
   for (int i=0; i<dim; i++) {

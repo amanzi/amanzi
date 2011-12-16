@@ -114,7 +114,7 @@ SUITE (Framework)
     bool parallel(comm.NumProc() > 1);
     
     CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MOAB, parallel));
-    CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel));
+    CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::MSTK, parallel));
     CHECK(Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::STKMESH, parallel));
     if (parallel) {
       CHECK(!Amanzi::AmanziMesh::framework_generates(Amanzi::AmanziMesh::Simple, parallel));

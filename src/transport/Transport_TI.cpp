@@ -9,35 +9,36 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziTransport {
 
+/* ******************************************************************* 
+ * Routine takes a parallel overlapping vector C and returns a parallel
+ * overlapping vector F(C).
+ ****************************************************************** */
 void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
 {
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
   const Epetra_Vector& ws  = TS_nextBIG->ref_water_saturation();
   const Epetra_Vector& phi = TS_nextBIG->ref_porosity();
 
-  // transport routines need RCP pointer
+  // transport routines need an RCP pointer
   Epetra_Vector* component_tmp = const_cast<Epetra_Vector*> (&component);  
   const Teuchos::RCP<Epetra_Vector> component_rcp(component_tmp, false);
 
   lifting.reset_field(mesh_, component_rcp);
   lifting.calculateCellGradient();
-
   Teuchos::RCP<Epetra_MultiVector> gradient = lifting.get_gradient();
-  std::vector<double>& field_local_min = lifting.get_field_local_min();
-  std::vector<double>& field_local_max = lifting.get_field_local_max();
 
   if (advection_limiter == TRANSPORT_LIMITER_BARTH_JESPERSEN) {  
-    limiterBarthJespersen(
-        current_component_, component_rcp, gradient, field_local_min, field_local_max, limiter_);
+    limiterBarthJespersen(current_component_, component_rcp, gradient, limiter_);
     lifting.applyLimiter(limiter_);
-  }
-  else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
+  } else if (advection_limiter == TRANSPORT_LIMITER_TENSORIAL) {
     limiterTensorial(current_component_, component_rcp, gradient);
+  } else if (advection_limiter == TRANSPORT_LIMITER_KUZMIN) {
+    limiterKuzmin(current_component_, component_rcp, gradient);
   }
 
   // ADVECTIVE FLUXES
   // We assume that limiters made their job up to round-off errors. 
-  // Min-max condition will enforce robustness for these errors.
+  // Min-max condition will enforce robustness w.r.t. these errors.
   int f, c1, c2;
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
@@ -70,16 +71,14 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
       f_component[c2] += tcc_flux;
-    } 
-    else if (c1 >= 0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0)) {
+    } else if (c1 >= 0 && c1 <= cmax_owned && (c2 > cmax_owned || c2 < 0)) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
 
       tcc_flux = u * upwind_tcc;
       f_component[c1] -= tcc_flux;
-    } 
-    else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
+    } else if (c1 > cmax_owned && c2 >= 0 && c2 <= cmax_owned) {
       upwind_tcc = lifting.getValue(c1, xf);
       upwind_tcc = std::max(upwind_tcc, umin);
       upwind_tcc = std::min(upwind_tcc, umax);
@@ -87,31 +86,45 @@ void Transport_PK::fun(const double t, const Epetra_Vector& component, Epetra_Ve
       tcc_flux = u * upwind_tcc;
       f_component[c2] += tcc_flux;
     }
-  } 
+  }
 
   for (int c=cmin; c<=cmax_owned; c++) {  // calculate conservative quantatity 
     double vol_phi_ws = mesh_->cell_volume(c) * phi[c] * ws[c]; 
     f_component[c] /= vol_phi_ws; 
   }
-
+ 
   // BOUNDARY CONDITIONS for ADVECTION
-  for (int n=0; n<bcs.size(); n++) {  // analyze boundary sets
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      f = bcs[n].faces[k];
-      c2 = (*downwind_cell_)[f]; 
-
-      if (c2 >= 0) {
-        u = fabs(darcy_flux[f]);
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
+  for (int n=0; n<bcs.size(); n++) {
+    if (current_component_ == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        f = bc->first;
+        c2 = (*downwind_cell_)[f]; 
+ 
+        if (c2 >= 0 && f <= fmax_owned) {
+          u = fabs(darcy_flux[f]);    
           double vol_phi_ws = mesh_->cell_volume(c2) * phi[c2] * ws[c2]; 
-          tcc_flux = u * bcs[n].values[current_component_];
+          tcc_flux = u * bc->second;
           f_component[c2] += tcc_flux / vol_phi_ws;
-          bcs[n].influx[current_component_] += tcc_flux;
         }
       } 
     }
   }   
+
+  // DISPERSIVE FLUXES
+  /*
+  if (dispersivity_model != TRANSPORT_DISPERSIVITY_MODEL_NULL) {
+    calculate_dispersion_tensor();
+
+    std::vector<int> bc_face_id(number_wghost_faces);  // must be allocated only once (lipnikov@lanl.gov)
+    std::vector<double> bc_face_values(number_wghost_faces);
+
+    extract_boundary_conditions(current_component_, bc_face_id, bc_face_values);
+    populate_harmonic_points_values(current_component_, component, bc_face_id, bc_face_values);
+    add_dispersive_fluxes(component, scalar_field, bc_face_id, bc_face_values, tcc_next);
+  }
+  */
+
+  TS_nextBIG->distribute_cell_vector(f_component);
 }
 
 }  // namespace AmanziTransport

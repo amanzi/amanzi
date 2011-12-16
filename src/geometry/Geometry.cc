@@ -36,6 +36,8 @@ namespace Amanzi
 				  double *volume,
 				  Point *centroid)
     {
+      Point v1(3), v2(3), v3(3);
+
 
       // Initialize to sane values
 
@@ -52,7 +54,11 @@ namespace Amanzi
 
       if (np == 4) { // is a tetrahedron
 
-	tet_get_vol_centroid(ccoords,volume,centroid);
+        *centroid = (ccoords[0]+ccoords[1]+ccoords[2]+ccoords[3])/4.0;
+        v1 = ccoords[1]-ccoords[0];
+        v2 = ccoords[2]-ccoords[0];
+        v3 = ccoords[3]-ccoords[0];
+        *volume = (v1^v2)*v3;
 
       }
       else { // if (np > 4), polyhedron with possibly curved faces
@@ -64,36 +70,49 @@ namespace Amanzi
 
 	int offset = 0;
 	for (int i = 0; i < nf; i++) {
+          Point tcentroid(3);
+          double tvolume;
 
-	  // geometric center of all face nodes
-	  
-	  Point fcenter(0.0,0.0,0.0);
-	  for (int j = 0; j < nfnodes[i]; j++)
-	    fcenter += fcoords[offset+j];
-	  fcenter /= nfnodes[i];
-	  
-	  for (int j = 0; j < nfnodes[i]; j++) { // for each edge of face
+          if (nfnodes[i] == 3) {
+
+              tcentroid = (center+fcoords[offset]+fcoords[offset+1]+fcoords[offset+2])/4.0;
+              v1 = fcoords[offset]-center;
+              v2 = fcoords[offset+1]-center;
+              v3 = fcoords[offset+2]-center;
+              tvolume = (v1^v2)*v3;
+              
+              (*centroid) += tvolume*tcentroid;      // sum up 1st moment
+              (*volume) += tvolume;                  // sum up 0th moment
+
+          }
+          else {
+            // geometric center of all face nodes
+            
+            Point fcenter(0.0,0.0,0.0);
+            for (int j = 0; j < nfnodes[i]; j++)
+              fcenter += fcoords[offset+j];
+            fcenter /= nfnodes[i];
+            
+            for (int j = 0; j < nfnodes[i]; j++) { // for each edge of face
+              
+              // form tet from edge of face, face center and cell center
+              
+              int k, kp1;
+              
+              k = offset+j;
+              kp1 = offset+(j+1)%nfnodes[i];
+              
+              tcentroid = (center+fcenter+fcoords[k]+fcoords[kp1])/4.0;
+              v1 = fcoords[k]-center;
+              v2 = fcoords[kp1]-center;
+              v3 = fcenter-center;
+              tvolume = (v1^v2)*v3;
+              
+              (*centroid) += tvolume*tcentroid;      // sum up 1st moment
+              (*volume) += tvolume;                  // sum up 0th moment
 	    
-	    // form tet from edge of face, face center and cell center
-	    
-	    Point tcentroid(3);
-	    double tvolume;
-	    int k, kp1;
-	    Point v1(3), v2(3), v3(3);
-	    
-	    k = offset+j;
-	    kp1 = offset+(j+1)%nfnodes[i];
-	    
-	    tcentroid = (center+fcenter+fcoords[k]+fcoords[kp1])/4.0;
-	    v1 = fcoords[k]-center;
-	    v2 = fcoords[kp1]-center;
-	    v3 = fcenter-center;
-	    tvolume = (v1^v2)*v3;
-	    
-	    (*centroid) += tvolume*tcentroid;      // sum up 1st moment
-	    (*volume) += tvolume;                  // sum up 0th moment
-	    
-	  } // for each edge of face
+            } // for each edge of face
+          }
 
 	  offset += nfnodes[i];
 
@@ -110,38 +129,92 @@ namespace Amanzi
 
 
 
+    // Checks if point is inside polyhedron
+    //
+    // ccoords  - vertices of the polyhedron (in no particular order)
+    // nf       - number of faces of polyhedron
+    // nfnodes  - number of nodes for each face
+    // fcoords  - linear array of face coordinates in in ccw manner
+    //            assuming normal of face is pointing out (
+    //
+    // So if the polyhedron has 5 faces with 5,3,3,3 and 3 nodes each
+    // then entries 1-5 of fcoords describes face 1, entries 6-9
+    // describes face 2 and so on
+    //
+    // Assuming that the polyhedron's faces can be broken into
+    // triangular subfaces, this routine checks that the test point 
+    // forms a positive volume with each triangular subface 
 
 
-    // Special function for tet volume and centroid
-
-    void tet_get_vol_centroid(const std::vector<Point> ccoords, 
-			      double *volume,
-			      Point *centroid)
+    bool point_in_polyhed(const Point testpnt,
+                          const std::vector<Point> ccoords, 
+                          const unsigned int nf, 
+                          const std::vector<unsigned int> nfnodes,
+                          const std::vector<Point> fcoords)
     {
-      // Initialize to sane values
-      
-      centroid->set(0.0);
-      (*volume) = 0.0;
-      
+
       int np = ccoords.size();
       if (np < 4) {
-	cout << "Less than 4 points supplied for tetrahedron" << std::endl;
-	return;
+	cout << "Not a polyhedron" << std::endl;
+	return false;
       }
-      else if (np > 4) 
-	cout << "More than 4 points supplied for tetrahedron" << std::endl;
-
-      (*centroid) = (ccoords[0]+ccoords[1]+ccoords[2]+ccoords[3])/4.0;
-
-      Point v1 = ccoords[1]-ccoords[0];
-      Point v2 = ccoords[2]-ccoords[0];
-      Point v3 = ccoords[3]-ccoords[0];
-      (*volume) = ((v1^v2)*v3)/6.0;
- 
-    } // tet_get_vol_centroid
 
 
+      int offset = 0;
+      for (int i = 0; i < nf; i++) {
 
+        Point v1(3), v2(3), v3(3);
+        double tvolume;
+
+        if (nfnodes[i] == 3) {
+          
+          v1 = fcoords[offset]-testpnt;
+          v2 = fcoords[offset+1]-testpnt;
+          v3 = fcoords[offset+2]-testpnt;
+          tvolume = (v1^v2)*v3;
+          
+          if (tvolume < 0.0)
+            return false;
+        }
+        else {
+
+          // geometric center of all face nodes
+	
+          Point fcenter(0.0,0.0,0.0);
+          for (int j = 0; j < nfnodes[i]; j++)
+            fcenter += fcoords[offset+j];
+          fcenter /= nfnodes[i];
+	
+
+          for (int j = 0; j < nfnodes[i]; j++) { // for each edge of face
+	    
+            // form tet from edge of face, face center and test point
+            
+            Point tcentroid(3);
+            int k, kp1;
+            
+            k = offset+j;
+            kp1 = offset+(j+1)%nfnodes[i];
+            
+            v1 = fcoords[k]-testpnt;
+            v2 = fcoords[kp1]-testpnt;
+            v3 = fcenter-testpnt;
+            tvolume = (v1^v2)*v3;
+            
+            if (tvolume < 0.0)
+              return false;
+              
+          } // for each edge of face
+            
+          offset += nfnodes[i];
+        }
+            
+      } // for each face
+
+      return true;
+
+
+    } // point_in_polyhed
 
 
 
@@ -247,6 +320,35 @@ namespace Amanzi
     } // polygon_get_area_centroid
   
 
+
+    // Check if point is in polygon by Jordan's crossing algorithm
+
+    bool point_in_polygon(const Point testpnt, const std::vector<Point> coords)
+    {
+      int i, ip1, c;
+
+      /* Basic test - will work for strictly interior and exterior points */
+
+      int np = coords.size();
+
+      double x = testpnt.x(); 
+      double y = testpnt.y();
+
+      for (i = 0, c = 0; i < np; i++) {
+        ip1 = (i+1)%np;
+        if (((coords[i].y() > y && coords[ip1].y() <= y) ||
+             (coords[ip1].y() > y && coords[i].y() <= y)) &&
+            (x <= (coords[i].x() + (y-coords[i].y())*(coords[ip1].x()-coords[i].x())/(coords[ip1].y()-coords[i].y()))))
+          c = !c;
+      }
+
+      /* If we don't need consistent classification of points on the
+         boundary, we can quit here.  If the point is classified as
+         inside, it is definitely inside or on the boundary - no way it
+         can be outside and be classified as inside */
+
+      return (c == 1);
+    }
 
 
 

@@ -17,11 +17,15 @@ namespace bl = boost::lambda;
 #include "Element_types.hh"
 #include "Entity_map.hh"
 
+// AmanziGeometry
+#include "Geometry.hh"
+#include "BoxRegion.hh"
+#include "PointRegion.hh"
 
 // STK_mesh
 #include "Mesh_STK_factory.hh"
 #include "Element_field_types.hh"
-#include "Cell_topology.hh"
+#include "Cell_type_to_shards.hh"
 #include "Mesh_common.hh"
 #include "stk_mesh_error.hh"
 
@@ -52,7 +56,8 @@ Mesh_STK_factory::Mesh_STK_factory (const stk::ParallelMachine& comm, int bucket
  * @return 
  */
 Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data, 
-                                         const Data::Fields& fields)
+					     const Data::Fields& fields,
+					     const AmanziGeometry::GeometricModelPtr& gm)
 {
   ASSERT(communicator_.NumProc() == 1);
 
@@ -62,7 +67,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
   int nvert(data.parameters().num_nodes_);
   Epetra_Map vmap(nvert, 1, communicator_);
 
-  return build_mesh(data, cmap, vmap, fields);
+  return build_mesh(data, cmap, vmap, fields, gm);
 }
 
 /** 
@@ -76,9 +81,10 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
  * @return Mesh instance
  */
 Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data, 
-                                         const Epetra_Map& cellmap,
-                                         const Epetra_Map& vertmap,
-                                         const Data::Fields& fields)
+					     const Epetra_Map& cellmap,
+					     const Epetra_Map& vertmap,
+					     const Data::Fields& fields,
+					     const AmanziGeometry::GeometricModelPtr& gm)
 {
 
   // Update construction variables for the new mesh.
@@ -105,8 +111,8 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
     
   // Build the data for the mesh object.
 
-  build_meta_data_ (data, fields);
-  build_bulk_data_ (data, cellmap, vertmap, fields);
+  build_meta_data_ (data, fields, gm);
+  build_bulk_data_ (data, cellmap, vertmap, fields, gm);
 
   Mesh_STK_Impl *mesh(NULL);
 
@@ -125,7 +131,9 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
 }
 
 
-void Mesh_STK_factory::build_meta_data_ (const Data::Data& data, const Data::Fields& fields)
+  void Mesh_STK_factory::build_meta_data_ (const Data::Data& data, 
+					   const Data::Fields& fields, 
+					   const AmanziGeometry::GeometricModelPtr& gm)
 {
   const int num_element_blocks = data.element_blocks ();
   const int num_side_sets      = data.side_sets ();
@@ -173,6 +181,13 @@ void Mesh_STK_factory::build_meta_data_ (const Data::Data& data, const Data::Fie
     put_field_ (*field, universal_part, space_dimension);
   }
 
+
+  // Add some additional parts as place holders for meshets that will
+  // be created based on the region specifications in the geometric model
+
+  if (gm)
+    init_extra_parts_from_gm(gm);
+
   meta_data_->commit ();
 
 }
@@ -186,9 +201,10 @@ void Mesh_STK_factory::build_meta_data_ (const Data::Data& data, const Data::Fie
  * @param fields 
  */
 void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data, 
-                                     const Epetra_Map& cellmap, 
-                                     const Epetra_Map& vertmap,
-                                     const Data::Fields& fields)
+					 const Epetra_Map& cellmap, 
+					 const Epetra_Map& vertmap,
+					 const Data::Fields& fields,
+					 const AmanziGeometry::GeometricModelPtr& gm)
 {
   const int space_dimension = data.parameters ().dimensions ();
 
@@ -254,6 +270,12 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
     add_sides_to_part_ (data.side_set (set), *side_sets_ [set], cellmap);
   }
   bulk_data_->modification_end();
+
+  // Fill in the elements/faces/nodes for the extra parts that are created
+  // based on the region specifications in the geometric model
+
+  if (gm)
+    fill_extra_parts_from_gm(gm);
 }
 
 
@@ -333,6 +355,8 @@ void Mesh_STK_factory::add_coordinates_ (const Data::Coordinates<double>& coordi
 }
 
 
+  // Declare a part from an element block
+
 stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const Data::Element_block& block)
 {
 
@@ -372,6 +396,23 @@ stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const Data::Element_block
 }
 
 
+  // Declare a part from just a name and id (we don't yet know the elements that will go into it)
+
+  stk::mesh::Part* Mesh_STK_factory::add_element_block_ (const std::string name, const int id)
+{
+
+  stk::mesh::Part &new_part (meta_data_->declare_part (name, element_rank_));
+
+  meta_data_->declare_part_subset(*elements_part_, new_part);
+
+  add_set_part_relation_ (id, new_part);
+
+  return &new_part;
+}
+
+
+  // Declare a part from a side set data structure
+
 stk::mesh::Part* Mesh_STK_factory::add_side_set_ (const Data::Side_set& set)
 {
   std::ostringstream name;
@@ -387,6 +428,20 @@ stk::mesh::Part* Mesh_STK_factory::add_side_set_ (const Data::Side_set& set)
   return &new_part;
 }
 
+  // Declare a part from a side set name and id
+
+  stk::mesh::Part* Mesh_STK_factory::add_side_set_ (const std::string name, const int id)
+{
+  stk::mesh::Part &new_part (meta_data_->declare_part (name, face_rank_));
+  meta_data_->declare_part_subset(*faces_part_, new_part);
+
+  add_set_part_relation_ (id, new_part);
+
+  return &new_part;
+}
+
+
+  // Declare a part from a node set data structure
 
 stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const Data::Node_set& set)
 {
@@ -400,6 +455,15 @@ stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const Data::Node_set& set)
 
   add_set_part_relation_ (set.id (), new_part);
 
+  return &new_part;
+}
+
+  stk::mesh::Part* Mesh_STK_factory::add_node_set_ (const std::string name, const int id)
+{
+  stk::mesh::Part &new_part (meta_data_->declare_part (name, stk::mesh::Node));
+  meta_data_->declare_part_subset(*nodes_part_, new_part);
+
+  add_set_part_relation_ (id, new_part);
 
   return &new_part;
 }
@@ -413,8 +477,6 @@ void Mesh_STK_factory::add_set_part_relation_ (unsigned int set_id, stk::mesh::P
   ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end ());
 
   set_to_part_ [rank_set_id]  = &part;
-
-
 
 }
 
@@ -891,6 +953,369 @@ void Mesh_STK_factory::add_nodes_to_part_ (const Data::Node_set& node_set,
   }
 
 }
+
+
+
+
+
+void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm) 
+{
+
+  if (gm == NULL) return;
+
+
+  int space_dim = gm->dimension();
+
+
+  int ngr = gm->Num_Regions();
+  for (int i = 0; i < ngr; i++)
+    {
+      AmanziGeometry::RegionPtr greg = gm->Region_i(i);
+      
+      switch (greg->type())
+        {
+        case AmanziGeometry::BOX: { 
+
+          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate()) {            
+            add_side_set_(greg->name(), greg->id());
+          }
+          else {
+            add_element_block_(greg->name(), greg->id());
+          }
+
+          break;
+        }
+        case AmanziGeometry::PLANE: {
+
+          // Assumption is that user wants to extract side sets
+          
+          add_side_set_(greg->name(), greg->id());
+
+          break;
+        }
+        case AmanziGeometry::LABELEDSET: {
+
+          // This should already be in there
+
+          break;
+          }
+        case AmanziGeometry::SURFACE: {
+          // Not implemented
+
+
+          break;
+        }
+        case AmanziGeometry::POINT: {
+
+          // Cell set based on points
+
+          add_element_block_(greg->name(), greg->id());
+
+          break;
+        }
+        default:
+          throw std::exception();
+        }
+      
+    }
+
+}
+
+
+
+
+void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricModelPtr& gm) 
+{
+  if (gm == NULL) return;
+
+
+  bulk_data_->modification_begin();
+
+  int space_dim = gm->dimension();
+
+
+  int ngr = gm->Num_Regions();
+  for (int i = 0; i < ngr; i++)
+    {
+      AmanziGeometry::RegionPtr greg = gm->Region_i(i);
+      stk::mesh::Part *part;
+      stk::mesh::PartVector parts_to_add;
+
+      switch (greg->type())
+        {
+        case AmanziGeometry::BOX: { 
+
+          // Find the part with this name
+
+	  part = meta_data_->get_part (greg->name());
+          ASSERT (part);
+	  parts_to_add.push_back(part);
+
+          if (((AmanziGeometry::BoxRegionPtr) greg)->is_degenerate()) {
+
+            ASSERT (part->primary_entity_rank () == face_rank_);
+
+            // Assumption is that user wants to extract cell sets
+          
+            stk::mesh::Selector owned(meta_data_->locally_owned_part());
+            stk::mesh::EntityVector faces;
+            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Face), faces);
+
+            stk::mesh::EntityVector::iterator f;
+            for (f = faces.begin(); f != faces.end(); f++) {
+
+              stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
+
+              double cen[3]={0.0,0.0,0.0};
+	      int nfn = 0;
+              for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
+                   it != nodes.end (); ++it)
+                {
+                  double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
+                  for (int k = 0; k < space_dim; k++)
+                    cen[k] += xyz[k];
+		  nfn++;
+                }
+              for (int k = 0; k < space_dim; k++)
+                cen[k] /= nfn;
+
+              AmanziGeometry::Point pcen(space_dim);
+              pcen.set(cen);
+              
+              if (greg->inside(pcen))  // If face center is inside region
+                {
+                  bulk_data_->change_entity_parts(*(*f),parts_to_add);
+                }
+            }
+
+          }
+
+          else {
+
+            // Assumption is that user wants to extract cell sets
+
+            ASSERT (part->primary_entity_rank () == element_rank_);
+
+          
+            stk::mesh::Selector owned(meta_data_->locally_owned_part());
+            stk::mesh::EntityVector cells;
+            stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Element), cells);
+
+            stk::mesh::EntityVector::iterator c;
+            for (c = cells.begin(); c != cells.end(); c++) {
+
+              stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
+
+              double cen[3]={0.0,0.0,0.0};
+	      int nen = 0;
+              for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
+                   it != nodes.end (); ++it)
+                {
+                  double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
+                  for (int k = 0; k < space_dim; k++)
+                    cen[k] += xyz[k];
+		  nen++;
+                }
+              for (int k = 0; k < space_dim; k++)
+                cen[k] /= nen;
+
+              AmanziGeometry::Point pcen(space_dim);
+              pcen.set(cen);
+              
+              if (greg->inside(pcen))  // If center is inside region
+                {
+                  bulk_data_->change_entity_parts(*(*c),parts_to_add);
+                }
+            }
+
+          }
+
+          break;
+        }
+        case AmanziGeometry::PLANE: {
+
+	  part = meta_data_->get_part (greg->name());
+          ASSERT (part);
+	  parts_to_add.push_back(part);
+	  
+          // Assumption is that user wants to extract side sets
+	  
+	  ASSERT (part->primary_entity_rank () == face_rank_);
+
+	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
+	  stk::mesh::EntityVector faces;
+	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Face), faces);
+	  
+	  stk::mesh::EntityVector::iterator f;
+	  for (f = faces.begin(); f != faces.end(); f++) {
+	    
+	    stk::mesh::PairIterRelation nodes = (*f)->relations (node_rank_);
+	    
+	    bool on_plane = true;
+	    for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
+		 it != nodes.end (); ++it)
+	      {
+		double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
+		AmanziGeometry::Point pxyz(space_dim);
+		pxyz.set(xyz);
+		
+		if (!greg->inside(pxyz)) {
+		  on_plane = false;
+		  break;
+		}
+	      }
+	    
+	    if (on_plane)  // If face center is inside region
+	      {
+		bulk_data_->change_entity_parts(*(*f),parts_to_add);
+	      }
+	  }
+
+          break;
+        }
+        case AmanziGeometry::LABELEDSET: {
+
+          // This should already be in there
+
+          break;
+	}
+        case AmanziGeometry::SURFACE: {
+          // Not implemented
+
+
+          break;
+        }
+        case AmanziGeometry::POINT: {
+
+	  part = meta_data_->get_part (greg->name());
+          ASSERT (part);
+	  parts_to_add.push_back(part);
+	  
+	  
+	  stk::mesh::Selector owned(meta_data_->locally_owned_part());
+	  stk::mesh::EntityVector nodes;
+	  stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Node), nodes);
+	 
+
+          AmanziGeometry::Point rgnpnt(((AmanziGeometry::PointRegionPtr)greg)->point());
+
+          double mindist2 = 1.0e+16;
+          stk::mesh::Entity *minnode = NULL;
+ 
+	  stk::mesh::EntityVector::iterator n;
+	  for (n = nodes.begin(); n != nodes.end(); n++) {
+	    
+            double *xyz = stk::mesh::field_data(*coordinate_field_, *(*n));
+            AmanziGeometry::Point vpnt(space_dim);
+            vpnt.set(xyz);
+
+            double dist2 = (vpnt-rgnpnt)*(vpnt-rgnpnt);
+
+            if (dist2 < mindist2) {              
+              mindist2 = dist2;
+              minnode = *n;
+              if (mindist2 <= 1.0e-32)
+                break;
+            }            
+		
+	  }
+
+          stk::mesh::PairIterRelation cells = minnode->relations (element_rank_);
+	    
+          for (stk::mesh::PairIterRelation::iterator it = cells.begin(); 
+               it != cells.end(); it++) {
+
+            stk::mesh::Entity *element = it->entity();
+
+
+            // build up a description of the element in terms of its nodes ...
+
+            std::vector<AmanziGeometry::Point> ccoord;
+
+            stk::mesh::PairIterRelation elnodes = element->relations(node_rank_);
+            for (stk::mesh::PairIterRelation::iterator jt = elnodes.begin();
+                 jt != elnodes.end(); jt++) {
+
+              stk::mesh::Entity *elnode = jt->entity();
+
+              double *xyz = stk::mesh::field_data(*coordinate_field_, *elnode);
+              AmanziGeometry::Point vpnt(space_dim);
+              vpnt.set(xyz);
+              ccoord.push_back(vpnt);
+              
+            }
+
+            
+            // ... and its faces (while ensuring that they are pointing out of
+            // the element)
+
+            std::vector<AmanziGeometry::Point> fcoord;
+            std::vector<unsigned int> nfnodes;
+
+            stk::mesh::PairIterRelation elfaces = element->relations(face_rank_);
+
+            int nf = elfaces.size();
+
+            for (stk::mesh::PairIterRelation::iterator jt = elfaces.begin (); 
+                 jt != elfaces.end (); ++jt)
+              {
+                stk::mesh::Entity *elface = jt->entity();
+                
+                stk::mesh::FieldTraits<Id_field_type>::data_type *owner = 
+                  stk::mesh::field_data<Id_field_type>(*face_owner_, *elface);
+                
+                int dir = (*owner == element->identifier()) ? 1 : -1;
+                
+                
+                stk::mesh::PairIterRelation fnodes = elface->relations(node_rank_);                
+                nfnodes.push_back(fnodes.size());
+                
+                std::vector<AmanziGeometry::Point> thisfcoord;
+                for (stk::mesh::PairIterRelation::iterator kt = fnodes.begin();
+                     kt != fnodes.end(); ++kt)
+                  {
+                    stk::mesh::Entity *fnode = kt->entity();
+                    
+                    double *xyz = stk::mesh::field_data(*coordinate_field_, *fnode);
+                    AmanziGeometry::Point vpnt(space_dim);
+                    vpnt.set(xyz);
+                    thisfcoord.push_back(vpnt);
+                  }       
+                
+                if (dir == 1) {
+                  for (std::vector<AmanziGeometry::Point>::iterator kt = thisfcoord.begin(); kt != thisfcoord.end(); ++kt)
+                    {
+                      fcoord.push_back(*kt);
+                    }
+                }
+                else {
+                  for (std::vector<AmanziGeometry::Point>::reverse_iterator kt = thisfcoord.rbegin(); kt != thisfcoord.rend(); ++kt)
+                    {
+                      fcoord.push_back(*kt);
+                    }
+                }
+              }
+                        
+
+            // Test if the element polyhedron contains the rgn pnt
+
+            if (AmanziGeometry::point_in_polyhed(rgnpnt,ccoord,nf,nfnodes,
+                                                       fcoord)) {
+              bulk_data_->change_entity_parts(*element,parts_to_add);
+            }
+
+          }
+
+          break;
+        }
+        default:
+          throw std::exception();
+        }
+      
+    }
+
+}
+
 
 
 } // close namespace STK 

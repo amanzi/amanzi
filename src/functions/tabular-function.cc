@@ -4,6 +4,20 @@
 namespace Amanzi {
 
 TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector<double> &y)
+    : x_(x), y_(y)
+{
+  form_.assign(x.size()-1,LINEAR);
+  check_args(x, y, form_);
+}
+
+TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector<double> &y,
+    const std::vector<Form> &form) : x_(x), y_(y), form_(form)
+{
+  check_args(x, y, form);
+}
+
+void TabularFunction::check_args(const std::vector<double> &x, const std::vector<double> &y,
+                                 const std::vector<Form> &form) const
 {
   if (x.size() != y.size()) {
     Errors::Message m;
@@ -22,8 +36,11 @@ TabularFunction::TabularFunction(const std::vector<double> &x, const std::vector
       Exceptions::amanzi_throw(m);
     }
   }
-  x_ = x;
-  y_ = y;
+  if (form.size() != x.size()-1) {
+    Errors::Message m;
+    m << "incorrect number of form values specified";
+    Exceptions::amanzi_throw(m);
+  }
 }
 
 double TabularFunction::operator() (const double *x) const
@@ -39,14 +56,22 @@ double TabularFunction::operator() (const double *x) const
     int j1 = 0, j2 = n-1;
     while (j2 - j1 > 1) {
       int j = (j1 + j2) / 2;
-      if (*x > x_[j]) {
+      if (*x >= x_[j]) {
         j1 = j;
       } else {
         j2 = j;
       }
     }
-    // Linear interpolation between x[j1] and x[j2]
-    y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (*x - x_[j1]);
+    // Now have x_[j1] <= *x < x_[j2]
+    switch (form_[j1]) {
+    case LINEAR:
+      // Linear interpolation between x[j1] and x[j2]
+      y = y_[j1] + ((y_[j2]-y_[j1])/(x_[j2]-x_[j1])) * (*x - x_[j1]);
+      break;
+    case CONSTANT:
+      y = y_[j1];
+      break;
+    }
   }
   return y;
 }

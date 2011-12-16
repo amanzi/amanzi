@@ -13,6 +13,8 @@
 #include "Mesh.hh"
 #include "Region.hh"
 
+#include "GeometricModel.hh"
+
 namespace Amanzi {
 
 namespace AmanziMesh {
@@ -26,13 +28,16 @@ public:
       
   Mesh_simple (double x0, double y0, double z0,
 	       double x1, double y1, double z1,
-	       int nx, int ny, int nz, Epetra_Comm *communicator);
+	       int nx, int ny, int nz, Epetra_Comm *communicator,
+	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
   
   Mesh_simple ( const GenerationSpec& gspec,
-		Epetra_Comm *communicator );
+		Epetra_Comm *communicator,
+                const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
 
   Mesh_simple ( Teuchos::ParameterList &parameter_list,
-		Epetra_Comm *communicator );
+		Epetra_Comm *communicator,
+		const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
   
   virtual ~Mesh_simple ();
   
@@ -247,24 +252,20 @@ public:
   //----------------------------
   //
     
-  // Number of sets containing entities of type 'kind' in mesh
-    
-  unsigned int num_sets(const Entity_kind kind) const;
-    
-    
-  // Ids of sets containing entities of 'kind'
-
-  void get_set_ids (const Entity_kind kind, std::vector<Set_ID> *setids) const;
-
-
-  // Is this is a valid ID of a set containing entities of 'kind'
-
-  bool valid_set_id (const Set_ID setid, const Entity_kind kind) const;
-
 
   // Get number of entities of type 'category' in set
 
   unsigned int get_set_size (const Set_ID setid, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
+
+  unsigned int get_set_size (const Set_Name setname, 
+			     const Entity_kind kind,
+			     const Parallel_type ptype) const;
+
+
+  unsigned int get_set_size (const char *setname, 
 			     const Entity_kind kind,
 			     const Parallel_type ptype) const;
 
@@ -275,6 +276,18 @@ public:
 			 const Entity_kind kind, 
 			 const Parallel_type ptype, 
 			 std::vector<Entity_ID> *entids) const; 
+
+  void get_set_entities (const Set_Name setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
+
+  void get_set_entities (const char *setname, 
+			 const Entity_kind kind, 
+			 const Parallel_type ptype, 
+			 std::vector<Entity_ID> *entids) const; 
+
 
 
   // this should be used with extreme caution:
@@ -294,16 +307,15 @@ private:
 
   std::vector<double> coordinates_;
 
-  inline unsigned int node_index_(int i, int j, int k);
-  inline unsigned int xyface_index_(int i, int j, int k);
-  inline unsigned int yzface_index_(int i, int j, int k);
-  inline unsigned int xzface_index_(int i, int j, int k);
-  inline unsigned int cell_index_(int i, int j, int k);
+  inline unsigned int node_index_(int i, int j, int k) const;
+  inline unsigned int xyface_index_(int i, int j, int k) const;
+  inline unsigned int yzface_index_(int i, int j, int k) const;
+  inline unsigned int xzface_index_(int i, int j, int k) const;
+  inline unsigned int cell_index_(int i, int j, int k) const;
 
   int nx_, ny_, nz_;  // number of cells in the three coordinate directions
   double x0_, x1_, y0_, y1_, z0_, z1_;  // coordinates of lower left front and upper right back of brick
 
-  AmanziGeometry::RegionVector mesh_blocks_;
 
   int num_cells_;
   int num_nodes_;
@@ -318,8 +330,16 @@ private:
   std::vector<unsigned int> node_to_face_;
   std::vector<unsigned int> node_to_cell_;
 
-  std::vector<std::vector<unsigned int> > side_sets_;
-  std::vector<std::vector<unsigned int> > element_blocks_;
+  // The following are mutable because they have to be modified 
+  // after the class construction even though the class is instantiated
+  // as a constant class
+
+  mutable std::vector<std::vector<unsigned int> > side_sets_;
+  mutable std::vector<std::vector<unsigned int> > element_blocks_;
+  mutable std::vector<std::vector<unsigned int> > node_sets_;
+  mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;
+  mutable std::vector<AmanziGeometry::RegionPtr> side_set_regions_;
+  mutable std::vector<AmanziGeometry::RegionPtr> node_set_regions_;
 
   Epetra_Comm  *communicator_;
 
@@ -330,27 +350,27 @@ private:
   // ------------------------
 
 
-  unsigned int Mesh_simple::node_index_(int i, int j, int k)
+  unsigned int Mesh_simple::node_index_(int i, int j, int k) const
   {
     return i + j*(nx_+1) + k*(nx_+1)*(ny_+1);
   }
 
-  unsigned int Mesh_simple::cell_index_(int i, int j, int k)
+  unsigned int Mesh_simple::cell_index_(int i, int j, int k) const
   {
     return i + j*nx_ + k*nx_*ny_;
   }
 
-  unsigned int Mesh_simple::xyface_index_(int i, int j, int k)
+  unsigned int Mesh_simple::xyface_index_(int i, int j, int k) const
   {
     return i + j*nx_ + k*nx_*ny_;
   }
 
-  unsigned int Mesh_simple::xzface_index_(int i, int j, int k)
+  unsigned int Mesh_simple::xzface_index_(int i, int j, int k) const
   {
     return i + j*nx_ + k*nx_*(ny_+1) +  xyface_index_(0,0,nz_+1);
   }
 
-  unsigned int Mesh_simple::yzface_index_(int i, int j, int k)
+  unsigned int Mesh_simple::yzface_index_(int i, int j, int k) const
   {
     return i + j*(nx_+1) + k*(nx_+1)*ny_ + xzface_index_(0,0,nz_);
   }

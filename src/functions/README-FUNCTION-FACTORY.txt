@@ -24,10 +24,16 @@ New function types can added easily.
     piecewise: f(x) = x_0, x <= x_0; (x, f(x)) is the linear interpolant
     between (x_{i-1},y_{i-1}) and {x_i,y_i) for x in [x_{i-1},x_i], i=1,...,n-1;
     f(x) = x_{n-1}, x > x_{n-1}.
+    
+    The "forms" parameter is optional.  If specified it must be an array of
+    length equal to one less than the length of "x values".  Each value is
+    either "linear" to indicate linear interpolation on that interval, or
+    "constant" to use the left endpoint value for that interval.
 
   <ParameterList name="function-tabular">
     <Parameter name="x values" type="Array double" value=double-array />
     <Parameter name="y values" type="Array double" value=double-array />
+    <Parameter name="forms" type="Array string" value=string-array />
   </ParameterList>
   
   * Smooth step function:  A C2 function f(x) such that f(x) = y0 for x < x0,

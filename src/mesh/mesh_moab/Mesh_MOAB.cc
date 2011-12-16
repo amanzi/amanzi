@@ -12,7 +12,8 @@ namespace AmanziMesh
 
   // Constructor - load up mesh from file
 
-Mesh_MOAB::Mesh_MOAB (const char *filename, MPI_Comm comm)
+  Mesh_MOAB::Mesh_MOAB (const char *filename, MPI_Comm comm, 
+			const AmanziGeometry::GeometricModelPtr& gm)
 {
   int result, rank;
   
@@ -121,6 +122,11 @@ Mesh_MOAB::Mesh_MOAB (const char *filename, MPI_Comm comm)
       
 
 
+  // Set the geometric model that this mesh is related to
+
+  set_geometric_model(gm);
+
+
 
   { // Keep together and in this order 
 
@@ -210,6 +216,8 @@ void Mesh_MOAB::clear_internals_ ()
 
   nsets = 0;
   setids_ = setdims_ = NULL;
+
+  Mesh::set_geometric_model((Amanzi::AmanziGeometry::GeometricModelPtr) NULL);
 }
 
 
@@ -1357,56 +1365,23 @@ void Mesh_MOAB::face_get_coordinates (Entity_ID faceid, std::vector<AmanziGeomet
 }
   
 
+void Mesh_MOAB::get_set_entities (const Set_Name set_name, 
+                                  const Entity_kind kind, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *setents) const {
+}
 
-void Mesh_MOAB::get_set_ids (Entity_kind kind, Set_ID_List *setids) const
-{ 
-  int i;
-
-  setids->clear();
-
-  switch (kind) {
-  case CELL: {
-
-    for (i = 0; i < nsets; i++)
-      if (setdims_[i] == celldim)
-	setids->push_back(setids_[i]);
-
-    return;
-    break;
-  }
-
-  case FACE: {
-
-    for (i = 0; i < nsets; i++)
-      if (setdims_[i] == facedim)
-	setids->push_back(setids_[i]);
-
-    return;
-    break;
-  }
-
-  case NODE: {
-
-    for (i = 0; i < nsets; i++)
-      if (setdims_[i] == 0)
-	setids->push_back(setids_[i]);
-
-    return;
-    break;
-  }
-
-  default:
-    return;
-  }
-    
+void Mesh_MOAB::get_set_entities (const char *set_name, 
+                                  const Entity_kind kind, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *setents) const {
 }
 
 
-
-void Mesh_MOAB::get_set_entities (Set_ID set_id, 
-				       Entity_kind kind, 
-				       Parallel_type ptype,
-				       Entity_ID_List *setents) const {
+void Mesh_MOAB::get_set_entities (const Set_ID set_id, 
+                                  const Entity_kind kind, 
+                                  const Parallel_type ptype,
+                                  Entity_ID_List *setents) const {
 
   int result;
   const void *valarr[1] = {&set_id};
@@ -1548,54 +1523,19 @@ void Mesh_MOAB::get_set_entities (Set_ID set_id,
     
 }
 
-
-unsigned int Mesh_MOAB::num_sets(Entity_kind kind) const {
-  int n = 0;
-    
-  switch (kind) {
-  case CELL:
-    for (int i = 0; i < nsets; i++)
-      if (setdims_[i] == celldim) n++;
-    return n;
-  case FACE:
-    for (int i = 0; i < nsets; i++)
-      if (setdims_[i] == facedim) n++;
-    return n;
-  case NODE:
-    for (int i = 0; i < nsets; i++)
-      if (setdims_[i] == 0) n++;
-    return n;
-  default:
-    return 0;
-  }
+unsigned int Mesh_MOAB::get_set_size(const Set_Name set_name, 
+                                     const Entity_kind kind, 
+                                     const Parallel_type ptype) const {   
 }
+  
+unsigned int Mesh_MOAB::get_set_size(const char *set_name, 
+                                     const Entity_kind kind, 
+                                     const Parallel_type ptype) const {   
+}  
 
-bool Mesh_MOAB::valid_set_id (Set_ID id, Entity_kind kind) const {
-  int n = 0;
-
-  switch (kind) {
-  case CELL:
-    for (int i = 0; i < nsets; i++)
-      if (setdims_[i] == celldim && setids_[i] == id) return true;
-    break;
-  case FACE:
-    for (int i = 0; i < nsets; i++)
-      if (setdims_[i] == facedim && setids_[i] == id) return true;
-    break;
-  case NODE:
-    for (int i = 0; i < nsets; i++)
-      if (setdims_[i] == 0 && setids_[i] == id) return true;
-    break;
-  default:
-    return false;
-  }    
-
-  return false;
-}
-
-unsigned int Mesh_MOAB::get_set_size(Set_ID set_id, 
-					  Entity_kind kind, 
-					  Parallel_type ptype) const {   
+unsigned int Mesh_MOAB::get_set_size(const Set_ID set_id, 
+                                     const Entity_kind kind, 
+                                     const Parallel_type ptype) const {   
   
   const int loc_setid = set_id;
   const void* valarr[1];

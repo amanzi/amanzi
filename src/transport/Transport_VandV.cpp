@@ -8,7 +8,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
-#include "dbc.hh"
+#include "errors.hh"
 
 #include "Transport_PK.hpp"
 
@@ -67,7 +67,9 @@ void Transport_PK::check_divergence_property()
       cout << "    cell  = " << c << endl;
       cout << "    divergence = " << div << endl;
       cout << "    maximal velocity = " << umax << endl;
-      ASSERT(0);
+      Errors::Message msg;
+      msg << "Velocity field is not divergence free " << "\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
   error_avg /= (cmax_owned + 1);
@@ -81,8 +83,48 @@ void Transport_PK::check_divergence_property()
     error_max = global_max;
 #endif
     if (! MyPID) {
-      cout << "Transport_PK: maximal (divergence / flux) = " << error_max << endl;
-      cout << "              average (divergence / flux) = " << error_avg << endl; 
+      cout << "Transport_PK: " << endl; 
+      cout << "    maximal (divergence / flux) = " << error_max << endl;
+      cout << "    average (divergence / flux) = " << error_avg << endl; 
+    }
+  }
+}
+
+
+/* *******************************************************************
+ * Check for completeness of influx boundary conditions.                        
+ ****************************************************************** */
+void Transport_PK::check_influx_bc() const
+{
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  std::vector<int> influx_face(fmax + 1);
+
+  for (int i=0; i<number_components; i++) {
+    influx_face.assign(fmax + 1, 0);    
+
+    for (int n=0; n<bcs.size(); n++) {
+      if (i == bcs_tcc_index[n]) {
+        for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+          int f = bc->first;
+          influx_face[f] = 1; 
+        }
+      }
+    }
+
+    for (int n=0; n<bcs.size(); n++) {
+      if (i == bcs_tcc_index[n]) {
+        for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+          int f = bc->first;
+          if (darcy_flux[f] < 0 && influx_face[f] == 0) {
+            char component[3];
+            std::sprintf(component, "%3d", i);
+
+            Errors::Message msg;
+            msg << "No influx boundary condition has been found for component " << component << ".\n";
+            Exceptions::amanzi_throw(msg);
+          }
+        }
+      }
     }
   }
 }
@@ -103,16 +145,18 @@ void Transport_PK::check_GEDproperty(Epetra_MultiVector& tracer) const
   if (TRANSPORT_AMANZI_VERSION == 1) {
     for (i=0; i<num_components; i++) {
       if (tr_min[i] < 0) {
-        cout << "Transport_PK: concentration violated GED property" << endl; 
+        cout << "Transport_PK: concentration violates GED property" << endl; 
         cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
         cout << "    MyPID = " << MyPID << endl;
         cout << "    component = " << i << endl;
         cout << "    time = " << T_internal << endl;
         cout << "    min/max values = " << tr_min[i] << " " << tr_max[i] << endl;
 
-        ASSERT(0); 
+        Errors::Message msg;
+        msg << "Concentration violates GED property." << "\n";
+        Exceptions::amanzi_throw(msg);
       }
-    }
+    } 
   }
 }
 
@@ -132,17 +176,19 @@ void Transport_PK::check_tracer_bounds(Epetra_MultiVector& tracer,
     double value = tracer[component][c];
     if (value < lower_bound - tol || value > upper_bound + tol) {
       cout << "Transport_PK: tracer violates bounds" << endl; 
-      cout << "  Make an Amanzi ticket or turn off internal transport tests" << endl;
-      cout << "  MyPID = " << MyPID << endl;
-      cout << "  component = " << component << endl;
-      cout << "  internal time = " << T_internal << endl;
-      cout << "    cell = " << c << endl;
-      cout << "    center = " << mesh_->cell_centroid(c) << endl;
-      cout << "    limiter = " << (*limiter_)[c] << endl;
-      cout << "    value (old) = " << (*tcc)[component][c] << endl;
-      cout << "    value (new) = " << value << endl;
-
-      ASSERT(0); 
+      cout << "    Make an Amanzi ticket or turn off internal transport tests" << endl;
+      cout << "    MyPID = " << MyPID << endl;
+      cout << "    component = " << component << endl;
+      cout << "    internal time = " << T_internal << endl;
+      cout << "      cell = " << c << endl;
+      cout << "      center = " << mesh_->cell_centroid(c) << endl;
+      cout << "      limiter = " << (*limiter_)[c] << endl;
+      cout << "      value (old) = " << (*tcc)[component][c] << endl;
+      cout << "      value (new) = " << value << endl;
+ 
+      Errors::Message msg;
+      msg << "Tracer violates bounds." << "\n";
+      Exceptions::amanzi_throw(msg);
     }
   }
 }

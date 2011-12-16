@@ -18,17 +18,14 @@ namespace Amanzi
 class RichardsModelEvaluator : public BDF2::fnBase,
 			       public Teuchos::VerboseObject<RichardsModelEvaluator>
 {
-public:
-
-  // Constructor
+ public:
   RichardsModelEvaluator(RichardsProblem *problem, 
-			 Teuchos::ParameterList &plist, 
-			 const Epetra_Map &map,
-			 Teuchos::RCP<const Flow_State> FS); 
+			                   Teuchos::ParameterList &plist, 
+			                   const Epetra_Map &map,
+			                   Teuchos::RCP<const Flow_State> FS); 
 
   // Initialization
   void initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
-
 
   void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f);
   void precon(const Epetra_Vector& u, Epetra_Vector& Pu);
@@ -37,11 +34,9 @@ public:
 
   bool is_admissible(const Epetra_Vector& up);
 
-private:
-  
+ private:
   RichardsProblem* problem_;
 
-  // The diffusion matrix
   DiffusionMatrix& D;
 
   Epetra_Map map_;
@@ -50,7 +45,6 @@ private:
   ML_Epetra::MultiLevelPreconditioner *MLprec;
 
   //Teuchos::ParameterList ML_plist;
-
   Teuchos::ParameterList& plist_;
   Teuchos::RCP<const Flow_State> FS_;
 

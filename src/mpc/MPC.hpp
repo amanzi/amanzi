@@ -57,7 +57,7 @@ namespace Amanzi
     
     Teuchos::ParameterList mpc_parameter_list;
     
-    double T0, T1;
+    double T0, T1, dT0;
     int end_cycle;
     
     bool flow_enabled, transport_enabled, chemistry_enabled;

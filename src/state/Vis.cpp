@@ -37,10 +37,10 @@ void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 	{
 	  steps = ilist.get<Teuchos::Array<int> >("Steps");  
 	}
-    }  
+    }    
   else
     {
-      Errors::Message m("Amanzi::Vis::read_parameters... Cycle Data sublist does not exist on the Visualization Data list");
+      Errors::Message m("Amanzi::Vis::read_parameters... Cycle Data sublist does not exist in the Visualization Data list");
       Exceptions::amanzi_throw(m);
     }
 }

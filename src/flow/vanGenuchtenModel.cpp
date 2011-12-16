@@ -2,14 +2,21 @@
 #include "math.h"
 #include <iostream>
 
-vanGenuchtenModel::vanGenuchtenModel(int meshblock_, double m_, double alpha_, 
+// vanGenuchtenModel::vanGenuchtenModel(int meshblock_, double m_, double alpha_, 
+// 				     double sr_, double p_atm_) :
+//   m(m_), alpha(alpha_), sr(sr_), p_atm(p_atm_)
+// {
+//   n = 1.0/(1.0-m);
+//   set_mesh_block(meshblock_);
+// }
+
+vanGenuchtenModel::vanGenuchtenModel(std::string region_, double m_, double alpha_, 
 				     double sr_, double p_atm_) :
   m(m_), alpha(alpha_), sr(sr_), p_atm(p_atm_)
 {
   n = 1.0/(1.0-m);
-  set_mesh_block(meshblock_);
+  set_region(region_);
 }
-
  
 double vanGenuchtenModel::k_relative(double p)
 {

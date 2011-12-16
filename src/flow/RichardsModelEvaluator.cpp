@@ -67,7 +67,7 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
   Epetra_Vector dS (problem_->CellMap());
   problem_->dSofP(*uc, dS);
 
-  const Epetra_Vector& phi = FS_->porosity();
+  const Epetra_Vector& phi = FS_->get_porosity();
   double rho;
 
   problem_->GetFluidDensity(rho);
@@ -85,8 +85,8 @@ void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u,
     {
       *out << "fun o.k." <<  std::endl;
     }
-
 }
+
 
 void RichardsModelEvaluator::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {

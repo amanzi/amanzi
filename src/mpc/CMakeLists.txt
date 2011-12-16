@@ -33,6 +33,8 @@ include_directories(${FLOW_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${PLATFORM_INTERFACE_SOURCE_DIR})
+include_directories(${FUNCS_SOURCE_DIR})
+include_directories(${MFUNCS_SOURCE_DIR})
 
 
 

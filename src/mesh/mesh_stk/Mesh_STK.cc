@@ -57,10 +57,8 @@ Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
 {
   Mesh::set_comm(communicator_->GetMpiComm());
   build_maps_();
-
-  // FIXME: this is supposed to be temporary
-  fill_setnameid_map_();
 }
+
 
 Mesh_STK::~Mesh_STK(void)
 {
@@ -398,6 +396,7 @@ Mesh_STK::face_get_cells(const Entity_ID faceid,
 {
   stk::mesh::EntityId global_face_id = 
       this->face_epetra_map(true).GID(faceid);
+  global_face_id += 1;
   
   STK::Entity_Ids cell_ids;
   mesh_->face_to_elements(global_face_id, cell_ids);
@@ -606,77 +605,179 @@ Mesh_STK::node_epetra_map (bool include_ghost) const
   return get_map_(NODE, include_ghost);
 }
 
-// -------------------------------------------------------------
-// Mesh_STK::num_sets
-// -------------------------------------------------------------
-unsigned int 
-Mesh_STK::num_sets (Entity_kind kind) const
-{
-  ASSERT (entity_valid_kind(kind));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
-  return mesh_->num_sets(rank);
-}
 
 // -------------------------------------------------------------
-// Mesh_STK::get_set_ids
-// -------------------------------------------------------------
-void Mesh_STK::get_set_ids (const Entity_kind kind, Set_ID_List *setids) const
-{
-  ASSERT (entity_valid_kind(kind));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
-
-  std::vector<unsigned int> ids;
-  mesh_->get_set_ids (rank, ids);
-  
-  setids->clear();
-  std::copy (ids.begin(), ids.end(), std::back_inserter(*setids));
-}
-
-// -------------------------------------------------------------
-// Mesh_STK::valid_set_id
-// -------------------------------------------------------------
-bool 
-Mesh_STK::valid_set_id (const Set_ID setid, const Entity_kind kind) const
-{
-  ASSERT (entity_valid_kind(kind));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
-
-  return mesh_->valid_id(setid, rank);
-}
-
-// -------------------------------------------------------------
-// Mesh_STK::get_set_size
+// Mesh_STK::get_set_size (by int setid)
 // -------------------------------------------------------------
 unsigned int 
 Mesh_STK::get_set_size (const Set_ID setid, const Entity_kind kind, 
                         const Parallel_type ptype) const
 {
-  ASSERT (entity_valid_ptype(ptype));
-  ASSERT (this->valid_set_id(setid, kind));
-  stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
-  
-  stk::mesh::Part* p(mesh_->get_set(setid, rank));
-  return mesh_->count_entities(*p, ptype);
+  Entity_ID_List setents;
+
+  get_set_entities(setid, kind, ptype, &setents);
+
+  return setents.size();
 }
 
+
 // -------------------------------------------------------------
-// Mesh_STK::get_set_entities
+// Mesh_STK::get_set_size (by char *setname)
+// -------------------------------------------------------------
+unsigned int 
+Mesh_STK::get_set_size (const char *setname, const Entity_kind kind, 
+                        const Parallel_type ptype) const
+{
+  Entity_ID_List setents;
+
+  get_set_entities(setname, kind, ptype, &setents);
+
+  return setents.size();
+}
+
+
+// -------------------------------------------------------------
+// Mesh_STK::get_set_size (by std::string setname)
+// -------------------------------------------------------------
+unsigned int 
+Mesh_STK::get_set_size (const std::string setname, const Entity_kind kind, 
+                        const Parallel_type ptype) const
+{
+  Entity_ID_List setents;
+
+  get_set_entities(setname, kind, ptype, &setents);
+
+  return setents.size();
+}
+
+
+// -------------------------------------------------------------
+// Mesh_STK::get_set_entities  (by int setid)
 // -------------------------------------------------------------
 void 
-Mesh_STK::get_set_entities (const Set_ID setid, 
+Mesh_STK::get_set_entities (const Set_ID setid,
+                            const Entity_kind kind, 
+                            const Parallel_type ptype, 
+                            Entity_ID_List *entids) const
+{  
+  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setid);
+
+  std::cerr << "DEPRECATED METHOD!" << std::endl;
+  std::cerr << "Call get_set_entities with setname instead of setid" << std::endl;
+
+  if (!rgn)
+    {
+      std::cerr << "Mesh_STK::get_set_entities: No region with id" << setid << std::endl;
+      std::cerr << "Cannot construct requested set" << std::endl;
+      throw std::exception();
+    }
+
+  
+  get_set_entities(rgn->name(),kind,ptype,entids);
+}
+
+
+// -------------------------------------------------------------
+// Mesh_STK::get_set_entities  (by char *setname)
+// -------------------------------------------------------------
+void 
+Mesh_STK::get_set_entities (const char *setname,
                             const Entity_kind kind, 
                             const Parallel_type ptype, 
                             Entity_ID_List *entids) const
 {
+  std::string setname1(setname);
+
+  get_set_entities(setname1, kind, ptype, entids);
+}
+
+// -------------------------------------------------------------
+// Mesh_STK::get_set_entities  (by std::string setname)
+// -------------------------------------------------------------
+void 
+Mesh_STK::get_set_entities (const std::string setname,
+                            const Entity_kind kind, 
+                            const Parallel_type ptype, 
+                            Entity_ID_List *entids) const
+{
+
   ASSERT (entity_valid_ptype(ptype));
-  ASSERT (this->valid_set_id(setid, kind));
   stk::mesh::EntityRank rank(entity_map_.kind_to_rank(kind));
 
-  stk::mesh::Part *p(mesh_->get_set(setid, rank));
-  ASSERT(p != NULL);
+  stk::mesh::Part *part;
+
+  int celldim = cell_dimension();
+  int spacedim = space_dimension();
+
+  AmanziGeometry::GeometricModelPtr gm = geometric_model();
+  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
+
+  // Did not find the region
+  
+  if (rgn == NULL) 
+    {
+      std::cerr << "Geometric model has no region named " << setname << std::endl;
+      std::cerr << "Cannot construct set by this name" << std::endl;
+      throw std::exception();
+    }
+  
+  if (rgn->type() == AmanziGeometry::LABELEDSET)
+    {
+
+      // Region is of type labeled set and a mesh set should have been
+      // initialized from the input file
+  
+      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      std::string label = lsrgn->label();
+      std::string entity_type = lsrgn->entity_str();
+      
+      
+      if ((kind == CELL && entity_type != "CELL") ||
+          (kind == FACE && entity_type != "FACE") ||
+          (kind == NODE && entity_type != "NODE"))
+        {
+          std::cerr << "Found labeled set region named " << setname << " but it"<< std::endl;
+          std::cerr << "contains entities of type " << entity_type << ", not the requested type" << std::endl;
+          
+          throw std::exception();
+        } 
+      
+      std::stringstream internal_name;
+
+      if (kind == CELL)
+        internal_name << "element block " << label;
+      else if (kind == FACE)
+        internal_name << "side set " << label;
+      else if (kind == NODE)
+        internal_name << "node set " << label;
+
+ 
+      part = mesh_->get_set(internal_name.str(), rank);
+
+      if (part == NULL)
+        {
+          std::cerr << "Mesh set " << setname << " should have been read in" << std::endl;
+          std::cerr << "as set " << label << " from the mesh file. Its absence" << std::endl;
+          std::cerr << "indicates an error in the input file or in the mesh file" << std::endl;
+          
+          throw std::exception();
+        }
+    }
+  else
+    {
+      part = mesh_->get_set(setname, rank);
+    }
+
+
+  // Until STKmesh allows modification of meta_data_ we cannot do anything
+  // if the part is not found. It has to have been created during the 
+  // initialization phase
+
+  ASSERT(part != NULL);
 
   STK::Entity_vector entities;
-  mesh_->get_entities(*p, ptype, entities);
+  mesh_->get_entities(*part, ptype, entities);
 
   entids->clear();
   for (STK::Entity_vector::iterator e = entities.begin(); 
@@ -688,8 +789,6 @@ Mesh_STK::get_set_entities (const Set_ID setid,
   }
 }
     
-
-
 
 
 // -------------------------------------------------------------
@@ -844,25 +943,6 @@ Mesh_STK::redistribute(const Teuchos::ParameterList &paramlist)
   partitioner.partition();
   Teuchos::RCP< Epetra_Map > newcmap(partitioner.createNewMap()); // 0-based
   this->redistribute(*newcmap);
-}
-
-// -------------------------------------------------------------
-// Mesh_STK::fill_setnameid_map_
-// -------------------------------------------------------------
-void
-Mesh_STK::fill_setnameid_map_(void)
-{
-  std::vector<unsigned int> csetids;
-  const int cell_rank = entity_map_.kind_to_rank (CELL);
-  mesh_->get_set_ids(cell_rank, csetids);
-
-  tmp_setnameid_map.clear();
-  for (std::vector<unsigned int>::const_iterator i = csetids.begin();
-       i != csetids.end(); ++i) {
-    stk::mesh::Part *p = mesh_->get_set(*i, cell_rank);
-    std::string s(p->name());
-    tmp_setnameid_map[s] = *i;
-  }
 }
 
 } // namespace AmanziMesh

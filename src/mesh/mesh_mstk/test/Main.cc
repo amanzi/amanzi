@@ -5,7 +5,10 @@
 int main(int argc, char *argv[])
 {
 
-  return UnitTest::RunAllTests ();
+  MPI_Init(&argc,&argv);
 
+  int ok = UnitTest::RunAllTests ();
+  
+  MPI_Finalize();
 }
 
