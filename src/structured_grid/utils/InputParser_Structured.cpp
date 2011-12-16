@@ -187,17 +187,20 @@ namespace Amanzi {
 	  prob_list.set("cfl",0.95);
 	  prob_list.set("do_simple",2);
 	}
+      else if (!flowmode.compare("transient two phase flow"))
+	{
+	  prob_list.set("model_name","two-phase");
+	  prob_list.set("cfl",0.75);
+	}
 
       std::string chemmode = eclist.get<std::string>("Chemistry Mode");
       if (!chemmode.compare("none"))
-	prob_list.set("do_chem",-1);    
+	prob_list.set("do_chem",-1);
 
-      const ParameterList& mlist = parameter_list.sublist("Mesh").sublist("Structured");
-      
-      int nlevel = 0;
-      if (mlist.isParameter("Maximum Level"))
-	nlevel = mlist.get<int>("Maximum Level");
-      amr_list.set("max_level",nlevel);
+      //AMR
+      const ParameterList& stlist = parameter_list.sublist("Mesh").sublist("Structured");
+      amr_list.set<Array<int> >("n_cell",stlist.get<Array<int> >("Number of Cells"));
+      int nlevel = amr_list.get<int>("max_level",0);
       if (nlevel == 0) nlevel = 1;
       Array<int> n_buf(nlevel,2);
       if (!amr_list.isParameter("ref_ratio"))
@@ -312,7 +315,7 @@ namespace Amanzi {
 	    if (rentry.isList()) {
 	      const ParameterList& rsslist = rslist.sublist(rlabel);
 	      if (rlabel=="Porosity: Uniform"){
-		rsublist.setEntry("porosity",rsslist.getEntry("Porosity"));
+		rsublist.setEntry("porosity",rsslist.getEntry("Value"));
 		rsublist.set("porosity_dist","uniform");
 	      }
 	      else if (rlabel=="Intrinsic Permeability: Anisotropic Uniform") {
@@ -549,9 +552,22 @@ namespace Amanzi {
 	    const ParameterList& rsslist = rslist.sublist(rlabel);
 	    if (rlabel=="BC: Flux"){
 	      // don't do time-dependent flux
-	      Array<double> flux = rsslist.get<Array<double> >("Extensive Flux");
-	      if (rsslist.isParameter("Material Type at Boundary"))
-		rsublist.set("rock",rsslist.get<std::string>("Material Type at Boundary"));
+	      Array<double> flux;
+	      if (rsslist.isParameter("Intensive Volumetric Flux"))
+		flux = rsslist.get<Array<double> >("Intensive Volumetric Flux");
+	      else if (rsslist.isParameter("Intensive Mass Flux"))
+		{
+		  flux = rsslist.get<Array<double> >("Intensive Mass Flux");
+		  for (int i=0;i<flux.size();i++)
+		    flux[i] /= 1.e3;
+		}
+	      if (!rsslist.isParameter("Material Type at Boundary"))
+		{
+		  // this is temporary.  It will be removed once the structured code is updated.
+		  const ParameterList& mat_list = parameter_list.sublist("Material Properties"); 
+		  std::string first_material = mat_list.name(mat_list.begin());
+		  rsublist.set("rock",first_material);
+		}
 		
 	      rsublist.set("inflow",-flux[0]);
 	      rsublist.set("type","zero_total_velocity");
@@ -869,8 +885,8 @@ namespace Amanzi {
       for (ParameterList::ConstIterator i=clist.begin(); i!=clist.end(); ++i) {
 	std::string label = clist.name(i);
 	const ParameterList& rslist = clist.sublist(label);
-	Array<int> tmp = rslist.get<Array<int> >("Start_Stop_Frequency");
-	cycle_map[label] = tmp[2];
+	Array<int> tmp = rslist.get<Array<int> >("Start_Period_Stop");
+	cycle_map[label] = tmp[1];
       }
 
       // vis data
@@ -893,13 +909,13 @@ namespace Amanzi {
 	    Array<double> tmp = rslist.get<Array<double> >("Values");
 	    time_map[label] = tmp;
 	}
-	else if (rslist.isParameter("Start_Stop_Frequency")) {
-	  Array<double> tmp = rslist.get<Array<double> >("Start_Stop_Frequency");
+	else if (rslist.isParameter("Start_Period_Stop")) {
+	  Array<double> tmp = rslist.get<Array<double> >("Start_Period_Stop");
 	  Array<double> timeseries;
 	  timeseries.push_back(0.e0);
 	  double timecount = 0.0;
 	  while (timecount < simulation_time) {
-	    timecount += tmp[2];
+	    timecount += tmp[1];
 	    timeseries.push_back(timecount);
 	  }
 	  time_map[label] = timeseries;
@@ -941,7 +957,7 @@ namespace Amanzi {
 	  sublist.setEntry("region",rslist.getEntry("Region"));
 	  sublist.set("times",time_map[rslist.get<std::string>("Time Macro")]);
 	  
-	  Array<std::string > variables = rslist.get<Array<std::string> >("Variables");
+	  Array<std::string > variables = rslist.get<Array<std::string> >("Variable Macro");
 	  tridata tri = var_map[variables[0]];
 	  if (tri.solute.empty()) {
 	    sublist.set("var_type","comp");

@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 		    out << labellist[i] << ", " 
 		        << ind_obs_list.get<std::string>("Region") << ", "
 			<< ind_obs_list.get<std::string>("Functional") << ", "
-			<< ind_obs_list.get<Teuchos::Array<std::string> >("Variables") << ", "
+			<< ind_obs_list.get<Teuchos::Array<std::string> >("Variable Macro") << ", "
 			<< output_observations[labellist[i]][j].time << ", "
 			<< output_observations[labellist[i]][j].value << std::endl;
 		}
