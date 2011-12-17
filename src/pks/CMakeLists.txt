@@ -5,6 +5,7 @@
 #    PK class
 #
 
+add_subdirectory(mpc)
 add_subdirectory(flow)
 
 # ATS include directories

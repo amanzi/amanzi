@@ -35,6 +35,7 @@ public:
   // returns the Vector (if this.name==subname) or sub-vector (if subname in
   // this) or throws exception
   virtual int SubVector(std::string subname, Teuchos::RCP<Vector>& subvec) = 0;
+  virtual int SubVector(std::string subname, Teuchos::RCP<const Vector>& subvec) const = 0;
 
 
 

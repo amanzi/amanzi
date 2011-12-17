@@ -7,7 +7,7 @@ add_subdirectory(state)
 add_subdirectory(pks)
 
 # MPC
-add_subdirectory(mpc)
+# add_subdirectory(mpc)
 
 # main (from $AMANZI_HOME/src/common/standalone_simulation_coordinator
 add_subdirectory(executables)

@@ -141,4 +141,21 @@ int TreeVector::SubVector(std::string subname, Teuchos::RCP<Vector> &vec) {
   }
   return 1;
 };
+
+int TreeVector::SubVector(std::string subname,
+                          Teuchos::RCP<const Vector> &vec) const {
+  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    if (subname == (*subvec)->Name()) {
+      vec = *subvec;
+      return 0;
+    }
+  }
+  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+       subvec != subvecs_.end(); ++subvec) {
+    int ierr = (*subvec)->SubVector(subname, vec);
+    if (!ierr) return ierr;
+  }
+  return 1;
+};
 } // namespace
