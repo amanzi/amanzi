@@ -47,6 +47,7 @@ public:
   // returns the Vector (if this.name==subname) or sub-vector (if subname in
   // this)
   int SubVector(std::string subname, Teuchos::RCP<Vector>& subvec);
+  int SubVector(std::string subname, Teuchos::RCP<const Vector>& subvec) const;
 
   int Dot(const Vector& other, double* result) const;
 
