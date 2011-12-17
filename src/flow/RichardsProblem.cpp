@@ -32,11 +32,11 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   
   Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
   Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  Teuchos::ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
+  Teuchos::ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
 
-  upwind_k_rel_ = richards_list.get<bool>("Upwind relative permeability", true);
+  upwind_k_rel_ = rp_list.get<bool>("Upwind relative permeability", true);
   
-  p_atm_   = richards_list.get<double>("Atmospheric pressure");
+  p_atm_   = rp_list.get<double>("Atmospheric pressure");
   rho_ = state_list.get<double>("Constant water density");
   mu_ = state_list.get<double>("Constant viscosity");
   gravity_ = state_list.get<double>("Gravity z");
@@ -45,7 +45,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   gvec_[2] = -gravity_;
   
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(richards_list.sublist("boundary conditions",true));
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(rp_list.sublist("boundary conditions",true));
   FlowBCFactory bc_factory(mesh, bc_list);
   bc_press_ = bc_factory.CreatePressure();
   bc_head_  = bc_factory.CreateStaticHead(p_atm_, rho_, gravity_);
@@ -56,18 +56,18 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh));
 
   // Create the preconditioner (structure only, no values)
-  Teuchos::ParameterList diffprecon_plist = richards_list.sublist("Diffusion Preconditioner");
-  precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
+  Teuchos::ParameterList diffprecon_list = rp_list.sublist("Diffusion Preconditioner");
+  precon_ = new DiffusionPrecon(D_, diffprecon_list, Map());
   
   // set permeability
   k_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
   
-  if (!richards_list.isSublist("Water retention models")) {
+  if (!rp_list.isSublist("Water retention models")) {
     Errors::Message m("There is no Water retention models list");
     Exceptions::amanzi_throw(m);
   }
-  Teuchos::ParameterList &vGsl = richards_list.sublist("Water retention models");
+  Teuchos::ParameterList &vGsl = rp_list.sublist("Water retention models");
 
   // first figure out how many entries there are
   int nblocks = 0;
@@ -75,10 +75,8 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
     if (vGsl.isSublist(vGsl.name(i))) {
       nblocks++;
     } else {
-      // currently we only support van Genuchten, if a user
-      // specifies something else, throw a meaningful error...
-      Errors::Message m("RichardsProblem: the Water retention models sublist contains an entry that is not a sublist!");
-      Exceptions::amanzi_throw(m);
+      Errors::Message msg("Water retention models sublist contains an entry that is not a sublist.");
+      Exceptions::amanzi_throw(msg);
     }
   }
 
@@ -245,6 +243,7 @@ void RichardsProblem::ComputeRelPerm(const Epetra_Vector &P, Epetra_Vector &k_re
 {
   ASSERT(P.Map().SameAs(CellMap(true)));
   ASSERT(k_rel.Map().SameAs(CellMap(true)));
+
   for (int mb=0; mb<WRM.size(); mb++) {
     // get mesh block cells
     std::string region = WRM[mb]->region();
@@ -424,16 +423,15 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
     Fhead[bc->first] = Pface[bc->first] - bc->second;
     Pface[bc->first] = bc->second;
   }
-  
-  // GENERIC COMPUTATION OF THE FUNCTIONAL /////////////////////////////////////
 
+  // Computate the functional  
   Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
   if (upwind_k_rel_) {
     ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] / mu_);
+    for (int c=0; c<K.MyLength(); ++c) K[c] = rho_ * k_[c] / mu_;
   } else {
     ComputeRelPerm(Pcell, K);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] * K[j] / mu_);
+    for (int c=0; c<K.MyLength(); ++c) K[c] = rho_ * k_[c] * K[c] / mu_;
   }
 
   // Create cell and face result vectors that include ghosts.
@@ -451,7 +449,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
     if (upwind_k_rel_) {
-      for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
+      for (int k=0; k<6; ++k) aux3[k] = K_upwind[cface[k]];
       MD[j].diff_op(K[j], aux3, Pcell[j], aux1, Fcell[j], aux2);
       // Gravity contribution
       MD[j].GravityFlux(gvec_, gflux);
@@ -483,7 +481,7 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   // Copy owned part of result into the output vectors.
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
   for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
-    
+
   delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
 }
 

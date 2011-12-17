@@ -34,7 +34,7 @@ TEST(FLOW_1D_RICHARDS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: 1D Richards, 5-layer model" << endl;
+cout << "Test: 1D Richards, 2-layer model" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -49,7 +49,7 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-68.0, 1.0,1.0,0.0, 1, 1, 136, comm, gm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 100, comm, gm)); 
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -79,13 +79,15 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   Epetra_Vector *ucells = problem.CreateCellView(u);
   for (int c=0; c<ucells->MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    (*ucells)[c] = 101325.0 - 9800 * (xc[2] + 62.0);
+    //(*ucells)[c] = 101325.0 - 9800 * (xc[2] + 62.0);
+    (*ucells)[c] = xc[2] * (xc[2] + 10.0);
   }
 
   Epetra_Vector *ufaces = problem.CreateFaceView(u);
   for (int f=0; f<ufaces->MyLength(); f++) {
     const Point& xf = mesh->face_centroid(f);
     (*ufaces)[f] = 101325.0 - 9800 * (xf[2] + 62.0);
+    (*ufaces)[f] = xf[2] * (xf[2] + 10.0);
   }
   
   // initialize the state
@@ -94,7 +96,7 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
 
   // set intial and final time
   double t0 = 0.0;
-  double t1 = 1000.0;
+  double t1 = 100.0;
 
   // compute the initial udot
   Epetra_Vector udot(problem.Map());
@@ -135,7 +137,7 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
 
     tlast=TS.most_recent_time();
 
-    if ( i%5 == 1 ) { 
+    if ( i%50 == 1 ) { 
       Amanzi::CGNS::open_data_file(cgns_filename);
       Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
       Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
@@ -147,6 +149,7 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
   Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
   Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
+  for (int k=0; k<100; k++) std::cout << k << " " << u[k] << std::endl;
  
   delete comm;
 }

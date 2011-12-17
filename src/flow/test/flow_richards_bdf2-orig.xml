@@ -11,51 +11,69 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-10.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-68.0}"/>
         <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Material 1 Region">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-10.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-5.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-68.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-48.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Material 2 Region">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-5.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-48.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-45.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Material 3 Region">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-45.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-39.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Material 4 Region">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-39.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-16.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Material 5 Region">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-16.0}"/>
         <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.5,-5.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.0,0.5,-1.0}"/>
         <Parameter name="Direction" type="Array double" value="{-1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{1.0,0.5,-5.0}"/>
+        <Parameter name="Location" type="Array double" value="{1.0,0.5,-1.0}"/>
         <Parameter name="Direction" type="Array double" value="{1.0,0.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Front side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,0.0,-5.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.5,0.0,-1.0}"/>
         <Parameter name="Direction" type="Array double" value="{0.0,-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Back side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,1.0,-5.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.5,1.0,-1.0}"/>
         <Parameter name="Direction" type="Array double" value="{0.0,1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,0.5,-10.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.5,0.5,-68.0}"/>
         <Parameter name="Direction" type="Array double" value="{0.0,0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
@@ -71,7 +89,7 @@
   input deks for other flow tests -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
-      <Parameter name="Atmospheric pressure" type="double" value="1"/>
+      <Parameter name="Atmospheric pressure" type="double" value="101325"/>
       <ParameterList name="Diffusion Preconditioner">
         <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="0"/>
@@ -102,7 +120,7 @@
         <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
         <Parameter name="NKA max vectors" type="int" value="5"/>
         <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-        <Parameter name="Nonlinear solver tolerance" type="double" value="0.0001"/>
+        <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
       </ParameterList>
 
       <Parameter name="Upwind relative permeability" type="bool" value="true"/>
@@ -111,23 +129,43 @@
         <ParameterList name="Water Retention Model for Material 1 Region">
           <Parameter name="Region" type="string" value="Material 1 Region"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
-          <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0"/>
+          <Parameter name="van Genuchten alpha" type="double" value="6.33e-5"/>
+          <Parameter name="van Genuchten m" type="double" value="0.392"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0609"/>
         </ParameterList>
         <ParameterList name="Water Retention Model for Material 2 Region">
           <Parameter name="Region" type="string" value="Material 2 Region"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
-          <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0"/>
+          <Parameter name="van Genuchten alpha" type="double" value="2.961e-5"/>
+          <Parameter name="van Genuchten m" type="double" value="0.386"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.213"/>
+        </ParameterList>
+        <ParameterList name="Water Retention Model for Material 3 Region">
+          <Parameter name="Region" type="string" value="Material 3 Region"/>
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="van Genuchten alpha" type="double" value="6.84e-5"/>
+          <Parameter name="van Genuchten m" type="double" value="0.456"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.2595"/>
+        </ParameterList>
+        <ParameterList name="Water Retention Model for Material 4 Region">
+          <Parameter name="Region" type="string" value="Material 4 Region"/>
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="van Genuchten alpha" type="double" value="9.39e-5"/>
+          <Parameter name="van Genuchten m" type="double" value="0.469"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0837"/>
+        </ParameterList>
+        <ParameterList name="Water Retention Model for Material 5 Region">
+          <Parameter name="Region" type="string" value="Material 5 Region"/>
+          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1.008e-3"/>
+          <Parameter name="van Genuchten m" type="double" value="0.658"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0774"/>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array string" value="{Left side, Right side, Front side, Back side}"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array string" value="{constant}"/>
@@ -135,6 +173,7 @@
                 <Parameter name="y values" type="Array double" value="{0.0, 0.0}"/>
               </ParameterList>
             </ParameterList>
+            <Parameter name="regions" type="Array string" value="{Left side, Right side, Front side, Back side}"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="pressure">
@@ -142,7 +181,7 @@
             <Parameter name="regions" type="Array string" value="{Top side}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+                <Parameter name="value" type="double" value="-506275.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -150,7 +189,7 @@
             <Parameter name="regions" type="Array string" value="{Bottom side}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
+                <Parameter name="value" type="double" value="160125.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -163,20 +202,20 @@
   input deks for other flow tests -->
   <ParameterList name="State">
     <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
-    <Parameter name="Constant viscosity" type="double" value="1.0"/>
-    <Parameter name="Constant water density" type="double" value="1.0"/>
+    <Parameter name="Constant viscosity" type="double" value="0.00089"/>
+    <Parameter name="Constant water density" type="double" value="998.32"/>
     <Parameter name="Constant water saturation" type="double" value="1"/>
     <Parameter name="Gravity x" type="double" value="0"/>
     <Parameter name="Gravity y" type="double" value="0"/>
-    <Parameter name="Gravity z" type="double" value="-1.0"/>
+    <Parameter name="Gravity z" type="double" value="-9.81"/>
 
     <Parameter name="Number of component concentrations" type="int" value="1"/>
-    <Parameter name="Number of mesh blocks" type="int" value="2"/>
+    <Parameter name="Number of mesh blocks" type="int" value="5"/>
 
     <ParameterList name="Mesh block 1">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="2.0"/>
-      <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant permeability" type="double" value="7.33e-14"/>
+      <Parameter name="Constant porosity" type="double" value="0.1643"/>
       <Parameter name="Region" type="string" value="Material 1 Region"/>
       <ParameterList name="linear pressure">
         <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
@@ -189,9 +228,51 @@
     </ParameterList>
     <ParameterList name="Mesh block 2">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="0.5"/>
-      <Parameter name="Constant porosity" type="double" value="0.2"/>
+      <Parameter name="Constant permeability" type="double" value="5.27e-14"/>
+      <Parameter name="Constant porosity" type="double" value="0.2625"/>
       <Parameter name="Region" type="string" value="Material 2 Region"/>
+      <ParameterList name="linear pressure">
+        <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="reference value" type="double" value="0.0"/>
+      </ParameterList>
+      <ParameterList name="uniform saturation">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Mesh block 3">
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+      <Parameter name="Constant permeability" type="double" value="1.37e-14"/>
+      <Parameter name="Constant porosity" type="double" value="0.4223"/>
+      <Parameter name="Region" type="string" value="Material 3 Region"/>
+      <ParameterList name="linear pressure">
+        <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="reference value" type="double" value="0.0"/>
+      </ParameterList>
+      <ParameterList name="uniform saturation">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Mesh block 4">
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+      <Parameter name="Constant permeability" type="double" value="1.23e-13"/>
+      <Parameter name="Constant porosity" type="double" value="0.3586"/>
+      <Parameter name="Region" type="string" value="Material 4 Region"/>
+      <ParameterList name="linear pressure">
+        <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="reference value" type="double" value="0.0"/>
+      </ParameterList>
+      <ParameterList name="uniform saturation">
+        <Parameter name="value" type="double" value="1.0"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Mesh block 5">
+      <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
+      <Parameter name="Constant permeability" type="double" value="1.24e-12"/>
+      <Parameter name="Constant porosity" type="double" value="0.2586"/>
+      <Parameter name="Region" type="string" value="Material 5 Region"/>
       <ParameterList name="linear pressure">
         <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>

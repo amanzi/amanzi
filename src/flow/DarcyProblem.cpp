@@ -31,7 +31,9 @@ DarcyProblem::DarcyProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   rho_ = list.get<double>("fluid density");
   mu_ = list.get<double>("fluid viscosity");
   gravity_ = list.get<double>("gravity");
-  g_[0] = 0.0; g_[1] = 0.0; g_[2] = -gravity_;
+  g_[0] = 0.0; 
+  g_[1] = 0.0; 
+  g_[2] = -gravity_;
   
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(list.sublist("boundary conditions",true));
