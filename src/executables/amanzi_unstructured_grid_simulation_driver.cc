@@ -20,7 +20,7 @@
 
 #include "MeshFactory.hh"
 #include "State.hh"
-#include "MPC.hh"
+#include "Coordinator.hh"
 
 #include "errors.hh"
 #include "exceptions.hh"
@@ -41,44 +41,37 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
-#else  
+#else
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  int rank, ierr, aerr;
+  int rank;
   MPI_Comm_rank(mpi_comm,&rank);
 
-  bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
-  
   ParameterList params_copy;
-  
-  if (! native)
-    {
+  bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
+  if (! native) {
       params_copy = Amanzi::AmanziInput::translate_state_sublist(input_parameter_list);
-    }
-  else
-    {
-      params_copy = input_parameter_list;
-    }
+  } else {
+    params_copy = input_parameter_list;
+  }
 
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
-    {  
-      // print parameter list
-      *out << "======================> dumping parameter list <======================" << std::endl;
-      Teuchos::writeParameterListToXmlOStream(params_copy, *out);
-      *out << "======================> done dumping parameter list. <================"<<std::endl;
-    }
-
-  using namespace std;
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+    // print parameter list
+    *out << "======================> dumping parameter list <======================" <<
+      std::endl;
+    Teuchos::writeParameterListToXmlOStream(params_copy, *out);
+    *out << "======================> done dumping parameter list. <================" <<
+      std::endl;
+  }
 
   Amanzi::AmanziMesh::MeshFactory factory(*comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
-  // get the Mesh sublist
-
-  ierr = 0;
+  // select the mesh framework
   Teuchos::ParameterList mesh_parameter_list = params_copy.sublist("Mesh");
 
+  int ierr = 0;
   try {
     std::string framework = mesh_parameter_list.get<string>("Framework");
     Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
@@ -105,12 +98,13 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
     ierr++;
   }
 
+  int aerr = 0;
   comm->SumAll(&ierr, &aerr, 1);
   if (aerr > 0) {
     return Amanzi::Simulator::FAIL;
   }
 
-
+  // make mesh
   std::string file("");
   try {
     file = mesh_parameter_list.get<string>("Read");
@@ -119,9 +113,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   }
 
   if (!file.empty()) {
-
-                                // make a mesh from a mesh file
-
+    // make mesh from file
     ierr = 0;
     try {
       mesh = factory.create(file);
@@ -129,25 +121,21 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
       std::cerr << rank << ": error: " << e.what() << std::endl;
       ierr++;
     }
-  
+
     comm->SumAll(&ierr, &aerr, 1);
     if (aerr > 0) {
       return Amanzi::Simulator::FAIL;
     }
-  
   } else {
-
-                                // generate a hex mesh
-
+    // generate mesh from parameter list
     ierr = 0;
-
     try {
       mesh = factory(mesh_parameter_list.sublist("Generate"));
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
       ierr++;
     }
-  
+
     comm->SumAll(&ierr, &aerr, 1);
     if (aerr > 0) {
       return Amanzi::Simulator::FAIL;
@@ -157,14 +145,14 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   ASSERT(!mesh.is_null());
 
-  // create the MPC
-  Amanzi::MPC mpc(params_copy, mesh, comm, output_observations);
-  
-  mpc.cycle_driver();
-  
+  // create the top level Coordinator
+  Amanzi::Coordinator coordinator(params_copy, mesh, comm, output_observations);
+
+  // run the simulation
+  coordinator.cycle_driver();
+
   mesh.reset();
   delete comm;
-      
   return Amanzi::Simulator::SUCCESS;
 }
 

@@ -18,7 +18,7 @@
 namespace Amanzi
 {
 
-class MPC : public Teuchos::VerboseObject<MPC>, public PK {
+class MPC : public PK {
 
 public:
   MPC(Teuchos::ParameterList& mpc_plist,

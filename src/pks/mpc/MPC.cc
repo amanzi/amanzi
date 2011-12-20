@@ -23,7 +23,18 @@ MPC::MPC(Teuchos::ParameterList &mpc_plist,
          Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) :
     mpc_plist_(mpc_plist), S_(S) {
 
-  set_name(mpc_plist.get<std::string>("Name"));
+  // do stuff for the VerboseObject
+  // -- set the line prefix
+  this->setLinePrefix("Amanzi::MPC         ");
+  // -- make sure that the line prefix is printed
+  this->getOStream()->setShowLinePrefix(true);
+  // -- Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&mpc_plist_,this);
+
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   Teuchos::ParameterList pks_list = mpc_plist.sublist("PKs");
   for (Teuchos::ParameterList::ConstIterator i = pks_list.begin();
@@ -33,10 +44,18 @@ MPC::MPC(Teuchos::ParameterList &mpc_plist,
     const Teuchos::ParameterEntry  &entry_i = pks_list.entry(i);
 
     if (entry_i.isList()) {
-      Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(name()));
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+        *out << "MPC creating TreeVec with name: " << name_i << std::endl;
+      }
+      Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector(name_i));
       soln->PushBack(pk_soln);
-      sub_pks_.push_back(pk_factory_.create_pk(pks_list.sublist(name_i),
-                                               S, pk_soln));
+
+      if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+        *out << "MPC creating PK with name: " << name_i << std::endl;
+      }
+      Teuchos::RCP<PK> pk = pk_factory_.create_pk(pks_list.sublist(name_i), S, pk_soln);
+      pk->set_name(name_i);
+      sub_pks_.push_back(pk);
     }
   }
 };
