@@ -12,7 +12,7 @@
 //#endif
 
 #include "Mesh.hh"
-//#include "Mesh_maps_base.hh"
+#include "Element_types.hh"
 #include "errors.hh"
 #include "Epetra_Vector.h"
 #include "Teuchos_XMLObject.hpp"
@@ -155,6 +155,11 @@ class HDF5_MPI {
   int NumElems_;
   int Iteration_;
 
+  // Mesh information
+  int conn_;
+  AmanziMesh::Cell_type ctype_;
+  std::string cname_;
+  
   static std::string xdmfHeader_;
 };
   

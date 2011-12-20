@@ -12,9 +12,9 @@ TEST(HDF5) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  std::string hdf5_meshfile  = "new_mesh";
-  std::string hdf5_datafile1 = "new_data";
-  std::string hdf5_datafile2 = "new_restart";
+  std::string hdf5_meshfile  = "new_mesh.h5";
+  std::string hdf5_datafile1 = "new_data.h5";
+  std::string hdf5_datafile2 = "new_restart.h5";
   
   Amanzi::AmanziMesh::Mesh_simple Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1, comm);
   /* PREPING FOR MESHFACTORY - CURRENTLY ONLY AVAILABLE ON MESH_CHANGES BRANCH
