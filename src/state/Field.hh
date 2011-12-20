@@ -43,8 +43,6 @@ public:
   void set_io_vis(bool io_vis) { io_vis_ = io_vis; }
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
-  void set_data(std::string pk_name, Teuchos::RCP<const Epetra_MultiVector>&);
-  void set_data(std::string pk_name, Teuchos::RCP<const Epetra_Vector>&);
   void set_data(std::string pk_name, const Epetra_Vector&);
   void set_data(std::string pk_name, const Epetra_MultiVector&);
   void set_data(std::string pk_name, const double* u);

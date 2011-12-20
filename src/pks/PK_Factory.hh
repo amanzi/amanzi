@@ -14,7 +14,8 @@ namespace Amanzi
   class PK_Factory {
 
   public:
-    Teuchos::RCP<PK> create_pk(Teuchos::ParameterList, Teuchos::RCP<State>&);
+    Teuchos::RCP<PK> create_pk(Teuchos::ParameterList plist, Teuchos::RCP<State>& S,
+            Teuchos::RCP<TreeVector>& soln);
   };
 }
 

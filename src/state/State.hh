@@ -71,10 +71,6 @@ public:
 
   // modify methods
   void set_field(std::string fieldname, std::string pk_name,
-                 Teuchos::RCP<const Epetra_MultiVector>&);
-  void set_field(std::string fieldname, std::string pk_name,
-                 Teuchos::RCP<const Epetra_Vector>&);
-  void set_field(std::string fieldname, std::string pk_name,
                  const Epetra_Vector&);
   void set_field(std::string fieldname, std::string pk_name,
                  const Epetra_MultiVector&);

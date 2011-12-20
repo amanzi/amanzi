@@ -27,15 +27,12 @@ public:
   virtual void initialize(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) = 0;
 
   // transfer operators
-  virtual void state_to_solution(Teuchos::RCP<const State>& S,
-                                 Teuchos::RCP<TreeVector>& soln) = 0;
-  virtual void state_to_solution(Teuchos::RCP<const State>& S,
-                                 Teuchos::RCP<TreeVector>& soln,
+  virtual void state_to_solution(const State& S, Teuchos::RCP<TreeVector>& soln) = 0;
+  virtual void state_to_solution(const State& S, Teuchos::RCP<TreeVector>& soln,
                                  Teuchos::RCP<TreeVector>& soln_dot) = 0;
-  virtual void solution_to_state(Teuchos::RCP<const TreeVector>& soln,
+  virtual void solution_to_state(const TreeVector& soln,
                                  Teuchos::RCP<State>& S) = 0;
-  virtual void solution_to_state(Teuchos::RCP<const TreeVector>& soln,
-                                 Teuchos::RCP<const TreeVector>& soln_dot,
+  virtual void solution_to_state(const TreeVector& soln, const TreeVector& soln_dot,
                                  Teuchos::RCP<State>& S) = 0;
 
   // Choose a time step compatible with physics.
@@ -55,9 +52,9 @@ public:
   std::string name() { return name_; }
   void set_name(std::string name) { name_ = name; }
 
-private: 
+private:
   std::string name_;
-  
+
 };
 } // namespace
 

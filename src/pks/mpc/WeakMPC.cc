@@ -20,12 +20,11 @@
 namespace Amanzi {
 
 WeakMPC::WeakMPC(Teuchos::ParameterList& mpc_plist,
-                 Teuchos::RCP<State>& S) :
-    mpc_plist_(mpc_plist), S_(S) {
-  MPC::MPC(Teuchos::ParameterList& mpc_plist, Teuchos::RCP<State>& S) {
+                 Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) :
+    MPC::MPC(mpc_plist, S, soln) {
 };
 
-bool WeakMPC::advance(double dt, Teuchos::RCP<State>& S0,
+bool WeakMPC::advance(double dt, Teuchos::RCP<const State>& S0,
              Teuchos::RCP<State>& S1, Teuchos::RCP<TreeVector>& solution) {
   bool fail = false;
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
