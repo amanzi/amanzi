@@ -101,7 +101,7 @@ if (BUILD_TESTS)
  
     # Test: flow-richards
     if (ENABLE_CGNS)
-        set(amanzi_libs geometry mesh mesh_audit simple_mesh state flow whetstone solvers output hdf5)
+	set(amanzi_libs geometry mesh mesh_audit simple_mesh state flow whetstone solvers output ${HDF5_LIBRARIES})
 
         add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
         target_link_libraries(flow_richards_bdf2 ${amanzi_libs} ${UnitTest_LIBRARIES})
