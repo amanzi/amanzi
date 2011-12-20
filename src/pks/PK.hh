@@ -45,12 +45,6 @@ public:
   virtual bool advance(double dt, Teuchos::RCP<const State>& S0,
           Teuchos::RCP<State>& S1, Teuchos::RCP<TreeVector>& solution) = 0;
 
-  // compute the residual function, for use as a sub-pk 
-  // NOTE: compute_f gets called by the BDF/integration code, which means that
-  // it must accept vectors and dynamic_cast them to TreeVectors.
-  virtual void compute_f(const double t, const Vector& soln,
-                         const Vector& soln_dot, Vector& f) = 0;
-
   // Commit any secondary (dependent) variables.
   virtual void commit_state(double dt, Teuchos::RCP<State>& S) = 0;
 

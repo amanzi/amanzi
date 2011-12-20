@@ -47,9 +47,6 @@ public:
   virtual bool advance(double dt, Teuchos::RCP<State>& S0,
              Teuchos::RCP<State>& S1, Teuchos::RCP<TreeVector>& solution) = 0;
 
-  virtual void compute_f(const double t, const Vector& u, const Vector& udot,
-                         Vector& f);
-
   virtual void commit_state(double dt, Teuchos::RCP<State> &S);
 
   private:
