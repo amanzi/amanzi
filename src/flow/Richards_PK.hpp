@@ -1,23 +1,70 @@
-#ifndef __RICHARDSPROBLEM_H__
-#define __RICHARDSPROBLEM_H__
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Neil Carlson (version 1) 
+         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+#ifndef __RICHARDS_PK_HPP__
+#define __RICHARDS_PK_HPP__
 
 #include "Epetra_Vector.h"
-#include "Epetra_Import.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Mesh.hh"
 
-#include "DiffusionMatrix.hpp"
-#include "DiffusionPrecon.hpp"
-#include "MimeticHexLocal.hpp"
-#include "MimeticHex.hpp"
-#include "WaterRetentionBaseModel.hpp"
 #include "Flow_State.hpp"
+#include "Flow_PK.hpp"
+#include "Interface_BDF2.hpp"
 
 namespace Amanzi {
+namespace AmanziFlow {
 
-class BoundaryFunction; // forward declaration
+class Richards_PK : public Flow_PK {
+ public:
+  Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
+  ~Richards_PK ();
 
+  // major memebr
+  int init(double t0, double h0);
+  int advance(double dT);
+  int advance_to_steady_state();
+  void commit_state(Teuchos::RCP<Flow_State>) {};  // pointer to state is know
+
+  // access members
+  const Epetra_Vector& get_pressure() const { return *pressure_cells; }
+  const Epetra_Vector& get_flux() const { return *richards_flux; }
+  void get_velocity(Epetra_MultiVector &q) const { problem->DeriveDarcyVelocity(*solution, q); }
+  void get_saturation(Epetra_Vector &s) const;
+  double get_flow_dT() { return hnext; }
+  
+ private:
+  Teuchos::RCP<const Flow_State> FS;
+  Teuchos::ParameterList &richards_plist;
+ 
+  RichardsModelEvaluator *RME;
+  
+  BDF2::Dae *time_stepper;
+
+  Epetra_Vector *solution;   // full cell/face solution
+  Epetra_Vector *pressure_cells;   // cell pressures
+  Epetra_Vector *pressure_faces;
+  Epetra_Vector *richards_flux; // Darcy face fluxes
+
+  int max_itr;      // max number of linear solver iterations
+  double err_tol;   // linear solver convergence error tolerance
+  int precon_freq;  // preconditioner update frequency
+
+  double ss_t0, ss_t1, ss_h0, ss_z;
+
+  double h, hnext;
+};
+
+}  // namespace AmanziFlow
+}  // namespace Amanzi
+
+#endif
+
+/*
 class RichardsProblem {
  public:
   RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, 
@@ -30,8 +77,8 @@ class RichardsProblem {
 
   void set_pressure_cells(double height, Epetra_Vector *pressure);
   void set_pressure_faces(double height, Epetra_Vector *pressure);
-  void SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure);
-  void SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure);
+  void set_initial_pressure_from_saturation_cells(double saturation, Epetra_Vector *pressure);
+  void set_initial_pressure_from_saturation_faces(double saturation, Epetra_Vector *pressure);
 
   void set_flow_state(Teuchos::RCP<const Flow_State> FS_) { FS = FS_; } 
 
@@ -85,9 +132,9 @@ class RichardsProblem {
   double gravity_;  // gravitational acceleration (positive coef, directed in -z direction)
   double gvec_[3];  // set to {0,0,-gravity_}
   
-  BoundaryFunction *bc_press_;  // Pressure Dirichlet conditions, excluding static head
-  BoundaryFunction *bc_head_;   // Static pressure head conditions; also Dirichlet-type
-  BoundaryFunction *bc_flux_;   // Outward mass flux conditions
+  Amanzi::BoundaryFunction *bc_press_;  // Pressure Dirichlet conditions, excluding static head
+  Amanzi::BoundaryFunction *bc_head_;   // Static pressure head conditions; also Dirichlet-type
+  Amanzi::BoundaryFunction *bc_flux_;   // Outward mass flux conditions
   
   std::vector<MimeticHexLocal>  MD;
   MimeticHex *md_;
@@ -97,21 +144,16 @@ class RichardsProblem {
 
   Teuchos::RCP<DiffusionMatrix> D_;
 
-  Epetra_Vector* cell_volumes;
-  
   std::vector<Teuchos::RCP<WaterRetentionBaseModel> > WRM;
 
   Teuchos::RCP<const Flow_State> FS;  
 
- private:  // Auxillary functions
+ private:
   Epetra_Map* create_dof_map_(const Epetra_Map&, const Epetra_Map&) const;
   void validate_boundary_conditions() const;
   DiffusionMatrix* create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh>&) const;
   void init_mimetic_disc_(AmanziMesh::Mesh&, std::vector<MimeticHexLocal>&) const;
   void upwind_rel_perm_(const Epetra_Vector&, Epetra_Vector&);
-
 };
 
-} // close namespace Amanzi
-
-#endif
+*/

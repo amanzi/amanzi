@@ -14,6 +14,7 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
+using namespace Amanzi::AmanziFlow;
 
 int main (int argc, char *argv[])
 {

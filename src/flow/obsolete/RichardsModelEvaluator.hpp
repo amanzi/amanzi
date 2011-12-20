@@ -12,8 +12,8 @@
 #include "RichardsProblem.hpp"
 #include "Flow_State.hpp"
 
-namespace Amanzi
-{
+namespace Amanzi {
+namespace AmanziFlow {
 
 class RichardsModelEvaluator : public BDF2::fnBase,
 			       public Teuchos::VerboseObject<RichardsModelEvaluator>
@@ -52,6 +52,7 @@ class RichardsModelEvaluator : public BDF2::fnBase,
 
 };
 
-} // close namespace Amanzi
+}  // namespace AmanziFlow
+}  // namespace Amanzi
 
 #endif // RICHARDS_MODEL_EVALUATOR_HPP 

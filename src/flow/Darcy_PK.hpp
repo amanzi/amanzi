@@ -1,61 +1,84 @@
-#ifndef __Darcy_PK_hpp__
-#define __Darcy_PK_hpp__
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Neil Carlson (version 1) 
+         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+#ifndef __DARCY_PK_HPP__
+#define __DARCY_PK_HPP__
 
 #include "Teuchos_RCP.hpp"
 
 #include "Epetra_Vector.h"
 #include "AztecOO.h"
 
+#include "Mesh.hh"
+#include "Point.hh"
+#include "boundary-function.hh"
+#include "tensor.hpp"
+
 #include "Flow_PK.hpp"
 #include "Flow_State.hpp"
-#include "DarcyProblem.hpp"
+#include "Matrix_MFD.hpp"
 
-namespace Amanzi
-{
+namespace Amanzi {
+namespace AmanziFlow {
 
-class Darcy_PK : public Flow_PK
-{
+class Darcy_PK : public Flow_PK {
+ public:
+  Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
+  ~Darcy_PK () { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
 
-public:
-  Darcy_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
-
-  ~Darcy_PK ();
-
-  int advance_transient(double h) {}; 
-  int init_transient(double t0, double h0) {}; 
-  
+  // main methods
+  int advance(double dT); 
   int advance_to_steady_state();
-  void commit_state(Teuchos::RCP<Flow_State>) {}
+  void commit_state(Teuchos::RCP<Flow_State>) {};
 
-  // After a successful advance() the following routines may be called.
+  // other main methods
+  void process_parameter_list();
+  void populate_absolute_permeability_tensor(std::vector<WhetStone::Tensor>& K);
 
-  // Returns a reference to the cell pressure vector.
-  const Epetra_Vector& Pressure() const { return *pressure; }
+  // control methods
+  void print_statistics() const;
 
-  // Returns a reference to the Darcy face flux vector.
-  const Epetra_Vector& Flux() const { return *darcy_flux; }
+ private:
+  void Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_);
+  void Init(Matrix_MFD* matrix_) { Init(matrix_, matrix_); }
+  Teuchos::ParameterList dp_list;
 
-  // Computes the components of the Darcy velocity on cells.
-  void GetVelocity (Epetra_MultiVector &q) const
-      { problem->DeriveDarcyVelocity(*solution, q); }
+  Teuchos::RCP<Flow_State> FS;
+  AmanziGeometry::Point gravity;
 
-  double get_flow_dT() { return 0.0; };
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Epetra_Map *super_map_;
+  int dim;
 
-private:
+  Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
+  Teuchos::RCP<Epetra_Import> face_importer_;
 
-  Teuchos::RCP<const Flow_State> FS;
+  AztecOO* solver;
+  Matrix_MFD* matrix;
+  Matrix_MFD* preconditioner;
 
-  DarcyProblem *problem;
-  AztecOO *solver;
+  Teuchos::RCP<Epetra_Vector> solution;  // global solution
+  Teuchos::RCP<Epetra_Vector> solution_cell;  // cell-based pressures
+  Teuchos::RCP<Epetra_Vector> solution_face;  // face-base pressures
 
-  Epetra_Vector *solution;   // full cell/face solution
-  Epetra_Vector *pressure;   // cell pressures
-  Epetra_Vector *darcy_flux; // Darcy face fluxes
+  int num_itrs, max_itrs;  // numbers of linear solver iterations
+  double err_tol, residual;  // errors in linear solver
 
-  int max_itr;      // max number of linear solver iterations
-  double err_tol;   // linear solver convergence error tolerance
+  BoundaryFunction *bc_pressure;  // Pressure Dirichlet b.c., excluding static head
+  BoundaryFunction *bc_head;  // Static pressure head b.c.; also Dirichlet-type
+  BoundaryFunction *bc_flux;  // Outward mass flux b.c.
+  std::vector<int> bc_markers;  // Used faces marked with boundary conditions
+  std::vector<double> bc_values;
+
+  std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
 };
 
-}
+}  // namespace AmanziFlow
+}  // namespace Amanzi
 
 #endif
+

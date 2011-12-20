@@ -41,7 +41,7 @@ namespace Amanzi
     Teuchos::RCP<State> S;
     Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
     Teuchos::RCP<AmanziTransport::Transport_State> TS; 
-    Teuchos::RCP<Flow_State> FS;
+    Teuchos::RCP<AmanziFlow::Flow_State> FS;
     
     // misc setup information
     Teuchos::ParameterList parameter_list;
@@ -53,7 +53,7 @@ namespace Amanzi
     // process kernels
     Teuchos::RCP<amanzi::chemistry::Chemistry_PK> CPK;
     Teuchos::RCP<AmanziTransport::Transport_PK> TPK;
-    Teuchos::RCP<Flow_PK> FPK; 
+    Teuchos::RCP<AmanziFlow::Flow_PK> FPK; 
     
     Teuchos::ParameterList mpc_parameter_list;
     

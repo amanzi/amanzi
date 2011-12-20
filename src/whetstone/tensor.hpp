@@ -35,6 +35,7 @@ class Tensor {
   // elementary operators
   friend AmanziGeometry::Point operator*(Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(Tensor& T1, Tensor& T2);
+  Tensor& operator*=(const double& c);
 
   // access members
   double& operator()(int i, int j) { return data_[i * WHETSTONE_TENSOR_SIZE[d_-1][rank_-1] + j]; }

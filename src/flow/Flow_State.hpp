@@ -1,3 +1,9 @@
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
 #ifndef __Flow_State_hpp__
 #define __Flow_State_hpp__
 
@@ -7,38 +13,66 @@
 #include "State.hpp"
 
 namespace Amanzi {
+namespace AmanziFlow {
+
+enum FlowCreateMode {
+CopyPointers,  // copy Teuchos::RCP pointers 
+ViewMemory,    // convert to overlap to non-overlap vectors  
+CopyMemory     // copy non-overlap vector to overlap vectors 
+};
+
 
 class Flow_State {
  public:
-  Flow_State(Teuchos::RCP<State> S) :
-      mesh_maps_(S->get_mesh_maps()),
-      gravity_(S->get_gravity()),
-      fluid_density_(S->get_density()),
-      fluid_viscosity_(S->get_viscosity()),
-      permeability_(S->get_permeability()),
-      pressure_(S->get_pressure()),
-      porosity_(S->get_porosity()) {};
+  Flow_State(Teuchos::RCP<State> S);
+  Flow_State(Flow_State& S, FlowCreateMode mode = CopyPointers);
   ~Flow_State() {};
 
+  // data management
+  void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target);
+  void copymemory_vector(Epetra_Vector& source, Epetra_Vector& target);
+  void distribute_cell_vector(Epetra_Vector& v);
+  void distribute_cell_multivector(Epetra_MultiVector& v);
+
+  Epetra_Vector* create_cell_view(const Epetra_Vector&) const;
+  Epetra_Vector* create_face_view(const Epetra_Vector&) const;
+
   // access methods
-  const Teuchos::RCP<AmanziMesh::Mesh>& get_mesh_maps() const { return mesh_maps_ ;}
-  double get_fluid_density() const { return *fluid_density_; }
-  double get_fluid_viscosity() const { return *fluid_viscosity_; }
-  const double* get_gravity() const { return *gravity_; }
-  const Epetra_Vector& get_permeability() const { return *permeability_; }
-  const Epetra_Vector& get_porosity() const { return *porosity_; }
+  Teuchos::RCP<Epetra_Vector> get_porosity() { return porosity; }
+  Teuchos::RCP<double> get_fluid_density() { return fluid_density; }
+  Teuchos::RCP<double> get_fluid_viscosity() { return fluid_viscosity; }
+  Teuchos::RCP<Epetra_Vector> get_absolute_permeability() { return absolute_permeability; }
+  Teuchos::RCP<double*> get_gravity() { return gravity; }
+  Teuchos::RCP<Epetra_Vector> get_pressure() { return pressure; }
+  Teuchos::RCP<Epetra_Vector>  get_darcy_flux () { return darcy_flux; }
+  Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
+
+  Epetra_Vector& ref_pressure() { return *pressure; }
+  Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
+  Epetra_Vector& ref_absolute_permeability() { return *absolute_permeability; }
+
+  // miscaleneous
+  double get_time() { return S_->get_time(); }
+  
+  // debug routines
+  void set_fluid_density(double rho);
+  void set_fluid_viscosity(double mu);
 
  private:
-  // object doesn't own anything -- all smart pointers to the real thing.
-  const Teuchos::RCP<double> fluid_density_;
-  const Teuchos::RCP<double> fluid_viscosity_;
-  const Teuchos::RCP<double*> gravity_;
-  const Teuchos::RCP<Epetra_Vector> permeability_;
-  const Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_;
-  const Teuchos::RCP<Epetra_Vector> pressure_;  // current cell pressure solution
-  const Teuchos::RCP<Epetra_Vector> porosity_;
+  State* S_;  
+
+  Teuchos::RCP<double> fluid_density;
+  Teuchos::RCP<double> fluid_viscosity;
+  Teuchos::RCP<double*> gravity;
+  Teuchos::RCP<Epetra_Vector> absolute_permeability;
+  Teuchos::RCP<Epetra_Vector> pressure;
+  Teuchos::RCP<Epetra_Vector> porosity;
+  Teuchos::RCP<Epetra_Vector> darcy_flux;
+
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 };
 
-} // close namespace Amanzi
+}  // namespace AmanziFlow
+}  // namespace Amanzi
 
 #endif

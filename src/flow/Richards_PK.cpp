@@ -1,22 +1,128 @@
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Neil Carlson (nnc@lanl.gov), 
+         Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+#include <algorithm>
+
 #include "Epetra_IntVector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include <algorithm>
-
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
+#include "Mesh.hh"
 #include "Point.hh"
 
-#include "RichardsProblem.hpp"
+#include "Richards_PK.hpp"
+#include "Flow_BC_Factory.hpp"
 #include "boundary-function.hh"
 #include "vanGenuchtenModel.hpp"
-#include "Mesh.hh"
-#include "flow-bc-factory.hh"
 
 namespace Amanzi {
+namespace AmanziFlow {
 
+/* ******************************************************************
+* We set up only default values and call Init() routine to complete
+* each variable initialization
+****************************************************************** */
+Richards_PK::Richards_PK(Teuchos::ParameterList &plist, 
+                         const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), richards_plist(plist)
+{
+  // Add some parameters to the Richards problem constructor parameter list.
+  Teuchos::ParameterList &rp_list = plist.sublist("Richards Problem");
+  rp_list.set("fluid density", FS->get_fluid_density());
+  rp_list.set("fluid viscosity", FS->get_fluid_viscosity());
+  const double *gravity = FS->get_gravity();
+  //TODO: assuming gravity[0] = gravity[1] = 0 -- needs to be reconciled somehow
+  rp_list.set("gravity", -gravity[2]);
+  
+  // Create the Richards flow problem.
+  Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
+  problem = new RichardsProblem(FS->get_mesh_maps(), plist);
+
+  // Create the solution vectors.
+  solution = new Epetra_Vector(problem->Map());
+  pressure_cells = FS->create_cell_view(*solution);
+  pressure_faces = FS->create_face_view(*solution);
+  richards_flux = new Epetra_Vector(problem->FaceMap());
+
+  // first the Richards model evaluator
+  Teuchos::ParameterList &rme_list = rlist.sublist("Richards model evaluator");
+  RME = new RichardsModelEvaluator(problem, rme_list, problem->Map(), FS);  
+
+  // then the BDF2 solver
+  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(rlist.sublist("Time integrator")));
+
+  time_stepper = new BDF2::Dae(*RME, problem->Map());
+  time_stepper->setParameterList(bdf2_list_p);
+};
+
+
+Richards_PK::~Richards_PK()
+{
+  delete richards_flux;
+  delete pressure_cells;
+  delete pressure_faces;
+  delete solution;
+  delete problem;
+};
+
+
+int Richards_PK::init(double t0, double h_)
+{
+  h = h_;
+  hnext = h_;
+
+  // Set problem parameters.
+  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_flow_state(FS);
+
+  Epetra_Vector udot(problem->Map());
+  problem->compute_udot(t0, *solution, udot);
+  
+  time_stepper->set_initial_state(t0, *solution, udot);
+  
+  int errc;
+  RME->update_precon(t0, *solution, h, errc);
+}
+
+
+/* ******************************************************************* 
+ * We have to advance each component independently due to different
+ * discretizations. We use tcc when only owned data are needed and 
+ * tcc_next when owned and ghost data.
+ *
+ * Data flow: loop over components C and for each C apply the 
+ * second-order RK method. 
+ ****************************************************************** */
+int Richards_PK::advance(double dT) 
+{
+  // Set problem parameters.
+  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_flow_state(FS);
+
+  time_stepper->bdf2_step(h,0.0,*solution,hnext);
+  time_stepper->commit_solution(h,*solution);  
+
+  time_stepper->write_bdf2_stepping_statistics();
+}
+
+
+void Richards_PK::get_saturation(Epetra_Vector &s) const
+{
+  //for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
+  problem->DeriveVanGenuchtenSaturation(*pressure_cells, s);
+}
+
+}  // namespace AmanziFlow
+}  // namespace Amanzi
+
+/*
 RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                                  const Teuchos::ParameterList& parameter_list) : mesh_(mesh)
 {
@@ -389,11 +495,6 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
 }
 
 
-/* ******************************************************************
-* The cell and face-based DoF are packed together into the X and F 
-* Epetra vectors: cell-based DoF in the first part, followed by the 
-* face-based DoF. In addition, only the owned DoF belong to the vectors.
-****************************************************************** */
 void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time)
 {
   // Create views into the cell and face segments of X and F
@@ -795,7 +896,7 @@ void RichardsProblem::set_pressure_faces(double height, Epetra_Vector *pressure)
 }
 
 
-void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure)
+void RichardsProblem::set_initial_pressure_from_saturation_cells(double saturation, Epetra_Vector *pressure)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     // get mesh block cells
@@ -813,7 +914,7 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationCells(double satura
 }
 
 
-void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double saturation, Epetra_Vector *pressure)
+void RichardsProblem::set_initial_pressure_from_saturation_faces(double saturation, Epetra_Vector *pressure)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     // get mesh block cells
@@ -831,4 +932,222 @@ void RichardsProblem::SetInitialPressureProfileFromSaturationFaces(double satura
   }
 }
 
+int Richards_PK::advance_to_steady_state()
+{
+  // Set problem parameters.
+  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_flow_state(FS);
+
+  double t0 = ss_t0;
+  double t1 = ss_t1;
+  double h =  ss_h0;
+  double hnext;
+
+  // create udot
+
+  problem->set_pressure_cells(ss_z, pressure_cells);
+  problem->set_pressure_faces(ss_z, pressure_faces);
+
+  Epetra_Vector udot(problem->Map());
+  problem->compute_udot(t0, *solution, udot);
+
+  time_stepper->set_initial_state(t0, *solution, udot);
+
+  int errc;
+  RME->update_precon(t0, *solution, h, errc);
+
+  // iterate
+  int i = 0;
+  double tlast = t0;
+
+  do {
+    time_stepper->bdf2_step(h,0.0,*solution,hnext);
+    time_stepper->commit_solution(h,*solution);
+
+    // update the state, but only the cell values of pressure
+    // FS->update_pressure( * problem->CreateCellView(*solution) );
+    time_stepper->write_bdf2_stepping_statistics();
+
+    h = hnext;
+    i++;
+
+    tlast=time_stepper->most_recent_time();
+  } while (t1 >= tlast);    
+  
+  // Derive the Richards fluxes on faces
+  double l1_error;
+  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
+  std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
+}
+
+}  // namespace AmanziFlow
 }  // namespace Amanzi
+
+
+RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem, 
+					       Teuchos::ParameterList &plist, 
+					       const Epetra_Map &map,
+					       Teuchos::RCP<const Flow_State> FS) 
+  : problem_(problem), D(problem->Matrix()),  map_(map), plist_(plist),
+    FS_(FS)
+{
+  this->setLinePrefix("RichardsModelEvaluator");
+  this->getOStream()->setShowLinePrefix(true);
+
+  // Read the sublist for verbosity settings.
+  Teuchos::readVerboseObjectSublist(&plist_,this);
+
+  atol = plist.get<double>("Absolute error tolerance",1.0);
+  rtol = plist.get<double>("Relative error tolerance",1e-5);
+  
+}
+
+void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
+{
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+  
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
+    *out << "initialize o.k." << std::endl;
+  }
+}
+
+// Overridden from BDF2::fnBase
+
+void RichardsModelEvaluator::fun(const double t, const Epetra_Vector& u, 
+				 const Epetra_Vector& udot, Epetra_Vector& f)
+{
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
+  // compute F(u)
+  problem_->ComputeF(u, f, t);
+
+  Epetra_Vector *uc     = problem_->CreateCellView(u);  
+  Epetra_Vector *udotc  = problem_->CreateCellView(udot);
+  Epetra_Vector *fc     = problem_->CreateCellView(f);
+
+
+  // compute S'(p)
+  Epetra_Vector dS (problem_->CellMap());
+  problem_->dSofP(*uc, dS);
+
+  const Epetra_Vector& phi = FS_->get_porosity();
+  double rho;
+
+  problem_->GetFluidDensity(rho);
+
+  // assume that porosity is piecewise constant
+  dS.Multiply(rho,dS,phi,0.0);
+  
+  // scale by the cell volumes
+  dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
+
+  // on the cell unknowns compute f=f+dS*udotc*rho*phi
+  fc->Multiply(1.0,dS,*udotc,1.0);
+
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
+    *out << "fun o.k." <<  std::endl;
+  }
+}
+
+
+void RichardsModelEvaluator::precon(const Epetra_Vector& X, Epetra_Vector& Y)
+{
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
+  (problem_->Precon()).ApplyInverse(X, Y);
+
+  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
+    *out << "precon o.k." << std::endl;
+  }
+}
+
+
+void RichardsModelEvaluator::update_precon(const double t, const Epetra_Vector& up, const double h, int& errc)
+{
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
+  problem_->ComputePrecon(up,h);
+
+  errc = 0;
+
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+    {
+      *out << "update_precon done" << std::endl;
+    }
+}
+
+
+
+double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
+{
+  using Teuchos::OSTab;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+
+  double en = 0.0; 
+  for (int j=0; j<u.MyLength(); j++) {
+    double tmp = abs(du[j]) / (atol+rtol*abs(u[j]));
+    en = std::max<double>(en, tmp);
+  }
+
+  // find the global maximum
+#ifdef HAVE_MPI
+  double buf = en;
+  MPI_Allreduce ( &buf, &en, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+#endif
+
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
+    {
+      *out << "enorm done" << std::endl;
+    }
+
+  return  en;
+
+}
+
+
+bool RichardsModelEvaluator::is_admissible(const Epetra_Vector& up)
+{
+  return true;
+}
+
+bool RichardsNoxInterface::computeF(const Epetra_Vector &x, Epetra_Vector &f, FillType flag)
+{
+  (*problem_).ComputeF(x, f);
+  return true;
+}
+
+
+bool RichardsNoxInterface::computeJacobian(const Epetra_Vector &x, Epetra_Operator &J)
+{
+  // Shouldn't be called -- not required for JFNK.
+  ASSERT(false);
+}
+
+
+bool RichardsNoxInterface::computePreconditioner(const Epetra_Vector &x, Epetra_Operator &M, Teuchos::ParameterList *params)
+{
+  // We assume the input operator is the same one we handed to NOX.
+  ASSERT(&M == &(problem_->Precon()));
+
+  if (lag_count_ == 0) (*problem_).ComputePrecon(x);
+  lag_count_++;
+  lag_count_ %= lag_prec_;
+
+  return true;
+}
+
+*/

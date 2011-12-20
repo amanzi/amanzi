@@ -1,11 +1,21 @@
-#include "flow-bc-factory.hh"
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Neil Carlson (versions 1 & 2)  (nnc@lanl.gov)
+*/
 
 #include "boundary-function.hh"
 #include "function-factory.hh"
 #include "errors.hh"
 
-namespace Amanzi {
+#include "Flow_BC_Factory.hpp"
 
+namespace Amanzi {
+namespace AmanziFlow {
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
 BoundaryFunction* FlowBCFactory::CreatePressure() const
 {
   BoundaryFunction *bc = new BoundaryFunction(mesh_);
@@ -23,6 +33,10 @@ BoundaryFunction* FlowBCFactory::CreatePressure() const
   return bc;
 }
 
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
 BoundaryFunction* FlowBCFactory::CreateMassFlux() const
 {
   BoundaryFunction *bc = new BoundaryFunction(mesh_);
@@ -40,6 +54,10 @@ BoundaryFunction* FlowBCFactory::CreateMassFlux() const
   return bc;
 }
 
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
 BoundaryFunction* FlowBCFactory::CreateStaticHead(double p0, double density, double gravity) const
 {
   BoundaryFunction *bc = new BoundaryFunction(mesh_);
@@ -57,6 +75,10 @@ BoundaryFunction* FlowBCFactory::CreateStaticHead(double p0, double density, dou
   return bc;
 }
 
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
 void FlowBCFactory::process_pressure_list(Teuchos::ParameterList &list,
                                            BoundaryFunction *bc) const
 {
@@ -81,6 +103,10 @@ void FlowBCFactory::process_pressure_list(Teuchos::ParameterList &list,
   }
 }
 
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
 void FlowBCFactory::process_pressure_spec(Teuchos::ParameterList &list, BoundaryFunction *bc) const
 {
   Errors::Message m;
@@ -124,6 +150,10 @@ void FlowBCFactory::process_pressure_spec(Teuchos::ParameterList &list, Boundary
   bc->Define(regions, f);
 }
 
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
 void FlowBCFactory::process_mass_flux_list(Teuchos::ParameterList &list,
                                            BoundaryFunction *bc) const
 {
@@ -148,6 +178,10 @@ void FlowBCFactory::process_mass_flux_list(Teuchos::ParameterList &list,
   }
 }
 
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
 void FlowBCFactory::process_mass_flux_spec(Teuchos::ParameterList &list,
                                            BoundaryFunction *bc) const
 {
@@ -192,7 +226,12 @@ void FlowBCFactory::process_mass_flux_spec(Teuchos::ParameterList &list,
   bc->Define(regions, f);
 }
 
-void FlowBCFactory::process_static_head_list(double p0, double density, double gravity,
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
+void FlowBCFactory::process_static_head_list(
+    double p0, double density, double gravity,
     Teuchos::ParameterList &list, BoundaryFunction *bc) const
 {
   // Iterate through the BC specification sublists in the list.
@@ -216,7 +255,12 @@ void FlowBCFactory::process_static_head_list(double p0, double density, double g
   }
 }
 
-void FlowBCFactory::process_static_head_spec(double p0, double density, double gravity,
+
+/* ******************************************************************
+* TBA
+****************************************************************** */
+void FlowBCFactory::process_static_head_spec(
+    double p0, double density, double gravity,
     Teuchos::ParameterList &list, BoundaryFunction *bc) const
 {
   Errors::Message m;
@@ -267,4 +311,5 @@ void FlowBCFactory::process_static_head_spec(double p0, double density, double g
   bc->Define(regions, f);
 }
 
-} // namespace Amanzi
+}  // namespace AmanziFlow
+}  // namespace Amanzi

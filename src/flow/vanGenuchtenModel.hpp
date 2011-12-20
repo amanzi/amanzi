@@ -1,33 +1,43 @@
-#ifndef _VANGENUCHTENMODEL_H_
-#define _VANGENUCHTENMODEL_H_
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Neil Carlson (version 1)
+         Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
 
-#include "WaterRetentionBaseModel.hpp"
+#ifndef __VAN_GENUCHTEN_MODEL_HPP__
+#define __VAN_GENUCHTEN_MODEL_HPP__
 
-class vanGenuchtenModel : public WaterRetentionBaseModel {
+#include "WaterRetentionModel.hpp"
+
+namespace Amanzi {
+namespace AmanziFlow {
+
+class vanGenuchtenModel : public WaterRetentionModel {
+ public:
+  vanGenuchtenModel(std::string region_, double m_, double alpha_, double sr_, double atm_pressure_);
+  ~vanGenuchtenModel() {};
   
-public:
-  vanGenuchtenModel(std::string region_, double m_, double alpha_, 
-		    double sr_, double p_atm_);
-
-  
-  // overridden from WaterRetentionBaseModel
+  // requires methods from the base class
   double k_relative(double p);
   double saturation(double p);
   double d_saturation(double p);  
 
-  void update_p_atm(double new_p_atm);
-  const double get_p_atm() { return p_atm; };
-
+  void update_atm_pressure(double pressure) { atm_pressure = pressure; }
   double pressure(double saturation);
 
-private:
-  const double m;     // van Genuchten m
-  double n;           // van Genuchten n
-  const double alpha; // van Genuchten alpha 
-  double p_atm;       // atmospheric pressure
-  const double sr;    // van Genuchten effective saturation
+  // access methods
+  const double get_atm_pressure() { return atm_pressure; }
 
+ private:
+  const double m;  // van Genuchten parameters: m, n, alpha
+  double n; 
+  const double alpha; 
+  double atm_pressure;
+  const double sr;  // van Genuchten effective saturation
 };
 
-
+}  // namespace AmanziFlow
+}  // namespace Amanzi
+ 
 #endif

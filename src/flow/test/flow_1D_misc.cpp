@@ -19,6 +19,7 @@
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
+using namespace Amanzi::AmanziFlow;
 
 struct problem_setup
 {
@@ -27,7 +28,7 @@ struct problem_setup
   Teuchos::RCP<Mesh> mesh;
   GeometricModel *gm;
   Teuchos::ParameterList params;
-  Amanzi::DarcyProblem *problem;
+  DarcyProblem *problem;
   AztecOO *solver;
   Epetra_Vector *solution;
   // parameters for analytic pressure function
@@ -112,7 +113,7 @@ struct problem_setup
     params.set("gravity", -g[2]);
 
     // Create the problem.
-    problem = new Amanzi::DarcyProblem(mesh, params);
+    problem = new DarcyProblem(mesh, params);
 
     // Other model parameters; we won't be messing with these.
     problem->set_absolute_permeability(1.0);

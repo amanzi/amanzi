@@ -31,7 +31,7 @@ Transport_State::Transport_State(State& S)
  *                     as the MPC expected                     
  * mode = CopyMemory   creates internal transport state based on 
  *                     ovelapped mesh maps                       
-/* **************************************************************** */
+ * **************************************************************** */
 Transport_State::Transport_State(Transport_State& S, TransportCreateMode mode)
 {
   if (mode == CopyPointers) {

@@ -25,6 +25,7 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
@@ -47,12 +48,12 @@ add_definitions("-DUSE_MPI")
 #
 # Library: flow
 #
-add_library(flow Transient_Richards_PK.cpp Darcy_PK.cpp
-                 RichardsProblem.cpp RichardsNoxInterface.cpp RichardsModelEvaluator.cpp
-                 DarcyProblem.cpp DarcyMatvec.cpp 
-                 DiffusionMatrix.cpp DiffusionPrecon.cpp DiffusionMap.cpp 
-                 MimeticHexLocal.cpp MimeticHex.cpp
-                 flow-bc-factory.cc vanGenuchtenModel.cpp)
+add_library(flow Flow_PK.cpp Flow_State.cpp 
+                 Flow_BC_Factory.cpp Flow_VandV.cpp 
+                 Interface_BDF2.cpp # Interface_NOX.cpp
+                 Darcy_PK.cpp Richards_PK.cpp
+                 Matrix_MFD.cpp Matrix_VAG.cpp 
+                 vanGenuchtenModel.cpp)
 add_install_library(flow)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 list(REVERSE flow_tpl_libs)

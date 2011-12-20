@@ -31,7 +31,7 @@ namespace AmanziTransport {
 * each variable initialization
 ****************************************************************** */
 Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
-			                     Teuchos::RCP<Transport_State> TS_MPC)
+			   Teuchos::RCP<Transport_State> TS_MPC)
 { 
   status = TRANSPORT_NULL;
 

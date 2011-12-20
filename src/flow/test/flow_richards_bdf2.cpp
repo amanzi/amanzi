@@ -33,6 +33,7 @@ TEST(FLOW_1D_RICHARDS) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::AmanziFlow;
 
 cout << "Test: 1D Richards, 2-layer model" << endl;
 #ifdef HAVE_MPI
@@ -54,7 +55,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
   RCP<State> S = Teuchos::rcp(new State(state_list, mesh));
-  RCP<Amanzi::Flow_State> FS = Teuchos::rcp(new Amanzi::Flow_State(S));
+  RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
 
   // create Richards problem
   RichardsProblem problem(mesh, parameter_list);
@@ -65,7 +66,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
   ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
   ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
-  Amanzi::RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
+  RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
 
   // create the time stepping object
   Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList);

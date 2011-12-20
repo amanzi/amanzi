@@ -1,7 +1,7 @@
 #include "DarcyMatvec.hpp"
 
-namespace Amanzi
-{
+namespace Amanzi {
+namespace AmanziFlow {
 
 DarcyMatvec::DarcyMatvec(DarcyProblem *problem) : problem_(problem)
 {
@@ -22,4 +22,5 @@ int DarcyMatvec::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
   return 0;
 }
 
-} // close namespace Amanzi
+}  // namespace AmanziFlow
+}  // namespace Amanzi

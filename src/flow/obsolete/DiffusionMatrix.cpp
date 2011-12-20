@@ -7,8 +7,8 @@
 
 #include "dbc.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
+namespace AmanziFlow {
 
 DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
                                  const std::vector<int> &dir_faces) : mesh_(mesh), dir_faces_(dir_faces)
@@ -299,4 +299,6 @@ void DiffusionMatrix::Print(std::ostream &os) const
   if (dir_faces_.size() > 0) os << std::endl;
 }
 
-} // close namespace Amanzi
+} // namespace AmanziFlow
+} // namespace Amanzi
+

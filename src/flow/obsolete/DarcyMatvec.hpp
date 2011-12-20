@@ -1,19 +1,16 @@
-#ifndef __DARCYMATVEC_H__
-#define __DARCYMATVEC_H__
+#ifndef __DARCY_MATVEC_H__
+#define __DARCY_MATVEC_H__
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Operator.h"
 
 #include "DarcyProblem.hpp"
 
-namespace Amanzi
-{
+namespace Amanzi {
+namespace AmanziFlow {
 
-class DarcyMatvec : public Epetra_Operator
-{
-
-public:
-
+class DarcyMatvec : public Epetra_Operator {
+ public:
   DarcyMatvec(DarcyProblem *problem);
   ~DarcyMatvec() {}
 
@@ -37,17 +34,15 @@ public:
   const Epetra_Comm& Comm() const { return problem_->Comm(); }
 
   const Epetra_Map& OperatorDomainMap() const { return problem_->Map(); }
-
   const Epetra_Map& OperatorRangeMap() const { return problem_->Map(); }
 
-private:
-
+ private:
   char* label_;
 
   DarcyProblem *problem_;
-
 };
 
-} // close namespace Amanzi
+}  // namespace AmanziFlow
+}  // namespace Amanzi
 
 #endif

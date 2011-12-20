@@ -49,7 +49,7 @@ int Tensor::init(const int d, const int rank)
 
 
 /* ******************************************************************
-* Simple operations with tensors of rank 1 and 2
+* Trace operation with tensors of rank 1 and 2
 ****************************************************************** */
 double Tensor::trace()
 {
@@ -63,6 +63,9 @@ double Tensor::trace()
 }
 
 
+/* ******************************************************************
+* Inverse operation with tensors of rank 1 and 2
+****************************************************************** */
 void Tensor::inverse()
 {
   int size = WHETSTONE_TENSOR_SIZE[d_-1][rank_-1];
@@ -88,6 +91,19 @@ void Tensor::inverse()
     lapack.GETRF(size, size, data_, size, ipiv, &info);
     lapack.GETRI(size, data_, size, ipiv, work, size, &info); 
   }
+}
+
+
+/* ******************************************************************
+* Trace operation with tensors of rank 1 and 2
+****************************************************************** */
+double Tensor::operator*=(const double& c)
+{
+  if (rank_ <= 2) {
+    int size = WHETSTONE_TENSOR_SIZE[d_-1][rank_-1];
+    for (int i=0; i<size; i++) (*this)(i, i) *= c;
+  }
+  return *this; 
 }
 
 

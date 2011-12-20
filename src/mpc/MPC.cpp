@@ -11,7 +11,7 @@
 #include "Flow_State.hpp"
 #include "Darcy_PK.hpp"
 //#include "SteadyState_Richards_PK.hpp"
-#include "Transient_Richards_PK.hpp"
+#include "Richards_PK.hpp"
 #include "Transport_State.hpp"
 #include "Transport_PK.hpp"
 // TODO: We are using depreciated parts of boost::filesystem
@@ -125,16 +125,16 @@ void MPC::mpc_init()
 
    // flow...
    if (flow_enabled) {
-     FS = Teuchos::rcp( new Flow_State( S ) );
+     FS = Teuchos::rcp( new AmanziFlow::Flow_State( S ) );
 
      Teuchos::ParameterList flow_parameter_list = 
        parameter_list.sublist("Flow");
      
      flow_model = mpc_parameter_list.get<string>("Flow model","Darcy");
      if (flow_model == "Darcy")
-       FPK = Teuchos::rcp( new Darcy_PK(flow_parameter_list, FS) );  
+       FPK = Teuchos::rcp( new AmanziFlow::Darcy_PK(flow_parameter_list, FS) );  
      else if (flow_model == "Richards")
-       FPK = Teuchos::rcp( new Transient_Richards_PK(flow_parameter_list, FS) );
+       FPK = Teuchos::rcp( new AmanziFlow::Richards_PK(flow_parameter_list, FS) );
      else {
        cout << "MPC: unknown flow model: " << flow_model << endl;
        throw std::exception();
@@ -300,7 +300,7 @@ void MPC::cycle_driver ()
 
   if (flow_enabled)
     {
-      FPK->init_transient(T0, dT0);
+      FPK->init(T0, dT0);
     }
 
 
@@ -341,7 +341,7 @@ void MPC::cycle_driver ()
 	
 	if (flow_enabled)
 	  {
-	    FPK->advance_transient(mpc_dT);
+	    FPK->advance(mpc_dT);
 	  }
 
 
