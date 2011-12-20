@@ -241,16 +241,6 @@ Teuchos::RCP<Epetra_MultiVector> State::get_field(std::string fieldname,
 };
 
 void State::set_field(std::string fieldname, std::string pk_name,
-                      Teuchos::RCP<const Epetra_MultiVector> &data) {
-  get_field_record(fieldname)->set_data(pk_name, data);
-};
-
-void State::set_field(std::string fieldname, std::string pk_name,
-                      Teuchos::RCP<const Epetra_Vector> &data) {
-  get_field_record(fieldname)->set_data(pk_name, data);
-};
-
-void State::set_field(std::string fieldname, std::string pk_name,
                       const Epetra_MultiVector& data) {
   get_field_record(fieldname)->set_data(pk_name, data);
 };

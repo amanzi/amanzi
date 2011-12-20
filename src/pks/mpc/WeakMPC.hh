@@ -21,12 +21,12 @@ namespace Amanzi {
 class WeakMPC : public Teuchos::VerboseObject<WeakMPC>, public MPC {
 
 public:
-  WeakMPC(Teuchos::ParameterList &mpc_plist,
-          Teuchos::RCP<State> &S);
+  WeakMPC(Teuchos::ParameterList& mpc_plist,
+          Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
 
   ~WeakMPC() {};
 
-  bool advance(double dt, Teuchos::RCP<State> &S0,
+  bool advance(double dt, Teuchos::RCP<const State> &S0,
                Teuchos::RCP<State> &S1, Teuchos::RCP<TreeVector> &solution);
 };
 } // close namespace Amanzi

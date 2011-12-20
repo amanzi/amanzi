@@ -67,16 +67,6 @@ Teuchos::RCP<Epetra_MultiVector> Field::get_data(std::string pk_name) {
   }
 };
 
-void Field::set_data(std::string pk_name, Teuchos::RCP<const Epetra_MultiVector> &data) {
-  assert_owner_or_die(pk_name);
-  *data_ = *data;
-};
-
-void Field::set_data(std::string pk_name, Teuchos::RCP<const Epetra_Vector> &data) {
-  assert_owner_or_die(pk_name);
-  *((*data_)(0)) = *data;
-};
-
 void Field::set_data(std::string pk_name, const Epetra_MultiVector& data) {
   assert_owner_or_die(pk_name);
   *data_ = data;

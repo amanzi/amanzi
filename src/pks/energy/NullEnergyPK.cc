@@ -25,38 +25,38 @@ void NullEnergyPK::initialize(Teuchos::RCP<State>& S,
   S_->set_field("temperature", "energy", T_);
   S_->set_field("temperature", "energy", T_);
   S_->set_field("dtemperature", "energy", 0.0);
-  state_to_solution(S, soln);
+  state_to_solution(*S, soln);
 };
 
 // transfer operators
-void NullEnergyPK::state_to_solution(Teuchos::RCP<const State>& S,
+void NullEnergyPK::state_to_solution(const State& S,
                                      Teuchos::RCP<TreeVector>& soln) {
-  *(*soln[0]) = S->get_field("temperature");
+  *((*soln)[0]) = *S.get_field("temperature");
 };
 
-void NullEnergyPK::state_to_solution(Teuchos::RCP<const State>& S,
+void NullEnergyPK::state_to_solution(const State& S,
                                      Teuchos::RCP<TreeVector>& soln,
                                      Teuchos::RCP<TreeVector>& soln_dot) {
-  *(*soln)[0] = S->get_field("temperature");
-  *(*soln_dot)[0] = S->get_field("dtemperature");
+  *(*soln)[0] = *S.get_field("temperature");
+  *(*soln_dot)[0] = *S.get_field("dtemperature");
 };
 
-void NullEnergyPK::solution_to_state(Teuchos::RCP<const TreeVector>& soln,
+void NullEnergyPK::solution_to_state(const TreeVector& soln,
                                      Teuchos::RCP<State>& S) {
-  S->set_field("temperature", "energy", (*soln)[0]);
+  S->set_field("temperature", "energy", *soln[0]);
 };
 
-void NullEnergyPK::solution_to_state(Teuchos::RCP<const TreeVector>& soln,
-                                     Teuchos::RCP<const TreeVector>& soln_dot,
+void NullEnergyPK::solution_to_state(const TreeVector& soln,
+                                     const TreeVector& soln_dot,
                                      Teuchos::RCP<State>& S) {
-  S->set_field("temperature", "energy", (*soln)[0]);
-  S->set_field("dtemperature", "energy", (*soln_dot)[0]);
+  S->set_field("temperature", "energy", *soln[0]);
+  S->set_field("dtemperature", "energy", *soln_dot[0]);
 };
 
-bool NullEnergyPK::advance(double dt, Teuchos::RCP<State> &S0,
+bool NullEnergyPK::advance(double dt, Teuchos::RCP<const State>& S0,
           Teuchos::RCP<State> &S1, Teuchos::RCP<TreeVector> &soln) {
   *soln = T_;
-  solution_to_state(soln, S1);
+  solution_to_state(*soln, S1);
   return false;
 };
 

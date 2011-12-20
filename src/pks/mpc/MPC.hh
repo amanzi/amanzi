@@ -31,35 +31,37 @@ public:
                           Teuchos::RCP<TreeVector>& soln);
 
   // transfer operators
-  virtual void state_to_solution(Teuchos::RCP<const State>& S,
+  virtual void state_to_solution(const State& S,
                                  Teuchos::RCP<TreeVector>& soln);
-  virtual void state_to_solution(Teuchos::RCP<const State>& S,
+  virtual void state_to_solution(const State& S,
                                  Teuchos::RCP<TreeVector>& soln,
                                  Teuchos::RCP<TreeVector>& soln_dot);
-  virtual void solution_to_state(Teuchos::RCP<const TreeVector>& soln,
+  virtual void solution_to_state(const TreeVector& soln,
                                  Teuchos::RCP<State>& S);
-  virtual void solution_to_state(Teuchos::RCP<const TreeVector>& soln,
-                                 Teuchos::RCP<const TreeVector>& soln_dot,
+  virtual void solution_to_state(const TreeVector& soln,
+                                 const TreeVector& soln_dot,
                                  Teuchos::RCP<State>& S);
 
   virtual double get_dT();
 
-  virtual bool advance(double dt, Teuchos::RCP<State>& S0,
+  virtual bool advance(double dt, Teuchos::RCP<const State>& S0,
              Teuchos::RCP<State>& S1, Teuchos::RCP<TreeVector>& solution) = 0;
 
-  virtual void commit_state(double dt, Teuchos::RCP<State> &S);
+  virtual void commit_state(double dt, Teuchos::RCP<State>& S);
 
-  private:
-    // PK container and factory
-    PK_Factory pk_factory_;
-    std::vector< Teuchos::RCP<PK> > sub_pks_;
+  virtual void calculate_diagnostics(Teuchos::RCP<State>& S);
 
-    // states
-    Teuchos::RCP<State> S_;
+protected:
+  // PK container and factory
+  PK_Factory pk_factory_;
+  std::vector< Teuchos::RCP<PK> > sub_pks_;
 
-    // misc setup information
-    Teuchos::ParameterList mpc_plist_;
-  };
+  // states
+  Teuchos::RCP<State> S_;
+
+  // misc setup information
+  Teuchos::ParameterList mpc_plist_;
+};
 
 } // close namespace Amanzi
 
