@@ -6,6 +6,7 @@
 
 #include "Epetra_Vector.h"
 
+#include "Vector.hh"
 #include "PK.hh"
 #include "State.hh"
 #include "RichardsProblem.hh"
@@ -22,8 +23,8 @@ public:
 
   double get_dT() { return h; }
 
-  bool advance_transient(double dt, const Teuchos::RCP<State> &S0,
-                         Teuchos::RCP<State> &S1);
+  bool advance(double dt, const Teuchos::RCP<State> &S0,
+               Teuchos::RCP<State> &S1, Teuchos::RCP<Vector> &solution);
 
   void commit_state(double dt, Teuchos::RCP<State> &S) {}
 

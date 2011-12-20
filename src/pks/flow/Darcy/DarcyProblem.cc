@@ -1,6 +1,5 @@
 #include "Epetra_IntVector.h"
 
-#include "DarcyProblem.hh"
 #include "boundary-function.hh"
 #include "DarcyMatvec.hpp"
 #include "flow-bc-factory.hh"
@@ -8,6 +7,8 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
+#include "DarcyProblem.hh"
 
 namespace Amanzi
 {

@@ -18,7 +18,6 @@ include_directories(${ATS_SOURCE_DIR}/src/pks)
 #
 # Library: state
 #
-#add_library(flow Darcy_PK.cc)
 add_library(darcy DarcyProblem.cc Darcy_PK.cc)
 
 

@@ -17,32 +17,31 @@
 namespace Amanzi
 {
 
-  class MPC : public Teuchos::VerboseObject<MPC> {
+  class WeakMPC : public Teuchos::VerboseObject<MPC>, public PK {
 
   public:
-    // types
-    typedef std::vector<Teuchos::RCP<PK> > PKs;
+    WeakMPC(Teuchos::ParameterList &parameter_list,
+        Teuchos::RCP<State> &S);
 
-    MPC(Teuchos::ParameterList& parameter_list_,
-        Teuchos::RCP<AmanziMesh::Mesh>& mesh_maps_,
-        Epetra_MpiComm* comm_,
-        Amanzi::ObservationData& output_observations_);
+    ~WeakMPC() {};
 
-    ~MPC() {};
-
-    void initialize(Teuchos::ParameterList& plist, Teuchos::RCP<State>&);
+    // PK methods
+    void initialize(Teuchos::RCP<State>& S);
     double get_dT();
-    bool advance_transient(double, Teuchos::RCP<State>&, Teuchos::RCP<State>&);
-    void commit_state(double, Teuchos::RCP<State>&);
-    void cycle_driver ();
+    bool advance(double dt, const Teuchos::RCP<State> &S0,
+                 Teuchos::RCP<State> &S1, Teuchos::RCP<Vector> &solution);
+    void compute_f(const double t, const Vector& u, const Vector& udot,
+                   Vector& f);
+    void commit_state(double dt, Teuchos::RCP<State> &S);
 
   private:
     void mpc_init();
     void read_parameter_list();
 
     // PK container and factory
-    PK_Factory pk_factory;
-    PKs pks;
+    PK_Factory pk_factory_;
+    void cycle_driver ();
+    std::vector< Teuchos::RCP<PK> > sub_pks_
 
     // states
     Teuchos::RCP<State> S;

@@ -1,6 +1,7 @@
 # -*- mode: cmake -*-
 
 # state
+add_subdirectory(data_structures)
 add_subdirectory(state)
 
 # Process Kernels

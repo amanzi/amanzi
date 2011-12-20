@@ -25,19 +25,12 @@ public:
 
   // operations
   virtual void Scale(double value) = 0;
-  //virtual void Shift(double shift) = 0;
+  virtual void Shift(double value) = 0;
 
   // this <- alpha*a + beta*b + gamma*this
   virtual Vector& Update(double scalarA, const Vector& A, double scalarThis) = 0;
   virtual Vector& Update(double scalarA, const Vector& A,
                          double scalarB, const Vector& B, double scalarThis) = 0;
-
-  // returns the Vector (if this.name==subname) or sub-vector (if subname in
-  // this) or throws exception
-  virtual int SubVector(std::string subname, Teuchos::RCP<Vector>& subvec) = 0;
-  virtual int SubVector(std::string subname, Teuchos::RCP<const Vector>& subvec) const = 0;
-
-
 
   // note that a Vector must also provide an innerProduct method, but it need
   // not work if the other Vector is not of the same type.  Implementations
