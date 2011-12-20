@@ -14,43 +14,21 @@
 
 #include "PK.hh"
 #include "PK_Factory.hh"
+#include "MPC.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
 
-  class WeakMPC : public Teuchos::VerboseObject<MPC>, public PK {
+class WeakMPC : public Teuchos::VerboseObject<WeakMPC>, public MPC {
 
-  public:
-    WeakMPC(Teuchos::ParameterList &mpc_plist,
-        Teuchos::RCP<State> &S);
+public:
+  WeakMPC(Teuchos::ParameterList &mpc_plist,
+          Teuchos::RCP<State> &S);
 
-    ~WeakMPC() {};
+  ~WeakMPC() {};
 
-    // PK methods
-    void initialize();
-
-    double get_dT();
-
-    bool advance(double dt, const Teuchos::RCP<State> &S0,
-                 Teuchos::RCP<State> &S1, Teuchos::RCP<TreeVector> &solution);
-    void compute_f(const double t, const Vector& u, const Vector& udot,
-                   Vector& f);
-    void commit_state(double dt, Teuchos::RCP<State> &S);
-
-    void solution_to_state(const TreeVector& u, const TreeVector& udot);
-  private:
-    
-    // PK container and factory
-    PK_Factory pk_factory_;
-    std::vector< Teuchos::RCP<PK> > sub_pks_
-
-    // states
-    Teuchos::RCP<State> S_;
-
-    // misc setup information
-    Teuchos::ParameterList mpc_plist_;
-  };
-
+  bool advance(double dt, Teuchos::RCP<State> &S0,
+               Teuchos::RCP<State> &S1, Teuchos::RCP<TreeVector> &solution);
+};
 } // close namespace Amanzi
 
 #endif

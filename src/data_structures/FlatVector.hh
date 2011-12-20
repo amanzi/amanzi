@@ -41,10 +41,6 @@ public:
   FlatVector& Update(double scalarA, const Vector& A,
               double scalarB, const Vector& B, double scalarThis);
 
-  // returns the Vector (if this.name==subname) or sub-vector (if subname in
-  // this)
-  int SubVector(std::string subname, Teuchos::RCP<Vector> subvec) { return 1; }
-
   int Dot(const Vector& other, double* result) const;
 
 private:

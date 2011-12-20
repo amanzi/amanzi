@@ -19,9 +19,10 @@ public:
   explicit TreeVector(std::string name);
   TreeVector(std::string name, Teuchos::RCP<Epetra_MultiVector>&);
   TreeVector(std::string name, Teuchos::RCP<Epetra_Vector>&);
-  TreeVector(std::string name, Teuchos::RCP<Vector>&);
+  TreeVector(std::string name, Teuchos::RCP<TreeVector>&);
   TreeVector(std::string name, std::vector< Teuchos::RCP<Epetra_MultiVector> >&);
-  TreeVector(std::string name, std::vector< Teuchos::RCP<Vector> >&);
+  TreeVector(std::string name, std::vector< Teuchos::RCP<TreeVector> >&);
+  TreeVector(const TreeVector&);
 
   // set data
   //  - guaranteed to not error
@@ -37,24 +38,28 @@ public:
 
   // operations
   void Scale(double value);
-  //void shift(double shift);
+  void Shift(double scalarA);
+  int Dot(const Vector& other, double* result) const;
 
   // this <- alpha*a + beta*b + gamma*this
-  TreeVector& Update(double scalarA, const Vector& A, double scalarThis);
-  TreeVector& Update(double scalarA, const Vector& A,
-                     double scalarB, const Vector& B, double scalarThis);
+  Vector& Update(double scalarA, const Vector& A, double scalarThis);
+  Vector& Update(double scalarA, const Vector& A,
+                 double scalarB, const Vector& B, double scalarThis);
 
-  // returns the Vector (if this.name==subname) or sub-vector (if subname in
-  // this)
-  int SubVector(std::string subname, Teuchos::RCP<Vector>& subvec);
-  int SubVector(std::string subname, Teuchos::RCP<const Vector>& subvec) const;
+  // non-inherited extras
+  int SubVector(std::string subname, Teuchos::RCP<TreeVector>& subvec);
+  int SubVector(std::string subname, Teuchos::RCP<const TreeVector>& subvec) const;
 
-  int Dot(const Vector& other, double* result) const;
+  Teuchos::RCP<Epetra_MultiVector> operator[](int vecnum) { return data_[vecnum]; }
+  Teuchos::RCP<const Epetra_MultiVector> operator[](int vecnum) const { return data_[vecnum]; }
+
+  void PushBack(Teuchos::RCP<TreeVector>& subvec);
+  void PushBack(Teuchos::RCP<Epetra_MultiVector>& data);
 
 private:
   std::string name_;
   std::vector< Teuchos::RCP<Epetra_MultiVector> > data_;
-  std::vector< Teuchos::RCP<Vector> > subvecs_;
+  std::vector< Teuchos::RCP<TreeVector> > subvecs_;
 };
 
 } // namespace

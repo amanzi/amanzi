@@ -28,8 +28,8 @@ public:
   double get_dT() { return 1.e99; }
 
   // Steady state Darcy -- transient does nothing.
-  bool advance_transient(double dt, const Teuchos::RCP<State> &S0,
-                         Teuchos::RCP<State> &S1) { return 0; }
+  bool advance(double dt, const Teuchos::RCP<State> &S0,
+               Teuchos::RCP<State> &S1) { return 0; }
 
   // Transient does nothing, so commit not needed.
   void commit_state(double dt, Teuchos::RCP<State> &S) {}

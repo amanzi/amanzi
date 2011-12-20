@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <iostream>
 
-#include "RichardsProblem.hh"
 #include "boundary-function.hh"
 #include "vanGenuchtenModel.hpp"
 #include "Mesh.hh"
@@ -12,6 +11,8 @@
 #include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
+
+#include "RichardsProblem.hh"
 
 namespace Amanzi
 {

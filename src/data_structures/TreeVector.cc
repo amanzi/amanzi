@@ -17,7 +17,7 @@ TreeVector::TreeVector(std::string name, Teuchos::RCP<Epetra_Vector> &data) :
   data_.push_back(data);
 };
 
-TreeVector::TreeVector(std::string name, Teuchos::RCP<Vector> &subvec) : name_(name) {
+TreeVector::TreeVector(std::string name, Teuchos::RCP<TreeVector> &subvec) : name_(name) {
   subvecs_.push_back(subvec);
 };
 
@@ -27,7 +27,7 @@ TreeVector::TreeVector(std::string name,
   data_ = dvec;
 };
 
-TreeVector::TreeVector(std::string name, std::vector< Teuchos::RCP<Vector> > &subvecs) :
+TreeVector::TreeVector(std::string name, std::vector< Teuchos::RCP<TreeVector> > &subvecs) :
     name_(name) {
   subvecs_ = subvecs;
 };
@@ -37,7 +37,7 @@ TreeVector& TreeVector::operator=(double value) {
        datum != data_.end(); ++datum) {
     (*datum)->PutScalar(value);
   }
-  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     *(*subvec) = value;
   }
@@ -66,13 +66,24 @@ void TreeVector::Scale(double value) {
        datum != data_.end(); ++datum) {
     (*datum)->Scale(value);
   }
-  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     (*subvec)->Scale(value);
   }
 };
 
-TreeVector& TreeVector::Update(double scalarA, const Vector& A, double scalarThis) {
+void TreeVector::Shift(double scalarA) {
+  for (unsigned int i = 0; i != data_.size(); ++i) {
+    Epetra_MultiVector work(*data_[i]);
+    work.PutScalar(1.0);
+    data_[i]->Update(scalarA, work, 1.0);
+  }
+  for (unsigned int i = 0; i != subvecs_.size(); ++i) {
+    subvecs_[i]->Shift(scalarA);
+  }
+};
+
+Vector& TreeVector::Update(double scalarA, const Vector& A, double scalarThis) {
   const TreeVector *A_ptr = dynamic_cast<const TreeVector *> (&A);
   ASSERT(A_ptr);
   ASSERT(A_ptr->subvecs_.size() == subvecs_.size());
@@ -87,7 +98,7 @@ TreeVector& TreeVector::Update(double scalarA, const Vector& A, double scalarThi
   return *this;
 };
 
-TreeVector& TreeVector::Update(double scalarA, const Vector& A,
+Vector& TreeVector::Update(double scalarA, const Vector& A,
                    double scalarB, const Vector& B, double scalarThis) {
   const TreeVector *A_ptr = dynamic_cast<const TreeVector *> (&A);
   ASSERT(A_ptr);
@@ -126,15 +137,15 @@ int TreeVector::Dot(const Vector& other, double* result) const {
   return 0;
 };
 
-int TreeVector::SubVector(std::string subname, Teuchos::RCP<Vector> &vec) {
-  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+int TreeVector::SubVector(std::string subname, Teuchos::RCP<TreeVector> &vec) {
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     if (subname == (*subvec)->Name()) {
       vec = *subvec;
       return 0;
     }
   }
-  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+  for (std::vector< Teuchos::RCP<TreeVector> >::iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     int ierr = (*subvec)->SubVector(subname, vec);
     if (!ierr) return ierr;
@@ -143,19 +154,28 @@ int TreeVector::SubVector(std::string subname, Teuchos::RCP<Vector> &vec) {
 };
 
 int TreeVector::SubVector(std::string subname,
-                          Teuchos::RCP<const Vector> &vec) const {
-  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+                          Teuchos::RCP<const TreeVector> &vec) const {
+  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     if (subname == (*subvec)->Name()) {
       vec = *subvec;
       return 0;
     }
   }
-  for (std::vector< Teuchos::RCP<Vector> >::iterator subvec = subvecs_.begin();
+  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
        subvec != subvecs_.end(); ++subvec) {
     int ierr = (*subvec)->SubVector(subname, vec);
     if (!ierr) return ierr;
   }
   return 1;
 };
+
+void TreeVector::PushBack(Teuchos::RCP<TreeVector>& subvec) {
+  subvecs_.push_back(subvec);
+};
+
+void TreeVector::PushBack(Teuchos::RCP<Epetra_MultiVector>& data) {
+  data_.push_back(data);
+};
+
 } // namespace
