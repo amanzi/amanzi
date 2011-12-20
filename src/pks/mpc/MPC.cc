@@ -144,48 +144,6 @@ double MPC::get_dT() {
   return dt;
 }
 
-void MPC::compute_f(const double t, const Vector& u,
-                    const Vector& udot, Vector& f) {
-  const TreeVector *u_ptr = dynamic_cast<const TreeVector *> (&u);
-  ASSERT(u_ptr);
-  const TreeVector *udot_ptr = dynamic_cast<const TreeVector *> (&udot);
-  ASSERT(udot_ptr);
-  TreeVector *f_ptr = dynamic_cast<TreeVector *> (&f);
-  ASSERT(f_ptr);
-
-  // note this must happen outside of the pk loop -- it places the solution
-  // for one PK in the state so that it may be accessed by other PKs
-  solution_to_state(*u_ptr, *udot_ptr, S_);
-
-  for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
-       pk != sub_pks_.end(); ++pk) {
-
-    int subvec_not_found;
-    Teuchos::RCP<const TreeVector> sub_u;
-    subvec_not_found = u_ptr->SubVector((*pk)->name(), sub_u);
-    if (subvec_not_found) {
-      Errors::Message message("MPC: vector structure does not match PK structure");
-      Exceptions::amanzi_throw(message);
-    } 
-
-    Teuchos::RCP<const TreeVector> sub_udot;
-    subvec_not_found = udot_ptr->SubVector((*pk)->name(), sub_udot);
-    if (subvec_not_found) {
-      Errors::Message message("MPC: vector structure does not match PK structure");
-      Exceptions::amanzi_throw(message);
-    } 
-    
-    Teuchos::RCP<TreeVector> sub_f;
-    subvec_not_found = f_ptr->SubVector((*pk)->name(), sub_f);
-    if (subvec_not_found) {
-      Errors::Message message("MPC: vector structure does not match PK structure");
-      Exceptions::amanzi_throw(message);
-    } 
-
-    (*pk)->compute_f(t, *sub_u, *sub_udot, *sub_f);
-  }
-};
-
 void MPC::commit_state(double dt, Teuchos::RCP<State> &S) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
