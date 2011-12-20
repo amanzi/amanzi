@@ -8,15 +8,15 @@
 #include "State.hh"
 #include "PK.hh"
 
-namespace Amanzi
-{
+namespace Amanzi {
 
-  class PK_Factory {
+class PK_Factory {
 
-  public:
-    Teuchos::RCP<PK> create_pk(Teuchos::ParameterList plist, Teuchos::RCP<State>& S,
-            Teuchos::RCP<TreeVector>& soln);
-  };
+public:
+
+  Teuchos::RCP<PK> create_pk(Teuchos::ParameterList plist, Teuchos::RCP<State>& S,
+                             Teuchos::RCP<TreeVector>& soln);
+};
 }
 
 #endif

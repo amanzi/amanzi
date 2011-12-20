@@ -1,5 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
+#include <iostream>
 #include "errors.hh"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Epetra_Comm.h"
@@ -27,46 +28,58 @@ Coordinator::Coordinator(Teuchos::ParameterList &parameter_list,
 
 void Coordinator::coordinator_init() {
   // set the line prefix for output
-  this->setLinePrefix("Amanzi::Coordinator         ");
+  this->setLinePrefix("Amanzi::Coordinator  ");
   // make sure that the line prefix is printed
   this->getOStream()->setShowLinePrefix(true);
 
   // Read the sublist for verbosity settings.
-  Teuchos::readVerboseObjectSublist(&parameter_list,this);
+  Teuchos::readVerboseObjectSublist(&parameter_list_,this);
 
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-  coordinator_plist_ = parameter_list.sublist("Coordinator");
+  coordinator_plist_ = parameter_list_.sublist("Coordinator");
   read_parameter_list();
 
   // create the state object
-  Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");
-  S = Teuchos::rcp(new State( state_parameter_list, mesh_maps));
+  Teuchos::ParameterList state_parameter_list = parameter_list_.sublist("State");
+  S_ = Teuchos::rcp(new State( state_parameter_list, mesh_maps_));
 
-  // create the PKs
-  Teuchos::ParameterList pks_list = parameter_list.sublist("PKs");
+  // create the top level PK
+  Teuchos::ParameterList pks_list = parameter_list_.sublist("PKs");
   Teuchos::ParameterList::ConstIterator pk_item = pks_list.begin();
 
   const std::string &pk_name = pks_list.name(pk_item);
   const Teuchos::ParameterEntry &pk_value = pks_list.entry(pk_item);
-  pk_ = pk_factory_.create_pk(pks_list.sublist(pk_name), S_, solution_);
+
+  // -- create the solution
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+    *out << "Coordinator creating TreeVec with name: " << pk_name << std::endl;
+  }
+  soln_ = Teuchos::rcp(new TreeVector(pk_name));
+
+  // -- create the pk
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true)) {
+    *out << "Coordinator creating PK with name: " << pk_name << std::endl;
+  }
+  pk_ = pk_factory_.create_pk(pks_list.sublist(pk_name), S_, soln_);
+  pk_->set_name(pk_name);
 
   // create the observations
-  Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation");
-  observations = new Amanzi::Unstructured_observations(observation_plist,
-                                                       output_observations);
+  Teuchos::ParameterList observation_plist = parameter_list_.sublist("Observation");
+  observations_ = new Amanzi::Unstructured_observations(observation_plist,
+          output_observations_);
 
   // create the visualization object
-  if (parameter_list.isSublist("Visualization Data")) {
+  if (parameter_list_.isSublist("Visualization Data")) {
       Teuchos::ParameterList vis_parameter_list =
-        parameter_list.sublist("Visualization Data");
-      visualization = new Amanzi::Vis(vis_parameter_list, comm);
-      visualization->create_files(*mesh_maps);
+        parameter_list_.sublist("Visualization Data");
+      visualization_ = new Amanzi::Vis(vis_parameter_list, comm_);
+      visualization_->create_files(*mesh_maps_);
   } else {
-    visualization = new Amanzi::Vis();
+    visualization_ = new Amanzi::Vis();
   }
 }
 
@@ -75,13 +88,13 @@ void Coordinator::initialize() {
   S_->initialize();
 
   // initialize the process kernels (which should initialize all dependent variables)
-  pk_->initialize(S_, solution_);
+  pk_->initialize(S_, soln_);
 }
 
 void Coordinator::read_parameter_list() {
-  T0 = coordinator_plist_.get<double>("Start Time");
-  T1 = coordinator_plist_.get<double>("End Time");
-  end_cycle = coordinator_plist_.get<int>("End Cycle",-1);
+  T0_ = coordinator_plist_.get<double>("Start Time");
+  T1_ = coordinator_plist_.get<double>("End Time");
+  end_cycle_ = coordinator_plist_.get<int>("End Cycle",-1);
 }
 
 void Coordinator::cycle_driver () {
@@ -91,7 +104,7 @@ void Coordinator::cycle_driver () {
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
   // start at time T=T0, iteration 0;
-  S_->set_time(T0);
+  S_->set_time(T0_);
   int iter = 0;
   S_->set_cycle(iter);
 
@@ -99,10 +112,10 @@ void Coordinator::cycle_driver () {
   // this should include advancing flow to steady state
   // (which should be done by flow_pk->initialize_state(S)
   initialize();
-  S->set_time(T0); // in case steady state solve changed this
+  S_->set_time(T0_); // in case steady state solve changed this
 
   // make observations
-  observations->make_observations(*S_);
+  observations_->make_observations(*S_);
 
   // write visualization if requested at IC
   S_->write_vis(*visualization_);
@@ -114,36 +127,38 @@ void Coordinator::cycle_driver () {
   // iterate process kernels
   double mpc_dT;
   bool fail = 0;
-  while (  (S->get_time() <= T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
-    mpc_dT = get_dT();
+  while (  (S_->get_time() <= T1_)  &&   ((end_cycle_ == -1) || (iter <= end_cycle_)) ) {
+    mpc_dT = pk_->get_dT();
 
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
       *out << "Cycle = " << iter;
-      *out << ",  Time = "<< S->get_time() / (60*60*24);
+      *out << ",  Time = "<< S_->get_time() / (60*60*24);
       *out << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
     }
 
     // advance
-    fail = advance_transient(mpc_dT, S, S_new);
+    Teuchos::RCP<const State> cS = S_; // required as passing non-const to
+                                       // const not possible under RCP
+    fail = pk_->advance(mpc_dT, cS, S_new, soln_);
     if (fail) {
       Errors::Message message("Coordinator: error advancing time");
       Exceptions::amanzi_throw(message);
     } else {
       // update the time in the state object
-      S->advance_time(mpc_dT);
+      S_->advance_time(mpc_dT);
 
       // we're done with this time step
-      S = S_new;
+      S_ = S_new;
 
       // advance the iteration count
       ++iter;
-      S->set_cycle(iter);
+      S_->set_cycle(iter);
 
       // make observations
-      observations->make_observations(*S);
+      observations_->make_observations(*S_);
 
       // write visualization if requested
-      S->write_vis(*visualization);
+      S_->write_vis(*visualization_);
 
       // write restart dump if requested
       // restart->dump_state(*S);
@@ -151,7 +166,7 @@ void Coordinator::cycle_driver () {
   } // while not finished
 
   // dump observations
-  output_observations.print(std::cout);
+  output_observations_.print(std::cout);
 } // cycle driver
 
 } // close namespace Amanzi

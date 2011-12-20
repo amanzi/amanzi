@@ -5,6 +5,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_MpiComm.h"
+
+#include "TreeVector.hh"
 #include "State.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
@@ -12,12 +14,12 @@
 #include "Unstructured_observations.hpp"
 #include "Vis.hpp"
 
-//namespace Amanzi {
+namespace Amanzi {
 
 class Coordinator : public Teuchos::VerboseObject<Coordinator> {
 
 public:
-  Coordinator(Teuchos::ParameterList &parameter_list,          
+  Coordinator(Teuchos::ParameterList &parameter_list,
               Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps,
               Epetra_MpiComm* comm,
               Amanzi::ObservationData& output_observations);
@@ -33,11 +35,11 @@ private:
 
   // PK container and factory
   PK_Factory pk_factory_;
-  PK pk_;
+  Teuchos::RCP<PK> pk_;
 
   // states
-  Teuchos::RCP<State> S0_, S1_;
-  Teuchos::RCP<TreeVector> solution_;
+  Teuchos::RCP<State> S_;
+  Teuchos::RCP<TreeVector> soln_;
 
   // misc setup information
   Teuchos::ParameterList parameter_list_;
@@ -56,7 +58,6 @@ private:
 
   // visualization
   Amanzi::Vis *visualization_;
-  
 };
 
 } // close namespace Amanzi
