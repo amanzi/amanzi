@@ -41,8 +41,14 @@ namespace Amanzi {
       
       if ( plist.sublist("Output").sublist("Time Macros").isSublist(macro_name) )
 	{
-	  time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
-	    .get<Teuchos::Array<double> >("Start_Period_Stop");
+	  if (plist.sublist("Output").sublist("Time Macros").sublist(macro_name).isParameter("Start_Period_Stop")) {
+	    time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
+	      .get<Teuchos::Array<double> >("Start_Period_Stop");
+	  }
+	  if (plist.sublist("Output").sublist("Time Macros").sublist(macro_name).isParameter("Values")) {
+	    time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
+	      .get<Teuchos::Array<double> >("Values");
+	  }	  
 	}
       else
 	{
@@ -123,8 +129,8 @@ namespace Amanzi {
 		  Teuchos::ParameterList& c_restart_list = restart_list.sublist("Cycle Data");
 
 		  c_restart_list.set<int>("Start", range[0]);
-		  c_restart_list.set<int>("End", range[1]);
-		  c_restart_list.set<int>("Interval", range[2]);
+		  c_restart_list.set<int>("End", range[2]);
+		  c_restart_list.set<int>("Interval", range[1]);
 		  // now delete the Cycle Macro paramter
 		  
 		  restart_list.remove("Cycle Macro");
@@ -379,6 +385,10 @@ namespace Amanzi {
 	   
 
 	}
+      
+      std::string vlevel("medium");
+      mpc_list.sublist("VerboseObject") = create_Verbosity_List(vlevel);
+
 
       return mpc_list;
     }
@@ -522,7 +532,7 @@ namespace Amanzi {
 		  // TODO...
 		  // CREATE THE DARCY SUBLIST
 		}
-	      else if ( plist.sublist("Execution control").get<std::string>("Flow Mode") == "steady state single phase variably saturated flow" )
+	      else if ( plist.sublist("Execution control").get<std::string>("Flow Mode") == "transient single phase variably saturated flow" )
 		{
 		  Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
 		  richards_problem.set<bool>("Upwind relative permeability", true);
@@ -533,6 +543,8 @@ namespace Amanzi {
 		  // set some reasonable defaults...
 		  richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
 		  richards_model_evaluator.set<double>("Relative error tolerance",1.0e-5);
+		  std::string vlevel("medium");
+		  richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
 		
 		  Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
 		  // set some reasonable defaults...
@@ -541,6 +553,8 @@ namespace Amanzi {
 		  time_integrator.set<int>("Maximum number of BDF tries", 10);
 		  time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
 		  time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
+		  time_integrator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
+
 
 		  // insert the water retention models sublist
 		  Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models"); 
@@ -671,13 +685,13 @@ namespace Amanzi {
 		  Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
 		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
 		  
-		  if (!bc_flux.isParameter("Extensive Mass Flux"))
+		  if (!bc_flux.isParameter("Intensive Mass Flux"))
 		    {
 		      // we can only handle mass fluxes right now
-		      Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Extensive Mass Flux"));
+		      Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Intensive Mass Flux"));
 		    }
 
-		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Extensive Mass Flux");
+		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Intensive Mass Flux");
 		  
 		  std::stringstream ss;
 		  ss << "BC " << bc_counter++;
@@ -951,8 +965,22 @@ namespace Amanzi {
       return stt_list;
     }
 
-
-
+    Teuchos::ParameterList create_Verbosity_List ( std::string& vlevel ) 
+    {
+      Teuchos::ParameterList vlist;
+      
+      if (vlevel == "low") {
+	vlist.set<std::string>("Verbosity Level","low");
+      } else if (vlevel == "medium") {
+	vlist.set<std::string>("Verbosity Level","medium");
+      } else if (vlevel == "medium") {
+	vlist.set<std::string>("Verbosity Level","high");
+      } else if (vlevel == "none") {
+	vlist.set<std::string>("Verbosity Level","none");
+      }
+	
+      return vlist;      
+    }
 
   }
 }

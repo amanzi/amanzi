@@ -26,7 +26,8 @@ void Transport_PK::process_parameter_list()
   Teuchos::RCP<AmanziMesh::Mesh> mesh = TS->get_mesh_maps();
 
   Teuchos::ParameterList transport_list;
-  transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
+  //transport_list = parameter_list.get<Teuchos::ParameterList>("Transport");
+  transport_list = parameter_list;
 
   // global transport parameters
   cfl = transport_list.get<double>("CFL", 1.0);
