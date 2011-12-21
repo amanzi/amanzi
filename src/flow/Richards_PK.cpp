@@ -30,119 +30,256 @@ namespace AmanziFlow {
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::ParameterList &plist, 
-                         const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), richards_plist(plist)
+Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC)
 {
-  // Add some parameters to the Richards problem constructor parameter list.
-  Teuchos::ParameterList &rp_list = plist.sublist("Richards Problem");
-  rp_list.set("fluid density", FS->get_fluid_density());
-  rp_list.set("fluid viscosity", FS->get_fluid_viscosity());
-  const double *gravity = FS->get_gravity();
-  //TODO: assuming gravity[0] = gravity[1] = 0 -- needs to be reconciled somehow
-  rp_list.set("gravity", -gravity[2]);
-  
-  // Create the Richards flow problem.
-  Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
-  problem = new RichardsProblem(FS->get_mesh_maps(), plist);
+  FS = FS_MPC;
+  rp_list = rp_list_;
+
+  mesh_ = FS->get_mesh();
+  dim = mesh_->space_dimension();
+
+  // Create the combined cell/face DoF map.
+  super_map_ = create_super_map();
+
+  // Other fundamental physical quantaties
+  double rho = *(FS->get_fluid_density());
+  double mu = *(FS->get_fluid_viscosity()); 
+  for(int k=0; k<dim; k++) (*(FS->get_gravity()))[k];
+
+#ifdef HAVE_MPI
+  const  Epetra_Comm & comm = mesh_->cell_map(false).Comm(); 
+  MyPID = comm.MyPID();
+
+  const Epetra_Map& source_cmap = mesh_->cell_map(false);
+  const Epetra_Map& target_cmap = mesh_->cell_map(true);
+
+  cell_importer_ = Teuchos::rcp(new Epetra_Import(target_cmap, source_cmap));
+
+  const Epetra_Map& source_fmap = mesh_->face_map(false);
+  const Epetra_Map& target_fmap = mesh_->face_map(true);
+
+  face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
+#endif
+
+  // miscalleneous
+  upwind_Krel = true;
+
+  Flow_PK::Init(FS_MPC);
+}
+
+
+/* ******************************************************************
+* Extract information from Richards Problem parameter list.
+****************************************************************** */
+void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
+{
+  if (matrix_ == NULL) matrix = new Matrix_MFD(FS, *super_map_);
+  else matrix = matrix_;
+
+  if (preconditioner_ == NULL) preconditioner = matrix;
+  else preconditioner = preconditioner_;
+
+  solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
 
   // Create the solution vectors.
-  solution = new Epetra_Vector(problem->Map());
-  pressure_cells = FS->create_cell_view(*solution);
-  pressure_faces = FS->create_face_view(*solution);
-  richards_flux = new Epetra_Vector(problem->FaceMap());
+  solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
+  solution_cells = Teuchos::rcp(FS->create_cell_view(*solution));
+  solution_faces = Teuchos::rcp(FS->create_face_view(*solution));
+  rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
 
-  // first the Richards model evaluator
-  Teuchos::ParameterList &rme_list = rlist.sublist("Richards model evaluator");
-  RME = new RichardsModelEvaluator(problem, rme_list, problem->Map(), FS);  
+  // Get some solver parameters from the flow parameter list.
+  process_parameter_list();
 
-  // then the BDF2 solver
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(rlist.sublist("Time integrator")));
+  // Process boundary data
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  std::vector<int> bc_markers(FLOW_BC_FACE_NULL, ncells);
+  std::vector<double> bc_values(0.0, ncells);
 
-  time_stepper = new BDF2::Dae(*RME, problem->Map());
-  time_stepper->setParameterList(bdf2_list_p);
+  T_physical = FS->get_time();
+  double time = (standalone_mode) ? T_internal : T_physical;
+
+  bc_pressure->Compute(time);
+  update_data_boundary_faces(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+
+  // Create the Richards model evaluator and time integrator
+  Teuchos::ParameterList& rme_list = rp_list.sublist("Richards model evaluator");
+  solver = new Interface_BDF2();  
+
+  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
+  time_stepper = new BDF2::Dae(*solver, *super_map_);
+  time_stepper->setParameterList(bdf2_list);
 };
 
 
-Richards_PK::~Richards_PK()
+/* ******************************************************************
+* Routine processes parameter list. It needs to be called only once
+* on each processor.                                                     
+****************************************************************** */
+void Richards_PK::process_parameter_list()
 {
-  delete richards_flux;
-  delete pressure_cells;
-  delete pressure_faces;
-  delete solution;
-  delete problem;
-};
+  Teuchos::ParameterList preconditioner_list;
+  preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
+
+  max_itrs = rp_list.get<int>("Max Iterations");
+  err_tol = rp_list.get<double>("Error Tolerance");
+
+  upwind_Krel = rp_list.get<bool>("Upwind relative permeability", true);
+  atm_pressure = rp_list.get<double>("Atmospheric pressure");
+
+  // Create the BC objects.
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(rp_list.sublist("boundary conditions", true));
+  FlowBCFactory bc_factory(mesh_, bc_list);
+
+  bc_pressure = bc_factory.CreatePressure();
+  bc_head = bc_factory.CreateStaticHead(0.0, rho, gravity[dim - 1]);
+  bc_flux = bc_factory.CreateMassFlux();
+
+  validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
+
+  double time = (standalone_mode) ? T_internal : T_physical;
+  bc_pressure->Compute(time);
+  bc_head->Compute(time);
+  bc_flux->Compute(time);
+}
 
 
-int Richards_PK::init(double t0, double h_)
+/* ******************************************************************
+* Calculates steady-state solution assuming that abosolute and relative
+* permeabilities do not depend explicitly on time.                                                    
+****************************************************************** */
+int Richards_PK::advance_to_steady_state()
 {
-  h = h_;
-  hnext = h_;
+  double T0 = (standalone_mode) ? T_internal : T_physical;
+  double dTnext, T1, Tlast = T0;
 
-  // Set problem parameters.
-  problem->set_absolute_permeability(FS->get_permeability());
-  problem->set_flow_state(FS);
+  int itrs = 0;
+  while (T1 < Tlast) {
+    // work-around limited support for tensors
+    std::vector<WhetStone::Tensor> K(number_owned_cells);
+    populate_absolute_permeability_tensor(K);
+    calculate_relative_permeability(Krel);
 
-  Epetra_Vector udot(problem->Map());
-  problem->compute_udot(t0, *solution, udot);
+    for (int c=0; c<K.size(); c++) K[c] *= rho / mu * Krel[c];
+
+    matrix->createMFDstiffnessMatrices(K);
+    matrix->assembleGlobalMatrices(*rhs);
+    matrix->applyBoundaryConditions(bc_markers, bc_values);
+    matrix->computeSchurComplement();
+
+    if (itrs == 0) {  // initialization
+      Epetra_Vector pdot(*super_map_);
+      compute_pdot(T0, *solution, pdot);
+      time_stepper->set_initial_state(T0, *solution, pdot);
+
+      int errc;
+      double dT0 = 1e-3;
+      solver->update_precon(T0, *solution, dT0, errc);
+    }
+
+    time_stepper->bdf2_step(dT, 0.0, *solution, dTnext);
+    time_stepper->commit_solution(dT, *solution);
+    time_stepper->write_bdf2_stepping_statistics();
+
+    dT = dTnext;
+    Tlast = time_stepper->most_recent_time();
+    itrs++;
+  }    
   
-  time_stepper->set_initial_state(t0, *solution, udot);
-  
-  int errc;
-  RME->update_precon(t0, *solution, h, errc);
+  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
+  matrix->deriveDarcyFlux(*solution, *rhs, *face_importer_, darcy_flux);
 }
 
 
 /* ******************************************************************* 
- * We have to advance each component independently due to different
- * discretizations. We use tcc when only owned data are needed and 
- * tcc_next when owned and ghost data.
- *
- * Data flow: loop over components C and for each C apply the 
- * second-order RK method. 
+ * . 
  ****************************************************************** */
 int Richards_PK::advance(double dT) 
 {
-  // Set problem parameters.
-  problem->set_absolute_permeability(FS->get_permeability());
-  problem->set_flow_state(FS);
+  // work-around limited support for tensors
+  std::vector<WhetStone::Tensor> K(number_owned_cells);
+  populate_absolute_permeability_tensor(K);
+  calculate_relative_permeability(Krel);
 
-  time_stepper->bdf2_step(h,0.0,*solution,hnext);
-  time_stepper->commit_solution(h,*solution);  
+  for (int c=0; c<K.size(); c++) K[c] *= rho / mu * Krel[c];
 
+  matrix->createMFDstiffnessMatrices(K);
+  matrix->assembleGlobalMatrices(*rhs);
+  matrix->applyBoundaryConditions(bc_markers, bc_values);
+  matrix->computeSchurComplement();
+
+  if (itrs == 0) {  // initialization
+    Epetra_Vector pdot(*super_map_);
+    compute_pdot(T0, *solution, pdot);
+    time_stepper->set_initial_state(T0, *solution, pdot);
+
+    int errc;
+    double dT0 = 1e-3;
+    solver->update_precon(T0, *solution, dT0, errc);
+  }
+
+  time_stepper->bdf2_step(dT, 0.0, *solution, dTnext);
+  time_stepper->commit_solution(dT, *solution);
   time_stepper->write_bdf2_stepping_statistics();
 }
 
 
-void Richards_PK::get_saturation(Epetra_Vector &s) const
+/* ******************************************************************
+* Estimate dp/dt from the pressure equations.                                               
+****************************************************************** */
+void Richards_PK::compute_udot(const double t, const Epetra_Vector& p, Epetra_Vector &pdot)
 {
-  //for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
-  problem->DeriveVanGenuchtenSaturation(*pressure_cells, s);
+  ComputeF(p, pdot);
+
+  // zero out the face part, why? (lipnikov@lanl.gov)
+  Epetra_Vector *pdot_face = FS->create_face_view(pdot);
+  pdot_face->PutScalar(0.0);
+}
+
+
+/* ******************************************************************
+* Temporary convertion from double to tensor.                                               
+****************************************************************** */
+void Richards_PK::populate_absolute_permeability_tensor(std::vector<WhetStone::Tensor>& K)
+{
+  const Epetra_Vector& permeability = FS->ref_absolute_permeability();
+
+  for (int c=cmin; c<=cmax; c++) {
+    K[c].init(dim, 1);
+    K[c](0, 0) = permeability[c];
+  }
+}
+
+
+/* ******************************************************************
+* .                                               
+****************************************************************** */
+void Richards_PK::ComputeRelPerm(const Epetra_Vector &P, Epetra_Vector &k_rel) const
+{
+  ASSERT(P.Map().SameAs(CellMap(true)));
+  ASSERT(k_rel.Map().SameAs(CellMap(true)));
+
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    std::string region = WRM[mb]->region();
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::USED);
+    std::vector<unsigned int> block(ncells);
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::USED,&block);
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) {
+      k_rel[*j] = WRM[mb]->k_relative(P[*j]);
+    }
+  }
 }
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 
+
+
 /*
 RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                                  const Teuchos::ParameterList& parameter_list) : mesh_(mesh)
 {
-  // Create the combined cell/face DoF map.
-  dof_map_ = create_dof_map_(CellMap(), FaceMap());
-
-  face_importer_ = new Epetra_Import(FaceMap(true),FaceMap(false));
-  cell_importer_ = new Epetra_Import(CellMap(true),CellMap(false));
-
-  // create the MimeticHexLocal objects.
-  init_mimetic_disc_(*mesh, MD);
-  md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
-  
-  Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  Teuchos::ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
-
-  upwind_k_rel_ = rp_list.get<bool>("Upwind relative permeability", true);
-  
-  p_atm_   = rp_list.get<double>("Atmospheric pressure");
   rho_ = state_list.get<double>("Constant water density");
   mu_ = state_list.get<double>("Constant viscosity");
   gravity_ = state_list.get<double>("Gravity z");
@@ -216,154 +353,7 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   }  
 }
 
-
-RichardsProblem::~RichardsProblem()
-{
-  delete dof_map_;
-  delete face_importer_;
-  delete cell_importer_;
-  delete md_;
-  delete precon_;
-
-  delete cell_volumes;
-  delete bc_press_;
-  delete bc_head_;
-  delete bc_flux_;
-}
-
   
-void RichardsProblem::validate_boundary_conditions() const
-{
-  // Create sets of the face indices belonging to each BC type.
-  std::set<int> press_faces, head_faces, flux_faces;
-  BoundaryFunction::Iterator bc;
-  for (bc = bc_press_->begin(); bc != bc_press_->end(); ++bc) press_faces.insert(bc->first);
-  for (bc = bc_head_->begin();  bc != bc_head_->end();  ++bc) head_faces.insert(bc->first);
-  for (bc = bc_flux_->begin();  bc != bc_flux_->end();  ++bc) flux_faces.insert(bc->first);
-  
-  std::set<int> overlap;
-  std::set<int>::iterator overlap_end;
-  int local_overlap, global_overlap;
-  
-  // Check for overlap between pressure and static head BC.
-  std::set_intersection(press_faces.begin(), press_faces.end(),
-                         head_faces.begin(),  head_faces.end(),
-                        std::inserter(overlap, overlap.end()));
-  local_overlap = overlap.size();
-  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
-  if (global_overlap != 0) {
-    Errors::Message m;
-    std::stringstream s;
-    s << global_overlap;
-    m << "RichardsProblem: \"static head\" BC overlap \"dirichlet\" BC on "
-      << s.str().c_str() << " faces";
-    Exceptions::amanzi_throw(m);
-  }
-  
-  // Check for overlap between pressure and flux BC.
-  overlap.clear();
-  std::set_intersection(press_faces.begin(), press_faces.end(),
-                         flux_faces.begin(),  flux_faces.end(),
-                        std::inserter(overlap, overlap.end()));
-  local_overlap = overlap.size();
-  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
-  if (global_overlap != 0) {
-    Errors::Message m;
-    std::stringstream s;
-    s << global_overlap;
-    m << "RichardsProblem: \"flux\" BC overlap \"dirichlet\" BC on "
-      << s.str().c_str() << " faces";
-    Exceptions::amanzi_throw(m);
-  }
-  
-  // Check for overlap between static head and flux BC.
-  overlap.clear();
-  std::set_intersection(head_faces.begin(), head_faces.end(),
-                        flux_faces.begin(), flux_faces.end(),
-                        std::inserter(overlap, overlap.end()));
-  local_overlap = overlap.size();
-  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
-  if (global_overlap != 0) {
-    Errors::Message m;
-    std::stringstream s;
-    s << global_overlap;
-    m << "RichardsProblem: \"flux\" BC overlap \"static head\" BC on "
-      << s.str().c_str() << " faces";
-    Exceptions::amanzi_throw(m);
-  }
-  
-  //TODO: Verify that a BC has been applied to every boundary face.
-  //      Right now faces without BC are considered no-mass-flux.
-}
-
-
-DiffusionMatrix* RichardsProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh) const
-{
-  // Generate the list of all Dirichlet-type faces.
-  // The provided list should include USED BC faces.
-  std::vector<int> dir_faces;
-  for (BoundaryFunction::Iterator i = bc_press_->begin(); i != bc_press_->end(); ++i)
-    dir_faces.push_back(i->first);
-  for (BoundaryFunction::Iterator i = bc_head_->begin();  i != bc_head_->end();  ++i)
-    dir_faces.push_back(i->first);
-  
-  return new DiffusionMatrix(mesh, dir_faces);
-}
-
-
-void RichardsProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<MimeticHexLocal> &MD) const
-{
-  // Local storage for the 8 vertex coordinates of a hexahedral cell.
-  double x[8][3];
-  double *xBegin = &x[0][0];  // begin iterator
-  double *xEnd = xBegin+24;   // end iterator
-
-  MD.resize(mesh.cell_map(true).NumMyElements());
-  for (int j = 0; j < MD.size(); ++j) {
-    mesh.cell_to_coordinates((unsigned int) j, xBegin, xEnd);
-    MD[j].update(x);
-  }
-}
-
-
-void RichardsProblem::set_absolute_permeability(double k)
-{
-  for (int c=0; c<k_.size(); ++c) k_[c] = k;  // should verify k > 0
-}
-
-
-void RichardsProblem::set_absolute_permeability(const Epetra_Vector &k)
-{
-  // should verify k.Map() is CellMap()
-  // should verify k values are all > 0
-  Epetra_Vector k_ovl(mesh_->cell_map(true));
-  Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
-
-  k_ovl.Import(k, importer, Insert);
-
-  for (int i=0; i<k_.size(); ++i) k_[i] = k_ovl[i];
-}
-
-
-void RichardsProblem::ComputeRelPerm(const Epetra_Vector &P, Epetra_Vector &k_rel) const
-{
-  ASSERT(P.Map().SameAs(CellMap(true)));
-  ASSERT(k_rel.Map().SameAs(CellMap(true)));
-
-  for (int mb=0; mb<WRM.size(); mb++) {
-    // get mesh block cells
-    std::string region = WRM[mb]->region();
-    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::USED);
-    std::vector<unsigned int> block(ncells);
-    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::USED,&block);
-    std::vector<unsigned int>::iterator j;
-    for (j = block.begin(); j!=block.end(); j++) {
-      k_rel[*j] = WRM[mb]->k_relative(P[*j]);
-    }
-  }
-}
-
-
 void RichardsProblem::UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
@@ -868,34 +858,6 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
 }
 
 
-void RichardsProblem::compute_udot(const double t, const Epetra_Vector& u, Epetra_Vector &udot)
-{
-  ComputeF(u, udot);
-
-  // zero out the face part
-  Epetra_Vector *udot_face = CreateFaceView(udot);
-  udot_face->PutScalar(0.0);
-}
-
-
-void RichardsProblem::set_pressure_cells(double height, Epetra_Vector *pressure)
-{
-  for (int c=0; c<pressure->MyLength(); c++) {
-    const AmanziGeometry::Point& xc = FS->get_mesh_maps()->cell_centroid(c);
-    (*pressure)[c] = p_atm_ + rho_ * gvec_[2] * (xc[2] - height);
-  }
-}
-
-
-void RichardsProblem::set_pressure_faces(double height, Epetra_Vector *pressure)
-{
-  for (int f=0; f<pressure->MyLength(); f++) {
-    const AmanziGeometry::Point& xf = FS->get_mesh_maps()->face_centroid(f);
-    (*pressure)[f] = p_atm_ + rho_*gvec_[2] * (xf[2] - height);
-  }
-}
-
-
 void RichardsProblem::set_initial_pressure_from_saturation_cells(double saturation, Epetra_Vector *pressure)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
@@ -932,53 +894,6 @@ void RichardsProblem::set_initial_pressure_from_saturation_faces(double saturati
   }
 }
 
-int Richards_PK::advance_to_steady_state()
-{
-  // Set problem parameters.
-  problem->set_absolute_permeability(FS->get_permeability());
-  problem->set_flow_state(FS);
-
-  double t0 = ss_t0;
-  double t1 = ss_t1;
-  double h =  ss_h0;
-  double hnext;
-
-  // create udot
-
-  problem->set_pressure_cells(ss_z, pressure_cells);
-  problem->set_pressure_faces(ss_z, pressure_faces);
-
-  Epetra_Vector udot(problem->Map());
-  problem->compute_udot(t0, *solution, udot);
-
-  time_stepper->set_initial_state(t0, *solution, udot);
-
-  int errc;
-  RME->update_precon(t0, *solution, h, errc);
-
-  // iterate
-  int i = 0;
-  double tlast = t0;
-
-  do {
-    time_stepper->bdf2_step(h,0.0,*solution,hnext);
-    time_stepper->commit_solution(h,*solution);
-
-    // update the state, but only the cell values of pressure
-    // FS->update_pressure( * problem->CreateCellView(*solution) );
-    time_stepper->write_bdf2_stepping_statistics();
-
-    h = hnext;
-    i++;
-
-    tlast=time_stepper->most_recent_time();
-  } while (t1 >= tlast);    
-  
-  // Derive the Richards fluxes on faces
-  double l1_error;
-  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
-}
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

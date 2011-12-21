@@ -177,6 +177,23 @@ void Flow_State::distribute_cell_vector(Epetra_Vector& v)
 }
 
 
+/* **************************************************************** */
+void Flow_State::distribute_face_vector(Epetra_Vector& v, Epetra_CombineMode mode)
+{
+#ifdef HAVE_MPI
+  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
+  const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  Epetra_Import importer(target_fmap, source_fmap);
+
+  double* vdata;
+  v.ExtractView(&vdata);
+  Epetra_Vector vv(View, source_fmap, vdata);
+
+  v.Import(vv, importer, mode);
+#endif
+}
+
+
 /* *******************************************************************
  * Copy data in ghost positions for a multivector.              
  ****************************************************************** */
@@ -237,6 +254,33 @@ void Flow_State::set_fluid_viscosity(double mu)
 {
   *fluid_viscosity = mu;  // verify that it is positive (lipnikov@lanl.gov)
 }
+
+
+/* *******************************************************************
+ * DEBUG: create hydrostatic pressure with p0 at height z0.
+ ****************************************************************** */
+void Flow_State::set_pressure_head(double z0, double p0, Epetra_Vector& pressure)
+{
+  int dim = mesh_->space_dimension();
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+
+  double rho = *fluid_density;
+  double g = (*gravity)[dim - 1];
+
+  for (int c=0; c<ncells; c++) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    pressure[c] = p0 + rho * g * (xc[dim - 1] - z0);
+  }
+
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  if (pressure.MyLength() == ncells + nfaces) {
+    for (int f=0; f<nfaces; f++) {
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      pressure[ncells + f] = p0 + rho * g * (xf[dim - 1] - z0);
+    }
+  }
+}
+
 
 
 }  // namespace AmanziTransport

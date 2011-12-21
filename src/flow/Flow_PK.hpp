@@ -25,7 +25,8 @@ namespace AmanziFlow {
 
 const int FLOW_NULL = 0;
 const int FLOW_STATE_BEGIN = 2;
-const int FLOW_STATE_COMPLETE = 3;
+const int FLOW_STATE_INIT = 3;
+const int FLOW_STATE_COMPLETE = 4;
 
 const int FLOW_BC_FACE_NULL = 0; 
 const int FLOW_BC_FACE_PRESSURE = 1; 

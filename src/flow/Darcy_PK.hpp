@@ -43,12 +43,12 @@ class Darcy_PK : public Flow_PK {
   void print_statistics() const;
 
  private:
-  void Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_);
-  void Init(Matrix_MFD* matrix_) { Init(matrix_, matrix_); }
+  void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
   Teuchos::ParameterList dp_list;
 
   Teuchos::RCP<Flow_State> FS;
   AmanziGeometry::Point gravity;
+  double rho, mu;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map *super_map_;
@@ -61,12 +61,13 @@ class Darcy_PK : public Flow_PK {
   Matrix_MFD* matrix;
   Matrix_MFD* preconditioner;
 
-  Teuchos::RCP<Epetra_Vector> solution;  // global solution
-  Teuchos::RCP<Epetra_Vector> solution_cell;  // cell-based pressures
-  Teuchos::RCP<Epetra_Vector> solution_face;  // face-base pressures
-
   int num_itrs, max_itrs;  // numbers of linear solver iterations
   double err_tol, residual;  // errors in linear solver
+
+  Teuchos::RCP<Epetra_Vector> solution;  // global solution
+  Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
+  Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
+  Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
 
   BoundaryFunction *bc_pressure;  // Pressure Dirichlet b.c., excluding static head
   BoundaryFunction *bc_head;  // Static pressure head b.c.; also Dirichlet-type

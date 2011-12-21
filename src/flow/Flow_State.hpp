@@ -8,7 +8,9 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 #define __Flow_State_hpp__
 
 #include "Epetra_Vector.h"
+#include "Epetra_CombineMode.h"
 #include "Teuchos_RCP.hpp"
+
 #include "Mesh.hh"
 #include "State.hpp"
 
@@ -32,6 +34,7 @@ class Flow_State {
   void copymemory_multivector(Epetra_MultiVector& source, Epetra_MultiVector& target);
   void copymemory_vector(Epetra_Vector& source, Epetra_Vector& target);
   void distribute_cell_vector(Epetra_Vector& v);
+  void distribute_face_vector(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
   void distribute_cell_multivector(Epetra_MultiVector& v);
 
   Epetra_Vector* create_cell_view(const Epetra_Vector&) const;
@@ -57,6 +60,7 @@ class Flow_State {
   // debug routines
   void set_fluid_density(double rho);
   void set_fluid_viscosity(double mu);
+  void set_pressure_head(double z0, double p0, Epetra_Vector& pressure);
 
  private:
   State* S_;  
