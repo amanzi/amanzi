@@ -1,4 +1,14 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Implementation of the process kernel factory.  Currently this must be manually
+edited each time a new PK needs to be registered with the factory... this
+should eventually get smarter.
+------------------------------------------------------------------------- */
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -36,5 +46,4 @@ Teuchos::RCP<PK> PK_Factory::create_pk(Teuchos::ParameterList plist,
     Exceptions::amanzi_throw(message);
   }
 };
-
 } // namespace

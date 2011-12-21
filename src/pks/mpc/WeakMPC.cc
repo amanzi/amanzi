@@ -1,19 +1,21 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Implementation for the derived WeakMPC class.  Provides only the advance()
+method missing from MPC.hh.  In weak coupling, we simply loop over the
+sub-PKs, calling their advance() methods and returning failure if any fail.
+
+See additional documentation in the base class src/pks/mpc/MPC.hh
+------------------------------------------------------------------------- */
 
 #include <string>
 
 #include "errors.hh"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Epetra_Comm.h"
-#include "Epetra_MpiComm.h"
-
-// TODO: We are using depreciated parts of boost::filesystem
-#define BOOST_FILESYSTEM_VERSION 2
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-
-#include "dbc.hh"
-#include "State.hh"
 
 #include "WeakMPC.hh"
 
@@ -21,11 +23,10 @@ namespace Amanzi {
 
 WeakMPC::WeakMPC(Teuchos::ParameterList& mpc_plist,
                  Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) :
-    MPC::MPC(mpc_plist, S, soln) {
-};
+    MPC::MPC(mpc_plist, S, soln) {};
 
-bool WeakMPC::advance(double dt, Teuchos::RCP<const State>& S0,
-             Teuchos::RCP<State>& S1, Teuchos::RCP<TreeVector>& solution) {
+// Advance each sub-PK individually.
+bool WeakMPC::advance(double dt, Teuchos::RCP<TreeVector>& solution) {
   bool fail = false;
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
@@ -35,7 +36,7 @@ bool WeakMPC::advance(double dt, Teuchos::RCP<const State>& S0,
       Errors::Message message("WeakMPC: vector structure does not match PK structure");
       Exceptions::amanzi_throw(message);
     } else {
-      fail = (*pk)->advance(dt, S0, S1, subvec);
+      fail = (*pk)->advance(dt, subvec);
       if (fail) {
         return fail;
       }

@@ -1,4 +1,22 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Implementation for the Base MPC class.  A multi process coordinator is a PK
+(process kernel) which coordinates several PKs.  Each of these coordinated PKs
+may be MPCs themselves, or physical PKs.  Note this does NOT provide a full
+implementation of PK -- it does not supply the advance() method.  Therefore
+this class cannot be instantiated, but must be inherited by derived classes
+which finish supplying the functionality.  Instead, this provides the data
+structures and methods (which may be overridden by derived classes) for
+managing multiple PKs.
+
+Most of these methods simply loop through the coordinated PKs, calling their
+respective methods.
+------------------------------------------------------------------------- */
 
 #include <string>
 
@@ -21,7 +39,7 @@ namespace Amanzi {
 
 MPC::MPC(Teuchos::ParameterList &mpc_plist,
          Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) :
-    mpc_plist_(mpc_plist), S_(S) {
+    mpc_plist_(mpc_plist) {
 
   // do stuff for the VerboseObject
   // -- set the line prefix
@@ -36,6 +54,7 @@ MPC::MPC(Teuchos::ParameterList &mpc_plist,
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
+  // loop over sub-PKs in the PK sublist, constructing the hierarchy recursively
   Teuchos::ParameterList pks_list = mpc_plist.sublist("PKs");
   for (Teuchos::ParameterList::ConstIterator i = pks_list.begin();
        i != pks_list.end(); ++i) {
@@ -60,6 +79,7 @@ MPC::MPC(Teuchos::ParameterList &mpc_plist,
   }
 };
 
+// loop over sub-PKs, calling their initialization methods
 void MPC::initialize(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
@@ -73,6 +93,7 @@ void MPC::initialize(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) {
   }
 };
 
+// loop over sub-PKs, calling their state_to_solution method
 void MPC::state_to_solution(const State& S, Teuchos::RCP<TreeVector>& soln) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
@@ -86,6 +107,7 @@ void MPC::state_to_solution(const State& S, Teuchos::RCP<TreeVector>& soln) {
   }
 };
 
+// loop over sub-PKs, calling their state_to_solution method
 void MPC::state_to_solution(const State& S, Teuchos::RCP<TreeVector>& soln,
                             Teuchos::RCP<TreeVector>& soln_dot) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
@@ -107,6 +129,7 @@ void MPC::state_to_solution(const State& S, Teuchos::RCP<TreeVector>& soln,
   }
 };
 
+// loop over sub-PKs, calling their solution_to_state method
 void MPC::solution_to_state(const TreeVector& soln, Teuchos::RCP<State>& S) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
@@ -120,6 +143,7 @@ void MPC::solution_to_state(const TreeVector& soln, Teuchos::RCP<State>& S) {
   }
 };
 
+// loop over sub-PKs, calling their solution_to_state method
 void MPC::solution_to_state(const TreeVector& soln, const TreeVector& soln_dot,
                             Teuchos::RCP<State>& S) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
@@ -141,15 +165,17 @@ void MPC::solution_to_state(const TreeVector& soln, const TreeVector& soln_dot,
   }
 };
 
-double MPC::get_dT() {
+// min(pk.get_dt()) for each sub-PK
+double MPC::get_dt() {
   double dt = 1.e99;
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    dt = std::min(dt, (*pk)->get_dT());
+    dt = std::min(dt, (*pk)->get_dt());
   }
   return dt;
 }
 
+// loop over sub-PKs, calling their commit_state method
 void MPC::commit_state(double dt, Teuchos::RCP<State>& S) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
@@ -157,10 +183,23 @@ void MPC::commit_state(double dt, Teuchos::RCP<State>& S) {
   }
 };
 
+// loop over sub-PKs, calling their calculate_diagnostics method
 void MPC::calculate_diagnostics(Teuchos::RCP<State>& S) {
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
     (*pk)->calculate_diagnostics(S);
+  }
+};
+
+// loop over sub-PKs, calling their set_states() methods
+void MPC::set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next) {
+  // first set my state
+  PK::set_states(S, S_next);
+
+  // do the loop
+  for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    (*pk)->set_states(S, S_next);
   }
 };
 } // namespace

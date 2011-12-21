@@ -1,4 +1,17 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Interface for a Field.  Field is not intended so much to hide implementation
+of data as to restrict write access to data.  It freely passes out pointers to
+its private data, but only passes out read-only const pointers unless you have
+the secret password (AKA the name of the process kernel that owns the data).
+
+Field also stores some basic metadata for Vis, checkpointing, etc.
+------------------------------------------------------------------------- */
 
 #ifndef __FIELD_HH__
 #define __FIELD_HH__
@@ -8,6 +21,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+
 #include "Mesh.hh"
 
 namespace Amanzi {
@@ -53,6 +67,7 @@ public:
   void set_vector_data(std::string pk_name, const double* u, int mesh_block_id);
 
 private:
+  // consistency checking
   void assert_owner_or_die(std::string pk_name) const;
   void assert_location_or_die(int location) const;
   void assert_valid_block_id_or_die(int mesh_block_id) const;
@@ -70,4 +85,5 @@ private:
 
 }; // class Field
 } // namespace Amanzi
+
 #endif

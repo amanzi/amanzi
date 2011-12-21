@@ -1,4 +1,16 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Interface for the State.  State is a simple data-manager, allowing PKs to
+require, read, and write various fields.  Provides some data protection by
+providing both const and non-const fields to PKs.  Provides some
+initialization capability -- this is where all independent variables can be
+initialized (as independent variables are owned by state, not by any PK).
+------------------------------------------------------------------------- */
 
 #ifndef __STATE_HH__
 #define __STATE_HH__
@@ -42,6 +54,8 @@ public:
   // enum, own indicates whether the PK requiring the field would like write
   // access to the field (i.e. the field is a dependent variable for the PK),
   // and num_dofs indicates the number of required vectors.
+  //
+  // Note that multiple PKs may require a field, but only one may own it.
   void require_field(std::string fieldname, int location,
                      std::string owner="state", int num_dofs=1);
 
@@ -58,13 +72,13 @@ public:
   // Access to the full field instance, not just the data.
   Teuchos::RCP<Field> get_field_record(std::string fieldname);
 
+  // CRUFT, fix me.
   Teuchos::RCP<double> get_density() { return density_; }
   Teuchos::RCP<double> get_viscosity() { return viscosity_; }
   Teuchos::RCP<double*> get_gravity() { return gravity_; }
 
   Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps_; }
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() { return mesh_maps_; };
-
 
   double get_time () const { return time_; }
   int get_cycle () const { return cycle_; }
@@ -95,6 +109,7 @@ public:
   void advance_time(double dT) { time_ += dT; }
   void set_cycle (int new_cycle ) { cycle_ = new_cycle; }
 
+  // CRUFT, fix me
   void set_density(double wd);
   void set_viscosity(double mu);
   void set_gravity(const double *g);
@@ -119,6 +134,7 @@ private:
   FieldNameMap field_name_map_;
   Fields fields_;
 
+  // CRUFT, fix me
   // extra data which (for the moment) is assumed constant
   // over the entire domain
   Teuchos::RCP<double*> gravity_;
@@ -134,15 +150,6 @@ private:
 
   // parameter list
   Teuchos::ParameterList parameter_list_;
-
-  // // restart related maps
-  // Teuchos::RCP<Epetra_Map> all_to_one_node_map;
-  // Teuchos::RCP<Epetra_Map> all_to_one_cell_map;
-  // Teuchos::RCP<Epetra_Map> all_to_one_face_map;
-  // Teuchos::RCP<Epetra_Export> all_to_one_node_export;
-  // Teuchos::RCP<Epetra_Export> all_to_one_cell_export;
-  // Teuchos::RCP<Epetra_Export> all_to_one_face_export;
-
 };
 
 inline

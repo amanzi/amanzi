@@ -21,7 +21,7 @@ public:
 
   void initialize(Teuchos::RCP<State> &S);
 
-  double get_dT() { return h; }
+  double get_dt() { return h; }
 
   bool advance(double dt, const Teuchos::RCP<State> &S0,
                Teuchos::RCP<State> &S1, Teuchos::RCP<Vector> &solution);
