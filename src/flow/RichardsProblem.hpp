@@ -26,7 +26,7 @@ class RichardsProblem {
   // explicit initialization
   void set_absolute_permeability(double k);
   void set_absolute_permeability(const Epetra_Vector &k);
-
+  
   void set_pressure_cells(double height, Epetra_Vector *pressure);
   void set_pressure_faces(double height, Epetra_Vector *pressure);
   void SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure);

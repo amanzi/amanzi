@@ -1,11 +1,11 @@
+#include "Mesh.hh"
 #include "Transient_Richards_PK.hpp"
-
 #include "RichardsProblem.hpp"
 
 namespace Amanzi {
 
 Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_, 
-                                             const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), plist(plist_)
+                                             const Teuchos::RCP<Flow_State> FS_) : FS(FS_), plist(plist_)
 {
   // Add some parameters to the Richards problem constructor parameter list.
   Teuchos::ParameterList &rp_list = plist.sublist("Richards Problem");
@@ -23,6 +23,11 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_,
   pressure_cells = problem->CreateCellView(*solution);
   pressure_faces = problem->CreateFaceView(*solution);
   richards_flux = new Epetra_Vector(problem->FaceMap());
+  
+  // get the pressure from the flow state
+  *pressure_cells = FS->get_pressure();
+  // and compute approximate face pressures
+  approximate_face_pressure(*pressure_cells, *pressure_faces);
 
   // first the Richards model evaluator
   Teuchos::ParameterList &rme_list = rp_list.sublist("Richards model evaluator");
@@ -33,6 +38,9 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_,
 
   time_stepper = new BDF2::Dae(*RME, problem->Map());
   time_stepper->setParameterList(bdf2_list_p);
+
+  // initialize the water saturation for vis
+  GetSaturation( FS->get_water_saturation() );
 
 };
 
@@ -116,7 +124,7 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
 
 int Transient_Richards_PK::advance_transient(double h) 
 {
-  // Set problem parameters.
+  // Set problem parameters
   problem->set_absolute_permeability(FS->get_permeability());
   problem->set_flow_state(FS);
 
@@ -129,8 +137,36 @@ int Transient_Richards_PK::advance_transient(double h)
 
 void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const
 {
-  //for (int i = 0; i < s.MyLength(); ++i) s[i] = 1.0;
   problem->DeriveVanGenuchtenSaturation(*pressure_cells, s);
 }
+  
+void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS) 
+{
+  FS->get_pressure() = *pressure_cells;
+  
+  GetSaturation( FS->get_water_saturation() );
+}
+
+
+void Transient_Richards_PK::approximate_face_pressure(const Epetra_Vector& cell_pressure, Epetra_Vector& face_pressure)
+{
+  // loop over all faces
+  for (int iface=0; iface<face_pressure.MyLength(); iface++)
+    {
+      // find the neighbor cell of the current face
+      Amanzi::AmanziMesh::Entity_ID_List cells;
+      FS->get_mesh_maps()->face_get_cells(iface,Amanzi::AmanziMesh::OWNED, &cells);
+      
+      double cp(0.0);
+      for (unsigned int it=0; it<cells.size(); it++)
+	{
+	  cp += cell_pressure[cells[it]];
+	}
+      // compute an average pressure for the face
+      face_pressure[iface] = cp / cells.size();
+    }
+}
+
+
 
 }  // close namespace Amanzi

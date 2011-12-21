@@ -17,7 +17,8 @@ class Flow_State {
       fluid_viscosity_(S->get_viscosity()),
       permeability_(S->get_permeability()),
       pressure_(S->get_pressure()),
-      porosity_(S->get_porosity()) {};
+      porosity_(S->get_porosity()),
+      water_saturation_(S->get_water_saturation()) {};
   ~Flow_State() {};
 
   // access methods
@@ -27,6 +28,8 @@ class Flow_State {
   const double* get_gravity() const { return *gravity_; }
   const Epetra_Vector& get_permeability() const { return *permeability_; }
   const Epetra_Vector& get_porosity() const { return *porosity_; }
+  Epetra_Vector& get_water_saturation() { return *water_saturation_; }
+  Epetra_Vector& get_pressure() { return *pressure_; }
 
  private:
   // object doesn't own anything -- all smart pointers to the real thing.
@@ -37,6 +40,7 @@ class Flow_State {
   const Teuchos::RCP<AmanziMesh::Mesh> mesh_maps_;
   const Teuchos::RCP<Epetra_Vector> pressure_;  // current cell pressure solution
   const Teuchos::RCP<Epetra_Vector> porosity_;
+  const Teuchos::RCP<Epetra_Vector> water_saturation_;
 };
 
 } // close namespace Amanzi

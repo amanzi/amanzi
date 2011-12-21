@@ -398,6 +398,7 @@ void MPC::cycle_driver ()
 	// in the process kernels
 	if (transport_enabled) TPK->commit_state(TS);
 	if (chemistry_enabled) CPK->commit_state(CS, mpc_dT);
+	if (flow_enabled)      FPK->commit_state(FS);
 	
 	// advance the iteration count
 	iter++;

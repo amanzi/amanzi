@@ -543,12 +543,12 @@ namespace Amanzi {
 		  // set some reasonable defaults...
 		  richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
 		  richards_model_evaluator.set<double>("Relative error tolerance",1.0e-5);
-		  std::string vlevel("low");
+		  std::string vlevel("high");
 		  richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
 		
 		  Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
 		  // set some reasonable defaults...
-		  time_integrator.set<int>("Nonlinear solver max iterations", 6);
+		  time_integrator.set<int>("Nonlinear solver max iterations", 40);
 		  time_integrator.set<int>("NKA max vectors", 5);
 		  time_integrator.set<int>("Maximum number of BDF tries", 10);
 		  time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
@@ -692,7 +692,9 @@ namespace Amanzi {
 		    }
 
 		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Intensive Mass Flux");
-		  
+		  // input spec defines positive as inward flux, we must reverse the sign to use this
+		  for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+		  	  
 		  std::stringstream ss;
 		  ss << "BC " << bc_counter++;
 
