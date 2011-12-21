@@ -1,0 +1,97 @@
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+#ifndef __MATRIX_MFD_HPP__
+#define __MATRIX_MFD_HPP__
+
+#include <strings.h>
+
+#include "Epetra_Map.h"
+#include "Epetra_Operator.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "ml_MultiLevelPreconditioner.h"
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
+
+#include "Mesh.hh"
+#include "Point.hh"
+#include "boundary-function.hh"
+#include "mfd3d.hpp"
+
+#include "Flow_State.hpp"
+
+namespace Amanzi {
+namespace AmanziFlow {
+
+class Matrix_MFD : public Epetra_Operator {
+ public:
+  Matrix_MFD(Teuchos::RCP<Flow_State> FS_, Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->get_mesh(); }
+  ~Matrix_MFD() {};
+
+  // main methods
+  void createMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
+  void createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K);
+  void applyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+
+  void symbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
+  void assembleGlobalMatrices(Epetra_Vector& rhs);
+  void computeSchurComplement();
+  void deriveDarcyFlux(const Epetra_Vector& solution, 
+                       const Epetra_Vector& rhs, 
+                       const Epetra_Import& face_importer, 
+                       Epetra_Vector& darcy_flux);
+  void deriveDarcyVelocity(const Epetra_Vector& darcy_flux, 
+                           Epetra_MultiVector& darcy_velocity) const;
+
+  void init_ML_preconditioner(Teuchos::ParameterList& ML_list);
+  void update_ML_preconditioner();
+
+
+  // required methods
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  bool UseTranspose() const { return false; }
+  int SetUseTranspose(bool) { return 1; }
+
+  const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
+  const Epetra_Map& OperatorDomainMap() const { return map; }
+  const Epetra_Map& OperatorRangeMap() const { return map; }
+
+  const char* Label() const { return strdup("Matrix MFD"); }
+  double NormInf() const { return 0.0; }
+  bool HasNormInf() const { return false; }
+
+ private:
+  Teuchos::RCP<Flow_State> FS;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  Epetra_Map map;
+
+  std::vector<Teuchos::SerialDenseMatrix<int, double> > Minv_cells;  // populated as needed
+  std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells;
+  std::vector<Epetra_SerialDenseVector> Acf_cells;
+  std::vector<double> Acc_cells;  // duplication may be useful later
+
+  std::vector<Epetra_SerialDenseVector> Ff_cells;
+  std::vector<double> Fc_cells;
+
+  Teuchos::RCP<Epetra_Vector> Acc;
+  Teuchos::RCP<Epetra_CrsMatrix> Acf; 
+  Teuchos::RCP<Epetra_FECrsMatrix> Aff;
+  Teuchos::RCP<Epetra_FECrsMatrix> Sff;  // Schur complement
+
+  ML_Epetra::MultiLevelPreconditioner *MLprec;
+  Teuchos::ParameterList ML_list;
+};
+
+}  // namespace AmanziFlow
+}  // namespace Amanzi
+
+#endif
