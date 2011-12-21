@@ -25,7 +25,7 @@ public:
   void initialize(Teuchos::RCP<State> &S);
 
   // Steady state Darcy -- no timestep limitations
-  double get_dT() { return 1.e99; }
+  double get_dt() { return 1.e99; }
 
   // Steady state Darcy -- transient does nothing.
   bool advance(double dt, const Teuchos::RCP<State> &S0,

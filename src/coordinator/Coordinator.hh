@@ -1,3 +1,17 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Interface for the Coordinator.  Coordinator is basically just a class to hold
+the cycle driver, which runs the overall, top level timestep loop.  It
+instantiates states, ensures they are initialized, and runs the timestep loop
+including Vis and restart/checkpoint dumps.  It contains one and only one PK
+-- most likely this PK is an MPC of some type -- to do the actual work.
+------------------------------------------------------------------------- */
+
 #ifndef _COORDINATOR_HH_
 #define _COORDINATOR_HH_
 
@@ -39,6 +53,7 @@ private:
 
   // states
   Teuchos::RCP<State> S_;
+  Teuchos::RCP<State> S_next_;
   Teuchos::RCP<TreeVector> soln_;
 
   // misc setup information

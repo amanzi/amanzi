@@ -1,8 +1,22 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
 
-#include "Field.hh"
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Implementation for a Field.  Field is not intended so much to hide implementation
+of data as to restrict write access to data.  It freely passes out pointers to
+its private data, but only passes out read-only const pointers unless you have
+the secret password (AKA the name of the process kernel that owns the data).
+
+Field also stores some basic metadata for Vis, checkpointing, etc.
+------------------------------------------------------------------------- */
+
 #include "errors.hh"
 #include "cell_geometry.hh"
+
+#include "Field.hh"
 
 namespace Amanzi {
 
@@ -25,6 +39,7 @@ Field::Field(std::string fieldname, int location,
 };
 
 // I miss decorators, do they exist in C++?
+// check that the requesting pk owns the data
 void Field::assert_owner_or_die(std::string pk_name) const {
   if (pk_name != owner_) {
     std::stringstream messagestream;
@@ -35,6 +50,7 @@ void Field::assert_owner_or_die(std::string pk_name) const {
   }
 };
 
+// check that the location matches this field's location
 void Field::assert_location_or_die(int location) const {
   if (location != location_) {
     std::stringstream messagestream;
@@ -45,6 +61,7 @@ void Field::assert_location_or_die(int location) const {
   }
 };
 
+// check that the block id is valid within the mesh
 void Field::assert_valid_block_id_or_die(int mesh_block_id) const {
   // check valid block id
   if (!mesh_maps_->valid_set_id(mesh_block_id,Amanzi::AmanziMesh::CELL)) {
@@ -55,6 +72,7 @@ void Field::assert_valid_block_id_or_die(int mesh_block_id) const {
   }
 };
 
+// write-access to the data
 Teuchos::RCP<Epetra_MultiVector> Field::get_data(std::string pk_name) {
   if (pk_name == owner_) {
     return data_;
@@ -67,16 +85,19 @@ Teuchos::RCP<Epetra_MultiVector> Field::get_data(std::string pk_name) {
   }
 };
 
+// write data
 void Field::set_data(std::string pk_name, const Epetra_MultiVector& data) {
   assert_owner_or_die(pk_name);
   *data_ = data;
 };
 
+// write data
 void Field::set_data(std::string pk_name, const Epetra_Vector& data) {
   assert_owner_or_die(pk_name);
   *((*data_)(0)) = data;
 };
 
+// write data to uniform, constant value (per vector)
 void Field::set_data(std::string pk_name, const double* u) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(Amanzi::AmanziMesh::CELL);
@@ -86,6 +107,7 @@ void Field::set_data(std::string pk_name, const double* u) {
   }
 };
 
+// write data to uniform, constant value
 void Field::set_data(std::string pk_name, double u) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(Amanzi::AmanziMesh::CELL);
@@ -95,6 +117,7 @@ void Field::set_data(std::string pk_name, double u) {
   }
 };
 
+// write data of on single block to a constant value (per vector)
 void Field::set_data(std::string pk_name, const double* u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(Amanzi::AmanziMesh::CELL);
@@ -116,6 +139,7 @@ void Field::set_data(std::string pk_name, const double* u, int mesh_block_id) {
   }
 };
 
+// write data of on single block to a constant value
 void Field::set_data(std::string pk_name, double u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(Amanzi::AmanziMesh::CELL);
@@ -137,6 +161,7 @@ void Field::set_data(std::string pk_name, double u, int mesh_block_id) {
   }
 };
 
+// write a constant 3-vector to faces (dotting the constant vector with the face normal)
 void Field::set_vector_data(std::string pk_name, const double* u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(Amanzi::AmanziMesh::FACE);

@@ -1,4 +1,12 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Interface for the process kernel factory.
+------------------------------------------------------------------------- */
 
 #ifndef _PK_FACTORY_HH_
 #define _PK_FACTORY_HH_

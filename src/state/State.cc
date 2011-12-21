@@ -1,4 +1,26 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Implementation for the State.  State is a simple data-manager, allowing PKs to
+require, read, and write various fields.  Provides some data protection by
+providing both const and non-const fields to PKs.  Provides some
+initialization capability -- this is where all independent variables can be
+initialized (as independent variables are owned by state, not by any PK).
+
+------------------------------------------------------------------------- */
+
+/* TODO: (etc 12/21), ATS ticket #6
+1. Yank crufty density and viscosity out of here... they may be spatially
+variable.
+
+2. Consider making Field virtual and allowing an implementation with
+scalars/NumVectors() length vectors to decrease memory footprint for things
+like density which may NOT be spatially variable.
+*/
 
 #include <iostream>
 #include "State.hh"
@@ -19,8 +41,8 @@ State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps):
   *gravity_ = new double[3];
 };
 
-State::State( Teuchos::ParameterList &parameter_list,
-              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps):
+State::State(Teuchos::ParameterList &parameter_list,
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps):
   mesh_maps_(mesh_maps),
   parameter_list_(parameter_list) {
 
@@ -30,6 +52,11 @@ State::State( Teuchos::ParameterList &parameter_list,
   *gravity_ = new double[3];
 };
 
+// copy constructor:
+// Create a new State with different data but the same values.
+//
+// Could get a better implementation with a CopyMode, see TransportState in
+// Amanzi as an example.  I'm not sure its needed at this point, however.
 State::State(const State& s) {
   density_ = Teuchos::rcp(new double);
   viscosity_ = Teuchos::rcp(new double);
@@ -49,6 +76,7 @@ State::State(const State& s) {
   mesh_maps_ = s.mesh_maps_;
 };
 
+// assignment is crucial... copy values not data/pointers
 State& State::operator=(const State& s) {
   if (this != &s) {
     *density_ = *s.density_;
@@ -66,17 +94,17 @@ State& State::operator=(const State& s) {
   return *this;
 };
 
-
 State::~State() {
   delete [] (*gravity_);
 };
 
+// Initialize data, allowing values to be specified here or in the owning PK.
+// All independent variables must be initialized here.
 void State::initialize() {
-  // may eventually (through restart?) be alternative ways of initializing the
-  // state?
   initialize_from_parameter_list();
 };
 
+// Make sure all fields have gotten their IC, either from State or the owning PK.
 bool State::check_all_initialized() {
   for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
        field != fields_.end(); ++field) {
@@ -85,8 +113,9 @@ bool State::check_all_initialized() {
   return true;
 };
 
+// Initialize fields from the parameter list of "Constant {Fieldname}",
+// including all independent variables.
 void State::initialize_from_parameter_list() {
-  // Initialize data that sits outside of a PK (TODO: fix this, they should go with a PK).
   double u[3];
   u[0] = parameter_list_.get<double>("Gravity x");
   u[1] = parameter_list_.get<double>("Gravity y");

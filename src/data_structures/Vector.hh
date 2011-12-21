@@ -1,4 +1,15 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Purely virtual interface for an ATS Vector.  Provides basic vector
+functionality including scalar operations and an inner product.
+Implementations of this interface may be used within ATS time integrators and
+nonlinear solvers (eventually).
+------------------------------------------------------------------------- */
 
 #ifndef __VECTOR_HH__
 #define __VECTOR_HH__
@@ -23,7 +34,7 @@ public:
   virtual void SetName(std::string name) = 0;
   virtual std::string Name() = 0;
 
-  // operations
+  // scalar operations
   virtual void Scale(double value) = 0;
   virtual void Shift(double value) = 0;
 
@@ -34,11 +45,9 @@ public:
 
   // note that a Vector must also provide an innerProduct method, but it need
   // not work if the other Vector is not of the same type.  Implementations
-  // likely use dynamic_cast?
-  int Dot(const Vector& other, double* result);
-
+  // likely use dynamic_cast.
+  virtual int Dot(const Vector& other, double* result) const = 0;
 };
-
 } // namespace
 
 #endif

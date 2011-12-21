@@ -1,4 +1,16 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Interface for TreeVector, a nested, hierarchical data structure for PK
+hiearchies.  This nested vector allows each physical PK to push back
+Epetra_MultiVectors to store their solution, and allows MPCs to push back
+TreeVectors in a nested format.  It also provides an implementation of the
+Vector interface for use with time integrators/nonlinear solvers.
+------------------------------------------------------------------------- */
 
 #ifndef __TREEVECTOR_HH__
 #define __TREEVECTOR_HH__

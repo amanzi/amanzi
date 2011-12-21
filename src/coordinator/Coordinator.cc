@@ -1,4 +1,16 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+Implementation for the Coordinator.  Coordinator is basically just a class to hold
+the cycle driver, which runs the overall, top level timestep loop.  It
+instantiates states, ensures they are initialized, and runs the timestep loop
+including Vis and restart/checkpoint dumps.  It contains one and only one PK
+-- most likely this PK is an MPC of some type -- to do the actual work.
+------------------------------------------------------------------------- */
 
 #include <iostream>
 #include "errors.hh"
@@ -89,6 +101,9 @@ void Coordinator::initialize() {
 
   // initialize the process kernels (which should initialize all dependent variables)
   pk_->initialize(S_, soln_);
+
+  // Check that all fields have now been initialized or die.
+  S_->check_all_initialized();
 }
 
 void Coordinator::read_parameter_list() {
@@ -120,15 +135,20 @@ void Coordinator::cycle_driver () {
   // write visualization if requested at IC
   S_->write_vis(*visualization_);
 
-  // we need to create an intermediate state that will store the 
-  // updated solution until we know it has succeeded
-  Teuchos::RCP<State> S_new = Teuchos::rcp(new State(*S_));
+  // we need to create an intermediate state that will store the updated
+  // solution until we know it has succeeded
+  S_next_ = Teuchos::rcp(new State(*S_));
+
+  // set the states in the PKs
+  Teuchos::RCP<const State> cS = S_; // cast as const as passing non-const to const
+                                     // not possible under the RCP
+  pk_->set_states(cS, S_next_);
 
   // iterate process kernels
   double mpc_dT;
   bool fail = 0;
   while (  (S_->get_time() <= T1_)  &&   ((end_cycle_ == -1) || (iter <= end_cycle_)) ) {
-    mpc_dT = pk_->get_dT();
+    mpc_dT = pk_->get_dt();
 
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
       *out << "Cycle = " << iter;
@@ -137,9 +157,7 @@ void Coordinator::cycle_driver () {
     }
 
     // advance
-    Teuchos::RCP<const State> cS = S_; // required as passing non-const to
-                                       // const not possible under RCP
-    fail = pk_->advance(mpc_dT, cS, S_new, soln_);
+    fail = pk_->advance(mpc_dT, soln_);
     if (fail) {
       Errors::Message message("Coordinator: error advancing time");
       Exceptions::amanzi_throw(message);
@@ -147,8 +165,8 @@ void Coordinator::cycle_driver () {
       // update the time in the state object
       S_->advance_time(mpc_dT);
 
-      // we're done with this time step
-      S_ = S_new;
+      // we're done with this time step, copy the state
+      *S_ = *S_next_;
 
       // advance the iteration count
       ++iter;
