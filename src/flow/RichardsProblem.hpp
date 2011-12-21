@@ -20,8 +20,7 @@ class BoundaryFunction; // forward declaration
 
 class RichardsProblem {
  public:
-  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, 
-                  const Teuchos::ParameterList& parameter_list);
+  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, Teuchos::ParameterList& rp_list);
   ~RichardsProblem();
 
   // explicit initialization

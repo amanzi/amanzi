@@ -43,7 +43,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_richards_bdf2.xml";
+  string xmlFileName = "test/flow_richards_bdf2.xml"; //new-bc-cribs-1D.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create an SIMPLE mesh framework 
@@ -57,13 +57,19 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   RCP<Amanzi::Flow_State> FS = Teuchos::rcp(new Amanzi::Flow_State(S));
 
   // create Richards problem
-  RichardsProblem problem(mesh, parameter_list);
+  ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+  ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
+
+  richards_list.set("fluid density", FS->get_fluid_density());  // will be removed in new version
+  richards_list.set("fluid viscosity", FS->get_fluid_viscosity());
+  const double *gravity = FS->get_gravity();
+  richards_list.set("gravity", gravity[2]);
+
+  RichardsProblem problem(mesh, richards_list);
   problem.set_flow_state(FS);
   problem.set_absolute_permeability(FS->get_permeability());
 
   // create the Richards Model Evaluator
-  ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
   ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
   Amanzi::RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
 

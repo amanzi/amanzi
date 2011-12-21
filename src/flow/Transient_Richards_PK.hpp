@@ -42,7 +42,7 @@ class Transient_Richards_PK : public Flow_PK {
 
 private:
   Teuchos::RCP<const Flow_State> FS;
-  Teuchos::ParameterList &richards_plist;
+  Teuchos::ParameterList &plist;
   
   RichardsProblem *problem;
   RichardsModelEvaluator *RME;

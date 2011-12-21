@@ -18,7 +18,7 @@
 namespace Amanzi {
 
 RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                                 const Teuchos::ParameterList& parameter_list) : mesh_(mesh)
+                                 Teuchos::ParameterList& rp_list) : mesh_(mesh)
 {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
@@ -30,16 +30,12 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   init_mimetic_disc_(*mesh, MD);
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
   
-  Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  Teuchos::ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
-
   upwind_k_rel_ = rp_list.get<bool>("Upwind relative permeability", true);
   
-  p_atm_   = rp_list.get<double>("Atmospheric pressure");
-  rho_ = state_list.get<double>("Constant water density");
-  mu_ = state_list.get<double>("Constant viscosity");
-  gravity_ = state_list.get<double>("Gravity z");
+  p_atm_ = rp_list.get<double>("Atmospheric pressure");
+  rho_ = rp_list.get<double>("fluid density");
+  mu_ = rp_list.get<double>("fluid viscosity");
+  gravity_ = rp_list.get<double>("gravity");
   gvec_[0] = 0.0; 
   gvec_[1] = 0.0; 
   gvec_[2] = -gravity_;

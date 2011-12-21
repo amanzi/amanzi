@@ -4,8 +4,8 @@
 
 namespace Amanzi {
 
-Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist, 
-                                             const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), richards_plist(plist)
+Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_, 
+                                             const Teuchos::RCP<const Flow_State> FS_) : FS(FS_), plist(plist_)
 {
   // Add some parameters to the Richards problem constructor parameter list.
   Teuchos::ParameterList &rp_list = plist.sublist("Richards Problem");
@@ -16,8 +16,7 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist,
   rp_list.set("gravity", -gravity[2]);
   
   // Create the Richards flow problem.
-  Teuchos::ParameterList rlist = richards_plist.sublist("Richards Problem");
-  problem = new RichardsProblem(FS->get_mesh_maps(), plist);
+  problem = new RichardsProblem(FS->get_mesh_maps(), rp_list);
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -26,11 +25,11 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist,
   richards_flux = new Epetra_Vector(problem->FaceMap());
 
   // first the Richards model evaluator
-  Teuchos::ParameterList &rme_list = rlist.sublist("Richards model evaluator");
+  Teuchos::ParameterList &rme_list = rp_list.sublist("Richards model evaluator");
   RME = new RichardsModelEvaluator(problem, rme_list, problem->Map(), FS);  
 
   // then the BDF2 solver
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(rlist.sublist("Time integrator")));
+  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
 
   time_stepper = new BDF2::Dae(*RME, problem->Map());
   time_stepper->setParameterList(bdf2_list_p);
