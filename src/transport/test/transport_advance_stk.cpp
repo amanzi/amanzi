@@ -45,7 +45,8 @@ TEST(ADVANCE_WITH_STK) {
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
   TPK.set_standalone_mode(true);
 
   // advance the state

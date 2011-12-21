@@ -56,7 +56,9 @@ TEST(CONSTRUCTOR) {
   int num_components = 2;
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-  Transport_PK TPK(parameter_list, TS);
+
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
 
   TPK.print_statistics();
 
@@ -97,7 +99,8 @@ TEST(FACES_VOLUMES) {
   int num_components = 2;
   State mpc_state(num_components, mesh);
   RCP<Transport_State> TS = rcp(new Transport_State(mpc_state));
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
 
   // printing face areas
   int f;
