@@ -50,7 +50,7 @@ add_definitions("-DUSE_MPI")
 #
 add_library(flow Flow_PK.cpp Flow_State.cpp 
                  Flow_BC_Factory.cpp Flow_VandV.cpp 
-                 Interface_BDF2.cpp # Interface_NOX.cpp
+                 # Interface_BDF2.cpp Interface_NOX.cpp
                  Darcy_PK.cpp Richards_PK.cpp
                  Matrix_MFD.cpp Matrix_VAG.cpp 
                  vanGenuchtenModel.cpp)

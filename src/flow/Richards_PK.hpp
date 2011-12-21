@@ -40,10 +40,17 @@ class Richards_PK : public Flow_PK {
 
   // other main methods
   void process_parameter_list();
-  void populate_absolute_permeability_tensor(std::vector<WhetStone::Tensor>& K);
-  void calculate_relative_permeability(std::vector<double>& Krel);
+  void populateAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
+  void relativePermeability(const Epetra_Vector& p);
+  void relativePermeabilityUpwindGravity(const Epetra_Vector& p);
+  void relativePermeabilityUpwindFlux(const Epetra_Vector& p);
 
-  void compute_pdot(const double T, const Epetra_Vector& p, Epetra_Vector &pdot);
+  void computePDot(const double T, const Epetra_Vector& p, Epetra_Vector& pdot);
+  void computeFunctionalPTerm(const Epetra_Vector& p, Epetra_Vector& pdot);
+
+  void dSofP(const Epetra_Vector& p, Epetra_Vector& dS);
+  void deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Vector& s);
+  void setInitialPressureFromSaturation(double s, Epetra_Vector& p);
 
   // control methods
   void print_statistics() const;
@@ -87,7 +94,8 @@ class Richards_PK : public Flow_PK {
   std::vector<double> bc_values;
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
-  std::vector<double> Krel;  // realitive permeability
+  Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
+  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
   bool upwind_Krel;
 };
 
