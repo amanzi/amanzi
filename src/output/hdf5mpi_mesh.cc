@@ -19,7 +19,7 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
 : viz_comm_(comm), H5DataFilename_(dataFilename)
 {
   viz_comm_ = comm;
-  H5DataFilename_ = dataFilename;
+  H5DataFilename_ = dataFilename; 
   info_ = MPI_INFO_NULL;
   IOconfig_.numIOgroups = 1;
   IOconfig_.commIncoming = comm.Comm();
@@ -44,6 +44,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
 
   // build h5 filename
   h5Filename = filename;
+  h5Filename.append(std::string(".h5"));
 
   // new parallel
   file = parallelIO_open_file(h5Filename.c_str(), &IOgroup_, FILE_CREATE);
@@ -192,6 +193,7 @@ void HDF5_MPI::createDataFile(std::string soln_filename) {
   // ->assumes global name exists!!
   // build h5 filename
   h5filename = soln_filename;
+  h5filename.append(std::string(".h5"));
   
   // new parallel
   file = parallelIO_open_file(h5filename.c_str(), &IOgroup_, FILE_CREATE);

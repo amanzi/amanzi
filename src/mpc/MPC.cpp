@@ -334,8 +334,8 @@ void MPC::cycle_driver ()
 	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
 	  {
 	    *out << "Cycle = " << iter; 
-	    *out << ",  Time = "<< S->get_time() / (60*60*24);
-	    *out << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
+	    *out << ",  Time(days) = "<< S->get_time() / (60*60*24);
+	    *out << ",  dT(days) = " << mpc_dT / (60*60*24)  << std::endl;
 	  }
 
 	
