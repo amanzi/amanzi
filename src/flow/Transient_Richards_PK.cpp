@@ -150,17 +150,25 @@ void  Transient_Richards_PK::commit_state(Teuchos::RCP<Flow_State> FS)
 
 void Transient_Richards_PK::approximate_face_pressure(const Epetra_Vector& cell_pressure, Epetra_Vector& face_pressure)
 {
+  // make a vector that includes the overlap region
+  Epetra_Vector cell_pressure_ovl(FS->get_mesh_maps()->cell_epetra_map(true) );
+
+  // import the cell pressures to this vector to get access to the overlap
+  Epetra_Import cell_importer(FS->get_mesh_maps()->cell_epetra_map(true),FS->get_mesh_maps()->cell_epetra_map(false));
+  
+  cell_pressure_ovl.Import(cell_pressure, cell_importer, Insert);
+
   // loop over all faces
   for (int iface=0; iface<face_pressure.MyLength(); iface++)
     {
       // find the neighbor cell of the current face
       Amanzi::AmanziMesh::Entity_ID_List cells;
-      FS->get_mesh_maps()->face_get_cells(iface,Amanzi::AmanziMesh::OWNED, &cells);
+      FS->get_mesh_maps()->face_get_cells(iface,Amanzi::AmanziMesh::USED, &cells);
       
       double cp(0.0);
       for (unsigned int it=0; it<cells.size(); it++)
 	{
-	  cp += cell_pressure[cells[it]];
+	  cp += cell_pressure_ovl[cells[it]];
 	}
       // compute an average pressure for the face
       face_pressure[iface] = cp / cells.size();

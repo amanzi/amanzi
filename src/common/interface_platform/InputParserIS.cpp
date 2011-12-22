@@ -543,7 +543,7 @@ namespace Amanzi {
 		  // set some reasonable defaults...
 		  richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
 		  richards_model_evaluator.set<double>("Relative error tolerance",1.0e-5);
-		  std::string vlevel("high");
+		  std::string vlevel("low");
 		  richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
 		
 		  Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
