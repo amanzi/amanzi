@@ -28,13 +28,18 @@ namespace Amanzi {
 class Field {
 
 public:
-
+  // null constructor
   Field() {};
 
+  // standard constructor
   Field(std::string fieldname, int location,
         Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps,
         std::string owner="state",
         int num_dofs=1);
+
+  // copy constructor and assignment
+  Field(const Field&);
+  Field& operator=(const Field&);
 
   // access
   std::string get_fieldname() const { return fieldname_; }
