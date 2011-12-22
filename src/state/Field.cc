@@ -38,6 +38,38 @@ Field::Field(std::string fieldname, int location,
   }
 };
 
+// copy constructor:
+// Create a new Field with different data but the same values.
+Field::Field(const Field& field) {
+  data_ = Teuchos::rcp(new Epetra_MultiVector(*field.data_));
+  fieldname_ = field.fieldname_;
+  owner_ = field.owner_;
+  subfieldnames_ = field.subfieldnames_;
+  location_ = field.location_;
+  num_dofs_ = field.num_dofs_;
+  io_restart_ = field.io_restart_;
+  io_vis_ = field.io_vis_;
+  initialized_ = field.initialized_;
+  mesh_maps_ = field.mesh_maps_;
+};
+
+// assignment is crucial... copy values not data/pointers
+Field& Field::operator=(const Field& field) {
+  if (this != &field) {
+    *data_ = *(field.data_);
+    fieldname_ = field.fieldname_;
+    owner_ = field.owner_;
+    subfieldnames_ = field.subfieldnames_;
+    location_ = field.location_;
+    num_dofs_ = field.num_dofs_;
+    io_restart_ = field.io_restart_;
+    io_vis_ = field.io_vis_;
+    initialized_ = field.initialized_;
+    mesh_maps_ = field.mesh_maps_;
+  }
+  return *this;
+};
+
 // I miss decorators, do they exist in C++?
 // check that the requesting pk owns the data
 void Field::assert_owner_or_die(std::string pk_name) const {

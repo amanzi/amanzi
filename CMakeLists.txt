@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 2.8.2)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
-enable_testing()
+set(BUILD_TESTS true)
 
 # Define the project name
 # This command will define
@@ -94,21 +94,6 @@ endif()
 # the OS limits and will prevent the host code from compiling.
 # Unfortunately Trilinos does not provide exported targets
 # The host code must explicitly link against the Trilinos library
-# path to link against the Trilinos libraries.
-link_directories(${Amanzi_TPL_Trilinos_LIBRARY_DIRS})
-
-
-# --------------------------------------------------------------------------- #
-#  Define the library paths
-# --------------------------------------------------------------------------- #
-# We make every effort in the Amanzi build system to include TPL libraries 
-# in the target definitions. Avoid using Amanzi_TPL_*_LIBRARY or
-# Amanzi_TPL_*_LIBRARIES variables. Using these variables when it
-# is not neccessary may result in a command line length that exceeds
-# the OS limits and will prevent the host code from compiling.
-# Unfortunately Trilinos does not provide exported targets, but
-# this will change in the Trilinos 10.8 release.
-# Until then, the host code must explicitly link against the Trilinos library
 # path to link against the Trilinos libraries.
 link_directories(${Amanzi_TPL_Trilinos_LIBRARY_DIRS})
 
