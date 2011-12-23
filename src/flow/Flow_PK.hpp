@@ -18,6 +18,7 @@ Usage:
 #include "Teuchos_RCP.hpp"
 
 #include "boundary-function.hh"
+#include "mfd3d.hpp"
 #include "Flow_State.hpp"
 
 namespace Amanzi {
@@ -67,6 +68,8 @@ class Flow_PK {
                                   BoundaryFunction *bc_flux,
                                   std::vector<int>& bc_markers,
                                   std::vector<double>& bc_values);
+
+  void calculateGravityFluxes(int cell, WhetStone::Tensor& K, std::vector<double>& gravity_flux);
 
   // access members  
   Teuchos::RCP<Flow_State> get_flow_state() { return FS; }

@@ -69,6 +69,10 @@ class Matrix_MFD : public Epetra_Operator {
   double NormInf() const { return 0.0; }
   bool HasNormInf() const { return false; }
 
+  // access methods
+  std::vector<Teuchos::SerialDenseMatrix<int, double> >& get_Aff_cells() { return Aff_cells; }
+  std::vector<Epetra_SerialDenseVector>& get_Ff_cells() { return Ff_cells; }
+
  private:
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

@@ -40,7 +40,8 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
   // Other fundamental physical quantaties
   double rho = *(FS->get_fluid_density());
   double mu = *(FS->get_fluid_viscosity()); 
-  for(int k=0; k<dim; k++) (*(FS->get_gravity()))[k];
+  gravity.init(dim);
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
 
 #ifdef HAVE_MPI
   const  Epetra_Comm & comm = mesh_->cell_map(false).Comm(); 
@@ -154,6 +155,7 @@ int Darcy_PK::advance_to_steady_state()
   // calculate and assemble elemental stifness matrices
   matrix->createMFDstiffnessMatrices(K);
   matrix->assembleGlobalMatrices(*rhs);
+  addGravityFluxes_MFD(matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->computeSchurComplement();
 
@@ -184,6 +186,33 @@ void Darcy_PK::populate_absolute_permeability_tensor(std::vector<WhetStone::Tens
   for (int c=cmin; c<=cmax; c++) {
     K[c].init(dim, 1);
     K[c](0, 0) = permeability[c];
+  }
+}
+
+
+/* ******************************************************************
+* .                                               
+****************************************************************** */
+void Darcy_PK::addGravityFluxes_MFD(Matrix_MFD* matrix)
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<double> gravity_flux;
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  for (int c=0; c<ncells; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    calculateGravityFluxes(c, K[c], gravity_flux);
+    
+    Teuchos::SerialDenseMatrix<int, double>& Bff = matrix->get_Aff_cells()[c];
+    Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
+
+    for (int n=0; n<nfaces; n++) {
+      double colsum = 0.0;
+      for (int m=0; m<nfaces; m++) colsum += Bff(n, m) * gravity_flux[m];
+      Ff[n] = colsum;
+    }
   }
 }
 

@@ -38,6 +38,7 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void process_parameter_list();
   void populate_absolute_permeability_tensor(std::vector<WhetStone::Tensor>& K);
+  void addGravityFluxes_MFD(Matrix_MFD* matrix);
 
   // control methods
   void print_statistics() const;

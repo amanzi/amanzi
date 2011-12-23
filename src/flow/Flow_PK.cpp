@@ -7,6 +7,8 @@ Authors: Neil Carlson (version 1)
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "mfd3d.hpp"
+
 #include "Flow_PK.hpp"
 #include "Flow_State.hpp"
 
@@ -101,6 +103,28 @@ void Flow_PK::update_data_boundary_faces(BoundaryFunction* bc_pressure,
     int f = bc->first;    
     bc_markers[f] = FLOW_BC_FACE_FLUX;
     bc_values[f] = bc->second;
+  }
+}
+
+
+/* ******************************************************************
+* Gravity fluxes are calculated w.r.t. actual normals.                                                  
+****************************************************************** */
+void Flow_PK::calculateGravityFluxes(
+  int c, WhetStone::Tensor& K, std::vector<double>& gravity_flux) 
+{
+  AmanziMesh::Entity_ID_List faces;
+  mesh_->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  AmanziGeometry::Point gravity(dim); 
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
+
+  gravity_flux.clear();
+  for (int n=0; n<nfaces; n++) {
+    int f = faces[n];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    gravity_flux.push_back((K * gravity) * normal);    
   }
 }
 

@@ -365,10 +365,10 @@ void Richards_PK::deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Ve
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
 
     std::vector<unsigned int> block(ncells);
-    mesh_->get_set_entities(region, AmanziMesh::CELL, manziMesh::OWNED, &block);
+    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
       
     std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) S[*i] = WRM[mb]->saturation(p[*i]);
+    for (i=block.begin(); i!=block.end(); i++) s[*i] = WRM[mb]->saturation(p[*i]);
   }
 }
 

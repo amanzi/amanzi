@@ -86,14 +86,13 @@ if (BUILD_TESTS)
     include_directories(${SOLVERS_SOURCE_DIR})
 
     # Test: miscaleneous flow routines
-    add_executable(flow_1D_misc test/Main.cc test/flow_1D_misc.cpp test/flow_vanGenuchten.cpp)
-    target_link_libraries(flow_1D_misc flow mesh_factory mesh cell_geometry ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_1D_misc flow_1D_misc KIND int)
+    add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp test/flow_vanGenuchten.cpp)
+    target_link_libraries(flow_darcy_misc flow mesh_factory mesh cell_geometry ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
 
     # Test: parallel flow
-    add_amanzi_test(flow_parallel_2pe flow_1D_misc NPROCS 2 KIND unit)
-    add_amanzi_test(flow_parallel_4pe flow_1D_misc NPROCS 4 KIND unit)
-    add_amanzi_test(flow_parallel_8pe flow_1D_misc NPROCS 8 KIND unit)
+    add_amanzi_test(flow_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
+    add_amanzi_test(flow_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
  
     # Test: flow-bc-factory
     add_executable(flow_bc_factory test/flow_bc_factory.cc)

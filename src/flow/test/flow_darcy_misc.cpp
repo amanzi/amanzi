@@ -1,20 +1,22 @@
+/*
+This is the flow component of the Amanzi code. 
+License: BSD
+Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
+*/
+
+#include <iostream>
+
 #include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
 
 #include "AztecOO.h"
-
 #include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "DarcyProblem.hpp"
-#include "cell_geometry.hh"
+#include "Darcy_PK.hpp"
 
-#include <iostream>
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -24,7 +26,6 @@ using namespace Amanzi::AmanziFlow;
 struct problem_setup
 {
   Epetra_MpiComm *comm;
-  //Teuchos::RCP<Mesh_simple> mesh;
   Teuchos::RCP<Mesh> mesh;
   GeometricModel *gm;
   Teuchos::ParameterList params;
@@ -247,11 +248,9 @@ SUITE(Simple_1D_Flow) {
     double error;
     cell_pressure_error(error);
     CHECK(error < 1.0e-8);
-    //std::cout << "cell pressure error=" << error << std::endl;
 
     face_pressure_error(error);
     CHECK(error < 1.0e-8);
-    //std::cout << "face pressure error=" << error << std::endl;
   }
 
   TEST_FIXTURE(problem_setup, xg_p_p)
