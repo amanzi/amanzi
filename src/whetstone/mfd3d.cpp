@@ -36,7 +36,7 @@ int MFD3D::darcy_mass(int cell,
   Teuchos::SerialDenseMatrix<int, double> Mc(nfaces, nfaces);
 
   int ok = L2_consistency(cell, permeability, N, Mc);
-  if (!ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   stability_scalar(cell, N, Mc, M);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -60,7 +60,7 @@ int MFD3D::darcy_mass_inverse(int cell,
   Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
 
   int ok = L2_consistency_inverse(cell, permeability, R, Wc);
-  if (!ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   stability_scalar(cell, R, Wc, W);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

@@ -97,7 +97,7 @@ void Tensor::inverse()
 /* ******************************************************************
 * Trace operation with tensors of rank 1 and 2
 ****************************************************************** */
-double Tensor::operator*=(const double& c)
+Tensor& Tensor::operator*=(const double& c)
 {
   if (rank_ <= 2) {
     int size = WHETSTONE_TENSOR_SIZE[d_-1][rank_-1];
@@ -118,7 +118,7 @@ AmanziGeometry::Point operator*(Tensor& T, const AmanziGeometry::Point& p)
 
   AmanziGeometry::Point p2(p.dim());
   if (rank == 1) { 
-    p2 = data[0] * p; 
+    p2 = data[0] * p;
     return p2;
   } 
   else if (rank == 2) {
