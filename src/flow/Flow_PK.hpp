@@ -70,6 +70,7 @@ class Flow_PK {
                                   std::vector<double>& bc_values);
 
   void calculateGravityFluxes(int cell, WhetStone::Tensor& K, std::vector<double>& gravity_flux);
+  void addGravityFluxes(Epetra_Vector& darcy_flux);
 
   // access members  
   Teuchos::RCP<Flow_State> get_flow_state() { return FS; }

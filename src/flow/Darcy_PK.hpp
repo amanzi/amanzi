@@ -27,7 +27,7 @@ namespace AmanziFlow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
+  Darcy_PK(Teuchos::RCP<Teuchos::ParameterList> dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   ~Darcy_PK() { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
 
   // main methods
@@ -50,9 +50,11 @@ class Darcy_PK : public Flow_PK {
   Epetra_Vector& get_solution_cells() { return *solution_cells; }
   Epetra_Vector& get_solution_faces() { return *solution_faces; }
   AmanziGeometry::Point& get_gravity() { return gravity; }
+  double get_rho() { return rho; }
+  double get_mu() { return mu; }
 
  private:
-  Teuchos::ParameterList dp_list;
+  Teuchos::RCP<Teuchos::ParameterList> dp_list;
 
   Teuchos::RCP<Flow_State> FS;
   AmanziGeometry::Point gravity;

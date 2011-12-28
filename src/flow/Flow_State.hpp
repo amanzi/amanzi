@@ -54,6 +54,7 @@ class Flow_State {
   Epetra_Vector& ref_pressure() { return *pressure; }
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
   Epetra_Vector& ref_absolute_permeability() { return *absolute_permeability; }
+  double ref_fluid_density() { return *fluid_density; }
 
   // miscaleneous
   double get_time() { return S_->get_time(); }

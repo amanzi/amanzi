@@ -27,7 +27,7 @@ using namespace Amanzi::AmanziFlow;
 class DarcyProblem {
  public:
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
-  Teuchos::ParameterList dp_list;
+  Teuchos::RCP<Teuchos::ParameterList> dp_list;
   AmanziFlow::Darcy_PK* DPK; 
 
   DarcyProblem() 
@@ -39,26 +39,24 @@ class DarcyProblem {
     updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
     // create an SIMPLE mesh framework 
-    Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList& region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list);
     mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
 
-    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-    Teuchos::ParameterList dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
+    Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+    dp_list = Teuchos::rcp(new Teuchos::ParameterList(flow_list.get<Teuchos::ParameterList>("Darcy Problem")));
 
     // create Darcy process kernel
-    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList& state_list = parameter_list.get<Teuchos::ParameterList>("State");
     State S(state_list, mesh);
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
     DPK = new Darcy_PK(dp_list, FS);
-    DPK->Init();
   }
 
   ~DarcyProblem() { delete DPK; }
 
-  void set_bc(const char *side, const char *type, double value) 
+  void reset_bc(const char *type, const char *bc_x, double value) 
   {
-    Teuchos::Array<std::string> reg(1, side);
     std::string func_list_name;
     if (type == "pressure") {
       func_list_name = "boundary pressure";
@@ -67,8 +65,9 @@ class DarcyProblem {
     } else if (type == "mass flux") {
       func_list_name = "outward mass flux";
     }
-    dp_list.sublist("boundary conditions").sublist(type).sublist(side).set("regions", reg).
-        sublist(func_list_name).sublist("function-constant").set("value", value);
+    Teuchos::ParameterList& bc_list = dp_list->get<Teuchos::ParameterList>("boundary conditions");
+    Teuchos::ParameterList& function_list = bc_list.sublist(type).sublist(bc_x).sublist(func_list_name);
+    function_list.sublist("function-constant").set("value", value);
   }
   
   double cell_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
@@ -80,7 +79,7 @@ class DarcyProblem {
     for (int c=0; c<ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-cout << c << " " << solution_cells[c] << " exact = " <<  pressure_exact << endl;
+//cout << c << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -108,7 +107,7 @@ cout << c << " " << solution_cells[c] << " exact = " <<  pressure_exact << endl;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f=0; f<nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_flux[f] << " exact = " << velocity_exact * normal << endl;
+//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
       error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
@@ -120,12 +119,12 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(DarcyProblem, Test1) {
     std::cout <<"Flow 1D: test 1" << std::endl;
-    set_bc("LEFT",  "pressure", 1.0);  // Set non-default BC.
-    set_bc("RIGHT", "pressure", 0.0);
+    reset_bc("pressure", "BC 1", 0.0);  // reset default b.c.
+    reset_bc("pressure", "BC 2", 1.0);
 
+    DPK->Init();
     DPK->advance_to_steady_state();
 
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity and q is the Darcy velocity
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     double error = cell_pressure_error(p0, pressure_gradient);
@@ -134,8 +133,11 @@ SUITE(Simple_1D_Flow) {
     error = face_pressure_error(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
 
+    double rho = DPK->get_rho();
+    double mu = DPK->get_mu();
+
     AmanziGeometry::Point velocity;
-    velocity = pressure_gradient + DPK->get_gravity();
+    velocity = -rho * (pressure_gradient / mu + rho * DPK->get_gravity());
     error = darcy_flux_error(velocity);
     CHECK(error < 1.0e-8);
   }

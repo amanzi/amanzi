@@ -117,8 +117,9 @@ void Flow_PK::calculateGravityFluxes(
   mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
+  double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho * rho;
 
   gravity_flux.clear();
   for (int n=0; n<nfaces; n++) {
@@ -127,6 +128,25 @@ void Flow_PK::calculateGravityFluxes(
     gravity_flux.push_back((K * gravity) * normal);    
   }
 }
+
+
+/* ******************************************************************
+* Updates global Darcy vector calculated by a discretization method.                                             
+****************************************************************** */
+void Flow_PK::addGravityFluxes(Epetra_Vector& darcy_flux)
+{
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+
+  double rho = FS->ref_fluid_density();
+  AmanziGeometry::Point gravity(dim); 
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho * rho;
+
+  for (int f=0; f<nfaces; f++) {
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    darcy_flux[f] -= gravity * normal;
+  }
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

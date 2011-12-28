@@ -26,7 +26,7 @@ namespace AmanziFlow {
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
+Darcy_PK::Darcy_PK(Teuchos::RCP<Teuchos::ParameterList> dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
 
@@ -40,8 +40,8 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
   super_map_ = create_super_map();
  
   // Other fundamental physical quantaties
-  double rho = *(FS->get_fluid_density());
-  double mu = *(FS->get_fluid_viscosity()); 
+  rho = *(FS->get_fluid_density());
+  mu = *(FS->get_fluid_viscosity()); 
   gravity.init(dim);
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
 
@@ -103,7 +103,7 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Preconditioner
-  Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = dp_list->sublist("ML Parameters");
   preconditioner->init_ML_preconditioner(ML_list); 
 };
 
@@ -115,13 +115,13 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 void Darcy_PK::process_parameter_list()
 {
   Teuchos::ParameterList preconditioner_list;
-  preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
+  preconditioner_list = dp_list->get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
   max_itrs = preconditioner_list.get<int>("Max Iterations");
   err_tol = preconditioner_list.get<double>("Error Tolerance");
 
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list.sublist("boundary conditions", true));
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list->sublist("boundary conditions", true));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.CreatePressure();
@@ -138,7 +138,7 @@ void Darcy_PK::process_parameter_list()
 
 
 /* ******************************************************************
-*  Calculates steady-state solution assuming that abosolute permeability 
+* Calculates steady-state solution assuming that absolute permeability 
 * does not depend on time.                                                    
 ****************************************************************** */
 int Darcy_PK::advance_to_steady_state()
@@ -173,6 +173,8 @@ int Darcy_PK::advance_to_steady_state()
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(K);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
+  addGravityFluxes(darcy_flux);
+
   return 0;
 }
 
@@ -192,28 +194,26 @@ void Darcy_PK::populate_absolute_permeability_tensor(std::vector<WhetStone::Tens
 
 
 /* ******************************************************************
-* .                                               
+* Routine updates elemental discretization matrices and must be 
+* called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
 void Darcy_PK::addGravityFluxes_MFD(Matrix_MFD* matrix)
 {
   AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
   std::vector<double> gravity_flux;
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (int c=0; c<ncells; c++) {
     mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_face_dirs(c, &dirs);
     int nfaces = faces.size();
 
     calculateGravityFluxes(c, K[c], gravity_flux);
     
-    Teuchos::SerialDenseMatrix<int, double>& Bff = matrix->get_Aff_cells()[c];
     Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
-
-    for (int n=0; n<nfaces; n++) {
-      double colsum = 0.0;
-      for (int m=0; m<nfaces; m++) colsum += Bff(n, m) * gravity_flux[m];
-      Ff[n] = colsum;
-    }
+    for (int n=0; n<nfaces; n++) Ff[n] += gravity_flux[n] * dirs[n];
   }
 }
 

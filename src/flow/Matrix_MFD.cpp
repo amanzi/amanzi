@@ -422,7 +422,7 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
       double s = 0.0;
       for (int m=0; m<nfaces; m++) s += Aff_cells[c](n, m) * dp[m];
       int f = faces[n];
-      darcy_flux[f] = -s * dirs[n];
+      darcy_flux[f] = s * dirs[n];
     }
   }
 }
