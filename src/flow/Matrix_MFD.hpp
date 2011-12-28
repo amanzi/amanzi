@@ -33,19 +33,20 @@ namespace AmanziFlow {
 
 class Matrix_MFD : public Epetra_Operator {
  public:
-  Matrix_MFD(Teuchos::RCP<Flow_State> FS_, Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->get_mesh(); }
+  Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->get_mesh(); }
   ~Matrix_MFD() {};
 
   // main methods
   void createMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
+  void createMFDrhsVectors();
   void createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K);
   void applyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
   void symbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
-  void assembleGlobalMatrices(Epetra_Vector& rhs);
-  void computeSchurComplement();
+  void assembleGlobalMatrices();
+  void computeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
+
   void deriveDarcyFlux(const Epetra_Vector& solution, 
-                       const Epetra_Vector& rhs, 
                        const Epetra_Import& face_importer, 
                        Epetra_Vector& darcy_flux);
   void deriveDarcyVelocity(const Epetra_Vector& darcy_flux, 
@@ -72,6 +73,8 @@ class Matrix_MFD : public Epetra_Operator {
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& get_Aff_cells() { return Aff_cells; }
   std::vector<Epetra_SerialDenseVector>& get_Ff_cells() { return Ff_cells; }
+  Teuchos::RCP<Epetra_Vector>& get_rhs() { return rhs; }
+  Teuchos::RCP<Epetra_Vector>& get_rhs_faces() { return rhs_faces; }
 
  private:
   Teuchos::RCP<Flow_State> FS;
@@ -90,6 +93,9 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix> Acf; 
   Teuchos::RCP<Epetra_FECrsMatrix> Aff;
   Teuchos::RCP<Epetra_FECrsMatrix> Sff;  // Schur complement
+  Teuchos::RCP<Epetra_Vector> rhs;
+  Teuchos::RCP<Epetra_Vector> rhs_cells;
+  Teuchos::RCP<Epetra_Vector> rhs_faces;
 
   ML_Epetra::MultiLevelPreconditioner *MLprec;
   Teuchos::ParameterList ML_list;

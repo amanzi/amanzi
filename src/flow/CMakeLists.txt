@@ -51,7 +51,7 @@ add_definitions("-DUSE_MPI")
 add_library(flow Flow_PK.cpp Flow_State.cpp 
                  Flow_BC_Factory.cpp Flow_VandV.cpp 
                  # Interface_BDF2.cpp Interface_NOX.cpp
-                 Darcy_PK.cpp Richards_PK.cpp
+                 Darcy_PK.cpp # Richards_PK.cpp
                  Matrix_MFD.cpp Matrix_VAG.cpp 
                  vanGenuchtenModel.cpp)
 add_install_library(flow)
@@ -85,23 +85,28 @@ if (BUILD_TESTS)
     include_directories(${FLOW_SOURCE_DIR})
     include_directories(${SOLVERS_SOURCE_DIR})
 
-    # Test: miscaleneous flow routines
-    add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp test/flow_vanGenuchten.cpp)
-    target_link_libraries(flow_darcy_misc flow mesh_factory mesh cell_geometry ${UnitTest_LIBRARIES})
+    set(flow_libs geometry mesh mesh_audit simple_mesh state flow whetstone)
+ 
+    # Test: miscaleneous Darcy flow routines
+    add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp)
+    target_link_libraries(flow_darcy_misc ${flow_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
-
-    # Test: parallel flow
     add_amanzi_test(flow_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
     add_amanzi_test(flow_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
  
+    # Test: miscaleneous Richards flow routines
+    add_executable(flow_richards_misc test/Main.cc test/flow_vanGenuchten.cpp)
+    target_link_libraries(flow_richards_misc ${flow_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_richards_misc flow_richards_misc KIND int)
+
     # Test: flow-bc-factory
     add_executable(flow_bc_factory test/flow_bc_factory.cc)
-    target_link_libraries(flow_bc_factory flow mesh_factory mesh error_handling ${UnitTest_LIBRARIES})
+    target_link_libraries(flow_bc_factory ${flow_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(flow_bc_factory flow_bc_factory KIND unit)
  
     # Test: flow-richards
     if (ENABLE_CGNS)
-        set(amanzi_libs geometry mesh mesh_audit simple_mesh state flow whetstone solvers output hdf5)
+        set(amanzi_libs geometry mesh mesh_audit simple_mesh flow state whetstone solvers output hdf5)
 
         add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
         target_link_libraries(flow_richards_bdf2 ${amanzi_libs} ${UnitTest_LIBRARIES})

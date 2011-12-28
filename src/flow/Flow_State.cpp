@@ -33,6 +33,21 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
 }
 
 
+Flow_State::Flow_State(State& S)
+{
+  porosity = S.get_porosity();
+  fluid_density = S.get_density();
+  fluid_viscosity = S.get_viscosity();
+  gravity = S.get_gravity();
+  absolute_permeability = S.get_permeability();
+  pressure = S.get_pressure();
+  darcy_flux = S.get_darcy_flux();
+  mesh_ = S.get_mesh_maps();
+
+  S_ = &S;
+}
+
+
 /* *******************************************************************
  * mode = CopyPointers (default) a trivial copy of the given state           
  * mode = ViewMemory   creates the flow state from internal one   

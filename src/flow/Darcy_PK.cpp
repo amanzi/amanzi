@@ -28,6 +28,8 @@ namespace AmanziFlow {
 ****************************************************************** */
 Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
 {
+  Flow_PK::Init(FS_MPC);  // sets up default parameters
+
   FS = FS_MPC;
   dp_list = dp_list_;
 
@@ -57,8 +59,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
 
   face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
-
-  Flow_PK::Init(FS_MPC);
 }
 
 
@@ -78,20 +78,19 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->create_cell_view(*solution));
   solution_faces = Teuchos::rcp(FS->create_face_view(*solution));
-  rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
 
   solver = new AztecOO;
   solver->SetUserOperator(matrix);
   solver->SetPrecOperator(preconditioner);
   solver->SetAztecOption(AZ_solver, AZ_cg);
 
-  // Get some solver parameters from the flow parameter list.
+  // Get parameters from the flow parameter list.
   process_parameter_list();
 
   // Process boundary data
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  std::vector<int> bc_markers(FLOW_BC_FACE_NULL, ncells);
-  std::vector<double> bc_values(0.0, ncells);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  bc_markers.resize(nfaces, FLOW_BC_FACE_NULL);
+  bc_values.resize(nfaces, 0.0);
 
   T_physical = FS->get_time();
   double time = (standalone_mode) ? T_internal : T_physical;
@@ -118,8 +117,8 @@ void Darcy_PK::process_parameter_list()
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
-  max_itrs = dp_list.get<int>("Max Iterations");
-  err_tol = dp_list.get<double>("Error Tolerance");
+  max_itrs = preconditioner_list.get<int>("Max Iterations");
+  err_tol = preconditioner_list.get<double>("Error Tolerance");
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list.sublist("boundary conditions", true));
@@ -147,20 +146,21 @@ int Darcy_PK::advance_to_steady_state()
   int n = number_owned_cells + number_owned_faces;
 
   // work-around limited support for tensors
-  std::vector<WhetStone::Tensor> K(number_owned_cells);
   populate_absolute_permeability_tensor(K);
-
   for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
 
   // calculate and assemble elemental stifness matrices
   matrix->createMFDstiffnessMatrices(K);
-  matrix->assembleGlobalMatrices(*rhs);
+  matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
-  matrix->computeSchurComplement();
+  matrix->assembleGlobalMatrices();
+  matrix->computeSchurComplement(bc_markers, bc_values);
+  matrix->update_ML_preconditioner();
 
+  rhs = matrix->get_rhs();
   Epetra_Vector b(*rhs);
-  solver->SetRHS(&b);
+  solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess 
 
   solver->Iterate(max_itrs, err_tol);
@@ -171,7 +171,8 @@ int Darcy_PK::advance_to_steady_state()
             << "Norm of true residual = " << solver->TrueResidual() << std::endl;
 
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  matrix->deriveDarcyFlux(*solution, *rhs, *face_importer_, darcy_flux);
+  matrix->createMFDstiffnessMatrices(K);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
   return 0;
 }
 

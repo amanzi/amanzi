@@ -27,6 +27,7 @@ CopyMemory     // copy non-overlap vector to overlap vectors
 class Flow_State {
  public:
   Flow_State(Teuchos::RCP<State> S);
+  Flow_State(State& S);
   Flow_State(Flow_State& S, FlowCreateMode mode = CopyPointers);
   ~Flow_State() {};
 

@@ -10,11 +10,12 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_MpiComm.h"
 
-#include "AztecOO.h"
 #include "Mesh.hh"
+#include "Mesh_simple.hh"
 #include "Darcy_PK.hpp"
 
 
@@ -23,69 +24,41 @@ using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::AmanziFlow;
 
-struct problem_setup
-{
-  Epetra_MpiComm *comm;
-  Teuchos::RCP<Mesh> mesh;
-  GeometricModel *gm;
-  Teuchos::ParameterList params;
-  DarcyProblem *problem;
-  AztecOO *solver;
-  Epetra_Vector *solution;
-  // parameters for analytic pressure function
-  double p0, pgrad[3];
-  // other parameters
-  double rho, mu, g[3];
+class DarcyProblem {
+ public:
+  Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  Teuchos::ParameterList dp_list;
+  AmanziFlow::Darcy_PK* DPK; 
 
-  problem_setup()
+  DarcyProblem() 
   {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
-    // Generate the mesh file name.
-    std::string filename;
-    if (comm->NumProc() == 1)
-      filename = "test/4x4x4.exo";
-    else 
-      filename = "test/4x4x4.par";
-    
-    // Create the geometric model.
-    Teuchos::ParameterList regions;
-    regions.sublist("FRONT").sublist("Region: Labeled Set").
-        set("File",filename).set("Format","Exodus II").set("Label","1").set("Entity","Face");
-    regions.sublist("RIGHT").sublist("Region: Labeled Set").
-        set("File",filename).set("Format","Exodus II").set("Label","2").set("Entity","Face");
-    regions.sublist("BACK").sublist("Region: Labeled Set").
-        set("File",filename).set("Format","Exodus II").set("Label","3").set("Entity","Face");
-    regions.sublist("LEFT").sublist("Region: Labeled Set").
-        set("File",filename).set("Format","Exodus II").set("Label","4").set("Entity","Face");
-    regions.sublist("BOTTOM").sublist("Region: Labeled Set").
-        set("File",filename).set("Format","Exodus II").set("Label","5").set("Entity","Face");
-    regions.sublist("TOP").sublist("Region: Labeled Set").
-        set("File",filename).set("Format","Exodus II").set("Label","6").set("Entity","Face");
-    gm = new GeometricModel(3,regions);
+    Teuchos::ParameterList parameter_list;
+    string xmlFileName = "test/flow_darcy_misc.xml";
+    updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
-    // Create the mesh.
-    MeshFactory mesh_fact(*comm);
-    mesh = mesh_fact(filename, gm);
+    // create an SIMPLE mesh framework 
+    Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+    GeometricModelPtr gm = new GeometricModel(3, region_list);
+    mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
 
-    // Set default model parameters.
-    rho = 1.0;
-    mu = 1.0;
-    for (int i=0; i<3; ++i) g[i] = 0.0;
-    
-    // Default boundary conditions are no-flux
-    params.sublist("boundary conditions");
+    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+    Teuchos::ParameterList dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
+
+    // create Darcy process kernel
+    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
+    State S(state_list, mesh);
+    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+    DPK = new Darcy_PK(dp_list, FS);
+    DPK->Init();
   }
 
-  ~problem_setup()
-  {
-    delete solution;
-    delete solver;
-    delete problem;
-  }
+  ~DarcyProblem() { delete DPK; }
 
-  void set_bc(const char *side, const char *type, double value) {
-    Teuchos::Array<std::string> reg(1,side);
+  void set_bc(const char *side, const char *type, double value) 
+  {
+    Teuchos::Array<std::string> reg(1, side);
     std::string func_list_name;
     if (type == "pressure") {
       func_list_name = "boundary pressure";
@@ -94,165 +67,81 @@ struct problem_setup
     } else if (type == "mass flux") {
       func_list_name = "outward mass flux";
     }
-    params.sublist("boundary conditions").sublist(type).sublist(side).set("regions",reg).
-        sublist(func_list_name).sublist("function-constant").set("value",value);
+    dp_list.sublist("boundary conditions").sublist(type).sublist(side).set("regions", reg).
+        sublist(func_list_name).sublist("function-constant").set("value", value);
   }
   
-  void setFluidDensity(double value) { rho = value; }
-  void setFluidViscosity(double value) { mu = value; }
-  void setGravity(double *value) { for (int i=0; i<3; ++i) g[i] = value[i]; }
-
-  void create_problem()
+  double cell_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
   {
-    // Create the Darcy problem parameter list.
-    //Teuchos::ParameterList &precon_pl = pl.sublist("Diffusion Preconditioner");
-    //Teuchos::ParameterList &ml_pl = precon_pl.sublist("ML Parameters");
-    //ml_pl.set("default values", "SA");
-    
-    params.set("fluid density", rho);
-    params.set("fluid viscosity", mu);
-    params.set("gravity", -g[2]);
+    Epetra_Vector& solution_cells = DPK->get_solution_cells();
 
-    // Create the problem.
-    problem = new DarcyProblem(mesh, params);
-
-    // Other model parameters; we won't be messing with these.
-    problem->set_absolute_permeability(1.0);
-  }
-
-  void solve_problem()
-  {
-    problem->Assemble();
-
-    solver = new AztecOO;
-    solver->SetAztecOption(AZ_solver, AZ_cg);
-    solver->SetUserOperator(&(problem->Matvec()));
-    solver->SetPrecOperator(&(problem->Precon()));
-
-    // Define the RHS.
-    Epetra_Vector b(problem->RHS()); // make a copy, Aztec00 will muck with it
-    solver->SetRHS(&b);
-
-    // Register the initial solution guess; will be overwritten with the solution.
-    solution = new Epetra_Vector(problem->Map());
-    solver->SetLHS(solution);
-
-    solver->Iterate(50, 1.0e-10);
-    //std::cout << "Solver performed " << solver->NumIters() << " iterations." << std::endl
-    //          << "Norm of true residual = " << solver->TrueResidual() << std::endl;
-  }
-
-  void set_pressure_constants(double p0_, double pgrad_[])
-  {
-    p0 = p0_;
-    for (int i = 0; i < 3; ++i) pgrad[i] = pgrad_[i];
-  }
-
-  double pressure(double *x)
-  {
-    return p0 + pgrad[0]*x[0] + pgrad[1]*x[1] + pgrad[2]*x[2];
-  }
-
-  void cell_pressure_error(double &l2error)
-  {
-    Epetra_Vector &p_solve = *(problem->CreateCellView(*solution));
-    Epetra_Vector  p_error(problem->CellMap());
-
-    double xdata[24], xc[3];
-    Epetra_SerialDenseMatrix x(View, xdata, 3, 3, 8);
-
-    for (int j = 0; j < p_error.MyLength(); ++j) {
-      mesh->cell_to_coordinates((unsigned int) j, xdata, xdata+24);
-      cell_geometry::hex_centroid(x, xc);
-      p_error[j] = pressure(xc) - p_solve[j];
+    double error_L2 = 0.0;
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (int c=0; c<ncells; c++) {
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+      double pressure_exact = p0 + pressure_gradient * xc;
+cout << c << " " << solution_cells[c] << " exact = " <<  pressure_exact << endl;
+      error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
     }
-
-    p_error.Norm2(&l2error);
-    delete &p_solve;
+    return sqrt(error_L2);
   }
 
-  void face_pressure_error(double &l2error)
+  double face_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
   {
-    Epetra_Vector &p_solve = *(problem->CreateFaceView(*solution));
-    Epetra_Vector  p_error(problem->FaceMap());
+    Epetra_Vector& solution_faces = DPK->get_solution_faces();
 
-    double xdata[12], xc[3];
-    Epetra_SerialDenseMatrix x(View, xdata, 3, 3, 4);
-
-    for (int j = 0; j < p_error.MyLength(); ++j) {
-      mesh->face_to_coordinates((unsigned int) j, xdata, xdata+12);
-      cell_geometry::quad_face_centroid(x, xc);
-      p_error[j] = pressure(xc) - p_solve[j];
+    double error_L2 = 0.0;
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    for (int f=0; f<nfaces; f++) {
+      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
+      double pressure_exact = p0 + pressure_gradient * xf;
+      error_L2 += std::pow(solution_faces[f] - pressure_exact, 2.0);
     }
-  p_error.Norm2(&l2error);
-  delete &p_solve;
+    return sqrt(error_L2);
   }
 
-  void darcy_flux_error(double q[3], double &error1, double &error2)
+  double darcy_flux_error(AmanziGeometry::Point& velocity_exact)
   {
-    Epetra_Vector qflux(problem->FaceMap());
-    problem->DeriveDarcyFlux(*solution, qflux, error2);
+    Epetra_Vector& darcy_flux = *(DPK->get_FS().get_darcy_flux());
 
-    double a[3];
-    double x[12];
-    for (unsigned int j = 0; j < qflux.MyLength(); ++j) {
-      mesh->face_to_coordinates(j, x, x+12);
-      cell_geometry::quad_face_normal(x, a);
-      qflux[j] = qflux[j] - cell_geometry::dot_product(q, a, 3);
+    double error_L2 = 0.0;
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    for (int f=0; f<nfaces; f++) {
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);      
+//cout << f << " " << darcy_flux[f] << " exact = " << velocity_exact * normal << endl;
+      error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
     }
-    qflux.Norm2(&error1);
+    return sqrt(error_L2);
   }
-
-  void darcy_velocity_error(double q[3], double &error)
-  {
-    Epetra_MultiVector qcell(problem->CellMap(),3);
-    problem->DeriveDarcyVelocity(*solution, qcell);
-    for (int j=0; j<qcell.MyLength(); ++j) {
-      for (int k=0; k<3; ++k) qcell[k][j] -= q[k];
-    }
-
-    double multi_error[3];
-    qcell.Norm2(multi_error);
-
-    error = 0.0;
-    for (int k=0; k<3; k++) error += std::pow(multi_error[0], 2.0);
-    error = std::sqrt(error);
-  }
-
 };
+
 
 SUITE(Simple_1D_Flow) {
 
-  TEST_FIXTURE(problem_setup, x_p_p)
-  {
+  TEST_FIXTURE(DarcyProblem, Test1) {
     std::cout <<"Flow 1D: test 1" << std::endl;
-    // Set non-default BC before create_problem().
-    set_bc("LEFT",  "pressure", 1.0);
+    set_bc("LEFT",  "pressure", 1.0);  // Set non-default BC.
     set_bc("RIGHT", "pressure", 0.0);
 
-    // Set non-default model parameters before create_problem().
+    DPK->advance_to_steady_state();
 
-    create_problem();
-    solve_problem();
-
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
+    // pgrad = rho * g - (mu/k) * q, where g is the gravity and q is the Darcy velocity
     double p0 = 1.0;
-    double pgrad[3] = {-1.0, 0.0, 0.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    double error = cell_pressure_error(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
 
-    face_pressure_error(error);
+    error = face_pressure_error(p0, pressure_gradient);
+    CHECK(error < 1.0e-8);
+
+    AmanziGeometry::Point velocity;
+    velocity = pressure_gradient + DPK->get_gravity();
+    error = darcy_flux_error(velocity);
     CHECK(error < 1.0e-8);
   }
+}
 
+/*
   TEST_FIXTURE(problem_setup, xg_p_p)
   {
     std::cout <<"Flow 1D: test 2" << std::endl;
@@ -285,6 +174,7 @@ SUITE(Simple_1D_Flow) {
     face_pressure_error(error);
     CHECK(error < 1.0e-8);
   }
+}
 
   TEST_FIXTURE(problem_setup, x_q_p)
   {
@@ -834,4 +724,5 @@ SUITE(Darcy_Velocity) {
     CHECK(error < 1.1e-8);
   }
 }
+*/
 

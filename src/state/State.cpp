@@ -106,7 +106,7 @@ void State::initialize_from_parameter_list()
   set_water_density(parameter_list.get<double>("Constant water density"));
   // set_water_saturation(parameter_list.get<double>("Constant water saturation"));
   set_viscosity(parameter_list.get<double>("Constant viscosity"));
-  
+
   for (int nb=1; nb<=num_blocks; nb++) {
     
     std::stringstream pname;

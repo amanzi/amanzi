@@ -64,7 +64,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
 ****************************************************************** */
 int Transport_PK::Init()
 {
-  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory) );  
+  TS_nextBIG = Teuchos::rcp(new Transport_State(*TS, CopyMemory));  
   TS_nextMPC = Teuchos::rcp(new Transport_State(*TS_nextBIG, ViewMemory));
 
   const Epetra_Map& cmap = mesh_->cell_map(true);

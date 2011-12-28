@@ -35,7 +35,10 @@ int MFD3D::darcy_mass(int cell,
   Teuchos::SerialDenseMatrix<int, double> N(nfaces, d);
   Teuchos::SerialDenseMatrix<int, double> Mc(nfaces, nfaces);
 
-  int ok = L2_consistency(cell, permeability, N, Mc);
+  Tensor permeability_inv(permeability);
+  permeability_inv.inverse();
+
+  int ok = L2_consistency(cell, permeability_inv, N, Mc);
   if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
 
   stability_scalar(cell, N, Mc, M);
@@ -171,7 +174,8 @@ int MFD3D::dispersion_corner_fluxes(int node,
 
 /* ******************************************************************
 * Consistency condition for inner product in space of Darcy fluxes. 
-* Only upper triangular part of Wc is calculated.
+* Only upper triangular part of Mc is calculated.
+* Darcy flux is scaled by area!
 ****************************************************************** */
 int MFD3D::L2_consistency(int cell,
                           Tensor& T,
@@ -196,17 +200,12 @@ int MFD3D::L2_consistency(int cell,
   for (int i=0; i<num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double a1 = mesh_->face_area(f);
-
-    v1 = a1 * (fm - cm);
-    v2 = Tinv * v1;
+    v2 = Tinv * (fm - cm);
  
     for (int j=i; j<num_faces; j++) {
       f = faces[j];
       const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-      double a2 = mesh_->face_area(f);
-
-      v1 = a2 * (fm - cm);
+      v1 = fm - cm;
       Mc(i, j) = (v1 * v2) / volume; 
     }
   }
@@ -217,9 +216,7 @@ int MFD3D::L2_consistency(int cell,
   for (int i=0; i<num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double area = dirs[i] * mesh_->face_area(f);
-
-    for (int k=0; k<d; k++) N(i, k) = normal[k] / area;
+    for (int k=0; k<d; k++) N(i, k) = normal[k];
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
@@ -228,6 +225,7 @@ int MFD3D::L2_consistency(int cell,
 /* ******************************************************************
 * Consistency condition for inverse of mass matrix in space of Darcy 
 * fluxes. Only the upper triangular part of Wc is calculated.
+* Darcy flux is scaled by area!
 ****************************************************************** */
 int MFD3D::L2_consistency_inverse(int cell,
                                   Tensor& T,
@@ -250,16 +248,13 @@ int MFD3D::L2_consistency_inverse(int cell,
   for (int i=0; i<num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double a1 = dirs[i] * mesh_->face_area(f);
 
     v1 = T * normal;
  
     for (int j=i; j<num_faces; j++) {
       f = faces[j];
       const AmanziGeometry::Point& v2 = mesh_->face_normal(f);
-      double a2 = dirs[j] * mesh_->face_area(f);
-
-      Wc(i, j) = (v1 * v2) / (a1 * a2 * volume); 
+      Wc(i, j) = (v1 * v2) / (dirs[i] * dirs[j] * volume); 
     }
   }
 
@@ -268,9 +263,7 @@ int MFD3D::L2_consistency_inverse(int cell,
   for (int i=0; i<num_faces; i++) {
     int f = faces[i];
     const AmanziGeometry::Point& fm = mesh_->face_centroid(f);
-    double area = mesh_->face_area(f);
-
-    for (int k=0; k<d; k++) R(i, k) = area * (fm[k] - cm[k]);
+    for (int k=0; k<d; k++) R(i, k) = fm[k] - cm[k];
   }
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

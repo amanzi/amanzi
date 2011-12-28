@@ -28,12 +28,14 @@ namespace AmanziFlow {
 class Darcy_PK : public Flow_PK {
  public:
   Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
-  ~Darcy_PK () { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
+  ~Darcy_PK() { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
 
   // main methods
-  int advance(double dT); 
+  void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+
+  int advance(double dT) {}; 
   int advance_to_steady_state();
-  void commit_state(Teuchos::RCP<Flow_State>) {};
+  void commit_state() {};
 
   // other main methods
   void process_parameter_list();
@@ -43,8 +45,13 @@ class Darcy_PK : public Flow_PK {
   // control methods
   void print_statistics() const;
 
+  // access methods
+  Flow_State& get_FS() { return *FS; }
+  Epetra_Vector& get_solution_cells() { return *solution_cells; }
+  Epetra_Vector& get_solution_faces() { return *solution_faces; }
+  AmanziGeometry::Point& get_gravity() { return gravity; }
+
  private:
-  void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
   Teuchos::ParameterList dp_list;
 
   Teuchos::RCP<Flow_State> FS;
@@ -69,6 +76,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
   Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
   Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
+  Teuchos::RCP<Epetra_Vector> rhs_faces;
 
   BoundaryFunction *bc_pressure;  // Pressure Dirichlet b.c., excluding static head
   BoundaryFunction *bc_head;  // Static pressure head b.c.; also Dirichlet-type
