@@ -4,86 +4,51 @@ License: BSD
 Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+#include "Interface_BDF2.hpp"
+
 namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
 * .                                                 
 ****************************************************************** */
-Interface_BDF2::Interface_BDF2(RichardsProblem *problem, 
-					       Teuchos::ParameterList &plist, 
-					       const Epetra_Map &map,
-					       Teuchos::RCP<const Flow_State> FS) 
-  : problem_(problem), D(problem->Matrix()),  map_(map), plist_(plist),
-    FS_(FS)
+Interface_BDF2::Interface_BDF2(Richards_PK* RPK, 
+                               Teuchos::ParameterList& rme_list)
 {
-  this->setLinePrefix("RichardsModelEvaluator");
-  this->getOStream()->setShowLinePrefix(true);
-
-  // Read the sublist for verbosity settings.
-  Teuchos::readVerboseObjectSublist(&plist_,this);
-
-  atol = plist.get<double>("Absolute error tolerance",1.0);
-  rtol = plist.get<double>("Relative error tolerance",1e-5);
-  
+  RPK_ = RPK;
+  rme_list_ = rme_list;
+  absolute_tol = rme_list_.get<double>("Absolute error tolerance", 1.0);
+  relative_tol = rme_list_.get<double>("Relative error tolerance", 1e-5); 
 }
+
 
 /* ******************************************************************
 * .                                                 
 ****************************************************************** */
-void Interface_BDF2::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
+void Interface_BDF2::fun(
+    const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
 {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
-  
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-    *out << "initialize o.k." << std::endl;
-  }
-}
+  RPK_->computeFunctionalPTerm(u, f, t);  // compute F(u)
 
-// Overridden from BDF2::fnBase
+  Epetra_Vector* uc = RPK_->get_FS().create_cell_view(u);  
+  Epetra_Vector* udotc = RPK_->get_FS().create_cell_view(udot);
+  Epetra_Vector* fc = RPK_->get_FS().create_cell_view(f);
 
-/* ******************************************************************
-* .                                                 
-****************************************************************** */
-void Interface_BDF2::fun(const double t, const Epetra_Vector& u, 
-				 const Epetra_Vector& udot, Epetra_Vector& f)
-{
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = RPK_->get_mesh();
+  Epetra_Vector dS(mesh->cell_map(false));  // compute S'(p)
+  RPK_->derivedSdP(*uc, dS);
 
-  // compute F(u)
-  problem_->ComputeF(u, f, t);
+  Teuchos::RCP<Epetra_Vector> phi = RPK_->get_FS().get_porosity();
+  double rho = RPK_->get_rho();
 
-  Epetra_Vector *uc     = problem_->CreateCellView(u);  
-  Epetra_Vector *udotc  = problem_->CreateCellView(udot);
-  Epetra_Vector *fc     = problem_->CreateCellView(f);
-
-
-  // compute S'(p)
-  Epetra_Vector dS (problem_->CellMap());
-  problem_->dSofP(*uc, dS);
-
-  const Epetra_Vector& phi = FS_->get_porosity();
-  double rho;
-
-  problem_->GetFluidDensity(rho);
-
-  // assume that porosity is piecewise constant
-  dS.Multiply(rho,dS,phi,0.0);
-  
-  // scale by the cell volumes
-  dS.Multiply(1.0,dS,*(problem_->cell_vols()),0.0);
-
-  // on the cell unknowns compute f=f+dS*udotc*rho*phi
-  fc->Multiply(1.0,dS,*udotc,1.0);
-
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-    *out << "fun o.k." <<  std::endl;
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c<ncells; c++) {
+    double volume = mesh->cell_volume(c);
+    double dS_cell = (*phi)[c] * dS[c] * rho * volume;
+    (*fc)[c] += dS_cell * (*udotc)[c];
   }
 }
 
@@ -93,37 +58,18 @@ void Interface_BDF2::fun(const double t, const Epetra_Vector& u,
 ****************************************************************** */
 void Interface_BDF2::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
-
-  (problem_->Precon()).ApplyInverse(X, Y);
-
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-    *out << "precon o.k." << std::endl;
-  }
+  RPK_->get_matrix()->ApplyInverse(X, Y);
 }
 
 
 /* ******************************************************************
 * .                                                 
 ****************************************************************** */
-void Interface_BDF2::update_precon(const double t, const Epetra_Vector& up, const double h, int& errc)
+void Interface_BDF2::update_precon(
+    const double t, const Epetra_Vector& up, const double dT, int& errc)
 {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
-
-  problem_->ComputePrecon(up,h);
-
+  RPK_->get_matrix()->update_ML_preconditioner();
   errc = 0;
-
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
-    {
-      *out << "update_precon done" << std::endl;
-    }
 }
 
 
@@ -132,28 +78,18 @@ void Interface_BDF2::update_precon(const double t, const Epetra_Vector& up, cons
 ****************************************************************** */
 double Interface_BDF2::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 {
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab  
-
-  double en = 0.0; 
-  for (int j=0; j<u.MyLength(); j++) {
-    double tmp = abs(du[j]) / (atol+rtol*abs(u[j]));
-    en = std::max<double>(en, tmp);
+  double error_norm = 0.0; 
+  for (int n=0; n<u.MyLength(); n++) {
+    double tmp = abs(du[n]) / (absolute_tol + relative_tol * abs(u[n]));
+    error_norm = std::max<double>(error_norm, tmp);
   }
 
   // find the global maximum
 #ifdef HAVE_MPI
-  double buf = en;
-  MPI_Allreduce ( &buf, &en, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+  double buf = error_norm;
+  MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
-
-  if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-    *out << "enorm done" << std::endl;
-  }
-
-  return  en;
+  return  error_norm;
 }
 
 }  // namespace AmanziFlow

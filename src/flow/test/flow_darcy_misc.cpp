@@ -116,8 +116,7 @@ class DarcyProblem {
 
 
 SUITE(Simple_1D_Flow) {
-
-  TEST_FIXTURE(DarcyProblem, Test1) {
+  TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     std::cout <<"Flow 1D: test 1" << std::endl;
     reset_bc("pressure", "BC 1", 0.0);  // reset default b.c.
     reset_bc("pressure", "BC 2", 1.0);
@@ -159,12 +158,6 @@ SUITE(Simple_1D_Flow) {
     create_problem();
     solve_problem();
 
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
     double p0 = 1.0;
     double pgrad[3] = {-1.0, 0.0, -1.0};
     set_pressure_constants(p0, pgrad);
@@ -191,12 +184,6 @@ SUITE(Simple_1D_Flow) {
     create_problem();
     solve_problem();
 
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
     double p0 = 1.0;
     double pgrad[3] = {-1.0, 0.0, 0.0};
     set_pressure_constants(p0, pgrad);
@@ -225,144 +212,8 @@ SUITE(Simple_1D_Flow) {
     create_problem();
     solve_problem();
 
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
     double p0 = 1.0;
     double pgrad[3] = {-1.0, 0.0, -1.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, y_p_p)
-  {
-    std::cout <<"Flow 1D: test 5" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("BACK",  "pressure", 1.0);
-    set_bc("FRONT", "pressure", 0.0);
-
-    // Set non-default model parameters before create_problem().
-
-    create_problem();
-    solve_problem();
-
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
-    double p0 = 0.0;
-    double pgrad[3] = {0.0, 1.0, 0.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-  }
-
-  TEST_FIXTURE(problem_setup, yg_p_p)
-  {
-    std::cout <<"Flow 1D: test 6" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("BACK",  "static head", 1.0);
-    set_bc("FRONT", "static head", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    setGravity(g);
-
-    create_problem();
-    solve_problem();
-
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
-    double p0 = 0.0;
-    double pgrad[3] = {0.0, 1.0, -1.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-  }
-
-  TEST_FIXTURE(problem_setup, y_q_p)
-  {
-    std::cout <<"Flow 1D: test 7" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("BACK",  "mass flux", -1.0);
-    set_bc("FRONT", "pressure", 0.0);
-
-    // Set non-default model parameters before create_problem().
-
-    create_problem();
-    solve_problem();
-
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
-    double p0 = 0.0;
-    double pgrad[3] = {0.0, 1.0, 0.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, yg_q_p)
-  {
-    std::cout <<"Flow 1D: test 8" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("BACK",  "mass flux", -1.0);
-    set_bc("FRONT", "static head", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    setGravity(g);
-
-    create_problem();
-    solve_problem();
-
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
-    double p0 = 0.0;
-    double pgrad[3] = {0.0, 1.0, -1.0};
     set_pressure_constants(p0, pgrad);
 
     double error;
@@ -387,12 +238,6 @@ SUITE(Simple_1D_Flow) {
     create_problem();
     solve_problem();
 
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
     double p0 = 1.0;
     double pgrad[3] = {0.0, 0.0, -1.0};
     set_pressure_constants(p0, pgrad);
@@ -421,12 +266,6 @@ SUITE(Simple_1D_Flow) {
     create_problem();
     solve_problem();
 
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/k) * q, where g is the gravity vector and
-    //   q is the expected constant Darcy velocity
     double p0 = 2.0;
     double pgrad[3] = {0.0, 0.0, -2.0};
     set_pressure_constants(p0, pgrad);
@@ -437,149 +276,11 @@ SUITE(Simple_1D_Flow) {
 
     face_pressure_error(error);
     CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, z_q_p)
-  {
-    std::cout <<"Flow 1D: test 11" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("TOP",    "mass flux", 1.0);
-    set_bc("BOTTOM", "pressure", 1.0);
-
-    // Set non-default model parameters before create_problem().
-
-    create_problem();
-    solve_problem();
-
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
-    double p0 = 1.0;
-    double pgrad[3] = {0.0, 0.0, -1.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, zg_q_p)
-  {
-    std::cout <<"Flow 1D: test 12" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("TOP",    "mass flux", 1.0);
-    set_bc("BOTTOM", "pressure", 2.0);
-
-    // Set non-default model parameters before create_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    setGravity(g);
-
-    create_problem();
-    solve_problem();
-
-    // Define the analytic pressure solution:
-    // p0 = pressure at (0,0,0).
-    // pgrad = constant pressure gradient.
-    // Domain is [0,1]^3.
-    // pgrad = rho * g - (mu/(rho*k)) * f, where g is the gravity
-    //   vector and f is the expected constant mass flux
-    double p0 = 2.0;
-    double pgrad[3] = {0.0, 0.0, -2.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-    //std::cout << "cell pressure error=" << error << std::endl;
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-    //std::cout << "face pressure error=" << error << std::endl;
-  }
-
-}
-
-SUITE(Darcy_Flux) {
-
-  TEST_FIXTURE(problem_setup, Darcy_Flux_X)
-  {
-    std::cout <<"Darcy flux: test 1" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("LEFT",  "pressure", 1.0);
-    set_bc("RIGHT", "pressure", 0.0);
-
-    // Set non-default model parameters before create_problem().
-
-    create_problem();
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = { 1.0, 0.0, 0.0 };
-    double error1, error2;
-    darcy_flux_error(q, error1, error2);
-    CHECK(error1 < 1.0e-9); // flux error norm
-    CHECK(error2 < 1.0e-9); // flux discrepancy norm
-  }
-
-
-  TEST_FIXTURE(problem_setup, Darcy_Flux_Y)
-  {
-    std::cout <<"Darcy flux: test 2" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("FRONT", "pressure", 1.0);
-    set_bc("BACK",  "pressure", 0.0);
-
-    // Set non-default model parameters before create_problem().
-
-    create_problem();
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = { 0.0, 1.0, 0.0 };
-    double error1, error2;
-    darcy_flux_error(q, error1, error2);
-    CHECK(error1 < 1.0e-9); // flux error norm
-    CHECK(error2 < 1.0e-9); // flux discrepancy norm
-  }
-
-
-  TEST_FIXTURE(problem_setup, Darcy_Flux_Z)
-  {
-    std::cout <<"Darcy flux: test 3" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("BOTTOM", "pressure", 1.0);
-    set_bc("TOP",    "pressure", 0.0);
-
-    // Set non-default model parameters before solve_problem().
-
-    create_problem();
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = { 0.0, 0.0, 1.0 };
-    double error1, error2;
-    darcy_flux_error(q, error1, error2);
-    CHECK(error1 < 1.0e-9); // flux error norm
-    CHECK(error2 < 1.0e-9); // flux discrepancy norm
   }
 }
 
 
 SUITE(Darcy_Velocity) {
-
   TEST_FIXTURE(problem_setup, Darcy_Velocity_X)
   {
     std::cout <<"Darcy velocity: test 1" << std::endl;

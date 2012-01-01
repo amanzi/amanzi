@@ -40,6 +40,7 @@ class Matrix_MFD : public Epetra_Operator {
   void createMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
   void createMFDrhsVectors();
   void createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K);
+  void rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
   void applyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
   void symbolicAssembleGlobalMatrices(const Epetra_Map& super_map);
@@ -72,6 +73,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   // access methods
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& get_Aff_cells() { return Aff_cells; }
+  std::vector<double>& get_Acc_cells() { return Acc_cells; }
   std::vector<Epetra_SerialDenseVector>& get_Ff_cells() { return Ff_cells; }
   Teuchos::RCP<Epetra_Vector>& get_rhs() { return rhs; }
   Teuchos::RCP<Epetra_Vector>& get_rhs_faces() { return rhs_faces; }

@@ -33,7 +33,7 @@ void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
 
 
 /* ******************************************************************
-* Calculate elemental inverse mass matrices.                                            
+* Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
 void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K)
 {
@@ -41,6 +41,7 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K)
   AmanziMesh::Entity_ID_List faces;
 
   Aff_cells.clear();
+  Acf_cells.clear();
   Acc_cells.clear();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -66,6 +67,31 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K)
     Acc_cells.push_back(matsum);
   }
 }
+
+
+/* ******************************************************************
+*  .                                            
+****************************************************************** */
+void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, 
+                                             const Epetra_Vector& new_scale)
+{
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  for (int c=0; c<ncells; c++) {
+    Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells[c];
+    Epetra_SerialDenseVector& Bcf = Acf_cells[c];
+
+    int n = Bff.numRows();
+    double scale = old_scale[c] / new_scale[c];
+
+    for (int i=0; i<n; i++) {
+      for (int j=0; j<n; j++) Bff(i, j) *= scale;
+      Bcf(i) *= scale;
+    }
+    Acc_cells[c] *= scale;
+  }
+}
+
 
 /* ******************************************************************
 * .                                           
@@ -125,7 +151,7 @@ void Matrix_MFD::applyBoundaryConditions(
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f]; 
       } else if (bc_markers[f] == FLOW_BC_FACE_FLUX) {
-        // We assume for moment no-flux b.c.
+        Ff[n] += bc_values[f] * mesh_->face_area(f);
       }
     }
   }
@@ -376,7 +402,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   // Solve the Schur complement system for Yf with Tf as the rhs using ML
   MLprec->ApplyInverse(Tf, Yf);
 
-  // BACKWARD SUBSTITUTION: Yc = inv(Acc) (Xc - Acf Yf)
+  // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
   (*Acf).Multiply(false, Yf, Tc);  // this should do the required parallel comm
   Tc.Update(1.0, Xc, -1.0);
   Yc.ReciprocalMultiply(1.0, *Acc, Tc, 0.0);

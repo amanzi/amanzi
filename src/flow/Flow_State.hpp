@@ -51,6 +51,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector>  get_darcy_flux () { return darcy_flux; }
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
 
+  Epetra_Vector& ref_porosity() { return *porosity; }
   Epetra_Vector& ref_pressure() { return *pressure; }
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
   Epetra_Vector& ref_absolute_permeability() { return *absolute_permeability; }

@@ -75,11 +75,11 @@ Epetra_Map* Flow_PK::create_super_map()
 /* ******************************************************************
 * Add a boundary marker to used faces.                                          
 ****************************************************************** */
-void Flow_PK::update_data_boundary_faces(BoundaryFunction* bc_pressure,
-                                         BoundaryFunction* bc_head, 
-                                         BoundaryFunction* bc_flux,
-                                         std::vector<int>& bc_markers,
-                                         std::vector<double>& bc_values)
+void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
+                                       BoundaryFunction* bc_head, 
+                                       BoundaryFunction* bc_flux,
+                                       std::vector<int>& bc_markers,
+                                       std::vector<double>& bc_values)
 {
   for (int n=0; n<bc_markers.size(); n++) {
     bc_markers[n] = FLOW_BC_FACE_NULL;
@@ -144,6 +144,37 @@ void Flow_PK::addGravityFluxes(Epetra_Vector& darcy_flux)
   for (int f=0; f<nfaces; f++) {
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     darcy_flux[f] -= gravity * normal;
+  }
+}
+
+
+/* *******************************************************************
+ * Identify flux direction based on orientation of the face normal 
+ * and sign of the  Darcy velocity.                               
+ ****************************************************************** */
+void Flow_PK::identify_upwind_cells(Epetra_Vector& upwind_cell, Epetra_Vector& downwind_cell)
+{
+  for (int f=fmin; f<=fmax; f++) {
+    upwind_cell[f] = -1;  // negative value is indicator of a boundary
+    downwind_cell[f] = -1;
+  }
+
+  AmanziMesh::Entity_ID_List faces; 
+  std::vector<int> fdirs;
+  Epetra_Vector& darcy_flux = FS_nextBIG->ref_darcy_flux();
+
+  for (int c=cmin; c<=cmax; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_face_dirs(c, &fdirs);
+
+    for (int i=0; i<faces.size(); i++) {
+      int f = faces[i];
+      if (darcy_flux[f] * fdirs[i] >= 0) { 
+        upwind_cell[f] = c; 
+      } else { 
+        downwind_cell[f] = c; 
+      }
+    }
   }
 }
 

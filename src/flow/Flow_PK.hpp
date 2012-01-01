@@ -34,6 +34,12 @@ const int FLOW_BC_FACE_PRESSURE = 1;
 const int FLOW_BC_FACE_HEAD = 2; 
 const int FLOW_BC_FACE_FLUX = 4; 
 
+const int FLOW_STEADY_STATE_PICARD = 1;
+const int FLOW_STEADY_STATE_TIME_STEPPING = 2;
+const int FLOW_STEADY_STATE_NOX = 2;
+const int FLOW_STEADY_STATE_MAX_ITERATIONS = 100;
+const double FLOW_STEADY_STATE_TOLERANCE = 1e-6;
+
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
 const int FLOW_HEX_EDGES = 12;
@@ -63,11 +69,11 @@ class Flow_PK {
   virtual int advance_to_steady_state() = 0;
   virtual void commit_state() = 0;
 
-  void update_data_boundary_faces(BoundaryFunction *bc_pressure, 
-                                  BoundaryFunction *bc_head,
-                                  BoundaryFunction *bc_flux,
-                                  std::vector<int>& bc_markers,
-                                  std::vector<double>& bc_values);
+  void updateBoundaryConditions(BoundaryFunction *bc_pressure, 
+                                BoundaryFunction *bc_head,
+                                BoundaryFunction *bc_flux,
+                                std::vector<int>& bc_markers,
+                                std::vector<double>& bc_values);
 
   void calculateGravityFluxes(int cell, WhetStone::Tensor& K, std::vector<double>& gravity_flux);
   void addGravityFluxes(Epetra_Vector& darcy_flux);
@@ -89,6 +95,7 @@ class Flow_PK {
 
   // miscallenous members
   Epetra_Map* create_super_map();
+  void identify_upwind_cells(Epetra_Vector& upwind_cell, Epetra_Vector& downwind_cell);
 
  public:
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;

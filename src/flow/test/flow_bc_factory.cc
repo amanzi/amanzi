@@ -6,7 +6,7 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "flow-bc-factory.hh"
+#include "Flow_BC_Factory.hpp"
 #include "boundary-function.hh"
 #include "function-factory.hh"
 #include "errors.hh"
