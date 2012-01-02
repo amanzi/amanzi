@@ -58,8 +58,6 @@ class Richards_PK : public Flow_PK {
   void applyAdvectionMFD(Epetra_Vector& X, Epetra_Vector& Y);
 
   void computePDot(const double T, const Epetra_Vector& p, Epetra_Vector& pdot);
-  void computeFunctionalPTerm(const Epetra_Vector& p, Epetra_Vector& pdot, double T = 0.0);
-
   void computePreconditioner(const Epetra_Vector &X, const double h);
 
   void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
@@ -116,8 +114,10 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> rhs_faces;
 
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
-  Interface_BDF2* solver_BDF;
-  BDF2::Dae* time_stepper;
+
+  Interface_BDF2* ti_bdf2;  // BDF2 time integration method
+  BDF2::Dae* bdf2_dae;
+  int itrs_bdf2;
 
   BoundaryFunction *bc_pressure;  // Pressure Dirichlet b.c., excluding static head
   BoundaryFunction *bc_head;  // Static pressure head b.c.; also Dirichlet-type

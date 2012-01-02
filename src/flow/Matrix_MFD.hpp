@@ -47,7 +47,7 @@ class Matrix_MFD : public Epetra_Operator {
   void assembleGlobalMatrices();
   void computeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
-  double computeResidual(const Epetra_Vector& solution);
+  double computeResidual(const Epetra_Vector& solution, Epetra_Vector& residual);
 
   void deriveDarcyFlux(const Epetra_Vector& solution, 
                        const Epetra_Import& face_importer, 

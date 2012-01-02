@@ -18,8 +18,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh_simple.hh"
 #include "State.hpp"
 #include "Flow_State.hpp"
-#include "RichardsProblem.hpp"
-#include "RichardsModelEvaluator.hpp"
+#include "Richards_PK.hpp"
 #include "BDF2_Dae.hpp"
 
 #include "gmv_mesh.hh"
@@ -35,7 +34,7 @@ TEST(FLOW_1D_RICHARDS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziFlow;
 
-cout << "Test: 1D Richards, 2-layer model" << endl;
+cout << "Test: 2D Richards, 2-layer model" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -44,35 +43,23 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_richards_bdf2.xml";
+  string xmlFileName = "test/flow_richards_2D.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 100, comm, gm)); 
+  GeometricModelPtr gm = new GeometricModel(2, region_list);
+  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,-10.0, 1.0,0.0, 10,100, comm, 2, gm)); 
 
   // create the state
-  ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  RCP<State> S = Teuchos::rcp(new State(state_list, mesh));
-  RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+  rp_list = Teuchos::rcp(new Teuchos::ParameterList(flow_list.get<Teuchos::ParameterList>("Richards Problem")));
 
-  // create Richards problem
-  RichardsProblem problem(mesh, parameter_list);
-  problem.set_flow_state(FS);
-  problem.set_absolute_permeability(FS->get_permeability());
-
-  // create the Richards Model Evaluator
-  ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
-  ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
-  RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
-
-  // create the time stepping object
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList);
-  *bdf2_list = richards_list.get<Teuchos::ParameterList>("Time integrator");  
-  BDF2::Dae TS(RME, problem.Map());
-  TS.setParameterList(bdf2_list);
+  // create Richards process kernel
+  Teuchos::ParameterList& state_list = parameter_list.get<Teuchos::ParameterList>("State");
+  State S(state_list, mesh);
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  RPK = new Richards_PK(rp_list, FS);
 
   // create the initial condition
   Epetra_Vector u(problem.Map());

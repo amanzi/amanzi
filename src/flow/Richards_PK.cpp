@@ -5,8 +5,6 @@ Authors: Neil Carlson (nnc@lanl.gov),
          Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include <algorithm>
-
 #include "Epetra_IntVector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -115,11 +113,12 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Create the Richards model evaluator and time integrator
   Teuchos::ParameterList& rme_list = rp_list->sublist("Richards model evaluator");
-  solver_BDF = new Interface_BDF2(this, rme_list);  
+  ti_bdf2 = new Interface_BDF2(this, rme_list);
+  itrs_bdf2 = 0;
 
   Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list->sublist("Time integrator")));
-  time_stepper = new BDF2::Dae(*solver_BDF, *super_map_);
-  time_stepper->setParameterList(bdf2_list);
+  bdf2_dae = new BDF2::Dae(*ti_bdf2, *super_map_);
+  bdf2_dae->setParameterList(bdf2_list);
 
   // Allocate data for relative permeability
   Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
@@ -156,6 +155,7 @@ int Richards_PK::advanceSteadyState_Picard()
 {
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
+  Epetra_Vector  residual(*solution);
 
   solver->SetAztecOption(AZ_output, AZ_none);
   int itrs = 0;
@@ -183,7 +183,7 @@ int Richards_PK::advanceSteadyState_Picard()
 
     // check for convergence of non-linear residual
     rhs = matrix->get_rhs();
-    L2error = matrix->computeResidual(solution_new);
+    L2error = matrix->computeResidual(solution_new, residual);
     (*rhs).Norm2(&L2norm);
     L2error /= L2norm;
 
@@ -267,40 +267,46 @@ for (int c=0; c<K.size(); c+=4) cout << (*solution_cells)[c] << endl;
 
 
 /* ******************************************************************* 
- * . 
- ****************************************************************** */
+* Performs one time step of size dT. 
+******************************************************************* */
 int Richards_PK::advance(double dT) 
 {
+  solver->SetAztecOption(AZ_output, AZ_none);
+
   // work-around limited support for tensors
-  std::vector<WhetStone::Tensor> K(number_owned_cells);
   setAbsolutePermeabilityTensor(K);
   calculateRelativePermeability(*solution_cells);
 
-  for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+  for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
 
   matrix->createMFDstiffnessMatrices(K);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(matrix);
+  addTimeDerivative_MFD(*solution_cells, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   matrix->computeSchurComplement(bc_markers, bc_values);
   matrix->update_ML_preconditioner();
 
-  int itrs;
-  double T0, dTnext;
-  if (itrs == 0) {  // initialization
+  T_physical = FS->get_time();
+  double time = (standalone_mode) ? T_internal : T_physical;
+  double dTnext;
+
+  if (itrs_bdf2 == 0) {  // initialization
     Epetra_Vector pdot(*super_map_);
-    computePDot(T0, *solution, pdot);
-    time_stepper->set_initial_state(T0, *solution, pdot);
+    computePDot(time, *solution, pdot);
+    bdf2_dae->set_initial_state(time, *solution, pdot);
 
     int errc;
-    double dT0 = 1e-3;
-    solver_BDF->update_precon(T0, *solution, dT0, errc);
+    ti_bdf2->update_precon(time, *solution, dT, errc);
   }
 
-  time_stepper->bdf2_step(dT, 0.0, *solution, dTnext);
-  time_stepper->commit_solution(dT, *solution);
-  time_stepper->write_bdf2_stepping_statistics();
+  bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
+  bdf2_dae->commit_solution(dT, *solution);
+  bdf2_dae->write_bdf2_stepping_statistics();
+
+  itrs_bdf2++;
+  return 0;
 }
 
 
@@ -309,19 +315,11 @@ int Richards_PK::advance(double dT)
 ****************************************************************** */
 void Richards_PK::computePDot(const double T, const Epetra_Vector& p, Epetra_Vector &pdot)
 {
-  computeFunctionalPTerm(p, pdot);
+  double norm_pdot;
+  norm_pdot = matrix->computeResidual(p, pdot);
 
-  // zero out the face part, why? (lipnikov@lanl.gov)
   Epetra_Vector *pdot_face = FS->create_face_view(pdot);
   pdot_face->PutScalar(0.0);
-}
-
-
-/* ******************************************************************
-* .                                               
-****************************************************************** */
-void Richards_PK::computeFunctionalPTerm(const Epetra_Vector &X, Epetra_Vector &F, double time)
-{
 }
 
 
@@ -336,115 +334,6 @@ void Richards_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& 
     K[c].init(dim, 1);
     K[c](0, 0) = permeability[c];
   }
-}
-
-
-/* ******************************************************************
-* .                                               
-****************************************************************** */
-void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
-{
-  for (int mb=0; mb<WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-
-    AmanziMesh::Set_ID_List block;
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-
-    std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) (*Krel_cells)[*i] = WRM[mb]->k_relative(p[*i]);
-  }
-}
-
-
-/* ******************************************************************
-* .                                               
-****************************************************************** */
-void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
-{
-  calculateRelativePermeability(p);  // populates cell-based permeabilities
-  FS->distribute_cell_vector(*Krel_cells);
-
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  for (int c=0; c<number_owned_cells; c++) {
-    mesh_->cell_get_face_dirs(c, &dirs);
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
-
-    for (int n=0; n<nfaces; n++) {
-      int f = faces[n];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f); 
-      if ((normal * gravity) * dirs[n] > 0.0) (*Krel_faces)[f] = (*Krel_cells)[c]; 
-    }
-  }
-}
-
-
-/* ******************************************************************
-* .                                               
-****************************************************************** */
-void Richards_PK::derivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
-{
-  for (int mb=0; mb<WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    std::vector<unsigned int> block(ncells);
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-      
-    std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) ds[*i] = WRM[mb]->d_saturation(p[*i]);
-  }
-}
-
-
-/* ******************************************************************
-* .                                               
-****************************************************************** */
-void Richards_PK::deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Vector& s)
-{
-  for (int mb=0; mb<WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    std::vector<unsigned int> block(ncells);
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-      
-    std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) s[*i] = WRM[mb]->saturation(p[*i]);
-  }
-}
-
-
-/* ******************************************************************
-* .                                               
-****************************************************************** */
-void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
-{
-  for (int mb=0; mb<WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    std::vector<unsigned int> block(ncells);
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-      
-    std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) p[*i] = WRM[mb]->pressure(s);
-  } 
- 
-  /*
-  for (int mb=0; mb<WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    std::vector<unsigned int> block(ncells);
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-      
-    std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) p[*i] = WRM[mb]->pressure(s);
-  }
-  */
 }
 
 

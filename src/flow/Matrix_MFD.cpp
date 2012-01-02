@@ -296,18 +296,16 @@ void Matrix_MFD::computeSchurComplement(
 
 
 /* ******************************************************************
-* Linear algebra operations with matrices                                                 
+* Linear algebra operations with matrices: r = f - A * x                                                 
 ****************************************************************** */
-double Matrix_MFD::computeResidual(const Epetra_Vector& solution)
+double Matrix_MFD::computeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
 {
-  Epetra_Vector residual(*rhs);
-
   Apply(solution, residual);
-  residual.Update(-1.0, *rhs, 1.0);
+  residual.Update(1.0, *rhs, -1.0);
 
-  double norm;
-  residual.Norm2(&norm);
-  return norm;
+  double norm_residual;
+  residual.Norm2(&norm_residual);
+  return norm_residual;
 }
 
 

@@ -46,7 +46,7 @@ class RichardsProblem {
     Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     rp_list = Teuchos::rcp(new Teuchos::ParameterList(flow_list.get<Teuchos::ParameterList>("Richards Problem")));
 
-    // create Darcy process kernel
+    // create Richards process kernel
     Teuchos::ParameterList& state_list = parameter_list.get<Teuchos::ParameterList>("State");
     State S(state_list, mesh);
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));

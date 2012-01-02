@@ -51,7 +51,8 @@ add_definitions("-DUSE_MPI")
 add_library(flow Flow_PK.cpp Flow_State.cpp 
                  Flow_BC_Factory.cpp Flow_VandV.cpp 
                  Interface_BDF2.cpp # Interface_NOX.cpp
-                 Darcy_PK.cpp Darcy_IO.cpp Richards_PK.cpp Richards_IO.cpp
+                 Darcy_PK.cpp Darcy_IO.cpp 
+                 Richards_PK.cpp Richards_IO.cpp Richards_WRM.cpp
                  Matrix_MFD.cpp Matrix_VAG.cpp 
                  vanGenuchtenModel.cpp)
 add_install_library(flow)
@@ -109,14 +110,12 @@ if (BUILD_TESTS)
     target_link_libraries(flow_bc_factory ${flow_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(flow_bc_factory flow_bc_factory KIND unit)
  
-    # Test: flow-richards
-    if (ENABLE_CGNS)
-        set(amanzi_libs geometry mesh mesh_audit simple_mesh flow state whetstone solvers output hdf5)
+    # Test: 2D Richards
+    set(amanzi_libs geometry mesh mesh_audit simple_mesh flow state whetstone solvers output hdf5)
 
-        #add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
-        #target_link_libraries(flow_richards_bdf2 ${amanzi_libs} ${UnitTest_LIBRARIES})
-        #add_amanzi_test(flow_richards_bdf2 flow_richards_bdf2 KIND unit)
-    endif()
+    add_executable(flow_richards_2D test/Main.cc test/flow_richards_2D.cpp)
+    target_link_libraries(flow_richards_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_richards_2D flow_richards_2D KIND unit)
     
 endif()
 

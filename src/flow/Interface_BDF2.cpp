@@ -31,7 +31,7 @@ Interface_BDF2::Interface_BDF2(Richards_PK* RPK,
 void Interface_BDF2::fun(
     const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
 {
-  RPK_->computeFunctionalPTerm(u, f, t);  // compute F(u)
+  RPK_->get_matrix()->computeResidual(u, f);  // compute F(u)
 
   Epetra_Vector* uc = RPK_->get_FS().create_cell_view(u);  
   Epetra_Vector* udotc = RPK_->get_FS().create_cell_view(udot);

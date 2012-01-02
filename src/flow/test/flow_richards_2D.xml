@@ -11,58 +11,46 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-10.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-10.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Material 1 Region">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-10.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,-5.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-10.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,-5.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Material 2 Region">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,0.0,-5.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,1.0,0.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-5.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,0.5,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{-1.0,0.0,0.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.0,-5.0}"/>
+        <Parameter name="Direction" type="Array double" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Right side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{1.0,0.5,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{1.0,0.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Front side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,0.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,-1.0,0.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Back side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,1.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,1.0,0.0}"/>
+        <Parameter name="Location" type="Array double" value="{1.0,-5.0}"/>
+        <Parameter name="Direction" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,0.5,-10.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,0.0,-1.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.5,-10.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Top side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,0.5,0.0}"/>
-        <Parameter name="Direction" type="Array double" value="{0.0,0.0,1.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.5,0.0}"/>
+        <Parameter name="Direction" type="Array double" value="{0.0,1.0}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -97,6 +85,12 @@
         <Parameter name="Relative error tolerance" type="double" value="1e-05"/>
       </ParameterList>
 
+      <ParameterList name="Steady state solution">
+        <Parameter name="method" type="string" value="Picard"/>
+        <Parameter name="max iterations" type="int" value="200"/>
+        <Parameter name="solver tolerance" type="double" value="1e-5"/>
+      </ParameterList>
+
       <ParameterList name="Time integrator">
         <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
         <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
@@ -127,7 +121,7 @@
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array string" value="{Left side, Right side, Front side, Back side}"/>
+            <Parameter name="regions" type="Array string" value="{Left side, Right side}"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array string" value="{constant}"/>
@@ -179,8 +173,8 @@
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Region" type="string" value="Material 1 Region"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="gradient" type="Array double" value="{0.0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0}"/>
         <Parameter name="reference value" type="double" value="0.0"/>
       </ParameterList>
       <ParameterList name="uniform saturation">
@@ -193,8 +187,8 @@
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Region" type="string" value="Material 2 Region"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0, 0.0}"/>
+        <Parameter name="gradient" type="Array double" value="{0.0, 0.0}"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0.0, 0.0}"/>
         <Parameter name="reference value" type="double" value="0.0"/>
       </ParameterList>
       <ParameterList name="uniform saturation">
