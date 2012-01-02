@@ -47,6 +47,8 @@ class Matrix_MFD : public Epetra_Operator {
   void assembleGlobalMatrices();
   void computeSchurComplement(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
+  double computeResidual(const Epetra_Vector& solution);
+
   void deriveDarcyFlux(const Epetra_Vector& solution, 
                        const Epetra_Import& face_importer, 
                        Epetra_Vector& darcy_flux);
@@ -75,6 +77,7 @@ class Matrix_MFD : public Epetra_Operator {
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& get_Aff_cells() { return Aff_cells; }
   std::vector<double>& get_Acc_cells() { return Acc_cells; }
   std::vector<Epetra_SerialDenseVector>& get_Ff_cells() { return Ff_cells; }
+  std::vector<double>& get_Fc_cells() { return Fc_cells; }
   Teuchos::RCP<Epetra_Vector>& get_rhs() { return rhs; }
   Teuchos::RCP<Epetra_Vector>& get_rhs_faces() { return rhs_faces; }
 

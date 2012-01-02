@@ -110,8 +110,11 @@ void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
 /* ******************************************************************
 * Gravity fluxes are calculated w.r.t. actual normals.                                                  
 ****************************************************************** */
-void Flow_PK::calculateGravityFluxes(
-  int c, WhetStone::Tensor& K, std::vector<double>& gravity_flux) 
+void Flow_PK::calculateGravityFluxes(int c, 
+                                     std::vector<WhetStone::Tensor>& K,
+                                     Epetra_IntVector& upwind_cell,
+                                     std::vector<double>& gravity_flux,
+                                     bool upwind_Krel) 
 {
   AmanziMesh::Entity_ID_List faces;
   mesh_->cell_get_faces(c, &faces);
@@ -122,10 +125,18 @@ void Flow_PK::calculateGravityFluxes(
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho * rho;
 
   gravity_flux.clear();
+
   for (int n=0; n<nfaces; n++) {
     int f = faces[n];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    gravity_flux.push_back((K * gravity) * normal);    
+
+    if (upwind_Krel) {
+      int c1 = upwind_cell[f];
+      if (c1 >= 0) c1 = c; 
+      gravity_flux.push_back((K[c1] * gravity) * normal);
+    } else {
+      gravity_flux.push_back((K[c] * gravity) * normal);
+    }
   }
 }
 
@@ -152,7 +163,7 @@ void Flow_PK::addGravityFluxes(Epetra_Vector& darcy_flux)
  * Identify flux direction based on orientation of the face normal 
  * and sign of the  Darcy velocity.                               
  ****************************************************************** */
-void Flow_PK::identify_upwind_cells(Epetra_Vector& upwind_cell, Epetra_Vector& downwind_cell)
+void Flow_PK::identify_upwind_cells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
 {
   for (int f=fmin; f<=fmax; f++) {
     upwind_cell[f] = -1;  // negative value is indicator of a boundary

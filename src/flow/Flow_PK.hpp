@@ -35,7 +35,7 @@ const int FLOW_BC_FACE_HEAD = 2;
 const int FLOW_BC_FACE_FLUX = 4; 
 
 const int FLOW_STEADY_STATE_PICARD = 1;
-const int FLOW_STEADY_STATE_TIME_STEPPING = 2;
+const int FLOW_STEADY_STATE_BACKWARD_EULER = 2;
 const int FLOW_STEADY_STATE_NOX = 2;
 const int FLOW_STEADY_STATE_MAX_ITERATIONS = 100;
 const double FLOW_STEADY_STATE_TOLERANCE = 1e-6;
@@ -75,7 +75,11 @@ class Flow_PK {
                                 std::vector<int>& bc_markers,
                                 std::vector<double>& bc_values);
 
-  void calculateGravityFluxes(int cell, WhetStone::Tensor& K, std::vector<double>& gravity_flux);
+  void calculateGravityFluxes(int cell, 
+                              std::vector<WhetStone::Tensor>& K,
+                              Epetra_IntVector& upwind_cell, 
+                              std::vector<double>& gravity_flux, 
+                              bool upwind_Krel = false);
   void addGravityFluxes(Epetra_Vector& darcy_flux);
 
   // access members  
@@ -95,7 +99,7 @@ class Flow_PK {
 
   // miscallenous members
   Epetra_Map* create_super_map();
-  void identify_upwind_cells(Epetra_Vector& upwind_cell, Epetra_Vector& downwind_cell);
+  void identify_upwind_cells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
  public:
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;

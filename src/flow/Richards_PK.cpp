@@ -80,8 +80,6 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   if (preconditioner_ == NULL) preconditioner = matrix;
   else preconditioner = preconditioner_;
 
-  solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
-
   // Create the solution vectors.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->create_cell_view(*solution));
@@ -125,8 +123,29 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Allocate data for relative permeability
   Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  if (upwind_Krel) Krel_faces = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
-};
+  if (upwind_Krel) {
+    const Epetra_Map& fmap = mesh_->face_map(true);
+
+    Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap));
+    upwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap));
+    downwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap));
+
+    identify_upwind_cells(*upwind_cell, *downwind_cell);
+  }
+}
+
+
+/* ******************************************************************
+*  Wrapper for advance to steady-state routines.                                                    
+****************************************************************** */
+int Richards_PK::advance_to_steady_state()
+{
+  if (method_sss == FLOW_STEADY_STATE_PICARD) {
+    return advanceSteadyState_Picard();
+  } else if (method_sss == FLOW_STEADY_STATE_BACKWARD_EULER) {
+    return advanceSteadyState_BackwardEuler();
+  }
+}
 
 
 /* ******************************************************************
@@ -138,19 +157,21 @@ int Richards_PK::advanceSteadyState_Picard()
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
 
-  //solver->SetAztecOption(AZ_conv, AZ_rhs);
+  solver->SetAztecOption(AZ_output, AZ_none);
   int itrs = 0;
   double L2norm, L2error = 1.0, L2error_prev = 1.0;
-  double relaxation = 0.8;
+  double relaxation = 0.0;
 
   while (L2error > err_tol_sss && itrs < max_itrs_sss) {
     // work-around limited support for tensors
     setAbsolutePermeabilityTensor(K);
-    if (upwind_Krel) calculateRelativePermeabilityUpwindGravity(*solution_cells);
-    else calculateRelativePermeability(*solution_cells);
-
+    if (upwind_Krel) {
+      identify_upwind_cells(*upwind_cell, *downwind_cell);
+      calculateRelativePermeabilityUpwindGravity(*solution_cells);
+    } else { 
+      calculateRelativePermeability(*solution_cells);
+    }
     for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
-    //for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
 
     matrix->createMFDstiffnessMatrices(K);
     matrix->createMFDrhsVectors();
@@ -160,37 +181,86 @@ int Richards_PK::advanceSteadyState_Picard()
     matrix->computeSchurComplement(bc_markers, bc_values);
     matrix->update_ML_preconditioner();
 
+    // check for convergence of non-linear residual
     rhs = matrix->get_rhs();
+    L2error = matrix->computeResidual(solution_new);
+    (*rhs).Norm2(&L2norm);
+    L2error /= L2norm;
+
+    if (L2error > L2error_prev) relaxation = std::min(0.95, relaxation * 1.5); 
+    else relaxation = std::max(0.05, relaxation * 0.9);  
+
+    // call AztecOO solver
     Epetra_Vector b(*rhs);
-    solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
+    solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess 
 
     solver->Iterate(max_itrs, err_tol);
     num_itrs = solver->NumIters();
-    residual = solver->TrueResidual();
+    double residual = solver->TrueResidual();
+cout << itrs << " res=" << L2error << "  cg# " << num_itrs << "  relax=" << relaxation << endl;
 
-    L2norm = L2error = 0.0;
     for (int c=0; c<number_owned_cells; c++) {
       solution_new[c] = relaxation * solution_old[c] + (1.0 - relaxation) * solution_new[c];
-      L2norm += pow(solution_new[c], 2.0);
-      L2error += pow(solution_old[c] - solution_new[c], 2.0);
       solution_old[c] = solution_new[c];
     }
-    L2error = sqrt(L2error / L2norm);
-
-    if (L2error > L2error_prev) relaxation = std::min(0.95, relaxation * 1.5); 
-    else relaxation = std::max(0.05, relaxation * 0.9);  
-    cout << itrs << " ERR=" << L2error << " relax=" << relaxation << endl;
 
     L2error_prev = L2error;
     itrs++;
   }    
-//for (int c=0; c<K.size(); c+=4) cout << solution_new[c] << endl; 
+for (int c=0; c<K.size(); c+=4) cout << solution_new[c] << endl; 
   
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(K);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  //addGravityFluxes(darcy_flux);
+  addGravityFluxes(darcy_flux);
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Calculates steady-state solution assuming that abosolute and relative
+* permeabilities do not depend explicitly on time.                                                    
+****************************************************************** */
+int Richards_PK::advanceSteadyState_BackwardEuler()
+{
+  solver->SetAztecOption(AZ_output, AZ_none);
+
+  int itrs = 0;
+  double T = 0.0, Tend = 1000000.0;
+  dT = 1000.0;
+
+  while (T < Tend) {
+    // work-around limited support for tensors
+    setAbsolutePermeabilityTensor(K);
+    calculateRelativePermeability(*solution_cells);
+    for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+
+    matrix->createMFDstiffnessMatrices(K);
+    matrix->createMFDrhsVectors();
+    addGravityFluxes_MFD(matrix);
+    addTimeDerivative_MFD(*solution_cells, matrix);
+    matrix->applyBoundaryConditions(bc_markers, bc_values);
+    matrix->assembleGlobalMatrices();
+    matrix->computeSchurComplement(bc_markers, bc_values);
+    matrix->update_ML_preconditioner();
+
+    // call AztecOO solver
+    rhs = matrix->get_rhs();
+    Epetra_Vector b(*rhs);
+    solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
+    solver->SetLHS(&*solution);  // initial solution guess 
+
+    solver->Iterate(max_itrs, err_tol);
+    num_itrs = solver->NumIters();
+    double residual = solver->TrueResidual();
+cout << itrs << " res=" << residual << "  cg=" << num_itrs << endl;
+
+    T += dT;
+    itrs++;
+  }
+for (int c=0; c<K.size(); c+=4) cout << (*solution_cells)[c] << endl; 
 
   return 0;
 }
@@ -252,95 +322,6 @@ void Richards_PK::computePDot(const double T, const Epetra_Vector& p, Epetra_Vec
 ****************************************************************** */
 void Richards_PK::computeFunctionalPTerm(const Epetra_Vector &X, Epetra_Vector &F, double time)
 {
-  // Create views into the cell and face segments of X and F
-  /*
-  Epetra_Vector &Pcell_own = *CreateCellView(X);
-  Epetra_Vector &Pface_own = *CreateFaceView(X);
-
-  Epetra_Vector &Fcell_own = *CreateCellView(F);
-  Epetra_Vector &Fface_own = *CreateFaceView(F);
-
-  // Create input cell and face pressure vectors that include ghosts.
-  Epetra_Vector Pcell(CellMap(true));
-  Pcell.Import(Pcell_own, *cell_importer_, Insert);
-  Epetra_Vector Pface(FaceMap(true));
-  Pface.Import(Pface_own, *face_importer_, Insert);
-
-  // Precompute the Dirichlet-type BC residuals for later use.
-  // Impose the Dirichlet boundary data on the face pressure vector.
-  bc_press_->Compute(time);
-  std::map<int,double> Fpress;
-  for (BoundaryFunction::Iterator bc = bc_press_->begin(); bc != bc_press_->end(); ++bc) {
-    Fpress[bc->first] = Pface[bc->first] - bc->second;
-    Pface[bc->first] = bc->second;
-  }
-  bc_head_->Compute(time);
-  std::map<int,double> Fhead;
-  for (BoundaryFunction::Iterator bc = bc_head_->begin(); bc != bc_head_->end(); ++bc) {
-    Fhead[bc->first] = Pface[bc->first] - bc->second;
-    Pface[bc->first] = bc->second;
-  }
-
-  // Compute the functional  
-  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
-  if (upwind_k_rel_) {
-    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int c=0; c<K.MyLength(); ++c) K[c] = rho_ * k_[c] / mu_;
-  } else {
-    ComputeRelPerm(Pcell, K);
-    for (int c=0; c<K.MyLength(); ++c) K[c] = rho_ * k_[c] * K[c] / mu_;
-  }
-
-  // Create cell and face result vectors that include ghosts.
-  Epetra_Vector Fcell(CellMap(true));
-  Epetra_Vector Fface(FaceMap(true));
-
-  int cface[6];
-  double aux1[6], aux2[6], aux3[6], gflux[6];
-
-  Fface.PutScalar(0.0);
-  for (int j = 0; j < Pcell.MyLength(); ++j) {
-    // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
-    // Gather the local face pressures int AUX1.
-    for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    // Compute the local value of the diffusion operator.
-    if (upwind_k_rel_) {
-      for (int k=0; k<6; ++k) aux3[k] = K_upwind[cface[k]];
-      MD[j].diff_op(K[j], aux3, Pcell[j], aux1, Fcell[j], aux2);
-      // Gravity contribution
-      MD[j].GravityFlux(gvec_, gflux);
-      for (int k = 0; k < 6; ++k) gflux[k] *= rho_ * K[j] * aux3[k];
-      for (int k = 0; k < 6; ++k) {
-        aux2[k] -= gflux[k];
-        Fcell[j] += gflux[k];
-      }
-    } else {
-      MD[j].diff_op(K[j], Pcell[j], aux1, Fcell[j], aux2);
-      // Gravity contribution
-      MD[j].GravityFlux(gvec_, gflux);
-      for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K[j] * gflux[k];
-    }
-    // Scatter the local face result into FFACE.
-    for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
-  }
-
-  // Dirichlet-type condition residuals; overwrite with the pre-computed values.
-  std::map<int,double>::const_iterator i;
-  for (i = Fpress.begin(); i != Fpress.end(); ++i) Fface[i->first] = i->second;
-  for (i = Fhead.begin();  i != Fhead.end();  ++i) Fface[i->first] = i->second;
-  
-  // Mass flux BC contribution.
-  bc_flux_->Compute(time);
-  for (BoundaryFunction::Iterator bc = bc_flux_->begin(); bc != bc_flux_->end(); ++bc)
-    Fface[bc->first] += bc->second * md_->face_area_[bc->first];
-  
-  // Copy owned part of result into the output vectors.
-  for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
-  for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
-
-  delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
-  */
 }
 
 
@@ -484,7 +465,7 @@ void Richards_PK::addGravityFluxes_MFD(Matrix_MFD* matrix)
     mesh_->cell_get_face_dirs(c, &dirs);
     int nfaces = faces.size();
 
-    calculateGravityFluxes(c, K[c], gravity_flux);
+    calculateGravityFluxes(c, K, *upwind_cell, gravity_flux, upwind_Krel);
     
     Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
     for (int n=0; n<nfaces; n++) Ff[n] += gravity_flux[n] * dirs[n];
@@ -495,18 +476,23 @@ void Richards_PK::addGravityFluxes_MFD(Matrix_MFD* matrix)
 /* ******************************************************************
 * Adds .                                               
 ****************************************************************** */
-void Richards_PK::addTimeDerivative(Epetra_Vector& pressure_cells, Matrix_MFD* matrix)
+void Richards_PK::addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MFD* matrix)
 {
   Epetra_Vector dSdP(mesh_->cell_map(false));
   derivedSdP(pressure_cells, dSdP);
  
   const Epetra_Vector& phi = FS->ref_porosity();
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
+  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);
-    Acc_cells[c] += dSdP[c] * phi[c] * volume / dT;
+    double factor = dSdP[c] * phi[c] * volume / dT;
+if (factor < 0) cout << "HERE:" << dSdP[c] << endl;
+    Acc_cells[c] += factor;
+    Fc_cells[c] += factor * pressure_cells[c];
   }
 }
 

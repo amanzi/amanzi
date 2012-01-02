@@ -103,7 +103,7 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Preconditioner
   Teuchos::ParameterList ML_list = dp_list->sublist("ML Parameters");
-  preconditioner->init_ML_preconditioner(ML_list); 
+  preconditioner->init_ML_preconditioner(ML_list);
 };
 
 
@@ -180,7 +180,7 @@ void Darcy_PK::addGravityFluxes_MFD(Matrix_MFD* matrix)
     mesh_->cell_get_face_dirs(c, &dirs);
     int nfaces = faces.size();
 
-    calculateGravityFluxes(c, K[c], gravity_flux);
+    calculateGravityFluxes(c, K, *upwind_cell, gravity_flux);
     
     Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
     for (int n=0; n<nfaces; n++) Ff[n] += gravity_flux[n] * dirs[n];

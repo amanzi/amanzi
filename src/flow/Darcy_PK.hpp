@@ -87,6 +87,7 @@ class Darcy_PK : public Flow_PK {
   std::vector<double> bc_values;
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
+  Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 
 }  // namespace AmanziFlow

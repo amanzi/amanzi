@@ -9,6 +9,7 @@ Authors: Neil Carlson (version 1)
 #define __RICHARDS_PK_HPP__
 
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
 #include "AztecOO.h"
 
@@ -39,7 +40,7 @@ class Richards_PK : public Flow_PK {
   void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
 
   int advance(double dT); 
-  int advance_to_steady_state() { advanceSteadyState_Picard(); }
+  int advance_to_steady_state();
   void commit_state() {};
 
   int advanceSteadyState_Picard();
@@ -66,7 +67,7 @@ class Richards_PK : public Flow_PK {
   void derivePressureFromSaturation(double s, Epetra_Vector& p);
 
   void addGravityFluxes_MFD(Matrix_MFD* matrix);
-  void addTimeDerivative(Epetra_Vector& pressure_cells, Matrix_MFD* matrix);
+  void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MFD* matrix);
 
   // control methods
   void print_statistics() const;
@@ -102,7 +103,7 @@ class Richards_PK : public Flow_PK {
 
   int precon_freq;  // preconditioner update frequency
   int num_itrs, max_itrs;  // numbers of linear solver iterations
-  double err_tol, residual;  // errors in linear solver
+  double err_tol;  // errors in linear solver
 
   int method_sss;  // Method to reach the steady-state solution
   int num_itrs_sss, max_itrs_sss;  // number of non-linear iterations
@@ -127,7 +128,9 @@ class Richards_PK : public Flow_PK {
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
+
   bool upwind_Krel;
+  Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 
 }  // namespace AmanziFlow

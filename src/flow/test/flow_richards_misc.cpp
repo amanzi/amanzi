@@ -41,7 +41,7 @@ class RichardsProblem {
     // create an SIMPLE mesh framework 
     Teuchos::ParameterList& region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list);
-    mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 2, 2, 160, comm, gm)); 
+    mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 2, 2, 80, comm, gm)); 
 
     Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     rp_list = Teuchos::rcp(new Teuchos::ParameterList(flow_list.get<Teuchos::ParameterList>("Richards Problem")));

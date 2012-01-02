@@ -83,10 +83,10 @@ void Richards_PK::processParameterList()
   Teuchos::ParameterList& steady_state_list = rp_list->sublist("Steady state solution");
 
   string method_name = steady_state_list.get<string>("method", "Picard");
-  if (method_name == "Picards") {
+  if (method_name == "Picard") {
     method_sss = FLOW_STEADY_STATE_PICARD;
-  } else if (method_name == "Time stepping") {
-    method_sss = FLOW_STEADY_STATE_TIME_STEPPING;
+  } else if (method_name == "backward Euler") {
+    method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
   } else if (method_name == "NOX") {
     method_sss = FLOW_STEADY_STATE_NOX; 
   }

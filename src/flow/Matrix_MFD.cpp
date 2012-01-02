@@ -296,6 +296,22 @@ void Matrix_MFD::computeSchurComplement(
 
 
 /* ******************************************************************
+* Linear algebra operations with matrices                                                 
+****************************************************************** */
+double Matrix_MFD::computeResidual(const Epetra_Vector& solution)
+{
+  Epetra_Vector residual(*rhs);
+
+  Apply(solution, residual);
+  residual.Update(-1.0, *rhs, 1.0);
+
+  double norm;
+  residual.Norm2(&norm);
+  return norm;
+}
+
+
+/* ******************************************************************
 * Initialization of the preconditioner                                                 
 ****************************************************************** */
 void Matrix_MFD::init_ML_preconditioner(Teuchos::ParameterList& ML_list_)

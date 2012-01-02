@@ -229,6 +229,17 @@ void Flow_State::distribute_cell_multivector(Epetra_MultiVector& v)
 
 
 /* *******************************************************************
+* Copy data in ghost positions for a vector.              
+******************************************************************* */
+double Flow_State::norm_cell(Epetra_Vector& v1, Epetra_Vector& v2)
+{
+  double L2error = 0.0;
+  for (int c=0; c<v1.MyLength(); c++) L2error += pow(v1[c] - v2[c], 2.0);
+  return sqrt(L2error);
+}
+
+
+/* *******************************************************************
  * Extract cells from a supervector             
  ****************************************************************** */
 Epetra_Vector* Flow_State::create_cell_view(const Epetra_Vector &X) const
