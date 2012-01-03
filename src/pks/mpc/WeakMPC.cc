@@ -26,20 +26,13 @@ WeakMPC::WeakMPC(Teuchos::ParameterList& mpc_plist,
     MPC::MPC(mpc_plist, S, soln) {};
 
 // Advance each sub-PK individually.
-bool WeakMPC::advance(double dt, Teuchos::RCP<TreeVector>& solution) {
+bool WeakMPC::advance(double dt) {
   bool fail = false;
   for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    Teuchos::RCP<TreeVector> subvec;
-    int subvec_not_found = solution->SubVector((*pk)->name(), subvec);
-    if (subvec_not_found) {
-      Errors::Message message("WeakMPC: vector structure does not match PK structure");
-      Exceptions::amanzi_throw(message);
-    } else {
-      fail = (*pk)->advance(dt, subvec);
-      if (fail) {
-        return fail;
-      }
+    fail = (*pk)->advance(dt);
+    if (fail) {
+      return fail;
     }
   }
   return fail;

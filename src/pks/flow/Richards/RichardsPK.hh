@@ -1,30 +1,27 @@
-#ifndef __RICHARDS_PK_HH__
-#define __RICHARDS_PK_HH__
+#ifndef PKS_FLOW_RICHARDS_RICHARDSPK_HH_
+#define PKS_FLOW_RICHARDS_RICHARDSPK_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Epetra_Vector.h"
-
-#include "Vector.hh"
 #include "PK.hh"
 #include "State.hh"
 #include "RichardsProblem.hh"
-#include "RichardsModelEvaluator.hh"
 #include "BDF2_Dae.hpp"
 
 namespace Amanzi {
-class Richards_PK : public PK {
+
+class RichardsPK : public PK, public BDF2::fnBase {
 
 public:
-  Richards_PK(Teuchos::ParameterList &plist, Teuchos::RCP<State> &S);
+  RichardsPK(Teuchos::ParameterList& flow_plist, Teuchos::RCP<State>& S,
+             Teuchos::RCP<TreeVector>& soln);
 
-  void initialize(Teuchos::RCP<State> &S);
+  void initialize(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
 
-  double get_dt() { return h; }
+  double get_dt() { return h_; }
 
-  bool advance(double dt, const Teuchos::RCP<State> &S0,
-               Teuchos::RCP<State> &S1, Teuchos::RCP<Vector> &solution);
+  bool advance(double dt, Teuchos::RCP<TreeVector>& soln);
 
   void commit_state(double dt, Teuchos::RCP<State> &S) {}
 

@@ -25,14 +25,16 @@ namespace Amanzi {
 
 NullEnergyPK::NullEnergyPK(Teuchos::ParameterList& energy_plist,
                            Teuchos::RCP<State>& S,
-                           Teuchos::RCP<TreeVector>& soln) :
+                           Teuchos::RCP<TreeVector>& solution) :
     energy_plist_(energy_plist) {
+
+  solution_ = solution;
 
   // require fields for the state and solution
   S->require_field("temperature", FIELD_LOCATION_CELL, "energy");
   S->get_field_record("temperature")->set_io_vis(true);
-  Teuchos::RCP<Epetra_MultiVector> soln_temp = Teuchos::rcp(new Epetra_MultiVector(*S->get_field("temperature")));
-  soln->PushBack(soln_temp);
+  Teuchos::RCP<Epetra_MultiVector> temp_ptr = S->get_field("temperature", "energy");
+  solution_->PushBack(temp_ptr);
 
   S->require_field("temperature_dot", FIELD_LOCATION_CELL, "energy");
 
@@ -40,51 +42,54 @@ NullEnergyPK::NullEnergyPK(Teuchos::ParameterList& energy_plist,
 };
 
 // initialize ICs
-void NullEnergyPK::initialize(Teuchos::RCP<State>& S,
-                              Teuchos::RCP<TreeVector>& soln) {
+void NullEnergyPK::initialize(Teuchos::RCP<State>& S) {
   S->set_field("temperature", "energy", T_);
   S->get_field_record("temperature")->set_initialized();
 
   S->set_field("temperature_dot", "energy", 0.0);
   S->get_field_record("temperature_dot")->set_initialized();
-
-  state_to_solution(*S, soln);
 };
 
-// Copy temperature field from state into solution vector.
-// Used to reset timestep and initialize the solution vector.
-  void NullEnergyPK::state_to_solution(const State& S,
+
+// Pointer copy of state to solution
+void NullEnergyPK::state_to_solution(State& S,
                                      Teuchos::RCP<TreeVector>& soln) {
-  *((*soln)[0]) = *S.get_field("temperature");
+  ((*soln)[0]) = S.get_field("temperature", "energy");
 };
 
-// Copy temperature fields from state into solution vector.
-void NullEnergyPK::state_to_solution(const State& S,
-                                     Teuchos::RCP<TreeVector>& soln,
+// Pointer copy temperature fields from state into solution vector.
+void NullEnergyPK::state_to_solution(State& S, Teuchos::RCP<TreeVector>& soln,
                                      Teuchos::RCP<TreeVector>& soln_dot) {
-  *(*soln)[0] = *S.get_field("temperature");
-  *(*soln_dot)[0] = *S.get_field("temperature_dot");
+  (*soln)[0] = S.get_field("temperature", "energy");
+  (*soln_dot)[0] = S.get_field("temperature_dot", "energy");
 };
 
-// Copy temperature fields from solution vector into state.  Used within
+// Pointer copy temperature fields from solution vector into state.  Used within
 // compute_f() of strong couplers to set the current iterate in the state for
 // use with other PKs.
-void NullEnergyPK::solution_to_state(const TreeVector& soln,
-                                     Teuchos::RCP<State>& S) {
-  S->set_field("temperature", "energy", *soln[0]);
+void NullEnergyPK::solution_to_state(TreeVector& soln, Teuchos::RCP<State>& S) {
+  Teuchos::RCP<Epetra_MultiVector> temp_ptr = soln[0];
+  S->set_field_pointer("temperature", "energy", temp_ptr);
 };
 
-void NullEnergyPK::solution_to_state(const TreeVector& soln,
-                                     const TreeVector& soln_dot,
+void NullEnergyPK::solution_to_state(TreeVector& soln, TreeVector& soln_dot,
                                      Teuchos::RCP<State>& S) {
-  S->set_field("temperature", "energy", *soln[0]);
-  S->set_field("temperature_dot", "energy", *soln_dot[0]);
+  Teuchos::RCP<Epetra_MultiVector> temp_ptr = soln[0];
+  S->set_field_pointer("temperature", "energy", temp_ptr);
+  Teuchos::RCP<Epetra_MultiVector> temp_dot_ptr = soln_dot[0];
+  S->set_field_pointer("temperature_dot", "energy", temp_dot_ptr);
 };
 
-bool NullEnergyPK::advance(double dt, Teuchos::RCP<TreeVector> &soln) {
-  *soln = T_;
-  solution_to_state(*soln, S_next_);
+bool NullEnergyPK::advance(double dt) {
+  *solution_ = T_;
   return false;
+};
+
+void NullEnergyPK::set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next) {
+  S_ = S;
+  S_next_ = S_next;
+  // pointer copy the state's temperature field to be the solution's temperature field
+  (*solution_)[0] = S_next->get_field("temperature", "energy");
 };
 
 void NullEnergyPK::compute_f(const double t, const Vector& u,
