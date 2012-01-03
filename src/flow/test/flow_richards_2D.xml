@@ -11,39 +11,45 @@
   <ParameterList name="Regions">
     <ParameterList name="Computational domain">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-10.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-2.0}"/>
         <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Material 1 Region">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-10.0}"/>
-        <Parameter name="High Coordinate" type="Array double" value="{1.0,-5.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-2.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Material 2 Region">
       <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-5.0}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0.0,-1.0}"/>
         <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="Left side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.0,-5.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.0,-1.0}"/>
         <Parameter name="Direction" type="Array double" value="{-1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Right side">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{1.0,-5.0}"/>
-        <Parameter name="Direction" type="Array double" value="{1.0,0.0}"/>
+    <ParameterList name="Right side Bottom">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{1.0,-2.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side Top">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{1.0,-1.0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{1.0,0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Bottom side">
       <ParameterList name="Region: Plane">
-        <Parameter name="Location" type="Array double" value="{0.5,-10.0}"/>
+        <Parameter name="Location" type="Array double" value="{0.5,-2.0}"/>
         <Parameter name="Direction" type="Array double" value="{0.0,-1.0}"/>
       </ParameterList>
     </ParameterList>
@@ -59,8 +65,10 @@
   input deks for other flow tests -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
-      <Parameter name="Atmospheric pressure" type="double" value="1"/>
+      <Parameter name="Atmospheric pressure" type="double" value="0.0"/>
       <ParameterList name="Diffusion Preconditioner">
+        <Parameter name="Max Iterations" type="int" value="100"/>
+        <Parameter name="Error Tolerance" type="double" value="1.0e-9"/>
         <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="0"/>
           <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -86,7 +94,7 @@
       </ParameterList>
 
       <ParameterList name="Steady state solution">
-        <Parameter name="method" type="string" value="Picard"/>
+        <Parameter name="method" type="string" value="backward Euler"/>
         <Parameter name="max iterations" type="int" value="200"/>
         <Parameter name="solver tolerance" type="double" value="1e-5"/>
       </ParameterList>
@@ -99,7 +107,7 @@
         <Parameter name="Nonlinear solver tolerance" type="double" value="0.0001"/>
       </ParameterList>
 
-      <Parameter name="Upwind relative permeability" type="bool" value="true"/>
+      <Parameter name="Upwind relative permeability" type="bool" value="false"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Water Retention Model for Material 1 Region">
@@ -107,21 +115,21 @@
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
         </ParameterList>
         <ParameterList name="Water Retention Model for Material 2 Region">
           <Parameter name="Region" type="string" value="Material 2 Region"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="1.0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.0"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
         </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
         <ParameterList name="mass flux">
           <ParameterList name="BC 0">
-            <Parameter name="regions" type="Array string" value="{Left side, Right side}"/>
+            <Parameter name="regions" type="Array string" value="{Left side, Right side Top}"/>
             <ParameterList name="outward mass flux">
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array string" value="{constant}"/>
@@ -141,7 +149,7 @@
             </ParameterList>
           </ParameterList>
           <ParameterList name="BC 2">
-            <Parameter name="regions" type="Array string" value="{Bottom side}"/>
+            <Parameter name="regions" type="Array string" value="{Bottom side, Right side Bottom}"/>
             <ParameterList name="boundary pressure">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.0"/>
@@ -161,8 +169,8 @@
     <Parameter name="Constant water density" type="double" value="1.0"/>
     <Parameter name="Constant water saturation" type="double" value="1"/>
     <Parameter name="Gravity x" type="double" value="0"/>
-    <Parameter name="Gravity y" type="double" value="0"/>
-    <Parameter name="Gravity z" type="double" value="-1.0"/>
+    <Parameter name="Gravity y" type="double" value="-1.0"/>
+    <Parameter name="Gravity z" type="double" value="0.0"/>
 
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Number of mesh blocks" type="int" value="2"/>

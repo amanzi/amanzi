@@ -15,19 +15,19 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh_simple.hh"
+#include "MSTK_types.h"
+#include "Mesh_MSTK.hh"
+#include "MeshAudit.hh"
+#include "gmv_mesh.hh"
+
 #include "State.hpp"
 #include "Flow_State.hpp"
 #include "Richards_PK.hpp"
 #include "BDF2_Dae.hpp"
 
-#include "gmv_mesh.hh"
-#include "cgns_mesh_par.hh"
-#include "cgns_mesh.hh"
-
 
 /* **************************************************************** */
-TEST(FLOW_1D_RICHARDS) {
+TEST(FLOW_2D_RICHARDS) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -35,12 +35,6 @@ TEST(FLOW_1D_RICHARDS) {
   using namespace Amanzi::AmanziFlow;
 
 cout << "Test: 2D Richards, 2-layer model" << endl;
-#ifdef HAVE_MPI
-  Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm  *comm = new Epetra_SerialComm();
-#endif
-
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_2D.xml";
@@ -49,95 +43,42 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,-10.0, 1.0,0.0, 10,100, comm, 2, gm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 10,40, MPI_COMM_WORLD, gm)); 
 
-  // create the state
-  Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  rp_list = Teuchos::rcp(new Teuchos::ParameterList(flow_list.get<Teuchos::ParameterList>("Richards Problem")));
-
-  // create Richards process kernel
-  Teuchos::ParameterList& state_list = parameter_list.get<Teuchos::ParameterList>("State");
+  // create flow state
+  ParameterList& state_list = parameter_list.get<ParameterList>("State");
   State S(state_list, mesh);
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
-  RPK = new Richards_PK(rp_list, FS);
 
-  // create the initial condition
-  Epetra_Vector u(problem.Map());
+  // create Richards process kernel
+  ParameterList& flow_list = parameter_list.get<ParameterList>("Flow");
+  RCP<ParameterList> rp_list = rcp(new ParameterList(flow_list.get<ParameterList>("Richards Problem")));
+  Richards_PK* RPK = new Richards_PK(rp_list, FS);
+  RPK->Init();
 
-  Epetra_Vector *ucells = problem.CreateCellView(u);
-  for (int c=0; c<ucells->MyLength(); c++) {
+  // create the initial pressure function
+  Epetra_Vector p(RPK->get_super_map());
+  Epetra_Vector* pcells = FS->create_cell_view(p);
+  Epetra_Vector* pfaces = FS->create_face_view(p);
+
+  for (int c=0; c<pcells->MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    //(*ucells)[c] = 101325.0 - 9800 * (xc[2] + 62.0);
-    (*ucells)[c] = xc[2] * (xc[2] + 10.0);
+    (*pcells)[c] = xc[1] * (xc[1] + 2.0);
   }
 
-  Epetra_Vector *ufaces = problem.CreateFaceView(u);
-  for (int f=0; f<ufaces->MyLength(); f++) {
+  for (int f=0; f<pfaces->MyLength(); f++) {
     const Point& xf = mesh->face_centroid(f);
-    (*ufaces)[f] = 101325.0 - 9800 * (xf[2] + 62.0);
-    (*ufaces)[f] = xf[2] * (xf[2] + 10.0);
+    (*pfaces)[f] = xf[2] * (xf[2] + 2.0);
   }
   
-  // initialize the state
-  S->update_pressure(*problem.CreateCellView(u));
-  S->set_time(0.0);
+  S.update_pressure(*pcells);
+  S.set_time(0.0);
 
-  // set intial and final time
-  double t0 = 0.0;
-  double t1 = 100.0;
-
-  // compute the initial udot
-  Epetra_Vector udot(problem.Map());
-  problem.compute_udot(t0, u, udot);
-  udot.PutScalar(0.0);
-
-  // intialize the state of the time stepper
-  TS.set_initial_state(t0, u, udot);
+  // solve the problem
+  RPK->advance_to_steady_state();
  
-  int errc;
-  double hnext, h = 1.0e-5;  // initial time step
-  RME.update_precon(t0, u, h, errc);
-
-  // set up output
-  std::string cgns_filename = "out.cgns";
-
-  Amanzi::CGNS::create_mesh_file(*mesh, cgns_filename);
-  Amanzi::CGNS::open_data_file(cgns_filename);
-  Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
-
-  Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
-  
-  // iterate
-  int i = 0;
-  double tlast = t0;
-  do {    
-    TS.bdf2_step(h, 0.0, u, hnext);
-    TS.commit_solution(h, u);
-
-    S->advance_time(h);    
-    S->update_pressure(*problem.CreateCellView(u));  // update only the cell-based pressure
-
-    TS.write_bdf2_stepping_statistics();
-
-    h = hnext;
-    i++;
-
-    tlast=TS.most_recent_time();
-
-    if ( i%50 == 1 ) { 
-      Amanzi::CGNS::open_data_file(cgns_filename);
-      Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
-      Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-      Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
-    }
-  } while (t1 >= tlast);
-
-  Amanzi::CGNS::open_data_file(cgns_filename);
-  Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
-  Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
-  for (int k=0; k<100; k++) std::cout << k << " " << u[k] << std::endl;
- 
-  delete comm;
+  GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+  GMV::start_data();
+  GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
+  GMV::close_data_file();
 }

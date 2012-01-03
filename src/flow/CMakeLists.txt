@@ -43,7 +43,7 @@ if (ENABLE_CGNS)
 endif()
 
 # Need to move this to roo level -- lpritch
-add_definitions("-DUSE_MPI")
+add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 
 #
 # Library: flow
@@ -86,7 +86,7 @@ if (BUILD_TESTS)
     include_directories(${FLOW_SOURCE_DIR})
     include_directories(${SOLVERS_SOURCE_DIR})
 
-    set(flow_libs geometry mesh mesh_audit mesh_factory simple_mesh state flow whetstone)
+    set(flow_libs geometry mesh mesh_audit mesh_factory simple_mesh mstk_mesh state flow whetstone)
  
     # Test: miscaleneous Darcy flow routines
     add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp)
@@ -111,11 +111,16 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_bc_factory flow_bc_factory KIND unit)
  
     # Test: 2D Richards
-    set(amanzi_libs geometry mesh mesh_audit simple_mesh flow state whetstone solvers output hdf5)
+    if ( ENABLE_MSTK_Mesh )
+        include_directories(${MSTK_INCLUDE_DIRS})
+        include_directories(${MSTK_SOURCE_DIR})
 
-    add_executable(flow_richards_2D test/Main.cc test/flow_richards_2D.cpp)
-    target_link_libraries(flow_richards_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_richards_2D flow_richards_2D KIND unit)
+        set(amanzi_libs geometry mesh mesh_audit mstk_mesh flow state whetstone solvers output hdf5)
+
+        add_executable(flow_richards_2D test/Main.cc test/flow_richards_2D.cpp)
+        target_link_libraries(flow_richards_2D ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_richards_2D flow_richards_2D KIND unit)
+    endif()
     
 endif()
 

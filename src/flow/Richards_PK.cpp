@@ -139,6 +139,9 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 ****************************************************************** */
 int Richards_PK::advance_to_steady_state()
 {
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  for (int c=0; c<ncells; c++) (*solution_cells)[c] = FS->ref_pressure()[c];
+
   if (method_sss == FLOW_STEADY_STATE_PICARD) {
     return advanceSteadyState_Picard();
   } else if (method_sss == FLOW_STEADY_STATE_BACKWARD_EULER) {
@@ -207,8 +210,7 @@ cout << itrs << " res=" << L2error << "  cg# " << num_itrs << "  relax=" << rela
 
     L2error_prev = L2error;
     itrs++;
-  }    
-for (int c=0; c<K.size(); c+=4) cout << solution_new[c] << endl; 
+  }
   
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(K);  // Should be improved. (lipnikov@lanl.gov)
@@ -260,7 +262,7 @@ cout << itrs << " res=" << residual << "  cg=" << num_itrs << endl;
     T += dT;
     itrs++;
   }
-for (int c=0; c<K.size(); c+=4) cout << (*solution_cells)[c] << endl; 
+//for (int c=0; c<K.size(); c+=4) cout << (*solution_cells)[c] << endl; 
 
   return 0;
 }
