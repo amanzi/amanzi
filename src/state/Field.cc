@@ -20,20 +20,23 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 namespace Amanzi {
 
-Field::Field(std::string fieldname, int location,
+Field::Field(std::string fieldname, FieldLocation location,
              Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps,
              std::string owner, int num_dofs):
     fieldname_(fieldname), location_(location),
     owner_(owner), mesh_maps_(mesh_maps), num_dofs_(num_dofs),
     io_restart_(true), io_vis_(false) {
 
-  if (location_ == Amanzi::AmanziMesh::FACE) {
+  if (location_ == FIELD_LOCATION_FACE) {
     data_ = Teuchos::rcp(new Epetra_MultiVector(mesh_maps->face_map(false),num_dofs_));
-  } else if (location == Amanzi::AmanziMesh::CELL) {
+  } else if (location == FIELD_LOCATION_CELL) {
     data_ = Teuchos::rcp(new Epetra_MultiVector(mesh_maps->cell_map(false),num_dofs_));
+  } else if (location == FIELD_LOCATION_MESH) {
+    Errors::Message message("Constant Fields not yet implemented");
+    Exceptions::amanzi_throw(message);
   }
 
-  if (num_dofs == 1 && location == Amanzi::AmanziMesh::CELL) {
+  if (num_dofs == 1 && location == FIELD_LOCATION_CELL) {
     subfieldnames_.push_back(fieldname);
   }
 };
@@ -83,7 +86,7 @@ void Field::assert_owner_or_die(std::string pk_name) const {
 };
 
 // check that the location matches this field's location
-void Field::assert_location_or_die(int location) const {
+void Field::assert_location_or_die(FieldLocation location) const {
   if (location != location_) {
     std::stringstream messagestream;
     messagestream << "Invalid write to location " << location
@@ -132,7 +135,7 @@ void Field::set_data(std::string pk_name, const Epetra_Vector& data) {
 // write data to uniform, constant value (per vector)
 void Field::set_data(std::string pk_name, const double* u) {
   assert_owner_or_die(pk_name);
-  assert_location_or_die(Amanzi::AmanziMesh::CELL);
+  assert_location_or_die(FIELD_LOCATION_CELL);
 
   for (int i = 0; i != data_->NumVectors(); ++i) {
     ((*data_)(i))->PutScalar(u[i]);
@@ -142,7 +145,7 @@ void Field::set_data(std::string pk_name, const double* u) {
 // write data to uniform, constant value
 void Field::set_data(std::string pk_name, double u) {
   assert_owner_or_die(pk_name);
-  assert_location_or_die(Amanzi::AmanziMesh::CELL);
+  assert_location_or_die(FIELD_LOCATION_CELL);
 
   for (int i = 0; i != data_->NumVectors(); ++i) {
     (*data_)(i)->PutScalar(u);
@@ -152,7 +155,7 @@ void Field::set_data(std::string pk_name, double u) {
 // write data of on single block to a constant value (per vector)
 void Field::set_data(std::string pk_name, const double* u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
-  assert_location_or_die(Amanzi::AmanziMesh::CELL);
+  assert_location_or_die(FIELD_LOCATION_CELL);
   assert_valid_block_id_or_die(mesh_block_id);
 
   unsigned int mesh_block_size = mesh_maps_->get_set_size(mesh_block_id,
@@ -174,7 +177,7 @@ void Field::set_data(std::string pk_name, const double* u, int mesh_block_id) {
 // write data of on single block to a constant value
 void Field::set_data(std::string pk_name, double u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
-  assert_location_or_die(Amanzi::AmanziMesh::CELL);
+  assert_location_or_die(FIELD_LOCATION_CELL);
   assert_valid_block_id_or_die(mesh_block_id);
 
   unsigned int mesh_block_size = mesh_maps_->get_set_size(mesh_block_id,
@@ -196,7 +199,7 @@ void Field::set_data(std::string pk_name, double u, int mesh_block_id) {
 // write a constant 3-vector to faces (dotting the constant vector with the face normal)
 void Field::set_vector_data(std::string pk_name, const double* u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
-  assert_location_or_die(Amanzi::AmanziMesh::FACE);
+  assert_location_or_die(FIELD_LOCATION_FACE);
   assert_valid_block_id_or_die(mesh_block_id);
 
   double x[4][3], normal[3];

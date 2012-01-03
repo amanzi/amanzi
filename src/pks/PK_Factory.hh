@@ -8,8 +8,8 @@ Author: Ethan Coon
 Interface for the process kernel factory.
 ------------------------------------------------------------------------- */
 
-#ifndef _PK_FACTORY_HH_
-#define _PK_FACTORY_HH_
+#ifndef PKS_PK_FACTORY_HH_
+#define PKS_PK_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"

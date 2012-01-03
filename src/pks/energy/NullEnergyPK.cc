@@ -29,12 +29,12 @@ NullEnergyPK::NullEnergyPK(Teuchos::ParameterList& energy_plist,
     energy_plist_(energy_plist) {
 
   // require fields for the state and solution
-  S->require_field("temperature", Amanzi::AmanziMesh::CELL, "energy");
+  S->require_field("temperature", FIELD_LOCATION_CELL, "energy");
   S->get_field_record("temperature")->set_io_vis(true);
-  Teuchos::RCP<Epetra_MultiVector> soln_temp = Teuchos::rcp(new Epetra_MultiVector(*S->get_field("temperature", "energy")));
+  Teuchos::RCP<Epetra_MultiVector> soln_temp = Teuchos::rcp(new Epetra_MultiVector(*S->get_field("temperature")));
   soln->PushBack(soln_temp);
 
-  S->require_field("temperature_dot", Amanzi::AmanziMesh::CELL, "energy");
+  S->require_field("temperature_dot", FIELD_LOCATION_CELL, "energy");
 
   T_ = energy_plist.get<double>("Constant temperature", 290.0);
 };

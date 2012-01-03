@@ -12,8 +12,8 @@ initialization capability -- this is where all independent variables can be
 initialized (as independent variables are owned by state, not by any PK).
 ------------------------------------------------------------------------- */
 
-#ifndef __STATE_HH__
-#define __STATE_HH__
+#ifndef STATE_STATE_HH_
+#define STATE_STATE_HH_
 
 #include <string>
 #include <vector>
@@ -61,7 +61,7 @@ public:
   // and num_dofs indicates the number of required vectors.
   //
   // Note that multiple PKs may require a field, but only one may own it.
-  void require_field(std::string fieldname, int location,
+  void require_field(std::string fieldname, FieldLocation location,
                      std::string owner="state", int num_dofs=1);
 
   // -- access methods --

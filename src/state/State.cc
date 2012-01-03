@@ -148,7 +148,7 @@ void State::initialize_from_parameter_list() {
   // Initialize -- State has "sudo" privleges and can write them all
   for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
        field != fields_.end(); ++field) {
-    if ((*field)->get_location() == Amanzi::AmanziMesh::CELL) {
+    if ((*field)->get_location() == FIELD_LOCATION_CELL) {
       const std::vector<std::string> subfield_names = (*field)->get_subfield_names();
       if (subfield_names.size() == (*field)->get_num_dofs()) {
         double u[subfield_names.size()];
@@ -185,7 +185,7 @@ void State::initialize_from_parameter_list() {
     for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
          field != fields_.end(); ++field) {
       std::cout << "checking for ICs for " << (*field)->get_fieldname() << std::endl;
-      if ((*field)->get_location() == Amanzi::AmanziMesh::CELL) {
+      if ((*field)->get_location() == FIELD_LOCATION_CELL) {
         std::cout << "  checking for cell ICs for " << (*field)->get_fieldname() << std::endl;
         const std::vector<std::string> subfield_names = (*field)->get_subfield_names();
         if (subfield_names.size() == (*field)->get_num_dofs()) {
@@ -210,7 +210,7 @@ void State::initialize_from_parameter_list() {
             std::cout << "got them all, assigning" << std::endl;
           }
         }
-      } else if ((*field)->get_location() == Amanzi::AmanziMesh::FACE) {
+      } else if ((*field)->get_location() == FIELD_LOCATION_FACE) {
         std::cout << "  checking for face ICs for " << (*field)->get_fieldname() << std::endl;
         if (1 == (*field)->get_num_dofs()) {
           // a vector field, try to get the 3 components
@@ -231,7 +231,7 @@ void State::initialize_from_parameter_list() {
   } // loop over blocks
 };
 
-void State::require_field(std::string fieldname, int location,
+void State::require_field(std::string fieldname, FieldLocation location,
                           std::string owner, int num_dofs) {
   if (field_name_map_.find(fieldname) == field_name_map_.end()) {
     // Field does not yet exist; create a new one.

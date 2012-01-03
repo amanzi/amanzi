@@ -12,8 +12,8 @@ TreeVectors in a nested format.  It also provides an implementation of the
 Vector interface for use with time integrators/nonlinear solvers.
 ------------------------------------------------------------------------- */
 
-#ifndef __TREEVECTOR_HH__
-#define __TREEVECTOR_HH__
+#ifndef DATA_STRUCTURES_TREEVECTOR_HH_
+#define DATA_STRUCTURES_TREEVECTOR_HH_
 
 #include <string>
 #include <vector>

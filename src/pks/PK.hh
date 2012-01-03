@@ -12,8 +12,8 @@ hierarchies.
 ------------------------------------------------------------------------- */
 
 
-#ifndef _PK_HH_
-#define _PK_HH_
+#ifndef PKS_PK_HH_
+#define PKS_PK_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -50,6 +50,11 @@ public:
 
   // -- Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool advance(double dt, Teuchos::RCP<TreeVector>& solution) = 0;
+  virtual bool advance(double dt, Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next,
+                       Teuchos::RCP<TreeVector>& solution) {
+    set_states(S, S_next);
+    return advance(dt, solution);
+  }
 
   // -- Commit any secondary (dependent) variables.
   virtual void commit_state(double dt, Teuchos::RCP<State>& S) = 0;
@@ -62,7 +67,7 @@ public:
   std::string name() { return name_; }
   virtual void set_name(std::string name) { name_ = name; }
 
-  // set States
+  // set pointers to State
   virtual void set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next) {
     S_ = S;
     S_next_ = S_next;
