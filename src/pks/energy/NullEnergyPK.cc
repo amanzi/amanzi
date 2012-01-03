@@ -48,6 +48,10 @@ void NullEnergyPK::initialize(Teuchos::RCP<State>& S) {
 
   S->set_field("temperature_dot", "energy", 0.0);
   S->get_field_record("temperature_dot")->set_initialized();
+
+  // model evaluator params
+  atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
+  rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 };
 
 
@@ -80,11 +84,23 @@ void NullEnergyPK::solution_to_state(TreeVector& soln, TreeVector& soln_dot,
   S->set_field_pointer("temperature_dot", "energy", temp_dot_ptr);
 };
 
-bool NullEnergyPK::advance(double dt) {
+// Advance methods calculate the constant value
+// -- advance using the analytic value
+bool NullEnergyPK::advance_analytic(double dt) {
   *solution_ = T_;
   return false;
 };
 
+// -- advance using the BDF integrator
+bool NullEnergyPK::advance_bdf(double dt) {
+};
+
+// -- call your favorite
+bool NullEnergyPK::advance(double dt) {
+  return advance_analytic(dt);
+};
+
+// overwrite the state pointers, and make sure the solutions T pointer points to S_next's T
 void NullEnergyPK::set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next) {
   S_ = S;
   S_next_ = S_next;
@@ -92,9 +108,35 @@ void NullEnergyPK::set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>&
   (*solution_)[0] = S_next->get_field("temperature", "energy");
 };
 
-void NullEnergyPK::compute_f(const double t, const Vector& u,
-                             const Vector& udot, Vector& f) {
-  f = u;
+// Methods for the BDF integrator
+// -- residual
+void NullEnergyPK::fun(const double t, const TreeVector& soln, const TreeVector& udot,
+                       TreeVector& f) {
+  f = soln;
   f.Shift(-T_);
 };
+
+// -- preconditioning (currently none)
+void NullEnergyPK::precon(const TreeVector& u, TreeVector& Pu) {
+  Pu = u;
+};
+
+// computes a norm on u-du and returns the result
+double NullEnergyPK::enorm(const TreeVector& u, const TreeVector& du) {
+  double enorm_val = 0.0;
+  Epetra_Vector temp_vec = *(*u[0])(0);
+  Epetra_Vector temp_dot_vec = *(*du[0])(0);
+  for (unsigned int lcv=0; lcv != u[0]->MyLength(); ++lcv) {
+    double tmp = abs(temp_dot_vec[lcv])/(atol_ + rtol_*abs(temp_vec[lcv]));
+    enorm_val = std::max<double>(enorm_val, tmp);
+  }
+
+#ifdef HAVE_MPI
+  double buf = enorm_val;
+  MPI_Allreduce(&buf, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+
+  return enorm_val;
+};
+
 } // namespace
