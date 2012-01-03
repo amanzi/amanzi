@@ -683,7 +683,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_flux = bc.sublist("BC: Flux");
 
 		  Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
+		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time functions");
 		  
 		  if (!bc_flux.isParameter("Intensive Mass Flux"))
 		    {
@@ -747,7 +747,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 	  
 		  
@@ -799,7 +799,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
 	  
 		  
@@ -891,7 +891,7 @@ namespace Amanzi {
 	      // get the regions
 	      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 	      
-	      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Porosity");
+	      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
 	      double perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
 	      double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
 	      
