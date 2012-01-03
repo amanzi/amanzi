@@ -42,7 +42,16 @@ public:
                                  Teuchos::RCP<TreeVector>& soln_dot) = 0;
   virtual void solution_to_state(TreeVector& soln, Teuchos::RCP<State>& S) = 0;
   virtual void solution_to_state(TreeVector& soln, TreeVector& soln_dot,
-                                 Teuchos::RCP<State>& S) = 0;
+          Teuchos::RCP<State>& S) = 0;
+
+  // THIS IS SUPREMELY UGLY AND EVIL, FIX ME (BUT HOW?!?!) -- etc
+  virtual void const_solution_to_state(const TreeVector& soln, const TreeVector& soln_dot,
+          Teuchos::RCP<State>& S) {
+    // cast away const
+    TreeVector* soln_ptr = const_cast<TreeVector*>(&soln);
+    TreeVector* soln_dot_ptr = const_cast<TreeVector*>(&soln_dot);
+    solution_to_state(*soln_ptr, *soln_dot_ptr, S);
+  }
 
   // -- Choose a time step compatible with physics.
   virtual double get_dt() = 0;
