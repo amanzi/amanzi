@@ -63,94 +63,59 @@ struct test_state {
 };
 
 SUITE(COPY) {
-  // // test the field copy constructor
-  // TEST_FIXTURE(test_field, FieldCopy) {
-  //   field->set_data("test_owner", 2.0);
-  //   Field newfield(*(field));
-  //   CHECK_CLOSE(get_value(newfield), get_value(*field), 0.00001);
-  //   CHECK_CLOSE(get_value(newfield), 2.0, 0.00001);
-  //   newfield.set_data("test_owner", 3.0);
-  //   CHECK_CLOSE(get_value(newfield), 3.0, 0.00001);
-  //   CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
-  // }
+  // test the field copy constructor
+  TEST_FIXTURE(test_field, FieldCopy) {
+    field->set_data("test_owner", 2.0);
+    Field newfield(*(field));
+    CHECK_CLOSE(get_value(newfield), get_value(*field), 0.00001);
+    CHECK_CLOSE(get_value(newfield), 2.0, 0.00001);
+    newfield.set_data("test_owner", 3.0);
+    CHECK_CLOSE(get_value(newfield), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
+  }
 
-  // // test the field assignment operator
-  // TEST_FIXTURE(test_field, FieldAssignment) {
-  //   field->set_data("test_owner", 2.0);
-  //   Teuchos::RCP<Field> newfield = Teuchos::rcp(new Field("new_fieldname",
-  //           Amanzi::AmanziMesh::CELL, mesh, "test_owner"));
-  //   *newfield = *field;
-  //   CHECK_CLOSE(get_value(*newfield), get_value(*field), 0.00001);
-  //   CHECK_CLOSE(get_value(*newfield), 2.0, 0.00001);
-  //   newfield->set_data("test_owner", 3.0);
-  //   CHECK_CLOSE(get_value(*newfield), 3.0, 0.00001);
-  //   CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
-  // }
+  // test the field assignment operator
+  TEST_FIXTURE(test_field, FieldAssignment) {
+    field->set_data("test_owner", 2.0);
+    Teuchos::RCP<Field> newfield = Teuchos::rcp(new Field("new_fieldname",
+            Amanzi::AmanziMesh::CELL, mesh, "test_owner"));
+    *newfield = *field;
+    CHECK_CLOSE(get_value(*newfield), get_value(*field), 0.00001);
+    CHECK_CLOSE(get_value(*newfield), 2.0, 0.00001);
+    newfield->set_data("test_owner", 3.0);
+    CHECK_CLOSE(get_value(*newfield), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
+  }
 
-  // mesh create/destroy seg fault
-  TEST(MeshFactoryCreateDestroy) {
-    Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(*comm);
-    CHECK(true);
-  };
+  // test the state copy constructor
+  TEST_FIXTURE(test_state, StateCopy) {
+    state->set_field("test_fieldname", "test_owner", 2.0);
+    State newstate(*state);
+    CHECK_CLOSE(get_value(newstate), get_value(*state), 0.00001);
+    CHECK_CLOSE(get_value(newstate), 2.0, 0.00001);
+    newstate.set_field("test_fieldname", "test_owner", 3.0);
+    CHECK_CLOSE(get_value(newstate), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
+  }
 
-  // mesh create/destroy seg fault
-  TEST(MeshCreateDestroy) {
-    Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(*comm);
-    Teuchos::RCP<Mesh> mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    CHECK(true);
-  };
+  // test the state assignment operator
+  TEST_FIXTURE(test_state, StateAssignment) {
+    state->set_field("test_fieldname", "test_owner", 2.0);
 
-  // pinning down create/destroy seg fault
-  TEST(StateCreateDestroy) {
-    Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(*comm);
-    Teuchos::RCP<Mesh> mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    Teuchos::RCP<State> state = Teuchos::rcp(new State(mesh));
-    CHECK(true);
-  };
+    // copy construct the new state to get the same structure
+    Teuchos::RCP<State> newstate = Teuchos::rcp(new State(*state));
 
-  // pinning down create/destroy seg fault
-  TEST(StateWithFieldCreateDestroy) {
-    Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(*comm);
-    Teuchos::RCP<Mesh> mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    Teuchos::RCP<State> state = Teuchos::rcp(new State(mesh));
-    state->require_field("test_fieldname", Amanzi::AmanziMesh::CELL, "test_owner");
-    CHECK(true);
-  };
+    // reset the value to test the operator=
+    newstate->set_field("test_fieldname", "test_owner", 0.0);
 
-  // pinning down create/destroy seg fault
-  TEST(StateCopyCreateDestroy) {
-    Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(*comm);
-    Teuchos::RCP<Mesh> mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    Teuchos::RCP<State> state = Teuchos::rcp(new State(mesh));
-    State state2(*state);
-    CHECK(true);
-  };
+    // test operator=
+    *newstate = *state;
+    CHECK_CLOSE(get_value(*newstate), get_value(*state), 0.00001);
+    CHECK_CLOSE(get_value(*newstate), 2.0, 0.00001);
 
-//   // test the state copy constructor
-//   TEST_FIXTURE(test_state, StateCopy) {
-//     state->set_field("test_fieldname", "test_owner", 2.0);
-//     State newstate(*state);
-//     CHECK_CLOSE(get_value(newstate), get_value(*state), 0.00001);
-//     CHECK_CLOSE(get_value(newstate), 2.0, 0.00001);
-//     newstate.set_field("test_fieldname", "test_owner", 3.0);
-//     CHECK_CLOSE(get_value(newstate), 3.0, 0.00001);
-//     CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
-//   }
-
-//   // test the state assignment operator
-//   TEST_FIXTURE(test_state, StateAssignment) {
-//     state->set_field("test_fieldname", "test_owner", 2.0);
-//     Teuchos::RCP<State> newstate = Teuchos::rcp(new State(mesh));
-//     *newstate = *state;
-//     CHECK_CLOSE(get_value(*newstate), get_value(*state), 0.00001);
-//     CHECK_CLOSE(get_value(*newstate), 2.0, 0.00001);
-//     newstate->set_field("test_fieldname", "test_owner", 3.0);
-//     CHECK_CLOSE(get_value(*newstate), 3.0, 0.00001);
-//     CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
-//   }
+    // test copies are deep
+    newstate->set_field("test_fieldname", "test_owner", 3.0);
+    CHECK_CLOSE(get_value(*newstate), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
+  }
 }

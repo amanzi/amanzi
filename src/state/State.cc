@@ -23,33 +23,32 @@ like density which may NOT be spatially variable.
 */
 
 #include <iostream>
-#include "State.hh"
+
 #include "Epetra_Vector.h"
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
+
 #include "errors.hh"
-#include "Mesh.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
-State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps):
+State::State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh_maps):
   mesh_maps_(mesh_maps) {
 
   density_ = Teuchos::rcp(new double);
   viscosity_ = Teuchos::rcp(new double);
-  gravity_ = Teuchos::rcp(new double*);
-  *gravity_ = new double[3];
+  gravity_ = Teuchos::rcp(new std::vector<double>);
+  (*gravity_).resize(3, 0.0);
 };
 
-State::State(Teuchos::ParameterList &parameter_list,
-             Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps):
+State::State(Teuchos::ParameterList& parameter_list,
+             Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh_maps):
   mesh_maps_(mesh_maps),
   parameter_list_(parameter_list) {
 
   density_ = Teuchos::rcp(new double);
   viscosity_ = Teuchos::rcp(new double);
-  gravity_ = Teuchos::rcp(new double*);
-  *gravity_ = new double[3];
+  gravity_ = Teuchos::rcp(new std::vector<double>);
+  (*gravity_).resize(3, 0.0);
 };
 
 // copy constructor:
@@ -58,44 +57,57 @@ State::State(Teuchos::ParameterList &parameter_list,
 // Could get a better implementation with a CopyMode, see TransportState in
 // Amanzi as an example.  I'm not sure its needed at this point, however.
 State::State(const State& s) {
+  mesh_maps_ = s.mesh_maps_;
+
   density_ = Teuchos::rcp(new double);
   viscosity_ = Teuchos::rcp(new double);
-  gravity_ = Teuchos::rcp(new double*);
-  *gravity_ = new double[3];
+  gravity_ = Teuchos::rcp(new std::vector<double>);
+  (*gravity_).resize(3, 0.0);
 
   *density_ = *s.density_;
   *viscosity_ = *s.viscosity_;
   *gravity_ = *s.gravity_;
 
-  field_name_map_ = FieldNameMap(s.field_name_map_);
-  fields_ = s.fields_;  // this needs testing
+  field_name_map_ = s.field_name_map_;
+  fields_.resize(s.fields_.size());
+  for (unsigned int lcv = 0; lcv != s.fields_.size(); ++lcv) {
+    fields_[lcv] = Teuchos::rcp(new Field(*(s.fields_[lcv])));
+  }
 
   time_ = s.time_;
   cycle_ = s.cycle_;
   status_ = s.status_;
-  mesh_maps_ = s.mesh_maps_;
 };
 
-// assignment is crucial... copy values not data/pointers
+// operator=:
+//  Assign a state's data from another state.  Note this
+// implementation requires the State being copied has the same structure (in
+// terms of fields, order of fields, etc) as *this.  This really means that
+// it should be a previously-copy-constructed version of the State.  One and
+// only one State should be instantiated and populated -- all other States
+// should be copy-constructed from that initial State.
 State& State::operator=(const State& s) {
+  if (fields_.size() != s.fields_.size()) {
+    Errors::Message message("Attempted copy of non-compatible states.");
+    Exceptions::amanzi_throw(message);
+  }
   if (this != &s) {
+    mesh_maps_ = s.mesh_maps_;
+
     *density_ = *s.density_;
     *viscosity_ = *s.viscosity_;
     *gravity_ = *s.gravity_;
 
     field_name_map_ = s.field_name_map_;
-    fields_ = s.fields_; // this needs testing
+    for (unsigned int lcv = 0; lcv != s.fields_.size(); ++lcv) {
+      *(fields_[lcv]) = *(s.fields_[lcv]);
+    }
 
     time_ = s.time_;
     cycle_ = s.cycle_;
     status_ = s.status_;
-    mesh_maps_ = s.mesh_maps_;
   }
   return *this;
-};
-
-State::~State() {
-  delete [] (*gravity_);
 };
 
 // Initialize data, allowing values to be specified here or in the owning PK.
@@ -309,21 +321,22 @@ void State::set_subfield_names(std::string fieldname,
   get_field_record(fieldname)->set_subfield_names(subfield_names);
 };
 
-void State::set_density(double wd )
-{
+void State::set_density(double wd ) {
   *density_ = wd;
 };
 
-void State::set_viscosity(double mu)
-{
+void State::set_viscosity(double mu) {
   *viscosity_ = mu;
 };
 
-void State::set_gravity(const double *g)
-{
+void State::set_gravity(const double g[3]) {
   (*gravity_)[0] = g[0];
   (*gravity_)[1] = g[1];
   (*gravity_)[2] = g[2];
+};
+
+void State::set_gravity(const std::vector<double> g) {
+  *gravity_ = g;
 };
 
 void State::write_vis(Amanzi::Vis& vis) {

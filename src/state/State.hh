@@ -16,6 +16,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #define __STATE_HH__
 
 #include <string>
+#include <vector>
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
@@ -32,19 +33,23 @@ typedef enum { COMPLETE, UPDATING } status_type;
 class State {
 
 public:
-  // types
-  typedef std::vector< Teuchos::RCP<Field> > Fields;
-  typedef std::map<std::string, Fields::size_type> FieldNameMap;
+  State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh_maps);
 
-  State(Teuchos::RCP<Amanzi::AmanziMesh::Mesh>&);
+  State(Teuchos::ParameterList& parameter_list,
+	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& mesh_maps);
 
-  State(Teuchos::ParameterList&,
-	 Teuchos::RCP<Amanzi::AmanziMesh::Mesh>&);
+  // Copy constructor, copies memory not pointers.
+  explicit State(const State& s);
 
-  State(const State&); // copy constructor
-  State& operator=(const State&); // assignment
+  // Assignment operator, copies memory not pointers.  Note this
+  // implementation requires the State being copied has the same structure (in
+  // terms of fields, order of fields, etc) as *this.  This really means that
+  // it should be a previously-copy-constructed version of the State.  One and
+  // only one State should be instantiated and populated -- all other States
+  // should be copy-constructed from that initial State.
+  State& operator=(const State& s);
 
-  ~State();
+  //  ~State() {};
 
   // initialize values over blocks
   void initialize();
@@ -75,7 +80,7 @@ public:
   // CRUFT, fix me.
   Teuchos::RCP<double> get_density() { return density_; }
   Teuchos::RCP<double> get_viscosity() { return viscosity_; }
-  Teuchos::RCP<double*> get_gravity() { return gravity_; }
+  Teuchos::RCP< std::vector<double> > get_gravity() { return gravity_; }
 
   Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps_; }
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() { return mesh_maps_; };
@@ -112,7 +117,8 @@ public:
   // CRUFT, fix me
   void set_density(double wd);
   void set_viscosity(double mu);
-  void set_gravity(const double *g);
+  void set_gravity(const double g[3]);
+  void set_gravity(const std::vector<double> g);
 
   // status methods
   const status_type get_status () const { return status_; };
@@ -131,13 +137,13 @@ private:
   void initialize_from_parameter_list();
 
   // field container and fieldname map from name -> container location
-  FieldNameMap field_name_map_;
-  Fields fields_;
+  std::vector< Teuchos::RCP<Field> > fields_;
+  std::map<std::string, std::vector< Teuchos::RCP<Field> >::size_type> field_name_map_;
 
   // CRUFT, fix me
   // extra data which (for the moment) is assumed constant
   // over the entire domain
-  Teuchos::RCP<double*> gravity_;
+  Teuchos::RCP< std::vector<double> > gravity_;
   Teuchos::RCP<double> density_;
   Teuchos::RCP<double> viscosity_;
 
