@@ -1,7 +1,7 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#ifndef __FLATVECTOR_HH__
-#define __FLATVECTOR_HH__
+#ifndef DATA_STRUCTURES_FLATVECTOR_HH_
+#define DATA_STRUCTURES_FLATVECTOR_HH_
 
 #include <string>
 #include <vector>

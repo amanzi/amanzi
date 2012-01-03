@@ -12,8 +12,8 @@ calling their advance() methods and returning failure if any fail.
 See additional documentation in the base class src/pks/mpc/MPC.hh
 ------------------------------------------------------------------------- */
 
-#ifndef _MPC_HPP_
-#define _MPC_HPP_
+#ifndef PKS_MPC_WEAKMPC_HH_
+#define PKS_MPC_WEAKMPC_HH_
 
 #include <vector>
 

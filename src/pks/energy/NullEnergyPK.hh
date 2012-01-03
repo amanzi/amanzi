@@ -19,8 +19,8 @@ Example usage:
 
 ------------------------------------------------------------------------- */
 
-#ifndef _NULLENERGYPK_HH_
-#define _NULLENERGYPK_HH_
+#ifndef PKS_ENERGY_NULLENERGYPK_HH_
+#define PKS_ENERGY_NULLENERGYPK_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObject.hpp"

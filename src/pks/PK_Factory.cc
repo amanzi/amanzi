@@ -17,9 +17,9 @@ should eventually get smarter.
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "WeakMPC.hh"
-// #include "Darcy_PK.hh"
-// #include "Richards_PK.hh"
-// #include "Permafrost_PK.hh"
+// #include "DarcyPK.hh"
+// #include "RichardsPK.hh"
+// #include "PermafrostPK.hh"
 #include "NullEnergyPK.hh"
 
 namespace Amanzi {
@@ -34,11 +34,11 @@ Teuchos::RCP<PK> PK_Factory::create_pk(Teuchos::ParameterList plist,
   // } else if (pk_type == "Strong MPC") {
   //   return Teuchos::rcp(new StrongMPC(plist, S, soln));
   // } else if (pk_type == "Darcy") {
-  //   return Teuchos::rcp(new Darcy_PK(plist, S, soln));
+  //   return Teuchos::rcp(new DarcyPK(plist, S, soln));
   // } else if (pk_type == "Richards") {
-  //   return Teuchos::rcp(new Richards_PK(plist, S, soln));
+  //   return Teuchos::rcp(new RichardsPK(plist, S, soln));
   // } else if (pk_type == "Permafrost") {
-  //   return Teuchos::rcp(new Permafrost_PK(plist, S, soln));
+  //   return Teuchos::rcp(new PermafrostPK(plist, S, soln));
   } else if (pk_type == "Constant Temperature") {
     return Teuchos::rcp(new NullEnergyPK(plist, S, soln));
   } else {

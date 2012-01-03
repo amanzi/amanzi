@@ -11,8 +11,8 @@ Implementations of this interface may be used within ATS time integrators and
 nonlinear solvers (eventually).
 ------------------------------------------------------------------------- */
 
-#ifndef __VECTOR_HH__
-#define __VECTOR_HH__
+#ifndef DATA_STRUCTURES_VECTOR_HH_
+#define DATA_STRUCTURES_VECTOR_HH_
 
 #include <string>
 

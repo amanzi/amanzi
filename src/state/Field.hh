@@ -13,8 +13,8 @@ the secret password (AKA the name of the process kernel that owns the data).
 Field also stores some basic metadata for Vis, checkpointing, etc.
 ------------------------------------------------------------------------- */
 
-#ifndef __FIELD_HH__
-#define __FIELD_HH__
+#ifndef STATE_FIELD_HH_
+#define STATE_FIELD_HH_
 
 #include <string>
 #include <vector>
@@ -25,6 +25,13 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "Mesh.hh"
 
 namespace Amanzi {
+
+enum FieldLocation {
+  FIELD_LOCATION_MESH, // constant on the mesh (scalar data)
+  FIELD_LOCATION_CELL, // cell centers
+  FIELD_LOCATION_FACE // cell faces
+};
+
 class Field {
 
 public:
@@ -32,7 +39,7 @@ public:
   Field() {};
 
   // standard constructor
-  Field(std::string fieldname, int location,
+  Field(std::string fieldname, FieldLocation location,
         Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh_maps,
         std::string owner="state",
         int num_dofs=1);
@@ -44,7 +51,7 @@ public:
   // access
   std::string get_fieldname() const { return fieldname_; }
   std::string get_owner() const { return owner_; }
-  int get_location() const { return location_; }
+  FieldLocation get_location() const { return location_; }
   int get_num_dofs() const { return num_dofs_; }
   const std::vector<std::string>& get_subfield_names() const { return subfieldnames_; }
   bool io_restart() const { return io_restart_; }
@@ -74,14 +81,14 @@ public:
 private:
   // consistency checking
   void assert_owner_or_die(std::string pk_name) const;
-  void assert_location_or_die(int location) const;
+  void assert_location_or_die(FieldLocation location) const;
   void assert_valid_block_id_or_die(int mesh_block_id) const;
 
   Teuchos::RCP<Epetra_MultiVector> data_;
   std::string fieldname_;
   std::string owner_;
   std::vector<std::string> subfieldnames_;
-  int location_;
+  FieldLocation location_;
   int num_dofs_;
   bool io_restart_;
   bool io_vis_;

@@ -30,11 +30,10 @@ struct test_field {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MeshFactory mesh_fact(*comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    field = Teuchos::rcp(new Field("test_fieldname", Amanzi::AmanziMesh::CELL,
+    field = Teuchos::rcp(new Field("test_fieldname", FIELD_LOCATION_CELL,
             mesh, "test_owner"));
   }
   ~test_field() { delete comm; }
-
 };
 
 double get_value(Field& field) {
@@ -57,7 +56,7 @@ struct test_state {
     MeshFactory mesh_fact(*comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     state = Teuchos::rcp(new State(mesh));
-    state->require_field("test_fieldname", Amanzi::AmanziMesh::CELL, "test_owner");
+    state->require_field("test_fieldname", FIELD_LOCATION_CELL, "test_owner");
   }
   ~test_state() { delete comm; }
 };
@@ -78,7 +77,7 @@ SUITE(COPY) {
   TEST_FIXTURE(test_field, FieldAssignment) {
     field->set_data("test_owner", 2.0);
     Teuchos::RCP<Field> newfield = Teuchos::rcp(new Field("new_fieldname",
-            Amanzi::AmanziMesh::CELL, mesh, "test_owner"));
+            FIELD_LOCATION_CELL, mesh, "test_owner"));
     *newfield = *field;
     CHECK_CLOSE(get_value(*newfield), get_value(*field), 0.00001);
     CHECK_CLOSE(get_value(*newfield), 2.0, 0.00001);

@@ -18,8 +18,8 @@ Most of these methods simply loop through the coordinated PKs, calling their
 respective methods.
 ------------------------------------------------------------------------- */
 
-#ifndef _MPC_HH_
-#define _MPC_HH_
+#ifndef PKS_MPC_MPC_HH_
+#define PKS_MPC_MPC_HH_
 
 #include <vector>
 
