@@ -120,6 +120,12 @@ Teuchos::RCP<Epetra_MultiVector> Field::get_data(std::string pk_name) {
   }
 };
 
+// Overwrite data by pointer, not copy
+void Field::set_data_pointer(std::string pk_name, Teuchos::RCP<Epetra_MultiVector>& data) {
+  assert_owner_or_die(pk_name);
+  data_ = data;
+};
+
 // write data
 void Field::set_data(std::string pk_name, const Epetra_MultiVector& data) {
   assert_owner_or_die(pk_name);

@@ -1,11 +1,11 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "Richards_PK.hh"
+#include "RichardsPK.hh"
 #include "RichardsModelEvaluator.hh"
 
 namespace Amanzi {
 
-  Richards_PK::Richards_PK(Teuchos::ParameterList &plist_, Teuchos::RCP<State> &S) :
+  RichardsPK::RichardsPK(Teuchos::ParameterList &plist_, Teuchos::RCP<State> &S) :
     plist(plist_) {
   // Require fields in the state
   S->require_field("pressure", Amanzi::AmanziMesh::CELL, "flow");
@@ -47,7 +47,7 @@ namespace Amanzi {
   time_stepper->setParameterList(bdf2_list_p);
 };
 
-void Richards_PK::initialize(Teuchos::RCP<State> &S) {
+void RichardsPK::initialize(Teuchos::RCP<State> &S) {
   Teuchos::ParameterList richards_plist = plist.sublist("Richards Problem");
 
   steady_state = richards_plist.get<bool>("Steady state", false);
@@ -116,7 +116,7 @@ void Richards_PK::initialize(Teuchos::RCP<State> &S) {
   problem->DeriveDarcyVelocity(*solution, *velocity);
 };
 
-void Richards_PK::advance_to_steady_state()
+void RichardsPK::advance_to_steady_state()
 {
   double t0 = ss_t0;
   double t1 = ss_t1;
@@ -148,7 +148,7 @@ void Richards_PK::advance_to_steady_state()
 //    2. advance transient (which in no way can alter either S0 or S1)
 //    3. set state S1 with solution from problem
 // much like advance_to_steady_state() works
-bool Richards_PK::advance_transient(double dt, const Teuchos::RCP<State> &S0,
+bool RichardsPK::advance_transient(double dt, const Teuchos::RCP<State> &S0,
                                               Teuchos::RCP<State> &S1) {
   // potentially changed permeability and porosity
   problem->SetPermeability(*(*(S0->get_field("permeability")))(0));

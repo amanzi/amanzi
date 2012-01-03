@@ -35,7 +35,7 @@ public:
 
   ~WeakMPC() {};
 
-  bool advance(double dt, Teuchos::RCP<TreeVector> &solution);
+  bool advance(double dt);
 };
 } // close namespace Amanzi
 

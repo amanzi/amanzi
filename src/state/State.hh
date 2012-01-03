@@ -89,6 +89,8 @@ public:
   int get_cycle () const { return cycle_; }
 
   // modify methods
+  void set_field_pointer(std::string fieldname, std::string pk_name,
+                         Teuchos::RCP<Epetra_MultiVector>& data);
   void set_field(std::string fieldname, std::string pk_name,
                  const Epetra_Vector&);
   void set_field(std::string fieldname, std::string pk_name,

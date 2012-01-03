@@ -100,7 +100,7 @@ void Coordinator::initialize() {
   S_->initialize();
 
   // initialize the process kernels (which should initialize all dependent variables)
-  pk_->initialize(S_, soln_);
+  pk_->initialize(S_);
 
   // Check that all fields have now been initialized or die.
   S_->check_all_initialized();
@@ -157,7 +157,7 @@ void Coordinator::cycle_driver () {
     }
 
     // advance
-    fail = pk_->advance(mpc_dT, soln_);
+    fail = pk_->advance(mpc_dT);
     if (fail) {
       Errors::Message message("Coordinator: error advancing time");
       Exceptions::amanzi_throw(message);
