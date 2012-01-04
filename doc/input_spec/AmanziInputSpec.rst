@@ -758,7 +758,7 @@ The following initial condition parameterizations are supported:
 
 The following boundary condition parameterizations are supported:
 
-* `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Extensive Volumetric Flux`" [double] or `"Extensive Mass Flux`" [double], `"Intensive Volumetric Flux`" [double] or `"Intensive Mass Flux`" [double]
+* `"BC: Flux`" requires `"Times`" [Array double], `"Time Functions`" [Array string] (see the note below) and one of the following: `"Inward Volumetric Flux`" [double], `"Inward Mass Flux`" [double], `"Outward Volumetric Flux`" [double] or `"Outward Mass Flux`" [double]. Here volumetriuc flux is interpreted as meters cubed per meters squared per second, and mass flux is interpreted as kilogramms per meter squared per second. Inward or outward refers to the flux being in the direction of the inward or outward normal to each face of the boundary region, respectively.
 
 * `"BC: Uniform Pressure`" requires `"Times`" [Array double], `"Time Functions`" [Array string] and `"Values`" [Array double]
 
