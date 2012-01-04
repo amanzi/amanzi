@@ -48,7 +48,8 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> get_absolute_permeability() { return absolute_permeability; }
   Teuchos::RCP<double*> get_gravity() { return gravity; }
   Teuchos::RCP<Epetra_Vector> get_pressure() { return pressure; }
-  Teuchos::RCP<Epetra_Vector>  get_darcy_flux () { return darcy_flux; }
+  Teuchos::RCP<Epetra_Vector> get_darcy_flux () { return darcy_flux; }
+  Teuchos::RCP<Epetra_Vector> get_water_saturation() { return water_saturation; }
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
 
   Epetra_Vector& ref_porosity() { return *porosity; }
@@ -76,6 +77,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> pressure;
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_Vector> darcy_flux;
+  Teuchos::RCP<Epetra_Vector> water_saturation;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 };

@@ -56,7 +56,8 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   TS->analytic_darcy_flux(u);
   TS->analytic_water_saturation();
 
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
   TPK.set_standalone_mode(true);
 
   // advance the state

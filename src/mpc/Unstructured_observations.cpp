@@ -64,10 +64,10 @@ namespace Amanzi {
 	// for now we can only observe Integrals and Values
 
 	if ( (i->second).functional != "Observation Data: Integral"  &&  
-	     (i->second).functional != "Observation Data: Value" )
+	     (i->second).functional != "Observation Data: Point" )
 	  
 	  {
-	    Errors::Message m("Unstructured_observations: can only handle Functional == Observation Data: Integral, or Functional == Observation Data: Value");
+	    Errors::Message m("Unstructured_observations: can only handle Functional == Observation Data: Integral, or Functional == Observation Data: Point");
 	    Exceptions::amanzi_throw(m); 
 	  }
 	
@@ -99,7 +99,7 @@ namespace Amanzi {
 		      }
 		  }
 
-		else if ((i->second).functional == "Observation Data: Value")
+		else if ((i->second).functional == "Observation Data: Point")
 		  {
 		    data_triplet.value   = state.point_value((i->second).region, var);
 		  }

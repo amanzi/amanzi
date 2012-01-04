@@ -499,196 +499,200 @@ namespace Amanzi {
       // Require information related to the regions and materials.  
       ParameterList regionlist = parameter_list.sublist("Regions");
 
-      const ParameterList& blist = parameter_list.sublist("Boundary Conditions");
       Array<std::string> bc_name_array;
       Array<bool> hi_def(ndim,false), lo_def(ndim,false);
-      Array<int> hi_bc(ndim,2), lo_bc(ndim,2);
+      Array<int> hi_bc(ndim,4), lo_bc(ndim,4);
       Array<int> p_hi_bc(ndim,1), p_lo_bc(ndim,1);
       Array<int> inflow_hi_bc(ndim,0), inflow_lo_bc(ndim,0);
       Array<double> inflow_hi_vel(ndim,0), inflow_lo_vel(ndim,0);
       Array<double> press_hi(ndim,0), press_lo(ndim,0);
       double water_table_hi, water_table_lo;
 
-      for (ParameterList::ConstIterator i=blist.begin(); i!=blist.end(); ++i) {
+      if (parameter_list.isSublist("Boundary Conditions"))
+	{
+	  const ParameterList& blist = parameter_list.sublist("Boundary Conditions");
+	  for (ParameterList::ConstIterator i=blist.begin(); i!=blist.end(); ++i) {
         
-	std::string label = blist.name(i);
-	std::string _label = underscore(label);
-	const ParameterEntry& entry = blist.getEntry(label);
+	    std::string label = blist.name(i);
+	    std::string _label = underscore(label);
+	    const ParameterEntry& entry = blist.getEntry(label);
         
-	ParameterList rsublist;
-        const ParameterList& rslist = blist.sublist(label);
-        for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) {
-          
-          const std::string& rlabel = rslist.name(j);
-	  Array<std::string > regions = rslist.get<Array<std::string> >("Assigned Regions");
-	  
-	  Array<std::string > valid_region_def_lo, valid_region_def_hi;
-	  valid_region_def_lo.push_back("XLOBC");
-	  valid_region_def_hi.push_back("XHIBC");
-	  valid_region_def_lo.push_back("YLOBC");
-	  valid_region_def_hi.push_back("YHIBC");
-	  if (ndim == 3) {
-	    valid_region_def_lo.push_back("ZLOBC");
-	    valid_region_def_hi.push_back("ZHIBC");
+	    ParameterList rsublist;
+	    const ParameterList& rslist = blist.sublist(label);
+	    for (ParameterList::ConstIterator j=rslist.begin(); j!=rslist.end(); ++j) {
+	      
+	      const std::string& rlabel = rslist.name(j);
+	      Array<std::string > regions = rslist.get<Array<std::string> >("Assigned Regions");
+	      
+	      Array<std::string > valid_region_def_lo, valid_region_def_hi;
+	      valid_region_def_lo.push_back("XLOBC");
+	      valid_region_def_hi.push_back("XHIBC");
+	      valid_region_def_lo.push_back("YLOBC");
+	      valid_region_def_hi.push_back("YHIBC");
+	      if (ndim == 3) {
+		valid_region_def_lo.push_back("ZLOBC");
+		valid_region_def_hi.push_back("ZHIBC");
+	      }
+	      Array<std::string> _regions;
+	      for (Array<std::string>::iterator it=regions.begin(); it!=regions.end(); it++) {
+		_regions.push_back(underscore(*it));
+		bool valid = false;
+		for (int j = 0; j<ndim; j++) {
+		  if (!(*it).compare(valid_region_def_lo[j]))
+		    valid = true;
+		  else if (!(*it).compare(valid_region_def_hi[j]))
+		    valid = true;
+		}
+		if (!valid)
+		  std::cerr << "Structured: boundary conditions can only be applied to "
+			    << "regions labeled as XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
+	      }
+	      
+	      rsublist.set("region",_regions);
+	      const ParameterEntry& rentry = rslist.getEntry(rlabel);
+	      if (rentry.isList()) {
+		const ParameterList& rsslist = rslist.sublist(rlabel);
+		if (rlabel=="BC: Flux"){
+		  // don't do time-dependent flux
+		  Array<double> flux;
+		  if (rsslist.isParameter("Intensive Volumetric Flux"))
+		    flux = rsslist.get<Array<double> >("Intensive Volumetric Flux");
+		  else if (rsslist.isParameter("Intensive Mass Flux"))
+		    {
+		      flux = rsslist.get<Array<double> >("Intensive Mass Flux");
+		      for (int i=0;i<flux.size();i++)
+			flux[i] /= 1.e3;
+		    }
+		  if (!rsslist.isParameter("Material Type at Boundary"))
+		    {
+		      // this is temporary.  It will be removed once the structured code is updated.
+		      const ParameterList& mat_list = parameter_list.sublist("Material Properties"); 
+		      std::string first_material = mat_list.name(mat_list.begin());
+		      rsublist.set("rock",first_material);
+		    }
+		  
+		  rsublist.set("inflow",-flux[0]);
+		  rsublist.set("type","zero_total_velocity");
+		  comp_list.set(_label,rsublist);
+		  bc_name_array.push_back(_label);
+		  
+		  for (Array<std::string>::iterator it=regions.begin(); 
+		       it!=regions.end(); it++) {
+		    for (int j=0; j<ndim; j++) {
+		      if (!(*it).compare(valid_region_def_lo[j])) {
+			lo_def[j] = true;
+			lo_bc[j] = 1;
+			p_lo_bc[j] = 1;
+			inflow_lo_bc[j] = 1;
+			inflow_lo_vel[j] = flux[0];
+		      }
+		      else if (!(*it).compare(valid_region_def_hi[j])) {
+			hi_def[j] = true;
+			hi_bc[j] = 1;
+			p_hi_bc[j] = 1;
+			inflow_hi_bc[j] = 1;
+			inflow_hi_vel[j] = -flux[0];
+		      }
+		    }
+		  }
+		}
+		else if (rlabel=="BC: Uniform Pressure") {
+		  // set to saturated condition
+		  rsublist.set("Water",density[arrayphase[0]]);
+		  rsublist.set("type","scalar");
+		  comp_list.set(_label,rsublist);
+		  bc_name_array.push_back(_label);
+		  
+		  Array<double> values = rsslist.get<Array<double> >("Values");
+		  // convert to atm with datum at atmospheric pressure
+		  for (Array<double>::iterator it=values.begin();
+		       it!=values.end(); it++) {
+		    *it = *it/1.01325e5 - 1.e0;
+		  }
+		  for (Array<std::string>::iterator it=regions.begin(); 
+		   it!=regions.end(); it++) {
+		    for (int j=0; j<ndim; j++) {
+		      if (!(*it).compare(valid_region_def_lo[j])) {
+			lo_def[j] = true;
+			lo_bc[j] = 1;
+			p_lo_bc[j] = 2;
+			press_lo[j] = values[0];
+		      }
+		      else if (!(*it).compare(valid_region_def_hi[j])) {
+			hi_def[j] = true;
+			hi_bc[j] = 1;
+			p_hi_bc[j] = 2;
+			press_hi[j] = values[0];
+		      }
+		    }
+		  }
+		}
+		else if (rlabel=="BC: Linear Pressure") {
+		  // set to saturated condition
+		  rsublist.set("Water",1000e0);
+		  rsublist.set("type","scalar");
+		  comp_list.set(_label,rsublist);
+		  bc_name_array.push_back(_label);
+		  
+		  Array<double> ref_values = rsslist.get<Array<double> >("Reference Values");
+		  Array<double> ref_coor   = rsslist.get<Array<double> >("Reference Coordinate");
+		  // convert to atm with datum at atmospheric pressure
+		  for (Array<double>::iterator it=ref_values.begin();
+		       it!=ref_values.end(); it++) {
+		    *it = *it/101325 - 1.e0;
+		  }
+		  for (Array<std::string>::iterator it=regions.begin(); 
+		       it!=regions.end(); it++) {
+		    for (int j=0; j<ndim; j++) {
+		      if (!(*it).compare(valid_region_def_lo[j])) {
+			lo_def[j] = true;
+			lo_bc[j] = 1;
+			p_lo_bc[j] = 2;
+			press_lo[j] = ref_values[0];
+			if (j == ndim-1) water_table_lo = ref_coor[j];
+		      }
+		      else if (!(*it).compare(valid_region_def_hi[j])) {
+			hi_def[j] = true;
+			hi_bc[j] = 1;
+			p_hi_bc[j] = 2;
+			press_hi[j] = ref_values[0];
+			if (j == ndim-1) water_table_hi = ref_coor[j];
+		      }
+		    }
+		  }
+		}
+		else if (rlabel=="BC: No Flow") {
+		  for (Array<std::string>::iterator it=regions.begin(); 
+		       it!=regions.end(); it++) {
+		    for (int j=0; j<ndim; j++) {
+		      if (!(*it).compare(valid_region_def_lo[j])) {
+			lo_def[j] = true;
+			lo_bc[j] = 4;
+			p_lo_bc[j] = 4;
+		      }
+		      else if (!(*it).compare(valid_region_def_hi[j])) {
+			hi_def[j] = true;
+			hi_bc[j] = 4;
+			p_hi_bc[j] = 4;
+		      }
+		    }
+		  }
+		}	      
+	      }          
+	    }
 	  }
-	  Array<std::string> _regions;
-	  for (Array<std::string>::iterator it=regions.begin(); it!=regions.end(); it++) {
-	    _regions.push_back(underscore(*it));
-	    bool valid = false;
-	    for (int j = 0; j<ndim; j++) {
-	      if (!(*it).compare(valid_region_def_lo[j]))
-		valid = true;
-	      else if (!(*it).compare(valid_region_def_hi[j]))
-		valid = true;
-	    }
-	    if (!valid)
-	      std::cerr << "Structured: boundary conditions can only be applied to "
-			<< "regions labeled as XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
-	  }
-
-	  rsublist.set("region",_regions);
-          const ParameterEntry& rentry = rslist.getEntry(rlabel);
-          if (rentry.isList()) {
-	    const ParameterList& rsslist = rslist.sublist(rlabel);
-	    if (rlabel=="BC: Flux"){
-	      // don't do time-dependent flux
-	      Array<double> flux;
-	      if (rsslist.isParameter("Intensive Volumetric Flux"))
-		flux = rsslist.get<Array<double> >("Intensive Volumetric Flux");
-	      else if (rsslist.isParameter("Intensive Mass Flux"))
-		{
-		  flux = rsslist.get<Array<double> >("Intensive Mass Flux");
-		  for (int i=0;i<flux.size();i++)
-		    flux[i] /= 1.e3;
-		}
-	      if (!rsslist.isParameter("Material Type at Boundary"))
-		{
-		  // this is temporary.  It will be removed once the structured code is updated.
-		  const ParameterList& mat_list = parameter_list.sublist("Material Properties"); 
-		  std::string first_material = mat_list.name(mat_list.begin());
-		  rsublist.set("rock",first_material);
-		}
-		
-	      rsublist.set("inflow",-flux[0]);
-	      rsublist.set("type","zero_total_velocity");
-	      comp_list.set(_label,rsublist);
-	      bc_name_array.push_back(_label);
-
-	      for (Array<std::string>::iterator it=regions.begin(); 
-		   it!=regions.end(); it++) {
-		for (int j=0; j<ndim; j++) {
-		  if (!(*it).compare(valid_region_def_lo[j])) {
-		    lo_def[j] = true;
-		    lo_bc[j] = 1;
-		    p_lo_bc[j] = 1;
-		    inflow_lo_bc[j] = 1;
-		    inflow_lo_vel[j] = flux[0];
-		  }
-		  else if (!(*it).compare(valid_region_def_hi[j])) {
-		    hi_def[j] = true;
-		    hi_bc[j] = 1;
-		    p_hi_bc[j] = 1;
-		    inflow_hi_bc[j] = 1;
-		    inflow_hi_vel[j] = -flux[0];
-		  }
-		}
-	      }
-	    }
-	    else if (rlabel=="BC: Uniform Pressure") {
-	      // set to saturated condition
-	      rsublist.set("Water",density[arrayphase[0]]);
-	      rsublist.set("type","scalar");
-	      comp_list.set(_label,rsublist);
-	      bc_name_array.push_back(_label);
-
-	      Array<double> values = rsslist.get<Array<double> >("Values");
-	      // convert to atm with datum at atmospheric pressure
-	      for (Array<double>::iterator it=values.begin();
-		   it!=values.end(); it++) {
-		*it = *it/1.01325e5 - 1.e0;
-	      }
-	      for (Array<std::string>::iterator it=regions.begin(); 
-		   it!=regions.end(); it++) {
-		for (int j=0; j<ndim; j++) {
-		  if (!(*it).compare(valid_region_def_lo[j])) {
-		    lo_def[j] = true;
-		    lo_bc[j] = 1;
-		    p_lo_bc[j] = 2;
-		    press_lo[j] = values[0];
-		  }
-		  else if (!(*it).compare(valid_region_def_hi[j])) {
-		    hi_def[j] = true;
-		    hi_bc[j] = 1;
-		    p_hi_bc[j] = 2;
-		    press_hi[j] = values[0];
-		  }
-		}
-	      }
-	    }
-	    else if (rlabel=="BC: Linear Pressure") {
-	      // set to saturated condition
-	      rsublist.set("Water",1000e0);
-	      rsublist.set("type","scalar");
-	      comp_list.set(_label,rsublist);
-	      bc_name_array.push_back(_label);
-
-	      Array<double> ref_values = rsslist.get<Array<double> >("Reference Values");
-	      Array<double> ref_coor   = rsslist.get<Array<double> >("Reference Coordinate");
-	      // convert to atm with datum at atmospheric pressure
-	      for (Array<double>::iterator it=ref_values.begin();
-		   it!=ref_values.end(); it++) {
-		*it = *it/101325 - 1.e0;
-	      }
-	      for (Array<std::string>::iterator it=regions.begin(); 
-		   it!=regions.end(); it++) {
-		for (int j=0; j<ndim; j++) {
-		  if (!(*it).compare(valid_region_def_lo[j])) {
-		    lo_def[j] = true;
-		    lo_bc[j] = 1;
-		    p_lo_bc[j] = 2;
-		    press_lo[j] = ref_values[0];
-		    if (j == ndim-1) water_table_lo = ref_coor[j];
-		  }
-		  else if (!(*it).compare(valid_region_def_hi[j])) {
-		    hi_def[j] = true;
-		    hi_bc[j] = 1;
-		    p_hi_bc[j] = 2;
-		    press_hi[j] = ref_values[0];
-		    if (j == ndim-1) water_table_hi = ref_coor[j];
-		  }
-		}
-	      }
-	    }
-	    else if (rlabel=="BC: No Flow") {
-	      for (Array<std::string>::iterator it=regions.begin(); 
-		   it!=regions.end(); it++) {
-		for (int j=0; j<ndim; j++) {
-		  if (!(*it).compare(valid_region_def_lo[j])) {
-		    lo_def[j] = true;
-		    lo_bc[j] = 4;
-		    p_lo_bc[j] = 4;
-		  }
-		  else if (!(*it).compare(valid_region_def_hi[j])) {
-		    hi_def[j] = true;
-		    hi_bc[j] = 4;
-		    p_hi_bc[j] = 4;
-		  }
-		}
-	      }
-	    }	      
-	  }          
 	}
-      }
-
-      bool all_bc_are_defined = true;
-      for (int j=0; j<ndim; j++) {
+      //default to no flow
+      /*
+	bool all_bc_are_defined = true;
+	for (int j=0; j<ndim; j++) {
 	if (!lo_def[j])
-	  all_bc_are_defined = false;
-      }
-      if (!all_bc_are_defined)
+	all_bc_are_defined = false;
+	}
+	if (!all_bc_are_defined)
 	std::cerr << "Structured: boundarys conditions must be defined to all the "
-		  << "following regions: XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
-
+	<< "following regions: XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
+      */
       comp_list.set("inflow",bc_name_array);      
       comp_list.set("lo_bc",lo_bc);
       comp_list.set("hi_bc",hi_bc);
@@ -798,72 +802,75 @@ namespace Amanzi {
       // Require information related to the regions.  
       ParameterList regionlist = parameter_list.sublist("Regions");
 
-      const ParameterList& blist = parameter_list.sublist("Boundary Conditions");
-      Array<std::string> bc_set;
-      for (ParameterList::ConstIterator i=blist.begin(); i!=blist.end(); ++i) {        
-	std::string label  = blist.name(i);
-	std::string _label = underscore(label);
-	ParameterList rsublist;
-	const ParameterList& rslist = blist.sublist(label);
-	Array<std::string> regions = rslist.get<Array<std::string> >("Assigned Regions");
-	Array<std::string> _regions;
-	Array<std::string> valid_region_def_lo, valid_region_def_hi;
-	valid_region_def_lo.push_back("XLOBC");
-	valid_region_def_hi.push_back("XHIBC");
-	valid_region_def_lo.push_back("YLOBC");
-	valid_region_def_hi.push_back("YHIBC");
-	if (ndim == 3) {
-	  valid_region_def_lo.push_back("ZLOBC");
-	  valid_region_def_hi.push_back("ZHIBC");
-	}
-	for (Array<std::string>::iterator it=regions.begin(); it!=regions.end(); it++) {
-	  _regions.push_back(underscore(*it));
-	  bool valid = false;
-	  for (int j = 0; j<ndim; j++) {
-	    if (!(*it).compare(valid_region_def_lo[j]))
-	      valid = true;
-	    else if (!(*it).compare(valid_region_def_hi[j]))
-	      valid = true;
-	  }
-	  if (!valid)
-	    std::cerr << "Structured: boundary conditions can only be applied to "
-		      << "regions labeled as XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
-	}
-	const ParameterList& rsslist = rslist.sublist("Solute BC");
-	for (Array<std::string>::iterator it=array_phase.begin(); 
-	     it!=array_phase.end(); it++ ) {
-	  for (Array<std::string>::iterator jt=array_comp.begin(); 
-	       jt!=array_comp.end(); jt++ ) {
-	    for (Array<std::string>::iterator kt=array_tracer.begin(); 
-		 kt!=array_tracer.end(); kt++ ) {
-	      const ParameterList& rssslist = rsslist.sublist(*it).sublist(*jt).sublist(*kt);
-	      for (ParameterList::ConstIterator j=rssslist.begin(); 
-		   j!=rssslist.end(); ++j) {
-		std::string rlabel = rssslist.name(j);
-		const ParameterEntry& rentry = rssslist.getEntry(rlabel);
-		if (rentry.isList()) {
-		  const ParameterList& rsssslist = rssslist.sublist(rlabel);
-		  if (rlabel=="BC: Inflow") {
-		    if (!rsublist.isParameter("type"))
-		      rsublist.set("type","scalar");
-		    else
-		      if (rsublist.get<std::string>("scalar") != "scalar")
-			std::cerr << "Definition of BC for tracer is not consistent!\n";
-		    rsublist.set(*kt,rsssslist.get<Array<double> >("Values"));
-		  }
-		}
+      if (parameter_list.isSublist("Boundary Conditions"))
+	{
+	  const ParameterList& blist = parameter_list.sublist("Boundary Conditions");
+	  Array<std::string> bc_set;
+	  for (ParameterList::ConstIterator i=blist.begin(); i!=blist.end(); ++i) {        
+	    std::string label  = blist.name(i);
+	    std::string _label = underscore(label);
+	    ParameterList rsublist;
+	    const ParameterList& rslist = blist.sublist(label);
+	    Array<std::string> regions = rslist.get<Array<std::string> >("Assigned Regions");
+	    Array<std::string> _regions;
+	    Array<std::string> valid_region_def_lo, valid_region_def_hi;
+	    valid_region_def_lo.push_back("XLOBC");
+	    valid_region_def_hi.push_back("XHIBC");
+	    valid_region_def_lo.push_back("YLOBC");
+	    valid_region_def_hi.push_back("YHIBC");
+	    if (ndim == 3) {
+	      valid_region_def_lo.push_back("ZLOBC");
+	      valid_region_def_hi.push_back("ZHIBC");
+	    }
+	    for (Array<std::string>::iterator it=regions.begin(); it!=regions.end(); it++) {
+	      _regions.push_back(underscore(*it));
+	      bool valid = false;
+	      for (int j = 0; j<ndim; j++) {
+		if (!(*it).compare(valid_region_def_lo[j]))
+		  valid = true;
+		else if (!(*it).compare(valid_region_def_hi[j]))
+		  valid = true;
 	      }
-	    }     
+	      if (!valid)
+		std::cerr << "Structured: boundary conditions can only be applied to "
+			  << "regions labeled as XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
+	    }
+	    const ParameterList& rsslist = rslist.sublist("Solute BC");
+	    for (Array<std::string>::iterator it=array_phase.begin(); 
+		 it!=array_phase.end(); it++ ) {
+	      for (Array<std::string>::iterator jt=array_comp.begin(); 
+		   jt!=array_comp.end(); jt++ ) {
+		for (Array<std::string>::iterator kt=array_tracer.begin(); 
+		     kt!=array_tracer.end(); kt++ ) {
+		  const ParameterList& rssslist = rsslist.sublist(*it).sublist(*jt).sublist(*kt);
+		  for (ParameterList::ConstIterator j=rssslist.begin(); 
+		       j!=rssslist.end(); ++j) {
+		    std::string rlabel = rssslist.name(j);
+		    const ParameterEntry& rentry = rssslist.getEntry(rlabel);
+		    if (rentry.isList()) {
+		      const ParameterList& rsssslist = rssslist.sublist(rlabel);
+		      if (rlabel=="BC: Inflow") {
+			if (!rsublist.isParameter("type"))
+			  rsublist.set("type","scalar");
+			else
+			  if (rsublist.get<std::string>("scalar") != "scalar")
+			    std::cerr << "Definition of BC for tracer is not consistent!\n";
+			rsublist.set(*kt,rsssslist.get<Array<double> >("Values"));
+		      }
+		    }
+		  }
+		}     
+	      }
+	    }
+	    if (rsublist.isParameter("type"))
+	      if (rsublist.get<std::string>("type") == "scalar") {
+		bc_set.push_back(_label);
+		rsublist.set("region",_regions);
+		tracer_list.set(_label,rsublist);
+	      }
 	  }
+	  tracer_list.set("inflow",bc_set);
 	}
-	if (rsublist.isParameter("type"))
-	  if (rsublist.get<std::string>("type") == "scalar") {
-	    bc_set.push_back(_label);
-	    rsublist.set("region",_regions);
-	    tracer_list.set(_label,rsublist);
-	  }
-      }
-      tracer_list.set("inflow",bc_set);
     }
 
     //

@@ -24,11 +24,13 @@ namespace Amanzi {
     Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList& plist );
     Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList& plist );
     Teuchos::ParameterList create_State_List ( Teuchos::ParameterList& plist );
+    Teuchos::ParameterList create_Verbosity_List ( std::string& vlevel );
 
     static std::string phase_name;
     static std::string phase_comp_name;
     static Teuchos::Array<std::string> comp_names;
     static std::map<std::string, int> comp_names_map;
+    static std::string verbosity_level = "low";
   }
 }
 

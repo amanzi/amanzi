@@ -41,8 +41,14 @@ namespace Amanzi {
       
       if ( plist.sublist("Output").sublist("Time Macros").isSublist(macro_name) )
 	{
-	  time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
-	    .get<Teuchos::Array<double> >("Start_Period_Stop");
+	  if (plist.sublist("Output").sublist("Time Macros").sublist(macro_name).isParameter("Start_Period_Stop")) {
+	    time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
+	      .get<Teuchos::Array<double> >("Start_Period_Stop");
+	  }
+	  if (plist.sublist("Output").sublist("Time Macros").sublist(macro_name).isParameter("Values")) {
+	    time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
+	      .get<Teuchos::Array<double> >("Values");
+	  }	  
 	}
       else
 	{
@@ -123,8 +129,8 @@ namespace Amanzi {
 		  Teuchos::ParameterList& c_restart_list = restart_list.sublist("Cycle Data");
 
 		  c_restart_list.set<int>("Start", range[0]);
-		  c_restart_list.set<int>("End", range[1]);
-		  c_restart_list.set<int>("Interval", range[2]);
+		  c_restart_list.set<int>("End", range[2]);
+		  c_restart_list.set<int>("Interval", range[1]);
 		  // now delete the Cycle Macro paramter
 		  
 		  restart_list.remove("Cycle Macro");
@@ -379,6 +385,10 @@ namespace Amanzi {
 	   
 
 	}
+      
+      std::string vlevel("low");
+      mpc_list.sublist("VerboseObject") = create_Verbosity_List(vlevel);
+
 
       return mpc_list;
     }
@@ -522,7 +532,7 @@ namespace Amanzi {
 		  // TODO...
 		  // CREATE THE DARCY SUBLIST
 		}
-	      else if ( plist.sublist("Execution control").get<std::string>("Flow Mode") == "steady state single phase variably saturated flow" )
+	      else if ( plist.sublist("Execution control").get<std::string>("Flow Mode") == "transient single phase variably saturated flow" )
 		{
 		  Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
 		  richards_problem.set<bool>("Upwind relative permeability", true);
@@ -533,14 +543,18 @@ namespace Amanzi {
 		  // set some reasonable defaults...
 		  richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
 		  richards_model_evaluator.set<double>("Relative error tolerance",1.0e-5);
+		  std::string vlevel("low");
+		  richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
 		
 		  Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
 		  // set some reasonable defaults...
-		  time_integrator.set<int>("Nonlinear solver max iterations", 6);
+		  time_integrator.set<int>("Nonlinear solver max iterations", 40);
 		  time_integrator.set<int>("NKA max vectors", 5);
 		  time_integrator.set<int>("Maximum number of BDF tries", 10);
 		  time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
 		  time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
+		  time_integrator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
+
 
 		  // insert the water retention models sublist
 		  Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models"); 
@@ -669,16 +683,18 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_flux = bc.sublist("BC: Flux");
 
 		  Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
+		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time functions");
 		  
-		  if (!bc_flux.isParameter("Extensive Mass Flux"))
+		  if (!bc_flux.isParameter("Intensive Mass Flux"))
 		    {
 		      // we can only handle mass fluxes right now
-		      Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Extensive Mass Flux"));
+		      Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Intensive Mass Flux"));
 		    }
 
-		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Extensive Mass Flux");
-		  
+		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Intensive Mass Flux");
+		  // input spec defines positive as inward flux, we must reverse the sign to use this
+		  for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+		  	  
 		  std::stringstream ss;
 		  ss << "BC " << bc_counter++;
 
@@ -731,7 +747,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 	  
 		  
@@ -783,7 +799,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
 	  
 		  
@@ -875,7 +891,7 @@ namespace Amanzi {
 	      // get the regions
 	      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 	      
-	      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Porosity");
+	      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
 	      double perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
 	      double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
 	      
@@ -951,8 +967,22 @@ namespace Amanzi {
       return stt_list;
     }
 
-
-
+    Teuchos::ParameterList create_Verbosity_List ( std::string& vlevel ) 
+    {
+      Teuchos::ParameterList vlist;
+      
+      if (vlevel == "low") {
+	vlist.set<std::string>("Verbosity Level","low");
+      } else if (vlevel == "medium") {
+	vlist.set<std::string>("Verbosity Level","medium");
+      } else if (vlevel == "medium") {
+	vlist.set<std::string>("Verbosity Level","high");
+      } else if (vlevel == "none") {
+	vlist.set<std::string>("Verbosity Level","none");
+      }
+	
+      return vlist;      
+    }
 
   }
 }

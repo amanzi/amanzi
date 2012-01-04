@@ -23,6 +23,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -66,7 +67,7 @@ if(ENABLE_CGNS)
 endif()
 
 add_library(output ${output_source_files})
-target_link_libraries(output simple_mesh mesh geometry error_handling ${output_tpl_list} )
+target_link_libraries(output simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list} )
 
 #
 # Install Targets

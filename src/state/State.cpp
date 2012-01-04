@@ -862,6 +862,10 @@ void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, co
 };
 
 
+
+
+
+
 void State::write_vis(Amanzi::Vis& vis)
 {
   if (vis.dump_requested(get_cycle()) && !vis.is_disabled() )
@@ -884,6 +888,8 @@ void State::write_vis(Amanzi::Vis& vis)
 
       // write component data
       vis.write_vector( *get_total_component_concentration(), compnames);
+      vis.finalize_timestep(); 
+      
     }
 }
 

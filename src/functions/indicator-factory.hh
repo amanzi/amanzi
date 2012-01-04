@@ -5,17 +5,17 @@
 #include <fstream>
 #include "Epetra_Comm.h"
 
-namespace Amanzi {
+#include "indicator.hh"
 
-class Indicator; // forward declaration
+namespace Amanzi {
 
 class IndicatorFactory {
  public:
   IndicatorFactory() {}
   ~IndicatorFactory() {}
-  Indicator* Create(std::string&, Epetra_Comm&) const;
+  Indicator* Create(std::string&, const Epetra_Comm&) const;
  private:
-  Indicator* create_grid_indicator(int, std::fstream&, Epetra_Comm&) const;
+  Indicator* create_grid_indicator(int, std::fstream&, const Epetra_Comm&) const;
 };
 
 } // namespace Amanzi

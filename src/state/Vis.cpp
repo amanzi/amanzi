@@ -23,7 +23,7 @@ Amanzi::Vis::Vis (): disabled(true)
 
 void Amanzi::Vis::read_parameters(Teuchos::ParameterList& plist)
 {
-  filebasename = plist.get<string>("file base name","amanzi_vis");
+  filebasename = plist.get<string>("File Name Base","amanzi_vis");
   
   if ( plist.isSublist("Cycle Data") ) 
     {

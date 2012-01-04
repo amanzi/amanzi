@@ -10,7 +10,7 @@
 
 namespace Amanzi {
 
-Indicator* IndicatorFactory::Create(std::string &filename, Epetra_Comm &comm) const
+Indicator* IndicatorFactory::Create(std::string &filename, const Epetra_Comm &comm) const
 {
   int error;
   Indicator* f(0);
@@ -67,7 +67,7 @@ Indicator* IndicatorFactory::Create(std::string &filename, Epetra_Comm &comm) co
   return f;
 }
 
-Indicator* IndicatorFactory::create_grid_indicator(int dim, std::fstream &infile, Epetra_Comm &comm) const
+Indicator* IndicatorFactory::create_grid_indicator(int dim, std::fstream &infile, const Epetra_Comm &comm) const
 {
   int error;
   
