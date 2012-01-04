@@ -84,12 +84,18 @@ class Mesh_STK_Impl {
   bool valid_id (unsigned int id, stk::mesh::EntityRank rank) const;
 
   stk::mesh::Part* get_set (unsigned int set_id, stk::mesh::EntityRank rank);
-  stk::mesh::Part* get_set (const char* name,    stk::mesh::EntityRank rank);
+  stk::mesh::Part* get_set (const char* name, stk::mesh::EntityRank rank);
+  stk::mesh::Part* get_set (const std::string name, stk::mesh::EntityRank rank);
 
   void get_sets (stk::mesh::EntityRank rank, stk::mesh::PartVector& sets) const;
   void get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int>&) const;
 
+  stk::mesh::Part* add_set (const std::string setname, unsigned int setid,
+                            stk::mesh::EntityRank rank,   
+                            Entity_ID_List entity_ids);
+  
 
+  void add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part);
     
     
   // Static information

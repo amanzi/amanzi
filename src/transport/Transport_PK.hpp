@@ -18,10 +18,10 @@ Usage:
 
 #include "tensor.hpp"
 #include "Explicit_TI_fnBase.hpp"
+#include "boundary-function.hh"
 
 #include "State.hpp"
 #include "Transport_State.hpp"
-#include "Transport_BCs.hpp"
 #include "Reconstruction.hpp"
 
 /*
@@ -52,7 +52,11 @@ const int TRANSPORT_BC_CONSTANT_TCC = 1;
 const int TRANSPORT_BC_DISPERSION_FLUX = 2;
 const int TRANSPORT_BC_NULL = 3;
 
+const int TRANSPORT_FLOW_STEADYSTATE = 1;
+const int TRANSPORT_FLOW_TRANSIENT = 2;
+
 const double TRANSPORT_CONCENTRATION_OVERSHOOT = 1e-6;
+const double TRANSPORT_CONCENTRATION_INFINITY = 1e+99;
 
 const int TRANSPORT_MAX_FACES = 14;  // Kelvin's tetrakaidecahedron
 const int TRANSPORT_MAX_NODES = 47;  // These olyhedron parameters must
@@ -65,6 +69,8 @@ const int TRANSPORT_DISPERSIVITY_MODEL_LICHTNER = 4;
 
 const int TRANSPORT_LIMITER_BARTH_JESPERSEN = 1; 
 const int TRANSPORT_LIMITER_TENSORIAL = 2;
+const int TRANSPORT_LIMITER_KUZMIN = 3;
+const double TRANSPORT_LIMITER_TOLERANCE = 1e-14;
 
 const int TRANSPORT_AMANZI_VERSION = 2;  
 
@@ -74,7 +80,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   Transport_PK();
   Transport_PK(Teuchos::ParameterList& parameter_list_MPC,
                Teuchos::RCP<Transport_State> TS_MPC);
-  ~Transport_PK() {};
+  ~Transport_PK() { for (int i=0; i<bcs.size(); i++) delete bcs[i]; }
 
   // primary members
   double calculate_transport_dT();
@@ -88,6 +94,7 @@ class Transport_PK : public Explicit_TI::fnBase {
                            double lower_bound,
                            double upper_bound,
                            double tol = 0.0) const;
+  void check_influx_bc() const;
 
   // access members  
   Teuchos::RCP<Transport_State> get_transport_state() { return TS; }
@@ -98,26 +105,34 @@ class Transport_PK : public Explicit_TI::fnBase {
   inline double get_cfl() { return cfl; }
   inline int get_transport_status() { return status; }
 
+  // control members
+  inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void print_statistics() const;
  
  private:
   // advection routines
   void advance_donor_upwind(double dT);
   void advance_second_order_upwind(double dT);
-  void advance_second_order_upwind_testing(double dT);
   void advance_arbitrary_order_upwind(double dT);
   void fun(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   void limiterBarthJespersen(const int component,
                              Teuchos::RCP<Epetra_Vector> scalar_field, 
                              Teuchos::RCP<Epetra_MultiVector> gradient, 
-                             std::vector<double>& field_local_min,
-                             std::vector<double>& field_local_max,
                              Teuchos::RCP<Epetra_Vector> limiter);
 
   void limiterTensorial(const int component,
                         Teuchos::RCP<Epetra_Vector> scalar_field, 
                         Teuchos::RCP<Epetra_MultiVector> gradient);
+
+  void limiterKuzmin(const int component,
+                     Teuchos::RCP<Epetra_Vector> scalar_field, 
+                     Teuchos::RCP<Epetra_MultiVector> gradient);
+
+  void calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
+                                   AmanziGeometry::Point& normal_new,
+                                   double& L22normal_new, 
+                                   AmanziGeometry::Point& direction);
 
   void apply_directional_limiter(AmanziGeometry::Point& normal, 
                                  AmanziGeometry::Point& p,
@@ -167,10 +182,13 @@ class Transport_PK : public Explicit_TI::fnBase {
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
 
+  int advection_limiter;  // data for limiters
   int current_component_;
   Teuchos::RCP<Epetra_Vector> component_, component_next_;
   Teuchos::RCP<Epetra_Vector> limiter_;
   Reconstruction lifting;
+  std::vector<double> component_local_min_;
+  std::vector<double> component_local_max_;
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
@@ -183,13 +201,15 @@ class Transport_PK : public Explicit_TI::fnBase {
   std::vector<double> harmonic_points_value;
   std::vector<WhetStone::Tensor> dispersion_tensor;
 
-  int advection_limiter;  // data for limiters
-
-  double cfl, dT, dT_debug, T_internal;  
+  double cfl, dT, dT_debug, T_internal, T_physical;  
   int number_components; 
   int status;
+  bool standalone_mode;  // If it is true the internal time will be used.
+  int flow_mode;  // steady-sate or transient
 
-  std::vector<Transport_BCs> bcs;  // BCs for each components and each side set
+  std::vector<BoundaryFunction*> bcs;  // influx BCs for each components
+  std::vector<int> bcs_tcc_index; 
+  double bc_scaling;
 
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
   int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;

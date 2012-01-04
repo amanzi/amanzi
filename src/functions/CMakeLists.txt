@@ -66,5 +66,13 @@ if (BUILD_TESTS)
   add_executable(function-factory-test test/function-factory-test.cc)
   target_link_libraries(function-factory-test functions ${UnitTest_LIBRARIES})
   add_amanzi_test(function-factory function-factory-test KIND unit)
+  
+  add_executable(all-indicator-test test/all-indicator-test.cc)
+  target_link_libraries(all-indicator-test functions ${UnitTest_LIBRARIES})
+  add_amanzi_test(concrete-indicators all-indicator-test KIND unit)
+
+  add_executable(indicator-factory-test test/indicator-factory-test.cc)
+  target_link_libraries(indicator-factory-test functions ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+  add_amanzi_test(indicator-factory indicator-factory-test KIND unit)
 
 endif()

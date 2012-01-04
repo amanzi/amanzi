@@ -5,22 +5,20 @@
 
 namespace Amanzi {
 
-void BoundaryFunction::Define (const std::vector<int> &regions,
+void BoundaryFunction::Define (const std::vector<std::string> &regions,
                                const Teuchos::RCP<const Function> &f)
 {
   // Form the set of face indices that belong to any of the given regions.
   // We use a std::set here to filter out any duplicate indices.
   std::set<AmanziMesh::Entity_ID> this_domain;
-  for (std::vector<int>::const_iterator r = regions.begin(); r != regions.end(); ++r) {
-    if ((*mesh_).valid_set_id(*r, AmanziMesh::FACE)) {
+  for (std::vector<std::string>::const_iterator r = regions.begin(); r != regions.end(); ++r) {
+    if ((*mesh_).valid_set_name(*r, AmanziMesh::FACE)) {
       AmanziMesh::Entity_ID_List face_list;
-      (*mesh_).get_set_entities((unsigned int)*r, AmanziMesh::FACE, AmanziMesh::USED, &face_list);
+      (*mesh_).get_set_entities(*r, AmanziMesh::FACE, AmanziMesh::USED, &face_list);
       this_domain.insert(face_list.begin(), face_list.end());
     } else {
       Errors::Message m;
-      std::stringstream s;
-      s << *r;
-      m << "unknown region: " << s.str().c_str(); // will be r->c_str()
+      m << "unknown region: \"" << r->c_str() << "\"";
       Exceptions::amanzi_throw(m);
     }
   }
@@ -50,9 +48,9 @@ void BoundaryFunction::Define (const std::vector<int> &regions,
   for (Domain::const_iterator d = this_domain.begin(); d != this_domain.end(); ++d) value_[*d];
 }
 
-void BoundaryFunction::Define (int region, const Teuchos::RCP<const Function> &f)
+void BoundaryFunction::Define (const std::string region, const Teuchos::RCP<const Function> &f)
 {
-  std::vector<int> regions(1,region);
+  std::vector<std::string> regions(1,region);
   Define(regions, f);
 }
 

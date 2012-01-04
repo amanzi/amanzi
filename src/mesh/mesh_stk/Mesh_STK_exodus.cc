@@ -43,14 +43,15 @@ Mesh_STK::read_exodus_(const std::string& fname)
   try {
     if (nproc == 1) {
       meshdata.reset(Exodus::read_exodus_file(fname.c_str()));
-      mesh_.reset(mf.build_mesh(*meshdata, nofields));
+      mesh_.reset(mf.build_mesh(*meshdata, nofields, Mesh::geometric_model()));
     } else {
       Exodus::Parallel_Exodus_file thefile(*communicator_, fname);
       meshdata = thefile.read_mesh();
       mesh_.reset(mf.build_mesh(*meshdata, 
                                 *(thefile.cellmap()), 
                                 *(thefile.vertexmap()), 
-                                nofields));
+                                nofields,
+				Mesh::geometric_model()));
     }
   } catch (const std::exception& e) {
     std::cerr << communicator_->MyPID() << ": error: " << e.what() << std::endl;
@@ -62,35 +63,35 @@ Mesh_STK::read_exodus_(const std::string& fname)
     Exceptions::amanzi_throw( STK::Error ("Exodus file read error") );
   build_maps_();
 
-  // FIXME: this is supposed to be temporary
-  fill_setnameid_map_();
 }
 
 // -------------------------------------------------------------
 // Mesh_STK::Mesh_STK
 // -------------------------------------------------------------
 Mesh_STK::Mesh_STK(const Epetra_MpiComm& comm, 
-                   const std::string& fname)
+                   const std::string& fname,
+		   const AmanziGeometry::GeometricModelPtr& gm)
     : communicator_(new Epetra_MpiComm(comm)),
       mesh_(), 
       entity_map_(3),            // FIXME: needs to come from the file
       map_owned_(), map_used_()
-
       
 {
   Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_geometric_model(gm);
   read_exodus_(fname);
 }
 
-Mesh_STK::Mesh_STK(const char *fname, MPI_Comm comm)
+  Mesh_STK::Mesh_STK(const char *fname, MPI_Comm comm,
+		     const AmanziGeometry::GeometricModelPtr& gm)
     : communicator_(new Epetra_MpiComm(comm)),
       mesh_(), 
       entity_map_(3),           // FIXME: needs to come from the file
       map_owned_(), map_used_()
-
       
 {
   Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_geometric_model(gm);
   read_exodus_(fname);
 }
 

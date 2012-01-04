@@ -72,8 +72,8 @@ public:
   unsigned int myvertexes(void) const { return vertex_gidx_.size(); }
 
   /// Add a region for which a block is to be created
-  void add_region(const int& id, const std::string& name,
-                  const AmanziGeometry::RegionPtr r);
+  //  void add_region(const int& id, const std::string& name,
+  //                  const AmanziGeometry::RegionPtr r);
 
   /// (Collective) Generate the (local local part of the) mesh and fill a Data instance
   Data *generate(void);
@@ -88,9 +88,7 @@ protected:
 
   static const unsigned int nvcell;     /**< number of vertexes per cell (8) */
 
-  struct Block {
-    int id;
-    std::string name;
+  struct Block {                        /**< element block */
     AmanziGeometry::RegionPtr region;
     std::vector<unsigned int> gidx;
     std::vector<int> connectivity;

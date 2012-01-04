@@ -17,85 +17,106 @@ void Transport_PK::limiterTensorial(const int component,
                                     Teuchos::RCP<Epetra_Vector> scalar_field, 
                                     Teuchos::RCP<Epetra_MultiVector> gradient)
 {
-  std::vector<double> total_influx(number_wghost_cells, 0.0);  // follows calculation of dT
-  std::vector<double> total_outflux(number_wghost_cells, 0.0);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
-  double u1, u2, u1f, u2f, umin, umax;
-  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim), direction(dim), p(dim);
+  double u1, u2, u1f, u2f, umin, umax, L22normal_new;
+  AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
+  AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
 
+  std::vector<AmanziGeometry::Point> normals;
+  AmanziMesh::Entity_ID_List faces;
+
+  // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   for (int c=cmin; c<=cmax_owned; c++) {
-    AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i=0; i<dim; i++) gradient_c1[i] = (*gradient)[i][c]; 
-
-    // find the first violation of feasible set 
-    bool flag;
+ 
+    normals.clear();  // normals to planes the define the feasiable set
     for (int loop=0; loop<2; loop++) {
-      flag = true;
       for (int i=0; i<nfaces; i++) {
         int f = faces[i];
         int c1 = (*upwind_cell_)[f];
         int c2 = (*downwind_cell_)[f];
-        if (c1<0 || c2<0) continue; // boundary faces are considered separately
 
-        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
-
-        u1 = (*scalar_field)[c1];
-        u2 = (*scalar_field)[c2];
+        if (c1>=0 && c2>=0) {
+          u1 = (*scalar_field)[c1];
+          u2 = (*scalar_field)[c2];
+        } else if (c1==c) {
+          u1 = u2 = (*scalar_field)[c1];
+        } else {
+          continue;
+        }
         umin = std::min(u1, u2);
         umax = std::max(u1, u2);
 
+        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+        u1f = lifting.getValue(gradient_c1, c, xcf);
+
         // check if umin <= u1f <= umax
-        u1f = lifting.getValue(gradient_c1, c1, xcf);
-        direction = xcf - xc1;
-
         if (u1f < umin) {
-          p = ((umin - u1) / L22(direction)) * direction;
-          apply_directional_limiter(direction, p, direction, gradient_c1);
-          flag = false;
-        }
-        else if (u1f > umax) {
-          p = ((umax - u1) / L22(direction)) * direction;
-          apply_directional_limiter(direction, p, direction, gradient_c1);
-          flag = false;
-        }
-
-        if (loop == 0) { 
-          total_influx[c2] += fabs(darcy_flux[f]);
-          total_outflux[c1] += fabs(darcy_flux[f]); 
+          normal_new = xcf - xc;
+          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+ 
+          p = ((umin - u1) / sqrt(L22normal_new)) * direction;
+          apply_directional_limiter(normal_new, p, direction, gradient_c1);
+        } else if (u1f > umax) {
+          normal_new = xcf - xc;
+          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+ 
+          p = ((umax - u1) / sqrt(L22normal_new)) * direction;
+          apply_directional_limiter(normal_new, p, direction, gradient_c1);
         }
       }
-      if (flag) break;  // No limiters were needed. 
+      if (normals.size() == 0) break;  // No limiters were imposed. 
     }
+
+    double grad_norm = norm(gradient_c1);
+    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c1 = 0.0;
+
     for (int i=0; i<dim; i++) (*gradient)[i][c] = gradient_c1[i];
   }
+
+  // Local extrema are calculated here and updated in Step 2. 
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
+
+    for (int i=0; i<cells.size(); i++) {
+      double value = (*scalar_field)[cells[i]];
+      component_local_min_[c] = std::min(component_local_min_[c], value);
+      component_local_max_[c] = std::max(component_local_max_[c], value);
+    }
+  }
  
-  // limiting gradient on the Dirichlet boundary
-  for ( int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
-      int c1 = (*upwind_cell_)[f]; 
-      int c2 = (*downwind_cell_)[f]; 
+  // Step 2: limit gradient on the Dirichlet boundary
+  for (int n=0; n<bcs.size(); n++) {
+    if (component == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        int c1 = (*upwind_cell_)[f]; 
+        int c2 = (*downwind_cell_)[f]; 
 
-      if (c2 >= 0) {
-        u2 = (*scalar_field)[c2];
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-          u1 = bcs[n].values[component];
+        if (c2 >= 0 && c2 <= cmax_owned) {
+          u2 = (*scalar_field)[c2];
+          u1 = bc->second;
           umin = std::min(u1, u2);
           umax = std::max(u1, u2);
+
+          bc_scaling = std::max(bc_scaling, u1);
+          component_local_max_[c2] = std::max(component_local_max_[c2], u1);  
+          component_local_min_[c2] = std::min(component_local_min_[c2], u1);  
 
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
           u2f = lifting.getValue(c2, xcf);
-
           for (int i=0; i<dim; i++) gradient_c2[i] = (*gradient)[i][c2]; 
           direction = xcf - xc2;
-
+ 
           if (u2f < umin) {
             p = ((umin - u2) / L22(direction)) * direction;
             apply_directional_limiter(direction, p, direction, gradient_c2);
@@ -106,35 +127,51 @@ void Transport_PK::limiterTensorial(const int component,
           }
 
           for (int i=0; i<dim; i++) (*gradient)[i][c2] = gradient_c2[i]; 
-          total_influx[c2] += fabs(u1);
         } 
       }
     }
   }
-
-  // cleaning local extrema (due to round-off errors)
+ 
+  // Step 3: enforcing a priori time step estimate (division of dT by 2). 
   for (int c=cmin; c<=cmax_owned; c++) {
-    u1 = (*scalar_field)[c];
-    if (u1 <= lifting.get_field_local_min()[c] || u1 >= lifting.get_field_local_max()[c]) {
-      for (int i=0; i<dim; i++) (*gradient)[i][c] = 0.0;
-    } 
-  }
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
 
-  // limiting second term in the flux formula (outflow darcy_flux)
-  for (int c=cmin; c<=cmax_owned; c++) {
-    if (total_outflux[c]) {
-      double psi = std::min(total_influx[c] / total_outflux[c], 1.0);
-      for (int i=0; i<dim; i++) (*gradient)[i][c] *= psi; 
+    double a, b;
+    double flux, outflux = 0.0, outflux_weigted = 0.0;
+    for (int i=0; i<nfaces; i++) {
+      int f = faces[i];
+      int c1 = (*upwind_cell_)[f];  
+
+      if (c == c1) {
+        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+        u1f = lifting.getValue(c, xcf);
+        u1 = (*scalar_field)[c];
+
+        a = u1f - u1;
+        if (fabs(a) > TRANSPORT_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1))) {
+          if (a > 0) b = u1 - component_local_min_[c];
+          else       b = u1 - component_local_max_[c];     
+
+          flux = fabs(darcy_flux[f]);
+          outflux += flux;
+          if (b) {
+            outflux_weigted += flux * a / b;  
+          } else {
+            for (int k=0; k<dim; k++) (*gradient)[k][c] = 0.0;
+            break;
+          }
+        }
+      }
+    }
+
+    if (outflux_weigted > outflux) {
+      double psi = outflux / outflux_weigted;
+      for (int i=0; i<dim; i++) (*gradient)[i][c] *= psi;
     }
   }
 
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = (*limiter_).Map();
-  const Epetra_BlockMap& target_fmap = (*limiter_).Map();
-
-  Epetra_Import importer(target_fmap, source_fmap);
-  (*limiter_).Import(*limiter_, importer, Insert);
-#endif
+  TS_nextBIG->distribute_cell_multivector(*gradient);
 }
 
 
@@ -148,24 +185,27 @@ void Transport_PK::limiterTensorial(const int component,
 void Transport_PK::limiterBarthJespersen(const int component,
                                          Teuchos::RCP<Epetra_Vector> scalar_field, 
                                          Teuchos::RCP<Epetra_MultiVector> gradient,
-                                         std::vector<double>& field_local_min,
-                                         std::vector<double>& field_local_max,
                                          Teuchos::RCP<Epetra_Vector> limiter)
 {
-  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0;
- 
-  std::vector<double> total_influx(number_wghost_cells, 0.0);  // follows calculation of dT
-  std::vector<double> total_outflux(number_wghost_cells, 0.0);
   const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
 
+  for (int c=cmin; c<=cmax; c++) (*limiter)[c] = 1.0;
+ 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
 
+  // Step 1: limiting gradient inside domain
   for (int f=fmin; f<=fmax_owned; f++) {
     int c1, c2;
     c1 = (*upwind_cell_)[f];
     c2 = (*downwind_cell_)[f];
-    if (c1 < 0 || c2 < 0) return;  // the desing should be modified (lipnikov@lanl.gov)
+    if (c1<0 || c2<0) continue;
+
+    u1 = (*scalar_field)[c1];
+    u2 = (*scalar_field)[c2];
+    umin = std::min(u1, u2);
+    umax = std::max(u1, u2);
+    double tol = sqrt(TRANSPORT_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2)); 
 
     const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(c1);
     const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
@@ -175,10 +215,9 @@ void Transport_PK::limiterBarthJespersen(const int component,
     double u1_add = gradient_c1 * (xcf - xc1);
     u1f = u1 + u1_add;
 
-    if (u1f < umin && u1_add) {
+    if (u1f < umin - tol) {
       (*limiter)[c1] = std::min((*limiter)[c1], (umin - u1) / u1_add);
-    }
-    else if (u1f > umax && u1_add) {
+    } else if (u1f > umax + tol) {
       (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u1_add); 
     }
 
@@ -186,41 +225,44 @@ void Transport_PK::limiterBarthJespersen(const int component,
     double u2_add = gradient_c2 * (xcf - xc2);
     u2f = u2 + u2_add;
 
-    if (u2f < umin && u2_add) {
+    if (u2f < umin - tol) {
       (*limiter)[c2] = std::min((*limiter)[c2], (umin - u2) / u2_add);
-    }
-    else if (u2f > umax && u2_add) {
+    } else if (u2f > umax + tol) {
       (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u2_add); 
     }
-
-    total_influx[c2] += fabs(darcy_flux[f]);
-    total_outflux[c1] += fabs(darcy_flux[f]); 
   } 
  
-  // limiting second term in the flux formula (outflow darcy_flux)
-  // has to be moved down, after BC. (lipnikov@lan.gov)
+  // Local extrema are calculated here and updated in Step 2. 
+  AmanziMesh::Entity_ID_List cells;
+
   for (int c=cmin; c<=cmax_owned; c++) {
-    if (total_outflux[c]) {
-      double psi = std::min(total_influx[c] / total_outflux[c], 1.0);
-      (*limiter)[c] = std::min((*limiter)[c], psi);
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
+
+    for (int i=0; i<cells.size(); i++) {
+      double value = (*scalar_field)[cells[i]];
+      component_local_min_[c] = std::min(component_local_min_[c], value);
+      component_local_max_[c] = std::max(component_local_max_[c], value);
     }
   }
+ 
+  // Step 2: limiting gradient on the Dirichlet boundary
+  for (int n=0; n<bcs.size(); n++) {
+    if (component == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        int c2 = (*downwind_cell_)[f]; 
 
-  // limiting gradient on the Dirichlet boundary
-  for ( int n=0; n<bcs.size(); n++) {
-    for (int k=0; k<bcs[n].faces.size(); k++) {
-      int f = bcs[n].faces[k];
-      int c1 = (*upwind_cell_)[f]; 
-      int c2 = (*downwind_cell_)[f]; 
-
-      if (c2 >= 0) {
-        u2 = (*scalar_field)[c2];
-
-        if (bcs[n].type == TRANSPORT_BC_CONSTANT_TCC) {
-          u1 = bcs[n].values[component];
+        if (c2 >= 0) {
+          u2 = (*scalar_field)[c2];
+          u1 = bc->second;
           umin = std::min(u1, u2);
           umax = std::max(u1, u2);
+          double tol = sqrt(TRANSPORT_LIMITER_TOLERANCE) * (fabs(u1) + fabs(u2)); 
 
+          component_local_max_[c2] = std::max(component_local_max_[c2], u1);  
+          component_local_min_[c2] = std::min(component_local_min_[c2], u1);
+  
           const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
           const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
@@ -228,29 +270,263 @@ void Transport_PK::limiterBarthJespersen(const int component,
           double u_add = gradient_c2 * (xcf - xc2);
           u2f = u2 + u_add;
 
-          if (u2f < umin && u_add) {
+          if (u2f < umin - tol) {
             (*limiter)[c2] = std::min((*limiter)[c2], (umin - u2) / u_add);
           }
-          else if (u2f > umax && u_add) {
+          else if (u2f > umax + tol) {
             (*limiter)[c2] = std::min((*limiter)[c2], (umax - u2) / u_add); 
           }
         } 
       }
-      else if (c1 >= 0) {
-        //(*limiter)[c1] = 0.0;  // ad-hoc testing (lipnikov@lanl.gov)
+    }
+  }
+
+  // Step 3: enforcing a priori time step estimate (division of dT by 2). 
+  AmanziMesh::Entity_ID_List faces;
+
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    double a, b;
+    double flux, outflux = 0.0, outflux_weigted = 0.0;
+    for (int i=0; i<nfaces; i++) {
+      int f = faces[i];
+      int c1 = (*upwind_cell_)[f];  
+
+      if (c == c1) {
+        const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
+        u1f = lifting.getValue(c, xcf);
+        u1 = (*scalar_field)[c];
+
+        a = u1f - u1;
+        if (fabs(a) > TRANSPORT_LIMITER_TOLERANCE * (fabs(u1f) + fabs(u1))) {
+          if (a > 0) b = u1 - component_local_min_[c];
+          else       b = u1 - component_local_max_[c];     
+
+          flux = fabs(darcy_flux[f]);
+          outflux += flux;
+          if (b) {
+            outflux_weigted += flux * a / b;  
+          } else {
+            (*limiter)[c] = 0.0;
+            break;
+          }
+        }
+      }
+    }
+
+    if (outflux_weigted > outflux) {
+      double psi = outflux / outflux_weigted;
+      (*limiter)[c] *= psi;
+    }
+  }
+
+  TS_nextBIG->distribute_cell_vector(*limiter);
+}
+ 
+
+/* *******************************************************************
+ * Kuzmin's limiter use all neighbors of a computational cell.  
+ ****************************************************************** */
+void Transport_PK::limiterKuzmin(const int component,
+                                 Teuchos::RCP<Epetra_Vector> scalar_field, 
+                                 Teuchos::RCP<Epetra_MultiVector> gradient)
+{
+  // Step 1: local extrema are calculated here at nodes and updated later
+  std::vector<double> component_node_min(vmax + 1);
+  std::vector<double> component_node_max(vmax + 1);
+
+  AmanziMesh::Entity_ID_List nodes;
+
+  component_node_min.assign(vmax + 1,  TRANSPORT_CONCENTRATION_INFINITY);
+  component_node_max.assign(vmax + 1, -TRANSPORT_CONCENTRATION_INFINITY);
+
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_nodes(c, &nodes);
+
+    double value = (*scalar_field)[c];
+    for (int i=0; i<nodes.size(); i++) {
+      int v = nodes[i];
+      component_node_min[v] = std::min(component_node_min[v], value);
+      component_node_max[v] = std::max(component_node_max[v], value);
+    }
+  }
+
+  // Update min/max at nodes from influx boundary data
+  for (int n=0; n<bcs.size(); n++) {
+    if (component == bcs_tcc_index[n]) {
+      for (BoundaryFunction::Iterator bc=bcs[n]->begin(); bc != bcs[n]->end(); ++bc) {
+        int f = bc->first;
+        int c2 = (*downwind_cell_)[f]; 
+
+        if (c2 >= 0) {
+          mesh_->face_get_nodes(f, &nodes);
+          double value = (*scalar_field)[c2];
+
+          for (int i=0; i<nodes.size(); i++) {
+            int v = nodes[i];
+            component_node_min[v] = std::min(component_node_min[v], value);
+            component_node_max[v] = std::max(component_node_max[v], value);
+          }
+        }
       }
     }
   }
 
-#ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = (*limiter_).Map();
-  const Epetra_BlockMap& target_fmap = (*limiter_).Map();
+  // Step 2: limit reconstructed gradients at cell nodes
+  double umin, umax, up, u1;
+  AmanziGeometry::Point xp(dim);
 
-  Epetra_Import importer(target_fmap, source_fmap);
-  (*limiter_).Import(*limiter_, importer, Insert);
-#endif
-}
+  double L22normal_new;
+  AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
+
+  std::vector<AmanziGeometry::Point> normals;
+
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    for (int i=0; i<dim; i++) gradient_c[i] = (*gradient)[i][c]; 
+    
+    double umin = component_node_min[c];
+    double umax = component_node_max[c];
  
+    normals.clear();  // normals to planes the define the feasiable set
+    for (int loop=0; loop<2; loop++) {
+      for (int i=0; i<nnodes; i++) {
+        int v = nodes[i];
+
+        mesh_->node_get_coordinates(v, &xp);
+        up = lifting.getValue(gradient_c, c, xp);
+
+        // check if umin <= up <= umax
+        if (up < umin) {
+          normal_new = xp - xc;
+          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+ 
+          p = ((umin - up) / sqrt(L22normal_new)) * direction;
+          apply_directional_limiter(normal_new, p, direction, gradient_c);
+        } else if (up > umax) {
+          normal_new = xp - xc;
+          calculate_descent_direction(normals, normal_new, L22normal_new, direction);
+ 
+          p = ((umax - up) / sqrt(L22normal_new)) * direction;
+          apply_directional_limiter(normal_new, p, direction, gradient_c);
+        }
+      }
+      if (normals.size() == 0) break;  // No limiters were imposed. 
+    }
+
+    double grad_norm = norm(gradient_c);
+    if (grad_norm < TRANSPORT_LIMITER_TOLERANCE * bc_scaling) gradient_c = 0.0;
+
+    for (int i=0; i<dim; i++) (*gradient)[i][c] = gradient_c[i];
+  }
+
+  // Step 3: extrema are calculated for cells. 
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_nodes(c, &nodes);
+    component_local_min_[c] = component_local_max_[c] = (*scalar_field)[c];
+
+    for (int i=0; i<nodes.size(); i++) {
+      int v = nodes[i];
+      component_local_min_[c] = std::min(component_local_min_[c], component_node_min[v]);
+      component_local_max_[c] = std::max(component_local_max_[c], component_node_max[v]);
+    }
+  }
+
+  // Step 4: enforcing a priori time step estimate (division of dT by 2). 
+  // Experimental version is limited to 2D (lipnikov@lanl.gov).
+  const Epetra_Vector& darcy_flux = TS_nextBIG->ref_darcy_flux();
+  AmanziMesh::Entity_ID_List faces;
+
+  for (int c=cmin; c<=cmax_owned; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    double a, b;
+    double flux, outflux = 0.0, outflux_weigted = 0.0;
+    for (int i=0; i<nfaces; i++) {
+      int f = faces[i];
+      int c1 = (*upwind_cell_)[f];  
+
+      if (c == c1) {
+        mesh_->face_get_nodes(f, &nodes);
+ 
+        for (int j=0; j<nodes.size(); j++) {
+          int v = nodes[j]; 
+          mesh_->node_get_coordinates(v, &xp);
+          up = lifting.getValue(c, xp);
+          u1 = (*scalar_field)[c];
+
+          a = up - u1;
+          if (fabs(a) > TRANSPORT_LIMITER_TOLERANCE * (fabs(up) + fabs(u1))) {
+            if (a > 0) b = u1 - component_local_min_[c];
+            else       b = u1 - component_local_max_[c];     
+
+            flux = fabs(darcy_flux[f]);
+            outflux += flux;
+            if (b) {
+              outflux_weigted += flux * a / b;  
+            } else {
+              for (int k=0; k<dim; k++) (*gradient)[k][c] = 0.0;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (outflux_weigted > outflux) {
+      double psi = outflux / outflux_weigted;
+      for (int i=0; i<dim; i++) (*gradient)[i][c] *= psi;
+    }
+  }
+
+  TS_nextBIG->distribute_cell_multivector(*gradient);
+}
+
+
+/* *******************************************************************
+ * Descent direction is obtained by orthogonalizing normal direction
+ * 'normal_new' to previous normals. A few exceptions are analyzed.  
+ ****************************************************************** */
+void Transport_PK::calculate_descent_direction(std::vector<AmanziGeometry::Point>& normals,
+                                               AmanziGeometry::Point& normal_new,
+                                               double& L22normal_new, 
+                                               AmanziGeometry::Point& direction)
+{
+  L22normal_new = L22(normal_new);
+  normal_new /= sqrt(L22normal_new);
+  direction = normal_new;
+
+  int nnormals = normals.size();
+  if (nnormals == dim) {
+    normals.clear();    
+  } else {
+    double a;
+    for (int n=0; n<nnormals; n++) {
+      a = normals[n] * direction;
+      for (int i=0; i<dim; i++) direction[i] -= a * normals[n][i];
+    }
+
+    // verify new direction
+    a = L22(direction);
+    if (a < L22normal_new * TRANSPORT_LIMITER_TOLERANCE) {
+      normals.clear();
+      direction = normal_new;
+    } else {
+      a = sqrt(a);
+      for (int i=0; i<dim; i++) direction[i] /= a;
+    }
+  }
+  normals.push_back(direction); 
+}
+
 
 /* *******************************************************************
  * Routine projects gradient on a plane defined by normal and point p.
@@ -260,9 +536,7 @@ void Transport_PK::apply_directional_limiter(AmanziGeometry::Point& normal,
                                              AmanziGeometry::Point& direction, 
                                              AmanziGeometry::Point& gradient)
 {
-  double norm = L22(direction);
-  double a = ((p - gradient) * direction) / norm;
- 
+  double a = ((p - gradient) * normal) / (direction * normal); 
   gradient += a * direction;
 }
   

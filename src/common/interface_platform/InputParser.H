@@ -1,13 +1,11 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Region.hh"
-#include "RectangularRegion.hh"
 
 #include "Teuchos_MPISession.hpp"
 
 using Amanzi::AmanziGeometry::Region;
 using Amanzi::AmanziGeometry::RegionPtr;
-using Amanzi::AmanziGeometry::RectangularRegion;
 using Amanzi::AmanziGeometry::Point;
 
 using Teuchos::Array;
@@ -70,11 +68,10 @@ namespace Amanzi {
       }
     };
     
-    typedef std::map<std::string,RegionPtr> RegionMap;
+    typedef std::map<std::string,int> RegionMap;
     typedef std::list<Rock> RockList;
     typedef std::map<std::string,Component> ComponentMap;
     typedef std::map<std::string,ComponentMap> PhaseMap;
-    typedef std::map<std::string,std::pair<std::string,int> > UserToMeshLabelMap;
     
     const Rock&
     find_rock_for_region(const RockList& rock_list,
@@ -88,8 +85,7 @@ namespace Amanzi {
     define_regions_rock_new_mesh(const Teuchos::ParameterList& parameter_list,
                                  RegionMap&                    region_map,
                                  RockList&                     rock_list,
-                                 ParameterList&                new_generate_sublist,
-                                 UserToMeshLabelMap&           user_to_mesh_labelID_map);
+                                 ParameterList&                new_generate_sublist);
       
     ParameterList translate_state_sublist(const ParameterList& orig_params);
   }

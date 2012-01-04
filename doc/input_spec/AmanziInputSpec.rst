@@ -148,11 +148,11 @@ Example:
     <Parameter name="Amanzi Input Format Version" type="string" value="1.0.0"/>
   </ParameterList>
 
-Documentation
-=============
+General Description
+===================
 
-The `"Documenation`" parameter list can be used to provide a brief description of the problem specified in the file.  Any number of string entries can be provided
-with any label that may be useful for the user own purposes
+The `"General Description`" parameter list can be used to provide a brief description of the problem specified in the file.  ANY number of string entries can be provided
+with ANY label that may be useful for the user own purposes.  This section is not parsed by Amanzi and thus optional.
 
 * LABEL [string] A descriptive string
 
@@ -160,14 +160,15 @@ Example:
 
 .. code-block:: xml
 
-  <ParameterList name="Main">
-    <ParameterList name="Documentation">
-      <Parameter name="Simulation Objective" type="string" value="Validate workflow for parameter estimation"/>
-      <Parameter name="Spatial Dimension" type="string" value="2"/>
-      <Parameter name="Domain Shape" type="string" value="Rectangle: 2x1 aspect ratio"/>
-      <Parameter name="Author" type="string" value="M. Day"/>
-    </ParameterList>
+   <ParameterList name="General Description">
+     <Parameter name="Model ID" type="string" value="Transient Richards"/>
+     <Parameter name="Model name" type="string" value="BC Cribs PE Template"/>
+     <Parameter name="Description" type="string" value="Unsat flow and transport"/>
+     <Parameter name="Purpose" type="string" value="Provide input req. for Phase II Demo"/>
+     <Parameter name="Creation date" type="string" value="09.25.11 01:28"/>
+     <Parameter name="Last modified" type="string" value="09.25.11 01:28"/>
   </ParameterList>
+  
 
 Execution Control
 =================
@@ -215,6 +216,73 @@ Example:
     <Parameter name="Transport Mode" type="string" value="explicit second order transport"/>
     <Parameter name="Chemistry Mode" type="string" value="none"/>
   </ParameterList>
+
+`"Execution Control`" section also contains subsections that are specific to the implementation details of `"Structured"` and `"Unstructured"` numerical solution approaches.  These subsections are highly specific to the numerical algorithm details, which will be a sensitive function of the mesh framework, the type of problem selected, the mode requested for time integration, whether the mesh is dynamically adaptive, and a host of more detailed algorithm and model decisions.  All options for `"Structured`" are optional at the moment and see the example XML file for a typical set of control parameters.
+
+Usage for `"Structured`":
+
+* `"prob`" [list] accepts a list of input parameters that further define the algorithmic details of the flow, transport and chemistry modes. Optional.
+
+ * `"cfl`" [double] CFL number.  Default=1. Optional. 
+
+ * `"v`" [integer] Verbosity level (0-2). Default=0. Optional. 
+
+ * `"full_cycle`" [integer] 1 if the pressure equation is solved at the beginning of each timestep; 0 otherwise.  Default = 0. Optional.
+
+ * `"no_corrector`" [integer] 1 if corrector step is skipped; 0 otherwise.  Default = 0. Optional.
+
+ * `"do_kappa_refine`" [integer] 1 if refinement criteria looks at gradient of permeability; 0 otherwise.  Default = 0. Optional.
+
+ * `"do_reflux`" [integer] 1 if reflux is done; 0 otherwise.  Optional.
+
+ * `"initial_dt`" [double] The initial level 0 time step regardless of other settings.  Optional. 
+
+ * `"init_shrink`" [double] The initial time step is equal to the prescribed time step multiplied by this factor. Optional.
+
+ * `"change_max`" [double] The factor by which the time step can grow in subsequent step. Optional.
+
+ * `"fixed_dt`" [double] Level 0 time step regardless of cfl or other settings. Optional.
+
+ * `"max_dt`" [double] Maximum level 0 time step regardless of cfl or other settings. Optional except for variably saturated flow.
+
+ * `"dt_cutoff`" [double] The time step below which calculation will abort. Optional.
+
+ * `"visc_abs_tol`" [double] Absolute tolerance for the linear solver in the component equations. Default=1e-10. Optional.
+
+ * `"visc_tol`" [double] Relative tolerance for the linear solver in the component equations. Default=1e-10. Optional.
+
+
+* `"amr`" [list] accepts a list of input parameters that pertains to adaptive mesh refinement algorithm. Optional.
+
+ * `"probin_file`" [String] Name of additional AMR fortran parameter file.  Default = probin. Optional.
+
+ * `"max_level`" [integer] The maximum level of refinement above the coarsest level.  Default=0. Optional.
+
+ * `"ref_ratio`" [Array integer] The ratio of coarse to fine grid spacing between subsequent levels.  Default=2 at each finer level. Optional. 
+
+ * `"n_error_buf`" [Array integer] The number of additional cells around already tagged cells that will be tagged at each AMR level. Default=1. Optional.
+
+ * `"regrid_int`" [Array integer] Number of coarse time steps before a regrid attempt.  Default=1. Optional.
+
+ * `"v`" [integer] Verbosity level (0-1). Default=0. Optional. 
+
+ * `"max_grid_size`" [integer] The maximum size of a grid in any direction.  Optional. 
+
+ * `"blocking factor`" [integer] The minimum block size; `"max_grid_size`" must be a multiple of this. Optional. 
+
+ * `"nosub`" [integer] 1 if no subcycling; 0 otherwise. Default=0. Optional. 
+
+ * `"regrid_on_restart`" [integer] 1 if regrid at restart; 0 otherwise.  Default=0. Optional.
+
+ * `"grid_eff`" [double] Grid efficiency during a regrid.  0 for lowest efficiency and 1 for highest efficiency. Default=0.75.  Optional. 
+
+* `"diffuse`" [list] Algorithmic options for the diffusion solver. Optional.  Details to be added.
+
+* `"mac`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
+
+* `"cg`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
+
+* `"mg`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
 
 Domain
 ======
@@ -450,43 +518,90 @@ the following set of physical properties using the supported models described be
 
   * `"Assigned Regions`" (Array string) a set of labels corresponding to volumetric regions defined above.  If any regions specified here are not three-dimensional, an error is thrown.
 
-The following models are currently supported for porosity:
+The following models can be specified for porosity (only `"Porosity: Uniform`" is supported at the moment):
 
-* `"Porosity: Uniform`" requires `"Value`" [double] to specify the constant value of porosity.
+* `"Porosity: Uniform`" [list] requires 
+ 
+ * `"Value`" [double] to specify the constant value of porosity.
 
-* `"Porosity: Random`" requires the `"Mean And RMS Values`" [Array double]
+* `"Porosity: Random`" [list] requires
+ 
+ * `"Mean And RMS Values`" [Array double] to specify the mean value.
 
-* `"Porosity: GSLib`" requires `"File`" [string], the name of a gslib input file 
+* `"Porosity: GSLib`" [list] requires 
+ 
+ * `"File`" [string] to specify the name of a gslib input file.
 
-* `"Porosity: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of porosity).  Optionally `"Interpolation`" (the interpolation strategy: : `"Constant`" [default] or `"Linear`").  Optionally `"Framework`" (if the mesh framework with which the file was written is different from current) will indicate the format of the file.  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+* `"Porosity: File`" [list] requires 
+ 
+ * `"File`" [string] to specify name of a file;
+ 
+ * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
+
+ * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
+
+ * `"Framework`" [string] (if the mesh framework with which the file was written is different from current) will indicate the format of the file; optional. (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
 
 
-The following models are currently supported for mass density:
+The following models can be specified for mass density  (not needed at the moment):
 
-* `"Mass Density: Uniform`" requires `"Value`" [double] to specify the constant value of mass density of the material.
+* `"Mass Density: Uniform`" [list] requires 
 
-* `"Mass Density: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of mass density), `"Interpolation`" (the interpolation strategy: : `"Constant`" or `"Linear`"), `"Format`" (format of the file).  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+ * `"Value`" [double] to specify the constant value of mass density of the material.
+
+* `"Mass Density: File`" [list] requires 
+ 
+ * `"File`" [string] to specify name of a file;
+ 
+ * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
+
+ * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
+
+ * `"Format`" [string] to specify the format of the file.  (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
 
 
-The following models are currently supported for the intrinsic permeability of the material:
+The following models can be specified for the intrinsic permeability of the material (only `"Intrinsic Permeability: Uniform`" and `"Intrinsic Permeability: Anisotropic Uniform`" are supported at the moment):
 
-* `"Intrinsic Permeability: Uniform`" requires `"Value`" [double] to specify the constant value of the intrinsic permeability
+* `"Intrinsic Permeability: Uniform`" [list] requires 
+ 
+ * `"Value`" [double] to specify the constant value of the intrinsic permeability
 
-* `"Intrinsic Permeability: Anisotropic Uniform`" requires `"Horizontal`" [double] and `"Vertical`" [double] to specify the constant value of the intrinsic permeability in the horizontal and vertical directions, respectively
+* `"Intrinsic Permeability: Anisotropic Uniform`" [list] requires 
+ 
+ * `"Horizontal`" [double] to specify the constant value of the intrinsic permeability in the horizontal directions; and
 
-* `"Intrinsic Permeability: GSLib`" requires `"File`" [string], the name of a gslib input file 
+ * `"Vertical`" [double] to specify the constant value of the intrinsic permeability in the vertical directions.
 
-* `"Intrinsic Permeability: File`" requires the following strings: `"File`" (name of a file), `"Label`" (the label of the scalar field in the file to associate with the values of intrinsic permeability).  Optionally `"Interpolation`" (the interpolation strategy: `"Constant`" [default] or `"Linear`"), `"Format`" (format of the file).  Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.
+* `"Intrinsic Permeability: GSLib`" [list] requires 
+ 
+ * `"File`" [string] to specify the name of a gslib input file. 
 
+* `"Intrinsic Permeability: File`" [list] requires 
+ 
+ * `"File`" [string] to specify name of a file;
+ 
+ * `"Label`" [string] to specify the label of the scalar field in the file to associate with the values of porosity;  
+
+ * `"Interpolation`" [string] to specify the the interpolation strategy: : `"Constant`" [default] or `"Linear`"; optional;  and 
+
+ * `"Format`" [string] to specify the format of the file.  (Note that the physical domain of this input data must completely cover the union of the regions over which this property is to be evaluated.)
 
 Additionally, all models (except `"Anisotropic Uniform`") accept the optional parameter `"Anisotropy`" [double] (default = 1.0) which is the ratio of vertical to horizontal anisotropy (the values given are assumed to define the horizontal value).  
 
 
 The following models are currently supported for capillary pressure (Section 3.3.2):
 
-* `"Capillary Pressure: None`" requires no parameters, pc = 0
+* `"Capillary Pressure: None`" [list] requires no parameters, pc = 0
 
-* `"Capillary Pressure: van Genuchten`" requires `"alpha_sr_m`" [Array double] to specify alpha and m in Equation 3.7 and sr in Eq 3.5, and `"Relative Permeability`" [string] (either (1) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
+* `"Capillary Pressure: van Genuchten`" [list] requires 
+
+ * `"alpha`" [double] to specify alpha in Equation 3.7.
+
+ * `"Sr`" [double] to specify sr in Eq 3.5.
+
+ * `"m`" [double] to specify m in Equation 3.7.
+
+ * `"Relative Permeability`" [string] (either (1) `"Burdine`", or (2) `"Mualem`") to determine n from Eq 3.10.
 
 Example:
 
@@ -505,10 +620,12 @@ Example:
         <Parameter name="Value" type="double" value="0.38"/>
       </ParameterList>
       <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha_sr_m" type="Array double" value="{2.14e-4, 0, .601}"/> <!-- alpha = 0.021 cm^-1 -> Pa^-1 -->
+        <Parameter name="alpha" type="double" value="2.14e-4"/> 
+        <Parameter name="sr" type="double" value="0"/> 
+        <Parameter name="m" type="double" value=".601"/> 
         <Parameter name="Relative Permeability" type="string" value="Mualem"/>
       </ParameterList>
-      <Parameter name="Assigned regions" type="string array" value="{Top Region, Bottom Region}"/>
+      <Parameter name="Assigned regions" type="Array string" value="{Top Region, Bottom Region}"/>
     </ParameterList>
 
 In this example, the material `"Backfill`" (which fills `"Bottom Region`" and `"Top Region`") has a
@@ -759,7 +876,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
   * OBSERVATION [list] user-defined label, can accept values for `"Variables`", `"Functional`", `"Region`" and `"Time Macro`"
 
-    * `"Variables`" [Array string] a list of labels of variables defined above
+    * `"Variable Macro`" [Array string] a list of labels of variables defined above
 
     * `"Functional`" [string] the label of a function to apply to each of the variables in the variable list (Function options detailed below)
 
@@ -771,6 +888,8 @@ for its evaluation.  The observations are evaluated during the simulation and re
 
 
 The following Observation Data functionals are currently supported.  All of them operate on the variables identified.
+
+* `"Observation Data: Point`" returns the value of the phase, component or solute mass density at the specified point
 
 * `"Observation Data: Mean`" returns the mean value of the phase, component or solute mass density
 
@@ -790,7 +909,7 @@ Example:
 .. code-block:: xml
 
   <ParameterList name="Observation Data">
-    <Parameter name="Observation output Filename" type="string" value="obs_output.out"/>
+    <Parameter name="Observation Output Filename" type="string" value="obs_output.out"/>
     <ParameterList name="Time Macros">
       <ParameterList name="Annual">
         <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7}"/>
@@ -897,28 +1016,6 @@ Example:
 In this example, the liquid pressure and water density are written when the cycle number is evenly divisble by 5.
 
 
-
-Execution Control
-=================
-
-       This section is highly specific to the numerical algorithm details, which
-       will be a sensitive function of the mesh framework, the type of problem 
-       selected, the mode requested for time integration, whether the mesh
-       is dynamically adaptive, and a host of more detailed algorithm and model
-       decisions.  
-
-       The parameter set below represents a fictional calculation and depicts 
-       an organization of the numerical parameters that might be appropriate.       
-       The main ParameterList here is named after a labeled "type" of solve
-       one might like to do.  Had this been an unsteady simulation, many of the
-       linear and nonlinear solver parameters may not be applicable at all.
-
-       It is unclear whether the inputs for this section can or should be orgainized
-       at any finer a level of granularity.
-
-       See the example XML file for a typical set of control parameters.
-
-
 Restart from Checkpoint Data File
 ---------------------------------
 
@@ -949,8 +1046,8 @@ Output format of Observation Output File
 ========================================
 ASCII format will be used.   The file is preceded by two header lines:
 
-`Observation Name, Region, Functional, Variable, Time, Value`
-`======================================`
+* `Observation Name, Region, Functional, Variable, Time, Value`
+* `======================================`
 
 the first line describes what information are being displayed in entries in subsequent lines.  Each subsequent line
 consists of 6 entries separated by the delimiter ",":
@@ -1257,7 +1354,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <ParameterList name="Material 1">
        
              <ParameterList name="Porosity: Uniform">
-               <Parameter name="Porosity" type="double" value="0.38"/>
+               <Parameter name="Value" type="double" value="0.38"/>
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
@@ -1280,7 +1377,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <ParameterList name="Material 2">
        
              <ParameterList name="Porosity: Uniform">
-               <Parameter name="Porosity" type="double" value="0.36"/>
+               <Parameter name="Value" type="double" value="0.36"/>
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
@@ -1302,7 +1399,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <ParameterList name="Material 3">
        
              <ParameterList name="Porosity: Uniform">
-               <Parameter name="Porosity" type="double" value="0.23"/>
+               <Parameter name="Value" type="double" value="0.23"/>
              </ParameterList>
        
              <ParameterList name="Intrinsic Permeability: Anisotropic Uniform">
@@ -1532,14 +1629,14 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <!-- define some handy cycle macros -->
            <ParameterList name="Cycle Macros">
              <ParameterList name="Every-5-steps">
-               <Parameter name="Start_Stop_Frequency" type="Array int" value="{0, -1, 5}"/>
+               <Parameter name="Start_Period_Stop" type="Array int" value="{0, 5, -1}"/>
              </ParameterList>
            </ParameterList>
 
            <!-- define some handy time macros -->
            <ParameterList name="Time Macros">
              <ParameterList name="Annual">
-               <Parameter name="Start_Stop_Frequency" type="Array double" value="{0, -1, 3.1536e7}"/>
+               <Parameter name="Start_Period_Stop" type="Array double" value="{0, 3.1536e7, -1}"/>
              </ParameterList>
 
              <ParameterList name="My_times">
@@ -1548,11 +1645,11 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              </ParameterList>
 
              <ParameterList name="Daily_1957-1967">
-               <Parameter name="Start_Stop_Frequency" type="Array double" value="{3.1536e7, 3.46896e8, 86400.}"/>
+               <Parameter name="Start_Period_Stop" type="Array double" value="{3.1536e7, 86400., 3.46896e8}"/>
              </ParameterList>
 
              <ParameterList name="Daily_1957-2006">
-               <Parameter name="Start_Stop_Frequency" type="Array double" value="{3.1536e7, 1.5768e9, 86400.}"/>
+               <Parameter name="Start_Period_Stop" type="Array double" value="{3.1536e7, 86400., 1.5768e9}"/>
              </ParameterList>
 
            </ParameterList>
@@ -1583,29 +1680,29 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="Integrated Mass">
                <Parameter name="Region" type="string" value="All"/>
                <Parameter name="Functional" type="string" value="Observation Data: Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Annual"/>
              </ParameterList>
 
              <!-- Point samples of water and Tc-99 -->
              <ParameterList name="Point Sample 1">
                <Parameter name="Region" type="string" value="Sample Point 1 Region"/>
-               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
 
              <ParameterList name="Point Sample 2">
                <Parameter name="Region" type="string" value="Sample Point 2 Region"/>
-               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
 
              <ParameterList name="Point Sample 3">
                <Parameter name="Region" type="string" value="Sample Point 3 Region"/>
-               <Parameter name="Functional" type="string" value="Observation Data: Value"/>
-               <Parameter name="Variables" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
+               <Parameter name="Functional" type="string" value="Observation Data: Point"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Water Mass Density, Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-1967"/>
              </ParameterList>
 
@@ -1613,28 +1710,28 @@ required to specify a real simulation with Amanzi envisioned functional for the 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Bottom">
                <Parameter name="Region" type="string" value="Bottom Surface Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 1">
                <Parameter name="Region" type="string" value="Crib 1 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - Crib 2">
                <Parameter name="Region" type="string" value="Crib 2 Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
              <ParameterList name="Cummulative Tc-99 Flux Integral - 90m">
                <Parameter name="Region" type="string" value="90 Meter Plane Region"/>
                <Parameter name="Functional" type="string" value="Observation Data: Cummulative Integral"/>
-               <Parameter name="Variables" type="Array string" value="{Tc-99 Molar Concentration}"/>
+               <Parameter name="Variable Macro" type="Array string" value="{Tc-99 Molar Concentration}"/>
                <Parameter name="Time Macro" type="string" value="Daily_1957-2006"/>
              </ParameterList>
 
@@ -1644,7 +1741,7 @@ required to specify a real simulation with Amanzi envisioned functional for the 
            <ParameterList name="Visualization Data">
              <Parameter name="File Name Base" type="string" value="viz-"/>
              <Parameter name="Cycle Macro" type="string" value="Every-10-steps"/>
-             <Parameter name="Variables" type="Array string" value="{Aqueous Pressure, Water Mass Density, Tc-99 Molar Concentration}"/>
+             <Parameter name="Variable Macro" type="Array string" value="{Aqueous Pressure, Water Mass Density, Tc-99 Molar Concentration}"/>
            </ParameterList>
 
            <ParameterList name="Checkpoint Data">

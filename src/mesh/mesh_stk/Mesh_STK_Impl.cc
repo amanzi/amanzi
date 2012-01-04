@@ -6,6 +6,9 @@ namespace bl = boost::lambda;
 #include "Mesh_STK_Impl.hh"
 #include "dbc.hh"
 #include "Mesh_common.hh"
+#include "GeometricModel.hh"
+#include "LabeledSetRegion.hh"
+
 
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -318,15 +321,24 @@ Mesh_STK_Impl::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
   ASSERT (part_it != set_to_part_.end ());
 
   return part_it->second;
-
+  
 }
 
 stk::mesh::Part* Mesh_STK_Impl::get_set (const char* name, stk::mesh::EntityRank rank)
 {
+  stk::mesh::Part *part = meta_data_->get_part (name);
+  if (part)
+    ASSERT (part->primary_entity_rank () == rank);
+
+  return part;
+}
+
+stk::mesh::Part* Mesh_STK_Impl::get_set (const std::string name, stk::mesh::EntityRank rank)
+{
 
   stk::mesh::Part *part = meta_data_->get_part (name);
-  ASSERT (part);
-  ASSERT (part->primary_entity_rank () == rank);
+  if (part)
+    ASSERT (part->primary_entity_rank () == rank);
 
   return part;
 }
@@ -423,6 +435,18 @@ bool Mesh_STK_Impl::valid_rank (stk::mesh::EntityRank rank)
           rank == stk::mesh::Face || rank == stk::mesh::Element);
 }
 
+
+void Mesh_STK_Impl::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part& part)
+{
+  const unsigned int part_id = part.mesh_meta_data_ordinal ();
+  const stk::mesh::EntityRank rank = part.primary_entity_rank ();
+  const Rank_and_id rank_set_id = std::make_pair (rank, set_id);
+
+  ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end ());
+
+  set_to_part_ [rank_set_id]  = &part;
+
+}
 
 
 // Object validators

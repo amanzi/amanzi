@@ -85,7 +85,7 @@ class SerialReadFixture : public ReadFixture {
   {
     meshdata.reset(Amanzi::Exodus::read_exodus_file(name.c_str()));
     // meshdata->to_stream(std::cerr, verbose);
-    mesh.reset(mf.build_mesh(*meshdata, nofields));
+    mesh.reset(mf.build_mesh(*meshdata, nofields, NULL));
   }
 
  public:
@@ -125,7 +125,7 @@ class ParallelReadFixture : public ReadFixture {
       cmap->Print(std::cerr);
       vmap->Print(std::cerr);
     }
-    mesh.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields));
+    mesh.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
   }
 
  public:
@@ -155,27 +155,30 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 11*11*11);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED), 10*10*11*3);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 10*10*10);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 20);
 
-      stk::mesh::Part *p;
-      int count;
+      // We will check entity sets in a separate test
+      // These routines are not supported any more
+      // CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
+      // CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 20);
+      // CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 20);
 
-      p = mesh->get_set(1, stk::mesh::Face);
-      CHECK(p != NULL);
-      count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      CHECK_EQUAL(count, 600);
+      // stk::mesh::Part *p;
+      // int count;
+
+      // p = mesh->get_set(1, stk::mesh::Face);
+      // CHECK(p != NULL);
+      // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // CHECK_EQUAL(count, 600);
             
-      p = mesh->get_set("element block 20000", stk::mesh::Element);
-      CHECK(p != NULL);
-      count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      CHECK_EQUAL(count, 9);
+      // p = mesh->get_set("element block 20000", stk::mesh::Element);
+      // CHECK(p != NULL);
+      // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // CHECK_EQUAL(count, 9);
             
-      p = mesh->get_set("node set 103", stk::mesh::Node);
-      CHECK(p != NULL);
-      count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      CHECK_EQUAL(count, 121);
+      // p = mesh->get_set("node set 103", stk::mesh::Node);
+      // CHECK(p != NULL);
+      // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // CHECK_EQUAL(count, 121);
             
       Auditor audit("hex_11x11x11_ss_", mesh);
       audit();
@@ -188,7 +191,8 @@ SUITE (Exodus)
       read("../exodus_reader/test_files/prism.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 1920);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 2634);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 1);
+
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 1);
 
       Auditor audit("prism_", mesh);
       audit();
@@ -202,7 +206,7 @@ SUITE (Exodus)
       read("../exodus_reader/test_files/mixed-coarse.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 361);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 592);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 5);
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 5);
 
       Auditor audit("mixed-coarse_", mesh);
       audit();
@@ -217,7 +221,7 @@ SUITE (Exodus)
       read("../exodus_reader/test_files/mixed.exo");
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 6495);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 23186);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 6);
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 6);
 
       Auditor audit("mixed_", mesh);
       audit();
@@ -234,27 +238,29 @@ SUITE (Exodus)
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED), 4*4*4);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Face, Amanzi::AmanziMesh::OWNED), 3*3*4*3);
       CHECK_EQUAL(mesh->count_entities(stk::mesh::Element, Amanzi::AmanziMesh::OWNED), 3*3*3);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
 
-      stk::mesh::Part *p;
-      int count;
+      // Check entity sets in a separate test
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
 
-      p = mesh->get_set("side set 1", stk::mesh::Face);
-      CHECK(p != NULL);
-      count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      CHECK_EQUAL(count, 54);
+      //      stk::mesh::Part *p;
+      // int count;
+
+      // p = mesh->get_set("side set 1", stk::mesh::Face);
+      // CHECK(p != NULL);
+      // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // CHECK_EQUAL(count, 54);
             
-      p = mesh->get_set("element block 20000", stk::mesh::Element);
-      CHECK(p != NULL);
-      count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      CHECK_EQUAL(count, 9);
+      // p = mesh->get_set("element block 20000", stk::mesh::Element);
+      // CHECK(p != NULL);
+      // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // CHECK_EQUAL(count, 9);
             
-      p = mesh->get_set("node set 103", stk::mesh::Node);
-      CHECK(p != NULL);
-      count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      CHECK_EQUAL(count, 16);
+      // p = mesh->get_set("node set 103", stk::mesh::Node);
+      // CHECK(p != NULL);
+      // count = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // CHECK_EQUAL(count, 16);
             
       Auditor audit("hex_4x4x4_ss_", mesh);
       audit();
@@ -279,25 +285,28 @@ SUITE (Exodus)
       comm.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 10*10*10);
 
-      stk::mesh::Part *p;
 
-      p = mesh->get_set("side set 1", stk::mesh::Face);
-      CHECK(p != NULL);
-      local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
-      CHECK_EQUAL(global, 600);
+      // Check sets in a separate test
+
+      // stk::mesh::Part *p;
+
+      // p = mesh->get_set("side set 1", stk::mesh::Face);
+      // CHECK(p != NULL);
+      // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // comm.SumAll(&local, &global, 1);
+      // CHECK_EQUAL(global, 600);
             
-      p = mesh->get_set("element block 20000", stk::mesh::Element);
-      CHECK(p != NULL);
-      local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
-      CHECK_EQUAL(global, 9);
+      // p = mesh->get_set("element block 20000", stk::mesh::Element);
+      // CHECK(p != NULL);
+      // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // comm.SumAll(&local, &global, 1);
+      // CHECK_EQUAL(global, 9);
 
-      p = mesh->get_set("node set 103", stk::mesh::Node);
-      CHECK(p != NULL);
-      local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
-      CHECK_EQUAL(global, 121);
+      // p = mesh->get_set("node set 103", stk::mesh::Node);
+      // CHECK(p != NULL);
+      // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // comm.SumAll(&local, &global, 1);
+      // CHECK_EQUAL(global, 121);
 
       Auditor audit("hex_11x11x11_ss.par", mesh);
       audit();
@@ -308,9 +317,11 @@ SUITE (Exodus)
   {
     if (nproc > 1 && nproc < 4) {
       read("../exodus_reader/test_files/split1/hex_4x4x4_ss.par");
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
-      CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
+
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Element), 3);
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Node), 21);
+      //      CHECK_EQUAL(mesh->num_sets(stk::mesh::Face), 21);
+
       int local, global;
       local = mesh->count_entities(stk::mesh::Node, Amanzi::AmanziMesh::OWNED);
       comm.SumAll(&local, &global, 1);
@@ -322,25 +333,25 @@ SUITE (Exodus)
       comm.SumAll(&local, &global, 1);
       CHECK_EQUAL(global, 3*3*3);
 
-      stk::mesh::Part *p;
-
-      p = mesh->get_set(1, stk::mesh::Face);
-      CHECK(p != NULL);
-      local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
-      CHECK_EQUAL(global, 54);
+      //      stk::mesh::Part *p;
+      //
+      //      p = mesh->get_set(1, stk::mesh::Face);
+      //      CHECK(p != NULL);
+      // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // comm.SumAll(&local, &global, 1);
+      // CHECK_EQUAL(global, 54);
             
-      p = mesh->get_set(20000, stk::mesh::Element);
-      CHECK(p != NULL);
-      local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
-      CHECK_EQUAL(global, 9);
+      // p = mesh->get_set(20000, stk::mesh::Element);
+      // CHECK(p != NULL);
+      // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // comm.SumAll(&local, &global, 1);
+      // CHECK_EQUAL(global, 9);
 
-      p = mesh->get_set(103, stk::mesh::Node);
-      CHECK(p != NULL);
-      local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
-      comm.SumAll(&local, &global, 1);
-      CHECK_EQUAL(global, 16);
+      // p = mesh->get_set(103, stk::mesh::Node);
+      // CHECK(p != NULL);
+      // local = mesh->count_entities(*p, Amanzi::AmanziMesh::OWNED);
+      // comm.SumAll(&local, &global, 1);
+      // CHECK_EQUAL(global, 16);
 
       Auditor audit("hex_4x4x4_ss.par", mesh);
       audit();

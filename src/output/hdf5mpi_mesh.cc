@@ -1,5 +1,7 @@
 #include "hdf5mpi_mesh.hh"
 
+//TODO(barker): remove ParaView specific xmf files, now reads VisIt version
+
 namespace Amanzi {
   
 
@@ -17,7 +19,7 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
 : viz_comm_(comm), H5DataFilename_(dataFilename)
 {
   viz_comm_ = comm;
-  H5DataFilename_ = dataFilename;
+  H5DataFilename_ = dataFilename; 
   info_ = MPI_INFO_NULL;
   IOconfig_.numIOgroups = 1;
   IOconfig_.commIncoming = comm.Comm();
@@ -41,7 +43,8 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   int *ids;
 
   // build h5 filename
-  h5Filename = filename + ".h5";
+  h5Filename = filename;
+  h5Filename.append(std::string(".h5"));
 
   // new parallel
   file = parallelIO_open_file(h5Filename.c_str(), &IOgroup_, FILE_CREATE);
@@ -79,7 +82,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   // TODO(barker): add error handling: can't create/write
   // new parallel
   parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file,
-                           "Mesh/Nodes", &IOgroup_,
+                           "Mesh/Nodes", &IOgroup_, 
                            NONUNIFORM_CONTIGUOUS_WRITE);
   delete nodes;
   
@@ -96,13 +99,6 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   
   
   // get connectivity
-  // TODO(barker): remove HEX8 assumption here
-  int elem_conn = 8;
-  globaldims[0] = num_elems_all;
-  globaldims[1] = elem_conn;
-  localdims[0] = num_elems;
-  localdims[1] = elem_conn;
-
   int nnodes(nmap.NumMyElements());
   std::vector<int> nnodesAll(viz_comm_.NumProc(),0);
   viz_comm_.GatherAll(&nnodes, &nnodesAll[0], 1);
@@ -112,9 +108,19 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
     start += nnodesAll[i];
   }
   viz_comm_.GatherAll(&start, &startAll[0],1);
-
-  int *ielem = new int[num_elems*elem_conn];
-  std::vector<unsigned int> xh(elem_conn);
+  
+  AmanziMesh::Entity_ID_List nodeids;
+  unsigned int cellid = 0;
+  mesh_maps.cell_get_nodes(cellid,&nodeids);
+  conn_ = nodeids.size();
+  
+  globaldims[0] = num_elems_all;
+  globaldims[1] = conn_;
+  localdims[0] = num_elems;
+  localdims[1] = conn_;
+  
+  int *ielem = new int[num_elems*conn_];
+  std::vector<unsigned int> xh(conn_);
 
   // testing
   std::vector<int> gid(num_nodes_all);
@@ -124,16 +130,18 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
     gid[i] = ngmap.GID(i);
   }
   nmap.RemoteIDList(num_nodes_all, &gid[0], &pid[0], &lid[0]);
+  /*
   for (int i=0; i<num_nodes_all; i++) {
   }
+   */
 
   for (int i = 0; i < num_elems; i++) {
     mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
-    for (int j = 0; j < elem_conn; j++) {
+    for (int j = 0; j < conn_; j++) {
       if (nmap.MyLID(xh[j])) {
-        ielem[i*elem_conn+j] = xh[j] + startAll[viz_comm_.MyPID()];
+        ielem[i*conn_+j] = xh[j] + startAll[viz_comm_.MyPID()];
       } else {
-	ielem[i*elem_conn+j] = lid[xh[j]] + startAll[pid[xh[j]]];
+	ielem[i*conn_+j] = lid[xh[j]] + startAll[pid[xh[j]]];
       }
     }
   }
@@ -167,6 +175,8 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
 
   // Create and write out accompanying Xdmf file
   if (TrackXdmf() && viz_comm_.MyPID() == 0) {
+    ctype_ = mesh_maps.cell_get_type(0); 
+    cname_ = AmanziMesh::Data::type_to_name(ctype_);
     xmfFilename = filename + ".xmf";
     createXdmfMesh_(xmfFilename);
   }
@@ -182,7 +192,8 @@ void HDF5_MPI::createDataFile(std::string soln_filename) {
   // ?? input mesh filename or grab global mesh filename
   // ->assumes global name exists!!
   // build h5 filename
-  h5filename = soln_filename + ".h5";
+  h5filename = soln_filename;
+  h5filename.append(std::string(".h5"));
   
   // new parallel
   file = parallelIO_open_file(h5filename.c_str(), &IOgroup_, FILE_CREATE);
@@ -659,17 +670,17 @@ Teuchos::XMLObject HDF5_MPI::addXdmfHeaderLocal_(const double value) {
 
 Teuchos::XMLObject HDF5_MPI::addXdmfTopo_() {
   std::stringstream tmp, tmp1;
-
+  
+  // TODO(barker): error checking if cname_ and conn_ haven't been checked
+  // TODO(barker): error checking if cname_ is unknown
   Teuchos::XMLObject topo("Topology");
-  // TODO(barker): remove hex assumption
-  topo.addAttribute("Type", "Hexahedron");
+  topo.addAttribute("Type", cname_);
   topo.addInt("Dimensions", NumElems());
   topo.addAttribute("Name", "topo");
 
   Teuchos::XMLObject DataItem("DataItem");
   DataItem.addAttribute("DataType", "Int");
-  // TODO(barker): remove hex assumption
-  tmp << NumElems() << " 8";
+  tmp << NumElems() << " " << conn_;
   DataItem.addAttribute("Dimensions", tmp.str());
   DataItem.addAttribute("Format", "HDF");
 

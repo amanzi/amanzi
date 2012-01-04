@@ -5,15 +5,19 @@
 namespace Amanzi
 {
 
-Darcy_PK::Darcy_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList &list, 
+                   const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
 {
-  // Create the flow boundary conditions object.
-  Teuchos::ParameterList bc_param_list = list.sublist("Flow BC");
-  bc = Teuchos::rcp<FlowBC>(new FlowBC(bc_param_list, FS->mesh()));
-
+  // add parameters to sublist
+  Teuchos::ParameterList &dp_list = list.sublist("Darcy Problem");
+  dp_list.set("fluid density", FS->get_fluid_density());
+  dp_list.set("fluid viscosity", FS->get_fluid_viscosity());
+  const double *gravity = FS->get_gravity();
+  dp_list.set("gravity", -gravity[2]);  // This assumes gravity[0] = gravity[1] = 0 (lipnikov@lanl.gov)
+  
   // Create the Darcy flow problem.
   Teuchos::ParameterList darcy_plist = list.sublist("Darcy Problem");
-  problem = new DarcyProblem(FS->mesh(),darcy_plist, bc);
+  problem = new DarcyProblem(FS->get_mesh_maps(), darcy_plist);
 
   // Create the solution vectors.
   solution = new Epetra_Vector(problem->Map());
@@ -45,10 +49,7 @@ Darcy_PK::~Darcy_PK()
 int Darcy_PK::advance_to_steady_state()
 {
   // Set problem parameters.
-  problem->SetFluidDensity(FS->fluid_density());
-  problem->SetFluidViscosity(FS->fluid_viscosity());
-  problem->SetPermeability(FS->permeability());
-  problem->SetGravity(FS->gravity());
+  problem->set_absolute_permeability(FS->get_permeability());
 
   // Perform the final "assembly" of the problem.
   problem->Assemble();

@@ -1,14 +1,19 @@
 #include "Epetra_IntVector.h"
 
 #include "DarcyProblem.hpp"
+#include "boundary-function.hh"
 #include "DarcyMatvec.hpp"
+#include "flow-bc-factory.hh"
+
+#include "dbc.hh"
+#include "errors.hh"
+#include "exceptions.hh"
 
 namespace Amanzi
 {
 
 DarcyProblem::DarcyProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
-			   Teuchos::ParameterList &darcy_plist,
-			   const Teuchos::RCP<FlowBC> &bc) : mesh_(mesh), bc_(bc)
+			   Teuchos::ParameterList &list) : mesh_(mesh)
 {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
@@ -23,21 +28,39 @@ DarcyProblem::DarcyProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   // Create the matvec operator for the system
   matvec_ = new DarcyMatvec(this);
 
+  rho_ = list.get<double>("fluid density");
+  mu_ = list.get<double>("fluid viscosity");
+  gravity_ = list.get<double>("gravity");
+  g_[0] = 0.0; 
+  g_[1] = 0.0; 
+  g_[2] = -gravity_;
+  
+  // Create the BC objects.
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(list.sublist("boundary conditions",true));
+  FlowBCFactory bc_factory(mesh, bc_list);
+  bc_press_ = bc_factory.CreatePressure();
+  bc_head_  = bc_factory.CreateStaticHead(0.0, rho_, gravity_);
+  bc_flux_  = bc_factory.CreateMassFlux();
+  validate_boundary_conditions();
+  
+  // Evaluate the BC at dummy time 0.
+  //TODO: introduce some method to have a time-parametrized, steady Darcy problem.
+  bc_press_->Compute(0.0);
+  bc_head_->Compute(0.0);
+  bc_flux_->Compute(0.0);
+
   // Create the diffusion matrix (structure only, no values)
-  D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh, bc));
+  D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh));
 
   // Create the preconditioner (structure only, no values)
-  Teuchos::ParameterList diffprecon_plist = darcy_plist.sublist("Diffusion Preconditioner");
+  Teuchos::ParameterList diffprecon_plist = list.sublist("Diffusion Preconditioner");
   precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
 
   // Create the RHS vector.
   rhs_ = new Epetra_Vector(Map());
 
   // DEFINE DEFAULTS FOR PROBLEM PARAMETERS
-  rho_ = 1.0;
-  mu_  = 1.0;
   k_.resize(CellMap(true).NumMyElements(), 1.0);
-  for (int i = 0; i < 3; ++i) g_[i] = 0.0; // no gravity
 }
 
 
@@ -50,25 +73,86 @@ DarcyProblem::~DarcyProblem()
   delete cell_importer_;
   delete face_importer_;
   delete md_;
+  delete bc_press_;
+  delete bc_head_;
+  delete bc_flux_;
 }
 
 
-DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh, const Teuchos::RCP<FlowBC> &bc) const
+void DarcyProblem::validate_boundary_conditions() const
+{
+  // Create sets of the face indices belonging to each BC type.
+  std::set<int> press_faces, head_faces, flux_faces;
+  BoundaryFunction::Iterator bc;
+  for (bc = bc_press_->begin(); bc != bc_press_->end(); ++bc) press_faces.insert(bc->first);
+  for (bc = bc_head_->begin();  bc != bc_head_->end();  ++bc) head_faces.insert(bc->first);
+  for (bc = bc_flux_->begin();  bc != bc_flux_->end();  ++bc) flux_faces.insert(bc->first);
+  
+  std::set<int> overlap;
+  std::set<int>::iterator overlap_end;
+  int local_overlap, global_overlap;
+  
+  // Check for overlap between pressure and static head BC.
+  std::set_intersection(press_faces.begin(), press_faces.end(),
+                         head_faces.begin(),  head_faces.end(),
+                        std::inserter(overlap, overlap.end()));
+  local_overlap = overlap.size();
+  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
+  if (global_overlap != 0) {
+    Errors::Message m;
+    std::stringstream s;
+    s << global_overlap;
+    m << "DarcyProblem: \"static head\" BC overlap \"dirichlet\" BC on "
+      << s.str().c_str() << " faces";
+    Exceptions::amanzi_throw(m);
+  }
+  
+  // Check for overlap between pressure and flux BC.
+  overlap.clear();
+  std::set_intersection(press_faces.begin(), press_faces.end(),
+                         flux_faces.begin(),  flux_faces.end(),
+                        std::inserter(overlap, overlap.end()));
+  local_overlap = overlap.size();
+  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
+  if (global_overlap != 0) {
+    Errors::Message m;
+    std::stringstream s;
+    s << global_overlap;
+    m << "DarcyProblem: \"flux\" BC overlap \"dirichlet\" BC on "
+      << s.str().c_str() << " faces";
+    Exceptions::amanzi_throw(m);
+  }
+  
+  // Check for overlap between static head and flux BC.
+  overlap.clear();
+  std::set_intersection(head_faces.begin(), head_faces.end(),
+                        flux_faces.begin(), flux_faces.end(),
+                        std::inserter(overlap, overlap.end()));
+  local_overlap = overlap.size();
+  Comm().SumAll(&local_overlap, &global_overlap, 1); //TODO: this will over count ghost faces
+  if (global_overlap != 0) {
+    Errors::Message m;
+    std::stringstream s;
+    s << global_overlap;
+    m << "DarcyProblem: \"flux\" BC overlap \"static head\" BC on "
+      << s.str().c_str() << " faces";
+    Exceptions::amanzi_throw(m);
+  }
+  
+  //TODO: Verify that a BC has been applied to every boundary face.
+  //      Right now faces without BC are considered no-mass-flux.
+}
+
+
+DiffusionMatrix* DarcyProblem::create_diff_matrix_(const Teuchos::RCP<AmanziMesh::Mesh> &mesh) const
 {
   // Generate the list of all Dirichlet-type faces.
-  // The provided lists should include all used BC faces.
+  // The provided list should include USED BC faces.
   std::vector<int> dir_faces;
-  for (int j = 0; j < bc->NumBC(); ++j) {
-    FlowBC::bc_spec& BC = (*bc)[j];
-    switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-      case FlowBC::STATIC_HEAD:
-        dir_faces.reserve(dir_faces.size() + BC.Faces.size());
-        for (int i = 0; i < BC.Faces.size(); ++i)
-          dir_faces.push_back(BC.Faces[i]);
-        break;
-    }
-  }
+  for (BoundaryFunction::Iterator i = bc_press_->begin(); i != bc_press_->end(); ++i)
+    dir_faces.push_back(i->first);
+  for (BoundaryFunction::Iterator i = bc_head_->begin();  i != bc_head_->end();  ++i)
+    dir_faces.push_back(i->first);
   return new DiffusionMatrix(mesh, dir_faces);
 }
 
@@ -127,23 +211,22 @@ void DarcyProblem::SetGravity(const double g[3])
 }
 
 
-void DarcyProblem::SetPermeability(double k)
+void DarcyProblem::set_absolute_permeability(double k)
 {
-  /// should verify k > 0
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k;
+  for (int c=0; c<k_.size(); ++c) k_[c] = k;  // should verify k > 0 (lipnikov@lanl.gov)
 }
 
 
-void DarcyProblem::SetPermeability(const Epetra_Vector &k)
+void DarcyProblem::set_absolute_permeability(const Epetra_Vector &k)
 {
-  /// should verify k.Map() is CellMap()
-  /// should verify k values are all > 0
+  // should verify k.Map() is CellMap()
+  // should verify k values are all > 0
   Epetra_Vector k_ovl(mesh_->cell_map(true));
   Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
 
   k_ovl.Import(k, importer, Insert);
 
-  for (int i = 0; i < k_.size(); ++i) k_[i] = k_ovl[i];
+  for (int i=0; i<k_.size(); ++i) k_[i] = k_ovl[i];
 }
 
 
@@ -167,8 +250,20 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
   Epetra_Vector Pface(FaceMap(true));
   Pface.Import(Pface_own, *face_importer_, Insert);
 
-  // Apply initial BC fixups to PFACE.
-  apply_BC_initial_(Pface); // modifies used values
+  // Precompute the Dirichlet-type BC residuals for later use.
+  // Impose the Dirichlet boundary data on the face pressure vector.
+  //bc_press_->Compute(time);
+  std::map<int,double> Fpress;
+  for (BoundaryFunction::Iterator bc = bc_press_->begin(); bc != bc_press_->end(); ++bc) {
+    Fpress[bc->first] = Pface[bc->first] - bc->second;
+    Pface[bc->first] = bc->second;
+  }
+  //bc_head_->Compute(time);
+  std::map<int,double> Fhead;
+  for (BoundaryFunction::Iterator bc = bc_head_->begin(); bc != bc_head_->end(); ++bc) {
+    Fhead[bc->first] = Pface[bc->first] - bc->second;
+    Pface[bc->first] = bc->second;
+  }
 
   // Create cell and face result vectors that include ghosts.
   Epetra_Vector Fcell(CellMap(true));
@@ -193,90 +288,21 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
   }
 
-  // Apply final BC fixups to FFACE.
-  apply_BC_final_(Fface); // modifies used values
+  // Dirichlet-type condition residuals; overwrite with the pre-computed values.
+  std::map<int,double>::const_iterator i;
+  for (i = Fpress.begin(); i != Fpress.end(); ++i) Fface[i->first] = i->second;
+  for (i = Fhead.begin();  i != Fhead.end();  ++i) Fface[i->first] = i->second;
+  
+  // Mass flux BC contribution.
+  //bc_flux_->Compute(time);
+  for (BoundaryFunction::Iterator bc = bc_flux_->begin(); bc != bc_flux_->end(); ++bc)
+    Fface[bc->first] += bc->second * md_->face_area_[bc->first];
   
   // Copy owned part of result into the output vectors.
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
   for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
 
   delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
-}
-
-
-// BC fixups for F computation: initial pass.
-void DarcyProblem::apply_BC_initial_(Epetra_Vector &Pface)
-{
-  for (int j = 0; j < (*bc_).NumBC(); ++j) {
-    FlowBC::bc_spec& BC = (*bc_)[j];
-    switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          BC.Aux[i] = Pface[n] - BC.Value;
-          Pface[n] = BC.Value;
-        }
-        break;
-      // WARNING: THIS IS A ONE-OFF HACK.
-      // It is assumed that g is aligned with z.
-      // The BC value is used to set the height (for the entire
-      // set of BC faces) of zero pressure.
-      case FlowBC::STATIC_HEAD:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          double x[3];
-          face_centroid_(n, x);
-          double p = rho_ * g_[2] * (x[2] - BC.Value);
-          BC.Aux[i] = Pface[n] - p;
-          Pface[n] = p;
-        }
-        break;
-    }
-  }
-}
-
-void DarcyProblem::face_centroid_(int face, double xc[])
-{
-   // Local storage for the 4 vertex coordinates of a face.
-  double x[4][3];
-  double *xBegin = &x[0][0];  // begin iterator
-  double *xEnd = xBegin+12;   // end iterator
-
-  mesh_->face_to_coordinates((unsigned int) face, xBegin, xEnd);
-
-  for (int k = 0; k < 3; ++k) {
-    double s = 0.0;
-    for (int i = 0; i < 4; ++i)
-       s += x[i][k];
-    xc[k] = s / 4.0;
-  }
-}
-
-
-// BC fixups for F computation: final pass.
-void DarcyProblem::apply_BC_final_(Epetra_Vector &Fface)
-{
-  for (int j = 0; j < (*bc_).NumBC(); ++j) {
-    FlowBC::bc_spec& BC = (*bc_)[j];
-    switch (BC.Type) {
-      case FlowBC::PRESSURE_CONSTANT:
-      case FlowBC::STATIC_HEAD:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          Fface[n] = BC.Aux[i];
-        }
-        break;
-      case FlowBC::DARCY_CONSTANT:
-        for (int i = 0; i < BC.Faces.size(); ++i) {
-          int n = BC.Faces[i];
-          Fface[n] += rho_ * BC.Value * md_->face_area_[n];
-        }
-        break;
-      case FlowBC::NO_FLOW:
-        // The do-nothing boundary condition.
-        break;
-    }
-  }
 }
 
 

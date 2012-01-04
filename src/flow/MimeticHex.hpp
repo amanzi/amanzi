@@ -11,10 +11,8 @@
 
 namespace Amanzi {
 
-class MimeticHex
-{
-public:
-
+class MimeticHex {
+ public:
   MimeticHex(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> &mesh);
   ~MimeticHex(){}
 
@@ -23,25 +21,17 @@ public:
   const Epetra_Map& CellMap(bool ghost=false) const { return mesh_->cell_map(ghost); }
   const Epetra_Map& FaceMap(bool ghost=false) const { return mesh_->face_map(ghost); }
 
-  double Volume(int n) { return volume_[n]; }
-
   void DeriveFluxes(const Epetra_Vector&, Epetra_Vector&) const;
 
   Epetra_SerialDenseVector face_area_;
-private:
 
+ private:
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh_;
 
-  //std::vector<double> volume_;
-  //std::vector<double[3]> face_normal_;
-  //std::vector<double> face_area_;
-
   Epetra_SerialDenseVector volume_;
-  //Epetra_SerialDenseVector face_area_;
   Epetra_SerialDenseMatrix face_normal_;
-
 };
 
-} // close namespace Amanzi
+}  // close namespace Amanzi
 
 #endif

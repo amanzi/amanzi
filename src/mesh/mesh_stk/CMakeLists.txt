@@ -53,6 +53,14 @@ if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
 
+   # Need to copy files for the tests 
+    if (NOT (${STK_SOURCE_DIR} EQUAL ${STK_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+          copy_directory ${STK_SOURCE_DIR}/test ${STK_BINARY_DIR}/test) 
+    endif()
+
+
+
     # Test: stk_mesh
     add_executable(test_stk_mesh test/Main.cc test/test_Mesh.cc
                      test/test_Maps.cc test/test_Hex.cc)
@@ -80,6 +88,12 @@ if (BUILD_TESTS)
     target_link_libraries(test_stk_mesh_read exodus_reader stk_mesh mesh_audit ${UnitTest_LIBRARIES})
     add_amanzi_test(stk_mesh_read test_stk_mesh_read KIND int)
     add_amanzi_test(stk_mesh_read_parallel test_stk_mesh_read NPROCS 4 KIND int)
+
+    # Test: Create sets and respond to set queries
+    add_executable(test_stk_sets test/Main.cc test/test_Sets.cc)
+    target_link_libraries(test_stk_sets stk_mesh exodus_reader ${UnitTest_LIBRARIES})
+    add_amanzi_test(stk_mesh_sets test_stk_sets KIND int)
+
 
 endif()
 

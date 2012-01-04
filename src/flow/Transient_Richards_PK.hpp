@@ -12,22 +12,19 @@
 #include "RichardsModelEvaluator.hpp"
 #include "BDF2_Dae.hpp"
 
-namespace Amanzi
-{
-class Transient_Richards_PK : public Flow_PK
-{
+namespace Amanzi {
 
-public:
-  Transient_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
-
+class Transient_Richards_PK : public Flow_PK {
+ public:
+  Transient_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<Flow_State>);
   ~Transient_Richards_PK ();
 
   int advance_to_steady_state();
-  int advance_transient();
-  void commit_state(Teuchos::RCP<Flow_State>) {}
+  int advance_transient(double h);
+  int init_transient(double t0, double h0);
+  void commit_state(Teuchos::RCP<Flow_State>); 
 
   // After a successful advance() the following routines may be called.
-
   // Returns a reference to the cell pressure vector.
   const Epetra_Vector& Pressure() const { return *pressure_cells; }
 
@@ -41,13 +38,13 @@ public:
   // Computes the fluid saturation on cells.
   void GetSaturation(Epetra_Vector &s) const;
   
-  double get_flow_dT() { return h; }
-
+  double get_flow_dT() { return hnext; }
 
 private:
+  void approximate_face_pressure(const Epetra_Vector& cell_pressure, Epetra_Vector& face_pressure);
 
-  Teuchos::RCP<const Flow_State> FS;
-  Teuchos::ParameterList &richards_plist;
+  Teuchos::RCP<Flow_State> FS;
+  Teuchos::ParameterList &plist;
   
   RichardsProblem *problem;
   RichardsModelEvaluator *RME;
@@ -66,9 +63,8 @@ private:
   double ss_t0, ss_t1, ss_h0, ss_z;
 
   double h, hnext;
-
 };
 
-} // close namespace Amanzi
+}  // namespace Amanzi
 
 #endif

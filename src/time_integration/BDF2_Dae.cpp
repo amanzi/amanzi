@@ -652,7 +652,7 @@ namespace BDF2 {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
     
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	
       {
 	*out << oss.str() << std::endl;
       }

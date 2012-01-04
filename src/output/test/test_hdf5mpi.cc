@@ -11,13 +11,13 @@ TEST(HDF5_MPI) {
 //  Epetra_SerialComm *comm = new Epetra_SerialComm();
 //#endif
     
-  std::string hdf5_meshfile  = "new_mesh";
-  std::string hdf5_datafile1 = "new_data";
-  std::string hdf5_datafile2 = "new_restart";
+  std::string hdf5_meshfile  = "new_mesh_mpi.h5";
+  std::string hdf5_datafile1 = "new_data_mpi.h5";
+  std::string hdf5_datafile2 = "new_restart_mpi.h5";
   
   //Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
-  //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1, 1,
-  //                                        comm));
+  //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1,
+  //                                        1, comm));
   Amanzi::AmanziMesh::Mesh_STK Mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, comm);
 
   unsigned int num_nodes = Mesh.count_entities(Amanzi::AmanziMesh::NODE, 
@@ -104,9 +104,8 @@ TEST(HDF5_MPI) {
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
   
   // test reading data back
-  std::string restart_filename = hdf5_datafile2 + ".h5";
-  cout << "E>> create restart_input with file " << restart_filename << endl;
-  Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm,restart_filename);
+  cout << "E>> create restart_input with file " << hdf5_datafile2 << endl;
+  Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm,hdf5_datafile2);
   double newtime;
   int newcycle;
   std::string newstring;
