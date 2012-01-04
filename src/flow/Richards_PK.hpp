@@ -33,6 +33,7 @@ class Interface_BDF2;  // forward declaration of class
 
 class Richards_PK : public Flow_PK {
  public:
+  Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   ~Richards_PK () { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
 
@@ -47,6 +48,12 @@ class Richards_PK : public Flow_PK {
   int advanceSteadyState_BackwardEuler();
   int advanceSteadyState_NOX();
  
+  // required methods
+  void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs);
+  void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
+  double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
+  void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc);
+
   // other main methods
   void processParameterList();
   void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
@@ -112,6 +119,10 @@ class Richards_PK : public Flow_PK {
   int num_itrs_sss, max_itrs_sss;  // number of non-linear iterations
   double err_tol_sss, residual_sss;
 
+  BDF2::Dae* bdf2_dae;  // BDF2 time integration method
+  double absolute_tol_bdf, relative_tol_bdf;
+  int itrs_bdf2;
+
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
   Teuchos::RCP<Epetra_Vector> solution_faces;  // face-base pressures
@@ -119,10 +130,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> rhs_faces;
 
   std::vector<Teuchos::RCP<WaterRetentionModel> > WRM;
-
-  Interface_BDF2* ti_bdf2;  // BDF2 time integration method
-  BDF2::Dae* bdf2_dae;
-  int itrs_bdf2;
 
   BoundaryFunction *bc_pressure;  // Pressure Dirichlet b.c., excluding static head
   BoundaryFunction *bc_head;  // Static pressure head b.c.; also Dirichlet-type
@@ -136,6 +143,8 @@ class Richards_PK : public Flow_PK {
 
   bool upwind_Krel;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
+
+  int verbosity;
 };
 
 }  // namespace AmanziFlow

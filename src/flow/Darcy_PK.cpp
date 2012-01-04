@@ -22,6 +22,16 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
+* Wrapper for the real constructor (temporary solution ???)
+****************************************************************** */
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
+{
+  Teuchos::RCP<Teuchos::ParameterList> dp_list_rcp = Teuchos::rcp(new Teuchos::ParameterList(dp_list_));
+  Darcy_PK(dp_list_rcp, FS_MPC);
+}
+
+
+/* ******************************************************************
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */

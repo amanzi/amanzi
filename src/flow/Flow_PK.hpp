@@ -10,7 +10,7 @@ Usage:
 */
 
 #ifndef __FLOW_PK_HPP__
-#define __FLOw_PK_HPP__
+#define __FLOW_PK_HPP__
 
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -19,6 +19,7 @@ Usage:
 
 #include "boundary-function.hh"
 #include "mfd3d.hpp"
+#include "BDF2_fnBase.hpp"
 #include "Flow_State.hpp"
 
 namespace Amanzi {
@@ -54,16 +55,21 @@ const int FLOW_MAX_EDGES = 60;  // be calculated in Init().
 
 const int FLOW_INTERNAL_ERROR = 911;  // contact (lipnikov@lanl.gov)
 
+const int FLOW_VERBOSITY_NULL = 3;
+const int FLOW_VERBOSITY_HIGH = 3;
+const int FLOW_VERBOSITY_LOW = 3;
+
 const int FLOW_AMANZI_VERSION = 2;  
 
 
-class Flow_PK {
+class Flow_PK : public BDF2::fnBase {
  public:
   Flow_PK() {};
   ~Flow_PK() {};
 
   // main methods
   void Init(Teuchos::RCP<Flow_State> FS_MPC);
+  void set_initial_time(double T0, double dT0) { T_internal = T_physical = T0; dT = dT0; }
 
   virtual int advance(double dT) = 0; 
   virtual int advance_to_steady_state() = 0;

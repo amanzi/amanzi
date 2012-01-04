@@ -27,6 +27,7 @@ namespace AmanziFlow {
 
 class Darcy_PK : public Flow_PK {
  public:
+  Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   Darcy_PK(Teuchos::RCP<Teuchos::ParameterList> dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   ~Darcy_PK() { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
 
@@ -36,6 +37,12 @@ class Darcy_PK : public Flow_PK {
   int advance(double dT) {}; 
   int advance_to_steady_state();
   void commit_state() {};
+
+  // required methods
+  void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs) {};
+  void precon(const Epetra_Vector& u, Epetra_Vector& Hu) {};
+  double enorm(const Epetra_Vector& u, const Epetra_Vector& du) {};
+  void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc) {};
 
   // other main methods
   void process_parameter_list();

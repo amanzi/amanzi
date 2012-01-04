@@ -1,5 +1,5 @@
 /*
-This is the transport component of the Amanzi code. 
+This is the flow component of the Amanzi code. 
 License: BSD
 Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */

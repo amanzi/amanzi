@@ -19,10 +19,19 @@ Authors: Neil Carlson (nnc@lanl.gov),
 #include "Flow_BC_Factory.hpp"
 #include "boundary-function.hh"
 #include "Richards_PK.hpp"
-#include "Interface_BDF2.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
+
+/* ******************************************************************
+* Wrapper for the real constructor (temporary solution ???)
+****************************************************************** */
+Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC)
+{
+  Teuchos::RCP<Teuchos::ParameterList> rp_list_rcp = Teuchos::rcp(new Teuchos::ParameterList(rp_list_));
+  Richards_PK(rp_list_rcp, FS_MPC);
+}
+
 
 /* ******************************************************************
 * We set up only default values and call Init() routine to complete
@@ -64,6 +73,7 @@ Richards_PK::Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos:
 
   // miscalleneous
   upwind_Krel = true;
+  verbosity = FLOW_VERBOSITY_HIGH;
 }
 
 
@@ -113,11 +123,11 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Create the Richards model evaluator and time integrator
   Teuchos::ParameterList& rme_list = rp_list->sublist("Richards model evaluator");
-  ti_bdf2 = new Interface_BDF2(this, rme_list);
-  itrs_bdf2 = 0;
+  absolute_tol_bdf = rme_list.get<double>("Absolute error tolerance", 1.0);
+  relative_tol_bdf = rme_list.get<double>("Relative error tolerance", 1e-5); 
 
   Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list->sublist("Time integrator")));
-  bdf2_dae = new BDF2::Dae(*ti_bdf2, *super_map_);
+  bdf2_dae = new BDF2::Dae(*this, *super_map_);
   bdf2_dae->setParameterList(bdf2_list);
 
   // Allocate data for relative permeability
@@ -201,7 +211,10 @@ int Richards_PK::advanceSteadyState_Picard()
     solver->Iterate(max_itrs, err_tol);
     num_itrs = solver->NumIters();
     double residual = solver->TrueResidual();
-cout << itrs << " res=" << L2error << "  cg# " << num_itrs << "  relax=" << relaxation << endl;
+    if (verbosity >= FLOW_VERBOSITY_HIGH) {
+      cout << "Picard itrs=" << itrs << " residual=" << L2error 
+           << "  cg itrs=" << num_itrs << "  relaxation=" << relaxation << endl;
+    }
 
     for (int c=0; c<number_owned_cells; c++) {
       solution_new[c] = relaxation * solution_old[c] + (1.0 - relaxation) * solution_new[c];
@@ -300,7 +313,7 @@ int Richards_PK::advance(double dT)
     bdf2_dae->set_initial_state(time, *solution, pdot);
 
     int errc;
-    ti_bdf2->update_precon(time, *solution, dT, errc);
+    update_precon(time, *solution, dT, errc);
   }
 
   bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);

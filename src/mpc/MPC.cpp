@@ -300,7 +300,7 @@ void MPC::cycle_driver ()
 
   if (flow_enabled)
     {
-      FPK->init(T0, dT0);
+      FPK->set_initial_time(T0, dT0);
     }
 
 
