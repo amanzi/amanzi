@@ -31,12 +31,13 @@ Example usage:
 #include "TreeVector.hh"
 
 #include "PK.hh"
+#include "BDF2_Dae.hpp"
 #include "BDF2_fnBase.hpp"
 
 namespace Amanzi {
 
-class NullEnergyPK : public PK {
-  //class NullEnergyPK : public PK, public BDF2::fnBase {
+  // class NullEnergyPK : public PK {
+class NullEnergyPK : public PK, public BDF2::fnBase {
 
 public:
   NullEnergyPK(Teuchos::ParameterList& energy_plist, Teuchos::RCP<State>& S,
@@ -99,7 +100,8 @@ private:
   // misc setup information
   Teuchos::ParameterList energy_plist_;
 
-  // for the model evaluator component
+  // time integration
+  Teuchos::RCP<BDF2::Dae> time_stepper_;
   double atol_;
   double rtol_;
 };

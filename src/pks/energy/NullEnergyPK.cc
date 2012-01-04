@@ -39,6 +39,13 @@ NullEnergyPK::NullEnergyPK(Teuchos::ParameterList& energy_plist,
   S->require_field("temperature_dot", FIELD_LOCATION_CELL, "energy");
 
   T_ = energy_plist.get<double>("Constant temperature", 290.0);
+
+  // check if we need to make a time integrator
+  if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
+    time_stepper_ = Teuchos::rcp(new BDF2::Dae(*this, S->get_mesh_maps()));
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
+    time_stepper_->setParameterList(bdf2_list_p);
+  }
 };
 
 // initialize ICs
@@ -50,8 +57,16 @@ void NullEnergyPK::initialize(Teuchos::RCP<State>& S) {
   S->get_field_record("temperature_dot")->set_initialized();
 
   // model evaluator params
+  // -- tolerances
   atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
   rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+
+  // -- initialize time derivative
+  TreeVector solution_dot(solution_);
+  solution_dot = 0.0;
+
+  // -- set initial state
+  time_stepper_->set_initial_state(S->get_time(), *solution_, solution_dot);
 };
 
 
@@ -93,6 +108,21 @@ bool NullEnergyPK::advance_analytic(double dt) {
 
 // -- advance using the BDF integrator
 bool NullEnergyPK::advance_bdf(double dt) {
+
+  // take the bdf timestep
+  double h = dt;
+  double hnext;
+  time_stepper_->bdf2_step(h, 0.0, *solution_, hnext);
+  time_stepper_->commit_solution(h, *solution_);
+  time_stepper_->write_bdf2_stepping_statistics();
+
+  // In the case where this is a leaf, and therefore advancing itself (and not
+  // within a strongly coupled solver), we will call the local residual
+  // function only.  This local residual function need NOT copy the guess for
+  // u/u_dot into the state (as it is a leaf and therefore already has access.
+  // Therefore, the S_next's temperature pointer was not overwritten, and we
+  // need not copy it back into S_next, like is required in StrongMPC.
+  return false;
 };
 
 // -- call your favorite
