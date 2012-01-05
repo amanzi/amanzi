@@ -29,7 +29,7 @@ class Darcy_PK : public Flow_PK {
  public:
   Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   Darcy_PK(Teuchos::RCP<Teuchos::ParameterList> dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
-  ~Darcy_PK() { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
+  ~Darcy_PK();
 
   // main methods
   void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);

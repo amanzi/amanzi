@@ -26,13 +26,14 @@ using namespace Amanzi::AmanziFlow;
 
 class RichardsProblem {
  public:
+  Epetra_MpiComm* comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   Teuchos::RCP<Teuchos::ParameterList> rp_list;
   Richards_PK* RPK; 
 
   RichardsProblem() 
   {
-    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
     Teuchos::ParameterList parameter_list;
     string xmlFileName = "test/flow_richards_misc.xml";
@@ -53,7 +54,7 @@ class RichardsProblem {
     RPK = new Richards_PK(rp_list, FS);
   }
 
-  ~RichardsProblem() { delete RPK; }
+  ~RichardsProblem() { delete RPK; delete comm; }
 
   void reset_bc(const char *type, const char *bc_x, double value) 
   {

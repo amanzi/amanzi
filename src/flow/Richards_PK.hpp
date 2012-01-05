@@ -35,7 +35,7 @@ class Richards_PK : public Flow_PK {
  public:
   Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
-  ~Richards_PK () { delete super_map_, solver, matrix, preconditioner, bdf2_dae, bc_pressure, bc_head, bc_flux; }
+  ~Richards_PK ();
 
   // main methods
   void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);

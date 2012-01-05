@@ -39,7 +39,7 @@ BoundaryFunction* FlowBCFactory::CreatePressure() const
 ****************************************************************** */
 BoundaryFunction* FlowBCFactory::CreateMassFlux() const
 {
-  BoundaryFunction *bc = new BoundaryFunction(mesh_);
+  BoundaryFunction* bc = new BoundaryFunction(mesh_);
   try {
     process_mass_flux_list(params_->sublist("mass flux"), bc);
   } catch (Errors::Message &msg) {
@@ -60,7 +60,7 @@ BoundaryFunction* FlowBCFactory::CreateMassFlux() const
 ****************************************************************** */
 BoundaryFunction* FlowBCFactory::CreateStaticHead(double p0, double density, double gravity) const
 {
-  BoundaryFunction *bc = new BoundaryFunction(mesh_);
+  BoundaryFunction* bc = new BoundaryFunction(mesh_);
   try {
     process_static_head_list(p0, density, gravity, params_->sublist("static head"), bc);
   } catch (Errors::Message &msg) {

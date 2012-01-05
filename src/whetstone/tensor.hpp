@@ -21,10 +21,10 @@ const int WHETSTONE_TENSOR_SIZE[3][3] = {1, 1, 1,
 
 class Tensor {
  public:
-  Tensor() { d_ = 0; rank_ = 0; data_ = NULL; }
+  Tensor() { d_ = rank_ = 0; data_ = NULL; }
   Tensor(const Tensor& T);
-  Tensor(const int d, const int rank) { init(d, rank); }
-  ~Tensor() { if (data) delete[] data_; }
+  Tensor(const int d, const int rank) { data_ = NULL; init(d, rank); }
+  ~Tensor() { if (data_) delete[] data_; }
 
   // primary members
   int init(const int d, const int rank);
@@ -53,7 +53,7 @@ class Tensor {
  
  private:
   int d_, rank_;
-  double *data_;
+  double* data_;
 };
 
 }  // namespace WhetStone

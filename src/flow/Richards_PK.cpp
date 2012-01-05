@@ -78,6 +78,22 @@ Richards_PK::Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos:
 
 
 /* ******************************************************************
+* Clean memory.
+****************************************************************** */
+Richards_PK::~Richards_PK() 
+{ 
+  delete super_map_; 
+  delete solver; 
+  delete matrix; 
+  if (preconditioner) delete preconditioner;
+  delete bdf2_dae;
+  delete bc_pressure;
+  delete bc_head;
+  delete bc_flux;
+}
+
+
+/* ******************************************************************
 * Extract information from Richards Problem parameter list.
 ****************************************************************** */
 void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)

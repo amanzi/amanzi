@@ -71,6 +71,20 @@ Darcy_PK::Darcy_PK(Teuchos::RCP<Teuchos::ParameterList> dp_list_, Teuchos::RCP<F
 }
 
 
+/* ******************************************************************
+* Clean memory.
+****************************************************************** */
+Darcy_PK::~Darcy_PK() 
+{ 
+  delete super_map_; 
+  delete solver; 
+  delete matrix; 
+  if (preconditioner) delete preconditioner;
+  delete bc_pressure;
+  delete bc_head;
+  delete bc_flux; 
+}
+
 
 /* ******************************************************************
 * Extract information from Diffusion Problem parameter list.
