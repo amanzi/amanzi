@@ -631,24 +631,24 @@ namespace Amanzi {
     {
       Teuchos::ParameterList dpc_list;
       
-      Teuchos::ParameterList ml_list = dpc_list.sublist("ML Parameters");
-      dpc_list.set<int>("ML output", 0);
-      dpc_list.set<int>("max levels", 40);
-      dpc_list.set<std::string>("prec type","MGW");
-      dpc_list.set<int>("cycle applications", 2);
-      dpc_list.set<std::string>("aggregation: type", "Uncoupled");
-      dpc_list.set<double>("aggregation: damping factor", 1.33);
-      dpc_list.set<double>("aggregation: threshold", 0.0);
-      dpc_list.set<int>("aggregation: nodes per aggregate", 3);
-      dpc_list.set<std::string>("eigen-analysis: type", "cg");
-      dpc_list.set<int>("eigen-analysis: iterations", 10);
-      dpc_list.set<int>("smoother: sweeps", 2);
-      dpc_list.set<double>("smoother: damping factor", 1.0);
-      dpc_list.set<std::string>("smoother: pre or post", "both");
-      dpc_list.set<std::string>("smoother: type", "Gauss-Seidel");
-      dpc_list.set<double>("smoother: damping factor", 1.0);
-      dpc_list.set<std::string>("coarse: type", "Amesos-KLU");
-      dpc_list.set<int>("coarse: max size", 128);
+      Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
+      ml_list.set<int>("ML output", 0);
+      ml_list.set<int>("max levels", 40);
+      ml_list.set<std::string>("prec type","MGW");
+      ml_list.set<int>("cycle applications", 2);
+      ml_list.set<std::string>("aggregation: type", "Uncoupled");
+      ml_list.set<double>("aggregation: damping factor", 1.33);
+      ml_list.set<double>("aggregation: threshold", 0.0);
+      ml_list.set<int>("aggregation: nodes per aggregate", 3);
+      ml_list.set<std::string>("eigen-analysis: type", "cg");
+      ml_list.set<int>("eigen-analysis: iterations", 10);
+      ml_list.set<int>("smoother: sweeps", 2);
+      ml_list.set<double>("smoother: damping factor", 1.0);
+      ml_list.set<std::string>("smoother: pre or post", "both");
+      ml_list.set<std::string>("smoother: type", "Gauss-Seidel");
+      ml_list.set<double>("smoother: damping factor", 1.0);
+      ml_list.set<std::string>("coarse: type", "Amesos-KLU");
+      ml_list.set<int>("coarse: max size", 128);
 
       return dpc_list;
     }
