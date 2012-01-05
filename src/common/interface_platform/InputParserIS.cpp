@@ -489,10 +489,10 @@ namespace Amanzi {
 				      
 				      Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
 				      Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
-				      Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time functions");
+				      Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
 				      bc.set<Teuchos::Array<double> >(compss.str(), values );
 				      bc.set<Teuchos::Array<double> >("Times", times);
-				      bc.set<Teuchos::Array<std::string> >("Time functions", time_fns);
+				      bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
 				      bc.set<Teuchos::Array<std::string> >("Regions", regs);
 
 				      bc_counter++;
@@ -683,18 +683,26 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_flux = bc.sublist("BC: Flux");
 
 		  Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time functions");
+		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
 		  
-		  if (!bc_flux.isParameter("Intensive Mass Flux"))
-		    {
-		      // we can only handle mass fluxes right now
-		      Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Intensive Mass Flux"));
-		    }
+		  if (! (bc_flux.isParameter("Inward Mass Flux") || bc_flux.isParameter("Outward Mass Flux"))  )  {
+		    // we can only handle mass fluxes right now
+		    Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Mass Flux"));
+		  }
 
-		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Intensive Mass Flux");
-		  // input spec defines positive as inward flux, we must reverse the sign to use this
-		  for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
-		  	  
+		  Teuchos::Array<double> flux;
+		  
+		  if (bc_flux.isParameter("Inward Mass Flux")) {
+		    flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
+		  }
+		  else if (bc_flux.isParameter("Outward Mass Flux")) {
+		    flux = bc_flux.get<Teuchos::Array<double> >("Outward Mass Flux");
+		  }
+
+		  if (bc_flux.isParameter("Inward Mass Flux")) {
+		    for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+		  }
+
 		  std::stringstream ss;
 		  ss << "BC " << bc_counter++;
 
@@ -747,7 +755,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 	  
 		  
@@ -799,7 +807,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
 	  
 		  
