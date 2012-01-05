@@ -68,9 +68,9 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
 
   for (int f=0; f<pfaces->MyLength(); f++) {
     const Point& xf = mesh->face_centroid(f);
-    (*pfaces)[f] = xf[2] * (xf[2] + 2.0);
+    (*pfaces)[f] = xf[1] * (xf[1] + 2.0);
   }
-  
+
   S.update_pressure(*pcells);
   S.set_time(0.0);
 
@@ -81,4 +81,6 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
   GMV::start_data();
   GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
   GMV::close_data_file();
+
+  delete RPK;
 }

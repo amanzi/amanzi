@@ -33,11 +33,12 @@ Tensor::Tensor(const Tensor& T)
 
 
 /* ******************************************************************
-* Initialization of a tensor of rank 1, 2 or 4.
+* Initialization of a tensor of rank 1, 2 or 4. 
 ****************************************************************** */
 int Tensor::init(const int d, const int rank) 
 {
   int mem = WHETSTONE_TENSOR_SIZE[d-1][rank-1] * WHETSTONE_TENSOR_SIZE[d-1][rank-1]; 
+  if (data_) delete[] data_;
   data_ = new double[mem]; 
  
   d_ = d;

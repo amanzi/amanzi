@@ -36,7 +36,7 @@ class Darcy_PK : public Flow_PK {
 
   int advance(double dT) {}; 
   int advance_to_steady_state();
-  void commit_state() {};
+  void commit_state(Teuchos::RCP<Flow_State> FS) {};
 
   // required methods
   void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs) {};

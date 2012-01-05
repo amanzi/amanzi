@@ -35,14 +35,14 @@ class Richards_PK : public Flow_PK {
  public:
   Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
-  ~Richards_PK () { delete super_map_, solver, matrix, preconditioner, bc_pressure, bc_head, bc_flux; }
+  ~Richards_PK () { delete super_map_, solver, matrix, preconditioner, bdf2_dae, bc_pressure, bc_head, bc_flux; }
 
   // main methods
   void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
 
   int advance(double dT); 
   int advance_to_steady_state();
-  void commit_state() {};
+  void commit_state(Teuchos::RCP<Flow_State> FS) {};
 
   int advanceSteadyState_Picard();
   int advanceSteadyState_BackwardEuler();

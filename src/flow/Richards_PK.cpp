@@ -132,15 +132,13 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Allocate data for relative permeability
   Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  if (upwind_Krel) {
-    const Epetra_Map& fmap = mesh_->face_map(true);
+ 
+  const Epetra_Map& fmap = mesh_->face_map(true);
+  Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap));
+  upwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap));
+  downwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap));
 
-    Krel_faces = Teuchos::rcp(new Epetra_Vector(fmap));
-    upwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap));
-    downwind_cell = Teuchos::rcp(new Epetra_IntVector(fmap));
-
-    identify_upwind_cells(*upwind_cell, *downwind_cell);
-  }
+  identify_upwind_cells(*upwind_cell, *downwind_cell);
 }
 
 

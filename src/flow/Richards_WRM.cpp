@@ -18,7 +18,8 @@ void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
 
-    AmanziMesh::Set_ID_List block;
+    //AmanziMesh::Set_ID_List block;
+    std::vector<AmanziMesh::Set_ID> block;
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     std::vector<unsigned int>::iterator i;
