@@ -673,7 +673,7 @@ namespace Amanzi {
 	      // get the regions
 	      Teuchos::Array<std::string> regions = bc.get<Teuchos::Array<std::string> >("Assigned Regions");
 
-	      if ( bc.isSublist("BC:No Flow") )
+	      if ( bc.isSublist("BC:Zero Flow") )
 		{
 		  // this is the natural BC for flow and we need not list it explicitly			    
 		}
@@ -892,8 +892,8 @@ namespace Amanzi {
 	      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 	      
 	      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
-	      double perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
-	      double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
+	      double permeability = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
+	      //double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
 	      
 	      
 	 
@@ -904,9 +904,8 @@ namespace Amanzi {
 
 		  Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
 
-		  // ignore horizontal permeability for now
 		  stt_mat.set<double>("Constant porosity", porosity);
-		  stt_mat.set<double>("Constant permeability", perm_vert);
+		  stt_mat.set<double>("Constant permeability", permeability);
 		  stt_mat.set<std::string>("Region", *i);
 
 		  comp_counter=0;
