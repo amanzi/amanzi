@@ -229,13 +229,31 @@ void Flow_State::distribute_cell_multivector(Epetra_MultiVector& v)
 
 
 /* *******************************************************************
-* Copy data in ghost positions for a vector.              
+* L2 norms.              
 ******************************************************************* */
 double Flow_State::norm_cell(Epetra_Vector& v1, Epetra_Vector& v2)
 {
+  int ncells = (mesh_->cell_map(false)).NumMyElements();
+
   double L2error = 0.0;
-  for (int c=0; c<v1.MyLength(); c++) L2error += pow(v1[c] - v2[c], 2.0);
+  for (int c=0; c<ncells; c++) {
+    double volume = mesh_->cell_volume(c);
+    L2error += volume * pow(v1[c] - v2[c], 2.0);
+  }
   return sqrt(L2error);
+}
+
+
+double Flow_State::norm_cell(Epetra_Vector& v1)
+{
+  int ncells = (mesh_->cell_map(false)).NumMyElements();
+
+  double L2norm = 0.0;
+  for (int c=0; c<ncells; c++) {
+    double volume = mesh_->cell_volume(c);
+    L2norm += volume * pow(v1[c], 2.0);
+  }
+  return sqrt(L2norm);
 }
 
 

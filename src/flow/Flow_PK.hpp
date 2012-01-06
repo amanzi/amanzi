@@ -81,6 +81,10 @@ class Flow_PK : public BDF2::fnBase {
                                 std::vector<int>& bc_markers,
                                 std::vector<double>& bc_values);
 
+  void applyBoundaryConditions(std::vector<int>& bc_markers,
+                               std::vector<double>& bc_values,
+                               Epetra_Vector& pressure_faces);
+
   void calculateGravityFluxes(int cell, 
                               std::vector<WhetStone::Tensor>& K,
                               Epetra_IntVector& upwind_cell, 

@@ -108,7 +108,25 @@ void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
 
 
 /* ******************************************************************
-* Gravity fluxes are calculated w.r.t. actual normals.                                                  
+* Add a boundary marker to used faces.                                          
+****************************************************************** */
+void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
+                                      std::vector<double>& bc_values,
+                                      Epetra_Vector& pressure_faces)
+{
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  for (int f=0; f<nfaces; f++) {
+    if (bc_markers[f] == FLOW_BC_FACE_PRESSURE || 
+        bc_markers[f] == FLOW_BC_FACE_HEAD) {
+      pressure_faces[f] = bc_values[f]; 
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Gravity fluxes are calculated w.r.t. actual normals. Tensor K
+* includes already the following factors: rho * Krel / mu.                                                   
 ****************************************************************** */
 void Flow_PK::calculateGravityFluxes(int c, 
                                      std::vector<WhetStone::Tensor>& K,
@@ -122,7 +140,7 @@ void Flow_PK::calculateGravityFluxes(int c,
 
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho * rho;
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho;
 
   gravity_flux.clear();
 

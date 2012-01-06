@@ -15,6 +15,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 
 #include "Mesh.hh"
 #include "Point.hh"
+#include "gmv_mesh.hh"
 
 #include "Flow_BC_Factory.hpp"
 #include "boundary-function.hh"
@@ -84,8 +85,12 @@ Richards_PK::~Richards_PK()
 { 
   delete super_map_; 
   delete solver; 
-  delete matrix; 
-  if (preconditioner) delete preconditioner;
+  if (matrix == preconditioner) {
+    delete matrix; 
+  } else {
+    delete matrix;
+    delete preconditioner;
+  }
   delete bdf2_dae;
   delete bc_pressure;
   delete bc_head;
@@ -127,6 +132,8 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   double time = (standalone_mode) ? T_internal : T_physical;
 
   bc_pressure->Compute(time);
+  bc_flux->Compute(time);
+  bc_head->Compute(time);
   updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
   // Process other fundamental structures
@@ -187,19 +194,20 @@ int Richards_PK::advanceSteadyState_Picard()
   solver->SetAztecOption(AZ_output, AZ_none);
   int itrs = 0;
   double L2norm, L2error = 1.0, L2error_prev = 1.0;
-  double relaxation = 0.0;
+  double relaxation = 0.5;
 
   while (L2error > err_tol_sss && itrs < max_itrs_sss) {
-    // work-around limited support for tensors
-    setAbsolutePermeabilityTensor(K);
+    setAbsolutePermeabilityTensor(K);  // work-around limited support for tensors
     if (upwind_Krel) {
       identify_upwind_cells(*upwind_cell, *downwind_cell);
       calculateRelativePermeabilityUpwindGravity(*solution_cells);
     } else { 
       calculateRelativePermeability(*solution_cells);
     }
-    for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+    if (itrs) for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+    else for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
 
+    // create algebraic problem
     matrix->createMFDstiffnessMatrices(K);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(matrix);
@@ -225,9 +233,10 @@ int Richards_PK::advanceSteadyState_Picard()
     solver->Iterate(max_itrs, err_tol);
     num_itrs = solver->NumIters();
     double residual = solver->TrueResidual();
+
     if (verbosity >= FLOW_VERBOSITY_HIGH) {
-      cout << "Picard itrs=" << itrs << " residual=" << L2error 
-           << "  cg itrs=" << num_itrs << "  relaxation=" << relaxation << endl;
+      std::printf("Picard step:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%5.3f)  CG info(%8.3e, %4d)\n", 
+          itrs, L2error, L2norm, relaxation, residual, num_itrs);
     }
 
     for (int c=0; c<number_owned_cells; c++) {
@@ -254,18 +263,30 @@ int Richards_PK::advanceSteadyState_Picard()
 ****************************************************************** */
 int Richards_PK::advanceSteadyState_BackwardEuler()
 {
+  Epetra_Vector  solution_old(*solution);
+  Epetra_Vector& solution_new = *solution;
+
   solver->SetAztecOption(AZ_output, AZ_none);
 
-  int itrs = 0;
-  double T = 0.0, Tend = 1000000.0;
-  dT = 1000.0;
+  T_internal = 0.0;
+  dT = 4.0e+10 / max_itrs_sss;
 
-  while (T < Tend) {
+  int itrs = 0;
+  double L2error = 1.0;
+  while (L2error > err_tol_sss && itrs < max_itrs_sss) {
     // work-around limited support for tensors
     setAbsolutePermeabilityTensor(K);
     calculateRelativePermeability(*solution_cells);
     for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
 
+    // update boundary conditions
+    double time = T_internal;
+    bc_pressure->Compute(time);
+    bc_flux->Compute(time);
+    bc_head->Compute(time);
+    updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+
+    // create algebraic problem
     matrix->createMFDstiffnessMatrices(K);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(matrix);
@@ -284,12 +305,28 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     solver->Iterate(max_itrs, err_tol);
     num_itrs = solver->NumIters();
     double residual = solver->TrueResidual();
-cout << itrs << " res=" << residual << "  cg=" << num_itrs << endl;
 
-    T += dT;
+    // error estimates
+    double sol_error = FS->norm_cell(solution_old, solution_new);
+    double sol_norm = FS->norm_cell(solution_new);
+    L2error = sol_error / sol_norm;
+
+    solution_old = solution_new;
+    if (verbosity >= FLOW_VERBOSITY_HIGH) {
+      std::printf("Time step:%4d   Pressure(diff=%9.4e, norm=%9.4e)  CG info(%8.3e, %4d)\n", 
+          itrs, L2error, sol_norm, residual, num_itrs);
+    }
+
+    T_internal += dT;
     itrs++;
+
+    // DEBUG
+    GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(*solution_cells, 0, "pressure");
+    GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
+    GMV::close_data_file();
   }
-//for (int c=0; c<K.size(); c+=4) cout << (*solution_cells)[c] << endl; 
 
   return 0;
 }

@@ -92,6 +92,10 @@ class Richards_PK : public Flow_PK {
   double get_rho() { return rho; }
   double get_mu() { return mu; }
 
+  std::vector<int>& get_bc_markers() { return bc_markers; }
+  std::vector<double>& get_bc_values() { return bc_values; }
+  Epetra_Vector& get_Krel_cells() { return *Krel_cells; }
+
  private:
   Teuchos::RCP<Teuchos::ParameterList> rp_list;
 
