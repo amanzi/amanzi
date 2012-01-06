@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "grid-indicator.hh"
+#include "grid-color-function.hh"
 
 using namespace Amanzi;
 
@@ -19,7 +19,7 @@ SUITE(Grid) {
     std::vector<double> x0(1, 0.0);
     std::vector<double> dx(1, 1.0);
     std::vector<int> array(1, 2);
-    GridIndicator f(1,count,x0,dx,array);
+    GridColorFunction f(1,count,x0,dx,array);
     double x;
     x = -1.0;
     CHECK_EQUAL(f(&x), 2);
@@ -34,7 +34,7 @@ SUITE(Grid) {
     std::vector<double> x0(1, 1.0);
     std::vector<double> dx(1, 1.0);
     std::vector<int> array(3); array[0] = 1; array[1] = 2; array[2] = 3;
-    GridIndicator f(1,count,x0,dx,array);
+    GridColorFunction f(1,count,x0,dx,array);
     double x;
     x = 0.5;
     CHECK_EQUAL(f(&x), 1);
@@ -54,7 +54,7 @@ SUITE(Grid) {
     std::vector<double> x0(2); x0[0] = 1.0;  x0[1] = 2.0;
     std::vector<double> dx(2); dx[0] = -1.0; dx[1] = 1.0;
     std::vector<int> array(1, 2);
-    GridIndicator f(2,count,x0,dx,array);
+    GridColorFunction f(2,count,x0,dx,array);
     double x1[2] = {-1.0, 0.0};
     CHECK_EQUAL(f(x1), 2);
     double x2[2] = {2.0, 4.0};
@@ -72,7 +72,7 @@ SUITE(Grid) {
     std::vector<double> dx(2); dx[0] = -1.0; dx[1] = 1.0;
     std::vector<int> array(4);
     for (int i = 0; i < 4; ++i) array[i] = 1 + i;
-    GridIndicator f(2,count,x0,dx,array);
+    GridColorFunction f(2,count,x0,dx,array);
     double x1[2] = {1.5, 0.5};
     CHECK_EQUAL(1, f(x1));
     double x2[2] = {0.5, 0.5};
@@ -102,7 +102,7 @@ SUITE(Grid) {
         }
       }
     }
-    GridIndicator f(3,count,x0,dx,array);
+    GridColorFunction f(3,count,x0,dx,array);
     int fx;
     double x[3];
     for (int iz = 0; iz < count[2]; ++iz) {

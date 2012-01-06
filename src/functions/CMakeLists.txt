@@ -67,12 +67,12 @@ if (BUILD_TESTS)
   target_link_libraries(function-factory-test functions ${UnitTest_LIBRARIES})
   add_amanzi_test(function-factory function-factory-test KIND unit)
   
-  add_executable(all-indicator-test test/all-indicator-test.cc)
-  target_link_libraries(all-indicator-test functions ${UnitTest_LIBRARIES})
-  add_amanzi_test(concrete-indicators all-indicator-test KIND unit)
+  add_executable(all-color-function-test test/all-color-function-test.cc)
+  target_link_libraries(all-color-function-test functions ${UnitTest_LIBRARIES})
+  add_amanzi_test(concrete-color-function all-color-function-test KIND unit)
 
-  add_executable(indicator-factory-test test/indicator-factory-test.cc)
-  target_link_libraries(indicator-factory-test functions ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-  add_amanzi_test(indicator-factory indicator-factory-test KIND unit)
+  add_executable(color-function-factory-test test/color-function-factory-test.cc)
+  target_link_libraries(color-function-factory-test functions ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+  add_amanzi_test(color-function-factory color-function-factory-test KIND unit)
 
 endif()
