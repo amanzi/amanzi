@@ -1155,6 +1155,74 @@ An example is given by the following:
 
 `Integrated Mass, All, Observation Data: Integral, Water Mass Density, 1000, 1.00e3`
 
+Tabulated Function File Format
+==============================
+
+The following ASCII input file format supports the definition of a tabulated function defined over a grid.  Several XML input Parameters refer to files in this format.  The file consists of the following records (lines).  Each record is on a single line, except for the DATAVAL record which may be split across multiple lines.
+
+1. **DATATYPE**:  An integer value: 0 for integer data, 1 for real data.
+
+  * An integer-valued file is used to define a 'color' function used in the definition of a region.
+
+2. **GRIDTYPE**:  A string that specifies the type of grid used to define the function.  The format of the rest of the file is contingent upon this value.  The currently supported options are uniform rectilinear grids in 1, 2 and 3-D, which are indicated by the values `1DCoRectMesh`, `2DCoRectMesh` and `3DCoRectMesh`, respectively (names adopted from XDMF).
+
+For the uniform rectilinear grids, the remaining records are as follows.  Several records take 1, 2 or 3 values depending on the space dimension of the grid.
+
+3. **NXNYNZ**: 3 (or 2, 1) integer values (NX, NY, NZ) giving the number of zones in the x, y and z coordinate directions, respectively.
+
+4. **CORNER1**: 3 (or 2, 1) floating point values (X1, Y1, Z1) giving the coordinate of the first corner of the domain.
+
+5. **CORNER2**: 3 (or 2, 1) floating point values (X2, Y2, Z2) giving the coordinate of the second corner of the domain.  The grid points r_{i,j,k} = (x_i, y_j, z_j) are defined as:
+
+      x_i = X1 + i*(X2-X1)/NX, 0 <= i <= NX
+
+      y_j = Y1 + j*(Y2-Y1)/NY, 0 <= j <= NY
+
+      z_k = Z1 + k*(Z2-Z1)/NZ, 0 <= k <= NZ
+
+  The (i,j,k) grid cell is defined by the corner grid points r_{i-1,j-1,k-1} and r_{i,j,k}, for 1 <= i <= NX, 1 <= j <= NY, 1 <= k <= NZ.  Note that the corner points are any pair of opposite corner points; the ordering of grid points and cells starts at CORNER1 and ends at CORNER2.
+
+6. **DATALOC**:  An integer value: 0 for cell-based data, 1 for point-based data.
+
+
+7. **DATACOL**:  An integer (N) giving the number of "columns" in the data.  This is the number of values per grid cell/point.  N=1 for a scalar valued function; N>1 for a N-vector valued function.
+
+  * [U] only a single column is currently supported.
+
+8. **DATAVAL**: The values of the function on the cells/points of the grid.  The values should appear in Fortran array order were the values stored in the Fortran array A(N,NX,NY,NZ) (A(N,0:NX,0:NY,0:NZ) for point-based data).  That is, the column index varies fastest, x grid index next fastest, etc.
+    
+Example
+-------
+
+As an example, consider the following integer-valued function in 2-D:
+
+::
+ 
+                  +-----+-----+-----+ (2,3)
+                  |     |     |     |
+                  |  2  |  1  |  1  |
+                  |     |     |     |
+                  +-----+-----+-----+
+                  |     |     |     |
+                  |  5  |  1  |  2  |
+                  |     |     |     |
+            (0,0) +-----+-----+-----+
+
+
+The corresponding input file would be:
+
+.. code-block:: text
+
+  0
+  2DCoRectMesh
+  3 2
+  0.0 0.0
+  2.0 3.0
+  0
+  1
+  5 1 2 2 1 1
+
+
 Complete Example
 =================
 
