@@ -108,22 +108,26 @@ int main(int argc, char *argv[]) {
 	std::ofstream out(obs_file.c_str());
 	out.precision(16);
 	out.setf(std::ios::scientific);
-	std::vector<std::string> labellist = output_observations.observationLabels();
 	
 	out << "Observation Name, Region, Functional, Variable, Time, Value\n";
 	out << "===========================================================\n";
-	for (int i = 0; i < labellist.size(); i++) {	  
-	  const Teuchos::ParameterList& ind_obs_list = 
-	    obs_list.sublist(labellist[i]);
-	  
-	  for (int j = 0; j < output_observations[labellist[i]].size(); j++) {
-	    if (output_observations[labellist[i]][j].is_valid)
-	      out << labellist[i] << ", " 
+
+	for (Teuchos::ParameterList::ConstIterator i=obs_list.begin(); i!=obs_list.end(); ++i) {
+	  std::string label  = obs_list.name(i);
+	  std::string _label = label;
+	  if (framework=="Structured")_label = Amanzi::AmanziInput::underscore(label);
+	  const Teuchos::ParameterEntry& entry = obs_list.getEntry(label);
+	  if (entry.isList()) {
+	    const Teuchos::ParameterList& ind_obs_list = obs_list.sublist(label);
+	    for (int j = 0; j < output_observations[_label].size(); j++) {
+	    if (output_observations[_label][j].is_valid)
+	      out << label << ", " 
 		  << ind_obs_list.get<std::string>("Region") << ", "
 		  << ind_obs_list.get<std::string>("Functional") << ", "
 		  << ind_obs_list.get<Teuchos::Array<std::string> >("Variable Macro") << ", "
-		  << output_observations[labellist[i]][j].time << ", "
-		  << output_observations[labellist[i]][j].value << std::endl;
+		  << output_observations[_label][j].time << ", "
+		  << output_observations[_label][j].value << std::endl;
+	    }
 	  }
 	}
 	out.close();
