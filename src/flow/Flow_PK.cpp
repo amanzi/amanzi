@@ -125,14 +125,14 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
 
 
 /* ******************************************************************
-* Gravity fluxes are calculated w.r.t. actual normals. Tensor K
-* includes already the following factors: rho * Krel / mu.                                                   
+* Gravity fluxes are calculated w.r.t. actual normals. Here K is
+* the hydraulic conductivity times relative permeability.
 ****************************************************************** */
 void Flow_PK::calculateGravityFluxes(int c, 
                                      std::vector<WhetStone::Tensor>& K,
                                      Epetra_IntVector& upwind_cell,
                                      std::vector<double>& gravity_flux,
-                                     bool upwind_Krel) 
+                                     bool flag_upwind) 
 {
   AmanziMesh::Entity_ID_List faces;
   mesh_->cell_get_faces(c, &faces);
@@ -148,7 +148,7 @@ void Flow_PK::calculateGravityFluxes(int c,
     int f = faces[n];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    if (upwind_Krel) {
+    if (flag_upwind) {
       int c1 = upwind_cell[f];
       if (c1 >= 0) c1 = c; 
       gravity_flux.push_back((K[c1] * gravity) * normal);

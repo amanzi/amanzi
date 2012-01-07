@@ -22,20 +22,10 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Wrapper for the real constructor (temporary solution ???)
-****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
-{
-  Teuchos::RCP<Teuchos::ParameterList> dp_list_rcp = Teuchos::rcp(new Teuchos::ParameterList(dp_list_));
-  Darcy_PK(dp_list_rcp, FS_MPC);
-}
-
-
-/* ******************************************************************
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::RCP<Teuchos::ParameterList> dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
 
@@ -78,8 +68,12 @@ Darcy_PK::~Darcy_PK()
 { 
   delete super_map_; 
   delete solver; 
-  delete matrix; 
-  if (preconditioner) delete preconditioner;
+  if (matrix == preconditioner) {
+    delete matrix; 
+  } else {
+    delete matrix;
+    delete preconditioner;
+  }
   delete bc_pressure;
   delete bc_head;
   delete bc_flux; 
@@ -119,6 +113,8 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   double time = (standalone_mode) ? T_internal : T_physical;
 
   bc_pressure->Compute(time);
+  bc_head->Compute(time);
+  bc_flux->Compute(time);
   updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
   // Process other fundamental structures
@@ -126,7 +122,7 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Preconditioner
-  Teuchos::ParameterList ML_list = dp_list->sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
   preconditioner->init_ML_preconditioner(ML_list);
 };
 

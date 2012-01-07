@@ -25,20 +25,10 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Wrapper for the real constructor (temporary solution ???)
-****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC)
-{
-  Teuchos::RCP<Teuchos::ParameterList> rp_list_rcp = Teuchos::rcp(new Teuchos::ParameterList(rp_list_));
-  Richards_PK(rp_list_rcp, FS_MPC);
-}
-
-
-/* ******************************************************************
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos::RCP<Flow_State> FS_MPC)
+Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);
 
@@ -73,7 +63,7 @@ Richards_PK::Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos:
 #endif
 
   // miscalleneous
-  upwind_Krel = true;
+  flag_upwind = true;
   verbosity = FLOW_VERBOSITY_HIGH;
 }
 
@@ -141,15 +131,15 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Preconditioner
-  Teuchos::ParameterList ML_list = rp_list->sublist("ML Parameters");
+  Teuchos::ParameterList ML_list = rp_list.sublist("ML Parameters");
   preconditioner->init_ML_preconditioner(ML_list); 
 
   // Create the Richards model evaluator and time integrator
-  Teuchos::ParameterList& rme_list = rp_list->sublist("Richards model evaluator");
+  Teuchos::ParameterList& rme_list = rp_list.sublist("Richards model evaluator");
   absolute_tol_bdf = rme_list.get<double>("Absolute error tolerance", 1.0);
   relative_tol_bdf = rme_list.get<double>("Relative error tolerance", 1e-5); 
 
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list->sublist("Time integrator")));
+  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
   bdf2_dae = new BDF2::Dae(*this, *super_map_);
   bdf2_dae->setParameterList(bdf2_list);
 
@@ -198,7 +188,7 @@ int Richards_PK::advanceSteadyState_Picard()
 
   while (L2error > err_tol_sss && itrs < max_itrs_sss) {
     setAbsolutePermeabilityTensor(K);  // work-around limited support for tensors
-    if (upwind_Krel) {
+    if (flag_upwind) {
       identify_upwind_cells(*upwind_cell, *downwind_cell);
       calculateRelativePermeabilityUpwindGravity(*solution_cells);
     } else { 
@@ -246,6 +236,13 @@ int Richards_PK::advanceSteadyState_Picard()
 
     L2error_prev = L2error;
     itrs++;
+
+    // DEBUG
+    GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(*solution_cells, 0, "pressure");
+    GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
+    GMV::close_data_file();
   }
   
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
@@ -269,7 +266,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
   solver->SetAztecOption(AZ_output, AZ_none);
 
   T_internal = 0.0;
-  dT = 4.0e+10 / max_itrs_sss;
+  dT = 3.0e+07 / max_itrs_sss;
 
   int itrs = 0;
   double L2error = 1.0;
@@ -277,7 +274,9 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     // work-around limited support for tensors
     setAbsolutePermeabilityTensor(K);
     calculateRelativePermeability(*solution_cells);
-    for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+
+    if (itrs) for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
+    else for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
 
     // update boundary conditions
     double time = T_internal;
@@ -290,7 +289,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     matrix->createMFDstiffnessMatrices(K);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(matrix);
-    addTimeDerivative_MFD(*solution_cells, matrix);
+    if (itrs) addTimeDerivative_MFD(*solution_cells, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
     matrix->computeSchurComplement(bc_markers, bc_values);
@@ -324,6 +323,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(*solution_cells, 0, "pressure");
+  GMV::write_cell_data(*(FS->get_absolute_permeability()), 0, "abs_permeability");
     GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
     GMV::close_data_file();
   }
@@ -420,10 +420,16 @@ void Richards_PK::addGravityFluxes_MFD(Matrix_MFD* matrix)
     mesh_->cell_get_face_dirs(c, &dirs);
     int nfaces = faces.size();
 
-    calculateGravityFluxes(c, K, *upwind_cell, gravity_flux, upwind_Krel);
+    calculateGravityFluxes(c, K, *upwind_cell, gravity_flux, flag_upwind);
     
     Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
-    for (int n=0; n<nfaces; n++) Ff[n] += gravity_flux[n] * dirs[n];
+    double Fc = matrix->get_Fc_cells()[c];
+
+    for (int n=0; n<nfaces; n++) {
+      double outward_flux = gravity_flux[n] * dirs[n];
+      Ff[n] += outward_flux;
+      Fc += outward_flux;  // Nonzero-sum contribution if flag_upwind = true.
+    }
   }
 }
 

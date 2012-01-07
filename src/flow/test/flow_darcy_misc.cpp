@@ -27,7 +27,7 @@ using namespace Amanzi::AmanziFlow;
 class DarcyProblem {
  public:
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
-  Teuchos::RCP<Teuchos::ParameterList> dp_list;
+  Teuchos::ParameterList dp_list;
   AmanziFlow::Darcy_PK* DPK; 
 
   DarcyProblem() 
@@ -39,15 +39,15 @@ class DarcyProblem {
     updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
     // create an SIMPLE mesh framework 
-    Teuchos::ParameterList& region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list);
     mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
 
-    Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-    dp_list = Teuchos::rcp(new Teuchos::ParameterList(flow_list.get<Teuchos::ParameterList>("Darcy Problem")));
+    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+    dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
 
     // create Darcy process kernel
-    Teuchos::ParameterList& state_list = parameter_list.get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
     State S(state_list, mesh);
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
     DPK = new Darcy_PK(dp_list, FS);
@@ -55,7 +55,8 @@ class DarcyProblem {
 
   ~DarcyProblem() { delete DPK; }
 
-  void reset_bc(const char *type, const char *bc_x, double value) 
+  void create_bc_list(
+      const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
   {
     std::string func_list_name;
     if (type == "pressure") {
@@ -65,9 +66,15 @@ class DarcyProblem {
     } else if (type == "mass flux") {
       func_list_name = "outward mass flux";
     }
-    Teuchos::ParameterList& bc_list = dp_list->get<Teuchos::ParameterList>("boundary conditions");
-    Teuchos::ParameterList& function_list = bc_list.sublist(type).sublist(bc_x).sublist(func_list_name);
-    function_list.sublist("function-constant").set("value", value);
+    Teuchos::ParameterList& bc_list = dp_list.get<Teuchos::ParameterList>("boundary conditions");
+    Teuchos::ParameterList& type_list = bc_list.get<Teuchos::ParameterList>(type);
+
+    Teuchos::ParameterList& bc_sublist = type_list.sublist(bc_x);
+    bc_sublist.set("regions", regions);
+
+    Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist(func_list_name);
+    Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
+    function_list.set("value", value);
   }
   
   double cell_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
@@ -118,8 +125,14 @@ class DarcyProblem {
 SUITE(Simple_1D_Flow) {
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     std::cout <<"Flow 1D: test 1" << std::endl;
-    reset_bc("pressure", "BC 1", 0.0);  // reset default b.c.
-    reset_bc("pressure", "BC 2", 1.0);
+
+    Teuchos::Array<std::string> regions(1);
+    regions[0] = string("Top side");
+    create_bc_list("pressure", "BC 1", regions, 0.0);
+
+    regions[0] = string("Bottom side");
+    create_bc_list("pressure", "BC 2", regions, 1.0);
+    DPK->resetParameterList(dp_list);
 
     DPK->Init();
     DPK->advance_to_steady_state();

@@ -18,17 +18,17 @@ namespace AmanziFlow {
 void Richards_PK::processParameterList()
 {
   Teuchos::ParameterList preconditioner_list;
-  preconditioner_list = rp_list->get<Teuchos::ParameterList>("Diffusion Preconditioner");
+  preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
   max_itrs = preconditioner_list.get<int>("Max Iterations");
   err_tol = preconditioner_list.get<double>("Error Tolerance");
 
-  upwind_Krel = rp_list->get<bool>("Upwind relative permeability", true);
-  atm_pressure = rp_list->get<double>("Atmospheric pressure");
+  flag_upwind = rp_list.get<bool>("Upwind relative permeability", true);
+  atm_pressure = rp_list.get<double>("Atmospheric pressure");
 
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> 
-      bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list->sublist("boundary conditions", true)));
+      bc_list = Teuchos::rcp(new Teuchos::ParameterList(rp_list.sublist("boundary conditions", true)));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.CreatePressure();
@@ -43,11 +43,11 @@ void Richards_PK::processParameterList()
   bc_flux->Compute(time);
 
   // Create water retention models
-  if (!rp_list->isSublist("Water retention models")) {
+  if (!rp_list.isSublist("Water retention models")) {
     Errors::Message m("There is no Water retention models list");
     Exceptions::amanzi_throw(m);
   }
-  Teuchos::ParameterList& vG_list = rp_list->sublist("Water retention models");
+  Teuchos::ParameterList& vG_list = rp_list.sublist("Water retention models");
 
   int nblocks = 0;  // Find out how many WRM entries there are.
   for (Teuchos::ParameterList::ConstIterator i = vG_list.begin(); i != vG_list.end(); i++) {
@@ -80,7 +80,7 @@ void Richards_PK::processParameterList()
   }
 
   // Steady state solution
-  Teuchos::ParameterList& steady_state_list = rp_list->sublist("Steady state solution");
+  Teuchos::ParameterList& steady_state_list = rp_list.sublist("Steady state solution");
 
   string method_name = steady_state_list.get<string>("method", "Picard");
   if (method_name == "Picard") {

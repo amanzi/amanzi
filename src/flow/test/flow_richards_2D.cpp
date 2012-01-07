@@ -51,8 +51,8 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
 
   // create Richards process kernel
-  ParameterList& flow_list = parameter_list.get<ParameterList>("Flow");
-  RCP<ParameterList> rp_list = rcp(new ParameterList(flow_list.get<ParameterList>("Richards Problem")));
+  ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
+  ParameterList rp_list = flow_list.get<ParameterList>("Richards Problem");
   Richards_PK* RPK = new Richards_PK(rp_list, FS);
   RPK->Init();
 

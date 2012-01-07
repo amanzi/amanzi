@@ -34,7 +34,6 @@ class Interface_BDF2;  // forward declaration of class
 class Richards_PK : public Flow_PK {
  public:
   Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
-  Richards_PK(Teuchos::RCP<Teuchos::ParameterList> rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   ~Richards_PK ();
 
   // main methods
@@ -76,6 +75,7 @@ class Richards_PK : public Flow_PK {
 
   // control methods
   void print_statistics() const;
+  void resetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
   
   // access methods
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
@@ -97,7 +97,7 @@ class Richards_PK : public Flow_PK {
   Epetra_Vector& get_Krel_cells() { return *Krel_cells; }
 
  private:
-  Teuchos::RCP<Teuchos::ParameterList> rp_list;
+  Teuchos::ParameterList rp_list;
 
   Teuchos::RCP<Flow_State> FS;
   AmanziGeometry::Point gravity;
@@ -145,7 +145,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  bool upwind_Krel;
+  bool flag_upwind;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 
   int verbosity;

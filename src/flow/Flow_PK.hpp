@@ -89,7 +89,7 @@ class Flow_PK : public BDF2::fnBase {
                               std::vector<WhetStone::Tensor>& K,
                               Epetra_IntVector& upwind_cell, 
                               std::vector<double>& gravity_flux, 
-                              bool upwind_Krel = false);
+                              bool flag_upwind = false);
   void addGravityFluxes(Epetra_Vector& darcy_flux);
 
   // access members  

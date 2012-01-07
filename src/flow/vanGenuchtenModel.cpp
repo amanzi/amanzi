@@ -41,7 +41,7 @@ double vanGenuchtenModel::k_relative(double p)
 
 
 /* ******************************************************************
-* Saturation formula.                                         
+* Saturation formula (3.5)-(3.6).                                         
 ****************************************************************** */
 double vanGenuchtenModel::saturation(double p)
 {

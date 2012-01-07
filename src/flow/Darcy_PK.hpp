@@ -28,7 +28,6 @@ namespace AmanziFlow {
 class Darcy_PK : public Flow_PK {
  public:
   Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
-  Darcy_PK(Teuchos::RCP<Teuchos::ParameterList> dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
   ~Darcy_PK();
 
   // main methods
@@ -51,6 +50,7 @@ class Darcy_PK : public Flow_PK {
 
   // control methods
   void print_statistics() const;
+  void resetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list = dp_list_new; }
 
   // access methods
   Flow_State& get_FS() { return *FS; }
@@ -61,7 +61,7 @@ class Darcy_PK : public Flow_PK {
   double get_mu() { return mu; }
 
  private:
-  Teuchos::RCP<Teuchos::ParameterList> dp_list;
+  Teuchos::ParameterList dp_list;
 
   Teuchos::RCP<Flow_State> FS;
   AmanziGeometry::Point gravity;

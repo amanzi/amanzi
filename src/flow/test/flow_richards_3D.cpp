@@ -56,7 +56,7 @@ cout << "Test: 3D Richards, crib model" << endl;
 
   // create Richards process kernel
   ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
-  RCP<ParameterList> rp_list = rcp(new ParameterList(flow_list.get<ParameterList>("Richards Problem")));
+  ParameterList rp_list = flow_list.get<ParameterList>("Richards Problem");
   Richards_PK* RPK = new Richards_PK(rp_list, FS);
   RPK->Init();
 

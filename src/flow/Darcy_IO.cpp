@@ -18,17 +18,18 @@ namespace AmanziFlow {
 void Darcy_PK::process_parameter_list()
 {
   Teuchos::ParameterList preconditioner_list;
-  preconditioner_list = dp_list->get<Teuchos::ParameterList>("Diffusion Preconditioner");
+  preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
   max_itrs = preconditioner_list.get<int>("Max Iterations");
   err_tol = preconditioner_list.get<double>("Error Tolerance");
 
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list->sublist("boundary conditions", true));
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list.sublist("boundary conditions", true));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.CreatePressure();
   bc_head = bc_factory.CreateStaticHead(0.0, rho, gravity[dim - 1]);
+cout << bc_head << endl;
   bc_flux = bc_factory.CreateMassFlux();
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  

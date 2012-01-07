@@ -40,15 +40,15 @@ class RichardsProblem {
     updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
     // create an SIMPLE mesh framework 
-    Teuchos::ParameterList& region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
+    Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list);
     mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 2, 2, 80, comm, gm)); 
 
-    Teuchos::ParameterList& flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-    rp_list = Teuchos::rcp(new Teuchos::ParameterList(flow_list.get<Teuchos::ParameterList>("Richards Problem")));
+    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
+    Teuchos::ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
 
     // create Richards process kernel
-    Teuchos::ParameterList& state_list = parameter_list.get<Teuchos::ParameterList>("State");
+    Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
     State S(state_list, mesh);
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
     RPK = new Richards_PK(rp_list, FS);
