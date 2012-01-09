@@ -59,7 +59,7 @@ double vanGenuchtenModel::saturation(double p)
 ****************************************************************** */
 double vanGenuchtenModel::d_saturation(double p)
 {
-  double pc = atm_pressure - p; // capillary pressure
+  double pc = atm_pressure - p;  // capillary pressure
   if (pc > 0.0) {
     return m*n * pow(1.0 + pow(alpha*pc, n), -m-1.0) * pow(alpha*pc, n-1) * alpha * (1.0 - sr);
   } else {

@@ -38,8 +38,8 @@ class Flow_State {
   void distribute_face_vector(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
   void distribute_cell_multivector(Epetra_MultiVector& v);
 
-  Epetra_Vector* create_cell_view(const Epetra_Vector&) const;
-  Epetra_Vector* create_face_view(const Epetra_Vector&) const;
+  Epetra_Vector* createCellView(const Epetra_Vector& u) const;
+  Epetra_Vector* createFaceView(const Epetra_Vector& u) const;
 
   // access methods
   Teuchos::RCP<Epetra_Vector> get_porosity() { return porosity; }
@@ -57,6 +57,7 @@ class Flow_State {
   Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
   Epetra_Vector& ref_absolute_permeability() { return *absolute_permeability; }
   double ref_fluid_density() { return *fluid_density; }
+  double ref_fluid_viscosity() { return *fluid_viscosity; }
 
   // miscaleneous
   double get_time() { return S_->get_time(); }

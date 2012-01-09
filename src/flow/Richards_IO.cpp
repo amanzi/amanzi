@@ -87,12 +87,14 @@ void Richards_PK::processParameterList()
     method_sss = FLOW_STEADY_STATE_PICARD;
   } else if (method_name == "backward Euler") {
     method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
-  } else if (method_name == "NOX") {
-    method_sss = FLOW_STEADY_STATE_NOX; 
+  } else if (method_name == "BDF2") {
+    method_sss = FLOW_STEADY_STATE_BDF2; 
   }
 
   max_itrs_sss = steady_state_list.get<int>("max iterations", FLOW_STEADY_STATE_MAX_ITERATIONS);
   err_tol_sss = steady_state_list.get<double>("solver tolerance", FLOW_STEADY_STATE_TOLERANCE);
+
+  dT = steady_state_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
 }
 
 }  // namespace AmanziFlow

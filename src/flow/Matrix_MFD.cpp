@@ -198,8 +198,8 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
   Sff->GlobalAssemble();
 
   rhs = Teuchos::rcp(new Epetra_Vector(super_map));
-  rhs_cells = Teuchos::rcp(FS->create_cell_view(*rhs));
-  rhs_faces = Teuchos::rcp(FS->create_face_view(*rhs));
+  rhs_cells = Teuchos::rcp(FS->createCellView(*rhs));
+  rhs_faces = Teuchos::rcp(FS->createFaceView(*rhs));
 }
 
 
@@ -413,7 +413,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   (*Acf).Multiply(true, Tc, Tf);  // this should do the required parallel comm
   Tf.Update(1.0, Xf, -1.0);
 
-  // Solve the Schur complement system for Yf with Tf as the rhs using ML
+  // Solve the Schur complement system Aff * Yf = Tf.
   MLprec->ApplyInverse(Tf, Yf);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
@@ -434,7 +434,7 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
                                  const Epetra_Import& face_importer, 
                                  Epetra_Vector& darcy_flux)
 {
-  Epetra_Vector* solution_faces = FS->create_face_view(solution);
+  Epetra_Vector* solution_faces = FS->createFaceView(solution);
 #ifdef HAVE_MPI
   Epetra_Vector solution_faces_wghost(mesh_->face_map(true));
   solution_faces_wghost.Import(*solution_faces, face_importer, Insert);
@@ -475,7 +475,7 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
 void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_flux, Epetra_MultiVector& darcy_velocity) const
 {
   Teuchos::LAPACK<int, double> lapack;
-  double rhs[FLOW_MAX_FACES];
+  double rhs_cell[FLOW_MAX_FACES];
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -495,7 +495,7 @@ void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_flux, Epetra_Mul
       double area = mesh_->face_area(f);
 
       for (int i=0; i<dim; i++) {
-        rhs[i] += normal[i] * darcy_flux[f] * dirs[f];
+        rhs_cell[i] += normal[i] * darcy_flux[f] * dirs[f];
         matrix(i,i) += normal[i] * normal[i]; 
         for (int j=i+1; j<dim; j++) {
           matrix(j,i) = matrix(i,j) += normal[i] * normal[j];
@@ -504,9 +504,9 @@ void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_flux, Epetra_Mul
     }
 
     int info;
-    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs, dim, &info); 
+    lapack.POSV('U', dim, 1, matrix.values(), dim, rhs_cell, dim, &info); 
 
-    for (int i=0; i<dim; i++) darcy_velocity[i][c] = rhs[i];
+    for (int i=0; i<dim; i++) darcy_velocity[i][c] = rhs_cell[i];
   }
 }
 

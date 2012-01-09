@@ -28,8 +28,8 @@ class RichardsProblem {
  public:
   Epetra_MpiComm* comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
-  Teuchos::RCP<Teuchos::ParameterList> rp_list;
-  Richards_PK* RPK; 
+  Teuchos::ParameterList rp_list;
+  AmanziFlow::Richards_PK* RPK; 
 
   RichardsProblem() 
   {
@@ -45,18 +45,21 @@ class RichardsProblem {
     mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 2, 2, 80, comm, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-    Teuchos::ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
+    rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
 
     // create Richards process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
     State S(state_list, mesh);
+
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
     RPK = new Richards_PK(rp_list, FS);
+    RPK->set_standalone_mode(true);
   }
 
   ~RichardsProblem() { delete RPK; delete comm; }
 
-  void reset_bc(const char *type, const char *bc_x, double value) 
+  void create_bc_list(
+      const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
   {
     std::string func_list_name;
     if (type == "pressure") {
@@ -66,9 +69,15 @@ class RichardsProblem {
     } else if (type == "mass flux") {
       func_list_name = "outward mass flux";
     }
-    Teuchos::ParameterList& bc_list = rp_list->get<Teuchos::ParameterList>("boundary conditions");
-    Teuchos::ParameterList& function_list = bc_list.sublist(type).sublist(bc_x).sublist(func_list_name);
-    function_list.sublist("function-constant").set("value", value);
+    Teuchos::ParameterList& bc_list = rp_list.get<Teuchos::ParameterList>("boundary conditions");
+    Teuchos::ParameterList& type_list = bc_list.get<Teuchos::ParameterList>(type);
+
+    Teuchos::ParameterList& bc_sublist = type_list.sublist(bc_x);
+    bc_sublist.set("regions", regions);
+
+    Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist(func_list_name);
+    Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
+    function_list.set("value", value);
   }
   
   double cell_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
@@ -118,26 +127,32 @@ class RichardsProblem {
 
 SUITE(Simple_1D_Flow) {
   TEST_FIXTURE(RichardsProblem, DirichletDirichlet) {
-    std::cout <<"Flow 1D: test 1" << std::endl;
-    reset_bc("pressure", "BC 1", 0.0);  // reset default b.c.
-    reset_bc("pressure", "BC 2", 0.0);
+    std::cout <<"Richards 1D: Dirichlet-Dirichlet" << std::endl;
 
-    RPK->Init();
-    RPK->advance_to_steady_state();
+    double rho = RPK->get_rho();  // set up analytic solution
+    double mu = RPK->get_mu();
 
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    double error = cell_pressure_error(p0, pressure_gradient);
-    CHECK(error < 1.0e-8);
+    AmanziGeometry::Point velocity(3);
+    velocity = -rho * (pressure_gradient - rho * RPK->get_gravity()) / mu;
 
+    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
+    regions[0] = string("Top side");
+    create_bc_list("pressure", "BC 1", regions, 0.0);
+
+    regions[0] = string("Bottom side");
+    create_bc_list("pressure", "BC 2", regions, 0.0);
+    RPK->resetParameterList(rp_list);
+
+    RPK->Init();  // setup the problem
+    RPK->advance_to_steady_state();
+for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_solution_cells()[c] << endl;
+
+    double error = cell_pressure_error(p0, pressure_gradient); // error checks
+    CHECK(error < 1.0e-8);
     error = face_pressure_error(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-
-    double rho = RPK->get_rho();
-    double mu = RPK->get_mu();
-
-    AmanziGeometry::Point velocity;
-    velocity = -rho * (pressure_gradient / mu + rho * RPK->get_gravity());
     error = darcy_flux_error(velocity);
     CHECK(error < 1.0e-8);
   }

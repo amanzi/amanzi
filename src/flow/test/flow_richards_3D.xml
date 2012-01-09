@@ -52,7 +52,8 @@
        <ParameterList name="Steady state solution">
          <Parameter name="method" type="string" value="backward Euler"/>
          <Parameter name="max iterations" type="int" value="1000"/>
-         <Parameter name="solver tolerance" type="double" value="1e-12"/>
+         <Parameter name="solver tolerance" type="double" value="1e-9"/>
+         <Parameter name="Initial time step" type="double" value="1e-12"/>
        </ParameterList>
 
        <ParameterList name="Time integrator">
@@ -60,13 +61,13 @@
          <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
          <Parameter name="NKA max vectors" type="int" value="5"/>
          <Parameter name="Nonlinear solver max iterations" type="int" value="40"/>
-         <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
+         <Parameter name="Nonlinear solver tolerance" type="double" value="1e-5"/>
          <ParameterList name="VerboseObject">
-           <Parameter name="Verbosity Level" type="string" value="low"/>
+           <Parameter name="Verbosity Level" type="string" value="medium"/>
          </ParameterList>
        </ParameterList>
 
-       <Parameter name="Upwind relative permeability" type="bool" value="true"/>
+       <Parameter name="Upwind relative permeability" type="bool" value="false"/>
 
        <ParameterList name="Water retention models">
          <ParameterList name="Water Retention Model for Bfr">
@@ -134,7 +135,7 @@
                <ParameterList name="function-tabular">
                  <Parameter name="forms" type="Array string" value="{constant}"/>
                  <Parameter name="x values" type="Array double" value="{0, 1e+09}"/>
-                 <Parameter name="y values" type="Array double" value="{1.1098e-10, 1.1098e-10}"/>
+                 <Parameter name="y values" type="Array double" value="{1.1076e-07, 1.1076e-07}"/>
                </ParameterList>
              </ParameterList>
              <Parameter name="regions" type="Array string" value="{Top Surface Region}"/>
@@ -145,7 +146,7 @@
              <ParameterList name="boundary pressure">
                <ParameterList name="function-tabular">
                  <Parameter name="forms" type="Array string" value="{linear}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 1e+10}"/>
+                 <Parameter name="x values" type="Array double" value="{0, 1e+7}"/>
                  <Parameter name="y values" type="Array double" value="{1.11169e+06, 101325}"/>
                </ParameterList>
              </ParameterList>

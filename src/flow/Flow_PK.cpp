@@ -125,35 +125,40 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
 
 
 /* ******************************************************************
-* Gravity fluxes are calculated w.r.t. actual normals. Here K is
-* the hydraulic conductivity times relative permeability.
+* Routine updates elemental discretization matrices and must be 
+* called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
-void Flow_PK::calculateGravityFluxes(int c, 
-                                     std::vector<WhetStone::Tensor>& K,
-                                     Epetra_IntVector& upwind_cell,
-                                     std::vector<double>& gravity_flux,
-                                     bool flag_upwind) 
+void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
+                                   const Epetra_Vector& Krel_cells,
+                                   const Epetra_Vector& Krel_faces,
+                                   bool flag_upwind, 
+                                   Matrix_MFD* matrix)
 {
-  AmanziMesh::Entity_ID_List faces;
-  mesh_->cell_get_faces(c, &faces);
-  int nfaces = faces.size();
-
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim); 
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho;
 
-  gravity_flux.clear();
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-  for (int n=0; n<nfaces; n++) {
-    int f = faces[n];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  for (int c=0; c<ncells; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_face_dirs(c, &dirs);
+    int nfaces = faces.size();
 
-    if (flag_upwind) {
-      int c1 = upwind_cell[f];
-      if (c1 >= 0) c1 = c; 
-      gravity_flux.push_back((K[c1] * gravity) * normal);
-    } else {
-      gravity_flux.push_back((K[c] * gravity) * normal);
+    Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
+    double& Fc = matrix->get_Fc_cells()[c];
+
+    for (int n=0; n<nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+      double outward_flux = ((K[c] * gravity) * normal) * dirs[n];
+      if (flag_upwind) outward_flux *= Krel_faces[f] / Krel_cells[c];
+    
+      Ff[n] += outward_flux;
+      Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
     }
   }
 }
@@ -162,35 +167,36 @@ void Flow_PK::calculateGravityFluxes(int c,
 /* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::addGravityFluxes(Epetra_Vector& darcy_flux)
+void Flow_PK::addGravityFluxes_DarcyFlux(Epetra_Vector& darcy_flux)
 {
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   double rho = FS->ref_fluid_density();
+  double mu = FS->ref_fluid_viscosity();
   AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho * rho;
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho * rho / mu;
 
   for (int f=0; f<nfaces; f++) {
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    darcy_flux[f] -= gravity * normal;
+    darcy_flux[f] += gravity * normal;
   }
 }
 
 
 /* *******************************************************************
- * Identify flux direction based on orientation of the face normal 
- * and sign of the  Darcy velocity.                               
- ****************************************************************** */
-void Flow_PK::identify_upwind_cells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
+* Identify flux direction based on orientation of the face normal 
+* and sign of the Darcy velocity.                               
+******************************************************************* */
+void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
 {
   for (int f=fmin; f<=fmax; f++) {
     upwind_cell[f] = -1;  // negative value is indicator of a boundary
     downwind_cell[f] = -1;
   }
 
+  Epetra_Vector& darcy_flux = FS_nextBIG->ref_darcy_flux();
   AmanziMesh::Entity_ID_List faces; 
   std::vector<int> fdirs;
-  Epetra_Vector& darcy_flux = FS_nextBIG->ref_darcy_flux();
 
   for (int c=cmin; c<=cmax; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -198,15 +204,11 @@ void Flow_PK::identify_upwind_cells(Epetra_IntVector& upwind_cell, Epetra_IntVec
 
     for (int i=0; i<faces.size(); i++) {
       int f = faces[i];
-      if (darcy_flux[f] * fdirs[i] >= 0) { 
-        upwind_cell[f] = c; 
-      } else { 
-        downwind_cell[f] = c; 
-      }
+      if (darcy_flux[f] * fdirs[i] >= 0) upwind_cell[f] = c; 
+      else downwind_cell[f] = c; 
     }
   }
 }
-
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

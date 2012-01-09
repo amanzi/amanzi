@@ -29,7 +29,6 @@ void Darcy_PK::process_parameter_list()
 
   bc_pressure = bc_factory.CreatePressure();
   bc_head = bc_factory.CreateStaticHead(0.0, rho, gravity[dim - 1]);
-cout << bc_head << endl;
   bc_flux = bc_factory.CreateMassFlux();
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  

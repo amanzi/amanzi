@@ -46,7 +46,6 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void process_parameter_list();
   void populate_absolute_permeability_tensor(std::vector<WhetStone::Tensor>& K);
-  void addGravityFluxes_MFD(Matrix_MFD* matrix);
 
   // control methods
   void print_statistics() const;
@@ -94,7 +93,13 @@ class Darcy_PK : public Flow_PK {
   std::vector<double> bc_values;
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability
+  Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
+  Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
+
+  bool flag_upwind;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
+
+  int verbosity;
 };
 
 }  // namespace AmanziFlow

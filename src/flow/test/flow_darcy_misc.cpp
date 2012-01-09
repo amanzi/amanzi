@@ -124,9 +124,17 @@ class DarcyProblem {
 
 SUITE(Simple_1D_Flow) {
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
-    std::cout <<"Flow 1D: test 1" << std::endl;
+    std::cout <<"Darcy 1D: Dirichlet-Dirichlet" << std::endl;
 
-    Teuchos::Array<std::string> regions(1);
+    double rho = DPK->get_rho();  // set up analytic solution
+    double mu = DPK->get_mu();
+
+    double p0 = 1.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -rho * (pressure_gradient - rho * DPK->get_gravity()) / mu;
+
+    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
     create_bc_list("pressure", "BC 1", regions, 0.0);
 
@@ -134,56 +142,52 @@ SUITE(Simple_1D_Flow) {
     create_bc_list("pressure", "BC 2", regions, 1.0);
     DPK->resetParameterList(dp_list);
 
-    DPK->Init();
+    DPK->Init();  // setup the problem
     DPK->advance_to_steady_state();
+
+    double error = cell_pressure_error(p0, pressure_gradient);  // error checks
+    CHECK(error < 1.0e-8);
+    error = face_pressure_error(p0, pressure_gradient);
+    CHECK(error < 1.0e-8);
+    error = darcy_flux_error(velocity);
+    CHECK(error < 1.0e-8);
+  }
+
+
+  TEST_FIXTURE(DarcyProblem, DirichletNeumann)
+  {
+    std::cout <<"Flow 1D: Dirichlet-Neumann" << std::endl;
+
+    double rho = DPK->get_rho();  // set up analytic solution
+    double mu = DPK->get_mu();
 
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -rho * (pressure_gradient - rho * DPK->get_gravity()) / mu;
+    double u0 = -(velocity * AmanziGeometry::Point(0.0, 0.0, 1.0));
+
+    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
+    regions[0] = string("Top side");
+    create_bc_list("mass flux", "BC 1", regions, u0);
+
+    regions[0] = string("Bottom side");
+    create_bc_list("pressure", "BC 2", regions, 1.0);
+    DPK->resetParameterList(dp_list);
+
+    DPK->Init();  // setup the problem
+    DPK->advance_to_steady_state();
+
     double error = cell_pressure_error(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-
     error = face_pressure_error(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-
-    double rho = DPK->get_rho();
-    double mu = DPK->get_mu();
-
-    AmanziGeometry::Point velocity;
-    velocity = -rho * (pressure_gradient / mu + rho * DPK->get_gravity());
     error = darcy_flux_error(velocity);
     CHECK(error < 1.0e-8);
   }
 }
 
 /*
-  TEST_FIXTURE(problem_setup, xg_p_p)
-  {
-    std::cout <<"Flow 1D: test 2" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("LEFT",  "static head", 1.0);
-    set_bc("RIGHT", "static head", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    setGravity(g);
-
-    create_problem();
-    solve_problem();
-
-    double p0 = 1.0;
-    double pgrad[3] = {-1.0, 0.0, -1.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-  }
-}
-
   TEST_FIXTURE(problem_setup, x_q_p)
   {
     std::cout <<"Flow 1D: test 3" << std::endl;

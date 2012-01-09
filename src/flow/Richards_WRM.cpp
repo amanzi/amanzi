@@ -11,7 +11,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* .                                               
+* Defines relative permeability ONLY for cells.                                               
 ****************************************************************** */
 void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
 {
@@ -29,7 +29,7 @@ void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
 
 
 /* ******************************************************************
-* .                                               
+* Defines relative permeabilities ONLY for faces.                                               
 ****************************************************************** */
 void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
 {
@@ -47,7 +47,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
     for (int n=0; n<nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f); 
-      if ((normal * gravity) * dirs[n] > 0.0) (*Krel_faces)[f] = (*Krel_cells)[c]; 
+      if ((normal * gravity) * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c]; 
     }
   }
 }

@@ -18,12 +18,9 @@ void Richards_PK::fun(
 {
   matrix->computeResidual(u, f);  // compute F(u)
 
-  Epetra_Vector* uc = FS->create_cell_view(u);  
-  Epetra_Vector* udotc = FS->create_cell_view(udot);
-  Epetra_Vector* fc = FS->create_cell_view(f);
-
-  Epetra_Vector dS(mesh_->cell_map(false));  // compute S'(p)
-  derivedSdP(*uc, dS);
+  Epetra_Vector* u_cells = FS->createCellView(u);  
+  Epetra_Vector dS(mesh_->cell_map(false));
+  derivedSdP(*u_cells, dS);
 
   Teuchos::RCP<Epetra_Vector> phi = FS->get_porosity();
 
@@ -31,7 +28,7 @@ void Richards_PK::fun(
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);
     double dS_cell = (*phi)[c] * dS[c] * rho * volume;
-    (*fc)[c] += dS_cell * (*udotc)[c];
+    f[c] -= dS_cell * u[c];
   }
 }
 
@@ -46,13 +43,14 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 
 
 /* ******************************************************************
-* .                                                 
+* Compute new preconsitioner Sff(p, dT).                                                 
 ****************************************************************** */
 void Richards_PK::update_precon(
-    const double t, const Epetra_Vector& up, const double dT, int& errc)
+    const double T, const Epetra_Vector& u, const double dT_bdf2, int& ierr)
 {
-  matrix->update_ML_preconditioner();
-  errc = 0;
+  dT = dT_bdf2;  // this dT will be used in calculation of preconditioner 
+  computePreconditionerMFD(u, matrix);
+  ierr = 0;
 }
 
 

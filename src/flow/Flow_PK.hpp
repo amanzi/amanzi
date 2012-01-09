@@ -20,7 +20,9 @@ Usage:
 #include "boundary-function.hh"
 #include "mfd3d.hpp"
 #include "BDF2_fnBase.hpp"
+
 #include "Flow_State.hpp"
+#include "Matrix_MFD.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -37,9 +39,10 @@ const int FLOW_BC_FACE_FLUX = 4;
 
 const int FLOW_STEADY_STATE_PICARD = 1;
 const int FLOW_STEADY_STATE_BACKWARD_EULER = 2;
-const int FLOW_STEADY_STATE_NOX = 2;
+const int FLOW_STEADY_STATE_BDF2 = 3;
 const int FLOW_STEADY_STATE_MAX_ITERATIONS = 100;
 const double FLOW_STEADY_STATE_TOLERANCE = 1e-6;
+const double FLOW_STEADY_STATE_INITIAL_DT = 1e-8;
 
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
@@ -75,6 +78,7 @@ class Flow_PK : public BDF2::fnBase {
   virtual int advance_to_steady_state() = 0;
   virtual void commit_state(Teuchos::RCP<Flow_State> FS) = 0;
 
+  // boundary condition members
   void updateBoundaryConditions(BoundaryFunction *bc_pressure, 
                                 BoundaryFunction *bc_head,
                                 BoundaryFunction *bc_flux,
@@ -85,12 +89,13 @@ class Flow_PK : public BDF2::fnBase {
                                std::vector<double>& bc_values,
                                Epetra_Vector& pressure_faces);
 
-  void calculateGravityFluxes(int cell, 
-                              std::vector<WhetStone::Tensor>& K,
-                              Epetra_IntVector& upwind_cell, 
-                              std::vector<double>& gravity_flux, 
-                              bool flag_upwind = false);
-  void addGravityFluxes(Epetra_Vector& darcy_flux);
+  // gravity members
+  void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
+                            const Epetra_Vector& Krel_cells, 
+                            const Epetra_Vector& Krel_faces, 
+                            bool flag_upwind, 
+                            Matrix_MFD* matrix);
+  void addGravityFluxes_DarcyFlux(Epetra_Vector& darcy_flux);
 
   // access members  
   Teuchos::RCP<Flow_State> get_flow_state() { return FS; }
@@ -109,7 +114,7 @@ class Flow_PK : public BDF2::fnBase {
 
   // miscallenous members
   Epetra_Map* create_super_map();
-  void identify_upwind_cells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
+  void identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
  public:
   int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;

@@ -58,20 +58,22 @@ cout << "Test: 3D Richards, crib model" << endl;
   ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
   ParameterList rp_list = flow_list.get<ParameterList>("Richards Problem");
   Richards_PK* RPK = new Richards_PK(rp_list, FS);
+  RPK->set_standalone_mode(true);
   RPK->Init();
 
   // create the initial pressure function
+  /*
   Epetra_Vector p(RPK->get_super_map());
   Epetra_Vector* pcells = FS->create_cell_view(p);
   Epetra_Vector* pfaces = FS->create_face_view(p);
 
-  p.PutScalar(0.0);
+  p.PutScalar(101325.0);
   RPK->applyBoundaryConditions(RPK->get_bc_markers(), RPK->get_bc_values(), *pfaces);
-
   S.update_pressure(*pcells);
-  S.set_time(0.0);
+  */
 
   // solve the problem
+  S.set_time(0.0);
   RPK->advance_to_steady_state();
  
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");

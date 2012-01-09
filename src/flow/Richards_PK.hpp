@@ -29,8 +29,6 @@ Authors: Neil Carlson (version 1)
 namespace Amanzi {
 namespace AmanziFlow {
 
-class Interface_BDF2;  // forward declaration of class
-
 class Richards_PK : public Flow_PK {
  public:
   Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
@@ -45,13 +43,14 @@ class Richards_PK : public Flow_PK {
 
   int advanceSteadyState_Picard();
   int advanceSteadyState_BackwardEuler();
-  int advanceSteadyState_NOX();
+  int advanceSteadyState_ForwardEuler();
+  int advanceSteadyState_BDF2();
  
-  // required methods
+  // required BDF2 methods
   void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs);
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
-  void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc);
+  void update_precon(const double T, const Epetra_Vector& u, const double dT, int& ierr);
 
   // other main methods
   void processParameterList();
@@ -63,19 +62,19 @@ class Richards_PK : public Flow_PK {
   void applyDiffusionMFD(Epetra_Vector& X, Epetra_Vector& Y);
   void applyAdvectionMFD(Epetra_Vector& X, Epetra_Vector& Y);
 
-  void computePDot(const double T, const Epetra_Vector& p, Epetra_Vector& pdot);
-  void computePreconditioner(const Epetra_Vector &X, const double h);
+  void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MFD* matrix);
+
+  double computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot);
+  void computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix);
 
   void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Vector& s);
   void derivePressureFromSaturation(double s, Epetra_Vector& p);
 
-  void addGravityFluxes_MFD(Matrix_MFD* matrix);
-  void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MFD* matrix);
-
   // control methods
-  void print_statistics() const;
+  inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void resetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
+  void print_statistics() const;
   
   // access methods
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }

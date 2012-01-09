@@ -58,6 +58,10 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
 
   face_importer_ = Teuchos::rcp(new Epetra_Import(target_fmap, source_fmap));
 #endif
+
+  // miscalleneous
+  flag_upwind = false;
+  verbosity = FLOW_VERBOSITY_HIGH;
 }
 
 
@@ -93,8 +97,8 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Create the solution vectors.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
-  solution_cells = Teuchos::rcp(FS->create_cell_view(*solution));
-  solution_faces = Teuchos::rcp(FS->create_face_view(*solution));
+  solution_cells = Teuchos::rcp(FS->createCellView(*solution));
+  solution_faces = Teuchos::rcp(FS->createFaceView(*solution));
 
   solver = new AztecOO;
   solver->SetUserOperator(matrix);
@@ -121,6 +125,10 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   K.resize(number_owned_cells);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
+  // Allocate data for relative permeability
+  Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
+  Krel_cells->PutScalar(1.0);  // must go away (lipnikov@lanl.gov) 
+
   // Preconditioner
   Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
   preconditioner->init_ML_preconditioner(ML_list);
@@ -142,7 +150,7 @@ int Darcy_PK::advance_to_steady_state()
   // calculate and assemble elemental stifness matrices
   matrix->createMFDstiffnessMatrices(K);
   matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(matrix);
+  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, false, matrix);  // flag_upwind is always false
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   matrix->computeSchurComplement(bc_markers, bc_values);
@@ -163,7 +171,7 @@ int Darcy_PK::advance_to_steady_state()
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(K);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes(darcy_flux);
+  addGravityFluxes_DarcyFlux(darcy_flux);
 
   return 0;
 }
@@ -179,31 +187,6 @@ void Darcy_PK::populate_absolute_permeability_tensor(std::vector<WhetStone::Tens
   for (int c=cmin; c<=cmax; c++) {
     K[c].init(dim, 1);
     K[c](0, 0) = permeability[c];
-  }
-}
-
-
-/* ******************************************************************
-* Routine updates elemental discretization matrices and must be 
-* called before applying boundary conditions and global assembling.                                             
-****************************************************************** */
-void Darcy_PK::addGravityFluxes_MFD(Matrix_MFD* matrix)
-{
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  std::vector<double> gravity_flux;
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  for (int c=0; c<ncells; c++) {
-    mesh_->cell_get_faces(c, &faces);
-    mesh_->cell_get_face_dirs(c, &dirs);
-    int nfaces = faces.size();
-
-    calculateGravityFluxes(c, K, *upwind_cell, gravity_flux);
-    
-    Epetra_SerialDenseVector& Ff = matrix->get_Ff_cells()[c];
-    for (int n=0; n<nfaces; n++) Ff[n] += gravity_flux[n] * dirs[n];
   }
 }
 

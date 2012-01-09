@@ -110,22 +110,7 @@
           </ParameterList>
         </ParameterList>
         <ParameterList name="pressure">
-          <ParameterList name="BC 1">
-            <Parameter name="regions" type="Array string" value="{Top side}"/>
-            <ParameterList name="boundary pressure">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="BC 2">
-            <Parameter name="regions" type="Array string" value="{Bottom side}"/>
-            <ParameterList name="boundary pressure">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="1.0"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
+          <!-- Will be populated by the code -->
         </ParameterList>
       </ParameterList>
     </ParameterList>

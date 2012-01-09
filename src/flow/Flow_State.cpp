@@ -258,33 +258,31 @@ double Flow_State::norm_cell(Epetra_Vector& v1)
 
 
 /* *******************************************************************
- * Extract cells from a supervector             
- ****************************************************************** */
-Epetra_Vector* Flow_State::create_cell_view(const Epetra_Vector &X) const
+* Extract cells from a supervector             
+******************************************************************* */
+Epetra_Vector* Flow_State::createCellView(const Epetra_Vector& u) const
 {
-  // should verify that X.Map() is the same as Map()
   double *data;
-  X.ExtractView(&data);
+  u.ExtractView(&data);
   return new Epetra_Vector(View, mesh_->cell_map(false), data);
 }
 
 
 /* *******************************************************************
- * Extract faces from a supervector             
- ****************************************************************** */
-Epetra_Vector* Flow_State::create_face_view(const Epetra_Vector &X) const
+* Extract faces from a supervector             
+******************************************************************* */
+Epetra_Vector* Flow_State::createFaceView(const Epetra_Vector& u) const
 {
-  // should verify that X.Map() is the same as Map()
   double *data;
-  X.ExtractView(&data);
+  u.ExtractView(&data);
   int ncells = (mesh_->cell_map(false)).NumMyElements();
   return new Epetra_Vector(View, mesh_->face_map(false), data+ncells);
 }
 
 
 /* *******************************************************************
- * DEBUG: create constant fluid density    
- ****************************************************************** */
+* DEBUG: create constant fluid density    
+******************************************************************* */
 void Flow_State::set_fluid_density(double rho)
 {
   *fluid_density = rho;  // verify that it is positive (lipnikov@lanl.gov)
