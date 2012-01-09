@@ -115,7 +115,9 @@ int main(int argc, char *argv[]) {
 	for (Teuchos::ParameterList::ConstIterator i=obs_list.begin(); i!=obs_list.end(); ++i) {
 	  std::string label  = obs_list.name(i);
 	  std::string _label = label;
+#ifdef ENABLE_Structured
 	  if (framework=="Structured")_label = Amanzi::AmanziInput::underscore(label);
+#endif
 	  const Teuchos::ParameterEntry& entry = obs_list.getEntry(label);
 	  if (entry.isList()) {
 	    const Teuchos::ParameterList& ind_obs_list = obs_list.sublist(label);
