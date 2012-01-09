@@ -496,6 +496,11 @@ namespace Amanzi {
 	      rsublist.set("type","hydrostatic");
 	      rsublist.set("water_table",ref_coor[ref_coor.size()-1]);
 	    }
+	    else if (rlabel=="IC: Uniform Saturation") {
+	      rsublist.set("type","scalar");
+	      double sat = rsslist.get<double>("Value");
+	      rsublist.set(array_comp[0],density[array_comp[0]]);
+ 	    }
 	    else if (rlabel=="IC: Flux") {
 	      rsublist.set("type","zero_total_velocity");
 	      rsublist.set("inflow",rsslist.get<double>("inflow velocity"));
@@ -526,7 +531,8 @@ namespace Amanzi {
       Array<int> inflow_hi_bc(ndim,0), inflow_lo_bc(ndim,0);
       Array<double> inflow_hi_vel(ndim,0), inflow_lo_vel(ndim,0);
       Array<double> press_hi(ndim,0), press_lo(ndim,0);
-      double water_table_hi, water_table_lo;
+      double water_table_hi=0;
+      double water_table_lo=0;
 
       if (parameter_list.isSublist("Boundary Conditions"))
 	{
@@ -646,7 +652,7 @@ namespace Amanzi {
 		      }
 		    }
 		  }
-		}
+		} 
 		else if (rlabel=="BC: Linear Pressure") {
 		  // set to saturated condition
 		  rsublist.set("Water",1000e0);
@@ -681,7 +687,7 @@ namespace Amanzi {
 		    }
 		  }
 		}
-		else if (rlabel=="BC: No Flow") {
+		else if (rlabel=="BC: Zero Flow") {
 		  for (Array<std::string>::iterator it=regions.begin(); 
 		       it!=regions.end(); it++) {
 		    for (int j=0; j<ndim; j++) {
