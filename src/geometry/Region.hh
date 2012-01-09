@@ -28,7 +28,8 @@ enum RegionType {
   LABELEDSET,
   LAYER,
   SURFACE,
-  POINT
+  POINT,
+  COLORFUNCTION
 };
 
 
