@@ -60,7 +60,7 @@ struct problem_setup
         set("File",filename).set("Format","Exodus II").set("Label","5").set("Entity","Face");
     regions.sublist("TOP").sublist("Region: Labeled Set").
         set("File",filename).set("Format","Exodus II").set("Label","6").set("Entity","Face");
-    gm = new GeometricModel(3,regions);
+    gm = new GeometricModel(3,regions,comm);
 
     // Create the mesh.
     MeshFactory mesh_fact(*comm);

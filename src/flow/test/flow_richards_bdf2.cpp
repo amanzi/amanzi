@@ -48,7 +48,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 100, comm, gm)); 
 
   // create the state

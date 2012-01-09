@@ -90,8 +90,8 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   Teuchos::ParameterList reg_params = new_list.sublist("Regions");
 
-  Amanzi::AmanziGeometry::GeometricModelPtr geom_model_ptr(
-           new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params) );
+  Amanzi::AmanziGeometry::GeometricModelPtr 
+    geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
 
 
   // Add the geometric model to the domain

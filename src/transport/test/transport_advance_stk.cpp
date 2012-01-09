@@ -24,6 +24,12 @@ TEST(ADVANCE_WITH_STK) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: advance with STK" << endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+#endif
+
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_advance_stk.xml";
@@ -31,7 +37,7 @@ TEST(ADVANCE_WITH_STK) {
 
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   RCP<Mesh> mesh = rcp(new Mesh_STK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD, gm));
   
   // create a transport state with two component 

@@ -51,7 +51,7 @@ cout << "Test: 2.5D transport on a cubic mesh for long time" << endl;
 
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect3D_50x50x1.exo", MPI_COMM_WORLD, 3, gm));
 
   //Amanzi::MeshAudit audit(mesh);
