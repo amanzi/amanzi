@@ -421,8 +421,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 | `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
-| `"Region" Color Function"`     | `"File`", `"Value`"                     | string, int                  | Set defined by color in a structured color function file               |
-|                                |                                         |                              | The format for the color function file is given below                  |
+| `"Region" Color Function"`     | `"File`", `"Value`"                     | string, int                  | Set defined by color in a tabulated function file (see below)          |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
@@ -431,8 +430,7 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 
 Notes
 
-* `"Region: Point`" defines a point in space. Using this definition,
- cell sets encompassing this point are retrieved inside Amanzi.
+* `"Region: Point`" defines a point in space. Using this definition, cell sets encompassing this point are retrieved inside Amanzi.
 
 * `"Region: Box`" defines a region bounded by coordinate-aligned
   planes. Boxes are allowed to be of zero thickness in only one
@@ -456,7 +454,7 @@ Notes
   an integer).  The resulting region will have the dimensionality 
   associated with the entities in the indicated set. 
 
-  By defintition, "Labeled Set" region is applicable only to the
+  By definition, "Labeled Set" region is applicable only to the
   unstructured version of Amanzi. 
 
   Currently, Amanzi-U only supports mesh files in the Exodus II format.
