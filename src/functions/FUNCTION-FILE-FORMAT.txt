@@ -60,7 +60,7 @@ ordering of grid points and cells starts at CORNER1 and ends at CORNER2.
     
 As an example, consider the following integer-valued function in 2-D:
 
-                 +-----+-----+-----+ (3.0,2.0)
+                 +-----+-----+-----+ (2.0,3.0)
                  |     |     |     |
                  |  2  |  1  |  1  |
                  |     |     |     |

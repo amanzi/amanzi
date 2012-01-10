@@ -1206,7 +1206,7 @@ As an example, consider the following integer-valued function in 2-D:
 
 ::
  
-                  +-----+-----+-----+ (3.0,2.0)
+                  +-----+-----+-----+ (2.0,3.0)
                   |     |     |     |
                   |  2  |  1  |  1  |
                   |     |     |     |
