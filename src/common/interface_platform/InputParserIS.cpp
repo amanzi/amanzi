@@ -62,25 +62,38 @@ namespace Amanzi {
     }
 
 
-    Teuchos::Array<int> get_Cycle_Macro ( std::string& macro_name, Teuchos::ParameterList& plist )
-    {
+    Teuchos::Array<int> get_Cycle_Macro ( std::string& macro_name, Teuchos::ParameterList& plist ) {
       Teuchos::Array<int> cycle_range;
       
-      if ( plist.sublist("Output").sublist("Cycle Macros").isSublist(macro_name) )
-	{
-	  cycle_range = plist.sublist("Output").sublist("Cycle Macros").sublist(macro_name)
-	    .get<Teuchos::Array<int> >("Start_Period_Stop");
-	}
-      else
-	{
-	  std::stringstream ss;
-	  ss << "The cycle macro " << macro_name << " does not exist in the input file";
-	  Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));		  
-	}
-      
+      if ( plist.sublist("Output").sublist("Cycle Macros").isSublist(macro_name) ) {
+	cycle_range = plist.sublist("Output").sublist("Cycle Macros").sublist(macro_name)
+	  .get<Teuchos::Array<int> >("Start_Period_Stop");
+      }
+      else {
+	std::stringstream ss;
+	ss << "The cycle macro " << macro_name << " does not exist in the input file";
+	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));		  
+      }
       return cycle_range;
-
     }
+
+
+    // Teuchos::Array<string> get_Variable_Macro ( std::string& macro name, Teuchos::ParameterList& plist ) {
+    //   Teuchos::Array<string> vars;
+      
+    //   if ( plist.sublist("Output").sublist("Variable Macros").isSublist(macro_name) ) {
+	
+
+    //   }
+    //   else {
+    // 	std::stringstream ss;
+    // 	ss << "The variable macro " << macro_name << " does not exist in the input file";
+    // 	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+    //   }
+
+    //   return vars;
+    // }
+
 
     void init_global_info( Teuchos::ParameterList& plist )
     {
@@ -331,14 +344,17 @@ namespace Amanzi {
 
 
 	  // now interpret the modes
-	  if ( exe_sublist.isParameter("Transport Mode") ) 
-	    {
-	      mpc_list.set<std::string>("disable Transport_PK","no");
-	    }
-	  else
-	    {
+	  if ( exe_sublist.isParameter("Transport Mode") ) {
+	    if ( exe_sublist.get<std::string>("Transport Mode") == "none" ) {
 	      mpc_list.set<std::string>("disable Transport_PK","yes");
 	    }
+	    else {
+	      mpc_list.set<std::string>("disable Transport_PK","no");
+	    }
+	  }
+	  else {
+	    mpc_list.set<std::string>("disable Transport_PK","yes");
+	  }
 	  
 	  if ( exe_sublist.isParameter("Flow Mode") )
 	    {
