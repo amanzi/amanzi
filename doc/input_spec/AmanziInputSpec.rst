@@ -1206,7 +1206,7 @@ As an example, consider the following integer-valued function in 2-D:
 
 ::
  
-                  +-----+-----+-----+ (2,3)
+                  +-----+-----+-----+ (3.0,2.0)
                   |     |     |     |
                   |  2  |  1  |  1  |
                   |     |     |     |
@@ -1214,7 +1214,7 @@ As an example, consider the following integer-valued function in 2-D:
                   |     |     |     |
                   |  5  |  1  |  2  |
                   |     |     |     |
-            (0,0) +-----+-----+-----+
+        (0.0,0.0) +-----+-----+-----+
 
 
 The corresponding input file would be:
