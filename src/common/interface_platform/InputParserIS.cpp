@@ -78,21 +78,56 @@ namespace Amanzi {
     }
 
 
-    // Teuchos::Array<string> get_Variable_Macro ( std::string& macro name, Teuchos::ParameterList& plist ) {
-    //   Teuchos::Array<string> vars;
+    Teuchos::Array<std::string> get_Variable_Macro ( std::string& macro_name, Teuchos::ParameterList& plist ) {
+
       
-    //   if ( plist.sublist("Output").sublist("Variable Macros").isSublist(macro_name) ) {
+      std::vector<std::string> vars;
+
+      if ( plist.sublist("Output").sublist("Variable Macros").isSublist(macro_name) ) {
+	Teuchos::ParameterList& macro_list = plist.sublist("Output").sublist("Variable Macros").sublist(macro_name);
 	
+	if ( macro_list.isParameter("Phase") ) {
+	  std::string macro_phase = macro_list.get<std::string>("Phase");
+	  if (macro_phase == "All") {
+	    vars.push_back(phase_comp_name);
+	  }
+	  else {  // not All, must equal phase_comp_name
+	    if ( macro_list.isParameter("Component") ) {
+	      std::string macro_comp = macro_list.get<std::string>("Component");
+	      if (macro_comp == "All") {
+		vars.push_back(phase_comp_name);
+	      }
+	      else { // not All, must equal 
+		if ( macro_comp != phase_comp_name ) {
+		  std::stringstream ss;
+		  ss << "The phase component name " << macro_comp << " is refered to in a variable macro but is not defined";
+		  Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));			  
+		}
+		vars.push_back(macro_comp);
+	      }
+	      
+	    }
+	  }
+	  
+	}
+	
+      }
+      else {
+    	std::stringstream ss;
+    	ss << "The variable macro " << macro_name << " does not exist in the input file";
+    	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+      }
 
-    //   }
-    //   else {
-    // 	std::stringstream ss;
-    // 	ss << "The variable macro " << macro_name << " does not exist in the input file";
-    // 	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
-    //   }
-
-    //   return vars;
-    // }
+      Teuchos::Array<std::string> ret_vars(vars.size());
+      
+      std::cout << vars.size() << " " << ret_vars.size() << std::endl;
+      
+      for (int i=0; i<vars.size(); i++) {
+	ret_vars[i] = vars[i];
+      }
+      
+      return vars;
+    }
 
 
     void init_global_info( Teuchos::ParameterList& plist )
@@ -211,19 +246,24 @@ namespace Amanzi {
 		      obs_list.sublist(i->first) = olist.sublist(i->first);
 		      
 
-		      if ( obs_list.sublist(i->first).isParameter("Time Macro") )
-			{
-			  std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
-			  obs_list.sublist(i->first).set("Start_Period_Stop",get_Time_Macro(time_macro, plist));
-			  obs_list.sublist(i->first).remove("Time Macro");
-			}
+		      if ( obs_list.sublist(i->first).isParameter("Time Macro") ) {
+			std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
+			obs_list.sublist(i->first).set("Start_Period_Stop",get_Time_Macro(time_macro, plist));
+			obs_list.sublist(i->first).remove("Time Macro");
+		      }
 		      
-		      if ( obs_list.sublist(i->first).isParameter("Cycle Macro") )
-			{
-			  std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
-			  obs_list.sublist(i->first).set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
-			  obs_list.sublist(i->first).remove("Cycle Macro");
-			}
+		      if ( obs_list.sublist(i->first).isParameter("Cycle Macro") ) {
+			std::string cycle_macro = obs_list.sublist(i->first).get<std::string>("Cycle Macro");
+			obs_list.sublist(i->first).set("Start_Period_Stop",get_Cycle_Macro(cycle_macro, plist));
+			obs_list.sublist(i->first).remove("Cycle Macro");
+		      }
+		      
+		      if ( obs_list.sublist(i->first).isParameter("Variable Macro") ) {
+			std::string var_macro = obs_list.sublist(i->first).get<std::string>("Variable Macro");
+			obs_list.sublist(i->first).set("Variables",get_Variable_Macro(var_macro, plist));
+			obs_list.sublist(i->first).remove("Variable Macro");
+		      }
+
 	            }
 	 	}
 	    }
