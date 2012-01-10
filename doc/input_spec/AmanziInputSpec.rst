@@ -421,6 +421,9 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 | `"Region: Labeled Set"`        | `"Label`", `"File`",                    | string, string,              | Set per label defined in mesh file (see below)                         |
 |                                | `"Format`", `"Entity`"                  | string, string               |  (available for frameworks supporting the `"File`" keyword)            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
+| `"Region" Color Function"`     | `"File`", `"Value`"                     | string, int                  | Set defined by color in a structured color function file               |
+|                                |                                         |                              | The format for the color function file is given below                  |
++--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Layer"`              | `"File#`", `"Label#`"                   | (#=1,2) string, string       | Region between two surfaces                                            |
 +--------------------------------+-----------------------------------------+------------------------------+------------------------------------------------------------------------+
 | `"Region: Surface"`            | `"File`" `"Label`"                      | string, string               | Labeled triangulated face set in file                                  |
@@ -428,12 +431,19 @@ Amanzi supports parameterized forms for a number of analytic shapes, as well as 
 
 Notes
 
-* `"Region: Box`" defines a region bounded by coordinate-aligned planes.
-  Currently, `"Region: Plane`" is constrained to be coordinate-aligned.
+* `"Region: Point`" defines a point in space. Using this definition,
+ cell sets encompassing this point are retrieved inside Amanzi.
 
-* The "Region: Labeled Set" region requires a `"Label`" that was given to
-  sets generated in a preprocessing step and stored in a
-  formatted data file.  For example, a mesh file in the Exodus II
+* `"Region: Box`" defines a region bounded by coordinate-aligned
+  planes. Boxes are allowed to be of zero thickness in only one
+  direction in which case they are equivalent to planes.
+
+* Currently, `"Region: Plane`" is constrained to be coordinate-aligned.
+
+* The `"Region: Labeled Set`" region defines a named set of mesh entities
+  existing in an input mesh file. This is the same file that contains
+  the computational mesh. The name of the entity set is given
+  by `"Label`".  For example, a mesh file in the Exodus II
   format can be processed to tag cells, faces and/or nodes with
   specific labels, using a variety of external tools.  Regions based
   on such sets are assigned a user-defined label for Amanzi, which may
@@ -441,15 +451,30 @@ Notes
   Note that the file used to express this labeled set may be in any
   Amanzi-supported mesh format (the mesh format is specified in the
   parameters for this option).  The `"entity`" parameter may be
-  necessary to specify a unique set.  For example, an exodus file
+  necessary to specify a unique set.  For example, an Exodus file
   requires `"Cell`", `"Face`" or `"Node`" as well as a label (which is
   an integer).  The resulting region will have the dimensionality 
-  associated with the entities in the indicated set.
+  associated with the entities in the indicated set. 
 
-  Amanzi supports `"Region: Labeled Set`" regions in the following
-  formats: `"Structured`" (example), `"Exodus II`" (example).  Note that
-  the format of the labeled set file does not have to match that
-  of the `"Mesh Framework`" selected in the `"Mesh`" section.
+  By defintition, "Labeled Set" region is applicable only to the
+  unstructured version of Amanzi. 
+
+  Currently, Amanzi-U only supports mesh files in the Exodus II format.
+
+* `"Region: Color Function`" defines a region based a specified
+  integer color, `"Value`", in a structured color function file,
+  `"File`". The format of the color function file is given below in
+  the "Tabulated function file format" section. As
+  shown in the file, the color values may be specified at the nodes or
+  cells of the color function grid. A computational cell is assigned
+  the 'color' of the data grid cell containing its cell centroid
+  (cell-based colors) or the data grid nearest its cell-centroid
+  (node-based colors). Computational cells sets are then built from
+  all cells with the specified color `"Value`".
+
+  In order to avoid, gaps and overlaps in specifying materials, it is
+  strongly recommended that regions be defined using a single color
+  function file. 
 
 * Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
@@ -495,9 +520,25 @@ Example:
 	<Parameter name="Entity" type="string" value="Face"/>
       </ParameterList>
     </ParamterList>
+    <ParameterList name="Outflow plane">
+      <ParameterList name="Region: Plane">
+        <Parameter name="Location" type="Array double" value="{0.5, 0.5, 0.5}"/>
+        <Parameter name="Direction" type="Array double" value="{0, 0, 1}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Sand">
+      <ParameterList name="Region: Color Function">
+        <Parameter name="File" type="string" value="F_area_col.txt"/>
+        <Parameter name="Value" type="int" value="25"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
-In this example, "Top Section", "Middle Section" and "Bottom Section" are three box-shaped volumetric regions, and "Inflow Surface" is a surface region defined in an Exodus II-formatted labeled set file.
+In this example, "Top Section", "Middle Section" and "Bottom Section"
+are three box-shaped volumetric regions. "Inflow Surface" is a
+surface region defined in an Exodus II-formatted labeled set
+file and "Outflow plane" is a planar region. "Sand" is a volumetric
+region defined by the value 25 in color function file.
 
 
 
