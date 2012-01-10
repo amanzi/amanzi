@@ -91,9 +91,7 @@ class Flow_PK : public BDF2::fnBase {
 
   // gravity members
   void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
-                            const Epetra_Vector& Krel_cells, 
                             const Epetra_Vector& Krel_faces, 
-                            bool flag_upwind, 
                             Matrix_MFD* matrix);
   void addGravityFluxes_DarcyFlux(Epetra_Vector& darcy_flux);
 
@@ -128,7 +126,7 @@ class Flow_PK : public BDF2::fnBase {
   Teuchos::RCP<Flow_State> FS_nextBIG;  // involves both owned and ghost values
   Teuchos::RCP<Flow_State> FS_nextMPC;  // uses physical memory of FS_nextBIG
   
-  double T_internal, T_physical, dT;
+  double T_internal, T_physical, dT, dT0;
   int status;
   int standalone_mode;
  

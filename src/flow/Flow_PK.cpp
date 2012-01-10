@@ -129,9 +129,7 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
 * called before applying boundary conditions and global assembling.                                             
 ****************************************************************** */
 void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
-                                   const Epetra_Vector& Krel_cells,
                                    const Epetra_Vector& Krel_faces,
-                                   bool flag_upwind, 
                                    Matrix_MFD* matrix)
 {
   double rho = FS->ref_fluid_density();
@@ -154,9 +152,7 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-      double outward_flux = ((K[c] * gravity) * normal) * dirs[n];
-      if (flag_upwind) outward_flux *= Krel_faces[f] / Krel_cells[c];
-    
+      double outward_flux = ((K[c] * gravity) * normal) * dirs[n] * Krel_faces[f];
       Ff[n] += outward_flux;
       Fc -= outward_flux;  // Nonzero-sum contribution when flag_upwind = false.
     }

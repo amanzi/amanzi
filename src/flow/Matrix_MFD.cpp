@@ -35,12 +35,14 @@ void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
-void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K)
+void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K, 
+                                            Epetra_Vector& Krel_faces)
 {
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
 
   Aff_cells.clear();
+  Afc_cells.clear();
   Acf_cells.clear();
   Acc_cells.clear();
 
@@ -50,19 +52,27 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K)
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
-    Epetra_SerialDenseVector Bcf(nfaces);
+    Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
     mfd.darcy_mass_inverse(c, K[c], Bff);
 
+    for (int n=0; n<nfaces; n++)
+      for (int m=0; m<nfaces; m++) Bff(m, n) *= Krel_faces[faces[m]];
+
     double matsum = 0.0;  // elimination of mass matrix
     for (int n=0; n<nfaces; n++) {
-      double colsum = 0.0;
-      for (int m=0; m<nfaces; m++) colsum += Bff(n, m);
+      double rowsum = 0.0, colsum = 0.0;
+      for (int m=0; m<nfaces; m++) {
+        colsum += Bff(m, n);
+        rowsum += Bff(n, m);
+      }
       Bcf(n) = -colsum;
+      Bfc(n) = -rowsum;
       matsum += colsum;
     }
 
     Aff_cells.push_back(Bff);
+    Afc_cells.push_back(Bfc);
     Acf_cells.push_back(Bcf);
     Acc_cells.push_back(matsum);
   }
@@ -70,7 +80,7 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K)
 
 
 /* ******************************************************************
-*  .                                            
+* May be used in the future.                                            
 ****************************************************************** */
 void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, 
                                              const Epetra_Vector& new_scale)
@@ -94,7 +104,7 @@ void Matrix_MFD::rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale,
 
 
 /* ******************************************************************
-* .                                           
+* Simply allocates memory.                                           
 ****************************************************************** */
 void Matrix_MFD::createMFDrhsVectors() 
 {
@@ -132,6 +142,7 @@ void Matrix_MFD::applyBoundaryConditions(
     int nfaces = faces.size();
 
     Teuchos::SerialDenseMatrix<int, double>& Bff = Aff_cells[c];  // B means elemental.
+    Epetra_SerialDenseVector& Bfc = Afc_cells[c];
     Epetra_SerialDenseVector& Bcf = Acf_cells[c];
 
     Epetra_SerialDenseVector& Ff = Ff_cells[c]; 
@@ -146,7 +157,7 @@ void Matrix_MFD::applyBoundaryConditions(
           Bff(n, m) = Bff(m, n) = 0.0;
         }
         Fc -= Bcf(n) * bc_values[f];
-        Bcf(n) = 0.0;
+        Bcf(n) = Bfc(n) = 0.0;
 
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f]; 
@@ -159,7 +170,9 @@ void Matrix_MFD::applyBoundaryConditions(
 
 
 /* ******************************************************************
-* Initialize Trilinos matrices. It must be called only once.                                           
+* Initialize Trilinos matrices. It must be called only once. 
+* If matrix is non-symmetric, we generate transpose of the matrix 
+* block Afc to reuse cf_graph; otherwise, pointer Afc = Acf.   
 ****************************************************************** */
 void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 {
@@ -197,6 +210,9 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
   Aff->GlobalAssemble();
   Sff->GlobalAssemble();
 
+  if (flag_symmetry_) Afc = Acf;
+  else Afc = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
+
   rhs = Teuchos::rcp(new Epetra_Vector(super_map));
   rhs_cells = Teuchos::rcp(FS->createCellView(*rhs));
   rhs_faces = Teuchos::rcp(FS->createFaceView(*rhs));
@@ -231,6 +247,9 @@ void Matrix_MFD::assembleGlobalMatrices()
     (*Acc)[c] = Acc_cells[c];
     (*Acf).ReplaceMyValues(c, nfaces, Acf_cells[c].Values(), faces_LID);
     (*Aff).SumIntoGlobalValues(nfaces, faces_GID, Aff_cells[c].values());
+    
+    if (!flag_symmetry_) 
+        (*Afc).ReplaceMyValues(c, nfaces, Afc_cells[c].Values(), faces_LID);
   }
   (*Aff).GlobalAssemble();
 
@@ -256,7 +275,7 @@ void Matrix_MFD::assembleGlobalMatrices()
 
 /* ******************************************************************
 * Compute the face Schur complement of 2x2 block matrix.
-* Special structure of matrix Acf is exploited in this algorithm.                               
+                              
 ****************************************************************** */
 void Matrix_MFD::computeSchurComplement(
     std::vector<int>& bc_markers, std::vector<double>& bc_values) 
@@ -272,9 +291,11 @@ void Matrix_MFD::computeSchurComplement(
     Epetra_SerialDenseMatrix Schur(nfaces, nfaces);
 
     Epetra_SerialDenseVector& Bcf = Acf_cells[c];
+    Epetra_SerialDenseVector& Bfc = Afc_cells[c];
+
     for (int n=0; n<nfaces; n++) {
       for (int m=0; m<nfaces; m++) {
-        Schur(n, m) = Aff_cells[c](n, m) - Bcf[n] * Bcf[m] / (*Acc)[c];
+        Schur(n, m) = Aff_cells[c](n, m) - Bfc[n] * Bcf[m] / (*Acc)[c];
       }
     }
 
@@ -359,13 +380,13 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Temporary cell and face vectors.
   Epetra_MultiVector Tf(fmap, nvectors);
 
-  // Face unknowns:  Yf = Aff * Xf + trans(Acf) * Xc
+  // Face unknowns:  Yf = Aff * Xf + Afc * Xc 
   (*Aff).Multiply(false, Xf, Yf);
-  (*Acf).Multiply(true, Xc, Tf);  // this should do the required parallel comm
+  (*Afc).Multiply(true, Xc, Tf);  // Afc is kept in transpose form
   Yf.Update(1.0, Tf, 1.0);
 
   // Cell unknowns:  Yc = Acf * Xf + Acc * Xc
-  (*Acf).Multiply(false, Xf, Yc);  // this should do the required parallel comm
+  (*Acf).Multiply(false, Xf, Yc);  // It performs the required parallel communications.
   Yc.Multiply(1.0, *Acc, Xc, 1.0);
 
   delete [] fvec_ptrs;
@@ -408,16 +429,16 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   Epetra_MultiVector Tc(cmap, nvectors);
   Epetra_MultiVector Tf(fmap, nvectors);
 
-  // FORWARD ELIMINATION:  Tf = Xf - trans(Acf) inv(Acc) Xc
+  // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
   Tc.ReciprocalMultiply(1.0, *Acc, Xc, 0.0);
-  (*Acf).Multiply(true, Tc, Tf);  // this should do the required parallel comm
+  (*Afc).Multiply(true, Tc, Tf);  // Afc is kept in transpose form
   Tf.Update(1.0, Xf, -1.0);
 
   // Solve the Schur complement system Aff * Yf = Tf.
   MLprec->ApplyInverse(Tf, Yf);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
-  (*Acf).Multiply(false, Yf, Tc);  // this should do the required parallel comm
+  (*Acf).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
   Tc.Update(1.0, Xc, -1.0);
   Yc.ReciprocalMultiply(1.0, *Acc, Tc, 0.0);
 

@@ -94,7 +94,7 @@ void Richards_PK::processParameterList()
   max_itrs_sss = steady_state_list.get<int>("max iterations", FLOW_STEADY_STATE_MAX_ITERATIONS);
   err_tol_sss = steady_state_list.get<double>("solver tolerance", FLOW_STEADY_STATE_TOLERANCE);
 
-  dT = steady_state_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
+  dT0 = steady_state_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
 }
 
 }  // namespace AmanziFlow

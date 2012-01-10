@@ -37,9 +37,10 @@ class Matrix_MFD : public Epetra_Operator {
   ~Matrix_MFD() {};
 
   // main methods
+  void setSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   void createMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
   void createMFDrhsVectors();
-  void createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K);
+  void createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K, Epetra_Vector& Krel_faces);
   void rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
   void applyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 
@@ -86,9 +87,11 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map map;
 
+  bool flag_symmetry_;
+
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Minv_cells;  // populated as needed
   std::vector<Teuchos::SerialDenseMatrix<int, double> > Aff_cells;
-  std::vector<Epetra_SerialDenseVector> Acf_cells;
+  std::vector<Epetra_SerialDenseVector> Acf_cells, Afc_cells;
   std::vector<double> Acc_cells;  // duplication may be useful later
 
   std::vector<Epetra_SerialDenseVector> Ff_cells;
@@ -96,6 +99,7 @@ class Matrix_MFD : public Epetra_Operator {
 
   Teuchos::RCP<Epetra_Vector> Acc;
   Teuchos::RCP<Epetra_CrsMatrix> Acf; 
+  Teuchos::RCP<Epetra_CrsMatrix> Afc;  // We generate transpose of this matrix block. 
   Teuchos::RCP<Epetra_FECrsMatrix> Aff;
   Teuchos::RCP<Epetra_FECrsMatrix> Sff;  // Schur complement
   Teuchos::RCP<Epetra_Vector> rhs;

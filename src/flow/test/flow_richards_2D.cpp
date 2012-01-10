@@ -59,8 +59,8 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
 
   // create the initial pressure function
   Epetra_Vector p(RPK->get_super_map());
-  Epetra_Vector* pcells = FS->create_cell_view(p);
-  Epetra_Vector* pfaces = FS->create_face_view(p);
+  Epetra_Vector* pcells = FS->createCellView(p);
+  Epetra_Vector* pfaces = FS->createFaceView(p);
 
   for (int c=0; c<pcells->MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);

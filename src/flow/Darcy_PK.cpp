@@ -123,11 +123,12 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Process other fundamental structures
   K.resize(number_owned_cells);
+  matrix->setSymmetryProperty(true);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Allocate data for relative permeability
-  Krel_cells = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-  Krel_cells->PutScalar(1.0);  // must go away (lipnikov@lanl.gov) 
+  Krel_faces = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
+  Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov) 
 
   // Preconditioner
   Teuchos::ParameterList ML_list = dp_list.sublist("ML Parameters");
@@ -148,9 +149,9 @@ int Darcy_PK::advance_to_steady_state()
   for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
 
   // calculate and assemble elemental stifness matrices
-  matrix->createMFDstiffnessMatrices(K);
+  matrix->createMFDstiffnessMatrices(K, *Krel_faces);
   matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_cells, *Krel_faces, false, matrix);  // flag_upwind is always false
+  addGravityFluxes_MFD(K, *Krel_faces, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   matrix->computeSchurComplement(bc_markers, bc_values);
@@ -169,7 +170,7 @@ int Darcy_PK::advance_to_steady_state()
             << "Norm of true residual = " << solver->TrueResidual() << std::endl;
 
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(K);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
   addGravityFluxes_DarcyFlux(darcy_flux);
 
