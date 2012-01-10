@@ -18,13 +18,15 @@ multiple lines.
 
 (1) DATATYPE:  An integer value: 0 for integer data, 1 for real data.
 
-(2) GRIDTYPE.  A string that specifies the type of grid used to define
-    the indicator function.  The format of the rest of the file is contingent
-    upon this value.  To start we consider only uniform rectilinear grids in
-    3, 2 and 1-D, which are indicated by the values "3DCoRectMesh",
-    "2DCoRectMesh" and "1DCoRectMesh", respectively (names taken from XDMF).
+(2) GRIDTYPE.  A string that specifies the type of grid used to define the
+    function.  The format of the rest of the file is contingent upon this
+    value.  To start we consider only uniform rectilinear grids in 1, 2 and
+    3-D, which are indicated by the values "1DCoRectMesh", "2DCoRectMesh"
+    and "3DCoRectMesh", respectively (names adopted from XDMF).
     
-For the uniform rectilinear grids, the remaining records are as follows:
+For the uniform rectilinear grids, the remaining records are as follows.
+Several records take 1, 2 or 3 values depending on the space dimension of
+the grid.
 
 (3) NXNYNZ: 3 (or 2, 1) integer values (NX, NY, NZ) giving the number of zones
     in the x, y and z coordinate directions, respectively.
@@ -58,7 +60,7 @@ ordering of grid points and cells starts at CORNER1 and ends at CORNER2.
     
 As an example, consider the following integer-valued function in 2-D:
 
-                 +-----+-----+-----+ (2,3)
+                 +-----+-----+-----+ (2.0,3.0)
                  |     |     |     |
                  |  2  |  1  |  1  |
                  |     |     |     |
@@ -66,7 +68,7 @@ As an example, consider the following integer-valued function in 2-D:
                  |     |     |     |
                  |  5  |  1  |  2  |
                  |     |     |     |
-           (0,0) +-----+-----+-----+
+       (0.0,0.0) +-----+-----+-----+
 
 The corresponding input file would be:
 
