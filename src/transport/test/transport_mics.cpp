@@ -46,7 +46,7 @@ TEST(CONSTRUCTOR) {
  
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
   RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, comm, gm)); 
  
   //MeshAudit audit(mesh);
@@ -92,7 +92,7 @@ TEST(FACES_VOLUMES) {
  
   // create an simple mesh framework
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 1, 2, 1, comm, gm)); 
  
   // create a transport state with two components

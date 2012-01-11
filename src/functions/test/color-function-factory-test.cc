@@ -6,8 +6,8 @@
 
 #include <string>
 
-#include "indicator.hh"
-#include "indicator-factory.hh"
+#include "color-function.hh"
+#include "color-function-factory.hh"
 #include "errors.hh"
 
 using namespace Amanzi;
@@ -21,9 +21,9 @@ int main(int argc, char *argv[])
 TEST(Grid1D_cell)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  IndicatorFactory factory;
-  std::string infile("test/ind-func-1-cell.txt");
-  Indicator *f = factory.Create(infile, comm);
+  ColorFunctionFactory factory;
+  std::string infile("test/color-func-1-cell.txt");
+  ColorFunction *f = factory.Create(infile, comm);
   double x;
   x = 0.0;
   CHECK_EQUAL(10, (*f)(&x));
@@ -34,9 +34,9 @@ TEST(Grid1D_cell)
 TEST(Grid1D_node)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  IndicatorFactory factory;
-  std::string infile("test/ind-func-1-node.txt");
-  Indicator *f = factory.Create(infile, comm);
+  ColorFunctionFactory factory;
+  std::string infile("test/color-func-1-node.txt");
+  ColorFunction *f = factory.Create(infile, comm);
   double x;
   x = 0.0;
   CHECK_EQUAL(10, (*f)(&x));
@@ -47,9 +47,9 @@ TEST(Grid1D_node)
 TEST(Grid2D_cell)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  IndicatorFactory factory;
-  std::string infile("test/ind-func-2-cell.txt");
-  Indicator *f = factory.Create(infile, comm);
+  ColorFunctionFactory factory;
+  std::string infile("test/color-func-2-cell.txt");
+  ColorFunction *f = factory.Create(infile, comm);
   double x1[2] = {2.0, 1.0};
   CHECK_EQUAL(30, (*f)(x1));
   double x2[2] = {0.0, 2.0};
@@ -63,9 +63,9 @@ TEST(Grid2D_cell)
 TEST(Grid2D_node)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  IndicatorFactory factory;
-  std::string infile("test/ind-func-2-node.txt");
-  Indicator *f = factory.Create(infile, comm);
+  ColorFunctionFactory factory;
+  std::string infile("test/color-func-2-node.txt");
+  ColorFunction *f = factory.Create(infile, comm);
   double x1[2] = {2.0, 1.0};
   CHECK_EQUAL(30, (*f)(x1));
   double x2[2] = {0.0, 2.0};
@@ -79,9 +79,9 @@ TEST(Grid2D_node)
 TEST(Grid3D_cell)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  IndicatorFactory factory;
-  std::string infile("test/ind-func-3-cell.txt");
-  Indicator *f = factory.Create(infile, comm);
+  ColorFunctionFactory factory;
+  std::string infile("test/color-func-3-cell.txt");
+  ColorFunction *f = factory.Create(infile, comm);
   // check some random locations
   double x1[3] = {2.0, 1.0, 3.0};
   CHECK_EQUAL(213, (*f)(x1));
@@ -96,9 +96,9 @@ TEST(Grid3D_cell)
 TEST(Grid3D_node)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  IndicatorFactory factory;
-  std::string infile("test/ind-func-3-node.txt");
-  Indicator *f = factory.Create(infile, comm);
+  ColorFunctionFactory factory;
+  std::string infile("test/color-func-3-node.txt");
+  ColorFunction *f = factory.Create(infile, comm);
   // check some random locations
   double x1[3] = {2.0, 1.0, 3.0};
   CHECK_EQUAL(213, (*f)(x1));

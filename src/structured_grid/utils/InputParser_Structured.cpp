@@ -118,6 +118,21 @@ namespace Amanzi {
 	  else if (rlabel == "Domain High Corner")
 	    domhi = stlist.get<Array<double> >(rlabel);
 	}
+
+      const ParameterList& eclist = parameter_list.sublist("Execution control");
+      int bfactor = 2;
+      if (eclist.isSublist("amr"))
+	if (eclist.sublist("amr").isParameter("blocking_factor"))
+	  bfactor = eclist.sublist("amr").get<int>("blocking_factor");
+     
+      Array<int> n_cell = struc_list.sublist("amr").get<Array<int> >("n_cell");
+      for (int i=0;i<ndim;i++) {
+	if (n_cell[i]%bfactor > 0) {
+	  std::cerr << "Number of Cells must be divisible by " << bfactor << std::endl;
+	  throw std::exception();
+	}
+      }
+
       ParameterList& glist = struc_list.sublist("geometry");
       glist.set("prob_lo",domlo);
       glist.set("prob_hi",domhi);
@@ -481,6 +496,11 @@ namespace Amanzi {
 	      rsublist.set("type","hydrostatic");
 	      rsublist.set("water_table",ref_coor[ref_coor.size()-1]);
 	    }
+	    else if (rlabel=="IC: Uniform Saturation") {
+	      rsublist.set("type","scalar");
+	      double sat = rsslist.get<double>("Value");
+	      rsublist.set(array_comp[0],density[array_comp[0]]);
+ 	    }
 	    else if (rlabel=="IC: Flux") {
 	      rsublist.set("type","zero_total_velocity");
 	      rsublist.set("inflow",rsslist.get<double>("inflow velocity"));
@@ -489,6 +509,11 @@ namespace Amanzi {
 	      for (Array<std::string>::iterator k=array_comp.begin(); k!=array_comp.end(); ++k)
 		rsublist.set(*k,rsslist.get<double>(*k));
 	    }
+	    else if (rlabel=="IC: Uniform Pressure") {
+	      std::cerr << rlabel << " does not work with Amanzi-S yet.\n";
+	      throw std::exception();
+	    }
+	      
 	    comp_list.set(_label,rsublist);
 	  }
 	}
@@ -506,7 +531,8 @@ namespace Amanzi {
       Array<int> inflow_hi_bc(ndim,0), inflow_lo_bc(ndim,0);
       Array<double> inflow_hi_vel(ndim,0), inflow_lo_vel(ndim,0);
       Array<double> press_hi(ndim,0), press_lo(ndim,0);
-      double water_table_hi, water_table_lo;
+      double water_table_hi=0;
+      double water_table_lo=0;
 
       if (parameter_list.isSublist("Boundary Conditions"))
 	{
@@ -626,7 +652,7 @@ namespace Amanzi {
 		      }
 		    }
 		  }
-		}
+		} 
 		else if (rlabel=="BC: Linear Pressure") {
 		  // set to saturated condition
 		  rsublist.set("Water",1000e0);
@@ -661,7 +687,7 @@ namespace Amanzi {
 		    }
 		  }
 		}
-		else if (rlabel=="BC: No Flow") {
+		else if (rlabel=="BC: Zero Flow") {
 		  for (Array<std::string>::iterator it=regions.begin(); 
 		       it!=regions.end(); it++) {
 		    for (int j=0; j<ndim; j++) {
@@ -715,127 +741,69 @@ namespace Amanzi {
     convert_to_structured_tracer(const ParameterList& parameter_list, 
 				 ParameterList&       struc_list)
     {
+      const ParameterList& eclist = parameter_list.sublist("Execution control");
+      std::string tmode = "none";
+      if (eclist.isParameter("Transport Mode"))
+	tmode = eclist.get<std::string>("Transport Mode");
+      bool do_tracer = true;
+      if (!tmode.compare("none"))
+	do_tracer = false;
 
-      ParameterList& tracer_list = struc_list.sublist("tracer");
-
-      const ParameterList& rlist = parameter_list.sublist("Phase Definitions");
-
-      // get tracers
-      Array<std::string> array_phase, array_comp, array_tracer;
-      for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i) {        
-	std::string label = rlist.name(i);
-	array_phase.push_back(label);
-        const ParameterList& rslist = rlist.sublist(label);
-	if (rslist.isSublist("Phase Components")) {
-	  const ParameterList& rsslist = rslist.sublist("Phase Components");
-	  for (ParameterList::ConstIterator j=rsslist.begin(); j!=rsslist.end(); ++j) {
-	    std::string rlabel = rsslist.name(j);
-	    array_comp.push_back(rlabel);
-	    const ParameterList& rssslist = rsslist.sublist(rlabel);
-	    if (rssslist.isParameter("Component Solutes")) {
-	      Array<std::string> solutes = rssslist.get<Array<std::string> >("Component Solutes");
-	      for (Array<std::string>::iterator it=solutes.begin(); 
-		   it!=solutes.end();it++)
-		array_tracer.push_back(underscore(*it));
-	    }
-	  }
-	}
-      }
-      tracer_list.set("tracer",array_tracer);
-      tracer_list.set("group","Total");
-      for (Array<std::string>::iterator it=array_tracer.begin(); 
-	   it!=array_tracer.end(); it++) {
-	ParameterList sublist;
-	sublist.set("group","Total");
-	tracer_list.set(*it,sublist);
-      }
-
-      // get initial conditions
-      const ParameterList& ilist = parameter_list.sublist("Initial Conditions");
-      Array<std::string> init_set;
-
-      for (ParameterList::ConstIterator i=ilist.begin(); i!=ilist.end(); ++i) {        
-	std::string label = ilist.name(i);
-	std::string _label = underscore(label);
-	init_set.push_back(_label);
-
-	ParameterList rsublist;
-	const ParameterList& rslist = ilist.sublist(label);
-	Array<std::string> regions = rslist.get<Array<std::string> >("Assigned Regions");
-	Array<std::string> _regions;
-	for (Array<std::string>::iterator it=regions.begin(); it!=regions.end(); it++) {
-	  _regions.push_back(underscore(*it));
-	}
-	rsublist.set("region",_regions);
-	const ParameterList& rsslist = rslist.sublist("Solute IC");
-	for (Array<std::string>::iterator it=array_phase.begin(); 
-	     it!=array_phase.end(); it++ ) {
-	  for (Array<std::string>::iterator jt=array_comp.begin(); 
-	       jt!=array_comp.end(); jt++ ) {
-	    for (Array<std::string>::iterator kt=array_tracer.begin(); 
-		 kt!=array_tracer.end(); kt++ ) {
-	      const ParameterList& rssslist = rsslist.sublist(*it).sublist(*jt).sublist(*kt);
-	      for (ParameterList::ConstIterator j=rssslist.begin(); 
-		   j!=rssslist.end(); ++j) {
-		std::string rlabel = rssslist.name(j);
-		const ParameterEntry& rentry = rssslist.getEntry(rlabel);
-		if (rentry.isList()) {
-		    const ParameterList& rsssslist = rssslist.sublist(rlabel);
-		    if (rlabel=="IC: Uniform") {
-			if (!rsublist.isParameter("type"))
-			  rsublist.set("type","scalar");
-			else
-			  if (rsublist.get<std::string>("scalar") != "scalar")
-			    std::cerr << "Definition of IC for tracer is not consistent!\n";
-			rsublist.set(*kt,rsssslist.get<double>("Value"));
-		    }
+      if (do_tracer) {
+	const ParameterList& rlist = parameter_list.sublist("Phase Definitions");
+	
+	// get tracers
+	Array<std::string> array_phase, array_comp, array_tracer;
+	for (ParameterList::ConstIterator i=rlist.begin(); i!=rlist.end(); ++i) {        
+	  std::string label = rlist.name(i);
+	  array_phase.push_back(label);
+	  const ParameterList& rslist = rlist.sublist(label);
+	  if (rslist.isSublist("Phase Components")) {
+	    const ParameterList& rsslist = rslist.sublist("Phase Components");
+	    for (ParameterList::ConstIterator j=rsslist.begin(); j!=rsslist.end(); ++j) {
+	      std::string rlabel = rsslist.name(j);
+	      array_comp.push_back(rlabel);
+	      const ParameterList& rssslist = rsslist.sublist(rlabel);
+	      if (rssslist.isParameter("Component Solutes")) {
+		Array<std::string> solutes = rssslist.get<Array<std::string> >("Component Solutes");
+		for (Array<std::string>::iterator it=solutes.begin(); 
+		     it!=solutes.end();it++) {
+		  array_tracer.push_back(underscore(*it));
 		}
 	      }
-	    }     
+	    }
 	  }
 	}
-	tracer_list.set(_label,rsublist);
-      }
-      tracer_list.set("init",init_set);
 
-      // Boundary conditions
-      // Require information related to the regions.  
-      ParameterList regionlist = parameter_list.sublist("Regions");
-
-      if (parameter_list.isSublist("Boundary Conditions"))
-	{
-	  const ParameterList& blist = parameter_list.sublist("Boundary Conditions");
-	  Array<std::string> bc_set;
-	  for (ParameterList::ConstIterator i=blist.begin(); i!=blist.end(); ++i) {        
-	    std::string label  = blist.name(i);
+	if (array_tracer.size() > 0) {
+	  ParameterList& tracer_list = struc_list.sublist("tracer");
+	  tracer_list.set("tracer",array_tracer);
+	  tracer_list.set("group","Total");
+	  for (Array<std::string>::iterator it=array_tracer.begin(); 
+	       it!=array_tracer.end(); it++) {
+	    ParameterList sublist;
+	    sublist.set("group","Total");
+	    tracer_list.set(*it,sublist);
+	  }
+	  
+	  // get initial conditions
+	  const ParameterList& ilist = parameter_list.sublist("Initial Conditions");
+	  Array<std::string> init_set;
+	  
+	  for (ParameterList::ConstIterator i=ilist.begin(); i!=ilist.end(); ++i) {        
+	    std::string label = ilist.name(i);
 	    std::string _label = underscore(label);
+	    init_set.push_back(_label);
+	    
 	    ParameterList rsublist;
-	    const ParameterList& rslist = blist.sublist(label);
+	    const ParameterList& rslist = ilist.sublist(label);
 	    Array<std::string> regions = rslist.get<Array<std::string> >("Assigned Regions");
 	    Array<std::string> _regions;
-	    Array<std::string> valid_region_def_lo, valid_region_def_hi;
-	    valid_region_def_lo.push_back("XLOBC");
-	    valid_region_def_hi.push_back("XHIBC");
-	    valid_region_def_lo.push_back("YLOBC");
-	    valid_region_def_hi.push_back("YHIBC");
-	    if (ndim == 3) {
-	      valid_region_def_lo.push_back("ZLOBC");
-	      valid_region_def_hi.push_back("ZHIBC");
-	    }
 	    for (Array<std::string>::iterator it=regions.begin(); it!=regions.end(); it++) {
 	      _regions.push_back(underscore(*it));
-	      bool valid = false;
-	      for (int j = 0; j<ndim; j++) {
-		if (!(*it).compare(valid_region_def_lo[j]))
-		  valid = true;
-		else if (!(*it).compare(valid_region_def_hi[j]))
-		  valid = true;
-	      }
-	      if (!valid)
-		std::cerr << "Structured: boundary conditions can only be applied to "
-			  << "regions labeled as XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
 	    }
-	    const ParameterList& rsslist = rslist.sublist("Solute BC");
+	    rsublist.set("region",_regions);
+	    const ParameterList& rsslist = rslist.sublist("Solute IC");
 	    for (Array<std::string>::iterator it=array_phase.begin(); 
 		 it!=array_phase.end(); it++ ) {
 	      for (Array<std::string>::iterator jt=array_comp.begin(); 
@@ -849,28 +817,97 @@ namespace Amanzi {
 		    const ParameterEntry& rentry = rssslist.getEntry(rlabel);
 		    if (rentry.isList()) {
 		      const ParameterList& rsssslist = rssslist.sublist(rlabel);
-		      if (rlabel=="BC: Inflow") {
+		      if (rlabel=="IC: Uniform") {
 			if (!rsublist.isParameter("type"))
 			  rsublist.set("type","scalar");
 			else
 			  if (rsublist.get<std::string>("scalar") != "scalar")
-			    std::cerr << "Definition of BC for tracer is not consistent!\n";
-			rsublist.set(*kt,rsssslist.get<Array<double> >("Values"));
+			    std::cerr << "Definition of IC for tracer is not consistent!\n";
+			rsublist.set(*kt,rsssslist.get<double>("Value"));
 		      }
 		    }
 		  }
 		}     
 	      }
 	    }
-	    if (rsublist.isParameter("type"))
-	      if (rsublist.get<std::string>("type") == "scalar") {
-		bc_set.push_back(_label);
-		rsublist.set("region",_regions);
-		tracer_list.set(_label,rsublist);
-	      }
+	    tracer_list.set(_label,rsublist);
 	  }
-	  tracer_list.set("inflow",bc_set);
+	  tracer_list.set("init",init_set);
+	  
+	  // Boundary conditions
+	  // Require information related to the regions.  
+	  ParameterList regionlist = parameter_list.sublist("Regions");
+	  
+	  if (parameter_list.isSublist("Boundary Conditions")) {
+	    const ParameterList& blist = parameter_list.sublist("Boundary Conditions");
+	    Array<std::string> bc_set;
+	    for (ParameterList::ConstIterator i=blist.begin(); i!=blist.end(); ++i) {        
+	      std::string label  = blist.name(i);
+	      std::string _label = underscore(label);
+	      ParameterList rsublist;
+	      const ParameterList& rslist = blist.sublist(label);
+	      Array<std::string> regions = rslist.get<Array<std::string> >("Assigned Regions");
+	      Array<std::string> _regions;
+	      Array<std::string> valid_region_def_lo, valid_region_def_hi;
+	      valid_region_def_lo.push_back("XLOBC");
+	      valid_region_def_hi.push_back("XHIBC");
+	      valid_region_def_lo.push_back("YLOBC");
+	      valid_region_def_hi.push_back("YHIBC");
+	      if (ndim == 3) {
+		valid_region_def_lo.push_back("ZLOBC");
+		valid_region_def_hi.push_back("ZHIBC");
+	      }
+	      for (Array<std::string>::iterator it=regions.begin(); it!=regions.end(); it++) {
+		_regions.push_back(underscore(*it));
+		bool valid = false;
+		for (int j = 0; j<ndim; j++) {
+		  if (!(*it).compare(valid_region_def_lo[j]))
+		    valid = true;
+		  else if (!(*it).compare(valid_region_def_hi[j]))
+		    valid = true;
+		}
+		if (!valid)
+		  std::cerr << "Structured: boundary conditions can only be applied to "
+			    << "regions labeled as XLOBC, XHIBC, YLOBC, YHIBC, ZLOBC and ZHIBC\n";
+	      }
+	      const ParameterList& rsslist = rslist.sublist("Solute BC");
+	      for (Array<std::string>::iterator it=array_phase.begin(); 
+		   it!=array_phase.end(); it++ ) {
+		for (Array<std::string>::iterator jt=array_comp.begin(); 
+		     jt!=array_comp.end(); jt++ ) {
+		  for (Array<std::string>::iterator kt=array_tracer.begin(); 
+		       kt!=array_tracer.end(); kt++ ) {
+		    const ParameterList& rssslist = rsslist.sublist(*it).sublist(*jt).sublist(*kt);
+		    for (ParameterList::ConstIterator j=rssslist.begin(); 
+			 j!=rssslist.end(); ++j) {
+		      std::string rlabel = rssslist.name(j);
+		      const ParameterEntry& rentry = rssslist.getEntry(rlabel);
+		      if (rentry.isList()) {
+			const ParameterList& rsssslist = rssslist.sublist(rlabel);
+			if (rlabel=="BC: Inflow") {
+			  if (!rsublist.isParameter("type"))
+			    rsublist.set("type","scalar");
+			  else
+			    if (rsublist.get<std::string>("scalar") != "scalar")
+			      std::cerr << "Definition of BC for tracer is not consistent!\n";
+			  rsublist.set(*kt,rsssslist.get<Array<double> >("Values"));
+			}
+		      }
+		    }
+		  }     
+		}
+	      }
+	      if (rsublist.isParameter("type"))
+		if (rsublist.get<std::string>("type") == "scalar") {
+		  bc_set.push_back(_label);
+		  rsublist.set("region",_regions);
+		  tracer_list.set(_label,rsublist);
+		}
+	    }
+	    tracer_list.set("inflow",bc_set);
+	  }
 	}
+      }
     }
 
     //
@@ -957,11 +994,22 @@ namespace Amanzi {
 	if (entry.isList()) {
 	  const ParameterList& rslist = olist.sublist(label);
 	  std::string functional = rslist.get<std::string>("Functional");
+	  std::string region_name = rslist.get<std::string>("Region");
 	  if (functional == "Observation Data: Integral")
 	    sublist.set("obs_type","integral");
 	  else if (functional == "Observation Data: Point")
-	    sublist.set("obs_type","point_sample");	
-	  sublist.setEntry("region",rslist.getEntry("Region"));
+	    {
+	      sublist.set("obs_type","point_sample");
+	      const ParameterList& lregion = 
+		parameter_list.sublist("Regions").sublist(region_name);
+	      if (!lregion.isSublist("Region: Point"))
+		{
+		  std::cerr << label << " is a point observation and "
+			    << region_name << " is not a point region.\n";
+		  throw std::exception();
+		}
+	    }
+	  sublist.set("region",region_name);
 	  sublist.set("times",time_map[rslist.get<std::string>("Time Macro")]);
 	  
 	  Array<std::string > variables = rslist.get<Array<std::string> >("Variable Macro");

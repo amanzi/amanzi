@@ -9,17 +9,20 @@
  * 
  */
 
-#include "Region.hh"
-#include "BoxRegion.hh"
-#include "PlaneRegion.hh"
-#include "LabeledSetRegion.hh"
-#include "PointRegion.hh"
-#include "RegionFactory.hh"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+
+#include "Region.hh"
+#include "BoxRegion.hh"
+#include "PlaneRegion.hh"
+#include "LabeledSetRegion.hh"
+#include "ColorFunctionRegion.hh"
+#include "PointRegion.hh"
+
+#include "RegionFactory.hh"
 
 
 // Create region from XML specification
@@ -28,9 +31,10 @@
 Amanzi::AmanziGeometry::RegionPtr 
 Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
                                       const unsigned int reg_id, 
-                                      const Teuchos::ParameterList& reg_params)
+                                      const Teuchos::ParameterList& reg_params,
+                                      const Epetra_MpiComm *comm)
 {
-  
+
   // There should be only one item below the region name
   // which indicates the shape of the
   // region. Unfortunately, there is nothing to prevent
@@ -116,6 +120,16 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         entity_str = "NODE";
 
       RegionPtr regptr = new LabeledSetRegion(reg_name, reg_id, entity_str, file, format, name);
+      return regptr;
+    }
+  else if (shape == "Region: Color Function")
+    {
+      Teuchos::ParameterList colorfunc_params = reg_params.sublist(shape);
+
+      std::string file = colorfunc_params.get<std::string>("File");
+      int value = colorfunc_params.get<int>("Value");
+
+      RegionPtr regptr = new ColorFunctionRegion(reg_name, reg_id, file, value, comm);
       return regptr;
     }
   else if (shape == "Region: Point")

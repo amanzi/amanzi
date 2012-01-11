@@ -15,6 +15,8 @@
 #include "../PlaneRegion.hh"
 #include "../RegionFactory.hh"
 #include "../GeometricModel.hh"
+
+#include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -26,6 +28,7 @@
 TEST(GEOMETRIC_MODEL)
 {
 
+  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
   // read the parameter list from input file
 
@@ -34,7 +37,7 @@ TEST(GEOMETRIC_MODEL)
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel((unsigned int)3,reg_spec);
+  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel((unsigned int)3,reg_spec,&ecomm);
 
 
 

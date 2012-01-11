@@ -109,7 +109,7 @@ void Transport_PK::process_parameter_list()
         regions = BC_list.get<Teuchos::Array<std::string> >("Regions").toVector();
         times = BC_list.get<Teuchos::Array<double> >("Times").toVector();
         values = BC_list.get<Teuchos::Array<double> >(tcc_name).toVector();
-        functions = BC_list.get<Teuchos::Array<std::string> >("Time functions").toVector();
+        functions = BC_list.get<Teuchos::Array<std::string> >("Time Functions").toVector();
 
         int nfunctions = functions.size();  // convert strings to forms
         std::vector<TabularFunction::Form> forms(functions.size());

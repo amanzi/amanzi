@@ -19,7 +19,7 @@ include(PrintVariable)
 project(GEOMETRY)
 
 # Amanzi include directories
-include_directories(${DBC_SOURCE_DIR})
+include_directories(${DBC_SOURCE_DIR} ${FUNCS_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -29,7 +29,7 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 #
 file (GLOB geometry_source_files "*.cc")
 add_library(geometry ${geometry_source_files})
-target_link_libraries(geometry error_handling ${Teuchos_LIBRARIES})
+target_link_libraries(geometry error_handling functions ${Teuchos_LIBRARIES})
 
 #
 # Install Targets
@@ -59,21 +59,23 @@ if (BUILD_TESTS)
    add_executable(test_geomops
                   test/Main.cc
 		  test/test_geometric_ops.cc)
-   target_link_libraries(test_geomops geometry ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
+   target_link_libraries(test_geomops geometry ${Teuchos_LIBRARIES} ${Trilinos_LIBRARIES} ${UnitTest_LIBRARIES})
 
    # Test: test region creation
    add_executable(test_region 
                   test/Main.cc 
                   test/test_box_region.cc
                   test/test_plane_region.cc
-                  test/test_labeledset.cc)
-   target_link_libraries(test_region geometry ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
+                  test/test_labeledset.cc
+		  test/test_colorfunc_region.cc
+		  )
+   target_link_libraries(test_region geometry ${Teuchos_LIBRARIES} ${Trilinos_LIBRARIES} ${UnitTest_LIBRARIES})
 
    # Test: test geometric model creation
    add_executable(test_geometric_model
                   test/Main.cc 
                   test/test_geometric_model.cc)
-   target_link_libraries(test_geometric_model geometry ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
+   target_link_libraries(test_geometric_model geometry ${Teuchos_LIBRARIES} ${Trilinos_LIBRARIES} ${UnitTest_LIBRARIES})
 
 
    add_amanzi_test(geometry test_region test_geometric_model test_geomops KIND unit)

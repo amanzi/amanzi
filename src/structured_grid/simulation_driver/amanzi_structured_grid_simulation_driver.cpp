@@ -4,7 +4,6 @@
 #include "PorousMedia.H"
 
 #include "ParmParseHelpers.H"
-#include "InputParser_Structured.H"
 
 void
 Structured_observations(const Array<Observation>& observation_array,

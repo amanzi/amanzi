@@ -12,8 +12,11 @@
 #ifndef _RegionFactory_hh_
 #define _RegionFactory_hh_
 
-#include "Region.hh"
+#include "Epetra_MpiComm.h"
 #include <Teuchos_ParameterList.hpp>
+
+
+#include "Region.hh"
 
 namespace Amanzi {
 namespace AmanziGeometry {
@@ -24,7 +27,8 @@ namespace AmanziGeometry {
 // create derived region classes based on the shape parameter
 
 RegionPtr RegionFactory(const std::string reg_name, const unsigned int reg_id,
-                          const Teuchos::ParameterList& reg_spec);
+                        const Teuchos::ParameterList& reg_spec,
+                        const Epetra_MpiComm *comm);
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

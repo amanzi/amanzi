@@ -6,6 +6,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "ObservationData.H"
 #include "Simulator.H"
+#include "InputParser_Structured.H"
 
 struct AmanziStructuredGridSimulationDriver
   : Amanzi::Simulator

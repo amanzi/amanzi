@@ -62,25 +62,38 @@ namespace Amanzi {
     }
 
 
-    Teuchos::Array<int> get_Cycle_Macro ( std::string& macro_name, Teuchos::ParameterList& plist )
-    {
+    Teuchos::Array<int> get_Cycle_Macro ( std::string& macro_name, Teuchos::ParameterList& plist ) {
       Teuchos::Array<int> cycle_range;
       
-      if ( plist.sublist("Output").sublist("Cycle Macros").isSublist(macro_name) )
-	{
-	  cycle_range = plist.sublist("Output").sublist("Cycle Macros").sublist(macro_name)
-	    .get<Teuchos::Array<int> >("Start_Period_Stop");
-	}
-      else
-	{
-	  std::stringstream ss;
-	  ss << "The cycle macro " << macro_name << " does not exist in the input file";
-	  Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));		  
-	}
-      
+      if ( plist.sublist("Output").sublist("Cycle Macros").isSublist(macro_name) ) {
+	cycle_range = plist.sublist("Output").sublist("Cycle Macros").sublist(macro_name)
+	  .get<Teuchos::Array<int> >("Start_Period_Stop");
+      }
+      else {
+	std::stringstream ss;
+	ss << "The cycle macro " << macro_name << " does not exist in the input file";
+	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));		  
+      }
       return cycle_range;
-
     }
+
+
+    // Teuchos::Array<string> get_Variable_Macro ( std::string& macro name, Teuchos::ParameterList& plist ) {
+    //   Teuchos::Array<string> vars;
+      
+    //   if ( plist.sublist("Output").sublist("Variable Macros").isSublist(macro_name) ) {
+	
+
+    //   }
+    //   else {
+    // 	std::stringstream ss;
+    // 	ss << "The variable macro " << macro_name << " does not exist in the input file";
+    // 	Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+    //   }
+
+    //   return vars;
+    // }
+
 
     void init_global_info( Teuchos::ParameterList& plist )
     {
@@ -331,14 +344,17 @@ namespace Amanzi {
 
 
 	  // now interpret the modes
-	  if ( exe_sublist.isParameter("Transport Mode") ) 
-	    {
-	      mpc_list.set<std::string>("disable Transport_PK","no");
-	    }
-	  else
-	    {
+	  if ( exe_sublist.isParameter("Transport Mode") ) {
+	    if ( exe_sublist.get<std::string>("Transport Mode") == "none" ) {
 	      mpc_list.set<std::string>("disable Transport_PK","yes");
 	    }
+	    else {
+	      mpc_list.set<std::string>("disable Transport_PK","no");
+	    }
+	  }
+	  else {
+	    mpc_list.set<std::string>("disable Transport_PK","yes");
+	  }
 	  
 	  if ( exe_sublist.isParameter("Flow Mode") )
 	    {
@@ -489,10 +505,10 @@ namespace Amanzi {
 				      
 				      Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
 				      Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
-				      Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time functions");
+				      Teuchos::Array<std::string> time_fns = bcsub.get<Teuchos::Array<std::string> >("Time Functions");
 				      bc.set<Teuchos::Array<double> >(compss.str(), values );
 				      bc.set<Teuchos::Array<double> >("Times", times);
-				      bc.set<Teuchos::Array<std::string> >("Time functions", time_fns);
+				      bc.set<Teuchos::Array<std::string> >("Time Functions", time_fns);
 				      bc.set<Teuchos::Array<std::string> >("Regions", regs);
 
 				      bc_counter++;
@@ -631,24 +647,24 @@ namespace Amanzi {
     {
       Teuchos::ParameterList dpc_list;
       
-      Teuchos::ParameterList ml_list = dpc_list.sublist("ML Parameters");
-      dpc_list.set<int>("ML output", 0);
-      dpc_list.set<int>("max levels", 40);
-      dpc_list.set<std::string>("prec type","MGW");
-      dpc_list.set<int>("cycle applications", 2);
-      dpc_list.set<std::string>("aggregation: type", "Uncoupled");
-      dpc_list.set<double>("aggregation: damping factor", 1.33);
-      dpc_list.set<double>("aggregation: threshold", 0.0);
-      dpc_list.set<int>("aggregation: nodes per aggregate", 3);
-      dpc_list.set<std::string>("eigen-analysis: type", "cg");
-      dpc_list.set<int>("eigen-analysis: iterations", 10);
-      dpc_list.set<int>("smoother: sweeps", 2);
-      dpc_list.set<double>("smoother: damping factor", 1.0);
-      dpc_list.set<std::string>("smoother: pre or post", "both");
-      dpc_list.set<std::string>("smoother: type", "Gauss-Seidel");
-      dpc_list.set<double>("smoother: damping factor", 1.0);
-      dpc_list.set<std::string>("coarse: type", "Amesos-KLU");
-      dpc_list.set<int>("coarse: max size", 128);
+      Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
+      ml_list.set<int>("ML output", 0);
+      ml_list.set<int>("max levels", 40);
+      ml_list.set<std::string>("prec type","MGW");
+      ml_list.set<int>("cycle applications", 2);
+      ml_list.set<std::string>("aggregation: type", "Uncoupled");
+      ml_list.set<double>("aggregation: damping factor", 1.33);
+      ml_list.set<double>("aggregation: threshold", 0.0);
+      ml_list.set<int>("aggregation: nodes per aggregate", 3);
+      ml_list.set<std::string>("eigen-analysis: type", "cg");
+      ml_list.set<int>("eigen-analysis: iterations", 10);
+      ml_list.set<int>("smoother: sweeps", 2);
+      ml_list.set<double>("smoother: damping factor", 1.0);
+      ml_list.set<std::string>("smoother: pre or post", "both");
+      ml_list.set<std::string>("smoother: type", "Gauss-Seidel");
+      ml_list.set<double>("smoother: damping factor", 1.0);
+      ml_list.set<std::string>("coarse: type", "Amesos-KLU");
+      ml_list.set<int>("coarse: max size", 128);
 
       return dpc_list;
     }
@@ -673,7 +689,7 @@ namespace Amanzi {
 	      // get the regions
 	      Teuchos::Array<std::string> regions = bc.get<Teuchos::Array<std::string> >("Assigned Regions");
 
-	      if ( bc.isSublist("BC:No Flow") )
+	      if ( bc.isSublist("BC:Zero Flow") )
 		{
 		  // this is the natural BC for flow and we need not list it explicitly			    
 		}
@@ -683,18 +699,26 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_flux = bc.sublist("BC: Flux");
 
 		  Teuchos::Array<double> times = bc_flux.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time functions");
+		  Teuchos::Array<std::string> time_fns = bc_flux.get<Teuchos::Array<std::string> >("Time Functions");
 		  
-		  if (!bc_flux.isParameter("Intensive Mass Flux"))
-		    {
-		      // we can only handle mass fluxes right now
-		      Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Intensive Mass Flux"));
-		    }
+		  if (! (bc_flux.isParameter("Inward Mass Flux") || bc_flux.isParameter("Outward Mass Flux"))  )  {
+		    // we can only handle mass fluxes right now
+		    Exceptions::amanzi_throw(Errors::Message("In BC: Flux we can only handle Mass Flux"));
+		  }
 
-		  Teuchos::Array<double> flux = bc_flux.get<Teuchos::Array<double> >("Intensive Mass Flux");
-		  // input spec defines positive as inward flux, we must reverse the sign to use this
-		  for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
-		  	  
+		  Teuchos::Array<double> flux;
+		  
+		  if (bc_flux.isParameter("Inward Mass Flux")) {
+		    flux = bc_flux.get<Teuchos::Array<double> >("Inward Mass Flux");
+		  }
+		  else if (bc_flux.isParameter("Outward Mass Flux")) {
+		    flux = bc_flux.get<Teuchos::Array<double> >("Outward Mass Flux");
+		  }
+
+		  if (bc_flux.isParameter("Inward Mass Flux")) {
+		    for (int i=0; i<flux.size(); i++) flux[i] = - flux[i];
+		  }
+
 		  std::stringstream ss;
 		  ss << "BC " << bc_counter++;
 
@@ -747,7 +771,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 	  
 		  
@@ -799,7 +823,7 @@ namespace Amanzi {
 		  Teuchos::ParameterList& bc_dir = bc.sublist("BC: Hydrostatic");
 		  
 		  Teuchos::Array<double>      times = bc_dir.get<Teuchos::Array<double> >("Times");
-		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time functions");
+		  Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
 		  Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
 	  
 		  
@@ -892,8 +916,8 @@ namespace Amanzi {
 	      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 	      
 	      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
-	      double perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
-	      double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
+	      double permeability = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
+	      //double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
 	      
 	      
 	 
@@ -904,9 +928,8 @@ namespace Amanzi {
 
 		  Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
 
-		  // ignore horizontal permeability for now
 		  stt_mat.set<double>("Constant porosity", porosity);
-		  stt_mat.set<double>("Constant permeability", perm_vert);
+		  stt_mat.set<double>("Constant permeability", permeability);
 		  stt_mat.set<std::string>("Region", *i);
 
 		  comp_counter=0;

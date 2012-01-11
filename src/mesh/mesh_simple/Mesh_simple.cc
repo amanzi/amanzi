@@ -1068,7 +1068,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
         }
       }
 
-      if (!found) // create the side set from the region definition
+      if (!found) // create the cell set from the region definition
         {
           AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
           
@@ -1086,7 +1086,8 @@ void Mesh_simple::get_set_entities (const std::string setname,
               throw std::exception();
             }
 
-          if (rgn->type() == AmanziGeometry::BOX)
+          if (rgn->type() == AmanziGeometry::BOX || 
+              rgn->type() == AmanziGeometry::COLORFUNCTION)
             {
               for (int ix=0; ix<nx_; ix++)
                 for (int iy=0; iy<ny_; iy++)
@@ -1111,7 +1112,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
             }
           else
             {
-              std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
+              std::cerr << "Region type not suitable/applicable for cellsets" << std::endl;
               throw std::exception();
             }
         }

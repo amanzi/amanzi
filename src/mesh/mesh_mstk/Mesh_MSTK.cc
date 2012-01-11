@@ -1686,7 +1686,8 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
 
         case CELL:
 
-          if (rgn->type() == AmanziGeometry::BOX) 
+          if (rgn->type() == AmanziGeometry::BOX ||
+              rgn->type() == AmanziGeometry::COLORFUNCTION) 
             {
               if (celldim == 3)
                 mset1 = MSet_New(mesh,setname.c_str(),MREGION);

@@ -10,7 +10,7 @@
 
 
 #include "../Region.hh"
-#include "../LabeledSetRegion.hh"
+#include "../ColorFunctionRegion.hh"
 #include "../RegionFactory.hh"
 
 #include "Epetra_MpiComm.h"
@@ -22,14 +22,15 @@
 #include "mpi.h"
 
 
-TEST(LABELEDSET_REGION)
+TEST(COLORFUNCTION_REGION)
 {
 
   Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
+
   // read the parameter list from input file
 
-  std::string infilename = "test/labeledsetregion.xml";
+  std::string infilename = "test/colorfunc_region.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
@@ -52,32 +53,26 @@ TEST(LABELEDSET_REGION)
     CHECK_EQUAL(reg->name(),reg_name);
     CHECK_EQUAL(reg->id(),reg_id);
   
+    // Make sure that the region type is an Indicator Function
 
-    // Get the entity type and mesh file name directly from the XML
-  
+    CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::COLORFUNCTION);
 
-    CHECK_EQUAL(reg_spec.isSublist(reg_spec.name(i)),true);
+    // Check if two known points are in the appropriate regions
 
-  
-    Teuchos::ParameterList::ConstIterator j = reg_params.begin();
-    Teuchos::ParameterList labset_params = reg_params.sublist(reg_params.name(j));
-    std::string in_entity_str = labset_params.get< std::string >("Entity");
+    Amanzi::AmanziGeometry::Point p(3);
 
-    
-    // Make sure that the region type is a Labeled Set
+    if (reg_name == "Top") {
+      double xyz[3] = {0.5,0.5,0.75};
+      p.set(xyz);
 
-    CHECK_EQUAL(reg->type(),Amanzi::AmanziGeometry::LABELEDSET);
-  
-    // See if the min-max of the region were correctly retrieved
-  
-    Amanzi::AmanziGeometry::Point p, n;
-      Amanzi::AmanziGeometry::LabeledSetRegionPtr lsreg =
-      dynamic_cast<Amanzi::AmanziGeometry::LabeledSetRegionPtr> (reg);
+      CHECK_EQUAL(reg->inside(p),true);
+    }
+    else if (reg_name == "Bottom") {
+      double xyz[3] = {0.5,0.5,0.25};
+      p.set(xyz);
 
-    // Did we get the entity string right?
-
-    CHECK_EQUAL(in_entity_str,lsreg->entity_str());
-
+      CHECK_EQUAL(reg->inside(p),true);
+    }
   }
 }  
 

@@ -51,7 +51,7 @@ cout << "Test: 2D transport on a square mesh for long time" << endl;
 
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_50x50_ss.exo", MPI_COMM_WORLD, 2, gm));
   
   /* create a MPC state with one component */
