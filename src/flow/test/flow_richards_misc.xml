@@ -125,16 +125,16 @@
         <ParameterList name="Water Retention Model for Material 1 Region">
           <Parameter name="Region" type="string" value="Material 1 Region"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="1e-2"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1e-0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0"/>
         </ParameterList>
         <ParameterList name="Water Retention Model for Material 2 Region">
           <Parameter name="Region" type="string" value="Material 2 Region"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="1e-2"/>
+          <Parameter name="van Genuchten alpha" type="double" value="1e-0"/>
           <Parameter name="van Genuchten m" type="double" value="0.5"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.1"/>
+          <Parameter name="van Genuchten residual saturation" type="double" value="0.0"/>
         </ParameterList>
       </ParameterList>
 

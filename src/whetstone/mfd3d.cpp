@@ -270,7 +270,7 @@ int MFD3D::L2_consistency_inverse(int cell,
 
 
 /* ******************************************************************
-* Consistency condition for stifness matrix in heat conduction. 
+* Consistency condition for stiffness matrix in heat conduction. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
 int MFD3D::H1_consistency(int cell,
@@ -379,13 +379,13 @@ void MFD3D::stability_scalar(int cell,
 
   double scale = 0.0;
   for (int i=0; i<nrows; i++) scale += Mc(i, i);
-  scale /= (nrows * volume);
+  scale /= nrows;
 
   for (int i=0; i<nrows; i++) {
     for (int j=i; j<nrows; j++) M(i, j) = Mc(i, j);
   }
 
-  for (int i=0; i<nrows; i++ ) {  // add projector (I - N^T N) to matrix M
+  for (int i=0; i<nrows; i++ ) {  // add projector scale * (I - N^T N) to matrix M
     M(i, i) += scale;
 
     for (int j=i; j<nrows; j++) {

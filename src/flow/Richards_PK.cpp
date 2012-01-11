@@ -343,7 +343,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
 
-  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_bicgstab);  // symmetry is NOT required
+  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_cgs);  // symmetry is NOT required
   solver->SetAztecOption(AZ_output, AZ_none);
 
   T_internal = 0.0;
