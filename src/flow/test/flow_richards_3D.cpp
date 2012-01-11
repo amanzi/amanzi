@@ -75,9 +75,11 @@ cout << "Test: 3D Richards, crib model" << endl;
   // solve the problem
   S.set_time(0.0);
   RPK->advance_to_steady_state();
-//for (int c=0; c<516*4; c+=4) cout << c << " " << RPK->get_solution_cells()[c] << endl;
-for (int c=0; c<516*4; c+=4) cout << c << " " << RPK->get_FS().ref_darcy_flux()[c] << endl;
- 
+
+for (int f=0; f<8776; f++) {
+double flux = RPK->get_FS().ref_darcy_flux()[f];
+if (fabs(flux) > 1e-10) cout << f << " " <<  flux << endl;
+}
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
   GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");

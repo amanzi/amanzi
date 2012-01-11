@@ -53,7 +53,7 @@
          <Parameter name="method" type="string" value="backward Euler"/>
          <Parameter name="max iterations" type="int" value="1000"/>
          <Parameter name="solver tolerance" type="double" value="1e-9"/>
-         <Parameter name="Initial time step" type="double" value="1e-12"/>
+         <Parameter name="Initial time step" type="double" value="3e+4"/>
        </ParameterList>
 
        <ParameterList name="Time integrator">

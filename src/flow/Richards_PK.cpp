@@ -393,7 +393,8 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     double sol_norm = FS->norm_cell(solution_new);
     L2error = sol_error / sol_norm;
 
-    if (residual > sol_norm * 1e-3) {
+    //if (residual > sol_norm * 1e-3) {
+    if (L2error > 1e-2) {
       dT /= 4;
       solution_new = solution_old;
       if (verbosity >= FLOW_VERBOSITY_HIGH) {
