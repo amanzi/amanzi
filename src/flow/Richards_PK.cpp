@@ -328,7 +328,7 @@ int Richards_PK::advanceSteadyState_Picard()
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(darcy_flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
 
   return 0;
 }
@@ -425,7 +425,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(darcy_flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
 
   return 0;
 }

@@ -120,12 +120,14 @@ class RichardsProblem {
   {
     Epetra_Vector& darcy_flux = *(RPK->get_FS().get_darcy_flux());
 
+    double cr = 1.02160895462971866;  // analytical data
+
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f=0; f<nfaces; f++) {
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);      
+      const double area = mesh->face_area(f);      
 //cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
-      error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
+      error_L2 += std::pow(darcy_flux[f] - cr * area, 2.0);
     }
     return sqrt(error_L2);
   }

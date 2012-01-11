@@ -93,7 +93,9 @@ class Flow_PK : public BDF2::fnBase {
   void addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K, 
                             const Epetra_Vector& Krel_faces, 
                             Matrix_MFD* matrix);
-  void addGravityFluxes_DarcyFlux(Epetra_Vector& darcy_flux);
+  void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
+                                  const Epetra_Vector& Krel_faces,
+                                  Epetra_Vector& darcy_flux);
 
   // access members  
   Teuchos::RCP<Flow_State> get_flow_state() { return FS; }

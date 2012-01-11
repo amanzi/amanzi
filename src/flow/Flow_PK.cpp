@@ -163,18 +163,35 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 /* ******************************************************************
 * Updates global Darcy vector calculated by a discretization method.                                             
 ****************************************************************** */
-void Flow_PK::addGravityFluxes_DarcyFlux(Epetra_Vector& darcy_flux)
+void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
+                                         const Epetra_Vector& Krel_faces,
+                                         Epetra_Vector& darcy_flux)
 {
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-
   double rho = FS->ref_fluid_density();
-  double mu = FS->ref_fluid_viscosity();
   AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho * rho / mu;
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho;
 
-  for (int f=0; f<nfaces; f++) {
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    darcy_flux[f] += gravity * normal;
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  std::vector<int> flag(nfaces, 0);
+
+  for (int c=0; c<ncells; c++) {
+    mesh_->cell_get_faces(c, &faces);
+    mesh_->cell_get_face_dirs(c, &dirs);
+    int nfaces = faces.size();
+
+    for (int n=0; n<nfaces; n++) {
+      int f = faces[n];
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+      if (!flag[f]) {
+        darcy_flux[f] += ((K[c] * gravity) * normal) * dirs[n] * Krel_faces[f];
+        flag[f] = 1;
+      }
+    }
   }
 }
 
