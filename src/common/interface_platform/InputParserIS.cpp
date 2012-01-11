@@ -110,6 +110,18 @@ namespace Amanzi {
 	  }
 	  
 	}
+	if ( macro_list.isParameter("Solute") ) {
+	  std::string macro_solute = macro_list.get<std::string>("Solute");
+	  if ( macro_solute == "All" ) {
+	    for ( int i=0; i<comp_names.size(); i++) vars.push_back(comp_names[i]);
+	  }
+	  else {
+	    vars.push_back(macro_solute);
+	  }
+
+	}
+
+
 	
       }
       else {
@@ -598,13 +610,13 @@ namespace Amanzi {
 		  Teuchos::ParameterList& richards_model_evaluator = richards_problem.sublist("Richards model evaluator");
 		  // set some reasonable defaults...
 		  richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
-		  richards_model_evaluator.set<double>("Relative error tolerance",1.0e-5);
+		  richards_model_evaluator.set<double>("Relative error tolerance",1.0e-3);
 		  std::string vlevel("low");
 		  richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
 		
 		  Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
 		  // set some reasonable defaults...
-		  time_integrator.set<int>("Nonlinear solver max iterations", 40);
+		  time_integrator.set<int>("Nonlinear solver max iterations", 6);
 		  time_integrator.set<int>("NKA max vectors", 5);
 		  time_integrator.set<int>("Maximum number of BDF tries", 10);
 		  time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
@@ -690,8 +702,8 @@ namespace Amanzi {
       Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
       ml_list.set<int>("ML output", 0);
       ml_list.set<int>("max levels", 40);
-      ml_list.set<std::string>("prec type","MGW");
-      ml_list.set<int>("cycle applications", 2);
+      ml_list.set<std::string>("prec type","MGV");
+      ml_list.set<int>("cycle applications", 1);
       ml_list.set<std::string>("aggregation: type", "Uncoupled");
       ml_list.set<double>("aggregation: damping factor", 1.33);
       ml_list.set<double>("aggregation: threshold", 0.0);
@@ -704,7 +716,7 @@ namespace Amanzi {
       ml_list.set<std::string>("smoother: type", "Gauss-Seidel");
       ml_list.set<double>("smoother: damping factor", 1.0);
       ml_list.set<std::string>("coarse: type", "Amesos-KLU");
-      ml_list.set<int>("coarse: max size", 128);
+      ml_list.set<int>("coarse: max size", 64);
 
       return dpc_list;
     }
