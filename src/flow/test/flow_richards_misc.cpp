@@ -126,7 +126,7 @@ class RichardsProblem {
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f=0; f<nfaces; f++) {
       const double area = mesh->face_area(f);      
-//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
+//cout << f << " " << xf << " " << darcy_flux[f] << " exact=" << cr << endl;
       error_L2 += std::pow(darcy_flux[f] - cr * area, 2.0);
     }
     return sqrt(error_L2);
@@ -156,8 +156,8 @@ SUITE(Simple_1D_Flow) {
 
     RPK->Init();  // setup the problem
     RPK->advance_to_steady_state();
-for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_solution_cells()[c] 
-                                << " " << RPK->get_FS().ref_darcy_flux()[c] << endl;
+for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_solution_cells()[c] << endl;
+//for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_FS().ref_darcy_flux()[c] << endl;
 
     double error = cell_pressure_error(p0, pressure_gradient); // error checks
     CHECK(error < 1.0e-8);

@@ -64,7 +64,7 @@ class Matrix_MFD : public Epetra_Operator {
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   bool UseTranspose() const { return false; }
-  int SetUseTranspose(bool) { return 1; }
+  int SetUseTranspose(bool) { return -1; }
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
   const Epetra_Map& OperatorDomainMap() const { return map; }

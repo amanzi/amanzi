@@ -448,8 +448,12 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 
 
 /* ******************************************************************
-* WARNING: Routines requires mass matrices (Aff_cells) befor imposing 
-* boundary conditions.                                                 
+* WARNING: Routines requires original mass matrices (Aff_cells), i.e.
+* before boundary conditions were imposed.
+*
+* WARNING: Since diffusive flux is not continuous, we derive it only
+* once (using flag) and in exactly the same manner as in routine
+* Flow_PK::addGravityFluxes_DarcyFlux.
 ****************************************************************** */
 void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution, 
                                  const Epetra_Import& face_importer, 
@@ -468,6 +472,9 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
   std::vector<int> dirs;
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  std::vector<int> flag(nfaces, 0);
+
   for (int c=0; c<ncells; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -480,10 +487,13 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
 
     mesh_->cell_get_face_dirs(c, &dirs);
     for (int n=0; n<nfaces; n++) {
-      double s = 0.0;
-      for (int m=0; m<nfaces; m++) s += Aff_cells[c](n, m) * dp[m];
       int f = faces[n];
-      darcy_flux[f] = s * dirs[n];
+      if (!flag[f]) {
+        double s = 0.0;
+        for (int m=0; m<nfaces; m++) s += Aff_cells[c](n, m) * dp[m];
+        darcy_flux[f] = s * dirs[n];
+        flag[f] = 1;
+      }
     }
   }
 }
