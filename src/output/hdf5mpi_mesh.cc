@@ -45,12 +45,12 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   // build h5 filename
   h5Filename = filename;
   //TODO:barker - verify with Markus whether he'll include h5 or I'll add it
-  //h5Filename.append(std::string(".h5"));
+  h5Filename.append(std::string(".h5"));
 
   // new parallel
   file = parallelIO_open_file(h5Filename.c_str(), &IOgroup_, FILE_CREATE);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI:: error creating mesh file");
+    Errors::Message message("HDF5_MPI::createMeshFile - error creating mesh file");
     Exceptions::amanzi_throw(message);
   }
   
@@ -195,12 +195,12 @@ void HDF5_MPI::createDataFile(std::string soln_filename) {
   // build h5 filename
   h5filename = soln_filename;
   //TODO:barker - verify with Markus whether he'll include h5 or I'll add it
-  //h5filename.append(std::string(".h5"));
+  h5filename.append(std::string(".h5"));
   
   // new parallel
   file = parallelIO_open_file(h5filename.c_str(), &IOgroup_, FILE_CREATE);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::createDataFile: error creating data file");
+    Errors::Message message("HDF5_MPI::createDataFile - error creating data file");
     Exceptions::amanzi_throw(message);
   }
 
@@ -278,7 +278,7 @@ void HDF5_MPI::writeAttrString(const std::string value, const std::string attrna
   file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
     
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::writeAttrString error opening data file to write attribute");
+    Errors::Message message("HDF5_MPI::writeAttrString - error opening data file to write attribute");
     Exceptions::amanzi_throw(message);
   }
   
@@ -320,7 +320,7 @@ void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
   file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
     
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::writeAttrReal error opening data file to write attribute");
+    Errors::Message message("HDF5_MPI::writeAttrReal - error opening data file to write attribute");
     Exceptions::amanzi_throw(message);
   }
     
@@ -358,7 +358,7 @@ void HDF5_MPI::writeAttrInt(int value, const std::string attrname)
   file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
     
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::writeAttrInt error opening data file to write attribute");
+    Errors::Message message("HDF5_MPI::writeAttrInt - error opening data file to write attribute");
     Exceptions::amanzi_throw(message);
   }
     
@@ -393,7 +393,7 @@ void HDF5_MPI::readAttrString(std::string &value, const std::string attrname)
   root = H5Gopen(file, "/", H5P_DEFAULT);
     
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::readAttrString error opening data file to write attribute");
+    Errors::Message message("HDF5_MPI::readAttrString - error opening data file to write attribute");
     Exceptions::amanzi_throw(message);
   }
   
@@ -429,7 +429,7 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
   file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
     
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::readAttrReal error opening data file to write attribute");
+    Errors::Message message("HDF5_MPI::readAttrReal - error opening data file to write attribute");
     Exceptions::amanzi_throw(message);
   }
     
@@ -458,7 +458,7 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
     file = H5Fopen(H5DataFilename_.c_str(), H5F_ACC_RDWR, acc_tpl1);
     
     if (file < 0) {
-      Errors::Message message("HDF5_MPI::readAttrInt error opening data file to write attribute");
+      Errors::Message message("HDF5_MPI::readAttrInt - error opening data file to write attribute");
       Exceptions::amanzi_throw(message);
     }
     
@@ -532,7 +532,7 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
   file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
                               FILE_READWRITE);
   if (file < 0) {
-    Errors::Message message("HDF5_MPI::writeFieldData_ error opening data file to write field data");
+    Errors::Message message("HDF5_MPI::writeFieldData_ - error opening data file to write field data");
     Exceptions::amanzi_throw(message);
   }
 
@@ -568,6 +568,10 @@ void HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   int ndims;
   hid_t file = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
                                     FILE_READONLY);
+  if (file < 0) {
+    Errors::Message message("HDF5_MPI::readFieldData_ - error opening data file to write field data");
+    Exceptions::amanzi_throw(message);
+  }
   parallelIO_get_dataset_ndims(&ndims, file, h5path, &IOgroup_);
   int  globaldims[ndims], localdims[ndims];
   parallelIO_get_dataset_dims(globaldims, file, h5path, &IOgroup_);
