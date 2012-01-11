@@ -5,7 +5,8 @@ Authors: Neil Carlson (nnc@lanl.gov),
          Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "vanGenuchtenModel.hpp"
+#include "WRM_vanGenuchten.hpp"
+#include "WRM_analytic.hpp"
 #include "Richards_PK.hpp"
 
 namespace Amanzi {
@@ -66,14 +67,18 @@ void Richards_PK::processParameterList()
     if (vG_list.isSublist(vG_list.name(i))) {
       Teuchos::ParameterList& wrm_list = vG_list.sublist(vG_list.name(i));
 
-      if ( wrm_list.get<string>("Water retention model") == "van Genuchten") {
+      if (wrm_list.get<string>("Water retention model") == "van Genuchten") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
 
         double vG_m = wrm_list.get<double>("van Genuchten m");
         double vG_alpha = wrm_list.get<double>("van Genuchten alpha");
         double vG_sr = wrm_list.get<double>("van Genuchten residual saturation");
 	      
-        WRM[iblock] = Teuchos::rcp(new vanGenuchtenModel(region, vG_m, vG_alpha, vG_sr, atm_pressure));
+        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr, atm_pressure));
+      } 
+      else if (wrm_list.get<string>("Water retention model") == "analytic") {
+        std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
+        WRM[iblock] = Teuchos::rcp(new WRM_analytic(region));
       }
       iblock++;
     }

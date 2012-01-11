@@ -8,7 +8,7 @@ Authors: Neil Carlson (version 1)
 #include <cmath>
 #include <iostream>
 
-#include "vanGenuchtenModel.hpp"
+#include "WRM_vanGenuchten.hpp"
 
 namespace Amanzi {
 namespace AmanziFlow {
@@ -16,7 +16,7 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Setup fundamental parameters for this model.                                            
 ****************************************************************** */
-vanGenuchtenModel::vanGenuchtenModel(
+WRM_vanGenuchten::WRM_vanGenuchten(
    std::string region_, double m_, double alpha_, double sr_, double atm_pressure_) :
    m(m_), alpha(alpha_), sr(sr_), atm_pressure(atm_pressure_)
 {
@@ -28,7 +28,7 @@ vanGenuchtenModel::vanGenuchtenModel(
 /* ******************************************************************
 * Relative permeability formula.                                          
 ****************************************************************** */
-double vanGenuchtenModel::k_relative(double p)
+double WRM_vanGenuchten::k_relative(double p)
 {
   double pc = atm_pressure - p;  // capillary pressure
   if (pc > 0.0) {
@@ -43,7 +43,7 @@ double vanGenuchtenModel::k_relative(double p)
 /* ******************************************************************
 * Saturation formula (3.5)-(3.6).                                         
 ****************************************************************** */
-double vanGenuchtenModel::saturation(double p)
+double WRM_vanGenuchten::saturation(double p)
 {
   double pc = atm_pressure - p;  // capillary pressure
   if (pc > 0.0) {
@@ -57,7 +57,7 @@ double vanGenuchtenModel::saturation(double p)
 /* ******************************************************************
 * Derivative of the saturation formula w.r.t. capillary pressure.                                         
 ****************************************************************** */
-double vanGenuchtenModel::d_saturation(double p)
+double WRM_vanGenuchten::d_saturation(double p)
 {
   double pc = atm_pressure - p;  // capillary pressure
   if (pc > 0.0) {
@@ -71,7 +71,7 @@ double vanGenuchtenModel::d_saturation(double p)
 /* ******************************************************************
 * Pressure as a function of saturation.                                       
 ****************************************************************** */
-double vanGenuchtenModel::pressure(double sl)
+double WRM_vanGenuchten::pressure(double sl)
 {
   double se = (sl - sr) / (1.0 - sr);
   return atm_pressure - (pow(pow(se, -1.0/m) - 1.0, 1/n)) / alpha;

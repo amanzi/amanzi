@@ -5,6 +5,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
 
 #include <iostream>
+#include <cmath>
 
 #include "UnitTest++.h"
 
@@ -84,12 +85,18 @@ class RichardsProblem {
   {
     Epetra_Vector& solution_cells = RPK->get_solution_cells();
 
-    double error_L2 = 0.0;
+    double k1 = 0.5, k2 = 2.0, g = 2.0, a = 5.0, cr = 1.02160895462971866;  // analytical data
+    double f1 = sqrt(1.0 - g * k1 / cr);
+    double f2 = sqrt(g * k2 / cr - 1.0);
+
+    double pressure_exact, error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (int c=0; c<ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      double pressure_exact = p0 + pressure_gradient * xc;
-//cout << c << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
+      double z = xc[2];
+      if (z < -a) pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
+      else pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
+//cout << z << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -147,7 +154,8 @@ SUITE(Simple_1D_Flow) {
 
     RPK->Init();  // setup the problem
     RPK->advance_to_steady_state();
-for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_solution_cells()[c] << endl;
+for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_solution_cells()[c] 
+                                << " " << RPK->get_FS().ref_darcy_flux()[c] << endl;
 
     double error = cell_pressure_error(p0, pressure_gradient); // error checks
     CHECK(error < 1.0e-8);

@@ -393,8 +393,8 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     double sol_norm = FS->norm_cell(solution_new);
     L2error = sol_error / sol_norm;
 
-    if (residual > sol_norm * err_tol) {
-      dT /= 2;
+    if (residual > sol_norm * 1e-3) {
+      dT /= 4;
       solution_new = solution_old;
       if (verbosity >= FLOW_VERBOSITY_HIGH) {
         std::printf("Declined: %4d  Pressure(diff=%9.4e, sol=%9.4e)  CG info(%8.3e, %4d),  dT=%8.3e\n", 
@@ -421,6 +421,12 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
     GMV::close_data_file();
   }
+  
+  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
+  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
+  addGravityFluxes_DarcyFlux(darcy_flux);
+
   return 0;
 }
 

@@ -68,7 +68,7 @@ const int FLOW_AMANZI_VERSION = 2;
 class Flow_PK : public BDF2::fnBase {
  public:
   Flow_PK() {};
-  ~Flow_PK() {};
+  virtual ~Flow_PK() {};
 
   // main methods
   void Init(Teuchos::RCP<Flow_State> FS_MPC);
