@@ -6,7 +6,7 @@ namespace Amanzi {
 
     Teuchos::ParameterList translate (Teuchos::ParameterList& plist);
 
-    Teuchos::Array<double> get_Time_Macro ( std::string& macro_name, Teuchos::ParameterList& plist );
+    Teuchos::ParameterList get_Time_Macro ( std::string& macro_name, Teuchos::ParameterList& plist );
     Teuchos::Array<int> get_Cycle_Macro ( std::string& macro_name, Teuchos::ParameterList& plist );
     Teuchos::Array<std::string> get_Variable_Macro ( std::string& macro_name, Teuchos::ParameterList& plist );
     void init_global_info( Teuchos::ParameterList& plist ); 

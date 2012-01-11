@@ -35,19 +35,25 @@ namespace Amanzi {
 
 
     
-    Teuchos::Array<double> get_Time_Macro ( std::string& macro_name, Teuchos::ParameterList& plist )
+    Teuchos::ParameterList get_Time_Macro ( std::string& macro_name, Teuchos::ParameterList& plist )
     {
-      Teuchos::Array<double> time_range;
+      Teuchos::ParameterList time_macro;
       
       if ( plist.sublist("Output").sublist("Time Macros").isSublist(macro_name) )
 	{
 	  if (plist.sublist("Output").sublist("Time Macros").sublist(macro_name).isParameter("Start_Period_Stop")) {
+	    Teuchos::Array<double> time_range;
 	    time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
 	      .get<Teuchos::Array<double> >("Start_Period_Stop");
+	    
+	    time_macro.set<Teuchos::Array<double> >("Start_Period_Stop",time_range);
+
 	  }
 	  if (plist.sublist("Output").sublist("Time Macros").sublist(macro_name).isParameter("Values")) {
-	    time_range = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
+	    Teuchos::Array<double> values;
+	    values = plist.sublist("Output").sublist("Time Macros").sublist(macro_name)
 	      .get<Teuchos::Array<double> >("Values");
+	    time_macro.set<Teuchos::Array<double> >("Values",values);
 	  }	  
 	}
       else
@@ -57,7 +63,7 @@ namespace Amanzi {
 	  Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));		  
 	}
       
-      return time_range;
+      return time_macro;
 
     }
 
@@ -132,13 +138,11 @@ namespace Amanzi {
 
       Teuchos::Array<std::string> ret_vars(vars.size());
       
-      std::cout << vars.size() << " " << ret_vars.size() << std::endl;
-      
       for (int i=0; i<vars.size(); i++) {
 	ret_vars[i] = vars[i];
       }
       
-      return vars;
+      return ret_vars;
     }
 
 
@@ -257,10 +261,15 @@ namespace Amanzi {
 		      // copy the observation data sublist
 		      obs_list.sublist(i->first) = olist.sublist(i->first);
 		      
-
 		      if ( obs_list.sublist(i->first).isParameter("Time Macro") ) {
 			std::string time_macro = obs_list.sublist(i->first).get<std::string>("Time Macro");
-			obs_list.sublist(i->first).set("Start_Period_Stop",get_Time_Macro(time_macro, plist));
+			Teuchos::ParameterList time_macro_list = get_Time_Macro(time_macro, plist);
+			if (time_macro_list.isParameter("Start_Period_Stop")) {
+			  obs_list.sublist(i->first).set("Start_Period_Stop",time_macro_list.get<Teuchos::Array<double> >("Start_Period_Stop"));
+			}
+			if (time_macro_list.isParameter("Values")) {
+			  obs_list.sublist(i->first).set("Values",time_macro_list.get<Teuchos::Array<double> >("Values"));
+			}
 			obs_list.sublist(i->first).remove("Time Macro");
 		      }
 		      

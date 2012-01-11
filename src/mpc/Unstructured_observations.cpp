@@ -30,7 +30,7 @@ namespace Amanzi {
 
 	    // get the observation time values
 	    Teuchos::Array<double> times = observable_plist.get<Teuchos::Array<double> >("Values", empty);
-
+	    
 	    // loop over all variables listed and create an observable for each
 	    Teuchos::Array<std::string> vars = observable_plist.get<Teuchos::Array<string> >("Variables");
 	    observations.insert(std::pair
@@ -120,6 +120,7 @@ namespace Amanzi {
       {
 	if ( last_time < T[i] && T[i] <= time )
 	  {
+	    std::cout << last_time << " " << T[i] << " " << time << std::endl;
 	    return true;
 	  }
       }

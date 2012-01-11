@@ -200,7 +200,8 @@ void State::create_storage ()
 
 
 void State::set_time ( double new_time ) {
-
+  
+  last_time = new_time;
   time = new_time;
 
 }
@@ -243,6 +244,7 @@ void State::update_pressure(const Epetra_Vector &new_pressure)
 
 void State::advance_time(double dT)
 {
+  last_time = time;
   time = time + dT;
 }
 
