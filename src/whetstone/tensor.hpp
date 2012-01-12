@@ -33,6 +33,7 @@ class Tensor {
   void inverse();
 
   // elementary operators
+  friend Tensor operator*(Tensor& T, const double& c);
   friend AmanziGeometry::Point operator*(Tensor& T, const AmanziGeometry::Point& p);
   friend Tensor operator*(Tensor& T1, Tensor& T2);
   Tensor& operator*=(const double& c);

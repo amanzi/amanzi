@@ -135,7 +135,7 @@
                <ParameterList name="function-tabular">
                  <Parameter name="forms" type="Array string" value="{constant}"/>
                  <Parameter name="x values" type="Array double" value="{0, 1e+09}"/>
-                 <Parameter name="y values" type="Array double" value="{1.1076e-07, 1.1076e-07}"/>
+                 <Parameter name="y values" type="Array double" value="{-1.1076e-07, -1.1076e-07}"/>
                </ParameterList>
              </ParameterList>
              <Parameter name="regions" type="Array string" value="{Top Surface Region}"/>

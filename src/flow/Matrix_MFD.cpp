@@ -55,6 +55,9 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
     mfd.darcy_mass_inverse(c, K[c], Bff);
+//cout << Bff << endl; 
+//    mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
+//cout << Bff << endl; 
 
     for (int n=0; n<nfaces; n++)
       for (int m=0; m<nfaces; m++) Bff(m, n) *= Krel_faces[faces[m]];
@@ -162,7 +165,7 @@ void Matrix_MFD::applyBoundaryConditions(
         Bff(n, n) = 1.0;
         Ff[n] = bc_values[f]; 
       } else if (bc_markers[f] == FLOW_BC_FACE_FLUX) {
-        Ff[n] += bc_values[f] * mesh_->face_area(f);
+        Ff[n] -= bc_values[f] * mesh_->face_area(f);
       }
     }
   }

@@ -71,6 +71,29 @@ int MFD3D::darcy_mass_inverse(int cell,
 
 
 /* ******************************************************************
+* This is debug version of the above routine for scalar tensors
+* and orthogonal brick element.
+****************************************************************** */
+int MFD3D::darcy_mass_inverse_diagonal(int cell,
+                                       Tensor& permeability,
+                                       Teuchos::SerialDenseMatrix<int, double>& W)
+{
+  double volume = mesh_->cell_volume(cell);
+
+  AmanziMesh::Entity_ID_List faces;
+  mesh_->cell_get_faces(cell, &faces);
+  int nfaces = faces.size();
+
+  W.putScalar(0.0);
+  for (int n=0; n<nfaces; n++) {
+    int f = faces[n];
+    double area = mesh_->face_area(f);
+    W(n, n) = permeability(0, 0) * area * area / volume;
+  }
+}
+
+
+/* ******************************************************************
 * A harmonic point is a unique point on a plane seprating two 
 * materials where (a) continuity conditions are satisfied for 
 * continuous piecewise linear pressure functions and (b) pressure 

@@ -27,6 +27,6 @@ class fnBase {
   virtual bool is_admissible(const Epetra_Vector& up) { return true; }
 };
 
-}
+}  // namespace BDF2
 
 #endif  // _BDF2_FNBASE_HPP_

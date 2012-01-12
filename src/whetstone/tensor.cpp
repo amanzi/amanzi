@@ -114,6 +114,25 @@ Tensor& Tensor::operator*=(const double& c)
 
 
 /* ******************************************************************
+* Rescale the tensor 
+****************************************************************** */
+Tensor operator*(Tensor& T, const double& c)
+{
+  int rank = T.get_rank();
+  int d = T.get_dimension();
+  double* data = T.get_data();
+
+  Tensor T1(d, rank);
+  double* data1 = T1.get_data();
+  
+  int size = WHETSTONE_TENSOR_SIZE[d-1][rank-1];
+  for (int i=0; i<size; i++) data1[i] = data[i] * c;
+
+  return T1;
+}
+
+
+/* ******************************************************************
 * First convolution operation for tensors of rank 1 and 2. 
 ****************************************************************** */
 AmanziGeometry::Point operator*(Tensor& T, const AmanziGeometry::Point& p)

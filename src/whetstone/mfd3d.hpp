@@ -42,7 +42,7 @@ class MFD3D {
   MFD3D(Teuchos::RCP<AmanziMesh::Mesh> mesh) { mesh_ = mesh; };
   ~MFD3D() {};
 
-  // primary members
+  // primary methods
   int darcy_mass(int cell,
                  Tensor& permeability,
                  Teuchos::SerialDenseMatrix<int, double>& M);
@@ -62,7 +62,7 @@ class MFD3D {
                            Tensor& deformation,
                            Teuchos::SerialDenseMatrix<int, double>& A); 
 
-  // suppporting primary members
+  // suppporting primary methods
   int L2_consistency(int cell,
                      Tensor& T,
                      Teuchos::SerialDenseMatrix<int, double>& N,
@@ -98,6 +98,11 @@ class MFD3D {
 
    // extension of mesh API
    int cell_get_face_adj_cell(const int cell, const int face);
+
+   // debug methods
+   int darcy_mass_inverse_diagonal(int cell,
+                                   Tensor& permeability,
+                                   Teuchos::SerialDenseMatrix<int, double>& W);
 
  private:
   int find_position(int v, AmanziMesh::Entity_ID_List nodes);
