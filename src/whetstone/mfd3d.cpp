@@ -78,6 +78,7 @@ int MFD3D::darcy_mass_inverse_diagonal(int cell,
                                        Tensor& permeability,
                                        Teuchos::SerialDenseMatrix<int, double>& W)
 {
+  int d = mesh_->space_dimension();
   double volume = mesh_->cell_volume(cell);
 
   AmanziMesh::Entity_ID_List faces;
@@ -88,8 +89,9 @@ int MFD3D::darcy_mass_inverse_diagonal(int cell,
   for (int n=0; n<nfaces; n++) {
     int f = faces[n];
     double area = mesh_->face_area(f);
-    W(n, n) = permeability(0, 0) * area * area / volume;
+    W(n, n) = nfaces * permeability(0, 0) * area * area / (d * volume);
   }
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 

@@ -418,7 +418,6 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(*solution_cells, 0, "pressure");
-    GMV::write_cell_data(*(FS->get_absolute_permeability()), 0, "abs_permeability");
     GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
     GMV::close_data_file();
   }
