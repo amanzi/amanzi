@@ -59,7 +59,6 @@ class Matrix_MFD : public Epetra_Operator {
   void init_ML_preconditioner(Teuchos::ParameterList& ML_list);
   void update_ML_preconditioner();
 
-
   // required methods
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;

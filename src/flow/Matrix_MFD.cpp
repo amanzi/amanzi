@@ -54,7 +54,8 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    mfd.darcy_mass_inverse(c, K[c], Bff);
+    if (nfaces == 6) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+    else mfd.darcy_mass_inverse(c, K[c], Bff);
     //mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
 
     for (int n=0; n<nfaces; n++)

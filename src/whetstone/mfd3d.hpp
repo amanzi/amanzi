@@ -49,6 +49,9 @@ class MFD3D {
   int darcy_mass_inverse(int cell,
                          Tensor& permeability,
                          Teuchos::SerialDenseMatrix<int, double>& W);
+  int darcy_mass_inverse_hex(int cell,
+                             Tensor& permeability,
+                             Teuchos::SerialDenseMatrix<int, double>& W);
 
   int dispersion_corner_fluxes(int node,
                                int cell,
@@ -86,23 +89,23 @@ class MFD3D {
                         Teuchos::SerialDenseMatrix<int, double>& N,  // use R, Wc, and W for the inverse matrix
                         Teuchos::SerialDenseMatrix<int, double>& Mc,
                         Teuchos::SerialDenseMatrix<int, double>& M);
-  void stability_monotone(int cell,
-                          Teuchos::SerialDenseMatrix<int, double>& N,
-                          Teuchos::SerialDenseMatrix<int, double>& Mc,
-                          Teuchos::SerialDenseMatrix<int, double>& M);
+  int stability_monotone_hex(int cell,
+                             Tensor& T,
+                             Teuchos::SerialDenseMatrix<int, double>& Mc,
+                             Teuchos::SerialDenseMatrix<int, double>& M);
 
   void calculate_harmonic_points(int face, 
                                  std::vector<Tensor>& T, 
                                  AmanziGeometry::Point& harmonic_point,
                                  double& harmonic_point_weight);
 
-   // extension of mesh API
-   int cell_get_face_adj_cell(const int cell, const int face);
+  // extension of mesh API
+  int cell_get_face_adj_cell(const int cell, const int face);
 
-   // debug methods
-   int darcy_mass_inverse_diagonal(int cell,
-                                   Tensor& permeability,
-                                   Teuchos::SerialDenseMatrix<int, double>& W);
+  // debug methods
+  int darcy_mass_inverse_diagonal(int cell,
+                                  Tensor& permeability,
+                                  Teuchos::SerialDenseMatrix<int, double>& W);
 
  private:
   int find_position(int v, AmanziMesh::Entity_ID_List nodes);

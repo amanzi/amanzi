@@ -102,6 +102,22 @@ void Richards_PK::processParameterList()
   dT0 = steady_state_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
 }
 
+
+/* ****************************************************************
+* Printing information about Flow status 
+**************************************************************** */
+void Richards_PK::print_statistics() const
+{
+  if (!MyPID && verbosity > 0) {
+    cout << "Flow PK:" << endl;
+    cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
+    cout << "    Verbosity level = " << verbosity_level << endl;
+    cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
+    cout << "    Upwind = " << (flag_upwind ? "yes" : "no") << endl;
+  }
+}
+ 
+
 }  // namespace AmanziFlow
 }  // namespace Amanzi
 

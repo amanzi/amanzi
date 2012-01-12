@@ -71,6 +71,31 @@ int MFD3D::darcy_mass_inverse(int cell,
 
 
 /* ******************************************************************
+* Darcy mass matrix for a hexahedral element, a brick for now.
+****************************************************************** */
+int MFD3D::darcy_mass_inverse_hex(int cell,
+                                  Tensor& permeability,
+                                  Teuchos::SerialDenseMatrix<int, double>& W)
+{
+  int d = mesh_->space_dimension();
+
+  AmanziMesh::Entity_ID_List faces;
+  mesh_->cell_get_faces(cell, &faces);
+  int nfaces = faces.size();
+ 
+  Teuchos::SerialDenseMatrix<int, double> R(nfaces, d);
+  Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
+
+  int ok = L2_consistency_inverse(cell, permeability, R, Wc);
+  if (ok) return WHETSTONE_ELEMENTAL_MATRIX_WRONG;
+
+  int flag = stability_monotone_hex(cell, permeability, Wc, W);
+  if (flag) stability_scalar(cell, R, Wc, W);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
+
+
+/* ******************************************************************
 * This is debug version of the above routine for scalar tensors
 * and orthogonal brick element.
 ****************************************************************** */
@@ -389,7 +414,7 @@ int MFD3D::H1_consistency_elasticity(int cell,
 
 
 /* ******************************************************************
-* Conventional Gramm-Schimdt orthogonalization of colums of matrix N. 
+* Simplest stability term is added to the consistency term. 
 ****************************************************************** */
 void MFD3D::stability_scalar(int cell,
                              Teuchos::SerialDenseMatrix<int, double>& N,
@@ -400,7 +425,6 @@ void MFD3D::stability_scalar(int cell,
  
   int nrows = Mc.numRows();
   int ncols = N.numCols();
-  double volume = mesh_->cell_volume(cell);
 
   double scale = 0.0;
   for (int i=0; i<nrows; i++) scale += Mc(i, i);
@@ -423,6 +447,95 @@ void MFD3D::stability_scalar(int cell,
   for (int i=0; i<nrows; i++) {  // symmetrization
     for (int j=i+1; j<nrows; j++) M(j, i) = M(i, j);
   }
+}
+
+
+/* ******************************************************************
+* A simple monotone stability term for a 2D or 3D brick element. 
+****************************************************************** */
+int MFD3D::stability_monotone_hex(int cell,
+                                  Tensor& T,
+                                  Teuchos::SerialDenseMatrix<int, double>& Mc,
+                                  Teuchos::SerialDenseMatrix<int, double>& M)
+{
+  int d = mesh_->space_dimension(); 
+  int nrows = 2 * d;
+
+  for (int i=0; i<nrows; i++) {
+    for (int j=i; j<nrows; j++) M(j, i) = M(i, j) = Mc(i, j);
+  }
+
+  // create groups of quasi-parallel faces
+  int map[nrows];
+  for (int i=0; i<nrows; i++) map[i] = i;
+
+  std::vector<int> dirs;
+  AmanziMesh::Entity_ID_List faces; 
+  mesh_->cell_get_face_dirs(cell, &dirs);
+  mesh_->cell_get_faces(cell, &faces);
+
+  int i1, i2, k, l;
+  double s1, s2, area1, area2;
+  for (int i=0; i<d-1; i++) {
+    int i1 = 2*i;
+    int i2 = i1 + 1; 
+
+    int f = faces[i1];
+    const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
+    area1 = mesh_->face_area(f);
+
+    s1 = 1.0;
+    for (int j=i2; j<nrows; j++) {
+      int f = faces[j];
+      const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
+      area2 = mesh_->face_area(f);
+
+      s2 = (normal1 * normal2) * (dirs[i] * dirs[j]) / (area1 * area2);
+      if (s2 < s1) {  // swap map values in positions i2 and j  
+        k = map[i2]; 
+        map[i2] = j; 
+        map[j] = k;
+        s1 = s2;
+      }
+    }
+    //if (s1 >= 0.0) return -1;  // hex is too disturted
+  }
+
+  //define transformed tensor
+  Tensor T1(d, 2); 
+  for (int i=0; i<d; i++) {
+    k = map[2*i];
+    int f = faces[k];
+    const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
+    area1 = mesh_->face_area(f);
+
+    for (int j=i; j<d; j++) {
+      l = map[2*j];
+      f = faces[l];
+      const AmanziGeometry::Point& normal2 = mesh_->face_normal(f);
+      area2 = mesh_->face_area(f);
+
+      s1 = (T * normal1) * normal2 * (dirs[k] * dirs[l]) / (area1 * area2);
+      if (i-j) T1(i, j) = T1(j, i) = -fabs(s1);
+      else T1(i, i) = s1;
+    }
+  }
+
+  // add stability term D_ik T1_kl D_il
+  double volume = mesh_->cell_volume(cell);
+  for (int i=0; i<nrows; i++) {
+    i1 = i / 2;
+    k = map[i];
+    area1 = mesh_->face_area(faces[k]);
+
+    for (int j=i; j<nrows; j++) {
+      i2 = j / 2;
+      l = map[j];
+      area2 = mesh_->face_area(faces[l]);
+      M(l, k) = M(k, l) += T1(i1, i2) * area1 * area2 / volume;  // Fix (lipnikov@lanl.gov)
+    }
+  }
+  return 0;
 }
 
 

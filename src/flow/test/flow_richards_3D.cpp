@@ -58,8 +58,10 @@ cout << "Test: 3D Richards, crib model" << endl;
   ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
   ParameterList rp_list = flow_list.get<ParameterList>("Richards Problem");
   Richards_PK* RPK = new Richards_PK(rp_list, FS);
+
   RPK->set_standalone_mode(true);
   RPK->Init();
+  RPK->print_statistics();
 
   // create the initial pressure function
   /*
