@@ -65,7 +65,7 @@ class Richards_PK : public Flow_PK {
   void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MFD* matrix);
 
   double computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix);
+  void computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, bool flag_update_ML = true);
 
   void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Vector& s);

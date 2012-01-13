@@ -16,20 +16,15 @@ namespace AmanziFlow {
 void Richards_PK::fun(
     const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
 {
-  matrix->computeResidual(u, f);  // compute F(u)
-
-  Epetra_Vector* u_cells = FS->createCellView(u);  
-  Epetra_Vector dS(mesh_->cell_map(false));
-  derivedSdP(*u_cells, dS);
-
-  Teuchos::RCP<Epetra_Vector> phi = FS->get_porosity();
-
+  Epetra_Vector& Dcc_time = matrix->get_Dcc_time();
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c=0; c<ncells; c++) {
-    double volume = mesh_->cell_volume(c);
-    double dS_cell = (*phi)[c] * dS[c] * rho * volume;
-    f[c] -= dS_cell * u[c];
-  }
+
+  T_internal = T_physical = T;
+  computePreconditionerMFD(u, matrix, false);  // Calculate only stiffness matrix.
+
+  matrix->computeResidual(u, f);  // compute F(u)
+  for (int c=0; c<ncells; c++) f[c] += Dcc_time[c] * u[c];
+  f.Update(-1.0, udot ,1.0);
 }
 
 

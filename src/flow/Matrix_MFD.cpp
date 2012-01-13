@@ -73,7 +73,7 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
       matsum += colsum;
     }
 
-    Aff_cells.push_back(Bff);
+    Aff_cells.push_back(Bff);  // This the only place where memory can be allocated. 
     Afc_cells.push_back(Bfc);
     Acf_cells.push_back(Bcf);
     Acc_cells.push_back(matsum);
@@ -214,6 +214,8 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 
   if (flag_symmetry_) Afc = Acf;
   else Afc = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
+
+  Dcc_time = Teuchos::rcp(new Epetra_Vector(cmap)); 
 
   rhs = Teuchos::rcp(new Epetra_Vector(super_map));
   rhs_cells = Teuchos::rcp(FS->createCellView(*rhs));

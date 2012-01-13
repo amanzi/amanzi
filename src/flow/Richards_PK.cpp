@@ -180,11 +180,13 @@ int Richards_PK::advance_to_steady_state()
 ******************************************************************* */
 int Richards_PK::advanceSteadyState_BDF2() 
 {
-  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_bicgstab);  // symmetry is NOT required
+  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_cgs);  // symmetry is NOT required
   solver->SetAztecOption(AZ_output, AZ_none);
 
   double& time = (standalone_mode) ? T_internal : T_physical;
   int itrs = 0;
+ 
+  dT = dT0;
 
   while (itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
@@ -212,7 +214,7 @@ int Richards_PK::advanceSteadyState_BDF2()
     matrix->computeSchurComplement(bc_markers, bc_values);
     matrix->update_ML_preconditioner();
 
-    T_physical = FS->get_time();
+    T_internal = T_physical = FS->get_time();
     double dTnext;
 
     if (itrs == 0) {  // initialization of BDF2
@@ -561,7 +563,8 @@ double Richards_PK::computeUDot(const double T, const Epetra_Vector& u, Epetra_V
 * Gathers together routines to compute MFD matrices Axx(u) and 
 * preconditioner Sff(u) using internal time step dT.                             
 ****************************************************************** */
-void Richards_PK::computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix)
+void Richards_PK::computePreconditionerMFD(
+    const Epetra_Vector& u, Matrix_MFD* matrix, bool flag_update_ML)
 {
   Epetra_Vector* u_cells = FS->createCellView(u);
 
@@ -582,8 +585,10 @@ void Richards_PK::computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* m
   addTimeDerivative_MFD(*solution_cells, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
-  matrix->computeSchurComplement(bc_markers, bc_values);
-  matrix->update_ML_preconditioner();  
+  if (flag_update_ML) {
+    matrix->computeSchurComplement(bc_markers, bc_values);
+    matrix->update_ML_preconditioner();  
+  }
 }
 
 
@@ -611,14 +616,16 @@ void Richards_PK::addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MF
  
   const Epetra_Vector& phi = FS->ref_porosity();
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
+  Epetra_Vector& Dcc_time = matrix->get_Dcc_time();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = dSdP[c] * phi[c] * volume / dT;
+    double factor = rho * phi[c] * dSdP[c] * volume / dT;
     Acc_cells[c] += factor;
+    Dcc_time[c] = factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
 }
