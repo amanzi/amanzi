@@ -2,13 +2,15 @@
 #define _REGION_H_
 
 #include <string>
+#include <map>
+#include <sstream>
+
 #include <Array.H>
 #include <FArrayBox.H>
 #include <Box.H>
 #include <BoxArray.H>
-#include <Geometry.H>
-#include <LevelBld.H>
-#include <AmrLevel.H>
+#include <ParallelDescriptor.H>
+using std::map;
 
 //enum PurposeT {any, rock, source, output, boundary}; 
 

@@ -627,6 +627,11 @@ PorousMedia::variableSetUp ()
   IndexType regionIDtype(IndexType::TheCellType());
   int nCompRegion = 1;
   derive_lst.add("MaterialID", regionIDtype, nCompRegion);
+  derive_lst.add("Capillary_Pressure", regionIDtype, nCompRegion);
+  derive_lst.add("Volumetric_Water_Content", regionIDtype, nCompRegion);
+  derive_lst.add("Porosity", regionIDtype, nCompRegion);
+  derive_lst.add("Aqueous_Saturation", regionIDtype, nCompRegion);
+  derive_lst.add("Aqueous_Pressure", regionIDtype, nCompRegion);
 
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************
@@ -735,6 +740,12 @@ void PorousMedia::read_geometry()
 		  r_param[dir+BL_SPACEDIM] = hi_coor[dir];
 		}
 	      region_array[i]->set(r_param);
+	    }
+	  else if (Region::region_map[r_type] == Region::region_map["color_function"])
+	    {
+              int color_value; ppr.get("color_value",color_value);
+              std::string color_file; ppr.get("color_file",color_file);
+	      region_array[i] = new colorFunctionRegion(r_name[idx],r_purpose,r_type,color_file,color_value);
 	    }
           else BoxLib::Abort("type not supported");
 	}
