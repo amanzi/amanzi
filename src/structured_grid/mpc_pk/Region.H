@@ -26,6 +26,7 @@ public:
     std::map<std::string,int> m;
     m["point"] = 0;
     m["box"]   = 1;
+    m["color_function"] = 2;
 
     return m;
   };
@@ -83,6 +84,27 @@ public:
   Real vertex_lo[BL_SPACEDIM];
   Real vertex_hi[BL_SPACEDIM];
 
+};
+
+class colorFunctionRegion : public boxRegion 
+{
+
+public: 
+  
+  colorFunctionRegion (std::string r_name,
+                       std::string r_purpose,
+                       std::string r_type,
+		       std::string file_name,
+                       int         color_val);
+
+  void set_color_map(const std::string& file_name);
+  IntVect atIndex(Array<Real> x) const;
+
+  virtual bool inregion (Array<Real>& x);
+
+  BaseFab<int>* m_color_map;
+  Array<Real> dx;
+  int m_color_val;
 };
 
 class allRegion : public Region 

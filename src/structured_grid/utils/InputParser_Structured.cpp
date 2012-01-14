@@ -255,7 +255,14 @@ namespace Amanzi {
           const ParameterEntry& rentry = rslist.getEntry(rlabel);
           
           if (rentry.isList()) {
-            if (rlabel=="Region: Point"){	      
+            if (rlabel=="Region: Color Function") {
+	      const ParameterList& rsslist = rslist.sublist(rlabel);
+	      rsublist.setEntry("color_file",rsslist.getEntry("File"));
+	      rsublist.setEntry("color_value",rsslist.getEntry("Value"));
+	      rsublist.set("purpose", "all");
+	      rsublist.set("type", "color_function");
+            }
+	    else if (rlabel=="Region: Point"){	      
 	      const ParameterList& rsslist = rslist.sublist(rlabel);
 	      rsublist.setEntry("coordinate",rsslist.getEntry("Coordinate"));
 	      rsublist.set("purpose", "all");
