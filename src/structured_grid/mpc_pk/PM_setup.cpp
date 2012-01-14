@@ -624,6 +624,9 @@ PorousMedia::variableSetUp ()
 			    bc, BndryFunc(FORT_ONE_N_FILL));
     }
 #endif
+  IndexType regionIDtype(IndexType::TheCellType());
+  int nCompRegion = 1;
+  derive_lst.add("MaterialID", regionIDtype, nCompRegion);
 
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************

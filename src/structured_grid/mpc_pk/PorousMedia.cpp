@@ -9139,6 +9139,61 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
     }
 }
 
+MultiFab*
+PorousMedia::derive (const std::string& name,
+                     Real               time,
+                     int                ngrow)
+{
+    BL_ASSERT(ngrow >= 0);
+    
+    const DeriveRec* rec = derive_lst.get(name);
+    BoxArray dstBA(grids);
+    MultiFab* mf = new MultiFab(dstBA, rec->numDerive(), ngrow);
+    int dcomp = 0;
+    derive(name,time,*mf,dcomp);
+    return mf;
+
+}
+
+void
+PorousMedia::derive (const std::string& name,
+                     Real               time,
+                     MultiFab&          mf,
+                     int                dcomp)
+{
+    if (name=="MaterialID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        const DeriveRec* rec = derive_lst.get(name);
+
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        const Real* dx = geom.CellSize();
+
+        mf.setVal(-1,dcomp,1,ngrow);
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            FArrayBox& fab = mf[mfi];
+            for (int i=0; i<rock_array.size(); ++i) {
+                const Array<int>& rock_regions = rock_array[i].region;
+                for (int j=0; j<rock_regions.size(); ++j) {
+                    int regionIdx = rock_regions[j];
+                    Real val = (Real)(regionIdx);
+                    region_array[regionIdx]->setVal(fab,val,0,dx,0);
+                }
+            }
+        }
+
+    } else {
+
+        return AmrLevel::derive(name,time,mf,dcomp);
+    }
+}
+
 void
 PorousMedia::manual_tags_placement (TagBoxArray&    tags,
 				    Array<IntVect>& bf_lev)

@@ -937,6 +937,9 @@ namespace Amanzi {
       const ParameterList& vlist = rlist.sublist("Visualization Data");
       amr_list.set("plot_file",vlist.get<std::string>("File Name Base"));
       amr_list.set("plot_int",cycle_map[vlist.get<std::string>("Cycle Macro")]);
+      if (vlist.isParameter("Visualised Derives")) {
+        amr_list.setEntry("derive_plot_vars",vlist.getEntry("Visualised Derives"));
+      }
 
       // check point
       const ParameterList& plist = rlist.sublist("Checkpoint Data");

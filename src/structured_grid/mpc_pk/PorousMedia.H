@@ -747,6 +747,15 @@ protected:
     return getLevel(lev).getViscFluxReg();
   }
 
+  void derive (const std::string& name,
+               Real           time,
+               MultiFab&      mf,
+               int            dcomp);
+
+  MultiFab* derive (const std::string& name,
+                    Real           time,
+                    int            ngrow);
+
   //
   // diagnostics
   //
