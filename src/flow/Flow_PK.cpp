@@ -97,6 +97,7 @@ void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
     int f = bc->first;    
     bc_markers[f] = FLOW_BC_FACE_HEAD;
     bc_values[f] = bc->second;
+cout << f << " " << bc_values[f] << endl;
   }
 
   for (bc=bc_flux->begin(); bc!=bc_flux->end(); ++bc) {
@@ -118,7 +119,7 @@ void Flow_PK::applyBoundaryConditions(std::vector<int>& bc_markers,
   for (int f=0; f<nfaces; f++) {
     if (bc_markers[f] == FLOW_BC_FACE_PRESSURE || 
         bc_markers[f] == FLOW_BC_FACE_HEAD) {
-      pressure_faces[f] = bc_values[f]; 
+      pressure_faces[f] = bc_values[f];
     }
   }
 }

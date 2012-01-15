@@ -95,23 +95,21 @@ class FlowBCFactory {
      : mesh_(mesh), params_(params) {}
   ~FlowBCFactory() {};
   
-  BoundaryFunction* CreatePressure() const;
-  BoundaryFunction* CreateMassFlux() const;
-  BoundaryFunction* CreateStaticHead(double, double, double) const;
+  BoundaryFunction* createPressure() const;
+  BoundaryFunction* createMassFlux() const;
+  BoundaryFunction* createStaticHead(double, double, double) const;
 
  private:
-  void process_pressure_list(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void process_pressure_spec(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void process_mass_flux_list(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void process_mass_flux_spec(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void process_static_head_list(double, double, double, Teuchos::ParameterList&,
-      BoundaryFunction*) const;
-  void process_static_head_spec(double, double, double,
-      Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processPressureList(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processPressureSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processMassFluxList(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processMassFluxSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processStaticHeadList(double, double, double, Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processStaticHeadSpec(double, double, double, Teuchos::ParameterList&, BoundaryFunction*) const;
      
  private:
-  const Teuchos::RCP<const AmanziMesh::Mesh> &mesh_;
-  const Teuchos::RCP<Teuchos::ParameterList> &params_;
+  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;
+  const Teuchos::RCP<Teuchos::ParameterList>& params_;
 };
 
 }  // namespace AmanziFlow

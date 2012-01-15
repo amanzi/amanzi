@@ -14,18 +14,18 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* TBA
+* Process Dirichet BC (pressure), step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::CreatePressure() const
+BoundaryFunction* FlowBCFactory::createPressure() const
 {
   BoundaryFunction *bc = new BoundaryFunction(mesh_);
   try {
-    process_pressure_list(params_->sublist("pressure"), bc);
-  } catch (Errors::Message &msg) {
+    processPressureList(params_->sublist("pressure"), bc);
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"pressure\" sublist error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  } catch (Teuchos::Exceptions::InvalidParameterType &msg) {
+  } catch (Teuchos::Exceptions::InvalidParameterType& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"pressure\" sublist error: not a sublist: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -35,18 +35,18 @@ BoundaryFunction* FlowBCFactory::CreatePressure() const
 
 
 /* ******************************************************************
-* TBA
+* Process Neumann BC (mass flux), step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::CreateMassFlux() const
+BoundaryFunction* FlowBCFactory::createMassFlux() const
 {
   BoundaryFunction* bc = new BoundaryFunction(mesh_);
   try {
-    process_mass_flux_list(params_->sublist("mass flux"), bc);
-  } catch (Errors::Message &msg) {
+    processMassFluxList(params_->sublist("mass flux"), bc);
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"mass flux\" sublist error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  } catch (Teuchos::Exceptions::InvalidParameterType &msg) {
+  } catch (Teuchos::Exceptions::InvalidParameterType& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"mass flux\" sublist error: not a sublist: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -56,18 +56,18 @@ BoundaryFunction* FlowBCFactory::CreateMassFlux() const
 
 
 /* ******************************************************************
-* TBA
+* Process Dirichet BC (static head), step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::CreateStaticHead(double p0, double density, double gravity) const
+BoundaryFunction* FlowBCFactory::createStaticHead(double p0, double density, double gravity) const
 {
   BoundaryFunction* bc = new BoundaryFunction(mesh_);
   try {
-    process_static_head_list(p0, density, gravity, params_->sublist("static head"), bc);
-  } catch (Errors::Message &msg) {
+    processStaticHeadList(p0, density, gravity, params_->sublist("static head"), bc);
+  } catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"static head\" sublist error: " << msg.what();
     Exceptions::amanzi_throw(m);
-  } catch (Teuchos::Exceptions::InvalidParameterType &msg) {
+  } catch (Teuchos::Exceptions::InvalidParameterType& msg) {
     Errors::Message m;
     m << "FlowBCFactory: \"static head\" sublist error: not a sublist: " << msg.what();
     Exceptions::amanzi_throw(m);
@@ -77,20 +77,20 @@ BoundaryFunction* FlowBCFactory::CreateStaticHead(double p0, double density, dou
 
 
 /* ******************************************************************
-* TBA
+* Process Dirichet BC (pressure), step 2.
 ****************************************************************** */
-void FlowBCFactory::process_pressure_list(Teuchos::ParameterList &list,
-                                           BoundaryFunction *bc) const
+void FlowBCFactory::processPressureList(Teuchos::ParameterList &list,
+                                        BoundaryFunction *bc) const
 {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
     std::string name = i->first;
     if (list.isSublist(name)) {
-      Teuchos::ParameterList &spec = list.sublist(name);
+      Teuchos::ParameterList& spec = list.sublist(name);
       try {
-        process_pressure_spec(spec, bc);
-      } catch (Errors::Message &msg) {
+        processPressureSpec(spec, bc);
+      } catch (Errors::Message& msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
@@ -105,72 +105,74 @@ void FlowBCFactory::process_pressure_list(Teuchos::ParameterList &list,
 
 
 /* ******************************************************************
-* TBA
+* Process Dirichet BC (pressure), step 3.
 ****************************************************************** */
-void FlowBCFactory::process_pressure_spec(Teuchos::ParameterList &list, BoundaryFunction *bc) const
+void FlowBCFactory::processPressureSpec(Teuchos::ParameterList& list, BoundaryFunction* bc) const
 {
   Errors::Message m;
-  // Get the regions parameter value.
   std::vector<std::string> regions;
+
   if (list.isParameter("regions")) {
     if (list.isType<Teuchos::Array<std::string> >("regions")) {
       regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
-    } else { // ERROR -- "regions" is not of type Array<int>
+    } else {
       m << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(m);
     }
-  } else { // ERROR -- "regions" is missing
+  } else {  // Parameter "regions" is missing.
     m << "parameter \"regions\" is missing";
     Exceptions::amanzi_throw(m);
   }
-  // Get the boundary pressure function sublist.
-  Teuchos::ParameterList *f_list;
+
+  Teuchos::ParameterList* f_list;
   if (list.isParameter("boundary pressure")) {
     if (list.isSublist("boundary pressure")) {
       // validate function-factory sublist
       f_list = &list.sublist("boundary pressure");
-    } else { // ERROR -- "boundary pressure" is not a sublist
+    } else {  // "boundary pressure" is not a sublist
       m << "parameter \"boundary pressure\" is not a sublist";
       Exceptions::amanzi_throw(m);
     }
-  } else { // ERROR -- "boundary pressure" sublist is missing
+  } else {  // "boundary pressure" sublist is missing.
     m << "sublist \"boundary pressure\" is missing";
     Exceptions::amanzi_throw(m);
   }
+
   // Make the boundary pressure function.
   Teuchos::RCP<Function> f;
   FunctionFactory f_fact;
   try {
     f = Teuchos::rcp(f_fact.Create(*f_list));
-  } catch (Errors::Message &msg) {
+  } catch (Errors::Message& msg) {
     m << "error in sublist \"boundary pressure\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
+
   // Add this BC specification to the boundary function.
   bc->Define(regions, f);
 }
 
 
 /* ******************************************************************
-* TBA
+* Process Neumann BC (mass flux), step 2.
 ****************************************************************** */
-void FlowBCFactory::process_mass_flux_list(Teuchos::ParameterList &list,
-                                           BoundaryFunction *bc) const
+void FlowBCFactory::processMassFluxList(Teuchos::ParameterList& list,
+                                        BoundaryFunction* bc) const
 {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
     std::string name = i->first;
     if (list.isSublist(name)) {
-      Teuchos::ParameterList &spec = list.sublist(name);
+      Teuchos::ParameterList& spec = list.sublist(name);
       try {
-        process_mass_flux_spec(spec, bc);
+        processMassFluxSpec(spec, bc);
       } catch (Errors::Message &msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else { // ERROR -- parameter is not a sublist
+    } else {  // Parameter is not a sublist
       Errors::Message m;
       m << "parameter \"" << name.c_str() << "\" is not a sublist";
       Exceptions::amanzi_throw(m);
@@ -180,10 +182,10 @@ void FlowBCFactory::process_mass_flux_list(Teuchos::ParameterList &list,
 
 
 /* ******************************************************************
-* TBA
+* Process Neumann BC (mass flux), step 3.
 ****************************************************************** */
-void FlowBCFactory::process_mass_flux_spec(Teuchos::ParameterList &list,
-                                           BoundaryFunction *bc) const
+void FlowBCFactory::processMassFluxSpec(Teuchos::ParameterList& list,
+                                        BoundaryFunction* bc) const
 {
   Errors::Message m;
   // Get the regions parameter value.
@@ -191,28 +193,29 @@ void FlowBCFactory::process_mass_flux_spec(Teuchos::ParameterList &list,
   if (list.isParameter("regions")) {
     if (list.isType<Teuchos::Array<std::string> >("regions")) {
       regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
-    } else { // ERROR -- "regions" is not of type Array<int>
+    } else {
       m << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(m);
     }
-  } else { // ERROR -- "regions" is missing
+  } else {  // Parameter "regions" is missing.
     m << "parameter \"regions\" is missing";
     Exceptions::amanzi_throw(m);
   }
-  // Get the outward mass flux function sublist.
+
   Teuchos::ParameterList *f_list;
   if (list.isParameter("outward mass flux")) {
     if (list.isSublist("outward mass flux")) {
       // validate function-factory sublist
       f_list = &list.sublist("outward mass flux");
-    } else { // ERROR -- "outward mass flux" is not a sublist
+    } else {  // "outward mass flux" is not a sublist.
       m << "parameter \"outward mass flux\" is not a sublist";
       Exceptions::amanzi_throw(m);
     }
-  } else { // ERROR -- "outward mass flux" sublist is missing
+  } else {  // "outward mass flux" sublist is missing
     m << "sublist \"outward mass flux\" is missing";
     Exceptions::amanzi_throw(m);
   }
+
   // Make the outward mass flux function.
   Teuchos::RCP<Function> f;
   FunctionFactory f_fact;
@@ -222,32 +225,33 @@ void FlowBCFactory::process_mass_flux_spec(Teuchos::ParameterList &list,
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
+
   // Add this BC specification to the boundary function.
   bc->Define(regions, f);
 }
 
 
 /* ******************************************************************
-* TBA
+* Process Dirichet BC (static head), step 2.
 ****************************************************************** */
-void FlowBCFactory::process_static_head_list(
+void FlowBCFactory::processStaticHeadList(
     double p0, double density, double gravity,
-    Teuchos::ParameterList &list, BoundaryFunction *bc) const
+    Teuchos::ParameterList& list, BoundaryFunction* bc) const
 {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
   for (Teuchos::ParameterList::ConstIterator i = list.begin(); i != list.end(); ++i) {
     std::string name = i->first;
     if (list.isSublist(name)) {
-      Teuchos::ParameterList &spec = list.sublist(name);
+      Teuchos::ParameterList& spec = list.sublist(name);
       try {
-        process_static_head_spec(p0, density, gravity, spec, bc);
-      } catch (Errors::Message &msg) {
+        processStaticHeadSpec(p0, density, gravity, spec, bc);
+      } catch (Errors::Message& msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
       }
-    } else { // ERROR -- parameter is not a sublist
+    } else {  // Parameter is not a sublist.
       Errors::Message m;
       m << "parameter \"" << name.c_str() << "\" is not a sublist";
       Exceptions::amanzi_throw(m);
@@ -257,49 +261,51 @@ void FlowBCFactory::process_static_head_list(
 
 
 /* ******************************************************************
-* TBA
+* Process Dirichet BC (static head), step 3.
 ****************************************************************** */
-void FlowBCFactory::process_static_head_spec(
+void FlowBCFactory::processStaticHeadSpec(
     double p0, double density, double gravity,
-    Teuchos::ParameterList &list, BoundaryFunction *bc) const
+    Teuchos::ParameterList& list, BoundaryFunction* bc) const
 {
   Errors::Message m;
-  // Get the regions parameter value.
   std::vector<std::string> regions;
+
   if (list.isParameter("regions")) {
     if (list.isType<Teuchos::Array<std::string> >("regions")) {
       regions = list.get<Teuchos::Array<std::string> >("regions").toVector();
-    } else { // ERROR -- "regions" is not of type Array<int>
+    } else {
       m << "parameter \"regions\" is not of type \"Array string\"";
       Exceptions::amanzi_throw(m);
     }
-  } else { // ERROR -- "regions" is missing
+  } else {  // Parameter "regions" is missing.
     m << "parameter \"regions\" is missing";
     Exceptions::amanzi_throw(m);
   }
+
   // Get the water table elevation function sublist.
-  Teuchos::ParameterList *water_table_list;
+  Teuchos::ParameterList* water_table_list;
   if (list.isParameter("water table elevation")) {
     if (list.isSublist("water table elevation")) {
       // validate function-factory sublist
       water_table_list = &list.sublist("water table elevation");
-    } else { // ERROR -- "water table elevation" is not a sublist
+    } else {  // "water table elevation" is not a sublist
       m << "parameter \"water table elevation\" is not a sublist";
       Exceptions::amanzi_throw(m);
     }
-  } else { // ERROR -- "water table elevation" sublist is missing
+  } else {  // "water table elevation" sublist is missing.
     m << "sublist \"water table elevation\" is missing";
     Exceptions::amanzi_throw(m);
   }
+
   // Form the parameter list to create static head function.
   Teuchos::ParameterList f_list;
-  Teuchos::ParameterList &static_head_list = f_list.sublist("function-static-head");
+  Teuchos::ParameterList& static_head_list = f_list.sublist("function-static-head");
   static_head_list.set("p0", p0);
   static_head_list.set("density", density);
   static_head_list.set("gravity", gravity);
   static_head_list.set("water table elevation", *water_table_list);
-  // Make the static head function.
-  Teuchos::RCP<Function> f;
+
+  Teuchos::RCP<Function> f;  // Make the static head function.
   FunctionFactory f_fact;
   try {
     f = Teuchos::rcp(f_fact.Create(f_list));
@@ -307,6 +313,7 @@ void FlowBCFactory::process_static_head_spec(
     m << "error in sublist \"water table elevation\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
+
   // Add this BC specification to the boundary function.
   bc->Define(regions, f);
 }

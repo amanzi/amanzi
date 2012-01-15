@@ -65,6 +65,7 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Flow_State> FS;
   AmanziGeometry::Point gravity;
   double rho, mu;
+  double atm_pressure;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map *super_map_;

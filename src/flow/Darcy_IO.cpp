@@ -23,13 +23,15 @@ void Darcy_PK::process_parameter_list()
   max_itrs = preconditioner_list.get<int>("Max Iterations");
   err_tol = preconditioner_list.get<double>("Error Tolerance");
 
+  atm_pressure = dp_list.get<double>("Atmospheric pressure");
+
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(dp_list.sublist("boundary conditions", true));
   FlowBCFactory bc_factory(mesh_, bc_list);
 
-  bc_pressure = bc_factory.CreatePressure();
-  bc_head = bc_factory.CreateStaticHead(0.0, rho, gravity[dim - 1]);
-  bc_flux = bc_factory.CreateMassFlux();
+  bc_pressure = bc_factory.createPressure();
+  bc_head = bc_factory.createStaticHead(atm_pressure, rho, -gravity[dim - 1]);  // We need |g| here.
+  bc_flux = bc_factory.createMassFlux();
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
 

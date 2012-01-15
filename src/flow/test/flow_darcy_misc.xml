@@ -112,6 +112,9 @@
         <ParameterList name="pressure">
           <!-- Will be populated by the code -->
         </ParameterList>
+        <ParameterList name="static head">
+          <!-- Will be populated by the code -->
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
