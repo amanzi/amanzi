@@ -15,7 +15,7 @@ namespace AmanziFlow {
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Darcy_PK::process_parameter_list()
+void Darcy_PK::processParameterList()
 {
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");

@@ -25,6 +25,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   FS = Teuchos::rcp(new Flow_State(*FS_MPC));
   mesh_ = FS->get_mesh();
   dim = mesh_->space_dimension();
+  MyPID = 0;
 
   T_internal = T_physical = dT = 0.0;
   standalone_mode = false;
@@ -51,7 +52,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 /* ******************************************************************
 * Super-map combining cells and faces.                                                  
 ****************************************************************** */
-Epetra_Map* Flow_PK::create_super_map()
+Epetra_Map* Flow_PK::createSuperMap()
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
@@ -60,12 +61,12 @@ Epetra_Map* Flow_PK::create_super_map()
   int ndof_global_cell = cmap.NumGlobalElements();
   int ndof_global = ndof_global_cell + fmap.NumGlobalElements();
 
-  int *gids = new int[ndof];
+  int* gids = new int[ndof];
   cmap.MyGlobalElements(&(gids[0]));
   fmap.MyGlobalElements(&(gids[number_owned_cells]));
 
   for (int f=0; f<number_owned_faces; f++) gids[number_owned_cells + f] += ndof_global_cell;
-  Epetra_Map *map = new Epetra_Map(ndof_global, ndof, gids, 0, cmap.Comm());
+  Epetra_Map* map = new Epetra_Map(ndof_global, ndof, gids, 0, cmap.Comm());
 
   delete [] gids;
   return map;
@@ -97,7 +98,6 @@ void Flow_PK::updateBoundaryConditions(BoundaryFunction* bc_pressure,
     int f = bc->first;    
     bc_markers[f] = FLOW_BC_FACE_HEAD;
     bc_values[f] = bc->second;
-cout << f << " " << bc_values[f] << endl;
   }
 
   for (bc=bc_flux->begin(); bc!=bc_flux->end(); ++bc) {

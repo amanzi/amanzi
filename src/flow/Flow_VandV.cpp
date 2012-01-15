@@ -15,7 +15,7 @@ namespace AmanziFlow {
 * Right now faces without BC are considered no-mass-flux.                                         
 ****************************************************************** */
 void Flow_PK::validate_boundary_conditions(
-    BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const
+    BoundaryFunction* bc_pressure, BoundaryFunction* bc_head, BoundaryFunction* bc_flux) const
 {
   // Create sets of the face indices belonging to each BC type.
   std::set<int> pressure_faces, head_faces, flux_faces;

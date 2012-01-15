@@ -52,7 +52,7 @@ Flow_State::Flow_State(State& S)
  * mode = CopyPointers (default) a trivial copy of the given state           
  * mode = ViewMemory   creates the flow state from internal one   
  *                     as the MPC expected                     
- * mode = CopyMemory   creates internal flow state based on 
+ * mode = CopyMemory   creates internal flow state based on the
  *                     ovelapped mesh maps                       
  * **************************************************************** */
 Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
@@ -80,10 +80,10 @@ Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
     const Epetra_Map& fmap = mesh_->face_map(true);
 
     pressure = Teuchos::rcp(new Epetra_Vector(cmap));
-    copymemory_vector(S.ref_pressure(), *pressure);
+    copyMemoryVector(S.ref_pressure(), *pressure);
 
     darcy_flux = Teuchos::rcp(new Epetra_Vector(fmap));
-    copymemory_vector(S.ref_darcy_flux(), *darcy_flux);
+    copyMemoryVector(S.ref_darcy_flux(), *darcy_flux);
   }
 
   else if (mode == ViewMemory) {
@@ -114,8 +114,8 @@ Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
 /* *******************************************************************
  * Routine imports a short multivector to a parallel overlaping vector.
  ****************************************************************** */
-void Flow_State::copymemory_multivector(Epetra_MultiVector& source, 
-                                        Epetra_MultiVector& target)
+void Flow_State::copyMemoryMultiVector(Epetra_MultiVector& source, 
+                                       Epetra_MultiVector& target)
 {
   const Epetra_BlockMap& source_cmap = source.Map();
   const Epetra_BlockMap& target_cmap = target.Map();
@@ -147,7 +147,7 @@ void Flow_State::copymemory_multivector(Epetra_MultiVector& source,
 /* *******************************************************************
  * Routine imports a short vector to a parallel overlaping vector.                
  ****************************************************************** */
-void Flow_State::copymemory_vector(Epetra_Vector& source, Epetra_Vector& target)
+void Flow_State::copyMemoryVector(Epetra_Vector& source, Epetra_Vector& target)
 {
   const Epetra_BlockMap& source_fmap = source.Map();
   const Epetra_BlockMap& target_fmap = target.Map();
@@ -262,7 +262,7 @@ double Flow_State::norm_cell(Epetra_Vector& v1)
 ******************************************************************* */
 Epetra_Vector* Flow_State::createCellView(const Epetra_Vector& u) const
 {
-  double *data;
+  double* data;
   u.ExtractView(&data);
   return new Epetra_Vector(View, mesh_->cell_map(false), data);
 }
@@ -273,7 +273,7 @@ Epetra_Vector* Flow_State::createCellView(const Epetra_Vector& u) const
 ******************************************************************* */
 Epetra_Vector* Flow_State::createFaceView(const Epetra_Vector& u) const
 {
-  double *data;
+  double* data;
   u.ExtractView(&data);
   int ncells = (mesh_->cell_map(false)).NumMyElements();
   return new Epetra_Vector(View, mesh_->face_map(false), data+ncells);

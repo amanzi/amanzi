@@ -39,7 +39,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
   dim = mesh_->space_dimension();
 
   // Create the combined cell/face DoF map.
-  super_map_ = create_super_map();
+  super_map_ = createSuperMap();
 
   // Other fundamental physical quantaties
   rho = *(FS->get_fluid_density());
@@ -99,7 +99,7 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   if (preconditioner_ == NULL) preconditioner = matrix;
   else preconditioner = preconditioner_;
 
-  // Create the solution vectors.
+  // Create the solution (pressure) vector.
   solution = Teuchos::rcp(new Epetra_Vector(*super_map_));
   solution_cells = Teuchos::rcp(FS->createCellView(*solution));
   solution_faces = Teuchos::rcp(FS->createFaceView(*solution));

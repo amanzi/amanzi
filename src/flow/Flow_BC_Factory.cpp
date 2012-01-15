@@ -18,7 +18,7 @@ namespace AmanziFlow {
 ****************************************************************** */
 BoundaryFunction* FlowBCFactory::createPressure() const
 {
-  BoundaryFunction *bc = new BoundaryFunction(mesh_);
+  BoundaryFunction* bc = new BoundaryFunction(mesh_);
   try {
     processPressureList(params_->sublist("pressure"), bc);
   } catch (Errors::Message& msg) {
@@ -79,8 +79,8 @@ BoundaryFunction* FlowBCFactory::createStaticHead(double p0, double density, dou
 /* ******************************************************************
 * Process Dirichet BC (pressure), step 2.
 ****************************************************************** */
-void FlowBCFactory::processPressureList(Teuchos::ParameterList &list,
-                                        BoundaryFunction *bc) const
+void FlowBCFactory::processPressureList(Teuchos::ParameterList& list,
+                                        BoundaryFunction* bc) const
 {
   // Iterate through the BC specification sublists in the list.
   // All are expected to be sublists of identical structure.
@@ -167,7 +167,7 @@ void FlowBCFactory::processMassFluxList(Teuchos::ParameterList& list,
       Teuchos::ParameterList& spec = list.sublist(name);
       try {
         processMassFluxSpec(spec, bc);
-      } catch (Errors::Message &msg) {
+      } catch (Errors::Message& msg) {
         Errors::Message m;
         m << "in sublist \"" << spec.name().c_str() << "\": " << msg.what();
         Exceptions::amanzi_throw(m);
@@ -202,7 +202,7 @@ void FlowBCFactory::processMassFluxSpec(Teuchos::ParameterList& list,
     Exceptions::amanzi_throw(m);
   }
 
-  Teuchos::ParameterList *f_list;
+  Teuchos::ParameterList* f_list;
   if (list.isParameter("outward mass flux")) {
     if (list.isSublist("outward mass flux")) {
       // validate function-factory sublist
@@ -221,7 +221,7 @@ void FlowBCFactory::processMassFluxSpec(Teuchos::ParameterList& list,
   FunctionFactory f_fact;
   try {
     f = Teuchos::rcp(f_fact.Create(*f_list));
-  } catch (Errors::Message &msg) {
+  } catch (Errors::Message& msg) {
     m << "error in sublist \"outward mass flux\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }
@@ -309,7 +309,7 @@ void FlowBCFactory::processStaticHeadSpec(
   FunctionFactory f_fact;
   try {
     f = Teuchos::rcp(f_fact.Create(f_list));
-  } catch (Errors::Message &msg) {
+  } catch (Errors::Message& msg) {
     m << "error in sublist \"water table elevation\": " << msg.what();
     Exceptions::amanzi_throw(m);
   }

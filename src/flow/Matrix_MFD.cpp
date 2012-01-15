@@ -181,10 +181,11 @@ void Matrix_MFD::applyBoundaryConditions(
 void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 {
   const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(true);
+  const Epetra_Map& fmap = mesh_->face_map(false);
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_FACES : FLOW_HEX_FACES;
-  Epetra_CrsGraph cf_graph(Copy, cmap, super_map, avg_entries_row, true);
+  Epetra_CrsGraph cf_graph(Copy, cmap, fmap_wghost, avg_entries_row, true);
   Epetra_FECrsGraph ff_graph(Copy, fmap, 2*avg_entries_row);
 
   AmanziMesh::Entity_ID_List faces;

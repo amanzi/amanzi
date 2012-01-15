@@ -44,8 +44,8 @@ class Darcy_PK : public Flow_PK {
   void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc) {};
 
   // other main methods
-  void process_parameter_list();
-  void populate_absolute_permeability_tensor(std::vector<WhetStone::Tensor>& K);
+  void processParameterList();
+  void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
 
   // control methods
   void print_statistics() const;
@@ -68,7 +68,7 @@ class Darcy_PK : public Flow_PK {
   double atm_pressure;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
-  Epetra_Map *super_map_;
+  Epetra_Map* super_map_;
   int dim;
 
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
@@ -87,9 +87,9 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> rhs;  // It has same size as solution.
   Teuchos::RCP<Epetra_Vector> rhs_faces;
 
-  BoundaryFunction *bc_pressure;  // Pressure Dirichlet b.c., excluding static head
-  BoundaryFunction *bc_head;  // Static pressure head b.c.; also Dirichlet-type
-  BoundaryFunction *bc_flux;  // Outward mass flux b.c.
+  BoundaryFunction* bc_pressure;  // Pressure Dirichlet b.c., excluding static head
+  BoundaryFunction* bc_head;  // Static pressure head b.c.; also Dirichlet-type
+  BoundaryFunction* bc_flux;  // Outward mass flux b.c.
   std::vector<int> bc_markers;  // Used faces marked with boundary conditions
   std::vector<double> bc_values;
 

@@ -30,7 +30,7 @@ void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
 
 /* ******************************************************************
 * Defines relative permeabilities ONLY for faces. 
-* WARNING; we assume that K is a scalar. (lipnikov@lanl.gov)                                              
+* WARNING; we assume that K is a diagonal tensor. (lipnikov@lanl.gov)                                              
 ****************************************************************** */
 void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
 {
@@ -56,7 +56,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
 
 
 /* ******************************************************************
-* .                                               
+* Use analytical formula for derivative dS/dP.                                               
 ****************************************************************** */
 void Richards_PK::derivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 {
@@ -74,9 +74,9 @@ void Richards_PK::derivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
 
 
 /* ******************************************************************
-* .                                               
+* Convertion p -> s.                                               
 ****************************************************************** */
-void Richards_PK::deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Vector& s)
+void Richards_PK::deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -92,7 +92,7 @@ void Richards_PK::deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Ve
 
 
 /* ******************************************************************
-* .                                               
+* Convertion s -> p.                                               
 ****************************************************************** */
 void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
 {
@@ -107,7 +107,6 @@ void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
     for (i=block.begin(); i!=block.end(); i++) p[*i] = WRM[mb]->pressure(s);
   } 
  
-  /*
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
     int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -118,7 +117,6 @@ void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
     std::vector<unsigned int>::iterator i;
     for (i=block.begin(); i!=block.end(); i++) p[*i] = WRM[mb]->pressure(s);
   }
-  */
 }
 
 }  // namespace AmanziFlow

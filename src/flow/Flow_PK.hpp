@@ -113,7 +113,7 @@ class Flow_PK : public BDF2::fnBase {
   inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
 
   // miscallenous members
-  Epetra_Map* create_super_map();
+  Epetra_Map* createSuperMap();
   void identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
  public:

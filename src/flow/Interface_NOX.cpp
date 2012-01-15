@@ -14,9 +14,9 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* TBA
+* NOT USED
 ****************************************************************** */
-bool Interface_NOX::computeF(const Epetra_Vector &x, Epetra_Vector &f, FillType flag)
+bool Interface_NOX::computeF(const Epetra_Vector& x, Epetra_Vector& f, FillType flag)
 {
   FPK_->NOX_ComputeF(x, f);
   return true;
@@ -24,7 +24,7 @@ bool Interface_NOX::computeF(const Epetra_Vector &x, Epetra_Vector &f, FillType 
 
 
 /* ******************************************************************
-* TBA
+* NOT USED
 ****************************************************************** */
 bool Interface_NOX::computePreconditioner(
     const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* params)

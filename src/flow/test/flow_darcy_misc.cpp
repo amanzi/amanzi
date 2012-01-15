@@ -226,41 +226,11 @@ SUITE(Simple_1D_Flow) {
     set_bc("TOP",    "pressure", 0.0);
     set_bc("BOTTOM", "pressure", 1.0);
 
-    // Set non-default model parameters before create_problem().
-
     create_problem();
     solve_problem();
 
     double p0 = 1.0;
     double pgrad[3] = {0.0, 0.0, -1.0};
-    set_pressure_constants(p0, pgrad);
-
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
-
-    face_pressure_error(error);
-    CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, zg_p_p)
-  {
-    std::cout <<"Flow 1D: test 10" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("TOP",    "pressure", 0.0);
-    set_bc("BOTTOM", "pressure", 2.0);
-
-    // Set non-default model parameters before create_problem().
-    double g[3] = {0.0, 0.0, -1.0};
-    setGravity(g);
-
-    create_problem();
-    solve_problem();
-
-    double p0 = 2.0;
-    double pgrad[3] = {0.0, 0.0, -2.0};
     set_pressure_constants(p0, pgrad);
 
     double error;
@@ -296,53 +266,6 @@ SUITE(Darcy_Velocity) {
     CHECK(error < 1.0e-8);
   }
 
-
-  TEST_FIXTURE(problem_setup, Darcy_Velocity_Y)
-  {
-    std::cout <<"Darcy velocity: test 2" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("FRONT", "pressure", 1.0);
-    set_bc("BACK",  "pressure", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    setFluidViscosity(2.0);
-
-    create_problem();
-    problem->set_absolute_permeability(2.0);
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = { 0.0, 1.0, 0.0 };
-    double error;
-    darcy_velocity_error(q, error);
-    CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, Darcy_Velocity_Z)
-  {
-    std::cout <<"Darcy velocity: test 3" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("BOTTOM", "pressure", 1.0);
-    set_bc("TOP",    "pressure", 0.0);
-
-    // Set non-default model parameters before solve_problem().
-    setFluidViscosity(2.0);
-
-    create_problem();
-    problem->set_absolute_permeability(2.0);
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = { 0.0, 0.0, 1.0 };
-    double error;
-    darcy_velocity_error(q, error);
-    CHECK(error < 1.0e-8);
-  }
-
-
   TEST_FIXTURE(problem_setup, Darcy_Velocity_X_Gravity)
   {
     std::cout <<"Darcy velocity: test 4" << std::endl;
@@ -366,58 +289,6 @@ SUITE(Darcy_Velocity) {
     double error;
     darcy_velocity_error(q, error);
     CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, Darcy_Velocity_Y_Gravity)
-  {
-    std::cout <<"Darcy velocity: test 5" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("FRONT", "static head", 1.0);
-    set_bc("BACK",  "static head", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    setFluidViscosity(2.0);
-    setFluidDensity(0.5);
-    double g[3] = {0.0, 0.0, -2.0};
-    setGravity(g);
-
-    create_problem();
-    problem->set_absolute_permeability(2.0);
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = {0.0, 1.0, 0.0};
-    double error;
-    darcy_velocity_error(q, error);
-    CHECK(error < 1.0e-8);
-  }
-
-
-  TEST_FIXTURE(problem_setup, Darcy_Velocity_Z_Gravity)
-  {
-    std::cout <<"Darcy velocity: test 6" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("BOTTOM", "pressure", 2.0);
-    set_bc("TOP",    "pressure", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    setFluidViscosity(2.0);
-    setFluidDensity(0.5);
-    double g[3] = {0.0, 0.0, -2.0};
-    setGravity(g);
-
-    create_problem();
-    problem->set_absolute_permeability(2.0);
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = {0.0, 0.0, 1.0};
-    double error;
-    darcy_velocity_error(q, error);
-    CHECK(error < 1.1e-8);
   }
 }
 */

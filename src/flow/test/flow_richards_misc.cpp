@@ -61,7 +61,7 @@ class RichardsProblem {
 
   ~RichardsProblem() { delete RPK; delete comm; }
 
-  void create_bc_list(
+  void createBClist(
       const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
   {
     std::string func_list_name;
@@ -150,10 +150,10 @@ SUITE(Simple_1D_Flow) {
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
-    create_bc_list("pressure", "BC 1", regions, 0.0);
+    createBClist("pressure", "BC 1", regions, 0.0);
 
     regions[0] = string("Bottom side");
-    create_bc_list("pressure", "BC 2", regions, 0.0);
+    createBClist("pressure", "BC 2", regions, 0.0);
     RPK->resetParameterList(rp_list);
 
     RPK->Init();  // setup the problem

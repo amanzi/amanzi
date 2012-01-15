@@ -36,7 +36,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
   dim = mesh_->space_dimension();
 
   // Create the combined cell/face DoF map.
-  super_map_ = create_super_map();
+  super_map_ = createSuperMap();
  
   // Other fundamental physical quantaties
   rho = *(FS->get_fluid_density());
@@ -45,7 +45,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
 
 #ifdef HAVE_MPI
-  const  Epetra_Comm & comm = mesh_->cell_map(false).Comm(); 
+  const  Epetra_Comm& comm = mesh_->cell_map(false).Comm(); 
   MyPID = comm.MyPID();
 
   const Epetra_Map& source_cmap = mesh_->cell_map(false);
@@ -106,7 +106,7 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   solver->SetAztecOption(AZ_solver, AZ_cg);
 
   // Get parameters from the flow parameter list.
-  process_parameter_list();
+  processParameterList();
 
   // Process boundary data
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -126,7 +126,7 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->setSymmetryProperty(true);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
-  // Allocate data for relative permeability
+  // Allocate data for relative permeability (for consistency).
   Krel_faces = Teuchos::rcp(new Epetra_Vector(mesh_->face_map(true)));
   Krel_faces->PutScalar(1.0);  // must go away (lipnikov@lanl.gov) 
 
@@ -145,7 +145,7 @@ int Darcy_PK::advance_to_steady_state()
   int n = number_owned_cells + number_owned_faces;
 
   // work-around limited support for tensors
-  populate_absolute_permeability_tensor(K);
+  setAbsolutePermeabilityTensor(K);
   for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
 
   // calculate and assemble elemental stifness matrices
@@ -181,7 +181,7 @@ int Darcy_PK::advance_to_steady_state()
 /* ******************************************************************
 *  Temporary convertion from double to tensor.                                               
 ****************************************************************** */
-void Darcy_PK::populate_absolute_permeability_tensor(std::vector<WhetStone::Tensor>& K)
+void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
   const Epetra_Vector& permeability = FS->ref_absolute_permeability();
 

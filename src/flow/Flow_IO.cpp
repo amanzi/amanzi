@@ -21,7 +21,7 @@ namespace AmanziFlow {
 * Routine processes parameter list. It needs to be called only once
 * on each processor.                                                     
 ****************************************************************** */
-void Flow_PK::process_parameter_list()
+void Flow_PK::processParameterList()
 {
   Teuchos::ParameterList flow_list;
   flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
