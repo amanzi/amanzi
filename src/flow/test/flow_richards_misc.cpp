@@ -16,7 +16,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Epetra_MpiComm.h"
 
 #include "Mesh.hh"
-#include "Mesh_simple.hh"
+#include "Mesh_MSTK.hh"
 #include "Richards_PK.hpp"
 
 
@@ -32,11 +32,12 @@ class RichardsProblem {
   State *S;
   Teuchos::ParameterList rp_list;
   AmanziFlow::Richards_PK* RPK;
+  int MyPID;
 
   RichardsProblem() 
   {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MyPID = comm.MyPID();
+    MyPID = comm->MyPID();
 
     Teuchos::ParameterList parameter_list;
     string xmlFileName = "test/flow_richards_misc.xml";
@@ -45,7 +46,7 @@ class RichardsProblem {
     // create an SIMPLE mesh framework 
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list);
-    mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1,1,80, comm, gm)); 
+    mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-10.0, 1.0,1.0,0.0, 1,1,80, comm, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");

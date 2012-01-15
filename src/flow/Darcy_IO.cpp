@@ -20,9 +20,6 @@ void Darcy_PK::processParameterList()
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = dp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
-  max_itrs = preconditioner_list.get<int>("Max Iterations");
-  err_tol = preconditioner_list.get<double>("Error Tolerance");
-
   atm_pressure = dp_list.get<double>("Atmospheric pressure");
 
   // Create the BC objects.
@@ -39,6 +36,12 @@ void Darcy_PK::processParameterList()
   bc_pressure->Compute(time);
   bc_head->Compute(time);
   bc_flux->Compute(time);
+
+  // Steady state solution
+  Teuchos::ParameterList& sss_list = dp_list.sublist("Steady state solution");
+
+  max_itrs_sss = preconditioner_list.get<int>("Linear solver maximal iterations", 100);
+  convergence_tol_sss = preconditioner_list.get<double>("Linear solver tolerance", 1e-12);
 }
 
 }  // namespace AmanziFlow

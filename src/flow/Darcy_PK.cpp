@@ -162,13 +162,13 @@ int Darcy_PK::advance_to_steady_state()
   solver->SetRHS(&b);  // Aztec00 modifies the right-hand-side.
   solver->SetLHS(&*solution);  // initial solution guess 
 
-  solver->Iterate(max_itrs, err_tol);
-  num_itrs = solver->NumIters();
-  residual = solver->TrueResidual();
+  solver->Iterate(max_itrs_sss, convergence_tol_sss);
+  num_itrs_sss = solver->NumIters();
+  residual_sss = solver->TrueResidual();
 
   if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
-    std::cout << "Darcy solver performed " << solver->NumIters() << " iterations." << std::endl
-              << "Norm of true residual = " << solver->TrueResidual() << std::endl;
+    std::cout << "Darcy solver performed " << num_itrs_sss << " iterations." << std::endl
+              << "Norm of true residual = " << residual_sss << std::endl;
   }
 
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();

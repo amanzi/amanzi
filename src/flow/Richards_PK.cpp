@@ -63,6 +63,12 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
 #endif
 
   // miscalleneous
+  method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
+  method_bdf = FLOW_STEADY_STATE_BDF2;
+
+  absolute_tol_sss = absolute_tol_bdf = 1.0; 
+  relative_tol_sss = relative_tol_bdf = 1e-5;
+
   flag_upwind = true;
   verbosity = FLOW_VERBOSITY_HIGH;
 }
@@ -127,10 +133,6 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Create the BDF2 time integrator
-  Teuchos::ParameterList& rme_list = rp_list.sublist("Richards model evaluator");
-  absolute_tol_bdf = rme_list.get<double>("Absolute error tolerance", 1.0);
-  relative_tol_bdf = rme_list.get<double>("Relative error tolerance", 1e-5); 
-
   Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
   bdf2_dae = new BDF2::Dae(*this, *super_map_);
   bdf2_dae->setParameterList(bdf2_list);
@@ -190,7 +192,7 @@ int Richards_PK::advance_to_steady_state()
 int Richards_PK::advanceSteadyState_BDF2() 
 {
   int itrs = 0;
-  dT = dT0;
+  dT = dT0_sss;
 
   while (itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
@@ -261,7 +263,7 @@ int Richards_PK::advanceSteadyState_Picard()
   double L2norm, L2error = 1.0, L2error_prev = 1.0;
   double relaxation = 0.5;
 
-  while (L2error > err_tol_sss && itrs < max_itrs_sss) {
+  while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
     setAbsolutePermeabilityTensor(K);
     if (flag_upwind) {  // Define K and Krel_faces
@@ -289,9 +291,9 @@ int Richards_PK::advanceSteadyState_Picard()
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess 
 
-    solver->Iterate(max_itrs, err_tol);
-    num_itrs = solver->NumIters();
-    double res_norm = solver->TrueResidual();
+    solver->Iterate(max_itrs, convergence_tol);
+    int num_itrs = solver->NumIters();
+    double residual = solver->TrueResidual();
 
     // update relaxation parameter
     solution_new.Norm2(&L2norm);
@@ -303,7 +305,7 @@ int Richards_PK::advanceSteadyState_Picard()
     // information output
     if (verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Picard step:%4d   Pressure(res=%9.4e, sol=%9.4e, relax=%5.3f)  CG info(%8.3e, %4d)\n", 
-          itrs, L2error, L2norm, relaxation, res_norm, num_itrs);
+          itrs, L2error, L2norm, relaxation, residual, num_itrs);
     }
 
     for (int c=0; c<number_owned_cells; c++) {
@@ -321,161 +323,6 @@ int Richards_PK::advanceSteadyState_Picard()
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
 
-  return 0;
-}
-
-
-/* ******************************************************************
-* Calculates steady-state solution assuming that abosolute and relative
-* permeabilities do not depend explicitly on time.                                                    
-****************************************************************** */
-int Richards_PK::advanceSteadyState_BackwardEuler()
-{
-  Epetra_Vector  solution_old(*solution);
-  Epetra_Vector& solution_new = *solution;
-
-  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_cgs);  // symmetry is NOT required
-  solver->SetAztecOption(AZ_output, AZ_none);
-
-  T_internal = 0.0;
-  dT = dT0;
-
-  int itrs = 0;
-  double L2error = 1.0;
-  while (L2error > err_tol_sss && itrs < max_itrs_sss) {
-    calculateRelativePermeability(*solution_cells);
-    setAbsolutePermeabilityTensor(K);
-    if (flag_upwind) {  // Define K and Krel_faces
-      calculateRelativePermeabilityUpwindGravity(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
-      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
-    }
-
-    // update boundary conditions
-    double time = T_internal + dT;
-    bc_pressure->Compute(time);
-    bc_flux->Compute(time);
-    bc_head->Compute(time);
-    updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
-
-    // create algebraic problem (matrix = preconditioner)
-    matrix->createMFDstiffnessMatrices(K, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    addTimeDerivative_MFD(*solution_cells, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
-    matrix->computeSchurComplement(bc_markers, bc_values);
-    matrix->update_ML_preconditioner();
-
-    // call AztecOO solver
-    rhs = matrix->get_rhs();
-    Epetra_Vector b(*rhs);
-    solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
-    solver->SetLHS(&*solution);  // initial solution guess 
-
-    solver->Iterate(max_itrs, err_tol);
-    num_itrs = solver->NumIters();
-    double residual = solver->TrueResidual();
-
-    // error estimates
-    double sol_error = FS->norm_cell(solution_old, solution_new);
-    double sol_norm = FS->norm_cell(solution_new);
-    L2error = sol_error / sol_norm;
-
-    if (residual > sol_norm * 1e-3) {
-    //if (L2error > 1e-2) {
-      dT /= 4;
-      solution_new = solution_old;
-      if (verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Declined: %4d  Pressure(diff=%9.4e, sol=%9.4e)  CG info(%8.3e, %4d),  dT=%8.3e\n", 
-            itrs, L2error, sol_norm, residual, num_itrs, dT);
-      }
-    } else { 
-      dT = std::min(dT0, dT * 2);
-      solution_old = solution_new;
-
-      if (verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Time step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  CG info(%8.3e, %4d),  dT=%8.3e\n", 
-            itrs, L2error, sol_norm, residual, num_itrs, dT);
-      }
-
-      T_internal += dT;
-      itrs++;
-    }
-
-    // DEBUG
-    /*
-    GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(*solution_cells, 0, "pressure");
-    GMV::close_data_file();
-    */
-  }
-  
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
-
-  return 0;
-}
-
-
-/* ******************************************************************
-* Calculates steady-state solution assuming that abosolute and relative
-* permeabilities do not depend explicitly on time.                                                    
-****************************************************************** */
-int Richards_PK::advanceSteadyState_ForwardEuler()
-{
-  Epetra_Vector solution_new(*solution);
-
-  T_internal = 0.0;
-  dT = 1.0;
-
-  int itrs = 0;
-  double L2error = 1.0;
-  while (L2error > err_tol_sss && itrs < 20) {
-    calculateRelativePermeability(*solution_cells);
-    setAbsolutePermeabilityTensor(K);
-    if (flag_upwind) {  // Define K and Krel_faces
-      calculateRelativePermeabilityUpwindGravity(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
-      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
-    }
-
-    // create algebraic problem
-    matrix->createMFDstiffnessMatrices(K, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
-
-    // calculate solution at ne time step
-    rhs = matrix->get_rhs();
-    L2error = matrix->computeResidual(*solution, solution_new);
-    solution_new.Update(1.0, *solution, dT);
-
-    // error estimates
-    double sol_error = 0.0, sol_norm = 0.0;
-    for (int n=0; n<solution->MyLength(); n++) {
-      sol_error += std::pow(solution_new[n] - (*solution)[n], 2.0);
-      sol_norm += std::pow(solution_new[n], 2.0);
-    }
-    sol_error = sqrt(sol_error / sol_norm);
-    sol_norm = sqrt(sol_norm);
- 
-    *solution = solution_new;
-    if (verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Time step:%6d   Pressure(diff=%9.4e, sol=%9.4e, res=%9.4e)  time=%8.3e\n", 
-          itrs, sol_error, sol_norm, L2error, T_internal);
-    }
-
-    T_internal += dT;
-    itrs++;
-  }
   return 0;
 }
 
@@ -507,7 +354,8 @@ int Richards_PK::advance(double dT)
   double time = (standalone_mode) ? T_internal : T_physical;
   double dTnext;
 
-  if (itrs_bdf2 == 0) {  // initialization
+  int itrs = 0;
+  if (itrs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     computeUDot(time, *solution, udot);
     bdf2_dae->set_initial_state(time, *solution, udot);
@@ -520,7 +368,7 @@ int Richards_PK::advance(double dT)
   bdf2_dae->commit_solution(dT, *solution);
   bdf2_dae->write_bdf2_stepping_statistics();
 
-  itrs_bdf2++;
+  itrs++;
   return 0;
 }
 

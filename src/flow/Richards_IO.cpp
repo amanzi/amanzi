@@ -21,9 +21,6 @@ void Richards_PK::processParameterList()
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
-  max_itrs = preconditioner_list.get<int>("Max Iterations");
-  err_tol = preconditioner_list.get<double>("Error Tolerance");
-
   flag_upwind = rp_list.get<bool>("Upwind relative permeability", true);
   atm_pressure = rp_list.get<double>("Atmospheric pressure");
 
@@ -85,9 +82,9 @@ void Richards_PK::processParameterList()
   }
 
   // Steady state solution
-  Teuchos::ParameterList& steady_state_list = rp_list.sublist("Steady state solution");
+  Teuchos::ParameterList& sss_list = rp_list.sublist("Steady state solution");
 
-  string method_name = steady_state_list.get<string>("method", "Picard");
+  string method_name = sss_list.get<string>("method", "Picard");
   if (method_name == "Picard") {
     method_sss = FLOW_STEADY_STATE_PICARD;
   } else if (method_name == "backward Euler") {
@@ -96,10 +93,32 @@ void Richards_PK::processParameterList()
     method_sss = FLOW_STEADY_STATE_BDF2; 
   }
 
-  max_itrs_sss = steady_state_list.get<int>("max iterations", FLOW_STEADY_STATE_MAX_ITERATIONS);
-  err_tol_sss = steady_state_list.get<double>("solver tolerance", FLOW_STEADY_STATE_TOLERANCE);
+  absolute_tol_sss = sss_list.get<double>("Absolute error tolerance", 1.0);
+  relative_tol_sss = sss_list.get<double>("Relative error tolerance", 1e-5); 
+  T0_sss = sss_list.get<double>("Start pseudo time", -1e+9);
+  T1_sss = sss_list.get<double>("End pseudo time", 0.0);
+  dT0_sss = sss_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
+  dTmax_sss = sss_list.get<double>("Maximal time step", dT0_sss);
 
-  dT0 = steady_state_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
+  max_itrs_sss = sss_list.get<int>("Maximal number of iterations", FLOW_STEADY_STATE_MAX_ITERATIONS);
+  convergence_tol_sss = sss_list.get<double>("Convergence tolerance", FLOW_STEADY_STATE_TOLERANCE);
+  max_itrs = sss_list.get<int>("Linear solver maximal iterations", 100);
+  convergence_tol = sss_list.get<double>("Linear solver tolerance", 1e-12);
+
+  // Transient solution
+  Teuchos::ParameterList& ts_list = rp_list.sublist("Transient solution");
+
+  method_name = ts_list.get<string>("method", "BDF2");
+  if (method_name == "backward Euler") {
+    method_bdf = FLOW_STEADY_STATE_BACKWARD_EULER;
+  } else if (method_name == "BDF2") {
+    method_bdf = FLOW_STEADY_STATE_BDF2; 
+  }
+  absolute_tol_bdf = ts_list.get<double>("Absolute error tolerance", 1.0);
+  relative_tol_bdf = ts_list.get<double>("Relative error tolerance", 1e-5); 
+  T0_bdf = sss_list.get<double>("Start pseudo time", 0.0);
+  T1_bdf = sss_list.get<double>("End pseudo time", 1e+10);
+  dT0_bdf = sss_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
 }
 
 

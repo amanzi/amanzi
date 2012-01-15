@@ -61,8 +61,8 @@ class Flow_State {
 
   // miscaleneous
   double get_time() { return S_->get_time(); }
-  double norm_cell(Epetra_Vector& v1, Epetra_Vector& v2);
-  double norm_cell(Epetra_Vector& v1);
+  double normL2cell(Epetra_Vector& v1, Epetra_Vector& v2);
+  double normL2cell(Epetra_Vector& v1);
   
   // debug routines
   void set_fluid_density(double rho);

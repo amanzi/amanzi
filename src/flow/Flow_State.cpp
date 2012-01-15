@@ -235,9 +235,9 @@ void Flow_State::copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 
 
 /* *******************************************************************
-* L2 norms.              
+* L2 norms (USED only ONCE).              
 ******************************************************************* */
-double Flow_State::norm_cell(Epetra_Vector& v1, Epetra_Vector& v2)
+double Flow_State::normL2cell(Epetra_Vector& v1, Epetra_Vector& v2)
 {
   int ncells = (mesh_->cell_map(false)).NumMyElements();
 
@@ -250,7 +250,7 @@ double Flow_State::norm_cell(Epetra_Vector& v1, Epetra_Vector& v2)
 }
 
 
-double Flow_State::norm_cell(Epetra_Vector& v1)
+double Flow_State::normL2cell(Epetra_Vector& v1)
 {
   int ncells = (mesh_->cell_map(false)).NumMyElements();
 

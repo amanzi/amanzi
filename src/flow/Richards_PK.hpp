@@ -64,6 +64,7 @@ class Richards_PK : public Flow_PK {
 
   double computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot);
   void computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, bool flag_update_ML = true);
+  double errorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
   void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
@@ -110,21 +111,21 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;
 
-  AztecOO* solver;
+  AztecOO* solver;  // Linear solver data
   Matrix_MFD* matrix;
   Matrix_MFD* preconditioner;
+  int max_itrs;
+  double convergence_tol;
 
-  int precon_freq;  // preconditioner update frequency
-  int num_itrs, max_itrs;  // numbers of linear solver iterations
-  double err_tol;  // errors in linear solver
+  int method_sss;  // Parameters for steady-state solution
+  int num_itrs_sss, max_itrs_sss;
+  double absolute_tol_sss, relative_tol_sss, convergence_tol_sss;
+  double T0_sss, T1_sss, dT0_sss, dTmax_sss;
 
-  int method_sss;  // Method to reach the steady-state solution
-  int num_itrs_sss, max_itrs_sss;  // number of non-linear iterations
-  double err_tol_sss, residual_sss;
-
-  BDF2::Dae* bdf2_dae;  // BDF2 time integration method
+  BDF2::Dae* bdf2_dae;  // Parameters for transient solution
+  int method_bdf;
   double absolute_tol_bdf, relative_tol_bdf;
-  int itrs_bdf2;
+  double T0_bdf, T1_bdf, dT0_bdf;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

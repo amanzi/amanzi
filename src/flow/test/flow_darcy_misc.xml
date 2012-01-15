@@ -73,10 +73,7 @@
     <ParameterList name="Darcy Problem">
       <Parameter name="Atmospheric pressure" type="double" value="1"/>
       <ParameterList name="Diffusion Preconditioner">
-        <Parameter name="Max Iterations" type="int" value="100"/>
-        <Parameter name="Error Tolerance" type="double" value="1.0e-12"/>
-  
-        <ParameterList name="ML Parameters">
+          <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="0"/>
           <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
           <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
@@ -94,6 +91,11 @@
           <Parameter name="smoother: sweeps" type="int" value="2"/>
           <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
         </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="Steady state solution">
+        <Parameter name="Linear solver tolerance" type="double" value="1e-12"/>
+        <Parameter name="Linear solver maximal iterations" type="int" value="200"/>
       </ParameterList>
 
       <ParameterList name="boundary conditions">

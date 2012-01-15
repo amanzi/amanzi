@@ -59,7 +59,7 @@ void Richards_PK::update_precon(
 
 
 /* ******************************************************************
-* .                                                 
+* Check difference du between the predicted and converged solutions.                                                 
 ****************************************************************** */
 double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 {
@@ -76,6 +76,7 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 #endif
   return  error_norm;
 }
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

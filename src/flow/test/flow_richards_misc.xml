@@ -74,9 +74,6 @@
       <Parameter name="Atmospheric pressure" type="double" value="1.0"/>
 
       <ParameterList name="Diffusion Preconditioner">
-        <Parameter name="Max Iterations" type="int" value="100"/>
-        <Parameter name="Error Tolerance" type="double" value="1.0e-9"/>
-
         <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="0"/>
           <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -97,15 +94,26 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="Richards model evaluator">
-        <Parameter name="Absolute error tolerance" type="double" value="0.1"/>
-        <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
-      </ParameterList>
-
       <ParameterList name="Steady state solution">
         <Parameter name="method" type="string" value="backward Euler"/>
-        <Parameter name="max iterations" type="int" value="200"/>
-        <Parameter name="solver tolerance" type="double" value="1e-9"/>
+        <Parameter name="Absolute error tolerance" type="double" value="1.0"/>
+        <Parameter name="Relative error tolerance" type="double" value="1e-4"/>
+        <Parameter name="Start pseudo time" type="double" value="-1000.0"/>
+        <Parameter name="End pseudo time" type="double" value="0.0"/>
+        <Parameter name="Initial time step" type="double" value="0.01"/>
+        <Parameter name="Maximal time step" type="double" value="0.1"/>
+        <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
+        <Parameter name="Maximal number of iterations" type="int" value="1000"/>
+        <Parameter name="Linear solver tolerance" type="double" value="1e-12"/>
+        <Parameter name="Linear solver maximal iterations" type="int" value="200"/>
+      </ParameterList>
+
+      <ParameterList name="Transient solution">
+        <Parameter name="method" type="string" value="BDF2"/>
+        <Parameter name="Absolute error tolerance" type="double" value="0.1"/>
+        <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
+        <Parameter name="Start time" type="double" value="0.0"/>
+        <Parameter name="End time" type="double" value="1000.0"/>
         <Parameter name="Initial time step" type="double" value="1e-1"/>
       </ParameterList>
 

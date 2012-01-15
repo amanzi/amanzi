@@ -78,8 +78,8 @@ class Darcy_PK : public Flow_PK {
   Matrix_MFD* matrix;
   Matrix_MFD* preconditioner;
 
-  int num_itrs, max_itrs;  // numbers of linear solver iterations
-  double err_tol, residual;  // errors in linear solver
+  int num_itrs_sss, max_itrs_sss;  // Parameters for steady state solution
+  double convergence_tol_sss, residual_sss;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures
