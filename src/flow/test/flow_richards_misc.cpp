@@ -29,6 +29,7 @@ class RichardsProblem {
  public:
   Epetra_MpiComm* comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  State *S;
   Teuchos::ParameterList rp_list;
   AmanziFlow::Richards_PK* RPK; 
 
@@ -43,16 +44,17 @@ class RichardsProblem {
     // create an SIMPLE mesh framework 
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list);
-    mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 2, 2, 80, comm, gm)); 
+    mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1,1,80, comm, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
 
     // create Richards process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-    State S(state_list, mesh);
+    S = new State(state_list, mesh);
+    S->set_time(0.0);
 
-    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
     RPK = new Richards_PK(rp_list, FS);
     RPK->set_standalone_mode(true);
   }
@@ -96,7 +98,7 @@ class RichardsProblem {
       double z = xc[2];
       if (z < -a) pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
       else pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-//cout << z << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
+cout << z << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -156,8 +158,6 @@ SUITE(Simple_1D_Flow) {
 
     RPK->Init();  // setup the problem
     RPK->advance_to_steady_state();
-for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_solution_cells()[c] << endl;
-//for (int c=0; c<320; c+=4) cout << c << " " << RPK->get_FS().ref_darcy_flux()[c] << endl;
 
     double error = cell_pressure_error(p0, pressure_gradient); // error checks
     CHECK(error < 1.0e-8);

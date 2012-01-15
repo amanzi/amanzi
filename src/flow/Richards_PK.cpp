@@ -105,11 +105,6 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   solution_faces = Teuchos::rcp(FS->createFaceView(*solution));
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
 
-  solver = new AztecOO;
-  solver->SetUserOperator(matrix);
-  solver->SetPrecOperator(preconditioner);
-  solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
-
   // Get some solver parameters from the flow parameter list.
   processParameterList();
 
@@ -131,11 +126,7 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->setSymmetryProperty(!flag_upwind);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
-  // Preconditioner
-  Teuchos::ParameterList ML_list = rp_list.sublist("ML Parameters");
-  preconditioner->init_ML_preconditioner(ML_list); 
-
-  // Create the Richards model evaluator and time integrator
+  // Create the BDF2 time integrator
   Teuchos::ParameterList& rme_list = rp_list.sublist("Richards model evaluator");
   absolute_tol_bdf = rme_list.get<double>("Absolute error tolerance", 1.0);
   relative_tol_bdf = rme_list.get<double>("Relative error tolerance", 1e-5); 
@@ -143,6 +134,22 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
   bdf2_dae = new BDF2::Dae(*this, *super_map_);
   bdf2_dae->setParameterList(bdf2_list);
+
+  // Preconditioner
+  Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
+
+  if (method_sss == FLOW_STEADY_STATE_BDF2) {
+    preconditioner = new Matrix_MFD(FS, *super_map_);
+    preconditioner->setSymmetryProperty(!flag_upwind);
+    preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
+    preconditioner->init_ML_preconditioner(ML_list); 
+  } else {
+    preconditioner->init_ML_preconditioner(ML_list);
+    solver = new AztecOO;
+    solver->SetUserOperator(matrix);
+    solver->SetPrecOperator(preconditioner);
+    solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
+  }
 
   // Allocate data for relative permeability
   const Epetra_Map& cmap = mesh_->cell_map(true);
@@ -162,12 +169,14 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 int Richards_PK::advance_to_steady_state()
 {
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
   for (int c=0; c<ncells; c++) (*solution_cells)[c] = FS->ref_pressure()[c];
+  deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
 
   if (method_sss == FLOW_STEADY_STATE_PICARD) {
     return advanceSteadyState_Picard();
   } else if (method_sss == FLOW_STEADY_STATE_BACKWARD_EULER) {
-    //return advanceSteadyState_ForwardEuler();
     return advanceSteadyState_BackwardEuler();
   } else if (method_sss == FLOW_STEADY_STATE_BDF2) {
     return advanceSteadyState_BDF2();
@@ -180,12 +189,7 @@ int Richards_PK::advance_to_steady_state()
 ******************************************************************* */
 int Richards_PK::advanceSteadyState_BDF2() 
 {
-  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_cgs);  // symmetry is NOT required
-  solver->SetAztecOption(AZ_output, AZ_none);
-
-  double& time = (standalone_mode) ? T_internal : T_physical;
   int itrs = 0;
- 
   dT = dT0;
 
   while (itrs < max_itrs_sss) {
@@ -195,27 +199,15 @@ int Richards_PK::advanceSteadyState_BDF2()
       calculateRelativePermeabilityUpwindGravity(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
-      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
+      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
     }
 
     // update boundary conditions
+    double time = T_internal; 
     bc_pressure->Compute(time);
     bc_flux->Compute(time);
     bc_head->Compute(time);
     updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
-
-    // create algebraic problem
-    matrix->createMFDstiffnessMatrices(K, *Krel_faces);
-    matrix->createMFDrhsVectors();
-    addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    addTimeDerivative_MFD(*solution_cells, matrix);
-    matrix->applyBoundaryConditions(bc_markers, bc_values);
-    matrix->assembleGlobalMatrices();
-    matrix->computeSchurComplement(bc_markers, bc_values);
-    matrix->update_ML_preconditioner();
-
-    T_internal = T_physical = FS->get_time();
-    double dTnext;
 
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
@@ -226,31 +218,35 @@ int Richards_PK::advanceSteadyState_BDF2()
       update_precon(time, *solution, dT, ierr);
     }
 
+    double dTnext;
     bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
     bdf2_dae->commit_solution(dT, *solution);
     bdf2_dae->write_bdf2_stepping_statistics();
 
-    T_physical = T_internal += dT;
+    T_internal = bdf2_dae->most_recent_time();
     dT = dTnext;
     itrs++;
-
-    double& time = (standalone_mode) ? T_internal : T_physical;
-    time = bdf2_dae->most_recent_time();
 
     // DEBUG
     GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(*solution_cells, 0, "pressure");
-    GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
     GMV::close_data_file();
   }
+  
+  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
+  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
+
   return 0;
 }
 
 
 /* ******************************************************************
-* Calculates steady-state solution assuming that abosolute and relative
-* permeabilities do not depend explicitly on time.                                                    
+* Calculates steady-state solution assuming that abosolute and
+* relative permeabilities do not depend explicitly on time.
+* This is the experimental method.                                                 
 ****************************************************************** */
 int Richards_PK::advanceSteadyState_Picard()
 {
@@ -275,7 +271,7 @@ int Richards_PK::advanceSteadyState_Picard()
       for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
     }
 
-    // create algebraic problem
+    // create algebraic problem (matrix = preconditioner)
     matrix->createMFDstiffnessMatrices(K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
@@ -318,13 +314,6 @@ int Richards_PK::advanceSteadyState_Picard()
     L2error_prev = L2error;
     T_internal += dT;
     itrs++;
-
-    // DEBUG
-    GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(*solution_cells, 0, "pressure");
-    GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
-    GMV::close_data_file();
   }
   
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
@@ -364,13 +353,13 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     }
 
     // update boundary conditions
-    double time = T_internal;
+    double time = T_internal + dT;
     bc_pressure->Compute(time);
     bc_flux->Compute(time);
     bc_head->Compute(time);
     updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
-    // create algebraic problem
+    // create algebraic problem (matrix = preconditioner)
     matrix->createMFDstiffnessMatrices(K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
@@ -395,8 +384,8 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     double sol_norm = FS->norm_cell(solution_new);
     L2error = sol_error / sol_norm;
 
-    //if (residual > sol_norm * 1e-3) {
-    if (L2error > 1e-2) {
+    if (residual > sol_norm * 1e-3) {
+    //if (L2error > 1e-2) {
       dT /= 4;
       solution_new = solution_old;
       if (verbosity >= FLOW_VERBOSITY_HIGH) {
@@ -417,11 +406,12 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     }
 
     // DEBUG
+    /*
     GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(*solution_cells, 0, "pressure");
-    GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
     GMV::close_data_file();
+    */
   }
   
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
@@ -485,21 +475,13 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
 
     T_internal += dT;
     itrs++;
-
-    // DEBUG
-    GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(*solution_cells, 0, "pressure");
-    GMV::write_cell_data(*(FS->get_absolute_permeability()), 0, "abs_permeability");
-    GMV::write_cell_data(*Krel_cells, 0, "rel_permeability");
-    GMV::close_data_file();
   }
   return 0;
 }
 
 
 /* ******************************************************************* 
-* Performs one time step of size dT. 
+* Performs one time step of size dT (under *development*). 
 ******************************************************************* */
 int Richards_PK::advance(double dT) 
 {
@@ -544,12 +526,33 @@ int Richards_PK::advance(double dT)
 
 
 /* ******************************************************************
-* Estimate du/dt from the pressure equations, u is the global
-* solution vector.                                            
+* BDF methods need a good initial guess.
 ****************************************************************** */
-double Richards_PK::computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector &udot)
+void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
+{
+  AmanziMesh::Entity_ID_List cells; 
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  for (int f=0; f<nfaces; f++) {
+    cells.clear();
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+         
+    double face_value = 0.0;
+    for (int n=0; n<ncells; n++) face_value += ucells[cells[n]];
+	
+    ufaces[f] = face_value / ncells;
+  }
+}
+
+
+/* ******************************************************************
+* Estimate du/dt from the pressure equations, du/dt = g - A*u.
+****************************************************************** */
+double Richards_PK::computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   double norm_udot;
+  computePreconditionerMFD(u, matrix, false);  // Calculate only stiffness matrix.
   norm_udot = matrix->computeResidual(u, udot);
 
   Epetra_Vector* udot_faces = FS->createFaceView(udot);
@@ -572,7 +575,7 @@ void Richards_PK::computePreconditionerMFD(
   calculateRelativePermeability(*u_cells);
   setAbsolutePermeabilityTensor(K);
   if (flag_upwind) {  // Define K and Krel_faces
-    calculateRelativePermeabilityUpwindGravity(*solution_cells);
+    calculateRelativePermeabilityUpwindGravity(*u_cells);
     for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
   } else {  // Define K and Krel_cells, Krel_faces is always one
     for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
@@ -582,7 +585,7 @@ void Richards_PK::computePreconditionerMFD(
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
-  addTimeDerivative_MFD(*solution_cells, matrix);
+  if (flag_update_ML) addTimeDerivative_MFD(*u_cells, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   if (flag_update_ML) {
@@ -616,7 +619,6 @@ void Richards_PK::addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MF
  
   const Epetra_Vector& phi = FS->ref_porosity();
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
-  Epetra_Vector& Dcc_time = matrix->get_Dcc_time();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -625,7 +627,6 @@ void Richards_PK::addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MF
     double volume = mesh_->cell_volume(c);
     double factor = rho * phi[c] * dSdP[c] * volume / dT;
     Acc_cells[c] += factor;
-    Dcc_time[c] = factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }
 }

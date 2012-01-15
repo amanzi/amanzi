@@ -11,20 +11,28 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* .                                                 
+* Calculate f(u, du/dt) = s du/dt + A*u - g.                                              
 ****************************************************************** */
 void Richards_PK::fun(
     const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
 {
-  Epetra_Vector& Dcc_time = matrix->get_Dcc_time();
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
   T_internal = T_physical = T;
   computePreconditionerMFD(u, matrix, false);  // Calculate only stiffness matrix.
+  matrix->computeResidual(u, f);  // compute g - A*u
 
-  matrix->computeResidual(u, f);  // compute F(u)
-  for (int c=0; c<ncells; c++) f[c] += Dcc_time[c] * u[c];
-  f.Update(-1.0, udot ,1.0);
+  Epetra_Vector* u_cells = FS->createCellView(u);
+  Epetra_Vector dSdP(mesh_->cell_map(false));
+  derivedSdP(*u_cells, dSdP);
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  const Epetra_Vector& phi = FS->ref_porosity();
+
+  for (int c=0; c<ncells; c++) {
+    double volume = mesh_->cell_volume(c);
+    double factor = rho * phi[c] * dSdP[c] * volume;
+    f[c] -= factor * udot[c]; 
+  }
+  f.Update(-1.0, f, 0.0);
 }
 
 
@@ -33,18 +41,19 @@ void Richards_PK::fun(
 ****************************************************************** */
 void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 {
-  matrix->ApplyInverse(X, Y);
+  preconditioner->ApplyInverse(X, Y);
 }
 
 
 /* ******************************************************************
-* Compute new preconsitioner Sff(p, dT).                                                 
+* Compute new preconditioner B(p, dT). For BDF2 method, we need a
+* separate memory allocation.                                                
 ****************************************************************** */
 void Richards_PK::update_precon(
     const double T, const Epetra_Vector& u, const double dT_bdf2, int& ierr)
 {
-  dT = dT_bdf2;  // this dT will be used in calculation of preconditioner 
-  computePreconditionerMFD(u, matrix);
+  dT = dT_bdf2;  // this dT will be used in calculation of preconditioner
+  computePreconditionerMFD(u, preconditioner);
   ierr = 0;
 }
 

@@ -76,6 +76,7 @@
       <ParameterList name="Diffusion Preconditioner">
         <Parameter name="Max Iterations" type="int" value="100"/>
         <Parameter name="Error Tolerance" type="double" value="1.0e-9"/>
+
         <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="0"/>
           <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
@@ -97,13 +98,13 @@
       </ParameterList>
 
       <ParameterList name="Richards model evaluator">
-        <Parameter name="Absolute error tolerance" type="double" value="1"/>
+        <Parameter name="Absolute error tolerance" type="double" value="0.1"/>
         <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
       </ParameterList>
 
       <ParameterList name="Steady state solution">
         <Parameter name="method" type="string" value="backward Euler"/>
-        <Parameter name="max iterations" type="int" value="1000"/>
+        <Parameter name="max iterations" type="int" value="200"/>
         <Parameter name="solver tolerance" type="double" value="1e-9"/>
         <Parameter name="Initial time step" type="double" value="1e-1"/>
       </ParameterList>
@@ -112,14 +113,14 @@
         <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
         <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
         <Parameter name="NKA max vectors" type="int" value="5"/>
-        <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-        <Parameter name="Nonlinear solver tolerance" type="double" value="0.0001"/>
+        <Parameter name="Nonlinear solver max iterations" type="int" value="20"/>
+        <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
         <ParameterList name="VerboseObject">
-          <Parameter name="Verbosity Level" type="string" value="medium"/>
+          <Parameter name="Verbosity Level" type="string" value="high"/>
         </ParameterList>
       </ParameterList>
 
-      <Parameter name="Upwind relative permeability" type="bool" value="true"/>
+      <Parameter name="Upwind relative permeability" type="bool" value="false"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Water Retention Model for Material 1 Region">
@@ -176,14 +177,14 @@
     <Parameter name="Constant water saturation" type="double" value="1"/>
     <Parameter name="Gravity x" type="double" value="0"/>
     <Parameter name="Gravity y" type="double" value="0"/>
-    <Parameter name="Gravity z" type="double" value="2.0"/>
+    <Parameter name="Gravity z" type="double" value="-2.0"/>
 
     <Parameter name="Number of component concentrations" type="int" value="1"/>
     <Parameter name="Number of mesh blocks" type="int" value="2"/>
 
     <ParameterList name="Mesh block 1">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="2.0"/>
+      <Parameter name="Constant permeability" type="double" value="0.5"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Region" type="string" value="Material 1 Region"/>
       <ParameterList name="linear pressure">
@@ -197,7 +198,7 @@
     </ParameterList>
     <ParameterList name="Mesh block 2">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="0.5"/>
+      <Parameter name="Constant permeability" type="double" value="2.0"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Region" type="string" value="Material 2 Region"/>
       <ParameterList name="linear pressure">

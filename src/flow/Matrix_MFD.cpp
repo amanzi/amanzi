@@ -13,7 +13,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate elemental inverse mass matrices.                                            
+* Calculate elemental inverse mass matrices (is *not* used).                                            
 ****************************************************************** */
 void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
 {
@@ -24,10 +24,12 @@ void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
   for (int c=0; c<K.size(); c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
-    Teuchos::SerialDenseMatrix<int, double> Wc(nfaces, nfaces);
 
-    mfd.darcy_mass_inverse(c, K[c], Wc);
-    Minv_cells.push_back(Wc);
+    Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
+
+    if (nfaces == 6) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+    else mfd.darcy_mass_inverse(c, K[c], Bff);
+    Minv_cells.push_back(Bff);
   }
 }
 
@@ -215,8 +217,6 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
   if (flag_symmetry_) Afc = Acf;
   else Afc = Teuchos::rcp(new Epetra_CrsMatrix(Copy, cf_graph));
 
-  Dcc_time = Teuchos::rcp(new Epetra_Vector(cmap)); 
-
   rhs = Teuchos::rcp(new Epetra_Vector(super_map));
   rhs_cells = Teuchos::rcp(FS->createCellView(*rhs));
   rhs_faces = Teuchos::rcp(FS->createFaceView(*rhs));
@@ -279,7 +279,6 @@ void Matrix_MFD::assembleGlobalMatrices()
 
 /* ******************************************************************
 * Compute the face Schur complement of 2x2 block matrix.
-                              
 ****************************************************************** */
 void Matrix_MFD::computeSchurComplement(
     std::vector<int>& bc_markers, std::vector<double>& bc_values) 
@@ -368,7 +367,7 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // Create views Xc and Xf into the cell and face segments of X.
   double **cvec_ptrs = X.Pointers();
-  double **fvec_ptrs = new double*[X.NumVectors()];
+  double **fvec_ptrs = new double*[nvectors];
   for (int i=0; i<nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
 
   Epetra_MultiVector Xc(View, cmap, cvec_ptrs, nvectors);
@@ -381,18 +380,21 @@ int Matrix_MFD::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Epetra_MultiVector Yc(View, cmap, cvec_ptrs, nvectors);
   Epetra_MultiVector Yf(View, fmap, fvec_ptrs, nvectors);
 
-  // Temporary cell and face vectors.
-  Epetra_MultiVector Tf(fmap, nvectors);
-
   // Face unknowns:  Yf = Aff * Xf + Afc * Xc 
-  (*Aff).Multiply(false, Xf, Yf);
-  (*Afc).Multiply(true, Xc, Tf);  // Afc is kept in transpose form
+  int ierr;
+  Epetra_MultiVector Tf(fmap, nvectors);
+  ierr  = (*Aff).Multiply(false, Xf, Yf);
+  ierr |= (*Afc).Multiply(true, Xc, Tf);  // Afc is kept in transpose form
   Yf.Update(1.0, Tf, 1.0);
 
   // Cell unknowns:  Yc = Acf * Xf + Acc * Xc
-  (*Acf).Multiply(false, Xf, Yc);  // It performs the required parallel communications.
-  Yc.Multiply(1.0, *Acc, Xc, 1.0);
+  ierr |= (*Acf).Multiply(false, Xf, Yc);  // It performs the required parallel communications.
+  ierr |= Yc.Multiply(1.0, *Acc, Xc, 1.0);
 
+  if (ierr) { 
+    Errors::Message msg("Matrix_MFD::Apply has failed in calculating y = A*x.");
+    Exceptions::amanzi_throw(msg);
+  }
   delete [] fvec_ptrs;
   return 0;
 }
@@ -416,7 +418,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 
   // Create views Xc and Xf into the cell and face segments of X.
   double **cvec_ptrs = X.Pointers();
-  double **fvec_ptrs = new double*[X.NumVectors()];
+  double **fvec_ptrs = new double*[nvectors];
   for (int i=0; i<nvectors; i++) fvec_ptrs[i] = cvec_ptrs[i] + ncells;
 
   Epetra_MultiVector Xc(View, cmap, cvec_ptrs, nvectors);
@@ -434,18 +436,23 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   Epetra_MultiVector Tf(fmap, nvectors);
 
   // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
-  Tc.ReciprocalMultiply(1.0, *Acc, Xc, 0.0);
-  (*Afc).Multiply(true, Tc, Tf);  // Afc is kept in transpose form
+  int ierr;
+  ierr  = Tc.ReciprocalMultiply(1.0, *Acc, Xc, 0.0);
+  ierr |= (*Afc).Multiply(true, Tc, Tf);  // Afc is kept in transpose form
   Tf.Update(1.0, Xf, -1.0);
 
-  // Solve the Schur complement system Aff * Yf = Tf.
+  // Solve the Schur complement system Sff * Yf = Tf.
   MLprec->ApplyInverse(Tf, Yf);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc) (Xc - Acf Yf)
-  (*Acf).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
+  ierr |= (*Acf).Multiply(false, Yf, Tc);  // It performs the required parallel communications.
   Tc.Update(1.0, Xc, -1.0);
-  Yc.ReciprocalMultiply(1.0, *Acc, Tc, 0.0);
+  ierr |= Yc.ReciprocalMultiply(1.0, *Acc, Tc, 0.0);
 
+  if (ierr) { 
+    Errors::Message msg("Matrix_MFD::ApplyInverse has failed in calculating y = A*x.");
+    Exceptions::amanzi_throw(msg);
+  }
   delete [] fvec_ptrs;
   return 0;
 }

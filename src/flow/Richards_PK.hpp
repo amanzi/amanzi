@@ -59,10 +59,8 @@ class Richards_PK : public Flow_PK {
   void calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
   void calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& darcy_flux);
 
-  void applyDiffusionMFD(Epetra_Vector& X, Epetra_Vector& Y);
-  void applyAdvectionMFD(Epetra_Vector& X, Epetra_Vector& Y);
-
   void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MFD* matrix);
+  void addTimeDerivative_VAG(Epetra_Vector& pressure_cells, Matrix_MFD* matrix);
 
   double computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot);
   void computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, bool flag_update_ML = true);
@@ -70,6 +68,8 @@ class Richards_PK : public Flow_PK {
   void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void deriveVanGenuchtenSaturation(const Epetra_Vector& p, Epetra_Vector& s);
   void derivePressureFromSaturation(double s, Epetra_Vector& p);
+
+  void deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
 
   // control methods
   inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 

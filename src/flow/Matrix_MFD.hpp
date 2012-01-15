@@ -63,7 +63,7 @@ class Matrix_MFD : public Epetra_Operator {
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
   bool UseTranspose() const { return false; }
-  int SetUseTranspose(bool) { return -1; }
+  int SetUseTranspose(bool) { return 1; }
 
   const Epetra_Comm& Comm() const { return *(mesh_->get_comm()); }
   const Epetra_Map& OperatorDomainMap() const { return map; }
@@ -80,8 +80,6 @@ class Matrix_MFD : public Epetra_Operator {
   std::vector<double>& get_Fc_cells() { return Fc_cells; }
   Teuchos::RCP<Epetra_Vector>& get_rhs() { return rhs; }
   Teuchos::RCP<Epetra_Vector>& get_rhs_faces() { return rhs_faces; }
-
-  Epetra_Vector& get_Dcc_time() { return *Dcc_time; }
 
  private:
   Teuchos::RCP<Flow_State> FS;
@@ -103,8 +101,6 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_CrsMatrix> Afc;  // We generate transpose of this matrix block. 
   Teuchos::RCP<Epetra_FECrsMatrix> Aff;
   Teuchos::RCP<Epetra_FECrsMatrix> Sff;  // Schur complement
-
-  Teuchos::RCP<Epetra_Vector> Dcc_time;  // Part of Acc related to time derivative.
 
   Teuchos::RCP<Epetra_Vector> rhs;
   Teuchos::RCP<Epetra_Vector> rhs_cells;

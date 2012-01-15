@@ -30,7 +30,7 @@ WRM_analytic::WRM_analytic(std::string region_)
 ****************************************************************** */
 double WRM_analytic::k_relative(double p)
 {
-  if (p > 0.0) return 1.0 + pow(alpha*p, n);
+  if (p > 0.0) return 1.0 / (1.0 + pow(alpha*p, n));
   else return 1.0;
 }
 
@@ -40,7 +40,7 @@ double WRM_analytic::k_relative(double p)
 ****************************************************************** */
 double WRM_analytic::saturation(double p)
 {
-  if (p > 0.0) return 1.0 + pow(alpha*p, n);
+  if (p > 0.0) return p;
   else return 1.0;
 }
 
