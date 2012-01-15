@@ -185,7 +185,7 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
 
   int avg_entries_row = (mesh_->space_dimension() == 2) ? FLOW_QUAD_FACES : FLOW_HEX_FACES;
-  Epetra_CrsGraph cf_graph(Copy, cmap, fmap_wghost, avg_entries_row, true);
+  Epetra_CrsGraph cf_graph(Copy, cmap, fmap_wghost, avg_entries_row, false);  // FIX (lipnikov@lanl.gov)
   Epetra_FECrsGraph ff_graph(Copy, fmap, 2*avg_entries_row);
 
   AmanziMesh::Entity_ID_List faces;
@@ -199,7 +199,7 @@ void Matrix_MFD::symbolicAssembleGlobalMatrices(const Epetra_Map& super_map)
 
     for (int n=0; n<nfaces; n++) {
       faces_LID[n] = faces[n];
-      faces_GID[n] = fmap.GID(faces_LID[n]);
+      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
     cf_graph.InsertMyIndices(c, nfaces, faces_LID);
     ff_graph.InsertGlobalIndices(nfaces, faces_GID, nfaces, faces_GID);
@@ -233,13 +233,12 @@ void Matrix_MFD::assembleGlobalMatrices()
 {
   Aff->PutScalar(0.0);
 
-  const Epetra_Map& cmap = mesh_->cell_map(false);
-  const Epetra_Map& fmap = mesh_->face_map(true);
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
+  const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   AmanziMesh::Entity_ID_List faces;
   int faces_LID[FLOW_MAX_FACES];
   int faces_GID[FLOW_MAX_FACES];
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
   for (int c=0; c<ncells; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -247,7 +246,7 @@ void Matrix_MFD::assembleGlobalMatrices()
 
     for (int n=0; n<nfaces; n++) { 
       faces_LID[n] = faces[n];
-      faces_GID[n] = fmap.GID(faces_LID[n]);
+      faces_GID[n] = fmap_wghost.GID(faces_LID[n]);
     }
     (*Acc)[c] = Acc_cells[c];
     (*Acf).ReplaceMyValues(c, nfaces, Acf_cells[c].Values(), faces_LID);
@@ -258,8 +257,8 @@ void Matrix_MFD::assembleGlobalMatrices()
   }
   (*Aff).GlobalAssemble();
 
-  // repeat some of the loops for clarity
-  Epetra_Vector rhs_faces_wghost(mesh_->face_map(true));
+  // We repeat some of the loops for code clarity.
+  Epetra_Vector rhs_faces_wghost(fmap_wghost);
 
   for (int c=0; c<ncells; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -271,7 +270,7 @@ void Matrix_MFD::assembleGlobalMatrices()
       rhs_faces_wghost[f] += Ff_cells[c][n];
     }
   }
-  FS->distribute_face_vector(rhs_faces_wghost, Add);
+  FS->combineGhostFace2MasterFace(rhs_faces_wghost, Add);
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f=0; f<nfaces; f++) (*rhs_faces)[f] = rhs_faces_wghost[f];

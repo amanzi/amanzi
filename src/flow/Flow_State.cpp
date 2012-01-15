@@ -174,9 +174,10 @@ void Flow_State::copyMemoryVector(Epetra_Vector& source, Epetra_Vector& target)
 
 
 /* *******************************************************************
- * Copy data in ghost positions for a vector.              
- ****************************************************************** */
-void Flow_State::distribute_cell_vector(Epetra_Vector& v)
+* Copy cell-based data from master to ghost positions.              
+* WARNING: vector v must contain ghost cells.              
+******************************************************************* */
+void Flow_State::copyMasterCell2GhostCell(Epetra_Vector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);
@@ -192,27 +193,32 @@ void Flow_State::distribute_cell_vector(Epetra_Vector& v)
 }
 
 
-/* **************************************************************** */
-void Flow_State::distribute_face_vector(Epetra_Vector& v, Epetra_CombineMode mode)
+/* *******************************************************************
+* Transfer face-based data from master to ghost positions and perform
+* operation mode there. 
+* WARNING: Vector v must contain ghost faces.              
+******************************************************************* */
+void Flow_State::combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode)
 {
 #ifdef HAVE_MPI
-  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
   const Epetra_BlockMap& target_fmap = mesh_->face_map(true);
+  const Epetra_BlockMap& source_fmap = mesh_->face_map(false);
   Epetra_Import importer(target_fmap, source_fmap);
 
   double* vdata;
   v.ExtractView(&vdata);
   Epetra_Vector vv(View, source_fmap, vdata);
 
-  v.Import(vv, importer, mode);
+  vv.Export(v, importer, mode);
 #endif
 }
 
 
 /* *******************************************************************
- * Copy data in ghost positions for a multivector.              
- ****************************************************************** */
-void Flow_State::distribute_cell_multivector(Epetra_MultiVector& v)
+* Copy cell-based data from master to ghost positions.              
+* WARNING: MultiVector v must contain ghost cells.              
+******************************************************************* */
+void Flow_State::copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 {
 #ifdef HAVE_MPI
   const Epetra_BlockMap& source_cmap = mesh_->cell_map(false);

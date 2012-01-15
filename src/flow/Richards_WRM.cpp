@@ -35,7 +35,7 @@ void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
 void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
 {
   calculateRelativePermeability(p);  // populates cell-based permeabilities
-  FS->distribute_cell_vector(*Krel_cells);
+  FS->copyMasterCell2GhostCell(*Krel_cells);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

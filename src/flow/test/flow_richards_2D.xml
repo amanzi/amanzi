@@ -94,9 +94,10 @@
       </ParameterList>
 
       <ParameterList name="Steady state solution">
-        <Parameter name="method" type="string" value="backward Euler"/>
-        <Parameter name="max iterations" type="int" value="200"/>
-        <Parameter name="solver tolerance" type="double" value="1e-5"/>
+        <Parameter name="method" type="string" value="Picard"/>
+        <Parameter name="max iterations" type="int" value="400"/>
+        <Parameter name="solver tolerance" type="double" value="1e-9"/>
+        <Parameter name="Initial time step" type="double" value="1.0e+0"/>
       </ParameterList>
 
       <ParameterList name="Time integrator">
@@ -104,7 +105,7 @@
         <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
         <Parameter name="NKA max vectors" type="int" value="5"/>
         <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
-        <Parameter name="Nonlinear solver tolerance" type="double" value="0.0001"/>
+        <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
       </ParameterList>
 
       <Parameter name="Upwind relative permeability" type="bool" value="false"/>

@@ -15,7 +15,7 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Epetra_MpiComm.h"
 
 #include "Mesh.hh"
-#include "Mesh_simple.hh"
+#include "Mesh_MSTK.hh"
 #include "Darcy_PK.hpp"
 
 
@@ -26,13 +26,17 @@ using namespace Amanzi::AmanziFlow;
 
 class DarcyProblem {
  public:
+  Epetra_MpiComm* comm;
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
+  State *S;
   Teuchos::ParameterList dp_list;
-  AmanziFlow::Darcy_PK* DPK; 
+  AmanziFlow::Darcy_PK* DPK;
+  int MyPID;
 
   DarcyProblem() 
   {
-    Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    MyPID = comm->MyPID();
 
     Teuchos::ParameterList parameter_list;
     string xmlFileName = "test/flow_darcy_misc.xml";
@@ -41,19 +45,21 @@ class DarcyProblem {
     // create an SIMPLE mesh framework 
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list);
-    mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
+    mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
 
     // create Darcy process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-    State S(state_list, mesh);
-    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+    S = new State(state_list, mesh);
+    S->set_time(0.0);
+
+    Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
     DPK = new Darcy_PK(dp_list, FS);
   }
 
-  ~DarcyProblem() { delete DPK; }
+  ~DarcyProblem() { delete DPK; delete comm; }
 
   void createBClist(
       const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
@@ -86,7 +92,7 @@ class DarcyProblem {
     for (int c=0; c<ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-//cout << c << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
+//if (MyPID==0) cout << c << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
@@ -124,7 +130,7 @@ class DarcyProblem {
 
 SUITE(Simple_1D_Flow) {
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
-    std::cout <<"Darcy 1D: Dirichlet-Dirichlet" << std::endl;
+    if (MyPID == 0) std::cout <<"Darcy 1D: Dirichlet-Dirichlet" << std::endl;
 
     double rho = DPK->get_rho();  // set up analytic solution
     double mu = DPK->get_mu();
@@ -156,7 +162,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(DarcyProblem, DirichletNeumann)
   {
-    std::cout <<"Flow 1D: Dirichlet-Neumann" << std::endl;
+    if (MyPID == 0) std::cout <<"Flow 1D: Dirichlet-Neumann" << std::endl;
 
     double rho = DPK->get_rho();  // set up analytic solution
     double mu = DPK->get_mu();
@@ -187,7 +193,7 @@ SUITE(Simple_1D_Flow) {
   }
 
   TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
-    std::cout <<"Darcy 1D: StaticHead-Dirichlet" << std::endl;
+    if (MyPID == 0) std::cout <<"Darcy 1D: StaticHead-Dirichlet" << std::endl;
 
     double rho = DPK->get_rho();  // set up analytic solution
     double mu = DPK->get_mu();

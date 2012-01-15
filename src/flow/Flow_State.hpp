@@ -34,9 +34,9 @@ class Flow_State {
   // data management
   void copyMemoryMultiVector(Epetra_MultiVector& source, Epetra_MultiVector& target);
   void copyMemoryVector(Epetra_Vector& source, Epetra_Vector& target);
-  void distribute_cell_vector(Epetra_Vector& v);
-  void distribute_face_vector(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
-  void distribute_cell_multivector(Epetra_MultiVector& v);
+  void copyMasterCell2GhostCell(Epetra_Vector& v);
+  void copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
+  void combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
 
   Epetra_Vector* createCellView(const Epetra_Vector& u) const;
   Epetra_Vector* createFaceView(const Epetra_Vector& u) const;

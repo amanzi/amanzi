@@ -142,7 +142,7 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 ****************************************************************** */
 int Darcy_PK::advance_to_steady_state()
 {
-  int n = number_owned_cells + number_owned_faces;
+  solver->SetAztecOption(AZ_output, AZ_none);
 
   // work-around limited support for tensors
   setAbsolutePermeabilityTensor(K);
@@ -166,8 +166,10 @@ int Darcy_PK::advance_to_steady_state()
   num_itrs = solver->NumIters();
   residual = solver->TrueResidual();
 
-  std::cout << "Darcy solver performed " << solver->NumIters() << " iterations." << std::endl
-            << "Norm of true residual = " << solver->TrueResidual() << std::endl;
+  if (verbosity >= FLOW_VERBOSITY_HIGH && MyPID == 0) {
+    std::cout << "Darcy solver performed " << solver->NumIters() << " iterations." << std::endl
+              << "Norm of true residual = " << solver->TrueResidual() << std::endl;
+  }
 
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
@@ -185,7 +187,7 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
   const Epetra_Vector& permeability = FS->ref_absolute_permeability();
 
-  for (int c=cmin; c<=cmax; c++) {
+  for (int c=0; c<K.size(); c++) {
     K[c].init(dim, 1);
     K[c](0, 0) = permeability[c];
   }

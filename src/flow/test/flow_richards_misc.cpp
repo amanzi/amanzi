@@ -31,11 +31,12 @@ class RichardsProblem {
   Teuchos::RCP<AmanziMesh::Mesh> mesh;
   State *S;
   Teuchos::ParameterList rp_list;
-  AmanziFlow::Richards_PK* RPK; 
+  AmanziFlow::Richards_PK* RPK;
 
   RichardsProblem() 
   {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+    MyPID = comm.MyPID();
 
     Teuchos::ParameterList parameter_list;
     string xmlFileName = "test/flow_richards_misc.xml";
@@ -59,7 +60,7 @@ class RichardsProblem {
     RPK->set_standalone_mode(true);
   }
 
-  ~RichardsProblem() { delete RPK; delete comm; }
+  ~RichardsProblem() { delete RPK; delete comm; delete S; }
 
   void createBClist(
       const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
