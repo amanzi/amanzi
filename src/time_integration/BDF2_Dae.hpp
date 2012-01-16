@@ -20,7 +20,7 @@
 namespace BDF2 {
 
 class Dae : public Teuchos::VerboseObject<Dae>,
-	          public Teuchos::ParameterListAcceptor {
+            public Teuchos::ParameterListAcceptor {
  public:
   // Create the BDF2 Dae solver object, the nonlinear problem must
   // be defined in a class that derives from the virtual base class

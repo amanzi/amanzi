@@ -41,14 +41,6 @@
          </ParameterList>
        </ParameterList>
 
-       <ParameterList name="Richards model evaluator">
-         <Parameter name="Absolute error tolerance" type="double" value="1"/>
-         <Parameter name="Relative error tolerance" type="double" value="1e-05"/>
-         <ParameterList name="VerboseObject">
-           <Parameter name="Verbosity Level" type="string" value="low"/>
-         </ParameterList>
-       </ParameterList>
-
       <ParameterList name="Steady state solution">
         <Parameter name="method" type="string" value="backward Euler"/>
         <Parameter name="Absolute error tolerance" type="double" value="1000"/>

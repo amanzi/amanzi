@@ -192,6 +192,7 @@ int Richards_PK::advance_to_steady_state()
 int Richards_PK::advanceSteadyState_BDF2() 
 {
   int itrs = 0;
+  T_internal = T0_sss;
   dT = dT0_sss;
 
   while (itrs < max_itrs_sss) {
@@ -230,10 +231,12 @@ int Richards_PK::advanceSteadyState_BDF2()
     itrs++;
 
     // DEBUG
+    /*
     GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(*solution_cells, 0, "pressure");
     GMV::close_data_file();
+    */
   }
   
   Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
@@ -344,7 +347,7 @@ int Richards_PK::advance(double dT)
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
-  addTimeDerivative_MFD(*solution_cells, matrix);
+  addTimeDerivative_MFD(*solution_cells, dT, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   matrix->computeSchurComplement(bc_markers, bc_values);
@@ -400,7 +403,7 @@ void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Ep
 double Richards_PK::computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   double norm_udot;
-  computePreconditionerMFD(u, matrix, false);  // Calculate only stiffness matrix.
+  computePreconditionerMFD(u, matrix, 0.0, false);  // Calculate only stiffness matrix.
   norm_udot = matrix->computeResidual(u, udot);
 
   Epetra_Vector* udot_faces = FS->createFaceView(udot);
@@ -415,7 +418,7 @@ double Richards_PK::computeUDot(const double T, const Epetra_Vector& u, Epetra_V
 * preconditioner Sff(u) using internal time step dT.                             
 ****************************************************************** */
 void Richards_PK::computePreconditionerMFD(
-    const Epetra_Vector& u, Matrix_MFD* matrix, bool flag_update_ML)
+    const Epetra_Vector& u, Matrix_MFD* matrix, double dT_prec, bool flag_update_ML)
 {
   Epetra_Vector* u_cells = FS->createCellView(u);
 
@@ -433,7 +436,7 @@ void Richards_PK::computePreconditionerMFD(
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
-  if (flag_update_ML) addTimeDerivative_MFD(*u_cells, matrix);
+  if (flag_update_ML) addTimeDerivative_MFD(*u_cells, dT_prec, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   if (flag_update_ML) {
@@ -460,7 +463,8 @@ void Richards_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& 
 /* ******************************************************************
 * Adds time derivative to cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
-void Richards_PK::addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MFD* matrix)
+void Richards_PK::addTimeDerivative_MFD(
+    Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
   Epetra_Vector dSdP(mesh_->cell_map(false));
   derivedSdP(pressure_cells, dSdP);
@@ -473,7 +477,7 @@ void Richards_PK::addTimeDerivative_MFD(Epetra_Vector& pressure_cells, Matrix_MF
 
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = rho * phi[c] * dSdP[c] * volume / dT;
+    double factor = rho * phi[c] * dSdP[c] * volume / dT_prec;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }

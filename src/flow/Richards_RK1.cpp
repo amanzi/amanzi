@@ -47,7 +47,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     matrix->createMFDstiffnessMatrices(K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    addTimeDerivative_MFDfake(*solution_cells, matrix);
+    addTimeDerivative_MFDfake(*solution_cells, dT, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
     matrix->computeSchurComplement(bc_markers, bc_values);
@@ -161,7 +161,8 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
 /* ******************************************************************
 * Adds time derivative to cell-based part of MFD algebraic system.                                               
 ****************************************************************** */
-void Richards_PK::addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, Matrix_MFD* matrix)
+void Richards_PK::addTimeDerivative_MFDfake(
+   Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix)
 {
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
@@ -170,7 +171,7 @@ void Richards_PK::addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, Matri
 
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);
-    double factor = volume / dT;
+    double factor = volume / dT_prec;
     Acc_cells[c] += factor;
     Fc_cells[c] += factor * pressure_cells[c];
   }

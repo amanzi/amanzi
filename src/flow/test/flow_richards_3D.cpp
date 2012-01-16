@@ -33,21 +33,25 @@ TEST(FLOW_3D_RICHARDS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziFlow;
 
-cout << "Test: 3D Richards, crib model" << endl;
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0) cout << "Test: 3D Richards, crib model" << endl;
+
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_richards_3D.xml";
+  string xmlFileName = "test/bc-cribs-1D.xml"; //flow_richards_3D.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create a mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list);
 
-  ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh");
-  ParameterList factory_list = mesh_list.get<ParameterList>("Unstructured").get<ParameterList>("Generate Mesh");
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  MeshFactory mesh_fact(comm);
-  Teuchos::RCP<Mesh> mesh(mesh_fact(factory_list, gm));
+  MeshFactory factory(comm);
+  ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
+  //ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
+  //Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
+  Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
@@ -64,6 +68,7 @@ cout << "Test: 3D Richards, crib model" << endl;
   RPK->print_statistics();
 
   // create the initial pressure function
+  /*
   Epetra_Vector p(RPK->get_super_map());
   Epetra_Vector* pcells = FS->createCellView(p);
   Epetra_Vector* pfaces = FS->createFaceView(p);
@@ -71,6 +76,7 @@ cout << "Test: 3D Richards, crib model" << endl;
   p.PutScalar(101325.0);
   RPK->applyBoundaryConditions(RPK->get_bc_markers(), RPK->get_bc_values(), *pfaces);
   S.update_pressure(*pcells);
+  */
 
   // solve the problem
   S.set_time(0.0);

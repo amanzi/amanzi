@@ -305,7 +305,7 @@ namespace BDF2 {
     state.usable_pc = true;
 
     // Solve the nonlinear BCE system.
-    solve_bce ( t, etah, u0, u, errc);
+    solve_bce (t, etah, u0, u, errc);
     if (errc != 0) 
       {
 	state.failed_bce++;

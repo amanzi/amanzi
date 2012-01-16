@@ -86,10 +86,6 @@
           <Parameter name="smoother: type" type="string" value="Gauss-Seidel"/>
         </ParameterList>
       </ParameterList>
-      <ParameterList name="Richards model evaluator">
-        <Parameter name="Absolute error tolerance" type="double" value="1"/>
-        <Parameter name="Relative error tolerance" type="double" value="1e-05"/>
-      </ParameterList>
 
       <ParameterList name="Steady state solution">
         <Parameter name="method" type="string" value="backward Euler"/>
