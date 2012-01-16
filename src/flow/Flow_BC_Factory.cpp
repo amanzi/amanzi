@@ -58,7 +58,8 @@ BoundaryFunction* FlowBCFactory::createMassFlux() const
 /* ******************************************************************
 * Process Dirichet BC (static head), step 1.
 ****************************************************************** */
-BoundaryFunction* FlowBCFactory::createStaticHead(double p0, double density, double gravity) const
+BoundaryFunction* FlowBCFactory::createStaticHead(
+    double p0, double density, AmanziGeometry::Point& gravity) const
 {
   BoundaryFunction* bc = new BoundaryFunction(mesh_);
   try {
@@ -235,7 +236,7 @@ void FlowBCFactory::processMassFluxSpec(Teuchos::ParameterList& list,
 * Process Dirichet BC (static head), step 2.
 ****************************************************************** */
 void FlowBCFactory::processStaticHeadList(
-    double p0, double density, double gravity,
+    double p0, double density, AmanziGeometry::Point& gravity,
     Teuchos::ParameterList& list, BoundaryFunction* bc) const
 {
   // Iterate through the BC specification sublists in the list.
@@ -264,7 +265,7 @@ void FlowBCFactory::processStaticHeadList(
 * Process Dirichet BC (static head), step 3.
 ****************************************************************** */
 void FlowBCFactory::processStaticHeadSpec(
-    double p0, double density, double gravity,
+    double p0, double density, AmanziGeometry::Point& gravity,
     Teuchos::ParameterList& list, BoundaryFunction* bc) const
 {
   Errors::Message m;
@@ -300,9 +301,12 @@ void FlowBCFactory::processStaticHeadSpec(
   // Form the parameter list to create static head function.
   Teuchos::ParameterList f_list;
   Teuchos::ParameterList& static_head_list = f_list.sublist("function-static-head");
+  int dim = gravity.dim();
+
   static_head_list.set("p0", p0);
   static_head_list.set("density", density);
-  static_head_list.set("gravity", gravity);
+  static_head_list.set("gravity", -gravity[dim-1]);
+  static_head_list.set("space dimension", dim);
   static_head_list.set("water table elevation", *water_table_list);
 
   Teuchos::RCP<Function> f;  // Make the static head function.

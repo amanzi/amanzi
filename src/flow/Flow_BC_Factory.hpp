@@ -82,6 +82,7 @@ The gravitational acceleration is assumed to be directed in the negative z-direc
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "Point.hh"
 #include "Mesh.hh"
 #include "boundary-function.hh"
 
@@ -97,15 +98,15 @@ class FlowBCFactory {
   
   BoundaryFunction* createPressure() const;
   BoundaryFunction* createMassFlux() const;
-  BoundaryFunction* createStaticHead(double, double, double) const;
+  BoundaryFunction* createStaticHead(double, double, AmanziGeometry::Point&) const;
 
  private:
   void processPressureList(Teuchos::ParameterList&, BoundaryFunction*) const;
   void processPressureSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
   void processMassFluxList(Teuchos::ParameterList&, BoundaryFunction*) const;
   void processMassFluxSpec(Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processStaticHeadList(double, double, double, Teuchos::ParameterList&, BoundaryFunction*) const;
-  void processStaticHeadSpec(double, double, double, Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processStaticHeadList(double, double, AmanziGeometry::Point&, Teuchos::ParameterList&, BoundaryFunction*) const;
+  void processStaticHeadSpec(double, double, AmanziGeometry::Point&, Teuchos::ParameterList&, BoundaryFunction*) const;
      
  private:
   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh_;

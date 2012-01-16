@@ -461,6 +461,7 @@ SUITE(static_head_factory) {
     sublist.set("p0", 1.0);
     sublist.set("density", 4.0);
     sublist.set("gravity", 0.5);
+    sublist.set("space dimension", 3);
     sublist.sublist("water table elevation").sublist("function-constant").set("value",3.0);
     FunctionFactory factory;
     Function *f = factory.Create(list);

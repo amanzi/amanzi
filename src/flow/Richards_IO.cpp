@@ -30,7 +30,7 @@ void Richards_PK::processParameterList()
   FlowBCFactory bc_factory(mesh_, bc_list);
 
   bc_pressure = bc_factory.createPressure();
-  bc_head = bc_factory.createStaticHead(atm_pressure, rho, -gravity[dim - 1]);  // We need |g| here.
+  bc_head = bc_factory.createStaticHead(atm_pressure, rho, gravity);
   bc_flux = bc_factory.createMassFlux();
 
   validate_boundary_conditions(bc_pressure, bc_head, bc_flux);  
