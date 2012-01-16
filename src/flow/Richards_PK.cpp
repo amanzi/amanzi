@@ -89,8 +89,8 @@ Richards_PK::~Richards_PK()
   }
   delete bdf2_dae;
   delete bc_pressure;
-  delete bc_head;
   delete bc_flux;
+  delete bc_head;
 }
 
 
@@ -303,7 +303,7 @@ int Richards_PK::advanceSteadyState_Picard()
     else relaxation = std::max(0.05, relaxation * 0.9);  
 
     // information output
-    if (verbosity >= FLOW_VERBOSITY_HIGH) {
+    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Picard step:%4d   Pressure(res=%9.4e, sol=%9.4e, relax=%5.3f)  CG info(%8.3e, %4d)\n", 
           itrs, L2error, L2norm, relaxation, residual, num_itrs);
     }
@@ -379,7 +379,7 @@ int Richards_PK::advance(double dT)
 void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells; 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
   for (int f=0; f<nfaces; f++) {
     cells.clear();
@@ -450,7 +450,7 @@ void Richards_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& 
 {
   const Epetra_Vector& permeability = FS->ref_absolute_permeability();
 
-  for (int c=cmin; c<=cmax; c++) {
+  for (int c=0; c<K.size(); c++) {
     K[c].init(dim, 1);
     K[c](0, 0) = permeability[c];
   }

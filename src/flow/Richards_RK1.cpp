@@ -24,7 +24,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
   T_internal = T0_sss;
   dT = dT0_sss;
 
-  int itrs = 0;
+  int itrs = 0, ifail = 0;
   double L2error = 1.0;
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
@@ -47,7 +47,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     matrix->createMFDstiffnessMatrices(K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
-    addTimeDerivative_MFD(*solution_cells, matrix);
+    addTimeDerivative_MFDfake(*solution_cells, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
     matrix->assembleGlobalMatrices();
     matrix->computeSchurComplement(bc_markers, bc_values);
@@ -67,23 +67,25 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     double sol_norm = FS->normL2cell(solution_new);
     L2error = errorSolutionDiff(solution_old, solution_new);
 
-    if (L2error > 1.0 && itrs) {  // itrs=0 allows to avoid bad initial guess.
-      dT /= 4;
+    if (L2error > 10.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess. 
+      dT /= 10;
       solution_new = solution_old;
-      if (verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Fail:%4d  Pressure(diff=%9.4e, sol=%9.4e)  CG info(%8.3e,%3d), T=%9.3e dT=%8.3e\n", 
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+        std::printf("Fail:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n", 
             itrs, L2error, sol_norm, residual, num_itrs, T_internal, dT);
       }
+      ifail++;
     } else { 
       T_internal += dT;
       solution_old = solution_new;
 
-      if (verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  CG info(%8.3e,%3d), T=%9.3e dT=%8.3e\n", 
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+        std::printf("Step:%4d  Pressure(diff=%9.4e, sol=%9.4e)  solver(%8.3e,%3d), T=%9.3e dT=%7.2e\n", 
             itrs, L2error, sol_norm, residual, num_itrs, T_internal, dT);
       }
 
-      dT = std::min(dT*2, dTmax_sss);
+      ifail = 0;
+      dT = std::min(dT*1.25, dTmax_sss);
       itrs++;
     }
 
@@ -144,7 +146,7 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
     sol_norm = sqrt(sol_norm);
  
     *solution = solution_new;
-    if (verbosity >= FLOW_VERBOSITY_HIGH) {
+    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Time step:%6d   Pressure(diff=%9.4e, sol=%9.4e, res=%9.4e)  time=%8.3e\n", 
           itrs, sol_error, sol_norm, L2error, T_internal);
     }
@@ -153,6 +155,25 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
     itrs++;
   }
   return 0;
+}
+
+
+/* ******************************************************************
+* Adds time derivative to cell-based part of MFD algebraic system.                                               
+****************************************************************** */
+void Richards_PK::addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, Matrix_MFD* matrix)
+{
+  std::vector<double>& Acc_cells = matrix->get_Acc_cells();
+  std::vector<double>& Fc_cells = matrix->get_Fc_cells();
+
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  for (int c=0; c<ncells; c++) {
+    double volume = mesh_->cell_volume(c);
+    double factor = volume / dT;
+    Acc_cells[c] += factor;
+    Fc_cells[c] += factor * pressure_cells[c];
+  }
 }
 
 

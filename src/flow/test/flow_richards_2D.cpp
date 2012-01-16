@@ -35,6 +35,9 @@ TEST(FLOW_2D_RICHARDS) {
   using namespace Amanzi::AmanziFlow;
 
 cout << "Test: 2D Richards, 2-layer model" << endl;
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+
   /* read parameter list */
   ParameterList parameter_list;
   string xmlFileName = "test/flow_richards_2D.xml";

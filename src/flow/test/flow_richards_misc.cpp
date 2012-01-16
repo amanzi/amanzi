@@ -100,22 +100,8 @@ class RichardsProblem {
       double z = xc[2];
       if (z < -a) pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
       else pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-cout << z << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
+//cout << z << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
       error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
-    }
-    return sqrt(error_L2);
-  }
-
-  double face_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
-  {
-    Epetra_Vector& solution_faces = RPK->get_solution_faces();
-
-    double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    for (int f=0; f<nfaces; f++) {
-      const AmanziGeometry::Point& xf = mesh->face_centroid(f);
-      double pressure_exact = p0 + pressure_gradient * xf;
-      error_L2 += std::pow(solution_faces[f] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
   }
@@ -140,7 +126,7 @@ cout << z << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
 
 SUITE(Simple_1D_Flow) {
   TEST_FIXTURE(RichardsProblem, DirichletDirichlet) {
-    std::cout <<"Richards 1D: Dirichlet-Dirichlet" << std::endl;
+    if (MyPID == 0) std::cout <<"Richards 1D: Dirichlet-Dirichlet" << std::endl;
 
     double rho = RPK->get_rho();  // set up analytic solution
     double mu = RPK->get_mu();
@@ -162,11 +148,9 @@ SUITE(Simple_1D_Flow) {
     RPK->advance_to_steady_state();
 
     double error = cell_pressure_error(p0, pressure_gradient); // error checks
-    CHECK(error < 1.0e-8);
-    error = face_pressure_error(p0, pressure_gradient);
-    CHECK(error < 1.0e-8);
+    CHECK(error < 5.0e-2);
     error = darcy_flux_error(velocity);
-    CHECK(error < 1.0e-8);
+    CHECK(error < 1.0e-2);
   }
 }
 

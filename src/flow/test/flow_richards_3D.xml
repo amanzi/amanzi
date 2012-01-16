@@ -51,15 +51,16 @@
 
       <ParameterList name="Steady state solution">
         <Parameter name="method" type="string" value="backward Euler"/>
-        <Parameter name="Absolute error tolerance" type="double" value="0.1"/>
-        <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
-        <Parameter name="Start pseudo time" type="double" value="-100.0"/>
-        <Parameter name="End pseudo time" type="double" value="0.0"/>
-        <Parameter name="Initial time step" type="double" value="1.0"/>
-        <Parameter name="Convergence tolerance" type="double" value="1e-12"/>
-        <Parameter name="Maximal number of iterations" type="int" value="200"/>
-        <Parameter name="Linear solver tolerance" type="double" value="1e-12"/>
-        <Parameter name="Linear solver maximal iterations" type="int" value="200"/>
+        <Parameter name="Absolute error tolerance" type="double" value="1000"/>
+        <Parameter name="Relative error tolerance" type="double" value="1e-3"/>
+        <Parameter name="Start pseudo time" type="double" value="0.0"/>
+        <Parameter name="End pseudo time" type="double" value="1e+12"/>
+        <Parameter name="Initial time step" type="double" value="1e+2"/>
+        <Parameter name="Maximal time step" type="double" value="1e+7"/>
+        <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
+        <Parameter name="Maximal number of iterations" type="int" value="2000"/>
+        <Parameter name="Linear solver tolerance" type="double" value="1e-14"/>
+        <Parameter name="Linear solver maximal iterations" type="int" value="100"/>
       </ParameterList>
 
       <ParameterList name="Transient solution">
@@ -82,7 +83,7 @@
          </ParameterList>
        </ParameterList>
 
-       <Parameter name="Upwind relative permeability" type="bool" value="false"/>
+       <Parameter name="Upwind relative permeability" type="bool" value="true"/>
 
        <ParameterList name="Water retention models">
          <ParameterList name="Water Retention Model for Bfr">
@@ -147,10 +148,8 @@
          <ParameterList name="mass flux">
            <ParameterList name="BC 0">
              <ParameterList name="outward mass flux">
-               <ParameterList name="function-tabular">
-                 <Parameter name="forms" type="Array string" value="{constant}"/>
-                 <Parameter name="x values" type="Array double" value="{0, 1e+09}"/>
-                 <Parameter name="y values" type="Array double" value="{-1.1076e-07, -1.1076e-07}"/>
+               <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="-1.1076e-07"/>
                </ParameterList>
              </ParameterList>
              <Parameter name="regions" type="Array string" value="{Top Surface Region}"/>
@@ -159,11 +158,16 @@
          <ParameterList name="pressure">
            <ParameterList name="BC 1">
              <ParameterList name="boundary pressure">
+               <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="101325"/>
+               </ParameterList>
+               <!--
                <ParameterList name="function-tabular">
                  <Parameter name="forms" type="Array string" value="{linear}"/>
                  <Parameter name="x values" type="Array double" value="{0, 1e+7}"/>
                  <Parameter name="y values" type="Array double" value="{1.11169e+06, 101325}"/>
                </ParameterList>
+               -->
              </ParameterList>
              <Parameter name="regions" type="Array string" value="{Bottom Surface Region}"/>
            </ParameterList>
