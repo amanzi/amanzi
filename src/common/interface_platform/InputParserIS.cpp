@@ -977,10 +977,20 @@ namespace Amanzi {
 	      Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 	      
 	      double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
-	      double permeability = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
-	      //double perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
-	      
-	      
+	      double perm_vert, perm_horiz;
+
+	      if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Uniform")) {
+		perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Uniform").get<double>("Value");
+		perm_horiz = perm_vert;
+	      }
+	      else if (matprop_list.sublist(matprop_list.name(i)).isSublist("Intrinsic Permeability: Anisotropic Uniform")) {
+		perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
+		perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
+	      }
+	      else {
+		// throw an error
+		
+	      }
 	 
 	      for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++)
 		{
@@ -990,7 +1000,8 @@ namespace Amanzi {
 		  Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
 
 		  stt_mat.set<double>("Constant porosity", porosity);
-		  stt_mat.set<double>("Constant permeability", permeability);
+		  stt_mat.set<double>("Constant vertical permeability", perm_vert);
+		  stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
 		  stt_mat.set<std::string>("Region", *i);
 
 		  comp_counter=0;
