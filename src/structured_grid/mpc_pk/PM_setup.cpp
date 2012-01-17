@@ -746,6 +746,20 @@ void PorousMedia::read_geometry()
               int color_value; ppr.get("color_value",color_value);
               std::string color_file; ppr.get("color_file",color_file);
 	      region_array[i] = new colorFunctionRegion(r_name[idx],r_purpose,r_type,color_file,color_value);
+
+	      // check if it is at the boundary.  If yes, then include boundary.
+	      Array<Real>r_param(2*BL_SPACEDIM);
+              colorFunctionRegion* cf = dynamic_cast<colorFunctionRegion*>(region_array[i]);
+              Real* lo = cf->vertex_lo;
+              Real* hi = cf->vertex_hi;
+              
+	      for (int dir=0;dir<BL_SPACEDIM; dir++)
+		{
+		  if (lo[dir] == problo[dir]) 
+		    lo[dir] = -2e20;
+		  if (hi[dir] == probhi[dir])
+		    hi[dir] = 2e20;
+		}
 	    }
           else BoxLib::Abort("type not supported");
 	}

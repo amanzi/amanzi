@@ -39,8 +39,9 @@ Region::setVal(FArrayBox&   fab,
 	  x[0] = dx[0]*(ix+0.5);
 	  if (inregion(x))
 	    {
-	      for (int n=scomp; n<ncomp;n++)
-		fab(IntVect(ix,iy),n) = val[n-scomp];
+                for (int n=scomp; n<ncomp;n++) {
+                    fab(IntVect(ix,iy),n) = val[n-scomp];
+                }
 	    }
 	}
     }
@@ -83,8 +84,9 @@ Region::setVal(FArrayBox&  fab,
       for (int ix=lo[0]; ix<hi[0]+1; ix++) 
 	{
 	  x[0] = dx[0]*(ix+0.5);
-	  if (inregion(x))
+	  if (inregion(x)) {
 	    fab(IntVect(ix,iy),idx) = val;
+          }
 	}
     }
 #else
@@ -97,9 +99,9 @@ Region::setVal(FArrayBox&  fab,
 	  for (int ix=lo[0]; ix<hi[0]+1; ix++) 
 	    {
 	      x[0] = dx[0]*(ix+0.5);
-	      if (inregion(x))
+	      if (inregion(x)) {
 		fab(IntVect(ix,iy,iz),idx) = val;
-		
+              }		
 	    }
 	}
     }
@@ -292,6 +294,14 @@ colorFunctionRegion::inregion (Array<Real>& x)
         return false;
     }
     IntVect idx = atIndex(x);
+    if ( !(m_color_map->box().contains(idx)) ) { // in hacked up boundary region
+        // Push index into "domain" and check there instead
+        const Box& domain = m_color_map->box();
+        for (int d=0; d<BL_SPACEDIM; ++d)
+        {
+            idx[d] = std::max(domain.smallEnd()[d],std::min(domain.bigEnd()[d],idx[d]));
+        }
+    }
     BL_ASSERT(m_color_map->box().contains(idx));
     return (*m_color_map)(idx,0) == m_color_val;
 }
