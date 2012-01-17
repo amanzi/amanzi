@@ -90,6 +90,7 @@ class ActivityModelPitzerHWM : public ActivityModel {
   std::vector<double> charge_product;                  // charge products [number_j_functions]
   std::vector<double> alpha1;                          // [number_b_functions]
   std::vector<double> alpha2;                          // [number_b_functions]
+  std::vector<double> const_j_functions;               // constant values for j functions
   double aphi_debye_huckel_slope;                      // Debye-Hückel limiting slope
   int number_b_functions;                              // Number of beta functions
   int number_j_functions;                              // Number of j functions

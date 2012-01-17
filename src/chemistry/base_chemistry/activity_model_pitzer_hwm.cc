@@ -62,6 +62,19 @@ ActivityModelPitzerHWM::ActivityModelPitzerHWM(const std::string& namedatabase,
       number_species(0),
       macinnes_scaled(false)
       {
+//---------------------------------------------------------------------------------------------
+// Store constant values for j functions
+// These constants were taken from Table III in Pitzer (1975).
+//---------------------------------------------------------------------------------------------
+const_j_functions.push_back(4.118);
+const_j_functions.push_back(7.247);
+const_j_functions.push_back(-4.408);
+const_j_functions.push_back(1.837);
+const_j_functions.push_back(-0.251);
+const_j_functions.push_back(0.0164);
+//---------------------------------------------------------------------------------------------
+// Read Pitzer coefficient database
+//---------------------------------------------------------------------------------------------
 ReadDataBase(namedatabase,primary_species,aqueous_complexes);
 }  // end ActivityModelPitzer constructor
 /*!
@@ -396,18 +409,10 @@ for (int j=0; j<number_b_functions; j++) {
     @class ActivityModelPitzerHWM
 
     @details Compute the J's functions.
-    These constants were taken from Table III in Pitzer (1975).
 */
 void ActivityModelPitzerHWM::ComputeJFunctions(){
 const double e1(4.581), e2(0.7237),
 		     e3(0.012), e4(0.528), e12(7.8963);
-std::vector<double> d;
-d.push_back(4.118);
-d.push_back(7.247);
-d.push_back(-4.408);
-d.push_back(1.837);
-d.push_back(-0.251);
-d.push_back(0.0164);
 for (int i=0;i<number_j_functions; i++) {
  double zizj(charge_product.at(i));
  double x(2.352*sqrt(I_)*zizj);
@@ -415,11 +420,11 @@ for (int i=0;i<number_j_functions; i++) {
  double x3(x2*x);
  double x4(x3*x);
  if (x<=0.03) {
-  double s1(d.at(5)/x);
+  double s1(const_j_functions.at(5)/x);
   double s3(6.0*s1);
   for (int k=4; k>=0; k--) {
-	s1=(s1+d.at(k))/x;
-	s3=(s3+k*d.at(k))/x;
+	s1=(s1+const_j_functions.at(k))/x;
+	s3=(s3+k*const_j_functions.at(k))/x;
   }
   s3=s3/x;
   double s1q(s1*s1);
