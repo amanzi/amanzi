@@ -208,7 +208,7 @@ int Richards_PK::advanceSteadyState_BDF2()
   dT = dT0_sss;
 
   int itrs = 0;
-  while (itrs < max_itrs_sss || T_internal < T1_sss) {
+  while (itrs < max_itrs_sss && T_internal < T1_sss) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
       computeUDot(T0_sss, *solution, udot);

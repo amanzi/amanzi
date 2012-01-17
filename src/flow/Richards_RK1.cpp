@@ -67,7 +67,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     double sol_norm = FS->normL2cell(solution_new);
     L2error = errorSolutionDiff(solution_old, solution_new);
 
-    if (L2error > 10.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess. 
+    if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess. 
       dT /= 10;
       solution_new = solution_old;
       if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {

@@ -27,7 +27,7 @@ void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
 
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
 
-    if (nfaces == 6) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+    if (nfaces == 6 || nfaces == 4) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
     else mfd.darcy_mass_inverse(c, K[c], Bff);
     Minv_cells.push_back(Bff);
   }
@@ -40,6 +40,7 @@ void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
 void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K, 
                                             Epetra_Vector& Krel_faces)
 {
+  int dim = mesh_->space_dimension();
   WhetStone::MFD3D mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
 
@@ -56,7 +57,7 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if (nfaces == 6) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+    if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
     else mfd.darcy_mass_inverse(c, K[c], Bff);
     //mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
 
