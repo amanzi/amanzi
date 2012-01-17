@@ -32,8 +32,6 @@ class Flow_State {
   ~Flow_State() {};
 
   // data management
-  void copyMemoryMultiVector(Epetra_MultiVector& source, Epetra_MultiVector& target);
-  void copyMemoryVector(Epetra_Vector& source, Epetra_Vector& target);
   void copyMasterCell2GhostCell(Epetra_Vector& v);
   void copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v);
   void combineGhostFace2MasterFace(Epetra_Vector& v, Epetra_CombineMode mode = Insert);
@@ -48,13 +46,13 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> get_absolute_permeability() { return absolute_permeability; }
   Teuchos::RCP<double*> get_gravity() { return gravity; }
   Teuchos::RCP<Epetra_Vector> get_pressure() { return pressure; }
-  Teuchos::RCP<Epetra_Vector> get_darcy_flux () { return darcy_flux; }
+  Teuchos::RCP<Epetra_Vector> get_darcy_mass_flux() { return darcy_mass_flux; }
   Teuchos::RCP<Epetra_Vector> get_water_saturation() { return water_saturation; }
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
 
   Epetra_Vector& ref_porosity() { return *porosity; }
   Epetra_Vector& ref_pressure() { return *pressure; }
-  Epetra_Vector& ref_darcy_flux() { return *darcy_flux; }
+  Epetra_Vector& ref_darcy_mass_flux() { return *darcy_mass_flux; }
   Epetra_Vector& ref_absolute_permeability() { return *absolute_permeability; }
   double ref_fluid_density() { return *fluid_density; }
   double ref_fluid_viscosity() { return *fluid_viscosity; }
@@ -78,7 +76,7 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> absolute_permeability;
   Teuchos::RCP<Epetra_Vector> pressure;
   Teuchos::RCP<Epetra_Vector> porosity;
-  Teuchos::RCP<Epetra_Vector> darcy_flux;
+  Teuchos::RCP<Epetra_Vector> darcy_mass_flux;
   Teuchos::RCP<Epetra_Vector> water_saturation;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

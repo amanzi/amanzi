@@ -30,8 +30,7 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
   T_internal = T_physical = dT = 0.0;
   standalone_mode = false;
 
-  FS_nextBIG = Teuchos::rcp(new Flow_State(*FS, CopyMemory) );  
-  FS_nextMPC = Teuchos::rcp(new Flow_State(*FS_nextBIG, ViewMemory));
+  FS_next = Teuchos::rcp(new Flow_State(*FS, CopyMemory) );  
 
   const Epetra_Map& cmap = mesh_->cell_map(true);
   cmin = cmap.MinLID();
@@ -166,7 +165,7 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 ****************************************************************** */
 void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
                                          const Epetra_Vector& Krel_faces,
-                                         Epetra_Vector& darcy_flux)
+                                         Epetra_Vector& darcy_mass_flux)
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim); 
@@ -186,7 +185,7 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
       if (!flag[f]) {
-        darcy_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
+        darcy_mass_flux[f] += ((K[c] * gravity) * normal) * Krel_faces[f];
         flag[f] = 1;
       }
     }
@@ -196,7 +195,8 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 
 /* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
-* and sign of the Darcy velocity.                               
+* and sign of the Darcy velocity. 
+* WARNING: It is *not* used now.                              
 ******************************************************************* */
 void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
 {
@@ -205,7 +205,7 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
     downwind_cell[f] = -1;
   }
 
-  Epetra_Vector& darcy_flux = FS_nextBIG->ref_darcy_flux();
+  Epetra_Vector& darcy_mass_flux = FS->ref_darcy_mass_flux();
   AmanziMesh::Entity_ID_List faces; 
   std::vector<int> fdirs;
 
@@ -215,7 +215,7 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
 
     for (int i=0; i<faces.size(); i++) {
       int f = faces[i];
-      if (darcy_flux[f] * fdirs[i] >= 0) upwind_cell[f] = c; 
+      if (darcy_mass_flux[f] * fdirs[i] >= 0) upwind_cell[f] = c; 
       else downwind_cell[f] = c; 
     }
   }

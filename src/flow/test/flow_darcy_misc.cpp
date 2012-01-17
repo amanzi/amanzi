@@ -83,7 +83,7 @@ class DarcyProblem {
     function_list.set("value", value);
   }
   
-  double cellPressureError(double p0, AmanziGeometry::Point& pressure_gradient)
+  double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient)
   {
     Epetra_Vector& solution_cells = DPK->get_solution_cells();
 
@@ -98,7 +98,7 @@ class DarcyProblem {
     return sqrt(error_L2);
   }
 
-  double face_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
+  double calculatePressureFaceError(double p0, AmanziGeometry::Point& pressure_gradient)
   {
     Epetra_Vector& solution_faces = DPK->get_solution_faces();
 
@@ -112,16 +112,16 @@ class DarcyProblem {
     return sqrt(error_L2);
   }
 
-  double darcy_flux_error(AmanziGeometry::Point& velocity_exact)
+  double calculateDarcyMassFluxError(AmanziGeometry::Point& velocity_exact)
   {
-    Epetra_Vector& darcy_flux = *(DPK->get_FS().get_darcy_flux());
+    Epetra_Vector& darcy_mass_flux = *(DPK->get_flow_state_next()->get_darcy_mass_flux());
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f=0; f<nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
-      error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
+//cout << f << " " << darcy_mass_flux[f] << " exact=" << velocity_exact * normal << endl;
+      error_L2 += std::pow(darcy_mass_flux[f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
   }
@@ -151,11 +151,11 @@ SUITE(Simple_1D_Flow) {
     DPK->Init();  // setup the problem
     DPK->advance_to_steady_state();
 
-    double error = cellPressureError(p0, pressure_gradient);  // error checks
+    double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(error < 1.0e-8);
-    error = face_pressure_error(p0, pressure_gradient);
+    error = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-    error = darcy_flux_error(velocity);
+    error = calculateDarcyMassFluxError(velocity);
     CHECK(error < 1.0e-8);
   }
 
@@ -184,11 +184,11 @@ SUITE(Simple_1D_Flow) {
     DPK->Init();  // setup the problem
     DPK->advance_to_steady_state();
 
-    double error = cellPressureError(p0, pressure_gradient);
+    double error = calculatePressureCellError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-    error = face_pressure_error(p0, pressure_gradient);
+    error = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-    error = darcy_flux_error(velocity);
+    error = calculateDarcyMassFluxError(velocity);
     CHECK(error < 1.0e-8);
   }
 
@@ -214,11 +214,11 @@ SUITE(Simple_1D_Flow) {
     DPK->Init();  // setup the problem
     DPK->advance_to_steady_state();
 
-    double error = cellPressureError(p0, pressure_gradient);  // error checks
+    double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
     CHECK(error < 1.0e-8);
-    error = face_pressure_error(p0, pressure_gradient);
+    error = calculatePressureFaceError(p0, pressure_gradient);
     CHECK(error < 1.0e-8);
-    error = darcy_flux_error(velocity);
+    error = calculateDarcyMassFluxError(velocity);
     CHECK(error < 1.0e-8);
   }
 }

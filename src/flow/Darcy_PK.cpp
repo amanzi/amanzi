@@ -171,10 +171,11 @@ int Darcy_PK::advance_to_steady_state()
               << "Norm of true residual = " << residual_sss << std::endl;
   }
 
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
+  // calculate darcy mass flux
+  Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
+  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
 
   return 0;
 }

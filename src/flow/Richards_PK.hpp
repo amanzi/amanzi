@@ -82,7 +82,6 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
   const Epetra_Map& get_super_map() { return *super_map_; }
 
-  Flow_State& get_FS() { return *FS; }
   Matrix_MFD* get_matrix() { return matrix; }
 
   Epetra_Vector& get_solution() { return *solution; }
@@ -100,7 +99,6 @@ class Richards_PK : public Flow_PK {
  private:
   Teuchos::ParameterList rp_list;
 
-  Teuchos::RCP<Flow_State> FS;
   AmanziGeometry::Point gravity;
   double rho, mu;
   double atm_pressure;

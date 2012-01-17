@@ -91,12 +91,6 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
 
     if (T_internal > T1_sss) break;
   }
-  
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
-
   return 0;
 }
 

@@ -97,12 +97,12 @@ class Flow_PK : public BDF2::fnBase {
                             Matrix_MFD* matrix);
   void addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K, 
                                   const Epetra_Vector& Krel_faces,
-                                  Epetra_Vector& darcy_flux);
+                                  Epetra_Vector& darcy_mass_flux);
 
   // access members  
   Teuchos::RCP<Flow_State> get_flow_state() { return FS; }
-  Teuchos::RCP<Flow_State> get_flow_state_next() { return FS_nextMPC; }
-  Flow_State& ref_flow_state_next() { return *FS_nextBIG; }
+  Teuchos::RCP<Flow_State> get_flow_state_next() { return FS_next; }
+  Flow_State& ref_flow_state_next() { return *FS_next; }
 
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
 
@@ -127,8 +127,7 @@ class Flow_PK : public BDF2::fnBase {
   int verbosity_level, internal_tests;  // output information
  
   Teuchos::RCP<Flow_State> FS;
-  Teuchos::RCP<Flow_State> FS_nextBIG;  // involves both owned and ghost values
-  Teuchos::RCP<Flow_State> FS_nextMPC;  // uses physical memory of FS_nextBIG
+  Teuchos::RCP<Flow_State> FS_next; 
   
   double T_internal, T_physical, dT, dT0;
   int status;

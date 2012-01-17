@@ -85,7 +85,7 @@ class RichardsProblem {
     function_list.set("value", value);
   }
   
-  double cell_pressure_error()
+  double calculatePressureCellError()
   {
     Epetra_Vector& solution_cells = RPK->get_solution_cells();
 
@@ -106,9 +106,9 @@ class RichardsProblem {
     return sqrt(error_L2);
   }
 
-  double darcy_flux_error()
+  double calculateDarcyMassFluxError()
   {
-    Epetra_Vector& darcy_flux = *(RPK->get_FS().get_darcy_flux());
+    Epetra_Vector& darcy_mass_flux = *(RPK->ref_flow_state_next().get_darcy_mass_flux());
 
     double cr = 1.02160895462971866;  // analytical data
     AmanziGeometry::Point velocity_exact(0.0, 0.0, -cr);
@@ -117,8 +117,8 @@ class RichardsProblem {
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f=0; f<nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
-      error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
+//cout << f << " " << darcy_mass_flux[f] << " exact=" << velocity_exact * normal << endl;
+      error_L2 += std::pow(darcy_mass_flux[f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
   }
@@ -140,9 +140,9 @@ SUITE(Simple_1D_Flow) {
     RPK->Init();  // setup the problem
     RPK->advance_to_steady_state();
 
-    double error = cell_pressure_error(); // error checks
+    double error = calculatePressureCellError(); // error checks
     CHECK(error < 5.0e-2);
-    error = darcy_flux_error();
+    error = calculateDarcyMassFluxError();
     CHECK(error < 1.0e-2);
   }
 }

@@ -175,15 +175,27 @@ int Richards_PK::advance_to_steady_state()
 
   for (int c=0; c<ncells; c++) (*solution_cells)[c] = FS->ref_pressure()[c];
   deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-  //applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
+  applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
 
+  int ierr = 0;
   if (method_sss == FLOW_STEADY_STATE_PICARD) {
-    return advanceSteadyState_Picard();
+    ierr = advanceSteadyState_Picard();
   } else if (method_sss == FLOW_STEADY_STATE_BACKWARD_EULER) {
-    return advanceSteadyState_BackwardEuler();
+    ierr = advanceSteadyState_BackwardEuler();
   } else if (method_sss == FLOW_STEADY_STATE_BDF2) {
-    return advanceSteadyState_BDF2();
+    ierr = advanceSteadyState_BDF2();
   }
+
+  //create flow state to be returned
+  FS_next->ref_pressure() = *solution_cells;
+
+  // calculate darcy mass flux
+  Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
+  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
+
+  return ierr;
 }
 
 
@@ -214,21 +226,7 @@ int Richards_PK::advanceSteadyState_BDF2()
     T_internal = bdf2_dae->most_recent_time();
     dT = dTnext;
     itrs++;
-
-    // DEBUG
-    /*
-    GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(*solution_cells, 0, "pressure");
-    GMV::close_data_file();
-    */
   }
-  
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
-
   return 0;
 }
 
@@ -304,11 +302,6 @@ int Richards_PK::advanceSteadyState_Picard()
     T_internal += dT;
     itrs++;
   }
-  
-  Epetra_Vector& darcy_flux = FS->ref_darcy_flux();
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
-  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_flux);
-  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_flux);
 
   return 0;
 }

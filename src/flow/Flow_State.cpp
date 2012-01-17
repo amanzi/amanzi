@@ -26,7 +26,7 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   gravity = S->get_gravity();
   absolute_permeability = S->get_permeability();
   pressure = S->get_pressure();
-  darcy_flux = S->get_darcy_flux();
+  darcy_mass_flux = S->get_darcy_flux();
   mesh_ = S->get_mesh_maps();
 
   S_ = &*S;
@@ -41,7 +41,7 @@ Flow_State::Flow_State(State& S)
   gravity = S.get_gravity();
   absolute_permeability = S.get_permeability();
   pressure = S.get_pressure();
-  darcy_flux = S.get_darcy_flux();
+  darcy_mass_flux = S.get_darcy_flux();
   mesh_ = S.get_mesh_maps();
 
   S_ = &S;
@@ -49,12 +49,10 @@ Flow_State::Flow_State(State& S)
 
 
 /* *******************************************************************
- * mode = CopyPointers (default) a trivial copy of the given state           
- * mode = ViewMemory   creates the flow state from internal one   
- *                     as the MPC expected                     
- * mode = CopyMemory   creates internal flow state based on the
- *                     ovelapped mesh maps                       
- * **************************************************************** */
+* mode = CopyPointers (default) a trivial copy of the given state           
+* mode = ViewMemory   creates the flow state from internal one   
+*                     as the MPC expected                     
+******************************************************************* */
 Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
 {
   if (mode == CopyPointers) {
@@ -64,9 +62,9 @@ Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
     gravity = S.get_gravity();
     absolute_permeability = S.get_absolute_permeability();
     pressure = S.get_pressure();
-    darcy_flux = S.get_darcy_flux();
+    darcy_mass_flux = S.get_darcy_mass_flux();
     mesh_ = S.get_mesh();
-  }
+  } 
   else if (mode == CopyMemory ) { 
     porosity = S.get_porosity();
     fluid_density = S.get_fluid_density();
@@ -75,101 +73,12 @@ Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
     absolute_permeability = S.get_absolute_permeability();
     mesh_ = S.get_mesh();
 
-    // allocate memory for internal state
-    const Epetra_Map& cmap = mesh_->cell_map(true);
-    const Epetra_Map& fmap = mesh_->face_map(true);
-
-    pressure = Teuchos::rcp(new Epetra_Vector(cmap));
-    copyMemoryVector(S.ref_pressure(), *pressure);
-
-    darcy_flux = Teuchos::rcp(new Epetra_Vector(fmap));
-    copyMemoryVector(S.ref_darcy_flux(), *darcy_flux);
-  }
-
-  else if (mode == ViewMemory) {
-    porosity = S.get_porosity(); 
-    fluid_density = S.get_fluid_density();
-    fluid_viscosity = S.get_fluid_viscosity();
-    gravity = S.get_gravity();
-    absolute_permeability = S.get_absolute_permeability();
-    mesh_ = S.get_mesh();
-
-    double *data_dp, *data_ddf;
-    const Epetra_Map& cmap = mesh_->cell_map(false);
-    const Epetra_Map& fmap = mesh_->face_map(false);
-
-    Epetra_Vector& dp = S.ref_pressure();
-    dp.ExtractView(&data_dp);     
-    pressure = Teuchos::rcp(new Epetra_Vector(View, cmap, data_dp));
-
-    Epetra_Vector& ddf = S.ref_darcy_flux();
-    ddf.ExtractView(&data_ddf);     
-    darcy_flux = Teuchos::rcp(new Epetra_Vector(View, fmap, data_ddf));
+    // allocate memory for the next state
+    pressure = Teuchos::rcp(new Epetra_Vector(S.ref_pressure()));
+    darcy_mass_flux = Teuchos::rcp(new Epetra_Vector(S.ref_darcy_mass_flux()));
   }
 
   S_ = S.S_;
-}
-
-
-/* *******************************************************************
- * Routine imports a short multivector to a parallel overlaping vector.
- ****************************************************************** */
-void Flow_State::copyMemoryMultiVector(Epetra_MultiVector& source, 
-                                       Epetra_MultiVector& target)
-{
-  const Epetra_BlockMap& source_cmap = source.Map();
-  const Epetra_BlockMap& target_cmap = target.Map();
-
-  int cmin, cmax, cmax_s, cmax_t;
-  cmin = source_cmap.MinLID();
-  cmax_s = source_cmap.MaxLID();
-  cmax_t = target_cmap.MaxLID();
-  cmax = std::min(cmax_s, cmax_t);
-
-  int number_vectors = source.NumVectors();
-  for (int c=cmin; c<=cmax; c++) {
-    for (int i=0; i<number_vectors; i++) target[i][c] = source[i][c];
-  }
-
-#ifdef HAVE_MPI
-  if (cmax_s > cmax_t) {
-    Errors::Message msg;
-    msg << "Source map (in copy_multivector) is larger than target map.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Epetra_Import importer(target_cmap, source_cmap);
-  target.Import(source, importer, Insert);
-#endif
-}
-
-
-/* *******************************************************************
- * Routine imports a short vector to a parallel overlaping vector.                
- ****************************************************************** */
-void Flow_State::copyMemoryVector(Epetra_Vector& source, Epetra_Vector& target)
-{
-  const Epetra_BlockMap& source_fmap = source.Map();
-  const Epetra_BlockMap& target_fmap = target.Map();
-
-  int fmin, fmax, fmax_s, fmax_t;
-  fmin   = source_fmap.MinLID();
-  fmax_s = source_fmap.MaxLID();
-  fmax_t = target_fmap.MaxLID();
-  fmax   = std::min(fmax_s, fmax_t);
-
-  for (int f=fmin; f<=fmax; f++) target[f] = source[f];
-
-#ifdef HAVE_MPI
-  if (fmax_s > fmax_t)  {
-    Errors::Message msg;
-    msg << "Source map (in copy_vector) is larger than target map.\n";
-    Exceptions::amanzi_throw(msg);
-  }
-
-  Epetra_Import importer(target_fmap, source_fmap);
-  target.Import(source, importer, Insert);
-#endif
 }
 
 

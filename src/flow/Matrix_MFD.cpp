@@ -468,7 +468,7 @@ int Matrix_MFD::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 ****************************************************************** */
 void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution, 
                                  const Epetra_Import& face_importer, 
-                                 Epetra_Vector& darcy_flux)
+                                 Epetra_Vector& darcy_mass_flux)
 {
   Epetra_Vector* solution_faces = FS->createFaceView(solution);
 #ifdef HAVE_MPI
@@ -502,7 +502,7 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
       if (!flag[f]) {
         double s = 0.0;
         for (int m=0; m<nfaces; m++) s += Aff_cells[c](n, m) * dp[m];
-        darcy_flux[f] = s * dirs[n];
+        darcy_mass_flux[f] = s * dirs[n];
         flag[f] = 1;
       }
     }
@@ -514,7 +514,8 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
 * Derive Darcy velocity in cells. 
 * WARNING: It cannot be consistent with the Darcy flux.                                                 
 ****************************************************************** */
-void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_flux, Epetra_MultiVector& darcy_velocity) const
+void Matrix_MFD::deriveDarcyVelocity(
+    const Epetra_Vector& darcy_mass_flux, Epetra_MultiVector& darcy_velocity) const
 {
   Teuchos::LAPACK<int, double> lapack;
   double rhs_cell[FLOW_MAX_FACES];
@@ -537,7 +538,7 @@ void Matrix_MFD::deriveDarcyVelocity(const Epetra_Vector& darcy_flux, Epetra_Mul
       double area = mesh_->face_area(f);
 
       for (int i=0; i<dim; i++) {
-        rhs_cell[i] += normal[i] * darcy_flux[f] * dirs[f];
+        rhs_cell[i] += normal[i] * darcy_mass_flux[f] * dirs[f];
         matrix(i,i) += normal[i] * normal[i]; 
         for (int j=i+1; j<dim; j++) {
           matrix(j,i) = matrix(i,j) += normal[i] * normal[j];
