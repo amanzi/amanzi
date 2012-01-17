@@ -13,11 +13,10 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = s du/dt + A*u - g.                                              
 ****************************************************************** */
-void Richards_PK::fun(
-    const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
+void Richards_PK::fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
 {
   T_internal = T_physical = T;
-  computePreconditionerMFD(u, matrix, 0.0, false);  // Calculate only stiffness matrix.
+  computePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeResidual(u, f);  // compute g - A*u
 
   Epetra_Vector* u_cells = FS->createCellView(u);
@@ -49,10 +48,9 @@ void Richards_PK::precon(const Epetra_Vector& X, Epetra_Vector& Y)
 * Compute new preconditioner B(p, dT_prec). For BDF2 method, we need
 * a separate memory allocation.                                              
 ****************************************************************** */
-void Richards_PK::update_precon(
-    const double T, const Epetra_Vector& u, const double dT_prec, int& ierr)
+void Richards_PK::update_precon(double Tp, const Epetra_Vector& u, double dTp, int& ierr)
 {
-  computePreconditionerMFD(u, preconditioner, dT_prec);
+  computePreconditionerMFD(u, preconditioner, Tp, dTp, true);
   ierr = 0;
 }
 

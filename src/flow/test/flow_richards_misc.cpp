@@ -85,7 +85,7 @@ class RichardsProblem {
     function_list.set("value", value);
   }
   
-  double cell_pressure_error(double p0, AmanziGeometry::Point& pressure_gradient)
+  double cell_pressure_error()
   {
     Epetra_Vector& solution_cells = RPK->get_solution_cells();
 
@@ -106,18 +106,19 @@ class RichardsProblem {
     return sqrt(error_L2);
   }
 
-  double darcy_flux_error(AmanziGeometry::Point& velocity_exact)
+  double darcy_flux_error()
   {
     Epetra_Vector& darcy_flux = *(RPK->get_FS().get_darcy_flux());
 
     double cr = 1.02160895462971866;  // analytical data
+    AmanziGeometry::Point velocity_exact(0.0, 0.0, -cr);
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     for (int f=0; f<nfaces; f++) {
-      const double area = mesh->face_area(f);      
-//cout << f << " " << xf << " " << darcy_flux[f] << " exact=" << cr << endl;
-      error_L2 += std::pow(darcy_flux[f] - cr * area, 2.0);
+      const AmanziGeometry::Point& normal = mesh->face_normal(f);      
+//cout << f << " " << darcy_flux[f] << " exact=" << velocity_exact * normal << endl;
+      error_L2 += std::pow(darcy_flux[f] - velocity_exact * normal, 2.0);
     }
     return sqrt(error_L2);
   }
@@ -127,14 +128,6 @@ class RichardsProblem {
 SUITE(Simple_1D_Flow) {
   TEST_FIXTURE(RichardsProblem, DirichletDirichlet) {
     if (MyPID == 0) std::cout <<"Richards 1D: Dirichlet-Dirichlet" << std::endl;
-
-    double rho = RPK->get_rho();  // set up analytic solution
-    double mu = RPK->get_mu();
-
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * RPK->get_gravity()) / mu;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -147,9 +140,9 @@ SUITE(Simple_1D_Flow) {
     RPK->Init();  // setup the problem
     RPK->advance_to_steady_state();
 
-    double error = cell_pressure_error(p0, pressure_gradient); // error checks
+    double error = cell_pressure_error(); // error checks
     CHECK(error < 5.0e-2);
-    error = darcy_flux_error(velocity);
+    error = darcy_flux_error();
     CHECK(error < 1.0e-2);
   }
 }

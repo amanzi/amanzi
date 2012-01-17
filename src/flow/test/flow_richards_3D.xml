@@ -42,15 +42,15 @@
        </ParameterList>
 
       <ParameterList name="Steady state solution">
-        <Parameter name="method" type="string" value="backward Euler"/>
-        <Parameter name="Absolute error tolerance" type="double" value="1000"/>
-        <Parameter name="Relative error tolerance" type="double" value="1e-3"/>
+        <Parameter name="method" type="string" value="BDF2"/>
+        <Parameter name="Absolute error tolerance" type="double" value="1"/>
+        <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
         <Parameter name="Start pseudo time" type="double" value="0.0"/>
-        <Parameter name="End pseudo time" type="double" value="1e+12"/>
-        <Parameter name="Initial time step" type="double" value="1e+2"/>
+        <Parameter name="End pseudo time" type="double" value="1e+10"/>
+        <Parameter name="Initial time step" type="double" value="1e-7"/>
         <Parameter name="Maximal time step" type="double" value="1e+7"/>
         <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
-        <Parameter name="Maximal number of iterations" type="int" value="2000"/>
+        <Parameter name="Maximal number of iterations" type="int" value="5000"/>
         <Parameter name="Linear solver tolerance" type="double" value="1e-14"/>
         <Parameter name="Linear solver maximal iterations" type="int" value="100"/>
       </ParameterList>

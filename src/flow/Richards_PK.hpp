@@ -47,10 +47,10 @@ class Richards_PK : public Flow_PK {
   int advanceSteadyState_BDF2();
  
   // required BDF2 methods
-  void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs);
+  void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs);
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
-  void update_precon(const double T, const Epetra_Vector& u, const double dT, int& ierr);
+  void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);
 
   // other main methods
   void processParameterList();
@@ -59,11 +59,12 @@ class Richards_PK : public Flow_PK {
   void calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
   void calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& darcy_flux);
 
-  void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix);
-  void addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dT_prec, Matrix_MFD* matrix);
+  void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
+  void addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
 
-  double computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot);
-  void computePreconditionerMFD(const Epetra_Vector &u, Matrix_MFD* matrix, double dT_prec, bool flag_update_ML = true);
+  double computeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot);
+  void computePreconditionerMFD(
+      const Epetra_Vector &u, Matrix_MFD* matrix, double Tp, double dTp, bool flag_update_ML);
   double errorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew);
 
   void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);

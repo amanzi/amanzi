@@ -110,6 +110,7 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   solution_cells = Teuchos::rcp(FS->createCellView(*solution));
   solution_faces = Teuchos::rcp(FS->createFaceView(*solution));
   rhs = Teuchos::rcp(new Epetra_Vector(*super_map_));
+  rhs = matrix->get_rhs();  // import rhs from the matrix 
 
   // Get some solver parameters from the flow parameter list.
   processParameterList();
@@ -174,7 +175,7 @@ int Richards_PK::advance_to_steady_state()
 
   for (int c=0; c<ncells; c++) (*solution_cells)[c] = FS->ref_pressure()[c];
   deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
-  applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
+  //applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
 
   if (method_sss == FLOW_STEADY_STATE_PICARD) {
     return advanceSteadyState_Picard();
@@ -191,34 +192,18 @@ int Richards_PK::advance_to_steady_state()
 ******************************************************************* */
 int Richards_PK::advanceSteadyState_BDF2() 
 {
-  int itrs = 0;
   T_internal = T0_sss;
   dT = dT0_sss;
 
-  while (itrs < max_itrs_sss) {
-    calculateRelativePermeability(*solution_cells);
-    setAbsolutePermeabilityTensor(K);
-    if (flag_upwind) {  // Define K and Krel_faces
-      calculateRelativePermeabilityUpwindGravity(*solution_cells);
-      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
-      for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
-    }
-
-    // update boundary conditions
-    double time = T_internal; 
-    bc_pressure->Compute(time);
-    bc_flux->Compute(time);
-    bc_head->Compute(time);
-    updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
-
+  int itrs = 0;
+  while (itrs < max_itrs_sss || T_internal < T1_sss) {
     if (itrs == 0) {  // initialization of BDF2
       Epetra_Vector udot(*super_map_);
-      computeUDot(time, *solution, udot);
-      bdf2_dae->set_initial_state(time, *solution, udot);
+      computeUDot(T0_sss, *solution, udot);
+      bdf2_dae->set_initial_state(T0_sss, *solution, udot);
 
       int ierr;
-      update_precon(time, *solution, dT, ierr);
+      update_precon(T0_sss, *solution, dT0_sss, ierr);
     }
 
     double dTnext;
@@ -286,7 +271,6 @@ int Richards_PK::advanceSteadyState_Picard()
     matrix->update_ML_preconditioner();
 
     // check convergence of non-linear residual
-    rhs = matrix->get_rhs();
     L2error = matrix->computeResidual(solution_new, residual);
 
     // call AztecOO solver
@@ -335,24 +319,6 @@ int Richards_PK::advanceSteadyState_Picard()
 ******************************************************************* */
 int Richards_PK::advance(double dT) 
 {
-  solver->SetAztecOption(AZ_output, AZ_none);
-
-  calculateRelativePermeability(*solution_cells);
-  if (flag_upwind) calculateRelativePermeabilityUpwindGravity(*solution_cells);
- 
-  // work-around limited support for tensors
-  setAbsolutePermeabilityTensor(K);  
-  for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;
-
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);
-  matrix->createMFDrhsVectors();
-  addGravityFluxes_MFD(K, *Krel_faces, matrix);
-  addTimeDerivative_MFD(*solution_cells, dT, matrix);
-  matrix->applyBoundaryConditions(bc_markers, bc_values);
-  matrix->assembleGlobalMatrices();
-  matrix->computeSchurComplement(bc_markers, bc_values);
-  matrix->update_ML_preconditioner();
-
   T_physical = FS->get_time();
   double time = (standalone_mode) ? T_internal : T_physical;
   double dTnext;
@@ -400,11 +366,12 @@ void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Ep
 /* ******************************************************************
 * Estimate du/dt from the pressure equations, du/dt = g - A*u.
 ****************************************************************** */
-double Richards_PK::computeUDot(const double T, const Epetra_Vector& u, Epetra_Vector& udot)
+double Richards_PK::computeUDot(double T, const Epetra_Vector& u, Epetra_Vector& udot)
 {
   double norm_udot;
-  computePreconditionerMFD(u, matrix, 0.0, false);  // Calculate only stiffness matrix.
+  computePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
   norm_udot = matrix->computeResidual(u, udot);
+  udot.Update(-1.0, udot, 0.0);
 
   Epetra_Vector* udot_faces = FS->createFaceView(udot);
   udot_faces->PutScalar(0.0);
@@ -418,13 +385,13 @@ double Richards_PK::computeUDot(const double T, const Epetra_Vector& u, Epetra_V
 * preconditioner Sff(u) using internal time step dT.                             
 ****************************************************************** */
 void Richards_PK::computePreconditionerMFD(
-    const Epetra_Vector& u, Matrix_MFD* matrix, double dT_prec, bool flag_update_ML)
+    const Epetra_Vector& u, Matrix_MFD* matrix, double Tp, double dTp, bool flag_update_ML)
 {
-  Epetra_Vector* u_cells = FS->createCellView(u);
-
   // setup absolute and compute relative permeabilities
+  Epetra_Vector* u_cells = FS->createCellView(u);
   calculateRelativePermeability(*u_cells);
   setAbsolutePermeabilityTensor(K);
+
   if (flag_upwind) {  // Define K and Krel_faces
     calculateRelativePermeabilityUpwindGravity(*u_cells);
     for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
@@ -432,11 +399,17 @@ void Richards_PK::computePreconditionerMFD(
     for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
   }
 
+  // update boundary conditions
+  bc_pressure->Compute(Tp);
+  bc_flux->Compute(Tp);
+  bc_head->Compute(Tp);
+  updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
+
   // setup new algebraic problems
   matrix->createMFDstiffnessMatrices(K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
-  if (flag_update_ML) addTimeDerivative_MFD(*u_cells, dT_prec, matrix);
+  if (flag_update_ML) addTimeDerivative_MFD(*u_cells, dTp, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
   matrix->assembleGlobalMatrices();
   if (flag_update_ML) {

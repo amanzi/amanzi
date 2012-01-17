@@ -39,7 +39,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/bc-cribs-1D.xml"; //flow_richards_3D.xml";
+  string xmlFileName = "test/flow_richards_3D.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create a mesh framework 
@@ -48,10 +48,10 @@ TEST(FLOW_3D_RICHARDS) {
 
   MeshFactory factory(comm);
   ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
-  //ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
-  //Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
-  std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
-  Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
+  ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
+  Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  //std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
+  //Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
