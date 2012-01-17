@@ -73,7 +73,7 @@ const_j_functions.push_back(1.837);
 const_j_functions.push_back(-0.251);
 const_j_functions.push_back(0.0164);
 //---------------------------------------------------------------------------------------------
-// Read Pitzer coefficient database
+// Read Pitzer coefficients database
 //---------------------------------------------------------------------------------------------
 ReadDataBase(namedatabase,primary_species,aqueous_complexes);
 }  // end ActivityModelPitzer constructor
