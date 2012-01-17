@@ -67,7 +67,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   RichardsProblem problem(mesh, richards_list);
   problem.set_flow_state(FS);
-  problem.set_absolute_permeability(FS->get_permeability());
+  problem.set_absolute_permeability(FS->get_vertical_permeability());
 
   // create the Richards Model Evaluator
   ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
@@ -124,8 +124,10 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
 
   Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
   
+
   // iterate
   int i = 0;
   double tlast = t0;
@@ -147,14 +149,16 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
       Amanzi::CGNS::open_data_file(cgns_filename);
       Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
       Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-      Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
+      Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
+      Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
     }
   } while (t1 >= tlast);
 
   Amanzi::CGNS::open_data_file(cgns_filename);
   Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
   Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
   for (int k=0; k<100; k++) std::cout << k << " " << u[k] << std::endl;
  
   delete comm;

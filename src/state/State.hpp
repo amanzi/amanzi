@@ -33,7 +33,8 @@ public:
   Teuchos::RCP<Epetra_Vector>       get_porosity ()         { return porosity; };
   Teuchos::RCP<Epetra_Vector>       get_water_saturation () { return water_saturation; };
   Teuchos::RCP<Epetra_Vector>       get_water_density ()    { return water_density; };
-  Teuchos::RCP<Epetra_Vector>       get_permeability ()     { return permeability; };
+  Teuchos::RCP<Epetra_Vector>       get_vertical_permeability ()     { return vertical_permeability; };
+  Teuchos::RCP<Epetra_Vector>       get_horizontal_permeability ()   { return vertical_permeability; };
   
   Teuchos::RCP<double>              get_density()      { return density; } 
   Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
@@ -81,6 +82,12 @@ public:
   void set_permeability (const double kappa);
   void set_permeability (const double kappa, const int mesh_block_id);
   void set_permeability (const double kappa, const std::string region);
+  void set_horizontal_permeability (const double kappa);
+  void set_horizontal_permeability (const double kappa, const int mesh_block_id);
+  void set_horizontal_permeability (const double kappa, const std::string region);  
+  void set_vertical_permeability (const double kappa);
+  void set_vertical_permeability (const double kappa, const int mesh_block_id);
+  void set_vertical_permeability (const double kappa, const std::string region);
   void set_viscosity(const double mu);
   void set_gravity(const double *g);
   void set_number_of_components(const int n);
@@ -92,6 +99,8 @@ public:
   void set_water_density ( const Epetra_Vector& water_density_ );
   void set_porosity ( const Epetra_Vector& porosity_ );
   void set_permeability ( const Epetra_Vector& permeability_ );
+  void set_vertical_permeability ( const Epetra_Vector& permeability_ );
+  void set_horizontal_permeability ( const Epetra_Vector& permeability_ );
   void set_pressure ( const Epetra_Vector& pressure_ );
   void set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ );
   void set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ );
@@ -131,7 +140,8 @@ private:
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_MultiVector> total_component_concentration; 
   Teuchos::RCP<Epetra_Vector> water_saturation;
-  Teuchos::RCP<Epetra_Vector> permeability;
+  Teuchos::RCP<Epetra_Vector> horizontal_permeability;
+  Teuchos::RCP<Epetra_Vector> vertical_permeability;  
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
 
   Teuchos::RCP<double*> gravity;

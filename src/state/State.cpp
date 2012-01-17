@@ -119,8 +119,15 @@ void State::initialize_from_parameter_list()
 
     // initialize the arrays with some constants from the input file
     set_porosity(sublist.get<double>("Constant porosity"),region);
-    set_permeability(sublist.get<double>("Constant permeability"),region);
-    
+
+    if (sublist.isParameter("Constant permeability")) {
+      set_permeability(sublist.get<double>("Constant permeability"),region);
+    }
+    else {
+      set_vertical_permeability(sublist.get<double>("Constant vertical permeability"),region);
+      set_horizontal_permeability(sublist.get<double>("Constant horizontal permeability"),region);
+    }
+
     u[0] = sublist.get<double>("Constant Darcy flux x",0.0);
     u[1] = sublist.get<double>("Constant Darcy flux y",0.0);
     u[2] = sublist.get<double>("Constant Darcy flux z",0.0);
@@ -186,7 +193,8 @@ void State::create_storage ()
   darcy_flux =       Teuchos::rcp( new Epetra_Vector( mesh_maps->face_map(false) ) );
   porosity =         Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) );
   water_saturation = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
-  permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
+  vertical_permeability       = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
+  horizontal_permeability     = Teuchos::rcp( new Epetra_Vector( mesh_maps->cell_map(false) ) ); 
   total_component_concentration 
     = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), number_of_components ) );  
   darcy_velocity   = Teuchos::rcp( new Epetra_MultiVector( mesh_maps->cell_map(false), 3));
@@ -464,19 +472,53 @@ void State::set_total_component_concentration( const double* conc, const std::st
 
 void State::set_permeability( const double kappa )
 {
-  permeability->PutScalar(kappa);
+  vertical_permeability->PutScalar(kappa);
+  horizontal_permeability->PutScalar(kappa);
 }
-
 
 void State::set_permeability( const double kappa, const int mesh_block_id)
 {
-  set_cell_value_in_mesh_block(kappa,*permeability,mesh_block_id);
+  set_cell_value_in_mesh_block(kappa,*vertical_permeability,mesh_block_id);
+  set_cell_value_in_mesh_block(kappa,*horizontal_permeability,mesh_block_id);
 }
 
 void State::set_permeability( const double kappa, const std::string region)
 {
-  set_cell_value_in_region(kappa,*permeability,region);
+  set_cell_value_in_region(kappa,*vertical_permeability,region);
+  set_cell_value_in_region(kappa,*horizontal_permeability,region);
 }
+
+void State::set_vertical_permeability( const double kappa )
+{
+  vertical_permeability->PutScalar(kappa);
+}
+
+void State::set_vertical_permeability( const double kappa, const int mesh_block_id)
+{
+  set_cell_value_in_mesh_block(kappa,*vertical_permeability,mesh_block_id);
+}
+
+void State::set_vertical_permeability( const double kappa, const std::string region)
+{
+  set_cell_value_in_region(kappa,*vertical_permeability,region);
+}
+
+void State::set_horizontal_permeability( const double kappa )
+{
+  horizontal_permeability->PutScalar(kappa);
+}
+
+void State::set_horizontal_permeability( const double kappa, const int mesh_block_id)
+{
+  set_cell_value_in_mesh_block(kappa,*horizontal_permeability,mesh_block_id);
+}
+
+void State::set_horizontal_permeability( const double kappa, const std::string region)
+{
+  set_cell_value_in_region(kappa,*horizontal_permeability,region);
+}
+
+
 
 void State::set_viscosity(const double mu)
 {
@@ -796,7 +838,18 @@ void State::set_porosity ( const Epetra_Vector& porosity_ )
 
 void State::set_permeability ( const Epetra_Vector& permeability_ ) 
 {
-  *permeability = permeability_;
+  *vertical_permeability = permeability_;
+  *horizontal_permeability = permeability_;
+};
+
+void State::set_vertical_permeability ( const Epetra_Vector& permeability_ ) 
+{
+  *vertical_permeability = permeability_;
+};
+
+void State::set_horizontal_permeability ( const Epetra_Vector& permeability_ ) 
+{
+  *horizontal_permeability = permeability_;
 };
 
 void State::set_pressure ( const Epetra_Vector& pressure_ ) 
@@ -880,7 +933,8 @@ void State::write_vis(Amanzi::Vis& vis)
       vis.write_vector(*get_porosity(),"porosity");
       vis.write_vector(*get_water_saturation(),"water saturation");
       vis.write_vector(*get_water_density(),"water density");
-      vis.write_vector(*get_permeability(),"permeability");
+      vis.write_vector(*get_vertical_permeability(),"vertical permeability");
+      vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
 
       std::vector<std::string> names(3);
       names[0] = "darcy velocity x";
