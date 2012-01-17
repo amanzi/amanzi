@@ -56,6 +56,8 @@ BCRec     PorousMedia::pres_bc;
 MacProj*  PorousMedia::mac_projector = 0;
 Godunov*  PorousMedia::godunov       = 0;
 
+static Real BL_ONEATM = 101325.0;
+
 namespace
 {
   const std::string solid("Solid");
@@ -8413,6 +8415,8 @@ PorousMedia::calcCapillary (MultiFab* pc,
   //
   // Calculate the capillary pressure for a given state.  
   //
+  BL_ASSERT(S.nGrow() >=1); // Assumes that boundary cells have been properly filled
+  BL_ASSERT(pc->nGrow() >= 0); // Fill boundary cells (in F)
   const int n_cpl_coef = cpl_coef->nComp();
   for (MFIter mfi(S); mfi.isValid(); ++mfi) 
     {
@@ -9136,6 +9140,170 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
 		}
 	    }
 	}
+    }
+}
+
+MultiFab*
+PorousMedia::derive (const std::string& name,
+                     Real               time,
+                     int                ngrow)
+{
+    BL_ASSERT(ngrow >= 0);
+    
+    const DeriveRec* rec = derive_lst.get(name);
+    BoxArray dstBA(grids);
+    MultiFab* mf = new MultiFab(dstBA, rec->numDerive(), ngrow);
+    int dcomp = 0;
+    derive(name,time,*mf,dcomp);
+    return mf;
+
+}
+
+void
+PorousMedia::derive (const std::string& name,
+                     Real               time,
+                     MultiFab&          mf,
+                     int                dcomp)
+{
+    const DeriveRec* rec = derive_lst.get(name);
+
+    if (name=="MaterialID") {
+        
+        BL_ASSERT(dcomp < mf.nComp());
+
+        const int ngrow = mf.nGrow();
+        
+        BoxArray dstBA(mf.boxArray());
+        BL_ASSERT(rec->deriveType() == dstBA[0].ixType());
+
+        const Real* dx = geom.CellSize();
+
+        mf.setVal(-1,dcomp,1,ngrow);
+        for (MFIter mfi(mf); mfi.isValid(); ++mfi)
+        {
+            FArrayBox& fab = mf[mfi];
+            for (int i=0; i<rock_array.size(); ++i) {
+                const Array<int>& rock_regions = rock_array[i].region;
+                for (int j=0; j<rock_regions.size(); ++j) {
+                    int regionIdx = rock_regions[j];
+                    Real val = (Real)(regionIdx);
+                    region_array[regionIdx]->setVal(fab,val,dcomp,dx,0);
+                }
+            }
+        }
+    }
+    else if (name=="Capillary_Pressure") {
+        
+        if (have_capillary)
+        {
+            const BoxArray& BA = mf.boxArray();
+            BL_ASSERT(rec->deriveType() == BA[0].ixType());
+
+            int ngrow = 1;
+            MultiFab S(BA,ncomps,ngrow);
+            FillPatchIterator fpi(*this,S,ngrow,time,State_Type,0,ncomps);
+            for ( ; fpi.isValid(); ++fpi)
+            {
+                S[fpi].copy(fpi(),0,0,ncomps);
+            }
+            
+            int ncomp = rec->numDerive();
+            MultiFab tmpmf(BA,ncomp,1);
+            calcCapillary(&tmpmf,S);
+            MultiFab::Copy(mf,tmpmf,0,dcomp,ncomp,0);
+        }
+        else {
+            BoxLib::Abort("PorousMedia::derive: cannot derive Capillary Pressure");
+        }
+    }
+    else if (name=="Volumetric_Water_Content") {
+        
+        // Note, assumes one comp per phase
+        int scomp = -1;
+        for (int i=0; i<cNames.size(); ++i) {
+            if (cNames[i] == "Water") {
+                if (pNames[i] != "Aqueous") {
+                    BoxLib::Abort("No Water in the Aqueous phase");
+                }
+                scomp = i;
+            }
+        }
+
+        if (scomp>=0)
+        {
+            const BoxArray& BA = mf.boxArray();
+            BL_ASSERT(rec->deriveType() == BA[0].ixType());
+            int ngrow = mf.nGrow();
+            BL_ASSERT(mf.nGrow()<=3); // rock_phi only has this many
+
+            int ncomp = 1; // Just water
+            BL_ASSERT(rec->numDerive()==ncomp);
+            FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
+            for ( ; fpi.isValid(); ++fpi)
+            {
+                mf[fpi].copy(fpi(),0,dcomp,ncomp);
+                mf[fpi].mult((*rock_phi)[fpi],0,dcomp,ncomp);
+            }
+        }            
+        else {
+            BoxLib::Abort("PorousMedia::derive: cannot derive Volumetric_Water_Content");
+        }
+    }
+    else if (name=="Aqueous_Saturation") {
+
+        // Sum all components in the Aqueous phase
+        // FIXME: Assumes one comp per phase
+        int scomp = -1;
+        int naq = 0;
+        for (int ip=0; ip<pNames.size(); ++ip) {
+            if (pNames[ip] == "Aqueous") {
+                scomp = ip;
+                naq++;
+            }
+        }
+
+        if (naq==1)
+        {
+            const BoxArray& BA = mf.boxArray();
+            BL_ASSERT(rec->deriveType() == BA[0].ixType());
+            int ngrow = mf.nGrow();
+            BL_ASSERT(mf.nGrow()<=1); // state only has this many
+
+            int ncomp = 1; // Just aqueous
+            BL_ASSERT(rec->numDerive()==ncomp);
+            FillPatchIterator fpi(*this,mf,ngrow,time,State_Type,scomp,ncomp);
+            for ( ; fpi.isValid(); ++fpi)
+            {
+                mf[fpi].copy(fpi(),0,dcomp,ncomp);
+            }
+        }            
+        else {
+            BoxLib::Abort("PorousMedia::derive: no support for more than one Aqueous component");
+        }
+    }
+    else if (name=="Aqueous_Pressure") {
+
+        // The pressure field is the Aqueous pressure in atm
+        // (assumes nphase==1,2) 
+        int ncomp = 1;
+        int ngrow = mf.nGrow();
+        AmrLevel::derive("pressure",time,mf,dcomp);
+        mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
+        mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
+    }
+    else if (name=="Porosity") {
+        
+        const BoxArray& BA = mf.boxArray();
+        BL_ASSERT(rec->deriveType() == BA[0].ixType());
+        int ngrow = mf.nGrow();
+        int ncomp = 1; // just porosity
+        BL_ASSERT(rec->numDerive()==ncomp);
+        BL_ASSERT(mf.nGrow()<=3); // rock_phi only has this many
+        MultiFab::Copy(mf,*rock_phi,0,dcomp,ncomp,ngrow);
+
+    } else {
+        
+        AmrLevel::derive(name,time,mf,dcomp);
     }
 }
 

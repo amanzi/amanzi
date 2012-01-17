@@ -255,7 +255,14 @@ namespace Amanzi {
           const ParameterEntry& rentry = rslist.getEntry(rlabel);
           
           if (rentry.isList()) {
-	    if (rlabel=="Region: Point"){	      
+            if (rlabel=="Region: Color Function") {
+	      const ParameterList& rsslist = rslist.sublist(rlabel);
+	      rsublist.setEntry("color_file",rsslist.getEntry("File"));
+	      rsublist.setEntry("color_value",rsslist.getEntry("Value"));
+	      rsublist.set("purpose", "all");
+	      rsublist.set("type", "color_function");
+            }
+	    else if (rlabel=="Region: Point"){	      
 	      const ParameterList& rsslist = rslist.sublist(rlabel);
 	      rsublist.setEntry("coordinate",rsslist.getEntry("Coordinate"));
 	      rsublist.set("purpose", "all");
@@ -937,6 +944,14 @@ namespace Amanzi {
       const ParameterList& vlist = rlist.sublist("Visualization Data");
       amr_list.set("plot_file",vlist.get<std::string>("File Name Base"));
       amr_list.set("plot_int",cycle_map[vlist.get<std::string>("Cycle Macro")]);
+      if (vlist.isParameter("Visualised Derives")) {
+          Array<std::string> visNames = vlist.get<Array<std::string> >("Visualised Derives");
+          for (int i=0; i<visNames.size(); ++i) {
+              visNames[i] = underscore(visNames[i]);
+          }
+          amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
+      }
+      amr_list.set<std::string>("plot_vars",""); // Shut off, per spec
 
       // check point
       const ParameterList& plist = rlist.sublist("Checkpoint Data");
