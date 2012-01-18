@@ -43,13 +43,14 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_richards_bdf2.xml"; //new-bc-cribs-1D.xml";
+  string xmlFileName = "test/flow_richards_bdf2.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 100, comm, gm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 80, comm, gm)); 
+  //RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 64.5,1.0,103.2, 1, 1, 516, comm, gm)); 
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -85,14 +86,14 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   Epetra_Vector *ucells = problem.CreateCellView(u);
   for (int c=0; c<ucells->MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    //(*ucells)[c] = 101325.0 - 9800 * (xc[2] + 62.0);
+    //(*ucells)[c] = 101325.0 + 9800 * (103.2 - xc[2]);
     (*ucells)[c] = xc[2] * (xc[2] + 10.0);
   }
 
   Epetra_Vector *ufaces = problem.CreateFaceView(u);
   for (int f=0; f<ufaces->MyLength(); f++) {
     const Point& xf = mesh->face_centroid(f);
-    (*ufaces)[f] = 101325.0 - 9800 * (xf[2] + 62.0);
+    //(*ufaces)[f] = 101325.0 + 9800 * (103.2 - xf[2]);
     (*ufaces)[f] = xf[2] * (xf[2] + 10.0);
   }
   
@@ -102,7 +103,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   // set intial and final time
   double t0 = 0.0;
-  double t1 = 100.0;
+  double t1 = 2.0e+4;
 
   // compute the initial udot
   Epetra_Vector udot(problem.Map());
@@ -113,20 +114,8 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   TS.set_initial_state(t0, u, udot);
  
   int errc;
-  double hnext, h = 1.0e-5;  // initial time step
+  double hnext, h = 1.0e-7;  // initial time step
   RME.update_precon(t0, u, h, errc);
-
-  // set up output
-  std::string cgns_filename = "out.cgns";
-
-  Amanzi::CGNS::create_mesh_file(*mesh, cgns_filename);
-  Amanzi::CGNS::open_data_file(cgns_filename);
-  Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
-
-  Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
-  Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
-  
 
   // iterate
   int i = 0;
@@ -144,22 +133,21 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
     i++;
 
     tlast=TS.most_recent_time();
-
-    if ( i%50 == 1 ) { 
-      Amanzi::CGNS::open_data_file(cgns_filename);
-      Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
-      Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-      Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
-      Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
-    }
   } while (t1 >= tlast);
 
+  // check for bounds
+  for (int k=0; k<80; k++) CHECK(u[k] < 0.501 && u[k] > -0.001);
+
+  // set up output
+  for (int k=0; k<80; k++) std::cout << k << " " << u[k] << std::endl;
+
+  std::string cgns_filename = "out.cgns";
+  Amanzi::CGNS::create_mesh_file(*mesh, cgns_filename);
   Amanzi::CGNS::open_data_file(cgns_filename);
-  Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
+  Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
   Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
   Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
   Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
-  for (int k=0; k<100; k++) std::cout << k << " " << u[k] << std::endl;
  
   delete comm;
 }
