@@ -6,6 +6,7 @@
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+
 using Teuchos::Array;
 using Teuchos::ParameterList;
 using Teuchos::ParameterEntry;
@@ -944,13 +945,18 @@ namespace Amanzi {
       const ParameterList& vlist = rlist.sublist("Visualization Data");
       amr_list.set("plot_file",vlist.get<std::string>("File Name Base"));
       amr_list.set("plot_int",cycle_map[vlist.get<std::string>("Cycle Macro")]);
-      if (vlist.isParameter("Visualised Derives")) {
-          Array<std::string> visNames = vlist.get<Array<std::string> >("Visualised Derives");
+      Array<std::string> visNames;
+      if (vlist.isParameter("Variables")) {
+          visNames = vlist.get<Array<std::string> >("Variables");
           for (int i=0; i<visNames.size(); ++i) {
               visNames[i] = underscore(visNames[i]);
           }
-          amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
       }
+      else {
+          visNames.resize(1);
+          visNames[0] = "ALL";
+      }
+      amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
       amr_list.set<std::string>("plot_vars",""); // Shut off, per spec
 
       // check point

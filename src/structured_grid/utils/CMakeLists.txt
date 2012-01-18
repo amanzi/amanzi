@@ -10,6 +10,17 @@ project(STRUCTUREDUTILS)
 
 include_directories(${STRUCTUREDUTILS_SOURCE_DIR})
 
+
+if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
+  include_directories(${CHEM_SOURCE_DIR}/includes)
+  include_directories(${DBC_SOURCE_DIR})
+endif()
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CCSE_INCLUDE_DIRS})
+include_directories(${PMAMR_INCLUDE_DIRS})
+
+
+
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 

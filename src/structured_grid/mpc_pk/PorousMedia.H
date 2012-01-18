@@ -272,6 +272,9 @@ public:
   static bool grids_on_side_of_domain (const BoxArray&    _grids,
 				       const Box&         _domain,
 				       const Orientation& _Face); 
+
+  static const Array<std::string>& PMspecificDerives() {return PM_specific_derives;}
+
 protected:
 
   DistributionMapping getFuncCountDM (const BoxArray& bxba, int ngrow = 0);
@@ -819,6 +822,7 @@ protected:
   static Array<BCData> ic_array;
   static Array<BCData> bc_array;
   static Array<Real> muval;
+  static Array<std::string> PM_specific_derives;
   
   // Tracers
   static Array<std::string> qNames;

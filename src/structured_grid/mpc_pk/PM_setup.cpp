@@ -78,6 +78,7 @@ Array<Real>         PorousMedia::density;
 Array<BCData>       PorousMedia::ic_array;
 Array<BCData>       PorousMedia::bc_array;
 Array<Real>         PorousMedia::muval;
+Array<std::string>  PorousMedia::PM_specific_derives;
 std::string         PorousMedia::model_name;
 int                 PorousMedia::model;
 int                 PorousMedia::nphases;
@@ -626,12 +627,17 @@ PorousMedia::variableSetUp ()
 #endif
   IndexType regionIDtype(IndexType::TheCellType());
   int nCompRegion = 1;
-  derive_lst.add("MaterialID", regionIDtype, nCompRegion);
-  derive_lst.add("Capillary_Pressure", regionIDtype, nCompRegion);
-  derive_lst.add("Volumetric_Water_Content", regionIDtype, nCompRegion);
-  derive_lst.add("Porosity", regionIDtype, nCompRegion);
-  derive_lst.add("Aqueous_Saturation", regionIDtype, nCompRegion);
-  derive_lst.add("Aqueous_Pressure", regionIDtype, nCompRegion);
+  int cnt = 0;
+  PM_specific_derives.resize(0);
+  PM_specific_derives.push_back("MaterialID");
+  PM_specific_derives.push_back("Capillary_Pressure");
+  PM_specific_derives.push_back("Volumetric_Water_Content");
+  PM_specific_derives.push_back("Porosity");
+  PM_specific_derives.push_back("Aqueous_Saturation");
+  PM_specific_derives.push_back("Aqueous_Pressure");
+  for (int i=0; i<PM_specific_derives.size(); ++i) {
+      derive_lst.add(PM_specific_derives[i], regionIDtype, nCompRegion);
+  }
 
   //
   // **************  DEFINE ERROR ESTIMATION QUANTITIES  *************

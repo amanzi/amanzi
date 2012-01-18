@@ -4900,7 +4900,63 @@ PorousMedia::sum_integrated_quantities ()
 void
 PorousMedia::setPlotVariables()
 {
-  AmrLevel::setPlotVariables();
+    ParmParse pp("amr");
+
+    // By default, do not add state variables
+    if (pp.contains("plot_vars"))
+    {
+        std::string nm;
+      
+        int nPltVars = pp.countval("plot_vars");
+      
+        for (int i = 0; i < nPltVars; i++)
+        {
+            pp.get("plot_vars", nm, i);
+
+            if (nm == "ALL") 
+                parent->fillStatePlotVarList();
+            else if (nm == "NONE")
+                parent->clearStatePlotVarList();
+            else
+                parent->addStatePlotVar(nm);
+        }
+    }
+
+    // Search for "ALL" in list
+    bool has_all = false;
+    Array<std::string> names_to_derive;
+
+    if (pp.contains("derive_plot_vars"))
+    {
+        std::string nm;
+      
+        int nDrvPltVars = pp.countval("derive_plot_vars");
+        names_to_derive.resize(nDrvPltVars);
+        pp.getarr("derive_plot_vars",names_to_derive,0,nDrvPltVars);
+      
+        for (int i = 0; i < nDrvPltVars; i++)
+        {
+            if (names_to_derive[i] == "ALL") 
+                has_all = true;
+        }
+    }
+
+    if (has_all || names_to_derive.size()==0) {
+        names_to_derive = PM_specific_derives;
+    }
+
+    for (int i=0; i<names_to_derive.size(); ++i) {
+
+        const std::string name = names_to_derive[i];
+
+        if (derive_lst.canDerive(name)) {
+
+            if (derive_lst.get(name)->deriveType() == IndexType::TheCellType())
+            {
+                parent->addDerivePlotVar(name);
+            }
+        }
+    }
 }
 
 std::string
@@ -9211,6 +9267,7 @@ PorousMedia::derive (const std::string& name,
             MultiFab tmpmf(BA,ncomp,1);
             calcCapillary(&tmpmf,S);
             MultiFab::Copy(mf,tmpmf,0,dcomp,ncomp,0);
+            mf.mult(BL_ONEATM,dcomp,ncomp,0);
         }
         else {
             BoxLib::Abort("PorousMedia::derive: cannot derive Capillary Pressure");
@@ -9244,6 +9301,7 @@ PorousMedia::derive (const std::string& name,
                 mf[fpi].copy(fpi(),0,dcomp,ncomp);
                 mf[fpi].mult((*rock_phi)[fpi],0,dcomp,ncomp);
             }
+            mf.mult(1/density[scomp],dcomp,ncomp);
         }            
         else {
             BoxLib::Abort("PorousMedia::derive: cannot derive Volumetric_Water_Content");
@@ -9276,6 +9334,8 @@ PorousMedia::derive (const std::string& name,
             {
                 mf[fpi].copy(fpi(),0,dcomp,ncomp);
             }
+            BL_ASSERT(scomp>=0 && scomp<ncomps);
+            mf.mult(1./density[scomp],dcomp,ncomp);
         }            
         else {
             BoxLib::Abort("PorousMedia::derive: no support for more than one Aqueous component");
@@ -9288,8 +9348,13 @@ PorousMedia::derive (const std::string& name,
         int ncomp = 1;
         int ngrow = mf.nGrow();
         AmrLevel::derive("pressure",time,mf,dcomp);
-        mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
-        mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
+        if (model == model_list["richard"]) {
+            mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
+            mf.plus(BL_ONEATM,dcomp,ncomp,ngrow);
+        }
+        else {
+            BoxLib::Abort("PorousMedia::derive: Aqueous_Pressure not yet implemented for non-Richard");
+        }
     }
     else if (name=="Porosity") {
         
