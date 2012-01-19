@@ -138,7 +138,7 @@ void Amanzi::Restart::read_state(State& S, std::string& filename)
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	  
     {
-      *out << "Amanzi::Restart... reading checkpoint from file " << filename << std::endl;
+      *out << "Reading checkpoint from file " << filename << std::endl;
     }
   
   

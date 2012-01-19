@@ -313,11 +313,6 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
         msh_gen.set<double>("Z_Min",low[2]);
         msh_gen.set<double>("Z_Max",high[2]);
 
-        // // make one mesh block that contains all of the mesh
-        // msh_gen.set<int>("Number of mesh blocks",1);
-        // msh_gen.sublist("Mesh Block 1").set<double>("Z0",low[2]).set<double>("Z1",high[2]);
-
-
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
         // TODO...
         // add code for input to read mesh file
@@ -398,6 +393,12 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
       mpc_list.set<std::string>("disable Chemistry_PK","yes");
     }
 
+
+    if ( plist->sublist("Execution control").isSublist("Restart from Checkpoint Data File") ) {
+      mpc_list.sublist("Restart from Checkpoint Data File") = 
+          plist->sublist("Execution control").sublist("Restart from Checkpoint Data File");
+    }
+    
 
   }
 
@@ -499,7 +500,7 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
         tbc_list.set<int>("number of BCs", bc_counter);
       }
     } else {
-      // unstructured amanzi can only have one phase
+      Exceptions::amanzi_throw(Errors::Message( "Unstructured Amanzi can only have one phase, but the input file specifies more than one."));
     }
   }
 
@@ -612,7 +613,7 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
   ml_list.set<int>("ML output", 0);
   ml_list.set<int>("max levels", 40);
   ml_list.set<std::string>("prec type","MGV");
-  ml_list.set<int>("cycle applications", 1);
+  ml_list.set<int>("cycle applications", 2);
   ml_list.set<std::string>("aggregation: type", "Uncoupled");
   ml_list.set<double>("aggregation: damping factor", 1.33);
   ml_list.set<double>("aggregation: threshold", 0.0);
@@ -698,7 +699,7 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
             } else if (time_fns[i] == "Constant") {
               forms_[i] = "constant";
             } else {
-              Exceptions::amanzi_throw(Errors::Message("Tabular function can only be Linear or Constant"));
+              Exceptions::amanzi_throw(Errors::Message("In the definition of BCs: tabular function can only be Linear or Constant"));
             }
 
           Teuchos::Array<std::string> forms = forms_;
@@ -818,17 +819,15 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
   if ( (++ phase_list.begin()) == phase_list.end() ) {
     // write the array of component solutes
     stt_list.set<Teuchos::Array<std::string> >("Component Solutes", comp_names);
-    stt_list.set<int>("Number of component concentrations", comp_names.size());    
+    stt_list.set<int>("Number of component concentrations", comp_names.size());
 
     double viscosity = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Viscosity: Uniform").get<double>("Viscosity");
     double density = phase_list.sublist(phase_name).sublist("Phase Properties").sublist("Density: Uniform").get<double>("Density");
 
     stt_list.set<double>("Constant viscosity", viscosity);
     stt_list.set<double>("Constant water density", density);
-    //stt_list.set<double>("Constant water saturation",1.0);
 
     int region_counter = 0;
-    int comp_counter;
     // loop over the material properties
     Teuchos::ParameterList& matprop_list = plist->sublist("Material Properties");
     for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
@@ -845,13 +844,13 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         perm_vert = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Vertical");
         perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
       } else {
-        // throw an error
+        Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
 
       }
 
       for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
         std::stringstream sss;
-        sss << "Mesh block " << *i; 
+        sss << "Mesh block " << *i;
 
         Teuchos::ParameterList& stt_mat = stt_list.sublist(sss.str());
 
@@ -860,7 +859,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         stt_mat.set<double>("Constant horizontal permeability", perm_horiz);
         stt_mat.set<std::string>("Region", *i);
 
-        comp_counter=0;
         // find the initial conditions for the current region
         Teuchos::ParameterList& ic_list = plist->sublist("Initial Conditions");
         Teuchos::ParameterList* ic_for_region = NULL;
@@ -902,7 +900,7 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         } else {
           Exceptions::amanzi_throw(Errors::Message("An initial condition for pressure must be specified. It must either be IC: Uniform Pressure, or IC: Linear Pressure."));
         }
-          
+
         // write the initial conditions for saturation, since this is not a primary variable, this is not required
         // so we don't throw if these initial conditions are missing
         if ( ic_for_region->isSublist("IC: Uniform Saturation") ) {
@@ -914,8 +912,14 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
 
         // write the initial conditions for the solutes, note that we hardcode for there only being one phase, with one phase component
         for (int ii=0; ii<comp_names.size(); ii++) {
+          if (! ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).isSublist(comp_names[ii])) {
+            std::stringstream ss;
+            ss << "Initial condition for solute " << comp_names[ii] << " in region " << *i << " is missing.";
+            Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+          }
+
           double conc = ic_for_region->sublist("Solute IC").sublist(phase_name).sublist(phase_comp_name).sublist(comp_names[ii]).sublist("IC: Uniform Concentration").get<double>("Value");
-          
+
           std::stringstream ss;
           ss << "Constant component concentration " << comp_names_map[ comp_names[ii] ];
 

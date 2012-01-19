@@ -827,13 +827,13 @@ Next, we specify the initial conditions.  Note that support is provided for spec
 
   * [U][S] `"Assigned Regions`" [Array string] list of regions to which this condition is assigned
 
-  * [S] `"Solute IC`" can accept PHASE (labels of phases defined above)
+  * [U][S] `"Solute IC`" can accept PHASE (labels of phases defined above)
 
-   * [S] PHASE [list] can accept COMPONENT (labels of components defined above)
+   * [U][S] PHASE [list] can accept COMPONENT (labels of components defined above)
 
-    * [S] COMPONENT [list] can accept SOLUTE (label of solute defined above)
+    * [U][S] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [S] Component IC [list] Parameterized model for initial component conditions.  Choose exactly one of the following: `"IC: Uniform Concentration`"
+     * [U][S] Component IC [list] Parameterized model for initial component conditions.  Choose exactly one of the following: `"IC: Uniform Concentration`"
 
      * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 

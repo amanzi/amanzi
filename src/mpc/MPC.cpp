@@ -181,18 +181,14 @@ void MPC::mpc_init()
    restart_requested = false;
    
    // then check if indeed we are
-   if (parameter_list.isSublist("Execution Control"))
-     {
-       if (parameter_list.sublist("Execution Control").isSublist("Restart from Checkpoint File"))
-	 {
-	   restart_requested = true;
-	   
-	   Teuchos::ParameterList restart_parameter_list = 
-	     parameter_list.sublist("Execution Control").sublist("Restart from Checkpoint File");
-	   
-	   restart_from_filename = restart_parameter_list.get<string>("Checkpoint File Name");
-	 }
-     }
+   if (mpc_parameter_list.isSublist("Restart from Checkpoint Data File")) {
+       restart_requested = true;
+       
+       Teuchos::ParameterList& restart_parameter_list = 
+	 mpc_parameter_list.sublist("Restart from Checkpoint Data File");
+       
+       restart_from_filename = restart_parameter_list.get<string>("Checkpoint Data File Name");
+   }
 }
 
 void MPC::read_parameter_list()
