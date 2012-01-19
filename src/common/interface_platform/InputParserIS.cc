@@ -251,8 +251,8 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
           }
 
           if ( obs_list.sublist(i->first).isParameter("Variable Macro") ) {
-            std::string var_macro = obs_list.sublist(i->first).get<std::string>("Variable Macro");
-            obs_list.sublist(i->first).set("Variables",get_Variable_Macro(var_macro, plist));
+            Teuchos::Array<std::string> var_macro = obs_list.sublist(i->first).get<Teuchos::Array<std::string> >("Variable Macro");
+            obs_list.sublist(i->first).set("Variables",get_Variable_Macro(var_macro[0], plist));
             obs_list.sublist(i->first).remove("Variable Macro");
           }
 
@@ -445,15 +445,15 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
     }
   }
 
-  if (n_transport_bcs > 0) {
+  if (n_transport_bcs >= 0) {
     Teuchos::ParameterList& tbc_list = trp_list.sublist("Transport BCs");
 
     Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
 
+    int bc_counter = 0;
     if ( (++ phase_list.begin()) == phase_list.end() ) {
       Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
 
-      int bc_counter = 0;
       for (Teuchos::ParameterList::ConstIterator i = bc_sublist.begin(); i != bc_sublist.end(); i++) {
         // read the assigned regions
         Teuchos::Array<std::string> regs = bc_sublist.sublist(bc_sublist.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
@@ -489,16 +489,13 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
                   bc.set<Teuchos::Array<std::string> >("Regions", regs);
 
                   bc_counter++;
-
                 }
-
               }
-
             }
           }
         }
-        tbc_list.set<int>("number of BCs", bc_counter);
       }
+      tbc_list.set<int>("number of BCs", bc_counter);
     } else {
       Exceptions::amanzi_throw(Errors::Message( "Unstructured Amanzi can only have one phase, but the input file specifies more than one."));
     }
@@ -882,7 +879,7 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         for (Teuchos::ParameterList::ConstIterator it = ic_list.begin(); it != ic_list.end(); it++) {
           if (ic_list.isSublist(it->first)) {
             Teuchos::Array<std::string> ass_regions = ic_list.sublist(it->first).get<Teuchos::Array<std::string> >("Assigned Regions");
-            if (ass_regions.size() == 1 && ass_regions[0] == "ALL") {
+            if (ass_regions.size() == 1 && ass_regions[0] == "All") {
               ic_for_region = &(ic_list.sublist(it->first));
             } else {
               // check if the current region is part of the current initial condition's assigned regions
