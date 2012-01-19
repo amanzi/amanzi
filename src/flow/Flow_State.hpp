@@ -43,7 +43,8 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> get_porosity() { return porosity; }
   Teuchos::RCP<double> get_fluid_density() { return fluid_density; }
   Teuchos::RCP<double> get_fluid_viscosity() { return fluid_viscosity; }
-  Teuchos::RCP<Epetra_Vector> get_absolute_permeability() { return absolute_permeability; }
+  Teuchos::RCP<Epetra_Vector> get_vertical_permeability() { return vertical_permeability; }
+  Teuchos::RCP<Epetra_Vector> get_horizontal_permeability() { return horizontal_permeability; }
   Teuchos::RCP<double*> get_gravity() { return gravity; }
   Teuchos::RCP<Epetra_Vector> get_pressure() { return pressure; }
   Teuchos::RCP<Epetra_Vector> get_darcy_mass_flux() { return darcy_mass_flux; }
@@ -53,7 +54,8 @@ class Flow_State {
   Epetra_Vector& ref_porosity() { return *porosity; }
   Epetra_Vector& ref_pressure() { return *pressure; }
   Epetra_Vector& ref_darcy_mass_flux() { return *darcy_mass_flux; }
-  Epetra_Vector& ref_absolute_permeability() { return *absolute_permeability; }
+  Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability; }
+  Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability; }
   double ref_fluid_density() { return *fluid_density; }
   double ref_fluid_viscosity() { return *fluid_viscosity; }
 
@@ -73,7 +75,8 @@ class Flow_State {
   Teuchos::RCP<double> fluid_density;
   Teuchos::RCP<double> fluid_viscosity;
   Teuchos::RCP<double*> gravity;
-  Teuchos::RCP<Epetra_Vector> absolute_permeability;
+  Teuchos::RCP<Epetra_Vector> vertical_permeability;
+  Teuchos::RCP<Epetra_Vector> horizontal_permeability;
   Teuchos::RCP<Epetra_Vector> pressure;
   Teuchos::RCP<Epetra_Vector> porosity;
   Teuchos::RCP<Epetra_Vector> darcy_mass_flux;

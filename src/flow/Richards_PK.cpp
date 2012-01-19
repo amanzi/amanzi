@@ -418,11 +418,18 @@ void Richards_PK::computePreconditionerMFD(
 ****************************************************************** */
 void Richards_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 {
-  const Epetra_Vector& permeability = FS->ref_absolute_permeability();
+  const Epetra_Vector& vertical_permeability = FS->ref_vertical_permeability();
+  const Epetra_Vector& horizontal_permeability = FS->ref_horizontal_permeability();
 
   for (int c=0; c<K.size(); c++) {
-    K[c].init(dim, 1);
-    K[c](0, 0) = permeability[c];
+    if (vertical_permeability[c] == horizontal_permeability[c]) {
+      K[c].init(dim, 1);
+      K[c](0, 0) = vertical_permeability[c];
+    } else {
+      K[c].init(dim, 2);
+      for (int i=0; i<dim-1; i++) K[c](i, i) = horizontal_permeability[c];
+      K[c](dim-1, dim-1) = vertical_permeability[c];
+    }
   }
 }
 

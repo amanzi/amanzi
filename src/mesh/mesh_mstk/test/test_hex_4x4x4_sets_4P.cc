@@ -18,19 +18,23 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 {
   int rank, size;
 
-  std::string expcsetnames[5] = {"Bottom LS", "Middle LS", "Top LS", 
-                                 "Bottom+Middle Box", "Top Box"};
+  std::string expcsetnames[8] = {"Bottom LS", "Middle LS", "Top LS", 
+                                 "Bottom+Middle Box", "Top Box",
+                                 "Bottom ColFunc", "Middle ColFunc", "Top ColFunc"};
 
-  int csetsize, expcsetsizes[4][5] = {{0,0,6,0,6},
-				      {1,3,3,4,3},
-				      {3,4,0,7,0},
-				      {5,2,0,7,0}};
+  int csetsize, expcsetsizes[4][8] = {{0,0,6,0,6,0,0,6},
+				      {1,3,3,4,3,1,3,3},
+				      {3,4,0,7,0,3,4,0},
+				      {5,2,0,7,0,5,2,0}};
   
-  int expcsetcells[4][5][9] = 
+  int expcsetcells[4][8][9] = 
     {
       {{-1,-1,-1,-1,-1,-1,-1,-1,-1},
        {-1,-1,-1,-1,-1,-1,-1,-1,-1},
        {0,1,2,3,4,5,-1,-1,-1},
+       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
+       {0,1,2,3,4,5,-1,-1,-1},
+       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
        {-1,-1,-1,-1,-1,-1,-1,-1,-1},
        {0,1,2,3,4,5,-1,-1,-1}},
 
@@ -38,18 +42,27 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
        {1,2,3,-1,-1,-1,-1,-1,-1},
        {4,5,6,-1,-1,-1,-1,-1,-1},
        {0,1,2,3,-1,-1,-1,-1,-1},
+       {4,5,6,-1,-1,-1,-1,-1,-1},
+       {0,-1,-1,-1,-1,-1,-1,-1,-1},
+       {1,2,3,-1,-1,-1,-1,-1,-1},
        {4,5,6,-1,-1,-1,-1,-1,-1}},
       
       {{0,1,2,-1,-1,-1,-1,-1,-1},
        {3,4,5,6,-1,-1,-1,-1,-1},
        {-1,-1,-1,-1,-1,-1,-1,-1,-1},
        {0,1,2,3,4,5,6,-1,-1},
-       {-1,-1,-1,-1,-1,-1,-1,-1}},
+       {-1,-1,-1,-1,-1,-1,-1,-1},
+       {0,1,2,-1,-1,-1,-1,-1,-1},
+       {3,4,5,6,-1,-1,-1,-1,-1},
+       {-1,-1,-1,-1,-1,-1,-1,-1,-1}},
 
       {{0,1,2,3,4,-1,-1,-1,-1},
        {5,6,-1,-1,-1,-1,-1,-1,-1},
        {-1,-1,-1,-1,-1,-1,-1,-1,-1},
        {0,1,2,3,4,5,6,-1,-1},
+       {-1,-1,-1,-1,-1,-1,-1,-1,-1},
+       {0,1,2,3,4,-1,-1,-1,-1},
+       {5,6,-1,-1,-1,-1,-1,-1,-1},
        {-1,-1,-1,-1,-1,-1,-1,-1,-1}}
     };
 
@@ -107,7 +120,9 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec);
+  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+
+  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm);
 
   // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
@@ -212,10 +227,10 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 	  // Find the expected cell set info corresponding to this name 
 	  
 	  int j;
-	  for (j = 0; j < 5; j++)
+	  for (j = 0; j < 8; j++)
 	    if (reg_name == expcsetnames[j]) break;
 	  
-	  CHECK(j < 5);
+	  CHECK(j < 8);
 	  
 	  // Verify that we can get the right number of entities in the set
 	  
@@ -278,10 +293,10 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
         // Find the expected face set info corresponding to this name
 
         int j;
-        for (j = 0; j < 5; j++)
+        for (j = 0; j < 8; j++)
           if (reg_name == expcsetnames[j]) break;
 
-        CHECK(j < 5);
+        CHECK(j < 8);
 	
 	// Verify that we can get the right number of entities in the set
 	
@@ -296,6 +311,34 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
 
         CHECK_ARRAY_EQUAL(expcsetcells[rank][j],setents,set_size);
       }
+
+    }
+    else if (shape == "Region: Color Function") {
+
+      // Do we have a valid cellset by this name
+
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+	
+      // Find the expected cell set info corresponding to this name
+
+      int j;
+      for (j = 0; j < 8; j++)
+        if (reg_name == expcsetnames[j]) break;
+
+      CHECK(j < 8);
+	
+      // Verify that we can get the right number of entities in the set
+	
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+
+      CHECK_EQUAL(expcsetsizes[rank][j],set_size);
+	
+      // Verify that we can get the correct set entities
+	
+      Amanzi::AmanziMesh::Entity_ID_List setents;
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+      
+      CHECK_ARRAY_EQUAL(expcsetcells[rank][j],setents,set_size);
 
     }
   }

@@ -40,270 +40,303 @@ SUITE (STK_SETS)
   TEST (SETS_READ)
   {
 
-  std::string expcsetnames[9] = {"Bottom LS", "Middle LS", "Top LS", 
-                                 "Bottom+Middle Box", "Top Box",
-                                 "Sample Point InCell", "Sample Point OnFace",
-                                 "Sample Point OnEdge", "Sample Point OnVertex"};  
+    std::string expcsetnames[12] = {"Bottom LS", "Middle LS", "Top LS", 
+                                    "Bottom+Middle Box", "Top Box",
+                                    "Sample Point InCell", "Sample Point OnFace",
+                                    "Sample Point OnEdge", "Sample Point OnVertex",
+                                    "Bottom ColFunc", "Middle ColFunc", "Top ColFunc"};  
   
-  unsigned int csetsize, expcsetsizes[9] = {9,9,9,18,9,1,2,4,8};
+    unsigned int csetsize, expcsetsizes[12] = {9,9,9,18,9,1,2,4,8,9,9,9};
   
-  unsigned int expcsetcells[9][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
-				      {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
-				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
-				      {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
-				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
-                                      {13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-                                      {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-                                      {9,10,12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-                                      {0,1,3,4,9,10,12,13,0,0,0,0,0,0,0,0,0,0}
-                                      };
+    unsigned int expcsetcells[12][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
+                                        {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
+                                        {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
+                                        {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
+                                        {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
+                                        {13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                        {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                        {9,10,12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                        {0,1,3,4,9,10,12,13,0,0,0,0,0,0,0,0,0,0},
+                                        {0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
+                                        {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
+                                        {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0}};
 
-  std::string expfsetnames[7] = {"Face 101", "Face 102", 
-				  "Face 10005", "Face 20004", "Face 30004",
-                                  "ZLO FACE Plane", "YLO FACE Box"};
+    std::string expfsetnames[7] = {"Face 101", "Face 102", 
+                                   "Face 10005", "Face 20004", "Face 30004",
+                                   "ZLO FACE Plane", "YLO FACE Box"};
 
-  unsigned int expfsetids[7]={101,102,10005,20004,30004,0,0};
+    unsigned int expfsetids[7]={101,102,10005,20004,30004,0,0};
   
-  unsigned int fsetsize, expfsetsizes[7] = {9,9,3,3,3,9,9};
+    unsigned int fsetsize, expfsetsizes[7] = {9,9,3,3,3,9,9};
 
 
-  unsigned int expfsetfaces[7][9] = {{4,9,14,19,23,27,32,36,40},
-				     {0,6,11,42,47,51,75,80,84},
-				     {30,35,39,0,0,0,0,0,0},
-				     {66,70,73,0,0,0,0,0,0},
-				     {99,103,106,0,0,0,0,0,0},
-				     {4,9,14,19,23,27,32,36,40},
-				     {0,6,11,42,47,51,75,80,84}};
+    unsigned int expfsetfaces[7][9] = {{4,9,14,19,23,27,32,36,40},
+                                       {0,6,11,42,47,51,75,80,84},
+                                       {30,35,39,0,0,0,0,0,0},
+                                       {66,70,73,0,0,0,0,0,0},
+                                       {99,103,106,0,0,0,0,0,0},
+                                       {4,9,14,19,23,27,32,36,40},
+                                       {0,6,11,42,47,51,75,80,84}};
 
 
-  std::string infilename = "test/hex_4x4x4.xml";
-  Teuchos::ParameterXMLFileReader xmlreader(infilename);
+    std::string infilename = "test/hex_4x4x4.xml";
+    Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
-  Teuchos::ParameterList reg_spec(xmlreader.getParameters());
+    Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec);
+    Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
-  // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
+    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm);
 
-  Amanzi::AmanziMesh::Mesh_STK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,gm);
+    // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
+
+    Amanzi::AmanziMesh::Mesh_STK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,gm);
 
 
-  Teuchos::ParameterList::ConstIterator i;
-  for (i = reg_spec.begin(); i != reg_spec.end(); i++) {
-        const std::string reg_name = reg_spec.name(i);     
+    Teuchos::ParameterList::ConstIterator i;
+    for (i = reg_spec.begin(); i != reg_spec.end(); i++) {
+      const std::string reg_name = reg_spec.name(i);     
 
-    Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
+      Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
 
-    // See if the geometric model has a region by this name
+      // See if the geometric model has a region by this name
   
-    Amanzi::AmanziGeometry::RegionPtr reg = gm->FindRegion(reg_name);
+      Amanzi::AmanziGeometry::RegionPtr reg = gm->FindRegion(reg_name);
 
-    CHECK(reg != NULL);
+      CHECK(reg != NULL);
 
-    // Do their names match ?
+      // Do their names match ?
 
-    CHECK_EQUAL(reg->name(),reg_name);
+      CHECK_EQUAL(reg->name(),reg_name);
 
 
-    // Get the region info directly from the XML and compare
+      // Get the region info directly from the XML and compare
   
-    Teuchos::ParameterList::ConstIterator j = reg_params.begin(); 
+      Teuchos::ParameterList::ConstIterator j = reg_params.begin(); 
 
-    std::string shape = reg_params.name(j);
+      std::string shape = reg_params.name(j);
 
-    if (shape == "Region: Plane") {
+      if (shape == "Region: Plane") {
 
-      // Do we have a valid sideset by this name
+        // Do we have a valid sideset by this name
 
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
-
-      int j;
-      for (j = 0; j < 7; j++) {
-        if (expfsetnames[j] == reg_name) break;
-      }
-
-      CHECK(j < 7);
-
-
-      // Verify that we can get the right number of entities in the set
-
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-
-      CHECK_EQUAL(expfsetsizes[j],set_size);
-
-
-      // Verify that we can get the correct set entities
-     
-      Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-
-      CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
-
-    }
-    else if (shape == "Region: Box") {
-
-      Teuchos::ParameterList box_params = reg_params.sublist(shape);
-      Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("Low Coordinate");
-      Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
-
-      if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2])
-	{
-	  // This is a reduced dimensionality box - request a faceset
-
-	  // Do we have a valid sideset by this name
-
-	  CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
-	  
-	  int j;
-	  for (j = 0; j < 7; j++) {
-	    if (expfsetnames[j] == reg_name) break;
-	  }
-	  
-	  CHECK(j < 7);
-	  
-	  
-	  // Verify that we can get the right number of entities in the set
-	  
-	  int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-	  
-	  CHECK_EQUAL(expfsetsizes[j],set_size);
-	  
-	  
-	  // Verify that we can get the correct set entities
-	  
-	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
-	  
-	  CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
-	}
-      else 
-	{
-	  // Do we have a valid cellset by this name
-	  
-	  CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
-	  
-	  // Find the expected cell set info corresponding to this name 
-	  
-	  int j;
-	  for (j = 0; j < 5; j++)
-	    if (reg_name == expcsetnames[j]) break;
-	  
-	  CHECK(j < 5);
-	  
-	  // Verify that we can get the right number of entities in the set
-	  
-	  int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-	  
-	  CHECK_EQUAL(expcsetsizes[j],set_size);
-	  
-	  // Verify that we can get the correct set entities
-	  
-	  Amanzi::AmanziMesh::Entity_ID_List setents;
-	  mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
-	  
-	  CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
-	}
-    }
-    else if (shape == "Region: Point") {
-
-      // Get cells around this point
-
-      Teuchos::ParameterList point_params = reg_params.sublist(shape);
-      Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
-
-      // Do we have a valid set by this name
-      
-      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
-	  
-      int j;
-      for (j = 0; j < 9; j++) {
-        if (expcsetnames[j] == reg_name) break;
-      }
-	  
-      CHECK(j < 9);
-	  
-	  
-      // Verify that we can get the right number of entities in the set
-	  
-      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-	  
-      CHECK_EQUAL(expcsetsizes[j],set_size);
-	  
-	  
-      // Verify that we can get the correct set entities
-      
-      Amanzi::AmanziMesh::Entity_ID_List setents;
-      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
-	  
-      CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
-
-    }
-    else if (shape == "Region: Labeled Set") {
-
-      Teuchos::ParameterList lsparams = reg_params.sublist(shape);
-
-      // Find the entity type in this parameter list
-
-      std::string entity_type = lsparams.get<std::string>("Entity");
-
-      if (entity_type == "Face") {
-
-	// Do we have a valid sideset by this name
-
-	CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
-
-        // Find the expected face set info corresponding to this name
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
 
         int j;
-        for (j = 0; j < 7; j++)
-          if (reg_name == expfsetnames[j]) break;
+        for (j = 0; j < 7; j++) {
+          if (expfsetnames[j] == reg_name) break;
+        }
 
         CHECK(j < 7);
-	
-	// Verify that we can get the right number of entities in the set
-	
-	int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-		
+
+
+        // Verify that we can get the right number of entities in the set
+
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+
         CHECK_EQUAL(expfsetsizes[j],set_size);
 
-	// Verify that we can get the correct set entities
-	
+
+        // Verify that we can get the correct set entities
+     
         Amanzi::AmanziMesh::Entity_ID_List setents;
-	mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
 
         CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
 
       }
-      else if (entity_type == "Cell") {
+      else if (shape == "Region: Box") {
 
-	// Do we have a valid sideset by this name
+        Teuchos::ParameterList box_params = reg_params.sublist(shape);
+        Teuchos::Array<double> pmin = box_params.get< Teuchos::Array<double> >("Low Coordinate");
+        Teuchos::Array<double> pmax = box_params.get< Teuchos::Array<double> >("High Coordinate");
 
-	CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
-	
-        // Find the expected face set info corresponding to this name
+        if (pmin[0] == pmax[0] || pmin[1] == pmax[1] || pmin[2] == pmax[2])
+          {
+            // This is a reduced dimensionality box - request a faceset
 
-        int j;
-        for (j = 0; j < 5; j++)
-          if (reg_name == expcsetnames[j]) break;
+            // Do we have a valid sideset by this name
 
-        CHECK(j < 5);
-	
-	// Verify that we can get the right number of entities in the set
-	
-	int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-
-        CHECK_EQUAL(expcsetsizes[j],set_size);
-	
-	// Verify that we can get the correct set entities
-	
-        Amanzi::AmanziMesh::Entity_ID_List setents;
-	mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
-
-        CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
+            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+	  
+            int j;
+            for (j = 0; j < 7; j++) {
+              if (expfsetnames[j] == reg_name) break;
+            }
+	  
+            CHECK(j < 7);
+	  
+	  
+            // Verify that we can get the right number of entities in the set
+	  
+            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+	  
+            CHECK_EQUAL(expfsetsizes[j],set_size);
+	  
+	  
+            // Verify that we can get the correct set entities
+	  
+            Amanzi::AmanziMesh::Entity_ID_List setents;
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+	  
+            CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);	  
+          }
+        else 
+          {
+            // Do we have a valid cellset by this name
+	  
+            CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+	  
+            // Find the expected cell set info corresponding to this name 
+	  
+            int j;
+            for (j = 0; j < 5; j++)
+              if (reg_name == expcsetnames[j]) break;
+	  
+            CHECK(j < 5);
+	  
+            // Verify that we can get the right number of entities in the set
+	  
+            int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+	  
+            CHECK_EQUAL(expcsetsizes[j],set_size);
+	  
+            // Verify that we can get the correct set entities
+	  
+            Amanzi::AmanziMesh::Entity_ID_List setents;
+            mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+	  
+            CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
+          }
       }
+      else if (shape == "Region: Point") {
 
+        // Get cells around this point
+
+        Teuchos::ParameterList point_params = reg_params.sublist(shape);
+        Teuchos::Array<double> p_vec = point_params.get< Teuchos::Array<double> >("Coordinate");
+
+        // Do we have a valid set by this name
+      
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+	  
+        int j;
+        for (j = 0; j < 12; j++) {
+          if (expcsetnames[j] == reg_name) break;
+        }
+	  
+        CHECK(j < 12);
+	  
+	  
+        // Verify that we can get the right number of entities in the set
+	  
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+	  
+        CHECK_EQUAL(expcsetsizes[j],set_size);
+	  
+	  
+        // Verify that we can get the correct set entities
+      
+        Amanzi::AmanziMesh::Entity_ID_List setents;
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+	  
+        CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
+
+      }
+      else if (shape == "Region: Labeled Set") {
+
+        Teuchos::ParameterList lsparams = reg_params.sublist(shape);
+
+        // Find the entity type in this parameter list
+
+        std::string entity_type = lsparams.get<std::string>("Entity");
+
+        if (entity_type == "Face") {
+
+          // Do we have a valid sideset by this name
+
+          CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::FACE));
+
+          // Find the expected face set info corresponding to this name
+
+          int j;
+          for (j = 0; j < 7; j++)
+            if (reg_name == expfsetnames[j]) break;
+
+          CHECK(j < 7);
+	
+          // Verify that we can get the right number of entities in the set
+	
+          int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+		
+          CHECK_EQUAL(expfsetsizes[j],set_size);
+
+          // Verify that we can get the correct set entities
+	
+          Amanzi::AmanziMesh::Entity_ID_List setents;
+          mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+
+          CHECK_ARRAY_EQUAL(expfsetfaces[j],setents,set_size);
+
+        }
+        else if (entity_type == "Cell") {
+
+          // Do we have a valid sideset by this name
+
+          CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+	
+          // Find the expected face set info corresponding to this name
+
+          int j;
+          for (j = 0; j < 12; j++)
+            if (reg_name == expcsetnames[j]) break;
+
+          CHECK(j < 12);
+	
+          // Verify that we can get the right number of entities in the set
+	
+          int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+
+          CHECK_EQUAL(expcsetsizes[j],set_size);
+	
+          // Verify that we can get the correct set entities
+	
+          Amanzi::AmanziMesh::Entity_ID_List setents;
+          mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+
+          CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
+        }
+
+      }
+      else if (shape == "Region: Color Function") {
+
+        // Do we have a valid sideset by this name
+      
+        CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+      
+        // Find the expected face set info corresponding to this name
+      
+        int j;
+        for (j = 0; j < 12; j++)
+          if (reg_name == expcsetnames[j]) break;
+      
+        CHECK(j < 12);
+	
+        // Verify that we can get the right number of entities in the set
+      
+        int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+      
+        CHECK_EQUAL(expcsetsizes[j],set_size);
+      
+        // Verify that we can get the correct set entities
+      
+        Amanzi::AmanziMesh::Entity_ID_List setents;
+        mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+      
+        CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
+
+      }
     }
-  }
 
   }
 
@@ -343,7 +376,9 @@ SUITE (STK_SETS)
 
     Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec);
+    Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+
+    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm);
 
     // Create a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 

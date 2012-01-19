@@ -18,7 +18,7 @@
 #include "exceptions.hh"
 
 #include "amanzi_unstructured_grid_simulation_driver.hpp"
-#include "InputParserIS.H"
+#include "InputParserIS.hh"
 
 Amanzi::Simulator::ReturnType
 AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_comm,
@@ -47,7 +47,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   
   if (! native)
     {
-      new_list = Amanzi::AmanziInput::translate(input_parameter_list);
+      new_list = Amanzi::AmanziInput::translate( &input_parameter_list);
     }
   else
     {
@@ -90,8 +90,8 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   Teuchos::ParameterList reg_params = new_list.sublist("Regions");
 
-  Amanzi::AmanziGeometry::GeometricModelPtr geom_model_ptr(
-           new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params) );
+  Amanzi::AmanziGeometry::GeometricModelPtr 
+    geom_model_ptr( new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm) );
 
 
   // Add the geometric model to the domain

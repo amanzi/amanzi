@@ -11,9 +11,9 @@ TEST(HDF5_MPI) {
 //  Epetra_SerialComm *comm = new Epetra_SerialComm();
 //#endif
     
-  std::string hdf5_meshfile  = "new_mesh_mpi.h5";
-  std::string hdf5_datafile1 = "new_data_mpi.h5";
-  std::string hdf5_datafile2 = "new_restart_mpi.h5";
+  std::string hdf5_meshfile  = "new_mesh_mpi";
+  std::string hdf5_datafile1 = "new_data_mpi";
+  std::string hdf5_datafile2 = "new_restart_mpi";
   
   //Teuchos::RCP<Amanzi::AmanziMesh::Mesh_STK> 
   //  Mesh(new Amanzi::AmanziMesh::Mesh_STK(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 1,
@@ -103,9 +103,12 @@ TEST(HDF5_MPI) {
   restart_output->writeCellDataReal(*fake_pressure, "pressure");
   restart_output->writeNodeDataReal(*node_quantity, "node_quantity");
   
+  delete viz_output;
+  delete restart_output;
+  
   // test reading data back
-  cout << "E>> create restart_input with file " << hdf5_datafile2 << endl;
-  Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm,hdf5_datafile2);
+  cout << "E>> create restart_input with file " << hdf5_datafile2 << ".h5" << endl;
+  Amanzi::HDF5_MPI *restart_input = new Amanzi::HDF5_MPI(*comm,hdf5_datafile2+".h5");
   double newtime;
   int newcycle;
   std::string newstring;
@@ -125,8 +128,6 @@ TEST(HDF5_MPI) {
   cout << "E>> read back:" << endl << *read_quantity;
   cout << "E>> cell map:" << endl << Mesh.cell_map(false);
   
-  delete viz_output;
-  delete restart_output;
   delete restart_input;
 
 #endif

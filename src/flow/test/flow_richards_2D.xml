@@ -147,10 +147,8 @@
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array string" value="{Left side, Right side Top}"/>
             <ParameterList name="outward mass flux">
-              <ParameterList name="function-tabular">
-                <Parameter name="forms" type="Array string" value="{constant}"/>
-                <Parameter name="x values" type="Array double" value="{0, 7.884e+06}"/>
-                <Parameter name="y values" type="Array double" value="{0.0, 0.0}"/>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -193,7 +191,8 @@
 
     <ParameterList name="Mesh block 1">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="2.0"/>
+      <Parameter name="Constant vertical permeability" type="double" value="2.0"/>
+      <Parameter name="Constant horizontal permeability" type="double" value="0.1"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Region" type="string" value="Material 1 Region"/>
       <ParameterList name="linear pressure">
@@ -207,7 +206,8 @@
     </ParameterList>
     <ParameterList name="Mesh block 2">
       <Parameter name="Constant component concentration 0" type="double" value="0.0"/>
-      <Parameter name="Constant permeability" type="double" value="0.5"/>
+      <Parameter name="Constant vertical permeability" type="double" value="0.5"/>
+      <Parameter name="Constant horizontal permeability" type="double" value="0.5"/>
       <Parameter name="Constant porosity" type="double" value="0.2"/>
       <Parameter name="Region" type="string" value="Material 2 Region"/>
       <ParameterList name="linear pressure">

@@ -24,7 +24,8 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   fluid_density = S->get_density();
   fluid_viscosity = S->get_viscosity();
   gravity = S->get_gravity();
-  absolute_permeability = S->get_permeability();
+  vertical_permeability = S->get_vertical_permeability();
+  horizontal_permeability = S->get_horizontal_permeability();
   pressure = S->get_pressure();
   darcy_mass_flux = S->get_darcy_flux();
   mesh_ = S->get_mesh_maps();
@@ -39,7 +40,8 @@ Flow_State::Flow_State(State& S)
   fluid_density = S.get_density();
   fluid_viscosity = S.get_viscosity();
   gravity = S.get_gravity();
-  absolute_permeability = S.get_permeability();
+  vertical_permeability = S.get_vertical_permeability();
+  horizontal_permeability = S.get_horizontal_permeability();
   pressure = S.get_pressure();
   darcy_mass_flux = S.get_darcy_flux();
   mesh_ = S.get_mesh_maps();
@@ -60,7 +62,8 @@ Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
     fluid_density = S.get_fluid_density();
     fluid_viscosity = S.get_fluid_viscosity();
     gravity = S.get_gravity();
-    absolute_permeability = S.get_absolute_permeability();
+    vertical_permeability = S.get_vertical_permeability();
+    horizontal_permeability = S.get_horizontal_permeability();
     pressure = S.get_pressure();
     darcy_mass_flux = S.get_darcy_mass_flux();
     mesh_ = S.get_mesh();
@@ -70,7 +73,8 @@ Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
     fluid_density = S.get_fluid_density();
     fluid_viscosity = S.get_fluid_viscosity();
     gravity = S.get_gravity();
-    absolute_permeability = S.get_absolute_permeability();
+    vertical_permeability = S.get_vertical_permeability();
+    horizontal_permeability = S.get_horizontal_permeability();
     mesh_ = S.get_mesh();
 
     // allocate memory for the next state

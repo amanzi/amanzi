@@ -45,7 +45,7 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
 
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list);
+  GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 10,40, MPI_COMM_WORLD, gm)); 
 
   // create flow state
@@ -77,7 +77,6 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
 
   S.update_pressure(*pcells);
   S.set_time(0.0);
-
   // solve the problem
   RPK->advance_to_steady_state();
  

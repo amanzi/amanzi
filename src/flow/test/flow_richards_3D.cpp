@@ -45,7 +45,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create a mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
 
   MeshFactory factory(comm);
   ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
@@ -87,7 +87,7 @@ TEST(FLOW_3D_RICHARDS) {
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
   GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
-  GMV::write_cell_data(*(S.get_permeability()), 0, "abs_permeability");
+  GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
   GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
   GMV::close_data_file();
 
