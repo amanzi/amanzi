@@ -143,13 +143,22 @@ void State::initialize_from_parameter_list()
         Exceptions::amanzi_throw(Errors::Message("State.cpp: The number of material IDs does not match the number of region names"));
       }
       
-      *out << "Region name ---> Material ID:" << std::endl;
+      Teuchos::Array<std::string> matnames =  parameter_list.get<Teuchos::Array<std::string> >("Material Names");
+      
+      *out << std::endl << "Material name ---> Material ID:" << std::endl;
+      for (int k=0; k<matnames.size(); k++) {
+        *out << matnames[k] << " ---> " << k+1 << std::endl;
+      }
+      *out << std::endl;
+       
+
       for (int ii=0; ii<regnames.size(); ii++) {
         double value = static_cast<double>(matids[ii]);
         set_cell_value_in_region(value, *get_material_ids(), regnames[ii]);
-        
-        *out << regnames[ii] << " ---> " << matids[ii] << std::endl;
       }
+
+      
+
     }  
   } else {
     material_ids->PutScalar(0.0);

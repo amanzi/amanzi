@@ -395,10 +395,10 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
 
 
     if ( plist->sublist("Execution control").isSublist("Restart from Checkpoint Data File") ) {
-      mpc_list.sublist("Restart from Checkpoint Data File") = 
+      mpc_list.sublist("Restart from Checkpoint Data File") =
           plist->sublist("Execution control").sublist("Restart from Checkpoint Data File");
     }
-    
+
 
   }
 
@@ -846,11 +846,11 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         } else {
           std::stringstream ss;
           ss << "There is more than one material assinged to region " << regions[ii] << ".";
-          Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));          
+          Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
         }
       }
-      
-      
+
+
       double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
       double perm_vert, perm_horiz;
 
@@ -948,7 +948,8 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
     // write the mapping between region name and material id
     // (here material ID is an atificial integer that is only used for visualization)
     Teuchos::Array<int> matids(region_to_matid.size());
-    Teuchos::Array<std::string> regnames(region_to_matid.size());    
+    Teuchos::Array<std::string> regnames(region_to_matid.size());
+    Teuchos::Array<std::string> matnames(matid_to_material.size());
 
     int ii=0;
     for (std::map<std::string,int>::const_iterator it = region_to_matid.begin(); it != region_to_matid.end(); it++) {
@@ -956,13 +957,19 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
       regnames[ii] = it->first;
       ii++;
     }
-    
+
+    for (int k=0; k<matnames.size(); k++) {
+      matnames[k] = matid_to_material[k+1];
+    }
+
 
     stt_list.set<Teuchos::Array<int> >("Region Name to Material ID Map (Material IDs)",matids);
     stt_list.set<Teuchos::Array<std::string> >("Region Name to Material ID Map (Region Names)",regnames);
-    
+    stt_list.set<Teuchos::Array<std::string> >("Material Names",matnames);
+
+
   } else {
-    Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");    
+    Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");
   }
 
 
