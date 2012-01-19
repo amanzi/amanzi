@@ -827,13 +827,30 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
     stt_list.set<double>("Constant viscosity", viscosity);
     stt_list.set<double>("Constant water density", density);
 
-    int region_counter = 0;
+    std::map<std::string,int> region_to_matid;
+    std::map<int,std::string> matid_to_material;
+
+    int matid_ctr = 0;
     // loop over the material properties
     Teuchos::ParameterList& matprop_list = plist->sublist("Material Properties");
     for (Teuchos::ParameterList::ConstIterator i = matprop_list.begin(); i != matprop_list.end(); i++) {
       // get the regions
       Teuchos::Array<std::string> regions = matprop_list.sublist(matprop_list.name(i)).get<Teuchos::Array<std::string> >("Assigned Regions");
 
+      // record the material ID for each region that this material occupies
+      matid_ctr++;
+      for (int ii=0; ii<regions.size(); ii++) {
+        if (region_to_matid.find(regions[ii]) == region_to_matid.end()) {
+          region_to_matid[regions[ii]] = matid_ctr;
+          matid_to_material[matid_ctr] = matprop_list.name(i);
+        } else {
+          std::stringstream ss;
+          ss << "There is more than one material assinged to region " << regions[ii] << ".";
+          Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));          
+        }
+      }
+      
+      
       double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
       double perm_vert, perm_horiz;
 
@@ -927,9 +944,30 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         }
       }
     }
-  } else {
 
+    // write the mapping between region name and material id
+    // (here material ID is an atificial integer that is only used for visualization)
+    Teuchos::Array<int> matids(region_to_matid.size());
+    Teuchos::Array<std::string> regnames(region_to_matid.size());    
+
+    int ii=0;
+    for (std::map<std::string,int>::const_iterator it = region_to_matid.begin(); it != region_to_matid.end(); it++) {
+      matids[ii] = it->second;
+      regnames[ii] = it->first;
+      ii++;
+    }
+    
+
+    stt_list.set<Teuchos::Array<int> >("Region Name to Material ID Map (Material IDs)",matids);
+    stt_list.set<Teuchos::Array<std::string> >("Region Name to Material ID Map (Region Names)",regnames);
+    
+  } else {
+    Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");    
   }
+
+
+
+
   return stt_list;
 }
 

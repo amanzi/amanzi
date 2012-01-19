@@ -3,6 +3,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
@@ -13,7 +14,7 @@
 
 typedef enum { COMPLETE, UPDATING } status_type;
 
-class State {
+class State  : public Teuchos::VerboseObject<State> {
   
 public:
 
@@ -34,7 +35,8 @@ public:
   Teuchos::RCP<Epetra_Vector>       get_water_saturation () { return water_saturation; };
   Teuchos::RCP<Epetra_Vector>       get_water_density ()    { return water_density; };
   Teuchos::RCP<Epetra_Vector>       get_vertical_permeability ()     { return vertical_permeability; };
-  Teuchos::RCP<Epetra_Vector>       get_horizontal_permeability ()   { return vertical_permeability; };
+  Teuchos::RCP<Epetra_Vector>       get_horizontal_permeability ()   { return horizontal_permeability; };
+  Teuchos::RCP<Epetra_Vector>       get_material_ids ()     { return material_ids; };
   
   Teuchos::RCP<double>              get_density()      { return density; } 
   Teuchos::RCP<double>              get_viscosity()    { return viscosity; }
@@ -104,6 +106,7 @@ public:
   void set_pressure ( const Epetra_Vector& pressure_ );
   void set_darcy_velocity ( const Epetra_MultiVector& darcy_velocity_ );
   void set_total_component_concentration ( const Epetra_MultiVector& total_component_concentration_ );
+  void set_material_ids ( const Epetra_Vector& material_ids_ );
 
   void set_linear_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
   void set_uniform_pressure ( const Teuchos::ParameterList& ic_list, const std::string& region );
@@ -123,6 +126,7 @@ public:
 
 private:
   void initialize_from_parameter_list();
+  void init_verbosity (Teuchos::ParameterList &parameter_list_);
   void create_default_compnames(int n);
   void set_cell_value_in_mesh_block(double value, Epetra_Vector &v,
 				    int mesh_block_id);
@@ -143,6 +147,7 @@ private:
   Teuchos::RCP<Epetra_Vector> horizontal_permeability;
   Teuchos::RCP<Epetra_Vector> vertical_permeability;  
   Teuchos::RCP<Epetra_MultiVector> darcy_velocity;
+  Teuchos::RCP<Epetra_Vector> material_ids;
 
   Teuchos::RCP<double*> gravity;
   Teuchos::RCP<double> density;
