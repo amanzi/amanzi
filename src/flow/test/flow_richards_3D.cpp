@@ -40,20 +40,20 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/bc-cribs-2D-20cm.xml"; //flow_richards_3D.xml";
+  string xmlFileName = "test/flow_richards_3D.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create a mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list);
+  GeometricModelPtr gm = new GeometricModel(3, region_list);
 
   MeshFactory factory(comm);
   ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
-  //ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
-  //Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
+  Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
   //std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
   //Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0, 64.5,103.2, 1,516, MPI_COMM_WORLD, gm)); 
+  //RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0, 64.5,103.2, 1,516, MPI_COMM_WORLD, gm)); 
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");

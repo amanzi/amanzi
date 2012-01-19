@@ -39,9 +39,10 @@ void Darcy_PK::processParameterList()
 
   // Steady state solution
   Teuchos::ParameterList& sss_list = dp_list.sublist("Steady state solution");
+  Teuchos::ParameterList& solver_list = sss_list.sublist("Linear solvers");
 
-  max_itrs_sss = preconditioner_list.get<int>("Linear solver maximal iterations", 100);
-  convergence_tol_sss = preconditioner_list.get<double>("Linear solver tolerance", 1e-12);
+  max_itrs_sss = preconditioner_list.get<int>("Maximal number of iterations", 100);
+  convergence_tol_sss = preconditioner_list.get<double>("Error tolerance", 1e-12);
 }
 
 }  // namespace AmanziFlow

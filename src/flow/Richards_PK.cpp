@@ -134,7 +134,8 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Create the BDF2 time integrator
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(rp_list.sublist("Time integrator")));
+  Teuchos::ParameterList solver_list = rp_list.sublist("Steady state solution").sublist("Nonlinear solvers");
+  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
   bdf2_dae = new BDF2::Dae(*this, *super_map_);
   bdf2_dae->setParameterList(bdf2_list);
 

@@ -94,8 +94,14 @@
       </ParameterList>
 
       <ParameterList name="Steady state solution">
-        <Parameter name="Linear solver tolerance" type="double" value="1e-12"/>
-        <Parameter name="Linear solver maximal iterations" type="int" value="200"/>
+        <Parameter name="method" type="string" value="Direct solve"/>
+        <Parameter name="Verbosity level" type="string" value="medium"/>
+
+        <ParameterList name="Linear solvers"> 
+          <Parameter name="Iterative method" type="string" value="CGS"/>
+          <Parameter name="Error tolerance" type="double" value="1e-14"/>
+          <Parameter name="Maximal number of iterations" type="int" value="100"/>
+        </ParameterList>
       </ParameterList>
 
       <ParameterList name="boundary conditions">
