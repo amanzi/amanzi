@@ -123,12 +123,15 @@ if (BUILD_TESTS)
     endif()
 
     # Test: 3D Richards
-    set(amanzi_libs geometry mesh mesh_audit mesh_factory mstk_mesh simple_mesh flow state whetstone solvers output hdf5)
+    set(amanzi_libs geometry mesh mesh_factory mstk_mesh simple_mesh flow state whetstone solvers output hdf5)
 
     add_executable(flow_richards_3D test/Main.cc test/flow_richards_3D.cpp)
     target_link_libraries(flow_richards_3D ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(flow_richards_3D flow_richards_3D KIND unit)
     
+    add_executable(flow_richards_tensor test/Main.cc test/flow_richards_tensor.cpp)
+    target_link_libraries(flow_richards_tensor ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_richards_tensor flow_richards_tensor KIND unit)
 endif()
 
 option(ENABLE_FLOW_EXAMPLES "Build flow examples" OFF)

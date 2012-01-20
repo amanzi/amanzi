@@ -63,6 +63,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
 #endif
 
   // miscalleneous
+  solver = NULL;
+
   method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
   method_bdf = FLOW_STEADY_STATE_BDF2;
 
@@ -80,7 +82,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
 Richards_PK::~Richards_PK() 
 { 
   delete super_map_; 
-  delete solver; 
+  if (solver) delete solver; 
   if (matrix == preconditioner) {
     delete matrix; 
   } else {

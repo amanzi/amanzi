@@ -34,9 +34,10 @@ TEST(FLOW_2D_RICHARDS) {
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::AmanziFlow;
 
-cout << "Test: 2D Richards, 2-layer model" << endl;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
+
+  if (MyPID == 0) cout << "Test: 2D Richards, 2-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
@@ -46,7 +47,9 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 10,40, MPI_COMM_WORLD, gm)); 
+cout << MyPID << " HERE -1 " << endl;
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 18,18, MPI_COMM_WORLD, gm)); 
+cout << MyPID << " HERE -2 " << endl;
 
   // create flow state
   ParameterList& state_list = parameter_list.get<ParameterList>("State");
@@ -80,10 +83,12 @@ cout << "Test: 2D Richards, 2-layer model" << endl;
   // solve the problem
   RPK->advance_to_steady_state();
  
-  GMV::open_data_file(*mesh, (std::string)"flow.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
-  GMV::close_data_file();
+  if (MyPID == 0) {
+    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
+    GMV::close_data_file();
+  }
 
   delete RPK;
 }
