@@ -35,8 +35,7 @@ LinearFunction::LinearFunction (double y0, const std::vector<double> &grad)
 double LinearFunction::operator() (const double *x) const
 {
   double y = y0_;
-  // N.B. The array (t,x,y,z) is passed as *x, so that x[j+1] is z.
-  for (int j = 0; j < grad_.size(); ++j) y += grad_[j]*(x[j+1] - x0_[j]);
+  for (int j = 0; j < grad_.size(); ++j) y += grad_[j]*(x[j] - x0_[j]);
   return y;
 }
 
