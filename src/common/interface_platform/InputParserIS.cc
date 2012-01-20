@@ -226,6 +226,12 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
 
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
 
+      if (olist.isParameter("Observation Output Filename")) {
+	obs_list.set<std::string>("Observation Output Filename",olist.get<std::string>("Observation Output Filename"));
+      } else {
+	Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
+      }
+
       for ( Teuchos::ParameterList::ConstIterator i = olist.begin();
             i != olist.end(); i++ ) {
         if (  olist.isSublist( i->first ) ) {

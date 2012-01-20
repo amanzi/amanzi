@@ -627,10 +627,10 @@ double State::point_value(const std::string& point_region, const std::string& na
     // throw
   }
 
-
   unsigned int mesh_block_size = mesh_maps->get_set_size(point_region,
                                                          Amanzi::AmanziMesh::CELL,
                                                          Amanzi::AmanziMesh::OWNED);
+
 
   double value(0.0);
   double volume(0.0);
@@ -657,7 +657,6 @@ double State::point_value(const std::string& point_region, const std::string& na
   else if ( name == "Water" )
   {
     value = 0.0;
-    \
     volume = 0.0;
     for (int i=0; i<mesh_block_size; i++)
     {
