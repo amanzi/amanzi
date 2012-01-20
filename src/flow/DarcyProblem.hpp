@@ -31,7 +31,7 @@ public:
   void SetFluidViscosity(double mu);
   void SetGravity(const double g[3]);
   void set_absolute_permeability(double k);
-  void set_absolute_permeability(const Epetra_Vector &k);
+  void set_absolute_permeability(const Epetra_Vector &kv, const Epetra_Vector &kh);
 
   // Assemble the problem
   void Assemble();
@@ -75,7 +75,8 @@ private:
   double mu_;   // constant fluid viscosity
   double g_[3]; // gravitational acceleration
   double gravity_;  // gravitational acceleration (positive coef, directed in -z direction)
-  std::vector<double> k_; // spatially variable permeability
+  std::vector<double> kv_; // spatially variable vertical permeability
+  std::vector<double> kh_; // spatially variable horizontal permeability
   
   BoundaryFunction *bc_press_;  // Pressure Dirichlet conditions, excluding static head
   BoundaryFunction *bc_head_;   // Static pressure head conditions; also Dirichlet-type

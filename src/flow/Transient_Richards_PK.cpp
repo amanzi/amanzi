@@ -58,7 +58,7 @@ Transient_Richards_PK::~Transient_Richards_PK()
 int Transient_Richards_PK::advance_to_steady_state()
 {
   // Set problem parameters.
-  problem->set_absolute_permeability(FS->get_vertical_permeability());
+  problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
   problem->set_flow_state(FS);
 
   double t0 = ss_t0;
@@ -109,7 +109,7 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
   hnext = h_;
 
   // Set problem parameters.
-  problem->set_absolute_permeability(FS->get_vertical_permeability());
+  problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
   problem->set_flow_state(FS);
 
   Epetra_Vector udot(problem->Map());
@@ -125,7 +125,7 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
 int Transient_Richards_PK::advance_transient(double h) 
 {
   // Set problem parameters
-  problem->set_absolute_permeability(FS->get_vertical_permeability());
+  problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
   problem->set_flow_state(FS);
 
   time_stepper->bdf2_step(h,0.0,*solution,hnext);
