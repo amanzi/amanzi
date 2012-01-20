@@ -47,9 +47,7 @@ TEST(FLOW_2D_RICHARDS) {
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
-cout << MyPID << " HERE -1 " << endl;
   RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 18,18, MPI_COMM_WORLD, gm)); 
-cout << MyPID << " HERE -2 " << endl;
 
   // create flow state
   ParameterList& state_list = parameter_list.get<ParameterList>("State");

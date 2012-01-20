@@ -186,8 +186,8 @@
             <ParameterList name="boundary pressure">
               <ParameterList name="function-linear">
                 <Parameter name="y0" type="double" value="0.0"/>
-                <Parameter name="gradient" type="Array double" value="{-0.15, -0.15, -0.15}"/>
-                <Parameter name="x0" type="Array double" value="{0.0, 0.0, 0.0}"/>
+                <Parameter name="gradient" type="Array double" value="{0.0, -0.15, -0.15, -0.15}"/>
+                <Parameter name="x0" type="Array double" value="{0.0, 0.0, 0.0, 0.0}"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>

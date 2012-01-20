@@ -24,7 +24,7 @@ class Dae : public Teuchos::VerboseObject<Dae>,
  public:
   // Create the BDF2 Dae solver object, the nonlinear problem must
   // be defined in a class that derives from the virtual base class
-  // fnBase.								
+  // fnBase.							q	
   // The map is passed in, so that the BDF2 Dae stepper knows what
   // kind of Epetra_Vector is needs to work with.
   // The parameter list plist is checked for validity in the constructor.
