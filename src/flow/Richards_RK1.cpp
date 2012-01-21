@@ -44,7 +44,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
     // create algebraic problem (matrix = preconditioner)
-    matrix->createMFDstiffnessMatrices(K, *Krel_faces);
+    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     addTimeDerivative_MFDfake(*solution_cells, dT, matrix);
@@ -119,7 +119,7 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
     }
 
     // create algebraic problem
-    matrix->createMFDstiffnessMatrices(K, *Krel_faces);
+    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);

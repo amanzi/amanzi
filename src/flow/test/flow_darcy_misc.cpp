@@ -45,7 +45,8 @@ class DarcyProblem {
     // create an SIMPLE mesh framework 
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-    mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
+    //mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
+    mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", MPI_COMM_WORLD, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");

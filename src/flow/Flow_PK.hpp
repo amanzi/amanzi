@@ -44,6 +44,10 @@ const int FLOW_STEADY_STATE_MAX_ITERATIONS = 100;
 const double FLOW_STEADY_STATE_TOLERANCE = 1e-6;
 const double FLOW_STEADY_STATE_INITIAL_DT = 1e-8;
 
+const int FLOW_MFD3D_POLYHEDRA = 1;
+const int FLOW_MFD3D_POLYHEDRA_MONOTONE = 2;  // under development
+const int FLOW_MFD3D_HEXAHEDRA_MONOTONE = 3;
+
 const int FLOW_HEX_FACES = 6;  // Hexahedron is the common element
 const int FLOW_HEX_NODES = 8;
 const int FLOW_HEX_EDGES = 12;

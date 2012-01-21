@@ -41,8 +41,15 @@ void Darcy_PK::processParameterList()
   Teuchos::ParameterList& sss_list = dp_list.sublist("Steady state solution");
   Teuchos::ParameterList& solver_list = sss_list.sublist("Linear solvers");
 
-  max_itrs_sss = preconditioner_list.get<int>("Maximal number of iterations", 100);
-  convergence_tol_sss = preconditioner_list.get<double>("Error tolerance", 1e-12);
+  max_itrs_sss = solver_list.get<int>("Maximal number of iterations", 100);
+  convergence_tol_sss = solver_list.get<double>("Error tolerance", 1e-12);
+
+  string method_name = sss_list.get<string>("Discretization method hint", "monotone");
+  if (method_name == "monotone") {
+    mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;
+  } else if (method_name == "none") {
+    mfd3d_method = FLOW_MFD3D_POLYHEDRA;
+  }
 }
 
 }  // namespace AmanziFlow

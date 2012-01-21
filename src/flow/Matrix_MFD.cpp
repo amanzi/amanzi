@@ -37,7 +37,8 @@ void Matrix_MFD::createMFDmassMatrices(std::vector<WhetStone::Tensor>& K)
 /* ******************************************************************
 * Calculate elemental stiffness matrices.                                            
 ****************************************************************** */
-void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K, 
+void Matrix_MFD::createMFDstiffnessMatrices(int mfd3d_method, 
+                                            std::vector<WhetStone::Tensor>& K, 
                                             Epetra_Vector& Krel_faces)
 {
   int dim = mesh_->space_dimension();
@@ -57,9 +58,13 @@ void Matrix_MFD::createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K,
     Teuchos::SerialDenseMatrix<int, double> Bff(nfaces, nfaces);
     Epetra_SerialDenseVector Bcf(nfaces), Bfc(nfaces);
 
-    if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
-    else mfd.darcy_mass_inverse(c, K[c], Bff);
-    //mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
+    if (mfd3d_method == AmanziFlow::FLOW_MFD3D_HEXAHEDRA_MONOTONE) {
+       if ((nfaces == 6 && dim == 3) || (nfaces == 4 && dim == 2)) mfd.darcy_mass_inverse_hex(c, K[c], Bff);
+       else mfd.darcy_mass_inverse(c, K[c], Bff);
+       //mfd.darcy_mass_inverse_diagonal(c, K[c], Bff);
+    } else {
+       mfd.darcy_mass_inverse(c, K[c], Bff);
+    }
 
     for (int n=0; n<nfaces; n++)
       for (int m=0; m<nfaces; m++) Bff(m, n) *= Krel_faces[faces[m]];

@@ -60,6 +60,7 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
 #endif
 
   // miscalleneous
+  mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
   flag_upwind = false;
   verbosity = FLOW_VERBOSITY_HIGH;
 }
@@ -149,7 +150,7 @@ int Darcy_PK::advance_to_steady_state()
   for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
 
   // calculate and assemble elemental stifness matrices
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
   matrix->applyBoundaryConditions(bc_markers, bc_values);
@@ -173,7 +174,7 @@ int Darcy_PK::advance_to_steady_state()
 
   // calculate darcy mass flux
   Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
 

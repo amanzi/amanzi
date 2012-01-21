@@ -3,7 +3,15 @@
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
   <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="mstk::mesh"/>
+    <ParameterList name="Unstructured">
+      <ParameterList name="Read">
+        <Parameter name="File" type="string" value="hexes.exo"/>
+        <Parameter name="Format" type="string" value="Exodus II"/>
+      </ParameterList>
+      <ParameterList name="Expert">
+        <Parameter name="Framework" type="string" value="mstk::mesh"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>    
    
   <!--  REGIONS: this super input desk will be used to cut-off smaller 
@@ -95,6 +103,7 @@
 
       <ParameterList name="Steady state solution">
         <Parameter name="method" type="string" value="Direct solve"/>
+        <Parameter name="Discretization method hint" type="string" value="none"/>
         <Parameter name="Verbosity level" type="string" value="medium"/>
 
         <ParameterList name="Linear solvers"> 

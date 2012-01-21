@@ -40,7 +40,7 @@ class Matrix_MFD : public Epetra_Operator {
   void setSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }
   void createMFDmassMatrices(std::vector<WhetStone::Tensor>& K);
   void createMFDrhsVectors();
-  void createMFDstiffnessMatrices(std::vector<WhetStone::Tensor>& K, Epetra_Vector& Krel_faces);
+  void createMFDstiffnessMatrices(int mfd3d_method, std::vector<WhetStone::Tensor>& K, Epetra_Vector& Krel_faces);
   void rescaleMFDstiffnessMatrices(const Epetra_Vector& old_scale, const Epetra_Vector& new_scale);
   void applyBoundaryConditions(std::vector<int>& bc_markers, std::vector<double>& bc_values);
 

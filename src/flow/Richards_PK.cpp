@@ -71,6 +71,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
   absolute_tol_sss = absolute_tol_bdf = 1.0; 
   relative_tol_sss = relative_tol_bdf = 1e-5;
 
+  mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
   flag_upwind = true;
   verbosity = FLOW_VERBOSITY_HIGH;
 }
@@ -194,7 +195,7 @@ int Richards_PK::advance_to_steady_state()
 
   // calculate darcy mass flux
   Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
 
@@ -263,7 +264,7 @@ int Richards_PK::advanceSteadyState_Picard()
     }
 
     // create algebraic problem (matrix = preconditioner)
-    matrix->createMFDstiffnessMatrices(K, *Krel_faces);
+    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
     matrix->createMFDrhsVectors();
     addGravityFluxes_MFD(K, *Krel_faces, matrix);
     matrix->applyBoundaryConditions(bc_markers, bc_values);
@@ -402,7 +403,7 @@ void Richards_PK::computePreconditionerMFD(
   updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
   // setup new algebraic problems
-  matrix->createMFDstiffnessMatrices(K, *Krel_faces);
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
   matrix->createMFDrhsVectors();
   addGravityFluxes_MFD(K, *Krel_faces, matrix);
   if (flag_update_ML) addTimeDerivative_MFD(*u_cells, dTp, matrix);
