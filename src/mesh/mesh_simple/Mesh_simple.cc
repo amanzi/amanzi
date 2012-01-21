@@ -1013,7 +1013,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
                     if (inbox)
                       ss.push_back(face);
 
-                    face = xzface_index_(nx_,iy,iz);
+                    face = yzface_index_(nx_,iy,iz);
                     face_get_coordinates(face,&fxyz);
 
                     inbox = true;
