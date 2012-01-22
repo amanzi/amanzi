@@ -16,7 +16,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "MSTK_types.h"
-#include "Mesh_MSTK.hh"
+#include "Mesh_simple.hh"
 
 #include "State.hpp"
 #include "Flow_State.hpp"
@@ -47,7 +47,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0,0.0, 1.0,1.0,1.0, 2, 2, 2, comm, gm)); 
+  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 2, 2, 2, comm, gm)); 
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -108,7 +108,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   for (int c=0; c<(*ucells).MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
-    //cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
+    cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
     err_p += pow(pressure[c] - p_exact, 2.0);
   }
   err_p = sqrt(err_p);

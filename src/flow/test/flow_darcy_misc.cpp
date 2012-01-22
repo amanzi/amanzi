@@ -45,7 +45,7 @@ class DarcyProblem {
     // create an SIMPLE mesh framework 
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-    //mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
+    //mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
     mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", MPI_COMM_WORLD, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
@@ -60,7 +60,7 @@ class DarcyProblem {
     DPK = new Darcy_PK(dp_list, FS);
   }
 
-  ~DarcyProblem() { delete DPK; delete comm; }
+  ~DarcyProblem() { delete DPK; delete comm; delete S; }
 
   void createBClist(
       const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
@@ -126,12 +126,30 @@ class DarcyProblem {
     }
     return sqrt(error_L2);
   }
+
+  double calculateDarcyVelocityError(AmanziGeometry::Point& velocity_exact)
+  {
+    Epetra_Vector& darcy_mass_flux = *(DPK->get_flow_state_next()->get_darcy_mass_flux());
+    int dim = mesh->space_dimension();
+
+    Epetra_MultiVector velocity(mesh->cell_map(false), dim);
+    DPK->get_matrix()->deriveDarcyVelocity(darcy_mass_flux, velocity);
+
+    double error_L2 = 0.0;
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (int c=0; c<ncells; c++) {
+//cout << c << " " << velocity[0][c] << " " << velocity[2][c] << " exact=" << velocity_exact << endl;
+      AmanziGeometry::Point velocity_num(velocity[0][c], velocity[1][c], velocity[2][c]);
+      error_L2 += L22(velocity_num - velocity_exact);
+    }
+    return sqrt(error_L2);
+  }
 };
 
 
-SUITE(Simple_1D_Flow) {
+SUITE(Darcy_PK) {
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
-    if (MyPID == 0) std::cout <<"Darcy 1D: Dirichlet-Dirichlet" << std::endl;
+    if (MyPID == 0) std::cout <<"Darcy PK: Dirichlet-Dirichlet" << std::endl;
 
     double rho = DPK->get_rho();  // set up analytic solution
     double mu = DPK->get_mu();
@@ -163,7 +181,7 @@ SUITE(Simple_1D_Flow) {
 
   TEST_FIXTURE(DarcyProblem, DirichletNeumann)
   {
-    if (MyPID == 0) std::cout <<"Flow 1D: Dirichlet-Neumann" << std::endl;
+    if (MyPID == 0) std::cout <<"Darcy PK: Dirichlet-Neumann" << std::endl;
 
     double rho = DPK->get_rho();  // set up analytic solution
     double mu = DPK->get_mu();
@@ -194,7 +212,7 @@ SUITE(Simple_1D_Flow) {
   }
 
   TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
-    if (MyPID == 0) std::cout <<"Darcy 1D: StaticHead-Dirichlet" << std::endl;
+    if (MyPID == 0) std::cout <<"Darcy PK: StaticHead-Dirichlet" << std::endl;
 
     double rho = DPK->get_rho();  // set up analytic solution
     double mu = DPK->get_mu();
@@ -224,55 +242,36 @@ SUITE(Simple_1D_Flow) {
   }
 }
 
-/*
-  TEST_FIXTURE(problem_setup, z_p_p)
+SUITE(Darcy_Velocity) {
+  TEST_FIXTURE(DarcyProblem, DarcyVelocity)
   {
-    std::cout <<"Flow 1D: test 9" << std::endl;
+    if (MyPID == 0) std::cout <<"Darcy PK: velocity" << std::endl;
 
-    // Set non-default BC before create_problem().
-    set_bc("TOP",    "pressure", 0.0);
-    set_bc("BOTTOM", "pressure", 1.0);
+    double rho = DPK->get_rho();  // set up analytic solution
+    double mu = DPK->get_mu();
 
-    create_problem();
-    solve_problem();
+    double p0 = 2.0;
+    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+    AmanziGeometry::Point velocity(3);
+    velocity = -rho * (pressure_gradient - rho * DPK->get_gravity()) / mu;
 
-    double p0 = 1.0;
-    double pgrad[3] = {0.0, 0.0, -1.0};
-    set_pressure_constants(p0, pgrad);
+    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
+    regions[0] = string("Top side");
+    createBClist("pressure", "BC 1", regions, 1.0);
 
-    double error;
-    cell_pressure_error(error);
-    CHECK(error < 1.0e-8);
+    regions[0] = string("Bottom side");
+    createBClist("static head", "BC 2", regions, 0.25);
+    DPK->resetParameterList(dp_list);
 
-    face_pressure_error(error);
+    DPK->Init();  // setup the problem
+    DPK->advance_to_steady_state();
+
+    double error = calculateDarcyVelocityError(velocity);
     CHECK(error < 1.0e-8);
   }
 }
 
-
-SUITE(Darcy_Velocity) {
-  TEST_FIXTURE(problem_setup, Darcy_Velocity_X)
-  {
-    std::cout <<"Darcy velocity: test 1" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("LEFT",  "pressure", 1.0);
-    set_bc("RIGHT", "pressure", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    setFluidViscosity(2.0);
-
-    create_problem();
-    problem->set_absolute_permeability(2.0);
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = {1.0, 0.0, 0.0};
-    double error;
-    darcy_velocity_error(q, error);
-    CHECK(error < 1.0e-8);
-  }
-
+/*
   TEST_FIXTURE(problem_setup, Darcy_Velocity_X_Gravity)
   {
     std::cout <<"Darcy velocity: test 4" << std::endl;

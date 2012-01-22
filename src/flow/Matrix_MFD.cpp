@@ -524,27 +524,28 @@ void Matrix_MFD::deriveDarcyVelocity(
     const Epetra_Vector& darcy_mass_flux, Epetra_MultiVector& darcy_velocity) const
 {
   Teuchos::LAPACK<int, double> lapack;
-  double rhs_cell[FLOW_MAX_FACES];
+
+  int dim = mesh_->space_dimension();
+  Teuchos::SerialDenseMatrix<int, double> matrix(dim, dim); 
+  double rhs_cell[dim];
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-  int dim = mesh_->space_dimension();
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c=0; c<ncells; c++) {
     mesh_->cell_get_faces(c, &faces); 
-    mesh_->cell_get_face_dirs(c, &dirs);
     int nfaces = faces.size(); 
 
-    Teuchos::SerialDenseMatrix<int, double> matrix(nfaces, nfaces); 
+    for (int i=0; i<dim; i++) rhs_cell[i] = 0.0;
+    matrix.putScalar(0.0);
 
-    for (int n=0; n<ncells; n++) {  // populate least-square matrix
+    for (int n=0; n<nfaces; n++) {  // populate least-square matrix
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       double area = mesh_->face_area(f);
 
       for (int i=0; i<dim; i++) {
-        rhs_cell[i] += normal[i] * darcy_mass_flux[f] * dirs[f];
+        rhs_cell[i] += normal[i] * darcy_mass_flux[f];
         matrix(i,i) += normal[i] * normal[i]; 
         for (int j=i+1; j<dim; j++) {
           matrix(j,i) = matrix(i,j) += normal[i] * normal[j];
