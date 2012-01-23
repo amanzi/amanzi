@@ -12,6 +12,15 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
+Matrix_MFD::~Matrix_MFD() 
+{
+  if (MLprec->IsPreconditionerComputed()) { 
+    MLprec->DestroyPreconditioner(); 
+    delete MLprec;
+  }
+}
+
+
 /* ******************************************************************
 * Calculate elemental inverse mass matrices (is *not* used).                                            
 ****************************************************************** */

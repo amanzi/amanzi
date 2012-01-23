@@ -34,7 +34,7 @@ namespace AmanziFlow {
 class Matrix_MFD : public Epetra_Operator {
  public:
   Matrix_MFD(Teuchos::RCP<Flow_State> FS_, const Epetra_Map& map_) : FS(FS_), map(map_) { mesh_ = FS->get_mesh(); }
-  ~Matrix_MFD() {};
+  ~Matrix_MFD();
 
   // main methods
   void setSymmetryProperty(bool flag_symmetry) { flag_symmetry_ = flag_symmetry; }

@@ -119,7 +119,7 @@ void Richards_PK::print_statistics() const
   if (!MyPID && verbosity > 0) {
     cout << "Flow PK:" << endl;
     cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
-    cout << "    Verbosity level = " << verbosity_level << endl;
+    cout << "    Verbosity level = " << verbosity << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
     cout << "    Upwind = " << (flag_upwind ? "yes" : "no") << endl;
   }

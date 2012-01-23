@@ -96,9 +96,9 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
  
     # Test: miscaleneous Richards flow routines
-    add_executable(flow_richards_misc test/Main.cc test/flow_richards_misc.cpp)
-    target_link_libraries(flow_richards_misc ${amanzi_libs} ${UnitTest_LIBRARIES})
-    add_amanzi_test(flow_richards_misc flow_richards_misc KIND int)
+    add_executable(flow_richards_convergence test/Main.cc test/flow_richards_convergence.cpp)
+    target_link_libraries(flow_richards_convergence ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_richards_convergence flow_richards_convergence KIND int)
  
     # Test: van Genuchten flow routines
     add_executable(flow_vanGenuchten test/Main.cc test/flow_vanGenuchten.cpp)
@@ -128,6 +128,10 @@ if (BUILD_TESTS)
     add_executable(flow_richards_3D test/Main.cc test/flow_richards_3D.cpp)
     target_link_libraries(flow_richards_3D ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(flow_richards_3D flow_richards_3D KIND unit)
+    
+    add_executable(flow_richards_bc_cribs test/Main.cc test/flow_richards_bc_cribs.cpp)
+    target_link_libraries(flow_richards_bc_cribs ${amanzi_libs} ${UnitTest_LIBRARIES})
+    add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs KIND unit)
     
     add_executable(flow_richards_tensor test/Main.cc test/flow_richards_tensor.cpp)
     target_link_libraries(flow_richards_tensor ${amanzi_libs} ${UnitTest_LIBRARIES})

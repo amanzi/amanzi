@@ -16,7 +16,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Mesh.hh"
-#include "Mesh_STK.hh"
+#include "MeshFactory.hh"
+#include "Mesh_MSTK.hh"
 #include "gmv_mesh.hh"
 
 #include "State.hpp"
@@ -35,7 +36,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) cout << "Test: 3D parallel Richards" << endl;
+  if (MyPID == 0) cout << "Test: 3D Richards, crib model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
@@ -45,9 +46,14 @@ TEST(FLOW_3D_RICHARDS) {
   // create a mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, &comm);
-  ParameterList unstructured_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
-  ParameterList mesh_list = unstructured_list.get<ParameterList>("Generate Mesh");
-  RCP<Mesh> mesh = rcp(new Mesh_STK(mesh_list, &comm, gm)); 
+
+  MeshFactory factory(comm);
+  ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
+  ParameterList factory_list = mesh_list.get<ParameterList>("Generate Mesh");
+  Teuchos::RCP<Mesh> mesh(factory(factory_list, gm));
+  //std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
+  //Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
+  //RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0, 64.5,103.2, 1,516, MPI_COMM_WORLD, gm)); 
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
@@ -78,15 +84,12 @@ TEST(FLOW_3D_RICHARDS) {
   S.set_time(0.0);
   RPK->advance_to_steady_state();
 
-  if (MyPID == 0) {
-    GMV::open_data_file(*mesh, (std::string)"flow.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
-    GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
-    GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
-    GMV::close_data_file();
-  }
+  GMV::open_data_file(*mesh, (std::string)"flow.gmv");
+  GMV::start_data();
+  GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
+  GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
+  GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
+  GMV::close_data_file();
 
-  delete gm;
   delete RPK;
 }

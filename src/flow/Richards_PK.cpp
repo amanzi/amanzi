@@ -73,7 +73,9 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
 
   mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
   flag_upwind = true;
+
   verbosity = FLOW_VERBOSITY_HIGH;
+  internal_tests = 0;
 }
 
 

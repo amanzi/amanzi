@@ -103,8 +103,6 @@ class Darcy_PK : public Flow_PK {
   bool flag_upwind;  // discretization control parameters
   int mfd3d_method;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
-
-  int verbosity;
 };
 
 }  // namespace AmanziFlow

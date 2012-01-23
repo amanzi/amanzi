@@ -2,14 +2,6 @@
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
   <Parameter name="grid_option" type="string" value="Unstructured"/>
 
-  <ParameterList name="Checkpoint Data">
-    <ParameterList name="Cycle Data">
-      <Parameter name="End" type="int" value="-1"/>
-      <Parameter name="Interval" type="int" value="1000"/>
-      <Parameter name="Start" type="int" value="0"/>
-    </ParameterList>
-    <Parameter name="File Name Base" type="string" value="dump-"/>
-  </ParameterList>
   <ParameterList name="Domain">
     <Parameter name="Spatial Dimension" type="int" value="3"/>
   </ParameterList>
@@ -46,10 +38,10 @@
         <Parameter name="Verbosity level" type="string" value="medium"/>
 
         <ParameterList name="Error control">
-          <Parameter name="Absolute error tolerance" type="double" value="1"/>
+          <Parameter name="Absolute error tolerance" type="double" value="10"/>
           <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
-          <Parameter name="Maximal number of iterations" type="int" value="10000"/>
+          <Parameter name="Maximal number of iterations" type="int" value="5000"/>
         </ParameterList>
 
         <ParameterList name="Time control">
@@ -69,7 +61,7 @@
           <Parameter name="Maximum number of BDF tries" type="int" value="10"/>
           <Parameter name="NKA drop tolerance" type="double" value="0.05"/>
           <Parameter name="NKA max vectors" type="int" value="5"/>
-          <Parameter name="Nonlinear solver max iterations" type="int" value="10"/>
+          <Parameter name="Nonlinear solver max iterations" type="int" value="20"/>
           <Parameter name="Nonlinear solver tolerance" type="double" value="0.01"/>
           <ParameterList name="VerboseObject">
             <Parameter name="Verbosity Level" type="string" value="medium"/>
@@ -80,61 +72,19 @@
       <Parameter name="Upwind relative permeability" type="bool" value="true"/>
 
       <ParameterList name="Water retention models">
-        <ParameterList name="Water Retention Model for Bfr">
-          <Parameter name="Region" type="string" value="Bfr"/>
+        <ParameterList name="Model 1">
+          <Parameter name="Region" type="string" value="Top Half"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000194"/>
           <Parameter name="van Genuchten m" type="double" value="0.28571"/>
           <Parameter name="van Genuchten residual saturation" type="double" value="0.103"/>
         </ParameterList>
-        <ParameterList name="Water Retention Model for Hcsr">
-          <Parameter name="Region" type="string" value="Hcsr"/>
+        <ParameterList name="Model 2">
+          <Parameter name="Region" type="string" value="Bottom Half"/>
           <Parameter name="Water retention model" type="string" value="van Genuchten"/>
           <Parameter name="van Genuchten alpha" type="double" value="0.000735"/>
           <Parameter name="van Genuchten m" type="double" value="0.51138"/>
           <Parameter name="van Genuchten residual saturation" type="double" value="0.074"/>
-        </ParameterList>
-        <ParameterList name="Water Retention Model for Hfsr">
-          <Parameter name="Region" type="string" value="Hfsr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="0.000214"/>
-          <Parameter name="van Genuchten m" type="double" value="0.60112"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.089"/>
-        </ParameterList>
-        <ParameterList name="Water Retention Model for Hgr">
-          <Parameter name="Region" type="string" value="Hgr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="0.000174"/>
-          <Parameter name="van Genuchten m" type="double" value="0.42029"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.134"/>
-        </ParameterList>
-        <ParameterList name="Water Retention Model for CCuzr">
-          <Parameter name="Region" type="string" value="CCuzr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="5.11e-05"/>
-          <Parameter name="van Genuchten m" type="double" value="0.55536"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.097"/>
-        </ParameterList>
-        <ParameterList name="Water Retention Model for CCugr">
-          <Parameter name="Region" type="string" value="CCugr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="0.000174"/>
-          <Parameter name="van Genuchten m" type="double" value="0.42029"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.134"/>
-        </ParameterList>
-        <ParameterList name="Water Retention Model for Rlmr">
-          <Parameter name="Region" type="string" value="Rlmr"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="5.11e-05"/>
-          <Parameter name="van Genuchten m" type="double" value="0.55536"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.097"/>
-        </ParameterList>
-        <ParameterList name="Water Retention Model for Rwiar">
-          <Parameter name="Region" type="string" value="Rwiar"/>
-          <Parameter name="Water retention model" type="string" value="van Genuchten"/>
-          <Parameter name="van Genuchten alpha" type="double" value="8.17e-05"/>
-          <Parameter name="van Genuchten m" type="double" value="0.39759"/>
-          <Parameter name="van Genuchten residual saturation" type="double" value="0.135"/>
         </ParameterList>
       </ParameterList>
 
@@ -146,24 +96,19 @@
                 <Parameter name="value" type="double" value="-1.1076e-07"/>
               </ParameterList>
             </ParameterList>
-            <Parameter name="regions" type="Array string" value="{Top Surface Region}"/>
+            <Parameter name="regions" type="Array string" value="{Top Right Surface}"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="pressure">
           <ParameterList name="BC 1">
             <ParameterList name="boundary pressure">
-              <!--
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="101325"/>
-              </ParameterList>
-              -->
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array string" value="{linear}"/>
                 <Parameter name="x values" type="Array double" value="{0, 1e+9}"/>
                 <Parameter name="y values" type="Array double" value="{1.11169e+06, 101325}"/>
               </ParameterList>
             </ParameterList>
-            <Parameter name="regions" type="Array string" value="{Bottom Surface Region}"/>
+            <Parameter name="regions" type="Array string" value="{Bottom Surface}"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
@@ -189,107 +134,71 @@
   <ParameterList name="Mesh">
     <ParameterList name="Unstructured">
       <ParameterList name="Generate Mesh">
-        <Parameter name="Number of Cells in X" type="int" value="1"/>
+        <Parameter name="Number of Cells in X" type="int" value="10"/>
         <Parameter name="Number of Cells in Y" type="int" value="1"/>
-        <Parameter name="Number of Cells in Z" type="int" value="516"/>
-        <Parameter name="X_Max" type="double" value="64.5"/>
+        <Parameter name="Number of Cells in Z" type="int" value="20"/>
         <Parameter name="X_Min" type="double" value="0"/>
-        <Parameter name="Y_Max" type="double" value="1"/>
+        <Parameter name="X_Max" type="double" value="50"/>
         <Parameter name="Y_Min" type="double" value="0"/>
-        <Parameter name="Z_Max" type="double" value="103.2"/>
+        <Parameter name="Y_Max" type="double" value="1"/>
         <Parameter name="Z_Min" type="double" value="0"/>
+        <Parameter name="Z_Max" type="double" value="100"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <!--  REGIONS:  -->
   <ParameterList name="Regions">
-    <ParameterList name="90 Meter Plane Region">
-      <ParameterList name="Region: Plane">
-        <Parameter name="Direction" type="Array double" value="{0, 0, 1}"/>
-        <Parameter name="Location" type="Array double" value="{0, 0, 90}"/>
+    <ParameterList name="Top Half">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 50}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{50, 1, 100}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Bfr">
+    <ParameterList name="Bottom Half">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 103.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 96.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Hcsr">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 96.0}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 82.2}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Hfsr">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 82.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 23.4}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Hgr">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 23.4}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 22.2}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="CCuzr">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 22.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 18.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="CCugr">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 18.0}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 11.4}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Rlmr">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 11.4}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 6.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Rwiar">
-      <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 6.0}"/>
         <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 0}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{50, 1, 50}"/>
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Bottom Surface Region">
+    <ParameterList name="Bottom Surface">
       <ParameterList name="Region: Plane">
         <Parameter name="Direction" type="Array double" value="{0, 0, -1}"/>
         <Parameter name="Location" type="Array double" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="East Surface Region">
+    <ParameterList name="East Surface">
       <ParameterList name="Region: Plane">
         <Parameter name="Direction" type="Array double" value="{1, 0, 0}"/>
-        <Parameter name="Location" type="Array double" value="{64.5, 0, 0}"/>
+        <Parameter name="Location" type="Array double" value="{50, 0, 0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="North Surface Region">
+    <ParameterList name="North Surface">
       <ParameterList name="Region: Plane">
         <Parameter name="Direction" type="Array double" value="{0, 1, 0}"/>
         <Parameter name="Location" type="Array double" value="{0, 1, 0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="South Surface Region">
+    <ParameterList name="South Surface">
       <ParameterList name="Region: Plane">
         <Parameter name="Direction" type="Array double" value="{0, -1, 0}"/>
         <Parameter name="Location" type="Array double" value="{0, 0, 0}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Top Surface Region">
+    <ParameterList name="Top Left Surface">
       <ParameterList name="Region: Box">
-        <Parameter name="High Coordinate" type="Array double" value="{64.5, 1, 103.2}"/>
-        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 103.2}"/>
+        <Parameter name="Low Coordinate" type="Array double" value="{0, 0, 100}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{25, 1, 100}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="West Surface Region">
+    <ParameterList name="Top Right Surface">
+      <ParameterList name="Region: Box">
+        <Parameter name="Low Coordinate" type="Array double" value="{25, 0, 100}"/>
+        <Parameter name="High Coordinate" type="Array double" value="{50, 1, 100}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="West Surface">
       <ParameterList name="Region: Plane">
         <Parameter name="Direction" type="Array double" value="{-1, 0, 0}"/>
         <Parameter name="Location" type="Array double" value="{0, 0, 0}"/>
@@ -311,92 +220,26 @@
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
       <Parameter name="Constant permeability" type="double" value="5.436e-14"/>
       <Parameter name="Constant porosity" type="double" value="0.158"/>
-      <Parameter name="Region" type="string" value="Bfr"/>
+      <Parameter name="Region" type="string" value="Top Half"/>
       <ParameterList name="linear pressure">
         <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 100}"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 2">
       <Parameter name="Constant component concentration 0" type="double" value="0"/>
       <Parameter name="Constant permeability" type="double" value="4.836e-13"/>
       <Parameter name="Constant porosity" type="double" value="0.364"/>
-      <Parameter name="Region" type="string" value="Hcsr"/>
+      <Parameter name="Region" type="string" value="Bottom Half"/>
       <ParameterList name="linear pressure">
         <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Mesh block 3">
-      <Parameter name="Constant component concentration 0" type="double" value="0"/>
-      <Parameter name="Constant permeability" type="double" value="2.045e-13"/>
-      <Parameter name="Constant porosity" type="double" value="0.388"/>
-      <Parameter name="Region" type="string" value="Hfsr"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Mesh block 4">
-      <Parameter name="Constant component concentration 0" type="double" value="0"/>
-      <Parameter name="Constant permeability" type="double" value="3.00e-14"/>
-      <Parameter name="Constant porosity" type="double" value="0.237"/>
-      <Parameter name="Region" type="string" value="Hgr"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Mesh block 5">
-      <Parameter name="Constant component concentration 0" type="double" value="0"/>
-      <Parameter name="Constant permeability" type="double" value="5.063e-15"/>
-      <Parameter name="Constant porosity" type="double" value="0.36"/>
-      <Parameter name="Region" type="string" value="CCuzr"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Mesh block 6">
-      <Parameter name="Constant component concentration 0" type="double" value="0"/>
-      <Parameter name="Constant permeability" type="double" value="3.000e-14"/>
-      <Parameter name="Constant porosity" type="double" value="0.237"/>
-      <Parameter name="Region" type="string" value="CCugr"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Mesh block 7">
-      <Parameter name="Constant component concentration 0" type="double" value="0"/>
-      <Parameter name="Constant permeability" type="double" value="5.063e-15"/>
-      <Parameter name="Constant porosity" type="double" value="0.36"/>
-      <Parameter name="Region" type="string" value="Rlmr"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Mesh block 8">
-      <Parameter name="Constant component concentration 0" type="double" value="0"/>
-      <Parameter name="Constant permeability" type="double" value="3.754e-14"/>
-      <Parameter name="Constant porosity" type="double" value="0.267"/>
-      <Parameter name="Region" type="string" value="Rwiar"/>
-      <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
-        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference coordinate" type="Array double" value="{0, 0, 100}"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Number of component concentrations" type="int" value="1"/>
-    <Parameter name="Number of mesh blocks" type="int" value="8"/>
+    <Parameter name="Number of mesh blocks" type="int" value="2"/>
   </ParameterList>
 
   <!--  TRANSPORT:  -->
@@ -413,13 +256,5 @@
     </ParameterList>
     <Parameter name="discretization order" type="int" value="2"/>
     <Parameter name="enable internal tests" type="string" value="no"/>
-  </ParameterList>
-  <ParameterList name="Visualization Data">
-    <ParameterList name="Cycle Data">
-      <Parameter name="End" type="int" value="-1"/>
-      <Parameter name="Interval" type="int" value="100"/>
-      <Parameter name="Start" type="int" value="0"/>
-    </ParameterList>
-    <Parameter name="File Name Base" type="string" value="viz-"/>
   </ParameterList>
 </ParameterList>

@@ -128,7 +128,7 @@ class Flow_PK : public BDF2::fnBase {
   int vmin, vmax;
 
   int MyPID;  // parallel information: will be moved to private
-  int verbosity_level, internal_tests;  // output information
+  int verbosity, internal_tests;  // output information
  
   Teuchos::RCP<Flow_State> FS;
   Teuchos::RCP<Flow_State> FS_next; 

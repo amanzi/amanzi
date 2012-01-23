@@ -544,7 +544,7 @@ Mesh_MSTK::~Mesh_MSTK() {
     
   MAttrib_Delete(celltype_att);
 
-  // MESH_Delete(mesh);
+  //MESH_Delete(mesh);
 }
 
 
@@ -703,6 +703,7 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 	    int lid = MEnt_ID(face);
 	    faceids->push_back(lid-1);
 	    found = true;
+	    List_Delete(fverts);
 	    break;
 	  }
 	  

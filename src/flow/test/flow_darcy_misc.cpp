@@ -271,31 +271,3 @@ SUITE(Darcy_Velocity) {
   }
 }
 
-/*
-  TEST_FIXTURE(problem_setup, Darcy_Velocity_X_Gravity)
-  {
-    std::cout <<"Darcy velocity: test 4" << std::endl;
-
-    // Set non-default BC before create_problem().
-    set_bc("LEFT",  "static head", 1.0);
-    set_bc("RIGHT", "static head", 0.0);
-
-    // Set non-default model parameters before create_problem().
-    setFluidViscosity(2.0);
-    setFluidDensity(0.5);
-    double g[3] = {0.0, 0.0, -2.0};
-    setGravity(g);
-
-    create_problem();
-    problem->set_absolute_permeability(2.0);
-    solve_problem();
-
-    // Darcy velocity
-    double q[3] = { 1.0, 0.0, 0.0 };
-    double error;
-    darcy_velocity_error(q, error);
-    CHECK(error < 1.0e-8);
-  }
-}
-*/
-
