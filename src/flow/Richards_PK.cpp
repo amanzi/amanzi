@@ -48,7 +48,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
 
 #ifdef HAVE_MPI
-  const  Epetra_Comm & comm = mesh_->cell_map(false).Comm(); 
+  const Epetra_Comm& comm = mesh_->cell_map(false).Comm(); 
   MyPID = comm.MyPID();
 
   const Epetra_Map& source_cmap = mesh_->cell_map(false);

@@ -14,10 +14,10 @@ namespace AmanziFlow {
 
 Matrix_MFD::~Matrix_MFD() 
 {
-  if (MLprec->IsPreconditionerComputed()) { 
-    MLprec->DestroyPreconditioner(); 
-    delete MLprec;
-  }
+  //if (MLprec->IsPreconditionerComputed()) { 
+  //  MLprec->DestroyPreconditioner(); 
+  //  delete MLprec;
+  //}
 }
 
 
@@ -498,8 +498,9 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
   std::vector<int> dirs;
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  std::vector<int> flag(nfaces, 0);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  std::vector<int> flag(nfaces_wghost, 0);
 
   for (int c=0; c<ncells; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -514,7 +515,7 @@ void Matrix_MFD::deriveDarcyFlux(const Epetra_Vector& solution,
     mesh_->cell_get_face_dirs(c, &dirs);
     for (int n=0; n<nfaces; n++) {
       int f = faces[n];
-      if (!flag[f]) {
+      if (f < nfaces_owned && !flag[f]) {
         double s = 0.0;
         for (int m=0; m<nfaces; m++) s += Aff_cells[c](n, m) * dp[m];
         darcy_mass_flux[f] = s * dirs[n];

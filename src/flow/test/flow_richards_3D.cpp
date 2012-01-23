@@ -51,8 +51,8 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create flow state
   ParameterList state_list = parameter_list.get<ParameterList>("State");
-  State S(state_list, mesh);
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  State* S = new State(state_list, mesh);
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
 
   // create Richards process kernel
   ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
@@ -75,18 +75,19 @@ TEST(FLOW_3D_RICHARDS) {
   */
 
   // solve the problem
-  S.set_time(0.0);
+  S->set_time(0.0);
   RPK->advance_to_steady_state();
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
     GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
-    GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
+    GMV::write_cell_data(*(S->get_vertical_permeability()), 0, "vert_permeability");
     GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
     GMV::close_data_file();
   }
 
   delete gm;
   delete RPK;
+  delete S;
 }

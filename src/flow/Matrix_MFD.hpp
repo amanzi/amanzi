@@ -106,7 +106,7 @@ class Matrix_MFD : public Epetra_Operator {
   Teuchos::RCP<Epetra_Vector> rhs_cells;
   Teuchos::RCP<Epetra_Vector> rhs_faces;
 
-  ML_Epetra::MultiLevelPreconditioner *MLprec;
+  ML_Epetra::MultiLevelPreconditioner* MLprec;
   Teuchos::ParameterList ML_list;
 };
 
