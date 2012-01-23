@@ -1,3 +1,4 @@
+
 #include <iostream>
 
 #include <Epetra_Comm.h>
@@ -48,6 +49,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   if (! native)
     {
       new_list = Amanzi::AmanziInput::translate( &input_parameter_list);
+      new_list.set<bool>("Native Unstructured Input",true);
     }
   else
     {

@@ -79,51 +79,55 @@ Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::Pa
 }
 
 
-Teuchos::Array<std::string> get_Variable_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist ) {
+Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& macro_name, Teuchos::ParameterList* plist ) {
 
   std::vector<std::string> vars;
 
-  if ( plist->sublist("Output").sublist("Variable Macros").isSublist(macro_name) ) {
-    Teuchos::ParameterList& macro_list = plist->sublist("Output").sublist("Variable Macros").sublist(macro_name);
+  for (int i=0; i<macro_name.size(); i++) {
 
-    if ( macro_list.isParameter("Phase") ) {
-      std::string macro_phase = macro_list.get<std::string>("Phase");
-      if (macro_phase == "All") {
-        vars.push_back(phase_comp_name);
-      } else {  // not All, must equal phase_comp_name
-        if ( macro_list.isParameter("Component") ) {
-          std::string macro_comp = macro_list.get<std::string>("Component");
-          if (macro_comp == "All") {
-            vars.push_back(phase_comp_name);
-          } else { // not All, must equal
-            if ( macro_comp != phase_comp_name ) {
-              std::stringstream ss;
-              ss << "The phase component name " << macro_comp << " is refered to in a variable macro but is not defined";
-              Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+    if ( plist->sublist("Output").sublist("Variable Macros").isSublist(macro_name[i]) ) {
+      Teuchos::ParameterList& macro_list = plist->sublist("Output").sublist("Variable Macros").sublist(macro_name[i]);
+
+      if ( macro_list.isParameter("Phase") ) {
+        std::string macro_phase = macro_list.get<std::string>("Phase");
+        if (macro_phase == "All") {
+          vars.push_back(phase_comp_name);
+        } else {  // not All, must equal phase_comp_name
+          if ( macro_list.isParameter("Component") ) {
+            std::string macro_comp = macro_list.get<std::string>("Component");
+            if (macro_comp == "All") {
+              vars.push_back(phase_comp_name);
+            } else { // not All, must equal
+              if ( macro_comp != phase_comp_name ) {
+                std::stringstream ss;
+                ss << "The phase component name " << macro_comp << " is refered to in a variable macro but is not defined";
+                Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
+              }
+              vars.push_back(macro_comp);
             }
-            vars.push_back(macro_comp);
-          }
 
+          }
         }
       }
-    }
 
-    if ( macro_list.isParameter("Solute") ) {
-      std::string macro_solute = macro_list.get<std::string>("Solute");
-      if ( macro_solute == "All" ) {
-        for ( int i=0; i<comp_names.size(); i++) vars.push_back(comp_names[i]);
-      } else {
-        vars.push_back(macro_solute);
+      if ( macro_list.isParameter("Solute") ) {
+        std::string macro_solute = macro_list.get<std::string>("Solute");
+        if ( macro_solute == "All" ) {
+          for ( int i=0; i<comp_names.size(); i++) vars.push_back(comp_names[i]);
+        } else {
+          vars.push_back(macro_solute);
+        }
+
       }
 
+
+
+    } else {
+      std::stringstream ss;
+      ss << "The variable macro " << macro_name[i] << " does not exist in the input file";
+      Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
     }
 
-
-
-  } else {
-    std::stringstream ss;
-    ss << "The variable macro " << macro_name << " does not exist in the input file";
-    Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
   }
 
   Teuchos::Array<std::string> ret_vars(vars.size());
@@ -227,9 +231,9 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
       Teuchos::ParameterList olist = plist->sublist("Output").sublist("Observation Data");
 
       if (olist.isParameter("Observation Output Filename")) {
-	obs_list.set<std::string>("Observation Output Filename",olist.get<std::string>("Observation Output Filename"));
+        obs_list.set<std::string>("Observation Output Filename",olist.get<std::string>("Observation Output Filename"));
       } else {
-	Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
+        Exceptions::amanzi_throw(Errors::Message("The required parameter Observation Output Filename was not specified."));
       }
 
       for ( Teuchos::ParameterList::ConstIterator i = olist.begin();
@@ -258,7 +262,7 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
 
           if ( obs_list.sublist(i->first).isParameter("Variable Macro") ) {
             Teuchos::Array<std::string> var_macro = obs_list.sublist(i->first).get<Teuchos::Array<std::string> >("Variable Macro");
-            obs_list.sublist(i->first).set("Variables",get_Variable_Macro(var_macro[0], plist));
+            obs_list.sublist(i->first).set("Variables",get_Variable_Macro(var_macro, plist));
             obs_list.sublist(i->first).remove("Variable Macro");
           }
 
