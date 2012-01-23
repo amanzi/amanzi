@@ -13,12 +13,22 @@ namespace AmanziInput {
 
 
 Teuchos::ParameterList translate(Teuchos::ParameterList* plist ) {
-  Teuchos::ParameterList new_list;
+  Teuchos::ParameterList new_list, tmp_list;
+  
 
   init_global_info(plist);
 
-  new_list.sublist("Checkpoint Data")    = create_Checkpoint_Data_List (plist);
-  new_list.sublist("Visualization Data") = create_Visualization_Data_List (plist);
+  // checkpoint list is optional
+  tmp_list = create_Checkpoint_Data_List (plist);
+  if (tmp_list.begin() != tmp_list.end()) {
+    new_list.sublist("Checkpoint Data")    = tmp_list;
+  }
+
+  tmp_list = create_Visualization_Data_List (plist);
+  if (tmp_list.begin() != tmp_list.end()) {  
+    new_list.sublist("Visualization Data") = tmp_list;
+  }
+
   new_list.sublist("Observation Data")   = create_Observation_Data_List (plist);
   new_list.sublist("Regions")            = get_Regions_List(plist);
   new_list.sublist("Mesh")               = translate_Mesh_List(plist);
