@@ -40,7 +40,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_richards_3D.xml";
+  string xmlFileName = "test/flow_richards_bc_cribs.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create a mesh framework 

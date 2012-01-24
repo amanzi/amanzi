@@ -42,14 +42,14 @@
       </ParameterList>
 
       <ParameterList name="Steady state solution">
-        <Parameter name="method" type="string" value="BDF2"/>
+        <Parameter name="method" type="string" value="Picard"/>
         <Parameter name="Verbosity level" type="string" value="medium"/>
 
         <ParameterList name="Error control">
-          <Parameter name="Absolute error tolerance" type="double" value="1"/>
+          <Parameter name="Absolute error tolerance" type="double" value="100"/>
           <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
-          <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
-          <Parameter name="Maximal number of iterations" type="int" value="10000"/>
+          <Parameter name="Convergence tolerance" type="double" value="1e-1"/>
+          <Parameter name="Maximal number of iterations" type="int" value="200"/>
         </ParameterList>
 
         <ParameterList name="Time control">
@@ -160,7 +160,7 @@
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array string" value="{linear}"/>
                 <Parameter name="x values" type="Array double" value="{0, 1e+9}"/>
-                <Parameter name="y values" type="Array double" value="{1.11169e+06, 101325}"/>
+                <Parameter name="y values" type="Array double" value="{101325, 101325}"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="regions" type="Array string" value="{Bottom Surface Region}"/>
@@ -313,9 +313,9 @@
       <Parameter name="Constant porosity" type="double" value="0.158"/>
       <Parameter name="Region" type="string" value="Bfr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 2">
@@ -324,9 +324,9 @@
       <Parameter name="Constant porosity" type="double" value="0.364"/>
       <Parameter name="Region" type="string" value="Hcsr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 3">
@@ -335,9 +335,9 @@
       <Parameter name="Constant porosity" type="double" value="0.388"/>
       <Parameter name="Region" type="string" value="Hfsr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 4">
@@ -346,9 +346,9 @@
       <Parameter name="Constant porosity" type="double" value="0.237"/>
       <Parameter name="Region" type="string" value="Hgr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 5">
@@ -357,9 +357,9 @@
       <Parameter name="Constant porosity" type="double" value="0.36"/>
       <Parameter name="Region" type="string" value="CCuzr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 6">
@@ -368,9 +368,9 @@
       <Parameter name="Constant porosity" type="double" value="0.237"/>
       <Parameter name="Region" type="string" value="CCugr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 7">
@@ -379,9 +379,9 @@
       <Parameter name="Constant porosity" type="double" value="0.36"/>
       <Parameter name="Region" type="string" value="Rlmr"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Mesh block 8">
@@ -390,9 +390,9 @@
       <Parameter name="Constant porosity" type="double" value="0.267"/>
       <Parameter name="Region" type="string" value="Rwiar"/>
       <ParameterList name="linear pressure">
-        <Parameter name="gradient" type="Array double" value="{0, 0, -9790.38}"/>
+        <Parameter name="gradient" type="Array double" value="{0, 0, 0.0}"/>
         <Parameter name="reference coordinate" type="Array double" value="{0, 0, 0}"/>
-        <Parameter name="reference value" type="double" value="1.11169e+06"/>
+        <Parameter name="reference value" type="double" value="101325"/>
       </ParameterList>
     </ParameterList>
     <Parameter name="Number of component concentrations" type="int" value="1"/>

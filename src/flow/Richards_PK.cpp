@@ -252,8 +252,8 @@ int Richards_PK::advanceSteadyState_Picard()
   solver->SetAztecOption(AZ_output, AZ_none);
 
   int itrs = 0;
-  double L2norm, L2error = 1.0, L2error_prev = 1.0;
-  double relaxation = 0.5;
+  double L2norm, L2error = 1.0;
+  double relaxation = 1e-1;
 
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
@@ -278,6 +278,7 @@ int Richards_PK::advanceSteadyState_Picard()
     L2error = matrix->computeResidual(solution_new, residual);
 
     // call AztecOO solver
+    rhs = matrix->get_rhs();
     Epetra_Vector b(*rhs);
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess 
@@ -288,23 +289,27 @@ int Richards_PK::advanceSteadyState_Picard()
 
     // update relaxation parameter
     solution_new.Norm2(&L2norm);
-    L2error /= L2norm;
+    L2error = errorSolutionDiff(solution_old, solution_new);
 
-    if (L2error > L2error_prev) relaxation = std::min(0.95, relaxation * 1.5); 
-    else relaxation = std::max(0.05, relaxation * 0.9);  
-
-    // information output
-    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-      std::printf("Picard step:%4d   Pressure(res=%9.4e, sol=%9.4e, relax=%5.3f)  CG info(%8.3e, %4d)\n", 
-          itrs, L2error, L2norm, relaxation, residual, num_itrs);
+    if (L2error > 1.0) {
+      relaxation = std::max(1e-1, relaxation / 4); 
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+        std::printf("Picard fail:%4d   Pressure(diff=%9.4e, sol=%9.4e, relax=%8.3e)  CG info(%8.3e, %4d)\n", 
+            itrs, L2error, L2norm, relaxation, residual, num_itrs);
+      }
+    } else {
+      relaxation = std::min(1.0, relaxation * 1.2);
+      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+        std::printf("Picard step:%4d   Pressure(diff=%9.4e, sol=%9.4e, relax=%8.3e)  CG info(%8.3e, %4d)\n", 
+            itrs, L2error, L2norm, relaxation, residual, num_itrs);
+      }
     }
 
     for (int c=0; c<number_owned_cells; c++) {
-      solution_new[c] = relaxation * solution_old[c] + (1.0 - relaxation) * solution_new[c];
+      solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
       solution_old[c] = solution_new[c];
     }
 
-    L2error_prev = L2error;
     T_internal += dT;
     itrs++;
   }

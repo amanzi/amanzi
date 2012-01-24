@@ -177,8 +177,9 @@ void Richards_PK::addTimeDerivative_MFDfake(
 ****************************************************************** */
 double Richards_PK::errorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew)
 {
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   double error_norm = 0.0; 
-  for (int n=0; n<uold.MyLength(); n++) {
+  for (int n=0; n<ncells; n++) {
     double tmp = abs(uold[n] - unew[n]) / (absolute_tol_sss + relative_tol_sss * abs(uold[n]));
     error_norm = std::max<double>(error_norm, tmp);
   }
