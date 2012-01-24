@@ -34,7 +34,6 @@ HDF5_MPI::~HDF5_MPI()
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
-//void HDF5_MPI::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename)
 void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string filename)
 {
 
@@ -476,7 +475,7 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
   
 }
   
-  void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
+void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
   {
     
     hid_t file, fid, attribute_id;
