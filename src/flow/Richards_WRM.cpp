@@ -40,7 +40,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
-  for (int c=0; c<number_owned_cells; c++) {
+  for (int c=0; c<ncells_owned; c++) {
     mesh_->cell_get_face_dirs(c, &dirs);
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();

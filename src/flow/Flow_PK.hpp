@@ -123,9 +123,8 @@ class Flow_PK : public BDF2::fnBase {
   void identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell);
 
  public:
-  int cmin, cmax_owned, cmax, number_owned_cells, number_wghost_cells;
-  int fmin, fmax_owned, fmax, number_owned_faces, number_wghost_faces;
-  int vmin, vmax;
+  int ncells_owned, ncells_wghost;
+  int nfaces_owned, nfaces_wghost;
 
   int MyPID;  // parallel information: will be moved to private
   int verbosity, internal_tests;  // output information

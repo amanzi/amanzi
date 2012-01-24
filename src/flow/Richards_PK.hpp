@@ -81,6 +81,7 @@ class Richards_PK : public Flow_PK {
   // access methods
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
   const Epetra_Map& get_super_map() { return *super_map_; }
+  const Epetra_Import& get_face_importer() { return *face_importer_; }
 
   Matrix_MFD* get_matrix() { return matrix; }
 

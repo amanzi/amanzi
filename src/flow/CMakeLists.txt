@@ -92,8 +92,8 @@ if (BUILD_TESTS)
     add_executable(flow_darcy_misc test/Main.cc test/flow_darcy_misc.cpp)
     target_link_libraries(flow_darcy_misc ${amanzi_libs} ${UnitTest_LIBRARIES})
     add_amanzi_test(flow_darcy_misc flow_darcy_misc KIND int)
-    add_amanzi_test(flow_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
-    add_amanzi_test(flow_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
+    add_amanzi_test(flow_darcy_parallel_2pe flow_darcy_misc NPROCS 2 KIND unit)
+    add_amanzi_test(flow_darcy_parallel_4pe flow_darcy_misc NPROCS 4 KIND unit)
  
     # Test: miscaleneous Richards flow routines
     add_executable(flow_richards_convergence test/Main.cc test/flow_richards_convergence.cpp)

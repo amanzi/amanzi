@@ -123,7 +123,7 @@ void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
   // Process other fundamental structures
-  K.resize(number_owned_cells);
+  K.resize(ncells_owned);
   matrix->setSymmetryProperty(true);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 

@@ -41,7 +41,7 @@
           <Parameter name="Absolute error tolerance" type="double" value="10"/>
           <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
-          <Parameter name="Maximal number of iterations" type="int" value="5000"/>
+          <Parameter name="Maximal number of iterations" type="int" value="50"/>
         </ParameterList>
 
         <ParameterList name="Time control">

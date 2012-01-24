@@ -32,19 +32,11 @@ void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 
   FS_next = Teuchos::rcp(new Flow_State(*FS, CopyMemory) );  
 
-  const Epetra_Map& cmap = mesh_->cell_map(true);
-  cmin = cmap.MinLID();
-  cmax = cmap.MaxLID();
+  ncells_owned = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_wghost = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
-  number_owned_cells = mesh_->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  cmax_owned = cmin + number_owned_cells - 1;
-
-  const Epetra_Map& fmap = mesh_->face_map(true);
-  fmin = fmap.MinLID();
-  fmax = fmap.MaxLID(); 
- 
-  number_owned_faces = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  fmax_owned = fmin + number_owned_faces - 1;
+  nfaces_owned = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_wghost = mesh_->count_entities(AmanziMesh::FACE, AmanziMesh::USED);
 }
 
 
@@ -56,15 +48,15 @@ Epetra_Map* Flow_PK::createSuperMap()
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& fmap = mesh_->face_map(false);
   
-  int ndof = number_owned_cells + number_owned_faces;
+  int ndof = ncells_owned + nfaces_owned;
   int ndof_global_cell = cmap.NumGlobalElements();
   int ndof_global = ndof_global_cell + fmap.NumGlobalElements();
 
   int* gids = new int[ndof];
   cmap.MyGlobalElements(&(gids[0]));
-  fmap.MyGlobalElements(&(gids[number_owned_cells]));
+  fmap.MyGlobalElements(&(gids[ncells_owned]));
 
-  for (int f=0; f<number_owned_faces; f++) gids[number_owned_cells + f] += ndof_global_cell;
+  for (int f=0; f<nfaces_owned; f++) gids[ncells_owned + f] += ndof_global_cell;
   Epetra_Map* map = new Epetra_Map(ndof_global, ndof, gids, 0, cmap.Comm());
 
   delete [] gids;
@@ -138,9 +130,8 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-  for (int c=0; c<ncells; c++) {
+  for (int c=0; c<ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     mesh_->cell_get_face_dirs(c, &dirs);
     int nfaces = faces.size();
@@ -171,14 +162,13 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
   AmanziGeometry::Point gravity(dim); 
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho;
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> flag(nfaces_wghost, 0);
 
-  for (int c=0; c<ncells; c++) {
+  for (int c=0; c<ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
@@ -202,7 +192,7 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 ******************************************************************* */
 void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVector& downwind_cell)
 {
-  for (int f=fmin; f<=fmax; f++) {
+  for (int f=0; f<nfaces_owned; f++) {
     upwind_cell[f] = -1;  // negative value is indicator of a boundary
     downwind_cell[f] = -1;
   }
@@ -211,7 +201,7 @@ void Flow_PK::identifyUpwindCells(Epetra_IntVector& upwind_cell, Epetra_IntVecto
   AmanziMesh::Entity_ID_List faces; 
   std::vector<int> fdirs;
 
-  for (int c=cmin; c<=cmax; c++) {
+  for (int c=0; c<ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
     mesh_->cell_get_face_dirs(c, &fdirs);
 

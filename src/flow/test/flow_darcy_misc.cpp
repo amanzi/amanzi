@@ -133,7 +133,8 @@ class DarcyProblem {
     int dim = mesh->space_dimension();
 
     Epetra_MultiVector velocity(mesh->cell_map(false), dim);
-    DPK->get_matrix()->deriveDarcyVelocity(darcy_mass_flux, velocity);
+    const Epetra_Import& face_importer = DPK->get_face_importer();
+    DPK->get_matrix()->deriveDarcyVelocity(darcy_mass_flux, face_importer, velocity);
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

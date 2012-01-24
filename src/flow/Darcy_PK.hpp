@@ -56,6 +56,7 @@ class Darcy_PK : public Flow_PK {
   Epetra_Vector& get_solution_cells() { return *solution_cells; }
   Epetra_Vector& get_solution_faces() { return *solution_faces; }
 
+  const Epetra_Import& get_face_importer() { return *face_importer_; }
   Matrix_MFD* get_matrix() { return matrix; }
 
   AmanziGeometry::Point& get_gravity() { return gravity; }

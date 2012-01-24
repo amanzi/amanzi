@@ -134,7 +134,7 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
 
   // Process other fundamental structures
-  K.resize(number_owned_cells);
+  K.resize(ncells_owned);
   matrix->setSymmetryProperty(!flag_upwind);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
@@ -177,9 +177,7 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 ****************************************************************** */
 int Richards_PK::advance_to_steady_state()
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  for (int c=0; c<ncells; c++) (*solution_cells)[c] = FS->ref_pressure()[c];
+  for (int c=0; c<ncells_owned; c++) (*solution_cells)[c] = FS->ref_pressure()[c];
   deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
 
@@ -305,7 +303,7 @@ int Richards_PK::advanceSteadyState_Picard()
       }
     }
 
-    for (int c=0; c<number_owned_cells; c++) {
+    for (int c=0; c<ncells_owned; c++) {
       solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
       solution_old[c] = solution_new[c];
     }
@@ -352,9 +350,8 @@ int Richards_PK::advance(double dT)
 void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells; 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
 
-  for (int f=0; f<nfaces; f++) {
+  for (int f=0; f<nfaces_owned; f++) {
     cells.clear();
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();

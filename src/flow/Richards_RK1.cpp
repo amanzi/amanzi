@@ -161,9 +161,7 @@ void Richards_PK::addTimeDerivative_MFDfake(
   std::vector<double>& Acc_cells = matrix->get_Acc_cells();
   std::vector<double>& Fc_cells = matrix->get_Fc_cells();
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-  for (int c=0; c<ncells; c++) {
+  for (int c=0; c<ncells_owned; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = volume / dT_prec;
     Acc_cells[c] += factor;
@@ -177,9 +175,8 @@ void Richards_PK::addTimeDerivative_MFDfake(
 ****************************************************************** */
 double Richards_PK::errorSolutionDiff(const Epetra_Vector& uold, const Epetra_Vector& unew)
 {
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   double error_norm = 0.0; 
-  for (int n=0; n<ncells; n++) {
+  for (int n=0; n<ncells_owned; n++) {
     double tmp = abs(uold[n] - unew[n]) / (absolute_tol_sss + relative_tol_sss * abs(uold[n]));
     error_norm = std::max<double>(error_norm, tmp);
   }
