@@ -24,6 +24,7 @@
 #include <Rock.H>
 #include <Source.H>
 #include <Observation.H>
+#include <RegionData.H>
 
 #ifdef AMANZI
 #include "simple_thermo_database.hh"
@@ -35,13 +36,6 @@ enum StateType {State_Type=0, Press_Type, Vel_Type, Vcr_Type, FuncCount_Type};
 enum PressureNames { Pressure=0 };
 enum VelNames { Xvel=0, Yvel, Zvel};
 enum VcrNames { Xvcr=0, Yvcr, Zvcr};
-
-typedef struct
-{
-  int type;
-  Array<int>    region;
-  Array<double> param;
-} BCData;
 
 class PMBld
   :
@@ -79,6 +73,8 @@ public:
   virtual void restart (Amr&          papa,
 			std::istream& is,
 			bool          bReadSpecial = false);
+
+  static void CleanupStatics ();
   //
   // Read problem input file. 
   //
@@ -244,7 +240,7 @@ public:
   //
   // Returns the value of "gravity" for use in the projection outflow bcs.
   //
-  Real getGravity () 
+  static Real getGravity () 
   {
     return gravity;
   }
@@ -263,7 +259,7 @@ public:
 			   const std::string& pltfile,
 			   const std::string& varname);
 
-  static const Array<Observation>& TheObservationArray() {return observation_array;}
+  static PArray<Observation>& TheObservationArray() {return observations;}
 
   static void getDirichletFaces (Array<Orientation>& Faces,
 				 const int           comp_Type,
@@ -274,6 +270,12 @@ public:
 				       const Orientation& _Face); 
 
   static const Array<std::string>& PMspecificDerives() {return PM_specific_derives;}
+
+  static PArray<Region>& Regions() {return regions;}
+  static PArray<Rock>& Rocks() {return rocks;}
+  static const Array<Real>& Density() {return density;}
+  static const Array<Real>& Viscosity() {return muval;}
+  static Real NumComponents() {return ncomps;}
 
 protected:
 
@@ -297,6 +299,10 @@ protected:
 			     ParmParse& ppr,
 			     Array<std::string>& names, 
 			     Array<Real>& coef);
+
+  static PArray<Region> build_region_PArray(const Array<std::string>& region_names);
+  static const Rock& find_rock(const std::string& name);
+
   virtual void sum_integrated_quantities ();
 
   //
@@ -772,12 +778,9 @@ protected:
 
   // list
   static std::map<std::string, int> model_list;
-  static std::map<std::string, int> bc_list;
-  static std::map<std::string, int> obs_list;
   static std::map<std::string, int> phase_list;
   static std::map<std::string, int> comp_list;
   static std::map<std::string, int> tracer_list;
-  static std::map<std::string, int> region_list;
 
   /*
     Flow model.  Options are
@@ -797,13 +800,12 @@ protected:
   AuxBoundaryData aux_boundary_data_old;
   bool            FillPatchedOldState_ok;
 
-
-  // Region: use of pointer to allow derived class in array.
-  static Array<Region*> region_array;
+  static PArray<Region> regions;
   static std::string surf_file;
 
   // Rock
-  static Array<Rock> rock_array;
+  static PArray<Rock> rocks;
+  static std::map<std::string, int> rock_to_int; // hack to support user output
   static std::string gsfile;
   static MultiFab*   kappadata;
   static MultiFab*   phidata;
@@ -819,8 +821,8 @@ protected:
   static Array<std::string> pNames;
   static Array<std::string> cNames;
   static Array<Real> density;
-  static Array<BCData> ic_array;
-  static Array<BCData> bc_array;
+  static PArray<RegionData> ics;
+  static PArray<RegionData> bcs;
   static Array<Real> muval;
   static Array<std::string> PM_specific_derives;
   
@@ -830,8 +832,8 @@ protected:
   static int  ntracers; 
   static Array<int> tType; 
   static Array<Real> tDen;
-  static Array<BCData> tic_array;
-  static Array<BCData> tbc_array;
+  static Array<PArray<RegionData> > tics;
+  static Array<PArray<RegionData> > tbcs;
   static Array<Real> tInflow;
 
   // Pressure
@@ -862,7 +864,7 @@ protected:
 
   // observations
   static std::string obs_outputfile;
-  static Array<Observation> observation_array;
+  static PArray<Observation> observations;
 
 #ifdef AMANZI
   static PArray<amanzi::chemistry::SimpleThermoDatabase> chemSolve;

@@ -31,23 +31,23 @@ public:
     return m;
   };
 
-  static std::map<std::string,int> region_map;
-
   Region(std::string r_name, std::string r_purpose, std::string r_type);
 
-  void setVal(FArrayBox& fab, 
-	      Array<Real>& val, 
+  void setVal(FArrayBox&         fab, 
+	      const Array<Real>& val, 
+	      const Real*        dx, 
+	      int                ng,
+	      int                scomp,
+	      int                ncomp) const;
+
+  void setVal(FArrayBox&  fab,
+              const Real  val, 
+              const int   idx,
 	      const Real* dx, 
-	      int ng,
-	      int scomp,
-	      int ncomp);
+              int         ng) const;
 
-  void setVal(FArrayBox& fab, const Real val, const int idx,
-	      const Real* dx, int ng);
-
-  virtual void set (Array<Real>& param)  = 0;
-  virtual bool inregion (Array<Real>& x) = 0;
-
+  virtual bool inregion (const Array<Real>& x) const = 0;
+  virtual std::ostream& operator<< (std::ostream& os) const;
 
   // Identifier for the region 
   std::string name;
@@ -55,36 +55,41 @@ public:
   std::string type;
 };
 
+std::ostream& operator<< (std::ostream& os, const Region& rhs);
+
 class pointRegion : public Region
 {
 
 public: 
   
-  pointRegion (std::string r_name, std::string r_purpose, std::string r_type)
-    : Region(r_name,r_purpose,r_type) {} ;
+    pointRegion (std::string r_name, std::string r_purpose, std::string r_type, const Array<Real>& coor)
+      : Region(r_name,r_purpose,r_type), coor(coor) {} ;
 
-  virtual void set (Array<Real>& param);
-  virtual bool inregion (Array<Real>& x);
+  virtual bool inregion (const Array<Real>& x) const;
+  virtual std::ostream& operator<< (std::ostream& os) const;
 
-  Real coor[BL_SPACEDIM];
-
+  Array<Real> coor;
 };
+
+std::ostream& operator<< (std::ostream& os, const pointRegion& rhs);
 
 class boxRegion : public Region 
 {
 
 public: 
   
-  boxRegion (std::string r_name, std::string r_purpose, std::string r_type)
-    : Region(r_name,r_purpose,r_type) {} ;
+    boxRegion (std::string r_name, std::string r_purpose, std::string r_type,
+               const Array<Real>& lo, const Array<Real>& hi)
+      : Region(r_name,r_purpose,r_type), lo(lo), hi(hi) {} ;
 
-  virtual void set (Array<Real>& param);
-  virtual bool inregion (Array<Real>& x);
+  virtual bool inregion (const Array<Real>& x) const;
+  virtual std::ostream& operator<< (std::ostream& os) const;
 
-  Real vertex_lo[BL_SPACEDIM];
-  Real vertex_hi[BL_SPACEDIM];
-
+  Array<Real> lo;
+  Array<Real> hi;
 };
+
+std::ostream& operator<< (std::ostream& os, const boxRegion& rhs);
 
 class colorFunctionRegion : public boxRegion 
 {
@@ -97,49 +102,44 @@ public:
 		       std::string file_name,
                        int         color_val);
 
-  void set_color_map(const std::string& file_name);
   IntVect atIndex(Array<Real> x) const;
+  virtual bool inregion (const Array<Real>& x) const;
+  virtual std::ostream& operator<< (std::ostream& os) const;
 
-  virtual bool inregion (Array<Real>& x);
-
+  void set_color_map();
   BaseFab<int>* m_color_map;
   Array<Real> dx;
   int m_color_val;
+  std::string m_file;
 };
 
-class allRegion : public Region 
+std::ostream& operator<< (std::ostream& os, const colorFunctionRegion& rhs);
+
+class allRegion : public boxRegion 
 {
 
 public: 
   
-  allRegion ()
-    : Region("ALL","any","all") {};
+    allRegion (const Array<Real>& lo,
+               const Array<Real>& hi)
+        : boxRegion("ALL","any","all",lo,hi) {};
 
-  virtual void set (Array<Real>& param);
-  virtual bool inregion (Array<Real>& x);
-
-  Real vertex_lo[BL_SPACEDIM];
-  Real vertex_hi[BL_SPACEDIM];
-
+  virtual bool inregion (const Array<Real>& x) const;
 };
 
-class allBCRegion : public Region 
+class allBCRegion : public boxRegion 
 {
 
 public: 
   
-  allBCRegion (int dir, int lo_or_hi);
+    allBCRegion (int dir, int lo_or_hi,
+                 const Array<Real>& lo,
+                 const Array<Real>& hi);
 
-  virtual void set (Array<Real>& param);
-  virtual bool inregion (Array<Real>& x);
+  virtual bool inregion (const Array<Real>& x) const;
 
-  Real vertex_lo[BL_SPACEDIM];
-  Real vertex_hi[BL_SPACEDIM];
-
-private:
-  int p_dir;
-  int p_lohi;
-
+protected:
+  int p_dir, p_lohi;
 };
 
 

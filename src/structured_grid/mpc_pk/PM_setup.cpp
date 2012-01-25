@@ -24,6 +24,8 @@
 #include "activity_model_factory.hh"
 #endif
 
+#include <TabularFunction.H>
+
 namespace
 {
   const std::string solid("Solid");
@@ -47,17 +49,17 @@ int PorousMedia::num_state_type;
 //
 // Region.
 //
-Array<Region*> PorousMedia::region_array;
 std::string    PorousMedia::surf_file;
+PArray<Region> PorousMedia::regions;
 //
 // Rock
 //
-Array<Rock> PorousMedia::rock_array;
 std::string PorousMedia::gsfile;
 MultiFab*   PorousMedia::kappadata;
 MultiFab*   PorousMedia::phidata;
 bool        PorousMedia::porosity_from_fine;
 bool        PorousMedia::permeability_from_fine;
+PArray<Rock> PorousMedia::rocks;
 //
 // Source.
 //
@@ -67,7 +69,7 @@ Array<Source> PorousMedia::source_array;
 // Observation.
 //
 std::string        PorousMedia::obs_outputfile;
-Array<Observation> PorousMedia::observation_array;
+PArray<Observation> PorousMedia::observations;
 //
 // Phases and components.
 //
@@ -75,8 +77,8 @@ Array<std::string>  PorousMedia::pNames;
 Array<std::string>  PorousMedia::cNames;
 Array<int >         PorousMedia::pType;
 Array<Real>         PorousMedia::density;
-Array<BCData>       PorousMedia::ic_array;
-Array<BCData>       PorousMedia::bc_array;
+PArray<RegionData>  PorousMedia::ics;
+PArray<RegionData>  PorousMedia::bcs;
 Array<Real>         PorousMedia::muval;
 Array<std::string>  PorousMedia::PM_specific_derives;
 std::string         PorousMedia::model_name;
@@ -93,8 +95,8 @@ Array<std::string>  PorousMedia::tNames;
 int                 PorousMedia::ntracers;
 Array<int>          PorousMedia::tType; 
 Array<Real>         PorousMedia::tDen;
-Array<BCData>       PorousMedia::tic_array;
-Array<BCData>       PorousMedia::tbc_array;
+Array<PArray<RegionData> > PorousMedia::tics;
+Array<PArray<RegionData> > PorousMedia::tbcs;
 //
 // Pressure.
 //
@@ -172,12 +174,10 @@ bool PorousMedia::use_funccount;
 // Lists.
 //
 std::map<std::string, int> PorousMedia::model_list;
-std::map<std::string, int> PorousMedia::bc_list;
-std::map<std::string, int> PorousMedia::obs_list;
 std::map<std::string, int> PorousMedia::phase_list;
 std::map<std::string, int> PorousMedia::comp_list;
 std::map<std::string, int> PorousMedia::tracer_list;
-std::map<std::string, int> PorousMedia::region_list;
+
 //
 // AMANZI flags.
 //
@@ -324,6 +324,7 @@ PorousMedia::setup_list()
   model_list["polymer"] = 3;
   model_list["richard"] = 4;
 
+#if 0
   // bc_list
   bc_list["file"] = 0;
   bc_list["scalar"] = 1;
@@ -331,18 +332,6 @@ PorousMedia::setup_list()
   bc_list["rockhold"] = 3;
   bc_list["zero_total_velocity"] = 4;
   bc_list["richard"] = 5;
-
-  // obs_list
-
-  // default region_list
-  region_list["ALL"] = 0;
-  region_list["XLOBC"] = 1;
-  region_list["XHIBC"] = 2;
-  region_list["YLOBC"] = 3;
-  region_list["YHIBC"] = 4;
-#if BL_SPACEDIM == 3
-  region_list["ZLOBC"] = 5;
-  region_list["ZHIBC"] = 6;
 #endif
 }
 
@@ -662,304 +651,291 @@ void PorousMedia::read_geometry()
   // Note: 1. The domain size and periodity information are read in 
   //          automatically.  This function deals primarily with region
   //          definition.
-  //       2. region_array defined in PorousMedia.H as Array<*Region>
+  //       2. regions defined in PorousMedia.H as PArray<Region>
   //
   ParmParse pp("geometry");
 
-  // Get number of regions
-  int nregion = pp.countval("region");
-  pp.query("nregions",nregion);
-  if (pp.countval("region") != nregion) 
-    {
-      std::cerr << "Number of regions specified and listed "
-		<< "do not match.\n";
-      BoxLib::Abort("PorousMedia::read_geometry()");
-    }
-  
-  // set up  1+2*BL_SPACEDIM default regions
-  int nRegion_DEF = 1 + 2*BL_SPACEDIM;
-  nregion = nregion + nRegion_DEF;
-
-  region_array.resize(nregion);
-  int cnt=0;
-  region_array[cnt++] = new allRegion();
-  for (int dir = 0; dir < BL_SPACEDIM; dir++)
-  {
-      region_array[cnt++] = new allBCRegion(dir,0);
-      region_array[cnt++] = new allBCRegion(dir,1);
-  }
   Array<Real> problo, probhi;
   pp.getarr("prob_lo",problo,0,BL_SPACEDIM);
   pp.getarr("prob_hi",probhi,0,BL_SPACEDIM);
-  Array<Real> temp(2*BL_SPACEDIM);
-  for (int i=0;i<BL_SPACEDIM;i++)
-    {
-      temp[i] = problo[i];
-      temp[i+BL_SPACEDIM] = probhi[i];
-    }
-  for (int i = 0; i < nRegion_DEF; i++)
-  {
-      BL_ASSERT(region_array[i]!=0);
-      region_array[i]->set(temp);
-  }
+
+  // Get number of regions
+  int nregion_user = pp.countval("regions");
+  
+  // set up  1+2*BL_SPACEDIM default regions
+  int nregion_DEF = 1 + 2*BL_SPACEDIM;
+  int nregion = nregion_user + nregion_DEF;
+  regions.resize(nregion);
+  regions.set(0, new   allRegion(problo,probhi));
+  regions.set(1, new allBCRegion(0,0,problo,probhi));
+  regions.set(2, new allBCRegion(0,1,problo,probhi));
+  regions.set(3, new allBCRegion(1,0,problo,probhi));
+  regions.set(4, new allBCRegion(1,1,problo,probhi));
+#if BL_SPACEDIM == 3
+  regions.set(5, new allBCRegion(2,0,problo,probhi));
+  regions.set(6, new allBCRegion(2,1,problo,probhi));
+#endif
 
   // Get parameters for each user defined region 
-  if (nregion > nRegion_DEF)
+  if (nregion_user)
     {
       std::string r_purpose, r_type;
-      int nRegion_Read = nregion-nRegion_DEF;
-      Array<std::string> r_name(nRegion_Read);
+      Array<std::string> r_name;
+      pp.getarr("regions",r_name,0,nregion_user);
 
-      pp.getarr("region",r_name,0,nRegion_Read);
-      
-      for (int i = nRegion_DEF; i<nregion; i++)
-	{
-	  int idx = i-nRegion_DEF;      
-	  region_list[r_name[idx]] = i;
-          const std::string prefix("geometry." + r_name[idx]);
+      Real geometry_eps = 1.e-3;
+      for (int j=0; j<nregion_user; ++j)
+      {
+          const std::string prefix("geometry." + r_name[j]);
           ParmParse ppr(prefix.c_str());
 	  ppr.get("purpose",r_purpose);
 	  ppr.get("type",r_type);      
-	  if (Region::region_map[r_type] == Region::region_map["point"])
-	    {
+	  if (r_type == "point")
+          {
 	      Array<Real> coor;
 	      ppr.getarr("coordinate",coor,0,BL_SPACEDIM);
-	      region_array[i] = new pointRegion(r_name[idx],r_purpose,r_type);
-	      region_array[i]->set(coor);
+              regions.set(nregion_DEF+j, new pointRegion(r_name[j],r_purpose,r_type,coor));
 	    }
-	  else if (Region::region_map[r_type] == Region::region_map["box"])
+	  else if (r_type == "box")
 	    {
 	      Array<Real> lo_coor,hi_coor;
 	      ppr.getarr("lo_coordinate",lo_coor,0,BL_SPACEDIM);
 	      ppr.getarr("hi_coordinate",hi_coor,0,BL_SPACEDIM);
-	      region_array[i] = new boxRegion(r_name[idx],r_purpose,r_type);
 	      
 	      // check if it is at the boundary.  If yes, then include boundary.
-	      Array<Real>r_param(2*BL_SPACEDIM);
 	      for (int dir=0;dir<BL_SPACEDIM; dir++)
 		{
-		  if (lo_coor[dir] == problo[dir]) 
+		  if (lo_coor[dir] <= problo[dir]+geometry_eps) 
 		    lo_coor[dir] = -2e20;
-		  if (hi_coor[dir] == probhi[dir])
+		  if (hi_coor[dir] >= probhi[dir]-geometry_eps)
 		    hi_coor[dir] = 2e20;
-		  r_param[dir]=lo_coor[dir];
-		  r_param[dir+BL_SPACEDIM] = hi_coor[dir];
 		}
-	      region_array[i]->set(r_param);
+              regions.set(nregion_DEF+j, new boxRegion(r_name[j],r_purpose,r_type,lo_coor,hi_coor));
 	    }
-	  else if (Region::region_map[r_type] == Region::region_map["color_function"])
-	    {
+	  else if (r_type == "color_function")
+          {
               int color_value; ppr.get("color_value",color_value);
               std::string color_file; ppr.get("color_file",color_file);
-	      region_array[i] = new colorFunctionRegion(r_name[idx],r_purpose,r_type,color_file,color_value);
+              colorFunctionRegion* cfr = new colorFunctionRegion(r_name[j],r_purpose,r_type,color_file,color_value);
 
 	      // check if it is at the boundary.  If yes, then include boundary.
-	      Array<Real>r_param(2*BL_SPACEDIM);
-              colorFunctionRegion* cf = dynamic_cast<colorFunctionRegion*>(region_array[i]);
-              Real* lo = cf->vertex_lo;
-              Real* hi = cf->vertex_hi;
+              Array<Real>& lo = cfr->lo;
+              Array<Real>& hi = cfr->hi;
               
 	      for (int dir=0;dir<BL_SPACEDIM; dir++)
-		{
-		  if (lo[dir] == problo[dir]) 
-		    lo[dir] = -2e20;
-		  if (hi[dir] == probhi[dir])
-		    hi[dir] = 2e20;
-		}
-	    }
-          else BoxLib::Abort("type not supported");
+              {
+		  if (lo[dir] <= problo[dir]+geometry_eps) 
+                      lo[dir] = -2e20;
+		  if (hi[dir] >= probhi[dir]-geometry_eps)
+                      hi[dir] = 2e20;
+              }
+	      regions.set(nregion_DEF+j, cfr);
+          }
+          else BoxLib::Abort("region type not supported");
 	}
       pp.query("surf_file",surf_file);
     }
-
 }
 
-void PorousMedia::read_rock()
+void
+PorousMedia::read_rock()
 {
-  //
-  // Get parameters related to rock
-  //
-  ParmParse pp("rock");
-  int nrock = pp.countval("rock");
-  if (nrock <= 0)
-    {
-      std::cerr << "At least one rock type must be defined.\n";
-      BoxLib::Abort("read_rock()");
+    //
+    // Get parameters related to rock
+    //
+    ParmParse pp("rock");
+    int nrock = pp.countval("rock");
+    if (nrock <= 0) {
+        BoxLib::Abort("At least one rock type must be defined.");
     }
-  rock_array.resize(nrock);
-  Array<std::string> r_names;
-  pp.getarr("rock",r_names,0,nrock);
-  for (int i = 0; i<nrock; i++)
+    Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
+    rocks.resize(nrock,PArrayManage);
+
+    for (int i = 0; i<nrock; i++)
     {
-      const std::string prefix("rock." + r_names[i]);
-      ParmParse ppr(prefix.c_str());
-      rock_array[i].name = r_names[i];
-      ppr.get("density",rock_array[i].density);
-      ppr.get("porosity",rock_array[i].porosity);    
-      ppr.getarr("permeability",rock_array[i].permeability,
-		  0,ppr.countval("permeability"));
-      BL_ASSERT(rock_array[i].permeability.size() == BL_SPACEDIM);
-      // The permeability is specified in mDa.  
-      // This needs to be multiplied with 1e-7 to be consistent 
-      // with the other units in the code
-      for (int j=0; j<rock_array[i].permeability.size();j++)
-	rock_array[i].permeability[j] *= 1.e-7;
-      // relative permeability: include kr_coef, sat_residual
-      rock_array[i].krType = 0;
-      ppr.query("kr_type",rock_array[i].krType);
-      if (rock_array[i].krType > 0)
-	ppr.getarr("kr_param",rock_array[i].krParam,
-		    0,ppr.countval("kr_param"));
+        const std::string& rname = r_names[i];
+        const std::string prefix("rock." + rname);
+        ParmParse ppr(prefix.c_str());
+        
+        Real rdensity; ppr.get("density",rdensity);
+        Real rporosity; ppr.get("porosity",rporosity);    
+        Array<Real> rpermeability; ppr.getarr("permeability",rpermeability,0,ppr.countval("permeability"));
+        BL_ASSERT(rpermeability.size() == 2); // Horizontal, Vertical
 
-      // capillary pressure: include cpl_coef, sat_residual, sigma
-      rock_array[i].cplType = 0;
-      ppr.query("cpl_type", rock_array[i].cplType);
-      if (rock_array[i].cplType > 0)
-	ppr.getarr("cpl_param",rock_array[i].cplParam,
-		    0,ppr.countval("cpl_param"));
-      
-      Array<std::string> assign_region_name;
-      std::string permeability_dist, porosity_dist;
-      // assigned rock to regions      
-      ppr.getarr("region",assign_region_name,0,ppr.countval("region"));
-      ppr.get("permeability_dist",permeability_dist);
-      ppr.get("porosity_dist",porosity_dist);
+        // The permeability is specified in mDa.  
+        // This needs to be multiplied with 1e-7 to be consistent 
+        // with the other units in the code
+        for (int j=0; j<rpermeability.size(); ++j) {
+            rpermeability[j] *= 1.e-7;
+        }
 
-      for (Array<std::string>::iterator it=assign_region_name.begin(); 
-	   it!=assign_region_name.end(); it++)
-	rock_array[i].region.push_back(region_list[*it]);	
+        // relative permeability: include kr_coef, sat_residual
+        int rkrType = 0;  ppr.query("kr_type",rkrType);
+        Array<Real> rkrParam;
+        if (rkrType > 0) {
+            ppr.getarr("kr_param",rkrParam,0,ppr.countval("kr_param"));
+        }
 
-      rock_array[i].porosity_dist_type = Rock::rock_dist_map[porosity_dist];
-      if (rock_array[i].porosity_dist_type > 1)
-	{
-	  Array<Real> param;   
-	  ppr.getarr("porosity_dist_param",param,0,ppr.countval("porosity_dist_param"));
-	  rock_array[i].porosity_dist_param = param;
-	}
+        // capillary pressure: include cpl_coef, sat_residual, sigma
+        int rcplType = 0;  ppr.query("cpl_type", rcplType);
+        Array<Real> rcplParam;
+        if (rcplType > 0) {
+            ppr.getarr("cpl_param",rcplParam,0,ppr.countval("cpl_param"));
+        }
 
-      rock_array[i].permeability_dist_type = Rock::rock_dist_map[permeability_dist];
-      if (rock_array[i].permeability_dist_type > 1)
-	{
-	  Array<Real> param;
-	  ppr.getarr("permeability_dist_param",param,0,ppr.countval("permeability_dist_param"));
-	  rock_array[i].permeability_dist_param = param;
-	}
+        Array<std::string> region_names;
+        ppr.getarr("regions",region_names,0,ppr.countval("regions"));
+        PArray<Region> rregions = build_region_PArray(region_names);
+
+        std::string porosity_dist; ppr.get("porosity_dist",porosity_dist);
+        int rporosity_dist_type = Rock::rock_dist_map[porosity_dist];
+        Array<Real> rporosity_dist_param;
+        if (rporosity_dist_type > 1) {
+            ppr.getarr("porosity_dist_param",rporosity_dist_param,
+                       0,ppr.countval("porosity_dist_param"));
+        }
+        
+        std::string permeability_dist; ppr.get("permeability_dist",permeability_dist);
+        int rpermeability_dist_type = Rock::rock_dist_map[permeability_dist];
+        Array<Real> rpermeability_dist_param;
+        if (rpermeability_dist_type > 1)
+        {
+            ppr.getarr("permeability_dist_param",rpermeability_dist_param,
+                       0,ppr.countval("permeability_dist_param"));
+        }
+
+        rocks.set(i, new Rock(rname,rdensity,rporosity,rporosity_dist_type,rporosity_dist_param,
+                              rpermeability,rpermeability_dist_type,rpermeability_dist_param,
+                              rkrType,rkrParam,rcplType,rcplParam,rregions));
+                  
+        
     }
-
-  bool read_full_pmap  = false;
-  bool read_full_kmap  = false;
-  bool build_full_pmap = true;
-  bool build_full_kmap = true;
-  permeability_from_fine = true;
-  porosity_from_fine = true;
-
-  std::string kfile, pfile,gsfile;
-  pp.query("permeability_file", kfile);
-  pp.query("porosity_file", pfile);
-  pp.query("gslib_file",gsfile);
-
-  // The I/O processor makes the directory if it doesn't already exist.
-  if (ParallelDescriptor::IOProcessor())
-    if (!BoxLib::UtilCreateDirectory(pfile, 0755))
-      BoxLib::CreateDirectoryFailed(pfile);
-  ParallelDescriptor::Barrier();
-  if (ParallelDescriptor::IOProcessor())
-    if (!BoxLib::UtilCreateDirectory(kfile, 0755))
-      BoxLib::CreateDirectoryFailed(kfile);
-  ParallelDescriptor::Barrier();
-
-  pfile += "/pp";
-  kfile += "/kp";
-
-  if (read_full_kmap)
+    
+    bool read_full_pmap  = false;
+    bool read_full_kmap  = false;
+    bool build_full_pmap = true;
+    bool build_full_kmap = true;
+    permeability_from_fine = true;
+    porosity_from_fine = true;
+    
+    std::string kfile, pfile,gsfile;
+    pp.query("permeability_file", kfile);
+    pp.query("porosity_file", pfile);
+    pp.query("gslib_file",gsfile);
+    
+    // The I/O processor makes the directory if it doesn't already exist.
+    if (ParallelDescriptor::IOProcessor())
+        if (!BoxLib::UtilCreateDirectory(pfile, 0755))
+            BoxLib::CreateDirectoryFailed(pfile);
+    ParallelDescriptor::Barrier();
+    if (ParallelDescriptor::IOProcessor())
+        if (!BoxLib::UtilCreateDirectory(kfile, 0755))
+            BoxLib::CreateDirectoryFailed(kfile);
+    ParallelDescriptor::Barrier();
+    
+    pfile += "/pp";
+    kfile += "/kp";
+    
+    if (read_full_kmap)
     {
-      std::cout << "Current code only allows reading in "
-		<< "the distribution in full." << std::endl;
-
-      if (kappadata == 0)
-          kappadata = new MultiFab;
-
-      VisMF::Read(*kappadata,kfile);
+        std::cout << "Current code only allows reading in "
+                  << "the distribution in full." << std::endl;
+        
+        if (kappadata == 0)
+            kappadata = new MultiFab;
+        
+        VisMF::Read(*kappadata,kfile);
     }
-
-  if (read_full_pmap)
+    
+    if (read_full_pmap)
     {
-      std::cout << "Current code only allows reading in "
-		<< "the distribution in full.\n";
-
-      if (phidata == 0)
-          phidata = new MultiFab;
-
-      VisMF::Read(*phidata,pfile);
+        std::cout << "Current code only allows reading in "
+                  << "the distribution in full.\n";
+        
+        if (phidata == 0)
+            phidata = new MultiFab;
+        
+        VisMF::Read(*phidata,pfile);
     }
-
-  // determine parameters needed to build kappadata and phidata
-  int max_level;
-  Array<int> n_cell, fratio;
-  Array<Real> problo, probhi;
-  if (build_full_kmap || build_full_pmap)
+    
+    // determine parameters needed to build kappadata and phidata
+    int max_level;
+    Array<int> n_cell, fratio;
+    Array<Real> problo, probhi;
+    if (build_full_kmap || build_full_pmap)
     { 
-      ParmParse am("amr");
-      am.query("max_level",max_level);
-      am.getarr("n_cell",n_cell,0,BL_SPACEDIM);
-      am.getarr("ref_ratio",fratio,0,max_level);
-      
-      ParmParse gm("geometry");
-      gm.getarr("prob_lo",problo,0,BL_SPACEDIM);
-      gm.getarr("prob_hi",probhi,0,BL_SPACEDIM);
+        ParmParse am("amr");
+        am.query("max_level",max_level);
+        am.getarr("n_cell",n_cell,0,BL_SPACEDIM);
+        am.getarr("ref_ratio",fratio,0,max_level);
+        
+        ParmParse gm("geometry");
+        gm.getarr("prob_lo",problo,0,BL_SPACEDIM);
+        gm.getarr("prob_hi",probhi,0,BL_SPACEDIM);
     }
-
-  // construct permeability field based on the specified parameters
-  if (build_full_kmap)
+    
+    // construct permeability field based on the specified parameters
+    if (build_full_kmap)
     {
-
-      BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
-
-      if (kappadata == 0)
-          kappadata = new MultiFab;
-
-      kappadata->define(ba,BL_SPACEDIM,0,Fab_allocate);
-
-      for (int i=0; i<nrock; i++)
-	{
-	  // these are temporary work around.   
-	  // Should utilizes region to determine size.
-	  rock_array[i].max_level = max_level;
-	  rock_array[i].n_cell = n_cell;
-	  rock_array[i].fratio = fratio;
-	  rock_array[i].problo = problo;
-	  rock_array[i].probhi = probhi;
-	  rock_array[i].build_kmap(*kappadata, region_array, gsfile);
+        
+        BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
+        
+        if (kappadata == 0)
+            kappadata = new MultiFab;
+        
+        kappadata->define(ba,BL_SPACEDIM,0,Fab_allocate);
+        
+        for (int i=0; i<rocks.size(); ++i) 
+        {
+            // these are temporary work around.   
+            // Should utilizes region to determine size.
+            Rock& r = rocks[i];
+            r.max_level = max_level;
+            r.n_cell = n_cell;
+            r.fratio = fratio;
+            r.problo = problo;
+            r.probhi = probhi;
+            r.build_kmap(*kappadata, gsfile);
 	}
-
-      VisMF::SetNOutFiles(10);
+        
+      VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
       VisMF::Write(*kappadata,kfile);
     }
-
-  if (build_full_pmap)
+    
+    if (build_full_pmap)
     {
-      BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
-
-      if (phidata == 0)
-          phidata = new MultiFab;
-
-      phidata->define(ba,1,0,Fab_allocate);
-      
-      for (int i=0; i<nrock; i++)
-	{
-	  // these are temporary work around.   
-	  // Should utilizes region to determine size.
-	  rock_array[i].max_level = max_level;
-	  rock_array[i].n_cell = n_cell;
-	  rock_array[i].fratio = fratio;
-	  rock_array[i].problo = problo;
-	  rock_array[i].probhi = probhi;
-
-	  rock_array[i].build_pmap(*phidata, region_array, gsfile);
+        BoxArray ba = Rock::build_finest_data(max_level, n_cell, fratio);
+        
+        if (phidata == 0)
+            phidata = new MultiFab;
+        
+        phidata->define(ba,1,0,Fab_allocate);
+        
+        for (int i=0; i<rocks.size(); ++i)
+        {
+            // these are temporary work around.   
+            // Should utilizes region to determine size.
+            Rock& r = rocks[i];
+            r.max_level = max_level;
+            r.n_cell = n_cell;
+            r.fratio = fratio;
+            r.problo = problo;
+            r.probhi = probhi;
+            r.build_pmap(*phidata, gsfile);
 	}
-
-      VisMF::SetNOutFiles(10);
-      VisMF::Write(*phidata,pfile);
+        
+        VisMF::SetNOutFiles(10); // FIXME: Should not be hardwired here
+        VisMF::Write(*phidata,pfile);
+    }
+    
+    if (ParallelDescriptor::IOProcessor()) {
+        std::cout << "Rock name mapping in output: " << std::endl;
+    }
+    for (int i=0; i<rocks.size(); ++i) 
+    {
+        if (ParallelDescriptor::IOProcessor()) {
+            std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
+        }
     }
 }
 
@@ -1043,78 +1019,50 @@ void PorousMedia::read_prob()
 }
 
 //
-// assign_bc_coef assigns the type and associated coefficients of 
-// initial and boundary condtiions.
+// Construct bc functions
 //
 
-void PorousMedia::assign_bc_coef(int type_id, 
-				 ParmParse& ppr,
-				 Array<std::string>& names, 
-				 Array<Real>& coef)
+PArray<Region>
+PorousMedia::build_region_PArray(const Array<std::string>& region_names)
 {
-  int ncoef = names.size();
-  std::string rtype;
-  Real vel;
-  if (type_id == bc_list["scalar"])
+    PArray<Region> ret(region_names.size(), PArrayNoManage);
+    for (int i=0; i<region_names.size(); ++i)
     {
-      coef.resize(ncoef);
-      for (int j = 0; j<ncoef; j++)
-	{
-	  coef[j] = 0;
-	  ppr.get(names[j].c_str(),coef[j]);
-	}
+        const std::string& name = region_names[i];
+        bool found = false;
+        for (int j=0; j<regions.size() && !found; ++j)
+        {
+            Region& r = regions[j];
+            if (regions[j].name == name) {
+                found = true;
+                ret.set(i,&r);
+            }
+        }
+        if (!found) {
+            BoxLib::Error("Named region not found");
+        }
     }
-  else if (type_id == bc_list["hydrostatic"])
+    return ret;
+}
+
+const Rock&
+PorousMedia::find_rock(const std::string& name)
+{
+    bool found=false;
+    int iRock = -1;
+    for (int i=0; i<rocks.size() && !found; ++i)
     {
-      coef.resize(1);
-      ppr.get("water_table",coef[0]);
+        const Rock& rock = rocks[i];
+        if (name == rock.name) {
+            found = true;
+            iRock = i;
+        }
+    } 
+    if (iRock < 0) {
+        BoxLib::Abort("Named rock not found");
     }
-  else if (type_id == bc_list["zero_total_velocity"])
-    {
-      coef.resize(ncomps+1);
-      ppr.query("rock",rtype);
-      ppr.get("inflow",vel);
-      for (int i=0;i<ncomps;i++)
-	coef[i] = density[i];
-      coef[ncomps] = vel;
-      if (!rtype.empty())
-	{
-	  int lkrtype;
-	  Real lkappa, lkrcoef, lsatres;
-	  for (int i = 0; i<rock_array.size(); i++)
-	    {
-	      if (!rtype.compare(rock_array[i].name))
-		{
-		  lkappa = rock_array[i].permeability[0];
-		  lkrtype = rock_array[i].krType;
-		  lkrcoef = rock_array[i].krParam[0];
-		  lsatres = rock_array[i].krParam[1];
-		}
-	    }
-	  int nc = 1;
-	  Real vtot = 0.;
-	  Real gstar;
-	  if (ncomps > 1)
-	    gstar = -lkappa*(density[0]-density[1])*gravity;
-	  else
-	    gstar = -lkappa*(density[0])*gravity;
-	      
-	  Real sol;
-	  FORT_FIND_INV_FLUX(&sol, &vel, &nc, &vtot,&gstar,muval.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
-	  coef[0] = density[0]*(sol*(1.0-lsatres)+lsatres);
-	  if (ncomps > 1)
-	    coef[1] = density[1]*(1.0-coef[0]/density[0]);
-	}
-      else if (type_id == bc_list["richard"])
-	{
-	  coef.resize(1);
-	  ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
-	  ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
-	  ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
-	  ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
-	}
-    }
-}  
+    return rocks[iRock];
+}
 
 void  PorousMedia::read_comp()
 {
@@ -1128,47 +1076,38 @@ void  PorousMedia::read_comp()
   pp.getarr("phase",pNames,0,nphases);
   for (int i = 0; i<nphases; i++) phase_list[pNames[i]] = i;
 
-  ParmParse cp("comp");
-
-  // Get number of components
-  ncomps = cp.countval("comp");
-  cp.query("ncomp",ncomps);
-  if (cp.countval("comp") != ncomps) 
-    {
-      std::cerr << "Number of components specified and listed "
-		<< "do not match.\n";
-      BoxLib::Abort("read_comp()");
-    }
-
-  // Get parameters for each component
-  cp.getarr("comp",cNames,0,ncomps);
-  for (int i = 0; i<ncomps; i++) comp_list[cNames[i]] = i;
-  pType.resize(ncomps);
-  density.resize(ncomps);
-  muval.resize(ncomps);
-  visc_coef.resize(ncomps);
-  is_diffusive.resize(ncomps);
-  std::string buffer;
-  for (int i = 0; i<ncomps; i++)
-    {
-      const std::string prefix("comp." + cNames[i]);
+  // Build flattened list of components
+  int ndiff = 0;
+  for (int i = 0; i<nphases; i++) {
+      const std::string prefix("phase." + pNames[i]);
       ParmParse ppr(prefix.c_str());
-      ppr.get("phase",buffer);
-      ppr.get("density",density[i]);
-      ppr.get("viscosity",muval[i]);
-      ppr.get("diffusivity",visc_coef[i]);
-      pType[i] = phase_list[buffer];
-
+      int p_nc = ppr.countval("comps");
+      BL_ASSERT(p_nc==1); // An assumption all over the place...
+      ncomps += p_nc;
+      Array<std::string> p_cNames; ppr.getarr("comps",p_cNames,0,p_nc);
+      for (int j=0; j<p_cNames.size(); ++j) {
+          cNames.push_back(p_cNames[j]);
+      }
+      Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
+      Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
+      Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
+      
       // Only components have diffusion at the moment.  
-      if (visc_coef[i] > 0)
-	{
+      if (visc_coef.back() > 0)
+      {
 	  do_any_diffuse = true;
-	  is_diffusive[i]   = 1;
-	}
-      else
-	variable_scal_diff = 0;
+	  is_diffusive[visc_coef.size()-1] = 1;
+      }
+      else {
+          variable_scal_diff = 0;
+      }
       ++ndiff;
-    }
+
+      pType.push_back(phase_list[pNames[i]]);
+  }
+
+  ParmParse cp("comp");
+  for (int i = 0; i<ncomps; i++) comp_list[cNames[i]] = i;
 
   // Get the dominant component
   std::string domName;
@@ -1239,51 +1178,147 @@ void  PorousMedia::read_comp()
     }
 
   // Initial condition and boundary condition
-  Array<std::string> ic_array_name;
-  int n_ic_array = cp.countval("init");
-  if (n_ic_array <= 0)
-    {
-      std::cerr << "the domain must be initialized.\n";
-      BoxLib::Abort("read_comp()");
-    }
-  cp.getarr("init",ic_array_name,0,n_ic_array);
-  ic_array.resize(n_ic_array);
-  std::string type_name;
-  Array<std::string> region_name;
-  for (int i = 0; i<n_ic_array; i++)
-    {
-      const std::string prefix("comp." + ic_array_name[i]);
-      ParmParse ppr(prefix.c_str());
-      ppr.get("type",type_name);
-      ic_array[i].type = bc_list[type_name];
-      int n_ic_region = ppr.countval("region");
-      ppr.getarr("region",region_name,0,n_ic_region);
-      ic_array[i].region.resize(n_ic_region);
-      for (int j=0;j<region_name.size();j++)
-	ic_array[i].region[j] = region_list[region_name[j]];
-      assign_bc_coef(ic_array[i].type,ppr,cNames,ic_array[i].param);
-    }
-
-  Array<std::string> bc_array_name;
-  int n_bc_array = cp.countval("inflow");
-  if (n_bc_array > 0)
-    {
-      cp.getarr("inflow",bc_array_name,0,n_bc_array);
-      bc_array.resize(n_bc_array);
-      for (int i = 0; i<n_bc_array; i++)
-	{
-	  const std::string prefix("comp." + bc_array_name[i]);
+  //
+  // Component ics, bcs will be set all at once
+  int n_ics = cp.countval("inits");
+  if (n_ics > 0)
+  {
+      Array<std::string> ic_names;
+      cp.getarr("inits",ic_names,0,n_ics);
+      ics.resize(n_ics);
+      for (int i = 0; i<n_ics; i++)
+      {
+          const std::string& icname = ic_names[i];
+	  const std::string prefix("comp.ics." + icname);
 	  ParmParse ppr(prefix.c_str());
-	  ppr.get("type",type_name);
-	  bc_array[i].type = bc_list[type_name];
-	  int n_bc_region = ppr.countval("region");
-	  ppr.getarr("region",region_name,0,n_bc_region);
-	  bc_array[i].region.resize(n_bc_region);
-	  for (int j=0;j<region_name.size();j++)
-	    bc_array[i].region[j] = region_list[region_name[j]];
-	  assign_bc_coef(bc_array[i].type,ppr,cNames,bc_array[i].param);
-	}
-    }
+          
+	  int n_ic_regions = ppr.countval("regions");
+          Array<std::string> region_names;
+	  ppr.getarr("regions",region_names,0,n_ic_regions);
+          PArray<Region> ic_regions = build_region_PArray(region_names);
+
+          std::string ic_type; ppr.get("type",ic_type);          
+          if (ic_type == "scalar")
+          {
+              std::string func; ppr.get("function",func);
+              if (func=="constant") {
+                  const std::string prefixC(prefix + ".constant");
+                  Array<Real> vals(ncomps);
+                  ParmParse pprc(prefixC.c_str());
+                  for (int j = 0; j<cNames.size(); j++) {
+                      pprc.get(cNames[j].c_str(),vals[j]);
+                  }
+                  ics.set(i, new RegionData(ic_regions,ic_type,vals));
+              }
+              else {
+                  BoxLib::Abort("Unsupported comp ic");
+              }
+          }
+          else if (ic_type == "hydrostatic")
+          {
+              Array<Real> water_table(1); ppr.get("water_table",water_table[0]);
+              ics.set(i, new RegionData(ic_regions,ic_type,water_table));
+          }
+          else if (ic_type == "zero_total_velocity")
+          {
+              BoxLib::Abort("comp ic zero_total_velocity not implemented yet");
+          }
+          else if (ic_type == "richard")
+          {
+              BoxLib::Abort("comp ic richard not implemented yet");
+#if 0
+              ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
+              ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
+              ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
+              ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
+#endif
+          }          
+      }
+  }
+
+  int n_bcs = cp.countval("bcs");
+  if (n_bcs > 0)
+  {
+      Array<std::string> bc_names;
+      cp.getarr("bcs",bc_names,0,n_bcs);
+      for (int i = 0; i<n_bcs; i++)
+      {
+          const std::string& bcname = bc_names[i];
+	  const std::string prefix("comp.bcs" + bcname);
+	  ParmParse ppr(prefix.c_str());
+          
+	  int n_bc_regions = ppr.countval("regions");
+          Array<std::string> region_names;
+	  ppr.getarr("regions",region_names,0,n_bc_regions);
+          const PArray<Region> bc_regions = build_region_PArray(region_names);
+          std::string bc_type; ppr.get("type",bc_type);
+          
+          if (bc_type == "scalar")
+          {
+              int nComp = cNames.size();
+              Array<Array<Real> > vals(nComp), times(nComp);
+              Array<Array<std::string> > forms(nComp);
+              for (int j = 0; j<cNames.size(); j++)
+              {
+                  ParmParse pps(prefix + "." + cNames[j]);
+                  int nv = pps.countval("vals");
+                  if (nv) {
+                      pps.getarr("vals",vals[j],0,nv);
+                      pps.getarr("times",times[j],0,nv);
+                      if (nv>1) {
+                          pps.getarr("forms",forms[j],0,nv-1);
+                      }
+                  }
+                  else {
+                      vals[j].resize(1,0);
+                      times[j].resize(1,0);
+                      forms[j].resize(0);
+                  }            
+              }
+              
+              bcs.set(i, new ArrayRegionData(times,vals,forms,bc_regions,bc_type));
+              
+          }
+          else if (bc_type == "hydrostatic")
+          {
+              Array<Real> water_table(1); ppr.get("water_table",water_table[0]);
+              bcs.set(i, new RegionData(bc_regions,bc_type,water_table));
+          }
+          else if (bc_type == "zero_total_velocity")
+          {
+              std::string rocklabel=""; ppr.get("rock",rocklabel);
+              const Rock& rock = find_rock(rocklabel);
+
+              Array<Real> vals, times;
+              Array<std::string> forms;
+
+              int nv = ppr.countval("aqueous_vol_flux");
+              if (nv) {
+                  ppr.getarr("aqueous_vol_flux",vals,0,nv);
+                  ppr.getarr("inflowtimes",times,0,nv);
+                  if (nv>1) {
+                      ppr.getarr("inflowfncs",forms,0,nv-1);
+                  }
+              }
+              else {
+                  vals.resize(1,0);
+                  times.resize(1,0);
+                  forms.resize(0);
+              }        
+              bcs.set(i, new FluxToArrayBC(times,vals,forms,bc_regions,bc_type,ncomps,rock));
+          }
+          else if (bc_type == "richard")
+          {
+              BoxLib::Abort("comp bc richard not implemented yet");
+#if 0
+              ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
+              ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
+              ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
+              ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
+#endif
+          }          
+      }
+  }
 }
 
 
@@ -1296,79 +1331,96 @@ void  PorousMedia::read_tracer()
 
   // Get number of tracers
   ntracers = pp.countval("tracer");
-  pp.query("ntracer",ntracers);
-  if (pp.countval("tracer") != ntracers) 
-    {
-      std::cerr << "Number of tracers specified and listed "
-		<< "do not match.\n";
-      BoxLib::Abort("read_tracer()");
-    }
-
-  // Get parameters for each component
+  std::map<std::string,Array<std::string> > group_map;
   if (ntracers > 0)
-    {
-      // Get names of tracer groups
-      pp.getarr("group",qNames,0,pp.countval("group"));
+  {
+      tics.resize(ntracers);
       pp.getarr("tracer",tNames,0,ntracers);
-      for (int i = 0; i< ntracers; i++) tracer_list[tNames[i]] = i+ncomps;
-      tType.resize(ntracers);
-      std::string buffer;
+
       for (int i = 0; i<ntracers; i++)
-	{
+      {
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
-	  ppr.get("group",buffer);
-	  for (int j=0;j<qNames.size(); j++) 
-	    if (buffer.compare(qNames[j])==0) tType[i] = j;	   
-	}
+          std::string g; ppr.get("group",g);
+          group_map[g].push_back(tNames[i]);
       
-      // Initial condition and boundary condition  
-      Array<std::string> ic_array_name;
-      int n_ic_array = pp.countval("init");
-      if (n_ic_array <= 0)
-	{
-	  std::cerr << "the domain must be initialized.\n";
-	  BoxLib::Abort("read_tracer()");
-	}
-      pp.getarr("init",ic_array_name,0,n_ic_array);
-      tic_array.resize(n_ic_array);
-      std::string type_name;
-      Array<std::string> region_name;
-      for (int i = 0; i<n_ic_array; i++)
-	{
-	  const std::string prefix("tracer." + ic_array_name[i]);
-	  ParmParse ppr(prefix.c_str());
-	  ppr.get("type",type_name);
-	  tic_array[i].type = bc_list[type_name];
-	  int n_ic_region = ppr.countval("region");
-	  ppr.getarr("region",region_name,0,n_ic_region);
-	  tic_array[i].region.resize(n_ic_region);
-	  for (int j=0;j<region_name.size();j++)
-	    tic_array[i].region[j] = region_list[region_name[j]];
-	  assign_bc_coef(tic_array[i].type,ppr,tNames,tic_array[i].param);
-	}
+          // Initial condition and boundary condition  
+          Array<std::string> ic_names;
+          int n_ic = ppr.countval("inits");
+          if (n_ic <= 0)
+          {
+              BoxLib::Abort("each tracer must be initialized");
+          }
+          ppr.getarr("inits",ic_names,0,n_ic);
+          
+          Array<std::string> region_names;
+          for (int n = 0; n<n_ic; n++)
+          {
+              const std::string prefixIC(prefix + "." + ic_names[n]);
+              ParmParse ppri(prefix.c_str());
+              
+              int n_ic_region = ppri.countval("regions");
+              ppri.getarr("regions",region_names,0,n_ic_region);
+              const PArray<Region>& tic_regions = build_region_PArray(region_names);
+              std::string tic_type; ppri.get("type",tic_type);
+              
+              if (tic_type == "scalar")
+              {
+                  Real val = 0; ppri.query("val",val);
+                  tics[i].set(i, new RegionData(tic_regions,tic_type,val));
+              }
+              else {
+                  BoxLib::Abort("Unsupported tracer IC type");
+              }
+          }
 
-      Array<std::string> bc_array_name;
-      int n_bc_array = pp.countval("inflow");
-      if (n_bc_array > 0)
-	{
-	  pp.getarr("inflow",bc_array_name,0,n_bc_array);
-	  tbc_array.resize(n_bc_array);
-	  for (int i = 0; i<n_bc_array; i++)
-	    {
-	      const std::string prefix("tracer." + bc_array_name[i]);
-	      ParmParse ppr(prefix.c_str());
-	      ppr.get("type",type_name);
-	      tbc_array[i].type = bc_list[type_name];
-	      int n_bc_region = ppr.countval("region");
-	      ppr.getarr("region",region_name,0,n_bc_region);
-	      tbc_array[i].region.resize(n_bc_region);
-	      for (int j=0;j<region_name.size();j++)
-		tbc_array[i].region[j] = region_list[region_name[j]];
-	      assign_bc_coef(tbc_array[i].type,ppr,tNames,tbc_array[i].param);
-	    }
-	}
-    }
+
+          Array<std::string> tbc_names;
+          int n_tbc = ppr.countval("tbcs");
+          if (n_tbc <= 0)
+          {
+              BoxLib::Abort("each tracer requires boundary conditions");
+          }
+          ppr.getarr("bcs",tbc_names,0,n_tbc);
+          
+          Array<std::string> tbc_region_names;
+          for (int n = 0; n<n_tbc; n++)
+          {
+              const std::string prefixTBC(prefix + "." + tbc_names[n]);
+              ParmParse ppri(prefix.c_str());
+              
+              int n_tbc_region = ppri.countval("regions");
+              ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
+              const PArray<Region>& tbc_regions = build_region_PArray(tbc_region_names);
+              std::string tbc_type; ppri.get("type",tbc_type);
+              
+              if (tbc_type == "scalar")
+              {
+                  Array<Real> times, vals;
+                  Array<std::string> forms;
+                  int nv = ppri.countval("vals");
+                  if (nv) {
+                      ppri.getarr("vals",vals,0,nv);
+                      ppri.getarr("times",times,0,nv);
+                      ppri.getarr("forms",forms,0,nv-1);
+                  }
+                  else {
+                      vals.resize(1,0); // Default tracers to zero for all time
+                      times.resize(1,0);
+                      forms.resize(0);
+                  }
+                  int nComp = 1;
+                  tbcs[i].set(i, new ArrayRegionData(times,vals,forms,tbc_regions,tbc_type,nComp));
+              
+              }
+              else {
+                  BoxLib::Abort("Unsupported tracer BC type");
+              }
+          }
+
+
+      }
+  }
 }
   
 void  PorousMedia::read_pressure()
@@ -1436,6 +1488,12 @@ void  PorousMedia::read_source()
 
   // determine number of sources 
   pp.query("do_source",do_source_term);
+
+  if (do_source_term) {
+      BoxLib::Abort("Sources no longer supported");
+  }
+
+#if 0
   int nsource = pp.countval("source");
   pp.query("nsource",nsource);
   if (pp.countval("source") != nsource) 
@@ -1490,7 +1548,7 @@ void  PorousMedia::read_source()
 		}
 	    }
 
-	  ppr.get("region",buffer);
+	  ppr.get("regions",buffer);
           bool region_set=false;
 	  for (int j=0; j<region_array.size();j++)
           {
@@ -1521,6 +1579,7 @@ void  PorousMedia::read_source()
 	 
 	}
     }
+#endif
 }
 
 void PorousMedia::read_observation()
@@ -1531,45 +1590,29 @@ void PorousMedia::read_observation()
   ParmParse pp("observation");
 
   // determine number of observation
-  int nobs = pp.countval("observation");
-  pp.query("nobs",nobs);
-  if (pp.countval("observation") != nobs) 
-    {
-      std::cerr << "Number of observations specified and listed "
-		<< "do not match.\n";
-      BoxLib::Abort("read_observation()");
-    }
-  if (nobs > 0)
-    {
-      observation_array.resize(nobs);
-      Array<std::string> oname;
-      pp.getarr("observation",oname,0,nobs);
+  int n_obs = pp.countval("observation");
+  if (n_obs > 0)
+  {
+      observations.resize(n_obs);
+      Array<std::string> obs_names;
+      pp.getarr("observation",obs_names,0,n_obs);
 
       // Get parameters for each observation
       // observation type:0=production,1=mass_fraction,2=mole_fraction,3=saturation
-      std::string buffer;
-      for (int i=0; i<nobs; i++)
-	{
-          const std::string prefix("observation." + oname[i]);
+      for (int i=0; i<n_obs; i++)
+      {
+          const std::string prefix("observation." + obs_names[i]);
 	  ParmParse ppr(prefix.c_str());
-	  observation_array[i].name = oname[i];
-	  obs_list[oname[i]] = i;
-	  ppr.get("obs_type",observation_array[i].obs_type);
-	  ppr.get("var_type",observation_array[i].var_type);
-	  ppr.get("var_id",observation_array[i].var_id);
 
-	  if (!observation_array[i].var_type.compare("comp"))
-	    observation_array[i].id = comp_list[observation_array[i].var_id];
-	  else if (!observation_array[i].var_type.compare("tracer"))
-	    observation_array[i].id = tracer_list[observation_array[i].var_id];
-
-	  ppr.get("region",buffer);
-          observation_array[i].region = region_list[buffer];
+          std::string obs_type; ppr.get("obs_type",obs_type);
+          std::string obs_op_type; ppr.get("obs_op_type",obs_op_type);
+          std::string obs_field; ppr.get("field",obs_field);
+          Array<std::string> region_names(1); ppr.get("region",region_names[0]);
+          const PArray<Region>& obs_regions = build_region_PArray(region_names);
           
-	  ppr.getarr("times",observation_array[i].times,
-		      0,ppr.countval("times"));
+	  Array<Real> obs_times; ppr.getarr("times",obs_times,0,ppr.countval("times"));
 
-	  //observation_array[i].vals.resize(observation_array[i].times.size());	 
+          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,obs_op_type,obs_times));
 	}
       
       // filename for output
@@ -1665,6 +1708,13 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read geometry." << std::endl;
 
+  if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "The Regions: " << std::endl;
+      for (int i=0; i<regions.size(); ++i) {
+          std::cout << regions[i] << std::endl;
+      }
+  }
+
   // rock
   read_rock();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -1675,10 +1725,20 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read components."<< std::endl;
   
+  if (ParallelDescriptor::IOProcessor()) {
+      std::cout << "The Components: " << std::endl;
+      for (int i=0; i<regions.size(); ++i) {
+          std::cout << regions[i] << std::endl;
+      }
+  }
+
   // tracers
   read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
+
+  std::cout << "read_tracer DONE." << std::endl;  
+  BoxLib::Abort("MARC");
 
   // pressure
   read_pressure();
