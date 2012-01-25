@@ -123,9 +123,10 @@ class Richards_PK : public Flow_PK {
   double T0_sss, T1_sss, dT0_sss, dTmax_sss;
 
   BDF2::Dae* bdf2_dae;  // Parameters for transient solution
-  int method_bdf;
-  double absolute_tol_bdf, relative_tol_bdf;
-  double T0_bdf, T1_bdf, dT0_bdf;
+  int method_trs;
+  double absolute_tol_trs, relative_tol_trs;
+  int num_itrs_trs;
+  double T0_trs, T1_trs, dT0_trs;
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

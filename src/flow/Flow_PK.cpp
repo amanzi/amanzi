@@ -162,9 +162,6 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
   AmanziGeometry::Point gravity(dim); 
   for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho;
 
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> flag(nfaces_wghost, 0);
 

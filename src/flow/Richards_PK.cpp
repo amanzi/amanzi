@@ -66,10 +66,11 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
   solver = NULL;
 
   method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
-  method_bdf = FLOW_STEADY_STATE_BDF2;
+  method_trs = FLOW_STEADY_STATE_BDF2;
+  num_itrs_trs = 0;
 
-  absolute_tol_sss = absolute_tol_bdf = 1.0; 
-  relative_tol_sss = relative_tol_bdf = 1e-5;
+  absolute_tol_sss = absolute_tol_trs = 1.0; 
+  relative_tol_sss = relative_tol_trs = 1e-5;
 
   mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
   flag_upwind = true;
@@ -199,7 +200,41 @@ int Richards_PK::advance_to_steady_state()
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
 
+  status = FLOW_NEXT_STATE_COMPLETE;
   return ierr;
+}
+
+
+/* ******************************************************************* 
+* Performs one time step of size dT (under *development*). 
+******************************************************************* */
+int Richards_PK::advance(double dT) 
+{
+  T_physical = FS->get_time();
+  double time = (standalone_mode) ? T_internal : T_physical;
+  double dTnext;
+
+  if (num_itrs_trs == 0) {  // initialization
+    Epetra_Vector udot(*super_map_);
+    computeUDot(time, *solution, udot);
+    bdf2_dae->set_initial_state(time, *solution, udot);
+
+    int ierr;
+    update_precon(time, *solution, dT, ierr);
+  }
+
+  bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
+  bdf2_dae->commit_solution(dT, *solution);
+  bdf2_dae->write_bdf2_stepping_statistics();
+
+  // calculate darcy mass flux
+  Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
+  matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
+  matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
+  addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
+
+  num_itrs_trs++;
+  return 0;
 }
 
 
@@ -271,36 +306,26 @@ int Richards_PK::advanceSteadyState_Picard()
     matrix->assembleGlobalMatrices();
     matrix->computeSchurComplement(bc_markers, bc_values);
     matrix->update_ML_preconditioner();
+    rhs = matrix->get_rhs();  // export rhs from matrix class
 
     // check convergence of non-linear residual
     L2error = matrix->computeResidual(solution_new, residual);
+    residual.Norm2(&L2error);
+    rhs->Norm2(&L2norm);
+    L2error /= L2norm;
 
     // call AztecOO solver
-    rhs = matrix->get_rhs();
     Epetra_Vector b(*rhs);
     solver->SetRHS(&b);  // AztecOO modifies the right-hand-side.
     solver->SetLHS(&*solution);  // initial solution guess 
 
     solver->Iterate(max_itrs, convergence_tol);
     int num_itrs = solver->NumIters();
-    double residual = solver->TrueResidual();
+    double linear_residual = solver->TrueResidual();
 
-    // update relaxation parameter
-    solution_new.Norm2(&L2norm);
-    L2error = errorSolutionDiff(solution_old, solution_new);
-
-    if (L2error > 1.0) {
-      relaxation = std::max(1e-1, relaxation / 4); 
-      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Picard fail:%4d   Pressure(diff=%9.4e, sol=%9.4e, relax=%8.3e)  CG info(%8.3e, %4d)\n", 
-            itrs, L2error, L2norm, relaxation, residual, num_itrs);
-      }
-    } else {
-      relaxation = std::min(1.0, relaxation * 1.2);
-      if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
-        std::printf("Picard step:%4d   Pressure(diff=%9.4e, sol=%9.4e, relax=%8.3e)  CG info(%8.3e, %4d)\n", 
-            itrs, L2error, L2norm, relaxation, residual, num_itrs);
-      }
+    if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+      std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n", 
+          itrs, L2error, L2norm, relaxation, linear_residual, num_itrs);
     }
 
     for (int c=0; c<ncells_owned; c++) {
@@ -312,34 +337,6 @@ int Richards_PK::advanceSteadyState_Picard()
     itrs++;
   }
 
-  return 0;
-}
-
-
-/* ******************************************************************* 
-* Performs one time step of size dT (under *development*). 
-******************************************************************* */
-int Richards_PK::advance(double dT) 
-{
-  T_physical = FS->get_time();
-  double time = (standalone_mode) ? T_internal : T_physical;
-  double dTnext;
-
-  int itrs = 0;
-  if (itrs == 0) {  // initialization
-    Epetra_Vector udot(*super_map_);
-    computeUDot(time, *solution, udot);
-    bdf2_dae->set_initial_state(time, *solution, udot);
-
-    int ierr;
-    update_precon(time, *solution, dT, ierr);
-  }
-
-  bdf2_dae->bdf2_step(dT, 0.0, *solution, dTnext);
-  bdf2_dae->commit_solution(dT, *solution);
-  bdf2_dae->write_bdf2_stepping_statistics();
-
-  itrs++;
   return 0;
 }
 
