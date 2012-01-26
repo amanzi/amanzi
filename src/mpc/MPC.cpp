@@ -315,6 +315,11 @@ void MPC::cycle_driver () {
       // take the mpc time step as the min of all suggested time steps 
       mpc_dT = std::min( std::min(flow_dT, transport_dT), chemistry_dT );
 
+      if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
+	mpc_dT = std::min( mpc_dT, dTtransient );
+      }
+
+
       // adjust this suggested time step so that we end on T1
       if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
         mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
@@ -435,7 +440,7 @@ void MPC::cycle_driver () {
 double MPC::time_step_limiter (double T, double dT, double T_end) {
 
   double time_remaining = T_end - T;
-
+  
   if (dT >= time_remaining) {
     return time_remaining;
   } else if ( dT > 0.75*time_remaining ) {

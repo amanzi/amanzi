@@ -31,7 +31,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
 
-
+  
 #ifdef HAVE_MPI
   Epetra_MpiComm *comm = new Epetra_MpiComm(mpi_comm);
 #else  
@@ -46,17 +46,30 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   Teuchos::ParameterList new_list; 
   Teuchos::ParameterList sub_list;
   
-  if (! native)
-    {
-      new_list = Amanzi::AmanziInput::translate( &input_parameter_list);
-      new_list.set<bool>("Native Unstructured Input",true);
-    }
-  else
-    {
-      new_list = input_parameter_list;
-    }
+  if (! native) {
+    new_list = Amanzi::AmanziInput::translate( &input_parameter_list);
 
-  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	  
+    std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity","Low");
+    
+    if ( verbosity == "None" ) {
+      verbLevel = Teuchos::VERB_NONE;
+    } else if ( verbosity == "Low" ) {
+      verbLevel = Teuchos::VERB_LOW;
+    } else if ( verbosity == "Medium" ) {
+      verbLevel = Teuchos::VERB_MEDIUM;
+    } else if ( verbosity == "High" ) {
+      verbLevel = Teuchos::VERB_HIGH;
+    } else if ( verbosity == "Extreme" ) {
+      verbLevel = Teuchos::VERB_HIGH;
+
+    } 
+      
+  } else {
+    new_list = input_parameter_list;
+  }
+  
+  
+  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))	  
     {  
       // print parameter list
       *out << "======================> dumping parameter list <======================" << std::endl;

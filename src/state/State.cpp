@@ -789,10 +789,17 @@ void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, co
 
 
 
-void State::write_vis(Amanzi::Vis& vis)
-{
-  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() )
-  {
+void State::write_vis(Amanzi::Vis& vis) {
+  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() ) {
+    using Teuchos::OSTab;
+    Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+    
+    if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+      *out << "Writing visualization dump, cycle = " << get_cycle() << std::endl;
+    }
+
     // create the new time step...
     vis.create_timestep(get_time(),get_cycle());
 
@@ -821,15 +828,12 @@ void State::write_vis(Amanzi::Vis& vis)
 
 
 
-void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames)
-{
+void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames)  {
   write_vis(vis);
 
-  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() )
-  {
+  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() ) {
     // write auxillary data
-    if (auxdata != NULL)
-    {
+    if (auxdata != NULL)  {
       vis.write_vector( *auxdata , auxnames);
     }
 

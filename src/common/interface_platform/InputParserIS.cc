@@ -15,7 +15,6 @@ namespace AmanziInput {
 Teuchos::ParameterList translate(Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList new_list, tmp_list;
   
-
   init_global_info(plist);
 
   // checkpoint list is optional
@@ -166,6 +165,31 @@ void init_global_info( Teuchos::ParameterList* plist ) {
   } else {
     // we can only do single phase
   }
+
+  if ( plist->isSublist("Execution Control") ) {
+    
+    if ( plist->sublist("Execution Control").isParameter("Verbosity") ) {
+      std::string verbosity = plist->sublist("Execution Control").get<std::string>("Verbosity");
+      
+      if ( verbosity == "None" ) {
+	verbosity_level = "none";
+      } else if ( verbosity == "Low" ) {
+	verbosity_level = "low";	
+      } else if ( verbosity == "Medium" ) {	
+	verbosity_level = "medium";
+      } else if ( verbosity == "High" ) {
+	verbosity_level = "high";
+      } else if ( verbosity == "Extreme" ) {
+	verbosity_level = "high";	
+      } else {
+	Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
+      }
+
+    } else {
+      verbosity_level = "low";
+    }
+  }
+
 }
 
 
@@ -360,8 +384,8 @@ Teuchos::ParameterList get_Domain_List ( Teuchos::ParameterList* plist ) {
 Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList mpc_list;
 
-  if ( plist->isSublist("Execution control") ) {
-    Teuchos::ParameterList exe_sublist = plist->sublist("Execution control");
+  if ( plist->isSublist("Execution Control") ) {
+    Teuchos::ParameterList exe_sublist = plist->sublist("Execution Control");
 
     mpc_list.sublist("Time Integration Mode") = exe_sublist.sublist("Time Integration Mode");
 
@@ -418,8 +442,7 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
 
   }
 
-  std::string vlevel("low");
-  mpc_list.sublist("VerboseObject") = create_Verbosity_List(vlevel);
+  mpc_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
 
   return mpc_list;
@@ -429,11 +452,11 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
 Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList trp_list;
 
-  if ( plist->isSublist("Execution control") ) {
-    if ( plist->sublist("Execution control").isParameter("Transport Model") ) {
-      if ( plist->sublist("Execution control").get<std::string>("Transport Model") == "On" ) {
-	if (plist->sublist("Execution control").isSublist("Numerical Control Parameters")) {
-	  Teuchos::ParameterList& ncp_list = plist->sublist("Execution control").sublist("Numerical Control Parameters");
+  if ( plist->isSublist("Execution Control") ) {
+    if ( plist->sublist("Execution Control").isParameter("Transport Model") ) {
+      if ( plist->sublist("Execution Control").get<std::string>("Transport Model") == "On" ) {
+	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	  Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
 	  if (ncp_list.isParameter("Transport Integration Algorithm")) {
 	    std::string tia = ncp_list.get<std::string>("Transport Integration Algorithm");
 	    if ( tia == "Explicit First-Order" ) {
@@ -534,11 +557,11 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
 Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList flw_list;
 
-  if ( plist->isSublist("Execution control") ) {
-    if ( plist->sublist("Execution control").isParameter("Flow Model") ) {
-      if ( plist->sublist("Execution control").get<std::string>("Flow Model") == "Steady" ) {
+  if ( plist->isSublist("Execution Control") ) {
+    if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
+      if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady" ) {
 	
-      } else if ( plist->sublist("Execution control").get<std::string>("Flow Model") == "Richards" ) {
+      } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<bool>("Upwind relative permeability", true);
         // this one should come from the input file...
@@ -548,8 +571,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
         // set some reasonable defaults...
         richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
         richards_model_evaluator.set<double>("Relative error tolerance",1.0e-3);
-        std::string vlevel("low");
-        richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
+        richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
         Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
         // set some reasonable defaults...
@@ -558,7 +580,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
         time_integrator.set<int>("Maximum number of BDF tries", 10);
         time_integrator.set<double>("Nonlinear solver tolerance", 0.01);
         time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
-        time_integrator.sublist("VerboseObject") = create_Verbosity_List(vlevel);
+        time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
 
         // insert the water retention models sublist
