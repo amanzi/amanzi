@@ -363,61 +363,57 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
   if ( plist->isSublist("Execution control") ) {
     Teuchos::ParameterList exe_sublist = plist->sublist("Execution control");
 
-    mpc_list.set<double>("Start Time", exe_sublist.get<double>("Start Time"));
-    mpc_list.set<double>("End Time", exe_sublist.get<double>("End Time"));
-    mpc_list.set<int>("End Cycle",-1); // not in input spec, set reasonable value
+    mpc_list.sublist("Time Integration Mode") = exe_sublist.sublist("Time Integration Mode");
 
-    mpc_list.set<double>("Initial time step",exe_sublist.get<double>("Initial time step"));
+    // mpc_list.set<double>("Start Time", exe_sublist.get<double>("Start Time"));
+    // mpc_list.set<double>("End Time", exe_sublist.get<double>("End Time"));
+    // mpc_list.set<int>("End Cycle",-1); // not in input spec, set reasonable value
+
+    // mpc_list.set<double>("Initial time step",exe_sublist.get<double>("Initial time step"));
 
 
     // now interpret the modes
-    if ( exe_sublist.isParameter("Transport Mode") ) {
-      if ( exe_sublist.get<std::string>("Transport Mode") == "none" ) {
+    if ( exe_sublist.isParameter("Transport Model") ) {
+      if ( exe_sublist.get<std::string>("Transport Model") == "Off" ) {
         mpc_list.set<std::string>("disable Transport_PK","yes");
-      } else {
+      } else if ( exe_sublist.get<std::string>("Transport Model") == "On" ) {
         mpc_list.set<std::string>("disable Transport_PK","no");
+      } else {
+	Exceptions::amanzi_throw(Errors::Message("Transport Model must either be On or Off"));
       }
     } else {
-      mpc_list.set<std::string>("disable Transport_PK","yes");
+      Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
+    }
+      
+
+    if ( exe_sublist.isParameter("Flow Model") ) {
+      if ( exe_sublist.get<std::string>("Flow Model") == "Off" ) {
+        mpc_list.set<std::string>("disable Flow_PK", "yes");
+      } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" ) {
+        mpc_list.set<std::string>("disable Flow_PK", "no");	
+        mpc_list.set<std::string>("Flow model","Richards");	
+      } else {
+	Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards or Off"));
+      }
+    } else {
+      Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));      
     }
 
-    if ( exe_sublist.isParameter("Flow Mode") ) {
-      mpc_list.set<std::string>("disable Flow_PK","no");
-
-      // figure out which flow mode is requested
-
-      if ( exe_sublist.get<std::string>("Flow Mode") == "steady state single phase saturated flow" ) {
-        mpc_list.set<std::string>("Flow model","Darcy");
-      }
-
-      if ( exe_sublist.get<std::string>("Flow Mode") == "transient single phase saturated flow" ) {
-        mpc_list.set<std::string>("Flow model","Darcy");
-      }
-
-      if ( exe_sublist.get<std::string>("Flow Mode") == "transient single phase variably saturated flow" ) {
-        mpc_list.set<std::string>("Flow model","Richards");
-      }
-
-      if ( exe_sublist.get<std::string>("Flow Mode") == "steady state single phase variably saturated flow" ) {
-        mpc_list.set<std::string>("Flow model","Richards");
-      }
-    }
-
-    if ( exe_sublist.isParameter("Chemistry Mode") ) {
-      if ( exe_sublist.get<std::string>("Chemistry Mode") == "none" ) {
+    if ( exe_sublist.isParameter("Chemistry Model") ) {
+      if ( exe_sublist.get<std::string>("Chemistry Model") == "Off" ) {
         mpc_list.set<std::string>("disable Chemistry_PK","yes");
       } else {
-        mpc_list.set<std::string>("disable Chemistry_PK","no");
+	Exceptions::amanzi_throw(Errors::Message("Chemistry Model must be Off, we currently do not support Chemistry through the inpur spec."));
       }
     } else {
-      mpc_list.set<std::string>("disable Chemistry_PK","yes");
+      Exceptions::amanzi_throw(Errors::Message("The parameter Chemistry Model must be specified."));      
     }
 
 
-    if ( plist->sublist("Execution control").isSublist("Restart from Checkpoint Data File") ) {
-      mpc_list.sublist("Restart from Checkpoint Data File") =
-          plist->sublist("Execution control").sublist("Restart from Checkpoint Data File");
-    }
+    // if ( plist->sublist("Execution control").isSublist("Restart from Checkpoint Data File") ) {
+    //   mpc_list.sublist("Restart from Checkpoint Data File") =
+    //       plist->sublist("Execution control").sublist("Restart from Checkpoint Data File");
+    // }
 
 
   }
@@ -531,11 +527,10 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList flw_list;
 
   if ( plist->isSublist("Execution control") ) {
-    if ( plist->sublist("Execution control").isParameter("Flow Mode") ) {
-      if ( plist->sublist("Execution control").get<std::string>("Flow Mode") == "steady state single phase saturated flow" ) {
-        // TODO...
-        // CREATE THE DARCY SUBLIST
-      } else if ( plist->sublist("Execution control").get<std::string>("Flow Mode") == "transient single phase variably saturated flow" ) {
+    if ( plist->sublist("Execution control").isParameter("Flow Model") ) {
+      if ( plist->sublist("Execution control").get<std::string>("Flow Model") == "Steady" ) {
+	
+      } else if ( plist->sublist("Execution control").get<std::string>("Flow Model") == "Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<bool>("Upwind relative permeability", true);
         // this one should come from the input file...
