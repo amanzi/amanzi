@@ -179,74 +179,74 @@ Amanzi supports both single-phase saturated and variably saturated groundwater f
 
 Usage:
 
-* `"Execution Control`"
+* [U] `"Execution Control`"
 
- * `"Flow Model`" [string]: flow process model
+ * [U] `"Flow Model`" [string]: flow process model
 
-  * `"Off`" [string]: No flow model
+  * [U] `"Off`" [string]: No flow model
 
-  * `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
+  * [U] `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
 
   * `"Single-phase`" [string]: Single phase, fully saturated flow
 
   * `"Multi-phase`" [string]: Multiple phase, variably saturated flow
 
- * `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
+ * [U] `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
- * `"Chemistry Model`" [string]: Chemical reaction of constituents.  (Defaults to `"Off`", the only currently supported option)
+ * [U] `"Chemistry Model`" [string]: Chemical reaction of constituents.  (Defaults to `"Off`", the only currently supported option)
 
- * `"Time Integration Mode`" [list]: accepts one of three integration modes:
+ * [U] `"Time Integration Mode`" [list]: accepts one of three integration modes:
 
-  * `"Steady`" [list] - Amanzi is run in steady mode.
+  * [U] `"Steady`" [list] - Amanzi is run in steady mode.
 
-   * `"Start`" [double] (Optional): Initial value for psuedo time (used as a continuation parameter) to generate a steady solution
+   * [U] `"Start`" [double] (Optional): Initial value for psuedo time (used as a continuation parameter) to generate a steady solution
 
-   * `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
+   * [U] `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
 
-   * `"Initial Time Step`" [double]: The intitial time step for the steady calculation.
+   * [U] `"Initial Time Step`" [double]: The intitial time step for the steady calculation.
 
-  * `"Transient`" [list] - A time-accurate evolution is desired
+  * [U] `"Transient`" [list] - A time-accurate evolution is desired
 
-   * `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
+   * [U] `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
 
-   * `"End`" [double]: End of integration period
+   * [U] `"End`" [double]: End of integration period
    
-   * `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+   * [U] `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
    * `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
-  * `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
+  * [U] `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
-   * `"Start`" [double]: Initial value for time to generate a steady solution
+   * [U] `"Start`" [double]: Initial value for time to generate a steady solution
 
-   * `"Switch`" [double]: Time when Chemistry Model and Transport Model are set to user specified input and Amanzi switches to time-accurate solution approach.
+   * [U] `"Switch`" [double]: Time when Chemistry Model and Transport Model are set to user specified input and Amanzi switches to time-accurate solution approach.
 
-   * `"End`" [double]: The end of the time-integration period
+   * [U] `"End`" [double]: The end of the time-integration period
     
-   * `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
+   * [U] `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
 
-   * `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
+   * [U] `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
    * `"Transient Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
- * `"Verbosity`" [string]: Defaults to `"Medium`"
+ * [U] `"Verbosity`" [string]: Defaults to `"Medium`"
 
-  * `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
+  * [U] `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
 
-  * `"Low`": Minimal logging output, includes information about time stepsizes attempted, and notification of I/O operations
+  * [U] `"Low`": Minimal logging output, includes information about time stepsizes attempted, and notification of I/O operations
 
-  * `"Medium`": Includes summary-level activity of each process kernel
+  * [U] `"Medium`": Includes summary-level activity of each process kernel
 
-  * `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
+  * [U] `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
 
-  * `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
+  * [U] `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
 
 
- * `"Numerical Control Parameters`" [list]
+ * [U] `"Numerical Control Parameters`" [list]
 
-  * `"Unstructured Algorithm`" [list]
+  * [U] `"Unstructured Algorithm`" [list]
 
-   * `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
+   * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
   * `"Structured Algorithm`" [list]
 
@@ -824,7 +824,7 @@ Finally, we specify boundary conditions.  Again, support is provided for specify
 
     * [U][S] COMPONENT [list] can accept SOLUTE (label of solute defined above)
 
-     * [U] BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
+     * [U, only Uniform Concentration] BC function [list] Parameterized model to specify initial profiles.  Choose exactly one of the following: `"BC: Uniform Concentration`", `"BC: Zero Gradient`" (see below)
 
       * `"Concentration Units`" [string] can accept `"Molar Concentration`" (moles/volume), `"Molal Concentration`" (moles/volume of water) , `"Specific Concentration`" (mass/volume of water)
 
