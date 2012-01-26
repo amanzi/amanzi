@@ -654,7 +654,7 @@ double State::point_value(const std::string& point_region, const std::string& na
       volume += mesh_maps->cell_volume(ic);
     }
   }
-  else if ( name == "Water" )
+  else if ( name == "Volumetric water content" )
   {
     value = 0.0;
     volume = 0.0;

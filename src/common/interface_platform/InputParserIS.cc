@@ -270,11 +270,11 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
             obs_list.sublist(i->first).remove("Cycle Macro");
           }
 
-          if ( obs_list.sublist(i->first).isParameter("Variable Macro") ) {
-            Teuchos::Array<std::string> var_macro = obs_list.sublist(i->first).get<Teuchos::Array<std::string> >("Variable Macro");
-            obs_list.sublist(i->first).set("Variables",get_Variable_Macro(var_macro, plist));
-            obs_list.sublist(i->first).remove("Variable Macro");
-          }
+          // if ( obs_list.sublist(i->first).isParameter("Variable Macro") ) {
+          //   Teuchos::Array<std::string> var_macro = obs_list.sublist(i->first).get<Teuchos::Array<std::string> >("Variable Macro");
+          //   obs_list.sublist(i->first).set("Variables",  get_Variable_Macro(var_macro, plist));
+          //   obs_list.sublist(i->first).remove("Variable Macro");
+          // }
 
         }
       }
@@ -492,13 +492,13 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
                 std::stringstream compss;
                 compss << "Component " << comp_names_map[*i];
 
-                // for now just read the first value from the
-                if ( comps.sublist(*i).isSublist("BC: Inflow") ) {
+		// for now just read the first value from the
+                if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
                   std::stringstream ss;
                   ss << "BC " << bc_counter;
                   Teuchos::ParameterList& bc = tbc_list.sublist(ss.str());
 
-                  Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Inflow");
+                  Teuchos::ParameterList& bcsub = comps.sublist(*i).sublist("BC: Uniform Concentration");
 
                   Teuchos::Array<double> values = bcsub.get<Teuchos::Array<double> >("Values");
                   Teuchos::Array<double> times = bcsub.get<Teuchos::Array<double> >("Times");
