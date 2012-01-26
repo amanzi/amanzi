@@ -197,14 +197,14 @@ void MPC::read_parameter_list()  {
 
     T0 = ti_list.sublist("Steady").get<double>("Start");
     T1 = ti_list.sublist("Steady").get<double>("End");
-    dTsteady = ti_list.sublist("Steady").get<double>("Steady Initial Time Step");
+    dTsteady = ti_list.sublist("Steady").get<double>("Initial Time Step");
 
   } else if ( ti_list.isSublist("Transient") ) {
     ti_mode = TRANSIENT;
 
     T0 = ti_list.sublist("Transient").get<double>("Start");
     T1 = ti_list.sublist("Transient").get<double>("End");
-    dTtransient =  ti_list.sublist("Transient").get<double>("Transient Initial Time Step");
+    dTtransient =  ti_list.sublist("Transient").get<double>("Initial Time Step");
   }
 
 }
@@ -295,12 +295,22 @@ void MPC::cycle_driver () {
       // determine the time step we are now going to take
       double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
 
+      if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
+	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+	  *out << "Steady state computation complete... now running in transient mode." << std::endl;
+	}
+      }
+
       if (flow_enabled && flow_model == "Richards")  {
-        flow_dT = FPK->get_flow_dT();
+	flow_dT = FPK->get_flow_dT();
         // adjust the time step, so that we exactly hit the switchover time
         if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+2.0*flow_dT > Tswitch) {
           flow_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
         }
+	// adjust the time step, so that we exactly hit the final time in steady mode
+	if (ti_mode == STEADY  &&  S->get_time()+2*flow_dT > T1) { 
+	  flow_dT = time_step_limiter(S->get_time(), flow_dT, T1);
+	}
       }
 
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
@@ -320,11 +330,14 @@ void MPC::cycle_driver () {
       }
 
 
-      // adjust this suggested time step so that we end on T1
+      // make sure we will hit the final time exactly
       if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
         mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
       }
-        
+      if (ti_mode == TRANSIENT && S->get_time()+2*mpc_dT > T1) { 
+	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
+      }
+      
 
       // write some info about the time step we are about to take
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
