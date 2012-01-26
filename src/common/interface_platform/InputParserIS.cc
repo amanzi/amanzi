@@ -430,15 +430,23 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   Teuchos::ParameterList trp_list;
 
   if ( plist->isSublist("Execution control") ) {
-    if ( plist->sublist("Execution control").isParameter("Transport Mode") ) {
-      if ( plist->sublist("Execution control").get<std::string>("Transport Mode") == "explicit first order transport" ) {
-        trp_list.set<int>("discretization order",1);
-      } else if ( plist->sublist("Execution control").get<std::string>("Transport Mode") == "explicit second order transport" ) {
-        trp_list.set<int>("discretization order",2);
-      } else {
-        // something's wrong
+    if ( plist->sublist("Execution control").isParameter("Transport Model") ) {
+      if ( plist->sublist("Execution control").get<std::string>("Transport Model") == "On" ) {
+	if (plist->sublist("Execution control").isSublist("Numerical Control Parameters")) {
+	  Teuchos::ParameterList& ncp_list = plist->sublist("Execution control").sublist("Numerical Control Parameters");
+	  if (ncp_list.isParameter("Transport Integration Algorithm")) {
+	    std::string tia = ncp_list.get<std::string>("Transport Integration Algorithm");
+	    if ( tia == "Explicit First-Order" ) {
+	      trp_list.set<int>("discretization order",1);
+	    } else if ( tia == "Explicit Second-Order" ) {
+	      trp_list.set<int>("discretization order",2);
+	    }
+	  } 
+	} else {
+	  trp_list.set<int>("discretization order",2);
+	} 
       }
-
+      
       // continue to set some reasonable defaults
       trp_list.set<std::string>("enable internal tests","no");
       trp_list.set<double>("CFL",1.0);
