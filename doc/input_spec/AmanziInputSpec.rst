@@ -171,12 +171,11 @@ Example:
   
 Unstructured Amanzi ignores this list.
 
+
 Execution Control
 =================
 
-**GEH: The format for the `"Execution Control`" section may differ from other sections in the input specification.  This format can change.  I am solely using a format that is comfortable and an alternative option to what has been used by others.**
-
-Amanzi supports both single-phase saturated and variably saturated groundwater flow and solute transport on structured and unstructured grids.  As part of the execution control, the user must specify the process models to be employed to run such simulations.  There are currently three process models or modes that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry (chemistry is currently a placeholder).
+Amanzi supports both single-phase saturated and variably saturated groundwater flow and solute transport on structured and unstructured grids.  As part of the execution control, the user must specify the process models to be employed for each simulation.  There are currently three process models or modes that need to be defined in the input file (1) flow, (2) transport, and (3) chemistry (chemistry is currently a placeholder).  Additionally, the user must indicate whether a time-accurate or steady solution is requested.
 
 Usage:
 
@@ -184,7 +183,7 @@ Usage:
 
  * `"Flow Model`" [string]: flow process model
 
-  * `"Off`" [string]: No transport model
+  * `"Off`" [string]: No flow model
 
   * `"Richards`" [string]: Single phase, variably saturated flow (assume constant gas pressure)
 
@@ -192,109 +191,78 @@ Usage:
 
   * `"Multi-phase`" [string]: Multiple phase, variably saturated flow
 
- * `"Transport Model`" [string]: Flow of phases.  Accepts `"Off`" or `"On`" [string]
+ * `"Transport Model`" [string]: Transport of phases.  Accepts `"Off`" or `"On`" [string]
 
  * `"Chemistry Model`" [string]: Chemical reaction of constituents.  (Defaults to `"Off`", the only currently supported option)
 
- * `"Time`" [list]: Interpretation of the time variable
+ * `"Time Integration Mode`" [list]: accepts one of three integration modes:
 
-  * `"Integration Mode`" [list]: accepts one of two integration modes:
+  * `"Steady`" [list] - Amanzi is run in steady mode.
 
-   * `"Steady`" [string] - Time is a monotonic continuation parameter, a steady solution is desired
+   * `"Start`" [double] (Optional): Initial value for psuedo time (used as a continuation parameter) to generate a steady solution
 
-   * `"Transient`" [string] - Time is an independent variable, a time-accurate evolution is desired
+   * `"End`" [double]: Time that defines a steady solution.  (stopping criteria may be generalized in future releases).
 
-  * `"End`" [double]: End of integration period
+   * `"Initial Time Step`" [double]: The intitial time step for the steady calculation.
 
-  * `"Start`" [double] (Optional): Start time for integration (if provided on restart, this value overrides restart value)
+  * `"Transient`" [list] - A time-accurate evolution is desired
 
-* `"Verbosity`" [string]: Defaults to `"Medium`"
+   * `"Start`" [double] (Optional): Start time for integration (if a steady mode exists then this time must equal the steady end time)
 
- * `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
+   * `"End`" [double]: End of integration period
+   
+   * `"Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
- * `"Low`": Minimal logging output, includes information about time stepsizes attempted, and notification of I/O operations
+   * `"Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
- * `"Medium`": Includes summary-level activity of each process kernel
+  * `"Initialize To Steady`" [list] - Amanzi is run in steady mode with `"Chemistry Model`" = `"Transport Model`" = `"Off`" until a steady solution is obtained.  Any solutes defined below are ignored.  When the solution is steady, the transport and chemistry models are set to user input and the transient integration mode is employed.  Integration continues forward in time.  Method for detection of a steady solution is specified.
 
- * `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
+   * `"Start`" [double]: Initial value for time to generate a steady solution
 
- * `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
+   * `"Switch`" [double]: Time when Chemistry Model and Transport Model are set to user specified input and Amanzi switches to time-accurate solution approach.
 
+   * `"End`" [double]: The end of the time-integration period
+    
+   * `"Steady Initial Time Step`" [double]: The intitial time step for the steady state initialization calculation.
 
-* `"Numerical Control Parameters`" [list]
+   * `"Transient Initial Time Step`" [double]: (Optional) The intitial time step for the transient calculation after "Switch" time.  If unspecified, Amanzi will compute this value based on numerical stability limitations, scaled by the parameter `"Initial Time Step Multiplier`"
 
- * `"Unstructured Algorithm`" [list]
+   * `"Transient Initial Time Step Multiplier`" [double] (Optional) If internally computed time step used, it will be scaled by this factor (default value: 1)
 
-  * `"Transport Integration Algorithm`" [string] Accepts `"None`", `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
+ * `"Verbosity`" [string]: Defaults to `"Medium`"
 
-  * `"Initial Time Step Size`" [double] Size of initial time-step in steady flow solver
+  * `"None`": No output is written to run log, except `"Diagnostic Output`" (defined below)
 
- * `"Structured Algorithm`" [list]
+  * `"Low`": Minimal logging output, includes information about time stepsizes attempted, and notification of I/O operations
 
-  * `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)
+  * `"Medium`": Includes summary-level activity of each process kernel
 
-   * `"cfl`" [double] CFL number.  Default=1. Optional. 
+  * `"High`": Includes numerical performance statistics of each process kernal, and miscellaneous status of primary variables
 
-   * `"v`" [int] Verbosity level (0-2). Default=0. Optional. 
-
-   * `"full_cycle`" [int] 1 if the pressure equation is solved at the beginning of each timestep; 0 otherwise.  Default = 0. Optional.
-
-   * `"no_corrector`" [int] 1 if corrector step is skipped; 0 otherwise.  Default = 0. Optional.
-
-   * `"do_kappa_refine`" [int] 1 if refinement criteria looks at gradient of permeability; 0 otherwise.  Default = 0. Optional.
-
-   * `"do_reflux`" [int] 1 if reflux is done; 0 otherwise.  Optional.
-
-   * `"initial_dt`" [double] The initial level 0 time step regardless of other settings.  Optional. 
-
-   * `"init_shrink`" [double] The initial time step is equal to the prescribed time step multiplied by this factor. Optional.
-
-   * `"change_max`" [double] The factor by which the time step can grow in subsequent step. Optional.
-
-   * `"fixed_dt`" [double] Level 0 time step regardless of cfl or other settings. Optional.
-
-   * `"max_dt`" [double] Maximum level 0 time step regardless of cfl or other settings. Optional except for variably saturated flow.
-
-   * `"dt_cutoff`" [double] The time step below which calculation will abort. Optional.
-
-   * `"visc_abs_tol`" [double] Absolute tolerance for the linear solver in the component equations. Default=1e-10. Optional.
-
-   * `"visc_tol`" [double] Relative tolerance for the linear solver in the component equations. Default=1e-10. Optional.
+  * `"Extreme`": Includes detailed iteration-level convergence properties of process kernal sovlers
 
 
-  * `"Adaptive Mesh Refinement`" [list] accepts a list of input parameters that pertains to adaptive mesh refinement algorithm. Optional.
+ * `"Numerical Control Parameters`" [list]
 
-   * `"probin_file`" [String] Name of additional AMR fortran parameter file.  Default = probin. Optional.
+  * `"Unstructured Algorithm`" [list]
 
-   * `"max_level`" [int] The maximum level of refinement above the coarsest level.  Default=0. Optional.
+   * `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
-   * `"ref_ratio`" [Array int] The ratio of coarse to fine grid spacing between subsequent levels.  Default=2 at each finer level. Optional. 
+  * `"Structured Algorithm`" [list]
 
-   * `"n_error_buf`" [Array int] The number of additional cells around already tagged cells that will be tagged at each AMR level. Default=1. Optional.
+   * `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)
 
-   * `"regrid_int`" [Array int] Number of coarse time steps before a regrid attempt.  Default=1. Optional.
+   * `"Adaptive Mesh Refinement`" [list] accepts a list of input parameters that pertains to adaptive mesh refinement algorithm. Optional.
 
-   * `"v`" [int] Verbosity level (0-1). Default=0. Optional. 
+   * `"Diffusion Discretization Control`" [list] Algorithmic options for the parabolic diffusion solver. Optional.  Details to be added.
 
-   * `"max_grid_size`" [int] The maximum size of a grid in any direction.  Optional. 
+   * `"Pressure Discretization Control`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
 
-   * `"blocking factor`" [int] The minimum block size; `"max_grid_size`" must be a multiple of this. Optional. 
+   * `"Iterative Linear Solver Control`" [list] Detailed controls for linear solvers. Details to be added.
 
-   * `"nosub`" [int] 1 if no subcycling; 0 otherwise. Default=0. Optional. 
+    * `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
 
-   * `"regrid_on_restart`" [int] 1 if regrid at restart; 0 otherwise.  Default=0. Optional.
-
-   * `"grid_eff`" [double] Grid efficiency during a regrid.  0 for lowest efficiency and 1 for highest efficiency. Default=0.75.  Optional. 
-
-  * `"Diffusion Discretization Control`" [list] Algorithmic options for the parabolic diffusion solver. Optional.  Details to be added.
-
-  * `"Pressure Discretization Control`" [list] Algorithmic options for pressure solve. Optional.  Details to be added.
-
-  * `"Iterative Linear Solver Control`" [list] Detailed controls for linear solvers. Details to be added.
-
-   * `"Conjugate Gradient Algorithm`" [list] Algorithmic options for CG Solver. Optional. Details to be added.
-
-   * `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
+    * `"Multigrid Algorithm`" [list] Algorithmic options for Multigrid Solver. Optional.  Details to be added.
 
 Example:
 
@@ -306,10 +274,11 @@ Example:
     <Parameter name="Transport Mode" type="string" value="On"/>
     <Parameter name="Chemistry Mode" type="string" value="Off"/>
 
-    <ParameterList name="Time">
-      <Parameter name="Integration Mode" type="string" value="Transient"/>
-      <Parameter name="Start" type="double" value="0"/>
-      <Parameter name="End" type="double" value="1.5768e9"/>
+    <ParameterList name="Time Integration Mode">
+      <ParameterList name="Transient">
+         <Parameter name="Start" type="double" value="0"/>
+         <Parameter name="End" type="double" value="1.5768e9"/>
+      </ParameterList>
     </ParameterList>
 
     <Parameter name="Verbosity" type="string" type="High"/>
@@ -326,6 +295,7 @@ Example:
 
 
 This example specifies that a time-dependent evolution of Richards equation is desired, evolving over the physical time interval, 0 to 1.5768e9 seconds.  While it assumes default values for most of the structured grid numerical control parameters, it explicitly sets the amr blocking factor to a value of 4.
+
 
 
 Domain
