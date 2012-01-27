@@ -286,7 +286,6 @@ int Richards_PK::advanceSteadyState_Picard()
 
   int itrs = 0;
   double L2norm, L2error = 1.0;
-  double relaxation = 1e-1;
 
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
@@ -323,12 +322,21 @@ int Richards_PK::advanceSteadyState_Picard()
     int num_itrs = solver->NumIters();
     double linear_residual = solver->TrueResidual();
 
+    // update relaxation
+    double relaxation = 1e-1;
+    for (int c=0; c<ncells_owned; c++) {
+      double diff = fabs(solution_new[c] - solution_old[c]);
+      double umax = std::max(fabs(solution_new[c]), fabs(solution_old[c]));
+      if (diff > 5e-3 * umax) relaxation = std::min(relaxation, 5e-3 * umax / diff);
+    }
+
     if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
       std::printf("Picard:%4d   Pressure(res=%9.4e, rhs=%9.4e, relax=%8.3e)  solver(%8.3e, %4d)\n", 
           itrs, L2error, L2norm, relaxation, linear_residual, num_itrs);
     }
 
-    for (int c=0; c<ncells_owned; c++) {
+    int ndof = ncells_owned + nfaces_owned;
+    for (int c=0; c<ndof; c++) {
       solution_new[c] = (1.0 - relaxation) * solution_old[c] + relaxation * solution_new[c];
       solution_old[c] = solution_new[c];
     }
