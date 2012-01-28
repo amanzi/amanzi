@@ -71,14 +71,14 @@
   input deks for other flow tests -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
-      <Parameter name="Atmospheric pressure" type="double" value="1.0"/>
+      <Parameter name="Atmospheric pressure" type="double" value="10.0"/>
 
       <ParameterList name="Diffusion Preconditioner">
         <ParameterList name="ML Parameters">
           <Parameter name="ML output" type="int" value="0"/>
           <Parameter name="aggregation: damping factor" type="double" value="1.33"/>
           <Parameter name="aggregation: nodes per aggregate" type="int" value="3"/>
-          <Parameter name="aggregation: threshold" type="double" value="0"/>
+          <Parameter name="aggregation: threshold" type="double" value="0.0"/>
           <Parameter name="aggregation: type" type="string" value="Uncoupled"/>
           <Parameter name="coarse: max size" type="int" value="128"/>
           <Parameter name="coarse: type" type="string" value="Amesos-KLU"/>
@@ -107,9 +107,9 @@
 
         <ParameterList name="Time control">
           <Parameter name="Start pseudo time" type="double" value="0.0"/>
-          <Parameter name="End pseudo time" type="double" value="1000.0"/>
+          <Parameter name="End pseudo time" type="double" value="1e+4"/>
           <Parameter name="Initial time step" type="double" value="0.01"/>
-          <Parameter name="Maximal time step" type="double" value="0.1"/>
+          <Parameter name="Maximal time step" type="double" value="10.0"/>
         </ParameterList>
 
         <ParameterList name="Linear solvers"> 
@@ -135,11 +135,11 @@
       <ParameterList name="Water retention models">
         <ParameterList name="Water Retention Model for Material 1 Region">
           <Parameter name="Region" type="string" value="Material 1 Region"/>
-          <Parameter name="Water retention model" type="string" value="analytic"/>
+          <Parameter name="Water retention model" type="string" value="fake"/>
         </ParameterList>
         <ParameterList name="Water Retention Model for Material 2 Region">
           <Parameter name="Region" type="string" value="Material 2 Region"/>
-          <Parameter name="Water retention model" type="string" value="analytic"/>
+          <Parameter name="Water retention model" type="string" value="fake"/>
         </ParameterList>
       </ParameterList>
 
@@ -148,10 +148,8 @@
           <ParameterList name="BC 0">
             <Parameter name="regions" type="Array string" value="{Left side, Right side, Front side, Back side}"/>
             <ParameterList name="outward mass flux">
-              <ParameterList name="function-tabular">
-                <Parameter name="forms" type="Array string" value="{constant}"/>
-                <Parameter name="x values" type="Array double" value="{0, 7.884e+06}"/>
-                <Parameter name="y values" type="Array double" value="{0.0, 0.0}"/>
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="0.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -184,7 +182,7 @@
     <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
     <Parameter name="Constant viscosity" type="double" value="1.0"/>
     <Parameter name="Constant water density" type="double" value="1.0"/>
-    <Parameter name="Constant water saturation" type="double" value="1"/>
+    <Parameter name="Constant water saturation" type="double" value="1.0"/>
     <Parameter name="Gravity x" type="double" value="0"/>
     <Parameter name="Gravity y" type="double" value="0"/>
     <Parameter name="Gravity z" type="double" value="-2.0"/>

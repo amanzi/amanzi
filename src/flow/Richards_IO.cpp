@@ -6,7 +6,7 @@ Authors: Neil Carlson (nnc@lanl.gov),
 */
 
 #include "WRM_vanGenuchten.hpp"
-#include "WRM_analytic.hpp"
+#include "WRM_fake.hpp"
 #include "Richards_PK.hpp"
 
 namespace Amanzi {
@@ -71,11 +71,11 @@ void Richards_PK::processParameterList()
         double vG_alpha = wrm_list.get<double>("van Genuchten alpha");
         double vG_sr = wrm_list.get<double>("van Genuchten residual saturation");
 	      
-        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr, atm_pressure));
+        WRM[iblock] = Teuchos::rcp(new WRM_vanGenuchten(region, vG_m, vG_alpha, vG_sr));
       } 
-      else if (wrm_list.get<string>("Water retention model") == "analytic") {
+      else if (wrm_list.get<string>("Water retention model") == "fake") {
         std::string region = wrm_list.get<std::string>("Region");  // associated mesh block
-        WRM[iblock] = Teuchos::rcp(new WRM_analytic(region));
+        WRM[iblock] = Teuchos::rcp(new WRM_fake(region));
       }
       iblock++;
     }

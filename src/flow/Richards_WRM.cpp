@@ -23,7 +23,10 @@ void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
 
     std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) (*Krel_cells)[*i] = WRM[mb]->k_relative(p[*i]);
+    for (i=block.begin(); i!=block.end(); i++) {
+      double pc = atm_pressure - p[*i];
+      (*Krel_cells)[*i] = WRM[mb]->k_relative(pc);
+    }
   }
 }
 
@@ -68,7 +71,10 @@ void Richards_PK::derivedSdP(const Epetra_Vector& p, Epetra_Vector& ds)
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
       
     std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) ds[*i] = WRM[mb]->d_saturation(p[*i]);
+    for (i=block.begin(); i!=block.end(); i++) {
+      double pc = atm_pressure - p[*i];
+      ds[*i] = WRM[mb]->d_saturation(pc);
+    }
   }
 }
 
@@ -86,7 +92,10 @@ void Richards_PK::deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
       
     std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) s[*i] = WRM[mb]->saturation(p[*i]);
+    for (i=block.begin(); i!=block.end(); i++) {
+      double pc = atm_pressure - p[*i];
+      s[*i] = WRM[mb]->saturation(pc);
+    }
   }
 }
 
@@ -104,7 +113,10 @@ void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
       
     std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) p[*i] = WRM[mb]->pressure(s);
+    for (i=block.begin(); i!=block.end(); i++) {
+      double pc = WRM[mb]->capillaryPressure(s);
+      p[*i] = atm_pressure - pc;
+    }
   } 
  
   for (int mb=0; mb<WRM.size(); mb++) {
@@ -115,7 +127,10 @@ void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
     mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
       
     std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) p[*i] = WRM[mb]->pressure(s);
+    for (i=block.begin(); i!=block.end(); i++) {
+      double pc = WRM[mb]->capillaryPressure(s);
+      p[*i] = atm_pressure - pc;
+    }
   }
 }
 

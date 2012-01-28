@@ -69,17 +69,6 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->Init();
   RPK->print_statistics();
 
-  // create the initial pressure function
-  /*
-  Epetra_Vector p(RPK->get_super_map());
-  Epetra_Vector* pcells = FS->createCellView(p);
-  Epetra_Vector* pfaces = FS->createFaceView(p);
-
-  p.PutScalar(101325.0);
-  RPK->applyBoundaryConditions(RPK->get_bc_markers(), RPK->get_bc_values(), *pfaces);
-  S.update_pressure(*pcells);
-  */
-
   // solve the problem
   S.set_time(0.0);
   RPK->advance_to_steady_state();
@@ -90,6 +79,11 @@ TEST(FLOW_3D_RICHARDS) {
   GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
   GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
   GMV::close_data_file();
+
+  // check the pressure profile
+  int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  Epetra_Vector& p = RPK->get_solution_cells();
+  for( int c=0; c<ncells; c++) CHECK(p[c] > 4500.0 && p[c] < 101325.0);
 
   delete RPK;
 }

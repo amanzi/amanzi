@@ -15,10 +15,10 @@ namespace AmanziFlow {
 
 class WaterRetentionModel {
  public:
-  virtual double k_relative(double p) = 0;
-  virtual double saturation(double p) = 0;
-  virtual double d_saturation(double p) = 0;
-  virtual double pressure(double sl) = 0;
+  virtual double k_relative(double pc) = 0;
+  virtual double saturation(double pc) = 0;
+  virtual double d_saturation(double pc) = 0;
+  virtual double capillaryPressure(double sl) = 0;
   
   const std::string region() { return reg; };
 

@@ -17,8 +17,8 @@ namespace AmanziFlow {
 * Setup fundamental parameters for this model.                                            
 ****************************************************************** */
 WRM_vanGenuchten::WRM_vanGenuchten(
-   std::string region_, double m_, double alpha_, double sr_, double atm_pressure_) :
-   m(m_), alpha(alpha_), sr(sr_), atm_pressure(atm_pressure_)
+   std::string region_, double m_, double alpha_, double sr_) :
+   m(m_), alpha(alpha_), sr(sr_)
 {
   n = 1.0 / (1.0 - m);
   set_region(region_);
@@ -26,11 +26,10 @@ WRM_vanGenuchten::WRM_vanGenuchten(
  
 
 /* ******************************************************************
-* Relative permeability formula.                                          
+* Relative permeability formula: input is capillary pressure.                                        
 ****************************************************************** */
-double WRM_vanGenuchten::k_relative(double p)
+double WRM_vanGenuchten::k_relative(double pc)
 {
-  double pc = atm_pressure - p;  // capillary pressure
   if (pc > 0.0) {
     double se = pow(1.0 + pow(alpha*pc, n), -m);
     return sqrt(se) * pow(1.0 - pow(1.0 - pow(se, 1.0/m), m), 2.0);
@@ -43,9 +42,8 @@ double WRM_vanGenuchten::k_relative(double p)
 /* ******************************************************************
 * Saturation formula (3.5)-(3.6).                                         
 ****************************************************************** */
-double WRM_vanGenuchten::saturation(double p)
+double WRM_vanGenuchten::saturation(double pc)
 {
-  double pc = atm_pressure - p;  // capillary pressure
   if (pc > 0.0) {
     return pow(1.0 + pow(alpha*pc, n), -m) * (1.0 - sr) + sr;
   } else {
@@ -57,9 +55,8 @@ double WRM_vanGenuchten::saturation(double p)
 /* ******************************************************************
 * Derivative of the saturation formula w.r.t. capillary pressure.                                         
 ****************************************************************** */
-double WRM_vanGenuchten::d_saturation(double p)
+double WRM_vanGenuchten::d_saturation(double pc)
 {
-  double pc = atm_pressure - p;  // capillary pressure
   if (pc > 0.0) {
     return m*n * pow(1.0 + pow(alpha*pc, n), -m-1.0) * pow(alpha*pc, n-1) * alpha * (1.0 - sr);
   } else {
@@ -71,10 +68,10 @@ double WRM_vanGenuchten::d_saturation(double p)
 /* ******************************************************************
 * Pressure as a function of saturation.                                       
 ****************************************************************** */
-double WRM_vanGenuchten::pressure(double sl)
+double WRM_vanGenuchten::capillaryPressure(double sl)
 {
   double se = (sl - sr) / (1.0 - sr);
-  return atm_pressure - (pow(pow(se, -1.0/m) - 1.0, 1/n)) / alpha;
+  return (pow(pow(se, -1.0/m) - 1.0, 1/n)) / alpha;
 }
 
 }  // namespace AmanziFlow

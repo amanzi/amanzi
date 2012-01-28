@@ -4,8 +4,8 @@ License: BSD
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef __VAN_ANALYTIC_MODEL_HPP__
-#define __VAN_ANALYTIC_MODEL_HPP__
+#ifndef __FAKE_MODEL_HPP__
+#define __FAKE_MODEL_HPP__
 
 #include "WaterRetentionModel.hpp"
 
@@ -17,19 +17,19 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
-class WRM_analytic : public WaterRetentionModel {
+class WRM_fake : public WaterRetentionModel {
  public:
-  WRM_analytic(std::string region_);
-  ~WRM_analytic() {};
+  WRM_fake(std::string region_);
+  ~WRM_fake() {};
   
   // requires methods from the base class
-  double k_relative(double p);
-  double saturation(double p);
-  double d_saturation(double p);  
-  double pressure(double saturation);
+  double k_relative(double pc);
+  double saturation(double pc);
+  double d_saturation(double pc);  
+  double capillaryPressure(double saturation);
 
  private:
-  double m, n, alpha, atm_pressure;
+  double m, n, alpha;
 };
 
 }  // namespace AmanziFlow

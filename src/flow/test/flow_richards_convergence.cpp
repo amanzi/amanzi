@@ -40,7 +40,7 @@ class RichardsProblem {
     MyPID = comm->MyPID();
 
     Teuchos::ParameterList parameter_list;
-    string xmlFileName = "test/flow_richards_misc.xml";
+    string xmlFileName = "test/flow_richards_convergence.xml";
     updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
     // create an SIMPLE mesh framework 
