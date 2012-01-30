@@ -42,13 +42,13 @@ class Flow_State {
 
   // access methods
   Teuchos::RCP<Epetra_Vector> get_porosity() { return porosity; }
-  Teuchos::RCP<double> get_fluid_density() { return fluid_density; }
-  Teuchos::RCP<double> get_fluid_viscosity() { return fluid_viscosity; }
-  Teuchos::RCP<Epetra_Vector> get_vertical_permeability() { return vertical_permeability; }
-  Teuchos::RCP<Epetra_Vector> get_horizontal_permeability() { return horizontal_permeability; }
-  Teuchos::RCP<double*> get_gravity() { return gravity; }
   Teuchos::RCP<Epetra_Vector> get_pressure() { return pressure; }
   Teuchos::RCP<Epetra_Vector> get_darcy_mass_flux() { return darcy_mass_flux; }
+  Teuchos::RCP<Epetra_Vector> get_vertical_permeability() { return vertical_permeability; }
+  Teuchos::RCP<Epetra_Vector> get_horizontal_permeability() { return horizontal_permeability; }
+  Teuchos::RCP<double> get_fluid_density() { return fluid_density; }
+  Teuchos::RCP<double> get_fluid_viscosity() { return fluid_viscosity; }
+  Teuchos::RCP<AmanziGeometry::Point> get_gravity() { return gravity; }
   Teuchos::RCP<Epetra_Vector> get_water_saturation() { return water_saturation; }
   Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
 
@@ -79,7 +79,7 @@ class Flow_State {
 
   Teuchos::RCP<double> fluid_density;
   Teuchos::RCP<double> fluid_viscosity;
-  Teuchos::RCP<double*> gravity;
+  Teuchos::RCP<AmanziGeometry::Point> gravity;
   Teuchos::RCP<Epetra_Vector> vertical_permeability;
   Teuchos::RCP<Epetra_Vector> horizontal_permeability;
   Teuchos::RCP<Epetra_Vector> pressure;

@@ -29,8 +29,10 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   porosity = Teuchos::rcp(new Epetra_Vector(cmap));
   fluid_density = Teuchos::rcp(new double);
   fluid_viscosity = Teuchos::rcp(new double);
-  gravity = Teuchos::rcp(new double*);
-  *gravity = new double[3];
+
+  gravity = Teuchos::rcp(new AmanziGeometry::Point(3));
+  for (int i=0; i<3; i++) (*gravity)[i] = 0.0;
+
   vertical_permeability = Teuchos::rcp(new Epetra_Vector(cmap));
   horizontal_permeability = Teuchos::rcp(new Epetra_Vector(cmap));
   pressure = Teuchos::rcp(new Epetra_Vector(cmap));
@@ -49,7 +51,10 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
   porosity = S->get_porosity();
   fluid_density = S->get_density();
   fluid_viscosity = S->get_viscosity();
-  gravity = S->get_gravity();
+
+  gravity = Teuchos::rcp(new AmanziGeometry::Point(3));
+  for (int i=0; i<3; i++) (*gravity)[i] = (*(S->get_gravity()))[i];
+
   vertical_permeability = S->get_vertical_permeability();
   horizontal_permeability = S->get_horizontal_permeability();
   pressure = S->get_pressure();
@@ -65,7 +70,10 @@ Flow_State::Flow_State(State& S)
   porosity = S.get_porosity();
   fluid_density = S.get_density();
   fluid_viscosity = S.get_viscosity();
-  gravity = S.get_gravity();
+
+  gravity = Teuchos::rcp(new AmanziGeometry::Point(3));
+  for (int i=0; i<3; i++) (*gravity)[i] = (*(S.get_gravity()))[i];
+
   vertical_permeability = S.get_vertical_permeability();
   horizontal_permeability = S.get_horizontal_permeability();
   pressure = S.get_pressure();
@@ -81,34 +89,34 @@ Flow_State::Flow_State(State& S)
 * mode = ViewMemory   creates the flow state from internal one   
 *                     as the MPC expected                     
 ******************************************************************* */
-Flow_State::Flow_State(Flow_State& S, FlowCreateMode mode)
+Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
 {
   if (mode == CopyPointers) {
-    porosity = S.get_porosity();
-    fluid_density = S.get_fluid_density();
-    fluid_viscosity = S.get_fluid_viscosity();
-    gravity = S.get_gravity();
-    vertical_permeability = S.get_vertical_permeability();
-    horizontal_permeability = S.get_horizontal_permeability();
-    pressure = S.get_pressure();
-    darcy_mass_flux = S.get_darcy_mass_flux();
-    mesh_ = S.get_mesh();
+    porosity = FS.get_porosity();
+    fluid_density = FS.get_fluid_density();
+    fluid_viscosity = FS.get_fluid_viscosity();
+    gravity = FS.get_gravity();
+    vertical_permeability = FS.get_vertical_permeability();
+    horizontal_permeability = FS.get_horizontal_permeability();
+    pressure = FS.get_pressure();
+    darcy_mass_flux = FS.get_darcy_mass_flux();
+    mesh_ = FS.get_mesh();
   } 
   else if (mode == CopyMemory ) { 
-    porosity = S.get_porosity();
-    fluid_density = S.get_fluid_density();
-    fluid_viscosity = S.get_fluid_viscosity();
-    gravity = S.get_gravity();
-    vertical_permeability = S.get_vertical_permeability();
-    horizontal_permeability = S.get_horizontal_permeability();
-    mesh_ = S.get_mesh();
+    porosity = FS.get_porosity();
+    fluid_density = FS.get_fluid_density();
+    fluid_viscosity = FS.get_fluid_viscosity();
+    gravity = FS.get_gravity();
+    vertical_permeability = FS.get_vertical_permeability();
+    horizontal_permeability = FS.get_horizontal_permeability();
+    mesh_ = FS.get_mesh();
 
     // allocate memory for the next state
-    pressure = Teuchos::rcp(new Epetra_Vector(S.ref_pressure()));
-    darcy_mass_flux = Teuchos::rcp(new Epetra_Vector(S.ref_darcy_mass_flux()));
+    pressure = Teuchos::rcp(new Epetra_Vector(FS.ref_pressure()));
+    darcy_mass_flux = Teuchos::rcp(new Epetra_Vector(FS.ref_darcy_mass_flux()));
   }
 
-  S_ = S.S_;
+  S_ = FS.S_;
 }
 
 
@@ -299,6 +307,7 @@ void Flow_State::set_permeability(double Kh, double Kv, const string region)
 void Flow_State::set_gravity(double g)
 {
   int dim = mesh_->space_dimension();
+  for (int i=0; i<dim-1; i++) (*gravity)[i] = 0.0;
   (*gravity)[dim-1] = g;
 }
 
