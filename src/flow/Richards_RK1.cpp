@@ -91,6 +91,8 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
 
     if (T_internal > T1_sss) break;
   }
+
+  num_nonlinear_steps = itrs;
   return 0;
 }
 

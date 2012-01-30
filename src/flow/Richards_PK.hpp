@@ -97,6 +97,9 @@ class Richards_PK : public Flow_PK {
   std::vector<double>& get_bc_values() { return bc_values; }
   Epetra_Vector& get_Krel_cells() { return *Krel_cells; }
 
+ public:
+  int num_nonlinear_steps;
+
  private:
   Teuchos::ParameterList rp_list;
 

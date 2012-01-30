@@ -117,6 +117,8 @@ class Flow_PK : public BDF2::fnBase {
   void validate_boundary_conditions(
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
   inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
+ 
+  void set_verbosity(int level) { verbosity = level; }
 
   // miscallenous members
   Epetra_Map* createSuperMap();

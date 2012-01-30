@@ -102,7 +102,7 @@
           <Parameter name="Absolute error tolerance" type="double" value="1.0"/>
           <Parameter name="Relative error tolerance" type="double" value="1e-4"/>
           <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
-          <Parameter name="Maximal number of iterations" type="int" value="1000"/>
+          <Parameter name="Maximal number of iterations" type="int" value="3000"/>
         </ParameterList>
 
         <ParameterList name="Time control">

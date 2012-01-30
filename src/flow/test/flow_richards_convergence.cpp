@@ -19,131 +19,99 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Mesh_MSTK.hh"
 #include "Richards_PK.hpp"
 
-
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 using namespace Amanzi::AmanziGeometry;
 using namespace Amanzi::AmanziFlow;
 
-class RichardsProblem {
- public:
-  Epetra_MpiComm* comm;
-  Teuchos::RCP<AmanziMesh::Mesh> mesh;
-  State *S;
-  Teuchos::ParameterList rp_list;
-  AmanziFlow::Richards_PK* RPK;
-  int MyPID;
 
-  RichardsProblem() 
-  {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MyPID = comm->MyPID();
+/* ******************************************************************
+* Calculate L2 error in pressure.                                                    
+****************************************************************** */
+double calculatePressureCellError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& pressure)
+{
+  double k1 = 0.5, k2 = 2.0, g = 2.0, a = 5.0, cr = 1.02160895462971866;  // analytical data
+  double f1 = sqrt(1.0 - g * k1 / cr);
+  double f2 = sqrt(g * k2 / cr - 1.0);
 
-    Teuchos::ParameterList parameter_list;
-    string xmlFileName = "test/flow_richards_convergence.xml";
-    updateParametersFromXmlFile(xmlFileName, &parameter_list);
+  double pressure_exact, error_L2 = 0.0;
+  for (int c=0; c<pressure.MyLength(); c++) {
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    double volume = mesh->cell_volume(c);
 
-    // create an SIMPLE mesh framework 
+    double z = xc[2];
+    if (z < -a) pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
+    else pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
+//cout << z << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
+    error_L2 += std::pow(pressure[c] - pressure_exact, 2.0) * volume;
+  }
+  return sqrt(error_L2);
+}
+
+
+/* ******************************************************************
+* Calculate l2 error (small l) in darcy flux.                                                    
+****************************************************************** */
+double calculateDarcyMassFluxError(Teuchos::RCP<Mesh> mesh, Epetra_Vector& darcy_mass_flux)
+{
+  double cr = 1.02160895462971866;  // analytical data
+  AmanziGeometry::Point velocity_exact(0.0, 0.0, -cr);
+
+  int nfaces = darcy_mass_flux.MyLength();
+  double error_l2 = 0.0;
+  for (int f=0; f<nfaces; f++) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(f);      
+//cout << f << " " << darcy_mass_flux[f] << " exact=" << velocity_exact * normal << endl;
+    error_l2 += std::pow(darcy_mass_flux[f] - velocity_exact * normal, 2.0);
+  }
+  return sqrt(error_l2 / nfaces);
+}
+
+
+TEST(FLOW_RICHARDS_CONVERGENCE) {
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  int MyPID = comm->MyPID();
+  if (MyPID == 0) std::cout <<"Richards: convergence Analysis" << std::endl;
+
+  Teuchos::ParameterList parameter_list;
+  string xmlFileName = "test/flow_richards_convergence.xml";
+  updateParametersFromXmlFile(xmlFileName, &parameter_list);
+
+  for (int n=40; n<321; n*=2) {
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
-    mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-10.0, 1.0,1.0,0.0, 1,1,80, comm, gm)); 
+    Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-10.0, 1.0,1.0,0.0, 1,1,n, comm, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-    rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
+    Teuchos::ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
 
     // create Richards process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-    S = new State(state_list, mesh);
+    State* S = new State(state_list, mesh);
     S->set_time(0.0);
 
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
-    RPK = new Richards_PK(rp_list, FS);
+    Richards_PK* RPK = new Richards_PK(rp_list, FS);
     RPK->set_standalone_mode(true);
-  }
-
-  ~RichardsProblem() { delete RPK; delete comm; delete S; }
-
-  void createBClist(
-      const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
-  {
-    std::string func_list_name;
-    if (type == "pressure") {
-      func_list_name = "boundary pressure";
-    } else if (type == "static head") {
-      func_list_name = "water table elevation";
-    } else if (type == "mass flux") {
-      func_list_name = "outward mass flux";
-    }
-    Teuchos::ParameterList& bc_list = rp_list.get<Teuchos::ParameterList>("boundary conditions");
-    Teuchos::ParameterList& type_list = bc_list.get<Teuchos::ParameterList>(type);
-
-    Teuchos::ParameterList& bc_sublist = type_list.sublist(bc_x);
-    bc_sublist.set("regions", regions);
-
-    Teuchos::ParameterList& bc_sublist_named = bc_sublist.sublist(func_list_name);
-    Teuchos::ParameterList& function_list = bc_sublist_named.sublist("function-constant");
-    function_list.set("value", value);
-  }
-  
-  double calculatePressureCellError()
-  {
-    Epetra_Vector& solution_cells = RPK->get_solution_cells();
-
-    double k1 = 0.5, k2 = 2.0, g = 2.0, a = 5.0, cr = 1.02160895462971866;  // analytical data
-    double f1 = sqrt(1.0 - g * k1 / cr);
-    double f2 = sqrt(g * k2 / cr - 1.0);
-
-    double pressure_exact, error_L2 = 0.0;
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    for (int c=0; c<ncells; c++) {
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-      double z = xc[2];
-      if (z < -a) pressure_exact = f1 * tan(cr * (z + 2*a) * f1 / k1);
-      else pressure_exact = -f2 * tanh(cr * f2 * (z + a) / k2 - atanh(f1 / f2 * tan(cr * a * f1 / k1)));
-//cout << z << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
-      error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
-    }
-    return sqrt(error_L2);
-  }
-
-  double calculateDarcyMassFluxError()
-  {
-    Epetra_Vector& darcy_mass_flux = *(RPK->ref_flow_state_next().get_darcy_mass_flux());
-
-    double cr = 1.02160895462971866;  // analytical data
-    AmanziGeometry::Point velocity_exact(0.0, 0.0, -cr);
-
-    double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    for (int f=0; f<nfaces; f++) {
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);      
-//cout << f << " " << darcy_mass_flux[f] << " exact=" << velocity_exact * normal << endl;
-      error_L2 += std::pow(darcy_mass_flux[f] - velocity_exact * normal, 2.0);
-    }
-    return sqrt(error_L2);
-  }
-};
-
-
-SUITE(Simple_1D_Flow) {
-  TEST_FIXTURE(RichardsProblem, DirichletDirichlet) {
-    if (MyPID == 0) std::cout <<"Richards 1D: Dirichlet-Dirichlet" << std::endl;
-
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = string("Top side");
-    createBClist("pressure", "BC 1", regions, 0.0);
-
-    regions[0] = string("Bottom side");
-    createBClist("pressure", "BC 2", regions, 0.0);
-    RPK->resetParameterList(rp_list);
 
     RPK->Init();  // setup the problem
+    if (n== 40) RPK->print_statistics();
+    RPK->set_verbosity(FLOW_VERBOSITY_NULL);
+
     RPK->advance_to_steady_state();
 
-    double error = calculatePressureCellError(); // error checks
-    CHECK(error < 5.0e-2);
-    error = calculateDarcyMassFluxError();
-    CHECK(error < 1.0e-2);
+    double pressure_error, flux_error;  // error checks
+    Flow_State& FS_next = RPK->ref_flow_state_next();
+    pressure_error = calculatePressureCellError(mesh, FS_next.ref_pressure());
+    flux_error = calculateDarcyMassFluxError(mesh, FS_next.ref_darcy_mass_flux());
+
+    if (n==80) CHECK(pressure_error < 5.0e-2 && flux_error < 5.0e-2);
+    printf("n=%3d nonlinear itrs=%4d  L2_pressure_error=%7.3e  l2_flux_error=%7.3e\n", 
+        n, RPK->num_nonlinear_steps, pressure_error, flux_error);
+
+    delete RPK; 
+    delete S; 
   }
+  delete comm; 
 }
 

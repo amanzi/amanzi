@@ -77,6 +77,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
 
   verbosity = FLOW_VERBOSITY_HIGH;
   internal_tests = 0;
+
+  num_nonlinear_steps = 0;
 }
 
 
@@ -266,6 +268,8 @@ int Richards_PK::advanceSteadyState_BDF2()
     dT = dTnext;
     itrs++;
   }
+
+  num_nonlinear_steps = itrs;
   return 0;
 }
 
@@ -345,6 +349,7 @@ int Richards_PK::advanceSteadyState_Picard()
     itrs++;
   }
 
+  num_nonlinear_steps = itrs;
   return 0;
 }
 
