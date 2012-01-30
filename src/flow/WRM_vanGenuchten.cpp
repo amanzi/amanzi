@@ -26,7 +26,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(
  
 
 /* ******************************************************************
-* Relative permeability formula: input is capillary pressure.                                        
+* Relative permeability formula: input is capillary pressure pc.                                        
 ****************************************************************** */
 double WRM_vanGenuchten::k_relative(double pc)
 {

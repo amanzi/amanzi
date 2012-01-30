@@ -71,7 +71,7 @@
   input deks for other flow tests -->
   <ParameterList name="Flow">
     <ParameterList name="Richards Problem">
-      <Parameter name="Atmospheric pressure" type="double" value="10.0"/>
+      <Parameter name="Atmospheric pressure" type="double" value="0.0"/>
 
       <ParameterList name="Diffusion Preconditioner">
         <ParameterList name="ML Parameters">
@@ -109,7 +109,7 @@
           <Parameter name="Start pseudo time" type="double" value="0.0"/>
           <Parameter name="End pseudo time" type="double" value="1e+4"/>
           <Parameter name="Initial time step" type="double" value="0.01"/>
-          <Parameter name="Maximal time step" type="double" value="10.0"/>
+          <Parameter name="Maximal time step" type="double" value="1.0"/>
         </ParameterList>
 
         <ParameterList name="Linear solvers"> 

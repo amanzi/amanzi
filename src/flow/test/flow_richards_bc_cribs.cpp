@@ -73,9 +73,15 @@ TEST(FLOW_3D_RICHARDS) {
   S.set_time(0.0);
   RPK->advance_to_steady_state();
 
+  // derive dependent variable
+  Epetra_Vector& pressure = RPK->get_solution_cells();
+  Epetra_Vector  saturation(pressure);
+  RPK->deriveSaturationFromPressure(pressure, saturation); 
+
   GMV::open_data_file(*mesh, (std::string)"flow.gmv");
   GMV::start_data();
-  GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
+  GMV::write_cell_data(pressure, 0, "pressure");
+  GMV::write_cell_data(saturation, 0, "saturation");
   GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
   GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
   GMV::close_data_file();

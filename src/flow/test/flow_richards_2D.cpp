@@ -49,10 +49,14 @@ TEST(FLOW_2D_RICHARDS) {
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
   RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 18,18, MPI_COMM_WORLD, gm)); 
 
-  // create flow state
-  ParameterList& state_list = parameter_list.get<ParameterList>("State");
-  State S(state_list, mesh);
-  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(S));
+  // create and populate flow state
+  Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
+  FS->set_permeability(0.1, 2.0, "Material 1");
+  FS->set_permeability(0.5, 0.5, "Material 2");
+  FS->set_porosity(0.2);
+  FS->set_fluid_viscosity(1.0);
+  FS->set_fluid_density(1.0);
+  FS->set_gravity(-1.0);
 
   // create Richards process kernel
   ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
@@ -62,22 +66,13 @@ TEST(FLOW_2D_RICHARDS) {
   RPK->Init();
 
   // create the initial pressure function
-  Epetra_Vector p(RPK->get_super_map());
-  Epetra_Vector* pcells = FS->createCellView(p);
-  Epetra_Vector* pfaces = FS->createFaceView(p);
+  Epetra_Vector& p = FS->ref_pressure();
 
-  for (int c=0; c<pcells->MyLength(); c++) {
+  for (int c=0; c<p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    (*pcells)[c] = xc[1] * (xc[1] + 2.0);
+    p[c] = xc[1] * (xc[1] + 2.0);
   }
 
-  for (int f=0; f<pfaces->MyLength(); f++) {
-    const Point& xf = mesh->face_centroid(f);
-    (*pfaces)[f] = xf[1] * (xf[1] + 2.0);
-  }
-
-  S.update_pressure(*pcells);
-  S.set_time(0.0);
   // solve the problem
   RPK->advance_to_steady_state();
  

@@ -26,6 +26,7 @@ CopyMemory     // copy non-overlap vector to overlap vectors
 
 class Flow_State {
  public:
+  Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   Flow_State(Teuchos::RCP<State> S);
   Flow_State(State& S);
   Flow_State(Flow_State& S, FlowCreateMode mode = CopyPointers);
@@ -60,14 +61,18 @@ class Flow_State {
   double ref_fluid_viscosity() { return *fluid_viscosity; }
 
   // miscaleneous
-  double get_time() { return S_->get_time(); }
+  double get_time() { return (S_ == NULL) ? 0.0 : S_->get_time(); }
   double normL2cell(Epetra_Vector& v1, Epetra_Vector& v2);
   double normL2cell(Epetra_Vector& v1);
   
   // debug routines
   void set_fluid_density(double rho);
   void set_fluid_viscosity(double mu);
-  void set_pressure_head(double z0, double p0, Epetra_Vector& pressure);
+  void set_porosity(double phi);
+  void set_pressure_hydrostatic(double z0, double p0);
+  void set_permeability(double Kh, double Kv);
+  void set_permeability(double Kh, double Kv, const string region);
+  void set_gravity(double g);
 
  private:
   State* S_;  

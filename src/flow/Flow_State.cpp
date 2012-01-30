@@ -10,6 +10,7 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
 #include "Point.hh"
 #include "errors.hh"
+#include "Mesh.hh"
 
 #include "State.hpp"
 #include "Flow_State.hpp"
@@ -17,7 +18,32 @@ Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 namespace Amanzi {
 namespace AmanziFlow {
 
-/* **************************************************************** */
+/* *******************************************************************
+* Flow state is build from scratch and filled with zeros.         
+******************************************************************* */
+Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
+{
+  const Epetra_BlockMap& cmap = mesh->cell_map(false);
+  const Epetra_BlockMap& fmap = mesh->face_map(false);
+
+  porosity = Teuchos::rcp(new Epetra_Vector(cmap));
+  fluid_density = Teuchos::rcp(new double);
+  fluid_viscosity = Teuchos::rcp(new double);
+  gravity = Teuchos::rcp(new double*);
+  *gravity = new double[3];
+  vertical_permeability = Teuchos::rcp(new Epetra_Vector(cmap));
+  horizontal_permeability = Teuchos::rcp(new Epetra_Vector(cmap));
+  pressure = Teuchos::rcp(new Epetra_Vector(cmap));
+  darcy_mass_flux = Teuchos::rcp(new Epetra_Vector(fmap));
+  mesh_ = mesh;
+
+  S_ = NULL;  
+}
+
+
+/* *******************************************************************
+* Flow state is build from state S.        
+******************************************************************* */
 Flow_State::Flow_State(Teuchos::RCP<State> S)
 {
   porosity = S->get_porosity();
@@ -218,9 +244,18 @@ void Flow_State::set_fluid_viscosity(double mu)
 
 
 /* *******************************************************************
+ * DEBUG: create constant porosity
+ ****************************************************************** */
+void Flow_State::set_porosity(double phi)
+{
+  porosity->PutScalar(phi);
+}
+
+
+/* *******************************************************************
  * DEBUG: create hydrostatic pressure with p0 at height z0.
  ****************************************************************** */
-void Flow_State::set_pressure_head(double z0, double p0, Epetra_Vector& pressure)
+void Flow_State::set_pressure_hydrostatic(double z0, double p0)
 {
   int dim = mesh_->space_dimension();
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -230,16 +265,41 @@ void Flow_State::set_pressure_head(double z0, double p0, Epetra_Vector& pressure
 
   for (int c=0; c<ncells; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    pressure[c] = p0 + rho * g * (xc[dim - 1] - z0);
+    (*pressure)[c] = p0 + rho * g * (xc[dim - 1] - z0);
   }
+}
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  if (pressure.MyLength() == ncells + nfaces) {
-    for (int f=0; f<nfaces; f++) {
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      pressure[ncells + f] = p0 + rho * g * (xf[dim - 1] - z0);
-    }
+
+/* *******************************************************************
+ * DEBUG: create diagonal permeability
+ ****************************************************************** */
+void Flow_State::set_permeability(double Kh, double Kv)
+{
+  horizontal_permeability->PutScalar(Kh);
+  vertical_permeability->PutScalar(Kv);
+}
+
+void Flow_State::set_permeability(double Kh, double Kv, const string region)
+{
+  std::vector<unsigned int> block;
+  mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  int ncells = block.size();
+      
+  for (int i=0; i<ncells; i++) {
+    int c = block[i];
+    (*horizontal_permeability)[c] = Kh;
+    (*vertical_permeability)[c] = Kv;
   }
+}
+
+
+/* *******************************************************************
+ * DEBUG: create constant gravity
+ ****************************************************************** */
+void Flow_State::set_gravity(double g)
+{
+  int dim = mesh_->space_dimension();
+  (*gravity)[dim-1] = g;
 }
 
 
