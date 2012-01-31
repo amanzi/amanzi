@@ -70,7 +70,7 @@ if ( BUILD_TESTS )
     include_directories(${Boost_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
-    set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone)
+    set(amanzi_libs geometry mesh mesh_audit simple_mesh state transport whetstone mesh_functions)
 
     # Test: miscaleneous transport routines
     add_executable(transport_mics test/Main.cc test/transport_mics.cpp)
@@ -93,7 +93,7 @@ if ( BUILD_TESTS )
         include_directories(${MSTK_INCLUDE_DIRS})
         include_directories(${MSTK_SOURCE_DIR})
 
-        set(amanzi_libs geometry mesh mesh_audit mstk_mesh state transport whetstone output)
+        set(amanzi_libs geometry mesh mesh_audit mstk_mesh state transport whetstone output mesh_functions)
 
         add_executable(transport_advance_mstk test/Main.cc test/transport_advance_mstk.cpp)
         target_link_libraries(transport_advance_mstk ${amanzi_libs} ${UnitTest_LIBRARIES})
@@ -120,7 +120,7 @@ if ( BUILD_TESTS )
         include_directories(${STK_INCLUDE_DIRS})
         include_directories(${STK_SOURCE_DIR})
 
-        set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus_reader state transport whetstone)
+        set(amanzi_libs geometry mesh mesh_audit stk_mesh exodus_reader state transport whetstone mesh_functions)
 
         add_executable(transport_advance_stk test/Main.cc test/transport_advance_stk.cpp)
         target_link_libraries(transport_advance_stk ${amanzi_libs} ${UnitTest_LIBRARIES})

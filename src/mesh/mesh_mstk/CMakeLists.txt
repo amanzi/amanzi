@@ -65,6 +65,7 @@ if (BUILD_TESTS)
     # Test: mstk_mesh
     add_executable(test_mstk_mesh 
                    test/Main.cc 
+		   test/test_lipnikov.cc
                    test/test_hex_2x2x2.cc
                    test/test_hex_3x3x2.cc
                    test/test_hex_4x4x4.cc
