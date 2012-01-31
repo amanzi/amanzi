@@ -26,8 +26,9 @@ Tensor::Tensor(const Tensor& T)
   int d = T.get_dimension();
   int rank = T.get_rank();
   double* data = T.get_data();
- 
+
   if (d && rank) {
+    data_ = NULL;
     int mem = init(d, rank); 
     for (int i=0; i<mem; i++) data_[i] = data[i];
   } else {
