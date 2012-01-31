@@ -35,7 +35,7 @@ public:
   TreeVector(std::string name, const std::vector< Teuchos::RCP<Epetra_MultiVector> >&);
   TreeVector(std::string name, const std::vector< Teuchos::RCP<TreeVector> >&);
   TreeVector(std::string name, const TreeVector&);
-  TreeVector(const TreeVector&) { throw "bad constructor"; }
+  TreeVector(const TreeVector&);
 
   // set data
   //  - guaranteed to not error
