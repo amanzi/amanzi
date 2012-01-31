@@ -88,6 +88,22 @@ TreeVector::TreeVector(std::string name, const TreeVector &tv) : name_(name) {
 };
 
 
+TreeVector::TreeVector(const TreeVector &tv) : name_(std::string("")) {
+  for (std::vector< Teuchos::RCP<Epetra_MultiVector> >::const_iterator datum = tv.data_.begin();
+       datum != tv.data_.end(); ++datum) {
+    
+    Teuchos::RCP<Epetra_MultiVector> new_EMV 
+        = Teuchos::rcp(new Epetra_MultiVector( (*datum)->Map(), (*datum)->NumVectors()  ) ); 
+    data_.push_back(new_EMV);
+  }
+  for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator sv = tv.subvecs_.begin();
+       sv != tv.subvecs_.end(); ++sv) {
+    
+    Teuchos::RCP<Amanzi::TreeVector> new_TV 
+        = Teuchos::rcp(new Amanzi::TreeVector((*sv)->name_, *sv) );
+    subvecs_.push_back(new_TV);
+  }  
+};
 
 
 TreeVector& TreeVector::operator=(double value) {
