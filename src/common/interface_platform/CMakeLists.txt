@@ -38,5 +38,8 @@ add_install_library(interface)
 #
 # Add include files to the installation target
 #
-file(GLOB _inc_files "*.H *.hh")
+file(GLOB _H_inc_files "*.H")
+file(GLOB _hh_inc_files "*.hh")
+file(GLOB _h_inc_files "*.h")
+set(_inc_files ${_H_inc_files} ${_h_inc_files} ${_hh_inc_files})
 add_install_include_file(${_inc_files})
