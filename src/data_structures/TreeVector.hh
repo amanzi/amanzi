@@ -29,12 +29,13 @@ class TreeVector : public Vector {
 public:
   // constructor the other three
   explicit TreeVector(std::string name);
-  TreeVector(std::string name, Teuchos::RCP<Epetra_MultiVector>&);
-  TreeVector(std::string name, Teuchos::RCP<Epetra_Vector>&);
-  TreeVector(std::string name, Teuchos::RCP<TreeVector>&);
-  TreeVector(std::string name, std::vector< Teuchos::RCP<Epetra_MultiVector> >&);
-  TreeVector(std::string name, std::vector< Teuchos::RCP<TreeVector> >&);
-  TreeVector(const TreeVector&);
+  TreeVector(std::string name, const Teuchos::RCP<Epetra_MultiVector>&);
+  TreeVector(std::string name, const Teuchos::RCP<Epetra_Vector>&);
+  TreeVector(std::string name, const Teuchos::RCP<TreeVector>&);
+  TreeVector(std::string name, const std::vector< Teuchos::RCP<Epetra_MultiVector> >&);
+  TreeVector(std::string name, const std::vector< Teuchos::RCP<TreeVector> >&);
+  TreeVector(std::string name, const TreeVector&);
+  TreeVector(const TreeVector&) { throw "bad constructor"; }
 
   // set data
   //  - guaranteed to not error
@@ -43,6 +44,8 @@ public:
   //  - not guaranteed not to error
   TreeVector& operator=(const Epetra_Vector &value);
   TreeVector& operator=(const Epetra_MultiVector &value);
+  TreeVector& operator=(const TreeVector &value);
+  
 
   // metadata
   void SetName(std::string name) { name_ = name; }
@@ -53,12 +56,26 @@ public:
   void Shift(double scalarA);
   int Dot(const Vector& other, double* result) const;
 
-  // this <- alpha*a + beta*b + gamma*this
+  // this <- scalarA*A + scalarThis*this
   Vector& Update(double scalarA, const Vector& A, double scalarThis);
+
+  // this <- scalarA*A + scalarB*B + scalarThis*this
   Vector& Update(double scalarA, const Vector& A,
                  double scalarB, const Vector& B, double scalarThis);
+  
+  // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
+  int Multiply(double scalarAB, const Vector& A, const Vector& B, double scalarThis);
+  
+  // this <- scalar
+  int PutScalar(double scalar);
+  
+  // return || this ||_{inf}
+  int NormInf(double* ninf);
 
   // non-inherited extras
+
+  void Print(ostream &os) const;
+
   int SubVector(std::string subname, Teuchos::RCP<TreeVector>& subvec);
   int SubVector(std::string subname, Teuchos::RCP<const TreeVector>& subvec) const;
 

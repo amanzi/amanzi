@@ -1,5 +1,5 @@
 #!/bin/sh
-
+AMANZI_DIR=/home/berndt/amanzi-install
 AMANZI_INSTALL_DIR=${AMANZI_DIR}
 
 cmake -D \

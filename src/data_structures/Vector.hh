@@ -43,6 +43,10 @@ public:
   virtual Vector& Update(double scalarA, const Vector& A,
                          double scalarB, const Vector& B, double scalarThis) = 0;
 
+  virtual int Multiply (double scalarA, const Vector& A, const Vector& B, double scalarThis) =0;
+  virtual int PutScalar(double scalar) = 0;
+  virtual int NormInf(double* ninf) = 0;
+
   // note that a Vector must also provide an innerProduct method, but it need
   // not work if the other Vector is not of the same type.  Implementations
   // likely use dynamic_cast.
