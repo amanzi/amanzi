@@ -32,8 +32,7 @@ void Richards_PK::calculateRelativePermeability(const Epetra_Vector& p)
 
 
 /* ******************************************************************
-* Defines relative permeabilities ONLY for faces. 
-* WARNING; we assume that K is a diagonal tensor. (lipnikov@lanl.gov)                                              
+* Defines upwinded relative permeabilities for faces using gravity. 
 ****************************************************************** */
 void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p)
 {
@@ -48,10 +47,38 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
+    AmanziGeometry::Point Kgravity = K[c] * gravity;
+
     for (int n=0; n<nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f); 
-      if ((normal * gravity) * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
+      if ((normal * Kgravity) * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
+      else if (bc_markers[f] != FLOW_BC_FACE_NULL) (*Krel_faces)[f] = (*Krel_cells)[c];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Defines upwinded relative permeabilities for faces using flux. 
+****************************************************************** */
+void Richards_PK::calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, 
+                                                          const Epetra_Vector& flux)
+{
+  calculateRelativePermeability(p);  // populates cell-based permeabilities
+  FS->copyMasterCell2GhostCell(*Krel_cells);
+
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  for (int c=0; c<ncells_owned; c++) {
+    mesh_->cell_get_face_dirs(c, &dirs);
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int n=0; n<nfaces; n++) {
+      int f = faces[n];
+      if (flux[n] * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
       else if (bc_markers[f] != FLOW_BC_FACE_NULL) (*Krel_faces)[f] = (*Krel_cells)[c];
     }
   }

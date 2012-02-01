@@ -57,7 +57,7 @@ class Richards_PK : public Flow_PK {
   void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
   void calculateRelativePermeability(const Epetra_Vector& p);
   void calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
-  void calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& darcy_flux);
+  void calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
 
   void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
   void addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
@@ -149,8 +149,9 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Epetra_Vector> Krel_cells;  // realitive permeability 
   Teuchos::RCP<Epetra_Vector> Krel_faces;  // realitive permeability 
 
-  bool flag_upwind;  // discretization control parameters
+  int Krel_method;  // method for calculating relative permeability
   int mfd3d_method;
+  bool is_matrix_symmetric;
   Teuchos::RCP<Epetra_IntVector> upwind_cell, downwind_cell;
 };
 

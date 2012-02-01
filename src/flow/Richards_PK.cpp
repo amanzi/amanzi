@@ -73,7 +73,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
   relative_tol_sss = relative_tol_trs = 1e-5;
 
   mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
-  flag_upwind = true;
+  Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
 
   verbosity = FLOW_VERBOSITY_HIGH;
   internal_tests = 0;
@@ -138,7 +138,8 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   // Process other fundamental structures
   K.resize(ncells_owned);
-  matrix->setSymmetryProperty(!flag_upwind);
+  is_matrix_symmetric = (Krel_method == FLOW_RELATIVE_PERM_CENTERED);
+  matrix->setSymmetryProperty(is_matrix_symmetric);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
   // Create the BDF2 time integrator
@@ -152,7 +153,7 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   if (method_sss == FLOW_STEADY_STATE_BDF2) {
     preconditioner = new Matrix_MFD(FS, *super_map_);
-    preconditioner->setSymmetryProperty(!flag_upwind);
+    preconditioner->setSymmetryProperty(is_matrix_symmetric);
     preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
     preconditioner->init_ML_preconditioner(ML_list); 
   } else {
@@ -285,7 +286,7 @@ int Richards_PK::advanceSteadyState_Picard()
   Epetra_Vector& solution_new = *solution;
   Epetra_Vector  residual(*solution);
 
-  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_bicgstab);  // symmetry is NOT required
+  if (!is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_bicgstab);
   solver->SetAztecOption(AZ_output, AZ_none);
 
   int itrs = 0;
@@ -294,10 +295,16 @@ int Richards_PK::advanceSteadyState_Picard()
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
     setAbsolutePermeabilityTensor(K);
-    if (flag_upwind) {  // Define K and Krel_faces
+    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
       calculateRelativePermeabilityUpwindGravity(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
-    } else {  // Define K and Krel_cells, Krel_faces is always one
+    } 
+    else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+      Epetra_Vector& flux = FS_next->ref_darcy_mass_flux();
+      calculateRelativePermeabilityUpwindFlux(*solution_cells, flux);
+      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+    } 
+    else {  // Define K and Krel_cells, Krel_faces is always one
       for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
     }
 
@@ -403,7 +410,7 @@ void Richards_PK::computePreconditionerMFD(
   calculateRelativePermeability(*u_cells);
   setAbsolutePermeabilityTensor(K);
 
-  if (flag_upwind) {  // Define K and Krel_faces
+  if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
     calculateRelativePermeabilityUpwindGravity(*u_cells);
     for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
   } else {  // Define K and Krel_cells, Krel_faces is always one

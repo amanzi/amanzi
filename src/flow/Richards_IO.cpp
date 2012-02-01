@@ -21,7 +21,9 @@ void Richards_PK::processParameterList()
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
-  flag_upwind = rp_list.get<bool>("Upwind relative permeability", true);
+  bool flag_upwind = rp_list.get<bool>("Upwind relative permeability", true);
+  if (flag_upwind) Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
+  else Krel_method = FLOW_RELATIVE_PERM_CENTERED;
   atm_pressure = rp_list.get<double>("Atmospheric pressure");
 
   // Create the BC objects.
@@ -121,7 +123,7 @@ void Richards_PK::print_statistics() const
     cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Verbosity level = " << verbosity << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
-    cout << "    Upwind = " << (flag_upwind ? "yes" : "no") << endl;
+    cout << "    Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "none") << endl;
   }
 }
  

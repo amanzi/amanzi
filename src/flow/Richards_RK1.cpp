@@ -18,7 +18,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
   Epetra_Vector  solution_old(*solution);
   Epetra_Vector& solution_new = *solution;
 
-  if (flag_upwind) solver->SetAztecOption(AZ_solver, AZ_cgs);  // symmetry is NOT required
+  if (is_matrix_symmetric) solver->SetAztecOption(AZ_solver, AZ_cgs);
   solver->SetAztecOption(AZ_output, AZ_none);
 
   T_internal = T0_sss;
@@ -29,7 +29,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
   while (L2error > convergence_tol_sss && itrs < max_itrs_sss) {
     calculateRelativePermeability(*solution_cells);
     setAbsolutePermeabilityTensor(K);
-    if (flag_upwind) {  // Define K and Krel_faces
+    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
       calculateRelativePermeabilityUpwindGravity(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one
@@ -113,7 +113,7 @@ int Richards_PK::advanceSteadyState_ForwardEuler()
   while (L2error > convergence_tol_sss) {
     calculateRelativePermeability(*solution_cells);
     setAbsolutePermeabilityTensor(K);
-    if (flag_upwind) {  // Define K and Krel_faces
+    if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
       calculateRelativePermeabilityUpwindGravity(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
     } else {  // Define K and Krel_cells, Krel_faces is always one

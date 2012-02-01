@@ -61,7 +61,6 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
 
   // miscalleneous
   mfd3d_method = FLOW_MFD3D_HEXAHEDRA_MONOTONE;  // will be changed (lipnikov@lanl.gov)
-  flag_upwind = false;
   verbosity = FLOW_VERBOSITY_HIGH;
 }
 
