@@ -361,9 +361,15 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
         // TODO...
         // add code for input to read mesh file
       }
+      
+      
+      if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Expert")) {
+	msh_list.sublist("Unstructured").sublist("Expert") = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert");	
+      }
+      
     }
   }
-
+  
   return msh_list;
 }
 

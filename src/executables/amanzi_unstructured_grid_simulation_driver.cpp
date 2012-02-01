@@ -164,7 +164,6 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   Teuchos::ParameterList unstr_mesh_params = mesh_params.sublist("Unstructured");
 
-
   // Decide on which mesh framework to use
 
   try {
@@ -178,7 +177,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
       Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("Expert");  
 
-      bool framework_specified = expert_mesh_params.isSublist("Framework");
+      bool framework_specified = expert_mesh_params.isParameter("Framework");
 
       // If caller has specified a particular framework to use, make
       // that the primary framework. Otherwise, use default framework
@@ -195,21 +194,21 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 	} else if (framework == Amanzi::AmanziMesh::framework_name(Amanzi::AmanziMesh::STKMESH)) {
 	  prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::STKMESH);
 	} else if (framework == "") {
-	  // do nothing
+	  // ??
 	} else {
 	  std::string s(framework);
 	  s += ": specified mesh framework preference not understood";
 	  amanzi_throw(Errors::Message(s));
 	}
 	
-      }
+      }   
     }
 
 
 
     // Create a mesh factory with default or user preferences for a
     // mesh framework
-
+    // prefs.clear(); prefs.push_back(Amanzi::AmanziMesh::MSTK);
     factory.preference(prefs);
 
 
