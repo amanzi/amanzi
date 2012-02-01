@@ -60,7 +60,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
 
 
 /* ******************************************************************
-* Defines upwinded relative permeabilities for faces using flux. 
+* Defines upwinded relative permeabilities for faces using a given flux. 
 ****************************************************************** */
 void Richards_PK::calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, 
                                                           const Epetra_Vector& flux)
@@ -81,6 +81,27 @@ void Richards_PK::calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p
       if (flux[n] * dirs[n] >= 0.0) (*Krel_faces)[f] = (*Krel_cells)[c];
       else if (bc_markers[f] != FLOW_BC_FACE_NULL) (*Krel_faces)[f] = (*Krel_cells)[c];
     }
+  }
+}
+
+
+/* ******************************************************************
+* Defines relative permeabilities for faces via arithmetic averaging. 
+****************************************************************** */
+void Richards_PK::calculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p)
+{
+  calculateRelativePermeability(p);  // populates cell-based permeabilities
+  FS->copyMasterCell2GhostCell(*Krel_cells);
+
+  AmanziMesh::Entity_ID_List cells;
+
+  Krel_faces->PutScalar(0.0);
+  for (int f=0; f<nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    for (int n=0; n<ncells; n++) (*Krel_faces)[f] += (*Krel_cells)[cells[n]];
+    (*Krel_faces)[f] /= ncells;
   }
 }
 

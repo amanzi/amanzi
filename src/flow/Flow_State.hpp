@@ -2,6 +2,13 @@
 This is the flow component of the Amanzi code. 
 License: BSD
 Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+Routine provide basic operations with components of the flow state,
+such as density, pressure, darcy mass flux, etc. 
+Usage:
+  Flow_State FS;       // for stand-alone initialization
+  Flow_State FS(S);    // for initialization from the state S
+  Flow_State FS(FS_);  // copy constructor
 */
 
 #ifndef __Flow_State_hpp__

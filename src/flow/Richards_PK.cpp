@@ -301,7 +301,16 @@ int Richards_PK::advanceSteadyState_Picard()
     } 
     else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
       Epetra_Vector& flux = FS_next->ref_darcy_mass_flux();
+
+      matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+      matrix->deriveDarcyFlux(*solution, *face_importer_, flux);
+      addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
+
       calculateRelativePermeabilityUpwindFlux(*solution_cells, flux);
+      for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+    } 
+    else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
+      calculateRelativePermeabilityArithmeticMean(*solution_cells);
       for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
     } 
     else {  // Define K and Krel_cells, Krel_faces is always one
@@ -413,7 +422,22 @@ void Richards_PK::computePreconditionerMFD(
   if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) {  // Define K and Krel_faces
     calculateRelativePermeabilityUpwindGravity(*u_cells);
     for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
-  } else {  // Define K and Krel_cells, Krel_faces is always one
+  } 
+  else if (Krel_method == FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX) {
+    Epetra_Vector& flux = FS_next->ref_darcy_mass_flux();
+
+    matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
+    matrix->deriveDarcyFlux(*solution, *face_importer_, flux);
+    addGravityFluxes_DarcyFlux(K, *Krel_faces, flux);
+
+    calculateRelativePermeabilityUpwindFlux(*solution_cells, flux);
+    for (int c=0; c<K.size(); c++) K[c] *= rho / mu; 
+  } 
+  else if (Krel_method == FLOW_RELATIVE_PERM_ARITHMETIC_MEAN) {
+    calculateRelativePermeabilityArithmeticMean(*u_cells);
+    for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+  } 
+  else {  // Define K and Krel_cells, Krel_faces is always one
     for (int c=0; c<K.size(); c++) K[c] *= (*Krel_cells)[c] * rho / mu;  
   }
 

@@ -21,9 +21,19 @@ void Richards_PK::processParameterList()
   Teuchos::ParameterList preconditioner_list;
   preconditioner_list = rp_list.get<Teuchos::ParameterList>("Diffusion Preconditioner");
 
-  bool flag_upwind = rp_list.get<bool>("Upwind relative permeability", true);
-  if (flag_upwind) Krel_method = FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
-  else Krel_method = FLOW_RELATIVE_PERM_CENTERED;
+  // Relative permeability method
+  string method_name = rp_list.get<string>("Relative permeability method", "Upwind with gravity");
+  if (method_name == "Upwind with gravity") {
+    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_GRAVITY;
+  } else if (method_name == "Cell centered") {
+    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_CENTERED;
+  } else if (method_name == "Upwind with Darcy flux") {
+    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_UPWIND_DARCY_FLUX;
+  } else if (method_name == "Arithmetic mean") {
+    Krel_method = AmanziFlow::FLOW_RELATIVE_PERM_ARITHMETIC_MEAN;
+  }
+
+  // Miscaleneous
   atm_pressure = rp_list.get<double>("Atmospheric pressure");
 
   // Create the BC objects.
@@ -86,25 +96,25 @@ void Richards_PK::processParameterList()
   // Steady state solution
   Teuchos::ParameterList& sss_list = rp_list.sublist("Steady state solution");
 
-  string method_name = sss_list.get<string>("method", "Picard");
+  method_name = sss_list.get<string>("method", "Picard");
   if (method_name == "Picard") {
-    method_sss = FLOW_STEADY_STATE_PICARD;
+    method_sss = AmanziFlow::FLOW_STEADY_STATE_PICARD;
   } else if (method_name == "backward Euler") {
-    method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
+    method_sss = AmanziFlow::FLOW_STEADY_STATE_BACKWARD_EULER;
   } else if (method_name == "BDF2") {
-    method_sss = FLOW_STEADY_STATE_BDF2; 
+    method_sss = AmanziFlow::FLOW_STEADY_STATE_BDF2; 
   }
 
   Teuchos::ParameterList& err_list = sss_list.sublist("Error control");
   absolute_tol_sss = err_list.get<double>("Absolute error tolerance", 1.0);
   relative_tol_sss = err_list.get<double>("Relative error tolerance", 1e-5); 
-  convergence_tol_sss = err_list.get<double>("Convergence tolerance", FLOW_STEADY_STATE_TOLERANCE);
-  max_itrs_sss = err_list.get<int>("Maximal number of iterations", FLOW_STEADY_STATE_MAX_ITERATIONS);
+  convergence_tol_sss = err_list.get<double>("Convergence tolerance", AmanziFlow::FLOW_STEADY_STATE_TOLERANCE);
+  max_itrs_sss = err_list.get<int>("Maximal number of iterations", AmanziFlow::FLOW_STEADY_STATE_MAX_ITERATIONS);
 
   Teuchos::ParameterList& time_list = sss_list.sublist("Time control");
   T0_sss = time_list.get<double>("Start pseudo time", -1e+9);
   T1_sss = time_list.get<double>("End pseudo time", 0.0);
-  dT0_sss = time_list.get<double>("Initial time step", FLOW_STEADY_STATE_INITIAL_DT);
+  dT0_sss = time_list.get<double>("Initial time step", AmanziFlow::FLOW_STEADY_STATE_INITIAL_DT);
   dTmax_sss = time_list.get<double>("Maximal time step", dT0_sss);
 
   Teuchos::ParameterList& solver_list = sss_list.sublist("Linear solvers");
@@ -123,7 +133,7 @@ void Richards_PK::print_statistics() const
     cout << "    Execution mode = " << (standalone_mode ? "standalone" : "MPC") << endl;
     cout << "    Verbosity level = " << verbosity << endl;
     cout << "    Enable internal tests = " << (internal_tests ? "yes" : "no")  << endl;
-    cout << "    Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "none") << endl;
+    cout << "    Upwind = " << ((Krel_method == FLOW_RELATIVE_PERM_UPWIND_GRAVITY) ? "gravity" : "other") << endl;
   }
 }
  

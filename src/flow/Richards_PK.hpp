@@ -58,6 +58,7 @@ class Richards_PK : public Flow_PK {
   void calculateRelativePermeability(const Epetra_Vector& p);
   void calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
   void calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
+  void calculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
 
   void addTimeDerivative_MFD(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);
   void addTimeDerivative_MFDfake(Epetra_Vector& pressure_cells, double dTp, Matrix_MFD* matrix);

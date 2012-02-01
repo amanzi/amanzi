@@ -3,6 +3,8 @@ This is the flow component of the Amanzi code.
 License: BSD
 Authors: Neil Carlson (nnc@lanl.gov), 
          Konstantin Lipnikov (lipnikov@lanl.gov)
+
+The routine implement interface to BDFx time integrators.  
 */
 
 #include "Richards_PK.hpp"
@@ -11,7 +13,7 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 /* ******************************************************************
-* Calculate f(u, du/dt) = s du/dt + A*u - g.                                              
+* Calculate f(u, du/dt) = s du/dt + A*u - g.                                         
 ****************************************************************** */
 void Richards_PK::fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
 {
@@ -31,7 +33,7 @@ void Richards_PK::fun(double T, const Epetra_Vector& u, const Epetra_Vector& udo
     double factor = rho * phi[c] * dSdP[c] * volume;
     f[c] -= factor * udot[c]; 
   }
-  f.Update(-1.0, f, 0.0);
+  f.Update(-1.0, f, 0.0);  // should be improved (lipnikov@lanl.gov)
 }
 
 
@@ -69,7 +71,8 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
   // find the global maximum
 #ifdef HAVE_MPI
   double buf = error_norm;
-  MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  //MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  du.Comm().MaxAll(&buf, &error_norm, 1);
 #endif
   return  error_norm;
 }

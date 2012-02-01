@@ -69,7 +69,7 @@
         </ParameterList>
       </ParameterList>
 
-      <Parameter name="Upwind relative permeability" type="bool" value="true"/>
+      <Parameter name="Relative permeability method" type="string" value="Upwind with gravity"/>
 
       <ParameterList name="Water retention models">
         <ParameterList name="Model 1">
