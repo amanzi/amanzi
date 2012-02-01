@@ -36,6 +36,7 @@ public:
   TreeVector(std::string name, const std::vector< Teuchos::RCP<TreeVector> >&);
   TreeVector(std::string name, const TreeVector&);
   TreeVector(const TreeVector&);
+  TreeVector(const Teuchos::RCP<TreeVector>&);
 
   // set data
   //  - guaranteed to not error

@@ -36,6 +36,8 @@ target_link_libraries(ats
                       mpc
                       energy
                       state
+                      time_integration
+                      ats_solvers
                       data_structures
                       amanzi_solvers
                       amanzi_time_integration
