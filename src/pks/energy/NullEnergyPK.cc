@@ -42,7 +42,10 @@ NullEnergyPK::NullEnergyPK(Teuchos::ParameterList& energy_plist,
 
   // check if we need to make a time integrator
   if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
-    time_stepper_ = Teuchos::rcp(new BDF2::Dae(*this, S->get_mesh_maps()));
+    // make an initvector for the time stepper
+    Teuchos::RCP<Epetra_Vector> ep_initvec = Teuchos::rcp(new Epetra_Vector( S->get_mesh_maps()->cell_epetra_map(false) ));
+    Teuchos::RCP<TreeVector> initvec = Teuchos::rcp(new TreeVector(std::string("initvec"),ep_initvec));
+    time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this,initvec));
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
     time_stepper_->setParameterList(bdf2_list_p);
   }
@@ -62,11 +65,11 @@ void NullEnergyPK::initialize(Teuchos::RCP<State>& S) {
   rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 
   // -- initialize time derivative
-  TreeVector solution_dot(solution_);
-  solution_dot = 0.0;
+  Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(solution_));
+  *solution_dot = 0.0;
 
   // -- set initial state
-  time_stepper_->set_initial_state(S->get_time(), *solution_, solution_dot);
+  time_stepper_->set_initial_state(S->get_time(), solution_, solution_dot);
 };
 
 
@@ -112,8 +115,8 @@ bool NullEnergyPK::advance_bdf(double dt) {
   // take the bdf timestep
   double h = dt;
   double hnext;
-  time_stepper_->bdf2_step(h, 0.0, *solution_, hnext);
-  time_stepper_->commit_solution(h, *solution_);
+  time_stepper_->bdf2_step(h, 0.0, solution_, hnext);
+  time_stepper_->commit_solution(h, solution_);
   time_stepper_->write_bdf2_stepping_statistics();
 
   // In the case where this is a leaf, and therefore advancing itself (and not
@@ -140,23 +143,24 @@ void NullEnergyPK::set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>&
 
 // Methods for the BDF integrator
 // -- residual
-void NullEnergyPK::fun(const double t, const TreeVector& soln, const TreeVector& udot,
-                       TreeVector& f) {
-  f = soln;
-  f.Shift(-T_);
+void NullEnergyPK::fun(const double t, const Teuchos::RCP<TreeVector> soln, 
+                       const Teuchos::RCP<TreeVector> udot,
+                       Teuchos::RCP<TreeVector> f) {
+  *f = *soln;
+  f->Shift(-T_);
 };
 
 // -- preconditioning (currently none)
-void NullEnergyPK::precon(const TreeVector& u, TreeVector& Pu) {
-  Pu = u;
+void NullEnergyPK::precon(const Teuchos::RCP<TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  *Pu = *u;
 };
 
 // computes a norm on u-du and returns the result
-double NullEnergyPK::enorm(const TreeVector& u, const TreeVector& du) {
+double NullEnergyPK::enorm(const Teuchos::RCP<TreeVector> u, const Teuchos::RCP<TreeVector> du) {
   double enorm_val = 0.0;
-  Epetra_Vector temp_vec = *(*u[0])(0);
-  Epetra_Vector temp_dot_vec = *(*du[0])(0);
-  for (unsigned int lcv=0; lcv != u[0]->MyLength(); ++lcv) {
+  Epetra_Vector temp_vec = *(*(*u)[0])(0);
+  Epetra_Vector temp_dot_vec = *(*(*du)[0])(0);
+  for (unsigned int lcv=0; lcv != (*u)[0]->MyLength(); ++lcv) {
     double tmp = abs(temp_dot_vec[lcv])/(atol_ + rtol_*abs(temp_vec[lcv]));
     enorm_val = std::max<double>(enorm_val, tmp);
   }

@@ -31,13 +31,13 @@ Example usage:
 #include "TreeVector.hh"
 
 #include "PK.hh"
-#include "BDF2_Dae.hpp"
-#include "BDF2_fnBase.hpp"
+#include "ImplicitTIBDF2.hh"
+#include "ImplicitTIBDF2fnBase.hh"
 
 namespace Amanzi {
 
   // class NullEnergyPK : public PK {
-class NullEnergyPK : public PK, public BDF2::fnBase {
+class NullEnergyPK : public PK, public ImplicitTIBDF2fnBase {
 
 public:
   NullEnergyPK(Teuchos::ParameterList& energy_plist, Teuchos::RCP<State>& S,
@@ -73,21 +73,21 @@ public:
 
   // BDF2 interface
   // computes the non-linear functional f = f(t,u,udot)
-  void fun(const double t, const TreeVector& soln, const TreeVector& soln_dot,
-           TreeVector& f);
+  void fun(const double t, const Teuchos::RCP<TreeVector> soln, const Teuchos::RCP<TreeVector> soln_dot,
+           Teuchos::RCP<TreeVector> f);
 
   // applies preconditioner to u and returns the result in Pu
-  void precon(const TreeVector& u, TreeVector& Pu);
+  void precon(const Teuchos::RCP<TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // computes a norm on u-du and returns the result
-  double enorm(const TreeVector& u, const TreeVector& du);
+  double enorm(const Teuchos::RCP<TreeVector> u, const Teuchos::RCP<TreeVector> du);
 
   // updates the preconditioner
-  void update_precon(const double t, const TreeVector& up, const double h, int& errc) {};
+  void update_precon(const double t, const Teuchos::RCP<TreeVector> up, const double h, int& errc) {};
 
   // check the admissibility of a solution
   // override with the actual admissibility check
-  bool is_admissible(const TreeVector& up) { return true; }
+  bool is_admissible(const Teuchos::RCP<TreeVector> up) { return true; }
 
 private:
   // A few options for advance
@@ -101,7 +101,7 @@ private:
   Teuchos::ParameterList energy_plist_;
 
   // time integration
-  Teuchos::RCP<BDF2::Dae> time_stepper_;
+  Teuchos::RCP<Amanzi::ImplicitTIBDF2> time_stepper_;
   double atol_;
   double rtol_;
 };
