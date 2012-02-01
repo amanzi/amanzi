@@ -55,6 +55,13 @@ add_library(flow Transient_Richards_PK.cpp Darcy_PK.cpp
                  MimeticHexLocal.cpp MimeticHex.cpp
                  flow-bc-factory.cc vanGenuchtenModel.cpp)
 add_install_library(flow)
+add_library(flow_implementation 
+                 RichardsProblem.cpp RichardsModelEvaluator.cpp
+                 DarcyProblem.cpp DarcyMatvec.cpp 
+                 DiffusionMatrix.cpp DiffusionPrecon.cpp DiffusionMap.cpp 
+                 MimeticHexLocal.cpp MimeticHex.cpp
+                 flow-bc-factory.cc vanGenuchtenModel.cpp)
+add_install_library(flow_implementation)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
