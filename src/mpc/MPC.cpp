@@ -285,7 +285,7 @@ void MPC::cycle_driver () {
   if (flow_enabled || transport_enabled || chemistry_enabled) {
 
     // make observations
-    if (!observations) observations->make_observations(*S);
+    if (observations) observations->make_observations(*S);
 
     // we need to create an EpetraMulitVector that will store the
     // intermediate value for the total component concentration
@@ -418,7 +418,7 @@ void MPC::cycle_driver () {
 
 
       // make observations
-      if (!observations) observations->make_observations(*S);
+      if (observations) observations->make_observations(*S);
 
 
       // write visualization if requested
@@ -445,10 +445,6 @@ void MPC::cycle_driver () {
     *out << ",  Time(secs) = "<< S->get_time(); // / (60*60*24);
     *out << std::endl;
   }
-
-
-  // dump observations
-  //output_observations.print(std::cout);
 
 
 }
