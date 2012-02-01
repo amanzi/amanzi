@@ -140,9 +140,12 @@ void MPC::mpc_init() {
   // done creating auxilary state objects and  process models
 
   // create the observations
-  Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data");
-  observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
-
+  if ( parameter_list.isSublist("Observation Data") ) {
+    Teuchos::ParameterList observation_plist = parameter_list.sublist("Observation Data"); 
+    observations = new Amanzi::Unstructured_observations(observation_plist, output_observations);
+  } else {
+    observations = NULL;
+  }
 
   // create the visualization object
   if (parameter_list.isSublist("Visualization Data"))  {
@@ -282,7 +285,7 @@ void MPC::cycle_driver () {
   if (flow_enabled || transport_enabled || chemistry_enabled) {
 
     // make observations
-    observations->make_observations(*S);
+    if (!observations) observations->make_observations(*S);
 
     // we need to create an EpetraMulitVector that will store the
     // intermediate value for the total component concentration
@@ -415,7 +418,7 @@ void MPC::cycle_driver () {
 
 
       // make observations
-      observations->make_observations(*S);
+      if (!observations) observations->make_observations(*S);
 
 
       // write visualization if requested

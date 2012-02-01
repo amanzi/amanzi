@@ -28,7 +28,13 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist ) {
     new_list.sublist("Visualization Data") = tmp_list;
   }
 
-  new_list.sublist("Observation Data")   = create_Observation_Data_List (plist);
+  if (plist->sublist("Output").isSublist("Observation Data")) {
+    Teuchos::ParameterList& od_list = plist->sublist("Output").sublist("Observation Data");
+    if (od_list.begin() != od_list.end()) {
+      new_list.sublist("Observation Data") = create_Observation_Data_List (plist);  
+    }
+  }
+    
   new_list.sublist("Regions")            = get_Regions_List(plist);
   new_list.sublist("Mesh")               = translate_Mesh_List(plist);
   new_list.sublist("Domain")             = get_Domain_List(plist);
