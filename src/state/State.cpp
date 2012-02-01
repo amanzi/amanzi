@@ -661,7 +661,7 @@ double State::point_value(const std::string& point_region, const std::string& na
     for (int i=0; i<mesh_block_size; i++)
     {
       int ic = cell_ids[i];
-      value += (*water_density)[ic] * (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
+      value +=  (*porosity)[ic] * (*water_saturation)[ic] * mesh_maps->cell_volume(ic);
       volume += mesh_maps->cell_volume(ic);
     }
   }
