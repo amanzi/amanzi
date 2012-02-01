@@ -544,7 +544,7 @@ Mesh_MSTK::~Mesh_MSTK() {
     
   MAttrib_Delete(celltype_att);
 
-  // MESH_Delete(mesh);
+  MESH_Delete(mesh);
 }
 
 
@@ -698,6 +698,8 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 	      break;
 	    }
 	  }
+
+	  List_Delete(fverts);
 	  
 	  if (all_present) {
 	    int lid = MEnt_ID(face);
@@ -705,9 +707,7 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 	    found = true;
 	    break;
 	  }
-	  
-	  List_Delete(fverts);
-	  
+	  	  
 	} // for (int j = 0; j < nf; j++) 
 	
 	if (!found) {
@@ -3477,7 +3477,7 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
     }
   }
    
-  for (i = 0; i < nx; i++)
+  for (i = 0; i < nx+1; i++)
     free(verts[i]);
   free(verts);
 
