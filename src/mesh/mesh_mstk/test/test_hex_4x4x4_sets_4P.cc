@@ -343,5 +343,13 @@ TEST(MSTK_HEX_4x4x4_SETS_4P)
     }
   }
 
+
+  // Once we can make RegionFactory work with reference counted pointers 
+  // we can get rid of this code
+
+  for (int i = 0; i < gm->Num_Regions(); i++)
+    delete (gm->Region_i(i));
+  delete gm;
+
 }
 
