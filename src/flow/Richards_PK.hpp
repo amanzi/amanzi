@@ -55,7 +55,8 @@ class Richards_PK : public Flow_PK {
   // other main methods
   void processParameterList();
   void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
-  void calculateRelativePermeability(const Epetra_Vector& p);
+  void calculateRelativePermeabilityCell(const Epetra_Vector& p);
+  void calculateRelativePermeabilityFace(const Epetra_Vector& p);
   void calculateRelativePermeabilityUpwindGravity(const Epetra_Vector& p);
   void calculateRelativePermeabilityUpwindFlux(const Epetra_Vector& p, const Epetra_Vector& flux);
   void calculateRelativePermeabilityArithmeticMean(const Epetra_Vector& p);
