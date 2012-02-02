@@ -55,6 +55,8 @@ class HDF5_MPI {
   void setNumNodes(int NumNodes) {NumNodes_ = NumNodes;}
   int NumElems() { return NumElems_;}
   void setNumElems(int NumElems) {NumElems_ = NumElems;}
+  int ConnLength() { return ConnLength_;}
+  void setConnLength(int ConnLength) {ConnLength_ = ConnLength;}
   int Iteration() { return Iteration_;}
   void setIteration(int Iteration) {Iteration_ = Iteration;}
 
@@ -144,6 +146,7 @@ class HDF5_MPI {
   // Simulation/Mesh Info
   int NumNodes_;
   int NumElems_;
+  int ConnLength_;
   int Iteration_;
 
   // Mesh information
