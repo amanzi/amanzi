@@ -58,7 +58,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.hinc = paramList_->get<double>("steady time step increase factor");
   
   int maxv = state.mitr-1;
-  int mvec = 5;
+  int mvec = 10;
   maxv = std::min<int>(maxv,mvec);
 
   // Initialize the FPA structure.

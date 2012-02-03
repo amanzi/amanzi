@@ -709,7 +709,7 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
   ml_list.set<int>("ML output", 0);
   ml_list.set<int>("max levels", 40);
   ml_list.set<std::string>("prec type","MGV");
-  ml_list.set<int>("cycle applications", 1);
+  ml_list.set<int>("cycle applications", 2);
   ml_list.set<std::string>("aggregation: type", "Uncoupled");
   ml_list.set<double>("aggregation: damping factor", 1.33);
   ml_list.set<double>("aggregation: threshold", 0.0);
