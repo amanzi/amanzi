@@ -253,13 +253,13 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   catch (int itr) { 
     // we end up in here either if the solver took too many iterations, 
     // or if it took too few
-    if (itr >= state.maxitr && itr < state.mitr) { 
+    if (itr > state.maxitr && itr <= state.mitr) { 
       hnext = state.hred * h;
       state.usable_pc = false;
     } else if (itr < state.minitr) {
       hnext = state.hinc * h;
       state.usable_pc = false;
-    } else if (itr >= state.mitr) {
+    } else if (itr > state.mitr) {
       u = usav; // restore the original u
       state.usable_pc = false;
       hnext = h;
@@ -343,7 +343,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
       }
 
-      if ((itr < state.minitr) || (itr >= state.maxitr)) {
+      if ((itr < state.minitr) || (itr > state.maxitr)) {
         throw itr;
       }
       return;

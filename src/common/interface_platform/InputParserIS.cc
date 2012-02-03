@@ -364,8 +364,7 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
         msh_gen.set<double>("Z_Max",high[2]);
 
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
-        // TODO...
-        // add code for input to read mesh file
+	msh_list.sublist("Unstructured").sublist("Read Mesh File") = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File");
       }
       
       

@@ -236,9 +236,10 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   // Read or generate the mesh
 
   std::string file(""), format("");
-  if (unstr_mesh_params.isSublist("Read")) {
 
-    Teuchos::ParameterList read_params = unstr_mesh_params.sublist("Read");
+  if (unstr_mesh_params.isSublist("Read Mesh File")) {
+
+    Teuchos::ParameterList read_params = unstr_mesh_params.sublist("Read Mesh File");
     
     if (read_params.isParameter("File")) {
 
