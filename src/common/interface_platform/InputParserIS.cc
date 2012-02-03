@@ -595,22 +595,22 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
 	    if (!num_list.isParameter("steady max iterations")) {
 	      steady_time_integrator.set<int>("steady max iterations", num_list.get<int>("steady max iterations"));
-	    } else steady_time_integrator.set<int>("steady max iterations",5);
+	    } else steady_time_integrator.set<int>("steady max iterations",10);
 	    
 	    if (!num_list.isParameter("steady min iterations")) {
-	      steady_time_integrator.set<int>("steady min iterations",2);
+	      steady_time_integrator.set<int>("steady min iterations",5);
 	    } else  steady_time_integrator.set<int>("steady min iterations", num_list.get<int>("steady min iterations"));
 	    
 	    if (!num_list.isParameter("steady limit iterations")) {
-	      steady_time_integrator.set<int>("steady limit iterations",10);
+	      steady_time_integrator.set<int>("steady limit iterations",20);
 	    } else  steady_time_integrator.set<int>("steady limit iterations", num_list.get<int>("steady limit iterations"));
 	    
 	    if (!num_list.isParameter("steady nonlinear tolerance")) {
-	      steady_time_integrator.set<double>("steady nonlinear tolerance",0.1);
+	      steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
 	    } else  steady_time_integrator.set<double>("steady nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance"));
 	    
 	    if (!num_list.isParameter("steady time step reduction factor")) {
-	      steady_time_integrator.set<double>("steady time step reduction factor",0.5);
+	      steady_time_integrator.set<double>("steady time step reduction factor",0.8);
 	    } else  steady_time_integrator.set<double>("steady time step reduction factor", num_list.get<double>("steady time step reduction factor"));
 	    
 	    if (!num_list.isParameter("steady time step increase factor")) {
@@ -619,20 +619,20 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
 	    
 	  } else {
 	    // set some probably not so good defaults for the steady computation 
-	    steady_time_integrator.set<int>("steady max iterations",5);
-	    steady_time_integrator.set<int>("steady min iterations",2);
-	    steady_time_integrator.set<int>("steady limit iterations",12);
-	    steady_time_integrator.set<double>("steady nonlinear tolerance",0.1);
-	    steady_time_integrator.set<double>("steady time step reduction factor",0.5);
+	    steady_time_integrator.set<int>("steady max iterations",10);
+	    steady_time_integrator.set<int>("steady min iterations",5);
+	    steady_time_integrator.set<int>("steady limit iterations",20);
+	    steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
+	    steady_time_integrator.set<double>("steady time step reduction factor",0.8);
 	    steady_time_integrator.set<double>("steady time step increase factor",1.2);
 	  }
 	} else {
 	  // set some probably not so good defaults for the steady computation 
-	  steady_time_integrator.set<int>("steady max iterations",5);
-	  steady_time_integrator.set<int>("steady min iterations",2);
-	  steady_time_integrator.set<int>("steady limit iterations",10);
-	  steady_time_integrator.set<double>("steady nonlinear tolerance",0.1);
-	  steady_time_integrator.set<double>("steady time step reduction factor",0.5);
+	  steady_time_integrator.set<int>("steady max iterations",10);
+	  steady_time_integrator.set<int>("steady min iterations",5);
+	  steady_time_integrator.set<int>("steady limit iterations",20);
+	  steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
+	  steady_time_integrator.set<double>("steady time step reduction factor",0.8);
 	  steady_time_integrator.set<double>("steady time step increase factor",1.2);
 	}
 	steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
@@ -716,7 +716,7 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
   ml_list.set<int>("aggregation: nodes per aggregate", 3);
   ml_list.set<std::string>("eigen-analysis: type", "cg");
   ml_list.set<int>("eigen-analysis: iterations", 10);
-  ml_list.set<int>("smoother: sweeps", 2);
+  ml_list.set<int>("smoother: sweeps", 1);
   ml_list.set<double>("smoother: damping factor", 1.0);
   ml_list.set<std::string>("smoother: pre or post", "both");
   ml_list.set<std::string>("smoother: type", "Gauss-Seidel");

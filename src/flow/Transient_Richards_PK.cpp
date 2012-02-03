@@ -125,6 +125,7 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
   
   int errc;
   RME->update_precon(t0, *solution, h, errc);
+  RME->update_norm(0.001,1.0);
 }
 
 int Transient_Richards_PK::init_steady(double t0, double h_)
@@ -143,6 +144,7 @@ int Transient_Richards_PK::init_steady(double t0, double h_)
   
   int errc;
   RME->update_precon(t0, *solution, h, errc);
+  RME->update_norm(0.0, 1.0); // we run the steady calculation with just an absolute norm
 }
 
 int Transient_Richards_PK::advance_transient(double h) 

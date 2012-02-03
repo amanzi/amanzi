@@ -299,11 +299,14 @@ void MPC::cycle_driver () {
     while (  (S->get_time() < T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
 
       // determine the time step we are now going to take
-      double mpc_dT, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
+      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
 
-      if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
-	if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
-	  *out << "Steady state computation complete... now running in transient mode." << std::endl;
+      if (flow_enabled && flow_model == "Richards") {
+	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
+	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
+	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
+	  }
+	  FPK->init_transient(S->get_time(), dTtransient);	
 	}
       }
 
@@ -365,7 +368,7 @@ void MPC::cycle_driver () {
 	      FPK->advance_steady(mpc_dT);
 	    }
 	    catch (int itr) {
-	      mpc_dT = 0.01*mpc_dT;
+	      mpc_dT = 0.5*mpc_dT;
 	      redo = true;
 	    }
 	  } while (redo);
