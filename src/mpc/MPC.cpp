@@ -278,7 +278,7 @@ void MPC::cycle_driver () {
 
   if (flow_enabled) {
     if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY ) {
-      FPK->init_transient(T0, dTsteady);
+      FPK->init_steady(T0, dTsteady);
     } else if ( ti_mode == TRANSIENT ) {
       FPK->init_transient(T0, dTtransient);
     }
@@ -357,7 +357,21 @@ void MPC::cycle_driver () {
       
       // first advance flow
       if (flow_enabled) {
-        FPK->advance_transient(mpc_dT);
+	if (ti_mode == STEADY || (ti_mode == INIT_TO_STEADY && S->get_time() < Tswitch)) { 	
+	  bool redo(false);
+	  do {
+	    redo = false;
+	    try {
+	      FPK->advance_steady(mpc_dT);
+	    }
+	    catch (int itr) {
+	      mpc_dT = 0.01*mpc_dT;
+	      redo = true;
+	    }
+	  } while (redo);
+	} else {
+	  FPK->advance_transient(mpc_dT);
+	}
       }
 
       // then advance transport

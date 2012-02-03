@@ -17,7 +17,7 @@ struct BDF1State {
   BDF1State() {
     seq = -1;
     usable_pc = false;
-    mitr = 5;
+    mitr = 20;
     ntol = 0.1;
 
     pcfun_calls = 0;
@@ -26,8 +26,8 @@ struct BDF1State {
     retried_bce = 0;
     failed_bce = 0;
     rejected_steps = 0;
-    hmin = std::numeric_limits<double>::max();
-    hmax = std::numeric_limits<double>::min();
+    hmin = std::numeric_limits<double>::min();
+    hmax = std::numeric_limits<double>::max();
 
     verbose = false;
   }
@@ -47,8 +47,9 @@ struct BDF1State {
   double    hpc;          // step size built into the current preconditioner
   bool      usable_pc;    // whether the current preconditioner is usable
   int       freeze_count; // don't increase step size for this number of steps
-  int       mitr;         // maximum number of nonlinear iterations (we cut time step here)
+  int       mitr;         // maximum number of nonlinear iterations, more and we fail 
   int       minitr;       // minimum number of nonlinear iterations (we will increase time step here)
+  int       maxitr;       // maximum number of nonlinear iterations (we cut time step here)
   double    ntol;         // nonlinear solver error tolerance (relative to 1)
   BDF2::SolutionHistory* uhist; // solution history structure
 
@@ -61,6 +62,8 @@ struct BDF1State {
   int    rejected_steps; // number of steps rejected on error tolerance
   double hmin;           // minimum step size used on a successful step
   double hmax;           // maximum step size used on a successful step
+  double hinc;           // stepsize increase factor
+  double hred;           // stepsize reduction factor
 
   // Diagnostics
   bool   verbose;

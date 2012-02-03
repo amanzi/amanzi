@@ -21,6 +21,8 @@ public:
   double pressure(double saturation);
 
 private:
+  double clip_capillary(double);
+
   const double m;     // van Genuchten m
   double n;           // van Genuchten n
   const double alpha; // van Genuchten alpha 

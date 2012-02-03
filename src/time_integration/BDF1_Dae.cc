@@ -50,26 +50,27 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   paramList_->validateParameters(*this->getValidParameters());
 
   // read the parameter list and initialize the class
-  state.mitr = paramList_->get<int>("Nonlinear solver max iterations");
-  state.minitr = paramList_->get<int>("Nonlinear solver min iterations");
-  state.ntol = paramList_->get<double>("Nonlinear solver tolerance");
-
-  mtries = paramList_->get<int>("Maximum number of BDF tries",20);
-
+  state.mitr = paramList_->get<int>("steady limit iterations");
+  state.maxitr = paramList_->get<int>("steady max iterations"); 
+  state.minitr = paramList_->get<int>("steady min iterations");
+  state.ntol = paramList_->get<double>("steady nonlinear tolerance");
+  state.hred = paramList_->get<double>("steady time step reduction factor");
+  state.hinc = paramList_->get<double>("steady time step increase factor");
+  
   int maxv = state.mitr-1;
-  int mvec = paramList_->get<int>("NKA max vectors");
+  int mvec = 5;
   maxv = std::min<int>(maxv,mvec);
 
   // Initialize the FPA structure.
   // first create a NOX::Epetra::Vector to initialize nka with
   NOX::Epetra::Vector init_vector( Epetra_Vector(map), NOX::ShapeCopy );
-  double vtol = paramList_->get<double>("NKA drop tolerance");
+  double vtol = 0.05;
   fpa = new nka(maxv, vtol, init_vector);
 
   // create the solution history object
   sh_ = new BDF2::SolutionHistory(2, map);
   state.init_solution_history(sh_);
-
+  
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 
@@ -100,30 +101,30 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
   static RCP<const ParameterList> validParams;
   if (is_null(validParams)) {
     RCP<ParameterList>
-        pl = Teuchos::rcp(new ParameterList("Time Stepping"));
-    Teuchos::setIntParameter("Nonlinear solver max iterations",
-                             10,
-                             "The maximum number of nonlinear iterations per invocation of the nonlinear solver.",
-                             &*pl);
-    Teuchos::setIntParameter("Nonlinear solver min iterations",
-                             3,
-                             "The minimum number of nonlinear iterations per invocation of the nonlinear solver.",
-                             &*pl);
-    Teuchos::setIntParameter("NKA max vectors",
+        pl = Teuchos::rcp(new ParameterList("steady time integrator"));
+    Teuchos::setIntParameter("steady max iterations",
                              5,
-                             "The size of the vectorspace for the nonlinear Krylov accelerator.",
+                             "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced.",
                              &*pl);
-    Teuchos::setDoubleParameter("Nonlinear solver tolerance",
-                                0.001,
-                                "The tolerance for the nonlinear solver.",
+    Teuchos::setIntParameter("steady min iterations",
+                             2,
+                             "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.",
+                             &*pl);
+    Teuchos::setIntParameter("steady limit iterations",
+                             12,
+                             "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated.",
+                             &*pl);
+    Teuchos::setDoubleParameter("steady nonlinear tolerance",
+                                0.1,
+                                "The tolerance for the nonlinear solver during the steady state computation.",
                                 &*pl);
-    Teuchos::setDoubleParameter("NKA drop tolerance",
-                                0.05,
-                                "Drop tolerance for the nonlinear Krylov accelerator.",
+    Teuchos::setDoubleParameter("steady time step reduction factor",
+                                0.5,
+                                "When time step reduction is necessary during the steady calculation, use this factor.",
                                 &*pl);
-    Teuchos::setIntParameter("Maximum number of BDF tries",
-                             20,
-                             "The number of failed BDF attempts we are tolerating.",
+    Teuchos::setDoubleParameter("steady time step increase factor",
+                             1.2,
+                             "When time step increase is possible during the steady calculation, use this factor.",
                              &*pl);
     Teuchos::setupVerboseObjectSublist(&*pl);
     validParams = pl;
@@ -178,92 +179,98 @@ void BDF1Dae::set_initial_state(const double t, const Epetra_Vector& x, const Ep
 
   state.uhist->flush_history(t, x, xdot);
   state.seq = 0;
-}
-
-
-void BDF1Dae::bdf1_step(double& h, double hmin, Epetra_Vector& u, double& hnext) {
-
-  ASSERT(hmin>=0.0);
-  ASSERT(hmin<=h);
-  ASSERT(mtries>=1);
-
-  using Teuchos::OSTab;
-  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
-
-  int tries = 0;
-  do {
-    tries++;
-
-    // Check for too many attempts at a single step.
-    if (tries > mtries) {
-      Errors::Message m("BDF2 step failed");
-      Exceptions::amanzi_throw(m);
-    }
-
-    // Check for a too-small step size.
-    if (h < hmin) {
-      Errors::Message m("BDF2 step size too small");
-      Exceptions::amanzi_throw(m);
-    }
-
-    // Attempt a BDF1 step.
-    int errc = 0;
-    bdf1_step_gen (h, u, hnext, errc, true);
-    if (errc == 0) return;
-
-    // Step failed; try again with the suggested step size.
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
-      *out << "Changing H by a factor of " << hnext/h << std::endl;
-    }
-    h = hnext;
-  } while (true);
+  state.usable_pc = false;
 
 }
 
 
 
-
-void BDF1Dae::bdf1_step_gen(double h, Epetra_Vector& u, double& hnext, int& errc, bool ectrl) {
-
+void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
+  
   double tlast = state.uhist->most_recent_time();
-  double t = tlast + h;
-
+  double tnew = tlast + h;
+  
   bool fresh_pc = false;
-
+  
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
+  
+  hnext = h;
 
+  // save the initial value so that we can restore the initial state 
+  // in case we need to bail
+  Epetra_Vector usav(map);
+  usav = u;
+  
+
+  if (h < state.hmin) {
+    std::cout << h << " " << state.hmin << std::endl;
+
+    std::string msg = "BDF1 failed: Time step crash";
+    Errors::Message m(msg);
+    Exceptions::amanzi_throw(m);    
+  }
+  
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
     *out << "BDF1 step " << state.seq+1 << " T = "<< tlast << " H = " << h << std::endl;
   }
-
+  
   // Predicted solution (initial value for the nonlinear solver)
   Epetra_Vector up(map);
-  state.uhist->interpolate_solution(t,  up, 1);
+  
+  if ( state.uhist->history_size() > 1) {
+    state.uhist->interpolate_solution(tnew,  up);
+  } else  {
+    up = u;
+  }
+
 
   // u at the start of the time step
   Epetra_Vector u0(map);
   u0 = u;
   
-  // update the preconditioner (we use the predicted solution at the end of the time step)
-  state.updpc_calls++;
-  fn.update_precon (t, up, h, errc);
   
+  if (!state.usable_pc) {
+    // update the preconditioner (we use the predicted solution at the end of the time step)
+    state.updpc_calls++;
+    int errc = 0;
+    fn.update_precon (tnew, up, h, errc);
+    if (errc != 0) {
+      std::string msg = "BDF1 failed: error while updating the preconditioner.";
+      Errors::Message m(msg);
+      Exceptions::amanzi_throw(m);        
+    }
+    state.usable_pc = true;
+  }
 
   //  Solve the nonlinear BCE system.
   u = up; // Initial solution guess is the predictor.
-  solve_bce ( t, h, u0, u, errc );
+  try {
+    solve_bce ( tnew, h, u0, u);
+  }
+  catch (int itr) { 
+    // we end up in here either if the solver took too many iterations, 
+    // or if it took too few
+    if (itr >= state.maxitr && itr < state.mitr) { 
+      hnext = state.hred * h;
+      state.usable_pc = false;
+    } else if (itr < state.minitr) {
+      hnext = state.hinc * h;
+      state.usable_pc = false;
+    } else if (itr >= state.mitr) {
+      u = usav; // restore the original u
+      state.usable_pc = false;
+      hnext = h;
+      throw itr;
+    } 
+  }
   
-  hnext = h;
-  errc = 0;
 }
 
 
-void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc) {
+void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u) {
 
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -289,8 +296,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u,
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve failed " << itr << " iterations (max), error = " << error << std::endl;
       }
-      errc = 1;
-      return;
+      throw itr;
     }
 
     itr++;
@@ -322,9 +328,8 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u,
     if ( ! fn.is_admissible(u) ) { // iterate is bad; bail.
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve FAILED: inadmissible solution iterate: itr=" << itr << std::endl;
-        errc = 2;
-        return;
       }
+      throw std::string("solution iterate is inadmissible"); 
     }
 
     error = fn.enorm(u, du);
@@ -337,7 +342,10 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u,
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
       }
-      errc = 0;
+
+      if ((itr < state.minitr) || (itr >= state.maxitr)) {
+        throw itr;
+      }
       return;
     }
   }

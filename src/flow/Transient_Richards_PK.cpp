@@ -39,6 +39,12 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_,
   time_stepper = new BDF2::Dae(*RME, problem->Map());
   time_stepper->setParameterList(bdf2_list_p);
 
+  // then the BDF1 solver
+  Teuchos::RCP<Teuchos::ParameterList> bdf1_list_p(new Teuchos::ParameterList(rp_list.sublist("steady time integrator")));
+
+  steady_time_stepper = new Amanzi::BDF1Dae(*RME, problem->Map());
+  steady_time_stepper->setParameterList(bdf1_list_p);
+
   // initialize the water saturation for vis
   GetSaturation( FS->get_water_saturation() );
 
@@ -121,6 +127,23 @@ int Transient_Richards_PK::init_transient(double t0, double h_)
   RME->update_precon(t0, *solution, h, errc);
 }
 
+int Transient_Richards_PK::init_steady(double t0, double h_)
+{
+  h = h_;
+  hnext = h_;
+
+  // Set problem parameters.
+  problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
+  problem->set_flow_state(FS);
+
+  Epetra_Vector udot(problem->Map());
+  problem->compute_udot(t0, *solution, udot);
+  
+  steady_time_stepper->set_initial_state(t0, *solution, udot);
+  
+  int errc;
+  RME->update_precon(t0, *solution, h, errc);
+}
 
 int Transient_Richards_PK::advance_transient(double h) 
 {
@@ -133,6 +156,21 @@ int Transient_Richards_PK::advance_transient(double h)
 
   time_stepper->write_bdf2_stepping_statistics();
 }
+
+
+int Transient_Richards_PK::advance_steady(double h) 
+{
+  // Set problem parameters
+  problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
+  problem->set_flow_state(FS);
+
+  steady_time_stepper->bdf1_step(h,*solution,hnext);
+  steady_time_stepper->commit_solution(h,*solution);  
+
+  steady_time_stepper->write_bdf1_stepping_statistics();
+}
+
+
 
 
 void Transient_Richards_PK::GetSaturation(Epetra_Vector &s) const

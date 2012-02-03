@@ -27,9 +27,8 @@ RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem,
   // Read the sublist for verbosity settings.
   Teuchos::readVerboseObjectSublist(&plist_,this);
 
-  atol = plist.get<double>("Absolute error tolerance",1.0);
-  rtol = plist.get<double>("Relative error tolerance",1e-5);
-  
+  atol = plist.get<double>("Absolute error tolerance",0.0);
+  rtol = plist.get<double>("Relative error tolerance",1.0);
 }
 
 void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)

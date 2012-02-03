@@ -1,5 +1,5 @@
-#ifndef _BDF2_DAE_HPP_
-#define _BDF2_DAE_HPP_
+#ifndef _BDF1_DAE_HH_
+#define _BDF1_DAE_HH_
 
 // This class is based on Neil Carlson's BDF2_DAE module
 // that is part of LANL's Truchas code.
@@ -44,15 +44,11 @@ class BDF1Dae : public Teuchos::VerboseObject<BDF1Dae>,
   // method computes a new time step length
   void select_step_size(const std::vector<double>& dt, const double perr, double& h);
 
-  // computes a BDF2 step
-  void bdf1_step_gen(double h, Epetra_Vector& u, double& hnext, int& errc, bool ectrl);
-
-  // attempts to take a BDF2 step, interfaces to bdf2_step_simple, will
-  // try several times with the suggested reduced time step to take the step
-  void bdf1_step(double& h, double hmin, Epetra_Vector& u, double& hnext);
+  // computes a BDF1 step
+  void bdf1_step(double h, Epetra_Vector& u, double& hnext);
 
   // the nonlinear solver (uses NKA)
-  void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u, int& errc);
+  void solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u);
 
   // returns the most recent time
   const double most_recent_time()

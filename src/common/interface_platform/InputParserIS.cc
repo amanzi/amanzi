@@ -401,13 +401,6 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
 
     mpc_list.sublist("Time Integration Mode") = exe_sublist.sublist("Time Integration Mode");
 
-    // mpc_list.set<double>("Start Time", exe_sublist.get<double>("Start Time"));
-    // mpc_list.set<double>("End Time", exe_sublist.get<double>("End Time"));
-    // mpc_list.set<int>("End Cycle",-1); // not in input spec, set reasonable value
-
-    // mpc_list.set<double>("Initial time step",exe_sublist.get<double>("Initial time step"));
-
-
     // now interpret the modes
     if ( exe_sublist.isParameter("Transport Model") ) {
       if ( exe_sublist.get<std::string>("Transport Model") == "Off" ) {
@@ -582,7 +575,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
         Teuchos::ParameterList& richards_model_evaluator = richards_problem.sublist("Richards model evaluator");
         // set some reasonable defaults...
         richards_model_evaluator.set<double>("Absolute error tolerance",1.0);
-        richards_model_evaluator.set<double>("Relative error tolerance",1.0e-3);
+        richards_model_evaluator.set<double>("Relative error tolerance",0.0);
         richards_model_evaluator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
         Teuchos::ParameterList& time_integrator = richards_problem.sublist("Time integrator");
@@ -594,6 +587,55 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
         time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
         time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
+	
+	// set paramters for the steady state time integrator
+	Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady time integrator");
+	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+	    if (!num_list.isParameter("steady max iterations")) {
+	      steady_time_integrator.set<int>("steady max iterations", num_list.get<int>("steady max iterations"));
+	    } else steady_time_integrator.set<int>("steady max iterations",5);
+	    
+	    if (!num_list.isParameter("steady min iterations")) {
+	      steady_time_integrator.set<int>("steady min iterations",2);
+	    } else  steady_time_integrator.set<int>("steady min iterations", num_list.get<int>("steady min iterations"));
+	    
+	    if (!num_list.isParameter("steady limit iterations")) {
+	      steady_time_integrator.set<int>("steady limit iterations",10);
+	    } else  steady_time_integrator.set<int>("steady limit iterations", num_list.get<int>("steady limit iterations"));
+	    
+	    if (!num_list.isParameter("steady nonlinear tolerance")) {
+	      steady_time_integrator.set<double>("steady nonlinear tolerance",0.1);
+	    } else  steady_time_integrator.set<double>("steady nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance"));
+	    
+	    if (!num_list.isParameter("steady time step reduction factor")) {
+	      steady_time_integrator.set<double>("steady time step reduction factor",0.5);
+	    } else  steady_time_integrator.set<double>("steady time step reduction factor", num_list.get<double>("steady time step reduction factor"));
+	    
+	    if (!num_list.isParameter("steady time step increase factor")) {
+	      steady_time_integrator.set<double>("steady time step increase factor",1.2);
+	    } else  steady_time_integrator.set<double>("steady time step increase factor", num_list.get<double>("steady time step increase factor"));
+	    
+	  } else {
+	    // set some probably not so good defaults for the steady computation 
+	    steady_time_integrator.set<int>("steady max iterations",5);
+	    steady_time_integrator.set<int>("steady min iterations",2);
+	    steady_time_integrator.set<int>("steady limit iterations",12);
+	    steady_time_integrator.set<double>("steady nonlinear tolerance",0.1);
+	    steady_time_integrator.set<double>("steady time step reduction factor",0.5);
+	    steady_time_integrator.set<double>("steady time step increase factor",1.2);
+	  }
+	} else {
+	  // set some probably not so good defaults for the steady computation 
+	  steady_time_integrator.set<int>("steady max iterations",5);
+	  steady_time_integrator.set<int>("steady min iterations",2);
+	  steady_time_integrator.set<int>("steady limit iterations",10);
+	  steady_time_integrator.set<double>("steady nonlinear tolerance",0.1);
+	  steady_time_integrator.set<double>("steady time step reduction factor",0.5);
+	  steady_time_integrator.set<double>("steady time step increase factor",1.2);
+	}
+	steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
         // insert the water retention models sublist
         Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models");
@@ -667,7 +709,7 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
   ml_list.set<int>("ML output", 0);
   ml_list.set<int>("max levels", 40);
   ml_list.set<std::string>("prec type","MGV");
-  ml_list.set<int>("cycle applications", 2);
+  ml_list.set<int>("cycle applications", 1);
   ml_list.set<std::string>("aggregation: type", "Uncoupled");
   ml_list.set<double>("aggregation: damping factor", 1.33);
   ml_list.set<double>("aggregation: threshold", 0.0);
@@ -1039,7 +1081,7 @@ Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
     vlist.set<std::string>("Verbosity Level","low");
   } else if (vlevel == "medium") {
     vlist.set<std::string>("Verbosity Level","medium");
-  } else if (vlevel == "medium") {
+  } else if (vlevel == "high") {
     vlist.set<std::string>("Verbosity Level","high");
   } else if (vlevel == "none") {
     vlist.set<std::string>("Verbosity Level","none");

@@ -248,6 +248,18 @@ Usage:
 
    * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
+   * [U] `"steady max iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
+
+   * [U] `"steady min iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
+
+   * [U] `"steady limit iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
+
+   * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
+
+   * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor.
+
+   * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor.
+
   * `"Structured Algorithm`" [list]
 
    * `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)

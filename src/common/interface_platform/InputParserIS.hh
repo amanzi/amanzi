@@ -31,7 +31,7 @@ static std::string phase_name;
 static std::string phase_comp_name;
 static Teuchos::Array<std::string> comp_names;
 static std::map<std::string, int> comp_names_map;
-static std::string verbosity_level = "low";
-
+static std::string verbosity_level("low");
+  
 }
 }
