@@ -52,12 +52,12 @@ public:
   virtual void initialize(Teuchos::RCP<State>& S);
 
   // transfer operators
-  virtual void state_to_solution(State& S, Teuchos::RCP<TreeVector>& soln);
-  virtual void state_to_solution(State& S, Teuchos::RCP<TreeVector>& soln,
+  virtual void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
+  virtual void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln,
                                  Teuchos::RCP<TreeVector>& soln_dot);
-  virtual void solution_to_state(TreeVector& soln, Teuchos::RCP<State>& S);
-  virtual void solution_to_state(TreeVector& soln, TreeVector& soln_dot,
-          Teuchos::RCP<State>& S);
+  virtual void solution_to_state(Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<State>& S);
+  virtual void solution_to_state(Teuchos::RCP<TreeVector>& soln,
+          Teuchos::RCP<TreeVector>& soln_dot, Teuchos::RCP<State>& S);
 
   // -- min(get_dt()) for each sub-PK
   virtual double get_dt();

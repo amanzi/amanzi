@@ -49,11 +49,11 @@ public:
   void initialize(Teuchos::RCP<State>& S);
 
   // -- transfer operators
-  void state_to_solution(State& S, Teuchos::RCP<TreeVector>& soln);
-  void state_to_solution(State& S, Teuchos::RCP<TreeVector>& soln,
+  void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
+  void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln,
                          Teuchos::RCP<TreeVector>& soln_dot);
-  void solution_to_state(TreeVector& soln, Teuchos::RCP<State>& S);
-  void solution_to_state(TreeVector& soln, TreeVector& soln_dot,
+  void solution_to_state(Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<State>& S);
+  void solution_to_state(Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<TreeVector>& soln_dot,
                          Teuchos::RCP<State>& S);
 
   // -- Choose a time step compatible with physics.

@@ -37,20 +37,27 @@ public:
   virtual void initialize(Teuchos::RCP<State>& S) = 0;
 
   // -- transfer operators -- ONLY COPIES POINTERS
-  virtual void state_to_solution(State& S, Teuchos::RCP<TreeVector>& soln) = 0;
-  virtual void state_to_solution(State& S, Teuchos::RCP<TreeVector>& soln,
+  virtual void state_to_solution(Teuchos::RCP<State>& S,
+                                 Teuchos::RCP<TreeVector>& soln) = 0;
+  virtual void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln,
                                  Teuchos::RCP<TreeVector>& soln_dot) = 0;
-  virtual void solution_to_state(TreeVector& soln, Teuchos::RCP<State>& S) = 0;
-  virtual void solution_to_state(TreeVector& soln, TreeVector& soln_dot,
-          Teuchos::RCP<State>& S) = 0;
+  virtual void solution_to_state(Teuchos::RCP<TreeVector>& soln,
+                                 Teuchos::RCP<State>& S) = 0;
+  virtual void solution_to_state(Teuchos::RCP<TreeVector>& soln,
+                                 Teuchos::RCP<TreeVector>& soln_dot,
+                                 Teuchos::RCP<State>& S) = 0;
 
-  // THIS IS SUPREMELY UGLY AND EVIL, FIX ME (BUT HOW?!?!) -- etc
-  virtual void const_solution_to_state(const TreeVector& soln, const TreeVector& soln_dot,
-          Teuchos::RCP<State>& S) {
-    // cast away const
-    TreeVector* soln_ptr = const_cast<TreeVector*>(&soln);
-    TreeVector* soln_dot_ptr = const_cast<TreeVector*>(&soln_dot);
-    solution_to_state(*soln_ptr, *soln_dot_ptr, S);
+  // EVIL CODE ALERT!!!
+  // While these routines themselves do not modify the const input object,
+  // they DO copy pointers to the const object's data into the non-const
+  // output object's realm.  While this cheats const, I don't have a good way
+  // around it. --etc
+  void solution_to_state(Teuchos::RCP<const TreeVector>& soln,
+                         Teuchos::RCP<const TreeVector>& soln_dot,
+                         Teuchos::RCP<State>& S) {
+    Teuchos::RCP<TreeVector> nc_soln = Teuchos::rcp_const_cast<TreeVector>(soln);
+    Teuchos::RCP<TreeVector> nc_soln_dot = Teuchos::rcp_const_cast<TreeVector>(soln_dot);
+    return solution_to_state(nc_soln, nc_soln_dot, S);
   }
 
   // -- Choose a time step compatible with physics.
