@@ -48,7 +48,6 @@ public:
               const std::string& field,
               const Region&      region,
               const std::string& obs_type,
-              const std::string& op_type,
               const Array<Real>& times);
 
   void process(Real t_old, Real t_new);

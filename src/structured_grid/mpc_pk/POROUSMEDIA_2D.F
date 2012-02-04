@@ -2827,3 +2827,80 @@ c     x-faces
 #undef YHI
 
       end
+
+
+
+#if 0
+c ::: ---------------------------------------------------------
+c ::: Define steady Richards 1D profile : FIXME
+c ::: ---------------------------------------------------------
+      
+      subroutine FORT_STEADY_1D_RICHARD(rho,DIMS(rho),rhoval,
+     &     cplcoef,DIMS(cplcoef),ncplcoef,dx,grav,rhoGInt,prevLoc)
+
+      implicit none
+
+      integer DIMDEC(rho)
+      integer DIMDEC(cplcoef)
+      integer ncomps, ncplcoef
+      REAL_T  rho(DIMV(rho),ncomps)
+      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
+      REAL_T  rhoval(ncomps)
+      REAL_T  dx(SDIM)
+      REAL_T  grav, rhoGint, prevLoc
+      
+      integer i,j,k,l_cpl_type
+      REAL_T  l_cpl_coef, l_sigma, l_sat_res
+      REAL_T  y
+      REAL_T  pc,phi,kappa,satlim(2),stmp(2)
+      REAL_T  intRhoG, prev_loc
+
+c     Gauss Legendre integration
+      REAL_T, parameter :: qd(5) = (/ 0.0d0,
+     &                                0.906179845938664d0*half,
+     &                                0.538469310105683d0*half,
+     &                               -0.906179845938664d0*half,
+     &                               -0.538469310105683d0*half /)
+
+
+      REAL_T, parameter :: wt(5) = (/ 0.568888888888889d0*half,
+     &                                0.236926885056189d0*half,
+     &                                0.478628670499366d0*half,
+     &                                0.236926885056189d0*half,
+     &                                0.478628670499366d0*half /)
+
+c     dummy
+      phi   = zero
+      kappa = zero
+
+      do j = ARG_L2(rho), ARG_H2(rho)
+         do i = ARG_L1(rho), ARG_H1(rho)
+            rho(i,j,:) = zero
+            do k = 1,5
+               y = (dble(j)+half+qd(k))*dx(2)
+               if (y .le. wt_loc) then
+                  rho(i,j,1) = rho(i,j,1) + rhoval(1)*wt(k)
+                  rho(i,j,2) = zero
+               else
+                  l_cpl_type = nint(cplcoef(i,j,1))
+                  l_cpl_coef = cplcoef(i,j,2)
+                  l_sigma    = cplcoef(i,j,3)
+                  l_sat_res  = cplcoef(i,j,4)
+                  satlim(1) = 1.1*l_sat_res*rhoval(1)
+                  satlim(2) = (one - 1.1*l_sat_res)*rhoval(2)
+                  pc = (rhoval(1)-rhoval(2))*grav*(y-prevLoc) + intRhoG
+                  call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
+     &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
+                  if (stmp(1) .lt. satlim(1)) then
+                     stmp = satlim
+                  end if
+                  rho(i,j,1) = rho(i,j,1) + stmp(1)*wt(k)
+                  rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
+               end if
+            end do 
+         end do
+      end do 
+
+      end
+
+#endif

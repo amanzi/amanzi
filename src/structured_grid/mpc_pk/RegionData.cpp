@@ -3,7 +3,8 @@
 #include <POROUSMEDIA_F.H>
 
 
-RegionData::RegionData(const PArray<Region>& regions,
+RegionData::RegionData(const std::string&    label,
+                       const PArray<Region>& regions,
                        const std::string&    typeStr,
                        const Array<Real>&    vals)
     : type(typeStr), vals(vals), nComp(vals.size())
@@ -11,7 +12,8 @@ RegionData::RegionData(const PArray<Region>& regions,
     setRegions(regions);
 }
 
-RegionData::RegionData(const PArray<Region>& regions,
+RegionData::RegionData(const std::string&    label,
+                       const PArray<Region>& regions,
                        const std::string&    typeStr,
                        Real                  val)
     : type(typeStr), nComp(1), vals(Array<Real>(val,nComp))
@@ -36,12 +38,13 @@ RegionData::setRegions(const PArray<Region>& regions_)
     }
 }
 
-ArrayRegionData::ArrayRegionData(const Array<Array<Real> >&        x,
+ArrayRegionData::ArrayRegionData(const std::string&                label,
+                                 const Array<Array<Real> >&        x,
                                  const Array<Array<Real> >&        y,
                                  const Array<Array<std::string> >& form,
                                  const PArray<Region>&             regions,
                                  const std::string&                typeStr)
-    : RegionData(regions,typeStr,Array<Real>(x.size()))
+    : RegionData(label,regions,typeStr,Array<Real>(x.size()))
 {
     BL_ASSERT(nComp==y.size());
     BL_ASSERT(nComp==form.size());
@@ -51,13 +54,14 @@ ArrayRegionData::ArrayRegionData(const Array<Array<Real> >&        x,
     }
 }
 
-ArrayRegionData::ArrayRegionData(const Array<Real>&       x,
+ArrayRegionData::ArrayRegionData(const std::string&       label,
+                                 const Array<Real>&       x,
                                  const Array<Real>&       y,
                                  const Array<std::string> form,
                                  const PArray<Region>&    regions,
                                  const std::string&       typeStr,
                                  int                      nComp)
-    : RegionData(regions,typeStr,Array<Real>(nComp))
+    : RegionData(label,regions,typeStr,Array<Real>(nComp))
 {
     funcs.resize(1);
     funcs[0] = TabularFunction(x,y,form);
@@ -78,43 +82,3 @@ ArrayRegionData::operator() (Real time) const
     return newVals;
 };
 
-
-Array<Real>
-FluxToArrayBC::operator() (Real time) const
-{
-    // Here, a flux is converted to an array of rho.saturation values
-    // based on the material properties of the rock at the boundary
-    
-    Real gravity = PorousMedia::getGravity();
-    const Array<Real>& density = PorousMedia::Density(); // Assumes 1 component per phase
-    int ncomps = density.size();
-    BL_ASSERT(ncomps>0 && ncomps<=2);
-    
-    
-    Real lkappa = rock.permeability[0];
-    Real gstar;
-    if (density.size() > 1)
-        gstar = -lkappa*(density[0]-density[1])*gravity;
-    else
-        gstar = -lkappa*(density[0])*gravity;
-    
-    // Compute saturation given Aqueous flow rate
-    int lkrtype = rock.krType;
-    Real lkrcoef = rock.krParam[0];
-    Real lsatres = rock.krParam[1];            
-    int nc = 1;
-    Real vtot = 0.; // Zero total velocity
-    Real sol;
-    const Array<Real>& visc = PorousMedia::Viscosity();
-    
-    Array<Real> rhoSat(ncomps);
-    Real vel = func(time);
-    FORT_FIND_INV_FLUX(&sol, &vel, &nc, &vtot,&gstar,visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
-    
-    rhoSat[0] = density[0]*(sol*(1.0-lsatres)+lsatres);
-    if (ncomps > 1) {
-        rhoSat[1] = density[1]*(1.0-rhoSat[0]/density[0]);
-    }
-    
-    return rhoSat;
-}

@@ -4,7 +4,6 @@
 
 Amr* Observation::amrp;
 std::map<std::string, int> Observation::obs_type_list;
-std::map<std::string, int> Observation::op_type_list;
 
 static bool initialized = false;
 
@@ -13,7 +12,6 @@ Observation::Cleanup ()
 {
     Observation::amrp = 0;
     Observation::obs_type_list.clear();
-    Observation::op_type_list.clear();
     initialized = false;
 }
 
@@ -21,9 +19,8 @@ Observation::Observation(const std::string& name,
                          const std::string& field,
                          const Region&      region,
                          const std::string& obs_type,
-                         const std::string& op_type,
                          const Array<Real>& times)
-    : name(name), field(field), region(region), obs_type(obs_type), op_type(op_type), times(times)
+    : name(name), field(field), region(region), obs_type(obs_type), times(times)
 {
     if (!initialized) {
         BoxLib::ExecOnFinalize(Observation::Cleanup);
@@ -36,17 +33,10 @@ Observation::Observation(const std::string& name,
         obs_type_list["flux"]             = 4;
         obs_type_list["point_sample"]     = 5;
 
-        op_type_list["average"]             = 0;
-        op_type_list["space_integral"]      = 1;
-        op_type_list["space_time_integral"] = 2;
     }
 
     if (obs_type_list.find(obs_type) == obs_type_list.end()) {
         BoxLib::Abort("Unsupported observation type");
-    }
-
-    if (op_type_list.find(op_type) == op_type_list.end()) {
-        BoxLib::Abort("Unsupported observation operation type");
     }
 }
 

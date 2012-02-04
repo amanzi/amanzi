@@ -37,6 +37,19 @@
 #define HYP_GROW    3
 #define PRESS_GROW  1
 
+#define SHOWVALARR(val)                        \
+{                                              \
+    std::cout << #val << " = ";                \
+    for (int i=0;i<val.size();++i)             \
+    {                                          \
+        std::cout << val[i] << " " ;           \
+    }                                          \
+    std::cout << std::endl;                    \
+}                                             
+#define SHOWVALARRA(val) { SHOWVALARR(val); BoxLib::Abort();}
+#define SHOWVAL(val) { std::cout << #val << " = " << val << std::endl;}
+#define SHOWVALA(val) { SHOWVAL(val); BoxLib::Abort();}
+
 #define DEF_LIMITS(fab,fabdat,fablo,fabhi)	\
   const int* fablo = (fab).loVect();		\
   const int* fabhi = (fab).hiVect();		\
@@ -140,6 +153,65 @@ PorousMedia::PorousMedia ()
   dt_eig       = 0;
   rhs_RhoD     = 0;
 	
+}
+
+// FIXME: These are assigned in the translator also, should be same list of data
+static std::string RpurposeDEF[7] = {"xlobc", "ylobc", "zlobc", "xhibc", "yhibc", "zhibc", "all"};
+
+
+void
+PorousMedia::setup_bound_desc()
+{
+    bc_descriptor_map.clear();
+    const Real* dx   = geom.CellSize();
+    const Box& domain = geom.Domain();
+    const int* domlo  = domain.loVect();
+    const int* domhi  = domain.hiVect();
+
+
+    Array<Orientation> Faces;
+    const BCRec& bc = desc_lst[State_Type].getBC(0);
+    getDirichletFaces(Faces,State_Type,bc);
+
+
+    for (int iface = 0; iface < Faces.size(); iface++)
+    {
+        const Orientation& face = Faces[iface];
+        if (PorousMedia::grids_on_side_of_domain(grids,domain,face)) 
+        {
+            Box ccBndBox  = BoxLib::adjCell(domain,face,1);
+            if (ccBndBox.ok()) {
+
+                // Find BCs for this face
+                int idx = face.coordDir() + 3*face.isHigh();
+                const std::string& purpose = RpurposeDEF[idx];
+                const PArray<RegionData>& bcs = PorousMedia::BCs();
+                Array<int> myBCs;
+                for (int i=0; i<bcs.size(); ++i) {
+                    const PArray<Region>& regions = bcs[i].Regions();
+                    int found = 0;
+                    for (int j=0; j<regions.size(); ++j) {
+                        if (regions[j].purpose == purpose) {
+                            found++;
+                        }
+                    }
+
+                    if (found) {
+                        myBCs.push_back(i);
+                    }
+                }
+
+                if (myBCs.size() > 0) 
+                {
+                    bc_descriptor_map[face] = BCDesc(ccBndBox,myBCs);
+                }
+                else {
+                    std::cerr << "No BCs responsible for filling face: " << Faces[iface] << std::endl;
+                    BoxLib::Abort();
+                }
+            }
+        }
+    }
 }
 
 PorousMedia::PorousMedia (Amr&            papa,
@@ -321,6 +393,9 @@ PorousMedia::PorousMedia (Amr&            papa,
 
   // Must initialize to zero because we test on zero in estDt.
   dt_eig = 0;
+
+  // Set up boundary condition work
+  setup_bound_desc();
 }
 
 PorousMedia::~PorousMedia ()
@@ -673,6 +748,13 @@ PorousMedia::initData ()
     const Real  cur_time = state[State_Type].curTime();
     S_new.setVal(0.);
     
+    // Compute 1D steady richards solution
+    if (model = model_list["richard"]  && material_is_layered) {
+        Box strip = Box(BoxLib::adjCellLo(geom.Domain(),0,1)).shift(0,1);
+        
+        // FIXME: Can set up a 1D solution
+    }
+  
     //
     // Initialized only based on solutions at the current level
     //
@@ -683,9 +765,9 @@ PorousMedia::initData ()
         FArrayBox& sdat = S_new[mfi];
         DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
         
-        for (int i=0; i<ics.size(); ++i)
+        for (int i=0; i<ic_array.size(); ++i)
         {
-            const RegionData& ic = ics[i];
+            const RegionData& ic = ic_array[i];
             const PArray<Region>& ic_regions = ic.Regions();
             const std::string& type = ic.Type();
             
@@ -705,8 +787,6 @@ PorousMedia::initData ()
 	    }
             else if (type == "hydrostatic") 
 	    {
-                BoxLib::Abort("comp ic hydrostatic not yet implemented");
-#if 0
                 Array<Real> vals = ic();
                 BL_ASSERT(model >= 2);
                 FArrayBox& cdat = (*cpl_coef)[mfi];
@@ -716,7 +796,7 @@ PorousMedia::initData ()
                            density.dataPtr(),&ncomps, 
                            c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
                            dx, vals.dataPtr(), &gravity);
-#endif
+
 	    }
             else if (type == "rockhold")
 	    {
@@ -772,7 +852,7 @@ PorousMedia::initData ()
 #ifdef MG_USE_FBOXLIB
             else if (type == "richard") 
 	    {
-                BoxLib::Abort("comp ic zero_total_velocity not yet implemented");
+                BoxLib::Abort("comp ic richard not yet implemented");
 #if 0
                 BL_ASSERT(model != model_list["single-phase"] && 
                           model != model_list["single-phase-solid"]);
@@ -803,7 +883,7 @@ PorousMedia::initData ()
         {		
             for (int iTracer=0; iTracer<ntracers; ++iTracer)
             {
-                const PArray<RegionData>& rds = tics[iTracer];
+                const PArray<RegionData>& rds = tic_array[iTracer];
 
                 for (int i=0; i<rds.size(); ++i)
                 {
@@ -817,7 +897,7 @@ PorousMedia::initData ()
                                   << "a file has not been implemented yet.\n";
                         BoxLib::Abort("PorousMedia::initData()");
                     }
-                    else if (tic_type == "scalar") 
+                    else if (tic_type == "concentration") 
                     {
                         Array<Real> val = tic();
                         for (int jt=0; jt<tic_regions.size(); ++jt) {
@@ -825,7 +905,8 @@ PorousMedia::initData ()
                         }
                     }
                     else {
-                        BoxLib::Abort("Uncrecognized tracer ic type");
+                        std::string m = "Unrecognized tracer ic type: " + tic_type;
+                        BoxLib::Abort(m.c_str());
                     }
                 }
             }
@@ -4986,7 +5067,7 @@ PorousMedia::setPlotVariables()
     }
 
     if (has_all || names_to_derive.size()==0) {
-        names_to_derive = PM_specific_derives;
+        names_to_derive = UserDerives();
     }
 
     for (int i=0; i<names_to_derive.size(); ++i) {
@@ -6067,7 +6148,7 @@ PorousMedia::init_rock_properties ()
 #endif
     }
   rock_phi->FillBoundary();
-  
+
   if (model != model_list["single-phase"] || model != model_list["single-phase-solid"])
     {
       bool do_fine_average = true;
@@ -6087,12 +6168,9 @@ PorousMedia::init_rock_properties ()
 	      tmpfab.resize(bx,n_kr_coef);
 	      tmpfab.setVal(0.);
 
-              BoxLib::Abort("FIXME");
-#if 0
-	      for (int i=0; i<rock_array.size(); i++) {
-                  rock_array[i].set_constant_krval(tmpfab,region_array,dxf);
+	      for (int i=0; i<rocks.size(); i++) {
+                  rocks[i].set_constant_krval(tmpfab,dxf);
               }
-#endif
 
 	      // average onto coarse grid
 	      const int* p_lo  = (*kr_coef)[mfi].loVect();
@@ -6109,12 +6187,9 @@ PorousMedia::init_rock_properties ()
 	    }
 	  else
 	    {
-                BoxLib::Abort("FIXME");
-#if 0                
-                for (int i=0; i<rock_array.size(); i++) {
-                    rock_array[i].set_constant_krval((*kr_coef)[mfi],region_array,dx);
+                for (int i=0; i<rocks.size(); i++) {
+                    rocks[i].set_constant_krval((*kr_coef)[mfi],dx);
                 }
-#endif
 	    }
 	}
       // capillary pressure
@@ -6129,12 +6204,9 @@ PorousMedia::init_rock_properties ()
 	      tmpfab.resize(bx,n_cpl_coef);
 	      tmpfab.setVal(0.);
 
-              BoxLib::Abort("FIXME");
-#if 0
-	      for (int i=0; i<rock_array.size(); i++) {
-                  rock_array[i].set_constant_cplval(tmpfab,region_array,dxf);
+	      for (int i=0; i<rocks.size(); i++) {
+                  rocks[i].set_constant_cplval(tmpfab,dxf);
               }
-#endif
 	      
 	      // average onto coarse grid
 	      const int* p_lo  = (*cpl_coef)[mfi].loVect();
@@ -6151,12 +6223,9 @@ PorousMedia::init_rock_properties ()
 	    }
 	  else
 	    {
-                BoxLib::Abort("FIXME");                    
-#if 0
-                for (int i=0; i<rock_array.size(); i++) {
-                  rock_array[i].set_constant_cplval((*cpl_coef)[mfi],region_array,dx);
+                for (int i=0; i<rocks.size(); i++) {
+                  rocks[i].set_constant_cplval((*cpl_coef)[mfi],dx);
                 }
-#endif
 	    }
 	}
     }
@@ -8961,242 +9030,95 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
 void
 PorousMedia::dirichletStateBC (const Real time)
 {
-    Array<Orientation> Faces;
-    const BCRec& bc = desc_lst[State_Type].getBC(0);
-    getDirichletFaces(Faces,State_Type,bc);
-
-    BL_ASSERT(bcs.size() >= Faces.size());
-
-    if (Faces.size()>0)
+    if (bc_descriptor_map.size()) 
     {
-#if 0
-        const Box& domain = geom.Domain();
-
-        BoxList  ccBoxList;
-
-        IntVect ratio = IntVect::TheUnitVector();
-        for (int lev = level+1; lev <= parent->finestLevel(); lev++)
-            ratio *= parent->refRatio(lev-1);
+        const Box domain = geom.Domain();
+        const int* domhi  = domain.hiVect();
+        const int* domlo  = domain.loVect();
+        const Real* dx   = geom.CellSize();
+        FArrayBox sdat;
     
-        for (int iface = 0; iface < Faces.size(); iface++)
-	{
-            if (grids_on_side_of_domain(grids,domain,Faces[iface])) 
-	    {
-                Box ccBndBox  = BoxLib::adjCell(domain,Faces[iface],1);
-                if (ccBndBox.ok())
-                    ccBoxList.push_back(ccBndBox);
-	    }
-	}
-      
+        for (std::map<Orientation,BCDesc>::const_iterator
+                 it=bc_descriptor_map.begin(); it!=bc_descriptor_map.end(); ++it) 
+        {
+            const Box bndBox = it->second.first;
+            const Array<int>& face_bc_idxs = it->second.second;
+            sdat.resize(bndBox,ncomps); sdat.setVal(0);
 
-        if (!ccBoxList.isEmpty())
-	{      
-            MultiFab& S = get_data(State_Type,time); 
+            for (int i=0; i<face_bc_idxs.size(); ++i) {
+                const RegionData& face_bc = bc_array[face_bc_idxs[i]];
+                const PArray<Region>& bc_regions = face_bc.Regions();
 
-            const Real* dx   = geom.CellSize();
-            const int* domlo  = domain.loVect();
-            const int* domhi  = domain.hiVect();
+                Array<Real> val = face_bc(time); // Get time-dependent values for rho.sat
 
-            BoxArray  ccBoxArray( ccBoxList);
+                for (int j=0; j<bc_regions.size(); ++j) {
 
-            FArrayBox sdat;
-            FArrayBox cdat;
-            for ( int iface = 0; iface < ccBoxList.size(); ++iface) 
-            {
-                sdat.resize(ccBoxArray[iface], ncomps);
-                sdat.setVal(0.0);
-	      
-                int face  = int(Faces[iface]);
-      
-                for (int i=0; i<bcs.size(); ++i)
-                {
-                    const RegionData& bc = bcs[i];
-                    const Array<std::string>& bc_regions = bc.Regions();
-                    const string& bc_type = bc.Type();
+                    std::cout << "Region: " << bc_regions[j].name << std::endl;
 
-                    if (bc_type == "file") 
-                    {
-                        std::cerr << "Initialization of boundary condition based on "
-                                  << "a file has not been implemented yet.\n";
-                        BoxLib::Abort("PorousMedia::dirichletStateBC()");
-                    }
-                    else if (bc_type == "scalar" || 
-                             bc_type == "zero_total_velocity") 
-                    {
-                        Array<Real> rhoSat = bc(time);
-                        for (int jt=0; jt<bc_regions.size(); ++jt) {
-                            bc_regions[jt].setVal(sdat,rhoSat,dx,0,0,ncomps);
-                        }
-                    }
-                    else if (bc_type == "hydrostatic")
-                    {
-                        BoxLib::Abort("comp hydrostatic bc not implemented yet");
-#if 0
-                        const int inDir = Faces[iface].coordDir();
-                        if (inDir != BL_SPACEDIM - 1)
-                        {
-                            const int n_cpl_coef = cpl_coef->nComp();
-                            cdat.resize(ccBoxArray[iface],n_cpl_coef);
-                          
-                            for (MFIter mfi(*cpl_coef); mfi.isValid(); ++mfi)
-                            {
-                                Box ovlp = (*cpl_coef)[mfi].box() & cdat.box();
-                                if (ovlp.ok()) 
-                                    cdat.copy((*cpl_coef)[mfi],ovlp,0,ovlp,0,
-                                              n_cpl_coef);
-                            }
-                            DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
-                            DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
-                            Real wt_loc = wt_lo;
-                            if (Faces[iface].faceDir() == Orientation::high)
-                                wt_loc = wt_hi;
-                          
-                            FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-                                       density.dataPtr(), &ncomps, 
-                                       c_ptr, ARLIM(c_lo),ARLIM(c_hi), 
-                                       &n_cpl_coef, dx, &wt_loc, &gravity);
-			}
-                    }
-#endif
+                    bc_regions[j].setVal(sdat,val,dx,0,0,val.size());
                 }
-              
-                for (MFIter mfi(S); mfi.isValid(); ++mfi)
-                {
-                    Box ovlp = S[mfi].box() & sdat.box();
-                    if (ovlp.ok()) 
-		    {
-                        S[mfi].copy(sdat,ovlp,0,ovlp,0,ncomps);
-		      
-                        if (S.nGrow() > 1)
-			{
-                            DEF_LIMITS(S[mfi],s_ptr,s_lo,s_hi);
-                            FORT_PATCH_GHOST(s_ptr,ARLIM(s_lo),ARLIM(s_hi),
-                                             &ncomps,&face,domlo,domhi);
-			}
-		    }
-		}
-                S.FillBoundary();
-	    }
+            }
+
+            std::cout << sdat << std::endl;
 	}
-#endif
-    }
+
+        MultiFab& S = get_data(State_Type,time); 
+        for (MFIter mfi(S); mfi.isValid(); ++mfi)
+        {
+            Box ovlp = S[mfi].box() & sdat.box();
+            if (ovlp.ok()) 
+            {
+                S[mfi].copy(sdat,ovlp,0,ovlp,0,ncomps);
+            }
+        }
+    }      
 }
 
 void
 PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
 {
-  Array<Orientation> Faces;
-  const BCRec& bc = desc_lst[State_Type].getBC(0);
-  getDirichletFaces(Faces,State_Type,bc);
-
-  BL_ASSERT(bcs.size() >= Faces.size());
-  if (Faces.size()>0)
+    if (bc_descriptor_map.size()) 
     {
-      const Box& domain = geom.Domain();
-      BoxList  ccBoxList;
-      IntVect ratio = IntVect::TheUnitVector();
-      for (int lev = level+1; lev <= parent->finestLevel(); lev++)
-	ratio *= parent->refRatio(lev-1);    
-      for (int iface = 0; iface < Faces.size(); iface++)
-	{
-	  if (grids_on_side_of_domain(grids,domain,Faces[iface])) 
-	    {
-      	      Box ccBndBox  = BoxLib::adjCell(domain,Faces[iface],1);
-	      for (int dir = 0; dir<BL_SPACEDIM; dir++)
-		{
-		  if (dir != Faces[iface].coordDir())
-		    {
-		      ccBndBox.growLo(dir,1);
-		      ccBndBox.growHi(dir,1);
-		    }
-		}
-	      const Box valid_ccBndBox = ccBndBox & fab.box();
-	      if (valid_ccBndBox.ok())
-		ccBoxList.push_back(valid_ccBndBox);
-	    }
-	}
+        const Box domain = geom.Domain();
+        const int* domhi  = domain.hiVect();
+        const int* domlo  = domain.loVect();
+        const Real* dx   = geom.CellSize();
+        FArrayBox sdat;
+    
+        for (std::map<Orientation,BCDesc>::const_iterator
+                 it=bc_descriptor_map.begin(); it!=bc_descriptor_map.end(); ++it) 
+        {
+            const Box bndBox = it->second.first;
+            const Array<int>& face_bc_idxs = it->second.second;
+            sdat.resize(bndBox,ncomps); sdat.setVal(0);
 
-      if (!ccBoxList.isEmpty())
-	{  
-	  const Real* dx   = geom.CellSize();
-	  const int* domlo  = domain.loVect();
-	  const int* domhi  = domain.hiVect();
+            for (int i=0; i<face_bc_idxs.size(); ++i) {
+                const RegionData& face_bc = bc_array[face_bc_idxs[i]];
+                const PArray<Region>& bc_regions = face_bc.Regions();
 
-	  BoxArray  ccBoxArray( ccBoxList);
-	  FArrayBox sdat;
-	  FArrayBox cdat;
-	  for ( int iface = 0; iface < ccBoxList.size(); ++iface) 
-	    {
-	      sdat.resize(ccBoxArray[iface], ncomps);
-	      sdat.setVal(0.0);
-	      
-	      int face  = int(Faces[iface]);
+                Array<Real> val = face_bc(time); // Get time-dependent values for rho.sat
+                
+                if (dynamic_cast<const Transform_S_AR_For_BC*>(&face_bc)) {
+                std::cout << "Func val: " 
+                          << dynamic_cast<const Transform_S_AR_For_BC&>(face_bc).tabularFunction(time) << std::endl;
+                std::cout << "   Func val: " 
+                          << dynamic_cast<const Transform_S_AR_For_BC&>(face_bc)(time)[0] << std::endl;
+                }
+                for (int j=0; j<bc_regions.size(); ++j) {
 
-              for (int i=0; i<bcs.size(); ++i)
-              {
-                  const RegionData& bc = bcs[i];
-                  const PArray<Region>& bc_regions = bc.Regions();
-                  const std::string& bc_type = bc.Type();
-                  
-		  if (bc_type == "file") 
-                  {
-		      std::cerr << "Initialization of boundary condition based on "
-				<< "a file has not been implemented yet.\n";
-		      BoxLib::Abort("PorousMedia::dirichletStateBC()");
-                  }
-		  else if (bc.Type() == "scalar" || 
-			   bc.Type() == "zero_total_velocity") 
-                  {
-                      Array<Real> vals = bc(time);
-                      for (int jt=0; jt<bc_regions.size(); ++jt) {
-                          bc_regions[jt].setVal(sdat,vals,dx,0,0,ncomps);
-                      }
-                  }
-		  else if (bc_type == "hydrostatic")
-                  {
-                      BoxLib::Abort("comp bc hydrostatic not yet implemented");
-#if 0
-		      const int inDir = Faces[iface].coordDir();
-		      if (inDir != BL_SPACEDIM - 1)
-                      {
-			  const int n_cpl_coef = cpl_coef->nComp();
-			  cdat.resize(ccBoxArray[iface],n_cpl_coef);
-                          
-			  for (MFIter mfi(*cpl_coef); mfi.isValid(); ++mfi)
-                          {
-			      Box ovlp = (*cpl_coef)[mfi].box() & cdat.box();
-			      if (ovlp.ok()) 
-                                  cdat.copy((*cpl_coef)[mfi],ovlp,0,ovlp,0,
-                                            n_cpl_coef);
-                          }
-			  DEF_LIMITS(sdat,s_ptr,s_lo,s_hi);
-			  DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
-			  Real wt_loc = wt_lo;
-			  if (Faces[iface].faceDir() == Orientation::high)
-                              wt_loc = wt_hi;
-                          
-			  FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-				     density.dataPtr(), &ncomps, 
-				     c_ptr, ARLIM(c_lo),ARLIM(c_hi), 
-				     &n_cpl_coef, dx, &wt_loc, &gravity);
-                      }
-#endif
-                  }
-              }
-	      
-	      Box ovlp = fab.box() & sdat.box();
-	      fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
-	      if (ngrow > 1)
-		{
-		  DEF_LIMITS(fab,s_ptr,s_lo,s_hi);
-		  FORT_PATCH_GHOST(s_ptr,ARLIM(s_lo),ARLIM(s_hi),
-				   &ncomps,&face,domlo,domhi);
-		}
-	    }
-	}
-    }
-  
-}
+                    std::cout << "Region: " << bc_regions[j].name << std::endl;
+
+                    bc_regions[j].setVal(sdat,val,dx,0,0,val.size());
+                }
+            }
+
+            std::cout << sdat << std::endl;
+
+            Box ovlp = bndBox & fab.box();
+            fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
+        }
+    }    
+}  
 
 void
 PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time)
@@ -9205,6 +9127,11 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
   const BCRec& bc = desc_lst[State_Type].getBC(0);
   getDirichletFaces(Faces,State_Type,bc);
 
+
+  // FIXME: Apply solute bcs here
+  BoxLib::Abort("Solute BC not yet implemented");
+
+#if 0
   if (Faces.size()>0)
     {
       const Box& domain = geom.Domain();
@@ -9292,6 +9219,7 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
           }
         }
     }
+#endif
 }
 
 MultiFab*
@@ -9318,7 +9246,7 @@ PorousMedia::derive (const std::string& name,
 {
     const DeriveRec* rec = derive_lst.get(name);
 
-    if (name=="MaterialID") {
+    if (name=="Material_ID") {
         
         BL_ASSERT(dcomp < mf.nComp());
 

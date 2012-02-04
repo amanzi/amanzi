@@ -3,6 +3,8 @@
 
 #include "Region.H"
 
+Real Region::geometry_eps = -1;
+
 Region::Region (std::string r_name, 
 		std::string r_purpose, 
 		std::string r_type)
@@ -10,6 +12,9 @@ Region::Region (std::string r_name,
     purpose(r_purpose),
     type(r_type)
 {
+    if (geometry_eps<0) {
+        BoxLib::Abort("Static variable Region::geometry_eps must be set before Region ctr");
+    }
 }
 
 void
@@ -343,6 +348,7 @@ colorFunctionRegion::operator<< (std::ostream& os) const
     os << " color val = " << m_color_val << '\n';
 }
 
+#if 1
 bool 
 allRegion::inregion(const Array<Real>& x) const
 {
@@ -397,3 +403,5 @@ allBCRegion::inregion(const Array<Real>& x) const
 
   return inflag;
 }
+#endif
+

@@ -28,6 +28,7 @@ set(BL_MACHINE ${CMAKE_SYSTEM_NAME})
 
 set(BL_DEFINES "BL_NOLINEVALUES;BL_PARALLEL_IO;BL_SPACEDIM=${AMANZI_SPACEDIM};BL_FORT_USE_${BL_FORTLINK};BL_${BL_MACHINE};BL_USE_${AMANZI_PRECISION};MG_USE_FBOXLIB;MG_USE_F90_SOLVERS")
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_FLAGS} -g")
 if (ENABLE_MPI)
   # bandre: I think the amanzi config requires that the mpi compilers
   # be set through the CC/CXX/FC environment variables before cmake is

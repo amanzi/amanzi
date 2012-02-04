@@ -19,12 +19,50 @@
 #include "omp.h"
 #endif
 
+#define SHOWVALARR(val)                        \
+{                                              \
+    std::cout << #val << " = ";                \
+    for (int i=0;i<val.size();++i)             \
+    {                                          \
+        std::cout << val[i] << " " ;           \
+    }                                          \
+    std::cout << std::endl;                    \
+}                                             
+#define SHOWVALARRA(val) { SHOWVALARR(val); BoxLib::Abort();}
+#define SHOWVAL(val) { std::cout << #val << " = " << val << std::endl;}
+#define SHOWVALA(val) { SHOWVAL(val); BoxLib::Abort();}
+
+
 #ifdef AMANZI
 #include "simple_thermo_database.hh"
 #include "activity_model_factory.hh"
 #endif
 
 #include <TabularFunction.H>
+
+std::ostream& operator<< (std::ostream& os, const Array<std::string>& rhs)
+{
+    for (int i=0; i<rhs.size(); ++i) {
+        os << rhs[i] << " ";
+    }
+    return os;
+}
+
+std::ostream& operator<< (std::ostream& os, const Array<int>& rhs)
+{
+    for (int i=0; i<rhs.size(); ++i) {
+        os << rhs[i] << " ";
+    }
+    return os;
+}
+
+std::ostream& operator<< (std::ostream& os, const Array<Real>& rhs)
+{
+    for (int i=0; i<rhs.size(); ++i) {
+        os << rhs[i] << " ";
+    }
+    return os;
+}
 
 namespace
 {
@@ -60,6 +98,7 @@ MultiFab*   PorousMedia::phidata;
 bool        PorousMedia::porosity_from_fine;
 bool        PorousMedia::permeability_from_fine;
 PArray<Rock> PorousMedia::rocks;
+bool        PorousMedia::material_is_layered;
 //
 // Source.
 //
@@ -77,10 +116,9 @@ Array<std::string>  PorousMedia::pNames;
 Array<std::string>  PorousMedia::cNames;
 Array<int >         PorousMedia::pType;
 Array<Real>         PorousMedia::density;
-PArray<RegionData>  PorousMedia::ics;
-PArray<RegionData>  PorousMedia::bcs;
+PArray<RegionData>  PorousMedia::ic_array;
+PArray<RegionData>  PorousMedia::bc_array;
 Array<Real>         PorousMedia::muval;
-Array<std::string>  PorousMedia::PM_specific_derives;
 std::string         PorousMedia::model_name;
 int                 PorousMedia::model;
 int                 PorousMedia::nphases;
@@ -95,8 +133,8 @@ Array<std::string>  PorousMedia::tNames;
 int                 PorousMedia::ntracers;
 Array<int>          PorousMedia::tType; 
 Array<Real>         PorousMedia::tDen;
-Array<PArray<RegionData> > PorousMedia::tics;
-Array<PArray<RegionData> > PorousMedia::tbcs;
+Array<PArray<RegionData> > PorousMedia::tic_array;
+Array<PArray<RegionData> > PorousMedia::tbc_array;
 //
 // Pressure.
 //
@@ -177,7 +215,7 @@ std::map<std::string, int> PorousMedia::model_list;
 std::map<std::string, int> PorousMedia::phase_list;
 std::map<std::string, int> PorousMedia::comp_list;
 std::map<std::string, int> PorousMedia::tracer_list;
-
+Array<std::string> PorousMedia::user_derive_list;
 //
 // AMANZI flags.
 //
@@ -614,18 +652,16 @@ PorousMedia::variableSetUp ()
 			    bc, BndryFunc(FORT_ONE_N_FILL));
     }
 #endif
+
+  // "User defined" - atthough these must correspond to those in PorousMedia::derive
   IndexType regionIDtype(IndexType::TheCellType());
   int nCompRegion = 1;
-  int cnt = 0;
-  PM_specific_derives.resize(0);
-  PM_specific_derives.push_back("MaterialID");
-  PM_specific_derives.push_back("Capillary_Pressure");
-  PM_specific_derives.push_back("Volumetric_Water_Content");
-  PM_specific_derives.push_back("Porosity");
-  PM_specific_derives.push_back("Aqueous_Saturation");
-  PM_specific_derives.push_back("Aqueous_Pressure");
-  for (int i=0; i<PM_specific_derives.size(); ++i) {
-      derive_lst.add(PM_specific_derives[i], regionIDtype, nCompRegion);
+  ParmParse pp("amr");
+  int num_user_derives = pp.countval("user_derive_list");
+  Array<std::string> user_derive_list(num_user_derives);
+  pp.getarr("user_derive_list",user_derive_list,0,num_user_derives);
+  for (int i=0; i<num_user_derives; ++i) {
+      derive_lst.add(user_derive_list[i], regionIDtype, nCompRegion);
   }
 
   //
@@ -658,45 +694,52 @@ void PorousMedia::read_geometry()
   Array<Real> problo, probhi;
   pp.getarr("prob_lo",problo,0,BL_SPACEDIM);
   pp.getarr("prob_hi",probhi,0,BL_SPACEDIM);
-
-  // Get number of regions
-  int nregion_user = pp.countval("regions");
   
   // set up  1+2*BL_SPACEDIM default regions
-  int nregion_DEF = 1 + 2*BL_SPACEDIM;
-  int nregion = nregion_user + nregion_DEF;
-  regions.resize(nregion);
-  regions.set(0, new   allRegion(problo,probhi));
-  regions.set(1, new allBCRegion(0,0,problo,probhi));
-  regions.set(2, new allBCRegion(0,1,problo,probhi));
-  regions.set(3, new allBCRegion(1,0,problo,probhi));
-  regions.set(4, new allBCRegion(1,1,problo,probhi));
+  bool generate_default_regions = false; pp.query("generate_default_regions",generate_default_regions);
+  int nregion_DEF = 0;
+  if (generate_default_regions) {
+      nregion_DEF = 1 + 2*BL_SPACEDIM;
+      regions.resize(nregion_DEF);
+      regions.set(0, new   allRegion(problo,probhi));
+      regions.set(1, new allBCRegion(0,0,problo,probhi));
+      regions.set(2, new allBCRegion(0,1,problo,probhi));
+      regions.set(3, new allBCRegion(1,0,problo,probhi));
+      regions.set(4, new allBCRegion(1,1,problo,probhi));
 #if BL_SPACEDIM == 3
-  regions.set(5, new allBCRegion(2,0,problo,probhi));
-  regions.set(6, new allBCRegion(2,1,problo,probhi));
+      regions.set(5, new allBCRegion(2,0,problo,probhi));
+      regions.set(6, new allBCRegion(2,1,problo,probhi));
 #endif
+  }
 
   // Get parameters for each user defined region 
+  Real geometry_eps = -1; pp.get("geometry_eps",geometry_eps);
+  Region::geometry_eps = geometry_eps;
+  int nregion = nregion_DEF;
+
+  int nregion_user = pp.countval("regions");
   if (nregion_user)
     {
       std::string r_purpose, r_type;
       Array<std::string> r_name;
       pp.getarr("regions",r_name,0,nregion_user);
+      nregion += nregion_user;
+      regions.resize(nregion);
 
-      Real geometry_eps = 1.e-3;
       for (int j=0; j<nregion_user; ++j)
       {
           const std::string prefix("geometry." + r_name[j]);
           ParmParse ppr(prefix.c_str());
 	  ppr.get("purpose",r_purpose);
 	  ppr.get("type",r_type);      
+
 	  if (r_type == "point")
           {
 	      Array<Real> coor;
 	      ppr.getarr("coordinate",coor,0,BL_SPACEDIM);
               regions.set(nregion_DEF+j, new pointRegion(r_name[j],r_purpose,r_type,coor));
 	    }
-	  else if (r_type == "box")
+	  else if (r_type == "box" || r_type == "surface")
 	    {
 	      Array<Real> lo_coor,hi_coor;
 	      ppr.getarr("lo_coordinate",lo_coor,0,BL_SPACEDIM);
@@ -737,6 +780,36 @@ void PorousMedia::read_geometry()
     }
 }
 
+bool check_if_layered(const Array<std::string>& material_region_names,
+                      const PArray<Region>&     regions,
+                      const Array<Real>&        plo,
+                      const Array<Real>&        phi)
+{
+    for (int i=0; i<material_region_names.size(); ++i)
+    {
+        const std::string& name = material_region_names[i];
+        for (int j=0; j<regions.size(); ++j)
+        {
+            const Region* r = &(regions[j]);
+            if (r->name == name) {
+                const boxRegion* testp = dynamic_cast<const boxRegion*>(r);
+                if (testp) {
+                    for (int d=0; d<BL_SPACEDIM-1; ++d) {
+                        if (testp->lo[d] > plo[d]  ||  testp->hi[d] < phi[d]) {
+                            return false;
+                        }
+                    }
+                }
+                else {
+                    std::cout << *r << std::endl;
+                    return false; // cant be layered if region is not a box
+                }
+            }
+        }
+    }
+    return true;
+}
+
 void
 PorousMedia::read_rock()
 {
@@ -751,6 +824,7 @@ PorousMedia::read_rock()
     Array<std::string> r_names;  pp.getarr("rock",r_names,0,nrock);
     rocks.resize(nrock,PArrayManage);
 
+    Array<std::string> material_regions;
     for (int i = 0; i<nrock; i++)
     {
         const std::string& rname = r_names[i];
@@ -786,6 +860,9 @@ PorousMedia::read_rock()
         Array<std::string> region_names;
         ppr.getarr("regions",region_names,0,ppr.countval("regions"));
         PArray<Region> rregions = build_region_PArray(region_names);
+        for (int j=0; j<region_names.size(); ++j) {
+            material_regions.push_back(region_names[j]);
+        }
 
         std::string porosity_dist; ppr.get("porosity_dist",porosity_dist);
         int rporosity_dist_type = Rock::rock_dist_map[porosity_dist];
@@ -937,6 +1014,9 @@ PorousMedia::read_rock()
             std::cout << "Rock: " << rocks[i].name << " -> " << i << std::endl;
         }
     }
+
+    // Check if material is actually layered in the vertical coordinate
+    material_is_layered = check_if_layered(material_regions,regions,problo,probhi);
 }
 
 void PorousMedia::read_prob()
@@ -1039,7 +1119,8 @@ PorousMedia::build_region_PArray(const Array<std::string>& region_names)
             }
         }
         if (!found) {
-            BoxLib::Error("Named region not found");
+            std::string m = "Named region not found " + name;
+            BoxLib::Error(m.c_str());
         }
     }
     return ret;
@@ -1059,10 +1140,54 @@ PorousMedia::find_rock(const std::string& name)
         }
     } 
     if (iRock < 0) {
-        BoxLib::Abort("Named rock not found");
+        std::string m = "Named rock not found " + name;
+        BoxLib::Abort(m.c_str());
     }
     return rocks[iRock];
 }
+
+
+Array<Real>
+FluxToRhoSat::transform(Real aqueous_Darcy_flux) const
+{
+    Real gravity = PorousMedia::getGravity();
+    const Array<Real>& density = PorousMedia::Density(); // Assumes 1 component per phase
+    int ncomps = density.size();
+    BL_ASSERT(ncomps>0 && ncomps<=2);
+        
+    Real lkappa = rock.permeability[0];
+    Real gstar;
+    if (density.size() > 1)
+        gstar = -lkappa*(density[0]-density[1])*gravity;
+    else
+        gstar = -lkappa*(density[0])*gravity;
+    
+    // Compute saturation given Aqueous flow rate
+    int lkrtype = rock.krType;
+    Real lkrcoef = rock.krParam[0];
+    Real lsatres = rock.krParam[1];            
+    int nc = 1;
+    Real vtot = 0.; // Zero total velocity
+    Real sol;
+    const Array<Real>& visc = PorousMedia::Viscosity();
+    
+    Array<Real> rhoSat(ncomps);
+
+    //std::cout << "aqueous_Darcy_flux: " << aqueous_Darcy_flux << std::endl;
+
+    FORT_FIND_INV_FLUX(&sol, &aqueous_Darcy_flux, &nc, &vtot, &gstar,
+                       visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
+    
+    rhoSat[0] = density[0]*(sol*(1.0-lsatres)+lsatres);
+    if (ncomps > 1) {
+        rhoSat[1] = density[1]*(1.0-rhoSat[0]/density[0]);
+    }
+    //std::cout << "rhoSat: " << rhoSat[0] << std::endl;
+    return rhoSat;
+}
+
+
+
 
 void  PorousMedia::read_comp()
 {
@@ -1072,12 +1197,12 @@ void  PorousMedia::read_comp()
   ParmParse pp("phase");
 
   // Get number and names of phases
-  nphases = pp.countval("phase");
-  pp.getarr("phase",pNames,0,nphases);
+  nphases = pp.countval("phases");
+  pp.getarr("phases",pNames,0,nphases);
   for (int i = 0; i<nphases; i++) phase_list[pNames[i]] = i;
 
   // Build flattened list of components
-  int ndiff = 0;
+  ndiff = 0;
   for (int i = 0; i<nphases; i++) {
       const std::string prefix("phase." + pNames[i]);
       ParmParse ppr(prefix.c_str());
@@ -1091,7 +1216,7 @@ void  PorousMedia::read_comp()
       Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
       Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
       Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
-      
+
       // Only components have diffusion at the moment.  
       if (visc_coef.back() > 0)
       {
@@ -1180,12 +1305,12 @@ void  PorousMedia::read_comp()
   // Initial condition and boundary condition
   //
   // Component ics, bcs will be set all at once
-  int n_ics = cp.countval("inits");
+  int n_ics = cp.countval("ic_labels");
   if (n_ics > 0)
   {
       Array<std::string> ic_names;
-      cp.getarr("inits",ic_names,0,n_ics);
-      ics.resize(n_ics);
+      cp.getarr("ic_labels",ic_names,0,n_ics);
+      ic_array.resize(n_ics);
       for (int i = 0; i<n_ics; i++)
       {
           const std::string& icname = ic_names[i];
@@ -1198,26 +1323,23 @@ void  PorousMedia::read_comp()
           PArray<Region> ic_regions = build_region_PArray(region_names);
 
           std::string ic_type; ppr.get("type",ic_type);          
-          if (ic_type == "scalar")
+          if (ic_type == "pressure")
           {
-              std::string func; ppr.get("function",func);
-              if (func=="constant") {
-                  const std::string prefixC(prefix + ".constant");
-                  Array<Real> vals(ncomps);
-                  ParmParse pprc(prefixC.c_str());
-                  for (int j = 0; j<cNames.size(); j++) {
-                      pprc.get(cNames[j].c_str(),vals[j]);
-                  }
-                  ics.set(i, new RegionData(ic_regions,ic_type,vals));
+              Array<Real> vals(ncomps);
+              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,vals));
+          }
+          else if (ic_type == "saturation")
+          {
+              Array<Real> vals(ncomps);
+              for (int j = 0; j<cNames.size(); j++) {
+                  ppr.get(cNames[j].c_str(),vals[j]);
               }
-              else {
-                  BoxLib::Abort("Unsupported comp ic");
-              }
+              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,vals));
           }
           else if (ic_type == "hydrostatic")
           {
               Array<Real> water_table(1); ppr.get("water_table",water_table[0]);
-              ics.set(i, new RegionData(ic_regions,ic_type,water_table));
+              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,water_table));
           }
           else if (ic_type == "zero_total_velocity")
           {
@@ -1233,18 +1355,22 @@ void  PorousMedia::read_comp()
               ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
 #endif
           }          
+          else {
+              BoxLib::Abort("Unsupported comp ic");
+          }
       }
   }
 
-  int n_bcs = cp.countval("bcs");
+  int n_bcs = cp.countval("bc_labels");
   if (n_bcs > 0)
   {
+      bc_array.resize(n_bcs);
       Array<std::string> bc_names;
-      cp.getarr("bcs",bc_names,0,n_bcs);
+      cp.getarr("bc_labels",bc_names,0,n_bcs);
       for (int i = 0; i<n_bcs; i++)
       {
           const std::string& bcname = bc_names[i];
-	  const std::string prefix("comp.bcs" + bcname);
+	  const std::string prefix("comp.bcs." + bcname);
 	  ParmParse ppr(prefix.c_str());
           
 	  int n_bc_regions = ppr.countval("regions");
@@ -1252,37 +1378,79 @@ void  PorousMedia::read_comp()
 	  ppr.getarr("regions",region_names,0,n_bc_regions);
           const PArray<Region> bc_regions = build_region_PArray(region_names);
           std::string bc_type; ppr.get("type",bc_type);
-          
-          if (bc_type == "scalar")
+
+          if (bc_type == "saturation")
           {
               int nComp = cNames.size();
               Array<Array<Real> > vals(nComp), times(nComp);
               Array<Array<std::string> > forms(nComp);
+
+              int num_comps_reqd = (model == model_list["richard"]  ?  nComp : nComp - 1);
+              int num_comps = 0;
               for (int j = 0; j<cNames.size(); j++)
               {
                   ParmParse pps(prefix + "." + cNames[j]);
                   int nv = pps.countval("vals");
                   if (nv) {
+                      num_comps++;
                       pps.getarr("vals",vals[j],0,nv);
-                      pps.getarr("times",times[j],0,nv);
                       if (nv>1) {
+                          pps.getarr("times",times[j],0,nv);
                           pps.getarr("forms",forms[j],0,nv-1);
                       }
                   }
-                  else {
-                      vals[j].resize(1,0);
-                      times[j].resize(1,0);
-                      forms[j].resize(0);
-                  }            
+              }
+
+              if (num_comps != num_comps_reqd) {
+                  std::string m=bcname + ": Insufficient number of components specified";
+                  BoxLib::Abort(m.c_str());
               }
               
-              bcs.set(i, new ArrayRegionData(times,vals,forms,bc_regions,bc_type));
+              bc_array.set(i, new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type));
               
+          }
+          else if (bc_type == "pressure")
+          {
+              int nPhase = pNames.size();
+              Array<Array<Real> > vals(nPhase), times(nPhase);
+              Array<Array<std::string> > forms(nPhase);
+              
+              int num_phases_reqd = (model == model_list["richard"]  ?  nPhase : nPhase - 1);
+              int num_phases = 0;
+              for (int j = 0; j<pNames.size(); j++)
+              {
+                  std::string val_name = "vals";
+#if 1
+                  ParmParse& pps = ppr;
+#else
+                  ParmParse pps(prefix + "." + pNames[j]);
+#endif
+                  int nv = pps.countval(val_name.c_str());
+                  if (nv) {
+                      num_phases++;
+                      pps.getarr(val_name.c_str(),vals[j],0,nv);
+                      times[j].resize(nv,0);
+                      if (nv>1) {
+                          pps.getarr("times",times[j],0,nv);
+                          pps.getarr("forms",forms[j],0,nv-1);
+                      }
+                  }
+              }
+
+              if (num_phases != num_phases_reqd) {
+                  std::cerr << bcname << ": Insufficient number of phases specified" << std::endl;
+                  std::cerr << " ngiven, nreqd: " << num_phases << ", " << num_phases_reqd << std::endl;
+                  std::cerr << " current model: " << model << std::endl;
+                  BoxLib::Abort();
+              }
+              
+              bc_array.set(i, new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type));
           }
           else if (bc_type == "hydrostatic")
           {
-              Array<Real> water_table(1); ppr.get("water_table",water_table[0]);
-              bcs.set(i, new RegionData(bc_regions,bc_type,water_table));
+              Array<Real> water_table(1,Geometry::ProbLo()[BL_SPACEDIM]);
+              ppr.query("water_table",water_table[0]);
+              bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,water_table));
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -1295,8 +1463,9 @@ void  PorousMedia::read_comp()
               int nv = ppr.countval("aqueous_vol_flux");
               if (nv) {
                   ppr.getarr("aqueous_vol_flux",vals,0,nv);
-                  ppr.getarr("inflowtimes",times,0,nv);
+                  times.resize(nv,0);
                   if (nv>1) {
+                      ppr.getarr("inflowtimes",times,0,nv);
                       ppr.getarr("inflowfncs",forms,0,nv-1);
                   }
               }
@@ -1305,7 +1474,16 @@ void  PorousMedia::read_comp()
                   times.resize(1,0);
                   forms.resize(0);
               }        
-              bcs.set(i, new FluxToArrayBC(times,vals,forms,bc_regions,bc_type,ncomps,rock));
+
+              FluxToRhoSat flux_to_sat(rock);
+              bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
+                                                        bc_type,ncomps,flux_to_sat));
+
+          }
+          else if (bc_type == "noflow")
+          {
+              Array<Real> val(1,0);
+              bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,val));
           }
           else if (bc_type == "richard")
           {
@@ -1316,7 +1494,12 @@ void  PorousMedia::read_comp()
               ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
               ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
 #endif
-          }          
+          }
+          else
+          {
+              std::cout << bc_type << " not a valid bc_type " << std::endl;
+              BoxLib::Abort();
+          }
       }
   }
 }
@@ -1330,12 +1513,13 @@ void  PorousMedia::read_tracer()
   ParmParse pp("tracer");
 
   // Get number of tracers
-  ntracers = pp.countval("tracer");
+  ntracers = pp.countval("tracers");
   std::map<std::string,Array<std::string> > group_map;
   if (ntracers > 0)
   {
-      tics.resize(ntracers);
-      pp.getarr("tracer",tNames,0,ntracers);
+      tic_array.resize(ntracers);
+      tbc_array.resize(ntracers);
+      pp.getarr("tracers",tNames,0,ntracers);
 
       for (int i = 0; i<ntracers; i++)
       {
@@ -1345,18 +1529,19 @@ void  PorousMedia::read_tracer()
           group_map[g].push_back(tNames[i]);
       
           // Initial condition and boundary condition  
-          Array<std::string> ic_names;
-          int n_ic = ppr.countval("inits");
+          Array<std::string> tic_names;
+          int n_ic = ppr.countval("tinits");
           if (n_ic <= 0)
           {
               BoxLib::Abort("each tracer must be initialized");
           }
-          ppr.getarr("inits",ic_names,0,n_ic);
+          ppr.getarr("tinits",tic_names,0,n_ic);
+          tic_array[i].resize(n_ic);
           
           Array<std::string> region_names;
           for (int n = 0; n<n_ic; n++)
           {
-              const std::string prefixIC(prefix + "." + ic_names[n]);
+              const std::string prefixIC(prefix + "." + tic_names[n]);
               ParmParse ppri(prefix.c_str());
               
               int n_ic_region = ppri.countval("regions");
@@ -1364,13 +1549,15 @@ void  PorousMedia::read_tracer()
               const PArray<Region>& tic_regions = build_region_PArray(region_names);
               std::string tic_type; ppri.get("type",tic_type);
               
-              if (tic_type == "scalar")
+              if (tic_type == "concentration")
               {
                   Real val = 0; ppri.query("val",val);
-                  tics[i].set(i, new RegionData(tic_regions,tic_type,val));
+                  tic_array[i].set(n, new RegionData(tNames[i],tic_regions,tic_type,val));
               }
               else {
-                  BoxLib::Abort("Unsupported tracer IC type");
+                  std::string m = "Tracer IC: \"" + tic_names[n] 
+                      + "\": Unsupported tracer IC type: \"" + tic_type + "\"";
+                  BoxLib::Abort(m.c_str());
               }
           }
 
@@ -1381,7 +1568,8 @@ void  PorousMedia::read_tracer()
           {
               BoxLib::Abort("each tracer requires boundary conditions");
           }
-          ppr.getarr("bcs",tbc_names,0,n_tbc);
+          ppr.getarr("tbcs",tbc_names,0,n_tbc);
+          tbc_array[i].resize(n_tbc);
           
           Array<std::string> tbc_region_names;
           for (int n = 0; n<n_tbc; n++)
@@ -1394,7 +1582,7 @@ void  PorousMedia::read_tracer()
               const PArray<Region>& tbc_regions = build_region_PArray(tbc_region_names);
               std::string tbc_type; ppri.get("type",tbc_type);
               
-              if (tbc_type == "scalar")
+              if (tbc_type == "concentration")
               {
                   Array<Real> times, vals;
                   Array<std::string> forms;
@@ -1410,11 +1598,13 @@ void  PorousMedia::read_tracer()
                       forms.resize(0);
                   }
                   int nComp = 1;
-                  tbcs[i].set(i, new ArrayRegionData(times,vals,forms,tbc_regions,tbc_type,nComp));
+                  tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
               
               }
               else {
-                  BoxLib::Abort("Unsupported tracer BC type");
+                  std::string m = "Tracer BC: \"" + tbc_names[n] 
+                      + "\": Unsupported tracer BC type: \"" + tbc_type + "\"";
+                  BoxLib::Abort(m.c_str());
               }
           }
 
@@ -1605,14 +1795,13 @@ void PorousMedia::read_observation()
 	  ParmParse ppr(prefix.c_str());
 
           std::string obs_type; ppr.get("obs_type",obs_type);
-          std::string obs_op_type; ppr.get("obs_op_type",obs_op_type);
           std::string obs_field; ppr.get("field",obs_field);
           Array<std::string> region_names(1); ppr.get("region",region_names[0]);
           const PArray<Region>& obs_regions = build_region_PArray(region_names);
           
 	  Array<Real> obs_times; ppr.getarr("times",obs_times,0,ppr.countval("times"));
 
-          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,obs_op_type,obs_times));
+          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,obs_times));
 	}
       
       // filename for output
@@ -1737,25 +1926,36 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read tracers."<< std::endl;
 
-  std::cout << "read_tracer DONE." << std::endl;  
-  BoxLib::Abort("MARC");
-
   // pressure
-  read_pressure();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read sources."<< std::endl;
+    std::cout << "Read pressure."<< std::endl;
+  read_pressure();
 
   // source
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read sources."<< std::endl;
   read_source();
 
   // chemistry
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read chemistry."<< std::endl;
   read_chem();
 
   // read amr
+  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+  //std::cout << "Read amr."<< std::endl;
   //read_amr();
 
   // source
+  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+    std::cout << "Read observation."<< std::endl;
   read_observation();
+
+
+  std::cout << "ncomps: "<< ncomps << std::endl;
+  std::cout << "nphases: "<< nphases << std::endl;
+  std::cout << "model: "<< model << std::endl;
+  std::cout << "density: "<< density << std::endl;
 
   FORT_INITPARAMS(&ncomps,&nphases,&model,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),

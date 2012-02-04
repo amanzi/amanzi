@@ -27,6 +27,7 @@ public:
     m["point"] = 0;
     m["box"]   = 1;
     m["color_function"] = 2;
+    m["surface"]   = 3;
 
     return m;
   };
@@ -53,6 +54,8 @@ public:
   std::string name;
   std::string purpose;
   std::string type;
+
+  static Real geometry_eps;
 };
 
 std::ostream& operator<< (std::ostream& os, const Region& rhs);
@@ -115,6 +118,7 @@ public:
 
 std::ostream& operator<< (std::ostream& os, const colorFunctionRegion& rhs);
 
+#if 1
 class allRegion : public boxRegion 
 {
 
@@ -141,6 +145,6 @@ public:
 protected:
   int p_dir, p_lohi;
 };
-
+#endif
 
 #endif /*_REGION_H_*/

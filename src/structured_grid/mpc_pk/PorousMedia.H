@@ -51,6 +51,22 @@ class PMBld
 				Real            time);
 };
 
+
+
+struct FluxToRhoSat
+    : public ArrayTransform
+{
+    FluxToRhoSat(const Rock& rock)
+        : rock(rock) {}
+    virtual ArrayTransform* clone() const {return new FluxToRhoSat(*this);}
+    virtual Array<Real> transform(Real inData) const;
+protected:
+    const Rock& rock;
+};
+
+
+
+
 class PorousMedia
   :
   public AmrLevel 
@@ -269,13 +285,14 @@ public:
 				       const Box&         _domain,
 				       const Orientation& _Face); 
 
-  static const Array<std::string>& PMspecificDerives() {return PM_specific_derives;}
-
+  static const Array<std::string>& UserDerives() {return user_derive_list;}
   static PArray<Region>& Regions() {return regions;}
   static PArray<Rock>& Rocks() {return rocks;}
   static const Array<Real>& Density() {return density;}
   static const Array<Real>& Viscosity() {return muval;}
   static Real NumComponents() {return ncomps;}
+
+  static PArray<RegionData>& BCs() {return bc_array;}
 
 protected:
 
@@ -776,6 +793,8 @@ protected:
   void check_minmax(int fscalar, int lscalar);
   void compute_divu (MultiFab& soln, MultiFab* umac);
 
+  void setup_bound_desc();
+
   // list
   static std::map<std::string, int> model_list;
   static std::map<std::string, int> phase_list;
@@ -800,8 +819,10 @@ protected:
   AuxBoundaryData aux_boundary_data_old;
   bool            FillPatchedOldState_ok;
 
+  static Real geometry_eps;
   static PArray<Region> regions;
   static std::string surf_file;
+  static bool material_is_layered;
 
   // Rock
   static PArray<Rock> rocks;
@@ -821,10 +842,10 @@ protected:
   static Array<std::string> pNames;
   static Array<std::string> cNames;
   static Array<Real> density;
-  static PArray<RegionData> ics;
-  static PArray<RegionData> bcs;
+  static PArray<RegionData> ic_array;
+  static PArray<RegionData> bc_array;
   static Array<Real> muval;
-  static Array<std::string> PM_specific_derives;
+  static Array<std::string> user_derive_list;;
   
   // Tracers
   static Array<std::string> qNames;
@@ -832,8 +853,8 @@ protected:
   static int  ntracers; 
   static Array<int> tType; 
   static Array<Real> tDen;
-  static Array<PArray<RegionData> > tics;
-  static Array<PArray<RegionData> > tbcs;
+  static Array<PArray<RegionData> > tic_array;
+  static Array<PArray<RegionData> > tbc_array;
   static Array<Real> tInflow;
 
   // Pressure
@@ -855,6 +876,8 @@ protected:
   static Array<Real> rinflow_vel_lo;
   static Array<Real> rinflow_vel_hi;
 
+  typedef std::pair<Box,Array<int> > BCDesc;
+    std::map<Orientation,BCDesc> bc_descriptor_map;
   // temperature
   static Real temperature;
 
