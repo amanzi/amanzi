@@ -131,7 +131,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
 
   // Create a mesh factory for this geometric model
 
-  Amanzi::AmanziMesh::MeshFactory factory(*comm) ;
+  Amanzi::AmanziMesh::MeshFactory factory(comm) ;
 
 
   // Prepare to read/create the mesh specification

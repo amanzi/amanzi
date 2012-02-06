@@ -40,7 +40,7 @@ class MeshFactory {
  protected:
 
   /// The parallel environment
-  Epetra_MpiComm my_comm;
+  const Epetra_MpiComm *my_comm;
 
   /// A list of preferred mesh frameworks to consider
   FrameworkPreference my_preference;
@@ -53,7 +53,7 @@ class MeshFactory {
  public:
 
   /// Default constructor.
-  explicit MeshFactory(const Epetra_MpiComm& communicator);
+  explicit MeshFactory(const Epetra_MpiComm *communicator);
 
   /// Destructor
   ~MeshFactory(void);

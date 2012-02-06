@@ -89,7 +89,7 @@ private:
   
   void clear_internals_();
 
-  void pre_create_steps_(const int space_dimension, const MPI_Comm incomm, 
+  void pre_create_steps_(const int space_dimension, const Epetra_MpiComm *incomm, 
                          const AmanziGeometry::GeometricModelPtr& gm);
   void post_create_steps_();
 
@@ -119,11 +119,11 @@ public:
 
   // Constructors that read the mesh from a file
 
-  Mesh_MSTK (const char *filename, MPI_Comm comm,
+  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL);
 
-  Mesh_MSTK (const char *filename, MPI_Comm comm, int space_dimension,
+  Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, int space_dimension,
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL);
 
@@ -133,29 +133,22 @@ public:
   Mesh_MSTK(const double x0, const double y0, const double z0,
 	    const double x1, const double y1, const double z1,
 	    const unsigned int nx, const unsigned int ny, const unsigned int nz, 
-           MPI_Comm comm,
+           const Epetra_MpiComm *incomm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
-  Mesh_MSTK(const double x0, const double y0, const double z0,
-	    const double x1, const double y1, const double z1,
-	    const unsigned int nx, const unsigned int ny, 
-	    const unsigned int nz, 
-	    Epetra_MpiComm *comm,
-	    const AmanziGeometry::GeometricModelPtr& gm = 
-	    (AmanziGeometry::GeometricModelPtr) NULL);
 
   // 2D
   Mesh_MSTK(const double x0, const double y0,
 	    const double x1, const double y1,
 	    const int nx, const int ny, 
-	    MPI_Comm comm,
+	    const Epetra_MpiComm *comm,
 	    const AmanziGeometry::GeometricModelPtr& gm = 
 	    (AmanziGeometry::GeometricModelPtr) NULL);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
-	    Epetra_MpiComm *comm,
+	    const Epetra_MpiComm *comm,
 	    const AmanziGeometry::GeometricModelPtr& gm = 
 	    (AmanziGeometry::GeometricModelPtr) NULL);
 

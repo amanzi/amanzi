@@ -12,8 +12,8 @@ namespace AmanziMesh
 
   // Constructor - load up mesh from file
 
-  Mesh_MOAB::Mesh_MOAB (const char *filename, MPI_Comm comm, 
-			const AmanziGeometry::GeometricModelPtr& gm)
+  Mesh_MOAB::Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
+			const AmanziGeometry::GeometricModelPtr& gm) 
 {
   int result, rank;
   
@@ -27,7 +27,7 @@ namespace AmanziMesh
   if (comm) {
     // MOAB's parallel communicator
     int mbcomm_id;
-    mbcomm = new ParallelComm(mbcore,comm,&mbcomm_id);
+    mbcomm = new ParallelComm(mbcore,comm->GetMpiComm(),&mbcomm_id);
 
     if (!mbcomm) {
       cerr << "Failed to initialize MOAB communicator\n";
@@ -35,8 +35,7 @@ namespace AmanziMesh
     }
   }
 
-  epcomm = new Epetra_MpiComm(comm);
-  Mesh::set_comm(epcomm);
+  Mesh::set_comm(comm);
 
 
   if (!mbcomm || mbcomm->size() == 1) 
@@ -176,7 +175,6 @@ Mesh_MOAB::~Mesh_MOAB() {
   delete [] setids_;
   delete [] setdims_;
   delete [] faceflip;
-  delete epcomm;
   delete mbcore;
 }
 
@@ -1748,6 +1746,7 @@ void Mesh_MOAB::init_cell_map ()
 {
   int *cell_gids;
   int ncell, result;
+  const Epetra_Comm *epcomm = Mesh::get_comm();
 
   if (!serial_run) {
 
@@ -1809,6 +1808,7 @@ void Mesh_MOAB::init_face_map ()
 {
   int *face_gids;
   int nface, result;
+  const Epetra_Comm *epcomm = Mesh::get_comm();
 
   if (!serial_run) {
 
@@ -1868,6 +1868,7 @@ void Mesh_MOAB::init_node_map ()
 {
   int *vert_gids;
   int nvert, result;
+  const Epetra_Comm *epcomm = Mesh::get_comm();
 
   if (!serial_run) {
 

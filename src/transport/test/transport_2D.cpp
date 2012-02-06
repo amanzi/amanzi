@@ -52,7 +52,7 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_10x10_ss.exo", MPI_COMM_WORLD, 2, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_10x10_ss.exo", (Epetra_MpiComm *)comm, 2, gm));
   
   /* create a MPC state with two component */
   int num_components = 2;

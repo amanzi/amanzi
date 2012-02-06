@@ -61,19 +61,19 @@ TEST(MSTK_HEX_4x4x4_SETS)
                                       {53,54,57,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}};
 
 			   
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+
 
   std::string infilename = "test/hex_4x4x4.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
-
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm);
+  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
 
   // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,3,gm);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",comm.get(),3,gm);
 
 
   Teuchos::ParameterList::ConstIterator i;

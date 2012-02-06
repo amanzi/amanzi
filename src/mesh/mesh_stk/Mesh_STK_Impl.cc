@@ -27,7 +27,7 @@ namespace STK {
 // ------------
 
 Mesh_STK_Impl::Mesh_STK_Impl (int space_dimension, 
-                              const Epetra_MpiComm& comm,
+                              const Epetra_MpiComm *comm,
                               Entity_map* entity_map,
                               stk::mesh::MetaData *meta_data,
                               stk::mesh::BulkData *bulk_data,
@@ -155,7 +155,7 @@ void
 Mesh_STK_Impl::element_to_face_dirs(stk::mesh::EntityId element, 
                                     std::vector<int>& dirs) const
 {
-  const int me = communicator_.MyPID();
+  const int me = communicator_->MyPID();
   const int cell_rank = entity_map_->kind_to_rank (CELL);
   const int face_rank = entity_map_->kind_to_rank (FACE);
 
@@ -465,8 +465,8 @@ bool Mesh_STK_Impl::dimension_ok_ () const
 void
 Mesh_STK_Impl::summary(std::ostream& os) const
 {
-  const int nproc(communicator_.NumProc());
-  const int me(communicator_.MyPID());
+  const int nproc(communicator_->NumProc());
+  const int me(communicator_->MyPID());
 
   for (int p = 0; p < nproc; p++) {
     if (p == me) {
@@ -490,7 +490,7 @@ Mesh_STK_Impl::summary(std::ostream& os) const
                        count_entities(stk::mesh::Element, USED))
          << std::endl;
     }
-    communicator_.Barrier();
+    communicator_->Barrier();
   }
   
 }

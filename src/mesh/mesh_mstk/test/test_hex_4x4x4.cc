@@ -23,10 +23,11 @@ TEST(MSTK_HEX_4x4x4)
   int NF = 108;
   int NC = 27;
 
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,3);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",comm.get(),3);
 
   nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
