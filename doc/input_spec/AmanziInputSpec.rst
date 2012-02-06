@@ -350,7 +350,7 @@ Usage:
 
   * [U] `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
 
-   * [U] `"File`" [string] name of pre-generated mesh file
+   * [U] `"File`" [string] name of pre-generated mesh file. Note that in the case of an Exodus II mesh file, the suffix of the serial mesh file must be .exo. When running in serial the code will read this file directly. When running in parallel, the code will instead read the partitioned files, that have been generated with a Nemesis tool. There is no need to change the file name in this case as the code will automatically load the proper files. 
 
    * [U] `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
