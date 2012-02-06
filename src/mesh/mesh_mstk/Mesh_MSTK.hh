@@ -1,19 +1,21 @@
 #ifndef _AMANZI_MESH_MSTK_H_
 #define _AMANZI_MESH_MSTK_H_
 
-#include <Mesh.hh>
-#include <Point.hh>
-#include <GeometricModel.hh>
-#include <LabeledSetRegion.hh>
-#include <PointRegion.hh>
-#include <GenerationSpec.hh>
-
 #include <memory>
 #include <vector>
 #include <sstream>
 #include <Epetra_MpiComm.h>
 
 #include <MSTK.h>
+
+#include <Mesh.hh>
+#include <Point.hh>
+#include <GeometricModel.hh>
+#include <LabeledSetRegion.hh>
+#include <PointRegion.hh>
+#include <GenerationSpec.hh>
+#include <dbc.hh>
+#include <errors.hh>
 
 namespace Amanzi 
 {
