@@ -47,7 +47,7 @@ AmanziUnstructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_c
   Teuchos::ParameterList sub_list;
   
   if (! native) {
-    new_list = Amanzi::AmanziInput::translate( &input_parameter_list);
+    new_list = Amanzi::AmanziInput::translate( &input_parameter_list, comm->NumProc() );
 
     std::string verbosity = input_parameter_list.sublist("Execution Control").get<std::string>("Verbosity","Low");
     

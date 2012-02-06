@@ -12,9 +12,12 @@ namespace Amanzi {
 namespace AmanziInput {
 
 
-Teuchos::ParameterList translate(Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
+
+  numproc_ = numproc;
+
   Teuchos::ParameterList new_list, tmp_list;
-  
+
   init_global_info(plist);
 
   // checkpoint list is optional
@@ -24,17 +27,17 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist ) {
   }
 
   tmp_list = create_Visualization_Data_List (plist);
-  if (tmp_list.begin() != tmp_list.end()) {  
+  if (tmp_list.begin() != tmp_list.end()) {
     new_list.sublist("Visualization Data") = tmp_list;
   }
 
   if (plist->sublist("Output").isSublist("Observation Data")) {
     Teuchos::ParameterList& od_list = plist->sublist("Output").sublist("Observation Data");
     if (od_list.begin() != od_list.end()) {
-      new_list.sublist("Observation Data") = create_Observation_Data_List (plist);  
+      new_list.sublist("Observation Data") = create_Observation_Data_List (plist);
     }
   }
-    
+
   new_list.sublist("Regions")            = get_Regions_List(plist);
   new_list.sublist("Mesh")               = translate_Mesh_List(plist);
   new_list.sublist("Domain")             = get_Domain_List(plist);
@@ -173,22 +176,22 @@ void init_global_info( Teuchos::ParameterList* plist ) {
   }
 
   if ( plist->isSublist("Execution Control") ) {
-    
+
     if ( plist->sublist("Execution Control").isParameter("Verbosity") ) {
       std::string verbosity = plist->sublist("Execution Control").get<std::string>("Verbosity");
-      
+
       if ( verbosity == "None" ) {
-	verbosity_level = "none";
+        verbosity_level = "none";
       } else if ( verbosity == "Low" ) {
-	verbosity_level = "low";	
-      } else if ( verbosity == "Medium" ) {	
-	verbosity_level = "medium";
+        verbosity_level = "low";
+      } else if ( verbosity == "Medium" ) {
+        verbosity_level = "medium";
       } else if ( verbosity == "High" ) {
-	verbosity_level = "high";
+        verbosity_level = "high";
       } else if ( verbosity == "Extreme" ) {
-	verbosity_level = "high";	
+        verbosity_level = "high";
       } else {
-	Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
+        Exceptions::amanzi_throw(Errors::Message("Verbosity must be one of None, Low, Medium, High, or Extreme."));
       }
 
     } else {
@@ -364,17 +367,45 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
         msh_gen.set<double>("Z_Max",high[2]);
 
       } else if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Read Mesh File")) {
-	msh_list.sublist("Unstructured").sublist("Read Mesh File") = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File");
+        std::string format = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("Format");
+        if ( format == "Exodus II") {
+          // process the file name to replace .exo with .par in the case of a parallel run
+          Teuchos::ParameterList& fn_list =  msh_list.sublist("Unstructured").sublist("Read Mesh File");
+          fn_list.set<std::string>("Format","Exodus II");
+          std::string file =  plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File").get<std::string>("File");
+          std::string suffix(file.substr(file.size()-4,4));
+
+          if ( suffix != ".exo" ) {
+            // exodus files must have the .exo suffix
+            Exceptions::amanzi_throw(Errors::Message("Exodus II was specified as a mesh file format but the suffix of the file that was specified is not .exo"));            
+          }
+
+          // figure out if this is a parallel run
+          if (numproc_ > 1) {
+            std::string par_file = file.replace(file.size()-4,4,std::string(".par"));
+
+            fn_list.set<std::string>("File",par_file);
+          } else {
+            // don't translate the suffix if this is a serial run
+            fn_list.set<std::string>("File",file);
+          }
+
+          msh_list.sublist("Unstructured").sublist("Read Mesh File") = fn_list;
+
+        } else {
+          msh_list.sublist("Unstructured").sublist("Read Mesh File") = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File");
+        }
+
       }
-      
-      
+
+
       if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Expert")) {
-	msh_list.sublist("Unstructured").sublist("Expert") = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert");	
+        msh_list.sublist("Unstructured").sublist("Expert") = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert");
       }
-      
+
     }
   }
-  
+
   return msh_list;
 }
 
@@ -407,34 +438,34 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
       } else if ( exe_sublist.get<std::string>("Transport Model") == "On" ) {
         mpc_list.set<std::string>("disable Transport_PK","no");
       } else {
-	Exceptions::amanzi_throw(Errors::Message("Transport Model must either be On or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Transport Model must either be On or Off"));
       }
     } else {
       Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
     }
-      
+
 
     if ( exe_sublist.isParameter("Flow Model") ) {
       if ( exe_sublist.get<std::string>("Flow Model") == "Off" ) {
         mpc_list.set<std::string>("disable Flow_PK", "yes");
       } else if ( exe_sublist.get<std::string>("Flow Model") == "Richards" ) {
-        mpc_list.set<std::string>("disable Flow_PK", "no");	
-        mpc_list.set<std::string>("Flow model","Richards");	
+        mpc_list.set<std::string>("disable Flow_PK", "no");
+        mpc_list.set<std::string>("Flow model","Richards");
       } else {
-	Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards or Off"));
+        Exceptions::amanzi_throw(Errors::Message("Flow Model must either be Richards or Off"));
       }
     } else {
-      Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));      
+      Exceptions::amanzi_throw(Errors::Message("The parameter Flow Model must be specified."));
     }
 
     if ( exe_sublist.isParameter("Chemistry Model") ) {
       if ( exe_sublist.get<std::string>("Chemistry Model") == "Off" ) {
         mpc_list.set<std::string>("disable Chemistry_PK","yes");
       } else {
-	Exceptions::amanzi_throw(Errors::Message("Chemistry Model must be Off, we currently do not support Chemistry through the inpur spec."));
+        Exceptions::amanzi_throw(Errors::Message("Chemistry Model must be Off, we currently do not support Chemistry through the inpur spec."));
       }
     } else {
-      Exceptions::amanzi_throw(Errors::Message("The parameter Chemistry Model must be specified."));      
+      Exceptions::amanzi_throw(Errors::Message("The parameter Chemistry Model must be specified."));
     }
 
 
@@ -459,21 +490,21 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Transport Model") ) {
       if ( plist->sublist("Execution Control").get<std::string>("Transport Model") == "On" ) {
-	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-	  Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
-	  if (ncp_list.isParameter("Transport Integration Algorithm")) {
-	    std::string tia = ncp_list.get<std::string>("Transport Integration Algorithm");
-	    if ( tia == "Explicit First-Order" ) {
-	      trp_list.set<int>("discretization order",1);
-	    } else if ( tia == "Explicit Second-Order" ) {
-	      trp_list.set<int>("discretization order",2);
-	    }
-	  } 
-	} else {
-	  trp_list.set<int>("discretization order",2);
-	} 
+        if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+          Teuchos::ParameterList& ncp_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters");
+          if (ncp_list.isParameter("Transport Integration Algorithm")) {
+            std::string tia = ncp_list.get<std::string>("Transport Integration Algorithm");
+            if ( tia == "Explicit First-Order" ) {
+              trp_list.set<int>("discretization order",1);
+            } else if ( tia == "Explicit Second-Order" ) {
+              trp_list.set<int>("discretization order",2);
+            }
+          }
+        } else {
+          trp_list.set<int>("discretization order",2);
+        }
       }
-      
+
       // continue to set some reasonable defaults
       trp_list.set<std::string>("enable internal tests","no");
       trp_list.set<double>("CFL",1.0);
@@ -523,7 +554,7 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
                 std::stringstream compss;
                 compss << "Component " << comp_names_map[*i];
 
-		// for now just read the first value from the
+                // for now just read the first value from the
                 if ( comps.sublist(*i).isSublist("BC: Uniform Concentration") ) {
                   std::stringstream ss;
                   ss << "BC " << bc_counter;
@@ -564,7 +595,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
   if ( plist->isSublist("Execution Control") ) {
     if ( plist->sublist("Execution Control").isParameter("Flow Model") ) {
       if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Steady" ) {
-	
+
       } else if ( plist->sublist("Execution Control").get<std::string>("Flow Model") == "Richards" ) {
         Teuchos::ParameterList& richards_problem = flw_list.sublist("Richards Problem");
         richards_problem.set<bool>("Upwind relative permeability", true);
@@ -586,55 +617,55 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
         time_integrator.set<double>("NKA drop tolerance", 5.0e-2);
         time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
-	
-	// set paramters for the steady state time integrator
-	Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady time integrator");
-	if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
-	  if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
-	    Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
-	    if (!num_list.isParameter("steady max iterations")) {
-	      steady_time_integrator.set<int>("steady max iterations", num_list.get<int>("steady max iterations"));
-	    } else steady_time_integrator.set<int>("steady max iterations",10);
-	    
-	    if (!num_list.isParameter("steady min iterations")) {
-	      steady_time_integrator.set<int>("steady min iterations",5);
-	    } else  steady_time_integrator.set<int>("steady min iterations", num_list.get<int>("steady min iterations"));
-	    
-	    if (!num_list.isParameter("steady limit iterations")) {
-	      steady_time_integrator.set<int>("steady limit iterations",20);
-	    } else  steady_time_integrator.set<int>("steady limit iterations", num_list.get<int>("steady limit iterations"));
-	    
-	    if (!num_list.isParameter("steady nonlinear tolerance")) {
-	      steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
-	    } else  steady_time_integrator.set<double>("steady nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance"));
-	    
-	    if (!num_list.isParameter("steady time step reduction factor")) {
-	      steady_time_integrator.set<double>("steady time step reduction factor",0.8);
-	    } else  steady_time_integrator.set<double>("steady time step reduction factor", num_list.get<double>("steady time step reduction factor"));
-	    
-	    if (!num_list.isParameter("steady time step increase factor")) {
-	      steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	    } else  steady_time_integrator.set<double>("steady time step increase factor", num_list.get<double>("steady time step increase factor"));
-	    
-	  } else {
-	    // set some probably not so good defaults for the steady computation 
-	    steady_time_integrator.set<int>("steady max iterations",10);
-	    steady_time_integrator.set<int>("steady min iterations",5);
-	    steady_time_integrator.set<int>("steady limit iterations",20);
-	    steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
-	    steady_time_integrator.set<double>("steady time step reduction factor",0.8);
-	    steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	  }
-	} else {
-	  // set some probably not so good defaults for the steady computation 
-	  steady_time_integrator.set<int>("steady max iterations",10);
-	  steady_time_integrator.set<int>("steady min iterations",5);
-	  steady_time_integrator.set<int>("steady limit iterations",20);
-	  steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
-	  steady_time_integrator.set<double>("steady time step reduction factor",0.8);
-	  steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	}
-	steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
+
+        // set paramters for the steady state time integrator
+        Teuchos::ParameterList& steady_time_integrator = richards_problem.sublist("steady time integrator");
+        if (plist->sublist("Execution Control").isSublist("Numerical Control Parameters")) {
+          if (plist->sublist("Execution Control").sublist("Numerical Control Parameters").isSublist("Unstructured Algorithm")) {
+            Teuchos::ParameterList& num_list = plist->sublist("Execution Control").sublist("Numerical Control Parameters").sublist("Unstructured Algorithm");
+            if (!num_list.isParameter("steady max iterations")) {
+              steady_time_integrator.set<int>("steady max iterations", num_list.get<int>("steady max iterations"));
+            } else steady_time_integrator.set<int>("steady max iterations",10);
+
+            if (!num_list.isParameter("steady min iterations")) {
+              steady_time_integrator.set<int>("steady min iterations",5);
+            } else  steady_time_integrator.set<int>("steady min iterations", num_list.get<int>("steady min iterations"));
+
+            if (!num_list.isParameter("steady limit iterations")) {
+              steady_time_integrator.set<int>("steady limit iterations",20);
+            } else  steady_time_integrator.set<int>("steady limit iterations", num_list.get<int>("steady limit iterations"));
+
+            if (!num_list.isParameter("steady nonlinear tolerance")) {
+              steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
+            } else  steady_time_integrator.set<double>("steady nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance"));
+
+            if (!num_list.isParameter("steady time step reduction factor")) {
+              steady_time_integrator.set<double>("steady time step reduction factor",0.8);
+            } else  steady_time_integrator.set<double>("steady time step reduction factor", num_list.get<double>("steady time step reduction factor"));
+
+            if (!num_list.isParameter("steady time step increase factor")) {
+              steady_time_integrator.set<double>("steady time step increase factor",1.2);
+            } else  steady_time_integrator.set<double>("steady time step increase factor", num_list.get<double>("steady time step increase factor"));
+
+          } else {
+            // set some probably not so good defaults for the steady computation
+            steady_time_integrator.set<int>("steady max iterations",10);
+            steady_time_integrator.set<int>("steady min iterations",5);
+            steady_time_integrator.set<int>("steady limit iterations",20);
+            steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
+            steady_time_integrator.set<double>("steady time step reduction factor",0.8);
+            steady_time_integrator.set<double>("steady time step increase factor",1.2);
+          }
+        } else {
+          // set some probably not so good defaults for the steady computation
+          steady_time_integrator.set<int>("steady max iterations",10);
+          steady_time_integrator.set<int>("steady min iterations",5);
+          steady_time_integrator.set<int>("steady limit iterations",20);
+          steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
+          steady_time_integrator.set<double>("steady time step reduction factor",0.8);
+          steady_time_integrator.set<double>("steady time step increase factor",1.2);
+        }
+        steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
 
         // insert the water retention models sublist
         Teuchos::ParameterList &water_retention_models = richards_problem.sublist("Water retention models");
