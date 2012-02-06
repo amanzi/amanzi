@@ -208,8 +208,11 @@ void MPC::read_parameter_list()  {
     T0 = ti_list.sublist("Transient").get<double>("Start");
     T1 = ti_list.sublist("Transient").get<double>("End");
     dTtransient =  ti_list.sublist("Transient").get<double>("Initial Time Step");
-  }
 
+  } else {
+    Errors::Message message("MPC: no valid Time Integration Mode was specified, you must specify exactly one of Initialize To Steady, Steady, or Transient.");
+    Exceptions::amanzi_throw(message);    
+  }
 }
 
 

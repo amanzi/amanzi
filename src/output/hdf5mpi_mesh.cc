@@ -207,6 +207,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   setH5MeshFilename(h5Filename);
   setNumNodes(nnodes_global);
   setNumElems(ncells_global);
+  setConnLength(total_conn);
   //TODO(barker): store the connectivity length for mixed meshes, anything else?
 
   // Create and write out accompanying Xdmf file
@@ -734,7 +735,7 @@ Teuchos::XMLObject HDF5_MPI::addXdmfTopo_() {
   
   Teuchos::XMLObject DataItem("DataItem");
   DataItem.addAttribute("DataType", "Int");
-  DataItem.addAttribute("Dimensions", "72");
+  DataItem.addInt("Dimensions", ConnLength());
   DataItem.addAttribute("Format", "HDF");
   
   tmp1 << H5MeshFilename() << ":/Mesh/MixedElements";
