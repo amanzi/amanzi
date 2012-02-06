@@ -135,7 +135,7 @@ Array<int>          PorousMedia::tType;
 Array<Real>         PorousMedia::tDen;
 Array<PArray<RegionData> > PorousMedia::tic_array;
 Array<PArray<RegionData> > PorousMedia::tbc_array;
-//
+std::map<std::string,Array<int> > PorousMedia::group_map;
 // Pressure.
 //
 #ifdef MG_USE_FBOXLIB
@@ -1514,7 +1514,6 @@ void  PorousMedia::read_tracer()
 
   // Get number of tracers
   ntracers = pp.countval("tracers");
-  std::map<std::string,Array<std::string> > group_map;
   if (ntracers > 0)
   {
       tic_array.resize(ntracers);
@@ -1526,7 +1525,7 @@ void  PorousMedia::read_tracer()
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
           std::string g; ppr.get("group",g);
-          group_map[g].push_back(tNames[i]);
+          group_map[g].push_back(i);
       
           // Initial condition and boundary condition  
           Array<std::string> tic_names;

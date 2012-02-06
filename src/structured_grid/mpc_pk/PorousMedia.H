@@ -856,6 +856,8 @@ protected:
   static Array<Real> tDen;
   static Array<PArray<RegionData> > tic_array;
   static Array<PArray<RegionData> > tbc_array;
+  static std::map<std::string,Array<int> > group_map;
+
   static Array<Real> tInflow;
 
   // Pressure

@@ -778,7 +778,7 @@ PorousMedia::initData ()
     S_new.setVal(0.);
     
     // Compute 1D steady richards solution
-    if (model = model_list["richard"]  && material_is_layered) {
+    if (model == model_list["richard"]  && material_is_layered) {
         Box strip = Box(BoxLib::adjCellLo(geom.Domain(),0,1)).shift(0,1);
         
         // FIXME: Can set up a 1D solution
@@ -1509,6 +1509,7 @@ PorousMedia::advance (Real time,
     //            1 ==> Only solve the pressure equation at time 0.
     //            0 ==> Solve the pressure equation at every timestep.
     //
+
 #ifdef MG_USE_FBOXLIB
     if (model == model_list["richard"]) 
       {
@@ -3050,10 +3051,7 @@ PorousMedia::tracer_advection_update (Real dt,
   //
   // Advect only the Total
   //
-  Array<int> idx_total;
-  for (int ii = 0; ii < ntracers; ii++)
-    if (ctotal.compare(qNames[tType[ii]]) == 0) 
-      idx_total.push_back(ii+ncomps+1);
+  const Array<int>& idx_total = group_map["Total"];
 
   Real pcTime = state[State_Type].curTime();
   for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
@@ -9086,13 +9084,13 @@ PorousMedia::dirichletStateBC (const Real time)
 
                 for (int j=0; j<bc_regions.size(); ++j) {
 
-                    std::cout << "Region: " << bc_regions[j].name << std::endl;
+                    //std::cout << "Region: " << bc_regions[j].name << std::endl;
 
                     bc_regions[j].setVal(sdat,val,dx,0,0,val.size());
                 }
             }
 
-            std::cout << sdat << std::endl;
+            //std::cout << sdat << std::endl;
 	}
 
         MultiFab& S = get_data(State_Type,time); 
@@ -9131,21 +9129,23 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
 
                 Array<Real> val = face_bc(time); // Get time-dependent values for rho.sat
                 
+#if 0
                 if (dynamic_cast<const Transform_S_AR_For_BC*>(&face_bc)) {
                 std::cout << "Func val: " 
                           << dynamic_cast<const Transform_S_AR_For_BC&>(face_bc).tabularFunction(time) << std::endl;
                 std::cout << "   Func val: " 
                           << dynamic_cast<const Transform_S_AR_For_BC&>(face_bc)(time)[0] << std::endl;
                 }
+#endif
                 for (int j=0; j<bc_regions.size(); ++j) {
 
-                    std::cout << "Region: " << bc_regions[j].name << std::endl;
+                    //std::cout << "Region: " << bc_regions[j].name << std::endl;
 
                     bc_regions[j].setVal(sdat,val,dx,0,0,val.size());
                 }
             }
 
-            std::cout << sdat << std::endl;
+            //std::cout << sdat << std::endl;
 
             Box ovlp = bndBox & fab.box();
             fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
@@ -9181,13 +9181,13 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
                 
                     for (int j=0; j<tbc_regions.size(); ++j) {
                         
-                        std::cout << "Region: " << tbc_regions[j].name << std::endl;
+                        //std::cout << "Region: " << tbc_regions[j].name << std::endl;
                         
                         tbc_regions[j].setVal(sdat,val,dx,0,0,val.size());
                     }
                 }
                 
-                std::cout << sdat << std::endl;
+                //std::cout << sdat << std::endl;
                 
                 Box ovlp = bndBox & fab.box();
                 fab.copy(sdat,ovlp,0,ovlp,n,1);

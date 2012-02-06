@@ -1520,7 +1520,7 @@ namespace Amanzi {
 
                     // 
                     // FIXME: Solute groups not yet in spec, default set here
-                    std::string group_name = "DEFAULT_GROUP_NAME";
+                    std::string group_name = "Total";
                     tmp.set<std::string>("group",group_name);
 
                     solute_list.set(soluteName,tmp);
