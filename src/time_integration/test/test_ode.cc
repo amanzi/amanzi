@@ -19,14 +19,15 @@
 TEST(NonlinearODE) {
 
   class nonlinearODE : public Amanzi::ImplicitTIBDF2fnBase {
-   public:
+  public:
 
     nonlinearODE(double atol, double rtol) :
-        rtol_(rtol), atol_(atol) {
+      rtol_(rtol), atol_(atol) {
     }
 
-    void fun(const double t, const Teuchos::RCP<Amanzi::TreeVector> u,
-             const Teuchos::RCP<Amanzi::TreeVector> udot, Teuchos::RCP<Amanzi::TreeVector> f) {
+    void fun(double t, Teuchos::RCP<const Amanzi::TreeVector> u,
+             Teuchos::RCP<const Amanzi::TreeVector> udot,
+             Teuchos::RCP<Amanzi::TreeVector> f) {
       // f = udot - u^2
       // note that the exact solution is
       // uex = u0/(1-u0(t-t0))
@@ -35,12 +36,11 @@ TEST(NonlinearODE) {
       f->Update(1.0, *udot, -1.0);
     }
 
-
-    void precon(const Teuchos::RCP<Amanzi::TreeVector> u, Teuchos::RCP<Amanzi::TreeVector> Pu) {
+    void precon(Teuchos::RCP<const Amanzi::TreeVector> u, Teuchos::RCP<Amanzi::TreeVector> Pu) {
       *Pu = *u;
     }
 
-    double enorm(const Teuchos::RCP<Amanzi::TreeVector> u,  const Teuchos::RCP<Amanzi::TreeVector> du) {
+    double enorm(Teuchos::RCP<const Amanzi::TreeVector> u, Teuchos::RCP<const Amanzi::TreeVector> du) {
 
       double norm_du, norm_u;
       du->NormInf(&norm_du);
@@ -49,24 +49,15 @@ TEST(NonlinearODE) {
       return  norm_du/(atol_+rtol_*norm_u);
     }
 
-
-    void update_precon(const double t, const Teuchos::RCP<Amanzi::TreeVector> up, const double h, int& errc) {
+    void update_precon(double t, Teuchos::RCP<const Amanzi::TreeVector> up, double h, int& errc) {
       // do nothing since the preconditioner is the identity
     }
 
-    bool is_admissible(const Epetra_Vector& u) {
-      return true;
-    }
-
-
-    void compute_udot(double t,  const Teuchos::RCP<Amanzi::TreeVector> u,  Teuchos::RCP<Amanzi::TreeVector> udot) {
-
+    void compute_udot(double t,  Teuchos::RCP<const Amanzi::TreeVector> u,  Teuchos::RCP<const Amanzi::TreeVector> udot) {
     }
 
     double atol_, rtol_;
   };
-
-
 
 
   std::cout << "Test: NonlinearODE" << std::endl;
@@ -86,14 +77,15 @@ TEST(NonlinearODE) {
 
   Epetra_BlockMap map(1,1,0, *comm);
 
-  Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp( new Epetra_Vector(map) );
-  Teuchos::RCP<Amanzi::TreeVector> initvec = Teuchos::rcp( new Amanzi::TreeVector("initvector", x));
+  Teuchos::RCP<Epetra_MultiVector> x = Teuchos::rcp(new Epetra_MultiVector(map,1,false));
+  Teuchos::RCP<Amanzi::TreeVector> initvec = Teuchos::rcp( new Amanzi::TreeVector("initvector"));
+  initvec->PushBack(x);
 
   // create the PDE problem
   nonlinearODE NF (1e-6, 1e-6);
 
   // create the time stepper
-  Amanzi::ImplicitTIBDF2 TS( NF, initvec);
+  Amanzi::ImplicitTIBDF2 TS(NF, initvec);
   TS.setParameterList(plist);
 
   // create the initial condition

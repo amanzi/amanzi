@@ -21,8 +21,9 @@ TEST(SolutionHistory_1) {
   // create an Epetra_Vector
   Epetra_BlockMap map(10,1,0,*comm);
 
-  Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(map));
-  Teuchos::RCP<Amanzi::TreeVector>  x_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("test vec"),x));
+  Teuchos::RCP<Epetra_MultiVector> x = Teuchos::rcp(new Epetra_MultiVector(map,1,false));
+  Teuchos::RCP<Amanzi::TreeVector>  x_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("test vec")));
+  x_tree->PushBack(x);
 
   // create a solution history of size three
   Amanzi::SolutionHistory SH(3, 0.0, x_tree);
@@ -50,8 +51,7 @@ TEST(SolutionHistory_1) {
 
   // check that the most recent vector in fact is the
   // one that contains  9.0
-  Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(map));
-  Teuchos::RCP<Amanzi::TreeVector>  y_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("another test vec"),y));
+  Teuchos::RCP<Amanzi::TreeVector>  y_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("test vec"), x_tree));
 
   SH.most_recent_solution(y_tree);
 
@@ -62,22 +62,22 @@ TEST(SolutionHistory_1) {
 
   std::vector<double> h;
   SH.time_deltas(h);
-  
+
   CHECK_EQUAL(h.size(),SH.history_size()-1);
   CHECK_EQUAL(h[0], 1.0);
   CHECK_EQUAL(h[1], 2.0);
-  
+
 
   // interpolate 1st order
   SH.interpolate_solution(2.5, y_tree, 1);
-  
+
   // we should get 6.5
   y_tree->NormInf(norminf);
   CHECK_EQUAL(norminf[0],6.5);
-  
+
   // interpolate 2nd order
   SH.interpolate_solution(2.5, y_tree, 2);
-  
+
   // from the quadratic through (1,1),(2,4),(3,9)
   // we should get 6.25
   // x_tree->PutScalar(6.25);
@@ -87,7 +87,7 @@ TEST(SolutionHistory_1) {
 
   // interpolate maximum order (should be 2nd)
   SH.interpolate_solution(2.5, y_tree);
-  
+
   // from the quadratic through (1,1),(2,4),(3,9)
   // we should get 6.25
   y_tree->NormInf(norminf);
@@ -99,28 +99,26 @@ TEST(SolutionHistory_2) {
 
   cout << "Test: SolutionHistory_2" << endl;
   Epetra_Comm *comm = new Epetra_SerialComm();
-  
+
   // create an Epetra_Vector
   Epetra_BlockMap map(10,1,0,*comm);
-  
-  Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp(new Epetra_Vector(map));
-  Teuchos::RCP<Amanzi::TreeVector> x_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("x"),x));
 
-  Teuchos::RCP<Epetra_Vector> xdot = Teuchos::rcp(new Epetra_Vector(map));
-  Teuchos::RCP<Amanzi::TreeVector> xdot_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("xdot"),x));
+  Teuchos::RCP<Epetra_MultiVector> x = Teuchos::rcp(new Epetra_MultiVector(map,1,false));
+  Teuchos::RCP<Amanzi::TreeVector>  x_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("test vec")));
+  x_tree->PushBack(x);
+
+  Teuchos::RCP<Amanzi::TreeVector> xdot_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("xdot"),x_tree));
 
   x_tree->PutScalar(0.0);
   xdot_tree->PutScalar(0.0);
   // create a solution history of size three
-  Amanzi::SolutionHistory SH(4, 0.0, x_tree, xdot_tree);  
+  Amanzi::SolutionHistory SH(4, 0.0, x_tree, xdot_tree);
 
   x_tree->PutScalar(1.0);
   xdot_tree->PutScalar(2.0);
   SH.record_solution(1.0,x_tree,xdot_tree);
 
-
-  Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(map));
-  Teuchos::RCP<Amanzi::TreeVector> y_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("y"),y));
+  Teuchos::RCP<Amanzi::TreeVector> y_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("y"),x_tree));
 
   // interpolate 1st order
   SH.interpolate_solution(0.5, y_tree, 2);

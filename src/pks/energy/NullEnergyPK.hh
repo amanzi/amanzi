@@ -73,21 +73,21 @@ public:
 
   // BDF2 interface
   // computes the non-linear functional f = f(t,u,udot)
-  void fun(const double t, const Teuchos::RCP<TreeVector> soln, const Teuchos::RCP<TreeVector> soln_dot,
-           Teuchos::RCP<TreeVector> f);
+  void fun(double t, Teuchos::RCP<const TreeVector> soln,
+           Teuchos::RCP<const TreeVector> soln_dot, Teuchos::RCP<TreeVector> f);
 
   // applies preconditioner to u and returns the result in Pu
-  void precon(const Teuchos::RCP<TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+  void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   // computes a norm on u-du and returns the result
-  double enorm(const Teuchos::RCP<TreeVector> u, const Teuchos::RCP<TreeVector> du);
+  double enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
 
   // updates the preconditioner
-  void update_precon(const double t, const Teuchos::RCP<TreeVector> up, const double h, int& errc) {};
+  void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h, int& errc) {};
 
   // check the admissibility of a solution
   // override with the actual admissibility check
-  bool is_admissible(const Teuchos::RCP<TreeVector> up) { return true; }
+  bool is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
 private:
   // A few options for advance
