@@ -43,9 +43,10 @@ namespace Amanzi {
     // check if we need to make a time integrator
     if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
       // make an initvector for the time stepper
-      Teuchos::RCP<Epetra_Vector> ep_initvec = Teuchos::rcp(new Epetra_Vector( S->get_mesh_maps()->cell_epetra_map(false) ));
-      Teuchos::RCP<TreeVector> initvec = Teuchos::rcp(new TreeVector(std::string("initvec"),ep_initvec));
-      time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this,initvec));
+      // Teuchos::RCP<Epetra_Vector> ep_initvec = Teuchos::rcp(new Epetra_Vector( S->get_mesh_maps()->cell_epetra_map(false) ));
+      // Teuchos::RCP<TreeVector> initvec = Teuchos::rcp(new TreeVector(std::string("initvec"),ep_initvec));
+
+      time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this,solution_));
       Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
       time_stepper_->setParameterList(bdf2_list_p);
     }
@@ -76,14 +77,14 @@ namespace Amanzi {
   // Pointer copy of state to solution
   void NullEnergyPK::state_to_solution(Teuchos::RCP<State>& S,
           Teuchos::RCP<TreeVector>& soln) {
-    ((*soln)[0]) = S.get_field("temperature");
+    ((*soln)[0]) = S->get_field("temperature", "energy");
   };
 
   // Pointer copy temperature fields from state into solution vector.
   void NullEnergyPK::state_to_solution(Teuchos::RCP<State>& S,
           Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<TreeVector>& soln_dot) {
-    (*soln)[0] = S.get_field("temperature");
-    (*soln_dot)[0] = S.get_field("temperature_dot");
+    (*soln)[0] = S->get_field("temperature", "energy");
+    (*soln_dot)[0] = S->get_field("temperature_dot", "energy");
   };
 
   // Pointer copy temperature fields from solution vector into state.  Used within
@@ -91,16 +92,16 @@ namespace Amanzi {
   // use with other PKs.
   void NullEnergyPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
           Teuchos::RCP<State>& S) {
-    Teuchos::RCP<Epetra_MultiVector> temp_ptr = soln[0];
+    Teuchos::RCP<Epetra_MultiVector> temp_ptr = (*soln)[0];
     Teuchos::RCP<Epetra_MultiVector> nc_temp_ptr = temp_ptr;
     S->set_field_pointer("temperature", "energy", nc_temp_ptr);
   };
 
   void NullEnergyPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
           Teuchos::RCP<TreeVector>& soln_dot, Teuchos::RCP<State>& S) {
-    Teuchos::RCP<Epetra_MultiVector> temp_ptr = soln[0];
+    Teuchos::RCP<Epetra_MultiVector> temp_ptr = (*soln)[0];
     S->set_field_pointer("temperature", "energy", temp_ptr);
-    Teuchos::RCP<Epetra_MultiVector> temp_dot_ptr = soln_dot[0];
+    Teuchos::RCP<Epetra_MultiVector> temp_dot_ptr = (*soln_dot)[0];
     S->set_field_pointer("temperature_dot", "energy", temp_dot_ptr);
   };
 
@@ -145,20 +146,20 @@ namespace Amanzi {
 
   // Methods for the BDF integrator
   // -- residual
-  void NullEnergyPK::fun(const double t, const Teuchos::RCP<TreeVector> soln,
-                         const Teuchos::RCP<TreeVector> udot,
-                         Teuchos::RCP<TreeVector> f) {
+  void NullEnergyPK::fun(double t, Teuchos::RCP<const TreeVector> soln,
+                         Teuchos::RCP<const TreeVector> udot, Teuchos::RCP<TreeVector> f) {
     *f = *soln;
     f->Shift(-T_);
   };
 
   // -- preconditioning (currently none)
-  void NullEnergyPK::precon(const Teuchos::RCP<TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  void NullEnergyPK::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
     *Pu = *u;
   };
 
   // computes a norm on u-du and returns the result
-  double NullEnergyPK::enorm(const Teuchos::RCP<TreeVector> u, const Teuchos::RCP<TreeVector> du) {
+  double NullEnergyPK::enorm(Teuchos::RCP<const TreeVector> u,
+                             Teuchos::RCP<const TreeVector> du) {
     double enorm_val = 0.0;
     Epetra_Vector temp_vec = *(*(*u)[0])(0);
     Epetra_Vector temp_dot_vec = *(*(*du)[0])(0);
