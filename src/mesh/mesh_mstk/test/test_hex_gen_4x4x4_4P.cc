@@ -32,6 +32,7 @@ TEST(MSTK_HEX_GEN_4x4x4_4P)
   int NCghost[4] = {12,11,17,20}; // updated
 
 			      
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
 			      
 
   int rank, size;
@@ -59,7 +60,7 @@ TEST(MSTK_HEX_GEN_4x4x4_4P)
 
   // Create a 3x3x3 cell hex mesh
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,3,3,3,MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,0.0,1.0,1.0,1.0,3,3,3,comm.get());
 
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);  
   CHECK_EQUAL(NVowned[rank],nv);

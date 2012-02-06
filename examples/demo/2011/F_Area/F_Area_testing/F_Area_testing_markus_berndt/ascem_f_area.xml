@@ -6,7 +6,7 @@
 
   <ParameterList name="Mesh">
     <Parameter name="Framework" type="string" value="stk::mesh"/>
-    <Parameter name="Read" type="string" value="ascem_f_area_mesh.exo" />
+    <Parameter name="Read" type="string" value="../ascem_f_area_mesh.exo" />
   </ParameterList>
 
 

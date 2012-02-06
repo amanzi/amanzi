@@ -66,7 +66,7 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::ParameterList mesh_parameter_list =
         parameter_list.sublist("Simple Mesh Parameters");
     Amanzi::AmanziMesh::GenerationSpec g(mesh_parameter_list);
-    mesh_ = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(g, comm));
+    mesh_ = Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_simple(g, (const Epetra_MpiComm *)comm));
 
     // get the state parameter list and create the state object
     Teuchos::ParameterList state_parameter_list = parameter_list.sublist("State");

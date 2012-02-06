@@ -12,7 +12,6 @@ namespace Amanzi {
 						       Amanzi::ObservationData& observation_data_):
     observation_data(observation_data_)
   {
-    
     // interpret paramerter list
     // loop over the sublists and create an observation for each
     for (Teuchos::ParameterList::ConstIterator i = observations_plist_.begin(); 
@@ -30,7 +29,7 @@ namespace Amanzi {
 
 	    // get the observation time values
 	    Teuchos::Array<double> times = observable_plist.get<Teuchos::Array<double> >("Values", empty);
-
+	    
 	    // loop over all variables listed and create an observable for each
 	    Teuchos::Array<std::string> vars = observable_plist.get<Teuchos::Array<string> >("Variables");
 	    observations.insert(std::pair
@@ -39,11 +38,6 @@ namespace Amanzi {
 								     observable_plist.get<string>("Region"),
 								     observable_plist.get<string>("Functional"),
 								     times, sps)));
-	  }
-	else
-	  {
-	    Errors::Message m("Unstructured_observations: the Observation sublist contains an entry that is not a sublist!");
-	    Exceptions::amanzi_throw(m);
 	  }
       }    
     
@@ -89,7 +83,7 @@ namespace Amanzi {
 		std::stringstream ss;
 		ss << label << ", " << var;
 
-		std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[ ss.str() ];
+		std::vector<Amanzi::ObservationData::DataTriple> &od = observation_data[ label ]; //ss.str() ];
 
 		if ((i->second).functional == "Observation Data: Integral")
 		  {

@@ -43,7 +43,7 @@ if (ENABLE_CGNS)
 endif()
 
 # Need to move this to roo level -- lpritch
-add_definitions("-DUSE_MPI")
+add_definitions("-DUSE_MPI" "-DMSTK_HAVE_MPI")
 
 #
 # Library: flow
@@ -55,6 +55,13 @@ add_library(flow Transient_Richards_PK.cpp Darcy_PK.cpp
                  MimeticHexLocal.cpp MimeticHex.cpp
                  flow-bc-factory.cc vanGenuchtenModel.cpp)
 add_install_library(flow)
+add_library(flow_implementation 
+                 RichardsProblem.cpp RichardsModelEvaluator.cpp
+                 DarcyProblem.cpp DarcyMatvec.cpp 
+                 DiffusionMatrix.cpp DiffusionPrecon.cpp DiffusionMap.cpp 
+                 MimeticHexLocal.cpp MimeticHex.cpp
+                 flow-bc-factory.cc vanGenuchtenModel.cpp)
+add_install_library(flow_implementation)
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${NOX_LIBRARIES} ${Epetra_LIBRARIES})
 list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
@@ -102,11 +109,22 @@ if (BUILD_TESTS)
  
     # Test: flow-richards
     if (ENABLE_CGNS)
-	set(amanzi_libs geometry mesh mesh_audit simple_mesh state flow whetstone solvers output ${HDF5_LIBRARIES})
+	set(amanzi_libs geometry mesh mesh_audit simple_mesh mesh_factory state flow whetstone solvers output ${HDF5_LIBRARIES})
 
         add_executable(flow_richards_bdf2 test/Main.cc test/flow_richards_bdf2.cpp)
         target_link_libraries(flow_richards_bdf2 ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(flow_richards_bdf2 flow_richards_bdf2 KIND unit)
+    endif()
+
+    if ( ENABLE_MSTK_Mesh )
+        include_directories(${MSTK_INCLUDE_DIRS})
+        include_directories(${MSTK_SOURCE_DIR})
+
+	set(amanzi_libs geometry mesh mesh_audit mstk_mesh mesh_factory state flow whetstone solvers output ${HDF5_LIBRARIES})
+
+        add_executable(flow_richards_tensor test/Main.cc test/flow_richards_tensor.cpp)
+        target_link_libraries(flow_richards_tensor ${amanzi_libs} ${UnitTest_LIBRARIES})
+        add_amanzi_test(flow_richards_tensor flow_richards_tensor KIND unit)
     endif()
     
 endif()

@@ -30,6 +30,7 @@ TEST(MSTK_QUAD_GEN_4x4x4_4P)
   int NFghost[4] = {10,11,20,10}; 
   int NCghost[4] = {4,4,7,3}; 
 
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
 			      
   int rank, size;
 
@@ -49,14 +50,14 @@ TEST(MSTK_QUAD_GEN_4x4x4_4P)
   }
 
   //  if (rank == 0) {
-    int DebugWait = 0;
-    while (DebugWait);
+  int DebugWait = 0;
+  while (DebugWait);
     //  }
 
 
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,1.0,1.0,3,3,MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,1.0,1.0,3,3,comm.get());
 
 
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);  

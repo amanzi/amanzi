@@ -99,6 +99,10 @@ int main(int argc, char *argv[]) {
     Amanzi::ObservationData output_observations;  
     Amanzi::Simulator::ReturnType ret = simulator->Run(mpi_comm,driver_parameter_list,output_observations);
     
+    if ( ret == Amanzi::Simulator::FAIL ) {
+      amanzi_throw(Errors::Message("The amanzi simulator returned an error code, this is most likely due to an error in the mesh creation."));
+    }
+
     // print out observation file in ASCII format 
     const Teuchos::ParameterList& obs_list = driver_parameter_list.sublist("Output").sublist("Observation Data");
     if (obs_list.isParameter("Observation Output Filename")) {
@@ -126,7 +130,7 @@ int main(int argc, char *argv[]) {
 	      out << label << ", " 
 		  << ind_obs_list.get<std::string>("Region") << ", "
 		  << ind_obs_list.get<std::string>("Functional") << ", "
-		  << ind_obs_list.get<Teuchos::Array<std::string> >("Variable Macro") << ", "
+		  << ind_obs_list.get<Teuchos::Array<std::string> >("Variables") << ", "
 		  << output_observations[_label][j].time << ", "
 		  << output_observations[_label][j].value << std::endl;
 	    }

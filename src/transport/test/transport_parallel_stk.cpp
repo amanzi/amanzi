@@ -46,7 +46,7 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-  RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4.par", MPI_COMM_WORLD, gm));
+  RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4.par", comm, gm));
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();

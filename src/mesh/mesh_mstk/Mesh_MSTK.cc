@@ -15,9 +15,11 @@ namespace AmanziMesh
 // Constructor - load up mesh from file
 //--------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
-		      const AmanziGeometry::GeometricModelPtr& gm)
-{
+Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm,
+		      const AmanziGeometry::GeometricModelPtr& gm) :
+  mpicomm(incomm->GetMpiComm())
+{  
+
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
 
@@ -96,16 +98,14 @@ Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm,
 // Constructor - load up mesh from file
 //--------------------------------------
 
-Mesh_MSTK::Mesh_MSTK (const char *filename, MPI_Comm incomm, 
+Mesh_MSTK::Mesh_MSTK (const char *filename, const Epetra_MpiComm *incomm, 
 		      int space_dimension,
-		      const AmanziGeometry::GeometricModelPtr& gm)
+		      const AmanziGeometry::GeometricModelPtr& gm) :
+  mpicomm(incomm->GetMpiComm())
 {
   int ok;
 
   pre_create_steps_(space_dimension, incomm, gm);
-
-
-
 
 
   if (myprocid == 0) {
@@ -178,13 +178,14 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 		     const double x1, const double y1, const double z1,
 		     const unsigned int nx, const unsigned int ny, 
 		     const unsigned int nz, 
-		     Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm) 
+		     const Epetra_MpiComm *incomm,
+		     const AmanziGeometry::GeometricModelPtr& gm) :
+  mpicomm(incomm->GetMpiComm())
 {
   int ok;
 
   int space_dimension = 3;
-  pre_create_steps_(space_dimension, incomm->GetMpiComm(), gm);
+  pre_create_steps_(space_dimension, incomm, gm);
 
 
 
@@ -245,87 +246,6 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 
 
 
-
-//--------------------------------------
-// Construct a 3D regular hexahedral mesh internally
-//--------------------------------------
-
-
-Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
-		     const double x1, const double y1, const double z1,
-		     const unsigned int nx, const unsigned int ny, 
-		     const unsigned int nz, 
-		     MPI_Comm incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm) 
-{
-  int ok;
-
-  int space_dimension = 3;
-  pre_create_steps_(space_dimension, incomm, gm);
-
-
-
-
-  if (myprocid == 0) {
-    int DebugWait=0;
-    while (DebugWait);
-  }
-
-  if (serial_run) {
-
-    // Load serial mesh
-
-    mesh = MESH_New(F1);
-    ok = generate_regular_mesh(mesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
-
-    set_cell_dimension(3);
-
-    myprocid = 0;
-  }
-  else {
-    Mesh_ptr globalmesh;
-    int topo_dim=3; // What is the topological dimension of the mesh
-    int ring = 1; // One layer of ghost cells in parallel meshes
-    int with_attr = 1;  // update of attributes in parallel meshes
-      
-    if (myprocid == 0) {
-      globalmesh = MESH_New(F1);
-
-      ok = generate_regular_mesh(globalmesh,x0,y0,z0,x1,y1,z1,nx,ny,nz);
-      
-      mesh = globalmesh;
-    }
-    else {
-      mesh = MESH_New(UNKNOWN_REP);
-      ok = 1;
-    }
-
-    ok = ok & MSTK_Mesh_Distribute(&mesh,&topo_dim,ring,with_attr,myprocid,
-					numprocs,mpicomm);
-
-    if (myprocid == 0)
-      MESH_Delete(globalmesh);
-
-    set_cell_dimension(topo_dim);
-  }
-
-  if (!ok) {
-    std::cerr << "FAILED" << std::endl;
-    std::cerr << "Failed to generate mesh on processor " << myprocid << std::endl;
-    assert(ok);
-  }
-
-
-
-
-  // Do all the processing required for setting up the mesh for Amanzi 
-  
-  post_create_steps_();
-
-}
-
-
-
 //--------------------------------------
 // Construct a 2D regular quadrilateral mesh internally
 //--------------------------------------
@@ -334,8 +254,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
 Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 		     const double x1, const double y1,
 		     const int nx, const int ny, 
-		     MPI_Comm incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm) 
+		     const Epetra_MpiComm *incomm,
+		     const AmanziGeometry::GeometricModelPtr& gm) :
+  mpicomm(incomm->GetMpiComm())
 {
   int ok;
 
@@ -411,8 +332,9 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
 //--------------------------------------
 
 Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
-		     Epetra_MpiComm *incomm,
-		     const AmanziGeometry::GeometricModelPtr& gm)
+		     const Epetra_MpiComm *incomm,
+		     const AmanziGeometry::GeometricModelPtr& gm) :
+  mpicomm(incomm->GetMpiComm())
 {
   int ok;
 
@@ -423,7 +345,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
   AmanziGeometry::Point p1(gspec.domain().point1());
 
   int space_dim = p0.dim();
-  pre_create_steps_(space_dim, incomm->GetMpiComm(), gm);
+  pre_create_steps_(space_dim, incomm, gm);
 
 
 
@@ -544,7 +466,7 @@ Mesh_MSTK::~Mesh_MSTK() {
     
   MAttrib_Delete(celltype_att);
 
-  // MESH_Delete(mesh);
+  MESH_Delete(mesh);
 }
 
 
@@ -698,6 +620,8 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 	      break;
 	    }
 	  }
+
+	  List_Delete(fverts);
 	  
 	  if (all_present) {
 	    int lid = MEnt_ID(face);
@@ -705,9 +629,7 @@ void Mesh_MSTK::cell_get_faces (const Entity_ID cellid,
 	    found = true;
 	    break;
 	  }
-	  
-	  List_Delete(fverts);
-	  
+	  	  
 	} // for (int j = 0; j < nf; j++) 
 	
 	if (!found) {
@@ -3477,7 +3399,7 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
     }
   }
    
-  for (i = 0; i < nx; i++)
+  for (i = 0; i < nx+1; i++)
     free(verts[i]);
   free(verts);
 
@@ -3485,25 +3407,22 @@ int Mesh_MSTK::generate_regular_mesh(Mesh_ptr mesh, double x0, double y0,
 }
 
 void Mesh_MSTK::pre_create_steps_(const int space_dimension, 
-                                  const MPI_Comm incomm, 
+                                  const Epetra_MpiComm *comm, 
                                   const AmanziGeometry::GeometricModelPtr& gm) 
 {
-
   clear_internals_();
 
   MSTK_Init();
 
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
 
   set_space_dimension(space_dimension);
 
-  mpicomm = incomm;
   MPI_Comm_rank(mpicomm,&myprocid);
   MPI_Comm_size(mpicomm,&numprocs);
 
   serial_run =  (!mpicomm || numprocs == 1) ? true : false;
-
-  Mesh::set_comm(mpicomm);
 
 }
 

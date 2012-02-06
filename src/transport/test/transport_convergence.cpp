@@ -53,7 +53,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     // create an MSTK mesh framework 
     ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 2, comm, gm));
+    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 2, (const Epetra_MpiComm *)comm, gm));
 
     // create a transport state with one component 
     int num_components = 1;
@@ -124,7 +124,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
  
   for (int nx=10; nx<81; nx*=2 ) {
-    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, comm, gm)); 
+    RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, (const Epetra_MpiComm *)comm, gm)); 
 
     // create a transport states with one component
     int num_components = 1;

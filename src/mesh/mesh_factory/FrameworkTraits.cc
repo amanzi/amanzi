@@ -60,14 +60,14 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
  public:
   
   /// Default constructor.
-  bogus_maps(const char *filename, MPI_Comm c,
+  bogus_maps(const char *filename, const Epetra_MpiComm *c,
              const Amanzi::AmanziGeometry::GeometricModelPtr& gm) 
       : Mesh(), bogus_map_(NULL) 
   {
     Exceptions::amanzi_throw(Errors::Message("reading not supported"));
   }
   
-  bogus_maps(const char *filename, MPI_Comm c, int dim,
+  bogus_maps(const char *filename, const Epetra_MpiComm *c, int dim,
              const Amanzi::AmanziGeometry::GeometricModelPtr& gm) 
       : Mesh(), bogus_map_(NULL) 
   {
@@ -77,7 +77,7 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
   bogus_maps(double x0, double y0, double z0,
 	     double x1, double y1, double z1,
 	     int nx, int ny, int nz, 
-	     Epetra_MpiComm *communicator,
+	     const Epetra_MpiComm *communicator,
              const Amanzi::AmanziGeometry::GeometricModelPtr& gm)
       : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
   {
@@ -85,7 +85,7 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
   }
 
   bogus_maps(const Amanzi::AmanziMesh::GenerationSpec& gspec, 
-             Epetra_MpiComm *communicator,
+             const Epetra_MpiComm *communicator,
              const Amanzi::AmanziGeometry::GeometricModelPtr& gm)
       : Amanzi::AmanziMesh::Mesh(), bogus_map_(NULL) 
   {
@@ -382,11 +382,11 @@ struct FrameworkTraits {
 
   /// Construct a mesh from a Exodus II file or file set
   static Teuchos::RCP<Mesh>
-read(Epetra_MpiComm& comm, const std::string& fname,
+read(const Epetra_MpiComm *comm, const std::string& fname,
      const AmanziGeometry::GeometricModelPtr& gm)
   {
     Teuchos::RCP<Mesh> 
-    result(new typename read_maps::type(fname.c_str(), comm.Comm(), gm));
+    result(new typename read_maps::type(fname.c_str(), comm, gm));
     return result;
   }
 
@@ -405,22 +405,22 @@ read(Epetra_MpiComm& comm, const std::string& fname,
   generate(const double& x0, const double& y0, const double& z0,
            const double& x1, const double& y1, const double& z1,
            const unsigned int& nx, const unsigned int& ny, const unsigned int& nz, 
-         Epetra_MpiComm& comm, 
+         const Epetra_MpiComm *comm, 
          const AmanziGeometry::GeometricModelPtr& gm)
   {
     Teuchos::RCP<Mesh> 
-    result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, &comm, gm));
+    result(new typename generate_maps::type(x0, y0, z0, x1, y1, z1, nx, ny, nz, comm, gm));
     return result;
   }
 
 /// Generate a hex mesh from arguments sent in through a parameter list
   static Teuchos::RCP<Mesh>
-generate(Teuchos::ParameterList &parameter_list, Epetra_MpiComm& comm,
+generate(Teuchos::ParameterList &parameter_list, const Epetra_MpiComm *comm,
          const AmanziGeometry::GeometricModelPtr& gm)
   {
     GenerationSpec gspec(parameter_list);
     Teuchos::RCP<Mesh> 
-    result(new typename generate_maps::type(gspec, &comm, gm));
+    result(new typename generate_maps::type(gspec, comm, gm));
     return result;
   }
 };
@@ -528,7 +528,7 @@ framework_reads(const Framework& f, const Format& fmt, const bool& parallel)
 // framework_read
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
-framework_read(Epetra_MpiComm& comm, const Framework& f, const std::string& fname, 
+framework_read(const Epetra_MpiComm *comm, const Framework& f, const std::string& fname, 
                const AmanziGeometry::GeometricModelPtr& gm)
 {
   Teuchos::RCP<Mesh> result;
@@ -589,7 +589,7 @@ framework_generates(const Framework& f, const bool& parallel)
 // framework_generate
 // -------------------------------------------------------------
 Teuchos::RCP<Mesh> 
-framework_generate(Epetra_MpiComm& comm, const Framework& f, 
+framework_generate(const Epetra_MpiComm *comm, const Framework& f, 
                    const double& x0, const double& y0, const double& z0,
                    const double& x1, const double& y1, const double& z1,
                    const unsigned int& nx, const unsigned int& ny, const unsigned int& nz,
@@ -620,7 +620,7 @@ framework_generate(Epetra_MpiComm& comm, const Framework& f,
 }
 
 Teuchos::RCP<Mesh> 
-framework_generate(Epetra_MpiComm& comm, const Framework& f, 
+framework_generate(const Epetra_MpiComm *comm, const Framework& f, 
                    Teuchos::ParameterList &parameter_list,
                    const AmanziGeometry::GeometricModelPtr& gm)
 {

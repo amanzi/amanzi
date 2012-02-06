@@ -42,8 +42,6 @@ class Mesh_MOAB : public Mesh
     int celldim; // Topological dimension of highest level entities
     int facedim; // Topological dimension of 2nd highest level entities
 
-    Epetra_MpiComm *epcomm;
-
 
 
     // Local handles to entity lists (Vertices, "Faces", "Cells")
@@ -150,7 +148,7 @@ class Mesh_MOAB : public Mesh
 
 public:
   
-  Mesh_MOAB (const char *filename, MPI_Comm comm, 
+  Mesh_MOAB (const char *filename, const Epetra_MpiComm *comm, 
 	     const AmanziGeometry::GeometricModelPtr& gm = 
 	     (AmanziGeometry::GeometricModelPtr) NULL);
   ~Mesh_MOAB();

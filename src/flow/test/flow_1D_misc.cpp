@@ -63,7 +63,7 @@ struct problem_setup
     gm = new GeometricModel(3,regions,comm);
 
     // Create the mesh.
-    MeshFactory mesh_fact(*comm);
+    MeshFactory mesh_fact(comm);
     mesh = mesh_fact(filename, gm);
 
     // Set default model parameters.

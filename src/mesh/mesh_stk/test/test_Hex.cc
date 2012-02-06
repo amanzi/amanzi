@@ -71,7 +71,7 @@ SUITE (HexMesh)
     CHECK_EQUAL(vmap->MaxAllGID(), (isize+1)*(jsize+1)*(ksize+1));
 
 
-    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(pm, 1000);
+    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
     Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
       mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
@@ -150,7 +150,7 @@ SUITE (HexMesh)
     Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
     Teuchos::RCP<Epetra_Map> vmap(g.vertexmap(true));
 
-    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(pm, 1000);
+    Amanzi::AmanziMesh::STK::Mesh_STK_factory mf(&comm, 1000);
     Amanzi::AmanziMesh::Data::Fields nofields;
     Amanzi::AmanziMesh::STK::Mesh_STK_Impl_p 
       mesh(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, NULL));
@@ -239,7 +239,7 @@ SUITE (HexMesh)
   {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(comm, 10, 10, 10));
+        mesh_map(new Amanzi::AmanziMesh::Mesh_STK(&comm, 10, 10, 10));
      
     Auditor audit("stk_mesh_generated_", mesh_map);
     audit();
@@ -269,7 +269,7 @@ SUITE (HexMesh)
   {
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     Amanzi::AmanziMesh::Mesh_STK
-        *mesh_stk = new Amanzi::AmanziMesh::Mesh_STK(comm, 4, 2, 2);
+        *mesh_stk = new Amanzi::AmanziMesh::Mesh_STK(&comm, 4, 2, 2);
 
     Teuchos::RCP<Epetra_CrsGraph> cgraph = mesh_stk->cellgraph();
     cgraph->Print(std::cerr);

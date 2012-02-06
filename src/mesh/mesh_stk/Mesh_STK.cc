@@ -50,12 +50,11 @@ const unsigned int Mesh_STK::num_kinds_ =
 // Mesh_STK:: constructors / destructor
 // -------------------------------------------------------------
 Mesh_STK::Mesh_STK(STK::Mesh_STK_Impl_p mesh)
-    : communicator_(new Epetra_MpiComm(mesh->communicator())),
-      mesh_(mesh), 
-      entity_map_(3),                   // FIXME: can be 2; take from mesh
-      map_owned_(), map_used_()
+  : mesh_(mesh), 
+    entity_map_(3),                   // FIXME: can be 2; take from mesh
+    map_owned_(), map_used_()
 {
-  Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_comm(mesh->communicator());
   build_maps_();
 }
 
@@ -809,6 +808,8 @@ extract_global_ids(const STK::Entity_vector& entities,
 void 
 Mesh_STK::build_maps_ ()
 {
+  const Epetra_Comm *comm = Mesh::get_comm();
+
   map_owned_.clear();
   map_used_.clear();
 
@@ -826,7 +827,7 @@ Mesh_STK::build_maps_ ()
     mesh_->get_entities (rank, OWNED, entities);
     extract_global_ids(entities, entity_ids);
 
-    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *communicator_));
+    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm));
     map_owned_.insert(MapSet::value_type(kind, map));
 
     // Get the collection of "ghost" entities
@@ -837,7 +838,7 @@ Mesh_STK::build_maps_ ()
     std::copy(ghost_entity_ids.begin(), ghost_entity_ids.end(), 
               std::back_inserter(entity_ids));
 
-    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *communicator_));
+    map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm));
     map_used_.insert(MapSet::value_type(kind, map));
   }
 
@@ -921,7 +922,8 @@ Mesh_STK::redistribute(const Epetra_Map& cellmap0)
             gids.begin());
   std::for_each(gids.begin(), gids.end(), bl::_1 += 1);
   Teuchos::RCP< Epetra_Map > cellmap1(new Epetra_Map(cellmap0.NumGlobalElements(), 
-                                                     gids.size(), &gids[0], 1, *communicator_));
+                                                     gids.size(), &gids[0], 1, 
+                                                     *(Mesh::get_comm())));
 
   mesh_->redistribute(*cellmap1);
 
