@@ -1489,6 +1489,7 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
   bool found(false);
   int celldim = Mesh::cell_dimension();
   int spacedim = Mesh::space_dimension();
+  const Epetra_Comm *epcomm = get_comm();
 
   assert(setents != NULL);
   
@@ -1677,11 +1678,6 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
                     }
                 }
 
-              if (!MSet_Num_Entries(mset1))
-                {
-                  std::cerr << "Need to expand search for cells containing point" << std::endl;
-                  throw std::exception();
-                }
             }
           else
             {
@@ -1798,83 +1794,148 @@ void Mesh_MSTK::get_set_entities (const std::string setname,
           break;
         }
     }
+
+
+  /* Check if no processor got any mesh entities */
+
+  int nent_loc, nent_glob;
+
+  nent_loc = MSet_Num_Entries(mset1);
+  epcomm->SumAll(&nent_loc,&nent_glob,1);
+
+  if (nent_glob == 0) {
+    std::stringstream stream;
+    stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+    Errors::Message mesg(stream.str());
+    Exceptions::amanzi_throw(mesg);
+  }
   
 
+  mset = NULL;
   switch (kind) {
   case CELL: {
     int ncells;
     int *cells;
 
-    if (!MSet_Num_Entries(mset1)) return;
-
-    if (ptype == OWNED)
-      mset = MSets_Subtract(mset1,GhostCells);
-    else if (ptype == GHOST)
-      mset = MSets_Subtract(mset1,OwnedCells);
-    else
-      mset = mset1;
-
-    if (!mset || !MSet_Num_Entries(mset)) return;
-
-    idx = 0;
-    while ((ment = MSet_Next_Entry(mset,&idx))) {
-      lid = MEnt_ID(ment);
-      setents->push_back(lid-1);
+    if (nent_loc) {
+      if (ptype == OWNED)
+        mset = MSets_Subtract(mset1,GhostCells);
+      else if (ptype == GHOST)
+        mset = MSets_Subtract(mset1,OwnedCells);
+      else
+        mset = mset1;      
     }
+    
 
-    if (ptype != USED)
-      MSet_Delete(mset);
+    /* Check if there were no entities left on any processor after
+       extracting the appropriate category of entities */
+    
+    nent_loc = mset ? MSet_Num_Entries(mset) : 0;
+    
+    epcomm->SumAll(&nent_loc,&nent_glob,1);
+    
+    if (nent_glob == 0) {
+      std::stringstream stream;
+      stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+      Errors::Message mesg(stream.str());
+      Exceptions::amanzi_throw(mesg);
+    }
+    
+    /* If this processor has no entities, nothing else to do */
+    
+    if (mset) {
+      idx = 0;
+      while ((ment = MSet_Next_Entry(mset,&idx))) {
+        lid = MEnt_ID(ment);
+        setents->push_back(lid-1);
+      }
+      
+      if (ptype != USED)
+        MSet_Delete(mset);
+    }
 
     return;
     break;
   }
   case FACE: {
 
-    if (!MSet_Num_Entries(mset1)) return;
-
-    if (ptype == OWNED)
-      mset = MSets_Subtract(mset1,NotOwnedFaces);
-    else if (ptype == GHOST)
-      mset = MSets_Subtract(mset1,OwnedFaces);
-    else
-      mset = mset1;
-
-    if (!mset || !MSet_Num_Entries(mset)) return;
-
-    idx = 0;
-    while ((ment = MSet_Next_Entry(mset,&idx))) {
-      lid = MEnt_ID(ment);
-      setents->push_back(lid-1);
+    if (nent_loc) {
+      if (ptype == OWNED)
+        mset = MSets_Subtract(mset1,NotOwnedFaces);
+      else if (ptype == GHOST)
+        mset = MSets_Subtract(mset1,OwnedFaces);
+      else
+        mset = mset1;
     }
 
-    if (ptype != USED)
-      MSet_Delete(mset);
+    /* Check if there were no entities left on any processor after
+       extracting the appropriate category of entities */
+ 
+    nent_loc = mset ? MSet_Num_Entries(mset) : 0;
 
+    epcomm->SumAll(&nent_loc,&nent_glob,1);
+
+    if (nent_glob == 0) {
+      std::stringstream stream;
+      stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+      Errors::Message mesg(stream.str());
+      Exceptions::amanzi_throw(mesg);
+    }
+
+    /* If this processor has no entities, nothing else to do */
+
+    if (mset) {
+      idx = 0;
+      while ((ment = MSet_Next_Entry(mset,&idx))) {
+        lid = MEnt_ID(ment);
+        setents->push_back(lid-1);
+      }
+
+      if (ptype != USED)
+        MSet_Delete(mset);
+    }
+      
     return;
     break;
   }
   case NODE: {
 
-    if (!MSet_Num_Entries(mset1)) return;
-    
-    if (ptype == OWNED)
-      mset = MSets_Subtract(mset1,NotOwnedVerts);
-    else if (ptype == GHOST)
-      mset = MSets_Subtract(mset1,OwnedVerts);
-    else
-      mset = mset1;
+    if (nent_loc) {    
+      if (ptype == OWNED)
+        mset = MSets_Subtract(mset1,NotOwnedVerts);
+      else if (ptype == GHOST)
+        mset = MSets_Subtract(mset1,OwnedVerts);
+      else
+        mset = mset1;
+    }
+      
+    /* Check if there were no entities left on any processor after
+       extracting the appropriate category of entities */
+ 
+    nent_loc = mset ? MSet_Num_Entries(mset) : 0;
 
-    if (!mset || !MSet_Num_Entries(mset)) return;
+    epcomm->SumAll(&nent_loc,&nent_glob,1);
 
-    idx = 0;
-    while ((ment = MSet_Next_Entry(mset,&idx))) {
-      lid = MEnt_ID(ment);
-      setents->push_back(lid-1);
+    if (nent_glob == 0) {
+      std::stringstream stream;
+      stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
+      Errors::Message mesg(stream.str());
+      Exceptions::amanzi_throw(mesg);
     }
 
-    if (ptype != USED)
-      MSet_Delete(mset);
+    /* If this processor has no entities, nothing else to do */
 
+    if (mset) {
+      idx = 0;
+      while ((ment = MSet_Next_Entry(mset,&idx))) {
+        lid = MEnt_ID(ment);
+        setents->push_back(lid-1);
+      }
+
+      if (ptype != USED)
+        MSet_Delete(mset);
+    }
+      
     return;
     break;
   }
