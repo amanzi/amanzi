@@ -173,6 +173,7 @@ PorousMedia::setup_bound_desc()
     const BCRec& bc = desc_lst[State_Type].getBC(0);
     getDirichletFaces(Faces,State_Type,bc);
 
+    tbc_descriptor_map.resize(ntracers);
 
     for (int iface = 0; iface < Faces.size(); iface++)
     {
@@ -185,6 +186,7 @@ PorousMedia::setup_bound_desc()
                 // Find BCs for this face
                 int idx = face.coordDir() + 3*face.isHigh();
                 const std::string& purpose = RpurposeDEF[idx];
+
                 const PArray<RegionData>& bcs = PorousMedia::BCs();
                 Array<int> myBCs;
                 for (int i=0; i<bcs.size(); ++i) {
@@ -200,7 +202,6 @@ PorousMedia::setup_bound_desc()
                         myBCs.push_back(i);
                     }
                 }
-
                 if (myBCs.size() > 0) 
                 {
                     bc_descriptor_map[face] = BCDesc(ccBndBox,myBCs);
@@ -209,6 +210,34 @@ PorousMedia::setup_bound_desc()
                     std::cerr << "No BCs responsible for filling face: " << Faces[iface] << std::endl;
                     BoxLib::Abort();
                 }
+
+                for (int n=0; n<ntracers; ++n) {
+                    const PArray<RegionData>& tbcs = PorousMedia::TBCs(n);
+                    Array<int> myTBCs;
+                    for (int i=0; i<tbcs.size(); ++i) {
+                        const PArray<Region>& tregions = tbcs[i].Regions();
+                        int tfound = 0;
+                        for (int j=0; j<tregions.size(); ++j) {
+                            if (tregions[j].purpose == purpose) {
+                                tfound++;
+                            }
+                        }
+                        
+                        if (tfound) {
+                            myTBCs.push_back(i);
+                        }
+                    }
+                    if (myTBCs.size() > 0) 
+                    {
+                        tbc_descriptor_map[n][face] = BCDesc(ccBndBox,myTBCs);
+                    }
+                    else {
+                        std::cerr << "No tracer BCs responsible for filling face: " << Faces[iface] << std::endl;
+                        BoxLib::Abort();
+                    }
+
+                }
+
             }
         }
     }
@@ -901,7 +930,11 @@ PorousMedia::initData ()
                     {
                         Array<Real> val = tic();
                         for (int jt=0; jt<tic_regions.size(); ++jt) {
-                            regions[jt].setVal(S_new[mfi],val[0],ncomps+iTracer,dx,0);
+                            BL_ASSERT(val.size()>=1);
+                            BL_ASSERT(sdat.nComp()>ncomps+iTracer);
+                            BL_ASSERT(tic_regions.size()>jt);
+
+                            tic_regions[jt].setVal(sdat,val[0],ncomps+iTracer,dx,0);
                         }
                     }
                     else {
@@ -9123,104 +9156,46 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
 void
 PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time)
 {
-  Array<Orientation> Faces;
-  const BCRec& bc = desc_lst[State_Type].getBC(0);
-  getDirichletFaces(Faces,State_Type,bc);
-
-
-  // FIXME: Apply solute bcs here
-  BoxLib::Abort("Solute BC not yet implemented");
-
-#if 0
-  if (Faces.size()>0)
+    for (int n=0; n<ntracers; ++n) 
     {
-      const Box& domain = geom.Domain();
-
-      BoxList  ccBoxList;
-
-      IntVect ratio = IntVect::TheUnitVector();
-      for (int lev = level+1; lev <= parent->finestLevel(); lev++)
-	ratio *= parent->refRatio(lev-1);
-    
-      for (int iface = 0; iface < Faces.size(); iface++)
-	{
-	  if (grids_on_side_of_domain(grids,domain,Faces[iface])) 
-	    {
-      	      Box ccBndBox  = BoxLib::adjCell(domain,Faces[iface],1);
-	      for (int dir = 0; dir<BL_SPACEDIM; dir++)
-		{
-		  if (dir != Faces[iface].coordDir())
-		    {
-		      ccBndBox.growLo(dir,1);
-		      ccBndBox.growHi(dir,1);
-		    }
-		}
-	      const Box valid_ccBndBox = ccBndBox & fab.box();
-	      if (valid_ccBndBox.ok())
-		ccBoxList.push_back(valid_ccBndBox);
-	    }
-	}
-      if (!ccBoxList.isEmpty())
-	{  
-	  const Real* dx   = geom.CellSize();
-	  const int* domlo  = domain.loVect();
-	  const int* domhi  = domain.hiVect();
-
-	  BoxArray  ccBoxArray( ccBoxList);
-
-	  FArrayBox sdat;
-	  FArrayBox cdat;
-	  for ( int iface = 0; iface < ccBoxList.size(); ++iface) 
-          {
-	      sdat.resize(ccBoxArray[iface], ntracers);
-	      sdat.setVal(0.0);
-	      
-	      int face  = int(Faces[iface]);
-
-              BL_ASSERT(tbcs.size()==ntracers);
-              for (int iTracer=0; iTracer<ntracers; ++iTracer) 
-              {
-                  const PArray<RegionData>& itbcs = tbcs[iTracer];
-
-                  for (int i=0; i<itbcs.size(); ++i)
-                  {
-                      const RegionData& tbc = itbcs[i];
-                      const PArray<Region>& tbc_regions = tbc.Regions();
-                      const std::string& tbc_type = tbc.Type();
-                      
-                      if (tbc_type == "file") 
-                      {
-                          std::cerr << "Initialization of boundary condition based on "
-                                    << "a file has not been implemented yet.\n";
-                          BoxLib::Abort("PorousMedia::dirichletTracerBC()");
-                      }
-                      else if (tbc_type == "scalar") 
-                      {
-                          Array<Real> val = tbc(time);
-                          for (int jt=0; jt<regions.size(); ++jt) {
-                              tbc_regions[jt].setVal(sdat,val[0],iTracer,dx,0);
-                          }
-                      }
-                      else {
-                          BoxLib::Abort("Unrecognized tracer bc type");
-                      }
-                      
-                      Box ovlp = fab.box() & sdat.box();
-                      fab.copy(sdat,ovlp,0,ovlp,0,ntracers);
-                      
-                      if (ngrow > 1)
-                      {
-                          DEF_LIMITS(fab,s_ptr,s_lo,s_hi);
-                          FORT_PATCH_GHOST(s_ptr,ARLIM(s_lo),ARLIM(s_hi),
-                                           &ntracers,&face,domlo,domhi);
-                      }
-                  }
-              }
-          }
-        }
+        if (tbc_descriptor_map[n].size()) 
+        {
+            const Box domain = geom.Domain();
+            const int* domhi  = domain.hiVect();
+            const int* domlo  = domain.loVect();
+            const Real* dx   = geom.CellSize();
+            FArrayBox sdat;
+            
+            for (std::map<Orientation,BCDesc>::const_iterator
+                     it=tbc_descriptor_map[n].begin(); it!=tbc_descriptor_map[n].end(); ++it) 
+            {
+                const Box bndBox = it->second.first;
+                const Array<int>& face_bc_idxs = it->second.second;
+                sdat.resize(bndBox,ncomps); sdat.setVal(0);
+                
+                for (int i=0; i<face_bc_idxs.size(); ++i) {
+                    const RegionData& face_tbc = tbc_array[n][face_bc_idxs[i]];
+                    const PArray<Region>& tbc_regions = face_tbc.Regions();
+                    
+                    Array<Real> val = face_tbc(time); // Get time-dependent values for concentration
+                
+                    for (int j=0; j<tbc_regions.size(); ++j) {
+                        
+                        std::cout << "Region: " << tbc_regions[j].name << std::endl;
+                        
+                        tbc_regions[j].setVal(sdat,val,dx,0,0,val.size());
+                    }
+                }
+                
+                std::cout << sdat << std::endl;
+                
+                Box ovlp = bndBox & fab.box();
+                fab.copy(sdat,ovlp,0,ovlp,n,1);
+            }
+        }    
     }
-#endif
 }
+
 
 MultiFab*
 PorousMedia::derive (const std::string& name,

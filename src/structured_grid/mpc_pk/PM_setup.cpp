@@ -1538,15 +1538,14 @@ void  PorousMedia::read_tracer()
           ppr.getarr("tinits",tic_names,0,n_ic);
           tic_array[i].resize(n_ic);
           
-          Array<std::string> region_names;
           for (int n = 0; n<n_ic; n++)
           {
               const std::string prefixIC(prefix + "." + tic_names[n]);
-              ParmParse ppri(prefix.c_str());
-              
+              ParmParse ppri(prefixIC.c_str());
               int n_ic_region = ppri.countval("regions");
+              Array<std::string> region_names;
               ppri.getarr("regions",region_names,0,n_ic_region);
-              const PArray<Region>& tic_regions = build_region_PArray(region_names);
+              const PArray<Region> tic_regions = build_region_PArray(region_names);
               std::string tic_type; ppri.get("type",tic_type);
               
               if (tic_type == "concentration")
@@ -1561,7 +1560,6 @@ void  PorousMedia::read_tracer()
               }
           }
 
-
           Array<std::string> tbc_names;
           int n_tbc = ppr.countval("tbcs");
           if (n_tbc <= 0)
@@ -1571,15 +1569,15 @@ void  PorousMedia::read_tracer()
           ppr.getarr("tbcs",tbc_names,0,n_tbc);
           tbc_array[i].resize(n_tbc);
           
-          Array<std::string> tbc_region_names;
           for (int n = 0; n<n_tbc; n++)
           {
               const std::string prefixTBC(prefix + "." + tbc_names[n]);
-              ParmParse ppri(prefix.c_str());
+              ParmParse ppri(prefixTBC.c_str());
               
               int n_tbc_region = ppri.countval("regions");
+              Array<std::string> tbc_region_names;
               ppri.getarr("regions",tbc_region_names,0,n_tbc_region);
-              const PArray<Region>& tbc_regions = build_region_PArray(tbc_region_names);
+              const PArray<Region> tbc_regions = build_region_PArray(tbc_region_names);
               std::string tbc_type; ppri.get("type",tbc_type);
               
               if (tbc_type == "concentration")
@@ -1589,8 +1587,13 @@ void  PorousMedia::read_tracer()
                   int nv = ppri.countval("vals");
                   if (nv) {
                       ppri.getarr("vals",vals,0,nv);
-                      ppri.getarr("times",times,0,nv);
-                      ppri.getarr("forms",forms,0,nv-1);
+                      if (nv>1) {
+                          ppri.getarr("times",times,0,nv);
+                          ppri.getarr("forms",forms,0,nv-1);
+                      }
+                      else {
+                          times.resize(1,0);
+                      }
                   }
                   else {
                       vals.resize(1,0); // Default tracers to zero for all time
@@ -1599,7 +1602,11 @@ void  PorousMedia::read_tracer()
                   }
                   int nComp = 1;
                   tbc_array[i].set(n, new ArrayRegionData(tbc_names[n],times,vals,forms,tbc_regions,tbc_type,nComp));
-              
+              }
+              else if (tbc_type == "noflow"  ||  tbc_type == "outflow")
+              {
+                  Array<Real> val(1,0);
+                  tbc_array[i].set(n, new RegionData(tbc_names[n],tbc_regions,tbc_type,val));
               }
               else {
                   std::string m = "Tracer BC: \"" + tbc_names[n] 
@@ -1607,8 +1614,6 @@ void  PorousMedia::read_tracer()
                   BoxLib::Abort(m.c_str());
               }
           }
-
-
       }
   }
 }
@@ -1797,7 +1802,7 @@ void PorousMedia::read_observation()
           std::string obs_type; ppr.get("obs_type",obs_type);
           std::string obs_field; ppr.get("field",obs_field);
           Array<std::string> region_names(1); ppr.get("region",region_names[0]);
-          const PArray<Region>& obs_regions = build_region_PArray(region_names);
+          const PArray<Region> obs_regions = build_region_PArray(region_names);
           
 	  Array<Real> obs_times; ppr.getarr("times",obs_times,0,ppr.countval("times"));
 

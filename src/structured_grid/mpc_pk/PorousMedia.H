@@ -293,6 +293,7 @@ public:
   static Real NumComponents() {return ncomps;}
 
   static PArray<RegionData>& BCs() {return bc_array;}
+  static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
 
 protected:
 
@@ -877,7 +878,9 @@ protected:
   static Array<Real> rinflow_vel_hi;
 
   typedef std::pair<Box,Array<int> > BCDesc;
-    std::map<Orientation,BCDesc> bc_descriptor_map;
+  std::map<Orientation,BCDesc> bc_descriptor_map;
+    Array<std::map<Orientation,BCDesc> > tbc_descriptor_map;
+
   // temperature
   static Real temperature;
 

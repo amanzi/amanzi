@@ -7,7 +7,7 @@ RegionData::RegionData(const std::string&    label,
                        const PArray<Region>& regions,
                        const std::string&    typeStr,
                        const Array<Real>&    vals)
-    : type(typeStr), vals(vals), nComp(vals.size())
+    : label(label), type(typeStr), vals(vals), nComp(vals.size())
 {
     setRegions(regions);
 }
@@ -16,7 +16,7 @@ RegionData::RegionData(const std::string&    label,
                        const PArray<Region>& regions,
                        const std::string&    typeStr,
                        Real                  val)
-    : type(typeStr), nComp(1), vals(Array<Real>(val,nComp))
+    : label(label), type(typeStr), nComp(1), vals(Array<Real>(nComp,val))
 {
     setRegions(regions);
 }

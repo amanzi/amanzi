@@ -1292,7 +1292,7 @@ namespace Amanzi {
                 const Array<std::string>& regions = state_bc.Regions();
                 Array<std::string> _regions;
                 for (int i=0; i<regions.size(); ++i) {
-                    _regions.push_back(regions[i]);
+                    _regions.push_back(underscore(regions[i]));
                 }
                 const std::string& Amanzi_type = state_bc.Amanzi_Type();
         
@@ -1340,7 +1340,7 @@ namespace Amanzi {
 
                             ParameterList typePL;
                             fPL.set("regions",_regions);
-                            fPL.setName(underscore(solute_bc_Amanzi_type));
+                            fPL.setName(underscore(solute_bc_label));
                             solute_to_BClabel.insert(
                                 std::pair<std::string,ParameterList>(underscore(soluteName),fPL));
                         }
@@ -1395,11 +1395,12 @@ namespace Amanzi {
                                 throw std::exception();
                             }
                     
-                            ParameterList typePL;
                             fPL.set("regions",_regions);
-                            fPL.setName(underscore(solute_ic_Amanzi_type));
+                            ParameterList icPL;
+                            icPL.set(underscore(solute_ic_label),fPL);
+                            icPL.setName(underscore(solute_ic_label));
                             solute_to_IClabel.insert(
-                                std::pair<std::string,ParameterList>(underscore(soluteName),fPL));
+                                std::pair<std::string,ParameterList>(underscore(soluteName),icPL));
                         }
                     }
                 }
