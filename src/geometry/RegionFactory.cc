@@ -80,7 +80,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\nCannot create region of type Box";
+        mesg << "\n" << "Cannot create region of type Box";
         Exceptions::amanzi_throw(mesg);
       }
     }
@@ -114,7 +114,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\nCannot create region of type Plane";
+        mesg << "\n" << "Cannot create region of type Plane";
         Exceptions::amanzi_throw(mesg);
       }
     }
@@ -139,7 +139,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\nCannot create region of type LabeledSet";
+        mesg << "\n" << "Cannot create region of type LabeledSet";
         Exceptions::amanzi_throw(mesg);
       }
 
@@ -156,7 +156,7 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\nCannot create region of type Color Function";
+        mesg << "\n" << "Cannot create region of type Color Function";
         Exceptions::amanzi_throw(mesg);
       }
 
@@ -185,14 +185,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
         return regptr;
       }
       catch (Errors::Message mesg) {
-        mesg << "\nCannot create region of type Point";
+        mesg << "\n" << "Cannot create region of type Point";
         Exceptions::amanzi_throw(mesg);
       }
     }
   else 
     {
-      std::cerr << "ERROR: Cannot process region with shape " << shape << std::endl;
-      throw std::exception();
+      Errors::Message mesg("ERROR: Cannot process region with given shape ");
+      Exceptions::amanzi_throw(mesg);
     }
 
 }
