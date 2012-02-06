@@ -467,7 +467,7 @@ class Mesh
   // other than an MpiComm type - so we can't do serial builds anyway 
 
   inline
-  const Epetra_MpiComm* get_comm() {
+  const Epetra_MpiComm* get_comm() const {
     return comm;
   }
 
