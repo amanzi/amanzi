@@ -364,6 +364,10 @@ Usage:
 
     * [U] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
 
+   * [U] `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
+
+    * [U] `"Framework`" [string] one of "stk::mesh", "MSTK", or "MOAB". 
+
 
 Example of `"Structured`" mesh:
 
