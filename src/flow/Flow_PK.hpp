@@ -16,7 +16,9 @@ public:
   virtual int advance_to_steady_state() = 0;
   
   virtual int advance_transient(double h) = 0; 
+  virtual int advance_steady(double h) = 0; 
   virtual int init_transient(double t0, double h0) = 0; 
+  virtual int init_steady(double t0, double h0) = 0; 
   
   virtual void commit_state(Teuchos::RCP<Flow_State>) = 0;
 

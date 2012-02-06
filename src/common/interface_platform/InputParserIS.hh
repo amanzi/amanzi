@@ -4,7 +4,7 @@
 namespace Amanzi {
 namespace AmanziInput {
 
-Teuchos::ParameterList translate (Teuchos::ParameterList* plist);
+  Teuchos::ParameterList translate (Teuchos::ParameterList* plist, int numproc);
 
 Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::ParameterList* plist );
 Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist );
@@ -31,7 +31,8 @@ static std::string phase_name;
 static std::string phase_comp_name;
 static Teuchos::Array<std::string> comp_names;
 static std::map<std::string, int> comp_names_map;
-static std::string verbosity_level = "low";
-
+static std::string verbosity_level("low");
+static int numproc_;
+  
 }
 }

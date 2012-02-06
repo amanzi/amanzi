@@ -32,6 +32,7 @@ class RichardsModelEvaluator : public BDF2::fnBase,
   void update_precon(const double t, const Epetra_Vector& up, const double h, int& errc);
 
   bool is_admissible(const Epetra_Vector& up);
+  void update_norm(double rtol, double atol);
 
  private:
   RichardsProblem* problem_;

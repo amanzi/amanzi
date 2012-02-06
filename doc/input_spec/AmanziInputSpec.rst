@@ -248,6 +248,18 @@ Usage:
 
    * [U] `"Transport Integration Algorithm`" [string] Accepts `"Explicit First-Order`" or `"Explicit Second-Order`" (default)
 
+   * [U] `"steady max iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced. 
+
+   * [U] `"steady min iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is increased.
+
+   * [U] `"steady limit iterations"` [integer] If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the current time step is reduced and the current time step is repeated. 
+
+   * [U] `"steady nonlinear tolerance"` [double] The tolerance for the nonlinear solver during the steady state computation.
+
+   * [U] `"steady time step reduction factor"` [double] When time step reduction is necessary during the steady calculation, use this factor.
+
+   * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor.
+
   * `"Structured Algorithm`" [list]
 
    * `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)
@@ -338,7 +350,7 @@ Usage:
 
   * [U] `"Read Mesh File`" [list] accepts name, format of pre-generated mesh file
 
-   * [U] `"File`" [string] name of pre-generated mesh file
+   * [U] `"File`" [string] name of pre-generated mesh file. Note that in the case of an Exodus II mesh file, the suffix of the serial mesh file must be .exo. When running in serial the code will read this file directly. When running in parallel, the code will instead read the partitioned files, that have been generated with a Nemesis tool. There is no need to change the file name in this case as the code will automatically load the proper files. 
 
    * [U] `"Format`" [string] format of pre-generated mesh file (`"MSTK`", `"MOAB`", or `"Exodus II`")
 
@@ -351,6 +363,10 @@ Usage:
     * [U] `"Domain High Coordinate`" [Array double] Location of high corner of domain
 
     * [U] `"Number Of Cells`" [Array int] the number of uniform cells in each coordinate direction
+
+   * [U] `"Expert`" [list] accepts parameters that control which particular mesh framework is to be used.
+
+    * [U] `"Framework`" [string] one of "stk::mesh", "MSTK", or "MOAB". 
 
 
 Example of `"Structured`" mesh:
