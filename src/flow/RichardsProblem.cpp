@@ -18,7 +18,7 @@
 namespace Amanzi {
 
 RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                                 const Teuchos::ParameterList& parameter_list) : mesh_(mesh)
+                                 Teuchos::ParameterList& rp_list) : mesh_(mesh)
 {
   // Create the combined cell/face DoF map.
   dof_map_ = create_dof_map_(CellMap(), FaceMap());
@@ -30,22 +30,18 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   init_mimetic_disc_(*mesh, MD);
   md_ = new MimeticHex(mesh); // evolving replacement for mimetic_hex
   
-  Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
-  Teuchos::ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
-
-  upwind_k_rel_ = richards_list.get<bool>("Upwind relative permeability", true);
+  upwind_k_rel_ = rp_list.get<bool>("Upwind relative permeability", true);
   
-  p_atm_   = richards_list.get<double>("Atmospheric pressure");
-  rho_ = state_list.get<double>("Constant water density");
-  mu_ = state_list.get<double>("Constant viscosity");
-  gravity_ = state_list.get<double>("Gravity z");
+  p_atm_ = rp_list.get<double>("Atmospheric pressure");
+  rho_ = rp_list.get<double>("fluid density");
+  mu_ = rp_list.get<double>("fluid viscosity");
+  gravity_ = rp_list.get<double>("gravity");
   gvec_[0] = 0.0; 
   gvec_[1] = 0.0; 
   gvec_[2] = -gravity_;
   
   // Create the BC objects.
-  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(richards_list.sublist("boundary conditions",true));
+  Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(rp_list.sublist("boundary conditions",true));
   FlowBCFactory bc_factory(mesh, bc_list);
   bc_press_ = bc_factory.CreatePressure();
   bc_head_  = bc_factory.CreateStaticHead(p_atm_, rho_, gravity_);
@@ -56,18 +52,19 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   D_ = Teuchos::rcp<DiffusionMatrix>(create_diff_matrix_(mesh));
 
   // Create the preconditioner (structure only, no values)
-  Teuchos::ParameterList diffprecon_plist = richards_list.sublist("Diffusion Preconditioner");
-  precon_ = new DiffusionPrecon(D_, diffprecon_plist, Map());
+  Teuchos::ParameterList diffprecon_list = rp_list.sublist("Diffusion Preconditioner");
+  precon_ = new DiffusionPrecon(D_, diffprecon_list, Map());
   
   // set permeability
-  k_.resize(CellMap(true).NumMyElements()); 
+  kv_.resize(CellMap(true).NumMyElements()); 
+  kh_.resize(CellMap(true).NumMyElements()); 
   k_rl_.resize(CellMap(true).NumMyElements());
   
-  if (!richards_list.isSublist("Water retention models")) {
+  if (!rp_list.isSublist("Water retention models")) {
     Errors::Message m("There is no Water retention models list");
     Exceptions::amanzi_throw(m);
   }
-  Teuchos::ParameterList &vGsl = richards_list.sublist("Water retention models");
+  Teuchos::ParameterList &vGsl = rp_list.sublist("Water retention models");
 
   // first figure out how many entries there are
   int nblocks = 0;
@@ -75,10 +72,8 @@ RichardsProblem::RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
     if (vGsl.isSublist(vGsl.name(i))) {
       nblocks++;
     } else {
-      // currently we only support van Genuchten, if a user
-      // specifies something else, throw a meaningful error...
-      Errors::Message m("RichardsProblem: the Water retention models sublist contains an entry that is not a sublist!");
-      Exceptions::amanzi_throw(m);
+      Errors::Message msg("Water retention models sublist contains an entry that is not a sublist.");
+      Exceptions::amanzi_throw(msg);
     }
   }
 
@@ -224,7 +219,8 @@ void RichardsProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<Mim
 
 void RichardsProblem::set_absolute_permeability(double k)
 {
-  for (int c=0; c<k_.size(); ++c) k_[c] = k;  // should verify k > 0
+  for (int c=0; c<kv_.size(); ++c) kv_[c] = kh_[c] = k;  // should verify k > 0
+  flag_tensor = false;
 }
 
 
@@ -236,8 +232,26 @@ void RichardsProblem::set_absolute_permeability(const Epetra_Vector &k)
   Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
 
   k_ovl.Import(k, importer, Insert);
+  for (int i=0; i<kv_.size(); ++i) kv_[i] = kh_[i] = k_ovl[i];
 
-  for (int i=0; i<k_.size(); ++i) k_[i] = k_ovl[i];
+  flag_tensor = false;
+}
+
+
+void RichardsProblem::set_absolute_permeability(const Epetra_Vector &kv, const Epetra_Vector &kh)
+{
+  // should verify k.Map() is CellMap()
+  // should verify k values are all > 0
+  Epetra_Vector k_ovl(mesh_->cell_map(true));
+  Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
+
+  k_ovl.Import(kv, importer, Insert);
+  for (int i=0; i<kv_.size(); ++i) kv_[i] = k_ovl[i];
+
+  k_ovl.Import(kh, importer, Insert);
+  for (int i=0; i<kh_.size(); ++i) kh_[i] = k_ovl[i];
+
+  flag_tensor = true;
 }
 
 
@@ -245,6 +259,7 @@ void RichardsProblem::ComputeRelPerm(const Epetra_Vector &P, Epetra_Vector &k_re
 {
   ASSERT(P.Map().SameAs(CellMap(true)));
   ASSERT(k_rel.Map().SameAs(CellMap(true)));
+
   for (int mb=0; mb<WRM.size(); mb++) {
     // get mesh block cells
     std::string region = WRM[mb]->region();
@@ -309,8 +324,6 @@ void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetr
 
 void RichardsProblem::ComputePrecon(const Epetra_Vector &P)
 {
-  std::vector<double> K(k_);
-
   Epetra_Vector &Pcell_own = *CreateCellView(P);
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
@@ -320,15 +333,45 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P)
   Pface.Import(Pface_own, *face_importer_, Insert);
 
   // Fill the diffusion matrix with values.
-  if (upwind_k_rel_) {
+  if (upwind_k_rel_ && !flag_tensor) {
     Epetra_Vector K_upwind(Pface.Map());
     ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] / mu_;
+
+    std::vector<double> K(kv_);
+    for (int j = 0; j < K.size(); ++j) K[j] *= rho_ / mu_;
     D_->Compute(K, K_upwind);
-  } else {
+  } else if (!upwind_k_rel_ && !flag_tensor) {
     Epetra_Vector k_rel(Pcell.Map());
     ComputeRelPerm(Pcell, k_rel);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] * k_rel[j] / mu_;
+
+    std::vector<double> K(kv_);
+    for (int j = 0; j < K.size(); ++j) K[j] *= rho_ * k_rel[j] / mu_;
+    D_->Compute(K);
+  } else if (upwind_k_rel_ && flag_tensor) {
+    Epetra_Vector K_upwind(Pface.Map());
+    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
+
+    std::vector<Epetra_SerialSymDenseMatrix> K;
+    for (int j = 0; j < kv_.size(); ++j) {
+      Epetra_SerialSymDenseMatrix Kcell;
+      Kcell.Shape(3);
+      Kcell(0,0) = Kcell(1,1) = kh_[j] * rho_ / mu_;
+      Kcell(2,2) = kv_[j] * rho_ / mu_;
+      K.push_back(Kcell);
+    }
+    D_->Compute(K, K_upwind);
+  } else if (!upwind_k_rel_ && flag_tensor) {
+    Epetra_Vector k_rel(Pcell.Map());
+    ComputeRelPerm(Pcell, k_rel);
+
+    std::vector<Epetra_SerialSymDenseMatrix> K;
+    for (int j = 0; j < kv_.size(); ++j) {
+      Epetra_SerialSymDenseMatrix Kcell;
+      Kcell.Shape(3);
+      Kcell(0,0) = Kcell(1,1) = kh_[j] * k_rel[j] * rho_ / mu_;
+      Kcell(2,2) = kv_[j] * k_rel[j] * rho_ / mu_;
+      K.push_back(Kcell);
+    }
     D_->Compute(K);
   }
 
@@ -345,8 +388,6 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P)
 
 void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
 {
-  std::vector<double> K(k_);
-
   Epetra_Vector &Pcell_own = *CreateCellView(P);
   Epetra_Vector Pcell(CellMap(true));
   Pcell.Import(Pcell_own, *cell_importer_, Insert);
@@ -354,16 +395,46 @@ void RichardsProblem::ComputePrecon(const Epetra_Vector &P, const double h)
   Epetra_Vector &Pface_own = *CreateFaceView(P);
   Epetra_Vector Pface(FaceMap(true));
   Pface.Import(Pface_own, *face_importer_, Insert);
-  
-  if (upwind_k_rel_) {
+
+  if (upwind_k_rel_ && !flag_tensor) {
     Epetra_Vector K_upwind(Pface.Map());
     ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] / mu_;
+
+    std::vector<double> K(kv_);
+    for (int j = 0; j < K.size(); ++j) K[j] *= rho_ / mu_;
     D_->Compute(K, K_upwind);
-  } else {
+  } else if (!upwind_k_rel_ && !flag_tensor) {
     Epetra_Vector k_rel(Pcell.Map());
     ComputeRelPerm(Pcell, k_rel);
-    for (int j = 0; j < K.size(); ++j) K[j] = rho_ * k_[j] * k_rel[j] / mu_;
+
+    std::vector<double> K(kv_);
+    for (int j = 0; j < K.size(); ++j) K[j] *= rho_ * k_rel[j] / mu_;
+    D_->Compute(K);
+  } else if (upwind_k_rel_ && flag_tensor) {
+    Epetra_Vector K_upwind(Pface.Map());
+    ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
+
+    std::vector<Epetra_SerialSymDenseMatrix> K;
+    for (int j = 0; j < kv_.size(); ++j) {
+      Epetra_SerialSymDenseMatrix Kcell;
+      Kcell.Shape(3);
+      Kcell(0,0) = Kcell(1,1) = kh_[j] * rho_ / mu_;
+      Kcell(2,2) = kv_[j] * rho_ / mu_;
+      K.push_back(Kcell);
+    }
+    D_->Compute(K, K_upwind);
+  } else if (!upwind_k_rel_ && flag_tensor) {
+    Epetra_Vector k_rel(Pcell.Map());
+    ComputeRelPerm(Pcell, k_rel);
+
+    std::vector<Epetra_SerialSymDenseMatrix> K;
+    for (int j = 0; j < kv_.size(); ++j) {
+      Epetra_SerialSymDenseMatrix Kcell;
+      Kcell.Shape(3);
+      Kcell(0,0) = Kcell(1,1) = kh_[j] * k_rel[j] * rho_ / mu_;
+      Kcell(2,2) = kv_[j] * k_rel[j] * rho_ / mu_;
+      K.push_back(Kcell);
+    }
     D_->Compute(K);
   }
 
@@ -424,16 +495,13 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
     Fhead[bc->first] = Pface[bc->first] - bc->second;
     Pface[bc->first] = bc->second;
   }
-  
-  // GENERIC COMPUTATION OF THE FUNCTIONAL /////////////////////////////////////
 
-  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
+  // Computate the functional  
+  Epetra_Vector k_rel(CellMap(true)), K_upwind(FaceMap(true));
   if (upwind_k_rel_) {
     ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] / mu_);
   } else {
-    ComputeRelPerm(Pcell, K);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] * K[j] / mu_);
+    ComputeRelPerm(Pcell, k_rel);
   }
 
   // Create cell and face result vectors that include ghosts.
@@ -451,20 +519,48 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
     if (upwind_k_rel_) {
-      for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
-      MD[j].diff_op(K[j], aux3, Pcell[j], aux1, Fcell[j], aux2);
-      // Gravity contribution
-      MD[j].GravityFlux(gvec_, gflux);
-      for (int k = 0; k < 6; ++k) gflux[k] *= rho_ * K[j] * aux3[k];
-      for (int k = 0; k < 6; ++k) {
-        aux2[k] -= gflux[k];
-        Fcell[j] += gflux[k];
+      for (int k=0; k<6; ++k) aux3[k] = K_upwind[cface[k]];
+      if (!flag_tensor) {
+        double Kc = rho_ * kv_[j] / mu_;
+        MD[j].diff_op(Kc, aux3, Pcell[j], aux1, Fcell[j], aux2);
+        // Gravity contribution
+        MD[j].GravityFlux(gvec_, gflux);
+        for (int k = 0; k < 6; ++k) gflux[k] *= rho_ * Kc * aux3[k];
+        for (int k = 0; k < 6; ++k) {
+          aux2[k] -= gflux[k];
+          Fcell[j] += gflux[k];
+        }
+      } else {
+        Epetra_SerialSymDenseMatrix Kc;
+        Kc.Shape(3);
+        Kc(0,0) = Kc(1,1) = rho_ * kh_[j] / mu_;
+        Kc(2,2) = rho_ * kv_[j] / mu_;
+        MD[j].diff_op(Kc, aux3, Pcell[j], aux1, Fcell[j], aux2);
+        // Gravity contribution
+        MD[j].GravityFlux(gvec_, Kc, gflux);
+        for (int k = 0; k < 6; ++k) gflux[k] *= rho_ * aux3[k];
+        for (int k = 0; k < 6; ++k) {
+          aux2[k] -= gflux[k];
+          Fcell[j] += gflux[k];
+        }
       }
     } else {
-      MD[j].diff_op(K[j], Pcell[j], aux1, Fcell[j], aux2);
-      // Gravity contribution
-      MD[j].GravityFlux(gvec_, gflux);
-      for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * K[j] * gflux[k];
+      if (!flag_tensor) {
+        double Kc = rho_ * kv_[j] * k_rel[j] / mu_;
+        MD[j].diff_op(Kc, Pcell[j], aux1, Fcell[j], aux2);
+        // Gravity contribution
+        MD[j].GravityFlux(gvec_, gflux);
+        for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * Kc * gflux[k];
+      } else {
+        Epetra_SerialSymDenseMatrix Kc;
+        Kc.Shape(3);
+        Kc(0,0) = Kc(1,1) = rho_ * kh_[j] * k_rel[j] / mu_;
+        Kc(2,2) = rho_ * kv_[j] * k_rel[j] / mu_;
+        MD[j].diff_op(Kc, Pcell[j], aux1, Fcell[j], aux2);
+        // Gravity contribution
+        MD[j].GravityFlux(gvec_, Kc, gflux);
+        for (int k = 0; k < 6; ++k) aux2[k] -= rho_ * gflux[k];
+      }
     }
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += aux2[k];
@@ -478,12 +574,13 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   // Mass flux BC contribution.
   bc_flux_->Compute(time);
   for (BoundaryFunction::Iterator bc = bc_flux_->begin(); bc != bc_flux_->end(); ++bc)
-    Fface[bc->first] += bc->second * md_->face_area_[bc->first];
+      Fface[bc->first] += bc->second * md_->face_area_[bc->first];
+
   
   // Copy owned part of result into the output vectors.
   for (int j = 0; j < Fcell_own.MyLength(); ++j) Fcell_own[j] = Fcell[j];
   for (int j = 0; j < Fface_own.MyLength(); ++j) Fface_own[j] = Fface[j];
-    
+
   delete &Pcell_own, &Pface_own, &Fcell_own, &Fface_own;
 }
 
@@ -515,11 +612,22 @@ void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector &Pcell,
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] / mu_);
-    MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2); // aux2 is inward flux
-    // Gravity contribution; aux2 becomes outward flux
-    MD[j].GravityFlux(gvec_, gflux);
-    for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
+    if (!flag_tensor) {
+      double K = (rho_ * kv_[j] / mu_);
+      MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2); // aux2 is inward flux
+      // Gravity contribution; aux2 becomes outward flux
+      MD[j].GravityFlux(gvec_, gflux);
+      for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
+    } else {
+      Epetra_SerialSymDenseMatrix Kc;
+      Kc.Shape(3);
+      Kc(0,0) = Kc(1,1) = rho_ * kh_[j] / mu_;
+      Kc(2,2) = rho_ * kv_[j] / mu_;
+      MD[j].diff_op(Kc, Pcell[j], aux1, dummy, aux2); // aux2 is inward flux
+      // Gravity contribution; aux2 becomes outward flux
+      MD[j].GravityFlux(gvec_, Kc, gflux);
+      for (int k = 0; k < 6; ++k) aux2[k] = rho_ * gflux[k] - aux2[k];
+    }
     // Scatter the local face result into FFACE.
     mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += fdirs[k] * aux2[k];
@@ -639,13 +747,11 @@ void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVe
   // incorporated into the mimetic discretization and K_upwind is applied
   // afterwards to the computed mimetic flux.  Note that density (rho) is
   // not included here because we want the Darcy velocity and not mass flux.
-  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
+  Epetra_Vector k_rel(CellMap(true)), K_upwind(FaceMap(true));
   if (upwind_k_rel_) {
     ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (k_[j] / mu_);
   } else {
-    ComputeRelPerm(Pcell, K);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (k_[j] / mu_) * K[j];
+    ComputeRelPerm(Pcell, k_rel);
   }
 
   int cface[6];
@@ -656,13 +762,35 @@ void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVe
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     if (upwind_k_rel_) {
       for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
-      MD[j].diff_op(K[j], aux3, Pcell_own[j], aux1, dummy, aux2);
-      MD[j].GravityFlux(gvec_, gflux);
-      for (int k = 0; k < 6; ++k) aux2[k] = aux3[k] * K[j] * rho_ * gflux[k] - aux2[k];
+      if (!flag_tensor) {
+        double K = kv_[j] / mu_;
+        MD[j].diff_op(K, aux3, Pcell_own[j], aux1, dummy, aux2);
+        MD[j].GravityFlux(gvec_, gflux);
+        for (int k = 0; k < 6; ++k) aux2[k] = aux3[k] * K * rho_ * gflux[k] - aux2[k];
+      } else {
+        Epetra_SerialSymDenseMatrix Kc;
+        Kc.Shape(3);
+        Kc(0,0) = Kc(1,1) = kh_[j] / mu_;
+        Kc(2,2) = kv_[j] / mu_;
+        MD[j].diff_op(Kc, aux3, Pcell_own[j], aux1, dummy, aux2);
+        MD[j].GravityFlux(gvec_, Kc, gflux);
+        for (int k = 0; k < 6; ++k) aux2[k] = aux3[k] * rho_ * gflux[k] - aux2[k];
+      }
     } else {
-      MD[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
-      MD[j].GravityFlux(gvec_, gflux);
-      for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
+      if (!flag_tensor) {
+        double K = k_rel[j] * kv_[j] / mu_;
+        MD[j].diff_op(K, Pcell_own[j], aux1, dummy, aux2);
+        MD[j].GravityFlux(gvec_, gflux);
+        for (int k = 0; k < 6; ++k) aux2[k] = K * rho_ * gflux[k] - aux2[k];
+      } else {
+        Epetra_SerialSymDenseMatrix Kc;
+        Kc.Shape(3);
+        Kc(0,0) = Kc(1,1) = k_rel[j] * kh_[j] / mu_;
+        Kc(2,2) = k_rel[j] * kv_[j] / mu_;
+        MD[j].diff_op(Kc, aux3, Pcell_own[j], aux1, dummy, aux2);
+        MD[j].GravityFlux(gvec_, Kc, gflux);
+        for (int k = 0; k < 6; ++k) aux2[k] = aux3[k] * rho_ * gflux[k] - aux2[k];
+      }
     }
     MD[j].CellFluxVector(aux2, aux4);
     Q[0][j] = aux4[0];
@@ -701,13 +829,12 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
   // The pressure gradient coefficient split as K * K_upwind: K gets
   // incorporated into the mimetic discretization and K_upwind is applied
   // afterwards to the computed mimetic flux.
-  Epetra_Vector K(CellMap(true)), K_upwind(FaceMap(true));
+  Epetra_Vector k_rel(CellMap(true)), K_upwind(FaceMap(true));
   if (upwind_k_rel_) {
     ComputeUpwindRelPerm(Pcell, Pface, K_upwind);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] / mu_);
+    k_rel.PutScalar(1.0);
   } else {
-    ComputeRelPerm(Pcell, K);
-    for (int j = 0; j < K.MyLength(); ++j) K[j] = (rho_ * k_[j] * K[j] / mu_);
+    ComputeRelPerm(Pcell, k_rel);
     K_upwind.PutScalar(1.0);  // whole coefficient used in mimetic disc
   }
 
@@ -718,10 +845,22 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    MD[j].diff_op(K[j], Pcell_own[j], aux1, dummy, aux2);
-    // Gravity contribution
-    MD[j].GravityFlux(gvec_, gflux);
-    for (int k = 0; k < 6; ++k) aux2[k] = K[j] * rho_ * gflux[k] - aux2[k];
+    if (!flag_tensor) {
+      double K = rho_ * kv_[j] * k_rel[j] / mu_;
+      MD[j].diff_op(K, Pcell_own[j], aux1, dummy, aux2);
+      // Gravity contribution
+      MD[j].GravityFlux(gvec_, gflux);
+      for (int k = 0; k < 6; ++k) aux2[k] = K * rho_ * gflux[k] - aux2[k];
+    } else {
+      Epetra_SerialSymDenseMatrix Kc;
+      Kc.Shape(3);
+      Kc(0,0) = Kc(1,1) = rho_ * kh_[j] * k_rel[j] / mu_;
+      Kc(2,2) = rho_ * kv_[j] * k_rel[j] / mu_;
+      MD[j].diff_op(Kc, Pcell_own[j], aux1, dummy, aux2);
+      // Gravity contribution
+      MD[j].GravityFlux(gvec_, Kc, gflux);
+      for (int k = 0; k < 6; ++k) aux2[k] = rho_ * gflux[k] - aux2[k];
+    }
     mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) {

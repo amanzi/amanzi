@@ -11,7 +11,7 @@ namespace Amanzi
   std::string h5Filename, xmfFilename;
 
   // build h5 filename
-  h5Filename = filename + ".h5";
+  h5Filename = filename;
 
   file = H5Fcreate(h5Filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (file < 0) {
@@ -50,21 +50,30 @@ namespace Amanzi
   H5Dclose(dataset);
   H5Sclose(dataspace);
 
+  // get number of nodes per element and element type
+  ctype_ = mesh_maps.cell_get_type(0); 
+  cname_ = AmanziMesh::Data::type_to_name(ctype_);
+  AmanziMesh::Entity_ID_List nodeids;
+  unsigned int cellid = 0;
+  mesh_maps.cell_get_nodes(cellid,&nodeids);
+  conn_ = nodeids.size();
+    
   // get connectivity
-  int *ielem = new int[num_elems*8];
-  std::vector<unsigned int> xh(8);
+  int *ielem = new int[num_elems*conn_];
+  //std::vector<unsigned int> xh(8);
 
-  for (int i = 0; i < num_elems; i++) {
-    mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
-    for (int j = 0; j < 8; j++) {
-      ielem[i*8+j] = xh[j];
+  for (unsigned int i = 0; i < num_elems; i++) {
+    //mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
+    mesh_maps.cell_get_nodes(i,&nodeids);
+    for (int j = 0; j < conn_; j++) {
+      ielem[i*conn_+j] = nodeids[j];
     }
   }
 
   // write out connectivity
   // TODO(barker): add error handling: can't create/write
   dimsf[0] = num_elems;
-  dimsf[1] = 8;
+  dimsf[1] = conn_;
   dataspace = H5Screate_simple(2, dimsf, NULL);
   dataset = H5Dcreate(group, "Elements", H5T_NATIVE_INT, dataspace,
                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -97,7 +106,7 @@ void HDF5::createDataFile(std::string soln_filename) {
   // ?? input mesh filename or grab global mesh filename
   // ->assumes global name exists!!
   // build h5 filename
-  h5filename = soln_filename; //  + ".h5";
+  h5filename = soln_filename;
 
   file = H5Fcreate(h5filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   if (file < 0) {
@@ -269,13 +278,13 @@ Teuchos::XMLObject HDF5::addXdmfTopo_() {
   std::stringstream tmp, tmp1;
 
   Teuchos::XMLObject topo("Topology");
-  topo.addAttribute("Type", "Hexahedron");
+  topo.addAttribute("Type", cname_);
   topo.addInt("Dimensions", NumElems());
   topo.addAttribute("Name", "topo");
 
   Teuchos::XMLObject DataItem("DataItem");
   DataItem.addAttribute("DataType", "Int");
-  tmp << NumElems() << " 8";
+  tmp << NumElems() << " " << conn_;
   DataItem.addAttribute("Dimensions", tmp.str());
   DataItem.addAttribute("Format", "HDF");
 

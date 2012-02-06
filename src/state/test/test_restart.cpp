@@ -293,13 +293,22 @@ SUITE(RESTART) {
   	CHECK_EQUAL((*S0.get_porosity())[i],(*S1.get_porosity())[i]);
       }    
 
-    s0_size = S0.get_permeability()->MyLength();
-    s1_size = S1.get_permeability()->MyLength();
+    s0_size = S0.get_vertical_permeability()->MyLength();
+    s1_size = S1.get_vertical_permeability()->MyLength();
+    CHECK_EQUAL(s0_size, s1_size);
+
+    s0_size = S0.get_horizontal_permeability()->MyLength();
+    s1_size = S1.get_horizontal_permeability()->MyLength();
     CHECK_EQUAL(s0_size, s1_size);
 
     for (int i=0; i<s0_size; i++) 
       {
-  	CHECK_EQUAL((*S0.get_permeability())[i],(*S1.get_permeability())[i]);
+  	CHECK_EQUAL((*S0.get_vertical_permeability())[i],(*S1.get_vertical_permeability())[i]);
+      }    
+
+    for (int i=0; i<s0_size; i++) 
+      {
+  	CHECK_EQUAL((*S0.get_horizontal_permeability())[i],(*S1.get_horizontal_permeability())[i]);
       }    
 
     s0_size = S0.get_darcy_velocity()->MyLength();

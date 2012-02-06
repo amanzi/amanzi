@@ -27,6 +27,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 
 

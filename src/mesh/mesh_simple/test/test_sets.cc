@@ -21,13 +21,18 @@ TEST(SETS) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  std::string expcsetnames[3] = {"Bottom Box", "Bottom+Middle Box",
-                                 "Vertical Box"};
-  unsigned int csetsize, expcsetsizes[5] = {9,18,9};
+  std::string expcsetnames[6] = {"Bottom Box", "Bottom+Middle Box",
+                                 "Vertical Box",
+                                 "Bottom ColFunc", "Middle ColFunc",
+                                 "Top ColFunc"};
+  unsigned int csetsize, expcsetsizes[6] = {9,18,9,9,9,9};
   
-  unsigned int expcsetcells[3][18] = {{0,3,6,1,4,7,2,5,8},
+  unsigned int expcsetcells[6][18] = {{0,3,6,1,4,7,2,5,8,0,0,0,0,0,0,0,0,0},
 				      {0,9,3,12,6,15,1,10,4,13,7,16,2,11,5,14,8,17},
-				      {1,10,19,4,13,22,7,16,25}};
+				      {1,10,19,4,13,22,7,16,25,0,0,0,0,0,0,0,0,0},
+                                      {0,3,6,1,4,7,2,5,8,0,0,0,0,0,0,0,0,0},
+                                      {9,12,15,10,13,16,11,14,17,0,0,0,0,0,0,0,0,0},
+                                      {18,21,24,19,22,25,20,23,26,0,0,0,0,0,0,0,0,0}};
 
   std::string expfsetnames[2] = {"ZLO FACE Plane", "YLO FACE Box"};
 
@@ -50,7 +55,7 @@ TEST(SETS) {
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec);
+  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm);
 
   // Create a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
@@ -273,6 +278,36 @@ TEST(SETS) {
 
       CHECK(false); 
 
+    }
+    else if (shape == "Region: Color Function") {
+
+
+      // Do we have a valid set by this name
+            
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+            
+      int j;
+      for (j = 0; j < 6; j++) {
+        if (expcsetnames[j] == reg_name) break;
+      }
+            
+      CHECK(j < 6);
+            
+            
+      // Verify that we can get the right number of entities in the set
+            
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
+            
+      CHECK_EQUAL(expcsetsizes[j],set_size);
+            
+            
+      // Verify that we can get the correct set entities
+            
+      Amanzi::AmanziMesh::Entity_ID_List setents;
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
+            
+      CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);	  
+                        
     }
   }
 

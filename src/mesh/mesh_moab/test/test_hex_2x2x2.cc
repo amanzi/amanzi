@@ -39,9 +39,11 @@ TEST(MOAB_HEX1)
 				  {4,5,7,6}};
 
 
+  std::auto_ptr<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x2_ss.exo",MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x2_ss.exo",comm.get());
 
 
   // Check number of nodes and their coordinates

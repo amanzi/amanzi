@@ -15,6 +15,8 @@
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
+#include "Epetra_MpiComm.h"
+
 #include "Region.hh"
 #include "RegionFactory.hh"
 
@@ -45,7 +47,8 @@ public:
 
   // Constructor from parameter list
 
-  GeometricModel(const unsigned int dim, Teuchos::ParameterList gm_param_list);
+  GeometricModel(const unsigned int dim, Teuchos::ParameterList gm_param_list,
+                 const Epetra_MpiComm *comm);
 
 
   // Constructor from a list of regions

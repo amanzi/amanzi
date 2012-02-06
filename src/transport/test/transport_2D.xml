@@ -48,25 +48,25 @@
       <ParameterList name="BC 0">
         <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
         <Parameter name="Regions" type="Array string" value="{Left side}"/>
-        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
       </ParameterList>  
       <ParameterList name="BC 1">
         <Parameter name="Component 0" type="Array double" value="{1.0, 1.0}"/>
         <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
-        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
       </ParameterList>  
       <ParameterList name="BC 2">
         <Parameter name="Component 1" type="Array double" value="{1.0, 0.0}"/>
         <Parameter name="Regions" type="Array string" value="{Left side}"/>
-        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
       </ParameterList>  
       <ParameterList name="BC 3">
         <Parameter name="Component 1" type="Array double" value="{0.5, 0.0}"/>
         <Parameter name="Regions" type="Array string" value="{Bottom side}"/>
-        <Parameter name="Time functions" type="Array string" value="{Constant}"/>
+        <Parameter name="Time Functions" type="Array string" value="{Constant}"/>
         <Parameter name="Times" type="Array double" value="{0.0, 0.1}"/>
       </ParameterList>  
     </ParameterList>  

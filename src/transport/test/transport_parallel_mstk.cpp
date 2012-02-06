@@ -27,6 +27,12 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   using namespace Amanzi::AmanziGeometry;
 
   cout << "Test: advance with MSTK in parallel" << endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_parallel_mstk.xml";
@@ -34,8 +40,8 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD, 3, gm));
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", comm, 3, gm));
    
   // create a transport state with two component 
   int num_components = 2;
@@ -48,7 +54,8 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   TS->analytic_darcy_flux(u);
   TS->analytic_water_saturation();
 
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
   TPK.set_standalone_mode(true);
   TPK.print_statistics();
 

@@ -44,7 +44,7 @@ class Mesh_STK_factory {
   const int bucket_size_;
   stk::ParallelMachine parallel_machine_;
 
-  Epetra_MpiComm communicator_;
+  const Epetra_MpiComm *communicator_;
 
 
   typedef std::vector<stk::mesh::Part*>   Parts;
@@ -139,7 +139,7 @@ class Mesh_STK_factory {
 
  public:
 
-  Mesh_STK_factory (const stk::ParallelMachine& comm, int bucket_size);
+  Mesh_STK_factory (const Epetra_MpiComm *comm, int bucket_size);
 
   //! Build a mesh from data.
   Mesh_STK_Impl* build_mesh (const Data::Data& data, 

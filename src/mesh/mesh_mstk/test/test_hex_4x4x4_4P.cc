@@ -29,6 +29,7 @@ TEST(MSTK_HEX_4x4x4_4P)
   int NCghost[4] = {12,11,17,20}; // updated
 
 			      
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
 			      
 
   int rank, size;
@@ -55,7 +56,7 @@ TEST(MSTK_HEX_4x4x4_4P)
 
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,3);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",comm.get(),3);
 
 
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);  

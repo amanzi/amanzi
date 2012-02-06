@@ -12,6 +12,8 @@
 #include "../Region.hh"
 #include "../PlaneRegion.hh"
 #include "../RegionFactory.hh"
+
+#include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
@@ -21,7 +23,7 @@
 
 TEST(PLANE_REGION)
 {
-
+  Epetra_MpiComm ecomm(MPI_COMM_WORLD);
 
   // read the parameter list from input file
 
@@ -40,7 +42,7 @@ TEST(PLANE_REGION)
   // Create a rectangular region
   
   Amanzi::AmanziGeometry::RegionPtr reg = 
-    Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params);
+    Amanzi::AmanziGeometry::RegionFactory(reg_spec.name(i), reg_id, reg_params, &ecomm);
   
   // See if we retrieved the name and id correctly
   

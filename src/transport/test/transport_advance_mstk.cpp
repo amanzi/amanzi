@@ -30,6 +30,13 @@ TEST(ADVANCE_WITH_MSTK) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: advance with MSTK" << endl;
+
+#ifdef HAVE_MPI
+  Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm  *comm = new Epetra_SerialComm();
+#endif
+
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_advance_mstk.xml";
@@ -37,8 +44,9 @@ TEST(ADVANCE_WITH_MSTK) {
 
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", MPI_COMM_WORLD, 3, gm));
+
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("../mesh/mesh_mstk/test/hex_4x4x4_ss.exo", (Epetra_MpiComm *)comm, 3, gm));
   
   // create a transport state with two component 
   int num_components = 2;
@@ -51,7 +59,9 @@ TEST(ADVANCE_WITH_MSTK) {
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
+
 
   // advance the state
   double dT = TPK.calculate_transport_dT();

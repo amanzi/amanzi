@@ -32,11 +32,11 @@ namespace AmanziMesh {
 void
 Mesh_STK::read_exodus_(const std::string& fname)
 {
-  const int nproc(communicator_->NumProc());
-  const int me(communicator_->MyPID());
+  const int nproc(Mesh::get_comm()->NumProc());
+  const int me(Mesh::get_comm()->MyPID());
   int ierr(0);
     
-  STK::Mesh_STK_factory mf(communicator_->GetMpiComm(), 1000);
+  STK::Mesh_STK_factory mf(Mesh::get_comm(), 1000);
   Data::Fields nofields;
   Teuchos::RCP<Data::Data> meshdata;
     
@@ -45,7 +45,7 @@ Mesh_STK::read_exodus_(const std::string& fname)
       meshdata.reset(Exodus::read_exodus_file(fname.c_str()));
       mesh_.reset(mf.build_mesh(*meshdata, nofields, Mesh::geometric_model()));
     } else {
-      Exodus::Parallel_Exodus_file thefile(*communicator_, fname);
+      Exodus::Parallel_Exodus_file thefile(*(Mesh::get_comm()), fname);
       meshdata = thefile.read_mesh();
       mesh_.reset(mf.build_mesh(*meshdata, 
                                 *(thefile.cellmap()), 
@@ -54,11 +54,11 @@ Mesh_STK::read_exodus_(const std::string& fname)
 				Mesh::geometric_model()));
     }
   } catch (const std::exception& e) {
-    std::cerr << communicator_->MyPID() << ": error: " << e.what() << std::endl;
+    std::cerr << Mesh::get_comm()->MyPID() << ": error: " << e.what() << std::endl;
     ierr++;
   }
   int aerr(0);
-  communicator_->SumAll(&ierr, &aerr, 1);
+  Mesh::get_comm()->SumAll(&ierr, &aerr, 1);
   if (aerr != 0) 
     Exceptions::amanzi_throw( STK::Error ("Exodus file read error") );
   build_maps_();
@@ -68,32 +68,30 @@ Mesh_STK::read_exodus_(const std::string& fname)
 // -------------------------------------------------------------
 // Mesh_STK::Mesh_STK
 // -------------------------------------------------------------
-Mesh_STK::Mesh_STK(const Epetra_MpiComm& comm, 
-                   const std::string& fname,
-		   const AmanziGeometry::GeometricModelPtr& gm)
-    : communicator_(new Epetra_MpiComm(comm)),
-      mesh_(), 
+  Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm, 
+                     const std::string& fname,
+                     const AmanziGeometry::GeometricModelPtr& gm)
+    : mesh_(), 
       entity_map_(3),            // FIXME: needs to come from the file
       map_owned_(), map_used_()
       
-{
-  Mesh::set_comm(communicator_->GetMpiComm());
-  Mesh::set_geometric_model(gm);
-  read_exodus_(fname);
-}
+  {
+    Mesh::set_comm(comm);
+    Mesh::set_geometric_model(gm);
+    read_exodus_(fname);
+  }
 
-  Mesh_STK::Mesh_STK(const char *fname, MPI_Comm comm,
+  Mesh_STK::Mesh_STK(const char *fname, const Epetra_MpiComm *comm,
 		     const AmanziGeometry::GeometricModelPtr& gm)
-    : communicator_(new Epetra_MpiComm(comm)),
-      mesh_(), 
+    : mesh_(), 
       entity_map_(3),           // FIXME: needs to come from the file
       map_owned_(), map_used_()
       
-{
-  Mesh::set_comm(communicator_->GetMpiComm());
-  Mesh::set_geometric_model(gm);
-  read_exodus_(fname);
-}
+  {
+    Mesh::set_comm(comm);
+    Mesh::set_geometric_model(gm);
+    read_exodus_(fname);
+  }
 
 } // namespace AmanziMesh
 } // namespace Amanzi

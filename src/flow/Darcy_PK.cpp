@@ -5,15 +5,15 @@
 namespace Amanzi
 {
 
-Darcy_PK::Darcy_PK(Teuchos::ParameterList &list, const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList &list, 
+                   const Teuchos::RCP<const Flow_State> FS_) : FS(FS_)
 {
-  // Add some parameters to the Darcy problem constructor parameter list.
+  // add parameters to sublist
   Teuchos::ParameterList &dp_list = list.sublist("Darcy Problem");
   dp_list.set("fluid density", FS->get_fluid_density());
   dp_list.set("fluid viscosity", FS->get_fluid_viscosity());
   const double *gravity = FS->get_gravity();
-  //TODO: assuming gravity[0] = gravity[1] = 0 -- needs to be reconciled somehow
-  dp_list.set("gravity", -gravity[2]);
+  dp_list.set("gravity", -gravity[2]);  // This assumes gravity[0] = gravity[1] = 0 (lipnikov@lanl.gov)
   
   // Create the Darcy flow problem.
   Teuchos::ParameterList darcy_plist = list.sublist("Darcy Problem");
@@ -49,7 +49,7 @@ Darcy_PK::~Darcy_PK()
 int Darcy_PK::advance_to_steady_state()
 {
   // Set problem parameters.
-  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
 
   // Perform the final "assembly" of the problem.
   problem->Assemble();

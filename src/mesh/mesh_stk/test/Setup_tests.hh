@@ -49,7 +49,7 @@ struct Mesh_setup : public Test_mesh
 
         const int bucket_size = 20;
         
-        factory = Factory_p(new Amanzi::AmanziMesh::STK::Mesh_STK_factory(parallel_machine, bucket_size));
+        factory = Factory_p(new Amanzi::AmanziMesh::STK::Mesh_STK_factory(communicator.get(), bucket_size));
         mesh    = Mesh_p (factory->build_mesh (*data, fields, NULL));
 
     }

@@ -32,6 +32,7 @@ namespace BDF2 {
     // kind of Epetra_Vector is needs to work with.
     // The parameter list plist is checked for validity in the constructor.
     Dae(fnBase& fn_, const Epetra_BlockMap& map_);
+    ~Dae();
 
     // initializes the state of the BDF2 stepper
     void set_initial_state(const double t, const Epetra_Vector& x, const Epetra_Vector& xdot);
@@ -87,6 +88,7 @@ namespace BDF2 {
 
     State state;
     nka* fpa;
+    SolutionHistory* sh_;
     fnBase& fn;
 
     const Epetra_BlockMap& map;

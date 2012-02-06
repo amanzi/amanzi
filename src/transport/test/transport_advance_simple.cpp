@@ -60,7 +60,7 @@ TEST(ADVANCE_WITH_SIMPLE) {
 
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
   RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 20, 2, comm, gm)); 
   
   // create a transport state with one component 
@@ -74,7 +74,8 @@ TEST(ADVANCE_WITH_SIMPLE) {
   TS->analytic_water_saturation();
   TS->analytic_water_density();
 
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
   TPK.set_standalone_mode(true);
   TPK.print_statistics();
 

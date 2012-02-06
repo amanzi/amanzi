@@ -41,10 +41,10 @@ namespace Amanzi {
 namespace AmanziMesh {
 namespace STK {
 
-Mesh_STK_factory::Mesh_STK_factory (const stk::ParallelMachine& comm, int bucket_size) 
-    : parallel_machine_ (comm),
-      bucket_size_ (bucket_size),
-      communicator_ (comm)
+Mesh_STK_factory::Mesh_STK_factory (const Epetra_MpiComm *comm, int bucket_size) 
+  : parallel_machine_ (comm->GetMpiComm()),
+    bucket_size_ (bucket_size),
+    communicator_ (comm)
 {  }
 
 /** 
@@ -59,13 +59,13 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh (const Data::Data& data,
 					     const Data::Fields& fields,
 					     const AmanziGeometry::GeometricModelPtr& gm)
 {
-  ASSERT(communicator_.NumProc() == 1);
+  ASSERT(communicator_->NumProc() == 1);
 
   int ncell(data.parameters().num_elements_);
-  Epetra_Map cmap(ncell, 1, communicator_);
+  Epetra_Map cmap(ncell, 1, *communicator_);
 
   int nvert(data.parameters().num_nodes_);
-  Epetra_Map vmap(nvert, 1, communicator_);
+  Epetra_Map vmap(nvert, 1, *communicator_);
 
   return build_mesh(data, cmap, vmap, fields, gm);
 }
@@ -238,8 +238,8 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
   // and starting global indexes distributed.
     
   int nface_local(count_local_faces_());
-  std::vector<int> nface(communicator_.NumProc(), 0);
-  communicator_.GatherAll(&nface_local, &nface[0], 1);
+  std::vector<int> nface(communicator_->NumProc(), 0);
+  communicator_->GatherAll(&nface_local, &nface[0], 1);
 
   std::vector<int> global_fidx(nface.size() + 1);
   int nface_global(0);
@@ -258,7 +258,7 @@ void Mesh_STK_factory::build_bulk_data_ (const Data::Data& data,
   ASSERT((global_fidx.back()-1) == nface_global);
 
   bulk_data_->modification_begin();
-  generate_local_faces_(global_fidx[communicator_.MyPID()], false);
+  generate_local_faces_(global_fidx[communicator_->MyPID()], false);
   bulk_data_->modification_end();
 
   // Put side set faces in the correct parts
@@ -660,7 +660,7 @@ Mesh_STK_factory::declare_face_(stk::mesh::EntityVector& nodes,
 int 
 Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcount)
 {      
-  const unsigned int me = communicator_.MyPID();
+  const unsigned int me = communicator_->MyPID();
   int faceidx(faceidx0);
   stk::mesh::Selector owned(meta_data_->locally_owned_part());
 
@@ -792,7 +792,7 @@ Mesh_STK_factory::generate_local_faces_(const int& faceidx0, const bool& justcou
 void
 Mesh_STK_factory::generate_cell_face_relations(void)
 {
-  const unsigned int me = communicator_.MyPID();
+  const unsigned int me = communicator_->MyPID();
   stk::mesh::Selector owned(meta_data_->locally_owned_part());
   stk::mesh::PartVector parts(meta_data_->get_parts());
 
@@ -865,7 +865,7 @@ void Mesh_STK_factory::add_sides_to_part_ (const Data::Side_set& side_set,
                                            stk::mesh::Part &part,
                                            const Epetra_Map& cmap)
 {
-  const unsigned int me(communicator_.MyPID());
+  const unsigned int me(communicator_->MyPID());
 
   // Side set consists of elements (local index) and a local face
   // number. We need to convert these to the unique face indices.
@@ -931,7 +931,7 @@ void Mesh_STK_factory::add_nodes_to_part_ (const Data::Node_set& node_set,
                                        stk::mesh::Part &part,
                                        const Epetra_Map& vmap)
 {
-  const unsigned int me(communicator_.MyPID());
+  const unsigned int me(communicator_->MyPID());
 
   stk::mesh::PartVector parts_to_add;
   parts_to_add.push_back (&part);
@@ -1008,6 +1008,14 @@ void Mesh_STK_factory::init_extra_parts_from_gm(const AmanziGeometry::GeometricM
         case AmanziGeometry::POINT: {
 
           // Cell set based on points
+
+          add_element_block_(greg->name(), greg->id());
+
+          break;
+        }
+        case AmanziGeometry::COLORFUNCTION: {
+
+	  // Cell set based on points
 
           add_element_block_(greg->name(), greg->id());
 
@@ -1306,6 +1314,53 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const AmanziGeometry::GeometricM
 
           }
 
+          break;
+        }
+        case AmanziGeometry::COLORFUNCTION: { 
+
+          // Find the part with this name
+          
+	  part = meta_data_->get_part (greg->name());
+          ASSERT (part);
+	  parts_to_add.push_back(part);
+          
+          
+          // Assumption is that user wants to extract cell sets
+          
+          ASSERT (part->primary_entity_rank () == element_rank_);
+          
+          
+          stk::mesh::Selector owned(meta_data_->locally_owned_part());
+          stk::mesh::EntityVector cells;
+          stk::mesh::get_selected_entities(owned, bulk_data_->buckets(stk::mesh::Element), cells);
+          
+          stk::mesh::EntityVector::iterator c;
+          for (c = cells.begin(); c != cells.end(); c++) {
+            
+            stk::mesh::PairIterRelation nodes = (*c)->relations (node_rank_);
+            
+            double cen[3]={0.0,0.0,0.0};
+            int nen = 0;
+            for (stk::mesh::PairIterRelation::iterator it = nodes.begin (); 
+                 it != nodes.end (); ++it)
+              {
+                double *xyz = stk::mesh::field_data(*coordinate_field_, *(it->entity()));
+                for (int k = 0; k < space_dim; k++)
+                  cen[k] += xyz[k];
+                nen++;
+              }
+            for (int k = 0; k < space_dim; k++)
+              cen[k] /= nen;
+            
+            AmanziGeometry::Point pcen(space_dim);
+            pcen.set(cen);
+            
+            if (greg->inside(pcen))  // If center is inside region
+              {
+                bulk_data_->change_entity_parts(*(*c),parts_to_add);
+              }
+          }
+          
           break;
         }
         default:

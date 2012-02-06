@@ -33,6 +33,11 @@ namespace BDF2 {
 
   }
 
+  Dae::~Dae() {
+    delete fpa;
+    delete sh_;
+  }
+
 
   void Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
   {
@@ -67,13 +72,14 @@ namespace BDF2 {
     fpa = new nka(maxv, vtol, init_vector); 
     
     // create the solution history object
-    SolutionHistory *sh = new SolutionHistory(3, map);
-    state.init_solution_history(sh);    
+    sh_ = new SolutionHistory(3, map);
+    state.init_solution_history(sh_);    
 
     // Read the sublist for verbosity settings.
     Teuchos::readVerboseObjectSublist(&*paramList_,this);
 
   }
+
 
   Teuchos::RCP<Teuchos::ParameterList> Dae::getNonconstParameterList()
   {
@@ -652,7 +658,7 @@ namespace BDF2 {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
     
-    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true))	
+    if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM,true))	
       {
 	*out << oss.str() << std::endl;
       }

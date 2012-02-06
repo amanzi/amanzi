@@ -239,7 +239,7 @@ main(int argc, char **argv)
 
   // generate a mesh
 
-  Amanzi::AmanziMesh::MeshFactory factory(comm);
+  Amanzi::AmanziMesh::MeshFactory factory(&comm);
   Amanzi::AmanziMesh::FrameworkPreference pref;
   if (dosimple) {
     pref.push_back(Amanzi::AmanziMesh::Simple);

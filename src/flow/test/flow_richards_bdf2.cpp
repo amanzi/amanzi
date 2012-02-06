@@ -15,7 +15,10 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include "Mesh.hh"
+#include "MeshFactory.hh"
 #include "Mesh_simple.hh"
+
 #include "State.hpp"
 #include "Flow_State.hpp"
 #include "RichardsProblem.hpp"
@@ -23,8 +26,6 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "BDF2_Dae.hpp"
 
 #include "gmv_mesh.hh"
-#include "cgns_mesh_par.hh"
-#include "cgns_mesh.hh"
 
 
 /* **************************************************************** */
@@ -34,7 +35,7 @@ TEST(FLOW_1D_RICHARDS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: 1D Richards, 5-layer model" << endl;
+cout << "Test: 1D Richards, 2-layer model" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -48,8 +49,13 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
 
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-68.0, 1.0,1.0,0.0, 1, 1, 136, comm, gm)); 
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+
+  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 80, comm, gm)); 
+  //MeshFactory factory(*comm);
+  //ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
+  //std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
+  //Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -57,13 +63,19 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   RCP<Amanzi::Flow_State> FS = Teuchos::rcp(new Amanzi::Flow_State(S));
 
   // create Richards problem
-  RichardsProblem problem(mesh, parameter_list);
-  problem.set_flow_state(FS);
-  problem.set_absolute_permeability(FS->get_permeability());
-
-  // create the Richards Model Evaluator
   ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
   ParameterList richards_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
+
+  richards_list.set("fluid density", FS->get_fluid_density());  // will be removed in new version
+  richards_list.set("fluid viscosity", FS->get_fluid_viscosity());
+  const double *gravity = FS->get_gravity();
+  richards_list.set("gravity", -gravity[2]);  // We need to pass the absolute value, |g|.
+
+  RichardsProblem problem(mesh, richards_list);
+  problem.set_flow_state(FS);
+  problem.set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
+
+  // create the Richards Model Evaluator
   ParameterList model_evaluator_list = richards_list.get<Teuchos::ParameterList>("Richards model evaluator");  
   Amanzi::RichardsModelEvaluator RME(&problem, model_evaluator_list, problem.Map(), FS);
 
@@ -79,13 +91,15 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   Epetra_Vector *ucells = problem.CreateCellView(u);
   for (int c=0; c<ucells->MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    (*ucells)[c] = 101325.0 - 9800 * (xc[2] + 62.0);
+    //(*ucells)[c] = 101325.0 + 9793.5 * (103.2 - xc[2]);
+    (*ucells)[c] = xc[2] * (xc[2] + 10.0);
   }
 
   Epetra_Vector *ufaces = problem.CreateFaceView(u);
   for (int f=0; f<ufaces->MyLength(); f++) {
     const Point& xf = mesh->face_centroid(f);
-    (*ufaces)[f] = 101325.0 - 9800 * (xf[2] + 62.0);
+    //(*ufaces)[f] = 101325.0 + 9793.5 * (103.2 - xf[2]);
+    (*ufaces)[f] = xf[2] * (xf[2] + 10.0);
   }
   
   // initialize the state
@@ -94,7 +108,7 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
 
   // set intial and final time
   double t0 = 0.0;
-  double t1 = 1000.0;
+  double t1 = 1.0e+4;
 
   // compute the initial udot
   Epetra_Vector udot(problem.Map());
@@ -105,19 +119,9 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
   TS.set_initial_state(t0, u, udot);
  
   int errc;
-  double hnext, h = 1.0e-5;  // initial time step
+  double hnext, h = 1.0e-2;  // initial time step
   RME.update_precon(t0, u, h, errc);
 
-  // set up output
-  std::string cgns_filename = "out.cgns";
-
-  Amanzi::CGNS::create_mesh_file(*mesh, cgns_filename);
-  Amanzi::CGNS::open_data_file(cgns_filename);
-  Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
-
-  Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
-  
   // iterate
   int i = 0;
   double tlast = t0;
@@ -134,19 +138,23 @@ cout << "Test: 1D Richards, 5-layer model" << endl;
     i++;
 
     tlast=TS.most_recent_time();
+  } while (t1 >= tlast && i < 6000);
 
-    if ( i%5 == 1 ) { 
-      Amanzi::CGNS::open_data_file(cgns_filename);
-      Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
-      Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-      Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
-    }
-  } while (t1 >= tlast);
+  // check for bounds
+  for (int k=0; k<80; k++) CHECK(u[k] < 0.001 && u[k] > -0.6);
 
+  // set up output
+  for (int k=0; k<80; k++) std::cout << k << " " << u[k] << std::endl;
+
+  /*
+  std::string cgns_filename = "out.cgns";
+  Amanzi::CGNS::create_mesh_file(*mesh, cgns_filename);
   Amanzi::CGNS::open_data_file(cgns_filename);
-  Amanzi::CGNS::create_timestep(S->get_time(), i, Amanzi::AmanziMesh::CELL);
+  Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
   Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_permeability()), "permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
+  Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
+  */
  
   delete comm;
 }

@@ -31,7 +31,9 @@ DarcyProblem::DarcyProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   rho_ = list.get<double>("fluid density");
   mu_ = list.get<double>("fluid viscosity");
   gravity_ = list.get<double>("gravity");
-  g_[0] = 0.0; g_[1] = 0.0; g_[2] = -gravity_;
+  g_[0] = 0.0; 
+  g_[1] = 0.0; 
+  g_[2] = -gravity_;
   
   // Create the BC objects.
   Teuchos::RCP<Teuchos::ParameterList> bc_list = Teuchos::rcpFromRef(list.sublist("boundary conditions",true));
@@ -58,7 +60,8 @@ DarcyProblem::DarcyProblem(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   rhs_ = new Epetra_Vector(Map());
 
   // DEFINE DEFAULTS FOR PROBLEM PARAMETERS
-  k_.resize(CellMap(true).NumMyElements(), 1.0);
+  kv_.resize(CellMap(true).NumMyElements(), 1.0);
+  kh_.resize(CellMap(true).NumMyElements(), 1.0);
 }
 
 
@@ -173,7 +176,7 @@ void DarcyProblem::init_mimetic_disc_(AmanziMesh::Mesh &mesh, std::vector<Mimeti
 void DarcyProblem::Assemble()
 {
   // Fill the diffusion matrix with values.
-  std::vector<double> K(k_);
+  std::vector<double> K(kv_);
   for (int j = 0; j < K.size(); ++j) K[j] = rho_ * K[j] / mu_;
   D_->Compute(K);
 
@@ -211,20 +214,22 @@ void DarcyProblem::SetGravity(const double g[3])
 
 void DarcyProblem::set_absolute_permeability(double k)
 {
-  for (int c=0; c<k_.size(); ++c) k_[c] = k;  // should verify k > 0 (lipnikov@lanl.gov)
+  for (int c=0; c<kv_.size(); ++c) kv_[c] = kh_[c] = k;  // should verify k > 0 (lipnikov@lanl.gov)
 }
 
 
-void DarcyProblem::set_absolute_permeability(const Epetra_Vector &k)
+void DarcyProblem::set_absolute_permeability(const Epetra_Vector &kv, const Epetra_Vector &kh)
 {
   // should verify k.Map() is CellMap()
   // should verify k values are all > 0
   Epetra_Vector k_ovl(mesh_->cell_map(true));
   Epetra_Import importer(mesh_->cell_map(true), mesh_->cell_map(false));
 
-  k_ovl.Import(k, importer, Insert);
+  k_ovl.Import(kv, importer, Insert);
+  for (int i=0; i<kv_.size(); ++i) kv_[i] = k_ovl[i];
 
-  for (int i=0; i<k_.size(); ++i) k_[i] = k_ovl[i];
+  k_ovl.Import(kh, importer, Insert);
+  for (int i=0; i<kh_.size(); ++i) kh_[i] = k_ovl[i];
 }
 
 
@@ -277,7 +282,7 @@ void DarcyProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F)
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] / mu_);
+    double K = (rho_ * kv_[j] / mu_);
     MD[j].diff_op(K, Pcell[j], aux1, Fcell[j], aux2);
     // Gravity contribution
     MD[j].GravityFlux(g_, gflux);
@@ -365,7 +370,7 @@ void DarcyProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVecto
   for (int j = 0; j < Pcell.MyLength(); ++j) {
     mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
-    double K = (k_[j] / mu_);
+    double K = (kv_[j] / mu_);
     MD[j].diff_op(K, Pcell[j], aux1, dummy, aux2);
     MD[j].GravityFlux(g_, gflux);
     for (int k = 0; k < 6; ++k) aux2[k] = rho_ * K * gflux[k] - aux2[k];
@@ -408,7 +413,7 @@ void DarcyProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, dou
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
-    double K = (rho_ * k_[j] / mu_);
+    double K = (rho_ * kv_[j] / mu_);
     MD[j].diff_op(K, Pcell_own[j], aux1, dummy, aux2);
     // Gravity contribution
     MD[j].GravityFlux(g_, gflux);

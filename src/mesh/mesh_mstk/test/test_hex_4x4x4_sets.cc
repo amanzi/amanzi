@@ -17,21 +17,25 @@
 TEST(MSTK_HEX_4x4x4_SETS)
 {
 
-  std::string expcsetnames[9] = {"Bottom LS", "Middle LS", "Top LS", 
+  std::string expcsetnames[12] = {"Bottom LS", "Middle LS", "Top LS", 
                                  "Bottom+Middle Box", "Top Box",
                                  "Sample Point InCell", "Sample Point OnFace",
-                                 "Sample Point OnEdge", "Sample Point OnVertex"};
-  unsigned int csetsize, expcsetsizes[9] = {9,9,9,18,9,1,2,4,8};
+                                 "Sample Point OnEdge", "Sample Point OnVertex",
+                                 "Bottom ColFunc", "Middle ColFunc", "Top ColFunc"};
+  unsigned int csetsize, expcsetsizes[12] = {9,9,9,18,9,1,2,4,8,9,9,9};
   
-  unsigned int expcsetcells[9][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
-				      {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
-				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
-				      {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
-				      {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
-                                      {13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-                                      {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-                                      {9,10,12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-                                      {0,1,3,4,9,10,12,13,0,0,0,0,0,0,0,0,0,0}};
+  unsigned int expcsetcells[12][18] = {{0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
+                                       {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
+                                       {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
+                                       {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17},
+                                       {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0},
+                                       {13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                       {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                       {9,10,12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+                                       {0,1,3,4,9,10,12,13,0,0,0,0,0,0,0,0,0,0},
+                                       {0,1,2,3,4,5,6,7,8,0,0,0,0,0,0,0,0},
+                                       {9,10,11,12,13,14,15,16,17,0,0,0,0,0,0,0,0,0},
+                                       {18,19,20,21,22,23,24,25,26,0,0,0,0,0,0,0,0,0}};
 
   std::string expfsetnames[7] = {"Face 101", "Face 102", 
 				  "Face 10005", "Face 20004", "Face 30004",
@@ -57,17 +61,19 @@ TEST(MSTK_HEX_4x4x4_SETS)
                                       {53,54,57,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1}};
 
 			   
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+
 
   std::string infilename = "test/hex_4x4x4.xml";
   Teuchos::ParameterXMLFileReader xmlreader(infilename);
 
   Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec);
+  Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm.get());
 
   // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,3,gm);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_4x4x4_ss.exo",comm.get(),3,gm);
 
 
   Teuchos::ParameterList::ConstIterator i;
@@ -347,7 +353,43 @@ TEST(MSTK_HEX_4x4x4_SETS)
       }
 
     }
+    else if (shape == "Region: Color Function") {
+
+      // Do we have a valid sideset by this name
+      
+      CHECK(mesh.valid_set_name(reg_name,Amanzi::AmanziMesh::CELL));
+      
+      // Find the expected face set info corresponding to this name
+      
+      int j;
+      for (j = 0; j < 12; j++)
+        if (reg_name == expcsetnames[j]) break;
+      
+      CHECK(j < 12);
+      
+      // Verify that we can get the right number of entities in the set
+      
+      int set_size = mesh.get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+      
+      CHECK_EQUAL(expcsetsizes[j],set_size);
+      
+      // Verify that we can get the correct set entities
+      
+      Amanzi::AmanziMesh::Entity_ID_List setents;
+      mesh.get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+      
+      CHECK_ARRAY_EQUAL(expcsetcells[j],setents,set_size);
+
+    }
   }
+
+
+  // Once we can make RegionFactory work with reference counted pointers 
+  // we can get rid of this code
+
+  for (int i = 0; i < gm->Num_Regions(); i++)
+    delete (gm->Region_i(i));
+  delete gm;
 
 }
 

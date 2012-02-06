@@ -193,6 +193,31 @@ void MimeticHexLocal::diff_op(double coef, double upwind_coef[],
 }
 
 
+void MimeticHexLocal::diff_op(
+    const Epetra_SerialSymDenseMatrix &coef, double upwind_coef[],
+    const double &pcell, const double pface[],
+    double &rcell, double rface[]) const
+{
+  Epetra_SerialDenseVector aux1(6);
+  Epetra_SerialDenseMatrix Minv(6,6);
+
+  // Inverse of the mass matrix.
+  mass_matrix(Minv, coef, true);
+
+  for (int i = 0; i < 6; ++i)
+    aux1(i) = pface[i] - pcell;
+
+  Epetra_SerialDenseVector aux2(View, rface, 6);
+  Minv.Multiply(false, aux1, aux2);
+  
+  for (int i = 0; i < 6; ++i) rface[i] *= upwind_coef[i];
+
+  rcell = 0.0;
+  for (int i = 0; i < 6; ++i)
+    rcell -= rface[i];
+}
+
+
 void MimeticHexLocal::diff_op(const Epetra_SerialSymDenseMatrix &coef,
     const double &pcell, const double pface[],
     double &rcell, double rface[]) const
@@ -274,6 +299,18 @@ void MimeticHexLocal::GravityFlux(const double g[], double gflux[]) const
     double s = 0.0;
     for (int k = 0; k < 3; ++k)
       s += g[k] * face_normal[i][k];
+    gflux[i] = s;
+  }
+}
+
+
+void MimeticHexLocal::GravityFlux(const double g[], Epetra_SerialSymDenseMatrix& Kc, double gflux[]) const
+{
+  // Expect g[3] and gflux[6]
+  for (int i = 0; i < 6; ++i) { // loop over faces
+    double s = 0.0;
+    for (int k = 0; k < 3; ++k)
+      s += g[k] * Kc(k,k) * face_normal[i][k];
     gflux[i] = s;
   }
 }

@@ -23,6 +23,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
+include_directories(${MESH_DATA_SOURCE_DIR})
 include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
 # External (TPL) include directories
@@ -66,7 +67,7 @@ if(ENABLE_CGNS)
 endif()
 
 add_library(output ${output_source_files})
-target_link_libraries(output simple_mesh mesh geometry error_handling ${output_tpl_list} )
+target_link_libraries(output simple_mesh mesh_data mesh geometry error_handling ${output_tpl_list} )
 
 #
 # Install Targets
@@ -101,13 +102,13 @@ if (BUILD_TESTS)
     # Test: hdf5_output
     add_executable(test_hdf5_output test/Main.cc test/test_hdf5.cc)
     target_link_libraries(test_hdf5_output output ${UnitTest_LIBRARIES} z)
-    add_test(hdf5_output test_hdf5_output)
+    add_amanzi_test(hdf5_output test_hdf5_output KIND int)
 
     # Test: hdf5_mpi_output
     if (ENABLE_STK_Mesh)
         add_executable(test_hdf5mpi_output test/Main.cc test/test_hdf5mpi.cc)
         target_link_libraries(test_hdf5mpi_output stk_mesh output ${UnitTest_LIBRARIES} z)
-        add_test(hdf5mpi_output test_hdf5mpi_output NPROCS 2 KIND int)
+        add_amanzi_test(hdf5mpi_output test_hdf5mpi_output NPROCS 2 KIND int)
     endif()
 
 endif()

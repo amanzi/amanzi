@@ -20,14 +20,14 @@ class BoundaryFunction; // forward declaration
 
 class RichardsProblem {
  public:
-  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, 
-                  const Teuchos::ParameterList& parameter_list);
+  RichardsProblem(const Teuchos::RCP<AmanziMesh::Mesh>& mesh, Teuchos::ParameterList& rp_list);
   ~RichardsProblem();
 
   // explicit initialization
   void set_absolute_permeability(double k);
   void set_absolute_permeability(const Epetra_Vector &k);
-
+  void set_absolute_permeability(const Epetra_Vector &kv, const Epetra_Vector &kh);
+  
   void set_pressure_cells(double height, Epetra_Vector *pressure);
   void set_pressure_faces(double height, Epetra_Vector *pressure);
   void SetInitialPressureProfileFromSaturationCells(double saturation, Epetra_Vector *pressure);
@@ -77,8 +77,11 @@ class RichardsProblem {
   Epetra_Import *face_importer_;
   Epetra_Import *cell_importer_;
 
-  std::vector<double> k_;  // spatially variable permeability
+  std::vector<double> kv_;  // spatially variable vertical permeability
+  std::vector<double> kh_;  // spatially variable horizontal permeability
   std::vector<double> k_rl_;  // relative permeability
+  bool flag_tensor;
+
   double p_atm_;  // atmospheric pressure
   double rho_;  // constant fluid density
   double mu_;  // constant fluid viscosity

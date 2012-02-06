@@ -104,7 +104,7 @@ int main (int argc, char* argv[])
   // the first, and only, command line argument is a file name. Three
   // types are supported depending on which frameworks are compiled in
 
-  Amanzi::AmanziMesh::MeshFactory factory(comm);
+  Amanzi::AmanziMesh::MeshFactory factory(&comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
   
   ierr = 0;

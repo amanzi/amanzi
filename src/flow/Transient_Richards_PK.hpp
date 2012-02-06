@@ -11,18 +11,21 @@
 #include "RichardsProblem.hpp"
 #include "RichardsModelEvaluator.hpp"
 #include "BDF2_Dae.hpp"
+#include "BDF1_Dae.hh"
 
 namespace Amanzi {
 
 class Transient_Richards_PK : public Flow_PK {
  public:
-  Transient_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<const Flow_State>);
+  Transient_Richards_PK(Teuchos::ParameterList&, const Teuchos::RCP<Flow_State>);
   ~Transient_Richards_PK ();
 
   int advance_to_steady_state();
   int advance_transient(double h);
+  int advance_steady(double h);
   int init_transient(double t0, double h0);
-  void commit_state(Teuchos::RCP<Flow_State>) {}
+  int init_steady(double t0, double h0);
+  void commit_state(Teuchos::RCP<Flow_State>); 
 
   // After a successful advance() the following routines may be called.
   // Returns a reference to the cell pressure vector.
@@ -41,14 +44,17 @@ class Transient_Richards_PK : public Flow_PK {
   double get_flow_dT() { return hnext; }
 
 private:
-  Teuchos::RCP<const Flow_State> FS;
-  Teuchos::ParameterList &richards_plist;
+  void approximate_face_pressure(const Epetra_Vector& cell_pressure, Epetra_Vector& face_pressure);
+
+  Teuchos::RCP<Flow_State> FS;
+  Teuchos::ParameterList &plist;
   
   RichardsProblem *problem;
   RichardsModelEvaluator *RME;
   
-  BDF2::Dae *time_stepper;
-
+  BDF2::Dae* time_stepper;
+  BDF1Dae* steady_time_stepper;
+  
   Epetra_Vector *solution;   // full cell/face solution
   Epetra_Vector *pressure_cells;   // cell pressures
   Epetra_Vector *pressure_faces;

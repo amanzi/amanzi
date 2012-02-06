@@ -52,7 +52,8 @@ GeometricModel::GeometricModel(const GeometricModel& old)
 
 
 GeometricModel::GeometricModel(const unsigned int dim,
-                                 Teuchos::ParameterList gm_params) :
+                               Teuchos::ParameterList gm_params,
+                               const Epetra_MpiComm *comm) :
     topo_dimension_(dim)
 {
 
@@ -106,7 +107,7 @@ GeometricModel::GeometricModel(const unsigned int dim,
               // Create the region
 
               Amanzi::AmanziGeometry::RegionPtr regptr = 
-                RegionFactory(region_name, region_id, reg_spec);
+                RegionFactory(region_name, region_id, reg_spec, comm);
               
               
               // Add it to the geometric model
@@ -129,6 +130,16 @@ GeometricModel::GeometricModel(const unsigned int dim,
 
 GeometricModel::~GeometricModel(void)
 {
+
+  // If a geometric model is deleted, we will not delete all the 
+  // the regions added to it because someone else may be holding 
+  // on to a pointer to the regions. For now, the top level routine
+  // deleting the geometric model has to delete the regions first
+  // to prevent a memory leak
+
+  // Once we can get RegionFactory to work with Reference Counted
+  // Pointers we can remove this comment
+
   Regions.clear();
 }
 

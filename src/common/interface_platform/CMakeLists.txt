@@ -30,7 +30,7 @@ include_directories(${CCSE_INCLUDE_DIRS})
 # interface library
 #
 add_library(interface InputParser.H InputParser.cpp
-                      InputParserIS.H InputParserIS.cpp
+                      InputParserIS.hh InputParserIS.cc
                       ObservationData.H Simulator.H)
 target_link_libraries(interface error_handling geometry ${Teuchos_LIBRARIES}) 		    
 add_install_library(interface)
@@ -38,5 +38,8 @@ add_install_library(interface)
 #
 # Add include files to the installation target
 #
-file(GLOB _inc_files "*.H")
+file(GLOB _H_inc_files "*.H")
+file(GLOB _hh_inc_files "*.hh")
+file(GLOB _h_inc_files "*.h")
+set(_inc_files ${_H_inc_files} ${_h_inc_files} ${_hh_inc_files})
 add_install_include_file(${_inc_files})

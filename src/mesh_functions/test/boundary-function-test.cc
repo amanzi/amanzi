@@ -74,9 +74,9 @@ struct reference_mesh
         set("Location",corner_max).set("Direction",back);
     regions.sublist("TOP").sublist("Region: Plane").
         set("Location",corner_max).set("Direction",top);
-    gm = new GeometricModel(3,regions);
+    gm = new GeometricModel(3,regions,comm);
     // Create the mesh
-    MeshFactory mesh_fact(*comm);
+    MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
   }
 };

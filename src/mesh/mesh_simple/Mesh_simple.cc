@@ -15,49 +15,42 @@ namespace AmanziMesh
 Mesh_simple::Mesh_simple (double x0, double y0, double z0,
 			  double x1, double y1, double z1,
 			  int nx, int ny, int nz,
-			  Epetra_Comm *communicator,
+			  const Epetra_MpiComm *communicator,
 			  const AmanziGeometry::GeometricModelPtr &gm):
     nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
-    z0_(z0), z1_(z1),
-    communicator_(communicator)
+    z0_(z0), z1_(z1)
 {
-  update();
-
   Mesh::set_comm(communicator);
   if (gm != (AmanziGeometry::GeometricModelPtr) NULL) 
-    {
-      Mesh::set_geometric_model(gm);
-    }
+    Mesh::set_geometric_model(gm);
+ 
+  update();
+
 }
 
 Mesh_simple::Mesh_simple ( Teuchos::ParameterList &parameter_list,
-			   Epetra_Comm *communicator,
-			   const AmanziGeometry::GeometricModelPtr &gm) :
-  communicator_(communicator) 
+			   const Epetra_MpiComm *communicator,
+			   const AmanziGeometry::GeometricModelPtr &gm)
 {
+  Mesh::set_comm(communicator);
+  if (gm != (AmanziGeometry::GeometricModelPtr) NULL) 
+    Mesh::set_geometric_model(gm);
+
   GenerationSpec gspec(parameter_list);
   generate_(gspec);
-  Mesh::set_comm(communicator);
-
-  if (gm != (AmanziGeometry::GeometricModelPtr) NULL) 
-    {
-      Mesh::set_geometric_model(gm);
-    }
 }
 
 Mesh_simple::Mesh_simple (const GenerationSpec& gspec,
-                          Epetra_Comm *communicator,
-                          const AmanziGeometry::GeometricModelPtr &gm) :
-    communicator_(communicator)
+                          const Epetra_MpiComm *communicator,
+                          const AmanziGeometry::GeometricModelPtr &gm)
 {
-  generate_(gspec);
   Mesh::set_comm(communicator);
   if (gm != (AmanziGeometry::GeometricModelPtr) NULL) 
-    {
-      Mesh::set_geometric_model(gm);
-    }
+    Mesh::set_geometric_model(gm);
+
+  generate_(gspec);
 }
 
 
@@ -364,6 +357,7 @@ void Mesh_simple::update_internals_()
 
 void Mesh_simple::build_maps_ ()
 {
+  const Epetra_Comm *epcomm = Mesh::get_comm();
   std::vector<int> cells( num_cells_ );
   for (int i=0; i< num_cells_; i++) cells[i] = i;
   
@@ -374,9 +368,9 @@ void Mesh_simple::build_maps_ ()
   for (int i=0; i< num_faces_; i++) faces[i] = i;
 
   
-  cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *communicator_ );
-  face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *communicator_ );
-  node_map_ = new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *communicator_ );
+  cell_map_ = new Epetra_Map(-1, num_cells_, &cells[0], 0, *epcomm );
+  face_map_ = new Epetra_Map(-1, num_faces_, &faces[0], 0, *epcomm );
+  node_map_ = new Epetra_Map(-1, num_nodes_, &nodes[0], 0, *epcomm );
 
 }
 
@@ -1013,7 +1007,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
                     if (inbox)
                       ss.push_back(face);
 
-                    face = xzface_index_(nx_,iy,iz);
+                    face = yzface_index_(nx_,iy,iz);
                     face_get_coordinates(face,&fxyz);
 
                     inbox = true;
@@ -1068,7 +1062,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
         }
       }
 
-      if (!found) // create the side set from the region definition
+      if (!found) // create the cell set from the region definition
         {
           AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
           
@@ -1086,7 +1080,8 @@ void Mesh_simple::get_set_entities (const std::string setname,
               throw std::exception();
             }
 
-          if (rgn->type() == AmanziGeometry::BOX)
+          if (rgn->type() == AmanziGeometry::BOX || 
+              rgn->type() == AmanziGeometry::COLORFUNCTION)
             {
               for (int ix=0; ix<nx_; ix++)
                 for (int iy=0; iy<ny_; iy++)
@@ -1111,7 +1106,7 @@ void Mesh_simple::get_set_entities (const std::string setname,
             }
           else
             {
-              std::cerr << "Region type not suitable/applicable for sidesets" << std::endl;
+              std::cerr << "Region type not suitable/applicable for cellsets" << std::endl;
               throw std::exception();
             }
         }

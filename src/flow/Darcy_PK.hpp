@@ -24,6 +24,9 @@ public:
   int advance_transient(double h) {}; 
   int init_transient(double t0, double h0) {}; 
   
+  int advance_steady(double h) {}; 
+  int init_steady(double t0, double h0) {}; 
+
   int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State>) {}
 

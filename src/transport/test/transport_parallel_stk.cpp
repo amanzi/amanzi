@@ -32,6 +32,12 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   using namespace Amanzi::AmanziGeometry;
 
   std::cout << "Test: advance using parallel STK mesh" << endl;
+#ifdef HAVE_MPI
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm *comm = new Epetra_SerialComm();
+#endif
+
   // read parameter list
   ParameterList parameter_list;
   string xmlFileName = "test/transport_parallel_stk.xml";
@@ -39,8 +45,8 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
 
   // create an MSTK mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(3, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4.par", MPI_COMM_WORLD, gm));
+  GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
+  RCP<Mesh> mesh = rcp(new Mesh_STK("../flow/test/4x4x4.par", comm, gm));
 
   //Amanzi::MeshAudit audit(mesh);
   //audit.Verify();
@@ -56,7 +62,8 @@ TEST(ADVANCE_WITH_STK_PARALLEL) {
   TS->analytic_darcy_flux(u);
   TS->analytic_water_saturation();
 
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
   TPK.set_standalone_mode(true);
 
   // advance the state

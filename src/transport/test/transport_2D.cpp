@@ -51,8 +51,8 @@ cout << "Test: Advance on a 2D square mesh" << endl;
 
   /* create an MSTK mesh framework */
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
-  GeometricModelPtr gm = new GeometricModel(2, region_list);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_10x10_ss.exo", MPI_COMM_WORLD, 2, gm));
+  GeometricModelPtr gm = new GeometricModel(2, region_list, (Epetra_MpiComm *)comm);
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK("test/rect2D_10x10_ss.exo", (Epetra_MpiComm *)comm, 2, gm));
   
   /* create a MPC state with two component */
   int num_components = 2;
@@ -67,7 +67,8 @@ cout << "Test: Advance on a 2D square mesh" << endl;
   TS->analytic_water_density();
 
   /* initialize a transport process kernel from a transport state */
-  Transport_PK TPK(parameter_list, TS);
+  ParameterList transport_list =  parameter_list.get<Teuchos::ParameterList>("Transport");
+  Transport_PK TPK(transport_list, TS);
   TPK.set_standalone_mode(true);
   TPK.print_statistics();
 

@@ -55,9 +55,9 @@ struct bits_and_pieces
         set("Location",corner_max).set("Direction",back);
     regions.sublist("TOP").sublist("Region: Plane").
         set("Location",corner_max).set("Direction",top);
-    gm = new GeometricModel(3,regions);
+    gm = new GeometricModel(3,regions,comm);
     // Create the mesh
-    MeshFactory mesh_fact(*comm);
+    MeshFactory mesh_fact(comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2, gm);
   }
 };
@@ -65,7 +65,7 @@ struct bits_and_pieces
 TEST_FIXTURE(bits_and_pieces, pressure_empty)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  MeshFactory mesh_fact(comm);
+  MeshFactory mesh_fact(&comm);
   Teuchos::RCP<Mesh> mesh(mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
   BoundaryFunction bf(mesh);
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
@@ -142,7 +142,7 @@ SUITE(pressure_bad_param) {
 TEST_FIXTURE(bits_and_pieces, mass_flux_empty)
 {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  MeshFactory mesh_fact(comm);
+  MeshFactory mesh_fact(&comm);
   Teuchos::RCP<Mesh> mesh(mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2));
   BoundaryFunction bf(mesh);
   Teuchos::RCP<Teuchos::ParameterList> params(new Teuchos::ParameterList);
