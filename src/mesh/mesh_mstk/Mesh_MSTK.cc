@@ -2664,55 +2664,48 @@ void Mesh_MSTK::init_set_info() {
 
   unsigned int ngr = gm->Num_Regions();
 
-
   for (int i = 0; i < ngr; i++) {
-
     AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
 
     strcpy(setname,rgn->name().c_str());
 
     mset = MESH_MSetByName(mesh,setname);
 
-    if (mset) 
-      {
+    if (mset) {
 
-	// The only time a mesh set by this name should already exist is
-	// if the region is of type labeled set. In that case, verify
-	// that the entity types in the set are the same as the one
-	// requested in the region
+      // The only time a mesh set by this name should already exist is
+      // if the region is of type labeled set. In that case, verify
+      // that the entity types in the set are the same as the one
+      // requested in the region
+      
+      if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
-	if (rgn->type() == AmanziGeometry::LABELEDSET) 
-	  {
-            AmanziGeometry::LabeledSetRegionPtr lsrgn =
-              dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+        AmanziGeometry::LabeledSetRegionPtr lsrgn =
+          dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+        
+        MType entdim = MSet_EntDim(mset);
+        if (Mesh::space_dimension() == 3) {
 
-	    MType entdim = MSet_EntDim(mset);
-	    if (Mesh::space_dimension() == 3) 
-	      {
-		if ((lsrgn->entity_str() == "CELL" && entdim != MREGION) ||
-		    (lsrgn->entity_str() == "FACE" && entdim != MFACE) ||
-		    (lsrgn->entity_str() == "NODE" && entdim != MVERTEX))
-		  {
-		    std::cerr << "Mismatch of entity type in labeled set region and mesh set" << std::endl;
-		    throw std::exception();
-		  }
-	      }
-	    else if (Mesh::space_dimension() == 2)
-	      {
-		if ((lsrgn->entity_str() == "CELL" && entdim != MFACE) ||
-		    (lsrgn->entity_str() == "FACE" && entdim != MEDGE) ||
-		    (lsrgn->entity_str() == "NODE" && entdim != MVERTEX))
-		  {
-		    std::cerr << "Mismatch of entity type in labeled set region and mesh set" << std::endl;
-		    throw std::exception();
-		  }
-	      }
-	  }
+          if ((lsrgn->entity_str() == "CELL" && entdim != MREGION) ||
+              (lsrgn->entity_str() == "FACE" && entdim != MFACE) ||
+              (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
+            std::cerr << "Mismatch of entity type in labeled set region and mesh set" << std::endl;
+            throw std::exception();
+          }
+        }
+        else if (Mesh::space_dimension() == 2) {
+          if ((lsrgn->entity_str() == "CELL" && entdim != MFACE) ||
+              (lsrgn->entity_str() == "FACE" && entdim != MEDGE) ||
+              (lsrgn->entity_str() == "NODE" && entdim != MVERTEX)) {
+            std::cerr << "Mismatch of entity type in labeled set region and mesh set" << std::endl;
+            throw std::exception();
+          }
+        }
       }
-    else 
-      { 
-	// Create it on demand later
-      }
+    }
+    else { 
+      // Create it on demand later
+    }
   }
   
 
