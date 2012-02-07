@@ -1,3 +1,20 @@
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+   ATS
+
+   License: see $ATS_DIR/COPYRIGHT
+   Author: Ethan Coon
+
+   Implementation for a basic Richards PK.
+
+   Example usage:
+
+   <ParameterList name="flow">
+   <Parameter name="PK model" type="string" value="Richards"/>
+   </ParameterList>
+
+   ------------------------------------------------------------------------- */
+
 #ifndef PKS_FLOW_RICHARDS_RICHARDSPK_HH_
 #define PKS_FLOW_RICHARDS_RICHARDSPK_HH_
 
@@ -11,61 +28,69 @@
 
 namespace Amanzi {
 
-class RichardsPK : public PK, public BDF2::fnBase {
+class RichardsPK : public PK, public ImplicitTIBDF2fnBase {
 
 public:
   RichardsPK(Teuchos::ParameterList& flow_plist, Teuchos::RCP<State>& S,
-             Teuchos::RCP<TreeVector>& soln);
+             Teuchos::RCP<TreeVector>& solution);
 
-  void initialize(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
+  void initialize(Teuchos::RCP<State>& S);
 
+
+  // -- transfer operators
+  void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln);
+  void state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln,
+                         Teuchos::RCP<TreeVector>& soln_dot);
+  void solution_to_state(Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<State>& S);
+  void solution_to_state(Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<TreeVector>& soln_dot,
+                         Teuchos::RCP<State>& S);
+
+  // -- Choose a time step compatible with physics.
   double get_dt() { return h_; }
 
-  bool advance(double dt, Teuchos::RCP<TreeVector>& soln);
+  // -- Advance from state S to state S_next at time S0.time + dt.
+  bool advance(double dt);
 
-  void commit_state(double dt, Teuchos::RCP<State> &S) {}
+  // -- Commit any secondary (dependent) variables.
+  void commit_state(double dt, Teuchos::RCP<State>& S) {}
 
-  // // again, are these necessary?
-  // // Returns a reference to the cell pressure vector.
-  // const Epetra_Vector& Pressure() const { return *pressure_cells; }
+  // -- Update diagnostics for vis.
+  void calculate_diagnostics(Teuchos::RCP<State>& S);
 
-  // // Returns a reference to the Richards face flux vector.
-  // const Epetra_Vector& Flux() const { return *richards_flux; }
+  // -- Set states for use in current and next timestep, and update solution from S_next
+  void set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next);
 
-  // // make these private?
-  // // Computes the components of the Richards velocity on cells.
-  // void GetVelocity(Epetra_MultiVector &q) const
-  //     { problem->DeriveDarcyVelocity(*solution, q); }
+  // BDF2 interface
+  // computes the non-linear functional f = f(t,u,udot)
+  void fun(double t, Teuchos::RCP<const TreeVector> soln,
+           Teuchos::RCP<const TreeVector> soln_dot, Teuchos::RCP<TreeVector> f);
 
-  // // Computes the fluid saturation on cells.
-  // void GetSaturation(Epetra_Vector &s) const;
+  // applies preconditioner to u and returns the result in Pu
+  void precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  // computes a norm on u-du and returns the result
+  double enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+
+  // updates the preconditioner
+  void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h, int& errc);
+
+  // check the admissibility of a solution
+  // override with the actual admissibility check
+  bool is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
 private:
-  void advance_to_steady_state();
+  void advance_to_steady_state_();
 
-  Teuchos::RCP<RichardsProblem> problem;
-  Teuchos::RCP<RichardsModelEvaluator> RME;
+  // TODO: these should be scoped pointers
+  Teuchos::RCP<RichardsProblem> problem_;
+  Teuchos::RCP<Amanzi::ImplicitTIBDF2> time_stepper_;
+  double atol_;
+  double rtol_;
 
-  Teuchos::RCP<BDF2::Dae> time_stepper;
+  Teuchos::ParameterList flow_plist_;
 
-  Teuchos::RCP<Epetra_Vector> solution;   // full cell/face solution
-  Teuchos::RCP<Epetra_Vector> pressure_cells;   // cell pressures
-  Teuchos::RCP<Epetra_Vector> pressure_faces;
-
-  Teuchos::RCP<Epetra_Vector> richards_flux; // Darcy face fluxes
-
-  int max_itr;      // max number of linear solver iterations
-  double err_tol;   // linear solver convergence error tolerance
-  int precon_freq;  // preconditioner update frequency
-
-  bool steady_state;
-  double ss_t0, ss_t1; // steady state start/stop times
-  double h0; // initial timestep size
-  double height0; // hydrostatic height at t0
-
-  double h, hnext;
-
-  Teuchos::ParameterList plist;
+  double h0_; // initial timestep size
+  double h_, hnext_; // current, next step sizes
 };
 
 } // close namespace Amanzi

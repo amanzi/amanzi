@@ -41,7 +41,7 @@ class NullEnergyPK : public PK, public ImplicitTIBDF2fnBase {
 
 public:
   NullEnergyPK(Teuchos::ParameterList& energy_plist, Teuchos::RCP<State>& S,
-               Teuchos::RCP<TreeVector>& soln);
+               Teuchos::RCP<TreeVector>& solution);
   ~NullEnergyPK() {}
 
   // PK interface
@@ -91,8 +91,8 @@ public:
 
 private:
   // A few options for advance
-  bool advance_analytic(double dt);
-  bool advance_bdf(double dt);
+  bool advance_analytic_(double dt);
+  bool advance_bdf_(double dt);
 
   // states
   double T_;
