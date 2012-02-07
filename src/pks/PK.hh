@@ -65,11 +65,6 @@ public:
 
   // -- Advance from state S0 to state S1 at time S0.time + dt.
   virtual bool advance(double dt) = 0;
-  virtual bool advance(double dt, Teuchos::RCP<const State>& S,
-                       Teuchos::RCP<State>& S_next) {
-    set_states(S, S_next);
-    return advance(dt);
-  }
 
   // -- Commit any secondary (dependent) variables.
   virtual void commit_state(double dt, Teuchos::RCP<State>& S) = 0;
@@ -77,10 +72,13 @@ public:
   // -- Calculate any diagnostics prior to doing vis
   virtual void calculate_diagnostics(Teuchos::RCP<State>& S) = 0;
 
-  // -- set pointers to State, and point the solution vector to the data in S_next
-  virtual void set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next) = 0;
-
   // Non-purely virtual component for a few base data structures.
+  // -- set pointers to State, and point the solution vector to the data in S_next
+  virtual void set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next) {
+    S_ = S;
+    S_next_ = S_next;
+  }
+
   // -- get and set name
   std::string name() { return name_; }
   virtual void set_name(std::string name) { name_ = name; }

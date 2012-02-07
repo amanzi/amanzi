@@ -68,9 +68,6 @@ public:
   // -- Update diagnostics for vis.
   void calculate_diagnostics(Teuchos::RCP<State>& S) {}
 
-  // -- Set states for use in current and next timestep, and update solution from S_next
-  void set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next);
-
   // BDF2 interface
   // computes the non-linear functional f = f(t,u,udot)
   void fun(double t, Teuchos::RCP<const TreeVector> soln,

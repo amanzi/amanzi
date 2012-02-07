@@ -36,12 +36,14 @@ RichardsPK::RichardsPK(Teuchos::ParameterList &flow_plist, Teuchos::RCP<State> &
   S->get_field_record("pressure")->set_io_vis(true);
   Teuchos::RCP<Epetra_MultiVector> pressure_ptr = S->get_field("pressure", "flow");
   solution_->PushBack(pressure_ptr);
+  S->require_field("pressure_dot", Amanzi::AmanziMesh::CELL, "flow");
 
   // -- constraints -- pressure on the faces
   S->require_field("pressure_lambda", Amanzi::AmanziMesh::FACE, "flow");
   Teuchos::RCP<Epetra_MultiVector> pressure_lambda_ptr =
     S->get_field("pressure_labmda", "flow");
   solution_->PushBack(pressure_lambda_ptr);
+  S->require_field("pressure_lambda_dot", Amanzi::AmanziMesh::FACE, "flow");
 
   // -- liquid flux, scalar on faces
   S->require_field("darcy_flux", Amanzi::AmanziMesh::FACE, "flow");
@@ -70,14 +72,14 @@ RichardsPK::RichardsPK(Teuchos::ParameterList &flow_plist, Teuchos::RCP<State> &
 
   // check if we need to make a time integrator
   if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
-    time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this,solution_));
+    time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this, solution_));
     Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(flow_plist_.sublist("Time integrator")));
     time_stepper_->setParameterList(bdf2_list_p);
   }
 };
 
 /* ******************************************************************
-*  Initialization of state.
+*  Initialization of the problem, time stepper, and state.
 *********************************************************************/
 void RichardsPK::initialize(Teuchos::RCP<State> &S) {
   Teuchos::ParameterList richards_plist = plist.sublist("Richards Problem");
@@ -128,97 +130,113 @@ void RichardsPK::initialize(Teuchos::RCP<State> &S) {
   problem_->DeriveDarcyVelocity(*darcy_flux, darcy_velocity);
   S->get_field_record("darcy_velocity")->set_initialized();
 
+  // set up timestepper
+  Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp(new TreeVector(*solution_));
+  state_to_solution(S, solution_, solution_dot);
+  time_stepper_->set_initial_state(S->get_time(), solution_, solution_dot);
 
-  ///// STOP HERE ////////
-
-
-
-  
   // set up preconditioner
   int errc;
-  double t0 = S->get_time();
-  problem->Compute_udot(t0, *solution, udot);
-  time_stepper->set_initial_state(t0, *solution, udot);
-
-  update_precon(t0, *solution, h, errc);
-
-  // if steady state solve
-  if (steady_state) {
-    // NOTE: this does NOT get (nor need) state, to gaurantee it cannot alter State
-    advance_to_steady_state();
-
-    // update state
-    S->set_field("pressure", "flow", *pressure_cells);
-    S->set_field("darcy_flux", "flow", *richards_flux);
-    S->set_time(ss_t1);
-  }
-
-  // IC for velocity
-  Teuchos::RCP<Epetra_MultiVector> velocity = S->get_field("darcy_velocity", "flow");
-  problem->DeriveDarcyVelocity(*solution, *velocity);
+  // TODO: scoped pointer for errc
+  update_precon(S->get_time(), solution_, h_, &errc);
 };
 
-void RichardsPK::advance_to_steady_state()
-{
-  double t0 = ss_t0;
-  double t1 = ss_t1;
-  double h = h0;
-  double hnext;
+  /* ******************************************************************
+   *  Pointer copy of state to solution
+   *********************************************************************/
+  void RichardsPK::state_to_solution(Teuchos::RCP<State>& S,
+                                     Teuchos::RCP<TreeVector>& soln) {
+    (*soln)[0] = S->get_field("pressure", "flow");
+    (*soln)[1] = S->get_field("pressure_lambda", "flow");
+  };
 
-  // iterate
-  int i = 0;
-  double tlast = t0;
+  /* ******************************************************************
+   *  Pointer copy of state to solution
+   *********************************************************************/
+  void RichardsPK::state_to_solution(Teuchos::RCP<State>& S,
+                                     Teuchos::RCP<TreeVector>& soln,
+                                     Teuchos::RCP<TreeVector>& soln_dot) {
+    (*soln)[0] = S->get_field("pressure", "flow");
+    (*soln)[1] = S->get_field("pressure_lambda", "flow");
+    (*soln_dot)[0] = S->get_field("pressure_dot", "flow");
+    (*soln_dot)[1] = S->get_field("pressure_lambda_dot", "flow");
+  };
 
-  do {
-    time_stepper->bdf2_step(h,0.0,*solution,hnext);
-    time_stepper->commit_solution(h,*solution);
-    time_stepper->write_bdf2_stepping_statistics();
+  /* ******************************************************************
+   *  Pointer copy of solution to state
+   *********************************************************************/
+  void RichardsPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
+                                     Teuchos::RCP<State>& S) {
+    S->set_field_pointer("pressure", "flow", (*soln)[0]);
+    S->set_field_pointer("pressure_lambda", "flow", (*soln)[1]);
+  };
 
-    h = hnext;
-    i++;
-    tlast=time_stepper->most_recent_time();
-  } while (t1 >= tlast);
+  /* ******************************************************************
+   *  Pointer copy of solution to state
+   *********************************************************************/
+  void RichardsPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
+                                     Teuchos::RCP<TreeVector>& soln_dot,
+                                     Teuchos::RCP<State>& S) {
+    S->set_field_pointer("pressure", "flow", (*soln)[0]);
+    S->set_field_pointer("pressure_lambda", "flow", (*soln)[1]);
+    S->set_field_pointer("pressure_dot", "flow", (*soln_dot)[0]);
+    S->set_field_pointer("pressure_lambda_dot", "flow", (*soln_dot)[1]);
+  };
 
-  // Derive the Richards fluxes on faces
-  double l1_error;
-  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
-}
+  /* ******************************************************************
+   *  advance transient by a step size dt
+   *********************************************************************/
+  bool RichardsPK::advance(double dt) {
+    h_ = dt;
+    state_to_solution(S_next_, solution_);
+    time_stepper_->bdf2_step(h_, 0.0, solution_, hnext_);
+    time_stepper_->commit_solution(h_, solution_);
+    time_stepper_->write_bdf2_stepping_statistics();
 
-// NOTE: this should get split into three parts --
-//    1. set problem data from state S0
-//    2. advance transient (which in no way can alter either S0 or S1)
-//    3. set state S1 with solution from problem
-// much like advance_to_steady_state() works
-bool RichardsPK::advance_transient(double dt, const Teuchos::RCP<State> &S0,
-                                              Teuchos::RCP<State> &S1) {
-  // potentially changed permeability and porosity
-  problem->SetPermeability(*(*(S0->get_field("permeability")))(0));
-  problem->SetPorosity(*(*(S0->get_field("porosity")))(0));
+    // QUESTION FOR MARKUS -- is it safe to assume that ALL time integration
+    // schemes will call fun(solution_) with the final solution?  If not, we
+    // must update saturation and flux manually after the solution is
+    // acquired.
 
-  // take the timestep
-  time_stepper->bdf2_step(dt, 0.0, *solution, hnext);
-  time_stepper->commit_solution(dt, *solution);
-  time_stepper->write_bdf2_stepping_statistics();
+    return false; // bdf2_step subcycles, so we have always succeeded
+  };
 
-  // update the state at the new time
-  // update pressure
-  S1->set_field("pressure", "flow", *pressure_cells);
 
-  // update flux
-  double l1_error;
-  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
-  S1->set_field("darcy_flux", "flow", *richards_flux);
+  /* ******************************************************************
+   *  update diagnostic variables for an I/O call
+   *********************************************************************/
+  void RichardsPK::calculate_diagnostics(Teuchos::RCP<State>& S) {
+    Teuchos::RCP<Epetra_MultiVector> darcy_flux = S->get_field("darcy_flux", "flow");
+    Teuchos::RCP<Epetra_MultiVector> darcy_velocity = S->get_field("darcy_velocity", "flow");
+    problem_->DeriveDarcyVelocity(*darcy_flux, darcy_velocity);
+  };
 
-  // update velocity DOES THIS NEED TO BE DONE NOW?  save for commit_state?
-  Teuchos::RCP<Epetra_MultiVector> velocity = S1->get_field("darcy_velocity", "flow");
-  problem->DeriveDarcyVelocity(*solution, *velocity);
+  ////// STOPPED HERE ////////
 
-  // update saturation
-  Teuchos::RCP<Epetra_MultiVector> saturation = S1->get_field("water saturation", "flow");
-  problem->DeriveSaturation(*pressure_cells, *(*saturation)(0));
 
-  return false; // bdf2_step subcycles, so we have always succeeded
-};
+  // BDF2 interface
+  /* ******************************************************************
+   *  computes the non-linear functional f = f(t,u,udot)
+   *********************************************************************/
+  void RichardsPK::fun(double t, Teuchos::RCP<const TreeVector> soln,
+                       Teuchos::RCP<const TreeVector> soln_dot,
+                       Teuchos::RCP<TreeVector> f) {
+  };
+
+  /* ******************************************************************
+   * applies preconditioner to u and returns the result in Pu
+   *********************************************************************/
+  void RichardsPK::precon(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
+
+  /* ******************************************************************
+   * computes a norm on u-du and returns the result
+   *********************************************************************/
+  double RichardsPK::enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
+
+  /* ******************************************************************
+   * updates the preconditioner
+   *********************************************************************/
+  void RichardsPK::update_precon(double t, Teuchos::RCP<const TreeVector> up, double h, int* errc);
+
+
 } // close namespace Amanzi
