@@ -89,8 +89,7 @@ namespace Amanzi {
   void NullEnergyPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
           Teuchos::RCP<State>& S) {
     Teuchos::RCP<Epetra_MultiVector> temp_ptr = (*soln)[0];
-    Teuchos::RCP<Epetra_MultiVector> nc_temp_ptr = temp_ptr;
-    S->set_field_pointer("temperature", "energy", nc_temp_ptr);
+    S->set_field_pointer("temperature", "energy", temp_ptr);
   };
 
   void NullEnergyPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
@@ -110,6 +109,7 @@ namespace Amanzi {
 
   // -- advance using the BDF integrator
   bool NullEnergyPK::advance_bdf_(double dt) {
+    state_to_solution(S_next_, solution_);
 
     // take the bdf timestep
     double h = dt;
@@ -130,14 +130,6 @@ namespace Amanzi {
   // -- call your favorite
   bool NullEnergyPK::advance(double dt) {
     return advance_analytic_(dt);
-  };
-
-  // overwrite the state pointers, and make sure the solutions T pointer points to S_next's T
-  void NullEnergyPK::set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next) {
-    S_ = S;
-    S_next_ = S_next;
-    // pointer copy the state's temperature field to be the solution's temperature field
-    (*solution_)[0] = S_next->get_field("temperature", "energy");
   };
 
   // Methods for the BDF integrator

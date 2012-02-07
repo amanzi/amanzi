@@ -57,9 +57,6 @@ public:
   // -- Update diagnostics for vis.
   void calculate_diagnostics(Teuchos::RCP<State>& S);
 
-  // -- Set states for use in current and next timestep, and update solution from S_next
-  void set_states(Teuchos::RCP<const State>& S, Teuchos::RCP<State>& S_next);
-
   // BDF2 interface
   // computes the non-linear functional f = f(t,u,udot)
   void fun(double t, Teuchos::RCP<const TreeVector> soln,
@@ -72,15 +69,13 @@ public:
   double enorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
 
   // updates the preconditioner
-  void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h, int& errc);
+  void update_precon(double t, Teuchos::RCP<const TreeVector> up, double h, int* errc);
 
   // check the admissibility of a solution
   // override with the actual admissibility check
   bool is_admissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
 private:
-  void advance_to_steady_state_();
-
   // TODO: these should be scoped pointers
   Teuchos::RCP<RichardsProblem> problem_;
   Teuchos::RCP<Amanzi::ImplicitTIBDF2> time_stepper_;
