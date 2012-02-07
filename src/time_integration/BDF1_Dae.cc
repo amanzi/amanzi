@@ -266,7 +266,6 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
       throw itr;
     } 
   }
-  
 }
 
 
