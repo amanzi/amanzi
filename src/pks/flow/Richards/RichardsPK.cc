@@ -1,18 +1,52 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+   ATS
+
+   License: see $ATS_DIR/COPYRIGHT
+   Author: Ethan Coon
+
+   Implementation for a basic Richards PK.
+
+   Example usage:
+
+   <ParameterList name="flow">
+   <Parameter name="PK model" type="string" value="Richards"/>
+   </ParameterList>
+
+   ------------------------------------------------------------------------- */
 
 #include "RichardsPK.hh"
-#include "RichardsModelEvaluator.hh"
+#include "RichardsProblem.hh"
 
 namespace Amanzi {
 
-  RichardsPK::RichardsPK(Teuchos::ParameterList &plist_, Teuchos::RCP<State> &S) :
-    plist(plist_) {
+
+/* ******************************************************************
+*  Constructor for the basic Richards Process Kernel
+*********************************************************************/
+RichardsPK::RichardsPK(Teuchos::ParameterList &flow_plist, Teuchos::RCP<State> &S,
+                       Teuchos::RCP<TreeVector>& solution) :
+    flow_plist_(flow_plist) {
+
+  solution_ = solution;
+
   // Require fields in the state
+  // -- pressure field
   S->require_field("pressure", Amanzi::AmanziMesh::CELL, "flow");
   S->get_field_record("pressure")->set_io_vis(true);
+  Teuchos::RCP<Epetra_MultiVector> pressure_ptr = S->get_field("pressure", "flow");
+  solution_->PushBack(pressure_ptr);
 
+  // -- constraints -- pressure on the faces
+  S->require_field("pressure_lambda", Amanzi::AmanziMesh::FACE, "flow");
+  Teuchos::RCP<Epetra_MultiVector> pressure_lambda_ptr =
+    S->get_field("pressure_labmda", "flow");
+  solution_->PushBack(pressure_lambda_ptr);
+
+  // -- liquid flux, scalar on faces
   S->require_field("darcy_flux", Amanzi::AmanziMesh::FACE, "flow");
 
+  // -- darcy velocity, vector on cells (for diagnostics only)
   S->require_field("darcy_velocity", Amanzi::AmanziMesh::CELL, "flow", 3);
   S->get_field_record("darcy_velocity")->set_io_vis(true);
   std::vector<std::string> subfieldnames;
@@ -21,84 +55,92 @@ namespace Amanzi {
   subfieldnames.push_back("Liquid Z-Velocity");
   S->set_subfield_names("darcy_velocity", subfieldnames);
 
-  S->require_field("water saturation", Amanzi::AmanziMesh::CELL, "flow");
-  S->get_field_record("water saturation")->set_io_vis(true);
+  // -- saturation
+  S->require_field("saturation", Amanzi::AmanziMesh::CELL, "flow");
+  S->get_field_record("saturation")->set_io_vis(true);
 
+  // -- parameters
   S->require_field("permeability", Amanzi::AmanziMesh::CELL);
+  S->require_field("relative_permeability", Amanzi::AmanziMesh::CELL);
   S->require_field("porosity", Amanzi::AmanziMesh::CELL);
 
   // create the problem
   Teuchos::ParameterList richards_plist = plist.sublist("Richards Problem");
-  problem = Teuchos::rcp(new RichardsProblem(S->get_mesh_maps(), richards_plist));
+  problem_ = Teuchos::rcp(new RichardsProblem(S->get_mesh_maps(), richards_plist));
 
-  // Create the solution vectors.
-  solution = Teuchos::rcp(new Epetra_Vector(problem->Map()));
-  pressure_cells = Teuchos::rcp(problem->CreateCellView(*solution));
-  pressure_faces = Teuchos::rcp(problem->CreateFaceView(*solution));
-  richards_flux = Teuchos::rcp(new Epetra_Vector(problem->FaceMap()));
-
-  // and the Richards model evaluator
-  Teuchos::ParameterList &rme_list = richards_plist.sublist("Richards model evaluator");
-  RME = Teuchos::rcp(new RichardsModelEvaluator(problem, rme_list));
-
-  // then the BDF2 solver
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(richards_plist.sublist("Time integrator")));
-  time_stepper = Teuchos::rcp(new BDF2::Dae(*RME, problem->Map()));
-  time_stepper->setParameterList(bdf2_list_p);
+  // check if we need to make a time integrator
+  if (!flow_plist_.get<bool>("Strongly Coupled PK", false)) {
+    time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this,solution_));
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(flow_plist_.sublist("Time integrator")));
+    time_stepper_->setParameterList(bdf2_list_p);
+  }
 };
 
+/* ******************************************************************
+*  Initialization of state.
+*********************************************************************/
 void RichardsPK::initialize(Teuchos::RCP<State> &S) {
   Teuchos::ParameterList richards_plist = plist.sublist("Richards Problem");
 
-  steady_state = richards_plist.get<bool>("Steady state", false);
-  if (steady_state) {
-    ss_t0 = richards_plist.get<double>("Steady state calculation initial time");
-    ss_t1 = richards_plist.get<double>("Steady state calculation final time");
-    h0 = richards_plist.get<double>("Steady state calculation initial time step");
-    height0 =  richards_plist.get<double>("Steady state calculation initial hydrostatic pressure height", 0.0);
-  } else {
-    h0 = richards_plist.get<double>("Initial time step");
-    height0 =  richards_plist.get<double>("Initial hydrostatic pressure height", 0.0);
-  }
-  // set the intial timestep size
-  h = h0;
-  hnext = h0;
+  // set the timestep sizes
+  h0_ = richards_plist.get<double>("Initial time step");
+  h_ = h0_;
+  hnext_ = h0_;
 
   // Set the problem independent variables from state
-  problem->SetFluidDensity(*S->get_density());
-  problem->SetFluidViscosity(*S->get_viscosity());
-  problem->SetGravity(*S->get_gravity());
+  problem_->SetFluidDensity(*S->get_density());
+  problem_->SetFluidViscosity(*S->get_viscosity());
+  problem_->SetGravity(*S->get_gravity());
+  problem_->Initialize();
 
-  problem->SetPermeability(*(*S->get_field("permeability"))(0));
-  problem->SetPorosity(*(*S->get_field("porosity"))(0));
+  // Initialize the problem, and calculate initial values for dependent
+  // variables.  In the process, set the fields to initialized.
+  // -- IC for pressure
+  Teuchos::RCP<Epetra_MultiVector> pressure = S->get_field("pressure", "flow");
+  Teuchos::RCP<Epetra_MultiVector> pressure_lambda = S->get_field("pressure_lambda", "flow");
+  problem_->InitializePressureCells(pressure);
+  problem_->InitializePressureFaces(pressure_lambda);
+  S->get_field_record("pressure")->set_initialized();
+  S->get_field_record("pressure_lambda")->set_initialized();
 
-  // initialize problem, including data needed to construct
-  // BCs, water models, etc.
-  problem->InitializeProblem(richards_plist);
+  // -- IC for saturations, if not set in state
+  Teuchos::RCP<Epetra_MultiVector> saturation = S->get_field("saturation", "flow");
+  problem_->InitializeSaturation(saturation);
+  S->get_field_record("saturation")->set_initialized();
 
-  // IC for pressure
-  problem->SetInitialPressureProfileCells(height0,pressure_cells);
-  problem->SetInitialPressureProfileFaces(height0,pressure_faces);
-  S->set_field("pressure", "flow", *pressure_cells);
+  // -- calculate rel perm
+  Teuchos::RCP<Epetra_MultiVector> rel_perm = S->get_field("permeability", "flow");
+  problem_->DeriveRelPerm(*saturation, rel_perm);
+  S->get_field_record("relative_permeability")->set_initialized();
 
-  // IC for flux
+  // -- calculate darcy flux
+  ASSERT(S->get_field_record("permeability")->initialized());
+  Teuchos::RCP<Epetra_MultiVector> perm = S->get_field("permeability");
+  Teuchos::RCP<Epetra_MultiVector> darcy_flux = S->get_field("darcy_flux", "flow");
+  // TODO: scoped pointer for l1_error
   double l1_error;
-  problem->DeriveDarcyFlux(*solution, *richards_flux, l1_error);
-  S->set_field("darcy_flux", "flow", *richards_flux);
+  problem_->DeriveDarcyFlux(*pressure, *rel_perm, *perm, darcy_flux, &l1_error);
+  S->get_field_record("darcy_flux")->set_initialized();
 
-  // initialize timestepping
-  if (steady_state) {
-    S->set_time(ss_t0);
-  }
+  // -- darcy velocity
+  Teuchos::RCP<Epetra_MultiVector> darcy_velocity = S->get_field("darcy_velocity", "flow");
+  // TODO: scoped pointer for l1_error
+  problem_->DeriveDarcyVelocity(*darcy_flux, darcy_velocity);
+  S->get_field_record("darcy_velocity")->set_initialized();
 
+
+  ///// STOP HERE ////////
+
+
+
+  
+  // set up preconditioner
+  int errc;
   double t0 = S->get_time();
-  Epetra_Vector udot(problem->Map());
   problem->Compute_udot(t0, *solution, udot);
   time_stepper->set_initial_state(t0, *solution, udot);
 
-  // set up preconditioner
-  int errc;
-  RME->update_precon(t0, *solution, h, errc);
+  update_precon(t0, *solution, h, errc);
 
   // if steady state solve
   if (steady_state) {

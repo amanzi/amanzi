@@ -26,7 +26,7 @@ namespace Amanzi {
   NullEnergyPK::NullEnergyPK(Teuchos::ParameterList& energy_plist,
                              Teuchos::RCP<State>& S,
                              Teuchos::RCP<TreeVector>& solution) :
-    energy_plist_(energy_plist) {
+      energy_plist_(energy_plist) {
 
     solution_ = solution;
 
@@ -42,10 +42,6 @@ namespace Amanzi {
 
     // check if we need to make a time integrator
     if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
-      // make an initvector for the time stepper
-      // Teuchos::RCP<Epetra_Vector> ep_initvec = Teuchos::rcp(new Epetra_Vector( S->get_mesh_maps()->cell_epetra_map(false) ));
-      // Teuchos::RCP<TreeVector> initvec = Teuchos::rcp(new TreeVector(std::string("initvec"),ep_initvec));
-
       time_stepper_ = Teuchos::rcp(new ImplicitTIBDF2(*this,solution_));
       Teuchos::RCP<Teuchos::ParameterList> bdf2_list_p(new Teuchos::ParameterList(energy_plist_.sublist("Time integrator")));
       time_stepper_->setParameterList(bdf2_list_p);
@@ -107,13 +103,13 @@ namespace Amanzi {
 
   // Advance methods calculate the constant value
   // -- advance using the analytic value
-  bool NullEnergyPK::advance_analytic(double dt) {
+  bool NullEnergyPK::advance_analytic_(double dt) {
     *solution_ = T_;
     return false;
   };
 
   // -- advance using the BDF integrator
-  bool NullEnergyPK::advance_bdf(double dt) {
+  bool NullEnergyPK::advance_bdf_(double dt) {
 
     // take the bdf timestep
     double h = dt;
@@ -133,7 +129,7 @@ namespace Amanzi {
 
   // -- call your favorite
   bool NullEnergyPK::advance(double dt) {
-    return advance_analytic(dt);
+    return advance_analytic_(dt);
   };
 
   // overwrite the state pointers, and make sure the solutions T pointer points to S_next's T
