@@ -54,14 +54,14 @@ Function* FunctionFactory::Create(Teuchos::ParameterList &list) const
       Exceptions::amanzi_throw(m);
     }
   }
-  
-  if (f)
-    return f;
-  else { // no function sublist was found above
+ 
+  if (!f) { // no function sublist was found above
     Errors::Message m;
     m << "FunctionFactory: missing function sublist.";
     Exceptions::amanzi_throw(m);
   }
+
+  return f;
 }
 
 Function* FunctionFactory::create_constant(Teuchos::ParameterList &params) const

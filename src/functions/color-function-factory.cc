@@ -221,7 +221,11 @@ ColorFunction* ColorFunctionFactory::create_grid_color_function(int dim, std::fs
   if (comm.MyPID() == 0) {
     for (int i = 0; i < n; ++i) {
       infile >> array[i];
-      if (error = !infile.good()) break;
+      if (i == n-1) { // okay to see an EOF on the last value
+        if (error = infile.fail()) break;
+      } else {
+        if (error = !infile.good()) break;
+      }
     }
   }
   comm.Broadcast(&error, 1, 0);
