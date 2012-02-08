@@ -26,8 +26,10 @@
 #if (BOOST_VERSION / 100 % 1000 >= 46)
  #include "boost/config.hpp"
  #ifndef BOOST_NO_FENV_H
-  #define AMANZI_USE_FENV
-  #include "boost/detail/fenv.hpp"
+  #ifdef _GNU_SOURCE
+   #define AMANZI_USE_FENV
+   #include "boost/detail/fenv.hpp"
+  #endif
  #endif
 #endif
 
