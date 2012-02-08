@@ -312,7 +312,7 @@ extern "C" {
 			  const int* lo, const int* hi,
 			  const int* domlo, const int* domhi,const int* bc, 
 			  const int* inflow_bc_lo, const int* inflow_bc_hi,
-			  const int* nc, const bool* do_upwind);
+			  const int* nc, const int* do_upwind);
 
   void FORT_RICHARD_AJAC(const Real* S, ARLIM_P(slo), ARLIM_P(shi),
 
@@ -343,7 +343,7 @@ extern "C" {
 			 const int* domlo, const int* domhi, 
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
-			 const bool* do_upwind);
+			 const int* do_upwind);
 
   void FORT_RICHARD_NJAC(const Real* S, ARLIM_P(slo), ARLIM_P(shi),
 
@@ -374,7 +374,7 @@ extern "C" {
 			 const int* domlo, const int* domhi, 
 			 const Real* dx, const int* bc,
 			 const int* inflow_bc_lo, const int* inflow_bc_hi,
-			 const Real* deps, const bool* do_upwind);
+			 const Real* deps, const int* do_upwind);
 
   void FORT_RICHARD_NJAC2(const Real* dfx, ARLIM_P(dfxlo), ARLIM_P(dfxhi),
 			  const Real* dfy, ARLIM_P(dfylo), ARLIM_P(dfyhi),
@@ -403,7 +403,7 @@ extern "C" {
 			  const int* domlo, const int* domhi, 
 			  const Real* dx, const int* bc,
 			  const int* inflow_bc_lo, const int* inflow_bc_hi,
-			  const Real* deps, const bool* do_upwind);
+			  const Real* deps, const int* do_upwind);
   
     void FORT_RICHARD_ALPHA (const Real* alpha,  ARLIM_P(alo),  ARLIM_P(ahi),
 			     const Real* s,   ARLIM_P(slo),   ARLIM_P(shi),

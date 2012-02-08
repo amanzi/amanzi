@@ -468,8 +468,8 @@ extern "C"
    void FORT_UPDATE_AOFS_TRACER(const Real* SOdat, ARLIM_P(slo), ARLIM_P(shi), 
 				const Real* SNdat, ARLIM_P(slo), ARLIM_P(shi),
 				const Real* AOdat, ARLIM_P(alo), ARLIM_P(ahi),
-				const Real*  pdat, ARLIM_P(plo), ARLIM_P(phi),
 				const Real* tfdat, ARLIM_P(tlo), ARLIM_P(thi),
+				const Real*  pdat, ARLIM_P(plo), ARLIM_P(phi),
 				const int* lo, const int* hi, 
 				const int* idx_total, const int* idx_total_n,
 				Real* dt, int* num_comp);

@@ -51,21 +51,7 @@ class PMBld
 				Real            time);
 };
 
-
-
-struct FluxToRhoSat
-    : public ArrayTransform
-{
-    FluxToRhoSat(const Rock& rock)
-        : rock(rock) {}
-    virtual ArrayTransform* clone() const {return new FluxToRhoSat(*this);}
-    virtual Array<Real> transform(Real inData) const;
-protected:
-    const Rock& rock;
-};
-
-
-
+class HydrostaticData;
 
 class PorousMedia
   :
@@ -290,7 +276,10 @@ public:
   static PArray<Rock>& Rocks() {return rocks;}
   static const Array<Real>& Density() {return density;}
   static const Array<Real>& Viscosity() {return muval;}
-  static Real NumComponents() {return ncomps;}
+  static int numComponents() {return ncomps;}
+  static const Array<std::string>& componentNames() {return cNames;}
+  static const Array<std::string>& phaseNames() {return pNames;}
+  static const Array<std::string>& soluteNames() {return tNames;}
 
   static PArray<RegionData>& BCs() {return bc_array;}
   static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
@@ -665,7 +654,7 @@ protected:
 			  const MultiFab* lbd,
 			  const MultiFab* u_mac,
 			  const int  nc = 0,
-			  const bool do_upwind = false);
+			  const int do_upwind = 0);
   //
   // Calculate the diffusive term in the jacobian of richard's equation
   //
@@ -674,7 +663,7 @@ protected:
 			 const MultiFab* umac,
 			 const Real time,
 			 const int  nc = 0,
-			 const bool do_upwind = false,
+			 const int do_upwind = 0,
 			 const bool do_n = true);
 
   //
@@ -735,6 +724,9 @@ protected:
   void dirichletStateBC (const Real time);
   void dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time);
   void dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time);
+  bool get_inflow_velocity(const Orientation& face,
+                           FArrayBox&         ccBndFab,
+                           Real               time);
   //
   // Called in grid_places after other tagging routines to modify
   //   the list of tagged points

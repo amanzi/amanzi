@@ -4,7 +4,8 @@
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "InputParser_Structured.H"
+#include <InputParser_Structured.H>
+#include <PMAMR_Labels.H>
 
 #include <BoxLib.H>
 
@@ -228,7 +229,6 @@ namespace Amanzi {
             rsublist.set("type", "point");
         }
 
-        static std::string RpurposeDEF[7] = {"xlobc", "ylobc", "zlobc", "xhibc", "yhibc", "zhibc", "all"};
         void convert_Region_Box(const ParameterList& rslist,
                                 const std::string&   rlabel,
                                 ParameterList&       rsublist)
@@ -247,10 +247,10 @@ namespace Amanzi {
                     
                     // Is this on the domain boundary?
                     if (lo[d] == domlo[d]) {
-                        purpose = RpurposeDEF[d];
+                        purpose = PMAMR::RpurposeDEF[d];
                     }
                     else if (lo[d] == domhi[d]) {
-                        purpose = RpurposeDEF[d+3];
+                        purpose = PMAMR::RpurposeDEF[d+3];
                     }
                 }
                 else {
@@ -293,7 +293,7 @@ namespace Amanzi {
             else if (std::abs(hi[coord] - domhi[coord]) < geometry_eps) {
                 iPurpose = (coord==0 ?  3 : (ndim==2 || coord==1 ? 4 : 5) );
             }
-            std::string purpose = underscore(RpurposeDEF[iPurpose]);
+            std::string purpose = underscore(PMAMR::RpurposeDEF[iPurpose]);
             rsublist.set("purpose",purpose);
         }
 
@@ -805,6 +805,18 @@ namespace Amanzi {
             }
         }
 
+        void convert_ICHydrostatic(const ParameterList& fPLin,
+                                   const std::string&   Amanzi_type,
+                                   ParameterList&       fPLout)
+        {
+            Array<std::string> reqP, nullList;
+            const std::string ref_name="Water Table Height"; reqP.push_back(ref_name);
+            PLoptions opt(fPLin,nullList,reqP,true,true);  
+            
+            fPLout.set<double>("water_table_height",fPLin.get<double>(ref_name));
+            fPLout.set<std::string>("type","hydrostatic");
+        }
+
         void convert_solute_ICConcentration(const ICBCFunc& solute_ic,
                                             ParameterList&  fPLout)
         {
@@ -881,6 +893,10 @@ namespace Amanzi {
                            || Amanzi_type == "IC: Linear Pressure") )
                 {
                     convert_ICPressure(fPLin,Amanzi_type,fPLout);
+                }
+                else if ( Amanzi_type == "IC: Hydrostatic" )
+                {
+                    convert_ICHydrostatic(fPLin,Amanzi_type,fPLout);
                 }
                 else {
                     std::cerr << "Unsupported IC: " << Amanzi_type << std::endl;
@@ -1219,7 +1235,7 @@ namespace Amanzi {
             {
                 int k = i%3;
                 if (k < ndim) {
-                    const std::string& Amanzi_purpose = AMR_to_Amanzi_label_map[RpurposeDEF[i]];
+                    const std::string& Amanzi_purpose = AMR_to_Amanzi_label_map[PMAMR::RpurposeDEF[i]];
                     const Array<Spair>& orient_RTs = orient_RT_map[Amanzi_purpose];
                     if (orient_RTs.size()==0) {
                         std::cerr << "No boundary conditions found for " << Amanzi_purpose << std::endl;
@@ -1242,19 +1258,19 @@ namespace Amanzi {
                     if (orient_type == "noflow") {
                         sat_bc      = 4; // No flow for saturation
                         pressure_bc = 4; // No flow for p
-                        inflow_bc   = 1; // Automatically set to zero
+                        inflow_bc   = 0; // Automatically set to zero
                     }
                     else if (orient_type == "pressure" || orient_type == "hydrostatic") {
                         // Must set components by name, and phase press set by press_XX(scalar) or hydro 
                         sat_bc      = 1; // Dirichlet for saturation,
                         pressure_bc = 2; // Dirichlet for p
-                        inflow_bc   = 1; // Unused
+                        inflow_bc   = 0; // Unused
                     }
                     else if (orient_type == "saturation") {
                         // Must set components by name, and phase press set by press_XX(scalar) or hydro 
                         sat_bc      = 1; // Dirichlet for saturation,
                         pressure_bc = 2; // Dirichlet for p
-                        inflow_bc   = 1; // Unused
+                        inflow_bc   = 0; // Unused
                     }
                     else if (orient_type == "zero_total_velocity") {
                         sat_bc      = 1; // Dirichlet for saturation (but will compute values based on p)
@@ -1707,6 +1723,10 @@ namespace Amanzi {
             double End_Time = eclist.get<double>("End Time");
             simulation_time = End_Time - Start_Time;
             struc_list.set("stop_time",End_Time-Start_Time);
+
+            if (eclist.isParameter("Max Step") ) {
+                struc_list.set<int>("max_step",eclist.get<int>("Max Step"));
+            }
             //
             // Mesh
             //

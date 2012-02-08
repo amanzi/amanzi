@@ -22,6 +22,13 @@ public:
     std::string Label() const {return label;}
     virtual Array<Real> operator() (Real time=0) const {return vals;}
 
+    virtual void apply(FArrayBox&  fab, 
+                       const Real* dx, 
+                       int         scomp,
+                       int         ncomp,
+                       Real        time = 0) const;
+    
+
 protected:
     void setRegions(const PArray<Region>& regions_);
 
@@ -62,7 +69,6 @@ struct ArrayTransform
     virtual ArrayTransform* clone() const {return new ArrayTransform(*this);}
     virtual Array<Real> transform(Real time) const {return Array<Real>(1,time);}
 };
-
 
 
 class Transform_S_AR_For_BC

@@ -11,9 +11,11 @@
 #include <time.h> 
 
 #include <PorousMedia.H>
+#include <PMAMR_Labels.H>
 #include <RegType.H> 
 #include <PROB_PM_F.H>
 #include <DERIVE_F.H>
+#include <PMAMR_Labels.H>
 
 #ifdef BL_USE_OMP
 #include "omp.h"
@@ -1146,6 +1148,70 @@ PorousMedia::find_rock(const std::string& name)
     return rocks[iRock];
 }
 
+#if 0
+struct HydroToRhoSat
+    : public ArrayTransform
+{
+    HydroToRhoSat() {}
+    virtual ArrayTransform* clone() const {return new FluxToRhoSat(*this);}
+    virtual Array<Real> transform(Real inData) const;
+};
+
+Array<Real>
+HydroToRhoSat::transform hydro_to_sat() const
+{
+    BL_ASSERT(model >= 2);
+    FArrayBox& cdat = (*cpl_coef)[mfi];
+    const int n_cpl_coef = cpl_coef->nComp();
+    DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
+    FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
+               density.dataPtr(),&ncomps, 
+               c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
+               dx, &(*it).param[0], &gravity);
+}
+#endif
+
+
+struct PressToRhoSat
+    : public ArrayTransform
+{
+    PressToRhoSat() {}
+    virtual ArrayTransform* clone() const {return new PressToRhoSat(*this);}
+    virtual Array<Real> transform(Real inData) const;
+protected:
+};
+
+Array<Real>
+PressToRhoSat::transform(Real aqueous_pressure) const
+{
+    // FIXME: Requires Water
+    const Array<std::string>& cNames = PorousMedia::componentNames();
+    const Array<Real>& density = PorousMedia::Density();
+
+    int ncomps = cNames.size();
+    int idx = -1;
+    for (int j=0; j<ncomps; ++j) {
+        if (cNames[j] == "Water") {
+            idx = j;
+        }
+    }
+    BL_ASSERT(idx>=0);
+
+    Array<double> rhoSat(ncomps,0);
+    rhoSat[idx] = density[idx] * 1; // Fully saturated...an assumption
+    return rhoSat;
+}
+
+struct FluxToRhoSat
+    : public ArrayTransform
+{
+    FluxToRhoSat(const Rock& rock)
+        : rock(rock) {}
+    virtual ArrayTransform* clone() const {return new FluxToRhoSat(*this);}
+    virtual Array<Real> transform(Real inData) const;
+protected:
+    const Rock& rock;
+};
 
 Array<Real>
 FluxToRhoSat::transform(Real aqueous_Darcy_flux) const
@@ -1174,6 +1240,8 @@ FluxToRhoSat::transform(Real aqueous_Darcy_flux) const
     Array<Real> rhoSat(ncomps);
 
     //std::cout << "aqueous_Darcy_flux: " << aqueous_Darcy_flux << std::endl;
+    //std::cout << "gstar: " << gstar << std::endl;
+    //std::cout << "visc: " << visc[0] << std::endl;
 
     FORT_FIND_INV_FLUX(&sol, &aqueous_Darcy_flux, &nc, &vtot, &gstar,
                        visc.dataPtr(),&ncomps,&lkrtype,&lkrcoef);
@@ -1183,6 +1251,7 @@ FluxToRhoSat::transform(Real aqueous_Darcy_flux) const
         rhoSat[1] = density[1]*(1.0-rhoSat[0]/density[0]);
     }
     //std::cout << "rhoSat: " << rhoSat[0] << std::endl;
+    //BoxLib::Abort();
     return rhoSat;
 }
 
@@ -1214,7 +1283,8 @@ void  PorousMedia::read_comp()
           cNames.push_back(p_cNames[j]);
       }
       Real p_rho; ppr.get("density",p_rho); density.push_back(p_rho);
-      Real p_visc; ppr.get("viscosity",p_visc); muval.push_back(p_visc);
+      // FIXME: Assume visc given in mass units, George hardwaired rho top 
+      Real p_visc; ppr.get("viscosity",p_visc); p_visc *= 1.e3; muval.push_back(p_visc);
       Real p_diff; ppr.get("diffusivity",p_diff); visc_coef.push_back(p_diff);
 
       // Only components have diffusion at the moment.  
@@ -1325,8 +1395,34 @@ void  PorousMedia::read_comp()
           std::string ic_type; ppr.get("type",ic_type);          
           if (ic_type == "pressure")
           {
-              Array<Real> vals(ncomps);
-              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,vals));
+              int nPhase = pNames.size();
+              Array<Real> vals(nPhase);
+              
+              int num_phases_reqd = nPhase;
+              std::map<std::string,bool> phases_set;
+              for (int j = 0; j<pNames.size(); j++)
+              {
+                  std::string val_name = "val";                  
+#if 1
+                  ParmParse& pps = ppr;
+#else
+                  ParmParse pps(prefix + "." + pNames[j]);
+#endif
+                  ppr.get(val_name.c_str(),vals[0]);          
+                  phases_set[pNames[j]] = true;
+              }
+
+              int num_phases = phases_set.size();
+              if (num_phases != num_phases_reqd) {
+                  std::cerr << icname << ": Insufficient number of phases specified" << std::endl;
+                  std::cerr << " ngiven, nreqd: " << num_phases << ", " << num_phases_reqd << std::endl;
+                  std::cerr << " current model: " << model << std::endl;
+                  BoxLib::Abort();
+              }
+              
+              Array<Real> times(1,0);
+              Array<std::string> forms(0);
+              ic_array.set(i, new ArrayRegionData(icname,times,vals,forms,ic_regions,ic_type,1));
           }
           else if (ic_type == "saturation")
           {
@@ -1338,8 +1434,11 @@ void  PorousMedia::read_comp()
           }
           else if (ic_type == "hydrostatic")
           {
-              Array<Real> water_table(1); ppr.get("water_table",water_table[0]);
-              ic_array.set(i, new RegionData(icname,ic_regions,ic_type,water_table));
+              Array<Real> water_table_height(1); ppr.get("water_table_height",water_table_height[0]);
+              Array<Real> times(1,0);
+              Array<std::string> forms;
+              ic_array.set(i, new ArrayRegionData(icname,times,water_table_height,
+                                                  forms,ic_regions,ic_type,1));
           }
           else if (ic_type == "zero_total_velocity")
           {
@@ -1364,6 +1463,15 @@ void  PorousMedia::read_comp()
   int n_bcs = cp.countval("bc_labels");
   if (n_bcs > 0)
   {
+      rinflow_bc_lo.resize(BL_SPACEDIM,0); 
+      rinflow_bc_hi.resize(BL_SPACEDIM,0); 
+      rinflow_vel_lo.resize(BL_SPACEDIM,0); 
+      rinflow_vel_hi.resize(BL_SPACEDIM,0); 
+      inflow_bc_lo.resize(BL_SPACEDIM,0); 
+      inflow_bc_hi.resize(BL_SPACEDIM,0); 
+      inflow_vel_lo.resize(BL_SPACEDIM,0); 
+      inflow_vel_hi.resize(BL_SPACEDIM,0); 
+
       bc_array.resize(n_bcs);
       Array<std::string> bc_names;
       cp.getarr("bc_labels",bc_names,0,n_bcs);
@@ -1379,78 +1487,40 @@ void  PorousMedia::read_comp()
           const PArray<Region> bc_regions = build_region_PArray(region_names);
           std::string bc_type; ppr.get("type",bc_type);
 
-          if (bc_type == "saturation")
-          {
-              int nComp = cNames.size();
-              Array<Array<Real> > vals(nComp), times(nComp);
-              Array<Array<std::string> > forms(nComp);
+          bool is_inflow;
+          int component_bc, pressure_bc;
 
-              int num_comps_reqd = (model == model_list["richard"]  ?  nComp : nComp - 1);
-              int num_comps = 0;
-              for (int j = 0; j<cNames.size(); j++)
-              {
-                  ParmParse pps(prefix + "." + cNames[j]);
-                  int nv = pps.countval("vals");
-                  if (nv) {
-                      num_comps++;
-                      pps.getarr("vals",vals[j],0,nv);
-                      if (nv>1) {
-                          pps.getarr("times",times[j],0,nv);
-                          pps.getarr("forms",forms[j],0,nv-1);
-                      }
-                  }
-              }
-
-              if (num_comps != num_comps_reqd) {
-                  std::string m=bcname + ": Insufficient number of components specified";
-                  BoxLib::Abort(m.c_str());
-              }
-              
-              bc_array.set(i, new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type));
-              
-          }
-          else if (bc_type == "pressure")
+          if (bc_type == "pressure")
           {
               int nPhase = pNames.size();
-              Array<Array<Real> > vals(nPhase), times(nPhase);
-              Array<Array<std::string> > forms(nPhase);
+              BL_ASSERT(nPhase==1); // FIXME
+              Array<Real> vals, times;
+              Array<std::string> forms;
               
-              int num_phases_reqd = (model == model_list["richard"]  ?  nPhase : nPhase - 1);
-              int num_phases = 0;
-              for (int j = 0; j<pNames.size(); j++)
-              {
-                  std::string val_name = "vals";
-#if 1
-                  ParmParse& pps = ppr;
-#else
-                  ParmParse pps(prefix + "." + pNames[j]);
-#endif
-                  int nv = pps.countval(val_name.c_str());
-                  if (nv) {
-                      num_phases++;
-                      pps.getarr(val_name.c_str(),vals[j],0,nv);
-                      times[j].resize(nv,0);
-                      if (nv>1) {
-                          pps.getarr("times",times[j],0,nv);
-                          pps.getarr("forms",forms[j],0,nv-1);
-                      }
+              std::string val_name = "vals";
+              int nv = ppr.countval(val_name.c_str());
+              if (nv) {
+                  ppr.getarr(val_name.c_str(),vals,0,nv);
+                  times.resize(nv,0);
+                  if (nv>1) {
+                      ppr.getarr("times",times,0,nv);
+                      ppr.getarr("forms",forms,0,nv-1);
                   }
               }
-
-              if (num_phases != num_phases_reqd) {
-                  std::cerr << bcname << ": Insufficient number of phases specified" << std::endl;
-                  std::cerr << " ngiven, nreqd: " << num_phases << ", " << num_phases_reqd << std::endl;
-                  std::cerr << " current model: " << model << std::endl;
-                  BoxLib::Abort();
+              
+              // convert to atm with datum at atmospheric pressure
+              for (int j=0; j<vals.size(); ++j) {
+                  vals[j] = vals[j] / 1.01325e5 - 1.e0;
               }
               
-              bc_array.set(i, new ArrayRegionData(bcname,times,vals,forms,bc_regions,bc_type));
-          }
-          else if (bc_type == "hydrostatic")
-          {
-              Array<Real> water_table(1,Geometry::ProbLo()[BL_SPACEDIM]);
-              ppr.query("water_table",water_table[0]);
-              bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,water_table));
+              is_inflow = false;
+              component_bc = 1;
+              pressure_bc = 2;
+
+              PressToRhoSat p_to_sat;
+              bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
+                                                        bc_type,ncomps,p_to_sat));
+
           }
           else if (bc_type == "zero_total_velocity")
           {
@@ -1462,7 +1532,7 @@ void  PorousMedia::read_comp()
 
               int nv = ppr.countval("aqueous_vol_flux");
               if (nv) {
-                  ppr.getarr("aqueous_vol_flux",vals,0,nv);
+                  ppr.getarr("aqueous_vol_flux",vals,0,nv); // "inward" flux
                   times.resize(nv,0);
                   if (nv>1) {
                       ppr.getarr("inflowtimes",times,0,nv);
@@ -1475,6 +1545,36 @@ void  PorousMedia::read_comp()
                   forms.resize(0);
               }        
 
+              // Work out sign of flux for this boundary
+              int is_hi = -1;
+              for (int j=0; j<bc_regions.size(); ++j)
+              {
+                  const std::string purpose = bc_regions[j].purpose;
+                  for (int k=0; k<7; ++k) {
+                      if (purpose == PMAMR::RpurposeDEF[k]) {
+                          BL_ASSERT(k != 6);
+                          bool this_is_hi = (k>3);
+                          if (is_hi < 0) {
+                              is_hi = this_is_hi;
+                          }
+                          else {
+                              if (this_is_hi != is_hi) {
+                                  BoxLib::Abort("BC must apply to a single face only");
+                              }
+                          }
+                      }
+                  }
+              }
+              if (is_hi) {
+                  for (int k=0; k<vals.size(); ++k) {
+                      vals[k] = -vals[k];
+                  }
+              }
+
+              is_inflow = true;
+              component_bc = 1;
+              pressure_bc = 1;
+
               FluxToRhoSat flux_to_sat(rock);
               bc_array.set(i, new Transform_S_AR_For_BC(bcname,times,vals,forms,bc_regions,
                                                         bc_type,ncomps,flux_to_sat));
@@ -1482,23 +1582,59 @@ void  PorousMedia::read_comp()
           }
           else if (bc_type == "noflow")
           {
+              is_inflow = false;
+              component_bc = 4;
+              pressure_bc = 4;
+
               Array<Real> val(1,0);
               bc_array.set(i, new RegionData(bcname,bc_regions,bc_type,val));
-          }
-          else if (bc_type == "richard")
-          {
-              BoxLib::Abort("comp bc richard not implemented yet");
-#if 0
-              ppr.getarr("inflow_bc_lo",rinflow_bc_lo,0,BL_SPACEDIM);
-              ppr.getarr("inflow_bc_hi",rinflow_bc_hi,0,BL_SPACEDIM);
-              ppr.getarr("inflow_vel_lo",rinflow_vel_lo,0,BL_SPACEDIM);
-              ppr.getarr("inflow_vel_hi",rinflow_vel_hi,0,BL_SPACEDIM);
-#endif
           }
           else
           {
               std::cout << bc_type << " not a valid bc_type " << std::endl;
               BoxLib::Abort();
+          }
+
+
+          // Some clean up 
+          std::set<std::string> o_set;
+          for (int j=0; j<bc_regions.size(); ++j)
+          {
+              const std::string purpose = bc_regions[j].purpose;
+              int dir = -1, is_hi;
+              for (int k=0; k<7; ++k) {
+                  if (purpose == PMAMR::RpurposeDEF[k]) {
+                      BL_ASSERT(k != 6);
+                      dir = k%3;
+                      is_hi = k>3;
+                  }
+              }
+              BL_ASSERT(dir>=0 && dir < BL_SPACEDIM);
+
+              if (o_set.find(purpose) == o_set.end())
+              {
+                  o_set.insert(purpose);
+
+                  if (is_hi) {
+                      rinflow_bc_hi[dir] = (is_inflow ? 1 : 0);
+                      phys_bc.setHi(dir,component_bc);
+                      pres_bc.setHi(dir,pressure_bc);
+                  }
+                  else {
+                      rinflow_bc_lo[dir] = (is_inflow ? 1 : 0);
+                      phys_bc.setLo(dir,component_bc);
+                      pres_bc.setLo(dir,pressure_bc);
+                  }
+              }
+              else {
+                  if ( (rinflow_bc_hi[dir] != is_inflow)
+                       || (phys_bc.lo(dir) != component_bc)
+                       || (pres_bc.lo(dir) != pressure_bc) )
+                  {
+                      std::cout << "Inconconsistent type for boundary " << std::endl;
+                      BoxLib::Abort();
+                  }
+              }
           }
       }
   }
@@ -1619,6 +1755,7 @@ void  PorousMedia::read_tracer()
   
 void  PorousMedia::read_pressure()
 {
+#if 0
   //
   // Read in parameters for pressure
   //
@@ -1671,6 +1808,7 @@ void  PorousMedia::read_pressure()
       pres_bc.setLo(i,plo_bc[i]);
       pres_bc.setHi(i,phi_bc[i]);
     }
+#endif
 }
 
 void  PorousMedia::read_source()

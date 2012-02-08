@@ -38,6 +38,20 @@ RegionData::setRegions(const PArray<Region>& regions_)
     }
 }
 
+void
+RegionData::apply(FArrayBox&  fab, 
+                  const Real* dx, 
+                  int         scomp,
+                  int         ncomp,
+                  Real        time) const
+{
+    Array<Real> val = (*this)(time);
+    for (int j=0; j<regions.size(); ++j)
+    {
+        regions[j].setVal(fab,val,dx,0,0,val.size());
+    }
+}
+
 ArrayRegionData::ArrayRegionData(const std::string&                label,
                                  const Array<Array<Real> >&        x,
                                  const Array<Array<Real> >&        y,

@@ -362,6 +362,10 @@ c ::: -----------------------------------------------------------
          sat = zero
 
       elseif (cpl_type .eq. 1) then
+         if (ncomps .ne. 2) then
+            print *,'cpl_type=1 requires ncomps=2'
+            call bl_pd_abort()
+         endif
          sat(2) = one - 0.2d0*log(pc*sqrt(kappa/phi)/sigma)
          if (ncomps > 1) then
             sat(1) = one - sat(2)
@@ -805,6 +809,8 @@ c         write(*,*) 'second derivative check', d2ld(1),d2ld(2),sat(1)
 
       end
 
+#if 1
+c     orig
       subroutine FORT_FIND_INV_FLUX(sol,vel,nc,vtot,gstar,muval,
      &     ncomps,kr_type,kr_coef)
 c     given a velocity of a phase, find the corresponding saturation 
@@ -874,7 +880,100 @@ c     given a velocity of a phase, find the corresponding saturation
 
  70   sol = half*(s1+s2)
       end
+#else
+      subroutine FORT_FIND_INV_FLUX(sol,vel,nc,vtot,gstar,muval,
+     &     ncomps,kr_type,kr_coef)
+c     given a velocity of a phase, find the corresponding saturation 
 
+      implicit none
+
+      integer nc,ncomps,kr_type,n
+      REAL_T sol,muval(ncomps)
+      REAL_T vel,vtot,gstar,kr_coef
+
+      REAL_T ld(2),rtmp(2),mtmp(2),srestmp
+      REAL_T s1,s2,stmp(2),f1,f2,ftmp
+      REAL_T, parameter :: eps = 1.0d-14
+
+      if (ncomps < 2) then
+         mtmp(1) = muval(1)
+         mtmp(2) = 0.018
+c         call bl_abort('FORT_FIND_INV_FLUX only works for 2-phase flow!')
+      end if
+
+
+      s1 = 0
+      s2 = 0
+      f2 = 1e20
+      rtmp = one
+      srestmp = zero
+
+c     first find the minimum for vT = 0
+      do n = 1,100
+         s1 = s1 + 0.01
+         stmp(1) = s1
+         stmp(2) = one-s1
+         call  get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+         if (nc .eq. 1) then
+            f1 = ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
+         else
+            f1 = ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
+         end if     
+         if (f1 < f2) then
+            s2 = s1
+            f2 = f1
+         end if
+      end do
+
+      s1 = eps
+      if (abs(vel) .lt. 1e-15) then
+         sol  = zero
+      else
+      stmp(1) = s1
+      stmp(2) = one - s1
+      call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+      if (nc .eq. 1) then
+         f1 = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
+      else
+         f1 = vel - ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
+      end if     
+ 60   stmp(1) = s2
+      stmp(2) = one - s2
+      call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+      if (nc .eq. 1) then
+         f2 = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
+      else
+         f2 = vel - ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
+      end if
+      if (sign(one,f1)-sign(one,f2) .ne. zero) then
+         do n = 1,100
+            stmp(1) = half*(s1+s2)
+            stmp(2) = one - stmp(1)
+            call get_ld(ld,stmp,rtmp,mtmp,2,kr_type,kr_coef,srestmp)
+            if (nc .eq. 1) then
+               ftmp = vel - ld(1)/(ld(1)+ld(2))*(vtot + ld(2)*gstar) 
+            else
+               ftmp = vel - ld(2)/(ld(1)+ld(2))*(vtot - ld(1)*gstar) 
+            end if
+
+            if (ftmp*f1 .lt. zero) then
+               f2 = ftmp
+               s2 = stmp(1)
+            elseif (ftmp*f2 .lt. zero) then
+               f1 = ftmp
+               s1 = stmp(1)
+            endif
+
+            if (dabs(s1-s2) .lt. eps) then
+               goto 70
+            endif
+         enddo
+      endif
+
+ 70   sol = half*(s1+s2)
+      end if
+      end
+#endif
 c ::: ----------------------------------------------------------
 c ::: Get component index and component count
 c ::: ----------------------------------------------------------
