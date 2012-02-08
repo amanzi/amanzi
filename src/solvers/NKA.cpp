@@ -85,6 +85,9 @@ nka::~nka()
 {
   delete [] v;
   delete [] w;
+  for (int j=0;j<mvec+1; ++j) {
+    delete [] h[j];
+  }
   delete [] h;
   delete [] next_v;
   delete [] prev_v;
