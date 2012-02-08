@@ -22,14 +22,19 @@
 #include "exceptions.hh"
 
 // include fenv if it exists
-#include "boost/config.hpp"
-#ifndef BOOST_NO_FENV_H
-#include "boost/detail/fenv.hpp"
+#include "boost/version.hpp"
+#if (BOOST_VERSION / 100 % 1000 >= 46)
+ #include "boost/config.hpp"
+ #ifndef BOOST_NO_FENV_H
+  #define AMANZI_USE_FENV
+  #include "boost/detail/fenv.hpp"
+ #endif
 #endif
+
 
 int main(int argc, char *argv[]) {
 
-#ifndef BOOST_NO_FENV_H
+#ifdef AMANZI_USE_FENV
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
