@@ -13,8 +13,8 @@ the secret password (AKA the name of the process kernel that owns the data).
 Field also stores some basic metadata for Vis, checkpointing, etc.
 ------------------------------------------------------------------------- */
 
-#ifndef STATE_FIELD_HH_
-#define STATE_FIELD_HH_
+#ifndef STATE_FIELD_MV_HH_
+#define STATE_FIELD_MV_HH_
 
 #include <string>
 #include <vector>

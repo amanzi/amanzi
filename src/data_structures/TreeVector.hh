@@ -33,14 +33,6 @@ namespace Amanzi {
     // These constructors allocate their own memory and do NOT copy the values,
     // just the layout, of their arguments.
 
-    // NOTE: are these really necessary?  I'm a little worried that the
-    // semantics of these aren't clear and they likely won't be necessary.  I
-    // think it's likely that TreeVectors get constructed in one of two ways:
-    // via the standard copy constructor, or as an empty TreeVector that then
-    // gets populated.  I suspect we should just remove these. --etc
-    // TreeVector(std::string name, const Teuchos::RCP<Epetra_MultiVector>&);
-    // TreeVector(std::string name, const Teuchos::RCP<Epetra_Vector>&);
-
     // these copy constructors are clearly necessary
     TreeVector(std::string name, const Teuchos::RCP<TreeVector>&);
     TreeVector(std::string name, const TreeVector&);
