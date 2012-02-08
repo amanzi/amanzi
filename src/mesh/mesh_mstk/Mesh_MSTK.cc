@@ -742,10 +742,10 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
 
             if (MF_UsesEntity(fadj,fe,MEDGE)) {
 
-              int fdir = MR_FaceDir_i((MRegion_ptr)cell,i) ? 1 : -1;
+              int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
               
               lid = MEnt_ID(fadj);
-              if (faceflip[lid-i]) fdir *= -1;
+              if (faceflip[lid-1]) fdir *= -1;
               
               face_dirs->push_back(fdir);
               
@@ -774,7 +774,7 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
 
         if (!MEnt_IsMarked(fopp,mkid)) {
 
-          int fdir = MR_FaceDir_i((MRegion_ptr)cell,i) ? 1 : -1;
+          int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
 
           lid = MEnt_ID(fopp);
           if (faceflip[lid-1]) fdir *= -1;
@@ -795,7 +795,7 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
       int i = 0;
       while ((face = List_Next_Entry(rfaces,&idx))) {
 
-        int fdir = MR_FaceDir_i((MRegion_ptr)cell,i);
+        int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
         
 	int lid = MEnt_ID(face);
         if (faceflip[lid-1]) fdir *= -1;
@@ -817,7 +817,7 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
     int i = 0;
     while ((edge = List_Next_Entry(fedges,&idx))) {
 
-      int fdir = MF_EdgeDir_i((MFace_ptr)cell,i);
+      int fdir = (MF_EdgeDir_i((MFace_ptr)cell,i) == 1) ? 1 : -1;
 
       int lid = MEnt_ID(edge);
       if (faceflip[lid-1]) fdir *= -1;
