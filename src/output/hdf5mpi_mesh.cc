@@ -738,7 +738,7 @@ Teuchos::XMLObject HDF5_MPI::addXdmfTopo_() {
   DataItem.addInt("Dimensions", ConnLength());
   DataItem.addAttribute("Format", "HDF");
   
-  tmp1 << H5MeshFilename() << ":/Mesh/MixedElements";
+  tmp1 << stripFilename_(H5MeshFilename()) << ":/Mesh/MixedElements";
   DataItem.addContent(tmp1.str());
   topo.addChild(DataItem);
 
@@ -758,7 +758,7 @@ Teuchos::XMLObject HDF5_MPI::addXdmfGeo_() {
   tmp1 << NumNodes() << " 3";
   DataItem.addAttribute("Dimensions", tmp1.str());
   DataItem.addAttribute("Format", "HDF");
-  tmp = H5MeshFilename() + ":/Mesh/Nodes";
+  tmp = stripFilename_(H5MeshFilename()) + ":/Mesh/Nodes";
   DataItem.addContent(tmp);
   geo.addChild(DataItem);
 
@@ -769,7 +769,7 @@ void HDF5_MPI::writeXdmfVisitGrid_(std::string filename) {
 
   // Create xmlObject grid
   Teuchos::XMLObject xi_include("xi:include");
-  xi_include.addAttribute("href", filename);
+  xi_include.addAttribute("href", stripFilename_(filename));
   xi_include.addAttribute("xpointer", "xpointer(//Xdmf/Domain/Grid)");
 
   // Step through xmlobject visit to find /domain/grid
@@ -844,14 +844,27 @@ Teuchos::XMLObject HDF5_MPI::addXdmfAttribute_(std::string varname,
   DataItem.addInt("Dimensions", length);
   DataItem.addAttribute("DataType", "Float");
   std::stringstream tmp;
-  tmp << H5DataFilename() << ":" << h5path;
+  tmp << stripFilename_(H5DataFilename()) << ":" << h5path;
   DataItem.addContent(tmp.str());
   attribute.addChild(DataItem);
 
   return attribute;
 }
 
+std::string HDF5_MPI::stripFilename_(std::string filename)  {
+  
+  std::stringstream ss(filename);
+  std::string name;
+  // strip for linux/unix/mac directory names
+  char delim('/');
+  while(std::getline(ss, name, delim)) { }
+  // strip for windows directory names
+  //delim='\\';
+  //while(std::getline(ss, name, delim)) { }
 
+  return name;
+}
+  
 std::string HDF5_MPI::xdmfHeader_ =
          "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
   
