@@ -49,7 +49,7 @@ Darcy_PK::~Darcy_PK()
 int Darcy_PK::advance_to_steady_state()
 {
   // Set problem parameters.
-  problem->set_absolute_permeability(FS->get_permeability());
+  problem->set_absolute_permeability(FS->get_vertical_permeability(), FS->get_horizontal_permeability());
 
   // Perform the final "assembly" of the problem.
   problem->Assemble();

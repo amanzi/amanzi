@@ -49,7 +49,7 @@ class ReadFixture {
   ReadFixture(void)
       : comm(MPI_COMM_WORLD),
         nproc(comm.NumProc()),
-        mf(comm.Comm(), 1000)
+        mf(&comm, 1000)
   { }
 
   void read(const std::string& name)
@@ -440,7 +440,7 @@ SUITE (Exodus)
     fname = fpath + fname;
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_STK(comm, fname.c_str()));
+      mesh(new Amanzi::AmanziMesh::Mesh_STK(&comm, fname.c_str()));
 
     Auditor audit("stk_mesh_read_", mesh);
     audit();

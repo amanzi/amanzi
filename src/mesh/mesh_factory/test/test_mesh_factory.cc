@@ -70,7 +70,7 @@ SUITE (MeshFramework)
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     bool parallel(comm.NumProc() > 1);
     
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
     Amanzi::AmanziMesh::FrameworkPreference pref(mesh_factory.preference());
 
     // The Simple framework should always be there
@@ -87,7 +87,7 @@ SUITE (MeshFramework)
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
 
     double x0( 0.0), y0( 0.0), z0( 0.0);
     double x1(10.0), y1(10.0), z1(10.0);
@@ -158,7 +158,7 @@ SUITE (MeshFramework)
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
 
     // make a parameter list to try out
     
@@ -242,7 +242,7 @@ SUITE (MeshFramework)
     
     Amanzi::AmanziMesh::FrameworkPreference pref;
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
 
     pref.clear(); pref.push_back(Amanzi::AmanziMesh::Simple);
     mesh_factory.preference(pref);
@@ -264,7 +264,7 @@ SUITE (MeshFramework)
     bool parallel(comm.NumProc() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
 
     if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::MOAB)) {
       mesh = mesh_factory(MOAB_TEST_FILE);
@@ -291,7 +291,7 @@ SUITE (MeshFramework)
     bool parallel(comm.NumProc() > 1);
 
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
 
     bool available =
         (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) && !parallel) ||
@@ -311,7 +311,7 @@ SUITE (MeshFramework)
     bool parallel(comm.NumProc() > 1);
     
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-    Amanzi::AmanziMesh::MeshFactory mesh_factory(comm);
+    Amanzi::AmanziMesh::MeshFactory mesh_factory(&comm);
     if (Amanzi::AmanziMesh::framework_available(Amanzi::AmanziMesh::STKMESH) && parallel) {
       mesh = mesh_factory(NEMESIS_TEST_FILE);
       CHECK(!mesh.is_null());

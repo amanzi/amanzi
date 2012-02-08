@@ -34,19 +34,19 @@ add_definitions("-DUSE_MPI")
 #
 # Library: time_integration
 #
-file(GLOB time_integration_source_files "*.cpp")
+file(GLOB time_integration_source_files "*.cpp" "*.cc")
 add_library(time_integration ${time_integration_source_files})
 add_install_library(time_integration)
 set(time_integration_tpl_libs ${DBC_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${NOX_LIBRARIES})
 list(REVERSE time_integration_tpl_libs)
 list(REMOVE_DUPLICATES time_integration_tpl_libs)
 list(REVERSE time_integration_tpl_libs)
-target_link_libraries(time_integration error_handling solvers flow ${time_integration_tpl_libs})
+target_link_libraries(time_integration error_handling solvers ${time_integration_tpl_libs})
 
 #
 # Install Targets
 #
-file(GLOB time_int_inc_files "*.hpp")
+file(GLOB time_int_inc_files "*.hpp" "*.hh")
 add_install_include_file(${time_int_inc_files})
 
 

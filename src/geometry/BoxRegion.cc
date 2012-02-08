@@ -71,7 +71,7 @@ BoxRegion::~BoxRegion(void)
 bool
 BoxRegion::between_(const double& x, const double& x0, const double& x1)
 {
-  double tol = 1.0e-16;
+  double tol = 1.0e-08;
   return  (x0+tol >= x && x >= x1-tol) || (x1+tol >= x && x >= x0-tol);
 }
 

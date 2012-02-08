@@ -22,6 +22,9 @@
 #include "ColorFunctionRegion.hh"
 #include "PointRegion.hh"
 
+#include "dbc.hh"
+#include "errors.hh"
+
 #include "RegionFactory.hh"
 
 
@@ -72,8 +75,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
           p1.set(p1_vec[0], p1_vec[1]);          
         }
 
-      RegionPtr regptr = new BoxRegion(reg_name, reg_id, p0, p1);
-      return regptr;
+      try {
+        RegionPtr regptr = new BoxRegion(reg_name, reg_id, p0, p1);        
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type Box";
+        Exceptions::amanzi_throw(mesg);
+      }
     }
   else if (shape == "Region: Plane")
     {
@@ -100,8 +109,14 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
           n.set(n_vec[0], n_vec[1]);          
         }
 
-      RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n);
-      return regptr;
+      try {
+        RegionPtr regptr = new PlaneRegion(reg_name, reg_id, p, n);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type Plane";
+        Exceptions::amanzi_throw(mesg);
+      }
     }
   else if (shape == "Region: Labeled Set")
     {
@@ -119,8 +134,15 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       else if (entity_str == "Node" || entity_str == "node" || entity_str == "NODE")
         entity_str = "NODE";
 
-      RegionPtr regptr = new LabeledSetRegion(reg_name, reg_id, entity_str, file, format, name);
-      return regptr;
+      try {
+        RegionPtr regptr = new LabeledSetRegion(reg_name, reg_id, entity_str, file, format, name);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type LabeledSet";
+        Exceptions::amanzi_throw(mesg);
+      }
+
     }
   else if (shape == "Region: Color Function")
     {
@@ -129,8 +151,15 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
       std::string file = colorfunc_params.get<std::string>("File");
       int value = colorfunc_params.get<int>("Value");
 
-      RegionPtr regptr = new ColorFunctionRegion(reg_name, reg_id, file, value, comm);
-      return regptr;
+      try {
+        RegionPtr regptr = new ColorFunctionRegion(reg_name, reg_id, file, value, comm);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type Color Function";
+        Exceptions::amanzi_throw(mesg);
+      }
+
     }
   else if (shape == "Region: Point")
     {
@@ -151,13 +180,19 @@ Amanzi::AmanziGeometry::RegionFactory(const std::string reg_name,
           pnt.set(p_vec[0], p_vec[1]);
         }
 
-      RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt);
-      return regptr;
+      try {
+        RegionPtr regptr = new PointRegion(reg_name, reg_id, pnt);
+        return regptr;
+      }
+      catch (Errors::Message mesg) {
+        mesg << "\n" << "Cannot create region of type Point";
+        Exceptions::amanzi_throw(mesg);
+      }
     }
   else 
     {
-      std::cerr << "ERROR: Cannot process region with shape " << shape << std::endl;
-      throw std::exception();
+      Errors::Message mesg("ERROR: Cannot process region with given shape ");
+      Exceptions::amanzi_throw(mesg);
     }
 
 }

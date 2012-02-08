@@ -130,6 +130,16 @@ GeometricModel::GeometricModel(const unsigned int dim,
 
 GeometricModel::~GeometricModel(void)
 {
+
+  // If a geometric model is deleted, we will not delete all the 
+  // the regions added to it because someone else may be holding 
+  // on to a pointer to the regions. For now, the top level routine
+  // deleting the geometric model has to delete the regions first
+  // to prevent a memory leak
+
+  // Once we can get RegionFactory to work with Reference Counted
+  // Pointers we can remove this comment
+
   Regions.clear();
 }
 

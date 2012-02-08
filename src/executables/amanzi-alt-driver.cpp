@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
   Teuchos::writeParameterListToXmlOStream(driver_parameter_list, std::cout);
   std::cout << "======================> done dumping parameter list. <================"<<std::endl;
 
-  Amanzi::AmanziMesh::MeshFactory factory(*comm);
+  Amanzi::AmanziMesh::MeshFactory factory(comm);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   // get the Mesh sublist

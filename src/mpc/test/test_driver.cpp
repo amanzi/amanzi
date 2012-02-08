@@ -66,7 +66,7 @@ TEST(DRIVER) {
       string filename = moab_mesh_parameter_list.get<string>("Exodus file name");
 
       Teuchos::RCP<Amanzi::AmanziMesh::Mesh_MOAB> MMM = 
-      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), MPI_COMM_WORLD));      
+      	Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MOAB(filename.c_str(), comm));      
       
       mesh = MMM;
 

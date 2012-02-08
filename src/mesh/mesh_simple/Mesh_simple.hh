@@ -28,15 +28,15 @@ public:
       
   Mesh_simple (double x0, double y0, double z0,
 	       double x1, double y1, double z1,
-	       int nx, int ny, int nz, Epetra_Comm *communicator,
+	       int nx, int ny, int nz, const Epetra_MpiComm *communicator,
 	       const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
   
   Mesh_simple ( const GenerationSpec& gspec,
-		Epetra_Comm *communicator,
+		const Epetra_MpiComm *communicator,
                 const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
 
   Mesh_simple ( Teuchos::ParameterList &parameter_list,
-		Epetra_Comm *communicator,
+		const Epetra_MpiComm *communicator,
 		const AmanziGeometry::GeometricModelPtr &gm = (AmanziGeometry::GeometricModelPtr) NULL);
   
   virtual ~Mesh_simple ();
@@ -340,8 +340,6 @@ private:
   mutable std::vector<AmanziGeometry::RegionPtr> element_block_regions_;
   mutable std::vector<AmanziGeometry::RegionPtr> side_set_regions_;
   mutable std::vector<AmanziGeometry::RegionPtr> node_set_regions_;
-
-  Epetra_Comm  *communicator_;
 
 };
 

@@ -21,7 +21,18 @@
 #include "errors.hh"
 #include "exceptions.hh"
 
+// include fenv if it exists
+#include "boost/config.hpp"
+#ifndef BOOST_NO_FENV_H
+#include "boost/detail/fenv.hpp"
+#endif
+
 int main(int argc, char *argv[]) {
+
+#ifndef BOOST_NO_FENV_H
+  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
+
   try {
     Teuchos::GlobalMPISession mpiSession(&argc,&argv,0);
     
@@ -130,7 +141,7 @@ int main(int argc, char *argv[]) {
 	      out << label << ", " 
 		  << ind_obs_list.get<std::string>("Region") << ", "
 		  << ind_obs_list.get<std::string>("Functional") << ", "
-		  << ind_obs_list.get<Teuchos::Array<std::string> >("Variable Macro") << ", "
+		  << ind_obs_list.get<Teuchos::Array<std::string> >("Variables") << ", "
 		  << output_observations[_label][j].time << ", "
 		  << output_observations[_label][j].value << std::endl;
 	    }

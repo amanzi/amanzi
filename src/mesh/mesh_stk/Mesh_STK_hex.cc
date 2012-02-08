@@ -39,8 +39,7 @@ Mesh_STK::generate_(Data::HexMeshGenerator& g)
   Teuchos::RCP<Data::Data> meshdata(g.generate());
   Teuchos::RCP<Epetra_Map> cmap(g.cellmap(true));
   Teuchos::RCP<Epetra_Map> vmap(g.vertexmap(true));
-  stk::ParallelMachine pm(communicator_->GetMpiComm());
-  STK::Mesh_STK_factory mf(pm, 1000);
+  STK::Mesh_STK_factory mf(Mesh::get_comm(), 1000);
   Data::Fields nofields;
   mesh_.reset(mf.build_mesh(*meshdata, *cmap, *vmap, nofields, Mesh::geometric_model()));
   build_maps_();
@@ -56,7 +55,7 @@ Mesh_STK::generate_(const unsigned int& ni, const unsigned int& nj, const unsign
                     const double& ydelta, 
                     const double& zdelta)
 {
-  Data::HexMeshGenerator g(communicator_.get(), 
+  Data::HexMeshGenerator g(Mesh::get_comm(), 
                            ni, nj, nk,
                            xorigin, yorigin, zorigin,
                            xdelta, ydelta, zdelta);
@@ -77,7 +76,7 @@ Mesh_STK::generate_(const GenerationSpec& gspec)
   double ydelta((p1.y() - p0.y())/static_cast<double>(ny));
   double zdelta((p1.z() - p0.z())/static_cast<double>(nz));
 
-  Data::HexMeshGenerator g(communicator_.get(), 
+  Data::HexMeshGenerator g(Mesh::get_comm(), 
                            nx, ny, nz,
                            p0.x(), p0.y(), p0.z(),
                            xdelta, ydelta, zdelta);
@@ -88,7 +87,7 @@ Mesh_STK::generate_(const GenerationSpec& gspec)
 // -------------------------------------------------------------
 // Mesh_STK:: constructors / destructor
 // -------------------------------------------------------------
-Mesh_STK::Mesh_STK(const Epetra_MpiComm& comm, 
+Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm, 
                    const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
                    const double& xorigin, 
                    const double& yorigin, 
@@ -97,13 +96,12 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm& comm,
                    const double& ydelta, 
                    const double& zdelta,
                    const AmanziGeometry::GeometricModelPtr& gm) 
-    : communicator_(new Epetra_MpiComm(comm)),
-      mesh_(), 
+    : mesh_(), 
       entity_map_ (3), 
       map_owned_(), map_used_()
       
 {
-  Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
   generate_(ni, nj, nk, xorigin, yorigin, zorigin, xdelta, ydelta, zdelta);
 }
@@ -111,15 +109,14 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm& comm,
 Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
                    const double x1, const double y1, const double z1,
                    const int nx, const int ny, const int nz, 
-                   Epetra_MpiComm *comm,
+                   const Epetra_MpiComm *comm,
                    const AmanziGeometry::GeometricModelPtr& gm)
-    : communicator_(new Epetra_MpiComm(*comm)),
-      mesh_(), 
-      entity_map_ (3), 
-      map_owned_(), map_used_()
+  : mesh_(), 
+    entity_map_ (3), 
+    map_owned_(), map_used_()
       
 {
-  Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
   double xdelta((x1 - x0)/static_cast<double>(nx));
   double ydelta((y1 - y0)/static_cast<double>(ny));
@@ -131,14 +128,13 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
 }
 
 Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
-                   Epetra_MpiComm *communicator,
+                   const Epetra_MpiComm *comm,
                    const AmanziGeometry::GeometricModelPtr& gm)
-  : communicator_(new Epetra_MpiComm(*communicator)),
-    mesh_(), 
+  : mesh_(), 
     entity_map_ (3), 
     map_owned_(), map_used_()
 {
-  Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
 
   GenerationSpec g(parameter_list);
@@ -147,14 +143,13 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
 }
 
 Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
-                   Epetra_MpiComm *communicator,
+                   const Epetra_MpiComm *comm,
                    const AmanziGeometry::GeometricModelPtr& gm)
-  : communicator_(new Epetra_MpiComm(*communicator)),
-    mesh_(), 
+  : mesh_(), 
     entity_map_ (3), 
     map_owned_(), map_used_()
 {
-  Mesh::set_comm(communicator_->GetMpiComm());
+  Mesh::set_comm(comm);
   Mesh::set_geometric_model(gm);
   generate_(gspec);
 }

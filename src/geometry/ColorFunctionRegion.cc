@@ -41,6 +41,7 @@ ColorFunctionRegion::ColorFunctionRegion(const std::string name,
     colorfunc_ = colfunc_factory.Create(file_,*comm);
   }
   catch (Errors::Message &msg) {
+    Exceptions::amanzi_throw(msg);
   }
 
 }
@@ -61,6 +62,7 @@ ColorFunctionRegion::ColorFunctionRegion(const char *name,
     colorfunc_ = colfunc_factory.Create(file_,*comm);
   }
   catch (Errors::Message &msg) {
+    Exceptions::amanzi_throw(msg);
   }
 }
 
@@ -86,6 +88,7 @@ ColorFunctionRegion::inside(const Point& p) const
     return (color == value_);
   }
   catch (Errors::Message &msg) {
+    std::cerr << msg.what() << std::endl;
     return false;
   }
 }

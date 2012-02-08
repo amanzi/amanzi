@@ -84,13 +84,13 @@ SUITE (STK_SETS)
 
     Teuchos::ParameterList reg_spec(xmlreader.getParameters());
 
-    Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+    Epetra_MpiComm *comm(new Epetra_MpiComm(MPI_COMM_WORLD));
 
-    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, &ecomm);
+    Amanzi::AmanziGeometry::GeometricModelPtr gm = new Amanzi::AmanziGeometry::GeometricModel(3, reg_spec, comm);
 
     // Load a mesh consisting of 3x3x3 elements (4x4x4 nodes)
 
-    Amanzi::AmanziMesh::Mesh_STK mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD,gm);
+    Amanzi::AmanziMesh::Mesh_STK mesh("test/hex_4x4x4_ss.exo",comm,gm);
 
 
     Teuchos::ParameterList::ConstIterator i;

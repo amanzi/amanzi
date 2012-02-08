@@ -15,9 +15,8 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "Mesh_simple.hh"
+#include "MSTK_types.h"
+#include "Mesh_MSTK.hh"
 
 #include "State.hpp"
 #include "Flow_State.hpp"
@@ -35,7 +34,7 @@ TEST(FLOW_1D_RICHARDS) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-cout << "Test: 1D Richards, 2-layer model" << endl;
+cout << "Test: Tensor Richards, a cube model" << endl;
 #ifdef HAVE_MPI
   Epetra_MpiComm  *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
@@ -44,18 +43,14 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/flow_richards_bdf2.xml";
+  string xmlFileName = "test/flow_richards_tensor.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(3, region_list, (Epetra_MpiComm *)comm);
 
-  RCP<Mesh> mesh = rcp(new Mesh_simple(0.0,0.0,-10.0, 1.0,1.0,0.0, 1, 1, 80, comm, gm)); 
-  //MeshFactory factory(*comm);
-  //ParameterList mesh_list = parameter_list.get<ParameterList>("Mesh").get<ParameterList>("Unstructured");
-  //std::string file(mesh_list.get<ParameterList>("Read").get<string>("File"));
-  //Teuchos::RCP<Mesh> mesh = factory.create(file, gm);
+  RCP<AmanziMesh::Mesh> mesh = rcp(new Mesh_MSTK(0.0,0.0,0.0, 1.0,1.0,1.0, 2, 2, 2, comm, gm)); 
 
   // create the state
   ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
@@ -85,30 +80,45 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   BDF2::Dae TS(RME, problem.Map());
   TS.setParameterList(bdf2_list);
 
+  // calculate the constant Darcy mass velocity
+  double rho = FS->get_fluid_density();
+  double mu = FS->get_fluid_viscosity();
+  const Epetra_Vector& kh = FS->get_horizontal_permeability();
+  const Epetra_Vector& kv = FS->get_vertical_permeability();
+
+  Point g(0.0, 0.0, gravity[2]); 
+  Point K(kh[0], kh[0], kv[0]);  // model the permeability tensor
+  Point u0(1.0, 2.0, 3.0);
+  Point v0(3);
+
+  for (int i=0; i<3; i++) v0[i] = -u0[i] / K[i];
+  v0 *= mu / rho;
+  v0 += g * rho;
+  cout << "rho=" << rho << " mu=" << mu << endl;
+  cout << "K=" << K << " g=" << g << endl;
+  cout << "v0=" << v0 << endl;
+
   // create the initial condition
   Epetra_Vector u(problem.Map());
-
   Epetra_Vector *ucells = problem.CreateCellView(u);
   for (int c=0; c<ucells->MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    //(*ucells)[c] = 101325.0 + 9793.5 * (103.2 - xc[2]);
-    (*ucells)[c] = xc[2] * (xc[2] + 10.0);
+    (*ucells)[c] = v0 * xc;
   }
 
   Epetra_Vector *ufaces = problem.CreateFaceView(u);
   for (int f=0; f<ufaces->MyLength(); f++) {
     const Point& xf = mesh->face_centroid(f);
-    //(*ufaces)[f] = 101325.0 + 9793.5 * (103.2 - xf[2]);
-    (*ufaces)[f] = xf[2] * (xf[2] + 10.0);
+    (*ufaces)[f] = v0 * xf;
   }
   
   // initialize the state
-  S->update_pressure(*problem.CreateCellView(u));
+  S->update_pressure(*ucells);
   S->set_time(0.0);
 
   // set intial and final time
   double t0 = 0.0;
-  double t1 = 1.0e+4;
+  double t1 = 1.0e+11;
 
   // compute the initial udot
   Epetra_Vector udot(problem.Map());
@@ -119,7 +129,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
   TS.set_initial_state(t0, u, udot);
  
   int errc;
-  double hnext, h = 1.0e-2;  // initial time step
+  double hnext, h = 1.0e+7;  // initial time step
   RME.update_precon(t0, u, h, errc);
 
   // iterate
@@ -130,7 +140,7 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
     TS.commit_solution(h, u);
 
     S->advance_time(h);    
-    S->update_pressure(*problem.CreateCellView(u));  // update only the cell-based pressure
+    S->update_pressure(*ucells);  // update only the cell-based pressure
 
     TS.write_bdf2_stepping_statistics();
 
@@ -138,23 +148,37 @@ cout << "Test: 1D Richards, 2-layer model" << endl;
     i++;
 
     tlast=TS.most_recent_time();
-  } while (t1 >= tlast && i < 6000);
+  } while (t1 >= tlast && i < 60);
 
-  // check for bounds
-  for (int k=0; k<80; k++) CHECK(u[k] < 0.001 && u[k] > -0.6);
+  // Derive the Richards fluxes on faces
+  double l1_error;
+  Epetra_Vector darcy_flux(*ufaces);
+  problem.DeriveDarcyFlux(u, darcy_flux, l1_error);
+  std::cout << "L1 norm of the Richards flux discrepancy = " << l1_error << std::endl;
 
-  // set up output
-  for (int k=0; k<80; k++) std::cout << k << " " << u[k] << std::endl;
+  // check accuracy
+  double err_p = 0.0, err_f = 0.0;
+  for (int c=0; c<(*ucells).MyLength(); c++) {
+    const Point& xc = mesh->cell_centroid(c);
+    double p_exact = v0 * xc;
+    //std::cout << c << " p_num=" << (*ucells)[c] << " p_ex=" << p_exact << std::endl;
+    err_p += pow((*ucells)[c] - p_exact, 2.0);
+  }
+  for (int f=0; f<(*ufaces).MyLength(); f++) {
+    const Point& xf = mesh->face_centroid(f);
+    const Point normal = mesh->face_normal(f);
+  
+    double p_exact = v0 * xf;
+    double f_exact = u0 * normal / rho;
+    //cout << f << " " << xf 
+    //          << "  p_num=" << (*ufaces)[f] << " p_ex=" << p_exact 
+    //          << "  flux_num=" << darcy_flux[f] << " f_ex=" << f_exact << endl;
+    err_f += pow(darcy_flux[f] - f_exact, 2.0);
+  }
+  cout << "ERRs=" << sqrt(err_p) << " " << sqrt(err_f) << endl;
 
-  /*
-  std::string cgns_filename = "out.cgns";
-  Amanzi::CGNS::create_mesh_file(*mesh, cgns_filename);
-  Amanzi::CGNS::open_data_file(cgns_filename);
-  Amanzi::CGNS::create_timestep(0.0, 0, Amanzi::AmanziMesh::CELL);
-  Amanzi::CGNS::write_field_data(*(S->get_pressure()), "pressure");
-  Amanzi::CGNS::write_field_data(*(S->get_vertical_permeability()), "vertical permeability");
-  Amanzi::CGNS::write_field_data(*(S->get_horizontal_permeability()), "horizontal permeability");
-  */
- 
+  CHECK(err_p < 1e-8);
+  CHECK(err_f < 1e-8); 
+
   delete comm;
 }

@@ -26,11 +26,13 @@ public:
 
   void diff_op(double, const double&, const double[], double&, double[]) const;
   void diff_op(double, double[], const double&, const double[], double&, double[]) const;
+  void diff_op(const Epetra_SerialSymDenseMatrix&, double[], const double&, const double[], double&, double[]) const;
   void diff_op(const Epetra_SerialSymDenseMatrix&, const double&, const double[], double&, double[]) const;
   void diff_op(double, const double&, const Epetra_SerialDenseVector&, double&, Epetra_SerialDenseVector&) const;
   void diff_op(const Epetra_SerialSymDenseMatrix&, const double&, const Epetra_SerialDenseVector&, double&, Epetra_SerialDenseVector&) const;
 
   void GravityFlux(const double g[], double gflux[]) const;
+  void GravityFlux(const double g[], Epetra_SerialSymDenseMatrix& Kc, double gflux[]) const;
   void CellFluxVector(double Fface[], double Fcell[]) const;
 
 private:

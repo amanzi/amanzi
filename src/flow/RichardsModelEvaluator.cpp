@@ -28,8 +28,7 @@ RichardsModelEvaluator::RichardsModelEvaluator(RichardsProblem *problem,
   Teuchos::readVerboseObjectSublist(&plist_,this);
 
   atol = plist.get<double>("Absolute error tolerance",1.0);
-  rtol = plist.get<double>("Relative error tolerance",1e-5);
-  
+  rtol = plist.get<double>("Relative error tolerance",0.0);
 }
 
 void RichardsModelEvaluator::initialize(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
@@ -136,7 +135,7 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
   // find the global maximum
 #ifdef HAVE_MPI
   double buf = en;
-  MPI_Allreduce ( &buf, &en, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD );
+  du.Comm().MaxAll(&buf, &en, 1);
 #endif
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true))
@@ -146,6 +145,12 @@ double RichardsModelEvaluator::enorm(const Epetra_Vector& u, const Epetra_Vector
 
   return  en;
 
+}
+
+
+void RichardsModelEvaluator::update_norm(double rtolnew, double atolnew) {
+  atol = atolnew;
+  rtol = rtolnew;
 }
 
 

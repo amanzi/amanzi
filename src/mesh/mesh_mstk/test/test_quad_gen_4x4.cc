@@ -25,10 +25,12 @@ TEST(MSTK_QUAD_GEN_4x4)
   int NF = 24;
   int NC = 9;
 
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+
 
   // Load a mesh consisting of 3x3 elements (4x4 nodes)
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,1.0,1.0,3,3,MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MSTK mesh(0.0,0.0,1.0,1.0,3,3,comm.get());
 
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);

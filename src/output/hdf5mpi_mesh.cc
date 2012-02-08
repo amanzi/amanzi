@@ -1,6 +1,9 @@
 #include "hdf5mpi_mesh.hh"
 
-//TODO(barker): remove ParaView specific xmf files, now reads VisIt version
+//TODO(barker): clean up debugging output
+//TODO(barker): check that close file is always getting called
+//TODO(barker): add error handling where appropriate
+//TODO(barker): clean up formating
 
 namespace Amanzi {
   
@@ -31,7 +34,6 @@ HDF5_MPI::~HDF5_MPI()
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
 
-//void HDF5_MPI::createMeshFile(Mesh_maps_base &mesh_maps, std::string filename)
 void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string filename)
 {
 
@@ -44,7 +46,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
 
   // build h5 filename
   h5Filename = filename;
-  //TODO:barker - verify with Markus whether he'll include h5 or I'll add it
+  //TODO(barker): verify with Markus whether he'll include h5 or I'll add it
   h5Filename.append(std::string(".h5"));
 
   // new parallel
@@ -56,23 +58,23 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   
   // get num_nodes, num_cells
   const Epetra_Map &nmap = mesh_maps.node_map(false);
-  int num_nodes = nmap.NumMyElements();
-  int num_nodes_all = nmap.NumGlobalElements();
+  int nnodes_local = nmap.NumMyElements();
+  int nnodes_global = nmap.NumGlobalElements();
   const Epetra_Map &ngmap = mesh_maps.node_map(true);
   
   const Epetra_Map &cmap = mesh_maps.cell_map(false);
-  int num_elems = cmap.NumMyElements();
-  int num_elems_all = cmap.NumGlobalElements();
+  int ncells_local = cmap.NumMyElements();
+  int ncells_global = cmap.NumGlobalElements();
 
   // get coords
-  double *nodes = new double[num_nodes*3];
-  globaldims[0] = num_nodes_all;
+  double *nodes = new double[nnodes_local*3];
+  globaldims[0] = nnodes_global;
   globaldims[1] = 3;
-  localdims[0] = num_nodes;
+  localdims[0] = nnodes_local;
   localdims[1] = 3;
 
   std::vector<double> xc(3);
-  for (int i = 0; i < num_nodes; i++) {
+  for (int i = 0; i < nnodes_local; i++) {
     mesh_maps.node_to_coordinates(i, xc.begin(), xc.end());
     nodes[i*3] = xc[0];
     nodes[i*3+1] = xc[1];
@@ -81,7 +83,6 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
 
   // write out coords
   // TODO(barker): add error handling: can't create/write
-  // new parallel
   parallelIO_write_dataset(nodes, PIO_DOUBLE, 2, globaldims, localdims, file,
                            "Mesh/Nodes", &IOgroup_, 
                            NONUNIFORM_CONTIGUOUS_WRITE);
@@ -89,7 +90,7 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   
   // write out node map
   ids = new int[nmap.NumMyElements()];
-  for (int i=0; i<num_nodes; i++) {
+  for (int i=0; i<nnodes_local; i++) {
     ids[i] = nmap.GID(i);
   }
   globaldims[1] = 1;
@@ -100,7 +101,8 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   
   
   // get connectivity
-  int nnodes(nmap.NumMyElements());
+  // nodes are written to h5 out of order, need info to map id to order in output
+  int nnodes(nnodes_local);
   std::vector<int> nnodesAll(viz_comm_.NumProc(),0);
   viz_comm_.GatherAll(&nnodes, &nnodesAll[0], 1);
   int start(0);
@@ -115,51 +117,83 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
   mesh_maps.cell_get_nodes(cellid,&nodeids);
   conn_ = nodeids.size();
   
-  globaldims[0] = num_elems_all;
-  globaldims[1] = conn_;
-  localdims[0] = num_elems;
-  localdims[1] = conn_;
-  
-  int *ielem = new int[num_elems*conn_];
-  std::vector<unsigned int> xh(conn_);
-
-  // testing
-  std::vector<int> gid(num_nodes_all);
-  std::vector<int> pid(num_nodes_all);
-  std::vector<int> lid(num_nodes_all);
-  for (int i=0; i<num_nodes_all; i++) {
+  std::vector<int> gid(nnodes_global);
+  std::vector<int> pid(nnodes_global);
+  std::vector<int> lid(nnodes_global);
+  for (int i=0; i<nnodes_global; i++) {
     gid[i] = ngmap.GID(i);
   }
-  nmap.RemoteIDList(num_nodes_all, &gid[0], &pid[0], &lid[0]);
-  /*
-  for (int i=0; i<num_nodes_all; i++) {
-  }
-   */
+  nmap.RemoteIDList(nnodes_global, &gid[0], &pid[0], &lid[0]);
 
-  for (int i = 0; i < num_elems; i++) {
-    mesh_maps.cell_to_nodes(i, xh.begin(), xh.end());
-    for (int j = 0; j < conn_; j++) {
-      if (nmap.MyLID(xh[j])) {
-        ielem[i*conn_+j] = xh[j] + startAll[viz_comm_.MyPID()];
+  // determine size of connectivity vector 
+  // element conn vector: elem_typeID elem_conn1 ... elem_connN
+  // conn vector length = size_conn + 1
+  // if polygon: elem_typeID num_nodes elem_conn1 ... elem_connN
+  //             conn vector length = size_conn + 1 + 1
+  // TODO(barker): make a list of cell types found, 
+  //               if all the same then write out as a uniform mesh of that type
+  int local_conn(0);
+  std::vector<int> each_conn(ncells_local);
+  for (int i=0; i<ncells_local; i++) {
+    mesh_maps.cell_get_nodes(i,&nodeids);
+    each_conn[i] = nodeids.size();
+    local_conn += each_conn[i]+1;  // add 1 for elem_typeID
+    if ( getCellTypeID_(each_conn[i]) == 3) local_conn += 1; // add 1 if polygon
+  }
+  std::vector<int> local_connAll(viz_comm_.NumProc(),0);
+  viz_comm_.GatherAll(&local_conn, &local_connAll[0], 1);
+  int total_conn(0);
+  for (int i=0; i<viz_comm_.NumProc(); i++) {
+    total_conn += local_connAll[i];
+  }
+  
+  int *cells = new int[local_conn];
+  globaldims[0] = total_conn; 
+  globaldims[1] = 1;
+  localdims[0] = local_conn;
+  localdims[1] = 1;
+  
+  // get local element connectivities
+  // nodeIDs need to be mapped to output IDs
+  int idx = 0;
+  for (int i=0; i<ncells_local; i++) {
+    int conn_len(each_conn[i]);
+    std::vector<unsigned int> xe(conn_len);
+    mesh_maps.cell_to_nodes(i, xe.begin(), xe.end());
+    // store cell type id
+    int type = getCellTypeID_(conn_len); 
+    cells[idx] = type;
+    idx++;
+    // TODO(barker): this shouldn't be a hardcoded value
+    if (type == 3) {
+      cells[idx+1] = each_conn[i];
+      idx++;
+    } 
+    // store mapped node ids for connectivity
+    for (int j = 0; j < conn_len; j++) {
+      if (nmap.MyLID(xe[j])) {
+        cells[idx+j] = xe[j] + startAll[viz_comm_.MyPID()];
       } else {
-	ielem[i*conn_+j] = lid[xh[j]] + startAll[pid[xh[j]]];
+	cells[idx+j] = lid[xe[j]] + startAll[pid[xe[j]]];
       }
     }
+    idx += conn_len;
   }
-
   // write out connectivity
-  // TODO(barker): add error handling: can't create/write  // new parallel
-  parallelIO_write_dataset(ielem, PIO_INTEGER, 2, globaldims, localdims, file, 
-                           "Mesh/Elements", &IOgroup_,
+  parallelIO_write_dataset(cells, PIO_INTEGER, 2, globaldims, localdims, file, 
+                           "Mesh/MixedElements", &IOgroup_,
                            NONUNIFORM_CONTIGUOUS_WRITE);
-  delete ielem;
+  delete cells;
   
   // write out cell map
   ids = new int[cmap.NumMyElements()];
-  for (int i=0; i<num_elems; i++) {
+  for (int i=0; i<ncells_local; i++) {
     ids[i] = cmap.GID(i);
   }
+
+  globaldims[0] = ncells_global; 
   globaldims[1] = 1;
+  localdims[0] = ncells_local;
   localdims[1] = 1;
   parallelIO_write_dataset(ids, PIO_INTEGER, 2, globaldims, localdims, file, 
                            "Mesh/ElementMap", &IOgroup_,
@@ -171,13 +205,16 @@ void HDF5_MPI::createMeshFile(const AmanziMesh::Mesh &mesh_maps, std::string fil
 
   // Store information
   setH5MeshFilename(h5Filename);
-  setNumNodes(num_nodes_all);
-  setNumElems(num_elems_all);
+  setNumNodes(nnodes_global);
+  setNumElems(ncells_global);
+  setConnLength(total_conn);
+  //TODO(barker): store the connectivity length for mixed meshes, anything else?
 
   // Create and write out accompanying Xdmf file
   if (TrackXdmf() && viz_comm_.MyPID() == 0) {
+    //TODO(barker): if implement type tracking, then update this as needed
     ctype_ = mesh_maps.cell_get_type(0); 
-    cname_ = AmanziMesh::Data::type_to_name(ctype_);
+    cname_ = "Mixed"; //AmanziMesh::Data::type_to_name(ctype_);
     xmfFilename = filename + ".xmf";
     createXdmfMesh_(xmfFilename);
   }
@@ -210,11 +247,8 @@ void HDF5_MPI::createDataFile(std::string soln_filename) {
   // Store filenames
   setH5DataFilename(h5filename);
   if (TrackXdmf() && viz_comm_.MyPID() == 0) {
-    setxdmfParaviewFilename(soln_filename + "PV.xmf");
-    setxdmfVisitFilename(soln_filename + "V.xmf");
-
+    setxdmfVisitFilename(soln_filename + ".VisIt.xmf");
     // start xmf files xmlObjects stored inside functions
-    createXdmfParaview_();
     createXdmfVisit_();
   }
 }
@@ -234,15 +268,11 @@ void HDF5_MPI::createTimestep(const double time, const int iteration) {
     of.close();
     setxdmfStepFilename(filename.str());
 
-    // update ParaView and VisIt xdmf files
+    // update VisIt xdmf files
     // TODO(barker): how to get to grid collection node, rather than root???
-    writeXdmfParaviewGrid_(filename.str(), time, iteration);
     writeXdmfVisitGrid_(filename.str());
     // TODO(barker): where to write out depends on where the root node is
     // ?? how to terminate stream or switch to new file out??
-    of.open(xdmfParaviewFilename().c_str());
-    of << xmlParaview();
-    of.close();
     of.open(xdmfVisitFilename().c_str());
     of << xmlVisit();
     of.close();
@@ -446,7 +476,7 @@ void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
   
 }
   
-  void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
+void HDF5_MPI::readAttrInt(int &value, const std::string attrname)
   {
     
     hid_t file, fid, attribute_id;
@@ -591,6 +621,29 @@ void HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   
 }
   
+int HDF5_MPI::getCellTypeID_(int conn_len) {
+  
+  //TODO(barker): how to return polyhedra?
+  // cell type id's defined in Xdmf/include/XdmfTopology.h
+  switch (conn_len) {
+    case 4:
+      // Tet 
+      return 6;
+    case 5:
+      // Pyramid
+      return 7;
+    case 6:
+      // wedge/prism
+      return 8;
+    case 8:
+      // Hex
+      return 9;
+    default:
+      // return polygon
+      return 3;
+  }
+}
+  
 void HDF5_MPI::createXdmfMesh_(const std::string xmfFilename) {
   // TODO(barker): add error handling: can't open/write
   Teuchos::XMLObject mesh("Xdmf");
@@ -604,29 +657,6 @@ void HDF5_MPI::createXdmfMesh_(const std::string xmfFilename) {
   of.close();
 }
 
-void HDF5_MPI::createXdmfParaview_() {
-  // TODO(barker): add error handling: can't open/write
-  Teuchos::XMLObject xmf("Xdmf");
-  xmf.addAttribute("xmlns:xi", "http://www.w3.org/2001/XInclude");
-  xmf.addAttribute("Version", "2.0");
-
-  // build xml object
-  Teuchos::XMLObject header;
-  header = addXdmfHeaderGlobal_();
-  xmf.addChild(header);
-  Teuchos::XMLObject node;
-  node = findGridNode_(xmf);
-  node.addChild(addXdmfTopo_());
-  node.addChild(addXdmfGeo_());
-
-  // write xmf
-  std::ofstream of(xdmfParaviewFilename().c_str());
-  of << HDF5_MPI::xdmfHeader_ << xmf << endl;
-  of.close();
-
-  // Store ParaView XMLObject
-  xmlParaview_ = xmf;
-}
 
 void HDF5_MPI::createXdmfVisit_() {
   // TODO(barker): add error handling: can't open/write
@@ -679,6 +709,7 @@ Teuchos::XMLObject HDF5_MPI::addXdmfTopo_() {
   
   // TODO(barker): error checking if cname_ and conn_ haven't been checked
   // TODO(barker): error checking if cname_ is unknown
+  /*
   Teuchos::XMLObject topo("Topology");
   topo.addAttribute("Type", cname_);
   topo.addInt("Dimensions", NumElems());
@@ -692,7 +723,23 @@ Teuchos::XMLObject HDF5_MPI::addXdmfTopo_() {
 
   tmp1 << H5MeshFilename() << ":/Mesh/Elements";
   DataItem.addContent(tmp1.str());
+   */
 
+  // NEW MIXED MESH
+  //TODO(barker): need to pass in topotype - or assume Mixed always
+  //TODO(barker): need to pass in connectivity length, or store somewhere
+  Teuchos::XMLObject topo("Topology");
+  topo.addAttribute("TopologyType", cname_);
+  topo.addInt("NumberOfElements", NumElems());
+  topo.addAttribute("Name", "mixedtopo");
+  
+  Teuchos::XMLObject DataItem("DataItem");
+  DataItem.addAttribute("DataType", "Int");
+  DataItem.addInt("Dimensions", ConnLength());
+  DataItem.addAttribute("Format", "HDF");
+  
+  tmp1 << H5MeshFilename() << ":/Mesh/MixedElements";
+  DataItem.addContent(tmp1.str());
   topo.addChild(DataItem);
 
   return topo;
@@ -716,39 +763,6 @@ Teuchos::XMLObject HDF5_MPI::addXdmfGeo_() {
   geo.addChild(DataItem);
 
   return geo;
-}
-
-void HDF5_MPI::writeXdmfParaviewGrid_(std::string filename, const double time,
-                                const int iteration) {
-  // Create xmlObject grid
-
-  Teuchos::XMLObject grid("Grid");
-  grid.addInt("Name", iteration);
-  grid.addAttribute("GridType", "Uniform");
-
-  // TODO(barker): update topo/geo name if mesh is evolving
-  Teuchos::XMLObject topo("Topology");
-  topo.addAttribute("Reference", "//Topology[@Name='topo']");
-  grid.addChild(topo);
-  Teuchos::XMLObject geo("Geometry");
-  geo.addAttribute("Reference", "//Geometry[@Name='geo']");
-  grid.addChild(geo);
-
-  Teuchos::XMLObject timeValue("Time");
-  timeValue.addDouble("Value", time);
-  grid.addChild(timeValue);
-
-  Teuchos::XMLObject xi_include("xi:include");
-  xi_include.addAttribute("href", filename);
-  xi_include.addAttribute("xpointer", "xpointer(//Xdmf/Domain/Grid/Attribute)");
-  grid.addChild(xi_include);
-
-  // Step through paraview xmlobject to find /domain/grid
-  Teuchos::XMLObject node;
-  node = findGridNode_(xmlParaview_);
-
-  // Add new grid to xmlobject paraview
-  node.addChild(grid);
 }
 
 void HDF5_MPI::writeXdmfVisitGrid_(std::string filename) {

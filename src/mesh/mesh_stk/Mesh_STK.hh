@@ -53,7 +53,7 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   explicit Mesh_STK(STK::Mesh_STK_Impl_p mesh);
 
   /// Construct hexahedral mesh of the given size and spacing
-  Mesh_STK(const Epetra_MpiComm& comm, 
+  Mesh_STK(const Epetra_MpiComm *comm, 
            const unsigned int& ni, const unsigned int& nj, const unsigned int& nk,
            const double& xorigin = 0.0, 
            const double& yorigin = 0.0, 
@@ -63,35 +63,35 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const double& zdelta = 1.0,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
-
+  
   /// Construct hexahedral mesh (Mesh_simple alternative)
   Mesh_STK(double x0, double y0, double z0,
            double x1, double y1, double z1,
            int nx, int ny, int nz, 
-           Epetra_MpiComm *communicator,
+           const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
-           Epetra_MpiComm *communicator,
+           const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)
   Mesh_STK(const GenerationSpec& gspec,
-           Epetra_MpiComm *communicator,
+           const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a mesh from a Exodus II file or file set
-  Mesh_STK(const Epetra_MpiComm& comm, 
+  Mesh_STK(const Epetra_MpiComm *comm, 
            const std::string& fname,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
   /// Construct a mesh from a Exodus II file or file set
-  Mesh_STK(const char *filename, MPI_Comm comm,
+  Mesh_STK(const char *filename, const Epetra_MpiComm *comm,
            const AmanziGeometry::GeometricModelPtr& gm = 
            (AmanziGeometry::GeometricModelPtr) NULL);
 
@@ -316,9 +316,6 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
   /// A list of supported entity kinds
   static const unsigned int num_kinds_;
   static const Entity_kind kinds_[];
-
-  /// The parallel environment
-  std::auto_ptr<Epetra_MpiComm> communicator_;
 
   /// The mesh implementation
   STK::Mesh_STK_Impl_p mesh_;

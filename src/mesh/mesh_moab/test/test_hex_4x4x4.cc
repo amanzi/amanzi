@@ -25,9 +25,11 @@ TEST(MOAB_HEX_4x4x4)
   int NC = 27;
 
 
+  std::auto_ptr<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD));
+
   // Load a single hex from the hex1.exo file
 
-  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_4x4x4_ss.exo",MPI_COMM_WORLD);
+  Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_4x4x4_ss.exo",comm.get());
 
   nf = mesh.count_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
