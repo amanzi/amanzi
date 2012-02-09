@@ -49,92 +49,53 @@ namespace Amanzi {
     // should be copy-constructed from that initial State.
     State& operator=(const State& s);
 
-    //  ~State() {};
-
     // initialize values over blocks
     void initialize();
     bool check_all_initialized();
 
-    // Add things to the state.  Location is one of the AmanziMesh::Entity_kind
-    // enum, own indicates whether the PK requiring the field would like write
-    // access to the field (i.e. the field is a dependent variable for the PK),
-    // and num_dofs indicates the number of required vectors.
+    // Add things to the state.
     //
     // Note that multiple PKs may require a field, but only one may own it.
-    void require_field(std::string fieldname, FieldLocation location,
-                       std::string owner="state", int num_dofs=1);
+    void require_field(std::string fieldname, std::string owner="state");
 
     // -- access methods --
     // This access method should be used by PKs who don't own the field, i.e.
     // flow accessing a temperature field if an energy PK owns the temperature field.
     // This ensures a PK cannot mistakenly alter data it doesn't own.
-    Teuchos::RCP<const Epetra_MultiVector> get_field(std::string fieldname) const;
+    Teuchos::RCP<const CompositeVector> get_data(std::string fieldname) const;
 
     // This access method should be used by PKs who own the field.
-    Teuchos::RCP<Epetra_MultiVector> get_field(std::string fieldname,
-            std::string pk_name);
+    Teuchos::RCP<CompositeVector> get_data(std::string fieldname, std::string pk_name);
 
     // Access to the full field instance, not just the data.
-    Teuchos::RCP<Field> get_field_record(std::string fieldname);
+    Teuchos::RCP<Field> get_field(std::string fieldname);
 
     // CRUFT, fix me.
-    Teuchos::RCP<double> get_density() {
-      return density_;
-    }
-    Teuchos::RCP<double> get_viscosity() {
-      return viscosity_;
-    }
-    Teuchos::RCP< std::vector<double> > get_gravity() {
-      return gravity_;
-    }
+    Teuchos::RCP<double> density() { return density_; }
+    Teuchos::RCP<const double> density() const { return density_; }
 
-    Amanzi::AmanziMesh::Mesh& get_mesh() {
-      return *mesh_maps_;
-    }
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() {
-      return mesh_maps_;
-    };
+    Teuchos::RCP<double> viscosity() { return viscosity_; }
+    Teuchos::RCP<const double> viscosity() const { return viscosity_; }
 
-    double get_time () const {
-      return time_;
-    }
-    int get_cycle () const {
-      return cycle_;
-    }
+    Teuchos::RCP< std::vector<double> > gravity() { return gravity_; }
+    Teuchos::RCP< const std::vector<double> > gravity() const { return gravity_; }
+
+    Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
+
+    double time () const { return time_; }
+    int cycle () const { return cycle_; } // what is the cycle?
+    status_type status () const { return status_; };
 
     // modify methods
-    void set_field_pointer(std::string fieldname, std::string pk_name,
-                           Teuchos::RCP<Epetra_MultiVector>& data);
-    void set_field(std::string fieldname, std::string pk_name,
-                   const Epetra_Vector&);
-    void set_field(std::string fieldname, std::string pk_name,
-                   const Epetra_MultiVector&);
-    void set_field(std::string fieldname, std::string pk_name, const double* u);
-    void set_field(std::string fieldname, std::string pk_name, double u);
+    void set_data(std::string fieldname, std::string pk_name,
+                  Teuchos::RCP<CompositeVector>& data);
+    void set_data(std::string fieldname, std::string pk_name,
+                   const CompositeVector& data);
 
-    // modify methods only valid for cell-based fields
-    void set_field(std::string fieldname, std::string pk_name,
-                   const double* u, int mesh_block_id);
-    void set_field(std::string fieldname, std::string pk_name,
-                   double u, int mesh_block_id);
-
-    // modify methods only valid for face-based fields
-    void set_vector_field(std::string fieldname, std::string pk_name,
-                          const double* u, int mesh_block_id);
-
-    // modify subfield_names, which are used for io naming
-    void set_subfield_names(std::string fieldname,
-                            const std::vector<std::string>& subfield_names);
-
-    void set_time ( double new_time ) {
-      time_ = new_time;
-    }
-    void advance_time(double dT) {
-      time_ += dT;
-    }
-    void set_cycle (int new_cycle ) {
-      cycle_ = new_cycle;
-    }
+    void set_time ( double new_time ) { time_ = new_time; }
+    void advance_time(double dT) { time_ += dT; }
+    void set_cycle (int new_cycle ) { cycle_ = new_cycle; }
 
     // CRUFT, fix me
     void set_density(double wd);
@@ -143,9 +104,7 @@ namespace Amanzi {
     void set_gravity(const std::vector<double> g);
 
     // status methods
-    const status_type get_status () const {
-      return status_;
-    };
+
     void set_status ( status_type new_status ) {
       status_ = new_status;
     }

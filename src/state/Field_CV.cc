@@ -80,8 +80,14 @@ Teuchos::RCP<CompositeVector> Field::data(std::string pk_name) {
 
 // Overwrite data by pointer, not copy
 void Field::set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
-  assert_owner_or_die(pk_name);
+  assert_owner_or_die_(pk_name);
   data_ = data;
+};
+
+// Overwrite data by copy.
+void Field::set_data(std::string pk_name, CompositeVector& data) {
+  assert_owner_or_die_(pk_name);
+  *data_ = data;
 };
 
 } // namespace
