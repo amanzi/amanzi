@@ -5,10 +5,11 @@ ATS
 License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 
-Interface for a Field.  Field is not intended so much to hide implementation
-of data as to restrict write access to data.  It freely passes out pointers to
-its private data, but only passes out read-only const pointers unless you have
-the secret password (AKA the name of the process kernel that owns the data).
+Interface for a Field containing a CompositeVector.  Field is not intended so
+much to hide implementation of data as to restrict write access to data.  It
+freely passes out pointers to its private data, but only passes out read-only
+const pointers unless you have the secret password (AKA the name of the
+process kernel that owns the data).
 
 Field also stores some basic metadata for Vis, checkpointing, etc.
 ------------------------------------------------------------------------- */
@@ -24,60 +25,35 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include "Mesh.hh"
 #include "CompositeVector.hh"
+#include "Field.hh"
 
 namespace Amanzi {
 
-class Field {
+class Field_CV : public Field {
 
 public:
-  // default constructor, does not generate data
-  Field(std::string fieldname, std::string owner="state");
-  Field(std::string fieldname, std::string owner="state",
-        Teuchos::RCP<CompositeVector>& data);
+  // constructors
+  Field_CV(std::string fieldname, std::string owner="state");
 
   // copy constructor and assignment
-  Field(const Field&);
-  Field& operator=(const Field&);
+  Teuchos::RCP<Field_CV> Clone() const;
+  operator=(const Field&);
 
-  // access
-  std::string fieldname() const { return fieldname_; }
-  std::string owner() const { return owner_; }
-  std::vector<std::vector< std::string > > subfield_names() const { return subfield_names_};
-  bool io_restart() const { return io_restart_; }
-  bool io_vis() const { return io_vis_; }
-  bool initialized() const { return initialized_; }
-
-  Teuchos::RCP<const CompositeVector> data() const { return data_; }
-  Teuchos::RCP<CompositeVector> data(std::string pk_name);
-
-  // mutators
-  void set_owner(std::string owner) { owner_ = owner; }
-  void set_io_restart(bool io_restart=true) { io_restart_ = io_restart; }
-  void set_io_vis(bool io_vis=true) { io_vis_ = io_vis; }
-  void set_initialized(bool initialized=true) { initialized_ = initialized; }
-
-  void set_subfield_names(std::vector< std::vector<std::string> > subfieldnames) {
-    subfieldnames_ = subfieldnames;
-  }
-  void set_subfield_names(std::vector<std::string> subfieldnames) {
-    subfieldnames_.PushBack(subfieldnames);
+  // data access and mutators
+  virtual Teuchos::RCP<const CompositeVector> data() const { return data_; }
+  virtual Teuchos::RCP<CompositeVector> data(std::string pk_name) {
+    assert_owner_or_die_(pk_name);
+    return data_;
   }
 
-  void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data);
+  virtual void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
+    assert_owner_or_die_(pk_name);
+    data_ = data;
+  }
 
 private:
 
-  // consistency checking
-  void assert_owner_or_die_(std::string pk_name) const;
-
   Teuchos::RCP<CompositeVector> data_;
-  std::string fieldname_;
-  std::string owner_;
-  std::vector< std::vector<std::string> > subfieldnames_;
-
-  bool io_restart_;
-  bool io_vis_;
-  bool initialized_;
 
 }; // class Field
 
