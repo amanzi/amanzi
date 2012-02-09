@@ -18,6 +18,14 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 namespace Amanzi {
 
+// constructor
+Field::Field(std::string fieldname, std::string owner) :
+    fieldname_(fieldname),
+    owner_(owner),
+    io_restart_(true),
+    io_vis_(false),
+    initialized_(false) {};
+
 // I miss decorators, do they exist in C++?
 // check that the requesting pk owns the data
 void Field::assert_owner_or_die_(std::string pk_name) const {
@@ -42,7 +50,7 @@ void Field::assert_type_or_die_(FieldType type) const {
 
 void Field::not_implemented_error_() const {
   std::stringstream messagestream;
-  messagestream << "Method not implemented for this type... blaim ecoon@lanl.gov!"
+  messagestream << "Method not implemented for this type... blaim ecoon@lanl.gov!";
   Errors::Message message(messagestream.str());
   Exceptions::amanzi_throw(message);
 };

@@ -18,12 +18,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #define STATE_FIELD_CV_HH_
 
 #include <string>
-#include <vector>
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
 
-#include "Mesh.hh"
 #include "CompositeVector.hh"
 #include "Field.hh"
 
@@ -33,27 +29,30 @@ class Field_CV : public Field {
 
 public:
   // constructors
-  Field_CV(std::string fieldname, std::string owner="state");
+  Field_CV(std::string fieldname);
+  Field_CV(std::string fieldname, std::string owner);
+  Field_CV(std::string fieldname, Teuchos::RCP<CompositeVector>& data);
+  Field_CV(std::string fieldname, std::string owner, Teuchos::RCP<CompositeVector>& data);
 
   // copy constructor and assignment
-  Teuchos::RCP<Field_CV> Clone() const;
-  operator=(const Field&);
+  explicit Field_CV(const Field_CV& other);
+  Teuchos::RCP<Field> Clone() const;
+  Teuchos::RCP<Field> Clone(std::string fieldname) const;
+  Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const;
 
   // data access and mutators
-  virtual Teuchos::RCP<const CompositeVector> data() const { return data_; }
-  virtual Teuchos::RCP<CompositeVector> data(std::string pk_name) {
-    assert_owner_or_die_(pk_name);
-    return data_;
-  }
+  Teuchos::RCP<const CompositeVector> vector_data() const { return data_; }
+  Teuchos::RCP<CompositeVector> vector_data(std::string pk_name);
 
-  virtual void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
-    assert_owner_or_die_(pk_name);
-    data_ = data;
-  }
+  void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data);
 
-private:
+protected:
 
   Teuchos::RCP<CompositeVector> data_;
+
+private:
+  // operator= disabled
+  Field_CV& operator=(const Field_CV&);
 
 }; // class Field
 

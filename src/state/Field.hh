@@ -22,7 +22,7 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
-#include "CompositeVector.hh"
+//#include "CompositeVector.hh"
 
 namespace Amanzi {
 
@@ -33,7 +33,8 @@ class Field {
 public:
   // copy constructor and assignment
   virtual Teuchos::RCP<Field> Clone() const = 0;
-  virtual operator=(const Field&) = 0;
+  virtual Teuchos::RCP<Field> Clone(std::string fieldname) const = 0;
+  virtual Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const = 0;
 
   // access
   std::string fieldname() const { return fieldname_; }
@@ -50,35 +51,35 @@ public:
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
   // data access and mutators
-  virtual Teuchos::RCP<const CompositeVector> data() const {
-    assert_type_or_die_(VECTOR_FIELD);
-    not_implemented_error_();
-  }
-  virtual Teuchos::RCP<CompositeVector> data(std::string pk_name) {
-    assert_type_or_die_(VECTOR_FIELD);
-    not_implemented_error_();
-  }
-  virtual Teuchos::RCP<const Epetra_Vector> data() const {
+  // virtual Teuchos::RCP<const CompositeVector> vector_data() const {
+  //   assert_type_or_die_(VECTOR_FIELD);
+  //   not_implemented_error_();
+  // }
+  // virtual Teuchos::RCP<CompositeVector> vector_data(std::string pk_name) {
+  //   assert_type_or_die_(VECTOR_FIELD);
+  //   not_implemented_error_();
+  // }
+  virtual Teuchos::RCP<const Epetra_Vector> constant_vector_data() const {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<Epetra_Vector> data(std::string pk_name) {
+  virtual Teuchos::RCP<Epetra_Vector> constant_vector_data(std::string pk_name) {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<const double> data() const {
+  virtual Teuchos::RCP<const double> scalar_data() const {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<double> data(std::string pk_name) {
+  virtual Teuchos::RCP<double> scalar_data(std::string pk_name) {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
 
-  virtual void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
-    assert_type_or_die_(VECTOR_FIELD);
-    not_implemented_error_();
-  }
+  // virtual void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
+  //   assert_type_or_die_(VECTOR_FIELD);
+  //   not_implemented_error_();
+  // }
   virtual void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>& data) {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
@@ -89,6 +90,9 @@ public:
   }
 
 protected:
+  // constructor protected, should only be called by derived classes
+  Field(std::string fieldname, std::string owner="state");
+
 
   // consistency checking
   void assert_owner_or_die_(std::string pk_name) const;
@@ -102,6 +106,10 @@ protected:
   bool io_restart_;
   bool io_vis_;
   bool initialized_;
+
+private:
+  // operator= disabled
+  Field& operator=(const Field&);
 
 }; // class Field
 

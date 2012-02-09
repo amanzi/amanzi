@@ -14,71 +14,70 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 ------------------------------------------------------------------------- */
 
 #include "errors.hh"
-#include "CompositeVector.hh"
 #include "Field.hh"
-#include "Field_CV.hh"
+#include "Field_Scalar.hh"
 
 namespace Amanzi {
 
-Field_CV::Field_CV(std::string fieldname) :
+Field_Scalar::Field_Scalar(std::string fieldname) :
     Field::Field(fieldname, "state"), data_() {
-  type_ = VECTOR_FIELD;
+  type_ = CONSTANT_SCALAR;
 };
 
-Field_CV::Field_CV(std::string fieldname, std::string owner) :
+Field_Scalar::Field_Scalar(std::string fieldname, std::string owner) :
     Field::Field(fieldname, owner), data_() {
-  type_ = VECTOR_FIELD;
+  type_ = CONSTANT_SCALAR;
 };
 
-Field_CV::Field_CV(std::string fieldname, Teuchos::RCP<CompositeVector>& data) :
+Field_Scalar::Field_Scalar(std::string fieldname, Teuchos::RCP<double>& data) :
     Field::Field(fieldname, "state"), data_(data) {
-  type_ = VECTOR_FIELD;
+  type_ = CONSTANT_SCALAR;
 };
 
-Field_CV::Field_CV(std::string fieldname, std::string owner,
-                           Teuchos::RCP<CompositeVector>& data) :
+Field_Scalar::Field_Scalar(std::string fieldname, std::string owner,
+                           Teuchos::RCP<double>& data) :
     Field::Field(fieldname, owner), data_(data) {
-  type_ = VECTOR_FIELD;
+  type_ = CONSTANT_SCALAR;
 };
 
 // copy constructor:
-Field_CV::Field_CV(const Field_CV& other) :
+Field_Scalar::Field_Scalar(const Field_Scalar& other) :
     Field::Field(other.fieldname_, other.owner_) {
   io_restart_ = other.io_restart_;
   io_vis_ = other.io_vis_;
   initialized_ = other.initialized_;
   type_ = other.type_;
-  data_ = Teuchos::rcp(new CompositeVector(*other.data_));
+  data_ = Teuchos::rcp(new double(*other.data_));
 };
 
 // Virtual copy constructor
-Teuchos::RCP<Field> Field_CV::Clone() const {
-  return Teuchos::rcp(new Field_CV(*this));
+Teuchos::RCP<Field> Field_Scalar::Clone() const {
+  return Teuchos::rcp(new Field_Scalar(*this));
 }
 
 // Virtual copy constructor with non-empty name
-Teuchos::RCP<Field> Field_CV::Clone(std::string fieldname) const {
-  Teuchos::RCP<Field_CV> other = Teuchos::rcp(new Field_CV(*this));
+Teuchos::RCP<Field> Field_Scalar::Clone(std::string fieldname) const {
+  Teuchos::RCP<Field_Scalar> other = Teuchos::rcp(new Field_Scalar(*this));
   other->fieldname_ = fieldname;
   return other;
 };
 
-// Virtual copy constructor with non-empty name
-Teuchos::RCP<Field> Field_CV::Clone(std::string fieldname, std::string owner) const {
-  Teuchos::RCP<Field_CV> other = Teuchos::rcp(new Field_CV(*this));
+// Virtual copy constructor with non-empty name and new owner
+Teuchos::RCP<Field> Field_Scalar::Clone(std::string fieldname, std::string owner)  const {
+  Teuchos::RCP<Field_Scalar> other = Teuchos::rcp(new Field_Scalar(*this));
   other->fieldname_ = fieldname;
   other->owner_ = owner;
   return other;
 };
 
 // write-access to the data
-Teuchos::RCP<CompositeVector> Field_CV::vector_data(std::string pk_name) {
+Teuchos::RCP<double> Field_Scalar::scalar_data(std::string pk_name) {
   assert_owner_or_die_(pk_name);
   return data_;
 };
 
 // Overwrite data by pointer, not copy
-void Field_CV::set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
+void Field_Scalar::set_data(std::string pk_name, Teuchos::RCP<double>& data) {
   assert_owner_or_die_(pk_name);
   data_ = data;
 };
