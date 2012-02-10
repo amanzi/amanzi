@@ -364,7 +364,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
 
     // Check for convergence
-    if (((error < state.ntol) && (itr > 1)) || (error < 0.01 * state.ntol)) {
+    if (error < state.ntol)   {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve succeeded: " << itr << " iterations, error = "<< error << std::endl;
       }
