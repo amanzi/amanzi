@@ -20,10 +20,10 @@ namespace AmanziFlow {
 ****************************************************************** */
 void Flow_PK::Init(Teuchos::RCP<Flow_State> FS_MPC)
 {
-  status = FLOW_NULL;
+  flow_status_ = FLOW_NULL;
 
   FS = Teuchos::rcp(new Flow_State(*FS_MPC));
-  mesh_ = FS->get_mesh();
+  mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
   MyPID = 0;
 
@@ -126,7 +126,7 @@ void Flow_PK::addGravityFluxes_MFD(std::vector<WhetStone::Tensor>& K,
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho;
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -160,7 +160,7 @@ void Flow_PK::addGravityFluxes_DarcyFlux(std::vector<WhetStone::Tensor>& K,
 {
   double rho = FS->ref_fluid_density();
   AmanziGeometry::Point gravity(dim); 
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k] * rho;
+  for (int k=0; k<dim; k++) gravity[k] = (*(FS->gravity()))[k] * rho;
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> flag(nfaces_wghost, 0);

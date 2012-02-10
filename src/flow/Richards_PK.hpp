@@ -74,6 +74,7 @@ class Richards_PK : public Flow_PK {
   void derivePressureFromSaturation(double s, Epetra_Vector& p);
 
   void deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
+  void deriveDarcyVelocity(Epetra_MultiVector& velocity);
 
   // control methods
   inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
@@ -81,23 +82,9 @@ class Richards_PK : public Flow_PK {
   void print_statistics() const;
   
   // access methods
-  Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
-  const Epetra_Map& get_super_map() { return *super_map_; }
-  const Epetra_Import& get_face_importer() { return *face_importer_; }
-
-  Matrix_MFD* get_matrix() { return matrix; }
-
-  Epetra_Vector& get_solution() { return *solution; }
-  Epetra_Vector& get_solution_cells() { return *solution_cells; }
-  Epetra_Vector& get_solution_faces() { return *solution_faces; }
-  AmanziGeometry::Point& get_gravity() { return gravity; }
-
-  double get_rho() { return rho; }
-  double get_mu() { return mu; }
-
-  std::vector<int>& get_bc_markers() { return bc_markers; }
-  std::vector<double>& get_bc_values() { return bc_values; }
-  Epetra_Vector& get_Krel_cells() { return *Krel_cells; }
+  Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
+  const Epetra_Map& super_map() { return *super_map_; }
+  AmanziGeometry::Point& gravity() { return gravity_; }
 
  public:
   int num_nonlinear_steps;
@@ -105,13 +92,12 @@ class Richards_PK : public Flow_PK {
  private:
   Teuchos::ParameterList rp_list;
 
-  AmanziGeometry::Point gravity;
+  AmanziGeometry::Point gravity_;
   double rho, mu;
   double atm_pressure;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;
   Epetra_Map* super_map_;
-  int dim;
 
   Teuchos::RCP<Epetra_Import> cell_importer_;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer_;
@@ -144,7 +130,7 @@ class Richards_PK : public Flow_PK {
   BoundaryFunction* bc_pressure;  // Pressure Dirichlet b.c., excluding static head
   BoundaryFunction* bc_head;  // Static pressure head b.c.; also Dirichlet-type
   BoundaryFunction* bc_flux;  // Outward mass flux b.c.
-  std::vector<int> bc_markers;  // Used faces marked with boundary conditions
+  std::vector<int> bc_markers;  // Used faces are marked with boundary conditions.
   std::vector<double> bc_values;
 
   std::vector<WhetStone::Tensor> K;  // tensor of absolute permeability

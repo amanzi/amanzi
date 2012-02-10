@@ -60,7 +60,7 @@ class DarcyProblem {
     DPK = new Darcy_PK(dp_list, FS);
   }
 
-  ~DarcyProblem() { delete DPK; delete comm; delete S; }
+  ~DarcyProblem() { delete DPK; delete S; delete comm; }
 
   void createBClist(
       const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 
@@ -86,22 +86,22 @@ class DarcyProblem {
   
   double calculatePressureCellError(double p0, AmanziGeometry::Point& pressure_gradient)
   {
-    Epetra_Vector& solution_cells = DPK->get_solution_cells();
+    Epetra_Vector& pressure = DPK->flow_state_next()->ref_pressure();
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     for (int c=0; c<ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
-//if (MyPID==0) cout << c << " " << solution_cells[c] << " exact=" <<  pressure_exact << endl;
-      error_L2 += std::pow(solution_cells[c] - pressure_exact, 2.0);
+//if (MyPID==0) cout << c << " " << pressure[c] << " exact=" <<  pressure_exact << endl;
+      error_L2 += std::pow(pressure[c] - pressure_exact, 2.0);
     }
     return sqrt(error_L2);
   }
 
   double calculatePressureFaceError(double p0, AmanziGeometry::Point& pressure_gradient)
   {
-    Epetra_Vector& solution_faces = DPK->get_solution_faces();
+    Epetra_Vector& solution_faces = DPK->ref_solution_faces();
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -115,7 +115,7 @@ class DarcyProblem {
 
   double calculateDarcyMassFluxError(AmanziGeometry::Point& velocity_exact)
   {
-    Epetra_Vector& darcy_mass_flux = *(DPK->get_flow_state_next()->get_darcy_mass_flux());
+    Epetra_Vector& darcy_mass_flux = DPK->flow_state_next()->ref_darcy_mass_flux();
 
     double error_L2 = 0.0;
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -129,12 +129,11 @@ class DarcyProblem {
 
   double calculateDarcyVelocityError(AmanziGeometry::Point& velocity_exact)
   {
-    Epetra_Vector& darcy_mass_flux = *(DPK->get_flow_state_next()->get_darcy_mass_flux());
+    Epetra_Vector& darcy_mass_flux = DPK->flow_state_next()->ref_darcy_mass_flux();
     int dim = mesh->space_dimension();
 
     Epetra_MultiVector velocity(mesh->cell_map(false), dim);
-    const Epetra_Import& face_importer = DPK->get_face_importer();
-    DPK->get_matrix()->deriveDarcyVelocity(darcy_mass_flux, face_importer, velocity);
+    DPK->deriveDarcyVelocity(velocity);
 
     double error_L2 = 0.0;
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -152,13 +151,13 @@ SUITE(Darcy_PK) {
   TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
     if (MyPID == 0) std::cout <<"Darcy PK: Dirichlet-Dirichlet" << std::endl;
 
-    double rho = DPK->get_rho();  // set up analytic solution
-    double mu = DPK->get_mu();
+    double rho = DPK->rho();  // set up analytic solution
+    double mu = DPK->mu();
 
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->get_gravity()) / mu;
+    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -184,13 +183,13 @@ SUITE(Darcy_PK) {
   {
     if (MyPID == 0) std::cout <<"Darcy PK: Dirichlet-Neumann" << std::endl;
 
-    double rho = DPK->get_rho();  // set up analytic solution
-    double mu = DPK->get_mu();
+    double rho = DPK->rho();  // set up analytic solution
+    double mu = DPK->mu();
 
     double p0 = 1.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->get_gravity()) / mu;
+    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
     double u0 = velocity * AmanziGeometry::Point(0.0, 0.0, 1.0);
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
@@ -215,13 +214,13 @@ SUITE(Darcy_PK) {
   TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     if (MyPID == 0) std::cout <<"Darcy PK: StaticHead-Dirichlet" << std::endl;
 
-    double rho = DPK->get_rho();  // set up analytic solution
-    double mu = DPK->get_mu();
+    double rho = DPK->rho();  // set up analytic solution
+    double mu = DPK->mu();
 
     double p0 = 2.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->get_gravity()) / mu;
+    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");
@@ -248,13 +247,13 @@ SUITE(Darcy_Velocity) {
   {
     if (MyPID == 0) std::cout <<"Darcy PK: velocity" << std::endl;
 
-    double rho = DPK->get_rho();  // set up analytic solution
-    double mu = DPK->get_mu();
+    double rho = DPK->rho();  // set up analytic solution
+    double mu = DPK->mu();
 
     double p0 = 2.0;
     AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
     AmanziGeometry::Point velocity(3);
-    velocity = -rho * (pressure_gradient - rho * DPK->get_gravity()) / mu;
+    velocity = -rho * (pressure_gradient - rho * DPK->gravity()) / mu;
 
     Teuchos::Array<std::string> regions(1);  // modify boundary conditions
     regions[0] = string("Top side");

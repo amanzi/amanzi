@@ -46,29 +46,24 @@ class Darcy_PK : public Flow_PK {
   // other main methods
   void processParameterList();
   void setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K);
+  void deriveDarcyVelocity(Epetra_MultiVector& velocity);
 
   // control methods
   void print_statistics() const;
   void resetParameterList(const Teuchos::ParameterList& dp_list_new) { dp_list = dp_list_new; }
 
   // access methods
-  Flow_State& get_FS() { return *FS; }
-  Epetra_Vector& get_solution_cells() { return *solution_cells; }
-  Epetra_Vector& get_solution_faces() { return *solution_faces; }
+  Epetra_Vector& ref_solution_faces() { return *solution_faces; }
 
-  const Epetra_Import& get_face_importer() { return *face_importer_; }
-  Matrix_MFD* get_matrix() { return matrix; }
-
-  AmanziGeometry::Point& get_gravity() { return gravity; }
-  double get_rho() { return rho; }
-  double get_mu() { return mu; }
+  double rho() { return rho_; }
+  double mu() { return mu_; }
+  AmanziGeometry::Point& gravity() { return gravity_; }
 
  private:
   Teuchos::ParameterList dp_list;
 
-  Teuchos::RCP<Flow_State> FS;
-  AmanziGeometry::Point gravity;
-  double rho, mu;
+  AmanziGeometry::Point gravity_;
+  double rho_, mu_;
   double atm_pressure;
 
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

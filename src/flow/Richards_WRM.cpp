@@ -70,7 +70,7 @@ void Richards_PK::calculateRelativePermeabilityUpwindGravity(const Epetra_Vector
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
-    AmanziGeometry::Point Kgravity = K[c] * gravity;
+    AmanziGeometry::Point Kgravity = K[c] * gravity_;
 
     for (int n=0; n<nfaces; n++) {
       int f = faces[n];

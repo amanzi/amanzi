@@ -15,7 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-#include "MSTK_types.h"
+//#include "MSTK_types.h"
 #include "Mesh_MSTK.hh"
 #include "MeshAudit.hh"
 #include "gmv_mesh.hh"
@@ -79,7 +79,7 @@ TEST(FLOW_2D_RICHARDS) {
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
-    GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
+    GMV::write_cell_data(RPK->flow_state_next()->ref_pressure(), 0, "pressure");
     GMV::close_data_file();
   }
 

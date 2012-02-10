@@ -66,7 +66,7 @@ int Richards_PK::advanceSteadyState_BackwardEuler()
     double residual = solver->TrueResidual();
 
     // error estimates
-    double sol_norm = FS->normL2cell(solution_new);
+    double sol_norm = FS->normLpCell(solution_new, 2.0);
     L2error = errorSolutionDiff(solution_old, solution_new);
 
     if (L2error > 1.0 && itrs && ifail < 5) {  // itrs=0 allows to avoid bad initial guess. 
@@ -189,7 +189,8 @@ double Richards_PK::errorSolutionDiff(const Epetra_Vector& uold, const Epetra_Ve
   // find the global maximum
 #ifdef HAVE_MPI
   double buf = error_norm;
-  MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  //MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  uold.Comm().MaxAll(&buf, &error_norm, 1);
 #endif
   return  error_norm;
 }

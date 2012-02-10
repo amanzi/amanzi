@@ -64,7 +64,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   // calculate the constant Darcy mass velocity
   double rho = FS->ref_fluid_density();
   double mu = FS->ref_fluid_viscosity();
-  AmanziGeometry::Point& g = RPK->get_gravity();
+  AmanziGeometry::Point& g = RPK->gravity();
 
   const Epetra_Vector& kh = FS->ref_horizontal_permeability();
   const Epetra_Vector& kv = FS->ref_vertical_permeability();
@@ -81,7 +81,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   cout << "grad(p)=" << v0 << endl;
 
   // create the initial condition
-  Epetra_Vector u(RPK->get_super_map());
+  Epetra_Vector u(RPK->super_map());
   Epetra_Vector *ucells = FS->createCellView(u);
   for (int c=0; c<ucells->MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -101,8 +101,8 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   RPK->advance_to_steady_state();
 
   // check accuracy
-  Epetra_Vector& pressure = RPK->get_flow_state_next()->ref_pressure();
-  Epetra_Vector& darcy_mass_flux = RPK->get_flow_state_next()->ref_darcy_mass_flux();
+  Epetra_Vector& pressure = RPK->flow_state_next()->ref_pressure();
+  Epetra_Vector& darcy_mass_flux = RPK->flow_state_next()->ref_darcy_mass_flux();
  
   double err_p = 0.0, err_u = 0.0;
   for (int c=0; c<(*ucells).MyLength(); c++) {

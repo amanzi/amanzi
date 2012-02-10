@@ -35,17 +35,17 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_Sta
   FS = FS_MPC;
   rp_list = rp_list_;
 
-  mesh_ = FS->get_mesh();
+  mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
 
   // Create the combined cell/face DoF map.
   super_map_ = createSuperMap();
 
   // Other fundamental physical quantaties
-  rho = *(FS->get_fluid_density());
-  mu = *(FS->get_fluid_viscosity()); 
-  gravity.init(dim);
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
+  rho = *(FS->fluid_density());
+  mu = *(FS->fluid_viscosity()); 
+  gravity_.init(dim);
+  for (int k=0; k<dim; k++) gravity_[k] = (*(FS->gravity()))[k];
 
 #ifdef HAVE_MPI
   const Epetra_Comm& comm = mesh_->cell_map(false).Comm(); 
@@ -203,7 +203,7 @@ int Richards_PK::advance_to_steady_state()
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
 
-  status = FLOW_NEXT_STATE_COMPLETE;
+  flow_status_ = FLOW_NEXT_STATE_COMPLETE;
   return ierr;
 }
 
@@ -357,6 +357,7 @@ int Richards_PK::advanceSteadyState_Picard()
 
 /* ******************************************************************
 * BDF methods need a good initial guess.
+* This method gives a less smoother solution than in Flow 1.0.
 ****************************************************************** */
 void Richards_PK::deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces)
 {
@@ -474,6 +475,17 @@ void Richards_PK::addTimeDerivative_MFD(
     Fc_cells[c] += factor * pressure_cells[c];
   }
 }
+
+
+/* ******************************************************************
+* A wrapper for a similar matrix call.  
+****************************************************************** */
+void Richards_PK::deriveDarcyVelocity(Epetra_MultiVector& velocity) 
+{
+  Epetra_Vector& flux = flow_state_next()->ref_darcy_mass_flux();
+  matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
+}
+
 
 }  // namespace AmanziFlow
 }  // namespace Amanzi

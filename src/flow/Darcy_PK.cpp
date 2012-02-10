@@ -32,17 +32,17 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS
   FS = FS_MPC;
   dp_list = dp_list_;
 
-  mesh_ = FS->get_mesh();
+  mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
 
   // Create the combined cell/face DoF map.
   super_map_ = createSuperMap();
  
   // Other fundamental physical quantaties
-  rho = *(FS->get_fluid_density());
-  mu = *(FS->get_fluid_viscosity()); 
-  gravity.init(dim);
-  for (int k=0; k<dim; k++) gravity[k] = (*(FS->get_gravity()))[k];
+  rho_ = *(FS->fluid_density());
+  mu_ = *(FS->fluid_viscosity()); 
+  gravity_.init(dim);
+  for (int k=0; k<dim; k++) gravity_[k] = (*(FS->gravity()))[k];
 
 #ifdef HAVE_MPI
   const  Epetra_Comm& comm = mesh_->cell_map(false).Comm(); 
@@ -146,7 +146,7 @@ int Darcy_PK::advance_to_steady_state()
 
   // work-around limited support for tensors
   setAbsolutePermeabilityTensor(K);
-  for (int c=0; c<K.size(); c++) K[c] *= rho / mu;
+  for (int c=0; c<K.size(); c++) K[c] *= rho_ / mu_;
 
   // calculate and assemble elemental stifness matrices
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);
@@ -170,6 +170,9 @@ int Darcy_PK::advance_to_steady_state()
     std::cout << "Darcy solver performed " << num_itrs_sss << " iterations." << std::endl
               << "Norm of true residual = " << residual_sss << std::endl;
   }
+
+  //create flow state to be returned
+  FS_next->ref_pressure() = *solution_cells;
 
   // calculate darcy mass flux
   Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
@@ -203,7 +206,17 @@ void Darcy_PK::setAbsolutePermeabilityTensor(std::vector<WhetStone::Tensor>& K)
 
 
 /* ******************************************************************
-*  Printing information about Flow status.                                                     
+* A wrapper for a similar matrix call.  
+****************************************************************** */
+void Darcy_PK::deriveDarcyVelocity(Epetra_MultiVector& velocity) 
+{
+  Epetra_Vector& flux = flow_state_next()->ref_darcy_mass_flux();
+  matrix->deriveDarcyVelocity(flux, *face_importer_, velocity);
+}
+
+
+/* ******************************************************************
+* Printing information about Flow status.                                                     
 ****************************************************************** */
 void Darcy_PK::print_statistics() const
 {

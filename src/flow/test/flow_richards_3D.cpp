@@ -63,17 +63,6 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->Init();
   RPK->print_statistics();
 
-  // create the initial pressure function
-  /*
-  Epetra_Vector p(RPK->get_super_map());
-  Epetra_Vector* pcells = FS->createCellView(p);
-  Epetra_Vector* pfaces = FS->createFaceView(p);
-
-  p.PutScalar(101325.0);
-  RPK->applyBoundaryConditions(RPK->get_bc_markers(), RPK->get_bc_values(), *pfaces);
-  S.update_pressure(*pcells);
-  */
-
   // solve the problem
   S->set_time(0.0);
   RPK->advance_to_steady_state();
@@ -81,9 +70,8 @@ TEST(FLOW_3D_RICHARDS) {
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"flow.gmv");
     GMV::start_data();
-    GMV::write_cell_data(RPK->get_solution_cells(), 0, "pressure");
+    GMV::write_cell_data(RPK->flow_state_next()->ref_pressure(), 0, "pressure");
     GMV::write_cell_data(*(S->get_vertical_permeability()), 0, "vert_permeability");
-    GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
     GMV::close_data_file();
   }
 

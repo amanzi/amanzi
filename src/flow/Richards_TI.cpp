@@ -72,7 +72,9 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 #ifdef HAVE_MPI
   double buf = error_norm;
   //MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+cout << MyPID << " " << u.MyLength() << " " << error_norm;
   du.Comm().MaxAll(&buf, &error_norm, 1);
+cout << " " << error_norm << endl;
 #endif
   return  error_norm;
 }

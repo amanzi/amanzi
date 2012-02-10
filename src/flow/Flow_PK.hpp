@@ -109,14 +109,10 @@ class Flow_PK : public BDF2::fnBase {
                                   Epetra_Vector& darcy_mass_flux);
 
   // access members  
-  Teuchos::RCP<Flow_State> get_flow_state() { return FS; }
-  Teuchos::RCP<Flow_State> get_flow_state_next() { return FS_next; }
+  Teuchos::RCP<Flow_State> flow_state() { return FS; }
+  Teuchos::RCP<Flow_State> flow_state_next() { return FS_next; }
   Flow_State& ref_flow_state_next() { return *FS_next; }
-
-  Teuchos::RCP<AmanziMesh::Mesh> get_mesh() { return mesh_; }
-
-  inline double get_flow_dT() { return dT; }
-  inline int get_flow_status() { return status; }
+  int flow_status() { return flow_status_; }
 
   // control members
   void validate_boundary_conditions(
@@ -140,7 +136,7 @@ class Flow_PK : public BDF2::fnBase {
   Teuchos::RCP<Flow_State> FS_next; 
   
   double T_internal, T_physical, dT, dT0;
-  int status;
+  int flow_status_;
   int standalone_mode;
  
   Teuchos::RCP<AmanziMesh::Mesh> mesh_;

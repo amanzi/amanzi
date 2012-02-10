@@ -74,7 +74,7 @@ TEST(FLOW_3D_RICHARDS) {
   RPK->advance_to_steady_state();
 
   // derive dependent variable
-  Epetra_Vector& pressure = RPK->get_solution_cells();
+  Epetra_Vector& pressure = RPK->flow_state_next()->ref_pressure();
   Epetra_Vector  saturation(pressure);
   RPK->deriveSaturationFromPressure(pressure, saturation); 
 
@@ -83,13 +83,11 @@ TEST(FLOW_3D_RICHARDS) {
   GMV::write_cell_data(pressure, 0, "pressure");
   GMV::write_cell_data(saturation, 0, "saturation");
   GMV::write_cell_data(*(S.get_vertical_permeability()), 0, "vert_permeability");
-  GMV::write_cell_data(RPK->get_Krel_cells(), 0, "rel_permeability");
   GMV::close_data_file();
 
   // check the pressure profile
   int ncells = mesh->count_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  Epetra_Vector& p = RPK->get_solution_cells();
-  for( int c=0; c<ncells; c++) CHECK(p[c] > 4500.0 && p[c] < 101325.0);
+  for( int c=0; c<ncells; c++) CHECK(pressure[c] > 4500.0 && pressure[c] < 101325.0);
 
   delete RPK;
 }
