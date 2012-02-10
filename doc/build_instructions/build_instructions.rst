@@ -14,9 +14,8 @@ TPLs using the tpl-build project. Instructions on how to use this project
 are located in tpl_build_instructions.rst. Once the user has installed all
 the required TPLs, the process to build Amanzi is:
 
-* Generate build files (Makefile, XCode project files, etc.) using 
- CMake.
-* Use the build files to build Amanzi, i.e. 'make'
+* Generate build files (Makefile, XCode project files, etc.) using CMake.
+* Use the build files to build Amanzi, i.e. ``make``.
   
 
 CMake Quickstart
@@ -53,7 +52,7 @@ passed in as a configuration setting on the command line are
 * CMAKE_<language>_FLAGS add <language> compile flags where language is
   C, CXX (C++) or Fortran.
 * CMAKE_BUILD_TYPE a string value of Debug or Release that controls optimized
-(Release) or debug (Debug) builds.
+  (Release) or debug (Debug) builds.
 * BUILD_SHARED_LIBS a boolean flag (ON,OFF) that controls if shared libraries
   are built.
 
@@ -98,28 +97,33 @@ are documented here.
 
 
 ENABLE_Structured:
+
         :Default: OFF
         :Description: Build structured mesh capability. 
         :Dependencies: CCSE
 
 
 ENABLE_Unstructured:
+
         :Default: OFF
         :Description: Build unstructured mesh capability.
         :Dependencies: At leat one of the mesh frame works, STK, MSTK or MOAB.
 
 
 ENABLE_DBC:
+
         :Default: ON
         :Description: Enable design by contract build.
         :Dependencies:
 
 
 ENABLE_CGNS:
+
         :Default: OFF
         :Description: Build support to create CGNS visualization files.
         :Dependencies: CGNS, requires a specific version. See Software Requirements
                        for more information.
+
 
 ENABLE_Config_Report:
 
