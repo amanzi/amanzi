@@ -171,40 +171,29 @@ namespace Amanzi {
   int TreeVector::NormInf(double* ninf) const {
     // Take the L_Inf norm of this.
     if (ninf == NULL) return 1;
+    if (data_.size() + subvecs_.size() == 0) return 1;
 
-    bool got_one_already(false);
+    int ierr = 0;
+    *ninf = 0.0;
     double ninf_loc;
     for (std::vector< Teuchos::RCP<Epetra_MultiVector> >::const_iterator datum = data_.begin();
-         datum != data_.end(); ++datum)
+         datum != data_.end(); ++datum) {
       for (int i=0; i<(*datum)->NumVectors(); i++) {
-        (*(*datum))(i)->NormInf(&ninf_loc);
-        if (got_one_already) {
-          if (ninf_loc > *ninf) {
-            *ninf = ninf_loc;
-          }
-        } else {
-          *ninf = ninf_loc;
-          got_one_already = true;
-        }
-      }
-
-    for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
-         subvec != subvecs_.end(); ++subvec) {
-      (*subvec)->NormInf(&ninf_loc);
-      if (got_one_already) {
+        ierr = (*(*datum))(i)->NormInf(&ninf_loc);
+        if (ierr) return ierr;
         if (ninf_loc > *ninf) {
           *ninf = ninf_loc;
         }
-      } else {
-        *ninf = ninf_loc;
-        got_one_already = true;
       }
     }
 
-    if (! got_one_already) {
-      return 1;
-    } else {
-      return 0;
+    for (std::vector< Teuchos::RCP<TreeVector> >::const_iterator subvec = subvecs_.begin();
+         subvec != subvecs_.end(); ++subvec) {
+      ierr = (*subvec)->NormInf(&ninf_loc);
+      if (ierr) return ierr;
+      if (ninf_loc > *ninf) {
+        *ninf = ninf_loc;
+      }
     }
   }
 
@@ -249,6 +238,7 @@ namespace Amanzi {
   int TreeVector::Dot(const Vector& other, double* result) const {
     // compute the dot product of all components of the tree vector
     // viewed as one flat vector
+    int ierr = 0;
 
     const TreeVector *other_ptr = static_cast<const TreeVector *> (&other);
     if (!other_ptr) return 1;
@@ -258,7 +248,7 @@ namespace Amanzi {
     *result = 0.0;
     for (unsigned int i = 0; i != data_.size(); ++i) {
       double intermediate_result[(other_ptr->data_[i])->NumVectors()];
-      int ierr = data_[i]->Dot( *(other_ptr->data_[i]),intermediate_result);
+      ierr = data_[i]->Dot( *(other_ptr->data_[i]),intermediate_result);
       if (ierr) return ierr;
       for (unsigned int j=0; j<(other_ptr->data_[i])->NumVectors(); ++j) {
         *result += intermediate_result[j];
@@ -266,12 +256,12 @@ namespace Amanzi {
     }
     for (unsigned int i = 0; i != subvecs_.size(); ++i) {
       double intermediate_result;
-      int ierr = subvecs_[i]->Dot(*(other_ptr->subvecs_[i]), &intermediate_result);
+      ierr = subvecs_[i]->Dot(*(other_ptr->subvecs_[i]), &intermediate_result);
       if (ierr) return ierr;
       *result += intermediate_result;
     }
 
-    return 0;
+    return ierr;
   };
 
   // this <- scalarA*A + scalarThis*this
