@@ -1,19 +1,68 @@
 #include <winstd.H>
 
-#include "PorousMedia.H"
+#include <PorousMedia.H>
 
-Amr* Observation::amrp = 0;
 
-Observation::Observation()
-    : initialized(false)
+
+Amr* Observation::amrp;
+std::map<std::string, int> Observation::obs_type_list;
+
+static bool initialized = false;
+
+void
+Observation::Cleanup ()
 {
-  obs_type_list["average"]          = 0;
-  obs_type_list["integral"]         = 1;
-  obs_type_list["time_integral"]    = 2;
-  obs_type_list["squared_integral"] = 3;
-  obs_type_list["flux"]             = 4;
-  obs_type_list["point_sample"]     = 5;
-}  
+    Observation::amrp = 0;
+    Observation::obs_type_list.clear();
+    initialized = false;
+}
+
+void
+Observation::Initialize()
+{
+    BoxLib::ExecOnFinalize(Observation::Cleanup);
+    initialized = true;
+    
+    obs_type_list["average"]          = 0;
+    obs_type_list["integral"]         = 1;
+    obs_type_list["time_integral"]    = 2;
+    obs_type_list["squared_integral"] = 3;
+    obs_type_list["flux"]             = 4;
+    obs_type_list["point_sample"]     = 5;
+}
+
+
+Observation::Observation(const std::string& name,
+                         const std::string& field,
+                         const Region&      region,
+                         const std::string& obs_type,
+                         const Array<Real>& times)
+    : name(name), field(field), region(region), obs_type(obs_type), times(times)
+{
+    if (!initialized) {
+        Initialize();
+    }
+
+    if (obs_type_list.find(obs_type) == obs_type_list.end()) {
+        BoxLib::Abort("Unsupported observation type");
+    }
+}
+
+Observation::Observation(const std::string& name,
+                         const std::string& field,
+                         const Region&      region,
+                         const std::string& obs_type,
+                         const std::string& event_label)
+    : name(name), field(field), region(region), obs_type(obs_type), event_label(event_label)
+{
+    if (!initialized) {
+        Initialize();
+    }
+
+    if (obs_type_list.find(obs_type) == obs_type_list.end()) {
+        BoxLib::Abort("Unsupported observation type");
+    }
+}
 
 void 
 Observation::process(Real t_old, 
@@ -104,7 +153,9 @@ Observation::point_sample (Real time)
   const int finest_level = amrp->finestLevel();
   const Array<IntVect>& refRatio = amrp->refRatio();
 
-  const pointRegion* ptreg = dynamic_cast<const pointRegion*>(PorousMedia::region_array[region]);
+
+  const Region* regPtr = &region;
+  const pointRegion* ptreg = dynamic_cast<const pointRegion*>(regPtr);
   if (ptreg == 0) 
   {
       BoxLib::Abort("Point Sample observation requires a point region");
@@ -117,17 +168,21 @@ Observation::point_sample (Real time)
       // Compute IntVect at this level of cell containing this point
       IntVect idx = Index(*ptreg,lev,amrp);
 
-      // Decide if this processor owns a state fab at this level containing this point
-      const MultiFab& S_new = amrp->getLevel(lev).get_new_data(State_Type);
+      // Decide if this processor owns a fab at this level containing this point
+      //
+      // FIXME: Do test on grids, derive when necessary
+      //
+      int nGrow = 0;
+      const MultiFab* S_new = amrp->getLevel(lev).derive(field,time,nGrow);
 
-      for (MFIter mfi(S_new); mfi.isValid() && proc_with_data<0; ++mfi)
+      for (MFIter mfi(*S_new); mfi.isValid() && proc_with_data<0; ++mfi)
       {
           const Box& box = mfi.validbox();
 
           if (box.contains(idx))
           {
               proc_with_data = ParallelDescriptor::MyProc();
-              value = S_new[mfi](idx,id);
+              value = (*S_new)[mfi](idx,0);
           }
       }
       ParallelDescriptor::ReduceIntMax(proc_with_data);
@@ -158,7 +213,8 @@ Observation::integral_and_volume (Real time)
             }
         }
 
-      const MultiFab& S_new = amrp->getLevel(lev).get_new_data(State_Type);
+      int nGrow = 0;
+      const MultiFab* S = amrp->getLevel(lev).derive(field,time,nGrow);
       BoxArray baf;
       if (lev < finest_level)
         {
@@ -171,14 +227,14 @@ Observation::integral_and_volume (Real time)
       Real vol = 1.;
       for (int i=0;i<BL_SPACEDIM;i++) vol *= dx[i];
 
-      for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+      for (MFIter mfi(*S); mfi.isValid(); ++mfi)
         {
           const Box& cbox = mfi.validbox();
           fabVOL.resize(cbox,1);
 
           // Initialize to zero everywhere, then set to 1 inside region
           fabVOL.setVal(0);
-          PorousMedia::region_array[region]->setVal(fabVOL,vol,0,dx,0);
+          region.setVal(fabVOL,vol,0,dx,0);
 
           // Zero where covered with better data
           if (lev < finest_level)
@@ -195,7 +251,7 @@ Observation::integral_and_volume (Real time)
           vol_inside += fabVOL.sum(0) * vol_scale_lev;
           
           fabINT.resize(cbox,1);
-          fabINT.copy(S_new[mfi],id,0,1);
+          fabINT.copy((*S)[mfi],0,0,1);
           fabINT.mult(fabVOL);
           int_inside += fabINT.sum(0);
         }

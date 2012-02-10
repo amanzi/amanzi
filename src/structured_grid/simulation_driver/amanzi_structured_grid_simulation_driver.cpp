@@ -1,12 +1,12 @@
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
-#include "Amr.H"
+#include "PMAmr.H"
 #include "PorousMedia.H"
 
 #include "ParmParseHelpers.H"
 
 void
-Structured_observations(const Array<Observation>& observation_array,
+Structured_observations(const PArray<Observation>& observation_array,
 			Amanzi::ObservationData& observation_data)
 {
   for (int i=0; i<observation_array.size(); ++i)
@@ -63,6 +63,8 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
 
     ParmParse pp;
 
+    ParmParse::dumpTable(std::cout,true);
+
     max_step  = -1;    
     strt_time =  0.0;  
     stop_time = -1.0;  
@@ -81,7 +83,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     }
 
 
-    Amr* amrptr = new Amr;
+    PMAmr* amrptr = new PMAmr;
 
     amrptr->init(strt_time,stop_time);
 
@@ -93,7 +95,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     }
 
     // Process the observations
-    const Array<Observation>& observation_array = PorousMedia::TheObservationArray();
+    const PArray<Observation>& observation_array = PorousMedia::TheObservationArray();
 
     Structured_observations(observation_array,output_observations);
 
