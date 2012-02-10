@@ -120,8 +120,8 @@ public:
 
   void create_storage();
 
-  void write_vis (Amanzi::Vis& vis);
-  void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames);
+  void write_vis (Amanzi::Vis& vis, bool force=false);
+  void write_vis (Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force=false);
   void set_compnames(std::vector<std::string>& compnames_);
 
 private:

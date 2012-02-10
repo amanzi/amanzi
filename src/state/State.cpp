@@ -789,8 +789,8 @@ void State::set_linear_saturation ( const Teuchos::ParameterList& lin_s_list, co
 
 
 
-void State::write_vis(Amanzi::Vis& vis) {
-  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() ) {
+void State::write_vis(Amanzi::Vis& vis, bool force) {
+  if ((force==true) || (vis.dump_requested(get_cycle()) && !vis.is_disabled() ))  {
     using Teuchos::OSTab;
     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -828,10 +828,10 @@ void State::write_vis(Amanzi::Vis& vis) {
 
 
 
-void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames)  {
-  write_vis(vis);
+void State::write_vis(Amanzi::Vis& vis, Epetra_MultiVector *auxdata, std::vector<std::string>& auxnames, bool force)  {
+  write_vis(vis, force);
 
-  if (vis.dump_requested(get_cycle()) && !vis.is_disabled() ) {
+  if ( (force == false) || (vis.dump_requested(get_cycle()) && !vis.is_disabled() ) ) {
     // write auxillary data
     if (auxdata != NULL)  {
       vis.write_vector( *auxdata , auxnames);

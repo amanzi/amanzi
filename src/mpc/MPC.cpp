@@ -442,14 +442,19 @@ void MPC::cycle_driver () {
 
 
       // write visualization if requested
+      bool force(false);
+      if ( abs(S->get_time() - T1) < 1e-7) { 
+	force = true;
+      }
+
       if (chemistry_enabled) {
         // get the auxillary data
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();
         
         // write visualization data for timestep if requested
-        S->write_vis(*visualization, &(*aux), auxnames);
+        S->write_vis(*visualization, &(*aux), auxnames, force);
       } else {
-        S->write_vis(*visualization);
+        S->write_vis(*visualization, force);
       }
 
       // write restart dump if requested
