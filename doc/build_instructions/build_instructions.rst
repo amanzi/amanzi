@@ -4,7 +4,7 @@ Building and Installing Amanzi
 
 
 Building Amanzi
-===============
+---------------
 
 Amanzi depends on several external software packages (TPL) to build. Before
 building Amanzi a user must either build each of these TPLs, provide
@@ -19,7 +19,7 @@ the required TPLs, the process to build Amanzi is:
   
 
 CMake Quickstart
-----------------
+================
 
 CMake is a build system generation tool available on UNIX flavor systems,
 Macs and Windows. Amanzi requires CMake version 2.8.4 or higher. Visit
@@ -61,7 +61,7 @@ HTML documentation.
 
 
 Amanzi TPL Configuration Settings
----------------------------------
+=================================
 
 We recommend that users build all the TPLs using the Amanzi TPL-Build project.
 This will create a CMake file that will initialize the cache settings for all 
@@ -89,7 +89,7 @@ are CMake list types. Each directory or filename should be separated with
 a semicolon.
 
 Amanzi Build Configuration Settings
------------------------------------
+===================================
 
 The naming convention for Amanzi build options is ENABLE_<Feature_Name>
 and is a boolean type (ON,OFF). The current build options with the default values
