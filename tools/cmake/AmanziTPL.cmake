@@ -25,6 +25,14 @@ set_feature_info(Boost
                  "http://www.boost.org"
                  "Required by the MPC")
 
+if ( Boost_VERSION) 
+
+  if ( ${Boost_VERSION} VERSION_LESS 1.46 )
+    message(WARNING "Found Boost version ${Boost_VERSION} which"
+                    " is older than the supported (1.46) version.")
+  endif()
+
+endif()
 
 ##############################################################################
 # HDF5 - http://www.hdfgroup.org/HDF5/
