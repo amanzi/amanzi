@@ -336,6 +336,11 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       *out << itr << ": error = " << error << std::endl;
     }
 
+    if (error > 1.0e+20) {
+      // the solver threatening to diverge
+      throw state.mitr;
+    }
+
     // Check for convergence
     if (((error < state.ntol) && (itr > 1)) || (error < 0.01 * state.ntol)) {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
