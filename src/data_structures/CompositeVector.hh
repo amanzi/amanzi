@@ -17,6 +17,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CombineMode.h"
+#include "Epetra_Import.h"
 
 #include "Mesh.hh"
 
@@ -41,7 +42,7 @@ namespace Amanzi {
 
     // copy constructor / assignment
     CompositeVector(const CompositeVector& other);
-    CompositeVector(const CompositeVector& other, bool ghosted);
+    CompositeVector(const CompositeVector& other, ConstructMode mode);
     CompositeVector& operator=(const CompositeVector& other);
 
     // view data
@@ -63,12 +64,14 @@ namespace Amanzi {
     // Modes shown in Epetra_CombineMode.h, but the default is Insert, which
     // overwrites the current ghost value with the (unique) new master value.
     void ScatterMasterToGhosted(Epetra_CombineMode mode=Insert);
+    void ScatterMasterToGhosted(std::string name, Epetra_CombineMode mode=Insert);
 
     // -- Combine ghosted values back to master values.
     // Modes shown in Epetra_CombineMode.h, but the default is InsertAdd,
     // where off-process values are first summed, then replace the current
     // value.
     void GatherGhostedToMaster(Epetra_CombineMode mode=InsertAdd);
+    void GatherGhostedToMaster(std::string name, Epetra_CombineMode mode=InsertAdd);
 
     // assorted vector operations for use by time integrators?
     // These may make life much easier for time integration of the full
@@ -81,16 +84,18 @@ namespace Amanzi {
     int PutScalar(std::vector<double> scalar);
     int PutScalar(std::string name, double scalar);
     int PutScalar(std::string name, std::vector<double> scalar);
-    int PutScalar(int blockid, double scalar);
-    int PutScalar(int blockid, std::vector<double> scalar);
-    int PutScalar(std::string name, int blockid, double scalar);
-    int PutScalar(std::string name, int blockid, std::vector<double> scalar);
+    int PutScalar(int set_id, double scalar);
+    int PutScalar(int set_id, std::vector<double> scalar);
+    int PutScalar(std::string name, int set_id, double scalar);
+    int PutScalar(std::string name, int set_id, std::vector<double> scalar);
 
     // -- this <- value*this
-    void Scale(double value);
+    int Scale(double value);
+    int Scale(std::string name, double value);
 
     // -- this <- this + scalarA
-    void Shift(double scalarA);
+    int Shift(double scalarA);
+    int Shift(std::string name, double scalarA);
 
     // -- result <- other \dot this
     int Dot(const CompositeVector& other, double* result) const;
@@ -108,31 +113,31 @@ namespace Amanzi {
 
     // -- norms
     int NormInf(double* norm) const;
-    int NormTwo(double* norm) const;
+    int Norm1(double* norm) const;
+    int Norm2(double* norm) const;
 
   private:
     void VerifyAndCreateData_();
-    void CreateOwnedView_(unsigned int index);
+    void CreateOwnedView_(unsigned int index) const;
 
     Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 
-    int num_components_;
-    std::map< std::string, unsigned int > indexmap_;
+    unsigned int num_components_;
+    mutable std::map< std::string, unsigned int > indexmap_;
     bool ghosted_;
 
     std::vector< std::string > names_;
     std::vector< Teuchos::RCP<Epetra_MultiVector> > data_;
-    std::vector< Teuchos::RCP<Epetra_MultiVector> > owned_data_; // generated lazily
+    mutable std::vector< Teuchos::RCP<Epetra_MultiVector> > owned_data_; // generated lazily
     std::vector< AmanziMesh::Entity_kind > locations_;
     std::vector< int > num_dofs_;
     std::vector< int > cardinalities_;
-    std::vector< Epetra_Import importer > importers_;
-    std::vector< Epetra_Import importer > exporters_;
+    std::vector< Teuchos::RCP<Epetra_Import> > importers_;
 
     std::vector< std::vector< std::string > > subfield_names_;
 
-    Teuchos::RCP<CompositeVector> owned_composite_; // generated lazily
-    Teuchos::RCP<Epetra_Vector> owned_vector_; // generated lazily
+    mutable Teuchos::RCP<CompositeVector> owned_composite_; // generated lazily
+    mutable Teuchos::RCP<Epetra_Vector> owned_vector_; // generated lazily
   };
 
 } // namespace
