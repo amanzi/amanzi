@@ -260,6 +260,10 @@ Usage:
 
    * [U] `"steady time step increase factor"` [double] When time step increase is possible during the steady calculation, use this factor.
 
+   * [U] `"steady max time step"` [double] During the steady state solve, the time step is not allowed to grow past this value.
+
+   * [U] `"steady max preconditioner lag iterations"` [int] During the steady state solve, the preconditioner is allowed to be lagged at most this amount of iterations.
+
   * `"Structured Algorithm`" [list]
 
    * `"Basic Algorithm Settings`" [list] accepts a list of input parameters that further define the algorithmic details of the structured-grid algorithms for flow, transport and chemistry. (optional)
