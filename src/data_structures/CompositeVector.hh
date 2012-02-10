@@ -22,31 +22,35 @@
 
 namespace Amanzi {
 
+  typedef enum { CONSTRUCT_WITHOUT_DATA } ConstructMode;
+
   class CompositeVector {
 
   public:
     // Constructors
-    CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                    std::vector<AmanziMesh::Entity_kind> components,
-                    std::vector<int> num_dofs);
+    CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh, std::vector<std::string> names,
+                    std::vector<AmanziMesh::Entity_kind> locations,
+                    std::vector<int> num_dofs, bool ghosted=true);
 
-    CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                    std::vector<AmanziMesh::Entity_kind> components, int num_dofs=1);
+    CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh, std::vector<std::string> names,
+                    std::vector<AmanziMesh::Entity_kind> locations,
+                    int num_dofs=1, bool ghosted=true);
 
-    CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                    AmanziMesh::Entity_kind component, int num_dofs=1);
+    CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh, std::string name,
+                    AmanziMesh::Entity_kind location, int num_dofs=1, bool ghosted=true);
 
+    // copy constructor / assignment
     CompositeVector(const CompositeVector& other);
-
-    // operator=
-    operator=(const CompositeVector& other);
+    CompositeVector(const CompositeVector& other, bool ghosted);
+    CompositeVector& operator=(const CompositeVector& other);
 
     // view data
     // -- Access a view of a single component's data.
     // Ghosted views are simply the vector itself, while non-ghosted views are
     // lazily generated.
-    Teuchos::RCP<const Epetra_MultiVector> ViewComponent(int index=0, bool ghosted=false) const;
-    Teuchos::RCP<Epetra_MultiVector> ViewComponent(int index=0, bool ghosted=false);
+    Teuchos::RCP<const Epetra_MultiVector> ViewComponent(std::string name="",
+            bool ghosted=false) const;
+    Teuchos::RCP<Epetra_MultiVector> ViewComponent(std::string="", bool ghosted=false);
 
     // -- Access a view of the owned composite data.
     // All meta-data is copied, but pointers to the data are replaced by
@@ -75,10 +79,12 @@ namespace Amanzi {
     // -- Insert value into data.
     int PutScalar(double scalar);
     int PutScalar(std::vector<double> scalar);
-    int PutScalar(int index, double scalar);
-    int PutScalar(int index, std::vector<double> scalar);
-    int PutScalar(int index, int blockid, double scalar);
-    int PutScalar(int index, int blockid, std::vector<double> scalar);
+    int PutScalar(std::string name, double scalar);
+    int PutScalar(std::string name, std::vector<double> scalar);
+    int PutScalar(int blockid, double scalar);
+    int PutScalar(int blockid, std::vector<double> scalar);
+    int PutScalar(std::string name, int blockid, double scalar);
+    int PutScalar(std::string name, int blockid, std::vector<double> scalar);
 
     // -- this <- value*this
     void Scale(double value);
@@ -105,16 +111,28 @@ namespace Amanzi {
     int NormTwo(double* norm) const;
 
   private:
+    void VerifyAndCreateData_();
+    void CreateOwnedView_(unsigned int index);
+
     Teuchos::RCP<AmanziMesh::Mesh> mesh_;
 
     int num_components_;
+    std::map< std::string, unsigned int > indexmap_;
+    bool ghosted_;
+
+    std::vector< std::string > names_;
     std::vector< Teuchos::RCP<Epetra_MultiVector> > data_;
-    std::vector< Teuchos::RCP<Epetra_MultiVector> > owned_data_; // generated lazily?
-    std::vector< AmanziMesh::Entity_kind > components_;
+    std::vector< Teuchos::RCP<Epetra_MultiVector> > owned_data_; // generated lazily
+    std::vector< AmanziMesh::Entity_kind > locations_;
     std::vector< int > num_dofs_;
     std::vector< int > cardinalities_;
+    std::vector< Epetra_Import importer > importers_;
+    std::vector< Epetra_Import importer > exporters_;
 
-    Teuchos::RCP<CompositeVector> owned_composite_; // generated lazily?
+    std::vector< std::vector< std::string > > subfield_names_;
+
+    Teuchos::RCP<CompositeVector> owned_composite_; // generated lazily
+    Teuchos::RCP<Epetra_Vector> owned_vector_; // generated lazily
   };
 
 } // namespace
