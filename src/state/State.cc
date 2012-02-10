@@ -88,7 +88,7 @@ State::State(const State& s) {
 // should be copy-constructed from that initial State.
 State& State::operator=(const State& s) {
   if (fields_.size() != s.fields_.size()) {
-    Errors::Message message("Attempted copy of non-compatible states.");
+    Errors::Message message("Attempted assignment of non-compatible states.");
     Exceptions::amanzi_throw(message);
   }
   if (this != &s) {
