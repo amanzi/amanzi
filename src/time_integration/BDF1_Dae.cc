@@ -35,12 +35,13 @@ BDF1Dae::~BDF1Dae() {
 
 
 void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList) {
+
   TEST_FOR_EXCEPT(is_null(paramList));
 
   // Validate and set the parameter defaults.  Here, the parameters are
   // validated and the state of *this is not changed unless the parameter
   // validation succeeds.  Also, any validators that are defined for various
-  // parameters are passed along so that they can be used in extracting
+  // parameters are passed along so theu they can be used in extracting
   // values!
 
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
@@ -56,6 +57,15 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.ntol = paramList_->get<double>("steady nonlinear tolerance");
   state.hred = paramList_->get<double>("steady time step reduction factor");
   state.hinc = paramList_->get<double>("steady time step increase factor");
+  state.hlimit = paramList_->get<double>("steady max time step");
+  state.maxpclag = paramList_->get<int>("steady max preconditioner lag iterations");
+
+  // sanity check
+  if ( ! ((state.minitr < state.maxitr) && (state.maxitr < state.mitr) )) {
+    Errors::Message m("steady state paramters are wrong, we need min iterations < max iterations < limit iterations");
+    Exceptions::amanzi_throw(m);        
+  }
+
   
   int maxv = state.mitr-1;
   int mvec = 10;
@@ -100,8 +110,7 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
   using Teuchos::tuple;
   static RCP<const ParameterList> validParams;
   if (is_null(validParams)) {
-    RCP<ParameterList>
-        pl = Teuchos::rcp(new ParameterList("steady time integrator"));
+    RCP<ParameterList>  pl = Teuchos::rcp(new ParameterList("steady time integrator"));
     Teuchos::setIntParameter("steady max iterations",
                              5,
                              "If during the steady state calculation, the number of iterations of the nonlinear solver exceeds this number, the subsequent time step is reduced.",
@@ -126,6 +135,14 @@ Teuchos::RCP<const Teuchos::ParameterList> BDF1Dae::getValidParameters() const {
                              1.2,
                              "When time step increase is possible during the steady calculation, use this factor.",
                              &*pl);
+    Teuchos::setDoubleParameter("steady max time step",
+                              1.0,
+                              "The maximum allowed time step.",
+                              &*pl);
+    Teuchos::setIntParameter("steady max preconditioner lag iterations",
+                              1,
+                              "The maximum number of time steps that the preconditioner is allowed to be lagged.",
+                              &*pl);
     Teuchos::setupVerboseObjectSublist(&*pl);
     validParams = pl;
   }
@@ -180,7 +197,7 @@ void BDF1Dae::set_initial_state(const double t, const Epetra_Vector& x, const Ep
   state.uhist->flush_history(t, x, xdot);
   state.seq = 0;
   state.usable_pc = false;
-
+  state.pclagcount = 0;
 }
 
 
@@ -219,7 +236,7 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   
   // Predicted solution (initial value for the nonlinear solver)
   Epetra_Vector up(map);
-  
+
   if ( state.uhist->history_size() > 1) {
     state.uhist->interpolate_solution(tnew,  up);
   } else  {
@@ -231,10 +248,15 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
   Epetra_Vector u0(map);
   u0 = u;
   
+  if (state.pclagcount > state.maxpclag) {
+    state.usable_pc = false;
+    state.pclagcount = 0;
+  }
   
   if (!state.usable_pc) {
     // update the preconditioner (we use the predicted solution at the end of the time step)
     state.updpc_calls++;
+    state.pclagcount++;
     int errc = 0;
     fn.update_precon (tnew, up, h, errc);
     if (errc != 0) {
@@ -254,15 +276,15 @@ void BDF1Dae::bdf1_step(double h, Epetra_Vector& u, double& hnext) {
     // we end up in here either if the solver took too many iterations, 
     // or if it took too few
     if (itr > state.maxitr && itr <= state.mitr) { 
-      hnext = state.hred * h;
+      hnext = std::min(state.hred * h, state.hlimit);
       state.usable_pc = false;
     } else if (itr < state.minitr) {
-      hnext = state.hinc * h;
+      hnext = std::min( state.hinc * h, state.hlimit);
       state.usable_pc = false;
     } else if (itr > state.mitr) {
       u = usav; // restore the original u
       state.usable_pc = false;
-      hnext = h;
+      hnext = std::min(h, state.hlimit);
       throw itr;
     } 
   }
@@ -336,9 +358,9 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       *out << itr << ": error = " << error << std::endl;
     }
 
-    if (error > 1.0e+20) {
+    if (error > state.hlimit) {
       // the solver threatening to diverge
-      throw state.mitr;
+      throw state.mitr+1;
     }
 
     // Check for convergence

@@ -39,12 +39,14 @@ Transient_Richards_PK::Transient_Richards_PK(Teuchos::ParameterList &plist_,
   time_stepper = new BDF2::Dae(*RME, problem->Map());
   time_stepper->setParameterList(bdf2_list_p);
 
+
   // then the BDF1 solver
   Teuchos::RCP<Teuchos::ParameterList> bdf1_list_p(new Teuchos::ParameterList(rp_list.sublist("steady time integrator")));
 
   steady_time_stepper = new Amanzi::BDF1Dae(*RME, problem->Map());
-  steady_time_stepper->setParameterList(bdf1_list_p);
 
+  steady_time_stepper->setParameterList(bdf1_list_p);
+  
   // initialize the water saturation for vis
   GetSaturation( FS->get_water_saturation() );
 

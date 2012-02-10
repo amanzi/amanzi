@@ -629,7 +629,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
             steady_time_integrator.set<double>("steady nonlinear tolerance", num_list.get<double>("steady nonlinear tolerance",1.0));
             steady_time_integrator.set<double>("steady time step reduction factor", num_list.get<double>("steady time step reduction factor",0.8));
             steady_time_integrator.set<double>("steady time step increase factor", num_list.get<double>("steady time step increase factor",1.2));
-	    steady_time_integrator.set<double>("steady max time step", num_list.get<double>("steady max time step",1e+8));
+	    steady_time_integrator.set<double>("steady max time step", num_list.get<double>("steady max time step",1.0e+8));
 	    steady_time_integrator.set<int>("steady max preconditioner lag iterations", num_list.get<int>("steady max preconditioner lag iterations",5));
           } else {
             // set some probably not so good defaults for the steady computation
@@ -639,7 +639,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
             steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
             steady_time_integrator.set<double>("steady time step reduction factor",0.8);
             steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	    steady_time_integrator.set<double>("steady max time step", 1e+8);
+	    steady_time_integrator.set<double>("steady max time step", 1.0e+8);
 	    steady_time_integrator.set<int>("steady max preconditioner lag iterations", 5);
           }
         } else {
@@ -650,7 +650,7 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
           steady_time_integrator.set<double>("steady nonlinear tolerance",1.0);
           steady_time_integrator.set<double>("steady time step reduction factor",0.8);
           steady_time_integrator.set<double>("steady time step increase factor",1.2);
-	  steady_time_integrator.set<double>("steady max time step", 1e+8);
+	  steady_time_integrator.set<double>("steady max time step", 1.0e+8);
 	  steady_time_integrator.set<int>("steady max preconditioner lag iterations", 5);
         }
         steady_time_integrator.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
