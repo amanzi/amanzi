@@ -1,6 +1,6 @@
 #include "amanzi_structured_grid_simulation_driver.H"
 #include "ParmParse.H"
-#include "Amr.H"
+#include "PMAmr.H"
 #include "PorousMedia.H"
 
 #include "ParmParseHelpers.H"
@@ -83,7 +83,7 @@ AmanziStructuredGridSimulationDriver::Run (const MPI_Comm&               mpi_com
     }
 
 
-    Amr* amrptr = new Amr;
+    PMAmr* amrptr = new PMAmr;
 
     amrptr->init(strt_time,stop_time);
 

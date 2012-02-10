@@ -5027,17 +5027,25 @@ c
       REAL_T  tforces(DIMV(tf),nvar-ncomps)
       REAL_T  rockphi(DIMV(rockphi))
       REAL_T  sat,satn
+      integer cWater
 
-      do j = lo(2), hi(2)
-         do i = lo(1), hi(1)
-            do n = ncomps+1,nvar
-               sn(i,j,n) = s(i,j,n)
-            end do
+c     First update all tracers with no change
+      sn(:,:,ncomps+1:nvar) = s(:,:,ncomps+1:nvar)
 
-            sat = s(i,j,1)/rhoval(1)
-            satn = sn(i,j,1)/rhoval(1)
-            do n = 1,idx_total_n
-               idx = idx_total(n)
+c     Then, advect/force those in the "Total" group
+c     FIXME: Assume first component is water, and that all tracers of interest are in water
+      cWater = 1
+
+c     idx_total is an array of 0-based arrays selecting a subset of the tracers
+c     in the "Total" group
+
+      do n = 1,idx_total_n
+         idx = idx_total(n) + 1
+
+         do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+               sat = s(i,j,cWater)/rhoval(cWater)
+               satn = sn(i,j,cWater)/rhoval(cWater)
                if (satn .gt. zero) then
                   sn(i,j,idx) = (sat*s(i,j,idx)
      &                 - dt*aofs(i,j,idx)/rockphi(i,j))/satn

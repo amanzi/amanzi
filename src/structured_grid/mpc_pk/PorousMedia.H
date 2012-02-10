@@ -51,7 +51,7 @@ class PMBld
 				Real            time);
 };
 
-class HydrostaticData;
+
 
 class PorousMedia
   :
@@ -246,6 +246,10 @@ public:
   {
     return gravity;
   }
+
+  static void coarseTimeStep (Real stop_time);
+
+
   //
   // Fill the 'dcomp' component of MultiFab 'mf' from the 'varname'
   // component of plotfile 'pltfile'.
@@ -283,6 +287,9 @@ public:
 
   static PArray<RegionData>& BCs() {return bc_array;}
   static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
+
+  static Array<std::string> vis_cycle_macros;
+  static Array<std::string> chk_cycle_macros;
 
 protected:
 

@@ -1545,7 +1545,6 @@ namespace Amanzi {
             }
         }
  
-        
         //
         // convert output to structured format
         //
@@ -1568,20 +1567,131 @@ namespace Amanzi {
 
             const ParameterList& rlist = parameter_list.sublist("Output");
       
-            // cycle macros
-            const ParameterList& clist = rlist.sublist("Cycle Macros");
-            std::map<std::string,int> cycle_map;
-            for (ParameterList::ConstIterator i=clist.begin(); i!=clist.end(); ++i) {
-                std::string label = clist.name(i);
-                const ParameterList& rslist = clist.sublist(label);
-                Array<int> tmp = rslist.get<Array<int> >("Start_Period_Stop");
-                cycle_map[label] = tmp[1];
+            // time macros
+            std::set<std::string> time_macros;
+            const ParameterList& tlist = rlist.sublist("Time Macros");
+            ParameterList tmPL;
+            for (ParameterList::ConstIterator i=tlist.begin(); i!=tlist.end(); ++i) {
+                std::string label = underscore(tlist.name(i));
+                const ParameterList& rslist = tlist.sublist(label);
+                Array<double> times, vals;
+                
+                ParameterList tPL;
+                for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
+                    const std::string& name = rslist.name(ii);
+                    
+                    if (name == "Times") {
+                        times = rslist.get<Array<double> >("Times");
+                    }
+                    else if (name == "Start_Period_Stop") {
+                        vals = rslist.get<Array<double> >("Start_Period_Stop");
+                    }
+                    else {
+                        std::cerr << "Invalid parameter in time macro  \"" << name
+                                  << "\""  << std::endl;
+                        throw std::exception();
+                    }
+                    
+                    std::string type;
+                    if (times.size()) {
+                        if (vals.size()) {
+                            std::cerr << "Cannot specify both time values and periods for time macro  \"" << name
+                                      << "\""  << std::endl;
+                            throw std::exception();
+                        }
+                        type = "times";
+                        tPL.set<Array<double> >("times",times);
+                    }
+                    else {
+                        if (vals.size()!=3) {
+                            std::cerr << "Incorrect number of values in time macro:  \"" << name
+                                      << "\""  << std::endl;
+                            throw std::exception();
+                        }
+                        type = "period";
+                        tPL.set<double>("start",vals[0]);
+                        tPL.set<double>("period",vals[1]);
+                        tPL.set<double>("stop",vals[2]);
+                    }
+                    tPL.set<std::string>("type",type);
+                    tmPL.set(label,tPL);
+                    time_macros.insert(label);
+                }
             }
+            amr_list.set("time_macro",tmPL);
+
+            Array<std::string> tma(time_macros.size());
+            int cnt = 0;
+            for (std::set<std::string>::const_iterator it=time_macros.begin(); it!=time_macros.end(); ++it) {
+                tma[cnt++] = *it;
+            }
+            amr_list.set<Array<std::string> >("time_macros",tma);
+            
+
+
+            // cycle macros
+            std::set<std::string> cycle_macros;
+            const ParameterList& clist = rlist.sublist("Cycle Macros");
+            ParameterList cmPL;
+            for (ParameterList::ConstIterator i=clist.begin(); i!=clist.end(); ++i) {
+                std::string label = underscore(clist.name(i));
+                const ParameterList& rslist = clist.sublist(clist.name(i));
+                Array<int> cycles, vals;
+                
+                ParameterList cPL;
+                for (ParameterList::ConstIterator ii=rslist.begin(); ii!=rslist.end(); ++ii) {
+                    const std::string& name = rslist.name(ii);
+                    
+                    if (name == "Cycles") {
+                        cycles = rslist.get<Array<int> >(name);
+                    }
+                    else if (name == "Start_Period_Stop") {
+                        vals = rslist.get<Array<int> >(name);
+                    }
+                    else {
+                        std::cerr << "Invalid parameter in cycle macro  \"" << name
+                                  << "\""  << std::endl;
+                        throw std::exception();
+                    }
+                    
+                    if (cycles.size()) {
+                        if (vals.size()) {
+                            std::cerr << "Cannot specify both cycle values and periods for cycle macro  \"" << name
+                                      << "\""  << std::endl;
+                            throw std::exception();
+                        }
+                        cPL.set<std::string>("type","cycles");
+                        cPL.set<Array<int> >("cycles",cycles);
+                    }
+                    else {
+                        if (vals.size()!=3) {
+                            std::cerr << "Incorrect number of values in cycle macro:  \"" << name
+                                      << "\""  << std::endl;
+                            throw std::exception();
+                        }
+                        cPL.set<std::string>("type","period");
+                        cPL.set<int>("start",vals[0]);
+                        cPL.set<int>("period",vals[1]);
+                        cPL.set<int>("stop",vals[2]);
+                    }
+                }
+                cmPL.set(label,cPL);
+                cycle_macros.insert(label);
+            }
+            amr_list.set("cycle_macro",cmPL);
+
+            Array<std::string> cma(cycle_macros.size());
+            int ccnt = 0;
+            for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
+                cma[ccnt++] = *it;
+            }
+            amr_list.set<Array<std::string> >("cycle_macros",cma);
+            
+
 
             // vis data
             const ParameterList& vlist = rlist.sublist("Visualization Data");
             amr_list.set("plot_file",vlist.get<std::string>("File Name Base"));
-            amr_list.set("plot_int",cycle_map[vlist.get<std::string>("Cycle Macro")]);
             Array<std::string> visNames;
 
             if (vlist.isParameter("Variables")) {
@@ -1602,39 +1712,77 @@ namespace Amanzi {
                     visNames[i] = underscore(visNames[i]);
                 }
             }
-
+            else {
+                std::cerr << "Must select variables to put into visualization files from the list: (\"";
+                for (int j=0; j<user_derive_list.size(); ++j) {
+                    std::cout << "\""<< AMR_to_Amanzi_label_map[user_derive_list[j]] << "\" ";
+                }
+                std::cout << std::endl;
+                throw std::exception();
+            }
             amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
-            amr_list.set<std::string>("plot_vars",""); // Shut off, per spec
 
-            // check point
-            const ParameterList& plist = rlist.sublist("Checkpoint Data");
-            amr_list.set("check_file",plist.get<std::string>("File Name Base"));
-            amr_list.set("check_int",cycle_map[plist.get<std::string>("Cycle Macro")]);
-
-            // time macros
-            const ParameterList& tlist = rlist.sublist("Time Macros");
-            std::map<std::string,Array<double> > time_map;
-            for (ParameterList::ConstIterator i=tlist.begin(); i!=tlist.end(); ++i) {
-                std::string label = tlist.name(i);
-                const ParameterList& rslist = tlist.sublist(label);
-                if (rslist.isParameter("Values")) {
-                    Array<double> tmp = rslist.get<Array<double> >("Values");
-                    time_map[label] = tmp;
-                }
-                else if (rslist.isParameter("Start_Period_Stop")) {
-                    Array<double> tmp = rslist.get<Array<double> >("Start_Period_Stop");
-                    Array<double> timeseries;
-                    timeseries.push_back(0.e0);
-                    double timecount = 0.0;
-                    while (timecount < simulation_time) {
-                        timecount += tmp[1];
-                        timeseries.push_back(timecount);
+            Array<std::string> vis_cMacroNames;
+            if (vlist.isParameter("Cycle Macros")) {
+                const Array<std::string>& vcMacros = vlist.get<Array<std::string> >("Cycle Macros");
+                vis_cMacroNames.resize(vcMacros.size());
+                for (int j=0; j<vcMacros.size(); ++j) {
+                    std::string label = underscore(vcMacros[j]);
+                    if (cycle_macros.find(label) != cycle_macros.end()) {
+                        vis_cMacroNames[j] = label;
                     }
-                    time_map[label] = timeseries;
+                    else {
+                        std::cerr << "Unrecognized cycle macro in Visualization Data: \""
+                                  << vcMacros[j] << "\"" << std::endl;
 
+                        for (std::set<std::string>::const_iterator it=cycle_macros.begin(); it!=cycle_macros.end(); ++it) {
+                            std::cout << *it << " " << std::endl;
+                        }
+
+                        throw std::exception();
+                    }
                 }
-            }      
+            }
+            else {
+                std::cerr << "Must provide \"Cycle macros\" in Visualization Data" << std::endl;
+                throw std::exception();
+            }
 
+            amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
+
+            //amr_list.set<std::string>("plot_vars",""); // Shut off, per spec
+
+
+
+            // check point data
+            const ParameterList& chlist = rlist.sublist("Checkpoint Data");
+            amr_list.set("check_file",chlist.get<std::string>("File Name Base"));
+            Array<std::string> chkNames;
+
+            Array<std::string> chk_cMacroNames;
+            if (chlist.isParameter("Cycle Macros")) {
+                const Array<std::string>& ccMacros = chlist.get<Array<std::string> >("Cycle Macros");
+                chk_cMacroNames.resize(ccMacros.size());
+                for (int j=0; j<ccMacros.size(); ++j) {
+                    std::string label = underscore(ccMacros[j]);
+                    if (cycle_macros.find(label) != cycle_macros.end()) {
+                        chk_cMacroNames[j] = label;
+                    }
+                    else {
+                        std::cerr << "Unrecognized cycle macro in Checkpoint Data: \""
+                                  << ccMacros[j] << "\"" << std::endl;
+                        throw std::exception();
+                    }
+                }
+            }
+            else {
+                std::cerr << "Must provide \"Cycle Macros\" in Checkpoint Data" << std::endl;
+                throw std::exception();
+            }
+            amr_list.set<Array<std::string> >("chk_cycle_macros",chk_cMacroNames);
+
+
+        
             // observation
             Array<std::string> arrayobs;
             const ParameterList& olist = rlist.sublist("Observation Data");
@@ -1663,7 +1811,16 @@ namespace Amanzi {
                         }
                     }
                     sublist.set("region",region_name);
-                    sublist.set("times",time_map[rslist.get<std::string>("Time Macro")]);
+
+                    const std::string& timeMacro = rslist.get<std::string>("Time Macro");
+                    if (time_macros.find(timeMacro) == time_macros.end()) {
+                        std::cerr << "Unrecognized time macro: \"" << timeMacro
+                                  << "\" for observation data: \"" << label << "\"" << std::endl;
+                        throw std::exception();                        
+                    }
+                    else {
+                        sublist.set("time_macro",timeMacro);
+                    }
 	  
                     Array<std::string> arrayvariables;
                     Array<std::string> variables = rslist.get<Array<std::string> >("Variables");

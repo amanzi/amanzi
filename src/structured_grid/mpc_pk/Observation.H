@@ -13,6 +13,9 @@
 #include <AmrLevel.H>
 #include <Region.H>
 
+#include <cmath>
+
+
 /*
   @ManDoc: Class defining all possible types of observations
 */
@@ -44,15 +47,24 @@ public:
   Array<Real> times;
   std::map<int,Real> vals;
 
+  std::string event_label;
+
   Observation(const std::string& name,
               const std::string& field,
               const Region&      region,
               const std::string& obs_type,
               const Array<Real>& times);
 
+  Observation(const std::string& name,
+              const std::string& field,
+              const Region&      region,
+              const std::string& obs_type,
+              const std::string& eventLabel);
+
   void process(Real t_old, Real t_new);
   static void setAmrPtr(Amr* amr) {amrp = amr;}
   static void Cleanup ();
+  static void Initialize ();
 
 protected:
   std::pair<Real,Real> integral_and_volume (Real time);
@@ -62,6 +74,6 @@ protected:
   Real volume_time_integral(Real t_old, Real t_new);
   Real point_sample (Real time);
 
-  Real val_old, val_new;
+  Real val_old, val_new;  
 };
 #endif /*_OBSERVATION_H_*/

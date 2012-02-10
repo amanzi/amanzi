@@ -16,6 +16,7 @@
 #include <PROB_PM_F.H>
 #include <DERIVE_F.H>
 #include <PMAMR_Labels.H>
+#include <PMAmr.H> 
 
 #ifdef BL_USE_OMP
 #include "omp.h"
@@ -111,6 +112,8 @@ Array<Source> PorousMedia::source_array;
 //
 std::string        PorousMedia::obs_outputfile;
 PArray<Observation> PorousMedia::observations;
+Array<std::string>  PorousMedia::vis_cycle_macros;
+Array<std::string>  PorousMedia::chk_cycle_macros;
 //
 // Phases and components.
 //
@@ -1148,29 +1151,6 @@ PorousMedia::find_rock(const std::string& name)
     return rocks[iRock];
 }
 
-#if 0
-struct HydroToRhoSat
-    : public ArrayTransform
-{
-    HydroToRhoSat() {}
-    virtual ArrayTransform* clone() const {return new FluxToRhoSat(*this);}
-    virtual Array<Real> transform(Real inData) const;
-};
-
-Array<Real>
-HydroToRhoSat::transform hydro_to_sat() const
-{
-    BL_ASSERT(model >= 2);
-    FArrayBox& cdat = (*cpl_coef)[mfi];
-    const int n_cpl_coef = cpl_coef->nComp();
-    DEF_CLIMITS(cdat,c_ptr,c_lo,c_hi);
-    FORT_HYDRO(s_ptr, ARLIM(s_lo),ARLIM(s_hi), 
-               density.dataPtr(),&ncomps, 
-               c_ptr, ARLIM(c_lo),ARLIM(c_hi), &n_cpl_coef,
-               dx, &(*it).param[0], &gravity);
-}
-#endif
-
 
 struct PressToRhoSat
     : public ArrayTransform
@@ -1380,7 +1360,7 @@ void  PorousMedia::read_comp()
   {
       Array<std::string> ic_names;
       cp.getarr("ic_labels",ic_names,0,n_ics);
-      ic_array.resize(n_ics);
+      ic_array.resize(n_ics,PArrayManage);
       for (int i = 0; i<n_ics; i++)
       {
           const std::string& icname = ic_names[i];
@@ -1472,7 +1452,7 @@ void  PorousMedia::read_comp()
       inflow_vel_lo.resize(BL_SPACEDIM,0); 
       inflow_vel_hi.resize(BL_SPACEDIM,0); 
 
-      bc_array.resize(n_bcs);
+      bc_array.resize(n_bcs,PArrayManage);
       Array<std::string> bc_names;
       cp.getarr("bc_labels",bc_names,0,n_bcs);
       for (int i = 0; i<n_bcs; i++)
@@ -1661,7 +1641,7 @@ void  PorousMedia::read_tracer()
           const std::string prefix("tracer." + tNames[i]);
 	  ParmParse ppr(prefix.c_str());
           std::string g; ppr.get("group",g);
-          group_map[g].push_back(i);
+          group_map[g].push_back(i+ncomps);
       
           // Initial condition and boundary condition  
           Array<std::string> tic_names;
@@ -1671,7 +1651,7 @@ void  PorousMedia::read_tracer()
               BoxLib::Abort("each tracer must be initialized");
           }
           ppr.getarr("tinits",tic_names,0,n_ic);
-          tic_array[i].resize(n_ic);
+          tic_array[i].resize(n_ic,PArrayManage);
           
           for (int n = 0; n<n_ic; n++)
           {
@@ -1702,7 +1682,7 @@ void  PorousMedia::read_tracer()
               BoxLib::Abort("each tracer requires boundary conditions");
           }
           ppr.getarr("tbcs",tbc_names,0,n_tbc);
-          tbc_array[i].resize(n_tbc);
+          tbc_array[i].resize(n_tbc,PArrayManage);
           
           for (int n = 0; n<n_tbc; n++)
           {
@@ -1916,18 +1896,80 @@ void  PorousMedia::read_source()
 
 void PorousMedia::read_observation()
 {
-  //
-  // Read in parameters for sources
-  //
-  ParmParse pp("observation");
+  Real time_eps = 1.e-6; // FIXME: needs to be computed
 
+  // Build time macros
+  ParmParse ppa("amr");
+
+  EventCoord& event_coord = PMAmr::eventCoord();
+
+  int n_cmac = ppa.countval("cycle_macros");
+  Array<std::string> cmacroNames;
+  ppa.getarr("cycle_macros",cmacroNames,0,n_cmac);
+  std::map<std::string,int> cmacro_map;
+  for (int i=0; i<n_cmac; ++i) {
+      std::string prefix = "amr.cycle_macro." + cmacroNames[i];
+      ParmParse ppc(prefix);
+      std::string type; ppc.get("type",type);
+      if (type == "period") {
+          int start, period, stop;
+          ppc.get("start",start);
+          ppc.get("period",period);
+          ppc.get("stop",stop);
+          std::cout << "Inserting " << cmacroNames[i] << std::endl;
+          event_coord.InsertCycleEvent(cmacroNames[i],start,period,stop);
+      }
+      else if (type == "cycles" ){
+          Array<int> cycles; ppc.getarr("cycles",cycles,0,ppc.countval("cycles"));
+          std::cout << "Inserting " << cmacroNames[i] << std::endl;
+          event_coord.InsertCycleEvent(cmacroNames[i],cycles);
+      }
+      else {
+          BoxLib::Abort("Unrecognized cycle macros type");
+      }
+      cmacro_map[cmacroNames[i]] = i;
+  }
+
+  int n_tmac = ppa.countval("time_macros");
+  Array<std::string> tmacroNames;
+  ppa.getarr("time_macros",tmacroNames,0,n_tmac);
+  std::map<std::string,int> tmacro_map;
+  for (int i=0; i<n_tmac; ++i) {
+      std::string prefix = "amr.time_macro." + tmacroNames[i];
+      ParmParse ppt(prefix);
+      std::string type; ppt.get("type",type);
+      if (type == "period") {
+          Real start, period, stop;
+          ppt.get("start",start);
+          ppt.get("period",period);
+          ppt.get("stop",stop);
+          std::cout << "Inserting " << tmacroNames[i] << std::endl;
+          event_coord.InsertTimeEvent(tmacroNames[i],start,period,stop);
+      }
+      else if (type == "times" ){
+          Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
+          std::cout << "Inserting " << tmacroNames[i] << std::endl;
+          event_coord.InsertTimeEvent(tmacroNames[i],times);
+      }
+      else {
+          BoxLib::Abort("Unrecognized time macros type");
+      }
+      tmacro_map[tmacroNames[i]] = i;
+  }
+
+
+
+  ParmParse pp("observation");
+  
   // determine number of observation
   int n_obs = pp.countval("observation");
   if (n_obs > 0)
   {
-      observations.resize(n_obs);
+      observations.resize(n_obs,PArrayManage);
       Array<std::string> obs_names;
       pp.getarr("observation",obs_names,0,n_obs);
+
+      // Get time and cycle macros
 
       // Get parameters for each observation
       // observation type:0=production,1=mass_fraction,2=mole_fraction,3=saturation
@@ -1941,15 +1983,18 @@ void PorousMedia::read_observation()
           Array<std::string> region_names(1); ppr.get("region",region_names[0]);
           const PArray<Region> obs_regions = build_region_PArray(region_names);
           
-	  Array<Real> obs_times; ppr.getarr("times",obs_times,0,ppr.countval("times"));
+          std::string obs_time_macro; ppr.get("time_macro",obs_time_macro);
 
-          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,obs_times));
+          observations.set(i, new Observation(obs_names[i],obs_field,obs_regions[0],obs_type,obs_time_macro));
 	}
       
       // filename for output
       pp.query("output_file",obs_outputfile);
       
     }
+
+  ppa.getarr("vis_cycle_macros",vis_cycle_macros,0,ppa.countval("vis_cycle_macros"));
+  ppa.getarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
 }
 
 void  PorousMedia::read_chem()
@@ -2069,9 +2114,9 @@ void PorousMedia::read_params()
     std::cout << "Read tracers."<< std::endl;
 
   // pressure
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read pressure."<< std::endl;
-  read_pressure();
+  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+  // std::cout << "Read pressure."<< std::endl;
+  //read_pressure();
 
   // source
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -2094,11 +2139,6 @@ void PorousMedia::read_params()
   read_observation();
 
 
-  std::cout << "ncomps: "<< ncomps << std::endl;
-  std::cout << "nphases: "<< nphases << std::endl;
-  std::cout << "model: "<< model << std::endl;
-  std::cout << "density: "<< density << std::endl;
-
   FORT_INITPARAMS(&ncomps,&nphases,&model,density.dataPtr(),
 		  muval.dataPtr(),pType.dataPtr(),
 		  &gravity);
@@ -2107,3 +2147,5 @@ void PorousMedia::read_params()
     FORT_TCRPARAMS(&ntracers);
 
 }
+
+

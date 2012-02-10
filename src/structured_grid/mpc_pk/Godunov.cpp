@@ -2209,7 +2209,7 @@ Godunov::Add_aofs_tracer (FArrayBox& Sold,
 			  int        tf_ind,
 			  FArrayBox& Rockphi,
 			  const Box& grd,
-			  Array<int> idx_total,
+			  const Array<int>& idx_total,
 			  Real       dt)
 {
   BL_ASSERT(Snew.nComp()    >= start_ind + num_comp);
@@ -2232,7 +2232,6 @@ Godunov::Add_aofs_tracer (FArrayBox& Sold,
   const Real *AOdat = Aofs.dataPtr(aofs_ind);
   const Real *TFdat = tforces.dataPtr(tf_ind);
   const Real *pdat  = Rockphi.dataPtr();
-    
     
   FORT_UPDATE_AOFS_TRACER(SOdat, ARLIM(slo), ARLIM(shi), 
 			  SNdat, ARLIM(slo), ARLIM(shi),

@@ -2,6 +2,8 @@
 
 #include <PorousMedia.H>
 
+
+
 Amr* Observation::amrp;
 std::map<std::string, int> Observation::obs_type_list;
 
@@ -15,6 +17,21 @@ Observation::Cleanup ()
     initialized = false;
 }
 
+void
+Observation::Initialize()
+{
+    BoxLib::ExecOnFinalize(Observation::Cleanup);
+    initialized = true;
+    
+    obs_type_list["average"]          = 0;
+    obs_type_list["integral"]         = 1;
+    obs_type_list["time_integral"]    = 2;
+    obs_type_list["squared_integral"] = 3;
+    obs_type_list["flux"]             = 4;
+    obs_type_list["point_sample"]     = 5;
+}
+
+
 Observation::Observation(const std::string& name,
                          const std::string& field,
                          const Region&      region,
@@ -23,16 +40,23 @@ Observation::Observation(const std::string& name,
     : name(name), field(field), region(region), obs_type(obs_type), times(times)
 {
     if (!initialized) {
-        BoxLib::ExecOnFinalize(Observation::Cleanup);
-        initialized = true;
+        Initialize();
+    }
 
-        obs_type_list["average"]          = 0;
-        obs_type_list["integral"]         = 1;
-        obs_type_list["time_integral"]    = 2;
-        obs_type_list["squared_integral"] = 3;
-        obs_type_list["flux"]             = 4;
-        obs_type_list["point_sample"]     = 5;
+    if (obs_type_list.find(obs_type) == obs_type_list.end()) {
+        BoxLib::Abort("Unsupported observation type");
+    }
+}
 
+Observation::Observation(const std::string& name,
+                         const std::string& field,
+                         const Region&      region,
+                         const std::string& obs_type,
+                         const std::string& event_label)
+    : name(name), field(field), region(region), obs_type(obs_type), event_label(event_label)
+{
+    if (!initialized) {
+        Initialize();
     }
 
     if (obs_type_list.find(obs_type) == obs_type_list.end()) {
@@ -190,7 +214,7 @@ Observation::integral_and_volume (Real time)
         }
 
       int nGrow = 0;
-      const MultiFab* S = amrp->getLevel(lev).derive(name,time,nGrow);
+      const MultiFab* S = amrp->getLevel(lev).derive(field,time,nGrow);
       BoxArray baf;
       if (lev < finest_level)
         {

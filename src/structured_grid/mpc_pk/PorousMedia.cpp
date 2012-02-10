@@ -85,6 +85,10 @@ PorousMedia::CleanupStatics ()
     regions.clear();
     rocks.clear();
     observations.clear();
+    ic_array.clear();
+    bc_array.clear();
+    tic_array.clear();
+    tbc_array.clear();
     initialized = false;
 }
 
@@ -429,9 +433,6 @@ PorousMedia::PorousMedia (Amr&            papa,
 
 PorousMedia::~PorousMedia ()
 {
-
-    std::cout << "Inside PM destructor" << std::endl;
-
   delete Ssync;
   delete advflux_reg;
   delete viscflux_reg;
@@ -2026,14 +2027,13 @@ PorousMedia::advance_richard (Real time,
   P_new.mult(-1.0,1);
   compute_vel_phase(u_mac_curr,0,time+dt);
     
-  if (level == 0) 
+  if (level == 0) {
     create_umac_grown(u_mac_curr,u_macG_trac);
-  else 
-    {
+  } else {
       PArray<MultiFab> u_macG_crse(BL_SPACEDIM,PArrayManage);
       GetCrseUmac(u_macG_crse,time);
       create_umac_grown(u_mac_curr,u_macG_crse,u_macG_trac); 
-    }
+  }
 
   umac_edge_to_cen(u_mac_curr,Vel_Type); 
   if (ntracers > 0)
@@ -3133,20 +3133,27 @@ PorousMedia::tracer_advection_update (Real dt,
   // Advect only the Total
   //
   const Array<int>& idx_total = group_map["Total"];
-
-  Real pcTime = state[State_Type].curTime();
-  for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
-    {
-      const int i = mfi.index();
-      getForce_Tracer(tforces,i,0,0,ntracers,pcTime);
-
-      godunov->Add_aofs_tracer(S_old[i],S_new[i],0,nscal,
-			       Aofs[i],0,tforces,0,Rockphi[i],grids[i],
-			       idx_total,dt);
-	
-    }
+  if (ntracers > 0) 
+  {
+      if (idx_total.size()) 
+      {
+          Real pcTime = state[State_Type].curTime();
+          for (MFIter mfi(S_new); mfi.isValid(); ++mfi)
+          {
+              const int i = mfi.index();
+              getForce_Tracer(tforces,i,0,0,ntracers,pcTime);
+              
+              godunov->Add_aofs_tracer(S_old[i],S_new[i],0,nscal,
+                                       Aofs[i],0,tforces,0,Rockphi[i],grids[i],
+                                       idx_total,dt);
+              
+          }
+      }
+      else {
+          MultiFab::Copy(S_new,S_old,ncomps,ncomps,ntracers,0);
+      }
+  }
   S_new.FillBoundary();
-
   //
   // Write out the min and max of each component of the new state.
   //
@@ -9205,7 +9212,9 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
             //std::cout << sdat << std::endl;
 
             Box ovlp = bndBox & fab.box();
-            fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
+            if (ovlp.ok()) {
+                fab.copy(sdat,ovlp,0,ovlp,0,ncomps);
+            }
         }
     }    
 }  
@@ -9238,7 +9247,9 @@ PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time
                 //std::cout << sdat << std::endl;
                 
                 Box ovlp = bndBox & fab.box();
-                fab.copy(sdat,ovlp,0,ovlp,n,1);
+                if (ovlp.ok()) {
+                    fab.copy(sdat,ovlp,0,ovlp,n,1);
+                }
             }
         }    
     }
@@ -9252,13 +9263,24 @@ PorousMedia::derive (const std::string& name,
 {
     BL_ASSERT(ngrow >= 0);
     
-    const DeriveRec* rec = derive_lst.get(name);
-    BoxArray dstBA(grids);
-    MultiFab* mf = new MultiFab(dstBA, rec->numDerive(), ngrow);
-    int dcomp = 0;
-    derive(name,time,*mf,dcomp);
-    return mf;
-
+    if (const DeriveRec* rec = derive_lst.get(name))
+    {
+        const DeriveRec* rec = derive_lst.get(name);
+        BoxArray dstBA(grids);
+        MultiFab* mf = new MultiFab(dstBA, rec->numDerive(), ngrow);
+        int dcomp = 0;
+        derive(name,time,*mf,dcomp);
+        return mf;
+    }
+    else
+    {
+        //
+        // If we got here, cannot derive given name.
+        //
+        std::string msg("PorousMedia::derive(): unknown variable: ");
+        msg += name;
+        BoxLib::Error(msg.c_str());
+    }
 }
 
 void
@@ -10187,3 +10209,4 @@ PorousMedia::compute_divu (MultiFab& soln,
 		     lo,hi,dx);
     }
 }
+
