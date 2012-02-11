@@ -19,18 +19,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 namespace Amanzi {
 
-Field_Scalar::Field_Scalar(std::string fieldname) :
-    Field::Field(fieldname, "state"), data_() {
-  type_ = CONSTANT_SCALAR;
-};
-
 Field_Scalar::Field_Scalar(std::string fieldname, std::string owner) :
     Field::Field(fieldname, owner), data_() {
-  type_ = CONSTANT_SCALAR;
-};
-
-Field_Scalar::Field_Scalar(std::string fieldname, Teuchos::RCP<double>& data) :
-    Field::Field(fieldname, "state"), data_(data) {
   type_ = CONSTANT_SCALAR;
 };
 

@@ -20,18 +20,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 namespace Amanzi {
 
-Field_CV::Field_CV(std::string fieldname) :
-    Field::Field(fieldname, "state"), data_() {
-  type_ = VECTOR_FIELD;
-};
-
 Field_CV::Field_CV(std::string fieldname, std::string owner) :
     Field::Field(fieldname, owner), data_() {
-  type_ = VECTOR_FIELD;
-};
-
-Field_CV::Field_CV(std::string fieldname, Teuchos::RCP<CompositeVector>& data) :
-    Field::Field(fieldname, "state"), data_(data) {
   type_ = VECTOR_FIELD;
 };
 
@@ -81,6 +71,11 @@ Teuchos::RCP<CompositeVector> Field_CV::vector_data(std::string pk_name) {
 void Field_CV::set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
   assert_owner_or_die_(pk_name);
   data_ = data;
+};
+
+void Field_CV::set_data(std::string pk_name, const CompositeVector& data) {
+  assert_owner_or_die_(pk_name);
+  *data_ = data;
 };
 
 } // namespace

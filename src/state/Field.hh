@@ -51,14 +51,14 @@ public:
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
   // data access and mutators
-  // virtual Teuchos::RCP<const CompositeVector> vector_data() const {
-  //   assert_type_or_die_(VECTOR_FIELD);
-  //   not_implemented_error_();
-  // }
-  // virtual Teuchos::RCP<CompositeVector> vector_data(std::string pk_name) {
-  //   assert_type_or_die_(VECTOR_FIELD);
-  //   not_implemented_error_();
-  // }
+  virtual Teuchos::RCP<const CompositeVector> vector_data() const {
+    assert_type_or_die_(VECTOR_FIELD);
+    not_implemented_error_();
+  }
+  virtual Teuchos::RCP<CompositeVector> vector_data(std::string pk_name) {
+    assert_type_or_die_(VECTOR_FIELD);
+    not_implemented_error_();
+  }
   virtual Teuchos::RCP<const Epetra_Vector> constant_vector_data() const {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
@@ -76,15 +76,30 @@ public:
     not_implemented_error_();
   }
 
-  // virtual void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
-  //   assert_type_or_die_(VECTOR_FIELD);
-  //   not_implemented_error_();
-  // }
+  // set data by pointer -- does not copy
+  virtual void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
+    assert_type_or_die_(VECTOR_FIELD);
+    not_implemented_error_();
+  }
   virtual void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>& data) {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
   virtual void set_data(std::string pk_name, Teuchos::RCP<double>& data) {
+    assert_type_or_die_(CONSTANT_SCALAR);
+    not_implemented_error_();
+  }
+
+  // set data by reference -- copies
+  virtual void set_data(std::string pk_name, const CompositeVector& data) {
+    assert_type_or_die_(VECTOR_FIELD);
+    not_implemented_error_();
+  }
+  virtual void set_data(std::string pk_name, const Epetra_Vector& data) {
+    assert_type_or_die_(CONSTANT_VECTOR);
+    not_implemented_error_();
+  }
+  virtual void set_data(std::string pk_name, const double& data) {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
