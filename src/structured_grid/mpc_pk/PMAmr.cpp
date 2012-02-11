@@ -5,34 +5,19 @@
 EventCoord PMAmr::event_coord;
 
 void
-PMAmr::coarseTimeStep (Real stop_time)
+process_events(bool& write_plotfile_after_step,
+               bool& write_checkpoint_after_step,
+               Array<int>& observations_after_step,
+               EventCoord& event_coord,
+               Real time, Real dt, int iter, int diter)
 {
-    const Real run_strt = ParallelDescriptor::second() ;    
-
-    //
-    // Compute new dt.
-    //
-    if (level_steps[0] > 0)
-    {
-        int post_regrid_flag = 0;
-        amr_level[0].computeNewDt(finest_level,
-                                  sub_cycle,
-                                  n_cycle,
-                                  ref_ratio,
-                                  dt_min,
-                                  dt_level,
-                                  stop_time,
-                                  post_regrid_flag);
-    }
-
-    bool write_plotfile_after_step = false;
-    bool write_checkpoint_after_step = false;
+    write_plotfile_after_step = false;
+    write_checkpoint_after_step = false;
     Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
     Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
 
 
-    std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(cumtime,dt_level[0],level_steps[0]);
-    Array<int> observations_after_step;
+    std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
     PArray<Observation>& observations = PorousMedia::TheObservationArray();
 
     if (nextEvent.second.size()) 
@@ -63,22 +48,64 @@ PMAmr::coarseTimeStep (Real stop_time)
                 }
             }
         }
-
-#if 0
-        // FIXME: Must propagate this dt through the AMR hierarchy, and possibly 
-        //   limit growth, etc - skip this for now
-        Real dt_red = nextEvent.first;
-        if (dt_red > 0) {
-            Real dt_0 = std::min(nextEvent.first,dt_level[0]);
-            int n_factor = 1;
-            for (int i = 0; i <= max_level; i++)
-            {
-                n_factor   *= n_cycle[i];
-                dt_level[i] = dt_0/( (Real)n_factor );
-            }
-        }
-#endif
     }
+}
+
+
+void
+PMAmr::init (Real strt_time,
+             Real stop_time)
+{
+    if (!restart_file.empty() && restart_file != "init")
+    {
+        restart(restart_file);
+    }
+    else
+    {
+        initialInit(strt_time,stop_time);
+
+        bool write_plot, write_check;
+        Array<int> initial_observations;
+        process_events(write_plot,write_check,initial_observations,event_coord,
+                       strt_time, dt_level[0], level_steps[0], 0);
+
+        if (write_plot) {
+
+            writePlotFile(plot_file_root,level_steps[0]);
+        }
+
+        if (write_check) {
+            checkPoint();
+        }
+    }
+}
+
+void
+PMAmr::coarseTimeStep (Real stop_time)
+{
+    const Real run_strt = ParallelDescriptor::second() ;    
+
+    //
+    // Compute new dt.
+    //
+    if (level_steps[0] > 0)
+    {
+        int post_regrid_flag = 0;
+        amr_level[0].computeNewDt(finest_level,
+                                  sub_cycle,
+                                  n_cycle,
+                                  ref_ratio,
+                                  dt_min,
+                                  dt_level,
+                                  stop_time,
+                                  post_regrid_flag);
+    }
+
+
+    bool write_plot, write_check;
+    Array<int> observations_to_process;
+    process_events(write_plot,write_check,observations_to_process,event_coord,
+                   cumtime, dt_level[0], level_steps[0], 1);
     
     // Do time step
     timeStep(0,cumtime,1,1,stop_time);
@@ -136,18 +163,12 @@ PMAmr::coarseTimeStep (Real stop_time)
     if (record_run_info_terse && ParallelDescriptor::IOProcessor())
         runlog_terse << level_steps[0] << " " << cumtime << " " << dt_level[0] << '\n';
 
-
-    if (write_plotfile_after_step) {
-        std::cout << " Write plotfile" << std::endl;
-    }
-    if (write_checkpoint_after_step) {
-        std::cout << " Write checkpoint" << std::endl;
-    }
-
-    if (observations_after_step.size()) {
+    
+    PArray<Observation>& observations = PorousMedia::TheObservationArray();
+    if (observations_to_process.size()) {
         std::cout << " Process observations ";
-        for (int i=0; i<observations_after_step.size(); ++i) {
-            std::cout << observations[observations_after_step[i]].name << " " << std::endl;
+        for (int i=0; i<observations_to_process.size(); ++i) {
+            std::cout << observations[observations_to_process[i]].name << " " << std::endl;
         }
     }
 
@@ -179,13 +200,13 @@ PMAmr::coarseTimeStep (Real stop_time)
     ParallelDescriptor::Bcast(&to_checkpoint, 1, ParallelDescriptor::IOProcessorNumber());
     ParallelDescriptor::Bcast(&to_stop,       1, ParallelDescriptor::IOProcessorNumber());
 
-    if (write_checkpoint_after_step || (to_checkpoint==1))
+    if (write_check || (to_checkpoint==1))
     {
         last_checkpoint = level_steps[0];
         checkPoint();
     }
 
-    if (write_plotfile_after_step)
+    if (write_plot)
     {
         last_plotfile = level_steps[0];
         writePlotFile(plot_file_root,level_steps[0]);
@@ -205,14 +226,14 @@ PMAmr::coarseTimeStep (Real stop_time)
 }
 
 bool
-EventCoord::CycleEvent::ThisEventDue(int cycle) const
+EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
 {
     if (type ==SPS)
     {
         if ( ( ( stop < 0 ) || ( cycle < stop ) )
              && ( cycle >= start ) )
         {
-            return ( (period==1) || ((cycle-start+1)%period == 0) );
+            return ( (period==1) || ((cycle-start+dCycle)%period == 0) );
         }
     }
     else {
@@ -276,7 +297,7 @@ EventCoord::TimeEvent::ThisEventDue(Real time, Real dt, Real& dt_red) const
 
 
 std::pair<Real,Array<std::string> >
-EventCoord::NextEvent(Real time, Real dt, int cycle) const
+EventCoord::NextEvent(Real time, Real dt, int cycle, int dcycle) const
 {
     Array<std::string> events;
     Real delta_time = -1;
@@ -284,7 +305,7 @@ EventCoord::NextEvent(Real time, Real dt, int cycle) const
         const std::string& name = it->first;
         const CycleEvent& event = it->second;
         CycleEvent::CycleType type = event.Type();
-        if (event.ThisEventDue(cycle)) {
+        if (event.ThisEventDue(cycle,dcycle)) {
             events.push_back(name);
         }
     }

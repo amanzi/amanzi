@@ -290,6 +290,7 @@ public:
 
   static Array<std::string> vis_cycle_macros;
   static Array<std::string> chk_cycle_macros;
+  static int echo_inputs;
 
 protected:
 

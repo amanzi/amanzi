@@ -4,6 +4,8 @@
 #include "Region.H"
 
 Real Region::geometry_eps = -1;
+Array<Real> Region::domlo;
+Array<Real> Region::domhi;
 
 Region::Region (std::string r_name, 
 		std::string r_purpose, 
@@ -14,6 +16,12 @@ Region::Region (std::string r_name,
 {
     if (geometry_eps<0) {
         BoxLib::Abort("Static variable Region::geometry_eps must be set before Region ctr");
+    }
+    if (domlo.size() == 0) {
+        BoxLib::Abort("Static variable Region::domlo must be set before Region ctr");
+    }
+    if (domhi.size() == 0) {
+        BoxLib::Abort("Static variable Region::domhi must be set before Region ctr");
     }
 }
 
@@ -31,40 +39,40 @@ Region::setVal(FArrayBox&         fab,
   Array<Real> x(BL_SPACEDIM);
   const int* lo = fab.loVect();
   const int* hi = fab.hiVect();
-
-
 #if (BL_SPACEDIM == 2)	
   for (int iy=lo[1]; iy<hi[1]+1; iy++) 
-    {
-      x[1] = dx[1]*(iy+0.5);
+  {
+      x[1] = std::min(std::max(domlo[1],dx[1]*(iy+0.5)),domhi[1]);
       for (int ix=lo[0]; ix<hi[0]+1; ix++) 
-	{
-	  x[0] = dx[0]*(ix+0.5);
+      {
+          x[0] = std::min(std::max(domlo[0],dx[0]*(ix+0.5)),domhi[0]);
 	  if (inregion(x))
-	    {
-                for (int n=scomp; n<ncomp;n++) {
-                    fab(IntVect(ix,iy),n) = val[n-scomp];
-                }
-	    }
-	}
-    }
+          {
+              for (int n=scomp; n<ncomp;n++) {
+                  fab(IntVect(ix,iy),n) = val[n-scomp];
+              }
+          }
+      }
+  }
 #else
   for (int iz=lo[2]; iz<hi[2]+1; iz++) 
-    {
-      x[2] = dx[2]*(iz+0.5);
+  {
+      x[2] = std::min(std::max(domlo[2],dx[2]*(iz+0.5)),domhi[2]);
       for (int iy=lo[1]; iy<hi[1]+1; iy++) 
-	{
-	  x[1] = dx[1]*(iy+0.5);
-	  for (int ix=lo[0]; ix<hi[0]+1; ix++) 
-	    {
-	      x[0] = dx[0]*(ix+0.5);
-	      if (inregion(x))
-		for (int n=scomp; n<ncomp;n++)
-		  fab(IntVect(ix,iy,iz),n) = val[n-scomp];
-		
-	    }
-	}
-    }
+      {
+          x[1] = std::min(std::max(domlo[1],dx[1]*(iy+0.5)),domhi[1]);
+          for (int ix=lo[0]; ix<hi[0]+1; ix++) 
+          {
+              x[0] = std::min(std::max(domlo[0],dx[0]*(ix+0.5)),domhi[0]);
+              if (inregion(x))
+              {
+                  for (int n=scomp; n<ncomp;n++) {
+                      fab(IntVect(ix,iy),n) = val[n-scomp];
+                  }
+              }
+          }
+      }
+  }
 #endif
 }
 
@@ -140,6 +148,12 @@ boxRegion::inregion(const Array<Real>& x) const
       x[2]>=lo[2] && x[2]<=hi[2])
     inflag = true;
 #endif
+
+  if (!inflag) {
+      std::cout << "name: " << name << std::endl;
+      std::cout << "  lo,hi: " << lo[0] << " " << lo[1] << " " << hi[0] << " " << hi[1]  << std::endl;
+      std::cout << "  x: " << x[0] << " " << x[1] << std::endl;
+  }
   return inflag;
 }
 
@@ -154,7 +168,7 @@ colorFunctionRegion::colorFunctionRegion (std::string r_name,
     m_color_val(color_val),
     m_file(file_name)
 {
-  set_color_map();
+    set_color_map();
 }
 
 void
@@ -269,7 +283,7 @@ colorFunctionRegion::atIndex(const Array<Real> x) const
     IntVect idx;
     for (int d=0; d<BL_SPACEDIM; ++d)
     {
-      idx[d] = (int)( (x[d] - lo[d])/dx[d] - 0.5);
+        idx[d] = (int) ((x[d] - lo[d])/dx[d]);
     }
     return idx;
 }
@@ -377,11 +391,33 @@ pick_name(int dir, int lo_or_hi)
     return name;
 }
 
+static
+std::string
+pick_purpose(int dir, int lo_or_hi)
+{
+    std::string purpose;
+    if (dir == 0 && lo_or_hi == 0)
+        purpose = "xlobc";
+    else if (dir == 0 && lo_or_hi == 1)
+        purpose = "xhibc";
+    else if (dir == 1 && lo_or_hi == 0)
+        purpose = "ylobc";
+    else if (dir == 1 && lo_or_hi == 1)
+        purpose = "yhibc";
+#if BL_SPACEDIM == 3
+    else if (dir == 2 && lo_or_hi == 0)
+        purpose = "zlobc";
+    else if (dir == 2 && lo_or_hi == 1)
+        purpose = "zhibc";
+#endif  
+    return purpose;
+}
+
 
 allBCRegion::allBCRegion (int dir, int lo_or_hi,
                           const Array<Real>& lo_,
                           const Array<Real>& hi_)
-    : boxRegion(pick_name(dir,lo_or_hi),"bc","bc",lo_,hi_)
+    : boxRegion(pick_name(dir,lo_or_hi),pick_purpose(dir,lo_or_hi),"box",lo_,hi_)
 {
   p_dir  = dir;
   p_lohi = lo_or_hi;

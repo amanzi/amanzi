@@ -114,6 +114,7 @@ std::string        PorousMedia::obs_outputfile;
 PArray<Observation> PorousMedia::observations;
 Array<std::string>  PorousMedia::vis_cycle_macros;
 Array<std::string>  PorousMedia::chk_cycle_macros;
+int                 PorousMedia::echo_inputs;
 //
 // Phases and components.
 //
@@ -461,6 +462,8 @@ PorousMedia::InitializeStaticVariables ()
   PorousMedia::it_pressure         = 0;  
   PorousMedia::do_any_diffuse      = false;
   PorousMedia::do_cpl_advect       = 0;
+
+  PorousMedia::echo_inputs         = 0;
 }
 
 void
@@ -468,7 +471,8 @@ PorousMedia::variableSetUp ()
 {
 
   InitializeStaticVariables();
-
+  ParmParse pproot;
+  pproot.query("echo_inputs",echo_inputs);
 
   BL_ASSERT(desc_lst.size() == 0);
 
@@ -674,7 +678,8 @@ PorousMedia::variableSetUp ()
   //
   err_list.add("gradn",1,ErrorRec::Special,FORT_ADVERROR);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  int dump_pp = false; pproot.query("dump_parmparse_table",dump_pp);
+  if (dump_pp && ParallelDescriptor::IOProcessor())
   {
       std::cout << "\nDumping ParmParse table:\n \n";
       ParmParse::dumpTable(std::cout);
@@ -699,9 +704,14 @@ void PorousMedia::read_geometry()
   Array<Real> problo, probhi;
   pp.getarr("prob_lo",problo,0,BL_SPACEDIM);
   pp.getarr("prob_hi",probhi,0,BL_SPACEDIM);
+  Region::domlo = problo;
+  Region::domhi = probhi;
   
+  Real geometry_eps = -1; pp.get("geometry_eps",geometry_eps);
+  Region::geometry_eps = geometry_eps;
+
   // set up  1+2*BL_SPACEDIM default regions
-  bool generate_default_regions = false; pp.query("generate_default_regions",generate_default_regions);
+  bool generate_default_regions = true; pp.query("generate_default_regions",generate_default_regions);
   int nregion_DEF = 0;
   if (generate_default_regions) {
       nregion_DEF = 1 + 2*BL_SPACEDIM;
@@ -718,11 +728,13 @@ void PorousMedia::read_geometry()
   }
 
   // Get parameters for each user defined region 
-  Real geometry_eps = -1; pp.get("geometry_eps",geometry_eps);
-  Region::geometry_eps = geometry_eps;
   int nregion = nregion_DEF;
 
   int nregion_user = pp.countval("regions");
+
+  if (!generate_default_regions  && nregion_user==0) {
+      BoxLib::Abort("Default regions not generated and none provided.  Perhaps omitted regions list?");
+  }
   if (nregion_user)
     {
       std::string r_purpose, r_type;
@@ -751,6 +763,7 @@ void PorousMedia::read_geometry()
 	      ppr.getarr("hi_coordinate",hi_coor,0,BL_SPACEDIM);
 	      
 	      // check if it is at the boundary.  If yes, then include boundary.
+#if 0
 	      for (int dir=0;dir<BL_SPACEDIM; dir++)
 		{
 		  if (lo_coor[dir] <= problo[dir]+geometry_eps) 
@@ -758,6 +771,7 @@ void PorousMedia::read_geometry()
 		  if (hi_coor[dir] >= probhi[dir]-geometry_eps)
 		    hi_coor[dir] = 2e20;
 		}
+#endif
               regions.set(nregion_DEF+j, new boxRegion(r_name[j],r_purpose,r_type,lo_coor,hi_coor));
 	    }
 	  else if (r_type == "color_function")
@@ -770,6 +784,7 @@ void PorousMedia::read_geometry()
               Array<Real>& lo = cfr->lo;
               Array<Real>& hi = cfr->hi;
               
+#if 0
 	      for (int dir=0;dir<BL_SPACEDIM; dir++)
               {
 		  if (lo[dir] <= problo[dir]+geometry_eps) 
@@ -777,6 +792,7 @@ void PorousMedia::read_geometry()
 		  if (hi[dir] >= probhi[dir]-geometry_eps)
                       hi[dir] = 2e20;
               }
+#endif
 	      regions.set(nregion_DEF+j, cfr);
           }
           else BoxLib::Abort("region type not supported");
@@ -836,7 +852,7 @@ PorousMedia::read_rock()
         const std::string prefix("rock." + rname);
         ParmParse ppr(prefix.c_str());
         
-        Real rdensity; ppr.get("density",rdensity);
+        Real rdensity = -1; // ppr.get("density",rdensity); // not actually used anywhere
         Real rporosity; ppr.get("porosity",rporosity);    
         Array<Real> rpermeability; ppr.getarr("permeability",rpermeability,0,ppr.countval("permeability"));
         BL_ASSERT(rpermeability.size() == 2); // Horizontal, Vertical
@@ -1022,6 +1038,32 @@ PorousMedia::read_rock()
 
     // Check if material is actually layered in the vertical coordinate
     material_is_layered = check_if_layered(material_regions,regions,problo,probhi);
+
+    // Check that at the coarse level material properties have been set over the entire domain
+    BoxArray ba(Box(IntVect(D_DECL(0,0,0)),
+                    IntVect(D_DECL(n_cell[0]-1,n_cell[1]-1,n_cell[2]-1))));
+    ba.maxSize(32);
+    MultiFab rockTest(ba,1,0);
+    rockTest.setVal(-1);
+    Array<Real> dx0(BL_SPACEDIM);
+    for (int i=0; i<BL_SPACEDIM; ++i) {
+        dx0[i] = (probhi[i] - problo[i])/n_cell[i];
+    }
+    for (MFIter mfi(rockTest); mfi.isValid(); ++mfi)
+    {
+        FArrayBox& fab = rockTest[mfi];
+        for (int i=0; i<rocks.size(); ++i)
+        {
+            Real val = (Real)i;
+            const PArray<Region>& rock_regions = rocks[i].regions;
+            for (int j=0; j<rock_regions.size(); ++j) {
+                rock_regions[j].setVal(fab,val,0,dx0.dataPtr(),0);
+            }
+        }
+    }
+    if (rockTest.min(0) < 0) {
+        BoxLib::Abort("Material has not been defined over the entire domain");
+    }
 }
 
 void PorousMedia::read_prob()
@@ -1283,6 +1325,7 @@ void  PorousMedia::read_comp()
 
   ParmParse cp("comp");
   for (int i = 0; i<ncomps; i++) comp_list[cNames[i]] = i;
+#if 0
 
   // Get the dominant component
   std::string domName;
@@ -1351,6 +1394,7 @@ void  PorousMedia::read_comp()
 	    }
         }
     }
+#endif
 
   // Initial condition and boundary condition
   //
@@ -1589,7 +1633,10 @@ void  PorousMedia::read_comp()
                       is_hi = k>3;
                   }
               }
-              BL_ASSERT(dir>=0 && dir < BL_SPACEDIM);
+              if (dir<0 || dir > BL_SPACEDIM) {
+                  std::cout << "Bad region for boundary: \n" << bc_regions[j] << std::endl;
+                  BoxLib::Abort();
+              }
 
               if (o_set.find(purpose) == o_set.end())
               {
@@ -1916,12 +1963,10 @@ void PorousMedia::read_observation()
           ppc.get("start",start);
           ppc.get("period",period);
           ppc.get("stop",stop);
-          std::cout << "Inserting " << cmacroNames[i] << std::endl;
           event_coord.InsertCycleEvent(cmacroNames[i],start,period,stop);
       }
       else if (type == "cycles" ){
           Array<int> cycles; ppc.getarr("cycles",cycles,0,ppc.countval("cycles"));
-          std::cout << "Inserting " << cmacroNames[i] << std::endl;
           event_coord.InsertCycleEvent(cmacroNames[i],cycles);
       }
       else {
@@ -1943,12 +1988,10 @@ void PorousMedia::read_observation()
           ppt.get("start",start);
           ppt.get("period",period);
           ppt.get("stop",stop);
-          std::cout << "Inserting " << tmacroNames[i] << std::endl;
           event_coord.InsertTimeEvent(tmacroNames[i],start,period,stop);
       }
       else if (type == "times" ){
           Array<Real> times; ppt.getarr("times",times,0,ppt.countval("times"));
-          std::cout << "Inserting " << tmacroNames[i] << std::endl;
           event_coord.InsertTimeEvent(tmacroNames[i],times);
       }
       else {
@@ -1995,6 +2038,33 @@ void PorousMedia::read_observation()
 
   ppa.getarr("vis_cycle_macros",vis_cycle_macros,0,ppa.countval("vis_cycle_macros"));
   ppa.getarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
+
+  for (int i=0; i<vis_cycle_macros.size(); ++i)
+  {
+      bool pcm_found = false;
+      for (int j=0; j<cmacroNames.size(); ++j) {
+          if (cmacroNames[j] == vis_cycle_macros[i]) {
+              pcm_found = true;
+          }
+      }
+      if (!pcm_found) {
+          std::string m = "vis_cycle_macros contains unrecognized name \"" + vis_cycle_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }      
+  }
+  for (int i=0; i<chk_cycle_macros.size(); ++i)
+  {
+      bool ccm_found = false;
+      for (int j=0; j<cmacroNames.size(); ++j) {
+          if (cmacroNames[j] == chk_cycle_macros[i]) {
+              ccm_found = true;
+          }
+      }
+      if (!ccm_found) {
+          std::string m = "chk_cycle_macros contains unrecognized name \"" + chk_cycle_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }      
+  }
 }
 
 void  PorousMedia::read_chem()
@@ -2084,7 +2154,7 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read geometry." << std::endl;
 
-  if (ParallelDescriptor::IOProcessor()) {
+  if (echo_inputs > 1 && ParallelDescriptor::IOProcessor()) {
       std::cout << "The Regions: " << std::endl;
       for (int i=0; i<regions.size(); ++i) {
           std::cout << regions[i] << std::endl;
@@ -2096,18 +2166,18 @@ void PorousMedia::read_params()
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read rock."<< std::endl;
 
+  if (echo_inputs > 1 && ParallelDescriptor::IOProcessor()) {
+      std::cout << "The Materials: " << std::endl;
+      for (int i=0; i<rocks.size(); ++i) {
+          std::cout << rocks[i] << std::endl;
+      }
+  }
+
   // components and phases
   read_comp();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
     std::cout << "Read components."<< std::endl;
   
-  if (ParallelDescriptor::IOProcessor()) {
-      std::cout << "The Components: " << std::endl;
-      for (int i=0; i<regions.size(); ++i) {
-          std::cout << regions[i] << std::endl;
-      }
-  }
-
   // tracers
   read_tracer();
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
@@ -2119,9 +2189,9 @@ void PorousMedia::read_params()
   //read_pressure();
 
   // source
-  if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
-    std::cout << "Read sources."<< std::endl;
-  read_source();
+  //if (verbose > 1 && ParallelDescriptor::IOProcessor()) 
+  //  std::cout << "Read sources."<< std::endl;
+  //read_source();
 
   // chemistry
   if (verbose > 1 && ParallelDescriptor::IOProcessor()) 

@@ -423,7 +423,7 @@ namespace Amanzi {
             {
                 MTEST mtest;
                 mtest.insert(MTEST::value_type("Porosity",false));
-                mtest.insert(MTEST::value_type("Density",false));
+                //mtest.insert(MTEST::value_type("Density",false)); // This is not used anywhere
                 mtest.insert(MTEST::value_type("Intrinsic_Permeability",false));
                 mtest.insert(MTEST::value_type("Capillary_Pressure",false));
                 mtest.insert(MTEST::value_type("Relative_Permeability",false));
@@ -1744,7 +1744,7 @@ namespace Amanzi {
                 }
             }
             else {
-                std::cerr << "Must provide \"Cycle macros\" in Visualization Data" << std::endl;
+                std::cerr << "Must provide \"Cycle Macros\" in Visualization Data" << std::endl;
                 throw std::exception();
             }
 

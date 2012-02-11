@@ -21,7 +21,7 @@ struct EventCoord
         CycleEvent(const Array<int>& cycles) 
             : cycles(cycles), type(CYCLES) {}
         CycleType Type() const {return type;}
-        bool ThisEventDue(int cycle) const;
+        bool ThisEventDue(int cycle, int dcycle) const;
 
     protected:
         int start, period, stop;
@@ -46,9 +46,7 @@ struct EventCoord
         TimeType type;
     };
 
-    std::pair<Real,Array<std::string> > NextEvent(Real time,
-                                                  Real dt,
-                                                  int  cycle) const;
+    std::pair<Real,Array<std::string> > NextEvent(Real time, Real dt, int  cycle, int dcycle) const;
     void InsertCycleEvent(const std::string& label, int start, int period, int stop);
     void InsertCycleEvent(const std::string& label, const Array<int>& cycles);
 
@@ -68,7 +66,9 @@ class PMAmr
 public:
     PMAmr() : Amr() {}
     virtual void coarseTimeStep (Real stop_time);
-    bool time_to_write_checkpoint(Real cumtime,Real dt_local,int steps);
+    virtual void init (Real strt_time,
+                       Real stop_time);
+
     static EventCoord& eventCoord() {return event_coord;}
 
 protected:
