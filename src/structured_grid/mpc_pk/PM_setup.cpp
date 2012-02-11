@@ -2068,8 +2068,8 @@ int tnum = 1;
 #ifdef BL_USE_OMP
 	tnum = omp_get_max_threads();
 #endif
-        ParmParse pb("prob");
-	pb.query("amanzi.file", amanzi_input_file);
+        ParmParse pb("prob.amanzi");
+	pb.query("file", amanzi_input_file);
         //
 	// In order to thread the AMANZI chemistry, we had to give each thread 
 	// its own chemSolve and components object.
@@ -2077,6 +2077,9 @@ int tnum = 1;
 	chemSolve.resize(tnum);
         components.resize(tnum);
 	parameters.resize(tnum);
+
+        bool verbose_chemistry_init = false;
+        pb.query("verbose_chemistry_init",verbose_chemistry_init);
 
 	for (int ithread = 0; ithread < tnum; ithread++)
         {
@@ -2112,6 +2115,11 @@ int tnum = 1;
             chemSolve[ithread].verbosity(amanzi::chemistry::kTerse);
 	  
             chemSolve[ithread].Setup(components[ithread],parameters[ithread]);
+
+            if (verbose_chemistry_init && ParallelDescriptor::IOProcessor() && ithread == 0) {
+                chemSolve[ithread].Display();
+                chemSolve[ithread].DisplayComponents(components[ithread]);
+            }
 	}
     }
 #endif
