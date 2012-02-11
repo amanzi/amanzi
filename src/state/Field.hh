@@ -22,7 +22,7 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
-//#include "CompositeVector.hh"
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 
@@ -51,12 +51,12 @@ public:
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
   // data access and mutators
-  virtual Teuchos::RCP<const CompositeVector> vector_data() const {
-    assert_type_or_die_(VECTOR_FIELD);
+  virtual Teuchos::RCP<const double> scalar_data() const {
+    assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<CompositeVector> vector_data(std::string pk_name) {
-    assert_type_or_die_(VECTOR_FIELD);
+  virtual Teuchos::RCP<double> scalar_data(std::string pk_name) {
+    assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
   virtual Teuchos::RCP<const Epetra_Vector> constant_vector_data() const {
@@ -67,12 +67,12 @@ public:
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<const double> scalar_data() const {
-    assert_type_or_die_(CONSTANT_SCALAR);
+  virtual Teuchos::RCP<const CompositeVector> vector_data() const {
+    assert_type_or_die_(VECTOR_FIELD);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<double> scalar_data(std::string pk_name) {
-    assert_type_or_die_(CONSTANT_SCALAR);
+  virtual Teuchos::RCP<CompositeVector> vector_data(std::string pk_name) {
+    assert_type_or_die_(VECTOR_FIELD);
     not_implemented_error_();
   }
 

@@ -16,6 +16,7 @@ message(STATUS "in state_dir: ATS_SOURCE_DIR=${ATS_SOURCE_DIR}")
 # Library: state
 #
 #add_library(state Field.cc State.cc Vis.cc)
+include_directories(${ATS_SOURCE_DIR}/src/data_structures)
 add_library(state Field.cc Field_Scalar.cc Field_ConstantVector.cc Field_CV.cc State.cc)
 
 
