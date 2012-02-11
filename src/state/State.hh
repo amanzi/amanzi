@@ -27,9 +27,10 @@
 #include "Epetra_Export.h"
 #include "Mesh.hh"
 #include "Vis.hpp"
+#include "CompositeVector.hh"
 #include "Field.hh"
 
-//namespace Amanzi {
+namespace Amanzi {
 
 class State {
 
@@ -73,8 +74,8 @@ public:
                      Teuchos::RCP<CompositeVector>& data_ptr);
   void RequireField(std::string fieldname, std::string owner,
                      const CompositeVector& data);
-  void RequireField(std::string fieldname, std::string owner, std::string name,
-                     AmanziMesh::Entity_kind location int num_dofs=1, bool ghosted=true);
+  void RequireField(std::string fieldname, std::string owner, AmanziMesh::Entity_kind location,
+                    int num_dofs=1, bool ghosted=true);
   void RequireField(std::string fieldname, std::string owner,
                      std::vector<std::string> names,
                      std::vector<AmanziMesh::Entity_kind> locations,
@@ -113,7 +114,7 @@ public:
   void SetData(std::string fieldname, std::string pk_name,
                 Teuchos::RCP<Epetra_Vector>& data);
   void SetData(std::string fieldname, std::string pk_name,
-                Teuchos::RCP<Epetra_Vector>& data);
+                Teuchos::RCP<CompositeVector>& data);
 
   // -- modify by reference, with copy
   void SetData(std::string fieldname, std::string pk_name, const double& data);
@@ -126,12 +127,14 @@ public:
   void advance_cycle ( int dcycle=1 ) { cycle_ += dcycle; }
 
   // vis and restart functions
-  void WriteVis(Amanzi::Vis& vis);
+// void WriteVis(Amanzi::Vis& vis);
 
 private:
 
   void InitializeFromParameterList_();
   Teuchos::RCP<Field> GetRecord_(std::string fieldname);
+  Teuchos::RCP<Field> CheckMayCreateOrOwn_or_die_(std::string fieldname, FieldType type);
+  void PushBackNewField_(std::string fieldname, FieldType type, std::string owner);
 
   // field container and fieldname map from name -> container location
   std::vector< Teuchos::RCP<Field> > fields_;
