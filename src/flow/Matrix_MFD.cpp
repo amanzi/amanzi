@@ -349,6 +349,20 @@ double Matrix_MFD::computeResidual(const Epetra_Vector& solution, Epetra_Vector&
 
 
 /* ******************************************************************
+* Linear algebra operations with matrices: r = A * x - f                                                 
+****************************************************************** */
+double Matrix_MFD::computeNegativeResidual(const Epetra_Vector& solution, Epetra_Vector& residual)
+{
+  Apply(solution, residual);
+  residual.Update(-1.0, *rhs, 1.0);
+
+  double norm_residual;
+  residual.Norm2(&norm_residual);
+  return norm_residual;
+}
+
+
+/* ******************************************************************
 * Initialization of the preconditioner                                                 
 ****************************************************************** */
 void Matrix_MFD::init_ML_preconditioner(Teuchos::ParameterList& ML_list_)

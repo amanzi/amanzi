@@ -19,7 +19,7 @@ void Richards_PK::fun(double T, const Epetra_Vector& u, const Epetra_Vector& udo
 {
   T_internal = T_physical = T;
   computePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
-  matrix->computeResidual(u, f);  // compute g - A*u
+  matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
   Epetra_Vector* u_cells = FS->createCellView(u);
   Epetra_Vector dSdP(mesh_->cell_map(false));
@@ -31,9 +31,8 @@ void Richards_PK::fun(double T, const Epetra_Vector& u, const Epetra_Vector& udo
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);
     double factor = rho * phi[c] * dSdP[c] * volume;
-    f[c] -= factor * udot[c]; 
+    f[c] += factor * udot[c]; 
   }
-  f.Update(-1.0, f, 0.0);  // should be improved (lipnikov@lanl.gov)
 }
 
 
@@ -72,9 +71,7 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 #ifdef HAVE_MPI
   double buf = error_norm;
   //MPI_Allreduce(&buf, &error_norm, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-cout << MyPID << " " << u.MyLength() << " " << error_norm;
   du.Comm().MaxAll(&buf, &error_norm, 1);
-cout << " " << error_norm << endl;
 #endif
   return  error_norm;
 }
