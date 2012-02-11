@@ -181,9 +181,18 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 ****************************************************************** */
 int Richards_PK::advance_to_steady_state()
 {
-  for (int c=0; c<ncells_owned; c++) (*solution_cells)[c] = FS->ref_pressure()[c];
+  // initial pressure
+  Epetra_Vector& pressure = FS->ref_pressure();
+  for (int c=0; c<ncells_owned; c++) (*solution_cells)[c] = pressure[c];
   deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
+
+  // initial water saturation
+  Epetra_Vector& water_saturation = FS->ref_water_saturation();
+  deriveSaturationFromPressure(pressure, water_saturation);
+
+  const Epetra_Vector& phi = FS->ref_porosity();
+  double water_mass0 = rho * FS->normLpCell(phi, water_saturation, 1.0);
 
   int ierr = 0;
   if (method_sss == FLOW_STEADY_STATE_PICARD) {
@@ -202,6 +211,16 @@ int Richards_PK::advance_to_steady_state()
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
+
+  // final water saturation
+  water_saturation = FS_next->ref_water_saturation();
+  deriveSaturationFromPressure(FS_next->ref_pressure(), water_saturation);
+
+  double water_mass1 = rho * FS_next->normLpCell(phi, water_saturation, 1.0);
+  if (MyPID == 0 && verbosity >= FLOW_VERBOSITY_HIGH) {
+    cout << "initial water mass = " << water_mass0 << " [KG]" << endl;    
+    cout << "final   water mass = " << water_mass1 << " [KG]" << endl; 
+  }   
 
   flow_status_ = FLOW_NEXT_STATE_COMPLETE;
   return ierr;

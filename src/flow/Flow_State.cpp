@@ -27,16 +27,18 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
   const Epetra_BlockMap& fmap = mesh->face_map(false);
 
   porosity_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  pressure_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  water_saturation_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  vertical_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  horizontal_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
+  darcy_mass_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
+
   fluid_density_ = Teuchos::rcp(new double);
   fluid_viscosity_ = Teuchos::rcp(new double);
 
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
   for (int i=0; i<3; i++) (*gravity_)[i] = 0.0;
 
-  vertical_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  horizontal_permeability_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  pressure_ = Teuchos::rcp(new Epetra_Vector(cmap));
-  darcy_mass_flux_ = Teuchos::rcp(new Epetra_Vector(fmap));
   mesh_ = mesh;
 
   S_ = NULL;  
@@ -49,16 +51,18 @@ Flow_State::Flow_State(Teuchos::RCP<AmanziMesh::Mesh> mesh)
 Flow_State::Flow_State(Teuchos::RCP<State> S)
 {
   porosity_ = S->get_porosity();
+  pressure_ = S->get_pressure();
+  water_saturation_ = S->get_water_saturation();
+  vertical_permeability_ = S->get_vertical_permeability();
+  horizontal_permeability_ = S->get_horizontal_permeability();
+  darcy_mass_flux_ = S->get_darcy_flux();
+
   fluid_density_ = S->get_density();
   fluid_viscosity_ = S->get_viscosity();
 
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
   for (int i=0; i<3; i++) (*gravity_)[i] = (*(S->get_gravity()))[i];
 
-  vertical_permeability_ = S->get_vertical_permeability();
-  horizontal_permeability_ = S->get_horizontal_permeability();
-  pressure_ = S->get_pressure();
-  darcy_mass_flux_ = S->get_darcy_flux();
   mesh_ = S->get_mesh_maps();
 
   S_ = &*S;
@@ -68,16 +72,18 @@ Flow_State::Flow_State(Teuchos::RCP<State> S)
 Flow_State::Flow_State(State& S)
 {
   porosity_ = S.get_porosity();
+  pressure_ = S.get_pressure();
+  water_saturation_ = S.get_water_saturation();
+  vertical_permeability_ = S.get_vertical_permeability();
+  horizontal_permeability_ = S.get_horizontal_permeability();
+  darcy_mass_flux_ = S.get_darcy_flux();
+
   fluid_density_ = S.get_density();
   fluid_viscosity_ = S.get_viscosity();
 
   gravity_ = Teuchos::rcp(new AmanziGeometry::Point(3));
   for (int i=0; i<3; i++) (*gravity_)[i] = (*(S.get_gravity()))[i];
 
-  vertical_permeability_ = S.get_vertical_permeability();
-  horizontal_permeability_ = S.get_horizontal_permeability();
-  pressure_ = S.get_pressure();
-  darcy_mass_flux_ = S.get_darcy_flux();
   mesh_ = S.get_mesh_maps();
 
   S_ = &S;
@@ -93,26 +99,32 @@ Flow_State::Flow_State(Flow_State& FS, FlowCreateMode mode)
 {
   if (mode == CopyPointers) {
     porosity_ = FS.porosity();
+    pressure_ = FS.pressure();
+    water_saturation_ = FS.water_saturation();
+    vertical_permeability_ = FS.vertical_permeability();
+    horizontal_permeability_ = FS.horizontal_permeability();
+    darcy_mass_flux_ = FS.darcy_mass_flux();
+
     fluid_density_ = FS.fluid_density();
     fluid_viscosity_ = FS.fluid_viscosity();
     gravity_ = FS.gravity();
-    vertical_permeability_ = FS.vertical_permeability();
-    horizontal_permeability_ = FS.horizontal_permeability();
-    pressure_ = FS.pressure();
-    darcy_mass_flux_ = FS.darcy_mass_flux();
+
     mesh_ = FS.mesh();
   } 
-  else if (mode == CopyMemory ) { 
+  else if (mode == CopyMemory ) {
     porosity_ = FS.porosity();
+    vertical_permeability_ = FS.vertical_permeability();
+    horizontal_permeability_ = FS.horizontal_permeability();
+
     fluid_density_ = FS.fluid_density();
     fluid_viscosity_ = FS.fluid_viscosity();
     gravity_ = FS.gravity();
-    vertical_permeability_ = FS.vertical_permeability();
-    horizontal_permeability_ = FS.horizontal_permeability();
+
     mesh_ = FS.mesh();
 
     // allocate memory for the next state
     pressure_ = Teuchos::rcp(new Epetra_Vector(FS.ref_pressure()));
+    water_saturation_ = Teuchos::rcp(new Epetra_Vector(FS.ref_water_saturation()));
     darcy_mass_flux_ = Teuchos::rcp(new Epetra_Vector(FS.ref_darcy_mass_flux()));
   }
 
@@ -182,17 +194,37 @@ void Flow_State::copyMasterMultiCell2GhostMultiCell(Epetra_MultiVector& v)
 
 
 /* *******************************************************************
-* Lp norms to calculate errors, water balance, etc              
+* Lp norm of the vector v1         
 ******************************************************************* */
-double Flow_State::normLpCell(Epetra_Vector& v1, double p)
+double Flow_State::normLpCell(const Epetra_Vector& v1, double p)
 {
   int ncells = (mesh_->cell_map(false)).NumMyElements();
 
-  double Lp_norm = 0.0;
+  double Lp_norm, Lp = 0.0;
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);
-    Lp_norm += volume * pow(v1[c], p);
+    Lp += volume * pow(v1[c], p);
   }
+  v1.Comm().MaxAll(&Lp, &Lp_norm, 1);
+
+  return pow(Lp_norm, 1.0/p);
+}
+
+
+/* *******************************************************************
+* Lp norm of the component-wise product v1 .* v2             
+******************************************************************* */
+double Flow_State::normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p)
+{
+  int ncells = (mesh_->cell_map(false)).NumMyElements();
+
+  double Lp_norm, Lp = 0.0;
+  for (int c=0; c<ncells; c++) {
+    double volume = mesh_->cell_volume(c);
+    Lp += volume * pow(v1[c] * v2[c], p);
+  }
+  v1.Comm().MaxAll(&Lp, &Lp_norm, 1);
+
   return pow(Lp_norm, 1.0/p);
 }
 

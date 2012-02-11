@@ -15,7 +15,8 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Epetra_MpiComm.h"
 
 #include "Mesh.hh"
-#include "Mesh_MSTK.hh"
+//#include "Mesh_MSTK.hh"
+#include "Mesh_simple.hh"
 #include "Darcy_PK.hpp"
 
 
@@ -60,7 +61,7 @@ class DarcyProblem {
     DPK = new Darcy_PK(dp_list, FS);
   }
 
-  ~DarcyProblem() { delete DPK; delete S; delete comm; }
+  ~DarcyProblem() { delete S; delete DPK; delete comm; }
 
   void createBClist(
       const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 

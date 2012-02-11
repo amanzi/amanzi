@@ -21,12 +21,12 @@ void Richards_PK::fun(double T, const Epetra_Vector& u, const Epetra_Vector& udo
   computePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  const Epetra_Vector& phi = FS->ref_porosity();
+
   Epetra_Vector* u_cells = FS->createCellView(u);
   Epetra_Vector dSdP(mesh_->cell_map(false));
   derivedSdP(*u_cells, dSdP);
-
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  const Epetra_Vector& phi = FS->ref_porosity();
 
   for (int c=0; c<ncells; c++) {
     double volume = mesh_->cell_volume(c);

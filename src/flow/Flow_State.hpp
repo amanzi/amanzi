@@ -53,10 +53,12 @@ class Flow_State {
   Teuchos::RCP<Epetra_Vector> darcy_mass_flux() { return darcy_mass_flux_; }
   Teuchos::RCP<Epetra_Vector> vertical_permeability() { return vertical_permeability_; }
   Teuchos::RCP<Epetra_Vector> horizontal_permeability() { return horizontal_permeability_; }
+  Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
+
   Teuchos::RCP<double> fluid_density() { return fluid_density_; }
   Teuchos::RCP<double> fluid_viscosity() { return fluid_viscosity_; }
   Teuchos::RCP<AmanziGeometry::Point> gravity() { return gravity_; }
-  Teuchos::RCP<Epetra_Vector> water_saturation() { return water_saturation_; }
+
   Teuchos::RCP<AmanziMesh::Mesh> mesh() { return mesh_; }
 
   Epetra_Vector& ref_porosity() { return *porosity_; }
@@ -64,12 +66,15 @@ class Flow_State {
   Epetra_Vector& ref_darcy_mass_flux() { return *darcy_mass_flux_; }
   Epetra_Vector& ref_vertical_permeability() { return *vertical_permeability_; }
   Epetra_Vector& ref_horizontal_permeability() { return *horizontal_permeability_; }
+  Epetra_Vector& ref_water_saturation() { return *water_saturation_; }
+
   double ref_fluid_density() { return *fluid_density_; }
   double ref_fluid_viscosity() { return *fluid_viscosity_; }
 
   // miscaleneous
   double get_time() { return (S_ == NULL) ? 0.0 : S_->get_time(); }
-  double normLpCell(Epetra_Vector& v1, double p = 2.0);
+  double normLpCell(const Epetra_Vector& v1, double p);
+  double normLpCell(const Epetra_Vector& v1, const Epetra_Vector& v2, double p);
   
   // debug routines
   void set_fluid_density(double rho);
