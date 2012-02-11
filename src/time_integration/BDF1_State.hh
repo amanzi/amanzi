@@ -28,6 +28,9 @@ struct BDF1State {
     rejected_steps = 0;
     hmin = std::numeric_limits<double>::min();
     hmax = std::numeric_limits<double>::max();
+    
+    hlimit = 1e10;
+    maxpclag = 1;
 
     verbose = false;
   }
@@ -50,6 +53,9 @@ struct BDF1State {
   int       mitr;         // maximum number of nonlinear iterations, more and we fail 
   int       minitr;       // minimum number of nonlinear iterations (we will increase time step here)
   int       maxitr;       // maximum number of nonlinear iterations (we cut time step here)
+  int       maxpclag;     // maximum iterations that the preconditioner can be lagged
+  int       pclagcount;   // counter for how many iterations the preconditioner has been lagged
+  double    hlimit;       // maximum allowed time step
   double    ntol;         // nonlinear solver error tolerance (relative to 1)
   BDF2::SolutionHistory* uhist; // solution history structure
 
