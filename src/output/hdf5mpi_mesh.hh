@@ -44,24 +44,22 @@ class HDF5_MPI {
   std::string H5DataFilename() { return H5DataFilename_; }
   void setH5DataFilename(std::string H5DataFilename) {
                          H5DataFilename_ = H5DataFilename;}
-  std::string xdmfParaviewFilename() { return xdmfParaviewFilename_; }
-  void setxdmfParaviewFilename(std::string xdmfParaviewFilename) {
-                               xdmfParaviewFilename_ = xdmfParaviewFilename;}
   std::string xdmfVisitFilename() { return xdmfVisitFilename_; }
   void setxdmfVisitFilename(std::string xdmfVisitFilename) {
                             xdmfVisitFilename_ = xdmfVisitFilename;}
   std::string xdmfStepFilename() { return xdmfStepFilename_; }
   void setxdmfStepFilename(std::string xdmfStepFilename) {
                            xdmfStepFilename_ = xdmfStepFilename;}
-
+  
   int NumNodes() { return NumNodes_;}
   void setNumNodes(int NumNodes) {NumNodes_ = NumNodes;}
   int NumElems() { return NumElems_;}
   void setNumElems(int NumElems) {NumElems_ = NumElems;}
+  int ConnLength() { return ConnLength_;}
+  void setConnLength(int ConnLength) {ConnLength_ = ConnLength;}
   int Iteration() { return Iteration_;}
   void setIteration(int Iteration) {Iteration_ = Iteration;}
 
-  Teuchos::XMLObject xmlParaview() { return xmlParaview_; }
   Teuchos::XMLObject xmlVisit() { return xmlVisit_; }
   Teuchos::XMLObject xmlStep() { return xmlStep_; }
 
@@ -69,10 +67,9 @@ class HDF5_MPI {
   void createMeshFile(const AmanziMesh::Mesh &mesh_Maps, std::string filename);
   //void createMeshFile(Mesh_maps_base &mesh_Maps, std::string filename);
 
-  // Create h5 file for data output, create accompanying Xdmf files for
-  // ParaView and Visit
+  // Create h5 file for data output, create accompanying Xdmf files for Visit
   void createDataFile(std::string data_filename);
-  // Adds time step attributes to ParaView and VisIt Xdmf files.  Creates
+  // Adds time step attributes to VisIt Xdmf files.  Creates
   // individual Xdmf for the current step.
   // TODO(barker): The individual step file can be remove after VisIt updates.
   // TODO(barker): Consolidate into a singel Xdmf file, after VisIt updates.
@@ -105,7 +102,6 @@ class HDF5_MPI {
  private:
 
   void createXdmfMesh_(const std::string filename);
-  void createXdmfParaview_();
   void createXdmfVisit_();
 
   Teuchos::XMLObject addXdmfHeaderGlobal_();
@@ -118,9 +114,6 @@ class HDF5_MPI {
 
   Teuchos::XMLObject findGridNode_(Teuchos::XMLObject xmlobject);
   Teuchos::XMLObject findMeshNode_(Teuchos::XMLObject xmlobject);
-  void writeXdmfParaviewGrid_(std::string filename,
-                                          const double time,
-                                          const int iteration);
   void writeXdmfVisitGrid_(std::string filename);
 
   void writeFieldData_(const Epetra_Vector &x, std::string varname,
@@ -128,6 +121,11 @@ class HDF5_MPI {
   void readFieldData_(Epetra_Vector &x, std::string varname,
                       datatype_t type);
 
+  int getCellTypeID_(int conn_len);
+  
+  
+  std::string stripFilename_(std::string filename);
+  
   // parallel info
   Epetra_MpiComm viz_comm_;
   MPI_Info info_;
@@ -139,20 +137,19 @@ class HDF5_MPI {
   bool TrackXdmf_;
 
   // XMLObjects for Xdmf output
-  Teuchos::XMLObject xmlParaview_;
   Teuchos::XMLObject xmlVisit_;
   Teuchos::XMLObject xmlStep_;
 
   // Filenames
   std::string H5MeshFilename_;
   std::string H5DataFilename_;
-  std::string xdmfParaviewFilename_;
   std::string xdmfVisitFilename_;
   std::string xdmfStepFilename_;
 
   // Simulation/Mesh Info
   int NumNodes_;
   int NumElems_;
+  int ConnLength_;
   int Iteration_;
 
   // Mesh information

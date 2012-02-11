@@ -793,7 +793,6 @@ c ::: -----------------------------------------------------------
             endif
          end do 
       end do
-
       end
 
 c ::: -----------------------------------------------------------
@@ -1150,7 +1149,7 @@ c ::: ---------------------------------------------------------------
       REAL_T  dfy(DIMV(dfy))
       REAL_T  umac(DIMV(umac))
       REAL_T  vmac(DIMV(vmac))
-      logical do_upwind
+      integer do_upwind
 
       integer i, j
       REAL_T  H_coef
@@ -1158,7 +1157,7 @@ c ::: ---------------------------------------------------------------
 c ::: diffusion coefficient in x-dir
       do i=lo(1), hi(1)+1
          do j=lo(2), hi(2)
-            if (do_upwind) then
+            if (do_upwind.eq.1) then
                H_coef = merge(lbd(i-1,j,nc),lbd(i,j,nc),umac(i,j)>=zero)
             else
                H_coef = half*(lbd(i-1,j,nc)+lbd(i,j,nc))
@@ -1184,7 +1183,7 @@ c ::: diffusion coefficient in x-dir
 c ::: diffusion coefficient in y-dir
       do j=lo(2), hi(2)+1
          do i=lo(1), hi(1)
-            if (do_upwind) then
+            if (do_upwind.eq.1) then
                H_coef = merge(lbd(i,j-1,nc),lbd(i,j,nc),vmac(i,j)>=zero)
             else
                H_coef = half*(lbd(i,j-1,nc)+lbd(i,j,nc))
@@ -1268,7 +1267,7 @@ c :: ------------------------------------------------------------
       REAL_T  krcoef(DIMV(krcoef),nkrcoef)
       REAL_T  phi(DIMV(phi))
       REAL_T  kappa(DIMV(kappa))
-      logical do_upwind
+      integer do_upwind
 
       integer i, j,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
@@ -1322,7 +1321,7 @@ c :: ------------------------------------------------------------
       by = zero
       do j = lo(2), hi(2)
          do i = lo(1), hi(1)
-            if (do_upwind) then
+            if (do_upwind.eq.1) then
                ldx(1)  = merge(lbd(i-1,j,1),lbd(i,j,1),umac(i,j)>=zero)
                ldx(2)  = merge(lbd(i,j,1),lbd(i+1,j,1),umac(i+1,j)>=zero)
                ldy(1)  = merge(lbd(i,j-1,1),lbd(i,j,1),vmac(i,j)>=zero)
@@ -1511,7 +1510,7 @@ c :: ------------------------------------------------------------
       REAL_T  phi(DIMV(phi))
       REAL_T  kappa(DIMV(kappa))
       REAL_T  deps
-      logical do_upwind
+      integer do_upwind
 
       integer i, j,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
@@ -1528,7 +1527,7 @@ c
       do j=lo(2), hi(2)
          do i=lo(1), hi(1)
 
-            if (do_upwind) then
+            if (do_upwind.eq.1) then
                ldx(1) = merge(kpx(i,j)*lbd(i-1,j,1),kpx(i,j)*lbd(i,j,1),umac(i,j)>=zero)
                ldx(2) = merge(kpx(i+1,j)*lbd(i,j,1),kpx(i+1,j)*lbd(i+1,j,1),umac(i+1,j)>=zero)
                ldy(1) = merge(kpy(i,j)*lbd(i,j-1,1),kpy(i,j)*lbd(i,j,1),vmac(i,j)>=zero)
@@ -1615,7 +1614,7 @@ c           x-direction
                l_cpl_sres  = cplcoef(i+n,j,4)
                call get_cpl(pcn(n+2),comp,rhoval,phi(i+n,j),kappa(i+n,j),l_sigma,ncomps,
      &              l_cpl_sres,l_cpl_type,l_cpl_coef)
-               if (do_upwind) then
+               if (do_upwind.eq.1) then
                   ldx(1) = merge(ldx(1),merge(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)>=zero),ldx(1)==zero)
                   ldx(2) = merge(ldx(2),merge(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)>=zero),ldx(2)==zero)
                else
@@ -1656,7 +1655,7 @@ c           y-direction
                l_cpl_sres  = cplcoef(i,j+n,4)
                call get_cpl(pcn(n+2),comp,rhoval,phi(i,j+n),kappa(i,j+n),l_sigma,ncomps,
      &              l_cpl_sres,l_cpl_type,l_cpl_coef)
-               if (do_upwind) then
+               if (do_upwind.eq.1) then
                   ldy(1) = merge(ldy(1),merge(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)>=zero),ldy(1)==zero)
                   ldy(2) = merge(ldy(2),merge(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)>=zero),ldy(2)==zero)
                else
@@ -1744,7 +1743,7 @@ c :: ------------------------------------------------------------
       REAL_T  phi(DIMV(phi))
       REAL_T  kappa(DIMV(kappa))
       REAL_T  deps
-      logical do_upwind
+      integer do_upwind
 
       integer i, j,n,l_kr_type,l_cpl_type
       REAL_T l_kr_coef, l_kr_sres, l_cpl_coef,l_sigma,l_cpl_sres
@@ -1761,7 +1760,7 @@ c
       do j=lo(2), hi(2)
          do i=lo(1), hi(1)
 
-            if (do_upwind) then
+            if (do_upwind.eq.1) then
                ldx(1) = merge(kpx(i,j)*lbd(i-1,j,1),kpx(i,j)*lbd(i,j,1),umac(i,j)>=zero)
                ldx(2) = merge(kpx(i+1,j)*lbd(i,j,1),kpx(i+1,j)*lbd(i+1,j,1),umac(i+1,j)>=zero)
                ldy(1) = merge(kpy(i,j)*lbd(i,j-1,1),kpy(i,j)*lbd(i,j,1),vmac(i,j)>=zero)
@@ -1842,7 +1841,7 @@ c           x-direction
                call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
                ldn(n+2) = ldtmp(1)
                pcn(n+2) = cap
-               if (do_upwind) then
+               if (do_upwind.eq.1) then
                   ldx(1) = merge(ldx(1),merge(kpx(i,j)*ldn(1),kpx(i,j)*ldn(2),umac(i,j)>=zero),ldx(1)==zero)
                   ldx(2) = merge(ldx(2),merge(kpx(i+1,j)*ldn(2),kpx(i+1,j)*ldn(3),umac(i+1,j)>=zero),ldx(2)==zero)
                else
@@ -1877,7 +1876,7 @@ c           y-direction
                call get_ld(ldtmp,comp,rhoval,muval,ncomps,l_kr_type,l_kr_coef,l_kr_sres)
                ldn(n+2) = ldtmp(1)
                pcn(n+2) = cap
-               if (do_upwind) then
+               if (do_upwind.eq.1) then
                   ldy(1) = merge(ldy(1),merge(kpy(i,j)*ldn(1),kpy(i,j)*ldn(2),vmac(i,j)>=zero),ldy(1)==zero)
                   ldy(2) = merge(ldy(2),merge(kpy(i,j+1)*ldn(2),kpy(i,j+1)*ldn(3),vmac(i,j+1)>=zero),ldy(2)==zero)
                else
@@ -2158,7 +2157,7 @@ c :: ------------------------------------------------------------
       REAL_T  p(DIMV(p))
       REAL_T  lbd(DIMV(lbd),ncomps)
       REAL_T  inflow_vel_lo(SDIM),inflow_vel_hi(SDIM)
-      logical do_upwind
+      integer do_upwind
       integer i, j
       REAL_T  grav, mult, ld, dp
 c
@@ -2167,12 +2166,12 @@ c
       grav = -rhoval(1)*gravity
       ux = zero
       uy = zero
-      do_upwind = .true.
+      do_upwind = 1
       do j=lo(2), hi(2)
          do i=lo(1), hi(1)+1
             dp = - (p(i,j)-p(i-1,j))/dx(1)
             mult = one
-            if (do_upwind) then
+            if (do_upwind.eq.1) then
                ld   = merge(lbd(i-1,j,1),lbd(i,j,1),dp>=zero)
             else
                ld   = half*(lbd(i,j,1)+lbd(i-1,j,1))
@@ -2211,7 +2210,7 @@ c
          do i=lo(1), hi(1)
             dp = - ((p(i,j)-p(i,j-1))/dx(2) - grav)
             mult = one
-            if (do_upwind) then
+            if (do_upwind.eq.1) then
                ld   = merge(lbd(i,j-1,1),lbd(i,j,1),dp>=zero)
             else
                ld   = half*(lbd(i,j,1)+lbd(i,j-1,1))
@@ -2302,6 +2301,7 @@ c ::: -------------------------------------------------------------
 
       end
 
+
 c ::: ---------------------------------------------------------
 c ::: Define hydrostatic boundary condition
 c ::: ---------------------------------------------------------
@@ -2358,15 +2358,21 @@ c     dummy
                   l_sigma    = cplcoef(i,j,3)
                   l_sat_res  = cplcoef(i,j,4)
                   satlim(1) = 1.1*l_sat_res*rhoval(1)
-                  satlim(2) = (one - 1.1*l_sat_res)*rhoval(2)
-                  pc = (rhoval(1)-rhoval(2))*grav*(y-wt_loc)
+                  if (ncomps .eq. 1) then
+                     pc = rhoval(1)*grav*(y-wt_loc)
+                  else
+                     satlim(2) = (one - 1.1*l_sat_res)*rhoval(2)
+                     pc = (rhoval(1)-rhoval(2))*grav*(y-wt_loc)
+                  endif
                   call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
      &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
                   if (stmp(1) .lt. satlim(1)) then
                      stmp = satlim
                   end if
                   rho(i,j,1) = rho(i,j,1) + stmp(1)*wt(k)
-                  rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
+                  if (ncomps>1) then
+                     rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
+                  endif
                end if
             end do 
          end do
@@ -2827,3 +2833,80 @@ c     x-faces
 #undef YHI
 
       end
+
+
+
+#if 0
+c ::: ---------------------------------------------------------
+c ::: Define steady Richards 1D profile : FIXME
+c ::: ---------------------------------------------------------
+      
+      subroutine FORT_STEADY_1D_RICHARD(rho,DIMS(rho),rhoval,
+     &     cplcoef,DIMS(cplcoef),ncplcoef,dx,grav,rhoGInt,prevLoc)
+
+      implicit none
+
+      integer DIMDEC(rho)
+      integer DIMDEC(cplcoef)
+      integer ncomps, ncplcoef
+      REAL_T  rho(DIMV(rho),ncomps)
+      REAL_T  cplcoef(DIMV(cplcoef),ncplcoef)
+      REAL_T  rhoval(ncomps)
+      REAL_T  dx(SDIM)
+      REAL_T  grav, rhoGint, prevLoc
+      
+      integer i,j,k,l_cpl_type
+      REAL_T  l_cpl_coef, l_sigma, l_sat_res
+      REAL_T  y
+      REAL_T  pc,phi,kappa,satlim(2),stmp(2)
+      REAL_T  intRhoG, prev_loc
+
+c     Gauss Legendre integration
+      REAL_T, parameter :: qd(5) = (/ 0.0d0,
+     &                                0.906179845938664d0*half,
+     &                                0.538469310105683d0*half,
+     &                               -0.906179845938664d0*half,
+     &                               -0.538469310105683d0*half /)
+
+
+      REAL_T, parameter :: wt(5) = (/ 0.568888888888889d0*half,
+     &                                0.236926885056189d0*half,
+     &                                0.478628670499366d0*half,
+     &                                0.236926885056189d0*half,
+     &                                0.478628670499366d0*half /)
+
+c     dummy
+      phi   = zero
+      kappa = zero
+
+      do j = ARG_L2(rho), ARG_H2(rho)
+         do i = ARG_L1(rho), ARG_H1(rho)
+            rho(i,j,:) = zero
+            do k = 1,5
+               y = (dble(j)+half+qd(k))*dx(2)
+               if (y .le. wt_loc) then
+                  rho(i,j,1) = rho(i,j,1) + rhoval(1)*wt(k)
+                  rho(i,j,2) = zero
+               else
+                  l_cpl_type = nint(cplcoef(i,j,1))
+                  l_cpl_coef = cplcoef(i,j,2)
+                  l_sigma    = cplcoef(i,j,3)
+                  l_sat_res  = cplcoef(i,j,4)
+                  satlim(1) = 1.1*l_sat_res*rhoval(1)
+                  satlim(2) = (one - 1.1*l_sat_res)*rhoval(2)
+                  pc = (rhoval(1)-rhoval(2))*grav*(y-prevLoc) + intRhoG
+                  call get_invcpl(stmp,pc,rhoval,phi,kappa,l_sigma,
+     &              ncomps,l_sat_res,l_cpl_type,l_cpl_coef)
+                  if (stmp(1) .lt. satlim(1)) then
+                     stmp = satlim
+                  end if
+                  rho(i,j,1) = rho(i,j,1) + stmp(1)*wt(k)
+                  rho(i,j,2) = rho(i,j,2) + stmp(2)*wt(k)
+               end if
+            end do 
+         end do
+      end do 
+
+      end
+
+#endif

@@ -19,7 +19,12 @@
 #include "Restart.hpp"
 
 namespace Amanzi
+
 {
+
+  enum time_integration_mode { STEADY, TRANSIENT, INIT_TO_STEADY };
+
+
 
   class MPC : public Teuchos::VerboseObject<MPC> {
 
@@ -36,7 +41,8 @@ namespace Amanzi
   private:
     void mpc_init();
     void read_parameter_list();
-    
+    double time_step_limiter (double T, double dT, double T_end);
+
     // states
     Teuchos::RCP<State> S;
     Teuchos::RCP<amanzi::chemistry::Chemistry_State> CS;
@@ -57,9 +63,12 @@ namespace Amanzi
     
     Teuchos::ParameterList mpc_parameter_list;
     
-    double T0, T1, dT0;
+    double T0, T1, dTsteady, dTtransient, Tswitch;
     int end_cycle;
+    time_integration_mode ti_mode;
+
     
+    bool steady, init_to_steady;
     bool flow_enabled, transport_enabled, chemistry_enabled;
     
     std::string flow_model;

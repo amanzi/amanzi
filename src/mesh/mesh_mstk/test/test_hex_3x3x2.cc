@@ -49,40 +49,42 @@ TEST(MSTK_HEX_3x3x2)
 			      {0,3,2,1},
 			      {4,5,6,7}};
 
+  Teuchos::RCP<Epetra_MpiComm> comm(new Epetra_MpiComm(MPI_COMM_WORLD)); 
+
 
   // Load a simple 2 element hex mesh 
 
-  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_3x3x2_ss.exo",MPI_COMM_WORLD,3);
-
-
+  Amanzi::AmanziMesh::Mesh_MSTK mesh("test/hex_3x3x2_ss.exo",comm.get(),3);
+  
+  
   nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NV,nv);
-
+  
   for (i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point coords;
-
+    
     coords.init(mesh.space_dimension()); 
-
+    
     mesh.node_get_coordinates(i,&coords);
     CHECK_EQUAL(xyz[i][0],coords[0]);
     CHECK_EQUAL(xyz[i][1],coords[1]);
     CHECK_EQUAL(xyz[i][2],coords[2]);
   }
-
-
+  
+  
   nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NF,nf);
   
   nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
   CHECK_EQUAL(NC,nc);
-    
+  
   for (i = 0; i < nc; i++) {
     mesh.cell_get_nodes(i,&cnodes);
     mesh.cell_get_faces(i,&faces);
     mesh.cell_get_face_dirs(i,&facedirs);
-
+    
     for (j = 0; j < 6; j++) {
-
+      
       mesh.face_get_nodes(faces[j],&fnodes);
       mesh.face_get_coordinates(faces[j],&fcoords);
       

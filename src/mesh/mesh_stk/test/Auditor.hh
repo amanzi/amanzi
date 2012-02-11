@@ -43,9 +43,9 @@ class Auditor {
     std::ostringstream ofile;
     ofile << oname
           << std::setfill('0') << std::setw(4) 
-          << mesh->communicator().MyPID() << ".tst";
+          << mesh->communicator()->MyPID() << ".tst";
     ofs.open(ofile.str().c_str());
-    if (mesh->communicator().MyPID() == 0)
+    if (mesh->communicator()->MyPID() == 0)
       std::cout << "Writing results to " << ofile.str() << ", etc." << std::endl;
     audit.reset(new Amanzi::MeshAudit(mesh_map, ofs));
   }

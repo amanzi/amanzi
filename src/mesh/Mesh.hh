@@ -34,7 +34,7 @@ class Mesh
     face_centroids, face_normals;
   AmanziGeometry::GeometricModelPtr geometric_model_;
 
-  Epetra_Comm *comm; // temporary until we get an amanzi communicator
+  const Epetra_MpiComm *comm; // temporary until we get an amanzi communicator
 
  protected:
 
@@ -462,18 +462,17 @@ class Mesh
   // communicator access
   // temporary until we set up an amanzi communicator
 
+  // Changing this to return Epetra_MpiComm * because the 
+  // stk::ParalllelMachine cannot be initialized with anything
+  // other than an MpiComm type - so we can't do serial builds anyway 
+
   inline
-  const Epetra_Comm* get_comm() {
+  const Epetra_MpiComm* get_comm() const {
     return comm;
   }
 
   inline
-  void set_comm(MPI_Comm incomm) {
-    comm = new Epetra_MpiComm(incomm);
-  }
-
-  inline
-  void set_comm(Epetra_Comm *incomm) {
+  void set_comm(const Epetra_MpiComm *incomm) {
     comm = incomm;
   }
 

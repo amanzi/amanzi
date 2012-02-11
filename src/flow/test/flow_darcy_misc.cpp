@@ -15,8 +15,8 @@ Authors: Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 #include "Epetra_MpiComm.h"
 
 #include "Mesh.hh"
-//#include "Mesh_MSTK.hh"
-#include "Mesh_simple.hh"
+#include "Mesh_MSTK.hh"
+//#include "Mesh_simple.hh"
 #include "Darcy_PK.hpp"
 
 
@@ -47,7 +47,7 @@ class DarcyProblem {
     Teuchos::ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
     //mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
-    mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", MPI_COMM_WORLD, gm)); 
+    mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", comm, gm)); 
 
     Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");

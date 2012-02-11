@@ -83,11 +83,15 @@ class Flow_PK : public BDF2::fnBase {
 
   // main methods
   void Init(Teuchos::RCP<Flow_State> FS_MPC);
-  void set_initial_time(double T0, double dT0) { T_internal = T_physical = T0; dT = dT0; }
+  void init_steady(double T0, double dT0) {};  // temporary gag (lipnikov@lanl.gov)
+  void init_transient(double T0, double dT0) {};  // temporary gag (lipnikov@lanl.gov)
 
   virtual int advance(double dT) = 0; 
   virtual int advance_to_steady_state() = 0;
   virtual void commit_state(Teuchos::RCP<Flow_State> FS) = 0;
+
+  void set_initial_time(double T0, double dT0) { T_internal = T_physical = T0; dT = dT0; }
+  double calculate_flow_dT() { return dT; }
 
   // boundary condition members
   void updateBoundaryConditions(BoundaryFunction *bc_pressure, 

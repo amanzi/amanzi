@@ -47,7 +47,7 @@ TEST(FLOW_2D_RICHARDS) {
   // create an SIMPLE mesh framework 
   ParameterList region_list = parameter_list.get<Teuchos::ParameterList>("Regions");
   GeometricModelPtr gm = new GeometricModel(2, region_list, &comm);
-  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 18,18, MPI_COMM_WORLD, gm)); 
+  RCP<Mesh> mesh = rcp(new Mesh_MSTK(0.0,-2.0, 1.0,0.0, 18,18, &comm, gm)); 
 
   // create and populate flow state
   Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(mesh));
