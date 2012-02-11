@@ -729,9 +729,15 @@ protected:
   //
   // Boundary conditions
   //  
+  void setPhysBoundaryValues (FArrayBox& dest,
+                              int        state_indx,
+                              Real       time,
+                              int        dest_comp,
+                              int        src_comp,
+                              int        num_comp);
   void dirichletStateBC (const Real time);
-  void dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time);
-  void dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time);
+  void dirichletStateBC (FArrayBox& fab, Real time);
+  void dirichletTracerBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            Real               time);

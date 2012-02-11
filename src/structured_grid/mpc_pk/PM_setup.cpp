@@ -761,17 +761,6 @@ void PorousMedia::read_geometry()
 	      Array<Real> lo_coor,hi_coor;
 	      ppr.getarr("lo_coordinate",lo_coor,0,BL_SPACEDIM);
 	      ppr.getarr("hi_coordinate",hi_coor,0,BL_SPACEDIM);
-	      
-	      // check if it is at the boundary.  If yes, then include boundary.
-#if 0
-	      for (int dir=0;dir<BL_SPACEDIM; dir++)
-		{
-		  if (lo_coor[dir] <= problo[dir]+geometry_eps) 
-		    lo_coor[dir] = -2e20;
-		  if (hi_coor[dir] >= probhi[dir]-geometry_eps)
-		    hi_coor[dir] = 2e20;
-		}
-#endif
               regions.set(nregion_DEF+j, new boxRegion(r_name[j],r_purpose,r_type,lo_coor,hi_coor));
 	    }
 	  else if (r_type == "color_function")
@@ -779,23 +768,12 @@ void PorousMedia::read_geometry()
               int color_value; ppr.get("color_value",color_value);
               std::string color_file; ppr.get("color_file",color_file);
               colorFunctionRegion* cfr = new colorFunctionRegion(r_name[j],r_purpose,r_type,color_file,color_value);
-
-	      // check if it is at the boundary.  If yes, then include boundary.
-              Array<Real>& lo = cfr->lo;
-              Array<Real>& hi = cfr->hi;
-              
-#if 0
-	      for (int dir=0;dir<BL_SPACEDIM; dir++)
-              {
-		  if (lo[dir] <= problo[dir]+geometry_eps) 
-                      lo[dir] = -2e20;
-		  if (hi[dir] >= probhi[dir]-geometry_eps)
-                      hi[dir] = 2e20;
-              }
-#endif
 	      regions.set(nregion_DEF+j, cfr);
           }
-          else BoxLib::Abort("region type not supported");
+          else {
+              std::string m = "region type not supported \"" + r_type + "\"";
+              BoxLib::Abort(m.c_str());
+          }
 	}
       pp.query("surf_file",surf_file);
     }

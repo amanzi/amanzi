@@ -123,38 +123,21 @@ Region::setVal(FArrayBox&  fab,
 bool 
 pointRegion::inregion (const Array<Real>& x) const
 {
-  bool inflag = false;
-#if (BL_SPACEDIM == 2)
-  if (x[0]>=coor[0] && x[1]>=coor[1])
-    inflag = true;
-#else
-  if (x[0]>=coor[0] && x[1]>=coor[1] && x[2]>=coor[2] )
-    inflag = true;
-#endif
-  return inflag;
+    bool inflag = true;
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        inflag &= (x[d]>=coor[d]);
+    }
+    return inflag;
 }
 
 bool 
 boxRegion::inregion(const Array<Real>& x) const
 {
-  bool inflag = false;
-#if (BL_SPACEDIM == 2)
-  if (x[0]>=lo[0] && x[0]<=hi[0] &&
-      x[1]>=lo[1] && x[1]<=hi[1])
-    inflag = true;
-#else
-  if (x[0]>=lo[0] && x[0]<=hi[0] &&
-      x[1]>=lo[1] && x[1]<=hi[1] &&
-      x[2]>=lo[2] && x[2]<=hi[2])
-    inflag = true;
-#endif
-
-  if (!inflag) {
-      std::cout << "name: " << name << std::endl;
-      std::cout << "  lo,hi: " << lo[0] << " " << lo[1] << " " << hi[0] << " " << hi[1]  << std::endl;
-      std::cout << "  x: " << x[0] << " " << x[1] << std::endl;
-  }
-  return inflag;
+    bool inflag = true;
+    for (int d=0; d<BL_SPACEDIM; ++d) {
+        inflag &= (x[d]>=lo[d] && x[d]<=hi[d]);
+    }
+    return inflag;
 }
 
 colorFunctionRegion::colorFunctionRegion (std::string r_name,
@@ -431,13 +414,7 @@ allBCRegion::allBCRegion (int dir, int lo_or_hi,
 bool 
 allBCRegion::inregion(const Array<Real>& x) const
 {
-  bool inflag = false;
-
-  if ((p_lohi == 0 && x[p_dir] <= lo[p_dir]) ||
-      (p_lohi == 1 && x[p_dir] >= hi[p_dir])) 
-    inflag = true;
-
-  return inflag;
+    return true;
 }
 #endif
 

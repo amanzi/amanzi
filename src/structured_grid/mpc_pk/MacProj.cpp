@@ -613,7 +613,7 @@ MacProj::mac_sync_compute (int                   level,
 			       prev_time,State_Type,0,nscal);
        S_fpi.isValid(); ++S_fpi)
     {
-       pm_level.dirichletStateBC(S_fpi(),HYP_GROW,prev_time);
+       pm_level.dirichletStateBC(S_fpi(),prev_time);
        const int i     = S_fpi.index();
 
       int state_ind     = 0;

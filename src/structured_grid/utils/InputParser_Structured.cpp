@@ -391,8 +391,6 @@ namespace Amanzi {
                 }
                 geom_list.set("regions",arrayregions);
             }
-            std::cout << geom_list << std::endl;
-
         }
 
         typedef std::map<std::string,bool> MTEST;
@@ -794,14 +792,14 @@ namespace Amanzi {
             }
             PLoptions opt(fPLin,nullList,reqP,true,true);  
     
-            fPLout.set<std::string>("type","pressure");
+            fPLout.set<std::string>("type","hydrostatic");
             fPLout.set<double>("val",fPLin.get<double>(val_name));
     
             if (Amanzi_type == "IC: Linear Pressure") {
                 fPLout.set<Array<double> >("grad",fPLin.get<Array<double> >(grad_name));
                 const Array<double>& water_table = fPLin.get<Array<double> >(ref_name);
                 int coord = water_table.size()-1;
-                fPLout.set<double>("water_table",water_table[coord]);                      
+                fPLout.set<double>("water_table_height",water_table[coord]);                      
             }
         }
 
