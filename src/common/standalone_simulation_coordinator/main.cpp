@@ -76,25 +76,17 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile(xmlInFileName,&driver_parameter_list);
     const Teuchos::ParameterList& mesh_parameter_list = driver_parameter_list.sublist("Mesh");
     
-    // Framework is now determined by noting whether the Mesh list contains a "Structured" sublist or
-    // a "Unstructured" sublist.
-    // Read the "Framework" from the "Mesh" parameter list so that we know which driver to call
-    // The available options are "Structured" and the unstructured options "SimpleMesh", "stk::mesh"
+    // The Mesh list contains a "Structured" sublist or a "Unstructured" sublist, and will 
+    // determine which simulation driver to call
     std::string framework;
-    if (mesh_parameter_list.isParameter("Framework")) {
-      typedef Teuchos::StringToIntegralParameterEntryValidator<int> StrValidator;
-      Teuchos::RCP<StrValidator> frameworkValidator
-	= Teuchos::rcp(new StrValidator(Teuchos::tuple<std::string>( "Structured", "SimpleMesh", "stk::mesh" )
-					,"Framework") );
-      
-      framework
-	= frameworkValidator->validateString(Teuchos::getParameter<std::string>(mesh_parameter_list,"Framework"));
+    if (mesh_parameter_list.isSublist("Structured")) {
+        framework = "Structured";
+    }
+    else if (mesh_parameter_list.isSublist("Unstructured")) {
+        framework = "Unstructured";
     }
     else {
-      if (mesh_parameter_list.isSublist("Structured"))
-	framework = "Structured";
-      else
-	framework = "Unstructured";
+        amanzi_throw(Errors::Message("The Mesh parameter list must contain one sublist: \"Structured\" or \"Unstructured\""));
     }
     
     Amanzi::Simulator* simulator = 0;
