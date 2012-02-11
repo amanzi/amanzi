@@ -29,9 +29,7 @@ class Field_ConstantVector : public Field {
 
 public:
   // constructors
-  Field_ConstantVector(std::string fieldname);
   Field_ConstantVector(std::string fieldname, std::string owner);
-  Field_ConstantVector(std::string fieldname, Teuchos::RCP<Epetra_Vector>& data);
   Field_ConstantVector(std::string fieldname, std::string owner,
                        Teuchos::RCP<Epetra_Vector>& data);
 

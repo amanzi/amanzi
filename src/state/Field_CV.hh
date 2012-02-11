@@ -29,12 +29,10 @@ class Field_CV : public Field {
 
 public:
   // constructors
-  Field_CV(std::string fieldname);
   Field_CV(std::string fieldname, std::string owner);
-  Field_CV(std::string fieldname, Teuchos::RCP<CompositeVector>& data);
   Field_CV(std::string fieldname, std::string owner, Teuchos::RCP<CompositeVector>& data);
 
-  // copy constructor and assignment
+  // copy constructors
   explicit Field_CV(const Field_CV& other);
   Teuchos::RCP<Field> Clone() const;
   Teuchos::RCP<Field> Clone(std::string fieldname) const;
@@ -45,14 +43,16 @@ public:
   Teuchos::RCP<CompositeVector> vector_data(std::string pk_name);
 
   void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data);
+  void set_data(std::string pk_name, const CompositeVector& data);
 
 protected:
 
   Teuchos::RCP<CompositeVector> data_;
 
 private:
-  // operator= disabled
+  // Assignment for the field disabled
   Field_CV& operator=(const Field_CV&);
+
 
 }; // class Field
 

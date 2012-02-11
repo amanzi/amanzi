@@ -28,9 +28,7 @@ class Field_Scalar : public Field {
 
 public:
   // constructors
-  Field_Scalar(std::string fieldname);
   Field_Scalar(std::string fieldname, std::string owner);
-  Field_Scalar(std::string fieldname, Teuchos::RCP<double>& data);
   Field_Scalar(std::string fieldname, std::string owner, Teuchos::RCP<double>& data);
 
   // copy constructor and assignment

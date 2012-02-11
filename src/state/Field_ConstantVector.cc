@@ -20,19 +20,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 namespace Amanzi {
 
-Field_ConstantVector::Field_ConstantVector(std::string fieldname) :
-    Field::Field(fieldname, "state"), data_() {
-  type_ = CONSTANT_VECTOR;
-};
-
 Field_ConstantVector::Field_ConstantVector(std::string fieldname, std::string owner) :
     Field::Field(fieldname, owner), data_() {
-  type_ = CONSTANT_VECTOR;
-};
-
-Field_ConstantVector::Field_ConstantVector(std::string fieldname,
-        Teuchos::RCP<Epetra_Vector>& data) :
-    Field::Field(fieldname, "state"), data_(data) {
   type_ = CONSTANT_VECTOR;
 };
 
