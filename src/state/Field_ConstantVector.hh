@@ -44,6 +44,10 @@ public:
   Teuchos::RCP<Epetra_Vector> constant_vector_data(std::string pk_name);
 
   void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>& data);
+  void set_data(std::string pk_name, const Epetra_Vector& data);
+
+  // initialization
+  virtual void Initialize(Teuchos::ParameterList& plist);
 
 protected:
 

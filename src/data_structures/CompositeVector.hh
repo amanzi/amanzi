@@ -45,6 +45,12 @@ namespace Amanzi {
     CompositeVector(const CompositeVector& other, ConstructMode mode);
     CompositeVector& operator=(const CompositeVector& other);
 
+    // access
+    std::vector<std::string> names() const { return names_; }
+    std::vector<int> num_dofs() const { return num_dofs_; }
+    int num_components() const { return num_components_; }
+    Teuchos::RCP<AmanziMesh::Mesh> mesh() const { return mesh_; }
+
     // view data
     // -- Access a view of a single component's data.
     // Ghosted views are simply the vector itself, while non-ghosted views are
