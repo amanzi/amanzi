@@ -812,6 +812,10 @@ void State::write_vis(Amanzi::Vis& vis, bool force) {
     vis.write_vector(*get_horizontal_permeability(),"horizontal permeability");
     vis.write_vector(*get_material_ids(),"material IDs");
     
+    // compute volumetric water content for visualization (porosity*water_saturation)
+    Epetra_Vector vol_water( mesh_maps->cell_map(false) );
+    vol_water.Multiply(1.0, *water_saturation, *porosity, 0.0);
+    vis.write_vector(vol_water,"volumetric water content");
 
     std::vector<std::string> names(3);
     names[0] = "darcy velocity x";
