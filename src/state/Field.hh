@@ -33,6 +33,9 @@ typedef enum { VECTOR_FIELD, CONSTANT_VECTOR, CONSTANT_SCALAR } FieldType;
 class Field {
 
 public:
+  // virtual destructor
+  virtual ~Field() {}
+
   // copy constructor and assignment
   virtual Teuchos::RCP<Field> Clone() const = 0;
   virtual Teuchos::RCP<Field> Clone(std::string fieldname) const = 0;
@@ -56,61 +59,61 @@ public:
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
   // data access and mutators
-  virtual Teuchos::RCP<const double> scalar_data() const {
+  virtual Teuchos::RCP<const double> GetScalarData() const {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<double> scalar_data(std::string pk_name) {
+  virtual Teuchos::RCP<double> GetScalarData(std::string pk_name) {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<const Epetra_Vector> constant_vector_data() const {
+  virtual Teuchos::RCP<const Epetra_Vector> GetConstantVectorData() const {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<Epetra_Vector> constant_vector_data(std::string pk_name) {
+  virtual Teuchos::RCP<Epetra_Vector> GetConstantVectorData(std::string pk_name) {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<const CompositeVector> vector_data() const {
+  virtual Teuchos::RCP<const CompositeVector> GetFieldData() const {
     assert_type_or_die_(VECTOR_FIELD);
     not_implemented_error_();
   }
-  virtual Teuchos::RCP<CompositeVector> vector_data(std::string pk_name) {
+  virtual Teuchos::RCP<CompositeVector> GetFieldData(std::string pk_name) {
     assert_type_or_die_(VECTOR_FIELD);
     not_implemented_error_();
   }
 
   // set data by pointer -- does not copy
-  virtual void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
+  virtual void SetData(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
     assert_type_or_die_(VECTOR_FIELD);
     not_implemented_error_();
   }
-  virtual void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>& data) {
+  virtual void SetData(std::string pk_name, Teuchos::RCP<Epetra_Vector>& data) {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
-  virtual void set_data(std::string pk_name, Teuchos::RCP<double>& data) {
+  virtual void SetData(std::string pk_name, Teuchos::RCP<double>& data) {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
 
   // set data by reference -- copies
-  virtual void set_data(std::string pk_name, const CompositeVector& data) {
+  virtual void SetData(std::string pk_name, const CompositeVector& data) {
     assert_type_or_die_(VECTOR_FIELD);
     not_implemented_error_();
   }
-  virtual void set_data(std::string pk_name, const Epetra_Vector& data) {
+  virtual void SetData(std::string pk_name, const Epetra_Vector& data) {
     assert_type_or_die_(CONSTANT_VECTOR);
     not_implemented_error_();
   }
-  virtual void set_data(std::string pk_name, const double& data) {
+  virtual void SetData(std::string pk_name, const double& data) {
     assert_type_or_die_(CONSTANT_SCALAR);
     not_implemented_error_();
   }
 
   // Initialize from a parameter list.
-  virtual void Initialize(Teuchos::ParameterList& plist);
+  virtual void Initialize(Teuchos::ParameterList& plist) = 0;
 
 protected:
   // constructor protected, should only be called by derived classes

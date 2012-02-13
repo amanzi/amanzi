@@ -76,11 +76,11 @@ State& State::operator=(const State& other) {
       fields_[lcv]->set_io_vis(other.fields_[lcv]->io_vis());
       fields_[lcv]->set_initialized(other.fields_[lcv]->initialized());
       if (fields_[lcv]->type() == VECTOR_FIELD) {
-        fields_[lcv]->set_data(fields_[lcv]->owner(), *other.fields_[lcv]->vector_data());
+        fields_[lcv]->SetData(fields_[lcv]->owner(), *other.fields_[lcv]->GetFieldData());
       } else if (fields_[lcv]->type() == CONSTANT_VECTOR) {
-        fields_[lcv]->set_data(fields_[lcv]->owner(), *other.fields_[lcv]->constant_vector_data());
+        fields_[lcv]->SetData(fields_[lcv]->owner(), *other.fields_[lcv]->GetConstantVectorData());
       } else if (fields_[lcv]->type() == CONSTANT_SCALAR) {
-        fields_[lcv]->set_data(fields_[lcv]->owner(), *other.fields_[lcv]->scalar_data());
+        fields_[lcv]->SetData(fields_[lcv]->owner(), *other.fields_[lcv]->GetScalarData());
       }
     }
 
@@ -194,7 +194,7 @@ void State::RequireScalar(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_Scalar(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -205,7 +205,7 @@ void State::RequireScalar(std::string fieldname, std::string owner, double data)
     fields_.push_back(Teuchos::rcp(new Field_Scalar(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -216,7 +216,7 @@ void State::RequireConstantVector(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_ConstantVector(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -228,7 +228,7 @@ void State::RequireConstantVector(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_ConstantVector(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -243,7 +243,7 @@ void State::RequireConstantVector(std::string fieldname, std::string owner, int 
     fields_.push_back(Teuchos::rcp(new Field_ConstantVector(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -254,7 +254,7 @@ void State::RequireField(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -266,7 +266,7 @@ void State::RequireField(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -279,7 +279,7 @@ void State::RequireField(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -294,7 +294,7 @@ void State::RequireField(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
@@ -309,33 +309,33 @@ void State::RequireField(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(owner, data_ptr);
+    field->SetData(owner, data_ptr);
   }
 };
 
 Teuchos::RCP<const double> State::GetScalarData(std::string fieldname) const {
-  return GetRecord_(fieldname)->scalar_data();
+  return GetRecord_(fieldname)->GetScalarData();
 };
 
 Teuchos::RCP<double> State::GetScalarData(std::string fieldname, std::string pk_name) {
-  return GetRecord_(fieldname)->scalar_data(pk_name);
+  return GetRecord_(fieldname)->GetScalarData(pk_name);
 };
 
 Teuchos::RCP<const Epetra_Vector> State::GetConstantVectorData(std::string fieldname) const {
-  return GetRecord_(fieldname)->constant_vector_data();
+  return GetRecord_(fieldname)->GetConstantVectorData();
 };
 
 Teuchos::RCP<Epetra_Vector> State::GetConstantVectorData(std::string fieldname,
                          std::string pk_name) {
-  return GetRecord_(fieldname)->constant_vector_data(pk_name);
+  return GetRecord_(fieldname)->GetConstantVectorData(pk_name);
 };
 
 Teuchos::RCP<const CompositeVector> State::GetFieldData(std::string fieldname) const {
-  return GetRecord_(fieldname)->vector_data();
+  return GetRecord_(fieldname)->GetFieldData();
 };
 
 Teuchos::RCP<CompositeVector> State::GetFieldData(std::string fieldname, std::string pk_name) {
-  return GetRecord_(fieldname)->vector_data(pk_name);
+  return GetRecord_(fieldname)->GetFieldData(pk_name);
 };
 
 Teuchos::RCP<Field> State::GetRecord(std::string fieldname, std::string pk_name) {
@@ -355,27 +355,27 @@ Teuchos::RCP<const Field> State::GetRecord(std::string fieldname) const {
 };
 
 void State::SetData(std::string fieldname, std::string pk_name, Teuchos::RCP<double>& data) {
-  GetRecord_(fieldname)->set_data(pk_name, data);
+  GetRecord_(fieldname)->SetData(pk_name, data);
 };
 
 void State::SetData(std::string fieldname, std::string pk_name, Teuchos::RCP<Epetra_Vector>& data) {
-  GetRecord_(fieldname)->set_data(pk_name, data);
+  GetRecord_(fieldname)->SetData(pk_name, data);
 };
 
 void State::SetData(std::string fieldname, std::string pk_name, Teuchos::RCP<CompositeVector>& data){
-  GetRecord_(fieldname)->set_data(pk_name, data);
+  GetRecord_(fieldname)->SetData(pk_name, data);
 };
 
 void State::SetData(std::string fieldname, std::string pk_name, const double& data) {
-  GetRecord_(fieldname)->set_data(pk_name, data);
+  GetRecord_(fieldname)->SetData(pk_name, data);
 };
 
 void State::SetData(std::string fieldname, std::string pk_name, const Epetra_Vector& data) {
-  GetRecord_(fieldname)->set_data(pk_name, data);
+  GetRecord_(fieldname)->SetData(pk_name, data);
 };
 
 void State::SetData(std::string fieldname, std::string pk_name, const CompositeVector& data) {
-  GetRecord_(fieldname)->set_data(pk_name, data);
+  GetRecord_(fieldname)->SetData(pk_name, data);
 };
 
 // void State::WriteVis(Amanzi::Vis& vis) {

@@ -69,15 +69,15 @@ public:
   void set_io_vis(bool io_vis) { io_vis_ = io_vis; }
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
 
-  void set_data_pointer(std::string pk_name, Teuchos::RCP<Epetra_MultiVector>& data);
-  void set_data(std::string pk_name, const Epetra_Vector&);
-  void set_data(std::string pk_name, const Epetra_MultiVector&);
-  void set_data(std::string pk_name, const double* u);
-  void set_data(std::string pk_name, double u);
-  void set_data(std::string pk_name, const double* u, int mesh_block_id);
-  void set_data(std::string pk_name, double u, int mesh_block_id);
-  void set_vector_data(std::string pk_name, const double* u);
-  void set_vector_data(std::string pk_name, const double* u, int mesh_block_id);
+  void SetData_pointer(std::string pk_name, Teuchos::RCP<Epetra_MultiVector>& data);
+  void SetData(std::string pk_name, const Epetra_Vector&);
+  void SetData(std::string pk_name, const Epetra_MultiVector&);
+  void SetData(std::string pk_name, const double* u);
+  void SetData(std::string pk_name, double u);
+  void SetData(std::string pk_name, const double* u, int mesh_block_id);
+  void SetData(std::string pk_name, double u, int mesh_block_id);
+  void set_GetFieldData(std::string pk_name, const double* u);
+  void set_GetFieldData(std::string pk_name, const double* u, int mesh_block_id);
 
 private:
   // consistency checking

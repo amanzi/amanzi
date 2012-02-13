@@ -61,19 +61,19 @@ Teuchos::RCP<Field> Field_Scalar::Clone(std::string fieldname, std::string owner
 };
 
 // write-access to the data
-Teuchos::RCP<double> Field_Scalar::scalar_data(std::string pk_name) {
+Teuchos::RCP<double> Field_Scalar::GetScalarData(std::string pk_name) {
   assert_owner_or_die_(pk_name);
   return data_;
 };
 
 // Overwrite data by pointer, not copy
-void Field_Scalar::set_data(std::string pk_name, Teuchos::RCP<double>& data) {
+void Field_Scalar::SetData(std::string pk_name, Teuchos::RCP<double>& data) {
   assert_owner_or_die_(pk_name);
   data_ = data;
 };
 
 // Set data by copy.
-void Field_Scalar::set_data(std::string pk_name, double data) {
+void Field_Scalar::SetData(std::string pk_name, double data) {
   assert_owner_or_die_(pk_name);
   *data_ = data;
 };
@@ -81,7 +81,7 @@ void Field_Scalar::set_data(std::string pk_name, double data) {
 // Initialization
 void Field_Scalar::Initialize(Teuchos::ParameterList& plist) {
   if (plist.isParameter("Constant "+fieldname_)) {
-    set_data(owner_, plist.get<double>("Constant "+(fieldname_)));
+    SetData(owner_, plist.get<double>("Constant "+(fieldname_)));
     set_initialized();
   }
 };
