@@ -62,18 +62,18 @@ Teuchos::RCP<Field> Field_CV::Clone(std::string fieldname, std::string owner) co
 };
 
 // write-access to the data
-Teuchos::RCP<CompositeVector> Field_CV::vector_data(std::string pk_name) {
+Teuchos::RCP<CompositeVector> Field_CV::GetFieldData(std::string pk_name) {
   assert_owner_or_die_(pk_name);
   return data_;
 };
 
 // Overwrite data by pointer, not copy
-void Field_CV::set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
+void Field_CV::SetData(std::string pk_name, Teuchos::RCP<CompositeVector>& data) {
   assert_owner_or_die_(pk_name);
   data_ = data;
 };
 
-void Field_CV::set_data(std::string pk_name, const CompositeVector& data) {
+void Field_CV::SetData(std::string pk_name, const CompositeVector& data) {
   assert_owner_or_die_(pk_name);
   *data_ = data;
 };

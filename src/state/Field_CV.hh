@@ -38,12 +38,15 @@ public:
   Teuchos::RCP<Field> Clone(std::string fieldname) const;
   Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const;
 
-  // data access and mutators
-  Teuchos::RCP<const CompositeVector> vector_data() const { return data_; }
-  Teuchos::RCP<CompositeVector> vector_data(std::string pk_name);
+  // destructor
+  ~Field_CV() {}
 
-  void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data);
-  void set_data(std::string pk_name, const CompositeVector& data);
+  // data access and mutators
+  Teuchos::RCP<const CompositeVector> GetFieldData() const { return data_; }
+  Teuchos::RCP<CompositeVector> GetFieldData(std::string pk_name);
+
+  void SetData(std::string pk_name, Teuchos::RCP<CompositeVector>& data);
+  void SetData(std::string pk_name, const CompositeVector& data);
 
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);

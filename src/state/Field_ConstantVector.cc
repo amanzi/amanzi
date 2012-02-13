@@ -63,20 +63,20 @@ Teuchos::RCP<Field> Field_ConstantVector::Clone(std::string fieldname,
 };
 
 // write-access to the data
-Teuchos::RCP<Epetra_Vector> Field_ConstantVector::constant_vector_data(std::string pk_name) {
+Teuchos::RCP<Epetra_Vector> Field_ConstantVector::GetConstantVectorData(std::string pk_name) {
   assert_owner_or_die_(pk_name);
   return data_;
 };
 
 // Overwrite data by pointer, not copy
-void Field_ConstantVector::set_data(std::string pk_name,
+void Field_ConstantVector::SetData(std::string pk_name,
         Teuchos::RCP<Epetra_Vector>& data) {
   assert_owner_or_die_(pk_name);
   data_ = data;
 };
 
 // Set data by copy.
-void Field_ConstantVector::set_data(std::string pk_name, const Epetra_Vector& data) {
+void Field_ConstantVector::SetData(std::string pk_name, const Epetra_Vector& data) {
   assert_owner_or_die_(pk_name);
   *data_ = data;
 };

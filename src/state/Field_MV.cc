@@ -121,25 +121,25 @@ Teuchos::RCP<Epetra_MultiVector> Field::get_data(std::string pk_name) {
 };
 
 // Overwrite data by pointer, not copy
-void Field::set_data_pointer(std::string pk_name, Teuchos::RCP<Epetra_MultiVector>& data) {
+void Field::SetData_pointer(std::string pk_name, Teuchos::RCP<Epetra_MultiVector>& data) {
   assert_owner_or_die(pk_name);
   data_ = data;
 };
 
 // write data
-void Field::set_data(std::string pk_name, const Epetra_MultiVector& data) {
+void Field::SetData(std::string pk_name, const Epetra_MultiVector& data) {
   assert_owner_or_die(pk_name);
   *data_ = data;
 };
 
 // write data
-void Field::set_data(std::string pk_name, const Epetra_Vector& data) {
+void Field::SetData(std::string pk_name, const Epetra_Vector& data) {
   assert_owner_or_die(pk_name);
   *((*data_)(0)) = data;
 };
 
 // write data to uniform, constant value (per vector)
-void Field::set_data(std::string pk_name, const double* u) {
+void Field::SetData(std::string pk_name, const double* u) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(FIELD_LOCATION_CELL);
 
@@ -149,7 +149,7 @@ void Field::set_data(std::string pk_name, const double* u) {
 };
 
 // write data to uniform, constant value
-void Field::set_data(std::string pk_name, double u) {
+void Field::SetData(std::string pk_name, double u) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(FIELD_LOCATION_CELL);
 
@@ -159,7 +159,7 @@ void Field::set_data(std::string pk_name, double u) {
 };
 
 // write data of on single block to a constant value (per vector)
-void Field::set_data(std::string pk_name, const double* u, int mesh_block_id) {
+void Field::SetData(std::string pk_name, const double* u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(FIELD_LOCATION_CELL);
   assert_valid_block_id_or_die(mesh_block_id);
@@ -181,7 +181,7 @@ void Field::set_data(std::string pk_name, const double* u, int mesh_block_id) {
 };
 
 // write data of on single block to a constant value
-void Field::set_data(std::string pk_name, double u, int mesh_block_id) {
+void Field::SetData(std::string pk_name, double u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(FIELD_LOCATION_CELL);
   assert_valid_block_id_or_die(mesh_block_id);
@@ -203,7 +203,7 @@ void Field::set_data(std::string pk_name, double u, int mesh_block_id) {
 };
 
 // write a constant 3-vector to faces (dotting the constant vector with the face normal)
-void Field::set_vector_data(std::string pk_name, const double* u, int mesh_block_id) {
+void Field::set_GetFieldData(std::string pk_name, const double* u, int mesh_block_id) {
   assert_owner_or_die(pk_name);
   assert_location_or_die(FIELD_LOCATION_FACE);
   assert_valid_block_id_or_die(mesh_block_id);

@@ -39,12 +39,15 @@ public:
   virtual Teuchos::RCP<Field> Clone(std::string fieldname) const;
   virtual Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const;
 
-  // data access and mutators
-  Teuchos::RCP<const Epetra_Vector> constant_vector_data() const { return data_; }
-  Teuchos::RCP<Epetra_Vector> constant_vector_data(std::string pk_name);
+  // destructor
+  ~Field_ConstantVector() {}
 
-  void set_data(std::string pk_name, Teuchos::RCP<Epetra_Vector>& data);
-  void set_data(std::string pk_name, const Epetra_Vector& data);
+  // data access and mutators
+  Teuchos::RCP<const Epetra_Vector> GetConstantVectorData() const { return data_; }
+  Teuchos::RCP<Epetra_Vector> GetConstantVectorData(std::string pk_name);
+
+  void SetData(std::string pk_name, Teuchos::RCP<Epetra_Vector>& data);
+  void SetData(std::string pk_name, const Epetra_Vector& data);
 
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);

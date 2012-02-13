@@ -37,12 +37,15 @@ public:
   virtual Teuchos::RCP<Field> Clone(std::string fieldname) const;
   virtual Teuchos::RCP<Field> Clone(std::string fieldname, std::string owner) const;
 
-  // data access and mutators
-  virtual Teuchos::RCP<const double> scalar_data() const { return data_; }
-  virtual Teuchos::RCP<double> scalar_data(std::string pk_name);
+  // destructor
+  ~Field_Scalar() {}
 
-  virtual void set_data(std::string pk_name, Teuchos::RCP<double>& data);
-  virtual void set_data(std::string pk_name, double data);
+  // data access and mutators
+  virtual Teuchos::RCP<const double> GetScalarData() const { return data_; }
+  virtual Teuchos::RCP<double> GetScalarData(std::string pk_name);
+
+  virtual void SetData(std::string pk_name, Teuchos::RCP<double>& data);
+  virtual void SetData(std::string pk_name, double data);
 
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);

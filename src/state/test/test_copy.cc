@@ -10,6 +10,7 @@
 #include "Mesh_STK.hh"
 
 #include "Field.hh"
+#include "Field_CV.hh"
 #include "State.hh"
 
 using namespace Amanzi;
@@ -25,25 +26,41 @@ struct test_field {
   Epetra_MpiComm *comm;
   Teuchos::RCP<Mesh> mesh;
 
-  Teuchos::RCP<Field> field;
+  Teuchos::RCP<Field_CV> field;
   test_field() {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MeshFactory mesh_fact(*comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    field = Teuchos::rcp(new Field("test_fieldname", FIELD_LOCATION_CELL,
-            mesh, "test_owner"));
+
+    std::vector<Entity_kind> locations(2);
+    locations[0] = CELL;
+    locations[0] = FACE;
+
+    std::vector<std::string> names(2);
+    names[0] = "cell";
+    names[1] = "face";
+
+    Teuchos::RCP<CompositeVector> data =
+      Teuchos::rcp(new CompositeVector(mesh, names, locations));
+    field = Teuchos::rcp(new Field_CV("test_fieldname", "test_owner", data));
   }
   ~test_field() { delete comm; }
 };
 
-double get_value(Field& field) {
-  Teuchos::RCP<Epetra_MultiVector> data = field.get_data("test_owner");
-  return (*(*data)(0))[0];
+double get_value(Teuchos::RCP<Field>& field) {
+  Teuchos::RCP<Field_CV> field_ptr = Teuchos::rcp_static_cast<Field_CV>(field);
+  Teuchos::RCP<const CompositeVector> data = field_ptr->GetFieldData();
+  return (*(*data->ViewComponent("cell", true))(0))[0];
 };
 
-double get_value(State& state) {
-  Teuchos::RCP<Epetra_MultiVector> data = state.get_field("test_fieldname", "test_owner");
-  return (*(*data)(0))[0];
+double get_value(Teuchos::RCP<Field_CV>& field) {
+  Teuchos::RCP<const CompositeVector> data = field->GetFieldData();
+  return (*(*data->ViewComponent("cell", true))(0))[0];
+};
+
+double get_value(const State& state) {
+  Teuchos::RCP<const CompositeVector> data = state.GetFieldData("test_fieldname");
+  return (*(*data->ViewComponent("cell", true))(0))[0];
 };
 
 struct test_state {
@@ -51,12 +68,22 @@ struct test_state {
   Teuchos::RCP<Mesh> mesh;
 
   Teuchos::RCP<State> state;
+
   test_state() {
     comm = new Epetra_MpiComm(MPI_COMM_WORLD);
     MeshFactory mesh_fact(*comm);
     mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
     state = Teuchos::rcp(new State(mesh));
-    state->require_field("test_fieldname", FIELD_LOCATION_CELL, "test_owner");
+
+    std::vector<Entity_kind> locations(2);
+    locations[0] = CELL;
+    locations[0] = FACE;
+
+    std::vector<std::string> names(2);
+    names[0] = "cell";
+    names[1] = "face";
+
+    state->RequireField("test_fieldname", "test_owner", names, locations);
   }
   ~test_state() { delete comm; }
 };
@@ -64,48 +91,74 @@ struct test_state {
 SUITE(COPY) {
   // test the field copy constructor
   TEST_FIXTURE(test_field, FieldCopy) {
-    field->set_data("test_owner", 2.0);
-    Field newfield(*(field));
-    CHECK_CLOSE(get_value(newfield), get_value(*field), 0.00001);
+    field->GetFieldData("test_owner")->PutScalar(2.0);
+    Teuchos::RCP<Field_CV> newfield = Teuchos::rcp(new Field_CV(*field));
+    CHECK_CLOSE(get_value(newfield), get_value(field), 0.00001);
     CHECK_CLOSE(get_value(newfield), 2.0, 0.00001);
-    newfield.set_data("test_owner", 3.0);
+    newfield->GetFieldData("test_owner")->PutScalar(3.0);
     CHECK_CLOSE(get_value(newfield), 3.0, 0.00001);
-    CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(field), 2.0, 0.00001);
   }
 
-  // test the field assignment operator
-  TEST_FIXTURE(test_field, FieldAssignment) {
-    field->set_data("test_owner", 2.0);
-    Teuchos::RCP<Field> newfield = Teuchos::rcp(new Field("new_fieldname",
-            FIELD_LOCATION_CELL, mesh, "test_owner"));
-    *newfield = *field;
-    CHECK_CLOSE(get_value(*newfield), get_value(*field), 0.00001);
-    CHECK_CLOSE(get_value(*newfield), 2.0, 0.00001);
-    newfield->set_data("test_owner", 3.0);
-    CHECK_CLOSE(get_value(*newfield), 3.0, 0.00001);
-    CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
+  // test the field Clone constructor
+  TEST_FIXTURE(test_field, FieldClone) {
+    field->GetFieldData("test_owner")->PutScalar(2.0);
+    Teuchos::RCP<Field> newfield = field->Clone();
+    CHECK_CLOSE(get_value(newfield), get_value(field), 0.00001);
+    CHECK_CLOSE(get_value(newfield), 2.0, 0.00001);
+    newfield->GetFieldData("test_owner")->PutScalar(3.0);
+    CHECK_CLOSE(get_value(newfield), 3.0, 0.00001);
+    CHECK_CLOSE(get_value(field), 2.0, 0.00001);
   }
+
+  // // test the field assignment operator
+  // TEST_FIXTURE(test_field, FieldAssignment) {
+  //   field->GetFieldData("test_owner")->PutScalar(2.0);
+
+  //   // copy construct the new field to get the same structure
+  //   Teuchos::RCP<Field_CV> newfield = Teuchos::rcp(new Field_CV(*field));
+  //   *newfield = *field;
+  //   CHECK_CLOSE(get_value(*newfield), get_value(*field), 0.00001);
+  //   CHECK_CLOSE(get_value(*newfield), 2.0, 0.00001);
+
+  //   // reset and check the new value
+  //   newfield->GetFieldData("test_owner")->PutScalar(3.0);
+  //   CHECK_CLOSE(get_value(*newfield), 3.0, 0.00001);
+  //   CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
+
+  //   // test operator=
+  //   *newfield = *field;
+  //   CHECK_CLOSE(get_value(*newfield), get_value(*field), 0.00001);
+  //   CHECK_CLOSE(get_value(*newfield), 2.0, 0.00001);
+
+  //   // ensure operator= did a deep copy, not a pointer copy
+  //   newfield->GetFieldData("test_owner")->PutScalar(3.0);
+  //   CHECK_CLOSE(get_value(*newfield), 3.0, 0.00001);
+  //   CHECK_CLOSE(get_value(*field), 2.0, 0.00001);
+  // }
 
   // test the state copy constructor
   TEST_FIXTURE(test_state, StateCopy) {
-    state->set_field("test_fieldname", "test_owner", 2.0);
+    state->GetFieldData("test_fieldname", "test_owner")->PutScalar(2.0);
     State newstate(*state);
     CHECK_CLOSE(get_value(newstate), get_value(*state), 0.00001);
     CHECK_CLOSE(get_value(newstate), 2.0, 0.00001);
-    newstate.set_field("test_fieldname", "test_owner", 3.0);
+    newstate.GetFieldData("test_fieldname", "test_owner")->PutScalar(3.0);
     CHECK_CLOSE(get_value(newstate), 3.0, 0.00001);
     CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
   }
 
   // test the state assignment operator
   TEST_FIXTURE(test_state, StateAssignment) {
-    state->set_field("test_fieldname", "test_owner", 2.0);
+    state->GetFieldData("test_fieldname", "test_owner")->PutScalar(2.0);
 
     // copy construct the new state to get the same structure
     Teuchos::RCP<State> newstate = Teuchos::rcp(new State(*state));
 
     // reset the value to test the operator=
-    newstate->set_field("test_fieldname", "test_owner", 0.0);
+    newstate->GetFieldData("test_fieldname", "test_owner")->PutScalar(0.0);
+    CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
+    CHECK_CLOSE(get_value(*newstate), 0.0, 0.00001);
 
     // test operator=
     *newstate = *state;
@@ -113,8 +166,9 @@ SUITE(COPY) {
     CHECK_CLOSE(get_value(*newstate), 2.0, 0.00001);
 
     // test copies are deep
-    newstate->set_field("test_fieldname", "test_owner", 3.0);
+    newstate->GetFieldData("test_fieldname", "test_owner")->PutScalar(3.0);
     CHECK_CLOSE(get_value(*newstate), 3.0, 0.00001);
     CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
   }
 }
+
