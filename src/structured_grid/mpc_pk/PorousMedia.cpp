@@ -5897,7 +5897,7 @@ PorousMedia::post_timestep (int crse_iteration)
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
       for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time);
+          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 
   if  ( (parent->cumTime() >=  stop_time || 
@@ -5953,7 +5953,7 @@ void PorousMedia::post_restart()
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
       for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time);
+          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 }
 
@@ -6403,7 +6403,7 @@ PorousMedia::post_init (Real stop_time)
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
       for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time);
+          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 }
 
