@@ -72,4 +72,18 @@ void Field_Scalar::set_data(std::string pk_name, Teuchos::RCP<double>& data) {
   data_ = data;
 };
 
+// Set data by copy.
+void Field_Scalar::set_data(std::string pk_name, double data) {
+  assert_owner_or_die_(pk_name);
+  *data_ = data;
+};
+
+// Initialization
+void Field_Scalar::Initialize(Teuchos::ParameterList& plist) {
+  if (plist.isParameter("Constant "+fieldname_)) {
+    set_data(owner_, plist.get<double>("Constant "+(fieldname_)));
+    set_initialized();
+  }
+};
+
 } // namespace

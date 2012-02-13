@@ -18,6 +18,8 @@ Field also stores some basic metadata for Vis, checkpointing, etc.
 
 #include <string>
 #include <vector>
+
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -40,12 +42,15 @@ public:
   std::string fieldname() const { return fieldname_; }
   std::string owner() const { return owner_; }
   FieldType type() const { return type_; }
+  std::vector<std::string> subfield_names() const { return subfield_names_; }
   bool io_restart() const { return io_restart_; }
   bool io_vis() const { return io_vis_; }
   bool initialized() const { return initialized_; }
 
   // mutators
   void set_owner(std::string owner) { owner_ = owner; }
+  void set_subfield_names(std::vector<std::string> subfield_names) {
+    subfield_names_ = subfield_names; }
   void set_io_restart(bool io_restart=true) { io_restart_ = io_restart; }
   void set_io_vis(bool io_vis=true) { io_vis_ = io_vis; }
   void set_initialized(bool initialized=true) { initialized_ = initialized; }
@@ -104,6 +109,9 @@ public:
     not_implemented_error_();
   }
 
+  // Initialize from a parameter list.
+  virtual void Initialize(Teuchos::ParameterList& plist);
+
 protected:
   // constructor protected, should only be called by derived classes
   Field(std::string fieldname, std::string owner="state");
@@ -117,6 +125,7 @@ protected:
   FieldType type_;
   std::string fieldname_;
   std::string owner_;
+  std::vector<std::string> subfield_names_;
 
   bool io_restart_;
   bool io_vis_;

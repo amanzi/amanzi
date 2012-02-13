@@ -28,7 +28,11 @@
 #include "Mesh.hh"
 #include "Vis.hpp"
 #include "CompositeVector.hh"
+
 #include "Field.hh"
+#include "Field_Scalar.hh"
+#include "Field_ConstantVector.hh"
+#include "Field_CV.hh"
 
 namespace Amanzi {
 
@@ -133,6 +137,7 @@ private:
 
   void InitializeFromParameterList_();
   Teuchos::RCP<Field> GetRecord_(std::string fieldname);
+  Teuchos::RCP<const Field> GetRecord_(std::string fieldname) const;
   Teuchos::RCP<Field> CheckMayCreateOrOwn_or_die_(std::string fieldname, FieldType type);
   void PushBackNewField_(std::string fieldname, FieldType type, std::string owner);
 
@@ -153,6 +158,11 @@ private:
 inline
 Teuchos::RCP<Field> State::GetRecord_(std::string fieldname) {
   return fields_[field_name_map_[fieldname]];
+};
+
+inline
+Teuchos::RCP<const Field> State::GetRecord_(std::string fieldname) const {
+  return fields_[field_name_map_.find(fieldname)->second];
 };
 
 } // namespace amanzi

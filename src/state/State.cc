@@ -24,6 +24,7 @@ like density which may NOT be spatially variable.
 
 #include <iostream>
 
+#include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
 
 #include "errors.hh"
@@ -95,115 +96,16 @@ void State::Initialize() {
   InitializeFromParameterList_();
 };
 
-// // Initialize fields from the parameter list of "Constant {Fieldname}",
-// // including all independent variables.
-// void State::InitializeFromParameterList_() {
-//   // gravity
+// Initialize fields from the parameter list of "Constant {Fieldname}",
+// including all independent variables.
+void State::InitializeFromParameterList_() {
+  for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
+       field != fields_.end(); ++field) {
+    (*field)->Initialize(state_plist_);
+  }
+};
 
-//   double u[3];
-//   u[0] = parameter_list_.get<double>("Gravity x");
-//   u[1] = parameter_list_.get<double>("Gravity y");
-//   u[2] = parameter_list_.get<double>("Gravity z");
-//   set_gravity(u);
-
-//   if (parameter_list_.isParameter("Constant water density")) {
-//     double u = parameter_list_.get<double>("Constant water density");
-//     std::cout << "initializing in state: density =" << u << std::endl;
-//     set_density(u);
-//   }
-//   if (parameter_list_.isParameter("Constant viscosity")) {
-//     double u = parameter_list_.get<double>("Constant viscosity");
-//     std::cout << "initializing in state: viscosity =" << u << std::endl;
-//     set_viscosity(u);
-//   }
-
-//   // Initialize -- State has "sudo" privleges and can write them all
-//   for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
-//        field != fields_.end(); ++field) {
-//     if ((*field)->get_location() == FIELD_LOCATION_CELL) {
-//       const std::vector<std::string> subfield_names = (*field)->get_subfield_names();
-//       if (subfield_names.size() == (*field)->get_num_dofs()) {
-//         double u[subfield_names.size()];
-//         bool got_them_all = true;
-//         for (int lcv=0; lcv != subfield_names.size(); ++lcv) {
-//           // attempt to pick out constant values for the field
-//           if (parameter_list_.isParameter("Constant "+subfield_names[lcv])) {
-//             u[lcv] = parameter_list_.get<double>("Constant "+subfield_names[lcv]);
-//             std::cout << "  got value:" << (*field)->get_fieldname() << "=" << u[lcv] << std::endl;
-//           } else {
-//             got_them_all = false;
-//             break;
-//           }
-//         }
-
-//         if (got_them_all) {
-//           std::cout << "got them all, assigning" << std::endl;
-//           (*field)->set_data((*field)->get_owner(), u);
-//           (*field)->set_initialized();
-//         }
-//       }
-//     }
-//   }
-
-//   int num_blocks = parameter_list_.get<int>("Number of mesh blocks");
-//   for (int nb=1; nb<=num_blocks; nb++) {
-//     std::stringstream pname;
-//     pname << "Mesh block " << nb;
-
-//     Teuchos::ParameterList sublist = parameter_list_.sublist(pname.str());
-
-//     int mesh_block_id = sublist.get<int>("Mesh block ID");
-
-//     for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
-//          field != fields_.end(); ++field) {
-//       std::cout << "checking for ICs for " << (*field)->get_fieldname() << std::endl;
-//       if ((*field)->get_location() == FIELD_LOCATION_CELL) {
-//         std::cout << "  checking for cell ICs for " << (*field)->get_fieldname() << std::endl;
-//         const std::vector<std::string> subfield_names = (*field)->get_subfield_names();
-//         if (subfield_names.size() == (*field)->get_num_dofs()) {
-//           std::cout << "  got names for " << (*field)->get_fieldname() << std::endl;
-//           double u[subfield_names.size()];
-//           bool got_them_all = true;
-//           for (int lcv=0; lcv != subfield_names.size(); ++lcv) {
-//             std::cout << subfield_names[lcv] << std::endl;
-//             // attempt to pick out constant values for the field
-//             if (sublist.isParameter("Constant "+subfield_names[lcv])) {
-//               u[lcv] = sublist.get<double>("Constant "+subfield_names[lcv]);
-//               std::cout << "  got value " << u[lcv] << std::endl;
-//             } else {
-//               got_them_all = false;
-//               break;
-//             }
-//           }
-
-//           if (got_them_all) {
-//             (*field)->set_data((*field)->get_owner(), u, mesh_block_id);
-//             (*field)->set_initialized();
-//             std::cout << "got them all, assigning" << std::endl;
-//           }
-//         }
-//       } else if ((*field)->get_location() == FIELD_LOCATION_FACE) {
-//         std::cout << "  checking for face ICs for " << (*field)->get_fieldname() << std::endl;
-//         if (1 == (*field)->get_num_dofs()) {
-//           // a vector field, try to get the 3 components
-//           std::string fieldname = (*field)->get_fieldname();
-//           if (sublist.isParameter("Constant "+fieldname+" x")) {
-//             double u[3];
-//             u[0] = sublist.get<double>("Constant "+fieldname+" x");
-//             u[1] = sublist.get<double>("Constant "+fieldname+" y");
-//             u[2] = sublist.get<double>("Constant "+fieldname+" z");
-
-//             std::cout << "initializing in state:" << fieldname << "=" << u << std::endl;
-//             (*field)->set_vector_data((*field)->get_owner(), u, mesh_block_id);
-//             (*field)->set_initialized();
-//           }
-//         }
-//       }
-//     } // loop over fields
-//   } // loop over blocks
-// };
-
-// Make sure all fields have gotten their IC, either from State or the owning PK.
+  // Make sure all fields have gotten their IC, either from State or the owning PK.
 bool State::CheckAllInitialized() {
   for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
        field != fields_.end(); ++field) {
@@ -260,11 +162,11 @@ void State::Require(std::string fieldname, FieldType type, std::string owner) {
       // Field does not yet exist; create a new one.
       PushBackNewField_(fieldname, type, owner);
 
-    } else if (GetRecord_(fieldname)->type != type) {
+    } else if (GetRecord_(fieldname)->type() != type) {
       std::stringstream messagestream;
-      messagestream << "Requested field " << fieldname << " on locations "
-                    << location << " already exists on location "
-                    << GetRecord_(fieldname)->get_location();
+      messagestream << "Requested field " << fieldname << " of type "
+                    << type << " already exists and is of type "
+                    << GetRecord_(fieldname)->type();
       Errors::Message message(messagestream.str());
       Exceptions::amanzi_throw(message);
     } // else the field exists, has matching type, and PK doesn't want to own
@@ -292,7 +194,7 @@ void State::RequireScalar(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_Scalar(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
@@ -303,7 +205,7 @@ void State::RequireScalar(std::string fieldname, std::string owner, double data)
     fields_.push_back(Teuchos::rcp(new Field_Scalar(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
@@ -314,7 +216,7 @@ void State::RequireConstantVector(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_ConstantVector(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
@@ -326,7 +228,7 @@ void State::RequireConstantVector(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_ConstantVector(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
@@ -334,14 +236,14 @@ void State::RequireConstantVector(std::string fieldname, std::string owner, int 
   Teuchos::RCP<Field> field = CheckMayCreateOrOwn_or_die_(fieldname, CONSTANT_VECTOR);
 
   // create the vector
-  Epetra_LocalMap map(dimension, 0, mesh_->Comm());
+  Epetra_LocalMap map(dimension, 0, *mesh_->get_comm());
   Teuchos::RCP<Epetra_Vector> data_ptr = Teuchos::rcp(new Epetra_Vector(map, false));
 
   if (field == Teuchos::null) {
     fields_.push_back(Teuchos::rcp(new Field_ConstantVector(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
@@ -352,7 +254,7 @@ void State::RequireField(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
@@ -364,12 +266,12 @@ void State::RequireField(std::string fieldname, std::string owner,
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
-void State::RequireField(std::string fieldname, std::string owner, AmanziMesh::Entity_kind location,
-                         int num_dofs=1, bool ghosted=true) {
+void State::RequireField(std::string fieldname, std::string owner,
+                         AmanziMesh::Entity_kind location, int num_dofs, bool ghosted) {
   Teuchos::RCP<Field> field = CheckMayCreateOrOwn_or_die_(fieldname, VECTOR_FIELD);
   Teuchos::RCP<CompositeVector> data_ptr = Teuchos::rcp(new CompositeVector(mesh_, fieldname,
                          location, num_dofs, ghosted));
@@ -377,13 +279,14 @@ void State::RequireField(std::string fieldname, std::string owner, AmanziMesh::E
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
-void State::RequireField(std::string fieldname, std::string owner, std::vector<std::string> names,
-                         std::vector<AmanziMesh::Entity_kind> locations, int num_dofs=1,
-                         bool ghosted=true) {
+void State::RequireField(std::string fieldname, std::string owner,
+                         std::vector<std::string> names,
+                         std::vector<AmanziMesh::Entity_kind> locations, int num_dofs,
+                         bool ghosted) {
   Teuchos::RCP<Field> field = CheckMayCreateOrOwn_or_die_(fieldname, VECTOR_FIELD);
   Teuchos::RCP<CompositeVector> data_ptr = Teuchos::rcp(new CompositeVector(mesh_, names,
                          locations, num_dofs, ghosted));
@@ -391,13 +294,14 @@ void State::RequireField(std::string fieldname, std::string owner, std::vector<s
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
-void State::RequireField(std::string fieldname, std::string owner, std::vector<std::string> names,
-                  std::vector<AmanziMesh::Entity_kind> locations,
-                  std::vector<int> num_dofs, bool ghosted=true) {
+void State::RequireField(std::string fieldname, std::string owner,
+                         std::vector<std::string> names,
+                         std::vector<AmanziMesh::Entity_kind> locations,
+                         std::vector<int> num_dofs, bool ghosted) {
   Teuchos::RCP<Field> field = CheckMayCreateOrOwn_or_die_(fieldname, VECTOR_FIELD);
   Teuchos::RCP<CompositeVector> data_ptr = Teuchos::rcp(new CompositeVector(mesh_, names,
                          locations, num_dofs, ghosted));
@@ -405,7 +309,7 @@ void State::RequireField(std::string fieldname, std::string owner, std::vector<s
     fields_.push_back(Teuchos::rcp(new Field_CV(fieldname, owner, data_ptr)));
   } else {
     field->set_owner(owner);
-    field->set_data(data_ptr);
+    field->set_data(owner, data_ptr);
   }
 };
 
@@ -423,7 +327,7 @@ Teuchos::RCP<const Epetra_Vector> State::GetConstantVectorData(std::string field
 
 Teuchos::RCP<Epetra_Vector> State::GetConstantVectorData(std::string fieldname,
                          std::string pk_name) {
-  return GetRecord_(fieldname)->constant_vector_data();
+  return GetRecord_(fieldname)->constant_vector_data(pk_name);
 };
 
 Teuchos::RCP<const CompositeVector> State::GetFieldData(std::string fieldname) const {
@@ -443,6 +347,7 @@ Teuchos::RCP<Field> State::GetRecord(std::string fieldname, std::string pk_name)
                   << " which is owned by " << GetRecord_(fieldname)->owner();
     Errors::Message message(messagestream.str());
     Exceptions::amanzi_throw(message);
+  }
 };
 
 Teuchos::RCP<const Field> State::GetRecord(std::string fieldname) const {

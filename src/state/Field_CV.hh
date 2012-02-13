@@ -45,6 +45,9 @@ public:
   void set_data(std::string pk_name, Teuchos::RCP<CompositeVector>& data);
   void set_data(std::string pk_name, const CompositeVector& data);
 
+  // initialization
+  virtual void Initialize(Teuchos::ParameterList& plist);
+
 protected:
 
   Teuchos::RCP<CompositeVector> data_;

@@ -75,4 +75,35 @@ void Field_ConstantVector::set_data(std::string pk_name,
   data_ = data;
 };
 
+// Set data by copy.
+void Field_ConstantVector::set_data(std::string pk_name, const Epetra_Vector& data) {
+  assert_owner_or_die_(pk_name);
+  *data_ = data;
+};
+
+
+// Initialization
+void Field_ConstantVector::Initialize(Teuchos::ParameterList& plist) {
+  if (subfield_names_.size() == data_->MyLength()) {
+    Epetra_Vector vals(*data_);
+    bool got_them_all = true;
+    for (unsigned int lcv=0; lcv != subfield_names_.size(); ++lcv) {
+      // attempt to pick out constant values for the field
+      if (plist.isParameter("Constant "+subfield_names_[lcv])) {
+        vals[lcv] = plist.get<double>("Constant "+subfield_names_[lcv]);
+        std::cout << "  got value:" << fieldname_ << "=" << vals[lcv] << std::endl;
+      } else {
+        got_them_all = false;
+        break;
+      }
+    }
+
+    if (got_them_all) {
+      std::cout << "got them all, assigning" << std::endl;
+      *data_ = vals;
+      set_initialized();
+    }
+  }
+};
+
 } // namespace
