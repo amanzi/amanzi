@@ -19,6 +19,7 @@
 
    ------------------------------------------------------------------------- */
 
+#include "CompositeVector.hh"
 #include "NullEnergyPK.hh"
 
 namespace Amanzi {
@@ -31,14 +32,12 @@ namespace Amanzi {
     solution_ = solution;
 
     // require fields for the state and solution
-    S->require_field("temperature", FIELD_LOCATION_CELL, "energy");
-    S->get_field_record("temperature")->set_io_vis(true);
-    Teuchos::RCP<Epetra_MultiVector> temp_ptr = S->get_field("temperature", "energy");
-    solution_->PushBack(temp_ptr);
+    S->RequireField("temperature", "energy", AmanziMesh::CELL);
+    S->GetRecord("temperature","energy")->set_io_vis(true);
+    Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+    solution_->set_data(temp);
 
-    S->require_field("temperature_dot", FIELD_LOCATION_CELL, "energy");
-
-    T_ = energy_plist.get<double>("Constant temperature", 290.0);
+    S->RequireField("temperature_dot", "energy", AmanziMesh::CELL);
 
     // check if we need to make a time integrator
     if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
@@ -50,37 +49,44 @@ namespace Amanzi {
 
   // initialize ICs
   void NullEnergyPK::initialize(Teuchos::RCP<State>& S) {
-    S->set_field("temperature", "energy", T_);
-    S->get_field_record("temperature")->set_initialized();
+    // constant initial temperature
+    T_ = energy_plist_.get<double>("Constant temperature", 290.0);
+    S->GetFieldData("temperature", "energy")->PutScalar(T_);
+    S->GetRecord("temperature", "energy")->set_initialized();
 
-    S->set_field("temperature_dot", "energy", 0.0);
-    S->get_field_record("temperature_dot")->set_initialized();
+    S->GetFieldData("temperature_dot", "energy")->PutScalar(0.0);
+    S->GetRecord("temperature_dot", "energy")->set_initialized();
 
-    // model evaluator params
-    // -- tolerances
-    atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
-    rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
+    if (!energy_plist_.get<bool>("Strongly Coupled PK", false)) {
+      // model evaluator params
+      // -- tolerances
+      atol_ = energy_plist_.get<double>("Absolute error tolerance",1.0);
+      rtol_ = energy_plist_.get<double>("Relative error tolerance",1e-5);
 
-    // -- initialize time derivative
-    Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(solution_));
-    *solution_dot = 0.0;
+      // -- initialize time derivative
+      Teuchos::RCP<TreeVector> solution_dot = Teuchos::rcp( new TreeVector(*solution_));
+      solution_dot->PutScalar(0.0);
 
-    // -- set initial state
-    time_stepper_->set_initial_state(S->get_time(), solution_, solution_dot);
+      // -- set initial state
+      time_stepper_->set_initial_state(S->time(), solution_, solution_dot);
+    }
   };
 
 
   // Pointer copy of state to solution
   void NullEnergyPK::state_to_solution(Teuchos::RCP<State>& S,
           Teuchos::RCP<TreeVector>& soln) {
-    ((*soln)[0]) = S->get_field("temperature", "energy");
+    Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+    soln->set_data(temp);
   };
 
   // Pointer copy temperature fields from state into solution vector.
   void NullEnergyPK::state_to_solution(Teuchos::RCP<State>& S,
           Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<TreeVector>& soln_dot) {
-    (*soln)[0] = S->get_field("temperature", "energy");
-    (*soln_dot)[0] = S->get_field("temperature_dot", "energy");
+    Teuchos::RCP<CompositeVector> temp = S->GetFieldData("temperature", "energy");
+    soln->set_data(temp);
+    Teuchos::RCP<CompositeVector> temp_dot = S->GetFieldData("temperature_dot", "energy");
+    soln_dot->set_data(temp_dot);
   };
 
   // Pointer copy temperature fields from solution vector into state.  Used within
@@ -88,22 +94,22 @@ namespace Amanzi {
   // use with other PKs.
   void NullEnergyPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
           Teuchos::RCP<State>& S) {
-    Teuchos::RCP<Epetra_MultiVector> temp_ptr = (*soln)[0];
-    S->set_field_pointer("temperature", "energy", temp_ptr);
+    Teuchos::RCP<CompositeVector> temp = soln->data();
+    S->SetData("temperature", "energy", temp);
   };
 
   void NullEnergyPK::solution_to_state(Teuchos::RCP<TreeVector>& soln,
           Teuchos::RCP<TreeVector>& soln_dot, Teuchos::RCP<State>& S) {
-    Teuchos::RCP<Epetra_MultiVector> temp_ptr = (*soln)[0];
-    S->set_field_pointer("temperature", "energy", temp_ptr);
-    Teuchos::RCP<Epetra_MultiVector> temp_dot_ptr = (*soln_dot)[0];
-    S->set_field_pointer("temperature_dot", "energy", temp_dot_ptr);
+    Teuchos::RCP<CompositeVector> temp = soln->data();
+    S->SetData("temperature", "energy", temp);
+    Teuchos::RCP<CompositeVector> temp_dot = soln_dot->data();
+    S->SetData("temperature_dot", "energy", temp_dot);
   };
 
   // Advance methods calculate the constant value
   // -- advance using the analytic value
   bool NullEnergyPK::advance_analytic_(double dt) {
-    *solution_ = T_;
+    solution_->PutScalar(T_);
     return false;
   };
 
@@ -149,10 +155,11 @@ namespace Amanzi {
   double NullEnergyPK::enorm(Teuchos::RCP<const TreeVector> u,
                              Teuchos::RCP<const TreeVector> du) {
     double enorm_val = 0.0;
-    Epetra_Vector temp_vec = *(*(*u)[0])(0);
-    Epetra_Vector temp_dot_vec = *(*(*du)[0])(0);
-    for (unsigned int lcv=0; lcv != (*u)[0]->MyLength(); ++lcv) {
-      double tmp = abs(temp_dot_vec[lcv])/(atol_ + rtol_*abs(temp_vec[lcv]));
+    Teuchos::RCP<const Epetra_MultiVector> temp_vec = u->data()->ViewComponent("temperature", false);
+    Teuchos::RCP<const Epetra_MultiVector> temp_dot_vec = du->data()->ViewComponent("temperature_dot", false);
+
+    for (unsigned int lcv=0; lcv != temp_vec->MyLength(); ++lcv) {
+      double tmp = abs((*(*temp_dot_vec)(0))[lcv])/(atol_ + rtol_*abs((*(*temp_vec)(0))[lcv]));
       enorm_val = std::max<double>(enorm_val, tmp);
     }
 

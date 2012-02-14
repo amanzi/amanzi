@@ -93,9 +93,8 @@ namespace Amanzi {
   void MPC::state_to_solution(Teuchos::RCP<State>& S, Teuchos::RCP<TreeVector>& soln) {
     for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
          pk != sub_pks_.end(); ++pk) {
-      Teuchos::RCP<TreeVector> pk_soln;
-      int subvec_not_found = soln->SubVector((*pk)->name(), pk_soln);
-      if (subvec_not_found) {
+      Teuchos::RCP<TreeVector> pk_soln = soln->SubVector((*pk)->name());
+      if (pk_soln == Teuchos::null) {
         Errors::Message message("MPC: vector structure does not match PK structure");
         Exceptions::amanzi_throw(message);
       }
@@ -108,16 +107,14 @@ namespace Amanzi {
           Teuchos::RCP<TreeVector>& soln_dot) {
     for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
          pk != sub_pks_.end(); ++pk) {
-      Teuchos::RCP<TreeVector> pk_soln;
-      int subvec_not_found = soln->SubVector((*pk)->name(), pk_soln);
-      if (subvec_not_found) {
+      Teuchos::RCP<TreeVector> pk_soln = soln->SubVector((*pk)->name());
+      if (pk_soln == Teuchos::null) {
         Errors::Message message("MPC: vector structure does not match PK structure");
         Exceptions::amanzi_throw(message);
       }
 
-      Teuchos::RCP<TreeVector> pk_soln_dot;
-      subvec_not_found = soln_dot->SubVector((*pk)->name(), pk_soln_dot);
-      if (subvec_not_found) {
+      Teuchos::RCP<TreeVector> pk_soln_dot = soln_dot->SubVector((*pk)->name());
+      if (pk_soln == Teuchos::null) {
         Errors::Message message("MPC: vector structure does not match PK structure");
         Exceptions::amanzi_throw(message);
       }
@@ -129,9 +126,8 @@ namespace Amanzi {
   void MPC::solution_to_state(Teuchos::RCP<TreeVector>& soln, Teuchos::RCP<State>& S) {
     for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
          pk != sub_pks_.end(); ++pk) {
-      Teuchos::RCP<TreeVector> pk_soln;
-      int subvec_not_found = soln->SubVector((*pk)->name(), pk_soln);
-      if (subvec_not_found) {
+      Teuchos::RCP<TreeVector> pk_soln = soln->SubVector((*pk)->name());
+      if (pk_soln == Teuchos::null) {
         Errors::Message message("MPC: vector structure does not match PK structure");
         Exceptions::amanzi_throw(message);
       }
@@ -144,16 +140,14 @@ namespace Amanzi {
           Teuchos::RCP<TreeVector>& soln_dot, Teuchos::RCP<State>& S) {
     for (std::vector< Teuchos::RCP<PK> >::iterator pk = sub_pks_.begin();
          pk != sub_pks_.end(); ++pk) {
-      Teuchos::RCP<TreeVector> pk_soln;
-      int subvec_not_found = soln->SubVector((*pk)->name(), pk_soln);
-      if (subvec_not_found) {
+      Teuchos::RCP<TreeVector> pk_soln = soln->SubVector((*pk)->name());
+      if (pk_soln == Teuchos::null) {
         Errors::Message message("MPC: vector structure does not match PK structure");
         Exceptions::amanzi_throw(message);
       }
 
-      Teuchos::RCP<TreeVector> pk_soln_dot;
-      subvec_not_found = soln_dot->SubVector((*pk)->name(), pk_soln_dot);
-      if (subvec_not_found) {
+      Teuchos::RCP<TreeVector> pk_soln_dot = soln_dot->SubVector((*pk)->name());
+      if (pk_soln_dot == Teuchos::null) {
         Errors::Message message("MPC: vector structure does not match PK structure");
         Exceptions::amanzi_throw(message);
       }

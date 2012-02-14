@@ -26,7 +26,7 @@ public:
   virtual int PutScalar(double scalar) = 0;
 
   // norms
-  virtual int NormInf(double* result) const;
+  virtual int NormInf(double* result) const = 0;
   //virtual int Norm1(double* result) const;
   //virtual int Norm2(double* result) const;
 

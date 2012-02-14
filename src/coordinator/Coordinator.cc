@@ -97,13 +97,13 @@ void Coordinator::coordinator_init() {
 
 void Coordinator::initialize() {
   // initialize the state (which should initialize all independent variables)
-  S_->initialize();
+  S_->Initialize();
 
   // initialize the process kernels (which should initialize all dependent variables)
   pk_->initialize(S_);
 
   // Check that all fields have now been initialized or die.
-  S_->check_all_initialized();
+  S_->CheckAllInitialized();
 }
 
 void Coordinator::read_parameter_list() {
@@ -133,7 +133,7 @@ void Coordinator::cycle_driver () {
   observations_->make_observations(*S_);
 
   // write visualization if requested at IC
-  S_->write_vis(*visualization_);
+  S_->WriteVis(*visualization_);
 
   // we need to create an intermediate state that will store the updated
   // solution until we know it has succeeded
@@ -147,12 +147,12 @@ void Coordinator::cycle_driver () {
   // iterate process kernels
   double mpc_dT;
   bool fail = 0;
-  while (  (S_->get_time() <= T1_)  &&   ((end_cycle_ == -1) || (iter <= end_cycle_)) ) {
+  while (  (S_->time() <= T1_)  &&   ((end_cycle_ == -1) || (iter <= end_cycle_)) ) {
     mpc_dT = pk_->get_dt();
 
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
       *out << "Cycle = " << iter;
-      *out << ",  Time = "<< S_->get_time() / (60*60*24);
+      *out << ",  Time = "<< S_->time() / (60*60*24);
       *out << ",  dT = " << mpc_dT / (60*60*24)  << std::endl;
     }
 
@@ -176,7 +176,7 @@ void Coordinator::cycle_driver () {
       observations_->make_observations(*S_);
 
       // write visualization if requested
-      S_->write_vis(*visualization_);
+      S_->WriteVis(*visualization_);
 
       // write restart dump if requested
       // restart->dump_state(*S);

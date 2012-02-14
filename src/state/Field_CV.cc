@@ -82,88 +82,94 @@ void Field_CV::Initialize(Teuchos::ParameterList& plist) {
   const std::vector<std::string> component_names = data_->names();
   const std::vector<int> num_dofs = data_->num_dofs();
   const int num_components = data_->num_components();
+  const std::vector< std::vector<std::string> > subfield_names = data_->subfield_names();
 
-  int count = 0;
-  for (std::vector<int>::const_iterator ndof = num_dofs.begin(); ndof != num_dofs.end();
-       ++ndof) { count += *ndof; }
-  if (count == subfield_names_.size()) {
-    // try to set the field on a per-subfield basis
-    double vals[count];
-    bool got_them_all = true;
-    for (unsigned int lcv=0; lcv != count; ++lcv) {
+  std::vector< std::vector<double> > vals(num_components);
+  for (unsigned int i = 0; i != num_components; ++i) {
+    vals[i].resize(num_dofs[i]);
+  }
+
+  // try to set the field on a per-subfield basis
+  bool got_them_all = true;
+  for (unsigned int lcv_component=0; lcv_component != num_components; ++lcv_component) {
+    for (unsigned int lcv_dof = 0; lcv_dof != num_dofs[lcv_component]; ++lcv_dof) {
       // attempt to pick out constant values for the field
-      if (plist.isParameter("Constant "+subfield_names_[lcv])) {
-        vals[lcv] = plist.get<double>("Constant "+subfield_names_[lcv]);
-        std::cout << "  got value:" << fieldname_ << "=" << vals[lcv]
-                  << std::endl;
+      std::string subname = subfield_names[lcv_component][lcv_dof];
+      if (subname != std::string("") &&
+          plist.isParameter("Constant "+subname)) {
+        vals[lcv_component][lcv_dof] = plist.get<double>("Constant "+subname);
+        std::cout << "  got value:" << subname << "=" <<
+        vals[lcv_component][lcv_dof] << std::endl;
       } else {
         got_them_all = false;
         break;
       }
     }
-
-    if (got_them_all) {
-      std::cout << "got them all, assigning" << std::endl;
-      unsigned int lcv_count = 0;
-      for (unsigned int lcv_component = 0; lcv_component != component_names.size();
-           ++lcv_component) {
-        std::vector<double> component_vals(num_dofs[lcv_component]);
-        for (unsigned int lcv_dof = 0; lcv_dof != num_dofs[lcv_component]; ++lcv_dof) {
-          component_vals[lcv_component] = vals[lcv_count];
-          lcv_count++;
-        }
-        data_->PutScalar(component_names[lcv_component], component_vals);
-      }
-      set_initialized();
+  }
+  if (got_them_all) {
+    std::cout << "got them all, assigning" << std::endl;
+    for (unsigned int lcv_component=0; lcv_component != num_components; ++lcv_component) {
+      data_->PutScalar(component_names[lcv_component], vals[lcv_component]);
     }
+    set_initialized();
+  }
 
-    // try to set the field on a per-subfield, per-mesh set basis
-    if (plist.isParameter("Number of mesh blocks")) {
-      int num_blocks = plist.get<int>("Number of mesh blocks");
+  // try to set the field on a per-subfield, per-mesh set basis
+  if (plist.isParameter("Number of mesh blocks")) {
+    int num_blocks = plist.get<int>("Number of mesh blocks");
 
-      bool got_a_block = false;
-      for (int nb=1; nb<=num_blocks; nb++) {
-        std::stringstream pname;
-        pname << "Mesh block " << nb;
-        Teuchos::ParameterList sublist = plist.sublist(pname.str());
-        int mesh_block_id = sublist.get<int>("Mesh block ID");
+    bool got_a_block = false;
+    for (int nb=1; nb<=num_blocks; nb++) {
+      std::stringstream pname;
+      pname << "Mesh block " << nb;
+      Teuchos::ParameterList sublist = plist.sublist(pname.str());
+      int mesh_block_id = sublist.get<int>("Mesh block ID");
 
-        got_them_all = true;
-        for (unsigned int lcv=0; lcv != count; ++lcv) {
+      got_them_all = true;
+      for (unsigned int lcv_component=0; lcv_component != num_components; ++lcv_component) {
+        for (unsigned int lcv_dof = 0; lcv_dof != num_dofs[lcv_component]; ++lcv_dof) {
           // attempt to pick out constant values for the field
-          if (sublist.isParameter("Constant "+subfield_names_[lcv])) {
-            vals[lcv] = sublist.get<double>("Constant "+subfield_names_[lcv]);
-            std::cout << "  got value:" << fieldname_ << "=" << vals[lcv] << std::endl;
+          std::string subname = subfield_names[lcv_component][lcv_dof];
+          if (subname != std::string("") &&
+              plist.isParameter("Constant "+subname)) {
+            vals[lcv_component][lcv_dof] = plist.get<double>("Constant "+subname);
+            std::cout << "  got value:" << subname << "=" <<
+              vals[lcv_component][lcv_dof] << std::endl;
           } else {
             got_them_all = false;
             break;
           }
         }
-        if (got_a_block && !got_them_all) {
-          std::stringstream messagestream;
-          messagestream << "Field " << fieldname_
-                        << "initialized at least one, but not all mesh block.";
-          Errors::Message message(messagestream.str());
-          Exceptions::amanzi_throw(message);
-        }
-
-        if (got_them_all) {
-          std::cout << "got them all, assigning" << std::endl;
-          got_a_block = true;
-          unsigned int lcv_count = 0;
-          for (unsigned int lcv_component = 0; lcv_component != component_names.size();
-               ++lcv_component) {
-            std::vector<double> component_vals(num_dofs[lcv_component]);
-            for (unsigned int lcv_dof = 0; lcv_dof != num_dofs[lcv_component]; ++lcv_dof) {
-              component_vals[lcv_component] = vals[lcv_count];
-              lcv_count++;
-            }
-            data_->PutScalar(component_names[lcv_component], mesh_block_id, component_vals);
-          }
-        }
-        set_initialized();
       }
+
+      if (got_a_block && !got_them_all) {
+        std::stringstream messagestream;
+        messagestream << "Field " << fieldname_
+                      << "initialized at least one, but not all mesh block.";
+        Errors::Message message(messagestream.str());
+        Exceptions::amanzi_throw(message);
+      }
+
+      if (got_them_all) {
+        got_a_block = true;
+        std::cout << "got them all, assigning" << std::endl;
+        for (unsigned int lcv_component=0; lcv_component != num_components; ++lcv_component) {
+          data_->PutScalar(component_names[lcv_component], mesh_block_id, vals[lcv_component]);
+        }
+      }
+      set_initialized();
     }
   }
 };
+
+void Field_CV::WriteVis(Amanzi::Vis& vis) {
+  if (io_vis_) {
+    const std::vector< std::vector<std::string> > subfield_names = data_->subfield_names();
+    const std::vector<std::string> names = data_->names();
+    for (unsigned int i = 0; i != data_->num_components(); ++i) {
+      vis.write_vector(*data_->ViewComponent(names[i], false), subfield_names[i]);
+    }
+  }
+};
+
 } // namespace

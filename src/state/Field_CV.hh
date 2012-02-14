@@ -41,6 +41,11 @@ public:
   // destructor
   ~Field_CV() {}
 
+  // subfield names
+  std::vector< std::vector< std::string > > subfield_names() { return data_->subfield_names(); }
+  void set_subfield_names(std::vector< std::vector< std::string > > subfield_names) {
+    data_->set_subfield_names(subfield_names); }
+
   // data access and mutators
   Teuchos::RCP<const CompositeVector> GetFieldData() const { return data_; }
   Teuchos::RCP<CompositeVector> GetFieldData(std::string pk_name);
@@ -50,6 +55,9 @@ public:
 
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);
+
+  // vis
+  void WriteVis(Amanzi::Vis& vis);
 
 protected:
 

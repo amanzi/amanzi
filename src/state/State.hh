@@ -131,7 +131,7 @@ public:
   void advance_cycle ( int dcycle=1 ) { cycle_ += dcycle; }
 
   // vis and restart functions
-// void WriteVis(Amanzi::Vis& vis);
+  void WriteVis(Amanzi::Vis& vis);
 
 private:
 

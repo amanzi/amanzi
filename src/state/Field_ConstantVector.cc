@@ -106,4 +106,9 @@ void Field_ConstantVector::Initialize(Teuchos::ParameterList& plist) {
   }
 };
 
+void Field_ConstantVector::WriteVis(Amanzi::Vis& vis) {
+  if (io_vis_) {
+  }
+};
+
 } // namespace

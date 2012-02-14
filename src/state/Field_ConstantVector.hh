@@ -42,6 +42,11 @@ public:
   // destructor
   ~Field_ConstantVector() {}
 
+  // names for the vector components
+  std::vector<std::string> subfield_names() { return subfield_names_; }
+  void set_subfield_names(std::vector<std::string> subfield_names) {
+    subfield_names_ = subfield_names; }
+
   // data access and mutators
   Teuchos::RCP<const Epetra_Vector> GetConstantVectorData() const { return data_; }
   Teuchos::RCP<Epetra_Vector> GetConstantVectorData(std::string pk_name);
@@ -52,9 +57,13 @@ public:
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);
 
+  // vis
+  void WriteVis(Amanzi::Vis& vis);
+
 protected:
 
   Teuchos::RCP<Epetra_Vector> data_;
+  std::vector<std::string> subfield_names_;
 
 private:
   // operator= disabled
