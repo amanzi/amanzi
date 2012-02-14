@@ -306,6 +306,23 @@ void RichardsProblem::dSofP(const Epetra_Vector &P, Epetra_Vector &dS)
 }
 
 
+void RichardsProblem::SofP(const Epetra_Vector &P, Epetra_Vector &S)
+{
+  for (int mb=0; mb<WRM.size(); mb++) {
+    // get mesh block cells
+    std::string region = WRM[mb]->region();
+    unsigned int ncells = mesh_->get_set_size(region,AmanziMesh::CELL,AmanziMesh::OWNED);
+    std::vector<unsigned int> block(ncells);
+
+    mesh_->get_set_entities(region,AmanziMesh::CELL,AmanziMesh::OWNED,&block);
+      
+    std::vector<unsigned int>::iterator j;
+    for (j = block.begin(); j!=block.end(); j++) S[*j] = WRM[mb]->saturation(P[*j]);
+  }
+}
+
+
+
 void RichardsProblem::DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S)
 {
   for (int mb=0; mb<WRM.size(); mb++) {

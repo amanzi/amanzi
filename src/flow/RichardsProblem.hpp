@@ -40,7 +40,9 @@ class RichardsProblem {
   void UpdateVanGenuchtenRelativePermeability(const Epetra_Vector &P);
   void DeriveVanGenuchtenSaturation(const Epetra_Vector &P, Epetra_Vector &S);
   void dSofP(const Epetra_Vector &P, Epetra_Vector &dS);
+  void SofP(const Epetra_Vector &P, Epetra_Vector &S);
   
+
   void ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double time = 0.0);
 
   void ComputePrecon(const Epetra_Vector &X);

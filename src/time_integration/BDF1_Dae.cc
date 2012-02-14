@@ -44,11 +44,12 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   // parameters are passed along so theu they can be used in extracting
   // values!
 
+
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(),0);
   paramList_ = paramList;
 
   // make sure that the parameter list is actually valid (this is probably redundant)
-  paramList_->validateParameters(*this->getValidParameters());
+  //paramList_->validateParameters(*this->getValidParameters());
 
   // read the parameter list and initialize the class
   state.mitr = paramList_->get<int>("steady limit iterations");
@@ -58,6 +59,7 @@ void BDF1Dae::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& param
   state.hred = paramList_->get<double>("steady time step reduction factor");
   state.hinc = paramList_->get<double>("steady time step increase factor");
   state.hlimit = paramList_->get<double>("steady max time step");
+
   state.maxpclag = paramList_->get<int>("steady max preconditioner lag iterations");
 
   // sanity check
@@ -309,11 +311,12 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
   Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
       Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
 
+  double error(0.0);
+
   do {
-    double error;
 
     // Check for too many nonlinear iterations.
-    if (itr >= state.mitr) {
+    if (itr > state.mitr) {
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
         *out << "AIN BCE solve failed " << itr << " iterations (max), error = " << error << std::endl;
       }
@@ -329,7 +332,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     u_tmp = u;
     u_tmp.Update(-1.0/h,u0,1.0/h);
 
-    fn.fun(t, u, u_tmp, du);
+    fn.fun(t, u, u_tmp, du, h);
 
     fn.precon(du, u_tmp);
 
@@ -354,14 +357,16 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
 
     error = fn.enorm(u, du);
+    
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;
     }
 
-    if (error > state.hlimit) {
+    if (error > state.elimit) {
       // the solver threatening to diverge
       throw state.mitr+1;
     }
+
 
     // Check for convergence
     if (error < state.ntol)   {
