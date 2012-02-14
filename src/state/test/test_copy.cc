@@ -14,81 +14,79 @@
 #include "State.hh"
 
 using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
-
-int main (int argc, char *argv[])
-{
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  return UnitTest::RunAllTests();
-}
-
-struct test_field {
-  Epetra_MpiComm *comm;
-  Teuchos::RCP<Mesh> mesh;
-
-  Teuchos::RCP<Field_CV> field;
-  test_field() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(*comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-
-    std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[0] = FACE;
-
-    std::vector<std::string> names(2);
-    names[0] = "cell";
-    names[1] = "face";
-
-    Teuchos::RCP<CompositeVector> data =
-      Teuchos::rcp(new CompositeVector(mesh, names, locations));
-    field = Teuchos::rcp(new Field_CV("test_fieldname", "test_owner", data));
-  }
-  ~test_field() { delete comm; }
-};
-
-double get_value(Teuchos::RCP<Field>& field) {
-  Teuchos::RCP<Field_CV> field_ptr = Teuchos::rcp_static_cast<Field_CV>(field);
-  Teuchos::RCP<const CompositeVector> data = field_ptr->GetFieldData();
-  return (*(*data->ViewComponent("cell", true))(0))[0];
-};
-
-double get_value(Teuchos::RCP<Field_CV>& field) {
-  Teuchos::RCP<const CompositeVector> data = field->GetFieldData();
-  return (*(*data->ViewComponent("cell", true))(0))[0];
-};
-
-double get_value(const State& state) {
-  Teuchos::RCP<const CompositeVector> data = state.GetFieldData("test_fieldname");
-  return (*(*data->ViewComponent("cell", true))(0))[0];
-};
-
-struct test_state {
-  Epetra_MpiComm *comm;
-  Teuchos::RCP<Mesh> mesh;
-
-  Teuchos::RCP<State> state;
-
-  test_state() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory mesh_fact(*comm);
-    mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    state = Teuchos::rcp(new State(mesh));
-
-    std::vector<Entity_kind> locations(2);
-    locations[0] = CELL;
-    locations[0] = FACE;
-
-    std::vector<std::string> names(2);
-    names[0] = "cell";
-    names[1] = "face";
-
-    state->RequireField("test_fieldname", "test_owner", names, locations);
-  }
-  ~test_state() { delete comm; }
-};
 
 SUITE(COPY) {
+  struct test_field {
+    Epetra_MpiComm *comm;
+    Teuchos::RCP<AmanziMesh::Mesh> mesh;
+
+    Teuchos::RCP<Field_CV> field;
+    test_field() {
+      comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+      AmanziMesh::MeshFactory mesh_fact(*comm);
+      mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+
+      std::vector<AmanziMesh::Entity_kind> locations(2);
+      locations[0] = AmanziMesh::CELL;
+      locations[0] = AmanziMesh::FACE;
+
+      std::vector<std::string> names(2);
+      names[0] = "cell";
+      names[1] = "face";
+
+      Teuchos::RCP<CompositeVector> data =
+        Teuchos::rcp(new CompositeVector(mesh, names, locations));
+      field = Teuchos::rcp(new Field_CV("test_fieldname", "test_owner", data));
+    }
+    ~test_field() {
+      delete comm;
+    }
+  };
+
+  double get_value(Teuchos::RCP<Field>& field) {
+    Teuchos::RCP<Field_CV> field_ptr = Teuchos::rcp_static_cast<Field_CV>(field);
+    Teuchos::RCP<const CompositeVector> data = field_ptr->GetFieldData();
+    return (*(*data->ViewComponent("cell", true))(0))[0];
+  };
+
+  double get_value(Teuchos::RCP<Field_CV>& field) {
+    Teuchos::RCP<const CompositeVector> data = field->GetFieldData();
+    return (*(*data->ViewComponent("cell", true))(0))[0];
+  };
+
+  double get_value(const State& state) {
+    Teuchos::RCP<const CompositeVector> data = state.GetFieldData("test_fieldname");
+    return (*(*data->ViewComponent("cell", true))(0))[0];
+  };
+
+  struct test_state {
+    Epetra_MpiComm *comm;
+    Teuchos::RCP<AmanziMesh::Mesh> mesh;
+
+    Teuchos::RCP<State> state;
+
+    test_state() {
+      comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+      AmanziMesh::MeshFactory mesh_fact(*comm);
+      mesh = mesh_fact(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+      state = Teuchos::rcp(new State(mesh));
+
+      std::vector<AmanziMesh::Entity_kind> locations(2);
+      locations[0] = AmanziMesh::CELL;
+      locations[0] = AmanziMesh::FACE;
+
+      std::vector<std::string> names(2);
+      names[0] = "cell";
+      names[1] = "face";
+
+      state->RequireField("test_fieldname", "test_owner", names, locations);
+    }
+    ~test_state() {
+      delete comm;
+    }
+  };
+
+
   // test the field copy constructor
   TEST_FIXTURE(test_field, FieldCopy) {
     field->GetFieldData("test_owner")->PutScalar(2.0);
@@ -171,4 +169,3 @@ SUITE(COPY) {
     CHECK_CLOSE(get_value(*state), 2.0, 0.00001);
   }
 }
-

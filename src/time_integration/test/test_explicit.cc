@@ -1,14 +1,54 @@
 #include "UnitTest++.h"
 
+#include "Teuchos_RCP.hpp"
+#include "Epetra_MpiComm.h"
+#include "Epetra_Vector.h"
+
+#include "Mesh_STK.hh"
+#include "MeshFactory.hh"
+#include "CompositeVector.hh"
+#include "TreeVector.hh"
+
 #include "ExplicitTIfnBase.hh"
 #include "ExplicitTIRK.hh"
 
-#include "Epetra_BlockMap.h"
-#include "Epetra_Vector.h"
-#include "Epetra_SerialComm.h"
+
+using namespace Amanzi;
 
 SUITE(TimeIntegrationTests) {
-  using namespace Amanzi;
+  // data structures
+  struct test_data {
+    Epetra_MpiComm *comm;
+    Teuchos::RCP<AmanziMesh::Mesh> mesh;
+
+    Teuchos::RCP<CompositeVector> y;
+    Teuchos::RCP<TreeVector> y_tree;
+    Teuchos::RCP<CompositeVector> y_new;
+    Teuchos::RCP<TreeVector> y_new_tree;
+
+    Epetra_Vector* ye;
+    Epetra_Vector* yne;
+
+    test_data() {
+      comm = new Epetra_MpiComm(MPI_COMM_SELF);
+      AmanziMesh::MeshFactory mesh_fact(*comm);
+      mesh = mesh_fact(0.0, 0.0, 0.0, 2.0, 1.0, 1.0, 2, 1, 1);
+
+      // non-ghosted y
+      y = Teuchos::rcp(new CompositeVector(mesh, "cell", AmanziMesh::CELL, 1, false));
+      y_tree = Teuchos::rcp(new TreeVector("y"));
+      y_tree->set_data(y);
+
+      // y new
+      y_new_tree = Teuchos::rcp(new TreeVector("y_new", *y_tree));
+      y_new = y_new_tree->data();
+
+      // just the vector for easier computing
+      ye = (*y->ViewComponent("cell"))(0);
+      yne = (*y_new->ViewComponent("cell"))(0);
+    }
+    ~test_data() { delete comm; }
+  };
 
   // ODE: y' = y
   class fn1 : public ExplicitTIfnBase {
@@ -19,25 +59,14 @@ SUITE(TimeIntegrationTests) {
     }
   };
 
-
-  TEST(Explicit_RK_Euler) {
+  TEST_FIXTURE(test_data, Explicit_RK_Euler) {
     cout << "Test: Explicit_RK_Euler" << endl;
-    Epetra_Comm* comm = new Epetra_SerialComm();
-    Epetra_BlockMap map(1,1,0,*comm);
-
-    Teuchos::RCP<Epetra_MultiVector> y = Teuchos::rcp( new Epetra_MultiVector(map,1,false));
-
-    TreeVector y_tree(std::string("y"));
-    y_tree.PushBack(y);
-
-    TreeVector y_new_tree(std::string("y_new"),y_tree);
-
     fn1 f;
     ExplicitTIRK::method_t method = ExplicitTIRK::forward_euler;
-    ExplicitTIRK explicit_time_integrator(f, method, y_tree);
+    ExplicitTIRK explicit_time_integrator(f, method, *y_tree);
 
     // initial value
-    y_tree.PutScalar(1.0);
+    y_tree->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -45,36 +74,22 @@ SUITE(TimeIntegrationTests) {
     double h=.1;
 
     // integrate to t=1.0
-    do
-    {
-      explicit_time_integrator.step(t,h,y_tree,y_new_tree);
+    do {
+      explicit_time_integrator.step(t, h, *y_tree, *y_new_tree);
       t=t+h;
-      y_tree = y_new_tree;
-    }
-    while (t<1.0);
-    CHECK_CLOSE( (*(*(y_tree[0]))(0))[0],exp(t),2.0*h);
+      *y_tree = *y_new_tree;
+    } while (t<1.0);
+    CHECK_CLOSE((*ye)[0], exp(t), 2.0*h);
   }
 
-
-  TEST(Explicit_RK_Heun) {
+  TEST_FIXTURE(test_data, Explicit_RK_Heun) {
     cout << "Test: Explicit_RK_Heun" << endl;
-
-    Epetra_Comm* comm = new Epetra_SerialComm();
-    Epetra_BlockMap map(1,1,0,*comm);
-
-    Teuchos::RCP<Epetra_MultiVector> y = Teuchos::rcp( new Epetra_MultiVector(map,1,false));
-
-    TreeVector y_tree(std::string("y"));
-    y_tree.PushBack(y);
-    TreeVector y_new_tree(std::string("y_new"),y_tree);
-
-
     fn1 f;
     ExplicitTIRK::method_t method = ExplicitTIRK::heun_euler;
-    ExplicitTIRK explicit_time_integrator(f, method, y_tree);
+    ExplicitTIRK explicit_time_integrator(f, method, *y_tree);
 
     // initial value
-    y_tree.PutScalar(1.0);
+    y_tree->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -82,35 +97,22 @@ SUITE(TimeIntegrationTests) {
     double h=.1;
 
     // integrate to t=1.0
-    do
-    {
-      explicit_time_integrator.step(t,h,y_tree,y_new_tree);
+    do {
+      explicit_time_integrator.step(t, h, *y_tree, *y_new_tree);
       t=t+h;
-      y_tree = y_new_tree;
-    }
-    while (t<1.0);
-    CHECK_CLOSE( (*(*(y_tree[0]))(0))[0],exp(t),pow(h,2));
+      *y_tree = *y_new_tree;
+    } while (t<1.0);
+    CHECK_CLOSE((*ye)[0], exp(t), pow(h,2));
   }
 
-
-  TEST(Explicit_RK_Midpoint) {
+  TEST_FIXTURE(test_data, Explicit_RK_Midpoint) {
     cout << "Test: Explicit_RK_Midpoint" << endl;
-
-    Epetra_Comm* comm = new Epetra_SerialComm();
-    Epetra_BlockMap map(1,1,0,*comm);
-
-    Teuchos::RCP<Epetra_MultiVector> initvec = Teuchos::rcp( new Epetra_MultiVector(map,1,false));
-
-    TreeVector y(std::string("y"));
-    y.PushBack(initvec);
-    TreeVector y_new(std::string("y_new"),y);
-
     fn1 f;
     ExplicitTIRK::method_t method = ExplicitTIRK::midpoint;
-    ExplicitTIRK explicit_time_integrator(f, method, y);
+    ExplicitTIRK explicit_time_integrator(f, method, *y_tree);
 
     // initial value
-    y.PutScalar(1.0);
+    y_tree->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -118,34 +120,23 @@ SUITE(TimeIntegrationTests) {
     double h=.1;
 
     // integrate to t=1.0
-    do
-    {
-      explicit_time_integrator.step(t,h,y,y_new);
+    do {
+      explicit_time_integrator.step(t, h, *y_tree, *y_new_tree);
       t=t+h;
-      y = y_new;
-    }
-    while (t<1.0);
-    CHECK_CLOSE((*(*(y[0]))(0))[0],exp(t),pow(h,2));
+      *y_tree = *y_new_tree;
+    } while (t<1.0);
+
+    CHECK_CLOSE((*ye)[0], exp(t), pow(h,2));
   }
 
-  TEST(Explicit_RK_Ralston) {
+  TEST_FIXTURE(test_data, Explicit_RK_Ralston) {
     cout << "Test: Explicit_RK_Rapson" << endl;
-
-    Epetra_Comm* comm = new Epetra_SerialComm();
-    Epetra_BlockMap map(1,1,0,*comm);
-
-    Teuchos::RCP<Epetra_MultiVector> initvec = Teuchos::rcp( new Epetra_MultiVector(map,1,false));
-
-    TreeVector y(std::string("y"));
-    y.PushBack(initvec);
-    TreeVector y_new(std::string("y_new"),y);
-
     fn1 f;
     ExplicitTIRK::method_t method = ExplicitTIRK::ralston;
-    ExplicitTIRK explicit_time_integrator(f, method, y);
+    ExplicitTIRK explicit_time_integrator(f, method, *y_tree);
 
     // initial value
-    y.PutScalar(1.0);
+    y_tree->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -153,35 +144,22 @@ SUITE(TimeIntegrationTests) {
     double h=.1;
 
     // integrate to t=1.0
-    do
-    {
-      explicit_time_integrator.step(t,h,y,y_new);
+    do {
+      explicit_time_integrator.step(t, h, *y_tree, *y_new_tree);
       t=t+h;
-      y = y_new;
-    }
-    while (t<1.0);
-    CHECK_CLOSE((*(*(y[0]))(0))[0],exp(t),pow(h,2));
+      *y_tree = *y_new_tree;
+    } while (t<1.0);
+    CHECK_CLOSE((*ye)[0], exp(t), pow(h,2));
   }
 
-
-  TEST(Explicit_RK_Kutta3D) {
+  TEST_FIXTURE(test_data, Explicit_RK_Kutta3D) {
     cout << "Test: Explicit_RK_Kutta3D" << endl;
-
-    Epetra_Comm* comm = new Epetra_SerialComm();
-    Epetra_BlockMap map(1,1,0,*comm);
-
-    Teuchos::RCP<Epetra_MultiVector> initvec = Teuchos::rcp( new Epetra_MultiVector(map,1,false));
-
-    TreeVector y(std::string("y"));
-    y.PushBack(initvec);
-    TreeVector y_new(std::string("y_new"),y);
-
     fn1 f;
     ExplicitTIRK::method_t method = ExplicitTIRK::kutta_3rd_order;
-    ExplicitTIRK explicit_time_integrator(f, method, y);
+    ExplicitTIRK explicit_time_integrator(f, method, *y_tree);
 
     // initial value
-    y.PutScalar(1.0);
+    y_tree->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -189,28 +167,16 @@ SUITE(TimeIntegrationTests) {
     double h=.1;
 
     // integrate to t=1.0
-    do
-    {
-      explicit_time_integrator.step(t,h,y,y_new);
+    do {
+      explicit_time_integrator.step(t, h, *y_tree, *y_new_tree);
       t=t+h;
-      y = y_new;
-    }
-    while (t<1.0);
-    CHECK_CLOSE((*(*(y[0]))(0))[0],exp(t),pow(h,3));
+      *y_tree = *y_new_tree;
+    } while (t<1.0);
+    CHECK_CLOSE((*ye)[0], exp(t), pow(h,3));
   }
 
-  TEST(Explicit_RK_UserDefined) {
+  TEST_FIXTURE(test_data, Explicit_RK_UserDefined) {
     cout << "Test: Explicit_RK_UserDefined" << endl;
-
-    Epetra_Comm* comm = new Epetra_SerialComm();
-    Epetra_BlockMap map(1,1,0,*comm);
-
-    Teuchos::RCP<Epetra_MultiVector> initvec = Teuchos::rcp( new Epetra_MultiVector(map,1,false));
-
-    TreeVector y(std::string("y"));
-    y.PushBack(initvec);
-    TreeVector y_new(std::string("y_new"),y);
-
     fn1 f;
     int order = 2;
     boost::numeric::ublas::matrix<double> a(order,order);
@@ -225,10 +191,10 @@ SUITE(TimeIntegrationTests) {
     c[0] = 0.0;
     c[1] = 1.0;
 
-    ExplicitTIRK explicit_time_integrator(f, order, a, b, c, y);
+    ExplicitTIRK explicit_time_integrator(f, order, a, b, c, *y_tree);
 
     // initial value
-    y.PutScalar(1.0);
+    y_tree->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -236,36 +202,23 @@ SUITE(TimeIntegrationTests) {
     double h=.1;
 
     // integrate to t=1.0
-    do
-    {
-      explicit_time_integrator.step(t,h,y,y_new);
+    do {
+      explicit_time_integrator.step(t, h, *y_tree, *y_new_tree);
       t = t + h;
-      y = y_new;
-    }
-    while (t<1.0);
+      *y_tree = *y_new_tree;
+    } while (t<1.0);
 
-
-    CHECK_CLOSE((*(*(y[0]))(0))[0],exp(t),pow(h,2));
+    CHECK_CLOSE((*ye)[0], exp(t), pow(h,2));
   }
 
-  TEST(Explicit_RK_RK4) {
+  TEST_FIXTURE(test_data, Explicit_RK_RK4) {
     cout << "Test: Explicit_RK_RK4" << endl;
-
-    Epetra_Comm* comm = new Epetra_SerialComm();
-    Epetra_BlockMap map(1,1,0,*comm);
-
-    Teuchos::RCP<Epetra_MultiVector> initvec = Teuchos::rcp( new Epetra_MultiVector(map,1,false));
-
-    TreeVector y(std::string("y"));
-    y.PushBack(initvec);
-    TreeVector y_new(std::string("y_new"),y);
-
     fn1 f;
     ExplicitTIRK::method_t method = ExplicitTIRK::runge_kutta_4th_order;
-    ExplicitTIRK explicit_time_integrator(f, method, y);
+    ExplicitTIRK explicit_time_integrator(f, method, *y_tree);
 
     // initial value
-    y.PutScalar(1.0);
+    y_tree->PutScalar(1.0);
 
     // initial time
     double t=0.0;
@@ -275,11 +228,11 @@ SUITE(TimeIntegrationTests) {
     // integrate to t=1.0
     do
     {
-      explicit_time_integrator.step(t, h, y, y_new);
+      explicit_time_integrator.step(t, h, *y_tree, *y_new_tree);
       t = t + h;
-      y = y_new;
+      *y_tree = *y_new_tree;
     }
     while (t<1.0);
-    CHECK_CLOSE((*(*(y[0]))(0))[0],exp(t),pow(h,4));
+    CHECK_CLOSE((*ye)[0], exp(t), pow(h,4));
   }
 }

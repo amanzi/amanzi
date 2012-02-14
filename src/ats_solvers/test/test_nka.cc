@@ -5,141 +5,135 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
-
-#include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 
+#include "MeshFactory.hh"
+#include "Mesh_STK.hh"
+#include "CompositeVector.hh"
 #include "TreeVector.hh"
 #include "NonlinarKrylovAccelerator.hh"
 
-TEST(NKA_NONLINEAR) {
+using namespace Amanzi;
 
-  std::cout << "NKA_NONLINEAR..." << std::endl;
+SUITE(SOLVERS) {
+  // data structures for testing
+  struct test_data {
+    Epetra_MpiComm *comm;
+    Teuchos::RCP<AmanziMesh::Mesh> mesh;
 
-  Epetra_Comm *comm = new Epetra_SerialComm();
-  // create an Epetra_Vector
-  Epetra_BlockMap map(3,1,0,*comm);
+    Teuchos::RCP<CompositeVector> x;
+    Teuchos::RCP<TreeVector> x_tree;
+    Teuchos::RCP<CompositeVector> f;
+    Teuchos::RCP<TreeVector> f_tree;
+    Teuchos::RCP<CompositeVector> dx;
+    Teuchos::RCP<TreeVector> dx_tree;
 
-  Teuchos::RCP<Epetra_MultiVector> x = Teuchos::rcp(new Epetra_MultiVector(map,1,false));
-  Teuchos::RCP<Amanzi::TreeVector>  x_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("x vec")));
-  x_tree->PushBack(x);
+    Epetra_Vector* fe;
+    Epetra_Vector* xe;
 
-  Amanzi::NonlinearKrylovAccelerator FPA(10,0.0,*x_tree);
-  FPA.nka_restart();
-  FPA.nka_relax();
+    test_data() {
+      comm = new Epetra_MpiComm(MPI_COMM_SELF);
+      AmanziMesh::MeshFactory mesh_fact(*comm);
+      mesh = mesh_fact(0.0, 0.0, 0.0, 3.0, 1.0, 1.0, 3, 1, 1);
 
-  // set up a simple fixed point iteration...
-  Teuchos::RCP<Epetra_MultiVector> f = Teuchos::rcp(new Epetra_MultiVector(*x));
-  Teuchos::RCP<Amanzi::TreeVector>  f_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("f vec"),*x_tree));
+      // non-ghosted x
+      x = Teuchos::rcp(new CompositeVector(mesh, "cell", AmanziMesh::CELL, 1, false));
+      x_tree = Teuchos::rcp(new TreeVector("x"));
+      x_tree->set_data(x);
 
-  Teuchos::RCP<Epetra_MultiVector> dx = Teuchos::rcp(new Epetra_MultiVector(*x));
-  Teuchos::RCP<Amanzi::TreeVector>  dx_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("dx vec"),*x_tree));
+      // f and dx
+      f_tree = Teuchos::rcp(new TreeVector("f", *x_tree));
+      f = f_tree->data();
+      dx_tree = Teuchos::rcp(new TreeVector("dx", *x_tree));
+      dx = dx_tree->data();
 
-  // initial value
-  Epetra_Vector* fe = (* (*f_tree)[0])(0);
-  Epetra_Vector* xe = (* (*x_tree)[0])(0);
+      // just the vector for easier computing
+      fe = (*f->ViewComponent("cell"))(0);
+      xe = (*x->ViewComponent("cell"))(0);
+    }
+    ~test_data() {
+      delete comm;
+    }
+  };
 
-  (*xe)[0] = 0.0;
-  (*xe)[1] = 0.0;
-  (*xe)[2] = 0.0;
+  TEST_FIXTURE(test_data, NKA_NONLINEAR) {
 
-  double norm(0.0);
-  int nka_iterations(0);
-  do {
-    nka_iterations++;
+    std::cout << "NKA_NONLINEAR..." << std::endl;
 
-    // function evaluation f <-- f(x^n)
+    Amanzi::NonlinearKrylovAccelerator FPA(10,0.0,*x_tree);
+    FPA.nka_restart();
+    FPA.nka_relax();
 
-    (*fe)[0] = (*xe)[0] - (cos((*xe)[0]) - sin((*xe)[1])) / 3.0;
-    (*fe)[1] = (*xe)[1] - (cos((*xe)[0]) - 2.0*sin((*xe)[1])) / 3.0;
-    (*fe)[2] = (*xe)[2] - (cos((*xe)[0]) - 3.0*sin((*xe)[2])) / 3.0;
+    // initial value
+    x->PutScalar(0.0);
 
-    // compute the NKA correction  dx <-- NKA(f)
-    FPA.nka_correction(*f_tree, *dx_tree);
+    double norm(0.0);
+    int nka_iterations(0);
+    do {
+      nka_iterations++;
 
-    // do the fixed point step   x^{n+1} <-- x^n - dx
-    x_tree->Update(-1.0, *dx_tree, 1.0);
+      // function evaluation f <-- f(x^n)
+      (*fe)[0] = (*xe)[0] - (cos((*xe)[0]) - sin((*xe)[1])) / 3.0;
+      (*fe)[1] = (*xe)[1] - (cos((*xe)[0]) - 2.0*sin((*xe)[1])) / 3.0;
+      (*fe)[2] = (*xe)[2] - (cos((*xe)[0]) - 3.0*sin((*xe)[2])) / 3.0;
 
-    dx_tree->NormInf(&norm);
+      // compute the NKA correction  dx <-- NKA(f)
+      FPA.nka_correction(*f_tree, *dx_tree);
 
-    std::cout << std::setprecision(15) << std::scientific;
+      // do the fixed point step   x^{n+1} <-- x^n - dx
+      x_tree->Update(-1.0, *dx_tree, 1.0);
 
-    std::cout << "iterate = " << nka_iterations;
-    std::cout << ", error = " << norm << std::endl;
-  } while (norm > 1e-14);
-  std::cout << "final error = " << norm << std::endl;
+      dx_tree->NormInf(&norm);
 
-  CHECK_EQUAL(nka_iterations,9);
+      std::cout << std::setprecision(15) << std::scientific;
+      std::cout << "iterate = " << nka_iterations;
+      std::cout << ", error = " << norm << std::endl;
+    } while (norm > 1e-14);
 
-  delete comm;
-  std::cout << "NKA_NONLINEAR... DONE." << std::endl;
-}
+    std::cout << "final error = " << norm << std::endl;
+    CHECK_EQUAL(nka_iterations,9);
+    std::cout << "NKA_NONLINEAR... DONE." << std::endl;
+  }
 
-TEST(NKA_LINEAR) {
+  TEST_FIXTURE(test_data, NKA_LINEAR) {
+    // This is a linear problem, NKA solves this in N steps where
+    // N is the number of unknowns.
 
-  // This is a linear problem, NKA solves this in N steps where
-  // N is the number of unknowns.
+    std::cout << "NKA_LINEAR..." << std::endl;
 
-  std::cout << "NKA_LINEAR..." << std::endl;
+    Amanzi::NonlinearKrylovAccelerator FPA(3,0.01,*x_tree);
+    FPA.nka_restart();
 
-  Epetra_Comm *comm = new Epetra_SerialComm();
-  // create an Epetra_Vector
-  Epetra_BlockMap map(3,1,0,*comm);
+    (*xe)[0] = 1.0;
+    (*xe)[1] = 2.0;
+    (*xe)[2] = -1.0;
 
-  Teuchos::RCP<Epetra_MultiVector> x = Teuchos::rcp(new Epetra_MultiVector(map,1,false));
-  Teuchos::RCP<Amanzi::TreeVector>  x_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("x vec")));
-  x_tree->PushBack(x);
+    double norm(0.0);
+    int nka_iterations(0);
+    do {
+      nka_iterations++;
+      // function evaluation f <-- f(x^n)
 
-  Amanzi::NonlinearKrylovAccelerator FPA(3,0.01,*x_tree);
-  FPA.nka_restart();
+      (*fe)[0] = 1.0 - (3.0*(*xe)[0]      -(*xe)[1]      -(*xe)[2]);
+      (*fe)[1] = 2.0 - (   -(*xe)[0] + 3.0*(*xe)[1]      -(*xe)[2]);
+      (*fe)[2] = -1.0 -(   -(*xe)[0]      -(*xe)[1] + 3.0*(*xe)[2]);
 
-  // set up a simple fixed point iteration...
+      // compute the NKA correction  dx <-- NKA(f)
+      FPA.nka_correction(*f_tree, *dx_tree);
 
-  Teuchos::RCP<Epetra_MultiVector> f = Teuchos::rcp(new Epetra_MultiVector(*x));
-  Teuchos::RCP<Amanzi::TreeVector>  f_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("f vec"),*x_tree));
+      // do the fixed point step   x^{n+1} <-- x^n - dx
+      x_tree->Update(-1.0, *dx_tree, 1.0);
 
-  Teuchos::RCP<Epetra_MultiVector> dx = Teuchos::rcp(new Epetra_MultiVector(*x));
-  Teuchos::RCP<Amanzi::TreeVector>  dx_tree = Teuchos::rcp(new Amanzi::TreeVector(std::string("dx vec"),*x_tree));
+      dx_tree->NormInf(&norm);
 
-  // initial value
-  Epetra_Vector* fe = (* (*f_tree)[0])(0);
-  Epetra_Vector* xe = (* (*x_tree)[0])(0);
+      std::cout << std::setprecision(15) << std::scientific;
 
-  (*xe)[0] = 1.0;
-  (*xe)[1] = 2.0;
-  (*xe)[2] = -1.0;
+      std::cout << "iterate = " << nka_iterations;
+      std::cout << ", error = " << norm << std::endl;
+    } while (norm > 1e-14);
 
-  double norm(0.0);
-  int nka_iterations(0);
-  do {
-    nka_iterations++;
-    // function evaluation f <-- f(x^n)
-
-    (*fe)[0] = 1.0 - (3.0*(*xe)[0]      -(*xe)[1]      -(*xe)[2]);
-    (*fe)[1] = 2.0 - (   -(*xe)[0] + 3.0*(*xe)[1]      -(*xe)[2]);
-    (*fe)[2] = -1.0 -(   -(*xe)[0]      -(*xe)[1] + 3.0*(*xe)[2]);
-
-    // compute the NKA correction  dx <-- NKA(f)
-    FPA.nka_correction(*f_tree, *dx_tree);
-
-    // do the fixed point step   x^{n+1} <-- x^n - dx
-    x_tree->Update(-1.0, *dx_tree, 1.0);
-
-    dx_tree->NormInf(&norm);
-
-    std::cout << std::setprecision(15) << std::scientific;
-
-    std::cout << "iterate = " << nka_iterations;
-    std::cout << ", error = " << norm << std::endl;
-
-  } while (norm > 1e-14);
-
-  std::cout << "final error = " << norm << std::endl;
-
-  CHECK_EQUAL(nka_iterations,3);
-
-  delete comm;
-  std::cout << "NKA_LINEAR... DONE." << std::endl;
-
+    std::cout << "final error = " << norm << std::endl;
+    CHECK_EQUAL(nka_iterations,3);
+    std::cout << "NKA_LINEAR... DONE." << std::endl;
+  }
 }

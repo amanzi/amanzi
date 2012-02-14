@@ -33,10 +33,7 @@ namespace Amanzi {
     // Basic constructor of an empty TreeVector
     explicit TreeVector(std::string name);
 
-    // These constructors allocate their own memory and do NOT copy the values,
-    // just the layout, of their arguments.
-
-    // these copy constructors are clearly necessary
+    // copy constructors
     TreeVector(const TreeVector& other);
     TreeVector(std::string name, const TreeVector& other);
 
