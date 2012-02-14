@@ -312,6 +312,7 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
       Teuchos::rcp(new NOX::Epetra::Vector(du, NOX::ShapeCopy));
 
   double error(0.0);
+  double initial_error(0.0);
 
   do {
 
@@ -357,12 +358,13 @@ void BDF1Dae::solve_bce(double t, double h, Epetra_Vector& u0, Epetra_Vector& u)
     }
 
     error = fn.enorm(u, du);
+    if (itr == 1) initial_error = error;
     
     if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_HIGH,true)) {
       *out << itr << ": error = " << error << std::endl;
     }
 
-    if (error > state.elimit) {
+    if (itr > 1 && error > initial_error*state.elimit ) {
       // the solver threatening to diverge
       throw state.mitr+1;
     }

@@ -447,6 +447,11 @@ void MPC::cycle_driver () {
 	force = true;
       }
 
+      if ( ti_mode == INIT_TO_STEADY ) 
+        if ( abs(S->get_time() - Tswitch) < 1e-7 ) {
+          force = true;
+        }
+
       if (chemistry_enabled) {
         // get the auxillary data
         Teuchos::RCP<Epetra_MultiVector> aux = CPK->get_extra_chemistry_output_data();

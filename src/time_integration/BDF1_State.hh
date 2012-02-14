@@ -30,7 +30,7 @@ struct BDF1State {
     hmax = std::numeric_limits<double>::max();
     
     hlimit = 1e10;
-    elimit = 1e10;
+    elimit = 1e15;
     maxpclag = 0;
 
     verbose = false;
