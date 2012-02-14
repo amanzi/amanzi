@@ -50,6 +50,9 @@ public:
   // initialization
   virtual void Initialize(Teuchos::ParameterList& plist);
 
+  // vis writing
+  void WriteVis(Amanzi::Vis& vis);
+
 protected:
 
   Teuchos::RCP<double> data_;

@@ -26,9 +26,9 @@ Example usage:
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "State.hh"
-#include "Vector.hh"
+#include "CompositeVector.hh"
 #include "TreeVector.hh"
+#include "State.hh"
 
 #include "PK.hh"
 #include "ImplicitTIBDF2.hh"

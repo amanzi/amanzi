@@ -47,6 +47,14 @@ CompositeVector::CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   num_dofs_.resize(num_components_);
   for (unsigned int i = 0; i != num_components_; ++i) num_dofs_[i] = num_dofs;
   VerifyAndCreateData_();
+
+  if (num_dofs == 1) {
+    subfield_names_.resize(num_components_);
+    for (unsigned int i = 0; i != num_components_; ++i) {
+      subfield_names_[i].resize(1);
+      subfield_names_[i][0] = names[i];
+    }
+  }
 };
 
 CompositeVector::CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh,
@@ -63,6 +71,12 @@ CompositeVector::CompositeVector(Teuchos::RCP<AmanziMesh::Mesh>& mesh,
   locations_[0] = location;
 
   VerifyAndCreateData_();
+
+  if (num_dofs == 1) {
+    subfield_names_.resize(num_components_);
+    subfield_names_[0].resize(1);
+    subfield_names_[0][0] = name;
+  }
 };
 
 CompositeVector::CompositeVector(const CompositeVector& other) :

@@ -20,12 +20,12 @@
 #include "Epetra_Import.h"
 
 #include "Mesh.hh"
-
+#include "Vector.hh"
 namespace Amanzi {
 
   typedef enum { CONSTRUCT_WITHOUT_DATA } ConstructMode;
 
-  class CompositeVector {
+  class CompositeVector : public Vector {
 
   public:
     // Constructors
@@ -47,9 +47,14 @@ namespace Amanzi {
 
     // access
     std::vector<std::string> names() const { return names_; }
+    std::vector< std::vector<std::string> > subfield_names() const { return subfield_names_; }
     std::vector<int> num_dofs() const { return num_dofs_; }
     int num_components() const { return num_components_; }
     Teuchos::RCP<AmanziMesh::Mesh> mesh() const { return mesh_; }
+
+    // mutators
+    void set_subfield_names(std::vector< std::vector<std::string> > subfield_names) {
+      subfield_names_ = subfield_names; }
 
     // view data
     // -- Access a view of a single component's data.
@@ -136,14 +141,13 @@ namespace Amanzi {
     bool ghosted_;
 
     std::vector< std::string > names_;
+    std::vector< std::vector<std::string> > subfield_names_;
     std::vector< Teuchos::RCP<Epetra_MultiVector> > data_;
     mutable std::vector< Teuchos::RCP<Epetra_MultiVector> > owned_data_; // generated lazily
     std::vector< AmanziMesh::Entity_kind > locations_;
     std::vector< int > num_dofs_;
     std::vector< int > cardinalities_;
     std::vector< Teuchos::RCP<Epetra_Import> > importers_;
-
-    std::vector< std::vector< std::string > > subfield_names_;
 
     mutable Teuchos::RCP<CompositeVector> owned_composite_; // generated lazily
     mutable Teuchos::RCP<Epetra_Vector> owned_vector_; // generated lazily

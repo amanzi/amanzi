@@ -86,4 +86,10 @@ void Field_Scalar::Initialize(Teuchos::ParameterList& plist) {
   }
 };
 
+// vis
+void Field_Scalar::WriteVis(Amanzi::Vis& vis) {
+  if (io_vis_) {
+  }
+};
+
 } // namespace

@@ -378,19 +378,16 @@ void State::SetData(std::string fieldname, std::string pk_name, const CompositeV
   GetRecord_(fieldname)->SetData(pk_name, data);
 };
 
-// void State::WriteVis(Amanzi::Vis& vis) {
-//   if (vis.dump_requested(get_cycle()) && !vis.is_disabled()) {
-//     // create the new time step...
-//     vis.create_timestep(get_time(),get_cycle());
+void State::WriteVis(Amanzi::Vis& vis) {
+  if (vis.dump_requested(cycle()) && !vis.is_disabled()) {
+    // create the new time step...
+    vis.create_timestep(time(),cycle());
 
-//     // dump all the state vectors into the file
-//     for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
-//          field != fields_.end(); ++field) {
-//       if ((*field)->io_vis()) {
-//         const std::vector<std::string> subfield_names = (*field)->get_subfield_names();
-//         vis.write_vector(*(*field)->get_data(), subfield_names);
-//       }
-//     }
-//   }
-// };
+    // dump all the state vectors into the file
+    for (std::vector< Teuchos::RCP<Field> >::iterator field = fields_.begin();
+         field != fields_.end(); ++field) {
+      (*field)->WriteVis(vis);
+    }
+  }
+};
 } // namespace amanzi
