@@ -122,6 +122,9 @@ namespace Amanzi {
     int Norm1(double* norm) const;
     int Norm2(double* norm) const;
 
+    // Extras
+    void Print(ostream &os) const;
+
   private:
     void VerifyAndCreateData_();
     void CreateOwnedView_(unsigned int index) const;

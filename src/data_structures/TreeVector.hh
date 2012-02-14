@@ -20,6 +20,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+
+#include "CompositeVector.hh"
+
 #include "Vector.hh"
 
 namespace Amanzi {
@@ -34,27 +37,15 @@ namespace Amanzi {
     // just the layout, of their arguments.
 
     // these copy constructors are clearly necessary
-    TreeVector(std::string name, const Teuchos::RCP<TreeVector>&);
-    TreeVector(std::string name, const TreeVector&);
-    TreeVector(const TreeVector&);
-    TreeVector(const Teuchos::RCP<TreeVector>&);
+    TreeVector(const TreeVector& other);
+    TreeVector(std::string name, const TreeVector& other);
 
-    // set data
-    //  - guaranteed to not error
-    TreeVector& operator=(double value);
-
-    //  - not guaranteed not to error
-    TreeVector& operator=(const Epetra_Vector &value);
-    TreeVector& operator=(const Epetra_MultiVector &value);
-    TreeVector& operator=(const TreeVector &value);
+    // assigment
+    TreeVector& operator=(const TreeVector& other);
 
     // metadata
-    void SetName(std::string name) {
-      name_ = name;
-    }
-    std::string Name() {
-      return name_;
-    }
+    void set_name(std::string name) { name_ = name; }
+    std::string name() { return name_; }
 
     // operations
     // this <- scalar
@@ -63,49 +54,49 @@ namespace Amanzi {
     // ninf <- || this ||_{inf}
     int NormInf(double* ninf) const;
 
+    // this <- value*this
+    int Scale(double value);
+
+    // this <- this + scalarA
+    int Shift(double scalarA);
+
+    // result <- other \dot this
+    int Dot(const TreeVector& other, double* result) const;
+
+    // this <- scalarA*A + scalarThis*this
+    TreeVector& Update(double scalarA, const TreeVector& A, double scalarThis);
+
+    // this <- scalarA*A + scalarB*B + scalarThis*this
+    TreeVector& Update(double scalarA, const TreeVector& A,
+                       double scalarB, const TreeVector& B, double scalarThis);
+
+    // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
+    int Multiply(double scalarAB, const TreeVector& A, const TreeVector& B,
+                 double scalarThis);
+
     // non-inherited extras
     void Print(ostream &os) const;
 
-    // this <- value*this
-    void Scale(double value);
-
-    // this <- this + scalarA
-    void Shift(double scalarA);
-
-    // result <- other \dot this
-    int Dot(const Vector& other, double* result) const;
-
-    // this <- scalarA*A + scalarThis*this
-    Vector& Update(double scalarA, const Vector& A, double scalarThis);
-
-    // this <- scalarA*A + scalarB*B + scalarThis*this
-    Vector& Update(double scalarA, const Vector& A,
-                   double scalarB, const Vector& B, double scalarThis);
-
-    // this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
-    int Multiply(double scalarAB, const Vector& A, const Vector& B, double scalarThis);
-
     // Get a pointer to the sub-vector "subname".
-    int SubVector(std::string subname, Teuchos::RCP<TreeVector>& subvec);
-    int SubVector(std::string subname, Teuchos::RCP<const TreeVector>& subvec) const;
+    Teuchos::RCP<TreeVector> SubVector(std::string subname);
+    Teuchos::RCP<const TreeVector> SubVector(std::string subname) const;
 
-    // Get a pointer to the data vector indexed by vecnum.
-    Teuchos::RCP<Epetra_MultiVector> operator[](int vecnum) {
-      return data_[vecnum];
-    }
-    Teuchos::RCP<const Epetra_MultiVector> operator[](int vecnum) const {
-      return data_[vecnum];
-    }
+    // Get a pointer to the CompositeVector
+    Teuchos::RCP<CompositeVector> data() { return data_; }
+    Teuchos::RCP<const CompositeVector> data() const { return data_; }
 
     // Add a sub-vector as a child of this node.
     void PushBack(Teuchos::RCP<TreeVector>& subvec);
 
-    // Add a data vector to this node of the tree.
-    void PushBack(Teuchos::RCP<Epetra_MultiVector>& data);
+    // Set data by pointer
+    void set_data(Teuchos::RCP<CompositeVector>& data) { data_ = data; }
+
+    // Set data by copy
+    void set_data(const CompositeVector& data) { *data_ = data; }
 
   private:
     std::string name_;
-    std::vector< Teuchos::RCP<Epetra_MultiVector> > data_;
+    Teuchos::RCP<CompositeVector> data_;
     std::vector< Teuchos::RCP<TreeVector> > subvecs_;
   };
 

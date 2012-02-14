@@ -558,5 +558,16 @@ int CompositeVector::Norm2(double* norm) const {
   return ierr;
 };
 
+void CompositeVector::Print(ostream& os) const {
+  os << "Composite Vector" << std::endl;
+  os << "  components: ";
+  for (unsigned int i = 0; i != num_components_; ++i) {
+    os << names_[i] << " ";
+  }
+  os << std::endl;
+  for (unsigned int i = 0; i != num_components_; ++i) {
+    data_[i]->Print(os);
+  }
+};
 } // namespace
 
