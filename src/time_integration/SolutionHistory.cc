@@ -38,7 +38,7 @@ void SolutionHistory::initialize(const int mvec, Teuchos::RCP<TreeVector> v) {
   times.resize(mvec);
 
   for (int j=0; j<mvec; j++)
-    d[j] = Teuchos::rcp(new TreeVector(std::string("solhist"),v));
+    d[j] = Teuchos::rcp(new TreeVector(std::string("solhist"),*v));
 }
 
 
