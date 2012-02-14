@@ -21,7 +21,7 @@ const double ImplicitTIBDF2::MARGIN_ = 3.0;
 
 ImplicitTIBDF2::ImplicitTIBDF2(ImplicitTIBDF2fnBase& fn, Teuchos::RCP<Amanzi::TreeVector> initvector) :
     fn_(fn) {
-  initvector_ = Teuchos::rcp( new Amanzi::TreeVector(std::string("bdf2 initvector"), initvector ) );
+  initvector_ = Teuchos::rcp( new Amanzi::TreeVector(std::string("bdf2 initvector"), *initvector ) );
   
   // set the line prefix for output
   this->setLinePrefix("ImplicitTIBDF2         ");
@@ -262,7 +262,7 @@ void ImplicitTIBDF2::trap_step_one(double h, Teuchos::RCP<Amanzi::TreeVector> u,
   
   
   // Predicted solution and base point for the BCE step.
-  Teuchos::RCP<Amanzi::TreeVector> u0 = Teuchos::rcp( new Amanzi::TreeVector(std::string("u0"), initvector_ ) );
+  Teuchos::RCP<Amanzi::TreeVector> u0 = Teuchos::rcp( new Amanzi::TreeVector(std::string("u0"), *initvector_ ) );
 
   state_.uhist->interpolate_solution (t,  u, 1);
   state_.uhist->interpolate_solution (t0, u0, 1);
@@ -310,8 +310,8 @@ void ImplicitTIBDF2::bdf1_step(double h, Teuchos::RCP<Amanzi::TreeVector> u) {
   double t = tlast + h;
   int errc;
 
-  Teuchos::RCP<Amanzi::TreeVector> up = Teuchos::rcp( new Amanzi::TreeVector(std::string("up"), initvector_ ) );
-  Teuchos::RCP<Amanzi::TreeVector> u0 = Teuchos::rcp( new Amanzi::TreeVector(std::string("u0"), initvector_ ) );
+  Teuchos::RCP<Amanzi::TreeVector> up = Teuchos::rcp( new Amanzi::TreeVector(std::string("up"), *initvector_ ) );
+  Teuchos::RCP<Amanzi::TreeVector> u0 = Teuchos::rcp( new Amanzi::TreeVector(std::string("u0"), *initvector_ ) );
 
   state_.uhist->interpolate_solution(t,  up, 2);  
   state_.uhist->interpolate_solution(tlast, u0, 1);
@@ -352,8 +352,8 @@ void ImplicitTIBDF2::bdf2_step_gen(double h, Teuchos::RCP<Amanzi::TreeVector> u,
   }
   
   // Predicted solution and base point for BCE step.
-  Teuchos::RCP<Amanzi::TreeVector> up = Teuchos::rcp( new Amanzi::TreeVector(std::string("up"), initvector_ ) );
-  Teuchos::RCP<Amanzi::TreeVector> u0 = Teuchos::rcp( new Amanzi::TreeVector(std::string("u0"), initvector_ ) );
+  Teuchos::RCP<Amanzi::TreeVector> up = Teuchos::rcp( new Amanzi::TreeVector(std::string("up"), *initvector_ ) );
+  Teuchos::RCP<Amanzi::TreeVector> u0 = Teuchos::rcp( new Amanzi::TreeVector(std::string("u0"), *initvector_ ) );
 
   state_.uhist->interpolate_solution(t,  up, 2);
   state_.uhist->interpolate_solution(t0, u0, 1);
@@ -490,8 +490,8 @@ void ImplicitTIBDF2::solve_bce(double t, double h, Teuchos::RCP<Amanzi::TreeVect
 
   int itr = 0;
 
-  Teuchos::RCP<Amanzi::TreeVector> du = Teuchos::rcp( new Amanzi::TreeVector(std::string("du"), initvector_ ) );
-  Teuchos::RCP<Amanzi::TreeVector> u_tmp = Teuchos::rcp( new Amanzi::TreeVector(std::string("u_tmp"), initvector_ ) );
+  Teuchos::RCP<Amanzi::TreeVector> du = Teuchos::rcp( new Amanzi::TreeVector(std::string("du"), *initvector_ ) );
+  Teuchos::RCP<Amanzi::TreeVector> u_tmp = Teuchos::rcp( new Amanzi::TreeVector(std::string("u_tmp"), *initvector_ ) );
 
 
   //  Teuchos::RCP<NOX::Epetra::Vector> preconditioned_f =
