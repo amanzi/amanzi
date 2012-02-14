@@ -191,6 +191,14 @@ int Richards_PK::advance_to_steady_state()
   Epetra_Vector& water_saturation = FS->ref_water_saturation();
   deriveSaturationFromPressure(pressure, water_saturation);
 
+  // redefine initial conditions to a dry soil (debug)
+  water_saturation.PutScalar(0.6);
+  derivePressureFromSaturation(water_saturation, pressure);
+  for (int c=0; c<ncells_owned; c++) (*solution_cells)[c] = pressure[c];
+  deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
+  applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
+
+  // start iterations
   const Epetra_Vector& phi = FS->ref_porosity();
   double water_mass0 = rho * FS->normLpCell(phi, water_saturation, 1.0);
 

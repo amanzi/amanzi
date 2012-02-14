@@ -18,17 +18,18 @@ class WRM_vanGenuchten : public WaterRetentionModel {
   WRM_vanGenuchten(std::string region_, double m_, double alpha_, double sr_);
   ~WRM_vanGenuchten() {};
   
-  // requires methods from the base class
+  // required methods from the base class
   double k_relative(double pc);
   double saturation(double pc);
   double d_saturation(double pc);  
   double capillaryPressure(double saturation);
+  double residualSaturation() { return sr; }
 
  private:
   double m;  // van Genuchten parameters: m, n, alpha
   double n; 
   const double alpha; 
-  const double sr;  // van Genuchten effective saturation
+  const double sr;  // van Genuchten residual saturation
 };
 
 }  // namespace AmanziFlow

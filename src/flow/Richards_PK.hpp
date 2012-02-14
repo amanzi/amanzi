@@ -71,7 +71,7 @@ class Richards_PK : public Flow_PK {
 
   void derivedSdP(const Epetra_Vector& p, Epetra_Vector& dS);
   void deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Vector& s);
-  void derivePressureFromSaturation(double s, Epetra_Vector& p);
+  void derivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p);
 
   void deriveFaceValuesFromCellValues(const Epetra_Vector& ucells, Epetra_Vector& ufaces);
   void deriveDarcyVelocity(Epetra_MultiVector& velocity);

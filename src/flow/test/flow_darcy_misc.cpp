@@ -61,7 +61,7 @@ class DarcyProblem {
     DPK = new Darcy_PK(dp_list, FS);
   }
 
-  ~DarcyProblem() { delete S; delete DPK; delete comm; }
+  ~DarcyProblem() { delete DPK; delete S; delete comm; }
 
   void createBClist(
       const char* type, const char* bc_x, Teuchos::Array<std::string>& regions, double value) 

@@ -68,9 +68,9 @@ double WRM_vanGenuchten::d_saturation(double pc)
 /* ******************************************************************
 * Pressure as a function of saturation.                                       
 ****************************************************************** */
-double WRM_vanGenuchten::capillaryPressure(double sl)
+double WRM_vanGenuchten::capillaryPressure(double s)
 {
-  double se = (sl - sr) / (1.0 - sr);
+  double se = (s - sr) / (1.0 - sr);
   return (pow(pow(se, -1.0/m) - 1.0, 1/n)) / alpha;
 }
 

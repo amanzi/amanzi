@@ -168,7 +168,7 @@ void Richards_PK::deriveSaturationFromPressure(const Epetra_Vector& p, Epetra_Ve
 /* ******************************************************************
 * Convertion s -> p.                                               
 ****************************************************************** */
-void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
+void Richards_PK::derivePressureFromSaturation(const Epetra_Vector& s, Epetra_Vector& p)
 {
   for (int mb=0; mb<WRM.size(); mb++) {
     std::string region = WRM[mb]->region();
@@ -179,24 +179,10 @@ void Richards_PK::derivePressureFromSaturation(double s, Epetra_Vector& p)
       
     std::vector<unsigned int>::iterator i;
     for (i=block.begin(); i!=block.end(); i++) {
-      double pc = WRM[mb]->capillaryPressure(s);
+      double pc = WRM[mb]->capillaryPressure(s[*i]);
       p[*i] = atm_pressure - pc;
     }
   } 
- 
-  for (int mb=0; mb<WRM.size(); mb++) {
-    std::string region = WRM[mb]->region();
-    int ncells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    std::vector<unsigned int> block(ncells);
-    mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &block);
-      
-    std::vector<unsigned int>::iterator i;
-    for (i=block.begin(); i!=block.end(); i++) {
-      double pc = WRM[mb]->capillaryPressure(s);
-      p[*i] = atm_pressure - pc;
-    }
-  }
 }
 
 }  // namespace AmanziFlow

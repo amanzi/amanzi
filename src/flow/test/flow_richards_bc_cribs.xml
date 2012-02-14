@@ -302,7 +302,7 @@
     <Parameter name="Component Solutes" type="Array string" value="{Tc-99}"/>
     <Parameter name="Constant viscosity" type="double" value="0.00089"/>
     <Parameter name="Constant water density" type="double" value="998"/>
-    <Parameter name="Constant water saturation" type="double" value="1"/>
+    <Parameter name="Constant water saturation" type="double" value="0.5"/>
     <Parameter name="Gravity x" type="double" value="0"/>
     <Parameter name="Gravity y" type="double" value="0"/>
     <Parameter name="Gravity z" type="double" value="-9.81"/>
