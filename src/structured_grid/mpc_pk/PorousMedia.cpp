@@ -1412,12 +1412,12 @@ PorousMedia::advance (Real time,
     if (level == 0)
       multilevel_advance(time,dt,iteration,ncycle);
     else
-      if (verbose && ParallelDescriptor::IOProcessor())
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
 	std::cout << " Doing multilevel solve : skipping level advance.\n";
   }
   else
   {
-    if (verbose && ParallelDescriptor::IOProcessor())
+    if (verbose > 1 && ParallelDescriptor::IOProcessor())
       {
 	std::cout << "Advancing grids at level " << level
 		  << " : starting time = "       << time
@@ -3379,7 +3379,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
   {
     std::cout << "... advect tracers\n";
   }
@@ -5860,7 +5860,7 @@ PorousMedia::post_timestep (int crse_iteration)
     {      
       for (int lev = 0; lev <= finest_level; lev++)
 	{
-	  if (verbose && ParallelDescriptor::IOProcessor())
+	  if (verbose>1 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Final solutions at level = " 
 		      << lev << '\n';
 
@@ -9922,7 +9922,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomps, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomps, IOProc);
   
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomps; kk++)
 	{
@@ -9941,7 +9941,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(&rhomaxmin[0], 1, IOProc);
   ParallelDescriptor::ReduceRealMin(&rhomaxmin[1], 1, IOProc);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     {  
       std::cout << "   RHO MAX/MIN "
 		<< ' ' << rhomaxmin[0] << "  " << rhomaxmin[1] << '\n';

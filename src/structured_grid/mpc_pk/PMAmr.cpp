@@ -4,7 +4,7 @@
 
 EventCoord PMAmr::event_coord;
 
-void
+Real
 process_events(bool& write_plotfile_after_step,
                bool& write_checkpoint_after_step,
                Array<int>& observations_after_step,
@@ -16,13 +16,14 @@ process_events(bool& write_plotfile_after_step,
     Array<std::string>& vis_cycle_macros = PorousMedia::vis_cycle_macros;
     Array<std::string>& chk_cycle_macros = PorousMedia::chk_cycle_macros;
 
-
+    Real dt_new = dt;
     std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
     PArray<Observation>& observations = PorousMedia::TheObservationArray();
 
     if (nextEvent.second.size()) 
     {
         // Process event
+        dt_new = nextEvent.first;
         const Array<std::string>& eventList = nextEvent.second;
 
         for (int j=0; j<eventList.size(); ++j) {
@@ -49,6 +50,7 @@ process_events(bool& write_plotfile_after_step,
             }
         }
     }
+    return dt_new;
 }
 
 
@@ -104,9 +106,16 @@ PMAmr::coarseTimeStep (Real stop_time)
 
     bool write_plot, write_check;
     Array<int> observations_to_process;
-    process_events(write_plot,write_check,observations_to_process,event_coord,
-                   cumtime, dt_level[0], level_steps[0], 1);
-    
+    Real dt_red = process_events(write_plot,write_check,observations_to_process,event_coord,
+                                 cumtime, dt_level[0], level_steps[0], 1);
+    if (dt_red > 0  &&  dt_red < dt_level[0]) {
+        Array<Real> dt_new(finest_level+1,dt_red);
+        for (int lev = 1; lev <= finest_level; lev++) {
+            dt_new[lev] = dt_new[lev-1]/Real(MaxRefRatio(lev-1));
+        }
+        setDtLevel(dt_new);
+    }
+
     // Do time step
     timeStep(0,cumtime,1,1,stop_time);
 
@@ -166,7 +175,9 @@ PMAmr::coarseTimeStep (Real stop_time)
     
     PArray<Observation>& observations = PorousMedia::TheObservationArray();
     if (observations_to_process.size()) {
-        std::cout << " Process observations ";
+        if (verbose > 0 && ParallelDescriptor::IOProcessor()) {
+            std::cout << " Process observations: \n";
+        }
         for (int i=0; i<observations_to_process.size(); ++i) {
             std::cout << observations[observations_to_process[i]].name << " " << std::endl;
         }

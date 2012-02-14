@@ -113,7 +113,9 @@ Array<Source> PorousMedia::source_array;
 std::string        PorousMedia::obs_outputfile;
 PArray<Observation> PorousMedia::observations;
 Array<std::string>  PorousMedia::vis_cycle_macros;
+Array<std::string>  PorousMedia::vis_time_macros;
 Array<std::string>  PorousMedia::chk_cycle_macros;
+Array<std::string>  PorousMedia::chk_time_macros;
 int                 PorousMedia::echo_inputs;
 //
 // Phases and components.
@@ -2014,8 +2016,10 @@ void PorousMedia::read_observation()
       
     }
 
-  ppa.getarr("vis_cycle_macros",vis_cycle_macros,0,ppa.countval("vis_cycle_macros"));
-  ppa.getarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
+  ppa.queryarr("vis_cycle_macros",vis_cycle_macros,0,ppa.countval("vis_cycle_macros"));
+  ppa.queryarr("vis_time_macros",vis_time_macros,0,ppa.countval("vis_time_macros"));
+  ppa.queryarr("chk_cycle_macros",chk_cycle_macros,0,ppa.countval("chk_cycle_macros"));
+  ppa.queryarr("chk_time_macros",chk_time_macros,0,ppa.countval("chk_time_macros"));
 
   for (int i=0; i<vis_cycle_macros.size(); ++i)
   {
@@ -2026,7 +2030,20 @@ void PorousMedia::read_observation()
           }
       }
       if (!pcm_found) {
-          std::string m = "vis_cycle_macros contains unrecognized name \"" + vis_cycle_macros[i] + "\"";
+          std::string m = "vis_cycle_macros contains unrecognized macro name \"" + vis_cycle_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }      
+  }
+  for (int i=0; i<vis_time_macros.size(); ++i)
+  {
+      bool pcm_found = false;
+      for (int j=0; j<tmacroNames.size(); ++j) {
+          if (tmacroNames[j] == vis_time_macros[i]) {
+              pcm_found = true;
+          }
+      }
+      if (!pcm_found) {
+          std::string m = "vis_time_macros contains unrecognized macro name \"" + vis_time_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }
@@ -2039,7 +2056,20 @@ void PorousMedia::read_observation()
           }
       }
       if (!ccm_found) {
-          std::string m = "chk_cycle_macros contains unrecognized name \"" + chk_cycle_macros[i] + "\"";
+          std::string m = "chk_cycle_macros contains unrecognized macro name \"" + chk_cycle_macros[i] + "\"";
+          BoxLib::Abort(m.c_str());
+      }      
+  }
+  for (int i=0; i<chk_time_macros.size(); ++i)
+  {
+      bool ccm_found = false;
+      for (int j=0; j<tmacroNames.size(); ++j) {
+          if (tmacroNames[j] == chk_time_macros[i]) {
+              ccm_found = true;
+          }
+      }
+      if (!ccm_found) {
+          std::string m = "chk_time_macros contains unrecognized macro name \"" + chk_time_macros[i] + "\"";
           BoxLib::Abort(m.c_str());
       }      
   }

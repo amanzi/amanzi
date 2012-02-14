@@ -16,6 +16,11 @@ using Teuchos::ParameterEntry;
 namespace Amanzi {
     namespace AmanziInput {
 
+        void MyAbort(const std::string& m) {
+            std::cerr << m << std::endl;
+            throw std::exception();
+        }
+
         double atmToMKS = 101325;
 
         std::string underscore(const std::string& instring)
@@ -62,41 +67,53 @@ namespace Amanzi {
         convert_to_structured_mesh (const ParameterList& parameter_list, 
                                     ParameterList&       struc_list)
         {
+            Array<std::string> reqP, reqL;
+
             // Mesh
+            std::string mesh_str = "Mesh"; reqL.push_back(mesh_str);
+            PLoptions Mopt(parameter_list,reqL,reqP,false,false); 
+
+            std::string struc_str = "Structured"; reqL.clear(); reqL.push_back(struc_str);
+            PLoptions MSopt(parameter_list.sublist(mesh_str),reqL,reqP,true,true); 
+
             struc_list.sublist("Mesh").set("Framework","Structured");
-            const ParameterList& stlist = parameter_list.sublist("Mesh").sublist("Structured");
-            for (ParameterList::ConstIterator j=stlist.begin(); j!=stlist.end(); ++j) 
-            {
-                const std::string& rlabel = stlist.name(j);
-                const ParameterEntry& rentry = stlist.getEntry(rlabel);
-                if (rlabel == "Number of Cells")
-                    struc_list.sublist("amr").setEntry("n_cell",rentry);
-                else if (rlabel == "Domain Low Corner")
-                    domlo = stlist.get<Array<double> >(rlabel);
-                else if (rlabel == "Domain High Corner")
-                    domhi = stlist.get<Array<double> >(rlabel);
-            }
+            const ParameterList& st_list = parameter_list.sublist(mesh_str).sublist(struc_str);
+
+            reqL.clear(); reqP.clear();
+            std::string NCells_str = "Number of Cells"; reqP.push_back(NCells_str);
+            std::string ProbLo_str = "Domain Low Corner"; reqP.push_back(ProbLo_str);
+            std::string ProbHi_str = "Domain High Corner"; reqP.push_back(ProbHi_str);
+            PLoptions MSOopt(st_list,reqL,reqP,true,true); 
+
+            Array<int> n_cell = st_list.get<Array<int> >(NCells_str);
+            domlo = st_list.get<Array<double> >(ProbLo_str);
+            domhi = st_list.get<Array<double> >(ProbHi_str);
+
 
             // FIXME: This multiplier should be input
+            if (domlo.size()<ndim  || domhi.size()<ndim) {
+                MyAbort("Domain size nonsensical");
+            }
             double max_size = domhi[0]-domlo[0];
             for (int i=0; i<ndim; ++i) {
                 max_size=std::max(max_size,domhi[i]-domlo[i]);
             }
             geometry_eps = 1.e-6*max_size;
 
-            const ParameterList& eclist = parameter_list.sublist("Execution control");
+            const ParameterList& eclist = parameter_list.sublist("Execution Control");
             int bfactor = 2;
             if (eclist.isSublist("amr"))
                 if (eclist.sublist("amr").isParameter("blocking_factor"))
                     bfactor = eclist.sublist("amr").get<int>("blocking_factor");
      
-            Array<int> n_cell = struc_list.sublist("amr").get<Array<int> >("n_cell");
             for (int i=0;i<ndim;i++) {
                 if (n_cell[i]%bfactor > 0) {
-                    std::cerr << "Number of Cells must be divisible by " << bfactor << std::endl;
-                    throw std::exception();
+                    MyAbort("Number of Cells must be divisible by " + bfactor);
                 }
             }
+
+            ParameterList& alist = struc_list.sublist("amr");
+            alist.set("n_cell",n_cell);
 
             ParameterList& glist = struc_list.sublist("geometry");
             glist.set("prob_lo",domlo);
@@ -114,78 +131,219 @@ namespace Amanzi {
         //
         void
         convert_to_structured_control(const ParameterList& parameter_list, 
-                                      ParameterList&       struc_list)
+                                      ParameterList&       struc_out_list,
+                                      bool&                do_tracer)
         {
+            std::string ec_str = "Execution Control";
+            std::string amr_str = "Adaptive Mesh Refinement Control";
+            std::string prob_str = "Basic Algorithm Control";
+            std::string cg_str = "Conjugate Gradient Algorithm";
+            std::string mg_str = "Multigrid Algorithm";
+            std::string mac_str = "Pressure Discretization Control";
+            std::string diffuse_str = "Diffusion Discretization Control";
 
-            ParameterList& amr_list     = struc_list.sublist("amr");
-            ParameterList& prob_list    = struc_list.sublist("prob");
-            ParameterList& cg_list      = struc_list.sublist("cg");
-            ParameterList& mg_list      = struc_list.sublist("mg");
-            ParameterList& mac_list     = struc_list.sublist("mac");
-            ParameterList& diffuse_list = struc_list.sublist("diffuse");
-      
-            const ParameterList& eclist =
-                parameter_list.sublist("Execution control");
+            const ParameterList& ec_list = parameter_list.sublist(ec_str);
 
-            if (eclist.isSublist("prob"))
-                prob_list = eclist.sublist("prob");
+            Array<std::string> reqL, reqP;
+            std::string flow_str = "Flow Model"; reqP.push_back(flow_str);
+            std::string trans_str = "Transport Model";reqP.push_back(trans_str);
+            std::string chem_str = "Chemistry Model"; reqP.push_back(chem_str);
+            std::string tim_str = "Time Integration Mode"; reqL.push_back(tim_str);
+            std::string v_str = "Verbosity";
+            PLoptions ECopt(ec_list,reqL,reqP,false,false); 
 
-            if (eclist.isSublist("amr")) 
-                amr_list = eclist.sublist("amr");
+            ParameterList& amr_out_list     = struc_out_list.sublist("amr");
+            ParameterList& prob_out_list    = struc_out_list.sublist("prob");
+            ParameterList& cg_out_list      = struc_out_list.sublist("cg");
+            ParameterList& mg_out_list      = struc_out_list.sublist("mg");
+            ParameterList& mac_out_list     = struc_out_list.sublist("mac");
+            ParameterList& diffuse_out_list = struc_out_list.sublist("diffuse");
 
-            if (eclist.isSublist("mg"))
-                mg_list = eclist.sublist("mg");
-
-            if (eclist.isSublist("cg"))
-                cg_list = eclist.sublist("cg");
-    
-            if (eclist.isSublist("mac"))
-                mac_list = eclist.sublist("mac");
-
-            if (eclist.isSublist("mac"))
-                diffuse_list = eclist.sublist("diffuse");
-
-            std::string flowmode = eclist.get<std::string>("Flow Mode");
-            if (!flowmode.compare("transient single phase variably saturated flow") ||
-                !flowmode.compare("steady state single phase variably saturated flow"))
-            {
-                prob_list.set("model_name","richard");
-                prob_list.set("have_capillary",1);
-                prob_list.set("visc_abs_tol",1.e-16);
-                prob_list.set("visc_tol",1.e-14);
-                prob_list.set("cfl",1);
-                prob_list.set("richard_max_dt",prob_list.get<double>("max_dt"));
+            //
+            // Set flow model
+            //
+            std::string model_name;
+            std::string flow_mode = ec_list.get<std::string>(flow_str);
+            if (flow_mode == "Off") {
+                MyAbort("Flow Mode = \"" + flow_mode + "\" not supported");
+                prob_out_list.set("do_simple",2);
             }
-            else if (!flowmode.compare("transient single phase saturated flow"))
-            {
-                prob_list.set("model_name","single-phase");
-                prob_list.set("cfl",0.95);
-                prob_list.set("do_simple",1);
+            else if (flow_mode == "Richards") {
+                model_name = "richard";
+                prob_out_list.set("have_capillary",1);
             }
-            else if (!flowmode.compare("steady state single phase saturated flow"))
-            {
-                prob_list.set("model_name","single-phase");
-                prob_list.set("cfl",0.95);
-                prob_list.set("do_simple",2);
+            else if (flow_mode == "Single-phase") {
+                model_name = "single-phase";
+                prob_out_list.set("do_simple",1);
             }
-            else if (!flowmode.compare("transient two phase flow"))
-            {
-                prob_list.set("model_name","two-phase");
-                prob_list.set("cfl",0.75);
+            else if (flow_mode == "Multi-phase") {
+                model_name = "two-phase";
+                prob_out_list.set("cfl",0.75);
+            }
+            prob_out_list.set("model_name",model_name);
+
+            //
+            // Set transport model
+            //
+            std::string transport_mode = ec_list.get<std::string>(trans_str);
+            do_tracer = (transport_mode == "Off"  ?  0  :  1);
+            prob_out_list.set<int>("do_tracer",do_tracer);
+
+            //
+            // Set chemistry model
+            //
+            std::string chem_mode = ec_list.get<std::string>(chem_str);
+            if (chem_mode == "Off") {
+                prob_out_list.set("do_chem",-1);
+            }
+            else {
+                MyAbort("Chemistry Mode must be \"Off\"");
             }
 
-            std::string chemmode = eclist.get<std::string>("Chemistry Mode");
-            if (!chemmode.compare("none"))
-                prob_list.set("do_chem",-1);
+            //
+            // Set time evolution mode
+            //
+            std::string steady_str = "Steady";
+            std::string transient_str = "Transient";
+            std::string init_to_steady_str = "Initialize To Steady";
+            const ParameterList& t_list = ec_list.sublist(tim_str);
+            if (t_list.isSublist(steady_str)) {
+                MyAbort("\"" + steady_str + "\" not yet supported" );
+                if (model_name == "single_phase") {
+                    prob_out_list.set("do_simple",2);
+                }
+            }
+            else if (t_list.isSublist(transient_str)) {
+                const ParameterList& tran_list = t_list.sublist(transient_str);
+               
+                reqP.clear(); 
+                std::string Start_str = "Start"; reqP.push_back(Start_str);
+                std::string End_str = "End"; reqP.push_back(End_str);
+                std::string Init_Time_Step_str = "Initial Time Step";
+                std::string Time_Step_Mult_str = "Time Step Multiplier";
+                PLoptions opt(tran_list,reqL,reqP,true,false); 
+                const Array<std::string> optStr = opt.OptLists();
 
-            //AMR
-            const ParameterList& stlist = parameter_list.sublist("Mesh").sublist("Structured");
-            amr_list.set<Array<int> >("n_cell",stlist.get<Array<int> >("Number of Cells"));
-            int nlevel = amr_list.get<int>("max_level",0);
-            if (nlevel == 0) nlevel = 1;
-            Array<int> n_buf(nlevel,2);
-            if (!amr_list.isParameter("ref_ratio"))
-                amr_list.set("ref_ratio",n_buf);
+                struc_out_list.set<double>("start_time", tran_list.get<double>(Start_str));
+                struc_out_list.set<double>("stop_time", tran_list.get<double>(End_str));
+                for (int i=0; i<optStr.size(); ++i) {
+                    if (optStr[i] == Init_Time_Step_str) {
+                        struc_out_list.set<double>("dt_init", tran_list.get<double>(Init_Time_Step_str));
+                    }
+                    else {
+                        MyAbort("Unrecognized option under \""+transient_str+"\"");
+                    }
+                }
+            }
+            else if (t_list.isSublist(init_to_steady_str)) {
+                MyAbort("\"" + init_to_steady_str + "\" not yet supported" );
+            }
+            else {
+                std::cout << t_list << std::endl;
+                MyAbort("No recognizable value for \"" + tim_str + "\"");
+            }
+
+
+            // Deal with optional settings
+            const Array<std::string> optL = ECopt.OptLists();
+            for (int i=0; i<optL.size(); ++i) {
+                if (optL[i] == amr_str) {
+                    const ParameterList& amr_list = ec_list.sublist(amr_str);
+                    std::string max_level_str = "Max AMR Level";
+                    int max_level = 0;
+                    if (amr_list.isParameter(max_level_str)) {
+                        max_level = amr_list.get<int>(max_level_str);
+                    }
+                    amr_out_list.set<int>("max_level",max_level);
+                    
+                    std::string ref_ratio_str = "Refinement Ratio";
+                    Array<int> ref_ratio(max_level,2);
+                    if (amr_list.isParameter(ref_ratio_str)) {
+                        ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
+                    }
+                    amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
+                }
+                else if (optL[i] == mg_str) {
+                    const ParameterList& mg_list = ec_list.sublist(mg_str);
+                    for (ParameterList::ConstIterator it=mg_list.begin(); it!=mg_list.end(); ++it) {
+                        const std::string& name = mg_list.name(it);
+                        mg_out_list.setEntry(name,mg_list.getEntry(name));
+                    }
+                }
+                else if (optL[i] == cg_str) {
+                    const ParameterList& cg_list = ec_list.sublist(cg_str);
+                    for (ParameterList::ConstIterator it=cg_list.begin(); it!=cg_list.end(); ++it) {
+                        const std::string& name = cg_list.name(it);
+                        cg_out_list.setEntry(name,cg_list.getEntry(name));
+                    }
+                }
+                else if (optL[i] == prob_str) {
+                    const ParameterList& prob_list = ec_list.sublist(prob_str);
+                    std::string Max_Time_Step_Change_str = "Maximum Time Step Change";
+                    std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
+                    std::string Max_Step_str = "Maximum Cycle Number";
+                    for (ParameterList::ConstIterator it=prob_list.begin(); it!=prob_list.end(); ++it) {
+                        const std::string& name = prob_list.name(it);
+                        std::cerr << "name: " << name << std::endl;
+                        if (name == Max_Time_Step_Change_str) {
+                            prob_out_list.set<double>("change_max", prob_list.get<double>(Max_Time_Step_Change_str));
+                        }
+                        else if (name == Max_Step_str) {
+                            int max_step = prob_list.get<int>(Max_Step_str);
+                            struc_out_list.set<double>("max_step", max_step);
+                        }
+                        else if (name == Max_Time_Step_Size_str) {
+                            double max_dt = prob_list.get<double>(Max_Time_Step_Size_str);
+                            struc_out_list.set<double>("max_dt", max_dt);
+                        }
+                    }
+                }
+                else {
+                    MyAbort("Unrecognized optional parameter to \"" + ec_str + "\" list: \"" + optL[i] + "\"");
+                }
+            }
+
+            const Array<std::string> optP = ECopt.OptParms();
+            int prob_v, mg_v, cg_v, amr_v, diffuse_v;
+            for (int i=0; i<optP.size(); ++i) {
+                if (optP[i] == v_str) {
+                    std::string v_val = "Medium";
+                    if (ec_list.isParameter(v_str)) {
+                        v_val = ec_list.get<std::string>(v_str);
+                    }
+
+                    if (v_val == "None") {
+                        prob_v = 0; mg_v = 0; cg_v = 0; amr_v = 0; diffuse_v = 0;
+                    }
+                    else if (v_val == "Low") {
+                        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 0;
+                    }
+                    else if (v_val == "Medium") {
+                        prob_v = 1; mg_v = 0; cg_v = 0; amr_v = 1;  diffuse_v = 1;
+                    }
+                    else if (v_val == "High") {
+                        prob_v = 2; mg_v = 1; cg_v = 1; amr_v = 2;  diffuse_v = 1;
+                    }
+                    else if (v_val == "Extreme") {
+                        prob_v = 3; mg_v = 3; cg_v = 3; amr_v = 3;  diffuse_v = 0;
+                    }
+                    prob_out_list.set("v",prob_v);
+                    amr_out_list.set("v",amr_v);
+                    mg_out_list.set("v",mg_v);
+                    cg_out_list.set("v",cg_v);
+                    diffuse_out_list.set("v",diffuse_v);
+                }
+                else {
+                    MyAbort("Unrecognized optional parameter to \"" + ec_str + "\": \"" + optP[i] + "\"");
+                }
+            }
+
+            // Set other basic algorithm defaults
+            prob_out_list.set("visc_abs_tol",1.e-16);
+            prob_out_list.set("visc_tol",1.e-14);
+            prob_out_list.set("cfl",1);
+            
+
         }
 
         static std::string dirStr[6] = {"-X", "-Y", "-Z", "+X", "+Y", "+Z"};
@@ -852,8 +1010,7 @@ namespace Amanzi {
         void
         convert_ics(const ParameterList& parameter_list, 
                     ParameterList&       struc_list,
-                    StateDef&            stateDef,
-                    bool                 do_tracer)
+                    StateDef&            stateDef)
         {
             ParameterList& comp_list  = struc_list.sublist("comp"); 
 
@@ -1135,8 +1292,7 @@ namespace Amanzi {
         void
         convert_bcs(const ParameterList& parameter_list, 
                     ParameterList&       struc_list,
-                    StateDef&            stateDef,
-                    bool                 do_tracer)
+                    StateDef&            stateDef)
         {
             ParameterList& comp_list  = struc_list.sublist("comp"); 
             ParameterList& press_list  = struc_list.sublist("press"); 
@@ -1425,16 +1581,9 @@ namespace Amanzi {
         void
         convert_to_structured_state(const ParameterList& parameter_list, 
                                     ParameterList&       struc_list,
-                                    StateDef&            stateDef)
+                                    StateDef&            stateDef,
+                                    bool                 do_tracer)
         {
-            const ParameterList& eclist = parameter_list.sublist("Execution control");
-            std::string tmode = "none";
-            if (eclist.isParameter("Transport Mode"))
-                tmode = eclist.get<std::string>("Transport Mode");
-            bool do_tracer = true;
-            if (!tmode.compare("none"))
-                do_tracer = false;
-    
             ParameterList& phase_list  = struc_list.sublist("phase");
             ParameterList& comp_list   = struc_list.sublist("comp"); 
             ParameterList& solute_list = struc_list.sublist("tracer"); 
@@ -1494,8 +1643,8 @@ namespace Amanzi {
             solute_list.set("tracers",arraysolute);
 
             // Convert ICs, BCs for phase/comp
-            convert_ics(parameter_list,struc_list,stateDef,do_tracer);    
-            convert_bcs(parameter_list,struc_list,stateDef,do_tracer);    
+            convert_ics(parameter_list,struc_list,stateDef);    
+            convert_bcs(parameter_list,struc_list,stateDef);    
 
             if (do_tracer) 
             {
@@ -1720,7 +1869,7 @@ namespace Amanzi {
             }
             amr_list.set<Array<std::string> >("derive_plot_vars",visNames);
 
-            Array<std::string> vis_cMacroNames;
+            Array<std::string> vis_cMacroNames, vis_tMacroNames;
             if (vlist.isParameter("Cycle Macros")) {
                 const Array<std::string>& vcMacros = vlist.get<Array<std::string> >("Cycle Macros");
                 vis_cMacroNames.resize(vcMacros.size());
@@ -1741,12 +1890,29 @@ namespace Amanzi {
                     }
                 }
             }
-            else {
-                std::cerr << "Must provide \"Cycle Macros\" in Visualization Data" << std::endl;
-                throw std::exception();
+            if (vlist.isParameter("Time Macros")) {
+                const Array<std::string>& vtMacros = vlist.get<Array<std::string> >("Time Macros");
+                vis_tMacroNames.resize(vtMacros.size());
+                for (int j=0; j<vtMacros.size(); ++j) {
+                    std::string label = underscore(vtMacros[j]);
+                    if (time_macros.find(label) != time_macros.end()) {
+                        vis_tMacroNames[j] = label;
+                    }
+                    else {
+                        std::cerr << "Unrecognized time macro in Visualization Data: \""
+                                  << vtMacros[j] << "\"" << std::endl;
+
+                        for (std::set<std::string>::const_iterator it=time_macros.begin(); it!=time_macros.end(); ++it) {
+                            std::cout << *it << " " << std::endl;
+                        }
+
+                        throw std::exception();
+                    }
+                }
             }
 
             amr_list.set<Array<std::string> >("vis_cycle_macros",vis_cMacroNames);
+            amr_list.set<Array<std::string> >("vis_time_macros",vis_tMacroNames);
 
             //amr_list.set<std::string>("plot_vars",""); // Shut off, per spec
 
@@ -1865,23 +2031,11 @@ namespace Amanzi {
         convert_to_structured(const ParameterList& parameter_list)
         {
             ParameterList struc_list = setup_structured();
-
-            StateDef stateDef(parameter_list);
-
+            bool do_tracer;
+            //
             // determine spatial dimension of the problem
+            // 
             ndim = parameter_list.sublist("Domain").get<int>("Spatial Dimension");
-      
-            // Note: Structured starts each run time 0 except for restart.
-            //       There is only stop_time = End_Time-Start_Time.
-            ParameterList eclist = parameter_list.sublist("Execution control");
-            double Start_Time = eclist.get<double>("Start Time");
-            double End_Time = eclist.get<double>("End Time");
-            simulation_time = End_Time - Start_Time;
-            struc_list.set("stop_time",End_Time-Start_Time);
-
-            if (eclist.isParameter("Max Step") ) {
-                struc_list.set<int>("max_step",eclist.get<int>("Max Step"));
-            }
             //
             // Mesh
             //
@@ -1889,7 +2043,7 @@ namespace Amanzi {
             //
             // Execution control
             //
-            convert_to_structured_control(parameter_list,struc_list);
+            convert_to_structured_control(parameter_list,struc_list, do_tracer);
             //
             // Regions
             //
@@ -1901,7 +2055,8 @@ namespace Amanzi {
             //
             // State
             //
-            convert_to_structured_state(parameter_list, struc_list, stateDef);
+            StateDef stateDef(parameter_list);
+            convert_to_structured_state(parameter_list, struc_list, stateDef, do_tracer);
             //
             // Output
             // 
