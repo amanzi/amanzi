@@ -1,13 +1,16 @@
 
 #include <EventCoord.H>
+#include <iostream>
 
 bool
 EventCoord::CycleEvent::ThisEventDue(int cycle, int dCycle) const
 {
     if (type ==SPS)
     {
-        if ( ( ( stop < 0 ) || ( cycle < stop ) )
-             && ( cycle >= start ) )
+
+
+        if ( ( ( stop < 0 ) || ( cycle + dCycle < stop ) )
+             && ( cycle + dCycle >= start ) )
         {
             return ( (period==1) || ((cycle-start+dCycle)%period == 0) );
         }

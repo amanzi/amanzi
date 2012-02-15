@@ -72,5 +72,10 @@ if (BUILD_TESTS)
                     copy ${STRUCTUREDUTILS_SOURCE_DIR}/sample.xml ${STRUCTUREDUTILS_BINARY_DIR})
   endif()
 
+  add_executable(tEC tEventCoord.cpp)
+  target_link_libraries(tEC ${structured_grid_libs} ${tpl_libs})
+
+  add_amanzi_test(tEC tEC KIND unit)
+
 endif()
 
