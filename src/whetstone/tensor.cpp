@@ -160,6 +160,7 @@ AmanziGeometry::Point operator*(Tensor& T, const AmanziGeometry::Point& p)
   else if (rank == 4) {
     return p;  // undefined operation (lipnikov@lanl.gov) 
   }
+  return p;
 }
 
 
@@ -183,6 +184,8 @@ Tensor operator*(Tensor& T1, Tensor& T2)
     T3(1, 1) = T1(1, 0) * a0 + T1(1, 1) * b0 + T1(1, 2) * c0;
     T3(1, 0) = T3(0, 1) = T1(2, 0) * a0 + T1(2, 1) * b0 + T1(2, 2) * c0;
     return T3;
+  } else {
+    return T1;  // ugly way to avoid compiler's warnings (lipnikov@lanl.gov)
   }
 }
 

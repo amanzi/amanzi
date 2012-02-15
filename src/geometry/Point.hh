@@ -46,11 +46,11 @@ class Point {
   double& operator[] (const int i) { return xyz[i]; }
   const double& operator[] (const int i) const { return xyz[i]; }
   
-  const double x() const { return xyz[0]; }
-  const double y() const { return xyz[1]; }
-  const double z() const { return (this->d==3) ? xyz[2] : 0.0; }
+  double x() const { return xyz[0]; }
+  double y() const { return xyz[1]; }
+  double z() const { return (this->d==3) ? xyz[2] : 0.0; }
   
-  const int dim() const { return d; }
+  int dim() const { return d; }
   
   /* operators */
   Point& operator=(const double& val) { for( int i=0; i<d; i++ ) xyz[i] = val;  return *this; }

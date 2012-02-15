@@ -19,10 +19,10 @@ namespace Amanzi {
     void create_files (const Amanzi::AmanziMesh::Mesh& mesh);
     void create_timestep (const double& time, const int& cycle);
     void finalize_timestep () const;
-    const bool dump_requested(int cycle) const;
+    bool dump_requested(int cycle) const;
     void write_vector(const Epetra_MultiVector& vec, const std::vector<std::string>& names ) const;
     void write_vector(const Epetra_Vector& vec, const std::string name ) const;
-    const bool is_disabled() const;
+    bool is_disabled() const;
 
   private:    
     void read_parameters(Teuchos::ParameterList& plist);

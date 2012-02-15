@@ -77,7 +77,6 @@ class Richards_PK : public Flow_PK {
   void deriveDarcyVelocity(Epetra_MultiVector& velocity);
 
   // control methods
-  inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void resetParameterList(const Teuchos::ParameterList& rp_list_new) { rp_list = rp_list_new; }
   void print_statistics() const;
   

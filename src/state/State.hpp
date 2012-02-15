@@ -48,11 +48,11 @@ public:
   
   const Teuchos::RCP<Amanzi::AmanziMesh::Mesh> get_mesh_maps() const { return mesh_maps; };
 
-  const double get_time () const { return time; };
-  const double get_last_time () const { return last_time; }
-  const int get_cycle () const { return cycle; };
+  double get_time () const { return time; };
+  double get_last_time () const { return last_time; }
+  int get_cycle () const { return cycle; };
 
-  const int get_number_of_components() const { return number_of_components; };
+  int get_number_of_components() const { return number_of_components; };
 
   const Amanzi::AmanziMesh::Mesh& get_mesh() { return *mesh_maps; };
 
@@ -66,7 +66,7 @@ public:
   void update_pressure(const Epetra_Vector&);
 
   // status methods
-  const status_type get_status () const { return status; };
+  status_type get_status () const { return status; };
   void set_status ( status_type new_status ) { status = new_status; }
 
 

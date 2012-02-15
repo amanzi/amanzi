@@ -33,14 +33,14 @@ class Darcy_PK : public Flow_PK {
   // main methods
   void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
 
-  int advance(double dT) {}; 
+  int advance(double dT) { return 0; } 
   int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State> FS) {};
 
   // required methods
   void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs) {};
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu) {};
-  double enorm(const Epetra_Vector& u, const Epetra_Vector& du) {};
+  double enorm(const Epetra_Vector& u, const Epetra_Vector& du) { return 0.0; }
   void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc) {};
 
   // other main methods

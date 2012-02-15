@@ -106,7 +106,7 @@ class Transport_PK : public Explicit_TI::fnBase {
   inline int get_transport_status() { return status; }
 
   // control members
-  inline bool set_standalone_mode(bool mode) { standalone_mode = mode; } 
+  inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
   void print_statistics() const;
  
  private:
