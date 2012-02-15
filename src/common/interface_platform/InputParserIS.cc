@@ -8,22 +8,26 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
+
 namespace Amanzi {
 namespace AmanziInput {
 
-
-Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
-
+Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) 
+{
   numproc_ = numproc;
 
   Teuchos::ParameterList new_list, tmp_list;
 
   init_global_info(plist);
 
+  // unstructured header
+  new_list.set<bool>("Native Unstructured Input", true);
+  new_list.set<std::string>("grid_option", "Unstructured");
+
   // checkpoint list is optional
   tmp_list = create_Checkpoint_Data_List (plist);
   if (tmp_list.begin() != tmp_list.end()) {
-    new_list.sublist("Checkpoint Data")    = tmp_list;
+    new_list.sublist("Checkpoint Data") = tmp_list;
   }
 
   tmp_list = create_Visualization_Data_List (plist);
@@ -38,21 +42,21 @@ Teuchos::ParameterList translate(Teuchos::ParameterList* plist, int numproc) {
     }
   }
 
-  new_list.sublist("Regions")            = get_Regions_List(plist);
-  new_list.sublist("Mesh")               = translate_Mesh_List(plist);
-  new_list.sublist("Domain")             = get_Domain_List(plist);
-  new_list.sublist("MPC")                = create_MPC_List(plist);
-  new_list.sublist("Transport")          = create_Transport_List(plist);
-  new_list.sublist("State")              = create_State_List(plist);
-  new_list.sublist("Flow")               = create_Flow_List(plist);
+  new_list.sublist("Regions") = get_Regions_List(plist);
+  new_list.sublist("Mesh") = translate_Mesh_List(plist);
+  new_list.sublist("Domain") = get_Domain_List(plist);
+  new_list.sublist("MPC") = create_MPC_List(plist);
+  new_list.sublist("Transport") = create_Transport_List(plist);
+  new_list.sublist("State") = create_State_List(plist);
+  new_list.sublist("Flow") = create_Flow_List(plist);
 
   return new_list;
-
 }
 
 
 
-Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::ParameterList* plist) 
+{
   Teuchos::ParameterList time_macro;
 
   if ( plist->sublist("Output").sublist("Time Macros").isSublist(macro_name) ) {
@@ -77,11 +81,11 @@ Teuchos::ParameterList get_Time_Macro (const std::string& macro_name, Teuchos::P
   }
 
   return time_macro;
-
 }
 
 
-Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist ) {
+Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::ParameterList* plist ) 
+{
   Teuchos::Array<int> cycle_range;
 
   if ( plist->sublist("Output").sublist("Cycle Macros").isSublist(macro_name) ) {
@@ -97,12 +101,11 @@ Teuchos::Array<int> get_Cycle_Macro ( const std::string& macro_name, Teuchos::Pa
 }
 
 
-Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& macro_name, Teuchos::ParameterList* plist ) {
-
+Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& macro_name, Teuchos::ParameterList* plist ) 
+{
   std::vector<std::string> vars;
 
   for (int i=0; i<macro_name.size(); i++) {
-
     if ( plist->sublist("Output").sublist("Variable Macros").isSublist(macro_name[i]) ) {
       Teuchos::ParameterList& macro_list = plist->sublist("Output").sublist("Variable Macros").sublist(macro_name[i]);
 
@@ -135,17 +138,12 @@ Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& ma
         } else {
           vars.push_back(macro_solute);
         }
-
       }
-
-
-
     } else {
       std::stringstream ss;
       ss << "The variable macro " << macro_name[i] << " does not exist in the input file";
       Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
     }
-
   }
 
   Teuchos::Array<std::string> ret_vars(vars.size());
@@ -158,8 +156,8 @@ Teuchos::Array<std::string> get_Variable_Macro ( Teuchos::Array<std::string>& ma
 }
 
 
-void init_global_info( Teuchos::ParameterList* plist ) {
-
+void init_global_info( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList& phase_list = plist->sublist("Phase Definitions");
   if ( (++ phase_list.begin()) == phase_list.end() ) {
     phase_name = phase_list.name(phase_list.begin());
@@ -198,14 +196,11 @@ void init_global_info( Teuchos::ParameterList* plist ) {
       verbosity_level = "low";
     }
   }
-
 }
 
 
-
-
-Teuchos::ParameterList create_Checkpoint_Data_List ( Teuchos::ParameterList* plist ) {
-
+Teuchos::ParameterList create_Checkpoint_Data_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList restart_list;
 
   if ( plist->isSublist("Output") ) {
@@ -235,8 +230,8 @@ Teuchos::ParameterList create_Checkpoint_Data_List ( Teuchos::ParameterList* pli
 
 
 
-Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* plist ) {
-
+Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList vis_list;
 
   if ( plist->isSublist("Output") ) {
@@ -263,9 +258,8 @@ Teuchos::ParameterList create_Visualization_Data_List ( Teuchos::ParameterList* 
 }
 
 
-
-
-Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList obs_list;
 
   if ( plist->isSublist("Output") ) {
@@ -308,7 +302,6 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
           //   obs_list.sublist(i->first).set("Variables",  get_Variable_Macro(var_macro, plist));
           //   obs_list.sublist(i->first).remove("Variable Macro");
           // }
-
         }
       }
     }
@@ -318,7 +311,8 @@ Teuchos::ParameterList create_Observation_Data_List ( Teuchos::ParameterList* pl
 
 
 
-Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList reg_list;
 
   if ( plist->isSublist("Regions") ) {
@@ -328,7 +322,9 @@ Teuchos::ParameterList get_Regions_List ( Teuchos::ParameterList* plist ) {
   return reg_list;
 }
 
-Teuchos::ParameterList get_Mesh_List ( Teuchos::ParameterList* plist ) {
+
+Teuchos::ParameterList get_Mesh_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList msh_list;
 
   if ( plist->isSublist("Mesh") ) {
@@ -339,7 +335,8 @@ Teuchos::ParameterList get_Mesh_List ( Teuchos::ParameterList* plist ) {
 }
 
 
-Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList msh_list;
 
   if ( plist->isSublist("Mesh") ) {
@@ -377,7 +374,7 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
 
           if ( suffix != ".exo" ) {
             // exodus files must have the .exo suffix
-            Exceptions::amanzi_throw(Errors::Message("Exodus II was specified as a mesh file format but the suffix of the file that was specified is not .exo"));            
+            Exceptions::amanzi_throw(Errors::Message("Exodus II was specified as a mesh file format but the suffix of the file that was specified is not .exo"));
           }
 
           // figure out if this is a parallel run
@@ -395,14 +392,11 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
         } else {
           msh_list.sublist("Unstructured").sublist("Read Mesh File") = plist->sublist("Mesh").sublist("Unstructured").sublist("Read Mesh File");
         }
-
       }
-
 
       if (plist->sublist("Mesh").sublist("Unstructured").isSublist("Expert")) {
         msh_list.sublist("Unstructured").sublist("Expert") = plist->sublist("Mesh").sublist("Unstructured").sublist("Expert");
       }
-
     }
   }
 
@@ -411,7 +405,8 @@ Teuchos::ParameterList translate_Mesh_List ( Teuchos::ParameterList* plist ) {
 
 
 
-Teuchos::ParameterList get_Domain_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList get_Domain_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList dom_list;
 
   if ( plist->isSublist("Domain") ) {
@@ -423,7 +418,8 @@ Teuchos::ParameterList get_Domain_List ( Teuchos::ParameterList* plist ) {
 
 
 
-Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList mpc_list;
 
   if ( plist->isSublist("Execution Control") ) {
@@ -443,7 +439,6 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
     } else {
       Exceptions::amanzi_throw(Errors::Message("The parameter Transport Model must be specified."));
     }
-
 
     if ( exe_sublist.isParameter("Flow Model") ) {
       if ( exe_sublist.get<std::string>("Flow Model") == "Off" ) {
@@ -473,18 +468,16 @@ Teuchos::ParameterList create_MPC_List ( Teuchos::ParameterList* plist ) {
     //   mpc_list.sublist("Restart from Checkpoint Data File") =
     //       plist->sublist("Execution control").sublist("Restart from Checkpoint Data File");
     // }
-
-
   }
 
   mpc_list.sublist("VerboseObject") = create_Verbosity_List(verbosity_level);
-
 
   return mpc_list;
 }
 
 
-Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList trp_list;
 
   if ( plist->isSublist("Execution Control") ) {
@@ -508,7 +501,6 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
       // continue to set some reasonable defaults
       trp_list.set<std::string>("enable internal tests","no");
       trp_list.set<double>("CFL",1.0);
-
     }
   }
 
@@ -584,12 +576,11 @@ Teuchos::ParameterList create_Transport_List ( Teuchos::ParameterList* plist ) {
   }
 
   return trp_list;
-
 }
 
 
-
-Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList flw_list;
 
   if ( plist->isSublist("Execution Control") ) {
@@ -675,7 +666,9 @@ Teuchos::ParameterList create_Flow_List ( Teuchos::ParameterList* plist ) {
   return flw_list;
 }
 
-Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
+
+Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList wrm_list;
 
   // loop through the material properties list and extract the water retention model info
@@ -712,15 +705,15 @@ Teuchos::ParameterList create_WRM_List ( Teuchos::ParameterList* plist ) {
       wrm_sublist.set<double>("van Genuchten m", m);
       wrm_sublist.set<double>("van Genuchten alpha",alpha);
       wrm_sublist.set<double>("van Genuchten residual saturation", Sr);
-
     }
-
   }
 
   return wrm_list;
 }
 
-Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
+
+Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList dpc_list;
 
   Teuchos::ParameterList& ml_list = dpc_list.sublist("ML Parameters");
@@ -745,7 +738,8 @@ Teuchos::ParameterList create_DPC_List ( Teuchos::ParameterList* plist ) {
 }
 
 
-Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList ssf_list;
 
   Teuchos::ParameterList& bc_sublist = plist->sublist("Boundary Conditions");
@@ -817,11 +811,7 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
 
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
-
         }
-
-
-
 
       } else if ( bc.isSublist("BC: Uniform Pressure") ) {
         Teuchos::ParameterList& bc_dir = bc.sublist("BC: Uniform Pressure");
@@ -830,15 +820,11 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
         Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
         Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Values");
 
-
         std::stringstream ss;
         ss << "BC " << bc_counter++;
 
-
         Teuchos::ParameterList& tbc = ssf_list.sublist("pressure").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
-
-
 
         if ( times.size() == 1 ) {
           Teuchos::ParameterList& tbcs = tbc.sublist("boundary pressure").sublist("function-constant");
@@ -848,7 +834,6 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
 
           tbcs.set<Teuchos::Array<double> >("x values", times);
           tbcs.set<Teuchos::Array<double> >("y values", values);
-
 
           std::vector<std::string> forms_(time_fns.size());
 
@@ -871,14 +856,11 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
         Teuchos::Array<std::string> time_fns = bc_dir.get<Teuchos::Array<std::string> >("Time Functions");
         Teuchos::Array<double>      values = bc_dir.get<Teuchos::Array<double> >("Water Table Height");
 
-
         std::stringstream ss;
         ss << "BC " << bc_counter++;
 
-
         Teuchos::ParameterList& tbc = ssf_list.sublist("static head").sublist(ss.str());
         tbc.set<Teuchos::Array<std::string> >("regions", regions );
-
 
 
         if ( times.size() == 1 ) {
@@ -889,7 +871,6 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
 
           tbcs.set<Teuchos::Array<double> >("x values", times);
           tbcs.set<Teuchos::Array<double> >("y values", values);
-
 
           std::vector<std::string> forms_(time_fns.size());
 
@@ -904,21 +885,19 @@ Teuchos::ParameterList create_SS_FlowBC_List ( Teuchos::ParameterList* plist ) {
           Teuchos::Array<std::string> forms = forms_;
           tbcs.set<Teuchos::Array<std::string> >("forms", forms);
         }
-
       }
 
       // TODO...
       // add the rest of the boundary conditions
-
     }
   }
-
 
   return ssf_list;
 }
 
 
-Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
+Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) 
+{
   Teuchos::ParameterList stt_list;
 
   stt_list.set<double>("Gravity x", 0.0);
@@ -963,7 +942,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         }
       }
 
-
       double porosity = matprop_list.sublist(matprop_list.name(i)).sublist("Porosity: Uniform").get<double>("Value");
       double perm_vert, perm_horiz;
 
@@ -975,7 +953,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
         perm_horiz = matprop_list.sublist(matprop_list.name(i)).sublist("Intrinsic Permeability: Anisotropic Uniform").get<double>("Horizontal");
       } else {
         Exceptions::amanzi_throw(Errors::Message("Permeability can only be specified as Intrinsic Permeability: Uniform, or Intrinsic Permeability: Anisotropic Uniform."));
-
       }
 
       for (Teuchos::Array<std::string>::const_iterator i=regions.begin(); i!=regions.end(); i++) {
@@ -1004,7 +981,6 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
                   ic_for_region = &(ic_list.sublist(it->first));
                 }
               }
-
             }
           } else {
             Exceptions::amanzi_throw(Errors::Message("The list Initial Conditions contains an entry that is not a ParamterList itself."));
@@ -1075,23 +1051,20 @@ Teuchos::ParameterList create_State_List ( Teuchos::ParameterList* plist ) {
       matnames[k] = matid_to_material[k+1];
     }
 
-
     stt_list.set<Teuchos::Array<int> >("Region Name to Material ID Map (Material IDs)",matids);
     stt_list.set<Teuchos::Array<std::string> >("Region Name to Material ID Map (Region Names)",regnames);
     stt_list.set<Teuchos::Array<std::string> >("Material Names",matnames);
-
 
   } else {
     Exceptions::amanzi_throw("There is more than one phase, however, amanzi-u only supports one phase");
   }
 
-
-
-
   return stt_list;
 }
 
-Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
+
+Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) 
+{
   Teuchos::ParameterList vlist;
 
   if (vlevel == "low") {
@@ -1107,5 +1080,5 @@ Teuchos::ParameterList create_Verbosity_List ( const std::string& vlevel ) {
   return vlist;
 }
 
-}
-}
+}  // namespace AmanziInput
+}  // namespace Amanzi
