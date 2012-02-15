@@ -28,12 +28,12 @@ namespace AmanziFlow {
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Richards_PK::Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC)
+Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);
 
   FS = FS_MPC;
-  rp_list = rp_list_;
+  rp_list = flow_list.sublist("Richards Problem");
 
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
@@ -105,7 +105,7 @@ Richards_PK::~Richards_PK()
 /* ******************************************************************
 * Extract information from Richards Problem parameter list.
 ****************************************************************** */
-void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
+void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 {
   if (matrix_ == NULL) matrix = new Matrix_MFD(FS, *super_map_);
   else matrix = matrix_;
@@ -173,6 +173,8 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 
   Krel_cells->PutScalar(1.0);  // we start with fully saturated media
   Krel_faces->PutScalar(1.0);
+
+  flow_status_ = FLOW_INIT_COMPLETE;
 }
 
 
@@ -181,6 +183,8 @@ void Richards_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 ****************************************************************** */
 int Richards_PK::advance_to_steady_state()
 {
+  flow_status_ = FLOW_NEXT_STATE_BEGIN;
+
   // initial pressure
   Epetra_Vector& pressure = FS->ref_pressure();
   for (int c=0; c<ncells_owned; c++) (*solution_cells)[c] = pressure[c];
@@ -230,7 +234,7 @@ int Richards_PK::advance_to_steady_state()
     cout << "final   water mass = " << water_mass1 << " [KG]" << endl; 
   }   
 
-  flow_status_ = FLOW_NEXT_STATE_COMPLETE;
+  if (ierr == 0) flow_status_ = FLOW_STEADY_STATE_COMPLETE;
   return ierr;
 }
 
@@ -240,11 +244,15 @@ int Richards_PK::advance_to_steady_state()
 ******************************************************************* */
 int Richards_PK::advance(double dT) 
 {
+  flow_status_ = FLOW_NEXT_STATE_BEGIN;
+
   T_physical = FS->get_time();
   double time = (standalone_mode) ? T_internal : T_physical;
   double dTnext;
 
-  if (num_itrs_trs == 0) {  // initialization
+  applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
+
+  if (num_itrs_trs == 100) {  // initialization
     Epetra_Vector udot(*super_map_);
     computeUDot(time, *solution, udot);
     bdf2_dae->set_initial_state(time, *solution, udot);
@@ -257,13 +265,17 @@ int Richards_PK::advance(double dT)
   bdf2_dae->commit_solution(dT, *solution);
   bdf2_dae->write_bdf2_stepping_statistics();
 
+  T_internal = bdf2_dae->most_recent_time();
+  dT = dTnext;
+  num_itrs_trs++;
+
   // calculate darcy mass flux
   Epetra_Vector& darcy_mass_flux = FS_next->ref_darcy_mass_flux();
   matrix->createMFDstiffnessMatrices(mfd3d_method, K, *Krel_faces);  // Should be improved. (lipnikov@lanl.gov)
   matrix->deriveDarcyFlux(*solution, *face_importer_, darcy_mass_flux);
   addGravityFluxes_DarcyFlux(K, *Krel_faces, darcy_mass_flux);
 
-  num_itrs_trs++;
+  flow_status_ = FLOW_NEXT_STATE_COMPLETE;
   return 0;
 }
 
@@ -355,7 +367,7 @@ int Richards_PK::advanceSteadyState_Picard()
     double linear_residual = solver->TrueResidual();
 
     // update relaxation
-    double relaxation = 1e-1;
+    double relaxation = 0.2;
     for (int c=0; c<ncells_owned; c++) {
       double diff = fabs(solution_new[c] - solution_old[c]);
       double umax = std::max(fabs(solution_new[c]), fabs(solution_old[c]));
@@ -411,7 +423,6 @@ double Richards_PK::computeUDot(double T, const Epetra_Vector& u, Epetra_Vector&
   double norm_udot;
   computePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
   norm_udot = matrix->computeResidual(u, udot);
-  udot.Update(-1.0, udot, 0.0);
 
   Epetra_Vector* udot_faces = FS->createFaceView(udot);
   udot_faces->PutScalar(0.0);

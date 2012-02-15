@@ -49,16 +49,16 @@ class DarcyProblem {
     //mesh = Teuchos::rcp(new Mesh_simple(0.0,0.0,-0.0, 1.0,1.0,1.0, 4, 4, 4, comm, gm)); 
     mesh = Teuchos::rcp(new Mesh_MSTK("test/hexes.exo", comm, gm)); 
 
-    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-    dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
-
     // create Darcy process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
     S = new State(state_list, mesh);
     S->set_time(0.0);
 
+    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
-    DPK = new Darcy_PK(dp_list, FS);
+    DPK = new Darcy_PK(flow_list, FS);
+
+    dp_list = flow_list.get<Teuchos::ParameterList>("Darcy Problem");
   }
 
   ~DarcyProblem() { delete DPK; delete S; delete comm; }
@@ -168,7 +168,7 @@ SUITE(Darcy_PK) {
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->resetParameterList(dp_list);
 
-    DPK->Init();  // setup the problem
+    DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
 
     double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
@@ -201,7 +201,7 @@ SUITE(Darcy_PK) {
     createBClist("pressure", "BC 2", regions, 1.0);
     DPK->resetParameterList(dp_list);
 
-    DPK->Init();  // setup the problem
+    DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
 
     double error = calculatePressureCellError(p0, pressure_gradient);
@@ -231,7 +231,7 @@ SUITE(Darcy_PK) {
     createBClist("static head", "BC 2", regions, 0.25);
     DPK->resetParameterList(dp_list);
 
-    DPK->Init();  // setup the problem
+    DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
 
     double error = calculatePressureCellError(p0, pressure_gradient);  // error checks
@@ -264,7 +264,7 @@ SUITE(Darcy_Velocity) {
     createBClist("static head", "BC 2", regions, 0.25);
     DPK->resetParameterList(dp_list);
 
-    DPK->Init();  // setup the problem
+    DPK->InitPK();  // setup the problem
     DPK->advance_to_steady_state();
 
     double error = calculateDarcyVelocityError(velocity);

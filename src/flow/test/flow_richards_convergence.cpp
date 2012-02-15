@@ -82,20 +82,18 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     GeometricModelPtr gm = new GeometricModel(3, region_list, comm);
     Teuchos::RCP<Mesh> mesh = Teuchos::rcp(new Mesh_MSTK(0.0,0.0,-10.0, 1.0,1.0,0.0, 1,1,n, comm, gm)); 
 
-    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-    Teuchos::ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
-
     // create Richards process kernel
     Teuchos::ParameterList state_list = parameter_list.get<Teuchos::ParameterList>("State");
     State* S = new State(state_list, mesh);
     S->set_time(0.0);
 
+    Teuchos::ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
     Teuchos::RCP<Flow_State> FS = Teuchos::rcp(new Flow_State(*S));
-    Richards_PK* RPK = new Richards_PK(rp_list, FS);
+    Richards_PK* RPK = new Richards_PK(flow_list, FS);
     RPK->set_standalone_mode(true);
 
-    RPK->Init();  // setup the problem
-    if (n== 40) RPK->print_statistics();
+    RPK->InitPK();  // setup the problem
+    if (n == 40) RPK->print_statistics();
     RPK->set_verbosity(FLOW_VERBOSITY_NULL);
 
     RPK->advance_to_steady_state();

@@ -56,10 +56,9 @@ cout << "Test: Tensor Richards, a cube model" << endl;
 
   // create Richards problem
   ParameterList flow_list = parameter_list.get<Teuchos::ParameterList>("Flow");
-  ParameterList rp_list = flow_list.get<Teuchos::ParameterList>("Richards Problem");
-  Richards_PK* RPK = new Richards_PK(rp_list, FS);
+  Richards_PK* RPK = new Richards_PK(flow_list, FS);
   RPK->set_standalone_mode(true);
-  RPK->Init();
+  RPK->InitPK();
 
   // calculate the constant Darcy mass velocity
   double rho = FS->ref_fluid_density();
@@ -108,7 +107,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   for (int c=0; c<(*ucells).MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
-    cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
+    //cout << c << " p_num=" << pressure[c] << " p_ex=" << p_exact << endl;
     err_p += pow(pressure[c] - p_exact, 2.0);
   }
   err_p = sqrt(err_p);

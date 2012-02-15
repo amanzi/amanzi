@@ -56,11 +56,10 @@ TEST(FLOW_3D_RICHARDS) {
 
   // create Richards process kernel
   ParameterList flow_list = parameter_list.get<ParameterList>("Flow");
-  ParameterList rp_list = flow_list.get<ParameterList>("Richards Problem");
-  Richards_PK* RPK = new Richards_PK(rp_list, FS);
+  Richards_PK* RPK = new Richards_PK(flow_list, FS);
 
   RPK->set_standalone_mode(true);
-  RPK->Init();
+  RPK->InitPK();
   RPK->print_statistics();
 
   // solve the problem

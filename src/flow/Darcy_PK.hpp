@@ -27,11 +27,11 @@ namespace AmanziFlow {
 
 class Darcy_PK : public Flow_PK {
  public:
-  Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC);
+  Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC);
   ~Darcy_PK();
 
   // main methods
-  void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
 
   int advance(double dT) { return 0; } 
   int advance_to_steady_state();

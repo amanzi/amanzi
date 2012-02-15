@@ -25,12 +25,12 @@ namespace AmanziFlow {
 * We set up only default values and call Init() routine to complete
 * each variable initialization
 ****************************************************************** */
-Darcy_PK::Darcy_PK(Teuchos::ParameterList& dp_list_, Teuchos::RCP<Flow_State> FS_MPC)
+Darcy_PK::Darcy_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC)
 {
   Flow_PK::Init(FS_MPC);  // sets up default parameters
 
   FS = FS_MPC;
-  dp_list = dp_list_;
+  dp_list = flow_list.sublist("Darcy Problem");
 
   mesh_ = FS->mesh();
   dim = mesh_->space_dimension();
@@ -87,7 +87,7 @@ Darcy_PK::~Darcy_PK()
 /* ******************************************************************
 * Extract information from Diffusion Problem parameter list.
 ****************************************************************** */
-void Darcy_PK::Init(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
+void Darcy_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
 {
   if (matrix_ == NULL) matrix = new Matrix_MFD(FS, *super_map_);
   else matrix = matrix_;

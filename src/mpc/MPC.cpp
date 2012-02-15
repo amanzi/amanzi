@@ -116,25 +116,24 @@ void MPC::mpc_init() {
     Teuchos::ParameterList transport_parameter_list =
         parameter_list.sublist("Transport");
 
-    TPK = Teuchos::rcp( new AmanziTransport::Transport_PK(transport_parameter_list, TS) );
+    TPK = Teuchos::rcp(new AmanziTransport::Transport_PK(transport_parameter_list, TS));
   }
 
   // flow...
   if (flow_enabled) {
-    FS = Teuchos::rcp( new AmanziFlow::Flow_State( S ) );
-
-    Teuchos::ParameterList flow_parameter_list =
-        parameter_list.sublist("Flow");
+    FS = Teuchos::rcp(new AmanziFlow::Flow_State(S));
+    Teuchos::ParameterList flow_parameter_list = parameter_list.sublist("Flow");
 
     flow_model = mpc_parameter_list.get<string>("Flow model","Darcy");
     if (flow_model == "Darcy") {
-      FPK = Teuchos::rcp( new AmanziFlow::Darcy_PK(flow_parameter_list, FS) );
+      FPK = Teuchos::rcp(new AmanziFlow::Darcy_PK(flow_parameter_list, FS));
     } else if (flow_model == "Richards") {
-      FPK = Teuchos::rcp( new AmanziFlow::Richards_PK(flow_parameter_list, FS) );
+      FPK = Teuchos::rcp(new AmanziFlow::Richards_PK(flow_parameter_list, FS));
     } else {
       cout << "MPC: unknown flow model: " << flow_model << endl;
       throw std::exception();
     }
+    FPK->InitPK();
   }
   // done creating auxilary state objects and  process models
 
@@ -277,9 +276,9 @@ void MPC::cycle_driver () {
 
   if (flow_enabled) {
     if (ti_mode == STEADY || ti_mode == INIT_TO_STEADY ) {
-      FPK->init_steady(T0, dTsteady);
+      FPK->set_time(T0, dTsteady);
     } else if ( ti_mode == TRANSIENT ) {
-      FPK->init_transient(T0, dTtransient);
+      FPK->set_time(T0, dTtransient);
     }
   }
 
@@ -305,7 +304,7 @@ void MPC::cycle_driver () {
 	  if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
 	    *out << "Steady state computation complete... now running in transient mode." << std::endl;
 	  }
-	  FPK->init_transient(S->get_time(), dTtransient);	
+	  FPK->set_time(S->get_time(), dTtransient);	
 	}
       }
 
@@ -365,6 +364,10 @@ void MPC::cycle_driver () {
 	    redo = false;
 	    try {
 	      FPK->advance_to_steady_state();
+              if( FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
+                S->set_time(Tswitch);
+                FPK->set_time(Tswitch, 1e-8);
+              }
 	    }
 	    catch (int itr) {
 	      mpc_dT = 0.5*mpc_dT;
@@ -379,7 +382,7 @@ void MPC::cycle_driver () {
       // then advance transport
       if (ti_mode == TRANSIENT || (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch) ) {
         if (transport_enabled) {
-          TPK->advance( mpc_dT );
+          TPK->advance(mpc_dT);
           if (TPK->get_transport_status() == AmanziTransport::TRANSPORT_STATE_COMPLETE) {
             // get the transport state and commit it to the state
             Teuchos::RCP<AmanziTransport::Transport_State> TS_next = TPK->get_transport_state_next();

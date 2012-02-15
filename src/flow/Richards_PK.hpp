@@ -31,11 +31,11 @@ namespace AmanziFlow {
 
 class Richards_PK : public Flow_PK {
  public:
-  Richards_PK(Teuchos::ParameterList& rp_list_, Teuchos::RCP<Flow_State> FS_MPC);
+  Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_State> FS_MPC);
   ~Richards_PK();
 
   // main methods
-  void Init(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
 
   int advance(double dT); 
   int advance_to_steady_state();

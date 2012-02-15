@@ -28,8 +28,9 @@ namespace Amanzi {
 namespace AmanziFlow {
 
 const int FLOW_NULL = 0;
-const int FLOW_NEXT_STATE_BEGIN = 2;
-const int FLOW_NEXT_STATE_INIT = 3;
+const int FLOW_INIT_COMPLETE = 1;
+const int FLOW_STEADY_STATE_COMPLETE = 2;
+const int FLOW_NEXT_STATE_BEGIN = 3;
 const int FLOW_NEXT_STATE_COMPLETE = 4;
 
 const int FLOW_BC_FACE_NULL = 0; 
@@ -83,14 +84,12 @@ class Flow_PK : public BDF2::fnBase {
 
   // main methods
   void Init(Teuchos::RCP<Flow_State> FS_MPC);
-  void init_steady(double T0, double dT0) {};  // temporary gag (lipnikov@lanl.gov)
-  void init_transient(double T0, double dT0) {};  // temporary gag (lipnikov@lanl.gov)
+  virtual void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL) = 0;
 
   virtual int advance(double dT) = 0; 
   virtual int advance_to_steady_state() = 0;
   virtual void commit_state(Teuchos::RCP<Flow_State> FS) = 0;
 
-  void set_initial_time(double T0, double dT0) { T_internal = T_physical = T0; dT = dT0; }
   double calculate_flow_dT() { return dT; }
 
   // boundary condition members
@@ -123,6 +122,7 @@ class Flow_PK : public BDF2::fnBase {
       BoundaryFunction *bc_pressure, BoundaryFunction *bc_head, BoundaryFunction *bc_flux) const;
   inline void set_standalone_mode(bool mode) { standalone_mode = mode; } 
  
+  void set_time(double T0, double dT0) { T_internal = T_physical = T0; dT = dT0; }
   void set_verbosity(int level) { verbosity = level; }
 
   // miscallenous members
