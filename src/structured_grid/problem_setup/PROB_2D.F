@@ -59,6 +59,8 @@ c
          probin(i:i) = char(name(i))
       end do
 
+#if 0
+c     REMOVE NEED FOR PROBIN...WILL SET THESE IN c++ EVENTUALLY ANYWAY
       untin = 9
       if (namlen .eq. 0) then
          open(untin,file='probin',form='formatted',status='old')
@@ -69,6 +71,11 @@ c
       read(untin,fortin)
       if (isioproc .eq. 1) write(6,fortin)
       close(unit=untin)
+#endif
+
+      probtype = 1
+      denerr = 1.d0
+      adverr = 10.d0
 
       end
 
