@@ -22,8 +22,8 @@ include_directories(${PMAMR_INCLUDE_DIRS})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 
-set(CXX_header_files ParmParseHelpers.H InputParser_Structured.H TabularFunction.H)
-set(CXX_source_files ParmParseHelpers.cpp InputParser_Structured.cpp TabularFunction.cpp)
+set(CXX_header_files ParmParseHelpers.H InputParser_Structured.H TabularFunction.H EventCoord.H)
+set(CXX_source_files ParmParseHelpers.cpp InputParser_Structured.cpp TabularFunction.cpp EventCoord.cpp)
 
 add_install_include_file(${CXX_header_files})
 
