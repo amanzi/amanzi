@@ -288,8 +288,8 @@ public:
   static PArray<RegionData>& BCs() {return bc_array;}
   static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
 
-  static Array<std::string> vis_cycle_macros;
-  static Array<std::string> chk_cycle_macros;
+  static Array<std::string> vis_cycle_macros, vis_time_macros;
+  static Array<std::string> chk_cycle_macros, chk_time_macros;
   static int echo_inputs;
 
 protected:

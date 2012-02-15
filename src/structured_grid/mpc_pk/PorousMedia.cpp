@@ -1412,12 +1412,12 @@ PorousMedia::advance (Real time,
     if (level == 0)
       multilevel_advance(time,dt,iteration,ncycle);
     else
-      if (verbose && ParallelDescriptor::IOProcessor())
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
 	std::cout << " Doing multilevel solve : skipping level advance.\n";
   }
   else
   {
-    if (verbose && ParallelDescriptor::IOProcessor())
+    if (verbose > 1 && ParallelDescriptor::IOProcessor())
       {
 	std::cout << "Advancing grids at level " << level
 		  << " : starting time = "       << time
@@ -2154,8 +2154,6 @@ PorousMedia::create_lambda (Real time)
            ++S_fpi)
 	{
 
-	  dirichletStateBC(S_fpi(),time);
-
 	  const int i = S_fpi.index();
 	  BL_ASSERT(grids[i] == S_fpi.validbox());
 
@@ -2368,8 +2366,6 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
        S_fpi.isValid();
        ++S_fpi)
     {
-      dirichletStateBC(S_fpi(),time);
-
       const int  i   = S_fpi.index();
       const int* lo  = grids[i].loVect();
       const int* hi  = grids[i].hiVect();
@@ -2586,9 +2582,6 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase, MultiFab* u_mac,
        S_fpi.isValid();
        ++S_fpi)
     {
-      
-      dirichletStateBC(S_fpi(),time);
-
       const int  i   = S_fpi.index();
       const int* lo  = grids[i].loVect();
       const int* hi  = grids[i].hiVect();
@@ -2725,8 +2718,6 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
        S_fpi.isValid();
        ++S_fpi)
     {
-      dirichletStateBC(S_fpi(),time);
-
       const int  i   = S_fpi.index();
       const int* lo  = grids[i].loVect();
       const int* hi  = grids[i].hiVect();
@@ -2879,8 +2870,6 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
        S_fpi.isValid();
        ++S_fpi)
     {
-      dirichletStateBC(S_fpi(),prev_time);
-
       const int i = S_fpi.index();
       
       getForce(tforces,i,1,fscalar,nscal,curr_time);
@@ -3390,7 +3379,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
   {
     std::cout << "... advect tracers\n";
   }
@@ -3448,11 +3437,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
        S_fpi.isValid() && Sn_fpi.isValid() && St_fpi.isValid() && Stn_fpi.isValid(); 
        ++S_fpi,++Sn_fpi,++St_fpi,++Stn_fpi)
     {
-      dirichletTracerBC(S_fpi(),prev_time);
-      dirichletTracerBC(Sn_fpi(),cur_time);
-      dirichletStateBC(St_fpi(),prev_time);
-      dirichletStateBC(Stn_fpi(),cur_time);
-
       const int i = S_fpi.index();
       getForce_Tracer(tforces,i,1,fscalar,nscal,cur_time);
 
@@ -5511,9 +5495,6 @@ PorousMedia::predictDT (MultiFab* u_macG)
        S_fpi.isValid();
        ++S_fpi)
     {
-
-      dirichletStateBC(S_fpi(),cur_time);
-
       const int i = S_fpi.index();
 
       Array<int> state_bc;
@@ -5879,7 +5860,7 @@ PorousMedia::post_timestep (int crse_iteration)
     {      
       for (int lev = 0; lev <= finest_level; lev++)
 	{
-	  if (verbose && ParallelDescriptor::IOProcessor())
+	  if (verbose>1 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Final solutions at level = " 
 		      << lev << '\n';
 
@@ -7945,7 +7926,6 @@ PorousMedia::FillStateBndry (Real time,
         {
 	  S[fpi.index()].copy(fpi(),*bli,0,*bli,src_comp,ncomp);
         }
-      dirichletStateBC(S[fpi.index()],time);
     }
 }
 
@@ -8084,9 +8064,6 @@ PorousMedia::calcDiffusivity (const Real time,
        fpi.isValid();
        ++fpi)
     {
-
-      dirichletStateBC(fpi(),time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       const int vflag = -1;
@@ -8234,8 +8211,6 @@ PorousMedia::calcDiffusivity_CPL_dp (MultiFab* diffusivity[BL_SPACEDIM],
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -8423,8 +8398,6 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
        fpi.isValid();
        ++fpi)
     {
-        dirichletStateBC(fpi(),time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -8598,8 +8571,6 @@ PorousMedia::calc_richard_alpha (MultiFab*     alpha,
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -8688,7 +8659,6 @@ PorousMedia::calcCapillary (const Real time)
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),time);
       const int idx   = fpi.index(); 
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       BL_ASSERT(box == fpi().box());
@@ -8929,7 +8899,6 @@ PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),time);
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       BL_ASSERT(box == fpi().box());
@@ -9006,8 +8975,6 @@ PorousMedia::calcDLambda (const Real time, MultiFab* dlbd_cc)
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -9955,7 +9922,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomps, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomps, IOProc);
   
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomps; kk++)
 	{
@@ -9974,7 +9941,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(&rhomaxmin[0], 1, IOProc);
   ParallelDescriptor::ReduceRealMin(&rhomaxmin[1], 1, IOProc);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     {  
       std::cout << "   RHO MAX/MIN "
 		<< ' ' << rhomaxmin[0] << "  " << rhomaxmin[1] << '\n';
