@@ -93,6 +93,7 @@ TEST(FLOW_RICHARDS_CONVERGENCE) {
     RPK->set_standalone_mode(true);
 
     RPK->InitPK();  // setup the problem
+    RPK->InitSteadyState();
     if (n == 40) RPK->print_statistics();
     RPK->set_verbosity(FLOW_VERBOSITY_NULL);
 

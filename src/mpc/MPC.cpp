@@ -134,6 +134,7 @@ void MPC::mpc_init() {
       throw std::exception();
     }
     FPK->InitPK();
+    FPK->InitSteadyState();
   }
   // done creating auxilary state objects and  process models
 
@@ -294,7 +295,7 @@ void MPC::cycle_driver () {
         Teuchos::rcp(new Epetra_MultiVector(*S->get_total_component_concentration()));
 
     // then start time stepping 
-    while (  (S->get_time() < T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
+    while ((S->get_time() < T1) && ((end_cycle == -1) || (iter <= end_cycle))) {
 
       // determine the time step we are now going to take
       double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
@@ -366,7 +367,7 @@ void MPC::cycle_driver () {
 	      FPK->advance_to_steady_state();
               if( FPK->flow_status() == AmanziFlow::FLOW_STEADY_STATE_COMPLETE) {
                 S->set_time(Tswitch);
-                FPK->set_time(Tswitch, 1e-8);
+                FPK->InitTransient();
               }
 	    }
 	    catch (int itr) {

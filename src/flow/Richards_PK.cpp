@@ -64,6 +64,7 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& flow_list, Teuchos::RCP<Flow_St
 
   // miscalleneous
   solver = NULL;
+  bdf2_dae = NULL;
 
   method_sss = FLOW_STEADY_STATE_BACKWARD_EULER;
   method_trs = FLOW_STEADY_STATE_BDF2;
@@ -142,28 +143,6 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   matrix->setSymmetryProperty(is_matrix_symmetric);
   matrix->symbolicAssembleGlobalMatrices(*super_map_);
 
-  // Create the BDF2 time integrator
-  Teuchos::ParameterList solver_list = rp_list.sublist("Steady state solution").sublist("Nonlinear solvers");
-  Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
-  bdf2_dae = new BDF2::Dae(*this, *super_map_);
-  bdf2_dae->setParameterList(bdf2_list);
-
-  // Preconditioner
-  Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
-
-  if (method_sss == FLOW_STEADY_STATE_BDF2) {
-    preconditioner = new Matrix_MFD(FS, *super_map_);
-    preconditioner->setSymmetryProperty(is_matrix_symmetric);
-    preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
-    preconditioner->init_ML_preconditioner(ML_list); 
-  } else {
-    preconditioner->init_ML_preconditioner(ML_list);
-    solver = new AztecOO;
-    solver->SetUserOperator(matrix);
-    solver->SetPrecOperator(preconditioner);
-    solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
-  }
-
   // Allocate data for relative permeability
   const Epetra_Map& cmap = mesh_->cell_map(true);
   const Epetra_Map& fmap = mesh_->face_map(true);
@@ -175,6 +154,77 @@ void Richards_PK::InitPK(Matrix_MFD* matrix_, Matrix_MFD* preconditioner_)
   Krel_faces->PutScalar(1.0);
 
   flow_status_ = FLOW_INIT_COMPLETE;
+}
+
+
+/* ******************************************************************
+* Separate initialization of solver may be required for steady state
+* and transient runs.       
+****************************************************************** */
+void Richards_PK::InitSteadyState()
+{
+  Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
+
+  if (method_sss == FLOW_STEADY_STATE_BDF2) {
+    preconditioner = new Matrix_MFD(FS, *super_map_);
+    preconditioner->setSymmetryProperty(is_matrix_symmetric);
+    preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
+    preconditioner->init_ML_preconditioner(ML_list); 
+
+    // Create the BDF2 time integrator
+    Teuchos::ParameterList solver_list = rp_list.sublist("Steady state solution").sublist("Nonlinear solvers");
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
+    if (bdf2_dae == NULL) bdf2_dae = new BDF2::Dae(*this, *super_map_);
+    bdf2_dae->setParameterList(bdf2_list);
+  } 
+  else {
+    preconditioner->init_ML_preconditioner(ML_list);
+    solver = new AztecOO;
+    solver->SetUserOperator(matrix);
+    solver->SetPrecOperator(preconditioner);
+    solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
+  }
+
+  absolute_tol = absolute_tol_sss;
+  relative_tol = relative_tol_sss;
+}
+
+
+/* ******************************************************************
+* Initialization analyzes status of matrix/preconditioner pair.      
+****************************************************************** */
+void Richards_PK::InitTransient()
+{
+  Teuchos::ParameterList ML_list = rp_list.sublist("Diffusion Preconditioner").sublist("ML Parameters");
+
+  if (method_trs == FLOW_STEADY_STATE_BDF2) {
+    if (preconditioner == matrix) {
+      preconditioner = new Matrix_MFD(FS, *super_map_);
+      preconditioner->setSymmetryProperty(is_matrix_symmetric);
+      preconditioner->symbolicAssembleGlobalMatrices(*super_map_);
+      preconditioner->init_ML_preconditioner(ML_list); 
+    } 
+    // Reset the BDF2 time integrator
+    if (bdf2_dae != NULL) delete bdf2_dae;  // the only way to reset it
+
+    Teuchos::ParameterList solver_list = rp_list.sublist("Transient solution").sublist("Nonlinear solvers");
+    Teuchos::RCP<Teuchos::ParameterList> bdf2_list(new Teuchos::ParameterList(solver_list));
+    bdf2_dae = new BDF2::Dae(*this, *super_map_);
+    bdf2_dae->setParameterList(bdf2_list);
+  } 
+  else if (solver == NULL) {
+    preconditioner->init_ML_preconditioner(ML_list);
+    solver = new AztecOO;
+    solver->SetUserOperator(matrix);
+    solver->SetPrecOperator(preconditioner);
+    solver->SetAztecOption(AZ_solver, AZ_cg);  // symmetry is required
+  }
+
+  absolute_tol = absolute_tol_trs;
+  relative_tol = relative_tol_trs;
+
+  dT = dT0_trs;
+  T_internal = T0_trs;
 }
 
 
@@ -242,17 +292,18 @@ int Richards_PK::advance_to_steady_state()
 /* ******************************************************************* 
 * Performs one time step of size dT (under *development*). 
 ******************************************************************* */
-int Richards_PK::advance(double dT) 
+int Richards_PK::advance(double dT_MPC) 
 {
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
 
+  dT = dT_MPC;
   T_physical = FS->get_time();
   double time = (standalone_mode) ? T_internal : T_physical;
   double dTnext;
 
   applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
 
-  if (num_itrs_trs == 100) {  // initialization
+  if (num_itrs_trs == 0) {  // initialization
     Epetra_Vector udot(*super_map_);
     computeUDot(time, *solution, udot);
     bdf2_dae->set_initial_state(time, *solution, udot);

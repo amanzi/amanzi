@@ -63,7 +63,7 @@ double Richards_PK::enorm(const Epetra_Vector& u, const Epetra_Vector& du)
 {
   double error_norm = 0.0; 
   for (int n=0; n<u.MyLength(); n++) {
-    double tmp = abs(du[n]) / (absolute_tol_sss + relative_tol_sss * abs(u[n]));
+    double tmp = abs(du[n]) / (absolute_tol + relative_tol * abs(u[n]));
     error_norm = std::max<double>(error_norm, tmp);
   }
 

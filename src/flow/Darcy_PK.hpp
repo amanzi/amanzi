@@ -32,6 +32,8 @@ class Darcy_PK : public Flow_PK {
 
   // main methods
   void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitSteadyState() {};  // (lipnikov@lanl.gov)
+  void InitTransient() {};
 
   int advance(double dT) { return 0; } 
   int advance_to_steady_state();

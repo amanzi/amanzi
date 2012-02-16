@@ -59,6 +59,7 @@ cout << "Test: Tensor Richards, a cube model" << endl;
   Richards_PK* RPK = new Richards_PK(flow_list, FS);
   RPK->set_standalone_mode(true);
   RPK->InitPK();
+  RPK->InitSteadyState();
 
   // calculate the constant Darcy mass velocity
   double rho = FS->ref_fluid_density();

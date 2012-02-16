@@ -36,8 +36,10 @@ class Richards_PK : public Flow_PK {
 
   // main methods
   void InitPK(Matrix_MFD* matrix_ = NULL, Matrix_MFD* preconditioner_ = NULL);
+  void InitSteadyState();
+  void InitTransient();
 
-  int advance(double dT); 
+  int advance(double dT_MPC); 
   int advance_to_steady_state();
   void commit_state(Teuchos::RCP<Flow_State> FS) {};
 
@@ -114,9 +116,11 @@ class Richards_PK : public Flow_PK {
 
   BDF2::Dae* bdf2_dae;  // Parameters for transient solution
   int method_trs;
-  double absolute_tol_trs, relative_tol_trs;
-  int num_itrs_trs;
-  double T0_trs, T1_trs, dT0_trs;
+  double absolute_tol_trs, relative_tol_trs, convergence_tol_trs;
+  int num_itrs_trs, max_itrs_trs;
+  double T0_trs, T1_trs, dT0_trs, dTmax_trs;
+
+  double absolute_tol, relative_tol;  // Generic parameters (sss or trs)
 
   Teuchos::RCP<Epetra_Vector> solution;  // global solution
   Teuchos::RCP<Epetra_Vector> solution_cells;  // cell-based pressures

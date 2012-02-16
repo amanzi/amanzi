@@ -89,7 +89,7 @@
       </ParameterList>
 
       <ParameterList name="Steady state solution">
-        <Parameter name="method" type="string" value="BDF2"/>
+        <Parameter name="method" type="string" value="backward Euler"/>
         <Parameter name="Verbosity level" type="string" value="medium"/>
 
         <ParameterList name="Error control">

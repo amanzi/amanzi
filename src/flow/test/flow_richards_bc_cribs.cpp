@@ -40,7 +40,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   /* read parameter list */
   ParameterList parameter_list;
-  string xmlFileName = "test/akuna_amanzi-vf_native.xml"; //flow_richards_bc_cribs.xml";
+  string xmlFileName = "test/flow_richards_bc_cribs.xml";
   updateParametersFromXmlFile(xmlFileName, &parameter_list);
 
   // create a mesh framework 
@@ -66,6 +66,7 @@ TEST(FLOW_3D_RICHARDS) {
 
   RPK->set_standalone_mode(true);
   RPK->InitPK();
+  RPK->InitSteadyState();
   RPK->print_statistics();
 
   // solve the problem
