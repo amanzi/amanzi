@@ -298,6 +298,22 @@ Mesh_STK_Impl::coordinates (stk::mesh::EntityId node) const
 
 }
 
+void
+Mesh_STK_Impl::set_coordinates (stk::mesh::EntityId node, const double *coords) 
+{
+
+  stk::mesh::Entity *entity = id_to_entity(stk::mesh::Node, node);
+  double * node_coordinates = stk::mesh::field_data(coordinate_field_, *entity);
+
+  std::cerr << "Node " << node << "coordinates:" << std::endl;
+  std::cerr << "   Before: " << node_coordinates[0] << node_coordinates[1] << node_coordinates[2] << std::endl;
+
+  std::copy(coords, coords+space_dimension_, node_coordinates);
+
+  std::cerr << "   After: " << node_coordinates[0] << node_coordinates[1] << node_coordinates[2] << std::endl << std::endl;
+
+}
+
 // -------------------------------------------------------------
 // Mesh_STK_Impl::id_to_entity
 // -------------------------------------------------------------

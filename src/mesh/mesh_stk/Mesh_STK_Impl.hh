@@ -68,6 +68,8 @@ class Mesh_STK_Impl {
     
   double const * coordinates (stk::mesh::EntityId node) const;
   double const * coordinates (stk::mesh::Entity* node)  const;
+
+  void set_coordinates (stk::mesh::EntityId node, const double *coords);
     
   stk::mesh::Entity* id_to_entity (stk::mesh::EntityRank rank, 
                                    stk::mesh::EntityId id) const;
