@@ -1275,7 +1275,7 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
                                     const double *coords) {
   MBEntityHandle v = vtx_id_to_handle[nodeid];
 
-  int result = mbcore->set_coords(&node, 1, coords);
+  int result = mbcore->set_coords(&v, 1, coords);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem setting node coordinates" << std::endl;
     assert(result == MB_SUCCESS);
