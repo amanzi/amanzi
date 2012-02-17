@@ -2,6 +2,7 @@
 
 #include <PMAmr.H>
 #include <Observation.H>
+#include <EventCoord.H>
 
 
 

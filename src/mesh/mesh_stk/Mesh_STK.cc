@@ -577,6 +577,19 @@ Mesh_STK::cell_get_coordinates (const Entity_ID cellid,
     
 
 
+// ------------------------------------------------------------
+// Modify the coordinates of a node
+// ------------------------------------------------------------
+
+void
+Mesh_STK::node_set_coordinates(const Entity_ID nodeid, const double *coords)
+{
+  stk::mesh::EntityId gid(this->GID(nodeid, NODE));
+  gid++;                                // need 1-based for stk::mesh
+  mesh_->set_coordinates(gid, coords);
+}
+
+
 // -------------------------------------------------------------
 // Mesh_STK::cell_epetra_map
 // -------------------------------------------------------------

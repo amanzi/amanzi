@@ -150,6 +150,7 @@ namespace Amanzi {
             std::string chem_str = "Chemistry Model"; reqP.push_back(chem_str);
             std::string tim_str = "Time Integration Mode"; reqL.push_back(tim_str);
             std::string v_str = "Verbosity";
+            std::string num_str = "Numerical Control Parameters";
             PLoptions ECopt(ec_list,reqL,reqP,false,false); 
 
             ParameterList& amr_out_list     = struc_out_list.sublist("amr");
@@ -247,54 +248,65 @@ namespace Amanzi {
             // Deal with optional settings
             const Array<std::string> optL = ECopt.OptLists();
             for (int i=0; i<optL.size(); ++i) {
-                if (optL[i] == amr_str) {
-                    const ParameterList& amr_list = ec_list.sublist(amr_str);
-                    std::string max_level_str = "Max AMR Level";
-                    int max_level = 0;
-                    if (amr_list.isParameter(max_level_str)) {
-                        max_level = amr_list.get<int>(max_level_str);
-                    }
-                    amr_out_list.set<int>("max_level",max_level);
-                    
-                    std::string ref_ratio_str = "Refinement Ratio";
-                    Array<int> ref_ratio(max_level,2);
-                    if (amr_list.isParameter(ref_ratio_str)) {
-                        ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
-                    }
-                    amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
-                }
-                else if (optL[i] == mg_str) {
-                    const ParameterList& mg_list = ec_list.sublist(mg_str);
-                    for (ParameterList::ConstIterator it=mg_list.begin(); it!=mg_list.end(); ++it) {
-                        const std::string& name = mg_list.name(it);
-                        mg_out_list.setEntry(name,mg_list.getEntry(name));
-                    }
-                }
-                else if (optL[i] == cg_str) {
-                    const ParameterList& cg_list = ec_list.sublist(cg_str);
-                    for (ParameterList::ConstIterator it=cg_list.begin(); it!=cg_list.end(); ++it) {
-                        const std::string& name = cg_list.name(it);
-                        cg_out_list.setEntry(name,cg_list.getEntry(name));
-                    }
-                }
-                else if (optL[i] == prob_str) {
-                    const ParameterList& prob_list = ec_list.sublist(prob_str);
-                    std::string Max_Time_Step_Change_str = "Maximum Time Step Change";
-                    std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
-                    std::string Max_Step_str = "Maximum Cycle Number";
-                    for (ParameterList::ConstIterator it=prob_list.begin(); it!=prob_list.end(); ++it) {
-                        const std::string& name = prob_list.name(it);
-                        std::cerr << "name: " << name << std::endl;
-                        if (name == Max_Time_Step_Change_str) {
-                            prob_out_list.set<double>("change_max", prob_list.get<double>(Max_Time_Step_Change_str));
+                if (optL[i] == num_str) {
+                    const ParameterList& num_list = ec_list.sublist(num_str);
+                    Array<std::string> nL, nP;
+                    PLoptions NUMopt(num_list,reqL,reqP,false,true); 
+                    const Array<std::string> NUMoptL = NUMopt.OptLists();
+                    for (int j=0; j<NUMoptL.size(); ++j) {
+                        if (NUMoptL[j] == amr_str) {
+                            const ParameterList& amr_list = num_list.sublist(amr_str);
+                            std::string max_level_str = "Max AMR Level";
+                            int max_level = 0;
+                            if (amr_list.isParameter(max_level_str)) {
+                                max_level = amr_list.get<int>(max_level_str);
+                            }
+                            amr_out_list.set<int>("max_level",max_level);
+                            
+                            std::string ref_ratio_str = "Refinement Ratio";
+                            Array<int> ref_ratio(max_level,2);
+                            if (amr_list.isParameter(ref_ratio_str)) {
+                                ref_ratio = amr_list.get<Array<int> >(ref_ratio_str);
+                            }
+                            amr_out_list.set<Array<int> >("ref_ratio",ref_ratio);
                         }
-                        else if (name == Max_Step_str) {
-                            int max_step = prob_list.get<int>(Max_Step_str);
-                            struc_out_list.set<double>("max_step", max_step);
+                        else if (NUMoptL[j] == mg_str) {
+                            const ParameterList& mg_list = num_list.sublist(mg_str);
+                            for (ParameterList::ConstIterator it=mg_list.begin(); it!=mg_list.end(); ++it) {
+                                const std::string& name = mg_list.name(it);
+                                mg_out_list.setEntry(name,mg_list.getEntry(name));
+                            }
                         }
-                        else if (name == Max_Time_Step_Size_str) {
-                            double max_dt = prob_list.get<double>(Max_Time_Step_Size_str);
-                            struc_out_list.set<double>("max_dt", max_dt);
+                        else if (NUMoptL[j] == cg_str) {
+                            const ParameterList& cg_list = num_list.sublist(cg_str);
+                            for (ParameterList::ConstIterator it=cg_list.begin(); it!=cg_list.end(); ++it) {
+                                const std::string& name = cg_list.name(it);
+                                cg_out_list.setEntry(name,cg_list.getEntry(name));
+                            }
+                        }
+                        else if (NUMoptL[j] == prob_str) {
+                            const ParameterList& prob_list = num_list.sublist(prob_str);
+                            std::string Max_Time_Step_Change_str = "Maximum Time Step Change";
+                            std::string Max_Time_Step_Size_str = "Maximum Time Step Size";
+                            std::string Max_Step_str = "Maximum Cycle Number";
+                            for (ParameterList::ConstIterator it=prob_list.begin(); it!=prob_list.end(); ++it) {
+                                const std::string& name = prob_list.name(it);
+                                if (name == Max_Time_Step_Change_str) {
+                                    prob_out_list.set<double>("change_max",
+                                                              prob_list.get<double>(Max_Time_Step_Change_str));
+                                }
+                                else if (name == Max_Step_str) {
+                                    int max_step = prob_list.get<int>(Max_Step_str);
+                                    struc_out_list.set<double>("max_step", max_step);
+                                }
+                                else if (name == Max_Time_Step_Size_str) {
+                                    double max_dt = prob_list.get<double>(Max_Time_Step_Size_str);
+                                    struc_out_list.set<double>("max_dt", max_dt);
+                                }
+                                else {
+                                    prob_out_list.setEntry(name,num_list.getEntry(name));
+                                }
+                            }
                         }
                     }
                 }
@@ -333,6 +345,14 @@ namespace Amanzi {
                     cg_out_list.set("v",cg_v);
                     diffuse_out_list.set("v",diffuse_v);
                 }
+                else if (optP[i] == num_str) {
+
+                    prob_out_list.set("v",prob_v);
+                    amr_out_list.set("v",amr_v);
+                    mg_out_list.set("v",mg_v);
+                    cg_out_list.set("v",cg_v);
+                    diffuse_out_list.set("v",diffuse_v);
+                }
                 else {
                     MyAbort("Unrecognized optional parameter to \"" + ec_str + "\": \"" + optP[i] + "\"");
                 }
@@ -342,8 +362,6 @@ namespace Amanzi {
             prob_out_list.set("visc_abs_tol",1.e-16);
             prob_out_list.set("visc_tol",1.e-14);
             prob_out_list.set("cfl",1);
-            
-
         }
 
         static std::string dirStr[6] = {"-X", "-Y", "-Z", "+X", "+Y", "+Z"};

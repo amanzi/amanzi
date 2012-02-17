@@ -1,0 +1,60 @@
+#ifndef _EventCoord_H_
+#define _EventCoord_H_
+
+#include <string>
+#include <map>
+#include <cmath>
+
+#include <Array.H>
+#include <REAL.H>
+
+struct EventCoord
+{
+    struct CycleEvent
+    {
+        enum CycleType {SPS, CYCLES};
+        CycleEvent() {}
+        CycleEvent(int start, int period, int stop) 
+            : start(start), period(period), stop(stop), type(SPS) {}
+        CycleEvent(const Array<int>& cycles) 
+            : cycles(cycles), type(CYCLES) {}
+        CycleType Type() const {return type;}
+        bool ThisEventDue(int cycle, int dcycle) const;
+
+    protected:
+        int start, period, stop;
+        Array<int> cycles;
+        CycleType type;
+    };
+
+    struct TimeEvent
+    {
+        enum TimeType {SPS, TIMES};
+        TimeEvent() {}
+        TimeEvent(Real start, Real period, Real stop) 
+            : start(start), period(period), stop(stop), type(SPS) {}
+        TimeEvent(const Array<Real>& times) 
+            : times(times), type(TIMES) {}
+        TimeType Type() const {return type;}
+        bool ThisEventDue(Real time, Real dt, Real& dt_red) const;
+
+    protected:
+        Real start, period, stop;
+        Array<Real> times;
+        TimeType type;
+    };
+
+    std::pair<Real,Array<std::string> > NextEvent(Real time, Real dt, int  cycle, int dcycle) const;
+    void InsertCycleEvent(const std::string& label, int start, int period, int stop);
+    void InsertCycleEvent(const std::string& label, const Array<int>& cycles);
+
+    void InsertTimeEvent(const std::string& label, Real start, Real period, Real stop);
+    void InsertTimeEvent(const std::string& label, const Array<Real>& cycles);
+
+protected:
+    std::map<std::string,CycleEvent> cycleEvents;
+    std::map<std::string,TimeEvent> timeEvents;
+};
+
+#endif
+

@@ -299,6 +299,12 @@ class Mesh
                              std::vector<AmanziGeometry::Point> *ccoords) const = 0;
 
 
+  // Set Node coordinates to new location
+
+  virtual
+  void node_set_coordinates (const Entity_ID nodeid,
+                             const double *coords) = 0;
+
 
   // Mesh entity geometry
   //--------------
