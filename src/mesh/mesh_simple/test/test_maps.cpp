@@ -23,7 +23,7 @@ TEST(MAPS) {
   Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1, comm); 
 
   double xc[] = { 2.0, 2.0, 2.0 };
-  Mm.set_coordinate(7,xc,xc+3);
+  Mm.node_set_coordinates(7,xc);
 
   cout << "number of cells = " << Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED) << endl;
   cout << "number of faces = " << Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED) << endl;

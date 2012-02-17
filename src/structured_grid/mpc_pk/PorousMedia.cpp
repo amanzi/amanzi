@@ -1412,12 +1412,12 @@ PorousMedia::advance (Real time,
     if (level == 0)
       multilevel_advance(time,dt,iteration,ncycle);
     else
-      if (verbose && ParallelDescriptor::IOProcessor())
+      if (verbose>1 && ParallelDescriptor::IOProcessor())
 	std::cout << " Doing multilevel solve : skipping level advance.\n";
   }
   else
   {
-    if (verbose && ParallelDescriptor::IOProcessor())
+    if (verbose > 1 && ParallelDescriptor::IOProcessor())
       {
 	std::cout << "Advancing grids at level " << level
 		  << " : starting time = "       << time
@@ -2154,8 +2154,6 @@ PorousMedia::create_lambda (Real time)
            ++S_fpi)
 	{
 
-	  dirichletStateBC(S_fpi(),1,time);
-
 	  const int i = S_fpi.index();
 	  BL_ASSERT(grids[i] == S_fpi.validbox());
 
@@ -2368,8 +2366,6 @@ PorousMedia::initialize_umac (MultiFab* u_mac, MultiFab& RhoG,
        S_fpi.isValid();
        ++S_fpi)
     {
-      dirichletStateBC(S_fpi(),1,time);
-
       const int  i   = S_fpi.index();
       const int* lo  = grids[i].loVect();
       const int* hi  = grids[i].hiVect();
@@ -2586,9 +2582,6 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase, MultiFab* u_mac,
        S_fpi.isValid();
        ++S_fpi)
     {
-      
-      dirichletStateBC(S_fpi(),1,time);
-
       const int  i   = S_fpi.index();
       const int* lo  = grids[i].loVect();
       const int* hi  = grids[i].hiVect();
@@ -2725,8 +2718,6 @@ PorousMedia::compute_vel_phase (MultiFab* u_phase,
        S_fpi.isValid();
        ++S_fpi)
     {
-      dirichletStateBC(S_fpi(),1,time);
-
       const int  i   = S_fpi.index();
       const int* lo  = grids[i].loVect();
       const int* hi  = grids[i].hiVect();
@@ -2854,12 +2845,14 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
   FArrayBox flux[BL_SPACEDIM], tforces, pctmp, phitmp, kappatmp;
 
   Array<int> state_bc;
-  int do_new = 1; 
-  setPhysBoundaryValues(State_Type,fscalar,nscal,do_new);
-  
+
   // S_new is only used as a container to hold
   // time t^{n+1} inflow boundary conditions
   MultiFab& S_new = get_new_data(State_Type); 
+  for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
+    setPhysBoundaryValues(S_new[mfi],State_Type,curr_time,fscalar,fscalar,nscal);
+  }
+
   MultiFab fluxes[BL_SPACEDIM];
   
   if (reflux_on_this_call && do_reflux && level < parent->finestLevel())
@@ -2877,8 +2870,6 @@ PorousMedia::scalar_advection (MultiFab* u_macG,
        S_fpi.isValid();
        ++S_fpi)
     {
-      dirichletStateBC(S_fpi(),HYP_GROW,prev_time);
-
       const int i = S_fpi.index();
       
       getForce(tforces,i,1,fscalar,nscal,curr_time);
@@ -3388,7 +3379,7 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
 {
   BL_PROFILE(BL_PROFILE_THIS_NAME() + "::tracer_advection()");
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
   {
     std::cout << "... advect tracers\n";
   }
@@ -3419,8 +3410,10 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
   MultiFab* divu_fp = new MultiFab(grids,1,1);
   (*divu_fp).setVal(0.);
 
-  int do_new = 1; 
-  setPhysBoundaryValues(State_Type,fscalar,nscal,do_new);
+  MultiFab& S_new = get_new_data(State_Type); 
+  for (MFIter mfi(S_new); mfi.isValid(); ++mfi) {
+    setPhysBoundaryValues(S_new[mfi],State_Type,cur_time,fscalar,fscalar,nscal);
+  }
 
   MultiFab fluxes[BL_SPACEDIM];
   if (reflux_on_this_call && do_reflux && level < parent->finestLevel())
@@ -3444,11 +3437,6 @@ PorousMedia::tracer_advection (MultiFab* u_macG,
        S_fpi.isValid() && Sn_fpi.isValid() && St_fpi.isValid() && Stn_fpi.isValid(); 
        ++S_fpi,++Sn_fpi,++St_fpi,++Stn_fpi)
     {
-      dirichletTracerBC(S_fpi(),HYP_GROW,prev_time);
-      dirichletTracerBC(Sn_fpi(),HYP_GROW,cur_time);
-      dirichletStateBC(St_fpi(),HYP_GROW,prev_time);
-      dirichletStateBC(Stn_fpi(),HYP_GROW,cur_time);
-
       const int i = S_fpi.index();
       getForce_Tracer(tforces,i,1,fscalar,nscal,cur_time);
 
@@ -5507,9 +5495,6 @@ PorousMedia::predictDT (MultiFab* u_macG)
        S_fpi.isValid();
        ++S_fpi)
     {
-
-      dirichletStateBC(S_fpi(),GEOM_GROW,cur_time);
-
       const int i = S_fpi.index();
 
       Array<int> state_bc;
@@ -5875,7 +5860,7 @@ PorousMedia::post_timestep (int crse_iteration)
     {      
       for (int lev = 0; lev <= finest_level; lev++)
 	{
-	  if (verbose && ParallelDescriptor::IOProcessor())
+	  if (verbose>1 && ParallelDescriptor::IOProcessor())
 	    std::cout << "Final solutions at level = " 
 		      << lev << '\n';
 
@@ -5893,7 +5878,7 @@ PorousMedia::post_timestep (int crse_iteration)
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
       for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time);
+          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 
   if  ( (parent->cumTime() >=  stop_time || 
@@ -5949,7 +5934,7 @@ void PorousMedia::post_restart()
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
       for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time);
+          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 }
 
@@ -6399,7 +6384,7 @@ PorousMedia::post_init (Real stop_time)
       Real prev_time = state[State_Type].prevTime();
       Real curr_time = state[State_Type].curTime();
       for (int i=0; i<observations.size(); ++i)
-          observations[i].process(prev_time, curr_time);
+          observations[i].process(prev_time, curr_time, parent->levelSteps(0));
     }
 }
 
@@ -7942,7 +7927,6 @@ PorousMedia::FillStateBndry (Real time,
 	  S[fpi.index()].copy(fpi(),*bli,0,*bli,src_comp,ncomp);
         }
     }
-  dirichletStateBC(time);
 }
 
 
@@ -8080,9 +8064,6 @@ PorousMedia::calcDiffusivity (const Real time,
        fpi.isValid();
        ++fpi)
     {
-
-      dirichletStateBC(fpi(),nGrow,time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       const int vflag = -1;
@@ -8230,8 +8211,6 @@ PorousMedia::calcDiffusivity_CPL_dp (MultiFab* diffusivity[BL_SPACEDIM],
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),nGrow,time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -8419,8 +8398,6 @@ PorousMedia::calc_richard_jac (MultiFab*       diffusivity[BL_SPACEDIM],
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),nGrow,time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -8594,8 +8571,6 @@ PorousMedia::calc_richard_alpha (MultiFab*     alpha,
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),nGrow,time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -8684,7 +8659,6 @@ PorousMedia::calcCapillary (const Real time)
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),nGrow,time);
       const int idx   = fpi.index(); 
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       BL_ASSERT(box == fpi().box());
@@ -8925,7 +8899,6 @@ PorousMedia::calcLambda (const Real time, MultiFab* lbd_cc)
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),nGrow,time);
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
       BL_ASSERT(box == fpi().box());
@@ -9002,8 +8975,6 @@ PorousMedia::calcDLambda (const Real time, MultiFab* dlbd_cc)
        fpi.isValid();
        ++fpi)
     {
-      dirichletStateBC(fpi(),nGrow,time);
-
       const int idx   = fpi.index();
       const Box box   = BoxLib::grow(grids[idx],nGrow);
 
@@ -9096,6 +9067,28 @@ PorousMedia::center_to_edge_plain (const FArrayBox& ccfab,
 // ===================
 
 void
+PorousMedia::setPhysBoundaryValues (FArrayBox& dest,
+                                    int        state_indx,
+                                    Real       time,
+                                    int        dest_comp,
+                                    int        src_comp,
+                                    int        num_comp)
+{
+    // The default behavior of an AmrLevel, for reference:
+    state[state_indx].FillBoundary(dest,time,geom.CellSize(),
+                                   geom.ProbDomain(),dest_comp,src_comp,num_comp);
+
+    if (state_indx==State_Type) {
+        if (src_comp==0) {
+          dirichletStateBC(dest,time);
+        }
+        else if (src_comp==ncomps) {
+           dirichletTracerBC(dest,time);
+        }
+    }
+}
+
+void
 PorousMedia::getDirichletFaces (Array<Orientation>& Faces,
 				const int           comp_Type,
 				const BCRec&        _bc)
@@ -9149,45 +9142,7 @@ PorousMedia::grids_on_side_of_domain (const BoxArray&    _grids,
 }
 
 void
-PorousMedia::dirichletStateBC (const Real time)
-{
-    if (bc_descriptor_map.size()) 
-    {
-        const Box domain = geom.Domain();
-        const int* domhi  = domain.hiVect();
-        const int* domlo  = domain.loVect();
-        const Real* dx   = geom.CellSize();
-        FArrayBox sdat;
-    
-        for (std::map<Orientation,BCDesc>::const_iterator
-                 it=bc_descriptor_map.begin(); it!=bc_descriptor_map.end(); ++it) 
-        {
-            const Box bndBox = it->second.first;
-            const Array<int>& face_bc_idxs = it->second.second;
-            sdat.resize(bndBox,ncomps); sdat.setVal(0);
-
-            for (int i=0; i<face_bc_idxs.size(); ++i) {
-                const RegionData& face_bc = bc_array[face_bc_idxs[i]];
-                face_bc.apply(sdat,dx,0,0,ncomps);
-            }
-
-            //std::cout << sdat << std::endl;
-	}
-
-        MultiFab& S = get_data(State_Type,time); 
-        for (MFIter mfi(S); mfi.isValid(); ++mfi)
-        {
-            Box ovlp = S[mfi].box() & sdat.box();
-            if (ovlp.ok()) 
-            {
-                S[mfi].copy(sdat,ovlp,0,ovlp,0,ncomps);
-            }
-        }
-    }      
-}
-
-void
-PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
+PorousMedia::dirichletStateBC (FArrayBox& fab, Real time)
 {
     if (bc_descriptor_map.size()) 
     {
@@ -9220,7 +9175,7 @@ PorousMedia::dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time)
 }  
 
 void
-PorousMedia::dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time)
+PorousMedia::dirichletTracerBC (FArrayBox& fab, Real time)
 {
     for (int n=0; n<ntracers; ++n) 
     {
@@ -9316,6 +9271,7 @@ PorousMedia::derive (const std::string& name,
                 }
             }
         }
+
     }
     else if (name=="Capillary_Pressure") {
         
@@ -9966,7 +9922,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(smax.dataPtr(), ncomps, IOProc);
   ParallelDescriptor::ReduceRealMin(smin.dataPtr(), ncomps, IOProc);
   
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     {
       for (int kk = 0; kk < ncomps; kk++)
 	{
@@ -9985,7 +9941,7 @@ PorousMedia::check_minmax()
   ParallelDescriptor::ReduceRealMax(&rhomaxmin[0], 1, IOProc);
   ParallelDescriptor::ReduceRealMin(&rhomaxmin[1], 1, IOProc);
 
-  if (verbose && ParallelDescriptor::IOProcessor())
+  if (verbose > 1 && ParallelDescriptor::IOProcessor())
     {  
       std::cout << "   RHO MAX/MIN "
 		<< ' ' << rhomaxmin[0] << "  " << rhomaxmin[1] << '\n';

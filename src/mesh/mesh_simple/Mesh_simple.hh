@@ -232,6 +232,10 @@ public:
   void cell_get_coordinates (const Entity_ID cellid, 
 			     std::vector<AmanziGeometry::Point> *ccoords) const;
     
+  // Modify the coordinates of a node
+
+  void node_set_coordinates (const Entity_ID nodeid, const double *coords);
+
     
   //
   // Epetra maps

@@ -15,10 +15,11 @@ namespace AmanziFlow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = s du/dt + A*u - g.                                         
 ****************************************************************** */
-void Richards_PK::fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f)
+void Richards_PK::fun(
+    double Tp, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, double dTp)
 {
-  T_internal = T_physical = T;
-  computePreconditionerMFD(u, matrix, T, 0.0, false);  // Calculate only stiffness matrix.
+  T_internal = T_physical = Tp;
+  computePreconditionerMFD(u, matrix, Tp, 0.0, false);  // Calculate only stiffness matrix.
   matrix->computeNegativeResidual(u, f);  // compute A*u - g
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);

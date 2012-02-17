@@ -11,7 +11,7 @@ namespace BDF2 {
 class fnBase {
  public:
   // computes the non-linear functional f = f(t,u,udot) 
-  virtual void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f) = 0;
+  virtual void fun(const double t, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& f, const double dT=0.0) = 0;
 
   // applies preconditioner to u and returns the result in Pu
   virtual void precon(const Epetra_Vector& u, Epetra_Vector& Pu) = 0;

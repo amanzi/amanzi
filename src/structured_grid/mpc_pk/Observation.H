@@ -53,15 +53,9 @@ public:
               const std::string& field,
               const Region&      region,
               const std::string& obs_type,
-              const Array<Real>& times);
-
-  Observation(const std::string& name,
-              const std::string& field,
-              const Region&      region,
-              const std::string& obs_type,
               const std::string& eventLabel);
 
-  void process(Real t_old, Real t_new);
+  void process(Real t_old, Real t_new, int iter);
   static void setAmrPtr(Amr* amr) {amrp = amr;}
   static void Cleanup ();
   static void Initialize ();

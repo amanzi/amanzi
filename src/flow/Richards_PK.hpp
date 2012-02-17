@@ -49,7 +49,7 @@ class Richards_PK : public Flow_PK {
   int advanceSteadyState_BDF2();
  
   // required BDF2 methods
-  void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs);
+  void fun(double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0);
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu);
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du);
   void update_precon(double T, const Epetra_Vector& u, double dT, int& ierr);

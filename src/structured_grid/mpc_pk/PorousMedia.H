@@ -288,8 +288,9 @@ public:
   static PArray<RegionData>& BCs() {return bc_array;}
   static PArray<RegionData>& TBCs(int iTrac) {return tbc_array[iTrac];}
 
-  static Array<std::string> vis_cycle_macros;
-  static Array<std::string> chk_cycle_macros;
+  static Array<std::string> vis_cycle_macros, vis_time_macros;
+  static Array<std::string> chk_cycle_macros, chk_time_macros;
+  static int echo_inputs;
 
 protected:
 
@@ -728,9 +729,15 @@ protected:
   //
   // Boundary conditions
   //  
+  void setPhysBoundaryValues (FArrayBox& dest,
+                              int        state_indx,
+                              Real       time,
+                              int        dest_comp,
+                              int        src_comp,
+                              int        num_comp);
   void dirichletStateBC (const Real time);
-  void dirichletStateBC (FArrayBox& fab, const int ngrow, const Real time);
-  void dirichletTracerBC (FArrayBox& fab, const int ngrow, const Real time);
+  void dirichletStateBC (FArrayBox& fab, Real time);
+  void dirichletTracerBC (FArrayBox& fab, Real time);
   bool get_inflow_velocity(const Orientation& face,
                            FArrayBox&         ccBndFab,
                            Real               time);

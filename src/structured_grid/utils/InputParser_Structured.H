@@ -242,7 +242,7 @@ namespace Amanzi {
 
           void bailParms() 
               {
-                  std::cerr << "Unsupported option parameters(s) list in ParameterList: " << std::endl;
+                  std::cerr << "Unsupported option parameters(s) in ParameterList: " << std::endl;
                   for (int i=0; i<optParms.size(); ++i) {
                       std::cerr << "\"" << optParms[i] << "\" ";
                   }
@@ -260,7 +260,7 @@ namespace Amanzi {
               }
           void bailLists() 
               {
-                  std::cerr << "Unsupported option list(s) list in ParameterList: " << std::endl;
+                  std::cerr << "Unsupported option list(s) in ParameterList: " << std::endl;
                   for (int i=0; i<optLists.size(); ++i) {
                       std::cerr << "\"" << optLists[i] << "\" ";
                   }

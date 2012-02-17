@@ -41,7 +41,7 @@
           <Parameter name="Absolute error tolerance" type="double" value="10"/>
           <Parameter name="Relative error tolerance" type="double" value="1e-5"/>
           <Parameter name="Convergence tolerance" type="double" value="1e-9"/>
-          <Parameter name="Maximal number of iterations" type="int" value="50"/>
+          <Parameter name="Maximal number of iterations" type="int" value="150"/>
         </ParameterList>
 
         <ParameterList name="Time control">
@@ -105,7 +105,7 @@
               <ParameterList name="function-tabular">
                 <Parameter name="forms" type="Array string" value="{linear}"/>
                 <Parameter name="x values" type="Array double" value="{0, 1e+9}"/>
-                <Parameter name="y values" type="Array double" value="{1.11169e+06, 101325}"/>
+                <Parameter name="y values" type="Array double" value="{101325, 101325}"/>
               </ParameterList>
             </ParameterList>
             <Parameter name="regions" type="Array string" value="{Bottom Surface}"/>

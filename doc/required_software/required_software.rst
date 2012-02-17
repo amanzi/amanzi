@@ -126,11 +126,13 @@ Trilinos:
         :Information: http://trilinos.sandia.gov/
 
 CCSE:
-        :Version: 0.1.2
+        :Version: 0.1.9
         :Description: Base library for structured-mesh objects
         :Role: Used by Amanzi to implement structured-grid adaptive integrator
         :Dependencies: MPI, OpenMPI (if enabled)
-        :Information: https://ccse.lbl.gov/Software/ccse_core.html
+        :Information: https://ccse.lbl.gov/BoxLib
+
+        - Note that CCSE has changed their software distribution system, now providing a public GIT repository.  Using GIT, the version number above is tagged and can be pulled specifically.  However, the preferred approached is to download the tar.gz file maintained with the Amanzi TPL collection, since it is guaranteed to be of the correct version.
 
 
 Required Software Tools

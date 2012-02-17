@@ -1578,6 +1578,14 @@ void Mesh_MSTK::face_get_coordinates (const Entity_ID faceid, std::vector<Amanzi
   
 
 
+// Modify a node's coordinates
+
+void Mesh_MSTK::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
+                                      const double *coords) {
+  MVertex_ptr v = vtx_id_to_handle[nodeid];
+  MV_Set_Coords(v,(double *)coords);
+}
+
 
 
 

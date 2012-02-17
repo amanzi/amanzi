@@ -255,6 +255,9 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
 			     std::vector<AmanziGeometry::Point> *ccoords) const;
 
 
+  // Modify the coordinates of a node
+  void node_set_coordinates (const Entity_ID nodeid, const double *coords);
+
   //
   // Epetra maps
   //------------

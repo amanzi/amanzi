@@ -1,6 +1,8 @@
 #include <winstd.H>
 
-#include <PorousMedia.H>
+#include <PMAmr.H>
+#include <Observation.H>
+#include <EventCoord.H>
 
 
 
@@ -36,22 +38,6 @@ Observation::Observation(const std::string& name,
                          const std::string& field,
                          const Region&      region,
                          const std::string& obs_type,
-                         const Array<Real>& times)
-    : name(name), field(field), region(region), obs_type(obs_type), times(times)
-{
-    if (!initialized) {
-        Initialize();
-    }
-
-    if (obs_type_list.find(obs_type) == obs_type_list.end()) {
-        BoxLib::Abort("Unsupported observation type");
-    }
-}
-
-Observation::Observation(const std::string& name,
-                         const std::string& field,
-                         const Region&      region,
-                         const std::string& obs_type,
                          const std::string& event_label)
     : name(name), field(field), region(region), obs_type(obs_type), event_label(event_label)
 {
@@ -64,9 +50,30 @@ Observation::Observation(const std::string& name,
     }
 }
 
+std::pair<bool,Real>
+process_events(Real time, Real dt, int iter, int diter, const std::string& event_label)
+{
+    EventCoord& event_coord = PMAmr::eventCoord();
+    std::pair<Real,Array<std::string> > nextEvent = event_coord.NextEvent(time,dt,iter, diter);
+    if (nextEvent.second.size()) 
+    {
+        // Process event
+        const Array<std::string>& eventList = nextEvent.second;
+
+        for (int j=0; j<eventList.size(); ++j) {
+            if (event_label == eventList[j]) {
+                return std::pair<bool,Real>(true,nextEvent.first);
+            }
+        }
+    }
+    return std::pair<bool,Real>(false,-1);
+}
+
+
 void 
 Observation::process(Real t_old, 
-		     Real t_new)
+		     Real t_new,
+                     int  iter)
 {
   // Must set the amr pointer prior to use via Observation::setAmrPtr
   BL_ASSERT(amrp); 
@@ -114,14 +121,15 @@ Observation::process(Real t_old,
       break;
 
     default:
-      for (int i=0; i<times.size(); i++)
-	{
-	  if (times[i] >= t_old && times[i] <= t_new)
-	    {
-              Real eta = std::min(1.,std::max(0.,(times[i]-t_old)/(t_new-t_old)));
-	      vals[i] = val_old*(1 - eta) + val_new*eta;
-	    }
-	}
+
+        std::pair<bool,Real> ret = process_events(t_old,t_new-t_old,iter,1,event_label);
+        
+        if (ret.first) {
+            Real dt_red = ret.second;
+            times.push_back(t_old + dt_red);
+            Real eta = std::min(1.,std::max(0.,dt_red/(t_new-t_old)));
+            vals[times.size()-1] = (val_old*(1 - eta) + val_new*eta);
+        }
     }
   val_old = val_new;
 }

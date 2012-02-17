@@ -30,7 +30,8 @@ struct BDF1State {
     hmax = std::numeric_limits<double>::max();
     
     hlimit = 1e10;
-    maxpclag = 1;
+    elimit = 1e15;
+    maxpclag = 0;
 
     verbose = false;
   }
@@ -56,6 +57,7 @@ struct BDF1State {
   int       maxpclag;     // maximum iterations that the preconditioner can be lagged
   int       pclagcount;   // counter for how many iterations the preconditioner has been lagged
   double    hlimit;       // maximum allowed time step
+  double    elimit;
   double    ntol;         // nonlinear solver error tolerance (relative to 1)
   BDF2::SolutionHistory* uhist; // solution history structure
 

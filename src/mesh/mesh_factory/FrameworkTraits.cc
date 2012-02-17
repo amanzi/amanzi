@@ -185,6 +185,10 @@ class bogus_maps : public Amanzi::AmanziMesh::Mesh {
 			     std::vector<Amanzi::AmanziGeometry::Point> *ccoords) const
   {}
 
+  void node_set_coordinates(const Amanzi::AmanziMesh::Entity_ID nodeid, 
+                                      const double *coords) 
+  {}
+
   const Epetra_Map& cell_epetra_map (const bool include_ghost) const
   { return *bogus_map_; }
     

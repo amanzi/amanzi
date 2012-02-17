@@ -40,7 +40,7 @@ class Darcy_PK : public Flow_PK {
   void commit_state(Teuchos::RCP<Flow_State> FS) {};
 
   // required methods
-  void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs) {};
+  void fun(const double T, const Epetra_Vector& u, const Epetra_Vector& udot, Epetra_Vector& rhs, double dT = 0.0) {};
   void precon(const Epetra_Vector& u, Epetra_Vector& Hu) {};
   double enorm(const Epetra_Vector& u, const Epetra_Vector& du) { return 0.0; }
   void update_precon(const double T, const Epetra_Vector& up, const double h, int& errc) {};

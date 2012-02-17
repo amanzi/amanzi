@@ -56,6 +56,7 @@ public:
   std::string type;
 
   static Real geometry_eps;
+  static Array<Real> domlo, domhi;
 };
 
 std::ostream& operator<< (std::ostream& os, const Region& rhs);
