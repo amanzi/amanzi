@@ -127,7 +127,7 @@ public:
   
     allRegion (const Array<Real>& lo,
                const Array<Real>& hi)
-        : boxRegion("All","any","all",lo,hi) {};
+        : boxRegion("ALL","any","all",lo,hi) {};
 
   virtual bool inregion (const Array<Real>& x) const;
 };
