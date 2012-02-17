@@ -2,7 +2,8 @@
   <Parameter name="Native Structured Input" type="bool" value="true"/>
   <Parameter name="echo_inputs" type="int" value="2"/>
   <ParameterList name="Mesh">
-    <Parameter name="Framework" type="string" value="Structured"/>
+    <ParameterList name="Structured">
+    </ParameterList>
   </ParameterList>
   <ParameterList name="amr">
     <Parameter name="check_file" type="string" value="test_2/dump-"/>
