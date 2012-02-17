@@ -218,6 +218,8 @@ void MPC::read_parameter_list()  {
 
 void MPC::cycle_driver () {
 
+  enum time_step_limiter_type { FLOW_LIMITS, TRANSPORT_LIMITS, CHEMISTRY_LIMITS, MPC_LIMITS } ;
+  time_step_limiter_type tslimiter;
 
   using Teuchos::OSTab;
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -299,7 +301,8 @@ void MPC::cycle_driver () {
     while (  (S->get_time() < T1)  &&   ((end_cycle == -1) || (iter <= end_cycle)) ) {
 
       // determine the time step we are now going to take
-      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99;
+      double mpc_dT=1e+99, chemistry_dT=1e+99, transport_dT=1e+99, flow_dT=1e+99, limiter_dT=1e+99;
+
 
       if (flow_enabled && flow_model == "Richards") {
 	if (ti_mode == INIT_TO_STEADY && S->get_last_time() < Tswitch && S->get_time() >= Tswitch) {
@@ -314,11 +317,11 @@ void MPC::cycle_driver () {
 	flow_dT = FPK->get_flow_dT();
         // adjust the time step, so that we exactly hit the switchover time
         if (ti_mode == INIT_TO_STEADY &&  S->get_time() < Tswitch && S->get_time()+2.0*flow_dT > Tswitch) {
-          flow_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
+          limiter_dT = time_step_limiter(S->get_time(), flow_dT, Tswitch);
         }
 	// adjust the time step, so that we exactly hit the final time in steady mode
 	if (ti_mode == STEADY  &&  S->get_time()+2*flow_dT > T1) { 
-	  flow_dT = time_step_limiter(S->get_time(), flow_dT, T1);
+	  limiter_dT = time_step_limiter(S->get_time(), flow_dT, T1);
 	}
       }
 
@@ -332,27 +335,59 @@ void MPC::cycle_driver () {
       }
       
       // take the mpc time step as the min of all suggested time steps 
-      mpc_dT = std::min( std::min(flow_dT, transport_dT), chemistry_dT );
+      mpc_dT = std::min( std::min( std::min(flow_dT, transport_dT), chemistry_dT), limiter_dT );
 
+      // figure out who limits the time step
+      if (mpc_dT == flow_dT) {
+	tslimiter = FLOW_LIMITS;
+      } else if (mpc_dT == transport_dT) {
+	tslimiter = TRANSPORT_LIMITS;
+      } else if (mpc_dT == chemistry_dT) {
+	tslimiter = CHEMISTRY_LIMITS;
+      } else if (mpc_dT == limiter_dT) {
+	tslimiter = MPC_LIMITS;
+      }
+      
       if (ti_mode == INIT_TO_STEADY && S->get_time() >= Tswitch && S->get_last_time() < Tswitch) {
 	mpc_dT = std::min( mpc_dT, dTtransient );
+	tslimiter = MPC_LIMITS; 
       }
 
 
       // make sure we will hit the final time exactly
       if (ti_mode == INIT_TO_STEADY && S->get_time() > Tswitch && S->get_time()+2*mpc_dT > T1) { 
         mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
+	tslimiter = MPC_LIMITS;
       }
       if (ti_mode == TRANSIENT && S->get_time()+2*mpc_dT > T1) { 
 	mpc_dT = time_step_limiter(S->get_time(), mpc_dT, T1);
+	tslimiter = MPC_LIMITS;
       }
       
-
       // write some info about the time step we are about to take
+      
+      // first determine what we will write about the time step limiter
+      std::string limitstring("");
+      switch (tslimiter) {
+      case(MPC_LIMITS): 
+	limitstring = std::string("(mpc limits timestep)");
+	break;
+      case (TRANSPORT_LIMITS): 
+	limitstring = std::string("(transport limits timestep)");
+	break;
+      case (CHEMISTRY_LIMITS): 
+	limitstring = std::string("(chemistry limits timestep)");
+	break;
+      case (FLOW_LIMITS): 
+	limitstring = std::string("(flow limits timestep)");
+	break;
+      }
+
       if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
         *out << "Cycle = " << iter;
         *out << ",  Time(secs) = "<< S->get_time(); // / (60*60*24);
         *out << ",  dT(secs) = " << mpc_dT; // / (60*60*24)  << std::endl;
+	*out << " " << limitstring;
         *out << std::endl;
       }
 
