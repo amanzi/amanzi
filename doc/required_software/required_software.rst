@@ -52,7 +52,7 @@ Required Libraries
 ------------------
 
 Boost:
-        :Versions: 1.46.0
+        :Versions: 1.48.0
         :Description: C++ Library which extends the capabilibies of the standard library.
         :Role: Specific Boost libraries are used in various parts of the Amanzi code base.
 
@@ -60,13 +60,16 @@ Boost:
           file system activities.
         - ``graph``: Used in the mesh audit tool.
         - ``mpl``: Meta-programming library used in the mesh factory.  
+        - ``system`` :   ???
+        - ``program_options`` : Used in the MPC to define options in the main driver.
+        - ``regex`` : ??  
 
         :Dependencies: A modern C++ compiler. See the Boost website for specifics.
         :Information: http://www.boost.org/
 
 
 zlib:
-        :Versions: 1.2.5
+        :Versions: 1.2.6
         :Description: Compression library
         :Role: Used by HDF5 for input and output.
         :Dependencies: 
@@ -74,7 +77,7 @@ zlib:
 
 
 cURL:
-        :Versions: 7.21.2
+        :Versions: 7.21.6
         :Description: Download tool.
         :Role: Used by netCDF  
         :Dependencies:
@@ -82,14 +85,14 @@ cURL:
 
 
 HDF5:
-        :Versions: 1.8.7
+        :Versions: 1.8.8
         :Description: File format libary
         :Role: Used by Amanzi for input and output of problem data.
         :Dependencies: zlib
         :Information: http://www.hdfgroup.org/HDF5/
 
 ASCEM-IO:
-        :Versions: 1.1p 
+        :Versions: 2.0 
         :Description: Parallel IO load balance libary
         :Role: Used by Amanzi output of problem data and restarts.
         :Dependencies: HDF5, MPI
@@ -97,7 +100,7 @@ ASCEM-IO:
 
 
 netCDF:
-        :Versions: 4.1.1
+        :Versions: 4.1.3
         :Description: File format libary
         :Role: Used by Amanzi for input and output of mesh data.
         :Dependencies:  cURL, HDF5
@@ -105,12 +108,18 @@ netCDF:
 
 
 ExodusII:
-        :Versions: 4.98
+        :Versions: 5.14
         :Description: Mesh data base libary
         :Role: Used by Amanzi to describe mesh geometry for import.
         :Dependencies: netCDF
         :Information: http://sourceforge.net/projects/exodusii/
 
+METIS:
+        :Versions: 4.0.3
+        :Description: Serial graph partitioning library
+        :Role: Used by MSTK 
+        :Dependencies: 
+        :Information: http://glaros.dtc.umn.edu/gkhome/views/metis/
 
 Trilinos:
         :Versions: 10.6.4
@@ -139,7 +148,7 @@ Required Software Tools
 -----------------------
 
 CMake:
-        :Versions: 2.8.3 required.
+        :Versions: 2.8.5 required.
         :Description: Cross-platform software build system
         :Role: Forms the basis of the Amanzi build and testing tools
         :Dependencies: A suitable build backand. GNU Make is standard.
@@ -177,7 +186,7 @@ MOAB:
         :Information: 
 
 MSTK:
-        :Versions: 1.83
+        :Versions: 1.85.rc2
         :Description: A meshing database library
         :Role: An optional backend for Amanzi meshing
         :Dependencies: ExodusII
