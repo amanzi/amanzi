@@ -15,6 +15,7 @@ Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 #include "Mesh.hh"
 #include "errors.hh"
 #include "tabular-function.hh"
+#include "gmv_mesh.hh"
 
 #include "tensor.hpp"
 #include "mfd3d.hpp"
@@ -232,6 +233,15 @@ void Transport_PK::advance(double dT_MPC)
   } else if (spatial_disc_order == 2) {
     advance_second_order_upwind(dT_MPC);
   }
+
+  // DEBUG
+  /*
+  Epetra_MultiVector& tcc = TS_nextMPC->ref_total_component_concentration();
+  GMV::open_data_file(*mesh_, (std::string)"transport.gmv");
+  GMV::start_data();
+  GMV::write_cell_data(tcc, 0, "component0");
+  GMV::close_data_file();
+  */
 }
 
 

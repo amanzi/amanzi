@@ -235,15 +235,16 @@ int Richards_PK::advance_to_steady_state()
 {
   flow_status_ = FLOW_NEXT_STATE_BEGIN;
 
-  // initial pressure
   Epetra_Vector& pressure = FS->ref_pressure();
+  Epetra_Vector& water_saturation = FS->ref_water_saturation();
+
+  // initial pressure and saturation
+  /*
   for (int c=0; c<ncells_owned; c++) (*solution_cells)[c] = pressure[c];
   deriveFaceValuesFromCellValues(*solution_cells, *solution_faces);
   applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
-
-  // initial water saturation
-  Epetra_Vector& water_saturation = FS->ref_water_saturation();
   deriveSaturationFromPressure(pressure, water_saturation);
+  */
 
   // redefine initial conditions to a dry soil (debug)
   water_saturation.PutScalar(0.6);
@@ -301,6 +302,11 @@ int Richards_PK::advance(double dT_MPC)
   double time = (standalone_mode) ? T_internal : T_physical;
   double dTnext;
 
+  // update boundary conditions
+  bc_pressure->Compute(time);
+  bc_flux->Compute(time);
+  bc_head->Compute(time);
+  updateBoundaryConditions(bc_pressure, bc_head, bc_flux, bc_markers, bc_values);
   applyBoundaryConditions(bc_markers, bc_values, *solution_faces);
 
   if (num_itrs_trs == 0) {  // initialization
@@ -338,6 +344,7 @@ int Richards_PK::advanceSteadyState_BDF2()
 {
   T_internal = T0_sss;
   dT = dT0_sss;
+  bool last_step = false;
 
   int itrs = 0;
   while (itrs < max_itrs_sss && T_internal < T1_sss) {
@@ -356,8 +363,15 @@ int Richards_PK::advanceSteadyState_BDF2()
     bdf2_dae->write_bdf2_stepping_statistics();
 
     T_internal = bdf2_dae->most_recent_time();
-    dT = dTnext;
+    dT = dTnext; 
     itrs++;
+
+    double Tdiff = T1_sss - T_internal;
+    if (dTnext > Tdiff) {
+      dT = Tdiff * 0.99999991;  // To avoid hitting the wrong BC
+      last_step = true;
+    }
+    if (last_step && dT < 1e-3) break;
   }
 
   num_nonlinear_steps = itrs;
