@@ -51,7 +51,7 @@ Transport_PK::Transport_PK(Teuchos::ParameterList &parameter_list_MPC,
   dim = mesh_->space_dimension();
 
   standalone_mode = false;
-  flow_mode = TRANSPORT_FLOW_STEADYSTATE;
+  flow_mode = TRANSPORT_FLOW_TRANSIENT;
   bc_scaling = 0.0;
 
   Init();  // must be moved out of the constructor (lipnikov@lanl.gov)
