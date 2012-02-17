@@ -176,8 +176,8 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Initial Conditions">
-      <ParameterList name="All">
-        <Parameter name="Assigned Regions" type="Array string" value="{All}"/>
+      <ParameterList name="ALL">
+        <Parameter name="Assigned Regions" type="Array string" value="{ALL}"/>
         <ParameterList name="IC: Linear Pressure">
           <Parameter name="Phase" type="string" value="Aqueous"/>
           <Parameter name="Reference Value" type="double" value="101325 "/>
