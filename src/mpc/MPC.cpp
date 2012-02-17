@@ -401,6 +401,9 @@ void MPC::cycle_driver () {
 	    redo = false;
 	    try {
 	      FPK->advance_steady(mpc_dT);
+              FPK->commit_state(FS);
+              S->update_darcy_flux(FPK->Flux());
+              S->update_pressure(FPK->Pressure());
 	    }
 	    catch (int itr) {
 	      mpc_dT = 0.5*mpc_dT;
