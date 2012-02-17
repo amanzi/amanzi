@@ -420,10 +420,11 @@ bool MeshAudit::check_cell_to_faces() const
   AmanziMesh::Entity_ID_List bad_faces;
   AmanziMesh::Entity_ID_List free_faces;
   AmanziMesh::Entity_ID_List cface;
+  std::vector<int> cfdirs;
 
   for (unsigned int j = 0; j < ncell; ++j) {
     try {
-      mesh->cell_get_faces(j, &cface); // this may fail
+      mesh->cell_get_faces_and_dirs(j, false, &cface, &cfdirs); // this may fail
       bool invalid_refs = false;
       for (int k = 0; k < cface.size(); ++k) {
         if (cface[k] < 0 || cface[k] >= nface) invalid_refs = true;
@@ -460,10 +461,11 @@ bool MeshAudit::check_face_refs_by_cells() const
 {
   vector<unsigned int> cface;
   vector<unsigned int> refs(nface, 0);
+  vector<int> cfdirs;
 
   for (unsigned int j = 0; j < ncell; ++j) {
-    mesh->cell_get_faces(j, &cface);
-    mesh->cell_get_faces(j, &cface);
+    mesh->cell_get_faces_and_dirs(j, false, &cface, &cfdirs);
+    //    mesh->cell_get_faces(j, &cface);
     for (int k = 0; k < cface.size(); ++k) (refs[cface[k]])++;
   }
 
@@ -571,14 +573,15 @@ bool MeshAudit::check_node_refs_by_faces() const
 
 bool MeshAudit::check_cell_to_face_dirs() const
 {
+  vector<unsigned int> faces;
   vector<int> fdirs;
   vector<unsigned int> bad_cells, bad_cells_exc;
 
   for (unsigned int j = 0; j < ncell; ++j) {
     fdirs.assign(6, INT_MAX);
     try {
-      mesh->cell_get_face_dirs(j, &fdirs);  // this may fail
-      mesh->cell_get_face_dirs(j, &fdirs);
+      mesh->cell_get_faces_and_dirs(j, false, &faces, &fdirs);  // this may fail
+      //      mesh->cell_get_face_dirs(j, &fdirs);
       bool bad_data = false;
       for (int k = 0; k < fdirs.size(); ++k)
         if (fdirs[k] != -1 && fdirs[k] != 1) bad_data = true;
@@ -665,8 +668,7 @@ bool MeshAudit::check_cell_to_faces_to_nodes() const
 
     mesh->cell_get_nodes(j, &cnode); // this should not fail
 
-    mesh->cell_get_faces(j, &cface); // this should not fail
-    mesh->cell_get_face_dirs(j, &fdirs); // this should not fail
+    mesh->cell_get_faces_and_dirs(j, true, &cface, &fdirs); // this should not fail
 
     bool bad_face = false;
     bool bad_dir  = false;
@@ -1250,18 +1252,19 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
 
   AmanziMesh::Entity_ID_List cface;
   AmanziMesh::Entity_ID_List bad_cells;
+  std::vector<int> cfdirs;
 
   // Create a matrix of the GIDs for all owned cells.
   int maxfaces = 0;
   for (unsigned int j = 0; j < ncell_own; ++j) {
-    mesh->cell_get_faces(j, &cface);
+    mesh->cell_get_faces_and_dirs(j, false, &cface, &cfdirs);
     maxfaces = (cface.size() > maxfaces) ? cface.size() : maxfaces;
   }
 
   Epetra_IntSerialDenseMatrix gids(ncell_use,maxfaces); // no Epetra_IntMultiVector :(
 
   for (unsigned int j = 0; j < ncell_own; ++j) {
-    mesh->cell_get_faces(j, &cface);
+    mesh->cell_get_faces_and_dirs(j, false, &cface, &cfdirs);
     for (int k = 0; k < cface.size(); ++k)
       gids(j,k) = face_map.GID(cface[k]);
     for (int k = cface.size(); k < maxfaces; ++k)
@@ -1278,7 +1281,7 @@ bool MeshAudit::check_cell_to_faces_ghost_data() const
 
   // Compare the ghost cell GIDs against the reference values just computed.
   for (unsigned int j = ncell_own; j < ncell_use; ++j) {
-    mesh->cell_get_faces(j, &cface);
+    mesh->cell_get_faces_and_dirs(j, false, &cface, &cfdirs);
     bool bad_data = false;
     for (int k = 0; k < cface.size(); ++k)
       if (face_map.GID(cface[k]) != gids(j,k)) bad_data = true;
@@ -1675,8 +1678,9 @@ bool MeshAudit::check_face_partition() const
   bool owned[nface];
   for (int j = 0; j < nface; ++j) owned[j] = false;
   AmanziMesh::Entity_ID_List cface;
+  std::vector<int> cfdirs;
   for (unsigned int j = 0; j < mesh->cell_epetra_map(false).NumMyElements(); ++j) {
-    mesh->cell_get_faces(j, &cface);
+    mesh->cell_get_faces_and_dirs(j, false, &cface, &cfdirs);
     for (int k = 0; k < cface.size(); ++k) owned[cface[k]] = true;
   }
 

@@ -60,6 +60,8 @@ class Mesh_STK_Impl {
 
   void element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) const;
   void element_to_face_dirs (stk::mesh::EntityId element, std::vector<int>& ids) const;
+  void element_to_faces_and_dirs(stk::mesh::EntityId element, Entity_Ids& ids,
+                                 std::vector<int>& dirs) const;
   void element_to_nodes (stk::mesh::EntityId element, Entity_Ids& ids) const;
   void face_to_nodes    (stk::mesh::EntityId element, Entity_Ids& ids) const;
   void face_to_elements (stk::mesh::EntityId element, Entity_Ids& ids) const;

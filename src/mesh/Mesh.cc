@@ -32,8 +32,7 @@ int Mesh::precompute_geometric_quantities() const {
       std::vector<int> fdirs;
       std::vector<AmanziGeometry::Point> ccoords, cfcoords, fcoords;
 
-      cell_get_faces(i,&faces);
-      cell_get_face_dirs(i,&fdirs);
+      cell_get_faces_and_dirs(i,false,&faces,&fdirs);
 
       nf = faces.size();
 

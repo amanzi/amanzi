@@ -525,13 +525,15 @@ void RichardsProblem::ComputeF(const Epetra_Vector &X, Epetra_Vector &F, double 
   Epetra_Vector Fcell(CellMap(true));
   Epetra_Vector Fface(FaceMap(true));
 
-  int cface[6];
+  AmanziMesh::Entity_ID_List cface;
+  std::vector<int> cfdirs;
+  //  int cface[6];
   double aux1[6], aux2[6], aux3[6], gflux[6];
 
   Fface.PutScalar(0.0);
   for (int j = 0; j < Pcell.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
+    mesh_->cell_get_faces_and_dirs((unsigned int) j, true, &cface, &cfdirs);
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
@@ -609,8 +611,10 @@ void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector &Pcell,
   ASSERT(Pface.Map().SameAs(FaceMap(true)));
   ASSERT(k_rel.Map().SameAs(FaceMap(true)));
 
-  int fdirs[6];
-  unsigned int cface[6];
+  //  int fdirs[6];
+  //  unsigned int cface[6];
+  AmanziMesh::Entity_ID_List cface;
+  std::vector<int> fdirs;
   double aux1[6], aux2[6], gflux[6], dummy;
 
   // Calculate the mimetic face 'fluxes' that omit the relative permeability.
@@ -625,7 +629,7 @@ void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector &Pcell,
   Epetra_Vector Fface(FaceMap(true)); // fills with 0, includes ghosts
   for (unsigned int j = 0; j < Pcell.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces(j, cface, cface+6);
+    mesh_->cell_get_faces_and_dirs(j, true, &cface, &fdirs);
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
@@ -646,7 +650,6 @@ void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector &Pcell,
       for (int k = 0; k < 6; ++k) aux2[k] = rho_ * gflux[k] - aux2[k];
     }
     // Scatter the local face result into FFACE.
-    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     for (int k = 0; k < 6; ++k) Fface[cface[k]] += fdirs[k] * aux2[k];
   }
 
@@ -667,8 +670,7 @@ void RichardsProblem::ComputeUpwindRelPerm(const Epetra_Vector &Pcell,
   // Looping over all cells gives desired result on *owned* faces.
   for (unsigned int j = 0; j < CellMap(true).NumMyElements(); ++j) {
     // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces(j, cface, cface+6);
-    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
+    mesh_->cell_get_faces_and_dirs(j, true, &cface, &fdirs);
     for (int k = 0; k < 6; ++k) {
       if (fdirs[k] > 0) {
         ASSERT(fcell[cface[k]].first == -1);
@@ -771,11 +773,13 @@ void RichardsProblem::DeriveDarcyVelocity(const Epetra_Vector &X, Epetra_MultiVe
     ComputeRelPerm(Pcell, k_rel);
   }
 
-  int cface[6];
+  //  int cface[6];
+  AmanziMesh::Entity_ID_List cface;
+  std::vector<int> cfdirs;
   double aux1[6], aux2[6], aux3[6], aux4[3], gflux[6], dummy;
 
   for (int j = 0; j < Pcell_own.MyLength(); ++j) {
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) cface, (unsigned int*) cface+6);
+    mesh_->cell_get_faces_and_dirs((unsigned int) j, true, &cface, &cfdirs);
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     if (upwind_k_rel_) {
       for (int k = 0; k < 6; ++k) aux3[k] = K_upwind[cface[k]];
@@ -824,8 +828,10 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
   /// should verify P.Map() is Map()
   /// should verify F.Map() is FaceMap()
 
-  int fdirs[6];
-  unsigned int cface[6];
+  //  int fdirs[6];
+  //  unsigned int cface[6];
+  std::vector<int> fdirs;
+  AmanziMesh::Entity_ID_List cface;
   double aux1[6], aux2[6], aux3[6], gflux[6], dummy;
 
   // Create a view into the cell pressure segment of P.
@@ -858,7 +864,7 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
   // Process-local assembly of the mimetic face fluxes.
   for (unsigned int j = 0; j < Pcell_own.MyLength(); ++j) {
     // Get the list of process-local face indices for this cell.
-    mesh_->cell_to_faces(j, cface, cface+6);
+    mesh_->cell_get_faces_and_dirs(j, true, &cface, &fdirs);
     // Gather the local face pressures int AUX1.
     for (int k = 0; k < 6; ++k) aux1[k] = Pface[cface[k]];
     // Compute the local value of the diffusion operator.
@@ -878,7 +884,6 @@ void RichardsProblem::DeriveDarcyFlux(const Epetra_Vector &P, Epetra_Vector &F, 
       MD[j].GravityFlux(gvec_, Kc, gflux);
       for (int k = 0; k < 6; ++k) aux2[k] = rho_ * gflux[k] - aux2[k];
     }
-    mesh_->cell_to_face_dirs(j, fdirs, fdirs+6);
     // Scatter the local face result into FFACE.
     for (int k = 0; k < 6; ++k) {
       Fface[cface[k]] += fdirs[k] * aux2[k];

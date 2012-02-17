@@ -86,8 +86,7 @@ TEST(MOAB_HEX_4x4x4_4P)
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
-      mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
-      mesh.cell_to_face_dirs(c, c2fdirs.begin(), c2fdirs.end());
+      mesh.cell_get_faces_and_dirs( c, true, &c2f, &c2fdirs );
 
       for (int j=0; j<6; j++)
 	{

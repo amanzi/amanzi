@@ -1,5 +1,9 @@
-#include "Mesh_MSTK.hh"
 //#include <Teuchos_RCP.hpp>
+
+#include "dbc.hh"
+
+#include "Mesh_MSTK.hh"
+
 
 using namespace std;
 
@@ -833,6 +837,176 @@ void Mesh_MSTK::cell_get_face_dirs (const Entity_ID cellid,
 
 
 
+  // Get faces of a cell and directions in which the cell uses the face 
+
+  // On a distributed mesh, this will return all the faces of the
+  // cell, OWNED or GHOST. If ordered = true, the faces will be
+  // returned in a standard order according to Exodus II convention
+  // for standard cells; in all other situations (ordered = false or
+  // non-standard cells), the list of faces will be in arbitrary order
+
+  // In 3D, direction is 1 if face normal points out of cell
+  // and -1 if face normal points into cell
+  // In 2D, direction is 1 if face/edge is defined in the same
+  // direction as the cell polygon, and -1 otherwise
+
+void Mesh_MSTK::cell_get_faces_and_dirs (const Entity_ID cellid,
+                                         const bool ordered,
+                                         Entity_ID_List *faceids,
+                                         std::vector<int> *face_dirs) const 
+{
+
+  MEntity_ptr cell;
+  int j,nf, result;
+
+  ASSERT(faceids != NULL);
+  ASSERT(face_dirs != NULL);
+
+  faceids->clear();
+  face_dirs->clear();
+  
+  
+  cell = cell_id_to_handle[cellid];
+
+
+  if (cell_dimension() == 3) {
+
+    List_ptr rfaces = MR_Faces((MRegion_ptr)cell);   
+
+    int celltype = cell_get_type(cellid);
+
+    if (!ordered || (celltype >= TET && celltype <= HEX)) {
+      int lid;
+
+
+      /* base face */
+
+      MFace_ptr face0 = List_Entry(rfaces,0);
+      int fdir0 = MR_FaceDir_i((MRegion_ptr)cell,0);
+
+      /* Markers for faces to avoid searching */
+
+      int mkid = MSTK_GetMarker();
+      MEnt_Mark(face0,mkid);
+
+      /* Add all lateral faces first (faces adjacent to the base face) */
+
+      List_ptr fedges0 = MF_Edges(face0,!fdir0,0);
+      int idx = 0;
+      MEdge_ptr fe;
+      while ((fe = List_Next_Entry(fedges0,&idx))) {
+
+        /* Is there an unprocessed face in this region that is
+           adjacent to this edge */
+        
+        int idx2 = 0;
+        MFace_ptr fadj; 
+        int i = 0;
+        while ((fadj = List_Next_Entry(rfaces,&idx2))) {
+
+          if (fadj != face0 && !MEnt_IsMarked(fadj,mkid)) {
+
+            if (MF_UsesEntity(fadj,fe,MEDGE)) {
+
+              int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
+              
+              lid = MEnt_ID(fadj);
+              if (faceflip[lid-1]) fdir *= -1;
+              
+              faceids->push_back(lid-1);
+              face_dirs->push_back(fdir);
+              
+              MEnt_Mark(fadj,mkid);
+            }
+          }
+
+          i++;
+        }
+      }
+      List_Delete(fedges0);
+
+      /* Add the base face */
+
+      lid = MEnt_ID(face0);
+      fdir0 = fdir0 ? 1 : -1;
+      if (faceflip[lid-1]) fdir0 *= -1;
+
+      faceids->push_back(lid-1);
+      face_dirs->push_back(fdir0);
+
+      /* If there is a last remaining face, it is the top face */
+
+      MFace_ptr fopp;
+      idx = 0;
+      int i = 0;
+      while ((fopp = List_Next_Entry(rfaces,&idx))) {
+
+        if (fopp != face0 && !MEnt_IsMarked(fopp,mkid)) {
+
+          int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
+
+          lid = MEnt_ID(fopp);
+          if (faceflip[lid-1]) fdir *= -1;
+
+          faceids->push_back(lid-1);
+          face_dirs->push_back(fdir);
+
+          break;
+        }
+
+        i++;
+      }
+
+
+      List_Unmark(rfaces,mkid);
+      MSTK_FreeMarker(mkid);
+    }
+    else {
+      int idx = 0;
+      MFace_ptr face;
+      int i = 0;
+      while ((face = List_Next_Entry(rfaces,&idx))) {
+
+        int fdir = (MR_FaceDir_i((MRegion_ptr)cell,i) == 1) ? 1 : -1;
+        
+	int lid = MEnt_ID(face);
+        if (faceflip[lid-1]) fdir *= -1;
+
+        faceids->push_back(lid-1);
+	face_dirs->push_back(fdir);
+
+        i++;
+      }
+    }
+    
+    List_Delete(rfaces);
+  }
+  else {  // cell_dimension() = 2; surface or 2D mesh
+
+    List_ptr fedges = MF_Edges((MFace_ptr)cell,1,0);
+
+    MEdge_ptr edge;
+    int idx = 0;
+    int i = 0;
+    while ((edge = List_Next_Entry(fedges,&idx))) {
+
+      int fdir = (MF_EdgeDir_i((MFace_ptr)cell,i) == 1) ? 1 : -1;
+
+      int lid = MEnt_ID(edge);
+      if (faceflip[lid-1]) fdir *= -1;
+
+      faceids->push_back(lid-1);
+      face_dirs->push_back(fdir);
+
+      i++;
+    }
+    List_Delete(fedges);
+  }
+
+}
+
+
+ 
 // Get nodes of cell 
 // On a distributed mesh, all nodes (OWNED or GHOST) of the cell 
 // are returned

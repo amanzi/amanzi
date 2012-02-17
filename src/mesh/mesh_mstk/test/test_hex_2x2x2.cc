@@ -78,8 +78,7 @@ TEST(MSTK_HEX1)
 
 
     
-  mesh.cell_get_faces(0,&faces);
-  mesh.cell_get_face_dirs(0,&facedirs);
+  mesh.cell_get_faces_and_dirs(0,true,&faces,&facedirs);
 
   for (j = 0; j < 6; j++) {
     mesh.face_get_nodes(faces[j],&facenodes);

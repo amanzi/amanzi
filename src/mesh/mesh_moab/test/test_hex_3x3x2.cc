@@ -15,8 +15,9 @@ TEST(MOAB_HEX_3x3x2)
 {
 
   int i, j, k, err, nc, nf, nv;
-  unsigned int faces[6], cnodes[8], fnodes[6];
-  int facedirs[6];
+  unsigned int cnodes[8], fnodes[6];
+  Amanzi::AmanziMesh::Entity_ID_List faces;
+  std::vector<int> facedirs;
   double ccoords[24], fcoords[12];
 
   int NV = 18;
@@ -107,8 +108,7 @@ TEST(MOAB_HEX_3x3x2)
     
   for (i = 0; i < nc; i++) {
     mesh.cell_to_nodes(i,cnodes,cnodes+8);
-    mesh.cell_to_faces(i,faces,faces+6);
-    mesh.cell_to_face_dirs(i,facedirs,facedirs+6);
+    mesh.cell_get_faces_and_dirs(i,true,&faces,&facedirs);
 
     CHECK_ARRAY_EQUAL(cellfaces[i],faces,6);
     CHECK_ARRAY_EQUAL(cellfacedirs[i],facedirs,6);
@@ -173,13 +173,14 @@ TEST(MOAB_HEX_3x3x2)
 
 
   std::vector<unsigned int>  c2f(6);
+  std::vector<int> c2fdirs;
   Epetra_Map cell_map(mesh.cell_epetra_map(true));
   Epetra_Map face_map(mesh.face_epetra_map(false));
 
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
-      mesh.cell_to_faces( c, c2f.begin(), c2f.end() );
+      mesh.cell_get_faces_and_dirs( c, true, &c2f, &c2fdirs );
       for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));

@@ -62,7 +62,7 @@ namespace AmanziMesh
     result = 
       mbcore->load_file(filename,NULL,
 			"PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1.2",
-			NULL,NULL,NULL);
+			NULL,NULL,0);
       
     rank = mbcomm->rank();
       
@@ -72,7 +72,7 @@ namespace AmanziMesh
     // Load serial mesh
 
     result =
-      mbcore->load_file(filename,NULL,NULL,NULL,NULL,NULL);
+      mbcore->load_file(filename,NULL,NULL,NULL,NULL,0);
 
     rank = 0;
   }
@@ -1187,7 +1187,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
   MBEntityHandle cell;
   MBRange cell_faces;
   std::vector<MBEntityHandle> cell_nodes, face_nodes;
-  int *cell_faceids, cell_facedirs;
+  int *cell_faceids, *cell_facedirs;
   int nf, result;
   int cfstd[6][4] = {{0,1,5,4},    // Expected cell-face-node pattern
 		     {1,2,6,5},
@@ -1199,7 +1199,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
   cell = cell_id_to_handle[cellid];
 
   faceids->clear();
-  facedirs->clear();
+  face_dirs->clear();
 
       
   result = mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
@@ -1211,6 +1211,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
   nf = cell_faces.size();
 
   cell_faceids = new int[nf];			
+  cell_facedirs = new int[nf];
 
 
   // Have to re-sort the faces according a specific template for hexes
@@ -1322,10 +1323,9 @@ void Mesh_MOAB::cell_get_faces_and_dirs (const Entity_ID cellid,
 
   for (int i = 0; i < nf; i++) {
     faceids->push_back(cell_faceids[i]);
-    facedirs->push_back(cell_facedirs[i]);
+    face_dirs->push_back(cell_facedirs[i]);
   }
 
-  delete [] cell_faces;
   delete [] cell_faceids;
   delete [] cell_facedirs;
 }

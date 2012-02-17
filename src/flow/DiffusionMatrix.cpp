@@ -18,14 +18,17 @@ DiffusionMatrix::DiffusionMatrix(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
   const Epetra_Map& face_map_use = FaceMap(true);  // all used faces
 
   // Create graphs for the cell-face and face-face matrices.
-  int l_indices[6], g_indices[6];
+  //  int l_indices[6], g_indices[6];
+  int g_indices[6];
+  AmanziMesh::Entity_ID_List l_indices;
+  std::vector<int> dirs;
   Epetra_CrsGraph cf_graph(Copy, cell_map, face_map_use, 6, true);
   Epetra_FECrsGraph ff_graph(Copy, face_map, 11);
   for (int j = 0; j < cell_map.NumMyElements(); ++j) {
     // Get the cell face indices; we need both process-local and global indices.
-    mesh->cell_to_faces((unsigned int) j, (unsigned int*) l_indices, (unsigned int*) l_indices+6);
+    mesh->cell_get_faces_and_dirs((unsigned int) j, true, &l_indices, &dirs);
     for (int i = 0; i < 6; ++i) g_indices[i] = face_map_use.GID(l_indices[i]);
-    cf_graph.InsertMyIndices(j, 6, l_indices);
+    cf_graph.InsertMyIndices(j, 6, (int *) &(l_indices[0]));
     ff_graph.InsertGlobalIndices(6, g_indices, 6, g_indices);
   }
   cf_graph.FillComplete(face_map, cell_map);
@@ -102,7 +105,9 @@ void DiffusionMatrix::Compute(const std::vector<T> &K)
   Epetra_Map cell_map = CellMap(false); // owned cells
   Epetra_Map face_map_use = FaceMap(true);  // all used faces
 
-  int l_indices[6];
+  //  int l_indices[6];
+  AmanziMesh::Entity_ID_List l_indices;
+  std::vector<int> dirs;
   Epetra_IntSerialDenseVector g_indices(6);
   Epetra_SerialDenseMatrix minv(6,6);
 
@@ -122,7 +127,7 @@ void DiffusionMatrix::Compute(const std::vector<T> &K)
     mhex.mass_matrix(minv, K[j], true);
 
     // Get the cell face indices; we need both process-local and global indices.
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) l_indices, (unsigned int*) l_indices+6);
+    mesh_->cell_get_faces_and_dirs((unsigned int) j, true, &l_indices, &dirs);
     for (int k = 0; k < 6; ++k) g_indices[k] = face_map_use.GID(l_indices[k]);
 
     double w[6];
@@ -135,7 +140,7 @@ void DiffusionMatrix::Compute(const std::vector<T> &K)
     }
 
     (*Dcc_)[j] = matsum;
-    (*Dcf_).ReplaceMyValues(j, 6, w, l_indices);
+    (*Dcf_).ReplaceMyValues(j, 6, w, (int *) &(l_indices[0]));
     (*Dff_).SumIntoGlobalValues(g_indices, minv);
   }
   ApplyDirichletProjection(*Dff_);
@@ -149,7 +154,9 @@ void DiffusionMatrix::Compute(const std::vector<T> &K, const Epetra_Vector &K_up
   Epetra_Map cell_map = CellMap(false); // owned cells
   Epetra_Map face_map_use = FaceMap(true);  // all used faces
 
-  int l_indices[6];
+  //  int l_indices[6];
+  AmanziMesh::Entity_ID_List l_indices;
+  std::vector<int> dirs;
   Epetra_IntSerialDenseVector g_indices(6);
   Epetra_SerialDenseMatrix minv(6,6);
 
@@ -166,7 +173,7 @@ void DiffusionMatrix::Compute(const std::vector<T> &K, const Epetra_Vector &K_up
     mhex.mass_matrix(minv, K[j], true);
 
     // Get the cell face indices; we need both process-local and global indices.
-    mesh_->cell_to_faces((unsigned int) j, (unsigned int*) l_indices, (unsigned int*) l_indices+6);
+    mesh_->cell_get_faces_and_dirs((unsigned int) j, true, &l_indices, &dirs);
     for (int k = 0; k < 6; ++k) g_indices[k] = face_map_use.GID(l_indices[k]);
 
     // Scale the rows of the cell face mass matrix inverse with the upwind coeffs.
@@ -187,8 +194,8 @@ void DiffusionMatrix::Compute(const std::vector<T> &K, const Epetra_Vector &K_up
     }
 
     (*Dcc_)[j] = matsum;
-    (*Dcf_).ReplaceMyValues(j, 6, w_cf, l_indices);
-    (*Dfc_t_).ReplaceMyValues(j, 6, w_fc, l_indices);
+    (*Dcf_).ReplaceMyValues(j, 6, w_cf, (int *) &(l_indices[0]));
+    (*Dfc_t_).ReplaceMyValues(j, 6, w_fc, (int *) &(l_indices[0]));
     (*Dff_).SumIntoGlobalValues(g_indices, minv);
   }
   ApplyDirichletProjection(*Dff_);

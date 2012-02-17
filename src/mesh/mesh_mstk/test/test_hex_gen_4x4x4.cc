@@ -48,8 +48,7 @@ TEST(MSTK_HEX_GEN_4x4x4)
   for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
     {
       CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
-      mesh.cell_get_faces(c, &c2f);
-      mesh.cell_get_face_dirs(c, &c2fdirs);
+      mesh.cell_get_faces_and_dirs(c, true, &c2f, &c2fdirs);
       for (int j=0; j<6; j++)
 	{
 	  int f = face_map.LID(c2f[j]);
