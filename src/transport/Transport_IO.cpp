@@ -60,10 +60,10 @@ void Transport_PK::process_parameter_list()
     advection_limiter = TRANSPORT_LIMITER_KUZMIN;
   }
 
-  flow_mode = TRANSPORT_FLOW_STEADYSTATE;
-  string flow_mode_name = transport_list.get<string>("flow mode", "steady-state");
-  if (flow_mode_name == "transient") {
-    flow_mode = TRANSPORT_FLOW_TRANSIENT;
+  flow_mode = TRANSPORT_FLOW_TRANSIENT;
+  string flow_mode_name = transport_list.get<string>("flow mode", "transient");
+  if (flow_mode_name == "steady-state") {
+    flow_mode = TRANSPORT_FLOW_STEADYSTATE;
   }  
    
   // control parameter
